@@ -1,0 +1,24 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --color-primary: #1a1a2e;
+  --color-accent: #e94560;
+  --color-surface: #ffffff;
+  --color-muted: #6b7280;
+  --font-sans: system-ui, -apple-system, sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  min-height: 100dvh;
+}
+
+#root {
+  min-height: 100dvh;
+}
