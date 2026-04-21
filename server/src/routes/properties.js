@@ -102,7 +102,7 @@ router.post('/', async (req, res) => {
 // PATCH /api/properties/:id
 router.patch('/:id', async (req, res) => {
   try {
-    const allowed = ['name', 'description', 'address', 'phone', 'email', 'wifi_name', 'wifi_password', 'checkin_time', 'checkout_time', 'rules', 'amenities', 'modules', 'theme', 'logo_url', 'cover_url', 'services', 'gallery', 'restaurant', 'activities']
+    const allowed = ['name', 'description', 'address', 'phone', 'email', 'wifi_name', 'wifi_password', 'checkin_time', 'checkout_time', 'rules', 'amenities', 'modules', 'theme', 'logo_url', 'cover_url', 'services', 'gallery', 'restaurant', 'activities', 'excursions']
     const updates = Object.fromEntries(
       Object.entries(req.body).filter(([k]) => allowed.includes(k))
     )

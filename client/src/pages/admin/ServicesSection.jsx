@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star } from 'lucide-react'
 
 export const SERVICE_ICONS = [
   { key: 'pool',         emoji: '🏊', label: 'Piscina' },
@@ -19,6 +20,25 @@ const BLANK = { icon: 'pool', name: '', description: '', hours: '' }
 
 export function iconEmoji(key) {
   return SERVICE_ICONS.find(ic => ic.key === key)?.emoji || '⭐'
+}
+
+const SERVICE_LUCIDE = {
+  pool:          Waves,
+  spa:           Sparkles,
+  restaurant:    Utensils,
+  gym:           Activity,
+  parking:       Car,
+  wifi:          Wifi,
+  beach:         Umbrella,
+  entertainment: Music,
+  bar:           Wine,
+  breakfast:     Coffee,
+  reception24:   Bell,
+  shuttle:       Bus,
+}
+
+export function iconLucide(key) {
+  return SERVICE_LUCIDE[key] || Star
 }
 
 export default function ServicesSection({ services = [], onChange }) {

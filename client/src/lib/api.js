@@ -27,7 +27,9 @@ export async function uploadMedia(endpoint, file) {
     headers: { Authorization: `Bearer ${session?.access_token}` },
     body: formData,
   })
-  const body = await res.json()
-  if (!res.ok) throw new Error(body.error || `Errore ${res.status}`)
+  const text = await res.text()
+  let body
+  try { body = text ? JSON.parse(text) : {} } catch { body = {} }
+  if (!res.ok) throw new Error(body?.error || `Errore ${res.status}`)
   return body
 }

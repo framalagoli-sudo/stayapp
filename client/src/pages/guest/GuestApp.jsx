@@ -1,39 +1,37 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import {
+  Home, Compass, Bell, Info,
+  Images, LayoutGrid, Utensils, Zap, Mountain,
+  Wifi, Phone, Mail, MapPin, FileText,
+  X, Check,
+} from 'lucide-react'
 import RequestForm from './RequestForm'
 import ServicesTab from './ServicesTab'
 import RestaurantTab from './RestaurantTab'
 import ActivitiesTab from './ActivitiesTab'
+import ExcursionsTab from './ExcursionsTab'
 
+// ─── Constants ────────────────────────────────────────────────────────────────
 const DEFAULT_MODULES = {
   reception: true, housekeeping: false, restaurant: false,
   upselling: false, chat: false, wifi: true, info: true,
 }
-
 const DEFAULT_THEME = {
-  primaryColor: '#00b5b5',
-  bgColor: '#ffffff',
-  textColor: '#1a1a2e',
-  fontHeading: 'playfair',
-  fontBody: 'inter',
-  headerStyle: 'solid',
-  borderStyle: 'mixed',
+  primaryColor: '#00b5b5', bgColor: '#ffffff', textColor: '#1a1a2e',
+  fontHeading: 'playfair', fontBody: 'inter', headerStyle: 'solid', borderStyle: 'mixed',
 }
-
 const FONT_URLS = {
-  // heading fonts
   playfair:   'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap',
   cormorant:  'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&display=swap',
   raleway:    'https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700&display=swap',
   montserrat: 'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap',
   nunito:     'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap',
   'dm-sans':  'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap',
-  // body fonts
   inter:      'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap',
   lato:       'https://fonts.googleapis.com/css2?family=Lato:wght@400;600;700&display=swap',
   'open-sans':'https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap',
 }
-
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
   cormorant:  "'Cormorant Garamond', Georgia, serif",
@@ -42,31 +40,36 @@ const HEADING_FAMILIES = {
   nunito:     "'Nunito', system-ui, sans-serif",
   'dm-sans':  "'DM Sans', system-ui, sans-serif",
 }
-
 const BODY_FAMILIES = {
   inter:      "'Inter', system-ui, sans-serif",
   lato:       "'Lato', system-ui, sans-serif",
   'open-sans':"'Open Sans', system-ui, sans-serif",
 }
-
 const BORDER_RADII = { rounded: 16, mixed: 8, square: 0 }
+
+const NAV_ITEMS = [
+  { key: 'home',     Icon: Home,    label: 'Home' },
+  { key: 'esplora',  Icon: Compass, label: 'Esplora' },
+  { key: 'richiesta',Icon: Bell,    label: 'Richiesta' },
+  { key: 'info',     Icon: Info,    label: 'Info' },
+]
 
 function loadFont(key) {
   if (!key || !FONT_URLS[key]) return
   const id = `gfont-${key}`
   if (document.getElementById(id)) return
   const link = document.createElement('link')
-  link.id = id
-  link.rel = 'stylesheet'
-  link.href = FONT_URLS[key]
+  link.id = id; link.rel = 'stylesheet'; link.href = FONT_URLS[key]
   document.head.appendChild(link)
 }
 
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function GuestApp() {
   const { slug } = useParams()
-  const [property, setProperty] = useState(null)
-  const [error, setError] = useState(null)
-  const [tab, setTab] = useState(null)
+  const [property,    setProperty]    = useState(null)
+  const [error,       setError]       = useState(null)
+  const [nav,         setNav]         = useState('home')
+  const [exploreChip, setExploreChip] = useState(null)
 
   useEffect(() => {
     fetch(`/api/guest/${slug}`)
@@ -82,25 +85,11 @@ export default function GuestApp() {
     loadFont(t.fontBody)
   }, [property?.theme?.fontHeading, property?.theme?.fontBody])
 
-  useEffect(() => {
-    if (!property) return
-    const m = { ...DEFAULT_MODULES, ...(property.modules || {}) }
-    const hasRequests = m.reception || m.housekeeping
-    const actionsActive = (property.activities || []).some(c => c.items?.some(i => i.active))
-    if (m.info)                            { setTab('info');       return }
-    if ((property.services || []).length)  { setTab('services');   return }
-    if (property.restaurant?.active)       { setTab('restaurant'); return }
-    if (actionsActive)                     { setTab('activities'); return }
-    if (m.wifi)                            { setTab('wifi');       return }
-    if (hasRequests)                       { setTab('request');    return }
-  }, [property])
+  if (error)     return <div style={{ padding: 40, textAlign: 'center', color: '#e53e3e' }}>{error}</div>
+  if (!property) return <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Caricamento…</div>
 
-  if (error) return <div style={{ padding: 32, textAlign: 'center', color: '#e53e3e' }}>{error}</div>
-  if (!property) return <div style={{ padding: 32, textAlign: 'center', color: '#888' }}>Caricamento…</div>
-
-  const modules = { ...DEFAULT_MODULES, ...(property.modules || {}) }
-  const theme   = { ...DEFAULT_THEME, ...(property.theme || {}) }
-
+  const modules       = { ...DEFAULT_MODULES, ...(property.modules || {}) }
+  const theme         = { ...DEFAULT_THEME,   ...(property.theme   || {}) }
   const primary       = theme.primaryColor
   const bgColor       = theme.bgColor
   const textColor     = theme.textColor
@@ -108,262 +97,265 @@ export default function GuestApp() {
   const bodyFamily    = BODY_FAMILIES[theme.fontBody]       || BODY_FAMILIES.inter
   const radius        = BORDER_RADII[theme.borderStyle]     ?? 8
   const isDark        = bgColor === '#1a1a2e'
-  const subText       = isDark ? '#aaa' : '#666'
+  const subText       = isDark ? '#aaa' : '#777'
+  const cardBg        = isDark ? '#1e1e32' : '#fff'
+  const surfaceBg     = isDark ? '#252538' : '#f7f7f9'
+  const navBg         = isDark ? '#12121f' : '#ffffff'
+  const borderColor   = isDark ? '#2a2a3e' : '#efefef'
 
-  const hasRequests    = modules.reception || modules.housekeeping
-  const hasServices    = (property.services || []).length > 0
-  const hasRestaurant  = property.restaurant?.active
-  const hasActivities  = (property.activities || []).some(cat =>
-    cat.items?.some(item => item.active)
+  const sp = { primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor }
+
+  function goExplore(chip) { setExploreChip(chip); setNav('esplora') }
+
+  // Header
+  const headerContent = (
+    <div style={{ textAlign: 'center' }}>
+      {property.logo_url && (
+        <img key={property.logo_url} src={property.logo_url} alt="logo"
+          style={{ maxHeight: 100, maxWidth: 220, objectFit: 'contain', display: 'block', margin: '0 auto 8px' }} />
+      )}
+      <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, fontFamily: headingFamily, color: '#fff',
+        textShadow: '0 1px 6px rgba(0,0,0,0.35)' }}>
+        {property.name}
+      </h1>
+    </div>
   )
 
-  const allTabs = [
-    { key: 'info',       label: 'Info',       visible: modules.info },
-    { key: 'services',   label: 'Servizi',    visible: hasServices },
-    { key: 'restaurant', label: 'Ristorante', visible: hasRestaurant },
-    { key: 'activities', label: 'Attività',   visible: hasActivities },
-    { key: 'wifi',       label: 'WiFi',       visible: modules.wifi },
-    { key: 'request',    label: 'Richiesta',  visible: hasRequests },
-  ]
-  const visibleTabs = allTabs.filter(t => t.visible)
-
-  function Header() {
-    // Bottom identity block: logo (if present) + name, always centered
-    const identity = (
-      <div style={{ textAlign: 'center' }}>
-        {property.logo_url && (
-          <img
-            key={property.logo_url}
-            src={property.logo_url}
-            alt="logo"
-            style={{ maxHeight: 120, maxWidth: 240, objectFit: 'contain', display: 'block', margin: '0 auto 10px' }}
-          />
-        )}
-        <h1 style={{
-          margin: 0, fontSize: 20, fontWeight: 700,
-          fontFamily: headingFamily, color: '#fff',
-          textShadow: property.cover_url ? '0 1px 4px rgba(0,0,0,0.4)' : 'none',
-        }}>
-          {property.name}
-        </h1>
-      </div>
-    )
-
-    // With cover photo: image fills header, gradient overlay from bottom, identity pinned at bottom
-    if (property.cover_url) {
-      return (
-        <div style={{
-          position: 'relative', height: 220, overflow: 'hidden', flexShrink: 0,
-        }}>
-          <img
-            src={property.cover_url}
-            alt="cover"
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-          {/* gradient overlay: transparent top → dark bottom */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.6) 100%)',
-          }} />
-          {/* identity at bottom of overlay */}
-          <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0,
-            padding: '0 20px 20px',
-          }}>
-            {identity}
-          </div>
-        </div>
-      )
-    }
-
-    // No cover photo: solid primary color, identity centered vertically
-    const headerBg = theme.headerStyle === 'gradient'
-      ? `linear-gradient(135deg, ${primary} 0%, ${primary}bb 100%)`
-      : primary
-
-    return (
-      <div style={{
-        background: headerBg, padding: '32px 20px 28px',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        {identity}
-      </div>
-    )
-  }
+  const AppHeader = property.cover_url ? (
+    <div style={{ position: 'relative', height: 200, overflow: 'hidden', flexShrink: 0 }}>
+      <img src={property.cover_url} alt="cover"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%)' }} />
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 20px 18px' }}>{headerContent}</div>
+    </div>
+  ) : (
+    <div style={{
+      background: theme.headerStyle === 'gradient'
+        ? `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)` : primary,
+      padding: '28px 20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    }}>
+      {headerContent}
+    </div>
+  )
 
   return (
     <>
       <style>{`
-        .guest-shell {
-          min-height: 100vh;
-          background: ${bgColor};
+        .g-shell { display:flex; flex-direction:column; min-height:100vh; background:${bgColor}; }
+        .g-app   { flex:1; display:flex; flex-direction:column; width:100%; max-width:430px; margin:0 auto; background:${bgColor}; }
+        .g-scroll { flex:1; overflow-y:auto; scrollbar-width:none; }
+        .g-scroll::-webkit-scrollbar { display:none; }
+        .g-nav   { flex-shrink:0; display:flex; background:${navBg}; border-top:1px solid ${borderColor}; padding-bottom:env(safe-area-inset-bottom); }
+        .g-nav-btn { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; height:60px; border:none; background:none; cursor:pointer; padding:0; }
+        .feature-card { transition:transform 0.14s ease, box-shadow 0.14s ease; }
+        .feature-card:active { transform:scale(0.96); }
+        @media (min-width:769px) {
+          .g-shell { background:linear-gradient(145deg,#0f0f1a 0%,#1c1c32 60%,#0f1a1a 100%); flex-direction:row; justify-content:center; align-items:flex-start; padding:36px 20px 48px; }
+          .g-app { flex:none; width:390px; height:calc(100vh - 84px); border-radius:44px; overflow:hidden; box-shadow:0 32px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.06); }
         }
-        .guest-app {
-          width: 100%;
-          max-width: 430px;
-          margin: 0 auto;
-          min-height: 100vh;
-        }
-        @media (min-width: 769px) {
-          .guest-shell {
-            background: linear-gradient(145deg, #0f0f1a 0%, #1c1c32 60%, #0f1a1a 100%);
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 36px 20px 48px;
-          }
-          .guest-app {
-            min-height: auto;
-            border-radius: 44px;
-            overflow: hidden;
-            box-shadow:
-              0 32px 80px rgba(0,0,0,0.7),
-              0 0 0 1px rgba(255,255,255,0.06),
-              inset 0 0 0 1px rgba(255,255,255,0.03);
-            max-height: calc(100vh - 72px);
-            overflow-y: auto;
-            scrollbar-width: none;
-          }
-          .guest-app::-webkit-scrollbar { display: none; }
-          .guest-tabs-sticky { position: sticky !important; top: 0 !important; }
-        }
-        @keyframes tabFadeIn {
-          from { opacity: 0; transform: translateY(6px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .tab-content { animation: tabFadeIn 0.18s ease; }
-        .gallery-scroll { overflow-x: auto; scrollbar-width: none; }
-        .gallery-scroll::-webkit-scrollbar { display: none; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        .fade-up { animation:fadeUp 0.22s ease; }
+        .gallery-scroll { overflow-x:auto; scrollbar-width:none; }
+        .gallery-scroll::-webkit-scrollbar { display:none; }
+        .chip-bar::-webkit-scrollbar { display:none; }
       `}</style>
-      <div className="guest-shell">
-        <div
-          className="guest-app"
-          style={{
-            '--primary': primary,
-            '--radius': `${radius}px`,
-            fontFamily: bodyFamily,
-            background: bgColor,
-            color: textColor,
-          }}
-        >
-          <Header />
 
-          {/* Tabs */}
-          {visibleTabs.length > 1 && (
-            <div
-              className="guest-tabs-sticky"
-              style={{
-                display: 'flex', borderBottom: `1px solid ${isDark ? '#333' : '#eee'}`,
-                background: bgColor, position: 'sticky', top: 0, zIndex: 10,
-              }}
-            >
-              {visibleTabs.map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => setTab(key)}
-                  style={{
-                    flex: 1, padding: '14px 0', border: 'none', background: 'none', cursor: 'pointer',
-                    fontSize: 14, fontWeight: tab === key ? 700 : 400,
-                    color: tab === key ? primary : subText,
-                    borderBottom: tab === key ? `2px solid ${primary}` : '2px solid transparent',
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
+      <div className="g-shell">
+        <div className="g-app" style={{ fontFamily: bodyFamily, color: textColor }}>
 
-          <div style={{ padding: '20px' }}>
-            {visibleTabs.length === 0
-              ? <p style={{ textAlign: 'center', color: subText, marginTop: 32 }}>Nessun servizio disponibile al momento.</p>
-              : <div key={tab} className="tab-content">
-                  {tab === 'info'       && <InfoTab property={property} primary={primary} textColor={textColor} subText={subText} headingFamily={headingFamily} isDark={isDark} radius={radius} />}
-                  {tab === 'services'   && <ServicesTab services={property.services} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} />}
-                  {tab === 'restaurant' && <RestaurantTab restaurant={property.restaurant} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} headingFamily={headingFamily} />}
-                  {tab === 'activities' && <ActivitiesTab activities={property.activities} propertyId={property.id} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} />}
-                  {tab === 'wifi'       && <WifiTab property={property} primary={primary} textColor={textColor} subText={subText} headingFamily={headingFamily} isDark={isDark} radius={radius} />}
-                  {tab === 'request'    && <RequestForm propertyId={property.id} modules={modules} primary={primary} radius={radius} textColor={textColor} isDark={isDark} />}
-                </div>
-            }
+          {AppHeader}
+
+          <div key={nav} className="g-scroll fade-up">
+            {nav === 'home'     && <HomePage      property={property} modules={modules} onExplore={goExplore} {...sp} headingFamily={headingFamily} />}
+            {nav === 'esplora'  && <EsploraPage   property={property} chip={exploreChip} setChip={setExploreChip} {...sp} headingFamily={headingFamily} />}
+            {nav === 'richiesta'&& <div style={{ padding: 20 }}><RequestForm propertyId={property.id} modules={modules} primary={primary} radius={radius} textColor={textColor} isDark={isDark} /></div>}
+            {nav === 'info'     && <InfoPage       property={property} modules={modules} {...sp} headingFamily={headingFamily} />}
           </div>
+
+          <nav className="g-nav">
+            {NAV_ITEMS.map(({ key, Icon, label }) => (
+              <button key={key} type="button" className="g-nav-btn" onClick={() => setNav(key)}>
+                <Icon size={22} strokeWidth={1.5} color={primary} style={{ opacity: nav === key ? 1 : 0.4 }} />
+                <span style={{ fontSize: 10, fontWeight: nav === key ? 700 : 400, color: nav === key ? primary : subText, lineHeight: 1 }}>
+                  {label}
+                </span>
+              </button>
+            ))}
+          </nav>
+
         </div>
       </div>
     </>
   )
 }
 
-function InfoTab({ property, primary, textColor, subText, headingFamily, isDark, radius }) {
+// ─── HOME ─────────────────────────────────────────────────────────────────────
+function HomePage({ property, modules, onExplore, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor }) {
+  const hasServices   = (property.services  || []).length > 0
+  const hasRestaurant = property.restaurant?.active
+  const hasGallery    = (property.gallery   || []).length > 0
+  const hasActivities = (property.activities|| []).some(c => c.items?.some(i => i.active))
+  const hasExcursions = (property.excursions|| []).some(e => e.active)
+
+  const svcCount = property.services?.length || 0
+  const actCount = (property.activities || []).reduce((n, c) => n + (c.items?.filter(i => i.active).length || 0), 0)
+  const excCount = (property.excursions || []).filter(e => e.active).length
+  const galCount = property.gallery?.length || 0
+  const catCount = property.restaurant?.categories?.length || 0
+
+  const CARDS = [
+    hasGallery    && { key: 'galleria',   Icon: Images,     label: 'Galleria',   sub: `${galCount} foto`,                             photo: property.gallery?.[0] },
+    hasServices   && { key: 'servizi',    Icon: LayoutGrid, label: 'Servizi',    sub: `${svcCount} disponibili`,                      photo: null },
+    hasRestaurant && { key: 'ristorante', Icon: Utensils,   label: 'Ristorante', sub: catCount ? `${catCount} categorie` : 'Menù',   photo: null },
+    hasActivities && { key: 'attivita',   Icon: Zap,        label: 'Attività',   sub: `${actCount} attività`,                        photo: null },
+    hasExcursions && { key: 'escursioni', Icon: Mountain,   label: 'Escursioni', sub: `${excCount} disponibili`,                     photo: null },
+  ].filter(Boolean)
+
+  return (
+    <div style={{ padding: '20px 16px 28px' }}>
+
+      {/* Welcome card */}
+      {(property.checkin_time || property.checkout_time || property.description) && (
+        <div style={{
+          background: `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)`,
+          borderRadius: 20, padding: '22px 24px', marginBottom: 28,
+          boxShadow: `0 8px 32px ${primary}44`,
+        }}>
+          {property.description && (
+            <p style={{ margin: '0 0 16px', fontSize: 14, color: 'rgba(255,255,255,0.88)', lineHeight: 1.6 }}>
+              {property.description}
+            </p>
+          )}
+          {(property.checkin_time || property.checkout_time) && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              {property.checkin_time && (
+                <div>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Check-in</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: '#fff', fontFamily: headingFamily, lineHeight: 1 }}>{property.checkin_time}</div>
+                </div>
+              )}
+              {property.checkout_time && (
+                <div>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Check-out</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: '#fff', fontFamily: headingFamily, lineHeight: 1 }}>{property.checkout_time}</div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Feature cards */}
+      {CARDS.length > 0 && (
+        <>
+          <h2 style={{ fontSize: 20, fontWeight: 700, fontFamily: headingFamily, color: textColor, margin: '0 0 14px' }}>Esplora</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {CARDS.map(({ key, Icon, label, sub, photo }, i) => {
+              const isAlone = i === CARDS.length - 1 && CARDS.length % 2 !== 0
+              return (
+                <div key={key} className="feature-card" onClick={() => onExplore(key)} style={{
+                  gridColumn: isAlone ? 'span 2' : undefined,
+                  borderRadius: 16, overflow: 'hidden', cursor: 'pointer',
+                  minHeight: isAlone ? 100 : 140,
+                  display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+                  padding: '14px 16px', position: 'relative',
+                  background: photo ? 'transparent' : isDark ? '#1e1e32' : `${primary}0d`,
+                  boxShadow: isDark ? '0 2px 16px rgba(0,0,0,0.35)' : '0 2px 16px rgba(0,0,0,0.07)',
+                  border: isDark ? `1px solid ${borderColor}` : 'none',
+                }}>
+                  {photo && (
+                    <>
+                      <img src={photo} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 20%, rgba(0,0,0,0.65) 100%)' }} />
+                    </>
+                  )}
+                  <div style={{ position: 'relative' }}>
+                    <Icon size={isAlone ? 28 : 34} strokeWidth={1.5} color={photo ? '#fff' : primary} style={{ marginBottom: 8, display: 'block' }} />
+                    <div style={{ fontSize: 15, fontWeight: 700, color: photo ? '#fff' : textColor, lineHeight: 1.2 }}>{label}</div>
+                    <div style={{ fontSize: 12, color: photo ? 'rgba(255,255,255,0.75)' : subText, marginTop: 3 }}>{sub}</div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
+
+      {CARDS.length === 0 && !property.checkin_time && !property.checkout_time && (
+        <p style={{ textAlign: 'center', color: subText, marginTop: 48, fontSize: 15 }}>Benvenuto!</p>
+      )}
+    </div>
+  )
+}
+
+// ─── ESPLORA ──────────────────────────────────────────────────────────────────
+function EsploraPage({ property, chip, setChip, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor }) {
   const [lightbox, setLightbox] = useState(null)
-  const cardBg     = isDark ? '#2a2a3e' : '#fff'
-  const cardShadow = isDark ? 'none' : '0 2px 12px rgba(0,0,0,0.07)'
-  const gallery    = property.gallery || []
+
+  const hasServices   = (property.services  || []).length > 0
+  const hasRestaurant = property.restaurant?.active
+  const hasGallery    = (property.gallery   || []).length > 0
+  const hasActivities = (property.activities|| []).some(c => c.items?.some(i => i.active))
+  const hasExcursions = (property.excursions|| []).some(e => e.active)
+
+  const CHIPS = [
+    hasGallery    && { key: 'galleria',   label: 'Galleria' },
+    hasServices   && { key: 'servizi',    label: 'Servizi' },
+    hasRestaurant && { key: 'ristorante', label: 'Ristorante' },
+    hasActivities && { key: 'attivita',   label: 'Attività' },
+    hasExcursions && { key: 'escursioni', label: 'Escursioni' },
+  ].filter(Boolean)
+
+  const activeChip = CHIPS.find(c => c.key === chip) ? chip : CHIPS[0]?.key
+
+  if (!CHIPS.length) {
+    return (
+      <div style={{ padding: 40, textAlign: 'center', color: subText }}>
+        <Compass size={40} strokeWidth={1.5} color={primary} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
+        <p style={{ margin: 0, fontSize: 15 }}>Nessun contenuto disponibile.</p>
+      </div>
+    )
+  }
+
+  const sp = { primary, textColor, subText, isDark, radius, headingFamily }
 
   return (
     <div>
-      {/* Description */}
-      {property.description && (
-        <p style={{ color: subText, lineHeight: 1.7, fontSize: 14, margin: '0 0 20px' }}>
-          {property.description}
-        </p>
-      )}
-
-      {/* Gallery horizontal scroll */}
-      {gallery.length > 0 && (
-        <div style={{ margin: '0 -20px 24px', padding: '0 20px' }}>
-          <div className="gallery-scroll" style={{ display: 'flex', gap: 10, paddingBottom: 4 }}>
-            {gallery.map((url, i) => (
-              <img key={url} src={url} alt=""
-                style={{ height: 160, width: 240, flexShrink: 0, borderRadius: radius, objectFit: 'cover', cursor: 'pointer', display: 'block' }}
-                onClick={() => setLightbox(url)} />
-            ))}
-          </div>
+      {/* Sticky chip bar */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, background: bgColor, borderBottom: `1px solid ${borderColor}`, padding: '12px 16px' }}>
+        <div className="chip-bar" style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none' }}>
+          {CHIPS.map(({ key, label }) => (
+            <button key={key} type="button" onClick={() => setChip(key)} style={{
+              padding: '8px 16px', borderRadius: 20, cursor: 'pointer', flexShrink: 0,
+              fontSize: 13, fontWeight: activeChip === key ? 700 : 400,
+              border: `1.5px solid ${activeChip === key ? primary : borderColor}`,
+              background: activeChip === key ? primary : 'transparent',
+              color: activeChip === key ? '#fff' : subText,
+              transition: 'all 0.15s',
+            }}>
+              {label}
+            </button>
+          ))}
         </div>
-      )}
-
-      {/* Info cards */}
-      <div style={{ display: 'grid', gap: 10 }}>
-        {property.address && (
-          <InfoCard label="📍 Indirizzo" value={property.address} textColor={textColor} cardBg={cardBg} cardShadow={cardShadow} radius={radius} />
-        )}
-        {(property.checkin_time || property.checkout_time) && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            {property.checkin_time  && <InfoCard label="🏨 Check-in"  value={property.checkin_time}  textColor={textColor} cardBg={cardBg} cardShadow={cardShadow} radius={radius} />}
-            {property.checkout_time && <InfoCard label="🚪 Check-out" value={property.checkout_time} textColor={textColor} cardBg={cardBg} cardShadow={cardShadow} radius={radius} />}
-          </div>
-        )}
-        {property.phone && (
-          <InfoCard label="📞 Telefono" value={<a href={`tel:${property.phone}`} style={{ color: primary }}>{property.phone}</a>} textColor={textColor} cardBg={cardBg} cardShadow={cardShadow} radius={radius} />
-        )}
       </div>
 
-      {/* Rules */}
-      {property.rules && (
-        <div style={{ marginTop: 24 }}>
-          <h3 style={{ fontSize: 15, marginBottom: 10, marginTop: 0, fontFamily: headingFamily, color: textColor }}>
-            Regole della struttura
-          </h3>
-          <p style={{ color: subText, fontSize: 13, lineHeight: 1.7, whiteSpace: 'pre-line', margin: 0 }}>
-            {property.rules}
-          </p>
-        </div>
-      )}
+      {/* Section content */}
+      <div key={activeChip} className="fade-up" style={{ padding: '20px 16px 28px' }}>
+        {activeChip === 'galleria'   && <GalleriaGrid gallery={property.gallery || []} radius={radius} onOpen={setLightbox} />}
+        {activeChip === 'servizi'    && <ServicesTab services={property.services} {...sp} />}
+        {activeChip === 'ristorante' && <RestaurantTab restaurant={property.restaurant} {...sp} />}
+        {activeChip === 'attivita'   && <ActivitiesTab activities={property.activities} propertyId={property.id} {...sp} />}
+        {activeChip === 'escursioni' && <ExcursionsTab excursions={property.excursions} propertyId={property.id} {...sp} />}
+      </div>
 
-      {/* Lightbox */}
       {lightbox && (
-        <div
-          onClick={() => setLightbox(null)}
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 1000, padding: 16,
-          }}
-        >
+        <div onClick={() => setLightbox(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.93)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
           <img src={lightbox} alt=""
-            style={{ maxWidth: '100%', maxHeight: '90vh', borderRadius: 8, objectFit: 'contain', display: 'block' }} />
+            style={{ maxWidth: '100%', maxHeight: '90vh', borderRadius: 10, objectFit: 'contain', display: 'block' }} />
           <button onClick={() => setLightbox(null)}
-            style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', width: 36, height: 36, borderRadius: '50%', cursor: 'pointer', fontSize: 18 }}>
-            ✕
+            style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', width: 38, height: 38, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <X size={18} strokeWidth={2} color="#fff" />
           </button>
         </div>
       )}
@@ -371,53 +363,106 @@ function InfoTab({ property, primary, textColor, subText, headingFamily, isDark,
   )
 }
 
-function WifiTab({ property, primary, textColor, subText, headingFamily, isDark, radius }) {
+// ─── INFO ─────────────────────────────────────────────────────────────────────
+function InfoPage({ property, modules, primary, textColor, subText, isDark, radius, headingFamily, cardBg, borderColor }) {
   const [copied, setCopied] = useState(false)
-  const cardBg     = isDark ? '#2a2a3e' : '#fff'
-  const cardShadow = isDark ? 'none' : '0 2px 12px rgba(0,0,0,0.07)'
+  const shadow = isDark ? 'none' : '0 2px 16px rgba(0,0,0,0.07)'
 
   function copyPassword() {
     navigator.clipboard.writeText(property.wifi_password || '')
     setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    setTimeout(() => setCopied(false), 2500)
   }
 
   return (
-    <div>
-      <h3 style={{ fontSize: 16, marginTop: 0, marginBottom: 16, fontFamily: headingFamily, color: textColor }}>
-        📶 Connessione WiFi
-      </h3>
-      {property.wifi_name ? (
-        <div style={{ background: cardBg, borderRadius: radius, padding: 20, boxShadow: cardShadow }}>
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, color: subText, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>Rete</div>
-            <div style={{ fontWeight: 700, fontSize: 16, color: textColor }}>{property.wifi_name}</div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <div>
-              <div style={{ fontSize: 11, color: subText, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>Password</div>
-              <div style={{ fontWeight: 600, fontSize: 15, letterSpacing: 2, color: textColor }}>{property.wifi_password}</div>
+    <div style={{ padding: '20px 16px 28px' }}>
+
+      {modules.wifi && property.wifi_name && (
+        <InfoSection Icon={Wifi} title="WiFi" primary={primary} headingFamily={headingFamily} textColor={textColor}>
+          <div style={{ background: cardBg, borderRadius: 16, padding: 20, boxShadow: shadow }}>
+            <div style={{ fontSize: 11, color: subText, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 3 }}>Rete</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: textColor, marginBottom: 16 }}>{property.wifi_name}</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 11, color: subText, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 3 }}>Password</div>
+                <div style={{ fontWeight: 600, fontSize: 15, letterSpacing: 2, color: textColor }}>{property.wifi_password}</div>
+              </div>
+              <button onClick={copyPassword}
+                style={{ padding: '10px 20px', background: copied ? '#22c55e' : primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0 }}>
+                {copied
+                  ? <><Check size={14} strokeWidth={2.5} style={{ verticalAlign: 'middle', marginRight: 3 }} />Copiata</>
+                  : 'Copia'}
+              </button>
             </div>
-            <button
-              onClick={copyPassword}
-              style={{ padding: '10px 20px', background: copied ? '#22c55e' : primary, color: '#fff', border: 'none', borderRadius: radius / 2 || 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0 }}
-            >
-              {copied ? '✓ Copiata' : 'Copia'}
-            </button>
           </div>
-        </div>
-      ) : (
-        <p style={{ color: subText }}>Informazioni WiFi non disponibili.</p>
+        </InfoSection>
       )}
+
+      {(property.phone || property.email || property.address) && (
+        <InfoSection Icon={MapPin} title="Contatti" primary={primary} headingFamily={headingFamily} textColor={textColor}>
+          <div style={{ background: cardBg, borderRadius: 16, overflow: 'hidden', boxShadow: shadow }}>
+            {property.phone && (
+              <ContactRow Icon={Phone} label="Telefono" value={property.phone} href={`tel:${property.phone}`} primary={primary} textColor={textColor} subText={subText} border={borderColor} />
+            )}
+            {property.email && (
+              <ContactRow Icon={Mail} label="Email" value={property.email} href={`mailto:${property.email}`} primary={primary} textColor={textColor} subText={subText} border={borderColor} />
+            )}
+            {property.address && (
+              <ContactRow Icon={MapPin} label="Indirizzo" value={property.address} href={`https://maps.google.com/?q=${encodeURIComponent(property.address)}`} primary={primary} textColor={textColor} subText={subText} border="transparent" />
+            )}
+          </div>
+        </InfoSection>
+      )}
+
+      {property.rules && (
+        <InfoSection Icon={FileText} title="Regole della struttura" primary={primary} headingFamily={headingFamily} textColor={textColor}>
+          <div style={{ background: cardBg, borderRadius: 16, padding: 20, boxShadow: shadow }}>
+            <p style={{ margin: 0, fontSize: 14, color: subText, lineHeight: 1.8, whiteSpace: 'pre-line' }}>
+              {property.rules}
+            </p>
+          </div>
+        </InfoSection>
+      )}
+
     </div>
   )
 }
 
-function InfoCard({ label, value, textColor, cardBg, cardShadow, radius }) {
+// ─── Shared components ────────────────────────────────────────────────────────
+function GalleriaGrid({ gallery, radius, onOpen }) {
   return (
-    <div style={{ background: cardBg, borderRadius: radius, padding: '14px 16px', boxShadow: cardShadow }}>
-      <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>{label}</div>
-      <div style={{ fontWeight: 600, fontSize: 14, color: textColor }}>{value}</div>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+      {gallery.map((url, i) => (
+        <img key={url + i} src={url} alt=""
+          style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: radius, cursor: 'pointer', display: 'block' }}
+          onClick={() => onOpen(url)} />
+      ))}
     </div>
+  )
+}
+
+function InfoSection({ Icon, title, primary, headingFamily, textColor, children }) {
+  return (
+    <section style={{ marginBottom: 28 }}>
+      <h2 style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 18, fontWeight: 700, fontFamily: headingFamily, color: textColor, margin: '0 0 12px' }}>
+        <Icon size={18} strokeWidth={1.5} color={primary} />
+        {title}
+      </h2>
+      {children}
+    </section>
+  )
+}
+
+function ContactRow({ Icon, label, value, href, primary, textColor, subText, border }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer"
+      style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', borderBottom: `1px solid ${border}`, textDecoration: 'none' }}>
+      <Icon size={20} strokeWidth={1.5} color={primary} style={{ flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 11, color: subText, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>{label}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: textColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
+      </div>
+      <span style={{ fontSize: 18, color: primary, flexShrink: 0, opacity: 0.6 }}>›</span>
+    </a>
   )
 }

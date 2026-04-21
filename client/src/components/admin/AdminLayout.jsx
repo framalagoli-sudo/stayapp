@@ -17,6 +17,7 @@ const NAV_PROPERTY = [
   { to: '/admin/property/restaurant', label: 'Ristorante' },
   { to: '/admin/property/theme',       label: 'Tema e colori' },
   { to: '/admin/property/activities',  label: 'Attività' },
+  { to: '/admin/property/excursions',  label: 'Escursioni' },
 ]
 
 const STYLES = `

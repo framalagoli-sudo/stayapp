@@ -94,23 +94,34 @@ async function handleDelete(req, res, dbField) {
 }
 
 // Gallery: upload only (no DB update — client manages the array via PATCH /properties)
-router.post('/gallery', upload.single('file'), async (req, res) => {
+router.post('/gallery', (req, res, next) => {
+  upload.single('file')(req, res, (err) => {
+    if (err) {
+      console.error('Multer error:', err)
+      return res.status(400).json({ error: `Errore file: ${err.message}` })
+    }
+    next()
+  })
+}, async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Nessun file ricevuto' })
+
     const profile = await getProfile(req.user.id)
     if (!profile?.property_id) return res.status(403).json({ error: 'Struttura non associata' })
 
     const ext = req.file.originalname.split('.').pop().toLowerCase()
-    const path = `${profile.property_id}/gallery-${Date.now()}.${ext}`
-    const { error } = await supabase.storage
+    const storagePath = `${profile.property_id}/gallery-${Date.now()}.${ext}`
+
+    const { error: uploadError } = await supabase.storage
       .from('property-media')
-      .upload(path, req.file.buffer, { contentType: req.file.mimetype, upsert: false })
-    if (error) return res.status(500).json({ error: error.message })
-    const { data } = supabase.storage.from('property-media').getPublicUrl(path)
+      .upload(storagePath, req.file.buffer, { contentType: req.file.mimetype, upsert: true })
+    if (uploadError) return res.status(500).json({ error: uploadError.message })
+
+    const { data } = supabase.storage.from('property-media').getPublicUrl(storagePath)
     res.json({ url: `${data.publicUrl}?v=${Date.now()}` })
   } catch (err) {
     console.error('Gallery upload error:', err)
-    res.status(500).json({ error: 'Errore interno del server' })
+    res.status(500).json({ error: err.message || 'Errore interno del server' })
   }
 })
 

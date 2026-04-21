@@ -15,6 +15,7 @@ import PropertyGalleryPage from './pages/admin/property/PropertyGalleryPage'
 import PropertyRestaurantPage from './pages/admin/property/PropertyRestaurantPage'
 import PropertyThemePage from './pages/admin/property/PropertyThemePage'
 import PropertyActivitiesPage from './pages/admin/property/PropertyActivitiesPage'
+import PropertyExcursionsPage from './pages/admin/property/PropertyExcursionsPage'
 
 export default function App() {
   return (
@@ -46,6 +47,7 @@ export default function App() {
             <Route path="property/restaurant" element={<PropertyRestaurantPage />} />
             <Route path="property/theme" element={<PropertyThemePage />} />
             <Route path="property/activities" element={<PropertyActivitiesPage />} />
+            <Route path="property/excursions" element={<PropertyExcursionsPage />} />
           </Route>
 
           {/* Root */}

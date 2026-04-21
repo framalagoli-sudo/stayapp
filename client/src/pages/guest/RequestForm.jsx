@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CheckCircle } from 'lucide-react'
 
 const DEFAULT_MODULES = {
   reception: true, housekeeping: false, restaurant: false,
@@ -48,7 +49,7 @@ export default function RequestForm({ propertyId, modules = {}, primary = '#00b5
   if (state === 'success') {
     return (
       <div style={{ textAlign: 'center', padding: '32px 0' }}>
-        <div style={{ fontSize: 40, marginBottom: 12 }}>✓</div>
+        <CheckCircle size={48} strokeWidth={1.5} color={primary} style={{ marginBottom: 12 }} />
         <p style={{ fontWeight: 600, color: primary }}>Richiesta inviata!</p>
         <p style={{ color: isDark ? '#aaa' : '#666', fontSize: 14 }}>Il personale la riceverà a breve.</p>
         <button

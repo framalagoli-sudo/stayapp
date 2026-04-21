@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { MapPin, Clock, CheckCircle } from 'lucide-react'
 
 const AGE_FILTERS = [
   { value: 'tutti',    label: 'Tutti' },
@@ -97,7 +98,7 @@ export default function ActivitiesTab({ activities = [], propertyId, primary, te
             style={{ background: cardBg, borderRadius: `${radius}px ${radius}px 0 0`, padding: 24, width: '100%', maxWidth: 430, boxSizing: 'border-box' }}>
             {bookState === 'success' ? (
               <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                <div style={{ fontSize: 36, marginBottom: 8 }}>✓</div>
+                <CheckCircle size={44} strokeWidth={1.5} color={primary} style={{ marginBottom: 8 }} />
                 <p style={{ fontWeight: 600, color: primary, margin: '0 0 6px' }}>Richiesta inviata!</p>
                 <p style={{ color: subText, fontSize: 13, margin: '0 0 16px' }}>Il personale la contatterà a breve.</p>
                 <button onClick={closeBooking} style={{ padding: '10px 28px', background: primary, color: '#fff', border: 'none', borderRadius: radius, cursor: 'pointer', fontWeight: 600 }}>
@@ -107,7 +108,11 @@ export default function ActivitiesTab({ activities = [], propertyId, primary, te
             ) : (
               <>
                 <h3 style={{ margin: '0 0 6px', fontSize: 16, color: textColor }}>Prenota: {booking.name}</h3>
-                {booking.schedule && <p style={{ margin: '0 0 14px', color: subText, fontSize: 13 }}>🕐 {booking.schedule}</p>}
+                {booking.schedule && (
+                  <p style={{ margin: '0 0 14px', color: subText, fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Clock size={13} strokeWidth={1.5} color={primary} />{booking.schedule}
+                  </p>
+                )}
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: subText, marginBottom: 4 }}>
                   Camera (opzionale)
                 </label>
@@ -160,10 +165,14 @@ function ActivityCard({ item, primary, textColor, subText, cardBg, cardShadow, r
           )}
         </div>
         {item.location && (
-          <div style={{ fontSize: 12, color: subText, marginBottom: 3 }}>📍 {item.location}</div>
+          <div style={{ fontSize: 12, color: subText, marginBottom: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <MapPin size={12} strokeWidth={1.5} color={primary} />{item.location}
+          </div>
         )}
         {item.schedule && (
-          <div style={{ fontSize: 12, color: subText, marginBottom: 8 }}>🕐 {item.schedule}</div>
+          <div style={{ fontSize: 12, color: subText, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Clock size={12} strokeWidth={1.5} color={primary} />{item.schedule}
+          </div>
         )}
         {item.description && (
           <p style={{ margin: '0 0 12px', fontSize: 13, color: subText, lineHeight: 1.6 }}>{item.description}</p>
