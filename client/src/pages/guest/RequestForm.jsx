@@ -12,7 +12,7 @@ const REQUEST_TYPES = [
   { value: 'other',       label: 'Altro',        module: '_always' },
 ]
 
-export default function RequestForm({ propertyId, modules = {} }) {
+export default function RequestForm({ propertyId, modules = {}, primary = '#00b5b5', radius = 8, textColor = '#1a1a2e', isDark = false }) {
   const effectiveModules = { ...DEFAULT_MODULES, ...modules }
   const hasAnyRequest = effectiveModules.reception || effectiveModules.housekeeping
 
@@ -24,7 +24,11 @@ export default function RequestForm({ propertyId, modules = {} }) {
   const [type, setType] = useState(visibleTypes[0]?.value || 'other')
   const [room, setRoom] = useState('')
   const [message, setMessage] = useState('')
-  const [state, setState] = useState('idle') // idle | loading | success | error
+  const [state, setState] = useState('idle')
+
+  const inputBg    = isDark ? '#2a2a3e' : '#fff'
+  const inputBorder= isDark ? '#3a3a5e' : '#ddd'
+  const labelColor = isDark ? '#ccc' : '#444'
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -45,11 +49,11 @@ export default function RequestForm({ propertyId, modules = {} }) {
     return (
       <div style={{ textAlign: 'center', padding: '32px 0' }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>✓</div>
-        <p style={{ fontWeight: 600, color: '#38a169' }}>Richiesta inviata!</p>
-        <p style={{ color: '#666', fontSize: 14 }}>Il personale la riceverà a breve.</p>
+        <p style={{ fontWeight: 600, color: primary }}>Richiesta inviata!</p>
+        <p style={{ color: isDark ? '#aaa' : '#666', fontSize: 14 }}>Il personale la riceverà a breve.</p>
         <button
           onClick={() => setState('idle')}
-          style={{ marginTop: 16, padding: '10px 24px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}
+          style={{ marginTop: 16, padding: '10px 24px', background: primary, color: '#fff', border: 'none', borderRadius: radius, cursor: 'pointer' }}
         >
           Nuova richiesta
         </button>
@@ -57,9 +61,16 @@ export default function RequestForm({ propertyId, modules = {} }) {
     )
   }
 
+  const labelStyle = { display: 'block', fontSize: 13, fontWeight: 600, color: labelColor, marginBottom: 6 }
+  const inputStyle = {
+    width: '100%', padding: '10px 12px', borderRadius: radius / 2 || 4,
+    border: `1px solid ${inputBorder}`, fontSize: 14, marginBottom: 16,
+    boxSizing: 'border-box', background: inputBg, color: textColor,
+  }
+
   return (
     <form onSubmit={handleSubmit}>
-      <h3 style={{ marginTop: 0, fontSize: 15 }}>Invia una richiesta</h3>
+      <h3 style={{ marginTop: 0, fontSize: 15, color: textColor }}>Invia una richiesta</h3>
 
       <label style={labelStyle}>Tipo</label>
       <div style={{ display: 'grid', gridTemplateColumns: visibleTypes.length === 1 ? '1fr' : '1fr 1fr', gap: 8, marginBottom: 16 }}>
@@ -69,10 +80,10 @@ export default function RequestForm({ propertyId, modules = {} }) {
             type="button"
             onClick={() => setType(value)}
             style={{
-              padding: '10px', borderRadius: 8, fontSize: 13,
-              border: `2px solid ${type === value ? '#1a1a2e' : '#ddd'}`,
-              background: type === value ? '#1a1a2e' : '#fff',
-              color: type === value ? '#fff' : '#333',
+              padding: '10px', borderRadius: radius / 2 || 4, fontSize: 13,
+              border: `2px solid ${type === value ? primary : inputBorder}`,
+              background: type === value ? primary : inputBg,
+              color: type === value ? '#fff' : textColor,
               cursor: 'pointer',
             }}
           >
@@ -105,13 +116,10 @@ export default function RequestForm({ propertyId, modules = {} }) {
       <button
         type="submit"
         disabled={state === 'loading'}
-        style={{ width: '100%', padding: '14px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer' }}
+        style={{ width: '100%', padding: '14px', background: primary, color: '#fff', border: 'none', borderRadius: radius, fontSize: 15, fontWeight: 600, cursor: 'pointer' }}
       >
         {state === 'loading' ? 'Invio…' : 'Invia richiesta'}
       </button>
     </form>
   )
 }
-
-const labelStyle = { display: 'block', fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 6 }
-const inputStyle = { width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14, marginBottom: 16, boxSizing: 'border-box' }

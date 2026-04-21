@@ -7,7 +7,7 @@ const router = Router()
 router.get('/:slug', async (req, res) => {
   const { data, error } = await supabase
     .from('properties')
-    .select('id, name, description, address, phone, wifi_name, wifi_password, checkin_time, checkout_time, rules, amenities, logo_url, cover_url, plan, modules')
+    .select('id, name, description, address, phone, wifi_name, wifi_password, checkin_time, checkout_time, rules, amenities, logo_url, cover_url, plan, modules, theme, services, gallery, restaurant, activities')
     .eq('slug', req.params.slug)
     .eq('active', true)
     .single()

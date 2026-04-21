@@ -102,10 +102,13 @@ router.post('/', async (req, res) => {
 // PATCH /api/properties/:id
 router.patch('/:id', async (req, res) => {
   try {
-    const allowed = ['name', 'description', 'address', 'phone', 'email', 'wifi_name', 'wifi_password', 'checkin_time', 'checkout_time', 'rules', 'amenities', 'modules']
+    const allowed = ['name', 'description', 'address', 'phone', 'email', 'wifi_name', 'wifi_password', 'checkin_time', 'checkout_time', 'rules', 'amenities', 'modules', 'theme', 'logo_url', 'cover_url', 'services', 'gallery', 'restaurant', 'activities']
     const updates = Object.fromEntries(
       Object.entries(req.body).filter(([k]) => allowed.includes(k))
     )
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: 'Nessun campo da aggiornare' })
+    }
 
     const { data, error } = await supabase
       .from('properties')

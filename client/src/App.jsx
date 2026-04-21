@@ -5,10 +5,16 @@ import AdminLayout from './components/admin/AdminLayout'
 import LoginPage from './pages/admin/LoginPage'
 import DashboardPage from './pages/admin/DashboardPage'
 import RequestsPage from './pages/admin/RequestsPage'
-import PropertyPage from './pages/admin/PropertyPage'
 import PropertiesPage from './pages/admin/PropertiesPage'
 import QRCodePage from './pages/admin/QRCodePage'
 import GuestApp from './pages/guest/GuestApp'
+import PropertyInfoPage from './pages/admin/property/PropertyInfoPage'
+import PropertyModulesPage from './pages/admin/property/PropertyModulesPage'
+import PropertyServicesPage from './pages/admin/property/PropertyServicesPage'
+import PropertyGalleryPage from './pages/admin/property/PropertyGalleryPage'
+import PropertyRestaurantPage from './pages/admin/property/PropertyRestaurantPage'
+import PropertyThemePage from './pages/admin/property/PropertyThemePage'
+import PropertyActivitiesPage from './pages/admin/property/PropertyActivitiesPage'
 
 export default function App() {
   return (
@@ -30,9 +36,16 @@ export default function App() {
           >
             <Route index element={<DashboardPage />} />
             <Route path="requests" element={<RequestsPage />} />
-            <Route path="property" element={<PropertyPage />} />
             <Route path="properties" element={<PropertiesPage />} />
             <Route path="qrcode" element={<QRCodePage />} />
+            <Route path="property" element={<Navigate to="/admin/property/info" replace />} />
+            <Route path="property/info" element={<PropertyInfoPage />} />
+            <Route path="property/modules" element={<PropertyModulesPage />} />
+            <Route path="property/services" element={<PropertyServicesPage />} />
+            <Route path="property/gallery" element={<PropertyGalleryPage />} />
+            <Route path="property/restaurant" element={<PropertyRestaurantPage />} />
+            <Route path="property/theme" element={<PropertyThemePage />} />
+            <Route path="property/activities" element={<PropertyActivitiesPage />} />
           </Route>
 
           {/* Root */}
