@@ -1,8 +1,10 @@
 import { supabase } from './supabase'
 
+const BASE = import.meta.env.VITE_API_URL || ''
+
 export async function apiFetch(path, options = {}) {
   const { data: { session } } = await supabase.auth.getSession()
-  const res = await fetch(path, {
+  const res = await fetch(`${BASE}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -22,7 +24,7 @@ export async function uploadMedia(endpoint, file) {
   const { data: { session } } = await supabase.auth.getSession()
   const formData = new FormData()
   formData.append('file', file)
-  const res = await fetch(endpoint, {
+  const res = await fetch(`${BASE}${endpoint}`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${session?.access_token}` },
     body: formData,

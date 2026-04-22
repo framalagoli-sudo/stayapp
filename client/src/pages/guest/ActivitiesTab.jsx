@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { MapPin, Clock, CheckCircle } from 'lucide-react'
+import { apiFetch } from '../../lib/api'
 
 const AGE_FILTERS = [
   { value: 'tutti',    label: 'Tutti' },
@@ -34,9 +35,8 @@ export default function ActivitiesTab({ activities = [], propertyId, primary, te
   async function sendBooking(activity) {
     setBookState('loading')
     try {
-      const res = await fetch('/api/requests', {
+      await apiFetch('/api/requests', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           property_id: propertyId,
           type: 'attività',
@@ -44,7 +44,7 @@ export default function ActivitiesTab({ activities = [], propertyId, primary, te
           message: `Richiesta prenotazione: ${activity.name}${activity.schedule ? ` — ${activity.schedule}` : ''}`,
         }),
       })
-      setBookState(res.ok ? 'success' : 'error')
+      setBookState('success')
     } catch {
       setBookState('error')
     }

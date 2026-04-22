@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { CheckCircle } from 'lucide-react'
+import { apiFetch } from '../../lib/api'
 
 const DEFAULT_MODULES = {
   reception: true, housekeeping: false, restaurant: false,
@@ -35,12 +36,11 @@ export default function RequestForm({ propertyId, modules = {}, primary = '#00b5
     e.preventDefault()
     setState('loading')
     try {
-      const res = await fetch('/api/requests', {
+      await apiFetch('/api/requests', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ property_id: propertyId, type, room, message }),
       })
-      setState(res.ok ? 'success' : 'error')
+      setState('success')
     } catch {
       setState('error')
     }
