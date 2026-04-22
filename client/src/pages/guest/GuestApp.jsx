@@ -6,6 +6,7 @@ import {
   Wifi, Phone, Mail, MapPin, FileText,
   X, Check,
 } from 'lucide-react'
+import { apiFetch } from '../../lib/api'
 import RequestForm from './RequestForm'
 import ServicesTab from './ServicesTab'
 import RestaurantTab from './RestaurantTab'
@@ -72,8 +73,7 @@ export default function GuestApp() {
   const [exploreChip, setExploreChip] = useState(null)
 
   useEffect(() => {
-    fetch(`/api/guest/${slug}`)
-      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    apiFetch(`/api/guest/${slug}`)
       .then(setProperty)
       .catch(() => setError('Struttura non trovata.'))
   }, [slug])
