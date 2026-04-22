@@ -67,10 +67,14 @@ function loadFont(key) {
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function GuestApp() {
   const { slug } = useParams()
-  const [property,    setProperty]    = useState(null)
-  const [error,       setError]       = useState(null)
-  const [nav,         setNav]         = useState('home')
-  const [exploreChip, setExploreChip] = useState(null)
+  const [property,     setProperty]     = useState(null)
+  const [error,        setError]        = useState(null)
+  const [nav,          setNav]          = useState('home')
+  const [exploreChip,  setExploreChip]  = useState(null)
+  const [compactBar,   setCompactBar]   = useState(false)
+  const [showArrow,    setShowArrow]    = useState(true)
+  const scrollRef  = useRef(null)
+  const chipBarRef = useRef(null)
 
   useEffect(() => {
     apiFetch(`/api/guest/${slug}`)
@@ -84,6 +88,21 @@ export default function GuestApp() {
     loadFont(t.fontHeading)
     loadFont(t.fontBody)
   }, [property?.theme?.fontHeading, property?.theme?.fontBody])
+
+  // Reset scroll + compact bar on tab change
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = 0
+    setCompactBar(false)
+  }, [nav])
+
+  function handleScroll(e) {
+    setCompactBar(e.target.scrollTop > 120)
+  }
+
+  function handleChipScroll(e) {
+    const el = e.target
+    setShowArrow(el.scrollLeft < el.scrollWidth - el.clientWidth - 4)
+  }
 
   if (error)     return <div style={{ padding: 40, textAlign: 'center', color: '#e53e3e' }}>{error}</div>
   if (!property) return <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Caricamento…</div>
@@ -107,7 +126,22 @@ export default function GuestApp() {
 
   function goExplore(chip) { setExploreChip(chip); setNav('esplora') }
 
-  // Header
+  // Compute chips for Esplora (used both in chip bar and EsploraPage)
+  const hasServices   = (property.services  || []).length > 0
+  const hasRestaurant = property.restaurant?.active
+  const hasGallery    = (property.gallery   || []).length > 0
+  const hasActivities = (property.activities|| []).some(c => c.items?.some(i => i.active))
+  const hasExcursions = (property.excursions|| []).some(e => e.active)
+  const CHIPS = [
+    hasGallery    && { key: 'galleria',   label: 'Galleria' },
+    hasServices   && { key: 'servizi',    label: 'Servizi' },
+    hasRestaurant && { key: 'ristorante', label: 'Ristorante' },
+    hasActivities && { key: 'attivita',   label: 'Attività' },
+    hasExcursions && { key: 'escursioni', label: 'Escursioni' },
+  ].filter(Boolean)
+  const activeChip = CHIPS.find(c => c.key === exploreChip) ? exploreChip : CHIPS[0]?.key
+
+  // Full header (scrolls away inside g-scroll)
   const headerContent = (
     <div style={{ textAlign: 'center' }}>
       {property.logo_url && (
@@ -120,9 +154,8 @@ export default function GuestApp() {
       </h1>
     </div>
   )
-
   const AppHeader = property.cover_url ? (
-    <div style={{ position: 'relative', height: 200, overflow: 'hidden', flexShrink: 0 }}>
+    <div style={{ position: 'relative', height: 200, overflow: 'hidden' }}>
       <img src={property.cover_url} alt="cover"
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%)' }} />
@@ -132,7 +165,7 @@ export default function GuestApp() {
     <div style={{
       background: theme.headerStyle === 'gradient'
         ? `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)` : primary,
-      padding: '28px 20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      padding: '28px 20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       {headerContent}
     </div>
@@ -155,6 +188,8 @@ export default function GuestApp() {
         }
         .g-scroll { flex:1; min-height:0; overflow-y:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
         .g-scroll::-webkit-scrollbar { display:none; }
+        .g-compact { flex-shrink:0; overflow:hidden; transition:max-height 0.22s ease; }
+        .g-chips   { flex-shrink:0; background:${bgColor}; border-bottom:1px solid ${borderColor}; padding:10px 16px; }
         .g-nav {
           flex-shrink:0; display:flex;
           background:${navBg}; border-top:1px solid ${borderColor};
@@ -176,15 +211,67 @@ export default function GuestApp() {
       <div className="g-shell">
         <div className="g-app" style={{ fontFamily: bodyFamily, color: textColor }}>
 
-          {AppHeader}
-
-          <div key={nav} className="g-scroll fade-up">
-            {nav === 'home'     && <HomePage      property={property} modules={modules} onExplore={goExplore} {...sp} headingFamily={headingFamily} />}
-            {nav === 'esplora'  && <EsploraPage   property={property} chip={exploreChip} setChip={setExploreChip} {...sp} headingFamily={headingFamily} />}
-            {nav === 'richiesta'&& <div style={{ padding: 20 }}><RequestForm propertyId={property.id} modules={modules} primary={primary} radius={radius} textColor={textColor} isDark={isDark} /></div>}
-            {nav === 'info'     && <InfoPage       property={property} modules={modules} {...sp} headingFamily={headingFamily} />}
+          {/* ── Compact name bar (appears after scroll) ── */}
+          <div className="g-compact" style={{ maxHeight: compactBar ? 44 : 0 }}>
+            <div style={{
+              background: primary,
+              height: 44, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10,
+            }}>
+              {property.logo_url && (
+                <img src={property.logo_url} alt="logo"
+                  style={{ height: 24, maxWidth: 60, objectFit: 'contain', flexShrink: 0 }} />
+              )}
+              <span style={{ color: '#fff', fontWeight: 700, fontFamily: headingFamily, fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {property.name}
+              </span>
+            </div>
           </div>
 
+          {/* ── Chip bar (always visible in Esplora) ── */}
+          {nav === 'esplora' && CHIPS.length > 0 && (
+            <div className="g-chips">
+              <div style={{ position: 'relative' }}>
+                <div ref={chipBarRef} className="chip-bar" onScroll={handleChipScroll}
+                  style={{ paddingRight: showArrow && CHIPS.length > 2 ? 36 : 0 }}>
+                  {CHIPS.map(({ key, label }) => (
+                    <button key={key} type="button" onClick={() => setExploreChip(key)} style={{
+                      padding: '8px 16px', borderRadius: 20, cursor: 'pointer', flexShrink: 0,
+                      fontSize: 13, fontWeight: activeChip === key ? 700 : 400,
+                      border: `1.5px solid ${activeChip === key ? primary : borderColor}`,
+                      background: activeChip === key ? primary : 'transparent',
+                      color: activeChip === key ? '#fff' : subText,
+                      transition: 'all 0.15s', WebkitTapHighlightColor: 'transparent',
+                    }}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {showArrow && CHIPS.length > 2 && (
+                  <div style={{
+                    position: 'absolute', right: 0, top: 0, bottom: 0, width: 44,
+                    background: `linear-gradient(to right, transparent, ${bgColor} 70%)`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+                    pointerEvents: 'none',
+                  }}>
+                    <ChevronRight size={18} strokeWidth={1.5} color={primary} style={{ opacity: 0.7 }} />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── Scroll area ── */}
+          <div ref={scrollRef} className="g-scroll" onScroll={handleScroll}>
+            {AppHeader}
+            <div key={nav} className="fade-up">
+              {nav === 'home'      && <HomePage      property={property} modules={modules} onExplore={goExplore} {...sp} headingFamily={headingFamily} />}
+              {nav === 'esplora'   && <EsploraPage   property={property} activeChip={activeChip} {...sp} headingFamily={headingFamily} />}
+              {nav === 'richiesta' && <div style={{ padding: 20 }}><RequestForm propertyId={property.id} modules={modules} primary={primary} radius={radius} textColor={textColor} isDark={isDark} /></div>}
+              {nav === 'info'      && <InfoPage      property={property} modules={modules} {...sp} headingFamily={headingFamily} />}
+            </div>
+          </div>
+
+          {/* ── Bottom nav ── */}
           <nav className="g-nav">
             {NAV_ITEMS.map(({ key, Icon, label }) => (
               <button key={key} type="button" className="g-nav-btn" onClick={() => setNav(key)}>
@@ -302,33 +389,11 @@ function HomePage({ property, modules, onExplore, primary, textColor, subText, i
 }
 
 // ─── ESPLORA ──────────────────────────────────────────────────────────────────
-function EsploraPage({ property, chip, setChip, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor }) {
-  const [lightbox,  setLightbox]  = useState(null)
-  const [showArrow, setShowArrow] = useState(true)
-  const chipBarRef = useRef(null)
+function EsploraPage({ property, activeChip, primary, textColor, subText, isDark, radius, headingFamily }) {
+  const [lightbox, setLightbox] = useState(null)
+  const sp = { primary, textColor, subText, isDark, radius, headingFamily }
 
-  function handleChipScroll(e) {
-    const el = e.target
-    setShowArrow(el.scrollLeft < el.scrollWidth - el.clientWidth - 4)
-  }
-
-  const hasServices   = (property.services  || []).length > 0
-  const hasRestaurant = property.restaurant?.active
-  const hasGallery    = (property.gallery   || []).length > 0
-  const hasActivities = (property.activities|| []).some(c => c.items?.some(i => i.active))
-  const hasExcursions = (property.excursions|| []).some(e => e.active)
-
-  const CHIPS = [
-    hasGallery    && { key: 'galleria',   label: 'Galleria' },
-    hasServices   && { key: 'servizi',    label: 'Servizi' },
-    hasRestaurant && { key: 'ristorante', label: 'Ristorante' },
-    hasActivities && { key: 'attivita',   label: 'Attività' },
-    hasExcursions && { key: 'escursioni', label: 'Escursioni' },
-  ].filter(Boolean)
-
-  const activeChip = CHIPS.find(c => c.key === chip) ? chip : CHIPS[0]?.key
-
-  if (!CHIPS.length) {
+  if (!activeChip) {
     return (
       <div style={{ padding: 40, textAlign: 'center', color: subText }}>
         <Compass size={40} strokeWidth={1.5} color={primary} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
@@ -337,47 +402,8 @@ function EsploraPage({ property, chip, setChip, primary, textColor, subText, isD
     )
   }
 
-  const sp = { primary, textColor, subText, isDark, radius, headingFamily }
-
   return (
     <div>
-      {/* Sticky chip bar */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 10, background: bgColor, borderBottom: `1px solid ${borderColor}`, padding: '10px 16px' }}>
-        <div style={{ position: 'relative' }}>
-          <div
-            ref={chipBarRef}
-            className="chip-bar"
-            onScroll={handleChipScroll}
-            style={{ paddingRight: showArrow && CHIPS.length > 2 ? 36 : 0 }}
-          >
-            {CHIPS.map(({ key, label }) => (
-              <button key={key} type="button" onClick={() => setChip(key)} style={{
-                padding: '8px 16px', borderRadius: 20, cursor: 'pointer', flexShrink: 0,
-                fontSize: 13, fontWeight: activeChip === key ? 700 : 400,
-                border: `1.5px solid ${activeChip === key ? primary : borderColor}`,
-                background: activeChip === key ? primary : 'transparent',
-                color: activeChip === key ? '#fff' : subText,
-                transition: 'all 0.15s',
-                WebkitTapHighlightColor: 'transparent',
-              }}>
-                {label}
-              </button>
-            ))}
-          </div>
-          {showArrow && CHIPS.length > 2 && (
-            <div style={{
-              position: 'absolute', right: 0, top: 0, bottom: 0, width: 44,
-              background: `linear-gradient(to right, transparent, ${bgColor} 70%)`,
-              display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-              pointerEvents: 'none',
-            }}>
-              <ChevronRight size={18} strokeWidth={1.5} color={primary} style={{ opacity: 0.7 }} />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Section content */}
       <div key={activeChip} className="fade-up" style={{ padding: '20px 16px 28px' }}>
         {activeChip === 'galleria'   && <GalleriaGrid gallery={property.gallery || []} radius={radius} onOpen={setLightbox} />}
         {activeChip === 'servizi'    && <ServicesTab services={property.services} {...sp} />}
