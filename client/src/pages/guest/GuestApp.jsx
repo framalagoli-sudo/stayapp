@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   Home, Compass, Bell, Info,
   Images, LayoutGrid, Utensils, Zap, Mountain,
   Wifi, Phone, Mail, MapPin, FileText,
-  X, Check,
+  X, Check, ChevronRight,
 } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
 import RequestForm from './RequestForm'
@@ -141,22 +141,35 @@ export default function GuestApp() {
   return (
     <>
       <style>{`
-        .g-shell { display:flex; flex-direction:column; min-height:100vh; background:${bgColor}; }
-        .g-app   { flex:1; display:flex; flex-direction:column; width:100%; max-width:430px; margin:0 auto; background:${bgColor}; }
-        .g-scroll { flex:1; overflow-y:auto; scrollbar-width:none; }
+        *,*::before,*::after { box-sizing:border-box; }
+        .g-shell {
+          display:flex; flex-direction:column;
+          height:100vh; height:100dvh;
+          overflow:hidden; background:${bgColor};
+        }
+        .g-app {
+          flex:1; min-height:0;
+          display:flex; flex-direction:column;
+          width:100%; max-width:430px; margin:0 auto;
+          background:${bgColor}; overflow:hidden;
+        }
+        .g-scroll { flex:1; min-height:0; overflow-y:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
         .g-scroll::-webkit-scrollbar { display:none; }
-        .g-nav   { flex-shrink:0; display:flex; background:${navBg}; border-top:1px solid ${borderColor}; padding-bottom:env(safe-area-inset-bottom); }
-        .g-nav-btn { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; height:60px; border:none; background:none; cursor:pointer; padding:0; }
-        .feature-card { transition:transform 0.14s ease, box-shadow 0.14s ease; }
+        .g-nav {
+          flex-shrink:0; display:flex;
+          background:${navBg}; border-top:1px solid ${borderColor};
+          padding-bottom:env(safe-area-inset-bottom,0px);
+        }
+        .g-nav-btn { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; height:60px; border:none; background:none; cursor:pointer; padding:0; -webkit-tap-highlight-color:transparent; }
+        .feature-card { transition:transform 0.14s ease; }
         .feature-card:active { transform:scale(0.96); }
         @media (min-width:769px) {
-          .g-shell { background:linear-gradient(145deg,#0f0f1a 0%,#1c1c32 60%,#0f1a1a 100%); flex-direction:row; justify-content:center; align-items:flex-start; padding:36px 20px 48px; }
-          .g-app { flex:none; width:390px; height:calc(100vh - 84px); border-radius:44px; overflow:hidden; box-shadow:0 32px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.06); }
+          .g-shell { background:linear-gradient(145deg,#0f0f1a 0%,#1c1c32 60%,#0f1a1a 100%); flex-direction:row; justify-content:center; align-items:center; }
+          .g-app { flex:none; width:390px; height:812px; max-height:calc(100vh - 48px); border-radius:44px; overflow:hidden; box-shadow:0 32px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.06); }
         }
         @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
         .fade-up { animation:fadeUp 0.22s ease; }
-        .gallery-scroll { overflow-x:auto; scrollbar-width:none; }
-        .gallery-scroll::-webkit-scrollbar { display:none; }
+        .chip-bar { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
         .chip-bar::-webkit-scrollbar { display:none; }
       `}</style>
 
@@ -290,7 +303,14 @@ function HomePage({ property, modules, onExplore, primary, textColor, subText, i
 
 // ─── ESPLORA ──────────────────────────────────────────────────────────────────
 function EsploraPage({ property, chip, setChip, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor }) {
-  const [lightbox, setLightbox] = useState(null)
+  const [lightbox,  setLightbox]  = useState(null)
+  const [showArrow, setShowArrow] = useState(true)
+  const chipBarRef = useRef(null)
+
+  function handleChipScroll(e) {
+    const el = e.target
+    setShowArrow(el.scrollLeft < el.scrollWidth - el.clientWidth - 4)
+  }
 
   const hasServices   = (property.services  || []).length > 0
   const hasRestaurant = property.restaurant?.active
@@ -322,20 +342,38 @@ function EsploraPage({ property, chip, setChip, primary, textColor, subText, isD
   return (
     <div>
       {/* Sticky chip bar */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 10, background: bgColor, borderBottom: `1px solid ${borderColor}`, padding: '12px 16px' }}>
-        <div className="chip-bar" style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none' }}>
-          {CHIPS.map(({ key, label }) => (
-            <button key={key} type="button" onClick={() => setChip(key)} style={{
-              padding: '8px 16px', borderRadius: 20, cursor: 'pointer', flexShrink: 0,
-              fontSize: 13, fontWeight: activeChip === key ? 700 : 400,
-              border: `1.5px solid ${activeChip === key ? primary : borderColor}`,
-              background: activeChip === key ? primary : 'transparent',
-              color: activeChip === key ? '#fff' : subText,
-              transition: 'all 0.15s',
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, background: bgColor, borderBottom: `1px solid ${borderColor}`, padding: '10px 16px' }}>
+        <div style={{ position: 'relative' }}>
+          <div
+            ref={chipBarRef}
+            className="chip-bar"
+            onScroll={handleChipScroll}
+            style={{ paddingRight: showArrow && CHIPS.length > 2 ? 36 : 0 }}
+          >
+            {CHIPS.map(({ key, label }) => (
+              <button key={key} type="button" onClick={() => setChip(key)} style={{
+                padding: '8px 16px', borderRadius: 20, cursor: 'pointer', flexShrink: 0,
+                fontSize: 13, fontWeight: activeChip === key ? 700 : 400,
+                border: `1.5px solid ${activeChip === key ? primary : borderColor}`,
+                background: activeChip === key ? primary : 'transparent',
+                color: activeChip === key ? '#fff' : subText,
+                transition: 'all 0.15s',
+                WebkitTapHighlightColor: 'transparent',
+              }}>
+                {label}
+              </button>
+            ))}
+          </div>
+          {showArrow && CHIPS.length > 2 && (
+            <div style={{
+              position: 'absolute', right: 0, top: 0, bottom: 0, width: 44,
+              background: `linear-gradient(to right, transparent, ${bgColor} 70%)`,
+              display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+              pointerEvents: 'none',
             }}>
-              {label}
-            </button>
-          ))}
+              <ChevronRight size={18} strokeWidth={1.5} color={primary} style={{ opacity: 0.7 }} />
+            </div>
+          )}
         </div>
       </div>
 
