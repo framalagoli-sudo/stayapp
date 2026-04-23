@@ -6,11 +6,11 @@ const router = Router()
 
 router.use(requireAuth)
 
-// GET /api/properties
+// GET /api/properties?azienda_id=xxx (azienda_id opzionale, solo per super_admin)
 router.get('/', async (req, res) => {
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, property_id, group_id')
+    .select('role, property_id, azienda_id')
     .eq('id', req.user.id)
     .single()
 
@@ -20,10 +20,13 @@ router.get('/', async (req, res) => {
 
   if (profile.role === 'admin_struttura' || profile.role === 'staff') {
     query = query.eq('id', profile.property_id)
-  } else if (profile.role === 'admin_gruppo') {
-    query = query.eq('group_id', profile.group_id)
+  } else if (profile.role === 'admin_azienda') {
+    if (!profile.azienda_id) return res.json([])
+    query = query.eq('azienda_id', profile.azienda_id)
+  } else if (profile.role === 'super_admin' && req.query.azienda_id) {
+    query = query.eq('azienda_id', req.query.azienda_id)
   }
-  // super_admin vede tutto
+  // super_admin senza filtro vede tutto
 
   const { data, error } = await query.order('name')
   if (error) return res.status(500).json({ error: error.message })
@@ -51,14 +54,18 @@ router.post('/', async (req, res) => {
       .eq('id', req.user.id)
       .single()
 
-    if (!profile || !['super_admin', 'admin_gruppo'].includes(profile.role)) {
+    if (!profile || !['super_admin', 'admin_azienda'].includes(profile.role)) {
       return res.status(403).json({ error: 'Permessi insufficienti' })
     }
+
+    const azienda_id = profile.role === 'super_admin'
+      ? req.body.azienda_id
+      : profile.azienda_id
+    if (!azienda_id) return res.status(400).json({ error: 'azienda_id obbligatorio' })
 
     const { name } = req.body
     if (!name?.trim()) return res.status(400).json({ error: 'Il nome è obbligatorio' })
 
-    // Genera slug dal nome
     const baseSlug = name
       .toLowerCase()
       .normalize('NFD')
@@ -66,7 +73,6 @@ router.post('/', async (req, res) => {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '') || 'struttura'
 
-    // Verifica unicità slug con .limit(1) invece di .maybeSingle()
     const { data: existing } = await supabase
       .from('properties')
       .select('id')
@@ -82,12 +88,7 @@ router.post('/', async (req, res) => {
 
     const { data, error } = await supabase
       .from('properties')
-      .insert({
-        name: name.trim(),
-        slug,
-        ...extras,
-        ...(profile.role === 'admin_gruppo' && { group_id: profile.group_id }),
-      })
+      .insert({ name: name.trim(), slug, azienda_id, ...extras })
       .select()
       .single()
 

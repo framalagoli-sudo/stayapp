@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 
 const PIANI = ['base', 'standard', 'premium', 'enterprise']
@@ -108,7 +108,7 @@ export default function AziendePage() {
       )}
 
       {view === 'list' && (
-        <div style={{ display: 'grid', gap: 12 }}>
+        <div style={{ display: 'grid', gap: 16 }}>
           {aziende.length === 0 && (
             <p style={{ color: '#888' }}>Nessuna azienda trovata. Creane una nuova per iniziare.</p>
           )}
@@ -129,13 +129,18 @@ export default function AziendePage() {
 function AziendaCard({ azienda: a, onEdit, onDelete }) {
   const moduli = a.moduli || {}
   const moduliAttivi = Object.entries(moduli).filter(([, v]) => v).map(([k]) => k)
-  const [showAccessi, setShowAccessi] = useState(false)
+  const [openPanel, setOpenPanel] = useState(null) // null | 'strutture' | 'ristoranti' | 'accessi'
+
+  function togglePanel(name) {
+    setOpenPanel(p => p === name ? null : name)
+  }
 
   return (
     <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+      {/* Header azienda */}
       <div style={{ padding: '20px 24px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 600, fontSize: 15 }}>{a.ragione_sociale}</div>
+          <div style={{ fontWeight: 700, fontSize: 16 }}>{a.ragione_sociale}</div>
           <div style={{ fontSize: 12, color: '#888', marginTop: 3, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             {a.partita_iva && <span>P.IVA {a.partita_iva}</span>}
             {a.email && <span>{a.email}</span>}
@@ -149,30 +154,188 @@ function AziendaCard({ azienda: a, onEdit, onDelete }) {
             ))}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-          <button
-            onClick={() => setShowAccessi(v => !v)}
-            style={pill({ background: showAccessi ? '#1a1a2e' : '#f0f4ff', color: showAccessi ? '#fff' : '#1a1a2e' })}
-          >
+        <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          {moduli.struttura && (
+            <button onClick={() => togglePanel('strutture')} style={pill({ background: openPanel === 'strutture' ? '#1a1a2e' : '#f0f4ff', color: openPanel === 'strutture' ? '#fff' : '#1a1a2e', padding: '6px 14px', fontSize: 12 })}>
+              Strutture
+            </button>
+          )}
+          {moduli.ristorante && (
+            <button onClick={() => togglePanel('ristoranti')} style={pill({ background: openPanel === 'ristoranti' ? '#e63946' : '#fff0f2', color: openPanel === 'ristoranti' ? '#fff' : '#c0392b', padding: '6px 14px', fontSize: 12 })}>
+              Ristoranti
+            </button>
+          )}
+          <button onClick={() => togglePanel('accessi')} style={pill({ background: openPanel === 'accessi' ? '#1a1a2e' : '#f5f5f5', color: openPanel === 'accessi' ? '#fff' : '#444', padding: '6px 14px', fontSize: 12 })}>
             Accessi
           </button>
-          <button onClick={onEdit} style={pill({ background: '#f0f4ff', color: '#1a1a2e' })}>Modifica</button>
-          <button onClick={onDelete} style={pill({ background: '#fff0f0', color: '#c00' })}>Elimina</button>
+          <button onClick={onEdit} style={pill({ background: '#f0f4ff', color: '#1a1a2e', padding: '6px 14px', fontSize: 12 })}>Modifica</button>
+          <button onClick={onDelete} style={pill({ background: '#fff0f0', color: '#c00', padding: '6px 14px', fontSize: 12 })}>Elimina</button>
         </div>
       </div>
 
-      {showAccessi && (
+      {/* Pannelli espandibili */}
+      {openPanel === 'strutture' && (
+        <EntitaSection
+          aziendaId={a.id}
+          tipo="struttura"
+          apiBase="/api/properties"
+          editBase="/admin/struttura"
+          label="struttura"
+          labelPlural="strutture"
+          accentColor="#1a1a2e"
+        />
+      )}
+      {openPanel === 'ristoranti' && (
+        <EntitaSection
+          aziendaId={a.id}
+          tipo="ristorante"
+          apiBase="/api/ristoranti"
+          editBase="/admin/ristoranti"
+          label="ristorante"
+          labelPlural="ristoranti"
+          accentColor="#e63946"
+        />
+      )}
+      {openPanel === 'accessi' && (
         <AccessiSection aziendaId={a.id} />
       )}
     </div>
   )
 }
 
-function AccessiSection({ aziendaId }) {
-  const [utente, setUtente] = useState(undefined) // undefined=loading, null=nessuno
+// ── Sezione Strutture / Ristoranti ────────────────────────────────────────────
+
+function EntitaSection({ aziendaId, tipo, apiBase, editBase, label, labelPlural, accentColor }) {
+  const navigate = useNavigate()
+  const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [mode, setMode] = useState('view') // view | create | resetPwd
+  const [showCreate, setShowCreate] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState(null)
+
+  useEffect(() => { loadItems() }, [aziendaId])
+
+  async function loadItems() {
+    setLoading(true); setError(null)
+    try {
+      const data = await apiFetch(`${apiBase}?azienda_id=${aziendaId}`)
+      setItems(data)
+    } catch (e) { setError(e.message) }
+    finally { setLoading(false) }
+  }
+
+  async function handleCreate(e) {
+    e.preventDefault()
+    if (!newName.trim()) { setCreateError('Il nome è obbligatorio'); return }
+    setCreating(true); setCreateError(null)
+    try {
+      const created = await apiFetch(apiBase, {
+        method: 'POST',
+        body: JSON.stringify({ name: newName.trim(), azienda_id: aziendaId }),
+      })
+      setItems(prev => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)))
+      setNewName('')
+      setShowCreate(false)
+    } catch (e) { setCreateError(e.message) }
+    finally { setCreating(false) }
+  }
+
+  async function handleDelete(item) {
+    if (!confirm(`Eliminare "${item.name}"? L'operazione è irreversibile.`)) return
+    try {
+      await apiFetch(`${apiBase}/${item.id}`, { method: 'DELETE' })
+      setItems(prev => prev.filter(i => i.id !== item.id))
+    } catch (e) { alert(e.message) }
+  }
+
+  const inp = { padding: '8px 12px', borderRadius: 7, border: '1px solid #ddd', fontSize: 14, flex: 1, boxSizing: 'border-box' }
+
+  return (
+    <div style={{ borderTop: '1px solid #f0f0f0', padding: '16px 24px', background: '#fafafa' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#888', letterSpacing: 1, textTransform: 'uppercase' }}>
+          {labelPlural} ({items.length})
+        </div>
+        {!showCreate && (
+          <button
+            onClick={() => setShowCreate(true)}
+            style={pill({ background: accentColor, color: '#fff', padding: '5px 12px', fontSize: 12 })}
+          >
+            + Nuova {label}
+          </button>
+        )}
+      </div>
+
+      {loading && <p style={{ fontSize: 13, color: '#888', margin: 0 }}>Caricamento…</p>}
+      {error && <p style={{ fontSize: 13, color: '#c00', margin: 0 }}>{error}</p>}
+
+      {showCreate && (
+        <form onSubmit={handleCreate} style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <input
+            value={newName}
+            onChange={e => setNewName(e.target.value)}
+            placeholder={`Nome ${label}`}
+            autoFocus
+            style={inp}
+          />
+          <button type="submit" disabled={creating} style={pill({ background: accentColor, color: '#fff', padding: '8px 14px', fontSize: 12 })}>
+            {creating ? 'Creazione…' : 'Crea'}
+          </button>
+          <button type="button" onClick={() => { setShowCreate(false); setNewName(''); setCreateError(null) }} style={pill({ background: '#f0f0f0', color: '#333', padding: '8px 14px', fontSize: 12 })}>
+            Annulla
+          </button>
+          {createError && <p style={{ color: '#c00', fontSize: 12, margin: '4px 0 0', width: '100%' }}>{createError}</p>}
+        </form>
+      )}
+
+      {!loading && !error && items.length === 0 && !showCreate && (
+        <p style={{ fontSize: 13, color: '#aaa', margin: 0 }}>Nessuna {label} configurata.</p>
+      )}
+
+      <div style={{ display: 'grid', gap: 8 }}>
+        {items.map(item => (
+          <div key={item.id} style={{
+            background: '#fff', borderRadius: 8, padding: '10px 14px',
+            border: '1px solid #eee',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>{item.name}</div>
+              <div style={{ fontSize: 11, color: '#aaa', marginTop: 1, display: 'flex', gap: 8 }}>
+                <code style={{ background: '#f5f5f5', padding: '0 4px', borderRadius: 3 }}>{item.slug}</code>
+                <span style={{ color: item.active ? '#38a169' : '#e53e3e' }}>{item.active ? 'Attiva' : 'Inattiva'}</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+              <button
+                onClick={() => navigate(`${editBase}/${item.id}/info`)}
+                style={pill({ background: '#f0f4ff', color: '#1a1a2e', padding: '5px 12px', fontSize: 12 })}
+              >
+                Gestisci
+              </button>
+              <button
+                onClick={() => handleDelete(item)}
+                style={pill({ background: '#fff0f0', color: '#c00', padding: '5px 12px', fontSize: 12 })}
+              >
+                Elimina
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Sezione Accessi ───────────────────────────────────────────────────────────
+
+function AccessiSection({ aziendaId }) {
+  const [utente, setUtente] = useState(undefined)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [mode, setMode] = useState('view')
   const [form, setForm] = useState({ email: '', password: '', full_name: '' })
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState(null)
@@ -344,6 +507,8 @@ function AccessiSection({ aziendaId }) {
   )
 }
 
+// ── Shared components ─────────────────────────────────────────────────────────
+
 function Badge({ color, textColor = '#333', text }) {
   return (
     <span style={{
@@ -393,7 +558,6 @@ function AziendaForm({ title, initialData = {}, onSave, onCancel }) {
       <h3 style={{ marginTop: 0, marginBottom: 20 }}>{title}</h3>
       <form onSubmit={handleSubmit}>
 
-        {/* Dati anagrafici */}
         <SectionLabel>Dati anagrafici</SectionLabel>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
           {TEXT_FIELDS.map(({ key, label, type = 'text', required }) => (
@@ -411,7 +575,6 @@ function AziendaForm({ title, initialData = {}, onSave, onCancel }) {
           ))}
         </div>
 
-        {/* Piano */}
         <SectionLabel>Piano</SectionLabel>
         <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
           {PIANI.map(p => (
@@ -433,7 +596,6 @@ function AziendaForm({ title, initialData = {}, onSave, onCancel }) {
           ))}
         </div>
 
-        {/* Moduli */}
         <SectionLabel>Moduli attivi</SectionLabel>
         <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
           {['struttura', 'ristorante'].map(m => (
@@ -449,7 +611,6 @@ function AziendaForm({ title, initialData = {}, onSave, onCancel }) {
           ))}
         </div>
 
-        {/* Stato */}
         <SectionLabel>Stato</SectionLabel>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, marginBottom: 24 }}>
           <input

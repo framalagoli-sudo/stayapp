@@ -14,7 +14,7 @@ async function getProfile(userId) {
   return data
 }
 
-// GET /api/ristoranti
+// GET /api/ristoranti?azienda_id=xxx (azienda_id opzionale, solo per super_admin)
 router.get('/', async (req, res) => {
   const profile = await getProfile(req.user.id)
   if (!profile) return res.status(403).json({ error: 'Profilo non trovato' })
@@ -24,6 +24,8 @@ router.get('/', async (req, res) => {
   if (profile.role !== 'super_admin') {
     if (!profile.azienda_id) return res.json([])
     query = query.eq('azienda_id', profile.azienda_id)
+  } else if (req.query.azienda_id) {
+    query = query.eq('azienda_id', req.query.azienda_id)
   }
 
   const { data, error } = await query
