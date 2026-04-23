@@ -9,6 +9,7 @@ import uploadRouter from './routes/upload.js'
 import aziendeRouter from './routes/aziende.js'
 import ristorantiRouter from './routes/ristoranti.js'
 import usersRouter from './routes/users.js'
+import publicRouter from './routes/public.js'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -30,6 +31,7 @@ app.use('/api/upload', uploadRouter)
 app.use('/api/aziende', aziendeRouter)
 app.use('/api/ristoranti', ristorantiRouter)
 app.use('/api/users', usersRouter)
+app.use('/api/public', publicRouter)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 

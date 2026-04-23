@@ -109,4 +109,91 @@ router.delete('/:id', async (req, res) => {
   res.json({ success: true })
 })
 
+// ── Gestione utente admin dell'azienda ────────────────────────────────────────
+
+// GET /api/aziende/:id/utente — trova l'utente admin_azienda associato
+router.get('/:id/utente', async (req, res) => {
+  const profile = await getProfile(req.user.id)
+  if (profile?.role !== 'super_admin') return res.status(403).json({ error: 'Accesso negato' })
+
+  try {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .eq('azienda_id', req.params.id)
+      .eq('role', 'admin_azienda')
+      .limit(1)
+
+    if (!profiles?.length) return res.json(null)
+
+    const { data: authUser, error } = await supabase.auth.admin.getUserById(profiles[0].id)
+    if (error) return res.json(null)
+
+    res.json({
+      id: profiles[0].id,
+      email: authUser.user?.email,
+      full_name: profiles[0].full_name,
+      last_sign_in: authUser.user?.last_sign_in_at,
+      banned: !!authUser.user?.banned_until,
+    })
+  } catch (err) {
+    res.status(500).json({ error: 'Errore interno del server' })
+  }
+})
+
+// POST /api/aziende/:id/utente — crea credenziali per l'azienda
+router.post('/:id/utente', async (req, res) => {
+  const profile = await getProfile(req.user.id)
+  if (profile?.role !== 'super_admin') return res.status(403).json({ error: 'Accesso negato' })
+
+  const { email, password, full_name } = req.body
+  if (!email?.trim()) return res.status(400).json({ error: 'Email obbligatoria' })
+  if (!password || password.length < 6) return res.status(400).json({ error: 'Password minimo 6 caratteri' })
+
+  try {
+    const { data, error } = await supabase.auth.admin.createUser({
+      email: email.trim(), password, email_confirm: true,
+      user_metadata: { full_name },
+    })
+    if (error) return res.status(400).json({ error: error.message })
+
+    await new Promise(r => setTimeout(r, 600))
+
+    await supabase.from('profiles')
+      .update({ role: 'admin_azienda', azienda_id: req.params.id, full_name: full_name || null })
+      .eq('id', data.user.id)
+
+    res.status(201).json({ id: data.user.id, email: data.user.email, full_name, banned: false })
+  } catch (err) {
+    console.error('POST /api/aziende/:id/utente error:', err)
+    res.status(500).json({ error: 'Errore interno del server' })
+  }
+})
+
+// PATCH /api/aziende/:id/utente/:uid — reset password o blocca/sblocca
+router.patch('/:id/utente/:uid', async (req, res) => {
+  const profile = await getProfile(req.user.id)
+  if (profile?.role !== 'super_admin') return res.status(403).json({ error: 'Accesso negato' })
+
+  const updates = {}
+  if (req.body.password) updates.password = req.body.password
+  if (typeof req.body.banned === 'boolean') {
+    updates.ban_duration = req.body.banned ? '87600h' : 'none'
+  }
+
+  const { error } = await supabase.auth.admin.updateUserById(req.params.uid, updates)
+  if (error) return res.status(500).json({ error: error.message })
+  res.json({ success: true })
+})
+
+// DELETE /api/aziende/:id/utente/:uid — revoca accesso
+router.delete('/:id/utente/:uid', async (req, res) => {
+  const profile = await getProfile(req.user.id)
+  if (profile?.role !== 'super_admin') return res.status(403).json({ error: 'Accesso negato' })
+
+  const { error } = await supabase.auth.admin.deleteUser(req.params.uid)
+  if (error) return res.status(500).json({ error: error.message })
+  res.json({ success: true })
+})
+
 export default router
