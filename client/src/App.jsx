@@ -1,5 +1,7 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useParams } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { AziendaProvider } from './context/AziendaContext'
+import { PropertyIdContext } from './context/PropertyIdContext'
 import ProtectedRoute from './components/admin/ProtectedRoute'
 import AdminLayout from './components/admin/AdminLayout'
 import LoginPage from './pages/admin/LoginPage'
@@ -13,16 +15,27 @@ import RistoranteMenuPage from './pages/admin/ristorante/RistoranteMenuPage'
 import RistoranteGalleryPage from './pages/admin/ristorante/RistoranteGalleryPage'
 import RistoranteThemePage from './pages/admin/ristorante/RistoranteThemePage'
 import QRCodePage from './pages/admin/QRCodePage'
+import UsersPage from './pages/admin/UsersPage'
 import GuestApp from './pages/guest/GuestApp'
 import RestaurantApp from './pages/guest/RestaurantApp'
 import PropertyInfoPage from './pages/admin/property/PropertyInfoPage'
 import PropertyModulesPage from './pages/admin/property/PropertyModulesPage'
 import PropertyServicesPage from './pages/admin/property/PropertyServicesPage'
 import PropertyGalleryPage from './pages/admin/property/PropertyGalleryPage'
-import PropertyRestaurantPage from './pages/admin/property/PropertyRestaurantPage'
 import PropertyThemePage from './pages/admin/property/PropertyThemePage'
 import PropertyActivitiesPage from './pages/admin/property/PropertyActivitiesPage'
 import PropertyExcursionsPage from './pages/admin/property/PropertyExcursionsPage'
+
+// Injects property ID from URL params into PropertyIdContext
+// so all property sub-pages work without modification
+function StrutturaLayout() {
+  const { id } = useParams()
+  return (
+    <PropertyIdContext.Provider value={id}>
+      <Outlet />
+    </PropertyIdContext.Provider>
+  )
+}
 
 export default function App() {
   return (
@@ -39,27 +52,42 @@ export default function App() {
             path="/admin"
             element={
               <ProtectedRoute>
-                <AdminLayout />
+                <AziendaProvider>
+                  <AdminLayout />
+                </AziendaProvider>
               </ProtectedRoute>
             }
           >
             <Route index element={<DashboardPage />} />
-            <Route path="requests" element={<RequestsPage />} />
-            <Route path="aziende" element={<AziendePage />} />
+            <Route path="requests"   element={<RequestsPage />} />
+            <Route path="aziende"    element={<AziendePage />} />
             <Route path="properties" element={<PropertiesPage />} />
-            <Route path="ristoranti" element={<RistorantiListPage />} />
-            <Route path="ristoranti/:id/info"    element={<RistoranteInfoPage />} />
-            <Route path="ristoranti/:id/menu"    element={<RistoranteMenuPage />} />
-            <Route path="ristoranti/:id/gallery" element={<RistoranteGalleryPage />} />
-            <Route path="ristoranti/:id/theme"   element={<RistoranteThemePage />} />
-            <Route path="qrcode" element={<QRCodePage />} />
-            <Route path="property" element={<Navigate to="/admin/property/info" replace />} />
-            <Route path="property/info" element={<PropertyInfoPage />} />
-            <Route path="property/modules" element={<PropertyModulesPage />} />
-            <Route path="property/services" element={<PropertyServicesPage />} />
-            <Route path="property/gallery" element={<PropertyGalleryPage />} />
-            <Route path="property/restaurant" element={<PropertyRestaurantPage />} />
-            <Route path="property/theme" element={<PropertyThemePage />} />
+            <Route path="users"      element={<UsersPage />} />
+            <Route path="qrcode"     element={<QRCodePage />} />
+
+            {/* Ristoranti */}
+            <Route path="ristoranti"              element={<RistorantiListPage />} />
+            <Route path="ristoranti/:id/info"     element={<RistoranteInfoPage />} />
+            <Route path="ristoranti/:id/menu"     element={<RistoranteMenuPage />} />
+            <Route path="ristoranti/:id/gallery"  element={<RistoranteGalleryPage />} />
+            <Route path="ristoranti/:id/theme"    element={<RistoranteThemePage />} />
+
+            {/* Struttura by ID (admin_azienda, super_admin) */}
+            <Route path="struttura/:id" element={<StrutturaLayout />}>
+              <Route path="info"       element={<PropertyInfoPage />} />
+              <Route path="services"   element={<PropertyServicesPage />} />
+              <Route path="gallery"    element={<PropertyGalleryPage />} />
+              <Route path="theme"      element={<PropertyThemePage />} />
+              <Route path="activities" element={<PropertyActivitiesPage />} />
+              <Route path="excursions" element={<PropertyExcursionsPage />} />
+            </Route>
+
+            {/* Struttura legacy (admin_struttura, staff — usa profile.property_id) */}
+            <Route path="property/info"       element={<PropertyInfoPage />} />
+            <Route path="property/modules"    element={<PropertyModulesPage />} />
+            <Route path="property/services"   element={<PropertyServicesPage />} />
+            <Route path="property/gallery"    element={<PropertyGalleryPage />} />
+            <Route path="property/theme"      element={<PropertyThemePage />} />
             <Route path="property/activities" element={<PropertyActivitiesPage />} />
             <Route path="property/excursions" element={<PropertyExcursionsPage />} />
           </Route>

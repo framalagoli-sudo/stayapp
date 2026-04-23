@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { usePropertyId } from '../context/PropertyIdContext'
 import { supabase } from '../lib/supabase'
 import { apiFetch } from '../lib/api'
 
 export function useProperty() {
   const { profile } = useAuth()
+  const ctxId = usePropertyId() // injected by /admin/struttura/:id/* routes
+
+  // Priority: URL-injected id → profile.property_id
+  const propertyId = ctxId || profile?.property_id
+
   const [property, setProperty] = useState(null)
   const [loading, setLoading]   = useState(true)
   const [saving, setSaving]     = useState(false)
@@ -12,16 +18,16 @@ export function useProperty() {
   const [saveError, setSaveError] = useState(null)
 
   useEffect(() => {
-    if (profile?.property_id) load()
+    if (propertyId) load()
     else if (profile) setLoading(false)
-  }, [profile?.property_id])
+  }, [propertyId])
 
   async function load() {
     setLoading(true)
     const { data } = await supabase
       .from('properties')
       .select('*')
-      .eq('id', profile.property_id)
+      .eq('id', propertyId)
       .single()
     setProperty(data || null)
     setLoading(false)
@@ -32,7 +38,7 @@ export function useProperty() {
     setSaved(false)
     setSaveError(null)
     try {
-      const data = await apiFetch(`/api/properties/${profile.property_id}`, {
+      const data = await apiFetch(`/api/properties/${propertyId}`, {
         method: 'PATCH',
         body: JSON.stringify(updates),
       })
@@ -47,5 +53,5 @@ export function useProperty() {
     }
   }
 
-  return { property, setProperty, loading, saving, saved, saveError, save, propertyId: profile?.property_id }
+  return { property, setProperty, loading, saving, saved, saveError, save, propertyId }
 }
