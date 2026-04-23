@@ -6,6 +6,8 @@ import guestRouter from './routes/guest.js'
 import requestsRouter from './routes/requests.js'
 import authRouter from './routes/auth.js'
 import uploadRouter from './routes/upload.js'
+import aziendeRouter from './routes/aziende.js'
+import ristorantiRouter from './routes/ristoranti.js'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -24,6 +26,8 @@ app.use('/api/properties', propertiesRouter)
 app.use('/api/guest', guestRouter)
 app.use('/api/requests', requestsRouter)
 app.use('/api/upload', uploadRouter)
+app.use('/api/aziende', aziendeRouter)
+app.use('/api/ristoranti', ristorantiRouter)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 

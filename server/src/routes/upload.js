@@ -131,4 +131,81 @@ router.post('/cover', upload.single('file'), (req, res) => handleUpload(req, res
 router.delete('/logo',  (req, res) => handleDelete(req, res, 'logo_url'))
 router.delete('/cover', (req, res) => handleDelete(req, res, 'cover_url'))
 
+// ── Ristorante uploads ─────────────────────────────────────────────────────
+
+async function getRistoranteAccess(userId, ristoranteId) {
+  const { data: profile } = await supabase
+    .from('profiles').select('role, azienda_id').eq('id', userId).single()
+  if (!profile) return null
+  if (profile.role === 'super_admin') return profile
+  const { data: rist } = await supabase
+    .from('ristoranti').select('azienda_id').eq('id', ristoranteId).single()
+  if (!rist || rist.azienda_id !== profile.azienda_id) return null
+  return profile
+}
+
+async function handleRistoranteUpload(req, res, dbField) {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Nessun file ricevuto' })
+    const { ristorante_id } = req.query
+    if (!ristorante_id) return res.status(400).json({ error: 'ristorante_id obbligatorio' })
+
+    const access = await getRistoranteAccess(req.user.id, ristorante_id)
+    if (!access) return res.status(403).json({ error: 'Accesso negato' })
+
+    const ext = req.file.originalname.split('.').pop().toLowerCase()
+    const storagePath = `ristoranti/${ristorante_id}/${dbField}-${Date.now()}.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('property-media')
+      .upload(storagePath, req.file.buffer, { contentType: req.file.mimetype, upsert: true })
+    if (uploadError) return res.status(500).json({ error: uploadError.message })
+
+    const { data } = supabase.storage.from('property-media').getPublicUrl(storagePath)
+    const publicUrl = `${data.publicUrl}?v=${Date.now()}`
+
+    const { error: dbError } = await supabase
+      .from('ristoranti').update({ [dbField]: publicUrl }).eq('id', ristorante_id)
+    if (dbError) return res.status(500).json({ error: dbError.message })
+
+    res.json({ url: publicUrl })
+  } catch (err) {
+    console.error(`Ristorante upload error [${dbField}]:`, err)
+    res.status(500).json({ error: 'Errore interno del server' })
+  }
+}
+
+router.post('/restaurant-logo',  upload.single('file'), (req, res) => handleRistoranteUpload(req, res, 'logo_url'))
+router.post('/restaurant-cover', upload.single('file'), (req, res) => handleRistoranteUpload(req, res, 'cover_url'))
+
+router.post('/restaurant-gallery', (req, res, next) => {
+  upload.single('file')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: `Errore file: ${err.message}` })
+    next()
+  })
+}, async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Nessun file ricevuto' })
+    const { ristorante_id } = req.query
+    if (!ristorante_id) return res.status(400).json({ error: 'ristorante_id obbligatorio' })
+
+    const access = await getRistoranteAccess(req.user.id, ristorante_id)
+    if (!access) return res.status(403).json({ error: 'Accesso negato' })
+
+    const ext = req.file.originalname.split('.').pop().toLowerCase()
+    const storagePath = `ristoranti/${ristorante_id}/gallery-${Date.now()}.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('property-media')
+      .upload(storagePath, req.file.buffer, { contentType: req.file.mimetype, upsert: true })
+    if (uploadError) return res.status(500).json({ error: uploadError.message })
+
+    const { data } = supabase.storage.from('property-media').getPublicUrl(storagePath)
+    res.json({ url: `${data.publicUrl}?v=${Date.now()}` })
+  } catch (err) {
+    console.error('Restaurant gallery upload error:', err)
+    res.status(500).json({ error: 'Errore interno del server' })
+  }
+})
+
 export default router
