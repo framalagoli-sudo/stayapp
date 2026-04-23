@@ -6,6 +6,7 @@ import LoginPage from './pages/admin/LoginPage'
 import DashboardPage from './pages/admin/DashboardPage'
 import RequestsPage from './pages/admin/RequestsPage'
 import PropertiesPage from './pages/admin/PropertiesPage'
+import AziendePage from './pages/admin/AziendePage'
 import QRCodePage from './pages/admin/QRCodePage'
 import GuestApp from './pages/guest/GuestApp'
 import PropertyInfoPage from './pages/admin/property/PropertyInfoPage'
@@ -37,6 +38,7 @@ export default function App() {
           >
             <Route index element={<DashboardPage />} />
             <Route path="requests" element={<RequestsPage />} />
+            <Route path="aziende" element={<AziendePage />} />
             <Route path="properties" element={<PropertiesPage />} />
             <Route path="qrcode" element={<QRCodePage />} />
             <Route path="property" element={<Navigate to="/admin/property/info" replace />} />

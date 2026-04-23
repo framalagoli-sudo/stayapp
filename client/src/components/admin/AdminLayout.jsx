@@ -4,7 +4,8 @@ import { useAuth } from '../../context/AuthContext'
 
 const NAV_MAIN = [
   { to: '/admin', label: 'Dashboard', end: true },
-  { to: '/admin/properties', label: 'Strutture', roles: ['super_admin', 'admin_gruppo'] },
+  { to: '/admin/aziende', label: 'Aziende', roles: ['super_admin'] },
+  { to: '/admin/properties', label: 'Strutture', roles: ['super_admin', 'admin_gruppo', 'admin_azienda'] },
   { to: '/admin/requests', label: 'Richieste' },
   { to: '/admin/qrcode', label: 'QR Code', roles: ['admin_struttura', 'staff'] },
 ]
@@ -68,7 +69,7 @@ export default function AdminLayout() {
   }
 
   const role = profile?.role
-  const showPropertySection = role && ['super_admin', 'admin_gruppo', 'admin_struttura', 'staff'].includes(role)
+  const showPropertySection = role && ['super_admin', 'admin_gruppo', 'admin_azienda', 'admin_struttura', 'staff'].includes(role)
 
   const visibleMain = NAV_MAIN.filter(item =>
     !item.roles || (role && item.roles.includes(role))
