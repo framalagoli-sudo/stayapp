@@ -1,6 +1,16 @@
 # StayApp — Documentazione per sviluppo
 
-Piattaforma SaaS per strutture ricettive italiane. L'ospite inquadra un QR code e accede a una PWA installabile sul telefono che funge da guida digitale e canale di comunicazione con la struttura.
+Piattaforma SaaS multi-modulo per strutture ricettive, ristoranti e altri business italiani. L'ospite inquadra un QR code e accede a una PWA installabile.
+
+**Architettura multi-modulo:**
+```
+Azienda (top-level)
+├── moduli: { struttura, ristorante, spa, ... }
+├── Struttura 1 → PWA /s/:slug
+├── Struttura 2
+├── Ristorante 1 → PWA /r/:slug
+└── Ristorante 2
+```
 
 ---
 
@@ -87,7 +97,28 @@ request_type:   reception | maintenance | housekeeping | other
 
 > **Nota:** `request_type` nel DB è un enum con 4 valori, ma il server accetta anche stringhe libere come `'attività'` e `'escursione'` perché usa la service role key (bypassa i vincoli). Da allineare con una migration che aggiunge i valori all'enum o converte il campo in `text`.
 
-### Tabella `groups`
+### Tabella `aziende` ⭐ (nuova — sostituisce `groups`)
+
+```sql
+id               uuid PK
+ragione_sociale  text NOT NULL
+partita_iva      text
+codice_fiscale   text
+email            text
+pec              text
+telefono         text
+cellulare        text
+indirizzo        text
+citta            text
+cap              text
+provincia        text
+moduli           jsonb DEFAULT '{"struttura":false,"ristorante":false}'
+piano            plan_type DEFAULT 'base'
+active           boolean DEFAULT true
+created_at / updated_at  timestamptz
+```
+
+### Tabella `groups` (DEPRECATA — usare `aziende`)
 
 ```sql
 id          uuid PK
@@ -133,6 +164,27 @@ updated_at    timestamptz
 ```sql
 ALTER TABLE properties ADD COLUMN IF NOT EXISTS activities JSONB DEFAULT '[]'::jsonb;
 ALTER TABLE properties ADD COLUMN IF NOT EXISTS excursions JSONB DEFAULT '[]'::jsonb;
+```
+
+### Tabella `ristoranti` ⭐ (nuova)
+
+```sql
+id          uuid PK
+azienda_id  uuid FK → aziende (cascade delete)
+slug        text UNIQUE        -- es. "osteria-della-nonna"
+name        text NOT NULL
+description text
+address     text
+phone       text
+email       text
+schedule    text               -- es. "Lun-Ven 12:00-14:30 / 19:00-22:30"
+cover_url   text
+logo_url    text
+active      boolean DEFAULT true
+theme       jsonb DEFAULT '{"primaryColor":"#e63946",...}'
+gallery     jsonb DEFAULT '[]'
+menu        jsonb DEFAULT '[]' -- [{id, name, items:[{id, name, description, price, photo, allergens}]}]
+created_at / updated_at  timestamptz
 ```
 
 ### Tabella `profiles`
