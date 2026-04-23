@@ -14,6 +14,7 @@ import RistoranteGalleryPage from './pages/admin/ristorante/RistoranteGalleryPag
 import RistoranteThemePage from './pages/admin/ristorante/RistoranteThemePage'
 import QRCodePage from './pages/admin/QRCodePage'
 import GuestApp from './pages/guest/GuestApp'
+import RestaurantApp from './pages/guest/RestaurantApp'
 import PropertyInfoPage from './pages/admin/property/PropertyInfoPage'
 import PropertyModulesPage from './pages/admin/property/PropertyModulesPage'
 import PropertyServicesPage from './pages/admin/property/PropertyServicesPage'
@@ -30,6 +31,7 @@ export default function App() {
         <Routes>
           {/* Guest PWA */}
           <Route path="/s/:slug" element={<GuestApp />} />
+          <Route path="/r/:slug" element={<RestaurantApp />} />
 
           {/* Admin */}
           <Route path="/admin/login" element={<LoginPage />} />
