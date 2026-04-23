@@ -7,6 +7,11 @@ import DashboardPage from './pages/admin/DashboardPage'
 import RequestsPage from './pages/admin/RequestsPage'
 import PropertiesPage from './pages/admin/PropertiesPage'
 import AziendePage from './pages/admin/AziendePage'
+import RistorantiListPage from './pages/admin/RistorantiListPage'
+import RistoranteInfoPage from './pages/admin/ristorante/RistoranteInfoPage'
+import RistoranteMenuPage from './pages/admin/ristorante/RistoranteMenuPage'
+import RistoranteGalleryPage from './pages/admin/ristorante/RistoranteGalleryPage'
+import RistoranteThemePage from './pages/admin/ristorante/RistoranteThemePage'
 import QRCodePage from './pages/admin/QRCodePage'
 import GuestApp from './pages/guest/GuestApp'
 import PropertyInfoPage from './pages/admin/property/PropertyInfoPage'
@@ -40,6 +45,11 @@ export default function App() {
             <Route path="requests" element={<RequestsPage />} />
             <Route path="aziende" element={<AziendePage />} />
             <Route path="properties" element={<PropertiesPage />} />
+            <Route path="ristoranti" element={<RistorantiListPage />} />
+            <Route path="ristoranti/:id/info"    element={<RistoranteInfoPage />} />
+            <Route path="ristoranti/:id/menu"    element={<RistoranteMenuPage />} />
+            <Route path="ristoranti/:id/gallery" element={<RistoranteGalleryPage />} />
+            <Route path="ristoranti/:id/theme"   element={<RistoranteThemePage />} />
             <Route path="qrcode" element={<QRCodePage />} />
             <Route path="property" element={<Navigate to="/admin/property/info" replace />} />
             <Route path="property/info" element={<PropertyInfoPage />} />

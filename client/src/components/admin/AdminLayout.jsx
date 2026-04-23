@@ -6,8 +6,16 @@ const NAV_MAIN = [
   { to: '/admin', label: 'Dashboard', end: true },
   { to: '/admin/aziende', label: 'Aziende', roles: ['super_admin'] },
   { to: '/admin/properties', label: 'Strutture', roles: ['super_admin', 'admin_gruppo', 'admin_azienda'] },
+  { to: '/admin/ristoranti', label: 'Ristoranti', roles: ['super_admin', 'admin_azienda'] },
   { to: '/admin/requests', label: 'Richieste' },
   { to: '/admin/qrcode', label: 'QR Code', roles: ['admin_struttura', 'staff'] },
+]
+
+const NAV_RISTORANTE = [
+  { sub: 'info',    label: 'Informazioni' },
+  { sub: 'menu',    label: 'Menu' },
+  { sub: 'gallery', label: 'Galleria foto' },
+  { sub: 'theme',   label: 'Tema e colori' },
 ]
 
 const NAV_PROPERTY = [
@@ -71,6 +79,10 @@ export default function AdminLayout() {
   const role = profile?.role
   const showPropertySection = role && ['super_admin', 'admin_gruppo', 'admin_azienda', 'admin_struttura', 'staff'].includes(role)
 
+  // Detect ristorante sub-pages from URL: /admin/ristoranti/:id/...
+  const ristoranteMatch = location.pathname.match(/^\/admin\/ristoranti\/([^/]+)\//)
+  const ristoranteId = ristoranteMatch?.[1]
+
   const visibleMain = NAV_MAIN.filter(item =>
     !item.roles || (role && item.roles.includes(role))
   )
@@ -110,6 +122,23 @@ export default function AdminLayout() {
                 {label}
               </NavLink>
             ))}
+          </>
+        )}
+
+        {ristoranteId && (
+          <>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#555', letterSpacing: 1, padding: '16px 12px 6px', textTransform: 'uppercase' }}>
+              Ristorante
+            </div>
+            {NAV_RISTORANTE.map(({ sub, label }) => {
+              const to = `/admin/ristoranti/${ristoranteId}/${sub}`
+              return (
+                <NavLink key={sub} to={to}
+                  style={({ isActive }) => navLinkStyle(isActive, true)}>
+                  {label}
+                </NavLink>
+              )
+            })}
           </>
         )}
       </nav>
