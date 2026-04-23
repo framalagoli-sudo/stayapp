@@ -184,7 +184,12 @@ export default function AdminLayout() {
   }
 
   function StrutturaSubLinks({ baseId }) {
-    if (!baseId) return null
+    if (!baseId) return (
+      <div style={{ padding: '6px 12px 10px 20px', fontSize: 12, color: '#666', fontStyle: 'italic' }}>
+        Nessuna struttura creata.<br />
+        <span style={{ color: '#888' }}>Aggiungila dal pannello Aziende.</span>
+      </div>
+    )
     return STRUTTURA_SUBS.map(({ sub, label }) => {
       const to = `/admin/struttura/${baseId}/${sub}`
       return (
@@ -196,7 +201,12 @@ export default function AdminLayout() {
   }
 
   function RistoranteSubLinks({ baseId }) {
-    if (!baseId) return null
+    if (!baseId) return (
+      <div style={{ padding: '6px 12px 10px 20px', fontSize: 12, color: '#666', fontStyle: 'italic' }}>
+        Nessun ristorante creato.<br />
+        <span style={{ color: '#888' }}>Aggiungilo dal pannello Aziende.</span>
+      </div>
+    )
     return RISTORANTE_SUBS.map(({ sub, label }) => {
       const to = `/admin/ristoranti/${baseId}/${sub}`
       return (
