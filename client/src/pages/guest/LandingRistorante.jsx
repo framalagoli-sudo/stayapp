@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { MapPin, Phone, Mail, Clock, ChevronDown } from 'lucide-react'
+import { MapPin, Phone, Mail, Clock, ChevronDown, Utensils, Wine, Coffee, Music, Car, Wind, Wifi, Bell, Bus, Star, Heart, Award } from 'lucide-react'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -34,6 +34,13 @@ function loadFont(key) {
   link.id = id; link.rel = 'stylesheet'; link.href = FONT_URLS[key]
   document.head.appendChild(link)
 }
+
+const HIGHLIGHT_LUCIDE = {
+  star: Star, heart: Heart, award: Award, restaurant: Utensils, wine: Wine,
+  breakfast: Coffee, music: Music, location: MapPin, time: Clock,
+  parking: Car, ac: Wind, wifi: Wifi, reception: Bell, shuttle: Bus,
+}
+function highlightIcon(key) { return HIGHLIGHT_LUCIDE[key] || Star }
 
 const SOCIAL_CONFIG = [
   { key: 'instagram',   label: 'Instagram',   color: '#E1306C' },
@@ -91,6 +98,7 @@ export default function LandingRistorante({ ristorante }) {
   const pwaUrl     = `${window.location.pathname}?qr=1`
   const bookingUrl = mini.booking_url || null
   const tagline    = mini.tagline || ''
+  const highlights = (mini.highlights || []).filter(h => h.text)
   const gallery    = (ristorante.gallery || []).slice(0, 9)
   const menu       = ristorante.menu || []
   const hasGallery     = sections.gallery      && gallery.length > 0
@@ -186,6 +194,27 @@ export default function LandingRistorante({ ristorante }) {
           <ChevronDown size={20} color="rgba(255,255,255,0.6)" strokeWidth={1.5} />
         </div>
       </section>
+
+      {/* Highlights */}
+      {highlights.length > 0 && (
+        <section style={{ padding: '56px 0', background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
+          <div className="land-section">
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(highlights.length, 3)}, 1fr)`, gap: 24 }}>
+              {highlights.map(h => {
+                const Icon = highlightIcon(h.icon)
+                return (
+                  <div key={h.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 12 }}>
+                    <div style={{ width: 56, height: 56, borderRadius: '50%', background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon size={24} strokeWidth={1.5} color={primary} />
+                    </div>
+                    <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#1a1a2e', lineHeight: 1.4 }}>{h.text}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* About */}
       {ristorante.description && (

@@ -1,14 +1,32 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useRistorante } from '../../../hooks/useRistorante'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Plus, Trash2, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Mountain, Wind, Heart, Award, MapPin, Clock } from 'lucide-react'
 
 const DEFAULT_SECTIONS = { gallery: true, menu_preview: true }
-const DEFAULT_SOCIAL    = { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' }
+const DEFAULT_SOCIAL   = { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' }
 const DEFAULT = {
   active: false, tagline: '', booking_url: '', seo_title: '', seo_description: '',
-  sections: DEFAULT_SECTIONS, social: DEFAULT_SOCIAL,
+  sections: DEFAULT_SECTIONS, social: DEFAULT_SOCIAL, highlights: [],
 }
+
+const HIGHLIGHT_ICONS = [
+  { key: 'star',       Icon: Star,      label: 'Stella' },
+  { key: 'heart',      Icon: Heart,     label: 'Cuore' },
+  { key: 'award',      Icon: Award,     label: 'Premio' },
+  { key: 'restaurant', Icon: Utensils,  label: 'Cucina' },
+  { key: 'wine',       Icon: Wine,      label: 'Vini' },
+  { key: 'breakfast',  Icon: Coffee,    label: 'Caffè' },
+  { key: 'music',      Icon: Music,     label: 'Musica' },
+  { key: 'location',   Icon: MapPin,    label: 'Posizione' },
+  { key: 'time',       Icon: Clock,     label: 'Orario' },
+  { key: 'parking',    Icon: Car,       label: 'Parcheggio' },
+  { key: 'ac',         Icon: Wind,      label: 'Climatizzato' },
+  { key: 'wifi',       Icon: Wifi,      label: 'Wi-Fi' },
+  { key: 'reception',  Icon: Bell,      label: 'Servizio' },
+  { key: 'shuttle',    Icon: Bus,       label: 'Navetta' },
+]
+const ICON_MAP = Object.fromEntries(HIGHLIGHT_ICONS.map(({ key, Icon }) => [key, Icon]))
 
 export default function RistoranteMiniSitoPage() {
   const { id } = useParams()
@@ -20,8 +38,9 @@ export default function RistoranteMiniSitoPage() {
       const s = ristorante.minisito || {}
       setForm({
         ...DEFAULT, ...s,
-        sections: { ...DEFAULT_SECTIONS, ...(s.sections || {}) },
-        social:   { ...DEFAULT_SOCIAL,   ...(s.social   || {}) },
+        sections:   { ...DEFAULT_SECTIONS, ...(s.sections   || {}) },
+        social:     { ...DEFAULT_SOCIAL,   ...(s.social     || {}) },
+        highlights: s.highlights || [],
       })
     }
   }, [ristorante])
@@ -34,6 +53,24 @@ export default function RistoranteMiniSitoPage() {
 
   function patchSection(key, value) {
     const updated = { ...form, sections: { ...form.sections, [key]: value } }
+    setForm(updated)
+    save({ minisito: updated }).catch(() => {})
+  }
+
+  function addHighlight() {
+    const updated = { ...form, highlights: [...(form.highlights || []), { id: crypto.randomUUID(), icon: 'star', text: '' }] }
+    setForm(updated)
+    save({ minisito: updated }).catch(() => {})
+  }
+
+  function updateHighlight(id, patch) {
+    const updated = { ...form, highlights: form.highlights.map(h => h.id === id ? { ...h, ...patch } : h) }
+    setForm(updated)
+    save({ minisito: updated }).catch(() => {})
+  }
+
+  function removeHighlight(id) {
+    const updated = { ...form, highlights: form.highlights.filter(h => h.id !== id) }
     setForm(updated)
     save({ minisito: updated }).catch(() => {})
   }
@@ -171,6 +208,48 @@ export default function RistoranteMiniSitoPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Highlights */}
+      <div style={cardStyle}>
+        <h3 style={sectionTitle}>Punti di forza</h3>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+          Fino a 6 card con icona e testo visualizzate in evidenza nel minisito (es. "Cucina a km zero", "Vini naturali").
+        </p>
+        {(form.highlights || []).map(h => {
+          const Icon = ICON_MAP[h.icon] || Star
+          return (
+            <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <select
+                value={h.icon}
+                onChange={e => updateHighlight(h.id, { icon: e.target.value })}
+                style={{ padding: '8px 6px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, background: '#fff', cursor: 'pointer', flexShrink: 0 }}
+              >
+                {HIGHLIGHT_ICONS.map(({ key, label }) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: '#fff0f1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Icon size={18} strokeWidth={1.5} color="#e63946" />
+              </div>
+              <input
+                value={h.text}
+                onChange={e => { const t = e.target.value; setForm(f => ({ ...f, highlights: f.highlights.map(x => x.id === h.id ? { ...x, text: t } : x) })) }}
+                onBlur={() => save({ minisito: form }).catch(() => {})}
+                placeholder="es. Cucina a km zero, ingredienti locali"
+                style={{ ...inputStyle, flex: 1 }}
+              />
+              <button onClick={() => removeHighlight(h.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', flexShrink: 0, padding: 4 }}>
+                <Trash2 size={16} strokeWidth={1.5} />
+              </button>
+            </div>
+          )
+        })}
+        {(form.highlights || []).length < 6 && (
+          <button onClick={addHighlight} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#e63946', background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
+            <Plus size={14} strokeWidth={2.5} /> Aggiungi punto di forza
+          </button>
+        )}
       </div>
 
       {/* Social */}

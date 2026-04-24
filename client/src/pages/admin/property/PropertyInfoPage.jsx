@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useProperty } from '../../../hooks/useProperty'
 import CollegamentiSection from '../../../components/admin/CollegamentiSection'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, X } from 'lucide-react'
+
+const AMENITY_PRESETS = [
+  'Wi-Fi gratuito', 'Parcheggio', 'Piscina', 'Spa', 'Palestra', 'Ristorante',
+  'Colazione inclusa', 'Pet friendly', 'Vista mare', 'Vista montagna',
+  'Aria condizionata', 'Ascensore', 'Navetta aeroporto', 'Spiaggia privata',
+  'Campo da tennis', 'Noleggio bici',
+]
 
 const FIELDS = [
   { key: 'name',          label: 'Nome struttura *', type: 'text' },
@@ -21,8 +28,30 @@ const INFO_KEYS = FIELDS.map(f => f.key)
 export default function PropertyInfoPage() {
   const { property, loading, saving, saved, saveError, save } = useProperty()
   const [form, setForm] = useState({})
+  const [amenities, setAmenities] = useState([])
+  const [amenityInput, setAmenityInput] = useState('')
 
-  useEffect(() => { if (property) setForm(property) }, [property])
+  useEffect(() => {
+    if (property) {
+      setForm(property)
+      setAmenities(property.amenities || [])
+    }
+  }, [property])
+
+  function addAmenity(label) {
+    const val = label.trim()
+    if (!val || amenities.includes(val)) return
+    const updated = [...amenities, val]
+    setAmenities(updated)
+    setAmenityInput('')
+    save({ amenities: updated }).catch(() => {})
+  }
+
+  function removeAmenity(val) {
+    const updated = amenities.filter(a => a !== val)
+    setAmenities(updated)
+    save({ amenities: updated }).catch(() => {})
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -88,6 +117,57 @@ export default function PropertyInfoPage() {
           />
         )}
       </form>
+
+      {/* Amenities */}
+      <div style={{ ...cardStyle, marginTop: 16 }}>
+        <h3 style={{ marginTop: 0, marginBottom: 4, fontSize: 16, fontWeight: 700 }}>Dotazioni e servizi</h3>
+        <p style={{ margin: '0 0 16px', fontSize: 13, color: '#888' }}>
+          Tag visibili nella scheda Info dell'app e nel minisito. Aggiungili dalla lista o scrivi il tuo.
+        </p>
+
+        {/* Current tags */}
+        {amenities.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+            {amenities.map(a => (
+              <span key={a} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#f0f4ff', color: '#1a1a2e', fontSize: 13, fontWeight: 600, padding: '5px 10px', borderRadius: 20 }}>
+                {a}
+                <button onClick={() => removeAmenity(a)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1, color: '#888', display: 'flex' }}>
+                  <X size={13} strokeWidth={2.5} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Free text input */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          <input
+            value={amenityInput}
+            onChange={e => setAmenityInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addAmenity(amenityInput) } }}
+            placeholder="Scrivi una dotazione e premi Invio"
+            style={{ ...inputStyle, flex: 1 }}
+          />
+          <button
+            type="button"
+            onClick={() => addAmenity(amenityInput)}
+            style={{ padding: '10px 16px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}
+          >
+            Aggiungi
+          </button>
+        </div>
+
+        {/* Presets */}
+        <div style={{ fontSize: 12, color: '#aaa', marginBottom: 8 }}>Suggerimenti rapidi:</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {AMENITY_PRESETS.filter(p => !amenities.includes(p)).map(p => (
+            <button key={p} onClick={() => addAmenity(p)}
+              style={{ fontSize: 12, padding: '4px 10px', borderRadius: 16, border: '1px solid #ddd', background: '#fff', cursor: 'pointer', color: '#555' }}>
+              + {p}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

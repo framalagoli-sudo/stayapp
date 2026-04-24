@@ -533,6 +533,18 @@ function InfoPage({ property, modules, primary, textColor, subText, isDark, radi
         </InfoSection>
       )}
 
+      {(property.amenities || []).length > 0 && (
+        <InfoSection Icon={LayoutGrid} title="Dotazioni" primary={primary} headingFamily={headingFamily} textColor={textColor}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {property.amenities.map(a => (
+              <span key={a} style={{ background: cardBg, color: textColor, fontSize: 13, fontWeight: 600, padding: '7px 14px', borderRadius: 20, boxShadow: shadow }}>
+                {a}
+              </span>
+            ))}
+          </div>
+        </InfoSection>
+      )}
+
       {property.rules && (
         <InfoSection Icon={FileText} title="Regole della struttura" primary={primary} headingFamily={headingFamily} textColor={textColor}>
           <div style={{ background: cardBg, borderRadius: 16, padding: 20, boxShadow: shadow }}>

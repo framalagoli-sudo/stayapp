@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, Phone, Mail, ChevronDown, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro } from 'lucide-react'
+import { MapPin, Phone, Mail, ChevronDown, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro, Heart, Award, Mountain, Wind } from 'lucide-react'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -41,6 +41,14 @@ const SERVICE_LUCIDE = {
   bar: Wine, breakfast: Coffee, reception24: Bell, shuttle: Bus,
 }
 function serviceIcon(key) { return SERVICE_LUCIDE[key] || Star }
+
+const HIGHLIGHT_LUCIDE = {
+  star: Star, heart: Heart, award: Award, wifi: Wifi, parking: Car,
+  pool: Waves, spa: Sparkles, restaurant: Utensils, gym: Activity,
+  beach: Umbrella, mountain: Mountain, breakfast: Coffee, bar: Wine,
+  shuttle: Bus, reception: Bell, ac: Wind, location: LocationPin, time: Clock, music: Music,
+}
+function highlightIcon(key) { return HIGHLIGHT_LUCIDE[key] || Star }
 
 const SOCIAL_CONFIG = [
   { key: 'instagram',   label: 'Instagram',   color: '#E1306C' },
@@ -99,6 +107,8 @@ export default function LandingStruttura({ property }) {
   const pwaUrl     = `${window.location.pathname}?qr=1`
   const bookingUrl = mini.booking_url || null
   const tagline    = mini.tagline || ''
+  const highlights = (mini.highlights || []).filter(h => h.text)
+  const amenities  = (property.amenities || [])
   const gallery    = (property.gallery  || []).slice(0, 9)
   const services   = (property.services || []).slice(0, 6)
 
@@ -195,6 +205,27 @@ export default function LandingStruttura({ property }) {
         </div>
       </section>
 
+      {/* Highlights */}
+      {highlights.length > 0 && (
+        <section style={{ padding: '56px 0', background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
+          <div className="land-section">
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(highlights.length, 3)}, 1fr)`, gap: 24 }}>
+              {highlights.map(h => {
+                const Icon = highlightIcon(h.icon)
+                return (
+                  <div key={h.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 12 }}>
+                    <div style={{ width: 56, height: 56, borderRadius: '50%', background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon size={24} strokeWidth={1.5} color={primary} />
+                    </div>
+                    <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#1a1a2e', lineHeight: 1.4 }}>{h.text}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* About */}
       {property.description && (
         <section ref={aboutRef} style={{ padding: '80px 0', background: '#fff' }}>
@@ -217,6 +248,15 @@ export default function LandingStruttura({ property }) {
                     <div style={{ fontFamily: heading, fontSize: 36, fontWeight: 700 }}>{property.checkout_time}</div>
                   </div>
                 )}
+              </div>
+            )}
+            {amenities.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 32 }}>
+                {amenities.map(a => (
+                  <span key={a} style={{ background: '#f5f5f7', color: '#444', fontSize: 13, fontWeight: 600, padding: '6px 14px', borderRadius: 20 }}>
+                    {a}
+                  </span>
+                ))}
               </div>
             )}
           </div>

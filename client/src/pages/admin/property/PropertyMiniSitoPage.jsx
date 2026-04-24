@@ -1,13 +1,36 @@
 import { useEffect, useState } from 'react'
 import { useProperty } from '../../../hooks/useProperty'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Plus, Trash2, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Mountain, Wind, Heart, Award, MapPin, Clock } from 'lucide-react'
 
-const DEFAULT_SECTIONS = { gallery: true, services: true, activities: true, excursions: true }
-const DEFAULT_SOCIAL    = { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' }
+const DEFAULT_SECTIONS   = { gallery: true, services: true, activities: true, excursions: true }
+const DEFAULT_SOCIAL     = { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' }
 const DEFAULT = {
   active: false, tagline: '', booking_url: '', seo_title: '', seo_description: '',
-  sections: DEFAULT_SECTIONS, social: DEFAULT_SOCIAL,
+  sections: DEFAULT_SECTIONS, social: DEFAULT_SOCIAL, highlights: [],
 }
+
+const HIGHLIGHT_ICONS = [
+  { key: 'star',        Icon: Star,      label: 'Stella' },
+  { key: 'heart',       Icon: Heart,     label: 'Cuore' },
+  { key: 'award',       Icon: Award,     label: 'Premio' },
+  { key: 'wifi',        Icon: Wifi,      label: 'Wi-Fi' },
+  { key: 'parking',     Icon: Car,       label: 'Parcheggio' },
+  { key: 'pool',        Icon: Waves,     label: 'Piscina' },
+  { key: 'spa',         Icon: Sparkles,  label: 'Spa' },
+  { key: 'restaurant',  Icon: Utensils,  label: 'Ristorante' },
+  { key: 'gym',         Icon: Activity,  label: 'Palestra' },
+  { key: 'beach',       Icon: Umbrella,  label: 'Spiaggia' },
+  { key: 'mountain',    Icon: Mountain,  label: 'Montagna' },
+  { key: 'breakfast',   Icon: Coffee,    label: 'Colazione' },
+  { key: 'bar',         Icon: Wine,      label: 'Bar' },
+  { key: 'shuttle',     Icon: Bus,       label: 'Navetta' },
+  { key: 'reception',   Icon: Bell,      label: 'Reception' },
+  { key: 'ac',          Icon: Wind,      label: 'Aria cond.' },
+  { key: 'location',    Icon: MapPin,    label: 'Posizione' },
+  { key: 'time',        Icon: Clock,     label: 'Orario' },
+  { key: 'music',       Icon: Music,     label: 'Animazione' },
+]
+const ICON_MAP = Object.fromEntries(HIGHLIGHT_ICONS.map(({ key, Icon }) => [key, Icon]))
 
 export default function PropertyMiniSitoPage() {
   const { property, loading, saving, saved, saveError, save } = useProperty()
@@ -18,8 +41,9 @@ export default function PropertyMiniSitoPage() {
       const s = property.minisito || {}
       setForm({
         ...DEFAULT, ...s,
-        sections: { ...DEFAULT_SECTIONS, ...(s.sections || {}) },
-        social:   { ...DEFAULT_SOCIAL,   ...(s.social   || {}) },
+        sections:   { ...DEFAULT_SECTIONS, ...(s.sections   || {}) },
+        social:     { ...DEFAULT_SOCIAL,   ...(s.social     || {}) },
+        highlights: s.highlights || [],
       })
     }
   }, [property])
@@ -32,6 +56,24 @@ export default function PropertyMiniSitoPage() {
 
   function patchSection(key, value) {
     const updated = { ...form, sections: { ...form.sections, [key]: value } }
+    setForm(updated)
+    save({ minisito: updated }).catch(() => {})
+  }
+
+  function addHighlight() {
+    const updated = { ...form, highlights: [...(form.highlights || []), { id: crypto.randomUUID(), icon: 'star', text: '' }] }
+    setForm(updated)
+    save({ minisito: updated }).catch(() => {})
+  }
+
+  function updateHighlight(id, patch) {
+    const updated = { ...form, highlights: form.highlights.map(h => h.id === id ? { ...h, ...patch } : h) }
+    setForm(updated)
+    save({ minisito: updated }).catch(() => {})
+  }
+
+  function removeHighlight(id) {
+    const updated = { ...form, highlights: form.highlights.filter(h => h.id !== id) }
     setForm(updated)
     save({ minisito: updated }).catch(() => {})
   }
@@ -172,6 +214,48 @@ export default function PropertyMiniSitoPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Highlights */}
+      <div style={cardStyle}>
+        <h3 style={sectionTitle}>Punti di forza</h3>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+          Fino a 6 card con icona e testo visualizzate in evidenza nel minisito (es. "Vista panoramica", "Pet friendly").
+        </p>
+        {(form.highlights || []).map(h => {
+          const Icon = ICON_MAP[h.icon] || Star
+          return (
+            <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <select
+                value={h.icon}
+                onChange={e => updateHighlight(h.id, { icon: e.target.value })}
+                style={{ padding: '8px 6px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, background: '#fff', cursor: 'pointer', flexShrink: 0 }}
+              >
+                {HIGHLIGHT_ICONS.map(({ key, label }) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: '#f0f4ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Icon size={18} strokeWidth={1.5} color="#1a1a2e" />
+              </div>
+              <input
+                value={h.text}
+                onChange={e => { const t = e.target.value; setForm(f => ({ ...f, highlights: f.highlights.map(x => x.id === h.id ? { ...x, text: t } : x) })) }}
+                onBlur={() => save({ minisito: form }).catch(() => {})}
+                placeholder="es. Vista panoramica sulle Dolomiti"
+                style={{ ...inputStyle, flex: 1 }}
+              />
+              <button onClick={() => removeHighlight(h.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', flexShrink: 0, padding: 4 }}>
+                <Trash2 size={16} strokeWidth={1.5} />
+              </button>
+            </div>
+          )
+        })}
+        {(form.highlights || []).length < 6 && (
+          <button onClick={addHighlight} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#1a1a2e', background: '#f0f4ff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
+            <Plus size={14} strokeWidth={2.5} /> Aggiungi punto di forza
+          </button>
+        )}
       </div>
 
       {/* Social */}
