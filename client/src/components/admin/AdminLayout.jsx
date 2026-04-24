@@ -259,6 +259,7 @@ export default function AdminLayout() {
         {isAdminAzienda && (
           <>
             <NavLink to="/admin/requests" style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>
+            <NavLink to="/admin/qrcode"   style={({ isActive }) => navLinkStyle(isActive)}>QR Code</NavLink>
 
             {/* Solo struttura (no collapse) */}
             {hasStruttura && !bothActive && (
