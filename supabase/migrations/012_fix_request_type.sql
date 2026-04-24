@@ -2,4 +2,5 @@
 -- (attività, escursione, ecc.) già inviati dal server con service role key
 
 ALTER TABLE requests ALTER COLUMN type TYPE text;
-DROP TYPE IF EXISTS request_type;
+ALTER TABLE requests ALTER COLUMN type DROP DEFAULT;
+DROP TYPE IF EXISTS request_type CASCADE;
