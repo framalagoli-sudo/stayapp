@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useRistorante } from '../../../hooks/useRistorante'
 import { uploadMedia, apiFetch } from '../../../lib/api'
 import CollegamentiSection from '../../../components/admin/CollegamentiSection'
+import { ExternalLink } from 'lucide-react'
 
 const FIELDS = [
   { key: 'name',        label: 'Nome ristorante *', type: 'text' },
@@ -48,7 +49,20 @@ export default function RistoranteInfoPage() {
 
   return (
     <div style={{ maxWidth: 640 }}>
-      <h2 style={titleStyle}>Informazioni generali</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+        <h2 style={{ ...titleStyle, marginBottom: 0 }}>Informazioni generali</h2>
+        {ristorante.slug && (
+          <a
+            href={`/r/${ristorante.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: '#e63946', fontWeight: 600, textDecoration: 'none', padding: '6px 12px', background: '#e6394610', borderRadius: 8 }}
+          >
+            <ExternalLink size={13} strokeWidth={2} />
+            Anteprima PWA
+          </a>
+        )}
+      </div>
       <p style={descStyle}>Dati di base del ristorante visibili ai clienti nell'app.</p>
 
       {/* Logo & Cover */}
