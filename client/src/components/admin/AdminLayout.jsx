@@ -259,6 +259,7 @@ export default function AdminLayout() {
         {isAdminAzienda && (
           <>
             <NavLink to="/admin/requests" style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>
+            <NavLink to="/admin/chat"     style={({ isActive }) => navLinkStyle(isActive)}>Chat</NavLink>
             <NavLink to="/admin/qrcode"   style={({ isActive }) => navLinkStyle(isActive)}>QR Code</NavLink>
 
             {/* Solo struttura (no collapse) */}
@@ -308,6 +309,7 @@ export default function AdminLayout() {
         {isLegacyStruttura && (
           <>
             <NavLink to="/admin/requests" style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>
+            <NavLink to="/admin/chat"     style={({ isActive }) => navLinkStyle(isActive)}>Chat</NavLink>
             <NavLink to="/admin/qrcode"   style={({ isActive }) => navLinkStyle(isActive)}>QR Code</NavLink>
             <SectionHeader label="La mia struttura" />
             {NAV_PROPERTY.map(({ to, label }) => (

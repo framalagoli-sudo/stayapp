@@ -1,16 +1,29 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import {
-  Home, Compass, Bell, Info,
+  Home, Compass, Bell, Info, MessageCircle, Send,
   Images, LayoutGrid, Zap, Mountain,
   Wifi, Phone, Mail, MapPin, FileText,
   X, Check, ChevronRight,
 } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
+import { supabase } from '../../lib/supabase'
 import RequestForm from './RequestForm'
 import ServicesTab from './ServicesTab'
 import ActivitiesTab from './ActivitiesTab'
 import ExcursionsTab from './ExcursionsTab'
+
+// Genera o recupera session_id anonimo del guest
+function getSessionId() {
+  const key = 'chat_session_id'
+  let id = localStorage.getItem(key)
+  if (!id) {
+    id = crypto.randomUUID()
+    localStorage.setItem(key, id)
+  }
+  return id
+}
+const SESSION_ID = getSessionId()
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DEFAULT_MODULES = {
@@ -47,11 +60,12 @@ const BODY_FAMILIES = {
 }
 const BORDER_RADII = { rounded: 16, mixed: 8, square: 0 }
 
-const NAV_ITEMS = [
-  { key: 'home',     Icon: Home,    label: 'Home' },
-  { key: 'esplora',  Icon: Compass, label: 'Esplora' },
-  { key: 'richiesta',Icon: Bell,    label: 'Richiesta' },
-  { key: 'info',     Icon: Info,    label: 'Info' },
+const BASE_NAV = [
+  { key: 'home',      Icon: Home,          label: 'Home' },
+  { key: 'esplora',   Icon: Compass,       label: 'Esplora' },
+  { key: 'richiesta', Icon: Bell,          label: 'Richiesta' },
+  { key: 'chat',      Icon: MessageCircle, label: 'Chat',    module: 'chat' },
+  { key: 'info',      Icon: Info,          label: 'Info' },
 ]
 
 function loadFont(key) {
@@ -122,6 +136,8 @@ export default function GuestApp() {
   const borderColor   = isDark ? '#2a2a3e' : '#efefef'
 
   const sp = { primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor }
+
+  const NAV_ITEMS = BASE_NAV.filter(item => !item.module || modules[item.module])
 
   function goExplore(chip) { setExploreChip(chip); setNav('esplora') }
 
@@ -264,6 +280,7 @@ export default function GuestApp() {
               {nav === 'home'      && <HomePage      property={property} modules={modules} onExplore={goExplore} {...sp} headingFamily={headingFamily} />}
               {nav === 'esplora'   && <EsploraPage   property={property} activeChip={activeChip} {...sp} headingFamily={headingFamily} />}
               {nav === 'richiesta' && <div style={{ padding: 20 }}><RequestForm propertyId={property.id} modules={modules} primary={primary} radius={radius} textColor={textColor} isDark={isDark} /></div>}
+              {nav === 'chat'      && <ChatPage      propertyId={property.id} propertyName={property.name} {...sp} headingFamily={headingFamily} />}
               {nav === 'info'      && <InfoPage      property={property} modules={modules} {...sp} headingFamily={headingFamily} />}
             </div>
           </div>
@@ -561,5 +578,175 @@ function ContactRow({ Icon, label, value, href, primary, textColor, subText, bor
       </div>
       <span style={{ fontSize: 18, color: primary, flexShrink: 0, opacity: 0.6 }}>›</span>
     </a>
+  )
+}
+
+// ─── CHAT ─────────────────────────────────────────────────────────────────────
+function ChatPage({ propertyId, propertyName, primary, textColor, subText, isDark, radius, cardBg, borderColor }) {
+  const [messages,  setMessages]  = useState([])
+  const [guestName, setGuestName] = useState(() => localStorage.getItem('chat_guest_name') || '')
+  const [nameSet,   setNameSet]   = useState(() => !!localStorage.getItem('chat_guest_name'))
+  const [input,     setInput]     = useState('')
+  const [sending,   setSending]   = useState(false)
+  const [nameInput, setNameInput] = useState('')
+  const endRef = useRef(null)
+
+  useEffect(() => {
+    loadMessages()
+  }, [])
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  // Realtime: ricevi risposte dello staff in tempo reale
+  useEffect(() => {
+    const channel = supabase
+      .channel(`chat-guest-${SESSION_ID}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'messages',
+        filter: `property_id=eq.${propertyId}`,
+      }, (payload) => {
+        const msg = payload.new
+        if (msg.session_id === SESSION_ID) {
+          setMessages(prev => {
+            if (prev.find(m => m.id === msg.id)) return prev
+            return [...prev, msg]
+          })
+        }
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [propertyId])
+
+  async function loadMessages() {
+    try {
+      const data = await apiFetch(`/api/messages?property_id=${propertyId}&session_id=${SESSION_ID}`)
+      setMessages(data)
+    } catch {}
+  }
+
+  function saveName(e) {
+    e.preventDefault()
+    if (!nameInput.trim()) return
+    localStorage.setItem('chat_guest_name', nameInput.trim())
+    setGuestName(nameInput.trim())
+    setNameSet(true)
+  }
+
+  async function send(e) {
+    e.preventDefault()
+    if (!input.trim()) return
+    setSending(true)
+    const body = input.trim()
+    setInput('')
+    try {
+      const msg = await apiFetch('/api/messages', {
+        method: 'POST',
+        body: JSON.stringify({ property_id: propertyId, session_id: SESSION_ID, guest_name: guestName || null, sender: 'guest', body }),
+      })
+      setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg])
+    } catch (err) {
+      alert(err.message)
+      setInput(body)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const shadow = isDark ? 'none' : '0 2px 16px rgba(0,0,0,0.07)'
+
+  // Chiedi il nome prima di chattare
+  if (!nameSet) {
+    return (
+      <div style={{ padding: '40px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <MessageCircle size={28} strokeWidth={1.5} color={primary} />
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <h2 style={{ margin: '0 0 6px', fontSize: 20, color: textColor }}>Chat con la reception</h2>
+          <p style={{ margin: 0, fontSize: 14, color: subText }}>Siamo qui per aiutarti. Come ti chiami?</p>
+        </div>
+        <form onSubmit={saveName} style={{ width: '100%', maxWidth: 300 }}>
+          <input
+            value={nameInput}
+            onChange={e => setNameInput(e.target.value)}
+            placeholder="Il tuo nome (opzionale)"
+            style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: `1px solid ${borderColor}`, fontSize: 15, boxSizing: 'border-box', background: cardBg, color: textColor, marginBottom: 10 }}
+          />
+          <button type="submit" style={{ width: '100%', padding: '12px', background: primary, color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+            Inizia la chat
+          </button>
+          <button type="button" onClick={() => setNameSet(true)} style={{ width: '100%', padding: '10px', background: 'none', border: 'none', color: subText, fontSize: 13, cursor: 'pointer', marginTop: 4 }}>
+            Continua senza nome
+          </button>
+        </form>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 400 }}>
+      {/* Header */}
+      <div style={{ padding: '16px 20px 12px', borderBottom: `1px solid ${borderColor}` }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: textColor }}>{propertyName} — Reception</div>
+        <div style={{ fontSize: 11, color: subText, marginTop: 2 }}>
+          {guestName ? `Ciao ${guestName}! ` : ''}Siamo qui per aiutarti.
+        </div>
+      </div>
+
+      {/* Messaggi */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 8px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {messages.length === 0 && (
+          <div style={{ textAlign: 'center', marginTop: 32, color: subText }}>
+            <MessageCircle size={36} strokeWidth={1.5} color={`${primary}40`} style={{ display: 'block', margin: '0 auto 10px' }} />
+            <p style={{ margin: 0, fontSize: 14 }}>Scrivi il tuo primo messaggio!</p>
+          </div>
+        )}
+        {messages.map(msg => (
+          <div key={msg.id} style={{ display: 'flex', justifyContent: msg.sender === 'guest' ? 'flex-end' : 'flex-start' }}>
+            <div style={{
+              maxWidth: '78%',
+              background: msg.sender === 'guest' ? primary : cardBg,
+              color: msg.sender === 'guest' ? '#fff' : textColor,
+              borderRadius: msg.sender === 'guest' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+              padding: '10px 14px',
+              boxShadow: msg.sender === 'staff' ? shadow : 'none',
+              border: msg.sender === 'staff' ? `1px solid ${borderColor}` : 'none',
+            }}>
+              {msg.sender === 'staff' && (
+                <div style={{ fontSize: 10, fontWeight: 700, color: primary, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Reception
+                </div>
+              )}
+              <div style={{ fontSize: 14, lineHeight: 1.5 }}>{msg.body}</div>
+              <div style={{ fontSize: 10, opacity: 0.55, marginTop: 3, textAlign: msg.sender === 'guest' ? 'right' : 'left' }}>
+                {new Date(msg.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            </div>
+          </div>
+        ))}
+        <div ref={endRef} />
+      </div>
+
+      {/* Input */}
+      <form onSubmit={send} style={{ padding: '10px 12px', borderTop: `1px solid ${borderColor}`, display: 'flex', gap: 8 }}>
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          placeholder="Scrivi un messaggio…"
+          style={{ flex: 1, padding: '10px 14px', borderRadius: 24, border: `1px solid ${borderColor}`, fontSize: 14, background: cardBg, color: textColor, outline: 'none' }}
+        />
+        <button type="submit" disabled={sending || !input.trim()} style={{
+          width: 44, height: 44, borderRadius: '50%', border: 'none',
+          background: input.trim() ? primary : `${primary}40`,
+          cursor: input.trim() ? 'pointer' : 'default',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          transition: 'background 0.2s',
+        }}>
+          <Send size={16} strokeWidth={2} color="#fff" />
+        </button>
+      </form>
+    </div>
   )
 }

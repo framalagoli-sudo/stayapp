@@ -11,6 +11,7 @@ import ristorantiRouter from './routes/ristoranti.js'
 import usersRouter from './routes/users.js'
 import publicRouter from './routes/public.js'
 import collegamentiRouter from './routes/collegamenti.js'
+import messagesRouter from './routes/messages.js'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -34,6 +35,7 @@ app.use('/api/ristoranti', ristorantiRouter)
 app.use('/api/users', usersRouter)
 app.use('/api/public', publicRouter)
 app.use('/api/collegamenti', collegamentiRouter)
+app.use('/api/messages', messagesRouter)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 
