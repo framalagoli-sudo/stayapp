@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useProperty } from '../../../hooks/useProperty'
+import CollegamentiSection from '../../../components/admin/CollegamentiSection'
 
 const FIELDS = [
   { key: 'name',          label: 'Nome struttura *', type: 'text' },
@@ -64,6 +65,14 @@ export default function PropertyInfoPage() {
         <button type="submit" disabled={saving} style={saveBtn}>
           {saving ? 'Salvataggio…' : saved ? '✓ Salvato' : 'Salva'}
         </button>
+
+        {property.azienda_id && (
+          <CollegamentiSection
+            entitaId={property.id}
+            entitaTipo="struttura"
+            aziendaId={property.azienda_id}
+          />
+        )}
       </form>
     </div>
   )

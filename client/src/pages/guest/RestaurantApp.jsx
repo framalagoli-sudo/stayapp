@@ -350,6 +350,40 @@ function InfoTab({ ristorante, primary, textColor, subText, isDark, radius, head
         </InfoSection>
       )}
 
+      {/* Scopri anche — entità collegate */}
+      {ristorante.collegamenti?.length > 0 && (
+        <InfoSection Icon={ChevronRight} title="Scopri anche" primary={primary} headingFamily={headingFamily} textColor={textColor}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {ristorante.collegamenti.map(c => {
+              const href = c.tipo === 'ristorante' ? `/r/${c.slug}` : `/s/${c.slug}`
+              const typeLabel = c.tipo === 'ristorante' ? 'Ristorante' : 'Struttura'
+              const typeColor = c.tipo === 'struttura' ? primary : '#e63946'
+              return (
+                <a key={c.slug} href={href} style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  background: cardBg, borderRadius: radius, padding: '14px 16px',
+                  boxShadow: shadow, textDecoration: 'none',
+                  border: isDark ? `1px solid ${borderColor}` : 'none',
+                }}>
+                  {c.logo_url ? (
+                    <img src={c.logo_url} alt="" style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
+                  ) : (
+                    <div style={{ width: 44, height: 44, borderRadius: 10, background: `${typeColor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <span style={{ fontSize: 20 }}>{c.tipo === 'ristorante' ? '🍽️' : '🏨'}</span>
+                    </div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: typeColor, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>{typeLabel}</div>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: textColor }}>{c.name}</div>
+                  </div>
+                  <ChevronRight size={18} strokeWidth={1.5} color={subText} />
+                </a>
+              )
+            })}
+          </div>
+        </InfoSection>
+      )}
+
     </div>
   )
 }

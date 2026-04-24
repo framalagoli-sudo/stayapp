@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useRistorante } from '../../../hooks/useRistorante'
 import { uploadMedia, apiFetch } from '../../../lib/api'
+import CollegamentiSection from '../../../components/admin/CollegamentiSection'
 
 const FIELDS = [
   { key: 'name',        label: 'Nome ristorante *', type: 'text' },
@@ -119,6 +120,14 @@ export default function RistoranteInfoPage() {
         <button type="submit" disabled={saving} style={saveBtn}>
           {saving ? 'Salvataggio…' : saved ? '✓ Salvato' : 'Salva'}
         </button>
+
+        {ristorante.azienda_id && (
+          <CollegamentiSection
+            entitaId={ristorante.id}
+            entitaTipo="ristorante"
+            aziendaId={ristorante.azienda_id}
+          />
+        )}
       </form>
     </div>
   )

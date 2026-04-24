@@ -384,6 +384,46 @@ function HomePage({ property, modules, onExplore, primary, textColor, subText, i
       {CARDS.length === 0 && !property.checkin_time && !property.checkout_time && (
         <p style={{ textAlign: 'center', color: subText, marginTop: 48, fontSize: 15 }}>Benvenuto!</p>
       )}
+
+      {/* Scopri anche — entità collegate */}
+      {property.collegamenti?.length > 0 && (
+        <div style={{ marginTop: 32 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, fontFamily: headingFamily, color: textColor, margin: '0 0 14px' }}>
+            Scopri anche
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {property.collegamenti.map(c => {
+              const href = c.tipo === 'ristorante' ? `/r/${c.slug}` : `/s/${c.slug}`
+              const typeLabel = c.tipo === 'ristorante' ? 'Ristorante' : 'Struttura'
+              const typeColor = c.tipo === 'ristorante' ? '#e63946' : primary
+              return (
+                <a key={c.id || c.slug} href={href} style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  background: isDark ? cardBg : '#fff',
+                  borderRadius: radius, padding: '14px 16px',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+                  border: isDark ? `1px solid ${borderColor}` : 'none',
+                  textDecoration: 'none',
+                }}>
+                  {c.logo_url ? (
+                    <img src={c.logo_url} alt="" style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
+                  ) : (
+                    <div style={{ width: 44, height: 44, borderRadius: 10, background: `${typeColor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <span style={{ fontSize: 20 }}>{c.tipo === 'ristorante' ? '🍽️' : '🏨'}</span>
+                    </div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: typeColor, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>{typeLabel}</div>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: textColor, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</div>
+                    {c.description && <div style={{ fontSize: 12, color: subText, marginTop: 2, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' }}>{c.description}</div>}
+                  </div>
+                  <ChevronRight size={18} strokeWidth={1.5} color={subText} />
+                </a>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
