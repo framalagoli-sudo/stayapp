@@ -29,6 +29,12 @@ export default function RistorantiListPage() {
 
   const isSuperAdmin = profile?.role === 'super_admin'
 
+  useEffect(() => {
+    if (profile && !['super_admin', 'admin', 'editor'].includes(profile.role)) {
+      navigate('/admin', { replace: true })
+    }
+  }, [profile])
+
   useEffect(() => { load() }, [])
   useEffect(() => { setShowCreate(false) }, [location.key])
 

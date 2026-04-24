@@ -77,7 +77,7 @@ const STYLES = `
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function AdminLayout() {
   const { profile, signOut } = useAuth()
-  const { azienda, strutture, ristoranti, selectedStrutturaId, setSelectedStrutturaId, selectedRistoranteId, setSelectedRistoranteId } = useAzienda()
+  const { azienda, strutture, ristoranti, selectedStrutturaId, setSelectedStrutturaId, selectedRistoranteId, setSelectedRistoranteId, loading: aziendaLoading } = useAzienda()
   const navigate = useNavigate()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -106,10 +106,11 @@ export default function AdminLayout() {
   const isAdminAzienda = role === 'admin_azienda'
   const isLegacyStruttura = ['admin_struttura', 'staff', 'admin_gruppo'].includes(role)
 
-  // Determine modules from azienda or presence of entities
+  // Per admin_azienda: usa solo azienda.moduli (fonte di verità).
+  // Aspetta che azienda sia caricata per evitare flash di stato parziale.
   const moduli = azienda?.moduli || {}
-  const hasStruttura = moduli.struttura || strutture.length > 0
-  const hasRistorante = moduli.ristorante || ristoranti.length > 0
+  const hasStruttura = isAdminAzienda ? (!!moduli.struttura && !aziendaLoading) : (moduli.struttura || strutture.length > 0)
+  const hasRistorante = isAdminAzienda ? (!!moduli.ristorante && !aziendaLoading) : (moduli.ristorante || ristoranti.length > 0)
   const bothActive = hasStruttura && hasRistorante
 
   // Detect URL-based navigation (for super_admin sub-pages)

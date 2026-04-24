@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { usePropertyId } from '../context/PropertyIdContext'
-import { supabase } from '../lib/supabase'
 import { apiFetch } from '../lib/api'
 
 export function useProperty() {
@@ -24,13 +23,14 @@ export function useProperty() {
 
   async function load() {
     setLoading(true)
-    const { data } = await supabase
-      .from('properties')
-      .select('*')
-      .eq('id', propertyId)
-      .single()
-    setProperty(data || null)
-    setLoading(false)
+    try {
+      const data = await apiFetch(`/api/properties/${propertyId}`)
+      setProperty(data || null)
+    } catch {
+      setProperty(null)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function save(updates) {

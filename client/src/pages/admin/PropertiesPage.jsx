@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
+import { useAuth } from '../../context/AuthContext'
 
 const FIELDS = [
   { key: 'name', label: 'Nome struttura', type: 'text', required: true },
@@ -21,6 +22,8 @@ const pill = (extra = {}) => ({
 })
 
 export default function PropertiesPage() {
+  const { profile } = useAuth()
+  const navigate = useNavigate()
   const location = useLocation()
   const [properties, setProperties] = useState([])
   const [loading, setLoading] = useState(true)
@@ -28,6 +31,13 @@ export default function PropertiesPage() {
   const [selected, setSelected] = useState(null)
   const [qrProperty, setQrProperty] = useState(null)
   const [pageError, setPageError] = useState(null)
+
+  // Solo super_admin, admin, editor possono gestire le strutture globalmente
+  useEffect(() => {
+    if (profile && !['super_admin', 'admin', 'editor'].includes(profile.role)) {
+      navigate('/admin', { replace: true })
+    }
+  }, [profile])
 
   useEffect(() => { loadAll() }, [])
 
