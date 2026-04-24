@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, Phone, Mail, ChevronDown } from 'lucide-react'
+import { MapPin, Phone, Mail, ChevronDown, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro } from 'lucide-react'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -35,11 +35,12 @@ function loadFont(key) {
   document.head.appendChild(link)
 }
 
-const SERVICE_ICONS = {
-  pool: '🏊', spa: '💆', restaurant: '🍽️', gym: '💪', parking: '🅿️',
-  wifi: '📶', beach: '🏖️', entertainment: '🎭', bar: '🍸', breakfast: '☕',
-  reception24: '🔔', shuttle: '🚐',
+const SERVICE_LUCIDE = {
+  pool: Waves, spa: Sparkles, restaurant: Utensils, gym: Activity,
+  parking: Car, wifi: Wifi, beach: Umbrella, entertainment: Music,
+  bar: Wine, breakfast: Coffee, reception24: Bell, shuttle: Bus,
 }
+function serviceIcon(key) { return SERVICE_LUCIDE[key] || Star }
 
 const SOCIAL_CONFIG = [
   { key: 'instagram',   label: 'Instagram',   color: '#E1306C' },
@@ -67,8 +68,8 @@ export default function LandingStruttura({ property }) {
   const heading = HEADING_FAMILIES[theme.fontHeading] || HEADING_FAMILIES.playfair
   const body    = BODY_FAMILIES[theme.fontBody]       || BODY_FAMILIES.inter
   const mini    = property.minisito || {}
-  const sections = { gallery: true, services: true, activities: true, excursions: true, ...(mini.sections || {}) }
-  const social   = mini.social || {}
+  const sections   = { gallery: true, services: true, activities: true, excursions: true, ...(mini.sections || {}) }
+  const social     = mini.social || {}
   const socialLinks = SOCIAL_CONFIG.filter(s => social[s.key])
 
   useEffect(() => {
@@ -95,14 +96,26 @@ export default function LandingStruttura({ property }) {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const pwaUrl      = `${window.location.pathname}?qr=1`
-  const bookingUrl  = mini.booking_url || null
-  const tagline     = mini.tagline || ''
-  const gallery     = (property.gallery  || []).slice(0, 9)
-  const services    = (property.services || []).slice(0, 6)
-  const hasGallery  = sections.gallery  && gallery.length > 0
-  const hasServices = sections.services && services.length > 0
-  const hasInfo     = property.phone || property.email || property.address || property.checkin_time
+  const pwaUrl     = `${window.location.pathname}?qr=1`
+  const bookingUrl = mini.booking_url || null
+  const tagline    = mini.tagline || ''
+  const gallery    = (property.gallery  || []).slice(0, 9)
+  const services   = (property.services || []).slice(0, 6)
+
+  // Activities: flatten active items, max 6 preview
+  const activitiesRaw = (property.activities || [])
+  const activityItems = activitiesRaw.flatMap(cat =>
+    (cat.items || []).filter(i => i.active !== false).map(item => ({ ...item, category: cat.category }))
+  ).slice(0, 6)
+
+  // Excursions: only active, max 6 preview
+  const excursionItems = (property.excursions || []).filter(e => e.active !== false).slice(0, 6)
+
+  const hasGallery     = sections.gallery     && gallery.length > 0
+  const hasServices    = sections.services    && services.length > 0
+  const hasActivities  = sections.activities  && activityItems.length > 0
+  const hasExcursions  = sections.excursions  && excursionItems.length > 0
+  const hasInfo        = property.phone || property.email || property.address || property.checkin_time
 
   return (
     <>
@@ -149,7 +162,6 @@ export default function LandingStruttura({ property }) {
           : <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${primary} 0%, ${primary}99 100%)` }} />
         }
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.65) 100%)' }} />
-
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 24px' }}>
           {property.logo_url && (
             <img src={property.logo_url} alt="logo" className="fade-up"
@@ -176,7 +188,6 @@ export default function LandingStruttura({ property }) {
             </a>
           </div>
         </div>
-
         <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer' }}
           onClick={() => aboutRef.current?.scrollIntoView({ behavior: 'smooth' })}>
           <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', letterSpacing: 1, textTransform: 'uppercase' }}>Scopri</span>
@@ -197,13 +208,13 @@ export default function LandingStruttura({ property }) {
                 {property.checkin_time && (
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Check-in</div>
-                    <div style={{ fontFamily: heading, fontSize: 36, fontWeight: 700, color: '#1a1a2e' }}>{property.checkin_time}</div>
+                    <div style={{ fontFamily: heading, fontSize: 36, fontWeight: 700 }}>{property.checkin_time}</div>
                   </div>
                 )}
                 {property.checkout_time && (
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Check-out</div>
-                    <div style={{ fontFamily: heading, fontSize: 36, fontWeight: 700, color: '#1a1a2e' }}>{property.checkout_time}</div>
+                    <div style={{ fontFamily: heading, fontSize: 36, fontWeight: 700 }}>{property.checkout_time}</div>
                   </div>
                 )}
               </div>
@@ -212,19 +223,112 @@ export default function LandingStruttura({ property }) {
         </section>
       )}
 
-      {/* Servizi */}
+      {/* Servizi — Lucide icons come nell'app */}
       {hasServices && (
         <section style={{ padding: '80px 0', background: '#f9f9fb' }}>
           <div className="land-section">
             <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 48, textAlign: 'center' }}>I nostri servizi</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 20 }}>
-              {services.map(s => (
-                <div key={s.id} style={{ background: '#fff', borderRadius: 16, padding: '24px 16px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-                  <div style={{ fontSize: 32, marginBottom: 10 }}>{SERVICE_ICONS[s.icon] || '✨'}</div>
-                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{s.name}</div>
-                  {s.hours && <div style={{ fontSize: 12, color: '#888' }}>{s.hours}</div>}
+              {services.map(s => {
+                const Icon = serviceIcon(s.icon)
+                return (
+                  <div key={s.id} style={{ background: '#fff', borderRadius: 16, padding: '24px 16px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+                    <Icon size={28} strokeWidth={1.5} color={primary} style={{ marginBottom: 10 }} />
+                    <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{s.name}</div>
+                    {s.hours && <div style={{ fontSize: 12, color: '#888' }}>{s.hours}</div>}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Attività */}
+      {hasActivities && (
+        <section style={{ padding: '80px 0', background: '#fff' }}>
+          <div className="land-section">
+            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>Attività</h2>
+            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
+              {activityItems.length} {activityItems.length === 1 ? 'attività disponibile' : 'attività disponibili'}
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16, marginBottom: 40 }}>
+              {activityItems.map(item => (
+                <div key={item.id} style={{ background: '#f9f9fb', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
+                  {item.photo_url && (
+                    <img src={item.photo_url} alt={item.name}
+                      style={{ width: '100%', height: 160, objectFit: 'cover' }} />
+                  )}
+                  <div style={{ padding: '16px 18px' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+                      {item.category}
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>{item.name}</div>
+                    {item.schedule && (
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, color: '#888' }}>
+                        <Clock size={12} strokeWidth={1.5} />
+                        {item.schedule}
+                      </div>
+                    )}
+                    {item.location && (
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, color: '#888', marginTop: 4 }}>
+                        <LocationPin size={12} strokeWidth={1.5} />
+                        {item.location}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <a href={pwaUrl} style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+                Scopri tutte le attività
+              </a>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Escursioni */}
+      {hasExcursions && (
+        <section style={{ padding: '80px 0', background: '#f9f9fb' }}>
+          <div className="land-section">
+            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>Escursioni</h2>
+            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
+              {excursionItems.length} {excursionItems.length === 1 ? 'escursione disponibile' : 'escursioni disponibili'}
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginBottom: 40 }}>
+              {excursionItems.map(exc => (
+                <div key={exc.id} style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+                  {exc.photo_url && (
+                    <img src={exc.photo_url} alt={exc.name}
+                      style={{ width: '100%', height: 160, objectFit: 'cover' }} />
+                  )}
+                  <div style={{ padding: '16px 18px' }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>{exc.name}</div>
+                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                      {exc.price && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 700, color: primary }}>
+                          <Euro size={13} strokeWidth={2} />
+                          {exc.price}
+                        </span>
+                      )}
+                      {exc.duration && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#888' }}>
+                          <Clock size={13} strokeWidth={1.5} />
+                          {exc.duration}
+                        </span>
+                      )}
+                    </div>
+                    {exc.dates && <div style={{ fontSize: 12, color: '#888', marginTop: 6 }}>{exc.dates}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <a href={pwaUrl} style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+                Prenota un'escursione
+              </a>
             </div>
           </div>
         </section>
@@ -232,7 +336,7 @@ export default function LandingStruttura({ property }) {
 
       {/* Galleria */}
       {hasGallery && (
-        <section style={{ padding: '80px 0' }}>
+        <section style={{ padding: '80px 0', background: hasActivities || hasExcursions ? '#fff' : '#fff' }}>
           <div className="land-section">
             <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 40, textAlign: 'center' }}>Galleria</h2>
             <div className="land-gallery">
@@ -272,7 +376,6 @@ export default function LandingStruttura({ property }) {
                 )}
               </div>
             </div>
-
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', gap: 16 }}>
               <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>
                 Sei un ospite? Accedi all'app per i servizi in struttura.
