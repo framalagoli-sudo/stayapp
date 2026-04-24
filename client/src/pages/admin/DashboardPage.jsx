@@ -13,8 +13,10 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!profile) return
-    if (profile.property_id) fetchStats()
-    fetchProperties()
+    if (['super_admin', 'admin', 'editor', 'admin_gruppo', 'admin_struttura', 'staff'].includes(profile.role)) {
+      if (profile.property_id) fetchStats()
+      fetchProperties()
+    }
   }, [profile])
 
   async function fetchStats() {
@@ -60,6 +62,15 @@ export default function DashboardPage() {
   ]
 
   const canManage = profile && ['super_admin', 'admin_gruppo'].includes(profile.role)
+
+  if (profile?.role === 'admin_azienda') {
+    return (
+      <div>
+        <h2 style={{ marginTop: 0 }}>Dashboard</h2>
+        <p style={{ color: '#666' }}>Benvenuto, {profile?.full_name || 'Admin'}.</p>
+      </div>
+    )
+  }
 
   return (
     <div>
