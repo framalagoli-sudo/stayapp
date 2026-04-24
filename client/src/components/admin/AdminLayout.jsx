@@ -23,6 +23,7 @@ const STRUTTURA_SUBS = [
 ]
 const RISTORANTE_SUBS = [
   { sub: 'info',    label: 'Informazioni' },
+  { sub: 'moduli',  label: 'Moduli attivi' },
   { sub: 'menu',    label: 'Menu' },
   { sub: 'gallery', label: 'Galleria foto' },
   { sub: 'theme',   label: 'Tema e colori' },

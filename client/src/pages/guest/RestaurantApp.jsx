@@ -91,13 +91,14 @@ export default function RestaurantApp() {
   const navBg         = isDark ? '#12121f' : '#ffffff'
   const borderColor   = isDark ? '#2a2a3e' : '#efefef'
 
-  const hasGallery = (ristorante.gallery || []).length > 0
-  const sp = { primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor }
+  const hasGallery  = (ristorante.gallery || []).length > 0
+  const rModules    = { gallery: true, allergens: true, info: true, ...(ristorante.modules || {}) }
+  const sp = { primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, showAllergens: rModules.allergens }
 
   const NAV_ITEMS = [
     { key: 'menu',    Icon: Utensils, label: 'Menu' },
-    { key: 'info',    Icon: Info,     label: 'Info' },
-    ...(hasGallery ? [{ key: 'galleria', Icon: Images, label: 'Galleria' }] : []),
+    ...(rModules.info     ? [{ key: 'info',     Icon: Info,   label: 'Info' }]     : []),
+    ...(rModules.gallery && hasGallery ? [{ key: 'galleria', Icon: Images, label: 'Galleria' }] : []),
   ]
 
   // Header
@@ -213,7 +214,7 @@ export default function RestaurantApp() {
 }
 
 // ─── MENU ─────────────────────────────────────────────────────────────────────
-function MenuTab({ menu, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor }) {
+function MenuTab({ menu, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, showAllergens }) {
   const [lightbox, setLightbox] = useState(null)
 
   if (!menu.length) {
@@ -251,6 +252,7 @@ function MenuTab({ menu, primary, textColor, subText, isDark, radius, headingFam
                 radius={radius}
                 cardBg={cardBg}
                 borderColor={borderColor}
+                showAllergens={showAllergens}
                 onOpenPhoto={item.photo_url ? () => setLightbox(item.photo_url) : null}
               />
             ))}
@@ -273,8 +275,35 @@ function MenuTab({ menu, primary, textColor, subText, isDark, radius, headingFam
   )
 }
 
-function MenuItem({ item, primary, textColor, subText, isDark, radius, cardBg, borderColor, onOpenPhoto }) {
+const ALLERGEN_ICONS = {
+  glutine: '🌾', crostacei: '🦐', uova: '🥚', pesce: '🐟', arachidi: '🥜',
+  soia: '🫘', latte: '🥛', frutta_guscio: '🌰', sedano: '🥬', senape: '🟡',
+  sesamo: '🌿', anidride_solforosa: '🍷', lupini: '🫛', molluschi: '🦑',
+}
+
+function parseAllergens(str) {
+  if (!str) return []
+  return str.split(/[,;/]+/).map(s => s.trim().toLowerCase()).filter(Boolean)
+}
+
+function AllergenBadge({ name, primary }) {
+  const icon = Object.entries(ALLERGEN_ICONS).find(([k]) => name.includes(k))?.[1]
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 3,
+      fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20,
+      background: `${primary}15`, color: primary, border: `1px solid ${primary}30`,
+      whiteSpace: 'nowrap',
+    }}>
+      {icon && <span>{icon}</span>}
+      {name}
+    </span>
+  )
+}
+
+function MenuItem({ item, primary, textColor, subText, isDark, radius, cardBg, borderColor, onOpenPhoto, showAllergens }) {
   const shadow = isDark ? 'none' : '0 1px 8px rgba(0,0,0,0.06)'
+  const allergens = showAllergens ? parseAllergens(item.allergens) : []
 
   return (
     <div style={{ background: cardBg, borderRadius: radius, overflow: 'hidden', boxShadow: shadow, border: `1px solid ${borderColor}`, display: 'flex', gap: 0 }}>
@@ -297,11 +326,11 @@ function MenuItem({ item, primary, textColor, subText, isDark, radius, cardBg, b
           )}
         </div>
         {item.description && (
-          <p style={{ margin: '0 0 6px', fontSize: 13, color: subText, lineHeight: 1.5 }}>{item.description}</p>
+          <p style={{ margin: '0 0 8px', fontSize: 13, color: subText, lineHeight: 1.5 }}>{item.description}</p>
         )}
-        {item.allergens && (
-          <div style={{ fontSize: 11, color: subText, opacity: 0.7 }}>
-            Allergeni: {item.allergens}
+        {allergens.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {allergens.map(a => <AllergenBadge key={a} name={a} primary={primary} />)}
           </div>
         )}
       </div>

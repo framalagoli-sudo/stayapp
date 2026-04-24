@@ -14,6 +14,7 @@ import RistoranteInfoPage from './pages/admin/ristorante/RistoranteInfoPage'
 import RistoranteMenuPage from './pages/admin/ristorante/RistoranteMenuPage'
 import RistoranteGalleryPage from './pages/admin/ristorante/RistoranteGalleryPage'
 import RistoranteThemePage from './pages/admin/ristorante/RistoranteThemePage'
+import RistoranteModuliPage from './pages/admin/ristorante/RistoranteModuliPage'
 import QRCodePage from './pages/admin/QRCodePage'
 import UsersPage from './pages/admin/UsersPage'
 import GuestApp from './pages/guest/GuestApp'
@@ -71,6 +72,7 @@ export default function App() {
             <Route path="ristoranti/:id/menu"     element={<RistoranteMenuPage />} />
             <Route path="ristoranti/:id/gallery"  element={<RistoranteGalleryPage />} />
             <Route path="ristoranti/:id/theme"    element={<RistoranteThemePage />} />
+            <Route path="ristoranti/:id/moduli"   element={<RistoranteModuliPage />} />
 
             {/* Struttura by ID (admin_azienda, super_admin) */}
             <Route path="struttura/:id" element={<StrutturaLayout />}>
