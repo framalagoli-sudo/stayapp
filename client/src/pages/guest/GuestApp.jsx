@@ -2,14 +2,13 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   Home, Compass, Bell, Info,
-  Images, LayoutGrid, Utensils, Zap, Mountain,
+  Images, LayoutGrid, Zap, Mountain,
   Wifi, Phone, Mail, MapPin, FileText,
   X, Check, ChevronRight,
 } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
 import RequestForm from './RequestForm'
 import ServicesTab from './ServicesTab'
-import RestaurantTab from './RestaurantTab'
 import ActivitiesTab from './ActivitiesTab'
 import ExcursionsTab from './ExcursionsTab'
 
@@ -128,14 +127,12 @@ export default function GuestApp() {
 
   // Compute chips for Esplora (used both in chip bar and EsploraPage)
   const hasServices   = (property.services  || []).length > 0
-  const hasRestaurant = property.restaurant?.active
   const hasGallery    = (property.gallery   || []).length > 0
   const hasActivities = (property.activities|| []).some(c => c.items?.some(i => i.active))
   const hasExcursions = (property.excursions|| []).some(e => e.active)
   const CHIPS = [
     hasGallery    && { key: 'galleria',   label: 'Galleria' },
     hasServices   && { key: 'servizi',    label: 'Servizi' },
-    hasRestaurant && { key: 'ristorante', label: 'Ristorante' },
     hasActivities && { key: 'attivita',   label: 'Attività' },
     hasExcursions && { key: 'escursioni', label: 'Escursioni' },
   ].filter(Boolean)
@@ -292,7 +289,6 @@ export default function GuestApp() {
 // ─── HOME ─────────────────────────────────────────────────────────────────────
 function HomePage({ property, modules, onExplore, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor }) {
   const hasServices   = (property.services  || []).length > 0
-  const hasRestaurant = property.restaurant?.active
   const hasGallery    = (property.gallery   || []).length > 0
   const hasActivities = (property.activities|| []).some(c => c.items?.some(i => i.active))
   const hasExcursions = (property.excursions|| []).some(e => e.active)
@@ -301,14 +297,12 @@ function HomePage({ property, modules, onExplore, primary, textColor, subText, i
   const actCount = (property.activities || []).reduce((n, c) => n + (c.items?.filter(i => i.active).length || 0), 0)
   const excCount = (property.excursions || []).filter(e => e.active).length
   const galCount = property.gallery?.length || 0
-  const catCount = property.restaurant?.categories?.length || 0
 
   const CARDS = [
-    hasGallery    && { key: 'galleria',   Icon: Images,     label: 'Galleria',   sub: `${galCount} foto`,                             photo: property.gallery?.[0] },
-    hasServices   && { key: 'servizi',    Icon: LayoutGrid, label: 'Servizi',    sub: `${svcCount} disponibili`,                      photo: null },
-    hasRestaurant && { key: 'ristorante', Icon: Utensils,   label: 'Ristorante', sub: catCount ? `${catCount} categorie` : 'Menù',   photo: null },
-    hasActivities && { key: 'attivita',   Icon: Zap,        label: 'Attività',   sub: `${actCount} attività`,                        photo: null },
-    hasExcursions && { key: 'escursioni', Icon: Mountain,   label: 'Escursioni', sub: `${excCount} disponibili`,                     photo: null },
+    hasGallery    && { key: 'galleria',   Icon: Images,     label: 'Galleria',   sub: `${galCount} foto`,        photo: property.gallery?.[0] },
+    hasServices   && { key: 'servizi',    Icon: LayoutGrid, label: 'Servizi',    sub: `${svcCount} disponibili`, photo: null },
+    hasActivities && { key: 'attivita',   Icon: Zap,        label: 'Attività',   sub: `${actCount} attività`,    photo: null },
+    hasExcursions && { key: 'escursioni', Icon: Mountain,   label: 'Escursioni', sub: `${excCount} disponibili`, photo: null },
   ].filter(Boolean)
 
   return (
@@ -447,7 +441,6 @@ function EsploraPage({ property, activeChip, primary, textColor, subText, isDark
       <div key={activeChip} className="fade-up" style={{ padding: '20px 16px 28px' }}>
         {activeChip === 'galleria'   && <GalleriaGrid gallery={property.gallery || []} radius={radius} onOpen={setLightbox} />}
         {activeChip === 'servizi'    && <ServicesTab services={property.services} {...sp} />}
-        {activeChip === 'ristorante' && <RestaurantTab restaurant={property.restaurant} {...sp} />}
         {activeChip === 'attivita'   && <ActivitiesTab activities={property.activities} propertyId={property.id} {...sp} />}
         {activeChip === 'escursioni' && <ExcursionsTab excursions={property.excursions} propertyId={property.id} {...sp} />}
       </div>
