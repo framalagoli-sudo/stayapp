@@ -26,7 +26,7 @@ async function downloadQR(url, filename) {
 
 function QRCard({ name, tipo, slug }) {
   const [copied, setCopied] = useState(false)
-  const pwaUrl = tipo === 'ristorante' ? `${baseUrl}/r/${slug}` : `${baseUrl}/s/${slug}`
+  const pwaUrl = tipo === 'ristorante' ? `${baseUrl}/r/${slug}?qr=1` : `${baseUrl}/s/${slug}?qr=1`
   const typeColor = tipo === 'ristorante' ? '#e63946' : '#1a1a2e'
   const typeLabel = tipo === 'ristorante' ? 'Ristorante' : 'Struttura'
 

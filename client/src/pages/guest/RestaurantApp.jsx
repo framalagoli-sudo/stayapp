@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
+import LandingRistorante from './LandingRistorante'
 import { Utensils, Info, Images, Phone, Mail, MapPin, Clock, X, ChevronRight } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
 
@@ -46,6 +47,8 @@ function loadFont(key) {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function RestaurantApp() {
   const { slug } = useParams()
+  const [searchParams] = useSearchParams()
+  const isQR = searchParams.get('qr') === '1'
   const [ristorante, setRistorante] = useState(null)
   const [error, setError] = useState(null)
   const [nav, setNav] = useState('menu')
@@ -76,6 +79,8 @@ export default function RestaurantApp() {
 
   if (error)      return <div style={{ padding: 40, textAlign: 'center', color: '#e53e3e' }}>{error}</div>
   if (!ristorante) return <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Caricamento…</div>
+
+  if (!isQR && ristorante.minisito?.active) return <LandingRistorante ristorante={ristorante} />
 
   const theme         = { ...DEFAULT_THEME, ...(ristorante.theme || {}) }
   const primary       = theme.primaryColor

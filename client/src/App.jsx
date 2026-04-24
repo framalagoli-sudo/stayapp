@@ -27,6 +27,8 @@ import PropertyGalleryPage from './pages/admin/property/PropertyGalleryPage'
 import PropertyThemePage from './pages/admin/property/PropertyThemePage'
 import PropertyActivitiesPage from './pages/admin/property/PropertyActivitiesPage'
 import PropertyExcursionsPage from './pages/admin/property/PropertyExcursionsPage'
+import PropertyMiniSitoPage from './pages/admin/property/PropertyMiniSitoPage'
+import RistoranteMiniSitoPage from './pages/admin/ristorante/RistoranteMiniSitoPage'
 
 // Injects property ID from URL params into PropertyIdContext
 // so all property sub-pages work without modification
@@ -75,6 +77,7 @@ export default function App() {
             <Route path="ristoranti/:id/gallery"  element={<RistoranteGalleryPage />} />
             <Route path="ristoranti/:id/theme"    element={<RistoranteThemePage />} />
             <Route path="ristoranti/:id/moduli"   element={<RistoranteModuliPage />} />
+            <Route path="ristoranti/:id/minisito" element={<RistoranteMiniSitoPage />} />
 
             {/* Struttura by ID (admin_azienda, super_admin) */}
             <Route path="struttura/:id" element={<StrutturaLayout />}>
@@ -84,6 +87,7 @@ export default function App() {
               <Route path="theme"      element={<PropertyThemePage />} />
               <Route path="activities" element={<PropertyActivitiesPage />} />
               <Route path="excursions" element={<PropertyExcursionsPage />} />
+              <Route path="minisito"  element={<PropertyMiniSitoPage />} />
             </Route>
 
             {/* Struttura legacy (admin_struttura, staff — usa profile.property_id) */}
@@ -94,6 +98,7 @@ export default function App() {
             <Route path="property/theme"      element={<PropertyThemePage />} />
             <Route path="property/activities" element={<PropertyActivitiesPage />} />
             <Route path="property/excursions" element={<PropertyExcursionsPage />} />
+            <Route path="property/minisito"   element={<PropertyMiniSitoPage />} />
           </Route>
 
           {/* Root */}

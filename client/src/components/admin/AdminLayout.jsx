@@ -12,6 +12,7 @@ const NAV_PROPERTY = [  // admin_struttura / staff (profile.property_id)
   { to: '/admin/property/theme',      label: 'Tema e colori' },
   { to: '/admin/property/activities', label: 'Attività' },
   { to: '/admin/property/excursions', label: 'Escursioni' },
+  { to: '/admin/property/minisito',   label: 'Minisito pubblico' },
 ]
 const STRUTTURA_SUBS = [
   { sub: 'info',       label: 'Informazioni' },
@@ -20,13 +21,15 @@ const STRUTTURA_SUBS = [
   { sub: 'theme',      label: 'Tema e colori' },
   { sub: 'activities', label: 'Attività' },
   { sub: 'excursions', label: 'Escursioni' },
+  { sub: 'minisito',   label: 'Minisito pubblico' },
 ]
 const RISTORANTE_SUBS = [
-  { sub: 'info',    label: 'Informazioni' },
-  { sub: 'moduli',  label: 'Moduli attivi' },
-  { sub: 'menu',    label: 'Menu' },
-  { sub: 'gallery', label: 'Galleria foto' },
-  { sub: 'theme',   label: 'Tema e colori' },
+  { sub: 'info',     label: 'Informazioni' },
+  { sub: 'moduli',   label: 'Moduli attivi' },
+  { sub: 'menu',     label: 'Menu' },
+  { sub: 'gallery',  label: 'Galleria foto' },
+  { sub: 'theme',    label: 'Tema e colori' },
+  { sub: 'minisito', label: 'Minisito pubblico' },
 ]
 
 // ─── CSS ──────────────────────────────────────────────────────────────────────

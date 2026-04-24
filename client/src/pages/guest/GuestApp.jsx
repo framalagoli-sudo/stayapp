@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
+import LandingStruttura from './LandingStruttura'
 import {
   Home, Compass, Bell, Info, MessageCircle, Send,
   Images, LayoutGrid, Zap, Mountain,
@@ -80,6 +81,8 @@ function loadFont(key) {
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function GuestApp() {
   const { slug } = useParams()
+  const [searchParams] = useSearchParams()
+  const isQR = searchParams.get('qr') === '1'
   const [property,     setProperty]     = useState(null)
   const [error,        setError]        = useState(null)
   const [nav,          setNav]          = useState('home')
@@ -119,6 +122,8 @@ export default function GuestApp() {
 
   if (error)     return <div style={{ padding: 40, textAlign: 'center', color: '#e53e3e' }}>{error}</div>
   if (!property) return <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Caricamento…</div>
+
+  if (!isQR && property.minisito?.active) return <LandingStruttura property={property} />
 
   const modules       = { ...DEFAULT_MODULES, ...(property.modules || {}) }
   const theme         = { ...DEFAULT_THEME,   ...(property.theme   || {}) }
