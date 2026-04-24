@@ -3,7 +3,12 @@ import { useParams } from 'react-router-dom'
 import { useRistorante } from '../../../hooks/useRistorante'
 import { ExternalLink } from 'lucide-react'
 
-const DEFAULT = { active: false, tagline: '', booking_url: '', seo_title: '', seo_description: '' }
+const DEFAULT_SECTIONS = { gallery: true, menu_preview: true }
+const DEFAULT_SOCIAL    = { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' }
+const DEFAULT = {
+  active: false, tagline: '', booking_url: '', seo_title: '', seo_description: '',
+  sections: DEFAULT_SECTIONS, social: DEFAULT_SOCIAL,
+}
 
 export default function RistoranteMiniSitoPage() {
   const { id } = useParams()
@@ -11,11 +16,24 @@ export default function RistoranteMiniSitoPage() {
   const [form, setForm] = useState(DEFAULT)
 
   useEffect(() => {
-    if (ristorante) setForm({ ...DEFAULT, ...(ristorante.minisito || {}) })
+    if (ristorante) {
+      const s = ristorante.minisito || {}
+      setForm({
+        ...DEFAULT, ...s,
+        sections: { ...DEFAULT_SECTIONS, ...(s.sections || {}) },
+        social:   { ...DEFAULT_SOCIAL,   ...(s.social   || {}) },
+      })
+    }
   }, [ristorante])
 
   function patch(key, value) {
     const updated = { ...form, [key]: value }
+    setForm(updated)
+    save({ minisito: updated }).catch(() => {})
+  }
+
+  function patchSection(key, value) {
+    const updated = { ...form, sections: { ...form.sections, [key]: value } }
     setForm(updated)
     save({ minisito: updated }).catch(() => {})
   }
@@ -29,6 +47,18 @@ export default function RistoranteMiniSitoPage() {
   if (!ristorante) return <p style={errorStyle}>Ristorante non trovato.</p>
 
   const landingUrl = `${window.location.origin}/r/${ristorante.slug}`
+
+  const SECTION_ITEMS = [
+    { key: 'gallery',      label: 'Galleria foto',    hint: `${(ristorante.gallery || []).length} foto caricate` },
+    { key: 'menu_preview', label: 'Anteprima menu',   hint: `${(ristorante.menu    || []).length} categorie nel menu` },
+  ]
+
+  const SOCIAL_ITEMS = [
+    { key: 'instagram',   label: 'Instagram',   placeholder: 'https://instagram.com/nomeprofilo' },
+    { key: 'facebook',    label: 'Facebook',    placeholder: 'https://facebook.com/nomepagina' },
+    { key: 'tripadvisor', label: 'TripAdvisor', placeholder: 'https://tripadvisor.it/Restaurant-...' },
+    { key: 'whatsapp',    label: 'WhatsApp',    placeholder: 'https://wa.me/39...' },
+  ]
 
   return (
     <div style={{ maxWidth: 640 }}>
@@ -56,21 +86,11 @@ export default function RistoranteMiniSitoPage() {
               {form.active ? `Visibile su ${landingUrl}` : 'Disattivo — i visitatori vedono il menu digitale'}
             </div>
           </div>
-          <button type="button" onClick={() => patch('active', !form.active)} style={{
-            width: 52, height: 28, borderRadius: 14, border: 'none', cursor: 'pointer',
-            background: form.active ? '#e63946' : '#ddd', position: 'relative', flexShrink: 0,
-            transition: 'background 0.2s',
-          }}>
-            <span style={{
-              position: 'absolute', top: 4,
-              left: form.active ? 28 : 4,
-              width: 20, height: 20, borderRadius: '50%', background: '#fff',
-              transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-            }} />
-          </button>
+          <Toggle value={form.active} onChange={v => patch('active', v)} color="#e63946" />
         </div>
       </div>
 
+      {/* Contenuto + SEO */}
       <form onSubmit={handleSubmit} style={cardStyle}>
         <h3 style={sectionTitle}>Contenuto</h3>
 
@@ -129,7 +149,68 @@ export default function RistoranteMiniSitoPage() {
           {saving ? 'Salvataggio…' : saved ? '✓ Salvato' : 'Salva'}
         </button>
       </form>
+
+      {/* Sezioni visibili */}
+      <div style={cardStyle}>
+        <h3 style={sectionTitle}>Sezioni visibili</h3>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+          Scegli quali contenuti mostrare. Vengono presi automaticamente dall'app.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {SECTION_ITEMS.map(({ key, label, hint }, i) => (
+            <div key={key} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '14px 0',
+              borderBottom: i < SECTION_ITEMS.length - 1 ? '1px solid #f0f0f0' : 'none',
+            }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>{label}</div>
+                <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{hint}</div>
+              </div>
+              <Toggle value={form.sections[key] !== false} onChange={v => patchSection(key, v)} color="#e63946" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Social */}
+      <div style={cardStyle}>
+        <h3 style={sectionTitle}>Social e link utili</h3>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+          Appaiono come pulsanti nel footer del minisito. Lascia vuoti quelli non utilizzati.
+        </p>
+        {SOCIAL_ITEMS.map(({ key, label, placeholder }, i) => (
+          <div key={key} style={{ marginBottom: i < SOCIAL_ITEMS.length - 1 ? 16 : 0 }}>
+            <label style={lblStyle}>{label}</label>
+            <input
+              type="url"
+              value={form.social[key]}
+              onChange={e => setForm(f => ({ ...f, social: { ...f.social, [key]: e.target.value } }))}
+              onBlur={() => save({ minisito: form }).catch(() => {})}
+              placeholder={placeholder}
+              style={inputStyle}
+            />
+          </div>
+        ))}
+      </div>
     </div>
+  )
+}
+
+function Toggle({ value, onChange, color }) {
+  return (
+    <button type="button" onClick={() => onChange(!value)} style={{
+      width: 52, height: 28, borderRadius: 14, border: 'none', cursor: 'pointer',
+      background: value ? color : '#ddd', position: 'relative', flexShrink: 0,
+      transition: 'background 0.2s',
+    }}>
+      <span style={{
+        position: 'absolute', top: 4,
+        left: value ? 28 : 4,
+        width: 20, height: 20, borderRadius: '50%', background: '#fff',
+        transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+      }} />
+    </button>
   )
 }
 

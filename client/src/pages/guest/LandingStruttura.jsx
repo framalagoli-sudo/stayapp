@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, Phone, Mail, Clock, ChevronDown, Star, Wifi } from 'lucide-react'
+import { MapPin, Phone, Mail, ChevronDown } from 'lucide-react'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -41,6 +41,22 @@ const SERVICE_ICONS = {
   reception24: '🔔', shuttle: '🚐',
 }
 
+const SOCIAL_CONFIG = [
+  { key: 'instagram',   label: 'Instagram',   color: '#E1306C' },
+  { key: 'facebook',    label: 'Facebook',    color: '#1877F2' },
+  { key: 'tripadvisor', label: 'TripAdvisor', color: '#00AA6C' },
+  { key: 'whatsapp',    label: 'WhatsApp',    color: '#25D366' },
+]
+
+function SocialLink({ href, label, color }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer"
+      style={{ padding: '7px 16px', borderRadius: 50, background: color, color: '#fff', fontSize: 12, fontWeight: 700, textDecoration: 'none', letterSpacing: 0.3 }}>
+      {label}
+    </a>
+  )
+}
+
 export default function LandingStruttura({ property }) {
   const [scrolled, setScrolled] = useState(false)
   const [lightbox, setLightbox] = useState(null)
@@ -51,11 +67,13 @@ export default function LandingStruttura({ property }) {
   const heading = HEADING_FAMILIES[theme.fontHeading] || HEADING_FAMILIES.playfair
   const body    = BODY_FAMILIES[theme.fontBody]       || BODY_FAMILIES.inter
   const mini    = property.minisito || {}
+  const sections = { gallery: true, services: true, activities: true, excursions: true, ...(mini.sections || {}) }
+  const social   = mini.social || {}
+  const socialLinks = SOCIAL_CONFIG.filter(s => social[s.key])
 
   useEffect(() => {
     loadFont(theme.fontHeading)
     loadFont(theme.fontBody)
-    // SEO meta tags
     document.title = mini.seo_title || property.name
     setMeta('description', mini.seo_description || property.description || '')
     setMeta('og:title',    mini.seo_title || property.name)
@@ -80,10 +98,10 @@ export default function LandingStruttura({ property }) {
   const pwaUrl      = `${window.location.pathname}?qr=1`
   const bookingUrl  = mini.booking_url || null
   const tagline     = mini.tagline || ''
-  const gallery     = (property.gallery || []).slice(0, 9)
+  const gallery     = (property.gallery  || []).slice(0, 9)
   const services    = (property.services || []).slice(0, 6)
-  const hasGallery  = gallery.length > 0
-  const hasServices = services.length > 0
+  const hasGallery  = sections.gallery  && gallery.length > 0
+  const hasServices = sections.services && services.length > 0
   const hasInfo     = property.phone || property.email || property.address || property.checkin_time
 
   return (
@@ -107,7 +125,7 @@ export default function LandingStruttura({ property }) {
           .land-section { padding: 0 16px; }
         }
         @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-        .fade-up { animation: fadeUp 0.7s ease forwards; }
+        .fade-up   { animation: fadeUp 0.7s ease forwards; }
         .fade-up-2 { animation: fadeUp 0.7s 0.2s ease both; }
         .fade-up-3 { animation: fadeUp 0.7s 0.4s ease both; }
       `}</style>
@@ -159,11 +177,10 @@ export default function LandingStruttura({ property }) {
           </div>
         </div>
 
-        {/* Scroll hint */}
         <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer' }}
           onClick={() => aboutRef.current?.scrollIntoView({ behavior: 'smooth' })}>
           <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', letterSpacing: 1, textTransform: 'uppercase' }}>Scopri</span>
-          <ChevronDown size={20} color="rgba(255,255,255,0.7)" strokeWidth={1.5} style={{ animation: 'fadeUp 1s 1s infinite alternate' }} />
+          <ChevronDown size={20} color="rgba(255,255,255,0.7)" strokeWidth={1.5} />
         </div>
       </section>
 
@@ -275,7 +292,14 @@ export default function LandingStruttura({ property }) {
       )}
 
       {/* Footer */}
-      <footer style={{ background: '#111', padding: '24px', textAlign: 'center' }}>
+      <footer style={{ background: '#111', padding: '28px 24px', textAlign: 'center' }}>
+        {socialLinks.length > 0 && (
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
+            {socialLinks.map(({ key, label, color }) => (
+              <SocialLink key={key} href={social[key]} label={label} color={color} />
+            ))}
+          </div>
+        )}
         <p style={{ fontSize: 12, color: '#555' }}>
           © {new Date().getFullYear()} {property.name} · Powered by StayApp
         </p>

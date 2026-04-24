@@ -35,6 +35,22 @@ function loadFont(key) {
   document.head.appendChild(link)
 }
 
+const SOCIAL_CONFIG = [
+  { key: 'instagram',   label: 'Instagram',   color: '#E1306C' },
+  { key: 'facebook',    label: 'Facebook',    color: '#1877F2' },
+  { key: 'tripadvisor', label: 'TripAdvisor', color: '#00AA6C' },
+  { key: 'whatsapp',    label: 'WhatsApp',    color: '#25D366' },
+]
+
+function SocialLink({ href, label, color }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer"
+      style={{ padding: '7px 16px', borderRadius: 50, background: color, color: '#fff', fontSize: 12, fontWeight: 700, textDecoration: 'none', letterSpacing: 0.3 }}>
+      {label}
+    </a>
+  )
+}
+
 export default function LandingRistorante({ ristorante }) {
   const [scrolled,  setScrolled]  = useState(false)
   const [lightbox,  setLightbox]  = useState(null)
@@ -44,6 +60,9 @@ export default function LandingRistorante({ ristorante }) {
   const heading = HEADING_FAMILIES[theme.fontHeading] || HEADING_FAMILIES.playfair
   const body    = BODY_FAMILIES[theme.fontBody]       || BODY_FAMILIES.inter
   const mini    = ristorante.minisito || {}
+  const sections = { gallery: true, menu_preview: true, ...(mini.sections || {}) }
+  const social   = mini.social || {}
+  const socialLinks = SOCIAL_CONFIG.filter(s => social[s.key])
 
   useEffect(() => {
     loadFont(theme.fontHeading)
@@ -74,6 +93,8 @@ export default function LandingRistorante({ ristorante }) {
   const tagline    = mini.tagline || ''
   const gallery    = (ristorante.gallery || []).slice(0, 9)
   const menu       = ristorante.menu || []
+  const hasGallery     = sections.gallery      && gallery.length > 0
+  const hasMenuPreview = sections.menu_preview && menu.length > 0
 
   return (
     <>
@@ -179,7 +200,7 @@ export default function LandingRistorante({ ristorante }) {
       )}
 
       {/* Anteprima menu */}
-      {menu.length > 0 && (
+      {hasMenuPreview && (
         <section style={{ padding: '80px 0', background: '#f9f9fb' }}>
           <div className="land-section">
             <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
@@ -212,7 +233,7 @@ export default function LandingRistorante({ ristorante }) {
       )}
 
       {/* Galleria */}
-      {gallery.length > 0 && (
+      {hasGallery && (
         <section style={{ padding: '80px 0' }}>
           <div className="land-section">
             <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 40, textAlign: 'center' }}>Galleria</h2>
@@ -278,7 +299,14 @@ export default function LandingRistorante({ ristorante }) {
       )}
 
       {/* Footer */}
-      <footer style={{ background: '#111', padding: 24, textAlign: 'center' }}>
+      <footer style={{ background: '#111', padding: '28px 24px', textAlign: 'center' }}>
+        {socialLinks.length > 0 && (
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
+            {socialLinks.map(({ key, label, color }) => (
+              <SocialLink key={key} href={social[key]} label={label} color={color} />
+            ))}
+          </div>
+        )}
         <p style={{ fontSize: 12, color: '#555' }}>
           © {new Date().getFullYear()} {ristorante.name} · Powered by StayApp
         </p>
