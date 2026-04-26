@@ -107,6 +107,19 @@ router.patch('/:id', async (req, res) => {
     const updates = Object.fromEntries(
       Object.entries(req.body).filter(([k]) => allowed.includes(k))
     )
+
+    // Handle slug change separately with uniqueness validation
+    if (req.body.slug !== undefined) {
+      const clean = String(req.body.slug).toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+      if (!clean) return res.status(400).json({ error: 'Slug non valido' })
+      const { data: existing } = await supabase.from('properties')
+        .select('id').eq('slug', clean).neq('id', req.params.id).maybeSingle()
+      if (existing) return res.status(409).json({ error: 'Questo URL è già in uso da un\'altra struttura.' })
+      updates.slug = clean
+    }
+
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: 'Nessun campo da aggiornare' })
     }

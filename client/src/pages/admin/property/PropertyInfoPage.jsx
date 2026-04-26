@@ -25,16 +25,27 @@ const FIELDS = [
 
 const INFO_KEYS = FIELDS.map(f => f.key)
 
+function slugify(str) {
+  return str.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+}
+
 export default function PropertyInfoPage() {
   const { property, loading, saving, saved, saveError, save } = useProperty()
   const [form, setForm] = useState({})
   const [amenities, setAmenities] = useState([])
   const [amenityInput, setAmenityInput] = useState('')
+  const [slugInput, setSlugInput] = useState('')
+  const [slugSaving, setSlugSaving] = useState(false)
+  const [slugSaved, setSlugSaved] = useState(false)
+  const [slugError, setSlugError] = useState('')
 
   useEffect(() => {
     if (property) {
       setForm(property)
       setAmenities(property.amenities || [])
+      setSlugInput(property.slug || '')
     }
   }, [property])
 
@@ -51,6 +62,20 @@ export default function PropertyInfoPage() {
     const updated = amenities.filter(a => a !== val)
     setAmenities(updated)
     save({ amenities: updated }).catch(() => {})
+  }
+
+  async function handleSlugSave() {
+    const clean = slugify(slugInput)
+    if (!clean || clean === property.slug) return
+    setSlugSaving(true); setSlugError(''); setSlugSaved(false)
+    try {
+      await save({ slug: clean })
+      setSlugInput(clean)
+      setSlugSaved(true)
+      setTimeout(() => setSlugSaved(false), 2500)
+    } catch (e) {
+      setSlugError(e.message || 'Errore nel salvataggio')
+    } finally { setSlugSaving(false) }
   }
 
   async function handleSubmit(e) {
@@ -167,6 +192,32 @@ export default function PropertyInfoPage() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Slug / URL pubblica */}
+      <div style={{ ...cardStyle, marginTop: 16 }}>
+        <h3 style={{ marginTop: 0, marginBottom: 4, fontSize: 16, fontWeight: 700 }}>URL pubblica</h3>
+        <p style={{ margin: '0 0 16px', fontSize: 13, color: '#888' }}>
+          Indirizzo web della PWA per gli ospiti. Se lo modifichi, aggiorna il QR code.
+        </p>
+        <label style={lblStyle}>Slug (solo lettere, numeri e trattini)</label>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
+          <span style={{ fontSize: 13, color: '#aaa', flexShrink: 0 }}>{window.location.origin}/s/</span>
+          <input
+            value={slugInput}
+            onChange={e => { setSlugInput(slugify(e.target.value) || e.target.value.toLowerCase()); setSlugSaved(false); setSlugError('') }}
+            style={{ ...inputStyle, flex: 1, minWidth: 160 }}
+          />
+          <button
+            type="button"
+            onClick={handleSlugSave}
+            disabled={slugSaving || !slugInput || slugInput === property.slug}
+            style={{ ...saveBtn, opacity: (!slugInput || slugInput === property.slug) ? 0.5 : 1 }}
+          >
+            {slugSaving ? 'Salvataggio…' : slugSaved ? '✓ Salvato' : 'Salva URL'}
+          </button>
+        </div>
+        {slugError && <p style={{ color: '#c00', fontSize: 13, margin: 0 }}>{slugError}</p>}
       </div>
     </div>
   )
