@@ -133,7 +133,7 @@ export default function LandingStruttura({ property }) {
   const hasServices    = sections.services    && services.length > 0
   const hasActivities  = sections.activities  && activityItems.length > 0
   const hasExcursions  = sections.excursions  && excursionItems.length > 0
-  const hasEventi      = upcomingEventi.length > 0
+  const hasEventi      = sections.eventi !== false && upcomingEventi.length > 0
   const hasInfo        = property.phone || property.email || property.address || property.checkin_time
 
   return (

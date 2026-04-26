@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useProperty } from '../../../hooks/useProperty'
 import { ExternalLink, Plus, Trash2, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Mountain, Wind, Heart, Award, MapPin, Clock } from 'lucide-react'
 
-const DEFAULT_SECTIONS   = { gallery: true, services: true, activities: true, excursions: true }
+const DEFAULT_SECTIONS   = { gallery: true, services: true, activities: true, excursions: true, eventi: true }
 const DEFAULT_SOCIAL     = { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' }
 const DEFAULT = {
   active: false, tagline: '', booking_url: '', seo_title: '', seo_description: '',
@@ -93,6 +93,7 @@ export default function PropertyMiniSitoPage() {
     { key: 'services',   label: 'Servizi',         hint: `${(property.services   || []).length} servizi configurati` },
     { key: 'activities', label: 'Attività',        hint: `${(property.activities || []).length} categorie attività` },
     { key: 'excursions', label: 'Escursioni',      hint: `${(property.excursions || []).length} escursioni` },
+    { key: 'eventi',     label: 'Prossimi eventi', hint: 'eventi pubblicati e associati alla struttura' },
   ]
 
   const SOCIAL_ITEMS = [
