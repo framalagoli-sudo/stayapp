@@ -122,9 +122,11 @@ export default function LandingRistorante({ ristorante }) {
   const faq            = (mini.faq           || []).filter(f => f.question && f.answer)
 
   const now            = new Date()
-  const stats          = (mini.stats      || []).filter(s => s.value && s.label)
-  const promozioni     = (mini.promozioni || []).filter(p => p.title && (!p.expires_at || new Date(p.expires_at) >= now))
+  const stats          = (mini.stats        || []).filter(s => s.value && s.label)
+  const promozioni     = (mini.promozioni   || []).filter(p => p.title && (!p.expires_at || new Date(p.expires_at) >= now))
+  const menuSpeciali   = (mini.menu_speciali|| []).filter(m => m.name)
   const videoEmbedUrl  = getEmbedUrl(mini.video_url)
+  const ctaBanner      = mini.cta_banner || {}
   const showMap        = sections.show_map !== false && ristorante.address
 
   const hasGallery     = sections.gallery      && gallery.length > 0
@@ -298,6 +300,26 @@ export default function LandingRistorante({ ristorante }) {
         </section>
       )}
 
+      {/* CTA Banner */}
+      {ctaBanner.active && ctaBanner.title && (
+        <section style={{ padding: '88px 24px', background: `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)`, textAlign: 'center' }}>
+          <h2 style={{ fontFamily: heading, fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 700, color: '#fff', marginBottom: 16, lineHeight: 1.15 }}>
+            {ctaBanner.title}
+          </h2>
+          {ctaBanner.subtitle && (
+            <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.85)', marginBottom: 40, maxWidth: 600, margin: '0 auto 40px', lineHeight: 1.6 }}>
+              {ctaBanner.subtitle}
+            </p>
+          )}
+          {ctaBanner.cta_label && ctaBanner.cta_url && (
+            <a href={ctaBanner.cta_url} target="_blank" rel="noopener noreferrer"
+              style={{ display: 'inline-block', padding: '16px 44px', background: '#fff', color: primary, borderRadius: 50, fontSize: 17, fontWeight: 800, textDecoration: 'none', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
+              {ctaBanner.cta_label}
+            </a>
+          )}
+        </section>
+      )}
+
       {/* Testimonianze */}
       {testimonianze.length > 0 && (
         <section style={{ padding: '80px 0', background: '#f9f9fb' }}>
@@ -362,6 +384,56 @@ export default function LandingRistorante({ ristorante }) {
                       </a>
                     )}
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Menu Speciali / Degustazione */}
+      {menuSpeciali.length > 0 && (
+        <section style={{ padding: '80px 0', background: '#fff' }}>
+          <div className="land-section">
+            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
+              Menu degustazione
+            </h2>
+            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
+              Esperienze gastronomiche curate dallo chef
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
+              {menuSpeciali.map(m => (
+                <div key={m.id} style={{ borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+                  <div style={{ padding: '28px', background: 'linear-gradient(135deg, #1a1a2e 0%, #2a1a20 100%)' }}>
+                    {m.badge && (
+                      <span style={{ display: 'inline-block', background: primary, color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 14 }}>
+                        {m.badge}
+                      </span>
+                    )}
+                    <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, color: '#fff', marginBottom: 8, lineHeight: 1.2 }}>{m.name}</h3>
+                    {m.description && <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, margin: 0 }}>{m.description}</p>}
+                    {m.price && (
+                      <div style={{ marginTop: 20 }}>
+                        <span style={{ fontFamily: heading, fontSize: 36, fontWeight: 800, color: primary }}>{m.price}</span>
+                        {m.price_label && <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginLeft: 8 }}>/ {m.price_label}</span>}
+                      </div>
+                    )}
+                  </div>
+                  {(m.portate || []).filter(Boolean).length > 0 && (
+                    <div style={{ padding: '24px 28px', background: '#fff' }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 16 }}>Le portate</div>
+                      <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {(m.portate || []).filter(Boolean).map((portata, i) => (
+                          <li key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', fontSize: 14, color: '#444' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: '50%', background: `${primary}18`, color: primary, fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                              {i + 1}
+                            </span>
+                            {portata}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

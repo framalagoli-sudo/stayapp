@@ -3,13 +3,15 @@ import { useParams } from 'react-router-dom'
 import { useRistorante } from '../../../hooks/useRistorante'
 import { ExternalLink, Plus, Trash2, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Mountain, Wind, Heart, Award, MapPin, Clock } from 'lucide-react'
 
-const DEFAULT_SECTIONS = { gallery: true, menu_preview: true }
-const DEFAULT_SOCIAL   = { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' }
+const DEFAULT_SECTIONS   = { gallery: true, menu_preview: true }
+const DEFAULT_SOCIAL     = { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' }
+const DEFAULT_CTA_BANNER = { active: false, title: '', subtitle: '', cta_label: '', cta_url: '' }
 const DEFAULT = {
   active: false, tagline: '', booking_url: '', seo_title: '', seo_description: '',
   video_url: '',
   sections: DEFAULT_SECTIONS, social: DEFAULT_SOCIAL, highlights: [],
-  stats: [], promozioni: [], testimonianze: [], faq: [],
+  stats: [], promozioni: [], menu_speciali: [], testimonianze: [], faq: [],
+  cta_banner: DEFAULT_CTA_BANNER,
 }
 
 const HIGHLIGHT_ICONS = [
@@ -45,9 +47,11 @@ export default function RistoranteMiniSitoPage() {
         highlights:    s.highlights    || [],
         stats:         s.stats         || [],
         promozioni:    s.promozioni    || [],
+        menu_speciali: s.menu_speciali || [],
         testimonianze: s.testimonianze || [],
         faq:           s.faq           || [],
         video_url:     s.video_url     || '',
+        cta_banner:    { ...DEFAULT_CTA_BANNER, ...(s.cta_banner || {}) },
       })
     }
   }, [ristorante])
@@ -104,6 +108,24 @@ export default function RistoranteMiniSitoPage() {
   }
   function removePromo(id) {
     const updated = { ...form, promozioni: form.promozioni.filter(x => x.id !== id) }
+    setForm(updated); save({ minisito: updated }).catch(() => {})
+  }
+
+  function patchBanner(key, value) {
+    const updated = { ...form, cta_banner: { ...form.cta_banner, [key]: value } }
+    setForm(updated); save({ minisito: updated }).catch(() => {})
+  }
+
+  function addMenuSpeciale() {
+    const updated = { ...form, menu_speciali: [...(form.menu_speciali || []), { id: crypto.randomUUID(), badge: '', name: '', description: '', price: '', price_label: 'a persona', portate: [] }] }
+    setForm(updated); save({ minisito: updated }).catch(() => {})
+  }
+  function updateMenuSpeciale(id, p) {
+    const updated = { ...form, menu_speciali: form.menu_speciali.map(x => x.id === id ? { ...x, ...p } : x) }
+    setForm(updated); save({ minisito: updated }).catch(() => {})
+  }
+  function removeMenuSpeciale(id) {
+    const updated = { ...form, menu_speciali: form.menu_speciali.filter(x => x.id !== id) }
     setForm(updated); save({ minisito: updated }).catch(() => {})
   }
 
@@ -351,6 +373,63 @@ export default function RistoranteMiniSitoPage() {
         </button>
       </div>
 
+      {/* CTA Banner */}
+      <div style={cardStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <h3 style={{ ...sectionTitle, marginBottom: 0 }}>Banner CTA</h3>
+          <Toggle value={form.cta_banner?.active || false} onChange={v => patchBanner('active', v)} color="#e63946" />
+        </div>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: 8 }}>
+          Una banda colorata a tutto schermo con titolo persuasivo e pulsante di prenotazione. Appare solo se attivata.
+        </p>
+        <div style={fieldWrap}>
+          <label style={lblStyle}>Titolo principale</label>
+          <input value={form.cta_banner?.title || ''}
+            onChange={e => setForm(f => ({ ...f, cta_banner: { ...f.cta_banner, title: e.target.value } }))}
+            onBlur={() => save({ minisito: form }).catch(() => {})}
+            placeholder="es. Un'esperienza gastronomica unica ti aspetta"
+            style={inputStyle} />
+        </div>
+        <div style={fieldWrap}>
+          <label style={lblStyle}>Sottotitolo (opzionale)</label>
+          <input value={form.cta_banner?.subtitle || ''}
+            onChange={e => setForm(f => ({ ...f, cta_banner: { ...f.cta_banner, subtitle: e.target.value } }))}
+            onBlur={() => save({ minisito: form }).catch(() => {})}
+            placeholder="es. Riserva il tuo tavolo per una serata indimenticabile"
+            style={inputStyle} />
+        </div>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 0 }}>
+          <div style={{ flex: '0 0 180px' }}>
+            <label style={lblStyle}>Testo pulsante</label>
+            <input value={form.cta_banner?.cta_label || ''}
+              onChange={e => setForm(f => ({ ...f, cta_banner: { ...f.cta_banner, cta_label: e.target.value } }))}
+              onBlur={() => save({ minisito: form }).catch(() => {})}
+              placeholder="es. Prenota un tavolo" style={inputStyle} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={lblStyle}>Link pulsante</label>
+            <input type="url" value={form.cta_banner?.cta_url || ''}
+              onChange={e => setForm(f => ({ ...f, cta_banner: { ...f.cta_banner, cta_url: e.target.value } }))}
+              onBlur={() => save({ minisito: form }).catch(() => {})}
+              placeholder="https://..." style={inputStyle} />
+          </div>
+        </div>
+      </div>
+
+      {/* Menu speciali */}
+      <div style={cardStyle}>
+        <h3 style={sectionTitle}>Menu degustazione e speciali</h3>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+          Proponi esperienze gastronomiche curate dallo chef (es. "Menu Degustazione 5 portate", "Menu Terra e Mare"). Ogni menu mostra le portate con numerazione elegante.
+        </p>
+        {(form.menu_speciali || []).map(m => (
+          <MenuSpecialeItem key={m.id} item={m} onPatch={x => updateMenuSpeciale(m.id, x)} onRemove={() => removeMenuSpeciale(m.id)} />
+        ))}
+        <button onClick={addMenuSpeciale} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#e63946', background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
+          <Plus size={14} strokeWidth={2.5} /> Aggiungi menu speciale
+        </button>
+      </div>
+
       {/* Testimonianze */}
       <div style={cardStyle}>
         <h3 style={sectionTitle}>Testimonianze clienti</h3>
@@ -406,6 +485,57 @@ export default function RistoranteMiniSitoPage() {
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+function MenuSpecialeItem({ item, onPatch, onRemove }) {
+  const [badge,      setBadge]      = useState(item.badge      || '')
+  const [name,       setName]       = useState(item.name       || '')
+  const [description,setDescription]= useState(item.description|| '')
+  const [price,      setPrice]      = useState(item.price      || '')
+  const [priceLabel, setPriceLabel] = useState(item.price_label || 'a persona')
+  const [portate,    setPortate]    = useState((item.portate   || []).join('\n'))
+  return (
+    <div style={{ background: '#f9f9fb', borderRadius: 10, padding: 16, marginBottom: 12 }}>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ ...lblStyle, marginBottom: 4 }}>Badge (opzionale)</label>
+        <input value={badge} onChange={e => setBadge(e.target.value)} onBlur={() => onPatch({ badge })}
+          placeholder="es. Lo chef consiglia" style={inputStyle} />
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ ...lblStyle, marginBottom: 4 }}>Nome menu *</label>
+        <input value={name} onChange={e => setName(e.target.value)} onBlur={() => onPatch({ name })}
+          placeholder="es. Menu Degustazione Terra e Mare" style={{ ...inputStyle, fontWeight: 600 }} />
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ ...lblStyle, marginBottom: 4 }}>Descrizione breve</label>
+        <input value={description} onChange={e => setDescription(e.target.value)} onBlur={() => onPatch({ description })}
+          placeholder="es. Un viaggio tra i sapori del territorio, 5 portate" style={inputStyle} />
+      </div>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+        <div style={{ flex: '0 0 120px' }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Prezzo</label>
+          <input value={price} onChange={e => setPrice(e.target.value)} onBlur={() => onPatch({ price })}
+            placeholder="es. €75" style={inputStyle} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Label prezzo</label>
+          <input value={priceLabel} onChange={e => setPriceLabel(e.target.value)} onBlur={() => onPatch({ price_label: priceLabel })}
+            placeholder="es. a persona / con vini €95" style={inputStyle} />
+        </div>
+      </div>
+      <div style={{ marginBottom: 8 }}>
+        <label style={{ ...lblStyle, marginBottom: 4 }}>Portate (una per riga)</label>
+        <textarea value={portate}
+          onChange={e => setPortate(e.target.value)}
+          onBlur={() => onPatch({ portate: portate.split('\n').map(s => s.trim()).filter(Boolean) })}
+          rows={5} placeholder={"Amuse bouche\nAntipasto di mare\nPrimo della tradizione\nSecondo del territorio\nDessert"}
+          style={{ ...inputStyle, resize: 'vertical' }} />
+      </div>
+      <button onClick={onRemove} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 12, padding: 0 }}>
+        <Trash2 size={13} strokeWidth={1.5} /> Rimuovi menu
+      </button>
     </div>
   )
 }

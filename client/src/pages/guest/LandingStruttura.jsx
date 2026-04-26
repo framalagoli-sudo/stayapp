@@ -141,9 +141,11 @@ export default function LandingStruttura({ property }) {
   const now            = new Date()
   const stats          = (mini.stats       || []).filter(s => s.value && s.label)
   const promozioni     = (mini.promozioni  || []).filter(p => p.title && (!p.expires_at || new Date(p.expires_at) >= now))
+  const pacchetti      = (mini.pacchetti   || []).filter(p => p.name)
   const testimonianze  = (mini.testimonianze || []).filter(t => t.text && t.author)
   const faq            = (mini.faq           || []).filter(f => f.question && f.answer)
   const videoEmbedUrl  = getEmbedUrl(mini.video_url)
+  const ctaBanner      = mini.cta_banner || {}
   const showMap        = sections.show_map !== false && property.address
   const hasGallery     = sections.gallery     && gallery.length > 0
   const hasServices    = sections.services    && services.length > 0
@@ -331,6 +333,26 @@ export default function LandingStruttura({ property }) {
         </section>
       )}
 
+      {/* CTA Banner */}
+      {ctaBanner.active && ctaBanner.title && (
+        <section style={{ padding: '88px 24px', background: `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)`, textAlign: 'center' }}>
+          <h2 style={{ fontFamily: heading, fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 700, color: '#fff', marginBottom: 16, lineHeight: 1.15 }}>
+            {ctaBanner.title}
+          </h2>
+          {ctaBanner.subtitle && (
+            <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.85)', marginBottom: 40, maxWidth: 600, margin: '0 auto 40px', lineHeight: 1.6 }}>
+              {ctaBanner.subtitle}
+            </p>
+          )}
+          {ctaBanner.cta_label && ctaBanner.cta_url && (
+            <a href={ctaBanner.cta_url} target="_blank" rel="noopener noreferrer"
+              style={{ display: 'inline-block', padding: '16px 44px', background: '#fff', color: primary, borderRadius: 50, fontSize: 17, fontWeight: 800, textDecoration: 'none', boxShadow: '0 8px 40px rgba(0,0,0,0.18)', marginTop: ctaBanner.subtitle ? 0 : 0 }}>
+              {ctaBanner.cta_label}
+            </a>
+          )}
+        </section>
+      )}
+
       {/* Testimonianze */}
       {testimonianze.length > 0 && (
         <section style={{ padding: '80px 0', background: '#f9f9fb' }}>
@@ -395,6 +417,62 @@ export default function LandingStruttura({ property }) {
                       </a>
                     )}
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Pacchetti */}
+      {pacchetti.length > 0 && (
+        <section style={{ padding: '80px 0', background: '#f9f9fb' }}>
+          <div className="land-section">
+            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
+              Pacchetti e soggiorni
+            </h2>
+            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
+              Scegli il soggiorno pensato per te
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
+              {pacchetti.map(p => (
+                <div key={p.id} style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ padding: '28px 28px 0' }}>
+                    {p.badge && (
+                      <span style={{ display: 'inline-block', background: primary, color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 16 }}>
+                        {p.badge}
+                      </span>
+                    )}
+                    <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 6, color: '#1a1a2e' }}>{p.name}</h3>
+                    {p.tagline && <p style={{ fontSize: 14, color: '#888', marginBottom: 20, lineHeight: 1.5 }}>{p.tagline}</p>}
+                    {p.price && (
+                      <div style={{ marginBottom: 24, borderTop: '1px solid #f0f0f0', paddingTop: 20 }}>
+                        <span style={{ fontFamily: heading, fontSize: 40, fontWeight: 800, color: primary }}>{p.price}</span>
+                        {p.price_label && <span style={{ fontSize: 14, color: '#aaa', marginLeft: 6 }}>/ {p.price_label}</span>}
+                      </div>
+                    )}
+                  </div>
+                  {(p.includes || []).filter(Boolean).length > 0 && (
+                    <div style={{ padding: p.price ? '0 28px 24px' : '0 28px 24px', flex: 1 }}>
+                      {!p.price && <div style={{ height: 1, background: '#f0f0f0', margin: '0 0 20px' }} />}
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {(p.includes || []).filter(Boolean).map((item, i) => (
+                          <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 14, color: '#444' }}>
+                            <span style={{ color: primary, fontWeight: 700, fontSize: 15, lineHeight: 1.3, flexShrink: 0 }}>✓</span>
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {p.cta_label && p.cta_url && (
+                    <div style={{ padding: '0 28px 28px' }}>
+                      <a href={p.cta_url} target="_blank" rel="noopener noreferrer"
+                        style={{ display: 'block', textAlign: 'center', padding: '13px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+                        {p.cta_label}
+                      </a>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

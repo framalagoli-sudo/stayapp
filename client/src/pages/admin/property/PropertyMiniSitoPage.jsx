@@ -4,11 +4,13 @@ import { ExternalLink, Plus, Trash2, Waves, Sparkles, Utensils, Activity, Car, W
 
 const DEFAULT_SECTIONS   = { gallery: true, services: true, activities: true, excursions: true, eventi: true }
 const DEFAULT_SOCIAL     = { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' }
+const DEFAULT_CTA_BANNER = { active: false, title: '', subtitle: '', cta_label: '', cta_url: '' }
 const DEFAULT = {
   active: false, tagline: '', booking_url: '', seo_title: '', seo_description: '',
   video_url: '',
   sections: DEFAULT_SECTIONS, social: DEFAULT_SOCIAL, highlights: [],
-  stats: [], promozioni: [], testimonianze: [], faq: [],
+  stats: [], promozioni: [], pacchetti: [], testimonianze: [], faq: [],
+  cta_banner: DEFAULT_CTA_BANNER,
 }
 
 const HIGHLIGHT_ICONS = [
@@ -48,9 +50,11 @@ export default function PropertyMiniSitoPage() {
         highlights:    s.highlights    || [],
         stats:         s.stats         || [],
         promozioni:    s.promozioni    || [],
+        pacchetti:     s.pacchetti     || [],
         testimonianze: s.testimonianze || [],
         faq:           s.faq           || [],
         video_url:     s.video_url     || '',
+        cta_banner:    { ...DEFAULT_CTA_BANNER, ...(s.cta_banner || {}) },
       })
     }
   }, [property])
@@ -108,6 +112,24 @@ export default function PropertyMiniSitoPage() {
   }
   function removePromo(id) {
     const updated = { ...form, promozioni: form.promozioni.filter(x => x.id !== id) }
+    setForm(updated); save({ minisito: updated }).catch(() => {})
+  }
+
+  function patchBanner(key, value) {
+    const updated = { ...form, cta_banner: { ...form.cta_banner, [key]: value } }
+    setForm(updated); save({ minisito: updated }).catch(() => {})
+  }
+
+  function addPacchetto() {
+    const updated = { ...form, pacchetti: [...(form.pacchetti || []), { id: crypto.randomUUID(), badge: '', name: '', tagline: '', price: '', price_label: 'a persona', includes: [], cta_label: '', cta_url: '' }] }
+    setForm(updated); save({ minisito: updated }).catch(() => {})
+  }
+  function updatePacchetto(id, p) {
+    const updated = { ...form, pacchetti: form.pacchetti.map(x => x.id === id ? { ...x, ...p } : x) }
+    setForm(updated); save({ minisito: updated }).catch(() => {})
+  }
+  function removePacchetto(id) {
+    const updated = { ...form, pacchetti: form.pacchetti.filter(x => x.id !== id) }
     setForm(updated); save({ minisito: updated }).catch(() => {})
   }
 
@@ -368,6 +390,63 @@ export default function PropertyMiniSitoPage() {
         </button>
       </div>
 
+      {/* CTA Banner */}
+      <div style={cardStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <h3 style={{ ...sectionTitle, marginBottom: 0 }}>Banner CTA</h3>
+          <Toggle value={form.cta_banner?.active || false} onChange={v => patchBanner('active', v)} color="#1a1a2e" />
+        </div>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: 8 }}>
+          Una banda colorata a tutto schermo con titolo persuasivo e pulsante di conversione. Appare solo se attivata.
+        </p>
+        <div style={fieldWrap}>
+          <label style={lblStyle}>Titolo principale</label>
+          <input value={form.cta_banner?.title || ''}
+            onChange={e => setForm(f => ({ ...f, cta_banner: { ...f.cta_banner, title: e.target.value } }))}
+            onBlur={() => save({ minisito: form }).catch(() => {})}
+            placeholder="es. Pronto per un'esperienza indimenticabile?"
+            style={inputStyle} />
+        </div>
+        <div style={fieldWrap}>
+          <label style={lblStyle}>Sottotitolo (opzionale)</label>
+          <input value={form.cta_banner?.subtitle || ''}
+            onChange={e => setForm(f => ({ ...f, cta_banner: { ...f.cta_banner, subtitle: e.target.value } }))}
+            onBlur={() => save({ minisito: form }).catch(() => {})}
+            placeholder="es. Prenota ora con la migliore tariffa garantita"
+            style={inputStyle} />
+        </div>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 0 }}>
+          <div style={{ flex: '0 0 180px' }}>
+            <label style={lblStyle}>Testo pulsante</label>
+            <input value={form.cta_banner?.cta_label || ''}
+              onChange={e => setForm(f => ({ ...f, cta_banner: { ...f.cta_banner, cta_label: e.target.value } }))}
+              onBlur={() => save({ minisito: form }).catch(() => {})}
+              placeholder="es. Prenota ora" style={inputStyle} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={lblStyle}>Link pulsante</label>
+            <input type="url" value={form.cta_banner?.cta_url || ''}
+              onChange={e => setForm(f => ({ ...f, cta_banner: { ...f.cta_banner, cta_url: e.target.value } }))}
+              onBlur={() => save({ minisito: form }).catch(() => {})}
+              placeholder="https://..." style={inputStyle} />
+          </div>
+        </div>
+      </div>
+
+      {/* Pacchetti */}
+      <div style={cardStyle}>
+        <h3 style={sectionTitle}>Pacchetti e soggiorni</h3>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+          Proponi soggiorni tematici con elenco inclusi e prezzo. Ottimo per aumentare il valore percepito (es. "Weekend Romantico", "Family Summer").
+        </p>
+        {(form.pacchetti || []).map(p => (
+          <PacchettoItem key={p.id} item={p} onPatch={x => updatePacchetto(p.id, x)} onRemove={() => removePacchetto(p.id)} />
+        ))}
+        <button onClick={addPacchetto} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#1a1a2e', background: '#f0f4ff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
+          <Plus size={14} strokeWidth={2.5} /> Aggiungi pacchetto
+        </button>
+      </div>
+
       {/* Testimonianze */}
       <div style={cardStyle}>
         <h3 style={sectionTitle}>Testimonianze ospiti</h3>
@@ -423,6 +502,73 @@ export default function PropertyMiniSitoPage() {
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+function PacchettoItem({ item, onPatch, onRemove }) {
+  const [badge,      setBadge]      = useState(item.badge      || '')
+  const [name,       setName]       = useState(item.name       || '')
+  const [tagline,    setTagline]    = useState(item.tagline    || '')
+  const [price,      setPrice]      = useState(item.price      || '')
+  const [priceLabel, setPriceLabel] = useState(item.price_label || 'a persona')
+  const [includes,   setIncludes]   = useState((item.includes  || []).join('\n'))
+  const [ctaLabel,   setCtaLabel]   = useState(item.cta_label  || '')
+  const [ctaUrl,     setCtaUrl]     = useState(item.cta_url    || '')
+  return (
+    <div style={{ background: '#f9f9fb', borderRadius: 10, padding: 16, marginBottom: 12 }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+        <div style={{ flex: 1 }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Badge (opzionale)</label>
+          <input value={badge} onChange={e => setBadge(e.target.value)} onBlur={() => onPatch({ badge })}
+            placeholder="es. Più richiesto" style={inputStyle} />
+        </div>
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ ...lblStyle, marginBottom: 4 }}>Nome pacchetto *</label>
+        <input value={name} onChange={e => setName(e.target.value)} onBlur={() => onPatch({ name })}
+          placeholder="es. Weekend Romantico" style={{ ...inputStyle, fontWeight: 600 }} />
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ ...lblStyle, marginBottom: 4 }}>Sottotitolo (opzionale)</label>
+        <input value={tagline} onChange={e => setTagline(e.target.value)} onBlur={() => onPatch({ tagline })}
+          placeholder="es. Per una fuga dalla routine" style={inputStyle} />
+      </div>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+        <div style={{ flex: '0 0 120px' }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Prezzo</label>
+          <input value={price} onChange={e => setPrice(e.target.value)} onBlur={() => onPatch({ price })}
+            placeholder="es. €299" style={inputStyle} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Label prezzo</label>
+          <input value={priceLabel} onChange={e => setPriceLabel(e.target.value)} onBlur={() => onPatch({ price_label: priceLabel })}
+            placeholder="es. a persona / a notte" style={inputStyle} />
+        </div>
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ ...lblStyle, marginBottom: 4 }}>Include (una voce per riga)</label>
+        <textarea value={includes}
+          onChange={e => setIncludes(e.target.value)}
+          onBlur={() => onPatch({ includes: includes.split('\n').map(s => s.trim()).filter(Boolean) })}
+          rows={4} placeholder={"Colazione inclusa\nAccesso spa\nLate check-out\nCena romantica"}
+          style={{ ...inputStyle, resize: 'vertical' }} />
+      </div>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
+        <div style={{ flex: '0 0 160px' }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Testo pulsante</label>
+          <input value={ctaLabel} onChange={e => setCtaLabel(e.target.value)} onBlur={() => onPatch({ cta_label: ctaLabel })}
+            placeholder="es. Prenota ora" style={inputStyle} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Link pulsante</label>
+          <input type="url" value={ctaUrl} onChange={e => setCtaUrl(e.target.value)} onBlur={() => onPatch({ cta_url: ctaUrl })}
+            placeholder="https://..." style={inputStyle} />
+        </div>
+      </div>
+      <button onClick={onRemove} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 12, padding: 0 }}>
+        <Trash2 size={13} strokeWidth={1.5} /> Rimuovi pacchetto
+      </button>
     </div>
   )
 }
