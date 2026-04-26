@@ -5,7 +5,7 @@ import {
   Home, Compass, Bell, Info, MessageCircle, Send,
   Images, LayoutGrid, Zap, Mountain, Calendar, Users, Euro,
   Wifi, Phone, Mail, MapPin, FileText,
-  X, Check, ChevronRight,
+  X, Check, ChevronRight, ArrowLeft,
 } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
 import { supabase } from '../../lib/supabase'
@@ -90,7 +90,6 @@ export default function GuestApp() {
   const [exploreChip,    setExploreChip]    = useState(null)
   const [compactBar,     setCompactBar]     = useState(false)
   const [showArrow,      setShowArrow]      = useState(true)
-  const [selectedEvento, setSelectedEvento] = useState(null)
   const scrollRef  = useRef(null)
   const chipBarRef = useRef(null)
 
@@ -293,7 +292,7 @@ export default function GuestApp() {
             {AppHeader}
             <div key={nav} className="fade-up">
               {nav === 'home'      && <HomePage      property={property} upcomingEventi={upcomingEventi} modules={modules} onExplore={goExplore} {...sp} headingFamily={headingFamily} />}
-              {nav === 'esplora'   && <EsploraPage   property={property} upcomingEventi={upcomingEventi} activeChip={activeChip} onOpenEvento={setSelectedEvento} {...sp} headingFamily={headingFamily} />}
+              {nav === 'esplora'   && <EsploraPage   property={property} upcomingEventi={upcomingEventi} activeChip={activeChip} {...sp} headingFamily={headingFamily} />}
               {nav === 'richiesta' && <div style={{ padding: 20 }}><RequestForm propertyId={property.id} modules={modules} primary={primary} radius={radius} textColor={textColor} isDark={isDark} /></div>}
               {nav === 'chat'      && <ChatPage      propertyId={property.id} propertyName={property.name} {...sp} headingFamily={headingFamily} />}
               {nav === 'info'      && <InfoPage      property={property} modules={modules} {...sp} headingFamily={headingFamily} />}
@@ -311,11 +310,6 @@ export default function GuestApp() {
               </button>
             ))}
           </nav>
-
-          {/* ── Evento bottom sheet — absolute dentro g-app per rispettare il frame ── */}
-          {selectedEvento && (
-            <EventoSheet evento={selectedEvento} onClose={() => setSelectedEvento(null)} {...sp} />
-          )}
 
         </div>
       </div>
@@ -462,8 +456,9 @@ function HomePage({ property, upcomingEventi = [], modules, onExplore, primary, 
 }
 
 // ─── ESPLORA ──────────────────────────────────────────────────────────────────
-function EsploraPage({ property, upcomingEventi = [], activeChip, onOpenEvento, primary, textColor, subText, isDark, radius, headingFamily }) {
-  const [lightbox, setLightbox] = useState(null)
+function EsploraPage({ property, upcomingEventi = [], activeChip, primary, textColor, subText, isDark, radius, headingFamily }) {
+  const [lightbox,      setLightbox]      = useState(null)
+  const [selectedEvento, setSelectedEvento] = useState(null)
   const sp = { primary, textColor, subText, isDark, radius, headingFamily }
 
   if (!activeChip) {
@@ -475,6 +470,10 @@ function EsploraPage({ property, upcomingEventi = [], activeChip, onOpenEvento, 
     )
   }
 
+  if (selectedEvento) {
+    return <EventoDetailView evento={selectedEvento} onBack={() => setSelectedEvento(null)} {...sp} />
+  }
+
   return (
     <div>
       <div key={activeChip} className="fade-up" style={{ padding: '20px 16px 28px' }}>
@@ -482,7 +481,7 @@ function EsploraPage({ property, upcomingEventi = [], activeChip, onOpenEvento, 
         {activeChip === 'servizi'    && <ServicesTab services={property.services} {...sp} />}
         {activeChip === 'attivita'   && <ActivitiesTab activities={property.activities} propertyId={property.id} {...sp} />}
         {activeChip === 'escursioni' && <ExcursionsTab excursions={property.excursions} propertyId={property.id} {...sp} />}
-        {activeChip === 'eventi'     && <EventiTab eventi={upcomingEventi} onOpen={onOpenEvento} {...sp} />}
+        {activeChip === 'eventi'     && <EventiTab eventi={upcomingEventi} onOpen={setSelectedEvento} {...sp} />}
       </div>
 
       {lightbox && (
@@ -611,8 +610,8 @@ function EventiTab({ eventi, onOpen, primary, textColor, subText, isDark, radius
   )
 }
 
-// ─── EventoSheet — bottom sheet di prenotazione (position:absolute dentro g-app) ──
-function EventoSheet({ evento, onClose, primary, textColor, subText, isDark, radius }) {
+// ─── EventoDetailView — pagina dettaglio evento dentro la PWA (nessun overlay) ──
+function EventoDetailView({ evento, onBack, primary, textColor, subText, isDark, radius }) {
   const [pkgId,      setPkgId]      = useState(evento.packages?.length === 1 ? evento.packages[0].id : '')
   const [seats,      setSeats]      = useState(1)
   const [guestName,  setGuestName]  = useState('')
@@ -642,30 +641,36 @@ function EventoSheet({ evento, onClose, primary, textColor, subText, isDark, rad
     return new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
   }
 
-  const sheetBg = isDark ? '#1a1a2e' : '#fff'
-  const border  = isDark ? 'rgba(255,255,255,0.08)' : '#f0f0f0'
-  const inp = { width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${isDark ? 'rgba(255,255,255,0.15)' : '#ddd'}`, background: isDark ? 'rgba(255,255,255,0.07)' : '#fff', color: textColor, fontSize: 14, boxSizing: 'border-box' }
+  const cardBg = isDark ? '#1e1e32' : '#fff'
+  const border = isDark ? 'rgba(255,255,255,0.08)' : '#f0f0f0'
+  const inp = { width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${isDark ? 'rgba(255,255,255,0.15)' : '#ddd'}`, background: isDark ? 'rgba(255,255,255,0.07)' : '#fff', color: textColor, fontSize: 14, boxSizing: 'border-box', marginBottom: 8 }
 
   return (
-    <div onClick={onClose}
-      style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }}>
-      <div onClick={e => e.stopPropagation()}
-        style={{ width: '100%', maxHeight: '88%', background: sheetBg, borderRadius: '20px 20px 0 0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${border}`, flexShrink: 0 }}>
-          <span style={{ fontWeight: 700, fontSize: 16, color: textColor }}>{evento.title}</span>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: subText, display: 'flex' }}>
-            <X size={20} strokeWidth={1.5} />
-          </button>
-        </div>
-        <div style={{ overflowY: 'auto', flex: 1, padding: 20 }}>
-          {evento.cover_url && <img src={evento.cover_url} alt={evento.title} style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: radius || 12, marginBottom: 16, display: 'block' }} />}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><Calendar size={13} strokeWidth={1.5} color={primary} /> {fmtDate(evento.date_start)}</span>
-            {evento.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><MapPin size={13} strokeWidth={1.5} color={primary} /> {evento.location}</span>}
-            {evento.seats_total && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><Users size={13} strokeWidth={1.5} color={primary} /> {evento.seats_total - (evento.seats_booked || 0)} posti disponibili</span>}
-          </div>
-          {evento.description && <p style={{ margin: '0 0 16px', fontSize: 14, color: subText, lineHeight: 1.6 }}>{evento.description}</p>}
+    <div className="fade-up" style={{ paddingBottom: 32 }}>
+      {/* Back bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderBottom: `1px solid ${border}` }}>
+        <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: primary, padding: 0 }}>
+          <ArrowLeft size={16} strokeWidth={2} color={primary} /> Eventi
+        </button>
+      </div>
 
+      {evento.cover_url && (
+        <img src={evento.cover_url} alt={evento.title} style={{ width: '100%', height: 200, objectFit: 'cover', display: 'block' }} />
+      )}
+
+      <div style={{ padding: '20px 16px' }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: textColor, marginBottom: 12, lineHeight: 1.3 }}>{evento.title}</h2>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><Calendar size={13} strokeWidth={1.5} color={primary} /> {fmtDate(evento.date_start)}</span>
+          {evento.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><MapPin size={13} strokeWidth={1.5} color={primary} /> {evento.location}</span>}
+          {evento.seats_total && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><Users size={13} strokeWidth={1.5} color={primary} /> {evento.seats_total - (evento.seats_booked || 0)} posti</span>}
+        </div>
+
+        {evento.description && <p style={{ margin: '0 0 20px', fontSize: 14, color: subText, lineHeight: 1.6 }}>{evento.description}</p>}
+
+        {/* Prenotazione */}
+        <div style={{ background: cardBg, borderRadius: radius || 14, padding: 16, border: `1px solid ${border}` }}>
           {(evento.packages || []).length > 0 && (
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontWeight: 700, fontSize: 13, color: textColor, marginBottom: 8 }}>Scegli pacchetto</div>
@@ -682,29 +687,29 @@ function EventoSheet({ evento, onClose, primary, textColor, subText, isDark, rad
             </div>
           )}
 
-          <div style={{ fontWeight: 800, fontSize: 22, color: primary, marginBottom: 20 }}>
+          <div style={{ fontWeight: 800, fontSize: 22, color: primary, marginBottom: 16 }}>
             {(() => { const pkg = (evento.packages || []).find(p => p.id === pkgId); const price = pkg ? pkg.price : (evento.price || 0); return price > 0 ? `€${price} / persona` : 'Gratuito' })()}
           </div>
 
           {done ? (
-            <div style={{ textAlign: 'center', padding: '20px 0' }}>
-              <Check size={40} strokeWidth={1.5} color={primary} style={{ marginBottom: 8 }} />
-              <div style={{ fontWeight: 700, fontSize: 16, color: textColor, marginBottom: 4 }}>Prenotazione inviata!</div>
+            <div style={{ textAlign: 'center', padding: '16px 0' }}>
+              <Check size={36} strokeWidth={1.5} color={primary} style={{ marginBottom: 8 }} />
+              <div style={{ fontWeight: 700, fontSize: 15, color: textColor, marginBottom: 4 }}>Prenotazione inviata!</div>
               <div style={{ fontSize: 13, color: subText }}>Riceverai una conferma via email.</div>
             </div>
           ) : (
             <>
               <div style={{ fontWeight: 700, fontSize: 13, color: textColor, marginBottom: 10 }}>I tuoi dati</div>
-              <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Nome e cognome *" style={{ ...inp, marginBottom: 8 }} />
-              <input value={guestEmail} onChange={e => setGuestEmail(e.target.value)} placeholder="Email *" type="email" style={{ ...inp, marginBottom: 8 }} />
-              <input value={guestPhone} onChange={e => setGuestPhone(e.target.value)} placeholder="Telefono (opzionale)" type="tel" style={{ ...inp, marginBottom: 8 }} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Nome e cognome *" style={inp} />
+              <input value={guestEmail} onChange={e => setGuestEmail(e.target.value)} placeholder="Email *" type="email" style={inp} />
+              <input value={guestPhone} onChange={e => setGuestPhone(e.target.value)} placeholder="Telefono (opzionale)" type="tel" style={inp} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                 <label style={{ fontSize: 13, color: subText }}>Posti:</label>
-                <input type="number" min="1" value={seats} onChange={e => setSeats(parseInt(e.target.value) || 1)} style={{ ...inp, width: 70, textAlign: 'center' }} />
+                <input type="number" min="1" value={seats} onChange={e => setSeats(parseInt(e.target.value) || 1)} style={{ ...inp, width: 70, textAlign: 'center', marginBottom: 0 }} />
               </div>
               {bookErr && <p style={{ color: '#e53e3e', fontSize: 13, marginBottom: 10 }}>{bookErr}</p>}
               <button onClick={handleBook} disabled={booking}
-                style={{ width: '100%', padding: 14, background: primary, color: '#fff', border: 'none', borderRadius: radius || 12, fontSize: 15, fontWeight: 700, cursor: 'pointer', marginBottom: 8 }}>
+                style={{ width: '100%', padding: 14, background: primary, color: '#fff', border: 'none', borderRadius: radius || 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                 {booking ? 'Invio in corso…' : 'Prenota'}
               </button>
             </>

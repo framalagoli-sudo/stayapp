@@ -20,6 +20,7 @@ import QRCodePage from './pages/admin/QRCodePage'
 import UsersPage from './pages/admin/UsersPage'
 import GuestApp from './pages/guest/GuestApp'
 import RestaurantApp from './pages/guest/RestaurantApp'
+import EventoPage from './pages/guest/EventoPage'
 import PropertyInfoPage from './pages/admin/property/PropertyInfoPage'
 import PropertyModulesPage from './pages/admin/property/PropertyModulesPage'
 import PropertyServicesPage from './pages/admin/property/PropertyServicesPage'
@@ -52,6 +53,7 @@ export default function App() {
           {/* Guest PWA */}
           <Route path="/s/:slug" element={<GuestApp />} />
           <Route path="/r/:slug" element={<RestaurantApp />} />
+          <Route path="/eventi/:id" element={<EventoPage />} />
 
           {/* Admin */}
           <Route path="/admin/login" element={<LoginPage />} />

@@ -49,6 +49,19 @@ router.get('/r/:slug', async (req, res) => {
   res.json({ ...data, collegamenti })
 })
 
+// GET /api/guest/eventi/:id — singolo evento pubblico
+router.get('/eventi/:id', async (req, res) => {
+  const { data, error } = await supabase
+    .from('eventi')
+    .select('id, slug, title, description, cover_url, date_start, date_end, location, price, seats_total, seats_booked, packages')
+    .eq('id', req.params.id)
+    .eq('published', true)
+    .eq('active', true)
+    .single()
+  if (error || !data) return res.status(404).json({ error: 'Evento non trovato' })
+  res.json(data)
+})
+
 // GET /api/guest/eventi?entity_tipo=struttura&entity_id=xxx — eventi pubblici
 router.get('/eventi', async (req, res) => {
   const { entity_tipo, entity_id } = req.query
