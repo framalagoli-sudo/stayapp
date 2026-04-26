@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { MapPin, Phone, Mail, Clock, ChevronDown, Utensils, Wine, Coffee, Music, Car, Wind, Wifi, Bell, Bus, Star, Heart, Award, Calendar, Users } from 'lucide-react'
+import { apiFetch } from '../../lib/api'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -64,8 +65,7 @@ export default function LandingRistorante({ ristorante }) {
   const [upcomingEventi, setUpcomingEventi] = useState([])
 
   useEffect(() => {
-    fetch(`/api/guest/eventi?entity_tipo=ristorante&entity_id=${ristorante.id}`)
-      .then(r => r.json())
+    apiFetch(`/api/guest/eventi?entity_tipo=ristorante&entity_id=${ristorante.id}`)
       .then(d => Array.isArray(d) && setUpcomingEventi(d))
       .catch(() => {})
   }, [ristorante.id])

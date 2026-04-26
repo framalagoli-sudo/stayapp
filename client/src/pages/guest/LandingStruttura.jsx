@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { MapPin, Phone, Mail, ChevronDown, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro, Heart, Award, Mountain, Wind, Calendar, Users } from 'lucide-react'
+import { apiFetch } from '../../lib/api'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -73,8 +74,7 @@ export default function LandingStruttura({ property }) {
   const aboutRef = useRef(null)
 
   useEffect(() => {
-    fetch(`/api/guest/eventi?entity_tipo=struttura&entity_id=${property.id}`)
-      .then(r => r.json())
+    apiFetch(`/api/guest/eventi?entity_tipo=struttura&entity_id=${property.id}`)
       .then(d => Array.isArray(d) && setUpcomingEventi(d))
       .catch(() => {})
   }, [property.id])
