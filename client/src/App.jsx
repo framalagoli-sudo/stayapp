@@ -105,7 +105,6 @@ export default function App() {
 
             {/* Eventi */}
             <Route path="eventi"                         element={<EventiListPage />} />
-            <Route path="eventi/new"                     element={<EventoEditPage />} />
             <Route path="eventi/:id"                     element={<EventoEditPage />} />
             <Route path="eventi/:id/prenotazioni"        element={<EventoPrenotazioniPage />} />
           </Route>
