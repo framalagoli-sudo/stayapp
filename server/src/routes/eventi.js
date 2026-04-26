@@ -30,9 +30,9 @@ router.get('/', requireAuth, async (req, res) => {
 
   let query = supabase.from('eventi').select('*').order('date_start')
   if (profile.role !== 'super_admin') {
-    if (!profile.azienda_id) return res.json([])
+    if (!isUUID(profile.azienda_id)) return res.json([])
     query = query.eq('azienda_id', profile.azienda_id)
-  } else if (req.query.azienda_id) {
+  } else if (isUUID(req.query.azienda_id)) {
     query = query.eq('azienda_id', req.query.azienda_id)
   }
 

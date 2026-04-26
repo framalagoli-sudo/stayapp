@@ -30,7 +30,7 @@ export default function EventoEditPage() {
   const [form, setForm] = useState({
     title: '', description: '', date_start: '', date_end: '', location: '',
     price: '', seats_total: '', active: true, published: false,
-    entity_tipo: '', entity_id: '', packages: [],
+    entity_tipo: '', entity_id: '', azienda_id: '', packages: [],
   })
   const [cover, setCover] = useState(null)       // URL attuale
   const [uploading, setUploading] = useState(false)
@@ -53,6 +53,7 @@ export default function EventoEditPage() {
           published:   ev.published ?? false,
           entity_tipo: ev.entity_tipo || '',
           entity_id:   ev.entity_id   || '',
+          azienda_id:  ev.azienda_id  || '',
           packages:    (ev.packages || []).map(p => ({
             ...p, price: p.price ?? '', includes: p.includes || [],
           })),
@@ -102,9 +103,10 @@ export default function EventoEditPage() {
     try {
       const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
       const safeEntityId = UUID_RE.test(form.entity_id) ? form.entity_id : null
+      const resolvedAziendaId = azienda?.id || (UUID_RE.test(form.azienda_id) ? form.azienda_id : undefined)
       const payload = {
         ...form,
-        azienda_id:  azienda?.id || undefined,
+        azienda_id:  resolvedAziendaId,
         price:       form.price       === '' ? 0    : parseFloat(form.price),
         seats_total: form.seats_total === '' ? null : parseInt(form.seats_total),
         date_start:  form.date_start ? new Date(form.date_start).toISOString() : null,
@@ -137,8 +139,8 @@ export default function EventoEditPage() {
   }
 
   const entityOptions = [
-    ...strutture.map(s => ({ tipo: 'struttura', id: s.id, name: `Struttura: ${s.name}` })),
-    ...ristoranti.map(r => ({ tipo: 'ristorante', id: r.id, name: `Ristorante: ${r.name}` })),
+    ...strutture.map(s => ({ tipo: 'struttura', id: s.id, name: `Struttura: ${s.name}`, azienda_id: s.azienda_id })),
+    ...ristoranti.map(r => ({ tipo: 'ristorante', id: r.id, name: `Ristorante: ${r.name}`, azienda_id: r.azienda_id })),
   ]
 
   return (
@@ -228,8 +230,9 @@ export default function EventoEditPage() {
                 value={form.entity_id}
                 onChange={e => {
                   const opt = entityOptions.find(o => o.id === e.target.value)
-                  set('entity_id',   opt?.id   || '')
-                  set('entity_tipo', opt?.tipo  || '')
+                  set('entity_id',    opt?.id         || '')
+                  set('entity_tipo',  opt?.tipo        || '')
+                  set('azienda_id',   opt?.azienda_id  || '')
                 }}
                 style={{ ...inp, cursor: 'pointer' }}
               >
