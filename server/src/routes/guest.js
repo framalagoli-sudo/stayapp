@@ -34,23 +34,6 @@ async function getCollegamenti(tipo, id) {
   return result
 }
 
-// GET /api/guest/:slug — struttura (public)
-router.get('/:slug', async (req, res) => {
-  if (req.params.slug === 'r') return
-
-  const { data, error } = await supabase
-    .from('properties')
-    .select('id, name, description, address, phone, wifi_name, wifi_password, checkin_time, checkout_time, rules, amenities, logo_url, cover_url, plan, modules, theme, services, gallery, restaurant, activities, excursions, minisito')
-    .eq('slug', req.params.slug)
-    .eq('active', true)
-    .single()
-
-  if (error || !data) return res.status(404).json({ error: 'Struttura non trovata' })
-
-  const collegamenti = await getCollegamenti('struttura', data.id)
-  res.json({ ...data, collegamenti })
-})
-
 // GET /api/guest/r/:slug — ristorante (public)
 router.get('/r/:slug', async (req, res) => {
   const { data, error } = await supabase
@@ -116,6 +99,21 @@ router.post('/eventi/:id/book', async (req, res) => {
 
   if (error) return res.status(500).json({ error: error.message })
   res.status(201).json(data)
+})
+
+// GET /api/guest/:slug — struttura (public) — DEVE stare per ultima (catch-all)
+router.get('/:slug', async (req, res) => {
+  const { data, error } = await supabase
+    .from('properties')
+    .select('id, name, description, address, phone, wifi_name, wifi_password, checkin_time, checkout_time, rules, amenities, logo_url, cover_url, plan, modules, theme, services, gallery, restaurant, activities, excursions, minisito')
+    .eq('slug', req.params.slug)
+    .eq('active', true)
+    .single()
+
+  if (error || !data) return res.status(404).json({ error: 'Struttura non trovata' })
+
+  const collegamenti = await getCollegamenti('struttura', data.id)
+  res.json({ ...data, collegamenti })
 })
 
 export default router
