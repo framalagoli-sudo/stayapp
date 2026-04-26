@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, Phone, Mail, ChevronDown, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro, Heart, Award, Mountain, Wind, Calendar, Users } from 'lucide-react'
+import { MapPin, Phone, Mail, ChevronDown, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro, Heart, Award, Mountain, Wind, Calendar, Users, Plus, Minus } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
 
 const HEADING_FAMILIES = {
@@ -129,6 +129,8 @@ export default function LandingStruttura({ property }) {
   // Excursions: only active, max 6 preview
   const excursionItems = (property.excursions || []).filter(e => e.active !== false).slice(0, 6)
 
+  const testimonianze  = (mini.testimonianze || []).filter(t => t.text && t.author)
+  const faq            = (mini.faq           || []).filter(f => f.question && f.answer)
   const hasGallery     = sections.gallery     && gallery.length > 0
   const hasServices    = sections.services    && services.length > 0
   const hasActivities  = sections.activities  && activityItems.length > 0
@@ -268,6 +270,37 @@ export default function LandingStruttura({ property }) {
                 ))}
               </div>
             )}
+          </div>
+        </section>
+      )}
+
+      {/* Testimonianze */}
+      {testimonianze.length > 0 && (
+        <section style={{ padding: '80px 0', background: '#f9f9fb' }}>
+          <div className="land-section">
+            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
+              Cosa dicono i nostri ospiti
+            </h2>
+            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
+              Recensioni reali di chi ha soggiornato da noi
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
+              {testimonianze.map(t => (
+                <div key={t.id} style={{ background: '#fff', borderRadius: 16, padding: '28px 24px', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div style={{ fontSize: 40, lineHeight: 1, color: primary, opacity: 0.25, fontFamily: 'Georgia, serif', marginBottom: -8 }}>"</div>
+                  <p style={{ margin: 0, fontSize: 15, lineHeight: 1.7, color: '#444', flex: 1 }}>{t.text}</p>
+                  <div>
+                    <div style={{ display: 'flex', gap: 2, marginBottom: 8 }}>
+                      {[1,2,3,4,5].map(n => (
+                        <span key={n} style={{ color: n <= (t.rating || 5) ? '#f59e0b' : '#e0e0e0', fontSize: 16 }}>★</span>
+                      ))}
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>{t.author}</div>
+                    {t.location && <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{t.location}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       )}
@@ -452,6 +485,21 @@ export default function LandingStruttura({ property }) {
         </section>
       )}
 
+      {/* FAQ */}
+      {faq.length > 0 && (
+        <section style={{ padding: '80px 0', background: '#fff' }}>
+          <div className="land-section" style={{ maxWidth: 760 }}>
+            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
+              Domande frequenti
+            </h2>
+            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
+              Tutto quello che devi sapere prima di arrivare
+            </p>
+            <FaqAccordion faq={faq} primary={primary} />
+          </div>
+        </section>
+      )}
+
       {/* Info e contatti */}
       {hasInfo && (
         <section style={{ padding: '80px 0', background: '#1a1a2e', color: '#fff' }}>
@@ -521,6 +569,34 @@ export default function LandingStruttura({ property }) {
       )}
 
     </>
+  )
+}
+
+function FaqAccordion({ faq, primary }) {
+  const [open, setOpen] = useState(null)
+  return (
+    <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #f0f0f0' }}>
+      {faq.map((item, i) => {
+        const isOpen = open === item.id
+        return (
+          <div key={item.id} style={{ borderBottom: i < faq.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
+            <button onClick={() => setOpen(isOpen ? null : item.id)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '20px 24px', background: isOpen ? `${primary}08` : '#fff', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+              <span style={{ fontWeight: 700, fontSize: 16, color: '#1a1a2e', flex: 1 }}>{item.question}</span>
+              {isOpen
+                ? <Minus size={18} strokeWidth={2} color={primary} style={{ flexShrink: 0 }} />
+                : <Plus  size={18} strokeWidth={2} color={primary} style={{ flexShrink: 0 }} />
+              }
+            </button>
+            {isOpen && (
+              <div style={{ padding: '0 24px 20px', fontSize: 15, color: '#555', lineHeight: 1.7, background: `${primary}08` }}>
+                {item.answer}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
   )
 }
 

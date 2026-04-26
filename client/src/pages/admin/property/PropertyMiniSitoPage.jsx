@@ -7,6 +7,7 @@ const DEFAULT_SOCIAL     = { instagram: '', facebook: '', tripadvisor: '', whats
 const DEFAULT = {
   active: false, tagline: '', booking_url: '', seo_title: '', seo_description: '',
   sections: DEFAULT_SECTIONS, social: DEFAULT_SOCIAL, highlights: [],
+  testimonianze: [], faq: [],
 }
 
 const HIGHLIGHT_ICONS = [
@@ -41,9 +42,11 @@ export default function PropertyMiniSitoPage() {
       const s = property.minisito || {}
       setForm({
         ...DEFAULT, ...s,
-        sections:   { ...DEFAULT_SECTIONS, ...(s.sections   || {}) },
-        social:     { ...DEFAULT_SOCIAL,   ...(s.social     || {}) },
-        highlights: s.highlights || [],
+        sections:      { ...DEFAULT_SECTIONS, ...(s.sections   || {}) },
+        social:        { ...DEFAULT_SOCIAL,   ...(s.social     || {}) },
+        highlights:    s.highlights    || [],
+        testimonianze: s.testimonianze || [],
+        faq:           s.faq           || [],
       })
     }
   }, [property])
@@ -74,6 +77,38 @@ export default function PropertyMiniSitoPage() {
 
   function removeHighlight(id) {
     const updated = { ...form, highlights: form.highlights.filter(h => h.id !== id) }
+    setForm(updated)
+    save({ minisito: updated }).catch(() => {})
+  }
+
+  function addTestimonianza() {
+    const updated = { ...form, testimonianze: [...(form.testimonianze || []), { id: crypto.randomUUID(), author: '', location: '', rating: 5, text: '' }] }
+    setForm(updated)
+    save({ minisito: updated }).catch(() => {})
+  }
+  function updateTestimonianza(id, patch) {
+    const updated = { ...form, testimonianze: form.testimonianze.map(t => t.id === id ? { ...t, ...patch } : t) }
+    setForm(updated)
+    save({ minisito: updated }).catch(() => {})
+  }
+  function removeTestimonianza(id) {
+    const updated = { ...form, testimonianze: form.testimonianze.filter(t => t.id !== id) }
+    setForm(updated)
+    save({ minisito: updated }).catch(() => {})
+  }
+
+  function addFaq() {
+    const updated = { ...form, faq: [...(form.faq || []), { id: crypto.randomUUID(), question: '', answer: '' }] }
+    setForm(updated)
+    save({ minisito: updated }).catch(() => {})
+  }
+  function updateFaq(id, patch) {
+    const updated = { ...form, faq: form.faq.map(f => f.id === id ? { ...f, ...patch } : f) }
+    setForm(updated)
+    save({ minisito: updated }).catch(() => {})
+  }
+  function removeFaq(id) {
+    const updated = { ...form, faq: form.faq.filter(f => f.id !== id) }
     setForm(updated)
     save({ minisito: updated }).catch(() => {})
   }
@@ -259,6 +294,41 @@ export default function PropertyMiniSitoPage() {
         )}
       </div>
 
+      {/* Testimonianze */}
+      <div style={cardStyle}>
+        <h3 style={sectionTitle}>Testimonianze ospiti</h3>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+          Inserisci recensioni reali dei tuoi ospiti. Vengono mostrate come card nel minisito.
+        </p>
+        {(form.testimonianze || []).map(t => (
+          <TestimonianzaItem key={t.id} item={t}
+            onPatch={p => updateTestimonianza(t.id, p)}
+            onRemove={() => removeTestimonianza(t.id)} />
+        ))}
+        {(form.testimonianze || []).length < 10 && (
+          <button onClick={addTestimonianza} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#1a1a2e', background: '#f0f4ff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
+            <Plus size={14} strokeWidth={2.5} /> Aggiungi testimonianza
+          </button>
+        )}
+      </div>
+
+      {/* FAQ */}
+      <div style={cardStyle}>
+        <h3 style={sectionTitle}>Domande frequenti (FAQ)</h3>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+          Rispondi alle domande più comuni. Appaiono come accordion nel minisito.
+        </p>
+        {(form.faq || []).map((f, i) => (
+          <FaqItem key={f.id} item={f}
+            onPatch={p => updateFaq(f.id, p)}
+            onRemove={() => removeFaq(f.id)}
+            borderBottom={i < form.faq.length - 1} />
+        ))}
+        <button onClick={addFaq} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#1a1a2e', background: '#f0f4ff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 12 }}>
+          <Plus size={14} strokeWidth={2.5} /> Aggiungi domanda
+        </button>
+      </div>
+
       {/* Social */}
       <div style={cardStyle}>
         <h3 style={sectionTitle}>Social e link utili</h3>
@@ -278,6 +348,75 @@ export default function PropertyMiniSitoPage() {
             />
           </div>
         ))}
+      </div>
+    </div>
+  )
+}
+
+function StarRating({ value, onChange }) {
+  return (
+    <div style={{ display: 'flex', gap: 3 }}>
+      {[1, 2, 3, 4, 5].map(n => (
+        <button key={n} type="button" onClick={() => onChange(n)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: n <= value ? '#f59e0b' : '#ddd', fontSize: 18, lineHeight: 1 }}>
+          ★
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function TestimonianzaItem({ item, onPatch, onRemove }) {
+  const [author,   setAuthor]   = useState(item.author)
+  const [location, setLocation] = useState(item.location)
+  const [text,     setText]     = useState(item.text)
+  return (
+    <div style={{ background: '#f9f9fb', borderRadius: 10, padding: 16, marginBottom: 12 }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+        <div style={{ flex: 1 }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Nome ospite</label>
+          <input value={author} onChange={e => setAuthor(e.target.value)} onBlur={() => onPatch({ author })}
+            placeholder="es. Marco R." style={inputStyle} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Provenienza (opzionale)</label>
+          <input value={location} onChange={e => setLocation(e.target.value)} onBlur={() => onPatch({ location })}
+            placeholder="es. Milano" style={inputStyle} />
+        </div>
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ ...lblStyle, marginBottom: 6 }}>Valutazione</label>
+        <StarRating value={item.rating} onChange={r => onPatch({ rating: r })} />
+      </div>
+      <div style={{ marginBottom: 8 }}>
+        <label style={{ ...lblStyle, marginBottom: 4 }}>Testo recensione</label>
+        <textarea value={text} onChange={e => setText(e.target.value)} onBlur={() => onPatch({ text })}
+          rows={3} placeholder="es. Struttura meravigliosa, personale gentilissimo…"
+          style={{ ...inputStyle, resize: 'vertical' }} />
+      </div>
+      <button onClick={onRemove} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 12, padding: 0 }}>
+        <Trash2 size={13} strokeWidth={1.5} /> Rimuovi
+      </button>
+    </div>
+  )
+}
+
+function FaqItem({ item, onPatch, onRemove, borderBottom }) {
+  const [question, setQuestion] = useState(item.question)
+  const [answer,   setAnswer]   = useState(item.answer)
+  return (
+    <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: borderBottom ? '1px solid #f0f0f0' : 'none' }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+        <div style={{ flex: 1 }}>
+          <input value={question} onChange={e => setQuestion(e.target.value)} onBlur={() => onPatch({ question })}
+            placeholder="es. Il parcheggio è incluso?" style={{ ...inputStyle, marginBottom: 8, fontWeight: 600 }} />
+          <textarea value={answer} onChange={e => setAnswer(e.target.value)} onBlur={() => onPatch({ answer })}
+            rows={2} placeholder="es. Sì, disponiamo di un ampio parcheggio gratuito per tutti gli ospiti."
+            style={{ ...inputStyle, resize: 'vertical' }} />
+        </div>
+        <button onClick={onRemove} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 6, flexShrink: 0, marginTop: 2 }}>
+          <Trash2 size={15} strokeWidth={1.5} />
+        </button>
       </div>
     </div>
   )
