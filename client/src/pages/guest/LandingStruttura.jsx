@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, Phone, Mail, ChevronDown, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro, Heart, Award, Mountain, Wind, Calendar, Users } from 'lucide-react'
+import { MapPin, Phone, Mail, ChevronDown, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro, Heart, Award, Mountain, Wind, Calendar, Users, X, Check } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
 
 const HEADING_FAMILIES = {
@@ -71,6 +71,7 @@ export default function LandingStruttura({ property }) {
   const [scrolled,       setScrolled]       = useState(false)
   const [lightbox,       setLightbox]       = useState(null)
   const [upcomingEventi, setUpcomingEventi] = useState([])
+  const [selectedEvento, setSelectedEvento] = useState(null)
   const aboutRef = useRef(null)
 
   useEffect(() => {
@@ -397,7 +398,9 @@ export default function LandingStruttura({ property }) {
               {upcomingEventi.slice(0, 6).map(ev => {
                 const dateStr = new Date(ev.date_start).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
                 return (
-                  <div key={ev.id} style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+                  <div key={ev.id} onClick={() => setSelectedEvento(ev)} style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', cursor: 'pointer', transition: 'transform 0.14s ease, box-shadow 0.14s ease' }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(0,0,0,0.12)' }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)' }}>
                     {ev.cover_url
                       ? <img src={ev.cover_url} alt={ev.title} style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }} />
                       : <div style={{ width: '100%', height: 100, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -425,9 +428,7 @@ export default function LandingStruttura({ property }) {
                         <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>
                           {ev.price > 0 ? `€${ev.price}` : 'Gratuito'}
                         </span>
-                        {(ev.packages || []).length > 0 && (
-                          <span style={{ fontSize: 11, color: '#aaa' }}>{ev.packages.length} {ev.packages.length === 1 ? 'pacchetto' : 'pacchetti'}</span>
-                        )}
+                        <span style={{ fontSize: 13, fontWeight: 700, color: primary }}>Prenota →</span>
                       </div>
                     </div>
                   </div>
@@ -519,7 +520,113 @@ export default function LandingStruttura({ property }) {
           <img src={lightbox} alt="" style={{ maxWidth: '100%', maxHeight: '92vh', borderRadius: 8, objectFit: 'contain' }} />
         </div>
       )}
+
+      {/* Evento modal */}
+      {selectedEvento && (
+        <EventoModal evento={selectedEvento} primary={primary} heading={heading} body={body} onClose={() => setSelectedEvento(null)} />
+      )}
     </>
+  )
+}
+
+function EventoModal({ evento, primary, heading, body, onClose }) {
+  const [pkgId,      setPkgId]      = useState(evento.packages?.length === 1 ? evento.packages[0].id : '')
+  const [seats,      setSeats]      = useState(1)
+  const [guestName,  setGuestName]  = useState('')
+  const [guestEmail, setGuestEmail] = useState('')
+  const [guestPhone, setGuestPhone] = useState('')
+  const [booking,    setBooking]    = useState(false)
+  const [done,       setDone]       = useState(false)
+  const [bookErr,    setBookErr]    = useState('')
+
+  async function handleBook() {
+    if (!guestName.trim()) { setBookErr('Inserisci il tuo nome'); return }
+    if (!guestEmail.trim()) { setBookErr('Inserisci la tua email'); return }
+    setBooking(true); setBookErr('')
+    try {
+      await apiFetch(`/api/guest/eventi/${evento.id}/book`, {
+        method: 'POST',
+        body: JSON.stringify({ guest_name: guestName, guest_email: guestEmail,
+          guest_phone: guestPhone || null, package_id: pkgId || null, seats }),
+      })
+      setDone(true)
+    } catch (e) { setBookErr(e.message) }
+    finally { setBooking(false) }
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return '—'
+    return new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  }
+
+  const inp = { width: '100%', padding: '11px 14px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14, boxSizing: 'border-box', fontFamily: body }
+
+  return (
+    <div onClick={onClose}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
+      <div onClick={e => e.stopPropagation()}
+        style={{ background: '#fff', borderRadius: 20, maxWidth: 560, width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,0.35)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
+          <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 20, color: '#1a1a2e' }}>{evento.title}</span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, color: '#888', display: 'flex', borderRadius: 8 }}>
+            <X size={22} strokeWidth={1.5} />
+          </button>
+        </div>
+        <div style={{ overflowY: 'auto', flex: 1, padding: 24 }}>
+          {evento.cover_url && <img src={evento.cover_url} alt={evento.title} style={{ width: '100%', height: 220, objectFit: 'cover', borderRadius: 12, marginBottom: 20, display: 'block' }} />}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 14, color: '#555' }}><Calendar size={14} strokeWidth={1.5} color={primary} /> {fmtDate(evento.date_start)}</span>
+            {evento.location && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 14, color: '#555' }}><LocationPin size={14} strokeWidth={1.5} color={primary} /> {evento.location}</span>}
+            {evento.seats_total && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 14, color: '#555' }}><Users size={14} strokeWidth={1.5} color={primary} /> {evento.seats_total - (evento.seats_booked || 0)} posti disponibili</span>}
+          </div>
+          {evento.description && <p style={{ margin: '0 0 20px', fontSize: 15, color: '#555', lineHeight: 1.7 }}>{evento.description}</p>}
+
+          {(evento.packages || []).length > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 10 }}>Scegli pacchetto</div>
+              {evento.packages.map(pkg => (
+                <label key={pkg.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 10, border: `1.5px solid ${pkgId === pkg.id ? primary : '#e0e0e0'}`, marginBottom: 8, cursor: 'pointer', background: pkgId === pkg.id ? `${primary}10` : 'transparent' }}>
+                  <input type="radio" name="pkg" value={pkg.id} checked={pkgId === pkg.id} onChange={() => setPkgId(pkg.id)} style={{ accentColor: primary }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>{pkg.name}</div>
+                    {pkg.description && <div style={{ fontSize: 12, color: '#888' }}>{pkg.description}</div>}
+                  </div>
+                  <div style={{ fontWeight: 700, color: primary, fontSize: 15 }}>{pkg.price > 0 ? `€${pkg.price}` : 'Gratis'}</div>
+                </label>
+              ))}
+            </div>
+          )}
+
+          <div style={{ fontWeight: 800, fontSize: 26, color: primary, marginBottom: 24 }}>
+            {(() => { const pkg = (evento.packages || []).find(p => p.id === pkgId); const price = pkg ? pkg.price : (evento.price || 0); return price > 0 ? `€${price} / persona` : 'Gratuito' })()}
+          </div>
+
+          {done ? (
+            <div style={{ textAlign: 'center', padding: '24px 0' }}>
+              <Check size={48} strokeWidth={1.5} color={primary} style={{ display: 'block', margin: '0 auto 12px' }} />
+              <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6 }}>Prenotazione inviata!</div>
+              <div style={{ fontSize: 14, color: '#888' }}>Riceverai una conferma via email.</div>
+            </div>
+          ) : (
+            <>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 12 }}>I tuoi dati</div>
+              <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Nome e cognome *" style={{ ...inp, marginBottom: 10 }} />
+              <input value={guestEmail} onChange={e => setGuestEmail(e.target.value)} placeholder="Email *" type="email" style={{ ...inp, marginBottom: 10 }} />
+              <input value={guestPhone} onChange={e => setGuestPhone(e.target.value)} placeholder="Telefono (opzionale)" type="tel" style={{ ...inp, marginBottom: 10 }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                <label style={{ fontSize: 14, color: '#555', flexShrink: 0 }}>Posti:</label>
+                <input type="number" min="1" value={seats} onChange={e => setSeats(parseInt(e.target.value) || 1)} style={{ ...inp, width: 80, textAlign: 'center' }} />
+              </div>
+              {bookErr && <p style={{ color: '#e53e3e', fontSize: 13, marginBottom: 12 }}>{bookErr}</p>}
+              <button onClick={handleBook} disabled={booking}
+                style={{ width: '100%', padding: '15px', background: primary, color: '#fff', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
+                {booking ? 'Invio in corso…' : 'Prenota ora'}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
 
