@@ -7,8 +7,9 @@ const DEFAULT_SECTIONS = { gallery: true, menu_preview: true }
 const DEFAULT_SOCIAL   = { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' }
 const DEFAULT = {
   active: false, tagline: '', booking_url: '', seo_title: '', seo_description: '',
+  video_url: '',
   sections: DEFAULT_SECTIONS, social: DEFAULT_SOCIAL, highlights: [],
-  testimonianze: [], faq: [],
+  stats: [], promozioni: [], testimonianze: [], faq: [],
 }
 
 const HIGHLIGHT_ICONS = [
@@ -42,8 +43,11 @@ export default function RistoranteMiniSitoPage() {
         sections:      { ...DEFAULT_SECTIONS, ...(s.sections   || {}) },
         social:        { ...DEFAULT_SOCIAL,   ...(s.social     || {}) },
         highlights:    s.highlights    || [],
+        stats:         s.stats         || [],
+        promozioni:    s.promozioni    || [],
         testimonianze: s.testimonianze || [],
         faq:           s.faq           || [],
+        video_url:     s.video_url     || '',
       })
     }
   }, [ristorante])
@@ -76,6 +80,31 @@ export default function RistoranteMiniSitoPage() {
     const updated = { ...form, highlights: form.highlights.filter(h => h.id !== id) }
     setForm(updated)
     save({ minisito: updated }).catch(() => {})
+  }
+
+  function addStat() {
+    const updated = { ...form, stats: [...(form.stats || []), { id: crypto.randomUUID(), value: '', label: '' }] }
+    setForm(updated); save({ minisito: updated }).catch(() => {})
+  }
+  function updateStat(id, p) {
+    const updated = { ...form, stats: form.stats.map(s => s.id === id ? { ...s, ...p } : s) }
+    setForm(updated); save({ minisito: updated }).catch(() => {})
+  }
+  function removeStat(id) {
+    const updated = { ...form, stats: form.stats.filter(s => s.id !== id) }
+    setForm(updated); save({ minisito: updated }).catch(() => {})
+  }
+  function addPromo() {
+    const updated = { ...form, promozioni: [...(form.promozioni || []), { id: crypto.randomUUID(), badge: '', title: '', text: '', cta_label: '', cta_url: '', expires_at: '' }] }
+    setForm(updated); save({ minisito: updated }).catch(() => {})
+  }
+  function updatePromo(id, p) {
+    const updated = { ...form, promozioni: form.promozioni.map(x => x.id === id ? { ...x, ...p } : x) }
+    setForm(updated); save({ minisito: updated }).catch(() => {})
+  }
+  function removePromo(id) {
+    const updated = { ...form, promozioni: form.promozioni.filter(x => x.id !== id) }
+    setForm(updated); save({ minisito: updated }).catch(() => {})
   }
 
   function addTestimonianza() {
@@ -115,8 +144,9 @@ export default function RistoranteMiniSitoPage() {
   const landingUrl = `${window.location.origin}/r/${ristorante.slug}`
 
   const SECTION_ITEMS = [
-    { key: 'gallery',      label: 'Galleria foto',    hint: `${(ristorante.gallery || []).length} foto caricate` },
-    { key: 'menu_preview', label: 'Anteprima menu',   hint: `${(ristorante.menu    || []).length} categorie nel menu` },
+    { key: 'gallery',      label: 'Galleria foto',  hint: `${(ristorante.gallery || []).length} foto caricate` },
+    { key: 'menu_preview', label: 'Anteprima menu', hint: `${(ristorante.menu    || []).length} categorie nel menu` },
+    { key: 'show_map',     label: 'Mappa',           hint: ristorante.address ? `Mappa di: ${ristorante.address}` : 'Aggiungi un indirizzo nelle informazioni ristorante' },
   ]
 
   const SOCIAL_ITEMS = [
@@ -169,6 +199,16 @@ export default function RistoranteMiniSitoPage() {
             placeholder="es. Cucina tradizionale toscana dal 1985"
             style={inputStyle}
           />
+        </div>
+
+        <div style={fieldWrap}>
+          <label style={lblStyle}>Video (YouTube o Vimeo)</label>
+          <input type="url" value={form.video_url}
+            onChange={e => setForm(f => ({ ...f, video_url: e.target.value }))}
+            onBlur={() => save({ minisito: form }).catch(() => {})}
+            placeholder="https://www.youtube.com/watch?v=..."
+            style={inputStyle} />
+          <span style={hintStyle}>Incolla il link del video. Appare come sezione dedicata nel minisito.</span>
         </div>
 
         <div style={fieldWrap}>
@@ -281,6 +321,36 @@ export default function RistoranteMiniSitoPage() {
         )}
       </div>
 
+      {/* Stats */}
+      <div style={cardStyle}>
+        <h3 style={sectionTitle}>Numeri in evidenza</h3>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+          Fino a 4 numeri mostrati in una banda d'impatto (es. "500+ Coperti a settimana", "Michelin 2024").
+        </p>
+        {(form.stats || []).map(s => (
+          <StatItem key={s.id} item={s} onPatch={p => updateStat(s.id, p)} onRemove={() => removeStat(s.id)} />
+        ))}
+        {(form.stats || []).length < 4 && (
+          <button onClick={addStat} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#e63946', background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
+            <Plus size={14} strokeWidth={2.5} /> Aggiungi numero
+          </button>
+        )}
+      </div>
+
+      {/* Promozioni */}
+      <div style={cardStyle}>
+        <h3 style={sectionTitle}>Offerte e promozioni</h3>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+          Card promo con CTA. Se imposti una scadenza, la card sparisce automaticamente dopo quella data.
+        </p>
+        {(form.promozioni || []).map(p => (
+          <PromoItem key={p.id} item={p} accentColor="#e63946" onPatch={x => updatePromo(p.id, x)} onRemove={() => removePromo(p.id)} />
+        ))}
+        <button onClick={addPromo} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#e63946', background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
+          <Plus size={14} strokeWidth={2.5} /> Aggiungi offerta
+        </button>
+      </div>
+
       {/* Testimonianze */}
       <div style={cardStyle}>
         <h3 style={sectionTitle}>Testimonianze clienti</h3>
@@ -336,6 +406,72 @@ export default function RistoranteMiniSitoPage() {
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+function StatItem({ item, onPatch, onRemove }) {
+  const [value, setValue] = useState(item.value)
+  const [label, setLabel] = useState(item.label)
+  return (
+    <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
+      <input value={value} onChange={e => setValue(e.target.value)} onBlur={() => onPatch({ value })}
+        placeholder="es. 500+" style={{ ...inputStyle, flex: '0 0 110px', fontWeight: 700, textAlign: 'center' }} />
+      <input value={label} onChange={e => setLabel(e.target.value)} onBlur={() => onPatch({ label })}
+        placeholder="es. Coperti a settimana" style={{ ...inputStyle, flex: 1 }} />
+      <button onClick={onRemove} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 4, flexShrink: 0 }}>
+        <Trash2 size={16} strokeWidth={1.5} />
+      </button>
+    </div>
+  )
+}
+
+function PromoItem({ item, onPatch, onRemove }) {
+  const [badge,     setBadge]     = useState(item.badge)
+  const [title,     setTitle]     = useState(item.title)
+  const [text,      setText]      = useState(item.text)
+  const [ctaLabel,  setCtaLabel]  = useState(item.cta_label)
+  const [ctaUrl,    setCtaUrl]    = useState(item.cta_url)
+  const [expiresAt, setExpiresAt] = useState(item.expires_at)
+  return (
+    <div style={{ background: '#f9f9fb', borderRadius: 10, padding: 16, marginBottom: 12 }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+        <div style={{ flex: 1 }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Badge (opzionale)</label>
+          <input value={badge} onChange={e => setBadge(e.target.value)} onBlur={() => onPatch({ badge })}
+            placeholder="es. Offerta limitata" style={inputStyle} />
+        </div>
+        <div style={{ flex: '0 0 160px' }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Scadenza (opzionale)</label>
+          <input type="date" value={expiresAt} onChange={e => { setExpiresAt(e.target.value); onPatch({ expires_at: e.target.value }) }}
+            style={inputStyle} />
+        </div>
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ ...lblStyle, marginBottom: 4 }}>Titolo offerta *</label>
+        <input value={title} onChange={e => setTitle(e.target.value)} onBlur={() => onPatch({ title })}
+          placeholder="es. Menu degustazione primavera" style={{ ...inputStyle, fontWeight: 600 }} />
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ ...lblStyle, marginBottom: 4 }}>Descrizione</label>
+        <input value={text} onChange={e => setText(e.target.value)} onBlur={() => onPatch({ text })}
+          placeholder="es. 5 portate con abbinamento vini selezionati" style={inputStyle} />
+      </div>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
+        <div style={{ flex: '0 0 160px' }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Testo pulsante</label>
+          <input value={ctaLabel} onChange={e => setCtaLabel(e.target.value)} onBlur={() => onPatch({ cta_label: ctaLabel })}
+            placeholder="es. Prenota ora" style={inputStyle} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Link pulsante</label>
+          <input type="url" value={ctaUrl} onChange={e => setCtaUrl(e.target.value)} onBlur={() => onPatch({ cta_url: ctaUrl })}
+            placeholder="https://..." style={inputStyle} />
+        </div>
+      </div>
+      <button onClick={onRemove} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 12, padding: 0 }}>
+        <Trash2 size={13} strokeWidth={1.5} /> Rimuovi offerta
+      </button>
     </div>
   )
 }

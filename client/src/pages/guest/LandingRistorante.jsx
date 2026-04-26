@@ -59,6 +59,15 @@ function SocialLink({ href, label, color }) {
   )
 }
 
+function getEmbedUrl(url) {
+  if (!url) return null
+  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}?rel=0&modestbranding=1`
+  const vm = url.match(/vimeo\.com\/(\d+)/)
+  if (vm) return `https://player.vimeo.com/video/${vm[1]}?title=0&byline=0&portrait=0`
+  return null
+}
+
 export default function LandingRistorante({ ristorante }) {
   const [scrolled,       setScrolled]       = useState(false)
   const [lightbox,       setLightbox]       = useState(null)
@@ -111,6 +120,13 @@ export default function LandingRistorante({ ristorante }) {
   const menu       = ristorante.menu || []
   const testimonianze  = (mini.testimonianze || []).filter(t => t.text && t.author)
   const faq            = (mini.faq           || []).filter(f => f.question && f.answer)
+
+  const now            = new Date()
+  const stats          = (mini.stats      || []).filter(s => s.value && s.label)
+  const promozioni     = (mini.promozioni || []).filter(p => p.title && (!p.expires_at || new Date(p.expires_at) >= now))
+  const videoEmbedUrl  = getEmbedUrl(mini.video_url)
+  const showMap        = sections.show_map !== false && ristorante.address
+
   const hasGallery     = sections.gallery      && gallery.length > 0
   const hasMenuPreview = sections.menu_preview && menu.length > 0
   const hasEventi      = upcomingEventi.length > 0
@@ -227,6 +243,29 @@ export default function LandingRistorante({ ristorante }) {
         </section>
       )}
 
+      {/* Stats */}
+      {stats.length > 0 && (
+        <section style={{ padding: '64px 0', background: 'linear-gradient(135deg, #1a1a2e 0%, #0f1a1a 100%)' }}>
+          <div className="land-section">
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(stats.length, 4)}, 1fr)`, gap: 0 }}>
+              {stats.map((s, i) => (
+                <div key={s.id} style={{
+                  textAlign: 'center', padding: '8px 24px',
+                  borderRight: i < stats.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                }}>
+                  <div style={{ fontFamily: heading, fontSize: 'clamp(40px, 5vw, 64px)', fontWeight: 700, color: primary, lineHeight: 1, marginBottom: 10 }}>
+                    {s.value}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.5 }}>
+                    {s.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* About */}
       {ristorante.description && (
         <section style={{ padding: '80px 0' }}>
@@ -235,6 +274,26 @@ export default function LandingRistorante({ ristorante }) {
               La nostra cucina
             </h2>
             <p style={{ fontSize: 18, lineHeight: 1.8, color: '#555' }}>{ristorante.description}</p>
+          </div>
+        </section>
+      )}
+
+      {/* Video */}
+      {videoEmbedUrl && (
+        <section style={{ padding: '80px 0', background: '#fff' }}>
+          <div className="land-section" style={{ maxWidth: 960 }}>
+            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 8, textAlign: 'center' }}>
+              Scopri {ristorante.name}
+            </h2>
+            <p style={{ textAlign: 'center', color: '#888', marginBottom: 40, fontSize: 15 }}>Guarda il video e lasciati ispirare</p>
+            <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, borderRadius: 20, overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,0.18)' }}>
+              <iframe
+                src={videoEmbedUrl}
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
           </div>
         </section>
       )}
@@ -262,6 +321,46 @@ export default function LandingRistorante({ ristorante }) {
                     </div>
                     <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>{t.author}</div>
                     {t.location && <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{t.location}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Promozioni */}
+      {promozioni.length > 0 && (
+        <section style={{ padding: '80px 0', background: '#fff' }}>
+          <div className="land-section">
+            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
+              Offerte speciali
+            </h2>
+            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
+              Promozioni esclusive per i nostri clienti
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
+              {promozioni.map(p => (
+                <div key={p.id} style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', borderTop: `4px solid ${primary}` }}>
+                  <div style={{ padding: '28px 24px' }}>
+                    {p.badge && (
+                      <span style={{ display: 'inline-block', background: `${primary}18`, color: primary, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 14 }}>
+                        {p.badge}
+                      </span>
+                    )}
+                    <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 12, color: '#1a1a2e' }}>{p.title}</h3>
+                    {p.text && <p style={{ fontSize: 15, color: '#666', lineHeight: 1.6, marginBottom: 20 }}>{p.text}</p>}
+                    {p.expires_at && (
+                      <div style={{ fontSize: 12, color: '#aaa', marginBottom: 16 }}>
+                        Valida fino al {new Date(p.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
+                      </div>
+                    )}
+                    {p.cta_label && p.cta_url && (
+                      <a href={p.cta_url} target="_blank" rel="noopener noreferrer"
+                        style={{ display: 'inline-block', padding: '11px 24px', background: primary, color: '#fff', borderRadius: 50, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+                        {p.cta_label}
+                      </a>
+                    )}
                   </div>
                 </div>
               ))}
@@ -313,11 +412,13 @@ export default function LandingRistorante({ ristorante }) {
             <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
               {upcomingEventi.length} {upcomingEventi.length === 1 ? 'evento in programma' : 'eventi in programma'}
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginBottom: 40 }}>
               {upcomingEventi.slice(0, 6).map(ev => {
                 const dateStr = new Date(ev.date_start).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
                 return (
-                  <div key={ev.id} style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+                  <a key={ev.id} href={`/eventi/${ev.id}`} style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', transition: 'transform 0.14s ease, box-shadow 0.14s ease' }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(0,0,0,0.12)' }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)' }}>
                     {ev.cover_url
                       ? <img src={ev.cover_url} alt={ev.title} style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }} />
                       : <div style={{ height: 100, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -341,11 +442,14 @@ export default function LandingRistorante({ ristorante }) {
                           </span>
                         )}
                       </div>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: primary }}>
-                        {ev.price > 0 ? `€${ev.price}` : 'Gratuito'}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+                        <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>
+                          {ev.price > 0 ? `€${ev.price}` : 'Gratuito'}
+                        </span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: primary }}>Prenota →</span>
                       </div>
                     </div>
-                  </div>
+                  </a>
                 )
               })}
             </div>
@@ -379,6 +483,20 @@ export default function LandingRistorante({ ristorante }) {
               ))}
             </div>
           </div>
+        </section>
+      )}
+
+      {/* Mappa */}
+      {showMap && (
+        <section style={{ lineHeight: 0 }}>
+          <iframe
+            title="mappa"
+            src={`https://maps.google.com/maps?q=${encodeURIComponent(ristorante.address)}&output=embed&z=15`}
+            width="100%" height="380"
+            style={{ border: 'none', display: 'block' }}
+            loading="lazy"
+            allowFullScreen
+          />
         </section>
       )}
 
