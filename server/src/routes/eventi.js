@@ -4,6 +4,9 @@ import { requireAuth } from '../middleware/auth.js'
 
 const router = Router()
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+function isUUID(v) { return UUID_RE.test(v) }
+
 function slugify(str) {
   return str.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -80,8 +83,10 @@ router.post('/', requireAuth, async (req, res) => {
   if (!title?.trim())  return res.status(400).json({ error: 'Il titolo è obbligatorio' })
   if (!date_start)     return res.status(400).json({ error: 'La data è obbligatoria' })
 
-  const azienda_id = profile.role === 'super_admin' ? req.body.azienda_id : profile.azienda_id
-  if (!azienda_id) return res.status(400).json({ error: 'azienda_id obbligatorio' })
+  // Accept azienda_id from client (for super_admin or as override); fallback to profile
+  const raw = isUUID(req.body.azienda_id) ? req.body.azienda_id : (isUUID(profile.azienda_id) ? profile.azienda_id : null)
+  const azienda_id = raw
+  if (!azienda_id) return res.status(400).json({ error: 'Nessuna azienda valida associata al profilo. Verifica le impostazioni utente.' })
 
   let base = slugify(title), slug = base, n = 0
   while (true) {
@@ -91,6 +96,8 @@ router.post('/', requireAuth, async (req, res) => {
   }
 
   const payload = Object.fromEntries(Object.entries(req.body).filter(([k]) => ALLOWED.includes(k)))
+  // Sanitize UUID fields — reject any non-UUID string (e.g. "undefined")
+  if (payload.entity_id && !isUUID(payload.entity_id)) { payload.entity_id = null; payload.entity_tipo = null }
   const { data, error } = await supabase.from('eventi').insert({ ...payload, azienda_id, slug }).select().single()
   if (error) return res.status(500).json({ error: error.message })
   res.status(201).json(data)
@@ -99,6 +106,7 @@ router.post('/', requireAuth, async (req, res) => {
 // PATCH /api/eventi/:id
 router.patch('/:id', requireAuth, async (req, res) => {
   const payload = Object.fromEntries(Object.entries(req.body).filter(([k]) => ALLOWED.includes(k)))
+  if (payload.entity_id && !isUUID(payload.entity_id)) { payload.entity_id = null; payload.entity_tipo = null }
   payload.updated_at = new Date().toISOString()
   const { data, error } = await supabase.from('eventi').update(payload).eq('id', req.params.id).select().single()
   if (error) return res.status(500).json({ error: error.message })

@@ -24,7 +24,7 @@ function toInputDate(iso) {
 export default function EventoEditPage() {
   const { id } = useParams()   // 'new' = creation
   const navigate = useNavigate()
-  const { strutture, ristoranti } = useAzienda()
+  const { azienda, strutture, ristoranti } = useAzienda()
   const isNew = id === 'new'
 
   const [form, setForm] = useState({
@@ -100,14 +100,17 @@ export default function EventoEditPage() {
     setError(null)
     setSaving(true)
     try {
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      const safeEntityId = UUID_RE.test(form.entity_id) ? form.entity_id : null
       const payload = {
         ...form,
+        azienda_id:  azienda?.id || undefined,
         price:       form.price       === '' ? 0    : parseFloat(form.price),
         seats_total: form.seats_total === '' ? null : parseInt(form.seats_total),
         date_start:  form.date_start ? new Date(form.date_start).toISOString() : null,
         date_end:    form.date_end   ? new Date(form.date_end).toISOString()   : null,
-        entity_tipo: form.entity_tipo || null,
-        entity_id:   form.entity_id   || null,
+        entity_tipo: safeEntityId ? (form.entity_tipo || null) : null,
+        entity_id:   safeEntityId,
         packages: form.packages.map(p => ({
           ...p,
           price: p.price === '' ? 0 : parseFloat(p.price),
