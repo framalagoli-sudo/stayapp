@@ -29,6 +29,9 @@ import PropertyActivitiesPage from './pages/admin/property/PropertyActivitiesPag
 import PropertyExcursionsPage from './pages/admin/property/PropertyExcursionsPage'
 import PropertyMiniSitoPage from './pages/admin/property/PropertyMiniSitoPage'
 import RistoranteMiniSitoPage from './pages/admin/ristorante/RistoranteMiniSitoPage'
+import EventiListPage from './pages/admin/eventi/EventiListPage'
+import EventoEditPage from './pages/admin/eventi/EventoEditPage'
+import EventoPrenotazioniPage from './pages/admin/eventi/EventoPrenotazioniPage'
 
 // Injects property ID from URL params into PropertyIdContext
 // so all property sub-pages work without modification
@@ -99,6 +102,12 @@ export default function App() {
             <Route path="property/activities" element={<PropertyActivitiesPage />} />
             <Route path="property/excursions" element={<PropertyExcursionsPage />} />
             <Route path="property/minisito"   element={<PropertyMiniSitoPage />} />
+
+            {/* Eventi */}
+            <Route path="eventi"                         element={<EventiListPage />} />
+            <Route path="eventi/new"                     element={<EventoEditPage />} />
+            <Route path="eventi/:id"                     element={<EventoEditPage />} />
+            <Route path="eventi/:id/prenotazioni"        element={<EventoPrenotazioniPage />} />
           </Route>
 
           {/* Root */}

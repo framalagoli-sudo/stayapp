@@ -241,6 +241,7 @@ export default function AdminLayout() {
             <NavLink to="/admin/ristoranti" style={({ isActive }) => navLinkStyle(isActive)}>Ristoranti</NavLink>
             <NavLink to="/admin/users"      style={({ isActive }) => navLinkStyle(isActive)}>Utenti</NavLink>
             <NavLink to="/admin/requests"   style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>
+            <NavLink to="/admin/eventi"     style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>
             {/* Sub-nav struttura quando super_admin gestisce una struttura via URL */}
             {strutturaUrlId && (
               <>
@@ -263,6 +264,7 @@ export default function AdminLayout() {
           <>
             <NavLink to="/admin/requests" style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>
             <NavLink to="/admin/chat"     style={({ isActive }) => navLinkStyle(isActive)}>Chat</NavLink>
+            <NavLink to="/admin/eventi"   style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>
             <NavLink to="/admin/qrcode"   style={({ isActive }) => navLinkStyle(isActive)}>QR Code</NavLink>
 
             {/* Solo struttura (no collapse) */}
@@ -313,6 +315,7 @@ export default function AdminLayout() {
           <>
             <NavLink to="/admin/requests" style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>
             <NavLink to="/admin/chat"     style={({ isActive }) => navLinkStyle(isActive)}>Chat</NavLink>
+            <NavLink to="/admin/eventi"   style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>
             <NavLink to="/admin/qrcode"   style={({ isActive }) => navLinkStyle(isActive)}>QR Code</NavLink>
             <SectionHeader label="La mia struttura" />
             {NAV_PROPERTY.map(({ to, label }) => (

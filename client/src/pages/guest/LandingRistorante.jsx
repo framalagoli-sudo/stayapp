@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { MapPin, Phone, Mail, Clock, ChevronDown, Utensils, Wine, Coffee, Music, Car, Wind, Wifi, Bell, Bus, Star, Heart, Award } from 'lucide-react'
+import { MapPin, Phone, Mail, Clock, ChevronDown, Utensils, Wine, Coffee, Music, Car, Wind, Wifi, Bell, Bus, Star, Heart, Award, Calendar, Users } from 'lucide-react'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -59,8 +59,16 @@ function SocialLink({ href, label, color }) {
 }
 
 export default function LandingRistorante({ ristorante }) {
-  const [scrolled,  setScrolled]  = useState(false)
-  const [lightbox,  setLightbox]  = useState(null)
+  const [scrolled,       setScrolled]       = useState(false)
+  const [lightbox,       setLightbox]       = useState(null)
+  const [upcomingEventi, setUpcomingEventi] = useState([])
+
+  useEffect(() => {
+    fetch(`/api/guest/eventi?entity_tipo=ristorante&entity_id=${ristorante.id}`)
+      .then(r => r.json())
+      .then(d => Array.isArray(d) && setUpcomingEventi(d))
+      .catch(() => {})
+  }, [ristorante.id])
 
   const theme   = { primaryColor: '#e63946', fontHeading: 'playfair', fontBody: 'inter', ...(ristorante.theme || {}) }
   const primary = theme.primaryColor
@@ -103,6 +111,7 @@ export default function LandingRistorante({ ristorante }) {
   const menu       = ristorante.menu || []
   const hasGallery     = sections.gallery      && gallery.length > 0
   const hasMenuPreview = sections.menu_preview && menu.length > 0
+  const hasEventi      = upcomingEventi.length > 0
 
   return (
     <>
@@ -256,6 +265,56 @@ export default function LandingRistorante({ ristorante }) {
               <a href={pwaUrl} style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
                 Menu completo
               </a>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Eventi */}
+      {hasEventi && (
+        <section style={{ padding: '80px 0', background: '#f9f9fb' }}>
+          <div className="land-section">
+            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
+              Prossimi eventi
+            </h2>
+            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
+              {upcomingEventi.length} {upcomingEventi.length === 1 ? 'evento in programma' : 'eventi in programma'}
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+              {upcomingEventi.slice(0, 6).map(ev => {
+                const dateStr = new Date(ev.date_start).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+                return (
+                  <div key={ev.id} style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+                    {ev.cover_url
+                      ? <img src={ev.cover_url} alt={ev.title} style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }} />
+                      : <div style={{ height: 100, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Calendar size={36} strokeWidth={1.5} color={primary} />
+                        </div>
+                    }
+                    <div style={{ padding: '16px 18px' }}>
+                      <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>{ev.title}</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}>
+                          <Calendar size={12} strokeWidth={1.5} color={primary} /> {dateStr}
+                        </span>
+                        {ev.location && (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}>
+                            <MapPin size={12} strokeWidth={1.5} color={primary} /> {ev.location}
+                          </span>
+                        )}
+                        {ev.seats_total && (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}>
+                            <Users size={12} strokeWidth={1.5} color={primary} /> {ev.seats_total - ev.seats_booked} posti
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: primary }}>
+                        {ev.price > 0 ? `€${ev.price}` : 'Gratuito'}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </section>

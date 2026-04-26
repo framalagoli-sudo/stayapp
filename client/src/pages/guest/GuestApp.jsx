@@ -3,7 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom'
 import LandingStruttura from './LandingStruttura'
 import {
   Home, Compass, Bell, Info, MessageCircle, Send,
-  Images, LayoutGrid, Zap, Mountain,
+  Images, LayoutGrid, Zap, Mountain, Calendar, Users, Euro,
   Wifi, Phone, Mail, MapPin, FileText,
   X, Check, ChevronRight,
 } from 'lucide-react'
@@ -83,10 +83,11 @@ export default function GuestApp() {
   const { slug } = useParams()
   const [searchParams] = useSearchParams()
   const isQR = searchParams.get('qr') === '1'
-  const [property,     setProperty]     = useState(null)
-  const [error,        setError]        = useState(null)
-  const [nav,          setNav]          = useState('home')
-  const [exploreChip,  setExploreChip]  = useState(null)
+  const [property,       setProperty]       = useState(null)
+  const [upcomingEventi, setUpcomingEventi] = useState([])
+  const [error,          setError]          = useState(null)
+  const [nav,            setNav]            = useState('home')
+  const [exploreChip,    setExploreChip]    = useState(null)
   const [compactBar,   setCompactBar]   = useState(false)
   const [showArrow,    setShowArrow]    = useState(true)
   const scrollRef  = useRef(null)
@@ -94,7 +95,12 @@ export default function GuestApp() {
 
   useEffect(() => {
     apiFetch(`/api/guest/${slug}`)
-      .then(setProperty)
+      .then(prop => {
+        setProperty(prop)
+        apiFetch(`/api/guest/eventi?entity_tipo=struttura&entity_id=${prop.id}`)
+          .then(setUpcomingEventi)
+          .catch(() => {})
+      })
       .catch(() => setError('Struttura non trovata.'))
   }, [slug])
 
@@ -151,11 +157,13 @@ export default function GuestApp() {
   const hasGallery    = (property.gallery   || []).length > 0
   const hasActivities = (property.activities|| []).some(c => c.items?.some(i => i.active))
   const hasExcursions = (property.excursions|| []).some(e => e.active)
+  const hasEventi     = upcomingEventi.length > 0
   const CHIPS = [
     hasGallery    && { key: 'galleria',   label: 'Galleria' },
     hasServices   && { key: 'servizi',    label: 'Servizi' },
     hasActivities && { key: 'attivita',   label: 'Attività' },
     hasExcursions && { key: 'escursioni', label: 'Escursioni' },
+    hasEventi     && { key: 'eventi',     label: 'Eventi' },
   ].filter(Boolean)
   const activeChip = CHIPS.find(c => c.key === exploreChip) ? exploreChip : CHIPS[0]?.key
 
@@ -282,8 +290,8 @@ export default function GuestApp() {
           <div ref={scrollRef} className="g-scroll" onScroll={handleScroll}>
             {AppHeader}
             <div key={nav} className="fade-up">
-              {nav === 'home'      && <HomePage      property={property} modules={modules} onExplore={goExplore} {...sp} headingFamily={headingFamily} />}
-              {nav === 'esplora'   && <EsploraPage   property={property} activeChip={activeChip} {...sp} headingFamily={headingFamily} />}
+              {nav === 'home'      && <HomePage      property={property} upcomingEventi={upcomingEventi} modules={modules} onExplore={goExplore} {...sp} headingFamily={headingFamily} />}
+              {nav === 'esplora'   && <EsploraPage   property={property} upcomingEventi={upcomingEventi} activeChip={activeChip} {...sp} headingFamily={headingFamily} />}
               {nav === 'richiesta' && <div style={{ padding: 20 }}><RequestForm propertyId={property.id} modules={modules} primary={primary} radius={radius} textColor={textColor} isDark={isDark} /></div>}
               {nav === 'chat'      && <ChatPage      propertyId={property.id} propertyName={property.name} {...sp} headingFamily={headingFamily} />}
               {nav === 'info'      && <InfoPage      property={property} modules={modules} {...sp} headingFamily={headingFamily} />}
@@ -309,11 +317,12 @@ export default function GuestApp() {
 }
 
 // ─── HOME ─────────────────────────────────────────────────────────────────────
-function HomePage({ property, modules, onExplore, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor }) {
+function HomePage({ property, upcomingEventi = [], modules, onExplore, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor }) {
   const hasServices   = (property.services  || []).length > 0
   const hasGallery    = (property.gallery   || []).length > 0
   const hasActivities = (property.activities|| []).some(c => c.items?.some(i => i.active))
   const hasExcursions = (property.excursions|| []).some(e => e.active)
+  const hasEventi     = upcomingEventi.length > 0
 
   const svcCount = property.services?.length || 0
   const actCount = (property.activities || []).reduce((n, c) => n + (c.items?.filter(i => i.active).length || 0), 0)
@@ -321,10 +330,11 @@ function HomePage({ property, modules, onExplore, primary, textColor, subText, i
   const galCount = property.gallery?.length || 0
 
   const CARDS = [
-    hasGallery    && { key: 'galleria',   Icon: Images,     label: 'Galleria',   sub: `${galCount} foto`,        photo: property.gallery?.[0] },
-    hasServices   && { key: 'servizi',    Icon: LayoutGrid, label: 'Servizi',    sub: `${svcCount} disponibili`, photo: null },
-    hasActivities && { key: 'attivita',   Icon: Zap,        label: 'Attività',   sub: `${actCount} attività`,    photo: null },
-    hasExcursions && { key: 'escursioni', Icon: Mountain,   label: 'Escursioni', sub: `${excCount} disponibili`, photo: null },
+    hasGallery    && { key: 'galleria',   Icon: Images,    label: 'Galleria',   sub: `${galCount} foto`,             photo: property.gallery?.[0] },
+    hasServices   && { key: 'servizi',    Icon: LayoutGrid, label: 'Servizi',   sub: `${svcCount} disponibili`,      photo: null },
+    hasActivities && { key: 'attivita',   Icon: Zap,        label: 'Attività',  sub: `${actCount} attività`,         photo: null },
+    hasExcursions && { key: 'escursioni', Icon: Mountain,   label: 'Escursioni', sub: `${excCount} disponibili`,     photo: null },
+    hasEventi     && { key: 'eventi',     Icon: Calendar,   label: 'Eventi',    sub: `${upcomingEventi.length} in programma`, photo: upcomingEventi[0]?.cover_url || null },
   ].filter(Boolean)
 
   return (
@@ -445,7 +455,7 @@ function HomePage({ property, modules, onExplore, primary, textColor, subText, i
 }
 
 // ─── ESPLORA ──────────────────────────────────────────────────────────────────
-function EsploraPage({ property, activeChip, primary, textColor, subText, isDark, radius, headingFamily }) {
+function EsploraPage({ property, upcomingEventi = [], activeChip, primary, textColor, subText, isDark, radius, headingFamily }) {
   const [lightbox, setLightbox] = useState(null)
   const sp = { primary, textColor, subText, isDark, radius, headingFamily }
 
@@ -465,6 +475,7 @@ function EsploraPage({ property, activeChip, primary, textColor, subText, isDark
         {activeChip === 'servizi'    && <ServicesTab services={property.services} {...sp} />}
         {activeChip === 'attivita'   && <ActivitiesTab activities={property.activities} propertyId={property.id} {...sp} />}
         {activeChip === 'escursioni' && <ExcursionsTab excursions={property.excursions} propertyId={property.id} {...sp} />}
+        {activeChip === 'eventi'     && <EventiTab eventi={upcomingEventi} {...sp} />}
       </div>
 
       {lightbox && (
@@ -555,6 +566,57 @@ function InfoPage({ property, modules, primary, textColor, subText, isDark, radi
         </InfoSection>
       )}
 
+    </div>
+  )
+}
+
+// ─── EventiTab ────────────────────────────────────────────────────────────────
+function EventiTab({ eventi, primary, textColor, subText, isDark, radius }) {
+  function fmtDate(iso) {
+    if (!iso) return '—'
+    return new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {eventi.map(ev => (
+        <div key={ev.id} style={{ background: isDark ? '#1e1e32' : '#fff', borderRadius: radius || 12, overflow: 'hidden', boxShadow: isDark ? 'none' : '0 2px 12px rgba(0,0,0,0.07)', border: isDark ? '1px solid rgba(255,255,255,0.08)' : 'none' }}>
+          {ev.cover_url && (
+            <img src={ev.cover_url} alt={ev.title} style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />
+          )}
+          <div style={{ padding: '14px 16px' }}>
+            <div style={{ fontWeight: 700, fontSize: 16, color: textColor, marginBottom: 6 }}>{ev.title}</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}>
+                <Calendar size={12} strokeWidth={1.5} color={primary} /> {fmtDate(ev.date_start)}
+              </span>
+              {ev.location && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}>
+                  <MapPin size={12} strokeWidth={1.5} color={primary} /> {ev.location}
+                </span>
+              )}
+              {ev.seats_total && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}>
+                  <Users size={12} strokeWidth={1.5} color={primary} /> {ev.seats_total - ev.seats_booked} posti
+                </span>
+              )}
+            </div>
+            {ev.description && (
+              <p style={{ margin: '0 0 10px', fontSize: 13, color: subText, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                {ev.description}
+              </p>
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>
+                {ev.price > 0 ? `€${ev.price}` : 'Gratuito'}
+              </span>
+              {(ev.packages || []).length > 0 && (
+                <span style={{ fontSize: 11, color: subText }}>{ev.packages.length} {ev.packages.length === 1 ? 'pacchetto' : 'pacchetti'}</span>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

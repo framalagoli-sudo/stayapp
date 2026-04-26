@@ -66,4 +66,56 @@ router.get('/r/:slug', async (req, res) => {
   res.json({ ...data, collegamenti })
 })
 
+// GET /api/guest/eventi?entity_tipo=struttura&entity_id=xxx — eventi pubblici
+router.get('/eventi', async (req, res) => {
+  const { entity_tipo, entity_id } = req.query
+  let query = supabase
+    .from('eventi')
+    .select('id, slug, title, description, cover_url, date_start, date_end, location, price, seats_total, seats_booked, packages')
+    .eq('published', true)
+    .eq('active', true)
+    .gte('date_start', new Date().toISOString())
+    .order('date_start')
+
+  if (entity_tipo && entity_id) {
+    query = query.eq('entity_tipo', entity_tipo).eq('entity_id', entity_id)
+  }
+
+  const { data, error } = await query
+  if (error) return res.status(500).json({ error: error.message })
+  res.json(data || [])
+})
+
+// POST /api/guest/eventi/:id/book — crea prenotazione (pubblico)
+router.post('/eventi/:id/book', async (req, res) => {
+  const { guest_name, guest_email, guest_phone, package_id, seats, notes } = req.body
+  if (!guest_name?.trim()) return res.status(400).json({ error: 'Nome obbligatorio' })
+  if (!guest_email?.trim()) return res.status(400).json({ error: 'Email obbligatoria' })
+
+  const { data: evento, error: evErr } = await supabase
+    .from('eventi').select('id, seats_total, seats_booked, packages, price').eq('id', req.params.id).single()
+  if (evErr || !evento) return res.status(404).json({ error: 'Evento non trovato' })
+
+  const reqSeats = parseInt(seats) || 1
+  if (evento.seats_total && (evento.seats_booked + reqSeats) > evento.seats_total)
+    return res.status(400).json({ error: 'Posti non disponibili' })
+
+  // Calcola importo totale
+  let price = evento.price || 0
+  if (package_id) {
+    const pkg = (evento.packages || []).find(p => p.id === package_id)
+    if (pkg) price = pkg.price || 0
+  }
+  const total_amount = price * reqSeats
+
+  const { data, error } = await supabase.from('event_bookings').insert({
+    event_id: req.params.id, guest_name, guest_email,
+    guest_phone: guest_phone || null, package_id: package_id || null,
+    seats: reqSeats, total_amount, notes: notes || null, status: 'pending',
+  }).select().single()
+
+  if (error) return res.status(500).json({ error: error.message })
+  res.status(201).json(data)
+})
+
 export default router

@@ -208,4 +208,35 @@ router.post('/restaurant-gallery', (req, res, next) => {
   }
 })
 
+// POST /api/upload/event-cover?evento_id=xxx
+router.post('/event-cover', (req, res, next) => {
+  upload.single('file')(req, res, err => {
+    if (err) return res.status(400).json({ error: `Errore file: ${err.message}` })
+    next()
+  })
+}, async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Nessun file ricevuto' })
+    const { evento_id } = req.query
+    if (!evento_id) return res.status(400).json({ error: 'evento_id obbligatorio' })
+
+    const ext = req.file.originalname.split('.').pop().toLowerCase()
+    const storagePath = `eventi/${evento_id}/cover-${Date.now()}.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('property-media')
+      .upload(storagePath, req.file.buffer, { contentType: req.file.mimetype, upsert: true })
+    if (uploadError) return res.status(500).json({ error: uploadError.message })
+
+    const { data } = supabase.storage.from('property-media').getPublicUrl(storagePath)
+    const url = `${data.publicUrl}?v=${Date.now()}`
+
+    await supabase.from('eventi').update({ cover_url: url, updated_at: new Date().toISOString() }).eq('id', evento_id)
+    res.json({ url })
+  } catch (err) {
+    console.error('Event cover upload error:', err)
+    res.status(500).json({ error: 'Errore interno del server' })
+  }
+})
+
 export default router
