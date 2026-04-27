@@ -4,6 +4,9 @@ import { requireAuth } from '../middleware/auth.js'
 
 const router = Router()
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+function toUuid(v) { return (v && UUID_RE.test(v)) ? v : null }
+
 function slugify(str) {
   return str.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -112,6 +115,7 @@ router.get('/', requireAuth, async (req, res) => {
 
 // GET /api/blog/:id — singolo (admin)
 router.get('/:id', requireAuth, async (req, res) => {
+  if (!UUID_RE.test(req.params.id)) return res.status(400).json({ error: 'ID non valido' })
   const { data, error } = await supabase.from('articoli').select('*').eq('id', req.params.id).single()
   if (error || !data) return res.status(404).json({ error: 'Non trovato' })
   res.json(data)
@@ -133,8 +137,8 @@ router.post('/', requireAuth, async (req, res) => {
     azienda_id, slug, title: title.trim(),
     excerpt: excerpt || null, content: content || null,
     cover_url: cover_url || null, author: author || null,
-    category_id: category_id || null,
-    entity_tipo: entity_tipo || null, entity_id: entity_id || null,
+    category_id: toUuid(category_id),
+    entity_tipo: entity_tipo || null, entity_id: toUuid(entity_id),
     published: !!published, published_at: published ? now : null,
   }).select().single()
   if (error) return res.status(500).json({ error: error.message })
@@ -143,9 +147,15 @@ router.post('/', requireAuth, async (req, res) => {
 
 // PATCH /api/blog/:id — aggiorna articolo
 router.patch('/:id', requireAuth, async (req, res) => {
+  if (!UUID_RE.test(req.params.id)) return res.status(400).json({ error: 'ID articolo non valido' })
+
   const allowed = ['title', 'excerpt', 'content', 'cover_url', 'author',
     'category_id', 'entity_tipo', 'entity_id', 'published', 'active']
   const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)))
+
+  // Normalizza campi UUID: stringa vuota o "undefined" → null
+  if ('category_id' in updates) updates.category_id = toUuid(updates.category_id)
+  if ('entity_id'   in updates) updates.entity_id   = toUuid(updates.entity_id)
 
   if (updates.published === true) {
     const { data: cur } = await supabase.from('articoli').select('published_at').eq('id', req.params.id).single()
