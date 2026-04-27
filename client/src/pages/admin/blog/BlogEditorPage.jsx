@@ -9,6 +9,7 @@ import { ArrowLeft, Upload, X, Eye, EyeOff } from 'lucide-react'
 export default function BlogEditorPage() {
   const { id } = useParams()
   const isNew = id === 'new'
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   const navigate = useNavigate()
   const { profile } = useAuth()
   const { azienda, strutture, ristoranti } = useAzienda()
@@ -29,6 +30,7 @@ export default function BlogEditorPage() {
   const fileRef = useRef()
 
   useEffect(() => {
+    if (!isNew && !UUID_RE.test(id)) { navigate('/admin/blog', { replace: true }); return }
     if (!aziendaId) return
     apiFetch(`/api/blog/categories?azienda_id=${aziendaId}`).then(setCategories).catch(() => {})
     if (!isNew) {
