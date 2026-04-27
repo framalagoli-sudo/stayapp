@@ -7,9 +7,10 @@ import { ArrowLeft, Trash2, Plus } from 'lucide-react'
 
 export default function BlogCategoriesPage() {
   const { profile } = useAuth()
-  const { azienda } = useAzienda()
+  const { azienda, strutture, ristoranti } = useAzienda()
   const navigate = useNavigate()
   const aziendaId = azienda?.id || profile?.azienda_id
+    || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id
 
   const [categories, setCategories] = useState([])
   const [newName, setNewName] = useState('')

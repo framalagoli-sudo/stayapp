@@ -13,7 +13,9 @@ export default function BlogEditorPage() {
   const { profile } = useAuth()
   const { azienda, strutture, ristoranti } = useAzienda()
 
+  // super_admin ha profile.azienda_id = null → fallback alla prima struttura/ristorante disponibile
   const aziendaId = azienda?.id || profile?.azienda_id
+    || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id
 
   const [form, setForm] = useState({
     title: '', excerpt: '', content: '', cover_url: '', author: '',
@@ -35,7 +37,7 @@ export default function BlogEditorPage() {
         cover_url: d.cover_url || '', author: d.author || '',
         category_id: d.category_id || '', entity_tipo: d.entity_tipo || '',
         entity_id: d.entity_id || '', published: !!d.published,
-      })).catch(() => navigate('/admin/blog'))
+      })).catch(e => setError(e?.message || 'Errore nel caricamento dell\'articolo'))
     }
   }, [aziendaId, id])
 

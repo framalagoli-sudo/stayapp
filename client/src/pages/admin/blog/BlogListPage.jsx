@@ -21,7 +21,7 @@ function badge(bg, color) {
 
 export default function BlogListPage() {
   const { profile } = useAuth()
-  const { azienda } = useAzienda()
+  const { azienda, strutture, ristoranti } = useAzienda()
   const navigate = useNavigate()
   const [articoli, setArticoli] = useState([])
   const [categories, setCategories] = useState([])
@@ -29,6 +29,7 @@ export default function BlogListPage() {
   const [loading, setLoading] = useState(true)
 
   const aziendaId = azienda?.id || profile?.azienda_id
+    || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id
 
   useEffect(() => {
     if (!aziendaId) return
