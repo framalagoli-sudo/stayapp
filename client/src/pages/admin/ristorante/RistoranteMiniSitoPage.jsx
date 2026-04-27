@@ -169,15 +169,16 @@ export default function RistoranteMiniSitoPage() {
     save({ minisito: form }).catch(() => {})
   }
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
+
   if (loading) return <p style={loadingStyle}>Caricamento…</p>
   if (!ristorante) return <p style={errorStyle}>Ristorante non trovato.</p>
 
   const landingUrl = `${window.location.origin}/r/${ristorante.slug}`
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  )
   const sectionOrder = form.section_order?.length ? form.section_order : DEFAULT_SECTION_ORDER
 
   function handleDragEnd(event) {

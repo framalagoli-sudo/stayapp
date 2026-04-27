@@ -179,15 +179,16 @@ export default function PropertyMiniSitoPage() {
     save({ minisito: form }).catch(() => {})
   }
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
+
   if (loading) return <p style={loadingStyle}>Caricamento…</p>
   if (!property) return <p style={errorStyle}>Struttura non trovata.</p>
 
   const landingUrl = `${window.location.origin}/s/${property.slug}`
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  )
   const sectionOrder = form.section_order?.length ? form.section_order : DEFAULT_SECTION_ORDER
 
   function handleDragEnd(event) {
