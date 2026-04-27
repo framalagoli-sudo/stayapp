@@ -239,4 +239,26 @@ router.post('/event-cover', (req, res, next) => {
   }
 })
 
+// POST /api/upload/blog-cover — cover articolo (solo URL, nessun aggiornamento DB)
+router.post('/blog-cover', (req, res, next) => {
+  upload.single('file')(req, res, err => {
+    if (err) return res.status(400).json({ error: `Errore file: ${err.message}` })
+    next()
+  })
+}, async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Nessun file ricevuto' })
+    const ext = req.file.originalname.split('.').pop().toLowerCase()
+    const storagePath = `blog/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    const { error: uploadError } = await supabase.storage
+      .from('property-media')
+      .upload(storagePath, req.file.buffer, { contentType: req.file.mimetype, upsert: true })
+    if (uploadError) return res.status(500).json({ error: uploadError.message })
+    const { data } = supabase.storage.from('property-media').getPublicUrl(storagePath)
+    res.json({ url: `${data.publicUrl}?v=${Date.now()}` })
+  } catch (err) {
+    res.status(500).json({ error: 'Errore interno del server' })
+  }
+})
+
 export default router

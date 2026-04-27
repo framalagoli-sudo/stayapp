@@ -33,6 +33,10 @@ import RistoranteMiniSitoPage from './pages/admin/ristorante/RistoranteMiniSitoP
 import EventiListPage from './pages/admin/eventi/EventiListPage'
 import EventoEditPage from './pages/admin/eventi/EventoEditPage'
 import EventoPrenotazioniPage from './pages/admin/eventi/EventoPrenotazioniPage'
+import BlogListPage from './pages/admin/blog/BlogListPage'
+import BlogEditorPage from './pages/admin/blog/BlogEditorPage'
+import BlogCategoriesPage from './pages/admin/blog/BlogCategoriesPage'
+import ArticoloPage from './pages/public/ArticoloPage'
 
 // Injects property ID from URL params into PropertyIdContext
 // so all property sub-pages work without modification
@@ -54,6 +58,7 @@ export default function App() {
           <Route path="/s/:slug" element={<GuestApp />} />
           <Route path="/r/:slug" element={<RestaurantApp />} />
           <Route path="/eventi/:id" element={<EventoPage />} />
+          <Route path="/blog/:slug" element={<ArticoloPage />} />
 
           {/* Admin */}
           <Route path="/admin/login" element={<LoginPage />} />
@@ -110,6 +115,12 @@ export default function App() {
             <Route path="eventi"                         element={<EventiListPage />} />
             <Route path="eventi/:id"                     element={<EventoEditPage />} />
             <Route path="eventi/:id/prenotazioni"        element={<EventoPrenotazioniPage />} />
+
+            {/* Blog */}
+            <Route path="blog"                   element={<BlogListPage />} />
+            <Route path="blog/new"               element={<BlogEditorPage />} />
+            <Route path="blog/categories"        element={<BlogCategoriesPage />} />
+            <Route path="blog/:id"               element={<BlogEditorPage />} />
           </Route>
 
           {/* Root */}

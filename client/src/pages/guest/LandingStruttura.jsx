@@ -79,18 +79,22 @@ function getEmbedUrl(url) {
 const DEFAULT_ORDER = [
   'highlights', 'stats', 'about', 'video', 'cta_banner',
   'testimonianze', 'promozioni', 'pacchetti',
-  'services', 'activities', 'excursions', 'eventi', 'gallery', 'faq', 'show_map',
+  'services', 'activities', 'excursions', 'eventi', 'news', 'gallery', 'faq', 'show_map',
 ]
 
 export default function LandingStruttura({ property }) {
   const [scrolled,       setScrolled]       = useState(false)
   const [lightbox,       setLightbox]       = useState(null)
   const [upcomingEventi, setUpcomingEventi] = useState([])
+  const [newsArticoli,   setNewsArticoli]   = useState([])
   const aboutRef = useRef(null)
 
   useEffect(() => {
     apiFetch(`/api/guest/eventi?entity_tipo=struttura&entity_id=${property.id}`)
       .then(d => Array.isArray(d) && setUpcomingEventi(d))
+      .catch(() => {})
+    apiFetch(`/api/blog/public?entity_tipo=struttura&entity_id=${property.id}&limit=6`)
+      .then(d => Array.isArray(d) && setNewsArticoli(d))
       .catch(() => {})
   }, [property.id])
 
@@ -485,6 +489,33 @@ export default function LandingStruttura({ property }) {
                     </a>
                   )
                 })}
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'news':
+        if (!newsArticoli.length) return null
+        return (
+          <section key="news" style={{ padding: '80px 0', background: '#fff' }}>
+            <div className="land-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>News & Aggiornamenti</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Le ultime novità dalla struttura</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
+                {newsArticoli.map(art => (
+                  <a key={art.id} href={`/blog/${art.slug}`}
+                    style={{ background: '#f9f9fb', borderRadius: 14, overflow: 'hidden', display: 'block', textDecoration: 'none', color: 'inherit', transition: 'transform 0.14s ease, box-shadow 0.14s ease', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.10)' }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)' }}>
+                    {art.cover_url && <img src={art.cover_url} alt={art.title} style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />}
+                    <div style={{ padding: '16px 18px' }}>
+                      {art.published_at && <div style={{ fontSize: 11, color: '#aaa', marginBottom: 6 }}>{new Date(art.published_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
+                      <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8, color: '#1a1a2e' }}>{art.title}</div>
+                      {art.excerpt && <div style={{ fontSize: 13, color: '#777', lineHeight: 1.5 }}>{art.excerpt}</div>}
+                      <div style={{ marginTop: 12, fontSize: 13, fontWeight: 700, color: primary }}>Leggi →</div>
+                    </div>
+                  </a>
+                ))}
               </div>
             </div>
           </section>
