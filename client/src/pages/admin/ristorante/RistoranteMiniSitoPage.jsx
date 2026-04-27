@@ -1,14 +1,22 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useRistorante } from '../../../hooks/useRistorante'
-import { ExternalLink, Plus, Trash2, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Mountain, Wind, Heart, Award, MapPin, Clock } from 'lucide-react'
+import { ExternalLink, Plus, Trash2, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Mountain, Wind, Heart, Award, MapPin, Clock, GripVertical } from 'lucide-react'
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
-const DEFAULT_SECTIONS   = { gallery: true, menu_preview: true }
-const DEFAULT_SOCIAL     = { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' }
-const DEFAULT_CTA_BANNER = { active: false, title: '', subtitle: '', cta_label: '', cta_url: '' }
+const DEFAULT_SECTIONS      = { gallery: true, menu_preview: true }
+const DEFAULT_SOCIAL        = { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' }
+const DEFAULT_CTA_BANNER    = { active: false, title: '', subtitle: '', cta_label: '', cta_url: '' }
+const DEFAULT_SECTION_ORDER = [
+  'highlights', 'stats', 'about', 'video', 'cta_banner',
+  'testimonianze', 'promozioni', 'menu_speciali', 'menu_preview',
+  'eventi', 'gallery', 'faq', 'show_map',
+]
 const DEFAULT = {
   active: false, tagline: '', booking_url: '', seo_title: '', seo_description: '',
-  video_url: '',
+  video_url: '', section_order: [],
   sections: DEFAULT_SECTIONS, social: DEFAULT_SOCIAL, highlights: [],
   stats: [], promozioni: [], menu_speciali: [], testimonianze: [], faq: [],
   cta_banner: DEFAULT_CTA_BANNER,
@@ -52,6 +60,7 @@ export default function RistoranteMiniSitoPage() {
         faq:           s.faq           || [],
         video_url:     s.video_url     || '',
         cta_banner:    { ...DEFAULT_CTA_BANNER, ...(s.cta_banner || {}) },
+        section_order: s.section_order || [],
       })
     }
   }, [ristorante])
@@ -165,10 +174,38 @@ export default function RistoranteMiniSitoPage() {
 
   const landingUrl = `${window.location.origin}/r/${ristorante.slug}`
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
+  const sectionOrder = form.section_order?.length ? form.section_order : DEFAULT_SECTION_ORDER
+
+  function handleDragEnd(event) {
+    const { active, over } = event
+    if (active.id !== over?.id) {
+      const oldIdx = sectionOrder.indexOf(active.id)
+      const newIdx = sectionOrder.indexOf(over.id)
+      const newOrder = arrayMove(sectionOrder, oldIdx, newIdx)
+      const updated = { ...form, section_order: newOrder }
+      setForm(updated)
+      save({ minisito: updated }).catch(() => {})
+    }
+  }
+
   const SECTION_ITEMS = [
-    { key: 'gallery',      label: 'Galleria foto',  hint: `${(ristorante.gallery || []).length} foto caricate` },
-    { key: 'menu_preview', label: 'Anteprima menu', hint: `${(ristorante.menu    || []).length} categorie nel menu` },
-    { key: 'show_map',     label: 'Mappa',           hint: ristorante.address ? `Mappa di: ${ristorante.address}` : 'Aggiungi un indirizzo nelle informazioni ristorante' },
+    { key: 'highlights',    label: 'Punti di forza',       hint: `${(form.highlights || []).length} punti configurati` },
+    { key: 'stats',         label: 'Numeri in evidenza',   hint: `${(form.stats || []).length} numeri configurati` },
+    { key: 'about',         label: 'La nostra cucina',     hint: ristorante.description ? 'Dalla descrizione ristorante' : 'Aggiungi una descrizione nelle info ristorante' },
+    { key: 'video',         label: 'Video',                hint: form.video_url ? 'Video configurato' : 'Aggiungi un link video nella sezione Contenuto' },
+    { key: 'cta_banner',    label: 'Banner CTA',           hint: form.cta_banner?.active ? 'Attivo' : 'Disattivo — attivalo nel card Banner CTA' },
+    { key: 'testimonianze', label: 'Testimonianze',        hint: `${(form.testimonianze || []).length} testimonianze configurate` },
+    { key: 'promozioni',    label: 'Offerte e promozioni', hint: `${(form.promozioni || []).length} offerte configurate` },
+    { key: 'menu_speciali', label: 'Menu degustazione',    hint: `${(form.menu_speciali || []).length} menu configurati` },
+    { key: 'menu_preview',  label: 'Anteprima menu',       hint: `${(ristorante.menu || []).length} categorie nel menu` },
+    { key: 'eventi',        label: 'Prossimi eventi',      hint: 'eventi pubblicati e associati al ristorante' },
+    { key: 'gallery',       label: 'Galleria foto',        hint: `${(ristorante.gallery || []).length} foto caricate` },
+    { key: 'faq',           label: 'FAQ',                  hint: `${(form.faq || []).length} domande configurate` },
+    { key: 'show_map',      label: 'Mappa',                hint: ristorante.address ? `Mappa di: ${ristorante.address}` : 'Aggiungi un indirizzo nelle informazioni ristorante' },
   ]
 
   const SOCIAL_ITEMS = [
@@ -278,27 +315,30 @@ export default function RistoranteMiniSitoPage() {
         </button>
       </form>
 
-      {/* Sezioni visibili */}
+      {/* Sezioni e ordine */}
       <div style={cardStyle}>
-        <h3 style={sectionTitle}>Sezioni visibili</h3>
+        <h3 style={sectionTitle}>Sezioni e ordine</h3>
         <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
-          Scegli quali contenuti mostrare. Vengono presi automaticamente dall'app.
+          Trascina le sezioni per riordinarle. Usa il toggle per mostrarle o nasconderle.
         </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-          {SECTION_ITEMS.map(({ key, label, hint }, i) => (
-            <div key={key} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '14px 0',
-              borderBottom: i < SECTION_ITEMS.length - 1 ? '1px solid #f0f0f0' : 'none',
-            }}>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: 14 }}>{label}</div>
-                <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{hint}</div>
-              </div>
-              <Toggle value={form.sections[key] !== false} onChange={v => patchSection(key, v)} color="#e63946" />
-            </div>
-          ))}
-        </div>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={sectionOrder} strategy={verticalListSortingStrategy}>
+            {sectionOrder.map((key, i) => {
+              const item = SECTION_ITEMS.find(s => s.key === key)
+              if (!item) return null
+              return (
+                <SortableSectionRow
+                  key={key} id={key}
+                  label={item.label} hint={item.hint}
+                  visible={form.sections[key] !== false}
+                  onToggle={v => patchSection(key, v)}
+                  color="#e63946"
+                  isLast={i === sectionOrder.length - 1}
+                />
+              )
+            })}
+          </SortableContext>
+        </DndContext>
       </div>
 
       {/* Highlights */}
@@ -485,6 +525,23 @@ export default function RistoranteMiniSitoPage() {
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+function SortableSectionRow({ id, label, hint, visible, onToggle, color, isLast }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
+  return (
+    <div ref={setNodeRef} style={{ ...style, display: 'flex', alignItems: 'center', gap: 10, padding: '14px 0', borderBottom: isLast ? 'none' : '1px solid #f0f0f0' }}>
+      <div {...attributes} {...listeners} style={{ cursor: 'grab', color: '#ccc', flexShrink: 0, display: 'flex', touchAction: 'none' }}>
+        <GripVertical size={18} strokeWidth={1.5} />
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontWeight: 600, fontSize: 14 }}>{label}</div>
+        {hint && <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{hint}</div>}
+      </div>
+      <Toggle value={visible} onChange={onToggle} color={color} />
     </div>
   )
 }

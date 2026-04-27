@@ -68,6 +68,12 @@ function getEmbedUrl(url) {
   return null
 }
 
+const DEFAULT_ORDER = [
+  'highlights', 'stats', 'about', 'video', 'cta_banner',
+  'testimonianze', 'promozioni', 'menu_speciali', 'menu_preview',
+  'eventi', 'gallery', 'faq', 'show_map',
+]
+
 export default function LandingRistorante({ ristorante }) {
   const [scrolled,       setScrolled]       = useState(false)
   const [lightbox,       setLightbox]       = useState(null)
@@ -84,7 +90,7 @@ export default function LandingRistorante({ ristorante }) {
   const heading = HEADING_FAMILIES[theme.fontHeading] || HEADING_FAMILIES.playfair
   const body    = BODY_FAMILIES[theme.fontBody]       || BODY_FAMILIES.inter
   const mini    = ristorante.minisito || {}
-  const sections = { gallery: true, menu_preview: true, ...(mini.sections || {}) }
+  const sections = { ...(mini.sections || {}) }
   const social   = mini.social || {}
   const socialLinks = SOCIAL_CONFIG.filter(s => social[s.key])
 
@@ -118,20 +124,387 @@ export default function LandingRistorante({ ristorante }) {
   const highlights = (mini.highlights || []).filter(h => h.text)
   const gallery    = (ristorante.gallery || []).slice(0, 9)
   const menu       = ristorante.menu || []
-  const testimonianze  = (mini.testimonianze || []).filter(t => t.text && t.author)
-  const faq            = (mini.faq           || []).filter(f => f.question && f.answer)
+  const testimonianze = (mini.testimonianze || []).filter(t => t.text && t.author)
+  const faq           = (mini.faq           || []).filter(f => f.question && f.answer)
 
-  const now            = new Date()
-  const stats          = (mini.stats        || []).filter(s => s.value && s.label)
-  const promozioni     = (mini.promozioni   || []).filter(p => p.title && (!p.expires_at || new Date(p.expires_at) >= now))
-  const menuSpeciali   = (mini.menu_speciali|| []).filter(m => m.name)
-  const videoEmbedUrl  = getEmbedUrl(mini.video_url)
-  const ctaBanner      = mini.cta_banner || {}
-  const showMap        = sections.show_map !== false && ristorante.address
+  const now           = new Date()
+  const stats         = (mini.stats        || []).filter(s => s.value && s.label)
+  const promozioni    = (mini.promozioni   || []).filter(p => p.title && (!p.expires_at || new Date(p.expires_at) >= now))
+  const menuSpeciali  = (mini.menu_speciali|| []).filter(m => m.name)
+  const videoEmbedUrl = getEmbedUrl(mini.video_url)
+  const ctaBanner     = mini.cta_banner || {}
 
-  const hasGallery     = sections.gallery      && gallery.length > 0
-  const hasMenuPreview = sections.menu_preview && menu.length > 0
-  const hasEventi      = upcomingEventi.length > 0
+  const hasInfo = ristorante.phone || ristorante.email || ristorante.address || ristorante.schedule
+
+  const sectionOrder = mini.section_order?.length ? mini.section_order : DEFAULT_ORDER
+
+  function renderSection(key) {
+    if (sections[key] === false) return null
+    switch (key) {
+      case 'highlights':
+        if (!highlights.length) return null
+        return (
+          <section key="highlights" style={{ padding: '56px 0', background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
+            <div className="land-section">
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(highlights.length, 3)}, 1fr)`, gap: 24 }}>
+                {highlights.map(h => {
+                  const Icon = highlightIcon(h.icon)
+                  return (
+                    <div key={h.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 12 }}>
+                      <div style={{ width: 56, height: 56, borderRadius: '50%', background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Icon size={24} strokeWidth={1.5} color={primary} />
+                      </div>
+                      <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#1a1a2e', lineHeight: 1.4 }}>{h.text}</p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'stats':
+        if (!stats.length) return null
+        return (
+          <section key="stats" style={{ padding: '64px 0', background: 'linear-gradient(135deg, #1a1a2e 0%, #0f1a1a 100%)' }}>
+            <div className="land-section">
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(stats.length, 4)}, 1fr)`, gap: 0 }}>
+                {stats.map((s, i) => (
+                  <div key={s.id} style={{
+                    textAlign: 'center', padding: '8px 24px',
+                    borderRight: i < stats.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                  }}>
+                    <div style={{ fontFamily: heading, fontSize: 'clamp(40px, 5vw, 64px)', fontWeight: 700, color: primary, lineHeight: 1, marginBottom: 10 }}>
+                      {s.value}
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.5 }}>
+                      {s.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'about':
+        if (!ristorante.description) return null
+        return (
+          <section key="about" style={{ padding: '80px 0' }}>
+            <div className="land-section" style={{ maxWidth: 800, textAlign: 'center' }}>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 700, marginBottom: 24 }}>
+                La nostra cucina
+              </h2>
+              <p style={{ fontSize: 18, lineHeight: 1.8, color: '#555' }}>{ristorante.description}</p>
+            </div>
+          </section>
+        )
+
+      case 'video':
+        if (!videoEmbedUrl) return null
+        return (
+          <section key="video" style={{ padding: '80px 0', background: '#fff' }}>
+            <div className="land-section" style={{ maxWidth: 960 }}>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 8, textAlign: 'center' }}>
+                Scopri {ristorante.name}
+              </h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 40, fontSize: 15 }}>Guarda il video e lasciati ispirare</p>
+              <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, borderRadius: 20, overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,0.18)' }}>
+                <iframe
+                  src={videoEmbedUrl}
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'cta_banner':
+        if (!ctaBanner.active || !ctaBanner.title) return null
+        return (
+          <section key="cta_banner" style={{ padding: '88px 24px', background: `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)`, textAlign: 'center' }}>
+            <h2 style={{ fontFamily: heading, fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 700, color: '#fff', marginBottom: 16, lineHeight: 1.15 }}>
+              {ctaBanner.title}
+            </h2>
+            {ctaBanner.subtitle && (
+              <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.85)', marginBottom: 40, maxWidth: 600, margin: '0 auto 40px', lineHeight: 1.6 }}>
+                {ctaBanner.subtitle}
+              </p>
+            )}
+            {ctaBanner.cta_label && ctaBanner.cta_url && (
+              <a href={ctaBanner.cta_url} target="_blank" rel="noopener noreferrer"
+                style={{ display: 'inline-block', padding: '16px 44px', background: '#fff', color: primary, borderRadius: 50, fontSize: 17, fontWeight: 800, textDecoration: 'none', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
+                {ctaBanner.cta_label}
+              </a>
+            )}
+          </section>
+        )
+
+      case 'testimonianze':
+        if (!testimonianze.length) return null
+        return (
+          <section key="testimonianze" style={{ padding: '80px 0', background: '#f9f9fb' }}>
+            <div className="land-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
+                Cosa dicono i nostri clienti
+              </h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
+                Recensioni reali di chi ha cenato da noi
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
+                {testimonianze.map(t => (
+                  <div key={t.id} style={{ background: '#fff', borderRadius: 16, padding: '28px 24px', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <div style={{ fontSize: 40, lineHeight: 1, color: primary, opacity: 0.25, fontFamily: 'Georgia, serif', marginBottom: -8 }}>"</div>
+                    <p style={{ margin: 0, fontSize: 15, lineHeight: 1.7, color: '#444', flex: 1 }}>{t.text}</p>
+                    <div>
+                      <div style={{ display: 'flex', gap: 2, marginBottom: 8 }}>
+                        {[1,2,3,4,5].map(n => (
+                          <span key={n} style={{ color: n <= (t.rating || 5) ? '#f59e0b' : '#e0e0e0', fontSize: 16 }}>★</span>
+                        ))}
+                      </div>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>{t.author}</div>
+                      {t.location && <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{t.location}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'promozioni':
+        if (!promozioni.length) return null
+        return (
+          <section key="promozioni" style={{ padding: '80px 0', background: '#fff' }}>
+            <div className="land-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
+                Offerte speciali
+              </h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
+                Promozioni esclusive per i nostri clienti
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
+                {promozioni.map(p => (
+                  <div key={p.id} style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', borderTop: `4px solid ${primary}` }}>
+                    <div style={{ padding: '28px 24px' }}>
+                      {p.badge && (
+                        <span style={{ display: 'inline-block', background: `${primary}18`, color: primary, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 14 }}>
+                          {p.badge}
+                        </span>
+                      )}
+                      <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 12, color: '#1a1a2e' }}>{p.title}</h3>
+                      {p.text && <p style={{ fontSize: 15, color: '#666', lineHeight: 1.6, marginBottom: 20 }}>{p.text}</p>}
+                      {p.expires_at && (
+                        <div style={{ fontSize: 12, color: '#aaa', marginBottom: 16 }}>
+                          Valida fino al {new Date(p.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
+                        </div>
+                      )}
+                      {p.cta_label && p.cta_url && (
+                        <a href={p.cta_url} target="_blank" rel="noopener noreferrer"
+                          style={{ display: 'inline-block', padding: '11px 24px', background: primary, color: '#fff', borderRadius: 50, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+                          {p.cta_label}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'menu_speciali':
+        if (!menuSpeciali.length) return null
+        return (
+          <section key="menu_speciali" style={{ padding: '80px 0', background: '#fff' }}>
+            <div className="land-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
+                Menu degustazione
+              </h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
+                Esperienze gastronomiche curate dallo chef
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
+                {menuSpeciali.map(m => (
+                  <div key={m.id} style={{ borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+                    <div style={{ padding: '28px', background: 'linear-gradient(135deg, #1a1a2e 0%, #2a1a20 100%)' }}>
+                      {m.badge && (
+                        <span style={{ display: 'inline-block', background: primary, color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 14 }}>
+                          {m.badge}
+                        </span>
+                      )}
+                      <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, color: '#fff', marginBottom: 8, lineHeight: 1.2 }}>{m.name}</h3>
+                      {m.description && <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, margin: 0 }}>{m.description}</p>}
+                      {m.price && (
+                        <div style={{ marginTop: 20 }}>
+                          <span style={{ fontFamily: heading, fontSize: 36, fontWeight: 800, color: primary }}>{m.price}</span>
+                          {m.price_label && <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginLeft: 8 }}>/ {m.price_label}</span>}
+                        </div>
+                      )}
+                    </div>
+                    {(m.portate || []).filter(Boolean).length > 0 && (
+                      <div style={{ padding: '24px 28px', background: '#fff' }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 16 }}>Le portate</div>
+                        <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                          {(m.portate || []).filter(Boolean).map((portata, i) => (
+                            <li key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', fontSize: 14, color: '#444' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: '50%', background: `${primary}18`, color: primary, fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                                {i + 1}
+                              </span>
+                              {portata}
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'menu_preview':
+        if (!menu.length) return null
+        return (
+          <section key="menu_preview" style={{ padding: '80px 0', background: '#f9f9fb' }}>
+            <div className="land-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
+                Il menu
+              </h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
+                {menu.length} {menu.length === 1 ? 'categoria' : 'categorie'} · {menu.reduce((n, c) => n + (c.items?.length || 0), 0)} piatti
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16, marginBottom: 40 }}>
+                {menu.slice(0, 6).map(cat => (
+                  <div key={cat.id} style={{ background: '#fff', borderRadius: 14, padding: '20px 20px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', borderTop: `3px solid ${primary}` }}>
+                    <div style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, marginBottom: 8 }}>{cat.name}</div>
+                    <div style={{ fontSize: 13, color: '#888' }}>{cat.items?.length || 0} piatti</div>
+                    {cat.items?.slice(0, 2).map(item => (
+                      <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTop: '1px solid #f0f0f0' }}>
+                        <span style={{ fontSize: 13, color: '#444', flex: 1, marginRight: 8 }}>{item.name}</span>
+                        {item.price && <span style={{ fontSize: 13, fontWeight: 700, color: primary, flexShrink: 0 }}>€{item.price}</span>}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <a href={pwaUrl} style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+                  Menu completo
+                </a>
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'eventi':
+        if (!upcomingEventi.length) return null
+        return (
+          <section key="eventi" style={{ padding: '80px 0', background: '#f9f9fb' }}>
+            <div className="land-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
+                Prossimi eventi
+              </h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
+                {upcomingEventi.length} {upcomingEventi.length === 1 ? 'evento in programma' : 'eventi in programma'}
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginBottom: 40 }}>
+                {upcomingEventi.slice(0, 6).map(ev => {
+                  const dateStr = new Date(ev.date_start).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+                  return (
+                    <a key={ev.id} href={`/eventi/${ev.id}`} style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', transition: 'transform 0.14s ease, box-shadow 0.14s ease' }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(0,0,0,0.12)' }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)' }}>
+                      {ev.cover_url
+                        ? <img src={ev.cover_url} alt={ev.title} style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }} />
+                        : <div style={{ height: 100, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Calendar size={36} strokeWidth={1.5} color={primary} />
+                          </div>
+                      }
+                      <div style={{ padding: '16px 18px' }}>
+                        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>{ev.title}</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}>
+                            <Calendar size={12} strokeWidth={1.5} color={primary} /> {dateStr}
+                          </span>
+                          {ev.location && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}>
+                              <MapPin size={12} strokeWidth={1.5} color={primary} /> {ev.location}
+                            </span>
+                          )}
+                          {ev.seats_total && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}>
+                              <Users size={12} strokeWidth={1.5} color={primary} /> {ev.seats_total - ev.seats_booked} posti
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+                          <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>
+                            {ev.price > 0 ? `€${ev.price}` : 'Gratuito'}
+                          </span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: primary }}>Prenota →</span>
+                        </div>
+                      </div>
+                    </a>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'gallery':
+        if (!gallery.length) return null
+        return (
+          <section key="gallery" style={{ padding: '80px 0' }}>
+            <div className="land-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 40, textAlign: 'center' }}>Galleria</h2>
+              <div className="land-gallery">
+                {gallery.map((url, i) => (
+                  <img key={url + i} src={url} alt="" onClick={() => setLightbox(url)} />
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'faq':
+        if (!faq.length) return null
+        return (
+          <section key="faq" style={{ padding: '80px 0', background: '#fff' }}>
+            <div className="land-section" style={{ maxWidth: 760 }}>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
+                Domande frequenti
+              </h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
+                Tutto quello che devi sapere prima di venirci a trovare
+              </p>
+              <FaqAccordion faq={faq} primary={primary} />
+            </div>
+          </section>
+        )
+
+      case 'show_map':
+        if (!ristorante.address) return null
+        return (
+          <section key="show_map" style={{ lineHeight: 0 }}>
+            <iframe
+              title="mappa"
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(ristorante.address)}&output=embed&z=15`}
+              width="100%" height="380"
+              style={{ border: 'none', display: 'block' }}
+              loading="lazy"
+              allowFullScreen
+            />
+          </section>
+        )
+
+      default: return null
+    }
+  }
 
   return (
     <>
@@ -224,356 +597,10 @@ export default function LandingRistorante({ ristorante }) {
         </div>
       </section>
 
-      {/* Highlights */}
-      {highlights.length > 0 && (
-        <section style={{ padding: '56px 0', background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
-          <div className="land-section">
-            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(highlights.length, 3)}, 1fr)`, gap: 24 }}>
-              {highlights.map(h => {
-                const Icon = highlightIcon(h.icon)
-                return (
-                  <div key={h.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 12 }}>
-                    <div style={{ width: 56, height: 56, borderRadius: '50%', background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Icon size={24} strokeWidth={1.5} color={primary} />
-                    </div>
-                    <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#1a1a2e', lineHeight: 1.4 }}>{h.text}</p>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Stats */}
-      {stats.length > 0 && (
-        <section style={{ padding: '64px 0', background: 'linear-gradient(135deg, #1a1a2e 0%, #0f1a1a 100%)' }}>
-          <div className="land-section">
-            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(stats.length, 4)}, 1fr)`, gap: 0 }}>
-              {stats.map((s, i) => (
-                <div key={s.id} style={{
-                  textAlign: 'center', padding: '8px 24px',
-                  borderRight: i < stats.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none',
-                }}>
-                  <div style={{ fontFamily: heading, fontSize: 'clamp(40px, 5vw, 64px)', fontWeight: 700, color: primary, lineHeight: 1, marginBottom: 10 }}>
-                    {s.value}
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.5 }}>
-                    {s.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* About */}
-      {ristorante.description && (
-        <section style={{ padding: '80px 0' }}>
-          <div className="land-section" style={{ maxWidth: 800, textAlign: 'center' }}>
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 700, marginBottom: 24 }}>
-              La nostra cucina
-            </h2>
-            <p style={{ fontSize: 18, lineHeight: 1.8, color: '#555' }}>{ristorante.description}</p>
-          </div>
-        </section>
-      )}
-
-      {/* Video */}
-      {videoEmbedUrl && (
-        <section style={{ padding: '80px 0', background: '#fff' }}>
-          <div className="land-section" style={{ maxWidth: 960 }}>
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 8, textAlign: 'center' }}>
-              Scopri {ristorante.name}
-            </h2>
-            <p style={{ textAlign: 'center', color: '#888', marginBottom: 40, fontSize: 15 }}>Guarda il video e lasciati ispirare</p>
-            <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, borderRadius: 20, overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,0.18)' }}>
-              <iframe
-                src={videoEmbedUrl}
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* CTA Banner */}
-      {ctaBanner.active && ctaBanner.title && (
-        <section style={{ padding: '88px 24px', background: `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)`, textAlign: 'center' }}>
-          <h2 style={{ fontFamily: heading, fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 700, color: '#fff', marginBottom: 16, lineHeight: 1.15 }}>
-            {ctaBanner.title}
-          </h2>
-          {ctaBanner.subtitle && (
-            <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.85)', marginBottom: 40, maxWidth: 600, margin: '0 auto 40px', lineHeight: 1.6 }}>
-              {ctaBanner.subtitle}
-            </p>
-          )}
-          {ctaBanner.cta_label && ctaBanner.cta_url && (
-            <a href={ctaBanner.cta_url} target="_blank" rel="noopener noreferrer"
-              style={{ display: 'inline-block', padding: '16px 44px', background: '#fff', color: primary, borderRadius: 50, fontSize: 17, fontWeight: 800, textDecoration: 'none', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
-              {ctaBanner.cta_label}
-            </a>
-          )}
-        </section>
-      )}
-
-      {/* Testimonianze */}
-      {testimonianze.length > 0 && (
-        <section style={{ padding: '80px 0', background: '#f9f9fb' }}>
-          <div className="land-section">
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
-              Cosa dicono i nostri clienti
-            </h2>
-            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
-              Recensioni reali di chi ha cenato da noi
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
-              {testimonianze.map(t => (
-                <div key={t.id} style={{ background: '#fff', borderRadius: 16, padding: '28px 24px', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div style={{ fontSize: 40, lineHeight: 1, color: primary, opacity: 0.25, fontFamily: 'Georgia, serif', marginBottom: -8 }}>"</div>
-                  <p style={{ margin: 0, fontSize: 15, lineHeight: 1.7, color: '#444', flex: 1 }}>{t.text}</p>
-                  <div>
-                    <div style={{ display: 'flex', gap: 2, marginBottom: 8 }}>
-                      {[1,2,3,4,5].map(n => (
-                        <span key={n} style={{ color: n <= (t.rating || 5) ? '#f59e0b' : '#e0e0e0', fontSize: 16 }}>★</span>
-                      ))}
-                    </div>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>{t.author}</div>
-                    {t.location && <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{t.location}</div>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Promozioni */}
-      {promozioni.length > 0 && (
-        <section style={{ padding: '80px 0', background: '#fff' }}>
-          <div className="land-section">
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
-              Offerte speciali
-            </h2>
-            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
-              Promozioni esclusive per i nostri clienti
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
-              {promozioni.map(p => (
-                <div key={p.id} style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', borderTop: `4px solid ${primary}` }}>
-                  <div style={{ padding: '28px 24px' }}>
-                    {p.badge && (
-                      <span style={{ display: 'inline-block', background: `${primary}18`, color: primary, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 14 }}>
-                        {p.badge}
-                      </span>
-                    )}
-                    <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 12, color: '#1a1a2e' }}>{p.title}</h3>
-                    {p.text && <p style={{ fontSize: 15, color: '#666', lineHeight: 1.6, marginBottom: 20 }}>{p.text}</p>}
-                    {p.expires_at && (
-                      <div style={{ fontSize: 12, color: '#aaa', marginBottom: 16 }}>
-                        Valida fino al {new Date(p.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
-                      </div>
-                    )}
-                    {p.cta_label && p.cta_url && (
-                      <a href={p.cta_url} target="_blank" rel="noopener noreferrer"
-                        style={{ display: 'inline-block', padding: '11px 24px', background: primary, color: '#fff', borderRadius: 50, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
-                        {p.cta_label}
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Menu Speciali / Degustazione */}
-      {menuSpeciali.length > 0 && (
-        <section style={{ padding: '80px 0', background: '#fff' }}>
-          <div className="land-section">
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
-              Menu degustazione
-            </h2>
-            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
-              Esperienze gastronomiche curate dallo chef
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
-              {menuSpeciali.map(m => (
-                <div key={m.id} style={{ borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
-                  <div style={{ padding: '28px', background: 'linear-gradient(135deg, #1a1a2e 0%, #2a1a20 100%)' }}>
-                    {m.badge && (
-                      <span style={{ display: 'inline-block', background: primary, color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 14 }}>
-                        {m.badge}
-                      </span>
-                    )}
-                    <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, color: '#fff', marginBottom: 8, lineHeight: 1.2 }}>{m.name}</h3>
-                    {m.description && <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, margin: 0 }}>{m.description}</p>}
-                    {m.price && (
-                      <div style={{ marginTop: 20 }}>
-                        <span style={{ fontFamily: heading, fontSize: 36, fontWeight: 800, color: primary }}>{m.price}</span>
-                        {m.price_label && <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginLeft: 8 }}>/ {m.price_label}</span>}
-                      </div>
-                    )}
-                  </div>
-                  {(m.portate || []).filter(Boolean).length > 0 && (
-                    <div style={{ padding: '24px 28px', background: '#fff' }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 16 }}>Le portate</div>
-                      <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        {(m.portate || []).filter(Boolean).map((portata, i) => (
-                          <li key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', fontSize: 14, color: '#444' }}>
-                            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: '50%', background: `${primary}18`, color: primary, fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
-                              {i + 1}
-                            </span>
-                            {portata}
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Anteprima menu */}
-      {hasMenuPreview && (
-        <section style={{ padding: '80px 0', background: '#f9f9fb' }}>
-          <div className="land-section">
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
-              Il menu
-            </h2>
-            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
-              {menu.length} {menu.length === 1 ? 'categoria' : 'categorie'} · {menu.reduce((n, c) => n + (c.items?.length || 0), 0)} piatti
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16, marginBottom: 40 }}>
-              {menu.slice(0, 6).map(cat => (
-                <div key={cat.id} style={{ background: '#fff', borderRadius: 14, padding: '20px 20px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', borderTop: `3px solid ${primary}` }}>
-                  <div style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, marginBottom: 8 }}>{cat.name}</div>
-                  <div style={{ fontSize: 13, color: '#888' }}>{cat.items?.length || 0} piatti</div>
-                  {cat.items?.slice(0, 2).map(item => (
-                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTop: '1px solid #f0f0f0' }}>
-                      <span style={{ fontSize: 13, color: '#444', flex: 1, marginRight: 8 }}>{item.name}</span>
-                      {item.price && <span style={{ fontSize: 13, fontWeight: 700, color: primary, flexShrink: 0 }}>€{item.price}</span>}
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <a href={pwaUrl} style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-                Menu completo
-              </a>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Eventi */}
-      {hasEventi && (
-        <section style={{ padding: '80px 0', background: '#f9f9fb' }}>
-          <div className="land-section">
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
-              Prossimi eventi
-            </h2>
-            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
-              {upcomingEventi.length} {upcomingEventi.length === 1 ? 'evento in programma' : 'eventi in programma'}
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginBottom: 40 }}>
-              {upcomingEventi.slice(0, 6).map(ev => {
-                const dateStr = new Date(ev.date_start).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
-                return (
-                  <a key={ev.id} href={`/eventi/${ev.id}`} style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', transition: 'transform 0.14s ease, box-shadow 0.14s ease' }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(0,0,0,0.12)' }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)' }}>
-                    {ev.cover_url
-                      ? <img src={ev.cover_url} alt={ev.title} style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }} />
-                      : <div style={{ height: 100, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Calendar size={36} strokeWidth={1.5} color={primary} />
-                        </div>
-                    }
-                    <div style={{ padding: '16px 18px' }}>
-                      <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>{ev.title}</div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}>
-                          <Calendar size={12} strokeWidth={1.5} color={primary} /> {dateStr}
-                        </span>
-                        {ev.location && (
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}>
-                            <MapPin size={12} strokeWidth={1.5} color={primary} /> {ev.location}
-                          </span>
-                        )}
-                        {ev.seats_total && (
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}>
-                            <Users size={12} strokeWidth={1.5} color={primary} /> {ev.seats_total - ev.seats_booked} posti
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-                        <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>
-                          {ev.price > 0 ? `€${ev.price}` : 'Gratuito'}
-                        </span>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: primary }}>Prenota →</span>
-                      </div>
-                    </div>
-                  </a>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* FAQ */}
-      {faq.length > 0 && (
-        <section style={{ padding: '80px 0', background: '#fff' }}>
-          <div className="land-section" style={{ maxWidth: 760 }}>
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
-              Domande frequenti
-            </h2>
-            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
-              Tutto quello che devi sapere prima di venirci a trovare
-            </p>
-            <FaqAccordion faq={faq} primary={primary} />
-          </div>
-        </section>
-      )}
-
-      {/* Galleria */}
-      {hasGallery && (
-        <section style={{ padding: '80px 0' }}>
-          <div className="land-section">
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 40, textAlign: 'center' }}>Galleria</h2>
-            <div className="land-gallery">
-              {gallery.map((url, i) => (
-                <img key={url + i} src={url} alt="" onClick={() => setLightbox(url)} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Mappa */}
-      {showMap && (
-        <section style={{ lineHeight: 0 }}>
-          <iframe
-            title="mappa"
-            src={`https://maps.google.com/maps?q=${encodeURIComponent(ristorante.address)}&output=embed&z=15`}
-            width="100%" height="380"
-            style={{ border: 'none', display: 'block' }}
-            loading="lazy"
-            allowFullScreen
-          />
-        </section>
-      )}
+      {sectionOrder.map(renderSection)}
 
       {/* Contatti */}
-      {(ristorante.phone || ristorante.email || ristorante.address || ristorante.schedule) && (
+      {hasInfo && (
         <section style={{ padding: '80px 0', background: '#1a1a2e', color: '#fff' }}>
           <div className="land-section" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 48 }}>
             <div>

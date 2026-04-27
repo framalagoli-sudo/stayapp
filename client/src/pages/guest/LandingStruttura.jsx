@@ -76,6 +76,12 @@ function getEmbedUrl(url) {
   return null
 }
 
+const DEFAULT_ORDER = [
+  'highlights', 'stats', 'about', 'video', 'cta_banner',
+  'testimonianze', 'promozioni', 'pacchetti',
+  'services', 'activities', 'excursions', 'eventi', 'gallery', 'faq', 'show_map',
+]
+
 export default function LandingStruttura({ property }) {
   const [scrolled,       setScrolled]       = useState(false)
   const [lightbox,       setLightbox]       = useState(null)
@@ -93,8 +99,8 @@ export default function LandingStruttura({ property }) {
   const heading = HEADING_FAMILIES[theme.fontHeading] || HEADING_FAMILIES.playfair
   const body    = BODY_FAMILIES[theme.fontBody]       || BODY_FAMILIES.inter
   const mini    = property.minisito || {}
-  const sections   = { gallery: true, services: true, activities: true, excursions: true, ...(mini.sections || {}) }
-  const social     = mini.social || {}
+  const sections    = { ...(mini.sections || {}) }
+  const social      = mini.social || {}
   const socialLinks = SOCIAL_CONFIG.filter(s => social[s.key])
 
   useEffect(() => {
@@ -129,30 +135,403 @@ export default function LandingStruttura({ property }) {
   const gallery    = (property.gallery  || []).slice(0, 9)
   const services   = (property.services || []).slice(0, 6)
 
-  // Activities: flatten active items, max 6 preview
-  const activitiesRaw = (property.activities || [])
-  const activityItems = activitiesRaw.flatMap(cat =>
+  const activitiesRaw  = (property.activities || [])
+  const activityItems  = activitiesRaw.flatMap(cat =>
     (cat.items || []).filter(i => i.active !== false).map(item => ({ ...item, category: cat.category }))
   ).slice(0, 6)
-
-  // Excursions: only active, max 6 preview
   const excursionItems = (property.excursions || []).filter(e => e.active !== false).slice(0, 6)
 
-  const now            = new Date()
-  const stats          = (mini.stats       || []).filter(s => s.value && s.label)
-  const promozioni     = (mini.promozioni  || []).filter(p => p.title && (!p.expires_at || new Date(p.expires_at) >= now))
-  const pacchetti      = (mini.pacchetti   || []).filter(p => p.name)
-  const testimonianze  = (mini.testimonianze || []).filter(t => t.text && t.author)
-  const faq            = (mini.faq           || []).filter(f => f.question && f.answer)
-  const videoEmbedUrl  = getEmbedUrl(mini.video_url)
-  const ctaBanner      = mini.cta_banner || {}
-  const showMap        = sections.show_map !== false && property.address
-  const hasGallery     = sections.gallery     && gallery.length > 0
-  const hasServices    = sections.services    && services.length > 0
-  const hasActivities  = sections.activities  && activityItems.length > 0
-  const hasExcursions  = sections.excursions  && excursionItems.length > 0
-  const hasEventi      = sections.eventi !== false && upcomingEventi.length > 0
-  const hasInfo        = property.phone || property.email || property.address || property.checkin_time
+  const now           = new Date()
+  const stats         = (mini.stats        || []).filter(s => s.value && s.label)
+  const promozioni    = (mini.promozioni   || []).filter(p => p.title && (!p.expires_at || new Date(p.expires_at) >= now))
+  const pacchetti     = (mini.pacchetti    || []).filter(p => p.name)
+  const testimonianze = (mini.testimonianze|| []).filter(t => t.text && t.author)
+  const faq           = (mini.faq          || []).filter(f => f.question && f.answer)
+  const videoEmbedUrl = getEmbedUrl(mini.video_url)
+  const ctaBanner     = mini.cta_banner || {}
+  const hasInfo       = property.phone || property.email || property.address || property.checkin_time
+
+  const sectionOrder = mini.section_order?.length ? mini.section_order : DEFAULT_ORDER
+
+  function renderSection(key) {
+    if (sections[key] === false) return null
+
+    switch (key) {
+      case 'highlights':
+        if (!highlights.length) return null
+        return (
+          <section key="highlights" style={{ padding: '56px 0', background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
+            <div className="land-section">
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(highlights.length, 3)}, 1fr)`, gap: 24 }}>
+                {highlights.map(h => {
+                  const Icon = highlightIcon(h.icon)
+                  return (
+                    <div key={h.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 12 }}>
+                      <div style={{ width: 56, height: 56, borderRadius: '50%', background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Icon size={24} strokeWidth={1.5} color={primary} />
+                      </div>
+                      <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#1a1a2e', lineHeight: 1.4 }}>{h.text}</p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'stats':
+        if (!stats.length) return null
+        return (
+          <section key="stats" style={{ padding: '64px 0', background: 'linear-gradient(135deg, #1a1a2e 0%, #0f1a1a 100%)' }}>
+            <div className="land-section">
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(stats.length, 4)}, 1fr)`, gap: 0 }}>
+                {stats.map((s, i) => (
+                  <div key={s.id} style={{ textAlign: 'center', padding: '8px 24px', borderRight: i < stats.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
+                    <div style={{ fontFamily: heading, fontSize: 'clamp(40px, 5vw, 64px)', fontWeight: 700, color: primary, lineHeight: 1, marginBottom: 10 }}>{s.value}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.5 }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'about':
+        if (!property.description) return null
+        return (
+          <section key="about" ref={aboutRef} style={{ padding: '80px 0', background: '#fff' }}>
+            <div className="land-section" style={{ maxWidth: 800, textAlign: 'center' }}>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 700, marginBottom: 24, color: '#1a1a2e' }}>Benvenuto</h2>
+              <p style={{ fontSize: 18, lineHeight: 1.8, color: '#555' }}>{property.description}</p>
+              {(property.checkin_time || property.checkout_time) && (
+                <div style={{ display: 'flex', gap: 32, justifyContent: 'center', marginTop: 40, flexWrap: 'wrap' }}>
+                  {property.checkin_time && (
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Check-in</div>
+                      <div style={{ fontFamily: heading, fontSize: 36, fontWeight: 700 }}>{property.checkin_time}</div>
+                    </div>
+                  )}
+                  {property.checkout_time && (
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Check-out</div>
+                      <div style={{ fontFamily: heading, fontSize: 36, fontWeight: 700 }}>{property.checkout_time}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {amenities.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 32 }}>
+                  {amenities.map(a => (
+                    <span key={a} style={{ background: '#f5f5f7', color: '#444', fontSize: 13, fontWeight: 600, padding: '6px 14px', borderRadius: 20 }}>{a}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        )
+
+      case 'video':
+        if (!videoEmbedUrl) return null
+        return (
+          <section key="video" style={{ padding: '80px 0', background: '#fff' }}>
+            <div className="land-section" style={{ maxWidth: 960 }}>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 8, textAlign: 'center' }}>Scopri {property.name}</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 40, fontSize: 15 }}>Guarda il video e lasciati ispirare</p>
+              <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, borderRadius: 20, overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,0.18)' }}>
+                <iframe src={videoEmbedUrl}
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen />
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'cta_banner':
+        if (!ctaBanner.active || !ctaBanner.title) return null
+        return (
+          <section key="cta_banner" style={{ padding: '88px 24px', background: `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)`, textAlign: 'center' }}>
+            <h2 style={{ fontFamily: heading, fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 700, color: '#fff', marginBottom: 16, lineHeight: 1.15 }}>{ctaBanner.title}</h2>
+            {ctaBanner.subtitle && (
+              <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.85)', maxWidth: 600, margin: '0 auto 40px', lineHeight: 1.6 }}>{ctaBanner.subtitle}</p>
+            )}
+            {ctaBanner.cta_label && ctaBanner.cta_url && (
+              <a href={ctaBanner.cta_url} target="_blank" rel="noopener noreferrer"
+                style={{ display: 'inline-block', padding: '16px 44px', background: '#fff', color: primary, borderRadius: 50, fontSize: 17, fontWeight: 800, textDecoration: 'none', boxShadow: '0 8px 40px rgba(0,0,0,0.18)', marginTop: 8 }}>
+                {ctaBanner.cta_label}
+              </a>
+            )}
+          </section>
+        )
+
+      case 'testimonianze':
+        if (!testimonianze.length) return null
+        return (
+          <section key="testimonianze" style={{ padding: '80px 0', background: '#f9f9fb' }}>
+            <div className="land-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>Cosa dicono i nostri ospiti</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Recensioni reali di chi ha soggiornato da noi</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
+                {testimonianze.map(t => (
+                  <div key={t.id} style={{ background: '#fff', borderRadius: 16, padding: '28px 24px', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <div style={{ fontSize: 40, lineHeight: 1, color: primary, opacity: 0.25, fontFamily: 'Georgia, serif', marginBottom: -8 }}>"</div>
+                    <p style={{ margin: 0, fontSize: 15, lineHeight: 1.7, color: '#444', flex: 1 }}>{t.text}</p>
+                    <div>
+                      <div style={{ display: 'flex', gap: 2, marginBottom: 8 }}>
+                        {[1,2,3,4,5].map(n => <span key={n} style={{ color: n <= (t.rating || 5) ? '#f59e0b' : '#e0e0e0', fontSize: 16 }}>★</span>)}
+                      </div>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>{t.author}</div>
+                      {t.location && <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{t.location}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'promozioni':
+        if (!promozioni.length) return null
+        return (
+          <section key="promozioni" style={{ padding: '80px 0', background: '#fff' }}>
+            <div className="land-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>Offerte speciali</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Promozioni esclusive per i nostri ospiti</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
+                {promozioni.map(p => (
+                  <div key={p.id} style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', borderTop: `4px solid ${primary}` }}>
+                    <div style={{ padding: '28px 24px' }}>
+                      {p.badge && <span style={{ display: 'inline-block', background: `${primary}18`, color: primary, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 14 }}>{p.badge}</span>}
+                      <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 12, color: '#1a1a2e' }}>{p.title}</h3>
+                      {p.text && <p style={{ fontSize: 15, color: '#666', lineHeight: 1.6, marginBottom: 20 }}>{p.text}</p>}
+                      {p.expires_at && <div style={{ fontSize: 12, color: '#aaa', marginBottom: 16 }}>Valida fino al {new Date(p.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
+                      {p.cta_label && p.cta_url && (
+                        <a href={p.cta_url} target="_blank" rel="noopener noreferrer"
+                          style={{ display: 'inline-block', padding: '11px 24px', background: primary, color: '#fff', borderRadius: 50, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+                          {p.cta_label}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'pacchetti':
+        if (!pacchetti.length) return null
+        return (
+          <section key="pacchetti" style={{ padding: '80px 0', background: '#f9f9fb' }}>
+            <div className="land-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>Pacchetti e soggiorni</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Scegli il soggiorno pensato per te</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
+                {pacchetti.map(p => (
+                  <div key={p.id} style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ padding: '28px 28px 0' }}>
+                      {p.badge && <span style={{ display: 'inline-block', background: primary, color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 16 }}>{p.badge}</span>}
+                      <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 6, color: '#1a1a2e' }}>{p.name}</h3>
+                      {p.tagline && <p style={{ fontSize: 14, color: '#888', marginBottom: 20, lineHeight: 1.5 }}>{p.tagline}</p>}
+                      {p.price && (
+                        <div style={{ marginBottom: 24, borderTop: '1px solid #f0f0f0', paddingTop: 20 }}>
+                          <span style={{ fontFamily: heading, fontSize: 40, fontWeight: 800, color: primary }}>{p.price}</span>
+                          {p.price_label && <span style={{ fontSize: 14, color: '#aaa', marginLeft: 6 }}>/ {p.price_label}</span>}
+                        </div>
+                      )}
+                    </div>
+                    {(p.includes || []).filter(Boolean).length > 0 && (
+                      <div style={{ padding: '0 28px 24px', flex: 1 }}>
+                        {!p.price && <div style={{ height: 1, background: '#f0f0f0', margin: '0 0 20px' }} />}
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                          {(p.includes || []).filter(Boolean).map((item, i) => (
+                            <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 14, color: '#444' }}>
+                              <span style={{ color: primary, fontWeight: 700, fontSize: 15, lineHeight: 1.3, flexShrink: 0 }}>✓</span>
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {p.cta_label && p.cta_url && (
+                      <div style={{ padding: '0 28px 28px' }}>
+                        <a href={p.cta_url} target="_blank" rel="noopener noreferrer"
+                          style={{ display: 'block', textAlign: 'center', padding: '13px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+                          {p.cta_label}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'services':
+        if (!services.length) return null
+        return (
+          <section key="services" style={{ padding: '80px 0', background: '#f9f9fb' }}>
+            <div className="land-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 48, textAlign: 'center' }}>I nostri servizi</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 20 }}>
+                {services.map(s => {
+                  const Icon = serviceIcon(s.icon)
+                  return (
+                    <div key={s.id} style={{ background: '#fff', borderRadius: 16, padding: '24px 16px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+                      <Icon size={28} strokeWidth={1.5} color={primary} style={{ marginBottom: 10 }} />
+                      <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{s.name}</div>
+                      {s.hours && <div style={{ fontSize: 12, color: '#888' }}>{s.hours}</div>}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'activities':
+        if (!activityItems.length) return null
+        return (
+          <section key="activities" style={{ padding: '80px 0', background: '#fff' }}>
+            <div className="land-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>Attività</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
+                {activityItems.length} {activityItems.length === 1 ? 'attività disponibile' : 'attività disponibili'}
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16, marginBottom: 40 }}>
+                {activityItems.map(item => (
+                  <div key={item.id} style={{ background: '#f9f9fb', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
+                    {item.photo_url && <img src={item.photo_url} alt={item.name} style={{ width: '100%', height: 160, objectFit: 'cover' }} />}
+                    <div style={{ padding: '16px 18px' }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>{item.category}</div>
+                      <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>{item.name}</div>
+                      {item.schedule && <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, color: '#888' }}><Clock size={12} strokeWidth={1.5} />{item.schedule}</div>}
+                      {item.location && <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, color: '#888', marginTop: 4 }}><LocationPin size={12} strokeWidth={1.5} />{item.location}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <a href={pwaUrl} style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>Scopri tutte le attività</a>
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'excursions':
+        if (!excursionItems.length) return null
+        return (
+          <section key="excursions" style={{ padding: '80px 0', background: '#f9f9fb' }}>
+            <div className="land-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>Escursioni</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
+                {excursionItems.length} {excursionItems.length === 1 ? 'escursione disponibile' : 'escursioni disponibili'}
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginBottom: 40 }}>
+                {excursionItems.map(exc => (
+                  <div key={exc.id} style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+                    {exc.photo_url && <img src={exc.photo_url} alt={exc.name} style={{ width: '100%', height: 160, objectFit: 'cover' }} />}
+                    <div style={{ padding: '16px 18px' }}>
+                      <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>{exc.name}</div>
+                      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                        {exc.price && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 700, color: primary }}><Euro size={13} strokeWidth={2} />{exc.price}</span>}
+                        {exc.duration && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#888' }}><Clock size={13} strokeWidth={1.5} />{exc.duration}</span>}
+                      </div>
+                      {exc.dates && <div style={{ fontSize: 12, color: '#888', marginTop: 6 }}>{exc.dates}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <a href={pwaUrl} style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>Prenota un'escursione</a>
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'eventi':
+        if (!upcomingEventi.length) return null
+        return (
+          <section key="eventi" style={{ padding: '80px 0', background: '#f9f9fb' }}>
+            <div className="land-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>Prossimi eventi</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
+                {upcomingEventi.length} {upcomingEventi.length === 1 ? 'evento in programma' : 'eventi in programma'}
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginBottom: 40 }}>
+                {upcomingEventi.slice(0, 6).map(ev => {
+                  const dateStr = new Date(ev.date_start).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+                  return (
+                    <a key={ev.id} href={`/eventi/${ev.id}`} style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', transition: 'transform 0.14s ease, box-shadow 0.14s ease' }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(0,0,0,0.12)' }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)' }}>
+                      {ev.cover_url
+                        ? <img src={ev.cover_url} alt={ev.title} style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }} />
+                        : <div style={{ width: '100%', height: 100, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Calendar size={36} strokeWidth={1.5} color={primary} /></div>
+                      }
+                      <div style={{ padding: '16px 18px' }}>
+                        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>{ev.title}</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}><Calendar size={12} strokeWidth={1.5} color={primary} /> {dateStr}</span>
+                          {ev.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}><LocationPin size={12} strokeWidth={1.5} color={primary} /> {ev.location}</span>}
+                          {ev.seats_total && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}><Users size={12} strokeWidth={1.5} color={primary} /> {ev.seats_total - ev.seats_booked} posti</span>}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+                          <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>{ev.price > 0 ? `€${ev.price}` : 'Gratuito'}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: primary }}>Prenota →</span>
+                        </div>
+                      </div>
+                    </a>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'gallery':
+        if (!gallery.length) return null
+        return (
+          <section key="gallery" style={{ padding: '80px 0', background: '#fff' }}>
+            <div className="land-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 40, textAlign: 'center' }}>Galleria</h2>
+              <div className="land-gallery">
+                {gallery.map((url, i) => (
+                  <img key={url + i} src={url} alt="" onClick={() => setLightbox(url)} />
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+
+      case 'faq':
+        if (!faq.length) return null
+        return (
+          <section key="faq" style={{ padding: '80px 0', background: '#fff' }}>
+            <div className="land-section" style={{ maxWidth: 760 }}>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>Domande frequenti</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Tutto quello che devi sapere prima di arrivare</p>
+              <FaqAccordion faq={faq} primary={primary} />
+            </div>
+          </section>
+        )
+
+      case 'show_map':
+        if (!property.address) return null
+        return (
+          <section key="show_map" style={{ lineHeight: 0 }}>
+            <iframe title="mappa"
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(property.address)}&output=embed&z=15`}
+              width="100%" height="380"
+              style={{ border: 'none', display: 'block' }}
+              loading="lazy" allowFullScreen />
+          </section>
+        )
+
+      default: return null
+    }
+  }
 
   return (
     <>
@@ -180,7 +559,6 @@ export default function LandingStruttura({ property }) {
         .fade-up-3 { animation: fadeUp 0.7s 0.4s ease both; }
       `}</style>
 
-      {/* Sticky nav */}
       <nav className="land-nav">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {property.logo_url && <img src={property.logo_url} alt="logo" style={{ height: 32, objectFit: 'contain' }} />}
@@ -192,7 +570,6 @@ export default function LandingStruttura({ property }) {
         </div>
       </nav>
 
-      {/* Hero */}
       <section style={{ position: 'relative', height: '100vh', minHeight: 560, overflow: 'hidden' }}>
         {property.cover_url
           ? <img src={property.cover_url} alt="cover" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -200,18 +577,11 @@ export default function LandingStruttura({ property }) {
         }
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.65) 100%)' }} />
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 24px' }}>
-          {property.logo_url && (
-            <img src={property.logo_url} alt="logo" className="fade-up"
-              style={{ maxHeight: 80, maxWidth: 200, objectFit: 'contain', marginBottom: 24, filter: 'brightness(0) invert(1)' }} />
-          )}
+          {property.logo_url && <img src={property.logo_url} alt="logo" className="fade-up" style={{ maxHeight: 80, maxWidth: 200, objectFit: 'contain', marginBottom: 24, filter: 'brightness(0) invert(1)' }} />}
           <h1 className="fade-up-2" style={{ fontFamily: heading, fontSize: 'clamp(36px, 6vw, 72px)', fontWeight: 700, color: '#fff', lineHeight: 1.1, marginBottom: 16, textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}>
             {property.name}
           </h1>
-          {tagline && (
-            <p className="fade-up-3" style={{ fontSize: 'clamp(16px, 2.5vw, 22px)', color: 'rgba(255,255,255,0.88)', maxWidth: 600, lineHeight: 1.5, marginBottom: 36 }}>
-              {tagline}
-            </p>
-          )}
+          {tagline && <p className="fade-up-3" style={{ fontSize: 'clamp(16px, 2.5vw, 22px)', color: 'rgba(255,255,255,0.88)', maxWidth: 600, lineHeight: 1.5, marginBottom: 36 }}>{tagline}</p>}
           <div className="fade-up-3" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
             {bookingUrl && (
               <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
@@ -219,8 +589,7 @@ export default function LandingStruttura({ property }) {
                 Prenota ora
               </a>
             )}
-            <a href={pwaUrl}
-              style={{ padding: '14px 32px', background: 'rgba(255,255,255,0.18)', color: '#fff', borderRadius: 50, fontSize: 16, fontWeight: 600, textDecoration: 'none', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.3)' }}>
+            <a href={pwaUrl} style={{ padding: '14px 32px', background: 'rgba(255,255,255,0.18)', color: '#fff', borderRadius: 50, fontSize: 16, fontWeight: 600, textDecoration: 'none', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.3)' }}>
               App ospiti
             </a>
           </div>
@@ -232,464 +601,8 @@ export default function LandingStruttura({ property }) {
         </div>
       </section>
 
-      {/* Highlights */}
-      {highlights.length > 0 && (
-        <section style={{ padding: '56px 0', background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
-          <div className="land-section">
-            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(highlights.length, 3)}, 1fr)`, gap: 24 }}>
-              {highlights.map(h => {
-                const Icon = highlightIcon(h.icon)
-                return (
-                  <div key={h.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 12 }}>
-                    <div style={{ width: 56, height: 56, borderRadius: '50%', background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Icon size={24} strokeWidth={1.5} color={primary} />
-                    </div>
-                    <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#1a1a2e', lineHeight: 1.4 }}>{h.text}</p>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-      )}
+      {sectionOrder.map(renderSection)}
 
-      {/* Stats */}
-      {stats.length > 0 && (
-        <section style={{ padding: '64px 0', background: 'linear-gradient(135deg, #1a1a2e 0%, #0f1a1a 100%)' }}>
-          <div className="land-section">
-            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(stats.length, 4)}, 1fr)`, gap: 0 }}>
-              {stats.map((s, i) => (
-                <div key={s.id} style={{
-                  textAlign: 'center', padding: '8px 24px',
-                  borderRight: i < stats.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none',
-                }}>
-                  <div style={{ fontFamily: heading, fontSize: 'clamp(40px, 5vw, 64px)', fontWeight: 700, color: primary, lineHeight: 1, marginBottom: 10 }}>
-                    {s.value}
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.5 }}>
-                    {s.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* About */}
-      {property.description && (
-        <section ref={aboutRef} style={{ padding: '80px 0', background: '#fff' }}>
-          <div className="land-section" style={{ maxWidth: 800, textAlign: 'center' }}>
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 700, marginBottom: 24, color: '#1a1a2e' }}>
-              Benvenuto
-            </h2>
-            <p style={{ fontSize: 18, lineHeight: 1.8, color: '#555' }}>{property.description}</p>
-            {(property.checkin_time || property.checkout_time) && (
-              <div style={{ display: 'flex', gap: 32, justifyContent: 'center', marginTop: 40, flexWrap: 'wrap' }}>
-                {property.checkin_time && (
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Check-in</div>
-                    <div style={{ fontFamily: heading, fontSize: 36, fontWeight: 700 }}>{property.checkin_time}</div>
-                  </div>
-                )}
-                {property.checkout_time && (
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Check-out</div>
-                    <div style={{ fontFamily: heading, fontSize: 36, fontWeight: 700 }}>{property.checkout_time}</div>
-                  </div>
-                )}
-              </div>
-            )}
-            {amenities.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 32 }}>
-                {amenities.map(a => (
-                  <span key={a} style={{ background: '#f5f5f7', color: '#444', fontSize: 13, fontWeight: 600, padding: '6px 14px', borderRadius: 20 }}>
-                    {a}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* Video */}
-      {videoEmbedUrl && (
-        <section style={{ padding: '80px 0', background: '#fff' }}>
-          <div className="land-section" style={{ maxWidth: 960 }}>
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 8, textAlign: 'center' }}>
-              Scopri {property.name}
-            </h2>
-            <p style={{ textAlign: 'center', color: '#888', marginBottom: 40, fontSize: 15 }}>Guarda il video e lasciati ispirare</p>
-            <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, borderRadius: 20, overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,0.18)' }}>
-              <iframe
-                src={videoEmbedUrl}
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* CTA Banner */}
-      {ctaBanner.active && ctaBanner.title && (
-        <section style={{ padding: '88px 24px', background: `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)`, textAlign: 'center' }}>
-          <h2 style={{ fontFamily: heading, fontSize: 'clamp(28px, 4vw, 52px)', fontWeight: 700, color: '#fff', marginBottom: 16, lineHeight: 1.15 }}>
-            {ctaBanner.title}
-          </h2>
-          {ctaBanner.subtitle && (
-            <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.85)', marginBottom: 40, maxWidth: 600, margin: '0 auto 40px', lineHeight: 1.6 }}>
-              {ctaBanner.subtitle}
-            </p>
-          )}
-          {ctaBanner.cta_label && ctaBanner.cta_url && (
-            <a href={ctaBanner.cta_url} target="_blank" rel="noopener noreferrer"
-              style={{ display: 'inline-block', padding: '16px 44px', background: '#fff', color: primary, borderRadius: 50, fontSize: 17, fontWeight: 800, textDecoration: 'none', boxShadow: '0 8px 40px rgba(0,0,0,0.18)', marginTop: ctaBanner.subtitle ? 0 : 0 }}>
-              {ctaBanner.cta_label}
-            </a>
-          )}
-        </section>
-      )}
-
-      {/* Testimonianze */}
-      {testimonianze.length > 0 && (
-        <section style={{ padding: '80px 0', background: '#f9f9fb' }}>
-          <div className="land-section">
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
-              Cosa dicono i nostri ospiti
-            </h2>
-            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
-              Recensioni reali di chi ha soggiornato da noi
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
-              {testimonianze.map(t => (
-                <div key={t.id} style={{ background: '#fff', borderRadius: 16, padding: '28px 24px', boxShadow: '0 2px 16px rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div style={{ fontSize: 40, lineHeight: 1, color: primary, opacity: 0.25, fontFamily: 'Georgia, serif', marginBottom: -8 }}>"</div>
-                  <p style={{ margin: 0, fontSize: 15, lineHeight: 1.7, color: '#444', flex: 1 }}>{t.text}</p>
-                  <div>
-                    <div style={{ display: 'flex', gap: 2, marginBottom: 8 }}>
-                      {[1,2,3,4,5].map(n => (
-                        <span key={n} style={{ color: n <= (t.rating || 5) ? '#f59e0b' : '#e0e0e0', fontSize: 16 }}>★</span>
-                      ))}
-                    </div>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>{t.author}</div>
-                    {t.location && <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{t.location}</div>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Promozioni */}
-      {promozioni.length > 0 && (
-        <section style={{ padding: '80px 0', background: '#fff' }}>
-          <div className="land-section">
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
-              Offerte speciali
-            </h2>
-            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
-              Promozioni esclusive per i nostri ospiti
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
-              {promozioni.map(p => (
-                <div key={p.id} style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', borderTop: `4px solid ${primary}` }}>
-                  <div style={{ padding: '28px 24px' }}>
-                    {p.badge && (
-                      <span style={{ display: 'inline-block', background: `${primary}18`, color: primary, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 14 }}>
-                        {p.badge}
-                      </span>
-                    )}
-                    <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 12, color: '#1a1a2e' }}>{p.title}</h3>
-                    {p.text && <p style={{ fontSize: 15, color: '#666', lineHeight: 1.6, marginBottom: 20 }}>{p.text}</p>}
-                    {p.expires_at && (
-                      <div style={{ fontSize: 12, color: '#aaa', marginBottom: 16 }}>
-                        Valida fino al {new Date(p.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
-                      </div>
-                    )}
-                    {p.cta_label && p.cta_url && (
-                      <a href={p.cta_url} target="_blank" rel="noopener noreferrer"
-                        style={{ display: 'inline-block', padding: '11px 24px', background: primary, color: '#fff', borderRadius: 50, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
-                        {p.cta_label}
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Pacchetti */}
-      {pacchetti.length > 0 && (
-        <section style={{ padding: '80px 0', background: '#f9f9fb' }}>
-          <div className="land-section">
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
-              Pacchetti e soggiorni
-            </h2>
-            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
-              Scegli il soggiorno pensato per te
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
-              {pacchetti.map(p => (
-                <div key={p.id} style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ padding: '28px 28px 0' }}>
-                    {p.badge && (
-                      <span style={{ display: 'inline-block', background: primary, color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 16 }}>
-                        {p.badge}
-                      </span>
-                    )}
-                    <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 6, color: '#1a1a2e' }}>{p.name}</h3>
-                    {p.tagline && <p style={{ fontSize: 14, color: '#888', marginBottom: 20, lineHeight: 1.5 }}>{p.tagline}</p>}
-                    {p.price && (
-                      <div style={{ marginBottom: 24, borderTop: '1px solid #f0f0f0', paddingTop: 20 }}>
-                        <span style={{ fontFamily: heading, fontSize: 40, fontWeight: 800, color: primary }}>{p.price}</span>
-                        {p.price_label && <span style={{ fontSize: 14, color: '#aaa', marginLeft: 6 }}>/ {p.price_label}</span>}
-                      </div>
-                    )}
-                  </div>
-                  {(p.includes || []).filter(Boolean).length > 0 && (
-                    <div style={{ padding: p.price ? '0 28px 24px' : '0 28px 24px', flex: 1 }}>
-                      {!p.price && <div style={{ height: 1, background: '#f0f0f0', margin: '0 0 20px' }} />}
-                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {(p.includes || []).filter(Boolean).map((item, i) => (
-                          <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 14, color: '#444' }}>
-                            <span style={{ color: primary, fontWeight: 700, fontSize: 15, lineHeight: 1.3, flexShrink: 0 }}>✓</span>
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {p.cta_label && p.cta_url && (
-                    <div style={{ padding: '0 28px 28px' }}>
-                      <a href={p.cta_url} target="_blank" rel="noopener noreferrer"
-                        style={{ display: 'block', textAlign: 'center', padding: '13px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-                        {p.cta_label}
-                      </a>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Servizi — Lucide icons come nell'app */}
-      {hasServices && (
-        <section style={{ padding: '80px 0', background: '#f9f9fb' }}>
-          <div className="land-section">
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 48, textAlign: 'center' }}>I nostri servizi</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 20 }}>
-              {services.map(s => {
-                const Icon = serviceIcon(s.icon)
-                return (
-                  <div key={s.id} style={{ background: '#fff', borderRadius: 16, padding: '24px 16px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-                    <Icon size={28} strokeWidth={1.5} color={primary} style={{ marginBottom: 10 }} />
-                    <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{s.name}</div>
-                    {s.hours && <div style={{ fontSize: 12, color: '#888' }}>{s.hours}</div>}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Attività */}
-      {hasActivities && (
-        <section style={{ padding: '80px 0', background: '#fff' }}>
-          <div className="land-section">
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>Attività</h2>
-            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
-              {activityItems.length} {activityItems.length === 1 ? 'attività disponibile' : 'attività disponibili'}
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16, marginBottom: 40 }}>
-              {activityItems.map(item => (
-                <div key={item.id} style={{ background: '#f9f9fb', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
-                  {item.photo_url && (
-                    <img src={item.photo_url} alt={item.name}
-                      style={{ width: '100%', height: 160, objectFit: 'cover' }} />
-                  )}
-                  <div style={{ padding: '16px 18px' }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
-                      {item.category}
-                    </div>
-                    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>{item.name}</div>
-                    {item.schedule && (
-                      <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, color: '#888' }}>
-                        <Clock size={12} strokeWidth={1.5} />
-                        {item.schedule}
-                      </div>
-                    )}
-                    {item.location && (
-                      <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, color: '#888', marginTop: 4 }}>
-                        <LocationPin size={12} strokeWidth={1.5} />
-                        {item.location}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <a href={pwaUrl} style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-                Scopri tutte le attività
-              </a>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Escursioni */}
-      {hasExcursions && (
-        <section style={{ padding: '80px 0', background: '#f9f9fb' }}>
-          <div className="land-section">
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>Escursioni</h2>
-            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
-              {excursionItems.length} {excursionItems.length === 1 ? 'escursione disponibile' : 'escursioni disponibili'}
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginBottom: 40 }}>
-              {excursionItems.map(exc => (
-                <div key={exc.id} style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-                  {exc.photo_url && (
-                    <img src={exc.photo_url} alt={exc.name}
-                      style={{ width: '100%', height: 160, objectFit: 'cover' }} />
-                  )}
-                  <div style={{ padding: '16px 18px' }}>
-                    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>{exc.name}</div>
-                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                      {exc.price && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 700, color: primary }}>
-                          <Euro size={13} strokeWidth={2} />
-                          {exc.price}
-                        </span>
-                      )}
-                      {exc.duration && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#888' }}>
-                          <Clock size={13} strokeWidth={1.5} />
-                          {exc.duration}
-                        </span>
-                      )}
-                    </div>
-                    {exc.dates && <div style={{ fontSize: 12, color: '#888', marginTop: 6 }}>{exc.dates}</div>}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <a href={pwaUrl} style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-                Prenota un'escursione
-              </a>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Eventi */}
-      {hasEventi && (
-        <section style={{ padding: '80px 0', background: '#f9f9fb' }}>
-          <div className="land-section">
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
-              Prossimi eventi
-            </h2>
-            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
-              {upcomingEventi.length} {upcomingEventi.length === 1 ? 'evento in programma' : 'eventi in programma'}
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginBottom: 40 }}>
-              {upcomingEventi.slice(0, 6).map(ev => {
-                const dateStr = new Date(ev.date_start).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
-                return (
-                  <a key={ev.id} href={`/eventi/${ev.id}`} style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', transition: 'transform 0.14s ease, box-shadow 0.14s ease' }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(0,0,0,0.12)' }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)' }}>
-                    {ev.cover_url
-                      ? <img src={ev.cover_url} alt={ev.title} style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }} />
-                      : <div style={{ width: '100%', height: 100, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Calendar size={36} strokeWidth={1.5} color={primary} />
-                        </div>
-                    }
-                    <div style={{ padding: '16px 18px' }}>
-                      <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>{ev.title}</div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}>
-                          <Calendar size={12} strokeWidth={1.5} color={primary} /> {dateStr}
-                        </span>
-                        {ev.location && (
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}>
-                            <LocationPin size={12} strokeWidth={1.5} color={primary} /> {ev.location}
-                          </span>
-                        )}
-                        {ev.seats_total && (
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}>
-                            <Users size={12} strokeWidth={1.5} color={primary} /> {ev.seats_total - ev.seats_booked} posti
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-                        <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>
-                          {ev.price > 0 ? `€${ev.price}` : 'Gratuito'}
-                        </span>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: primary }}>Prenota →</span>
-                      </div>
-                    </div>
-                  </a>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Galleria */}
-      {hasGallery && (
-        <section style={{ padding: '80px 0', background: '#fff' }}>
-          <div className="land-section">
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 40, textAlign: 'center' }}>Galleria</h2>
-            <div className="land-gallery">
-              {gallery.map((url, i) => (
-                <img key={url + i} src={url} alt="" onClick={() => setLightbox(url)} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* FAQ */}
-      {faq.length > 0 && (
-        <section style={{ padding: '80px 0', background: '#fff' }}>
-          <div className="land-section" style={{ maxWidth: 760 }}>
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
-              Domande frequenti
-            </h2>
-            <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
-              Tutto quello che devi sapere prima di arrivare
-            </p>
-            <FaqAccordion faq={faq} primary={primary} />
-          </div>
-        </section>
-      )}
-
-      {/* Mappa */}
-      {showMap && (
-        <section style={{ lineHeight: 0 }}>
-          <iframe
-            title="mappa"
-            src={`https://maps.google.com/maps?q=${encodeURIComponent(property.address)}&output=embed&z=15`}
-            width="100%" height="380"
-            style={{ border: 'none', display: 'block' }}
-            loading="lazy"
-            allowFullScreen
-          />
-        </section>
-      )}
-
-      {/* Info e contatti */}
       {hasInfo && (
         <section style={{ padding: '80px 0', background: '#1a1a2e', color: '#fff' }}>
           <div className="land-section" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 48 }}>
@@ -699,64 +612,50 @@ export default function LandingStruttura({ property }) {
                 {property.address && (
                   <a href={`https://maps.google.com/?q=${encodeURIComponent(property.address)}`} target="_blank" rel="noopener noreferrer"
                     style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}>
-                    <MapPin size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0, marginTop: 2 }} />
-                    {property.address}
+                    <MapPin size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0, marginTop: 2 }} />{property.address}
                   </a>
                 )}
                 {property.phone && (
                   <a href={`tel:${property.phone}`} style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}>
-                    <Phone size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0 }} />
-                    {property.phone}
+                    <Phone size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0 }} />{property.phone}
                   </a>
                 )}
                 {property.email && (
                   <a href={`mailto:${property.email}`} style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}>
-                    <Mail size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0 }} />
-                    {property.email}
+                    <Mail size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0 }} />{property.email}
                   </a>
                 )}
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', gap: 16 }}>
-              <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>
-                Sei un ospite? Accedi all'app per i servizi in struttura.
-              </p>
+              <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>Sei un ospite? Accedi all'app per i servizi in struttura.</p>
               {bookingUrl && (
                 <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
                   style={{ padding: '13px 28px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
                   Prenota ora
                 </a>
               )}
-              <a href={pwaUrl} style={{ padding: '13px 28px', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>
-                App ospiti
-              </a>
+              <a href={pwaUrl} style={{ padding: '13px 28px', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>App ospiti</a>
             </div>
           </div>
         </section>
       )}
 
-      {/* Footer */}
       <footer style={{ background: '#111', padding: '28px 24px', textAlign: 'center' }}>
         {socialLinks.length > 0 && (
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
-            {socialLinks.map(({ key, label, color }) => (
-              <SocialLink key={key} href={social[key]} label={label} color={color} />
-            ))}
+            {socialLinks.map(({ key, label, color }) => <SocialLink key={key} href={social[key]} label={label} color={color} />)}
           </div>
         )}
-        <p style={{ fontSize: 12, color: '#555' }}>
-          © {new Date().getFullYear()} {property.name} · Powered by StayApp
-        </p>
+        <p style={{ fontSize: 12, color: '#555' }}>© {new Date().getFullYear()} {property.name} · Powered by StayApp</p>
       </footer>
 
-      {/* Lightbox */}
       {lightbox && (
         <div onClick={() => setLightbox(null)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 24, cursor: 'zoom-out' }}>
           <img src={lightbox} alt="" style={{ maxWidth: '100%', maxHeight: '92vh', borderRadius: 8, objectFit: 'contain' }} />
         </div>
       )}
-
     </>
   )
 }
@@ -772,15 +671,10 @@ function FaqAccordion({ faq, primary }) {
             <button onClick={() => setOpen(isOpen ? null : item.id)}
               style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '20px 24px', background: isOpen ? `${primary}08` : '#fff', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
               <span style={{ fontWeight: 700, fontSize: 16, color: '#1a1a2e', flex: 1 }}>{item.question}</span>
-              {isOpen
-                ? <Minus size={18} strokeWidth={2} color={primary} style={{ flexShrink: 0 }} />
-                : <Plus  size={18} strokeWidth={2} color={primary} style={{ flexShrink: 0 }} />
-              }
+              {isOpen ? <Minus size={18} strokeWidth={2} color={primary} style={{ flexShrink: 0 }} /> : <Plus size={18} strokeWidth={2} color={primary} style={{ flexShrink: 0 }} />}
             </button>
             {isOpen && (
-              <div style={{ padding: '0 24px 20px', fontSize: 15, color: '#555', lineHeight: 1.7, background: `${primary}08` }}>
-                {item.answer}
-              </div>
+              <div style={{ padding: '0 24px 20px', fontSize: 15, color: '#555', lineHeight: 1.7, background: `${primary}08` }}>{item.answer}</div>
             )}
           </div>
         )
