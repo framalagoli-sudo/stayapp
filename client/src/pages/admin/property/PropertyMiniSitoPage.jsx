@@ -189,7 +189,10 @@ export default function PropertyMiniSitoPage() {
 
   const landingUrl = `${window.location.origin}/s/${property.slug}`
 
-  const sectionOrder = form.section_order?.length ? form.section_order : DEFAULT_SECTION_ORDER
+  const savedOrder = form.section_order || []
+  const sectionOrder = savedOrder.length
+    ? [...savedOrder, ...DEFAULT_SECTION_ORDER.filter(k => !savedOrder.includes(k))]
+    : DEFAULT_SECTION_ORDER
 
   function handleDragEnd(event) {
     const { active, over } = event

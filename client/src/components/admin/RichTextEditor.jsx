@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
@@ -29,6 +30,13 @@ export default function RichTextEditor({ content, onChange, placeholder = 'Scriv
     content: content || '',
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
   })
+
+  // Aggiorna il contenuto quando cambia esternamente (es. caricamento articolo da DB)
+  useEffect(() => {
+    if (editor && content !== undefined && editor.getHTML() !== content) {
+      editor.commands.setContent(content || '')
+    }
+  }, [editor, content])
 
   if (!editor) return null
 
