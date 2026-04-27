@@ -118,7 +118,6 @@ export default function App() {
 
             {/* Blog */}
             <Route path="blog"                   element={<BlogListPage />} />
-            <Route path="blog/new"               element={<BlogEditorPage />} />
             <Route path="blog/categories"        element={<BlogCategoriesPage />} />
             <Route path="blog/:id"               element={<BlogEditorPage />} />
           </Route>
