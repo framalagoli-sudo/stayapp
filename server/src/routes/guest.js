@@ -38,7 +38,7 @@ async function getCollegamenti(tipo, id) {
 router.get('/r/:slug', async (req, res) => {
   const { data, error } = await supabase
     .from('ristoranti')
-    .select('id, name, description, address, phone, email, schedule, logo_url, cover_url, theme, gallery, menu, modules, minisito')
+    .select('id, azienda_id, name, description, address, phone, email, schedule, logo_url, cover_url, theme, gallery, menu, modules, minisito')
     .eq('slug', req.params.slug)
     .eq('active', true)
     .single()
@@ -118,7 +118,7 @@ router.post('/eventi/:id/book', async (req, res) => {
 router.get('/:slug', async (req, res) => {
   const { data, error } = await supabase
     .from('properties')
-    .select('id, name, description, address, phone, whatsapp, wifi_name, wifi_password, checkin_time, checkout_time, rules, amenities, logo_url, cover_url, plan, modules, theme, services, gallery, restaurant, activities, excursions, minisito')
+    .select('id, azienda_id, name, description, address, phone, whatsapp, wifi_name, wifi_password, checkin_time, checkout_time, rules, amenities, logo_url, cover_url, plan, modules, theme, services, gallery, restaurant, activities, excursions, minisito')
     .eq('slug', req.params.slug)
     .eq('active', true)
     .single()

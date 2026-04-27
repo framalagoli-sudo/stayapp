@@ -84,7 +84,7 @@ export default function LandingRistorante({ ristorante }) {
     apiFetch(`/api/guest/eventi?entity_tipo=ristorante&entity_id=${ristorante.id}`)
       .then(d => Array.isArray(d) && setUpcomingEventi(d))
       .catch(() => {})
-    apiFetch(`/api/blog/public?entity_tipo=ristorante&entity_id=${ristorante.id}&limit=6`)
+    apiFetch(`/api/blog/public?azienda_id=${ristorante.azienda_id}&entity_tipo=ristorante&entity_id=${ristorante.id}&limit=6`)
       .then(d => Array.isArray(d) && setNewsArticoli(d))
       .catch(() => {})
   }, [ristorante.id])
@@ -140,7 +140,10 @@ export default function LandingRistorante({ ristorante }) {
 
   const hasInfo = ristorante.phone || ristorante.email || ristorante.address || ristorante.schedule
 
-  const sectionOrder = mini.section_order?.length ? mini.section_order : DEFAULT_ORDER
+  const savedOrder = mini.section_order || []
+  const sectionOrder = savedOrder.length
+    ? [...savedOrder, ...DEFAULT_ORDER.filter(k => !savedOrder.includes(k))]
+    : DEFAULT_ORDER
 
   function renderSection(key) {
     if (sections[key] === false) return null

@@ -28,10 +28,17 @@ router.get('/public', async (req, res) => {
     .eq('published', true).eq('active', true)
     .order('published_at', { ascending: false })
     .limit(parseInt(limit))
+
   if (azienda_id) q = q.eq('azienda_id', azienda_id)
   if (category_id) q = q.eq('category_id', category_id)
-  if (entity_tipo) q = q.eq('entity_tipo', entity_tipo)
-  if (entity_id) q = q.eq('entity_id', entity_id)
+
+  // Se entity_id specificato: mostra articoli di quell'entità OPPURE aziendali (entity_tipo null)
+  if (entity_id && UUID_RE.test(entity_id)) {
+    q = q.or(`entity_id.eq.${entity_id},entity_tipo.is.null`)
+  } else if (entity_tipo) {
+    q = q.eq('entity_tipo', entity_tipo)
+  }
+
   const { data, error } = await q
   if (error) return res.status(500).json({ error: error.message })
   res.json(data || [])

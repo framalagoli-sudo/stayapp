@@ -93,7 +93,7 @@ export default function LandingStruttura({ property }) {
     apiFetch(`/api/guest/eventi?entity_tipo=struttura&entity_id=${property.id}`)
       .then(d => Array.isArray(d) && setUpcomingEventi(d))
       .catch(() => {})
-    apiFetch(`/api/blog/public?entity_tipo=struttura&entity_id=${property.id}&limit=6`)
+    apiFetch(`/api/blog/public?azienda_id=${property.azienda_id}&entity_tipo=struttura&entity_id=${property.id}&limit=6`)
       .then(d => Array.isArray(d) && setNewsArticoli(d))
       .catch(() => {})
   }, [property.id])
@@ -155,7 +155,10 @@ export default function LandingStruttura({ property }) {
   const ctaBanner     = mini.cta_banner || {}
   const hasInfo       = property.phone || property.email || property.address || property.checkin_time
 
-  const sectionOrder = mini.section_order?.length ? mini.section_order : DEFAULT_ORDER
+  const savedOrder = mini.section_order || []
+  const sectionOrder = savedOrder.length
+    ? [...savedOrder, ...DEFAULT_ORDER.filter(k => !savedOrder.includes(k))]
+    : DEFAULT_ORDER
 
   function renderSection(key) {
     if (sections[key] === false) return null
