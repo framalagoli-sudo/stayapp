@@ -184,7 +184,7 @@ export default function LandingStruttura({ property }) {
         return (
           <section key="stats" style={{ padding: '64px 0', background: 'linear-gradient(135deg, #1a1a2e 0%, #0f1a1a 100%)' }}>
             <div className="land-section">
-              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(stats.length, 4)}, 1fr)`, gap: 0 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 0 }}>
                 {stats.map((s, i) => (
                   <div key={s.id} style={{ textAlign: 'center', padding: '8px 24px', borderRight: i < stats.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
                     <div style={{ fontFamily: heading, fontSize: 'clamp(40px, 5vw, 64px)', fontWeight: 700, color: primary, lineHeight: 1, marginBottom: 10 }}>{s.value}</div>

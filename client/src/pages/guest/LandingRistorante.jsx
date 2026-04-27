@@ -168,7 +168,7 @@ export default function LandingRistorante({ ristorante }) {
         return (
           <section key="stats" style={{ padding: '64px 0', background: 'linear-gradient(135deg, #1a1a2e 0%, #0f1a1a 100%)' }}>
             <div className="land-section">
-              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(stats.length, 4)}, 1fr)`, gap: 0 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 0 }}>
                 {stats.map((s, i) => (
                   <div key={s.id} style={{
                     textAlign: 'center', padding: '8px 24px',
