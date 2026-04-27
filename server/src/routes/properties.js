@@ -83,7 +83,7 @@ router.post('/', async (req, res) => {
       ? `${baseSlug}-${Date.now().toString(36)}`
       : baseSlug
 
-    const allowed = ['description', 'address', 'phone', 'email', 'wifi_name', 'wifi_password', 'checkin_time', 'checkout_time', 'rules', 'amenities']
+    const allowed = ['description', 'address', 'phone', 'whatsapp', 'email', 'wifi_name', 'wifi_password', 'checkin_time', 'checkout_time', 'rules', 'amenities']
     const extras = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)))
 
     const { data, error } = await supabase
@@ -103,7 +103,7 @@ router.post('/', async (req, res) => {
 // PATCH /api/properties/:id
 router.patch('/:id', async (req, res) => {
   try {
-    const allowed = ['name', 'description', 'address', 'phone', 'email', 'wifi_name', 'wifi_password', 'checkin_time', 'checkout_time', 'rules', 'amenities', 'modules', 'theme', 'logo_url', 'cover_url', 'services', 'gallery', 'restaurant', 'activities', 'excursions', 'minisito']
+    const allowed = ['name', 'description', 'address', 'phone', 'whatsapp', 'email', 'wifi_name', 'wifi_password', 'checkin_time', 'checkout_time', 'rules', 'amenities', 'modules', 'theme', 'logo_url', 'cover_url', 'services', 'gallery', 'restaurant', 'activities', 'excursions', 'minisito']
     const updates = Object.fromEntries(
       Object.entries(req.body).filter(([k]) => allowed.includes(k))
     )
