@@ -15,6 +15,7 @@ const FIELDS = [
   { key: 'description',   label: 'Descrizione',      type: 'textarea' },
   { key: 'address',       label: 'Indirizzo',        type: 'text' },
   { key: 'phone',         label: 'Telefono',         type: 'text' },
+  { key: 'whatsapp',      label: 'WhatsApp',         type: 'text', placeholder: 'es. +39 333 1234567' },
   { key: 'email',         label: 'Email',            type: 'email' },
   { key: 'checkin_time',  label: 'Check-in',         type: 'text', placeholder: 'es. 14:00' },
   { key: 'checkout_time', label: 'Check-out',        type: 'text', placeholder: 'es. 11:00' },

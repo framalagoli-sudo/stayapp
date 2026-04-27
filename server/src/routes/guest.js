@@ -118,7 +118,7 @@ router.post('/eventi/:id/book', async (req, res) => {
 router.get('/:slug', async (req, res) => {
   const { data, error } = await supabase
     .from('properties')
-    .select('id, name, description, address, phone, wifi_name, wifi_password, checkin_time, checkout_time, rules, amenities, logo_url, cover_url, plan, modules, theme, services, gallery, restaurant, activities, excursions, minisito')
+    .select('id, name, description, address, phone, whatsapp, wifi_name, wifi_password, checkin_time, checkout_time, rules, amenities, logo_url, cover_url, plan, modules, theme, services, gallery, restaurant, activities, excursions, minisito')
     .eq('slug', req.params.slug)
     .eq('active', true)
     .single()
