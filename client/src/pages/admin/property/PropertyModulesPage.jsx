@@ -6,6 +6,7 @@ const MODULE_DEFS = [
   { key: 'wifi',         label: 'WiFi',                    desc: 'Tab WiFi con credenziali' },
   { key: 'reception',    label: 'Richieste alla reception', desc: "Tab Richiesta nell'app ospite" },
   { key: 'housekeeping', label: 'Housekeeping / Pulizie',  desc: 'Richieste di pulizia camera' },
+  { key: 'chat',         label: 'Chat con la reception',   desc: "Tab Chat nell'app ospite — messaggistica realtime" },
 ]
 
 const DEFAULT_MODULES = {
