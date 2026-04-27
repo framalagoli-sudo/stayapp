@@ -850,7 +850,7 @@ function ChatPage({ propertyId, propertyName, primary, textColor, subText, isDar
             value={nameInput}
             onChange={e => setNameInput(e.target.value)}
             placeholder="Il tuo nome (opzionale)"
-            style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: `1px solid ${borderColor}`, fontSize: 15, boxSizing: 'border-box', background: cardBg, color: textColor, marginBottom: 10 }}
+            style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: `1px solid ${borderColor}`, fontSize: 16, boxSizing: 'border-box', background: cardBg, color: textColor, marginBottom: 10 }}
           />
           <button type="submit" style={{ width: '100%', padding: '12px', background: primary, color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
             Inizia la chat
@@ -864,7 +864,7 @@ function ChatPage({ propertyId, propertyName, primary, textColor, subText, isDar
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 400 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '60vh' }}>
       {/* Header */}
       <div style={{ padding: '16px 20px 12px', borderBottom: `1px solid ${borderColor}` }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: textColor }}>{propertyName} — Reception</div>
@@ -908,12 +908,12 @@ function ChatPage({ propertyId, propertyName, primary, textColor, subText, isDar
       </div>
 
       {/* Input */}
-      <form onSubmit={send} style={{ padding: '10px 12px', borderTop: `1px solid ${borderColor}`, display: 'flex', gap: 8 }}>
+      <form onSubmit={send} style={{ padding: '10px 12px', borderTop: `1px solid ${borderColor}`, display: 'flex', gap: 8, position: 'sticky', bottom: 0, background: cardBg }}>
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
           placeholder="Scrivi un messaggio…"
-          style={{ flex: 1, padding: '10px 14px', borderRadius: 24, border: `1px solid ${borderColor}`, fontSize: 14, background: cardBg, color: textColor, outline: 'none' }}
+          style={{ flex: 1, padding: '10px 14px', borderRadius: 24, border: `1px solid ${borderColor}`, fontSize: 16, background: cardBg, color: textColor, outline: 'none' }}
         />
         <button type="submit" disabled={sending || !input.trim()} style={{
           width: 44, height: 44, borderRadius: '50%', border: 'none',

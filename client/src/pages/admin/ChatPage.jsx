@@ -5,6 +5,19 @@ import { apiFetch } from '../../lib/api'
 import { supabase } from '../../lib/supabase'
 import { Send, MessageSquare, User } from 'lucide-react'
 
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.connect(gain); gain.connect(ctx.destination)
+    osc.frequency.value = 880
+    gain.gain.setValueAtTime(0.12, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25)
+    osc.start(); osc.stop(ctx.currentTime + 0.25)
+  } catch {}
+}
+
 function formatTime(ts) {
   return new Date(ts).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
@@ -34,6 +47,7 @@ export default function ChatPage() {
   const { profile } = useAuth()
   const { strutture } = useAzienda()
   const propertyId = usePropertyId()
+  const propertyName = strutture?.find(s => s.id === propertyId)?.name || 'Struttura'
 
   const [conversations, setConversations] = useState([])
   const [activeSession, setActiveSession] = useState(null)
@@ -72,12 +86,18 @@ export default function ChatPage() {
         filter: `property_id=eq.${propertyId}`,
       }, (payload) => {
         const msg = payload.new
+        const isNewGuestMsg = msg.sender === 'guest' && msg.session_id !== activeSession
+        if (isNewGuestMsg) {
+          playBeep()
+          document.title = '💬 Nuovo messaggio — StayApp'
+          setTimeout(() => { document.title = 'StayApp' }, 5000)
+        }
         // Aggiorna lista conversazioni
         setConversations(prev => {
           const exists = prev.find(c => c.last.session_id === msg.session_id)
           if (exists) {
             return prev.map(c => c.last.session_id === msg.session_id
-              ? { last: msg, unread: msg.sender === 'guest' && msg.session_id !== activeSession ? c.unread + 1 : 0 }
+              ? { last: msg, unread: isNewGuestMsg ? c.unread + 1 : 0 }
               : c
             ).sort((a, b) => new Date(b.last.created_at) - new Date(a.last.created_at))
           }
@@ -158,14 +178,17 @@ export default function ChatPage() {
 
       {/* ── Sidebar conversazioni ── */}
       <div style={{ width: 280, borderRight: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-        <div style={{ padding: '20px 16px 12px', borderBottom: '1px solid #f0f0f0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid #f0f0f0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
             <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Chat ospiti</h2>
             {totalUnread > 0 && (
               <span style={{ background: '#e53e3e', color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 20 }}>
                 {totalUnread}
               </span>
             )}
+          </div>
+          <div style={{ fontSize: 11, color: '#aaa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            {propertyName}
           </div>
         </div>
 
