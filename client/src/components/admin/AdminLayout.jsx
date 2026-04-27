@@ -16,6 +16,7 @@ const NAV_PROPERTY = [  // admin_struttura / staff (profile.property_id)
 ]
 const STRUTTURA_SUBS = [
   { sub: 'info',       label: 'Informazioni' },
+  { sub: 'modules',    label: 'Moduli attivi' },
   { sub: 'services',   label: 'Servizi' },
   { sub: 'gallery',    label: 'Galleria foto' },
   { sub: 'theme',      label: 'Tema e colori' },

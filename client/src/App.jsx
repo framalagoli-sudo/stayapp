@@ -87,12 +87,13 @@ export default function App() {
             {/* Struttura by ID (admin_azienda, super_admin) */}
             <Route path="struttura/:id" element={<StrutturaLayout />}>
               <Route path="info"       element={<PropertyInfoPage />} />
+              <Route path="modules"    element={<PropertyModulesPage />} />
               <Route path="services"   element={<PropertyServicesPage />} />
               <Route path="gallery"    element={<PropertyGalleryPage />} />
               <Route path="theme"      element={<PropertyThemePage />} />
               <Route path="activities" element={<PropertyActivitiesPage />} />
               <Route path="excursions" element={<PropertyExcursionsPage />} />
-              <Route path="minisito"  element={<PropertyMiniSitoPage />} />
+              <Route path="minisito"   element={<PropertyMiniSitoPage />} />
             </Route>
 
             {/* Struttura legacy (admin_struttura, staff — usa profile.property_id) */}
