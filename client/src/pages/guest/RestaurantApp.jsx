@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import LandingRistorante from './LandingRistorante'
+import CookieBanner from '../../components/CookieBanner'
 import { Utensils, Info, Images, Phone, Mail, MapPin, Clock, X, ChevronRight } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
 
@@ -174,6 +175,7 @@ export default function RestaurantApp() {
         .fade-up { animation:fadeUp 0.22s ease; }
       `}</style>
 
+      <CookieBanner primaryColor={primary} privacyUrl={`/r/${slug}/privacy`} cookieUrl={`/r/${slug}/cookie`} />
       <div className="r-shell">
         <div className="r-app" style={{ fontFamily: bodyFamily, color: textColor }}>
 
@@ -417,6 +419,11 @@ function InfoTab({ ristorante, primary, textColor, subText, isDark, radius, head
           </div>
         </InfoSection>
       )}
+
+      <div style={{ textAlign: 'center', paddingTop: 20, borderTop: `1px solid ${borderColor}`, marginTop: 8 }}>
+        <a href={`/r/${ristorante.slug}/privacy`} style={{ fontSize: 12, color: subText, marginRight: 16, textDecoration: 'none' }}>Privacy Policy</a>
+        <a href={`/r/${ristorante.slug}/cookie`} style={{ fontSize: 12, color: subText, textDecoration: 'none' }}>Cookie Policy</a>
+      </div>
 
     </div>
   )

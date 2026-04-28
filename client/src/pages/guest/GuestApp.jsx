@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import LandingStruttura from './LandingStruttura'
+import CookieBanner from '../../components/CookieBanner'
 import {
   Home, Compass, Bell, Info, MessageCircle, Send,
   Images, LayoutGrid, Zap, Mountain, Calendar, Users, Euro,
@@ -239,6 +240,7 @@ export default function GuestApp() {
         .chip-bar::-webkit-scrollbar { display:none; }
       `}</style>
 
+      <CookieBanner primaryColor={primary} privacyUrl={`/s/${slug}/privacy`} cookieUrl={`/s/${slug}/cookie`} />
       <div className="g-shell">
         <div className="g-app" style={{ fontFamily: bodyFamily, color: textColor, position: 'relative' }}>
 
@@ -592,6 +594,11 @@ function InfoPage({ property, modules, primary, textColor, subText, isDark, radi
           </div>
         </InfoSection>
       )}
+
+      <div style={{ textAlign: 'center', paddingTop: 20, borderTop: `1px solid ${borderColor}`, marginTop: 8 }}>
+        <a href={`/s/${property.slug}/privacy`} style={{ fontSize: 12, color: subText, marginRight: 16, textDecoration: 'none' }}>Privacy Policy</a>
+        <a href={`/s/${property.slug}/cookie`} style={{ fontSize: 12, color: subText, textDecoration: 'none' }}>Cookie Policy</a>
+      </div>
 
     </div>
   )
