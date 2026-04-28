@@ -38,6 +38,7 @@ import BlogEditorPage from './pages/admin/blog/BlogEditorPage'
 import BlogCategoriesPage from './pages/admin/blog/BlogCategoriesPage'
 import ArticoloPage from './pages/public/ArticoloPage'
 import BlogListPage from './pages/public/BlogListPage'
+import ContattiPage from './pages/admin/ContattiPage'
 
 // Injects property ID from URL params into PropertyIdContext
 // so all property sub-pages work without modification
@@ -76,6 +77,7 @@ export default function App() {
           >
             <Route index element={<DashboardPage />} />
             <Route path="requests"   element={<RequestsPage />} />
+            <Route path="contatti"   element={<ContattiPage />} />
             <Route path="chat"       element={<ChatPage />} />
             <Route path="aziende"    element={<AziendePage />} />
             <Route path="properties" element={<PropertiesPage />} />

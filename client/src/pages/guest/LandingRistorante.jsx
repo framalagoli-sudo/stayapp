@@ -72,7 +72,7 @@ function getEmbedUrl(url) {
 const DEFAULT_ORDER = [
   'highlights', 'stats', 'about', 'video', 'cta_banner',
   'testimonianze', 'promozioni', 'menu_speciali', 'menu_preview',
-  'eventi', 'news', 'gallery', 'faq', 'show_map', 'contatti',
+  'eventi', 'news', 'gallery', 'faq', 'show_map', 'contatti', 'newsletter',
 ]
 
 export default function LandingRistorante({ ristorante }) {
@@ -511,6 +511,21 @@ export default function LandingRistorante({ ristorante }) {
           </section>
         )
 
+      case 'newsletter':
+        return (
+          <section key="newsletter" style={{ padding: '80px 0', background: primary }}>
+            <div className="land-section" style={{ maxWidth: 560, textAlign: 'center' }}>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(22px, 3vw, 34px)', fontWeight: 700, color: '#fff', marginBottom: 10 }}>
+                {mini.newsletter_title || 'Resta aggiornato'}
+              </h2>
+              <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 15, marginBottom: 36 }}>
+                {mini.newsletter_subtitle || 'Iscriviti per ricevere offerte esclusive e novità.'}
+              </p>
+              <NewsletterForm aziendaId={ristorante.azienda_id} primary={primary} />
+            </div>
+          </section>
+        )
+
       case 'gallery':
         if (!gallery.length) return null
         return (
@@ -730,6 +745,51 @@ export default function LandingRistorante({ ristorante }) {
 
       <CookieBanner primaryColor={primary} privacyUrl={mini.privacy_url || null} />
     </>
+  )
+}
+
+function NewsletterForm({ aziendaId, primary }) {
+  const [nome,     setNome]     = useState('')
+  const [email,    setEmail]    = useState('')
+  const [telefono, setTelefono] = useState('')
+  const [state,    setState]    = useState('idle')
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setState('loading')
+    try {
+      await fetch('/api/contatti/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ azienda_id: aziendaId, nome, email, telefono, fonte: 'minisito' }),
+      })
+      setState('success')
+    } catch { setState('error') }
+  }
+
+  if (state === 'success') return (
+    <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 14, padding: '24px', color: '#fff' }}>
+      <div style={{ fontSize: 32, marginBottom: 10 }}>✓</div>
+      <p style={{ fontWeight: 700, fontSize: 17, marginBottom: 4 }}>Iscrizione completata!</p>
+      <p style={{ opacity: 0.8, fontSize: 14 }}>Ti terremo aggiornato sulle nostre novità.</p>
+    </div>
+  )
+
+  return (
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <input value={nome} onChange={e => setNome(e.target.value)} required placeholder="Il tuo nome"
+        style={{ padding: '13px 16px', borderRadius: 10, border: 'none', fontSize: 15, outline: 'none' }} />
+      <input value={email} onChange={e => setEmail(e.target.value)} type="email" required placeholder="La tua email"
+        style={{ padding: '13px 16px', borderRadius: 10, border: 'none', fontSize: 15, outline: 'none' }} />
+      <input value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="Telefono (opzionale)"
+        style={{ padding: '13px 16px', borderRadius: 10, border: 'none', fontSize: 15, outline: 'none' }} />
+      {state === 'error' && <p style={{ color: '#ffe', fontSize: 13 }}>Errore. Riprova.</p>}
+      <button type="submit" disabled={state === 'loading'}
+        style={{ padding: '14px', background: '#fff', color: primary, border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer', marginTop: 4 }}>
+        {state === 'loading' ? 'Iscrizione…' : 'Iscriviti'}
+      </button>
+      <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', margin: 0 }}>Nessuno spam. Puoi cancellarti in qualsiasi momento.</p>
+    </form>
   )
 }
 
