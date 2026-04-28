@@ -11,7 +11,7 @@ const DEFAULT_CTA_BANNER    = { active: false, title: '', subtitle: '', cta_labe
 const DEFAULT_SECTION_ORDER = [
   'highlights', 'stats', 'about', 'video', 'cta_banner',
   'testimonianze', 'promozioni', 'pacchetti',
-  'services', 'activities', 'excursions', 'eventi', 'news', 'gallery', 'faq', 'show_map',
+  'services', 'activities', 'excursions', 'eventi', 'news', 'gallery', 'faq', 'show_map', 'contatti',
 ]
 const DEFAULT = {
   active: false, tagline: '', booking_url: '', seo_title: '', seo_description: '',
@@ -223,6 +223,7 @@ export default function PropertyMiniSitoPage() {
     { key: 'gallery',       label: 'Galleria foto',        hint: `${(property.gallery || []).length} foto caricate` },
     { key: 'faq',           label: 'FAQ',                  hint: `${(form.faq || []).length} domande configurate` },
     { key: 'show_map',      label: 'Mappa',                hint: property.address ? `Mappa di: ${property.address}` : 'Aggiungi un indirizzo nelle informazioni struttura' },
+    { key: 'contatti',      label: 'Form di contatto',     hint: property.email ? `Messaggi inviati a ${property.email}` : 'Aggiungi un\'email nelle info struttura per ricevere i messaggi' },
   ]
 
   const SOCIAL_ITEMS = [

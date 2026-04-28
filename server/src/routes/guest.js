@@ -129,4 +129,73 @@ router.get('/:slug', async (req, res) => {
   res.json({ ...data, collegamenti })
 })
 
+// POST /api/guest/contact — form contatto minisito (pubblico)
+router.post('/contact', async (req, res) => {
+  const { entity_tipo, entity_id, name, email, message } = req.body
+  if (!name?.trim() || !email?.trim() || !message?.trim()) {
+    return res.status(400).json({ error: 'Nome, email e messaggio sono obbligatori' })
+  }
+
+  let entityEmail = null
+  let entityName  = null
+  if (entity_tipo === 'struttura' && entity_id) {
+    const { data } = await supabase.from('properties').select('name, email').eq('id', entity_id).single()
+    entityEmail = data?.email; entityName = data?.name
+  } else if (entity_tipo === 'ristorante' && entity_id) {
+    const { data } = await supabase.from('ristoranti').select('name, email').eq('id', entity_id).single()
+    entityEmail = data?.email; entityName = data?.name
+  }
+
+  if (entityEmail && process.env.RESEND_API_KEY) {
+    try {
+      const { Resend } = await import('resend')
+      const resend = new Resend(process.env.RESEND_API_KEY)
+      await resend.emails.send({
+        from: process.env.RESEND_FROM || 'StayApp <noreply@stayapp.it>',
+        to: entityEmail,
+        replyTo: email,
+        subject: `[${entityName}] Nuovo messaggio dal sito`,
+        html: emailTemplate({
+          title: 'Nuovo messaggio dal sito',
+          entityName,
+          rows: [
+            { label: 'Nome', value: name },
+            { label: 'Email', value: `<a href="mailto:${email}" style="color:#00b5b5">${email}</a>` },
+            { label: 'Messaggio', value: message.replace(/\n/g, '<br>') },
+          ],
+          appUrl: process.env.APP_URL || 'https://stayapp.it',
+        }),
+      })
+    } catch (err) { console.error('[contact]', err.message) }
+  }
+
+  res.json({ ok: true })
+})
+
+function emailTemplate({ title, entityName, rows, appUrl }) {
+  return `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f5f5f5;font-family:Inter,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:40px 20px">
+  <table width="600" cellpadding="0" cellspacing="0" style="margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
+    <tr><td style="background:#1a1a2e;padding:28px 36px">
+      <div style="font-size:22px;font-weight:700;color:#fff">${entityName}</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-top:4px">Notifica StayApp</div>
+    </td></tr>
+    <tr><td style="padding:32px 36px">
+      <h2 style="margin:0 0 24px;font-size:18px;color:#1a1a2e">${title}</h2>
+      <table width="100%" cellpadding="0" cellspacing="0">
+        ${rows.map(r => `<tr>
+          <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;width:130px;font-size:13px;font-weight:600;color:#888;vertical-align:top">${r.label}</td>
+          <td style="padding:10px 0 10px 16px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#1a1a2e;line-height:1.6">${r.value}</td>
+        </tr>`).join('')}
+      </table>
+    </td></tr>
+    <tr><td style="padding:20px 36px;background:#f9f9fb;border-top:1px solid #f0f0f0">
+      <a href="${appUrl}/admin/requests" style="color:#00b5b5;font-size:13px;text-decoration:none;font-weight:600">Apri il pannello admin →</a>
+      <span style="color:#bbb;font-size:12px;margin-left:16px">Powered by StayApp</span>
+    </td></tr>
+  </table>
+  </td></tr></table></body></html>`
+}
+
+export { emailTemplate }
 export default router

@@ -80,7 +80,7 @@ function getEmbedUrl(url) {
 const DEFAULT_ORDER = [
   'highlights', 'stats', 'about', 'video', 'cta_banner',
   'testimonianze', 'promozioni', 'pacchetti',
-  'services', 'activities', 'excursions', 'eventi', 'news', 'gallery', 'faq', 'show_map',
+  'services', 'activities', 'excursions', 'eventi', 'news', 'gallery', 'faq', 'show_map', 'contatti',
 ]
 
 export default function LandingStruttura({ property }) {
@@ -521,6 +521,26 @@ export default function LandingStruttura({ property }) {
                   </a>
                 ))}
               </div>
+              {newsArticoli.length >= 6 && (
+                <div style={{ textAlign: 'center', marginTop: 40 }}>
+                  <a href={`/blog?azienda_id=${property.azienda_id}`}
+                    style={{ display: 'inline-block', padding: '12px 32px', borderRadius: 50, border: `2px solid ${primary}`, color: primary, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+                    Vedi tutti gli articoli →
+                  </a>
+                </div>
+              )}
+            </div>
+          </section>
+        )
+
+      case 'contatti':
+        if (!property.phone && !property.email) return null
+        return (
+          <section key="contatti" style={{ padding: '80px 0', background: '#f9f9fb' }}>
+            <div className="land-section" style={{ maxWidth: 640 }}>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>Contattaci</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Siamo a tua disposizione per qualsiasi informazione</p>
+              <ContactForm entityTipo="struttura" entityId={property.id} primary={primary} heading={heading} />
             </div>
           </section>
         )
@@ -694,6 +714,50 @@ export default function LandingStruttura({ property }) {
 
       <CookieBanner primaryColor={primary} privacyUrl={mini.privacy_url || null} />
     </>
+  )
+}
+
+function ContactForm({ entityTipo, entityId, primary, heading }) {
+  const [name,    setName]    = useState('')
+  const [email,   setEmail]   = useState('')
+  const [message, setMessage] = useState('')
+  const [state,   setState]   = useState('idle')
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setState('loading')
+    try {
+      await fetch('/api/guest/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, name, email, message }),
+      })
+      setState('success')
+    } catch { setState('error') }
+  }
+
+  if (state === 'success') {
+    return (
+      <div style={{ textAlign: 'center', padding: '40px 0' }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>✓</div>
+        <p style={{ fontWeight: 700, fontSize: 18, color: primary, marginBottom: 8 }}>Messaggio inviato!</p>
+        <p style={{ color: '#888' }}>Ti risponderemo il prima possibile.</p>
+      </div>
+    )
+  }
+
+  const inputStyle = { width: '100%', padding: '12px 16px', borderRadius: 10, border: '1px solid #e0e0e0', fontSize: 15, marginBottom: 16, boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none' }
+  return (
+    <form onSubmit={handleSubmit} style={{ background: '#fff', borderRadius: 16, padding: '36px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+      <input value={name} onChange={e => setName(e.target.value)} required placeholder="Il tuo nome" style={inputStyle} />
+      <input value={email} onChange={e => setEmail(e.target.value)} required type="email" placeholder="La tua email" style={inputStyle} />
+      <textarea value={message} onChange={e => setMessage(e.target.value)} required rows={5} placeholder="Il tuo messaggio…" style={{ ...inputStyle, resize: 'vertical' }} />
+      {state === 'error' && <p style={{ color: '#e53e3e', fontSize: 13, marginBottom: 12 }}>Errore nell'invio. Riprova.</p>}
+      <button type="submit" disabled={state === 'loading'}
+        style={{ width: '100%', padding: '14px', background: primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
+        {state === 'loading' ? 'Invio…' : 'Invia messaggio'}
+      </button>
+    </form>
   )
 }
 

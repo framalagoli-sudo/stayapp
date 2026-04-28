@@ -12,7 +12,7 @@ const DEFAULT_CTA_BANNER    = { active: false, title: '', subtitle: '', cta_labe
 const DEFAULT_SECTION_ORDER = [
   'highlights', 'stats', 'about', 'video', 'cta_banner',
   'testimonianze', 'promozioni', 'menu_speciali', 'menu_preview',
-  'eventi', 'news', 'gallery', 'faq', 'show_map',
+  'eventi', 'news', 'gallery', 'faq', 'show_map', 'contatti',
 ]
 const DEFAULT = {
   active: false, tagline: '', booking_url: '', seo_title: '', seo_description: '',
@@ -211,6 +211,7 @@ export default function RistoranteMiniSitoPage() {
     { key: 'gallery',       label: 'Galleria foto',        hint: `${(ristorante.gallery || []).length} foto caricate` },
     { key: 'faq',           label: 'FAQ',                  hint: `${(form.faq || []).length} domande configurate` },
     { key: 'show_map',      label: 'Mappa',                hint: ristorante.address ? `Mappa di: ${ristorante.address}` : 'Aggiungi un indirizzo nelle informazioni ristorante' },
+    { key: 'contatti',      label: 'Form di contatto',     hint: ristorante.email ? `Messaggi inviati a ${ristorante.email}` : 'Aggiungi un\'email nelle info ristorante per ricevere i messaggi' },
   ]
 
   const SOCIAL_ITEMS = [
