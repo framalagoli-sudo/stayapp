@@ -734,9 +734,9 @@ export default function LandingRistorante({ ristorante }) {
           © {new Date().getFullYear()} {ristorante.name} · Powered by StayApp
         </p>
         {ristorante.slug && (
-          <p style={{ fontSize: 11, color: '#444', marginTop: 8 }}>
-            <a href={`/r/${ristorante.slug}/privacy`} style={{ color: '#666', textDecoration: 'none', marginRight: 12 }}>Privacy Policy</a>
-            <a href={`/r/${ristorante.slug}/cookie`}  style={{ color: '#666', textDecoration: 'none' }}>Cookie Policy</a>
+          <p style={{ fontSize: 11, color: '#888', marginTop: 8 }}>
+            <a href={`/r/${ristorante.slug}/privacy`} style={{ color: '#aaa', textDecoration: 'none', marginRight: 12 }}>Privacy Policy</a>
+            <a href={`/r/${ristorante.slug}/cookie`}  style={{ color: '#aaa', textDecoration: 'none' }}>Cookie Policy</a>
           </p>
         )}
       </footer>

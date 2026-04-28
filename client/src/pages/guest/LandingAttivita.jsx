@@ -512,9 +512,9 @@ export default function LandingAttivita({ attivita }) {
         )}
         <p style={{ fontSize: 12, color: '#555' }}>© {new Date().getFullYear()} {attivita.name} · Powered by StayApp</p>
         {attivita.slug && (
-          <p style={{ fontSize: 11, color: '#444', marginTop: 8 }}>
-            <a href={`/a/${attivita.slug}/privacy`} style={{ color: '#666', textDecoration: 'none', marginRight: 12 }}>Privacy Policy</a>
-            <a href={`/a/${attivita.slug}/cookie`}  style={{ color: '#666', textDecoration: 'none' }}>Cookie Policy</a>
+          <p style={{ fontSize: 11, color: '#888', marginTop: 8 }}>
+            <a href={`/a/${attivita.slug}/privacy`} style={{ color: '#aaa', textDecoration: 'none', marginRight: 12 }}>Privacy Policy</a>
+            <a href={`/a/${attivita.slug}/cookie`}  style={{ color: '#aaa', textDecoration: 'none' }}>Cookie Policy</a>
           </p>
         )}
       </footer>
