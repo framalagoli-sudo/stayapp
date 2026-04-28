@@ -718,6 +718,12 @@ export default function LandingStruttura({ property }) {
           </div>
         )}
         <p style={{ fontSize: 12, color: '#555' }}>© {new Date().getFullYear()} {property.name} · Powered by StayApp</p>
+        {property.slug && (
+          <p style={{ fontSize: 11, color: '#444', marginTop: 8 }}>
+            <a href={`/s/${property.slug}/privacy`} style={{ color: '#666', textDecoration: 'none', marginRight: 12 }}>Privacy Policy</a>
+            <a href={`/s/${property.slug}/cookie`}  style={{ color: '#666', textDecoration: 'none' }}>Cookie Policy</a>
+          </p>
+        )}
       </footer>
 
       {lightbox && (

@@ -46,8 +46,8 @@ const DEFAULT_PRIVACY = {
   usa_newsletter: false,
   usa_richieste_ospiti: false,
   usa_prenotazioni: false,
-  hosting_provider: 'Supabase (EU - Frankfurt)',
-  email_provider: 'Resend',
+  hosting_provider: '',
+  email_provider: '',
 }
 
 const oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
@@ -161,13 +161,13 @@ function PrivacyPolicyContent({ entity, p, primary, entityType }) {
       <Section title="5. Destinatari dei dati">
         <p>I dati personali possono essere comunicati alle seguenti categorie di destinatari, nella qualità di Responsabili del trattamento ex art. 28 GDPR:</p>
         <ul>
-          <li><strong>Fornitore di hosting e database:</strong> {p.hosting_provider} — trattamento necessario all'erogazione del servizio digitale.</li>
+          <li><strong>Fornitore di hosting e database:</strong> server certificati localizzati all'interno dello Spazio Economico Europeo — trattamento necessario all'erogazione del servizio digitale.</li>
           {(p.usa_form_contatti || p.usa_newsletter) && (
-            <li><strong>Fornitore invio email:</strong> {p.email_provider} — utilizzato per inviare notifiche e comunicazioni.</li>
+            <li><strong>Fornitore invio email:</strong> servizio di invio email transazionale — utilizzato per inviare notifiche e comunicazioni agli indirizzi forniti.</li>
           )}
         </ul>
         <p>I dati non vengono venduti, ceduti o comunicati a terzi per finalità commerciali proprie di questi ultimi.</p>
-        <p><strong>Trasferimento extra-UE:</strong> Il fornitore di hosting elabora i dati all'interno dello Spazio Economico Europeo (SEA). Eventuali trasferimenti verso paesi terzi avvengono nel rispetto delle garanzie previste dagli artt. 44-49 GDPR.</p>
+        <p><strong>Trasferimento extra-UE:</strong> I dati vengono elaborati all'interno dello Spazio Economico Europeo (SEE). Eventuali trasferimenti verso paesi terzi avvengono nel rispetto delle garanzie previste dagli artt. 44-49 GDPR.</p>
       </Section>
 
       <Section title="6. Diritti dell'interessato">
