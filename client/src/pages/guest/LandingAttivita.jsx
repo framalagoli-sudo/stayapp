@@ -527,8 +527,8 @@ export default function LandingAttivita({ attivita }) {
 
       <CookieBanner
         primaryColor={primary}
-        privacyUrl={attivita.slug ? `${window.location.origin}/a/${attivita.slug}/privacy` : null}
-        cookieUrl={attivita.slug  ? `${window.location.origin}/a/${attivita.slug}/cookie`  : null}
+        privacyUrl={attivita.slug ? `/a/${attivita.slug}/privacy` : null}
+        cookieUrl={attivita.slug  ? `/a/${attivita.slug}/cookie`  : null}
       />
     </>
   )
