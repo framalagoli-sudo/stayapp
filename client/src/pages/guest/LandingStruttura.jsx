@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { MapPin, Phone, Mail, ChevronDown, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro, Heart, Award, Mountain, Wind, Calendar, Users, Plus, Minus } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
+import CookieBanner from '../../components/CookieBanner'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -690,6 +691,8 @@ export default function LandingStruttura({ property }) {
           <img src={lightbox} alt="" style={{ maxWidth: '100%', maxHeight: '92vh', borderRadius: 8, objectFit: 'contain' }} />
         </div>
       )}
+
+      <CookieBanner primaryColor={primary} privacyUrl={mini.privacy_url || null} />
     </>
   )
 }

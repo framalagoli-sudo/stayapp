@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useAzienda } from '../../context/AziendaContext'
 import { supabase } from '../../lib/supabase'
 import { apiFetch } from '../../lib/api'
-import { ExternalLink, Settings, Store, Building2, Eye } from 'lucide-react'
+import { ExternalLink, Settings, Store, Building2, Eye, AlertTriangle } from 'lucide-react'
 
 export default function DashboardPage() {
   const { profile } = useAuth()
@@ -73,6 +73,20 @@ export default function DashboardPage() {
     <div>
       <h2 style={{ marginTop: 0 }}>Dashboard</h2>
       <p style={{ color: '#666', marginBottom: 24 }}>Benvenuto, {profile?.full_name || 'Admin'}.</p>
+
+      {properties.some(p => !p.email) && (
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, background: '#fffbeb', border: '1px solid #f6cc5c', borderRadius: 10, padding: '14px 16px', marginBottom: 24 }}>
+          <AlertTriangle size={18} strokeWidth={2} color="#b7791f" style={{ flexShrink: 0, marginTop: 1 }} />
+          <div style={{ fontSize: 14, color: '#7d5a00', lineHeight: 1.5 }}>
+            <strong>Email mancante</strong> — alcune strutture non hanno un'email configurata.
+            Le notifiche di nuove richieste non verranno inviate.{' '}
+            <button onClick={() => navigate('/admin/property/info')}
+              style={{ background: 'none', border: 'none', color: '#b7791f', fontWeight: 700, cursor: 'pointer', padding: 0, textDecoration: 'underline', fontSize: 14 }}>
+              Vai in Informazioni
+            </button> per aggiungerla.
+          </div>
+        </div>
+      )}
 
       {profile?.property_id && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 40 }}>
@@ -167,6 +181,18 @@ function AziendaDashboard({ profile }) {
           Benvenuto, {profile?.full_name || 'Admin'}. Gestisci le tue entità e visualizza le anteprime.
         </p>
       </div>
+
+      {!loading && allEntita.some(e => !e.email) && (
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, background: '#fffbeb', border: '1px solid #f6cc5c', borderRadius: 10, padding: '14px 16px', marginBottom: 24 }}>
+          <AlertTriangle size={18} strokeWidth={2} color="#b7791f" style={{ flexShrink: 0, marginTop: 1 }} />
+          <div style={{ fontSize: 14, color: '#7d5a00', lineHeight: 1.5 }}>
+            <strong>Email mancante</strong> —{' '}
+            {allEntita.filter(e => !e.email).map(e => e.name).join(', ')}{' '}
+            {allEntita.filter(e => !e.email).length === 1 ? 'non ha' : 'non hanno'} un'email configurata.
+            Le notifiche di nuove richieste ospite non verranno inviate. Vai in <em>Gestisci → Informazioni</em> per aggiungerla.
+          </div>
+        </div>
+      )}
 
       {loading && <p style={{ color: '#aaa', fontSize: 14 }}>Caricamento…</p>}
 

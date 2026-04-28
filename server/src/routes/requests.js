@@ -4,6 +4,20 @@ import { requireAuth } from '../middleware/auth.js'
 
 const router = Router()
 
+async function sendAdminEmail({ to, subject, html }) {
+  if (!process.env.RESEND_API_KEY || !to) return
+  try {
+    const { Resend } = await import('resend')
+    const resend = new Resend(process.env.RESEND_API_KEY)
+    await resend.emails.send({
+      from: process.env.RESEND_FROM || 'StayApp <noreply@stayapp.it>',
+      to, subject, html,
+    })
+  } catch (err) {
+    console.error('[email]', err.message)
+  }
+}
+
 // POST /api/requests — guest submits a request (no auth)
 router.post('/', async (req, res) => {
   const { property_id, room, type, message } = req.body
@@ -18,6 +32,26 @@ router.post('/', async (req, res) => {
     .single()
 
   if (error) return res.status(500).json({ error: error.message })
+
+  // Email notification (fire-and-forget)
+  supabase.from('properties').select('name, email').eq('id', property_id).single()
+    .then(({ data: prop }) => {
+      if (!prop?.email) return
+      sendAdminEmail({
+        to: prop.email,
+        subject: `[${prop.name}] Nuova richiesta: ${type}`,
+        html: `
+          <h2>Nuova richiesta ospite</h2>
+          <p><strong>Tipo:</strong> ${type}</p>
+          ${room ? `<p><strong>Camera:</strong> ${room}</p>` : ''}
+          <p><strong>Messaggio:</strong><br>${message.replace(/\n/g, '<br>')}</p>
+          <hr>
+          <p style="color:#888;font-size:12px">StayApp — pannello admin: ${process.env.APP_URL || 'https://stayapp.it'}/admin/requests</p>
+        `,
+      })
+    })
+    .catch(() => {})
+
   res.status(201).json(data)
 })
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { MapPin, Phone, Mail, Clock, ChevronDown, Utensils, Wine, Coffee, Music, Car, Wind, Wifi, Bell, Bus, Star, Heart, Award, Calendar, Users, Plus, Minus } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
+import CookieBanner from '../../components/CookieBanner'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -706,6 +707,8 @@ export default function LandingRistorante({ ristorante }) {
           <img src={lightbox} alt="" style={{ maxWidth: '100%', maxHeight: '92vh', borderRadius: 8, objectFit: 'contain' }} />
         </div>
       )}
+
+      <CookieBanner primaryColor={primary} privacyUrl={mini.privacy_url || null} />
     </>
   )
 }
