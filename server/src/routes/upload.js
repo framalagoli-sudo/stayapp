@@ -261,4 +261,62 @@ router.post('/blog-cover', (req, res, next) => {
   }
 })
 
+// ── Attività uploads ───────────────────────────────────────────────────────
+
+async function handleAttivitaUpload(req, res, dbField) {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Nessun file ricevuto' })
+    const { attivita_id } = req.query
+    if (!attivita_id) return res.status(400).json({ error: 'attivita_id obbligatorio' })
+
+    const ext = req.file.originalname.split('.').pop().toLowerCase()
+    const storagePath = `attivita/${attivita_id}/${dbField}-${Date.now()}.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('property-media')
+      .upload(storagePath, req.file.buffer, { contentType: req.file.mimetype, upsert: true })
+    if (uploadError) return res.status(500).json({ error: uploadError.message })
+
+    const { data } = supabase.storage.from('property-media').getPublicUrl(storagePath)
+    const publicUrl = `${data.publicUrl}?v=${Date.now()}`
+
+    const { error: dbError } = await supabase
+      .from('attivita').update({ [dbField]: publicUrl }).eq('id', attivita_id)
+    if (dbError) return res.status(500).json({ error: dbError.message })
+
+    res.json({ url: publicUrl })
+  } catch (err) {
+    res.status(500).json({ error: 'Errore interno del server' })
+  }
+}
+
+router.post('/attivita-logo',  upload.single('file'), (req, res) => handleAttivitaUpload(req, res, 'logo_url'))
+router.post('/attivita-cover', upload.single('file'), (req, res) => handleAttivitaUpload(req, res, 'cover_url'))
+
+router.post('/attivita-gallery', (req, res, next) => {
+  upload.single('file')(req, res, err => {
+    if (err) return res.status(400).json({ error: `Errore file: ${err.message}` })
+    next()
+  })
+}, async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Nessun file ricevuto' })
+    const { attivita_id } = req.query
+    if (!attivita_id) return res.status(400).json({ error: 'attivita_id obbligatorio' })
+
+    const ext = req.file.originalname.split('.').pop().toLowerCase()
+    const storagePath = `attivita/${attivita_id}/gallery-${Date.now()}.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('property-media')
+      .upload(storagePath, req.file.buffer, { contentType: req.file.mimetype, upsert: true })
+    if (uploadError) return res.status(500).json({ error: uploadError.message })
+
+    const { data } = supabase.storage.from('property-media').getPublicUrl(storagePath)
+    res.json({ url: `${data.publicUrl}?v=${Date.now()}` })
+  } catch {
+    res.status(500).json({ error: 'Errore interno del server' })
+  }
+})
+
 export default router

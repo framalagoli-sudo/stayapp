@@ -34,6 +34,18 @@ async function getCollegamenti(tipo, id) {
   return result
 }
 
+// GET /api/guest/a/:slug — attività (public)
+router.get('/a/:slug', async (req, res) => {
+  const { data, error } = await supabase
+    .from('attivita')
+    .select('id, azienda_id, name, tipo, description, address, phone, email, schedule, logo_url, cover_url, theme, gallery, services, minisito')
+    .eq('slug', req.params.slug)
+    .eq('active', true)
+    .single()
+  if (error || !data) return res.status(404).json({ error: 'Attività non trovata' })
+  res.json(data)
+})
+
 // GET /api/guest/r/:slug — ristorante (public)
 router.get('/r/:slug', async (req, res) => {
   const { data, error } = await supabase

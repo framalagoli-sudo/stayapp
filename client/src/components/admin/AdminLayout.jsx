@@ -32,6 +32,12 @@ const RISTORANTE_SUBS = [
   { sub: 'theme',    label: 'Tema e colori' },
   { sub: 'minisito', label: 'Minisito pubblico' },
 ]
+const ATTIVITA_SUBS = [
+  { sub: 'info',     label: 'Informazioni' },
+  { sub: 'gallery',  label: 'Galleria foto' },
+  { sub: 'theme',    label: 'Tema e colori' },
+  { sub: 'minisito', label: 'Minisito pubblico' },
+]
 
 // ─── CSS ──────────────────────────────────────────────────────────────────────
 const STYLES = `
@@ -82,12 +88,13 @@ const STYLES = `
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function AdminLayout() {
   const { profile, signOut } = useAuth()
-  const { azienda, strutture, ristoranti, selectedStrutturaId, setSelectedStrutturaId, selectedRistoranteId, setSelectedRistoranteId, loading: aziendaLoading } = useAzienda()
+  const { azienda, strutture, ristoranti, attivita, selectedStrutturaId, setSelectedStrutturaId, selectedRistoranteId, setSelectedRistoranteId, selectedAttivitaId, setSelectedAttivitaId, loading: aziendaLoading } = useAzienda()
   const navigate = useNavigate()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [strutturaOpen, setStrutturaOpen] = useState(true)
   const [ristoranteOpen, setRistoranteOpen] = useState(false)
+  const [attivitaOpen, setAttivitaOpen] = useState(false)
 
   useEffect(() => { setMenuOpen(false) }, [location.pathname])
 
@@ -98,6 +105,9 @@ export default function AdminLayout() {
     }
     if (location.pathname.includes('/admin/ristoranti/')) {
       setRistoranteOpen(true)
+    }
+    if (location.pathname.includes('/admin/attivita/')) {
+      setAttivitaOpen(true)
     }
   }, [location.pathname])
 
@@ -116,13 +126,16 @@ export default function AdminLayout() {
   const moduli = azienda?.moduli || {}
   const hasStruttura = isAdminAzienda ? (!!moduli.struttura && !aziendaLoading) : (moduli.struttura || strutture.length > 0)
   const hasRistorante = isAdminAzienda ? (!!moduli.ristorante && !aziendaLoading) : (moduli.ristorante || ristoranti.length > 0)
+  const hasAttivita = isAdminAzienda ? (!!moduli.attivita && !aziendaLoading) : (moduli.attivita || attivita?.length > 0)
   const bothActive = hasStruttura && hasRistorante
 
   // Detect URL-based navigation (for super_admin sub-pages)
   const strutturaUrlMatch = location.pathname.match(/^\/admin\/struttura\/([^/]+)/)
   const ristoranteUrlMatch = location.pathname.match(/^\/admin\/ristoranti\/([^/]+)\//)
+  const attivitaUrlMatch = location.pathname.match(/^\/admin\/attivita\/([^/]+)\//)
   const strutturaUrlId = strutturaUrlMatch?.[1]
   const ristoranteUrlId = ristoranteUrlMatch?.[1]
+  const attivitaUrlId = attivitaUrlMatch?.[1]
 
   const navLinkStyle = (isActive, sub = false) => ({
     display: 'block',
@@ -223,6 +236,39 @@ export default function AdminLayout() {
     })
   }
 
+  function AttivitaSelector() {
+    if (!attivita || attivita.length <= 1) return null
+    return (
+      <select
+        className="sidebar-selector"
+        value={selectedAttivitaId || ''}
+        onChange={e => {
+          setSelectedAttivitaId(e.target.value)
+          navigate(`/admin/attivita/${e.target.value}/info`)
+        }}
+      >
+        {attivita.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+      </select>
+    )
+  }
+
+  function AttivitaSubLinks({ baseId }) {
+    if (!baseId) return (
+      <div style={{ padding: '6px 12px 10px 20px', fontSize: 12, color: '#666', fontStyle: 'italic' }}>
+        Nessuna attività creata.<br />
+        <span style={{ color: '#888' }}>Aggiungila dal pannello Attività.</span>
+      </div>
+    )
+    return ATTIVITA_SUBS.map(({ sub, label }) => {
+      const to = `/admin/attivita/${baseId}/${sub}`
+      return (
+        <NavLink key={sub} to={to} style={({ isActive }) => navLinkStyle(isActive, true)}>
+          {label}
+        </NavLink>
+      )
+    })
+  }
+
   const sidebarContent = (
     <>
       <div style={{ padding: '24px 20px 16px', fontWeight: 700, fontSize: 18, letterSpacing: 1 }}>
@@ -240,6 +286,7 @@ export default function AdminLayout() {
             <NavLink to="/admin/aziende"    style={({ isActive }) => navLinkStyle(isActive)}>Aziende</NavLink>
             <NavLink to="/admin/properties" style={({ isActive }) => navLinkStyle(isActive)}>Strutture</NavLink>
             <NavLink to="/admin/ristoranti" style={({ isActive }) => navLinkStyle(isActive)}>Ristoranti</NavLink>
+            <NavLink to="/admin/attivita"   style={({ isActive }) => navLinkStyle(isActive)}>Attività</NavLink>
             <NavLink to="/admin/users"      style={({ isActive }) => navLinkStyle(isActive)}>Utenti</NavLink>
             <NavLink to="/admin/requests"   style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>
             <NavLink to="/admin/eventi"     style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>
@@ -257,6 +304,13 @@ export default function AdminLayout() {
               <>
                 <SectionHeader label="Ristorante" />
                 <RistoranteSubLinks baseId={ristoranteUrlId} />
+              </>
+            )}
+            {/* Sub-nav attività quando super_admin gestisce un'attività via URL */}
+            {attivitaUrlId && !strutturaUrlId && !ristoranteUrlId && (
+              <>
+                <SectionHeader label="Attività" />
+                <AttivitaSubLinks baseId={attivitaUrlId} />
               </>
             )}
           </>
@@ -311,6 +365,18 @@ export default function AdminLayout() {
                   <RistoranteSubLinks baseId={selectedRistoranteId} />
                 </CollapseSection>
               </>
+            )}
+
+            {/* Attività */}
+            {hasAttivita && (
+              <CollapseSection
+                label="Attività"
+                isOpen={attivitaOpen}
+                onToggle={() => setAttivitaOpen(o => !o)}
+              >
+                <AttivitaSelector />
+                <AttivitaSubLinks baseId={selectedAttivitaId} />
+              </CollapseSection>
             )}
           </>
         )}

@@ -9,8 +9,10 @@ export function AziendaProvider({ children }) {
   const [azienda, setAzienda] = useState(null)
   const [strutture, setStrutture] = useState([])
   const [ristoranti, setRistoranti] = useState([])
+  const [attivita, setAttivita] = useState([])
   const [selectedStrutturaId, _setSelectedStrutturaId] = useState(null)
   const [selectedRistoranteId, _setSelectedRistoranteId] = useState(null)
+  const [selectedAttivitaId, _setSelectedAttivitaId] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export function AziendaProvider({ children }) {
         return
       }
 
-      const promises = [apiFetch('/api/properties'), apiFetch('/api/ristoranti')]
+      const promises = [apiFetch('/api/properties'), apiFetch('/api/ristoranti'), apiFetch('/api/attivita')]
       if (profile.azienda_id) promises.unshift(apiFetch(`/api/aziende/${profile.azienda_id}`))
 
       const results = await Promise.all(promises)
@@ -37,11 +39,14 @@ export function AziendaProvider({ children }) {
         setAzienda(results[0])
         setStrutture(results[1])
         setRistoranti(results[2])
+        setAttivita(results[3] || [])
         _setSelectedStrutturaId(id => id || results[1][0]?.id || null)
         _setSelectedRistoranteId(id => id || results[2][0]?.id || null)
+        _setSelectedAttivitaId(id => id || results[3]?.[0]?.id || null)
       } else {
         setStrutture(results[0])
         setRistoranti(results[1])
+        setAttivita(results[2] || [])
       }
     } catch (e) {
       console.error('AziendaContext load error:', e)
@@ -54,12 +59,14 @@ export function AziendaProvider({ children }) {
 
   function setSelectedStrutturaId(id) { _setSelectedStrutturaId(id) }
   function setSelectedRistoranteId(id) { _setSelectedRistoranteId(id) }
+  function setSelectedAttivitaId(id) { _setSelectedAttivitaId(id) }
 
   return (
     <AziendaContext.Provider value={{
-      azienda, strutture, ristoranti,
+      azienda, strutture, ristoranti, attivita,
       selectedStrutturaId, setSelectedStrutturaId,
       selectedRistoranteId, setSelectedRistoranteId,
+      selectedAttivitaId, setSelectedAttivitaId,
       loading, refresh,
     }}>
       {children}

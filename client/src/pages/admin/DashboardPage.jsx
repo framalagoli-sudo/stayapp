@@ -159,16 +159,18 @@ export default function DashboardPage() {
 
 function AziendaDashboard({ profile }) {
   const navigate = useNavigate()
-  const { azienda, strutture, ristoranti, loading } = useAzienda()
+  const { azienda, strutture, ristoranti, attivita, loading } = useAzienda()
 
   const allEntita = [
     ...strutture.map(s => ({ ...s, tipo: 'struttura' })),
     ...ristoranti.map(r => ({ ...r, tipo: 'ristorante' })),
+    ...(attivita || []).map(a => ({ ...a, tipo: 'attivita' })),
   ]
 
   const TIPO_CONFIG = {
     struttura: { label: 'Struttura', color: '#1a1a2e', bg: '#1a1a2e18', icon: Building2, pwaBase: '/s/' },
     ristorante: { label: 'Ristorante', color: '#e63946', bg: '#e6394618', icon: Store, pwaBase: '/r/' },
+    attivita:   { label: 'Attività',   color: '#6b46c1', bg: '#6b46c118', icon: Eye,     pwaBase: '/a/' },
   }
 
   return (
@@ -216,7 +218,9 @@ function AziendaDashboard({ profile }) {
             const Icon = cfg.icon
             const adminPath = entita.tipo === 'struttura'
               ? `/admin/struttura/${entita.id}/info`
-              : `/admin/ristoranti/${entita.id}/info`
+              : entita.tipo === 'ristorante'
+              ? `/admin/ristoranti/${entita.id}/info`
+              : `/admin/attivita/${entita.id}/info`
             const pwaUrl = cfg.pwaBase + entita.slug
 
             return (

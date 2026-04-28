@@ -33,12 +33,18 @@ import RistoranteMiniSitoPage from './pages/admin/ristorante/RistoranteMiniSitoP
 import EventiListPage from './pages/admin/eventi/EventiListPage'
 import EventoEditPage from './pages/admin/eventi/EventoEditPage'
 import EventoPrenotazioniPage from './pages/admin/eventi/EventoPrenotazioniPage'
-import BlogListPage from './pages/admin/blog/BlogListPage'
+import AdminBlogListPage from './pages/admin/blog/BlogListPage'
 import BlogEditorPage from './pages/admin/blog/BlogEditorPage'
 import BlogCategoriesPage from './pages/admin/blog/BlogCategoriesPage'
 import ArticoloPage from './pages/public/ArticoloPage'
 import BlogListPage from './pages/public/BlogListPage'
 import ContattiPage from './pages/admin/ContattiPage'
+import AttivitaListPage from './pages/admin/attivita/AttivitaListPage'
+import AttivitaInfoPage from './pages/admin/attivita/AttivitaInfoPage'
+import AttivitaGalleryPage from './pages/admin/attivita/AttivitaGalleryPage'
+import AttivitaThemePage from './pages/admin/attivita/AttivitaThemePage'
+import AttivitaMiniSitoPage from './pages/admin/attivita/AttivitaMiniSitoPage'
+import AttivitaApp from './pages/guest/AttivitaApp'
 
 // Injects property ID from URL params into PropertyIdContext
 // so all property sub-pages work without modification
@@ -59,6 +65,7 @@ export default function App() {
           {/* Guest PWA */}
           <Route path="/s/:slug" element={<GuestApp />} />
           <Route path="/r/:slug" element={<RestaurantApp />} />
+          <Route path="/a/:slug" element={<AttivitaApp />} />
           <Route path="/eventi/:id" element={<EventoPage />} />
           <Route path="/blog" element={<BlogListPage />} />
           <Route path="/blog/:slug" element={<ArticoloPage />} />
@@ -83,6 +90,13 @@ export default function App() {
             <Route path="properties" element={<PropertiesPage />} />
             <Route path="users"      element={<UsersPage />} />
             <Route path="qrcode"     element={<QRCodePage />} />
+
+            {/* Attività */}
+            <Route path="attivita"                element={<AttivitaListPage />} />
+            <Route path="attivita/:id/info"       element={<AttivitaInfoPage />} />
+            <Route path="attivita/:id/gallery"    element={<AttivitaGalleryPage />} />
+            <Route path="attivita/:id/theme"      element={<AttivitaThemePage />} />
+            <Route path="attivita/:id/minisito"   element={<AttivitaMiniSitoPage />} />
 
             {/* Ristoranti */}
             <Route path="ristoranti"              element={<RistorantiListPage />} />
@@ -121,7 +135,7 @@ export default function App() {
             <Route path="eventi/:id/prenotazioni"        element={<EventoPrenotazioniPage />} />
 
             {/* Blog */}
-            <Route path="blog"                   element={<BlogListPage />} />
+            <Route path="blog"                   element={<AdminBlogListPage />} />
             <Route path="blog/categories"        element={<BlogCategoriesPage />} />
             <Route path="blog/:id"               element={<BlogEditorPage />} />
           </Route>

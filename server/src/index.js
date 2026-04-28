@@ -15,6 +15,7 @@ import messagesRouter from './routes/messages.js'
 import eventiRouter from './routes/eventi.js'
 import blogRouter from './routes/blog.js'
 import contattiRouter from './routes/contatti.js'
+import attivitaRouter from './routes/attivita.js'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -42,6 +43,7 @@ app.use('/api/messages', messagesRouter)
 app.use('/api/eventi', eventiRouter)
 app.use('/api/blog', blogRouter)
 app.use('/api/contatti', contattiRouter)
+app.use('/api/attivita', attivitaRouter)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 
