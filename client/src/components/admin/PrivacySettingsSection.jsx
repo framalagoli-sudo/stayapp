@@ -43,7 +43,7 @@ const TOGGLES = [
   { key: 'usa_prenotazioni',     label: 'Sistema prenotazioni',         hint: 'Se integri strumenti di booking esterni (TheFork, Booking, ecc.)' },
 ]
 
-export default function PrivacySettingsSection({ entityData, pwaSlug, pwaPrefix, onSave, saving, saved }) {
+export default function PrivacySettingsSection({ entityData, pwaSlug, pwaPrefix, onSave, saving, saved, saveError }) {
   const [form, setForm] = useState(DEFAULT)
 
   useEffect(() => {
