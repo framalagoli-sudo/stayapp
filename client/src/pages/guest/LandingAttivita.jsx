@@ -404,7 +404,7 @@ export default function LandingAttivita({ attivita }) {
             <div className="land-section" style={{ maxWidth: 640 }}>
               <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>Contattaci</h2>
               <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Siamo a tua disposizione</p>
-              <ContactForm entityTipo="attivita" entityId={attivita.id} primary={primary} />
+              <ContactForm entityTipo="attivita" entityId={attivita.id} primary={primary} privacyUrl={`/a/${attivita.slug}/privacy`} />
             </div>
           </section>
         )
@@ -551,10 +551,10 @@ function NewsletterForm({ aziendaId, primary }) {
   )
 }
 
-function ContactForm({ entityTipo, entityId, primary }) {
-  const [nome, setNome] = useState(''); const [email, setEmail] = useState(''); const [message, setMessage] = useState(''); const [state, setState] = useState('idle')
+function ContactForm({ entityTipo, entityId, primary, privacyUrl }) {
+  const [nome, setNome] = useState(''); const [email, setEmail] = useState(''); const [message, setMessage] = useState(''); const [privacy, setPrivacy] = useState(false); const [state, setState] = useState('idle')
   async function handleSubmit(e) {
-    e.preventDefault(); setState('loading')
+    e.preventDefault(); if (!privacy) return; setState('loading')
     try { await fetch('/api/guest/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, name: nome, email, message }) }); setState('success') } catch { setState('error') }
   }
   if (state === 'success') return (<div style={{ textAlign: 'center', padding: '40px 0' }}><div style={{ fontSize: 48, marginBottom: 16 }}>✓</div><p style={{ fontWeight: 700, fontSize: 18, color: primary }}>Messaggio inviato!</p></div>)
@@ -564,7 +564,11 @@ function ContactForm({ entityTipo, entityId, primary }) {
       <input value={nome} onChange={e => setNome(e.target.value)} required placeholder="Il tuo nome" style={inp} />
       <input value={email} onChange={e => setEmail(e.target.value)} required type="email" placeholder="La tua email" style={inp} />
       <textarea value={message} onChange={e => setMessage(e.target.value)} required rows={5} placeholder="Il tuo messaggio…" style={{ ...inp, resize: 'vertical' }} />
-      <button type="submit" disabled={state === 'loading'} style={{ width: '100%', padding: '14px', background: primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>{state === 'loading' ? 'Invio…' : 'Invia messaggio'}</button>
+      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 16, cursor: 'pointer', fontSize: 13, color: '#555', lineHeight: 1.5 }}>
+        <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} required style={{ marginTop: 2, accentColor: primary, flexShrink: 0 }} />
+        <span>Ho letto e accetto la{' '}{privacyUrl ? <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: primary, fontWeight: 600 }}>Privacy Policy</a> : 'Privacy Policy'}{' '}ai sensi del GDPR.</span>
+      </label>
+      <button type="submit" disabled={state === 'loading' || !privacy} style={{ width: '100%', padding: '14px', background: privacy ? primary : '#ccc', color: '#fff', border: 'none', borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: privacy ? 'pointer' : 'default', transition: 'background 0.2s' }}>{state === 'loading' ? 'Invio…' : 'Invia messaggio'}</button>
     </form>
   )
 }

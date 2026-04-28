@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-const KEY = 'cookie_consent'
+const KEY = 'cookie_consent_v2'
 
 export default function CookieBanner({ primaryColor = '#00b5b5', privacyUrl, cookieUrl }) {
   const [visible, setVisible] = useState(false)
