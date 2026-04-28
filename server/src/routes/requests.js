@@ -5,16 +5,21 @@ import { requireAuth } from '../middleware/auth.js'
 const router = Router()
 
 async function sendAdminEmail({ to, subject, html }) {
-  if (!process.env.RESEND_API_KEY || !to) return
+  console.log('[email] API key presente:', !!process.env.RESEND_API_KEY)
+  console.log('[email] Destinatario:', to)
+  console.log('[email] Mittente:', process.env.RESEND_FROM)
+  if (!process.env.RESEND_API_KEY) { console.log('[email] SKIP: RESEND_API_KEY mancante'); return }
+  if (!to) { console.log('[email] SKIP: email destinatario mancante'); return }
   try {
     const { Resend } = await import('resend')
     const resend = new Resend(process.env.RESEND_API_KEY)
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from: process.env.RESEND_FROM || 'StayApp <noreply@stayapp.it>',
       to, subject, html,
     })
+    console.log('[email] Inviata OK:', result)
   } catch (err) {
-    console.error('[email]', err.message)
+    console.error('[email] ERRORE:', err.message, err)
   }
 }
 
