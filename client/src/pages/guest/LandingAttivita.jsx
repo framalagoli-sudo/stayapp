@@ -519,7 +519,11 @@ export default function LandingAttivita({ attivita }) {
         </div>
       )}
 
-      <CookieBanner primaryColor={primary} privacyUrl={mini.privacy_url || null} />
+      <CookieBanner
+        primaryColor={primary}
+        privacyUrl={attivita.slug ? `${window.location.origin}/a/${attivita.slug}/privacy` : null}
+        cookieUrl={attivita.slug  ? `${window.location.origin}/a/${attivita.slug}/cookie`  : null}
+      />
     </>
   )
 }

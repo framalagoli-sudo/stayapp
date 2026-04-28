@@ -68,7 +68,7 @@ router.post('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   try {
     const allowed = ['name', 'tipo', 'description', 'address', 'phone', 'email', 'schedule',
-      'theme', 'logo_url', 'cover_url', 'gallery', 'services', 'active', 'minisito']
+      'theme', 'logo_url', 'cover_url', 'gallery', 'services', 'active', 'minisito', 'privacy_data']
     const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)))
 
     if (req.body.slug !== undefined) {

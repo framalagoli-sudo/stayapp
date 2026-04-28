@@ -727,7 +727,11 @@ export default function LandingStruttura({ property }) {
         </div>
       )}
 
-      <CookieBanner primaryColor={primary} privacyUrl={mini.privacy_url || null} />
+      <CookieBanner
+        primaryColor={primary}
+        privacyUrl={property.slug ? `${window.location.origin}/s/${property.slug}/privacy` : null}
+        cookieUrl={property.slug  ? `${window.location.origin}/s/${property.slug}/cookie`  : null}
+      />
     </>
   )
 }

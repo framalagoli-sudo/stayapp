@@ -743,7 +743,11 @@ export default function LandingRistorante({ ristorante }) {
         </div>
       )}
 
-      <CookieBanner primaryColor={primary} privacyUrl={mini.privacy_url || null} />
+      <CookieBanner
+        primaryColor={primary}
+        privacyUrl={ristorante.slug ? `${window.location.origin}/r/${ristorante.slug}/privacy` : null}
+        cookieUrl={ristorante.slug  ? `${window.location.origin}/r/${ristorante.slug}/cookie`  : null}
+      />
     </>
   )
 }

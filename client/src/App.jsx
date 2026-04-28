@@ -39,6 +39,10 @@ import BlogCategoriesPage from './pages/admin/blog/BlogCategoriesPage'
 import ArticoloPage from './pages/public/ArticoloPage'
 import BlogListPage from './pages/public/BlogListPage'
 import ContattiPage from './pages/admin/ContattiPage'
+import PolicyPage from './pages/public/PolicyPage'
+import PropertyPrivacyPage from './pages/admin/property/PropertyPrivacyPage'
+import RistorantePrivacyPage from './pages/admin/ristorante/RistorantePrivacyPage'
+import AttivitaPrivacyPage from './pages/admin/attivita/AttivitaPrivacyPage'
 import AttivitaListPage from './pages/admin/attivita/AttivitaListPage'
 import AttivitaInfoPage from './pages/admin/attivita/AttivitaInfoPage'
 import AttivitaGalleryPage from './pages/admin/attivita/AttivitaGalleryPage'
@@ -67,6 +71,16 @@ export default function App() {
           <Route path="/r/:slug" element={<RestaurantApp />} />
           <Route path="/a/:slug" element={<AttivitaApp />} />
           <Route path="/eventi/:id" element={<EventoPage />} />
+
+          {/* Policy pubbliche — struttura */}
+          <Route path="/s/:slug/privacy" element={<PolicyPage type="privacy" entityType="struttura" />} />
+          <Route path="/s/:slug/cookie"  element={<PolicyPage type="cookie"  entityType="struttura" />} />
+          {/* Policy pubbliche — ristorante */}
+          <Route path="/r/:slug/privacy" element={<PolicyPage type="privacy" entityType="ristorante" />} />
+          <Route path="/r/:slug/cookie"  element={<PolicyPage type="cookie"  entityType="ristorante" />} />
+          {/* Policy pubbliche — attività */}
+          <Route path="/a/:slug/privacy" element={<PolicyPage type="privacy" entityType="attivita" />} />
+          <Route path="/a/:slug/cookie"  element={<PolicyPage type="cookie"  entityType="attivita" />} />
           <Route path="/blog" element={<BlogListPage />} />
           <Route path="/blog/:slug" element={<ArticoloPage />} />
 
@@ -97,6 +111,7 @@ export default function App() {
             <Route path="attivita/:id/gallery"    element={<AttivitaGalleryPage />} />
             <Route path="attivita/:id/theme"      element={<AttivitaThemePage />} />
             <Route path="attivita/:id/minisito"   element={<AttivitaMiniSitoPage />} />
+            <Route path="attivita/:id/privacy"    element={<AttivitaPrivacyPage />} />
 
             {/* Ristoranti */}
             <Route path="ristoranti"              element={<RistorantiListPage />} />
@@ -106,6 +121,7 @@ export default function App() {
             <Route path="ristoranti/:id/theme"    element={<RistoranteThemePage />} />
             <Route path="ristoranti/:id/moduli"   element={<RistoranteModuliPage />} />
             <Route path="ristoranti/:id/minisito" element={<RistoranteMiniSitoPage />} />
+            <Route path="ristoranti/:id/privacy"  element={<RistorantePrivacyPage />} />
 
             {/* Struttura by ID (admin_azienda, super_admin) */}
             <Route path="struttura/:id" element={<StrutturaLayout />}>
@@ -117,6 +133,7 @@ export default function App() {
               <Route path="activities" element={<PropertyActivitiesPage />} />
               <Route path="excursions" element={<PropertyExcursionsPage />} />
               <Route path="minisito"   element={<PropertyMiniSitoPage />} />
+              <Route path="privacy"    element={<PropertyPrivacyPage />} />
             </Route>
 
             {/* Struttura legacy (admin_struttura, staff — usa profile.property_id) */}
@@ -128,6 +145,7 @@ export default function App() {
             <Route path="property/activities" element={<PropertyActivitiesPage />} />
             <Route path="property/excursions" element={<PropertyExcursionsPage />} />
             <Route path="property/minisito"   element={<PropertyMiniSitoPage />} />
+            <Route path="property/privacy"    element={<PropertyPrivacyPage />} />
 
             {/* Eventi */}
             <Route path="eventi"                         element={<EventiListPage />} />
