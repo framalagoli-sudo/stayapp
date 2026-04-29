@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 const KEY = 'cookie_consent_v2'
 
@@ -6,17 +7,19 @@ export default function CookieBanner({ primaryColor = '#00b5b5', privacyUrl, coo
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    if (!localStorage.getItem(KEY)) setVisible(true)
+    try {
+      if (!localStorage.getItem(KEY)) setVisible(true)
+    } catch {}
   }, [])
 
-  function accept() { localStorage.setItem(KEY, 'accepted'); setVisible(false) }
-  function reject()  { localStorage.setItem(KEY, 'rejected');  setVisible(false) }
+  function accept() { try { localStorage.setItem(KEY, 'accepted') } catch {} setVisible(false) }
+  function reject()  { try { localStorage.setItem(KEY, 'rejected') } catch {} setVisible(false) }
 
   if (!visible) return null
 
-  return (
+  return createPortal(
     <div style={{
-      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 9999,
+      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 2147483647,
       background: '#1a1a2e', color: '#fff',
       padding: '16px 20px', display: 'flex', alignItems: 'center',
       gap: 16, flexWrap: 'wrap', justifyContent: 'space-between',
@@ -48,6 +51,7 @@ export default function CookieBanner({ primaryColor = '#00b5b5', privacyUrl, coo
           Accetto
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
