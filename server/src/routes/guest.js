@@ -38,7 +38,7 @@ async function getCollegamenti(tipo, id) {
 router.get('/a/:slug', async (req, res) => {
   const { data, error } = await supabase
     .from('attivita')
-    .select('id, azienda_id, name, tipo, description, address, phone, email, schedule, logo_url, cover_url, theme, gallery, services, minisito, privacy_data')
+    .select('id, azienda_id, slug, name, tipo, description, address, phone, email, schedule, logo_url, cover_url, theme, gallery, services, minisito, privacy_data')
     .eq('slug', req.params.slug)
     .eq('active', true)
     .single()
@@ -50,7 +50,7 @@ router.get('/a/:slug', async (req, res) => {
 router.get('/r/:slug', async (req, res) => {
   const { data, error } = await supabase
     .from('ristoranti')
-    .select('id, azienda_id, name, description, address, phone, email, schedule, logo_url, cover_url, theme, gallery, menu, modules, minisito, privacy_data')
+    .select('id, azienda_id, slug, name, description, address, phone, email, schedule, logo_url, cover_url, theme, gallery, menu, modules, minisito, privacy_data')
     .eq('slug', req.params.slug)
     .eq('active', true)
     .single()
@@ -130,7 +130,7 @@ router.post('/eventi/:id/book', async (req, res) => {
 router.get('/:slug', async (req, res) => {
   const { data, error } = await supabase
     .from('properties')
-    .select('id, azienda_id, name, description, address, phone, whatsapp, wifi_name, wifi_password, checkin_time, checkout_time, rules, amenities, logo_url, cover_url, plan, modules, theme, services, gallery, restaurant, activities, excursions, minisito, privacy_data')
+    .select('id, azienda_id, slug, name, description, address, phone, whatsapp, wifi_name, wifi_password, checkin_time, checkout_time, rules, amenities, logo_url, cover_url, plan, modules, theme, services, gallery, restaurant, activities, excursions, minisito, privacy_data')
     .eq('slug', req.params.slug)
     .eq('active', true)
     .single()
