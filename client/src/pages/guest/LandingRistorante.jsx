@@ -521,7 +521,7 @@ export default function LandingRistorante({ ristorante }) {
               <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 15, marginBottom: 36 }}>
                 {mini.newsletter_subtitle || 'Iscriviti per ricevere offerte esclusive e novità.'}
               </p>
-              <NewsletterForm aziendaId={ristorante.azienda_id} primary={primary} />
+              <NewsletterForm aziendaId={ristorante.azienda_id} primary={primary} privacyUrl={`/r/${ristorante.slug}/privacy`} />
             </div>
           </section>
         )
@@ -758,14 +758,16 @@ export default function LandingRistorante({ ristorante }) {
   )
 }
 
-function NewsletterForm({ aziendaId, primary }) {
+function NewsletterForm({ aziendaId, primary, privacyUrl }) {
   const [nome,     setNome]     = useState('')
   const [email,    setEmail]    = useState('')
   const [telefono, setTelefono] = useState('')
+  const [privacy,  setPrivacy]  = useState(false)
   const [state,    setState]    = useState('idle')
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (!privacy) return
     setState('loading')
     try {
       await fetch('/api/contatti/subscribe', {
@@ -793,9 +795,21 @@ function NewsletterForm({ aziendaId, primary }) {
         style={{ padding: '13px 16px', borderRadius: 10, border: 'none', fontSize: 15, outline: 'none' }} />
       <input value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="Telefono (opzionale)"
         style={{ padding: '13px 16px', borderRadius: 10, border: 'none', fontSize: 15, outline: 'none' }} />
+      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', textAlign: 'left' }}>
+        <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} required
+          style={{ marginTop: 3, flexShrink: 0, accentColor: '#fff' }} />
+        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 1.5 }}>
+          Ho letto e accetto la{' '}
+          {privacyUrl
+            ? <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#fff', fontWeight: 700 }}>Privacy Policy</a>
+            : 'Privacy Policy'
+          }
+          {' '}ai sensi del GDPR.
+        </span>
+      </label>
       {state === 'error' && <p style={{ color: '#ffe', fontSize: 13 }}>Errore. Riprova.</p>}
-      <button type="submit" disabled={state === 'loading'}
-        style={{ padding: '14px', background: '#fff', color: primary, border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer', marginTop: 4 }}>
+      <button type="submit" disabled={state === 'loading' || !privacy}
+        style={{ padding: '14px', background: privacy ? '#fff' : 'rgba(255,255,255,0.4)', color: primary, border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: privacy ? 'pointer' : 'default', marginTop: 4, transition: 'background 0.2s' }}>
         {state === 'loading' ? 'Iscrizione…' : 'Iscriviti'}
       </button>
       <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', margin: 0 }}>Nessuno spam. Puoi cancellarti in qualsiasi momento.</p>
