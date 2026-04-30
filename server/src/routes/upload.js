@@ -319,4 +319,51 @@ router.post('/attivita-gallery', (req, res, next) => {
   }
 })
 
+// POST /api/upload/minisito-image?entity_type=struttura|ristorante|attivita&entity_id=xxx
+// Upload-only: no DB update, caller saves the URL in minisito jsonb
+router.post('/minisito-image', (req, res, next) => {
+  upload.single('file')(req, res, err => {
+    if (err) return res.status(400).json({ error: `Errore file: ${err.message}` })
+    next()
+  })
+}, async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Nessun file ricevuto' })
+    const { entity_type, entity_id } = req.query
+    if (!entity_type || !entity_id) return res.status(400).json({ error: 'entity_type e entity_id obbligatori' })
+
+    const { data: profile } = await supabase.from('profiles').select('role, property_id, azienda_id').eq('id', req.user.id).single()
+    if (!profile) return res.status(403).json({ error: 'Accesso negato' })
+
+    if (entity_type === 'struttura') {
+      if (profile.role !== 'super_admin' && profile.property_id !== entity_id)
+        return res.status(403).json({ error: 'Accesso negato' })
+    } else if (entity_type === 'ristorante') {
+      const { data: rist } = await supabase.from('ristoranti').select('azienda_id').eq('id', entity_id).single()
+      if (!rist || (profile.role !== 'super_admin' && rist.azienda_id !== profile.azienda_id))
+        return res.status(403).json({ error: 'Accesso negato' })
+    } else if (entity_type === 'attivita') {
+      const { data: att } = await supabase.from('attivita').select('azienda_id').eq('id', entity_id).single()
+      if (!att || (profile.role !== 'super_admin' && att.azienda_id !== profile.azienda_id))
+        return res.status(403).json({ error: 'Accesso negato' })
+    } else {
+      return res.status(400).json({ error: 'entity_type non valido' })
+    }
+
+    const ext = req.file.originalname.split('.').pop().toLowerCase()
+    const storagePath = `${entity_type}/${entity_id}/minisito-${Date.now()}.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('property-media')
+      .upload(storagePath, req.file.buffer, { contentType: req.file.mimetype, upsert: true })
+    if (uploadError) return res.status(500).json({ error: uploadError.message })
+
+    const { data } = supabase.storage.from('property-media').getPublicUrl(storagePath)
+    res.json({ url: `${data.publicUrl}?v=${Date.now()}` })
+  } catch (err) {
+    console.error('Minisito image upload error:', err)
+    res.status(500).json({ error: 'Errore interno del server' })
+  }
+})
+
 export default router

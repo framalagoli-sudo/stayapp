@@ -1,15 +1,14 @@
 # StayApp — Documentazione per sviluppo
 
-Piattaforma SaaS multi-modulo per strutture ricettive, ristoranti e altri business italiani. L'ospite inquadra un QR code e accede a una PWA installabile.
+Piattaforma SaaS multi-modulo per strutture ricettive, ristoranti e altri business italiani. L'ospite inquadra un QR code e accede a una PWA installabile. Ogni entità può attivare anche un **minisito pubblico** (landing page marketing).
 
 **Architettura multi-modulo:**
 ```
 Azienda (top-level)
-├── moduli: { struttura, ristorante, spa, ... }
-├── Struttura 1 → PWA /s/:slug
-├── Struttura 2
-├── Ristorante 1 → PWA /r/:slug
-└── Ristorante 2
+├── moduli: { struttura, ristorante, attivita, ... }
+├── Struttura 1 → PWA /s/:slug  |  Minisito /s/:slug (se attivo)
+├── Ristorante 1 → PWA /r/:slug |  Minisito /r/:slug (se attivo)
+└── Attività 1  → Minisito /a/:slug
 ```
 
 ---
@@ -23,13 +22,21 @@ Azienda (top-level)
 | Database | Supabase (PostgreSQL + Auth + Storage) |
 | Icone | lucide-react ^1.8.0 |
 | Router | react-router-dom v6 |
-| Pagamenti | Stripe (dipendenza installata, non ancora integrata) |
-| Hosting | Vercel (pianificato) |
+| Email | Resend (RESEND_API_KEY in env) |
+| Pagamenti | Stripe (installato, non integrato) |
+| Hosting frontend | **Vercel** — `https://stayapp-henna.vercel.app` |
+| Hosting backend | **Railway** |
 
 **Avvio locale:**
 - Client: `cd client && npm run dev` → `http://localhost:5173`
 - Server: `cd server && npm run dev` → `http://localhost:3001`
-- Il client fa proxy `/api/*` → `localhost:3001` via `vite.config.js`
+- Proxy `/api/*` → `localhost:3001` via `vite.config.js`
+
+**Deploy Vercel (manuale fino a connessione GitHub):**
+```bash
+npx vercel --prod --yes   # dalla root del repo
+```
+Il progetto Vercel ha `rootDirectory: client`. Il `client/vercel.json` configura SPA routing (rewrites → index.html).
 
 ---
 
@@ -37,49 +44,67 @@ Azienda (top-level)
 
 ```
 hospitality/
-├── client/                     # React PWA
+├── client/
+│   ├── vercel.json                 # SPA routing: tutte le route → index.html
 │   └── src/
-│       ├── App.jsx             # Router principale
-│       ├── context/
-│       │   └── AuthContext.jsx # Auth state globale (user + profile)
+│       ├── App.jsx                 # Router principale
+│       ├── context/AuthContext.jsx
 │       ├── hooks/
-│       │   └── useProperty.js  # Hook per caricare/salvare la struttura
+│       │   ├── useProperty.js
+│       │   ├── useRistorante.js
+│       │   └── useAttivita.js
 │       ├── lib/
-│       │   ├── api.js          # apiFetch + uploadMedia (con auth token)
-│       │   └── supabase.js     # Client Supabase (anon key)
-│       ├── components/admin/
-│       │   ├── AdminLayout.jsx # Sidebar + outlet (responsive mobile)
-│       │   └── ProtectedRoute.jsx
+│       │   ├── api.js              # apiFetch + uploadMedia
+│       │   └── supabase.js
+│       ├── components/
+│       │   ├── admin/
+│       │   │   ├── AdminLayout.jsx
+│       │   │   └── ProtectedRoute.jsx
+│       │   ├── CookieBanner.jsx    # React Portal, key cookie_consent_v2
+│       │   └── admin/PrivacySettingsSection.jsx
 │       └── pages/
-│           ├── admin/          # Pannello di gestione
-│           │   ├── property/   # Sub-pagine struttura (8 pagine)
+│           ├── admin/
+│           │   ├── property/       # info, modules, services, gallery, restaurant,
+│           │   │                   # theme, activities, excursions, privacy
+│           │   ├── ristorante/     # info, menu, gallery, theme, minisito, privacy
+│           │   ├── attivita/       # info, gallery, theme, minisito, privacy
 │           │   ├── DashboardPage.jsx
 │           │   ├── RequestsPage.jsx
 │           │   ├── PropertiesPage.jsx
-│           │   ├── QRCodePage.jsx
-│           │   ├── LoginPage.jsx
-│           │   └── *Section.jsx  # Componenti editor (Services, Gallery, Restaurant, Activities, Excursions)
-│           └── guest/          # App ospite PWA
-│               ├── GuestApp.jsx      # Entry point PWA (carica da slug)
-│               ├── RequestForm.jsx
-│               ├── ServicesTab.jsx
-│               ├── RestaurantTab.jsx
-│               ├── ActivitiesTab.jsx
-│               └── ExcursionsTab.jsx
+│           │   └── QRCodePage.jsx
+│           ├── guest/
+│           │   ├── GuestApp.jsx         # PWA struttura (/s/:slug)
+│           │   ├── RestaurantApp.jsx    # PWA ristorante (/r/:slug)
+│           │   ├── AttivitaApp.jsx      # Entry attività (/a/:slug)
+│           │   ├── LandingStruttura.jsx # Minisito struttura
+│           │   ├── LandingRistorante.jsx
+│           │   ├── LandingAttivita.jsx
+│           │   ├── RequestForm.jsx
+│           │   ├── ServicesTab.jsx
+│           │   ├── ActivitiesTab.jsx
+│           │   └── ExcursionsTab.jsx
+│           └── public/
+│               └── PolicyPage.jsx  # /s/:slug/privacy|cookie, /r/:slug/..., /a/:slug/...
 ├── server/
 │   └── src/
-│       ├── index.js            # Express app + route mount
-│       ├── middleware/
-│       │   └── auth.js         # requireAuth + requireRole
-│       ├── lib/
-│       │   └── supabase.js     # Client Supabase (service role — bypassa RLS)
+│       ├── index.js
+│       ├── middleware/auth.js
+│       ├── lib/supabase.js         # service role key — bypassa RLS
 │       └── routes/
-│           ├── auth.js         # GET /api/auth/me
-│           ├── properties.js   # CRUD strutture
-│           ├── guest.js        # GET /api/guest/:slug (pubblico)
-│           ├── requests.js     # CRUD richieste ospiti
-│           └── upload.js       # Upload media (logo, cover, gallery, foto moduli)
-└── supabase/migrations/        # SQL da eseguire manualmente in Supabase
+│           ├── auth.js
+│           ├── properties.js       # CRUD strutture
+│           ├── ristoranti.js       # CRUD ristoranti
+│           ├── attivita.js         # CRUD attività
+│           ├── guest.js            # endpoint pubblici (no auth)
+│           ├── requests.js
+│           ├── upload.js
+│           ├── eventi.js
+│           ├── blog.js
+│           └── contatti.js         # subscribe newsletter
+└── supabase/migrations/
+    ├── ...
+    ├── 017_attivita.sql            # tabella attivita + moduli.attivita su aziende
+    └── 018_privacy_data.sql        # colonna privacy_data su properties/ristoranti/attivita
 ```
 
 ---
@@ -87,7 +112,6 @@ hospitality/
 ## Database Supabase
 
 ### Tipi enum
-
 ```sql
 plan_type:      base | standard | premium | enterprise
 user_role:      super_admin | admin_gruppo | admin_struttura | staff | ospite
@@ -95,142 +119,60 @@ request_status: open | in_progress | resolved | cancelled
 request_type:   reception | maintenance | housekeeping | other
 ```
 
-> **Nota:** `request_type` nel DB è un enum con 4 valori, ma il server accetta anche stringhe libere come `'attività'` e `'escursione'` perché usa la service role key (bypassa i vincoli). Da allineare con una migration che aggiunge i valori all'enum o converte il campo in `text`.
-
-### Tabella `aziende` ⭐ (nuova — sostituisce `groups`)
-
+### Tabella `aziende`
 ```sql
-id               uuid PK
-ragione_sociale  text NOT NULL
-partita_iva      text
-codice_fiscale   text
-email            text
-pec              text
-telefono         text
-cellulare        text
-indirizzo        text
-citta            text
-cap              text
-provincia        text
-moduli           jsonb DEFAULT '{"struttura":false,"ristorante":false}'
-piano            plan_type DEFAULT 'base'
-active           boolean DEFAULT true
-created_at / updated_at  timestamptz
-```
-
-### Tabella `groups` (DEPRECATA — usare `aziende`)
-
-```sql
-id          uuid PK
-name        text
-plan        plan_type  DEFAULT 'standard'
-active      boolean    DEFAULT true
-created_at  timestamptz
+id, ragione_sociale, partita_iva, codice_fiscale, email, pec,
+telefono, cellulare, indirizzo, citta, cap, provincia,
+moduli jsonb DEFAULT '{"struttura":false,"ristorante":false,"attivita":false}',
+piano plan_type DEFAULT 'base', active boolean, created_at, updated_at
 ```
 
 ### Tabella `properties`
-
 ```sql
-id            uuid PK
-group_id      uuid FK → groups (nullable)
-slug          text UNIQUE        -- es. "hotel-bellavista" (usato nell'URL della PWA)
-name          text
-description   text
-address       text
-phone         text
-email         text
-wifi_name     text
-wifi_password text
-checkin_time  text               -- es. "14:00"
-checkout_time text               -- es. "11:00"
-rules         text
-amenities     jsonb DEFAULT '[]'
-logo_url      text               -- URL Supabase Storage (con ?v= cache-buster)
-cover_url     text               -- URL Supabase Storage (con ?v= cache-buster)
-plan          plan_type DEFAULT 'base'
-active        boolean DEFAULT true
-modules       jsonb DEFAULT '{"reception":true,"housekeeping":false,"restaurant":false,"upselling":false,"chat":false,"wifi":true,"info":true}'
-theme         jsonb DEFAULT '{"primaryColor":"#00b5b5","font":"inter"}'
-services      jsonb DEFAULT '[]'
-gallery       jsonb DEFAULT '[]' -- array di URL stringa
-restaurant    jsonb              -- oggetto con active, name, description, schedule, categories[]
-activities    jsonb DEFAULT '[]' -- array categorie con items (migration pendente)
-excursions    jsonb DEFAULT '[]' -- array flat escursioni (migration pendente)
-created_at    timestamptz
-updated_at    timestamptz
+id, azienda_id (FK aziende), group_id (FK groups, nullable),
+slug text UNIQUE, name, description, address, phone, email, whatsapp,
+wifi_name, wifi_password, checkin_time, checkout_time, rules,
+amenities jsonb, logo_url, cover_url, plan plan_type,
+active boolean, modules jsonb, theme jsonb, services jsonb,
+gallery jsonb, restaurant jsonb, activities jsonb, excursions jsonb,
+minisito jsonb,        -- configurazione minisito/landing
+privacy_data jsonb,    -- dati GDPR titolare per policy auto-generate
+created_at, updated_at
 ```
 
-**Migration pendente — eseguire su Supabase:**
+### Tabella `ristoranti`
 ```sql
-ALTER TABLE properties ADD COLUMN IF NOT EXISTS activities JSONB DEFAULT '[]'::jsonb;
-ALTER TABLE properties ADD COLUMN IF NOT EXISTS excursions JSONB DEFAULT '[]'::jsonb;
+id, azienda_id (FK), slug UNIQUE, name, description, address,
+phone, email, schedule, cover_url, logo_url, active boolean,
+theme jsonb, gallery jsonb, menu jsonb, modules jsonb,
+minisito jsonb, privacy_data jsonb, created_at, updated_at
 ```
 
-### Tabella `ristoranti` ⭐ (nuova)
-
+### Tabella `attivita` (migration 017)
 ```sql
-id          uuid PK
-azienda_id  uuid FK → aziende (cascade delete)
-slug        text UNIQUE        -- es. "osteria-della-nonna"
-name        text NOT NULL
-description text
-address     text
-phone       text
-email       text
-schedule    text               -- es. "Lun-Ven 12:00-14:30 / 19:00-22:30"
-cover_url   text
-logo_url    text
-active      boolean DEFAULT true
-theme       jsonb DEFAULT '{"primaryColor":"#e63946",...}'
-gallery     jsonb DEFAULT '[]'
-menu        jsonb DEFAULT '[]' -- [{id, name, items:[{id, name, description, price, photo, allergens}]}]
-created_at / updated_at  timestamptz
+id, azienda_id (FK), slug UNIQUE, name, tipo text,
+description, address, phone, email, schedule,
+cover_url, logo_url, active boolean,
+theme jsonb, gallery jsonb, services jsonb,
+minisito jsonb, privacy_data jsonb, created_at, updated_at
 ```
 
 ### Tabella `profiles`
-
 ```sql
-id          uuid PK → auth.users (cascade delete)
-role        user_role DEFAULT 'staff'
-full_name   text
-property_id uuid FK → properties (nullable)
-group_id    uuid FK → groups (nullable)
-created_at  timestamptz
+id (FK auth.users), role user_role, full_name,
+property_id (FK properties, nullable), group_id (FK groups, nullable)
 ```
 
-Trigger `on_auth_user_created` crea il profilo automaticamente al signup.
-
 ### Tabella `requests`
-
 ```sql
-id          uuid PK
-property_id uuid FK → properties (cascade delete)
-room        text (nullable)
-type        request_type   -- anche valori liberi come 'attività', 'escursione'
-message     text
-status      request_status DEFAULT 'open'
-note        text (nullable)
-created_at  timestamptz
-updated_at  timestamptz
+id, property_id (FK), room, type request_type, message,
+status request_status DEFAULT 'open', note, created_at, updated_at
 ```
 
 ### Storage Supabase
-
 Bucket: `property-media` (pubblico)
-
-Path convention: `{property_id}/{campo}-{timestamp}.{ext}`
-
-Tutti gli upload usano `upsert: true` e aggiungono `?v={timestamp}` all'URL per invalidare la cache.
-
-### RLS Policies
-
-- `profiles`: ogni utente vede solo il proprio record
-- `properties SELECT`: super_admin / property_id match / group_id match
-- `properties UPDATE`: stesse regole del SELECT
-- `requests SELECT`: super_admin o property_id match
-- `requests INSERT`: aperto — il server usa service role key
-
-Il server Node.js usa sempre la **service role key** → bypassa tutte le RLS policy. La RLS vale per le query dirette dal client (AuthContext, useProperty).
+Path: `{entity_id}/{campo}-{timestamp}.{ext}`
+Upload con `upsert: true` + `?v={timestamp}` per cache-bust.
 
 ---
 
@@ -239,64 +181,190 @@ Il server Node.js usa sempre la **service role key** → bypassa tutte le RLS po
 ### Auth
 | Metodo | Path | Auth | Descrizione |
 |---|---|---|---|
-| GET | `/api/auth/me` | ✓ | Profilo utente corrente |
+| GET | `/api/auth/me` | ✓ | Profilo utente |
 | GET | `/api/health` | — | Health check |
 
 ### Properties
 | Metodo | Path | Auth | Descrizione |
 |---|---|---|---|
-| GET | `/api/properties` | ✓ | Lista strutture (filtrata per ruolo) |
+| GET | `/api/properties` | ✓ | Lista strutture |
 | GET | `/api/properties/:id` | ✓ | Singola struttura |
-| POST | `/api/properties` | ✓ super_admin/admin_gruppo | Crea struttura + genera slug |
-| PATCH | `/api/properties/:id` | ✓ | Aggiorna campi struttura |
-| DELETE | `/api/properties/:id` | ✓ super_admin/admin_gruppo | Elimina struttura |
+| POST | `/api/properties` | ✓ | Crea struttura |
+| PATCH | `/api/properties/:id` | ✓ | Aggiorna (include privacy_data, minisito) |
+| DELETE | `/api/properties/:id` | ✓ | Elimina |
 
-Campi aggiornabili via PATCH: `name, description, address, phone, email, wifi_name, wifi_password, checkin_time, checkout_time, rules, amenities, modules, theme, logo_url, cover_url, services, gallery, restaurant, activities, excursions`
-
-### Guest (pubblico)
+### Ristoranti
 | Metodo | Path | Auth | Descrizione |
 |---|---|---|---|
-| GET | `/api/guest/:slug` | — | Dati struttura per la PWA ospite |
+| GET | `/api/ristoranti` | ✓ | Lista ristoranti azienda |
+| POST | `/api/ristoranti` | ✓ | Crea ristorante |
+| PATCH | `/api/ristoranti/:id` | ✓ | Aggiorna |
+| DELETE | `/api/ristoranti/:id` | ✓ | Elimina |
 
-### Requests
+### Attività
 | Metodo | Path | Auth | Descrizione |
 |---|---|---|---|
-| POST | `/api/requests` | — | Ospite invia richiesta |
-| GET | `/api/requests` | ✓ | Lista richieste (filtri: property_id, status) |
-| PATCH | `/api/requests/:id` | ✓ | Aggiorna status/note |
+| GET | `/api/attivita` | ✓ | Lista attività azienda |
+| POST | `/api/attivita` | ✓ | Crea attività |
+| PATCH | `/api/attivita/:id` | ✓ | Aggiorna |
+| DELETE | `/api/attivita/:id` | ✓ | Elimina |
+
+### Guest (pubblici, no auth)
+| Metodo | Path | Descrizione |
+|---|---|---|
+| GET | `/api/guest/:slug` | Struttura (include slug, privacy_data, minisito) |
+| GET | `/api/guest/r/:slug` | Ristorante |
+| GET | `/api/guest/a/:slug` | Attività |
+| GET | `/api/guest/eventi` | Lista eventi pubblici |
+| GET | `/api/guest/eventi/:id` | Singolo evento |
+| POST | `/api/guest/eventi/:id/book` | Prenota evento |
+| POST | `/api/guest/contact` | Form contatti minisito → email via Resend |
+
+> **Importante:** tutti e tre gli endpoint guest includono `slug` nella select. Senza, i link privacy/cookie nel minisito non funzionano.
 
 ### Upload
-| Metodo | Path | Auth | Descrizione |
-|---|---|---|---|
-| POST | `/api/upload/logo` | ✓ | Carica logo → aggiorna `logo_url` |
-| POST | `/api/upload/cover` | ✓ | Carica cover → aggiorna `cover_url` |
-| DELETE | `/api/upload/logo` | ✓ | Elimina logo da Storage + nullifica campo |
-| DELETE | `/api/upload/cover` | ✓ | Elimina cover da Storage + nullifica campo |
-| POST | `/api/upload/gallery` | ✓ | Carica foto → restituisce URL (client gestisce array) |
-
-Limite file: 5 MB. Multer usa `memoryStorage()`.
-
----
-
-## Livelli di accesso
-
-| Ruolo | Cosa vede/fa |
-|---|---|
-| `super_admin` | Tutto: tutte le strutture, tutte le richieste, sidebar completa |
-| `admin_gruppo` | Le strutture del proprio group_id |
-| `admin_struttura` | La propria struttura |
-| `staff` | La propria struttura |
-
-Sidebar admin: "La mia struttura" è visibile a tutti i ruoli. "Strutture" solo a super_admin e admin_gruppo. "QR Code" solo ad admin_struttura e staff.
+| Metodo | Path | Descrizione |
+|---|---|---|
+| POST | `/api/upload/logo` | Logo struttura |
+| POST | `/api/upload/cover` | Cover struttura |
+| POST | `/api/upload/gallery` | Foto galleria |
+| POST | `/api/upload/ristorante-logo` | Logo ristorante |
+| POST | `/api/upload/attivita-logo` | Logo attività |
+| POST | `/api/upload/attivita-cover` | Cover attività |
+| POST | `/api/upload/attivita-gallery` | Galleria attività |
+| POST | `/api/upload/minisito-image?entity_type=struttura\|ristorante\|attivita&entity_id=...` | Immagine per blocchi descrittivi minisito → `{ url }` |
 
 ---
 
-## Struttura dati JSONB
+## Route frontend (App.jsx)
 
-### `modules`
+### Pubbliche (guest)
+| Path | Componente | Note |
+|---|---|---|
+| `/s/:slug` | GuestApp | PWA struttura; se minisito.active → LandingStruttura |
+| `/r/:slug` | RestaurantApp | PWA ristorante; se minisito.active → LandingRistorante |
+| `/a/:slug` | AttivitaApp → LandingAttivita | Solo minisito |
+| `/s/:slug/privacy` | PolicyPage (type=privacy, struttura) | |
+| `/s/:slug/cookie` | PolicyPage (type=cookie, struttura) | |
+| `/r/:slug/privacy` | PolicyPage (type=privacy, ristorante) | |
+| `/r/:slug/cookie` | PolicyPage (type=cookie, ristorante) | |
+| `/a/:slug/privacy` | PolicyPage (type=privacy, attivita) | |
+| `/a/:slug/cookie` | PolicyPage (type=cookie, attivita) | |
+
+### Admin
+```
+/admin                          → Dashboard
+/admin/requests                 → Richieste ospiti
+/admin/properties               → Lista strutture
+/admin/qrcode                   → QR Code
+/admin/property/info            → Info struttura
+/admin/property/modules         → Moduli attivi
+/admin/property/services        → Servizi
+/admin/property/gallery         → Galleria
+/admin/property/restaurant      → Ristorante interno
+/admin/property/theme           → Tema e colori
+/admin/property/activities      → Attività
+/admin/property/excursions      → Escursioni
+/admin/property/privacy         → Privacy & Policy struttura
+/admin/struttura/:id/*          → Stesse sub-pagine per strutture multiple
+/admin/ristoranti/:id/info|menu|gallery|theme|minisito|privacy
+/admin/attivita/:id/info|gallery|theme|minisito|privacy
+```
+
+---
+
+## Sistema Privacy / GDPR
+
+Ogni entità (struttura, ristorante, attività) ha:
+- Colonna `privacy_data jsonb` con dati titolare (nome, P.IVA, indirizzo, DPO, finalità trattamento)
+- Pagine policy auto-generate da quei dati: `/s/:slug/privacy`, `/s/:slug/cookie`
+- Link automatici nel footer del minisito e nel CookieBanner
+- Checkbox consenso obbligatorio in form contatti e newsletter
+
+**CookieBanner:**
+- Usa `createPortal(document.body)` per compatibilità cross-browser (fix Firefox)
+- localStorage key: `cookie_consent_v2`
+- Mostra link Privacy Policy + Cookie Policy
+
+**Form con consenso GDPR:**
+- Form contatti: checkbox + link privacy, bottone disabilitato senza consenso
+- Form newsletter: stessa cosa (marketing = consenso esplicito obbligatorio)
+
+---
+
+## Minisito (Landing page)
+
+Attivabile per struttura e ristorante (`minisito.active = true`), sempre attivo per attività.
+
+**GuestApp/RestaurantApp logic:**
+```js
+if (!isQR && entity.minisito?.active) return <LandingStruttura entity={entity} />
+// altrimenti → PWA standard
+```
+
+**Sezioni configurabili** (drag & drop nell'admin):
+`highlights, stats, about, foto_testo, paragrafi, team, steps, video, cta_banner, testimonianze, promozioni, pacchetti, services, activities, excursions, eventi, news, gallery, faq, show_map, contatti, newsletter`
+
+**Sezioni descrittive (nuove):**
+- `foto_testo` — blocchi foto 50%/testo 50%, flag `inverti` per scambiare le colonne; mobile sempre foto sopra
+- `paragrafi` — titolo sezione + N card con icona, titolo, testo, foto opzionale (medico→specializzazioni, scuola→corsi…)
+- `team` — card con foto circolare 96px, nome, ruolo, bio
+- `steps` — numerazione badge su icona, titolo, testo; griglia auto-fit (processo "Come funziona")
+
+**Sezioni attività:** subset senza menu_preview/menu_speciali/pacchetti
+
+---
+
+## Struttura dati JSONB chiave
+
+### `minisito`
 ```json
-{ "reception": true, "housekeeping": false, "restaurant": false,
-  "upselling": false, "chat": false, "wifi": true, "info": true }
+{
+  "active": true,
+  "tagline": "...",
+  "booking_url": "https://...",
+  "seo_title": "...",
+  "seo_description": "...",
+  "section_order": ["highlights", "about", ...],
+  "sections": { "newsletter": false, ... },
+  "highlights": [{ "id": "uuid", "icon": "star", "text": "..." }],
+  "stats": [{ "id": "uuid", "value": "150+", "label": "Camere" }],
+  "social": { "instagram": "https://...", "facebook": "...", "whatsapp": "..." },
+  "promozioni": [...],
+  "pacchetti": [...],
+  "testimonianze": [...],
+  "faq": [...],
+  "video_url": "https://youtube.com/...",
+  "cta_banner": { "title": "...", "subtitle": "...", "button_text": "..." },
+  "newsletter_title": "...",
+  "newsletter_subtitle": "...",
+  "foto_testo": [{ "id": "uuid", "title": "...", "text": "...", "image_url": "...", "inverti": false }],
+  "paragrafi_titolo": "Servizi",
+  "paragrafi": [{ "id": "uuid", "icon": "star", "title": "...", "text": "...", "image_url": "" }],
+  "team_titolo": "Il nostro team",
+  "team": [{ "id": "uuid", "photo_url": "...", "nome": "...", "ruolo": "...", "bio": "..." }],
+  "steps_titolo": "Come funziona",
+  "steps": [{ "id": "uuid", "icon": "check-circle", "title": "...", "text": "..." }]
+}
+```
+
+### `privacy_data`
+```json
+{
+  "titolare_nome": "Hotel Bellavista Srl",
+  "titolare_forma_giuridica": "Srl",
+  "titolare_piva": "01234567890",
+  "titolare_cf": "...",
+  "titolare_indirizzo": "Via Roma 1",
+  "titolare_citta": "Milano",
+  "titolare_cap": "20100",
+  "titolare_provincia": "MI",
+  "titolare_email": "privacy@hotel.it",
+  "titolare_telefono": "...",
+  "dpo_nome": "",
+  "dpo_email": "",
+  "servizi": { "form_contatti": true, "newsletter": false, "richieste_ospiti": true, "prenotazioni": false }
+}
 ```
 
 ### `theme`
@@ -320,77 +388,16 @@ Sidebar admin: "La mia struttura" è visibile a tutti i ruoli. "Strutture" solo 
 ```json
 [{ "id": "uuid", "icon": "pool", "name": "Piscina", "description": "...", "hours": "09:00–19:00" }]
 ```
-Icone: `pool, spa, restaurant, gym, parking, wifi, beach, entertainment, bar, breakfast, reception24, shuttle`
-Mappate a Lucide in `iconLucide()` (ServicesSection.jsx).
-
-### `gallery`
-```json
-["https://...supabase.co/.../photo.jpg?v=123", "..."]
-```
-
-### `restaurant`
-```json
-{
-  "active": true, "name": "Ristorante", "description": "...", "schedule": "12:00–14:30",
-  "categories": [{ "id": "uuid", "name": "Antipasti",
-    "items": [{ "id": "uuid", "name": "...", "description": "...", "price": 12, "allergens": "..." }]
-  }]
-}
-```
 
 ### `activities`
 ```json
-[{
-  "id": "uuid", "category": "Sport acquatici",
-  "items": [{
-    "id": "uuid", "name": "Kayak", "description": "...",
-    "location": "Lago", "schedule": "09:00–12:00",
-    "ageGroup": "tutti", "bookable": true, "photo_url": "...", "active": true
-  }]
-}]
+[{ "id": "uuid", "category": "Sport", "items": [{ "id": "uuid", "name": "Kayak", "description": "...", "location": "...", "schedule": "...", "ageGroup": "tutti", "bookable": true, "photo_url": "...", "active": true }] }]
 ```
-`ageGroup`: `tutti | adulti | bambini | famiglie`
 
 ### `excursions`
 ```json
-[{
-  "id": "uuid", "name": "Gita alle 5 Terre", "description": "...",
-  "price": 45, "duration": "8 ore", "meeting_point": "Lobby ore 08:00",
-  "seats": 12, "dates": "Ogni martedì", "includes": "Trasporto, pranzo",
-  "photo_url": "...", "active": true
-}]
+[{ "id": "uuid", "name": "...", "description": "...", "price": 45, "duration": "8 ore", "meeting_point": "...", "seats": 12, "dates": "Ogni martedì", "includes": "...", "photo_url": "...", "active": true }]
 ```
-
----
-
-## Moduli implementati
-
-### Admin panel
-
-| Pagina | Path | Funzione |
-|---|---|---|
-| Dashboard | `/admin` | Overview richieste aperte |
-| Richieste | `/admin/requests` | Lista + filtri status + aggiorna stato |
-| Strutture | `/admin/properties` | Crea/lista strutture (solo super_admin, admin_gruppo) |
-| QR Code | `/admin/qrcode` | Genera QR per URL `/s/{slug}` |
-| Informazioni | `/admin/property/info` | Nome, descrizione, orari, WiFi, regole, logo, cover |
-| Moduli attivi | `/admin/property/modules` | Toggle reception/housekeeping/wifi/info |
-| Servizi | `/admin/property/services` | CRUD servizi con icone Lucide |
-| Galleria | `/admin/property/gallery` | Upload/riordina/elimina foto galleria |
-| Ristorante | `/admin/property/restaurant` | Menu a categorie con prezzi e allergeni |
-| Tema e colori | `/admin/property/theme` | Colore primary, sfondo, font, bordi + preview live |
-| Attività | `/admin/property/activities` | CRUD attività per categoria con foto e prenotabilità |
-| Escursioni | `/admin/property/excursions` | CRUD escursioni flat con prezzo e posti |
-
-### App ospite (PWA)
-
-URL: `/s/{slug}` — carica da `GET /api/guest/:slug` (nessuna auth richiesta)
-
-**Bottom nav a 4 tab:**
-- **Home** — Welcome card gradient primary + griglia card che aprono sezioni Esplora
-- **Esplora** — Chip bar sticky + contenuto: Galleria / Servizi / Ristorante / Attività / Escursioni (solo chip con contenuto presente)
-- **Richiesta** — Form tipo + camera + messaggio → `POST /api/requests`
-- **Info** — WiFi (con copia password), contatti, check-in/out, regole
 
 ---
 
@@ -398,82 +405,107 @@ URL: `/s/{slug}` — carica da `GET /api/guest/:slug` (nessuna auth richiesta)
 
 ### Icone (lucide-react)
 - `strokeWidth={1.5}` sempre
-- `color={primary}` sempre (colore primario della struttura dal tema)
+- `color={primary}` sempre
 - Bottom nav inattiva: `opacity: 0.4`; attiva: `opacity: 1`
-- `CheckCircle` per stati di successo nei form
-- `X` per chiudere modal/lightbox
-- NON usare emoji nell'app ospite
 
 ### Form e input in liste dinamiche
-**Pattern obbligatorio** per evitare bug di "impasto" (ogni keypress ri-renderizza):
 ```jsx
 function ItemForm({ item, onPatch }) {
   const [name, setName] = useState(item.name)
-  // testo: onChange aggiorna stato locale, onBlur propaga al genitore
   return <input value={name} onChange={e => setName(e.target.value)} onBlur={() => onPatch({ name })} />
-  // select/toggle/file: onChange diretto a onPatch
 }
 ```
-Estrarre sempre in componenti separati (`ItemForm`, `CategoryNameInput`) per isolare lo stato.
+Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 
 ### API calls
-- `apiFetch(path, options)` — aggiunge Bearer token, gestisce JSON
-- `uploadMedia(endpoint, file)` — multipart, NON impostare Content-Type (lo fa il browser)
-- Entrambe: `res.text()` → `JSON.parse` in try/catch (gestisce risposte HTML di errore)
+- `apiFetch(path, options)` — Bearer token, gestisce JSON
+- `uploadMedia(endpoint, file)` — multipart, NON impostare Content-Type
 
-### Hook `useProperty`
-- Carica la struttura dal `profile.property_id` via Supabase client (RLS)
-- `save(updates)` → PATCH `/api/properties/:id` + aggiorna stato locale + "Salvato" 2.5s
-- Usato da tutte le pagine `property/*`
+### Hook pattern
+- `useProperty()` — struttura corrente da `profile.property_id`
+- `useRistorante(id)` — ristorante by ID
+- `useAttivita(id)` — attività by ID
+- Tutti espongono: `{ data, loading, saving, saved, saveError, save }`
 
 ### Stile
 - Tutto inline styles, nessun CSS framework
 - Admin: sidebar 220px + main `#f5f5f5`
-- Guest: flex column con bottom nav fixed; scroll area `flex:1; overflow-y:auto`
+- Guest PWA: flex column con bottom nav fixed; scroll area `flex:1; overflow-y:auto`
 - Desktop mockup guest: 390px, `border-radius:44px`, `overflow:hidden`
-- Chip bar Esplora: `position:sticky; top:0` dentro il container scroll
 
-### Supabase — due client distinti
-- **Server** (`server/src/lib/supabase.js`): service role key → bypassa RLS
-- **Client** (`client/src/lib/supabase.js`): anon key + JWT → soggetto a RLS
+---
+
+## Moduli implementati
+
+### Admin panel
+| Pagina | Path | Funzione |
+|---|---|---|
+| Dashboard | `/admin` | Overview con tutte le entità (strutture + ristoranti + attività) |
+| Richieste | `/admin/requests` | Lista + filtri status |
+| Strutture | `/admin/properties` | Crea/lista (super_admin) |
+| QR Code | `/admin/qrcode` | Genera QR |
+| Info struttura | `/admin/property/info` | Nome, orari, WiFi, logo, cover |
+| Moduli | `/admin/property/modules` | Toggle moduli attivi |
+| Servizi | `/admin/property/services` | CRUD con icone |
+| Galleria | `/admin/property/gallery` | Upload/riordina/elimina |
+| Ristorante interno | `/admin/property/restaurant` | Menu categorie |
+| Tema | `/admin/property/theme` | Colore, font, bordi + preview |
+| Attività | `/admin/property/activities` | CRUD per categoria |
+| Escursioni | `/admin/property/excursions` | CRUD flat |
+| Privacy struttura | `/admin/property/privacy` | Dati GDPR + preview policy |
+| Ristorante | `/admin/ristoranti/:id/*` | info, menu, gallery, theme, minisito, privacy |
+| Attività | `/admin/attivita/:id/*` | info, gallery, theme, minisito, privacy |
+
+### App ospite (PWA)
+- **Struttura** `/s/:slug`: Home / Esplora / Richiesta / Info + CookieBanner
+- **Ristorante** `/r/:slug`: Menu / Info / Galleria + CookieBanner
+- **Attività** `/a/:slug`: sempre minisito (LandingAttivita)
+
+### Minisito (Landing)
+- LandingStruttura, LandingRistorante, LandingAttivita
+- Sezioni configurabili drag & drop
+- Social links, SEO meta, CookieBanner con link policy
+- Form contatti con consenso GDPR
+- Form newsletter con consenso GDPR
+
+---
+
+## Note importanti
+
+1. **Slug**: generato al momento della creazione, non modificabile dopo. Conflitti → aggiunge `-{timestamp base36}`.
+
+2. **cache-buster URL**: `?v={timestamp}` su tutti gli URL Storage. Non rimuovere.
+
+3. **`slug` nella select guest**: tutti e tre gli endpoint guest (`/api/guest/:slug`, `/r/:slug`, `/a/:slug`) devono includere `slug` nella `.select()`. Senza, i link privacy/cookie nel minisito restano `undefined`.
+
+4. **CookieBanner**: usa `createPortal(document.body)` per evitare problemi di stacking context in Firefox. Key localStorage: `cookie_consent_v2`.
+
+5. **vercel.json**: in `client/vercel.json`, configura `rewrites → index.html` per SPA routing. Senza, Firefox e accessi diretti a URL profondi restituiscono 404.
+
+6. **Deploy Vercel**: il progetto `stayapp` su Vercel ha `rootDirectory: client`. Deployare dalla root del repo con `npx vercel --prod --yes`. Il GitHub auto-deploy non è ancora collegato — deploy manuale per ora.
+
+7. **Server Railway**: il backend gira su Railway. Riavvio automatico al push. `EADDRINUSE :3001` in locale = istanza precedente ancora attiva, killare con `Stop-Process -Id <PID> -Force`.
+
+8. **Supabase service role**: il server usa sempre la service role key → bypassa RLS. La RLS vale solo per query client-side (AuthContext, useProperty).
 
 ---
 
 ## Roadmap — da implementare
 
 ### Alta priorità
-- [ ] **Migration DB**: aggiungere `activities` e `excursions` su Supabase (SQL sopra)
-- [ ] **Fix enum `request_type`**: aggiungere `attività` e `escursione` o convertire in `text`
-- [ ] **Notifiche real-time richieste**: Supabase Realtime sulla tabella `requests`
-- [ ] **Chat ospite ↔ reception**: modulo `chat` già in `modules`, tabella `messages` da creare
-- [ ] **Push notifications**: service worker già attivo, da collegare a Supabase Realtime o Web Push
+- [ ] **Collegare GitHub → Vercel auto-deploy** (Settings → Git nel dashboard Vercel)
+- [ ] **Notifiche real-time richieste**: Supabase Realtime su `requests`
+- [ ] **Fix enum `request_type`**: aggiungere `attività`/`escursione` o convertire in `text`
 
 ### Media priorità
-- [ ] **Stripe Connect**: pagamenti per escursioni/upselling (dipendenza già installata)
-- [ ] **Multi-lingua**: i18n per l'app ospite (IT/EN/DE minimo)
-- [ ] **Upselling**: modulo già previsto in `modules`, da implementare
-- [ ] **Analytics**: contatori visualizzazioni, richieste per tipo, conversioni
-- [ ] **Gestione staff**: invita utenti con ruolo staff associato a una struttura
+- [ ] **Stripe Connect**: pagamenti eventi/escursioni/upselling
+- [ ] **Multi-lingua**: i18n per app ospite (IT/EN/DE)
+- [ ] **Chat ospite ↔ reception**: tabella `messages` + Supabase Realtime
+- [ ] **Analytics**: contatori visite, richieste per tipo
+- [ ] **Gestione staff**: invita utenti con ruolo staff
 
 ### Bassa priorità
-- [ ] **QR Code personalizzato** con logo struttura sovrapposto
-- [ ] **Modalità offline**: cache service worker per uso senza connessione
-- [ ] **Recensioni ospiti** a fine soggiorno
-- [ ] **Integrazione PMS**: Opera, Protel, ecc.
-- [ ] **Piano Enterprise**: white label + dominio custom
-
----
-
-## Note importanti
-
-1. **Slug**: generato dal nome alla creazione (lowercase, no accenti, solo `a-z0-9-`). In caso di conflitto aggiunge `-{timestamp base36}`. Non modificabile dopo la creazione.
-
-2. **Cache-buster URL**: tutti gli URL Storage hanno `?v={timestamp}`. Non rimuovere — serve per forzare il refresh dopo upload.
-
-3. **Gallery management**: il client carica foto via `/api/upload/gallery` (riceve URL), poi fa `PATCH /api/properties/:id` con l'array `gallery` aggiornato. Stesso pattern per activities ed excursions (i JSONB interi vengono salvati tramite PATCH).
-
-4. **Font Google**: caricati a runtime con `<link>` iniettato nel `<head>`. La pagina tema admin li carica tutti per il selettore. L'app ospite carica solo quelli scelti dalla struttura.
-
-5. **Mobile admin**: sidebar fixed con hamburger su viewport < 768px. Si chiude automaticamente al cambio di rotta (`useEffect` su `location.pathname`).
-
-6. **Piani**: la colonna `plan` esiste su `properties` ma non è ancora usata per limitare funzionalità. Futura integrazione con Stripe per upgrade/downgrade.
+- [ ] **QR Code con logo** sovrapposto
+- [ ] **Modalità offline** PWA
+- [ ] **Recensioni ospiti**
+- [ ] **Integrazione PMS**

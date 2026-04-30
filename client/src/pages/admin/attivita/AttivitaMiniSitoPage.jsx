@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAttivita } from '../../../hooks/useAttivita'
-import { ExternalLink, Star, Heart, Award, Wifi, Car, Sparkles, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Wind, MapPin, Clock, Mountain } from 'lucide-react'
+import { uploadMedia } from '../../../lib/api'
+import { ExternalLink, Star, Heart, Award, Wifi, Car, Sparkles, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Wind, MapPin, Clock, Mountain, Users } from 'lucide-react'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -11,7 +12,7 @@ const DEFAULT_SECTIONS      = { gallery: true, servizi: true }
 const DEFAULT_SOCIAL        = { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' }
 const DEFAULT_CTA_BANNER    = { active: false, title: '', subtitle: '', cta_label: '', cta_url: '' }
 const DEFAULT_SECTION_ORDER = [
-  'highlights', 'stats', 'about', 'video', 'cta_banner',
+  'highlights', 'stats', 'about', 'foto_testo', 'paragrafi', 'team', 'steps', 'video', 'cta_banner',
   'testimonianze', 'promozioni', 'servizi',
   'eventi', 'news', 'gallery', 'faq', 'show_map', 'contatti', 'newsletter',
 ]
@@ -21,6 +22,8 @@ const DEFAULT = {
   sections: DEFAULT_SECTIONS, social: DEFAULT_SOCIAL, highlights: [],
   stats: [], promozioni: [], testimonianze: [], faq: [],
   cta_banner: DEFAULT_CTA_BANNER,
+  foto_testo: [], paragrafi_titolo: '', paragrafi: [],
+  team_titolo: '', team: [], steps_titolo: '', steps: [],
 }
 
 const HIGHLIGHT_ICONS = [
@@ -64,6 +67,13 @@ export default function AttivitaMiniSitoPage() {
         video_url:     s.video_url     || '',
         cta_banner:    { ...DEFAULT_CTA_BANNER, ...(s.cta_banner || {}) },
         section_order: s.section_order || [],
+        foto_testo:    s.foto_testo    || [],
+        paragrafi_titolo: s.paragrafi_titolo || '',
+        paragrafi:     s.paragrafi    || [],
+        team_titolo:   s.team_titolo  || '',
+        team:          s.team         || [],
+        steps_titolo:  s.steps_titolo || '',
+        steps:         s.steps        || [],
       })
     }
   }, [attivita])
@@ -183,6 +193,10 @@ export default function AttivitaMiniSitoPage() {
   }
 
   const SECTION_ITEMS = [
+    { key: 'foto_testo',    label: 'Blocchi foto + testo',   hint: `${(form.foto_testo || []).length} blocchi configurati` },
+    { key: 'paragrafi',     label: 'Paragrafi con icona',   hint: `${(form.paragrafi || []).length} paragrafi — ${form.paragrafi_titolo || 'titolo non impostato'}` },
+    { key: 'team',          label: 'Il team',               hint: `${(form.team || []).length} membri — ${form.team_titolo || 'Il nostro team'}` },
+    { key: 'steps',         label: 'Come funziona (steps)', hint: `${(form.steps || []).length} passi — ${form.steps_titolo || 'Come funziona'}` },
     { key: 'highlights',    label: 'Punti di forza',       hint: `${(form.highlights || []).length} punti configurati` },
     { key: 'stats',         label: 'Numeri in evidenza',   hint: `${(form.stats || []).length} numeri configurati` },
     { key: 'about',         label: 'Chi siamo',            hint: attivita.description ? 'Dalla descrizione attività' : 'Aggiungi una descrizione nelle info attività' },
@@ -497,6 +511,146 @@ export default function AttivitaMiniSitoPage() {
         </button>
       </div>
 
+      {/* Blocchi foto + testo */}
+      <div style={cardStyle}>
+        <h3 style={sectionTitle}>Blocchi foto + testo</h3>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+          Immagine 50% + testo 50%. Su mobile foto sopra, testo sotto.
+        </p>
+        {(form.foto_testo || []).map((block, idx) => (
+          <FotoTestoItemAtt key={block.id} item={block} attivitaId={attivita.id}
+            onPatch={p => {
+              const updated = { ...form, foto_testo: form.foto_testo.map(b => b.id === block.id ? { ...b, ...p } : b) }
+              setForm(updated); save({ minisito: updated }).catch(() => {})
+            }}
+            onRemove={() => {
+              const updated = { ...form, foto_testo: form.foto_testo.filter(b => b.id !== block.id) }
+              setForm(updated); save({ minisito: updated }).catch(() => {})
+            }}
+            borderBottom={idx < form.foto_testo.length - 1}
+          />
+        ))}
+        <button type="button" onClick={() => {
+          const updated = { ...form, foto_testo: [...(form.foto_testo || []), { id: crypto.randomUUID(), titolo: '', testo: '', image_url: '', inverti: false }] }
+          setForm(updated); save({ minisito: updated }).catch(() => {})
+        }} style={{ padding: '8px 16px', background: `${PRIMARY}10`, color: PRIMARY, border: `1px dashed ${PRIMARY}`, borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+          + Aggiungi blocco
+        </button>
+      </div>
+
+      {/* Paragrafi con icona */}
+      <div style={cardStyle}>
+        <h3 style={sectionTitle}>Paragrafi con icona</h3>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+          Card con icona + titolo + testo. Es: specializzazioni, servizi offerti, corsi disponibili.
+        </p>
+        <div style={fieldWrap}>
+          <label style={lblStyle}>Titolo sezione</label>
+          <input value={form.paragrafi_titolo}
+            onChange={e => setForm(f => ({ ...f, paragrafi_titolo: e.target.value }))}
+            onBlur={() => save({ minisito: form }).catch(() => {})}
+            placeholder="es. I nostri servizi / Le nostre specializzazioni"
+            style={inputStyle} />
+        </div>
+        {(form.paragrafi || []).map(p => (
+          <ParagrafoItemAtt key={p.id} item={p} attivitaId={attivita.id} icons={HIGHLIGHT_ICONS}
+            onPatch={patch => {
+              const updated = { ...form, paragrafi: form.paragrafi.map(x => x.id === p.id ? { ...x, ...patch } : x) }
+              setForm(updated); save({ minisito: updated }).catch(() => {})
+            }}
+            onRemove={() => {
+              const updated = { ...form, paragrafi: form.paragrafi.filter(x => x.id !== p.id) }
+              setForm(updated); save({ minisito: updated }).catch(() => {})
+            }}
+          />
+        ))}
+        <button type="button" onClick={() => {
+          const updated = { ...form, paragrafi: [...(form.paragrafi || []), { id: crypto.randomUUID(), icon: 'star', titolo: '', testo: '', image_url: '' }] }
+          setForm(updated); save({ minisito: updated }).catch(() => {})
+        }} style={{ padding: '8px 16px', background: `${PRIMARY}10`, color: PRIMARY, border: `1px dashed ${PRIMARY}`, borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+          + Aggiungi paragrafo
+        </button>
+      </div>
+
+      {/* Team */}
+      <div style={cardStyle}>
+        <h3 style={sectionTitle}>Il team</h3>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+          Presenta i professionisti della tua attività: guide, istruttori, specialisti, staff.
+        </p>
+        <div style={fieldWrap}>
+          <label style={lblStyle}>Titolo sezione</label>
+          <input value={form.team_titolo}
+            onChange={e => setForm(f => ({ ...f, team_titolo: e.target.value }))}
+            onBlur={() => save({ minisito: form }).catch(() => {})}
+            placeholder="es. Il nostro team / I nostri esperti"
+            style={inputStyle} />
+        </div>
+        {(form.team || []).map(m => (
+          <TeamMemberItemAtt key={m.id} item={m} attivitaId={attivita.id}
+            onPatch={patch => {
+              const updated = { ...form, team: form.team.map(x => x.id === m.id ? { ...x, ...patch } : x) }
+              setForm(updated); save({ minisito: updated }).catch(() => {})
+            }}
+            onRemove={() => {
+              const updated = { ...form, team: form.team.filter(x => x.id !== m.id) }
+              setForm(updated); save({ minisito: updated }).catch(() => {})
+            }}
+          />
+        ))}
+        <button type="button" onClick={() => {
+          const updated = { ...form, team: [...(form.team || []), { id: crypto.randomUUID(), nome: '', ruolo: '', bio: '', photo_url: '' }] }
+          setForm(updated); save({ minisito: updated }).catch(() => {})
+        }} style={{ padding: '8px 16px', background: `${PRIMARY}10`, color: PRIMARY, border: `1px dashed ${PRIMARY}`, borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+          + Aggiungi membro
+        </button>
+      </div>
+
+      {/* Steps */}
+      <div style={cardStyle}>
+        <h3 style={sectionTitle}>Come funziona (steps)</h3>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+          Passi numerati con icona. Es: prenotazione → check-in → esperienza → feedback.
+        </p>
+        <div style={fieldWrap}>
+          <label style={lblStyle}>Titolo sezione</label>
+          <input value={form.steps_titolo}
+            onChange={e => setForm(f => ({ ...f, steps_titolo: e.target.value }))}
+            onBlur={() => save({ minisito: form }).catch(() => {})}
+            placeholder="es. Come funziona / Il tuo percorso"
+            style={inputStyle} />
+        </div>
+        {(form.steps || []).map((step, idx) => (
+          <div key={step.id} style={{ background: '#fafafa', borderRadius: 10, padding: 14, marginBottom: 12, border: '1px solid #eee' }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: PRIMARY, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>{idx + 1}</div>
+              <select value={step.icon} onChange={e => { const updated = { ...form, steps: form.steps.map(x => x.id === step.id ? { ...x, icon: e.target.value } : x) }; setForm(updated); save({ minisito: updated }).catch(() => {}) }}
+                style={{ padding: '7px 6px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, background: '#fff', flex: '0 0 auto' }}>
+                {HIGHLIGHT_ICONS.map(({ key, label }) => <option key={key} value={key}>{label}</option>)}
+              </select>
+              <input value={step.titolo}
+                onChange={e => { const v = e.target.value; setForm(f => ({ ...f, steps: f.steps.map(x => x.id === step.id ? { ...x, titolo: v } : x) })) }}
+                onBlur={() => save({ minisito: form }).catch(() => {})}
+                placeholder="es. Prenota online" style={{ ...inputStyle, flex: 1 }} />
+              <button type="button" onClick={() => {
+                const updated = { ...form, steps: form.steps.filter(x => x.id !== step.id) }
+                setForm(updated); save({ minisito: updated }).catch(() => {})
+              }} style={{ padding: '6px 10px', background: '#fff0f0', color: '#c00', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>✕</button>
+            </div>
+            <textarea value={step.testo}
+              onChange={e => { const v = e.target.value; setForm(f => ({ ...f, steps: f.steps.map(x => x.id === step.id ? { ...x, testo: v } : x) })) }}
+              onBlur={() => save({ minisito: form }).catch(() => {})}
+              placeholder="Breve descrizione…" rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
+          </div>
+        ))}
+        <button type="button" onClick={() => {
+          const updated = { ...form, steps: [...(form.steps || []), { id: crypto.randomUUID(), icon: 'star', titolo: '', testo: '' }] }
+          setForm(updated); save({ minisito: updated }).catch(() => {})
+        }} style={{ padding: '8px 16px', background: `${PRIMARY}10`, color: PRIMARY, border: `1px dashed ${PRIMARY}`, borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+          + Aggiungi step
+        </button>
+      </div>
+
       {/* Social */}
       <div style={cardStyle}>
         <h3 style={sectionTitle}>Social e link</h3>
@@ -509,6 +663,116 @@ export default function AttivitaMiniSitoPage() {
               placeholder={placeholder} style={inputStyle} />
           </div>
         ))}
+      </div>
+    </div>
+  )
+}
+
+function FotoTestoItemAtt({ item, attivitaId, onPatch, onRemove, borderBottom }) {
+  const [titolo, setTitolo] = useState(item.titolo || '')
+  const [testo,  setTesto]  = useState(item.testo  || '')
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef()
+  async function handleImageUpload(e) {
+    const file = e.target.files[0]; if (!file) return
+    setUploading(true)
+    try {
+      const { url } = await uploadMedia(`/api/upload/minisito-image?entity_type=attivita&entity_id=${attivitaId}`, file)
+      onPatch({ image_url: url })
+    } catch {} finally { setUploading(false); e.target.value = '' }
+  }
+  return (
+    <div style={{ background: '#fafafa', borderRadius: 10, padding: 14, marginBottom: 12, border: '1px solid #eee', paddingBottom: borderBottom ? 14 : 14 }}>
+      <input value={titolo} onChange={e => setTitolo(e.target.value)} onBlur={() => onPatch({ titolo })}
+        placeholder="Titolo (opzionale)" style={{ ...inputStyle, marginBottom: 8 }} />
+      <textarea value={testo} onChange={e => setTesto(e.target.value)} onBlur={() => onPatch({ testo })}
+        rows={3} placeholder="Testo descrittivo…" style={{ ...inputStyle, resize: 'vertical', marginBottom: 8 }} />
+      {item.image_url && <img src={item.image_url} alt="" style={{ width: '100%', maxHeight: 120, objectFit: 'cover', borderRadius: 8, marginBottom: 8, display: 'block' }} />}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <button type="button" onClick={() => fileRef.current?.click()}
+          style={{ fontSize: 12, padding: '5px 12px', background: `${PRIMARY}10`, color: PRIMARY, border: 'none', borderRadius: 7, cursor: 'pointer', fontWeight: 600 }}>
+          {uploading ? '…' : item.image_url ? 'Cambia immagine' : 'Carica immagine'}
+        </button>
+        <input ref={fileRef} type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
+        <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, cursor: 'pointer' }}>
+          <input type="checkbox" checked={item.inverti || false} onChange={e => onPatch({ inverti: e.target.checked })} style={{ accentColor: PRIMARY }} />
+          Foto a destra
+        </label>
+        {item.image_url && <button type="button" onClick={() => onPatch({ image_url: '' })} style={{ fontSize: 11, padding: '3px 8px', background: '#fff0f0', color: '#c00', border: 'none', borderRadius: 5, cursor: 'pointer' }}>Rimuovi foto</button>}
+        <button type="button" onClick={onRemove} style={{ marginLeft: 'auto', padding: '6px 10px', background: '#fff0f0', color: '#c00', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>✕</button>
+      </div>
+    </div>
+  )
+}
+
+function ParagrafoItemAtt({ item, attivitaId, icons, onPatch, onRemove }) {
+  const [titolo, setTitolo] = useState(item.titolo || '')
+  const [testo,  setTesto]  = useState(item.testo  || '')
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef()
+  async function handleImageUpload(e) {
+    const file = e.target.files[0]; if (!file) return
+    setUploading(true)
+    try {
+      const { url } = await uploadMedia(`/api/upload/minisito-image?entity_type=attivita&entity_id=${attivitaId}`, file)
+      onPatch({ image_url: url })
+    } catch {} finally { setUploading(false); e.target.value = '' }
+  }
+  return (
+    <div style={{ background: '#fafafa', borderRadius: 10, padding: 14, marginBottom: 12, border: '1px solid #eee' }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        <select value={item.icon} onChange={e => onPatch({ icon: e.target.value })}
+          style={{ padding: '7px 6px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, background: '#fff', flexShrink: 0 }}>
+          {icons.map(({ key, label }) => <option key={key} value={key}>{label}</option>)}
+        </select>
+        <input value={titolo} onChange={e => setTitolo(e.target.value)} onBlur={() => onPatch({ titolo })}
+          placeholder="es. Yoga / Meditazione / Trekking" style={{ ...inputStyle, flex: 1 }} />
+        <button type="button" onClick={onRemove} style={{ padding: '6px 10px', background: '#fff0f0', color: '#c00', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, flexShrink: 0 }}>✕</button>
+      </div>
+      <textarea value={testo} onChange={e => setTesto(e.target.value)} onBlur={() => onPatch({ testo })}
+        rows={2} placeholder="Descrizione…" style={{ ...inputStyle, resize: 'vertical', marginBottom: 8 }} />
+      {item.image_url && <img src={item.image_url} alt="" style={{ width: '100%', maxHeight: 100, objectFit: 'cover', borderRadius: 8, marginBottom: 6, display: 'block' }} />}
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        <button type="button" onClick={() => fileRef.current?.click()} style={{ fontSize: 11, padding: '3px 8px', background: `${PRIMARY}10`, color: PRIMARY, border: 'none', borderRadius: 5, cursor: 'pointer' }}>
+          {uploading ? '…' : item.image_url ? 'Cambia foto' : 'Foto (opz.)'}
+        </button>
+        <input ref={fileRef} type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
+        {item.image_url && <button type="button" onClick={() => onPatch({ image_url: '' })} style={{ fontSize: 11, padding: '3px 8px', background: '#fff0f0', color: '#c00', border: 'none', borderRadius: 5, cursor: 'pointer' }}>Rimuovi</button>}
+      </div>
+    </div>
+  )
+}
+
+function TeamMemberItemAtt({ item, attivitaId, onPatch, onRemove }) {
+  const [nome,  setNome]  = useState(item.nome  || '')
+  const [ruolo, setRuolo] = useState(item.ruolo || '')
+  const [bio,   setBio]   = useState(item.bio   || '')
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef()
+  async function handlePhotoUpload(e) {
+    const file = e.target.files[0]; if (!file) return
+    setUploading(true)
+    try {
+      const { url } = await uploadMedia(`/api/upload/minisito-image?entity_type=attivita&entity_id=${attivitaId}`, file)
+      onPatch({ photo_url: url })
+    } catch {} finally { setUploading(false); e.target.value = '' }
+  }
+  return (
+    <div style={{ background: '#fafafa', borderRadius: 10, padding: 14, marginBottom: 12, border: '1px solid #eee', display: 'flex', gap: 12 }}>
+      <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', overflow: 'hidden', background: `${PRIMARY}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #eee' }}>
+          {item.photo_url ? <img src={item.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Users size={24} strokeWidth={1.5} color="#aaa" />}
+        </div>
+        <button type="button" onClick={() => fileRef.current?.click()} style={{ fontSize: 10, padding: '3px 6px', background: `${PRIMARY}10`, color: PRIMARY, border: 'none', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}>{uploading ? '…' : 'Foto'}</button>
+        <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+          <input value={nome} onChange={e => setNome(e.target.value)} onBlur={() => onPatch({ nome })} placeholder="Nome e cognome" style={{ ...inputStyle, flex: 1, fontWeight: 600 }} />
+          <button type="button" onClick={onRemove} style={{ padding: '6px 10px', background: '#fff0f0', color: '#c00', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>✕</button>
+        </div>
+        <input value={ruolo} onChange={e => setRuolo(e.target.value)} onBlur={() => onPatch({ ruolo })} placeholder="es. Guida / Istruttore / Specialista" style={{ ...inputStyle, marginBottom: 8 }} />
+        <textarea value={bio} onChange={e => setBio(e.target.value)} onBlur={() => onPatch({ bio })} rows={2} placeholder="Breve bio…" style={{ ...inputStyle, resize: 'vertical' }} />
       </div>
     </div>
   )

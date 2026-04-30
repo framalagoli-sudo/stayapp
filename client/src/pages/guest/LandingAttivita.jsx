@@ -78,7 +78,7 @@ function getEmbedUrl(url) {
 }
 
 const DEFAULT_ORDER = [
-  'highlights', 'stats', 'about', 'video', 'cta_banner',
+  'highlights', 'stats', 'about', 'foto_testo', 'paragrafi', 'team', 'steps', 'video', 'cta_banner',
   'testimonianze', 'promozioni', 'servizi',
   'eventi', 'news', 'gallery', 'faq', 'show_map', 'contatti', 'newsletter',
 ]
@@ -424,6 +424,125 @@ export default function LandingAttivita({ attivita }) {
           </section>
         )
 
+      case 'foto_testo': {
+        const fotoTesto = (mini.foto_testo || []).filter(b => b.testo || b.image_url)
+        if (!fotoTesto.length) return null
+        return (
+          <section key="foto_testo" style={{ padding: '80px 0', background: '#fff' }}>
+            <div className="land-section">
+              {fotoTesto.map((block, idx) => (
+                <div key={block.id} className={`ft-grid${block.inverti ? ' inv' : ''}`}
+                  style={{ marginBottom: idx < fotoTesto.length - 1 ? 72 : 0 }}>
+                  <div className="ft-img-col">
+                    {block.image_url
+                      ? <img src={block.image_url} alt={block.titolo || ''} style={{ width: '100%', borderRadius: 16, objectFit: 'cover', aspectRatio: '4/3', display: 'block' }} />
+                      : <div style={{ width: '100%', aspectRatio: '4/3', borderRadius: 16, background: `${primary}10` }} />
+                    }
+                  </div>
+                  <div className="ft-txt-col">
+                    {block.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(22px, 3vw, 34px)', fontWeight: 700, marginBottom: 16, color: '#1a1a2e', lineHeight: 1.2 }}>{block.titolo}</h2>}
+                    {block.testo && <p style={{ fontSize: 16, lineHeight: 1.8, color: '#555', whiteSpace: 'pre-line', margin: 0 }}>{block.testo}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )
+      }
+
+      case 'paragrafi': {
+        const paragrafiItems = (mini.paragrafi || []).filter(p => p.titolo || p.testo)
+        if (!paragrafiItems.length) return null
+        return (
+          <section key="paragrafi" style={{ padding: '80px 0', background: '#f9f9fb' }}>
+            <div className="land-section">
+              {mini.paragrafi_titolo && (
+                <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 48, textAlign: 'center', color: '#1a1a2e' }}>{mini.paragrafi_titolo}</h2>
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
+                {paragrafiItems.map(p => {
+                  const Icon = highlightIcon(p.icon)
+                  return (
+                    <div key={p.id} style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
+                      {p.image_url && <img src={p.image_url} alt={p.titolo || ''} style={{ width: '100%', height: 200, objectFit: 'cover', display: 'block' }} />}
+                      <div style={{ padding: 24 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                          <div style={{ width: 44, height: 44, borderRadius: 10, background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <Icon size={22} strokeWidth={1.5} color={primary} />
+                          </div>
+                          {p.titolo && <h3 style={{ fontFamily: heading, fontSize: 18, fontWeight: 700, margin: 0, color: '#1a1a2e' }}>{p.titolo}</h3>}
+                        </div>
+                        {p.testo && <p style={{ fontSize: 15, lineHeight: 1.7, color: '#555', margin: 0, whiteSpace: 'pre-line' }}>{p.testo}</p>}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+        )
+      }
+
+      case 'team': {
+        const teamItems = (mini.team || []).filter(m => m.nome)
+        if (!teamItems.length) return null
+        return (
+          <section key="team" style={{ padding: '80px 0', background: '#fff' }}>
+            <div className="land-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{mini.team_titolo || 'Il nostro team'}</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Le persone che rendono tutto possibile</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 24 }}>
+                {teamItems.map(m => (
+                  <div key={m.id} style={{ background: '#f9f9fb', borderRadius: 20, padding: '32px 24px', textAlign: 'center' }}>
+                    {m.photo_url
+                      ? <img src={m.photo_url} alt={m.nome} style={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover', border: `3px solid ${primary}30`, display: 'block', margin: '0 auto 16px' }} />
+                      : <div style={{ width: 96, height: 96, borderRadius: '50%', background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                          <Users size={40} strokeWidth={1.5} color={primary} />
+                        </div>
+                    }
+                    <div style={{ fontFamily: heading, fontSize: 18, fontWeight: 700, color: '#1a1a2e', marginBottom: 4 }}>{m.nome}</div>
+                    {m.ruolo && <div style={{ fontSize: 13, fontWeight: 600, color: primary, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>{m.ruolo}</div>}
+                    {m.bio && <p style={{ fontSize: 14, lineHeight: 1.6, color: '#666', margin: 0 }}>{m.bio}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+      }
+
+      case 'steps': {
+        const stepsItems = (mini.steps || []).filter(s => s.titolo)
+        if (!stepsItems.length) return null
+        return (
+          <section key="steps" style={{ padding: '80px 0', background: '#f9f9fb' }}>
+            <div className="land-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{mini.steps_titolo || 'Come funziona'}</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Semplice, veloce, efficace</p>
+              <div className="steps-wrap">
+                {stepsItems.map((step, idx) => {
+                  const Icon = highlightIcon(step.icon)
+                  return (
+                    <div key={step.id} style={{ textAlign: 'center', padding: '0 8px' }}>
+                      <div style={{ position: 'relative', display: 'inline-block', marginBottom: 20 }}>
+                        <div style={{ width: 72, height: 72, borderRadius: '50%', background: `${primary}12`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Icon size={28} strokeWidth={1.5} color={primary} />
+                        </div>
+                        <div style={{ position: 'absolute', top: -6, right: -6, width: 24, height: 24, borderRadius: '50%', background: primary, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800 }}>
+                          {idx + 1}
+                        </div>
+                      </div>
+                      <h3 style={{ fontFamily: heading, fontSize: 18, fontWeight: 700, color: '#1a1a2e', marginBottom: 8 }}>{step.titolo}</h3>
+                      {step.testo && <p style={{ fontSize: 14, lineHeight: 1.6, color: '#666', margin: 0 }}>{step.testo}</p>}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+        )
+      }
+
       default: return null
     }
   }
@@ -445,10 +564,19 @@ export default function LandingAttivita({ attivita }) {
         .land-section { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
         .land-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .land-gallery img { width: 100%; aspect-ratio: 4/3; object-fit: cover; cursor: pointer; border-radius: 4px; }
+        .ft-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+        .ft-img-col { order: 0; }
+        .ft-txt-col { order: 1; }
+        .ft-grid.inv .ft-img-col { order: 1; }
+        .ft-grid.inv .ft-txt-col { order: 0; }
+        .steps-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 32px; }
         @media (max-width: 768px) {
           .land-gallery { grid-template-columns: repeat(2, 1fr); }
           .land-nav { padding: 0 16px; }
           .land-section { padding: 0 16px; }
+          .ft-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
+          .ft-img-col { order: 0 !important; }
+          .ft-txt-col { order: 1 !important; }
         }
       `}</style>
 

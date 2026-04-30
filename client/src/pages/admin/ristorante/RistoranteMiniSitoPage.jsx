@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useRistorante } from '../../../hooks/useRistorante'
-import { ExternalLink, Plus, Trash2, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Mountain, Wind, Heart, Award, MapPin, Clock, GripVertical } from 'lucide-react'
+import { uploadMedia } from '../../../lib/api'
+import { ExternalLink, Plus, Trash2, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Mountain, Wind, Heart, Award, MapPin, Clock, GripVertical, Users } from 'lucide-react'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -10,7 +11,7 @@ const DEFAULT_SECTIONS      = { gallery: true, menu_preview: true }
 const DEFAULT_SOCIAL        = { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' }
 const DEFAULT_CTA_BANNER    = { active: false, title: '', subtitle: '', cta_label: '', cta_url: '' }
 const DEFAULT_SECTION_ORDER = [
-  'highlights', 'stats', 'about', 'video', 'cta_banner',
+  'highlights', 'stats', 'about', 'foto_testo', 'paragrafi', 'team', 'steps', 'video', 'cta_banner',
   'testimonianze', 'promozioni', 'menu_speciali', 'menu_preview',
   'eventi', 'news', 'gallery', 'faq', 'show_map', 'contatti', 'newsletter',
 ]
@@ -20,6 +21,8 @@ const DEFAULT = {
   sections: DEFAULT_SECTIONS, social: DEFAULT_SOCIAL, highlights: [],
   stats: [], promozioni: [], menu_speciali: [], testimonianze: [], faq: [],
   cta_banner: DEFAULT_CTA_BANNER,
+  foto_testo: [], paragrafi_titolo: '', paragrafi: [],
+  team_titolo: '', team: [], steps_titolo: '', steps: [],
 }
 
 const HIGHLIGHT_ICONS = [
@@ -61,6 +64,13 @@ export default function RistoranteMiniSitoPage() {
         video_url:     s.video_url     || '',
         cta_banner:    { ...DEFAULT_CTA_BANNER, ...(s.cta_banner || {}) },
         section_order: s.section_order || [],
+        foto_testo:    s.foto_testo    || [],
+        paragrafi_titolo: s.paragrafi_titolo || '',
+        paragrafi:     s.paragrafi    || [],
+        team_titolo:   s.team_titolo  || '',
+        team:          s.team         || [],
+        steps_titolo:  s.steps_titolo || '',
+        steps:         s.steps        || [],
       })
     }
   }, [ristorante])
@@ -197,6 +207,10 @@ export default function RistoranteMiniSitoPage() {
   }
 
   const SECTION_ITEMS = [
+    { key: 'foto_testo',    label: 'Blocchi foto + testo',   hint: `${(form.foto_testo || []).length} blocchi configurati` },
+    { key: 'paragrafi',     label: 'Paragrafi con icona',   hint: `${(form.paragrafi || []).length} paragrafi — ${form.paragrafi_titolo || 'titolo non impostato'}` },
+    { key: 'team',          label: 'Il team',               hint: `${(form.team || []).length} membri — ${form.team_titolo || 'Il nostro team'}` },
+    { key: 'steps',         label: 'Come funziona (steps)', hint: `${(form.steps || []).length} passi — ${form.steps_titolo || 'Come funziona'}` },
     { key: 'highlights',    label: 'Punti di forza',       hint: `${(form.highlights || []).length} punti configurati` },
     { key: 'stats',         label: 'Numeri in evidenza',   hint: `${(form.stats || []).length} numeri configurati` },
     { key: 'about',         label: 'La nostra cucina',     hint: ristorante.description ? 'Dalla descrizione ristorante' : 'Aggiungi una descrizione nelle info ristorante' },
@@ -512,6 +526,139 @@ export default function RistoranteMiniSitoPage() {
         </button>
       </div>
 
+      {/* Blocchi foto + testo */}
+      <div style={cardStyle}>
+        <h3 style={sectionTitle}>Blocchi foto + testo</h3>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+          Ogni blocco mostra un'immagine affiancata al testo (50/50). Su mobile l'immagine va sopra.
+        </p>
+        {(form.foto_testo || []).map((block, idx) => (
+          <FotoTestoItem key={block.id} item={block} entityType="ristorante" entityId={ristorante.id}
+            onPatch={p => {
+              const updated = { ...form, foto_testo: form.foto_testo.map(b => b.id === block.id ? { ...b, ...p } : b) }
+              setForm(updated); save({ minisito: updated }).catch(() => {})
+            }}
+            onRemove={() => {
+              const updated = { ...form, foto_testo: form.foto_testo.filter(b => b.id !== block.id) }
+              setForm(updated); save({ minisito: updated }).catch(() => {})
+            }}
+            borderBottom={idx < form.foto_testo.length - 1}
+          />
+        ))}
+        <button onClick={() => {
+          const updated = { ...form, foto_testo: [...(form.foto_testo || []), { id: crypto.randomUUID(), titolo: '', testo: '', image_url: '', inverti: false }] }
+          setForm(updated); save({ minisito: updated }).catch(() => {})
+        }} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#e63946', background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
+          <Plus size={14} strokeWidth={2.5} /> Aggiungi blocco
+        </button>
+      </div>
+
+      {/* Paragrafi con icona */}
+      <div style={cardStyle}>
+        <h3 style={sectionTitle}>Paragrafi con icona</h3>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+          Card con icona + titolo + testo. Ideale per piatti speciali, allergie, proposta cucina, ecc.
+        </p>
+        <div style={fieldWrap}>
+          <label style={lblStyle}>Titolo sezione</label>
+          <input value={form.paragrafi_titolo}
+            onChange={e => setForm(f => ({ ...f, paragrafi_titolo: e.target.value }))}
+            onBlur={() => save({ minisito: form }).catch(() => {})}
+            placeholder="es. La nostra filosofia / I nostri punti di forza"
+            style={inputStyle} />
+        </div>
+        {(form.paragrafi || []).map((p, idx) => (
+          <ParagrafoItem key={p.id} item={p} entityType="ristorante" entityId={ristorante.id}
+            icons={HIGHLIGHT_ICONS}
+            onPatch={patch => {
+              const updated = { ...form, paragrafi: form.paragrafi.map(x => x.id === p.id ? { ...x, ...patch } : x) }
+              setForm(updated); save({ minisito: updated }).catch(() => {})
+            }}
+            onRemove={() => {
+              const updated = { ...form, paragrafi: form.paragrafi.filter(x => x.id !== p.id) }
+              setForm(updated); save({ minisito: updated }).catch(() => {})
+            }}
+            borderBottom={idx < form.paragrafi.length - 1}
+          />
+        ))}
+        <button onClick={() => {
+          const updated = { ...form, paragrafi: [...(form.paragrafi || []), { id: crypto.randomUUID(), icon: 'star', titolo: '', testo: '', image_url: '' }] }
+          setForm(updated); save({ minisito: updated }).catch(() => {})
+        }} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#e63946', background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
+          <Plus size={14} strokeWidth={2.5} /> Aggiungi paragrafo
+        </button>
+      </div>
+
+      {/* Team */}
+      <div style={cardStyle}>
+        <h3 style={sectionTitle}>Il team</h3>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+          Presenta lo chef, il sommelier, il personale di sala — chiunque rappresenti il tuo ristorante.
+        </p>
+        <div style={fieldWrap}>
+          <label style={lblStyle}>Titolo sezione</label>
+          <input value={form.team_titolo}
+            onChange={e => setForm(f => ({ ...f, team_titolo: e.target.value }))}
+            onBlur={() => save({ minisito: form }).catch(() => {})}
+            placeholder="es. Il nostro team / La brigata di cucina"
+            style={inputStyle} />
+        </div>
+        {(form.team || []).map((m, idx) => (
+          <TeamMemberItem key={m.id} item={m} entityType="ristorante" entityId={ristorante.id}
+            onPatch={patch => {
+              const updated = { ...form, team: form.team.map(x => x.id === m.id ? { ...x, ...patch } : x) }
+              setForm(updated); save({ minisito: updated }).catch(() => {})
+            }}
+            onRemove={() => {
+              const updated = { ...form, team: form.team.filter(x => x.id !== m.id) }
+              setForm(updated); save({ minisito: updated }).catch(() => {})
+            }}
+            borderBottom={idx < form.team.length - 1}
+          />
+        ))}
+        <button onClick={() => {
+          const updated = { ...form, team: [...(form.team || []), { id: crypto.randomUUID(), nome: '', ruolo: '', bio: '', photo_url: '' }] }
+          setForm(updated); save({ minisito: updated }).catch(() => {})
+        }} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#e63946', background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
+          <Plus size={14} strokeWidth={2.5} /> Aggiungi membro
+        </button>
+      </div>
+
+      {/* Steps / Come funziona */}
+      <div style={cardStyle}>
+        <h3 style={sectionTitle}>Come funziona (steps)</h3>
+        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+          Passi numerati con icona. Es: "1. Prenota → 2. Scegli il menu → 3. Goditi la serata".
+        </p>
+        <div style={fieldWrap}>
+          <label style={lblStyle}>Titolo sezione</label>
+          <input value={form.steps_titolo}
+            onChange={e => setForm(f => ({ ...f, steps_titolo: e.target.value }))}
+            onBlur={() => save({ minisito: form }).catch(() => {})}
+            placeholder="es. Come prenotare / La tua esperienza"
+            style={inputStyle} />
+        </div>
+        {(form.steps || []).map((step, idx) => (
+          <StepItem key={step.id} item={step} index={idx} icons={HIGHLIGHT_ICONS}
+            onPatch={patch => {
+              const updated = { ...form, steps: form.steps.map(x => x.id === step.id ? { ...x, ...patch } : x) }
+              setForm(updated); save({ minisito: updated }).catch(() => {})
+            }}
+            onRemove={() => {
+              const updated = { ...form, steps: form.steps.filter(x => x.id !== step.id) }
+              setForm(updated); save({ minisito: updated }).catch(() => {})
+            }}
+            borderBottom={idx < form.steps.length - 1}
+          />
+        ))}
+        <button onClick={() => {
+          const updated = { ...form, steps: [...(form.steps || []), { id: crypto.randomUUID(), icon: 'star', titolo: '', testo: '' }] }
+          setForm(updated); save({ minisito: updated }).catch(() => {})
+        }} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#e63946', background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
+          <Plus size={14} strokeWidth={2.5} /> Aggiungi step
+        </button>
+      </div>
+
       {/* Social */}
       <div style={cardStyle}>
         <h3 style={sectionTitle}>Social e link utili</h3>
@@ -734,6 +881,157 @@ function FaqItem({ item, onPatch, onRemove, borderBottom }) {
         <button onClick={onRemove} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 6, flexShrink: 0, marginTop: 2 }}>
           <Trash2 size={15} strokeWidth={1.5} />
         </button>
+      </div>
+    </div>
+  )
+}
+
+function FotoTestoItem({ item, entityType, entityId, onPatch, onRemove, borderBottom }) {
+  const [titolo,    setTitolo]    = useState(item.titolo || '')
+  const [testo,     setTesto]     = useState(item.testo  || '')
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef()
+  async function handleImageUpload(e) {
+    const file = e.target.files[0]; if (!file) return
+    setUploading(true)
+    try {
+      const { url } = await uploadMedia(`/api/upload/minisito-image?entity_type=${entityType}&entity_id=${entityId}`, file)
+      onPatch({ image_url: url })
+    } catch {} finally { setUploading(false); e.target.value = '' }
+  }
+  return (
+    <div style={{ paddingBottom: 20, marginBottom: 20, borderBottom: borderBottom ? '1px solid #f0f0f0' : 'none' }}>
+      <div style={fieldWrap}>
+        <label style={lblStyle}>Titolo (opzionale)</label>
+        <input value={titolo} onChange={e => setTitolo(e.target.value)} onBlur={() => onPatch({ titolo })}
+          placeholder="es. La nostra storia" style={inputStyle} />
+      </div>
+      <div style={fieldWrap}>
+        <label style={lblStyle}>Testo</label>
+        <textarea value={testo} onChange={e => setTesto(e.target.value)} onBlur={() => onPatch({ testo })}
+          rows={4} placeholder="Testo descrittivo…" style={{ ...inputStyle, resize: 'vertical' }} />
+      </div>
+      {item.image_url && <img src={item.image_url} alt="" style={{ width: '100%', maxHeight: 160, objectFit: 'cover', borderRadius: 8, marginBottom: 10, display: 'block' }} />}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <button type="button" onClick={() => fileRef.current?.click()}
+          style={{ fontSize: 13, padding: '6px 14px', background: '#fff0f1', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+          {uploading ? 'Caricamento…' : item.image_url ? 'Cambia immagine' : 'Carica immagine'}
+        </button>
+        <input ref={fileRef} type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', userSelect: 'none' }}>
+          <input type="checkbox" checked={item.inverti || false} onChange={e => onPatch({ inverti: e.target.checked })} style={{ accentColor: '#e63946' }} />
+          Foto a destra
+        </label>
+        {item.image_url && <button type="button" onClick={() => onPatch({ image_url: '' })} style={{ fontSize: 12, padding: '4px 10px', background: '#fff0f0', color: '#c00', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Rimuovi immagine</button>}
+      </div>
+      <button type="button" onClick={onRemove} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 12, padding: 0, marginTop: 12 }}>
+        <Trash2 size={13} strokeWidth={1.5} /> Rimuovi blocco
+      </button>
+    </div>
+  )
+}
+
+function ParagrafoItem({ item, entityType, entityId, icons, onPatch, onRemove, borderBottom }) {
+  const [titolo,    setTitolo]    = useState(item.titolo || '')
+  const [testo,     setTesto]     = useState(item.testo  || '')
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef()
+  const Icon = (icons.find(i => i.key === item.icon) || icons[0]).Icon
+  async function handleImageUpload(e) {
+    const file = e.target.files[0]; if (!file) return
+    setUploading(true)
+    try {
+      const { url } = await uploadMedia(`/api/upload/minisito-image?entity_type=${entityType}&entity_id=${entityId}`, file)
+      onPatch({ image_url: url })
+    } catch {} finally { setUploading(false); e.target.value = '' }
+  }
+  return (
+    <div style={{ paddingBottom: 20, marginBottom: 20, borderBottom: borderBottom ? '1px solid #f0f0f0' : 'none' }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+        <div style={{ flex: '0 0 auto' }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Icona</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <select value={item.icon} onChange={e => onPatch({ icon: e.target.value })} style={{ padding: '8px 6px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, background: '#fff' }}>
+              {icons.map(({ key, label }) => <option key={key} value={key}>{label}</option>)}
+            </select>
+            <div style={{ width: 36, height: 36, borderRadius: 8, background: '#fff0f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon size={18} strokeWidth={1.5} color="#e63946" />
+            </div>
+          </div>
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Titolo</label>
+          <input value={titolo} onChange={e => setTitolo(e.target.value)} onBlur={() => onPatch({ titolo })} placeholder="es. La nostra proposta" style={inputStyle} />
+        </div>
+      </div>
+      <div style={{ marginBottom: 12 }}>
+        <label style={lblStyle}>Testo</label>
+        <textarea value={testo} onChange={e => setTesto(e.target.value)} onBlur={() => onPatch({ testo })} rows={3} placeholder="Descrizione…" style={{ ...inputStyle, resize: 'vertical' }} />
+      </div>
+      {item.image_url && <img src={item.image_url} alt="" style={{ width: '100%', maxHeight: 120, objectFit: 'cover', borderRadius: 8, marginBottom: 8, display: 'block' }} />}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <button type="button" onClick={() => fileRef.current?.click()} style={{ fontSize: 12, padding: '5px 12px', background: '#fff0f1', border: 'none', borderRadius: 7, cursor: 'pointer', fontWeight: 600 }}>
+          {uploading ? 'Caricamento…' : item.image_url ? 'Cambia foto' : 'Foto (opzionale)'}
+        </button>
+        <input ref={fileRef} type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
+        {item.image_url && <button type="button" onClick={() => onPatch({ image_url: '' })} style={{ fontSize: 12, padding: '4px 10px', background: '#fff0f0', color: '#c00', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Rimuovi foto</button>}
+        <button type="button" onClick={onRemove} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 4 }}><Trash2 size={15} strokeWidth={1.5} /></button>
+      </div>
+    </div>
+  )
+}
+
+function TeamMemberItem({ item, entityType, entityId, onPatch, onRemove, borderBottom }) {
+  const [nome,      setNome]      = useState(item.nome  || '')
+  const [ruolo,     setRuolo]     = useState(item.ruolo || '')
+  const [bio,       setBio]       = useState(item.bio   || '')
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef()
+  async function handlePhotoUpload(e) {
+    const file = e.target.files[0]; if (!file) return
+    setUploading(true)
+    try {
+      const { url } = await uploadMedia(`/api/upload/minisito-image?entity_type=${entityType}&entity_id=${entityId}`, file)
+      onPatch({ photo_url: url })
+    } catch {} finally { setUploading(false); e.target.value = '' }
+  }
+  return (
+    <div style={{ paddingBottom: 20, marginBottom: 20, borderBottom: borderBottom ? '1px solid #f0f0f0' : 'none', display: 'flex', gap: 14 }}>
+      <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+        <div style={{ width: 72, height: 72, borderRadius: '50%', overflow: 'hidden', background: '#f0f4ff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #eee' }}>
+          {item.photo_url ? <img src={item.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Users size={28} strokeWidth={1.5} color="#aaa" />}
+        </div>
+        <button type="button" onClick={() => fileRef.current?.click()} style={{ fontSize: 11, padding: '4px 8px', background: '#fff0f1', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>{uploading ? '…' : 'Foto'}</button>
+        <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <input value={nome} onChange={e => setNome(e.target.value)} onBlur={() => onPatch({ nome })} placeholder="Nome e cognome" style={{ ...inputStyle, marginBottom: 8, fontWeight: 600 }} />
+        <input value={ruolo} onChange={e => setRuolo(e.target.value)} onBlur={() => onPatch({ ruolo })} placeholder="es. Chef / Sommelier / Responsabile sala" style={{ ...inputStyle, marginBottom: 8 }} />
+        <textarea value={bio} onChange={e => setBio(e.target.value)} onBlur={() => onPatch({ bio })} rows={2} placeholder="Breve bio…" style={{ ...inputStyle, resize: 'vertical', marginBottom: 4 }} />
+        <button type="button" onClick={onRemove} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 12, padding: 0 }}><Trash2 size={13} strokeWidth={1.5} /> Rimuovi</button>
+      </div>
+    </div>
+  )
+}
+
+function StepItem({ item, index, icons, onPatch, onRemove, borderBottom }) {
+  const [titolo, setTitolo] = useState(item.titolo || '')
+  const [testo,  setTesto]  = useState(item.testo  || '')
+  const Icon = (icons.find(i => i.key === item.icon) || icons[0]).Icon
+  return (
+    <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: borderBottom ? '1px solid #f0f0f0' : 'none' }}>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+        <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#e63946', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0, marginTop: 6 }}>{index + 1}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <select value={item.icon} onChange={e => onPatch({ icon: e.target.value })} style={{ padding: '7px 6px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, background: '#fff', flexShrink: 0 }}>
+              {icons.map(({ key, label }) => <option key={key} value={key}>{label}</option>)}
+            </select>
+            <input value={titolo} onChange={e => setTitolo(e.target.value)} onBlur={() => onPatch({ titolo })} placeholder="es. Prenota un tavolo" style={{ ...inputStyle, flex: 1 }} />
+          </div>
+          <textarea value={testo} onChange={e => setTesto(e.target.value)} onBlur={() => onPatch({ testo })} rows={2} placeholder="Breve descrizione…" style={{ ...inputStyle, resize: 'vertical' }} />
+        </div>
+        <button type="button" onClick={onRemove} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 4, marginTop: 4, flexShrink: 0 }}><Trash2 size={15} strokeWidth={1.5} /></button>
       </div>
     </div>
   )
