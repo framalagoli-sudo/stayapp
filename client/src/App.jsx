@@ -40,6 +40,7 @@ import ArticoloPage from './pages/public/ArticoloPage'
 import BlogListPage from './pages/public/BlogListPage'
 import ContattiPage from './pages/admin/ContattiPage'
 import PolicyPage from './pages/public/PolicyPage'
+import LandingPage from './pages/public/LandingPage'
 import PropertyPrivacyPage from './pages/admin/property/PropertyPrivacyPage'
 import RistorantePrivacyPage from './pages/admin/ristorante/RistorantePrivacyPage'
 import AttivitaPrivacyPage from './pages/admin/attivita/AttivitaPrivacyPage'
@@ -158,8 +159,8 @@ export default function App() {
             <Route path="blog/:id"               element={<BlogEditorPage />} />
           </Route>
 
-          {/* Root */}
-          <Route path="/" element={<Navigate to="/admin" replace />} />
+          {/* Root — landing page StayApp */}
+          <Route path="/" element={<LandingPage />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
