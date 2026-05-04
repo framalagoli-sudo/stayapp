@@ -1,24 +1,24 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import {
   MessageCircle, Mail, Smartphone, LayoutDashboard, QrCode,
-  Star, Shield, Palette, Calendar, UtensilsCrossed, Menu, X,
-  ArrowRight, Bell, ClipboardList, Info, Building2, Waves,
+  Star, Shield, Palette, UtensilsCrossed, Menu, X,
+  ArrowRight, ArrowDown, Bell, ClipboardList, Info, Building2,
   CheckCircle, ChevronRight, Zap, Clock, DollarSign,
   Activity, Briefcase, ShoppingBag, GraduationCap, LogIn,
   RefreshCw, Edit3, Globe
 } from 'lucide-react'
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
-const PRIMARY    = '#1A6490'  // verde-blu
-const ACCENT     = '#C4952A'  // oro beige (più caldo, meno rosso)
+const PRIMARY    = '#1A6490'
+const ACCENT     = '#C4952A'
 const LIGHT_P    = '#E0EFF7'
 const LIGHT_A    = '#F8F2E3'
 const BG         = '#F8F6F3'
 const TEXT       = '#17252D'
 const TEXT_LIGHT = '#496070'
-const DARK       = '#0F2330'  // per sezioni scure
+const DARK       = '#0F2330'
 
-const WA_NUMBER = '393000000000' // TODO: sostituire (es. '393471234567')
+const WA_NUMBER = '393000000000' // TODO: sostituire con numero reale
 const EMAIL     = 'fra.malagoli@gmail.com'
 const WA_DEMO   = `https://wa.me/${WA_NUMBER}?text=Ciao!%20Vorrei%20saperne%20di%20pi%C3%B9%20su%20StayApp.`
 const WA_PRICE  = `https://wa.me/${WA_NUMBER}?text=Ciao!%20Vorrei%20un%20preventivo%20per%20StayApp.`
@@ -44,25 +44,33 @@ const css = `
   .lp-cta-row      { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
   .lp-hero-btns    { display: flex; gap: 16px; flex-wrap: wrap; }
   .lp-mobile-btn   { display: none !important; }
+  .lp-demo-cta     { display: none !important; }
+  .lp-compare-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: center; margin-bottom: 64px; }
+  .lp-compare-arrow { display: flex; flex-direction: column; align-items: center; }
+  .lp-phone-mini   { display: none; justify-content: center; margin-top: 32px; }
 
-  a.lp-navlink { color: ${TEXT_LIGHT}; text-decoration: none; font-size: 15px; font-weight: 500; transition: color .2s; }
-  a.lp-navlink:hover { color: ${PRIMARY}; }
+  a.lp-navlink { color: rgba(255,255,255,0.75); text-decoration: none; font-size: 15px; font-weight: 500; transition: color .2s; }
+  a.lp-navlink:hover { color: #fff; }
 
   .lp-featcard { transition: transform .2s, box-shadow .2s; }
   .lp-featcard:hover { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(26,100,144,0.12) !important; }
 
   @media (max-width: 960px) {
-    .lp-hero-grid  { grid-template-columns: 1fr; gap: 48px; }
+    .lp-hero-grid  { grid-template-columns: 1fr; gap: 32px; }
     .lp-two-grid   { grid-template-columns: 1fr; }
     .lp-indip-grid { grid-template-columns: 1fr; }
     .lp-six-grid   { grid-template-columns: repeat(2,1fr); }
     .lp-feat-grid  { grid-template-columns: repeat(2,1fr); gap: 16px; }
     .lp-steps-grid { grid-template-columns: 1fr; gap: 32px; }
     .lp-phone      { display: none; }
+    .lp-phone-mini { display: flex; }
     .lp-nav-links  { display: none !important; }
     .lp-mobile-btn { display: flex !important; }
+    .lp-demo-cta   { display: inline-flex !important; }
     .lp-footer-row { flex-direction: column; text-align: center; }
     .lp-footer-links { flex-direction: column; gap: 12px; align-items: center; }
+    .lp-compare-grid { grid-template-columns: 1fr; gap: 16px; }
+    .lp-compare-arrow { transform: rotate(90deg); }
   }
   @media (max-width: 520px) {
     .lp-feat-grid { grid-template-columns: 1fr; }
@@ -93,7 +101,7 @@ const FEATURES = [
   { icon: <Globe size={21} strokeWidth={1.5} color={PRIMARY} />,          title: 'Sito web professionale',    text: 'Landing page con SEO, galleria, testimonianze e form contatti. Trovato su Google, aggiornato da te.' },
   { icon: <Edit3 size={21} strokeWidth={1.5} color={PRIMARY} />,          title: 'Aggiorna dal telefono',     text: 'Testi, foto, prezzi, menu: tutto modificabile dal tuo smartphone in pochi tap. Niente PC richiesto.' },
   { icon: <LayoutDashboard size={21} strokeWidth={1.5} color={PRIMARY} />, title: 'Pannello semplice',        text: 'Un pannello pensato per chi non è un tecnico. Se sai usare WhatsApp, sai usare StayApp.' },
-  { icon: <UtensilsCrossed size={21} strokeWidth={1.5} color={PRIMARY} />, title: 'Menu e servizi digitali', text: 'Categorie, voci, prezzi e foto sempre aggiornati. Basta ristampare o aspettare l\'agenzia.' },
+  { icon: <UtensilsCrossed size={21} strokeWidth={1.5} color={PRIMARY} />, title: 'Menu e servizi digitali', text: "Categorie, voci, prezzi e foto sempre aggiornati. Basta ristampare o aspettare l'agenzia." },
   { icon: <Shield size={21} strokeWidth={1.5} color={PRIMARY} />,          title: 'GDPR incluso',             text: 'Privacy policy e cookie policy auto-generate. Consensi nei form. Niente consulente legale.' },
   { icon: <Palette size={21} strokeWidth={1.5} color={PRIMARY} />,         title: 'Tema personalizzato',      text: 'Colori, font e stile adattati al tuo brand. Fai da solo o ci pensiamo noi in fase di setup.' },
   { icon: <Star size={21} strokeWidth={1.5} color={PRIMARY} />,            title: 'Galleria, eventi, news',   text: 'Tutto quello che serve per raccontare la tua attività e tenerla viva online, aggiornato in tempo reale.' },
@@ -118,8 +126,6 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const navActive = scrolled || mobileOpen
-
   return (
     <div className="lp" style={{ background: BG, color: TEXT, minHeight: '100vh' }}>
       <style>{css}</style>
@@ -127,53 +133,79 @@ export default function LandingPage() {
       {/* ── NAVBAR ── */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
-        background: navActive ? 'rgba(248,246,243,0.96)' : 'transparent',
-        backdropFilter: navActive ? 'blur(20px)' : 'none',
-        borderBottom: navActive ? `1px solid ${PRIMARY}18` : 'none',
+        background: scrolled || mobileOpen ? 'rgba(15,35,48,0.97)' : 'transparent',
+        backdropFilter: scrolled || mobileOpen ? 'blur(20px)' : 'none',
+        borderBottom: scrolled || mobileOpen ? '1px solid rgba(255,255,255,0.08)' : 'none',
         transition: 'all .3s ease',
       }}>
-        <div style={{ maxWidth: 1140, margin: '0 auto', padding: '0 28px', height: 66, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto', padding: '0 24px', height: 66, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Logo />
+
+          {/* desktop nav */}
           <div className="lp-nav-links">
             {[['#come-funziona','Come funziona'],['#funzionalita','Funzionalità'],['#perchi','Per chi è']].map(([h, l]) => (
               <a key={h} href={h} className="lp-navlink">{l}</a>
             ))}
-            <a href="/admin" className="lp-navlink" style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: PRIMARY }}>
+            <a href="/admin" className="lp-navlink" style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>
               <LogIn size={16} strokeWidth={1.5} /> Accedi
             </a>
             <Btn href="#richiedi-demo" bg={ACCENT}>Richiedi una demo</Btn>
           </div>
-          {/* hamburger */}
-          <button className="lp-mobile-btn" onClick={() => setMobileOpen(v => !v)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, color: TEXT }}>
-            {mobileOpen ? <X size={24} strokeWidth={1.5} /> : <Menu size={24} strokeWidth={1.5} />}
-          </button>
+
+          {/* mobile: sempre visibili — demo + hamburger */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <a href="#richiedi-demo" className="lp-demo-cta" style={{
+              background: ACCENT, color: '#fff', borderRadius: 8,
+              padding: '8px 14px', fontSize: 13, fontWeight: 700,
+              textDecoration: 'none', whiteSpace: 'nowrap',
+              fontFamily: "'Space Grotesk', sans-serif",
+            }}>Demo</a>
+            <button className="lp-mobile-btn" onClick={() => setMobileOpen(v => !v)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, color: '#fff' }}>
+              {mobileOpen ? <X size={24} strokeWidth={1.5} /> : <Menu size={24} strokeWidth={1.5} />}
+            </button>
+          </div>
         </div>
+
         {mobileOpen && (
-          <div style={{ background: BG, padding: '16px 28px 28px', borderTop: `1px solid ${PRIMARY}15`, display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ background: DARK, padding: '16px 24px 28px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: 20 }}>
             {[['#come-funziona','Come funziona'],['#funzionalita','Funzionalità'],['#perchi','Per chi è']].map(([h, l]) => (
-              <a key={h} href={h} onClick={() => setMobileOpen(false)} style={{ color: TEXT, textDecoration: 'none', fontSize: 17, fontWeight: 500 }}>{l}</a>
+              <a key={h} href={h} onClick={() => setMobileOpen(false)} style={{ color: 'rgba(255,255,255,0.75)', textDecoration: 'none', fontSize: 17, fontWeight: 500 }}>{l}</a>
             ))}
-            <a href="/admin" style={{ color: PRIMARY, textDecoration: 'none', fontSize: 17, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <a href="/admin" style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'none', fontSize: 17, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
               <LogIn size={18} strokeWidth={1.5} /> Accedi
             </a>
-            <Btn href="#richiedi-demo" bg={ACCENT}>Richiedi una demo</Btn>
           </div>
         )}
       </nav>
 
-      {/* ── HERO ── */}
+      {/* ── HERO — dark, SaaS style ── */}
       <section style={{
         minHeight: '100vh', display: 'flex', alignItems: 'center',
-        padding: '120px 28px 80px',
-        background: `linear-gradient(150deg, ${BG} 35%, ${LIGHT_P} 100%)`,
+        padding: '120px 24px 80px',
+        background: `linear-gradient(150deg, ${DARK} 0%, #0C3A58 60%, #0F2330 100%)`,
+        position: 'relative', overflow: 'hidden',
       }}>
-        <div style={{ maxWidth: 1140, margin: '0 auto', width: '100%' }}>
+        {/* sfondo decorativo */}
+        <div style={{
+          position: 'absolute', top: '-20%', right: '-10%',
+          width: 600, height: 600, borderRadius: '50%',
+          background: `radial-gradient(circle, ${PRIMARY}22 0%, transparent 70%)`,
+          pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '-10%', left: '-5%',
+          width: 400, height: 400, borderRadius: '50%',
+          background: `radial-gradient(circle, ${ACCENT}18 0%, transparent 70%)`,
+          pointerEvents: 'none',
+        }} />
+
+        <div style={{ maxWidth: 1140, margin: '0 auto', width: '100%', position: 'relative' }}>
           <div className="lp-hero-grid">
             <div>
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: 8,
-                background: LIGHT_A, color: ACCENT,
+                background: `${ACCENT}22`, color: ACCENT,
                 padding: '6px 16px', borderRadius: 100,
                 fontSize: 13, fontWeight: 600, marginBottom: 32,
                 border: `1px solid ${ACCENT}40`,
@@ -181,38 +213,52 @@ export default function LandingPage() {
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: ACCENT }} />
                 Hai sempre sognato un'app per la tua attività?
               </div>
-              <h1 style={{ fontSize: 52, fontWeight: 700, lineHeight: 1.1, letterSpacing: '-1.5px', color: TEXT, marginBottom: 24 }}>
-                Un'app per i clienti che hai.<br />
-                <span style={{ color: PRIMARY }}>Un sito per trovarne di nuovi.</span>
+              <h1 style={{ fontSize: 54, fontWeight: 700, lineHeight: 1.08, letterSpacing: '-1.5px', color: '#fff', marginBottom: 24 }}>
+                Un'app per i clienti<br />che hai già.{' '}
+                <span style={{ color: ACCENT }}>Un sito per trovarne di nuovi.</span>
               </h1>
-              <p style={{ fontSize: 18, color: TEXT_LIGHT, lineHeight: 1.8, marginBottom: 44, maxWidth: 480 }}>
+              <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.62)', lineHeight: 1.8, marginBottom: 44, maxWidth: 480 }}>
                 Aggiorna testi, foto e menù dal tuo telefono in 2 minuti.
                 Senza agenzie, senza WordPress, senza aspettare settimane per ogni modifica.
               </p>
               <div className="lp-hero-btns">
-                <Btn href={WA_DEMO} bg="#25D366" icon={<MessageCircle size={19} strokeWidth={1.5} />} shadow="rgba(37,211,102,0.32)">
+                <Btn href="#richiedi-demo" bg={ACCENT} shadow={`${ACCENT}55`}>
+                  Richiedi una demo gratuita
+                </Btn>
+                <Btn href={WA_DEMO} bg="rgba(255,255,255,0.08)" color="#fff" border="1.5px solid rgba(255,255,255,0.18)" icon={<MessageCircle size={19} strokeWidth={1.5} />}>
                   Scrivici su WhatsApp
                 </Btn>
-                <Btn href={`mailto:${EMAIL}?subject=Richiesta informazioni StayApp`} bg="transparent" color={PRIMARY} border={`2px solid ${PRIMARY}`} icon={<Mail size={19} strokeWidth={1.5} />}>
-                  Invia una mail
-                </Btn>
+              </div>
+
+              {/* social proof mini */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 48 }}>
+                <div style={{ display: 'flex' }}>
+                  {[0,1,2,3].map(i => (
+                    <div key={i} style={{ width: 32, height: 32, borderRadius: '50%', background: `hsl(${200+i*15},60%,${40+i*5}%)`, border: '2px solid rgba(255,255,255,0.15)', marginLeft: i > 0 ? -8 : 0 }} />
+                  ))}
+                </div>
+                <div>
+                  <div style={{ display: 'flex', gap: 2, marginBottom: 2 }}>
+                    {[...Array(5)].map((_,i) => <Star key={i} size={12} strokeWidth={0} fill={ACCENT} color={ACCENT} />)}
+                  </div>
+                  <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>Già usato da decine di attività</div>
+                </div>
               </div>
             </div>
             <div className="lp-phone"><PhoneMockup /></div>
           </div>
+
+          {/* phone mockup visibile su mobile — sotto il testo */}
+          <div className="lp-phone-mini"><PhoneMockup scale={0.82} /></div>
         </div>
       </section>
 
       {/* ── DUE STRUMENTI ── */}
-      <section style={{ padding: '104px 28px', background: '#fff' }}>
+      <section style={{ padding: '104px 24px', background: '#fff' }}>
         <div style={{ maxWidth: 1140, margin: '0 auto' }}>
           <SecHead label="La piattaforma" title="Due strumenti. Un'unica piattaforma." sub="Non devi scegliere tra un'app e un sito. Con StayApp li hai entrambi, e li gestisci dallo stesso posto." />
           <div className="lp-two-grid">
-            {/* Card sinistra — app interna */}
-            <div style={{
-              background: DARK, borderRadius: 24, padding: '44px 40px',
-              display: 'flex', flexDirection: 'column', gap: 24,
-            }}>
+            <div style={{ background: DARK, borderRadius: 24, padding: '44px 40px', display: 'flex', flexDirection: 'column', gap: 24 }}>
               <div style={{ width: 52, height: 52, borderRadius: 16, background: `${PRIMARY}50`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Smartphone size={26} strokeWidth={1.5} color="#fff" />
               </div>
@@ -232,12 +278,7 @@ export default function LandingPage() {
                 ))}
               </ul>
             </div>
-            {/* Card destra — sito web */}
-            <div style={{
-              background: LIGHT_P, borderRadius: 24, padding: '44px 40px',
-              display: 'flex', flexDirection: 'column', gap: 24,
-              border: `1px solid ${PRIMARY}20`,
-            }}>
+            <div style={{ background: LIGHT_P, borderRadius: 24, padding: '44px 40px', display: 'flex', flexDirection: 'column', gap: 24, border: `1px solid ${PRIMARY}20` }}>
               <div style={{ width: 52, height: 52, borderRadius: 16, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 2px 12px ${PRIMARY}20` }}>
                 <Globe size={26} strokeWidth={1.5} color={PRIMARY} />
               </div>
@@ -262,7 +303,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── INDIPENDENZA ── */}
-      <section style={{ padding: '104px 28px', background: DARK }}>
+      <section style={{ padding: '104px 24px', background: DARK }}>
         <div style={{ maxWidth: 1140, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 72 }}>
             <div style={{ color: ACCENT, fontWeight: 700, fontSize: 11, letterSpacing: 2.5, textTransform: 'uppercase', marginBottom: 14 }}>Il vero vantaggio</div>
@@ -274,13 +315,12 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Prima / Dopo */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 24, alignItems: 'center', marginBottom: 64 }}>
-            {/* Prima */}
+          {/* Prima / Dopo — RESPONSIVE */}
+          <div className="lp-compare-grid">
             <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 20, padding: '32px 28px', border: '1px solid rgba(255,255,255,0.08)' }}>
               <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 20 }}>Prima</div>
               {[
-                { icon: <Clock size={16} strokeWidth={1.5} />, t: 'Chiami l\'agenzia e aspetti' },
+                { icon: <Clock size={16} strokeWidth={1.5} />, t: "Chiami l'agenzia e aspetti" },
                 { icon: <DollarSign size={16} strokeWidth={1.5} />, t: '150–300€ per ogni modifica' },
                 { icon: <RefreshCw size={16} strokeWidth={1.5} />, t: '2–3 settimane di attesa' },
                 { icon: <X size={16} strokeWidth={1.5} />, t: 'Risultato spesso sbagliato' },
@@ -291,16 +331,14 @@ export default function LandingPage() {
               ))}
             </div>
 
-            {/* Freccia centrale */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            <div className="lp-compare-arrow">
               <ArrowRight size={28} strokeWidth={1.5} color={ACCENT} />
             </div>
 
-            {/* Dopo */}
             <div style={{ background: `${PRIMARY}25`, borderRadius: 20, padding: '32px 28px', border: `1px solid ${PRIMARY}40` }}>
               <div style={{ color: ACCENT, fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 20 }}>Con StayApp</div>
               {[
-                { icon: <Smartphone size={16} strokeWidth={1.5} />, t: 'Apri l\'app dal telefono' },
+                { icon: <Smartphone size={16} strokeWidth={1.5} />, t: "Apri l'app dal telefono" },
                 { icon: <Edit3 size={16} strokeWidth={1.5} />, t: 'Modifichi in 2 minuti' },
                 { icon: <Zap size={16} strokeWidth={1.5} />, t: 'Salvi ed è online subito' },
                 { icon: <CheckCircle size={16} strokeWidth={1.5} />, t: 'Esattamente come volevi' },
@@ -332,7 +370,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── COME FUNZIONA ── */}
-      <section id="come-funziona" style={{ padding: '104px 28px', background: '#fff' }}>
+      <section id="come-funziona" style={{ padding: '104px 24px', background: '#fff' }}>
         <div style={{ maxWidth: 980, margin: '0 auto' }}>
           <SecHead label="Semplicità" title="Come funziona" sub="Sei operativo in 24 ore. Poi vai avanti da solo." />
           <div className="lp-steps-grid">
@@ -359,7 +397,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── PER CHI È ── */}
-      <section id="perchi" style={{ padding: '104px 28px', background: BG }}>
+      <section id="perchi" style={{ padding: '104px 24px', background: BG }}>
         <div style={{ maxWidth: 1140, margin: '0 auto' }}>
           <SecHead label="Per chi è" title="Per qualsiasi attività con clienti" sub="Se hai clienti da gestire e nuovi da trovare, StayApp è per te." />
           <div className="lp-six-grid">
@@ -383,7 +421,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── FUNZIONALITÀ ── */}
-      <section id="funzionalita" style={{ padding: '104px 28px', background: '#fff' }}>
+      <section id="funzionalita" style={{ padding: '104px 24px', background: '#fff' }}>
         <div style={{ maxWidth: 1140, margin: '0 auto' }}>
           <SecHead label="Features" title="Tutto quello che ti serve" sub="Un solo strumento. Nessun abbonamento extra, nessuna integrazione." />
           <div className="lp-feat-grid">
@@ -404,7 +442,7 @@ export default function LandingPage() {
       <DemoForm />
 
       {/* ── ACCEDI (banner per clienti esistenti) ── */}
-      <section style={{ padding: '64px 28px', background: LIGHT_P, borderTop: `1px solid ${PRIMARY}20`, borderBottom: `1px solid ${PRIMARY}20` }}>
+      <section style={{ padding: '64px 24px', background: LIGHT_P, borderTop: `1px solid ${PRIMARY}20`, borderBottom: `1px solid ${PRIMARY}20` }}>
         <div style={{ maxWidth: 700, margin: '0 auto', textAlign: 'center' }}>
           <h3 style={{ fontSize: 24, fontWeight: 700, color: TEXT, marginBottom: 10 }}>Hai già un account StayApp?</h3>
           <p style={{ color: TEXT_LIGHT, fontSize: 16, marginBottom: 28 }}>Accedi direttamente al tuo pannello di gestione.</p>
@@ -415,7 +453,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── PRICING / CTA ── */}
-      <section id="contatti" style={{ padding: '104px 28px', background: `linear-gradient(140deg, ${PRIMARY} 0%, ${DARK} 100%)` }}>
+      <section id="contatti" style={{ padding: '104px 24px', background: `linear-gradient(140deg, ${PRIMARY} 0%, ${DARK} 100%)` }}>
         <div style={{ maxWidth: 660, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ color: `${ACCENT}cc`, fontWeight: 700, fontSize: 11, letterSpacing: 2.5, textTransform: 'uppercase', marginBottom: 16 }}>Pricing</div>
           <h2 style={{ fontSize: 42, fontWeight: 700, color: '#fff', marginBottom: 20, lineHeight: 1.15, letterSpacing: '-0.5px' }}>
@@ -436,7 +474,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ background: TEXT, color: 'rgba(255,255,255,0.42)', padding: '52px 28px' }}>
+      <footer style={{ background: TEXT, color: 'rgba(255,255,255,0.42)', padding: '52px 24px' }}>
         <div style={{ maxWidth: 1140, margin: '0 auto' }}>
           <div className="lp-footer-row">
             <div>
@@ -462,7 +500,7 @@ export default function LandingPage() {
 function Logo({ light }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 21, fontWeight: 700, color: light ? '#fff' : PRIMARY, letterSpacing: '-0.5px' }}>Stay</span>
+      <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 21, fontWeight: 700, color: light ? '#fff' : '#fff', letterSpacing: '-0.5px' }}>Stay</span>
       <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 21, fontWeight: 700, color: ACCENT }}>App</span>
     </div>
   )
@@ -539,7 +577,7 @@ function DemoForm() {
   const labelStyle = { fontSize: 13, fontWeight: 600, color: TEXT_LIGHT, marginBottom: 6, display: 'block' }
 
   return (
-    <section id="richiedi-demo" style={{ padding: '104px 28px', background: BG }}>
+    <section id="richiedi-demo" style={{ padding: '104px 24px', background: BG }}>
       <div style={{ maxWidth: 680, margin: '0 auto' }}>
         <SecHead
           label="Inizia adesso"
@@ -622,36 +660,38 @@ function DemoForm() {
   )
 }
 
-function PhoneMockup() {
+function PhoneMockup({ scale = 1 }) {
+  const w = Math.round(264 * scale)
+  const h = Math.round(532 * scale)
   return (
-    <div style={{ width: 264, height: 532, background: '#111820', borderRadius: 42, padding: 9, boxShadow: `0 48px 96px rgba(26,100,144,0.28), 0 0 0 1px rgba(255,255,255,0.05)` }}>
-      <div style={{ width: '100%', height: '100%', borderRadius: 34, background: `linear-gradient(165deg, ${PRIMARY} 0%, #0C4060 40%, #0A2535 100%)`, overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ height: 28, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', paddingBottom: 4 }}>
-          <div style={{ width: 72, height: 18, background: '#111820', borderRadius: 10 }} />
+    <div style={{ width: w, height: h, background: '#111820', borderRadius: 42 * scale, padding: 9 * scale, boxShadow: `0 48px 96px rgba(26,100,144,0.28), 0 0 0 1px rgba(255,255,255,0.05)` }}>
+      <div style={{ width: '100%', height: '100%', borderRadius: 34 * scale, background: `linear-gradient(165deg, ${PRIMARY} 0%, #0C4060 40%, #0A2535 100%)`, overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ height: 28 * scale, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', paddingBottom: 4 }}>
+          <div style={{ width: 72 * scale, height: 18 * scale, background: '#111820', borderRadius: 10 }} />
         </div>
-        <div style={{ padding: '16px 20px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 10, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <QrCode size={18} color="#fff" strokeWidth={1.5} />
+        <div style={{ padding: `${16 * scale}px ${20 * scale}px ${12 * scale}px`, display: 'flex', alignItems: 'center', gap: 10 * scale }}>
+          <div style={{ width: 34 * scale, height: 34 * scale, borderRadius: 10 * scale, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <QrCode size={18 * scale} color="#fff" strokeWidth={1.5} />
           </div>
           <div>
-            <div style={{ color: '#fff', fontWeight: 700, fontSize: 13 }}>La Tua Attività</div>
-            <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11 }}>Benvenuto · Aggiornato oggi</div>
+            <div style={{ color: '#fff', fontWeight: 700, fontSize: 13 * scale }}>La Tua Attività</div>
+            <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11 * scale }}>Benvenuto · Aggiornato oggi</div>
           </div>
         </div>
-        <div style={{ height: 3, background: `linear-gradient(90deg, ${ACCENT}, ${ACCENT}00)`, margin: '0 20px 16px', borderRadius: 2 }} />
-        <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+        <div style={{ height: 3, background: `linear-gradient(90deg, ${ACCENT}, ${ACCENT}00)`, margin: `0 ${20 * scale}px ${16 * scale}px`, borderRadius: 2 }} />
+        <div style={{ padding: `0 ${16 * scale}px`, display: 'flex', flexDirection: 'column', gap: 8 * scale, flex: 1 }}>
           {PHONE_ITEMS.map(({ icon, label }, i) => (
-            <div key={i} style={{ background: 'rgba(255,255,255,0.07)', borderRadius: 12, padding: '11px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</div>
-                <span style={{ color: 'rgba(255,255,255,0.82)', fontSize: 13, fontWeight: 500 }}>{label}</span>
+            <div key={i} style={{ background: 'rgba(255,255,255,0.07)', borderRadius: 12 * scale, padding: `${11 * scale}px ${14 * scale}px`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 * scale }}>
+                <div style={{ width: 28 * scale, height: 28 * scale, borderRadius: 8 * scale, background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</div>
+                <span style={{ color: 'rgba(255,255,255,0.82)', fontSize: 13 * scale, fontWeight: 500 }}>{label}</span>
               </div>
-              <ChevronRight size={14} strokeWidth={1.5} color="rgba(255,255,255,0.25)" />
+              <ChevronRight size={14 * scale} strokeWidth={1.5} color="rgba(255,255,255,0.25)" />
             </div>
           ))}
         </div>
-        <div style={{ padding: '12px 16px 16px', display: 'flex', justifyContent: 'space-around', borderTop: '1px solid rgba(255,255,255,0.07)', marginTop: 12 }}>
-          {[<Bell size={18} strokeWidth={1.5} />, <Smartphone size={18} strokeWidth={1.5} />, <Info size={18} strokeWidth={1.5} />].map((ic, i) => (
+        <div style={{ padding: `${12 * scale}px ${16 * scale}px ${16 * scale}px`, display: 'flex', justifyContent: 'space-around', borderTop: '1px solid rgba(255,255,255,0.07)', marginTop: 12 * scale }}>
+          {[<Bell size={18 * scale} strokeWidth={1.5} />, <Smartphone size={18 * scale} strokeWidth={1.5} />, <Info size={18 * scale} strokeWidth={1.5} />].map((ic, i) => (
             <div key={i} style={{ color: i === 0 ? ACCENT : 'rgba(255,255,255,0.28)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
               {ic}
               {i === 0 && <div style={{ width: 4, height: 4, borderRadius: '50%', background: ACCENT }} />}
