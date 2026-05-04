@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   MessageCircle, Mail, Smartphone, LayoutDashboard, QrCode,
   Star, Shield, Palette, Calendar, UtensilsCrossed, Menu, X,
@@ -141,7 +141,7 @@ export default function LandingPage() {
             <a href="/admin" className="lp-navlink" style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: PRIMARY }}>
               <LogIn size={16} strokeWidth={1.5} /> Accedi
             </a>
-            <Btn href={WA_DEMO} bg={ACCENT}>Richiedi una demo</Btn>
+            <Btn href="#richiedi-demo" bg={ACCENT}>Richiedi una demo</Btn>
           </div>
           {/* hamburger */}
           <button className="lp-mobile-btn" onClick={() => setMobileOpen(v => !v)}
@@ -157,7 +157,7 @@ export default function LandingPage() {
             <a href="/admin" style={{ color: PRIMARY, textDecoration: 'none', fontSize: 17, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
               <LogIn size={18} strokeWidth={1.5} /> Accedi
             </a>
-            <Btn href={WA_DEMO} bg={ACCENT}>Richiedi una demo</Btn>
+            <Btn href="#richiedi-demo" bg={ACCENT}>Richiedi una demo</Btn>
           </div>
         )}
       </nav>
@@ -400,6 +400,9 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── FORM RICHIESTA DEMO ── */}
+      <DemoForm />
+
       {/* ── ACCEDI (banner per clienti esistenti) ── */}
       <section style={{ padding: '64px 28px', background: LIGHT_P, borderTop: `1px solid ${PRIMARY}20`, borderBottom: `1px solid ${PRIMARY}20` }}>
         <div style={{ maxWidth: 700, margin: '0 auto', textAlign: 'center' }}>
@@ -490,6 +493,132 @@ function SecHead({ label, title, sub }) {
       <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.5px', color: TEXT }}>{title}</h2>
       {sub && <p style={{ color: TEXT_LIGHT, fontSize: 17, marginTop: 14 }}>{sub}</p>}
     </div>
+  )
+}
+
+const TIPI = [
+  '', 'Hotel e B&B', 'Ristorante / Bar', 'Palestra / Sport', 'Studio professionale',
+  'Negozio / Attività commerciale', 'Scuola / Corsi', 'Altro',
+]
+
+function DemoForm() {
+  const [form, setForm] = useState({ nome: '', email: '', telefono: '', tipo_attivita: '', messaggio: '' })
+  const [privacy, setPrivacy]   = useState(false)
+  const [sending, setSending]   = useState(false)
+  const [sent, setSent]         = useState(false)
+  const [errore, setErrore]     = useState(null)
+
+  function patch(k) { return e => setForm(f => ({ ...f, [k]: e.target.value })) }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!privacy) return
+    setSending(true); setErrore(null)
+    try {
+      const res = await fetch('/api/demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || 'Errore')
+      setSent(true)
+    } catch (err) {
+      setErrore(err.message)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const inputStyle = {
+    width: '100%', padding: '11px 14px', borderRadius: 10,
+    border: '1.5px solid #e0e0e0', fontSize: 15, fontFamily: "'DM Sans', sans-serif",
+    outline: 'none', background: '#fff', color: TEXT,
+    transition: 'border-color .2s',
+  }
+  const labelStyle = { fontSize: 13, fontWeight: 600, color: TEXT_LIGHT, marginBottom: 6, display: 'block' }
+
+  return (
+    <section id="richiedi-demo" style={{ padding: '104px 28px', background: BG }}>
+      <div style={{ maxWidth: 680, margin: '0 auto' }}>
+        <SecHead
+          label="Inizia adesso"
+          title="Richiedi una demo gratuita"
+          sub="Ti rispondo entro 24 ore. Nessun impegno, nessuna carta di credito."
+        />
+
+        {sent ? (
+          <div style={{ textAlign: 'center', padding: '48px 32px', background: '#fff', borderRadius: 20, border: `1.5px solid ${PRIMARY}30` }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>✓</div>
+            <h3 style={{ fontSize: 22, fontWeight: 700, color: PRIMARY, marginBottom: 10 }}>Richiesta inviata!</h3>
+            <p style={{ color: TEXT_LIGHT, fontSize: 16, lineHeight: 1.7 }}>
+              Grazie {form.nome.split(' ')[0]}! Ti contatto entro 24 ore all'indirizzo <strong>{form.email}</strong>.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} style={{ background: '#fff', borderRadius: 20, padding: '40px 36px', border: `1px solid ${PRIMARY}15`, display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div>
+                <label style={labelStyle}>Nome e cognome *</label>
+                <input style={inputStyle} value={form.nome} onChange={patch('nome')} required placeholder="Mario Rossi" />
+              </div>
+              <div>
+                <label style={labelStyle}>Email *</label>
+                <input style={inputStyle} type="email" value={form.email} onChange={patch('email')} required placeholder="mario@esempio.it" />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div>
+                <label style={labelStyle}>Telefono</label>
+                <input style={inputStyle} value={form.telefono} onChange={patch('telefono')} placeholder="+39 333 000 0000" />
+              </div>
+              <div>
+                <label style={labelStyle}>Tipo di attività</label>
+                <select style={{ ...inputStyle, cursor: 'pointer' }} value={form.tipo_attivita} onChange={patch('tipo_attivita')}>
+                  {TIPI.map(t => <option key={t} value={t}>{t || '— Seleziona —'}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Messaggio (opzionale)</label>
+              <textarea
+                style={{ ...inputStyle, resize: 'vertical', minHeight: 100 }}
+                value={form.messaggio} onChange={patch('messaggio')}
+                placeholder="Raccontami brevemente la tua attività e cosa ti serve…"
+              />
+            </div>
+
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
+              <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} style={{ marginTop: 3, width: 16, height: 16, accentColor: PRIMARY, flexShrink: 0 }} />
+              <span style={{ fontSize: 13, color: TEXT_LIGHT, lineHeight: 1.6 }}>
+                Ho letto e accetto il trattamento dei dati personali per ricevere una risposta alla mia richiesta.
+              </span>
+            </label>
+
+            {errore && (
+              <div style={{ background: '#fff5f5', color: '#c62828', padding: '10px 14px', borderRadius: 8, fontSize: 14 }}>{errore}</div>
+            )}
+
+            <button
+              type="submit"
+              disabled={!privacy || sending}
+              style={{
+                background: privacy ? PRIMARY : '#ccc',
+                color: '#fff', border: 'none', borderRadius: 10,
+                padding: '14px 28px', fontSize: 16, fontWeight: 700,
+                cursor: privacy ? 'pointer' : 'not-allowed',
+                fontFamily: "'Space Grotesk', sans-serif",
+                transition: 'background .2s',
+              }}
+            >
+              {sending ? 'Invio in corso…' : 'Invia la richiesta'}
+            </button>
+          </form>
+        )}
+      </div>
+    </section>
   )
 }
 

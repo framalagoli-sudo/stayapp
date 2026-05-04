@@ -50,6 +50,7 @@ import AttivitaGalleryPage from './pages/admin/attivita/AttivitaGalleryPage'
 import AttivitaThemePage from './pages/admin/attivita/AttivitaThemePage'
 import AttivitaMiniSitoPage from './pages/admin/attivita/AttivitaMiniSitoPage'
 import AttivitaApp from './pages/guest/AttivitaApp'
+import DemoRequestsPage from './pages/admin/DemoRequestsPage'
 
 // Injects property ID from URL params into PropertyIdContext
 // so all property sub-pages work without modification
@@ -99,6 +100,7 @@ export default function App() {
           >
             <Route index element={<DashboardPage />} />
             <Route path="requests"   element={<RequestsPage />} />
+            <Route path="demo"       element={<DemoRequestsPage />} />
             <Route path="contatti"   element={<ContattiPage />} />
             <Route path="chat"       element={<ChatPage />} />
             <Route path="aziende"    element={<AziendePage />} />

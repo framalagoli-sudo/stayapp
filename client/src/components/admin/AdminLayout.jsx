@@ -293,6 +293,7 @@ export default function AdminLayout() {
             <NavLink to="/admin/attivita"   style={({ isActive }) => navLinkStyle(isActive)}>Attività</NavLink>
             <NavLink to="/admin/users"      style={({ isActive }) => navLinkStyle(isActive)}>Utenti</NavLink>
             <NavLink to="/admin/requests"   style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>
+            <NavLink to="/admin/demo"       style={({ isActive }) => navLinkStyle(isActive)}>Richieste demo</NavLink>
             <NavLink to="/admin/eventi"     style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>
             <NavLink to="/admin/blog"       style={({ isActive }) => navLinkStyle(isActive)}>Blog & News</NavLink>
             <NavLink to="/admin/contatti"   style={({ isActive }) => navLinkStyle(isActive)}>Contatti</NavLink>
