@@ -575,27 +575,6 @@ function AziendaForm({ title, initialData = {}, onSave, onCancel }) {
           ))}
         </div>
 
-        <SectionLabel>Piano</SectionLabel>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-          {PIANI.map(p => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => set('piano', p)}
-              style={{
-                padding: '6px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600,
-                border: '2px solid',
-                borderColor: form.piano === p ? '#1a1a2e' : '#ddd',
-                background: form.piano === p ? '#1a1a2e' : '#fff',
-                color: form.piano === p ? '#fff' : '#666',
-                cursor: 'pointer',
-              }}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-
         <SectionLabel>Moduli attivi</SectionLabel>
         <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
           {['struttura', 'ristorante'].map(m => (
