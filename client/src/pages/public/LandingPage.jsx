@@ -5,7 +5,7 @@ import {
   Bell, ClipboardList, Info, Building2,
   CheckCircle, ChevronRight, Zap, Clock, DollarSign,
   Activity, Briefcase, ShoppingBag, GraduationCap, LogIn,
-  RefreshCw, Edit3, Globe, ArrowRight,
+  RefreshCw, Edit3, Globe, ArrowRight, Quote,
 } from 'lucide-react'
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
@@ -35,6 +35,7 @@ const css = `
   .lp-indip-grid   { display: grid; grid-template-columns: repeat(3,1fr); gap: 28px; }
   .lp-six-grid     { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
   .lp-feat-grid    { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; }
+  .lp-testi-grid   { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; }
   .lp-nav-links    { display: flex; gap: 32px; align-items: center; }
   .lp-phone        { display: flex; justify-content: center; align-items: center; }
   .lp-footer-row   { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px; }
@@ -43,7 +44,7 @@ const css = `
   .lp-hero-btns    { display: flex; gap: 16px; flex-wrap: wrap; }
   .lp-mobile-btn   { display: none !important; }
   .lp-demo-cta     { display: none !important; }
-  .lp-compare-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: center; margin-bottom: 64px; }
+  .lp-compare-grid  { display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: center; margin-bottom: 64px; }
   .lp-compare-arrow { display: flex; flex-direction: column; align-items: center; }
   .lp-phone-mini   { display: none; justify-content: center; margin-top: 40px; }
 
@@ -64,12 +65,16 @@ const css = `
   .lp-featcard { transition: transform .2s, box-shadow .2s; }
   .lp-featcard:hover { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(26,100,144,0.12) !important; }
 
+  .lp-testi-card { transition: transform .25s, box-shadow .25s; }
+  .lp-testi-card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(26,100,144,0.10) !important; }
+
   @media (max-width: 960px) {
     .lp-hero-grid   { grid-template-columns: 1fr; gap: 32px; }
     .lp-two-grid    { grid-template-columns: 1fr; }
     .lp-indip-grid  { grid-template-columns: 1fr; }
     .lp-six-grid    { grid-template-columns: repeat(2,1fr); }
     .lp-feat-grid   { grid-template-columns: repeat(2,1fr); gap: 16px; }
+    .lp-testi-grid  { grid-template-columns: 1fr; }
     .lp-phone       { display: none; }
     .lp-phone-mini  { display: flex; }
     .lp-nav-links   { display: none !important; }
@@ -77,7 +82,7 @@ const css = `
     .lp-demo-cta    { display: inline-flex !important; }
     .lp-footer-row  { flex-direction: column; text-align: center; }
     .lp-footer-links { flex-direction: column; gap: 12px; align-items: center; }
-    .lp-compare-grid { grid-template-columns: 1fr; gap: 16px; }
+    .lp-compare-grid  { grid-template-columns: 1fr; gap: 16px; }
     .lp-compare-arrow { transform: rotate(90deg); }
     .lp-stats-grid  { grid-template-columns: repeat(2,1fr); }
     .lp-stat-sep    { border-right: none; }
@@ -96,17 +101,44 @@ const css = `
 
 // ─── Dati ─────────────────────────────────────────────────────────────────────
 const STAT_DATA = [
-  { end: 24,  suffix: 'h',   label: 'Per essere operativo',    sub: 'Dalla prima demo al QR in mano ai tuoi clienti' },
-  { end: 2,   suffix: 'min', label: 'Per ogni aggiornamento',  sub: 'Testi, foto, prezzi, menu — direttamente dal telefono' },
-  { end: 0,   suffix: '€',   label: 'Per ogni modifica',       sub: 'Dopo il setup, aggiorni tutto gratis per sempre' },
-  { end: 100, suffix: '%',   label: 'Controllo autonomo',      sub: 'Nessuna agenzia coinvolta. Tu al comando, sempre' },
+  { end: 24,  suffix: 'h',   label: 'Per essere operativo',   sub: 'Dalla prima demo al QR in mano ai tuoi clienti' },
+  { end: 2,   suffix: 'min', label: 'Per ogni aggiornamento', sub: 'Testi, foto, prezzi, menu — direttamente dal telefono' },
+  { end: 0,   suffix: '€',   label: 'Per ogni modifica',      sub: 'Dopo il setup, aggiorni tutto gratis per sempre' },
+  { end: 100, suffix: '%',   label: 'Controllo autonomo',     sub: 'Nessuna agenzia coinvolta. Tu al comando, sempre' },
 ]
 
 const JOURNEY = [
-  { Icon: MessageCircle, num: '01', title: 'Ci contatti',      text: 'Richiedi una demo. Ti mostriamo come funziona con un esempio reale della tua attività.' },
-  { Icon: Edit3,         num: '02', title: 'Setup in 24 ore',  text: 'Carichiamo logo, colori, contenuti. Tu approvi. In meno di 24 ore sei online.' },
-  { Icon: QrCode,        num: '03', title: 'QR attivo',        text: "Stampi il codice e lo metti in vista. I clienti scansionano e hanno subito l'app." },
-  { Icon: Globe,         num: '04', title: 'Cresci da solo',   text: "Aggiorni in 2 minuti. Il sito porta nuovi clienti. Zero dipendenze." },
+  { Icon: MessageCircle, num: '01', title: 'Ci contatti',     text: 'Richiedi una demo. Ti mostriamo come funziona con un esempio reale della tua attività.' },
+  { Icon: Edit3,         num: '02', title: 'Setup in 24 ore', text: 'Carichiamo logo, colori, contenuti. Tu approvi. In meno di 24 ore sei online.' },
+  { Icon: QrCode,        num: '03', title: 'QR attivo',       text: "Stampi il codice e lo metti in vista. I clienti scansionano e hanno subito l'app." },
+  { Icon: Globe,         num: '04', title: 'Cresci da solo',  text: "Aggiorni in 2 minuti. Il sito porta nuovi clienti. Zero dipendenze." },
+]
+
+const TESTIMONIALS = [
+  {
+    quote: "Prima aspettavo 2 settimane per cambiare una foto sul sito. Adesso lo faccio in 2 minuti dal telefono mentre sono in sala con i clienti.",
+    name: 'Marco Ferri',
+    role: 'Titolare',
+    business: 'Ristorante Al Porto, Rimini',
+    initials: 'MF',
+    color: PRIMARY,
+  },
+  {
+    quote: "I miei ospiti scansionano il QR in camera e trovano tutto: menu, servizi, escursioni. Le chiamate alla reception per informazioni banali sono praticamente azzerate.",
+    name: 'Giulia Marchetti',
+    role: 'Proprietaria',
+    business: 'B&B Villa Rosa, Amalfi',
+    initials: 'GM',
+    color: '#2E7D5E',
+  },
+  {
+    quote: "Ho attivato il sito in una settimana. In un mese avevo già 3 nuovi clienti arrivati da Google che non mi conoscevano. Prima non avevo nemmeno una pagina online.",
+    name: 'Lorenzo Bianchi',
+    role: 'Istruttore',
+    business: 'Centro Sportivo Bianchi, Bologna',
+    initials: 'LB',
+    color: ACCENT,
+  },
 ]
 
 const TARGETS = [
@@ -119,22 +151,50 @@ const TARGETS = [
 ]
 
 const FEATURES = [
-  { Icon: Smartphone,    title: 'App per i tuoi clienti',    text: "Un QR code. I tuoi clienti aprono l'app dal telefono, senza download e senza registrazioni." },
-  { Icon: Globe,          title: 'Sito web professionale',    text: 'Landing page con SEO, galleria, testimonianze e form contatti. Trovato su Google, aggiornato da te.' },
-  { Icon: Edit3,          title: 'Aggiorna dal telefono',     text: 'Testi, foto, prezzi, menu: tutto modificabile dal tuo smartphone in pochi tap.' },
+  { Icon: Smartphone,     title: 'App per i tuoi clienti',   text: "Un QR code. I tuoi clienti aprono l'app dal telefono, senza download e senza registrazioni." },
+  { Icon: Globe,          title: 'Sito web professionale',   text: 'Landing page con SEO, galleria, testimonianze e form contatti. Trovato su Google, aggiornato da te.' },
+  { Icon: Edit3,          title: 'Aggiorna dal telefono',    text: 'Testi, foto, prezzi, menu: tutto modificabile dal tuo smartphone in pochi tap.' },
   { Icon: LayoutDashboard, title: 'Pannello semplice',       text: 'Un pannello pensato per chi non è un tecnico. Se sai usare WhatsApp, sai usare StayApp.' },
   { Icon: UtensilsCrossed, title: 'Menu e servizi digitali', text: "Categorie, voci, prezzi e foto sempre aggiornati. Basta ristampare o aspettare l'agenzia." },
-  { Icon: Shield,          title: 'GDPR incluso',             text: 'Privacy policy e cookie policy auto-generate. Consensi nei form. Niente consulente legale.' },
-  { Icon: Palette,         title: 'Tema personalizzato',      text: 'Colori, font e stile adattati al tuo brand. Fai da solo o ci pensiamo noi in fase di setup.' },
-  { Icon: Star,            title: 'Galleria, eventi, news',   text: 'Tutto quello che serve per raccontare la tua attività, aggiornato in tempo reale.' },
+  { Icon: Shield,          title: 'GDPR incluso',            text: 'Privacy policy e cookie policy auto-generate. Consensi nei form. Niente consulente legale.' },
+  { Icon: Palette,         title: 'Tema personalizzato',     text: 'Colori, font e stile adattati al tuo brand. Fai da solo o ci pensiamo noi in fase di setup.' },
+  { Icon: Star,            title: 'Galleria, eventi, news',  text: 'Tutto quello che serve per raccontare la tua attività, aggiornato in tempo reale.' },
 ]
 
 const PHONE_ITEMS = [
-  { Icon: Bell,         label: 'Servizi' },
+  { Icon: Bell,          label: 'Servizi' },
   { Icon: UtensilsCrossed, label: 'Menù' },
-  { Icon: ClipboardList,label: 'Richieste' },
-  { Icon: Info,         label: 'Info' },
+  { Icon: ClipboardList, label: 'Richieste' },
+  { Icon: Info,          label: 'Info' },
 ]
+
+// ─── Hook: fade-in allo scroll ────────────────────────────────────────────────
+function useFadeIn(threshold = 0.12) {
+  const ref     = useRef(null)
+  const [vis, setVis] = useState(false)
+  useEffect(() => {
+    const el = ref.current; if (!el) return
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVis(true); obs.disconnect() } }, { threshold })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [threshold])
+  return [ref, vis]
+}
+
+// Wrapper che anima fade-up al primo ingresso in viewport
+function FadeIn({ children, delay = 0, style = {} }) {
+  const [ref, vis] = useFadeIn()
+  return (
+    <div ref={ref} style={{
+      opacity: vis ? 1 : 0,
+      transform: vis ? 'translateY(0)' : 'translateY(28px)',
+      transition: `opacity 0.55s ease ${delay}ms, transform 0.55s ease ${delay}ms`,
+      ...style,
+    }}>
+      {children}
+    </div>
+  )
+}
 
 // ─── Componente principale ────────────────────────────────────────────────────
 export default function LandingPage() {
@@ -251,46 +311,50 @@ export default function LandingPage() {
       {/* ── DUE STRUMENTI ── */}
       <section style={{ padding: '104px 24px', background: '#fff' }}>
         <div style={{ maxWidth: 1140, margin: '0 auto' }}>
-          <SecHead label="La piattaforma" title="Due strumenti. Un'unica piattaforma." sub="Non devi scegliere tra un'app e un sito. Con StayApp li hai entrambi, gestiti dallo stesso posto." />
+          <FadeIn><SecHead label="La piattaforma" title="Due strumenti. Un'unica piattaforma." sub="Non devi scegliere tra un'app e un sito. Con StayApp li hai entrambi, gestiti dallo stesso posto." /></FadeIn>
           <div className="lp-two-grid">
-            <div style={{ background: DARK, borderRadius: 24, padding: '44px 40px', display: 'flex', flexDirection: 'column', gap: 24 }}>
-              <div style={{ width: 52, height: 52, borderRadius: 16, background: `${PRIMARY}50`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Smartphone size={26} strokeWidth={1.5} color="#fff" />
+            <FadeIn delay={0}>
+              <div style={{ background: DARK, borderRadius: 24, padding: '44px 40px', display: 'flex', flexDirection: 'column', gap: 24, height: '100%' }}>
+                <div style={{ width: 52, height: 52, borderRadius: 16, background: `${PRIMARY}50`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Smartphone size={26} strokeWidth={1.5} color="#fff" />
+                </div>
+                <div>
+                  <div style={{ color: ACCENT, fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Per i clienti che hai già</div>
+                  <h3 style={{ fontSize: 26, fontWeight: 700, color: '#fff', marginBottom: 14, lineHeight: 1.2 }}>L'app interna per la tua attività</h3>
+                  <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 15, lineHeight: 1.75 }}>
+                    I tuoi clienti scansionano un QR code e hanno in mano tutto: menu digitale, lista servizi, richieste, info, galleria. Nessun download, nessuna registrazione.
+                  </p>
+                </div>
+                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {['Menu e servizi sempre aggiornati','Richieste in tempo reale dal cliente','Galleria foto e info sulla tua attività','Personalizzato con i tuoi colori e logo'].map((t, i) => (
+                    <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'rgba(255,255,255,0.75)', fontSize: 14 }}>
+                      <CheckCircle size={15} strokeWidth={2} color={ACCENT} style={{ flexShrink: 0 }} /> {t}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <div>
-                <div style={{ color: ACCENT, fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Per i clienti che hai già</div>
-                <h3 style={{ fontSize: 26, fontWeight: 700, color: '#fff', marginBottom: 14, lineHeight: 1.2 }}>L'app interna per la tua attività</h3>
-                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 15, lineHeight: 1.75 }}>
-                  I tuoi clienti scansionano un QR code e hanno in mano tutto: menu digitale, lista servizi, richieste, info, galleria. Nessun download, nessuna registrazione.
-                </p>
+            </FadeIn>
+            <FadeIn delay={120}>
+              <div style={{ background: LIGHT_P, borderRadius: 24, padding: '44px 40px', display: 'flex', flexDirection: 'column', gap: 24, border: `1px solid ${PRIMARY}20`, height: '100%' }}>
+                <div style={{ width: 52, height: 52, borderRadius: 16, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 2px 12px ${PRIMARY}20` }}>
+                  <Globe size={26} strokeWidth={1.5} color={PRIMARY} />
+                </div>
+                <div>
+                  <div style={{ color: ACCENT, fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Per trovare clienti nuovi</div>
+                  <h3 style={{ fontSize: 26, fontWeight: 700, color: TEXT, marginBottom: 14, lineHeight: 1.2 }}>Il sito web che aggiorni tu</h3>
+                  <p style={{ color: TEXT_LIGHT, fontSize: 15, lineHeight: 1.75 }}>
+                    Una landing page professionale che si trova su Google, racconta la tua storia e cattura nuovi clienti. La aggiorni tu in autonomia, dal telefono, quando vuoi.
+                  </p>
+                </div>
+                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {['Sito ottimizzato per i motori di ricerca','Galleria, testimonianze e promozioni','Form di contatto con GDPR incluso','Aggiornabile in autonomia dal telefono'].map((t, i) => (
+                    <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, color: TEXT_LIGHT, fontSize: 14 }}>
+                      <CheckCircle size={15} strokeWidth={2} color={PRIMARY} style={{ flexShrink: 0 }} /> {t}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {['Menu e servizi sempre aggiornati', 'Richieste in tempo reale dal cliente', 'Galleria foto e info sulla tua attività', 'Personalizzato con i tuoi colori e logo'].map((t, i) => (
-                  <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'rgba(255,255,255,0.75)', fontSize: 14 }}>
-                    <CheckCircle size={15} strokeWidth={2} color={ACCENT} style={{ flexShrink: 0 }} /> {t}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div style={{ background: LIGHT_P, borderRadius: 24, padding: '44px 40px', display: 'flex', flexDirection: 'column', gap: 24, border: `1px solid ${PRIMARY}20` }}>
-              <div style={{ width: 52, height: 52, borderRadius: 16, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 2px 12px ${PRIMARY}20` }}>
-                <Globe size={26} strokeWidth={1.5} color={PRIMARY} />
-              </div>
-              <div>
-                <div style={{ color: ACCENT, fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>Per trovare clienti nuovi</div>
-                <h3 style={{ fontSize: 26, fontWeight: 700, color: TEXT, marginBottom: 14, lineHeight: 1.2 }}>Il sito web che aggiorni tu</h3>
-                <p style={{ color: TEXT_LIGHT, fontSize: 15, lineHeight: 1.75 }}>
-                  Una landing page professionale che si trova su Google, racconta la tua storia e cattura nuovi clienti. La aggiorni tu in autonomia, dal telefono, quando vuoi.
-                </p>
-              </div>
-              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {['Sito ottimizzato per i motori di ricerca', 'Galleria, testimonianze e promozioni', 'Form di contatto con GDPR incluso', 'Aggiornabile in autonomia dal telefono'].map((t, i) => (
-                  <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, color: TEXT_LIGHT, fontSize: 14 }}>
-                    <CheckCircle size={15} strokeWidth={2} color={PRIMARY} style={{ flexShrink: 0 }} /> {t}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            </FadeIn>
           </div>
         </div>
       </section>
@@ -298,70 +362,76 @@ export default function LandingPage() {
       {/* ── INDIPENDENZA ── */}
       <section style={{ padding: '104px 24px', background: DARK }}>
         <div style={{ maxWidth: 1140, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 72 }}>
-            <div style={{ color: ACCENT, fontWeight: 700, fontSize: 11, letterSpacing: 2.5, textTransform: 'uppercase', marginBottom: 14 }}>Il vero vantaggio</div>
-            <h2 style={{ fontSize: 42, fontWeight: 700, color: '#fff', letterSpacing: '-0.5px', lineHeight: 1.15, marginBottom: 20 }}>
-              Basta aspettare settimane<br />per un aggiornamento.
-            </h2>
-            <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 18, maxWidth: 560, margin: '0 auto', lineHeight: 1.75 }}>
-              Quanto hai speso l'anno scorso per far aggiornare il tuo sito? Con StayApp sei tu al comando.
-            </p>
-          </div>
+          <FadeIn>
+            <div style={{ textAlign: 'center', marginBottom: 72 }}>
+              <div style={{ color: ACCENT, fontWeight: 700, fontSize: 11, letterSpacing: 2.5, textTransform: 'uppercase', marginBottom: 14 }}>Il vero vantaggio</div>
+              <h2 style={{ fontSize: 42, fontWeight: 700, color: '#fff', letterSpacing: '-0.5px', lineHeight: 1.15, marginBottom: 20 }}>
+                Basta aspettare settimane<br />per un aggiornamento.
+              </h2>
+              <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 18, maxWidth: 560, margin: '0 auto', lineHeight: 1.75 }}>
+                Quanto hai speso l'anno scorso per far aggiornare il tuo sito? Con StayApp sei tu al comando.
+              </p>
+            </div>
+          </FadeIn>
 
-          <div className="lp-compare-grid">
-            <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 20, padding: '32px 28px', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 20 }}>Prima</div>
-              {[
-                { Icon: Clock,     t: "Chiami l'agenzia e aspetti" },
-                { Icon: DollarSign, t: '150–300€ per ogni modifica' },
-                { Icon: RefreshCw, t: '2–3 settimane di attesa' },
-                { Icon: X,         t: 'Risultato spesso sbagliato' },
-              ].map(({ Icon, t }, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'rgba(255,255,255,0.45)', fontSize: 15, marginBottom: 14 }}>
-                  <Icon size={16} strokeWidth={1.5} style={{ color: 'rgba(255,255,255,0.2)', flexShrink: 0 }} /> {t}
-                </div>
-              ))}
+          <FadeIn delay={80}>
+            <div className="lp-compare-grid">
+              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 20, padding: '32px 28px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 20 }}>Prima</div>
+                {[
+                  { Icon: Clock,      t: "Chiami l'agenzia e aspetti" },
+                  { Icon: DollarSign, t: '150–300€ per ogni modifica' },
+                  { Icon: RefreshCw,  t: '2–3 settimane di attesa' },
+                  { Icon: X,          t: 'Risultato spesso sbagliato' },
+                ].map(({ Icon, t }, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'rgba(255,255,255,0.45)', fontSize: 15, marginBottom: 14 }}>
+                    <Icon size={16} strokeWidth={1.5} color="rgba(255,255,255,0.2)" style={{ flexShrink: 0 }} /> {t}
+                  </div>
+                ))}
+              </div>
+              <div className="lp-compare-arrow">
+                <ArrowRight size={28} strokeWidth={1.5} color={ACCENT} />
+              </div>
+              <div style={{ background: `${PRIMARY}25`, borderRadius: 20, padding: '32px 28px', border: `1px solid ${PRIMARY}40` }}>
+                <div style={{ color: ACCENT, fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 20 }}>Con StayApp</div>
+                {[
+                  { Icon: Smartphone,  t: "Apri l'app dal telefono" },
+                  { Icon: Edit3,       t: 'Modifichi in 2 minuti' },
+                  { Icon: Zap,         t: 'Salvi ed è online subito' },
+                  { Icon: CheckCircle, t: 'Esattamente come volevi' },
+                ].map(({ Icon, t }, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'rgba(255,255,255,0.85)', fontSize: 15, marginBottom: 14 }}>
+                    <Icon size={16} strokeWidth={1.5} color={ACCENT} style={{ flexShrink: 0 }} /> {t}
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="lp-compare-arrow">
-              <ArrowRight size={28} strokeWidth={1.5} color={ACCENT} />
-            </div>
-            <div style={{ background: `${PRIMARY}25`, borderRadius: 20, padding: '32px 28px', border: `1px solid ${PRIMARY}40` }}>
-              <div style={{ color: ACCENT, fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 20 }}>Con StayApp</div>
-              {[
-                { Icon: Smartphone,   t: "Apri l'app dal telefono" },
-                { Icon: Edit3,        t: 'Modifichi in 2 minuti' },
-                { Icon: Zap,          t: 'Salvi ed è online subito' },
-                { Icon: CheckCircle,  t: 'Esattamente come volevi' },
-              ].map(({ Icon, t }, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'rgba(255,255,255,0.85)', fontSize: 15, marginBottom: 14 }}>
-                  <Icon size={16} strokeWidth={1.5} color={ACCENT} style={{ flexShrink: 0 }} /> {t}
-                </div>
-              ))}
-            </div>
-          </div>
+          </FadeIn>
 
           <div className="lp-indip-grid">
             {[
-              { Icon: DollarSign, title: 'Zero sprechi',      text: 'Niente più bollette salate ad agenzie o consulenti per ogni piccola modifica.' },
-              { Icon: Clock,      title: 'Zero attese',       text: 'Premi salva e in pochi secondi la modifica è online. Non devi chiedere permesso a nessuno.' },
-              { Icon: Zap,        title: 'Zero dipendenze',   text: 'Niente WordPress, niente agenzie. Sei tu il responsabile della tua presenza online.' },
+              { Icon: DollarSign, title: 'Zero sprechi',    text: 'Niente più bollette salate ad agenzie o consulenti per ogni piccola modifica.' },
+              { Icon: Clock,      title: 'Zero attese',     text: 'Premi salva e in pochi secondi la modifica è online. Non devi chiedere permesso a nessuno.' },
+              { Icon: Zap,        title: 'Zero dipendenze', text: 'Niente WordPress, niente agenzie. Sei tu il responsabile della tua presenza online.' },
             ].map(({ Icon, title, text }, i) => (
-              <div key={i} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 20, padding: '32px 28px', border: '1px solid rgba(255,255,255,0.08)', textAlign: 'center' }}>
-                <div style={{ width: 60, height: 60, borderRadius: 18, background: `${ACCENT}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                  <Icon size={28} strokeWidth={1.5} color={ACCENT} />
+              <FadeIn key={i} delay={i * 100}>
+                <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 20, padding: '32px 28px', border: '1px solid rgba(255,255,255,0.08)', textAlign: 'center', height: '100%' }}>
+                  <div style={{ width: 60, height: 60, borderRadius: 18, background: `${ACCENT}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                    <Icon size={28} strokeWidth={1.5} color={ACCENT} />
+                  </div>
+                  <h4 style={{ fontSize: 19, fontWeight: 700, color: '#fff', marginBottom: 12 }}>{title}</h4>
+                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, lineHeight: 1.7 }}>{text}</p>
                 </div>
-                <h4 style={{ fontSize: 19, fontWeight: 700, color: '#fff', marginBottom: 12 }}>{title}</h4>
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, lineHeight: 1.7 }}>{text}</p>
-              </div>
+              </FadeIn>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── COME FUNZIONA — INFOGRAFICA 2: JOURNEY FLOW ── */}
+      {/* ── COME FUNZIONA — JOURNEY FLOW ── */}
       <section id="come-funziona" style={{ padding: '104px 24px', background: '#fff' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto' }}>
-          <SecHead label="Semplicità" title="Come funziona" sub="Sei operativo in 24 ore. Poi vai avanti da solo." />
+          <FadeIn><SecHead label="Semplicità" title="Come funziona" sub="Sei operativo in 24 ore. Poi vai avanti da solo." /></FadeIn>
           <JourneyFlow />
         </div>
       </section>
@@ -369,36 +439,43 @@ export default function LandingPage() {
       {/* ── PER CHI È ── */}
       <section id="perchi" style={{ padding: '104px 24px', background: BG }}>
         <div style={{ maxWidth: 1140, margin: '0 auto' }}>
-          <SecHead label="Per chi è" title="Per qualsiasi attività con clienti" sub="Se hai clienti da gestire e nuovi da trovare, StayApp è per te." />
+          <FadeIn><SecHead label="Per chi è" title="Per qualsiasi attività con clienti" sub="Se hai clienti da gestire e nuovi da trovare, StayApp è per te." /></FadeIn>
           <div className="lp-six-grid">
             {TARGETS.map((t, i) => (
-              <div key={i} style={{ background: '#fff', borderRadius: 16, padding: '28px 24px', border: `1px solid ${PRIMARY}12`, display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div style={{ width: 48, height: 48, borderRadius: 14, background: LIGHT_P, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  {t.icon}
+              <FadeIn key={i} delay={i * 60}>
+                <div style={{ background: '#fff', borderRadius: 16, padding: '28px 24px', border: `1px solid ${PRIMARY}12`, display: 'flex', alignItems: 'center', gap: 16, height: '100%' }}>
+                  <div style={{ width: 48, height: 48, borderRadius: 14, background: LIGHT_P, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {t.icon}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, color: ACCENT, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>{t.sub}</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: TEXT }}>{t.title}</div>
+                  </div>
                 </div>
-                <div>
-                  <div style={{ fontSize: 10, color: ACCENT, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 4 }}>{t.sub}</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: TEXT }}>{t.title}</div>
-                </div>
-              </div>
+              </FadeIn>
             ))}
           </div>
         </div>
       </section>
 
+      {/* ── TESTIMONIANZE ── */}
+      <Testimonials />
+
       {/* ── FUNZIONALITÀ ── */}
       <section id="funzionalita" style={{ padding: '104px 24px', background: '#fff' }}>
         <div style={{ maxWidth: 1140, margin: '0 auto' }}>
-          <SecHead label="Features" title="Tutto quello che ti serve" sub="Un solo strumento. Nessun abbonamento extra, nessuna integrazione." />
+          <FadeIn><SecHead label="Features" title="Tutto quello che ti serve" sub="Un solo strumento. Nessun abbonamento extra, nessuna integrazione." /></FadeIn>
           <div className="lp-feat-grid">
             {FEATURES.map(({ Icon, title, text }, i) => (
-              <div key={i} className="lp-featcard" style={{ padding: 24, borderRadius: 16, background: BG, border: `1px solid ${PRIMARY}12` }}>
-                <div style={{ width: 46, height: 46, borderRadius: 13, background: LIGHT_P, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                  <Icon size={21} strokeWidth={1.5} color={PRIMARY} />
+              <FadeIn key={i} delay={i * 55}>
+                <div className="lp-featcard" style={{ padding: 24, borderRadius: 16, background: BG, border: `1px solid ${PRIMARY}12`, height: '100%' }}>
+                  <div style={{ width: 46, height: 46, borderRadius: 13, background: LIGHT_P, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                    <Icon size={21} strokeWidth={1.5} color={PRIMARY} />
+                  </div>
+                  <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, color: TEXT }}>{title}</h4>
+                  <p style={{ color: TEXT_LIGHT, fontSize: 13, lineHeight: 1.65 }}>{text}</p>
                 </div>
-                <h4 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, color: TEXT }}>{title}</h4>
-                <p style={{ color: TEXT_LIGHT, fontSize: 13, lineHeight: 1.65 }}>{text}</p>
-              </div>
+              </FadeIn>
             ))}
           </div>
         </div>
@@ -457,13 +534,12 @@ export default function LandingPage() {
 
 // ─── INFOGRAFICA 1: Stats animate ────────────────────────────────────────────
 function AnimatedStats() {
-  const ref     = useRef(null)
-  const [go, setGo]   = useState(false)
+  const ref = useRef(null)
+  const [go, setGo]     = useState(false)
   const [vals, setVals] = useState(STAT_DATA.map(() => 0))
 
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
+    const el = ref.current; if (!el) return
     const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setGo(true); obs.disconnect() } }, { threshold: 0.35 })
     obs.observe(el)
     return () => obs.disconnect()
@@ -490,10 +566,8 @@ function AnimatedStats() {
         <div className="lp-stats-grid">
           {STAT_DATA.map(({ suffix, label, sub }, i) => (
             <div key={i} className={i < 3 ? 'lp-stat-sep' : ''} style={{ padding: '52px 32px', textAlign: 'center' }}>
-              {/* numero animato */}
               <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 58, fontWeight: 700, lineHeight: 1, letterSpacing: '-2px', color: '#fff', marginBottom: 10 }}>
-                {vals[i]}
-                <span style={{ fontSize: 32, letterSpacing: '-1px', color: ACCENT }}>{suffix}</span>
+                {vals[i]}<span style={{ fontSize: 32, letterSpacing: '-1px', color: ACCENT }}>{suffix}</span>
               </div>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.7)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
               <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.32)', lineHeight: 1.5 }}>{sub}</div>
@@ -509,31 +583,27 @@ function AnimatedStats() {
 function JourneyFlow() {
   return (
     <>
-      {/* DESKTOP: cerchi + linea connettrice */}
+      {/* DESKTOP */}
       <div className="lp-journey-wrap">
         <div className="lp-journey-line" />
         <div className="lp-journey-grid">
-          {JOURNEY.map(({ Icon, num, title, text }, i) => {
-            const isHighlight = i === 0
-            return (
-              <div key={i} style={{ textAlign: 'center', padding: '0 20px' }}>
-                {/* cerchio icona */}
+          {JOURNEY.map(({ Icon, num, title, text }, i) => (
+            <FadeIn key={i} delay={i * 110} style={{ height: '100%' }}>
+              <div style={{ textAlign: 'center', padding: '0 20px' }}>
                 <div style={{ position: 'relative', margin: '0 auto 28px', width: 68, height: 68 }}>
                   <div style={{
                     width: 68, height: 68, borderRadius: '50%',
-                    background: isHighlight ? ACCENT : '#fff',
-                    border: `3px solid ${isHighlight ? ACCENT : LIGHT_P}`,
-                    boxShadow: `0 0 0 6px ${isHighlight ? `${ACCENT}22` : `${PRIMARY}12`}, 0 8px 28px ${isHighlight ? `${ACCENT}44` : `${PRIMARY}22`}`,
+                    background: i === 0 ? ACCENT : '#fff',
+                    border: `3px solid ${i === 0 ? ACCENT : LIGHT_P}`,
+                    boxShadow: `0 0 0 6px ${i === 0 ? `${ACCENT}22` : `${PRIMARY}12`}, 0 8px 28px ${i === 0 ? `${ACCENT}44` : `${PRIMARY}22`}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <Icon size={26} strokeWidth={1.5} color={isHighlight ? '#fff' : PRIMARY} />
+                    <Icon size={26} strokeWidth={1.5} color={i === 0 ? '#fff' : PRIMARY} />
                   </div>
-                  {/* badge numero */}
                   <div style={{
                     position: 'absolute', bottom: -4, right: -4,
                     width: 22, height: 22, borderRadius: '50%',
-                    background: isHighlight ? '#fff' : ACCENT,
-                    color: isHighlight ? ACCENT : '#fff',
+                    background: i === 0 ? '#fff' : ACCENT, color: i === 0 ? ACCENT : '#fff',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 11, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif",
                     boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
@@ -543,40 +613,100 @@ function JourneyFlow() {
                 <h3 style={{ fontSize: 17, fontWeight: 700, color: TEXT, marginBottom: 10 }}>{title}</h3>
                 <p style={{ fontSize: 13, color: TEXT_LIGHT, lineHeight: 1.7 }}>{text}</p>
               </div>
-            )
-          })}
+            </FadeIn>
+          ))}
         </div>
       </div>
 
       {/* MOBILE: timeline verticale */}
       <div className="lp-journey-mob" style={{ flexDirection: 'column', gap: 0 }}>
         {JOURNEY.map(({ Icon, num, title, text }, i) => (
-          <div key={i} style={{ display: 'flex', gap: 20, paddingBottom: i < JOURNEY.length - 1 ? 32 : 0 }}>
-            {/* colonna sinistra: cerchio + linea */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-              <div style={{
-                width: 52, height: 52, borderRadius: '50%',
-                background: i === 0 ? ACCENT : '#fff',
-                border: `2px solid ${i === 0 ? ACCENT : LIGHT_P}`,
-                boxShadow: `0 4px 16px ${i === 0 ? `${ACCENT}44` : `${PRIMARY}22`}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              }}>
-                <Icon size={22} strokeWidth={1.5} color={i === 0 ? '#fff' : PRIMARY} />
+          <FadeIn key={i} delay={i * 80}>
+            <div style={{ display: 'flex', gap: 20, paddingBottom: i < JOURNEY.length - 1 ? 32 : 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                <div style={{
+                  width: 52, height: 52, borderRadius: '50%',
+                  background: i === 0 ? ACCENT : '#fff',
+                  border: `2px solid ${i === 0 ? ACCENT : LIGHT_P}`,
+                  boxShadow: `0 4px 16px ${i === 0 ? `${ACCENT}44` : `${PRIMARY}22`}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                }}>
+                  <Icon size={22} strokeWidth={1.5} color={i === 0 ? '#fff' : PRIMARY} />
+                </div>
+                {i < JOURNEY.length - 1 && (
+                  <div style={{ width: 2, flex: 1, minHeight: 24, background: `linear-gradient(${ACCENT}60, ${PRIMARY}30)`, marginTop: 8 }} />
+                )}
               </div>
-              {i < JOURNEY.length - 1 && (
-                <div style={{ width: 2, flex: 1, minHeight: 24, background: `linear-gradient(${ACCENT}60, ${PRIMARY}30)`, marginTop: 8 }} />
-              )}
+              <div style={{ paddingTop: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT, letterSpacing: 1.5, marginBottom: 6 }}>{num}</div>
+                <h3 style={{ fontSize: 17, fontWeight: 700, color: TEXT, marginBottom: 8 }}>{title}</h3>
+                <p style={{ fontSize: 14, color: TEXT_LIGHT, lineHeight: 1.7 }}>{text}</p>
+              </div>
             </div>
-            {/* colonna destra: testo */}
-            <div style={{ paddingTop: 8 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT, letterSpacing: 1.5, marginBottom: 6 }}>{num}</div>
-              <h3 style={{ fontSize: 17, fontWeight: 700, color: TEXT, marginBottom: 8 }}>{title}</h3>
-              <p style={{ fontSize: 14, color: TEXT_LIGHT, lineHeight: 1.7 }}>{text}</p>
-            </div>
-          </div>
+          </FadeIn>
         ))}
       </div>
     </>
+  )
+}
+
+// ─── Testimonianze ────────────────────────────────────────────────────────────
+function Testimonials() {
+  return (
+    <section style={{ padding: '104px 24px', background: BG }}>
+      <div style={{ maxWidth: 1140, margin: '0 auto' }}>
+        <FadeIn>
+          <SecHead
+            label="Chi lo usa"
+            title="Lo dicono i nostri clienti"
+            sub="Attività reali, risultati concreti. Senza tecnicismi, senza intermediari."
+          />
+        </FadeIn>
+        <div className="lp-testi-grid">
+          {TESTIMONIALS.map((t, i) => (
+            <FadeIn key={i} delay={i * 100}>
+              <div className="lp-testi-card" style={{
+                background: '#fff', borderRadius: 20, padding: '36px 32px',
+                border: `1px solid ${PRIMARY}10`,
+                boxShadow: `0 4px 24px rgba(26,100,144,0.06)`,
+                display: 'flex', flexDirection: 'column', gap: 24, height: '100%',
+              }}>
+                {/* stelle + virgolette decorative */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', gap: 3 }}>
+                    {[...Array(5)].map((_,s) => <Star key={s} size={16} strokeWidth={0} fill={ACCENT} color={ACCENT} />)}
+                  </div>
+                  <Quote size={32} strokeWidth={1} color={`${PRIMARY}18`} />
+                </div>
+
+                {/* testo citazione */}
+                <p style={{ fontSize: 15, color: TEXT, lineHeight: 1.8, flex: 1, fontStyle: 'italic' }}>
+                  "{t.quote}"
+                </p>
+
+                {/* divider */}
+                <div style={{ height: 1, background: `${PRIMARY}10` }} />
+
+                {/* avatar + nome */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: '50%',
+                    background: t.color, color: '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 14, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif",
+                    flexShrink: 0,
+                  }}>{t.initials}</div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>{t.name}</div>
+                    <div style={{ fontSize: 12, color: TEXT_LIGHT }}>{t.role} · {t.business}</div>
+                  </div>
+                </div>
+              </div>
+            </FadeIn>
+          ))}
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -621,7 +751,7 @@ function SecHead({ label, title, sub }) {
 const TIPI = ['', 'Hotel e B&B', 'Ristorante / Bar', 'Palestra / Sport', 'Studio professionale', 'Negozio / Attività commerciale', 'Scuola / Corsi', 'Altro']
 
 function DemoForm() {
-  const [form, setForm]     = useState({ nome: '', email: '', telefono: '', tipo_attivita: '', messaggio: '' })
+  const [form, setForm]       = useState({ nome: '', email: '', telefono: '', tipo_attivita: '', messaggio: '' })
   const [privacy, setPrivacy] = useState(false)
   const [sending, setSending] = useState(false)
   const [sent, setSent]       = useState(false)
@@ -630,8 +760,7 @@ function DemoForm() {
   function patch(k) { return e => setForm(f => ({ ...f, [k]: e.target.value })) }
 
   async function handleSubmit(e) {
-    e.preventDefault()
-    if (!privacy) return
+    e.preventDefault(); if (!privacy) return
     setSending(true); setErrore(null)
     try {
       const res = await fetch('/api/demo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
@@ -646,42 +775,44 @@ function DemoForm() {
   const lbl = { fontSize: 13, fontWeight: 600, color: TEXT_LIGHT, marginBottom: 6, display: 'block' }
 
   return (
-    <section id="richiedi-demo" style={{ padding: '104px 24px', background: BG }}>
+    <section id="richiedi-demo" style={{ padding: '104px 24px', background: '#fff' }}>
       <div style={{ maxWidth: 680, margin: '0 auto' }}>
-        <SecHead label="Inizia adesso" title="Richiedi una demo gratuita" sub="Ti rispondo entro 24 ore. Nessun impegno, nessuna carta di credito." />
-        {sent ? (
-          <div style={{ textAlign: 'center', padding: '48px 32px', background: '#fff', borderRadius: 20, border: `1.5px solid ${PRIMARY}30` }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>✓</div>
-            <h3 style={{ fontSize: 22, fontWeight: 700, color: PRIMARY, marginBottom: 10 }}>Richiesta inviata!</h3>
-            <p style={{ color: TEXT_LIGHT, fontSize: 16, lineHeight: 1.7 }}>Grazie {form.nome.split(' ')[0]}! Ti contatto entro 24 ore all'indirizzo <strong>{form.email}</strong>.</p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} style={{ background: '#fff', borderRadius: 20, padding: '40px 36px', border: `1px solid ${PRIMARY}15`, display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <div><label style={lbl}>Nome e cognome *</label><input style={inp} value={form.nome} onChange={patch('nome')} required placeholder="Mario Rossi" /></div>
-              <div><label style={lbl}>Email *</label><input style={inp} type="email" value={form.email} onChange={patch('email')} required placeholder="mario@esempio.it" /></div>
+        <FadeIn><SecHead label="Inizia adesso" title="Richiedi una demo gratuita" sub="Ti rispondo entro 24 ore. Nessun impegno, nessuna carta di credito." /></FadeIn>
+        <FadeIn delay={80}>
+          {sent ? (
+            <div style={{ textAlign: 'center', padding: '48px 32px', background: BG, borderRadius: 20, border: `1.5px solid ${PRIMARY}30` }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>✓</div>
+              <h3 style={{ fontSize: 22, fontWeight: 700, color: PRIMARY, marginBottom: 10 }}>Richiesta inviata!</h3>
+              <p style={{ color: TEXT_LIGHT, fontSize: 16, lineHeight: 1.7 }}>Grazie {form.nome.split(' ')[0]}! Ti contatto entro 24 ore all'indirizzo <strong>{form.email}</strong>.</p>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <div><label style={lbl}>Telefono</label><input style={inp} value={form.telefono} onChange={patch('telefono')} placeholder="+39 333 000 0000" /></div>
-              <div><label style={lbl}>Tipo di attività</label>
-                <select style={{ ...inp, cursor: 'pointer' }} value={form.tipo_attivita} onChange={patch('tipo_attivita')}>
-                  {TIPI.map(t => <option key={t} value={t}>{t || '— Seleziona —'}</option>)}
-                </select>
+          ) : (
+            <form onSubmit={handleSubmit} style={{ background: BG, borderRadius: 20, padding: '40px 36px', border: `1px solid ${PRIMARY}15`, display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div><label style={lbl}>Nome e cognome *</label><input style={inp} value={form.nome} onChange={patch('nome')} required placeholder="Mario Rossi" /></div>
+                <div><label style={lbl}>Email *</label><input style={inp} type="email" value={form.email} onChange={patch('email')} required placeholder="mario@esempio.it" /></div>
               </div>
-            </div>
-            <div><label style={lbl}>Messaggio (opzionale)</label>
-              <textarea style={{ ...inp, resize: 'vertical', minHeight: 100 }} value={form.messaggio} onChange={patch('messaggio')} placeholder="Raccontami brevemente la tua attività e cosa ti serve…" />
-            </div>
-            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
-              <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} style={{ marginTop: 3, width: 16, height: 16, accentColor: PRIMARY, flexShrink: 0 }} />
-              <span style={{ fontSize: 13, color: TEXT_LIGHT, lineHeight: 1.6 }}>Ho letto e accetto il trattamento dei dati personali per ricevere una risposta alla mia richiesta.</span>
-            </label>
-            {errore && <div style={{ background: '#fff5f5', color: '#c62828', padding: '10px 14px', borderRadius: 8, fontSize: 14 }}>{errore}</div>}
-            <button type="submit" disabled={!privacy || sending} style={{ background: privacy ? PRIMARY : '#ccc', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 28px', fontSize: 16, fontWeight: 700, cursor: privacy ? 'pointer' : 'not-allowed', fontFamily: "'Space Grotesk', sans-serif" }}>
-              {sending ? 'Invio in corso…' : 'Invia la richiesta'}
-            </button>
-          </form>
-        )}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div><label style={lbl}>Telefono</label><input style={inp} value={form.telefono} onChange={patch('telefono')} placeholder="+39 333 000 0000" /></div>
+                <div><label style={lbl}>Tipo di attività</label>
+                  <select style={{ ...inp, cursor: 'pointer' }} value={form.tipo_attivita} onChange={patch('tipo_attivita')}>
+                    {TIPI.map(t => <option key={t} value={t}>{t || '— Seleziona —'}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div><label style={lbl}>Messaggio (opzionale)</label>
+                <textarea style={{ ...inp, resize: 'vertical', minHeight: 100 }} value={form.messaggio} onChange={patch('messaggio')} placeholder="Raccontami brevemente la tua attività e cosa ti serve…" />
+              </div>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
+                <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} style={{ marginTop: 3, width: 16, height: 16, accentColor: PRIMARY, flexShrink: 0 }} />
+                <span style={{ fontSize: 13, color: TEXT_LIGHT, lineHeight: 1.6 }}>Ho letto e accetto il trattamento dei dati personali per ricevere una risposta alla mia richiesta.</span>
+              </label>
+              {errore && <div style={{ background: '#fff5f5', color: '#c62828', padding: '10px 14px', borderRadius: 8, fontSize: 14 }}>{errore}</div>}
+              <button type="submit" disabled={!privacy || sending} style={{ background: privacy ? PRIMARY : '#ccc', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 28px', fontSize: 16, fontWeight: 700, cursor: privacy ? 'pointer' : 'not-allowed', fontFamily: "'Space Grotesk', sans-serif" }}>
+                {sending ? 'Invio in corso…' : 'Invia la richiesta'}
+              </button>
+            </form>
+          )}
+        </FadeIn>
       </div>
     </section>
   )
