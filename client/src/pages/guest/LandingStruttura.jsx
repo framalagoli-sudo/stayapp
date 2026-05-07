@@ -108,12 +108,6 @@ export default function LandingStruttura({ property }) {
   const sections    = { ...(mini.sections || {}) }
   const social      = mini.social || {}
   const socialLinks = SOCIAL_CONFIG.filter(s => social[s.key])
-  const bookingCta  = bookingUrl || social.whatsapp || null
-
-  function scrollToContatti(e) {
-    e.preventDefault()
-    document.getElementById('contatti-section')?.scrollIntoView({ behavior: 'smooth' })
-  }
 
   useEffect(() => {
     loadFont(theme.fontHeading)
@@ -141,6 +135,13 @@ export default function LandingStruttura({ property }) {
 
   const pwaUrl     = `${window.location.pathname}?qr=1`
   const bookingUrl = mini.booking_url || null
+  const bookingCta = bookingUrl || social.whatsapp || null
+
+  function scrollToContatti(e) {
+    e.preventDefault()
+    document.getElementById('contatti-section')?.scrollIntoView({ behavior: 'smooth' })
+  }
+
   const tagline    = mini.tagline || ''
   const highlights = (mini.highlights || []).filter(h => h.text)
   const amenities  = (property.amenities || [])
