@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { ArrowLeft, Calendar, User, Link2, Check } from 'lucide-react'
 
@@ -54,6 +54,8 @@ function ShareBar({ url, title }) {
 export default function ArticoloPage() {
   const { slug } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const backUrl = searchParams.get('back')
   const [articolo, setArticolo] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -90,6 +92,18 @@ export default function ArticoloPage() {
 
   return (
     <div style={{ background: '#f9f9f9', minHeight: '100vh' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', padding: '0 20px', height: 52 }}>
+        {backUrl ? (
+          <a href={backUrl} style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#555', textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>
+            <ArrowLeft size={15} strokeWidth={2} /> Torna al sito
+          </a>
+        ) : (
+          <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>
+            <ArrowLeft size={15} strokeWidth={2} /> Indietro
+          </button>
+        )}
+      </div>
+
       {/* Cover */}
       {articolo.cover_url && (
         <div style={{ width: '100%', height: 340, overflow: 'hidden', position: 'relative' }}>
@@ -99,14 +113,8 @@ export default function ArticoloPage() {
       )}
 
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '0 20px 80px' }}>
-        {/* Back */}
-        <button onClick={() => navigate(-1)}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 13, padding: '20px 0 0' }}>
-          <ArrowLeft size={15} strokeWidth={2} /> Torna indietro
-        </button>
-
         {/* Meta */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', margin: '16px 0 12px', fontSize: 13, color: '#aaa' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', margin: '28px 0 12px', fontSize: 13, color: '#aaa' }}>
           {articolo.published_at && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <Calendar size={13} strokeWidth={1.5} /> {fmtDate(articolo.published_at)}

@@ -88,6 +88,7 @@ export default function LandingStruttura({ property }) {
   const [lightbox,       setLightbox]       = useState(null)
   const [upcomingEventi, setUpcomingEventi] = useState([])
   const [newsArticoli,   setNewsArticoli]   = useState([])
+  const [promoModal,     setPromoModal]     = useState(null)
   const aboutRef = useRef(null)
 
   useEffect(() => {
@@ -307,18 +308,18 @@ export default function LandingStruttura({ property }) {
               <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Promozioni esclusive per i nostri ospiti</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
                 {promozioni.map(p => (
-                  <div key={p.id} style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', borderTop: `4px solid ${primary}` }}>
+                  <div key={p.id} onClick={() => setPromoModal(p)}
+                    style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', borderTop: `4px solid ${primary}`, cursor: 'pointer', transition: 'transform 0.14s ease, box-shadow 0.14s ease' }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.12)' }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 4px 24px rgba(0,0,0,0.08)' }}>
                     <div style={{ padding: '28px 24px' }}>
                       {p.badge && <span style={{ display: 'inline-block', background: `${primary}18`, color: primary, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 14 }}>{p.badge}</span>}
                       <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 12, color: '#1a1a2e' }}>{p.title}</h3>
                       {p.text && <p style={{ fontSize: 15, color: '#666', lineHeight: 1.6, marginBottom: 20 }}>{p.text}</p>}
                       {p.expires_at && <div style={{ fontSize: 12, color: '#aaa', marginBottom: 16 }}>Valida fino al {new Date(p.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
-                      {p.cta_label && p.cta_url && (
-                        <a href={p.cta_url} target="_blank" rel="noopener noreferrer"
-                          style={{ display: 'inline-block', padding: '11px 24px', background: primary, color: '#fff', borderRadius: 50, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
-                          {p.cta_label}
-                        </a>
-                      )}
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: `${primary}12`, color: primary, borderRadius: 50, fontSize: 13, fontWeight: 700 }}>
+                        {p.cta_label || "Scopri l'offerta"} &#8594;
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -416,12 +417,16 @@ export default function LandingStruttura({ property }) {
                       <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>{item.name}</div>
                       {item.schedule && <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, color: '#888' }}><Clock size={12} strokeWidth={1.5} />{item.schedule}</div>}
                       {item.location && <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, color: '#888', marginTop: 4 }}><LocationPin size={12} strokeWidth={1.5} />{item.location}</div>}
+                      <a href={bookingUrl || '#contatti-section'}
+                        style={{ display: 'block', marginTop: 12, padding: '8px 0', background: primary, color: '#fff', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}>
+                        {item.bookable !== false ? 'Prenota' : 'Contatta'}
+                      </a>
                     </div>
                   </div>
                 ))}
               </div>
               <div style={{ textAlign: 'center' }}>
-                <a href={pwaUrl} style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>Scopri tutte le attività</a>
+                <a href={bookingUrl || '#contatti-section'} style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>Scopri tutte le attività</a>
               </div>
             </div>
           </section>
@@ -447,12 +452,16 @@ export default function LandingStruttura({ property }) {
                         {exc.duration && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#888' }}><Clock size={13} strokeWidth={1.5} />{exc.duration}</span>}
                       </div>
                       {exc.dates && <div style={{ fontSize: 12, color: '#888', marginTop: 6 }}>{exc.dates}</div>}
+                      <a href={bookingUrl || '#contatti-section'}
+                        style={{ display: 'block', marginTop: 12, padding: '8px 0', background: primary, color: '#fff', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}>
+                        Prenota
+                      </a>
                     </div>
                   </div>
                 ))}
               </div>
               <div style={{ textAlign: 'center' }}>
-                <a href={pwaUrl} style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>Prenota un'escursione</a>
+                <a href={bookingUrl || '#contatti-section'} style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>Prenota un'escursione</a>
               </div>
             </div>
           </section>
@@ -507,7 +516,7 @@ export default function LandingStruttura({ property }) {
               <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Le ultime novità dalla struttura</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
                 {newsArticoli.map(art => (
-                  <a key={art.id} href={`/blog/${art.slug}`}
+                  <a key={art.id} href={`/blog/${art.slug}?back=${encodeURIComponent(window.location.pathname)}`}
                     style={{ background: '#f9f9fb', borderRadius: 14, overflow: 'hidden', display: 'block', textDecoration: 'none', color: 'inherit', transition: 'transform 0.14s ease, box-shadow 0.14s ease', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
                     onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.10)' }}
                     onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)' }}>
@@ -536,7 +545,7 @@ export default function LandingStruttura({ property }) {
       case 'contatti':
         if (!property.phone && !property.email) return null
         return (
-          <section key="contatti" style={{ padding: '80px 0', background: '#f9f9fb' }}>
+          <section key="contatti" id="contatti-section" style={{ padding: '80px 0', background: '#f9f9fb' }}>
             <div className="land-section" style={{ maxWidth: 640 }}>
               <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>Contattaci</h2>
               <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Siamo a tua disposizione per qualsiasi informazione</p>
@@ -863,6 +872,50 @@ export default function LandingStruttura({ property }) {
         </div>
       )}
 
+      {promoModal && (
+        <div onClick={() => setPromoModal(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9998, padding: 24 }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: 20, padding: 32, maxWidth: 480, width: '100%', position: 'relative', boxShadow: '0 24px 80px rgba(0,0,0,0.25)' }}>
+            <button onClick={() => setPromoModal(null)}
+              style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: '#aaa', lineHeight: 1, padding: 4 }}>
+              &#x2715;
+            </button>
+            {promoModal.badge && (
+              <span style={{ display: 'inline-block', background: `${primary}18`, color: primary, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 16 }}>
+                {promoModal.badge}
+              </span>
+            )}
+            <h3 style={{ fontFamily: heading, fontSize: 26, fontWeight: 700, marginBottom: 16, color: '#1a1a2e', paddingRight: 28, lineHeight: 1.25 }}>
+              {promoModal.title}
+            </h3>
+            {promoModal.text && (
+              <p style={{ fontSize: 16, color: '#555', lineHeight: 1.7, marginBottom: 20 }}>{promoModal.text}</p>
+            )}
+            {promoModal.expires_at && (
+              <div style={{ fontSize: 13, color: '#aaa', marginBottom: 24 }}>
+                Valida fino al {new Date(promoModal.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
+              </div>
+            )}
+            {promoModal.cta_url && promoModal.cta_url !== '#' ? (
+              <a href={promoModal.cta_url} target="_blank" rel="noopener noreferrer"
+                style={{ display: 'block', textAlign: 'center', padding: '14px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+                {promoModal.cta_label || 'Prenota'}
+              </a>
+            ) : bookingUrl ? (
+              <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
+                style={{ display: 'block', textAlign: 'center', padding: '14px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+                Prenota ora
+              </a>
+            ) : (
+              <a href="#contatti-section" onClick={() => setPromoModal(null)}
+                style={{ display: 'block', textAlign: 'center', padding: '14px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+                Contattaci
+              </a>
+            )}
+          </div>
+        </div>
+      )}
       <CookieBanner
         primaryColor={primary}
         privacyUrl={property.slug ? `/s/${property.slug}/privacy` : null}
