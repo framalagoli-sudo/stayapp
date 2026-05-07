@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, Phone, Mail, ChevronDown, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro, Heart, Award, Mountain, Wind, Calendar, Users, Plus, Minus } from 'lucide-react'
+import { MapPin, Phone, Mail, ChevronDown, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro, Heart, Award, Mountain, Wind, Calendar, Users, Plus, Minus, CheckCircle } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
 import CookieBanner from '../../components/CookieBanner'
 
@@ -89,6 +89,7 @@ export default function LandingStruttura({ property }) {
   const [upcomingEventi, setUpcomingEventi] = useState([])
   const [newsArticoli,   setNewsArticoli]   = useState([])
   const [promoModal,     setPromoModal]     = useState(null)
+  const [bookingModal,   setBookingModal]   = useState(null)
   const aboutRef = useRef(null)
 
   useEffect(() => {
@@ -423,12 +424,10 @@ export default function LandingStruttura({ property }) {
                       <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>{item.name}</div>
                       {item.schedule && <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, color: '#888' }}><Clock size={12} strokeWidth={1.5} />{item.schedule}</div>}
                       {item.location && <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, color: '#888', marginTop: 4 }}><LocationPin size={12} strokeWidth={1.5} />{item.location}</div>}
-                      <a href={ctaHref}
-                        target={ctaExternal ? '_blank' : undefined}
-                        rel={ctaExternal ? 'noopener noreferrer' : undefined}
-                        style={{ display: 'block', marginTop: 12, padding: '8px 0', background: primary, color: '#fff', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', textAlign: 'center', cursor: 'pointer' }}>
-                        {item.bookable !== false ? 'Prenota' : 'Contatta'}
-                      </a>
+                      <button onClick={() => setBookingModal({ type: 'activity', item })}
+                        style={{ display: 'block', width: '100%', marginTop: 12, padding: '8px 0', background: primary, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, textAlign: 'center', cursor: 'pointer' }}>
+                        {item.bookable !== false ? 'Prenota' : 'Info'}
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -465,12 +464,10 @@ export default function LandingStruttura({ property }) {
                         {exc.duration && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#888' }}><Clock size={13} strokeWidth={1.5} />{exc.duration}</span>}
                       </div>
                       {exc.dates && <div style={{ fontSize: 12, color: '#888', marginTop: 6 }}>{exc.dates}</div>}
-                      <a href={ctaHref}
-                        target={ctaExternal ? '_blank' : undefined}
-                        rel={ctaExternal ? 'noopener noreferrer' : undefined}
-                        style={{ display: 'block', marginTop: 12, padding: '8px 0', background: primary, color: '#fff', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', textAlign: 'center', cursor: 'pointer' }}>
+                      <button onClick={() => setBookingModal({ type: 'excursion', item: exc })}
+                        style={{ display: 'block', width: '100%', marginTop: 12, padding: '8px 0', background: primary, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, textAlign: 'center', cursor: 'pointer' }}>
                         Prenota
-                      </a>
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -892,6 +889,18 @@ export default function LandingStruttura({ property }) {
         </div>
       )}
 
+      {bookingModal && (
+        <BookingModal
+          type={bookingModal.type}
+          item={bookingModal.item}
+          entityId={property.id}
+          primary={primary}
+          heading={heading}
+          privacyUrl={property.slug ? `/s/${property.slug}/privacy` : null}
+          onClose={() => setBookingModal(null)}
+        />
+      )}
+
       {promoModal && (
         <div onClick={() => setPromoModal(null)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9998, padding: 24 }}>
@@ -1076,3 +1085,112 @@ function FaqAccordion({ faq, primary }) {
 
 const navBtnPrimary   = { padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 700, textDecoration: 'none', color: '#fff' }
 const navBtnSecondary = { padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 600, textDecoration: 'none', color: '#1a1a2e', border: '1px solid #ddd' }
+
+function BookingModal({ type, item, entityId, primary, heading, privacyUrl, onClose }) {
+  const [name,    setName]    = useState('')
+  const [email,   setEmail]   = useState('')
+  const [phone,   setPhone]   = useState('')
+  const [persons, setPersons] = useState(1)
+  const [notes,   setNotes]   = useState('')
+  const [privacy, setPrivacy] = useState(false)
+  const [state,   setState]   = useState('idle')
+
+  const isExc  = type === 'excursion'
+  const price  = isExc && item.price != null ? item.price : null
+  const total  = price != null ? (price * persons).toFixed(0) : null
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!privacy) return
+    setState('loading')
+    const lines = [
+      isExc ? `Prenotazione escursione: ${item.name}` : `Prenotazione attività: ${item.name}`,
+      isExc && item.dates    ? `Date: ${item.dates}` : null,
+      !isExc && item.schedule ? `Orario: ${item.schedule}` : null,
+      !isExc && item.location ? `Luogo: ${item.location}` : null,
+      isExc ? `Persone: ${persons}` : null,
+      total  ? `Totale: €${total}` : null,
+      phone.trim() ? `Telefono: ${phone.trim()}` : null,
+      notes.trim() ? `Note: ${notes.trim()}` : null,
+    ].filter(Boolean)
+    try {
+      await fetch('/api/guest/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entity_tipo: 'struttura', entity_id: entityId, name, email, message: lines.join('\n') }),
+      })
+      setState('success')
+    } catch { setState('error') }
+  }
+
+  const inp = { width: '100%', padding: '11px 14px', borderRadius: 10, border: '1px solid #e0e0e0', fontSize: 14, marginBottom: 12, boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none' }
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9998, padding: 20 }}>
+      <div onClick={e => e.stopPropagation()}
+        style={{ background: '#fff', borderRadius: 20, padding: 32, maxWidth: 460, width: '100%', position: 'relative', boxShadow: '0 24px 80px rgba(0,0,0,0.25)', maxHeight: '92vh', overflowY: 'auto' }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#aaa', lineHeight: 1 }}>
+          &#x2715;
+        </button>
+
+        {state === 'success' ? (
+          <div style={{ textAlign: 'center', padding: '24px 0' }}>
+            <CheckCircle size={52} strokeWidth={1.5} color={primary} style={{ marginBottom: 12 }} />
+            <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, color: '#1a1a2e', marginBottom: 8 }}>Richiesta inviata!</h3>
+            <p style={{ color: '#666', fontSize: 15, marginBottom: 24, lineHeight: 1.6 }}>Il personale ti contatterà per confermare la disponibilità.</p>
+            <button onClick={onClose} style={{ padding: '12px 32px', background: primary, color: '#fff', border: 'none', borderRadius: 50, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Chiudi</button>
+          </div>
+        ) : (
+          <>
+            <h3 style={{ fontFamily: heading, fontSize: 20, fontWeight: 700, color: '#1a1a2e', marginBottom: 4, paddingRight: 24 }}>
+              {isExc ? 'Prenota escursione' : 'Prenota attività'}
+            </h3>
+            <p style={{ fontSize: 16, fontWeight: 600, color: primary, marginBottom: 4 }}>{item.name}</p>
+            <div style={{ fontSize: 12, color: '#999', marginBottom: 20, display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+              {item.schedule && <span>&#128337; {item.schedule}</span>}
+              {item.location && <span>&#128205; {item.location}</span>}
+              {item.dates    && <span>&#128197; {item.dates}</span>}
+              {price != null && <span style={{ color: primary, fontWeight: 700 }}>€{price} / persona</span>}
+            </div>
+
+            {isExc && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Numero di persone</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <button type="button" onClick={() => setPersons(p => Math.max(1, p - 1))}
+                    style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid #ddd', background: '#f5f5f5', fontSize: 18, cursor: 'pointer', flexShrink: 0 }}>−</button>
+                  <span style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', minWidth: 24, textAlign: 'center' }}>{persons}</span>
+                  <button type="button" onClick={() => setPersons(p => p + 1)}
+                    style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid #ddd', background: '#f5f5f5', fontSize: 18, cursor: 'pointer', flexShrink: 0 }}>+</button>
+                  {total && <span style={{ marginLeft: 'auto', fontSize: 16, fontWeight: 700, color: primary }}>Totale: €{total}</span>}
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+              <input value={name}  onChange={e => setName(e.target.value)}  required placeholder="Il tuo nome *"  style={inp} />
+              <input value={email} onChange={e => setEmail(e.target.value)} required type="email" placeholder="Email *" style={inp} />
+              <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Telefono (opzionale)" style={inp} />
+              <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
+                placeholder="Note o richieste speciali…"
+                style={{ ...inp, resize: 'vertical', marginBottom: 14 }} />
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 14, cursor: 'pointer', fontSize: 13, color: '#555', lineHeight: 1.5 }}>
+                <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} required style={{ marginTop: 2, accentColor: primary, flexShrink: 0 }} />
+                <span>
+                  Ho letto e accetto la{' '}
+                  {privacyUrl ? <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: primary, fontWeight: 600 }}>Privacy Policy</a> : 'Privacy Policy'}
+                  {' '}ai sensi del GDPR.
+                </span>
+              </label>
+              {state === 'error' && <p style={{ color: '#e53e3e', fontSize: 13, marginBottom: 10 }}>Errore nell'invio. Riprova.</p>}
+              <button type="submit" disabled={!privacy || state === 'loading'}
+                style={{ width: '100%', padding: '14px', background: privacy ? primary : '#ccc', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: privacy ? 'pointer' : 'default', transition: 'background 0.2s' }}>
+                {state === 'loading' ? 'Invio…' : 'Invia richiesta'}
+              </button>
+            </form>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
