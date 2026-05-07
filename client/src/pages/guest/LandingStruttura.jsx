@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, Phone, Mail, ChevronDown, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro, Heart, Award, Mountain, Wind, Calendar, Users, Plus, Minus, CheckCircle } from 'lucide-react'
+import { MapPin, Phone, Mail, ChevronDown, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro, Heart, Award, Mountain, Wind, Calendar, Users, Plus, Minus, CheckCircle, ArrowLeft } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
 import CookieBanner from '../../components/CookieBanner'
 
@@ -90,6 +90,7 @@ export default function LandingStruttura({ property }) {
   const [newsArticoli,   setNewsArticoli]   = useState([])
   const [promoModal,     setPromoModal]     = useState(null)
   const [bookingModal,   setBookingModal]   = useState(null)
+  const [activePage,     setActivePage]     = useState(null)
   const aboutRef = useRef(null)
 
   useEffect(() => {
@@ -148,11 +149,13 @@ export default function LandingStruttura({ property }) {
   const gallery    = (property.gallery  || []).slice(0, 9)
   const services   = (property.services || []).slice(0, 6)
 
-  const activitiesRaw  = (property.activities || [])
-  const activityItems  = activitiesRaw.flatMap(cat =>
+  const activitiesRaw     = (property.activities || [])
+  const allActivityItems  = activitiesRaw.flatMap(cat =>
     (cat.items || []).filter(i => i.active !== false).map(item => ({ ...item, category: cat.category }))
-  ).slice(0, 6)
-  const excursionItems = (property.excursions || []).filter(e => e.active !== false).slice(0, 6)
+  )
+  const activityItems     = allActivityItems.slice(0, 6)
+  const allExcursionItems = (property.excursions || []).filter(e => e.active !== false)
+  const excursionItems    = allExcursionItems.slice(0, 6)
 
   const now           = new Date()
   const stats         = (mini.stats        || []).filter(s => s.value && s.label)
@@ -433,12 +436,10 @@ export default function LandingStruttura({ property }) {
                 ))}
               </div>
               <div style={{ textAlign: 'center' }}>
-                <a href={ctaHref}
-                  target={ctaExternal ? '_blank' : undefined}
-                  rel={ctaExternal ? 'noopener noreferrer' : undefined}
-                  style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-                  Scopri tutte le attività
-                </a>
+                <button onClick={() => setActivePage('activities')}
+                  style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+                  Scopri tutte le attività {allActivityItems.length > 6 ? `(${allActivityItems.length})` : ''}
+                </button>
               </div>
             </div>
           </section>
@@ -473,12 +474,10 @@ export default function LandingStruttura({ property }) {
                 ))}
               </div>
               <div style={{ textAlign: 'center' }}>
-                <a href={ctaHref}
-                  target={ctaExternal ? '_blank' : undefined}
-                  rel={ctaExternal ? 'noopener noreferrer' : undefined}
-                  style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-                  Prenota un'escursione
-                </a>
+                <button onClick={() => setActivePage('excursions')}
+                  style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+                  Prenota un'escursione {allExcursionItems.length > 6 ? `(${allExcursionItems.length})` : ''}
+                </button>
               </div>
             </div>
           </section>
@@ -934,6 +933,29 @@ export default function LandingStruttura({ property }) {
           </div>
         </div>
       )}
+      {activePage === 'activities' && (
+        <ActivitiesFullPage
+          items={allActivityItems}
+          primary={primary}
+          heading={heading}
+          entityId={property.id}
+          privacyUrl={property.slug ? `/s/${property.slug}/privacy` : null}
+          onBook={setBookingModal}
+          onBack={() => setActivePage(null)}
+        />
+      )}
+      {activePage === 'excursions' && (
+        <ExcursionsFullPage
+          items={allExcursionItems}
+          primary={primary}
+          heading={heading}
+          entityId={property.id}
+          privacyUrl={property.slug ? `/s/${property.slug}/privacy` : null}
+          onBook={setBookingModal}
+          onBack={() => setActivePage(null)}
+        />
+      )}
+
       <CookieBanner
         primaryColor={primary}
         privacyUrl={property.slug ? `/s/${property.slug}/privacy` : null}
@@ -1190,6 +1212,116 @@ function BookingModal({ type, item, entityId, primary, heading, privacyUrl, onCl
             </form>
           </>
         )}
+      </div>
+    </div>
+  )
+}
+
+function ActivitiesFullPage({ items, primary, heading, entityId, privacyUrl, onBook, onBack }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9990, background: '#f9f9fb', overflowY: 'auto' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(249,249,251,0.96)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #ebebeb', display: 'flex', alignItems: 'center', padding: '0 20px', height: 56 }}>
+        <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#555', padding: 0 }}>
+          <ArrowLeft size={18} strokeWidth={2} /> Indietro
+        </button>
+        <span style={{ fontFamily: heading, fontSize: 18, fontWeight: 700, color: '#1a1a2e', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>Attività</span>
+      </div>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 16px 80px' }}>
+        <p style={{ textAlign: 'center', color: '#aaa', fontSize: 13, marginBottom: 28 }}>
+          {items.length} {items.length === 1 ? 'attività disponibile' : 'attività disponibili'}
+        </p>
+        <div style={{ columns: '2 240px', columnGap: 14 }}>
+          {items.map(item => (
+            <div key={item.id} style={{ breakInside: 'avoid', marginBottom: 14, display: 'inline-block', width: '100%', background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 3px 16px rgba(0,0,0,0.07)' }}>
+              {item.photo_url && (
+                <div style={{ position: 'relative' }}>
+                  <img src={item.photo_url} alt={item.name} style={{ width: '100%', display: 'block', objectFit: 'cover' }} />
+                  {item.category && (
+                    <span style={{ position: 'absolute', top: 10, left: 10, background: primary, color: '#fff', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, letterSpacing: 0.3 }}>
+                      {item.category}
+                    </span>
+                  )}
+                </div>
+              )}
+              <div style={{ padding: '14px 16px 16px' }}>
+                {!item.photo_url && item.category && (
+                  <span style={{ fontSize: 10, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, display: 'block' }}>{item.category}</span>
+                )}
+                <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', marginBottom: item.description ? 6 : 8 }}>{item.name}</div>
+                {item.description && (
+                  <p style={{ fontSize: 13, color: '#777', lineHeight: 1.55, marginBottom: 10 }}>{item.description}</p>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
+                  {item.schedule && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#888' }}><Clock size={12} strokeWidth={1.5} color={primary} />{item.schedule}</span>}
+                  {item.location && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#888' }}><LocationPin size={12} strokeWidth={1.5} color={primary} />{item.location}</span>}
+                  {item.ageGroup && item.ageGroup !== 'tutti' && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#888' }}><Users size={12} strokeWidth={1.5} color={primary} />{item.ageGroup}</span>}
+                </div>
+                <button onClick={() => onBook({ type: 'activity', item })}
+                  style={{ width: '100%', padding: '10px 0', background: primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                  {item.bookable !== false ? 'Prenota' : 'Richiedi info'}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ExcursionsFullPage({ items, primary, heading, entityId, privacyUrl, onBook, onBack }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9990, background: '#fff', overflowY: 'auto' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #ebebeb', display: 'flex', alignItems: 'center', padding: '0 20px', height: 56 }}>
+        <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#555', padding: 0 }}>
+          <ArrowLeft size={18} strokeWidth={2} /> Indietro
+        </button>
+        <span style={{ fontFamily: heading, fontSize: 18, fontWeight: 700, color: '#1a1a2e', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>Escursioni</span>
+      </div>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 16px 80px' }}>
+        <p style={{ textAlign: 'center', color: '#aaa', fontSize: 13, marginBottom: 28 }}>
+          {items.length} {items.length === 1 ? 'escursione disponibile' : 'escursioni disponibili'}
+        </p>
+        <div style={{ columns: '2 260px', columnGap: 14 }}>
+          {items.map(exc => (
+            <div key={exc.id} style={{ breakInside: 'avoid', marginBottom: 14, display: 'inline-block', width: '100%', background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 3px 16px rgba(0,0,0,0.07)', border: '1px solid #f0f0f0' }}>
+              {exc.photo_url && (
+                <div style={{ position: 'relative' }}>
+                  <img src={exc.photo_url} alt={exc.name} style={{ width: '100%', display: 'block', objectFit: 'cover' }} />
+                  {exc.price != null && (
+                    <div style={{ position: 'absolute', top: 10, right: 10, background: primary, color: '#fff', fontWeight: 800, fontSize: 15, padding: '5px 12px', borderRadius: 20 }}>
+                      €{exc.price}
+                    </div>
+                  )}
+                </div>
+              )}
+              <div style={{ padding: '14px 16px 16px' }}>
+                <div style={{ fontWeight: 700, fontSize: 16, color: '#1a1a2e', marginBottom: 6 }}>{exc.name}</div>
+                {!exc.photo_url && exc.price != null && (
+                  <div style={{ fontSize: 22, fontWeight: 800, color: primary, marginBottom: 8 }}>€{exc.price}</div>
+                )}
+                {exc.description && (
+                  <p style={{ fontSize: 13, color: '#777', lineHeight: 1.55, marginBottom: 10 }}>{exc.description}</p>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: exc.includes ? 10 : 12 }}>
+                  {exc.duration     && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#888' }}><Clock size={12} strokeWidth={1.5} color={primary} />{exc.duration}</span>}
+                  {exc.dates        && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#888' }}><Calendar size={12} strokeWidth={1.5} color={primary} />{exc.dates}</span>}
+                  {exc.meeting_point && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#888' }}><LocationPin size={12} strokeWidth={1.5} color={primary} />{exc.meeting_point}</span>}
+                  {exc.seats != null && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: primary }}><Users size={12} strokeWidth={1.5} color={primary} />Posti disponibili: {exc.seats}</span>}
+                </div>
+                {exc.includes && (
+                  <ul style={{ margin: '0 0 12px', paddingLeft: 18, fontSize: 12, color: '#888', lineHeight: 1.8 }}>
+                    {exc.includes.split(',').map((s, i) => <li key={i}>{s.trim()}</li>)}
+                  </ul>
+                )}
+                <button onClick={() => onBook({ type: 'excursion', item: exc })}
+                  style={{ width: '100%', padding: '10px 0', background: primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                  Prenota
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )
