@@ -126,12 +126,11 @@ export default function LandingRistorante({ ristorante }) {
 
   const pwaUrl     = `${window.location.pathname}?qr=1`
   const bookingUrl = mini.booking_url || null
-  const bookingCta = bookingUrl || social.whatsapp || null
-
-  function scrollToContatti(e) {
-    e.preventDefault()
-    document.getElementById('contatti-section')?.scrollIntoView({ behavior: 'smooth' })
-  }
+  const ctaHref    = bookingUrl || social.whatsapp
+    || (ristorante.phone ? `tel:${ristorante.phone}` : null)
+    || (ristorante.email ? `mailto:${ristorante.email}` : null)
+    || '#contatti-section'
+  const ctaExternal = !!(bookingUrl || social.whatsapp)
 
   const tagline    = mini.tagline || ''
   const highlights = (mini.highlights || []).filter(h => h.text)
@@ -912,22 +911,11 @@ export default function LandingRistorante({ ristorante }) {
                 Valida fino al {new Date(promoModal.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
               </div>
             )}
-            {promoModal.cta_url && promoModal.cta_url !== '#' ? (
-              <a href={promoModal.cta_url} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'block', textAlign: 'center', padding: '14px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-                {promoModal.cta_label || 'Prenota'}
-              </a>
-            ) : bookingCta ? (
-              <a href={bookingCta} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'block', textAlign: 'center', padding: '14px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-                Prenota un tavolo
-              </a>
-            ) : (
-              <a style={{ display: 'block', textAlign: 'center', padding: '14px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none', cursor: 'pointer' }}
-                onClick={() => { setPromoModal(null); document.getElementById('contatti-section')?.scrollIntoView({ behavior: 'smooth' }) }}>
-                Contattaci
-              </a>
-            )}
+            <a href={promoModal.cta_url && promoModal.cta_url !== '#' ? promoModal.cta_url : ctaHref}
+              target="_blank" rel="noopener noreferrer"
+              style={{ display: 'block', textAlign: 'center', padding: '14px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none', cursor: 'pointer' }}>
+              {promoModal.cta_label || 'Prenota ora'}
+            </a>
           </div>
         </div>
       )}

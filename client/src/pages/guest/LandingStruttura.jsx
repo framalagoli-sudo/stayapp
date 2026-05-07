@@ -135,12 +135,11 @@ export default function LandingStruttura({ property }) {
 
   const pwaUrl     = `${window.location.pathname}?qr=1`
   const bookingUrl = mini.booking_url || null
-  const bookingCta = bookingUrl || social.whatsapp || null
-
-  function scrollToContatti(e) {
-    e.preventDefault()
-    document.getElementById('contatti-section')?.scrollIntoView({ behavior: 'smooth' })
-  }
+  const ctaHref    = bookingUrl || social.whatsapp
+    || (property.phone ? `tel:${property.phone}` : null)
+    || (property.email ? `mailto:${property.email}` : null)
+    || '#contatti-section'
+  const ctaExternal = !!(bookingUrl || social.whatsapp)
 
   const tagline    = mini.tagline || ''
   const highlights = (mini.highlights || []).filter(h => h.text)
@@ -424,11 +423,10 @@ export default function LandingStruttura({ property }) {
                       <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>{item.name}</div>
                       {item.schedule && <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, color: '#888' }}><Clock size={12} strokeWidth={1.5} />{item.schedule}</div>}
                       {item.location && <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, color: '#888', marginTop: 4 }}><LocationPin size={12} strokeWidth={1.5} />{item.location}</div>}
-                      <a href={bookingCta || undefined}
-                        onClick={!bookingCta ? scrollToContatti : undefined}
-                        target={bookingCta ? '_blank' : undefined}
-                        rel={bookingCta ? 'noopener noreferrer' : undefined}
-                        style={{ display: 'block', marginTop: 12, padding: '8px 0', background: primary, color: '#fff', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}>
+                      <a href={ctaHref}
+                        target={ctaExternal ? '_blank' : undefined}
+                        rel={ctaExternal ? 'noopener noreferrer' : undefined}
+                        style={{ display: 'block', marginTop: 12, padding: '8px 0', background: primary, color: '#fff', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', textAlign: 'center', cursor: 'pointer' }}>
                         {item.bookable !== false ? 'Prenota' : 'Contatta'}
                       </a>
                     </div>
@@ -436,10 +434,12 @@ export default function LandingStruttura({ property }) {
                 ))}
               </div>
               <div style={{ textAlign: 'center' }}>
-                <a href={bookingCta || undefined}
-                        onClick={!bookingCta ? scrollToContatti : undefined}
-                        target={bookingCta ? '_blank' : undefined}
-                        rel={bookingCta ? 'noopener noreferrer' : undefined} style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>Scopri tutte le attività</a>
+                <a href={ctaHref}
+                  target={ctaExternal ? '_blank' : undefined}
+                  rel={ctaExternal ? 'noopener noreferrer' : undefined}
+                  style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+                  Scopri tutte le attività
+                </a>
               </div>
             </div>
           </section>
@@ -465,11 +465,10 @@ export default function LandingStruttura({ property }) {
                         {exc.duration && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#888' }}><Clock size={13} strokeWidth={1.5} />{exc.duration}</span>}
                       </div>
                       {exc.dates && <div style={{ fontSize: 12, color: '#888', marginTop: 6 }}>{exc.dates}</div>}
-                      <a href={bookingCta || undefined}
-                        onClick={!bookingCta ? scrollToContatti : undefined}
-                        target={bookingCta ? '_blank' : undefined}
-                        rel={bookingCta ? 'noopener noreferrer' : undefined}
-                        style={{ display: 'block', marginTop: 12, padding: '8px 0', background: primary, color: '#fff', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}>
+                      <a href={ctaHref}
+                        target={ctaExternal ? '_blank' : undefined}
+                        rel={ctaExternal ? 'noopener noreferrer' : undefined}
+                        style={{ display: 'block', marginTop: 12, padding: '8px 0', background: primary, color: '#fff', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', textAlign: 'center', cursor: 'pointer' }}>
                         Prenota
                       </a>
                     </div>
@@ -477,10 +476,12 @@ export default function LandingStruttura({ property }) {
                 ))}
               </div>
               <div style={{ textAlign: 'center' }}>
-                <a href={bookingCta || undefined}
-                        onClick={!bookingCta ? scrollToContatti : undefined}
-                        target={bookingCta ? '_blank' : undefined}
-                        rel={bookingCta ? 'noopener noreferrer' : undefined} style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>Prenota un'escursione</a>
+                <a href={ctaHref}
+                  target={ctaExternal ? '_blank' : undefined}
+                  rel={ctaExternal ? 'noopener noreferrer' : undefined}
+                  style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+                  Prenota un'escursione
+                </a>
               </div>
             </div>
           </section>
@@ -916,22 +917,11 @@ export default function LandingStruttura({ property }) {
                 Valida fino al {new Date(promoModal.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
               </div>
             )}
-            {promoModal.cta_url && promoModal.cta_url !== '#' ? (
-              <a href={promoModal.cta_url} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'block', textAlign: 'center', padding: '14px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-                {promoModal.cta_label || 'Prenota'}
-              </a>
-            ) : bookingCta ? (
-              <a href={bookingCta} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'block', textAlign: 'center', padding: '14px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-                Prenota ora
-              </a>
-            ) : (
-              <a style={{ display: 'block', textAlign: 'center', padding: '14px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none', cursor: 'pointer' }}
-                onClick={() => { setPromoModal(null); document.getElementById('contatti-section')?.scrollIntoView({ behavior: 'smooth' }) }}>
-                Contattaci
-              </a>
-            )}
+            <a href={promoModal.cta_url && promoModal.cta_url !== '#' ? promoModal.cta_url : ctaHref}
+              target="_blank" rel="noopener noreferrer"
+              style={{ display: 'block', textAlign: 'center', padding: '14px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none', cursor: 'pointer' }}>
+              {promoModal.cta_label || 'Prenota ora'}
+            </a>
           </div>
         </div>
       )}
