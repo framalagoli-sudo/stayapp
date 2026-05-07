@@ -108,6 +108,12 @@ export default function LandingStruttura({ property }) {
   const sections    = { ...(mini.sections || {}) }
   const social      = mini.social || {}
   const socialLinks = SOCIAL_CONFIG.filter(s => social[s.key])
+  const bookingCta  = bookingUrl || social.whatsapp || null
+
+  function scrollToContatti(e) {
+    e.preventDefault()
+    document.getElementById('contatti-section')?.scrollIntoView({ behavior: 'smooth' })
+  }
 
   useEffect(() => {
     loadFont(theme.fontHeading)
@@ -417,7 +423,10 @@ export default function LandingStruttura({ property }) {
                       <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>{item.name}</div>
                       {item.schedule && <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, color: '#888' }}><Clock size={12} strokeWidth={1.5} />{item.schedule}</div>}
                       {item.location && <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, color: '#888', marginTop: 4 }}><LocationPin size={12} strokeWidth={1.5} />{item.location}</div>}
-                      <a href={bookingUrl || '#contatti-section'}
+                      <a href={bookingCta || undefined}
+                        onClick={!bookingCta ? scrollToContatti : undefined}
+                        target={bookingCta ? '_blank' : undefined}
+                        rel={bookingCta ? 'noopener noreferrer' : undefined}
                         style={{ display: 'block', marginTop: 12, padding: '8px 0', background: primary, color: '#fff', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}>
                         {item.bookable !== false ? 'Prenota' : 'Contatta'}
                       </a>
@@ -426,7 +435,10 @@ export default function LandingStruttura({ property }) {
                 ))}
               </div>
               <div style={{ textAlign: 'center' }}>
-                <a href={bookingUrl || '#contatti-section'} style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>Scopri tutte le attività</a>
+                <a href={bookingCta || undefined}
+                        onClick={!bookingCta ? scrollToContatti : undefined}
+                        target={bookingCta ? '_blank' : undefined}
+                        rel={bookingCta ? 'noopener noreferrer' : undefined} style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>Scopri tutte le attività</a>
               </div>
             </div>
           </section>
@@ -452,7 +464,10 @@ export default function LandingStruttura({ property }) {
                         {exc.duration && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#888' }}><Clock size={13} strokeWidth={1.5} />{exc.duration}</span>}
                       </div>
                       {exc.dates && <div style={{ fontSize: 12, color: '#888', marginTop: 6 }}>{exc.dates}</div>}
-                      <a href={bookingUrl || '#contatti-section'}
+                      <a href={bookingCta || undefined}
+                        onClick={!bookingCta ? scrollToContatti : undefined}
+                        target={bookingCta ? '_blank' : undefined}
+                        rel={bookingCta ? 'noopener noreferrer' : undefined}
                         style={{ display: 'block', marginTop: 12, padding: '8px 0', background: primary, color: '#fff', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}>
                         Prenota
                       </a>
@@ -461,7 +476,10 @@ export default function LandingStruttura({ property }) {
                 ))}
               </div>
               <div style={{ textAlign: 'center' }}>
-                <a href={bookingUrl || '#contatti-section'} style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>Prenota un'escursione</a>
+                <a href={bookingCta || undefined}
+                        onClick={!bookingCta ? scrollToContatti : undefined}
+                        target={bookingCta ? '_blank' : undefined}
+                        rel={bookingCta ? 'noopener noreferrer' : undefined} style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>Prenota un'escursione</a>
               </div>
             </div>
           </section>
@@ -902,14 +920,14 @@ export default function LandingStruttura({ property }) {
                 style={{ display: 'block', textAlign: 'center', padding: '14px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
                 {promoModal.cta_label || 'Prenota'}
               </a>
-            ) : bookingUrl ? (
-              <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
+            ) : bookingCta ? (
+              <a href={bookingCta} target="_blank" rel="noopener noreferrer"
                 style={{ display: 'block', textAlign: 'center', padding: '14px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
                 Prenota ora
               </a>
             ) : (
-              <a href="#contatti-section" onClick={() => setPromoModal(null)}
-                style={{ display: 'block', textAlign: 'center', padding: '14px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+              <a style={{ display: 'block', textAlign: 'center', padding: '14px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none', cursor: 'pointer' }}
+                onClick={() => { setPromoModal(null); document.getElementById('contatti-section')?.scrollIntoView({ behavior: 'smooth' }) }}>
                 Contattaci
               </a>
             )}

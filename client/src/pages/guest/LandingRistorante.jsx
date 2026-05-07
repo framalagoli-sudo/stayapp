@@ -99,6 +99,12 @@ export default function LandingRistorante({ ristorante }) {
   const sections = { ...(mini.sections || {}) }
   const social   = mini.social || {}
   const socialLinks = SOCIAL_CONFIG.filter(s => social[s.key])
+  const bookingCta  = bookingUrl || social.whatsapp || null
+
+  function scrollToContatti(e) {
+    e.preventDefault()
+    document.getElementById('contatti-section')?.scrollIntoView({ behavior: 'smooth' })
+  }
 
   useEffect(() => {
     loadFont(theme.fontHeading)
@@ -910,14 +916,14 @@ export default function LandingRistorante({ ristorante }) {
                 style={{ display: 'block', textAlign: 'center', padding: '14px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
                 {promoModal.cta_label || 'Prenota'}
               </a>
-            ) : bookingUrl ? (
-              <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
+            ) : bookingCta ? (
+              <a href={bookingCta} target="_blank" rel="noopener noreferrer"
                 style={{ display: 'block', textAlign: 'center', padding: '14px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
                 Prenota un tavolo
               </a>
             ) : (
-              <a href="#contatti-section" onClick={() => setPromoModal(null)}
-                style={{ display: 'block', textAlign: 'center', padding: '14px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+              <a style={{ display: 'block', textAlign: 'center', padding: '14px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none', cursor: 'pointer' }}
+                onClick={() => { setPromoModal(null); document.getElementById('contatti-section')?.scrollIntoView({ behavior: 'smooth' }) }}>
                 Contattaci
               </a>
             )}
