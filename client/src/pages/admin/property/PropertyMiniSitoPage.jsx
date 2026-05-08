@@ -136,7 +136,7 @@ export default function PropertyMiniSitoPage() {
   }
 
   function addPromo() {
-    const updated = { ...form, promozioni: [...(form.promozioni || []), { id: crypto.randomUUID(), badge: '', title: '', text: '', description_full: '', cover_url: '', gallery: [], valid_from: '', expires_at: '', conditions: '', cta_label: '', cta_url: '' }] }
+    const updated = { ...form, promozioni: [...(form.promozioni || []), { id: crypto.randomUUID(), badge: '', title: '', text: '', description_full: '', cover_url: '', gallery: [], valid_from: '', expires_at: '', conditions: '', price_original: '', price_discounted: '', cta_label: '', cta_url: '' }] }
     setForm(updated); save({ minisito: updated }).catch(() => {})
   }
   function updatePromo(id, p) {
@@ -878,32 +878,40 @@ function StatItem({ item, onPatch, onRemove }) {
 }
 
 function PromoItem({ item, entityType, entityId, onPatch, onRemove }) {
-  const [badge,        setBadge]        = useState(item.badge           || '')
-  const [title,        setTitle]        = useState(item.title           || '')
-  const [text,         setText]         = useState(item.text            || '')
-  const [descFull,     setDescFull]     = useState(item.description_full || '')
-  const [validFrom,    setValidFrom]    = useState(item.valid_from      || '')
-  const [expiresAt,    setExpiresAt]    = useState(item.expires_at      || '')
-  const [conditions,   setConditions]   = useState(item.conditions      || '')
-  const [ctaLabel,     setCtaLabel]     = useState(item.cta_label       || '')
-  const [ctaUrl,       setCtaUrl]       = useState(item.cta_url         || '')
-  const [uploading,    setUploading]    = useState(false)
-  const [uploadingGal, setUploadingGal] = useState(false)
+  const [badge,          setBadge]          = useState(item.badge             || '')
+  const [title,          setTitle]          = useState(item.title             || '')
+  const [text,           setText]           = useState(item.text              || '')
+  const [descFull,       setDescFull]       = useState(item.description_full  || '')
+  const [validFrom,      setValidFrom]      = useState(item.valid_from        || '')
+  const [expiresAt,      setExpiresAt]      = useState(item.expires_at        || '')
+  const [conditions,     setConditions]     = useState(item.conditions        || '')
+  const [priceOriginal,  setPriceOriginal]  = useState(item.price_original    || '')
+  const [priceDisc,      setPriceDisc]      = useState(item.price_discounted  || '')
+  const [ctaLabel,       setCtaLabel]       = useState(item.cta_label         || '')
+  const [ctaUrl,         setCtaUrl]         = useState(item.cta_url           || '')
+  const [uploading,      setUploading]      = useState(false)
+  const [uploadingGal,   setUploadingGal]   = useState(false)
+  const [uploadErr,      setUploadErr]      = useState('')
   const coverRef   = useRef()
   const galleryRef = useRef()
 
+  const discountPct = priceOriginal && priceDisc
+    ? Math.round((1 - parseFloat(priceDisc) / parseFloat(priceOriginal)) * 100)
+    : null
+
   async function handleCoverUpload(e) {
     const file = e.target.files[0]; if (!file) return
-    setUploading(true)
+    setUploading(true); setUploadErr('')
     try {
       const { url } = await uploadMedia(`/api/upload/minisito-image?entity_type=${entityType}&entity_id=${entityId}`, file)
       onPatch({ cover_url: url })
-    } catch {} finally { setUploading(false); e.target.value = '' }
+    } catch (err) { setUploadErr('Errore upload copertina: ' + (err.message || 'riprova')) }
+    finally { setUploading(false); e.target.value = '' }
   }
 
   async function handleGalleryUpload(e) {
     const files = Array.from(e.target.files); if (!files.length) return
-    setUploadingGal(true)
+    setUploadingGal(true); setUploadErr('')
     try {
       const urls = []
       for (const file of files) {
@@ -911,7 +919,8 @@ function PromoItem({ item, entityType, entityId, onPatch, onRemove }) {
         urls.push(url)
       }
       onPatch({ gallery: [...(item.gallery || []), ...urls] })
-    } catch {} finally { setUploadingGal(false); e.target.value = '' }
+    } catch (err) { setUploadErr('Errore upload galleria: ' + (err.message || 'riprova')) }
+    finally { setUploadingGal(false); e.target.value = '' }
   }
 
   return (
@@ -957,6 +966,27 @@ function PromoItem({ item, entityType, entityId, onPatch, onRemove }) {
           rows={2} placeholder="es. Non cumulabile con altre offerte. Soggetto a disponibilità."
           style={{ ...inputStyle, resize: 'vertical' }} />
       </div>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-end' }}>
+        <div style={{ flex: 1 }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Prezzo originale (€)</label>
+          <input value={priceOriginal} onChange={e => setPriceOriginal(e.target.value)}
+            onBlur={() => onPatch({ price_original: priceOriginal })}
+            placeholder="es. 150" style={inputStyle} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Prezzo scontato (€)</label>
+          <input value={priceDisc} onChange={e => setPriceDisc(e.target.value)}
+            onBlur={() => onPatch({ price_discounted: priceDisc })}
+            placeholder="es. 99" style={inputStyle} />
+        </div>
+        {discountPct > 0 && (
+          <div style={{ flex: '0 0 auto', paddingBottom: 1 }}>
+            <div style={{ background: '#22c55e', color: '#fff', fontWeight: 800, fontSize: 14, padding: '8px 12px', borderRadius: 8, whiteSpace: 'nowrap' }}>
+              -{discountPct}%
+            </div>
+          </div>
+        )}
+      </div>
       <div style={{ marginBottom: 10 }}>
         <label style={{ ...lblStyle, marginBottom: 8 }}>Immagine di copertina</label>
         {item.cover_url && <img src={item.cover_url} alt="" style={{ width: '100%', maxHeight: 160, objectFit: 'cover', borderRadius: 8, marginBottom: 8, display: 'block' }} />}
@@ -973,6 +1003,7 @@ function PromoItem({ item, entityType, entityId, onPatch, onRemove }) {
             </button>
           )}
         </div>
+        {uploadErr && <p style={{ color: '#c00', fontSize: 12, marginTop: 6, marginBottom: 0 }}>{uploadErr}</p>}
       </div>
       <div style={{ marginBottom: 10 }}>
         <label style={{ ...lblStyle, marginBottom: 8 }}>Galleria foto</label>

@@ -84,6 +84,27 @@ export default function OffertaPage() {
           <p style={{ fontSize: 18, color: '#666', lineHeight: 1.7, marginBottom: 24 }}>{offerta.text}</p>
         )}
 
+        {/* Prezzo */}
+        {(offerta.price_original || offerta.price_discounted) && (() => {
+          const orig = offerta.price_original
+          const disc = offerta.price_discounted
+          const pct  = orig && disc ? Math.round((1 - parseFloat(disc) / parseFloat(orig)) * 100) : null
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginBottom: 28 }}>
+              {disc
+                ? <span style={{ fontFamily: heading, fontSize: 40, fontWeight: 800, color: primary, lineHeight: 1 }}>€{disc}</span>
+                : <span style={{ fontFamily: heading, fontSize: 40, fontWeight: 800, color: primary, lineHeight: 1 }}>€{orig}</span>
+              }
+              {disc && orig && (
+                <span style={{ fontSize: 22, color: '#bbb', textDecoration: 'line-through', fontWeight: 500 }}>€{orig}</span>
+              )}
+              {pct > 0 && (
+                <span style={{ background: '#22c55e', color: '#fff', fontSize: 14, fontWeight: 800, padding: '6px 14px', borderRadius: 20 }}>-{pct}%</span>
+              )}
+            </div>
+          )
+        })()}
+
         {/* Date validità */}
         {(offerta.valid_from || offerta.expires_at) && (
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 28, padding: '16px 20px', background: '#f9f9fb', borderRadius: 12 }}>

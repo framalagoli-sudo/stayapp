@@ -343,21 +343,39 @@ export default function LandingStruttura({ property }) {
                         <img src={p.cover_url} alt={p.title} style={{ width: '100%', height: 180, objectFit: 'cover' }} />
                       )}
                       <div style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                        {p.badge && <span style={{ display: 'inline-block', alignSelf: 'flex-start', background: `${primary}18`, color: primary, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 14 }}>{p.badge}</span>}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 14 }}>
+                          {p.badge && <span style={{ display: 'inline-block', background: `${primary}18`, color: primary, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', flexShrink: 0 }}>{p.badge}</span>}
+                          {p.price_original && p.price_discounted && (() => {
+                            const pct = Math.round((1 - parseFloat(p.price_discounted) / parseFloat(p.price_original)) * 100)
+                            return pct > 0 ? <span style={{ display: 'inline-block', background: '#22c55e', color: '#fff', fontSize: 11, fontWeight: 800, padding: '4px 10px', borderRadius: 20, flexShrink: 0 }}>-{pct}%</span> : null
+                          })()}
+                        </div>
                         <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 12, color: '#1a1a2e' }}>{p.title}</h3>
                         {p.text && <p style={{ fontSize: 15, color: '#555', lineHeight: 1.7, marginBottom: 16, flex: 1 }}>{p.text}</p>}
+                        {(p.price_original || p.price_discounted) && (
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 16 }}>
+                            {p.price_discounted
+                              ? <span style={{ fontFamily: heading, fontSize: 28, fontWeight: 800, color: primary }}>€{p.price_discounted}</span>
+                              : <span style={{ fontFamily: heading, fontSize: 28, fontWeight: 800, color: primary }}>€{p.price_original}</span>
+                            }
+                            {p.price_discounted && p.price_original && (
+                              <span style={{ fontSize: 16, color: '#aaa', textDecoration: 'line-through' }}>€{p.price_original}</span>
+                            )}
+                          </div>
+                        )}
                         {p.expires_at && <div style={{ fontSize: 12, color: '#aaa', marginBottom: 20 }}>Valida fino al {new Date(p.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
-                        <div style={{ display: 'flex', gap: 10, flexDirection: 'column', marginTop: 'auto' }}>
-                          {hasDetail && (
+                        <div style={{ marginTop: 'auto' }}>
+                          {hasDetail ? (
                             <a href={`/s/${property.slug}/offerte/${p.id}`}
-                              style={{ display: 'block', textAlign: 'center', padding: '12px 20px', background: 'transparent', color: primary, border: `2px solid ${primary}`, borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
-                              Scopri di più
+                              style={{ display: 'block', textAlign: 'center', padding: '13px 20px', background: primary, color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+                              {p.cta_label || 'Scopri di più'}
                             </a>
-                          )}
-                          <a href={promoUrl} {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                            style={{ display: 'block', textAlign: 'center', padding: '13px 20px', background: primary, color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
-                            {ctaLabel}
-                          </a>
+                          ) : (p.cta_label && p.cta_url) ? (
+                            <a href={promoUrl} {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                              style={{ display: 'block', textAlign: 'center', padding: '13px 20px', background: primary, color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+                              {p.cta_label}
+                            </a>
+                          ) : null}
                         </div>
                       </div>
                     </div>
