@@ -134,15 +134,32 @@ router.post('/pageview', async (req, res) => {
   res.json({ ok: true })
 })
 
-// GET /api/guest/unsubscribe?token=xxx — disiscrizione newsletter (pubblico)
+// GET /api/guest/unsubscribe?token=xxx&nl=newsletter_id — disiscrizione newsletter (pubblico)
 router.get('/unsubscribe', async (req, res) => {
-  const { token } = req.query
+  const { token, nl } = req.query
   if (!token || token === 'TEST') return res.json({ ok: true, test: true })
   const { data, error } = await supabase.from('contatti')
     .update({ iscritto_newsletter: false, updated_at: new Date().toISOString() })
     .eq('unsubscribe_token', token)
     .select('id').single()
   if (error || !data) return res.status(404).json({ error: 'Token non valido' })
+  // Increment unsubscribes_count on the specific newsletter
+  if (nl) {
+    const { data: nlData } = await supabase.from('newsletters').select('unsubscribes_count').eq('id', nl).single()
+    if (nlData) await supabase.from('newsletters').update({ unsubscribes_count: (nlData.unsubscribes_count || 0) + 1 }).eq('id', nl)
+  }
+  res.json({ ok: true })
+})
+
+// GET /api/guest/confirm-subscription?token=xxx — conferma double opt-in (pubblico)
+router.get('/confirm-subscription', async (req, res) => {
+  const { token } = req.query
+  if (!token) return res.status(400).json({ error: 'Token mancante' })
+  const { data, error } = await supabase.from('contatti')
+    .update({ iscritto_newsletter: true, confirmation_token: null, updated_at: new Date().toISOString() })
+    .eq('confirmation_token', token)
+    .select('id').single()
+  if (error || !data) return res.status(404).json({ error: 'Token non valido o già usato' })
   res.json({ ok: true })
 })
 

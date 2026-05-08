@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useAzienda } from '../../context/AziendaContext'
 import { apiFetch } from '../../lib/api'
-import { Mail, Plus, Send, Copy, Trash2, Edit3, Archive } from 'lucide-react'
+import { Mail, Plus, Send, Copy, Trash2, Edit3, Archive, Clock, UserMinus } from 'lucide-react'
 
 const STATUS_LABEL = { draft: 'Bozza', sent: 'Inviata' }
 const STATUS_COLOR = { draft: '#888', sent: '#38a169' }
@@ -153,12 +153,23 @@ function NewsletterCard({ nl, onEdit, onDuplicate, onDelete }) {
             {TEMPLATE_LABEL[nl.template_id] || nl.template_id}
           </span>
           {nl.status === 'sent' && (
-            <span style={{ fontSize: 12, color: '#aaa' }}>
-              <Send size={11} strokeWidth={2} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+            <span style={{ fontSize: 12, color: '#aaa', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Send size={11} strokeWidth={2} />
               {nl.recipients_count} destinatari · {fmtDate(nl.sent_at)}
+              {nl.unsubscribes_count > 0 && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, marginLeft: 6, color: '#e53e3e' }}>
+                  <UserMinus size={11} strokeWidth={2} /> {nl.unsubscribes_count}
+                </span>
+              )}
             </span>
           )}
-          {isDraft && (
+          {isDraft && nl.scheduled_at && (
+            <span style={{ fontSize: 12, color: '#38a169', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Clock size={11} strokeWidth={2} />
+              {new Date(nl.scheduled_at).toLocaleString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+          {isDraft && !nl.scheduled_at && (
             <span style={{ fontSize: 12, color: '#aaa' }}>
               Modificata {fmtDate(nl.updated_at || nl.created_at)}
             </span>

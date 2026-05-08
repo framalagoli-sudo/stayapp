@@ -17,7 +17,7 @@ import blogRouter from './routes/blog.js'
 import contattiRouter from './routes/contatti.js'
 import attivitaRouter from './routes/attivita.js'
 import demoRouter from './routes/demo.js'
-import newsletterRouter from './routes/newsletter.js'
+import newsletterRouter, { runScheduledSends } from './routes/newsletter.js'
 import analyticsRouter from './routes/analytics.js'
 
 const app = express()
@@ -53,4 +53,7 @@ app.use('/api/analytics', analyticsRouter)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 
-app.listen(PORT, () => console.log(`StayApp server running on :${PORT}`))
+app.listen(PORT, () => {
+  console.log(`StayApp server running on :${PORT}`)
+  setInterval(() => runScheduledSends().catch(e => console.error('[scheduler]', e.message)), 60_000)
+})

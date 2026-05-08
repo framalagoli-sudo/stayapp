@@ -58,6 +58,7 @@ import AnalyticsPage from './pages/admin/AnalyticsPage'
 import NewsletterPage from './pages/admin/NewsletterPage'
 import NewsletterEditorPage from './pages/admin/NewsletterEditorPage'
 import UnsubscribePage from './pages/public/UnsubscribePage'
+import ConfirmSubscriptionPage from './pages/public/ConfirmSubscriptionPage'
 import NewsletterArchivePage from './pages/guest/NewsletterArchivePage'
 
 // Injects property ID from URL params into PropertyIdContext
@@ -98,6 +99,7 @@ export default function App() {
           <Route path="/blog" element={<BlogListPage />} />
           <Route path="/blog/:slug" element={<ArticoloPage />} />
           <Route path="/unsubscribe" element={<UnsubscribePage />} />
+          <Route path="/confirm-subscription" element={<ConfirmSubscriptionPage />} />
           <Route path="/s/:slug/newsletter" element={<NewsletterArchivePage entityType="struttura" />} />
           <Route path="/r/:slug/newsletter" element={<NewsletterArchivePage entityType="ristorante" />} />
           <Route path="/a/:slug/newsletter" element={<NewsletterArchivePage entityType="attivita" />} />

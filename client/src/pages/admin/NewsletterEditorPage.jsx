@@ -2,7 +2,14 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAzienda } from '../../context/AziendaContext'
 import { apiFetch } from '../../lib/api'
-import { ArrowLeft, Send, Eye, Save, Plus, Trash2, AlertCircle, CheckCircle } from 'lucide-react'
+import { ArrowLeft, Send, Eye, Save, Plus, Trash2, AlertCircle, CheckCircle, Smile, Clock, X } from 'lucide-react'
+
+const EMOJIS = [
+  '🎯','⚡','🔥','✨','💫','🎉','🎁','🌟','💥','❗',
+  '🌸','🌞','❄️','🍂','🌊','🌿','🌺','🎊','💎','🎭',
+  '🏨','🏖️','✈️','🗺️','🛎️','🍾','🥂','🌴','👑','💌',
+  '📢','📣','🔔','💡','🎈','🎀','🚀','💰','🎪','⭐',
+]
 
 // ─── Templates ────────────────────────────────────────────────────────────────
 
@@ -109,6 +116,8 @@ export default function NewsletterEditorPage() {
 
   const [nl, setNl]           = useState(null)
   const [subject, setSubject] = useState('')
+  const [preheader, setPreheader] = useState('')
+  const [scheduledAt, setScheduledAt] = useState('')
   const [templateId, setTemplateId] = useState('semplice')
   const [content, setContent] = useState(DEFAULT_CONTENT.semplice)
   const [entityTipo, setEntityTipo] = useState('struttura')
@@ -123,7 +132,9 @@ export default function NewsletterEditorPage() {
   const [sendState, setSendState] = useState('idle')
   const [recipientCount, setRecipientCount] = useState(null)
   const [sendConfirm, setSendConfirm] = useState(false)
+  const [emojiOpen, setEmojiOpen] = useState(false)
   const iframeRef = useRef(null)
+  const subjectRef = useRef(null)
 
   const isSent = nl?.status === 'sent'
 
@@ -141,6 +152,8 @@ export default function NewsletterEditorPage() {
       .then(data => {
         setNl(data)
         setSubject(data.subject || '')
+        setPreheader(data.preheader || '')
+        setScheduledAt(data.scheduled_at ? data.scheduled_at.slice(0, 16) : '')
         setTemplateId(data.template_id || 'semplice')
         setContent(data.content && Object.keys(data.content).length ? data.content : DEFAULT_CONTENT[data.template_id] || DEFAULT_CONTENT.semplice)
         setEntityTipo(data.entity_tipo || 'struttura')
@@ -166,13 +179,32 @@ export default function NewsletterEditorPage() {
     try {
       const updated = await apiFetch(`/api/newsletter/${id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ subject, template_id: templateId, content, entity_tipo: entityTipo, entity_id: entityId || null }),
+        body: JSON.stringify({
+          subject, preheader, template_id: templateId, content,
+          entity_tipo: entityTipo, entity_id: entityId || null,
+          scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+        }),
       })
       setNl(updated)
       setSaveTick(Date.now())
       setTimeout(() => setSaveTick(null), 2500)
     } catch (e) { alert(e.message) }
     finally { setSaving(false) }
+  }
+
+  function insertEmoji(emoji) {
+    const input = subjectRef.current
+    if (!input) { setSubject(s => s + emoji); setEmojiOpen(false); return }
+    const start = input.selectionStart ?? subject.length
+    const end   = input.selectionEnd   ?? subject.length
+    const newVal = subject.slice(0, start) + emoji + subject.slice(end)
+    setSubject(newVal)
+    setEmojiOpen(false)
+    setTimeout(() => {
+      input.focus()
+      const pos = start + [...emoji].length
+      input.setSelectionRange(pos, pos)
+    }, 0)
   }
 
   function handleTemplateChange(tid) {
@@ -263,15 +295,57 @@ export default function NewsletterEditorPage() {
         {/* Left: editor */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-          {/* Oggetto + Mittente */}
+          {/* Oggetto + Preheader + Mittente + Schedule */}
           <Section title="Informazioni generali">
             <div style={{ marginBottom: 14 }}>
               <span style={label}>Oggetto email</span>
-              <input value={subject} onChange={e => setSubject(e.target.value)} disabled={isSent}
-                placeholder="Es: Offerta speciale solo per te!" style={inp} />
+              <div style={{ display: 'flex', gap: 8, position: 'relative' }}>
+                <input ref={subjectRef} value={subject} onChange={e => setSubject(e.target.value)} disabled={isSent}
+                  placeholder="Es: Offerta speciale solo per te!" style={{ ...inp, flex: 1 }} />
+                {!isSent && (
+                  <div style={{ position: 'relative' }}>
+                    <button onClick={() => setEmojiOpen(o => !o)} title="Inserisci emoji" style={{
+                      height: '100%', padding: '0 12px', background: emojiOpen ? '#1a1a2e' : '#f0f0f0',
+                      color: emojiOpen ? '#fff' : '#555', border: 'none', borderRadius: 8, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center',
+                    }}>
+                      <Smile size={16} strokeWidth={2} />
+                    </button>
+                    {emojiOpen && (
+                      <>
+                        <div onClick={() => setEmojiOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 50 }} />
+                        <div style={{
+                          position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 51,
+                          background: '#fff', borderRadius: 12, padding: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                          display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: 4, width: 320,
+                        }}>
+                          {EMOJIS.map(e => (
+                            <button key={e} onClick={() => insertEmoji(e)} style={{
+                              background: 'none', border: 'none', cursor: 'pointer', fontSize: 18,
+                              padding: '4px', borderRadius: 6, lineHeight: 1,
+                              transition: 'background 0.1s',
+                            }}
+                            onMouseEnter={ev => ev.currentTarget.style.background = '#f5f5f5'}
+                            onMouseLeave={ev => ev.currentTarget.style.background = 'none'}
+                            >{e}</button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <span style={label}>Testo anteprima (preheader)</span>
+              <input value={preheader} onChange={e => setPreheader(e.target.value)} disabled={isSent}
+                placeholder="Testo visibile prima di aprire l'email nel client…" style={inp} maxLength={140} />
+              <div style={{ fontSize: 11, color: '#bbb', marginTop: 4 }}>
+                Appare dopo l'oggetto nella casella di posta · max 140 caratteri
+              </div>
             </div>
             {allEntities.length > 1 && (
-              <div>
+              <div style={{ marginBottom: 14 }}>
                 <span style={label}>Mittente (entità)</span>
                 <select value={entityId} onChange={e => {
                   const found = allEntities.find(x => x.id === e.target.value)
@@ -281,6 +355,34 @@ export default function NewsletterEditorPage() {
                   <option value="">— seleziona —</option>
                   {allEntities.map(e => <option key={e.id} value={e.id}>{e.label} ({e.tipo})</option>)}
                 </select>
+              </div>
+            )}
+            {!isSent && (
+              <div>
+                <span style={label}>Programmazione invio</span>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)}
+                    style={{ ...inp, flex: 1, colorScheme: 'light' }} />
+                  {scheduledAt && (
+                    <button onClick={() => setScheduledAt('')} title="Rimuovi programmazione" style={{
+                      height: 40, width: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: '#fff0f0', border: 'none', borderRadius: 8, cursor: 'pointer', color: '#e53e3e', flexShrink: 0,
+                    }}>
+                      <X size={14} strokeWidth={2.5} />
+                    </button>
+                  )}
+                </div>
+                {scheduledAt && (
+                  <div style={{ fontSize: 12, color: '#38a169', marginTop: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Clock size={12} strokeWidth={2} />
+                    Programmata per {new Date(scheduledAt).toLocaleString('it-IT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                )}
+                {!scheduledAt && (
+                  <div style={{ fontSize: 11, color: '#bbb', marginTop: 4 }}>
+                    Lascia vuoto per inviare manualmente
+                  </div>
+                )}
               </div>
             )}
           </Section>

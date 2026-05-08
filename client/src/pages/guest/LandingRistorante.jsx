@@ -948,20 +948,25 @@ function NewsletterForm({ aziendaId, primary, privacyUrl }) {
     if (!privacy) return
     setState('loading')
     try {
-      await fetch('/api/contatti/subscribe', {
+      const r = await fetch('/api/contatti/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ azienda_id: aziendaId, email, fonte: 'minisito' }),
       })
-      setState('success')
+      const data = await r.json()
+      setState(data.pending_confirmation ? 'pending' : data.duplicate ? 'duplicate' : 'success')
     } catch { setState('error') }
   }
 
-  if (state === 'success') return (
+  if (state === 'pending' || state === 'success' || state === 'duplicate') return (
     <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 14, padding: '24px', color: '#fff' }}>
-      <div style={{ fontSize: 32, marginBottom: 10 }}>✓</div>
-      <p style={{ fontWeight: 700, fontSize: 17, marginBottom: 4 }}>Iscrizione completata!</p>
-      <p style={{ opacity: 0.8, fontSize: 14 }}>Benvenuto nella nostra newsletter.</p>
+      <div style={{ fontSize: 32, marginBottom: 10 }}>{state === 'duplicate' ? '✓' : '📧'}</div>
+      <p style={{ fontWeight: 700, fontSize: 17, marginBottom: 4 }}>
+        {state === 'pending' ? 'Controlla la tua email!' : state === 'duplicate' ? 'Sei già iscritto!' : 'Iscrizione completata!'}
+      </p>
+      <p style={{ opacity: 0.8, fontSize: 14 }}>
+        {state === 'pending' ? 'Ti abbiamo inviato un link di conferma.' : state === 'duplicate' ? 'Sei già iscritto alla nostra newsletter.' : 'Benvenuto nella nostra newsletter.'}
+      </p>
     </div>
   )
 
