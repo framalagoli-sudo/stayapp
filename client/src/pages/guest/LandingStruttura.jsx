@@ -330,13 +330,9 @@ export default function LandingStruttura({ property }) {
               <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Promozioni esclusive per i nostri ospiti</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
                 {promozioni.map(p => {
-                  const isRealUrl = u => u && (u.startsWith('http') || u.startsWith('tel:') || u.startsWith('mailto:'))
-                  const promoUrl = isRealUrl(p.cta_url) ? p.cta_url
-                    : isRealUrl(bookingUrl) ? bookingUrl
-                    : social.whatsapp ? social.whatsapp
-                    : property.phone ? `tel:${property.phone}`
-                    : property.email ? `mailto:${property.email}`
-                    : null
+                  const promoUrl = (p.cta_url && p.cta_url.trim() && p.cta_url !== '#')
+                    ? p.cta_url.trim()
+                    : bookingUrl || social.whatsapp || (property.phone ? `tel:${property.phone}` : null) || (property.email ? `mailto:${property.email}` : null) || null
                   const ctaLabel = p.cta_label || 'Scopri offerta'
                   return (
                     <div key={p.id}
