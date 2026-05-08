@@ -296,7 +296,8 @@ export default function AdminLayout() {
             <NavLink to="/admin/prenotazioni" style={({ isActive }) => navLinkStyle(isActive)}>Prenotazioni</NavLink>
             <NavLink to="/admin/demo"         style={({ isActive }) => navLinkStyle(isActive)}>Richieste demo</NavLink>
             <NavLink to="/admin/eventi"     style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>
-            <NavLink to="/admin/blog"       style={({ isActive }) => navLinkStyle(isActive)}>Blog & News</NavLink>
+            <NavLink to="/admin/blog"        style={({ isActive }) => navLinkStyle(isActive)}>Blog & News</NavLink>
+            <NavLink to="/admin/newsletter" style={({ isActive }) => navLinkStyle(isActive)}>Newsletter</NavLink>
             <NavLink to="/admin/contatti"   style={({ isActive }) => navLinkStyle(isActive)}>Contatti</NavLink>
             {/* Sub-nav struttura quando super_admin gestisce una struttura via URL */}
             {strutturaUrlId && (
@@ -330,6 +331,7 @@ export default function AdminLayout() {
             <NavLink to="/admin/chat"          style={({ isActive }) => navLinkStyle(isActive)}>Chat</NavLink>
             <NavLink to="/admin/eventi"        style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>
             <NavLink to="/admin/blog"          style={({ isActive }) => navLinkStyle(isActive)}>Blog & News</NavLink>
+            <NavLink to="/admin/newsletter"    style={({ isActive }) => navLinkStyle(isActive)}>Newsletter</NavLink>
             <NavLink to="/admin/contatti"      style={({ isActive }) => navLinkStyle(isActive)}>Contatti</NavLink>
             <NavLink to="/admin/qrcode"        style={({ isActive }) => navLinkStyle(isActive)}>QR Code</NavLink>
 
@@ -396,6 +398,7 @@ export default function AdminLayout() {
             <NavLink to="/admin/chat"         style={({ isActive }) => navLinkStyle(isActive)}>Chat</NavLink>
             <NavLink to="/admin/eventi"       style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>
             <NavLink to="/admin/blog"         style={({ isActive }) => navLinkStyle(isActive)}>Blog & News</NavLink>
+            <NavLink to="/admin/newsletter"   style={({ isActive }) => navLinkStyle(isActive)}>Newsletter</NavLink>
             <NavLink to="/admin/contatti"     style={({ isActive }) => navLinkStyle(isActive)}>Contatti</NavLink>
             <NavLink to="/admin/qrcode"       style={({ isActive }) => navLinkStyle(isActive)}>QR Code</NavLink>
             <SectionHeader label="La mia struttura" />

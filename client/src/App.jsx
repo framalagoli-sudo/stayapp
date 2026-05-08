@@ -54,6 +54,10 @@ import DemoRequestsPage from './pages/admin/DemoRequestsPage'
 import BookingsPage from './pages/admin/BookingsPage'
 import OffertaPage from './pages/guest/OffertaPage'
 import PacchettoPage from './pages/guest/PacchettoPage'
+import NewsletterPage from './pages/admin/NewsletterPage'
+import NewsletterEditorPage from './pages/admin/NewsletterEditorPage'
+import UnsubscribePage from './pages/public/UnsubscribePage'
+import NewsletterArchivePage from './pages/guest/NewsletterArchivePage'
 
 // Injects property ID from URL params into PropertyIdContext
 // so all property sub-pages work without modification
@@ -92,6 +96,10 @@ export default function App() {
           <Route path="/a/:slug/cookie"  element={<PolicyPage type="cookie"  entityType="attivita" />} />
           <Route path="/blog" element={<BlogListPage />} />
           <Route path="/blog/:slug" element={<ArticoloPage />} />
+          <Route path="/unsubscribe" element={<UnsubscribePage />} />
+          <Route path="/s/:slug/newsletter" element={<NewsletterArchivePage entityType="struttura" />} />
+          <Route path="/r/:slug/newsletter" element={<NewsletterArchivePage entityType="ristorante" />} />
+          <Route path="/a/:slug/newsletter" element={<NewsletterArchivePage entityType="attivita" />} />
 
           {/* Admin */}
           <Route path="/admin/login" element={<LoginPage />} />
@@ -167,6 +175,10 @@ export default function App() {
             <Route path="blog"                   element={<AdminBlogListPage />} />
             <Route path="blog/categories"        element={<BlogCategoriesPage />} />
             <Route path="blog/:id"               element={<BlogEditorPage />} />
+
+            {/* Newsletter */}
+            <Route path="newsletter"     element={<NewsletterPage />} />
+            <Route path="newsletter/:id" element={<NewsletterEditorPage />} />
           </Route>
 
           {/* Root — landing page StayApp */}

@@ -126,6 +126,18 @@ router.post('/eventi/:id/book', async (req, res) => {
   res.status(201).json(data)
 })
 
+// GET /api/guest/unsubscribe?token=xxx — disiscrizione newsletter (pubblico)
+router.get('/unsubscribe', async (req, res) => {
+  const { token } = req.query
+  if (!token || token === 'TEST') return res.json({ ok: true, test: true })
+  const { data, error } = await supabase.from('contatti')
+    .update({ iscritto_newsletter: false, updated_at: new Date().toISOString() })
+    .eq('unsubscribe_token', token)
+    .select('id').single()
+  if (error || !data) return res.status(404).json({ error: 'Token non valido' })
+  res.json({ ok: true })
+})
+
 // GET /api/guest/:slug — struttura (public) — DEVE stare per ultima (catch-all)
 router.get('/:slug', async (req, res) => {
   const { data, error } = await supabase
