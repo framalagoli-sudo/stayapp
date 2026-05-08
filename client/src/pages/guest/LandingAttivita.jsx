@@ -411,12 +411,15 @@ export default function LandingAttivita({ attivita }) {
       case 'newsletter':
         return (
           <section key="newsletter" style={{ padding: '80px 0', background: primary }}>
-            <div className="land-section" style={{ maxWidth: 560, textAlign: 'center' }}>
+            <div className="land-section" style={{ maxWidth: 520, textAlign: 'center' }}>
+              <div style={{ width: 60, height: 60, background: 'rgba(255,255,255,0.15)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                <Mail size={26} strokeWidth={1.5} color="#fff" />
+              </div>
               <h2 style={{ fontFamily: heading, fontSize: 'clamp(22px, 3vw, 34px)', fontWeight: 700, color: '#fff', marginBottom: 10 }}>
-                {mini.newsletter_title || 'Resta aggiornato'}
+                {mini.newsletter_title || 'Iscriviti alla newsletter'}
               </h2>
-              <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 15, marginBottom: 36 }}>
-                {mini.newsletter_subtitle || 'Iscriviti per ricevere offerte esclusive e novità.'}
+              <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 15, marginBottom: 32, lineHeight: 1.6 }}>
+                {mini.newsletter_subtitle || 'News, promozioni ed offerte esclusive direttamente nella tua casella mail.'}
               </p>
               <NewsletterForm aziendaId={attivita.azienda_id} primary={primary} privacyUrl={`/a/${attivita.slug}/privacy`} />
             </div>
@@ -662,23 +665,56 @@ export default function LandingAttivita({ attivita }) {
 }
 
 function NewsletterForm({ aziendaId, primary, privacyUrl }) {
-  const [nome, setNome] = useState(''); const [email, setEmail] = useState(''); const [telefono, setTelefono] = useState(''); const [privacy, setPrivacy] = useState(false); const [state, setState] = useState('idle')
+  const [email,   setEmail]   = useState('')
+  const [privacy, setPrivacy] = useState(false)
+  const [state,   setState]   = useState('idle')
+
   async function handleSubmit(e) {
-    e.preventDefault(); if (!privacy) return; setState('loading')
-    try { await fetch('/api/contatti/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ azienda_id: aziendaId, nome, email, telefono, fonte: 'minisito' }) }); setState('success') } catch { setState('error') }
+    e.preventDefault()
+    if (!privacy) return
+    setState('loading')
+    try {
+      await fetch('/api/contatti/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ azienda_id: aziendaId, email, fonte: 'minisito' }),
+      })
+      setState('success')
+    } catch { setState('error') }
   }
-  if (state === 'success') return (<div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 14, padding: '24px', color: '#fff' }}><div style={{ fontSize: 32, marginBottom: 10 }}>✓</div><p style={{ fontWeight: 700, fontSize: 17, marginBottom: 4 }}>Iscrizione completata!</p></div>)
+
+  if (state === 'success') return (
+    <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 14, padding: '24px', color: '#fff' }}>
+      <div style={{ fontSize: 32, marginBottom: 10 }}>✓</div>
+      <p style={{ fontWeight: 700, fontSize: 17, marginBottom: 4 }}>Iscrizione completata!</p>
+      <p style={{ opacity: 0.8, fontSize: 14 }}>Benvenuto nella nostra newsletter.</p>
+    </div>
+  )
+
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <input value={nome} onChange={e => setNome(e.target.value)} required placeholder="Il tuo nome" style={{ padding: '13px 16px', borderRadius: 10, border: 'none', fontSize: 15, outline: 'none' }} />
-      <input value={email} onChange={e => setEmail(e.target.value)} type="email" required placeholder="La tua email" style={{ padding: '13px 16px', borderRadius: 10, border: 'none', fontSize: 15, outline: 'none' }} />
-      <input value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="Telefono (opzionale)" style={{ padding: '13px 16px', borderRadius: 10, border: 'none', fontSize: 15, outline: 'none' }} />
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <input value={email} onChange={e => setEmail(e.target.value)} type="email" required placeholder="La tua email"
+          style={{ flex: '1 1 220px', padding: '14px 18px', borderRadius: 10, border: 'none', fontSize: 15, outline: 'none', background: '#fff', color: '#222' }} />
+        <button type="submit" disabled={state === 'loading' || !privacy}
+          style={{ flex: '0 0 auto', padding: '14px 28px', background: privacy ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)', color: '#fff', border: '2px solid rgba(255,255,255,0.5)', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: privacy ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', transition: 'background 0.2s' }}>
+          {state === 'loading' ? '…' : 'Iscriviti →'}
+        </button>
+      </div>
       <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', textAlign: 'left' }}>
-        <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} required style={{ marginTop: 3, flexShrink: 0, accentColor: '#fff' }} />
-        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 1.5 }}>Ho letto e accetto la{' '}{privacyUrl ? <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#fff', fontWeight: 700 }}>Privacy Policy</a> : 'Privacy Policy'}{' '}ai sensi del GDPR.</span>
+        <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} required
+          style={{ marginTop: 3, flexShrink: 0, accentColor: '#fff' }} />
+        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>
+          Ho letto e accetto la{' '}
+          {privacyUrl
+            ? <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#fff', fontWeight: 700 }}>Privacy Policy</a>
+            : 'Privacy Policy'
+          }
+          {' '}ai sensi del GDPR.
+        </span>
       </label>
-      <button type="submit" disabled={state === 'loading' || !privacy} style={{ padding: '14px', background: privacy ? '#fff' : 'rgba(255,255,255,0.4)', color: primary, border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: privacy ? 'pointer' : 'default', marginTop: 4, transition: 'background 0.2s' }}>{state === 'loading' ? 'Iscrizione…' : 'Iscriviti'}</button>
-      <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', margin: 0 }}>Nessuno spam. Puoi cancellarti in qualsiasi momento.</p>
+      {state === 'error' && <p style={{ color: '#ffe', fontSize: 13, margin: 0 }}>Errore nell'iscrizione. Riprova.</p>}
+      <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: 0 }}>Nessuno spam. Puoi cancellarti in qualsiasi momento.</p>
     </form>
   )
 }
