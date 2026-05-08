@@ -217,14 +217,37 @@ router.post('/contact', async (req, res) => {
     return res.status(400).json({ error: 'Nome, email e messaggio sono obbligatori' })
   }
 
-  let entityEmail = null
-  let entityName  = null
+  let entityEmail  = null
+  let entityName   = null
+  let azienda_id   = null
+
   if (entity_tipo === 'struttura' && entity_id) {
-    const { data } = await supabase.from('properties').select('name, email').eq('id', entity_id).single()
-    entityEmail = data?.email; entityName = data?.name
+    const { data } = await supabase.from('properties').select('name, email, azienda_id').eq('id', entity_id).single()
+    entityEmail = data?.email; entityName = data?.name; azienda_id = data?.azienda_id
   } else if (entity_tipo === 'ristorante' && entity_id) {
-    const { data } = await supabase.from('ristoranti').select('name, email').eq('id', entity_id).single()
-    entityEmail = data?.email; entityName = data?.name
+    const { data } = await supabase.from('ristoranti').select('name, email, azienda_id').eq('id', entity_id).single()
+    entityEmail = data?.email; entityName = data?.name; azienda_id = data?.azienda_id
+  } else if (entity_tipo === 'attivita' && entity_id) {
+    const { data } = await supabase.from('attivita').select('name, email, azienda_id').eq('id', entity_id).single()
+    entityEmail = data?.email; entityName = data?.name; azienda_id = data?.azienda_id
+  }
+
+  // Salva lead in contatti (upsert su email+azienda_id)
+  if (azienda_id && email) {
+    try {
+      const { data: existing } = await supabase.from('contatti')
+        .select('id, note').eq('azienda_id', azienda_id).eq('email', email.trim()).single()
+      if (existing) {
+        const notes = [existing.note, `[${new Date().toLocaleDateString('it-IT')}] ${message.trim()}`].filter(Boolean).join('\n\n')
+        await supabase.from('contatti').update({ nome: name.trim(), note: notes, updated_at: new Date().toISOString() }).eq('id', existing.id)
+      } else {
+        await supabase.from('contatti').insert({
+          azienda_id, nome: name.trim(), email: email.trim(),
+          fonte: 'minisito', tags: ['lead', entity_tipo],
+          note: message.trim(), iscritto_newsletter: false,
+        })
+      }
+    } catch (err) { console.error('[contact] salvataggio contatto:', err.message) }
   }
 
   if (entityEmail && process.env.RESEND_API_KEY) {
