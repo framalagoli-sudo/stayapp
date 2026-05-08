@@ -336,7 +336,8 @@ router.post('/minisito-image', (req, res, next) => {
     if (!profile) return res.status(403).json({ error: 'Accesso negato' })
 
     if (entity_type === 'struttura') {
-      if (profile.role !== 'super_admin' && profile.property_id !== entity_id)
+      const { data: prop } = await supabase.from('properties').select('azienda_id').eq('id', entity_id).single()
+      if (!prop || (profile.role !== 'super_admin' && prop.azienda_id !== profile.azienda_id && profile.property_id !== entity_id))
         return res.status(403).json({ error: 'Accesso negato' })
     } else if (entity_type === 'ristorante') {
       const { data: rist } = await supabase.from('ristoranti').select('azienda_id').eq('id', entity_id).single()
