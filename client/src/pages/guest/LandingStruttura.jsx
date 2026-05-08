@@ -330,9 +330,14 @@ export default function LandingStruttura({ property }) {
               <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Promozioni esclusive per i nostri ospiti</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
                 {promozioni.map(p => {
-                  const promoUrl = (p.cta_url && p.cta_url !== '#' && p.cta_url.trim())
-                    ? p.cta_url
-                    : (bookingUrl || (social.whatsapp ? social.whatsapp : null) || (property.phone ? `tel:${property.phone}` : null) || (property.email ? `mailto:${property.email}` : null) || null)
+                  const isRealUrl = u => u && (u.startsWith('http') || u.startsWith('tel:') || u.startsWith('mailto:'))
+                  const promoUrl = isRealUrl(p.cta_url) ? p.cta_url
+                    : isRealUrl(bookingUrl) ? bookingUrl
+                    : social.whatsapp ? social.whatsapp
+                    : property.phone ? `tel:${property.phone}`
+                    : property.email ? `mailto:${property.email}`
+                    : null
+                  const ctaLabel = p.cta_label || 'Scopri offerta'
                   return (
                     <div key={p.id}
                       style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', borderTop: `4px solid ${primary}`, display: 'flex', flexDirection: 'column' }}>
@@ -341,11 +346,15 @@ export default function LandingStruttura({ property }) {
                         <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 12, color: '#1a1a2e' }}>{p.title}</h3>
                         {p.text && <p style={{ fontSize: 15, color: '#555', lineHeight: 1.7, marginBottom: 16, flex: 1 }}>{p.text}</p>}
                         {p.expires_at && <div style={{ fontSize: 12, color: '#aaa', marginBottom: 20 }}>Valida fino al {new Date(p.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
-                        {promoUrl && (
+                        {promoUrl ? (
                           <a href={promoUrl} target="_blank" rel="noopener noreferrer"
                             style={{ display: 'block', textAlign: 'center', padding: '13px 20px', background: primary, color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none', marginTop: 'auto' }}>
-                            {p.cta_label || 'Scopri offerta'}
+                            {ctaLabel}
                           </a>
+                        ) : (
+                          <div style={{ display: 'block', textAlign: 'center', padding: '13px 20px', background: primary, color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 700, marginTop: 'auto' }}>
+                            {ctaLabel}
+                          </div>
                         )}
                       </div>
                     </div>
