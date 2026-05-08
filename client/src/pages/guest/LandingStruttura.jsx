@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, Phone, Mail, ChevronDown, ChevronLeft, ChevronRight, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro, Heart, Award, Mountain, Wind, Calendar, Users, Plus, Minus, CheckCircle, ArrowLeft } from 'lucide-react'
+import { MapPin, Phone, Mail, ChevronDown, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro, Heart, Award, Mountain, Wind, Calendar, Users, Plus, Minus, CheckCircle, ArrowLeft } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
 import CookieBanner from '../../components/CookieBanner'
 
@@ -88,7 +88,6 @@ export default function LandingStruttura({ property }) {
   const [lightbox,       setLightbox]       = useState(null)
   const [upcomingEventi, setUpcomingEventi] = useState([])
   const [newsArticoli,   setNewsArticoli]   = useState([])
-  const [promoModal,     setPromoModal]     = useState(null)
   const [bookingModal,   setBookingModal]   = useState(null)
   const [activePage,     setActivePage]     = useState(null)
   const aboutRef = useRef(null)
@@ -323,22 +322,26 @@ export default function LandingStruttura({ property }) {
               <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>Offerte speciali</h2>
               <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Promozioni esclusive per i nostri ospiti</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
-                {promozioni.map(p => (
-                  <div key={p.id} onClick={() => setPromoModal(p)}
-                    style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', borderTop: `4px solid ${primary}`, cursor: 'pointer', transition: 'transform 0.14s ease, box-shadow 0.14s ease' }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.12)' }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 4px 24px rgba(0,0,0,0.08)' }}>
-                    <div style={{ padding: '28px 24px' }}>
-                      {p.badge && <span style={{ display: 'inline-block', background: `${primary}18`, color: primary, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 14 }}>{p.badge}</span>}
-                      <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 12, color: '#1a1a2e' }}>{p.title}</h3>
-                      {p.text && <p style={{ fontSize: 15, color: '#666', lineHeight: 1.6, marginBottom: 20 }}>{p.text}</p>}
-                      {p.expires_at && <div style={{ fontSize: 12, color: '#aaa', marginBottom: 16 }}>Valida fino al {new Date(p.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: `${primary}12`, color: primary, borderRadius: 50, fontSize: 13, fontWeight: 700 }}>
-                        {p.cta_label || "Scopri l'offerta"} &#8594;
-                      </span>
+                {promozioni.map(p => {
+                  const href = p.cta_url && p.cta_url !== '#' ? p.cta_url : ctaHref
+                  return (
+                    <div key={p.id}
+                      style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', borderTop: `4px solid ${primary}`, display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                        {p.badge && <span style={{ display: 'inline-block', alignSelf: 'flex-start', background: `${primary}18`, color: primary, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 14 }}>{p.badge}</span>}
+                        <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 12, color: '#1a1a2e' }}>{p.title}</h3>
+                        {p.text && <p style={{ fontSize: 15, color: '#555', lineHeight: 1.7, marginBottom: 16, flex: 1 }}>{p.text}</p>}
+                        {p.expires_at && <div style={{ fontSize: 12, color: '#aaa', marginBottom: 20 }}>Valida fino al {new Date(p.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
+                        {href && (
+                          <a href={href} target="_blank" rel="noopener noreferrer"
+                            style={{ display: 'block', textAlign: 'center', padding: '13px 20px', background: primary, color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none', marginTop: 'auto' }}>
+                            {p.cta_label || 'Scopri offerta'}
+                          </a>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           </section>
@@ -439,7 +442,7 @@ export default function LandingStruttura({ property }) {
                       {item.schedule && <div style={{ display: 'flex', gap: 5, alignItems: 'center', fontSize: 11, color: '#888', marginBottom: 2 }}><Clock size={11} strokeWidth={1.5} color={primary} />{item.schedule}</div>}
                       {item.location && <div style={{ display: 'flex', gap: 5, alignItems: 'center', fontSize: 11, color: '#888' }}><LocationPin size={11} strokeWidth={1.5} color={primary} />{item.location}</div>}
                       <button onClick={() => setBookingModal({ type: 'activity', item })}
-                        style={{ display: 'block', width: '100%', marginTop: 10, padding: '8px 0', background: primary, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, textAlign: 'center', cursor: 'pointer' }}>
+                        style={{ display: 'block', width: '100%', marginTop: 10, padding: '8px 0', background: 'transparent', color: primary, border: `1.5px solid ${primary}`, borderRadius: 8, fontSize: 12, fontWeight: 700, textAlign: 'center', cursor: 'pointer' }}>
                         {item.bookable !== false ? 'Prenota' : 'Info'}
                       </button>
                     </div>
@@ -482,7 +485,7 @@ export default function LandingStruttura({ property }) {
                         {exc.dates    && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#888' }}><Calendar size={11} strokeWidth={1.5} color={primary} />{exc.dates}</span>}
                       </div>
                       <button onClick={() => setBookingModal({ type: 'excursion', item: exc })}
-                        style={{ display: 'block', width: '100%', padding: '8px 0', background: primary, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, textAlign: 'center', cursor: 'pointer' }}>
+                        style={{ display: 'block', width: '100%', padding: '8px 0', background: 'transparent', color: primary, border: `1.5px solid ${primary}`, borderRadius: 8, fontSize: 12, fontWeight: 700, textAlign: 'center', cursor: 'pointer' }}>
                         Prenota
                       </button>
                     </div>
@@ -492,7 +495,7 @@ export default function LandingStruttura({ property }) {
               <div style={{ textAlign: 'center' }}>
                 <button onClick={() => setActivePage('excursions')}
                   style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
-                  Prenota un'escursione {allExcursionItems.length > 6 ? `(${allExcursionItems.length})` : ''}
+                  Scopri tutte le escursioni {allExcursionItems.length > 6 ? `(${allExcursionItems.length})` : ''}
                 </button>
               </div>
             </div>
@@ -769,8 +772,8 @@ export default function LandingStruttura({ property }) {
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: ${body}; color: #1a1a2e; background: #fff; }
         .land-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-          background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
-          border-bottom: 1px solid #eee; padding: 0 32px;
+          background: rgba(18,18,32,0.93); backdrop-filter: blur(14px);
+          border-bottom: 1px solid rgba(255,255,255,0.08); padding: 0 32px;
           display: flex; align-items: center; justify-content: space-between; height: 64px;
           transform: translateY(${scrolled ? '0' : '-100%'}); transition: transform 0.3s ease;
         }
@@ -803,7 +806,7 @@ export default function LandingStruttura({ property }) {
       <nav className="land-nav">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {property.logo_url && <img src={property.logo_url} alt="logo" style={{ height: 32, objectFit: 'contain' }} />}
-          <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 16 }}>{property.name}</span>
+          <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, color: '#fff' }}>{property.name}</span>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <a href={pwaUrl} style={navBtnSecondary}>App ospiti</a>
@@ -916,39 +919,6 @@ export default function LandingStruttura({ property }) {
         />
       )}
 
-      {promoModal && (
-        <div onClick={() => setPromoModal(null)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9998, padding: 24 }}>
-          <div onClick={e => e.stopPropagation()}
-            style={{ background: '#fff', borderRadius: 20, padding: 32, maxWidth: 480, width: '100%', position: 'relative', boxShadow: '0 24px 80px rgba(0,0,0,0.25)' }}>
-            <button onClick={() => setPromoModal(null)}
-              style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: '#aaa', lineHeight: 1, padding: 4 }}>
-              &#x2715;
-            </button>
-            {promoModal.badge && (
-              <span style={{ display: 'inline-block', background: `${primary}18`, color: primary, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 16 }}>
-                {promoModal.badge}
-              </span>
-            )}
-            <h3 style={{ fontFamily: heading, fontSize: 26, fontWeight: 700, marginBottom: 16, color: '#1a1a2e', paddingRight: 28, lineHeight: 1.25 }}>
-              {promoModal.title}
-            </h3>
-            {promoModal.text && (
-              <p style={{ fontSize: 16, color: '#555', lineHeight: 1.7, marginBottom: 20 }}>{promoModal.text}</p>
-            )}
-            {promoModal.expires_at && (
-              <div style={{ fontSize: 13, color: '#aaa', marginBottom: 24 }}>
-                Valida fino al {new Date(promoModal.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
-              </div>
-            )}
-            <a href={promoModal.cta_url && promoModal.cta_url !== '#' ? promoModal.cta_url : ctaHref}
-              target="_blank" rel="noopener noreferrer"
-              style={{ display: 'block', textAlign: 'center', padding: '14px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none', cursor: 'pointer' }}>
-              {promoModal.cta_label || 'Prenota ora'}
-            </a>
-          </div>
-        </div>
-      )}
       {activePage === 'activities' && (
         <ActivitiesFullPage
           items={allActivityItems}
@@ -1120,7 +1090,7 @@ function FaqAccordion({ faq, primary }) {
 }
 
 const navBtnPrimary   = { padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 700, textDecoration: 'none', color: '#fff' }
-const navBtnSecondary = { padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 600, textDecoration: 'none', color: '#1a1a2e', border: '1px solid #ddd' }
+const navBtnSecondary = { padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 600, textDecoration: 'none', color: '#fff', border: '1px solid rgba(255,255,255,0.35)' }
 
 function BookingModal({ type, item, entityId, primary, heading, privacyUrl, onClose }) {
   const [name,    setName]    = useState('')
@@ -1230,244 +1200,121 @@ function BookingModal({ type, item, entityId, primary, heading, privacyUrl, onCl
   )
 }
 
-function ItemSlider({ items, primary, heading, title, onBack, renderCard }) {
-  const [idx, setIdx] = useState(0)
-  const touchX        = useRef(null)
-
-  function goTo(n) {
-    setIdx(Math.max(0, Math.min(items.length - 1, n)))
-  }
-  function onTouchStart(e) { touchX.current = e.touches[0].clientX }
-  function onTouchEnd(e) {
-    if (touchX.current === null) return
-    const diff = touchX.current - e.changedTouches[0].clientX
-    if (Math.abs(diff) > 48) goTo(diff > 0 ? idx + 1 : idx - 1)
-    touchX.current = null
-  }
-
-  const showDots = items.length <= 10
+function ActivitiesFullPage({ items, primary, heading, onBook, onBack }) {
+  const [catFilter, setCatFilter] = useState('all')
+  const categories = [...new Set(items.map(i => i.category).filter(Boolean))]
+  const displayed  = catFilter === 'all' ? items : items.filter(i => i.category === catFilter)
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9990, background: '#f0f2f5', display: 'flex', flexDirection: 'column' }}>
-
-      {/* ── Header ── */}
-      <div style={{
-        flexShrink: 0, background: '#fff',
-        borderBottom: '1px solid rgba(0,0,0,0.07)',
-        display: 'flex', alignItems: 'center',
-        padding: '0 20px', height: 60, position: 'relative',
-      }}>
-        <button onClick={onBack} style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          background: 'none', border: 'none', cursor: 'pointer',
-          fontSize: 14, fontWeight: 600, color: '#1a1a2e', padding: '8px 0',
-        }}>
-          <ArrowLeft size={18} strokeWidth={2.5} /> Indietro
-        </button>
-        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', textAlign: 'center' }}>
-          <div style={{ fontFamily: heading, fontSize: 17, fontWeight: 700, color: '#1a1a2e', whiteSpace: 'nowrap' }}>{title}</div>
-          <div style={{ fontSize: 11, color: '#aaa', fontWeight: 500, marginTop: 1 }}>{idx + 1} di {items.length}</div>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9990, background: '#f5f5f7', overflowY: 'auto' }}>
+      {/* Header sticky */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#fff', borderBottom: '1px solid #ebebeb' }}>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '0 20px', height: 60 }}>
+          <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1a1a2e', padding: '8px 0' }}>
+            <ArrowLeft size={18} strokeWidth={2.5} /> Indietro
+          </button>
+          <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', textAlign: 'center' }}>
+            <span style={{ fontFamily: heading, fontSize: 17, fontWeight: 700, color: '#1a1a2e' }}>Attività</span>
+            <span style={{ fontSize: 12, color: '#aaa', marginLeft: 8 }}>({items.length})</span>
+          </div>
         </div>
+        {/* Filtri categoria */}
+        {categories.length > 1 && (
+          <div style={{ padding: '10px 20px 14px', display: 'flex', gap: 8, flexWrap: 'wrap', maxWidth: 1200, margin: '0 auto' }}>
+            {['all', ...categories].map(cat => (
+              <button key={cat} onClick={() => setCatFilter(cat)} style={{
+                padding: '6px 16px', borderRadius: 20,
+                border: `1.5px solid ${catFilter === cat ? primary : '#ddd'}`,
+                background: catFilter === cat ? primary : '#fff',
+                color: catFilter === cat ? '#fff' : '#555',
+                fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
+              }}>
+                {cat === 'all' ? 'Tutte' : cat}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* ── Slide area ── */}
-      <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}
-        onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-        <div style={{
-          display: 'flex', height: '100%',
-          transform: `translateX(-${idx * 100}%)`,
-          transition: 'transform 0.38s cubic-bezier(0.4, 0, 0.2, 1)',
-          willChange: 'transform',
-        }}>
-          {items.map((item, i) => (
-            <div key={item.id || i} style={{
-              flex: '0 0 100%', height: '100%',
-              padding: '16px 20px 8px',
-              boxSizing: 'border-box',
-              display: 'flex', flexDirection: 'column',
-            }}>
-              {/* Card with shadow + rounded corners */}
-              <div style={{
-                flex: 1, background: '#fff',
-                borderRadius: 22,
-                boxShadow: '0 8px 30px rgba(0,0,0,0.11)',
-                display: 'flex', flexDirection: 'column',
-                overflowY: 'auto',
-              }}>
-                {renderCard(item)}
+      {/* Griglia */}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px 64px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20 }}>
+          {displayed.map(item => (
+            <div key={item.id} style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', display: 'flex', flexDirection: 'column' }}>
+              {item.photo_url && (
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <img src={item.photo_url} alt={item.name} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />
+                  {item.category && (
+                    <span style={{ position: 'absolute', top: 10, left: 10, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>{item.category}</span>
+                  )}
+                </div>
+              )}
+              <div style={{ padding: '16px 18px 18px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                {!item.photo_url && item.category && <div style={{ fontSize: 10, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>{item.category}</div>}
+                <h3 style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 700, color: '#1a1a2e', lineHeight: 1.3 }}>{item.name}</h3>
+                {item.description && <p style={{ margin: '0 0 12px', fontSize: 13, color: '#666', lineHeight: 1.6, flex: 1 }}>{item.description}</p>}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
+                  {item.schedule && <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#888' }}><Clock size={12} strokeWidth={1.5} color={primary} />{item.schedule}</span>}
+                  {item.location && <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#888' }}><LocationPin size={12} strokeWidth={1.5} color={primary} />{item.location}</span>}
+                </div>
+                <button onClick={() => onBook({ type: 'activity', item })}
+                  style={{ width: '100%', padding: '10px 0', background: primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                  {item.bookable !== false ? 'Prenota' : 'Richiedi info'}
+                </button>
               </div>
             </div>
           ))}
         </div>
       </div>
-
-      {/* ── Nav bar ── */}
-      <div style={{
-        flexShrink: 0, background: '#fff',
-        borderTop: '1px solid rgba(0,0,0,0.06)',
-        padding: '14px 28px 24px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        <button onClick={() => goTo(idx - 1)} disabled={idx === 0}
-          style={{
-            width: 50, height: 50, borderRadius: '50%', border: 'none', flexShrink: 0,
-            background: idx === 0 ? '#efefef' : primary,
-            color: idx === 0 ? '#c0c0c0' : '#fff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: idx === 0 ? 'default' : 'pointer',
-            boxShadow: idx === 0 ? 'none' : `0 4px 14px ${primary}55`,
-            transition: 'all 0.2s',
-          }}>
-          <ChevronLeft size={22} strokeWidth={2.5} />
-        </button>
-
-        <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
-          {showDots
-            ? items.map((_, i) => (
-                <div key={i} onClick={() => goTo(i)} style={{
-                  width: i === idx ? 24 : 8, height: 8, borderRadius: 4,
-                  background: i === idx ? primary : '#d8d8d8',
-                  cursor: 'pointer', transition: 'all 0.28s', flexShrink: 0,
-                }} />
-              ))
-            : <span style={{ fontSize: 13, fontWeight: 600, color: '#888' }}>{idx + 1} / {items.length}</span>
-          }
-        </div>
-
-        <button onClick={() => goTo(idx + 1)} disabled={idx === items.length - 1}
-          style={{
-            width: 50, height: 50, borderRadius: '50%', border: 'none', flexShrink: 0,
-            background: idx === items.length - 1 ? '#efefef' : primary,
-            color: idx === items.length - 1 ? '#c0c0c0' : '#fff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: idx === items.length - 1 ? 'default' : 'pointer',
-            boxShadow: idx === items.length - 1 ? 'none' : `0 4px 14px ${primary}55`,
-            transition: 'all 0.2s',
-          }}>
-          <ChevronRight size={22} strokeWidth={2.5} />
-        </button>
-      </div>
     </div>
-  )
-}
-
-function ActivitiesFullPage({ items, primary, heading, onBook, onBack }) {
-  return (
-    <ItemSlider items={items} primary={primary} heading={heading} title="Attività" onBack={onBack}
-      renderCard={item => (
-        <>
-          {/* Image with rounded top corners only */}
-          {item.photo_url && (
-            <div style={{ flexShrink: 0, borderRadius: '22px 22px 0 0', overflow: 'hidden', position: 'relative' }}>
-              <img src={item.photo_url} alt={item.name}
-                style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />
-              {item.category && (
-                <span style={{
-                  position: 'absolute', top: 14, left: 14,
-                  background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)',
-                  color: '#fff', fontSize: 11, fontWeight: 700,
-                  padding: '4px 12px', borderRadius: 20, letterSpacing: 0.3,
-                }}>{item.category}</span>
-              )}
-            </div>
-          )}
-
-          {/* Content */}
-          <div style={{ padding: '20px 22px 24px', display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {!item.photo_url && item.category && (
-              <span style={{ fontSize: 10, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8, display: 'block' }}>{item.category}</span>
-            )}
-            <h2 style={{ margin: '0 0 10px', fontSize: 20, fontWeight: 800, color: '#1a1a2e', lineHeight: 1.25 }}>{item.name}</h2>
-            {item.description && (
-              <p style={{ margin: '0 0 14px', fontSize: 14, color: '#666', lineHeight: 1.65 }}>{item.description}</p>
-            )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 22 }}>
-              {item.schedule && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#777' }}>
-                  <Clock size={14} strokeWidth={1.5} color={primary} />{item.schedule}
-                </span>
-              )}
-              {item.location && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#777' }}>
-                  <LocationPin size={14} strokeWidth={1.5} color={primary} />{item.location}
-                </span>
-              )}
-              {item.ageGroup && item.ageGroup !== 'tutti' && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#777' }}>
-                  <Users size={14} strokeWidth={1.5} color={primary} />{item.ageGroup}
-                </span>
-              )}
-            </div>
-            <button onClick={() => onBook({ type: 'activity', item })}
-              style={{
-                width: '100%', padding: '15px 0',
-                background: primary, color: '#fff', border: 'none',
-                borderRadius: 14, fontSize: 16, fontWeight: 700, cursor: 'pointer',
-                boxShadow: `0 4px 16px ${primary}44`,
-              }}>
-              {item.bookable !== false ? 'Prenota' : 'Richiedi info'}
-            </button>
-          </div>
-        </>
-      )}
-    />
   )
 }
 
 function ExcursionsFullPage({ items, primary, heading, onBook, onBack }) {
   return (
-    <ItemSlider items={items} primary={primary} heading={heading} title="Escursioni" onBack={onBack}
-      renderCard={exc => (
-        <>
-          {/* Image with rounded top corners only */}
-          {exc.photo_url && (
-            <div style={{ flexShrink: 0, borderRadius: '22px 22px 0 0', overflow: 'hidden', position: 'relative' }}>
-              <img src={exc.photo_url} alt={exc.name}
-                style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />
-              {exc.price != null && (
-                <div style={{
-                  position: 'absolute', top: 14, right: 14,
-                  background: primary, color: '#fff',
-                  fontWeight: 800, fontSize: 16,
-                  padding: '5px 14px', borderRadius: 20,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                }}>€{exc.price}</div>
-              )}
-            </div>
-          )}
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9990, background: '#f5f5f7', overflowY: 'auto' }}>
+      {/* Header sticky */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#fff', borderBottom: '1px solid #ebebeb', display: 'flex', alignItems: 'center', padding: '0 20px', height: 60 }}>
+        <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1a1a2e', padding: '8px 0' }}>
+          <ArrowLeft size={18} strokeWidth={2.5} /> Indietro
+        </button>
+        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', textAlign: 'center' }}>
+          <span style={{ fontFamily: heading, fontSize: 17, fontWeight: 700, color: '#1a1a2e' }}>Escursioni</span>
+          <span style={{ fontSize: 12, color: '#aaa', marginLeft: 8 }}>({items.length})</span>
+        </div>
+      </div>
 
-          {/* Content */}
-          <div style={{ padding: '20px 22px 24px', display: 'flex', flexDirection: 'column', gap: 0 }}>
-            <h2 style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 800, color: '#1a1a2e', lineHeight: 1.25 }}>{exc.name}</h2>
-            {!exc.photo_url && exc.price != null && (
-              <div style={{ fontSize: 26, fontWeight: 800, color: primary, marginBottom: 10 }}>€{exc.price}</div>
-            )}
-            {exc.description && (
-              <p style={{ margin: '0 0 14px', fontSize: 14, color: '#666', lineHeight: 1.65 }}>{exc.description}</p>
-            )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: exc.includes ? 14 : 22 }}>
-              {exc.duration      && <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#777' }}><Clock size={14} strokeWidth={1.5} color={primary} />{exc.duration}</span>}
-              {exc.dates         && <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#777' }}><Calendar size={14} strokeWidth={1.5} color={primary} />{exc.dates}</span>}
-              {exc.meeting_point && <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#777' }}><LocationPin size={14} strokeWidth={1.5} color={primary} />{exc.meeting_point}</span>}
-              {exc.seats != null && <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: primary }}><Users size={14} strokeWidth={1.5} color={primary} />Posti disponibili: {exc.seats}</span>}
+      {/* Griglia */}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px 64px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20 }}>
+          {items.map(exc => (
+            <div key={exc.id} style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', display: 'flex', flexDirection: 'column' }}>
+              {exc.photo_url && (
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <img src={exc.photo_url} alt={exc.name} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />
+                  {exc.price != null && <div style={{ position: 'absolute', top: 10, right: 10, background: primary, color: '#fff', fontWeight: 800, fontSize: 14, padding: '4px 12px', borderRadius: 20 }}>€{exc.price}</div>}
+                </div>
+              )}
+              <div style={{ padding: '16px 18px 18px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: '#1a1a2e', lineHeight: 1.3 }}>{exc.name}</h3>
+                {!exc.photo_url && exc.price != null && <div style={{ fontSize: 22, fontWeight: 800, color: primary, marginBottom: 8 }}>€{exc.price}</div>}
+                {exc.description && <p style={{ margin: '0 0 12px', fontSize: 13, color: '#666', lineHeight: 1.6, flex: 1 }}>{exc.description}</p>}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
+                  {exc.duration      && <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#888' }}><Clock size={12} strokeWidth={1.5} color={primary} />{exc.duration}</span>}
+                  {exc.dates         && <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#888' }}><Calendar size={12} strokeWidth={1.5} color={primary} />{exc.dates}</span>}
+                  {exc.meeting_point && <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#888' }}><LocationPin size={12} strokeWidth={1.5} color={primary} />{exc.meeting_point}</span>}
+                  {exc.seats != null && <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: primary }}><Users size={12} strokeWidth={1.5} color={primary} />Posti: {exc.seats}</span>}
+                </div>
+                {exc.includes && <ul style={{ margin: '0 0 12px', paddingLeft: 18, fontSize: 12, color: '#777', lineHeight: 1.9 }}>{exc.includes.split(',').map((s, i) => <li key={i}>{s.trim()}</li>)}</ul>}
+                <button onClick={() => onBook({ type: 'excursion', item: exc })}
+                  style={{ width: '100%', padding: '10px 0', background: primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                  Prenota
+                </button>
+              </div>
             </div>
-            {exc.includes && (
-              <ul style={{ margin: '0 0 18px', paddingLeft: 20, fontSize: 13, color: '#777', lineHeight: 1.9 }}>
-                {exc.includes.split(',').map((s, i) => <li key={i}>{s.trim()}</li>)}
-              </ul>
-            )}
-            <button onClick={() => onBook({ type: 'excursion', item: exc })}
-              style={{
-                width: '100%', padding: '15px 0',
-                background: primary, color: '#fff', border: 'none',
-                borderRadius: 14, fontSize: 16, fontWeight: 700, cursor: 'pointer',
-                boxShadow: `0 4px 16px ${primary}44`,
-              }}>
-              Prenota
-            </button>
-          </div>
-        </>
-      )}
-    />
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
