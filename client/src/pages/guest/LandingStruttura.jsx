@@ -332,8 +332,9 @@ export default function LandingStruttura({ property }) {
                 {promozioni.map(p => {
                   const promoUrl = (p.cta_url && p.cta_url.trim() && p.cta_url !== '#')
                     ? p.cta_url.trim()
-                    : bookingUrl || social.whatsapp || (property.phone ? `tel:${property.phone}` : null) || (property.email ? `mailto:${property.email}` : null) || null
+                    : ctaHref
                   const ctaLabel = p.cta_label || 'Scopri offerta'
+                  const isExternal = promoUrl && (promoUrl.startsWith('http') || promoUrl.startsWith('tel:') || promoUrl.startsWith('mailto:'))
                   return (
                     <div key={p.id}
                       style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', borderTop: `4px solid ${primary}`, display: 'flex', flexDirection: 'column' }}>
@@ -342,16 +343,10 @@ export default function LandingStruttura({ property }) {
                         <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 12, color: '#1a1a2e' }}>{p.title}</h3>
                         {p.text && <p style={{ fontSize: 15, color: '#555', lineHeight: 1.7, marginBottom: 16, flex: 1 }}>{p.text}</p>}
                         {p.expires_at && <div style={{ fontSize: 12, color: '#aaa', marginBottom: 20 }}>Valida fino al {new Date(p.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
-                        {promoUrl ? (
-                          <a href={promoUrl} target="_blank" rel="noopener noreferrer"
-                            style={{ display: 'block', textAlign: 'center', padding: '13px 20px', background: primary, color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none', marginTop: 'auto' }}>
-                            {ctaLabel}
-                          </a>
-                        ) : (
-                          <div style={{ display: 'block', textAlign: 'center', padding: '13px 20px', background: primary, color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 700, marginTop: 'auto' }}>
-                            {ctaLabel}
-                          </div>
-                        )}
+                        <a href={promoUrl} {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                          style={{ display: 'block', textAlign: 'center', padding: '13px 20px', background: primary, color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none', marginTop: 'auto' }}>
+                          {ctaLabel}
+                        </a>
                       </div>
                     </div>
                   )
