@@ -12,7 +12,7 @@ async function getAziendaId(userId) {
 // POST /api/contatti/subscribe — iscrizione pubblica da minisito/PWA
 router.post('/subscribe', async (req, res) => {
   const { azienda_id, nome, email, telefono, fonte = 'minisito' } = req.body
-  if (!azienda_id || !nome?.trim()) return res.status(400).json({ error: 'azienda_id e nome obbligatori' })
+  if (!azienda_id) return res.status(400).json({ error: 'azienda_id obbligatorio' })
   if (!email?.trim() && !telefono?.trim()) return res.status(400).json({ error: 'Email o telefono obbligatori' })
 
   // Evita duplicati per email
@@ -23,7 +23,7 @@ router.post('/subscribe', async (req, res) => {
   }
 
   const { data, error } = await supabase.from('contatti').insert({
-    azienda_id, nome: nome.trim(),
+    azienda_id, nome: nome?.trim() || email?.trim() || '',
     email: email?.trim() || null,
     telefono: telefono?.trim() || null,
     fonte, iscritto_newsletter: true,
