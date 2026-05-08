@@ -349,7 +349,7 @@ export default function LandingStruttura({ property }) {
                         {p.expires_at && <div style={{ fontSize: 12, color: '#aaa', marginBottom: 20 }}>Valida fino al {new Date(p.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
                         <div style={{ display: 'flex', gap: 10, flexDirection: 'column', marginTop: 'auto' }}>
                           {hasDetail && (
-                            <a href={`/s/${entity.slug}/offerte/${p.id}`}
+                            <a href={`/s/${property.slug}/offerte/${p.id}`}
                               style={{ display: 'block', textAlign: 'center', padding: '12px 20px', background: 'transparent', color: primary, border: `2px solid ${primary}`, borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
                               Scopri di più
                             </a>
@@ -409,7 +409,7 @@ export default function LandingStruttura({ property }) {
                       )}
                       <div style={{ padding: '0 28px 28px', display: 'flex', flexDirection: 'column', gap: 10, marginTop: 'auto' }}>
                         {hasDetail && (
-                          <a href={`/s/${entity.slug}/pacchetti/${p.id}`}
+                          <a href={`/s/${property.slug}/pacchetti/${p.id}`}
                             style={{ display: 'block', textAlign: 'center', padding: '12px', background: 'transparent', color: primary, border: `2px solid ${primary}`, borderRadius: 12, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
                             Scopri di più
                           </a>
