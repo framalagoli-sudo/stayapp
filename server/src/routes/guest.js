@@ -141,6 +141,75 @@ router.get('/:slug', async (req, res) => {
   res.json({ ...data, collegamenti })
 })
 
+// POST /api/guest/book — prenotazione attività/escursione (pubblico, salva su DB + email)
+router.post('/book', async (req, res) => {
+  const { entity_tipo, entity_id, item_type, item_name, name, email, phone, persons, notes } = req.body
+  if (!name?.trim() || !email?.trim()) {
+    return res.status(400).json({ error: 'Nome e email obbligatori' })
+  }
+
+  let propertyId  = null
+  let entityEmail = null
+  let entityName  = null
+
+  if (entity_tipo === 'struttura' && entity_id) {
+    const { data } = await supabase.from('properties').select('id, name, email').eq('id', entity_id).single()
+    if (data) { propertyId = data.id; entityEmail = data.email; entityName = data.name }
+  } else if (entity_tipo === 'ristorante' && entity_id) {
+    const { data } = await supabase.from('ristoranti').select('id, name, email').eq('id', entity_id).single()
+    if (data) { entityEmail = data.email; entityName = data.name }
+  }
+
+  const typeLabel = item_type === 'excursion' ? 'escursione' : 'attività'
+  const msgLines = [
+    `[Prenotazione ${typeLabel}] ${item_name || ''}`,
+    `Nome: ${name}`,
+    `Email: ${email}`,
+    phone   ? `Telefono: ${phone}`   : null,
+    persons ? `Persone: ${persons}`  : null,
+    notes   ? `Note: ${notes}`       : null,
+  ].filter(Boolean).join('\n')
+
+  // Salva in requests (visibile nel pannello admin)
+  if (propertyId) {
+    await supabase.from('requests').insert({
+      property_id: propertyId,
+      type: 'other',
+      message: msgLines,
+    })
+  }
+
+  // Notifica email
+  if (entityEmail && process.env.RESEND_API_KEY) {
+    try {
+      const { Resend } = await import('resend')
+      const resend = new Resend(process.env.RESEND_API_KEY)
+      const rows = [
+        { label: 'Nome',    value: name },
+        { label: 'Email',   value: `<a href="mailto:${email}" style="color:#00b5b5">${email}</a>` },
+        ...(phone   ? [{ label: 'Telefono', value: phone }] : []),
+        ...(persons ? [{ label: 'Persone',  value: String(persons) }] : []),
+        { label: typeLabel === 'escursione' ? 'Escursione' : 'Attività', value: item_name || '' },
+        ...(notes   ? [{ label: 'Note',     value: notes.replace(/\n/g, '<br>') }] : []),
+      ]
+      await resend.emails.send({
+        from: process.env.RESEND_FROM || 'StayApp <noreply@stayapp.it>',
+        to: entityEmail,
+        replyTo: email,
+        subject: `[${entityName}] Nuova prenotazione ${typeLabel}: ${item_name || ''}`,
+        html: emailTemplate({
+          title: `Nuova prenotazione ${typeLabel}`,
+          entityName,
+          rows,
+          appUrl: process.env.APP_URL || 'https://stayapp.it',
+        }),
+      })
+    } catch (err) { console.error('[book]', err.message) }
+  }
+
+  res.status(201).json({ ok: true })
+})
+
 // POST /api/guest/contact — form contatto minisito (pubblico)
 router.post('/contact', async (req, res) => {
   const { entity_tipo, entity_id, name, email, message } = req.body

@@ -418,17 +418,22 @@ export default function LandingStruttura({ property }) {
               <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
                 {activityItems.length} {activityItems.length === 1 ? 'attività disponibile' : 'attività disponibili'}
               </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16, marginBottom: 40 }}>
+              <div style={{ columns: '2 220px', columnGap: 14, marginBottom: 40 }}>
                 {activityItems.map(item => (
-                  <div key={item.id} style={{ background: '#f9f9fb', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
-                    {item.photo_url && <img src={item.photo_url} alt={item.name} style={{ width: '100%', height: 160, objectFit: 'cover' }} />}
-                    <div style={{ padding: '16px 18px' }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>{item.category}</div>
-                      <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>{item.name}</div>
-                      {item.schedule && <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, color: '#888' }}><Clock size={12} strokeWidth={1.5} />{item.schedule}</div>}
-                      {item.location && <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, color: '#888', marginTop: 4 }}><LocationPin size={12} strokeWidth={1.5} />{item.location}</div>}
+                  <div key={item.id} style={{ breakInside: 'avoid', marginBottom: 14, display: 'inline-block', width: '100%', background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 3px 14px rgba(0,0,0,0.07)' }}>
+                    {item.photo_url && (
+                      <div style={{ position: 'relative' }}>
+                        <img src={item.photo_url} alt={item.name} style={{ width: '100%', display: 'block', objectFit: 'cover' }} />
+                        {item.category && <span style={{ position: 'absolute', top: 8, left: 8, background: primary, color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>{item.category}</span>}
+                      </div>
+                    )}
+                    <div style={{ padding: '12px 14px 14px' }}>
+                      {!item.photo_url && item.category && <div style={{ fontSize: 10, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>{item.category}</div>}
+                      <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6, color: '#1a1a2e' }}>{item.name}</div>
+                      {item.schedule && <div style={{ display: 'flex', gap: 5, alignItems: 'center', fontSize: 11, color: '#888', marginBottom: 2 }}><Clock size={11} strokeWidth={1.5} color={primary} />{item.schedule}</div>}
+                      {item.location && <div style={{ display: 'flex', gap: 5, alignItems: 'center', fontSize: 11, color: '#888' }}><LocationPin size={11} strokeWidth={1.5} color={primary} />{item.location}</div>}
                       <button onClick={() => setBookingModal({ type: 'activity', item })}
-                        style={{ display: 'block', width: '100%', marginTop: 12, padding: '8px 0', background: primary, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, textAlign: 'center', cursor: 'pointer' }}>
+                        style={{ display: 'block', width: '100%', marginTop: 10, padding: '8px 0', background: primary, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, textAlign: 'center', cursor: 'pointer' }}>
                         {item.bookable !== false ? 'Prenota' : 'Info'}
                       </button>
                     </div>
@@ -454,19 +459,24 @@ export default function LandingStruttura({ property }) {
               <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
                 {excursionItems.length} {excursionItems.length === 1 ? 'escursione disponibile' : 'escursioni disponibili'}
               </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16, marginBottom: 40 }}>
+              <div style={{ columns: '2 240px', columnGap: 14, marginBottom: 40 }}>
                 {excursionItems.map(exc => (
-                  <div key={exc.id} style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-                    {exc.photo_url && <img src={exc.photo_url} alt={exc.name} style={{ width: '100%', height: 160, objectFit: 'cover' }} />}
-                    <div style={{ padding: '16px 18px' }}>
-                      <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>{exc.name}</div>
-                      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                        {exc.price && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 700, color: primary }}><Euro size={13} strokeWidth={2} />{exc.price}</span>}
-                        {exc.duration && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#888' }}><Clock size={13} strokeWidth={1.5} />{exc.duration}</span>}
+                  <div key={exc.id} style={{ breakInside: 'avoid', marginBottom: 14, display: 'inline-block', width: '100%', background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 3px 14px rgba(0,0,0,0.07)', border: '1px solid #f0f0f0' }}>
+                    {exc.photo_url && (
+                      <div style={{ position: 'relative' }}>
+                        <img src={exc.photo_url} alt={exc.name} style={{ width: '100%', display: 'block', objectFit: 'cover' }} />
+                        {exc.price != null && <div style={{ position: 'absolute', top: 8, right: 8, background: primary, color: '#fff', fontWeight: 800, fontSize: 13, padding: '4px 10px', borderRadius: 20 }}>€{exc.price}</div>}
                       </div>
-                      {exc.dates && <div style={{ fontSize: 12, color: '#888', marginTop: 6 }}>{exc.dates}</div>}
+                    )}
+                    <div style={{ padding: '12px 14px 14px' }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 6 }}>{exc.name}</div>
+                      {!exc.photo_url && exc.price != null && <div style={{ fontSize: 18, fontWeight: 800, color: primary, marginBottom: 6 }}>€{exc.price}</div>}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 10 }}>
+                        {exc.duration && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#888' }}><Clock size={11} strokeWidth={1.5} color={primary} />{exc.duration}</span>}
+                        {exc.dates    && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#888' }}><Calendar size={11} strokeWidth={1.5} color={primary} />{exc.dates}</span>}
+                      </div>
                       <button onClick={() => setBookingModal({ type: 'excursion', item: exc })}
-                        style={{ display: 'block', width: '100%', marginTop: 12, padding: '8px 0', background: primary, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, textAlign: 'center', cursor: 'pointer' }}>
+                        style={{ display: 'block', width: '100%', padding: '8px 0', background: primary, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, textAlign: 'center', cursor: 'pointer' }}>
                         Prenota
                       </button>
                     </div>
@@ -1125,22 +1135,23 @@ function BookingModal({ type, item, entityId, primary, heading, privacyUrl, onCl
     e.preventDefault()
     if (!privacy) return
     setState('loading')
-    const lines = [
-      isExc ? `Prenotazione escursione: ${item.name}` : `Prenotazione attività: ${item.name}`,
-      isExc && item.dates    ? `Date: ${item.dates}` : null,
-      !isExc && item.schedule ? `Orario: ${item.schedule}` : null,
-      !isExc && item.location ? `Luogo: ${item.location}` : null,
-      isExc ? `Persone: ${persons}` : null,
-      total  ? `Totale: €${total}` : null,
-      phone.trim() ? `Telefono: ${phone.trim()}` : null,
-      notes.trim() ? `Note: ${notes.trim()}` : null,
-    ].filter(Boolean)
     try {
-      await fetch('/api/guest/contact', {
+      const res = await fetch('/api/guest/book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entity_tipo: 'struttura', entity_id: entityId, name, email, message: lines.join('\n') }),
+        body: JSON.stringify({
+          entity_tipo: 'struttura',
+          entity_id:   entityId,
+          item_type:   type,
+          item_name:   item.name,
+          name,
+          email,
+          phone:   phone.trim()  || undefined,
+          persons: isExc ? persons : undefined,
+          notes:   notes.trim()  || undefined,
+        }),
       })
+      if (!res.ok) throw new Error('server error')
       setState('success')
     } catch { setState('error') }
   }
@@ -1217,47 +1228,40 @@ function BookingModal({ type, item, entityId, primary, heading, privacyUrl, onCl
   )
 }
 
-function ActivitiesFullPage({ items, primary, heading, entityId, privacyUrl, onBook, onBack }) {
+function ActivitiesFullPage({ items, primary, heading, onBook, onBack }) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9990, background: '#f9f9fb', overflowY: 'auto' }}>
+      <style>{`.act-scroll::-webkit-scrollbar{display:none}`}</style>
       <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(249,249,251,0.96)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #ebebeb', display: 'flex', alignItems: 'center', padding: '0 20px', height: 56 }}>
         <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#555', padding: 0 }}>
           <ArrowLeft size={18} strokeWidth={2} /> Indietro
         </button>
         <span style={{ fontFamily: heading, fontSize: 18, fontWeight: 700, color: '#1a1a2e', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>Attività</span>
       </div>
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 16px 80px' }}>
-        <p style={{ textAlign: 'center', color: '#aaa', fontSize: 13, marginBottom: 28 }}>
+      <div style={{ padding: '24px 0 80px' }}>
+        <p style={{ textAlign: 'center', color: '#aaa', fontSize: 13, marginBottom: 20, paddingLeft: 16 }}>
           {items.length} {items.length === 1 ? 'attività disponibile' : 'attività disponibili'}
         </p>
-        <div style={{ columns: '2 240px', columnGap: 14 }}>
+        <div className="act-scroll" style={{ display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', gap: 12, padding: '4px 16px 8px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
           {items.map(item => (
-            <div key={item.id} style={{ breakInside: 'avoid', marginBottom: 14, display: 'inline-block', width: '100%', background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 3px 16px rgba(0,0,0,0.07)' }}>
+            <div key={item.id} style={{ flex: '0 0 calc(50% - 6px)', maxWidth: 300, scrollSnapAlign: 'start', background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 3px 16px rgba(0,0,0,0.08)' }}>
               {item.photo_url && (
                 <div style={{ position: 'relative' }}>
-                  <img src={item.photo_url} alt={item.name} style={{ width: '100%', display: 'block', objectFit: 'cover' }} />
-                  {item.category && (
-                    <span style={{ position: 'absolute', top: 10, left: 10, background: primary, color: '#fff', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, letterSpacing: 0.3 }}>
-                      {item.category}
-                    </span>
-                  )}
+                  <img src={item.photo_url} alt={item.name} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />
+                  {item.category && <span style={{ position: 'absolute', top: 8, left: 8, background: primary, color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>{item.category}</span>}
                 </div>
               )}
-              <div style={{ padding: '14px 16px 16px' }}>
-                {!item.photo_url && item.category && (
-                  <span style={{ fontSize: 10, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, display: 'block' }}>{item.category}</span>
-                )}
-                <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', marginBottom: item.description ? 6 : 8 }}>{item.name}</div>
-                {item.description && (
-                  <p style={{ fontSize: 13, color: '#777', lineHeight: 1.55, marginBottom: 10 }}>{item.description}</p>
-                )}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
-                  {item.schedule && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#888' }}><Clock size={12} strokeWidth={1.5} color={primary} />{item.schedule}</span>}
-                  {item.location && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#888' }}><LocationPin size={12} strokeWidth={1.5} color={primary} />{item.location}</span>}
-                  {item.ageGroup && item.ageGroup !== 'tutti' && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#888' }}><Users size={12} strokeWidth={1.5} color={primary} />{item.ageGroup}</span>}
+              <div style={{ padding: '12px 14px 14px' }}>
+                {!item.photo_url && item.category && <span style={{ fontSize: 10, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, display: 'block' }}>{item.category}</span>}
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 6, lineHeight: 1.3 }}>{item.name}</div>
+                {item.description && <p style={{ fontSize: 12, color: '#777', lineHeight: 1.5, marginBottom: 8 }}>{item.description}</p>}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 10 }}>
+                  {item.schedule && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#888' }}><Clock size={11} strokeWidth={1.5} color={primary} />{item.schedule}</span>}
+                  {item.location && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#888' }}><LocationPin size={11} strokeWidth={1.5} color={primary} />{item.location}</span>}
+                  {item.ageGroup && item.ageGroup !== 'tutti' && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#888' }}><Users size={11} strokeWidth={1.5} color={primary} />{item.ageGroup}</span>}
                 </div>
                 <button onClick={() => onBook({ type: 'activity', item })}
-                  style={{ width: '100%', padding: '10px 0', background: primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                  style={{ width: '100%', padding: '9px 0', background: primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                   {item.bookable !== false ? 'Prenota' : 'Richiedi info'}
                 </button>
               </div>
@@ -1269,53 +1273,46 @@ function ActivitiesFullPage({ items, primary, heading, entityId, privacyUrl, onB
   )
 }
 
-function ExcursionsFullPage({ items, primary, heading, entityId, privacyUrl, onBook, onBack }) {
+function ExcursionsFullPage({ items, primary, heading, onBook, onBack }) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9990, background: '#fff', overflowY: 'auto' }}>
+      <style>{`.exc-scroll::-webkit-scrollbar{display:none}`}</style>
       <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #ebebeb', display: 'flex', alignItems: 'center', padding: '0 20px', height: 56 }}>
         <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#555', padding: 0 }}>
           <ArrowLeft size={18} strokeWidth={2} /> Indietro
         </button>
         <span style={{ fontFamily: heading, fontSize: 18, fontWeight: 700, color: '#1a1a2e', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>Escursioni</span>
       </div>
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 16px 80px' }}>
-        <p style={{ textAlign: 'center', color: '#aaa', fontSize: 13, marginBottom: 28 }}>
+      <div style={{ padding: '24px 0 80px' }}>
+        <p style={{ textAlign: 'center', color: '#aaa', fontSize: 13, marginBottom: 20, paddingLeft: 16 }}>
           {items.length} {items.length === 1 ? 'escursione disponibile' : 'escursioni disponibili'}
         </p>
-        <div style={{ columns: '2 260px', columnGap: 14 }}>
+        <div className="exc-scroll" style={{ display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', gap: 12, padding: '4px 16px 8px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
           {items.map(exc => (
-            <div key={exc.id} style={{ breakInside: 'avoid', marginBottom: 14, display: 'inline-block', width: '100%', background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 3px 16px rgba(0,0,0,0.07)', border: '1px solid #f0f0f0' }}>
+            <div key={exc.id} style={{ flex: '0 0 calc(50% - 6px)', maxWidth: 300, scrollSnapAlign: 'start', background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 3px 16px rgba(0,0,0,0.08)', border: '1px solid #f0f0f0' }}>
               {exc.photo_url && (
                 <div style={{ position: 'relative' }}>
-                  <img src={exc.photo_url} alt={exc.name} style={{ width: '100%', display: 'block', objectFit: 'cover' }} />
-                  {exc.price != null && (
-                    <div style={{ position: 'absolute', top: 10, right: 10, background: primary, color: '#fff', fontWeight: 800, fontSize: 15, padding: '5px 12px', borderRadius: 20 }}>
-                      €{exc.price}
-                    </div>
-                  )}
+                  <img src={exc.photo_url} alt={exc.name} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />
+                  {exc.price != null && <div style={{ position: 'absolute', top: 8, right: 8, background: primary, color: '#fff', fontWeight: 800, fontSize: 13, padding: '4px 10px', borderRadius: 20 }}>€{exc.price}</div>}
                 </div>
               )}
-              <div style={{ padding: '14px 16px 16px' }}>
-                <div style={{ fontWeight: 700, fontSize: 16, color: '#1a1a2e', marginBottom: 6 }}>{exc.name}</div>
-                {!exc.photo_url && exc.price != null && (
-                  <div style={{ fontSize: 22, fontWeight: 800, color: primary, marginBottom: 8 }}>€{exc.price}</div>
-                )}
-                {exc.description && (
-                  <p style={{ fontSize: 13, color: '#777', lineHeight: 1.55, marginBottom: 10 }}>{exc.description}</p>
-                )}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: exc.includes ? 10 : 12 }}>
-                  {exc.duration     && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#888' }}><Clock size={12} strokeWidth={1.5} color={primary} />{exc.duration}</span>}
-                  {exc.dates        && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#888' }}><Calendar size={12} strokeWidth={1.5} color={primary} />{exc.dates}</span>}
-                  {exc.meeting_point && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#888' }}><LocationPin size={12} strokeWidth={1.5} color={primary} />{exc.meeting_point}</span>}
-                  {exc.seats != null && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: primary }}><Users size={12} strokeWidth={1.5} color={primary} />Posti disponibili: {exc.seats}</span>}
+              <div style={{ padding: '12px 14px 14px' }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 6, lineHeight: 1.3 }}>{exc.name}</div>
+                {!exc.photo_url && exc.price != null && <div style={{ fontSize: 18, fontWeight: 800, color: primary, marginBottom: 6 }}>€{exc.price}</div>}
+                {exc.description && <p style={{ fontSize: 12, color: '#777', lineHeight: 1.5, marginBottom: 8 }}>{exc.description}</p>}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 10 }}>
+                  {exc.duration     && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#888' }}><Clock size={11} strokeWidth={1.5} color={primary} />{exc.duration}</span>}
+                  {exc.dates        && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#888' }}><Calendar size={11} strokeWidth={1.5} color={primary} />{exc.dates}</span>}
+                  {exc.meeting_point && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#888' }}><LocationPin size={11} strokeWidth={1.5} color={primary} />{exc.meeting_point}</span>}
+                  {exc.seats != null && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: primary }}><Users size={11} strokeWidth={1.5} color={primary} />Posti: {exc.seats}</span>}
                 </div>
                 {exc.includes && (
-                  <ul style={{ margin: '0 0 12px', paddingLeft: 18, fontSize: 12, color: '#888', lineHeight: 1.8 }}>
+                  <ul style={{ margin: '0 0 10px', paddingLeft: 16, fontSize: 11, color: '#888', lineHeight: 1.8 }}>
                     {exc.includes.split(',').map((s, i) => <li key={i}>{s.trim()}</li>)}
                   </ul>
                 )}
                 <button onClick={() => onBook({ type: 'excursion', item: exc })}
-                  style={{ width: '100%', padding: '10px 0', background: primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                  style={{ width: '100%', padding: '9px 0', background: primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                   Prenota
                 </button>
               </div>
