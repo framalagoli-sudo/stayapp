@@ -507,7 +507,6 @@ export default function LandingRistorante({ ristorante }) {
         )
 
       case 'contatti':
-        if (!ristorante.phone && !ristorante.email) return null
         return (
           <section key="contatti" id="contatti-section" style={{ padding: '80px 0', background: '#f9f9fb' }}>
             <div className="land-section" style={{ maxWidth: 640 }}>

@@ -591,7 +591,6 @@ export default function LandingStruttura({ property }) {
         )
 
       case 'contatti':
-        if (!property.phone && !property.email) return null
         return (
           <section key="contatti" id="contatti-section" style={{ padding: '80px 0', background: '#f9f9fb' }}>
             <div className="land-section" style={{ maxWidth: 640 }}>

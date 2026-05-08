@@ -398,7 +398,6 @@ export default function LandingAttivita({ attivita }) {
         )
 
       case 'contatti':
-        if (!attivita.phone && !attivita.email) return null
         return (
           <section key="contatti" style={{ padding: '80px 0', background: '#f9f9fb' }}>
             <div className="land-section" style={{ maxWidth: 640 }}>
