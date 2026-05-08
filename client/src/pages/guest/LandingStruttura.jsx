@@ -426,10 +426,10 @@ export default function LandingStruttura({ property }) {
               </p>
               <div style={{ columns: '2 220px', columnGap: 14, marginBottom: 40 }}>
                 {activityItems.map(item => (
-                  <div key={item.id} style={{ breakInside: 'avoid', marginBottom: 14, display: 'inline-block', width: '100%', background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 3px 14px rgba(0,0,0,0.07)' }}>
+                  <div key={item.id} style={{ breakInside: 'avoid', marginBottom: 14, background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 3px 14px rgba(0,0,0,0.07)' }}>
                     {item.photo_url && (
                       <div style={{ position: 'relative' }}>
-                        <img src={item.photo_url} alt={item.name} style={{ width: '100%', display: 'block', objectFit: 'cover' }} />
+                        <img src={item.photo_url} alt={item.name} style={{ width: '100%', aspectRatio: '4/3', display: 'block', objectFit: 'cover' }} />
                         {item.category && <span style={{ position: 'absolute', top: 8, left: 8, background: primary, color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>{item.category}</span>}
                       </div>
                     )}
@@ -467,10 +467,10 @@ export default function LandingStruttura({ property }) {
               </p>
               <div style={{ columns: '2 240px', columnGap: 14, marginBottom: 40 }}>
                 {excursionItems.map(exc => (
-                  <div key={exc.id} style={{ breakInside: 'avoid', marginBottom: 14, display: 'inline-block', width: '100%', background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 3px 14px rgba(0,0,0,0.07)', border: '1px solid #f0f0f0' }}>
+                  <div key={exc.id} style={{ breakInside: 'avoid', marginBottom: 14, background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 3px 14px rgba(0,0,0,0.07)', border: '1px solid #f0f0f0' }}>
                     {exc.photo_url && (
                       <div style={{ position: 'relative' }}>
-                        <img src={exc.photo_url} alt={exc.name} style={{ width: '100%', display: 'block', objectFit: 'cover' }} />
+                        <img src={exc.photo_url} alt={exc.name} style={{ width: '100%', aspectRatio: '4/3', display: 'block', objectFit: 'cover' }} />
                         {exc.price != null && <div style={{ position: 'absolute', top: 8, right: 8, background: primary, color: '#fff', fontWeight: 800, fontSize: 13, padding: '4px 10px', borderRadius: 20 }}>€{exc.price}</div>}
                       </div>
                     )}
