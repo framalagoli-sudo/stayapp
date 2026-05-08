@@ -266,7 +266,7 @@ function InterestForm({ entityTipo, entityId, offertaTitle, primary, privacyUrl,
     try {
       await apiFetch('/api/guest/contact', {
         method: 'POST',
-        body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, name, email, message }),
+        body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, name, email, message, source: 'offerta', source_name: offertaTitle }),
       })
       setState('success')
       onSuccess?.()

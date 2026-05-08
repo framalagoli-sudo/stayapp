@@ -212,7 +212,7 @@ router.post('/book', async (req, res) => {
 
 // POST /api/guest/contact — form contatto minisito (pubblico)
 router.post('/contact', async (req, res) => {
-  const { entity_tipo, entity_id, name, email, message } = req.body
+  const { entity_tipo, entity_id, name, email, message, source, source_name } = req.body
   if (!name?.trim() || !email?.trim() || !message?.trim()) {
     return res.status(400).json({ error: 'Nome, email e messaggio sono obbligatori' })
   }
@@ -230,6 +230,17 @@ router.post('/contact', async (req, res) => {
   } else if (entity_tipo === 'attivita' && entity_id) {
     const { data } = await supabase.from('attivita').select('name, email, azienda_id').eq('id', entity_id).single()
     entityEmail = data?.email; entityName = data?.name; azienda_id = data?.azienda_id
+  }
+
+  // Salva in requests quando è un interesse per un'offerta
+  if (source === 'offerta' && entity_tipo === 'struttura' && entity_id) {
+    const msgLines = [
+      `[Interesse offerta: ${source_name || ''}]`,
+      `Nome: ${name.trim()}`,
+      `Email: ${email.trim()}`,
+      message.trim() ? `Messaggio: ${message.trim()}` : null,
+    ].filter(Boolean).join('\n')
+    await supabase.from('requests').insert({ property_id: entity_id, type: 'other', message: msgLines, status: 'open' })
   }
 
   // Salva lead in contatti (upsert su email+azienda_id)

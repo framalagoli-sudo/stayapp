@@ -26,6 +26,18 @@ function parseBooking(req) {
   return { tipo, itemName, ...fields }
 }
 
+function parseInteresse(req) {
+  const lines = (req.message || '').split('\n')
+  const firstLine = lines[0] || ''
+  const itemName = firstLine.replace(/^\[Interesse offerta:\s*/, '').replace(/\]$/, '').trim()
+  const fields = {}
+  lines.slice(1).forEach(line => {
+    const idx = line.indexOf(':')
+    if (idx > -1) fields[line.slice(0, idx).trim()] = line.slice(idx + 1).trim()
+  })
+  return { tipo: 'offerta', itemName, ...fields }
+}
+
 export default function BookingsPage() {
   const { profile } = useAuth()
   const [bookings, setBookings] = useState([])
@@ -45,7 +57,9 @@ export default function BookingsPage() {
     }
     try {
       const data = await apiFetch(`/api/requests?${params}`)
-      setBookings(data.filter(r => r.message?.startsWith('[Prenotazione')))
+      setBookings(data.filter(r =>
+        r.message?.startsWith('[Prenotazione') || r.message?.startsWith('[Interesse offerta')
+      ))
     } catch {
       setBookings([])
     } finally {
@@ -66,17 +80,23 @@ export default function BookingsPage() {
   }
 
   function countNew(tipoKey) {
+    if (tipoKey === 'offerte') {
+      return bookings.filter(r => r.message?.startsWith('[Interesse offerta') && r.status === 'open').length
+    }
     return bookings.filter(r => {
+      if (!r.message?.startsWith('[Prenotazione')) return false
       const p = parseBooking(r)
       return (tipoKey === 'attivita' ? p.tipo === 'attività' : p.tipo === 'escursione') && r.status === 'open'
     }).length
   }
 
   const displayed = bookings.filter(r => {
-    const p = parseBooking(r)
-    const matchTab = tab === 'attivita' ? p.tipo === 'attività' : p.tipo === 'escursione'
     const matchFilter = filter === 'all' || r.status === filter
-    return matchTab && matchFilter
+    if (!matchFilter) return false
+    if (tab === 'offerte') return r.message?.startsWith('[Interesse offerta')
+    if (!r.message?.startsWith('[Prenotazione')) return false
+    const p = parseBooking(r)
+    return tab === 'attivita' ? p.tipo === 'attività' : p.tipo === 'escursione'
   })
 
   return (
@@ -85,7 +105,7 @@ export default function BookingsPage() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '2px solid #e8e8e8' }}>
-        {[['attivita', 'Attività'], ['escursioni', 'Escursioni']].map(([key, label]) => {
+        {[['attivita', 'Attività'], ['escursioni', 'Escursioni'], ['offerte', 'Offerte']].map(([key, label]) => {
           const n = countNew(key)
           return (
             <button key={key} onClick={() => setTab(key)} style={{
@@ -125,7 +145,7 @@ export default function BookingsPage() {
       ) : displayed.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '48px 24px', color: '#aaa' }}>
           <CalendarCheck size={36} strokeWidth={1.5} color="#ddd" style={{ display: 'block', margin: '0 auto 12px' }} />
-          <p style={{ margin: 0, fontSize: 15 }}>Nessuna prenotazione.</p>
+          <p style={{ margin: 0, fontSize: 15 }}>Nessuna voce.</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -139,8 +159,10 @@ export default function BookingsPage() {
 }
 
 function BookingCard({ req, onUpdateStatus }) {
-  const p = parseBooking(req)
+  const isInteresse = req.message?.startsWith('[Interesse offerta')
+  const p = isInteresse ? parseInteresse(req) : parseBooking(req)
   const isNew = Date.now() - new Date(req.created_at).getTime() < 300_000
+  const propertyName = req.properties?.name
 
   return (
     <div style={{
@@ -150,8 +172,15 @@ function BookingCard({ req, onUpdateStatus }) {
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>
-            {p.itemName || '—'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+            <span style={{ fontWeight: 700, fontSize: 15 }}>
+              {p.itemName || '—'}
+            </span>
+            {propertyName && (
+              <span style={{ fontSize: 11, background: '#f0f4ff', color: '#3b5bdb', padding: '2px 8px', borderRadius: 10, fontWeight: 600, flexShrink: 0 }}>
+                {propertyName}
+              </span>
+            )}
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 16px', fontSize: 13, color: '#555' }}>
             {p['Nome']     && <span>{p['Nome']}</span>}
@@ -163,9 +192,9 @@ function BookingCard({ req, onUpdateStatus }) {
               <strong>Persone:</strong> {p['Persone']}
             </div>
           )}
-          {p['Note'] && (
+          {(p['Note'] || p['Messaggio']) && (
             <div style={{ marginTop: 4, fontSize: 12, color: '#888', fontStyle: 'italic' }}>
-              {p['Note']}
+              {p['Note'] || p['Messaggio']}
             </div>
           )}
         </div>
