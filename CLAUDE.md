@@ -69,7 +69,8 @@ hospitality/
 │           │   ├── ristorante/     # info, menu, gallery, theme, minisito, privacy
 │           │   ├── attivita/       # info, gallery, theme, minisito, privacy
 │           │   ├── DashboardPage.jsx
-│           │   ├── RequestsPage.jsx
+│           │   ├── RequestsPage.jsx   # richieste PWA (esclude booking)
+│           │   ├── BookingsPage.jsx   # prenotazioni attività/escursioni (tab separati)
 │           │   ├── PropertiesPage.jsx
 │           │   └── QRCodePage.jsx
 │           ├── guest/
@@ -441,7 +442,8 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 | Pagina | Path | Funzione |
 |---|---|---|
 | Dashboard | `/admin` | Overview con tutte le entità (strutture + ristoranti + attività) |
-| Richieste | `/admin/requests` | Lista + filtri status |
+| Richieste | `/admin/requests` | Richieste PWA ospiti (reception, manutenzione, ecc.) — esclude booking |
+| Prenotazioni | `/admin/prenotazioni` | Prenotazioni attività/escursioni con tab separati + filtri stato |
 | Strutture | `/admin/properties` | Crea/lista (super_admin) |
 | QR Code | `/admin/qrcode` | Genera QR |
 | Info struttura | `/admin/property/info` | Nome, orari, WiFi, logo, cover |
@@ -488,6 +490,8 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 
 8. **Supabase service role**: il server usa sempre la service role key → bypassa RLS. La RLS vale solo per query client-side (AuthContext, useProperty).
 
+9. **Discriminazione booking vs richieste**: le prenotazioni attività/escursioni vengono salvate in `requests` con `type: 'other'` e messaggio che inizia con `[Prenotazione attività]` o `[Prenotazione escursione]`. `BookingsPage` filtra con `message.startsWith('[Prenotazione')`, `RequestsPage` le esclude con `!message.startsWith('[Prenotazione')`. Se in futuro si migra l'enum, aggiornare entrambe le pagine.
+
 ---
 
 ## Roadmap — da implementare
@@ -495,7 +499,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 ### Alta priorità
 - [ ] **Collegare GitHub → Vercel auto-deploy** (Settings → Git nel dashboard Vercel)
 - [ ] **Notifiche real-time richieste**: Supabase Realtime su `requests`
-- [ ] **Fix enum `request_type`**: aggiungere `attività`/`escursione` o convertire in `text`
+- [ ] **Fix enum `request_type`**: aggiungere `attività`/`escursione` o convertire in `text` (ora si usa `other` + prefisso messaggio per discriminare)
 
 ### Media priorità
 - [ ] **Stripe Connect**: pagamenti eventi/escursioni/upselling
