@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { ArrowLeft, Calendar, ChevronLeft, ChevronRight, X, Send } from 'lucide-react'
@@ -15,11 +15,11 @@ const HEADING_FAMILIES = {
 export default function OffertaPage() {
   const { slug, id } = useParams()
   const navigate = useNavigate()
-  const [entity,   setEntity]   = useState(null)
-  const [offerta,  setOfferta]  = useState(null)
-  const [loading,  setLoading]  = useState(true)
-  const [lightbox, setLightbox] = useState(null)
-  const formRef = useRef(null)
+  const [entity,      setEntity]      = useState(null)
+  const [offerta,     setOfferta]     = useState(null)
+  const [loading,     setLoading]     = useState(true)
+  const [lightbox,    setLightbox]    = useState(null)
+  const [sheetOpen,   setSheetOpen]   = useState(false)
 
   useEffect(() => {
     apiFetch(`/api/guest/${slug}`)
@@ -30,6 +30,11 @@ export default function OffertaPage() {
       })
       .finally(() => setLoading(false))
   }, [slug, id])
+
+  useEffect(() => {
+    document.body.style.overflow = sheetOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [sheetOpen])
 
   if (loading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui' }}>Caricamento…</div>
   if (!offerta) return (
@@ -51,7 +56,7 @@ export default function OffertaPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fff', fontFamily: "'Inter', system-ui, sans-serif", paddingBottom: 80 }}>
+    <div style={{ minHeight: '100vh', background: '#fff', fontFamily: "'Inter', system-ui, sans-serif", paddingBottom: 88 }}>
       {/* Back button */}
       <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', borderBottom: '1px solid #f0f0f0', padding: '14px 20px' }}>
         <button onClick={() => navigate(-1)}
@@ -158,21 +163,9 @@ export default function OffertaPage() {
             {offerta.conditions}
           </div>
         )}
-
-        {/* Form interesse */}
-        <div ref={formRef}>
-          <InterestForm
-            entityTipo="struttura"
-            entityId={entity.id}
-            offertaTitle={offerta.title}
-            primary={primary}
-            heading={heading}
-            privacyUrl={privacyUrl}
-          />
-        </div>
       </div>
 
-      {/* Sticky CTA bar */}
+      {/* Sticky bottom bar */}
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 20,
         background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(10px)',
@@ -186,34 +179,71 @@ export default function OffertaPage() {
             <div style={{ fontSize: 13, color: primary, fontWeight: 700 }}>€{offerta.price_discounted || offerta.price_original}</div>
           )}
         </div>
-        <button
-          onClick={() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+        <button onClick={() => setSheetOpen(true)}
           style={{ flexShrink: 0, padding: '12px 24px', background: primary, color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Send size={15} strokeWidth={2} />
           Sono interessato
         </button>
       </div>
 
+      {/* Bottom sheet overlay */}
+      {sheetOpen && (
+        <>
+          <div onClick={() => setSheetOpen(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 30 }} />
+          <div style={{
+            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40,
+            background: '#fff', borderRadius: '20px 20px 0 0',
+            maxHeight: '90vh', overflowY: 'auto',
+            boxShadow: '0 -8px 40px rgba(0,0,0,0.18)',
+            animation: 'slideUp 0.25s ease',
+          }}>
+            <style>{`@keyframes slideUp { from { transform: translateY(100%) } to { transform: translateY(0) } }`}</style>
+            {/* Handle */}
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
+              <div style={{ width: 40, height: 4, background: '#ddd', borderRadius: 4 }} />
+            </div>
+            <div style={{ padding: '8px 24px 32px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+                <h2 style={{ fontFamily: heading, fontSize: 20, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Sono interessato</h2>
+                <button onClick={() => setSheetOpen(false)}
+                  style={{ background: '#f5f5f5', border: 'none', borderRadius: '50%', width: 36, height: 36, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <X size={18} strokeWidth={2} color="#555" />
+                </button>
+              </div>
+              <InterestForm
+                entityTipo="struttura"
+                entityId={entity.id}
+                offertaTitle={offerta.title}
+                primary={primary}
+                privacyUrl={privacyUrl}
+                onSuccess={() => setTimeout(() => setSheetOpen(false), 2000)}
+              />
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Lightbox */}
       {lightbox !== null && (
         <div onClick={() => setLightbox(null)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <button onClick={() => setLightbox(null)}
-            style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-            <X size={20} />
+            style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <X size={20} color="#fff" />
           </button>
           {lightbox > 0 && (
             <button onClick={e => { e.stopPropagation(); setLightbox(lightbox - 1) }}
-              style={{ position: 'absolute', left: 16, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: 44, height: 44, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-              <ChevronLeft size={24} />
+              style={{ position: 'absolute', left: 16, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: 44, height: 44, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ChevronLeft size={24} color="#fff" />
             </button>
           )}
           <img src={gallery[lightbox]} alt="" onClick={e => e.stopPropagation()}
             style={{ maxWidth: '90vw', maxHeight: '85vh', objectFit: 'contain', borderRadius: 8 }} />
           {lightbox < gallery.length - 1 && (
             <button onClick={e => { e.stopPropagation(); setLightbox(lightbox + 1) }}
-              style={{ position: 'absolute', right: 16, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: 44, height: 44, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-              <ChevronRight size={24} />
+              style={{ position: 'absolute', right: 16, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: 44, height: 44, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ChevronRight size={24} color="#fff" />
             </button>
           )}
         </div>
@@ -222,7 +252,7 @@ export default function OffertaPage() {
   )
 }
 
-function InterestForm({ entityTipo, entityId, offertaTitle, primary, heading, privacyUrl }) {
+function InterestForm({ entityTipo, entityId, offertaTitle, primary, privacyUrl, onSuccess }) {
   const [name,    setName]    = useState('')
   const [email,   setEmail]   = useState('')
   const [message, setMessage] = useState(`Sono interessato all'offerta: ${offertaTitle}`)
@@ -239,6 +269,7 @@ function InterestForm({ entityTipo, entityId, offertaTitle, primary, heading, pr
         body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, name, email, message }),
       })
       setState('success')
+      onSuccess?.()
     } catch { setState('error') }
   }
 
@@ -250,38 +281,35 @@ function InterestForm({ entityTipo, entityId, offertaTitle, primary, heading, pr
   }
 
   if (state === 'success') return (
-    <div style={{ background: `${primary}0d`, border: `1.5px solid ${primary}30`, borderRadius: 16, padding: '40px 32px', textAlign: 'center', marginBottom: 40 }}>
-      <div style={{ fontSize: 44, marginBottom: 12 }}>✓</div>
-      <p style={{ fontFamily: heading, fontWeight: 700, fontSize: 20, color: primary, marginBottom: 8 }}>Richiesta inviata!</p>
-      <p style={{ color: '#666', fontSize: 15 }}>Ti risponderemo il prima possibile.</p>
+    <div style={{ textAlign: 'center', padding: '24px 0' }}>
+      <div style={{ fontSize: 48, marginBottom: 12 }}>✓</div>
+      <p style={{ fontWeight: 700, fontSize: 18, color: primary, marginBottom: 6 }}>Richiesta inviata!</p>
+      <p style={{ color: '#888', fontSize: 14 }}>Ti risponderemo il prima possibile.</p>
     </div>
   )
 
   return (
-    <div style={{ background: '#f9f9fb', borderRadius: 20, padding: '36px 32px', marginBottom: 40 }}>
-      <h2 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, color: '#1a1a2e', marginBottom: 6 }}>Sono interessato</h2>
-      <p style={{ fontSize: 14, color: '#888', marginBottom: 28 }}>Lascia i tuoi contatti, ti risponderemo al più presto.</p>
-      <form onSubmit={handleSubmit}>
-        <input value={name} onChange={e => setName(e.target.value)} required placeholder="Il tuo nome" style={inp} />
-        <input value={email} onChange={e => setEmail(e.target.value)} required type="email" placeholder="La tua email" style={inp} />
-        <textarea value={message} onChange={e => setMessage(e.target.value)} required rows={3}
-          style={{ ...inp, resize: 'vertical', marginBottom: 16 }} />
-        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 20, cursor: 'pointer', fontSize: 13, color: '#555', lineHeight: 1.5 }}>
-          <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} required
-            style={{ marginTop: 2, accentColor: primary, flexShrink: 0 }} />
-          <span>
-            Ho letto e accetto la{' '}
-            <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: primary, fontWeight: 600 }}>Privacy Policy</a>
-            {' '}ai sensi del GDPR.
-          </span>
-        </label>
-        {state === 'error' && <p style={{ color: '#e53e3e', fontSize: 13, marginBottom: 12 }}>Errore nell'invio. Riprova.</p>}
-        <button type="submit" disabled={state === 'loading' || !privacy}
-          style={{ width: '100%', padding: '15px', background: privacy ? primary : '#ccc', color: '#fff', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 700, cursor: privacy ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'background 0.2s' }}>
-          <Send size={18} strokeWidth={2} />
-          {state === 'loading' ? 'Invio in corso…' : 'Invia richiesta'}
-        </button>
-      </form>
-    </div>
+    <form onSubmit={handleSubmit}>
+      <p style={{ fontSize: 14, color: '#888', marginBottom: 20, marginTop: 0 }}>Lascia i tuoi contatti, ti risponderemo al più presto.</p>
+      <input value={name} onChange={e => setName(e.target.value)} required placeholder="Il tuo nome" style={inp} />
+      <input value={email} onChange={e => setEmail(e.target.value)} required type="email" placeholder="La tua email" style={inp} />
+      <textarea value={message} onChange={e => setMessage(e.target.value)} required rows={3}
+        style={{ ...inp, resize: 'vertical', marginBottom: 16 }} />
+      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 20, cursor: 'pointer', fontSize: 13, color: '#555', lineHeight: 1.5 }}>
+        <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} required
+          style={{ marginTop: 2, accentColor: primary, flexShrink: 0 }} />
+        <span>
+          Ho letto e accetto la{' '}
+          <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: primary, fontWeight: 600 }}>Privacy Policy</a>
+          {' '}ai sensi del GDPR.
+        </span>
+      </label>
+      {state === 'error' && <p style={{ color: '#e53e3e', fontSize: 13, marginBottom: 12 }}>Errore nell'invio. Riprova.</p>}
+      <button type="submit" disabled={state === 'loading' || !privacy}
+        style={{ width: '100%', padding: '15px', background: privacy ? primary : '#ccc', color: '#fff', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 700, cursor: privacy ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'background 0.2s' }}>
+        <Send size={18} strokeWidth={2} />
+        {state === 'loading' ? 'Invio in corso…' : 'Invia richiesta'}
+      </button>
+    </form>
   )
 }
