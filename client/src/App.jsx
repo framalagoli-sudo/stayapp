@@ -54,6 +54,7 @@ import DemoRequestsPage from './pages/admin/DemoRequestsPage'
 import BookingsPage from './pages/admin/BookingsPage'
 import OffertaPage from './pages/guest/OffertaPage'
 import PacchettoPage from './pages/guest/PacchettoPage'
+import AnalyticsPage from './pages/admin/AnalyticsPage'
 import NewsletterPage from './pages/admin/NewsletterPage'
 import NewsletterEditorPage from './pages/admin/NewsletterEditorPage'
 import UnsubscribePage from './pages/public/UnsubscribePage'
@@ -114,6 +115,7 @@ export default function App() {
             }
           >
             <Route index element={<DashboardPage />} />
+            <Route path="analytics"     element={<AnalyticsPage />} />
             <Route path="requests"      element={<RequestsPage />} />
             <Route path="prenotazioni"  element={<BookingsPage />} />
             <Route path="demo"          element={<DemoRequestsPage />} />

@@ -91,6 +91,14 @@ export default function LandingAttivita({ attivita }) {
   const aboutRef = useRef(null)
 
   useEffect(() => {
+    if (!attivita?.id) return
+    const key = `pv_${attivita.id}`
+    if (sessionStorage.getItem(key)) return
+    sessionStorage.setItem(key, '1')
+    fetch('/api/guest/pageview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity_tipo: 'attivita', entity_id: attivita.id }) }).catch(() => {})
+  }, [attivita?.id])
+
+  useEffect(() => {
     apiFetch(`/api/guest/eventi?entity_tipo=attivita&entity_id=${attivita.id}`)
       .then(d => Array.isArray(d) && setUpcomingEventi(d)).catch(() => {})
     apiFetch(`/api/blog/public?azienda_id=${attivita.azienda_id}&entity_tipo=attivita&entity_id=${attivita.id}&limit=6`)

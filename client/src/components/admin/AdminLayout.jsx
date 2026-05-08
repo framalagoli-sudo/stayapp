@@ -283,6 +283,7 @@ export default function AdminLayout() {
 
         {/* ── Dashboard (tutti) ── */}
         <NavLink to="/admin" end style={({ isActive }) => navLinkStyle(isActive)}>Dashboard</NavLink>
+        <NavLink to="/admin/analytics" style={({ isActive }) => navLinkStyle(isActive)}>Analytics</NavLink>
 
         {/* ── Super Admin: gestione globale ── */}
         {isSuperAdmin && (

@@ -83,6 +83,14 @@ export default function LandingRistorante({ ristorante }) {
   const [promoModal,     setPromoModal]     = useState(null)
 
   useEffect(() => {
+    if (!ristorante?.id) return
+    const key = `pv_${ristorante.id}`
+    if (sessionStorage.getItem(key)) return
+    sessionStorage.setItem(key, '1')
+    fetch('/api/guest/pageview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity_tipo: 'ristorante', entity_id: ristorante.id }) }).catch(() => {})
+  }, [ristorante?.id])
+
+  useEffect(() => {
     apiFetch(`/api/guest/eventi?entity_tipo=ristorante&entity_id=${ristorante.id}`)
       .then(d => Array.isArray(d) && setUpcomingEventi(d))
       .catch(() => {})

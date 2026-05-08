@@ -126,6 +126,14 @@ router.post('/eventi/:id/book', async (req, res) => {
   res.status(201).json(data)
 })
 
+// POST /api/guest/pageview — traccia visita minisito (pubblico, fire-and-forget)
+router.post('/pageview', async (req, res) => {
+  const { entity_tipo, entity_id } = req.body
+  if (!entity_tipo || !entity_id) return res.status(400).json({ error: 'entity_tipo e entity_id obbligatori' })
+  await supabase.from('page_views').insert({ entity_tipo, entity_id })
+  res.json({ ok: true })
+})
+
 // GET /api/guest/unsubscribe?token=xxx — disiscrizione newsletter (pubblico)
 router.get('/unsubscribe', async (req, res) => {
   const { token } = req.query

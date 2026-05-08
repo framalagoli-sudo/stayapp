@@ -94,6 +94,14 @@ export default function LandingStruttura({ property }) {
   const aboutRef = useRef(null)
 
   useEffect(() => {
+    if (!property?.id) return
+    const key = `pv_${property.id}`
+    if (sessionStorage.getItem(key)) return
+    sessionStorage.setItem(key, '1')
+    fetch('/api/guest/pageview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity_tipo: 'struttura', entity_id: property.id }) }).catch(() => {})
+  }, [property?.id])
+
+  useEffect(() => {
     apiFetch(`/api/guest/eventi?entity_tipo=struttura&entity_id=${property.id}`)
       .then(d => Array.isArray(d) && setUpcomingEventi(d))
       .catch(() => {})
