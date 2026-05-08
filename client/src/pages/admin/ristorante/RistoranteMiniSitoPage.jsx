@@ -277,8 +277,7 @@ export default function RistoranteMiniSitoPage() {
       </div>
 
       {/* Tab bar */}
-      <style>{`.sito-tabs-r::-webkit-scrollbar{display:none}`}</style>
-      <div className="sito-tabs-r" style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, marginBottom: 20, scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
         {TABS.map(t => (
           <button key={t.key} onClick={() => setActiveTab(t.key)} style={{
             padding: '9px 18px', borderRadius: 22, border: 'none', cursor: 'pointer',
