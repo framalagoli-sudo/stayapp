@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, Phone, Mail, ChevronDown, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro, Heart, Award, Mountain, Wind, Calendar, Users, Plus, Minus, CheckCircle, ArrowLeft } from 'lucide-react'
+import { MapPin, Phone, Mail, ChevronDown, ChevronLeft, ChevronRight, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro, Heart, Award, Mountain, Wind, Calendar, Users, Plus, Minus, CheckCircle, ArrowLeft } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
 import CookieBanner from '../../components/CookieBanner'
 
@@ -101,6 +101,12 @@ export default function LandingStruttura({ property }) {
       .then(d => Array.isArray(d) && setNewsArticoli(d))
       .catch(() => {})
   }, [property.id])
+
+  useEffect(() => {
+    if (!activePage) return
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [activePage])
 
   const theme   = { primaryColor: '#00b5b5', fontHeading: 'playfair', fontBody: 'inter', ...(property.theme || {}) }
   const primary = theme.primaryColor
@@ -987,9 +993,8 @@ function NewsletterForm({ aziendaId, primary, privacyUrl }) {
     if (!privacy) return
     setState('loading')
     try {
-      await fetch('/api/contatti/subscribe', {
+      await apiFetch('/api/contatti/subscribe', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ azienda_id: aziendaId, nome, email, telefono, fonte: 'minisito' }),
       })
       setState('success')
@@ -1046,9 +1051,8 @@ function ContactForm({ entityTipo, entityId, primary, heading, privacyUrl }) {
     if (!privacy) return
     setState('loading')
     try {
-      await fetch('/api/guest/contact', {
+      await apiFetch('/api/guest/contact', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, name, email, message }),
       })
       setState('success')
@@ -1136,9 +1140,8 @@ function BookingModal({ type, item, entityId, primary, heading, privacyUrl, onCl
     if (!privacy) return
     setState('loading')
     try {
-      const res = await fetch('/api/guest/book', {
+      await apiFetch('/api/guest/book', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           entity_tipo: 'struttura',
           entity_id:   entityId,
@@ -1151,7 +1154,6 @@ function BookingModal({ type, item, entityId, primary, heading, privacyUrl, onCl
           notes:   notes.trim()  || undefined,
         }),
       })
-      if (!res.ok) throw new Error('server error')
       setState('success')
     } catch { setState('error') }
   }
@@ -1228,98 +1230,138 @@ function BookingModal({ type, item, entityId, primary, heading, privacyUrl, onCl
   )
 }
 
-function ActivitiesFullPage({ items, primary, heading, onBook, onBack }) {
+function ItemSlider({ items, primary, heading, title, onBack, renderCard }) {
+  const [idx, setIdx]     = useState(0)
+  const sliderRef         = useRef(null)
+
+  function goTo(n) {
+    const next = Math.max(0, Math.min(items.length - 1, n))
+    setIdx(next)
+    sliderRef.current?.scrollTo({ left: next * sliderRef.current.offsetWidth, behavior: 'smooth' })
+  }
+
+  function onScroll() {
+    if (!sliderRef.current) return
+    const n = Math.round(sliderRef.current.scrollLeft / sliderRef.current.offsetWidth)
+    if (n !== idx && n >= 0 && n < items.length) setIdx(n)
+  }
+
+  const dots = items.length <= 12 ? items.length : 0
+
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9990, background: '#f9f9fb', overflowY: 'auto' }}>
-      <style>{`.act-scroll::-webkit-scrollbar{display:none}`}</style>
-      <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(249,249,251,0.96)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #ebebeb', display: 'flex', alignItems: 'center', padding: '0 20px', height: 56 }}>
-        <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#555', padding: 0 }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9990, background: '#f9f9fb', display: 'flex', flexDirection: 'column' }}>
+      <style>{`#item-slider::-webkit-scrollbar{display:none}`}</style>
+
+      {/* Header */}
+      <div style={{ flexShrink: 0, background: '#fff', borderBottom: '1px solid #ebebeb', display: 'flex', alignItems: 'center', padding: '0 16px', height: 56, position: 'relative' }}>
+        <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#555', padding: 0 }}>
           <ArrowLeft size={18} strokeWidth={2} /> Indietro
         </button>
-        <span style={{ fontFamily: heading, fontSize: 18, fontWeight: 700, color: '#1a1a2e', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>Attività</span>
+        <span style={{ fontFamily: heading, fontSize: 17, fontWeight: 700, color: '#1a1a2e', position: 'absolute', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap' }}>{title}</span>
+        <span style={{ marginLeft: 'auto', fontSize: 12, color: '#aaa', fontWeight: 600 }}>{idx + 1} / {items.length}</span>
       </div>
-      <div style={{ padding: '24px 0 80px' }}>
-        <p style={{ textAlign: 'center', color: '#aaa', fontSize: 13, marginBottom: 20, paddingLeft: 16 }}>
-          {items.length} {items.length === 1 ? 'attività disponibile' : 'attività disponibili'}
-        </p>
-        <div className="act-scroll" style={{ display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', gap: 12, padding: '4px 16px 8px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-          {items.map(item => (
-            <div key={item.id} style={{ flex: '0 0 calc(50% - 6px)', maxWidth: 300, scrollSnapAlign: 'start', background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 3px 16px rgba(0,0,0,0.08)' }}>
-              {item.photo_url && (
-                <div style={{ position: 'relative' }}>
-                  <img src={item.photo_url} alt={item.name} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />
-                  {item.category && <span style={{ position: 'absolute', top: 8, left: 8, background: primary, color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>{item.category}</span>}
-                </div>
-              )}
-              <div style={{ padding: '12px 14px 14px' }}>
-                {!item.photo_url && item.category && <span style={{ fontSize: 10, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, display: 'block' }}>{item.category}</span>}
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 6, lineHeight: 1.3 }}>{item.name}</div>
-                {item.description && <p style={{ fontSize: 12, color: '#777', lineHeight: 1.5, marginBottom: 8 }}>{item.description}</p>}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 10 }}>
-                  {item.schedule && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#888' }}><Clock size={11} strokeWidth={1.5} color={primary} />{item.schedule}</span>}
-                  {item.location && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#888' }}><LocationPin size={11} strokeWidth={1.5} color={primary} />{item.location}</span>}
-                  {item.ageGroup && item.ageGroup !== 'tutti' && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#888' }}><Users size={11} strokeWidth={1.5} color={primary} />{item.ageGroup}</span>}
-                </div>
-                <button onClick={() => onBook({ type: 'activity', item })}
-                  style={{ width: '100%', padding: '9px 0', background: primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                  {item.bookable !== false ? 'Prenota' : 'Richiedi info'}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+
+      {/* Slide container */}
+      <div id="item-slider" ref={sliderRef} onScroll={onScroll}
+        style={{ flex: 1, display: 'flex', overflowX: 'auto', overflowY: 'hidden', scrollSnapType: 'x mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        {items.map((item, i) => (
+          <div key={item.id || i} style={{ flex: '0 0 100%', scrollSnapAlign: 'start', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+            {renderCard(item)}
+          </div>
+        ))}
+      </div>
+
+      {/* Nav: arrows + dots */}
+      <div style={{ flexShrink: 0, background: '#fff', borderTop: '1px solid #f0f0f0', padding: '14px 24px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <button onClick={() => goTo(idx - 1)} disabled={idx === 0}
+          style={{ width: 44, height: 44, borderRadius: '50%', border: 'none', background: idx === 0 ? '#f0f0f0' : primary, color: idx === 0 ? '#bbb' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: idx === 0 ? 'default' : 'pointer', flexShrink: 0 }}>
+          <ChevronLeft size={22} strokeWidth={2.5} />
+        </button>
+
+        {dots > 0 ? (
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', overflow: 'hidden', maxWidth: 'calc(100% - 120px)' }}>
+            {items.map((_, i) => (
+              <div key={i} onClick={() => goTo(i)}
+                style={{ width: i === idx ? 22 : 8, height: 8, borderRadius: 4, background: i === idx ? primary : '#ddd', cursor: 'pointer', transition: 'all 0.25s', flexShrink: 0 }} />
+            ))}
+          </div>
+        ) : (
+          <span style={{ fontSize: 13, color: '#888', fontWeight: 600 }}>{idx + 1} / {items.length}</span>
+        )}
+
+        <button onClick={() => goTo(idx + 1)} disabled={idx === items.length - 1}
+          style={{ width: 44, height: 44, borderRadius: '50%', border: 'none', background: idx === items.length - 1 ? '#f0f0f0' : primary, color: idx === items.length - 1 ? '#bbb' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: idx === items.length - 1 ? 'default' : 'pointer', flexShrink: 0 }}>
+          <ChevronRight size={22} strokeWidth={2.5} />
+        </button>
       </div>
     </div>
   )
 }
 
+function ActivitiesFullPage({ items, primary, heading, onBook, onBack }) {
+  return (
+    <ItemSlider items={items} primary={primary} heading={heading} title="Attività" onBack={onBack}
+      renderCard={item => (
+        <>
+          {item.photo_url && (
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <img src={item.photo_url} alt={item.name} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }} />
+              {item.category && <span style={{ position: 'absolute', top: 12, left: 12, background: primary, color: '#fff', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>{item.category}</span>}
+            </div>
+          )}
+          <div style={{ padding: '20px 20px 28px', flex: 1, overflowY: 'auto' }}>
+            {!item.photo_url && item.category && <span style={{ fontSize: 10, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, display: 'block' }}>{item.category}</span>}
+            <div style={{ fontWeight: 800, fontSize: 22, color: '#1a1a2e', marginBottom: 8, lineHeight: 1.25 }}>{item.name}</div>
+            {item.description && <p style={{ fontSize: 15, color: '#555', lineHeight: 1.65, marginBottom: 14 }}>{item.description}</p>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 24 }}>
+              {item.schedule && <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#777' }}><Clock size={14} strokeWidth={1.5} color={primary} />{item.schedule}</span>}
+              {item.location && <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#777' }}><LocationPin size={14} strokeWidth={1.5} color={primary} />{item.location}</span>}
+              {item.ageGroup && item.ageGroup !== 'tutti' && <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#777' }}><Users size={14} strokeWidth={1.5} color={primary} />{item.ageGroup}</span>}
+            </div>
+            <button onClick={() => onBook({ type: 'activity', item })}
+              style={{ width: '100%', padding: '15px', background: primary, color: '#fff', border: 'none', borderRadius: 14, fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
+              {item.bookable !== false ? 'Prenota' : 'Richiedi info'}
+            </button>
+          </div>
+        </>
+      )}
+    />
+  )
+}
+
 function ExcursionsFullPage({ items, primary, heading, onBook, onBack }) {
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9990, background: '#fff', overflowY: 'auto' }}>
-      <style>{`.exc-scroll::-webkit-scrollbar{display:none}`}</style>
-      <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #ebebeb', display: 'flex', alignItems: 'center', padding: '0 20px', height: 56 }}>
-        <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#555', padding: 0 }}>
-          <ArrowLeft size={18} strokeWidth={2} /> Indietro
-        </button>
-        <span style={{ fontFamily: heading, fontSize: 18, fontWeight: 700, color: '#1a1a2e', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>Escursioni</span>
-      </div>
-      <div style={{ padding: '24px 0 80px' }}>
-        <p style={{ textAlign: 'center', color: '#aaa', fontSize: 13, marginBottom: 20, paddingLeft: 16 }}>
-          {items.length} {items.length === 1 ? 'escursione disponibile' : 'escursioni disponibili'}
-        </p>
-        <div className="exc-scroll" style={{ display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory', gap: 12, padding: '4px 16px 8px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
-          {items.map(exc => (
-            <div key={exc.id} style={{ flex: '0 0 calc(50% - 6px)', maxWidth: 300, scrollSnapAlign: 'start', background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 3px 16px rgba(0,0,0,0.08)', border: '1px solid #f0f0f0' }}>
-              {exc.photo_url && (
-                <div style={{ position: 'relative' }}>
-                  <img src={exc.photo_url} alt={exc.name} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />
-                  {exc.price != null && <div style={{ position: 'absolute', top: 8, right: 8, background: primary, color: '#fff', fontWeight: 800, fontSize: 13, padding: '4px 10px', borderRadius: 20 }}>€{exc.price}</div>}
-                </div>
-              )}
-              <div style={{ padding: '12px 14px 14px' }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 6, lineHeight: 1.3 }}>{exc.name}</div>
-                {!exc.photo_url && exc.price != null && <div style={{ fontSize: 18, fontWeight: 800, color: primary, marginBottom: 6 }}>€{exc.price}</div>}
-                {exc.description && <p style={{ fontSize: 12, color: '#777', lineHeight: 1.5, marginBottom: 8 }}>{exc.description}</p>}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 10 }}>
-                  {exc.duration     && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#888' }}><Clock size={11} strokeWidth={1.5} color={primary} />{exc.duration}</span>}
-                  {exc.dates        && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#888' }}><Calendar size={11} strokeWidth={1.5} color={primary} />{exc.dates}</span>}
-                  {exc.meeting_point && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#888' }}><LocationPin size={11} strokeWidth={1.5} color={primary} />{exc.meeting_point}</span>}
-                  {exc.seats != null && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: primary }}><Users size={11} strokeWidth={1.5} color={primary} />Posti: {exc.seats}</span>}
-                </div>
-                {exc.includes && (
-                  <ul style={{ margin: '0 0 10px', paddingLeft: 16, fontSize: 11, color: '#888', lineHeight: 1.8 }}>
-                    {exc.includes.split(',').map((s, i) => <li key={i}>{s.trim()}</li>)}
-                  </ul>
-                )}
-                <button onClick={() => onBook({ type: 'excursion', item: exc })}
-                  style={{ width: '100%', padding: '9px 0', background: primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                  Prenota
-                </button>
-              </div>
+    <ItemSlider items={items} primary={primary} heading={heading} title="Escursioni" onBack={onBack}
+      renderCard={exc => (
+        <>
+          {exc.photo_url && (
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <img src={exc.photo_url} alt={exc.name} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }} />
+              {exc.price != null && <div style={{ position: 'absolute', top: 12, right: 12, background: primary, color: '#fff', fontWeight: 800, fontSize: 16, padding: '6px 14px', borderRadius: 20 }}>€{exc.price}</div>}
             </div>
-          ))}
-        </div>
-      </div>
-    </div>
+          )}
+          <div style={{ padding: '20px 20px 28px', flex: 1, overflowY: 'auto' }}>
+            <div style={{ fontWeight: 800, fontSize: 22, color: '#1a1a2e', marginBottom: 6, lineHeight: 1.25 }}>{exc.name}</div>
+            {!exc.photo_url && exc.price != null && <div style={{ fontSize: 28, fontWeight: 800, color: primary, marginBottom: 8 }}>€{exc.price}</div>}
+            {exc.description && <p style={{ fontSize: 15, color: '#555', lineHeight: 1.65, marginBottom: 14 }}>{exc.description}</p>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: exc.includes ? 12 : 24 }}>
+              {exc.duration      && <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#777' }}><Clock size={14} strokeWidth={1.5} color={primary} />{exc.duration}</span>}
+              {exc.dates         && <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#777' }}><Calendar size={14} strokeWidth={1.5} color={primary} />{exc.dates}</span>}
+              {exc.meeting_point && <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#777' }}><LocationPin size={14} strokeWidth={1.5} color={primary} />{exc.meeting_point}</span>}
+              {exc.seats != null && <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, fontWeight: 600, color: primary }}><Users size={14} strokeWidth={1.5} color={primary} />Posti disponibili: {exc.seats}</span>}
+            </div>
+            {exc.includes && (
+              <ul style={{ margin: '0 0 20px', paddingLeft: 20, fontSize: 14, color: '#777', lineHeight: 1.9 }}>
+                {exc.includes.split(',').map((s, i) => <li key={i}>{s.trim()}</li>)}
+              </ul>
+            )}
+            <button onClick={() => onBook({ type: 'excursion', item: exc })}
+              style={{ width: '100%', padding: '15px', background: primary, color: '#fff', border: 'none', borderRadius: 14, fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
+              Prenota
+            </button>
+          </div>
+        </>
+      )}
+    />
   )
 }
