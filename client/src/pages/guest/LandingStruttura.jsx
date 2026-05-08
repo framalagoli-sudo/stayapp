@@ -1231,66 +1231,119 @@ function BookingModal({ type, item, entityId, primary, heading, privacyUrl, onCl
 }
 
 function ItemSlider({ items, primary, heading, title, onBack, renderCard }) {
-  const [idx, setIdx]     = useState(0)
-  const sliderRef         = useRef(null)
+  const [idx, setIdx] = useState(0)
+  const touchX        = useRef(null)
 
   function goTo(n) {
-    const next = Math.max(0, Math.min(items.length - 1, n))
-    setIdx(next)
-    sliderRef.current?.scrollTo({ left: next * sliderRef.current.offsetWidth, behavior: 'smooth' })
+    setIdx(Math.max(0, Math.min(items.length - 1, n)))
+  }
+  function onTouchStart(e) { touchX.current = e.touches[0].clientX }
+  function onTouchEnd(e) {
+    if (touchX.current === null) return
+    const diff = touchX.current - e.changedTouches[0].clientX
+    if (Math.abs(diff) > 48) goTo(diff > 0 ? idx + 1 : idx - 1)
+    touchX.current = null
   }
 
-  function onScroll() {
-    if (!sliderRef.current) return
-    const n = Math.round(sliderRef.current.scrollLeft / sliderRef.current.offsetWidth)
-    if (n !== idx && n >= 0 && n < items.length) setIdx(n)
-  }
-
-  const dots = items.length <= 12 ? items.length : 0
+  const showDots = items.length <= 10
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9990, background: '#f9f9fb', display: 'flex', flexDirection: 'column' }}>
-      <style>{`#item-slider::-webkit-scrollbar{display:none}`}</style>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9990, background: '#f0f2f5', display: 'flex', flexDirection: 'column' }}>
 
-      {/* Header */}
-      <div style={{ flexShrink: 0, background: '#fff', borderBottom: '1px solid #ebebeb', display: 'flex', alignItems: 'center', padding: '0 16px', height: 56, position: 'relative' }}>
-        <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#555', padding: 0 }}>
-          <ArrowLeft size={18} strokeWidth={2} /> Indietro
+      {/* ── Header ── */}
+      <div style={{
+        flexShrink: 0, background: '#fff',
+        borderBottom: '1px solid rgba(0,0,0,0.07)',
+        display: 'flex', alignItems: 'center',
+        padding: '0 20px', height: 60, position: 'relative',
+      }}>
+        <button onClick={onBack} style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          background: 'none', border: 'none', cursor: 'pointer',
+          fontSize: 14, fontWeight: 600, color: '#1a1a2e', padding: '8px 0',
+        }}>
+          <ArrowLeft size={18} strokeWidth={2.5} /> Indietro
         </button>
-        <span style={{ fontFamily: heading, fontSize: 17, fontWeight: 700, color: '#1a1a2e', position: 'absolute', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap' }}>{title}</span>
-        <span style={{ marginLeft: 'auto', fontSize: 12, color: '#aaa', fontWeight: 600 }}>{idx + 1} / {items.length}</span>
+        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', textAlign: 'center' }}>
+          <div style={{ fontFamily: heading, fontSize: 17, fontWeight: 700, color: '#1a1a2e', whiteSpace: 'nowrap' }}>{title}</div>
+          <div style={{ fontSize: 11, color: '#aaa', fontWeight: 500, marginTop: 1 }}>{idx + 1} di {items.length}</div>
+        </div>
       </div>
 
-      {/* Slide container */}
-      <div id="item-slider" ref={sliderRef} onScroll={onScroll}
-        style={{ flex: 1, display: 'flex', overflowX: 'auto', overflowY: 'hidden', scrollSnapType: 'x mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        {items.map((item, i) => (
-          <div key={item.id || i} style={{ flex: '0 0 100%', scrollSnapAlign: 'start', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-            {renderCard(item)}
-          </div>
-        ))}
+      {/* ── Slide area ── */}
+      <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}
+        onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+        <div style={{
+          display: 'flex', height: '100%',
+          transform: `translateX(-${idx * 100}%)`,
+          transition: 'transform 0.38s cubic-bezier(0.4, 0, 0.2, 1)',
+          willChange: 'transform',
+        }}>
+          {items.map((item, i) => (
+            <div key={item.id || i} style={{
+              flex: '0 0 100%', height: '100%',
+              padding: '16px 20px 8px',
+              boxSizing: 'border-box',
+              display: 'flex', flexDirection: 'column',
+            }}>
+              {/* Card with shadow + rounded corners */}
+              <div style={{
+                flex: 1, background: '#fff',
+                borderRadius: 22,
+                boxShadow: '0 8px 30px rgba(0,0,0,0.11)',
+                display: 'flex', flexDirection: 'column',
+                overflowY: 'auto',
+              }}>
+                {renderCard(item)}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Nav: arrows + dots */}
-      <div style={{ flexShrink: 0, background: '#fff', borderTop: '1px solid #f0f0f0', padding: '14px 24px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      {/* ── Nav bar ── */}
+      <div style={{
+        flexShrink: 0, background: '#fff',
+        borderTop: '1px solid rgba(0,0,0,0.06)',
+        padding: '14px 28px 24px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
         <button onClick={() => goTo(idx - 1)} disabled={idx === 0}
-          style={{ width: 44, height: 44, borderRadius: '50%', border: 'none', background: idx === 0 ? '#f0f0f0' : primary, color: idx === 0 ? '#bbb' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: idx === 0 ? 'default' : 'pointer', flexShrink: 0 }}>
+          style={{
+            width: 50, height: 50, borderRadius: '50%', border: 'none', flexShrink: 0,
+            background: idx === 0 ? '#efefef' : primary,
+            color: idx === 0 ? '#c0c0c0' : '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: idx === 0 ? 'default' : 'pointer',
+            boxShadow: idx === 0 ? 'none' : `0 4px 14px ${primary}55`,
+            transition: 'all 0.2s',
+          }}>
           <ChevronLeft size={22} strokeWidth={2.5} />
         </button>
 
-        {dots > 0 ? (
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center', overflow: 'hidden', maxWidth: 'calc(100% - 120px)' }}>
-            {items.map((_, i) => (
-              <div key={i} onClick={() => goTo(i)}
-                style={{ width: i === idx ? 22 : 8, height: 8, borderRadius: 4, background: i === idx ? primary : '#ddd', cursor: 'pointer', transition: 'all 0.25s', flexShrink: 0 }} />
-            ))}
-          </div>
-        ) : (
-          <span style={{ fontSize: 13, color: '#888', fontWeight: 600 }}>{idx + 1} / {items.length}</span>
-        )}
+        <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
+          {showDots
+            ? items.map((_, i) => (
+                <div key={i} onClick={() => goTo(i)} style={{
+                  width: i === idx ? 24 : 8, height: 8, borderRadius: 4,
+                  background: i === idx ? primary : '#d8d8d8',
+                  cursor: 'pointer', transition: 'all 0.28s', flexShrink: 0,
+                }} />
+              ))
+            : <span style={{ fontSize: 13, fontWeight: 600, color: '#888' }}>{idx + 1} / {items.length}</span>
+          }
+        </div>
 
         <button onClick={() => goTo(idx + 1)} disabled={idx === items.length - 1}
-          style={{ width: 44, height: 44, borderRadius: '50%', border: 'none', background: idx === items.length - 1 ? '#f0f0f0' : primary, color: idx === items.length - 1 ? '#bbb' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: idx === items.length - 1 ? 'default' : 'pointer', flexShrink: 0 }}>
+          style={{
+            width: 50, height: 50, borderRadius: '50%', border: 'none', flexShrink: 0,
+            background: idx === items.length - 1 ? '#efefef' : primary,
+            color: idx === items.length - 1 ? '#c0c0c0' : '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: idx === items.length - 1 ? 'default' : 'pointer',
+            boxShadow: idx === items.length - 1 ? 'none' : `0 4px 14px ${primary}55`,
+            transition: 'all 0.2s',
+          }}>
           <ChevronRight size={22} strokeWidth={2.5} />
         </button>
       </div>
@@ -1303,23 +1356,55 @@ function ActivitiesFullPage({ items, primary, heading, onBook, onBack }) {
     <ItemSlider items={items} primary={primary} heading={heading} title="Attività" onBack={onBack}
       renderCard={item => (
         <>
+          {/* Image with rounded top corners only */}
           {item.photo_url && (
-            <div style={{ position: 'relative', flexShrink: 0 }}>
-              <img src={item.photo_url} alt={item.name} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }} />
-              {item.category && <span style={{ position: 'absolute', top: 12, left: 12, background: primary, color: '#fff', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>{item.category}</span>}
+            <div style={{ flexShrink: 0, borderRadius: '22px 22px 0 0', overflow: 'hidden', position: 'relative' }}>
+              <img src={item.photo_url} alt={item.name}
+                style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />
+              {item.category && (
+                <span style={{
+                  position: 'absolute', top: 14, left: 14,
+                  background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)',
+                  color: '#fff', fontSize: 11, fontWeight: 700,
+                  padding: '4px 12px', borderRadius: 20, letterSpacing: 0.3,
+                }}>{item.category}</span>
+              )}
             </div>
           )}
-          <div style={{ padding: '20px 20px 28px', flex: 1, overflowY: 'auto' }}>
-            {!item.photo_url && item.category && <span style={{ fontSize: 10, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, display: 'block' }}>{item.category}</span>}
-            <div style={{ fontWeight: 800, fontSize: 22, color: '#1a1a2e', marginBottom: 8, lineHeight: 1.25 }}>{item.name}</div>
-            {item.description && <p style={{ fontSize: 15, color: '#555', lineHeight: 1.65, marginBottom: 14 }}>{item.description}</p>}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 24 }}>
-              {item.schedule && <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#777' }}><Clock size={14} strokeWidth={1.5} color={primary} />{item.schedule}</span>}
-              {item.location && <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#777' }}><LocationPin size={14} strokeWidth={1.5} color={primary} />{item.location}</span>}
-              {item.ageGroup && item.ageGroup !== 'tutti' && <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#777' }}><Users size={14} strokeWidth={1.5} color={primary} />{item.ageGroup}</span>}
+
+          {/* Content */}
+          <div style={{ padding: '20px 22px 24px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {!item.photo_url && item.category && (
+              <span style={{ fontSize: 10, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8, display: 'block' }}>{item.category}</span>
+            )}
+            <h2 style={{ margin: '0 0 10px', fontSize: 20, fontWeight: 800, color: '#1a1a2e', lineHeight: 1.25 }}>{item.name}</h2>
+            {item.description && (
+              <p style={{ margin: '0 0 14px', fontSize: 14, color: '#666', lineHeight: 1.65 }}>{item.description}</p>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 22 }}>
+              {item.schedule && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#777' }}>
+                  <Clock size={14} strokeWidth={1.5} color={primary} />{item.schedule}
+                </span>
+              )}
+              {item.location && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#777' }}>
+                  <LocationPin size={14} strokeWidth={1.5} color={primary} />{item.location}
+                </span>
+              )}
+              {item.ageGroup && item.ageGroup !== 'tutti' && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#777' }}>
+                  <Users size={14} strokeWidth={1.5} color={primary} />{item.ageGroup}
+                </span>
+              )}
             </div>
             <button onClick={() => onBook({ type: 'activity', item })}
-              style={{ width: '100%', padding: '15px', background: primary, color: '#fff', border: 'none', borderRadius: 14, fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
+              style={{
+                width: '100%', padding: '15px 0',
+                background: primary, color: '#fff', border: 'none',
+                borderRadius: 14, fontSize: 16, fontWeight: 700, cursor: 'pointer',
+                boxShadow: `0 4px 16px ${primary}44`,
+              }}>
               {item.bookable !== false ? 'Prenota' : 'Richiedi info'}
             </button>
           </div>
@@ -1334,29 +1419,50 @@ function ExcursionsFullPage({ items, primary, heading, onBook, onBack }) {
     <ItemSlider items={items} primary={primary} heading={heading} title="Escursioni" onBack={onBack}
       renderCard={exc => (
         <>
+          {/* Image with rounded top corners only */}
           {exc.photo_url && (
-            <div style={{ position: 'relative', flexShrink: 0 }}>
-              <img src={exc.photo_url} alt={exc.name} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }} />
-              {exc.price != null && <div style={{ position: 'absolute', top: 12, right: 12, background: primary, color: '#fff', fontWeight: 800, fontSize: 16, padding: '6px 14px', borderRadius: 20 }}>€{exc.price}</div>}
+            <div style={{ flexShrink: 0, borderRadius: '22px 22px 0 0', overflow: 'hidden', position: 'relative' }}>
+              <img src={exc.photo_url} alt={exc.name}
+                style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />
+              {exc.price != null && (
+                <div style={{
+                  position: 'absolute', top: 14, right: 14,
+                  background: primary, color: '#fff',
+                  fontWeight: 800, fontSize: 16,
+                  padding: '5px 14px', borderRadius: 20,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                }}>€{exc.price}</div>
+              )}
             </div>
           )}
-          <div style={{ padding: '20px 20px 28px', flex: 1, overflowY: 'auto' }}>
-            <div style={{ fontWeight: 800, fontSize: 22, color: '#1a1a2e', marginBottom: 6, lineHeight: 1.25 }}>{exc.name}</div>
-            {!exc.photo_url && exc.price != null && <div style={{ fontSize: 28, fontWeight: 800, color: primary, marginBottom: 8 }}>€{exc.price}</div>}
-            {exc.description && <p style={{ fontSize: 15, color: '#555', lineHeight: 1.65, marginBottom: 14 }}>{exc.description}</p>}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: exc.includes ? 12 : 24 }}>
-              {exc.duration      && <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#777' }}><Clock size={14} strokeWidth={1.5} color={primary} />{exc.duration}</span>}
-              {exc.dates         && <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#777' }}><Calendar size={14} strokeWidth={1.5} color={primary} />{exc.dates}</span>}
-              {exc.meeting_point && <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#777' }}><LocationPin size={14} strokeWidth={1.5} color={primary} />{exc.meeting_point}</span>}
-              {exc.seats != null && <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, fontWeight: 600, color: primary }}><Users size={14} strokeWidth={1.5} color={primary} />Posti disponibili: {exc.seats}</span>}
+
+          {/* Content */}
+          <div style={{ padding: '20px 22px 24px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <h2 style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 800, color: '#1a1a2e', lineHeight: 1.25 }}>{exc.name}</h2>
+            {!exc.photo_url && exc.price != null && (
+              <div style={{ fontSize: 26, fontWeight: 800, color: primary, marginBottom: 10 }}>€{exc.price}</div>
+            )}
+            {exc.description && (
+              <p style={{ margin: '0 0 14px', fontSize: 14, color: '#666', lineHeight: 1.65 }}>{exc.description}</p>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: exc.includes ? 14 : 22 }}>
+              {exc.duration      && <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#777' }}><Clock size={14} strokeWidth={1.5} color={primary} />{exc.duration}</span>}
+              {exc.dates         && <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#777' }}><Calendar size={14} strokeWidth={1.5} color={primary} />{exc.dates}</span>}
+              {exc.meeting_point && <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#777' }}><LocationPin size={14} strokeWidth={1.5} color={primary} />{exc.meeting_point}</span>}
+              {exc.seats != null && <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: primary }}><Users size={14} strokeWidth={1.5} color={primary} />Posti disponibili: {exc.seats}</span>}
             </div>
             {exc.includes && (
-              <ul style={{ margin: '0 0 20px', paddingLeft: 20, fontSize: 14, color: '#777', lineHeight: 1.9 }}>
+              <ul style={{ margin: '0 0 18px', paddingLeft: 20, fontSize: 13, color: '#777', lineHeight: 1.9 }}>
                 {exc.includes.split(',').map((s, i) => <li key={i}>{s.trim()}</li>)}
               </ul>
             )}
             <button onClick={() => onBook({ type: 'excursion', item: exc })}
-              style={{ width: '100%', padding: '15px', background: primary, color: '#fff', border: 'none', borderRadius: 14, fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
+              style={{
+                width: '100%', padding: '15px 0',
+                background: primary, color: '#fff', border: 'none',
+                borderRadius: 14, fontSize: 16, fontWeight: 700, cursor: 'pointer',
+                boxShadow: `0 4px 16px ${primary}44`,
+              }}>
               Prenota
             </button>
           </div>
