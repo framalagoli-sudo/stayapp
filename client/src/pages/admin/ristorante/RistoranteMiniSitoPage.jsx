@@ -7,6 +7,8 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
+const PRIMARY = '#e63946'
+
 const DEFAULT_SECTIONS      = { gallery: true, menu_preview: true }
 const DEFAULT_SOCIAL        = { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' }
 const DEFAULT_CTA_BANNER    = { active: false, title: '', subtitle: '', cta_label: '', cta_url: '' }
@@ -43,10 +45,24 @@ const HIGHLIGHT_ICONS = [
 ]
 const ICON_MAP = Object.fromEntries(HIGHLIGHT_ICONS.map(({ key, Icon }) => [key, Icon]))
 
+const TABS = [
+  { key: 'generale',      label: 'Generale' },
+  { key: 'seo',           label: 'SEO & Social' },
+  { key: 'highlights',    label: 'Highlights' },
+  { key: 'offerte',       label: 'Offerte' },
+  { key: 'menu',          label: 'Menu' },
+  { key: 'testimonianze', label: 'Testimonianze' },
+  { key: 'faq',           label: 'FAQ' },
+  { key: 'cta',           label: 'CTA Banner' },
+  { key: 'contenuto',     label: 'Contenuto' },
+  { key: 'sezioni',       label: 'Sezioni' },
+]
+
 export default function RistoranteMiniSitoPage() {
   const { id } = useParams()
-  const { ristorante, loading, saving, saved, save } = useRistorante(id)
+  const { ristorante, loading, saving, saved, saveError, save } = useRistorante(id)
   const [form, setForm] = useState(DEFAULT)
+  const [activeTab, setActiveTab] = useState('generale')
 
   useEffect(() => {
     if (ristorante) {
@@ -89,20 +105,15 @@ export default function RistoranteMiniSitoPage() {
 
   function addHighlight() {
     const updated = { ...form, highlights: [...(form.highlights || []), { id: crypto.randomUUID(), icon: 'star', text: '' }] }
-    setForm(updated)
-    save({ minisito: updated }).catch(() => {})
+    setForm(updated); save({ minisito: updated }).catch(() => {})
   }
-
-  function updateHighlight(id, patch) {
-    const updated = { ...form, highlights: form.highlights.map(h => h.id === id ? { ...h, ...patch } : h) }
-    setForm(updated)
-    save({ minisito: updated }).catch(() => {})
+  function updateHighlight(id, p) {
+    const updated = { ...form, highlights: form.highlights.map(h => h.id === id ? { ...h, ...p } : h) }
+    setForm(updated); save({ minisito: updated }).catch(() => {})
   }
-
   function removeHighlight(id) {
     const updated = { ...form, highlights: form.highlights.filter(h => h.id !== id) }
-    setForm(updated)
-    save({ minisito: updated }).catch(() => {})
+    setForm(updated); save({ minisito: updated }).catch(() => {})
   }
 
   function addStat() {
@@ -117,6 +128,7 @@ export default function RistoranteMiniSitoPage() {
     const updated = { ...form, stats: form.stats.filter(s => s.id !== id) }
     setForm(updated); save({ minisito: updated }).catch(() => {})
   }
+
   function addPromo() {
     const updated = { ...form, promozioni: [...(form.promozioni || []), { id: crypto.randomUUID(), badge: '', title: '', text: '', cta_label: '', cta_url: '', expires_at: '' }] }
     setForm(updated); save({ minisito: updated }).catch(() => {})
@@ -152,8 +164,8 @@ export default function RistoranteMiniSitoPage() {
     const updated = { ...form, testimonianze: [...(form.testimonianze || []), { id: crypto.randomUUID(), author: '', location: '', rating: 5, text: '' }] }
     setForm(updated); save({ minisito: updated }).catch(() => {})
   }
-  function updateTestimonianza(id, patch) {
-    const updated = { ...form, testimonianze: form.testimonianze.map(t => t.id === id ? { ...t, ...patch } : t) }
+  function updateTestimonianza(id, p) {
+    const updated = { ...form, testimonianze: form.testimonianze.map(t => t.id === id ? { ...t, ...p } : t) }
     setForm(updated); save({ minisito: updated }).catch(() => {})
   }
   function removeTestimonianza(id) {
@@ -165,18 +177,13 @@ export default function RistoranteMiniSitoPage() {
     const updated = { ...form, faq: [...(form.faq || []), { id: crypto.randomUUID(), question: '', answer: '' }] }
     setForm(updated); save({ minisito: updated }).catch(() => {})
   }
-  function updateFaq(id, patch) {
-    const updated = { ...form, faq: form.faq.map(f => f.id === id ? { ...f, ...patch } : f) }
+  function updateFaq(id, p) {
+    const updated = { ...form, faq: form.faq.map(f => f.id === id ? { ...f, ...p } : f) }
     setForm(updated); save({ minisito: updated }).catch(() => {})
   }
   function removeFaq(id) {
     const updated = { ...form, faq: form.faq.filter(f => f.id !== id) }
     setForm(updated); save({ minisito: updated }).catch(() => {})
-  }
-
-  function handleSubmit(e) {
-    e.preventDefault()
-    save({ minisito: form }).catch(() => {})
   }
 
   const sensors = useSensors(
@@ -214,8 +221,8 @@ export default function RistoranteMiniSitoPage() {
     { key: 'highlights',    label: 'Punti di forza',       hint: `${(form.highlights || []).length} punti configurati` },
     { key: 'stats',         label: 'Numeri in evidenza',   hint: `${(form.stats || []).length} numeri configurati` },
     { key: 'about',         label: 'La nostra cucina',     hint: ristorante.description ? 'Dalla descrizione ristorante' : 'Aggiungi una descrizione nelle info ristorante' },
-    { key: 'video',         label: 'Video',                hint: form.video_url ? 'Video configurato' : 'Aggiungi un link video nella sezione Contenuto' },
-    { key: 'cta_banner',    label: 'Banner CTA',           hint: form.cta_banner?.active ? 'Attivo' : 'Disattivo — attivalo nel card Banner CTA' },
+    { key: 'video',         label: 'Video',                hint: form.video_url ? 'Video configurato' : 'Aggiungi un link video nella tab Generale' },
+    { key: 'cta_banner',    label: 'Banner CTA',           hint: form.cta_banner?.active ? 'Attivo' : 'Disattivo — attivalo nella tab CTA Banner' },
     { key: 'testimonianze', label: 'Testimonianze',        hint: `${(form.testimonianze || []).length} testimonianze configurate` },
     { key: 'promozioni',    label: 'Offerte e promozioni', hint: `${(form.promozioni || []).length} offerte configurate` },
     { key: 'menu_speciali', label: 'Menu degustazione',    hint: `${(form.menu_speciali || []).length} menu configurati` },
@@ -225,7 +232,7 @@ export default function RistoranteMiniSitoPage() {
     { key: 'gallery',       label: 'Galleria foto',        hint: `${(ristorante.gallery || []).length} foto caricate` },
     { key: 'faq',           label: 'FAQ',                  hint: `${(form.faq || []).length} domande configurate` },
     { key: 'show_map',      label: 'Mappa',                hint: ristorante.address ? `Mappa di: ${ristorante.address}` : 'Aggiungi un indirizzo nelle informazioni ristorante' },
-    { key: 'contatti',      label: 'Form di contatto',     hint: ristorante.email ? `Messaggi inviati a ${ristorante.email}` : 'Aggiungi un\'email nelle info ristorante per ricevere i messaggi' },
+    { key: 'contatti',      label: 'Form di contatto',     hint: ristorante.email ? `Messaggi inviati a ${ristorante.email}` : "Aggiungi un'email nelle info ristorante per ricevere i messaggi" },
     { key: 'newsletter',    label: 'Iscrizione newsletter', hint: 'Raccoglie nome, email e telefono degli ospiti' },
   ]
 
@@ -238,447 +245,435 @@ export default function RistoranteMiniSitoPage() {
 
   return (
     <div style={{ maxWidth: 640 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-        <h2 style={{ ...titleStyle, marginBottom: 0 }}>Minisito pubblico</h2>
-        {form.active && ristorante.slug && (
-          <a href={landingUrl} target="_blank" rel="noopener noreferrer"
-            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: '#e63946', fontWeight: 600, textDecoration: 'none', padding: '6px 12px', background: '#e6394610', borderRadius: 8 }}>
-            <ExternalLink size={13} strokeWidth={2} />
-            Anteprima
-          </a>
-        )}
-      </div>
-      <p style={descStyle}>
-        Una landing page pubblica e indicizzabile da Google. Quando attivo, chi visita l'URL del ristorante
-        vede il minisito invece dell'app menu.
-      </p>
 
-      {/* Toggle attivo */}
-      <div style={cardStyle}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <h2 style={{ ...titleStyle, marginBottom: 0 }}>Sito pubblico</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {saving && <span style={{ fontSize: 12, color: '#888' }}>Salvataggio…</span>}
+          {!saving && saved && <span style={{ fontSize: 12, color: '#38a169', fontWeight: 600 }}>✓ Salvato</span>}
+          {saveError && <span style={{ fontSize: 12, color: '#c00' }}>{saveError}</span>}
+          {form.active && ristorante.slug && (
+            <a href={landingUrl} target="_blank" rel="noopener noreferrer"
+              style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: PRIMARY, fontWeight: 600, textDecoration: 'none', padding: '6px 12px', background: `${PRIMARY}12`, borderRadius: 8 }}>
+              <ExternalLink size={13} strokeWidth={2} />
+              Anteprima
+            </a>
+          )}
+        </div>
+      </div>
+
+      {/* Toggle attivo — sempre visibile */}
+      <div style={{ ...cardStyle, marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 15 }}>Minisito attivo</div>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>Sito {form.active ? 'attivo' : 'disattivo'}</div>
             <div style={{ fontSize: 13, color: '#888', marginTop: 3 }}>
               {form.active ? `Visibile su ${landingUrl}` : 'Disattivo — i visitatori vedono il menu digitale'}
             </div>
           </div>
-          <Toggle value={form.active} onChange={v => patch('active', v)} color="#e63946" />
+          <Toggle value={form.active} onChange={v => patch('active', v)} color={PRIMARY} />
         </div>
       </div>
 
-      {/* Contenuto + SEO */}
-      <form onSubmit={handleSubmit} style={cardStyle}>
-        <h3 style={sectionTitle}>Contenuto</h3>
-
-        <div style={fieldWrap}>
-          <label style={lblStyle}>Tagline</label>
-          <input
-            value={form.tagline}
-            onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))}
-            onBlur={() => save({ minisito: form }).catch(() => {})}
-            placeholder="es. Cucina tradizionale toscana dal 1985"
-            style={inputStyle}
-          />
-        </div>
-
-        <div style={fieldWrap}>
-          <label style={lblStyle}>Video (YouTube o Vimeo)</label>
-          <input type="url" value={form.video_url}
-            onChange={e => setForm(f => ({ ...f, video_url: e.target.value }))}
-            onBlur={() => save({ minisito: form }).catch(() => {})}
-            placeholder="https://www.youtube.com/watch?v=..."
-            style={inputStyle} />
-          <span style={hintStyle}>Incolla il link del video. Appare come sezione dedicata nel minisito.</span>
-        </div>
-
-        <div style={fieldWrap}>
-          <label style={lblStyle}>Link prenotazione tavolo</label>
-          <input
-            type="url"
-            value={form.booking_url}
-            onChange={e => setForm(f => ({ ...f, booking_url: e.target.value }))}
-            onBlur={() => save({ minisito: form }).catch(() => {})}
-            placeholder="https://www.thefork.it/ristorante/..."
-            style={inputStyle}
-          />
-          <span style={hintStyle}>TheFork, sito proprietario, ecc. Appare come pulsante "Prenota un tavolo".</span>
-        </div>
-
-        <h3 style={{ ...sectionTitle, marginTop: 24 }}>SEO</h3>
-
-        <div style={fieldWrap}>
-          <label style={lblStyle}>Titolo pagina (SEO title)</label>
-          <input
-            value={form.seo_title}
-            onChange={e => setForm(f => ({ ...f, seo_title: e.target.value }))}
-            onBlur={() => save({ minisito: form }).catch(() => {})}
-            placeholder={`${ristorante.name} — Ristorante a ${ristorante.address || '...'}`}
-            style={inputStyle}
-          />
-          <span style={hintStyle}>{form.seo_title.length}/60 caratteri consigliati</span>
-        </div>
-
-        <div style={{ ...fieldWrap, marginBottom: 0 }}>
-          <label style={lblStyle}>Descrizione (meta description)</label>
-          <textarea
-            value={form.seo_description}
-            onChange={e => setForm(f => ({ ...f, seo_description: e.target.value }))}
-            onBlur={() => save({ minisito: form }).catch(() => {})}
-            rows={3}
-            placeholder="Breve descrizione che appare nei risultati di Google…"
-            style={{ ...inputStyle, resize: 'vertical' }}
-          />
-          <span style={hintStyle}>{form.seo_description.length}/160 caratteri consigliati</span>
-        </div>
-
-        <button type="submit" disabled={saving} style={{ ...saveBtn, marginTop: 20 }}>
-          {saving ? 'Salvataggio…' : saved ? '✓ Salvato' : 'Salva'}
-        </button>
-      </form>
-
-      {/* Sezioni e ordine */}
-      <div style={cardStyle}>
-        <h3 style={sectionTitle}>Sezioni e ordine</h3>
-        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
-          Trascina le sezioni per riordinarle. Usa il toggle per mostrarle o nasconderle.
-        </p>
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={sectionOrder} strategy={verticalListSortingStrategy}>
-            {sectionOrder.map((key, i) => {
-              const item = SECTION_ITEMS.find(s => s.key === key)
-              if (!item) return null
-              return (
-                <SortableSectionRow
-                  key={key} id={key}
-                  label={item.label} hint={item.hint}
-                  visible={form.sections[key] !== false}
-                  onToggle={v => patchSection(key, v)}
-                  color="#e63946"
-                  isLast={i === sectionOrder.length - 1}
-                />
-              )
-            })}
-          </SortableContext>
-        </DndContext>
+      {/* Tab bar */}
+      <style>{`.sito-tabs-r::-webkit-scrollbar{display:none}`}</style>
+      <div className="sito-tabs-r" style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, marginBottom: 20, scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+        {TABS.map(t => (
+          <button key={t.key} onClick={() => setActiveTab(t.key)} style={{
+            padding: '9px 18px', borderRadius: 22, border: 'none', cursor: 'pointer',
+            background: activeTab === t.key ? PRIMARY : '#f0f0f0',
+            color: activeTab === t.key ? '#fff' : '#555',
+            fontWeight: activeTab === t.key ? 700 : 500, fontSize: 13,
+            whiteSpace: 'nowrap', flexShrink: 0, transition: 'background 0.15s',
+          }}>
+            {t.label}
+          </button>
+        ))}
       </div>
+
+      {/* Generale */}
+      {activeTab === 'generale' && (
+        <div style={cardStyle}>
+          <h3 style={sectionTitle}>Impostazioni generali</h3>
+          <div style={fieldWrap}>
+            <label style={lblStyle}>Tagline</label>
+            <input value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))}
+              onBlur={() => save({ minisito: form }).catch(() => {})}
+              placeholder="es. Cucina tradizionale toscana dal 1985" style={inputStyle} />
+          </div>
+          <div style={fieldWrap}>
+            <label style={lblStyle}>Link prenotazione tavolo</label>
+            <input type="url" value={form.booking_url} onChange={e => setForm(f => ({ ...f, booking_url: e.target.value }))}
+              onBlur={() => save({ minisito: form }).catch(() => {})}
+              placeholder="https://www.thefork.it/ristorante/..." style={inputStyle} />
+            <span style={hintStyle}>TheFork, sito proprietario, ecc. Appare come pulsante "Prenota un tavolo".</span>
+          </div>
+          <div>
+            <label style={lblStyle}>Video (YouTube o Vimeo)</label>
+            <input type="url" value={form.video_url} onChange={e => setForm(f => ({ ...f, video_url: e.target.value }))}
+              onBlur={() => save({ minisito: form }).catch(() => {})}
+              placeholder="https://www.youtube.com/watch?v=..." style={inputStyle} />
+            <span style={hintStyle}>Appare come sezione video dedicata nel sito.</span>
+          </div>
+        </div>
+      )}
+
+      {/* SEO & Social */}
+      {activeTab === 'seo' && <>
+        <div style={cardStyle}>
+          <h3 style={sectionTitle}>SEO</h3>
+          <div style={fieldWrap}>
+            <label style={lblStyle}>Titolo pagina (SEO title)</label>
+            <input value={form.seo_title} onChange={e => setForm(f => ({ ...f, seo_title: e.target.value }))}
+              onBlur={() => save({ minisito: form }).catch(() => {})}
+              placeholder={`${ristorante.name} — Ristorante a ${ristorante.address || '...'}`} style={inputStyle} />
+            <span style={hintStyle}>{form.seo_title.length}/60 caratteri consigliati</span>
+          </div>
+          <div>
+            <label style={lblStyle}>Descrizione (meta description)</label>
+            <textarea value={form.seo_description} onChange={e => setForm(f => ({ ...f, seo_description: e.target.value }))}
+              onBlur={() => save({ minisito: form }).catch(() => {})}
+              placeholder="Breve descrizione che appare nei risultati di Google…" rows={3}
+              style={{ ...inputStyle, resize: 'vertical' }} />
+            <span style={hintStyle}>{form.seo_description.length}/160 caratteri consigliati</span>
+          </div>
+        </div>
+        <div style={cardStyle}>
+          <h3 style={sectionTitle}>Social e link utili</h3>
+          <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+            Appaiono come pulsanti nel footer del sito. Lascia vuoti quelli non utilizzati.
+          </p>
+          {SOCIAL_ITEMS.map(({ key, label, placeholder }, i) => (
+            <div key={key} style={{ marginBottom: i < SOCIAL_ITEMS.length - 1 ? 16 : 0 }}>
+              <label style={lblStyle}>{label}</label>
+              <input type="url" value={form.social[key]}
+                onChange={e => setForm(f => ({ ...f, social: { ...f.social, [key]: e.target.value } }))}
+                onBlur={() => save({ minisito: form }).catch(() => {})}
+                placeholder={placeholder} style={inputStyle} />
+            </div>
+          ))}
+        </div>
+      </>}
 
       {/* Highlights */}
-      <div style={cardStyle}>
-        <h3 style={sectionTitle}>Punti di forza</h3>
-        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
-          Fino a 6 card con icona e testo visualizzate in evidenza nel minisito (es. "Cucina a km zero", "Vini naturali").
-        </p>
-        {(form.highlights || []).map(h => {
-          const Icon = ICON_MAP[h.icon] || Star
-          return (
-            <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <select
-                value={h.icon}
-                onChange={e => updateHighlight(h.id, { icon: e.target.value })}
-                style={{ padding: '8px 6px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, background: '#fff', cursor: 'pointer', flexShrink: 0 }}
-              >
-                {HIGHLIGHT_ICONS.map(({ key, label }) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
-              </select>
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: '#fff0f1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Icon size={18} strokeWidth={1.5} color="#e63946" />
+      {activeTab === 'highlights' && <>
+        <div style={cardStyle}>
+          <h3 style={sectionTitle}>Punti di forza</h3>
+          <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+            Fino a 6 card con icona e testo (es. "Cucina a km zero", "Vini naturali", "Chef stellato").
+          </p>
+          {(form.highlights || []).map(h => {
+            const Icon = ICON_MAP[h.icon] || Star
+            return (
+              <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <select value={h.icon} onChange={e => updateHighlight(h.id, { icon: e.target.value })}
+                  style={{ padding: '8px 6px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, background: '#fff', cursor: 'pointer', flexShrink: 0 }}>
+                  {HIGHLIGHT_ICONS.map(({ key, label }) => <option key={key} value={key}>{label}</option>)}
+                </select>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: '#fff0f1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Icon size={18} strokeWidth={1.5} color={PRIMARY} />
+                </div>
+                <input value={h.text}
+                  onChange={e => { const t = e.target.value; setForm(f => ({ ...f, highlights: f.highlights.map(x => x.id === h.id ? { ...x, text: t } : x) })) }}
+                  onBlur={() => save({ minisito: form }).catch(() => {})}
+                  placeholder="es. Cucina a km zero, ingredienti locali" style={{ ...inputStyle, flex: 1 }} />
+                <button onClick={() => removeHighlight(h.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', flexShrink: 0, padding: 4 }}>
+                  <Trash2 size={16} strokeWidth={1.5} />
+                </button>
               </div>
-              <input
-                value={h.text}
-                onChange={e => { const t = e.target.value; setForm(f => ({ ...f, highlights: f.highlights.map(x => x.id === h.id ? { ...x, text: t } : x) })) }}
-                onBlur={() => save({ minisito: form }).catch(() => {})}
-                placeholder="es. Cucina a km zero, ingredienti locali"
-                style={{ ...inputStyle, flex: 1 }}
-              />
-              <button onClick={() => removeHighlight(h.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', flexShrink: 0, padding: 4 }}>
-                <Trash2 size={16} strokeWidth={1.5} />
-              </button>
-            </div>
-          )
-        })}
-        {(form.highlights || []).length < 6 && (
-          <button onClick={addHighlight} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#e63946', background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
-            <Plus size={14} strokeWidth={2.5} /> Aggiungi punto di forza
+            )
+          })}
+          {(form.highlights || []).length < 6 && (
+            <button onClick={addHighlight} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: PRIMARY, background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
+              <Plus size={14} strokeWidth={2.5} /> Aggiungi punto di forza
+            </button>
+          )}
+        </div>
+        <div style={cardStyle}>
+          <h3 style={sectionTitle}>Numeri in evidenza</h3>
+          <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+            Fino a 4 statistiche in una banda scura d'impatto (es. "500+ Coperti a settimana", "Michelin 2024").
+          </p>
+          {(form.stats || []).map(s => (
+            <StatItem key={s.id} item={s} onPatch={p => updateStat(s.id, p)} onRemove={() => removeStat(s.id)} />
+          ))}
+          {(form.stats || []).length < 4 && (
+            <button onClick={addStat} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: PRIMARY, background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
+              <Plus size={14} strokeWidth={2.5} /> Aggiungi numero
+            </button>
+          )}
+        </div>
+      </>}
+
+      {/* Offerte */}
+      {activeTab === 'offerte' && (
+        <div style={cardStyle}>
+          <h3 style={sectionTitle}>Offerte e promozioni</h3>
+          <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+            Card promo con CTA. Se imposti una scadenza, la card sparisce automaticamente dopo quella data.
+          </p>
+          {(form.promozioni || []).map(p => (
+            <PromoItem key={p.id} item={p} onPatch={x => updatePromo(p.id, x)} onRemove={() => removePromo(p.id)} />
+          ))}
+          <button onClick={addPromo} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: PRIMARY, background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
+            <Plus size={14} strokeWidth={2.5} /> Aggiungi offerta
           </button>
-        )}
-      </div>
-
-      {/* Stats */}
-      <div style={cardStyle}>
-        <h3 style={sectionTitle}>Numeri in evidenza</h3>
-        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
-          Fino a 4 numeri mostrati in una banda d'impatto (es. "500+ Coperti a settimana", "Michelin 2024").
-        </p>
-        {(form.stats || []).map(s => (
-          <StatItem key={s.id} item={s} onPatch={p => updateStat(s.id, p)} onRemove={() => removeStat(s.id)} />
-        ))}
-        {(form.stats || []).length < 4 && (
-          <button onClick={addStat} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#e63946', background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
-            <Plus size={14} strokeWidth={2.5} /> Aggiungi numero
-          </button>
-        )}
-      </div>
-
-      {/* Promozioni */}
-      <div style={cardStyle}>
-        <h3 style={sectionTitle}>Offerte e promozioni</h3>
-        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
-          Card promo con CTA. Se imposti una scadenza, la card sparisce automaticamente dopo quella data.
-        </p>
-        {(form.promozioni || []).map(p => (
-          <PromoItem key={p.id} item={p} accentColor="#e63946" onPatch={x => updatePromo(p.id, x)} onRemove={() => removePromo(p.id)} />
-        ))}
-        <button onClick={addPromo} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#e63946', background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
-          <Plus size={14} strokeWidth={2.5} /> Aggiungi offerta
-        </button>
-      </div>
-
-      {/* CTA Banner */}
-      <div style={cardStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-          <h3 style={{ ...sectionTitle, marginBottom: 0 }}>Banner CTA</h3>
-          <Toggle value={form.cta_banner?.active || false} onChange={v => patchBanner('active', v)} color="#e63946" />
         </div>
-        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: 8 }}>
-          Una banda colorata a tutto schermo con titolo persuasivo e pulsante di prenotazione. Appare solo se attivata.
-        </p>
-        <div style={fieldWrap}>
-          <label style={lblStyle}>Titolo principale</label>
-          <input value={form.cta_banner?.title || ''}
-            onChange={e => setForm(f => ({ ...f, cta_banner: { ...f.cta_banner, title: e.target.value } }))}
-            onBlur={() => save({ minisito: form }).catch(() => {})}
-            placeholder="es. Un'esperienza gastronomica unica ti aspetta"
-            style={inputStyle} />
-        </div>
-        <div style={fieldWrap}>
-          <label style={lblStyle}>Sottotitolo (opzionale)</label>
-          <input value={form.cta_banner?.subtitle || ''}
-            onChange={e => setForm(f => ({ ...f, cta_banner: { ...f.cta_banner, subtitle: e.target.value } }))}
-            onBlur={() => save({ minisito: form }).catch(() => {})}
-            placeholder="es. Riserva il tuo tavolo per una serata indimenticabile"
-            style={inputStyle} />
-        </div>
-        <div style={{ display: 'flex', gap: 10, marginBottom: 0 }}>
-          <div style={{ flex: '0 0 180px' }}>
-            <label style={lblStyle}>Testo pulsante</label>
-            <input value={form.cta_banner?.cta_label || ''}
-              onChange={e => setForm(f => ({ ...f, cta_banner: { ...f.cta_banner, cta_label: e.target.value } }))}
-              onBlur={() => save({ minisito: form }).catch(() => {})}
-              placeholder="es. Prenota un tavolo" style={inputStyle} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <label style={lblStyle}>Link pulsante</label>
-            <input type="url" value={form.cta_banner?.cta_url || ''}
-              onChange={e => setForm(f => ({ ...f, cta_banner: { ...f.cta_banner, cta_url: e.target.value } }))}
-              onBlur={() => save({ minisito: form }).catch(() => {})}
-              placeholder="https://..." style={inputStyle} />
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Menu speciali */}
-      <div style={cardStyle}>
-        <h3 style={sectionTitle}>Menu degustazione e speciali</h3>
-        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
-          Proponi esperienze gastronomiche curate dallo chef (es. "Menu Degustazione 5 portate", "Menu Terra e Mare"). Ogni menu mostra le portate con numerazione elegante.
-        </p>
-        {(form.menu_speciali || []).map(m => (
-          <MenuSpecialeItem key={m.id} item={m} onPatch={x => updateMenuSpeciale(m.id, x)} onRemove={() => removeMenuSpeciale(m.id)} />
-        ))}
-        <button onClick={addMenuSpeciale} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#e63946', background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
-          <Plus size={14} strokeWidth={2.5} /> Aggiungi menu speciale
-        </button>
-      </div>
+      {activeTab === 'menu' && (
+        <div style={cardStyle}>
+          <h3 style={sectionTitle}>Menu degustazione e speciali</h3>
+          <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+            Proponi esperienze gastronomiche curate dallo chef (es. "Menu Degustazione 5 portate", "Menu Terra e Mare"). Ogni menu mostra le portate con numerazione elegante.
+          </p>
+          {(form.menu_speciali || []).map(m => (
+            <MenuSpecialeItem key={m.id} item={m} onPatch={x => updateMenuSpeciale(m.id, x)} onRemove={() => removeMenuSpeciale(m.id)} />
+          ))}
+          <button onClick={addMenuSpeciale} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: PRIMARY, background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
+            <Plus size={14} strokeWidth={2.5} /> Aggiungi menu speciale
+          </button>
+        </div>
+      )}
 
       {/* Testimonianze */}
-      <div style={cardStyle}>
-        <h3 style={sectionTitle}>Testimonianze clienti</h3>
-        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
-          Inserisci recensioni reali dei tuoi clienti. Vengono mostrate come card nel minisito.
-        </p>
-        {(form.testimonianze || []).map(t => (
-          <TestimonianzaItem key={t.id} item={t} accentColor="#e63946"
-            onPatch={p => updateTestimonianza(t.id, p)}
-            onRemove={() => removeTestimonianza(t.id)} />
-        ))}
-        {(form.testimonianze || []).length < 10 && (
-          <button onClick={addTestimonianza} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#e63946', background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
-            <Plus size={14} strokeWidth={2.5} /> Aggiungi testimonianza
-          </button>
-        )}
-      </div>
+      {activeTab === 'testimonianze' && (
+        <div style={cardStyle}>
+          <h3 style={sectionTitle}>Testimonianze clienti</h3>
+          <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+            Inserisci recensioni reali dei tuoi clienti. Vengono mostrate come card nel sito.
+          </p>
+          {(form.testimonianze || []).map(t => (
+            <TestimonianzaItem key={t.id} item={t} accentColor={PRIMARY}
+              onPatch={p => updateTestimonianza(t.id, p)}
+              onRemove={() => removeTestimonianza(t.id)} />
+          ))}
+          {(form.testimonianze || []).length < 10 && (
+            <button onClick={addTestimonianza} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: PRIMARY, background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
+              <Plus size={14} strokeWidth={2.5} /> Aggiungi testimonianza
+            </button>
+          )}
+        </div>
+      )}
 
       {/* FAQ */}
-      <div style={cardStyle}>
-        <h3 style={sectionTitle}>Domande frequenti (FAQ)</h3>
-        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
-          Rispondi alle domande più comuni. Appaiono come accordion nel minisito.
-        </p>
-        {(form.faq || []).map((f, i) => (
-          <FaqItem key={f.id} item={f}
-            onPatch={p => updateFaq(f.id, p)}
-            onRemove={() => removeFaq(f.id)}
-            borderBottom={i < form.faq.length - 1} />
-        ))}
-        <button onClick={addFaq} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#e63946', background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 12 }}>
-          <Plus size={14} strokeWidth={2.5} /> Aggiungi domanda
-        </button>
-      </div>
-
-      {/* Blocchi foto + testo */}
-      <div style={cardStyle}>
-        <h3 style={sectionTitle}>Blocchi foto + testo</h3>
-        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
-          Ogni blocco mostra un'immagine affiancata al testo (50/50). Su mobile l'immagine va sopra.
-        </p>
-        {(form.foto_testo || []).map((block, idx) => (
-          <FotoTestoItem key={block.id} item={block} entityType="ristorante" entityId={ristorante.id}
-            onPatch={p => {
-              const updated = { ...form, foto_testo: form.foto_testo.map(b => b.id === block.id ? { ...b, ...p } : b) }
-              setForm(updated); save({ minisito: updated }).catch(() => {})
-            }}
-            onRemove={() => {
-              const updated = { ...form, foto_testo: form.foto_testo.filter(b => b.id !== block.id) }
-              setForm(updated); save({ minisito: updated }).catch(() => {})
-            }}
-            borderBottom={idx < form.foto_testo.length - 1}
-          />
-        ))}
-        <button onClick={() => {
-          const updated = { ...form, foto_testo: [...(form.foto_testo || []), { id: crypto.randomUUID(), titolo: '', testo: '', image_url: '', inverti: false }] }
-          setForm(updated); save({ minisito: updated }).catch(() => {})
-        }} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#e63946', background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
-          <Plus size={14} strokeWidth={2.5} /> Aggiungi blocco
-        </button>
-      </div>
-
-      {/* Paragrafi con icona */}
-      <div style={cardStyle}>
-        <h3 style={sectionTitle}>Paragrafi con icona</h3>
-        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
-          Card con icona + titolo + testo. Ideale per piatti speciali, allergie, proposta cucina, ecc.
-        </p>
-        <div style={fieldWrap}>
-          <label style={lblStyle}>Titolo sezione</label>
-          <input value={form.paragrafi_titolo}
-            onChange={e => setForm(f => ({ ...f, paragrafi_titolo: e.target.value }))}
-            onBlur={() => save({ minisito: form }).catch(() => {})}
-            placeholder="es. La nostra filosofia / I nostri punti di forza"
-            style={inputStyle} />
+      {activeTab === 'faq' && (
+        <div style={cardStyle}>
+          <h3 style={sectionTitle}>Domande frequenti (FAQ)</h3>
+          <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+            Rispondi alle domande più comuni. Appaiono come accordion nel sito.
+          </p>
+          {(form.faq || []).map((f, i) => (
+            <FaqItem key={f.id} item={f}
+              onPatch={p => updateFaq(f.id, p)}
+              onRemove={() => removeFaq(f.id)}
+              borderBottom={i < form.faq.length - 1} />
+          ))}
+          <button onClick={addFaq} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: PRIMARY, background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 12 }}>
+            <Plus size={14} strokeWidth={2.5} /> Aggiungi domanda
+          </button>
         </div>
-        {(form.paragrafi || []).map((p, idx) => (
-          <ParagrafoItem key={p.id} item={p} entityType="ristorante" entityId={ristorante.id}
-            icons={HIGHLIGHT_ICONS}
-            onPatch={patch => {
-              const updated = { ...form, paragrafi: form.paragrafi.map(x => x.id === p.id ? { ...x, ...patch } : x) }
-              setForm(updated); save({ minisito: updated }).catch(() => {})
-            }}
-            onRemove={() => {
-              const updated = { ...form, paragrafi: form.paragrafi.filter(x => x.id !== p.id) }
-              setForm(updated); save({ minisito: updated }).catch(() => {})
-            }}
-            borderBottom={idx < form.paragrafi.length - 1}
-          />
-        ))}
-        <button onClick={() => {
-          const updated = { ...form, paragrafi: [...(form.paragrafi || []), { id: crypto.randomUUID(), icon: 'star', titolo: '', testo: '', image_url: '' }] }
-          setForm(updated); save({ minisito: updated }).catch(() => {})
-        }} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#e63946', background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
-          <Plus size={14} strokeWidth={2.5} /> Aggiungi paragrafo
-        </button>
-      </div>
+      )}
 
-      {/* Team */}
-      <div style={cardStyle}>
-        <h3 style={sectionTitle}>Il team</h3>
-        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
-          Presenta lo chef, il sommelier, il personale di sala — chiunque rappresenti il tuo ristorante.
-        </p>
-        <div style={fieldWrap}>
-          <label style={lblStyle}>Titolo sezione</label>
-          <input value={form.team_titolo}
-            onChange={e => setForm(f => ({ ...f, team_titolo: e.target.value }))}
-            onBlur={() => save({ minisito: form }).catch(() => {})}
-            placeholder="es. Il nostro team / La brigata di cucina"
-            style={inputStyle} />
-        </div>
-        {(form.team || []).map((m, idx) => (
-          <TeamMemberItem key={m.id} item={m} entityType="ristorante" entityId={ristorante.id}
-            onPatch={patch => {
-              const updated = { ...form, team: form.team.map(x => x.id === m.id ? { ...x, ...patch } : x) }
-              setForm(updated); save({ minisito: updated }).catch(() => {})
-            }}
-            onRemove={() => {
-              const updated = { ...form, team: form.team.filter(x => x.id !== m.id) }
-              setForm(updated); save({ minisito: updated }).catch(() => {})
-            }}
-            borderBottom={idx < form.team.length - 1}
-          />
-        ))}
-        <button onClick={() => {
-          const updated = { ...form, team: [...(form.team || []), { id: crypto.randomUUID(), nome: '', ruolo: '', bio: '', photo_url: '' }] }
-          setForm(updated); save({ minisito: updated }).catch(() => {})
-        }} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#e63946', background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
-          <Plus size={14} strokeWidth={2.5} /> Aggiungi membro
-        </button>
-      </div>
-
-      {/* Steps / Come funziona */}
-      <div style={cardStyle}>
-        <h3 style={sectionTitle}>Come funziona (steps)</h3>
-        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
-          Passi numerati con icona. Es: "1. Prenota → 2. Scegli il menu → 3. Goditi la serata".
-        </p>
-        <div style={fieldWrap}>
-          <label style={lblStyle}>Titolo sezione</label>
-          <input value={form.steps_titolo}
-            onChange={e => setForm(f => ({ ...f, steps_titolo: e.target.value }))}
-            onBlur={() => save({ minisito: form }).catch(() => {})}
-            placeholder="es. Come prenotare / La tua esperienza"
-            style={inputStyle} />
-        </div>
-        {(form.steps || []).map((step, idx) => (
-          <StepItem key={step.id} item={step} index={idx} icons={HIGHLIGHT_ICONS}
-            onPatch={patch => {
-              const updated = { ...form, steps: form.steps.map(x => x.id === step.id ? { ...x, ...patch } : x) }
-              setForm(updated); save({ minisito: updated }).catch(() => {})
-            }}
-            onRemove={() => {
-              const updated = { ...form, steps: form.steps.filter(x => x.id !== step.id) }
-              setForm(updated); save({ minisito: updated }).catch(() => {})
-            }}
-            borderBottom={idx < form.steps.length - 1}
-          />
-        ))}
-        <button onClick={() => {
-          const updated = { ...form, steps: [...(form.steps || []), { id: crypto.randomUUID(), icon: 'star', titolo: '', testo: '' }] }
-          setForm(updated); save({ minisito: updated }).catch(() => {})
-        }} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#e63946', background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
-          <Plus size={14} strokeWidth={2.5} /> Aggiungi step
-        </button>
-      </div>
-
-      {/* Social */}
-      <div style={cardStyle}>
-        <h3 style={sectionTitle}>Social e link utili</h3>
-        <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
-          Appaiono come pulsanti nel footer del minisito. Lascia vuoti quelli non utilizzati.
-        </p>
-        {SOCIAL_ITEMS.map(({ key, label, placeholder }, i) => (
-          <div key={key} style={{ marginBottom: i < SOCIAL_ITEMS.length - 1 ? 16 : 0 }}>
-            <label style={lblStyle}>{label}</label>
-            <input
-              type="url"
-              value={form.social[key]}
-              onChange={e => setForm(f => ({ ...f, social: { ...f.social, [key]: e.target.value } }))}
-              onBlur={() => save({ minisito: form }).catch(() => {})}
-              placeholder={placeholder}
-              style={inputStyle}
-            />
+      {/* CTA Banner */}
+      {activeTab === 'cta' && (
+        <div style={cardStyle}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <h3 style={{ ...sectionTitle, marginBottom: 0 }}>Banner CTA</h3>
+            <Toggle value={form.cta_banner?.active || false} onChange={v => patchBanner('active', v)} color={PRIMARY} />
           </div>
-        ))}
-      </div>
+          <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: 8 }}>
+            Una banda colorata a tutto schermo con titolo persuasivo e pulsante di prenotazione. Appare solo se attivata.
+          </p>
+          <div style={fieldWrap}>
+            <label style={lblStyle}>Titolo principale</label>
+            <input value={form.cta_banner?.title || ''}
+              onChange={e => setForm(f => ({ ...f, cta_banner: { ...f.cta_banner, title: e.target.value } }))}
+              onBlur={() => save({ minisito: form }).catch(() => {})}
+              placeholder="es. Un'esperienza gastronomica unica ti aspetta" style={inputStyle} />
+          </div>
+          <div style={fieldWrap}>
+            <label style={lblStyle}>Sottotitolo (opzionale)</label>
+            <input value={form.cta_banner?.subtitle || ''}
+              onChange={e => setForm(f => ({ ...f, cta_banner: { ...f.cta_banner, subtitle: e.target.value } }))}
+              onBlur={() => save({ minisito: form }).catch(() => {})}
+              placeholder="es. Riserva il tuo tavolo per una serata indimenticabile" style={inputStyle} />
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ flex: '0 0 180px' }}>
+              <label style={lblStyle}>Testo pulsante</label>
+              <input value={form.cta_banner?.cta_label || ''}
+                onChange={e => setForm(f => ({ ...f, cta_banner: { ...f.cta_banner, cta_label: e.target.value } }))}
+                onBlur={() => save({ minisito: form }).catch(() => {})}
+                placeholder="es. Prenota un tavolo" style={inputStyle} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={lblStyle}>Link pulsante</label>
+              <input type="url" value={form.cta_banner?.cta_url || ''}
+                onChange={e => setForm(f => ({ ...f, cta_banner: { ...f.cta_banner, cta_url: e.target.value } }))}
+                onBlur={() => save({ minisito: form }).catch(() => {})}
+                placeholder="https://..." style={inputStyle} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Contenuto */}
+      {activeTab === 'contenuto' && <>
+        <div style={cardStyle}>
+          <h3 style={sectionTitle}>Blocchi foto + testo</h3>
+          <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+            Immagine affiancata al testo (50/50). Su mobile l'immagine va sopra.
+          </p>
+          {(form.foto_testo || []).map((block, idx) => (
+            <FotoTestoItem key={block.id} item={block} entityType="ristorante" entityId={ristorante.id}
+              onPatch={p => {
+                const updated = { ...form, foto_testo: form.foto_testo.map(b => b.id === block.id ? { ...b, ...p } : b) }
+                setForm(updated); save({ minisito: updated }).catch(() => {})
+              }}
+              onRemove={() => {
+                const updated = { ...form, foto_testo: form.foto_testo.filter(b => b.id !== block.id) }
+                setForm(updated); save({ minisito: updated }).catch(() => {})
+              }}
+              borderBottom={idx < form.foto_testo.length - 1}
+            />
+          ))}
+          <button onClick={() => {
+            const updated = { ...form, foto_testo: [...(form.foto_testo || []), { id: crypto.randomUUID(), titolo: '', testo: '', image_url: '', inverti: false }] }
+            setForm(updated); save({ minisito: updated }).catch(() => {})
+          }} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: PRIMARY, background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
+            <Plus size={14} strokeWidth={2.5} /> Aggiungi blocco
+          </button>
+        </div>
+        <div style={cardStyle}>
+          <h3 style={sectionTitle}>Paragrafi con icona</h3>
+          <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+            Card con icona + titolo + testo. Ottimo per filosofia cucina, specializzazioni, proposta vini, ecc.
+          </p>
+          <div style={fieldWrap}>
+            <label style={lblStyle}>Titolo sezione</label>
+            <input value={form.paragrafi_titolo}
+              onChange={e => setForm(f => ({ ...f, paragrafi_titolo: e.target.value }))}
+              onBlur={() => save({ minisito: form }).catch(() => {})}
+              placeholder="es. La nostra filosofia / I nostri punti di forza" style={inputStyle} />
+          </div>
+          {(form.paragrafi || []).map((p, idx) => (
+            <ParagrafoItem key={p.id} item={p} entityType="ristorante" entityId={ristorante.id}
+              icons={HIGHLIGHT_ICONS}
+              onPatch={patch => {
+                const updated = { ...form, paragrafi: form.paragrafi.map(x => x.id === p.id ? { ...x, ...patch } : x) }
+                setForm(updated); save({ minisito: updated }).catch(() => {})
+              }}
+              onRemove={() => {
+                const updated = { ...form, paragrafi: form.paragrafi.filter(x => x.id !== p.id) }
+                setForm(updated); save({ minisito: updated }).catch(() => {})
+              }}
+              borderBottom={idx < form.paragrafi.length - 1}
+            />
+          ))}
+          <button onClick={() => {
+            const updated = { ...form, paragrafi: [...(form.paragrafi || []), { id: crypto.randomUUID(), icon: 'star', titolo: '', testo: '', image_url: '' }] }
+            setForm(updated); save({ minisito: updated }).catch(() => {})
+          }} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: PRIMARY, background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
+            <Plus size={14} strokeWidth={2.5} /> Aggiungi paragrafo
+          </button>
+        </div>
+        <div style={cardStyle}>
+          <h3 style={sectionTitle}>Il team</h3>
+          <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+            Presenta lo chef, il sommelier, il personale di sala — chiunque rappresenti il tuo ristorante.
+          </p>
+          <div style={fieldWrap}>
+            <label style={lblStyle}>Titolo sezione</label>
+            <input value={form.team_titolo}
+              onChange={e => setForm(f => ({ ...f, team_titolo: e.target.value }))}
+              onBlur={() => save({ minisito: form }).catch(() => {})}
+              placeholder="es. Il nostro team / La brigata di cucina" style={inputStyle} />
+          </div>
+          {(form.team || []).map((m, idx) => (
+            <TeamMemberItem key={m.id} item={m} entityType="ristorante" entityId={ristorante.id}
+              onPatch={patch => {
+                const updated = { ...form, team: form.team.map(x => x.id === m.id ? { ...x, ...patch } : x) }
+                setForm(updated); save({ minisito: updated }).catch(() => {})
+              }}
+              onRemove={() => {
+                const updated = { ...form, team: form.team.filter(x => x.id !== m.id) }
+                setForm(updated); save({ minisito: updated }).catch(() => {})
+              }}
+              borderBottom={idx < form.team.length - 1}
+            />
+          ))}
+          <button onClick={() => {
+            const updated = { ...form, team: [...(form.team || []), { id: crypto.randomUUID(), nome: '', ruolo: '', bio: '', photo_url: '' }] }
+            setForm(updated); save({ minisito: updated }).catch(() => {})
+          }} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: PRIMARY, background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
+            <Plus size={14} strokeWidth={2.5} /> Aggiungi membro
+          </button>
+        </div>
+        <div style={cardStyle}>
+          <h3 style={sectionTitle}>Come funziona (steps)</h3>
+          <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+            Passi numerati con icona. Es: "1. Prenota → 2. Scegli il menu → 3. Goditi la serata".
+          </p>
+          <div style={fieldWrap}>
+            <label style={lblStyle}>Titolo sezione</label>
+            <input value={form.steps_titolo}
+              onChange={e => setForm(f => ({ ...f, steps_titolo: e.target.value }))}
+              onBlur={() => save({ minisito: form }).catch(() => {})}
+              placeholder="es. Come prenotare / La tua esperienza" style={inputStyle} />
+          </div>
+          {(form.steps || []).map((step, idx) => (
+            <StepItem key={step.id} item={step} index={idx} icons={HIGHLIGHT_ICONS}
+              onPatch={patch => {
+                const updated = { ...form, steps: form.steps.map(x => x.id === step.id ? { ...x, ...patch } : x) }
+                setForm(updated); save({ minisito: updated }).catch(() => {})
+              }}
+              onRemove={() => {
+                const updated = { ...form, steps: form.steps.filter(x => x.id !== step.id) }
+                setForm(updated); save({ minisito: updated }).catch(() => {})
+              }}
+              borderBottom={idx < form.steps.length - 1}
+            />
+          ))}
+          <button onClick={() => {
+            const updated = { ...form, steps: [...(form.steps || []), { id: crypto.randomUUID(), icon: 'star', titolo: '', testo: '' }] }
+            setForm(updated); save({ minisito: updated }).catch(() => {})
+          }} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: PRIMARY, background: '#fff0f1', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
+            <Plus size={14} strokeWidth={2.5} /> Aggiungi step
+          </button>
+        </div>
+      </>}
+
+      {/* Sezioni */}
+      {activeTab === 'sezioni' && (
+        <div style={cardStyle}>
+          <h3 style={sectionTitle}>Sezioni e ordine</h3>
+          <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+            Trascina le sezioni per riordinarle. Usa il toggle per mostrarle o nasconderle.
+          </p>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={sectionOrder} strategy={verticalListSortingStrategy}>
+              {sectionOrder.map((key, i) => {
+                const item = SECTION_ITEMS.find(s => s.key === key)
+                if (!item) return null
+                return (
+                  <SortableSectionRow
+                    key={key} id={key}
+                    label={item.label} hint={item.hint}
+                    visible={form.sections[key] !== false}
+                    onToggle={v => patchSection(key, v)}
+                    color={PRIMARY}
+                    isLast={i === sectionOrder.length - 1}
+                  />
+                )
+              })}
+            </SortableContext>
+          </DndContext>
+        </div>
+      )}
+
     </div>
   )
 }
@@ -919,7 +914,7 @@ function FotoTestoItem({ item, entityType, entityId, onPatch, onRemove, borderBo
         </button>
         <input ref={fileRef} type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', userSelect: 'none' }}>
-          <input type="checkbox" checked={item.inverti || false} onChange={e => onPatch({ inverti: e.target.checked })} style={{ accentColor: '#e63946' }} />
+          <input type="checkbox" checked={item.inverti || false} onChange={e => onPatch({ inverti: e.target.checked })} style={{ accentColor: PRIMARY }} />
           Foto a destra
         </label>
         {item.image_url && <button type="button" onClick={() => onPatch({ image_url: '' })} style={{ fontSize: 12, padding: '4px 10px', background: '#fff0f0', color: '#c00', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Rimuovi immagine</button>}
@@ -955,7 +950,7 @@ function ParagrafoItem({ item, entityType, entityId, icons, onPatch, onRemove, b
               {icons.map(({ key, label }) => <option key={key} value={key}>{label}</option>)}
             </select>
             <div style={{ width: 36, height: 36, borderRadius: 8, background: '#fff0f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Icon size={18} strokeWidth={1.5} color="#e63946" />
+              <Icon size={18} strokeWidth={1.5} color={PRIMARY} />
             </div>
           </div>
         </div>
@@ -998,7 +993,7 @@ function TeamMemberItem({ item, entityType, entityId, onPatch, onRemove, borderB
   return (
     <div style={{ paddingBottom: 20, marginBottom: 20, borderBottom: borderBottom ? '1px solid #f0f0f0' : 'none', display: 'flex', gap: 14 }}>
       <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-        <div style={{ width: 72, height: 72, borderRadius: '50%', overflow: 'hidden', background: '#f0f4ff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #eee' }}>
+        <div style={{ width: 72, height: 72, borderRadius: '50%', overflow: 'hidden', background: '#fff0f1', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #eee' }}>
           {item.photo_url ? <img src={item.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Users size={28} strokeWidth={1.5} color="#aaa" />}
         </div>
         <button type="button" onClick={() => fileRef.current?.click()} style={{ fontSize: 11, padding: '4px 8px', background: '#fff0f1', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>{uploading ? '…' : 'Foto'}</button>
@@ -1021,7 +1016,7 @@ function StepItem({ item, index, icons, onPatch, onRemove, borderBottom }) {
   return (
     <div style={{ paddingBottom: 16, marginBottom: 16, borderBottom: borderBottom ? '1px solid #f0f0f0' : 'none' }}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-        <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#e63946', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0, marginTop: 6 }}>{index + 1}</div>
+        <div style={{ width: 32, height: 32, borderRadius: '50%', background: PRIMARY, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0, marginTop: 6 }}>{index + 1}</div>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
             <select value={item.icon} onChange={e => onPatch({ icon: e.target.value })} style={{ padding: '7px 6px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, background: '#fff', flexShrink: 0 }}>
@@ -1055,13 +1050,11 @@ function Toggle({ value, onChange, color }) {
 }
 
 const titleStyle   = { marginTop: 0, marginBottom: 4, fontSize: 22 }
-const descStyle    = { margin: '0 0 20px', color: '#888', fontSize: 14, lineHeight: 1.6 }
 const cardStyle    = { background: '#fff', borderRadius: 12, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', marginBottom: 16 }
 const sectionTitle = { margin: '0 0 16px', fontSize: 14, fontWeight: 700, color: '#444' }
 const fieldWrap    = { marginBottom: 18 }
 const lblStyle     = { display: 'block', fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 5 }
 const inputStyle   = { width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14, boxSizing: 'border-box' }
 const hintStyle    = { fontSize: 11, color: '#aaa', marginTop: 4, display: 'block' }
-const saveBtn      = { padding: '10px 28px', background: '#e63946', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }
 const loadingStyle = { padding: 32, color: '#888' }
 const errorStyle   = { padding: 32, color: '#e53e3e' }
