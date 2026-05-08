@@ -335,18 +335,30 @@ export default function LandingStruttura({ property }) {
                     : ctaHref
                   const ctaLabel = p.cta_label || 'Scopri offerta'
                   const isExternal = promoUrl && (promoUrl.startsWith('http') || promoUrl.startsWith('tel:') || promoUrl.startsWith('mailto:'))
+                  const hasDetail = p.description_full || (p.gallery || []).length > 0
                   return (
                     <div key={p.id}
                       style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', borderTop: `4px solid ${primary}`, display: 'flex', flexDirection: 'column' }}>
+                      {p.cover_url && (
+                        <img src={p.cover_url} alt={p.title} style={{ width: '100%', height: 180, objectFit: 'cover' }} />
+                      )}
                       <div style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
                         {p.badge && <span style={{ display: 'inline-block', alignSelf: 'flex-start', background: `${primary}18`, color: primary, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 14 }}>{p.badge}</span>}
                         <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 12, color: '#1a1a2e' }}>{p.title}</h3>
                         {p.text && <p style={{ fontSize: 15, color: '#555', lineHeight: 1.7, marginBottom: 16, flex: 1 }}>{p.text}</p>}
                         {p.expires_at && <div style={{ fontSize: 12, color: '#aaa', marginBottom: 20 }}>Valida fino al {new Date(p.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
-                        <a href={promoUrl} {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                          style={{ display: 'block', textAlign: 'center', padding: '13px 20px', background: primary, color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none', marginTop: 'auto' }}>
-                          {ctaLabel}
-                        </a>
+                        <div style={{ display: 'flex', gap: 10, flexDirection: 'column', marginTop: 'auto' }}>
+                          {hasDetail && (
+                            <a href={`/s/${entity.slug}/offerte/${p.id}`}
+                              style={{ display: 'block', textAlign: 'center', padding: '12px 20px', background: 'transparent', color: primary, border: `2px solid ${primary}`, borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+                              Scopri di più
+                            </a>
+                          )}
+                          <a href={promoUrl} {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                            style={{ display: 'block', textAlign: 'center', padding: '13px 20px', background: primary, color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+                            {ctaLabel}
+                          </a>
+                        </div>
                       </div>
                     </div>
                   )
@@ -364,42 +376,54 @@ export default function LandingStruttura({ property }) {
               <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>Pacchetti e soggiorni</h2>
               <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Scegli il soggiorno pensato per te</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
-                {pacchetti.map(p => (
-                  <div key={p.id} style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ padding: '28px 28px 0' }}>
-                      {p.badge && <span style={{ display: 'inline-block', background: primary, color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 16 }}>{p.badge}</span>}
-                      <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 6, color: '#1a1a2e' }}>{p.name}</h3>
-                      {p.tagline && <p style={{ fontSize: 14, color: '#888', marginBottom: 20, lineHeight: 1.5 }}>{p.tagline}</p>}
-                      {p.price && (
-                        <div style={{ marginBottom: 24, borderTop: '1px solid #f0f0f0', paddingTop: 20 }}>
-                          <span style={{ fontFamily: heading, fontSize: 40, fontWeight: 800, color: primary }}>{p.price}</span>
-                          {p.price_label && <span style={{ fontSize: 14, color: '#aaa', marginLeft: 6 }}>/ {p.price_label}</span>}
+                {pacchetti.map(p => {
+                  const hasDetail = p.description_full || (p.gallery || []).length > 0
+                  return (
+                    <div key={p.id} style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column' }}>
+                      {p.cover_url && (
+                        <img src={p.cover_url} alt={p.name} style={{ width: '100%', height: 180, objectFit: 'cover' }} />
+                      )}
+                      <div style={{ padding: '28px 28px 0' }}>
+                        {p.badge && <span style={{ display: 'inline-block', background: primary, color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 16 }}>{p.badge}</span>}
+                        <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 6, color: '#1a1a2e' }}>{p.name}</h3>
+                        {p.tagline && <p style={{ fontSize: 14, color: '#888', marginBottom: 20, lineHeight: 1.5 }}>{p.tagline}</p>}
+                        {p.price && (
+                          <div style={{ marginBottom: 24, borderTop: '1px solid #f0f0f0', paddingTop: 20 }}>
+                            <span style={{ fontFamily: heading, fontSize: 40, fontWeight: 800, color: primary }}>{p.price}</span>
+                            {p.price_label && <span style={{ fontSize: 14, color: '#aaa', marginLeft: 6 }}>/ {p.price_label}</span>}
+                          </div>
+                        )}
+                      </div>
+                      {(p.includes || []).filter(Boolean).length > 0 && (
+                        <div style={{ padding: '0 28px 24px', flex: 1 }}>
+                          {!p.price && <div style={{ height: 1, background: '#f0f0f0', margin: '0 0 20px' }} />}
+                          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {(p.includes || []).filter(Boolean).map((item, i) => (
+                              <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 14, color: '#444' }}>
+                                <span style={{ color: primary, fontWeight: 700, fontSize: 15, lineHeight: 1.3, flexShrink: 0 }}>✓</span>
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
                         </div>
                       )}
+                      <div style={{ padding: '0 28px 28px', display: 'flex', flexDirection: 'column', gap: 10, marginTop: 'auto' }}>
+                        {hasDetail && (
+                          <a href={`/s/${entity.slug}/pacchetti/${p.id}`}
+                            style={{ display: 'block', textAlign: 'center', padding: '12px', background: 'transparent', color: primary, border: `2px solid ${primary}`, borderRadius: 12, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+                            Scopri di più
+                          </a>
+                        )}
+                        {p.cta_label && p.cta_url && (
+                          <a href={p.cta_url} target="_blank" rel="noopener noreferrer"
+                            style={{ display: 'block', textAlign: 'center', padding: '13px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+                            {p.cta_label}
+                          </a>
+                        )}
+                      </div>
                     </div>
-                    {(p.includes || []).filter(Boolean).length > 0 && (
-                      <div style={{ padding: '0 28px 24px', flex: 1 }}>
-                        {!p.price && <div style={{ height: 1, background: '#f0f0f0', margin: '0 0 20px' }} />}
-                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                          {(p.includes || []).filter(Boolean).map((item, i) => (
-                            <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 14, color: '#444' }}>
-                              <span style={{ color: primary, fontWeight: 700, fontSize: 15, lineHeight: 1.3, flexShrink: 0 }}>✓</span>
-                              {item}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {p.cta_label && p.cta_url && (
-                      <div style={{ padding: '0 28px 28px' }}>
-                        <a href={p.cta_url} target="_blank" rel="noopener noreferrer"
-                          style={{ display: 'block', textAlign: 'center', padding: '13px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-                          {p.cta_label}
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           </section>

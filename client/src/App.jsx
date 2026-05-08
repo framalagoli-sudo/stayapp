@@ -52,6 +52,8 @@ import AttivitaMiniSitoPage from './pages/admin/attivita/AttivitaMiniSitoPage'
 import AttivitaApp from './pages/guest/AttivitaApp'
 import DemoRequestsPage from './pages/admin/DemoRequestsPage'
 import BookingsPage from './pages/admin/BookingsPage'
+import OffertaPage from './pages/guest/OffertaPage'
+import PacchettoPage from './pages/guest/PacchettoPage'
 
 // Injects property ID from URL params into PropertyIdContext
 // so all property sub-pages work without modification
@@ -74,6 +76,10 @@ export default function App() {
           <Route path="/r/:slug" element={<RestaurantApp />} />
           <Route path="/a/:slug" element={<AttivitaApp />} />
           <Route path="/eventi/:id" element={<EventoPage />} />
+
+          {/* Dettaglio offerte e pacchetti struttura */}
+          <Route path="/s/:slug/offerte/:id"   element={<OffertaPage />} />
+          <Route path="/s/:slug/pacchetti/:id" element={<PacchettoPage />} />
 
           {/* Policy pubbliche — struttura */}
           <Route path="/s/:slug/privacy" element={<PolicyPage type="privacy" entityType="struttura" />} />

@@ -136,7 +136,7 @@ export default function PropertyMiniSitoPage() {
   }
 
   function addPromo() {
-    const updated = { ...form, promozioni: [...(form.promozioni || []), { id: crypto.randomUUID(), badge: '', title: '', text: '', cta_label: '', cta_url: '', expires_at: '' }] }
+    const updated = { ...form, promozioni: [...(form.promozioni || []), { id: crypto.randomUUID(), badge: '', title: '', text: '', description_full: '', cover_url: '', gallery: [], valid_from: '', expires_at: '', conditions: '', cta_label: '', cta_url: '' }] }
     setForm(updated); save({ minisito: updated }).catch(() => {})
   }
   function updatePromo(id, p) {
@@ -154,7 +154,7 @@ export default function PropertyMiniSitoPage() {
   }
 
   function addPacchetto() {
-    const updated = { ...form, pacchetti: [...(form.pacchetti || []), { id: crypto.randomUUID(), badge: '', name: '', tagline: '', price: '', price_label: 'a persona', includes: [], cta_label: '', cta_url: '' }] }
+    const updated = { ...form, pacchetti: [...(form.pacchetti || []), { id: crypto.randomUUID(), badge: '', name: '', tagline: '', price: '', price_label: 'a persona', includes: [], description_full: '', cover_url: '', gallery: [], duration: '', period: '', min_persons: '', cta_label: '', cta_url: '' }] }
     setForm(updated); save({ minisito: updated }).catch(() => {})
   }
   function updatePacchetto(id, p) {
@@ -421,7 +421,7 @@ export default function PropertyMiniSitoPage() {
             Card promo con CTA. Se imposti una scadenza, la card sparisce automaticamente dopo quella data.
           </p>
           {(form.promozioni || []).map(p => (
-            <PromoItem key={p.id} item={p} onPatch={x => updatePromo(p.id, x)} onRemove={() => removePromo(p.id)} />
+            <PromoItem key={p.id} item={p} entityType="struttura" entityId={property.id} onPatch={x => updatePromo(p.id, x)} onRemove={() => removePromo(p.id)} />
           ))}
           <button onClick={addPromo} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#1a1a2e', background: '#f0f4ff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
             <Plus size={14} strokeWidth={2.5} /> Aggiungi offerta
@@ -437,7 +437,7 @@ export default function PropertyMiniSitoPage() {
             Soggiorni tematici con elenco inclusi e prezzo (es. "Weekend Romantico", "Family Summer").
           </p>
           {(form.pacchetti || []).map(p => (
-            <PacchettoItem key={p.id} item={p} onPatch={x => updatePacchetto(p.id, x)} onRemove={() => removePacchetto(p.id)} />
+            <PacchettoItem key={p.id} item={p} entityType="struttura" entityId={property.id} onPatch={x => updatePacchetto(p.id, x)} onRemove={() => removePacchetto(p.id)} />
           ))}
           <button onClick={addPacchetto} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#1a1a2e', background: '#f0f4ff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', marginTop: 4 }}>
             <Plus size={14} strokeWidth={2.5} /> Aggiungi pacchetto
@@ -702,23 +702,52 @@ function SortableSectionRow({ id, label, hint, visible, onToggle, color, isLast 
   )
 }
 
-function PacchettoItem({ item, onPatch, onRemove }) {
-  const [badge,      setBadge]      = useState(item.badge      || '')
-  const [name,       setName]       = useState(item.name       || '')
-  const [tagline,    setTagline]    = useState(item.tagline    || '')
-  const [price,      setPrice]      = useState(item.price      || '')
-  const [priceLabel, setPriceLabel] = useState(item.price_label || 'a persona')
-  const [includes,   setIncludes]   = useState((item.includes  || []).join('\n'))
-  const [ctaLabel,   setCtaLabel]   = useState(item.cta_label  || '')
-  const [ctaUrl,     setCtaUrl]     = useState(item.cta_url    || '')
+function PacchettoItem({ item, entityType, entityId, onPatch, onRemove }) {
+  const [badge,        setBadge]        = useState(item.badge          || '')
+  const [name,         setName]         = useState(item.name           || '')
+  const [tagline,      setTagline]      = useState(item.tagline        || '')
+  const [price,        setPrice]        = useState(item.price          || '')
+  const [priceLabel,   setPriceLabel]   = useState(item.price_label    || 'a persona')
+  const [includes,     setIncludes]     = useState((item.includes      || []).join('\n'))
+  const [descFull,     setDescFull]     = useState(item.description_full || '')
+  const [duration,     setDuration]     = useState(item.duration       || '')
+  const [period,       setPeriod]       = useState(item.period         || '')
+  const [minPersons,   setMinPersons]   = useState(item.min_persons    || '')
+  const [ctaLabel,     setCtaLabel]     = useState(item.cta_label      || '')
+  const [ctaUrl,       setCtaUrl]       = useState(item.cta_url        || '')
+  const [uploading,    setUploading]    = useState(false)
+  const [uploadingGal, setUploadingGal] = useState(false)
+  const coverRef   = useRef()
+  const galleryRef = useRef()
+
+  async function handleCoverUpload(e) {
+    const file = e.target.files[0]; if (!file) return
+    setUploading(true)
+    try {
+      const { url } = await uploadMedia(`/api/upload/minisito-image?entity_type=${entityType}&entity_id=${entityId}`, file)
+      onPatch({ cover_url: url })
+    } catch {} finally { setUploading(false); e.target.value = '' }
+  }
+
+  async function handleGalleryUpload(e) {
+    const files = Array.from(e.target.files); if (!files.length) return
+    setUploadingGal(true)
+    try {
+      const urls = []
+      for (const file of files) {
+        const { url } = await uploadMedia(`/api/upload/minisito-image?entity_type=${entityType}&entity_id=${entityId}`, file)
+        urls.push(url)
+      }
+      onPatch({ gallery: [...(item.gallery || []), ...urls] })
+    } catch {} finally { setUploadingGal(false); e.target.value = '' }
+  }
+
   return (
     <div style={{ background: '#f9f9fb', borderRadius: 10, padding: 16, marginBottom: 12 }}>
-      <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-        <div style={{ flex: 1 }}>
-          <label style={{ ...lblStyle, marginBottom: 4 }}>Badge (opzionale)</label>
-          <input value={badge} onChange={e => setBadge(e.target.value)} onBlur={() => onPatch({ badge })}
-            placeholder="es. Più richiesto" style={inputStyle} />
-        </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ ...lblStyle, marginBottom: 4 }}>Badge (opzionale)</label>
+        <input value={badge} onChange={e => setBadge(e.target.value)} onBlur={() => onPatch({ badge })}
+          placeholder="es. Più richiesto" style={inputStyle} />
       </div>
       <div style={{ marginBottom: 10 }}>
         <label style={{ ...lblStyle, marginBottom: 4 }}>Nome pacchetto *</label>
@@ -726,7 +755,7 @@ function PacchettoItem({ item, onPatch, onRemove }) {
           placeholder="es. Weekend Romantico" style={{ ...inputStyle, fontWeight: 600 }} />
       </div>
       <div style={{ marginBottom: 10 }}>
-        <label style={{ ...lblStyle, marginBottom: 4 }}>Sottotitolo (opzionale)</label>
+        <label style={{ ...lblStyle, marginBottom: 4 }}>Sottotitolo</label>
         <input value={tagline} onChange={e => setTagline(e.target.value)} onBlur={() => onPatch({ tagline })}
           placeholder="es. Per una fuga dalla routine" style={inputStyle} />
       </div>
@@ -742,6 +771,23 @@ function PacchettoItem({ item, onPatch, onRemove }) {
             placeholder="es. a persona / a notte" style={inputStyle} />
         </div>
       </div>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+        <div style={{ flex: 1 }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Durata</label>
+          <input value={duration} onChange={e => setDuration(e.target.value)} onBlur={() => onPatch({ duration })}
+            placeholder="es. 3 notti / 4 giorni" style={inputStyle} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Periodo disponibilità</label>
+          <input value={period} onChange={e => setPeriod(e.target.value)} onBlur={() => onPatch({ period })}
+            placeholder="es. Giugno–Settembre" style={inputStyle} />
+        </div>
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ ...lblStyle, marginBottom: 4 }}>Numero minimo persone</label>
+        <input value={minPersons} onChange={e => setMinPersons(e.target.value)} onBlur={() => onPatch({ min_persons: minPersons })}
+          placeholder="es. 2 persone" style={inputStyle} />
+      </div>
       <div style={{ marginBottom: 10 }}>
         <label style={{ ...lblStyle, marginBottom: 4 }}>Include (una voce per riga)</label>
         <textarea value={includes}
@@ -749,6 +795,52 @@ function PacchettoItem({ item, onPatch, onRemove }) {
           onBlur={() => onPatch({ includes: includes.split('\n').map(s => s.trim()).filter(Boolean) })}
           rows={4} placeholder={"Colazione inclusa\nAccesso spa\nLate check-out\nCena romantica"}
           style={{ ...inputStyle, resize: 'vertical' }} />
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ ...lblStyle, marginBottom: 4 }}>Descrizione dettagliata</label>
+        <textarea value={descFull}
+          onChange={e => setDescFull(e.target.value)}
+          onBlur={() => onPatch({ description_full: descFull })}
+          rows={5} placeholder="Descrizione completa del pacchetto, visibile nella pagina di dettaglio…"
+          style={{ ...inputStyle, resize: 'vertical' }} />
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ ...lblStyle, marginBottom: 8 }}>Immagine di copertina</label>
+        {item.cover_url && <img src={item.cover_url} alt="" style={{ width: '100%', maxHeight: 160, objectFit: 'cover', borderRadius: 8, marginBottom: 8, display: 'block' }} />}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button type="button" onClick={() => coverRef.current?.click()}
+            style={{ fontSize: 13, padding: '6px 14px', background: '#f0f4ff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+            {uploading ? 'Caricamento…' : item.cover_url ? 'Cambia copertina' : 'Carica copertina'}
+          </button>
+          <input ref={coverRef} type="file" accept="image/*" onChange={handleCoverUpload} style={{ display: 'none' }} />
+          {item.cover_url && (
+            <button type="button" onClick={() => onPatch({ cover_url: '' })}
+              style={{ fontSize: 12, padding: '4px 10px', background: '#fff0f0', color: '#c00', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
+              Rimuovi
+            </button>
+          )}
+        </div>
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ ...lblStyle, marginBottom: 8 }}>Galleria foto</label>
+        {(item.gallery || []).length > 0 && (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+            {(item.gallery || []).map((url, idx) => (
+              <div key={idx} style={{ position: 'relative', width: 80, height: 60 }}>
+                <img src={url} alt="" style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 6 }} />
+                <button type="button" onClick={() => onPatch({ gallery: (item.gallery || []).filter((_, i) => i !== idx) })}
+                  style={{ position: 'absolute', top: -6, right: -6, background: '#c00', color: '#fff', border: 'none', borderRadius: '50%', width: 18, height: 18, fontSize: 11, cursor: 'pointer', padding: 0, lineHeight: '18px', textAlign: 'center' }}>
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <button type="button" onClick={() => galleryRef.current?.click()}
+          style={{ fontSize: 13, padding: '6px 14px', background: '#f0f4ff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+          {uploadingGal ? 'Caricamento…' : 'Aggiungi foto'}
+        </button>
+        <input ref={galleryRef} type="file" accept="image/*" multiple onChange={handleGalleryUpload} style={{ display: 'none' }} />
       </div>
       <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
         <div style={{ flex: '0 0 160px' }}>
@@ -785,26 +877,49 @@ function StatItem({ item, onPatch, onRemove }) {
   )
 }
 
-function PromoItem({ item, onPatch, onRemove }) {
-  const [badge,     setBadge]     = useState(item.badge)
-  const [title,     setTitle]     = useState(item.title)
-  const [text,      setText]      = useState(item.text)
-  const [ctaLabel,  setCtaLabel]  = useState(item.cta_label)
-  const [ctaUrl,    setCtaUrl]    = useState(item.cta_url)
-  const [expiresAt, setExpiresAt] = useState(item.expires_at)
+function PromoItem({ item, entityType, entityId, onPatch, onRemove }) {
+  const [badge,        setBadge]        = useState(item.badge           || '')
+  const [title,        setTitle]        = useState(item.title           || '')
+  const [text,         setText]         = useState(item.text            || '')
+  const [descFull,     setDescFull]     = useState(item.description_full || '')
+  const [validFrom,    setValidFrom]    = useState(item.valid_from      || '')
+  const [expiresAt,    setExpiresAt]    = useState(item.expires_at      || '')
+  const [conditions,   setConditions]   = useState(item.conditions      || '')
+  const [ctaLabel,     setCtaLabel]     = useState(item.cta_label       || '')
+  const [ctaUrl,       setCtaUrl]       = useState(item.cta_url         || '')
+  const [uploading,    setUploading]    = useState(false)
+  const [uploadingGal, setUploadingGal] = useState(false)
+  const coverRef   = useRef()
+  const galleryRef = useRef()
+
+  async function handleCoverUpload(e) {
+    const file = e.target.files[0]; if (!file) return
+    setUploading(true)
+    try {
+      const { url } = await uploadMedia(`/api/upload/minisito-image?entity_type=${entityType}&entity_id=${entityId}`, file)
+      onPatch({ cover_url: url })
+    } catch {} finally { setUploading(false); e.target.value = '' }
+  }
+
+  async function handleGalleryUpload(e) {
+    const files = Array.from(e.target.files); if (!files.length) return
+    setUploadingGal(true)
+    try {
+      const urls = []
+      for (const file of files) {
+        const { url } = await uploadMedia(`/api/upload/minisito-image?entity_type=${entityType}&entity_id=${entityId}`, file)
+        urls.push(url)
+      }
+      onPatch({ gallery: [...(item.gallery || []), ...urls] })
+    } catch {} finally { setUploadingGal(false); e.target.value = '' }
+  }
+
   return (
     <div style={{ background: '#f9f9fb', borderRadius: 10, padding: 16, marginBottom: 12 }}>
-      <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-        <div style={{ flex: 1 }}>
-          <label style={{ ...lblStyle, marginBottom: 4 }}>Badge (opzionale)</label>
-          <input value={badge} onChange={e => setBadge(e.target.value)} onBlur={() => onPatch({ badge })}
-            placeholder="es. Offerta limitata" style={inputStyle} />
-        </div>
-        <div style={{ flex: '0 0 160px' }}>
-          <label style={{ ...lblStyle, marginBottom: 4 }}>Scadenza (opzionale)</label>
-          <input type="date" value={expiresAt} onChange={e => { setExpiresAt(e.target.value); onPatch({ expires_at: e.target.value }) }}
-            style={inputStyle} />
-        </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ ...lblStyle, marginBottom: 4 }}>Badge (opzionale)</label>
+        <input value={badge} onChange={e => setBadge(e.target.value)} onBlur={() => onPatch({ badge })}
+          placeholder="es. Offerta limitata" style={inputStyle} />
       </div>
       <div style={{ marginBottom: 10 }}>
         <label style={{ ...lblStyle, marginBottom: 4 }}>Titolo offerta *</label>
@@ -812,9 +927,73 @@ function PromoItem({ item, onPatch, onRemove }) {
           placeholder="es. Weekend romantico — soggiorno 2 notti" style={{ ...inputStyle, fontWeight: 600 }} />
       </div>
       <div style={{ marginBottom: 10 }}>
-        <label style={{ ...lblStyle, marginBottom: 4 }}>Descrizione</label>
+        <label style={{ ...lblStyle, marginBottom: 4 }}>Descrizione breve</label>
         <input value={text} onChange={e => setText(e.target.value)} onBlur={() => onPatch({ text })}
           placeholder="es. Colazione inclusa, accesso spa, late check-out" style={inputStyle} />
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ ...lblStyle, marginBottom: 4 }}>Descrizione dettagliata</label>
+        <textarea value={descFull}
+          onChange={e => setDescFull(e.target.value)}
+          onBlur={() => onPatch({ description_full: descFull })}
+          rows={5} placeholder="Descrizione completa dell'offerta, visibile nella pagina di dettaglio…"
+          style={{ ...inputStyle, resize: 'vertical' }} />
+      </div>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+        <div style={{ flex: 1 }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Valida dal</label>
+          <input type="date" value={validFrom} onChange={e => { setValidFrom(e.target.value); onPatch({ valid_from: e.target.value }) }} style={inputStyle} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={{ ...lblStyle, marginBottom: 4 }}>Valida fino al</label>
+          <input type="date" value={expiresAt} onChange={e => { setExpiresAt(e.target.value); onPatch({ expires_at: e.target.value }) }} style={inputStyle} />
+        </div>
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ ...lblStyle, marginBottom: 4 }}>Note / Condizioni</label>
+        <textarea value={conditions}
+          onChange={e => setConditions(e.target.value)}
+          onBlur={() => onPatch({ conditions })}
+          rows={2} placeholder="es. Non cumulabile con altre offerte. Soggetto a disponibilità."
+          style={{ ...inputStyle, resize: 'vertical' }} />
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ ...lblStyle, marginBottom: 8 }}>Immagine di copertina</label>
+        {item.cover_url && <img src={item.cover_url} alt="" style={{ width: '100%', maxHeight: 160, objectFit: 'cover', borderRadius: 8, marginBottom: 8, display: 'block' }} />}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button type="button" onClick={() => coverRef.current?.click()}
+            style={{ fontSize: 13, padding: '6px 14px', background: '#f0f4ff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+            {uploading ? 'Caricamento…' : item.cover_url ? 'Cambia copertina' : 'Carica copertina'}
+          </button>
+          <input ref={coverRef} type="file" accept="image/*" onChange={handleCoverUpload} style={{ display: 'none' }} />
+          {item.cover_url && (
+            <button type="button" onClick={() => onPatch({ cover_url: '' })}
+              style={{ fontSize: 12, padding: '4px 10px', background: '#fff0f0', color: '#c00', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
+              Rimuovi
+            </button>
+          )}
+        </div>
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ ...lblStyle, marginBottom: 8 }}>Galleria foto</label>
+        {(item.gallery || []).length > 0 && (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+            {(item.gallery || []).map((url, idx) => (
+              <div key={idx} style={{ position: 'relative', width: 80, height: 60 }}>
+                <img src={url} alt="" style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 6 }} />
+                <button type="button" onClick={() => onPatch({ gallery: (item.gallery || []).filter((_, i) => i !== idx) })}
+                  style={{ position: 'absolute', top: -6, right: -6, background: '#c00', color: '#fff', border: 'none', borderRadius: '50%', width: 18, height: 18, fontSize: 11, cursor: 'pointer', padding: 0, lineHeight: '18px', textAlign: 'center' }}>
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <button type="button" onClick={() => galleryRef.current?.click()}
+          style={{ fontSize: 13, padding: '6px 14px', background: '#f0f4ff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+          {uploadingGal ? 'Caricamento…' : 'Aggiungi foto'}
+        </button>
+        <input ref={galleryRef} type="file" accept="image/*" multiple onChange={handleGalleryUpload} style={{ display: 'none' }} />
       </div>
       <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
         <div style={{ flex: '0 0 160px' }}>
