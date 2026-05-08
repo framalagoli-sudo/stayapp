@@ -292,8 +292,9 @@ export default function AdminLayout() {
             <NavLink to="/admin/ristoranti" style={({ isActive }) => navLinkStyle(isActive)}>Ristoranti</NavLink>
             <NavLink to="/admin/attivita"   style={({ isActive }) => navLinkStyle(isActive)}>Attività</NavLink>
             <NavLink to="/admin/users"      style={({ isActive }) => navLinkStyle(isActive)}>Utenti</NavLink>
-            <NavLink to="/admin/requests"   style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>
-            <NavLink to="/admin/demo"       style={({ isActive }) => navLinkStyle(isActive)}>Richieste demo</NavLink>
+            <NavLink to="/admin/requests"      style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>
+            <NavLink to="/admin/prenotazioni" style={({ isActive }) => navLinkStyle(isActive)}>Prenotazioni</NavLink>
+            <NavLink to="/admin/demo"         style={({ isActive }) => navLinkStyle(isActive)}>Richieste demo</NavLink>
             <NavLink to="/admin/eventi"     style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>
             <NavLink to="/admin/blog"       style={({ isActive }) => navLinkStyle(isActive)}>Blog & News</NavLink>
             <NavLink to="/admin/contatti"   style={({ isActive }) => navLinkStyle(isActive)}>Contatti</NavLink>
@@ -324,12 +325,13 @@ export default function AdminLayout() {
         {/* ── Admin Azienda: sezioni dinamiche ── */}
         {isAdminAzienda && (
           <>
-            <NavLink to="/admin/requests" style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>
-            <NavLink to="/admin/chat"     style={({ isActive }) => navLinkStyle(isActive)}>Chat</NavLink>
-            <NavLink to="/admin/eventi"   style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>
-            <NavLink to="/admin/blog"     style={({ isActive }) => navLinkStyle(isActive)}>Blog & News</NavLink>
-            <NavLink to="/admin/contatti" style={({ isActive }) => navLinkStyle(isActive)}>Contatti</NavLink>
-            <NavLink to="/admin/qrcode"   style={({ isActive }) => navLinkStyle(isActive)}>QR Code</NavLink>
+            <NavLink to="/admin/requests"      style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>
+            <NavLink to="/admin/prenotazioni"  style={({ isActive }) => navLinkStyle(isActive)}>Prenotazioni</NavLink>
+            <NavLink to="/admin/chat"          style={({ isActive }) => navLinkStyle(isActive)}>Chat</NavLink>
+            <NavLink to="/admin/eventi"        style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>
+            <NavLink to="/admin/blog"          style={({ isActive }) => navLinkStyle(isActive)}>Blog & News</NavLink>
+            <NavLink to="/admin/contatti"      style={({ isActive }) => navLinkStyle(isActive)}>Contatti</NavLink>
+            <NavLink to="/admin/qrcode"        style={({ isActive }) => navLinkStyle(isActive)}>QR Code</NavLink>
 
             {/* Solo struttura (no collapse) */}
             {hasStruttura && !bothActive && (
@@ -389,12 +391,13 @@ export default function AdminLayout() {
         {/* ── Admin Struttura / Staff: sidebar legacy ── */}
         {isLegacyStruttura && (
           <>
-            <NavLink to="/admin/requests" style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>
-            <NavLink to="/admin/chat"     style={({ isActive }) => navLinkStyle(isActive)}>Chat</NavLink>
-            <NavLink to="/admin/eventi"   style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>
-            <NavLink to="/admin/blog"     style={({ isActive }) => navLinkStyle(isActive)}>Blog & News</NavLink>
-            <NavLink to="/admin/contatti" style={({ isActive }) => navLinkStyle(isActive)}>Contatti</NavLink>
-            <NavLink to="/admin/qrcode"   style={({ isActive }) => navLinkStyle(isActive)}>QR Code</NavLink>
+            <NavLink to="/admin/requests"     style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>
+            <NavLink to="/admin/prenotazioni" style={({ isActive }) => navLinkStyle(isActive)}>Prenotazioni</NavLink>
+            <NavLink to="/admin/chat"         style={({ isActive }) => navLinkStyle(isActive)}>Chat</NavLink>
+            <NavLink to="/admin/eventi"       style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>
+            <NavLink to="/admin/blog"         style={({ isActive }) => navLinkStyle(isActive)}>Blog & News</NavLink>
+            <NavLink to="/admin/contatti"     style={({ isActive }) => navLinkStyle(isActive)}>Contatti</NavLink>
+            <NavLink to="/admin/qrcode"       style={({ isActive }) => navLinkStyle(isActive)}>QR Code</NavLink>
             <SectionHeader label="La mia struttura" />
             {NAV_PROPERTY.map(({ to, label }) => (
               <NavLink key={to} to={to} style={({ isActive }) => navLinkStyle(isActive, true)}>{label}</NavLink>

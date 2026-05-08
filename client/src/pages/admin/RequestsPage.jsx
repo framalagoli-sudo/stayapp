@@ -74,7 +74,7 @@ export default function RequestsPage() {
     if (filter !== 'all') params.set('status', filter)
     try {
       const data = await apiFetch(`/api/requests?${params}`)
-      setRequests(data)
+      setRequests(data.filter(r => !r.message?.startsWith('[Prenotazione')))
     } catch (_) {
       setRequests([])
     } finally {
