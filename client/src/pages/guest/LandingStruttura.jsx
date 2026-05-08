@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, Phone, Mail, ChevronDown, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro, Heart, Award, Mountain, Wind, Calendar, Users, Plus, Minus, CheckCircle, ArrowLeft } from 'lucide-react'
+import { MapPin, Phone, Mail, ChevronDown, ChevronLeft, ChevronRight, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro, Heart, Award, Mountain, Wind, Calendar, Users, Plus, Minus, CheckCircle, ArrowLeft } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
 import CookieBanner from '../../components/CookieBanner'
 
@@ -90,6 +90,7 @@ export default function LandingStruttura({ property }) {
   const [newsArticoli,   setNewsArticoli]   = useState([])
   const [bookingModal,   setBookingModal]   = useState(null)
   const [activePage,     setActivePage]     = useState(null)
+  const [isMobile,       setIsMobile]       = useState(() => window.innerWidth < 768)
   const aboutRef = useRef(null)
 
   useEffect(() => {
@@ -106,6 +107,12 @@ export default function LandingStruttura({ property }) {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
   }, [activePage])
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
 
   const theme   = { primaryColor: '#00b5b5', fontHeading: 'playfair', fontBody: 'inter', ...(property.theme || {}) }
   const primary = theme.primaryColor
@@ -323,7 +330,9 @@ export default function LandingStruttura({ property }) {
               <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Promozioni esclusive per i nostri ospiti</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
                 {promozioni.map(p => {
-                  const href = p.cta_url && p.cta_url !== '#' ? p.cta_url : ctaHref
+                  const promoUrl = (p.cta_url && p.cta_url !== '#' && p.cta_url.trim())
+                    ? p.cta_url
+                    : (bookingUrl || (social.whatsapp ? social.whatsapp : null) || (property.phone ? `tel:${property.phone}` : null) || (property.email ? `mailto:${property.email}` : null) || null)
                   return (
                     <div key={p.id}
                       style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', borderTop: `4px solid ${primary}`, display: 'flex', flexDirection: 'column' }}>
@@ -332,8 +341,8 @@ export default function LandingStruttura({ property }) {
                         <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 12, color: '#1a1a2e' }}>{p.title}</h3>
                         {p.text && <p style={{ fontSize: 15, color: '#555', lineHeight: 1.7, marginBottom: 16, flex: 1 }}>{p.text}</p>}
                         {p.expires_at && <div style={{ fontSize: 12, color: '#aaa', marginBottom: 20 }}>Valida fino al {new Date(p.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
-                        {href && (
-                          <a href={href} target="_blank" rel="noopener noreferrer"
+                        {promoUrl && (
+                          <a href={promoUrl} target="_blank" rel="noopener noreferrer"
                             style={{ display: 'block', textAlign: 'center', padding: '13px 20px', background: primary, color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none', marginTop: 'auto' }}>
                             {p.cta_label || 'Scopri offerta'}
                           </a>
@@ -427,29 +436,20 @@ export default function LandingStruttura({ property }) {
               <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
                 {activityItems.length} {activityItems.length === 1 ? 'attività disponibile' : 'attività disponibili'}
               </p>
-              <div style={{ columns: '2 220px', columnGap: 14, marginBottom: 40 }}>
-                {activityItems.map(item => (
-                  <div key={item.id} style={{ breakInside: 'avoid', marginBottom: 14, background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 3px 14px rgba(0,0,0,0.07)' }}>
-                    {item.photo_url && (
-                      <div style={{ position: 'relative' }}>
-                        <img src={item.photo_url} alt={item.name} style={{ width: '100%', aspectRatio: '4/3', display: 'block', objectFit: 'cover' }} />
-                        {item.category && <span style={{ position: 'absolute', top: 8, left: 8, background: primary, color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>{item.category}</span>}
-                      </div>
-                    )}
-                    <div style={{ padding: '12px 14px 14px' }}>
-                      {!item.photo_url && item.category && <div style={{ fontSize: 10, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>{item.category}</div>}
-                      <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6, color: '#1a1a2e' }}>{item.name}</div>
-                      {item.schedule && <div style={{ display: 'flex', gap: 5, alignItems: 'center', fontSize: 11, color: '#888', marginBottom: 2 }}><Clock size={11} strokeWidth={1.5} color={primary} />{item.schedule}</div>}
-                      {item.location && <div style={{ display: 'flex', gap: 5, alignItems: 'center', fontSize: 11, color: '#888' }}><LocationPin size={11} strokeWidth={1.5} color={primary} />{item.location}</div>}
-                      <button onClick={() => setBookingModal({ type: 'activity', item })}
-                        style={{ display: 'block', width: '100%', marginTop: 10, padding: '8px 0', background: 'transparent', color: primary, border: `1.5px solid ${primary}`, borderRadius: 8, fontSize: 12, fontWeight: 700, textAlign: 'center', cursor: 'pointer' }}>
-                        {item.bookable !== false ? 'Prenota' : 'Info'}
-                      </button>
+              {isMobile ? (
+                <MobileCarousel items={activityItems} primary={primary} renderCard={item => (
+                  <ActivityMiniCard item={item} primary={primary} onBook={() => setBookingModal({ type: 'activity', item })} />
+                )} />
+              ) : (
+                <div style={{ columns: '2 220px', columnGap: 14, marginBottom: 40 }}>
+                  {activityItems.map(item => (
+                    <div key={item.id} style={{ breakInside: 'avoid', marginBottom: 14, background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 3px 14px rgba(0,0,0,0.07)' }}>
+                      <ActivityMiniCard item={item} primary={primary} onBook={() => setBookingModal({ type: 'activity', item })} />
                     </div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ textAlign: 'center' }}>
+                  ))}
+                </div>
+              )}
+              <div style={{ textAlign: 'center', marginTop: isMobile ? 24 : 0 }}>
                 <button onClick={() => setActivePage('activities')}
                   style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
                   Scopri tutte le attività {allActivityItems.length > 6 ? `(${allActivityItems.length})` : ''}
@@ -468,31 +468,20 @@ export default function LandingStruttura({ property }) {
               <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
                 {excursionItems.length} {excursionItems.length === 1 ? 'escursione disponibile' : 'escursioni disponibili'}
               </p>
-              <div style={{ columns: '2 240px', columnGap: 14, marginBottom: 40 }}>
-                {excursionItems.map(exc => (
-                  <div key={exc.id} style={{ breakInside: 'avoid', marginBottom: 14, background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 3px 14px rgba(0,0,0,0.07)', border: '1px solid #f0f0f0' }}>
-                    {exc.photo_url && (
-                      <div style={{ position: 'relative' }}>
-                        <img src={exc.photo_url} alt={exc.name} style={{ width: '100%', aspectRatio: '4/3', display: 'block', objectFit: 'cover' }} />
-                        {exc.price != null && <div style={{ position: 'absolute', top: 8, right: 8, background: primary, color: '#fff', fontWeight: 800, fontSize: 13, padding: '4px 10px', borderRadius: 20 }}>€{exc.price}</div>}
-                      </div>
-                    )}
-                    <div style={{ padding: '12px 14px 14px' }}>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 6 }}>{exc.name}</div>
-                      {!exc.photo_url && exc.price != null && <div style={{ fontSize: 18, fontWeight: 800, color: primary, marginBottom: 6 }}>€{exc.price}</div>}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 10 }}>
-                        {exc.duration && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#888' }}><Clock size={11} strokeWidth={1.5} color={primary} />{exc.duration}</span>}
-                        {exc.dates    && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#888' }}><Calendar size={11} strokeWidth={1.5} color={primary} />{exc.dates}</span>}
-                      </div>
-                      <button onClick={() => setBookingModal({ type: 'excursion', item: exc })}
-                        style={{ display: 'block', width: '100%', padding: '8px 0', background: 'transparent', color: primary, border: `1.5px solid ${primary}`, borderRadius: 8, fontSize: 12, fontWeight: 700, textAlign: 'center', cursor: 'pointer' }}>
-                        Prenota
-                      </button>
+              {isMobile ? (
+                <MobileCarousel items={excursionItems} primary={primary} renderCard={exc => (
+                  <ExcursionMiniCard exc={exc} primary={primary} onBook={() => setBookingModal({ type: 'excursion', item: exc })} />
+                )} />
+              ) : (
+                <div style={{ columns: '2 240px', columnGap: 14, marginBottom: 40 }}>
+                  {excursionItems.map(exc => (
+                    <div key={exc.id} style={{ breakInside: 'avoid', marginBottom: 14, background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 3px 14px rgba(0,0,0,0.07)', border: '1px solid #f0f0f0' }}>
+                      <ExcursionMiniCard exc={exc} primary={primary} onBook={() => setBookingModal({ type: 'excursion', item: exc })} />
                     </div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ textAlign: 'center' }}>
+                  ))}
+                </div>
+              )}
+              <div style={{ textAlign: 'center', marginTop: isMobile ? 24 : 0 }}>
                 <button onClick={() => setActivePage('excursions')}
                   style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
                   Scopri tutte le escursioni {allExcursionItems.length > 6 ? `(${allExcursionItems.length})` : ''}
@@ -1200,14 +1189,115 @@ function BookingModal({ type, item, entityId, primary, heading, privacyUrl, onCl
   )
 }
 
+// ── Card condivise (main section + full page grid) ───────────────────────────
+
+function ActivityMiniCard({ item, primary, onBook }) {
+  return (
+    <>
+      {item.photo_url && (
+        <div style={{ position: 'relative' }}>
+          <img src={item.photo_url} alt={item.name} style={{ width: '100%', aspectRatio: '4/3', display: 'block', objectFit: 'cover' }} />
+          {item.category && <span style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>{item.category}</span>}
+        </div>
+      )}
+      <div style={{ padding: '12px 14px 14px' }}>
+        {!item.photo_url && item.category && <div style={{ fontSize: 10, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>{item.category}</div>}
+        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6, color: '#1a1a2e' }}>{item.name}</div>
+        {item.description && <p style={{ margin: '0 0 8px', fontSize: 12, color: '#666', lineHeight: 1.5 }}>{item.description}</p>}
+        {item.schedule && <div style={{ display: 'flex', gap: 5, alignItems: 'center', fontSize: 11, color: '#888', marginBottom: 2 }}><Clock size={11} strokeWidth={1.5} color={primary} />{item.schedule}</div>}
+        {item.location && <div style={{ display: 'flex', gap: 5, alignItems: 'center', fontSize: 11, color: '#888', marginBottom: 10 }}><LocationPin size={11} strokeWidth={1.5} color={primary} />{item.location}</div>}
+        <button onClick={onBook}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', marginTop: 10, padding: '9px 0', background: 'transparent', color: primary, border: `1.5px solid ${primary}`, borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+          <Calendar size={13} strokeWidth={1.5} />
+          {item.bookable !== false ? 'Prenota' : 'Info'}
+        </button>
+      </div>
+    </>
+  )
+}
+
+function ExcursionMiniCard({ exc, primary, onBook }) {
+  return (
+    <>
+      {exc.photo_url && (
+        <div style={{ position: 'relative' }}>
+          <img src={exc.photo_url} alt={exc.name} style={{ width: '100%', aspectRatio: '4/3', display: 'block', objectFit: 'cover' }} />
+          {exc.price != null && <div style={{ position: 'absolute', top: 8, right: 8, background: primary, color: '#fff', fontWeight: 800, fontSize: 13, padding: '4px 10px', borderRadius: 20 }}>€{exc.price}</div>}
+        </div>
+      )}
+      <div style={{ padding: '12px 14px 14px' }}>
+        <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 6 }}>{exc.name}</div>
+        {!exc.photo_url && exc.price != null && <div style={{ fontSize: 18, fontWeight: 800, color: primary, marginBottom: 6 }}>€{exc.price}</div>}
+        {exc.description && <p style={{ margin: '0 0 8px', fontSize: 12, color: '#666', lineHeight: 1.5 }}>{exc.description}</p>}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 10 }}>
+          {exc.duration && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#888' }}><Clock size={11} strokeWidth={1.5} color={primary} />{exc.duration}</span>}
+          {exc.dates    && <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#888' }}><Calendar size={11} strokeWidth={1.5} color={primary} />{exc.dates}</span>}
+        </div>
+        <button onClick={onBook}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', padding: '9px 0', background: 'transparent', color: primary, border: `1.5px solid ${primary}`, borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+          <Calendar size={13} strokeWidth={1.5} />
+          Prenota
+        </button>
+      </div>
+    </>
+  )
+}
+
+// ── Carosello mobile ──────────────────────────────────────────────────────────
+
+function MobileCarousel({ items, primary, renderCard }) {
+  const [idx, setIdx] = useState(0)
+  const touchX = useRef(null)
+  function goTo(n) { setIdx(Math.max(0, Math.min(items.length - 1, n))) }
+  function onTouchStart(e) { touchX.current = e.touches[0].clientX }
+  function onTouchEnd(e) {
+    if (touchX.current === null) return
+    const diff = touchX.current - e.changedTouches[0].clientX
+    if (Math.abs(diff) > 40) goTo(diff > 0 ? idx + 1 : idx - 1)
+    touchX.current = null
+  }
+  return (
+    <div style={{ marginBottom: 40 }}>
+      <div style={{ overflow: 'hidden', borderRadius: 14 }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+        <div style={{ display: 'flex', transform: `translateX(-${idx * 100}%)`, transition: 'transform 0.32s cubic-bezier(0.4,0,0.2,1)', willChange: 'transform' }}>
+          {items.map((item, i) => (
+            <div key={item.id || i} style={{ flex: '0 0 100%', background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 3px 14px rgba(0,0,0,0.08)' }}>
+              {renderCard(item)}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginTop: 16 }}>
+        <button onClick={() => goTo(idx - 1)} disabled={idx === 0}
+          style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: idx === 0 ? '#efefef' : primary, color: idx === 0 ? '#bbb' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: idx === 0 ? 'default' : 'pointer', boxShadow: idx === 0 ? 'none' : `0 3px 10px ${primary}44`, transition: 'all 0.2s', flexShrink: 0 }}>
+          <ChevronLeft size={18} strokeWidth={2.5} />
+        </button>
+        <span style={{ fontSize: 13, fontWeight: 600, color: '#888', minWidth: 48, textAlign: 'center' }}>{idx + 1} / {items.length}</span>
+        <button onClick={() => goTo(idx + 1)} disabled={idx === items.length - 1}
+          style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: idx === items.length - 1 ? '#efefef' : primary, color: idx === items.length - 1 ? '#bbb' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: idx === items.length - 1 ? 'default' : 'pointer', boxShadow: idx === items.length - 1 ? 'none' : `0 3px 10px ${primary}44`, transition: 'all 0.2s', flexShrink: 0 }}>
+          <ChevronRight size={18} strokeWidth={2.5} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Pagine full (Scopri tutte) ────────────────────────────────────────────────
+
 function ActivitiesFullPage({ items, primary, heading, onBook, onBack }) {
   const [catFilter, setCatFilter] = useState('all')
+  const [isMobile,  setIsMobile]  = useState(() => window.innerWidth < 768)
   const categories = [...new Set(items.map(i => i.category).filter(Boolean))]
   const displayed  = catFilter === 'all' ? items : items.filter(i => i.category === catFilter)
 
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9990, background: '#f5f5f7', overflowY: 'auto' }}>
-      {/* Header sticky */}
       <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#fff', borderBottom: '1px solid #ebebeb' }}>
         <div style={{ display: 'flex', alignItems: 'center', padding: '0 20px', height: 60 }}>
           <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1a1a2e', padding: '8px 0' }}>
@@ -1218,7 +1308,6 @@ function ActivitiesFullPage({ items, primary, heading, onBook, onBack }) {
             <span style={{ fontSize: 12, color: '#aaa', marginLeft: 8 }}>({items.length})</span>
           </div>
         </div>
-        {/* Filtri categoria */}
         {categories.length > 1 && (
           <div style={{ padding: '10px 20px 14px', display: 'flex', gap: 8, flexWrap: 'wrap', maxWidth: 1200, margin: '0 auto' }}>
             {['all', ...categories].map(cat => (
@@ -1236,44 +1325,36 @@ function ActivitiesFullPage({ items, primary, heading, onBook, onBack }) {
         )}
       </div>
 
-      {/* Griglia */}
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px 64px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20 }}>
-          {displayed.map(item => (
-            <div key={item.id} style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', display: 'flex', flexDirection: 'column' }}>
-              {item.photo_url && (
-                <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <img src={item.photo_url} alt={item.name} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />
-                  {item.category && (
-                    <span style={{ position: 'absolute', top: 10, left: 10, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>{item.category}</span>
-                  )}
-                </div>
-              )}
-              <div style={{ padding: '16px 18px 18px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                {!item.photo_url && item.category && <div style={{ fontSize: 10, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>{item.category}</div>}
-                <h3 style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 700, color: '#1a1a2e', lineHeight: 1.3 }}>{item.name}</h3>
-                {item.description && <p style={{ margin: '0 0 12px', fontSize: 13, color: '#666', lineHeight: 1.6, flex: 1 }}>{item.description}</p>}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
-                  {item.schedule && <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#888' }}><Clock size={12} strokeWidth={1.5} color={primary} />{item.schedule}</span>}
-                  {item.location && <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#888' }}><LocationPin size={12} strokeWidth={1.5} color={primary} />{item.location}</span>}
-                </div>
-                <button onClick={() => onBook({ type: 'activity', item })}
-                  style={{ width: '100%', padding: '10px 0', background: primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                  {item.bookable !== false ? 'Prenota' : 'Richiedi info'}
-                </button>
+        {isMobile ? (
+          <MobileCarousel items={displayed} primary={primary} renderCard={item => (
+            <ActivityMiniCard item={item} primary={primary} onBook={() => onBook({ type: 'activity', item })} />
+          )} />
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20 }}>
+            {displayed.map(item => (
+              <div key={item.id} style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' }}>
+                <ActivityMiniCard item={item} primary={primary} onBook={() => onBook({ type: 'activity', item })} />
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
 function ExcursionsFullPage({ items, primary, heading, onBook, onBack }) {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9990, background: '#f5f5f7', overflowY: 'auto' }}>
-      {/* Header sticky */}
       <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#fff', borderBottom: '1px solid #ebebeb', display: 'flex', alignItems: 'center', padding: '0 20px', height: 60 }}>
         <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1a1a2e', padding: '8px 0' }}>
           <ArrowLeft size={18} strokeWidth={2.5} /> Indietro
@@ -1284,36 +1365,20 @@ function ExcursionsFullPage({ items, primary, heading, onBook, onBack }) {
         </div>
       </div>
 
-      {/* Griglia */}
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px 64px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20 }}>
-          {items.map(exc => (
-            <div key={exc.id} style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', display: 'flex', flexDirection: 'column' }}>
-              {exc.photo_url && (
-                <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <img src={exc.photo_url} alt={exc.name} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />
-                  {exc.price != null && <div style={{ position: 'absolute', top: 10, right: 10, background: primary, color: '#fff', fontWeight: 800, fontSize: 14, padding: '4px 12px', borderRadius: 20 }}>€{exc.price}</div>}
-                </div>
-              )}
-              <div style={{ padding: '16px 18px 18px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: '#1a1a2e', lineHeight: 1.3 }}>{exc.name}</h3>
-                {!exc.photo_url && exc.price != null && <div style={{ fontSize: 22, fontWeight: 800, color: primary, marginBottom: 8 }}>€{exc.price}</div>}
-                {exc.description && <p style={{ margin: '0 0 12px', fontSize: 13, color: '#666', lineHeight: 1.6, flex: 1 }}>{exc.description}</p>}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
-                  {exc.duration      && <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#888' }}><Clock size={12} strokeWidth={1.5} color={primary} />{exc.duration}</span>}
-                  {exc.dates         && <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#888' }}><Calendar size={12} strokeWidth={1.5} color={primary} />{exc.dates}</span>}
-                  {exc.meeting_point && <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#888' }}><LocationPin size={12} strokeWidth={1.5} color={primary} />{exc.meeting_point}</span>}
-                  {exc.seats != null && <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: primary }}><Users size={12} strokeWidth={1.5} color={primary} />Posti: {exc.seats}</span>}
-                </div>
-                {exc.includes && <ul style={{ margin: '0 0 12px', paddingLeft: 18, fontSize: 12, color: '#777', lineHeight: 1.9 }}>{exc.includes.split(',').map((s, i) => <li key={i}>{s.trim()}</li>)}</ul>}
-                <button onClick={() => onBook({ type: 'excursion', item: exc })}
-                  style={{ width: '100%', padding: '10px 0', background: primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                  Prenota
-                </button>
+        {isMobile ? (
+          <MobileCarousel items={items} primary={primary} renderCard={exc => (
+            <ExcursionMiniCard exc={exc} primary={primary} onBook={() => onBook({ type: 'excursion', item: exc })} />
+          )} />
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20 }}>
+            {items.map(exc => (
+              <div key={exc.id} style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.07)' }}>
+                <ExcursionMiniCard exc={exc} primary={primary} onBook={() => onBook({ type: 'excursion', item: exc })} />
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
