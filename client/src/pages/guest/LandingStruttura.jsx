@@ -992,14 +992,16 @@ function NewsletterForm({ aziendaId, primary, privacyUrl }) {
     </div>
   )
 
+  const inputNlStyle = { padding: '13px 16px', borderRadius: 10, border: 'none', fontSize: 15, outline: 'none', background: '#fff', color: '#222', width: '100%', boxSizing: 'border-box' }
+
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <input value={nome} onChange={e => setNome(e.target.value)} required placeholder="Il tuo nome"
-        style={{ padding: '13px 16px', borderRadius: 10, border: 'none', fontSize: 15, outline: 'none' }} />
+        style={inputNlStyle} />
       <input value={email} onChange={e => setEmail(e.target.value)} type="email" required placeholder="La tua email"
-        style={{ padding: '13px 16px', borderRadius: 10, border: 'none', fontSize: 15, outline: 'none' }} />
+        style={inputNlStyle} />
       <input value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="Telefono (opzionale)"
-        style={{ padding: '13px 16px', borderRadius: 10, border: 'none', fontSize: 15, outline: 'none' }} />
+        style={inputNlStyle} />
       <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', textAlign: 'left' }}>
         <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} required
           style={{ marginTop: 3, flexShrink: 0, accentColor: '#fff' }} />
