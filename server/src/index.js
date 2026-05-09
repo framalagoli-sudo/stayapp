@@ -1,5 +1,12 @@
 import 'dotenv/config'
 import express from 'express'
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason)
+})
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err.message, err.stack)
+})
 import cors from 'cors'
 import propertiesRouter from './routes/properties.js'
 import guestRouter from './routes/guest.js'

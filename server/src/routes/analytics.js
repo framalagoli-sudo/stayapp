@@ -10,6 +10,7 @@ async function getProfile(userId) {
 }
 
 router.get('/', requireAuth, async (req, res) => {
+  try {
   const profile = await getProfile(req.user.id)
   if (!profile) return res.status(403).json({ error: 'Profilo non trovato' })
 
@@ -102,6 +103,10 @@ router.get('/', requireAuth, async (req, res) => {
     newsletter: { subscribers: nlSubscribers, sent_period: nlSent },
     contacts:   { total: contactsTotal, new_period: contactsNew },
   })
+  } catch (e) {
+    console.error('[analytics]', e.message)
+    res.status(500).json({ error: e.message })
+  }
 })
 
 function emptyResponse(range, now) {
