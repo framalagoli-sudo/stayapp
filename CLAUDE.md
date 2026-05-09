@@ -101,11 +101,19 @@ hospitality/
 │           ├── upload.js
 │           ├── eventi.js
 │           ├── blog.js
-│           └── contatti.js         # subscribe newsletter
+│           ├── contatti.js         # CRM: lista + subscribe (double opt-in)
+│           ├── newsletter.js       # CRUD + send + scheduler + archivio
+│           ├── analytics.js        # stats aggregate per azienda
+│           └── demo.js             # richieste demo dalla landing
 └── supabase/migrations/
-    ├── ...
-    ├── 017_attivita.sql            # tabella attivita + moduli.attivita su aziende
-    └── 018_privacy_data.sql        # colonna privacy_data su properties/ristoranti/attivita
+    ├── 015_blog.sql                # tabelle blog_articles, blog_categories
+    ├── 016_contatti.sql            # tabella contatti (CRM)
+    ├── 017_attivita.sql            # tabella attivita
+    ├── 018_privacy_data.sql        # privacy_data jsonb su properties/ristoranti/attivita
+    ├── 019_demo_requests.sql       # tabella demo_requests
+    ├── 020_newsletter.sql          # tabella newsletters + unsubscribe_token su contatti
+    ├── 021_page_views.sql          # tabella page_views (analytics visite minisito)
+    └── 022_newsletter_v2.sql       # confirmation_token + preheader + scheduled_at + unsubscribes_count
 ```
 
 ---
@@ -170,6 +178,47 @@ id, property_id (FK), room, type request_type, message,
 status request_status DEFAULT 'open', note, created_at, updated_at
 ```
 
+> Discriminazione: prenotazioni attività/escursioni hanno `message` che inizia con `[Prenotazione ...`; interessi offerte con `[Interesse offerta: ...`. `BookingsPage` include solo questi; `RequestsPage` li esclude.
+
+### Tabella `contatti`
+```sql
+id, azienda_id (FK aziende), nome, email, telefono,
+fonte text DEFAULT 'minisito',    -- 'minisito' | 'manuale' | 'form'
+iscritto_newsletter boolean DEFAULT false,
+unsubscribe_token uuid DEFAULT gen_random_uuid(),
+confirmation_token uuid,          -- double opt-in: null dopo conferma
+tags text[] DEFAULT '{}',
+note text,
+created_at, updated_at
+```
+
+### Tabella `newsletters`
+```sql
+id, azienda_id (FK aziende), entity_tipo text, entity_id uuid,
+subject text DEFAULT '',
+preheader text DEFAULT '',        -- testo anteprima nei client email
+template_id text DEFAULT 'semplice',  -- semplice|promozione|notizie|evento
+content jsonb DEFAULT '{}',
+status text DEFAULT 'draft',      -- draft | sent
+scheduled_at timestamptz,         -- se impostato, scheduler lo invia automaticamente
+sent_at timestamptz,
+recipients_count int DEFAULT 0,
+unsubscribes_count int DEFAULT 0,
+created_at, updated_at
+```
+
+### Tabella `page_views`
+```sql
+id, entity_tipo text, entity_id uuid, viewed_at timestamptz DEFAULT now()
+-- INDEX su (entity_tipo, entity_id) e su viewed_at
+```
+
+### Tabella `demo_requests`
+```sql
+id, nome, email, telefono, tipo_attivita, messaggio,
+letto boolean DEFAULT false, created_at
+```
+
 ### Storage Supabase
 Bucket: `property-media` (pubblico)
 Path: `{entity_id}/{campo}-{timestamp}.{ext}`
@@ -219,9 +268,43 @@ Upload con `upsert: true` + `?v={timestamp}` per cache-bust.
 | GET | `/api/guest/eventi` | Lista eventi pubblici |
 | GET | `/api/guest/eventi/:id` | Singolo evento |
 | POST | `/api/guest/eventi/:id/book` | Prenota evento |
-| POST | `/api/guest/contact` | Form contatti minisito → email via Resend |
+| POST | `/api/guest/contact` | Form contatti minisito → email via Resend + salva lead in contatti |
+| POST | `/api/guest/book` | Prenotazione attività/escursione → salva in requests + email |
+| POST | `/api/guest/pageview` | Traccia visita minisito (fire-and-forget, dedup con sessionStorage) |
+| GET | `/api/guest/unsubscribe?token=&nl=` | Disiscrizione newsletter + incrementa unsubscribes_count |
+| GET | `/api/guest/confirm-subscription?token=` | Conferma double opt-in → iscritto_newsletter=true |
 
 > **Importante:** tutti e tre gli endpoint guest includono `slug` nella select. Senza, i link privacy/cookie nel minisito non funzionano.
+
+### Contatti
+| Metodo | Path | Auth | Descrizione |
+|---|---|---|---|
+| POST | `/api/contatti/subscribe` | — | Iscrizione pubblica con double opt-in (email conferma via Resend) |
+| GET | `/api/contatti` | ✓ | Lista contatti azienda (filtri: tag, newsletter, search) |
+| POST | `/api/contatti` | ✓ | Crea contatto manuale |
+| PATCH | `/api/contatti/:id` | ✓ | Aggiorna contatto |
+| DELETE | `/api/contatti/:id` | ✓ | Elimina contatto |
+
+### Newsletter
+| Metodo | Path | Auth | Descrizione |
+|---|---|---|---|
+| GET | `/api/newsletter` | ✓ | Lista newsletter azienda |
+| POST | `/api/newsletter` | ✓ | Crea bozza |
+| GET | `/api/newsletter/:id` | ✓ | Singola newsletter |
+| PATCH | `/api/newsletter/:id` | ✓ | Aggiorna bozza (subject, preheader, template, content, scheduled_at) |
+| DELETE | `/api/newsletter/:id` | ✓ | Elimina bozza |
+| POST | `/api/newsletter/:id/duplicate` | ✓ | Duplica come nuova bozza |
+| POST | `/api/newsletter/:id/test` | ✓ | Invia email di test a un indirizzo |
+| POST | `/api/newsletter/:id/send` | ✓ | Invia a tutti gli iscritti (batch 50) |
+| GET | `/api/newsletter/archive/:tipo/:id` | — | Archivio pubblico newsletter inviate |
+
+> Il server chiama `runScheduledSends()` ogni 60s: invia automaticamente le newsletter con `scheduled_at <= now()`.
+> `{{nome}}` nelle newsletter viene sostituito con il nome del contatto (`personalize()` ricorsivo).
+
+### Analytics
+| Metodo | Path | Auth | Descrizione |
+|---|---|---|---|
+| GET | `/api/analytics?range=7\|30\|90` | ✓ | Stats aggregate: pageviews, richieste, prenotazioni, newsletter, contatti |
 
 ### Upload
 | Metodo | Path | Descrizione |
@@ -245,24 +328,43 @@ Upload con `upsert: true` + `?v={timestamp}` per cache-bust.
 | `/s/:slug` | GuestApp | PWA struttura; se minisito.active → LandingStruttura |
 | `/r/:slug` | RestaurantApp | PWA ristorante; se minisito.active → LandingRistorante |
 | `/a/:slug` | AttivitaApp → LandingAttivita | Solo minisito |
-| `/s/:slug/privacy` | PolicyPage (type=privacy, struttura) | |
-| `/s/:slug/cookie` | PolicyPage (type=cookie, struttura) | |
-| `/r/:slug/privacy` | PolicyPage (type=privacy, ristorante) | |
-| `/r/:slug/cookie` | PolicyPage (type=cookie, ristorante) | |
-| `/a/:slug/privacy` | PolicyPage (type=privacy, attivita) | |
-| `/a/:slug/cookie` | PolicyPage (type=cookie, attivita) | |
+| `/s/:slug/privacy\|cookie` | PolicyPage | |
+| `/r/:slug/privacy\|cookie` | PolicyPage | |
+| `/a/:slug/privacy\|cookie` | PolicyPage | |
+| `/blog` | BlogListPage | |
+| `/blog/:slug` | ArticoloPage | |
+| `/unsubscribe?token=` | UnsubscribePage | disiscrizione newsletter |
+| `/confirm-subscription?token=` | ConfirmSubscriptionPage | conferma double opt-in |
+| `/s/:slug/newsletter` | NewsletterArchivePage | archivio newsletter struttura |
+| `/r/:slug/newsletter` | NewsletterArchivePage | archivio newsletter ristorante |
+| `/a/:slug/newsletter` | NewsletterArchivePage | archivio newsletter attività |
+| `/eventi/:id` | EventoPage | dettaglio + prenotazione evento pubblico |
+| `/s/:slug/offerte/:id` | OffertaPage | dettaglio offerta |
+| `/s/:slug/pacchetti/:id` | PacchettoPage | dettaglio pacchetto |
+| `/` | LandingPage | landing marketing StayApp |
 
 ### Admin
 ```
 /admin                          → Dashboard
-/admin/requests                 → Richieste ospiti
+/admin/analytics                → Analytics (visite, richieste, newsletter, contatti)
+/admin/requests                 → Richieste ospiti (esclude prenotazioni)
+/admin/prenotazioni             → BookingsPage (tab: attività / escursioni / offerte)
+/admin/demo                     → DemoRequestsPage (richieste dalla landing StayApp)
+/admin/contatti                 → ContattiPage (CRM: lista, filtri, add/edit)
+/admin/newsletter               → NewsletterPage (lista bozze + inviate)
+/admin/newsletter/:id           → NewsletterEditorPage (editor + anteprima + invio)
+/admin/eventi                   → EventiListPage
+/admin/eventi/:id               → EventoEditPage
+/admin/eventi/:id/prenotazioni  → EventoPrenotazioniPage
+/admin/blog                     → AdminBlogListPage
+/admin/blog/categories          → BlogCategoriesPage
+/admin/blog/:id                 → BlogEditorPage
 /admin/properties               → Lista strutture
 /admin/qrcode                   → QR Code
 /admin/property/info            → Info struttura
 /admin/property/modules         → Moduli attivi
 /admin/property/services        → Servizi
 /admin/property/gallery         → Galleria
-/admin/property/restaurant      → Ristorante interno
 /admin/property/theme           → Tema e colori
 /admin/property/activities      → Attività
 /admin/property/excursions      → Escursioni
@@ -441,22 +543,28 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 ### Admin panel
 | Pagina | Path | Funzione |
 |---|---|---|
-| Dashboard | `/admin` | Overview con tutte le entità (strutture + ristoranti + attività) |
-| Richieste | `/admin/requests` | Richieste PWA ospiti (reception, manutenzione, ecc.) — esclude booking |
-| Prenotazioni | `/admin/prenotazioni` | Prenotazioni attività/escursioni con tab separati + filtri stato |
+| Dashboard | `/admin` | Overview entità + stats |
+| **Analytics** | `/admin/analytics` | Grafici SVG: visite minisito, richieste, prenotazioni, newsletter, contatti; range 7/30/90gg |
+| Richieste | `/admin/requests` | Richieste PWA ospiti — esclude prenotazioni e interessi offerta |
+| **Prenotazioni** | `/admin/prenotazioni` | Tab: Attività / Escursioni / Offerte; badge struttura; filtri stato |
+| **Demo** | `/admin/demo` | Richieste demo dalla landing StayApp (letto/non letto) |
+| **Contatti** | `/admin/contatti` | CRM: lista iscritti + lead, ricerca, filtri tag/newsletter, add/edit |
+| **Newsletter** | `/admin/newsletter` | Lista bozze + inviate; duplica; mostra scheduled_at e unsubscribes |
+| **Newsletter editor** | `/admin/newsletter/:id` | 4 template, live preview iframe, preheader, emoji picker oggetto, programmazione invio, test email |
+| **Blog** | `/admin/blog` | CRUD articoli + categorie; editor Tiptap rich text |
+| **Eventi** | `/admin/eventi` | CRUD eventi; prenotazioni per evento; export CSV |
 | Strutture | `/admin/properties` | Crea/lista (super_admin) |
 | QR Code | `/admin/qrcode` | Genera QR |
 | Info struttura | `/admin/property/info` | Nome, orari, WiFi, logo, cover |
 | Moduli | `/admin/property/modules` | Toggle moduli attivi |
 | Servizi | `/admin/property/services` | CRUD con icone |
 | Galleria | `/admin/property/gallery` | Upload/riordina/elimina |
-| Ristorante interno | `/admin/property/restaurant` | Menu categorie |
 | Tema | `/admin/property/theme` | Colore, font, bordi + preview |
 | Attività | `/admin/property/activities` | CRUD per categoria |
 | Escursioni | `/admin/property/excursions` | CRUD flat |
 | Privacy struttura | `/admin/property/privacy` | Dati GDPR + preview policy |
 | Ristorante | `/admin/ristoranti/:id/*` | info, menu, gallery, theme, minisito, privacy |
-| Attività | `/admin/attivita/:id/*` | info, gallery, theme, minisito, privacy |
+| Attività standalone | `/admin/attivita/:id/*` | info, gallery, theme, minisito, privacy |
 
 ### App ospite (PWA)
 - **Struttura** `/s/:slug`: Home / Esplora / Richiesta / Info + CookieBanner
@@ -490,26 +598,33 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 
 8. **Supabase service role**: il server usa sempre la service role key → bypassa RLS. La RLS vale solo per query client-side (AuthContext, useProperty).
 
-9. **Discriminazione booking vs richieste**: le prenotazioni attività/escursioni vengono salvate in `requests` con `type: 'other'` e messaggio che inizia con `[Prenotazione attività]` o `[Prenotazione escursione]`. `BookingsPage` filtra con `message.startsWith('[Prenotazione')`, `RequestsPage` le esclude con `!message.startsWith('[Prenotazione')`. Se in futuro si migra l'enum, aggiornare entrambe le pagine.
+9. **Discriminazione booking vs richieste**: le prenotazioni attività/escursioni vengono salvate in `requests` con `type: 'other'` e messaggio che inizia con `[Prenotazione attività]` o `[Prenotazione escursione]`. Gli interessi offerte iniziano con `[Interesse offerta: nome]`. `BookingsPage` filtra con `message.startsWith('[Prenotazione') || message.startsWith('[Interesse offerta')`, `RequestsPage` le esclude. Se in futuro si migra l'enum, aggiornare entrambe le pagine.
+
+10. **Newsletter — double opt-in**: `POST /api/contatti/subscribe` salva il contatto con `iscritto_newsletter: false` e invia email di conferma con link `/confirm-subscription?token=uuid`. Il token viene azzerato su conferma. `runScheduledSends()` gira ogni 60s via `setInterval` in `index.js`.
+
+11. **Newsletter — named exports**: `newsletter.js` esporta sia il router (`export default`) sia `sendNewsletterById` e `runScheduledSends` come named exports. `index.js` importa entrambi: `import newsletterRouter, { runScheduledSends } from './routes/newsletter.js'`.
+
+12. **Pageview tracking**: le landing page (LandingStruttura/Ristorante/Attivita) fanno `POST /api/guest/pageview` al mount, deduplicato con `sessionStorage` key `pv_{entity.id}`. 1 visita per sessione browser.
+
+13. **Analytics route**: nessuna query viene eseguita a module load time — tutto inside async handlers con try-catch. Express 4 non gestisce automaticamente eccezioni async: tutti i route handler async devono avere try-catch.
 
 ---
 
-## Roadmap — da implementare
+## Roadmap — prossimi step (aggiornata 2026-05-09)
 
-### Alta priorità
+### Concordati con l'utente (in ordine)
+- [x] Analytics dashboard
+- [x] Newsletter fasi 1+2+3+4
+- [ ] **Pagamenti Stripe** — checkout eventi/escursioni, conferma automatica prenotazione
+- [ ] **Multi-lingua** — IT/EN/DE per PWA ospite
+- [ ] **Gestione staff** — invita collaboratori via email, ruoli, limitazione accessi
+
+### Tecnico / infrastruttura
 - [ ] **Collegare GitHub → Vercel auto-deploy** (Settings → Git nel dashboard Vercel)
-- [ ] **Notifiche real-time richieste**: Supabase Realtime su `requests`
-- [ ] **Fix enum `request_type`**: aggiungere `attività`/`escursione` o convertire in `text` (ora si usa `other` + prefisso messaggio per discriminare)
-
-### Media priorità
-- [ ] **Stripe Connect**: pagamenti eventi/escursioni/upselling
-- [ ] **Multi-lingua**: i18n per app ospite (IT/EN/DE)
-- [ ] **Chat ospite ↔ reception**: tabella `messages` + Supabase Realtime
-- [ ] **Analytics**: contatori visite, richieste per tipo
-- [ ] **Gestione staff**: invita utenti con ruolo staff
+- [ ] **Notifiche real-time** — badge sidebar + toast (Supabase Realtime su `requests`) — bassa priorità
 
 ### Bassa priorità
 - [ ] **QR Code con logo** sovrapposto
 - [ ] **Modalità offline** PWA
 - [ ] **Recensioni ospiti**
-- [ ] **Integrazione PMS**
+- [ ] **Integrazione PMS** (Opera, Mews, Cloudbeds)
