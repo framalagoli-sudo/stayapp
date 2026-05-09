@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { MapPin, Phone, Mail, Clock, ChevronDown, Utensils, Wine, Coffee, Music, Car, Wind, Wifi, Bell, Bus, Star, Heart, Award, Calendar, Users, Plus, Minus } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
 import CookieBanner from '../../components/CookieBanner'
+import BookingWidget from '../../components/BookingWidget'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -72,7 +73,7 @@ function getEmbedUrl(url) {
 const DEFAULT_ORDER = [
   'highlights', 'stats', 'about', 'foto_testo', 'paragrafi', 'team', 'steps', 'video', 'cta_banner',
   'testimonianze', 'promozioni', 'menu_speciali', 'menu_preview',
-  'eventi', 'news', 'gallery', 'faq', 'show_map', 'contatti', 'newsletter',
+  'eventi', 'news', 'gallery', 'faq', 'show_map', 'booking', 'contatti', 'newsletter',
 ]
 
 export default function LandingRistorante({ ristorante }) {
@@ -521,6 +522,23 @@ export default function LandingRistorante({ ristorante }) {
               <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>Contattaci</h2>
               <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Siamo a tua disposizione per qualsiasi informazione</p>
               <ContactForm entityTipo="ristorante" entityId={ristorante.id} primary={primary} heading={heading} privacyUrl={`/r/${ristorante.slug}/privacy`} />
+            </div>
+          </section>
+        )
+
+      case 'booking':
+        return (
+          <section key="booking" style={{ padding: '80px 0', background: '#f8f8f8' }}>
+            <div className="land-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(22px, 3vw, 34px)', fontWeight: 700, marginBottom: 10, textAlign: 'center' }}>
+                {mini.booking_section_title || 'Prenota un tavolo'}
+              </h2>
+              <p style={{ textAlign: 'center', color: '#666', marginBottom: 40, fontSize: 15 }}>
+                {mini.booking_section_subtitle || 'Scegli il servizio e il giorno che preferisci.'}
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <BookingWidget entityTipo="ristorante" entityId={ristorante.id} primaryColor={primary} />
+              </div>
             </div>
           </section>
         )

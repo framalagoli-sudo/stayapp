@@ -26,6 +26,7 @@ import attivitaRouter from './routes/attivita.js'
 import demoRouter from './routes/demo.js'
 import newsletterRouter, { runScheduledSends } from './routes/newsletter.js'
 import analyticsRouter from './routes/analytics.js'
+import bookingRouter from './routes/booking.js'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -57,6 +58,7 @@ app.use('/api/attivita', attivitaRouter)
 app.use('/api/demo', demoRouter)
 app.use('/api/newsletter', newsletterRouter)
 app.use('/api/analytics', analyticsRouter)
+app.use('/api/booking',  bookingRouter)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 

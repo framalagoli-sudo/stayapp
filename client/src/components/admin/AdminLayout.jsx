@@ -295,6 +295,7 @@ export default function AdminLayout() {
             <NavLink to="/admin/users"      style={({ isActive }) => navLinkStyle(isActive)}>Utenti</NavLink>
             <NavLink to="/admin/requests"      style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>
             <NavLink to="/admin/prenotazioni" style={({ isActive }) => navLinkStyle(isActive)}>Prenotazioni</NavLink>
+            <NavLink to="/admin/booking"      style={({ isActive }) => navLinkStyle(isActive || location.pathname.startsWith('/admin/booking'))}>Booking risorse</NavLink>
             <NavLink to="/admin/demo"         style={({ isActive }) => navLinkStyle(isActive)}>Richieste demo</NavLink>
             <NavLink to="/admin/eventi"     style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>
             <NavLink to="/admin/blog"        style={({ isActive }) => navLinkStyle(isActive)}>Blog & News</NavLink>
@@ -329,6 +330,7 @@ export default function AdminLayout() {
           <>
             <NavLink to="/admin/requests"      style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>
             <NavLink to="/admin/prenotazioni"  style={({ isActive }) => navLinkStyle(isActive)}>Prenotazioni</NavLink>
+            <NavLink to="/admin/booking"       style={({ isActive }) => navLinkStyle(isActive || location.pathname.startsWith('/admin/booking'))}>Booking risorse</NavLink>
             <NavLink to="/admin/chat"          style={({ isActive }) => navLinkStyle(isActive)}>Chat</NavLink>
             <NavLink to="/admin/eventi"        style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>
             <NavLink to="/admin/blog"          style={({ isActive }) => navLinkStyle(isActive)}>Blog & News</NavLink>
@@ -396,6 +398,7 @@ export default function AdminLayout() {
           <>
             <NavLink to="/admin/requests"     style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>
             <NavLink to="/admin/prenotazioni" style={({ isActive }) => navLinkStyle(isActive)}>Prenotazioni</NavLink>
+            <NavLink to="/admin/booking"      style={({ isActive }) => navLinkStyle(isActive || location.pathname.startsWith('/admin/booking'))}>Booking risorse</NavLink>
             <NavLink to="/admin/chat"         style={({ isActive }) => navLinkStyle(isActive)}>Chat</NavLink>
             <NavLink to="/admin/eventi"       style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>
             <NavLink to="/admin/blog"         style={({ isActive }) => navLinkStyle(isActive)}>Blog & News</NavLink>

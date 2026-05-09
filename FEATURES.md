@@ -1,0 +1,345 @@
+# FEATURES — Roadmap prodotto StayApp
+
+Documento vivo. Aggiornato sessione per sessione.
+Ultima revisione: 2026-05-09 (booking risorse completato)
+
+---
+
+## Come leggere questo file
+
+- `[ ]` — da fare
+- `[~]` — parzialmente implementato / fondamenta presenti
+- `[x]` — completato
+- Priorità: 🔴 Alta · 🟡 Media · 🟢 Bassa
+
+---
+
+## Verticals supportati (attuali e futuri)
+
+Il sistema è già multi-modulo. L'obiettivo è espanderlo oltre l'hospitality:
+
+| Vertical | Modulo attuale | Note |
+|---|---|---|
+| Hotel / B&B / Agriturismo | `struttura` | ✅ core |
+| Ristorante / Bar / Pizzeria | `ristorante` | ✅ core |
+| Attività / Esperienza | `attivita` | ✅ core |
+| Centro sportivo / Padel / Tennis | `attivita` | estendibile |
+| Palestra / Fitness | nuovo modulo | booking classi + abbonamenti |
+| Studio medico / Dentista | nuovo modulo | booking slot + paziente |
+| Professionista (avvocato, commercialista, etc.) | nuovo modulo | booking appuntamenti |
+| Spa / Centro benessere | interno a struttura | booking trattamenti |
+| Coworking / Uffici | nuovo modulo | booking postazioni/sale |
+| Scuola / Formazione | nuovo modulo | iscrizioni corsi + lezioni |
+
+---
+
+## 1. SISTEMA BOOKING RISORSE (pivot strategico) 🔴
+
+Il cuore della piattaforma generalista. Sostituisce il concetto "prenotazione escursione"
+con un sistema universale applicabile a qualsiasi entità.
+
+### Concetto: Risorsa prenotabile
+
+Ogni entità può avere **N risorse**, ognuna con le sue regole:
+
+```
+Risorsa
+├── nome: "Campo Padel 1", "Sala Massaggi A", "Studio Dr. Rossi"
+├── tipo: slot_orario | campo | sala | postazione | classe
+├── durata_default: 60min
+├── capacita: 1 (singolo) | N (gruppo/classe)
+├── prezzo: 0 (gratuito) | fisso | variabile per slot
+├── disponibilita: regole settimanali (lun-ven 09:00-20:00)
+├── blocchi: eccezioni (festivi, manutenzione)
+├── anticipo_min: 2h (minimo anticipo prenotazione)
+├── cancellazione: 24h (policy cancellazione)
+└── conferma: automatica | manuale
+```
+
+### Casi d'uso per vertical
+
+| Vertical | Risorsa | Slot | Capacità |
+|---|---|---|---|
+| Hotel | Spa, Sala riunioni, Campo tennis | 60min | 1-2 |
+| Ristorante | Tavolo, Chef's table | 90min | 2-8 |
+| Centro sportivo | Campo padel, Campo calcetto | 60-90min | 2-10 |
+| Studio medico | Ambulatorio Dr. X | 20-30min | 1 |
+| Palestra | Sala spinning, Personal trainer | 45-60min | 1-20 |
+| Coworking | Postazione fissa, Sala riunioni | 1h-giornata | 1-10 |
+| Professionista | Agenda Dr./Avv./Commercialista | 30-60min | 1 |
+
+### Features booking system
+
+- [x] 🔴 **CRUD risorse** — admin crea/modifica risorse per la propria entità
+- [x] 🔴 **Calendario disponibilità** — grid settimanale con slot liberi/occupati (admin)
+- [x] 🔴 **Booking pubblico** — cliente sceglie risorsa → slot → conferma (PWA/minisito)
+- [x] 🔴 **Gestione prenotazioni** — lista admin con filtri, stato, azioni
+- [x] 🔴 **Email conferma** automatica al cliente (via Resend)
+- [ ] 🔴 **Email reminder** N ore prima (configurabile per risorsa)
+- [x] 🟡 **Cancellazione self-service** — link nell'email conferma, policy configurabile per risorsa
+- [ ] 🟡 **Lista d'attesa** — se slot pieno, cliente entra in lista
+- [ ] 🟡 **Pagamento al booking** — Stripe checkout integrato (deposito o totale)
+- [ ] 🟡 **Ricorrenza** — prenotazione settimanale fissa (abbonati palestra, slot fisso medico)
+- [ ] 🟢 **Sync calendario** — export iCal / Google Calendar per il professionista
+- [ ] 🟢 **Buffer tra slot** — pulizia/preparazione (es. 15min tra massaggi)
+- [ ] 🟢 **Override manuale** — admin blocca slot / sposta prenotazione
+
+### DB (nuove tabelle da aggiungere)
+
+```sql
+-- Risorse prenotabili
+risorse (
+  id, entity_tipo, entity_id, nome, tipo,
+  descrizione, durata_min int, capacita int,
+  prezzo numeric, valuta text DEFAULT 'EUR',
+  colore text,           -- per il calendario
+  attiva boolean,
+  disponibilita jsonb,   -- { lun: [{start:'09:00',end:'20:00'}], ... }
+  blocchi jsonb,         -- [{ data:'2026-06-15', motivo:'festivo' }]
+  anticipo_min int,      -- minuti minimi di anticipo
+  cancellazione_h int,   -- ore entro cui si può cancellare
+  conferma_auto boolean DEFAULT true,
+  created_at, updated_at
+)
+
+-- Prenotazioni risorse
+prenotazioni_risorse (
+  id, risorsa_id FK risorse,
+  entity_tipo, entity_id,
+  cliente_nome, cliente_email, cliente_telefono,
+  data date, ora_inizio time, ora_fine time,
+  posti int DEFAULT 1,
+  importo_totale numeric,
+  stato text DEFAULT 'confermata', -- confermata|in_attesa|cancellata|completata
+  note text,
+  pagamento_id text,     -- Stripe payment intent
+  reminder_inviato boolean DEFAULT false,
+  created_at, updated_at
+)
+```
+
+---
+
+## 2. ORDINAZIONE F&B (ristoranti / hotel room service) 🔴
+
+Ospite scansiona QR al tavolo → ordina → la cucina riceve in tempo reale.
+
+- [ ] 🔴 **Menu ordinabile** — toggle "ordinabile" per piatto/categoria
+- [ ] 🔴 **Carrello ospite** — aggiunge piatti, note per piatto, invia ordine
+- [ ] 🔴 **Kitchen display** — schermata cucina con ordini in arrivo (real-time)
+- [ ] 🔴 **Stato ordine** — ospite vede: ricevuto → in preparazione → pronto
+- [ ] 🟡 **Numero tavolo / camera** — identificazione ospite al momento dell'ordine
+- [ ] 🟡 **Pagamento integrato** — Stripe al momento dell'ordine o a fine pasto
+- [ ] 🟡 **Orari servizio** — ordini accettati solo negli orari definiti
+- [ ] 🟢 **Allergeni nel carrello** — warning se item contiene allergene dichiarato dall'ospite
+- [ ] 🟢 **Upselling automatico** — "Con questo abbinare vino X?"
+
+---
+
+## 3. CHECK-IN / CHECK-OUT DIGITALE (hotel) 🔴
+
+- [ ] 🔴 **Pre check-in** — email automatica N giorni prima con link form
+- [ ] 🔴 **Form pre-arrivo** — nome, documento (foto), ora arrivo stimata, preferenze
+- [ ] 🔴 **Notifica reception** — alert quando ospite completa il pre check-in
+- [ ] 🟡 **Check-out digitale** — ospite chiude il soggiorno dalla PWA
+- [ ] 🟡 **Addebiti extra** — reception aggiunge extra (minibar, ecc.) visibili all'ospite
+- [ ] 🟢 **Firma digitale** — firma regolamento struttura inline
+- [ ] 🟢 **Upload documento** — foto fronte/retro ID (storage Supabase)
+
+---
+
+## 4. EMAIL AUTOMATION (trigger automatici) 🔴
+
+Oggi abbiamo solo newsletter manuale. Manca l'automation basata su eventi.
+
+- [ ] 🔴 **Pre-arrivo** — email automatica X giorni prima del check-in (hotel)
+- [ ] 🔴 **Conferma prenotazione** — email immediata con dettagli risorsa/evento
+- [ ] 🔴 **Reminder appuntamento** — 24h e 1h prima (booking risorse)
+- [ ] 🔴 **Post-soggiorno / post-visita** — email automatica dopo check-out o appuntamento
+- [ ] 🟡 **Sequenza benvenuto** — serie email per nuovi iscritti newsletter
+- [ ] 🟡 **Re-engagement** — email a contatti inattivi da X giorni
+- [ ] 🟡 **Compleanno** — email automatica se data di nascita salvata nel CRM
+- [ ] 🟢 **Flow builder visuale** — editor drag & drop per costruire sequenze
+
+### DB
+
+```sql
+automazioni (
+  id, azienda_id, entity_tipo, entity_id,
+  nome, trigger text,       -- 'pre_arrivo'|'post_visita'|'conferma_booking'|...
+  trigger_config jsonb,     -- { giorni_prima: 3 }
+  template_id, subject, content jsonb,
+  attiva boolean,
+  created_at
+)
+```
+
+---
+
+## 5. UPSELLING IN-STAY 🟡
+
+Messaggi/offerte automatiche durante il soggiorno o prima dell'arrivo.
+
+- [ ] 🟡 **Upgrade camera** — offerta upgrade con prezzo delta (hotel)
+- [ ] 🟡 **Early check-in / late check-out** — disponibilità + prezzo
+- [ ] 🟡 **Add-on** — colazione, parcheggio, transfer (comprabili dalla PWA)
+- [ ] 🟡 **Offerta F&B** — "Prenota il tavolo per stasera" con link booking
+- [ ] 🟡 **Bundle** — pacchetti combinati (camera + cena + spa)
+- [ ] 🟢 **Trigger temporale** — upselling mostrato X ore dopo il check-in
+
+---
+
+## 6. FEEDBACK / NPS 🟡
+
+- [ ] 🟡 **Survey in-stay** — form breve a metà soggiorno (1-5 stelle + commento)
+- [ ] 🟡 **Post-stay automatico** — email survey 1 giorno dopo check-out
+- [ ] 🟡 **Dashboard feedback** — admin vede punteggi, trend, commenti
+- [ ] 🟡 **Redirect recensioni** — se NPS ≥ 4 → link Google/TripAdvisor automatico
+- [ ] 🟢 **Risposta pubblica** — admin risponde alle recensioni dalla piattaforma
+- [ ] 🟢 **Widget recensioni** — mostra recensioni verificate nel minisito
+
+---
+
+## 7. GESTIONE STAFF 🟡
+
+- [ ] 🟡 **Invito collaboratori** — admin invia email invito con ruolo preassegnato
+- [ ] 🟡 **Turni staff** — calendario settimanale assegnazione turni
+- [ ] 🟡 **Task assignment** — richiesta ospite assegnata a staff specifico
+- [ ] 🟡 **Housekeeping board** — stato camere: pulita/da pulire/in pulizia (hotel)
+- [ ] 🟡 **Manutenzione workflow** — segnalazione → assegna tecnico → chiusura con foto
+- [ ] 🟢 **Performance** — tempo medio risoluzione richieste per membro staff
+- [ ] 🟢 **Chat interna** — messaggi staff↔staff separati da ospite↔staff
+
+---
+
+## 8. MODULI PROFESSIONISTI (nuovo vertical) 🟡
+
+Espansione fuori dall'hospitality puro.
+
+### Studio medico / Dentista
+- [ ] 🟡 **Scheda paziente** — anagrafica, storico visite, note medico
+- [ ] 🟡 **Agenda medico** — vista settimanale con slot booking
+- [ ] 🟡 **Consenso informato** — documento con firma digitale
+- [ ] 🟢 **Ricette / referti** — upload PDF, download paziente dalla PWA
+- [ ] 🟢 **Promemoria terapia** — push notification o email a orari fissi
+
+### Avvocato / Commercialista
+- [ ] 🟡 **Gestione clienti** — CRM con fascicoli/pratiche
+- [ ] 🟡 **Agenda consulenze** — booking appuntamento con area di specializzazione
+- [ ] 🟢 **Condivisione documenti** — upload sicuro, link temporaneo per cliente
+- [ ] 🟢 **Fatturazione base** — preventivo → approvazione → fattura PDF
+
+### Palestra / Fitness
+- [ ] 🟡 **Classi e orari** — calendario corsi con iscrizione
+- [ ] 🟡 **Abbonamenti** — piani mensili/trimestrali con Stripe (recurring)
+- [ ] 🟡 **Check-in palestra** — QR code presenza, contatore ingressi
+- [ ] 🟢 **Personal trainer** — booking sessione 1:1, piano allenamento
+- [ ] 🟢 **Progressi** — tracciamento peso/misure nel tempo
+
+---
+
+## 9. CRM AVANZATO 🟡
+
+- [ ] 🟡 **Storico ospite/cliente** — visite, spesa totale, servizi usati
+- [ ] 🟡 **Segmentazione** — tag automatici (VIP, frequente, stagionale)
+- [ ] 🟡 **Preferenze salvate** — camera, dieta, allergeni, note speciali
+- [ ] 🟡 **Lifetime value** — quanto ha speso ogni cliente nel tempo
+- [ ] 🟢 **Importa contatti** — CSV upload
+- [ ] 🟢 **Loyalty program** — punti per soggiorno/acquisto, rewards
+
+---
+
+## 10. ANALYTICS AVANZATE 🟡
+
+- [ ] 🟡 **Revenue analytics** — ricavi per entità, per periodo, per canale
+- [ ] 🟡 **Tasso di conversione** — visite minisito → prenotazione
+- [ ] 🟡 **Occupancy** — tasso occupazione risorse nel tempo
+- [ ] 🟡 **Source tracking** — da dove arrivano i clienti (QR, link diretto, Google)
+- [ ] 🟢 **Heatmap comportamento** — sezioni PWA più usate
+- [ ] 🟢 **Confronto periodi** — questo mese vs stesso mese anno scorso
+- [ ] 🟢 **Export dati** — CSV/Excel per tutte le liste
+
+---
+
+## 11. PAGAMENTI STRIPE (completamento) 🔴
+
+Stripe è installato ma non integrato.
+
+- [ ] 🔴 **Checkout eventi** — pagamento al momento della prenotazione evento
+- [ ] 🔴 **Checkout risorse** — pagamento al momento del booking (deposito o totale)
+- [ ] 🔴 **Webhook Stripe** — conferma automatica prenotazione dopo pagamento
+- [ ] 🟡 **Rimborsi** — admin emette rimborso parziale/totale dalla dashboard
+- [ ] 🟡 **Abbonamenti ricorrenti** — Stripe Billing per palestre, coworking
+- [ ] 🟡 **Stripe Connect** — ogni azienda ha il suo account Stripe (commissione piattaforma)
+- [ ] 🟢 **Fattura automatica** — PDF fattura inviato via email dopo pagamento
+
+---
+
+## 12. NOTIFICHE E COMUNICAZIONI 🟡
+
+- [ ] 🟡 **Push notifications PWA** — notifiche browser per nuove richieste/messaggi
+- [ ] 🟡 **WhatsApp Business API** — invio automatico conferme/reminder via WhatsApp
+- [ ] 🟡 **SMS** — fallback SMS per reminder critici (via Twilio)
+- [ ] 🟢 **Telegram bot** — notifiche staff su canale Telegram (veloce da implementare)
+- [ ] 🟢 **In-app notifications** — badge + feed notifiche nell'admin
+
+---
+
+## 13. MULTI-LINGUA 🟢
+
+- [ ] 🟢 **IT/EN/DE PWA ospite** — le schermate guest tradotte
+- [ ] 🟢 **Rilevamento automatico** — lingua dal browser dell'ospite
+- [ ] 🟢 **Contenuti multilingua** — admin inserisce nome/descrizione in più lingue
+- [ ] 🟢 **Email multilingua** — template email nella lingua dell'ospite
+
+---
+
+## 14. INTEGRAZIONI ESTERNE 🟢
+
+- [ ] 🟢 **Google Calendar sync** — prenotazioni risorse appaiono in Google Calendar
+- [ ] 🟢 **PMS** (Opera, Mews, Cloudbeds) — sync disponibilità e prenotazioni hotel
+- [ ] 🟢 **Channel manager** — SiteMinder, Booking.com, Airbnb
+- [ ] 🟢 **Google My Business** — aggiorna orari e info automaticamente
+- [ ] 🟢 **Zapier / Make** — webhook in uscita per integrazioni custom
+
+---
+
+## 15. INFRASTRUTTURA / TECNICO 🟡
+
+- [ ] 🟡 **GitHub → Vercel auto-deploy** — collegare repo per CI/CD automatico
+- [ ] 🟡 **Notifiche real-time admin** — Supabase Realtime su richieste (badge sidebar)
+- [ ] 🟡 **Rate limiting API** — protezione endpoint pubblici
+- [ ] 🟡 **Audit log** — chi ha modificato cosa e quando
+- [ ] 🟢 **Backup automatico dati** — export periodico su Storage
+- [ ] 🟢 **Multi-tenant isolation** — garanzie RLS più robuste per dati sensibili (medici)
+- [ ] 🟢 **GDPR export** — "scarica tutti i miei dati" per utente finale
+
+---
+
+## Ordine di sviluppo suggerito
+
+### Sprint 1 — Booking risorse (3-4 sessioni)
+1. DB: tabelle `risorse` + `prenotazioni_risorse`
+2. Admin: CRUD risorse + calendario disponibilità
+3. Guest/pubblico: booking flow (scelta risorsa → slot → form → conferma)
+4. Email conferma automatica
+
+### Sprint 2 — Stripe + pagamenti (2 sessioni)
+5. Checkout Stripe per prenotazioni risorse ed eventi
+6. Webhook conferma automatica
+
+### Sprint 3 — Email automation (2 sessioni)
+7. Reminder automatici pre-appuntamento
+8. Post-visita / post-soggiorno
+
+### Sprint 4 — F&B ordering (2-3 sessioni)
+9. Menu ordinabile + carrello
+10. Kitchen display real-time
+
+### Sprint 5 — Vertical professionisti (3+ sessioni)
+11. Scheda cliente/paziente
+12. Moduli specifici per vertical
+
+---
+
+*Aggiornare questo file a inizio sessione se nuove feature vengono completate o la priorità cambia.*

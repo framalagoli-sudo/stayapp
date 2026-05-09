@@ -57,6 +57,10 @@ import PacchettoPage from './pages/guest/PacchettoPage'
 import AnalyticsPage from './pages/admin/AnalyticsPage'
 import NewsletterPage from './pages/admin/NewsletterPage'
 import NewsletterEditorPage from './pages/admin/NewsletterEditorPage'
+import BookingCalendarioPage from './pages/admin/booking/BookingCalendarioPage'
+import BookingRisorsePage from './pages/admin/booking/BookingRisorsePage'
+import BookingPrenotazioniPage from './pages/admin/booking/BookingPrenotazioniPage'
+import CancellaPrenotazionePage from './pages/public/CancellaPrenotazionePage'
 import UnsubscribePage from './pages/public/UnsubscribePage'
 import ConfirmSubscriptionPage from './pages/public/ConfirmSubscriptionPage'
 import NewsletterArchivePage from './pages/guest/NewsletterArchivePage'
@@ -98,6 +102,7 @@ export default function App() {
           <Route path="/a/:slug/cookie"  element={<PolicyPage type="cookie"  entityType="attivita" />} />
           <Route path="/blog" element={<BlogListPage />} />
           <Route path="/blog/:slug" element={<ArticoloPage />} />
+          <Route path="/cancella-prenotazione" element={<CancellaPrenotazionePage />} />
           <Route path="/unsubscribe" element={<UnsubscribePage />} />
           <Route path="/confirm-subscription" element={<ConfirmSubscriptionPage />} />
           <Route path="/s/:slug/newsletter" element={<NewsletterArchivePage entityType="struttura" />} />
@@ -183,6 +188,11 @@ export default function App() {
             {/* Newsletter */}
             <Route path="newsletter"     element={<NewsletterPage />} />
             <Route path="newsletter/:id" element={<NewsletterEditorPage />} />
+
+            {/* Booking risorse */}
+            <Route path="booking"                   element={<BookingCalendarioPage />} />
+            <Route path="booking/risorse"            element={<BookingRisorsePage />} />
+            <Route path="booking/prenotazioni"       element={<BookingPrenotazioniPage />} />
           </Route>
 
           {/* Root — landing page StayApp */}
