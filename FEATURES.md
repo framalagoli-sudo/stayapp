@@ -1,7 +1,7 @@
 # FEATURES — Roadmap prodotto StayApp
 
 Documento vivo. Aggiornato sessione per sessione.
-Ultima revisione: 2026-05-13 (chatbot configurabile + password reset admin completati)
+Ultima revisione: 2026-05-13 (chatbot configurabile + password reset admin completati; aggiunto piano sicurezza)
 
 ---
 
@@ -328,39 +328,75 @@ Stripe è installato ma non integrato.
 
 ---
 
-## 16. INFRASTRUTTURA / TECNICO 🟡
+## 16. SICUREZZA — Piano completo 🔴
+
+Priorità assoluta prima di acquisire clienti paganti. Diviso in fasi.
+
+### Fase 1 — Implementare subito (1-2 sessioni, costo zero)
+
+- [ ] 🔴 **helmet.js** — security headers HTTP in 2 righe (`X-Frame-Options`, `HSTS`, `CSP`, `nosniff`, ecc.)
+- [ ] 🔴 **Rate limiting** — `express-rate-limit`: 60 req/min su endpoint guest, 10 req/15min su auth login
+- [ ] 🔴 **CORS lockdown** — whitelist esplicita dei domini (`stayapp-henna.vercel.app` + `localhost:5173`)
+- [ ] 🔴 **Validazione input con zod** — ogni endpoint pubblico che riceve dati (contatti, prenotazioni, newsletter)
+- [ ] 🔴 **2FA login admin** — TOTP via Supabase Auth (Google Authenticator) per tutti gli utenti admin
+
+### Fase 2 — Prima del primo cliente pagante
+
+- [ ] 🔴 **Backup automatico notturno** — cron job su Railway: `pg_dump` → upload su Cloudflare R2 (retention 30gg)
+- [ ] 🔴 **Audit log** — tabella `audit_log` (user, action, entity, payload, ip, timestamp); middleware automatico su ogni PATCH/DELETE
+- [ ] 🟡 **Upgrade Supabase → Pro** — $25/mese, include backup giornalieri con 7gg retention + PITR
+- [ ] 🟡 **Monitoraggio dipendenze** — `npm audit` in CI/CD (GitHub Actions) ad ogni push; alert su vulnerabilità critiche
+- [ ] 🟡 **Rotazione service role key** — policy trimestrale; aggiornare Railway env vars
+
+### Fase 3 — Prima di scalare (>10 clienti)
+
+- [ ] 🟡 **WAF Cloudflare** — Free blocca bot aggressivi; Pro ($20/mese) aggiunge regole OWASP complete
+- [ ] 🟡 **GDPR compliance** — DPA (Data Processing Agreement) da far firmare ai clienti prima dell'onboarding
+- [ ] 🟡 **Monitoring + alerting** — Sentry (errori), BetterUptime (uptime), alert su spike traffico anomali
+- [ ] 🟡 **Session management avanzato** — revoca sessioni attive, log accessi per utente admin
+- [ ] 🟢 **Penetration test** — test manuale base annuale (anche con strumenti free: OWASP ZAP)
+- [ ] 🟢 **Multi-tenant isolation** — garanzie RLS più robuste per dati sensibili (futuro vertical medico)
+- [ ] 🟢 **GDPR export** — "scarica tutti i miei dati" per utente finale
+
+### Stack alternativo valutato (in ordine di consiglio)
+
+| Opzione | Descrizione | Costo/mese | Quando valutarla |
+|---|---|---|---|
+| **A — Hardened attuale** | Aggiunge Cloudflare WAF + Supabase Pro al setup corrente | $30-85 | Subito |
+| **B — Mid-range** | Neon DB + Clerk Auth + Cloudflare R2 al posto di Supabase | ~$105 | >20 clienti |
+| **C — Self-hosted** | Hetzner VPS + Docker (PostgreSQL + Node + MinIO + Keycloak) | €10 | Solo con competenze devops |
+
+---
+
+## 17. INFRASTRUTTURA / TECNICO 🟡
 
 - [ ] 🟡 **GitHub → Vercel auto-deploy** — collegare repo per CI/CD automatico
 - [ ] 🟡 **Notifiche real-time admin** — Supabase Realtime su richieste (badge sidebar)
-- [ ] 🟡 **Rate limiting API** — protezione endpoint pubblici
-- [ ] 🟡 **Audit log** — chi ha modificato cosa e quando
-- [ ] 🟢 **Backup automatico dati** — export periodico su Storage
-- [ ] 🟢 **Multi-tenant isolation** — garanzie RLS più robuste per dati sensibili (medici)
 - [ ] 🟢 **GDPR export** — "scarica tutti i miei dati" per utente finale
 
 ---
 
 ## Ordine di sviluppo suggerito
 
-### Sprint 1 — Booking risorse (3-4 sessioni)
-1. DB: tabelle `risorse` + `prenotazioni_risorse`
-2. Admin: CRUD risorse + calendario disponibilità
-3. Guest/pubblico: booking flow (scelta risorsa → slot → form → conferma)
-4. Email conferma automatica
+### Sprint 0 — Sicurezza base (PRIMA di tutto il resto)
+1. helmet.js + rate limiting + CORS lockdown + validazione zod
+2. 2FA login admin
+3. Backup automatico notturno
+4. Audit log
 
-### Sprint 2 — Stripe + pagamenti (2 sessioni)
+### Sprint 1 — Stripe + pagamenti (2 sessioni)
 5. Checkout Stripe per prenotazioni risorse ed eventi
 6. Webhook conferma automatica
 
-### Sprint 3 — Email automation (2 sessioni)
+### Sprint 2 — Email automation (2 sessioni)
 7. Reminder automatici pre-appuntamento
 8. Post-visita / post-soggiorno
 
-### Sprint 4 — F&B ordering (2-3 sessioni)
+### Sprint 3 — F&B ordering (2-3 sessioni)
 9. Menu ordinabile + carrello
 10. Kitchen display real-time
 
-### Sprint 5 — Vertical professionisti (3+ sessioni)
+### Sprint 4 — Vertical professionisti (3+ sessioni)
 11. Scheda cliente/paziente
 12. Moduli specifici per vertical
 
