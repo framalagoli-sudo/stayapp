@@ -13,6 +13,80 @@ Azienda (top-level)
 
 ---
 
+## Setup nuovo sviluppatore — da zero
+
+### 1. Prerequisiti
+- Node.js 18+
+- Git
+- Account Supabase (credenziali da Francesco)
+- Account Railway (credenziali da Francesco)
+- Account Vercel (credenziali da Francesco)
+
+### 2. Clona il repo e installa le dipendenze
+```bash
+git clone <repo-url>
+cd hospitality
+cd client && npm install
+cd ../server && npm install
+```
+
+### 3. Variabili d'ambiente
+
+**`server/.env`** (copia da Railway → Variables):
+```
+SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+RESEND_API_KEY=re_...
+RESEND_FROM=StayApp <noreply@stayapp.it>
+APP_URL=https://stayapp-henna.vercel.app
+CLIENT_URL=https://stayapp-henna.vercel.app
+DEMO_NOTIFY_EMAIL=fra.malagoli@gmail.com
+PORT=3001
+```
+
+**`client/.env`** (copia da Vercel → Settings → Environment Variables):
+```
+VITE_SUPABASE_URL=https://xxx.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJ...
+VITE_API_URL=https://<railway-url>.railway.app
+```
+
+### 4. Avvia in locale
+```bash
+# Terminale 1 — backend
+cd server && npm run dev
+
+# Terminale 2 — frontend
+cd client && npm run dev
+```
+Frontend: `http://localhost:5173` | Backend: `http://localhost:3001`
+
+### 5. Workflow sviluppo
+```
+1. Sviluppa e testa in locale
+2. git add + git commit
+3. git push → Railway aggiorna il backend automaticamente
+4. npx vercel --prod --yes (dalla root) → aggiorna il frontend
+```
+
+> ⚠️ Le migration SQL vanno eseguite a mano su Supabase Dashboard → SQL Editor.
+> Non sono automatiche. Testa sempre la migration prima di pushare.
+
+### 6. Account e accessi
+| Servizio | Piano | Chi gestisce |
+|---|---|---|
+| Supabase | Pro ($25/mese) | Francesco |
+| Vercel | Pro ($20/mese) | Francesco |
+| Railway | Starter ($5/mese) | Francesco |
+| Cloudflare | Free | Francesco |
+| Resend | Free/Pay-as-go | Francesco |
+
+### 7. Contatti
+- **Owner / Lead dev:** Francesco Malagoli — fra.malagoli@gmail.com
+- **Super admin app:** fra.malagoli@gmail.com
+
+---
+
 ## Stack tecnico
 
 | Layer | Tecnologia |
