@@ -729,6 +729,8 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     ```
     Il server usa service_role (bypassa tutto) quindi non è colpito. Il client usa Supabase solo per Auth API → non colpito. Impatta solo eventuali query client-side dirette su nuove tabelle.
 
+20. **Backup notturno automatico — Cloudflare R2**: cron job su Railway ogni notte alle 03:00 UTC. `pg_dump` → gzip → upload su R2 → pulizia backup >30 giorni. Codice in `server/src/lib/backup.js`. Variabili richieste su Railway: `DATABASE_URL`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME=stayapp-backups`. Bucket: `stayapp-backups` su Cloudflare R2, region EU, storage class Standard. Test manuale: `POST /api/admin/backup` (solo super_admin). La `DATABASE_URL` ha formato: `postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres` — si trova in Supabase → Project Settings → Database → Connection string.
+
 18. **⚠️ Supabase Redirect URLs — aggiornare ad ogni cambio dominio**: il flow di reset password usa `supabase.auth.resetPasswordForEmail()` con `redirectTo` che punta a `/admin/reset-password`. Supabase blocca i redirect verso URL non whitelistati. **Ogni volta che cambia il dominio di produzione o staging, aggiungere il nuovo URL in:**
     `Supabase Dashboard → Authentication → URL Configuration → Redirect URLs`
     URL da aggiungere (aggiornare con i domini reali):
@@ -748,6 +750,9 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - [x] **Booking risorse** — slot/coperti, calendario admin, widget pubblico, promozioni, visibile_minisito
 - [x] **Chatbot configurabile** — decision tree per struttura/ristorante/attività; admin editor nodi+opzioni; widget PWA e landing
 - [x] **Password reset admin** — forgot-password + reset-password con token Supabase monouso (1h)
+- [x] **Sicurezza Fase 1** — helmet, rate limiting, CORS lockdown, zod validation, global error handler
+- [x] **Backup notturno** — cron job Railway → pg_dump → Cloudflare R2 EU, retention 30gg
+- [ ] **Sicurezza Fase 2** — audit log, 2FA login admin, upgrade Supabase Pro + Vercel Pro (azioni manuali)
 - [ ] **Pagamenti Stripe** — checkout booking risorse ed eventi (struttura già pronta: colonne pagamento_stato/pagamento_id su prenotazioni)
 - [ ] **Multi-lingua** — IT/EN/DE per PWA ospite
 - [ ] **Gestione staff** — invita collaboratori via email, ruoli, limitazione accessi

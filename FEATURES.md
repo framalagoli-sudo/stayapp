@@ -1,7 +1,7 @@
 # FEATURES — Roadmap prodotto StayApp
 
 Documento vivo. Aggiornato sessione per sessione.
-Ultima revisione: 2026-05-13 (chatbot configurabile + password reset admin completati; aggiunto piano sicurezza)
+Ultima revisione: 2026-05-13 (sicurezza Fase 1 + backup notturno Cloudflare R2 completati)
 
 ---
 
@@ -332,20 +332,21 @@ Stripe è installato ma non integrato.
 
 Priorità assoluta prima di acquisire clienti paganti. Diviso in fasi.
 
-### Fase 1 — Implementare subito (1-2 sessioni, costo zero)
+### Fase 1 — ✅ COMPLETATA (2026-05-13)
 
-- [ ] 🔴 **helmet.js** — security headers HTTP in 2 righe (`X-Frame-Options`, `HSTS`, `CSP`, `nosniff`, ecc.)
-- [ ] 🔴 **Rate limiting** — `express-rate-limit`: 60 req/min su endpoint guest, 10 req/15min su auth login
-- [ ] 🔴 **CORS lockdown** — whitelist esplicita dei domini (`stayapp-henna.vercel.app` + `localhost:5173`)
-- [ ] 🔴 **Validazione input con zod** — ogni endpoint pubblico che riceve dati (contatti, prenotazioni, newsletter)
-- [ ] 🔴 **2FA login admin** — TOTP via Supabase Auth (Google Authenticator) per tutti gli utenti admin
+- [x] 🔴 **helmet.js** — security headers HTTP (`X-Frame-Options`, `HSTS`, `CSP`, `nosniff`, ecc.)
+- [x] 🔴 **Rate limiting** — `express-rate-limit`: 60 req/min guest, 10 req/15min auth, 120 req/min admin
+- [x] 🔴 **CORS lockdown** — whitelist esplicita domini
+- [x] 🔴 **Validazione input con zod** — tutti gli endpoint pubblici (contatti, prenotazioni, newsletter, demo)
+- [x] 🔴 **Backup automatico notturno** — cron job Railway: `pg_dump` → Cloudflare R2 EU, retention 30gg
+- [ ] 🔴 **2FA login admin** — TOTP via Supabase Auth (Google Authenticator)
 
-### Fase 2 — Prima del primo cliente pagante
+### Fase 2 — Prima di aggiungere altri clienti
 
-- [ ] 🔴 **Backup automatico notturno** — cron job su Railway: `pg_dump` → upload su Cloudflare R2 (retention 30gg)
 - [ ] 🔴 **Audit log** — tabella `audit_log` (user, action, entity, payload, ip, timestamp); middleware automatico su ogni PATCH/DELETE
-- [ ] 🟡 **Upgrade Supabase → Pro** — $25/mese, include backup giornalieri con 7gg retention + PITR
-- [ ] 🟡 **Monitoraggio dipendenze** — `npm audit` in CI/CD (GitHub Actions) ad ogni push; alert su vulnerabilità critiche
+- [ ] 🟡 **Upgrade Supabase → Pro** — $25/mese, include backup giornalieri con 7gg retention (azione manuale)
+- [ ] 🟡 **Upgrade Vercel → Pro** — $20/mese, richiesto per uso commerciale (azione manuale)
+- [ ] 🟡 **Monitoraggio dipendenze** — `npm audit` in CI/CD (GitHub Actions) ad ogni push
 - [ ] 🟡 **Rotazione service role key** — policy trimestrale; aggiornare Railway env vars
 
 ### Fase 3 — Prima di scalare (>10 clienti)
@@ -378,11 +379,11 @@ Priorità assoluta prima di acquisire clienti paganti. Diviso in fasi.
 
 ## Ordine di sviluppo suggerito
 
-### Sprint 0 — Sicurezza base (PRIMA di tutto il resto)
-1. helmet.js + rate limiting + CORS lockdown + validazione zod
-2. 2FA login admin
-3. Backup automatico notturno
-4. Audit log
+### Sprint 0 — Sicurezza base ✅ QUASI COMPLETO
+1. ✅ helmet.js + rate limiting + CORS lockdown + validazione zod
+2. ✅ Backup automatico notturno su Cloudflare R2
+3. [ ] 2FA login admin
+4. [ ] Audit log
 
 ### Sprint 1 — Stripe + pagamenti (2 sessioni)
 5. Checkout Stripe per prenotazioni risorse ed eventi
