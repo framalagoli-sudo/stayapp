@@ -61,6 +61,7 @@ hospitality/
 │       │   │   ├── AdminLayout.jsx
 │       │   │   └── ProtectedRoute.jsx
 │       │   ├── CookieBanner.jsx    # React Portal, key cookie_consent_v2
+│       │   ├── BookingWidget.jsx   # wizard pubblico prenotazione risorse
 │       │   └── admin/PrivacySettingsSection.jsx
 │       └── pages/
 │           ├── admin/
@@ -68,6 +69,10 @@ hospitality/
 │           │   │                   # theme, activities, excursions, privacy
 │           │   ├── ristorante/     # info, menu, gallery, theme, minisito, privacy
 │           │   ├── attivita/       # info, gallery, theme, minisito, privacy
+│           │   ├── booking/
+│           │   │   ├── BookingCalendarioPage.jsx  # week grid occupancy + drill-down giorno
+│           │   │   ├── BookingRisorsePage.jsx     # CRUD risorse + promozioni
+│           │   │   └── BookingPrenotazioniPage.jsx # lista filtri + note interne
 │           │   ├── DashboardPage.jsx
 │           │   ├── RequestsPage.jsx   # richieste PWA (esclude booking)
 │           │   ├── BookingsPage.jsx   # prenotazioni attività/escursioni (tab separati)
@@ -85,7 +90,8 @@ hospitality/
 │           │   ├── ActivitiesTab.jsx
 │           │   └── ExcursionsTab.jsx
 │           └── public/
-│               └── PolicyPage.jsx  # /s/:slug/privacy|cookie, /r/:slug/..., /a/:slug/...
+│               ├── PolicyPage.jsx              # /s/:slug/privacy|cookie, /r/:slug/..., /a/:slug/...
+│               └── CancellaPrenotazionePage.jsx # /cancella-prenotazione?token=
 ├── server/
 │   └── src/
 │       ├── index.js
@@ -104,6 +110,7 @@ hospitality/
 │           ├── contatti.js         # CRM: lista + subscribe (double opt-in)
 │           ├── newsletter.js       # CRUD + send + scheduler + archivio
 │           ├── analytics.js        # stats aggregate per azienda
+│           ├── booking.js          # sistema booking risorse (slot/coperti)
 │           └── demo.js             # richieste demo dalla landing
 └── supabase/migrations/
     ├── 015_blog.sql                # tabelle blog_articles, blog_categories
@@ -113,7 +120,9 @@ hospitality/
     ├── 019_demo_requests.sql       # tabella demo_requests
     ├── 020_newsletter.sql          # tabella newsletters + unsubscribe_token su contatti
     ├── 021_page_views.sql          # tabella page_views (analytics visite minisito)
-    └── 022_newsletter_v2.sql       # confirmation_token + preheader + scheduled_at + unsubscribes_count
+    ├── 022_newsletter_v2.sql       # confirmation_token + preheader + scheduled_at + unsubscribes_count
+    ├── 023_booking.sql             # tabelle risorse, risorse_promozioni, prenotazioni
+    └── 024_booking_visibility.sql  # colonna visibile_minisito su risorse
 ```
 
 ---
@@ -335,6 +344,7 @@ Upload con `upsert: true` + `?v={timestamp}` per cache-bust.
 | `/blog/:slug` | ArticoloPage | |
 | `/unsubscribe?token=` | UnsubscribePage | disiscrizione newsletter |
 | `/confirm-subscription?token=` | ConfirmSubscriptionPage | conferma double opt-in |
+| `/cancella-prenotazione?token=` | CancellaPrenotazionePage | cancellazione self-service prenotazione risorsa |
 | `/s/:slug/newsletter` | NewsletterArchivePage | archivio newsletter struttura |
 | `/r/:slug/newsletter` | NewsletterArchivePage | archivio newsletter ristorante |
 | `/a/:slug/newsletter` | NewsletterArchivePage | archivio newsletter attività |
@@ -356,6 +366,9 @@ Upload con `upsert: true` + `?v={timestamp}` per cache-bust.
 /admin/eventi                   → EventiListPage
 /admin/eventi/:id               → EventoEditPage
 /admin/eventi/:id/prenotazioni  → EventoPrenotazioniPage
+/admin/booking                  → BookingCalendarioPage (week grid + drill-down)
+/admin/booking/risorse          → BookingRisorsePage (CRUD + promozioni)
+/admin/booking/prenotazioni     → BookingPrenotazioniPage (lista filtri + note)
 /admin/blog                     → AdminBlogListPage
 /admin/blog/categories          → BlogCategoriesPage
 /admin/blog/:id                 → BlogEditorPage
@@ -406,7 +419,7 @@ if (!isQR && entity.minisito?.active) return <LandingStruttura entity={entity} /
 ```
 
 **Sezioni configurabili** (drag & drop nell'admin):
-`highlights, stats, about, foto_testo, paragrafi, team, steps, video, cta_banner, testimonianze, promozioni, pacchetti, services, activities, excursions, eventi, news, gallery, faq, show_map, contatti, newsletter`
+`highlights, stats, about, foto_testo, paragrafi, team, steps, video, cta_banner, testimonianze, promozioni, pacchetti, services, activities, excursions, eventi, news, gallery, faq, show_map, booking, contatti, newsletter`
 
 **Sezioni descrittive (nuove):**
 - `foto_testo` — blocchi foto 50%/testo 50%, flag `inverti` per scambiare le colonne; mobile sempre foto sopra
@@ -565,6 +578,9 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 | Privacy struttura | `/admin/property/privacy` | Dati GDPR + preview policy |
 | Ristorante | `/admin/ristoranti/:id/*` | info, menu, gallery, theme, minisito, privacy |
 | Attività standalone | `/admin/attivita/:id/*` | info, gallery, theme, minisito, privacy |
+| **Booking risorse** | `/admin/booking` | Calendario week grid occupancy per risorsa |
+| **Booking — Risorse** | `/admin/booking/risorse` | CRUD risorse (slot/coperti), orari, blocchi, promozioni, visibile_minisito |
+| **Booking — Prenotazioni** | `/admin/booking/prenotazioni` | Lista filtrata per data/risorsa/stato, note interne, cambio stato |
 
 ### App ospite (PWA)
 - **Struttura** `/s/:slug`: Home / Esplora / Richiesta / Info + CookieBanner
@@ -608,6 +624,12 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 
 13. **Analytics route**: nessuna query viene eseguita a module load time — tutto inside async handlers con try-catch. Express 4 non gestisce automaticamente eccezioni async: tutti i route handler async devono avere try-catch.
 
+14. **Booking risorse — architettura**: tabelle `risorse` + `risorse_promozioni` + `prenotazioni`. Due modalità: `slot` (slot orari con durata fissa, N risorse identiche in parallelo via campo `quantita`) e `coperti` (max coperti per servizio, es. Pranzo/Cena). L'algoritmo di disponibilità gira server-side in `booking.js` (`calcolaSlotOrari` / `calcolaCoperti`). Il campo `visibile_minisito` controlla se la risorsa appare nel widget pubblico (può essere attiva in admin ma nascosta nel sito).
+
+15. **BookingWidget**: componente wizard React (`src/components/BookingWidget.jsx`) usato nelle landing page come sezione `booking`. Chiama endpoint pubblici `/api/booking/public/*` senza autenticazione. I badge promo sono applicati slot per slot in base alle `risorse_promozioni` attive. La cancellazione avviene via `cancellation_token` uuid nella email di conferma → `/cancella-prenotazione?token=`.
+
+16. **Booking — giorni settimana**: la `disponibilita` usa la convenzione JS `getDay()` (0=dom, 1=lun, …, 6=sab) anche lato server (Node.js). I giorni di chiusura coperti usano lo stesso schema in `giorni_chiusura[]`. Le chiavi per slot sono `dom, lun, mar, mer, gio, ven, sab` (array `DAY_KEYS` in booking.js).
+
 ---
 
 ## Roadmap — prossimi step (aggiornata 2026-05-09)
@@ -615,7 +637,8 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 ### Concordati con l'utente (in ordine)
 - [x] Analytics dashboard
 - [x] Newsletter fasi 1+2+3+4
-- [ ] **Pagamenti Stripe** — checkout eventi/escursioni, conferma automatica prenotazione
+- [x] **Booking risorse** — slot/coperti, calendario admin, widget pubblico, promozioni, visibile_minisito
+- [ ] **Pagamenti Stripe** — checkout booking risorse ed eventi (struttura già pronta: colonne pagamento_stato/pagamento_id su prenotazioni)
 - [ ] **Multi-lingua** — IT/EN/DE per PWA ospite
 - [ ] **Gestione staff** — invita collaboratori via email, ruoli, limitazione accessi
 
@@ -624,7 +647,10 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - [ ] **Notifiche real-time** — badge sidebar + toast (Supabase Realtime su `requests`) — bassa priorità
 
 ### Bassa priorità
+- [ ] **Email reminder booking** — N ore prima dell'appuntamento (struttura: `reminder_inviato` su prenotazioni)
 - [ ] **QR Code con logo** sovrapposto
 - [ ] **Modalità offline** PWA
 - [ ] **Recensioni ospiti**
 - [ ] **Integrazione PMS** (Opera, Mews, Cloudbeds)
+
+> Per il dettaglio completo delle feature future vedere `FEATURES.md` nella root del repo.

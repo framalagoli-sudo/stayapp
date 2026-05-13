@@ -3,6 +3,7 @@ import { MapPin, Phone, Mail, ChevronDown, ChevronLeft, ChevronRight, Waves, Spa
 import { apiFetch } from '../../lib/api'
 import CookieBanner from '../../components/CookieBanner'
 import BookingWidget from '../../components/BookingWidget'
+import ChatbotWidget from '../../components/ChatbotWidget'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -1007,6 +1008,7 @@ export default function LandingStruttura({ property }) {
         privacyUrl={property.slug ? `/s/${property.slug}/privacy` : null}
         cookieUrl={property.slug  ? `/s/${property.slug}/cookie`  : null}
       />
+      <ChatbotWidget chatbot={property.chatbot} primaryColor={primary} fixed />
     </>
   )
 }

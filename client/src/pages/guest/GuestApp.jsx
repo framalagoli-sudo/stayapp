@@ -14,6 +14,7 @@ import RequestForm from './RequestForm'
 import ServicesTab from './ServicesTab'
 import ActivitiesTab from './ActivitiesTab'
 import ExcursionsTab from './ExcursionsTab'
+import ChatbotWidget from '../../components/ChatbotWidget'
 
 // Genera o recupera session_id anonimo del guest
 function getSessionId() {
@@ -293,6 +294,11 @@ export default function GuestApp() {
               </div>
             </div>
           )}
+
+          {/* ── Chatbot widget (floating) ── */}
+          <div style={{ position: 'relative', height: 0, flexShrink: 0 }}>
+            <ChatbotWidget chatbot={property.chatbot} primaryColor={primary} />
+          </div>
 
           {/* ── Scroll area ── */}
           <div ref={scrollRef} className="g-scroll" onScroll={handleScroll}>

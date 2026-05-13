@@ -3,6 +3,7 @@ import { MapPin, Phone, Mail, Clock, ChevronDown, Utensils, Wine, Coffee, Music,
 import { apiFetch } from '../../lib/api'
 import CookieBanner from '../../components/CookieBanner'
 import BookingWidget from '../../components/BookingWidget'
+import ChatbotWidget from '../../components/ChatbotWidget'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -952,6 +953,7 @@ export default function LandingRistorante({ ristorante }) {
         privacyUrl={ristorante.slug ? `/r/${ristorante.slug}/privacy` : null}
         cookieUrl={ristorante.slug  ? `/r/${ristorante.slug}/cookie`  : null}
       />
+      <ChatbotWidget chatbot={ristorante.chatbot} primaryColor={primary} fixed />
     </>
   )
 }

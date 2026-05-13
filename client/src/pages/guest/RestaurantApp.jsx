@@ -4,6 +4,7 @@ import LandingRistorante from './LandingRistorante'
 import CookieBanner from '../../components/CookieBanner'
 import { Utensils, Info, Images, Phone, Mail, MapPin, Clock, X, ChevronRight } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
+import ChatbotWidget from '../../components/ChatbotWidget'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DEFAULT_THEME = {
@@ -190,6 +191,11 @@ export default function RestaurantApp() {
                 {ristorante.name}
               </span>
             </div>
+          </div>
+
+          {/* Chatbot widget (floating) */}
+          <div style={{ position: 'relative', height: 0, flexShrink: 0 }}>
+            <ChatbotWidget chatbot={ristorante.chatbot} primaryColor={primary} />
           </div>
 
           {/* Scroll area */}
