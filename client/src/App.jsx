@@ -5,6 +5,8 @@ import { PropertyIdContext } from './context/PropertyIdContext'
 import ProtectedRoute from './components/admin/ProtectedRoute'
 import AdminLayout from './components/admin/AdminLayout'
 import LoginPage from './pages/admin/LoginPage'
+import ForgotPasswordPage from './pages/admin/ForgotPasswordPage'
+import ResetPasswordPage from './pages/admin/ResetPasswordPage'
 import DashboardPage from './pages/admin/DashboardPage'
 import RequestsPage from './pages/admin/RequestsPage'
 import ChatPage from './pages/admin/ChatPage'
@@ -112,8 +114,10 @@ export default function App() {
           <Route path="/r/:slug/newsletter" element={<NewsletterArchivePage entityType="ristorante" />} />
           <Route path="/a/:slug/newsletter" element={<NewsletterArchivePage entityType="attivita" />} />
 
-          {/* Admin */}
-          <Route path="/admin/login" element={<LoginPage />} />
+          {/* Admin — autenticazione */}
+          <Route path="/admin/login"           element={<LoginPage />} />
+          <Route path="/admin/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/admin/reset-password"  element={<ResetPasswordPage />} />
           <Route
             path="/admin"
             element={

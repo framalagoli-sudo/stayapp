@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
 export default function LoginPage() {
@@ -36,7 +36,12 @@ export default function LoginPage() {
           placeholder="admin@esempio.it"
         />
 
-        <label style={labelStyle}>Password</label>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <label style={{ ...labelStyle, marginBottom: 0 }}>Password</label>
+          <Link to="/admin/forgot-password" style={{ fontSize: 12, color: '#888', textDecoration: 'none' }}>
+            Password dimenticata?
+          </Link>
+        </div>
         <input
           type="password"
           value={password}
