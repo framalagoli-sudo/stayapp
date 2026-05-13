@@ -59,21 +59,25 @@ hospitality/
 │       ├── components/
 │       │   ├── admin/
 │       │   │   ├── AdminLayout.jsx
-│       │   │   └── ProtectedRoute.jsx
+│       │   │   ├── ProtectedRoute.jsx
+│       │   │   └── ChatbotEditor.jsx   # editor albero conversazione chatbot (condiviso)
 │       │   ├── CookieBanner.jsx    # React Portal, key cookie_consent_v2
 │       │   ├── BookingWidget.jsx   # wizard pubblico prenotazione risorse
+│       │   ├── ChatbotWidget.jsx   # chatbot floating (PWA=absolute, landing=fixed)
 │       │   └── admin/PrivacySettingsSection.jsx
 │       └── pages/
 │           ├── admin/
 │           │   ├── property/       # info, modules, services, gallery, restaurant,
-│           │   │                   # theme, activities, excursions, privacy
-│           │   ├── ristorante/     # info, menu, gallery, theme, minisito, privacy
-│           │   ├── attivita/       # info, gallery, theme, minisito, privacy
+│           │   │                   # theme, activities, excursions, privacy, chatbot
+│           │   ├── ristorante/     # info, menu, gallery, theme, minisito, privacy, chatbot
+│           │   ├── attivita/       # info, gallery, theme, minisito, privacy, chatbot
 │           │   ├── booking/
 │           │   │   ├── BookingCalendarioPage.jsx  # week grid occupancy + drill-down giorno
 │           │   │   ├── BookingRisorsePage.jsx     # CRUD risorse + promozioni
 │           │   │   └── BookingPrenotazioniPage.jsx # lista filtri + note interne
 │           │   ├── DashboardPage.jsx
+│           │   ├── ForgotPasswordPage.jsx  # richiesta reset password via email
+│           │   ├── ResetPasswordPage.jsx   # form nuova password (da link email Supabase)
 │           │   ├── RequestsPage.jsx   # richieste PWA (esclude booking)
 │           │   ├── BookingsPage.jsx   # prenotazioni attività/escursioni (tab separati)
 │           │   ├── PropertiesPage.jsx
@@ -122,7 +126,8 @@ hospitality/
     ├── 021_page_views.sql          # tabella page_views (analytics visite minisito)
     ├── 022_newsletter_v2.sql       # confirmation_token + preheader + scheduled_at + unsubscribes_count
     ├── 023_booking.sql             # tabelle risorse, risorse_promozioni, prenotazioni
-    └── 024_booking_visibility.sql  # colonna visibile_minisito su risorse
+    ├── 024_booking_visibility.sql  # colonna visibile_minisito su risorse
+    └── 025_chatbot.sql             # colonna chatbot jsonb su properties/ristoranti/attivita
 ```
 
 ---
@@ -155,6 +160,7 @@ active boolean, modules jsonb, theme jsonb, services jsonb,
 gallery jsonb, restaurant jsonb, activities jsonb, excursions jsonb,
 minisito jsonb,        -- configurazione minisito/landing
 privacy_data jsonb,    -- dati GDPR titolare per policy auto-generate
+chatbot jsonb,         -- albero conversazione chatbot (migration 025)
 created_at, updated_at
 ```
 
@@ -163,7 +169,7 @@ created_at, updated_at
 id, azienda_id (FK), slug UNIQUE, name, description, address,
 phone, email, schedule, cover_url, logo_url, active boolean,
 theme jsonb, gallery jsonb, menu jsonb, modules jsonb,
-minisito jsonb, privacy_data jsonb, created_at, updated_at
+minisito jsonb, privacy_data jsonb, chatbot jsonb, created_at, updated_at
 ```
 
 ### Tabella `attivita` (migration 017)
@@ -172,7 +178,7 @@ id, azienda_id (FK), slug UNIQUE, name, tipo text,
 description, address, phone, email, schedule,
 cover_url, logo_url, active boolean,
 theme jsonb, gallery jsonb, services jsonb,
-minisito jsonb, privacy_data jsonb, created_at, updated_at
+minisito jsonb, privacy_data jsonb, chatbot jsonb, created_at, updated_at
 ```
 
 ### Tabella `profiles`
@@ -581,10 +587,11 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 | **Booking risorse** | `/admin/booking` | Calendario week grid occupancy per risorsa |
 | **Booking — Risorse** | `/admin/booking/risorse` | CRUD risorse (slot/coperti), orari, blocchi, promozioni, visibile_minisito |
 | **Booking — Prenotazioni** | `/admin/booking/prenotazioni` | Lista filtrata per data/risorsa/stato, note interne, cambio stato |
+| **Chatbot** | `/admin/property/chatbot` | Editor albero conversazione: passi, opzioni tipizzate, anteprima live |
 
 ### App ospite (PWA)
-- **Struttura** `/s/:slug`: Home / Esplora / Richiesta / Info + CookieBanner
-- **Ristorante** `/r/:slug`: Menu / Info / Galleria + CookieBanner
+- **Struttura** `/s/:slug`: Home / Esplora / Richiesta / Info + CookieBanner + ChatbotWidget (floating absolute)
+- **Ristorante** `/r/:slug`: Menu / Info / Galleria + CookieBanner + ChatbotWidget (floating absolute)
 - **Attività** `/a/:slug`: sempre minisito (LandingAttivita)
 
 ### Minisito (Landing)
@@ -593,6 +600,12 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - Social links, SEO meta, CookieBanner con link policy
 - Form contatti con consenso GDPR
 - Form newsletter con consenso GDPR
+- ChatbotWidget (floating fixed, bottom-right) se chatbot.active=true
+
+### Auth admin
+- Login: `/admin/login`
+- Password dimenticata: `/admin/forgot-password` → email con link Supabase
+- Reset password: `/admin/reset-password` → form nuova password (token monouso, scade 1h)
 
 ---
 
@@ -630,6 +643,17 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 
 16. **Booking — giorni settimana**: la `disponibilita` usa la convenzione JS `getDay()` (0=dom, 1=lun, …, 6=sab) anche lato server (Node.js). I giorni di chiusura coperti usano lo stesso schema in `giorni_chiusura[]`. Le chiavi per slot sono `dom, lun, mar, mer, gio, ven, sab` (array `DAY_KEYS` in booking.js).
 
+17. **Chatbot — architettura**: configurazione salvata come `chatbot jsonb` su `properties`/`ristoranti`/`attivita`. Struttura: `{ active, bot_name, nodes: [{ id, name, message, options: [{ id, label, type, next, value }] }] }`. Tipi opzione: `go_to` (vai a nodo), `restart` (torna a start), `call` (tel:), `whatsapp` (wa.me), `link` (URL esterno). Il nodo `start` è obbligatorio e non eliminabile. `ChatbotWidget` ha due modalità: `fixed=false` (position:absolute dentro PWA) e `fixed=true` (position:fixed per landing pages). Il widget è disabilitato se `chatbot.active=false` o se non ci sono nodi.
+
+18. **⚠️ Supabase Redirect URLs — aggiornare ad ogni cambio dominio**: il flow di reset password usa `supabase.auth.resetPasswordForEmail()` con `redirectTo` che punta a `/admin/reset-password`. Supabase blocca i redirect verso URL non whitelistati. **Ogni volta che cambia il dominio di produzione o staging, aggiungere il nuovo URL in:**
+    `Supabase Dashboard → Authentication → URL Configuration → Redirect URLs`
+    URL da aggiungere (aggiornare con i domini reali):
+    ```
+    https://stayapp-henna.vercel.app/admin/reset-password
+    http://localhost:5173/admin/reset-password
+    ```
+    Senza questo, il link nell'email di reset porta a una pagina di errore Supabase invece che all'app.
+
 ---
 
 ## Roadmap — prossimi step (aggiornata 2026-05-09)
@@ -638,6 +662,8 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - [x] Analytics dashboard
 - [x] Newsletter fasi 1+2+3+4
 - [x] **Booking risorse** — slot/coperti, calendario admin, widget pubblico, promozioni, visibile_minisito
+- [x] **Chatbot configurabile** — decision tree per struttura/ristorante/attività; admin editor nodi+opzioni; widget PWA e landing
+- [x] **Password reset admin** — forgot-password + reset-password con token Supabase monouso (1h)
 - [ ] **Pagamenti Stripe** — checkout booking risorse ed eventi (struttura già pronta: colonne pagamento_stato/pagamento_id su prenotazioni)
 - [ ] **Multi-lingua** — IT/EN/DE per PWA ospite
 - [ ] **Gestione staff** — invita collaboratori via email, ruoli, limitazione accessi

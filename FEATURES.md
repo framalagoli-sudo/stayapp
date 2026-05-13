@@ -1,7 +1,7 @@
 # FEATURES — Roadmap prodotto StayApp
 
 Documento vivo. Aggiornato sessione per sessione.
-Ultima revisione: 2026-05-09 (booking risorse completato)
+Ultima revisione: 2026-05-13 (chatbot configurabile + password reset admin completati)
 
 ---
 
@@ -120,7 +120,31 @@ prenotazioni_risorse (
 
 ---
 
-## 2. ORDINAZIONE F&B (ristoranti / hotel room service) 🔴
+## 2. CHATBOT CONFIGURABILE (decision tree) 🟡
+
+Widget chat con risposte preimpostate per struttura, ristorante e attività. Admin configura albero di conversazione (nodi + opzioni con azioni).
+
+- [x] 🟡 **Decision tree admin** — editor nodi: messaggio bot + pulsanti tipizzati
+- [x] 🟡 **Tipi opzione** — `go_to` (vai a nodo), `restart` (torna a start), `call` (tel:), `whatsapp` (wa.me), `link` (URL esterno)
+- [x] 🟡 **Widget PWA** — posizionato sopra la nav bar (position:absolute, non fuoriesce dal mockup phone)
+- [x] 🟡 **Widget landing** — floating fixed bottom-right (360×520px) per minisiti
+- [x] 🟡 **Entità supportate** — struttura, ristorante, attività (colonna `chatbot jsonb` su tutte e tre le tabelle)
+- [x] 🟡 **Anteprima live** — nell'editor admin si vede la conversazione in tempo reale
+- [ ] 🟢 **Chatbot AI** — integrazione LLM per risposte libere (campo "altro" + GPT/Claude)
+- [ ] 🟢 **Trasferimento a operatore** — escalation a chat umana (WhatsApp / email notifica)
+- [ ] 🟢 **Analytics chatbot** — quali percorsi vengono scelti più spesso
+
+### DB
+```sql
+-- Migration 025_chatbot.sql
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS chatbot jsonb DEFAULT NULL;
+ALTER TABLE ristoranti ADD COLUMN IF NOT EXISTS chatbot jsonb DEFAULT NULL;
+ALTER TABLE attivita   ADD COLUMN IF NOT EXISTS chatbot jsonb DEFAULT NULL;
+```
+
+---
+
+## 3. ORDINAZIONE F&B (ristoranti / hotel room service) 🔴
 
 Ospite scansiona QR al tavolo → ordina → la cucina riceve in tempo reale.
 
@@ -136,7 +160,7 @@ Ospite scansiona QR al tavolo → ordina → la cucina riceve in tempo reale.
 
 ---
 
-## 3. CHECK-IN / CHECK-OUT DIGITALE (hotel) 🔴
+## 4. CHECK-IN / CHECK-OUT DIGITALE (hotel) 🔴
 
 - [ ] 🔴 **Pre check-in** — email automatica N giorni prima con link form
 - [ ] 🔴 **Form pre-arrivo** — nome, documento (foto), ora arrivo stimata, preferenze
@@ -148,7 +172,7 @@ Ospite scansiona QR al tavolo → ordina → la cucina riceve in tempo reale.
 
 ---
 
-## 4. EMAIL AUTOMATION (trigger automatici) 🔴
+## 5. EMAIL AUTOMATION (trigger automatici) 🔴
 
 Oggi abbiamo solo newsletter manuale. Manca l'automation basata su eventi.
 
@@ -176,7 +200,7 @@ automazioni (
 
 ---
 
-## 5. UPSELLING IN-STAY 🟡
+## 6. UPSELLING IN-STAY 🟡
 
 Messaggi/offerte automatiche durante il soggiorno o prima dell'arrivo.
 
@@ -189,7 +213,7 @@ Messaggi/offerte automatiche durante il soggiorno o prima dell'arrivo.
 
 ---
 
-## 6. FEEDBACK / NPS 🟡
+## 7. FEEDBACK / NPS 🟡
 
 - [ ] 🟡 **Survey in-stay** — form breve a metà soggiorno (1-5 stelle + commento)
 - [ ] 🟡 **Post-stay automatico** — email survey 1 giorno dopo check-out
@@ -200,7 +224,7 @@ Messaggi/offerte automatiche durante il soggiorno o prima dell'arrivo.
 
 ---
 
-## 7. GESTIONE STAFF 🟡
+## 8. GESTIONE STAFF 🟡
 
 - [ ] 🟡 **Invito collaboratori** — admin invia email invito con ruolo preassegnato
 - [ ] 🟡 **Turni staff** — calendario settimanale assegnazione turni
@@ -212,7 +236,7 @@ Messaggi/offerte automatiche durante il soggiorno o prima dell'arrivo.
 
 ---
 
-## 8. MODULI PROFESSIONISTI (nuovo vertical) 🟡
+## 9. MODULI PROFESSIONISTI (nuovo vertical) 🟡
 
 Espansione fuori dall'hospitality puro.
 
@@ -238,7 +262,7 @@ Espansione fuori dall'hospitality puro.
 
 ---
 
-## 9. CRM AVANZATO 🟡
+## 10. CRM AVANZATO 🟡
 
 - [ ] 🟡 **Storico ospite/cliente** — visite, spesa totale, servizi usati
 - [ ] 🟡 **Segmentazione** — tag automatici (VIP, frequente, stagionale)
@@ -249,7 +273,7 @@ Espansione fuori dall'hospitality puro.
 
 ---
 
-## 10. ANALYTICS AVANZATE 🟡
+## 11. ANALYTICS AVANZATE 🟡
 
 - [ ] 🟡 **Revenue analytics** — ricavi per entità, per periodo, per canale
 - [ ] 🟡 **Tasso di conversione** — visite minisito → prenotazione
@@ -261,7 +285,7 @@ Espansione fuori dall'hospitality puro.
 
 ---
 
-## 11. PAGAMENTI STRIPE (completamento) 🔴
+## 12. PAGAMENTI STRIPE (completamento) 🔴
 
 Stripe è installato ma non integrato.
 
@@ -275,7 +299,7 @@ Stripe è installato ma non integrato.
 
 ---
 
-## 12. NOTIFICHE E COMUNICAZIONI 🟡
+## 13. NOTIFICHE E COMUNICAZIONI 🟡
 
 - [ ] 🟡 **Push notifications PWA** — notifiche browser per nuove richieste/messaggi
 - [ ] 🟡 **WhatsApp Business API** — invio automatico conferme/reminder via WhatsApp
@@ -285,7 +309,7 @@ Stripe è installato ma non integrato.
 
 ---
 
-## 13. MULTI-LINGUA 🟢
+## 14. MULTI-LINGUA 🟢
 
 - [ ] 🟢 **IT/EN/DE PWA ospite** — le schermate guest tradotte
 - [ ] 🟢 **Rilevamento automatico** — lingua dal browser dell'ospite
@@ -294,7 +318,7 @@ Stripe è installato ma non integrato.
 
 ---
 
-## 14. INTEGRAZIONI ESTERNE 🟢
+## 15. INTEGRAZIONI ESTERNE 🟢
 
 - [ ] 🟢 **Google Calendar sync** — prenotazioni risorse appaiono in Google Calendar
 - [ ] 🟢 **PMS** (Opera, Mews, Cloudbeds) — sync disponibilità e prenotazioni hotel
@@ -304,7 +328,7 @@ Stripe è installato ma non integrato.
 
 ---
 
-## 15. INFRASTRUTTURA / TECNICO 🟡
+## 16. INFRASTRUTTURA / TECNICO 🟡
 
 - [ ] 🟡 **GitHub → Vercel auto-deploy** — collegare repo per CI/CD automatico
 - [ ] 🟡 **Notifiche real-time admin** — Supabase Realtime su richieste (badge sidebar)
