@@ -645,6 +645,16 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 
 17. **Chatbot — architettura**: configurazione salvata come `chatbot jsonb` su `properties`/`ristoranti`/`attivita`. Struttura: `{ active, bot_name, nodes: [{ id, name, message, options: [{ id, label, type, next, value }] }] }`. Tipi opzione: `go_to` (vai a nodo), `restart` (torna a start), `call` (tel:), `whatsapp` (wa.me), `link` (URL esterno). Il nodo `start` è obbligatorio e non eliminabile. `ChatbotWidget` ha due modalità: `fixed=false` (position:absolute dentro PWA) e `fixed=true` (position:fixed per landing pages). Il widget è disabilitato se `chatbot.active=false` o se non ci sono nodi.
 
+19. **⚠️ Supabase Grant espliciti — obbligatori da ottobre 2026**: dal 30 ottobre 2026 Supabase richiede grant espliciti per ogni nuova tabella. Le tabelle esistenti (001–025) sono già coperte. **Ogni migration futura deve includere:**
+    ```sql
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.nuova_tabella TO authenticated;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.nuova_tabella TO service_role;
+    -- Solo per tabelle pubbliche (endpoint /api/guest/* senza auth):
+    -- GRANT SELECT ON public.nuova_tabella TO anon;
+    ALTER TABLE public.nuova_tabella ENABLE ROW LEVEL SECURITY;
+    ```
+    Il server usa service_role (bypassa tutto) quindi non è colpito. Il client usa Supabase solo per Auth API → non colpito. Impatta solo eventuali query client-side dirette su nuove tabelle.
+
 18. **⚠️ Supabase Redirect URLs — aggiornare ad ogni cambio dominio**: il flow di reset password usa `supabase.auth.resetPasswordForEmail()` con `redirectTo` che punta a `/admin/reset-password`. Supabase blocca i redirect verso URL non whitelistati. **Ogni volta che cambia il dominio di produzione o staging, aggiungere il nuovo URL in:**
     `Supabase Dashboard → Authentication → URL Configuration → Redirect URLs`
     URL da aggiungere (aggiornare con i domini reali):
@@ -656,7 +666,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 
 ---
 
-## Roadmap — prossimi step (aggiornata 2026-05-09)
+## Roadmap — prossimi step (aggiornata 2026-05-13)
 
 ### Concordati con l'utente (in ordine)
 - [x] Analytics dashboard
