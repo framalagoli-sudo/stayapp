@@ -30,6 +30,8 @@ import demoRouter from './routes/demo.js'
 import newsletterRouter, { runScheduledSends } from './routes/newsletter.js'
 import analyticsRouter from './routes/analytics.js'
 import bookingRouter from './routes/booking.js'
+import { runBackup } from './lib/backup.js'
+import cron from 'node-cron'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -107,6 +109,25 @@ app.use('/api/booking',     adminLimiter, bookingRouter)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 
+// Backup manuale — solo super_admin, non esposto al rate limiter pubblico
+app.post('/api/admin/backup', async (req, res) => {
+  const authHeader = req.headers.authorization
+  if (!authHeader) return res.status(401).json({ error: 'Non autorizzato' })
+  try {
+    const { createClient } = await import('@supabase/supabase-js')
+    const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user } } = await sb.auth.getUser(token)
+    if (!user) return res.status(401).json({ error: 'Non autorizzato' })
+    const { data: profile } = await sb.from('profiles').select('role').eq('id', user.id).single()
+    if (profile?.role !== 'super_admin') return res.status(403).json({ error: 'Accesso negato' })
+    runBackup().catch(e => console.error('[backup-manual]', e.message))
+    res.json({ ok: true, message: 'Backup avviato in background' })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // ── Global error handler ─────────────────────────────────────────────────────
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
@@ -117,5 +138,13 @@ app.use((err, _req, res, _next) => {
 
 app.listen(PORT, () => {
   console.log(`StayApp server running on :${PORT}`)
+
+  // Newsletter scheduler — ogni 60 secondi
   setInterval(() => runScheduledSends().catch(e => console.error('[scheduler]', e.message)), 60_000)
+
+  // Backup notturno — ogni giorno alle 03:00 UTC
+  cron.schedule('0 3 * * *', () => {
+    runBackup().catch(e => console.error('[backup] Errore inatteso:', e.message))
+  })
+  console.log('[backup] Scheduler attivo — backup ogni notte alle 03:00 UTC')
 })
