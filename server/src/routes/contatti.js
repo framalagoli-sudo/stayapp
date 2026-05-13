@@ -1,9 +1,19 @@
 import { Router } from 'express'
 import { randomUUID } from 'crypto'
+import { z } from 'zod'
 import { supabase } from '../lib/supabase.js'
 import { requireAuth } from '../middleware/auth.js'
+import { validate } from '../middleware/validate.js'
 
 const router = Router()
+
+const subscribeSchema = z.object({
+  azienda_id: z.string().uuid(),
+  nome:       z.string().trim().max(100).optional(),
+  email:      z.string().trim().email().optional(),
+  telefono:   z.string().trim().max(30).optional(),
+  fonte:      z.string().trim().max(50).optional(),
+}).refine(d => d.email || d.telefono, { message: 'Email o telefono obbligatori' })
 
 async function getAziendaId(userId) {
   const { data } = await supabase.from('profiles').select('role, azienda_id').eq('id', userId).single()
@@ -11,7 +21,7 @@ async function getAziendaId(userId) {
 }
 
 // POST /api/contatti/subscribe — iscrizione pubblica da minisito/PWA (double opt-in)
-router.post('/subscribe', async (req, res) => {
+router.post('/subscribe', validate(subscribeSchema), async (req, res) => {
   const { azienda_id, nome, email, telefono, fonte = 'minisito' } = req.body
   if (!azienda_id) return res.status(400).json({ error: 'azienda_id obbligatorio' })
   if (!email?.trim() && !telefono?.trim()) return res.status(400).json({ error: 'Email o telefono obbligatori' })

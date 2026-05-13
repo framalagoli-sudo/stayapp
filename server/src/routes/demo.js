@@ -1,10 +1,20 @@
 import { Router } from 'express'
+import { z } from 'zod'
 import { supabase } from '../lib/supabase.js'
 import { requireAuth } from '../middleware/auth.js'
+import { validate } from '../middleware/validate.js'
 import { emailTemplate } from './guest.js'
 
 const router = Router()
 const NOTIFY_EMAIL = process.env.DEMO_NOTIFY_EMAIL || 'fra.malagoli@gmail.com'
+
+const demoSchema = z.object({
+  nome:           z.string().trim().min(1).max(100),
+  email:          z.string().trim().email(),
+  telefono:       z.string().trim().max(30).optional(),
+  tipo_attivita:  z.string().trim().max(100).optional(),
+  messaggio:      z.string().trim().max(3000).optional(),
+})
 
 async function assertSuperAdmin(userId) {
   const { data } = await supabase.from('profiles').select('role').eq('id', userId).single()
@@ -12,10 +22,8 @@ async function assertSuperAdmin(userId) {
 }
 
 // POST /api/demo — richiesta demo pubblica (no auth)
-router.post('/', async (req, res) => {
+router.post('/', validate(demoSchema), async (req, res) => {
   const { nome, email, telefono, tipo_attivita, messaggio } = req.body
-  if (!nome?.trim() || !email?.trim())
-    return res.status(400).json({ error: 'Nome e email sono obbligatori' })
 
   const { error } = await supabase.from('demo_requests').insert({
     nome: nome.trim(),

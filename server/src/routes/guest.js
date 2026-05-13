@@ -1,5 +1,43 @@
 import { Router } from 'express'
+import { z } from 'zod'
 import { supabase } from '../lib/supabase.js'
+import { validate } from '../middleware/validate.js'
+
+const bookEventSchema = z.object({
+  guest_name:  z.string().trim().min(1).max(100),
+  guest_email: z.string().trim().email(),
+  guest_phone: z.string().trim().max(30).optional(),
+  package_id:  z.string().uuid().optional(),
+  seats:       z.coerce.number().int().min(1).max(100).optional(),
+  notes:       z.string().trim().max(1000).optional(),
+})
+
+const bookSchema = z.object({
+  entity_tipo: z.enum(['struttura', 'ristorante', 'attivita']),
+  entity_id:   z.string().uuid(),
+  item_type:   z.enum(['activity', 'excursion']),
+  item_name:   z.string().trim().max(200).optional(),
+  name:        z.string().trim().min(1).max(100),
+  email:       z.string().trim().email(),
+  phone:       z.string().trim().max(30).optional(),
+  persons:     z.coerce.number().int().min(1).max(100).optional(),
+  notes:       z.string().trim().max(1000).optional(),
+})
+
+const contactSchema = z.object({
+  entity_tipo:  z.enum(['struttura', 'ristorante', 'attivita']),
+  entity_id:    z.string().uuid(),
+  name:         z.string().trim().min(1).max(100),
+  email:        z.string().trim().email(),
+  message:      z.string().trim().min(1).max(3000),
+  source:       z.string().trim().max(50).optional(),
+  source_name:  z.string().trim().max(200).optional(),
+})
+
+const pageviewSchema = z.object({
+  entity_tipo: z.enum(['struttura', 'ristorante', 'attivita']),
+  entity_id:   z.string().uuid(),
+})
 
 const router = Router()
 
@@ -95,7 +133,7 @@ router.get('/eventi', async (req, res) => {
 })
 
 // POST /api/guest/eventi/:id/book — crea prenotazione (pubblico)
-router.post('/eventi/:id/book', async (req, res) => {
+router.post('/eventi/:id/book', validate(bookEventSchema), async (req, res) => {
   const { guest_name, guest_email, guest_phone, package_id, seats, notes } = req.body
   if (!guest_name?.trim()) return res.status(400).json({ error: 'Nome obbligatorio' })
   if (!guest_email?.trim()) return res.status(400).json({ error: 'Email obbligatoria' })
@@ -127,7 +165,7 @@ router.post('/eventi/:id/book', async (req, res) => {
 })
 
 // POST /api/guest/pageview — traccia visita minisito (pubblico, fire-and-forget)
-router.post('/pageview', async (req, res) => {
+router.post('/pageview', validate(pageviewSchema), async (req, res) => {
   const { entity_tipo, entity_id } = req.body
   if (!entity_tipo || !entity_id) return res.status(400).json({ error: 'entity_tipo e entity_id obbligatori' })
   await supabase.from('page_views').insert({ entity_tipo, entity_id })
@@ -179,7 +217,7 @@ router.get('/:slug', async (req, res) => {
 })
 
 // POST /api/guest/book — prenotazione attività/escursione (pubblico, salva su DB + email)
-router.post('/book', async (req, res) => {
+router.post('/book', validate(bookSchema), async (req, res) => {
   const { entity_tipo, entity_id, item_type, item_name, name, email, phone, persons, notes } = req.body
   if (!name?.trim() || !email?.trim()) {
     return res.status(400).json({ error: 'Nome e email obbligatori' })
@@ -248,7 +286,7 @@ router.post('/book', async (req, res) => {
 })
 
 // POST /api/guest/contact — form contatto minisito (pubblico)
-router.post('/contact', async (req, res) => {
+router.post('/contact', validate(contactSchema), async (req, res) => {
   const { entity_tipo, entity_id, name, email, message, source, source_name } = req.body
   if (!name?.trim() || !email?.trim() || !message?.trim()) {
     return res.status(400).json({ error: 'Nome, email e messaggio sono obbligatori' })
