@@ -3,10 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, blockEmoji } from '../../lib/blockTypes'
 
-// ── UUID semplice lato client ─────────────────────────────────────────────────
 function uid() { return crypto.randomUUID() }
 
-// ── Slug helper ───────────────────────────────────────────────────────────────
 function slugify(s) {
   return (s || '').toLowerCase()
     .replace(/[àáâ]/g,'a').replace(/[èéê]/g,'e').replace(/[ìí]/g,'i')
@@ -14,12 +12,9 @@ function slugify(s) {
     .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'pagina'
 }
 
-// ── ItemListEditor: per blocchi con array di items ────────────────────────────
+// ── ItemListEditor ────────────────────────────────────────────────────────────
 function ItemListEditor({ items = [], onChange, fields, newItem }) {
-  function update(idx, key, val) {
-    const next = items.map((it, i) => i === idx ? { ...it, [key]: val } : it)
-    onChange(next)
-  }
+  function update(idx, key, val) { onChange(items.map((it, i) => i === idx ? { ...it, [key]: val } : it)) }
   function add() { onChange([...items, { id: uid(), ...newItem }]) }
   function remove(idx) { onChange(items.filter((_, i) => i !== idx)) }
   function move(idx, dir) {
@@ -63,7 +58,7 @@ function ItemListEditor({ items = [], onChange, fields, newItem }) {
   )
 }
 
-// ── Editors per tipo blocco ───────────────────────────────────────────────────
+// ── BlockEditor ───────────────────────────────────────────────────────────────
 function BlockEditor({ block, onChange, entityId, entityTipo }) {
   const { type, data } = block
   const upd = (key, val) => onChange({ ...data, [key]: val })
@@ -80,7 +75,6 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
           <Field label="Testo" value={data.text} onChange={v => upd('text', v)} multiline rows={5} />
         </div>
       )
-
     case 'foto_testo':
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -97,7 +91,6 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
           <Field label="URL pulsante (opz.)" value={data.button_url} onChange={v => upd('button_url', v)} placeholder="https://..." />
         </div>
       )
-
     case 'cta_banner':
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -107,10 +100,8 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
           <Field label="URL pulsante" value={data.button_url} onChange={v => upd('button_url', v)} placeholder="https://..." />
         </div>
       )
-
     case 'video':
       return <Field label="URL video (YouTube o Vimeo)" value={data.url} onChange={v => upd('url', v)} placeholder="https://youtube.com/watch?v=..." />
-
     case 'newsletter':
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -118,33 +109,24 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
           <Field label="Sottotitolo" value={data.subtitle} onChange={v => upd('subtitle', v)} />
         </div>
       )
-
     case 'highlights':
       return (
         <div>
           <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 10 }} />
           <ItemListEditor items={data.items} onChange={v => upd('items', v)}
             newItem={{ icon: 'star', text: '' }}
-            fields={[
-              { key: 'icon', label: 'Icona (es. star, heart, wifi)', placeholder: 'star' },
-              { key: 'text', label: 'Testo' },
-            ]} />
+            fields={[{ key: 'icon', label: 'Icona (es. star, heart, wifi)', placeholder: 'star' }, { key: 'text', label: 'Testo' }]} />
         </div>
       )
-
     case 'stats':
       return (
         <div>
           <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 10 }} />
           <ItemListEditor items={data.items} onChange={v => upd('items', v)}
             newItem={{ value: '', label: '' }}
-            fields={[
-              { key: 'value', label: 'Valore (es. 150+)', placeholder: '150+' },
-              { key: 'label', label: 'Etichetta (es. Clienti soddisfatti)' },
-            ]} />
+            fields={[{ key: 'value', label: 'Valore (es. 150+)', placeholder: '150+' }, { key: 'label', label: 'Etichetta' }]} />
         </div>
       )
-
     case 'paragrafi':
       return (
         <div>
@@ -159,7 +141,6 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
             ]} />
         </div>
       )
-
     case 'team':
       return (
         <div>
@@ -174,7 +155,6 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
             ]} />
         </div>
       )
-
     case 'steps':
       return (
         <div>
@@ -188,7 +168,6 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
             ]} />
         </div>
       )
-
     case 'testimonianze':
       return (
         <div>
@@ -203,7 +182,6 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
             ]} />
         </div>
       )
-
     case 'faq':
       return (
         <div>
@@ -216,7 +194,6 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
             ]} />
         </div>
       )
-
     case 'promozioni':
       return (
         <div>
@@ -233,7 +210,6 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
             ]} />
         </div>
       )
-
     case 'pacchetti':
       return (
         <div>
@@ -251,13 +227,12 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
             ]} />
         </div>
       )
-
     default:
       return <p style={{ fontSize: 13, color: '#888', margin: 0 }}>Editor non disponibile per questo blocco.</p>
   }
 }
 
-// ── Componenti helper ─────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function Field({ label, value, onChange, multiline, rows = 3, placeholder, style: extraStyle }) {
   return (
     <div style={extraStyle}>
@@ -278,7 +253,7 @@ function UploadBtn({ label, entityId, entityTipo, onUrl }) {
     setUpl(true)
     const fd = new FormData(); fd.append('file', file)
     try {
-      const res = await fetch(`/api/upload/minisito-image?entity_type=${entityTipo === 'struttura' ? 'struttura' : entityTipo}&entity_id=${entityId}`, {
+      const res = await fetch(`/api/upload/minisito-image?entity_type=${entityTipo}&entity_id=${entityId}`, {
         method: 'POST', body: fd,
         headers: { Authorization: `Bearer ${(await import('../../lib/supabase').then(m => m.supabase.auth.getSession()))?.data?.session?.access_token}` }
       })
@@ -302,6 +277,11 @@ function inputStyle() {
 }
 const tinyBtn = { background: '#f0f0f0', border: 'none', borderRadius: 4, padding: '3px 6px', cursor: 'pointer', fontSize: 11 }
 
+// Indicatore linea di drop
+function DropLine() {
+  return <div style={{ height: 3, background: '#4a7cdc', borderRadius: 2, margin: '2px 0', boxShadow: '0 0 8px rgba(74,124,220,0.45)' }} />
+}
+
 // ── Block Picker Modal ────────────────────────────────────────────────────────
 function BlockPicker({ onPick, onClose }) {
   return (
@@ -318,7 +298,7 @@ function BlockPicker({ onPick, onClose }) {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 8 }}>
               {BLOCK_TYPES.filter(b => b.group === group.key).map(b => (
                 <button key={b.type} onClick={() => { onPick(b.type); onClose() }}
-                  style={{ textAlign: 'left', padding: '12px 14px', background: '#f9f9fb', border: '1px solid #e8e8ee', borderRadius: 10, cursor: 'pointer', transition: 'background 0.15s' }}
+                  style={{ textAlign: 'left', padding: '12px 14px', background: '#f9f9fb', border: '1px solid #e8e8ee', borderRadius: 10, cursor: 'pointer' }}
                   onMouseEnter={e => e.currentTarget.style.background = '#f0f0ff'}
                   onMouseLeave={e => e.currentTarget.style.background = '#f9f9fb'}>
                   <div style={{ fontSize: 20, marginBottom: 4 }}>{b.emoji}</div>
@@ -339,65 +319,121 @@ export default function PaginaEditorPage() {
   const { pageId } = useParams()
   const navigate = useNavigate()
 
-  const [page, setPage]           = useState(null)
-  const [blocks, setBlocks]       = useState([])
-  const [expandedId, setExpandedId] = useState(null)
-  const [showPicker, setShowPicker] = useState(false)
-  const [showSeo, setShowSeo]     = useState(false)
-  const [saving, setSaving]       = useState(false)
-  const [dirty, setDirty]         = useState(false)
-  const [slugManual, setSlugManual] = useState(false)
-  const [saved, setSaved]         = useState(false)
-  const [loading, setLoading]     = useState(true)
+  const [page,        setPage]        = useState(null)
+  const [blocks,      setBlocks]      = useState([])
+  const [expandedId,  setExpandedId]  = useState(null)
+  const [showPicker,  setShowPicker]  = useState(false)
+  const [showSeo,     setShowSeo]     = useState(false)
+  const [saving,      setSaving]      = useState(false)
+  const [dirty,       setDirty]       = useState(false)
+  const [slugManual,  setSlugManual]  = useState(false)
+  const [origSlug,    setOrigSlug]    = useState(null)
+  const [saved,       setSaved]       = useState(false)
+  const [loading,     setLoading]     = useState(true)
+  const [entitySlug,  setEntitySlug]  = useState(null)
+  const [copied,      setCopied]      = useState(false)
+
+  // Drag & drop
+  const [dragBlockId,  setDragBlockId]  = useState(null)
+  const [dragOverPos,  setDragOverPos]  = useState(null) // { blockId, position: 'before'|'after' }
 
   useEffect(() => {
     apiFetch(`/api/pagine/${pageId}`).then(data => {
       if (data?.error) return navigate(-1)
       setPage(data)
       setBlocks(Array.isArray(data.blocks) ? data.blocks : [])
+      setOrigSlug(data.slug)
       setLoading(false)
     })
   }, [pageId])
 
+  // Fetch entity slug for preview link
+  useEffect(() => {
+    if (!page?.entity_id || !page?.entity_tipo) return
+    const ep = page.entity_tipo === 'struttura'
+      ? `/api/properties/${page.entity_id}`
+      : page.entity_tipo === 'ristorante'
+      ? `/api/ristoranti/${page.entity_id}`
+      : `/api/attivita/${page.entity_id}`
+    apiFetch(ep).then(d => { if (d?.slug) setEntitySlug(d.slug) })
+  }, [page?.entity_id])
+
+  function previewUrl() {
+    if (!entitySlug || !page) return null
+    const base = page.entity_tipo === 'struttura' ? `/s/${entitySlug}` : page.entity_tipo === 'ristorante' ? `/r/${entitySlug}` : `/a/${entitySlug}`
+    return `${base}/p/${page.slug}`
+  }
+
+  async function openPreview() {
+    if (dirty) await save()
+    const url = previewUrl()
+    if (url) window.open(url, '_blank')
+  }
+
+  function copyLink() {
+    const url = previewUrl()
+    if (!url) return
+    navigator.clipboard.writeText(window.location.origin + url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1800)
+  }
+
   function patchPage(key, val) { setPage(p => ({ ...p, [key]: val })); setDirty(true) }
-  function patchBlocks(newBlocks) { setBlocks(newBlocks); setDirty(true) }
+  function patchBlocks(nb) { setBlocks(nb); setDirty(true) }
 
   function addBlock(type) {
-    const newBlock = { id: uid(), type, data: { ...BLOCK_DEFAULTS[type] } }
-    patchBlocks([...blocks, newBlock])
-    setExpandedId(newBlock.id)
+    const b = { id: uid(), type, data: { ...BLOCK_DEFAULTS[type] } }
+    patchBlocks([...blocks, b])
+    setExpandedId(b.id)
   }
-
-  function updateBlock(id, data) {
-    patchBlocks(blocks.map(b => b.id === id ? { ...b, data } : b))
-  }
-
-  function moveBlock(id, dir) {
-    const idx = blocks.findIndex(b => b.id === id)
-    const next = idx + dir
-    if (next < 0 || next >= blocks.length) return
-    const arr = [...blocks]; [arr[idx], arr[next]] = [arr[next], arr[idx]]
-    patchBlocks(arr)
-  }
-
+  function updateBlock(id, data) { patchBlocks(blocks.map(b => b.id === id ? { ...b, data } : b)) }
   function deleteBlock(id) {
     if (!confirm('Eliminare questo blocco?')) return
     patchBlocks(blocks.filter(b => b.id !== id))
     if (expandedId === id) setExpandedId(null)
   }
 
+  // Drag & drop handlers
+  function onBlockDragStart(e, blockId) {
+    setDragBlockId(blockId)
+    e.dataTransfer.effectAllowed = 'move'
+    const ghost = document.createElement('div'); ghost.style.opacity = '0'
+    document.body.appendChild(ghost)
+    e.dataTransfer.setDragImage(ghost, 0, 0)
+    setTimeout(() => document.body.removeChild(ghost), 0)
+  }
+
+  function onBlockDragOver(e, blockId) {
+    e.preventDefault()
+    const rect = e.currentTarget.getBoundingClientRect()
+    const position = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after'
+    setDragOverPos(prev => (prev?.blockId === blockId && prev?.position === position) ? prev : { blockId, position })
+  }
+
+  function onBlockDrop(e, targetId) {
+    e.preventDefault()
+    if (!dragBlockId || dragBlockId === targetId || !dragOverPos) { resetBlockDrag(); return }
+    const arr = [...blocks]
+    const fromIdx = arr.findIndex(b => b.id === dragBlockId)
+    if (fromIdx === -1) { resetBlockDrag(); return }
+    const [moved] = arr.splice(fromIdx, 1)
+    const toIdx = arr.findIndex(b => b.id === targetId)
+    if (toIdx === -1) { resetBlockDrag(); return }
+    arr.splice(dragOverPos.position === 'before' ? toIdx : toIdx + 1, 0, moved)
+    patchBlocks(arr)
+    resetBlockDrag()
+  }
+
+  function resetBlockDrag() { setDragBlockId(null); setDragOverPos(null) }
+
   async function save() {
     setSaving(true)
     const res = await apiFetch(`/api/pagine/${pageId}`, {
       method: 'PATCH',
       body: JSON.stringify({
-        titolo: page.titolo,
-        slug: page.slug,
-        status: page.status,
-        nel_menu: page.nel_menu,
-        seo_title: page.seo_title,
-        seo_description: page.seo_description,
-        og_image_url: page.og_image_url,
+        titolo: page.titolo, slug: page.slug, status: page.status,
+        nel_menu: page.nel_menu, seo_title: page.seo_title,
+        seo_description: page.seo_description, og_image_url: page.og_image_url,
         blocks,
       }),
     })
@@ -409,22 +445,37 @@ export default function PaginaEditorPage() {
 
   const entityTipo = page.entity_tipo
   const entityId   = page.entity_id
+  const slugChanged = slugManual && page.slug !== origSlug
+  const seoScore   = [page.seo_title, page.seo_description].filter(Boolean).length
+  const seoColors  = ['#721c24', '#856404', '#155724']
+  const seoBg      = ['#f8d7da', '#fff3cd', '#d4edda']
+  const seoLabel   = ['✗ SEO non configurato', '⚠ SEO incompleto', '✓ SEO completo']
+  const pUrl       = previewUrl()
 
   return (
     <div style={{ maxWidth: 820 }}>
-      {/* Top bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#888', padding: 0 }}>← Indietro</button>
-        <h1 style={{ margin: 0, fontSize: 20, flex: 1 }}>{page.titolo || 'Pagina senza titolo'}</h1>
-        {dirty && <span style={{ fontSize: 12, color: '#856404', background: '#fff3cd', padding: '3px 10px', borderRadius: 10 }}>Modifiche non salvate</span>}
-        {saved && <span style={{ fontSize: 12, color: '#155724', background: '#d4edda', padding: '3px 10px', borderRadius: 10 }}>Salvato ✓</span>}
+
+      {/* ── Top bar ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24, flexWrap: 'wrap' }}>
+        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#888', padding: 0, flexShrink: 0 }}>← Indietro</button>
+        <h1 style={{ margin: 0, fontSize: 20, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {page.titolo || 'Pagina senza titolo'}
+        </h1>
+        {dirty && <span style={{ fontSize: 12, color: '#856404', background: '#fff3cd', padding: '3px 10px', borderRadius: 10, flexShrink: 0 }}>Non salvato</span>}
+        {saved && <span style={{ fontSize: 12, color: '#155724', background: '#d4edda', padding: '3px 10px', borderRadius: 10, flexShrink: 0 }}>Salvato ✓</span>}
+        {pUrl && (
+          <button onClick={openPreview}
+            style={{ background: '#f0f4ff', color: '#1a1a2e', border: '1px solid #c8d4f4', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontSize: 13, flexShrink: 0 }}>
+            {dirty ? '💾 Salva e apri ↗' : '↗ Apri pagina'}
+          </button>
+        )}
         <button onClick={save} disabled={saving || !dirty}
-          style={{ background: dirty ? '#1a1a2e' : '#ccc', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: dirty ? 'pointer' : 'default', fontSize: 14, fontWeight: 600 }}>
+          style={{ background: dirty ? '#1a1a2e' : '#ccc', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: dirty ? 'pointer' : 'default', fontSize: 14, fontWeight: 600, flexShrink: 0 }}>
           {saving ? 'Salvataggio...' : 'Salva'}
         </button>
       </div>
 
-      {/* Metadata */}
+      {/* ── Metadata ── */}
       <div style={{ background: '#fff', borderRadius: 12, padding: 20, marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
           <div>
@@ -436,9 +487,22 @@ export default function PaginaEditorPage() {
             }} style={inputStyle()} />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 4 }}>Slug URL</label>
-            <input value={page.slug || ''} onChange={e => { setSlugManual(true); patchPage('slug', slugify(e.target.value)) }}
-              style={{ ...inputStyle(), fontFamily: 'monospace' }} placeholder="es. chi-siamo" />
+            <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 4 }}>
+              Slug URL
+              {slugChanged && (
+                <span style={{ marginLeft: 6, color: '#856404', fontWeight: 400, fontSize: 11 }}>⚠ cambiare lo slug invalida i link esistenti</span>
+              )}
+            </label>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <input value={page.slug || ''} onChange={e => { setSlugManual(true); patchPage('slug', slugify(e.target.value)) }}
+                style={{ ...inputStyle(), fontFamily: 'monospace', flex: 1 }} placeholder="es. chi-siamo" />
+              {pUrl && (
+                <button onClick={copyLink} title="Copia link pagina"
+                  style={{ flexShrink: 0, padding: '7px 10px', border: '1px solid #ddd', borderRadius: 7, background: copied ? '#d4edda' : '#fafafa', cursor: 'pointer', fontSize: 12, color: copied ? '#155724' : '#555', whiteSpace: 'nowrap' }}>
+                  {copied ? '✓ Copiato' : '📋'}
+                </button>
+              )}
+            </div>
             <span style={{ fontSize: 11, color: '#aaa' }}>/{page.slug}</span>
           </div>
         </div>
@@ -457,57 +521,92 @@ export default function PaginaEditorPage() {
         </div>
       </div>
 
-      {/* Blocks */}
+      {/* ── Blocks ── */}
       <div style={{ marginBottom: 16 }}>
+        {blocks.length === 0 && (
+          <div style={{ padding: '32px 24px', textAlign: 'center', background: '#f9f9fb', borderRadius: 12, border: '2px dashed #e0e0e8', color: '#aaa', marginBottom: 8 }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>🧩</div>
+            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4, color: '#888' }}>Nessun blocco</div>
+            <div style={{ fontSize: 13 }}>Usa il pulsante qui sotto per aggiungere il primo blocco di contenuto.</div>
+          </div>
+        )}
         {blocks.map((block, idx) => {
-          const isOpen = expandedId === block.id
+          const isOpen    = expandedId === block.id
+          const isDragging  = dragBlockId === block.id
+          const isBefore    = dragOverPos?.blockId === block.id && dragOverPos.position === 'before'
+          const isAfter     = dragOverPos?.blockId === block.id && dragOverPos.position === 'after'
           return (
-            <div key={block.id} style={{ background: '#fff', borderRadius: 12, marginBottom: 8, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
-              {/* Block header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', cursor: 'pointer' }}
-                onClick={() => setExpandedId(isOpen ? null : block.id)}>
-                <span style={{ fontSize: 18 }}>{blockEmoji(block.type)}</span>
-                <span style={{ fontWeight: 600, fontSize: 14, flex: 1 }}>{blockLabel(block.type)}</span>
-                <button onClick={e => { e.stopPropagation(); moveBlock(block.id, -1) }} style={tinyBtn} disabled={idx === 0}>▲</button>
-                <button onClick={e => { e.stopPropagation(); moveBlock(block.id, 1) }} style={tinyBtn} disabled={idx === blocks.length - 1}>▼</button>
-                <button onClick={e => { e.stopPropagation(); deleteBlock(block.id) }}
-                  style={{ ...tinyBtn, color: '#c00', background: '#fce8e8' }}>✕</button>
-                <span style={{ fontSize: 12, color: '#888' }}>{isOpen ? '▲' : '▼'}</span>
-              </div>
-              {/* Block editor (expanded) */}
-              {isOpen && (
-                <div style={{ borderTop: '1px solid #f0f0f0', padding: '16px 20px' }}>
-                  <BlockEditor
-                    block={block}
-                    onChange={data => updateBlock(block.id, data)}
-                    entityId={entityId}
-                    entityTipo={entityTipo}
-                  />
+            <div key={block.id}>
+              {isBefore && <DropLine />}
+              <div
+                draggable={true}
+                onDragStart={e => onBlockDragStart(e, block.id)}
+                onDragOver={e => onBlockDragOver(e, block.id)}
+                onDrop={e => onBlockDrop(e, block.id)}
+                onDragEnd={resetBlockDrag}
+                style={{
+                  background: '#fff', borderRadius: 12, marginBottom: 6,
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden',
+                  opacity: isDragging ? 0.35 : 1,
+                  outline: isBefore || isAfter ? '2px solid transparent' : 'none',
+                  transition: 'opacity 0.12s',
+                }}
+              >
+                {/* Block header */}
+                <div
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', cursor: 'pointer', userSelect: 'none' }}
+                  onClick={() => setExpandedId(isOpen ? null : block.id)}
+                >
+                  <span style={{ color: '#bbb', fontSize: 16, cursor: 'grab', flexShrink: 0 }} title="Trascina per riordinare">⠿</span>
+                  <span style={{ fontSize: 18, flexShrink: 0 }}>{blockEmoji(block.type)}</span>
+                  <span style={{ fontWeight: 600, fontSize: 14, flex: 1, color: '#1a1a2e' }}>{blockLabel(block.type)}</span>
+                  <button onClick={e => { e.stopPropagation(); deleteBlock(block.id) }}
+                    style={{ ...tinyBtn, color: '#c00', background: '#fce8e8', flexShrink: 0 }}>✕ Elimina</button>
+                  <span style={{ fontSize: 11, color: '#aaa', flexShrink: 0 }}>{isOpen ? '▲' : '▼'}</span>
                 </div>
-              )}
+                {isOpen && (
+                  <div style={{ borderTop: '1px solid #f0f0f0', padding: '16px 20px' }}>
+                    <BlockEditor block={block} onChange={data => updateBlock(block.id, data)} entityId={entityId} entityTipo={entityTipo} />
+                  </div>
+                )}
+              </div>
+              {isAfter && <DropLine />}
             </div>
           )
         })}
       </div>
 
-      {/* Add block */}
+      {/* ── Add block ── */}
       <button onClick={() => setShowPicker(true)}
         style={{ width: '100%', padding: 14, background: '#f0f4ff', border: '2px dashed #99aaf0', borderRadius: 12, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#334', marginBottom: 24 }}>
         + Aggiungi blocco
       </button>
 
-      {/* SEO panel */}
+      {/* ── SEO panel ── */}
       <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
         <button onClick={() => setShowSeo(s => !s)}
-          style={{ width: '100%', padding: '14px 20px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 14, fontWeight: 600, color: '#1a1a2e' }}>
-          <span>🔍 Impostazioni SEO</span>
+          style={{ width: '100%', padding: '14px 20px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a2e' }}>🔍 Impostazioni SEO</span>
+            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: seoBg[seoScore], color: seoColors[seoScore], fontWeight: 600 }}>
+              {seoLabel[seoScore]}
+            </span>
+          </span>
           <span style={{ color: '#888', fontSize: 12 }}>{showSeo ? '▲ Chiudi' : '▼ Apri'}</span>
         </button>
         {showSeo && (
           <div style={{ borderTop: '1px solid #f0f0f0', padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <Field label="Titolo SEO (<title>)" value={page.seo_title} onChange={v => patchPage('seo_title', v)} placeholder={page.titolo} />
-            <Field label="Meta description" value={page.seo_description} onChange={v => patchPage('seo_description', v)} multiline rows={2} />
+            <div>
+              <Field label="Meta description (max 160 caratteri)" value={page.seo_description} onChange={v => patchPage('seo_description', v)} multiline rows={2} />
+              {page.seo_description && (
+                <div style={{ fontSize: 11, color: page.seo_description.length > 160 ? '#c00' : '#888', marginTop: 3 }}>
+                  {page.seo_description.length}/160 caratteri
+                </div>
+              )}
+            </div>
             <Field label="Immagine Open Graph (URL)" value={page.og_image_url} onChange={v => patchPage('og_image_url', v)} placeholder="https://..." />
+            {page.og_image_url && <img src={page.og_image_url} alt="" style={{ maxHeight: 100, borderRadius: 6, objectFit: 'cover' }} />}
           </div>
         )}
       </div>

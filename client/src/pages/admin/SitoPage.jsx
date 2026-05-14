@@ -418,6 +418,22 @@ export default function SitoPage({ entityTipo }) {
                     {p.nel_menu ? '☰ In menu' : '— Fuori menu'}
                   </span>
 
+                  {/* SEO indicator */}
+                  {(() => {
+                    const s = [p.seo_title, p.seo_description].filter(Boolean).length
+                    const bg = ['#fce8e8','#fff3cd','#d4edda'][s]
+                    const cl = ['#c00','#856404','#155724'][s]
+                    const lbl = ['SEO ✗','SEO ~','SEO ✓'][s]
+                    return <span title={['SEO non configurato','SEO incompleto','SEO completo'][s]} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 8, background: bg, color: cl, fontWeight: 700, flexShrink: 0 }}>{lbl}</span>
+                  })()}
+
+                  {/* Data modifica */}
+                  {p.updated_at && (
+                    <span style={{ fontSize: 11, color: '#ccc', flexShrink: 0 }} title="Ultima modifica">
+                      {new Date(p.updated_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}
+                    </span>
+                  )}
+
                   {/* Anteprima */}
                   {url && (
                     <a href={url} target="_blank" rel="noopener noreferrer"
