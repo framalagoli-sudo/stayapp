@@ -113,28 +113,33 @@ app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 app.post('/api/admin/backup', async (req, res) => {
   const authHeader = req.headers.authorization
   if (!authHeader) return res.status(401).json({ error: 'Non autorizzato' })
+  const log = []
+  const _log = console.log.bind(console)
+  const _err = console.error.bind(console)
+  console.log = (...a) => { _log(...a); log.push(a.join(' ')) }
+  console.error = (...a) => { _err(...a); log.push('ERROR: ' + a.join(' ')) }
   try {
     const { createClient } = await import('@supabase/supabase-js')
     const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
     const token = authHeader.replace('Bearer ', '')
-    const { data: { user } } = await sb.auth.getUser(token)
-    if (!user) return res.status(401).json({ error: 'Non autorizzato' })
-    const { data: profile } = await sb.from('profiles').select('role').eq('id', user.id).single()
-    if (profile?.role !== 'super_admin') return res.status(403).json({ error: 'Accesso negato' })
-    const log = []
-    const _log = console.log.bind(console)
-    const _err = console.error.bind(console)
-    console.log = (...a) => { _log(...a); log.push(a.join(' ')) }
-    console.error = (...a) => { _err(...a); log.push('ERROR: ' + a.join(' ')) }
-    try {
-      await runBackup()
-    } finally {
-      console.log = _log
-      console.error = _err
+    const { data: { user }, error: authErr } = await sb.auth.getUser(token)
+    if (authErr || !user) {
+      console.log = _log; console.error = _err
+      return res.status(401).json({ error: 'Non autorizzato', detail: authErr?.message })
     }
+    const { data: profile } = await sb.from('profiles').select('role').eq('id', user.id).single()
+    if (profile?.role !== 'super_admin') {
+      console.log = _log; console.error = _err
+      return res.status(403).json({ error: 'Accesso negato' })
+    }
+    await runBackup()
     res.json({ ok: true, log })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    log.push('THROWN: ' + err.message + (err.stack ? '\n' + err.stack : ''))
+    res.status(500).json({ error: err.message, log })
+  } finally {
+    console.log = _log
+    console.error = _err
   }
 })
 
