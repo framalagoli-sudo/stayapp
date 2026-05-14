@@ -13,6 +13,7 @@ const NAV_PROPERTY = [  // admin_struttura / staff (profile.property_id)
   { to: '/admin/property/activities', label: 'Attività' },
   { to: '/admin/property/excursions', label: 'Escursioni' },
   { to: '/admin/property/minisito',   label: 'Sito pubblico' },
+  { to: '/admin/property/pagine',     label: 'Pagine sito' },
   { to: '/admin/property/privacy',    label: 'Privacy & Policy' },
   { to: '/admin/property/chatbot',    label: 'Chatbot' },
 ]
@@ -25,6 +26,7 @@ const STRUTTURA_SUBS = [
   { sub: 'activities', label: 'Attività' },
   { sub: 'excursions', label: 'Escursioni' },
   { sub: 'minisito',   label: 'Sito pubblico' },
+  { sub: 'pagine',     label: 'Pagine sito' },
   { sub: 'privacy',    label: 'Privacy & Policy' },
   { sub: 'chatbot',    label: 'Chatbot' },
 ]
@@ -35,6 +37,7 @@ const RISTORANTE_SUBS = [
   { sub: 'gallery',  label: 'Galleria foto' },
   { sub: 'theme',    label: 'Tema e colori' },
   { sub: 'minisito', label: 'Sito pubblico' },
+  { sub: 'pagine',   label: 'Pagine sito' },
   { sub: 'privacy',  label: 'Privacy & Policy' },
   { sub: 'chatbot',  label: 'Chatbot' },
 ]
@@ -43,6 +46,7 @@ const ATTIVITA_SUBS = [
   { sub: 'gallery',  label: 'Galleria foto' },
   { sub: 'theme',    label: 'Tema e colori' },
   { sub: 'minisito', label: 'Sito pubblico' },
+  { sub: 'pagine',   label: 'Pagine sito' },
   { sub: 'privacy',  label: 'Privacy & Policy' },
   { sub: 'chatbot',  label: 'Chatbot' },
 ]

@@ -387,5 +387,34 @@ function emailTemplate({ title, entityName, rows, appUrl }) {
   </td></tr></table></body></html>`
 }
 
+// ── GET /api/guest/pagine/:tipo/:entityId — lista pagine pubblicate (navigazione) ──
+router.get('/pagine/:tipo/:entityId', async (req, res) => {
+  try {
+    const { tipo, entityId } = req.params
+    const { data, error } = await supabase
+      .from('pagine')
+      .select('id, parent_id, slug, titolo, nel_menu, ordine')
+      .eq('entity_tipo', tipo).eq('entity_id', entityId)
+      .eq('status', 'pubblicata').eq('nel_menu', true)
+      .order('ordine', { ascending: true })
+    if (error) return res.status(500).json({ error: error.message })
+    res.json(data || [])
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
+// ── GET /api/guest/pagina/:tipo/:entityId/:slug — singola pagina pubblica ──
+router.get('/pagina/:tipo/:entityId/:slug', async (req, res) => {
+  try {
+    const { tipo, entityId, slug } = req.params
+    const { data, error } = await supabase
+      .from('pagine').select('*')
+      .eq('entity_tipo', tipo).eq('entity_id', entityId)
+      .eq('slug', slug).eq('status', 'pubblicata')
+      .single()
+    if (error || !data) return res.status(404).json({ error: 'Pagina non trovata' })
+    res.json(data)
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
 export { emailTemplate }
 export default router

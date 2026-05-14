@@ -70,6 +70,9 @@ import PropertyChatbotPage from './pages/admin/property/PropertyChatbotPage'
 import RistoranteChatbotPage from './pages/admin/ristorante/RistoranteChatbotPage'
 import AttivitaChatbotPage from './pages/admin/attivita/AttivitaChatbotPage'
 import StaffPage from './pages/admin/StaffPage'
+import PagineListPage from './pages/admin/PagineListPage'
+import PaginaEditorPage from './pages/admin/PaginaEditorPage'
+import PaginaPage from './pages/guest/PaginaPage'
 import UnsubscribePage from './pages/public/UnsubscribePage'
 import ConfirmSubscriptionPage from './pages/public/ConfirmSubscriptionPage'
 import NewsletterArchivePage from './pages/guest/NewsletterArchivePage'
@@ -118,6 +121,11 @@ export default function App() {
           <Route path="/r/:slug/newsletter" element={<NewsletterArchivePage entityType="ristorante" />} />
           <Route path="/a/:slug/newsletter" element={<NewsletterArchivePage entityType="attivita" />} />
 
+          {/* Pagine sito */}
+          <Route path="/s/:slug/p/:pageSlug" element={<PaginaPage entityType="struttura" />} />
+          <Route path="/r/:slug/p/:pageSlug" element={<PaginaPage entityType="ristorante" />} />
+          <Route path="/a/:slug/p/:pageSlug" element={<PaginaPage entityType="attivita" />} />
+
           {/* Admin — autenticazione */}
           <Route path="/admin/login"           element={<LoginPage />} />
           <Route path="/admin/forgot-password" element={<ForgotPasswordPage />} />
@@ -156,6 +164,7 @@ export default function App() {
             <Route path="attivita/:id/minisito"   element={<AttivitaMiniSitoPage />} />
             <Route path="attivita/:id/privacy"    element={<AttivitaPrivacyPage />} />
             <Route path="attivita/:id/chatbot"    element={<AttivitaChatbotPage />} />
+            <Route path="attivita/:id/pagine"     element={<PagineListPage entityTipo="attivita" />} />
 
             {/* Ristoranti */}
             <Route path="ristoranti"              element={<RistorantiListPage />} />
@@ -167,6 +176,7 @@ export default function App() {
             <Route path="ristoranti/:id/minisito" element={<RistoranteMiniSitoPage />} />
             <Route path="ristoranti/:id/privacy"  element={<RistorantePrivacyPage />} />
             <Route path="ristoranti/:id/chatbot"  element={<RistoranteChatbotPage />} />
+            <Route path="ristoranti/:id/pagine"   element={<PagineListPage entityTipo="ristorante" />} />
 
             {/* Struttura by ID (admin_azienda, super_admin) */}
             <Route path="struttura/:id" element={<StrutturaLayout />}>
@@ -180,6 +190,7 @@ export default function App() {
               <Route path="minisito"   element={<PropertyMiniSitoPage />} />
               <Route path="privacy"    element={<PropertyPrivacyPage />} />
               <Route path="chatbot"    element={<PropertyChatbotPage />} />
+              <Route path="pagine"     element={<PagineListPage entityTipo="struttura" />} />
             </Route>
 
             {/* Struttura legacy (admin_struttura, staff — usa profile.property_id) */}
@@ -193,6 +204,7 @@ export default function App() {
             <Route path="property/minisito"   element={<PropertyMiniSitoPage />} />
             <Route path="property/privacy"    element={<PropertyPrivacyPage />} />
             <Route path="property/chatbot"    element={<PropertyChatbotPage />} />
+            <Route path="property/pagine"     element={<PagineListPage entityTipo="struttura" />} />
 
             {/* Eventi */}
             <Route path="eventi"                         element={<EventiListPage />} />
@@ -212,6 +224,9 @@ export default function App() {
             <Route path="booking"                   element={<BookingCalendarioPage />} />
             <Route path="booking/risorse"            element={<BookingRisorsePage />} />
             <Route path="booking/prenotazioni"       element={<BookingPrenotazioniPage />} />
+
+            {/* Editor pagina (shared, navigabile da PagineListPage) */}
+            <Route path="pagine/:pageId" element={<PaginaEditorPage />} />
           </Route>
 
           {/* Root — landing page StayApp */}

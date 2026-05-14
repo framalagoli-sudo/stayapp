@@ -90,6 +90,8 @@ export default function LandingAttivita({ attivita }) {
   const [lightbox,       setLightbox]       = useState(null)
   const [upcomingEventi, setUpcomingEventi] = useState([])
   const [newsArticoli,   setNewsArticoli]   = useState([])
+  const [pagine,         setPagine]         = useState([])
+  const [openDropdown,   setOpenDropdown]   = useState(null)
   const aboutRef = useRef(null)
 
   useEffect(() => {
@@ -105,6 +107,9 @@ export default function LandingAttivita({ attivita }) {
       .then(d => Array.isArray(d) && setUpcomingEventi(d)).catch(() => {})
     apiFetch(`/api/blog/public?azienda_id=${attivita.azienda_id}&entity_tipo=attivita&entity_id=${attivita.id}&limit=6`)
       .then(d => Array.isArray(d) && setNewsArticoli(d)).catch(() => {})
+    apiFetch(`/api/guest/pagine/attivita/${attivita.id}`)
+      .then(d => Array.isArray(d) && setPagine(d))
+      .catch(() => {})
   }, [attivita.id])
 
   const theme   = { primaryColor: '#6b46c1', fontHeading: 'playfair', fontBody: 'inter', ...(attivita.theme || {}) }
@@ -614,6 +619,33 @@ export default function LandingAttivita({ attivita }) {
           {attivita.logo_url && <img src={attivita.logo_url} alt="logo" style={{ height: 32, objectFit: 'contain' }} />}
           <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 16 }}>{attivita.name}</span>
         </div>
+        {pagine.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {pagine.filter(p => !p.parent_id).map(p => {
+              const subs = pagine.filter(c => c.parent_id === p.id)
+              return (
+                <div key={p.id} style={{ position: 'relative' }}
+                  onMouseEnter={() => subs.length && setOpenDropdown(p.id)}
+                  onMouseLeave={() => setOpenDropdown(null)}>
+                  <a href={`/a/${attivita.slug}/p/${p.slug}`}
+                    style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 13, padding: '6px 12px', borderRadius: 6, display: 'block', whiteSpace: 'nowrap' }}>
+                    {p.titolo}{subs.length > 0 && <span style={{ marginLeft: 4, opacity: 0.5 }}>▾</span>}
+                  </a>
+                  {subs.length > 0 && openDropdown === p.id && (
+                    <div style={{ position: 'absolute', top: '100%', left: 0, minWidth: 180, background: '#1a1a2e', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', padding: '6px 0', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 200 }}>
+                      {subs.map(s => (
+                        <a key={s.id} href={`/a/${attivita.slug}/p/${s.slug}`}
+                          style={{ display: 'block', padding: '9px 16px', color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 13 }}>
+                          {s.titolo}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 10 }}>
           {bookingUrl && <a href={bookingUrl} target="_blank" rel="noopener noreferrer" style={{ ...navBtnPrimary, background: primary }}>Prenota</a>}
         </div>
