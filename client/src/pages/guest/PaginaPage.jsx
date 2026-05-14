@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Euro, Mountain, Wind, CheckCircle, ChevronDown } from 'lucide-react'
+import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Euro, Mountain, Wind, CheckCircle, ChevronDown, Menu, X } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
 import CookieBanner from '../../components/CookieBanner'
 import ChatbotWidget from '../../components/ChatbotWidget'
@@ -66,6 +66,7 @@ export default function PaginaPage({ entityType }) {
   const [notFound, setNotFound] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [openDropdown, setOpenDropdown] = useState(null)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [faqOpen, setFaqOpen] = useState({})
 
   useEffect(() => {
@@ -77,6 +78,17 @@ export default function PaginaPage({ entityType }) {
     window.addEventListener('scroll', onScroll)
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') setMobileMenuOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  useEffect(() => {
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [mobileMenuOpen])
 
   async function load() {
     setLoading(true)
@@ -494,15 +506,18 @@ export default function PaginaPage({ entityType }) {
         .pp-dropdown { position: absolute; top: 100%; left: 0; min-width: 180px; background: ${navIsDark ? '#1a1a2e' : '#fff'}; border-radius: 10px; border: 1px solid ${navBorderColor}; padding: 6px 0; box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
         .pp-dropdown a { display: block; padding: 9px 16px; color: ${navTextColor}; text-decoration: none; font-size: 13px; }
         .pp-dropdown a:hover { background: ${navIsDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'}; color: ${navTextColorActive}; }
+        .pp-hamburger { display: none; background: none; border: none; cursor: pointer; padding: 8px; color: ${navTextColorActive}; line-height: 0; }
         .pp-hero { padding: 120px 24px 72px; background: linear-gradient(135deg, #1a1a2e 0%, #0d1a2a 100%); }
         @media (max-width: 768px) {
           .land-gallery { grid-template-columns: repeat(2, 1fr); }
-          .pp-nav { padding: 0 16px; }
+          .pp-nav { padding: 0 16px; transform: translateY(0) !important; }
           .pp-nav-links { display: none; }
+          .pp-hamburger { display: flex; }
           .pp-section { padding: 0 16px; }
           .ft-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
           .ft-img-col { order: 0 !important; }
           .ft-txt-col { order: 1 !important; }
+          .pp-hero { padding: 88px 16px 56px; }
         }
       `}</style>
 
@@ -542,7 +557,85 @@ export default function PaginaPage({ entityType }) {
             <a href={headerCfg.cta_url} style={navBtnPrimary}>{headerCfg.cta_text || 'Prenota'}</a>
           )}
         </div>
+        {/* Hamburger — visibile solo mobile */}
+        <button className="pp-hamburger" onClick={() => setMobileMenuOpen(o => !o)} aria-label="Menu">
+          {mobileMenuOpen ? <X size={24} strokeWidth={1.5} /> : <Menu size={24} strokeWidth={1.5} />}
+        </button>
       </nav>
+
+      {/* ── Mobile menu overlay ── */}
+      <div
+        onClick={e => { if (e.target === e.currentTarget) setMobileMenuOpen(false) }}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 99,
+          background: navBg, backdropFilter: 'blur(20px)',
+          paddingTop: 64,
+          display: 'flex', flexDirection: 'column',
+          opacity: mobileMenuOpen ? 1 : 0,
+          pointerEvents: mobileMenuOpen ? 'all' : 'none',
+          transform: mobileMenuOpen ? 'translateY(0)' : 'translateY(-6px)',
+          transition: 'opacity 0.22s ease, transform 0.22s ease',
+          overflowY: 'auto',
+        }}
+      >
+        {/* Voci menu */}
+        <div style={{ flex: 1, padding: '20px 28px 0' }}>
+          {/* Home */}
+          <a href={homeUrl} onClick={() => setMobileMenuOpen(false)}
+            style={{ display: 'block', fontFamily: heading, fontSize: 30, fontWeight: 700, lineHeight: 1.2,
+              color: navTextColorActive, textDecoration: 'none',
+              padding: '16px 0', borderBottom: `1px solid ${navBorderColor}` }}>
+            Home
+          </a>
+
+          {topLevel.map(p => {
+            const subs = children(p.id)
+            const isCurrent = p.slug === pageSlug
+            return (
+              <div key={p.id}>
+                <a href={`${pageBase}${p.slug}`} onClick={() => setMobileMenuOpen(false)}
+                  style={{ display: 'block', fontFamily: heading, fontSize: 30, fontWeight: 700, lineHeight: 1.2,
+                    color: isCurrent ? primary : navTextColorActive, textDecoration: 'none',
+                    padding: '16px 0', borderBottom: `1px solid ${navBorderColor}` }}>
+                  {p.titolo}
+                  {isCurrent && <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: primary, marginLeft: 10, verticalAlign: 'middle' }} />}
+                </a>
+                {subs.map(s => (
+                  <a key={s.id} href={`${pageBase}${s.slug}`} onClick={() => setMobileMenuOpen(false)}
+                    style={{ display: 'block', fontSize: 16, color: navTextColor, textDecoration: 'none',
+                      padding: '11px 0 11px 20px', borderBottom: `1px solid ${navBorderColor}`,
+                      opacity: 0.75 }}>
+                    ↳ {s.titolo}
+                  </a>
+                ))}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Fondo menu: CTA + contatti + policy */}
+        <div style={{ padding: '28px 28px 40px', marginTop: 8 }}>
+          {headerCfg.show_cta && headerCfg.cta_url && (
+            <a href={headerCfg.cta_url} onClick={() => setMobileMenuOpen(false)}
+              style={{ display: 'block', padding: '16px', background: primary, color: '#fff',
+                borderRadius: 14, textAlign: 'center', fontWeight: 700, fontSize: 17,
+                textDecoration: 'none', marginBottom: 20 }}>
+              {headerCfg.cta_text || 'Prenota ora'}
+            </a>
+          )}
+          {headerCfg.show_phone && entity.phone && (
+            <a href={`tel:${entity.phone}`}
+              style={{ display: 'block', fontSize: 15, color: navTextColor, textDecoration: 'none',
+                marginBottom: 14, opacity: 0.7 }}>
+              📞 {entity.phone}
+            </a>
+          )}
+          <div style={{ display: 'flex', gap: 20, opacity: 0.45 }}>
+            <a href={privacyUrl} style={{ color: navTextColorActive, textDecoration: 'none', fontSize: 12 }}>Privacy Policy</a>
+            <a href={`${homeUrl}/cookie`} style={{ color: navTextColorActive, textDecoration: 'none', fontSize: 12 }}>Cookie Policy</a>
+          </div>
+        </div>
+      </div>
 
       {/* Hero pagina */}
       <div className="pp-hero">
