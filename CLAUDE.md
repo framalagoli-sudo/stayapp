@@ -740,9 +740,38 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     ```
     Senza questo, il link nell'email di reset porta a una pagina di errore Supabase invece che all'app.
 
+21. **⚠️ Cambio dominio — checklist completa**: quando si acquista e configura il dominio definitivo, eseguire TUTTI questi passaggi in ordine:
+
+    **1. Acquisto e DNS (Cloudflare Registrar ~€10/anno)**
+    ```
+    DNS CNAME @ → cname.vercel-dns.com  (proxy ON)  ← frontend
+    DNS CNAME api → <url>.railway.app   (proxy ON)  ← backend
+    ```
+
+    **2. Vercel** — Settings → Domains → aggiungi dominio
+
+    **3. Railway** — aggiorna env var:
+    ```
+    CLIENT_URL=https://nuovodominio.com
+    ```
+
+    **4. Codice — CORS** (`server/src/index.js` → array `allowedOrigins`):
+    ```js
+    'https://nuovodominio.com',
+    ```
+    Commit + push.
+
+    **5. Supabase → Authentication → URL Configuration**:
+    - **Site URL** → `https://nuovodominio.com` ← fix etichetta 2FA TOTP
+    - **Redirect URLs** → aggiungi `https://nuovodominio.com/admin/reset-password` ← fix reset password
+
+    **6. Re-enrollment 2FA** — dopo aver aggiornato Site URL, ogni admin va su `/admin/security` → Disattiva → ri-scansiona QR (altrimenti Google Authenticator mostra ancora "localhost")
+
+    **7. Cloudflare WAF** — Security → WAF → Managed Rules → attiva Cloudflare Free Ruleset
+
 ---
 
-## Roadmap — prossimi step (aggiornata 2026-05-13)
+## Roadmap — prossimi step (aggiornata 2026-05-14)
 
 ### Concordati con l'utente (in ordine)
 - [x] Analytics dashboard
@@ -752,7 +781,9 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - [x] **Password reset admin** — forgot-password + reset-password con token Supabase monouso (1h)
 - [x] **Sicurezza Fase 1** — helmet, rate limiting, CORS lockdown, zod validation, global error handler
 - [x] **Backup notturno** — cron job Railway → Supabase client → JSON gzip → Cloudflare R2 EU, retention 30gg ✅ testato 2026-05-14
-- [ ] **Sicurezza Fase 2** — audit log, 2FA login admin, upgrade Supabase Pro + Vercel Pro (azioni manuali)
+- [x] **Sicurezza Fase 2** — audit log (tabella + middleware + pagina admin) + 2FA TOTP (login 2 step, enrollment QR, AAL check) ✅ 2026-05-14
+- [ ] **Upgrade Supabase Pro + Vercel Pro** — azione manuale ($45/mese totale)
+- [ ] **Dominio** — acquisto + configurazione (vedi nota 21 per checklist completa)
 - [ ] **Pagamenti Stripe** — checkout booking risorse ed eventi (struttura già pronta: colonne pagamento_stato/pagamento_id su prenotazioni)
 - [ ] **Multi-lingua** — IT/EN/DE per PWA ospite
 - [ ] **Gestione staff** — invita collaboratori via email, ruoli, limitazione accessi
