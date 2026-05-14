@@ -54,6 +54,8 @@ import AttivitaMiniSitoPage from './pages/admin/attivita/AttivitaMiniSitoPage'
 import AttivitaApp from './pages/guest/AttivitaApp'
 import DemoRequestsPage from './pages/admin/DemoRequestsPage'
 import AuditLogPage from './pages/admin/AuditLogPage'
+import SecurityPage from './pages/admin/SecurityPage'
+import MfaVerifyPage from './pages/admin/MfaVerifyPage'
 import BookingsPage from './pages/admin/BookingsPage'
 import OffertaPage from './pages/guest/OffertaPage'
 import PacchettoPage from './pages/guest/PacchettoPage'
@@ -119,6 +121,7 @@ export default function App() {
           <Route path="/admin/login"           element={<LoginPage />} />
           <Route path="/admin/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/admin/reset-password"  element={<ResetPasswordPage />} />
+          <Route path="/admin/mfa-verify"      element={<MfaVerifyPage />} />
           <Route
             path="/admin"
             element={
@@ -135,6 +138,7 @@ export default function App() {
             <Route path="prenotazioni"  element={<BookingsPage />} />
             <Route path="demo"          element={<DemoRequestsPage />} />
             <Route path="audit-log"    element={<AuditLogPage />} />
+            <Route path="security"     element={<SecurityPage />} />
             <Route path="contatti"   element={<ContattiPage />} />
             <Route path="chat"       element={<ChatPage />} />
             <Route path="aziende"    element={<AziendePage />} />
