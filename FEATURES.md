@@ -1,7 +1,7 @@
 # FEATURES — Roadmap prodotto StayApp
 
 Documento vivo. Aggiornato sessione per sessione.
-Ultima revisione: 2026-05-14 (backup notturno testato e funzionante su Cloudflare R2)
+Ultima revisione: 2026-05-14 (gestione staff completata — invito via email, permessi granulari, selezione struttura/ristorante)
 
 ---
 
@@ -226,7 +226,11 @@ Messaggi/offerte automatiche durante il soggiorno o prima dell'arrivo.
 
 ## 8. GESTIONE STAFF 🟡
 
-- [ ] 🟡 **Invito collaboratori** — admin invia email invito con ruolo preassegnato
+- [x] 🟡 **Invito collaboratori** — admin invia email invito via `inviteUserByEmail`; staff riceve link per impostare password ✅ 2026-05-14
+- [x] 🟡 **Permessi granulari** — checkbox per sezione (Richieste, Prenotazioni, Booking, Eventi, Blog, Newsletter, Contatti, Gestione struttura, Gestione ristorante, Gestione attività) + selezione entità specifiche (struttura_ids, ristorante_ids) ✅ 2026-05-14
+- [x] 🟡 **Sidebar staff filtrata** — `AziendaContext` carica solo le entità permesse; sidebar mostra solo le voci abilitate ✅ 2026-05-14
+- [x] 🟡 **Sospensione/riabilitazione** — ban_duration 87600h / none via Supabase Admin API ✅ 2026-05-14
+- [x] 🟡 **Eliminazione account** — `deleteUser` + rimozione profilo ✅ 2026-05-14
 - [ ] 🟡 **Turni staff** — calendario settimanale assegnazione turni
 - [ ] 🟡 **Task assignment** — richiesta ospite assegnata a staff specifico
 - [ ] 🟡 **Housekeeping board** — stato camere: pulita/da pulire/in pulizia (hotel)
@@ -379,11 +383,13 @@ Priorità assoluta prima di acquisire clienti paganti. Diviso in fasi.
 
 ## Ordine di sviluppo suggerito
 
-### Sprint 0 — Sicurezza base ✅ QUASI COMPLETO
+### Sprint 0 — Sicurezza base ✅ COMPLETO
 1. ✅ helmet.js + rate limiting + CORS lockdown + validazione zod
 2. ✅ Backup automatico notturno su Cloudflare R2
-3. [ ] 2FA login admin
-4. [ ] Audit log
+3. ✅ 2FA login admin (TOTP, enrollment QR, ProtectedRoute AAL check)
+4. ✅ Audit log (tabella + middleware + pagina admin)
+5. ✅ Gestione staff (invito via email, permessi granulari, selezione entità)
+6. ⏳ Upgrade Supabase Pro + Vercel Pro (azioni manuali — $45/mese)
 
 ### Sprint 1 — Stripe + pagamenti (2 sessioni)
 5. Checkout Stripe per prenotazioni risorse ed eventi
