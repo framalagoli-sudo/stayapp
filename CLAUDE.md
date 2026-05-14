@@ -201,7 +201,10 @@ hospitality/
     ├── 022_newsletter_v2.sql       # confirmation_token + preheader + scheduled_at + unsubscribes_count
     ├── 023_booking.sql             # tabelle risorse, risorse_promozioni, prenotazioni
     ├── 024_booking_visibility.sql  # colonna visibile_minisito su risorse
-    └── 025_chatbot.sql             # colonna chatbot jsonb su properties/ristoranti/attivita
+    ├── 025_chatbot.sql             # colonna chatbot jsonb su properties/ristoranti/attivita
+    ├── 026_staff_permissions.sql   # colonna permissions jsonb su profiles (staff granulare)
+    ├── 027_staff_permissions.sql   # (alias/refactor permissions)
+    └── 028_pagine.sql              # tabella pagine (N-pagine per entità, blocks jsonb)
 ```
 
 ---
@@ -308,6 +311,23 @@ id, nome, email, telefono, tipo_attivita, messaggio,
 letto boolean DEFAULT false, created_at
 ```
 
+### Tabella `pagine` (migration 028)
+```sql
+id uuid PRIMARY KEY,
+entity_tipo text NOT NULL CHECK (entity_tipo IN ('struttura','ristorante','attivita')),
+entity_id uuid NOT NULL,
+parent_id uuid REFERENCES pagine(id) ON DELETE SET NULL,  -- max 2 livelli
+slug text NOT NULL,
+titolo text NOT NULL DEFAULT '',
+status text DEFAULT 'bozza' CHECK (status IN ('bozza','pubblicata')),
+nel_menu boolean DEFAULT true,   -- se false: standalone, non appare nel nav
+ordine integer DEFAULT 0,
+seo_title text, seo_description text, og_image_url text,
+blocks jsonb DEFAULT '[]',       -- array di { id, type, data }
+created_at, updated_at
+UNIQUE(entity_tipo, entity_id, slug)
+```
+
 ### Storage Supabase
 Bucket: `property-media` (pubblico)
 Path: `{entity_id}/{campo}-{timestamp}.{ext}`
@@ -407,6 +427,18 @@ Upload con `upsert: true` + `?v={timestamp}` per cache-bust.
 | POST | `/api/upload/attivita-gallery` | Galleria attività |
 | POST | `/api/upload/minisito-image?entity_type=struttura\|ristorante\|attivita&entity_id=...` | Immagine per blocchi descrittivi minisito → `{ url }` |
 
+### Pagine
+| Metodo | Path | Auth | Descrizione |
+|---|---|---|---|
+| GET | `/api/pagine?entity_tipo=&entity_id=` | ✓ | Lista pagine entità |
+| POST | `/api/pagine` | ✓ | Crea pagina (slug auto) |
+| GET | `/api/pagine/:id` | ✓ | Singola pagina (con blocks) |
+| PATCH | `/api/pagine/:id` | ✓ | Aggiorna (titolo, slug, status, nel_menu, ordine, seo, blocks) |
+| DELETE | `/api/pagine/:id` | ✓ | Elimina |
+| POST | `/api/pagine/reorder` | ✓ | Riordina + aggiorna parent_id |
+| GET | `/api/guest/pagine/:tipo/:entityId` | — | Lista pagine nel_menu=true pubblicate (nav) |
+| GET | `/api/guest/pagina/:tipo/:entityId/:slug` | — | Singola pagina pubblicata per slug |
+
 ---
 
 ## Route frontend (App.jsx)
@@ -417,6 +449,9 @@ Upload con `upsert: true` + `?v={timestamp}` per cache-bust.
 | `/s/:slug` | GuestApp | PWA struttura; se minisito.active → LandingStruttura |
 | `/r/:slug` | RestaurantApp | PWA ristorante; se minisito.active → LandingRistorante |
 | `/a/:slug` | AttivitaApp → LandingAttivita | Solo minisito |
+| `/s/:slug/p/:pageSlug` | PaginaPage | Pagina aggiuntiva struttura |
+| `/r/:slug/p/:pageSlug` | PaginaPage | Pagina aggiuntiva ristorante |
+| `/a/:slug/p/:pageSlug` | PaginaPage | Pagina aggiuntiva attività |
 | `/s/:slug/privacy\|cookie` | PolicyPage | |
 | `/r/:slug/privacy\|cookie` | PolicyPage | |
 | `/a/:slug/privacy\|cookie` | PolicyPage | |
@@ -462,9 +497,11 @@ Upload con `upsert: true` + `?v={timestamp}` per cache-bust.
 /admin/property/activities      → Attività
 /admin/property/excursions      → Escursioni
 /admin/property/privacy         → Privacy & Policy struttura
-/admin/struttura/:id/*          → Stesse sub-pagine per strutture multiple
-/admin/ristoranti/:id/info|menu|gallery|theme|minisito|privacy
-/admin/attivita/:id/info|gallery|theme|minisito|privacy
+/admin/property/pagine          → PagineListPage (lista pagine legacy struttura)
+/admin/struttura/:id/*          → Stesse sub-pagine per strutture multiple (include pagine)
+/admin/ristoranti/:id/info|menu|gallery|theme|minisito|privacy|pagine
+/admin/attivita/:id/info|gallery|theme|minisito|privacy|pagine
+/admin/pagine/:pageId           → PaginaEditorPage (editor blocchi)
 ```
 
 ---
@@ -662,6 +699,8 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 | **Booking — Risorse** | `/admin/booking/risorse` | CRUD risorse (slot/coperti), orari, blocchi, promozioni, visibile_minisito |
 | **Booking — Prenotazioni** | `/admin/booking/prenotazioni` | Lista filtrata per data/risorsa/stato, note interne, cambio stato |
 | **Chatbot** | `/admin/property/chatbot` | Editor albero conversazione: passi, opzioni tipizzate, anteprima live |
+| **Pagine sito** | `/admin/property/pagine` | Lista pagine con ordinamento, stato, menu toggle; disponibile per struttura/ristorante/attività |
+| **Editor pagina** | `/admin/pagine/:pageId` | Builder a blocchi: 23 tipi in 5 gruppi, picker modale, SEO, slug auto |
 
 ### App ospite (PWA)
 - **Struttura** `/s/:slug`: Home / Esplora / Richiesta / Info + CookieBanner + ChatbotWidget (floating absolute)
@@ -782,11 +821,12 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - [x] **Sicurezza Fase 1** — helmet, rate limiting, CORS lockdown, zod validation, global error handler
 - [x] **Backup notturno** — cron job Railway → Supabase client → JSON gzip → Cloudflare R2 EU, retention 30gg ✅ testato 2026-05-14
 - [x] **Sicurezza Fase 2** — audit log (tabella + middleware + pagina admin) + 2FA TOTP (login 2 step, enrollment QR, AAL check) ✅ 2026-05-14
+- [x] **Gestione staff** — invita collaboratori via email, permessi granulari per sezione, ban/riabilita, elimina
+- [x] **Sistema pagine sito** — N pagine per entità, builder a blocchi (23 tipi), menu gerarchico con dropdown, bozza/pubblicata, nel_menu, SEO, slug auto ✅ 2026-05-14
 - [ ] **Upgrade Supabase Pro + Vercel Pro** — azione manuale ($45/mese totale)
 - [ ] **Dominio** — acquisto + configurazione (vedi nota 21 per checklist completa)
 - [ ] **Pagamenti Stripe** — checkout booking risorse ed eventi (struttura già pronta: colonne pagamento_stato/pagamento_id su prenotazioni)
 - [ ] **Multi-lingua** — IT/EN/DE per PWA ospite
-- [x] **Gestione staff** — invita collaboratori via email, permessi granulari per sezione, ban/riabilita, elimina
 
 ### Tecnico / infrastruttura
 - [ ] **Collegare GitHub → Vercel auto-deploy** (Settings → Git nel dashboard Vercel)
