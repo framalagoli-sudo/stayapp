@@ -4,6 +4,170 @@ import { apiFetch } from '../../lib/api'
 import { PropertyIdContext } from '../../context/PropertyIdContext'
 import { useAuth } from '../../context/AuthContext'
 
+// ── Template definitions ──────────────────────────────────────────────────────
+const TEMPLATES = [
+  {
+    id: 'blank',
+    label: 'Pagina vuota',
+    emoji: '📄',
+    desc: 'Parti da zero e aggiungi i blocchi che vuoi',
+    blockCount: 0,
+  },
+  {
+    id: 'chi_siamo',
+    label: 'Chi siamo',
+    emoji: '👥',
+    desc: 'Presentazione, foto+testo, team',
+    blockCount: 3,
+  },
+  {
+    id: 'servizi',
+    label: 'Servizi',
+    emoji: '🛎️',
+    desc: 'Card servizi, processo e call-to-action',
+    blockCount: 4,
+  },
+  {
+    id: 'contatti',
+    label: 'Contatti',
+    emoji: '📩',
+    desc: 'Testo introduttivo, form contatti e mappa',
+    blockCount: 3,
+  },
+  {
+    id: 'promo',
+    label: 'Promozioni',
+    emoji: '🏷️',
+    desc: 'Statistiche, offerte, testimonianze e CTA',
+    blockCount: 4,
+  },
+  {
+    id: 'faq',
+    label: 'FAQ',
+    emoji: '❓',
+    desc: 'Introduzione e accordion domande/risposte',
+    blockCount: 2,
+  },
+]
+
+function makeTemplateBlocks(templateId) {
+  const id = () => crypto.randomUUID()
+  switch (templateId) {
+    case 'chi_siamo': return [
+      { id: id(), type: 'about',      data: { title: 'Chi siamo', text: '' } },
+      { id: id(), type: 'foto_testo', data: { title: '', text: '', image_url: '', inverti: false, button_label: '', button_url: '' } },
+      { id: id(), type: 'team',       data: { titolo: 'Il nostro team', items: [] } },
+    ]
+    case 'servizi': return [
+      { id: id(), type: 'about',      data: { title: 'I nostri servizi', text: '' } },
+      { id: id(), type: 'paragrafi',  data: { titolo: 'Cosa offriamo', items: [] } },
+      { id: id(), type: 'steps',      data: { titolo: 'Come funziona', items: [] } },
+      { id: id(), type: 'cta_banner', data: { title: 'Pronto a iniziare?', subtitle: '', button_text: 'Contattaci', button_url: '' } },
+    ]
+    case 'contatti': return [
+      { id: id(), type: 'about',    data: { title: 'Contattaci', text: 'Siamo a tua disposizione.' } },
+      { id: id(), type: 'contatti', data: {} },
+      { id: id(), type: 'show_map', data: {} },
+    ]
+    case 'promo': return [
+      { id: id(), type: 'stats',         data: { titolo: '', items: [] } },
+      { id: id(), type: 'promozioni',    data: { titolo: 'Le nostre offerte', items: [] } },
+      { id: id(), type: 'testimonianze', data: { titolo: 'Cosa dicono di noi', items: [] } },
+      { id: id(), type: 'cta_banner',    data: { title: 'Non perdere questa occasione', subtitle: '', button_text: 'Scopri di più', button_url: '' } },
+    ]
+    case 'faq': return [
+      { id: id(), type: 'about', data: { title: 'Domande frequenti', text: '' } },
+      { id: id(), type: 'faq',   data: { titolo: '', items: [] } },
+    ]
+    default: return []
+  }
+}
+
+// ── Template Picker Modal ─────────────────────────────────────────────────────
+function NewPageModal({ onClose, onConfirm, creating }) {
+  const [title,    setTitle]    = useState('')
+  const [template, setTemplate] = useState('blank')
+
+  function handleSubmit(e) {
+    e.preventDefault()
+    if (!title.trim()) return
+    onConfirm(title.trim(), template)
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={{ background: '#fff', borderRadius: 18, width: '100%', maxWidth: 640, maxHeight: '88vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.25)' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '22px 24px 0' }}>
+          <h2 style={{ margin: 0, fontSize: 18, color: '#1a1a2e' }}>Nuova pagina</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#888', lineHeight: 1 }}>✕</button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          {/* Title input */}
+          <div style={{ padding: '20px 24px 0' }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Titolo della pagina *</label>
+            <input
+              autoFocus required
+              placeholder="es. Chi siamo, Servizi, Contatti…"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              style={{ width: '100%', padding: '10px 14px', border: '1px solid #ddd', borderRadius: 9, fontSize: 15, boxSizing: 'border-box' }}
+            />
+          </div>
+
+          {/* Template grid */}
+          <div style={{ padding: '20px 24px' }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 10 }}>Scegli un template di partenza</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 10 }}>
+              {TEMPLATES.map(t => {
+                const sel = template === t.id
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setTemplate(t.id)}
+                    style={{
+                      textAlign: 'left', padding: '14px 16px', borderRadius: 12, cursor: 'pointer',
+                      border: sel ? '2px solid #1a1a2e' : '2px solid #e8e8ee',
+                      background: sel ? '#f0f2ff' : '#f9f9fb',
+                      transition: 'border-color 0.12s, background 0.12s',
+                      position: 'relative',
+                    }}
+                  >
+                    {sel && <div style={{ position: 'absolute', top: 8, right: 10, fontSize: 13, color: '#1a1a2e', fontWeight: 700 }}>✓</div>}
+                    <div style={{ fontSize: 26, marginBottom: 6 }}>{t.emoji}</div>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: '#1a1a2e', marginBottom: 3 }}>{t.label}</div>
+                    <div style={{ fontSize: 11, color: '#888', lineHeight: 1.35 }}>{t.desc}</div>
+                    {t.blockCount > 0 && (
+                      <div style={{ marginTop: 8, fontSize: 10, color: '#aaa' }}>{t.blockCount} blocchi pre-compilati</div>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '0 24px 22px', borderTop: '1px solid #f0f0f0', paddingTop: 18 }}>
+            <button type="button" onClick={onClose}
+              style={{ padding: '10px 18px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', cursor: 'pointer', fontSize: 14 }}>
+              Annulla
+            </button>
+            <button type="submit" disabled={creating || !title.trim()}
+              style={{ padding: '10px 22px', borderRadius: 8, border: 'none', background: title.trim() ? '#1a1a2e' : '#ccc', color: '#fff', cursor: title.trim() ? 'pointer' : 'default', fontSize: 14, fontWeight: 600 }}>
+              {creating ? 'Creazione...' : 'Crea pagina →'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 export default function SitoPage({ entityTipo }) {
   const navigate    = useNavigate()
   const { id: paramId } = useParams()
@@ -22,17 +186,20 @@ export default function SitoPage({ entityTipo }) {
     ? `/admin/ristoranti/${paramId}/minisito`
     : `/admin/attivita/${paramId}/minisito`
 
-  const [pagine,      setPagine]      = useState([])
-  const [entitySlug,  setEntitySlug]  = useState(null)
-  const [loading,     setLoading]     = useState(true)
-  const [creating,    setCreating]    = useState(false)
-  const [newTitle,    setNewTitle]    = useState('')
-  const [showNew,     setShowNew]     = useState(false)
+  const [pagine,       setPagine]       = useState([])
+  const [entitySlug,   setEntitySlug]   = useState(null)
+  const [loading,      setLoading]      = useState(true)
+  const [creating,     setCreating]     = useState(false)
+  const [showNewModal, setShowNewModal] = useState(false)
+
+  // Search / filter
+  const [search,       setSearch]       = useState('')
+  const [filterStatus, setFilterStatus] = useState('tutti')
+  const [filterMenu,   setFilterMenu]   = useState('tutti')
 
   // Drag & drop state
   const [dragId,     setDragId]     = useState(null)
   const [dragOverId, setDragOverId] = useState(null)
-  const dragInsertBefore = useRef(null)
 
   useEffect(() => { if (entityId) load() }, [entityId])
 
@@ -60,30 +227,34 @@ export default function SitoPage({ entityTipo }) {
     return `${base}/p/${p.slug}`
   }
 
-  async function createPage(e) {
-    e.preventDefault()
-    if (!newTitle.trim()) return
+  async function createPage(title, templateId) {
     setCreating(true)
     const res = await apiFetch('/api/pagine', {
       method: 'POST',
-      body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, titolo: newTitle.trim() }),
+      body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, titolo: title }),
     })
-    setCreating(false)
-    if (res?.id) navigate(`/admin/pagine/${res.id}`)
-    else { setNewTitle(''); setShowNew(false); load() }
+    if (res?.id) {
+      const blocks = makeTemplateBlocks(templateId)
+      if (blocks.length > 0) {
+        await apiFetch(`/api/pagine/${res.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ blocks }),
+        })
+      }
+      navigate(`/admin/pagine/${res.id}`)
+    } else {
+      setCreating(false)
+      setShowNewModal(false)
+      load()
+    }
   }
 
   async function duplicatePage(p) {
     const res = await apiFetch('/api/pagine', {
       method: 'POST',
-      body: JSON.stringify({
-        entity_tipo: entityTipo,
-        entity_id: entityId,
-        titolo: `${p.titolo} (copia)`,
-      }),
+      body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, titolo: `${p.titolo} (copia)` }),
     })
     if (!res?.id) return
-    // copy blocks
     await apiFetch(`/api/pagine/${res.id}`, {
       method: 'PATCH',
       body: JSON.stringify({ blocks: p.blocks ?? [], nel_menu: false }),
@@ -144,9 +315,7 @@ export default function SitoPage({ entityTipo }) {
   function onDragStart(e, p) {
     setDragId(p.id)
     e.dataTransfer.effectAllowed = 'move'
-    // transparent ghost
-    const ghost = document.createElement('div')
-    ghost.style.opacity = '0'
+    const ghost = document.createElement('div'); ghost.style.opacity = '0'
     document.body.appendChild(ghost)
     e.dataTransfer.setDragImage(ghost, 0, 0)
     setTimeout(() => document.body.removeChild(ghost), 0)
@@ -161,21 +330,17 @@ export default function SitoPage({ entityTipo }) {
   async function onDrop(e, target) {
     e.preventDefault()
     if (!dragId || dragId === target.id) { resetDrag(); return }
-
     const arr = [...menuTop]
     const fromIdx = arr.findIndex(x => x.id === dragId)
     const toIdx   = arr.findIndex(x => x.id === target.id)
     if (fromIdx === -1 || toIdx === -1) { resetDrag(); return }
-
     arr.splice(toIdx, 0, arr.splice(fromIdx, 1)[0])
-
     const updated = pagine.map(p => {
       const found = arr.findIndex(x => x.id === p.id)
       return found !== -1 ? { ...p, ordine: found } : p
     })
     setPagine(updated)
     resetDrag()
-
     await apiFetch('/api/pagine/reorder', {
       method: 'POST',
       body: JSON.stringify({ items: arr.map((x, i) => ({ id: x.id, ordine: i, parent_id: x.parent_id })) }),
@@ -185,12 +350,22 @@ export default function SitoPage({ entityTipo }) {
 
   function resetDrag() { setDragId(null); setDragOverId(null) }
 
-  // Derive lists
+  // ── Derived lists ─────────────────────────────────────────────────────────────
   const menuTop   = pagine.filter(p => p.nel_menu && !p.parent_id).sort((a, b) => a.ordine - b.ordine)
   const menuSubs  = id => pagine.filter(p => p.nel_menu && p.parent_id === id).sort((a, b) => a.ordine - b.ordine)
   const notInMenu = pagine.filter(p => !p.nel_menu)
 
-  // ── Stili ────────────────────────────────────────────────────────────────────
+  // Filtered for section 2
+  const activeFilters = search || filterStatus !== 'tutti' || filterMenu !== 'tutti'
+  const filteredPagine = pagine.filter(p => {
+    if (search && !p.titolo.toLowerCase().includes(search.toLowerCase()) && !p.slug.toLowerCase().includes(search.toLowerCase())) return false
+    if (filterStatus !== 'tutti' && p.status !== filterStatus) return false
+    if (filterMenu === 'si'  && !p.nel_menu) return false
+    if (filterMenu === 'no'  &&  p.nel_menu) return false
+    return true
+  })
+
+  // ── Stili ─────────────────────────────────────────────────────────────────────
   const cardStyle = {
     background: '#fff', borderRadius: 10, border: '1px solid #eeeeee',
     boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
@@ -209,9 +384,17 @@ export default function SitoPage({ entityTipo }) {
                                  { background: '#f4f4f6', color: '#444', border: '1px solid #e4e4e8' }),
   })
 
-  // ── Row nel menu ─────────────────────────────────────────────────────────────
+  const filterChip = (active) => ({
+    padding: '4px 12px', borderRadius: 20, fontSize: 12, cursor: 'pointer',
+    border: active ? '1.5px solid #1a1a2e' : '1.5px solid #e0e0e0',
+    background: active ? '#1a1a2e' : '#fff',
+    color: active ? '#fff' : '#555',
+    fontWeight: active ? 600 : 400,
+  })
+
+  // ── MenuRow ───────────────────────────────────────────────────────────────────
   function MenuRow({ p, isChild = false }) {
-    const topIdx   = menuTop.indexOf(p)
+    const topIdx    = menuTop.indexOf(p)
     const canIndent = !isChild && topIdx > 0 && menuSubs(menuTop[topIdx - 1]?.id).length === 0
     const isDragging = dragId === p.id
     const isDragOver = dragOverId === p.id && !isChild
@@ -238,19 +421,13 @@ export default function SitoPage({ entityTipo }) {
         }}
       >
         {isChild && <div style={{ position: 'absolute', left: -20, top: '50%', width: 14, height: 1, background: '#ddd' }} />}
-
-        {/* Drag handle */}
         <span style={{ color: isChild ? '#ddd' : '#aaa', fontSize: 15, userSelect: 'none', flexShrink: 0 }}>⠿</span>
-
-        {/* ▲▼ per accessibilità (solo top-level) */}
         {!isChild && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0 }}>
             <button onClick={() => move(p, -1)} style={btnTiny} title="Sposta su">▲</button>
             <button onClick={() => move(p, 1)}  style={btnTiny} title="Sposta giù">▼</button>
           </div>
         )}
-
-        {/* Titolo */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <span style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>{p.titolo}</span>
           {p.status === 'bozza' && (
@@ -258,8 +435,6 @@ export default function SitoPage({ entityTipo }) {
           )}
           <span style={{ marginLeft: 6, fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>/{p.slug}</span>
         </div>
-
-        {/* Controlli annidamento */}
         {canIndent && (
           <button onClick={() => makeChild(p)} style={btnAction()} title="Rendi sottopagina di quella sopra">
             Rendi sottopagina ↳
@@ -270,8 +445,6 @@ export default function SitoPage({ entityTipo }) {
             ↱ Al primo livello
           </button>
         )}
-
-        {/* Rimuovi dal menu */}
         <button onClick={() => removeFromMenu(p)} style={btnAction('remove')} title="Rimuovi dal menu">
           ✕ Rimuovi
         </button>
@@ -280,7 +453,7 @@ export default function SitoPage({ entityTipo }) {
   }
 
   return (
-    <div style={{ maxWidth: 780 }}>
+    <div style={{ maxWidth: 820 }}>
 
       {/* ── SEZIONE 1: MENU DI NAVIGAZIONE ── */}
       <div style={{ marginBottom: 36 }}>
@@ -300,26 +473,20 @@ export default function SitoPage({ entityTipo }) {
             <span style={{ marginLeft: 8, fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>/</span>
           </div>
           <span style={{ fontSize: 11, color: '#888', fontStyle: 'italic' }}>sempre presente</span>
-          <button onClick={() => navigate(homeEditPath)} style={btnAction()}>
-            Modifica →
-          </button>
+          <button onClick={() => navigate(homeEditPath)} style={btnAction()}>Modifica →</button>
         </div>
 
-        {/* Pagine nel menu */}
         {!loading && menuTop.length > 0 && (
           <div>
             {menuTop.map(p => (
               <div key={p.id}>
                 <MenuRow p={p} />
-                {menuSubs(p.id).map(child => (
-                  <MenuRow key={child.id} p={child} isChild />
-                ))}
+                {menuSubs(p.id).map(child => <MenuRow key={child.id} p={child} isChild />)}
               </div>
             ))}
           </div>
         )}
 
-        {/* Pagine fuori dal menu */}
         {notInMenu.length > 0 && (
           <div style={{ marginTop: 16, padding: '14px 16px', background: '#f9f9fb', borderRadius: 10, border: '1px dashed #ddd' }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: '#888', marginBottom: 10 }}>
@@ -337,7 +504,6 @@ export default function SitoPage({ entityTipo }) {
           </div>
         )}
 
-        {/* Empty state */}
         {!loading && pagine.length === 0 && (
           <div style={{ padding: '20px 16px', background: '#f9f9fb', borderRadius: 10, border: '1px dashed #ddd', textAlign: 'center', color: '#aaa', fontSize: 13 }}>
             Crea le tue prime pagine nella sezione qui sotto, poi aggiungile al menu.
@@ -347,53 +513,95 @@ export default function SitoPage({ entityTipo }) {
 
       {/* ── SEZIONE 2: TUTTE LE PAGINE ── */}
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <div>
             <h2 style={{ margin: '0 0 4px', fontSize: 18, color: '#1a1a2e' }}>Tutte le pagine</h2>
             <p style={{ margin: 0, fontSize: 13, color: '#888' }}>
               Crea e modifica il contenuto. Pubblica le pagine per renderle visibili.
             </p>
           </div>
-          <button onClick={() => setShowNew(true)}
+          <button onClick={() => setShowNewModal(true)}
             style={{ background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 14, flexShrink: 0 }}>
             + Nuova pagina
           </button>
         </div>
 
-        {/* Form nuova pagina */}
-        {showNew && (
-          <form onSubmit={createPage} style={{ ...cardStyle, padding: 14, marginBottom: 10, display: 'flex', gap: 8 }}>
-            <input autoFocus required placeholder="Titolo (es. Chi siamo, Servizi…)" value={newTitle}
-              onChange={e => setNewTitle(e.target.value)}
-              style={{ flex: 1, padding: '9px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14 }} />
-            <button type="submit" disabled={creating} style={btnAction('primary')}>
-              {creating ? '...' : 'Crea'}
-            </button>
-            <button type="button" onClick={() => { setShowNew(false); setNewTitle('') }} style={btnAction()}>
-              Annulla
-            </button>
-          </form>
+        {/* Search + filter bar */}
+        {pagine.length > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            {/* Search */}
+            <div style={{ position: 'relative', marginBottom: 10 }}>
+              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: '#aaa', pointerEvents: 'none' }}>🔍</span>
+              <input
+                type="text"
+                placeholder="Cerca per titolo o slug…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{ width: '100%', padding: '9px 12px 9px 36px', border: '1px solid #e0e0e0', borderRadius: 9, fontSize: 13, boxSizing: 'border-box', background: '#fff' }}
+              />
+              {search && (
+                <button onClick={() => setSearch('')}
+                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#aaa', lineHeight: 1 }}>
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Filter chips */}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontSize: 11, color: '#aaa', marginRight: 2 }}>Stato:</span>
+              {[['tutti','Tutti'],['bozza','Bozze'],['pubblicata','Pubblicate']].map(([val, label]) => (
+                <button key={val} onClick={() => setFilterStatus(val)} style={filterChip(filterStatus === val)}>{label}</button>
+              ))}
+              <span style={{ fontSize: 11, color: '#aaa', marginLeft: 10, marginRight: 2 }}>Menu:</span>
+              {[['tutti','Tutti'],['si','In menu'],['no','Fuori menu']].map(([val, label]) => (
+                <button key={val} onClick={() => setFilterMenu(val)} style={filterChip(filterMenu === val)}>{label}</button>
+              ))}
+              {activeFilters && (
+                <button onClick={() => { setSearch(''); setFilterStatus('tutti'); setFilterMenu('tutti') }}
+                  style={{ marginLeft: 6, fontSize: 11, color: '#c00', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px' }}>
+                  Reset filtri
+                </button>
+              )}
+            </div>
+
+            {/* Count */}
+            {activeFilters && (
+              <div style={{ fontSize: 12, color: '#888', marginTop: 8 }}>
+                {filteredPagine.length === pagine.length
+                  ? `${pagine.length} pagine`
+                  : `${filteredPagine.length} di ${pagine.length} pagine`}
+              </div>
+            )}
+          </div>
         )}
 
         {loading ? (
           <p style={{ color: '#888' }}>Caricamento...</p>
         ) : pagine.length === 0 ? (
-          <div style={{ ...cardStyle, padding: '40px 24px', textAlign: 'center', color: '#aaa' }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>📄</div>
+          <div style={{ ...cardStyle, padding: '48px 24px', textAlign: 'center', color: '#aaa' }}>
+            <div style={{ fontSize: 38, marginBottom: 12 }}>📄</div>
             <p style={{ margin: '0 0 4px', fontWeight: 600, color: '#888', fontSize: 15 }}>Nessuna pagina ancora</p>
-            <p style={{ margin: '0 0 16px', fontSize: 13 }}>
+            <p style={{ margin: '0 0 20px', fontSize: 13 }}>
               Aggiungi pagine come "Chi siamo", "Servizi", "Contatti" e personalizzale con blocchi di contenuto.
             </p>
-            <button onClick={() => setShowNew(true)} style={btnAction('primary')}>
+            <button onClick={() => setShowNewModal(true)} style={btnAction('primary')}>
               + Crea la prima pagina
             </button>
           </div>
+        ) : filteredPagine.length === 0 ? (
+          <div style={{ padding: '32px 24px', textAlign: 'center', color: '#aaa', background: '#f9f9fb', borderRadius: 10 }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>🔍</div>
+            <div style={{ fontSize: 13 }}>Nessuna pagina corrisponde ai filtri selezionati.</div>
+          </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {pagine.map(p => {
+            {filteredPagine.map(p => {
               const url = previewUrl(p)
+              const seoScore = [p.seo_title, p.seo_description].filter(Boolean).length
               return (
-                <div key={p.id} style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', flexWrap: 'wrap' }}>
+                <div key={p.id} style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', flexWrap: 'wrap' }}>
 
                   {/* Titolo */}
                   <div style={{ flex: 1, minWidth: 140 }}>
@@ -403,7 +611,7 @@ export default function SitoPage({ entityTipo }) {
                     <span style={{ marginLeft: 8, fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>/{p.slug}</span>
                   </div>
 
-                  {/* Status toggle */}
+                  {/* Status */}
                   <button onClick={() => toggleStatus(p)} style={{
                     ...btnAction(), flexShrink: 0,
                     background: p.status === 'pubblicata' ? '#d4edda' : '#fff3cd',
@@ -413,28 +621,27 @@ export default function SitoPage({ entityTipo }) {
                     {p.status === 'pubblicata' ? '✓ Pubblicata' : '○ Bozza'}
                   </button>
 
-                  {/* Nel menu indicator */}
+                  {/* Nel menu */}
                   <span style={{ fontSize: 11, color: p.nel_menu ? '#0066aa' : '#bbb', flexShrink: 0 }}>
                     {p.nel_menu ? '☰ In menu' : '— Fuori menu'}
                   </span>
 
-                  {/* SEO indicator */}
-                  {(() => {
-                    const s = [p.seo_title, p.seo_description].filter(Boolean).length
-                    const bg = ['#fce8e8','#fff3cd','#d4edda'][s]
-                    const cl = ['#c00','#856404','#155724'][s]
-                    const lbl = ['SEO ✗','SEO ~','SEO ✓'][s]
-                    return <span title={['SEO non configurato','SEO incompleto','SEO completo'][s]} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 8, background: bg, color: cl, fontWeight: 700, flexShrink: 0 }}>{lbl}</span>
-                  })()}
+                  {/* SEO */}
+                  <span title={['SEO non configurato','SEO incompleto','SEO completo'][seoScore]}
+                    style={{ fontSize: 10, padding: '2px 6px', borderRadius: 8, flexShrink: 0, fontWeight: 700,
+                      background: ['#fce8e8','#fff3cd','#d4edda'][seoScore],
+                      color:      ['#c00','#856404','#155724'][seoScore] }}>
+                    SEO {['✗','~','✓'][seoScore]}
+                  </span>
 
-                  {/* Data modifica */}
+                  {/* Data */}
                   {p.updated_at && (
                     <span style={{ fontSize: 11, color: '#ccc', flexShrink: 0 }} title="Ultima modifica">
                       {new Date(p.updated_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}
                     </span>
                   )}
 
-                  {/* Anteprima */}
+                  {/* Apri */}
                   {url && (
                     <a href={url} target="_blank" rel="noopener noreferrer"
                       style={{ ...btnAction(), flexShrink: 0, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -447,12 +654,12 @@ export default function SitoPage({ entityTipo }) {
                     ⧉ Duplica
                   </button>
 
-                  {/* Edit */}
+                  {/* Modifica */}
                   <button onClick={() => navigate(`/admin/pagine/${p.id}`)} style={btnAction('primary')}>
                     Modifica
                   </button>
 
-                  {/* Delete */}
+                  {/* Elimina */}
                   <button onClick={() => deletePage(p)} style={btnAction('danger')}>✕</button>
                 </div>
               )
@@ -461,6 +668,14 @@ export default function SitoPage({ entityTipo }) {
         )}
       </div>
 
+      {/* ── Modal nuova pagina ── */}
+      {showNewModal && (
+        <NewPageModal
+          onClose={() => setShowNewModal(false)}
+          onConfirm={createPage}
+          creating={creating}
+        />
+      )}
     </div>
   )
 }
