@@ -1,51 +1,21 @@
-import { execSync, spawnSync } from 'child_process'
+import pkg from 'pg'
 import { S3Client, PutObjectCommand, ListObjectsV2Command, DeleteObjectCommand } from '@aws-sdk/client-s3'
-import { createGzip } from 'zlib'
-import { Readable } from 'stream'
+import { gzip } from 'zlib'
+import { promisify } from 'util'
 
+const { Client } = pkg
+const gzipAsync  = promisify(gzip)
 const RETENTION_DAYS = 30
 
 function getR2Client() {
-  const accountId      = process.env.R2_ACCOUNT_ID
-  const accessKeyId    = process.env.R2_ACCESS_KEY_ID
+  const accountId       = process.env.R2_ACCOUNT_ID
+  const accessKeyId     = process.env.R2_ACCESS_KEY_ID
   const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY
   if (!accountId || !accessKeyId || !secretAccessKey) return null
   return new S3Client({
     region: 'auto',
     endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
     credentials: { accessKeyId, secretAccessKey },
-  })
-}
-
-// Verifica che pg_dump sia disponibile nel container
-function isPgDumpAvailable() {
-  const result = spawnSync('pg_dump', ['--version'], { encoding: 'utf8' })
-  return result.status === 0
-}
-
-// Dump SQL compresso in memoria (Buffer) — nessun file temporaneo
-function dumpToBuffer(dbUrl) {
-  const result = spawnSync('pg_dump', ['--no-password', dbUrl], {
-    encoding: 'buffer',
-    maxBuffer: 500 * 1024 * 1024, // 500 MB max
-  })
-  if (result.status !== 0) {
-    const errMsg = result.stderr?.toString() || 'Errore sconosciuto'
-    throw new Error(`pg_dump fallito (exit ${result.status}): ${errMsg}`)
-  }
-  return result.stdout
-}
-
-// Comprime un Buffer con gzip, restituisce Buffer
-function gzipBuffer(buffer) {
-  return new Promise((resolve, reject) => {
-    const chunks = []
-    const gzip = createGzip()
-    const readable = Readable.from(buffer)
-    readable.pipe(gzip)
-    gzip.on('data', chunk => chunks.push(chunk))
-    gzip.on('end', () => resolve(Buffer.concat(chunks)))
-    gzip.on('error', reject)
   })
 }
 
@@ -64,27 +34,49 @@ export async function runBackup() {
     return
   }
 
-  if (!isPgDumpAvailable()) {
-    console.error('[backup] pg_dump non trovato nel container — assicurarsi che nixpacks.toml includa postgresql')
+  // ── 1. Connessione al DB ed export tabelle ────────────────────────────────
+  const client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } })
+  let backup = { _meta: { exported_at: new Date().toISOString(), version: 1 }, tables: {} }
+
+  try {
+    console.log('[backup] Connessione al database...')
+    await client.connect()
+
+    // Lista tutte le tabelle pubbliche
+    const { rows: tables } = await client.query(
+      `SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename`
+    )
+    console.log(`[backup] Tabelle trovate: ${tables.map(t => t.tablename).join(', ')}`)
+
+    // Esporta ogni tabella
+    for (const { tablename } of tables) {
+      const { rows } = await client.query(`SELECT * FROM "${tablename}"`)
+      backup.tables[tablename] = rows
+      console.log(`[backup] ${tablename}: ${rows.length} righe`)
+    }
+
+    await client.end()
+  } catch (err) {
+    console.error('[backup] Errore DB:', err.message)
+    try { await client.end() } catch {}
     return
   }
 
-  const date     = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
-  const filename = `backup-${date}.sql.gz`
-
-  // ── 1. pg_dump in memoria ────────────────────────────────────────────────
+  // ── 2. Serializza e comprimi ──────────────────────────────────────────────
   let compressed
   try {
-    console.log(`[backup] Avvio dump → ${filename}`)
-    const raw = dumpToBuffer(dbUrl)
-    compressed = await gzipBuffer(raw)
-    console.log(`[backup] Dump completato — ${(compressed.length / 1024).toFixed(0)} KB compressi`)
+    const json = JSON.stringify(backup)
+    compressed = await gzipAsync(Buffer.from(json, 'utf8'))
+    console.log(`[backup] Backup compresso: ${(compressed.length / 1024).toFixed(0)} KB`)
   } catch (err) {
-    console.error('[backup] Dump fallito:', err.message)
+    console.error('[backup] Compressione fallita:', err.message)
     return
   }
 
-  // ── 2. Upload su R2 ───────────────────────────────────────────────────────
+  // ── 3. Upload su R2 ───────────────────────────────────────────────────────
+  const date     = new Date().toISOString().slice(0, 10)
+  const filename = `backup-${date}.json.gz`
+
   try {
     await r2.send(new PutObjectCommand({
       Bucket: bucket,
@@ -99,7 +91,7 @@ export async function runBackup() {
     return
   }
 
-  // ── 3. Elimina backup più vecchi di RETENTION_DAYS ───────────────────────
+  // ── 4. Elimina backup più vecchi di RETENTION_DAYS ───────────────────────
   try {
     const { Contents = [] } = await r2.send(new ListObjectsV2Command({ Bucket: bucket }))
     const cutoff = new Date()
