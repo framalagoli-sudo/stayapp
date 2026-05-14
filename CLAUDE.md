@@ -577,7 +577,26 @@ if (!isQR && entity.minisito?.active) return <LandingStruttura entity={entity} /
   "team_titolo": "Il nostro team",
   "team": [{ "id": "uuid", "photo_url": "...", "nome": "...", "ruolo": "...", "bio": "..." }],
   "steps_titolo": "Come funziona",
-  "steps": [{ "id": "uuid", "icon": "check-circle", "title": "...", "text": "..." }]
+  "steps": [{ "id": "uuid", "icon": "check-circle", "title": "...", "text": "..." }],
+  "header_cfg": {
+    "style": "dark",           // dark | light | colored | transparent
+    "always_visible": false,   // true = nav sempre visibile; false = appare dopo scroll
+    "logo_in_nav": true,
+    "show_phone": false,       // mostra tel: link nel nav
+    "show_cta": false,
+    "cta_text": "Prenota ora",
+    "cta_url": "",
+    "bg_color": ""             // hex custom usato quando style='colored'
+  },
+  "footer_cfg": {
+    "layout": "standard",      // minimal | standard | full (3 colonne con contatti)
+    "style": "dark",           // dark | light
+    "copyright": "",           // testo custom (vuoto = automatico)
+    "show_socials": true,
+    "show_description": true,
+    "show_contact": true,      // colonna contatti (solo layout full)
+    "extra_links": [{ "id": "uuid", "label": "...", "url": "..." }]
+  }
 }
 ```
 
@@ -699,8 +718,8 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 | **Booking — Risorse** | `/admin/booking/risorse` | CRUD risorse (slot/coperti), orari, blocchi, promozioni, visibile_minisito |
 | **Booking — Prenotazioni** | `/admin/booking/prenotazioni` | Lista filtrata per data/risorsa/stato, note interne, cambio stato |
 | **Chatbot** | `/admin/property/chatbot` | Editor albero conversazione: passi, opzioni tipizzate, anteprima live |
-| **Pagine sito** | `/admin/property/pagine` | Lista pagine con ordinamento, stato, menu toggle; disponibile per struttura/ristorante/attività |
-| **Editor pagina** | `/admin/pagine/:pageId` | Builder a blocchi: 23 tipi in 5 gruppi, picker modale, SEO, slug auto |
+| **Sito (CMS)** | `/admin/property/sito` | 3 sezioni: (1) menu navigazione con drag & drop, (2) lista pagine con ricerca/filtri/template, (3) configuratore header & footer |
+| **Editor pagina** | `/admin/pagine/:pageId` | Builder a blocchi: 23 tipi in 5 gruppi, icone Lucide colorate per gruppo, drag & drop handle-only, picker con ricerca, drop indicator, SEO, slug auto |
 
 ### App ospite (PWA)
 - **Struttura** `/s/:slug`: Home / Esplora / Richiesta / Info + CookieBanner + ChatbotWidget (floating absolute)
@@ -779,6 +798,8 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     ```
     Senza questo, il link nell'email di reset porta a una pagina di errore Supabase invece che all'app.
 
+22. **⚠️ Drag & drop con componenti React inline**: definire un componente React (funzione con nome capitalizzato) DENTRO un altro componente causa unmount/remount ad ogni render perché React vede una nuova identità di funzione. Questo interrompe qualsiasi drag in corso. **Fix**: usare una funzione normale `renderXxx()` chiamata direttamente `{renderXxx(item)}` — React riconcilia i div con le key senza smontare niente. Pattern applicato a `renderMenuRow` in `SitoPage.jsx`. Stesso vale per qualsiasi altro editor drag & drop futuro.
+
 21. **⚠️ Cambio dominio — checklist completa**: quando si acquista e configura il dominio definitivo, eseguire TUTTI questi passaggi in ordine:
 
     **1. Acquisto e DNS (Cloudflare Registrar ~€10/anno)**
@@ -823,6 +844,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - [x] **Sicurezza Fase 2** — audit log (tabella + middleware + pagina admin) + 2FA TOTP (login 2 step, enrollment QR, AAL check) ✅ 2026-05-14
 - [x] **Gestione staff** — invita collaboratori via email, permessi granulari per sezione, ban/riabilita, elimina
 - [x] **Sistema pagine sito** — N pagine per entità, builder a blocchi (23 tipi), menu gerarchico con dropdown, bozza/pubblicata, nel_menu, SEO, slug auto ✅ 2026-05-14
+- [x] **CMS miglioramenti** — PaginaEditorPage: Lucide icons per gruppo, drag & drop fix (handle-only, renderMenuRow come funzione), block picker con ricerca; SitoPage: template pagina, ricerca/filtri, configuratore Header & Footer (stile, colore, CTA, telefono; layout footer minimal/standard/full); PaginaPage: hamburger mobile con overlay full-screen animato ✅ 2026-05-14
 - [ ] **Upgrade Supabase Pro + Vercel Pro** — azione manuale ($45/mese totale)
 - [ ] **Dominio** — acquisto + configurazione (vedi nota 21 per checklist completa)
 - [ ] **Pagamenti Stripe** — checkout booking risorse ed eventi (struttura già pronta: colonne pagamento_stato/pagamento_id su prenotazioni)
