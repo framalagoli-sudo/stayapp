@@ -69,6 +69,7 @@ import CancellaPrenotazionePage from './pages/public/CancellaPrenotazionePage'
 import PropertyChatbotPage from './pages/admin/property/PropertyChatbotPage'
 import RistoranteChatbotPage from './pages/admin/ristorante/RistoranteChatbotPage'
 import AttivitaChatbotPage from './pages/admin/attivita/AttivitaChatbotPage'
+import StaffPage from './pages/admin/StaffPage'
 import UnsubscribePage from './pages/public/UnsubscribePage'
 import ConfirmSubscriptionPage from './pages/public/ConfirmSubscriptionPage'
 import NewsletterArchivePage from './pages/guest/NewsletterArchivePage'
@@ -144,6 +145,7 @@ export default function App() {
             <Route path="aziende"    element={<AziendePage />} />
             <Route path="properties" element={<PropertiesPage />} />
             <Route path="users"      element={<UsersPage />} />
+            <Route path="staff"      element={<StaffPage />} />
             <Route path="qrcode"     element={<QRCodePage />} />
 
             {/* Attività */}

@@ -127,7 +127,10 @@ export default function AdminLayout() {
   const role = profile?.role
   const isSuperAdmin = role === 'super_admin'
   const isAdminAzienda = role === 'admin_azienda'
-  const isLegacyStruttura = ['admin_struttura', 'staff', 'admin_gruppo'].includes(role)
+  // staff with azienda_id = company-level staff with permissions control
+  const isStaff = role === 'staff' && !!profile?.azienda_id
+  const isLegacyStruttura = ['admin_struttura', 'admin_gruppo'].includes(role) || (role === 'staff' && !profile?.azienda_id)
+  const perm = profile?.permissions || {}
 
   // Per admin_azienda: usa solo azienda.moduli (fonte di verità).
   // Aspetta che azienda sia caricata per evitare flash di stato parziale.
@@ -343,6 +346,7 @@ export default function AdminLayout() {
             <NavLink to="/admin/newsletter"    style={({ isActive }) => navLinkStyle(isActive)}>Newsletter</NavLink>
             <NavLink to="/admin/contatti"      style={({ isActive }) => navLinkStyle(isActive)}>Contatti</NavLink>
             <NavLink to="/admin/qrcode"        style={({ isActive }) => navLinkStyle(isActive)}>QR Code</NavLink>
+            <NavLink to="/admin/staff"         style={({ isActive }) => navLinkStyle(isActive)}>Collaboratori</NavLink>
 
             {/* Solo struttura (no collapse) */}
             {hasStruttura && !bothActive && (
@@ -395,6 +399,46 @@ export default function AdminLayout() {
                 <AttivitaSelector />
                 <AttivitaSubLinks baseId={selectedAttivitaId} />
               </CollapseSection>
+            )}
+          </>
+        )}
+
+        {/* ── Staff (company-level, permissions-filtered) ── */}
+        {isStaff && (
+          <>
+            {perm.richieste    && <NavLink to="/admin/requests"      style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>}
+            {perm.prenotazioni && <NavLink to="/admin/prenotazioni"  style={({ isActive }) => navLinkStyle(isActive)}>Prenotazioni</NavLink>}
+            {perm.booking      && <NavLink to="/admin/booking"       style={({ isActive }) => navLinkStyle(isActive || location.pathname.startsWith('/admin/booking'))}>Booking risorse</NavLink>}
+            {perm.eventi       && <NavLink to="/admin/eventi"        style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>}
+            {perm.blog         && <NavLink to="/admin/blog"          style={({ isActive }) => navLinkStyle(isActive)}>Blog & News</NavLink>}
+            {perm.newsletter   && <NavLink to="/admin/newsletter"    style={({ isActive }) => navLinkStyle(isActive)}>Newsletter</NavLink>}
+            {perm.contatti     && <NavLink to="/admin/contatti"      style={({ isActive }) => navLinkStyle(isActive)}>Contatti</NavLink>}
+
+            {perm.struttura && hasStruttura && !bothActive && (
+              <>
+                <SectionHeader label={strutture.length === 1 ? strutture[0]?.name || 'La mia struttura' : 'Struttura'} />
+                <StrutturaSelector />
+                <StrutturaSubLinks baseId={selectedStrutturaId} />
+              </>
+            )}
+            {perm.ristorante && hasRistorante && !bothActive && (
+              <>
+                <SectionHeader label={ristoranti.length === 1 ? ristoranti[0]?.name || 'Il mio ristorante' : 'Ristorante'} />
+                <RistoranteSelector />
+                <RistoranteSubLinks baseId={selectedRistoranteId} />
+              </>
+            )}
+            {perm.struttura && perm.ristorante && bothActive && (
+              <>
+                <CollapseSection label="Struttura" isOpen={strutturaOpen} onToggle={() => setStrutturaOpen(o => !o)}>
+                  <StrutturaSelector />
+                  <StrutturaSubLinks baseId={selectedStrutturaId} />
+                </CollapseSection>
+                <CollapseSection label="Ristorante" isOpen={ristoranteOpen} onToggle={() => setRistoranteOpen(o => !o)}>
+                  <RistoranteSelector />
+                  <RistoranteSubLinks baseId={selectedRistoranteId} />
+                </CollapseSection>
+              </>
             )}
           </>
         )}
