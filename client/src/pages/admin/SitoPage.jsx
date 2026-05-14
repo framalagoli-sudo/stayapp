@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { PropertyIdContext } from '../../context/PropertyIdContext'
@@ -22,19 +22,42 @@ export default function SitoPage({ entityTipo }) {
     ? `/admin/ristoranti/${paramId}/minisito`
     : `/admin/attivita/${paramId}/minisito`
 
-  const [pagine,   setPagine]   = useState([])
-  const [loading,  setLoading]  = useState(true)
-  const [creating, setCreating] = useState(false)
-  const [newTitle, setNewTitle] = useState('')
-  const [showNew,  setShowNew]  = useState(false)
+  const [pagine,      setPagine]      = useState([])
+  const [entitySlug,  setEntitySlug]  = useState(null)
+  const [loading,     setLoading]     = useState(true)
+  const [creating,    setCreating]    = useState(false)
+  const [newTitle,    setNewTitle]    = useState('')
+  const [showNew,     setShowNew]     = useState(false)
+
+  // Drag & drop state
+  const [dragId,     setDragId]     = useState(null)
+  const [dragOverId, setDragOverId] = useState(null)
+  const dragInsertBefore = useRef(null)
 
   useEffect(() => { if (entityId) load() }, [entityId])
 
   async function load() {
     setLoading(true)
-    const data = await apiFetch(`/api/pagine?entity_tipo=${entityTipo}&entity_id=${entityId}`)
-    setPagine(Array.isArray(data) ? data : [])
+    const [pData, eData] = await Promise.all([
+      apiFetch(`/api/pagine?entity_tipo=${entityTipo}&entity_id=${entityId}`),
+      loadEntitySlug(),
+    ])
+    setPagine(Array.isArray(pData) ? pData : [])
+    if (eData?.slug) setEntitySlug(eData.slug)
     setLoading(false)
+  }
+
+  async function loadEntitySlug() {
+    if (entityTipo === 'struttura')  return apiFetch(`/api/properties/${entityId}`)
+    if (entityTipo === 'ristorante') return apiFetch(`/api/ristoranti/${entityId}`)
+    if (entityTipo === 'attivita')   return apiFetch(`/api/attivita/${entityId}`)
+    return null
+  }
+
+  function previewUrl(p) {
+    if (!entitySlug) return null
+    const base = entityTipo === 'struttura' ? `/s/${entitySlug}` : entityTipo === 'ristorante' ? `/r/${entitySlug}` : `/a/${entitySlug}`
+    return `${base}/p/${p.slug}`
   }
 
   async function createPage(e) {
@@ -50,6 +73,24 @@ export default function SitoPage({ entityTipo }) {
     else { setNewTitle(''); setShowNew(false); load() }
   }
 
+  async function duplicatePage(p) {
+    const res = await apiFetch('/api/pagine', {
+      method: 'POST',
+      body: JSON.stringify({
+        entity_tipo: entityTipo,
+        entity_id: entityId,
+        titolo: `${p.titolo} (copia)`,
+      }),
+    })
+    if (!res?.id) return
+    // copy blocks
+    await apiFetch(`/api/pagine/${res.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ blocks: p.blocks ?? [], nel_menu: false }),
+    })
+    load()
+  }
+
   async function toggleStatus(p) {
     await apiFetch(`/api/pagine/${p.id}`, { method: 'PATCH', body: JSON.stringify({ status: p.status === 'pubblicata' ? 'bozza' : 'pubblicata' }) })
     load()
@@ -61,7 +102,6 @@ export default function SitoPage({ entityTipo }) {
   }
 
   async function removeFromMenu(p) {
-    // Se ha figli nel menu, li porta al primo livello prima di rimuovere
     await apiFetch(`/api/pagine/${p.id}`, { method: 'PATCH', body: JSON.stringify({ nel_menu: false }) })
     load()
   }
@@ -73,7 +113,6 @@ export default function SitoPage({ entityTipo }) {
   }
 
   async function move(p, dir) {
-    const topLevel = pagine.filter(x => !x.parent_id)
     const arr = [...pagine]
     const idx = arr.indexOf(p)
     const t   = idx + dir
@@ -88,7 +127,6 @@ export default function SitoPage({ entityTipo }) {
   }
 
   async function makeChild(p) {
-    // Rendi sottopagina della voce sopra
     const topMenu = pagine.filter(x => x.nel_menu && !x.parent_id)
     const idx = topMenu.indexOf(p)
     if (idx <= 0) return
@@ -102,12 +140,57 @@ export default function SitoPage({ entityTipo }) {
     load()
   }
 
-  // Derive lists
-  const menuTop    = pagine.filter(p => p.nel_menu && !p.parent_id).sort((a, b) => a.ordine - b.ordine)
-  const menuSubs   = id => pagine.filter(p => p.nel_menu && p.parent_id === id).sort((a, b) => a.ordine - b.ordine)
-  const notInMenu  = pagine.filter(p => !p.nel_menu)
+  // ── Drag & drop ──────────────────────────────────────────────────────────────
+  function onDragStart(e, p) {
+    setDragId(p.id)
+    e.dataTransfer.effectAllowed = 'move'
+    // transparent ghost
+    const ghost = document.createElement('div')
+    ghost.style.opacity = '0'
+    document.body.appendChild(ghost)
+    e.dataTransfer.setDragImage(ghost, 0, 0)
+    setTimeout(() => document.body.removeChild(ghost), 0)
+  }
 
-  // ── Stili condivisi ─────────────────────────────────────────────────────────
+  function onDragOver(e, p) {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (p.id !== dragId) setDragOverId(p.id)
+  }
+
+  async function onDrop(e, target) {
+    e.preventDefault()
+    if (!dragId || dragId === target.id) { resetDrag(); return }
+
+    const arr = [...menuTop]
+    const fromIdx = arr.findIndex(x => x.id === dragId)
+    const toIdx   = arr.findIndex(x => x.id === target.id)
+    if (fromIdx === -1 || toIdx === -1) { resetDrag(); return }
+
+    arr.splice(toIdx, 0, arr.splice(fromIdx, 1)[0])
+
+    const updated = pagine.map(p => {
+      const found = arr.findIndex(x => x.id === p.id)
+      return found !== -1 ? { ...p, ordine: found } : p
+    })
+    setPagine(updated)
+    resetDrag()
+
+    await apiFetch('/api/pagine/reorder', {
+      method: 'POST',
+      body: JSON.stringify({ items: arr.map((x, i) => ({ id: x.id, ordine: i, parent_id: x.parent_id })) }),
+    })
+    load()
+  }
+
+  function resetDrag() { setDragId(null); setDragOverId(null) }
+
+  // Derive lists
+  const menuTop   = pagine.filter(p => p.nel_menu && !p.parent_id).sort((a, b) => a.ordine - b.ordine)
+  const menuSubs  = id => pagine.filter(p => p.nel_menu && p.parent_id === id).sort((a, b) => a.ordine - b.ordine)
+  const notInMenu = pagine.filter(p => !p.nel_menu)
+
+  // ── Stili ────────────────────────────────────────────────────────────────────
   const cardStyle = {
     background: '#fff', borderRadius: 10, border: '1px solid #eeeeee',
     boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
@@ -128,17 +211,38 @@ export default function SitoPage({ entityTipo }) {
 
   // ── Row nel menu ─────────────────────────────────────────────────────────────
   function MenuRow({ p, isChild = false }) {
-    const topIdx = menuTop.indexOf(p)
+    const topIdx   = menuTop.indexOf(p)
     const canIndent = !isChild && topIdx > 0 && menuSubs(menuTop[topIdx - 1]?.id).length === 0
+    const isDragging = dragId === p.id
+    const isDragOver = dragOverId === p.id && !isChild
 
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#fff', borderRadius: 8, marginBottom: 4, border: '1px solid #eeeeee', boxShadow: '0 1px 2px rgba(0,0,0,0.04)', marginLeft: isChild ? 28 : 0, position: 'relative' }}>
+      <div
+        draggable={!isChild}
+        onDragStart={!isChild ? e => onDragStart(e, p) : undefined}
+        onDragOver={!isChild ? e => onDragOver(e, p) : undefined}
+        onDrop={!isChild ? e => onDrop(e, p) : undefined}
+        onDragEnd={resetDrag}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '10px 14px',
+          background: isDragging ? '#f0f4ff' : '#fff',
+          borderRadius: 8, marginBottom: 4,
+          border: isDragOver ? '2px solid #4a7cdc' : '1px solid #eeeeee',
+          boxShadow: isDragging ? '0 4px 12px rgba(74,124,220,0.18)' : '0 1px 2px rgba(0,0,0,0.04)',
+          marginLeft: isChild ? 28 : 0,
+          position: 'relative',
+          opacity: isDragging ? 0.55 : 1,
+          transition: 'box-shadow 0.15s, border-color 0.15s',
+          cursor: isChild ? 'default' : 'grab',
+        }}
+      >
         {isChild && <div style={{ position: 'absolute', left: -20, top: '50%', width: 14, height: 1, background: '#ddd' }} />}
 
-        {/* Drag handle (visivo) */}
-        <span style={{ color: '#ccc', fontSize: 14, cursor: 'grab', userSelect: 'none', flexShrink: 0 }}>⠿</span>
+        {/* Drag handle */}
+        <span style={{ color: isChild ? '#ddd' : '#aaa', fontSize: 15, userSelect: 'none', flexShrink: 0 }}>⠿</span>
 
-        {/* Ordine */}
+        {/* ▲▼ per accessibilità (solo top-level) */}
         {!isChild && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0 }}>
             <button onClick={() => move(p, -1)} style={btnTiny} title="Sposta su">▲</button>
@@ -183,13 +287,13 @@ export default function SitoPage({ entityTipo }) {
         <div style={{ marginBottom: 16 }}>
           <h2 style={{ margin: '0 0 4px', fontSize: 18, color: '#1a1a2e' }}>Menu di navigazione</h2>
           <p style={{ margin: 0, fontSize: 13, color: '#888' }}>
-            Queste voci appaiono nella barra in cima al sito. Solo le pagine <strong>Pubblicate</strong> sono visibili ai visitatori.
+            Queste voci appaiono nella barra in cima al sito. Trascina per riordinare. Solo le pagine <strong>Pubblicate</strong> sono visibili ai visitatori.
           </p>
         </div>
 
         {/* Home — fisso */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', ...cardStyle, marginBottom: 4, background: '#fafafa' }}>
-          <span style={{ color: '#ddd', fontSize: 14, userSelect: 'none' }}>⠿</span>
+          <span style={{ color: '#ddd', fontSize: 15, userSelect: 'none' }}>⠿</span>
           <span style={{ fontSize: 18 }}>🏠</span>
           <div style={{ flex: 1 }}>
             <span style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>Home</span>
@@ -202,7 +306,7 @@ export default function SitoPage({ entityTipo }) {
         </div>
 
         {/* Pagine nel menu */}
-        {loading ? null : menuTop.length === 0 ? null : (
+        {!loading && menuTop.length > 0 && (
           <div>
             {menuTop.map(p => (
               <div key={p.id}>
@@ -286,41 +390,57 @@ export default function SitoPage({ entityTipo }) {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {pagine.map(p => (
-              <div key={p.id} style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', flexWrap: 'wrap' }}>
+            {pagine.map(p => {
+              const url = previewUrl(p)
+              return (
+                <div key={p.id} style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', flexWrap: 'wrap' }}>
 
-                {/* Titolo */}
-                <div style={{ flex: 1, minWidth: 140 }}>
-                  <span style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>
-                    {p.parent_id ? '└─ ' : ''}{p.titolo}
+                  {/* Titolo */}
+                  <div style={{ flex: 1, minWidth: 140 }}>
+                    <span style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>
+                      {p.parent_id ? '└─ ' : ''}{p.titolo}
+                    </span>
+                    <span style={{ marginLeft: 8, fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>/{p.slug}</span>
+                  </div>
+
+                  {/* Status toggle */}
+                  <button onClick={() => toggleStatus(p)} style={{
+                    ...btnAction(), flexShrink: 0,
+                    background: p.status === 'pubblicata' ? '#d4edda' : '#fff3cd',
+                    color:      p.status === 'pubblicata' ? '#155724' : '#856404',
+                    fontWeight: 600, border: 'none',
+                  }}>
+                    {p.status === 'pubblicata' ? '✓ Pubblicata' : '○ Bozza'}
+                  </button>
+
+                  {/* Nel menu indicator */}
+                  <span style={{ fontSize: 11, color: p.nel_menu ? '#0066aa' : '#bbb', flexShrink: 0 }}>
+                    {p.nel_menu ? '☰ In menu' : '— Fuori menu'}
                   </span>
-                  <span style={{ marginLeft: 8, fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>/{p.slug}</span>
+
+                  {/* Anteprima */}
+                  {url && (
+                    <a href={url} target="_blank" rel="noopener noreferrer"
+                      style={{ ...btnAction(), flexShrink: 0, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      ↗ Apri
+                    </a>
+                  )}
+
+                  {/* Duplica */}
+                  <button onClick={() => duplicatePage(p)} style={{ ...btnAction(), flexShrink: 0 }} title="Duplica pagina">
+                    ⧉ Duplica
+                  </button>
+
+                  {/* Edit */}
+                  <button onClick={() => navigate(`/admin/pagine/${p.id}`)} style={btnAction('primary')}>
+                    Modifica
+                  </button>
+
+                  {/* Delete */}
+                  <button onClick={() => deletePage(p)} style={btnAction('danger')}>✕</button>
                 </div>
-
-                {/* Status toggle */}
-                <button onClick={() => toggleStatus(p)} style={{
-                  ...btnAction(), flexShrink: 0,
-                  background: p.status === 'pubblicata' ? '#d4edda' : '#fff3cd',
-                  color:      p.status === 'pubblicata' ? '#155724' : '#856404',
-                  fontWeight: 600, border: 'none',
-                }}>
-                  {p.status === 'pubblicata' ? '✓ Pubblicata' : '○ Bozza'}
-                </button>
-
-                {/* Nel menu indicator */}
-                <span style={{ fontSize: 11, color: p.nel_menu ? '#0066aa' : '#bbb', flexShrink: 0 }}>
-                  {p.nel_menu ? '☰ In menu' : '— Fuori menu'}
-                </span>
-
-                {/* Edit */}
-                <button onClick={() => navigate(`/admin/pagine/${p.id}`)} style={btnAction('primary')}>
-                  Modifica
-                </button>
-
-                {/* Delete */}
-                <button onClick={() => deletePage(p)} style={btnAction('danger')}>✕</button>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
