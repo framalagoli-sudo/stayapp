@@ -121,8 +121,18 @@ app.post('/api/admin/backup', async (req, res) => {
     if (!user) return res.status(401).json({ error: 'Non autorizzato' })
     const { data: profile } = await sb.from('profiles').select('role').eq('id', user.id).single()
     if (profile?.role !== 'super_admin') return res.status(403).json({ error: 'Accesso negato' })
-    runBackup().catch(e => console.error('[backup-manual]', e.message))
-    res.json({ ok: true, message: 'Backup avviato in background' })
+    const log = []
+    const _log = console.log.bind(console)
+    const _err = console.error.bind(console)
+    console.log = (...a) => { _log(...a); log.push(a.join(' ')) }
+    console.error = (...a) => { _err(...a); log.push('ERROR: ' + a.join(' ')) }
+    try {
+      await runBackup()
+    } finally {
+      console.log = _log
+      console.error = _err
+    }
+    res.json({ ok: true, log })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
