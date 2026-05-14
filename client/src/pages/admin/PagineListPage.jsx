@@ -2,12 +2,17 @@ import { useContext, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { PropertyIdContext } from '../../context/PropertyIdContext'
+import { useAuth } from '../../context/AuthContext'
 
 export default function PagineListPage({ entityTipo }) {
   const navigate = useNavigate()
   const { id: paramId } = useParams()
   const ctxId = useContext(PropertyIdContext)
-  const entityId = entityTipo === 'struttura' ? (ctxId || paramId) : paramId
+  const { profile } = useAuth()
+  // struttura: try URL context → URL param → profile.property_id (legacy path)
+  const entityId = entityTipo === 'struttura'
+    ? (ctxId || paramId || profile?.property_id)
+    : paramId
 
   const [pagine, setPagine]   = useState([])
   const [loading, setLoading] = useState(true)
