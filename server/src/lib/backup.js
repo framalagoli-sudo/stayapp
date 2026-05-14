@@ -10,7 +10,7 @@ const RETENTION_DAYS = 30
 const TABLES = [
   'aziende', 'profiles', 'properties', 'ristoranti', 'attivita',
   'requests', 'contatti', 'newsletters', 'page_views', 'demo_requests',
-  'eventi', 'event_bookings', 'blog_articles', 'blog_categories',
+  'eventi', 'event_bookings', 'articoli', 'blog_categories',
   'risorse', 'risorse_promozioni', 'prenotazioni',
   'collegamenti', 'messages',
 ]
