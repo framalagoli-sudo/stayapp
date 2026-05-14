@@ -343,7 +343,7 @@ Priorità assoluta prima di acquisire clienti paganti. Diviso in fasi.
 
 ### Fase 2 — Prima di aggiungere altri clienti
 
-- [ ] 🔴 **Audit log** — tabella `audit_log` (user, action, entity, payload, ip, timestamp); middleware automatico su ogni PATCH/DELETE
+- [x] 🔴 **Audit log** — tabella `audit_log` + middleware automatico PATCH/DELETE + pagina admin con filtri e payload espandibile ✅ 2026-05-14
 - [ ] 🟡 **Upgrade Supabase → Pro** — $25/mese, include backup giornalieri con 7gg retention (azione manuale)
 - [ ] 🟡 **Upgrade Vercel → Pro** — $20/mese, richiesto per uso commerciale (azione manuale)
 - [ ] 🟡 **Monitoraggio dipendenze** — `npm audit` in CI/CD (GitHub Actions) ad ogni push
