@@ -191,7 +191,7 @@ hospitality/
 │           ├── booking.js          # sistema booking risorse (slot/coperti)
 │           └── demo.js             # richieste demo dalla landing
 └── supabase/migrations/
-    ├── 015_blog.sql                # tabelle blog_articles, blog_categories
+    ├── 015_blog.sql                # tabelle articoli, blog_categories
     ├── 016_contatti.sql            # tabella contatti (CRM)
     ├── 017_attivita.sql            # tabella attivita
     ├── 018_privacy_data.sql        # privacy_data jsonb su properties/ristoranti/attivita
@@ -729,7 +729,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     ```
     Il server usa service_role (bypassa tutto) quindi non è colpito. Il client usa Supabase solo per Auth API → non colpito. Impatta solo eventuali query client-side dirette su nuove tabelle.
 
-20. **Backup notturno automatico — Cloudflare R2**: cron job su Railway ogni notte alle 03:00 UTC. `pg_dump` → gzip → upload su R2 → pulizia backup >30 giorni. Codice in `server/src/lib/backup.js`. Variabili richieste su Railway: `DATABASE_URL`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME=stayapp-backups`. Bucket: `stayapp-backups` su Cloudflare R2, region EU, storage class Standard. Test manuale: `POST /api/admin/backup` (solo super_admin). La `DATABASE_URL` ha formato: `postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres` — si trova in Supabase → Project Settings → Database → Connection string.
+20. **Backup notturno automatico — Cloudflare R2**: cron job su Railway ogni notte alle 03:00 UTC. Usa il Supabase service role client per esportare tutte le tabelle → JSON → gzip → upload su R2 → pulizia backup >30 giorni. **Non usa pg_dump** (non disponibile nei container Railway). Codice in `server/src/lib/backup.js`. Variabili richieste su Railway: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME=stayapp-backups`. Bucket: `stayapp-backups` su Cloudflare R2, region EU, storage class Standard. Test manuale: `POST /api/admin/backup` (solo super_admin, risponde con `{ ok, log }`). Tabelle esportate: aziende, profiles, properties, ristoranti, attivita, requests, contatti, newsletters, page_views, demo_requests, eventi, event_bookings, articoli, blog_categories, risorse, risorse_promozioni, prenotazioni, collegamenti, messages.
 
 18. **⚠️ Supabase Redirect URLs — aggiornare ad ogni cambio dominio**: il flow di reset password usa `supabase.auth.resetPasswordForEmail()` con `redirectTo` che punta a `/admin/reset-password`. Supabase blocca i redirect verso URL non whitelistati. **Ogni volta che cambia il dominio di produzione o staging, aggiungere il nuovo URL in:**
     `Supabase Dashboard → Authentication → URL Configuration → Redirect URLs`
@@ -751,7 +751,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - [x] **Chatbot configurabile** — decision tree per struttura/ristorante/attività; admin editor nodi+opzioni; widget PWA e landing
 - [x] **Password reset admin** — forgot-password + reset-password con token Supabase monouso (1h)
 - [x] **Sicurezza Fase 1** — helmet, rate limiting, CORS lockdown, zod validation, global error handler
-- [x] **Backup notturno** — cron job Railway → pg_dump → Cloudflare R2 EU, retention 30gg
+- [x] **Backup notturno** — cron job Railway → Supabase client → JSON gzip → Cloudflare R2 EU, retention 30gg ✅ testato 2026-05-14
 - [ ] **Sicurezza Fase 2** — audit log, 2FA login admin, upgrade Supabase Pro + Vercel Pro (azioni manuali)
 - [ ] **Pagamenti Stripe** — checkout booking risorse ed eventi (struttura già pronta: colonne pagamento_stato/pagamento_id su prenotazioni)
 - [ ] **Multi-lingua** — IT/EN/DE per PWA ospite

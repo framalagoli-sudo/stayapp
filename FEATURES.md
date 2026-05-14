@@ -1,7 +1,7 @@
 # FEATURES — Roadmap prodotto StayApp
 
 Documento vivo. Aggiornato sessione per sessione.
-Ultima revisione: 2026-05-13 (sicurezza Fase 1 + backup notturno Cloudflare R2 completati)
+Ultima revisione: 2026-05-14 (backup notturno testato e funzionante su Cloudflare R2)
 
 ---
 
@@ -338,7 +338,7 @@ Priorità assoluta prima di acquisire clienti paganti. Diviso in fasi.
 - [x] 🔴 **Rate limiting** — `express-rate-limit`: 60 req/min guest, 10 req/15min auth, 120 req/min admin
 - [x] 🔴 **CORS lockdown** — whitelist esplicita domini
 - [x] 🔴 **Validazione input con zod** — tutti gli endpoint pubblici (contatti, prenotazioni, newsletter, demo)
-- [x] 🔴 **Backup automatico notturno** — cron job Railway: `pg_dump` → Cloudflare R2 EU, retention 30gg
+- [x] 🔴 **Backup automatico notturno** — cron job Railway 03:00 UTC: Supabase client → JSON gzip → Cloudflare R2 EU, retention 30gg ✅ testato 2026-05-14
 - [ ] 🔴 **2FA login admin** — TOTP via Supabase Auth (Google Authenticator)
 
 ### Fase 2 — Prima di aggiungere altri clienti
