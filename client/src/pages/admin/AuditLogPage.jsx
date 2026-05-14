@@ -29,6 +29,7 @@ export default function AuditLogPage() {
   const [filterMethod, setMethod] = useState('')
   const [filterEntity, setEntity] = useState('')
   const [filterEmail, setEmail]   = useState('')
+  const [expanded, setExpanded]   = useState(null)
   const limit = 50
 
   const load = useCallback(async (off = 0) => {
@@ -106,18 +107,33 @@ export default function AuditLogPage() {
               <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: '#9ca3af' }}>Nessuna operazione trovata</td></tr>
             )}
             {!loading && rows.map(r => (
-              <tr key={r.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                <td style={{ padding: '8px 12px', whiteSpace: 'nowrap', color: '#6b7280' }}>{fmt(r.created_at)}</td>
-                <td style={{ padding: '8px 12px', color: '#111827' }}>{r.user_email || '—'}</td>
-                <td style={{ padding: '8px 12px' }}><Badge method={r.method} /></td>
-                <td style={{ padding: '8px 12px', color: '#374151' }}>
-                  {r.entity_tipo || '—'}
-                  {r.entity_id && <span style={{ color: '#9ca3af', marginLeft: 4, fontSize: 11 }}>{r.entity_id.slice(0, 8)}…</span>}
-                </td>
-                <td style={{ padding: '8px 12px', color: '#6b7280', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.path}>{r.path}</td>
-                <td style={{ padding: '8px 12px', color: '#9ca3af', fontSize: 12 }}>{r.ip || '—'}</td>
-                <td style={{ padding: '8px 12px', color: r.status_code >= 400 ? '#b91c1c' : '#059669', fontWeight: 600 }}>{r.status_code}</td>
-              </tr>
+              <>
+                <tr
+                  key={r.id}
+                  onClick={() => setExpanded(expanded === r.id ? null : r.id)}
+                  style={{ borderBottom: expanded === r.id ? 'none' : '1px solid #f3f4f6', cursor: 'pointer', background: expanded === r.id ? '#f9fafb' : 'transparent' }}
+                >
+                  <td style={{ padding: '8px 12px', whiteSpace: 'nowrap', color: '#6b7280' }}>{fmt(r.created_at)}</td>
+                  <td style={{ padding: '8px 12px', color: '#111827' }}>{r.user_email || '—'}</td>
+                  <td style={{ padding: '8px 12px' }}><Badge method={r.method} /></td>
+                  <td style={{ padding: '8px 12px', color: '#374151' }}>
+                    {r.entity_tipo || '—'}
+                    {r.entity_id && <span style={{ color: '#9ca3af', marginLeft: 4, fontSize: 11 }}>{r.entity_id.slice(0, 8)}…</span>}
+                  </td>
+                  <td style={{ padding: '8px 12px', color: '#6b7280', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.path}>{r.path}</td>
+                  <td style={{ padding: '8px 12px', color: '#9ca3af', fontSize: 12 }}>{r.ip || '—'}</td>
+                  <td style={{ padding: '8px 12px', color: r.status_code >= 400 ? '#b91c1c' : '#059669', fontWeight: 600 }}>{r.status_code}</td>
+                </tr>
+                {expanded === r.id && (
+                  <tr key={r.id + '-detail'} style={{ borderBottom: '1px solid #f3f4f6', background: '#f9fafb' }}>
+                    <td colSpan={7} style={{ padding: '0 12px 12px 12px' }}>
+                      <pre style={{ margin: 0, fontSize: 12, color: '#374151', background: '#f1f5f9', padding: '10px 14px', borderRadius: 6, overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                        {r.payload ? JSON.stringify(r.payload, null, 2) : '(nessun payload)'}
+                      </pre>
+                    </td>
+                  </tr>
+                )}
+              </>
             ))}
           </tbody>
         </table>
