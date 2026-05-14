@@ -110,9 +110,10 @@ export default function SecurityPage() {
             Scansiona il QR con <strong>Google Authenticator</strong> o <strong>Authy</strong>, poi inserisci il codice a 6 cifre per confermare.
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
-            <div
-              dangerouslySetInnerHTML={{ __html: enrollData.totp.qr_code }}
-              style={{ width: 200, height: 200, border: '1px solid #e5e7eb', borderRadius: 8, padding: 8, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            <img
+              src={enrollData.totp.qr_code}
+              alt="QR Code 2FA"
+              style={{ width: 200, height: 200, border: '1px solid #e5e7eb', borderRadius: 8, padding: 8, background: '#fff' }}
             />
           </div>
           <details style={{ marginBottom: 20 }}>
