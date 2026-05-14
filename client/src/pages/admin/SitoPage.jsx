@@ -315,18 +315,17 @@ export default function SitoPage({ entityTipo }) {
     load()
   }
 
-  async function move(p, dir) {
+  function move(p, dir) {
     const arr = [...pagine]
     const idx = arr.indexOf(p)
     const t   = idx + dir
     if (t < 0 || t >= arr.length) return
     ;[arr[idx], arr[t]] = [arr[t], arr[idx]]
     setPagine(arr)
-    await apiFetch('/api/pagine/reorder', {
+    apiFetch('/api/pagine/reorder', {
       method: 'POST',
       body: JSON.stringify({ items: arr.map((x, i) => ({ id: x.id, ordine: i, parent_id: x.parent_id })) }),
     })
-    load()
   }
 
   async function makeChild(p) {
@@ -347,7 +346,7 @@ export default function SitoPage({ entityTipo }) {
   function onDragOver(e, p) {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
-    if (p.id !== dragId) setDragOverId(p.id)
+    if (p.id !== dragId && dragOverId !== p.id) setDragOverId(p.id)
   }
 
   async function onDrop(e, target) {
@@ -364,11 +363,11 @@ export default function SitoPage({ entityTipo }) {
     })
     setPagine(updated)
     resetDrag()
-    await apiFetch('/api/pagine/reorder', {
+    // fire-and-forget: l'optimistic update è già corretto, non serve reload
+    apiFetch('/api/pagine/reorder', {
       method: 'POST',
       body: JSON.stringify({ items: arr.map((x, i) => ({ id: x.id, ordine: i, parent_id: x.parent_id })) }),
     })
-    load()
   }
 
   function resetDrag() { setDragId(null); setDragOverId(null) }
