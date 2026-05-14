@@ -72,6 +72,7 @@ import AttivitaChatbotPage from './pages/admin/attivita/AttivitaChatbotPage'
 import StaffPage from './pages/admin/StaffPage'
 import PagineListPage from './pages/admin/PagineListPage'
 import PaginaEditorPage from './pages/admin/PaginaEditorPage'
+import SitoPage from './pages/admin/SitoPage'
 import PaginaPage from './pages/guest/PaginaPage'
 import UnsubscribePage from './pages/public/UnsubscribePage'
 import ConfirmSubscriptionPage from './pages/public/ConfirmSubscriptionPage'
@@ -162,6 +163,7 @@ export default function App() {
             <Route path="attivita/:id/gallery"    element={<AttivitaGalleryPage />} />
             <Route path="attivita/:id/theme"      element={<AttivitaThemePage />} />
             <Route path="attivita/:id/minisito"   element={<AttivitaMiniSitoPage />} />
+            <Route path="attivita/:id/sito"       element={<SitoPage entityTipo="attivita" />} />
             <Route path="attivita/:id/privacy"    element={<AttivitaPrivacyPage />} />
             <Route path="attivita/:id/chatbot"    element={<AttivitaChatbotPage />} />
             <Route path="attivita/:id/pagine"     element={<PagineListPage entityTipo="attivita" />} />
@@ -174,6 +176,7 @@ export default function App() {
             <Route path="ristoranti/:id/theme"    element={<RistoranteThemePage />} />
             <Route path="ristoranti/:id/moduli"   element={<RistoranteModuliPage />} />
             <Route path="ristoranti/:id/minisito" element={<RistoranteMiniSitoPage />} />
+            <Route path="ristoranti/:id/sito"     element={<SitoPage entityTipo="ristorante" />} />
             <Route path="ristoranti/:id/privacy"  element={<RistorantePrivacyPage />} />
             <Route path="ristoranti/:id/chatbot"  element={<RistoranteChatbotPage />} />
             <Route path="ristoranti/:id/pagine"   element={<PagineListPage entityTipo="ristorante" />} />
@@ -187,6 +190,7 @@ export default function App() {
               <Route path="theme"      element={<PropertyThemePage />} />
               <Route path="activities" element={<PropertyActivitiesPage />} />
               <Route path="excursions" element={<PropertyExcursionsPage />} />
+              <Route path="sito"       element={<SitoPage entityTipo="struttura" />} />
               <Route path="minisito"   element={<PropertyMiniSitoPage />} />
               <Route path="privacy"    element={<PropertyPrivacyPage />} />
               <Route path="chatbot"    element={<PropertyChatbotPage />} />
@@ -201,6 +205,7 @@ export default function App() {
             <Route path="property/theme"      element={<PropertyThemePage />} />
             <Route path="property/activities" element={<PropertyActivitiesPage />} />
             <Route path="property/excursions" element={<PropertyExcursionsPage />} />
+            <Route path="property/sito"       element={<SitoPage entityTipo="struttura" />} />
             <Route path="property/minisito"   element={<PropertyMiniSitoPage />} />
             <Route path="property/privacy"    element={<PropertyPrivacyPage />} />
             <Route path="property/chatbot"    element={<PropertyChatbotPage />} />

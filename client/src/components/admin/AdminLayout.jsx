@@ -12,8 +12,7 @@ const NAV_PROPERTY = [  // admin_struttura / staff (profile.property_id)
   { to: '/admin/property/theme',      label: 'Tema e colori' },
   { to: '/admin/property/activities', label: 'Attività' },
   { to: '/admin/property/excursions', label: 'Escursioni' },
-  { to: '/admin/property/minisito',   label: 'Sito pubblico' },
-  { to: '/admin/property/pagine',     label: 'Pagine sito' },
+  { to: '/admin/property/sito',       label: 'Sito' },
   { to: '/admin/property/privacy',    label: 'Privacy & Policy' },
   { to: '/admin/property/chatbot',    label: 'Chatbot' },
 ]
@@ -25,8 +24,7 @@ const STRUTTURA_SUBS = [
   { sub: 'theme',      label: 'Tema e colori' },
   { sub: 'activities', label: 'Attività' },
   { sub: 'excursions', label: 'Escursioni' },
-  { sub: 'minisito',   label: 'Sito pubblico' },
-  { sub: 'pagine',     label: 'Pagine sito' },
+  { sub: 'sito',       label: 'Sito' },
   { sub: 'privacy',    label: 'Privacy & Policy' },
   { sub: 'chatbot',    label: 'Chatbot' },
 ]
@@ -36,8 +34,7 @@ const RISTORANTE_SUBS = [
   { sub: 'menu',     label: 'Menu' },
   { sub: 'gallery',  label: 'Galleria foto' },
   { sub: 'theme',    label: 'Tema e colori' },
-  { sub: 'minisito', label: 'Sito pubblico' },
-  { sub: 'pagine',   label: 'Pagine sito' },
+  { sub: 'sito',     label: 'Sito' },
   { sub: 'privacy',  label: 'Privacy & Policy' },
   { sub: 'chatbot',  label: 'Chatbot' },
 ]
@@ -45,8 +42,7 @@ const ATTIVITA_SUBS = [
   { sub: 'info',     label: 'Informazioni' },
   { sub: 'gallery',  label: 'Galleria foto' },
   { sub: 'theme',    label: 'Tema e colori' },
-  { sub: 'minisito', label: 'Sito pubblico' },
-  { sub: 'pagine',   label: 'Pagine sito' },
+  { sub: 'sito',     label: 'Sito' },
   { sub: 'privacy',  label: 'Privacy & Policy' },
   { sub: 'chatbot',  label: 'Chatbot' },
 ]
