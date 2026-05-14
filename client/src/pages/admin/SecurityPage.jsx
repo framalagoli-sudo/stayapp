@@ -21,9 +21,9 @@ export default function SecurityPage() {
 
   async function startEnroll() {
     setError(null); setSuccess(null); setLoading(true)
-    // Rimuovi eventuali fattori non verificati rimasti da tentativi precedenti
-    const { data: existing } = await supabase.auth.mfa.listFactors()
-    const unverified = existing?.totp?.filter(f => f.status === 'unverified') ?? []
+    // listFactors() restituisce solo verificati — i non verificati vanno cercati su user.factors
+    const { data: { user } } = await supabase.auth.getUser()
+    const unverified = (user?.factors ?? []).filter(f => f.status === 'unverified')
     for (const f of unverified) await supabase.auth.mfa.unenroll({ factorId: f.id })
 
     const { data, error: err } = await supabase.auth.mfa.enroll({ factorType: 'totp' })
