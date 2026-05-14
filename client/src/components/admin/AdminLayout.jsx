@@ -414,14 +414,15 @@ export default function AdminLayout() {
             {perm.newsletter   && <NavLink to="/admin/newsletter"    style={({ isActive }) => navLinkStyle(isActive)}>Newsletter</NavLink>}
             {perm.contatti     && <NavLink to="/admin/contatti"      style={({ isActive }) => navLinkStyle(isActive)}>Contatti</NavLink>}
 
-            {perm.struttura && hasStruttura && !bothActive && (
+            {/* Struttura e/o ristorante: stessa logica di admin_azienda ma filtrata da AziendaContext */}
+            {perm.struttura && hasStruttura && !(perm.ristorante && bothActive) && (
               <>
                 <SectionHeader label={strutture.length === 1 ? strutture[0]?.name || 'La mia struttura' : 'Struttura'} />
                 <StrutturaSelector />
                 <StrutturaSubLinks baseId={selectedStrutturaId} />
               </>
             )}
-            {perm.ristorante && hasRistorante && !bothActive && (
+            {perm.ristorante && hasRistorante && !(perm.struttura && bothActive) && (
               <>
                 <SectionHeader label={ristoranti.length === 1 ? ristoranti[0]?.name || 'Il mio ristorante' : 'Ristorante'} />
                 <RistoranteSelector />
@@ -439,6 +440,12 @@ export default function AdminLayout() {
                   <RistoranteSubLinks baseId={selectedRistoranteId} />
                 </CollapseSection>
               </>
+            )}
+            {perm.attivita_gestione && hasAttivita && (
+              <CollapseSection label="Attività" isOpen={attivitaOpen} onToggle={() => setAttivitaOpen(o => !o)}>
+                <AttivitaSelector />
+                <AttivitaSubLinks baseId={selectedAttivitaId} />
+              </CollapseSection>
             )}
           </>
         )}

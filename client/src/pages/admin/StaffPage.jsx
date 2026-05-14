@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../lib/api'
+import { useAzienda } from '../../context/AziendaContext'
 
 const PERMISSIONS = [
   { key: 'richieste',    label: 'Richieste' },
@@ -9,13 +10,113 @@ const PERMISSIONS = [
   { key: 'blog',         label: 'Blog & News' },
   { key: 'newsletter',   label: 'Newsletter' },
   { key: 'contatti',     label: 'Contatti' },
-  { key: 'struttura',    label: 'Gestione struttura' },
-  { key: 'ristorante',   label: 'Gestione ristorante' },
 ]
 
 const EMPTY_FORM = { email: '', full_name: '', permissions: {} }
 
+function EntitySelector({ label, entities, selectedIds, onChange }) {
+  if (!entities?.length) return null
+  return (
+    <div style={{ marginTop: 6, paddingLeft: 16, borderLeft: '2px solid #ddd' }}>
+      <div style={{ fontSize: 12, color: '#888', marginBottom: 6 }}>
+        {label} — lascia vuoto per accesso a tutt{label.includes('struttur') ? 'e' : 'i'}
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {entities.map(e => {
+          const checked = selectedIds.includes(e.id)
+          return (
+            <label key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, cursor: 'pointer', background: checked ? '#ddeeff' : '#f5f5f5', padding: '4px 10px', borderRadius: 16, border: `1px solid ${checked ? '#3399cc' : '#ddd'}` }}>
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={() => onChange(checked ? selectedIds.filter(id => id !== e.id) : [...selectedIds, e.id])}
+                style={{ margin: 0 }}
+              />
+              {e.name}
+            </label>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function PermissionForm({ perms, onChange, strutture, ristoranti, attivita }) {
+  function toggle(key) {
+    onChange({ ...perms, [key]: !perms[key] })
+  }
+  return (
+    <div>
+      {/* Sezioni generiche */}
+      <div style={{ fontSize: 13, color: '#555', marginBottom: 6 }}>Sezioni</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+        {PERMISSIONS.map(({ key, label }) => (
+          <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', background: perms[key] ? '#e8f4f8' : '#f5f5f5', padding: '6px 12px', borderRadius: 20, border: `1px solid ${perms[key] ? '#0099bb' : '#ddd'}` }}>
+            <input type="checkbox" checked={!!perms[key]} onChange={() => toggle(key)} style={{ margin: 0 }} />
+            {label}
+          </label>
+        ))}
+      </div>
+
+      {/* Struttura */}
+      {strutture?.length > 0 && (
+        <div style={{ marginBottom: 10 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', background: perms.struttura ? '#e8f4f8' : '#f5f5f5', padding: '6px 12px', borderRadius: 20, border: `1px solid ${perms.struttura ? '#0099bb' : '#ddd'}`, width: 'fit-content' }}>
+            <input type="checkbox" checked={!!perms.struttura} onChange={() => onChange({ ...perms, struttura: !perms.struttura, struttura_ids: perms.struttura ? [] : (perms.struttura_ids || []) })} style={{ margin: 0 }} />
+            Gestione struttura
+          </label>
+          {perms.struttura && strutture.length > 1 && (
+            <EntitySelector
+              label="Strutture accessibili"
+              entities={strutture}
+              selectedIds={perms.struttura_ids || []}
+              onChange={ids => onChange({ ...perms, struttura_ids: ids })}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Ristorante */}
+      {ristoranti?.length > 0 && (
+        <div style={{ marginBottom: 10 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', background: perms.ristorante ? '#e8f4f8' : '#f5f5f5', padding: '6px 12px', borderRadius: 20, border: `1px solid ${perms.ristorante ? '#0099bb' : '#ddd'}`, width: 'fit-content' }}>
+            <input type="checkbox" checked={!!perms.ristorante} onChange={() => onChange({ ...perms, ristorante: !perms.ristorante, ristorante_ids: perms.ristorante ? [] : (perms.ristorante_ids || []) })} style={{ margin: 0 }} />
+            Gestione ristorante
+          </label>
+          {perms.ristorante && ristoranti.length > 1 && (
+            <EntitySelector
+              label="Ristoranti accessibili"
+              entities={ristoranti}
+              selectedIds={perms.ristorante_ids || []}
+              onChange={ids => onChange({ ...perms, ristorante_ids: ids })}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Attività */}
+      {attivita?.length > 0 && (
+        <div style={{ marginBottom: 4 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', background: perms.attivita_gestione ? '#e8f4f8' : '#f5f5f5', padding: '6px 12px', borderRadius: 20, border: `1px solid ${perms.attivita_gestione ? '#0099bb' : '#ddd'}`, width: 'fit-content' }}>
+            <input type="checkbox" checked={!!perms.attivita_gestione} onChange={() => onChange({ ...perms, attivita_gestione: !perms.attivita_gestione, attivita_ids: perms.attivita_gestione ? [] : (perms.attivita_ids || []) })} style={{ margin: 0 }} />
+            Gestione attività
+          </label>
+          {perms.attivita_gestione && attivita.length > 1 && (
+            <EntitySelector
+              label="Attività accessibili"
+              entities={attivita}
+              selectedIds={perms.attivita_ids || []}
+              onChange={ids => onChange({ ...perms, attivita_ids: ids })}
+            />
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function StaffPage() {
+  const { strutture, ristoranti, attivita } = useAzienda()
   const [staff, setStaff]       = useState([])
   const [loading, setLoading]   = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -32,10 +133,6 @@ export default function StaffPage() {
     const data = await apiFetch('/api/users')
     setStaff(Array.isArray(data) ? data : [])
     setLoading(false)
-  }
-
-  function toggleFormPerm(key) {
-    setForm(f => ({ ...f, permissions: { ...f.permissions, [key]: !f.permissions[key] } }))
   }
 
   async function handleInvite(e) {
@@ -84,6 +181,32 @@ export default function StaffPage() {
     load()
   }
 
+  function permSummary(p) {
+    if (!p) return []
+    const labels = []
+    PERMISSIONS.forEach(({ key, label }) => { if (p[key]) labels.push(label) })
+    if (p.struttura) {
+      const ids = p.struttura_ids || []
+      if (ids.length && strutture?.length > 1) {
+        const names = strutture.filter(s => ids.includes(s.id)).map(s => s.name).join(', ')
+        labels.push(`Struttura (${names})`)
+      } else {
+        labels.push('Gestione struttura')
+      }
+    }
+    if (p.ristorante) {
+      const ids = p.ristorante_ids || []
+      if (ids.length && ristoranti?.length > 1) {
+        const names = ristoranti.filter(r => ids.includes(r.id)).map(r => r.name).join(', ')
+        labels.push(`Ristorante (${names})`)
+      } else {
+        labels.push('Gestione ristorante')
+      }
+    }
+    if (p.attivita_gestione) labels.push('Gestione attività')
+    return labels
+  }
+
   return (
     <div style={{ maxWidth: 860 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
@@ -103,7 +226,7 @@ export default function StaffPage() {
             Riceverà un'email con il link per impostare la password e accedere al pannello.
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
             <div>
               <label style={{ display: 'block', fontSize: 13, color: '#555', marginBottom: 4 }}>Email *</label>
               <input
@@ -124,21 +247,15 @@ export default function StaffPage() {
             </div>
           </div>
 
-          <div style={{ marginBottom: 16 }}>
+          <div style={{ marginBottom: 20 }}>
             <label style={{ display: 'block', fontSize: 13, color: '#555', marginBottom: 8 }}>Accessi consentiti</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {PERMISSIONS.map(({ key, label }) => (
-                <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', background: form.permissions[key] ? '#e8f4f8' : '#f5f5f5', padding: '6px 12px', borderRadius: 20, border: `1px solid ${form.permissions[key] ? '#0099bb' : '#ddd'}` }}>
-                  <input
-                    type="checkbox"
-                    checked={!!form.permissions[key]}
-                    onChange={() => toggleFormPerm(key)}
-                    style={{ margin: 0 }}
-                  />
-                  {label}
-                </label>
-              ))}
-            </div>
+            <PermissionForm
+              perms={form.permissions}
+              onChange={p => setForm(f => ({ ...f, permissions: p }))}
+              strutture={strutture}
+              ristoranti={ristoranti}
+              attivita={attivita}
+            />
           </div>
 
           {error && <p style={{ color: '#c00', fontSize: 13, margin: '0 0 12px' }}>{error}</p>}
@@ -172,8 +289,8 @@ export default function StaffPage() {
                   <div style={{ fontWeight: 600, fontSize: 15 }}>{member.full_name || '—'}</div>
                   <div style={{ fontSize: 13, color: '#666', marginTop: 2 }}>{member.email}</div>
                   <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {member.invited && !member.confirmed && (
-                      <span style={{ fontSize: 11, background: '#fff3cd', color: '#856404', padding: '2px 8px', borderRadius: 10 }}>In attesa conferma</span>
+                    {!member.confirmed && (
+                      <span style={{ fontSize: 11, background: '#fff3cd', color: '#856404', padding: '2px 8px', borderRadius: 10 }}>In attesa conferma email</span>
                     )}
                     {member.banned && (
                       <span style={{ fontSize: 11, background: '#fce8e8', color: '#c00', padding: '2px 8px', borderRadius: 10 }}>Sospeso</span>
@@ -183,7 +300,7 @@ export default function StaffPage() {
                     )}
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <button onClick={() => editingId === member.id ? setEditingId(null) : startEdit(member)}
                     style={{ background: '#f0f0f0', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontSize: 13 }}>
                     {editingId === member.id ? 'Annulla' : 'Modifica accessi'}
@@ -201,32 +318,27 @@ export default function StaffPage() {
 
               {editingId !== member.id && (
                 <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {PERMISSIONS.map(({ key, label }) => (
-                    <span key={key} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 10, background: (member.permissions || {})[key] ? '#e8f4f8' : '#f0f0f0', color: (member.permissions || {})[key] ? '#0066aa' : '#999' }}>
-                      {label}
-                    </span>
-                  ))}
+                  {permSummary(member.permissions).length === 0
+                    ? <span style={{ fontSize: 12, color: '#aaa', fontStyle: 'italic' }}>Nessun accesso configurato</span>
+                    : permSummary(member.permissions).map(l => (
+                        <span key={l} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 10, background: '#e8f4f8', color: '#0066aa' }}>{l}</span>
+                      ))
+                  }
                 </div>
               )}
 
               {editingId === member.id && (
                 <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #f0f0f0' }}>
-                  <div style={{ fontSize: 13, color: '#555', marginBottom: 8 }}>Accessi consentiti</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
-                    {PERMISSIONS.map(({ key, label }) => (
-                      <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', background: editPerms[key] ? '#e8f4f8' : '#f5f5f5', padding: '6px 12px', borderRadius: 20, border: `1px solid ${editPerms[key] ? '#0099bb' : '#ddd'}` }}>
-                        <input
-                          type="checkbox"
-                          checked={!!editPerms[key]}
-                          onChange={() => setEditPerms(p => ({ ...p, [key]: !p[key] }))}
-                          style={{ margin: 0 }}
-                        />
-                        {label}
-                      </label>
-                    ))}
-                  </div>
+                  <div style={{ fontSize: 13, color: '#555', marginBottom: 10 }}>Modifica accessi consentiti</div>
+                  <PermissionForm
+                    perms={editPerms}
+                    onChange={setEditPerms}
+                    strutture={strutture}
+                    ristoranti={ristoranti}
+                    attivita={attivita}
+                  />
                   <button onClick={() => savePerms(member.id)} disabled={saving}
-                    style={{ background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', cursor: 'pointer', fontSize: 13 }}>
+                    style={{ marginTop: 14, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', cursor: 'pointer', fontSize: 13 }}>
                     {saving ? 'Salvataggio...' : 'Salva'}
                   </button>
                 </div>

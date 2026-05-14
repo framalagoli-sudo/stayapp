@@ -23,9 +23,12 @@ export function AziendaProvider({ children }) {
   async function loadData() {
     setLoading(true)
     try {
-      const isAziendaRole = ['admin_azienda', 'super_admin'].includes(profile.role)
+      // staff con azienda_id = company-level staff, carica dati azienda come admin_azienda
+      const isAziendaRole = ['admin_azienda', 'super_admin'].includes(profile.role) ||
+        (profile.role === 'staff' && !!profile.azienda_id)
+
       if (!isAziendaRole) {
-        // admin_struttura / staff: just set their fixed property
+        // legacy staff/admin_struttura con property_id
         _setSelectedStrutturaId(profile.property_id)
         setLoading(false)
         return
@@ -35,19 +38,33 @@ export function AziendaProvider({ children }) {
       if (profile.azienda_id) promises.unshift(apiFetch(`/api/aziende/${profile.azienda_id}`))
 
       const results = await Promise.all(promises)
+
+      let allStrutture = [], allRistoranti = [], allAttivita = []
       if (profile.azienda_id) {
         setAzienda(results[0])
-        setStrutture(results[1])
-        setRistoranti(results[2])
-        setAttivita(results[3] || [])
-        _setSelectedStrutturaId(id => id || results[1][0]?.id || null)
-        _setSelectedRistoranteId(id => id || results[2][0]?.id || null)
-        _setSelectedAttivitaId(id => id || results[3]?.[0]?.id || null)
+        allStrutture = results[1] || []
+        allRistoranti = results[2] || []
+        allAttivita = results[3] || []
       } else {
-        setStrutture(results[0])
-        setRistoranti(results[1])
-        setAttivita(results[2] || [])
+        allStrutture = results[0] || []
+        allRistoranti = results[1] || []
+        allAttivita = results[2] || []
       }
+
+      // Per staff: filtra alle entità permesse (ID specifici; vuoto = tutte)
+      if (profile.role === 'staff') {
+        const perm = profile.permissions || {}
+        if (perm.struttura_ids?.length) allStrutture = allStrutture.filter(s => perm.struttura_ids.includes(s.id))
+        if (perm.ristorante_ids?.length) allRistoranti = allRistoranti.filter(r => perm.ristorante_ids.includes(r.id))
+        if (perm.attivita_ids?.length) allAttivita = allAttivita.filter(a => perm.attivita_ids.includes(a.id))
+      }
+
+      setStrutture(allStrutture)
+      setRistoranti(allRistoranti)
+      setAttivita(allAttivita)
+      _setSelectedStrutturaId(id => id || allStrutture[0]?.id || null)
+      _setSelectedRistoranteId(id => id || allRistoranti[0]?.id || null)
+      _setSelectedAttivitaId(id => id || allAttivita[0]?.id || null)
     } catch (e) {
       console.error('AziendaContext load error:', e)
     } finally {
