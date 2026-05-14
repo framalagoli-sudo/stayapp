@@ -21,6 +21,11 @@ export default function SecurityPage() {
 
   async function startEnroll() {
     setError(null); setSuccess(null); setLoading(true)
+    // Rimuovi eventuali fattori non verificati rimasti da tentativi precedenti
+    const { data: existing } = await supabase.auth.mfa.listFactors()
+    const unverified = existing?.totp?.filter(f => f.status === 'unverified') ?? []
+    for (const f of unverified) await supabase.auth.mfa.unenroll({ factorId: f.id })
+
     const { data, error: err } = await supabase.auth.mfa.enroll({ factorType: 'totp' })
     setLoading(false)
     if (err) return setError(err.message)
@@ -105,10 +110,9 @@ export default function SecurityPage() {
             Scansiona il QR con <strong>Google Authenticator</strong> o <strong>Authy</strong>, poi inserisci il codice a 6 cifre per confermare.
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
-            <img
-              src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(enrollData.totp.qr_code)}`}
-              alt="QR Code 2FA"
-              style={{ width: 200, height: 200, border: '1px solid #e5e7eb', borderRadius: 8, padding: 8, background: '#fff' }}
+            <div
+              dangerouslySetInnerHTML={{ __html: enrollData.totp.qr_code }}
+              style={{ width: 200, height: 200, border: '1px solid #e5e7eb', borderRadius: 8, padding: 8, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             />
           </div>
           <details style={{ marginBottom: 20 }}>
