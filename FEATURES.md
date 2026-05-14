@@ -339,7 +339,7 @@ Priorità assoluta prima di acquisire clienti paganti. Diviso in fasi.
 - [x] 🔴 **CORS lockdown** — whitelist esplicita domini
 - [x] 🔴 **Validazione input con zod** — tutti gli endpoint pubblici (contatti, prenotazioni, newsletter, demo)
 - [x] 🔴 **Backup automatico notturno** — cron job Railway 03:00 UTC: Supabase client → JSON gzip → Cloudflare R2 EU, retention 30gg ✅ testato 2026-05-14
-- [ ] 🔴 **2FA login admin** — TOTP via Supabase Auth (Google Authenticator)
+- [x] 🔴 **2FA login admin** — TOTP via Supabase Auth (Google Authenticator / Authy), enrollment QR, ProtectedRoute AAL check ✅ 2026-05-14
 
 ### Fase 2 — Prima di aggiungere altri clienti
 
