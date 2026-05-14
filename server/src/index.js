@@ -31,9 +31,11 @@ import newsletterRouter, { runScheduledSends } from './routes/newsletter.js'
 import analyticsRouter from './routes/analytics.js'
 import bookingRouter from './routes/booking.js'
 import { runBackup } from './lib/backup.js'
+import { auditLog } from './middleware/auditLog.js'
 import cron from 'node-cron'
 
 const app = express()
+app.set('trust proxy', 1) // IP reale dietro Railway/Cloudflare
 const PORT = process.env.PORT || 3001
 
 // ── Security headers ────────────────────────────────────────────────────────
@@ -86,6 +88,7 @@ app.use('/api/guest', guestLimiter)
 app.use('/api/auth',  authLimiter)
 
 app.use(express.json({ limit: '2mb' })) // limite payload
+app.use(auditLog) // audit log PATCH/DELETE su tutte le route admin
 
 app.use('/api/auth',        authRouter)
 app.use('/api/guest',       guestRouter)
@@ -140,6 +143,35 @@ app.post('/api/admin/backup', async (req, res) => {
   } finally {
     console.log = _log
     console.error = _err
+  }
+})
+
+// Audit log — solo super_admin
+app.get('/api/admin/audit-log', async (req, res) => {
+  const authHeader = req.headers.authorization
+  if (!authHeader) return res.status(401).json({ error: 'Non autorizzato' })
+  try {
+    const { createClient } = await import('@supabase/supabase-js')
+    const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+    const { data: { user }, error: authErr } = await sb.auth.getUser(authHeader.replace('Bearer ', ''))
+    if (authErr || !user) return res.status(401).json({ error: 'Non autorizzato' })
+    const { data: profile } = await sb.from('profiles').select('role').eq('id', user.id).single()
+    if (profile?.role !== 'super_admin') return res.status(403).json({ error: 'Accesso negato' })
+
+    const limit  = Math.min(Number(req.query.limit)  || 50, 200)
+    const offset = Number(req.query.offset) || 0
+    let query = sb.from('audit_log').select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
+    if (req.query.method)      query = query.eq('method', req.query.method.toUpperCase())
+    if (req.query.entity_tipo) query = query.eq('entity_tipo', req.query.entity_tipo)
+    if (req.query.user_email)  query = query.ilike('user_email', `%${req.query.user_email}%`)
+
+    const { data, count, error } = await query
+    if (error) return res.status(500).json({ error: error.message })
+    res.json({ data, count, limit, offset })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
   }
 })
 

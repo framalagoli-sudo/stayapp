@@ -305,6 +305,7 @@ export default function AdminLayout() {
             <NavLink to="/admin/blog"        style={({ isActive }) => navLinkStyle(isActive)}>Blog & News</NavLink>
             <NavLink to="/admin/newsletter" style={({ isActive }) => navLinkStyle(isActive)}>Newsletter</NavLink>
             <NavLink to="/admin/contatti"   style={({ isActive }) => navLinkStyle(isActive)}>Contatti</NavLink>
+            <NavLink to="/admin/audit-log"  style={({ isActive }) => navLinkStyle(isActive)}>Audit log</NavLink>
             {/* Sub-nav struttura quando super_admin gestisce una struttura via URL */}
             {strutturaUrlId && (
               <>
