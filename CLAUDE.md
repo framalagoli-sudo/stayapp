@@ -786,7 +786,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - [ ] **Dominio** — acquisto + configurazione (vedi nota 21 per checklist completa)
 - [ ] **Pagamenti Stripe** — checkout booking risorse ed eventi (struttura già pronta: colonne pagamento_stato/pagamento_id su prenotazioni)
 - [ ] **Multi-lingua** — IT/EN/DE per PWA ospite
-- [ ] **Gestione staff** — invita collaboratori via email, ruoli, limitazione accessi
+- [x] **Gestione staff** — invita collaboratori via email, permessi granulari per sezione, ban/riabilita, elimina
 
 ### Tecnico / infrastruttura
 - [ ] **Collegare GitHub → Vercel auto-deploy** (Settings → Git nel dashboard Vercel)
