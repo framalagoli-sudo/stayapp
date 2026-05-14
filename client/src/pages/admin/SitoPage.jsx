@@ -415,15 +415,15 @@ export default function SitoPage({ entityTipo }) {
     fontWeight: active ? 600 : 400,
   })
 
-  // ── MenuRow ───────────────────────────────────────────────────────────────────
-  function MenuRow({ p, isChild = false }) {
+  // ── renderMenuRow — funzione (non componente React!) per evitare unmount/remount durante drag ──
+  function renderMenuRow(p, isChild = false) {
     const topIdx    = menuTop.indexOf(p)
     const canIndent = !isChild && topIdx > 0 && menuSubs(menuTop[topIdx - 1]?.id).length === 0
     const isDragging = dragId === p.id
     const isDragOver = dragOverId === p.id && !isChild
-
     return (
       <div
+        key={p.id}
         onDragOver={!isChild ? e => onDragOver(e, p) : undefined}
         onDrop={!isChild ? e => onDrop(e, p) : undefined}
         onDragEnd={resetDrag}
@@ -441,10 +441,9 @@ export default function SitoPage({ entityTipo }) {
         }}
       >
         {isChild && <div style={{ position: 'absolute', left: -20, top: '50%', width: 14, height: 1, background: '#ddd' }} />}
-        {/* Solo il grip è draggable */}
         {!isChild ? (
           <div
-            draggable
+            draggable={true}
             onDragStart={e => { e.stopPropagation(); setDragId(p.id); e.dataTransfer.effectAllowed = 'move' }}
             style={{ padding: '4px 6px', cursor: 'grab', color: '#bbb', flexShrink: 0, display: 'flex', alignItems: 'center', userSelect: 'none' }}
           >
@@ -467,18 +466,12 @@ export default function SitoPage({ entityTipo }) {
           <span style={{ marginLeft: 6, fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>/{p.slug}</span>
         </div>
         {canIndent && (
-          <button onClick={() => makeChild(p)} style={btnAction()} title="Rendi sottopagina di quella sopra">
-            Rendi sottopagina ↳
-          </button>
+          <button onClick={() => makeChild(p)} style={btnAction()}>Rendi sottopagina ↳</button>
         )}
         {isChild && (
-          <button onClick={() => makeTopLevel(p)} style={btnAction()} title="Riporta al primo livello">
-            ↱ Al primo livello
-          </button>
+          <button onClick={() => makeTopLevel(p)} style={btnAction()}>↱ Al primo livello</button>
         )}
-        <button onClick={() => removeFromMenu(p)} style={btnAction('remove')} title="Rimuovi dal menu">
-          ✕ Rimuovi
-        </button>
+        <button onClick={() => removeFromMenu(p)} style={btnAction('remove')}>✕ Rimuovi</button>
       </div>
     )
   }
@@ -511,8 +504,8 @@ export default function SitoPage({ entityTipo }) {
           <div>
             {menuTop.map(p => (
               <div key={p.id}>
-                <MenuRow p={p} />
-                {menuSubs(p.id).map(child => <MenuRow key={child.id} p={child} isChild />)}
+                {renderMenuRow(p, false)}
+                {menuSubs(p.id).map(child => renderMenuRow(child, true))}
               </div>
             ))}
           </div>
