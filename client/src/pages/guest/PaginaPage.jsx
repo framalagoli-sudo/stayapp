@@ -124,6 +124,8 @@ export default function PaginaPage({ entityType }) {
   loadFont(theme.fontBody)
 
   const mini       = entity.minisito || {}
+  const headerCfg  = { style: 'dark', always_visible: false, logo_in_nav: true, show_cta: false, cta_text: 'Prenota ora', cta_url: '', ...(mini.header_cfg || {}) }
+  const footerCfg  = { style: 'dark', copyright: '', show_socials: true, extra_links: [], ...(mini.footer_cfg || {}) }
   const homeUrl    = entityType === 'struttura' ? `/s/${slug}` : entityType === 'ristorante' ? `/r/${slug}` : `/a/${slug}`
   const privacyUrl = `${homeUrl}/privacy`
   const pageBase   = entityType === 'struttura' ? `/s/${slug}/p/` : entityType === 'ristorante' ? `/r/${slug}/p/` : `/a/${slug}/p/`
@@ -447,8 +449,25 @@ export default function PaginaPage({ entityType }) {
     }
   }
 
+  // Nav style derived from headerCfg
+  const navIsDark = headerCfg.style === 'dark' || headerCfg.style === 'colored'
+  const navBg = headerCfg.style === 'dark' ? 'rgba(18,18,32,0.95)'
+    : headerCfg.style === 'light' ? 'rgba(255,255,255,0.96)'
+    : headerCfg.style === 'colored' ? primary
+    : 'rgba(0,0,0,0.15)'
+  const navTextColor = navIsDark ? 'rgba(255,255,255,0.85)' : '#1a1a2e'
+  const navTextColorActive = navIsDark ? '#fff' : primary
+  const navBorderColor = navIsDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
+  const navVisible = headerCfg.always_visible || scrolled
   const navBtnPrimary = { padding: '8px 18px', borderRadius: 50, background: primary, color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none', border: 'none', cursor: 'pointer' }
-  const navBtnSecondary = { padding: '8px 16px', borderRadius: 50, background: 'rgba(255,255,255,0.12)', color: '#fff', fontSize: 13, fontWeight: 600, textDecoration: 'none', border: '1px solid rgba(255,255,255,0.2)' }
+  const navBtnSecondary = { padding: '8px 16px', borderRadius: 50, background: navIsDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)', color: navIsDark ? '#fff' : '#1a1a2e', fontSize: 13, fontWeight: 600, textDecoration: 'none', border: `1px solid ${navIsDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)'}` }
+
+  // Footer style
+  const footerBg   = footerCfg.style === 'light' ? '#f4f4f7' : '#111'
+  const footerText = footerCfg.style === 'light' ? '#666' : '#555'
+  const footerLink = footerCfg.style === 'light' ? '#888' : '#aaa'
+  const footerYear = new Date().getFullYear()
+  const footerCopy = footerCfg.copyright || `© ${footerYear} ${entity.name} · Powered by StayApp`
 
   return (
     <>
@@ -464,17 +483,17 @@ export default function PaginaPage({ entityType }) {
         .ft-grid.inv .ft-txt-col { order: 0; }
         .steps-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 32px; }
         .pp-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-          background: rgba(18,18,32,0.93); backdrop-filter: blur(14px);
-          border-bottom: 1px solid rgba(255,255,255,0.08); padding: 0 32px;
+          background: ${navBg}; backdrop-filter: blur(14px);
+          border-bottom: 1px solid ${navBorderColor}; padding: 0 32px;
           display: flex; align-items: center; justify-content: space-between; height: 64px;
-          transform: translateY(${scrolled ? '0' : '-100%'}); transition: transform 0.3s ease;
+          transform: translateY(${navVisible ? '0' : '-100%'}); transition: transform 0.3s ease;
         }
         .pp-nav-links { display: flex; align-items: center; gap: 4px; }
-        .pp-nav-link { color: rgba(255,255,255,0.75); text-decoration: none; font-size: 13; padding: 6px 12px; border-radius: 6px; white-space: nowrap; position: relative; }
-        .pp-nav-link:hover, .pp-nav-link.active { color: #fff; background: rgba(255,255,255,0.08); }
-        .pp-dropdown { position: absolute; top: 100%; left: 0; min-width: 180px; background: #1a1a2e; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); padding: 6px 0; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-        .pp-dropdown a { display: block; padding: 9px 16px; color: rgba(255,255,255,0.8); text-decoration: none; font-size: 13px; }
-        .pp-dropdown a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .pp-nav-link { color: ${navTextColor}; text-decoration: none; font-size: 13px; padding: 6px 12px; border-radius: 6px; white-space: nowrap; position: relative; }
+        .pp-nav-link:hover, .pp-nav-link.active { color: ${navTextColorActive}; background: ${navIsDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}; }
+        .pp-dropdown { position: absolute; top: 100%; left: 0; min-width: 180px; background: ${navIsDark ? '#1a1a2e' : '#fff'}; border-radius: 10px; border: 1px solid ${navBorderColor}; padding: 6px 0; box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
+        .pp-dropdown a { display: block; padding: 9px 16px; color: ${navTextColor}; text-decoration: none; font-size: 13px; }
+        .pp-dropdown a:hover { background: ${navIsDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'}; color: ${navTextColorActive}; }
         .pp-hero { padding: 120px 24px 72px; background: linear-gradient(135deg, #1a1a2e 0%, #0d1a2a 100%); }
         @media (max-width: 768px) {
           .land-gallery { grid-template-columns: repeat(2, 1fr); }
@@ -490,8 +509,10 @@ export default function PaginaPage({ entityType }) {
       {/* Nav */}
       <nav className="pp-nav">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {entity.logo_url && <img src={entity.logo_url} alt="logo" style={{ height: 28, objectFit: 'contain' }} />}
-          <a href={homeUrl} style={{ fontFamily: heading, fontWeight: 700, fontSize: 15, color: '#fff', textDecoration: 'none' }}>{entity.name}</a>
+          {headerCfg.logo_in_nav && entity.logo_url && (
+            <img src={entity.logo_url} alt="logo" style={{ height: 28, objectFit: 'contain' }} />
+          )}
+          <a href={homeUrl} style={{ fontFamily: heading, fontWeight: 700, fontSize: 15, color: navTextColorActive, textDecoration: 'none' }}>{entity.name}</a>
         </div>
         <div className="pp-nav-links">
           <a href={homeUrl} className="pp-nav-link">Home</a>
@@ -514,6 +535,9 @@ export default function PaginaPage({ entityType }) {
               </div>
             )
           })}
+          {headerCfg.show_cta && headerCfg.cta_url && (
+            <a href={headerCfg.cta_url} style={navBtnPrimary}>{headerCfg.cta_text || 'Prenota'}</a>
+          )}
         </div>
       </nav>
 
@@ -530,11 +554,21 @@ export default function PaginaPage({ entityType }) {
       {blocks.map(block => renderBlock(block))}
 
       {/* Footer */}
-      <footer style={{ background: '#111', padding: '28px 24px', textAlign: 'center', marginTop: 0 }}>
-        <p style={{ fontSize: 12, color: '#555' }}>© {new Date().getFullYear()} {entity.name} · Powered by StayApp</p>
-        <p style={{ fontSize: 11, color: '#888', marginTop: 8 }}>
-          <a href={privacyUrl} style={{ color: '#aaa', textDecoration: 'none', marginRight: 12 }}>Privacy Policy</a>
-          <a href={`${homeUrl}/cookie`} style={{ color: '#aaa', textDecoration: 'none' }}>Cookie Policy</a>
+      <footer style={{ background: footerBg, padding: '32px 24px', textAlign: 'center' }}>
+        {footerCfg.show_socials && mini.social && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 16 }}>
+            {mini.social.instagram && <a href={mini.social.instagram} target="_blank" rel="noopener noreferrer" style={{ color: footerLink, fontSize: 13, textDecoration: 'none' }}>Instagram</a>}
+            {mini.social.facebook  && <a href={mini.social.facebook}  target="_blank" rel="noopener noreferrer" style={{ color: footerLink, fontSize: 13, textDecoration: 'none' }}>Facebook</a>}
+            {mini.social.whatsapp  && <a href={mini.social.whatsapp}  target="_blank" rel="noopener noreferrer" style={{ color: footerLink, fontSize: 13, textDecoration: 'none' }}>WhatsApp</a>}
+          </div>
+        )}
+        <p style={{ fontSize: 12, color: footerText }}>{footerCopy}</p>
+        <p style={{ fontSize: 11, color: footerLink, marginTop: 10, display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <a href={privacyUrl} style={{ color: footerLink, textDecoration: 'none' }}>Privacy Policy</a>
+          <a href={`${homeUrl}/cookie`} style={{ color: footerLink, textDecoration: 'none' }}>Cookie Policy</a>
+          {(footerCfg.extra_links || []).filter(l => l.label && l.url).map(l => (
+            <a key={l.id} href={l.url} style={{ color: footerLink, textDecoration: 'none' }}>{l.label}</a>
+          ))}
         </p>
       </footer>
 

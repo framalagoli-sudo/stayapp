@@ -201,6 +201,15 @@ export default function SitoPage({ entityTipo }) {
   const [dragId,     setDragId]     = useState(null)
   const [dragOverId, setDragOverId] = useState(null)
 
+  // Header/Footer config
+  const DEFAULT_HEADER = { style: 'dark', always_visible: false, logo_in_nav: true, show_cta: false, cta_text: 'Prenota ora', cta_url: '' }
+  const DEFAULT_FOOTER = { style: 'dark', copyright: '', show_socials: true, extra_links: [] }
+  const [entityData,  setEntityData]  = useState(null)
+  const [headerCfg,   setHeaderCfg]   = useState(DEFAULT_HEADER)
+  const [footerCfg,   setFooterCfg]   = useState(DEFAULT_FOOTER)
+  const [savingCfg,   setSavingCfg]   = useState(false)
+  const [savedCfg,    setSavedCfg]    = useState(false)
+
   useEffect(() => { if (entityId) load() }, [entityId])
 
   async function load() {
@@ -211,6 +220,12 @@ export default function SitoPage({ entityTipo }) {
     ])
     setPagine(Array.isArray(pData) ? pData : [])
     if (eData?.slug) setEntitySlug(eData.slug)
+    if (eData) {
+      setEntityData(eData)
+      const mini = eData.minisito || {}
+      if (mini.header_cfg) setHeaderCfg(h => ({ ...h, ...mini.header_cfg }))
+      if (mini.footer_cfg) setFooterCfg(f => ({ ...f, ...mini.footer_cfg }))
+    }
     setLoading(false)
   }
 
@@ -219,6 +234,22 @@ export default function SitoPage({ entityTipo }) {
     if (entityTipo === 'ristorante') return apiFetch(`/api/ristoranti/${entityId}`)
     if (entityTipo === 'attivita')   return apiFetch(`/api/attivita/${entityId}`)
     return null
+  }
+
+  async function saveHeaderFooter() {
+    if (!entityData) return
+    setSavingCfg(true)
+    const endpoint = entityTipo === 'struttura' ? `/api/properties/${entityId}`
+      : entityTipo === 'ristorante' ? `/api/ristoranti/${entityId}`
+      : `/api/attivita/${entityId}`
+    await apiFetch(endpoint, {
+      method: 'PATCH',
+      body: JSON.stringify({ minisito: { ...(entityData.minisito || {}), header_cfg: headerCfg, footer_cfg: footerCfg } }),
+    })
+    setEntityData(d => ({ ...d, minisito: { ...(d?.minisito || {}), header_cfg: headerCfg, footer_cfg: footerCfg } }))
+    setSavingCfg(false)
+    setSavedCfg(true)
+    setTimeout(() => setSavedCfg(false), 2500)
   }
 
   function previewUrl(p) {
@@ -666,6 +697,126 @@ export default function SitoPage({ entityTipo }) {
             })}
           </div>
         )}
+      </div>
+
+      {/* ── SEZIONE 3: HEADER & FOOTER ── */}
+      <div style={{ marginTop: 36 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div>
+            <h2 style={{ margin: '0 0 4px', fontSize: 18, color: '#1a1a2e' }}>Header & Footer</h2>
+            <p style={{ margin: 0, fontSize: 13, color: '#888' }}>Personalizza la barra di navigazione e il footer del sito.</p>
+          </div>
+          <button
+            onClick={saveHeaderFooter}
+            disabled={savingCfg || !entityData}
+            style={{ background: savedCfg ? '#d4edda' : '#1a1a2e', color: savedCfg ? '#155724' : '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontSize: 14, fontWeight: 600, transition: 'background 0.3s' }}
+          >
+            {savingCfg ? 'Salvataggio…' : savedCfg ? '✓ Salvato' : 'Salva modifiche'}
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+
+          {/* ── Navbar ── */}
+          <div style={{ ...cardStyle, padding: 20 }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>Navigazione (navbar)</div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 8 }}>Stile</label>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {[['dark','Scuro'],['light','Chiaro'],['colored','Colorato'],['transparent','Trasparente']].map(([val, lbl]) => (
+                  <button key={val} onClick={() => setHeaderCfg(h => ({ ...h, style: val }))}
+                    style={{ padding: '5px 14px', borderRadius: 20, fontSize: 12, cursor: 'pointer', fontWeight: headerCfg.style === val ? 700 : 400,
+                      border: headerCfg.style === val ? '2px solid #1a1a2e' : '1.5px solid #e0e0e0',
+                      background: headerCfg.style === val ? '#1a1a2e' : '#fff',
+                      color: headerCfg.style === val ? '#fff' : '#555' }}>
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
+                <input type="checkbox" checked={headerCfg.always_visible} onChange={e => setHeaderCfg(h => ({ ...h, always_visible: e.target.checked }))} />
+                <span><strong>Sempre visibile</strong> <span style={{ color: '#888', fontSize: 11 }}>(altrimenti appare scorrendo)</span></span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
+                <input type="checkbox" checked={headerCfg.logo_in_nav} onChange={e => setHeaderCfg(h => ({ ...h, logo_in_nav: e.target.checked }))} />
+                <span><strong>Mostra logo</strong> nel nav</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
+                <input type="checkbox" checked={headerCfg.show_cta} onChange={e => setHeaderCfg(h => ({ ...h, show_cta: e.target.checked }))} />
+                <span><strong>Bottone CTA</strong> nel nav</span>
+              </label>
+            </div>
+
+            {headerCfg.show_cta && (
+              <div style={{ marginTop: 14, padding: 14, background: '#f9f9fb', borderRadius: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <input type="text" placeholder="Testo bottone (es. Prenota ora)" value={headerCfg.cta_text}
+                  onChange={e => setHeaderCfg(h => ({ ...h, cta_text: e.target.value }))}
+                  style={{ padding: '8px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13 }} />
+                <input type="url" placeholder="URL (es. https://...)" value={headerCfg.cta_url}
+                  onChange={e => setHeaderCfg(h => ({ ...h, cta_url: e.target.value }))}
+                  style={{ padding: '8px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13 }} />
+              </div>
+            )}
+          </div>
+
+          {/* ── Footer ── */}
+          <div style={{ ...cardStyle, padding: 20 }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>Footer</div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 8 }}>Stile</label>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {[['dark','Scuro'],['light','Chiaro']].map(([val, lbl]) => (
+                  <button key={val} onClick={() => setFooterCfg(f => ({ ...f, style: val }))}
+                    style={{ padding: '5px 14px', borderRadius: 20, fontSize: 12, cursor: 'pointer', fontWeight: footerCfg.style === val ? 700 : 400,
+                      border: footerCfg.style === val ? '2px solid #1a1a2e' : '1.5px solid #e0e0e0',
+                      background: footerCfg.style === val ? '#1a1a2e' : '#fff',
+                      color: footerCfg.style === val ? '#fff' : '#555' }}>
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 6 }}>Copyright personalizzato</label>
+                <input type="text" placeholder={`© ${new Date().getFullYear()} Nome · Powered by StayApp`}
+                  value={footerCfg.copyright}
+                  onChange={e => setFooterCfg(f => ({ ...f, copyright: e.target.value }))}
+                  style={{ width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }} />
+                <span style={{ fontSize: 10, color: '#aaa' }}>Lascia vuoto per il testo automatico</span>
+              </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
+                <input type="checkbox" checked={footerCfg.show_socials} onChange={e => setFooterCfg(f => ({ ...f, show_socials: e.target.checked }))} />
+                <span><strong>Social links</strong> nel footer</span>
+              </label>
+            </div>
+
+            <div style={{ marginTop: 14 }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 8 }}>Link aggiuntivi footer</label>
+              {(footerCfg.extra_links || []).map((lnk, i) => (
+                <div key={lnk.id || i} style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
+                  <input type="text" placeholder="Testo" value={lnk.label}
+                    onChange={e => setFooterCfg(f => ({ ...f, extra_links: f.extra_links.map((l, j) => j === i ? { ...l, label: e.target.value } : l) }))}
+                    style={{ flex: 1, padding: '6px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12 }} />
+                  <input type="url" placeholder="URL" value={lnk.url}
+                    onChange={e => setFooterCfg(f => ({ ...f, extra_links: f.extra_links.map((l, j) => j === i ? { ...l, url: e.target.value } : l) }))}
+                    style={{ flex: 2, padding: '6px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12 }} />
+                  <button onClick={() => setFooterCfg(f => ({ ...f, extra_links: f.extra_links.filter((_, j) => j !== i) }))}
+                    style={{ background: '#fce8e8', border: 'none', borderRadius: 6, padding: '6px 9px', cursor: 'pointer', color: '#c00', fontSize: 12 }}>✕</button>
+                </div>
+              ))}
+              <button onClick={() => setFooterCfg(f => ({ ...f, extra_links: [...(f.extra_links || []), { id: crypto.randomUUID(), label: '', url: '' }] }))}
+                style={{ ...btnAction('add'), marginTop: 4 }}>+ Aggiungi link</button>
+            </div>
+          </div>
+
+        </div>
       </div>
 
       {/* ── Modal nuova pagina ── */}

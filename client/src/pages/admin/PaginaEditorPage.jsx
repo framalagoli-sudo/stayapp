@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
-import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, blockEmoji } from '../../lib/blockTypes'
+import {
+  GripVertical, AlignLeft, Image, Grid, Users, List, Star, BarChart2, Zap,
+  MessageCircle, Tag, Package, HelpCircle, Video, Settings, Compass, Map,
+  Calendar, FileText, Clock, Mail, Phone, MapPin, ChevronDown, ChevronUp,
+  Plus, Trash2, ImageIcon,
+} from 'lucide-react'
+import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel } from '../../lib/blockTypes'
 
 function uid() { return crypto.randomUUID() }
 
@@ -10,6 +16,29 @@ function slugify(s) {
     .replace(/[àáâ]/g,'a').replace(/[èéê]/g,'e').replace(/[ìí]/g,'i')
     .replace(/[òó]/g,'o').replace(/[ùú]/g,'u').replace(/ç/g,'c')
     .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'pagina'
+}
+
+// ── Block icon + color mapping ────────────────────────────────────────────────
+const BLOCK_ICON_MAP = {
+  about: AlignLeft, foto_testo: Image, paragrafi: Grid,
+  team: Users, steps: List, highlights: Star, stats: BarChart2,
+  cta_banner: Zap, testimonianze: MessageCircle, promozioni: Tag,
+  pacchetti: Package, faq: HelpCircle, gallery: ImageIcon, video: Video,
+  services: Settings, activities: Compass, excursions: Map, eventi: Calendar,
+  news: FileText, booking: Clock, newsletter: Mail, contatti: Phone,
+  show_map: MapPin,
+}
+const GROUP_COLORS = {
+  layout: '#5b6af8', marketing: '#f97316', media: '#0891b2',
+  servizi: '#16a34a', conversione: '#9333ea',
+}
+function blockColor(type) {
+  const grp = BLOCK_TYPES.find(b => b.type === type)?.group
+  return GROUP_COLORS[grp] || '#666'
+}
+function BlockTypeIcon({ type, size = 15, muted = false }) {
+  const Icon = BLOCK_ICON_MAP[type] || FileText
+  return <Icon size={size} strokeWidth={1.5} color={muted ? '#aaa' : blockColor(type)} />
 }
 
 // ── ItemListEditor ────────────────────────────────────────────────────────────
@@ -25,7 +54,7 @@ function ItemListEditor({ items = [], onChange, fields, newItem }) {
   return (
     <div>
       {items.map((it, idx) => (
-        <div key={it.id || idx} style={{ background: '#f9f9fb', borderRadius: 8, padding: 12, marginBottom: 8 }}>
+        <div key={it.id || idx} style={{ background: '#f9f9fb', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid #eee' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
             <div style={{ display: 'flex', gap: 4 }}>
               <button onClick={() => move(idx, -1)} style={tinyBtn}>▲</button>
@@ -51,7 +80,7 @@ function ItemListEditor({ items = [], onChange, fields, newItem }) {
           ))}
         </div>
       ))}
-      <button onClick={add} style={{ width: '100%', padding: '8px', background: '#f0f4ff', border: '1px dashed #99b', borderRadius: 8, cursor: 'pointer', fontSize: 13, color: '#334' }}>
+      <button onClick={add} style={{ width: '100%', padding: '8px', background: '#f0f4ff', border: '1px dashed #c8d0f0', borderRadius: 8, cursor: 'pointer', fontSize: 13, color: '#334' }}>
         + Aggiungi elemento
       </button>
     </div>
@@ -64,169 +93,164 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
   const upd = (key, val) => onChange({ ...data, [key]: val })
 
   if (['gallery','services','activities','excursions','eventi','news','booking','contatti','show_map'].includes(type)) {
-    return <p style={{ fontSize: 13, color: '#888', fontStyle: 'italic', margin: 0 }}>Questo blocco visualizza automaticamente i dati dell'entità — nessuna configurazione necessaria.</p>
+    return (
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: 12, background: '#f8f9ff', borderRadius: 8, border: '1px solid #e8ecff' }}>
+        <BlockTypeIcon type={type} size={16} />
+        <p style={{ fontSize: 13, color: '#555', fontStyle: 'italic', margin: 0, lineHeight: 1.5 }}>
+          Questo blocco visualizza automaticamente i dati dell'entità — nessuna configurazione necessaria.
+        </p>
+      </div>
+    )
   }
 
   switch (type) {
-    case 'about':
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <Field label="Titolo sezione" value={data.title} onChange={v => upd('title', v)} />
-          <Field label="Testo" value={data.text} onChange={v => upd('text', v)} multiline rows={5} />
-        </div>
-      )
-    case 'foto_testo':
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <Field label="Titolo" value={data.title} onChange={v => upd('title', v)} />
-          <Field label="Testo" value={data.text} onChange={v => upd('text', v)} multiline rows={4} />
-          <Field label="URL immagine" value={data.image_url} onChange={v => upd('image_url', v)} placeholder="https://..." />
-          {data.image_url && <img src={data.image_url} alt="" style={{ maxHeight: 120, borderRadius: 6, objectFit: 'cover', width: '100%' }} />}
-          <UploadBtn label="Carica immagine" entityId={entityId} entityTipo={entityTipo} onUrl={url => upd('image_url', url)} />
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
-            <input type="checkbox" checked={!!data.inverti} onChange={e => upd('inverti', e.target.checked)} />
-            Inverti: testo a sinistra, immagine a destra
-          </label>
-          <Field label="Testo pulsante (opz.)" value={data.button_label} onChange={v => upd('button_label', v)} />
-          <Field label="URL pulsante (opz.)" value={data.button_url} onChange={v => upd('button_url', v)} placeholder="https://..." />
-        </div>
-      )
-    case 'cta_banner':
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <Field label="Titolo" value={data.title} onChange={v => upd('title', v)} />
-          <Field label="Sottotitolo" value={data.subtitle} onChange={v => upd('subtitle', v)} />
-          <Field label="Testo pulsante" value={data.button_text} onChange={v => upd('button_text', v)} />
-          <Field label="URL pulsante" value={data.button_url} onChange={v => upd('button_url', v)} placeholder="https://..." />
-        </div>
-      )
-    case 'video':
-      return <Field label="URL video (YouTube o Vimeo)" value={data.url} onChange={v => upd('url', v)} placeholder="https://youtube.com/watch?v=..." />
-    case 'newsletter':
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <Field label="Titolo sezione" value={data.title} onChange={v => upd('title', v)} />
-          <Field label="Sottotitolo" value={data.subtitle} onChange={v => upd('subtitle', v)} />
-        </div>
-      )
-    case 'highlights':
-      return (
-        <div>
-          <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 10 }} />
-          <ItemListEditor items={data.items} onChange={v => upd('items', v)}
-            newItem={{ icon: 'star', text: '' }}
-            fields={[{ key: 'icon', label: 'Icona (es. star, heart, wifi)', placeholder: 'star' }, { key: 'text', label: 'Testo' }]} />
-        </div>
-      )
-    case 'stats':
-      return (
-        <div>
-          <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 10 }} />
-          <ItemListEditor items={data.items} onChange={v => upd('items', v)}
-            newItem={{ value: '', label: '' }}
-            fields={[{ key: 'value', label: 'Valore (es. 150+)', placeholder: '150+' }, { key: 'label', label: 'Etichetta' }]} />
-        </div>
-      )
-    case 'paragrafi':
-      return (
-        <div>
-          <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 10 }} />
-          <ItemListEditor items={data.items} onChange={v => upd('items', v)}
-            newItem={{ icon: 'star', title: '', text: '', image_url: '' }}
-            fields={[
-              { key: 'icon', label: 'Icona', placeholder: 'star' },
-              { key: 'title', label: 'Titolo' },
-              { key: 'text', label: 'Testo', type: 'textarea', rows: 2 },
-              { key: 'image_url', label: 'Immagine URL (opz.)', placeholder: 'https://...' },
-            ]} />
-        </div>
-      )
-    case 'team':
-      return (
-        <div>
-          <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 10 }} />
-          <ItemListEditor items={data.items} onChange={v => upd('items', v)}
-            newItem={{ photo_url: '', nome: '', ruolo: '', bio: '' }}
-            fields={[
-              { key: 'photo_url', label: 'URL foto (circolare)', placeholder: 'https://...' },
-              { key: 'nome', label: 'Nome' },
-              { key: 'ruolo', label: 'Ruolo' },
-              { key: 'bio', label: 'Breve bio', type: 'textarea', rows: 2 },
-            ]} />
-        </div>
-      )
-    case 'steps':
-      return (
-        <div>
-          <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 10 }} />
-          <ItemListEditor items={data.items} onChange={v => upd('items', v)}
-            newItem={{ icon: 'check-circle', title: '', text: '' }}
-            fields={[
-              { key: 'icon', label: 'Icona', placeholder: 'check-circle' },
-              { key: 'title', label: 'Titolo passo' },
-              { key: 'text', label: 'Descrizione', type: 'textarea', rows: 2 },
-            ]} />
-        </div>
-      )
-    case 'testimonianze':
-      return (
-        <div>
-          <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 10 }} />
-          <ItemListEditor items={data.items} onChange={v => upd('items', v)}
-            newItem={{ author: '', location: '', rating: 5, text: '' }}
-            fields={[
-              { key: 'author', label: 'Autore' },
-              { key: 'location', label: 'Luogo (opz.)' },
-              { key: 'rating', label: 'Stelle (1-5)', type: 'number' },
-              { key: 'text', label: 'Testo', type: 'textarea', rows: 3 },
-            ]} />
-        </div>
-      )
-    case 'faq':
-      return (
-        <div>
-          <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 10 }} />
-          <ItemListEditor items={data.items} onChange={v => upd('items', v)}
-            newItem={{ question: '', answer: '' }}
-            fields={[
-              { key: 'question', label: 'Domanda' },
-              { key: 'answer', label: 'Risposta', type: 'textarea', rows: 3 },
-            ]} />
-        </div>
-      )
-    case 'promozioni':
-      return (
-        <div>
-          <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 10 }} />
-          <ItemListEditor items={data.items} onChange={v => upd('items', v)}
-            newItem={{ badge: '', title: '', text: '', cta_label: '', cta_url: '', expires_at: '' }}
-            fields={[
-              { key: 'badge', label: 'Badge (es. -20%)', placeholder: '-20%' },
-              { key: 'title', label: 'Titolo offerta' },
-              { key: 'text', label: 'Descrizione', type: 'textarea', rows: 2 },
-              { key: 'cta_label', label: 'Testo pulsante' },
-              { key: 'cta_url', label: 'URL pulsante', placeholder: 'https://...' },
-              { key: 'expires_at', label: 'Scadenza (YYYY-MM-DD)', placeholder: '2026-12-31' },
-            ]} />
-        </div>
-      )
-    case 'pacchetti':
-      return (
-        <div>
-          <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 10 }} />
-          <ItemListEditor items={data.items} onChange={v => upd('items', v)}
-            newItem={{ badge: '', name: '', tagline: '', price: '', price_label: 'a persona', includes: [], cta_label: 'Scegli', cta_url: '' }}
-            fields={[
-              { key: 'badge', label: 'Badge', placeholder: 'Più scelto' },
-              { key: 'name', label: 'Nome pacchetto' },
-              { key: 'tagline', label: 'Tagline' },
-              { key: 'price', label: 'Prezzo', placeholder: '€ 99' },
-              { key: 'price_label', label: 'Etichetta prezzo', placeholder: 'a persona' },
-              { key: 'cta_label', label: 'Testo pulsante' },
-              { key: 'cta_url', label: 'URL pulsante', placeholder: 'https://...' },
-            ]} />
-        </div>
-      )
+    case 'about': return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="Titolo sezione" value={data.title} onChange={v => upd('title', v)} />
+        <Field label="Testo" value={data.text} onChange={v => upd('text', v)} multiline rows={5} />
+      </div>
+    )
+    case 'foto_testo': return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="Titolo" value={data.title} onChange={v => upd('title', v)} />
+        <Field label="Testo" value={data.text} onChange={v => upd('text', v)} multiline rows={4} />
+        <Field label="URL immagine" value={data.image_url} onChange={v => upd('image_url', v)} placeholder="https://..." />
+        {data.image_url && <img src={data.image_url} alt="" style={{ maxHeight: 120, borderRadius: 8, objectFit: 'cover', width: '100%' }} />}
+        <UploadBtn label="Carica immagine" entityId={entityId} entityTipo={entityTipo} onUrl={url => upd('image_url', url)} />
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+          <input type="checkbox" checked={!!data.inverti} onChange={e => upd('inverti', e.target.checked)} />
+          Inverti: testo a sinistra, immagine a destra
+        </label>
+        <Field label="Testo pulsante (opz.)" value={data.button_label} onChange={v => upd('button_label', v)} />
+        <Field label="URL pulsante (opz.)" value={data.button_url} onChange={v => upd('button_url', v)} placeholder="https://..." />
+      </div>
+    )
+    case 'cta_banner': return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="Titolo" value={data.title} onChange={v => upd('title', v)} />
+        <Field label="Sottotitolo" value={data.subtitle} onChange={v => upd('subtitle', v)} />
+        <Field label="Testo pulsante" value={data.button_text} onChange={v => upd('button_text', v)} />
+        <Field label="URL pulsante" value={data.button_url} onChange={v => upd('button_url', v)} placeholder="https://..." />
+      </div>
+    )
+    case 'video': return (
+      <Field label="URL video (YouTube o Vimeo)" value={data.url} onChange={v => upd('url', v)} placeholder="https://youtube.com/watch?v=..." />
+    )
+    case 'newsletter': return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="Titolo sezione" value={data.title} onChange={v => upd('title', v)} />
+        <Field label="Sottotitolo" value={data.subtitle} onChange={v => upd('subtitle', v)} />
+      </div>
+    )
+    case 'highlights': return (
+      <div>
+        <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <ItemListEditor items={data.items} onChange={v => upd('items', v)}
+          newItem={{ icon: 'star', text: '' }}
+          fields={[{ key: 'icon', label: 'Icona (es. star, heart, wifi)', placeholder: 'star' }, { key: 'text', label: 'Testo' }]} />
+      </div>
+    )
+    case 'stats': return (
+      <div>
+        <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <ItemListEditor items={data.items} onChange={v => upd('items', v)}
+          newItem={{ value: '', label: '' }}
+          fields={[{ key: 'value', label: 'Valore (es. 150+)', placeholder: '150+' }, { key: 'label', label: 'Etichetta' }]} />
+      </div>
+    )
+    case 'paragrafi': return (
+      <div>
+        <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <ItemListEditor items={data.items} onChange={v => upd('items', v)}
+          newItem={{ icon: 'star', title: '', text: '', image_url: '' }}
+          fields={[
+            { key: 'icon', label: 'Icona', placeholder: 'star' },
+            { key: 'title', label: 'Titolo' },
+            { key: 'text', label: 'Testo', type: 'textarea', rows: 2 },
+            { key: 'image_url', label: 'Immagine URL (opz.)', placeholder: 'https://...' },
+          ]} />
+      </div>
+    )
+    case 'team': return (
+      <div>
+        <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <ItemListEditor items={data.items} onChange={v => upd('items', v)}
+          newItem={{ photo_url: '', nome: '', ruolo: '', bio: '' }}
+          fields={[
+            { key: 'photo_url', label: 'URL foto (circolare)', placeholder: 'https://...' },
+            { key: 'nome', label: 'Nome' },
+            { key: 'ruolo', label: 'Ruolo' },
+            { key: 'bio', label: 'Breve bio', type: 'textarea', rows: 2 },
+          ]} />
+      </div>
+    )
+    case 'steps': return (
+      <div>
+        <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <ItemListEditor items={data.items} onChange={v => upd('items', v)}
+          newItem={{ icon: 'check-circle', title: '', text: '' }}
+          fields={[
+            { key: 'icon', label: 'Icona', placeholder: 'check-circle' },
+            { key: 'title', label: 'Titolo passo' },
+            { key: 'text', label: 'Descrizione', type: 'textarea', rows: 2 },
+          ]} />
+      </div>
+    )
+    case 'testimonianze': return (
+      <div>
+        <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <ItemListEditor items={data.items} onChange={v => upd('items', v)}
+          newItem={{ author: '', location: '', rating: 5, text: '' }}
+          fields={[
+            { key: 'author', label: 'Autore' },
+            { key: 'location', label: 'Luogo (opz.)' },
+            { key: 'rating', label: 'Stelle (1-5)', type: 'number' },
+            { key: 'text', label: 'Testo', type: 'textarea', rows: 3 },
+          ]} />
+      </div>
+    )
+    case 'faq': return (
+      <div>
+        <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <ItemListEditor items={data.items} onChange={v => upd('items', v)}
+          newItem={{ question: '', answer: '' }}
+          fields={[
+            { key: 'question', label: 'Domanda' },
+            { key: 'answer', label: 'Risposta', type: 'textarea', rows: 3 },
+          ]} />
+      </div>
+    )
+    case 'promozioni': return (
+      <div>
+        <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <ItemListEditor items={data.items} onChange={v => upd('items', v)}
+          newItem={{ badge: '', title: '', text: '', cta_label: '', cta_url: '', expires_at: '' }}
+          fields={[
+            { key: 'badge', label: 'Badge (es. -20%)', placeholder: '-20%' },
+            { key: 'title', label: 'Titolo offerta' },
+            { key: 'text', label: 'Descrizione', type: 'textarea', rows: 2 },
+            { key: 'cta_label', label: 'Testo pulsante' },
+            { key: 'cta_url', label: 'URL pulsante', placeholder: 'https://...' },
+            { key: 'expires_at', label: 'Scadenza (YYYY-MM-DD)', placeholder: '2026-12-31' },
+          ]} />
+      </div>
+    )
+    case 'pacchetti': return (
+      <div>
+        <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <ItemListEditor items={data.items} onChange={v => upd('items', v)}
+          newItem={{ badge: '', name: '', tagline: '', price: '', price_label: 'a persona', cta_label: 'Scegli', cta_url: '' }}
+          fields={[
+            { key: 'badge', label: 'Badge', placeholder: 'Più scelto' },
+            { key: 'name', label: 'Nome pacchetto' },
+            { key: 'tagline', label: 'Tagline' },
+            { key: 'price', label: 'Prezzo', placeholder: '€ 99' },
+            { key: 'price_label', label: 'Etichetta prezzo', placeholder: 'a persona' },
+            { key: 'cta_label', label: 'Testo pulsante' },
+            { key: 'cta_url', label: 'URL pulsante', placeholder: 'https://...' },
+          ]} />
+      </div>
+    )
     default:
       return <p style={{ fontSize: 13, color: '#888', margin: 0 }}>Editor non disponibile per questo blocco.</p>
   }
@@ -236,7 +260,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
 function Field({ label, value, onChange, multiline, rows = 3, placeholder, style: extraStyle }) {
   return (
     <div style={extraStyle}>
-      {label && <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 3 }}>{label}</label>}
+      {label && <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 500 }}>{label}</label>}
       {multiline
         ? <textarea value={value || ''} onChange={e => onChange(e.target.value)} rows={rows} placeholder={placeholder} style={inputStyle()} />
         : <input type="text" value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={inputStyle()} />
@@ -265,50 +289,83 @@ function UploadBtn({ label, entityId, entityTipo, onUrl }) {
     <>
       <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handle} />
       <button type="button" onClick={() => inputRef.current.click()} disabled={upl}
-        style={{ fontSize: 12, padding: '5px 12px', borderRadius: 6, border: '1px dashed #bbb', background: '#fafafa', cursor: 'pointer', color: '#555' }}>
-        {upl ? 'Caricamento...' : `📁 ${label}`}
+        style={{ fontSize: 12, padding: '6px 14px', borderRadius: 6, border: '1px dashed #c8c8d8', background: '#fafafa', cursor: 'pointer', color: '#555', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <ImageIcon size={13} strokeWidth={1.5} />
+        {upl ? 'Caricamento...' : label}
       </button>
     </>
   )
 }
 
 function inputStyle() {
-  return { width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13, boxSizing: 'border-box', fontFamily: 'inherit', resize: 'vertical' }
+  return { width: '100%', padding: '9px 12px', border: '1px solid #e0e0e8', borderRadius: 7, fontSize: 13, boxSizing: 'border-box', fontFamily: 'inherit', resize: 'vertical', background: '#fafafa' }
 }
-const tinyBtn = { background: '#f0f0f0', border: 'none', borderRadius: 4, padding: '3px 6px', cursor: 'pointer', fontSize: 11 }
+const tinyBtn = { background: '#f0f0f0', border: 'none', borderRadius: 4, padding: '3px 7px', cursor: 'pointer', fontSize: 11, color: '#555' }
 
-// Indicatore linea di drop
+// Drop indicator
 function DropLine() {
-  return <div style={{ height: 3, background: '#4a7cdc', borderRadius: 2, margin: '2px 0', boxShadow: '0 0 8px rgba(74,124,220,0.45)' }} />
+  return <div style={{ height: 3, background: '#5b6af8', borderRadius: 2, margin: '3px 0', boxShadow: '0 0 8px rgba(91,106,248,0.5)' }} />
 }
 
 // ── Block Picker Modal ────────────────────────────────────────────────────────
 function BlockPicker({ onPick, onClose }) {
+  const [search, setSearch] = useState('')
+  const filtered = search
+    ? BLOCK_TYPES.filter(b => b.label.toLowerCase().includes(search.toLowerCase()) || b.desc?.toLowerCase().includes(search.toLowerCase()))
+    : null
+
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div style={{ background: '#fff', borderRadius: 16, padding: 28, width: '100%', maxWidth: 680, maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.25)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h3 style={{ margin: 0, fontSize: 18 }}>Aggiungi blocco</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#888' }}>✕</button>
-        </div>
-        {BLOCK_GROUPS.map(group => (
-          <div key={group.key} style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#888', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>{group.label}</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 8 }}>
-              {BLOCK_TYPES.filter(b => b.group === group.key).map(b => (
-                <button key={b.type} onClick={() => { onPick(b.type); onClose() }}
-                  style={{ textAlign: 'left', padding: '12px 14px', background: '#f9f9fb', border: '1px solid #e8e8ee', borderRadius: 10, cursor: 'pointer' }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#f0f0ff'}
-                  onMouseLeave={e => e.currentTarget.style.background = '#f9f9fb'}>
-                  <div style={{ fontSize: 20, marginBottom: 4 }}>{b.emoji}</div>
-                  <div style={{ fontWeight: 600, fontSize: 13, color: '#1a1a2e' }}>{b.label}</div>
-                  <div style={{ fontSize: 11, color: '#888', marginTop: 2, lineHeight: 1.3 }}>{b.desc}</div>
-                </button>
-              ))}
-            </div>
+      <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 600, maxHeight: '82vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 80px rgba(0,0,0,0.22)' }}>
+
+        {/* Header */}
+        <div style={{ padding: '20px 20px 12px', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <span style={{ fontWeight: 700, fontSize: 16, color: '#1a1a2e' }}>Aggiungi blocco</span>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#999', lineHeight: 1, padding: '2px 6px' }}>✕</button>
           </div>
-        ))}
+          <input autoFocus placeholder="Cerca blocco…" value={search} onChange={e => setSearch(e.target.value)}
+            style={{ width: '100%', padding: '9px 14px', border: '1.5px solid #e0e0e8', borderRadius: 9, fontSize: 14, boxSizing: 'border-box', outline: 'none' }} />
+        </div>
+
+        {/* Body */}
+        <div style={{ overflowY: 'auto', padding: '12px 12px' }}>
+          {(filtered ? [{ key: 'results', label: `${filtered.length} risultati` }] : BLOCK_GROUPS).map(group => {
+            const blocks = filtered || BLOCK_TYPES.filter(b => b.group === group.key)
+            if (!blocks.length) return null
+            const color = GROUP_COLORS[group.key] || '#666'
+            return (
+              <div key={group.key} style={{ marginBottom: 16 }}>
+                {!filtered && (
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6, paddingLeft: 4 }}>
+                    {group.label}
+                  </div>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {blocks.map(b => {
+                    const Icon = BLOCK_ICON_MAP[b.type] || FileText
+                    const bColor = blockColor(b.type)
+                    return (
+                      <button key={b.type} onClick={() => { onPick(b.type); onClose() }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 10, border: 'none', cursor: 'pointer', background: '#fff', textAlign: 'left', width: '100%' }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#f5f5ff'}
+                        onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
+                        <div style={{ width: 36, height: 36, borderRadius: 9, background: `${bColor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <Icon size={18} strokeWidth={1.5} color={bColor} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 600, fontSize: 13, color: '#1a1a2e' }}>{b.label}</div>
+                          <div style={{ fontSize: 11, color: '#888', marginTop: 1, lineHeight: 1.3 }}>{b.desc}</div>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
@@ -319,23 +376,23 @@ export default function PaginaEditorPage() {
   const { pageId } = useParams()
   const navigate = useNavigate()
 
-  const [page,        setPage]        = useState(null)
-  const [blocks,      setBlocks]      = useState([])
-  const [expandedId,  setExpandedId]  = useState(null)
-  const [showPicker,  setShowPicker]  = useState(false)
-  const [showSeo,     setShowSeo]     = useState(false)
-  const [saving,      setSaving]      = useState(false)
-  const [dirty,       setDirty]       = useState(false)
-  const [slugManual,  setSlugManual]  = useState(false)
-  const [origSlug,    setOrigSlug]    = useState(null)
-  const [saved,       setSaved]       = useState(false)
-  const [loading,     setLoading]     = useState(true)
-  const [entitySlug,  setEntitySlug]  = useState(null)
-  const [copied,      setCopied]      = useState(false)
+  const [page,       setPage]       = useState(null)
+  const [blocks,     setBlocks]     = useState([])
+  const [expandedId, setExpandedId] = useState(null)
+  const [showPicker, setShowPicker] = useState(false)
+  const [showSeo,    setShowSeo]    = useState(false)
+  const [saving,     setSaving]     = useState(false)
+  const [dirty,      setDirty]      = useState(false)
+  const [slugManual, setSlugManual] = useState(false)
+  const [origSlug,   setOrigSlug]   = useState(null)
+  const [saved,      setSaved]      = useState(false)
+  const [loading,    setLoading]    = useState(true)
+  const [entitySlug, setEntitySlug] = useState(null)
+  const [copied,     setCopied]     = useState(false)
 
   // Drag & drop
-  const [dragBlockId,  setDragBlockId]  = useState(null)
-  const [dragOverPos,  setDragOverPos]  = useState(null) // { blockId, position: 'before'|'after' }
+  const [dragBlockId, setDragBlockId] = useState(null)
+  const [dragOverPos, setDragOverPos] = useState(null) // { blockId, position: 'before'|'after' }
 
   useEffect(() => {
     apiFetch(`/api/pagine/${pageId}`).then(data => {
@@ -347,13 +404,10 @@ export default function PaginaEditorPage() {
     })
   }, [pageId])
 
-  // Fetch entity slug for preview link
   useEffect(() => {
-    if (!page?.entity_id || !page?.entity_tipo) return
-    const ep = page.entity_tipo === 'struttura'
-      ? `/api/properties/${page.entity_id}`
-      : page.entity_tipo === 'ristorante'
-      ? `/api/ristoranti/${page.entity_id}`
+    if (!page?.entity_id) return
+    const ep = page.entity_tipo === 'struttura' ? `/api/properties/${page.entity_id}`
+      : page.entity_tipo === 'ristorante' ? `/api/ristoranti/${page.entity_id}`
       : `/api/attivita/${page.entity_id}`
     apiFetch(ep).then(d => { if (d?.slug) setEntitySlug(d.slug) })
   }, [page?.entity_id])
@@ -371,11 +425,9 @@ export default function PaginaEditorPage() {
   }
 
   function copyLink() {
-    const url = previewUrl()
-    if (!url) return
+    const url = previewUrl(); if (!url) return
     navigator.clipboard.writeText(window.location.origin + url)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1800)
+    setCopied(true); setTimeout(() => setCopied(false), 1800)
   }
 
   function patchPage(key, val) { setPage(p => ({ ...p, [key]: val })); setDirty(true) }
@@ -393,11 +445,13 @@ export default function PaginaEditorPage() {
     if (expandedId === id) setExpandedId(null)
   }
 
-  // Drag & drop handlers
+  // ── Drag & drop ──────────────────────────────────────────────────────────────
   function onBlockDragStart(e, blockId) {
     setDragBlockId(blockId)
     e.dataTransfer.effectAllowed = 'move'
-    const ghost = document.createElement('div'); ghost.style.opacity = '0'
+    // Use a transparent ghost instead of the default drag image
+    const ghost = document.createElement('div')
+    ghost.style.cssText = 'width:1px;height:1px;opacity:0;position:fixed;top:0;left:0'
     document.body.appendChild(ghost)
     e.dataTransfer.setDragImage(ghost, 0, 0)
     setTimeout(() => document.body.removeChild(ghost), 0)
@@ -405,9 +459,10 @@ export default function PaginaEditorPage() {
 
   function onBlockDragOver(e, blockId) {
     e.preventDefault()
+    e.stopPropagation()
     const rect = e.currentTarget.getBoundingClientRect()
     const position = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after'
-    setDragOverPos(prev => (prev?.blockId === blockId && prev?.position === position) ? prev : { blockId, position })
+    setDragOverPos(p => (p?.blockId === blockId && p?.position === position) ? p : { blockId, position })
   }
 
   function onBlockDrop(e, targetId) {
@@ -443,43 +498,42 @@ export default function PaginaEditorPage() {
 
   if (loading) return <p style={{ padding: 40, color: '#888' }}>Caricamento...</p>
 
-  const entityTipo = page.entity_tipo
-  const entityId   = page.entity_id
+  const entityTipo  = page.entity_tipo
+  const entityId    = page.entity_id
   const slugChanged = slugManual && page.slug !== origSlug
-  const seoScore   = [page.seo_title, page.seo_description].filter(Boolean).length
-  const seoColors  = ['#721c24', '#856404', '#155724']
-  const seoBg      = ['#f8d7da', '#fff3cd', '#d4edda']
-  const seoLabel   = ['✗ SEO non configurato', '⚠ SEO incompleto', '✓ SEO completo']
-  const pUrl       = previewUrl()
+  const seoScore    = [page.seo_title, page.seo_description].filter(Boolean).length
+  const pUrl        = previewUrl()
 
   return (
-    <div style={{ maxWidth: 820 }}>
+    <div style={{ maxWidth: 780 }}>
 
       {/* ── Top bar ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24, flexWrap: 'wrap' }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#888', padding: 0, flexShrink: 0 }}>← Indietro</button>
-        <h1 style={{ margin: 0, fontSize: 20, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28, flexWrap: 'wrap' }}>
+        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#888', padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+          ← Indietro
+        </button>
+        <h1 style={{ margin: 0, fontSize: 19, fontWeight: 700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#1a1a2e' }}>
           {page.titolo || 'Pagina senza titolo'}
         </h1>
-        {dirty && <span style={{ fontSize: 12, color: '#856404', background: '#fff3cd', padding: '3px 10px', borderRadius: 10, flexShrink: 0 }}>Non salvato</span>}
-        {saved && <span style={{ fontSize: 12, color: '#155724', background: '#d4edda', padding: '3px 10px', borderRadius: 10, flexShrink: 0 }}>Salvato ✓</span>}
+        {dirty && <span style={{ fontSize: 11, color: '#856404', background: '#fff3cd', padding: '3px 10px', borderRadius: 20, flexShrink: 0, fontWeight: 600 }}>Non salvato</span>}
+        {saved && <span style={{ fontSize: 11, color: '#155724', background: '#d4edda', padding: '3px 10px', borderRadius: 20, flexShrink: 0, fontWeight: 600 }}>Salvato ✓</span>}
         {pUrl && (
           <button onClick={openPreview}
-            style={{ background: '#f0f4ff', color: '#1a1a2e', border: '1px solid #c8d4f4', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontSize: 13, flexShrink: 0 }}>
-            {dirty ? '💾 Salva e apri ↗' : '↗ Apri pagina'}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f0f4ff', color: '#1a1a2e', border: '1.5px solid #c8d4f4', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontSize: 13, flexShrink: 0 }}>
+            {dirty ? '💾 Salva e apri' : '↗ Apri'}
           </button>
         )}
         <button onClick={save} disabled={saving || !dirty}
-          style={{ background: dirty ? '#1a1a2e' : '#ccc', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: dirty ? 'pointer' : 'default', fontSize: 14, fontWeight: 600, flexShrink: 0 }}>
-          {saving ? 'Salvataggio...' : 'Salva'}
+          style={{ background: dirty ? '#1a1a2e' : '#e0e0e0', color: dirty ? '#fff' : '#999', border: 'none', borderRadius: 8, padding: '10px 22px', cursor: dirty ? 'pointer' : 'default', fontSize: 14, fontWeight: 600, flexShrink: 0 }}>
+          {saving ? 'Salvando...' : 'Salva'}
         </button>
       </div>
 
       {/* ── Metadata ── */}
-      <div style={{ background: '#fff', borderRadius: 12, padding: 20, marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+      <div style={{ background: '#fff', borderRadius: 12, padding: 20, marginBottom: 16, border: '1px solid #e8e8ee', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
           <div>
-            <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 4 }}>Titolo pagina *</label>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#444', marginBottom: 4 }}>Titolo *</label>
             <input value={page.titolo || ''} onChange={e => {
               const t = e.target.value
               patchPage('titolo', t)
@@ -487,30 +541,24 @@ export default function PaginaEditorPage() {
             }} style={inputStyle()} />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 4 }}>
-              Slug URL
-              {slugChanged && (
-                <span style={{ marginLeft: 6, color: '#856404', fontWeight: 400, fontSize: 11 }}>⚠ cambiare lo slug invalida i link esistenti</span>
-              )}
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#444', marginBottom: 4 }}>
+              Slug URL {slugChanged && <span style={{ color: '#856404', fontWeight: 400 }}>⚠ cambiando lo slug si rompono i link esistenti</span>}
             </label>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 6 }}>
               <input value={page.slug || ''} onChange={e => { setSlugManual(true); patchPage('slug', slugify(e.target.value)) }}
-                style={{ ...inputStyle(), fontFamily: 'monospace', flex: 1 }} placeholder="es. chi-siamo" />
+                style={{ ...inputStyle(), fontFamily: 'monospace', flex: 1 }} />
               {pUrl && (
-                <button onClick={copyLink} title="Copia link pagina"
-                  style={{ flexShrink: 0, padding: '7px 10px', border: '1px solid #ddd', borderRadius: 7, background: copied ? '#d4edda' : '#fafafa', cursor: 'pointer', fontSize: 12, color: copied ? '#155724' : '#555', whiteSpace: 'nowrap' }}>
-                  {copied ? '✓ Copiato' : '📋'}
+                <button onClick={copyLink} style={{ flexShrink: 0, padding: '9px 10px', border: '1px solid #e0e0e8', borderRadius: 7, background: copied ? '#d4edda' : '#fafafa', cursor: 'pointer', fontSize: 12, color: copied ? '#155724' : '#666' }}>
+                  {copied ? '✓' : '📋'}
                 </button>
               )}
             </div>
-            <span style={{ fontSize: 11, color: '#aaa' }}>/{page.slug}</span>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
-            <input type="checkbox" checked={page.status === 'pubblicata'}
-              onChange={e => patchPage('status', e.target.checked ? 'pubblicata' : 'bozza')} />
-            <span style={{ color: page.status === 'pubblicata' ? '#155724' : '#856404', fontWeight: 600 }}>
+            <input type="checkbox" checked={page.status === 'pubblicata'} onChange={e => patchPage('status', e.target.checked ? 'pubblicata' : 'bozza')} />
+            <span style={{ fontWeight: 600, color: page.status === 'pubblicata' ? '#155724' : '#856404' }}>
               {page.status === 'pubblicata' ? '✓ Pubblicata' : '○ Bozza'}
             </span>
           </label>
@@ -522,50 +570,91 @@ export default function PaginaEditorPage() {
       </div>
 
       {/* ── Blocks ── */}
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 12 }}>
         {blocks.length === 0 && (
-          <div style={{ padding: '32px 24px', textAlign: 'center', background: '#f9f9fb', borderRadius: 12, border: '2px dashed #e0e0e8', color: '#aaa', marginBottom: 8 }}>
-            <div style={{ fontSize: 32, marginBottom: 8 }}>🧩</div>
-            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4, color: '#888' }}>Nessun blocco</div>
-            <div style={{ fontSize: 13 }}>Usa il pulsante qui sotto per aggiungere il primo blocco di contenuto.</div>
+          <div style={{ padding: '40px 24px', textAlign: 'center', background: '#fafafa', borderRadius: 12, border: '2px dashed #e0e0e8', marginBottom: 10 }}>
+            <div style={{ width: 48, height: 48, borderRadius: 12, background: '#f0f0f8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+              <Plus size={22} strokeWidth={1.5} color="#888" />
+            </div>
+            <div style={{ fontWeight: 600, fontSize: 14, color: '#888', marginBottom: 6 }}>Nessun blocco</div>
+            <div style={{ fontSize: 13, color: '#aaa' }}>Usa il pulsante qui sotto per aggiungere il primo blocco</div>
           </div>
         )}
-        {blocks.map((block, idx) => {
-          const isOpen    = expandedId === block.id
-          const isDragging  = dragBlockId === block.id
-          const isBefore    = dragOverPos?.blockId === block.id && dragOverPos.position === 'before'
-          const isAfter     = dragOverPos?.blockId === block.id && dragOverPos.position === 'after'
+
+        {blocks.map((block) => {
+          const isOpen     = expandedId === block.id
+          const isDragging = dragBlockId === block.id
+          const isBefore   = dragOverPos?.blockId === block.id && dragOverPos.position === 'before'
+          const isAfter    = dragOverPos?.blockId === block.id && dragOverPos.position === 'after'
+          const bColor     = blockColor(block.type)
+
           return (
-            <div key={block.id}>
+            <div key={block.id} style={{ marginBottom: 6 }}>
               {isBefore && <DropLine />}
               <div
-                draggable={true}
-                onDragStart={e => onBlockDragStart(e, block.id)}
                 onDragOver={e => onBlockDragOver(e, block.id)}
                 onDrop={e => onBlockDrop(e, block.id)}
-                onDragEnd={resetBlockDrag}
+                onDragEnter={e => e.preventDefault()}
                 style={{
-                  background: '#fff', borderRadius: 12, marginBottom: 6,
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden',
-                  opacity: isDragging ? 0.35 : 1,
-                  outline: isBefore || isAfter ? '2px solid transparent' : 'none',
-                  transition: 'opacity 0.12s',
+                  background: '#fff',
+                  borderRadius: 10,
+                  border: (isBefore || isAfter) ? '1.5px solid #5b6af8' : '1px solid #e8e8ee',
+                  boxShadow: isDragging ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
+                  overflow: 'hidden',
+                  opacity: isDragging ? 0.3 : 1,
+                  transition: 'opacity 0.12s, border-color 0.1s',
                 }}
               >
-                {/* Block header */}
-                <div
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', cursor: 'pointer', userSelect: 'none' }}
-                  onClick={() => setExpandedId(isOpen ? null : block.id)}
-                >
-                  <span style={{ color: '#bbb', fontSize: 16, cursor: 'grab', flexShrink: 0 }} title="Trascina per riordinare">⠿</span>
-                  <span style={{ fontSize: 18, flexShrink: 0 }}>{blockEmoji(block.type)}</span>
-                  <span style={{ fontWeight: 600, fontSize: 14, flex: 1, color: '#1a1a2e' }}>{blockLabel(block.type)}</span>
-                  <button onClick={e => { e.stopPropagation(); deleteBlock(block.id) }}
-                    style={{ ...tinyBtn, color: '#c00', background: '#fce8e8', flexShrink: 0 }}>✕ Elimina</button>
-                  <span style={{ fontSize: 11, color: '#aaa', flexShrink: 0 }}>{isOpen ? '▲' : '▼'}</span>
+                {/* Card header */}
+                <div style={{ display: 'flex', alignItems: 'center', minHeight: 50 }}>
+
+                  {/* ── DRAG HANDLE (unico elemento draggable) ── */}
+                  <div
+                    draggable={true}
+                    onDragStart={e => { e.stopPropagation(); onBlockDragStart(e, block.id) }}
+                    onDragEnd={resetBlockDrag}
+                    style={{ padding: '14px 6px 14px 12px', cursor: 'grab', userSelect: 'none', flexShrink: 0, color: '#ccc', lineHeight: 0 }}
+                    title="Trascina per riordinare"
+                  >
+                    <GripVertical size={16} strokeWidth={1.5} />
+                  </div>
+
+                  {/* Block type icon */}
+                  <div style={{ width: 30, height: 30, borderRadius: 7, background: `${bColor}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginRight: 10 }}>
+                    <BlockTypeIcon type={block.type} size={15} />
+                  </div>
+
+                  {/* Label (clickable to expand) */}
+                  <span
+                    style={{ flex: 1, fontWeight: 600, fontSize: 14, color: '#1a1a2e', cursor: 'pointer', userSelect: 'none' }}
+                    onClick={() => setExpandedId(isOpen ? null : block.id)}
+                  >
+                    {blockLabel(block.type)}
+                  </span>
+
+                  {/* Delete */}
+                  <button
+                    onClick={() => deleteBlock(block.id)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px 6px', color: '#ddd', lineHeight: 0, flexShrink: 0 }}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#e03030' }}
+                    onMouseLeave={e => { e.currentTarget.style.color = '#ddd' }}
+                    title="Elimina blocco"
+                  >
+                    <Trash2 size={14} strokeWidth={1.5} />
+                  </button>
+
+                  {/* Expand */}
+                  <button
+                    onClick={() => setExpandedId(isOpen ? null : block.id)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px', color: '#bbb', lineHeight: 0, flexShrink: 0 }}
+                  >
+                    {isOpen ? <ChevronUp size={15} strokeWidth={2} /> : <ChevronDown size={15} strokeWidth={2} />}
+                  </button>
                 </div>
+
+                {/* Expanded editor */}
                 {isOpen && (
-                  <div style={{ borderTop: '1px solid #f0f0f0', padding: '16px 20px' }}>
+                  <div style={{ borderTop: '1px solid #f0f0f0', padding: '18px 20px', background: '#fafafa' }}>
                     <BlockEditor block={block} onChange={data => updateBlock(block.id, data)} entityId={entityId} entityTipo={entityTipo} />
                   </div>
                 )}
@@ -576,37 +665,42 @@ export default function PaginaEditorPage() {
         })}
       </div>
 
-      {/* ── Add block ── */}
+      {/* ── Add block button ── */}
       <button onClick={() => setShowPicker(true)}
-        style={{ width: '100%', padding: 14, background: '#f0f4ff', border: '2px dashed #99aaf0', borderRadius: 12, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#334', marginBottom: 24 }}>
-        + Aggiungi blocco
+        style={{ width: '100%', padding: 14, background: '#fff', border: '2px dashed #c8d0e8', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#5b6af8', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        <Plus size={16} strokeWidth={2} />
+        Aggiungi blocco
       </button>
 
       {/* ── SEO panel ── */}
-      <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e8e8ee', overflow: 'hidden' }}>
         <button onClick={() => setShowSeo(s => !s)}
           style={{ width: '100%', padding: '14px 20px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a2e' }}>🔍 Impostazioni SEO</span>
-            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: seoBg[seoScore], color: seoColors[seoScore], fontWeight: 600 }}>
-              {seoLabel[seoScore]}
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a2e' }}>Impostazioni SEO</span>
+            <span style={{
+              fontSize: 11, padding: '2px 8px', borderRadius: 20, fontWeight: 600,
+              background: ['#fce8e8','#fff3cd','#d4edda'][seoScore],
+              color: ['#c00','#856404','#155724'][seoScore],
+            }}>
+              {['✗ Non configurato','⚠ Incompleto','✓ Completo'][seoScore]}
             </span>
           </span>
-          <span style={{ color: '#888', fontSize: 12 }}>{showSeo ? '▲ Chiudi' : '▼ Apri'}</span>
+          {showSeo ? <ChevronUp size={15} strokeWidth={2} color="#aaa" /> : <ChevronDown size={15} strokeWidth={2} color="#aaa" />}
         </button>
         {showSeo && (
-          <div style={{ borderTop: '1px solid #f0f0f0', padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ borderTop: '1px solid #f0f0f0', padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
             <Field label="Titolo SEO (<title>)" value={page.seo_title} onChange={v => patchPage('seo_title', v)} placeholder={page.titolo} />
             <div>
               <Field label="Meta description (max 160 caratteri)" value={page.seo_description} onChange={v => patchPage('seo_description', v)} multiline rows={2} />
               {page.seo_description && (
-                <div style={{ fontSize: 11, color: page.seo_description.length > 160 ? '#c00' : '#888', marginTop: 3 }}>
+                <div style={{ fontSize: 11, marginTop: 4, color: page.seo_description.length > 160 ? '#c00' : '#999' }}>
                   {page.seo_description.length}/160 caratteri
                 </div>
               )}
             </div>
             <Field label="Immagine Open Graph (URL)" value={page.og_image_url} onChange={v => patchPage('og_image_url', v)} placeholder="https://..." />
-            {page.og_image_url && <img src={page.og_image_url} alt="" style={{ maxHeight: 100, borderRadius: 6, objectFit: 'cover' }} />}
+            {page.og_image_url && <img src={page.og_image_url} alt="" style={{ maxHeight: 100, borderRadius: 8, objectFit: 'cover' }} />}
           </div>
         )}
       </div>
