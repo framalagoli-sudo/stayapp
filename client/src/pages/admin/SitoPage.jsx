@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { PropertyIdContext } from '../../context/PropertyIdContext'
 import { useAuth } from '../../context/AuthContext'
+import { GripVertical } from 'lucide-react'
 
 // ── Template definitions ──────────────────────────────────────────────────────
 const TEMPLATES = [
@@ -202,8 +203,8 @@ export default function SitoPage({ entityTipo }) {
   const [dragOverId, setDragOverId] = useState(null)
 
   // Header/Footer config
-  const DEFAULT_HEADER = { style: 'dark', always_visible: false, logo_in_nav: true, show_cta: false, cta_text: 'Prenota ora', cta_url: '' }
-  const DEFAULT_FOOTER = { style: 'dark', copyright: '', show_socials: true, extra_links: [] }
+  const DEFAULT_HEADER = { style: 'dark', always_visible: false, logo_in_nav: true, show_cta: false, cta_text: 'Prenota ora', cta_url: '', show_phone: false, bg_color: '' }
+  const DEFAULT_FOOTER = { layout: 'standard', style: 'dark', copyright: '', show_socials: true, show_description: true, show_contact: true, extra_links: [] }
   const [entityData,  setEntityData]  = useState(null)
   const [headerCfg,   setHeaderCfg]   = useState(DEFAULT_HEADER)
   const [footerCfg,   setFooterCfg]   = useState(DEFAULT_FOOTER)
@@ -343,15 +344,6 @@ export default function SitoPage({ entityTipo }) {
   }
 
   // ── Drag & drop ──────────────────────────────────────────────────────────────
-  function onDragStart(e, p) {
-    setDragId(p.id)
-    e.dataTransfer.effectAllowed = 'move'
-    const ghost = document.createElement('div'); ghost.style.opacity = '0'
-    document.body.appendChild(ghost)
-    e.dataTransfer.setDragImage(ghost, 0, 0)
-    setTimeout(() => document.body.removeChild(ghost), 0)
-  }
-
   function onDragOver(e, p) {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
@@ -432,14 +424,12 @@ export default function SitoPage({ entityTipo }) {
 
     return (
       <div
-        draggable={!isChild}
-        onDragStart={!isChild ? e => onDragStart(e, p) : undefined}
         onDragOver={!isChild ? e => onDragOver(e, p) : undefined}
         onDrop={!isChild ? e => onDrop(e, p) : undefined}
         onDragEnd={resetDrag}
         style={{
           display: 'flex', alignItems: 'center', gap: 8,
-          padding: '10px 14px',
+          padding: '10px 8px 10px 14px',
           background: isDragging ? '#f0f4ff' : '#fff',
           borderRadius: 8, marginBottom: 4,
           border: isDragOver ? '2px solid #4a7cdc' : '1px solid #eeeeee',
@@ -448,15 +438,25 @@ export default function SitoPage({ entityTipo }) {
           position: 'relative',
           opacity: isDragging ? 0.55 : 1,
           transition: 'box-shadow 0.15s, border-color 0.15s',
-          cursor: isChild ? 'default' : 'grab',
         }}
       >
         {isChild && <div style={{ position: 'absolute', left: -20, top: '50%', width: 14, height: 1, background: '#ddd' }} />}
-        <span style={{ color: isChild ? '#ddd' : '#aaa', fontSize: 15, userSelect: 'none', flexShrink: 0 }}>⠿</span>
+        {/* Solo il grip è draggable */}
+        {!isChild ? (
+          <div
+            draggable
+            onDragStart={e => { e.stopPropagation(); setDragId(p.id); e.dataTransfer.effectAllowed = 'move' }}
+            style={{ padding: '4px 6px', cursor: 'grab', color: '#bbb', flexShrink: 0, display: 'flex', alignItems: 'center', userSelect: 'none' }}
+          >
+            <GripVertical size={15} strokeWidth={1.5} />
+          </div>
+        ) : (
+          <div style={{ width: 16, flexShrink: 0 }} />
+        )}
         {!isChild && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0 }}>
-            <button onClick={() => move(p, -1)} style={btnTiny} title="Sposta su">▲</button>
-            <button onClick={() => move(p, 1)}  style={btnTiny} title="Sposta giù">▼</button>
+            <button onClick={e => { e.stopPropagation(); move(p, -1) }} style={btnTiny} title="Sposta su">▲</button>
+            <button onClick={e => { e.stopPropagation(); move(p, 1) }}  style={btnTiny} title="Sposta giù">▼</button>
           </div>
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -721,44 +721,69 @@ export default function SitoPage({ entityTipo }) {
           <div style={{ ...cardStyle, padding: 20 }}>
             <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>Navigazione (navbar)</div>
 
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 8 }}>Stile</label>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {[['dark','Scuro'],['light','Chiaro'],['colored','Colorato'],['transparent','Trasparente']].map(([val, lbl]) => (
-                  <button key={val} onClick={() => setHeaderCfg(h => ({ ...h, style: val }))}
-                    style={{ padding: '5px 14px', borderRadius: 20, fontSize: 12, cursor: 'pointer', fontWeight: headerCfg.style === val ? 700 : 400,
-                      border: headerCfg.style === val ? '2px solid #1a1a2e' : '1.5px solid #e0e0e0',
-                      background: headerCfg.style === val ? '#1a1a2e' : '#fff',
-                      color: headerCfg.style === val ? '#fff' : '#555' }}>
-                    {lbl}
-                  </button>
-                ))}
+            {/* Stile */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 8 }}>Stile sfondo</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {[
+                  ['dark',        '████', '#1a1a2e', 'Scuro'],
+                  ['light',       '████', '#ffffff', 'Chiaro'],
+                  ['colored',     '████', null,      'Colore brand'],
+                  ['transparent', '░░░░', '#ffffff', 'Trasparente'],
+                ].map(([val, preview, bg, lbl]) => {
+                  const sel = headerCfg.style === val
+                  return (
+                    <button key={val} onClick={() => setHeaderCfg(h => ({ ...h, style: val }))}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, cursor: 'pointer', textAlign: 'left',
+                        border: sel ? '2px solid #1a1a2e' : '1.5px solid #e8e8e8',
+                        background: sel ? '#f0f2ff' : '#f9f9fb' }}>
+                      <span style={{ fontSize: 10, color: bg || '#999', letterSpacing: -1 }}>{preview}</span>
+                      <span style={{ fontSize: 12, fontWeight: sel ? 700 : 400, color: '#1a1a2e' }}>{lbl}</span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {/* Colore custom per "Colorato" */}
+            {headerCfg.style === 'colored' && (
+              <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <label style={{ fontSize: 12, color: '#666', whiteSpace: 'nowrap' }}>Colore:</label>
+                <input type="color" value={headerCfg.bg_color || '#1a1a2e'}
+                  onChange={e => setHeaderCfg(h => ({ ...h, bg_color: e.target.value }))}
+                  style={{ width: 40, height: 32, border: '1px solid #ddd', borderRadius: 6, padding: 2, cursor: 'pointer' }} />
+                <span style={{ fontSize: 11, color: '#888' }}>{headerCfg.bg_color || '#1a1a2e'}</span>
+              </div>
+            )}
+
+            {/* Comportamento */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
                 <input type="checkbox" checked={headerCfg.always_visible} onChange={e => setHeaderCfg(h => ({ ...h, always_visible: e.target.checked }))} />
-                <span><strong>Sempre visibile</strong> <span style={{ color: '#888', fontSize: 11 }}>(altrimenti appare scorrendo)</span></span>
+                <span><strong>Sempre visibile</strong> <span style={{ color: '#888', fontSize: 11 }}>(default: appare dopo scroll)</span></span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
                 <input type="checkbox" checked={headerCfg.logo_in_nav} onChange={e => setHeaderCfg(h => ({ ...h, logo_in_nav: e.target.checked }))} />
                 <span><strong>Mostra logo</strong> nel nav</span>
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
+                <input type="checkbox" checked={headerCfg.show_phone} onChange={e => setHeaderCfg(h => ({ ...h, show_phone: e.target.checked }))} />
+                <span><strong>Mostra telefono</strong> nel nav</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
                 <input type="checkbox" checked={headerCfg.show_cta} onChange={e => setHeaderCfg(h => ({ ...h, show_cta: e.target.checked }))} />
-                <span><strong>Bottone CTA</strong> nel nav</span>
+                <span><strong>Bottone CTA</strong></span>
               </label>
             </div>
 
             {headerCfg.show_cta && (
-              <div style={{ marginTop: 14, padding: 14, background: '#f9f9fb', borderRadius: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <input type="text" placeholder="Testo bottone (es. Prenota ora)" value={headerCfg.cta_text}
+              <div style={{ padding: 12, background: '#f9f9fb', borderRadius: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <input type="text" placeholder="Testo (es. Prenota ora)" value={headerCfg.cta_text}
                   onChange={e => setHeaderCfg(h => ({ ...h, cta_text: e.target.value }))}
-                  style={{ padding: '8px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13 }} />
-                <input type="url" placeholder="URL (es. https://...)" value={headerCfg.cta_url}
+                  style={{ padding: '7px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13 }} />
+                <input type="url" placeholder="URL destinazione" value={headerCfg.cta_url}
                   onChange={e => setHeaderCfg(h => ({ ...h, cta_url: e.target.value }))}
-                  style={{ padding: '8px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13 }} />
+                  style={{ padding: '7px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13 }} />
               </div>
             )}
           </div>
@@ -767,8 +792,32 @@ export default function SitoPage({ entityTipo }) {
           <div style={{ ...cardStyle, padding: 20 }}>
             <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>Footer</div>
 
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 8 }}>Stile</label>
+            {/* Layout */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 8 }}>Layout</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {[
+                  ['minimal',  'Minimale',  'Solo copyright e link policy'],
+                  ['standard', 'Standard',  'Logo + descrizione + social + link menu'],
+                  ['full',     'Completo',  '3 colonne: logo/socials, menu, contatti'],
+                ].map(([val, lbl, desc]) => {
+                  const sel = (footerCfg.layout || 'standard') === val
+                  return (
+                    <button key={val} onClick={() => setFooterCfg(f => ({ ...f, layout: val }))}
+                      style={{ display: 'flex', flexDirection: 'column', padding: '10px 12px', borderRadius: 8, cursor: 'pointer', textAlign: 'left',
+                        border: sel ? '2px solid #1a1a2e' : '1.5px solid #e8e8e8',
+                        background: sel ? '#f0f2ff' : '#f9f9fb' }}>
+                      <span style={{ fontSize: 13, fontWeight: sel ? 700 : 500, color: '#1a1a2e' }}>{lbl}</span>
+                      <span style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{desc}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Stile colore */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 8 }}>Sfondo</label>
               <div style={{ display: 'flex', gap: 6 }}>
                 {[['dark','Scuro'],['light','Chiaro']].map(([val, lbl]) => (
                   <button key={val} onClick={() => setFooterCfg(f => ({ ...f, style: val }))}
@@ -782,37 +831,52 @@ export default function SitoPage({ entityTipo }) {
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {/* Opzioni contenuto (layout standard/full) */}
+            {footerCfg.layout !== 'minimal' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+                  <input type="checkbox" checked={footerCfg.show_description !== false} onChange={e => setFooterCfg(f => ({ ...f, show_description: e.target.checked }))} />
+                  <span>Mostra tagline/descrizione</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+                  <input type="checkbox" checked={footerCfg.show_socials !== false} onChange={e => setFooterCfg(f => ({ ...f, show_socials: e.target.checked }))} />
+                  <span>Mostra social links</span>
+                </label>
+                {footerCfg.layout === 'full' && (
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+                    <input type="checkbox" checked={footerCfg.show_contact !== false} onChange={e => setFooterCfg(f => ({ ...f, show_contact: e.target.checked }))} />
+                    <span>Mostra colonna contatti</span>
+                  </label>
+                )}
+              </div>
+            )}
+
+            {/* Copyright + link extra */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 6 }}>Copyright personalizzato</label>
-                <input type="text" placeholder={`© ${new Date().getFullYear()} Nome · Powered by StayApp`}
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 4 }}>Testo copyright</label>
+                <input type="text" placeholder="Lascia vuoto per testo automatico"
                   value={footerCfg.copyright}
                   onChange={e => setFooterCfg(f => ({ ...f, copyright: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }} />
-                <span style={{ fontSize: 10, color: '#aaa' }}>Lascia vuoto per il testo automatico</span>
+                  style={{ width: '100%', padding: '7px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }} />
               </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
-                <input type="checkbox" checked={footerCfg.show_socials} onChange={e => setFooterCfg(f => ({ ...f, show_socials: e.target.checked }))} />
-                <span><strong>Social links</strong> nel footer</span>
-              </label>
-            </div>
-
-            <div style={{ marginTop: 14 }}>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 8 }}>Link aggiuntivi footer</label>
-              {(footerCfg.extra_links || []).map((lnk, i) => (
-                <div key={lnk.id || i} style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
-                  <input type="text" placeholder="Testo" value={lnk.label}
-                    onChange={e => setFooterCfg(f => ({ ...f, extra_links: f.extra_links.map((l, j) => j === i ? { ...l, label: e.target.value } : l) }))}
-                    style={{ flex: 1, padding: '6px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12 }} />
-                  <input type="url" placeholder="URL" value={lnk.url}
-                    onChange={e => setFooterCfg(f => ({ ...f, extra_links: f.extra_links.map((l, j) => j === i ? { ...l, url: e.target.value } : l) }))}
-                    style={{ flex: 2, padding: '6px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12 }} />
-                  <button onClick={() => setFooterCfg(f => ({ ...f, extra_links: f.extra_links.filter((_, j) => j !== i) }))}
-                    style={{ background: '#fce8e8', border: 'none', borderRadius: 6, padding: '6px 9px', cursor: 'pointer', color: '#c00', fontSize: 12 }}>✕</button>
-                </div>
-              ))}
-              <button onClick={() => setFooterCfg(f => ({ ...f, extra_links: [...(f.extra_links || []), { id: crypto.randomUUID(), label: '', url: '' }] }))}
-                style={{ ...btnAction('add'), marginTop: 4 }}>+ Aggiungi link</button>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 6 }}>Link aggiuntivi</label>
+                {(footerCfg.extra_links || []).map((lnk, i) => (
+                  <div key={lnk.id || i} style={{ display: 'flex', gap: 5, marginBottom: 5, alignItems: 'center' }}>
+                    <input type="text" placeholder="Testo" value={lnk.label}
+                      onChange={e => setFooterCfg(f => ({ ...f, extra_links: f.extra_links.map((l, j) => j === i ? { ...l, label: e.target.value } : l) }))}
+                      style={{ flex: 1, padding: '5px 7px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12 }} />
+                    <input type="url" placeholder="URL" value={lnk.url}
+                      onChange={e => setFooterCfg(f => ({ ...f, extra_links: f.extra_links.map((l, j) => j === i ? { ...l, url: e.target.value } : l) }))}
+                      style={{ flex: 2, padding: '5px 7px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12 }} />
+                    <button onClick={() => setFooterCfg(f => ({ ...f, extra_links: f.extra_links.filter((_, j) => j !== i) }))}
+                      style={{ background: '#fce8e8', border: 'none', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', color: '#c00', fontSize: 12 }}>✕</button>
+                  </div>
+                ))}
+                <button onClick={() => setFooterCfg(f => ({ ...f, extra_links: [...(f.extra_links || []), { id: crypto.randomUUID(), label: '', url: '' }] }))}
+                  style={{ ...btnAction('add'), marginTop: 2, fontSize: 11 }}>+ Aggiungi link</button>
+              </div>
             </div>
           </div>
 

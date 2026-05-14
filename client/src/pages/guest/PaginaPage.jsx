@@ -124,8 +124,8 @@ export default function PaginaPage({ entityType }) {
   loadFont(theme.fontBody)
 
   const mini       = entity.minisito || {}
-  const headerCfg  = { style: 'dark', always_visible: false, logo_in_nav: true, show_cta: false, cta_text: 'Prenota ora', cta_url: '', ...(mini.header_cfg || {}) }
-  const footerCfg  = { style: 'dark', copyright: '', show_socials: true, extra_links: [], ...(mini.footer_cfg || {}) }
+  const headerCfg  = { style: 'dark', always_visible: false, logo_in_nav: true, show_cta: false, cta_text: 'Prenota ora', cta_url: '', show_phone: false, bg_color: '', ...(mini.header_cfg || {}) }
+  const footerCfg  = { layout: 'standard', style: 'dark', copyright: '', show_socials: true, show_description: true, show_contact: true, extra_links: [], ...(mini.footer_cfg || {}) }
   const homeUrl    = entityType === 'struttura' ? `/s/${slug}` : entityType === 'ristorante' ? `/r/${slug}` : `/a/${slug}`
   const privacyUrl = `${homeUrl}/privacy`
   const pageBase   = entityType === 'struttura' ? `/s/${slug}/p/` : entityType === 'ristorante' ? `/r/${slug}/p/` : `/a/${slug}/p/`
@@ -453,7 +453,7 @@ export default function PaginaPage({ entityType }) {
   const navIsDark = headerCfg.style === 'dark' || headerCfg.style === 'colored'
   const navBg = headerCfg.style === 'dark' ? 'rgba(18,18,32,0.95)'
     : headerCfg.style === 'light' ? 'rgba(255,255,255,0.96)'
-    : headerCfg.style === 'colored' ? primary
+    : headerCfg.style === 'colored' ? (headerCfg.bg_color || primary)
     : 'rgba(0,0,0,0.15)'
   const navTextColor = navIsDark ? 'rgba(255,255,255,0.85)' : '#1a1a2e'
   const navTextColorActive = navIsDark ? '#fff' : primary
@@ -535,6 +535,9 @@ export default function PaginaPage({ entityType }) {
               </div>
             )
           })}
+          {headerCfg.show_phone && entity.phone && (
+            <a href={`tel:${entity.phone}`} style={{ ...navBtnSecondary, fontSize: 12 }}>{entity.phone}</a>
+          )}
           {headerCfg.show_cta && headerCfg.cta_url && (
             <a href={headerCfg.cta_url} style={navBtnPrimary}>{headerCfg.cta_text || 'Prenota'}</a>
           )}
@@ -554,22 +557,115 @@ export default function PaginaPage({ entityType }) {
       {blocks.map(block => renderBlock(block))}
 
       {/* Footer */}
-      <footer style={{ background: footerBg, padding: '32px 24px', textAlign: 'center' }}>
-        {footerCfg.show_socials && mini.social && (
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 16 }}>
-            {mini.social.instagram && <a href={mini.social.instagram} target="_blank" rel="noopener noreferrer" style={{ color: footerLink, fontSize: 13, textDecoration: 'none' }}>Instagram</a>}
-            {mini.social.facebook  && <a href={mini.social.facebook}  target="_blank" rel="noopener noreferrer" style={{ color: footerLink, fontSize: 13, textDecoration: 'none' }}>Facebook</a>}
-            {mini.social.whatsapp  && <a href={mini.social.whatsapp}  target="_blank" rel="noopener noreferrer" style={{ color: footerLink, fontSize: 13, textDecoration: 'none' }}>WhatsApp</a>}
+      <footer style={{ background: footerBg, padding: footerCfg.layout === 'minimal' ? '28px 24px' : '56px 24px 28px' }}>
+        {footerCfg.layout === 'minimal' ? (
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: 12, color: footerText, marginBottom: 10 }}>{footerCopy}</p>
+            <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <a href={privacyUrl} style={{ color: footerLink, textDecoration: 'none', fontSize: 11 }}>Privacy Policy</a>
+              <a href={`${homeUrl}/cookie`} style={{ color: footerLink, textDecoration: 'none', fontSize: 11 }}>Cookie Policy</a>
+              {(footerCfg.extra_links || []).filter(l => l.label && l.url).map(l => (
+                <a key={l.id} href={l.url} style={{ color: footerLink, textDecoration: 'none', fontSize: 11 }}>{l.label}</a>
+              ))}
+            </div>
+          </div>
+        ) : footerCfg.layout === 'full' ? (
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 48, marginBottom: 40 }}>
+              {/* Col 1: logo + desc + socials */}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  {entity.logo_url && <img src={entity.logo_url} alt="logo" style={{ height: 36, objectFit: 'contain' }} />}
+                  <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 17, color: footerCfg.style === 'light' ? '#1a1a2e' : '#fff' }}>{entity.name}</span>
+                </div>
+                {footerCfg.show_description !== false && mini.tagline && (
+                  <p style={{ fontSize: 13, color: footerLink, lineHeight: 1.6, marginBottom: 16, maxWidth: 280 }}>{mini.tagline}</p>
+                )}
+                {footerCfg.show_socials !== false && mini.social && (
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    {mini.social.instagram && <a href={mini.social.instagram} target="_blank" rel="noopener noreferrer" style={{ color: footerLink, fontSize: 12, textDecoration: 'none', fontWeight: 600 }}>Instagram</a>}
+                    {mini.social.facebook  && <a href={mini.social.facebook}  target="_blank" rel="noopener noreferrer" style={{ color: footerLink, fontSize: 12, textDecoration: 'none', fontWeight: 600 }}>Facebook</a>}
+                    {mini.social.whatsapp  && <a href={mini.social.whatsapp}  target="_blank" rel="noopener noreferrer" style={{ color: footerLink, fontSize: 12, textDecoration: 'none', fontWeight: 600 }}>WhatsApp</a>}
+                  </div>
+                )}
+              </div>
+              {/* Col 2: nav links */}
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: footerLink, marginBottom: 14 }}>Menu</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <a href={homeUrl} style={{ color: footerCfg.style === 'light' ? '#444' : 'rgba(255,255,255,0.75)', textDecoration: 'none', fontSize: 13 }}>Home</a>
+                  {topLevel.map(p => (
+                    <a key={p.id} href={`${pageBase}${p.slug}`} style={{ color: p.slug === pageSlug ? primary : footerCfg.style === 'light' ? '#444' : 'rgba(255,255,255,0.75)', textDecoration: 'none', fontSize: 13 }}>{p.titolo}</a>
+                  ))}
+                </div>
+              </div>
+              {/* Col 3: contact */}
+              {footerCfg.show_contact !== false && (
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: footerLink, marginBottom: 14 }}>Contatti</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {entity.address && <span style={{ fontSize: 13, color: footerCfg.style === 'light' ? '#444' : 'rgba(255,255,255,0.75)' }}>{entity.address}</span>}
+                    {entity.phone   && <a href={`tel:${entity.phone}`}   style={{ color: footerCfg.style === 'light' ? '#444' : 'rgba(255,255,255,0.75)', textDecoration: 'none', fontSize: 13 }}>{entity.phone}</a>}
+                    {entity.email   && <a href={`mailto:${entity.email}`} style={{ color: footerCfg.style === 'light' ? '#444' : 'rgba(255,255,255,0.75)', textDecoration: 'none', fontSize: 13 }}>{entity.email}</a>}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div style={{ borderTop: `1px solid ${footerCfg.style === 'light' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.08)'}`, paddingTop: 20, display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+              <p style={{ fontSize: 11, color: footerLink }}>{footerCopy}</p>
+              <div style={{ display: 'flex', gap: 14 }}>
+                <a href={privacyUrl} style={{ color: footerLink, textDecoration: 'none', fontSize: 11 }}>Privacy Policy</a>
+                <a href={`${homeUrl}/cookie`} style={{ color: footerLink, textDecoration: 'none', fontSize: 11 }}>Cookie Policy</a>
+                {(footerCfg.extra_links || []).filter(l => l.label && l.url).map(l => (
+                  <a key={l.id} href={l.url} style={{ color: footerLink, textDecoration: 'none', fontSize: 11 }}>{l.label}</a>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* standard (default) — 2 col */
+          <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 48, marginBottom: 36 }}>
+              {/* Col 1: logo + desc + socials */}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                  {entity.logo_url && <img src={entity.logo_url} alt="logo" style={{ height: 32, objectFit: 'contain' }} />}
+                  <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, color: footerCfg.style === 'light' ? '#1a1a2e' : '#fff' }}>{entity.name}</span>
+                </div>
+                {footerCfg.show_description !== false && mini.tagline && (
+                  <p style={{ fontSize: 13, color: footerLink, lineHeight: 1.6, marginBottom: 14, maxWidth: 340 }}>{mini.tagline}</p>
+                )}
+                {footerCfg.show_socials !== false && mini.social && (
+                  <div style={{ display: 'flex', gap: 14 }}>
+                    {mini.social.instagram && <a href={mini.social.instagram} target="_blank" rel="noopener noreferrer" style={{ color: footerLink, fontSize: 12, textDecoration: 'none', fontWeight: 600 }}>Instagram</a>}
+                    {mini.social.facebook  && <a href={mini.social.facebook}  target="_blank" rel="noopener noreferrer" style={{ color: footerLink, fontSize: 12, textDecoration: 'none', fontWeight: 600 }}>Facebook</a>}
+                    {mini.social.whatsapp  && <a href={mini.social.whatsapp}  target="_blank" rel="noopener noreferrer" style={{ color: footerLink, fontSize: 12, textDecoration: 'none', fontWeight: 600 }}>WhatsApp</a>}
+                  </div>
+                )}
+              </div>
+              {/* Col 2: nav links */}
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: footerLink, marginBottom: 14 }}>Menu</div>
+                <div style={{ display: 'grid', gridTemplateColumns: topLevel.length > 4 ? '1fr 1fr' : '1fr', gap: '8px 16px' }}>
+                  <a href={homeUrl} style={{ color: footerCfg.style === 'light' ? '#444' : 'rgba(255,255,255,0.75)', textDecoration: 'none', fontSize: 13 }}>Home</a>
+                  {topLevel.map(p => (
+                    <a key={p.id} href={`${pageBase}${p.slug}`} style={{ color: p.slug === pageSlug ? primary : footerCfg.style === 'light' ? '#444' : 'rgba(255,255,255,0.75)', textDecoration: 'none', fontSize: 13 }}>{p.titolo}</a>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div style={{ borderTop: `1px solid ${footerCfg.style === 'light' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.08)'}`, paddingTop: 18, display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+              <p style={{ fontSize: 11, color: footerLink }}>{footerCopy}</p>
+              <div style={{ display: 'flex', gap: 14 }}>
+                <a href={privacyUrl} style={{ color: footerLink, textDecoration: 'none', fontSize: 11 }}>Privacy Policy</a>
+                <a href={`${homeUrl}/cookie`} style={{ color: footerLink, textDecoration: 'none', fontSize: 11 }}>Cookie Policy</a>
+                {(footerCfg.extra_links || []).filter(l => l.label && l.url).map(l => (
+                  <a key={l.id} href={l.url} style={{ color: footerLink, textDecoration: 'none', fontSize: 11 }}>{l.label}</a>
+                ))}
+              </div>
+            </div>
           </div>
         )}
-        <p style={{ fontSize: 12, color: footerText }}>{footerCopy}</p>
-        <p style={{ fontSize: 11, color: footerLink, marginTop: 10, display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a href={privacyUrl} style={{ color: footerLink, textDecoration: 'none' }}>Privacy Policy</a>
-          <a href={`${homeUrl}/cookie`} style={{ color: footerLink, textDecoration: 'none' }}>Cookie Policy</a>
-          {(footerCfg.extra_links || []).filter(l => l.label && l.url).map(l => (
-            <a key={l.id} href={l.url} style={{ color: footerLink, textDecoration: 'none' }}>{l.label}</a>
-          ))}
-        </p>
       </footer>
 
       <CookieBanner primaryColor={primary} privacyUrl={privacyUrl} cookieUrl={`${homeUrl}/cookie`} />
