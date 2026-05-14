@@ -1,11 +1,19 @@
-import pkg from 'pg'
+import { supabase } from './supabase.js'
 import { S3Client, PutObjectCommand, ListObjectsV2Command, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { gzip } from 'zlib'
 import { promisify } from 'util'
 
-const { Client } = pkg
-const gzipAsync  = promisify(gzip)
+const gzipAsync     = promisify(gzip)
 const RETENTION_DAYS = 30
+
+// Tutte le tabelle pubbliche del progetto
+const TABLES = [
+  'aziende', 'profiles', 'properties', 'ristoranti', 'attivita',
+  'requests', 'contatti', 'newsletters', 'page_views', 'demo_requests',
+  'eventi', 'event_bookings', 'blog_articles', 'blog_categories',
+  'risorse', 'risorse_promozioni', 'prenotazioni',
+  'collegamenti', 'messages',
+]
 
 function getR2Client() {
   const accountId       = process.env.R2_ACCOUNT_ID
@@ -21,12 +29,6 @@ function getR2Client() {
 
 export async function runBackup() {
   const bucket = process.env.R2_BUCKET_NAME || 'stayapp-backups'
-  const dbUrl  = process.env.DATABASE_URL
-
-  if (!dbUrl) {
-    console.error('[backup] DATABASE_URL mancante — backup saltato')
-    return
-  }
 
   const r2 = getR2Client()
   if (!r2) {
@@ -34,32 +36,27 @@ export async function runBackup() {
     return
   }
 
-  // ── 1. Connessione al DB ed export tabelle ────────────────────────────────
-  const client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } })
-  let backup = { _meta: { exported_at: new Date().toISOString(), version: 1 }, tables: {} }
+  // ── 1. Esporta ogni tabella via Supabase client (service role) ────────────
+  const backup = {
+    _meta: { exported_at: new Date().toISOString(), version: 2 },
+    tables: {},
+  }
 
-  try {
-    console.log('[backup] Connessione al database...')
-    await client.connect()
-
-    // Lista tutte le tabelle pubbliche
-    const { rows: tables } = await client.query(
-      `SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename`
-    )
-    console.log(`[backup] Tabelle trovate: ${tables.map(t => t.tablename).join(', ')}`)
-
-    // Esporta ogni tabella
-    for (const { tablename } of tables) {
-      const { rows } = await client.query(`SELECT * FROM "${tablename}"`)
-      backup.tables[tablename] = rows
-      console.log(`[backup] ${tablename}: ${rows.length} righe`)
+  console.log('[backup] Avvio esportazione tabelle...')
+  for (const table of TABLES) {
+    try {
+      const { data, error } = await supabase.from(table).select('*')
+      if (error) {
+        console.error(`[backup] ${table}: ${error.message}`)
+        backup.tables[table] = { error: error.message }
+      } else {
+        backup.tables[table] = data || []
+        console.log(`[backup] ${table}: ${(data || []).length} righe`)
+      }
+    } catch (err) {
+      console.error(`[backup] ${table}: ${err.message}`)
+      backup.tables[table] = { error: err.message }
     }
-
-    await client.end()
-  } catch (err) {
-    console.error('[backup] Errore DB:', err.message)
-    try { await client.end() } catch {}
-    return
   }
 
   // ── 2. Serializza e comprimi ──────────────────────────────────────────────
@@ -67,7 +64,7 @@ export async function runBackup() {
   try {
     const json = JSON.stringify(backup)
     compressed = await gzipAsync(Buffer.from(json, 'utf8'))
-    console.log(`[backup] Backup compresso: ${(compressed.length / 1024).toFixed(0)} KB`)
+    console.log(`[backup] Compresso: ${(compressed.length / 1024).toFixed(0)} KB`)
   } catch (err) {
     console.error('[backup] Compressione fallita:', err.message)
     return
