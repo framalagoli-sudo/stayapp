@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { MapPin, Phone, Mail, Clock, ChevronDown, Utensils, Wine, Coffee, Music, Car, Wind, Wifi, Bell, Bus, Star, Heart, Award, Calendar, Users, Plus, Minus } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
+import { injectTracking } from '../../lib/tracking'
 import CookieBanner from '../../components/CookieBanner'
 import BookingWidget from '../../components/BookingWidget'
 import ChatbotWidget from '../../components/ChatbotWidget'
@@ -123,7 +124,8 @@ export default function LandingRistorante({ ristorante }) {
     setMeta('og:title',    mini.seo_title || ristorante.name)
     setMeta('og:image',    ristorante.cover_url || '')
     setMeta('og:type',     'restaurant')
-    return () => { document.title = 'StayApp' }
+    const cleanupTracking = injectTracking(mini.tracking_cfg || {})
+    return () => { document.title = 'StayApp'; cleanupTracking() }
   }, [])
 
   function setMeta(name, content) {

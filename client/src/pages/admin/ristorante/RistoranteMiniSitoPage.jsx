@@ -25,6 +25,7 @@ const DEFAULT = {
   cta_banner: DEFAULT_CTA_BANNER,
   foto_testo: [], paragrafi_titolo: '', paragrafi: [],
   team_titolo: '', team: [], steps_titolo: '', steps: [],
+  tracking_cfg: { meta_pixel_id: '', ga4_id: '', gtm_id: '' },
 }
 
 const HIGHLIGHT_ICONS = [
@@ -87,6 +88,7 @@ export default function RistoranteMiniSitoPage() {
         team:          s.team         || [],
         steps_titolo:  s.steps_titolo || '',
         steps:         s.steps        || [],
+        tracking_cfg:  { meta_pixel_id: '', ga4_id: '', gtm_id: '', ...(s.tracking_cfg || {}) },
       })
     }
   }, [ristorante])
@@ -353,6 +355,7 @@ export default function RistoranteMiniSitoPage() {
             </div>
           ))}
         </div>
+        <TrackingCard form={form} setForm={setForm} save={save} inputStyle={inputStyle} lblStyle={lblStyle} hintStyle={hintStyle} fieldWrap={fieldWrap} cardStyle={cardStyle} sectionTitle={sectionTitle} />
       </>}
 
       {/* Highlights */}
@@ -741,6 +744,38 @@ function MenuSpecialeItem({ item, onPatch, onRemove }) {
       <button onClick={onRemove} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 12, padding: 0 }}>
         <Trash2 size={13} strokeWidth={1.5} /> Rimuovi menu
       </button>
+    </div>
+  )
+}
+
+function TrackingCard({ form, setForm, save, inputStyle, lblStyle, hintStyle, fieldWrap, cardStyle, sectionTitle }) {
+  const cfg = form.tracking_cfg || {}
+  function patchTracking(key, value) {
+    const updated = { ...form, tracking_cfg: { ...cfg, [key]: value } }
+    setForm(updated)
+    save({ minisito: updated }).catch(() => {})
+  }
+  const FIELDS = [
+    { key: 'meta_pixel_id', label: 'Meta Pixel ID', placeholder: 'es. 1234567890123456', hint: 'Meta Business Suite → Gestione eventi → Pixel' },
+    { key: 'ga4_id',        label: 'Google Analytics 4 — Measurement ID', placeholder: 'es. G-XXXXXXXXXX', hint: 'Google Analytics → Amministrazione → Stream dati → Measurement ID' },
+    { key: 'gtm_id',        label: 'Google Tag Manager — Container ID', placeholder: 'es. GTM-XXXXXXX', hint: 'Google Tag Manager → Account → Container ID' },
+  ]
+  return (
+    <div style={cardStyle}>
+      <h3 style={sectionTitle}>Tracking & Analytics</h3>
+      <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+        Gli script vengono iniettati automaticamente nel minisito. Lascia vuoti quelli non utilizzati.
+      </p>
+      {FIELDS.map(({ key, label, placeholder, hint }, i) => (
+        <div key={key} style={{ ...fieldWrap, marginBottom: i < FIELDS.length - 1 ? 18 : 0 }}>
+          <label style={lblStyle}>{label}</label>
+          <input value={cfg[key] || ''} placeholder={placeholder}
+            onChange={e => setForm(f => ({ ...f, tracking_cfg: { ...(f.tracking_cfg || {}), [key]: e.target.value } }))}
+            onBlur={() => patchTracking(key, cfg[key] || '')}
+            style={inputStyle} />
+          <span style={hintStyle}>{hint}</span>
+        </div>
+      ))}
     </div>
   )
 }

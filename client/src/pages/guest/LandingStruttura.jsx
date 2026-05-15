@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { MapPin, Phone, Mail, ChevronDown, ChevronLeft, ChevronRight, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro, Heart, Award, Mountain, Wind, Calendar, Users, Plus, Minus, CheckCircle, ArrowLeft } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
+import { injectTracking } from '../../lib/tracking'
 import CookieBanner from '../../components/CookieBanner'
 import BookingWidget from '../../components/BookingWidget'
 import ChatbotWidget from '../../components/ChatbotWidget'
@@ -147,7 +148,8 @@ export default function LandingStruttura({ property }) {
     setMeta('og:title',    mini.seo_title || property.name)
     setMeta('og:image',    property.cover_url || '')
     setMeta('og:type',     'website')
-    return () => { document.title = 'StayApp' }
+    const cleanupTracking = injectTracking(mini.tracking_cfg || {})
+    return () => { document.title = 'StayApp'; cleanupTracking() }
   }, [])
 
   function setMeta(name, content) {
