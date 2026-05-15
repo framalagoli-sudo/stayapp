@@ -1,7 +1,7 @@
 # FEATURES — Roadmap prodotto StayApp
 
 Documento vivo. Aggiornato sessione per sessione.
-Ultima revisione: 2026-05-14 (gestione staff completata — invito via email, permessi granulari, selezione struttura/ristorante)
+Ultima revisione: **2026-05-15** (visione allargata worldwide + UX admin upgrade + analisi gap vs GoHighLevel)
 
 ---
 
@@ -14,399 +14,336 @@ Ultima revisione: 2026-05-14 (gestione staff completata — invito via email, pe
 
 ---
 
-## Verticals supportati (attuali e futuri)
+## Visione prodotto (aggiornata 2026-05-15)
 
-Il sistema è già multi-modulo. L'obiettivo è espanderlo oltre l'hospitality:
+**StayApp NON è solo per l'hospitality italiana.**
+È una piattaforma SaaS worldwide "business in a box" per qualsiasi business di servizi:
+hotel, ristoranti, attività, ma anche **aziende, freelancer, studi professionali, agenzie, palestre, coach, negozi** — qualsiasi business che vuole gestire clienti, prenotazioni, marketing e comunicazione da un'unica piattaforma senza dipendere da web agency.
 
-| Vertical | Modulo attuale | Note |
+**Competitor principali:** GoHighLevel · HubSpot · WordPress · Wix/Squarespace · Webflow
+
+**Vantaggio unico:** PWA installabile via QR code — nessun competitor lo fa in modo integrato.
+
+---
+
+## Target verticali (attuali e futuri)
+
+| Vertical | Modulo attuale | Stato |
 |---|---|---|
 | Hotel / B&B / Agriturismo | `struttura` | ✅ core |
 | Ristorante / Bar / Pizzeria | `ristorante` | ✅ core |
-| Attività / Esperienza | `attivita` | ✅ core |
-| Centro sportivo / Padel / Tennis | `attivita` | estendibile |
-| Palestra / Fitness | nuovo modulo | booking classi + abbonamenti |
+| Attività / Esperienza / Tour | `attivita` | ✅ core |
+| Centro sportivo / Padel | `attivita` + booking | estendibile |
+| Palestra / Fitness | nuovo modulo | abbonamenti + classi |
 | Studio medico / Dentista | nuovo modulo | booking slot + paziente |
-| Professionista (avvocato, commercialista, etc.) | nuovo modulo | booking appuntamenti |
+| Freelancer (avvocato, coach, consulente) | nuovo modulo | portfolio + proposals |
+| Agenzia marketing | nuovo modulo | multi-cliente, white-label |
 | Spa / Centro benessere | interno a struttura | booking trattamenti |
-| Coworking / Uffici | nuovo modulo | booking postazioni/sale |
-| Scuola / Formazione | nuovo modulo | iscrizioni corsi + lezioni |
+| Coworking | nuovo modulo | booking postazioni/sale |
+| Scuola / Formazione | nuovo modulo | iscrizioni corsi |
+| Negozio / E-commerce | nuovo modulo | catalogo + checkout |
 
 ---
 
-## 1. SISTEMA BOOKING RISORSE (pivot strategico) 🔴
+## Stato implementazione attuale ✅
 
-Il cuore della piattaforma generalista. Sostituisce il concetto "prenotazione escursione"
-con un sistema universale applicabile a qualsiasi entità.
+### Admin panel
+- [x] Login + 2FA TOTP (Google Authenticator / Authy)
+- [x] Password reset via email
+- [x] Dashboard con KPI, richieste aperte, prenotazioni oggi, contatti recenti, entity cards
+- [x] Sidebar con icone, raggruppamento visivo, booking sub-menu collassabile
+- [x] Breadcrumb navigazione su tutte le pagine admin
+- [x] Analytics con grafici SVG (range 7/30/90gg)
+- [x] Gestione aziende, strutture, ristoranti, attività (CRUD)
+- [x] Minisito drag-and-drop (struttura/ristorante/attività)
+- [x] Page builder CMS (23 tipi blocchi, drag & drop, SEO, header/footer configuratore)
+- [x] Chatbot visual builder (decision tree, preview live)
+- [x] Booking risorse (slot/coperti, calendario, promozioni, cancellazione self-service)
+- [x] Newsletter (4 template, double opt-in, schedulazione, test, archivio pubblico)
+- [x] Contatti CRM (filtri, tag, add/edit)
+- [x] Blog & News (editor Tiptap, categorie)
+- [x] Eventi (CRUD, prenotazioni, export CSV)
+- [x] Richieste ospiti + Prenotazioni separate
+- [x] Audit log (tabella + middleware + pagina admin)
+- [x] Gestione staff (invito email, permessi granulari, selezione entità, ban/elimina)
+- [x] QR Code generatore
+- [x] Sicurezza: helmet, rate limiting, CORS, zod validation
+- [x] Backup notturno Railway → Cloudflare R2 (03:00 UTC, retention 30gg)
 
-### Concetto: Risorsa prenotabile
+### Guest PWA + Minisito
+- [x] PWA struttura (/s/:slug), ristorante (/r/:slug), attività (/a/:slug)
+- [x] ChatbotWidget (PWA=absolute, landing=fixed)
+- [x] BookingWidget pubblico
+- [x] Privacy/GDPR auto-generate per tutte le entità
+- [x] CookieBanner (Portal, localStorage key cookie_consent_v2)
 
-Ogni entità può avere **N risorse**, ognuna con le sue regole:
+---
 
-```
-Risorsa
-├── nome: "Campo Padel 1", "Sala Massaggi A", "Studio Dr. Rossi"
-├── tipo: slot_orario | campo | sala | postazione | classe
-├── durata_default: 60min
-├── capacita: 1 (singolo) | N (gruppo/classe)
-├── prezzo: 0 (gratuito) | fisso | variabile per slot
-├── disponibilita: regole settimanali (lun-ven 09:00-20:00)
-├── blocchi: eccezioni (festivi, manutenzione)
-├── anticipo_min: 2h (minimo anticipo prenotazione)
-├── cancellazione: 24h (policy cancellazione)
-└── conferma: automatica | manuale
-```
+## ROADMAP — Tier 1: Revenue & Sales Enablers 🔴
+*Senza questi non si compete con GoHighLevel/HubSpot*
 
-### Casi d'uso per vertical
+### A. Stripe Payments (già installato, da integrare)
 
-| Vertical | Risorsa | Slot | Capacità |
-|---|---|---|---|
-| Hotel | Spa, Sala riunioni, Campo tennis | 60min | 1-2 |
-| Ristorante | Tavolo, Chef's table | 90min | 2-8 |
-| Centro sportivo | Campo padel, Campo calcetto | 60-90min | 2-10 |
-| Studio medico | Ambulatorio Dr. X | 20-30min | 1 |
-| Palestra | Sala spinning, Personal trainer | 45-60min | 1-20 |
-| Coworking | Postazione fissa, Sala riunioni | 1h-giornata | 1-10 |
-| Professionista | Agenda Dr./Avv./Commercialista | 30-60min | 1 |
+- [ ] 🔴 **Checkout booking risorse** — Stripe embedded nel widget pubblico (deposito o totale)
+- [ ] 🔴 **Checkout eventi** — pagamento alla prenotazione evento
+- [ ] 🔴 **Link di pagamento rapido** — admin genera link "paga €150" → cliente paga online (fondamentale per freelancer)
+- [ ] 🔴 **Webhook Stripe** — conferma automatica prenotazione dopo pagamento
+- [ ] 🟡 **Rimborsi** — admin emette rimborso parziale/totale dalla dashboard
+- [ ] 🟡 **Abbonamenti ricorrenti** — Stripe Billing per palestre, coworking, SaaS
+- [ ] 🟡 **Stripe Connect** — ogni azienda con il proprio account Stripe + commissione piattaforma
+- [ ] 🟢 **Fattura PDF automatica** — generata e inviata via email dopo pagamento
 
-### Features booking system
+### B. CRM Pipeline / Kanban (killer feature GoHighLevel)
 
-- [x] 🔴 **CRUD risorse** — admin crea/modifica risorse per la propria entità
-- [x] 🔴 **Calendario disponibilità** — grid settimanale con slot liberi/occupati (admin)
-- [x] 🔴 **Booking pubblico** — cliente sceglie risorsa → slot → conferma (PWA/minisito)
-- [x] 🔴 **Gestione prenotazioni** — lista admin con filtri, stato, azioni
-- [x] 🔴 **Email conferma** automatica al cliente (via Resend)
-- [ ] 🔴 **Email reminder** N ore prima (configurabile per risorsa)
-- [x] 🟡 **Cancellazione self-service** — link nell'email conferma, policy configurabile per risorsa
-- [ ] 🟡 **Lista d'attesa** — se slot pieno, cliente entra in lista
-- [ ] 🟡 **Pagamento al booking** — Stripe checkout integrato (deposito o totale)
-- [ ] 🟡 **Ricorrenza** — prenotazione settimanale fissa (abbonati palestra, slot fisso medico)
-- [ ] 🟢 **Sync calendario** — export iCal / Google Calendar per il professionista
-- [ ] 🟢 **Buffer tra slot** — pulizia/preparazione (es. 15min tra massaggi)
-- [ ] 🟢 **Override manuale** — admin blocca slot / sposta prenotazione
-
-### DB (nuove tabelle da aggiungere)
+- [ ] 🔴 **Pipeline stages** — colonne configurabili drag & drop (Lead → Contattato → Proposta → Chiuso/Perso)
+- [ ] 🔴 **Deal value** — valore stimato per ogni lead/opportunità
+- [ ] 🔴 **Kanban view** — vista board alternativa alla lista contatti
+- [ ] 🟡 **Lead scoring** — punteggio automatico basato su interazioni
+- [ ] 🟡 **Activity log per contatto** — storico email/note/interazioni per ogni lead
+- [ ] 🟡 **Filtri pipeline** — per stage, valore, assegnato a, data
+- [ ] 🟢 **Forecast** — previsione revenue da pipeline aperta
 
 ```sql
--- Risorse prenotabili
-risorse (
-  id, entity_tipo, entity_id, nome, tipo,
-  descrizione, durata_min int, capacita int,
-  prezzo numeric, valuta text DEFAULT 'EUR',
-  colore text,           -- per il calendario
-  attiva boolean,
-  disponibilita jsonb,   -- { lun: [{start:'09:00',end:'20:00'}], ... }
-  blocchi jsonb,         -- [{ data:'2026-06-15', motivo:'festivo' }]
-  anticipo_min int,      -- minuti minimi di anticipo
-  cancellazione_h int,   -- ore entro cui si può cancellare
-  conferma_auto boolean DEFAULT true,
-  created_at, updated_at
-)
+-- Aggiunta a contatti:
+ALTER TABLE contatti ADD COLUMN pipeline_stage text DEFAULT 'lead';
+ALTER TABLE contatti ADD COLUMN deal_value numeric DEFAULT 0;
+ALTER TABLE contatti ADD COLUMN assigned_to uuid REFERENCES profiles(id);
 
--- Prenotazioni risorse
-prenotazioni_risorse (
-  id, risorsa_id FK risorse,
-  entity_tipo, entity_id,
-  cliente_nome, cliente_email, cliente_telefono,
-  data date, ora_inizio time, ora_fine time,
-  posti int DEFAULT 1,
-  importo_totale numeric,
-  stato text DEFAULT 'confermata', -- confermata|in_attesa|cancellata|completata
-  note text,
-  pagamento_id text,     -- Stripe payment intent
-  reminder_inviato boolean DEFAULT false,
-  created_at, updated_at
-)
+-- Stages configurabili per azienda (jsonb su aziende)
+-- aziende.pipeline_stages jsonb DEFAULT '["lead","contattato","proposta","chiuso_vinto","chiuso_perso"]'
 ```
 
----
+### C. Webhooks / API pubblica (unlock enorme → Zapier/Make)
 
-## 2. CHATBOT CONFIGURABILE (decision tree) 🟡
+- [ ] 🔴 **Webhook uscente** — `POST /api/webhooks/config` + invio automatico a URL custom su eventi: nuovo_contatto, nuova_prenotazione, nuova_richiesta, pagamento_ricevuto, ecc.
+- [ ] 🔴 **API key management** — admin genera API key per integrazioni esterne
+- [ ] 🟡 **Zapier connector** — app Zapier ufficiale (trigger + action)
+- [ ] 🟡 **Make/Integromat** — modulo Make ufficiale
+- [ ] 🟢 **Documentazione API pubblica** — Swagger/OpenAPI per sviluppatori
 
-Widget chat con risposte preimpostate per struttura, ristorante e attività. Admin configura albero di conversazione (nodi + opzioni con azioni).
+### D. Email Automation Sequences
 
-- [x] 🟡 **Decision tree admin** — editor nodi: messaggio bot + pulsanti tipizzati
-- [x] 🟡 **Tipi opzione** — `go_to` (vai a nodo), `restart` (torna a start), `call` (tel:), `whatsapp` (wa.me), `link` (URL esterno)
-- [x] 🟡 **Widget PWA** — posizionato sopra la nav bar (position:absolute, non fuoriesce dal mockup phone)
-- [x] 🟡 **Widget landing** — floating fixed bottom-right (360×520px) per minisiti
-- [x] 🟡 **Entità supportate** — struttura, ristorante, attività (colonna `chatbot jsonb` su tutte e tre le tabelle)
-- [x] 🟡 **Anteprima live** — nell'editor admin si vede la conversazione in tempo reale
-- [ ] 🟢 **Chatbot AI** — integrazione LLM per risposte libere (campo "altro" + GPT/Claude)
-- [ ] 🟢 **Trasferimento a operatore** — escalation a chat umana (WhatsApp / email notifica)
-- [ ] 🟢 **Analytics chatbot** — quali percorsi vengono scelti più spesso
-
-### DB
-```sql
--- Migration 025_chatbot.sql
-ALTER TABLE properties ADD COLUMN IF NOT EXISTS chatbot jsonb DEFAULT NULL;
-ALTER TABLE ristoranti ADD COLUMN IF NOT EXISTS chatbot jsonb DEFAULT NULL;
-ALTER TABLE attivita   ADD COLUMN IF NOT EXISTS chatbot jsonb DEFAULT NULL;
-```
-
----
-
-## 3. ORDINAZIONE F&B (ristoranti / hotel room service) 🔴
-
-Ospite scansiona QR al tavolo → ordina → la cucina riceve in tempo reale.
-
-- [ ] 🔴 **Menu ordinabile** — toggle "ordinabile" per piatto/categoria
-- [ ] 🔴 **Carrello ospite** — aggiunge piatti, note per piatto, invia ordine
-- [ ] 🔴 **Kitchen display** — schermata cucina con ordini in arrivo (real-time)
-- [ ] 🔴 **Stato ordine** — ospite vede: ricevuto → in preparazione → pronto
-- [ ] 🟡 **Numero tavolo / camera** — identificazione ospite al momento dell'ordine
-- [ ] 🟡 **Pagamento integrato** — Stripe al momento dell'ordine o a fine pasto
-- [ ] 🟡 **Orari servizio** — ordini accettati solo negli orari definiti
-- [ ] 🟢 **Allergeni nel carrello** — warning se item contiene allergene dichiarato dall'ospite
-- [ ] 🟢 **Upselling automatico** — "Con questo abbinare vino X?"
-
----
-
-## 4. CHECK-IN / CHECK-OUT DIGITALE (hotel) 🔴
-
-- [ ] 🔴 **Pre check-in** — email automatica N giorni prima con link form
-- [ ] 🔴 **Form pre-arrivo** — nome, documento (foto), ora arrivo stimata, preferenze
-- [ ] 🔴 **Notifica reception** — alert quando ospite completa il pre check-in
-- [ ] 🟡 **Check-out digitale** — ospite chiude il soggiorno dalla PWA
-- [ ] 🟡 **Addebiti extra** — reception aggiunge extra (minibar, ecc.) visibili all'ospite
-- [ ] 🟢 **Firma digitale** — firma regolamento struttura inline
-- [ ] 🟢 **Upload documento** — foto fronte/retro ID (storage Supabase)
-
----
-
-## 5. EMAIL AUTOMATION (trigger automatici) 🔴
-
-Oggi abbiamo solo newsletter manuale. Manca l'automation basata su eventi.
-
-- [ ] 🔴 **Pre-arrivo** — email automatica X giorni prima del check-in (hotel)
-- [ ] 🔴 **Conferma prenotazione** — email immediata con dettagli risorsa/evento
-- [ ] 🔴 **Reminder appuntamento** — 24h e 1h prima (booking risorse)
-- [ ] 🔴 **Post-soggiorno / post-visita** — email automatica dopo check-out o appuntamento
-- [ ] 🟡 **Sequenza benvenuto** — serie email per nuovi iscritti newsletter
-- [ ] 🟡 **Re-engagement** — email a contatti inattivi da X giorni
-- [ ] 🟡 **Compleanno** — email automatica se data di nascita salvata nel CRM
-- [ ] 🟢 **Flow builder visuale** — editor drag & drop per costruire sequenze
-
-### DB
+- [ ] 🔴 **Trigger: nuova prenotazione** → email conferma personalizzata (già base, da potenziare)
+- [ ] 🔴 **Trigger: N ore prima appuntamento** → reminder automatico
+- [ ] 🔴 **Trigger: nuovo contatto/iscrizione** → sequenza benvenuto (email 1 subito, email 2 dopo 3gg, email 3 dopo 7gg)
+- [ ] 🔴 **Trigger: post-visita/post-soggiorno** → email follow-up + richiesta recensione
+- [ ] 🟡 **Trigger: compleanno** → email automatica se data nascita salvata nel CRM
+- [ ] 🟡 **Trigger: re-engagement** → email a contatti inattivi da X giorni
+- [ ] 🟡 **Flow builder visuale** — editor drag & drop sequenze (nodi trigger → condizione → azione)
+- [ ] 🟢 **A/B test subject** — test automatico su 2 varianti oggetto
 
 ```sql
 automazioni (
   id, azienda_id, entity_tipo, entity_id,
-  nome, trigger text,       -- 'pre_arrivo'|'post_visita'|'conferma_booking'|...
-  trigger_config jsonb,     -- { giorni_prima: 3 }
-  template_id, subject, content jsonb,
-  attiva boolean,
-  created_at
+  nome text, attiva boolean DEFAULT true,
+  trigger text,         -- 'nuova_prenotazione'|'pre_appuntamento'|'post_visita'|'nuovo_contatto'|'compleanno'|'re_engagement'
+  trigger_config jsonb, -- { ore_prima: 24 } | { giorni_dopo: 1 } | { giorni_inattivita: 60 }
+  steps jsonb,          -- [{ delay_giorni: 0, subject: '...', content: {...} }, ...]
+  created_at, updated_at
 )
 ```
 
 ---
 
-## 6. UPSELLING IN-STAY 🟡
+## ROADMAP — Tier 2: Marketing & Growth 🟡
 
-Messaggi/offerte automatiche durante il soggiorno o prima dell'arrivo.
+### E. Social Media Integrations
 
-- [ ] 🟡 **Upgrade camera** — offerta upgrade con prezzo delta (hotel)
-- [ ] 🟡 **Early check-in / late check-out** — disponibilità + prezzo
-- [ ] 🟡 **Add-on** — colazione, parcheggio, transfer (comprabili dalla PWA)
-- [ ] 🟡 **Offerta F&B** — "Prenota il tavolo per stasera" con link booking
-- [ ] 🟡 **Bundle** — pacchetti combinati (camera + cena + spa)
-- [ ] 🟢 **Trigger temporale** — upselling mostrato X ore dopo il check-in
+#### E1. Tracking & Pixel (1-2 ore, zero approvazioni esterne)
+- [ ] 🔴 **Meta Pixel** — campo `meta_pixel_id` in minisito settings → iniettato nell'`<head>` della landing. Retargeting Facebook/Instagram + conversioni.
+- [ ] 🔴 **Google Analytics 4** — campo `ga4_id` → script iniettato. Analytics traffico completo.
+- [ ] 🔴 **Google Tag Manager** — campo `gtm_id` → container unico, copre tutto il resto.
+- [ ] 🟡 **TikTok Pixel** — stesso pattern, per chi fa ads TikTok.
+
+```json
+// tracking_cfg in minisito jsonb:
+{
+  "meta_pixel_id": "1234567890",
+  "ga4_id": "G-XXXXXXXXXX",
+  "gtm_id": "GTM-XXXXXXX",
+  "tiktok_pixel_id": ""
+}
+```
+
+#### E2. WhatsApp Business API (1-2 giorni, 1000 conv/mese gratis)
+- [ ] 🟡 **Messaggio conferma prenotazione** → WhatsApp automatico via Meta Cloud API o Twilio
+- [ ] 🟡 **Reminder 24h prima** → WhatsApp
+- [ ] 🟡 **Follow-up post-visita** → WhatsApp
+- [ ] 🟢 **Template manager** — admin configura i template WhatsApp approvati da Meta
+- [ ] 🟢 **Two-way WhatsApp inbox** — risposte dei clienti in un'unica inbox admin
+
+#### E3. Social Embeds nel Page Builder
+- [ ] 🟡 **Blocco "Post Instagram"** — oEmbed da URL, si aggiorna automaticamente
+- [ ] 🟡 **Blocco "Video TikTok"** — oEmbed da URL
+- [ ] 🟡 **Blocco "Feed social"** — widget embed (ultimi N post da pagina Facebook/Instagram)
+
+#### E4. Social Posting Scheduler (richiede Meta App Review — settimane)
+- [ ] 🟢 **Connessione pagina Facebook/Instagram** — OAuth Meta Graph API
+- [ ] 🟢 **Crea e schedula post** — testo + immagine + data/ora → pubblicato automaticamente
+- [ ] 🟢 **Calendario editoriale** — vista mensile dei post programmati
+- [ ] 🟢 **Analytics post** — reach, like, commenti (da Graph API)
+
+#### E5. Facebook Lead Ads → CRM (triviale con webhooks già pronti)
+- [ ] 🟢 **Webhook Meta Lead Ads** → nuovo lead Facebook → contatto automatico in StayApp CRM
+- [ ] 🟢 **LinkedIn Lead Gen** → stesso flusso per LinkedIn
+
+#### E6. Google Business Profile
+- [ ] 🟢 **Post aggiornamenti** → pubblica "offerta del giorno" direttamente da admin su Google Business
+- [ ] 🟢 **Leggi e rispondi recensioni Google** → inbox admin
+- [ ] 🟢 **Sincronizza orari e info** → aggiornamento automatico
+
+### F. Reviews & Reputation Management
+
+- [ ] 🟡 **Raccolta recensioni post-visita** — form breve (stelle + commento) via email/link
+- [ ] 🟡 **Smart redirect** — se ≥4 stelle → Google/TripAdvisor; se <4 → form privato per gestire il problema
+- [ ] 🟡 **Widget recensioni nel minisito** — mostra le recensioni raccolte (con stelle)
+- [ ] 🟡 **Dashboard recensioni** — admin vede trend, media, commenti
+- [ ] 🟢 **Reply pubbliche** — admin risponde alle recensioni dalla piattaforma
+- [ ] 🟢 **Import recensioni Google** — portare recensioni esistenti nel widget
+
+### G. Form Builder
+
+- [ ] 🟡 **Form drag & drop** — admin costruisce form con campi custom (testo, email, tel, select, checkbox, file)
+- [ ] 🟡 **Logica condizionale** — "se risponde X mostra campo Y"
+- [ ] 🟡 **Embed ovunque** — codice snippet da incollare in qualsiasi sito
+- [ ] 🟡 **Blocco form nel page builder** — integrato nel CMS già esistente
+- [ ] 🟡 **Risultati in CRM** — ogni invio → nuovo contatto/lead in StayApp
+- [ ] 🟢 **Notifica email** — admin riceve email a ogni invio form
+- [ ] 🟢 **Webhook per form** — manda dati a Zapier/Make
+
+### H. Proposals & Preventivi Digitali (fondamentale per freelancer/agenzie)
+
+- [ ] 🟡 **Crea preventivo** — admin compone preventivo brandizzato (voci, quantità, prezzi, note, scadenza)
+- [ ] 🟡 **Link condivisibile** — cliente apre URL → vede preventivo → clicca "Accetto"
+- [ ] 🟡 **Firma digitale** — checkbox accettazione + email di conferma
+- [ ] 🟡 **Collegamento Stripe** — cliente accetta + paga direttamente dal preventivo
+- [ ] 🟡 **PDF download** — genera PDF del preventivo accettato (fattura pro-forma)
+- [ ] 🟢 **Template preventivi** — salva strutture riutilizzabili
+- [ ] 🟢 **Scadenza + reminder** — avvisa cliente se preventivo non accettato entro X giorni
 
 ---
 
-## 7. FEEDBACK / NPS 🟡
+## ROADMAP — Tier 3: Platform Maturity 🟢
 
-- [ ] 🟡 **Survey in-stay** — form breve a metà soggiorno (1-5 stelle + commento)
-- [ ] 🟡 **Post-stay automatico** — email survey 1 giorno dopo check-out
-- [ ] 🟡 **Dashboard feedback** — admin vede punteggi, trend, commenti
-- [ ] 🟡 **Redirect recensioni** — se NPS ≥ 4 → link Google/TripAdvisor automatico
-- [ ] 🟢 **Risposta pubblica** — admin risponde alle recensioni dalla piattaforma
-- [ ] 🟢 **Widget recensioni** — mostra recensioni verificate nel minisito
+### I. White-Label (modello agenzia → rivenditore)
 
----
+- [ ] 🟢 **Custom branding** — logo, colori, dominio custom per ogni rivenditore
+- [ ] 🟢 **Sub-account** — ogni agenzia gestisce N clienti indipendenti
+- [ ] 🟢 **Reseller dashboard** — agenzia vede tutti i suoi clienti + fatturazione
+- [ ] 🟢 **Prezzi custom** — agenzia imposta il proprio prezzo al cliente finale
+- [ ] 🟢 **Email branded** — email di sistema con dominio dell'agenzia
 
-## 8. GESTIONE STAFF 🟡
+### J. Client Portal (rivoluzionario per freelancer/agenzie)
 
-- [x] 🟡 **Invito collaboratori** — admin invia email invito via `inviteUserByEmail`; staff riceve link per impostare password ✅ 2026-05-14
-- [x] 🟡 **Permessi granulari** — checkbox per sezione (Richieste, Prenotazioni, Booking, Eventi, Blog, Newsletter, Contatti, Gestione struttura, Gestione ristorante, Gestione attività) + selezione entità specifiche (struttura_ids, ristorante_ids) ✅ 2026-05-14
-- [x] 🟡 **Sidebar staff filtrata** — `AziendaContext` carica solo le entità permesse; sidebar mostra solo le voci abilitate ✅ 2026-05-14
-- [x] 🟡 **Sospensione/riabilitazione** — ban_duration 87600h / none via Supabase Admin API ✅ 2026-05-14
-- [x] 🟡 **Eliminazione account** — `deleteUser` + rimozione profilo ✅ 2026-05-14
-- [ ] 🟡 **Turni staff** — calendario settimanale assegnazione turni
-- [ ] 🟡 **Task assignment** — richiesta ospite assegnata a staff specifico
-- [ ] 🟡 **Housekeeping board** — stato camere: pulita/da pulire/in pulizia (hotel)
-- [ ] 🟡 **Manutenzione workflow** — segnalazione → assegna tecnico → chiusura con foto
-- [ ] 🟢 **Performance** — tempo medio risoluzione richieste per membro staff
-- [ ] 🟢 **Chat interna** — messaggi staff↔staff separati da ospite↔staff
+- [ ] 🟢 **Login cliente** — il cliente di un'azienda StayApp ha la sua area riservata
+- [ ] 🟢 **Vedi prenotazioni** — storico e prossime prenotazioni
+- [ ] 🟢 **Vedi fatture/preventivi** — scarica PDF, paga online
+- [ ] 🟢 **Documenti condivisi** — l'admin carica file → il cliente li vede
+- [ ] 🟢 **Messaggi** — canale di comunicazione diretto admin ↔ cliente
 
----
+### K. E-Commerce Base
 
-## 9. MODULI PROFESSIONISTI (nuovo vertical) 🟡
+- [ ] 🟢 **Catalogo prodotti** — nome, descrizione, prezzo, foto, varianti
+- [ ] 🟢 **Carrello + checkout Stripe** — acquisto diretto dal minisito
+- [ ] 🟢 **Gestione ordini** — admin vede ordini, cambia stato, notifica cliente
+- [ ] 🟢 **Prodotti digitali** — download file dopo pagamento (PDF, template, corsi)
+- [ ] 🟢 **Codici sconto** — coupon con % o importo fisso
 
-Espansione fuori dall'hospitality puro.
+### L. Two-Way Inbox (GoHighLevel "Conversations")
 
-### Studio medico / Dentista
-- [ ] 🟡 **Scheda paziente** — anagrafica, storico visite, note medico
-- [ ] 🟡 **Agenda medico** — vista settimanale con slot booking
-- [ ] 🟡 **Consenso informato** — documento con firma digitale
-- [ ] 🟢 **Ricette / referti** — upload PDF, download paziente dalla PWA
-- [ ] 🟢 **Promemoria terapia** — push notification o email a orari fissi
-
-### Avvocato / Commercialista
-- [ ] 🟡 **Gestione clienti** — CRM con fascicoli/pratiche
-- [ ] 🟡 **Agenda consulenze** — booking appuntamento con area di specializzazione
-- [ ] 🟢 **Condivisione documenti** — upload sicuro, link temporaneo per cliente
-- [ ] 🟢 **Fatturazione base** — preventivo → approvazione → fattura PDF
-
-### Palestra / Fitness
-- [ ] 🟡 **Classi e orari** — calendario corsi con iscrizione
-- [ ] 🟡 **Abbonamenti** — piani mensili/trimestrali con Stripe (recurring)
-- [ ] 🟡 **Check-in palestra** — QR code presenza, contatore ingressi
-- [ ] 🟢 **Personal trainer** — booking sessione 1:1, piano allenamento
-- [ ] 🟢 **Progressi** — tracciamento peso/misure nel tempo
+- [ ] 🟢 **Inbox unificata** — tutte le comunicazioni in un posto: email form, chatbot, WhatsApp, SMS
+- [ ] 🟢 **Rispondi da admin** — reply direttamente dall'inbox senza uscire dalla piattaforma
+- [ ] 🟢 **Assegna a staff** — conversazione → assegnata a membro del team
+- [ ] 🟢 **Storico per contatto** — tutte le conversazioni legate al profilo CRM del cliente
 
 ---
 
-## 10. CRM AVANZATO 🟡
+## Feature esistenti da completare/potenziare
 
-- [ ] 🟡 **Storico ospite/cliente** — visite, spesa totale, servizi usati
-- [ ] 🟡 **Segmentazione** — tag automatici (VIP, frequente, stagionale)
-- [ ] 🟡 **Preferenze salvate** — camera, dieta, allergeni, note speciali
-- [ ] 🟡 **Lifetime value** — quanto ha speso ogni cliente nel tempo
-- [ ] 🟢 **Importa contatti** — CSV upload
-- [ ] 🟢 **Loyalty program** — punti per soggiorno/acquisto, rewards
+### Booking risorse (potenziamento)
+- [ ] 🟡 **Email/WhatsApp reminder** — N ore prima configurabile per risorsa
+- [ ] 🟡 **Lista d'attesa** — se slot pieno, cliente entra in lista
+- [ ] 🟡 **Ricorrenza** — prenotazione settimanale fissa
+- [ ] 🟢 **Sync Google Calendar** — iCal export per il professionista
+- [ ] 🟢 **Buffer tra slot** — tempo pulizia/preparazione tra appuntamenti
 
----
+### CRM avanzato
+- [ ] 🟡 **Storico cliente** — visite, spesa totale, servizi usati
+- [ ] 🟡 **Lifetime value** — ricavo totale per cliente
+- [ ] 🟡 **Import CSV** — caricamento contatti in bulk
+- [ ] 🟡 **Segmentazione automatica** — tag VIP, frequente, inattivo
+- [ ] 🟢 **Loyalty points** — punti per acquisto/visita, rewards
 
-## 11. ANALYTICS AVANZATE 🟡
-
-- [ ] 🟡 **Revenue analytics** — ricavi per entità, per periodo, per canale
-- [ ] 🟡 **Tasso di conversione** — visite minisito → prenotazione
+### Analytics avanzate
+- [ ] 🟡 **Revenue analytics** — ricavi per entità, periodo, canale
+- [ ] 🟡 **Tasso conversione** — visite minisito → prenotazione
 - [ ] 🟡 **Occupancy** — tasso occupazione risorse nel tempo
-- [ ] 🟡 **Source tracking** — da dove arrivano i clienti (QR, link diretto, Google)
-- [ ] 🟢 **Heatmap comportamento** — sezioni PWA più usate
+- [ ] 🟢 **Export CSV/Excel** — per tutte le liste
 - [ ] 🟢 **Confronto periodi** — questo mese vs stesso mese anno scorso
-- [ ] 🟢 **Export dati** — CSV/Excel per tutte le liste
+
+### Multi-lingua
+- [ ] 🟡 **EN/DE/FR/ES PWA ospite** — schermate guest tradotte
+- [ ] 🟡 **Rilevamento automatico** — lingua dal browser
+- [ ] 🟡 **Contenuti multilingua** — admin inserisce testi in più lingue
+- [ ] 🟢 **Email multilingua** — template nella lingua del cliente
+
+### Sicurezza — In corso
+- [x] ✅ helmet.js + rate limiting + CORS + zod (2026-05-13)
+- [x] ✅ Backup notturno R2 (2026-05-14)
+- [x] ✅ 2FA TOTP (2026-05-14)
+- [x] ✅ Audit log (2026-05-14)
+- [x] ✅ Gestione staff + permessi (2026-05-14)
+- [ ] 🟡 Upgrade Supabase Pro ($25/mese) — azione manuale
+- [ ] 🟡 Upgrade Vercel Pro ($20/mese) — azione manuale
+- [ ] 🟡 WAF Cloudflare (Free → regole OWASP)
+- [ ] 🟡 Monitoring: Sentry + BetterUptime
+
+### Infrastruttura
+- [ ] 🟡 **GitHub → Vercel auto-deploy** — CI/CD automatico
+- [ ] 🟡 **Notifiche real-time** — Supabase Realtime su richieste (badge sidebar)
+- [ ] 🟡 **Dominio custom** — acquisto + configurazione (checklist in server/CLAUDE.md)
 
 ---
 
-## 12. PAGAMENTI STRIPE (completamento) 🔴
+## Ordine di sviluppo consigliato (prossimi sprint)
 
-Stripe è installato ma non integrato.
+```
+Sprint 1 — Tracking pixel (1-2 ore, alto impatto immediato)
+  → Meta Pixel + GA4 + GTM nei settings minisito
 
-- [ ] 🔴 **Checkout eventi** — pagamento al momento della prenotazione evento
-- [ ] 🔴 **Checkout risorse** — pagamento al momento del booking (deposito o totale)
-- [ ] 🔴 **Webhook Stripe** — conferma automatica prenotazione dopo pagamento
-- [ ] 🟡 **Rimborsi** — admin emette rimborso parziale/totale dalla dashboard
-- [ ] 🟡 **Abbonamenti ricorrenti** — Stripe Billing per palestre, coworking
-- [ ] 🟡 **Stripe Connect** — ogni azienda ha il suo account Stripe (commissione piattaforma)
-- [ ] 🟢 **Fattura automatica** — PDF fattura inviato via email dopo pagamento
+Sprint 2 — Stripe payments (2-3 sessioni)
+  → Checkout booking + eventi + link pagamento rapido
+  → Webhook conferma automatica
 
----
+Sprint 3 — CRM Pipeline kanban (1-2 sessioni)
+  → Aggiunta pipeline_stage ai contatti
+  → Vista kanban drag & drop
 
-## 13. NOTIFICHE E COMUNICAZIONI 🟡
+Sprint 4 — Webhooks / API (1 sessione)
+  → Endpoint webhook uscente
+  → API key management
 
-- [ ] 🟡 **Push notifications PWA** — notifiche browser per nuove richieste/messaggi
-- [ ] 🟡 **WhatsApp Business API** — invio automatico conferme/reminder via WhatsApp
-- [ ] 🟡 **SMS** — fallback SMS per reminder critici (via Twilio)
-- [ ] 🟢 **Telegram bot** — notifiche staff su canale Telegram (veloce da implementare)
-- [ ] 🟢 **In-app notifications** — badge + feed notifiche nell'admin
+Sprint 5 — Email automation (2-3 sessioni)
+  → Trigger: conferma prenotazione, reminder, follow-up
+  → Builder sequenze base
 
----
+Sprint 6 — Reviews & Reputation (1-2 sessioni)
+  → Form raccolta recensioni
+  → Smart redirect + widget minisito
 
-## 14. MULTI-LINGUA 🟢
+Sprint 7 — Proposals/Preventivi (2 sessioni)
+  → Builder preventivo + link condivisibile + firma + Stripe
 
-- [ ] 🟢 **IT/EN/DE PWA ospite** — le schermate guest tradotte
-- [ ] 🟢 **Rilevamento automatico** — lingua dal browser dell'ospite
-- [ ] 🟢 **Contenuti multilingua** — admin inserisce nome/descrizione in più lingue
-- [ ] 🟢 **Email multilingua** — template email nella lingua dell'ospite
+Sprint 8 — WhatsApp Business API (1-2 sessioni)
+  → Messaggi automatici conferma + reminder
 
----
+Sprint 9 — Social Pixel (se non fatto in Sprint 1)
+  → Già descritto sopra
 
-## 15. INTEGRAZIONI ESTERNE 🟢
-
-- [ ] 🟢 **Google Calendar sync** — prenotazioni risorse appaiono in Google Calendar
-- [ ] 🟢 **PMS** (Opera, Mews, Cloudbeds) — sync disponibilità e prenotazioni hotel
-- [ ] 🟢 **Channel manager** — SiteMinder, Booking.com, Airbnb
-- [ ] 🟢 **Google My Business** — aggiorna orari e info automaticamente
-- [ ] 🟢 **Zapier / Make** — webhook in uscita per integrazioni custom
+Sprint 10 — White-label + Client portal (3+ sessioni)
+  → Modello agenzia rivenditrice
+```
 
 ---
 
-## 16. SICUREZZA — Piano completo 🔴
-
-Priorità assoluta prima di acquisire clienti paganti. Diviso in fasi.
-
-### Fase 1 — ✅ COMPLETATA (2026-05-13)
-
-- [x] 🔴 **helmet.js** — security headers HTTP (`X-Frame-Options`, `HSTS`, `CSP`, `nosniff`, ecc.)
-- [x] 🔴 **Rate limiting** — `express-rate-limit`: 60 req/min guest, 10 req/15min auth, 120 req/min admin
-- [x] 🔴 **CORS lockdown** — whitelist esplicita domini
-- [x] 🔴 **Validazione input con zod** — tutti gli endpoint pubblici (contatti, prenotazioni, newsletter, demo)
-- [x] 🔴 **Backup automatico notturno** — cron job Railway 03:00 UTC: Supabase client → JSON gzip → Cloudflare R2 EU, retention 30gg ✅ testato 2026-05-14
-- [x] 🔴 **2FA login admin** — TOTP via Supabase Auth (Google Authenticator / Authy), enrollment QR, ProtectedRoute AAL check ✅ 2026-05-14
-
-### Fase 2 — Prima di aggiungere altri clienti
-
-- [x] 🔴 **Audit log** — tabella `audit_log` + middleware automatico PATCH/DELETE + pagina admin con filtri e payload espandibile ✅ 2026-05-14
-- [ ] 🟡 **Upgrade Supabase → Pro** — $25/mese, include backup giornalieri con 7gg retention (azione manuale)
-- [ ] 🟡 **Upgrade Vercel → Pro** — $20/mese, richiesto per uso commerciale (azione manuale)
-- [ ] 🟡 **Monitoraggio dipendenze** — `npm audit` in CI/CD (GitHub Actions) ad ogni push
-- [ ] 🟡 **Rotazione service role key** — policy trimestrale; aggiornare Railway env vars
-
-### Fase 3 — Prima di scalare (>10 clienti)
-
-- [ ] 🟡 **WAF Cloudflare** — Free blocca bot aggressivi; Pro ($20/mese) aggiunge regole OWASP complete
-- [ ] 🟡 **GDPR compliance** — DPA (Data Processing Agreement) da far firmare ai clienti prima dell'onboarding
-- [ ] 🟡 **Monitoring + alerting** — Sentry (errori), BetterUptime (uptime), alert su spike traffico anomali
-- [ ] 🟡 **Session management avanzato** — revoca sessioni attive, log accessi per utente admin
-- [ ] 🟢 **Penetration test** — test manuale base annuale (anche con strumenti free: OWASP ZAP)
-- [ ] 🟢 **Multi-tenant isolation** — garanzie RLS più robuste per dati sensibili (futuro vertical medico)
-- [ ] 🟢 **GDPR export** — "scarica tutti i miei dati" per utente finale
-
-### Stack alternativo valutato (in ordine di consiglio)
-
-| Opzione | Descrizione | Costo/mese | Quando valutarla |
-|---|---|---|---|
-| **A — Hardened attuale** | Aggiunge Cloudflare WAF + Supabase Pro al setup corrente | $30-85 | Subito |
-| **B — Mid-range** | Neon DB + Clerk Auth + Cloudflare R2 al posto di Supabase | ~$105 | >20 clienti |
-| **C — Self-hosted** | Hetzner VPS + Docker (PostgreSQL + Node + MinIO + Keycloak) | €10 | Solo con competenze devops |
-
----
-
-## 17. INFRASTRUTTURA / TECNICO 🟡
-
-- [ ] 🟡 **GitHub → Vercel auto-deploy** — collegare repo per CI/CD automatico
-- [ ] 🟡 **Notifiche real-time admin** — Supabase Realtime su richieste (badge sidebar)
-- [ ] 🟢 **GDPR export** — "scarica tutti i miei dati" per utente finale
-
----
-
-## Ordine di sviluppo suggerito
-
-### Sprint 0 — Sicurezza base ✅ COMPLETO
-1. ✅ helmet.js + rate limiting + CORS lockdown + validazione zod
-2. ✅ Backup automatico notturno su Cloudflare R2
-3. ✅ 2FA login admin (TOTP, enrollment QR, ProtectedRoute AAL check)
-4. ✅ Audit log (tabella + middleware + pagina admin)
-5. ✅ Gestione staff (invito via email, permessi granulari, selezione entità)
-6. ⏳ Upgrade Supabase Pro + Vercel Pro (azioni manuali — $45/mese)
-
-### Sprint 1 — Stripe + pagamenti (2 sessioni)
-5. Checkout Stripe per prenotazioni risorse ed eventi
-6. Webhook conferma automatica
-
-### Sprint 2 — Email automation (2 sessioni)
-7. Reminder automatici pre-appuntamento
-8. Post-visita / post-soggiorno
-
-### Sprint 3 — F&B ordering (2-3 sessioni)
-9. Menu ordinabile + carrello
-10. Kitchen display real-time
-
-### Sprint 4 — Vertical professionisti (3+ sessioni)
-11. Scheda cliente/paziente
-12. Moduli specifici per vertical
-
----
-
-*Aggiornare questo file a inizio sessione se nuove feature vengono completate o la priorità cambia.*
+*Aggiornare questo file a inizio sessione quando si completano feature o cambia la priorità.*
