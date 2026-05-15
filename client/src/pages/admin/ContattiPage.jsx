@@ -9,7 +9,7 @@ import { DndContext, PointerSensor, useSensor, useSensors, useDraggable, useDrop
 const STAGES = [
   { key: 'lead',         label: 'Nuovo lead',       color: '#888',    light: '#f5f5f5' },
   { key: 'contattato',   label: 'Contattato',        color: '#2b6cb0', light: '#ebf4ff' },
-  { key: 'proposta',     label: 'Proposta inviata',  color: '#b7791f', light: '#fffbeb' },
+  { key: 'proposta',     label: 'In trattativa',     color: '#b7791f', light: '#fffbeb' },
   { key: 'chiuso_vinto', label: 'Chiuso ✓',          color: '#276749', light: '#f0fff4' },
   { key: 'chiuso_perso', label: 'Perso',             color: '#c53030', light: '#fff5f5' },
 ]
