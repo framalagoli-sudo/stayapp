@@ -7,11 +7,14 @@ import {
   Inbox, CalendarCheck, Users, Eye,
   AlertTriangle, ChevronRight, Settings, ExternalLink,
   Building2, Store, Zap,
+  Phone, Wrench, Sparkles, HelpCircle,
+  Clock, Mail, Globe, UserRound, BedDouble,
 } from 'lucide-react'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const TYPE_LABELS  = { reception: 'Reception', maintenance: 'Manutenzione', housekeeping: 'Pulizie', other: 'Altro' }
 const TYPE_COLORS  = { reception: '#1a1a2e', maintenance: '#e53e3e', housekeeping: '#38a169', other: '#888' }
+const TYPE_ICONS   = { reception: Phone, maintenance: Wrench, housekeeping: Sparkles, other: HelpCircle }
 const STATO_COLORS = { confermata: '#2e7d32', in_attesa: '#e65100', completata: '#1565c0', cancellata: '#999', no_show: '#b71c1c' }
 const TIPO_CFG = {
   struttura: { label: 'Struttura', color: '#1a1a2e', icon: Building2, pwaBase: '/s/' },
@@ -56,11 +59,14 @@ function KpiCard({ icon: Icon, label, value, color, sub, onClick }) {
   )
 }
 
-function SectionCard({ title, action, actionTo, navigate, children }) {
+function SectionCard({ title, icon: Icon, iconColor = '#1a1a2e', action, actionTo, navigate, children }) {
   return (
     <div style={{ background: '#fff', borderRadius: 14, padding: '20px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>{title}</h3>
+        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+          {Icon && <Icon size={16} strokeWidth={1.8} color={iconColor} />}
+          {title}
+        </h3>
         {action && (
           <button onClick={() => navigate(actionTo)} style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, padding: 0 }}>
             {action} <ChevronRight size={13} strokeWidth={1.5} />
@@ -205,37 +211,54 @@ export default function DashboardPage() {
       {/* ── Richieste + Prenotazioni oggi ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
 
-        <SectionCard title="Richieste aperte" action="Vedi tutte" actionTo="/admin/requests" navigate={navigate}>
+        <SectionCard title="Richieste aperte" icon={Inbox} iconColor="#e53e3e" action="Vedi tutte" actionTo="/admin/requests" navigate={navigate}>
           {loading ? <Loading /> : requests.length === 0
             ? <Empty text="Nessuna richiesta aperta" />
-            : requests.map(r => (
-              <div key={r.id} onClick={() => navigate('/admin/requests')}
-                style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 0', borderBottom: '1px solid #f5f5f5', cursor: 'pointer' }}>
-                <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 20, background: (TYPE_COLORS[r.type] || '#888') + '15', color: TYPE_COLORS[r.type] || '#888', flexShrink: 0, marginTop: 1 }}>
-                  {TYPE_LABELS[r.type] || r.type}
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500 }}>
-                    {r.room ? `Camera ${r.room}` : 'Nessuna camera'}
+            : requests.map(r => {
+              const TypeIcon = TYPE_ICONS[r.type] || HelpCircle
+              const color = TYPE_COLORS[r.type] || '#888'
+              return (
+                <div key={r.id} onClick={() => navigate('/admin/requests')}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid #f5f5f5', cursor: 'pointer' }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <TypeIcon size={15} strokeWidth={1.8} color={color} />
                   </div>
-                  <div style={{ fontSize: 12, color: '#bbb' }}>{timeAgo(r.created_at)}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color }}>
+                      {TYPE_LABELS[r.type] || r.type}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#bbb', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {r.room && <><BedDouble size={11} strokeWidth={1.5} /> Camera {r.room} · </>}
+                      <Clock size={11} strokeWidth={1.5} /> {timeAgo(r.created_at)}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))
+              )
+            })
           }
         </SectionCard>
 
-        <SectionCard title="Prenotazioni di oggi" action="Vai a Booking" actionTo="/admin/booking" navigate={navigate}>
+        <SectionCard title="Prenotazioni di oggi" icon={CalendarCheck} iconColor="#2e7d32" action="Vai a Booking" actionTo="/admin/booking" navigate={navigate}>
           {loading ? <Loading /> : prenOggi.length === 0
             ? <Empty text="Nessuna prenotazione oggi" />
             : prenOggi.map(p => (
               <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid #f5f5f5' }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', flexShrink: 0, width: 46 }}>
-                  {p.ora_inizio ? p.ora_inizio.slice(0, 5) : p.servizio || '—'}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, width: 52 }}>
+                  <Clock size={12} strokeWidth={1.5} color="#bbb" />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>
+                    {p.ora_inizio ? p.ora_inizio.slice(0, 5) : p.servizio || '—'}
+                  </span>
+                </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.cliente_nome}</div>
-                  {p.n_persone > 1 && <div style={{ fontSize: 12, color: '#bbb' }}>{p.n_persone} persone</div>}
+                  <div style={{ fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5, overflow: 'hidden' }}>
+                    <UserRound size={12} strokeWidth={1.5} color="#aaa" style={{ flexShrink: 0 }} />
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.cliente_nome}</span>
+                  </div>
+                  {p.n_persone > 1 && (
+                    <div style={{ fontSize: 12, color: '#bbb', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Users size={11} strokeWidth={1.5} /> {p.n_persone} persone
+                    </div>
+                  )}
                 </div>
                 <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: (STATO_COLORS[p.stato] || '#888') + '18', color: STATO_COLORS[p.stato] || '#888', flexShrink: 0 }}>
                   {p.stato}
@@ -248,18 +271,30 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Contatti recenti ── */}
-      <SectionCard title="Contatti recenti" action="Vedi tutti" actionTo="/admin/contatti" navigate={navigate}>
+      <SectionCard title="Contatti recenti" icon={Users} iconColor="#6b46c1" action="Vedi tutti" actionTo="/admin/contatti" navigate={navigate}>
         {loading ? <Loading /> : contatti.length === 0
           ? <Empty text="Nessun contatto ancora" />
           : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
               {contatti.map(c => (
                 <div key={c.id} onClick={() => navigate('/admin/contatti')} style={{ background: '#f8f8f8', borderRadius: 10, padding: '12px 14px', cursor: 'pointer' }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nome || '—'}</div>
-                  <div style={{ fontSize: 12, color: '#999', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: '#1a1a2e12', color: '#1a1a2e' }}>{c.fonte || 'minisito'}</span>
-                    <span style={{ fontSize: 11, color: '#ccc' }}>{timeAgo(c.created_at)}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#6b46c115', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <UserRound size={14} strokeWidth={1.8} color="#6b46c1" />
+                    </div>
+                    <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nome || '—'}</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#999', marginBottom: 8, overflow: 'hidden' }}>
+                    <Mail size={11} strokeWidth={1.5} color="#bbb" style={{ flexShrink: 0 }} />
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: '#1a1a2e12', color: '#1a1a2e', display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <Globe size={10} strokeWidth={1.5} />{c.fonte || 'minisito'}
+                    </span>
+                    <span style={{ fontSize: 11, color: '#ccc', display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <Clock size={10} strokeWidth={1.5} />{timeAgo(c.created_at)}
+                    </span>
                   </div>
                 </div>
               ))}
