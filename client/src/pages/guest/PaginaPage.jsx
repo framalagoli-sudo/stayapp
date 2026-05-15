@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Euro, Mountain, Wind, CheckCircle, ChevronDown, Menu, X } from 'lucide-react'
+import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Euro, Mountain, Wind, CheckCircle, ChevronDown, Menu, X, Calendar, Users } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
 import CookieBanner from '../../components/CookieBanner'
 import ChatbotWidget from '../../components/ChatbotWidget'
@@ -47,6 +47,14 @@ const HIGHLIGHT_LUCIDE = {
 }
 function highlightIcon(key) { return HIGHLIGHT_LUCIDE[key] || Star }
 
+const SERVICE_ICONS = {
+  pool: Waves, spa: Sparkles, restaurant: Utensils, gym: Activity,
+  parking: Car, wifi: Wifi, beach: Umbrella, bar: Wine,
+  breakfast: Coffee, reception: Bell, shuttle: Bus, ac: Wind,
+  location: MapPin, time: Clock, music: Music, award: Award,
+}
+function serviceIcon(key) { return SERVICE_ICONS[key] || Star }
+
 function getEmbedUrl(url) {
   if (!url) return null
   const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
@@ -68,10 +76,22 @@ export default function PaginaPage({ entityType }) {
   const [openDropdown, setOpenDropdown] = useState(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [faqOpen, setFaqOpen] = useState({})
+  const [eventi, setEventi] = useState([])
+  const [articoli, setArticoli] = useState([])
 
   useEffect(() => {
     load()
   }, [slug, pageSlug, entityType])
+
+  useEffect(() => {
+    if (!entity?.id) return
+    apiFetch(`/api/guest/eventi?entity_tipo=${entityType}&entity_id=${entity.id}`)
+      .then(d => Array.isArray(d) && setEventi(d.slice(0, 6)))
+      .catch(() => {})
+    apiFetch(`/api/blog/public?azienda_id=${entity.azienda_id}&entity_tipo=${entityType}&entity_id=${entity.id}&limit=6`)
+      .then(d => Array.isArray(d) && setArticoli(d))
+      .catch(() => {})
+  }, [entity?.id])
 
   useEffect(() => {
     function onScroll() { setScrolled(window.scrollY > 80) }
@@ -455,6 +475,269 @@ export default function PaginaPage({ entityType }) {
             </div>
           </section>
         )
+
+      case 'services': {
+        const services = (entity.services || []).filter(s => s.name)
+        if (!services.length) return null
+        return (
+          <section key={block.id} style={{ padding: '72px 0', background: '#f9f9fb' }}>
+            <div className="pp-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 48, textAlign: 'center', color: '#1a1a2e' }}>I nostri servizi</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 20 }}>
+                {services.map(s => {
+                  const Icon = serviceIcon(s.icon)
+                  return (
+                    <div key={s.id} style={{ background: '#fff', borderRadius: 16, padding: '24px 16px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+                      <Icon size={28} strokeWidth={1.5} color={primary} style={{ marginBottom: 10 }} />
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 4 }}>{s.name}</div>
+                      {s.hours && <div style={{ fontSize: 12, color: '#888' }}>{s.hours}</div>}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+        )
+      }
+
+      case 'activities': {
+        const actItems = (entity.activities || [])
+          .flatMap(cat => (cat.items || []).filter(i => i.active !== false).map(i => ({ ...i, category: cat.category })))
+        if (!actItems.length) return null
+        return (
+          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+            <div className="pp-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>Attività</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{actItems.length} {actItems.length === 1 ? 'attività disponibile' : 'attività disponibili'}</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
+                {actItems.map(item => (
+                  <div key={item.id} style={{ background: '#fafafa', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0' }}>
+                    {item.photo_url && <img src={item.photo_url} alt={item.name} style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />}
+                    <div style={{ padding: '16px 18px' }}>
+                      {item.category && <div style={{ fontSize: 11, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>{item.category}</div>}
+                      <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', marginBottom: 6 }}>{item.name}</div>
+                      {item.description && <p style={{ fontSize: 13, color: '#666', lineHeight: 1.5, margin: 0 }}>{item.description}</p>}
+                      {item.location && <div style={{ fontSize: 12, color: '#888', marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} strokeWidth={1.5} color={primary} />{item.location}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+      }
+
+      case 'excursions': {
+        const excItems = (entity.excursions || []).filter(e => e.active !== false && e.name)
+        if (!excItems.length) return null
+        return (
+          <section key={block.id} style={{ padding: '72px 0', background: '#f9f9fb' }}>
+            <div className="pp-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>Escursioni</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{excItems.length} {excItems.length === 1 ? 'escursione disponibile' : 'escursioni disponibili'}</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
+                {excItems.map(exc => (
+                  <div key={exc.id} style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0' }}>
+                    {exc.photo_url && <img src={exc.photo_url} alt={exc.name} style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />}
+                    <div style={{ padding: '16px 18px' }}>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', marginBottom: 6 }}>{exc.name}</div>
+                      {exc.description && <p style={{ fontSize: 13, color: '#666', lineHeight: 1.5, margin: '0 0 10px' }}>{exc.description}</p>}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontSize: 12, color: '#888' }}>
+                        {exc.duration && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={12} strokeWidth={1.5} color={primary} />{exc.duration}</span>}
+                        {exc.price > 0 && <span style={{ fontWeight: 700, color: primary, fontSize: 14 }}>€{exc.price}</span>}
+                        {exc.seats && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Users size={12} strokeWidth={1.5} color={primary} />Max {exc.seats}</span>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+      }
+
+      case 'promozioni': {
+        const now = new Date()
+        const promo = (mini.promozioni || []).filter(p => p.title && (!p.expires_at || new Date(p.expires_at) >= now))
+        if (!promo.length) return null
+        const ctaHref = mini.booking_url || homeUrl
+        return (
+          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+            <div className="pp-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>Offerte speciali</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Promozioni esclusive per i nostri ospiti</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
+                {promo.map(p => {
+                  const promoUrl = p.cta_url?.trim() && p.cta_url !== '#' ? p.cta_url.trim() : ctaHref
+                  const isExternal = promoUrl?.startsWith('http') || promoUrl?.startsWith('tel:') || promoUrl?.startsWith('mailto:')
+                  const hasDetail = p.description_full || (p.gallery || []).length > 0
+                  const offerteBase = entityType === 'struttura' ? `/s/${slug}/offerte/` : entityType === 'ristorante' ? `/r/${slug}/offerte/` : `/a/${slug}/offerte/`
+                  return (
+                    <div key={p.id} style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', borderTop: `4px solid ${primary}`, display: 'flex', flexDirection: 'column' }}>
+                      {p.cover_url && <img src={p.cover_url} alt={p.title} style={{ width: '100%', height: 180, objectFit: 'cover' }} />}
+                      <div style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 14 }}>
+                          {p.badge && <span style={{ display: 'inline-block', background: `${primary}18`, color: primary, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase' }}>{p.badge}</span>}
+                          {p.price_original && p.price_discounted && (() => {
+                            const pct = Math.round((1 - parseFloat(p.price_discounted) / parseFloat(p.price_original)) * 100)
+                            return pct > 0 ? <span style={{ display: 'inline-block', background: '#22c55e', color: '#fff', fontSize: 11, fontWeight: 800, padding: '4px 10px', borderRadius: 20 }}>-{pct}%</span> : null
+                          })()}
+                        </div>
+                        <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 12, color: '#1a1a2e' }}>{p.title}</h3>
+                        {p.text && <p style={{ fontSize: 15, color: '#555', lineHeight: 1.7, marginBottom: 16, flex: 1 }}>{p.text}</p>}
+                        {(p.price_original || p.price_discounted) && (
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 16 }}>
+                            <span style={{ fontFamily: heading, fontSize: 28, fontWeight: 800, color: primary }}>€{p.price_discounted || p.price_original}</span>
+                            {p.price_discounted && p.price_original && <span style={{ fontSize: 16, color: '#aaa', textDecoration: 'line-through' }}>€{p.price_original}</span>}
+                          </div>
+                        )}
+                        {p.expires_at && <div style={{ fontSize: 12, color: '#aaa', marginBottom: 20 }}>Valida fino al {new Date(p.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
+                        <div style={{ marginTop: 'auto' }}>
+                          {hasDetail ? (
+                            <a href={`${offerteBase}${p.id}`} style={{ display: 'block', textAlign: 'center', padding: '13px 20px', background: primary, color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+                              {p.cta_label || 'Scopri di più'}
+                            </a>
+                          ) : (p.cta_label && p.cta_url) ? (
+                            <a href={promoUrl} {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})} style={{ display: 'block', textAlign: 'center', padding: '13px 20px', background: primary, color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+                              {p.cta_label}
+                            </a>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+        )
+      }
+
+      case 'pacchetti': {
+        const packs = (mini.pacchetti || []).filter(p => p.name)
+        if (!packs.length) return null
+        const pacchettiBase = entityType === 'struttura' ? `/s/${slug}/pacchetti/` : entityType === 'ristorante' ? `/r/${slug}/pacchetti/` : `/a/${slug}/pacchetti/`
+        return (
+          <section key={block.id} style={{ padding: '72px 0', background: '#f9f9fb' }}>
+            <div className="pp-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>Pacchetti e soggiorni</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Scegli il soggiorno pensato per te</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
+                {packs.map(p => {
+                  const hasDetail = p.description_full || (p.gallery || []).length > 0
+                  return (
+                    <div key={p.id} style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column' }}>
+                      {p.cover_url && <img src={p.cover_url} alt={p.name} style={{ width: '100%', height: 180, objectFit: 'cover' }} />}
+                      <div style={{ padding: '28px 28px 0' }}>
+                        {p.badge && <span style={{ display: 'inline-block', background: primary, color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 16 }}>{p.badge}</span>}
+                        <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 6, color: '#1a1a2e' }}>{p.name}</h3>
+                        {p.tagline && <p style={{ fontSize: 14, color: '#888', marginBottom: 20, lineHeight: 1.5 }}>{p.tagline}</p>}
+                        {p.price && (
+                          <div style={{ marginBottom: 24, borderTop: '1px solid #f0f0f0', paddingTop: 20 }}>
+                            <span style={{ fontFamily: heading, fontSize: 40, fontWeight: 800, color: primary }}>{p.price}</span>
+                            {p.price_label && <span style={{ fontSize: 14, color: '#aaa', marginLeft: 6 }}>/ {p.price_label}</span>}
+                          </div>
+                        )}
+                      </div>
+                      {(p.includes || []).filter(Boolean).length > 0 && (
+                        <div style={{ padding: '0 28px 24px', flex: 1 }}>
+                          {!p.price && <div style={{ height: 1, background: '#f0f0f0', margin: '0 0 20px' }} />}
+                          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {(p.includes || []).filter(Boolean).map((item, i) => (
+                              <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 14, color: '#444' }}>
+                                <span style={{ color: primary, fontWeight: 700, fontSize: 15, lineHeight: 1.3, flexShrink: 0 }}>✓</span>
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <div style={{ padding: '0 28px 28px', display: 'flex', flexDirection: 'column', gap: 10, marginTop: 'auto' }}>
+                        {hasDetail && (
+                          <a href={`${pacchettiBase}${p.id}`} style={{ display: 'block', textAlign: 'center', padding: '12px', background: 'transparent', color: primary, border: `2px solid ${primary}`, borderRadius: 12, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>Scopri di più</a>
+                        )}
+                        {p.cta_label && p.cta_url && (
+                          <a href={p.cta_url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textAlign: 'center', padding: '13px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>{p.cta_label}</a>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+        )
+      }
+
+      case 'eventi': {
+        if (!eventi.length) return null
+        return (
+          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+            <div className="pp-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>Prossimi eventi</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{eventi.length} {eventi.length === 1 ? 'evento in programma' : 'eventi in programma'}</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+                {eventi.map(ev => {
+                  const dateStr = new Date(ev.date_start).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+                  return (
+                    <a key={ev.id} href={`/eventi/${ev.id}`} style={{ background: '#fafafa', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', border: '1px solid #f0f0f0' }}>
+                      {ev.cover_url
+                        ? <img src={ev.cover_url} alt={ev.title} style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }} />
+                        : <div style={{ height: 100, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Calendar size={36} strokeWidth={1.5} color={primary} /></div>
+                      }
+                      <div style={{ padding: '16px 18px' }}>
+                        <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', marginBottom: 8 }}>{ev.title}</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}><Calendar size={12} strokeWidth={1.5} color={primary} />{dateStr}</span>
+                          {ev.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}><MapPin size={12} strokeWidth={1.5} color={primary} />{ev.location}</span>}
+                          {ev.seats_total && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}><Users size={12} strokeWidth={1.5} color={primary} />{ev.seats_total - ev.seats_booked} posti</span>}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+                          <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>{ev.price > 0 ? `€${ev.price}` : 'Gratuito'}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: primary }}>Prenota →</span>
+                        </div>
+                      </div>
+                    </a>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+        )
+      }
+
+      case 'news': {
+        if (!articoli.length) return null
+        return (
+          <section key={block.id} style={{ padding: '72px 0', background: '#f9f9fb' }}>
+            <div className="pp-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>News & Aggiornamenti</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Le ultime novità</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
+                {articoli.map(art => (
+                  <a key={art.id} href={`/blog/${art.slug}?back=${encodeURIComponent(window.location.pathname)}`}
+                    style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', display: 'block', textDecoration: 'none', color: 'inherit', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1px solid #f0f0f0' }}>
+                    {art.cover_url && <img src={art.cover_url} alt={art.title} style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />}
+                    <div style={{ padding: '16px 18px' }}>
+                      {art.published_at && <div style={{ fontSize: 11, color: '#aaa', marginBottom: 6 }}>{new Date(art.published_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
+                      <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', marginBottom: 8 }}>{art.title}</div>
+                      {art.excerpt && <div style={{ fontSize: 13, color: '#777', lineHeight: 1.5 }}>{art.excerpt}</div>}
+                      <div style={{ marginTop: 12, fontSize: 13, fontWeight: 700, color: primary }}>Leggi →</div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+              {articoli.length >= 6 && (
+                <div style={{ textAlign: 'center', marginTop: 40 }}>
+                  <a href={`/blog?azienda_id=${entity.azienda_id}`} style={{ display: 'inline-block', padding: '12px 32px', borderRadius: 50, border: `2px solid ${primary}`, color: primary, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+                    Vedi tutti gli articoli →
+                  </a>
+                </div>
+              )}
+            </div>
+          </section>
+        )
+      }
 
       default:
         return null
