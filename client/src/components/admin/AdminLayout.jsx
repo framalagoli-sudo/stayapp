@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useAzienda } from '../../context/AziendaContext'
+import Breadcrumb from './Breadcrumb'
 import {
   LayoutDashboard, BarChart2, Shield,
   Inbox, CalendarCheck, Calendar, CalendarDays, Package, ListChecks,
@@ -541,6 +542,7 @@ export default function AdminLayout() {
           {sidebarContent}
         </aside>
         <main className="admin-main">
+          <Breadcrumb />
           <Outlet />
         </main>
       </div>
