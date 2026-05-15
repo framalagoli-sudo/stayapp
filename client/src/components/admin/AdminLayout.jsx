@@ -2,49 +2,57 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useAzienda } from '../../context/AziendaContext'
+import {
+  LayoutDashboard, BarChart2, Shield,
+  Inbox, CalendarCheck, Calendar, CalendarDays, Package, ListChecks,
+  MessageCircle, FileText, Newspaper, Mail, Users,
+  QrCode, UserCheck, ClipboardList, LogOut,
+  Building, Building2, Store, Zap,
+  Info, Layers, Wrench, Image, Palette, MapPin, Globe, Lock, Bot, UtensilsCrossed,
+} from 'lucide-react'
 
 // ─── Nav definitions ──────────────────────────────────────────────────────────
-const NAV_PROPERTY = [  // admin_struttura / staff (profile.property_id)
-  { to: '/admin/property/info',       label: 'Informazioni' },
-  { to: '/admin/property/modules',    label: 'Moduli attivi' },
-  { to: '/admin/property/services',   label: 'Servizi' },
-  { to: '/admin/property/gallery',    label: 'Galleria foto' },
-  { to: '/admin/property/theme',      label: 'Tema e colori' },
-  { to: '/admin/property/activities', label: 'Attività' },
-  { to: '/admin/property/excursions', label: 'Escursioni' },
-  { to: '/admin/property/sito',       label: 'Sito' },
-  { to: '/admin/property/privacy',    label: 'Privacy & Policy' },
-  { to: '/admin/property/chatbot',    label: 'Chatbot' },
+const NAV_PROPERTY = [
+  { to: '/admin/property/info',       label: 'Informazioni',  icon: Info },
+  { to: '/admin/property/modules',    label: 'Moduli attivi', icon: Layers },
+  { to: '/admin/property/services',   label: 'Servizi',       icon: Wrench },
+  { to: '/admin/property/gallery',    label: 'Galleria',      icon: Image },
+  { to: '/admin/property/theme',      label: 'Tema e colori', icon: Palette },
+  { to: '/admin/property/activities', label: 'Attività',      icon: Zap },
+  { to: '/admin/property/excursions', label: 'Escursioni',    icon: MapPin },
+  { to: '/admin/property/sito',       label: 'Sito',          icon: Globe },
+  { to: '/admin/property/privacy',    label: 'Privacy',       icon: Lock },
+  { to: '/admin/property/chatbot',    label: 'Chatbot',       icon: Bot },
 ]
 const STRUTTURA_SUBS = [
-  { sub: 'info',       label: 'Informazioni' },
-  { sub: 'modules',    label: 'Moduli attivi' },
-  { sub: 'services',   label: 'Servizi' },
-  { sub: 'gallery',    label: 'Galleria foto' },
-  { sub: 'theme',      label: 'Tema e colori' },
-  { sub: 'activities', label: 'Attività' },
-  { sub: 'excursions', label: 'Escursioni' },
-  { sub: 'sito',       label: 'Sito' },
-  { sub: 'privacy',    label: 'Privacy & Policy' },
-  { sub: 'chatbot',    label: 'Chatbot' },
+  { sub: 'info',       label: 'Informazioni',  icon: Info },
+  { sub: 'modules',    label: 'Moduli attivi', icon: Layers },
+  { sub: 'services',   label: 'Servizi',       icon: Wrench },
+  { sub: 'gallery',    label: 'Galleria',      icon: Image },
+  { sub: 'theme',      label: 'Tema e colori', icon: Palette },
+  { sub: 'activities', label: 'Attività',      icon: Zap },
+  { sub: 'excursions', label: 'Escursioni',    icon: MapPin },
+  { sub: 'sito',       label: 'Sito',          icon: Globe },
+  { sub: 'privacy',    label: 'Privacy',       icon: Lock },
+  { sub: 'chatbot',    label: 'Chatbot',       icon: Bot },
 ]
 const RISTORANTE_SUBS = [
-  { sub: 'info',     label: 'Informazioni' },
-  { sub: 'moduli',   label: 'Moduli attivi' },
-  { sub: 'menu',     label: 'Menu' },
-  { sub: 'gallery',  label: 'Galleria foto' },
-  { sub: 'theme',    label: 'Tema e colori' },
-  { sub: 'sito',     label: 'Sito' },
-  { sub: 'privacy',  label: 'Privacy & Policy' },
-  { sub: 'chatbot',  label: 'Chatbot' },
+  { sub: 'info',     label: 'Informazioni',  icon: Info },
+  { sub: 'moduli',   label: 'Moduli attivi', icon: Layers },
+  { sub: 'menu',     label: 'Menu',          icon: UtensilsCrossed },
+  { sub: 'gallery',  label: 'Galleria',      icon: Image },
+  { sub: 'theme',    label: 'Tema e colori', icon: Palette },
+  { sub: 'sito',     label: 'Sito',          icon: Globe },
+  { sub: 'privacy',  label: 'Privacy',       icon: Lock },
+  { sub: 'chatbot',  label: 'Chatbot',       icon: Bot },
 ]
 const ATTIVITA_SUBS = [
-  { sub: 'info',     label: 'Informazioni' },
-  { sub: 'gallery',  label: 'Galleria foto' },
-  { sub: 'theme',    label: 'Tema e colori' },
-  { sub: 'sito',     label: 'Sito' },
-  { sub: 'privacy',  label: 'Privacy & Policy' },
-  { sub: 'chatbot',  label: 'Chatbot' },
+  { sub: 'info',    label: 'Informazioni',  icon: Info },
+  { sub: 'gallery', label: 'Galleria',      icon: Image },
+  { sub: 'theme',   label: 'Tema e colori', icon: Palette },
+  { sub: 'sito',    label: 'Sito',          icon: Globe },
+  { sub: 'privacy', label: 'Privacy',       icon: Lock },
+  { sub: 'chatbot', label: 'Chatbot',       icon: Bot },
 ]
 
 // ─── CSS ──────────────────────────────────────────────────────────────────────
@@ -79,18 +87,19 @@ const STYLES = `
 
   .sidebar-collapse-btn {
     width: 100%; display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 12px; background: none; border: none; color: #fff;
-    cursor: pointer; font-size: 10px; font-weight: 700; letter-spacing: 1px;
-    text-transform: uppercase; margin-top: 8px;
+    padding: 9px 12px; background: none; border: none; color: #aaa;
+    cursor: pointer; font-size: 14px;
+    margin-top: 1px;
   }
-  .sidebar-collapse-btn:hover { background: rgba(255,255,255,0.06); border-radius: 6px; }
+  .sidebar-collapse-btn:hover { background: rgba(255,255,255,0.06); border-radius: 8px; color: #fff; }
   .collapse-body { overflow: hidden; transition: max-height 0.25s ease; }
   .sidebar-selector {
-    margin: 4px 12px 8px; padding: 7px 10px; background: rgba(255,255,255,0.08);
+    margin: 4px 12px 6px; padding: 7px 10px; background: rgba(255,255,255,0.08);
     border: none; border-radius: 8px; color: #fff; font-size: 13px; width: calc(100% - 24px);
     cursor: pointer; outline: none;
   }
   .sidebar-selector option { color: #1a1a2e; background: #fff; }
+  .sidebar-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 6px 12px; }
 `
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -103,10 +112,10 @@ export default function AdminLayout() {
   const [strutturaOpen, setStrutturaOpen] = useState(true)
   const [ristoranteOpen, setRistoranteOpen] = useState(false)
   const [attivitaOpen, setAttivitaOpen] = useState(false)
+  const [bookingOpen, setBookingOpen] = useState(() => location.pathname.startsWith('/admin/booking'))
 
   useEffect(() => { setMenuOpen(false) }, [location.pathname])
 
-  // Auto-expand section based on current path
   useEffect(() => {
     if (location.pathname.includes('/admin/struttura/') || location.pathname.includes('/admin/property/')) {
       setStrutturaOpen(true)
@@ -116,6 +125,9 @@ export default function AdminLayout() {
     }
     if (location.pathname.includes('/admin/attivita/')) {
       setAttivitaOpen(true)
+    }
+    if (location.pathname.startsWith('/admin/booking')) {
+      setBookingOpen(true)
     }
   }, [location.pathname])
 
@@ -127,20 +139,16 @@ export default function AdminLayout() {
   const role = profile?.role
   const isSuperAdmin = role === 'super_admin'
   const isAdminAzienda = role === 'admin_azienda'
-  // staff with azienda_id = company-level staff with permissions control
   const isStaff = role === 'staff' && !!profile?.azienda_id
   const isLegacyStruttura = ['admin_struttura', 'admin_gruppo'].includes(role) || (role === 'staff' && !profile?.azienda_id)
   const perm = profile?.permissions || {}
 
-  // Per admin_azienda: usa solo azienda.moduli (fonte di verità).
-  // Aspetta che azienda sia caricata per evitare flash di stato parziale.
   const moduli = azienda?.moduli || {}
   const hasStruttura = isAdminAzienda ? (!!moduli.struttura && !aziendaLoading) : (moduli.struttura || strutture.length > 0)
   const hasRistorante = isAdminAzienda ? (!!moduli.ristorante && !aziendaLoading) : (moduli.ristorante || ristoranti.length > 0)
   const hasAttivita = isAdminAzienda ? (!!moduli.attivita && !aziendaLoading) : (moduli.attivita || attivita?.length > 0)
   const bothActive = hasStruttura && hasRistorante
 
-  // Detect URL-based navigation (for super_admin sub-pages)
   const strutturaUrlMatch = location.pathname.match(/^\/admin\/struttura\/([^/]+)/)
   const ristoranteUrlMatch = location.pathname.match(/^\/admin\/ristoranti\/([^/]+)\//)
   const attivitaUrlMatch = location.pathname.match(/^\/admin\/attivita\/([^/]+)\//)
@@ -148,33 +156,53 @@ export default function AdminLayout() {
   const ristoranteUrlId = ristoranteUrlMatch?.[1]
   const attivitaUrlId = attivitaUrlMatch?.[1]
 
+  // ─── Style helpers ────────────────────────────────────────────────────────
   const navLinkStyle = (isActive, sub = false) => ({
     display: 'block',
-    padding: sub ? '7px 12px 7px 20px' : '10px 12px',
-    marginBottom: 2,
+    padding: sub ? '6px 12px 6px 16px' : '9px 12px',
+    marginBottom: 1,
     borderRadius: 8,
     color: isActive ? '#fff' : '#aaa',
-    background: isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
+    background: isActive ? 'rgba(255,255,255,0.13)' : 'transparent',
     textDecoration: 'none',
     fontSize: sub ? 13 : 14,
   })
 
+  // ─── Shared sub-components ────────────────────────────────────────────────
+  function NavItem({ to, icon: Icon, label, sub = false, end = false, activeOverride = false }) {
+    return (
+      <NavLink to={to} end={end} style={({ isActive }) => navLinkStyle(isActive || activeOverride, sub)}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: sub ? 7 : 9 }}>
+          {Icon && <Icon size={sub ? 13 : 15} strokeWidth={1.8} style={{ flexShrink: 0 }} />}
+          {label}
+        </span>
+      </NavLink>
+    )
+  }
+
   function SectionHeader({ label }) {
     return (
-      <div style={{ fontSize: 10, fontWeight: 700, color: '#555', letterSpacing: 1, padding: '14px 12px 6px', textTransform: 'uppercase' }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: '#555', letterSpacing: 1, padding: '12px 12px 4px', textTransform: 'uppercase' }}>
         {label}
       </div>
     )
   }
 
-  function CollapseSection({ label, isOpen, onToggle, children }) {
+  function Divider() {
+    return <div className="sidebar-divider" />
+  }
+
+  function CollapseSection({ label, icon: Icon, isOpen, onToggle, children }) {
     return (
       <>
         <button className="sidebar-collapse-btn" onClick={onToggle}>
-          <span>{label}</span>
-          <span style={{ fontSize: 16, opacity: 0.6, transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>›</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+            {Icon && <Icon size={15} strokeWidth={1.8} style={{ flexShrink: 0 }} />}
+            {label}
+          </span>
+          <span style={{ fontSize: 14, opacity: 0.4, transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>›</span>
         </button>
-        <div className="collapse-body" style={{ maxHeight: isOpen ? 600 : 0 }}>
+        <div className="collapse-body" style={{ maxHeight: isOpen ? 800 : 0 }}>
           {children}
         </div>
       </>
@@ -184,14 +212,8 @@ export default function AdminLayout() {
   function StrutturaSelector() {
     if (strutture.length <= 1) return null
     return (
-      <select
-        className="sidebar-selector"
-        value={selectedStrutturaId || ''}
-        onChange={e => {
-          setSelectedStrutturaId(e.target.value)
-          navigate(`/admin/struttura/${e.target.value}/info`)
-        }}
-      >
+      <select className="sidebar-selector" value={selectedStrutturaId || ''}
+        onChange={e => { setSelectedStrutturaId(e.target.value); navigate(`/admin/struttura/${e.target.value}/info`) }}>
         {strutture.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
       </select>
     )
@@ -200,15 +222,19 @@ export default function AdminLayout() {
   function RistoranteSelector() {
     if (ristoranti.length <= 1) return null
     return (
-      <select
-        className="sidebar-selector"
-        value={selectedRistoranteId || ''}
-        onChange={e => {
-          setSelectedRistoranteId(e.target.value)
-          navigate(`/admin/ristoranti/${e.target.value}/info`)
-        }}
-      >
+      <select className="sidebar-selector" value={selectedRistoranteId || ''}
+        onChange={e => { setSelectedRistoranteId(e.target.value); navigate(`/admin/ristoranti/${e.target.value}/info`) }}>
         {ristoranti.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+      </select>
+    )
+  }
+
+  function AttivitaSelector() {
+    if (!attivita || attivita.length <= 1) return null
+    return (
+      <select className="sidebar-selector" value={selectedAttivitaId || ''}
+        onChange={e => { setSelectedAttivitaId(e.target.value); navigate(`/admin/attivita/${e.target.value}/info`) }}>
+        {attivita.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
       </select>
     )
   }
@@ -220,14 +246,9 @@ export default function AdminLayout() {
         <span style={{ color: '#888' }}>Aggiungila dal pannello Aziende.</span>
       </div>
     )
-    return STRUTTURA_SUBS.map(({ sub, label }) => {
-      const to = `/admin/struttura/${baseId}/${sub}`
-      return (
-        <NavLink key={sub} to={to} style={({ isActive }) => navLinkStyle(isActive, true)}>
-          {label}
-        </NavLink>
-      )
-    })
+    return STRUTTURA_SUBS.map(({ sub, label, icon }) => (
+      <NavItem key={sub} to={`/admin/struttura/${baseId}/${sub}`} icon={icon} label={label} sub />
+    ))
   }
 
   function RistoranteSubLinks({ baseId }) {
@@ -237,30 +258,9 @@ export default function AdminLayout() {
         <span style={{ color: '#888' }}>Aggiungilo dal pannello Aziende.</span>
       </div>
     )
-    return RISTORANTE_SUBS.map(({ sub, label }) => {
-      const to = `/admin/ristoranti/${baseId}/${sub}`
-      return (
-        <NavLink key={sub} to={to} style={({ isActive }) => navLinkStyle(isActive, true)}>
-          {label}
-        </NavLink>
-      )
-    })
-  }
-
-  function AttivitaSelector() {
-    if (!attivita || attivita.length <= 1) return null
-    return (
-      <select
-        className="sidebar-selector"
-        value={selectedAttivitaId || ''}
-        onChange={e => {
-          setSelectedAttivitaId(e.target.value)
-          navigate(`/admin/attivita/${e.target.value}/info`)
-        }}
-      >
-        {attivita.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-      </select>
-    )
+    return RISTORANTE_SUBS.map(({ sub, label, icon }) => (
+      <NavItem key={sub} to={`/admin/ristoranti/${baseId}/${sub}`} icon={icon} label={label} sub />
+    ))
   }
 
   function AttivitaSubLinks({ baseId }) {
@@ -270,63 +270,75 @@ export default function AdminLayout() {
         <span style={{ color: '#888' }}>Aggiungila dal pannello Attività.</span>
       </div>
     )
-    return ATTIVITA_SUBS.map(({ sub, label }) => {
-      const to = `/admin/attivita/${baseId}/${sub}`
-      return (
-        <NavLink key={sub} to={to} style={({ isActive }) => navLinkStyle(isActive, true)}>
-          {label}
-        </NavLink>
-      )
-    })
+    return ATTIVITA_SUBS.map(({ sub, label, icon }) => (
+      <NavItem key={sub} to={`/admin/attivita/${baseId}/${sub}`} icon={icon} label={label} sub />
+    ))
   }
 
+  function renderBookingSection() {
+    return (
+      <CollapseSection label="Booking" icon={Calendar} isOpen={bookingOpen} onToggle={() => setBookingOpen(o => !o)}>
+        <NavItem to="/admin/booking" icon={CalendarDays} label="Calendario" sub end />
+        <NavItem to="/admin/booking/risorse" icon={Package} label="Risorse" sub />
+        <NavItem to="/admin/booking/prenotazioni" icon={ListChecks} label="Prenotazioni" sub />
+      </CollapseSection>
+    )
+  }
+
+  // ─── Sidebar content ──────────────────────────────────────────────────────
   const sidebarContent = (
     <>
-      <div style={{ padding: '24px 20px 16px', fontWeight: 700, fontSize: 18, letterSpacing: 1 }}>
+      <div style={{ padding: '22px 20px 14px', fontWeight: 700, fontSize: 18, letterSpacing: 1, color: '#fff' }}>
         StayApp
       </div>
 
       <nav style={{ flex: 1, padding: '0 12px', overflowY: 'auto' }}>
 
-        {/* ── Dashboard (tutti) ── */}
-        <NavLink to="/admin" end style={({ isActive }) => navLinkStyle(isActive)}>Dashboard</NavLink>
-        <NavLink to="/admin/analytics" style={({ isActive }) => navLinkStyle(isActive)}>Analytics</NavLink>
-        <NavLink to="/admin/security"  style={({ isActive }) => navLinkStyle(isActive)}>Sicurezza account</NavLink>
+        {/* ── Sempre visibili ── */}
+        <NavItem to="/admin" icon={LayoutDashboard} label="Dashboard" end />
+        <NavItem to="/admin/analytics" icon={BarChart2} label="Analytics" />
+        <NavItem to="/admin/security" icon={Shield} label="Sicurezza account" />
 
-        {/* ── Super Admin: gestione globale ── */}
+        {/* ── Super Admin ── */}
         {isSuperAdmin && (
           <>
-            <NavLink to="/admin/aziende"    style={({ isActive }) => navLinkStyle(isActive)}>Aziende</NavLink>
-            <NavLink to="/admin/properties" style={({ isActive }) => navLinkStyle(isActive)}>Strutture</NavLink>
-            <NavLink to="/admin/ristoranti" style={({ isActive }) => navLinkStyle(isActive)}>Ristoranti</NavLink>
-            <NavLink to="/admin/attivita"   style={({ isActive }) => navLinkStyle(isActive)}>Attività</NavLink>
-            <NavLink to="/admin/users"      style={({ isActive }) => navLinkStyle(isActive)}>Utenti</NavLink>
-            <NavLink to="/admin/requests"      style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>
-            <NavLink to="/admin/prenotazioni" style={({ isActive }) => navLinkStyle(isActive)}>Prenotazioni</NavLink>
-            <NavLink to="/admin/booking"      style={({ isActive }) => navLinkStyle(isActive || location.pathname.startsWith('/admin/booking'))}>Booking risorse</NavLink>
-            <NavLink to="/admin/demo"         style={({ isActive }) => navLinkStyle(isActive)}>Richieste demo</NavLink>
-            <NavLink to="/admin/eventi"     style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>
-            <NavLink to="/admin/blog"        style={({ isActive }) => navLinkStyle(isActive)}>Blog & News</NavLink>
-            <NavLink to="/admin/newsletter" style={({ isActive }) => navLinkStyle(isActive)}>Newsletter</NavLink>
-            <NavLink to="/admin/contatti"   style={({ isActive }) => navLinkStyle(isActive)}>Contatti</NavLink>
-            <NavLink to="/admin/audit-log"  style={({ isActive }) => navLinkStyle(isActive)}>Audit log</NavLink>
-            {/* Sub-nav struttura quando super_admin gestisce una struttura via URL */}
+            <Divider />
+            <NavItem to="/admin/aziende"    icon={Building}   label="Aziende" />
+            <NavItem to="/admin/properties" icon={Building2}  label="Strutture" />
+            <NavItem to="/admin/ristoranti" icon={Store}      label="Ristoranti" />
+            <NavItem to="/admin/attivita"   icon={Zap}        label="Attività" />
+            <NavItem to="/admin/users"      icon={Users}      label="Utenti" />
+
+            <Divider />
+            <NavItem to="/admin/requests"      icon={Inbox}         label="Richieste" />
+            <NavItem to="/admin/prenotazioni"  icon={CalendarCheck} label="Prenotazioni" />
+            {renderBookingSection()}
+            <NavItem to="/admin/demo"          icon={FileText}      label="Richieste demo" />
+
+            <Divider />
+            <NavItem to="/admin/eventi"     icon={CalendarDays}  label="Eventi" />
+            <NavItem to="/admin/blog"       icon={Newspaper}     label="Blog & News" />
+            <NavItem to="/admin/newsletter" icon={Mail}          label="Newsletter" />
+            <NavItem to="/admin/contatti"   icon={Users}         label="Contatti" />
+            <NavItem to="/admin/audit-log"  icon={ClipboardList} label="Audit log" />
+
             {strutturaUrlId && (
               <>
+                <Divider />
                 <SectionHeader label="Struttura" />
                 <StrutturaSubLinks baseId={strutturaUrlId} />
               </>
             )}
-            {/* Sub-nav ristorante quando super_admin gestisce un ristorante via URL */}
             {ristoranteUrlId && !strutturaUrlId && (
               <>
+                <Divider />
                 <SectionHeader label="Ristorante" />
                 <RistoranteSubLinks baseId={ristoranteUrlId} />
               </>
             )}
-            {/* Sub-nav attività quando super_admin gestisce un'attività via URL */}
             {attivitaUrlId && !strutturaUrlId && !ristoranteUrlId && (
               <>
+                <Divider />
                 <SectionHeader label="Attività" />
                 <AttivitaSubLinks baseId={attivitaUrlId} />
               </>
@@ -334,71 +346,62 @@ export default function AdminLayout() {
           </>
         )}
 
-        {/* ── Admin Azienda: sezioni dinamiche ── */}
+        {/* ── Admin Azienda ── */}
         {isAdminAzienda && (
           <>
-            <NavLink to="/admin/requests"      style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>
-            <NavLink to="/admin/prenotazioni"  style={({ isActive }) => navLinkStyle(isActive)}>Prenotazioni</NavLink>
-            <NavLink to="/admin/booking"       style={({ isActive }) => navLinkStyle(isActive || location.pathname.startsWith('/admin/booking'))}>Booking risorse</NavLink>
-            <NavLink to="/admin/chat"          style={({ isActive }) => navLinkStyle(isActive)}>Chat</NavLink>
-            <NavLink to="/admin/eventi"        style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>
-            <NavLink to="/admin/blog"          style={({ isActive }) => navLinkStyle(isActive)}>Blog & News</NavLink>
-            <NavLink to="/admin/newsletter"    style={({ isActive }) => navLinkStyle(isActive)}>Newsletter</NavLink>
-            <NavLink to="/admin/contatti"      style={({ isActive }) => navLinkStyle(isActive)}>Contatti</NavLink>
-            <NavLink to="/admin/qrcode"        style={({ isActive }) => navLinkStyle(isActive)}>QR Code</NavLink>
-            <NavLink to="/admin/staff"         style={({ isActive }) => navLinkStyle(isActive)}>Collaboratori</NavLink>
+            <Divider />
+            <NavItem to="/admin/requests"     icon={Inbox}         label="Richieste" />
+            <NavItem to="/admin/prenotazioni" icon={CalendarCheck} label="Prenotazioni" />
+            {renderBookingSection()}
+            <NavItem to="/admin/chat"         icon={MessageCircle} label="Chat" />
+            <NavItem to="/admin/eventi"       icon={CalendarDays}  label="Eventi" />
 
-            {/* Solo struttura (no collapse) */}
+            <Divider />
+            <NavItem to="/admin/blog"         icon={Newspaper}  label="Blog & News" />
+            <NavItem to="/admin/newsletter"   icon={Mail}       label="Newsletter" />
+            <NavItem to="/admin/contatti"     icon={Users}      label="Contatti" />
+
+            <Divider />
+            <NavItem to="/admin/qrcode" icon={QrCode}     label="QR Code" />
+            <NavItem to="/admin/staff"  icon={UserCheck}  label="Collaboratori" />
+
             {hasStruttura && !bothActive && (
               <>
+                <Divider />
                 <SectionHeader label={strutture.length === 1 ? strutture[0]?.name || 'La mia struttura' : 'Struttura'} />
                 <StrutturaSelector />
                 <StrutturaSubLinks baseId={selectedStrutturaId} />
               </>
             )}
-
-            {/* Solo ristorante (no collapse) */}
             {hasRistorante && !bothActive && (
               <>
+                <Divider />
                 <SectionHeader label={ristoranti.length === 1 ? ristoranti[0]?.name || 'Il mio ristorante' : 'Ristorante'} />
                 <RistoranteSelector />
                 <RistoranteSubLinks baseId={selectedRistoranteId} />
               </>
             )}
-
-            {/* Entrambi i moduli: collapsible */}
             {bothActive && (
               <>
-                <CollapseSection
-                  label="Struttura"
-                  isOpen={strutturaOpen}
-                  onToggle={() => setStrutturaOpen(o => !o)}
-                >
+                <Divider />
+                <CollapseSection label="Struttura" isOpen={strutturaOpen} onToggle={() => setStrutturaOpen(o => !o)}>
                   <StrutturaSelector />
                   <StrutturaSubLinks baseId={selectedStrutturaId} />
                 </CollapseSection>
-
-                <CollapseSection
-                  label="Ristorante"
-                  isOpen={ristoranteOpen}
-                  onToggle={() => setRistoranteOpen(o => !o)}
-                >
+                <CollapseSection label="Ristorante" isOpen={ristoranteOpen} onToggle={() => setRistoranteOpen(o => !o)}>
                   <RistoranteSelector />
                   <RistoranteSubLinks baseId={selectedRistoranteId} />
                 </CollapseSection>
               </>
             )}
-
-            {/* Attività */}
             {hasAttivita && (
-              <CollapseSection
-                label="Attività"
-                isOpen={attivitaOpen}
-                onToggle={() => setAttivitaOpen(o => !o)}
-              >
-                <AttivitaSelector />
-                <AttivitaSubLinks baseId={selectedAttivitaId} />
-              </CollapseSection>
+              <>
+                {!bothActive && <Divider />}
+                <CollapseSection label="Attività" isOpen={attivitaOpen} onToggle={() => setAttivitaOpen(o => !o)}>
+                  <AttivitaSelector />
+                  <AttivitaSubLinks baseId={selectedAttivitaId} />
+                </CollapseSection>
+              </>
             )}
           </>
         )}
@@ -406,17 +409,20 @@ export default function AdminLayout() {
         {/* ── Staff (company-level, permissions-filtered) ── */}
         {isStaff && (
           <>
-            {perm.richieste    && <NavLink to="/admin/requests"      style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>}
-            {perm.prenotazioni && <NavLink to="/admin/prenotazioni"  style={({ isActive }) => navLinkStyle(isActive)}>Prenotazioni</NavLink>}
-            {perm.booking      && <NavLink to="/admin/booking"       style={({ isActive }) => navLinkStyle(isActive || location.pathname.startsWith('/admin/booking'))}>Booking risorse</NavLink>}
-            {perm.eventi       && <NavLink to="/admin/eventi"        style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>}
-            {perm.blog         && <NavLink to="/admin/blog"          style={({ isActive }) => navLinkStyle(isActive)}>Blog & News</NavLink>}
-            {perm.newsletter   && <NavLink to="/admin/newsletter"    style={({ isActive }) => navLinkStyle(isActive)}>Newsletter</NavLink>}
-            {perm.contatti     && <NavLink to="/admin/contatti"      style={({ isActive }) => navLinkStyle(isActive)}>Contatti</NavLink>}
+            <Divider />
+            {perm.richieste    && <NavItem to="/admin/requests"     icon={Inbox}         label="Richieste" />}
+            {perm.prenotazioni && <NavItem to="/admin/prenotazioni" icon={CalendarCheck} label="Prenotazioni" />}
+            {perm.booking      && renderBookingSection()}
+            {perm.eventi       && <NavItem to="/admin/eventi"       icon={CalendarDays}  label="Eventi" />}
 
-            {/* Struttura e/o ristorante: stessa logica di admin_azienda ma filtrata da AziendaContext */}
+            {(perm.blog || perm.newsletter || perm.contatti) && <Divider />}
+            {perm.blog         && <NavItem to="/admin/blog"         icon={Newspaper}  label="Blog & News" />}
+            {perm.newsletter   && <NavItem to="/admin/newsletter"   icon={Mail}       label="Newsletter" />}
+            {perm.contatti     && <NavItem to="/admin/contatti"     icon={Users}      label="Contatti" />}
+
             {perm.struttura && hasStruttura && !(perm.ristorante && bothActive) && (
               <>
+                <Divider />
                 <SectionHeader label={strutture.length === 1 ? strutture[0]?.name || 'La mia struttura' : 'Struttura'} />
                 <StrutturaSelector />
                 <StrutturaSubLinks baseId={selectedStrutturaId} />
@@ -424,6 +430,7 @@ export default function AdminLayout() {
             )}
             {perm.ristorante && hasRistorante && !(perm.struttura && bothActive) && (
               <>
+                <Divider />
                 <SectionHeader label={ristoranti.length === 1 ? ristoranti[0]?.name || 'Il mio ristorante' : 'Ristorante'} />
                 <RistoranteSelector />
                 <RistoranteSubLinks baseId={selectedRistoranteId} />
@@ -431,6 +438,7 @@ export default function AdminLayout() {
             )}
             {perm.struttura && perm.ristorante && bothActive && (
               <>
+                <Divider />
                 <CollapseSection label="Struttura" isOpen={strutturaOpen} onToggle={() => setStrutturaOpen(o => !o)}>
                   <StrutturaSelector />
                   <StrutturaSubLinks baseId={selectedStrutturaId} />
@@ -442,39 +450,69 @@ export default function AdminLayout() {
               </>
             )}
             {perm.attivita_gestione && hasAttivita && (
-              <CollapseSection label="Attività" isOpen={attivitaOpen} onToggle={() => setAttivitaOpen(o => !o)}>
-                <AttivitaSelector />
-                <AttivitaSubLinks baseId={selectedAttivitaId} />
-              </CollapseSection>
+              <>
+                <Divider />
+                <CollapseSection label="Attività" isOpen={attivitaOpen} onToggle={() => setAttivitaOpen(o => !o)}>
+                  <AttivitaSelector />
+                  <AttivitaSubLinks baseId={selectedAttivitaId} />
+                </CollapseSection>
+              </>
             )}
           </>
         )}
 
-        {/* ── Admin Struttura / Staff: sidebar legacy ── */}
+        {/* ── Admin Struttura / Staff legacy ── */}
         {isLegacyStruttura && (
           <>
-            <NavLink to="/admin/requests"     style={({ isActive }) => navLinkStyle(isActive)}>Richieste</NavLink>
-            <NavLink to="/admin/prenotazioni" style={({ isActive }) => navLinkStyle(isActive)}>Prenotazioni</NavLink>
-            <NavLink to="/admin/booking"      style={({ isActive }) => navLinkStyle(isActive || location.pathname.startsWith('/admin/booking'))}>Booking risorse</NavLink>
-            <NavLink to="/admin/chat"         style={({ isActive }) => navLinkStyle(isActive)}>Chat</NavLink>
-            <NavLink to="/admin/eventi"       style={({ isActive }) => navLinkStyle(isActive)}>Eventi</NavLink>
-            <NavLink to="/admin/blog"         style={({ isActive }) => navLinkStyle(isActive)}>Blog & News</NavLink>
-            <NavLink to="/admin/newsletter"   style={({ isActive }) => navLinkStyle(isActive)}>Newsletter</NavLink>
-            <NavLink to="/admin/contatti"     style={({ isActive }) => navLinkStyle(isActive)}>Contatti</NavLink>
-            <NavLink to="/admin/qrcode"       style={({ isActive }) => navLinkStyle(isActive)}>QR Code</NavLink>
+            <Divider />
+            <NavItem to="/admin/requests"     icon={Inbox}         label="Richieste" />
+            <NavItem to="/admin/prenotazioni" icon={CalendarCheck} label="Prenotazioni" />
+            {renderBookingSection()}
+            <NavItem to="/admin/chat"         icon={MessageCircle} label="Chat" />
+            <NavItem to="/admin/eventi"       icon={CalendarDays}  label="Eventi" />
+
+            <Divider />
+            <NavItem to="/admin/blog"         icon={Newspaper}  label="Blog & News" />
+            <NavItem to="/admin/newsletter"   icon={Mail}       label="Newsletter" />
+            <NavItem to="/admin/contatti"     icon={Users}      label="Contatti" />
+
+            <Divider />
+            <NavItem to="/admin/qrcode" icon={QrCode} label="QR Code" />
+
+            <Divider />
             <SectionHeader label="La mia struttura" />
-            {NAV_PROPERTY.map(({ to, label }) => (
-              <NavLink key={to} to={to} style={({ isActive }) => navLinkStyle(isActive, true)}>{label}</NavLink>
+            {NAV_PROPERTY.map(({ to, label, icon }) => (
+              <NavItem key={to} to={to} icon={icon} label={label} sub />
             ))}
           </>
         )}
 
       </nav>
 
-      <div style={{ padding: '16px 20px', fontSize: 12, color: '#888', flexShrink: 0 }}>
-        <div>{profile?.full_name || profile?.email || profile?.role}</div>
-        <button onClick={handleSignOut}
-          style={{ marginTop: 8, background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: 0, fontSize: 12 }}>
+      {/* ── Footer utente ── */}
+      <div style={{ padding: '10px 12px 14px', borderTop: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+          <div style={{
+            width: 30, height: 30, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.12)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 13, fontWeight: 700, color: '#fff', flexShrink: 0,
+          }}>
+            {(profile?.full_name || profile?.email || '?')[0].toUpperCase()}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 13, color: '#ddd', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {profile?.full_name || profile?.email}
+            </div>
+            <div style={{ fontSize: 11, color: '#555' }}>{profile?.role}</div>
+          </div>
+        </div>
+        <button onClick={handleSignOut} style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+          padding: '7px 8px', background: 'none', border: 'none',
+          color: '#666', cursor: 'pointer', fontSize: 13, borderRadius: 6,
+        }}>
+          <LogOut size={14} strokeWidth={1.8} />
           Esci
         </button>
       </div>
