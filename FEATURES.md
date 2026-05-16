@@ -200,7 +200,7 @@ Il refactor verso "Business" generico richiede principalmente:
 ## Azioni manuali da fare (Francesco)
 
 - [x] Migration pipeline kanban: `ALTER TABLE contatti ADD COLUMN IF NOT EXISTS pipeline_stage text DEFAULT 'lead';`
-- [ ] **Migration webhooks** — eseguire su Supabase Dashboard → SQL Editor:
+- [x] **Migration webhooks** — eseguita 2026-05-16:
   ```sql
   CREATE TABLE webhooks (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
