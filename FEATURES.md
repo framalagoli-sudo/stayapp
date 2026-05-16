@@ -238,6 +238,7 @@ Il refactor verso "Business" generico richiede principalmente:
 - [x] **032_preventivi.sql** — tabella `preventivi` ✅ 2026-05-16
 - [x] **033_form_builder.sql** — tabelle `form_builder` + `form_submissions` ✅ 2026-05-16
 - [x] **034_piano_editoriale.sql** — tabella `piano_editoriale` ✅ 2026-05-16
+- [ ] **035_domini.sql** — tabella `domini` (sottodomini + domini custom)
 
 ### Infrastruttura
 
