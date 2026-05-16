@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useAzienda } from '../../context/AziendaContext'
 import { apiFetch } from '../../lib/api'
-import { Search, Plus, X, Pencil, Trash2, Users, Mail, Phone, Tag, List, LayoutGrid, GripVertical, ChevronDown } from 'lucide-react'
+import { Search, Plus, X, Pencil, Trash2, Users, Mail, Phone, Tag, List, LayoutGrid, GripVertical, ChevronDown, Star, Copy, Check } from 'lucide-react'
 import { DndContext, PointerSensor, useSensor, useSensors, useDraggable, useDroppable } from '@dnd-kit/core'
 
 // ─── Pipeline stages ─────────────────────────────────────────────────────────
@@ -226,7 +226,7 @@ function KanbanColumn({ stage, contacts, onEdit, onDelete, onAdd }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function ContattiPage() {
   const { profile } = useAuth()
-  const { azienda, strutture, ristoranti } = useAzienda()
+  const { azienda, strutture, ristoranti, attivita } = useAzienda()
   const [contatti,  setContatti]  = useState([])
   const [loading,   setLoading]   = useState(true)
   const [search,    setSearch]    = useState('')
@@ -235,6 +235,7 @@ export default function ContattiPage() {
   const [modal,     setModal]     = useState(null)    // null | 'new' | contact obj
   const [newStage,  setNewStage]  = useState('lead')  // stage pre-selezionato per "Aggiungi" da colonna
   const [allTags,   setAllTags]   = useState([])
+  const [recLinks,  setRecLinks]  = useState({}) // { [contactId]: { link, copied, picking, entityKey } }
 
   const aziendaId = azienda?.id || profile?.azienda_id
     || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id
@@ -257,6 +258,44 @@ export default function ContattiPage() {
   }
 
   useEffect(() => { if (aziendaId) load() }, [aziendaId, search, tagFilter]) // eslint-disable-line
+
+  const allEntities = [
+    ...(strutture || []).map(e => ({ id: e.id, name: e.name, tipo: 'struttura', key: `struttura:${e.id}` })),
+    ...(ristoranti || []).map(e => ({ id: e.id, name: e.name, tipo: 'ristorante', key: `ristorante:${e.id}` })),
+    ...(attivita || []).map(e => ({ id: e.id, name: e.name, tipo: 'attivita', key: `attivita:${e.id}` })),
+  ]
+
+  async function generaLinkRecensioneContatto(contactId, contactNome, entityKey) {
+    const entity = allEntities.find(e => e.key === entityKey) || allEntities[0]
+    if (!entity) return
+    try {
+      const data = await apiFetch('/api/recensioni/genera-link', {
+        method: 'POST',
+        body: JSON.stringify({ entity_tipo: entity.tipo, entity_id: entity.id, autore: contactNome }),
+      })
+      await navigator.clipboard.writeText(data.link)
+      setRecLinks(r => ({ ...r, [contactId]: { link: data.link, copied: true, picking: false, entityKey } }))
+      setTimeout(() => setRecLinks(r => ({ ...r, [contactId]: { ...r[contactId], copied: false } })), 2000)
+    } catch {}
+  }
+
+  function handleRecensioneClick(contactId, contactNome) {
+    const st = recLinks[contactId]
+    // già generato → copia
+    if (st?.link) {
+      navigator.clipboard.writeText(st.link)
+      setRecLinks(r => ({ ...r, [contactId]: { ...r[contactId], copied: true } }))
+      setTimeout(() => setRecLinks(r => ({ ...r, [contactId]: { ...r[contactId], copied: false } })), 2000)
+      return
+    }
+    // una sola entità → genera subito
+    if (allEntities.length === 1) {
+      generaLinkRecensioneContatto(contactId, contactNome, allEntities[0].key)
+      return
+    }
+    // più entità → mostra picker inline
+    setRecLinks(r => ({ ...r, [contactId]: { picking: !r[contactId]?.picking, entityKey: allEntities[0].key } }))
+  }
 
   async function handleDelete(id, nome) {
     if (!confirm(`Eliminare "${nome}"?`)) return
@@ -398,7 +437,29 @@ export default function ContattiPage() {
                 </div>
                 {/* Stage quick-change */}
                 <StageSelect value={c.pipeline_stage || 'lead'} onChange={stage => moveStage(c.id, stage)} />
-                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
+                  {/* Richiedi recensione */}
+                  <div style={{ position: 'relative' }}>
+                    <button onClick={() => handleRecensioneClick(c.id, c.nome)}
+                      title={recLinks[c.id]?.link ? 'Copia link' : 'Genera link recensione'}
+                      style={{ padding: '6px 10px', background: recLinks[c.id]?.copied ? '#f0fff4' : '#fffbeb', border: 'none', borderRadius: 7, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: recLinks[c.id]?.copied ? '#276749' : '#b7791f' }}>
+                      {recLinks[c.id]?.copied ? <><Check size={12} strokeWidth={2} /> Copiato</> : <><Star size={12} strokeWidth={2} /> Recensione</>}
+                    </button>
+                    {recLinks[c.id]?.picking && allEntities.length > 1 && (
+                      <div style={{ position: 'absolute', right: 0, top: '110%', background: '#fff', border: '1px solid #e8e8e8', borderRadius: 8, padding: 10, zIndex: 100, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', minWidth: 200 }}>
+                        <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>Seleziona entità</div>
+                        <select value={recLinks[c.id]?.entityKey || allEntities[0].key}
+                          onChange={e => setRecLinks(r => ({ ...r, [c.id]: { ...r[c.id], entityKey: e.target.value } }))}
+                          style={{ width: '100%', padding: '6px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, marginBottom: 8 }}>
+                          {allEntities.map(e => <option key={e.key} value={e.key}>{e.name}</option>)}
+                        </select>
+                        <button onClick={() => generaLinkRecensioneContatto(c.id, c.nome, recLinks[c.id]?.entityKey || allEntities[0].key)}
+                          style={{ width: '100%', padding: '6px', background: '#1a1a2e', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, color: '#fff' }}>
+                          Genera e copia link
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   <button onClick={() => setModal(c)} style={{ padding: '6px 10px', background: '#f5f5f5', border: 'none', borderRadius: 7, cursor: 'pointer' }}>
                     <Pencil size={13} strokeWidth={2} color="#555" />
                   </button>

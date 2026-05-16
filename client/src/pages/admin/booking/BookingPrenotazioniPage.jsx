@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../../../lib/api'
+import { Star, Copy, Check } from 'lucide-react'
 
 const STATI = ['', 'confermata', 'in_attesa', 'completata', 'cancellata', 'no_show']
 const STATI_LABEL = { confermata: 'Confermata', in_attesa: 'In attesa', completata: 'Completata', cancellata: 'Cancellata', no_show: 'No show' }
@@ -13,8 +14,9 @@ export default function BookingPrenotazioniPage() {
   const [loading, setLoading] = useState(true)
 
   const [filters, setFilters] = useState({ risorsa_id: '', stato: '', data_da: today(), data_a: '' })
-  const [expanded, setExpanded] = useState(null) // id prenotazione con note aperte
+  const [expanded, setExpanded] = useState(null)
   const [editNote, setEditNote] = useState({})
+  const [recLink, setRecLink] = useState({}) // { [id]: { link, copied } }
 
   function patchFilter(k, v) { setFilters(f => ({ ...f, [k]: v })) }
 
@@ -44,6 +46,25 @@ export default function BookingPrenotazioniPage() {
     await apiFetch(`/api/booking/prenotazioni/${id}`, { method: 'PATCH', body: JSON.stringify({ note_interne }) })
     setPrenotazioni(ps => ps.map(p => p.id === id ? { ...p, note_interne } : p))
     setExpanded(null)
+  }
+
+  async function generaLinkRecensione(p) {
+    if (recLink[p.id]?.link) {
+      await navigator.clipboard.writeText(recLink[p.id].link)
+      setRecLink(r => ({ ...r, [p.id]: { ...r[p.id], copied: true } }))
+      setTimeout(() => setRecLink(r => ({ ...r, [p.id]: { ...r[p.id], copied: false } })), 2000)
+      return
+    }
+    try {
+      const data = await apiFetch('/api/recensioni/genera-link', {
+        method: 'POST',
+        body: JSON.stringify({ entity_tipo: p.entity_tipo, entity_id: p.entity_id, autore: p.cliente_nome }),
+      })
+      setRecLink(r => ({ ...r, [p.id]: { link: data.link, copied: false } }))
+      await navigator.clipboard.writeText(data.link)
+      setRecLink(r => ({ ...r, [p.id]: { ...r[p.id], copied: true } }))
+      setTimeout(() => setRecLink(r => ({ ...r, [p.id]: { ...r[p.id], copied: false } })), 2000)
+    } catch {}
   }
 
   async function deleteP(id, nome) {
@@ -159,6 +180,11 @@ export default function BookingPrenotazioniPage() {
                         </select>
 
                         {/* Azioni */}
+                        <button onClick={() => generaLinkRecensione(p)}
+                          title={recLink[p.id]?.link ? 'Copia link recensione' : 'Genera link recensione'}
+                          style={{ ...ghostBtn, padding: '6px 10px', fontSize: 12, color: recLink[p.id]?.copied ? '#276749' : '#b7791f', display: 'flex', alignItems: 'center', gap: 4 }}>
+                          {recLink[p.id]?.copied ? <><Check size={13} strokeWidth={1.5} /> Copiato</> : <><Star size={13} strokeWidth={1.5} /> Recensione</>}
+                        </button>
                         <button onClick={() => {
                           setExpanded(isOpen ? null : p.id)
                           setEditNote(n => ({ ...n, [p.id]: p.note_interne || '' }))

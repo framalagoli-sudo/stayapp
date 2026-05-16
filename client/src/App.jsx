@@ -74,10 +74,25 @@ import IntegrazioniPage from './pages/admin/IntegrazioniPage'
 import PagineListPage from './pages/admin/PagineListPage'
 import PaginaEditorPage from './pages/admin/PaginaEditorPage'
 import SitoPage from './pages/admin/SitoPage'
+import AutomazioniPage from './pages/admin/AutomazioniPage'
+import RecensioniPage from './pages/admin/RecensioniPage'
+import RecensionePage from './pages/public/RecensionePage'
+import SignupPage from './pages/public/SignupPage'
 import PaginaPage from './pages/guest/PaginaPage'
 import UnsubscribePage from './pages/public/UnsubscribePage'
 import ConfirmSubscriptionPage from './pages/public/ConfirmSubscriptionPage'
 import NewsletterArchivePage from './pages/guest/NewsletterArchivePage'
+import OnboardingPage from './pages/admin/OnboardingPage'
+import ImpostazioniPage from './pages/admin/ImpostazioniPage'
+import PreventivPage from './pages/admin/PreventivPage'
+import PreventivoEditorPage from './pages/admin/PreventivoEditorPage'
+import PreventivoPublicPage from './pages/public/PreventivoPublicPage'
+import FormBuilderListPage from './pages/admin/FormBuilderListPage'
+import FormBuilderEditorPage from './pages/admin/FormBuilderEditorPage'
+import FormBuilderSubmissionsPage from './pages/admin/FormBuilderSubmissionsPage'
+import FormPublicPage from './pages/public/FormPublicPage'
+import PianoEditorialePage from './pages/admin/PianoEditorialePage'
+import PostEditorialePage from './pages/admin/PostEditorialePage'
 
 // Injects property ID from URL params into PropertyIdContext
 // so all property sub-pages work without modification
@@ -117,6 +132,10 @@ export default function App() {
           <Route path="/blog" element={<BlogListPage />} />
           <Route path="/blog/:slug" element={<ArticoloPage />} />
           <Route path="/cancella-prenotazione" element={<CancellaPrenotazionePage />} />
+          <Route path="/recensione" element={<RecensionePage />} />
+          <Route path="/preventivo" element={<PreventivoPublicPage />} />
+          <Route path="/form" element={<FormPublicPage />} />
+          <Route path="/signup" element={<SignupPage />} />
           <Route path="/unsubscribe" element={<UnsubscribePage />} />
           <Route path="/confirm-subscription" element={<ConfirmSubscriptionPage />} />
           <Route path="/s/:slug/newsletter" element={<NewsletterArchivePage entityType="struttura" />} />
@@ -133,6 +152,7 @@ export default function App() {
           <Route path="/admin/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/admin/reset-password"  element={<ResetPasswordPage />} />
           <Route path="/admin/mfa-verify"      element={<MfaVerifyPage />} />
+          <Route path="/admin/onboarding"      element={<OnboardingPage />} />
           <Route
             path="/admin"
             element={
@@ -148,8 +168,9 @@ export default function App() {
             <Route path="requests"      element={<RequestsPage />} />
             <Route path="prenotazioni"  element={<BookingsPage />} />
             <Route path="demo"          element={<DemoRequestsPage />} />
-            <Route path="audit-log"    element={<AuditLogPage />} />
-            <Route path="security"     element={<SecurityPage />} />
+            <Route path="audit-log"      element={<AuditLogPage />} />
+            <Route path="security"       element={<SecurityPage />} />
+            <Route path="impostazioni"   element={<ImpostazioniPage />} />
             <Route path="contatti"   element={<ContattiPage />} />
             <Route path="chat"       element={<ChatPage />} />
             <Route path="aziende"    element={<AziendePage />} />
@@ -157,6 +178,15 @@ export default function App() {
             <Route path="users"      element={<UsersPage />} />
             <Route path="staff"        element={<StaffPage />} />
             <Route path="integrazioni" element={<IntegrazioniPage />} />
+            <Route path="automazioni"  element={<AutomazioniPage />} />
+            <Route path="recensioni"   element={<RecensioniPage />} />
+            <Route path="preventivi"   element={<PreventivPage />} />
+            <Route path="preventivi/:id" element={<PreventivoEditorPage />} />
+            <Route path="form-builder" element={<FormBuilderListPage />} />
+            <Route path="form-builder/:id" element={<FormBuilderEditorPage />} />
+            <Route path="form-builder/:id/submissions" element={<FormBuilderSubmissionsPage />} />
+            <Route path="piano-editoriale" element={<PianoEditorialePage />} />
+            <Route path="piano-editoriale/:id" element={<PostEditorialePage />} />
             <Route path="qrcode"       element={<QRCodePage />} />
 
             {/* Attività */}

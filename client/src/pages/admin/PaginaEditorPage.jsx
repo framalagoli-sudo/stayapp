@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import {
@@ -251,9 +251,63 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
           ]} />
       </div>
     )
+    case 'form_builder': return (
+      <FormBuilderBlockEditor data={data} onChange={upd} />
+    )
     default:
       return <p style={{ fontSize: 13, color: '#888', margin: 0 }}>Editor non disponibile per questo blocco.</p>
   }
+}
+
+// ── FormBuilderBlockEditor — carica lista form e mostra picker ───────────────
+function FormBuilderBlockEditor({ data, onChange }) {
+  const [forms, setForms] = useState([])
+  useEffect(() => {
+    apiFetch('/api/form-builder').then(f => setForms(f)).catch(() => {})
+  }, [])
+
+  const selectedForm = forms.find(f => f.token === data.form_token)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div>
+        <label style={{ display: 'block', fontSize: 11, color: '#666', marginBottom: 4 }}>Seleziona form</label>
+        <select
+          value={data.form_token || ''}
+          onChange={e => {
+            const picked = forms.find(f => f.token === e.target.value)
+            onChange('form_token', e.target.value)
+            if (picked && !data.titolo_sezione) onChange('titolo_sezione', picked.nome)
+          }}
+          style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}
+        >
+          <option value="">— Scegli un form —</option>
+          {forms.map(f => (
+            <option key={f.id} value={f.token}>{f.nome}{!f.attivo ? ' (disattivo)' : ''}</option>
+          ))}
+        </select>
+        {forms.length === 0 && (
+          <p style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>
+            Nessun form trovato. <a href="/admin/form-builder" target="_blank" style={{ color: '#2b6cb0' }}>Crea il primo form →</a>
+          </p>
+        )}
+      </div>
+      <div>
+        <label style={{ display: 'block', fontSize: 11, color: '#666', marginBottom: 4 }}>Titolo sezione (opzionale)</label>
+        <input
+          value={data.titolo_sezione || ''}
+          onChange={e => onChange('titolo_sezione', e.target.value)}
+          placeholder="es. Contattaci"
+          style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13, boxSizing: 'border-box' }}
+        />
+      </div>
+      {selectedForm && (
+        <div style={{ background: '#f0fff4', border: '1px solid #c6f6d5', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#276749' }}>
+          ✓ Form selezionato: <strong>{selectedForm.nome}</strong> ({selectedForm.attivo ? 'attivo' : 'disattivo'})
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

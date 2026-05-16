@@ -28,10 +28,16 @@ import contattiRouter from './routes/contatti.js'
 import attivitaRouter from './routes/attivita.js'
 import demoRouter from './routes/demo.js'
 import newsletterRouter, { runScheduledSends } from './routes/newsletter.js'
+import automazioniRouter from './routes/automazioni.js'
+import recensioniRouter from './routes/recensioni.js'
+import { runAutomazioniScheduler } from './lib/automazioni.js'
 import analyticsRouter from './routes/analytics.js'
 import bookingRouter from './routes/booking.js'
 import pagineRouter from './routes/pagine.js'
 import webhooksRouter from './routes/webhooks.js'
+import preventivRouter from './routes/preventivi.js'
+import formBuilderRouter from './routes/form_builder.js'
+import pianoEditorialeRouter from './routes/piano_editoriale.js'
 import { runBackup } from './lib/backup.js'
 import { auditLog } from './middleware/auditLog.js'
 import cron from 'node-cron'
@@ -112,7 +118,12 @@ app.use('/api/newsletter',  adminLimiter, newsletterRouter)
 app.use('/api/analytics',   adminLimiter, analyticsRouter)
 app.use('/api/booking',     adminLimiter, bookingRouter)
 app.use('/api/pagine',      adminLimiter, pagineRouter)
-app.use('/api/webhooks',   adminLimiter, webhooksRouter)
+app.use('/api/webhooks',    adminLimiter, webhooksRouter)
+app.use('/api/automazioni',  adminLimiter, automazioniRouter)
+app.use('/api/recensioni',   adminLimiter, recensioniRouter)
+app.use('/api/preventivi',       preventivRouter)
+app.use('/api/form-builder',    guestLimiter, formBuilderRouter)
+app.use('/api/piano-editoriale', adminLimiter, pianoEditorialeRouter)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 
@@ -192,6 +203,9 @@ app.listen(PORT, () => {
 
   // Newsletter scheduler — ogni 60 secondi
   setInterval(() => runScheduledSends().catch(e => console.error('[scheduler]', e.message)), 60_000)
+
+  // Automazioni scheduler — ogni 60 secondi
+  setInterval(() => runAutomazioniScheduler().catch(e => console.error('[automazioni]', e.message)), 60_000)
 
   // Backup notturno — ogni giorno alle 03:00 UTC
   cron.schedule('0 3 * * *', () => {

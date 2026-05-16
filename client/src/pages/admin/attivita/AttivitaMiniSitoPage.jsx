@@ -25,7 +25,7 @@ const DEFAULT = {
   cta_banner: DEFAULT_CTA_BANNER,
   foto_testo: [], paragrafi_titolo: '', paragrafi: [],
   team_titolo: '', team: [], steps_titolo: '', steps: [],
-  tracking_cfg: { meta_pixel_id: '', ga4_id: '', gtm_id: '' },
+  tracking_cfg: { meta_pixel_id: '', ga4_id: '', gtm_id: '', tiktok_pixel_id: '' },
 }
 
 const HIGHLIGHT_ICONS = [
@@ -715,9 +715,10 @@ function TrackingCard({ form, setForm, save, inputStyle, lblStyle, hintStyle, fi
     save({ minisito: updated }).catch(() => {})
   }
   const FIELDS = [
-    { key: 'meta_pixel_id', label: 'Meta Pixel ID', placeholder: 'es. 1234567890123456', hint: 'Meta Business Suite → Gestione eventi → Pixel' },
-    { key: 'ga4_id',        label: 'Google Analytics 4 — Measurement ID', placeholder: 'es. G-XXXXXXXXXX', hint: 'Google Analytics → Amministrazione → Stream dati → Measurement ID' },
-    { key: 'gtm_id',        label: 'Google Tag Manager — Container ID', placeholder: 'es. GTM-XXXXXXX', hint: 'Google Tag Manager → Account → Container ID' },
+    { key: 'meta_pixel_id',   label: 'Meta Pixel ID',                        placeholder: 'es. 1234567890123456',  hint: 'Meta Business Suite → Gestione eventi → Pixel' },
+    { key: 'ga4_id',          label: 'Google Analytics 4 — Measurement ID', placeholder: 'es. G-XXXXXXXXXX',       hint: 'Google Analytics → Amministrazione → Stream dati → Measurement ID' },
+    { key: 'gtm_id',          label: 'Google Tag Manager — Container ID',   placeholder: 'es. GTM-XXXXXXX',        hint: 'Google Tag Manager → Account → Container ID' },
+    { key: 'tiktok_pixel_id', label: 'TikTok Pixel ID',                     placeholder: 'es. C4ABCDE12345678901', hint: 'TikTok Ads Manager → Assets → Events → Web Events → Pixel' },
   ]
   return (
     <div style={cardStyle}>

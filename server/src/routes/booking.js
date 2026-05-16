@@ -3,6 +3,7 @@ import { Resend } from 'resend'
 import { supabase } from '../lib/supabase.js'
 import { requireAuth } from '../middleware/auth.js'
 import { sendWebhooks } from '../lib/webhook.js'
+import { triggerAutomazione } from '../lib/automazioni.js'
 
 const router = Router()
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -525,7 +526,7 @@ router.post('/public/prenota', async (req, res) => {
       .from('prenotazioni').insert(payload).select().single()
     if (pe) return res.status(500).json({ error: pe.message })
 
-    // Email conferma + webhook (fire-and-forget)
+    // Email conferma + webhook + automazioni (fire-and-forget)
     inviaEmailConferma(prenotazione, risorsa)
     sendWebhooks(prenotazione.azienda_id, 'nuova_prenotazione', {
       prenotazione_id: prenotazione.id,
@@ -536,6 +537,48 @@ router.post('/public/prenota', async (req, res) => {
       ora_inizio: prenotazione.ora_inizio,
       importo_totale: prenotazione.importo_totale,
     })
+
+    const visitDatetime = prenotazione.data && prenotazione.ora_inizio
+      ? new Date(`${prenotazione.data}T${prenotazione.ora_inizio}`).toISOString()
+      : prenotazione.data ? new Date(`${prenotazione.data}T09:00:00`).toISOString() : null
+
+    // Genera token recensione per {{link_recensione}} nel trigger post_visita
+    let reviewLink = ''
+    if (visitDatetime) {
+      try {
+        const { data: recData } = await supabase.from('recensioni').insert({
+          azienda_id: prenotazione.azienda_id,
+          entity_tipo: risorsa.entity_tipo,
+          entity_id: risorsa.entity_id,
+          autore: prenotazione.cliente_nome,
+          stelle: 5, testo: '', fonte: 'form',
+          verificata: false, pubblica: false,
+        }).select('token').single()
+        if (recData?.token) {
+          reviewLink = `${process.env.CLIENT_URL || 'http://localhost:5173'}/recensione?token=${recData.token}`
+        }
+      } catch (e) { console.error('[booking] genera token recensione:', e.message) }
+    }
+
+    const autoVars = {
+      nome: prenotazione.cliente_nome,
+      email: prenotazione.cliente_email,
+      data: new Date(prenotazione.data).toLocaleDateString('it-IT'),
+      ora: prenotazione.ora_inizio || '',
+      servizio: prenotazione.servizio || risorsa.nome || '',
+      n_persone: String(prenotazione.n_persone || '1'),
+      note: prenotazione.note_cliente || '',
+      link_recensione: reviewLink,
+      visit_datetime: visitDatetime,
+      source_tipo: 'prenotazione',
+      source_id: prenotazione.id,
+    }
+    const ctx = { azienda_id: prenotazione.azienda_id, entity_tipo: risorsa.entity_tipo, entity_id: risorsa.entity_id }
+    triggerAutomazione('nuova_prenotazione', ctx, autoVars).catch(e => console.error('[auto] nuova_prenotazione:', e.message))
+    if (visitDatetime) {
+      triggerAutomazione('pre_visita',  ctx, autoVars).catch(e => console.error('[auto] pre_visita:', e.message))
+      triggerAutomazione('post_visita', ctx, autoVars).catch(e => console.error('[auto] post_visita:', e.message))
+    }
 
     res.status(201).json(prenotazione)
   } catch (e) { res.status(500).json({ error: e.message }) }

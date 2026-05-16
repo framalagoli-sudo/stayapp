@@ -8,8 +8,9 @@ import {
   Inbox, CalendarCheck, Calendar, CalendarDays, Package, ListChecks,
   MessageCircle, FileText, Newspaper, Mail, Users,
   QrCode, UserCheck, ClipboardList, LogOut,
-  Building, Building2, Store, Zap, Webhook,
+  Building, Building2, Store, Zap, Webhook, BotMessageSquare, Star, Settings,
   Info, Layers, Wrench, Image, Palette, MapPin, Globe, Lock, Bot, UtensilsCrossed,
+  FormInput,
 } from 'lucide-react'
 
 // ─── Nav definitions ──────────────────────────────────────────────────────────
@@ -102,6 +103,29 @@ const STYLES = `
   .sidebar-selector option { color: #1a1a2e; background: #fff; }
   .sidebar-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 6px 12px; }
 `
+
+// ─── Trial banner ─────────────────────────────────────────────────────────────
+function TrialBanner({ azienda }) {
+  if (!azienda?.trial_ends_at || azienda?.subscription_status !== 'trial') return null
+  const daysLeft = Math.ceil((new Date(azienda.trial_ends_at) - new Date()) / (1000 * 60 * 60 * 24))
+  if (daysLeft <= 0) return null
+  const urgent = daysLeft <= 3
+  return (
+    <div style={{
+      marginBottom: 20, padding: '10px 16px', borderRadius: 10,
+      background: urgent ? '#fff5f5' : '#fffbeb',
+      border: `1px solid ${urgent ? '#fed7d7' : '#fef3c7'}`,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+    }}>
+      <span style={{ fontSize: 13, color: urgent ? '#c53030' : '#b7791f', fontWeight: 600 }}>
+        {urgent ? '⚠️' : '⏳'} Trial: {daysLeft} {daysLeft === 1 ? 'giorno rimasto' : 'giorni rimasti'}
+      </span>
+      <span style={{ fontSize: 12, color: urgent ? '#c53030' : '#b7791f' }}>
+        Piano a pagamento disponibile nelle prossime versioni.
+      </span>
+    </div>
+  )
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function AdminLayout() {
@@ -317,12 +341,18 @@ export default function AdminLayout() {
             <NavItem to="/admin/demo"          icon={FileText}      label="Richieste demo" />
 
             <Divider />
-            <NavItem to="/admin/eventi"     icon={CalendarDays}  label="Eventi" />
-            <NavItem to="/admin/blog"       icon={Newspaper}     label="Blog & News" />
-            <NavItem to="/admin/newsletter" icon={Mail}          label="Newsletter" />
-            <NavItem to="/admin/contatti"      icon={Users}         label="Contatti" />
-            <NavItem to="/admin/integrazioni"  icon={Webhook}       label="Integrazioni" />
-            <NavItem to="/admin/audit-log"     icon={ClipboardList} label="Audit log" />
+            <NavItem to="/admin/eventi"        icon={CalendarDays}    label="Eventi" />
+            <NavItem to="/admin/blog"          icon={Newspaper}       label="Blog & News" />
+            <NavItem to="/admin/newsletter"    icon={Mail}            label="Newsletter" />
+            <NavItem to="/admin/automazioni"   icon={BotMessageSquare} label="Automazioni" />
+            <NavItem to="/admin/recensioni"    icon={Star}            label="Recensioni" />
+            <NavItem to="/admin/preventivi"        icon={FileText}    label="Preventivi" />
+            <NavItem to="/admin/form-builder"      icon={FormInput}   label="Form Builder" />
+            <NavItem to="/admin/piano-editoriale"  icon={CalendarDays} label="Piano editoriale" />
+            <NavItem to="/admin/contatti"      icon={Users}           label="Contatti" />
+            <NavItem to="/admin/integrazioni"  icon={Webhook}         label="Integrazioni" />
+            <NavItem to="/admin/audit-log"     icon={ClipboardList}   label="Audit log" />
+            <NavItem to="/admin/impostazioni"  icon={Settings}        label="Impostazioni" />
 
             {strutturaUrlId && (
               <>
@@ -359,12 +389,17 @@ export default function AdminLayout() {
             <NavItem to="/admin/eventi"       icon={CalendarDays}  label="Eventi" />
 
             <Divider />
-            <NavItem to="/admin/blog"         icon={Newspaper}  label="Blog & News" />
-            <NavItem to="/admin/newsletter"   icon={Mail}       label="Newsletter" />
-            <NavItem to="/admin/contatti"     icon={Users}      label="Contatti" />
+            <NavItem to="/admin/blog"          icon={Newspaper}       label="Blog & News" />
+            <NavItem to="/admin/newsletter"    icon={Mail}            label="Newsletter" />
+            <NavItem to="/admin/automazioni"       icon={BotMessageSquare} label="Automazioni" />
+            <NavItem to="/admin/recensioni"        icon={Star}        label="Recensioni" />
+            <NavItem to="/admin/preventivi"        icon={FileText}    label="Preventivi" />
+            <NavItem to="/admin/form-builder"      icon={FormInput}   label="Form Builder" />
+            <NavItem to="/admin/piano-editoriale"  icon={CalendarDays} label="Piano editoriale" />
+            <NavItem to="/admin/contatti"          icon={Users}       label="Contatti" />
 
             <Divider />
-            <NavItem to="/admin/qrcode"        icon={QrCode}   label="QR Code" />
+            <NavItem to="/admin/qrcode"        icon={QrCode}    label="QR Code" />
             <NavItem to="/admin/staff"         icon={UserCheck} label="Collaboratori" />
             <NavItem to="/admin/integrazioni"  icon={Webhook}   label="Integrazioni" />
 
@@ -545,6 +580,7 @@ export default function AdminLayout() {
         </aside>
         <main className="admin-main">
           <Breadcrumb />
+          <TrialBanner azienda={azienda} />
           <Outlet />
         </main>
       </div>

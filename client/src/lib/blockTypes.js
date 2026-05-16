@@ -30,6 +30,7 @@ export const BLOCK_TYPES = [
   { type: 'newsletter',   label: 'Newsletter',         group: 'conversione', emoji: '✉️', desc: 'Form iscrizione newsletter' },
   { type: 'contatti',     label: 'Form contatti',      group: 'conversione', emoji: '📩', desc: 'Modulo contatto con mappa' },
   { type: 'show_map',     label: 'Solo mappa',         group: 'conversione', emoji: '📍', desc: 'Google Maps embed' },
+  { type: 'form_builder', label: 'Form personalizzato',group: 'conversione', emoji: '📋', desc: 'Form creato con il Form Builder → scrive in Contatti' },
 ]
 
 export const BLOCK_DEFAULTS = {
@@ -56,6 +57,7 @@ export const BLOCK_DEFAULTS = {
   newsletter:   { title: '', subtitle: '' },
   contatti:     {},
   show_map:     {},
+  form_builder: { form_token: '', titolo_sezione: '' },
 }
 
 export function blockLabel(type) {

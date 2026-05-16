@@ -1,6 +1,8 @@
 # StayApp — Documentazione per sviluppo
 
-Piattaforma SaaS multi-modulo per strutture ricettive, ristoranti e altri business italiani. L'ospite inquadra un QR code e accede a una PWA installabile. Ogni entità può attivare anche un **minisito pubblico** (landing page marketing).
+> ⚠️ **IMPORTANTE — leggere prima di tutto:** StayApp è una piattaforma SaaS **worldwide per qualsiasi business di servizi** — hotel, ristoranti, attività, MA ANCHE freelancer, studi professionali, agenzie, palestre, coach, negozi, ecc. I nomi nel codice (`struttura`, `ristorante`, `attivita`) sono i primi template verticali, non il limite del prodotto. Ogni feature deve funzionare per un avvocato a Berlino tanto quanto per un hotel in Puglia. Non inquadrare mai StayApp come "tool per hospitality italiana".
+
+Piattaforma SaaS multi-modulo per qualsiasi business di servizi. Il cliente finale inquadra un QR code e accede a una PWA installabile. Ogni entità può attivare anche un **minisito pubblico** (landing page marketing).
 
 **Architettura multi-modulo:**
 ```

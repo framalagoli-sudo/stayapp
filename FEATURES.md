@@ -66,7 +66,7 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 
 ---
 
-## Stato implementazione ✅ (aggiornato 2026-05-15)
+## Stato implementazione ✅ (aggiornato 2026-05-16)
 
 ### UX Admin (questa sessione)
 - [x] Sidebar con icone, raggruppamento visivo, booking sub-menu collassabile
@@ -113,27 +113,37 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 - [x] Fix bug: pipeline_stage ora persiste correttamente nel PATCH /api/contatti/:id
 - **Migration da eseguire su Supabase** (vedi sotto in "Azioni manuali")
 
-### Sprint 5 — Email automation sequences (~mezza giornata) 🔴
-- [ ] Trigger: **nuova prenotazione** → email conferma personalizzata
-- [ ] Trigger: **N ore prima appuntamento** → reminder automatico
-- [ ] Trigger: **nuovo contatto** → sequenza benvenuto (email 1 subito, email 2 dopo 3gg)
-- [ ] Trigger: **post-visita** → follow-up + link recensione
-- [ ] UI admin: lista automazioni, toggle attiva/disattiva, configurazione delay
-- [ ] DB: tabella `automazioni` (trigger, steps jsonb, attiva boolean)
+### Sprint 5 — Email automation sequences ✅ 2026-05-16
+- [x] Trigger: **nuova_prenotazione** → email conferma personalizzata (delay configurabile)
+- [x] Trigger: **pre_visita** → reminder N ore prima dell'appuntamento
+- [x] Trigger: **post_visita** → follow-up N ore dopo la visita
+- [x] Trigger: **nuovo_contatto** → sequenza benvenuto a nuovi lead dal form minisito
+- [x] UI admin: `/admin/automazioni` — CRUD, toggle attiva/disattiva, editor steps con variabili, log esecuzioni, test email
+- [x] DB: `automazioni` + `automazioni_log` — scheduler ogni 60s, variabili `{{nome}} {{data}} {{ora}} {{servizio}} {{n_persone}}`
+- [x] Runner asincrono `runAutomazioniScheduler()` — invia via Resend, retry-safe (status pending→sent/failed)
+- **Migration da eseguire su Supabase:** `029_automazioni.sql`
 
-### Sprint 6 — Reviews & Reputation (~1-2 ore) 🟡
-- [ ] Form raccolta recensione post-visita (stelle + commento)
-- [ ] Smart redirect: ≥4 stelle → Google/TripAdvisor; <4 → form privato
-- [ ] Widget recensioni nel minisito (blocco CMS)
-- [ ] Dashboard recensioni admin (media, trend, commenti)
+### Sprint 6 — Reviews & Reputation ✅ 2026-05-16
+- [x] Form raccolta recensione pubblica `/recensione?token=...` — stelle + commento, universale (non legato al booking)
+- [x] Smart redirect: ≥4 stelle → URL configurabile (Google/TripAdvisor/qualsiasi); <4 → privata + notifica admin
+- [x] Import manuale da qualsiasi fonte (Google, TripAdvisor, Booking.com, ecc.) con badge fonte
+- [x] Admin page `/admin/recensioni` — media KPI, toggle pubblica/nascosta, risposta pubblica, elimina
+- [x] Sezione `recensioni` nelle tre landing page (dinamica, separata da `testimonianze` curate)
+- [x] Generazione link token per singolo cliente (con nome pre-compilato)
+- [x] Bottone "Richiedi recensione" in BookingPrenotazioniPage (per ogni prenotazione)
+- [x] Bottone "Richiedi recensione" in ContattiPage — picker entità se più di una
+- [x] Variabile `{{link_recensione}}` nelle automazioni post_visita (token auto-generato al momento della prenotazione)
+- **Migration eseguita:** `030_recensioni.sql` ✅
 
-### Sprint 7 — Self-signup + Stripe subscription (prerequisito Fase 1) 🔴
-Per acquisire clienti diretti senza intervento manuale.
-- [ ] Pagina pubblica `/signup` — registrazione azienda (nome, email, password, tipo business)
-- [ ] Onboarding wizard — 3 step: crea entità → carica logo → attiva minisito
-- [ ] Stripe Billing — piani mensili (es. Starter €29 / Pro €79 / Agency €199)
-- [ ] Email benvenuto automatica post-registrazione
-- [ ] Trial gratuito 14 giorni senza carta
+### Sprint 7 — Self-signup + Trial ✅ 2026-05-16
+- [x] Toggle signup on/off dal super_admin (`/admin/impostazioni`) — default OFF
+- [x] Pagina pubblica `/signup` — registrazione azienda (nome, email, password); se chiuse → schermata lockout
+- [x] Onboarding wizard 3 step: scegli tipo entità → carica logo → completamento
+- [x] Trial gratuito 14 giorni — `trial_ends_at` + `subscription_status` su aziende, banner countdown in admin
+- [x] Email benvenuto automatica post-registrazione (via Resend)
+- [x] Upload logo supporta `property_id` query param (fix per admin_azienda senza property_id nel profilo)
+- **Migration eseguita:** `031_signup.sql` ✅
+- **Stripe Billing** (piani mensili) → Sprint 8
 
 ### Sprint 8 — Stripe payments booking/eventi (2-3 ore + account Stripe) 🔴
 - [ ] Checkout booking risorse (deposito o totale)
@@ -146,23 +156,42 @@ Per acquisire clienti diretti senza intervento manuale.
 
 ## ROADMAP — Tier 2: Marketing & Growth 🟡
 
-### Tracking social (✅ Pixel/GA4/GTM fatto — da completare)
-- [ ] **TikTok Pixel** — stesso pattern Meta Pixel
+### Tracking social (✅ Pixel/GA4/GTM/TikTok fatto — da completare)
+- [x] **TikTok Pixel** — stesso pattern Meta Pixel ✅ 2026-05-16
 - [ ] **WhatsApp Business API** — messaggi automatici conferma/reminder (Meta Cloud API, 1000 conv/mese gratis)
 - [ ] **Social embed blocks** — blocchi oEmbed Instagram/TikTok nel page builder
 - [ ] **Facebook Lead Ads → CRM** — webhook Meta → contatto automatico in StayApp (banale con webhooks)
 - [ ] **Social posting scheduler** — richiede Meta App Review (settimane)
 - [ ] **Google Business Profile** — post aggiornamenti, leggi/rispondi recensioni
 
-### Form builder
-- [ ] Form drag & drop con campi custom + logica condizionale
-- [ ] Embed ovunque (snippet) + blocco CMS
-- [ ] Ogni invio → nuovo lead in CRM
+### Piano editoriale social ✅ 2026-05-16
+- [x] Calendario mensile interattivo — clic su giorno → crea post con data pre-selezionata
+- [x] Lista alternativa con filtro mese
+- [x] Editor post: titolo interno, testo (con contatore caratteri), URL immagine, multi-canale, data/ora, stato
+- [x] Canali: Instagram, Facebook, LinkedIn, TikTok, X, Google Business
+- [x] Stato workflow: bozza → pianificato → pubblicato (senza Meta API — pubblicazione manuale)
+- [x] Note interne non pubblicate
+- **Migration da eseguire su Supabase:** `034_piano_editoriale.sql`
 
-### Proposals / Preventivi digitali (→ rende "In trattativa" azionabile)
-- [ ] Builder preventivo brandizzato (voci, prezzi, scadenza)
-- [ ] Link condivisibile → cliente vede + accetta online
-- [ ] Firma digitale + collegamento Stripe
+### Form builder ✅ 2026-05-16
+- [x] Lista form con toggle attivo/disattivo
+- [x] Editor campi: testo, email, tel, numero, textarea, select (con opzioni), checkbox, data
+- [x] Ogni campo: label, placeholder, obbligatorio, riordina su/giù
+- [x] Ogni invio → lead automatico in CRM se campo email presente
+- [x] Email notifica admin configurabile
+- [x] URL redirect post-invio configurabile
+- [x] Embed via iframe (`/form?token=...`) + codice copiabile
+- [x] Tabella risposte con export CSV
+- **Migration da eseguire su Supabase:** `033_form_builder.sql`
+
+### Proposals / Preventivi digitali ✅ 2026-05-16
+- [x] Builder preventivo brandizzato (voci, prezzi, IVA, scadenza)
+- [x] Link condivisibile → cliente vede + accetta online con firma nome
+- [x] Admin: lista filtrata per stato, editor voci con totali live
+- [x] Stato workflow: bozza → inviato → accettato / rifiutato / scaduto
+- [x] Webhook `preventivo_accettato` agganciato all'accettazione
+- **Migration da eseguire su Supabase:** `032_preventivi.sql`
+- [ ] Firma digitale + collegamento Stripe (futuro)
 
 ---
 
@@ -215,6 +244,9 @@ Il refactor verso "Business" generico richiede principalmente:
   GRANT SELECT, INSERT, UPDATE, DELETE ON public.webhooks TO service_role;
   ALTER TABLE public.webhooks ENABLE ROW LEVEL SECURITY;
   ```
+- [ ] **Migration preventivi** — eseguire `032_preventivi.sql` su Supabase SQL Editor
+- [ ] **Migration form builder** — eseguire `033_form_builder.sql` su Supabase SQL Editor
+- [ ] **Migration piano editoriale** — eseguire `034_piano_editoriale.sql` su Supabase SQL Editor
 - [ ] Upgrade Supabase Pro ($25/mese)
 - [ ] Upgrade Vercel Pro ($20/mese)
 - [ ] Acquisto dominio + configurazione (checklist in server/CLAUDE.md)

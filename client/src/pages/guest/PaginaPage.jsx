@@ -739,6 +739,21 @@ export default function PaginaPage({ entityType }) {
         )
       }
 
+      case 'form_builder':
+        if (!d.form_token) return null
+        return (
+          <section key={block.id} style={{ padding: '72px 0', background: '#fafafa' }}>
+            <div className="pp-section" style={{ maxWidth: 620 }}>
+              {d.titolo_sezione && (
+                <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, textAlign: 'center', color: '#1a1a2e', marginBottom: 40 }}>
+                  {d.titolo_sezione}
+                </h2>
+              )}
+              <FormBuilderBlock token={d.form_token} primary={primary} />
+            </div>
+          </section>
+        )
+
       default:
         return null
     }
@@ -1124,6 +1139,85 @@ function ContattiForm({ entity, primary, privacyUrl, heading }) {
       <button type="submit" disabled={!privacy || state === 'loading'}
         style={{ padding: '13px', background: privacy ? primary : '#ccc', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: privacy ? 'pointer' : 'not-allowed' }}>
         {state === 'loading' ? 'Invio...' : 'Invia messaggio'}
+      </button>
+    </form>
+  )
+}
+
+const API_BASE_FB = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
+
+function FormBuilderBlock({ token, primary }) {
+  const [form, setForm]       = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [dati, setDati]       = useState({})
+  const [submitting, setSubmitting] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError]     = useState('')
+
+  useEffect(() => {
+    fetch(`${API_BASE_FB}/api/form-builder/public/${token}`)
+      .then(r => r.json())
+      .then(d => { if (d.error) throw new Error(d.error); setForm(d) })
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false))
+  }, [token])
+
+  function setField(id, value) { setDati(d => ({ ...d, [id]: value })) }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    const mancanti = (form?.campi || []).filter(c => c.required && !dati[c.id]?.toString().trim())
+    if (mancanti.length) { setError(`Obbligatori: ${mancanti.map(c => c.label).join(', ')}`); return }
+    setSubmitting(true); setError('')
+    try {
+      const res = await fetch(`${API_BASE_FB}/api/form-builder/public/${token}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dati),
+      })
+      const body = await res.json()
+      if (!res.ok) throw new Error(body.error || 'Errore invio')
+      if (body.redirect_url) window.location.href = body.redirect_url
+      else setSuccess(true)
+    } catch (e) { setError(e.message) }
+    setSubmitting(false)
+  }
+
+  const inp = { padding: '11px 14px', border: '1px solid #ddd', borderRadius: 10, fontSize: 15, outline: 'none', width: '100%', display: 'block', fontFamily: 'inherit', boxSizing: 'border-box' }
+
+  if (loading) return <p style={{ color: '#888', textAlign: 'center' }}>Caricamento form…</p>
+  if (error && !form) return <p style={{ color: '#c53030', textAlign: 'center' }}>{error}</p>
+  if (success) return <p style={{ color: '#2d7a2d', fontWeight: 600, textAlign: 'center', padding: '32px 0' }}>✓ Messaggio inviato! Grazie.</p>
+
+  return (
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {form?.descrizione && <p style={{ fontSize: 14, color: '#666', margin: '0 0 8px' }}>{form.descrizione}</p>}
+      {(form?.campi || []).map(c => (
+        <div key={c.id}>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 5 }}>
+            {c.label}{c.required && <span style={{ color: '#c53030' }}> *</span>}
+          </label>
+          {c.tipo === 'textarea' ? (
+            <textarea value={dati[c.id] || ''} onChange={e => setField(c.id, e.target.value)} placeholder={c.placeholder} rows={4} style={{ ...inp, resize: 'vertical' }} />
+          ) : c.tipo === 'select' ? (
+            <select value={dati[c.id] || ''} onChange={e => setField(c.id, e.target.value)} style={inp}>
+              <option value="">— Seleziona —</option>
+              {(c.opzioni || []).map((op, i) => <option key={i} value={op}>{op}</option>)}
+            </select>
+          ) : c.tipo === 'checkbox' ? (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, color: '#555' }}>
+              <input type="checkbox" checked={!!dati[c.id]} onChange={e => setField(c.id, e.target.checked)} style={{ width: 16, height: 16 }} />
+              {c.placeholder || 'Sì'}
+            </label>
+          ) : (
+            <input type={c.tipo} value={dati[c.id] || ''} onChange={e => setField(c.id, e.target.value)} placeholder={c.placeholder} style={inp} />
+          )}
+        </div>
+      ))}
+      {error && <p style={{ color: '#c53030', fontSize: 13, margin: 0 }}>{error}</p>}
+      <button type="submit" disabled={submitting}
+        style={{ padding: '13px', background: primary, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: submitting ? 'not-allowed' : 'pointer' }}>
+        {submitting ? 'Invio…' : 'Invia'}
       </button>
     </form>
   )

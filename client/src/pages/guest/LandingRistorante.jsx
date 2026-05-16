@@ -74,7 +74,7 @@ function getEmbedUrl(url) {
 
 const DEFAULT_ORDER = [
   'highlights', 'stats', 'about', 'foto_testo', 'paragrafi', 'team', 'steps', 'video', 'cta_banner',
-  'testimonianze', 'promozioni', 'menu_speciali', 'menu_preview',
+  'testimonianze', 'recensioni', 'promozioni', 'menu_speciali', 'menu_preview',
   'eventi', 'news', 'gallery', 'faq', 'show_map', 'booking', 'contatti', 'newsletter',
 ]
 
@@ -86,6 +86,7 @@ export default function LandingRistorante({ ristorante }) {
   const [promoModal,     setPromoModal]     = useState(null)
   const [pagine,         setPagine]         = useState([])
   const [openDropdown,   setOpenDropdown]   = useState(null)
+  const [recensioni,     setRecensioni]     = useState([])
 
   useEffect(() => {
     if (!ristorante?.id) return
@@ -104,6 +105,9 @@ export default function LandingRistorante({ ristorante }) {
       .catch(() => {})
     apiFetch(`/api/guest/pagine/ristorante/${ristorante.id}`)
       .then(d => Array.isArray(d) && setPagine(d))
+      .catch(() => {})
+    apiFetch(`/api/guest/recensioni/ristorante/${ristorante.id}`)
+      .then(d => Array.isArray(d) && setRecensioni(d))
       .catch(() => {})
   }, [ristorante.id])
 
@@ -305,6 +309,43 @@ export default function LandingRistorante({ ristorante }) {
             </div>
           </section>
         )
+
+      case 'recensioni': {
+        if (!recensioni.length) return null
+        const media = (recensioni.reduce((s, r) => s + r.stelle, 0) / recensioni.length).toFixed(1)
+        const FONTE_LABEL = { google: 'Google', tripadvisor: 'TripAdvisor', booking: 'Booking.com', manuale: null, form: null }
+        return (
+          <section key="recensioni" style={{ padding: '80px 0', background: '#fff' }}>
+            <div className="land-section">
+              <div style={{ textAlign: 'center', marginBottom: 12 }}>
+                <span style={{ fontSize: 36, fontWeight: 800, color: '#1a1a2e' }}>{media}</span>
+                <span style={{ fontSize: 28, color: '#f59e0b', marginLeft: 6 }}>★</span>
+              </div>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(22px, 3vw, 34px)', fontWeight: 700, marginBottom: 8, textAlign: 'center' }}>
+                {mini.recensioni_titolo || 'Cosa dicono i clienti'}
+              </h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
+                {recensioni.length} recension{recensioni.length === 1 ? 'e' : 'i'}
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
+                {recensioni.slice(0, 6).map(r => (
+                  <div key={r.id} style={{ background: '#f9f9fb', borderRadius: 16, padding: '24px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ display: 'flex', gap: 2 }}>
+                      {[1,2,3,4,5].map(n => <span key={n} style={{ color: n <= r.stelle ? '#f59e0b' : '#e0e0e0', fontSize: 18 }}>★</span>)}
+                    </div>
+                    {r.testo && <p style={{ margin: 0, fontSize: 14, lineHeight: 1.7, color: '#444', flex: 1 }}>{r.testo}</p>}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: '#1a1a2e' }}>{r.autore || 'Anonimo'}</div>
+                      {FONTE_LABEL[r.fonte] && <span style={{ fontSize: 11, color: '#888', background: '#e8e8e8', padding: '2px 7px', borderRadius: 20 }}>{FONTE_LABEL[r.fonte]}</span>}
+                      {r.verificata && <span style={{ fontSize: 11, color: '#276749' }}>✓</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+      }
 
       case 'promozioni':
         if (!promozioni.length) return null

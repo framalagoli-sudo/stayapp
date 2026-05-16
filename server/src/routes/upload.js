@@ -14,7 +14,7 @@ router.use(requireAuth)
 async function getProfile(userId) {
   const { data } = await supabase
     .from('profiles')
-    .select('property_id, role')
+    .select('property_id, role, azienda_id')
     .eq('id', userId)
     .single()
   return data
@@ -25,12 +25,21 @@ async function handleUpload(req, res, dbField) {
     if (!req.file) return res.status(400).json({ error: 'Nessun file ricevuto' })
 
     const profile = await getProfile(req.user.id)
-    if (!profile?.property_id) {
+    // Supporta property_id esplicito come query param (onboarding admin_azienda)
+    const propertyId = req.query.property_id || profile?.property_id
+    if (!propertyId) {
       return res.status(403).json({ error: 'Struttura non associata al profilo' })
+    }
+    // Verifica accesso quando property_id arriva da query param
+    if (req.query.property_id && profile?.role !== 'super_admin') {
+      const { data: prop } = await supabase.from('properties').select('azienda_id').eq('id', req.query.property_id).single()
+      if (!prop || prop.azienda_id !== profile?.azienda_id) {
+        return res.status(403).json({ error: 'Accesso negato' })
+      }
     }
 
     const ext = req.file.originalname.split('.').pop().toLowerCase()
-    const storagePath = `${profile.property_id}/${dbField}-${Date.now()}.${ext}`
+    const storagePath = `${propertyId}/${dbField}-${Date.now()}.${ext}`
 
     const { error: uploadError } = await supabase.storage
       .from('property-media')
@@ -47,7 +56,7 @@ async function handleUpload(req, res, dbField) {
     const { error: dbError } = await supabase
       .from('properties')
       .update({ [dbField]: publicUrl })
-      .eq('id', profile.property_id)
+      .eq('id', propertyId)
     if (dbError) return res.status(500).json({ error: dbError.message })
 
     res.json({ url: publicUrl })

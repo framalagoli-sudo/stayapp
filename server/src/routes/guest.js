@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { supabase } from '../lib/supabase.js'
 import { validate } from '../middleware/validate.js'
+import { triggerAutomazione } from '../lib/automazioni.js'
 
 const bookEventSchema = z.object({
   guest_name:  z.string().trim().min(1).max(100),
@@ -319,6 +320,7 @@ router.post('/contact', validate(contactSchema), async (req, res) => {
   }
 
   // Salva lead in contatti (upsert su email+azienda_id)
+  let isNewContact = false
   if (azienda_id && email) {
     try {
       const { data: existing } = await supabase.from('contatti')
@@ -332,8 +334,17 @@ router.post('/contact', validate(contactSchema), async (req, res) => {
           fonte: 'minisito', tags: ['lead', entity_tipo],
           note: message.trim(), iscritto_newsletter: false,
         })
+        isNewContact = true
       }
     } catch (err) { console.error('[contact] salvataggio contatto:', err.message) }
+  }
+
+  // Trigger automazioni nuovo_contatto (solo per contatti effettivamente nuovi)
+  if (isNewContact && azienda_id) {
+    triggerAutomazione('nuovo_contatto',
+      { azienda_id, entity_tipo, entity_id },
+      { nome: name.trim(), email: email.trim(), source_tipo: 'contatto' }
+    ).catch(e => console.error('[auto] nuovo_contatto:', e.message))
   }
 
   if (entityEmail && process.env.RESEND_API_KEY) {
@@ -413,6 +424,100 @@ router.get('/pagina/:tipo/:entityId/:slug', async (req, res) => {
       .single()
     if (error || !data) return res.status(404).json({ error: 'Pagina non trovata' })
     res.json(data)
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
+// ── GET /api/guest/recensioni/:tipo/:entityId — recensioni pubbliche ──
+router.get('/recensioni/:tipo/:entityId', async (req, res) => {
+  try {
+    const { tipo, entityId } = req.params
+    const { data, error } = await supabase
+      .from('recensioni')
+      .select('id, autore, stelle, testo, fonte, verificata, created_at')
+      .eq('entity_tipo', tipo).eq('entity_id', entityId)
+      .eq('pubblica', true)
+      .order('created_at', { ascending: false })
+      .limit(50)
+    if (error) return res.status(500).json({ error: error.message })
+    res.json(data || [])
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
+// ── GET /api/guest/recensione/:token — info per il form pubblico ──
+router.get('/recensione/:token', async (req, res) => {
+  try {
+    const { token } = req.params
+    const { data, error } = await supabase
+      .from('recensioni').select('id, autore, entity_tipo, entity_id, pubblica')
+      .eq('token', token).single()
+    if (error || !data) return res.status(404).json({ error: 'Link non valido o già utilizzato' })
+    if (data.pubblica) return res.status(410).json({ error: 'Recensione già inviata' })
+
+    // Recupera nome entità per personalizzare il form
+    const table = data.entity_tipo === 'struttura' ? 'properties' : data.entity_tipo === 'ristorante' ? 'ristoranti' : 'attivita'
+    const { data: entity } = await supabase.from(table).select('name, logo_url, theme, minisito').eq('id', data.entity_id).single()
+
+    res.json({
+      autore: data.autore,
+      entity_name: entity?.name || '',
+      entity_logo: entity?.logo_url || null,
+      primary: entity?.theme?.primaryColor || '#1a1a2e',
+      redirect_url: entity?.minisito?.recensioni_redirect_url || null,
+    })
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
+// ── POST /api/guest/recensione/:token — invia recensione ──
+router.post('/recensione/:token', async (req, res) => {
+  try {
+    const { token } = req.params
+    const { autore, stelle, testo } = req.body
+
+    if (!stelle || stelle < 1 || stelle > 5) return res.status(400).json({ error: 'stelle obbligatorie (1-5)' })
+
+    const { data: rec, error: fe } = await supabase
+      .from('recensioni').select('id, pubblica, entity_tipo, entity_id, azienda_id')
+      .eq('token', token).single()
+    if (fe || !rec) return res.status(404).json({ error: 'Link non valido' })
+    if (rec.pubblica) return res.status(410).json({ error: 'Recensione già inviata' })
+
+    // Recupera redirect_url per smart redirect
+    const table = rec.entity_tipo === 'struttura' ? 'properties' : rec.entity_tipo === 'ristorante' ? 'ristoranti' : 'attivita'
+    const { data: entity } = await supabase.from(table).select('minisito').eq('id', rec.entity_id).single()
+    const redirectUrl = entity?.minisito?.recensioni_redirect_url || null
+
+    // ≥4 stelle + redirect configurato → pubblica e reindirizza
+    const isPositive = Number(stelle) >= 4
+    const shouldRedirect = isPositive && redirectUrl
+
+    await supabase.from('recensioni').update({
+      autore: autore?.trim() || rec.autore || 'Anonimo',
+      stelle: Number(stelle),
+      testo: testo?.trim() || '',
+      verificata: true,
+      pubblica: isPositive,   // negativa resta nascosta finché admin non decide
+      updated_at: new Date().toISOString(),
+    }).eq('id', rec.id)
+
+    // Notifica admin per recensioni negative
+    if (!isPositive) {
+      const { data: az } = await supabase.from('aziende').select('email').eq('id', rec.azienda_id).single()
+      if (az?.email && process.env.RESEND_API_KEY) {
+        try {
+          const { Resend } = await import('resend')
+          const r = new Resend(process.env.RESEND_API_KEY)
+          const stars = '★'.repeat(Number(stelle)) + '☆'.repeat(5 - Number(stelle))
+          await r.emails.send({
+            from: process.env.RESEND_FROM || 'StayApp <noreply@stayapp.it>',
+            to: az.email,
+            subject: `[StayApp] Nuova recensione ${stars} da ${autore?.trim() || 'Anonimo'}`,
+            html: `<p>Hai ricevuto una recensione privata (${stelle}/5 stelle) da <strong>${autore?.trim() || 'Anonimo'}</strong>.</p><p>${testo?.trim() || ''}</p><p>Accedi al pannello admin per visualizzarla e rispondere.</p>`,
+          })
+        } catch {}
+      }
+    }
+
+    res.json({ ok: true, redirect: shouldRedirect ? redirectUrl : null })
   } catch (err) { res.status(500).json({ error: err.message }) }
 })
 
