@@ -232,14 +232,12 @@ Il refactor verso "Business" generico richiede principalmente:
 
 - [x] Migration pipeline kanban: `ALTER TABLE contatti ADD COLUMN IF NOT EXISTS pipeline_stage text DEFAULT 'lead';`
 - [x] **Migration webhooks** (`028_webhooks`) — eseguita 2026-05-16
-- [ ] **029_automazioni.sql** — tabelle `automazioni` + `automazioni_log`
-- [ ] **030_recensioni.sql** — tabella `recensioni` + colonne token su prenotazioni
-- [ ] **031_signup.sql** — colonne `trial_ends_at`, `subscription_status`, `signup_enabled` su aziende
-- [ ] **032_preventivi.sql** — tabella `preventivi`
-- [ ] **033_form_builder.sql** — tabelle `form_builder` + `form_submissions`
-- [ ] **034_piano_editoriale.sql** — tabella `piano_editoriale`
-
-> ⚠️ Eseguire nell'ordine 029 → 030 → 031 → 032 → 033 → 034
+- [x] **029_automazioni.sql** — tabelle `automazioni` + `automazioni_log` ✅ 2026-05-16
+- [x] **030_recensioni.sql** — tabella `recensioni` + colonne token su prenotazioni ✅ 2026-05-16
+- [x] **031_signup.sql** — colonne `trial_ends_at`, `subscription_status`, `signup_enabled` su aziende ✅ 2026-05-16
+- [x] **032_preventivi.sql** — tabella `preventivi` ✅ 2026-05-16
+- [x] **033_form_builder.sql** — tabelle `form_builder` + `form_submissions` ✅ 2026-05-16
+- [x] **034_piano_editoriale.sql** — tabella `piano_editoriale` ✅ 2026-05-16
 
 ### Infrastruttura
 
