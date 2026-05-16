@@ -4,7 +4,14 @@ import { requireAuth } from '../middleware/auth.js'
 import supabase from '../lib/supabase.js'
 
 const router = express.Router()
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+// Lazy — evita crash se ANTHROPIC_API_KEY non è ancora in env
+let _anthropic = null
+function getClient() {
+  if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY non configurata')
+  if (!_anthropic) _anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  return _anthropic
+}
 
 const MONTHLY_LIMIT = parseInt(process.env.AI_MONTHLY_LIMIT || '20')
 // in-memory: azienda_id -> { count, month }
@@ -62,7 +69,7 @@ router.post('/social-post', requireAuth, async (req, res) => {
     const channelRule = CHANNEL_RULES[canale] || `${canale}: adatta la lunghezza e il tono al canale`
     const businessCtx = nome_business ? `per "${nome_business}"` : ''
 
-    const message = await anthropic.messages.create({
+    const message = await getClient().messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 500,
       messages: [{
