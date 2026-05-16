@@ -255,7 +255,11 @@ router.get('/', requireAuth, async (req, res) => {
 })
 
 router.get('/:id', requireAuth, async (req, res) => {
-  const { data, error } = await supabase.from('newsletters').select('*').eq('id', req.params.id).single()
+  const profile = await getProfile(req.user.id)
+  if (!profile) return res.status(403).json({ error: 'Profilo non trovato' })
+  let q = supabase.from('newsletters').select('*').eq('id', req.params.id)
+  if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
+  const { data, error } = await q.single()
   if (error || !data) return res.status(404).json({ error: 'Newsletter non trovata' })
   res.json(data)
 })
@@ -275,17 +279,30 @@ router.post('/', requireAuth, async (req, res) => {
 })
 
 router.patch('/:id', requireAuth, async (req, res) => {
+  const profile = await getProfile(req.user.id)
+  if (!profile) return res.status(403).json({ error: 'Profilo non trovato' })
+
   const allowed = ['subject', 'preheader', 'template_id', 'content', 'entity_tipo', 'entity_id', 'scheduled_at']
   const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)))
   updates.updated_at = new Date().toISOString()
-  const { data, error } = await supabase.from('newsletters').update(updates).eq('id', req.params.id).select().single()
-  if (error) return res.status(500).json({ error: error.message })
+
+  let q = supabase.from('newsletters').update(updates).eq('id', req.params.id)
+  if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
+  const { data, error } = await q.select().single()
+  if (error) return res.status(error.code === 'PGRST116' ? 404 : 500).json({ error: error.message })
   res.json(data)
 })
 
 router.delete('/:id', requireAuth, async (req, res) => {
-  const { data: nl } = await supabase.from('newsletters').select('status').eq('id', req.params.id).single()
-  if (nl?.status === 'sent') return res.status(400).json({ error: 'Non puoi eliminare una newsletter già inviata' })
+  const profile = await getProfile(req.user.id)
+  if (!profile) return res.status(403).json({ error: 'Profilo non trovato' })
+
+  let qCheck = supabase.from('newsletters').select('status').eq('id', req.params.id)
+  if (profile.role !== 'super_admin') qCheck = qCheck.eq('azienda_id', profile.azienda_id)
+  const { data: nl } = await qCheck.single()
+  if (!nl) return res.status(404).json({ error: 'Newsletter non trovata' })
+  if (nl.status === 'sent') return res.status(400).json({ error: 'Non puoi eliminare una newsletter già inviata' })
+
   const { error } = await supabase.from('newsletters').delete().eq('id', req.params.id)
   if (error) return res.status(500).json({ error: error.message })
   res.json({ ok: true })

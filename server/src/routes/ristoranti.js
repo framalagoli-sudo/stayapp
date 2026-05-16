@@ -35,8 +35,11 @@ router.get('/', async (req, res) => {
 
 // GET /api/ristoranti/:id
 router.get('/:id', async (req, res) => {
-  const { data, error } = await supabase
-    .from('ristoranti').select('*').eq('id', req.params.id).single()
+  const profile = await getProfile(req.user.id)
+  if (!profile) return res.status(403).json({ error: 'Profilo non trovato' })
+  let q = supabase.from('ristoranti').select('*').eq('id', req.params.id)
+  if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
+  const { data, error } = await q.single()
   if (error || !data) return res.status(404).json({ error: 'Ristorante non trovato' })
   res.json(data)
 })
@@ -105,13 +108,14 @@ router.patch('/:id', async (req, res) => {
       return res.status(400).json({ error: 'Nessun campo da aggiornare' })
     }
 
-    const { data, error } = await supabase
-      .from('ristoranti')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', req.params.id)
-      .select().single()
+    const profile = await getProfile(req.user.id)
+    if (!profile) return res.status(403).json({ error: 'Profilo non trovato' })
 
-    if (error) return res.status(500).json({ error: error.message })
+    let q = supabase.from('ristoranti').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', req.params.id)
+    if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
+    const { data, error } = await q.select().single()
+
+    if (error) return res.status(error.code === 'PGRST116' ? 404 : 500).json({ error: error.message })
     res.json(data)
   } catch (err) {
     res.status(500).json({ error: 'Errore interno del server' })
@@ -125,7 +129,9 @@ router.delete('/:id', async (req, res) => {
     return res.status(403).json({ error: 'Permessi insufficienti' })
   }
 
-  const { error } = await supabase.from('ristoranti').delete().eq('id', req.params.id)
+  let q = supabase.from('ristoranti').delete().eq('id', req.params.id)
+  if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
+  const { error } = await q
   if (error) return res.status(500).json({ error: error.message })
   res.json({ success: true })
 })

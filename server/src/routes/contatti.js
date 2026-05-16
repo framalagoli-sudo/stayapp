@@ -151,12 +151,18 @@ router.post('/', requireAuth, async (req, res) => {
 
 // PATCH /api/contatti/:id — aggiorna (auth)
 router.patch('/:id', requireAuth, async (req, res) => {
+  const profile = await getAziendaId(req.user.id)
+  if (!profile) return res.status(403).json({ error: 'Profilo non trovato' })
+
   const allowed = ['nome', 'email', 'telefono', 'tags', 'note', 'iscritto_newsletter', 'pipeline_stage']
   const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)))
   updates.updated_at = new Date().toISOString()
 
-  const { data, error } = await supabase.from('contatti').update(updates).eq('id', req.params.id).select().single()
-  if (error) return res.status(500).json({ error: error.message })
+  let q = supabase.from('contatti').update(updates).eq('id', req.params.id)
+  if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
+  const { data, error } = await q.select().single()
+
+  if (error) return res.status(error.code === 'PGRST116' ? 404 : 500).json({ error: error.message })
   if (updates.pipeline_stage) {
     sendWebhooks(data.azienda_id, 'cambio_stage_pipeline', { contatto_id: data.id, nome: data.nome, email: data.email, stage: updates.pipeline_stage })
   }
@@ -165,7 +171,12 @@ router.patch('/:id', requireAuth, async (req, res) => {
 
 // DELETE /api/contatti/:id — elimina (auth)
 router.delete('/:id', requireAuth, async (req, res) => {
-  const { error } = await supabase.from('contatti').delete().eq('id', req.params.id)
+  const profile = await getAziendaId(req.user.id)
+  if (!profile) return res.status(403).json({ error: 'Profilo non trovato' })
+
+  let q = supabase.from('contatti').delete().eq('id', req.params.id)
+  if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
+  const { error } = await q
   if (error) return res.status(500).json({ error: error.message })
   res.json({ ok: true })
 })

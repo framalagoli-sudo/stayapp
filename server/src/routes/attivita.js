@@ -32,7 +32,11 @@ router.get('/', async (req, res) => {
 })
 
 router.get('/:id', async (req, res) => {
-  const { data, error } = await supabase.from('attivita').select('*').eq('id', req.params.id).single()
+  const profile = await getProfile(req.user.id)
+  if (!profile) return res.status(403).json({ error: 'Profilo non trovato' })
+  let q = supabase.from('attivita').select('*').eq('id', req.params.id)
+  if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
+  const { data, error } = await q.single()
   if (error || !data) return res.status(404).json({ error: 'Attività non trovata' })
   res.json(data)
 })
@@ -83,10 +87,14 @@ router.patch('/:id', async (req, res) => {
     if (Object.keys(updates).length === 0)
       return res.status(400).json({ error: 'Nessun campo da aggiornare' })
 
-    const { data, error } = await supabase.from('attivita')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', req.params.id).select().single()
-    if (error) return res.status(500).json({ error: error.message })
+    const profile = await getProfile(req.user.id)
+    if (!profile) return res.status(403).json({ error: 'Profilo non trovato' })
+
+    let q = supabase.from('attivita').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', req.params.id)
+    if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
+    const { data, error } = await q.select().single()
+
+    if (error) return res.status(error.code === 'PGRST116' ? 404 : 500).json({ error: error.message })
     res.json(data)
   } catch {
     res.status(500).json({ error: 'Errore interno del server' })
@@ -97,7 +105,9 @@ router.delete('/:id', async (req, res) => {
   const profile = await getProfile(req.user.id)
   if (!profile || !['super_admin', 'admin_azienda'].includes(profile.role))
     return res.status(403).json({ error: 'Permessi insufficienti' })
-  const { error } = await supabase.from('attivita').delete().eq('id', req.params.id)
+  let q = supabase.from('attivita').delete().eq('id', req.params.id)
+  if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
+  const { error } = await q
   if (error) return res.status(500).json({ error: error.message })
   res.json({ success: true })
 })

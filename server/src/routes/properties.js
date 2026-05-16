@@ -6,6 +6,11 @@ const router = Router()
 
 router.use(requireAuth)
 
+async function getProfile(userId) {
+  const { data } = await supabase.from('profiles').select('role, azienda_id').eq('id', userId).single()
+  return data
+}
+
 // GET /api/properties?azienda_id=xxx (azienda_id opzionale, solo per super_admin)
 router.get('/', async (req, res) => {
   const { data: profile } = await supabase
@@ -35,12 +40,11 @@ router.get('/', async (req, res) => {
 
 // GET /api/properties/:id
 router.get('/:id', async (req, res) => {
-  const { data, error } = await supabase
-    .from('properties')
-    .select('*')
-    .eq('id', req.params.id)
-    .single()
-
+  const profile = await getProfile(req.user.id)
+  if (!profile) return res.status(403).json({ error: 'Profilo non trovato' })
+  let q = supabase.from('properties').select('*').eq('id', req.params.id)
+  if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
+  const { data, error } = await q.single()
   if (error || !data) return res.status(404).json({ error: 'Struttura non trovata' })
   res.json(data)
 })
@@ -124,14 +128,14 @@ router.patch('/:id', async (req, res) => {
       return res.status(400).json({ error: 'Nessun campo da aggiornare' })
     }
 
-    const { data, error } = await supabase
-      .from('properties')
-      .update(updates)
-      .eq('id', req.params.id)
-      .select()
-      .single()
+    const profile = await getProfile(req.user.id)
+    if (!profile) return res.status(403).json({ error: 'Profilo non trovato' })
 
-    if (error) return res.status(500).json({ error: error.message })
+    let q = supabase.from('properties').update(updates).eq('id', req.params.id)
+    if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
+    const { data, error } = await q.select().single()
+
+    if (error) return res.status(error.code === 'PGRST116' ? 404 : 500).json({ error: error.message })
     res.json(data)
   } catch (err) {
     console.error('PATCH /api/properties/:id error:', err)
@@ -141,20 +145,14 @@ router.patch('/:id', async (req, res) => {
 
 // DELETE /api/properties/:id
 router.delete('/:id', async (req, res) => {
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', req.user.id)
-    .single()
-
+  const profile = await getProfile(req.user.id)
   if (!profile || !['super_admin', 'admin_gruppo'].includes(profile.role)) {
     return res.status(403).json({ error: 'Permessi insufficienti' })
   }
 
-  const { error } = await supabase
-    .from('properties')
-    .delete()
-    .eq('id', req.params.id)
+  let q = supabase.from('properties').delete().eq('id', req.params.id)
+  if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
+  const { error } = await q
 
   if (error) return res.status(500).json({ error: error.message })
   res.json({ success: true })

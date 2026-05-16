@@ -236,7 +236,11 @@ router.get('/risorse', requireAuth, async (req, res) => {
 
 router.get('/risorse/:id', requireAuth, async (req, res) => {
   try {
-    const { data, error } = await supabase.from('risorse').select('*').eq('id', req.params.id).single()
+    const profile = await getProfile(req.user.id)
+    if (!profile) return res.status(403).json({ error: 'Profilo non trovato' })
+    let q = supabase.from('risorse').select('*').eq('id', req.params.id)
+    if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
+    const { data, error } = await q.single()
     if (error || !data) return res.status(404).json({ error: 'Risorsa non trovata' })
     res.json(data)
   } catch (e) { res.status(500).json({ error: e.message }) }

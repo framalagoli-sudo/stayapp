@@ -5,6 +5,17 @@ import { requireAuth } from '../middleware/auth.js'
 const router = Router()
 router.use(requireAuth)
 
+async function getProfile(userId) {
+  const { data } = await supabase.from('profiles').select('role, azienda_id').eq('id', userId).single()
+  return data
+}
+
+async function getEntityAziendaId(entity_tipo, entity_id) {
+  const table = entity_tipo === 'struttura' ? 'properties' : entity_tipo === 'ristorante' ? 'ristoranti' : 'attivita'
+  const { data } = await supabase.from(table).select('azienda_id').eq('id', entity_id).single()
+  return data?.azienda_id
+}
+
 function slugify(str) {
   return (str || '').toLowerCase()
     .replace(/[àáâãäå]/g, 'a').replace(/[èéêë]/g, 'e')
@@ -66,6 +77,11 @@ router.get('/:id', async (req, res) => {
   try {
     const { data, error } = await supabase.from('pagine').select('*').eq('id', req.params.id).single()
     if (error || !data) return res.status(404).json({ error: 'Pagina non trovata' })
+    const profile = await getProfile(req.user.id)
+    if (profile?.role !== 'super_admin') {
+      const entityAziendaId = await getEntityAziendaId(data.entity_tipo, data.entity_id)
+      if (entityAziendaId !== profile?.azienda_id) return res.status(404).json({ error: 'Pagina non trovata' })
+    }
     res.json(data)
   } catch (err) { res.status(500).json({ error: err.message }) }
 })
@@ -73,6 +89,13 @@ router.get('/:id', async (req, res) => {
 // PATCH /api/pagine/:id
 router.patch('/:id', async (req, res) => {
   try {
+    const { data: existing } = await supabase.from('pagine').select('entity_tipo, entity_id').eq('id', req.params.id).single()
+    if (!existing) return res.status(404).json({ error: 'Pagina non trovata' })
+    const profile = await getProfile(req.user.id)
+    if (profile?.role !== 'super_admin') {
+      const entityAziendaId = await getEntityAziendaId(existing.entity_tipo, existing.entity_id)
+      if (entityAziendaId !== profile?.azienda_id) return res.status(404).json({ error: 'Pagina non trovata' })
+    }
     const ALLOWED = ['titolo','slug','status','nel_menu','ordine','parent_id','seo_title','seo_description','og_image_url','blocks']
     const updates = {}
     ALLOWED.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k] })
@@ -86,6 +109,13 @@ router.patch('/:id', async (req, res) => {
 // DELETE /api/pagine/:id
 router.delete('/:id', async (req, res) => {
   try {
+    const { data: existing } = await supabase.from('pagine').select('entity_tipo, entity_id').eq('id', req.params.id).single()
+    if (!existing) return res.status(404).json({ error: 'Pagina non trovata' })
+    const profile = await getProfile(req.user.id)
+    if (profile?.role !== 'super_admin') {
+      const entityAziendaId = await getEntityAziendaId(existing.entity_tipo, existing.entity_id)
+      if (entityAziendaId !== profile?.azienda_id) return res.status(404).json({ error: 'Pagina non trovata' })
+    }
     const { error } = await supabase.from('pagine').delete().eq('id', req.params.id)
     if (error) return res.status(500).json({ error: error.message })
     res.json({ success: true })
