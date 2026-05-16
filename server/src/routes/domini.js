@@ -27,7 +27,28 @@ router.get('/', async (req, res) => {
 
     const { data, error } = await q
     if (error) return res.status(500).json({ error: error.message })
-    res.json(data || [])
+
+    const list = data || []
+
+    // Auto-crea sottodominio per entità esistenti che non ce l'hanno ancora
+    const { entity_tipo, entity_id } = req.query
+    if (entity_tipo && entity_id && !list.some(d => d.tipo === 'subdomain')) {
+      const table = entity_tipo === 'struttura' ? 'properties' : entity_tipo === 'ristorante' ? 'ristoranti' : 'attivita'
+      const { data: entity } = await supabase.from(table).select('azienda_id, slug').eq('id', entity_id).single()
+      if (entity?.slug) {
+        await createDefaultSubdomain({
+          azienda_id: entity.azienda_id,
+          entity_tipo,
+          entity_id,
+          entity_slug: entity.slug,
+        })
+        const { data: fresh } = await supabase.from('domini').select('*')
+          .eq('entity_tipo', entity_tipo).eq('entity_id', entity_id).order('created_at', { ascending: true })
+        return res.json(fresh || list)
+      }
+    }
+
+    res.json(list)
   } catch (e) { res.status(500).json({ error: e.message }) }
 })
 
