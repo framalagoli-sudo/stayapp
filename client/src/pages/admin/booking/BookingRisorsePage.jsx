@@ -264,7 +264,7 @@ function RisorseForm({ form, patch, patchDisp, initDisp, onSave, onCancel, savin
         <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>{isNew ? 'Nuova risorsa' : `Modifica: ${form.nome}`}</h1>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, maxWidth: 900 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20, maxWidth: 900 }}>
 
         {/* Colonna sinistra */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -485,7 +485,7 @@ function PromoPanel({ risorsa, promozioni, promoForm, setPromoForm, promoData, s
       {promoForm && (
         <div style={{ background: '#fff', borderRadius: 12, padding: 24, marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
           <h3 style={{ margin: '0 0 16px' }}>{promoForm === 'new' ? 'Nuova offerta' : 'Modifica offerta'}</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
             <div>
               <Label>Nome offerta *</Label>
               <Input value={promoData.nome} onChange={e => patchP('nome', e.target.value)} placeholder="Es. Happy Hour, Prima visita" />

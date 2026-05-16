@@ -196,7 +196,7 @@ export default function EventoEditPage() {
             <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={4} style={{ ...inp, resize: 'vertical' }} placeholder="Descrivi l'evento, cosa è incluso, programma…" />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
             <div style={fieldWrap}>
               <label style={lbl}>Data e ora inizio *</label>
               <input type="datetime-local" value={form.date_start} onChange={e => set('date_start', e.target.value)} required style={inp} />
@@ -212,7 +212,7 @@ export default function EventoEditPage() {
             <input value={form.location} onChange={e => set('location', e.target.value)} style={inp} placeholder="es. Sala principale, Terrazza, Giardino" />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
             <div style={fieldWrap}>
               <label style={lbl}>Prezzo base (€)</label>
               <input type="number" min="0" step="0.5" value={form.price} onChange={e => set('price', e.target.value)} style={inp} placeholder="0 = gratuito" />

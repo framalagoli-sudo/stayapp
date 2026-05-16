@@ -140,7 +140,8 @@ export default function PianoEditorialePage() {
 
       {/* Vista calendario */}
       {view === 'calendar' && (
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #eee', overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto' }}>
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #eee', overflow: 'hidden', minWidth: 560 }}>
           {/* Intestazioni giorni */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid #eee' }}>
             {DAYS_LABEL.map(d => (
@@ -199,6 +200,7 @@ export default function PianoEditorialePage() {
               )
             })}
           </div>
+        </div>
         </div>
       )}
 

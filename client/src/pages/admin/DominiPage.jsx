@@ -298,14 +298,18 @@ function DnsInstructions({ istruzioni }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {(istruzioni.records || []).map((r, i) => (
-          <div key={i} style={{ background: '#fff', borderRadius: 6, padding: '10px 14px', display: 'grid', gridTemplateColumns: '60px 1fr 1fr 60px auto', gap: 8, alignItems: 'center', fontSize: 13 }}>
-            <span style={{ fontWeight: 700, color: '#1a1a2e', background: '#f5f5f5', padding: '2px 6px', borderRadius: 4, textAlign: 'center' }}>{r.tipo}</span>
-            <span style={{ color: '#555' }}><strong>Nome:</strong> {r.nome}</span>
-            <span style={{ color: '#555', wordBreak: 'break-all' }}><strong>Valore:</strong> {r.valore}</span>
-            <span style={{ color: '#888' }}>TTL: {r.ttl}</span>
-            <button onClick={() => copy(r.valore)} style={{ background: copied === r.valore ? '#e8f5e9' : '#f5f5f5', border: 'none', borderRadius: 4, padding: '4px 8px', cursor: 'pointer', fontSize: 11, color: copied === r.valore ? '#2e7d32' : '#555', whiteSpace: 'nowrap' }}>
-              {copied === r.valore ? '✓' : 'Copia'}
-            </button>
+          <div key={i} style={{ background: '#fff', borderRadius: 6, padding: '10px 14px', fontSize: 13 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+              <span style={{ fontWeight: 700, color: '#1a1a2e', background: '#f5f5f5', padding: '2px 8px', borderRadius: 4 }}>{r.tipo}</span>
+              <span style={{ fontSize: 11, color: '#888' }}>TTL: {r.ttl}</span>
+              <button onClick={() => copy(r.valore)} style={{ marginLeft: 'auto', background: copied === r.valore ? '#e8f5e9' : '#f5f5f5', border: 'none', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontSize: 11, color: copied === r.valore ? '#2e7d32' : '#555', whiteSpace: 'nowrap' }}>
+                {copied === r.valore ? '✓ Copiato' : 'Copia valore'}
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <div style={{ color: '#555' }}><strong>Nome:</strong> <code style={{ background: '#f5f5f5', padding: '1px 5px', borderRadius: 3 }}>{r.nome}</code></div>
+              <div style={{ color: '#555', wordBreak: 'break-all' }}><strong>Valore:</strong> <code style={{ background: '#f5f5f5', padding: '1px 5px', borderRadius: 3 }}>{r.valore}</code></div>
+            </div>
           </div>
         ))}
       </div>

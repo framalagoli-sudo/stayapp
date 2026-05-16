@@ -25,7 +25,7 @@ function ExcursionForm({ exc, onPatch, onUploadPhoto, uploading }) {
 
   return (
     <div style={{ padding: '0 16px 16px', borderTop: '1px solid #f0f0f0' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10, marginTop: 14 }}>
         <Field label="Nome *">
           <input value={name} onChange={e => setName(e.target.value)} onBlur={() => commit('name', name)}
             style={inputStyle} placeholder="es. Gita a Siracusa" />

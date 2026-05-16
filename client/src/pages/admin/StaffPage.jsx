@@ -226,7 +226,7 @@ export default function StaffPage() {
             Riceverà un'email con il link per impostare la password e accedere al pannello.
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 20 }}>
             <div>
               <label style={{ display: 'block', fontSize: 13, color: '#555', marginBottom: 4 }}>Email *</label>
               <input

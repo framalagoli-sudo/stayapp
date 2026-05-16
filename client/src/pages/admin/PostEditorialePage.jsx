@@ -177,7 +177,7 @@ export default function PostEditorialePage() {
         </div>
 
         {/* Data e ora */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16, marginBottom: 20 }}>
           <div>
             <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>Data pianificata</label>
             <input type="date" value={dataPianificata} onChange={e => setData(e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 14, boxSizing: 'border-box' }} />

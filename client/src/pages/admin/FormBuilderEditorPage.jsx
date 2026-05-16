@@ -130,7 +130,7 @@ export default function FormBuilderEditorPage() {
 
       {/* Impostazioni base */}
       <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #eee', padding: 20, marginBottom: 16 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>Nome form</label>
             <input value={nome} onChange={e => setNome(e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 12px', fontSize: 14, boxSizing: 'border-box' }} />

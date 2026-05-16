@@ -149,7 +149,7 @@ export default function RistoranteThemePage() {
           </Section>
 
           <Section label="Font titoli">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8 }}>
               {HEADING_FONTS.map(({ key, label, family, desc }) => {
                 const isSel = theme.fontHeading === key
                 return (
@@ -164,7 +164,7 @@ export default function RistoranteThemePage() {
           </Section>
 
           <Section label="Font testo">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
               {BODY_FONTS.map(({ key, label, family, desc }) => {
                 const isSel = theme.fontBody === key
                 return (
@@ -179,7 +179,7 @@ export default function RistoranteThemePage() {
           </Section>
 
           <Section label="Stile bordi" style={{ marginBottom: 0 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
               {BORDER_STYLES.map(({ key, label, desc }) => {
                 const isSel = theme.borderStyle === key
                 return (

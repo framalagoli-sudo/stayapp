@@ -244,7 +244,7 @@ function CreateUserForm({ onSave, onCancel }) {
           <label style={lbl}>Nome completo</label>
           <input value={form.full_name} onChange={e => set('full_name', e.target.value)} placeholder="Mario Rossi" style={inp} />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 12 }}>
           <div>
             <label style={lbl}>Email <span style={{ color: '#c00' }}>*</span></label>
             <input type="email" value={form.email} onChange={e => set('email', e.target.value)} style={inp} required />

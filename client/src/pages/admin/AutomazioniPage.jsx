@@ -77,7 +77,7 @@ function StepEditor({ step, idx, trigger, onChange, onRemove }) {
         />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10, marginBottom: 10 }}>
         <div>
           <label style={{ display: 'block', fontSize: 11, color: '#888', marginBottom: 4 }}>Testo pulsante (opzionale)</label>
           <input

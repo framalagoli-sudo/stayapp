@@ -162,7 +162,7 @@ export default function PreventivoEditorPage() {
 
       {/* Card principale */}
       <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #eee', padding: 24, marginBottom: 16 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 20 }}>
           {/* Titolo */}
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>Titolo</label>

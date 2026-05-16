@@ -317,7 +317,7 @@ export default function NewsletterEditorPage() {
                         <div style={{
                           position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 51,
                           background: '#fff', borderRadius: 12, padding: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                          display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: 4, width: 320,
+                          display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: 4, maxWidth: 320,
                         }}>
                           {EMOJIS.map(e => (
                             <button key={e} onClick={() => insertEmoji(e)} style={{
@@ -503,7 +503,7 @@ function SempliceFields({ c, patch, inp, label, disabled }) {
     <Field label={label} k="Immagine di intestazione"><input value={c.image_url || ''} onChange={e => patch('image_url', e.target.value)} disabled={disabled} placeholder="URL immagine (opzionale)" style={inp} /></Field>
     <Field label={label} k="Titolo"><input value={c.heading || ''} onChange={e => patch('heading', e.target.value)} disabled={disabled} placeholder="Es: Benvenuta primavera!" style={inp} /></Field>
     <Field label={label} k="Testo"><textarea value={c.text || ''} onChange={e => patch('text', e.target.value)} disabled={disabled} rows={5} placeholder="Corpo del messaggio…" style={{ ...inp, resize: 'vertical' }} /></Field>
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
       <Field label={label} k="Testo bottone CTA"><input value={c.cta_text || ''} onChange={e => patch('cta_text', e.target.value)} disabled={disabled} placeholder="Es: Scopri di più" style={inp} /></Field>
       <Field label={label} k="URL bottone CTA"><input value={c.cta_url || ''} onChange={e => patch('cta_url', e.target.value)} disabled={disabled} placeholder="https://…" style={inp} /></Field>
     </div>
@@ -515,16 +515,16 @@ function PromozioneFields({ c, patch, inp, label, disabled }) {
   const pct = orig && disc && orig > disc ? Math.round((1 - disc / orig) * 100) : null
   return <>
     <Field label={label} k="Immagine"><input value={c.image_url || ''} onChange={e => patch('image_url', e.target.value)} disabled={disabled} placeholder="URL immagine" style={inp} /></Field>
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
       <Field label={label} k="Titolo offerta"><input value={c.heading || ''} onChange={e => patch('heading', e.target.value)} disabled={disabled} placeholder="Es: Offerta estate" style={inp} /></Field>
       <Field label={label} k="Badge (opzionale)"><input value={c.badge || ''} onChange={e => patch('badge', e.target.value)} disabled={disabled} placeholder="Es: Solo questo weekend" style={inp} /></Field>
     </div>
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, alignItems: 'end' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10, alignItems: 'end' }}>
       <Field label={label} k="Prezzo originale (€)"><input value={c.price_original || ''} onChange={e => patch('price_original', e.target.value)} disabled={disabled} placeholder="Es: 150" style={inp} /></Field>
       <Field label={label} k={`Prezzo scontato (€)${pct ? ` — sconto ${pct}%` : ''}`}><input value={c.price_discounted || ''} onChange={e => patch('price_discounted', e.target.value)} disabled={disabled} placeholder="Es: 99" style={inp} /></Field>
     </div>
     <Field label={label} k="Descrizione"><textarea value={c.text || ''} onChange={e => patch('text', e.target.value)} disabled={disabled} rows={4} placeholder="Descrizione dell'offerta…" style={{ ...inp, resize: 'vertical' }} /></Field>
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
       <Field label={label} k="Testo bottone CTA"><input value={c.cta_text || ''} onChange={e => patch('cta_text', e.target.value)} disabled={disabled} placeholder="Es: Approfitta ora" style={inp} /></Field>
       <Field label={label} k="URL bottone CTA"><input value={c.cta_url || ''} onChange={e => patch('cta_url', e.target.value)} disabled={disabled} placeholder="https://…" style={inp} /></Field>
     </div>
@@ -545,7 +545,7 @@ function NotizieFIelds({ c, setContent, inp, label, disabled }) {
     setContent(prev => ({ ...prev, blocks: (prev.blocks || []).filter((_, i) => i !== idx) }))
   }
   return <>
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
       <Field label={label} k="Titolo sezione"><input value={c.heading || ''} onChange={e => setContent(p => ({ ...p, heading: e.target.value }))} disabled={disabled} placeholder="Es: Le ultime notizie" style={inp} /></Field>
       <Field label={label} k="Introduzione"><input value={c.intro || ''} onChange={e => setContent(p => ({ ...p, intro: e.target.value }))} disabled={disabled} placeholder="Testo introduttivo (opzionale)" style={inp} /></Field>
     </div>
@@ -572,18 +572,18 @@ function NotizieFIelds({ c, setContent, inp, label, disabled }) {
 function EventoFields({ c, patch, inp, label, disabled }) {
   return <>
     <Field label={label} k="Immagine"><input value={c.image_url || ''} onChange={e => patch('image_url', e.target.value)} disabled={disabled} placeholder="URL immagine" style={inp} /></Field>
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
       <Field label={label} k="Titoletto (opzionale)"><input value={c.heading || ''} onChange={e => patch('heading', e.target.value)} disabled={disabled} placeholder="Es: Ti aspettiamo" style={inp} /></Field>
       <Field label={label} k="Nome evento"><input value={c.event_title || ''} onChange={e => patch('event_title', e.target.value)} disabled={disabled} placeholder="Es: Cena di gala" style={inp} /></Field>
     </div>
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
       <Field label={label} k="Data"><input value={c.date || ''} onChange={e => patch('date', e.target.value)} disabled={disabled} type="date" style={inp} /></Field>
       <Field label={label} k="Ora"><input value={c.time || ''} onChange={e => patch('time', e.target.value)} disabled={disabled} placeholder="Es: 20:00" style={inp} /></Field>
       <Field label={label} k="Prezzo (€)"><input value={c.price || ''} onChange={e => patch('price', e.target.value)} disabled={disabled} placeholder="Es: 45" style={inp} /></Field>
     </div>
     <Field label={label} k="Luogo"><input value={c.location || ''} onChange={e => patch('location', e.target.value)} disabled={disabled} placeholder="Es: Sala principale" style={inp} /></Field>
     <Field label={label} k="Descrizione"><textarea value={c.text || ''} onChange={e => patch('text', e.target.value)} disabled={disabled} rows={4} placeholder="Descrizione dell'evento…" style={{ ...inp, resize: 'vertical' }} /></Field>
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
       <Field label={label} k="Testo bottone"><input value={c.cta_text || ''} onChange={e => patch('cta_text', e.target.value)} disabled={disabled} placeholder="Es: Prenota il tuo posto" style={inp} /></Field>
       <Field label={label} k="URL bottone"><input value={c.cta_url || ''} onChange={e => patch('cta_url', e.target.value)} disabled={disabled} placeholder="https://…" style={inp} /></Field>
     </div>

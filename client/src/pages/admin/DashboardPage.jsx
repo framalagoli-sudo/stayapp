@@ -209,7 +209,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Richieste + Prenotazioni oggi ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, marginBottom: 16 }}>
 
         <SectionCard title="Richieste aperte" icon={Inbox} iconColor="#e53e3e" action="Vedi tutte" actionTo="/admin/requests" navigate={navigate}>
           {loading ? <Loading /> : requests.length === 0

@@ -707,7 +707,7 @@ export default function SitoPage({ entityTipo }) {
           </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
 
           {/* ── Navbar ── */}
           <div style={{ ...cardStyle, padding: 20 }}>
@@ -716,7 +716,7 @@ export default function SitoPage({ entityTipo }) {
             {/* Stile */}
             <div style={{ marginBottom: 14 }}>
               <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 8 }}>Stile sfondo</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 6 }}>
                 {[
                   ['dark',        '████', '#1a1a2e', 'Scuro'],
                   ['light',       '████', '#ffffff', 'Chiaro'],

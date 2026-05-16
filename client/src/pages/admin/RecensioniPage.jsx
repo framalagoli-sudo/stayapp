@@ -128,7 +128,7 @@ function AddModal({ entityTipo, entityId, onClose, onCreate }) {
               <input value={autore} onChange={e => setAutore(e.target.value)} placeholder="Mario Rossi"
                 style={{ width: '100%', padding: '9px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginBottom: 12 }}>
               <div>
                 <label style={{ display: 'block', fontSize: 12, color: '#888', marginBottom: 5 }}>Stelle</label>
                 <select value={stelle} onChange={e => setStelle(Number(e.target.value))}

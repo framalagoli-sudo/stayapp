@@ -151,7 +151,7 @@ export default function RestaurantSection({ restaurant = { active: false, catego
 function ItemForm({ form, setForm, onSave, onCancel, onPhoto, uploadingPhoto }) {
   return (
     <div style={{ marginTop: 12, padding: 14, background: '#f0f0f0', borderRadius: 10 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10, marginBottom: 10 }}>
         <div>
           <label style={lbl}>Nome *</label>
           <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}

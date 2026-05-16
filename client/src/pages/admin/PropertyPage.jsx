@@ -312,7 +312,7 @@ export default function PropertyPage() {
   const theme   = { ...DEFAULT_THEME, ...(form.theme || {}) }
 
   return (
-    <div style={{ maxWidth: 960, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
+    <div style={{ maxWidth: 960, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, alignItems: 'start' }}>
 
       {/* Left column: all controls */}
       <div>
@@ -482,7 +482,7 @@ export default function PropertyPage() {
 
           {/* Heading font */}
           <Section label="Font titoli">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8 }}>
               {HEADING_FONTS.map(({ key, label, family, desc }) => {
                 const isSel = theme.fontHeading === key
                 return (
@@ -504,7 +504,7 @@ export default function PropertyPage() {
 
           {/* Body font */}
           <Section label="Font testo">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
               {BODY_FONTS.map(({ key, label, family, desc }) => {
                 const isSel = theme.fontBody === key
                 return (
@@ -526,7 +526,7 @@ export default function PropertyPage() {
 
           {/* Header style */}
           <Section label="Stile header">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
               {HEADER_STYLES.map(({ key, label, desc }) => {
                 const isSel = theme.headerStyle === key
                 return (
@@ -548,7 +548,7 @@ export default function PropertyPage() {
 
           {/* Border style */}
           <Section label="Stile bordi">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
               {BORDER_STYLES.map(({ key, label, desc, radius }) => {
                 const isSel = theme.borderStyle === key
                 return (

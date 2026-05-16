@@ -456,7 +456,7 @@ function AccessiSection({ aziendaId }) {
 
       {mode === 'create' && (
         <form onSubmit={handleCreate} style={{ maxWidth: 420 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10, marginBottom: 10 }}>
             <div style={{ gridColumn: '1 / -1' }}>
               <label style={lbl}>Nome completo</label>
               <input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} style={inp} />
@@ -558,7 +558,7 @@ function AziendaForm({ title, initialData = {}, onSave, onCancel }) {
       <form onSubmit={handleSubmit}>
 
         <SectionLabel>Dati anagrafici</SectionLabel>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 12 }}>
           {TEXT_FIELDS.map(({ key, label, type = 'text', required }) => (
             <div key={key} style={key === 'ragione_sociale' || key === 'indirizzo' ? { gridColumn: '1 / -1' } : {}}>
               <label style={labelStyle}>
