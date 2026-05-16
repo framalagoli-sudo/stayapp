@@ -105,12 +105,13 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 
 ## ROADMAP — Prossimi sprint
 
-### Sprint 4 — Webhooks / API outbound (~1 ora) 🔴
-Sblocca Zapier/Make per tutti gli utenti senza costruire nulla di più.
-- [ ] `POST /api/webhooks/config` — salva URL destinazione + eventi da monitorare
-- [ ] Invio automatico payload JSON su eventi: nuovo_contatto, nuova_prenotazione, nuova_richiesta, cambio_stage_pipeline
-- [ ] API key management — admin genera chiave per integrazioni esterne
-- [ ] UI admin: pagina "Integrazioni" con lista webhook attivi + test manuale
+### Sprint 4 — Webhooks / API outbound ✅ 2026-05-16
+- [x] `server/lib/webhook.js` — sendWebhooks() fire-and-forget, Promise.allSettled, timeout 6s
+- [x] `/api/webhooks` CRUD + `POST /:id/test` — invia payload di test all'URL
+- [x] Agganciato su: nuovo_contatto, nuova_prenotazione, nuova_richiesta, cambio_stage_pipeline
+- [x] UI admin: `/admin/integrazioni` — lista webhook, toggle attivo, add/delete, test con risposta HTTP
+- [x] Fix bug: pipeline_stage ora persiste correttamente nel PATCH /api/contatti/:id
+- **Migration da eseguire su Supabase** (vedi sotto in "Azioni manuali")
 
 ### Sprint 5 — Email automation sequences (~mezza giornata) 🔴
 - [ ] Trigger: **nuova prenotazione** → email conferma personalizzata
@@ -199,6 +200,21 @@ Il refactor verso "Business" generico richiede principalmente:
 ## Azioni manuali da fare (Francesco)
 
 - [x] Migration pipeline kanban: `ALTER TABLE contatti ADD COLUMN IF NOT EXISTS pipeline_stage text DEFAULT 'lead';`
+- [ ] **Migration webhooks** — eseguire su Supabase Dashboard → SQL Editor:
+  ```sql
+  CREATE TABLE webhooks (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    azienda_id uuid REFERENCES aziende(id) ON DELETE CASCADE,
+    nome text NOT NULL DEFAULT '',
+    url text NOT NULL,
+    eventi text[] DEFAULT '{}',
+    attivo boolean DEFAULT true,
+    created_at timestamptz DEFAULT now()
+  );
+  GRANT SELECT, INSERT, UPDATE, DELETE ON public.webhooks TO authenticated;
+  GRANT SELECT, INSERT, UPDATE, DELETE ON public.webhooks TO service_role;
+  ALTER TABLE public.webhooks ENABLE ROW LEVEL SECURITY;
+  ```
 - [ ] Upgrade Supabase Pro ($25/mese)
 - [ ] Upgrade Vercel Pro ($20/mese)
 - [ ] Acquisto dominio + configurazione (checklist in server/CLAUDE.md)
