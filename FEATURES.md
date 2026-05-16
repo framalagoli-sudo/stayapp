@@ -1,7 +1,7 @@
 # FEATURES — Roadmap prodotto StayApp
 
 Documento vivo. Aggiornato sessione per sessione.
-Ultima revisione: **2026-05-15** (CRM kanban, tracking pixels, UX admin, audit terminologia)
+Ultima revisione: **2026-05-16** (go-to-market ibrido diretto+agenzie)
 
 ---
 
@@ -21,6 +21,29 @@ Hotel, ristoranti, attività, ma anche freelancer, agenzie, studi, palestre, coa
 
 Competitor: GoHighLevel · HubSpot · WordPress · Wix · Webflow
 Vantaggio unico: **PWA installabile via QR** — nessun competitor lo fa integrato.
+
+### Go-to-market: modello ibrido (concordato 2026-05-16)
+
+**Fase 1 — Diretto** *(ora)*
+Primi 20-30 clienti paganti con self-signup. Servono per validare il prodotto,
+raccogliere testimonial e avere social proof da mostrare alle agenzie.
+Richiede: self-signup + Stripe subscription billing.
+
+**Fase 2 — Ibrido leggero** *(quando ci sono i primi clienti)*
+- Piano "Agency" a prezzo più alto con white-label incluso
+- Programma referral: l'agenzia porta clienti → prende 20-30% ricorrente
+- L'agenzia gestisce il cliente, StayApp gestisce il prodotto
+- Non serve infrastruttura complessa: basta un piano diverso e white-label base
+
+**Fase 3 — Canale agenzia pieno** *(se il modello funziona)*
+- Sub-account (ogni agenzia gestisce N clienti indipendenti)
+- Dashboard rivenditore con fatturazione
+- Prezzi custom per cliente finale
+- Qui si compete direttamente con GoHighLevel sul mercato europeo
+
+**Vantaggio vs GHL per agenzie europee:**
+GHL è in inglese, complesso, senza GDPR nativo, senza PWA.
+StayApp è più semplice da rivendere a PMI italiane/europee.
 
 **Insight architetturale (2026-05-15):** le entità "struttura / ristorante / attività" sono
 strutturalmente quasi identiche — stesse tabelle, stesse colonne, stessi pattern.
@@ -103,7 +126,15 @@ Sblocca Zapier/Make per tutti gli utenti senza costruire nulla di più.
 - [ ] Widget recensioni nel minisito (blocco CMS)
 - [ ] Dashboard recensioni admin (media, trend, commenti)
 
-### Sprint 7 — Stripe payments (2-3 ore + account Stripe) 🔴
+### Sprint 7 — Self-signup + Stripe subscription (prerequisito Fase 1) 🔴
+Per acquisire clienti diretti senza intervento manuale.
+- [ ] Pagina pubblica `/signup` — registrazione azienda (nome, email, password, tipo business)
+- [ ] Onboarding wizard — 3 step: crea entità → carica logo → attiva minisito
+- [ ] Stripe Billing — piani mensili (es. Starter €29 / Pro €79 / Agency €199)
+- [ ] Email benvenuto automatica post-registrazione
+- [ ] Trial gratuito 14 giorni senza carta
+
+### Sprint 8 — Stripe payments booking/eventi (2-3 ore + account Stripe) 🔴
 - [ ] Checkout booking risorse (deposito o totale)
 - [ ] Checkout eventi
 - [ ] Link pagamento rapido (admin genera link "paga €X" → cliente paga)
