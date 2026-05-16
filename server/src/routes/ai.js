@@ -1,16 +1,31 @@
 import express from 'express'
-import Anthropic from '@anthropic-ai/sdk'
 import { requireAuth } from '../middleware/auth.js'
 import supabase from '../lib/supabase.js'
 
 const router = express.Router()
 
-// Lazy — evita crash se ANTHROPIC_API_KEY non è ancora in env
-let _anthropic = null
-function getClient() {
-  if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY non configurata')
-  if (!_anthropic) _anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  return _anthropic
+async function callClaude(prompt) {
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY non configurata su Railway')
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 500,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.error?.message || `Anthropic API error ${res.status}`)
+  }
+  const data = await res.json()
+  return data.content[0].text.trim()
 }
 
 const MONTHLY_LIMIT = parseInt(process.env.AI_MONTHLY_LIMIT || '20')
@@ -69,12 +84,7 @@ router.post('/social-post', requireAuth, async (req, res) => {
     const channelRule = CHANNEL_RULES[canale] || `${canale}: adatta la lunghezza e il tono al canale`
     const businessCtx = nome_business ? `per "${nome_business}"` : ''
 
-    const message = await getClient().messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 500,
-      messages: [{
-        role: 'user',
-        content: `Sei un esperto di social media marketing. Scrivi un post ${businessCtx}.
+    const prompt = `Sei un esperto di social media marketing. Scrivi un post ${businessCtx}.
 
 Canale — ${channelRule}
 Tema/brief: ${tema}
@@ -82,14 +92,10 @@ Tono: ${tono}
 Lingua: italiano
 
 Scrivi SOLO il testo del post, senza titoli, introduzioni, virgolette esterne o spiegazioni aggiuntive.`
-      }]
-    })
 
+    const testo = await callClaude(prompt)
     const leftAfter = consumeCredit(azienda_id)
-    res.json({
-      testo: message.content[0].text.trim(),
-      usage: { remaining: leftAfter, limit: MONTHLY_LIMIT }
-    })
+    res.json({ testo, usage: { remaining: leftAfter, limit: MONTHLY_LIMIT } })
   } catch (e) {
     console.error('[AI social-post]', e.message)
     res.status(500).json({ error: 'Errore durante la generazione AI. Riprova tra qualche secondo.' })
