@@ -38,6 +38,7 @@ import webhooksRouter from './routes/webhooks.js'
 import preventivRouter from './routes/preventivi.js'
 import formBuilderRouter from './routes/form_builder.js'
 import pianoEditorialeRouter from './routes/piano_editoriale.js'
+import dominiRouter from './routes/domini.js'
 import { runBackup } from './lib/backup.js'
 import { auditLog } from './middleware/auditLog.js'
 import cron from 'node-cron'
@@ -51,17 +52,36 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }, // necessario per immagini Storage
 }))
 
-// ── CORS — whitelist esplicita ───────────────────────────────────────────────
-const allowedOrigins = [
+// ── CORS — whitelist esplicita + wildcard *.stayapp.it + domini custom ───────
+const STAYAPP_DOMAIN = process.env.STAYAPP_DOMAIN || 'stayapp.it'
+const STAYAPP_SUBDOMAIN_RE = new RegExp(`^https://[a-z0-9-]+\\.${STAYAPP_DOMAIN.replace('.', '\\.')}$`)
+
+const staticOrigins = new Set([
   'http://localhost:5173',
   'https://stayapp-henna.vercel.app',
+  `https://${STAYAPP_DOMAIN}`,
+  `https://www.${STAYAPP_DOMAIN}`,
   process.env.CLIENT_URL,
-].filter(Boolean)
+].filter(Boolean))
+
+// Cache domini custom — ricarica ogni 5 minuti
+let customDomainsCache = new Set()
+async function refreshCustomDomains() {
+  try {
+    const { data } = await supabase.from('domini')
+      .select('dominio').eq('tipo', 'custom').eq('stato', 'attivo')
+    if (data) customDomainsCache = new Set(data.map(d => `https://${d.dominio}`))
+  } catch (e) { console.error('[cors] refreshCustomDomains:', e.message) }
+}
+refreshCustomDomains()
+setInterval(refreshCustomDomains, 5 * 60 * 1000)
 
 app.use(cors({
   origin: (origin, cb) => {
-    // Permetti richieste senza origin (Postman, curl, server-to-server)
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true)
+    if (!origin) return cb(null, true) // Postman, curl, server-to-server
+    if (staticOrigins.has(origin)) return cb(null, true)
+    if (STAYAPP_SUBDOMAIN_RE.test(origin)) return cb(null, true)
+    if (customDomainsCache.has(origin)) return cb(null, true)
     cb(new Error(`CORS: origine non consentita — ${origin}`))
   },
   credentials: true,
@@ -124,6 +144,7 @@ app.use('/api/recensioni',   adminLimiter, recensioniRouter)
 app.use('/api/preventivi',       preventivRouter)
 app.use('/api/form-builder',    guestLimiter, formBuilderRouter)
 app.use('/api/piano-editoriale', adminLimiter, pianoEditorialeRouter)
+app.use('/api/domini',           adminLimiter, dominiRouter)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 

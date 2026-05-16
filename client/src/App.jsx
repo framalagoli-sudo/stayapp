@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useParams } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { AziendaProvider } from './context/AziendaContext'
@@ -93,6 +94,7 @@ import FormBuilderSubmissionsPage from './pages/admin/FormBuilderSubmissionsPage
 import FormPublicPage from './pages/public/FormPublicPage'
 import PianoEditorialePage from './pages/admin/PianoEditorialePage'
 import PostEditorialePage from './pages/admin/PostEditorialePage'
+import DominiPage from './pages/admin/DominiPage'
 
 // Injects property ID from URL params into PropertyIdContext
 // so all property sub-pages work without modification
@@ -105,10 +107,46 @@ function StrutturaLayout() {
   )
 }
 
+const STAYAPP_DOMAIN = import.meta.env.VITE_STAYAPP_DOMAIN || 'stayapp.it'
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+
+// Rileva se siamo su sottodominio *.stayapp.it o dominio custom → redirige alla rotta giusta
+function DomainDetector() {
+  const [redirectTo, setRedirectTo] = useState(null)
+  const [checked, setChecked] = useState(false)
+
+  useEffect(() => {
+    const h = window.location.hostname
+    const skip = h === 'localhost' || h === '127.0.0.1' ||
+      h.includes('vercel.app') ||
+      h === STAYAPP_DOMAIN || h === `www.${STAYAPP_DOMAIN}` ||
+      h.startsWith('admin.')
+    if (skip) { setChecked(true); return }
+
+    fetch(`${API_BASE}/api/public/resolve-domain?d=${encodeURIComponent(h)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.entity_tipo && data?.entity_slug) {
+          const prefix = data.entity_tipo === 'struttura' ? 's' : data.entity_tipo === 'ristorante' ? 'r' : 'a'
+          setRedirectTo(`/${prefix}/${data.entity_slug}`)
+        }
+        setChecked(true)
+      })
+      .catch(() => setChecked(true))
+  }, [])
+
+  if (!checked) return null
+  if (redirectTo && window.location.pathname === '/') {
+    window.history.replaceState(null, '', redirectTo)
+  }
+  return null
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <DomainDetector />
         <Routes>
           {/* Guest PWA */}
           <Route path="/s/:slug" element={<GuestApp />} />
@@ -199,6 +237,7 @@ export default function App() {
             <Route path="attivita/:id/privacy"    element={<AttivitaPrivacyPage />} />
             <Route path="attivita/:id/chatbot"    element={<AttivitaChatbotPage />} />
             <Route path="attivita/:id/pagine"     element={<PagineListPage entityTipo="attivita" />} />
+            <Route path="attivita/:id/domini"     element={<DominiPage entityTipo="attivita" />} />
 
             {/* Ristoranti */}
             <Route path="ristoranti"              element={<RistorantiListPage />} />
@@ -212,6 +251,7 @@ export default function App() {
             <Route path="ristoranti/:id/privacy"  element={<RistorantePrivacyPage />} />
             <Route path="ristoranti/:id/chatbot"  element={<RistoranteChatbotPage />} />
             <Route path="ristoranti/:id/pagine"   element={<PagineListPage entityTipo="ristorante" />} />
+            <Route path="ristoranti/:id/domini"  element={<DominiPage entityTipo="ristorante" />} />
 
             {/* Struttura by ID (admin_azienda, super_admin) */}
             <Route path="struttura/:id" element={<StrutturaLayout />}>
@@ -227,6 +267,7 @@ export default function App() {
               <Route path="privacy"    element={<PropertyPrivacyPage />} />
               <Route path="chatbot"    element={<PropertyChatbotPage />} />
               <Route path="pagine"     element={<PagineListPage entityTipo="struttura" />} />
+              <Route path="domini"     element={<DominiPage entityTipo="struttura" />} />
             </Route>
 
             {/* Struttura legacy (admin_struttura, staff — usa profile.property_id) */}
@@ -242,6 +283,7 @@ export default function App() {
             <Route path="property/privacy"    element={<PropertyPrivacyPage />} />
             <Route path="property/chatbot"    element={<PropertyChatbotPage />} />
             <Route path="property/pagine"     element={<PagineListPage entityTipo="struttura" />} />
+            <Route path="property/domini"     element={<DominiPage entityTipo="struttura" />} />
 
             {/* Eventi */}
             <Route path="eventi"                         element={<EventiListPage />} />

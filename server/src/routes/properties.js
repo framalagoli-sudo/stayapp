@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { supabase } from '../lib/supabase.js'
 import { requireAuth } from '../middleware/auth.js'
+import { createDefaultSubdomain } from './domini.js'
 
 const router = Router()
 
@@ -97,6 +98,7 @@ router.post('/', async (req, res) => {
       .single()
 
     if (error) return res.status(500).json({ error: error.message })
+    createDefaultSubdomain({ azienda_id, entity_tipo: 'struttura', entity_id: data.id, entity_slug: data.slug })
     res.status(201).json(data)
   } catch (err) {
     console.error('POST /api/properties error:', err)

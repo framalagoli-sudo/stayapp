@@ -59,4 +59,20 @@ router.post('/register', async (req, res) => {
   }
 })
 
+// GET /api/public/resolve-domain?d=hostname — risolve dominio/sottodominio → entità
+router.get('/resolve-domain', async (req, res) => {
+  const dominio = req.query.d?.trim().toLowerCase()
+  if (!dominio) return res.status(400).json({ error: 'Parametro d obbligatorio' })
+
+  const { data, error } = await supabase
+    .from('domini')
+    .select('entity_tipo, entity_id, entity_slug, tipo, stato')
+    .eq('dominio', dominio)
+    .eq('stato', 'attivo')
+    .single()
+
+  if (error || !data) return res.status(404).json({ error: 'Dominio non registrato' })
+  res.json(data)
+})
+
 export default router

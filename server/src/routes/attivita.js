@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { supabase } from '../lib/supabase.js'
 import { requireAuth } from '../middleware/auth.js'
+import { createDefaultSubdomain } from './domini.js'
 
 const router = Router()
 router.use(requireAuth)
@@ -63,6 +64,7 @@ router.post('/', async (req, res) => {
 
     const { data, error } = await supabase.from('attivita').insert({ azienda_id, slug, ...extras }).select().single()
     if (error) return res.status(500).json({ error: error.message })
+    createDefaultSubdomain({ azienda_id, entity_tipo: 'attivita', entity_id: data.id, entity_slug: data.slug })
     res.status(201).json(data)
   } catch (err) {
     res.status(500).json({ error: 'Errore interno del server' })

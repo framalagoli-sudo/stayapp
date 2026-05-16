@@ -25,6 +25,7 @@ const NAV_PROPERTY = [
   { to: '/admin/property/sito',       label: 'Sito',          icon: Globe },
   { to: '/admin/property/privacy',    label: 'Privacy',       icon: Lock },
   { to: '/admin/property/chatbot',    label: 'Chatbot',       icon: Bot },
+  { to: '/admin/property/domini',     label: 'Domini',        icon: Globe },
 ]
 const STRUTTURA_SUBS = [
   { sub: 'info',       label: 'Informazioni',  icon: Info },
@@ -37,6 +38,7 @@ const STRUTTURA_SUBS = [
   { sub: 'sito',       label: 'Sito',          icon: Globe },
   { sub: 'privacy',    label: 'Privacy',       icon: Lock },
   { sub: 'chatbot',    label: 'Chatbot',       icon: Bot },
+  { sub: 'domini',     label: 'Domini',        icon: Globe },
 ]
 const RISTORANTE_SUBS = [
   { sub: 'info',     label: 'Informazioni',  icon: Info },
@@ -47,6 +49,7 @@ const RISTORANTE_SUBS = [
   { sub: 'sito',     label: 'Sito',          icon: Globe },
   { sub: 'privacy',  label: 'Privacy',       icon: Lock },
   { sub: 'chatbot',  label: 'Chatbot',       icon: Bot },
+  { sub: 'domini',   label: 'Domini',        icon: Globe },
 ]
 const ATTIVITA_SUBS = [
   { sub: 'info',    label: 'Informazioni',  icon: Info },
@@ -55,6 +58,7 @@ const ATTIVITA_SUBS = [
   { sub: 'sito',    label: 'Sito',          icon: Globe },
   { sub: 'privacy', label: 'Privacy',       icon: Lock },
   { sub: 'chatbot', label: 'Chatbot',       icon: Bot },
+  { sub: 'domini',  label: 'Domini',        icon: Globe },
 ]
 
 // ─── CSS ──────────────────────────────────────────────────────────────────────
