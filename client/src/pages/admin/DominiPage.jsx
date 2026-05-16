@@ -8,9 +8,9 @@ const STAYAPP_DOMAIN = import.meta.env.VITE_STAYAPP_DOMAIN || 'stayapp.it'
 
 export default function DominiPage({ entityTipo }) {
   const { id: paramId } = useParams()
-  const { data: property } = entityTipo === 'struttura' ? useProperty() : { data: null }
+  const { property } = useProperty()
 
-  const entityId = entityTipo === 'struttura' ? property?.id : paramId
+  const entityId = paramId || (entityTipo === 'struttura' ? property?.id : null)
   const entityName = entityTipo === 'struttura' ? property?.name : null
 
   const [domini, setDomini] = useState([])
