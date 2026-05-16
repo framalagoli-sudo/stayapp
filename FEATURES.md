@@ -1,7 +1,7 @@
 # FEATURES — Roadmap prodotto StayApp
 
 Documento vivo. Aggiornato sessione per sessione.
-Ultima revisione: **2026-05-16** (Sprint 8 domini + security audit multi-tenant)
+Ultima revisione: **2026-05-16** (Sprint 8 completo + responsive mobile audit + AI social post generator)
 
 ---
 
@@ -168,7 +168,14 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 - **Migration da eseguire:** `035_domini.sql`
 - **Env vars da aggiungere in Railway:** `STAYAPP_DOMAIN=stayapp.it`, `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`
 
-### Sprint 9 — Stripe payments (2-3 ore + account Stripe) 🔴
+### Sprint 9-mini — Responsive mobile audit ✅ 2026-05-16
+- [x] 23 pagine admin — tutti `gridTemplateColumns: '1fr 1fr'` e `'1fr 1fr 1fr'` → `repeat(auto-fit, minmax(Xpx, 1fr))` (stacking automatico su mobile)
+- [x] Calendario piano editoriale — `overflowX: auto` su wrapper (scroll orizzontale su mobile)
+- [x] Emoji picker newsletter — `width: 320` → `maxWidth: 320` (non rompe layout stretto)
+- [x] DominiPage — fix hook condizionale + destructuring errato (`data` → `property`)
+- [x] Node.js su Vercel — cambiato da `24.x` a `20.x` LTS (build funzionante)
+
+### Sprint 10 — Stripe payments (prossimo) 🔴
 - [ ] Checkout booking risorse (deposito o totale)
 - [ ] Checkout eventi
 - [ ] Subscription billing (piani mensili da self-signup)
@@ -195,6 +202,7 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 - [x] Canali: Instagram, Facebook, LinkedIn, TikTok, X, Google Business
 - [x] Stato workflow: bozza → pianificato → pubblicato (senza Meta API — pubblicazione manuale)
 - [x] Note interne non pubblicate
+- [x] **AI social post generator** — bottone "✨ Genera con AI" nell'editor post; modal con tema/brief + tono (4 opzioni); genera testo ottimizzato per canale via Claude Haiku; anteprima + "Usa testo" o "Rigenera"; limite 20 gen/mese per azienda (configurabile `AI_MONTHLY_LIMIT`). Usa `fetch` nativo → `POST https://api.anthropic.com/v1/messages`. Richiede `ANTHROPIC_API_KEY` su Railway.
 - **Migration da eseguire su Supabase:** `034_piano_editoriale.sql`
 
 ### Form builder ✅ 2026-05-16
