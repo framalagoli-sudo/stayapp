@@ -8,7 +8,7 @@ import {
   Inbox, CalendarCheck, Calendar, CalendarDays, Package, ListChecks,
   MessageCircle, FileText, Newspaper, Mail, Users,
   QrCode, UserCheck, ClipboardList, LogOut,
-  Building, Building2, Store, Zap,
+  Building, Building2, Store, Zap, Webhook,
   Info, Layers, Wrench, Image, Palette, MapPin, Globe, Lock, Bot, UtensilsCrossed,
 } from 'lucide-react'
 
@@ -320,8 +320,9 @@ export default function AdminLayout() {
             <NavItem to="/admin/eventi"     icon={CalendarDays}  label="Eventi" />
             <NavItem to="/admin/blog"       icon={Newspaper}     label="Blog & News" />
             <NavItem to="/admin/newsletter" icon={Mail}          label="Newsletter" />
-            <NavItem to="/admin/contatti"   icon={Users}         label="Contatti" />
-            <NavItem to="/admin/audit-log"  icon={ClipboardList} label="Audit log" />
+            <NavItem to="/admin/contatti"      icon={Users}         label="Contatti" />
+            <NavItem to="/admin/integrazioni"  icon={Webhook}       label="Integrazioni" />
+            <NavItem to="/admin/audit-log"     icon={ClipboardList} label="Audit log" />
 
             {strutturaUrlId && (
               <>
@@ -363,8 +364,9 @@ export default function AdminLayout() {
             <NavItem to="/admin/contatti"     icon={Users}      label="Contatti" />
 
             <Divider />
-            <NavItem to="/admin/qrcode" icon={QrCode}     label="QR Code" />
-            <NavItem to="/admin/staff"  icon={UserCheck}  label="Collaboratori" />
+            <NavItem to="/admin/qrcode"        icon={QrCode}   label="QR Code" />
+            <NavItem to="/admin/staff"         icon={UserCheck} label="Collaboratori" />
+            <NavItem to="/admin/integrazioni"  icon={Webhook}   label="Integrazioni" />
 
             {hasStruttura && !bothActive && (
               <>

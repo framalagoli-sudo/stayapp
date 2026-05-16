@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { supabase } from '../lib/supabase.js'
 import { requireAuth } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
+import { sendWebhooks } from '../lib/webhook.js'
 
 const router = Router()
 
@@ -144,17 +145,21 @@ router.post('/', requireAuth, async (req, res) => {
   }).select().single()
 
   if (error) return res.status(500).json({ error: error.message })
+  sendWebhooks(data.azienda_id, 'nuovo_contatto', { contatto_id: data.id, nome: data.nome, email: data.email, telefono: data.telefono })
   res.status(201).json(data)
 })
 
 // PATCH /api/contatti/:id — aggiorna (auth)
 router.patch('/:id', requireAuth, async (req, res) => {
-  const allowed = ['nome', 'email', 'telefono', 'tags', 'note', 'iscritto_newsletter']
+  const allowed = ['nome', 'email', 'telefono', 'tags', 'note', 'iscritto_newsletter', 'pipeline_stage']
   const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)))
   updates.updated_at = new Date().toISOString()
 
   const { data, error } = await supabase.from('contatti').update(updates).eq('id', req.params.id).select().single()
   if (error) return res.status(500).json({ error: error.message })
+  if (updates.pipeline_stage) {
+    sendWebhooks(data.azienda_id, 'cambio_stage_pipeline', { contatto_id: data.id, nome: data.nome, email: data.email, stage: updates.pipeline_stage })
+  }
   res.json(data)
 })
 

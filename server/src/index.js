@@ -31,6 +31,7 @@ import newsletterRouter, { runScheduledSends } from './routes/newsletter.js'
 import analyticsRouter from './routes/analytics.js'
 import bookingRouter from './routes/booking.js'
 import pagineRouter from './routes/pagine.js'
+import webhooksRouter from './routes/webhooks.js'
 import { runBackup } from './lib/backup.js'
 import { auditLog } from './middleware/auditLog.js'
 import cron from 'node-cron'
@@ -111,6 +112,7 @@ app.use('/api/newsletter',  adminLimiter, newsletterRouter)
 app.use('/api/analytics',   adminLimiter, analyticsRouter)
 app.use('/api/booking',     adminLimiter, bookingRouter)
 app.use('/api/pagine',      adminLimiter, pagineRouter)
+app.use('/api/webhooks',   adminLimiter, webhooksRouter)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 

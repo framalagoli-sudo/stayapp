@@ -70,6 +70,7 @@ import PropertyChatbotPage from './pages/admin/property/PropertyChatbotPage'
 import RistoranteChatbotPage from './pages/admin/ristorante/RistoranteChatbotPage'
 import AttivitaChatbotPage from './pages/admin/attivita/AttivitaChatbotPage'
 import StaffPage from './pages/admin/StaffPage'
+import IntegrazioniPage from './pages/admin/IntegrazioniPage'
 import PagineListPage from './pages/admin/PagineListPage'
 import PaginaEditorPage from './pages/admin/PaginaEditorPage'
 import SitoPage from './pages/admin/SitoPage'
@@ -154,8 +155,9 @@ export default function App() {
             <Route path="aziende"    element={<AziendePage />} />
             <Route path="properties" element={<PropertiesPage />} />
             <Route path="users"      element={<UsersPage />} />
-            <Route path="staff"      element={<StaffPage />} />
-            <Route path="qrcode"     element={<QRCodePage />} />
+            <Route path="staff"        element={<StaffPage />} />
+            <Route path="integrazioni" element={<IntegrazioniPage />} />
+            <Route path="qrcode"       element={<QRCodePage />} />
 
             {/* Attività */}
             <Route path="attivita"                element={<AttivitaListPage />} />

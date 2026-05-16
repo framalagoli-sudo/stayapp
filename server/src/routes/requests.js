@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { supabase } from '../lib/supabase.js'
 import { requireAuth } from '../middleware/auth.js'
 import { emailTemplate } from './guest.js'
+import { sendWebhooks } from '../lib/webhook.js'
 
 const router = Router()
 
@@ -56,9 +57,10 @@ router.post('/', async (req, res) => {
 
   if (error) return res.status(500).json({ error: error.message })
 
-  // Email notification (fire-and-forget)
-  supabase.from('properties').select('name, email').eq('id', property_id).single()
+  // Email + webhook (fire-and-forget)
+  supabase.from('properties').select('name, email, azienda_id').eq('id', property_id).single()
     .then(({ data: prop }) => {
+      if (prop?.azienda_id) sendWebhooks(prop.azienda_id, 'nuova_richiesta', { richiesta_id: data.id, property_id, tipo: type, messaggio: message })
       if (!prop?.email) return
       sendAdminEmail({
         to: prop.email,

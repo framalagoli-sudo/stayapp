@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { Resend } from 'resend'
 import { supabase } from '../lib/supabase.js'
 import { requireAuth } from '../middleware/auth.js'
+import { sendWebhooks } from '../lib/webhook.js'
 
 const router = Router()
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -524,8 +525,17 @@ router.post('/public/prenota', async (req, res) => {
       .from('prenotazioni').insert(payload).select().single()
     if (pe) return res.status(500).json({ error: pe.message })
 
-    // Email conferma asincrona (non blocca la risposta)
+    // Email conferma + webhook (fire-and-forget)
     inviaEmailConferma(prenotazione, risorsa)
+    sendWebhooks(prenotazione.azienda_id, 'nuova_prenotazione', {
+      prenotazione_id: prenotazione.id,
+      risorsa_id: prenotazione.risorsa_id,
+      cliente_nome: prenotazione.cliente_nome,
+      cliente_email: prenotazione.cliente_email,
+      data: prenotazione.data,
+      ora_inizio: prenotazione.ora_inizio,
+      importo_totale: prenotazione.importo_totale,
+    })
 
     res.status(201).json(prenotazione)
   } catch (e) { res.status(500).json({ error: e.message }) }
