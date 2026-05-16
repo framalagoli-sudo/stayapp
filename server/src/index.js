@@ -39,6 +39,7 @@ import preventivRouter from './routes/preventivi.js'
 import formBuilderRouter from './routes/form_builder.js'
 import pianoEditorialeRouter from './routes/piano_editoriale.js'
 import dominiRouter from './routes/domini.js'
+import aiRouter from './routes/ai.js'
 import { runBackup } from './lib/backup.js'
 import { auditLog } from './middleware/auditLog.js'
 import cron from 'node-cron'
@@ -145,6 +146,7 @@ app.use('/api/preventivi',       preventivRouter)
 app.use('/api/form-builder',    guestLimiter, formBuilderRouter)
 app.use('/api/piano-editoriale', adminLimiter, pianoEditorialeRouter)
 app.use('/api/domini',           adminLimiter, dominiRouter)
+app.use('/api/ai',               adminLimiter, aiRouter)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 
