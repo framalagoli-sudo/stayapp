@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
-import { Globe, Plus, Trash2, CheckCircle, Clock, AlertCircle, Copy, ExternalLink, RefreshCw } from 'lucide-react'
+import { Globe, Plus, Trash2, CheckCircle, Clock, AlertCircle, Copy, ExternalLink, RefreshCw, Pencil, X, Check } from 'lucide-react'
 import { useProperty } from '../../hooks/useProperty'
 
 const STAYAPP_DOMAIN = import.meta.env.VITE_STAYAPP_DOMAIN || 'stayapp.it'
@@ -65,6 +65,14 @@ export default function DominiPage({ entityTipo }) {
     } catch (e) { setError(e.message) }
   }
 
+  async function handleRename(id, slug) {
+    const updated = await apiFetch(`/api/domini/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ slug }),
+    })
+    setDomini(prev => prev.map(d => d.id === id ? updated : d))
+  }
+
   function copyUrl(url) {
     navigator.clipboard.writeText(url)
     setCopied(url)
@@ -100,9 +108,9 @@ export default function DominiPage({ entityTipo }) {
         {loading ? (
           <p style={{ color: '#aaa', fontSize: 13 }}>Caricamento…</p>
         ) : defaultSubdomain ? (
-          <SubdomainCard dom={defaultSubdomain} onCopy={copyUrl} copied={copied} />
+          <SubdomainCard dom={defaultSubdomain} onCopy={copyUrl} copied={copied} onRename={handleRename} />
         ) : (
-          <p style={{ color: '#aaa', fontSize: 13 }}>Nessun sottodominio trovato. Sarà creato automaticamente.</p>
+          <p style={{ color: '#aaa', fontSize: 13 }}>Caricamento sottodominio…</p>
         )}
       </div>
 
@@ -147,13 +155,75 @@ export default function DominiPage({ entityTipo }) {
   )
 }
 
-function SubdomainCard({ dom, onCopy, copied }) {
+function SubdomainCard({ dom, onCopy, copied, onRename }) {
+  const DOMAIN = import.meta.env.VITE_STAYAPP_DOMAIN || 'stayapp.it'
   const url = `https://${dom.dominio}`
+  const currentSlug = dom.dominio.replace(`.${DOMAIN}`, '')
+
+  const [editing, setEditing] = useState(false)
+  const [slug, setSlug] = useState(currentSlug)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
+
+  async function handleSave() {
+    const clean = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-+|-+$/g, '')
+    if (!clean || clean === currentSlug) { setEditing(false); return }
+    setSaving(true)
+    setSaveError('')
+    try {
+      await onRename(dom.id, clean)
+      setEditing(false)
+    } catch (e) {
+      setSaveError(e.message)
+    }
+    setSaving(false)
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter') handleSave()
+    if (e.key === 'Escape') { setSlug(currentSlug); setEditing(false) }
+  }
+
+  if (editing) {
+    return (
+      <div style={{ background: '#f8fffe', border: '1px solid #b2dfdb', borderRadius: 10, padding: '14px 18px' }}>
+        <p style={{ margin: '0 0 10px', fontSize: 12, color: '#555', fontWeight: 600 }}>Scegli il tuo URL su <strong>{DOMAIN}</strong>:</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', border: '2px solid #1a1a2e', borderRadius: 8, overflow: 'hidden', flex: 1, minWidth: 220 }}>
+            <input
+              autoFocus
+              value={slug}
+              onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+              onKeyDown={handleKeyDown}
+              style={{ flex: 1, padding: '8px 10px', border: 'none', outline: 'none', fontSize: 14, fontWeight: 700 }}
+            />
+            <span style={{ padding: '8px 10px', background: '#f5f5f5', fontSize: 13, color: '#888', whiteSpace: 'nowrap' }}>.{DOMAIN}</span>
+          </div>
+          <button onClick={handleSave} disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600, opacity: saving ? 0.6 : 1 }}>
+            <Check size={14} strokeWidth={2} /> {saving ? 'Salvo…' : 'Salva'}
+          </button>
+          <button onClick={() => { setSlug(currentSlug); setEditing(false) }} style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', padding: 6 }}>
+            <X size={16} strokeWidth={1.5} />
+          </button>
+        </div>
+        {saveError && <p style={{ margin: '8px 0 0', fontSize: 12, color: '#c53030' }}>{saveError}</p>}
+        <p style={{ margin: '10px 0 0', fontSize: 12, color: '#888' }}>Solo lettere minuscole, numeri e trattini. Premi Invio per salvare.</p>
+      </div>
+    )
+  }
+
   return (
     <div style={{ background: '#f8fffe', border: '1px solid #b2dfdb', borderRadius: 10, padding: '14px 18px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <CheckCircle size={16} strokeWidth={1.5} color="#2e7d32" style={{ flexShrink: 0 }} />
         <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', flex: 1 }}>{dom.dominio}</span>
+        <button
+          onClick={() => setEditing(true)}
+          title="Personalizza URL"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', padding: 4, display: 'flex' }}
+        >
+          <Pencil size={14} strokeWidth={1.5} />
+        </button>
         <a href={url} target="_blank" rel="noreferrer" style={{ color: '#aaa', display: 'flex' }}>
           <ExternalLink size={15} strokeWidth={1.5} />
         </a>
@@ -165,7 +235,7 @@ function SubdomainCard({ dom, onCopy, copied }) {
         </button>
       </div>
       <p style={{ margin: '8px 0 0', fontSize: 12, color: '#888' }}>
-        Condividi questo link con i tuoi clienti — punta automaticamente alla tua pagina.
+        Condividi questo link con i tuoi clienti — punta automaticamente alla tua pagina. <button onClick={() => setEditing(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1565c0', fontSize: 12, padding: 0, textDecoration: 'underline' }}>Personalizza URL</button>
       </p>
     </div>
   )

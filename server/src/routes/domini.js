@@ -120,6 +120,37 @@ router.post('/', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }) }
 })
 
+// PATCH /api/domini/:id — rinomina sottodominio (solo tipo='subdomain')
+router.patch('/:id', async (req, res) => {
+  try {
+    const profile = await getProfile(req.user.id)
+    if (!profile) return res.status(403).json({ error: 'Profilo non trovato' })
+
+    let q = supabase.from('domini').select('*').eq('id', req.params.id)
+    if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
+    const { data: dom } = await q.single()
+    if (!dom) return res.status(404).json({ error: 'Dominio non trovato' })
+    if (dom.tipo !== 'subdomain') return res.status(400).json({ error: 'Solo i sottodomini possono essere rinominati qui' })
+
+    const raw = String(req.body.slug || '').trim().toLowerCase()
+    const cleanSlug = raw.replace(/[^a-z0-9-]/g, '-').replace(/^-+|-+$/g, '')
+    if (!cleanSlug) return res.status(400).json({ error: 'URL non valido: usa solo lettere, numeri e trattini' })
+
+    const newDominio = `${cleanSlug}.${STAYAPP_DOMAIN}`
+
+    // Verifica unicità
+    const { data: existing } = await supabase.from('domini')
+      .select('id').eq('dominio', newDominio).neq('id', dom.id).maybeSingle()
+    if (existing) return res.status(409).json({ error: 'Questo sottodominio è già in uso' })
+
+    const { data: updated, error } = await supabase.from('domini')
+      .update({ dominio: newDominio, entity_slug: cleanSlug, updated_at: new Date().toISOString() })
+      .eq('id', dom.id).select().single()
+    if (error) return res.status(500).json({ error: error.message })
+    res.json(updated)
+  } catch (e) { res.status(500).json({ error: e.message }) }
+})
+
 // POST /api/domini/:id/verify — controlla stato verifica su Vercel
 router.post('/:id/verify', async (req, res) => {
   try {
