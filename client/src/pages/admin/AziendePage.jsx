@@ -526,7 +526,6 @@ function AziendaForm({ title, initialData = {}, onSave, onCancel }) {
     email: '', pec: '', telefono: '', cellulare: '',
     indirizzo: '', citta: '', cap: '', provincia: '',
     piano: 'base',
-    moduli: { struttura: false, ristorante: false },
     active: true,
     ...initialData,
     moduli: { struttura: false, ristorante: false, ...(initialData.moduli || {}) },

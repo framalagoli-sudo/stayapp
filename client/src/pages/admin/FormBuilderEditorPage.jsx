@@ -158,7 +158,7 @@ export default function FormBuilderEditorPage() {
 
       {/* Campi */}
       <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #eee', padding: 20, marginBottom: 16 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: 11, color: '#888' }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#888', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           Campi del form
         </div>
 

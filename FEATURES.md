@@ -1,7 +1,7 @@
 # FEATURES — Roadmap prodotto StayApp
 
 Documento vivo. Aggiornato sessione per sessione.
-Ultima revisione: **2026-05-16** (go-to-market ibrido diretto+agenzie)
+Ultima revisione: **2026-05-16** (Sprint 5-7 completi — deploy Vercel live)
 
 ---
 
@@ -228,29 +228,25 @@ Il refactor verso "Business" generico richiede principalmente:
 
 ## Azioni manuali da fare (Francesco)
 
+### Migration SQL (eseguire su Supabase Dashboard → SQL Editor)
+
 - [x] Migration pipeline kanban: `ALTER TABLE contatti ADD COLUMN IF NOT EXISTS pipeline_stage text DEFAULT 'lead';`
-- [x] **Migration webhooks** — eseguita 2026-05-16:
-  ```sql
-  CREATE TABLE webhooks (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    azienda_id uuid REFERENCES aziende(id) ON DELETE CASCADE,
-    nome text NOT NULL DEFAULT '',
-    url text NOT NULL,
-    eventi text[] DEFAULT '{}',
-    attivo boolean DEFAULT true,
-    created_at timestamptz DEFAULT now()
-  );
-  GRANT SELECT, INSERT, UPDATE, DELETE ON public.webhooks TO authenticated;
-  GRANT SELECT, INSERT, UPDATE, DELETE ON public.webhooks TO service_role;
-  ALTER TABLE public.webhooks ENABLE ROW LEVEL SECURITY;
-  ```
-- [ ] **Migration preventivi** — eseguire `032_preventivi.sql` su Supabase SQL Editor
-- [ ] **Migration form builder** — eseguire `033_form_builder.sql` su Supabase SQL Editor
-- [ ] **Migration piano editoriale** — eseguire `034_piano_editoriale.sql` su Supabase SQL Editor
+- [x] **Migration webhooks** (`028_webhooks`) — eseguita 2026-05-16
+- [ ] **029_automazioni.sql** — tabelle `automazioni` + `automazioni_log`
+- [ ] **030_recensioni.sql** — tabella `recensioni` + colonne token su prenotazioni
+- [ ] **031_signup.sql** — colonne `trial_ends_at`, `subscription_status`, `signup_enabled` su aziende
+- [ ] **032_preventivi.sql** — tabella `preventivi`
+- [ ] **033_form_builder.sql** — tabelle `form_builder` + `form_submissions`
+- [ ] **034_piano_editoriale.sql** — tabella `piano_editoriale`
+
+> ⚠️ Eseguire nell'ordine 029 → 030 → 031 → 032 → 033 → 034
+
+### Infrastruttura
+
 - [ ] Upgrade Supabase Pro ($25/mese)
 - [ ] Upgrade Vercel Pro ($20/mese)
 - [ ] Acquisto dominio + configurazione (checklist in server/CLAUDE.md)
-- [ ] Creare account Stripe (quando si vuole sbloccare pagamenti)
+- [ ] Creare account Stripe (quando si vuole sbloccare pagamenti — Sprint 8)
 - [ ] Collegare GitHub → Vercel per auto-deploy
 
 ---
