@@ -66,6 +66,14 @@ status request_status DEFAULT 'open', note, created_at, updated_at
 ```
 > Prenotazioni attività/escursioni: `message` inizia con `[Prenotazione ...`; interessi offerte con `[Interesse offerta: ...`.
 
+### Tabella `aziende` (colonne aggiunte sprint 7)
+Colonne extra su `aziende`:
+```sql
+trial_ends_at timestamptz,           -- data fine trial (14gg da signup)
+subscription_status text DEFAULT 'trial',  -- 'trial' | 'active' | 'expired'
+signup_enabled boolean DEFAULT false  -- toggle super_admin per signup pubblico
+```
+
 ### Tabella `contatti`
 ```sql
 id, azienda_id (FK aziende), nome, email, telefono,
@@ -74,6 +82,7 @@ iscritto_newsletter boolean DEFAULT false,
 unsubscribe_token uuid DEFAULT gen_random_uuid(),
 confirmation_token uuid,          -- double opt-in: null dopo conferma
 tags text[] DEFAULT '{}', note text,
+pipeline_stage text DEFAULT 'lead',  -- 'lead'|'contattato'|'in_trattativa'|'chiuso'|'perso'
 created_at, updated_at
 ```
 
@@ -100,6 +109,101 @@ id, entity_tipo text, entity_id uuid, viewed_at timestamptz DEFAULT now()
 ```sql
 id, nome, email, telefono, tipo_attivita, messaggio,
 letto boolean DEFAULT false, created_at
+```
+
+### Tabella `webhooks` (migration 028_webhooks)
+```sql
+id uuid PK, azienda_id (FK), url text, eventi text[] DEFAULT '{}',
+attivo boolean DEFAULT true, secret text,
+created_at, updated_at
+```
+> eventi supportati: `nuovo_contatto`, `nuova_prenotazione`, `nuova_richiesta`, `cambio_stage_pipeline`, `preventivo_accettato`
+
+### Tabella `automazioni` (migration 029)
+```sql
+id uuid PK, azienda_id (FK), nome text, trigger text,
+-- trigger: 'nuova_prenotazione'|'pre_visita'|'post_visita'|'nuovo_contatto'
+attiva boolean DEFAULT true,
+steps jsonb DEFAULT '[]',
+-- steps: [{ delay_ore: 0, subject: '', body: '' }]
+created_at, updated_at
+```
+
+### Tabella `automazioni_log` (migration 029)
+```sql
+id uuid PK, automazione_id (FK), entity_tipo text, entity_id uuid,
+contatto_id uuid, status text DEFAULT 'pending',  -- pending|sent|failed
+scheduled_at timestamptz, sent_at timestamptz,
+error text, created_at
+```
+
+### Tabella `recensioni` (migration 030)
+```sql
+id uuid PK, azienda_id (FK), entity_tipo text, entity_id uuid,
+nome text, email text,
+stelle int CHECK (stelle BETWEEN 1 AND 5),
+commento text, risposta text,
+fonte text DEFAULT 'interno',  -- 'interno'|'google'|'tripadvisor'|'booking'|'altro'
+pubblica boolean DEFAULT false,
+token uuid UNIQUE DEFAULT gen_random_uuid(),
+created_at, updated_at
+```
+Colonne extra su `prenotazioni`: `recensione_token uuid`, `recensione_inviata boolean DEFAULT false`
+
+### Tabella `preventivi` (migration 032)
+```sql
+id uuid PK, azienda_id (FK), contatto_id uuid,
+numero int, titolo text,
+voci jsonb DEFAULT '[]',  -- [{ descrizione, quantita, prezzo_unitario, iva }]
+totale numeric, totale_iva numeric,
+valido_fino date, note text,
+status text DEFAULT 'bozza',  -- 'bozza'|'inviato'|'accettato'|'rifiutato'|'scaduto'
+token uuid UNIQUE DEFAULT gen_random_uuid(),
+firma_nome text, firmato_at timestamptz,
+created_at, updated_at
+```
+
+### Tabella `form_builder` (migration 033)
+```sql
+id uuid PK, azienda_id (FK), nome text, attivo boolean DEFAULT true,
+campi jsonb DEFAULT '[]',
+-- campi: [{ id, tipo, label, placeholder, obbligatorio, opzioni[] }]
+-- tipo: 'testo'|'email'|'tel'|'numero'|'textarea'|'select'|'checkbox'|'data'
+email_notifica text, redirect_url text,
+token uuid UNIQUE DEFAULT gen_random_uuid(),
+created_at, updated_at
+```
+
+### Tabella `form_submissions` (migration 033)
+```sql
+id uuid PK, form_id (FK form_builder), dati jsonb,
+contatto_id uuid,  -- creato auto se presente campo email
+created_at
+```
+
+### Tabella `piano_editoriale` (migration 034)
+```sql
+id uuid PK, azienda_id (FK),
+titolo text, testo text, immagine_url text,
+canali text[] DEFAULT '{}',
+-- canali: 'instagram'|'facebook'|'linkedin'|'tiktok'|'x'|'google_business'
+data_pubblicazione timestamptz,
+stato text DEFAULT 'bozza',  -- 'bozza'|'pianificato'|'pubblicato'
+note_interne text,
+created_at, updated_at
+```
+
+### Tabella `domini` (migration 035)
+```sql
+id uuid PK, azienda_id (FK),
+entity_tipo text, entity_id uuid, entity_slug text,
+dominio text UNIQUE,
+tipo text DEFAULT 'custom',  -- 'subdomain'|'custom'
+stato text DEFAULT 'pending',  -- 'attivo'|'pending'|'errore'
+vercel_domain_id text,
+dns_istruzioni jsonb,  -- { records: [{tipo,nome,valore,ttl}], verifica_txt: [...] }
+created_at, updated_at
+INDEX su dominio, INDEX su (entity_tipo, entity_id)
 ```
 
 ### Tabella `pagine` (migration 028)
@@ -226,6 +330,78 @@ Upload con `upsert: true` + `?v={timestamp}` per cache-bust.
 | GET/POST | `/api/pagine?entity_tipo=&entity_id=` | ✓ | Lista / Crea pagina (slug auto) |
 | GET/PATCH/DELETE | `/api/pagine/:id` | ✓ | Singola / Aggiorna / Elimina |
 | POST | `/api/pagine/reorder` | ✓ | Riordina + aggiorna parent_id |
+
+### Webhooks
+| Metodo | Path | Auth | Descrizione |
+|---|---|---|---|
+| GET/POST | `/api/webhooks` | ✓ | Lista / Crea webhook |
+| GET/PATCH/DELETE | `/api/webhooks/:id` | ✓ | Singolo / Aggiorna / Elimina |
+| POST | `/api/webhooks/:id/test` | ✓ | Invia payload di test e restituisce risposta HTTP |
+
+> `sendWebhooks(aziendaId, evento, payload)` in `server/lib/webhook.js` — fire-and-forget, Promise.allSettled, timeout 6s. Agganciato su: nuovo_contatto, nuova_prenotazione, nuova_richiesta, cambio_stage_pipeline, preventivo_accettato.
+
+### Automazioni email
+| Metodo | Path | Auth | Descrizione |
+|---|---|---|---|
+| GET/POST | `/api/automazioni` | ✓ | Lista / Crea automazione |
+| GET/PATCH/DELETE | `/api/automazioni/:id` | ✓ | Singola / Aggiorna / Elimina |
+| GET | `/api/automazioni/:id/log` | ✓ | Log esecuzioni (pending/sent/failed) |
+| POST | `/api/automazioni/test` | ✓ | Invia email di test |
+
+> `runAutomazioniScheduler()` ogni 60s via setInterval in `index.js`. Variabili template: `{{nome}} {{data}} {{ora}} {{servizio}} {{n_persone}} {{link_recensione}}`.
+
+### Recensioni
+| Metodo | Path | Auth | Descrizione |
+|---|---|---|---|
+| GET/POST | `/api/recensioni` | ✓ | Lista / Import manuale |
+| GET/PATCH/DELETE | `/api/recensioni/:id` | ✓ | Singola / Aggiorna (pubblica, risposta) / Elimina |
+| POST | `/api/recensioni/request` | ✓ | Genera token + invia email richiesta |
+| GET | `/api/guest/recensione?token=` | — | Legge nome pre-compilato da token |
+| POST | `/api/guest/recensione` | — | Salva recensione pubblica (token + stelle + commento) → smart redirect |
+
+> Smart redirect: ≥4 stelle → `redirect_url` configurata (Google/TripAdvisor/altro); <4 → salva privata + notifica admin.
+
+### Preventivi
+| Metodo | Path | Auth | Descrizione |
+|---|---|---|---|
+| GET/POST | `/api/preventivi` | ✓ | Lista / Crea |
+| GET/PATCH/DELETE | `/api/preventivi/:id` | ✓ | Singolo / Aggiorna / Elimina |
+| GET | `/api/public/preventivo/:token` | — | Preventivo pubblico per cliente |
+| POST | `/api/public/preventivo/:token/accetta` | — | Cliente accetta con firma nome → webhook preventivo_accettato |
+
+### Form builder
+| Metodo | Path | Auth | Descrizione |
+|---|---|---|---|
+| GET/POST | `/api/form-builder` | ✓ | Lista / Crea form |
+| GET/PATCH/DELETE | `/api/form-builder/:id` | ✓ | Singolo / Aggiorna / Elimina |
+| GET | `/api/form-builder/:id/submissions` | ✓ | Lista risposte |
+| GET | `/api/form-builder/:id/export` | ✓ | Export CSV risposte |
+| GET | `/api/public/form?token=` | — | Form pubblico (dati + campi) |
+| POST | `/api/public/form/:token/submit` | — | Salva risposta → lead CRM se email presente |
+
+### Piano editoriale
+| Metodo | Path | Auth | Descrizione |
+|---|---|---|---|
+| GET/POST | `/api/piano-editoriale` | ✓ | Lista / Crea post |
+| GET/PATCH/DELETE | `/api/piano-editoriale/:id` | ✓ | Singolo / Aggiorna / Elimina |
+
+### Domini
+| Metodo | Path | Auth | Descrizione |
+|---|---|---|---|
+| GET | `/api/domini?entity_tipo=&entity_id=` | ✓ | Lista domini entità (subdomain + custom) |
+| POST | `/api/domini` | ✓ | Aggiungi dominio custom → Vercel API + DNS instructions |
+| POST | `/api/domini/:id/verify` | ✓ | Verifica stato dominio via Vercel API |
+| DELETE | `/api/domini/:id` | ✓ | Rimuovi (solo custom; subdomain non eliminabile) |
+| GET | `/api/public/resolve-domain?d=hostname` | — | Risolve dominio/sottodominio → `{entity_tipo, entity_id, entity_slug}` |
+
+> `createDefaultSubdomain({ azienda_id, entity_tipo, entity_id, entity_slug })` — named export da `domini.js`, chiamato fire-and-forget dopo ogni creazione entità. Crea record `slug.stayapp.it` tipo `subdomain` stato `attivo`.
+
+### Auth / Signup
+| Metodo | Path | Auth | Descrizione |
+|---|---|---|---|
+| POST | `/api/auth/signup` | — | Registrazione pubblica: crea azienda + profilo admin_azienda + trial 14gg + email benvenuto |
+| GET | `/api/auth/me` | ✓ | Profilo utente corrente |
+| GET | `/api/health` | — | Health check |
 
 ---
 

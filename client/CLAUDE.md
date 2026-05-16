@@ -33,39 +33,58 @@ Questo file è auto-caricato da Claude Code quando si lavora in `client/`. Per i
 
 ### Admin
 ```
-/admin                          → Dashboard
-/admin/analytics                → Analytics (visite, richieste, newsletter, contatti)
-/admin/requests                 → Richieste ospiti (esclude prenotazioni)
-/admin/prenotazioni             → BookingsPage (tab: attività / escursioni / offerte)
-/admin/demo                     → DemoRequestsPage (richieste dalla landing StayApp)
-/admin/contatti                 → ContattiPage (CRM: lista, filtri, add/edit)
-/admin/newsletter               → NewsletterPage (lista bozze + inviate)
-/admin/newsletter/:id           → NewsletterEditorPage (editor + anteprima + invio)
-/admin/eventi                   → EventiListPage
-/admin/eventi/:id               → EventoEditPage
-/admin/eventi/:id/prenotazioni  → EventoPrenotazioniPage
-/admin/booking                  → BookingCalendarioPage (week grid + drill-down)
-/admin/booking/risorse          → BookingRisorsePage (CRUD + promozioni)
-/admin/booking/prenotazioni     → BookingPrenotazioniPage (lista filtri + note)
-/admin/blog                     → AdminBlogListPage
-/admin/blog/categories          → BlogCategoriesPage
-/admin/blog/:id                 → BlogEditorPage
-/admin/properties               → Lista strutture
-/admin/qrcode                   → QR Code
-/admin/property/info            → Info struttura
-/admin/property/modules         → Moduli attivi
-/admin/property/services        → Servizi
-/admin/property/gallery         → Galleria
-/admin/property/theme           → Tema e colori
-/admin/property/activities      → Attività
-/admin/property/excursions      → Escursioni
-/admin/property/privacy         → Privacy & Policy struttura
-/admin/property/chatbot         → Editor chatbot
-/admin/property/sito            → CMS: menu nav + lista pagine + header/footer configuratore
-/admin/struttura/:id/*          → Stesse sub-pagine per strutture multiple
-/admin/ristoranti/:id/info|menu|gallery|theme|minisito|privacy|pagine
-/admin/attivita/:id/info|gallery|theme|minisito|privacy|pagine
-/admin/pagine/:pageId           → PaginaEditorPage (builder blocchi)
+/admin                              → Dashboard
+/admin/analytics                    → Analytics (visite, richieste, newsletter, contatti)
+/admin/requests                     → Richieste ospiti (esclude prenotazioni)
+/admin/prenotazioni                 → BookingsPage (tab: attività / escursioni / offerte)
+/admin/demo                         → DemoRequestsPage (richieste dalla landing StayApp)
+/admin/contatti                     → ContattiPage (CRM: lista, filtri, add/edit, pipeline Kanban)
+/admin/newsletter                   → NewsletterPage (lista bozze + inviate)
+/admin/newsletter/:id               → NewsletterEditorPage (editor + anteprima + invio)
+/admin/eventi                       → EventiListPage
+/admin/eventi/:id                   → EventoEditPage
+/admin/eventi/:id/prenotazioni      → EventoPrenotazioniPage
+/admin/booking                      → BookingCalendarioPage (week grid + drill-down)
+/admin/booking/risorse              → BookingRisorsePage (CRUD + promozioni)
+/admin/booking/prenotazioni         → BookingPrenotazioniPage (lista filtri + note + tasto "Richiedi recensione")
+/admin/blog                         → AdminBlogListPage
+/admin/blog/categories              → BlogCategoriesPage
+/admin/blog/:id                     → BlogEditorPage
+/admin/properties                   → Lista strutture
+/admin/qrcode                       → QR Code
+/admin/impostazioni                 → ImpostazioniPage (super_admin: toggle signup on/off)
+/admin/automazioni                  → AutomazioniPage (CRUD email sequences + log esecuzioni)
+/admin/integrazioni                 → IntegrazioniPage (webhook outbound: lista, add, test, delete)
+/admin/recensioni                   → RecensioniPage (media KPI, lista, toggle pubblica, risposta, import)
+/admin/preventivi                   → PreventiviPage (lista + editor)
+/admin/preventivi/:id               → PreventivoEditorPage (voci, totali, link condivisione)
+/admin/form-builder                 → FormBuilderListPage
+/admin/form-builder/:id             → FormBuilderEditorPage (campi, embed iframe, risposte + CSV)
+/admin/piano-editoriale             → PianoEditorialeCalendarioPage (calendario + lista)
+/admin/property/info                → Info struttura
+/admin/property/modules             → Moduli attivi
+/admin/property/services            → Servizi
+/admin/property/gallery             → Galleria
+/admin/property/theme               → Tema e colori
+/admin/property/activities          → Attività
+/admin/property/excursions          → Escursioni
+/admin/property/privacy             → Privacy & Policy struttura
+/admin/property/chatbot             → Editor chatbot
+/admin/property/sito                → CMS: menu nav + lista pagine + header/footer configuratore
+/admin/property/domini              → DominiPage struttura (sottodominio + domini custom)
+/admin/struttura/:id/*              → Stesse sub-pagine per strutture multiple
+/admin/ristoranti/:id/info|menu|gallery|theme|minisito|privacy|pagine|domini
+/admin/attivita/:id/info|gallery|theme|minisito|privacy|pagine|domini
+/admin/pagine/:pageId               → PaginaEditorPage (builder blocchi)
+```
+
+### Pubbliche extra
+```
+/signup                             → SignupPage (registrazione azienda + onboarding wizard 3 step)
+/onboarding                         → OnboardingWizard (scegli entità → logo → done)
+/recensione?token=                  → RecensionePubblicaPage (stelle + commento, smart redirect)
+/form?token=                        → FormPublicPage (form embed pubblico)
+/preventivo/:token                  → PreventivoPublicPage (cliente vede + accetta con firma)
 ```
 
 ---
@@ -75,14 +94,21 @@ Questo file è auto-caricato da Claude Code quando si lavora in `client/`. Per i
 ### Admin panel
 | Pagina | Path | Funzione |
 |---|---|---|
-| Dashboard | `/admin` | Overview entità + stats |
+| Dashboard | `/admin` | Overview entità + stats + KPI |
 | Analytics | `/admin/analytics` | Grafici SVG: visite minisito, richieste, prenotazioni, newsletter, contatti; range 7/30/90gg |
 | Richieste | `/admin/requests` | Richieste PWA ospiti — esclude prenotazioni e interessi offerta |
 | Prenotazioni | `/admin/prenotazioni` | Tab: Attività / Escursioni / Offerte; badge struttura; filtri stato |
 | Demo | `/admin/demo` | Richieste demo dalla landing StayApp (letto/non letto) |
-| Contatti | `/admin/contatti` | CRM: lista iscritti + lead, ricerca, filtri tag/newsletter, add/edit |
+| Contatti | `/admin/contatti` | CRM: lista + pipeline Kanban (5 colonne, drag&drop, badge); filtri tag/newsletter; add/edit; richiedi recensione |
 | Newsletter | `/admin/newsletter` | Lista bozze + inviate; duplica; mostra scheduled_at e unsubscribes |
 | Newsletter editor | `/admin/newsletter/:id` | 4 template, live preview iframe, preheader, emoji picker oggetto, programmazione invio, test email |
+| Automazioni | `/admin/automazioni` | Email sequences: CRUD, trigger (nuova_prenotazione, pre_visita, post_visita, nuovo_contatto), steps con variabili `{{nome}} {{data}} {{ora}}`, log esecuzioni, test email |
+| Integrazioni | `/admin/integrazioni` | Webhook outbound: lista, toggle attivo, add URL, test (risposta HTTP), delete. Eventi: nuovo_contatto, nuova_prenotazione, nuova_richiesta, cambio_stage_pipeline, preventivo_accettato |
+| Recensioni | `/admin/recensioni` | Media KPI, lista con toggle pubblica/nascosta, risposta pubblica, import da Google/TripAdvisor/Booking, genera link token, elimina |
+| Preventivi | `/admin/preventivi` | Lista filtrata per stato (bozza/inviato/accettato/rifiutato/scaduto), editor voci con totali live, link condivisibile, firma online |
+| Form builder | `/admin/form-builder` | Lista form, toggle attivo; editor campi (testo, email, tel, numero, textarea, select, checkbox, data); embed iframe + codice; risposte con export CSV |
+| Piano editoriale | `/admin/piano-editoriale` | Calendario interattivo (clic giorno → crea post) + lista alternativa; canali: Instagram, Facebook, LinkedIn, TikTok, X, Google Business; stati: bozza/pianificato/pubblicato |
+| Impostazioni | `/admin/impostazioni` | Super admin: toggle signup pubblico on/off |
 | Blog | `/admin/blog` | CRUD articoli + categorie; editor Tiptap rich text |
 | Eventi | `/admin/eventi` | CRUD eventi; prenotazioni per evento; export CSV |
 | Info struttura | `/admin/property/info` | Nome, orari, WiFi, logo, cover |
@@ -92,9 +118,10 @@ Questo file è auto-caricato da Claude Code quando si lavora in `client/`. Per i
 | Attività | `/admin/property/activities` | CRUD per categoria |
 | Escursioni | `/admin/property/excursions` | CRUD flat |
 | Privacy struttura | `/admin/property/privacy` | Dati GDPR + preview policy |
+| Domini | `/admin/property/domini` | Sottodominio automatico `slug.stayapp.it` + domini custom con istruzioni DNS inline e verifica |
 | Booking calendario | `/admin/booking` | Week grid occupancy per risorsa |
 | Booking risorse | `/admin/booking/risorse` | CRUD risorse (slot/coperti), orari, blocchi, promozioni, visibile_minisito |
-| Booking prenotazioni | `/admin/booking/prenotazioni` | Lista filtrata per data/risorsa/stato, note interne, cambio stato |
+| Booking prenotazioni | `/admin/booking/prenotazioni` | Lista filtrata per data/risorsa/stato, note interne, cambio stato, richiedi recensione |
 | Chatbot | `/admin/property/chatbot` | Editor albero conversazione: passi, opzioni tipizzate, anteprima live |
 | Sito (CMS) | `/admin/property/sito` | 3 sezioni: (1) menu nav drag&drop, (2) lista pagine ricerca/filtri/template, (3) configuratore header & footer |
 | Editor pagina | `/admin/pagine/:pageId` | Builder blocchi: 23 tipi in 5 gruppi, icone Lucide colorate, drag&drop handle-only, picker con ricerca, drop indicator, SEO, slug auto |

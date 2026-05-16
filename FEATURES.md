@@ -1,7 +1,7 @@
 # FEATURES — Roadmap prodotto StayApp
 
 Documento vivo. Aggiornato sessione per sessione.
-Ultima revisione: **2026-05-16** (Sprint 5-7 completi — deploy Vercel live)
+Ultima revisione: **2026-05-16** (Sprint 8 domini + security audit multi-tenant)
 
 ---
 
@@ -145,9 +145,33 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 - **Migration eseguita:** `031_signup.sql` ✅
 - **Stripe Billing** (piani mensili) → Sprint 8
 
-### Sprint 8 — Stripe payments booking/eventi (2-3 ore + account Stripe) 🔴
+### Sprint 8 — Security audit + Domini custom ✅ 2026-05-16
+
+**Security — Multi-tenant isolation:**
+- [x] Audit sistematico su 18 route file — identificati 11 problemi (2 critici, 9 importanti)
+- [x] Fix `properties.js` GET/PATCH/DELETE `/:id` — filtro `azienda_id` aggiunto
+- [x] Fix `ristoranti.js` GET/PATCH/DELETE `/:id` — filtro `azienda_id` aggiunto
+- [x] Fix `attivita.js` GET/PATCH/DELETE `/:id` — filtro `azienda_id` aggiunto
+- [x] Fix `contatti.js` PATCH/DELETE `/:id` — filtro `azienda_id` aggiunto
+- [x] Fix `newsletter.js` GET/PATCH/DELETE `/:id` — filtro `azienda_id` aggiunto
+- [x] Fix `pagine.js` GET/PATCH/DELETE `/:id` — verifica ownership via `entity_tipo/entity_id`
+- [x] Fix `booking.js` GET `/risorse/:id` — filtro `azienda_id` aggiunto
+
+**Domini:**
+- [x] **Opzione A — Sottodominio incluso**: ogni entità creata riceve automaticamente `slug.stayapp.it`; zero configurazione
+- [x] **Opzione B — Dominio custom autonomo**: il cliente inserisce il proprio dominio nell'admin → Vercel API lo aggiunge → istruzioni DNS inline (CNAME/A con copia rapida) → bottone "Verifica" → tutto senza toccare il codice
+- [x] CORS wildcard `*.stayapp.it` + cache custom domains in memoria (refresh 5 min)
+- [x] `DomainDetector` in App.jsx: rileva sottodominio/dominio custom → risolve entità → redirect trasparente
+- [x] Pagina admin `Domini` disponibile per struttura / ristorante / attività
+- [x] `GET /api/public/resolve-domain?d=` — endpoint pubblico per la risoluzione
+- [x] Auto-creazione record sottodominio alla creazione di ogni entità
+- **Migration da eseguire:** `035_domini.sql`
+- **Env vars da aggiungere in Railway:** `STAYAPP_DOMAIN=stayapp.it`, `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`
+
+### Sprint 9 — Stripe payments (2-3 ore + account Stripe) 🔴
 - [ ] Checkout booking risorse (deposito o totale)
 - [ ] Checkout eventi
+- [ ] Subscription billing (piani mensili da self-signup)
 - [ ] Link pagamento rapido (admin genera link "paga €X" → cliente paga)
 - [ ] Webhook Stripe → aggiorna stato prenotazione automaticamente
 - *Richiede: account Stripe + chiavi API in Railway/Vercel env*
