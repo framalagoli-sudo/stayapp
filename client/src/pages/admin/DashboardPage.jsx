@@ -9,6 +9,7 @@ import {
   Building2, Store, Zap,
   Phone, Wrench, Sparkles, HelpCircle,
   Clock, Mail, Globe, UserRound, BedDouble,
+  Star, CalendarDays, FileEdit,
 } from 'lucide-react'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -92,11 +93,14 @@ export default function DashboardPage() {
   const navigate    = useNavigate()
   const { azienda, strutture, ristoranti, attivita, loading: aziLoading } = useAzienda()
 
-  const [analytics,   setAnalytics]   = useState(null)
-  const [requests,    setRequests]    = useState([])
-  const [prenOggi,    setPrenOggi]    = useState([])
-  const [contatti,    setContatti]    = useState([])
-  const [loading,     setLoading]     = useState(true)
+  const [analytics,      setAnalytics]      = useState(null)
+  const [requests,       setRequests]       = useState([])
+  const [prenOggi,       setPrenOggi]       = useState([])
+  const [contatti,       setContatti]       = useState([])
+  const [eventiProssimi, setEventiProssimi] = useState([])
+  const [recensioniKpi,  setRecensioniKpi]  = useState(null)
+  const [pianoCount,     setPianoCount]     = useState(null)
+  const [loading,        setLoading]        = useState(true)
 
   useEffect(() => {
     if (profile) load()
@@ -105,11 +109,14 @@ export default function DashboardPage() {
   async function load() {
     setLoading(true)
     const today = todayStr()
-    const [ana, req, pre, cnt] = await Promise.allSettled([
+    const [ana, req, pre, cnt, ev, rec, pia] = await Promise.allSettled([
       apiFetch('/api/analytics?range=7'),
       apiFetch('/api/requests'),
       apiFetch(`/api/booking/prenotazioni?data_da=${today}&data_a=${today}`),
       apiFetch('/api/contatti'),
+      apiFetch('/api/eventi'),
+      apiFetch('/api/recensioni'),
+      apiFetch('/api/piano-editoriale'),
     ])
     if (ana.status === 'fulfilled') setAnalytics(ana.value)
     if (req.status === 'fulfilled') {
@@ -124,6 +131,25 @@ export default function DashboardPage() {
     }
     if (pre.status === 'fulfilled') setPrenOggi((pre.value || []).slice(0, 7))
     if (cnt.status === 'fulfilled') setContatti((cnt.value || []).slice(0, 6))
+    if (ev.status === 'fulfilled') {
+      const all = ev.value || []
+      const upcoming = all
+        .filter(e => e.data_inizio && e.data_inizio >= today)
+        .sort((a, b) => a.data_inizio.localeCompare(b.data_inizio))
+        .slice(0, 5)
+      setEventiProssimi(upcoming)
+    }
+    if (rec.status === 'fulfilled') {
+      const all = (rec.value || []).filter(r => r.stelle > 0)
+      if (all.length > 0) {
+        const media = all.reduce((s, r) => s + r.stelle, 0) / all.length
+        setRecensioniKpi({ media: media.toFixed(1), count: all.length })
+      }
+    }
+    if (pia.status === 'fulfilled') {
+      const all = pia.value || []
+      setPianoCount(all.filter(p => p.stato !== 'pubblicato').length)
+    }
     setLoading(false)
   }
 
@@ -202,10 +228,13 @@ export default function DashboardPage() {
 
       {/* ── KPI row ── */}
       <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexWrap: 'wrap' }}>
-        <KpiCard icon={Inbox}        label="Richieste aperte"  value={analytics?.requests?.open}       color="#e53e3e" sub="richieste ospiti"     onClick={() => navigate('/admin/requests')} />
-        <KpiCard icon={CalendarCheck} label="Prenotazioni oggi" value={prenOggi.length}                 color="#2e7d32" sub={todayStr()}          onClick={() => navigate('/admin/booking')} />
-        <KpiCard icon={Users}         label="Nuovi contatti"    value={analytics?.contacts?.new_period} color="#6b46c1" sub="ultimi 7 giorni"      onClick={() => navigate('/admin/contatti')} />
-        <KpiCard icon={Eye}           label="Visite minisito"   value={analytics?.pageviews?.total}     color="#1a1a2e" sub="ultimi 7 giorni"      onClick={() => navigate('/admin/analytics')} />
+        <KpiCard icon={Inbox}        label="Richieste aperte"  value={analytics?.requests?.open}       color="#e53e3e" sub="richieste ospiti"      onClick={() => navigate('/admin/requests')} />
+        <KpiCard icon={CalendarCheck} label="Prenotazioni oggi" value={prenOggi.length}                 color="#2e7d32" sub={todayStr()}            onClick={() => navigate('/admin/booking')} />
+        <KpiCard icon={Users}         label="Nuovi contatti"    value={analytics?.contacts?.new_period} color="#6b46c1" sub="ultimi 7 giorni"       onClick={() => navigate('/admin/contatti')} />
+        <KpiCard icon={Eye}           label="Visite minisito"   value={analytics?.pageviews?.total}     color="#1a1a2e" sub="ultimi 7 giorni"       onClick={() => navigate('/admin/analytics')} />
+        <KpiCard icon={Star}          label="Recensione media"  value={recensioniKpi ? `⭐ ${recensioniKpi.media}` : '—'} color="#f59e0b" sub={recensioniKpi ? `${recensioniKpi.count} recensioni` : 'nessuna ancora'} onClick={() => navigate('/admin/recensioni')} />
+        <KpiCard icon={CalendarDays}  label="Prossimi eventi"   value={eventiProssimi.length}           color="#0284c7" sub="nei prossimi 30 giorni" onClick={() => navigate('/admin/eventi')} />
+        <KpiCard icon={FileEdit}      label="Bozze piano"       value={pianoCount ?? '—'}               color="#7c3aed" sub="da pubblicare"          onClick={() => navigate('/admin/piano-editoriale')} />
       </div>
 
       {/* ── Richieste + Prenotazioni oggi ── */}
@@ -269,6 +298,42 @@ export default function DashboardPage() {
         </SectionCard>
 
       </div>
+
+      {/* ── Prossimi eventi ── */}
+      {eventiProssimi.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <SectionCard title="Prossimi eventi" icon={CalendarDays} iconColor="#0284c7" action="Tutti gli eventi" actionTo="/admin/eventi" navigate={navigate}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {eventiProssimi.map(e => {
+                const data = e.data_inizio ? new Date(e.data_inizio) : null
+                const giorno = data ? data.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }) : '—'
+                const ore    = data ? data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : ''
+                return (
+                  <div key={e.id} onClick={() => navigate(`/admin/eventi/${e.id}`)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #f5f5f5', cursor: 'pointer' }}>
+                    <div style={{ width: 44, textAlign: 'center', flexShrink: 0 }}>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: '#0284c7', lineHeight: 1 }}>
+                        {data ? data.getDate() : '—'}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#aaa', textTransform: 'uppercase' }}>
+                        {data ? data.toLocaleDateString('it-IT', { month: 'short' }) : ''}
+                      </div>
+                    </div>
+                    <div style={{ width: 1, height: 36, background: '#f0f0f0', flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.titolo}</div>
+                      {ore && <div style={{ fontSize: 12, color: '#aaa', display: 'flex', alignItems: 'center', gap: 4, marginTop: 1 }}>
+                        <Clock size={11} strokeWidth={1.5} /> {ore}
+                        {e.prezzo ? <><span style={{ color: '#ddd' }}>·</span> €{e.prezzo}</> : null}
+                      </div>}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </SectionCard>
+        </div>
+      )}
 
       {/* ── Contatti recenti ── */}
       <SectionCard title="Contatti recenti" icon={Users} iconColor="#6b46c1" action="Vedi tutti" actionTo="/admin/contatti" navigate={navigate}>

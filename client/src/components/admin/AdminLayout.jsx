@@ -10,7 +10,7 @@ import {
   QrCode, UserCheck, ClipboardList, LogOut,
   Building, Building2, Store, Zap, Webhook, BotMessageSquare, Star, Settings,
   Info, Layers, Wrench, Image, Palette, MapPin, Globe, Lock, Bot, UtensilsCrossed,
-  FormInput, ShoppingBag, Sparkles,
+  FormInput, ShoppingBag, Sparkles, BarChart3,
 } from 'lucide-react'
 
 // ─── Nav definitions ──────────────────────────────────────────────────────────
@@ -350,6 +350,7 @@ export default function AdminLayout() {
             <NavItem to="/admin/newsletter"    icon={Mail}            label="Newsletter" />
             <NavItem to="/admin/automazioni"   icon={BotMessageSquare} label="Automazioni" />
             <NavItem to="/admin/recensioni"    icon={Star}            label="Recensioni" />
+            <NavItem to="/admin/survey"            icon={BarChart3}   label="Survey & NPS" />
             <NavItem to="/admin/preventivi"        icon={FileText}    label="Preventivi" />
             <NavItem to="/admin/form-builder"      icon={FormInput}   label="Form Builder" />
             <NavItem to="/admin/piano-editoriale"  icon={CalendarDays} label="Piano editoriale" />
@@ -399,6 +400,7 @@ export default function AdminLayout() {
             <NavItem to="/admin/newsletter"    icon={Mail}            label="Newsletter" />
             <NavItem to="/admin/automazioni"       icon={BotMessageSquare} label="Automazioni" />
             <NavItem to="/admin/recensioni"        icon={Star}        label="Recensioni" />
+            <NavItem to="/admin/survey"            icon={BarChart3}   label="Survey & NPS" />
             <NavItem to="/admin/preventivi"        icon={FileText}    label="Preventivi" />
             <NavItem to="/admin/form-builder"      icon={FormInput}   label="Form Builder" />
             <NavItem to="/admin/piano-editoriale"  icon={CalendarDays} label="Piano editoriale" />
