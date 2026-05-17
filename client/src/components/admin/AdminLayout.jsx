@@ -10,7 +10,7 @@ import {
   QrCode, UserCheck, ClipboardList, LogOut,
   Building, Building2, Store, Zap, Webhook, BotMessageSquare, Star, Settings,
   Info, Layers, Wrench, Image, Palette, MapPin, Globe, Lock, Bot, UtensilsCrossed,
-  FormInput, ShoppingBag, Sparkles, BarChart3,
+  FormInput, ShoppingBag, Sparkles, BarChart3, Gift,
 } from 'lucide-react'
 
 // ─── Nav definitions ──────────────────────────────────────────────────────────
@@ -372,6 +372,7 @@ export default function AdminLayout() {
             <NavItem to="/admin/preventivi"       icon={FileText}         label="Preventivi" />
             <NavItem to="/admin/form-builder"     icon={FormInput}        label="Form Builder" />
             <NavItem to="/admin/shop"             icon={ShoppingBag}      label="Shop" />
+            <NavItem to="/admin/loyalty"          icon={Gift}             label="Loyalty" />
             <NavItem to="/admin/eventi"           icon={CalendarDays}     label="Eventi" />
 
             {/* Sito & App contestuale: appare solo quando si naviga su un'entità */}
@@ -424,6 +425,7 @@ export default function AdminLayout() {
             <NavItem to="/admin/preventivi"       icon={FileText}         label="Preventivi" />
             <NavItem to="/admin/form-builder"     icon={FormInput}        label="Form Builder" />
             <NavItem to="/admin/shop"             icon={ShoppingBag}      label="Shop" />
+            <NavItem to="/admin/loyalty"          icon={Gift}             label="Loyalty" />
             <NavItem to="/admin/eventi"           icon={CalendarDays}     label="Eventi" />
 
             {(hasStruttura || hasRistorante || hasAttivita) && (

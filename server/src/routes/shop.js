@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { applicaLoyaltyOrdine, registraRiscatto, assegnaPuntiOrdine } from './loyalty.js'
 import { requireAuth } from '../middleware/auth.js'
 import { supabase } from '../lib/supabase.js'
 import { Resend } from 'resend'
@@ -139,7 +140,7 @@ router.get('/public/:azienda_id/prodotti', async (req, res) => {
 router.post('/public/:azienda_id/ordine', async (req, res) => {
   try {
     const { azienda_id } = req.params
-    const { email_cliente, nome_cliente, telefono_cliente, indirizzo, voci, note_cliente } = req.body
+    const { email_cliente, nome_cliente, telefono_cliente, indirizzo, voci, note_cliente, punti_da_usare, codice_gift_card } = req.body
 
     if (!email_cliente || !voci?.length) {
       return res.status(400).json({ error: 'email e voci sono obbligatori' })
@@ -163,6 +164,11 @@ router.post('/public/:azienda_id/ordine', async (req, res) => {
       totale += prezzoUnitario * qty
     }
 
+    // Loyalty: calcola sconti punti + gift card
+    const loyalty = await applicaLoyaltyOrdine(azienda_id, email_cliente,
+      { punti_da_usare: parseInt(punti_da_usare) || 0, codice_gift_card: codice_gift_card || '' }, totale)
+    const totaleFinale = Math.max(0, totale - loyalty.scontoLoyalty - loyalty.scontoGiftCard)
+
     // Gestione Stripe (opzionale)
     const stripeKey = process.env.STRIPE_SECRET_KEY
     let stripe_session_id = null
@@ -184,6 +190,7 @@ router.post('/public/:azienda_id/ordine', async (req, res) => {
             quantity: v.qty,
           })),
           customer_email: email_cliente,
+
           success_url: `${process.env.CLIENT_URL}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${process.env.CLIENT_URL}/checkout/annullato`,
           metadata: { azienda_id },
@@ -199,12 +206,20 @@ router.post('/public/:azienda_id/ordine', async (req, res) => {
     const { data: ordine, error } = await supabase.from('ordini').insert({
       azienda_id, email_cliente, nome_cliente: nome_cliente || '',
       telefono_cliente: telefono_cliente || '', indirizzo: indirizzo || {},
-      voci: vociSicure, totale, note_cliente: note_cliente || '',
-      stato: stripe_session_id ? 'in_attesa' : 'in_attesa',
+      voci: vociSicure, totale: totaleFinale, note_cliente: note_cliente || '',
+      stato: 'in_attesa',
       stripe_session_id,
+      punti_riscattati: loyalty.punti_da_usare || 0,
+      sconto_loyalty:   loyalty.scontoLoyalty,
+      codice_gift_card: codice_gift_card || null,
+      sconto_gift_card: loyalty.scontoGiftCard,
     }).select().single()
 
     if (error) return res.status(500).json({ error: error.message })
+
+    // Registra riscatto loyalty + assegna punti per acquisto (fire-and-forget)
+    registraRiscatto(azienda_id, ordine.id, loyalty)
+    assegnaPuntiOrdine(azienda_id, email_cliente, ordine.id, totaleFinale)
 
     // Email conferma al cliente
     try {

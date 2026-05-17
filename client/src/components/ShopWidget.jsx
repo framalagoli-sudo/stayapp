@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { apiFetch } from '../lib/api'
 import { useCarrello } from '../context/CarrelloContext'
-import { ShoppingCart, Plus, Minus, X, ArrowRight, Package } from 'lucide-react'
+import { ShoppingCart, Plus, Minus, X, ArrowRight, Package, Gift } from 'lucide-react'
 
 export default function ShopWidget({ aziendaId, primaryColor = '#1a1a2e' }) {
   const [prodotti, setProdotti] = useState([])
@@ -22,6 +22,14 @@ export default function ShopWidget({ aziendaId, primaryColor = '#1a1a2e' }) {
   const [done, setDone]     = useState(false)
   const [errore, setErrore] = useState('')
 
+  // loyalty
+  const [loyaltySaldo, setLoyaltySaldo] = useState(null)
+  const [usaPunti, setUsaPunti]         = useState(false)
+  const [giftCard, setGiftCard]         = useState('')
+  const [gcInfo, setGcInfo]             = useState(null)
+  const [gcErrore, setGcErrore]         = useState('')
+  const loyaltyTimer = useRef(null)
+
   const { voci, totale, count, aggiungi, rimuovi, aggiorna, svuota } = useCarrello()
 
   useEffect(() => {
@@ -30,6 +38,30 @@ export default function ShopWidget({ aziendaId, primaryColor = '#1a1a2e' }) {
       .then(setProdotti).catch(() => {})
       .finally(() => setLoading(false))
   }, [aziendaId])
+
+  // Fetch loyalty saldo when email changes (debounced 600ms)
+  useEffect(() => {
+    clearTimeout(loyaltyTimer.current)
+    if (!email || !email.includes('@')) { setLoyaltySaldo(null); setUsaPunti(false); return }
+    loyaltyTimer.current = setTimeout(() => {
+      apiFetch(`/api/loyalty/public/${aziendaId}/saldo?email=${encodeURIComponent(email)}`)
+        .then(d => setLoyaltySaldo(d))
+        .catch(() => setLoyaltySaldo(null))
+    }, 600)
+  }, [email, aziendaId])
+
+  async function verificaGiftCard() {
+    if (!giftCard.trim()) return
+    setGcErrore('')
+    try {
+      const d = await apiFetch(`/api/loyalty/public/${aziendaId}/gift-card?codice=${encodeURIComponent(giftCard)}`)
+      setGcInfo(d)
+    } catch (e) { setGcErrore(e.message || 'Codice non valido'); setGcInfo(null) }
+  }
+
+  const scontoLoyalty = usaPunti && loyaltySaldo?.saldo_euro > 0 ? loyaltySaldo.saldo_euro : 0
+  const scontoGc      = gcInfo ? Math.min(gcInfo.valore_residuo, Math.max(0, totale - scontoLoyalty)) : 0
+  const totaleFinale  = Math.max(0, totale - scontoLoyalty - scontoGc)
 
   const categorie = [...new Set(prodotti.map(p => p.categoria).filter(Boolean))]
   const filtrati = categoriaAttiva ? prodotti.filter(p => p.categoria === categoriaAttiva) : prodotti
@@ -43,6 +75,8 @@ export default function ShopWidget({ aziendaId, primaryColor = '#1a1a2e' }) {
         body: JSON.stringify({
           email_cliente: email, nome_cliente: nome, telefono_cliente: tel,
           indirizzo: { via, cap, citta }, voci, note_cliente: note,
+          punti_da_usare: usaPunti ? (loyaltySaldo?.saldo || 0) : 0,
+          codice_gift_card: gcInfo ? giftCard.trim().toUpperCase() : '',
         }),
       })
       if (data.checkout_url) {
@@ -221,6 +255,46 @@ export default function ShopWidget({ aziendaId, primaryColor = '#1a1a2e' }) {
                     <textarea value={note} onChange={e => setNote(e.target.value)} rows={2}
                       style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13, resize: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
                   </div>
+
+                  {/* Loyalty block — shown only if programme is active */}
+                  {loyaltySaldo?.programma && (
+                    <div style={{ background: '#f9f5ff', borderRadius: 10, padding: '12px 14px', border: '1px solid #e9d8fd' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 13, color: '#553c9a', marginBottom: 8 }}>
+                        <Gift size={14} strokeWidth={1.5} color="#553c9a" /> Programma fedeltà
+                      </div>
+                      {loyaltySaldo.saldo > 0 ? (
+                        loyaltySaldo.saldo_euro > 0 ? (
+                          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+                            <input type="checkbox" checked={usaPunti} onChange={e => setUsaPunti(e.target.checked)} />
+                            Usa {loyaltySaldo.saldo} punti (−€{loyaltySaldo.saldo_euro.toFixed(2)})
+                          </label>
+                        ) : (
+                          <p style={{ fontSize: 12, color: '#888', margin: 0 }}>
+                            Hai {loyaltySaldo.saldo} punti — servono {loyaltySaldo.programma.soglia_riscatto} per riscattare
+                          </p>
+                        )
+                      ) : (
+                        <p style={{ fontSize: 12, color: '#888', margin: 0 }}>Nessun punto accumulato con questa email</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Gift card */}
+                  <div>
+                    <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 3 }}>Codice gift card (opzionale)</label>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input value={giftCard} onChange={e => { setGiftCard(e.target.value.toUpperCase()); setGcInfo(null); setGcErrore('') }}
+                        placeholder="ES: WELCOME50"
+                        style={{ flex: 1, border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 14, boxSizing: 'border-box' }} />
+                      <button type="button" onClick={verificaGiftCard}
+                        style={{ padding: '8px 14px', background: '#f5f5f5', border: '1px solid #ddd', borderRadius: 8, cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap' }}>
+                        Verifica
+                      </button>
+                    </div>
+                    {gcInfo && <p style={{ fontSize: 12, color: '#2f855a', margin: '4px 0 0' }}>Saldo disponibile: €{Number(gcInfo.valore_residuo).toFixed(2)}</p>}
+                    {gcErrore && <p style={{ fontSize: 12, color: '#c53030', margin: '4px 0 0' }}>{gcErrore}</p>}
+                  </div>
+
                   {errore && <p style={{ color: '#c53030', fontSize: 13, margin: 0 }}>{errore}</p>}
                 </div>
               )}
@@ -241,8 +315,23 @@ export default function ShopWidget({ aziendaId, primaryColor = '#1a1a2e' }) {
                   </>
                 ) : (
                   <>
+                    <div style={{ fontSize: 13, color: '#666', marginBottom: 6 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Subtotale</span><span>€{totale.toFixed(2)}</span>
+                      </div>
+                      {scontoLoyalty > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#553c9a' }}>
+                          <span>Sconto punti</span><span>−€{scontoLoyalty.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {scontoGc > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#2f855a' }}>
+                          <span>Gift card</span><span>−€{scontoGc.toFixed(2)}</span>
+                        </div>
+                      )}
+                    </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14, fontWeight: 700, fontSize: 16 }}>
-                      <span>Totale</span><span>€{totale.toFixed(2)}</span>
+                      <span>Totale</span><span>€{totaleFinale.toFixed(2)}</span>
                     </div>
                     <button onClick={handleCheckout} disabled={submitting}
                       style={{ width: '100%', padding: '12px 0', background: submitting ? '#ccc' : primaryColor, color: '#fff', border: 'none', borderRadius: 10, cursor: submitting ? 'default' : 'pointer', fontWeight: 700, fontSize: 15 }}>
