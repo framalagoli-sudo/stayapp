@@ -138,26 +138,11 @@ export default function AdminLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [strutturaOpen, setStrutturaOpen] = useState(true)
-  const [ristoranteOpen, setRistoranteOpen] = useState(false)
-  const [attivitaOpen, setAttivitaOpen] = useState(false)
   const [bookingOpen, setBookingOpen] = useState(() => location.pathname.startsWith('/admin/booking'))
 
   useEffect(() => { setMenuOpen(false) }, [location.pathname])
-
   useEffect(() => {
-    if (location.pathname.includes('/admin/struttura/') || location.pathname.includes('/admin/property/')) {
-      setStrutturaOpen(true)
-    }
-    if (location.pathname.includes('/admin/ristoranti/')) {
-      setRistoranteOpen(true)
-    }
-    if (location.pathname.includes('/admin/attivita/')) {
-      setAttivitaOpen(true)
-    }
-    if (location.pathname.startsWith('/admin/booking')) {
-      setBookingOpen(true)
-    }
+    if (location.pathname.startsWith('/admin/booking')) setBookingOpen(true)
   }, [location.pathname])
 
   async function handleSignOut() {
@@ -176,7 +161,6 @@ export default function AdminLayout() {
   const hasStruttura = isAdminAzienda ? (!!moduli.struttura && !aziendaLoading) : (moduli.struttura || strutture.length > 0)
   const hasRistorante = isAdminAzienda ? (!!moduli.ristorante && !aziendaLoading) : (moduli.ristorante || ristoranti.length > 0)
   const hasAttivita = isAdminAzienda ? (!!moduli.attivita && !aziendaLoading) : (moduli.attivita || attivita?.length > 0)
-  const bothActive = hasStruttura && hasRistorante
 
   const strutturaUrlMatch = location.pathname.match(/^\/admin\/struttura\/([^/]+)/)
   const ristoranteUrlMatch = location.pathname.match(/^\/admin\/ristoranti\/([^/]+)\//)
@@ -184,6 +168,21 @@ export default function AdminLayout() {
   const strutturaUrlId = strutturaUrlMatch?.[1]
   const ristoranteUrlId = ristoranteUrlMatch?.[1]
   const attivitaUrlId = attivitaUrlMatch?.[1]
+
+  // Entità attiva per la sezione Sito & App
+  const activeEntityType = strutturaUrlId ? 'struttura'
+    : ristoranteUrlId ? 'ristorante'
+    : attivitaUrlId ? 'attivita'
+    : location.pathname.startsWith('/admin/property/') ? 'struttura'
+    : hasStruttura ? 'struttura'
+    : hasRistorante ? 'ristorante'
+    : hasAttivita ? 'attivita'
+    : null
+
+  const activeSitoId = activeEntityType === 'struttura' ? (strutturaUrlId || selectedStrutturaId)
+    : activeEntityType === 'ristorante' ? (ristoranteUrlId || selectedRistoranteId)
+    : activeEntityType === 'attivita' ? (attivitaUrlId || selectedAttivitaId)
+    : null
 
   // ─── Style helpers ────────────────────────────────────────────────────────
   const navLinkStyle = (isActive, sub = false) => ({
@@ -238,41 +237,10 @@ export default function AdminLayout() {
     )
   }
 
-  function StrutturaSelector() {
-    if (strutture.length <= 1) return null
-    return (
-      <select className="sidebar-selector" value={selectedStrutturaId || ''}
-        onChange={e => { setSelectedStrutturaId(e.target.value); navigate(`/admin/struttura/${e.target.value}/info`) }}>
-        {strutture.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-      </select>
-    )
-  }
-
-  function RistoranteSelector() {
-    if (ristoranti.length <= 1) return null
-    return (
-      <select className="sidebar-selector" value={selectedRistoranteId || ''}
-        onChange={e => { setSelectedRistoranteId(e.target.value); navigate(`/admin/ristoranti/${e.target.value}/info`) }}>
-        {ristoranti.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-      </select>
-    )
-  }
-
-  function AttivitaSelector() {
-    if (!attivita || attivita.length <= 1) return null
-    return (
-      <select className="sidebar-selector" value={selectedAttivitaId || ''}
-        onChange={e => { setSelectedAttivitaId(e.target.value); navigate(`/admin/attivita/${e.target.value}/info`) }}>
-        {attivita.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-      </select>
-    )
-  }
-
   function StrutturaSubLinks({ baseId }) {
     if (!baseId) return (
       <div style={{ padding: '6px 12px 10px 20px', fontSize: 12, color: '#666', fontStyle: 'italic' }}>
-        Nessuna struttura creata.<br />
-        <span style={{ color: '#888' }}>Aggiungila dal pannello Aziende.</span>
+        Nessuna struttura creata.
       </div>
     )
     return STRUTTURA_SUBS.map(({ sub, label, icon }) => (
@@ -283,8 +251,7 @@ export default function AdminLayout() {
   function RistoranteSubLinks({ baseId }) {
     if (!baseId) return (
       <div style={{ padding: '6px 12px 10px 20px', fontSize: 12, color: '#666', fontStyle: 'italic' }}>
-        Nessun ristorante creato.<br />
-        <span style={{ color: '#888' }}>Aggiungilo dal pannello Aziende.</span>
+        Nessun ristorante creato.
       </div>
     )
     return RISTORANTE_SUBS.map(({ sub, label, icon }) => (
@@ -295,8 +262,7 @@ export default function AdminLayout() {
   function AttivitaSubLinks({ baseId }) {
     if (!baseId) return (
       <div style={{ padding: '6px 12px 10px 20px', fontSize: 12, color: '#666', fontStyle: 'italic' }}>
-        Nessuna attività creata.<br />
-        <span style={{ color: '#888' }}>Aggiungila dal pannello Attività.</span>
+        Nessuna attività creata.
       </div>
     )
     return ATTIVITA_SUBS.map(({ sub, label, icon }) => (
@@ -314,74 +280,124 @@ export default function AdminLayout() {
     )
   }
 
+  // ─── Entity switcher (header) ─────────────────────────────────────────────
+  function EntitySwitcher() {
+    const allEntities = [
+      ...strutture.map(e => ({ id: e.id, name: e.name, key: `s:${e.id}` })),
+      ...ristoranti.map(e => ({ id: e.id, name: e.name, key: `r:${e.id}` })),
+      ...(attivita || []).map(e => ({ id: e.id, name: e.name, key: `a:${e.id}` })),
+    ]
+    if (allEntities.length === 0) return null
+
+    const activeKey = activeEntityType === 'struttura' && activeSitoId ? `s:${activeSitoId}`
+      : activeEntityType === 'ristorante' && activeSitoId ? `r:${activeSitoId}`
+      : activeEntityType === 'attivita' && activeSitoId ? `a:${activeSitoId}`
+      : allEntities[0]?.key || ''
+
+    function handleChange(e) {
+      const [prefix, id] = e.target.value.split(':')
+      if (prefix === 's') { setSelectedStrutturaId(id); navigate(`/admin/struttura/${id}/info`) }
+      else if (prefix === 'r') { setSelectedRistoranteId(id); navigate(`/admin/ristoranti/${id}/info`) }
+      else if (prefix === 'a') { setSelectedAttivitaId(id); navigate(`/admin/attivita/${id}/info`) }
+    }
+
+    const activeName = allEntities.find(e => e.key === activeKey)?.name || allEntities[0]?.name
+
+    return (
+      <div style={{ padding: '0 12px 14px' }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: '#444', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 5 }}>
+          Entità attiva
+        </div>
+        {allEntities.length === 1 ? (
+          <div style={{ fontSize: 13, color: '#ddd', fontWeight: 600, padding: '7px 10px', background: 'rgba(255,255,255,0.07)', borderRadius: 8 }}>
+            {activeName}
+          </div>
+        ) : (
+          <select className="sidebar-selector" style={{ margin: 0, width: '100%' }} value={activeKey} onChange={handleChange}>
+            {strutture.length > 0 && strutture.map(e => <option key={e.id} value={`s:${e.id}`}>{e.name}</option>)}
+            {ristoranti.length > 0 && ristoranti.map(e => <option key={e.id} value={`r:${e.id}`}>{e.name}</option>)}
+            {(attivita || []).length > 0 && (attivita || []).map(e => <option key={e.id} value={`a:${e.id}`}>{e.name}</option>)}
+          </select>
+        )}
+      </div>
+    )
+  }
+
+  // ─── Sito & App links (derivati dall'entità attiva) ───────────────────────
+  function SitoAppLinks() {
+    if (activeEntityType === 'struttura') return <StrutturaSubLinks baseId={activeSitoId} />
+    if (activeEntityType === 'ristorante') return <RistoranteSubLinks baseId={activeSitoId} />
+    if (activeEntityType === 'attivita') return <AttivitaSubLinks baseId={activeSitoId} />
+    return (
+      <div style={{ padding: '6px 12px 10px', fontSize: 12, color: '#555', fontStyle: 'italic' }}>
+        Nessuna entità attiva.
+      </div>
+    )
+  }
+
   // ─── Sidebar content ──────────────────────────────────────────────────────
   const sidebarContent = (
     <>
-      <div style={{ padding: '22px 20px 14px', fontWeight: 700, fontSize: 18, letterSpacing: 1, color: '#fff' }}>
+      <div style={{ padding: '22px 20px 10px', fontWeight: 700, fontSize: 18, letterSpacing: 1, color: '#fff' }}>
         StayApp
       </div>
 
+      {/* Entity switcher — admin azienda e staff */}
+      {(isAdminAzienda || isStaff) && <EntitySwitcher />}
+
       <nav style={{ flex: 1, padding: '0 12px', overflowY: 'auto' }}>
 
-        {/* ── Sempre visibili ── */}
         <NavItem to="/admin" icon={LayoutDashboard} label="Dashboard" end />
-        <NavItem to="/admin/analytics" icon={BarChart2} label="Analytics" />
-        <NavItem to="/admin/security" icon={Shield} label="Sicurezza account" />
 
         {/* ── Super Admin ── */}
         {isSuperAdmin && (
           <>
             <Divider />
-            <NavItem to="/admin/aziende"    icon={Building}   label="Aziende" />
-            <NavItem to="/admin/properties" icon={Building2}  label="Strutture" />
-            <NavItem to="/admin/ristoranti" icon={Store}      label="Ristoranti" />
-            <NavItem to="/admin/attivita"   icon={Zap}        label="Attività" />
-            <NavItem to="/admin/users"      icon={Users}      label="Utenti" />
-
-            <Divider />
-            <NavItem to="/admin/requests"      icon={Inbox}         label="Richieste" />
-            <NavItem to="/admin/prenotazioni"  icon={CalendarCheck} label="Prenotazioni" />
+            <SectionHeader label="Operativo" />
+            <NavItem to="/admin/requests"     icon={Inbox}         label="Richieste" />
+            <NavItem to="/admin/prenotazioni" icon={CalendarCheck} label="Prenotazioni" />
             {renderBookingSection()}
-            <NavItem to="/admin/demo"          icon={FileText}      label="Richieste demo" />
+            <NavItem to="/admin/demo"         icon={FileText}      label="Richieste demo" />
+            <NavItem to="/admin/recensioni"   icon={Star}          label="Recensioni" />
+            <NavItem to="/admin/survey"       icon={BarChart3}     label="Survey & NPS" />
 
             <Divider />
-            <NavItem to="/admin/eventi"        icon={CalendarDays}    label="Eventi" />
-            <NavItem to="/admin/blog"          icon={Newspaper}       label="Blog & News" />
-            <NavItem to="/admin/newsletter"    icon={Mail}            label="Newsletter" />
-            <NavItem to="/admin/automazioni"   icon={BotMessageSquare} label="Automazioni" />
-            <NavItem to="/admin/recensioni"    icon={Star}            label="Recensioni" />
-            <NavItem to="/admin/survey"            icon={BarChart3}   label="Survey & NPS" />
-            <NavItem to="/admin/preventivi"        icon={FileText}    label="Preventivi" />
-            <NavItem to="/admin/form-builder"      icon={FormInput}   label="Form Builder" />
-            <NavItem to="/admin/piano-editoriale"  icon={CalendarDays} label="Piano editoriale" />
-            <NavItem to="/admin/content-studio"    icon={Sparkles}     label="Content Studio" />
-            <NavItem to="/admin/shop"              icon={ShoppingBag}  label="Shop" />
-            <NavItem to="/admin/contatti"      icon={Users}           label="Contatti" />
-            <NavItem to="/admin/integrazioni"  icon={Webhook}         label="Integrazioni" />
-            <NavItem to="/admin/audit-log"     icon={ClipboardList}   label="Audit log" />
-            <NavItem to="/admin/impostazioni"  icon={Settings}        label="Impostazioni" />
+            <SectionHeader label="Marketing" />
+            <NavItem to="/admin/contatti"         icon={Users}            label="Contatti" />
+            <NavItem to="/admin/newsletter"       icon={Mail}             label="Newsletter" />
+            <NavItem to="/admin/automazioni"      icon={BotMessageSquare} label="Automazioni" />
+            <NavItem to="/admin/blog"             icon={Newspaper}        label="Blog & News" />
+            <NavItem to="/admin/piano-editoriale" icon={CalendarDays}     label="Piano editoriale" />
+            <NavItem to="/admin/content-studio"   icon={Sparkles}         label="Content Studio" />
+            <NavItem to="/admin/preventivi"       icon={FileText}         label="Preventivi" />
+            <NavItem to="/admin/form-builder"     icon={FormInput}        label="Form Builder" />
+            <NavItem to="/admin/shop"             icon={ShoppingBag}      label="Shop" />
+            <NavItem to="/admin/eventi"           icon={CalendarDays}     label="Eventi" />
 
-            {strutturaUrlId && (
+            {/* Sito & App contestuale: appare solo quando si naviga su un'entità */}
+            {(strutturaUrlId || ristoranteUrlId || attivitaUrlId) && (
               <>
                 <Divider />
-                <SectionHeader label="Struttura" />
-                <StrutturaSubLinks baseId={strutturaUrlId} />
+                <SectionHeader label="Sito & App" />
+                <SitoAppLinks />
               </>
             )}
-            {ristoranteUrlId && !strutturaUrlId && (
-              <>
-                <Divider />
-                <SectionHeader label="Ristorante" />
-                <RistoranteSubLinks baseId={ristoranteUrlId} />
-              </>
-            )}
-            {attivitaUrlId && !strutturaUrlId && !ristoranteUrlId && (
-              <>
-                <Divider />
-                <SectionHeader label="Attività" />
-                <AttivitaSubLinks baseId={attivitaUrlId} />
-              </>
-            )}
+
+            <Divider />
+            <SectionHeader label="Account" />
+            <NavItem to="/admin/analytics"    icon={BarChart2}     label="Analytics" />
+            <NavItem to="/admin/integrazioni" icon={Webhook}       label="Integrazioni" />
+            <NavItem to="/admin/audit-log"    icon={ClipboardList} label="Audit log" />
+            <NavItem to="/admin/impostazioni" icon={Settings}      label="Impostazioni" />
+            <NavItem to="/admin/security"     icon={Shield}        label="Sicurezza" />
+
+            <Divider />
+            <SectionHeader label="Piattaforma" />
+            <NavItem to="/admin/aziende"    icon={Building}  label="Aziende" />
+            <NavItem to="/admin/properties" icon={Building2} label="Strutture" />
+            <NavItem to="/admin/ristoranti" icon={Store}     label="Ristoranti" />
+            <NavItem to="/admin/attivita"   icon={Zap}       label="Attività" />
+            <NavItem to="/admin/users"      icon={Users}     label="Utenti" />
           </>
         )}
 
@@ -389,123 +405,81 @@ export default function AdminLayout() {
         {isAdminAzienda && (
           <>
             <Divider />
+            <SectionHeader label="Operativo" />
             <NavItem to="/admin/requests"     icon={Inbox}         label="Richieste" />
             <NavItem to="/admin/prenotazioni" icon={CalendarCheck} label="Prenotazioni" />
             {renderBookingSection()}
             <NavItem to="/admin/chat"         icon={MessageCircle} label="Chat" />
-            <NavItem to="/admin/eventi"       icon={CalendarDays}  label="Eventi" />
+            <NavItem to="/admin/recensioni"   icon={Star}          label="Recensioni" />
+            <NavItem to="/admin/survey"       icon={BarChart3}     label="Survey & NPS" />
 
             <Divider />
-            <NavItem to="/admin/blog"          icon={Newspaper}       label="Blog & News" />
-            <NavItem to="/admin/newsletter"    icon={Mail}            label="Newsletter" />
-            <NavItem to="/admin/automazioni"       icon={BotMessageSquare} label="Automazioni" />
-            <NavItem to="/admin/recensioni"        icon={Star}        label="Recensioni" />
-            <NavItem to="/admin/survey"            icon={BarChart3}   label="Survey & NPS" />
-            <NavItem to="/admin/preventivi"        icon={FileText}    label="Preventivi" />
-            <NavItem to="/admin/form-builder"      icon={FormInput}   label="Form Builder" />
-            <NavItem to="/admin/piano-editoriale"  icon={CalendarDays} label="Piano editoriale" />
-            <NavItem to="/admin/content-studio"    icon={Sparkles}     label="Content Studio" />
-            <NavItem to="/admin/shop"              icon={ShoppingBag}  label="Shop" />
-            <NavItem to="/admin/contatti"          icon={Users}       label="Contatti" />
+            <SectionHeader label="Marketing" />
+            <NavItem to="/admin/contatti"         icon={Users}            label="Contatti" />
+            <NavItem to="/admin/newsletter"       icon={Mail}             label="Newsletter" />
+            <NavItem to="/admin/automazioni"      icon={BotMessageSquare} label="Automazioni" />
+            <NavItem to="/admin/blog"             icon={Newspaper}        label="Blog & News" />
+            <NavItem to="/admin/piano-editoriale" icon={CalendarDays}     label="Piano editoriale" />
+            <NavItem to="/admin/content-studio"   icon={Sparkles}         label="Content Studio" />
+            <NavItem to="/admin/preventivi"       icon={FileText}         label="Preventivi" />
+            <NavItem to="/admin/form-builder"     icon={FormInput}        label="Form Builder" />
+            <NavItem to="/admin/shop"             icon={ShoppingBag}      label="Shop" />
+            <NavItem to="/admin/eventi"           icon={CalendarDays}     label="Eventi" />
+
+            {(hasStruttura || hasRistorante || hasAttivita) && (
+              <>
+                <Divider />
+                <SectionHeader label="Sito & App" />
+                <SitoAppLinks />
+              </>
+            )}
 
             <Divider />
-            <NavItem to="/admin/qrcode"        icon={QrCode}    label="QR Code" />
-            <NavItem to="/admin/staff"         icon={UserCheck} label="Collaboratori" />
-            <NavItem to="/admin/integrazioni"  icon={Webhook}   label="Integrazioni" />
-
-            {hasStruttura && !bothActive && (
-              <>
-                <Divider />
-                <SectionHeader label={strutture.length === 1 ? strutture[0]?.name || 'La mia struttura' : 'Struttura'} />
-                <StrutturaSelector />
-                <StrutturaSubLinks baseId={selectedStrutturaId} />
-              </>
-            )}
-            {hasRistorante && !bothActive && (
-              <>
-                <Divider />
-                <SectionHeader label={ristoranti.length === 1 ? ristoranti[0]?.name || 'Il mio ristorante' : 'Ristorante'} />
-                <RistoranteSelector />
-                <RistoranteSubLinks baseId={selectedRistoranteId} />
-              </>
-            )}
-            {bothActive && (
-              <>
-                <Divider />
-                <CollapseSection label="Struttura" isOpen={strutturaOpen} onToggle={() => setStrutturaOpen(o => !o)}>
-                  <StrutturaSelector />
-                  <StrutturaSubLinks baseId={selectedStrutturaId} />
-                </CollapseSection>
-                <CollapseSection label="Ristorante" isOpen={ristoranteOpen} onToggle={() => setRistoranteOpen(o => !o)}>
-                  <RistoranteSelector />
-                  <RistoranteSubLinks baseId={selectedRistoranteId} />
-                </CollapseSection>
-              </>
-            )}
-            {hasAttivita && (
-              <>
-                {!bothActive && <Divider />}
-                <CollapseSection label="Attività" isOpen={attivitaOpen} onToggle={() => setAttivitaOpen(o => !o)}>
-                  <AttivitaSelector />
-                  <AttivitaSubLinks baseId={selectedAttivitaId} />
-                </CollapseSection>
-              </>
-            )}
+            <SectionHeader label="Account" />
+            <NavItem to="/admin/analytics"    icon={BarChart2}  label="Analytics" />
+            <NavItem to="/admin/qrcode"       icon={QrCode}     label="QR Code" />
+            <NavItem to="/admin/staff"        icon={UserCheck}  label="Collaboratori" />
+            <NavItem to="/admin/integrazioni" icon={Webhook}    label="Integrazioni" />
+            <NavItem to="/admin/security"     icon={Shield}     label="Sicurezza" />
           </>
         )}
 
-        {/* ── Staff (company-level, permissions-filtered) ── */}
+        {/* ── Staff (filtrato per permessi) ── */}
         {isStaff && (
           <>
+            {(perm.richieste || perm.prenotazioni || perm.booking || perm.eventi || perm.recensioni) && (
+              <>
+                <Divider />
+                <SectionHeader label="Operativo" />
+                {perm.richieste    && <NavItem to="/admin/requests"     icon={Inbox}         label="Richieste" />}
+                {perm.prenotazioni && <NavItem to="/admin/prenotazioni" icon={CalendarCheck} label="Prenotazioni" />}
+                {perm.booking      && renderBookingSection()}
+                {perm.eventi       && <NavItem to="/admin/eventi"       icon={CalendarDays}  label="Eventi" />}
+                {perm.recensioni   && <NavItem to="/admin/recensioni"   icon={Star}          label="Recensioni" />}
+              </>
+            )}
+
+            {(perm.blog || perm.newsletter || perm.contatti) && (
+              <>
+                <Divider />
+                <SectionHeader label="Marketing" />
+                {perm.blog       && <NavItem to="/admin/blog"       icon={Newspaper} label="Blog & News" />}
+                {perm.newsletter && <NavItem to="/admin/newsletter" icon={Mail}      label="Newsletter" />}
+                {perm.contatti   && <NavItem to="/admin/contatti"   icon={Users}     label="Contatti" />}
+              </>
+            )}
+
+            {(perm.struttura || perm.ristorante || perm.attivita_gestione) && (hasStruttura || hasRistorante || hasAttivita) && (
+              <>
+                <Divider />
+                <SectionHeader label="Sito & App" />
+                <SitoAppLinks />
+              </>
+            )}
+
             <Divider />
-            {perm.richieste    && <NavItem to="/admin/requests"     icon={Inbox}         label="Richieste" />}
-            {perm.prenotazioni && <NavItem to="/admin/prenotazioni" icon={CalendarCheck} label="Prenotazioni" />}
-            {perm.booking      && renderBookingSection()}
-            {perm.eventi       && <NavItem to="/admin/eventi"       icon={CalendarDays}  label="Eventi" />}
-
-            {(perm.blog || perm.newsletter || perm.contatti) && <Divider />}
-            {perm.blog         && <NavItem to="/admin/blog"         icon={Newspaper}  label="Blog & News" />}
-            {perm.newsletter   && <NavItem to="/admin/newsletter"   icon={Mail}       label="Newsletter" />}
-            {perm.contatti     && <NavItem to="/admin/contatti"     icon={Users}      label="Contatti" />}
-
-            {perm.struttura && hasStruttura && !(perm.ristorante && bothActive) && (
-              <>
-                <Divider />
-                <SectionHeader label={strutture.length === 1 ? strutture[0]?.name || 'La mia struttura' : 'Struttura'} />
-                <StrutturaSelector />
-                <StrutturaSubLinks baseId={selectedStrutturaId} />
-              </>
-            )}
-            {perm.ristorante && hasRistorante && !(perm.struttura && bothActive) && (
-              <>
-                <Divider />
-                <SectionHeader label={ristoranti.length === 1 ? ristoranti[0]?.name || 'Il mio ristorante' : 'Ristorante'} />
-                <RistoranteSelector />
-                <RistoranteSubLinks baseId={selectedRistoranteId} />
-              </>
-            )}
-            {perm.struttura && perm.ristorante && bothActive && (
-              <>
-                <Divider />
-                <CollapseSection label="Struttura" isOpen={strutturaOpen} onToggle={() => setStrutturaOpen(o => !o)}>
-                  <StrutturaSelector />
-                  <StrutturaSubLinks baseId={selectedStrutturaId} />
-                </CollapseSection>
-                <CollapseSection label="Ristorante" isOpen={ristoranteOpen} onToggle={() => setRistoranteOpen(o => !o)}>
-                  <RistoranteSelector />
-                  <RistoranteSubLinks baseId={selectedRistoranteId} />
-                </CollapseSection>
-              </>
-            )}
-            {perm.attivita_gestione && hasAttivita && (
-              <>
-                <Divider />
-                <CollapseSection label="Attività" isOpen={attivitaOpen} onToggle={() => setAttivitaOpen(o => !o)}>
-                  <AttivitaSelector />
-                  <AttivitaSubLinks baseId={selectedAttivitaId} />
-                </CollapseSection>
-              </>
-            )}
+            <SectionHeader label="Account" />
+            <NavItem to="/admin/security" icon={Shield} label="Sicurezza" />
           </>
         )}
 
@@ -513,6 +487,7 @@ export default function AdminLayout() {
         {isLegacyStruttura && (
           <>
             <Divider />
+            <SectionHeader label="Operativo" />
             <NavItem to="/admin/requests"     icon={Inbox}         label="Richieste" />
             <NavItem to="/admin/prenotazioni" icon={CalendarCheck} label="Prenotazioni" />
             {renderBookingSection()}
@@ -520,18 +495,21 @@ export default function AdminLayout() {
             <NavItem to="/admin/eventi"       icon={CalendarDays}  label="Eventi" />
 
             <Divider />
-            <NavItem to="/admin/blog"         icon={Newspaper}  label="Blog & News" />
-            <NavItem to="/admin/newsletter"   icon={Mail}       label="Newsletter" />
-            <NavItem to="/admin/contatti"     icon={Users}      label="Contatti" />
+            <SectionHeader label="Marketing" />
+            <NavItem to="/admin/blog"       icon={Newspaper} label="Blog & News" />
+            <NavItem to="/admin/newsletter" icon={Mail}      label="Newsletter" />
+            <NavItem to="/admin/contatti"   icon={Users}     label="Contatti" />
 
             <Divider />
-            <NavItem to="/admin/qrcode" icon={QrCode} label="QR Code" />
-
-            <Divider />
-            <SectionHeader label="La mia struttura" />
+            <SectionHeader label="Sito & App" />
             {NAV_PROPERTY.map(({ to, label, icon }) => (
               <NavItem key={to} to={to} icon={icon} label={label} sub />
             ))}
+
+            <Divider />
+            <SectionHeader label="Account" />
+            <NavItem to="/admin/qrcode"   icon={QrCode} label="QR Code" />
+            <NavItem to="/admin/security" icon={Shield} label="Sicurezza" />
           </>
         )}
 
