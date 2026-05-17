@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { apiFetch, uploadMedia } from '../../../lib/api'
-import { ArrowLeft, Save, Trash2, Plus, X, Upload, AlertCircle, ShoppingBag } from 'lucide-react'
+import { ArrowLeft, Save, Trash2, Plus, X, Upload, AlertCircle, ShoppingBag, Share2 } from 'lucide-react'
 import AiButton from '../../../components/admin/AiButton'
 import { useAzienda } from '../../../context/AziendaContext'
+import PostSocialModal from '../../../components/admin/PostSocialModal'
 
 export default function ProdottoEditorPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { azienda } = useAzienda()
   const isNew = id === 'nuovo'
+  const [showPostModal, setShowPostModal] = useState(false)
   const fileRef = useRef()
 
   const [loading, setLoading] = useState(!isNew)
@@ -95,9 +97,15 @@ export default function ProdottoEditorPage() {
           {isNew ? 'Nuovo prodotto' : (nome || 'Modifica prodotto')}
         </h1>
         {!isNew && (
-          <button onClick={handleDelete} style={{ background: 'none', border: '1px solid #eee', borderRadius: 8, padding: '7px 12px', cursor: 'pointer', color: '#c53030' }}>
-            <Trash2 size={15} strokeWidth={1.5} />
-          </button>
+          <>
+            <button onClick={() => setShowPostModal(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f5f0ff', color: '#6b21a8', border: 'none', borderRadius: 8, padding: '7px 12px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+              <Share2 size={14} strokeWidth={1.5} /> Post
+            </button>
+            <button onClick={handleDelete} style={{ background: 'none', border: '1px solid #eee', borderRadius: 8, padding: '7px 12px', cursor: 'pointer', color: '#c53030' }}>
+              <Trash2 size={15} strokeWidth={1.5} />
+            </button>
+          </>
         )}
       </div>
 
@@ -204,5 +212,15 @@ export default function ProdottoEditorPage() {
         </button>
       </div>
     </div>
+
+    <PostSocialModal
+      isOpen={showPostModal}
+      onClose={() => setShowPostModal(false)}
+      titolo={nome}
+      sottotitolo={prezzoScontato ? `€${prezzoScontato} (scontato da €${prezzo})` : prezzo ? `€${prezzo}` : ''}
+      immagine={immagini[0] || ''}
+      tipo="prodotto shop"
+      nomeBusiness={azienda?.ragione_sociale || ''}
+    />
   )
 }

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch, uploadMedia } from '../../../lib/api'
-import { Trash2, Plus, X, Upload } from 'lucide-react'
+import { Trash2, Plus, X, Upload, Share2 } from 'lucide-react'
+import PostSocialModal from '../../../components/admin/PostSocialModal'
 
 const INCLUDES_OPTIONS = [
   { key: 'cena',       label: 'Cena' },
@@ -36,6 +37,7 @@ export default function EventoEditPage() {
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+  const [showPostModal, setShowPostModal] = useState(false)
 
   useEffect(() => {
     if (!isNew) {
@@ -152,10 +154,18 @@ export default function EventoEditPage() {
             {isNew ? 'Compila i dati e salva per ottenere l\'ID e caricare la copertina.' : 'Le modifiche vengono salvate al click su Salva.'}
           </p>
         </div>
-        <button onClick={() => navigate('/admin/eventi')}
-          style={{ background: 'none', border: '1px solid #ddd', borderRadius: 8, padding: '8px 14px', fontSize: 13, cursor: 'pointer', color: '#555' }}>
-          ← Lista
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {!isNew && (
+            <button type="button" onClick={() => setShowPostModal(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f5f0ff', color: '#6b21a8', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              <Share2 size={14} strokeWidth={1.5} /> Post social
+            </button>
+          )}
+          <button onClick={() => navigate('/admin/eventi')}
+            style={{ background: 'none', border: '1px solid #ddd', borderRadius: 8, padding: '8px 14px', fontSize: 13, cursor: 'pointer', color: '#555' }}>
+            ← Lista
+          </button>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -310,6 +320,16 @@ export default function EventoEditPage() {
           )}
         </div>
       </form>
+
+      <PostSocialModal
+        isOpen={showPostModal}
+        onClose={() => setShowPostModal(false)}
+        titolo={form.title}
+        sottotitolo={form.date_start ? `📅 ${form.date_start}${form.price ? ` · €${form.price}` : ''}` : form.price ? `€${form.price}` : ''}
+        immagine={cover}
+        tipo="evento"
+        nomeBusiness={azienda?.ragione_sociale || ''}
+      />
     </div>
   )
 }

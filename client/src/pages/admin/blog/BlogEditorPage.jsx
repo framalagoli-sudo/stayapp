@@ -4,8 +4,9 @@ import { useAuth } from '../../../context/AuthContext'
 import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch, uploadMedia } from '../../../lib/api'
 import RichTextEditor from '../../../components/admin/RichTextEditor'
-import { ArrowLeft, Upload, X, Eye, EyeOff } from 'lucide-react'
+import { ArrowLeft, Upload, X, Eye, EyeOff, Share2 } from 'lucide-react'
 import AiButton from '../../../components/admin/AiButton'
+import PostSocialModal from '../../../components/admin/PostSocialModal'
 
 export default function BlogEditorPage() {
   const { id } = useParams()
@@ -27,6 +28,7 @@ export default function BlogEditorPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const [showPostModal, setShowPostModal] = useState(false)
   const [uploading, setUploading] = useState(false)
   const fileRef = useRef()
 
@@ -90,6 +92,12 @@ export default function BlogEditorPage() {
         </button>
         <h2 style={{ margin: 0, fontSize: 20 }}>{isNew ? 'Nuovo articolo' : 'Modifica articolo'}</h2>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          {!isNew && (
+            <button onClick={() => setShowPostModal(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', background: '#f5f0ff', color: '#6b21a8', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              <Share2 size={14} strokeWidth={1.5} /> Post social
+            </button>
+          )}
           {!form.published && (
             <button onClick={() => handleSave(false)} disabled={saving}
               style={{ padding: '9px 18px', background: '#f0f0f0', color: '#1a1a2e', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
@@ -209,6 +217,16 @@ export default function BlogEditorPage() {
         </div>
       </div>
     </div>
+
+    <PostSocialModal
+      isOpen={showPostModal}
+      onClose={() => setShowPostModal(false)}
+      titolo={form.title}
+      sottotitolo={form.excerpt || ''}
+      immagine={form.cover_url}
+      tipo="articolo blog"
+      nomeBusiness={azienda?.ragione_sociale || ''}
+    />
   )
 }
 
