@@ -99,6 +99,7 @@ import DominiPage from './pages/admin/DominiPage'
 import ShopPage from './pages/admin/shop/ShopPage'
 import ProdottoEditorPage from './pages/admin/shop/ProdottoEditorPage'
 import OrdineDetailPage from './pages/admin/shop/OrdineDetailPage'
+import ContentStudioPage from './pages/admin/ContentStudioPage'
 
 // Injects property ID from URL params into PropertyIdContext
 // so all property sub-pages work without modification
@@ -233,6 +234,7 @@ export default function App() {
             <Route path="shop" element={<ShopPage />} />
             <Route path="shop/:id" element={<ProdottoEditorPage />} />
             <Route path="shop/ordini/:id" element={<OrdineDetailPage />} />
+            <Route path="content-studio" element={<ContentStudioPage />} />
             <Route path="qrcode"       element={<QRCodePage />} />
 
             {/* Attività */}
