@@ -5,6 +5,7 @@ import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch, uploadMedia } from '../../../lib/api'
 import RichTextEditor from '../../../components/admin/RichTextEditor'
 import { ArrowLeft, Upload, X, Eye, EyeOff } from 'lucide-react'
+import AiButton from '../../../components/admin/AiButton'
 
 export default function BlogEditorPage() {
   const { id } = useParams()
@@ -130,7 +131,10 @@ export default function BlogEditorPage() {
         {/* Titolo + metadati */}
         <div style={card}>
           <div style={{ marginBottom: 16 }}>
-            <label style={lbl}>Titolo *</label>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <label style={{ ...lbl, marginBottom: 0 }}>Titolo *</label>
+              <AiButton tipo="blog_titolo" nomeBusiness={azienda?.ragione_sociale || ''} label="✨ Genera titolo" showTono={false} placeholder="Es: articolo sulla nostra piscina, offerta estiva, eventi del weekend…" onInsert={t => set('title', t)} />
+            </div>
             <input value={form.title} onChange={e => set('title', e.target.value)} style={inp} placeholder="Titolo dell'articolo" />
           </div>
           <div style={{ marginBottom: 16 }}>
@@ -179,7 +183,18 @@ export default function BlogEditorPage() {
 
         {/* Contenuto */}
         <div style={card}>
-          <label style={lbl}>Contenuto</label>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <label style={{ ...lbl, marginBottom: 0 }}>Contenuto</label>
+            <AiButton
+              tipo="blog_corpo"
+              nomeBusiness={azienda?.ragione_sociale || ''}
+              contesto={form.title ? `Titolo articolo: "${form.title}"` : ''}
+              temaSuggerito={form.title || ''}
+              label="✨ Genera testo"
+              placeholder="Es: articolo sulla nostra storia, guida alla zona, consigli pratici…"
+              onInsert={t => set('content', t.split('\n\n').filter(Boolean).map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join(''))}
+            />
+          </div>
           <RichTextEditor content={form.content} onChange={v => set('content', v)} />
         </div>
 

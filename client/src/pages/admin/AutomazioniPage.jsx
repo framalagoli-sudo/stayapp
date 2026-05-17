@@ -5,6 +5,7 @@ import {
   Zap, Plus, Trash2, ToggleLeft, ToggleRight, ChevronDown, ChevronUp,
   Send, Check, X, Clock, Mail, AlertCircle,
 } from 'lucide-react'
+import AiButton from '../../components/admin/AiButton'
 
 const TRIGGERS = [
   { key: 'nuova_prenotazione', label: 'Nuova prenotazione',      desc: 'Quando un cliente prenota una risorsa' },
@@ -69,7 +70,17 @@ function StepEditor({ step, idx, trigger, onChange, onRemove }) {
       </div>
 
       <div style={{ marginBottom: 10 }}>
-        <label style={{ display: 'block', fontSize: 11, color: '#888', marginBottom: 4 }}>Testo</label>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <label style={{ fontSize: 11, color: '#888' }}>Testo</label>
+          <AiButton
+            tipo="email_corpo"
+            contesto={vars.length > 0 ? `Variabili disponibili: ${vars.join(', ')}` : ''}
+            label="✨ Genera"
+            showTono={false}
+            placeholder={`Es: email di conferma prenotazione, promemoria visita, richiesta recensione…`}
+            onInsert={t => onChange({ ...step, text: t })}
+          />
+        </div>
         <textarea
           rows={4} value={step.text} placeholder="Corpo dell'email…"
           onChange={e => onChange({ ...step, text: e.target.value })}

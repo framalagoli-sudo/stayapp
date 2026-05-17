@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAzienda } from '../../context/AziendaContext'
 import { apiFetch } from '../../lib/api'
 import { ArrowLeft, Send, Eye, Save, Plus, Trash2, AlertCircle, CheckCircle, Smile, Clock, X } from 'lucide-react'
+import AiButton from '../../components/admin/AiButton'
 
 const EMOJIS = [
   '🎯','⚡','🔥','✨','💫','🎉','🎁','🌟','💥','❗',
@@ -298,7 +299,19 @@ export default function NewsletterEditorPage() {
           {/* Oggetto + Preheader + Mittente + Schedule */}
           <Section title="Informazioni generali">
             <div style={{ marginBottom: 14 }}>
-              <span style={label}>Oggetto email</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={label}>Oggetto email</span>
+                {!isSent && (
+                  <AiButton
+                    tipo="newsletter_oggetto"
+                    nomeBusiness={currentEntity?.label || ''}
+                    label="✨ Genera oggetto"
+                    showTono={false}
+                    placeholder="Es: offerta estate, news mensile, evento speciale…"
+                    onInsert={t => setSubject(t)}
+                  />
+                )}
+              </div>
               <div style={{ display: 'flex', gap: 8, position: 'relative' }}>
                 <input ref={subjectRef} value={subject} onChange={e => setSubject(e.target.value)} disabled={isSent}
                   placeholder="Es: Offerta speciale solo per te!" style={{ ...inp, flex: 1 }} />
@@ -406,7 +419,17 @@ export default function NewsletterEditorPage() {
           )}
 
           {/* Content fields */}
-          <Section title="Contenuto">
+          <Section title="Contenuto" extra={!isSent && templateId !== 'notizie' ? (
+            <AiButton
+              tipo="newsletter_corpo"
+              nomeBusiness={currentEntity?.label || ''}
+              contesto={subject ? `Oggetto: "${subject}"` : ''}
+              temaSuggerito={subject || ''}
+              label="✨ Genera testo"
+              placeholder="Es: promozione weekend, notizie di settembre, evento speciale…"
+              onInsert={t => patchContent('text', t)}
+            />
+          ) : null}>
             {templateId === 'semplice' && <SempliceFields c={content} patch={patchContent} inp={inp} label={label} disabled={isSent} />}
             {templateId === 'promozione' && <PromozioneFields c={content} patch={patchContent} inp={inp} label={label} disabled={isSent} />}
             {templateId === 'notizie' && <NotizieFIelds c={content} setContent={setContent} inp={inp} label={label} disabled={isSent} />}
@@ -592,10 +615,13 @@ function EventoFields({ c, patch, inp, label, disabled }) {
 
 // ─── UI helpers ───────────────────────────────────────────────────────────────
 
-function Section({ title, children }) {
+function Section({ title, children, extra }) {
   return (
     <div style={{ background: '#fff', borderRadius: 12, padding: '20px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 16 }}>{title}</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 0.6 }}>{title}</div>
+        {extra}
+      </div>
       {children}
     </div>
   )

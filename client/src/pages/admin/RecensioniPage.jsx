@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useAzienda } from '../../context/AziendaContext'
 import { Star, Plus, Trash2, Eye, EyeOff, Link, Copy, Check, AlertCircle, MessageSquare } from 'lucide-react'
+import AiButton from '../../components/admin/AiButton'
 
 const FONTI = [
   { key: 'form',         label: 'Form',         color: '#276749' },
@@ -173,6 +174,7 @@ function RecensioneRow({ rec, onToggle, onDelete, onPatch }) {
   const [risposta, setRisposta] = useState(rec.risposta || '')
   const [editResp, setEditResp] = useState(false)
   const [saving, setSaving] = useState(false)
+  const { azienda } = useAzienda()
 
   async function saveRisposta() {
     setSaving(true)
@@ -198,6 +200,18 @@ function RecensioneRow({ rec, onToggle, onDelete, onPatch }) {
           {/* Risposta admin */}
           {editResp ? (
             <div style={{ marginTop: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontSize: 11, color: '#888' }}>La tua risposta</span>
+                <AiButton
+                  tipo="risposta_recensione"
+                  nomeBusiness={azienda?.ragione_sociale || ''}
+                  showTono={false}
+                  label="✨ Suggerisci"
+                  temaSuggerito={`Stelle: ${rec.stelle}/5\n${rec.testo ? `Recensione: ${rec.testo}` : ''}`}
+                  placeholder="Incolla o descrivi la recensione…"
+                  onInsert={t => setRisposta(t)}
+                />
+              </div>
               <textarea value={risposta} onChange={e => setRisposta(e.target.value)} rows={2}
                 placeholder="La tua risposta…"
                 style={{ width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, resize: 'vertical', boxSizing: 'border-box' }} />

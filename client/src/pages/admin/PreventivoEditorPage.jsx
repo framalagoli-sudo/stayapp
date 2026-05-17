@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
+import { useAzienda } from '../../context/AziendaContext'
 import {
   Save, Send, Trash2, Plus, Copy, Check, AlertCircle, ArrowLeft, FileText,
 } from 'lucide-react'
+import AiButton from '../../components/admin/AiButton'
 
 const STATI_LABEL = {
   bozza:     { label: 'Bozza',     color: '#666',   bg: '#f5f5f5' },
@@ -36,6 +38,7 @@ function fmt(n, currency = 'EUR') {
 export default function PreventivoEditorPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { azienda } = useAzienda()
 
   const [prev, setPrev] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -338,7 +341,21 @@ export default function PreventivoEditorPage() {
 
         {/* Note */}
         <div style={{ marginTop: 20 }}>
-          <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>Note (visibili al cliente)</label>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <label style={{ fontSize: 12, color: '#888' }}>Note (visibili al cliente)</label>
+            {!isReadonly && (
+              <AiButton
+                tipo="preventivo_note"
+                nomeBusiness={azienda?.ragione_sociale || ''}
+                contesto={titolo ? `Titolo preventivo: "${titolo}"` : ''}
+                temaSuggerito={titolo || ''}
+                label="✨ Genera note"
+                showTono={false}
+                placeholder="Es: inclusa consulenza iniziale, validità 30 giorni, pagamento 50% anticipo…"
+                onInsert={t => setNote(t)}
+              />
+            )}
+          </div>
           <textarea
             value={note} onChange={e => setNote(e.target.value)}
             disabled={isReadonly}

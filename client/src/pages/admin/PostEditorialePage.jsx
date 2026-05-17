@@ -269,9 +269,12 @@ export default function PostEditorialePage() {
               {aiResult && (
                 <div style={{ marginBottom: 16 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Testo generato</div>
-                  <div style={{ background: '#f8f8ff', border: '1.5px solid #e0deff', borderRadius: 10, padding: '12px 14px', fontSize: 13, lineHeight: 1.7, color: '#333', whiteSpace: 'pre-wrap', maxHeight: 220, overflowY: 'auto' }}>
-                    {aiResult}
-                  </div>
+                  <textarea
+                    value={aiResult}
+                    onChange={e => setAiResult(e.target.value)}
+                    rows={7}
+                    style={{ width: '100%', background: '#f8f8ff', border: '1.5px solid #e0deff', borderRadius: 10, padding: '12px 14px', fontSize: 13, lineHeight: 1.7, color: '#333', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                  />
                   <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                     <button onClick={insertAiText} style={{ flex: 1, padding: '9px 0', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                       Usa questo testo

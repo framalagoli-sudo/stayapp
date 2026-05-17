@@ -7,6 +7,7 @@ import {
   Calendar, FileText, Clock, Mail, Phone, MapPin, ChevronDown, ChevronUp,
   Plus, Trash2, ImageIcon,
 } from 'lucide-react'
+import AiButton from '../../components/admin/AiButton'
 import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel } from '../../lib/blockTypes'
 
 function uid() { return crypto.randomUUID() }
@@ -107,7 +108,21 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
     case 'about': return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <Field label="Titolo sezione" value={data.title} onChange={v => upd('title', v)} />
-        <Field label="Testo" value={data.text} onChange={v => upd('text', v)} multiline rows={5} />
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <label style={{ fontSize: 12, color: '#555', fontWeight: 500 }}>Testo</label>
+            <AiButton
+              tipo="minisito_about"
+              contesto={data.title ? `Sezione: "${data.title}"` : ''}
+              temaSuggerito={data.title || ''}
+              label="✨ Genera"
+              showTono={false}
+              placeholder="Descrivi brevemente di cosa tratta questa sezione…"
+              onInsert={v => upd('text', v)}
+            />
+          </div>
+          <textarea value={data.text || ''} onChange={e => upd('text', e.target.value)} rows={5} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+        </div>
       </div>
     )
     case 'foto_testo': return (
