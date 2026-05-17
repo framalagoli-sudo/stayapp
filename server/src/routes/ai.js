@@ -59,12 +59,8 @@ const CHANNEL_RULES = {
 }
 
 async function getAziendaId(userId) {
-  const { data: profile } = await supabase
-    .from('profiles').select('property_id').eq('id', userId).single()
-  if (!profile?.property_id) return null
-  const { data: prop } = await supabase
-    .from('properties').select('azienda_id').eq('id', profile.property_id).single()
-  return prop?.azienda_id || null
+  const { data } = await supabase.from('profiles').select('azienda_id').eq('id', userId).single()
+  return data?.azienda_id || null
 }
 
 // POST /api/ai/social-post
