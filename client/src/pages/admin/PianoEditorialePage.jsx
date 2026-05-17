@@ -53,7 +53,8 @@ export default function PianoEditorialePage() {
   const now = new Date()
   const [year, setYear]   = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth()) // 0-indexed
-  const [posts, setPosts] = useState([])
+  const [posts, setPosts]   = useState([])
+  const [drafts, setDrafts] = useState([]) // post senza data pianificata
   const [loading, setLoading] = useState(true)
   const [view, setView]   = useState('calendar') // 'calendar' | 'list'
   const [error, setError] = useState('')
@@ -62,8 +63,12 @@ export default function PianoEditorialePage() {
     setLoading(true)
     try {
       const mm = String(m + 1).padStart(2, '0')
-      const data = await apiFetch(`/api/piano-editoriale?mese=${y}-${mm}`)
+      const [data, senzaData] = await Promise.all([
+        apiFetch(`/api/piano-editoriale?mese=${y}-${mm}`),
+        apiFetch('/api/piano-editoriale?senza_data=1'),
+      ])
       setPosts(data)
+      setDrafts(senzaData)
     } catch (e) { setError(e.message) }
     setLoading(false)
   }
@@ -206,53 +211,70 @@ export default function PianoEditorialePage() {
 
       {/* Vista lista */}
       {view === 'list' && (
-        loading ? <p style={{ color: '#888' }}>Caricamento…</p> :
-        posts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px 0', color: '#aaa' }}>
-            <Calendar size={40} strokeWidth={1} style={{ marginBottom: 12 }} />
-            <p>Nessun post in questo mese</p>
-          </div>
-        ) : (
+        loading ? <p style={{ color: '#888' }}>Caricamento…</p> : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {posts.map(p => {
-              const stInfo = STATO_INFO[p.stato] || STATO_INFO.bozza
-              return (
-                <div
-                  key={p.id}
-                  onClick={() => navigate(`/admin/piano-editoriale/${p.id}`)}
-                  style={{ background: '#fff', borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer', border: '1px solid #eee' }}
-                >
-                  <div style={{ width: 40, textAlign: 'center', flexShrink: 0 }}>
-                    {p.data_pianificata ? (
-                      <>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: '#1a1a2e', lineHeight: 1 }}>
-                          {new Date(p.data_pianificata).getDate()}
-                        </div>
-                        <div style={{ fontSize: 10, color: '#aaa', textTransform: 'uppercase' }}>
-                          {MESI[new Date(p.data_pianificata).getMonth()]?.slice(0, 3)}
-                        </div>
-                      </>
-                    ) : (
-                      <span style={{ fontSize: 11, color: '#ccc' }}>—</span>
-                    )}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>{p.titolo || '(senza titolo)'}</div>
-                    {p.testo && <div style={{ fontSize: 12, color: '#888', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.testo}</div>}
-                    <CanaliPills canali={p.canali} />
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: stInfo.bg, color: stInfo.color, flexShrink: 0 }}>
-                    {stInfo.label}
-                  </span>
-                  <button onClick={(e) => handleDelete(p.id, e)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#ddd', flexShrink: 0 }}>
-                    <Trash2 size={15} strokeWidth={1.5} />
-                  </button>
+            {/* Bozze senza data */}
+            {drafts.length > 0 && (
+              <>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.6, padding: '4px 0 8px' }}>
+                  Bozze non pianificate ({drafts.length})
                 </div>
-              )
-            })}
+                {drafts.map(p => <PostRow key={p.id} p={p} navigate={navigate} handleDelete={handleDelete} />)}
+                {posts.length > 0 && <div style={{ borderTop: '1px solid #eee', margin: '8px 0' }} />}
+              </>
+            )}
+            {/* Post del mese */}
+            {posts.length === 0 && drafts.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '48px 0', color: '#aaa' }}>
+                <Calendar size={40} strokeWidth={1} style={{ marginBottom: 12 }} />
+                <p>Nessun post in questo mese</p>
+              </div>
+            ) : posts.length > 0 && (
+              <>
+                {drafts.length > 0 && <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.6, padding: '4px 0 8px' }}>Questo mese</div>}
+                {posts.map(p => <PostRow key={p.id} p={p} navigate={navigate} handleDelete={handleDelete} />)}
+              </>
+            )}
           </div>
         )
       )}
     </div>
   )
 }
+
+function PostRow({ p, navigate, handleDelete }) {
+  const stInfo = STATO_INFO[p.stato] || STATO_INFO.bozza
+  return (
+    <div
+      onClick={() => navigate(`/admin/piano-editoriale/${p.id}`)}
+      style={{ background: '#fff', borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer', border: '1px solid #eee' }}
+    >
+      <div style={{ width: 40, textAlign: 'center', flexShrink: 0 }}>
+        {p.data_pianificata ? (
+          <>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#1a1a2e', lineHeight: 1 }}>
+              {new Date(p.data_pianificata).getDate()}
+            </div>
+            <div style={{ fontSize: 10, color: '#aaa', textTransform: 'uppercase' }}>
+              {MESI[new Date(p.data_pianificata).getMonth()]?.slice(0, 3)}
+            </div>
+          </>
+        ) : (
+          <span style={{ fontSize: 11, color: '#ccc' }}>—</span>
+        )}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>{p.titolo || '(senza titolo)'}</div>
+        {p.testo && <div style={{ fontSize: 12, color: '#888', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.testo}</div>}
+        <CanaliPills canali={p.canali} />
+      </div>
+      <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: stInfo.bg, color: stInfo.color, flexShrink: 0 }}>
+        {stInfo.label}
+      </span>
+      <button onClick={(e) => handleDelete(p.id, e)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#ddd', flexShrink: 0 }}>
+        <Trash2 size={15} strokeWidth={1.5} />
+      </button>
+    </div>
+  )
+}
+

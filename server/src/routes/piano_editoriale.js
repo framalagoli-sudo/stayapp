@@ -22,11 +22,12 @@ router.get('/', requireAuth, async (req, res) => {
       .order('data_pianificata', { ascending: true, nullsFirst: false })
 
     if (req.query.stato)  q = q.eq('stato', req.query.stato)
-    if (req.query.mese) {
-      // mese nel formato YYYY-MM
+    if (req.query.senza_data) {
+      q = q.is('data_pianificata', null)
+    } else if (req.query.mese) {
       const [year, month] = req.query.mese.split('-')
       const from = `${year}-${month}-01`
-      const to   = new Date(year, month, 1).toISOString().slice(0, 10) // primo del mese successivo
+      const to   = new Date(year, month, 1).toISOString().slice(0, 10)
       q = q.gte('data_pianificata', from).lt('data_pianificata', to)
     }
 
