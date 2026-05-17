@@ -3,9 +3,10 @@ import { apiFetch } from '../../lib/api'
 import { X, Download, CalendarPlus, Sparkles, Check, AlertCircle, Image } from 'lucide-react'
 
 const FORMATI = [
-  { k: '1:1',  label: 'Feed',    w: 1080, h: 1080 },
-  { k: '9:16', label: 'Story',   w: 1080, h: 1920 },
-  { k: '16:9', label: 'Cover',   w: 1920, h: 1080 },
+  { k: '1:1',  label: 'Feed',      w: 1080, h: 1080 },
+  { k: '4:5',  label: 'Portrait',  w: 1080, h: 1350 },
+  { k: '9:16', label: 'Story',     w: 1080, h: 1920 },
+  { k: '16:9', label: 'Cover',     w: 1920, h: 1080 },
 ]
 
 const CANALI = [
