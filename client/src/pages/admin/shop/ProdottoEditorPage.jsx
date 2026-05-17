@@ -87,6 +87,7 @@ export default function ProdottoEditorPage() {
     ? Math.round((1 - parseFloat(prezzoScontato) / parseFloat(prezzo)) * 100) : null
 
   return (
+    <>
     <div style={{ maxWidth: 720 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
         <button onClick={() => navigate('/admin/shop')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
@@ -222,5 +223,6 @@ export default function ProdottoEditorPage() {
       tipo="prodotto shop"
       nomeBusiness={azienda?.ragione_sociale || ''}
     />
+    </>
   )
 }

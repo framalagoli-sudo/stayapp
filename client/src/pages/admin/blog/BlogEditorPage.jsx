@@ -83,6 +83,7 @@ export default function BlogEditorPage() {
     ? strutture : form.entity_tipo === 'ristorante' ? ristoranti : []
 
   return (
+    <>
     <div style={{ maxWidth: 800 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
@@ -227,6 +228,7 @@ export default function BlogEditorPage() {
       tipo="articolo blog"
       nomeBusiness={azienda?.ragione_sociale || ''}
     />
+    </>
   )
 }
 

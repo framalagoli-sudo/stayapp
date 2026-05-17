@@ -146,6 +146,7 @@ export default function EventoEditPage() {
   ]
 
   return (
+    <>
     <div style={{ maxWidth: 700 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
@@ -331,6 +332,7 @@ export default function EventoEditPage() {
         nomeBusiness={azienda?.ragione_sociale || ''}
       />
     </div>
+    </>
   )
 }
 
