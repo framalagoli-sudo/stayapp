@@ -134,8 +134,8 @@ export default function DashboardPage() {
     if (ev.status === 'fulfilled') {
       const all = ev.value || []
       const upcoming = all
-        .filter(e => e.data_inizio && e.data_inizio >= today)
-        .sort((a, b) => a.data_inizio.localeCompare(b.data_inizio))
+        .filter(e => e.date_start && e.date_start >= today)
+        .sort((a, b) => a.date_start.localeCompare(b.date_start))
         .slice(0, 5)
       setEventiProssimi(upcoming)
     }
@@ -305,7 +305,7 @@ export default function DashboardPage() {
           <SectionCard title="Prossimi eventi" icon={CalendarDays} iconColor="#0284c7" action="Tutti gli eventi" actionTo="/admin/eventi" navigate={navigate}>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {eventiProssimi.map(e => {
-                const data = e.data_inizio ? new Date(e.data_inizio) : null
+                const data = e.date_start ? new Date(e.date_start) : null
                 const giorno = data ? data.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }) : '—'
                 const ore    = data ? data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : ''
                 return (
@@ -321,10 +321,10 @@ export default function DashboardPage() {
                     </div>
                     <div style={{ width: 1, height: 36, background: '#f0f0f0', flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.titolo}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title}</div>
                       {ore && <div style={{ fontSize: 12, color: '#aaa', display: 'flex', alignItems: 'center', gap: 4, marginTop: 1 }}>
                         <Clock size={11} strokeWidth={1.5} /> {ore}
-                        {e.prezzo ? <><span style={{ color: '#ddd' }}>·</span> €{e.prezzo}</> : null}
+                        {e.price ? <><span style={{ color: '#ddd' }}>·</span> €{e.price}</> : null}
                       </div>}
                     </div>
                   </div>

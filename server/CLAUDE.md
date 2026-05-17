@@ -142,7 +142,7 @@ error text, created_at
 id uuid PK, azienda_id (FK), entity_tipo text, entity_id uuid,
 nome text, email text,
 stelle int CHECK (stelle BETWEEN 1 AND 5),
-commento text, risposta text,
+testo text, risposta text,
 fonte text DEFAULT 'interno',  -- 'interno'|'google'|'tripadvisor'|'booking'|'altro'
 pubblica boolean DEFAULT false,
 token uuid UNIQUE DEFAULT gen_random_uuid(),
@@ -187,7 +187,7 @@ id uuid PK, azienda_id (FK),
 titolo text, testo text, immagine_url text,
 canali text[] DEFAULT '{}',
 -- canali: 'instagram'|'facebook'|'linkedin'|'tiktok'|'x'|'google_business'
-data_pubblicazione timestamptz,
+data_pianificata timestamptz,
 stato text DEFAULT 'bozza',  -- 'bozza'|'pianificato'|'pubblicato'
 note_interne text,
 created_at, updated_at

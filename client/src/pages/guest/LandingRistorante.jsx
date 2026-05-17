@@ -94,7 +94,7 @@ export default function LandingRistorante({ ristorante }) {
     const key = `pv_${ristorante.id}`
     if (sessionStorage.getItem(key)) return
     sessionStorage.setItem(key, '1')
-    fetch('/api/guest/pageview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity_tipo: 'ristorante', entity_id: ristorante.id }) }).catch(() => {})
+    apiFetch('/api/guest/pageview', { method: 'POST', body: JSON.stringify({ entity_tipo: 'ristorante', entity_id: ristorante.id }) }).catch(() => {})
   }, [ristorante?.id])
 
   useEffect(() => {
@@ -1053,12 +1053,10 @@ function NewsletterForm({ aziendaId, primary, privacyUrl }) {
     if (!privacy) return
     setState('loading')
     try {
-      const r = await fetch('/api/contatti/subscribe', {
+      const data = await apiFetch('/api/contatti/subscribe', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ azienda_id: aziendaId, email, fonte: 'minisito' }),
       })
-      const data = await r.json()
       setState(data.pending_confirmation ? 'pending' : data.duplicate ? 'duplicate' : 'success')
     } catch { setState('error') }
   }
@@ -1115,9 +1113,8 @@ function ContactForm({ entityTipo, entityId, primary, privacyUrl }) {
     if (!privacy) return
     setState('loading')
     try {
-      await fetch('/api/guest/contact', {
+      await apiFetch('/api/guest/contact', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, name, email, message }),
       })
       setState('success')

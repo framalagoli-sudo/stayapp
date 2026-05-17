@@ -26,8 +26,8 @@ export default function ShopWidget({ aziendaId, primaryColor = '#1a1a2e' }) {
 
   useEffect(() => {
     if (!aziendaId) return
-    fetch(`/api/shop/public/${aziendaId}/prodotti`)
-      .then(r => r.json()).then(setProdotti).catch(() => {})
+    apiFetch(`/api/shop/public/${aziendaId}/prodotti`)
+      .then(setProdotti).catch(() => {})
       .finally(() => setLoading(false))
   }, [aziendaId])
 
@@ -38,16 +38,13 @@ export default function ShopWidget({ aziendaId, primaryColor = '#1a1a2e' }) {
     if (!email.trim()) { setErrore('Email obbligatoria'); return }
     setSubmitting(true); setErrore('')
     try {
-      const res = await fetch(`/api/shop/public/${aziendaId}/ordine`, {
+      const data = await apiFetch(`/api/shop/public/${aziendaId}/ordine`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email_cliente: email, nome_cliente: nome, telefono_cliente: tel,
           indirizzo: { via, cap, citta }, voci, note_cliente: note,
         }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Errore')
       if (data.checkout_url) {
         window.location.href = data.checkout_url
       } else {

@@ -8,6 +8,8 @@ import {
   RefreshCw, Edit3, Globe, ArrowRight, Quote,
 } from 'lucide-react'
 
+const API_BASE = import.meta.env.VITE_API_URL ?? ''
+
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const PRIMARY    = '#1A6490'
 const ACCENT     = '#C4952A'
@@ -763,7 +765,7 @@ function DemoForm() {
     e.preventDefault(); if (!privacy) return
     setSending(true); setErrore(null)
     try {
-      const res = await fetch('/api/demo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+      const res = await fetch(`${API_BASE}/api/demo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
       const d = await res.json()
       if (!res.ok) throw new Error(d.error || 'Errore')
       setSent(true)

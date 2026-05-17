@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 
+const API_BASE = import.meta.env.VITE_API_URL ?? ''
+
 export default function SignupPage() {
   const navigate = useNavigate()
   const [form, setForm] = useState({ nome_azienda: '', email: '', password: '', confirm: '' })
@@ -11,7 +13,7 @@ export default function SignupPage() {
   const [closed, setClosed] = useState(false)
 
   useEffect(() => {
-    fetch('/api/auth/signup-status')
+    fetch(`${API_BASE}/api/auth/signup-status`)
       .then(r => r.json())
       .then(d => { if (!d.signup_enabled) setClosed(true) })
       .catch(() => {})
@@ -24,7 +26,7 @@ export default function SignupPage() {
     if (form.password !== form.confirm) return setError('Le password non coincidono.')
     setLoading(true)
     try {
-      const res = await fetch('/api/auth/signup', {
+      const res = await fetch(`${API_BASE}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nome_azienda: form.nome_azienda, email: form.email, password: form.password }),

@@ -113,9 +113,9 @@ router.post('/piano', requireAuth, async (req, res) => {
 
     const [{ data: az }, { data: eventi }, { data: prodotti }, { data: recensioni }] = await Promise.all([
       supabase.from('aziende').select('ragione_sociale, content_strategy').eq('id', azienda_id).single(),
-      supabase.from('eventi').select('titolo, data_inizio, descrizione')
+      supabase.from('eventi').select('title, date_start, description')
         .eq('azienda_id', azienda_id)
-        .gte('data_inizio', dataInizio).lte('data_inizio', dataFine).limit(8),
+        .gte('date_start', dataInizio).lte('date_start', dataFine).limit(8),
       supabase.from('prodotti').select('nome, descrizione')
         .eq('azienda_id', azienda_id).eq('attivo', true).limit(5),
       supabase.from('recensioni').select('stelle, testo')
@@ -136,7 +136,7 @@ Content Pillar: ${pillarNames || 'educational, promozionale, community, behind t
 Piattaforme da usare: ${(strategy.piattaforme || ['instagram', 'facebook']).join(', ')}
 
 Contesto reale del mese:
-- Eventi programmati: ${eventi?.length ? eventi.map(e => `"${e.titolo}" (${e.data_inizio})`).join('; ') : 'nessuno'}
+- Eventi programmati: ${eventi?.length ? eventi.map(e => `"${e.title}" (${e.date_start})`).join('; ') : 'nessuno'}
 - Prodotti/servizi attivi: ${prodotti?.length ? prodotti.map(p => p.nome).join(', ') : 'nessuno'}
 - Recensioni positive recenti: ${recensioni?.length ? recensioni.map(r => `"${(r.testo || '').substring(0, 70)}"`).join(' | ') : 'nessuna'}
 
@@ -236,9 +236,9 @@ router.get('/gap', requireAuth, async (req, res) => {
     const meseEnd = today.slice(0, 7) + '-31'
 
     const [evRes, prRes, arRes, piRes] = await Promise.all([
-      supabase.from('eventi').select('id, titolo, data_inizio, cover_url, prezzo')
-        .eq('azienda_id', azienda_id).gte('data_inizio', today).lte('data_inizio', in30)
-        .order('data_inizio').limit(6),
+      supabase.from('eventi').select('id, title, date_start, cover_url, price')
+        .eq('azienda_id', azienda_id).gte('date_start', today).lte('date_start', in30)
+        .order('date_start').limit(6),
       supabase.from('prodotti').select('id, nome, prezzo, immagini')
         .eq('azienda_id', azienda_id).eq('attivo', true)
         .order('created_at', { ascending: false }).limit(6),

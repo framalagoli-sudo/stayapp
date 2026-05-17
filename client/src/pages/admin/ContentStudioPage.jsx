@@ -586,15 +586,15 @@ function OpportunitaTab({ nome }) {
           <SectionHeader icon={Calendar} label={`Prossimi eventi (${eventi.length})`} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {eventi.map(e => {
-              const dateStr = e.data_inizio ? new Date(e.data_inizio).toLocaleDateString('it-IT') : ''
+              const dateStr = e.date_start ? new Date(e.date_start).toLocaleDateString('it-IT') : ''
               return (
                 <GapCard key={e.id}
                   immagine={e.cover_url}
-                  titolo={e.titolo}
-                  sub={[dateStr, e.prezzo ? `€${e.prezzo}` : ''].filter(Boolean).join(' · ')}
+                  titolo={e.title}
+                  sub={[dateStr, e.price ? `€${e.price}` : ''].filter(Boolean).join(' · ')}
                   onCrea={() => apriPost({
-                    titolo: e.titolo,
-                    sottotitolo: [dateStr, e.prezzo ? `€${e.prezzo}` : ''].filter(Boolean).join(' · '),
+                    titolo: e.title,
+                    sottotitolo: [dateStr, e.price ? `€${e.price}` : ''].filter(Boolean).join(' · '),
                     immagine: e.cover_url || '',
                     tipo: 'evento',
                   })}

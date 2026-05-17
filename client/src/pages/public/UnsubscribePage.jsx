@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { CheckCircle, XCircle } from 'lucide-react'
 
+const API_BASE = import.meta.env.VITE_API_URL ?? ''
+
 export default function UnsubscribePage() {
   const [params] = useSearchParams()
   const token = params.get('token')
@@ -9,7 +11,7 @@ export default function UnsubscribePage() {
 
   useEffect(() => {
     if (!token) { setState('error'); return }
-    fetch(`/api/guest/unsubscribe?token=${encodeURIComponent(token)}`)
+    fetch(`${API_BASE}/api/guest/unsubscribe?token=${encodeURIComponent(token)}`)
       .then(r => r.ok ? setState('ok') : setState('error'))
       .catch(() => setState('error'))
   }, [token])

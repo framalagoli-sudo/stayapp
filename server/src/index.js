@@ -3,6 +3,7 @@ import express from 'express'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 import cors from 'cors'
+import { supabase } from './lib/supabase.js'
 
 process.on('unhandledRejection', (reason) => {
   console.error('[unhandledRejection]', reason)

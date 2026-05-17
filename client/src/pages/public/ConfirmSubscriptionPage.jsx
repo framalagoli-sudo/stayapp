@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { CheckCircle, XCircle, Loader } from 'lucide-react'
 
+const API_BASE = import.meta.env.VITE_API_URL ?? ''
+
 export default function ConfirmSubscriptionPage() {
   const [params] = useSearchParams()
   const [state, setState] = useState('loading')
@@ -9,7 +11,7 @@ export default function ConfirmSubscriptionPage() {
   useEffect(() => {
     const token = params.get('token')
     if (!token) { setState('error'); return }
-    fetch(`/api/guest/confirm-subscription?token=${encodeURIComponent(token)}`)
+    fetch(`${API_BASE}/api/guest/confirm-subscription?token=${encodeURIComponent(token)}`)
       .then(r => r.json())
       .then(data => setState(data.ok ? 'ok' : 'error'))
       .catch(() => setState('error'))

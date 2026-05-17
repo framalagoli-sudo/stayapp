@@ -106,7 +106,7 @@ export default function LandingStruttura({ property }) {
     const key = `pv_${property.id}`
     if (sessionStorage.getItem(key)) return
     sessionStorage.setItem(key, '1')
-    fetch('/api/guest/pageview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity_tipo: 'struttura', entity_id: property.id }) }).catch(() => {})
+    apiFetch('/api/guest/pageview', { method: 'POST', body: JSON.stringify({ entity_tipo: 'struttura', entity_id: property.id }) }).catch(() => {})
   }, [property?.id])
 
   useEffect(() => {

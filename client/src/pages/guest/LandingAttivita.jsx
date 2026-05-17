@@ -102,7 +102,7 @@ export default function LandingAttivita({ attivita }) {
     const key = `pv_${attivita.id}`
     if (sessionStorage.getItem(key)) return
     sessionStorage.setItem(key, '1')
-    fetch('/api/guest/pageview', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity_tipo: 'attivita', entity_id: attivita.id }) }).catch(() => {})
+    apiFetch('/api/guest/pageview', { method: 'POST', body: JSON.stringify({ entity_tipo: 'attivita', entity_id: attivita.id }) }).catch(() => {})
   }, [attivita?.id])
 
   useEffect(() => {
@@ -787,12 +787,10 @@ function NewsletterForm({ aziendaId, primary, privacyUrl }) {
     if (!privacy) return
     setState('loading')
     try {
-      const r = await fetch('/api/contatti/subscribe', {
+      const data = await apiFetch('/api/contatti/subscribe', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ azienda_id: aziendaId, email, fonte: 'minisito' }),
       })
-      const data = await r.json()
       setState(data.pending_confirmation ? 'pending' : data.duplicate ? 'duplicate' : 'success')
     } catch { setState('error') }
   }
@@ -841,7 +839,7 @@ function ContactForm({ entityTipo, entityId, primary, privacyUrl }) {
   const [nome, setNome] = useState(''); const [email, setEmail] = useState(''); const [message, setMessage] = useState(''); const [privacy, setPrivacy] = useState(false); const [state, setState] = useState('idle')
   async function handleSubmit(e) {
     e.preventDefault(); if (!privacy) return; setState('loading')
-    try { await fetch('/api/guest/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, name: nome, email, message }) }); setState('success') } catch { setState('error') }
+    try { await apiFetch('/api/guest/contact', { method: 'POST', body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, name: nome, email, message }) }); setState('success') } catch { setState('error') }
   }
   if (state === 'success') return (<div style={{ textAlign: 'center', padding: '40px 0' }}><div style={{ fontSize: 48, marginBottom: 16 }}>✓</div><p style={{ fontWeight: 700, fontSize: 18, color: primary }}>Messaggio inviato!</p></div>)
   const inp = { width: '100%', padding: '12px 16px', borderRadius: 10, border: '1px solid #e0e0e0', fontSize: 15, marginBottom: 16, boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none' }
