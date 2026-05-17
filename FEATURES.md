@@ -1,7 +1,7 @@
 # FEATURES — Roadmap prodotto StayApp
 
 Documento vivo. Aggiornato sessione per sessione.
-Ultima revisione: **2026-05-16** (Sprint 8 completo + responsive mobile audit + AI social post generator)
+Ultima revisione: **2026-05-17** (Sprint 5 e-commerce completo)
 
 ---
 
@@ -175,6 +175,22 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 - [x] DominiPage — fix hook condizionale + destructuring errato (`data` → `property`)
 - [x] Node.js su Vercel — cambiato da `24.x` a `20.x` LTS (build funzionante)
 
+### Sprint 5B — E-commerce / Shop ✅ 2026-05-17
+- [x] Migration `036_shop.sql`: tabelle `prodotti` + `ordini` (voci JSONB snapshot, stock null=illimitato, stato a 6 valori, stripe_session_id/payment_intent, tracking_url)
+- [x] Backend `shop.js`: CRUD prodotti admin, gestione ordini (lista + dettaglio + PATCH stato/note/tracking), endpoint pubblici con **price revalidation server-side** per sicurezza
+- [x] Stripe checkout opzionale: import dinamico, se `STRIPE_SECRET_KEY` non configurata → ordine COD senza redirect. Se configurata → Stripe Session
+- [x] Email conferma ordine via Resend
+- [x] `CarrelloContext`: carrello persistente localStorage (`stayapp_cart`), aggiungi/rimuovi/aggiorna/svuota, totale/count
+- [x] `ShopWidget`: componente pubblico con filtri categoria, griglia prodotti, qty +/−, carrello drawer, checkout form + indirizzo, conferma ordine
+- [x] Admin `ShopPage`: tab Prodotti (thumbnail, prezzo, toggle Eye, Trash2) + tab Ordini (filtro stato, badge colorati)
+- [x] Admin `ProdottoEditorPage`: nome, descrizione + AI, prezzo, scontato (% auto), stock, categoria, attivo, upload immagini multi
+- [x] Admin `OrdineDetailPage`: cliente + indirizzo, voci snapshot con subtotali, gestione stato/tracking/note_admin
+- [x] Sidebar AdminLayout: link "Shop" con icona ShoppingBag
+- [x] Landing pages Struttura/Ristorante/Attività: case 'shop' → `<ShopWidget aziendaId primaryColor />`
+- [x] MiniSito admin: 'shop' in DEFAULT_SECTION_ORDER + labels in tutte e 3 le pagine
+- **Migration da eseguire su Supabase:** `036_shop.sql` ⚠️
+- **Stripe opzionale:** aggiungere `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` in Railway quando pronto
+
 ### Sprint 10 — Stripe payments (prossimo) 🔴
 - [ ] Checkout booking risorse (deposito o totale)
 - [ ] Checkout eventi
@@ -250,8 +266,8 @@ Il refactor verso "Business" generico richiede principalmente:
 ### Client portal
 - [ ] Login cliente → vede prenotazioni, fatture, documenti
 
-### E-commerce base
-- [ ] Catalogo prodotti + carrello + checkout Stripe
+### E-commerce base ✅ 2026-05-17
+- [x] Catalogo prodotti + carrello + checkout (Stripe opzionale, COD fallback)
 
 ### Two-way inbox
 - [ ] Inbox unificata (form contatti + chatbot + WhatsApp) in admin
@@ -271,6 +287,7 @@ Il refactor verso "Business" generico richiede principalmente:
 - [x] **033_form_builder.sql** — tabelle `form_builder` + `form_submissions` ✅ 2026-05-16
 - [x] **034_piano_editoriale.sql** — tabella `piano_editoriale` ✅ 2026-05-16
 - [ ] **035_domini.sql** — tabella `domini` (sottodomini + domini custom)
+- [ ] **036_shop.sql** — tabelle `prodotti` + `ordini` ⚠️ da eseguire
 
 ### Infrastruttura
 
