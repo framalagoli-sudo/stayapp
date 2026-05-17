@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Euro, Mountain, Wind, CheckCircle, ChevronDown, Menu, X, Calendar, Users } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
 import CookieBanner from '../../components/CookieBanner'
@@ -67,6 +67,8 @@ function getEmbedUrl(url) {
 // entityType: 'struttura' | 'ristorante' | 'attivita'
 export default function PaginaPage({ entityType }) {
   const { slug, pageSlug } = useParams()
+  const [searchParams] = useSearchParams()
+  const isPreview = searchParams.get('preview') === '1'
   const [entity, setEntity] = useState(null)
   const [page, setPage] = useState(null)
   const [pagine, setPagine] = useState([])
@@ -121,8 +123,9 @@ export default function PaginaPage({ entityType }) {
       if (!entityData?.id) { setNotFound(true); setLoading(false); return }
       setEntity(entityData)
 
+      const previewParam = isPreview ? '?preview=1' : ''
       const [pageData, pagineData] = await Promise.all([
-        apiFetch(`/api/guest/pagina/${entityType}/${entityData.id}/${pageSlug}`),
+        apiFetch(`/api/guest/pagina/${entityType}/${entityData.id}/${pageSlug}${previewParam}`),
         apiFetch(`/api/guest/pagine/${entityType}/${entityData.id}`),
       ])
       if (!pageData?.id) { setNotFound(true); setLoading(false); return }

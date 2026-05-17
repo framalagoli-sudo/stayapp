@@ -490,7 +490,7 @@ export default function PaginaEditorPage() {
   async function openPreview() {
     if (dirty) await save()
     const url = previewUrl()
-    if (url) window.open(url, '_blank')
+    if (url) window.open(url + '?preview=1', '_blank')
   }
 
   function copyLink() {
