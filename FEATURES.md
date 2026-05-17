@@ -1,7 +1,7 @@
 # FEATURES — Roadmap prodotto StayApp
 
 Documento vivo. Aggiornato sessione per sessione.
-Ultima revisione: **2026-05-17** (Dashboard KPI + Survey/NPS + Content Studio Sprint B)
+Ultima revisione: **2026-05-17** (Google Calendar sync + Loyalty & Gift Card)
 
 ---
 
@@ -211,6 +211,28 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 - [x] +3 KPI card: Recensione media (⭐ media + conteggio), Prossimi eventi (30gg), Bozze piano editoriale
 - [x] Nuova sezione "Prossimi eventi" — lista con visualizzazione data (giorno/mese numerale) + ora + prezzo, click → editor evento
 
+### Google Calendar Sync ✅ 2026-05-17
+- [x] OAuth2 per account Google del cliente — un Google Cloud project per StayApp, ogni cliente connette il proprio account
+- [x] `/api/google-calendar/auth` + `/callback` + `/disconnect` + `/status`
+- [x] Token OAuth salvato per azienda in `aziende.google_calendar_token jsonb`; refresh automatico se scaduto
+- [x] Sync automatica alla creazione prenotazione pubblica (fire-and-forget)
+- [x] Sync su cambio stato: `confermata` → crea evento; `cancellata` → elimina evento
+- [x] `google_event_id` salvato su prenotazione per aggiornamenti/cancellazioni
+- [x] UI admin `/admin/integrazioni` — sezione Google Calendar: Connetti / Disconnetti, email account collegato
+- **Migration da eseguire:** `039_google_calendar.sql` ⚠️
+- **Setup manuale richiesto:** Google Cloud Console (API Calendar, OAuth 2.0, redirect URI) + Railway env `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`
+- **Test mode:** in "test mode" Google, aggiungere email clienti manualmente come utenti di test
+
+### Loyalty & Gift Card ✅ 2026-05-17
+- [x] Migration `040_loyalty.sql`: `loyalty_programs` + `loyalty_points` + `gift_cards` + colonne extra su `ordini`
+- [x] Admin `/admin/loyalty` — tab "Programma punti": configura nome, punti/€, valore punto, soglia riscatto + formula preview + classifica top 50 clienti per saldo
+- [x] Admin `/admin/loyalty` — tab "Gift Card": CRUD (crea con codice auto/manuale, valore, intestatario, scadenza; toggle attiva/disattiva; elimina)
+- [x] Shop integration: `applicaLoyaltyOrdine` calcola sconti punti + gift card prima del totale finale; `registraRiscatto` registra il riscatto; `assegnaPuntiOrdine` assegna punti post-ordine (tutti fire-and-forget)
+- [x] ShopWidget pubblico: lookup saldo punti by email (debounced 600ms), checkbox "usa punti" con sconto live, campo gift card con verifica inline, breakdown sconti nel footer checkout
+- [x] Endpoint pubblici: `GET /api/loyalty/public/:id/saldo?email=` + `GET /api/loyalty/public/:id/gift-card?codice=`
+- [x] API admin: `GET/PUT /api/loyalty/program`, `GET /api/loyalty/contatto/:id`, `POST /api/loyalty/assegna`, `GET /api/loyalty/classifica`, CRUD gift-cards
+- **Migration da eseguire:** `040_loyalty.sql` ⚠️
+
 ### Sprint 10 — Stripe Subscription Billing (prossimo) 🔴
 - [ ] Piani mensili (base/standard/premium) con prezzi
 - [ ] Checkout Stripe per subscription dalla pagina signup/trial
@@ -296,6 +318,7 @@ Il refactor verso "Business" generico richiede principalmente:
 
 ### E-commerce base ✅ 2026-05-17
 - [x] Catalogo prodotti + carrello + checkout (Stripe opzionale, COD fallback)
+- [x] Loyalty & Gift Card integrate nel checkout
 
 ### Two-way inbox
 - [ ] Inbox unificata (form contatti + chatbot + WhatsApp) in admin
@@ -318,6 +341,8 @@ Il refactor verso "Business" generico richiede principalmente:
 - [x] **036_shop.sql** — tabelle `prodotti` + `ordini` ✅ eseguita 2026-05-17
 - [x] **037_content_studio.sql** — colonna `content_strategy` su aziende ✅ eseguita 2026-05-17
 - [x] **038_survey.sql** — tabella `survey_risposte` ✅ eseguita 2026-05-17
+- [ ] **039_google_calendar.sql** — colonna `google_calendar_token` su aziende + `google_event_id` su prenotazioni ⚠️
+- [ ] **040_loyalty.sql** — tabelle `loyalty_programs`, `loyalty_points`, `gift_cards` + colonne su ordini ⚠️
 
 ### Infrastruttura
 
