@@ -1,6 +1,81 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
-import { Webhook, Plus, Trash2, Send, Check, X, ToggleLeft, ToggleRight, ChevronDown, ChevronUp } from 'lucide-react'
+import { Webhook, Plus, Trash2, Send, Check, X, ToggleLeft, ToggleRight, ChevronDown, ChevronUp, Calendar, CheckCircle, AlertCircle, Loader } from 'lucide-react'
+
+const API_BASE = import.meta.env.VITE_API_URL ?? ''
+
+function GoogleCalendarSection() {
+  const [status, setStatus] = useState(null) // null=loading, { connected, email }
+  const [disconnecting, setDisconnecting] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  useEffect(() => {
+    apiFetch('/api/google-calendar/status')
+      .then(d => setStatus(d))
+      .catch(() => setStatus({ connected: false, email: null }))
+  }, [])
+
+  // Gestisce il redirect dopo OAuth
+  useEffect(() => {
+    const gcal = searchParams.get('gcal')
+    if (gcal === 'ok') {
+      setStatus(null)
+      apiFetch('/api/google-calendar/status').then(d => setStatus(d)).catch(() => {})
+      setSearchParams({}, { replace: true })
+    } else if (gcal === 'error') {
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams])
+
+  async function handleDisconnect() {
+    if (!confirm('Disconnettere Google Calendar?')) return
+    setDisconnecting(true)
+    await apiFetch('/api/google-calendar/disconnect', { method: 'DELETE' })
+    setStatus({ connected: false, email: null })
+    setDisconnecting(false)
+  }
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #e8e8e8', borderRadius: 12, padding: '20px 22px', marginBottom: 28 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+        <Calendar size={20} strokeWidth={1.5} color="#4285F4" />
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e' }}>Google Calendar</div>
+          <div style={{ fontSize: 12, color: '#888', marginTop: 1 }}>
+            Le nuove prenotazioni vengono aggiunte automaticamente al tuo calendario
+          </div>
+        </div>
+      </div>
+
+      {status === null ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#aaa', fontSize: 13 }}>
+          <Loader size={13} strokeWidth={1.5} /> Caricamento…
+        </div>
+      ) : status.connected ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#276749', fontSize: 13, fontWeight: 600 }}>
+            <CheckCircle size={14} strokeWidth={2} />
+            Connesso{status.email ? ` — ${status.email}` : ''}
+          </div>
+          <button onClick={handleDisconnect} disabled={disconnecting}
+            style={{ padding: '5px 12px', background: 'none', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, color: '#666', cursor: 'pointer' }}>
+            {disconnecting ? 'Disconnetto…' : 'Disconnetti'}
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 13, color: '#888' }}>Non connesso</div>
+          <a href={`${API_BASE}/api/google-calendar/auth`}
+            style={{ padding: '7px 16px', background: '#4285F4', color: '#fff', borderRadius: 7, fontSize: 13, fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Calendar size={13} strokeWidth={2} />
+            Connetti Google Calendar
+          </a>
+        </div>
+      )}
+    </div>
+  )
+}
 
 const EVENTI = [
   { key: 'nuovo_contatto',       label: 'Nuovo contatto' },
@@ -206,15 +281,26 @@ export default function IntegrazioniPage() {
     setHooks(h => h.filter(x => x.id !== id))
   }
 
+  const [searchParams] = useSearchParams()
+  const gcalResult = searchParams.get('gcal')
+
   return (
     <div style={{ maxWidth: 720 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#1a1a2e' }}>Integrazioni</h1>
-          <p style={{ margin: '4px 0 0', fontSize: 14, color: '#888' }}>
-            Webhook outbound — connetti StayApp a Zapier, Make, n8n o qualsiasi sistema esterno.
-          </p>
+      <h1 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 700, color: '#1a1a2e' }}>Integrazioni</h1>
+      <p style={{ margin: '0 0 24px', fontSize: 14, color: '#888' }}>Connetti StayApp a Google Calendar, Zapier, Make, n8n e altri sistemi.</p>
+
+      {gcalResult === 'error' && (
+        <div style={{ background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#c53030', display: 'flex', gap: 8, alignItems: 'center' }}>
+          <AlertCircle size={14} strokeWidth={2} /> Connessione Google Calendar fallita. Riprova.
         </div>
+      )}
+
+      <GoogleCalendarSection />
+
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 14 }}>Webhook outbound</div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div style={{ fontSize: 13, color: '#888' }}>Invia eventi in tempo reale a Zapier, Make, n8n o sistemi custom.</div>
         <button onClick={() => setShowForm(s => !s)}
           style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px',
             background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, cursor: 'pointer' }}>

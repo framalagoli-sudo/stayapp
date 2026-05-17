@@ -44,6 +44,7 @@ import aiRouter from './routes/ai.js'
 import shopRouter from './routes/shop.js'
 import contentStudioRouter from './routes/contentStudio.js'
 import surveyRouter from './routes/survey.js'
+import googleCalendarRouter from './routes/googleCalendar.js'
 import { runBackup } from './lib/backup.js'
 import { auditLog } from './middleware/auditLog.js'
 import cron from 'node-cron'
@@ -156,6 +157,7 @@ app.use('/api/ai',               adminLimiter, aiRouter)
 app.use('/api/shop',             shopRouter)
 app.use('/api/content-studio',   contentStudioRouter)
 app.use('/api/survey',           surveyRouter)
+app.use('/api/google-calendar',  googleCalendarRouter)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 

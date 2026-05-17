@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase.js'
 import { requireAuth } from '../middleware/auth.js'
 import { sendWebhooks } from '../lib/webhook.js'
 import { triggerAutomazione } from '../lib/automazioni.js'
+import { syncBookingCreate, syncBookingDelete } from '../lib/googleCalendar.js'
 
 const router = Router()
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -374,8 +375,23 @@ router.patch('/prenotazioni/:id', requireAuth, async (req, res) => {
     const allowed = ['stato', 'note_interne', 'n_persone']
     const payload = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)))
     payload.updated_at = new Date().toISOString()
+
+    // Leggi prenotazione corrente per eventuale sync calendario
+    const { data: prev } = await supabase.from('prenotazioni').select('*').eq('id', req.params.id).single()
+
     const { data, error } = await supabase.from('prenotazioni').update(payload).eq('id', req.params.id).select().single()
     if (error) return res.status(500).json({ error: error.message })
+
+    // Sync Google Calendar: cancellata → rimuovi evento; confermata da in_attesa → crea evento
+    if (prev && payload.stato) {
+      if (payload.stato === 'cancellata' && prev.google_event_id) {
+        syncBookingDelete(prev.azienda_id, prev.google_event_id)
+      } else if (payload.stato === 'confermata' && prev.stato === 'in_attesa' && !prev.google_event_id) {
+        const { data: risorsa } = await supabase.from('risorse').select('nome, durata_minuti').eq('id', prev.risorsa_id).single()
+        syncBookingCreate(data, risorsa)
+      }
+    }
+
     res.json(data)
   } catch (e) { res.status(500).json({ error: e.message }) }
 })
@@ -530,8 +546,9 @@ router.post('/public/prenota', async (req, res) => {
       .from('prenotazioni').insert(payload).select().single()
     if (pe) return res.status(500).json({ error: pe.message })
 
-    // Email conferma + webhook + automazioni (fire-and-forget)
+    // Email conferma + webhook + Google Calendar + automazioni (fire-and-forget)
     inviaEmailConferma(prenotazione, risorsa)
+    syncBookingCreate(prenotazione, risorsa)
     sendWebhooks(prenotazione.azienda_id, 'nuova_prenotazione', {
       prenotazione_id: prenotazione.id,
       risorsa_id: prenotazione.risorsa_id,
