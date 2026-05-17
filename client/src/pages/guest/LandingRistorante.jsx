@@ -5,6 +5,7 @@ import { injectTracking } from '../../lib/tracking'
 import CookieBanner from '../../components/CookieBanner'
 import BookingWidget from '../../components/BookingWidget'
 import ChatbotWidget from '../../components/ChatbotWidget'
+import ShopWidget from '../../components/ShopWidget'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -606,6 +607,15 @@ export default function LandingRistorante({ ristorante }) {
                 {mini.newsletter_subtitle || 'News, promozioni ed offerte esclusive direttamente nella tua casella mail.'}
               </p>
               <NewsletterForm aziendaId={ristorante.azienda_id} primary={primary} privacyUrl={`/r/${ristorante.slug}/privacy`} />
+            </div>
+          </section>
+        )
+
+      case 'shop':
+        return (
+          <section key="shop" style={{ padding: '80px 0', background: '#f8f8f8' }}>
+            <div className="land-section">
+              <ShopWidget aziendaId={ristorante.azienda_id} primaryColor={primary} />
             </div>
           </section>
         )

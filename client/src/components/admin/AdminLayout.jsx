@@ -10,7 +10,7 @@ import {
   QrCode, UserCheck, ClipboardList, LogOut,
   Building, Building2, Store, Zap, Webhook, BotMessageSquare, Star, Settings,
   Info, Layers, Wrench, Image, Palette, MapPin, Globe, Lock, Bot, UtensilsCrossed,
-  FormInput,
+  FormInput, ShoppingBag,
 } from 'lucide-react'
 
 // ─── Nav definitions ──────────────────────────────────────────────────────────
@@ -353,6 +353,7 @@ export default function AdminLayout() {
             <NavItem to="/admin/preventivi"        icon={FileText}    label="Preventivi" />
             <NavItem to="/admin/form-builder"      icon={FormInput}   label="Form Builder" />
             <NavItem to="/admin/piano-editoriale"  icon={CalendarDays} label="Piano editoriale" />
+            <NavItem to="/admin/shop"              icon={ShoppingBag}  label="Shop" />
             <NavItem to="/admin/contatti"      icon={Users}           label="Contatti" />
             <NavItem to="/admin/integrazioni"  icon={Webhook}         label="Integrazioni" />
             <NavItem to="/admin/audit-log"     icon={ClipboardList}   label="Audit log" />
@@ -400,6 +401,7 @@ export default function AdminLayout() {
             <NavItem to="/admin/preventivi"        icon={FileText}    label="Preventivi" />
             <NavItem to="/admin/form-builder"      icon={FormInput}   label="Form Builder" />
             <NavItem to="/admin/piano-editoriale"  icon={CalendarDays} label="Piano editoriale" />
+            <NavItem to="/admin/shop"              icon={ShoppingBag}  label="Shop" />
             <NavItem to="/admin/contatti"          icon={Users}       label="Contatti" />
 
             <Divider />

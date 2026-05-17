@@ -12,7 +12,7 @@ const DEFAULT_CTA_BANNER    = { active: false, title: '', subtitle: '', cta_labe
 const DEFAULT_SECTION_ORDER = [
   'highlights', 'stats', 'about', 'foto_testo', 'paragrafi', 'team', 'steps', 'video', 'cta_banner',
   'testimonianze', 'promozioni', 'pacchetti',
-  'services', 'activities', 'excursions', 'eventi', 'news', 'gallery', 'faq', 'show_map', 'contatti', 'newsletter',
+  'services', 'activities', 'excursions', 'eventi', 'news', 'gallery', 'faq', 'show_map', 'booking', 'shop', 'contatti', 'newsletter',
 ]
 const DEFAULT_TRACKING = { meta_pixel_id: '', ga4_id: '', gtm_id: '', tiktok_pixel_id: '' }
 const DEFAULT = {
@@ -245,6 +245,7 @@ export default function PropertyMiniSitoPage() {
     { key: 'show_map',      label: 'Mappa',                hint: property.address ? `Mappa di: ${property.address}` : 'Aggiungi un indirizzo nelle informazioni struttura' },
     { key: 'contatti',      label: 'Form di contatto',     hint: property.email ? `Messaggi inviati a ${property.email}` : 'Aggiungi un\'email nelle info struttura per ricevere i messaggi' },
     { key: 'newsletter',    label: 'Iscrizione newsletter', hint: 'Raccoglie nome, email e telefono degli ospiti' },
+    { key: 'shop',          label: 'Shop / E-commerce',    hint: 'Mostra i prodotti del tuo shop online' },
   ]
 
   const SOCIAL_ITEMS = [

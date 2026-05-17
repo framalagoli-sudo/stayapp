@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useParams } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { AziendaProvider } from './context/AziendaContext'
+import { CarrelloProvider } from './context/CarrelloContext'
 import { PropertyIdContext } from './context/PropertyIdContext'
 import ProtectedRoute from './components/admin/ProtectedRoute'
 import AdminLayout from './components/admin/AdminLayout'
@@ -95,6 +96,9 @@ import FormPublicPage from './pages/public/FormPublicPage'
 import PianoEditorialePage from './pages/admin/PianoEditorialePage'
 import PostEditorialePage from './pages/admin/PostEditorialePage'
 import DominiPage from './pages/admin/DominiPage'
+import ShopPage from './pages/admin/shop/ShopPage'
+import ProdottoEditorPage from './pages/admin/shop/ProdottoEditorPage'
+import OrdineDetailPage from './pages/admin/shop/OrdineDetailPage'
 
 // Injects property ID from URL params into PropertyIdContext
 // so all property sub-pages work without modification
@@ -144,6 +148,7 @@ function DomainDetector() {
 
 export default function App() {
   return (
+    <CarrelloProvider>
     <AuthProvider>
       <BrowserRouter>
         <DomainDetector />
@@ -225,6 +230,9 @@ export default function App() {
             <Route path="form-builder/:id/submissions" element={<FormBuilderSubmissionsPage />} />
             <Route path="piano-editoriale" element={<PianoEditorialePage />} />
             <Route path="piano-editoriale/:id" element={<PostEditorialePage />} />
+            <Route path="shop" element={<ShopPage />} />
+            <Route path="shop/:id" element={<ProdottoEditorPage />} />
+            <Route path="shop/ordini/:id" element={<OrdineDetailPage />} />
             <Route path="qrcode"       element={<QRCodePage />} />
 
             {/* Attività */}
@@ -313,5 +321,6 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </CarrelloProvider>
   )
 }

@@ -15,7 +15,7 @@ const DEFAULT_CTA_BANNER    = { active: false, title: '', subtitle: '', cta_labe
 const DEFAULT_SECTION_ORDER = [
   'highlights', 'stats', 'about', 'foto_testo', 'paragrafi', 'team', 'steps', 'video', 'cta_banner',
   'testimonianze', 'promozioni', 'servizi',
-  'eventi', 'news', 'gallery', 'faq', 'show_map', 'contatti', 'newsletter',
+  'eventi', 'news', 'gallery', 'faq', 'show_map', 'booking', 'shop', 'contatti', 'newsletter',
 ]
 const DEFAULT = {
   active: false, tagline: '', booking_url: '', seo_title: '', seo_description: '',
@@ -223,6 +223,7 @@ export default function AttivitaMiniSitoPage() {
     { key: 'show_map',      label: 'Mappa',                hint: attivita.address ? `Mappa di: ${attivita.address}` : 'Aggiungi un indirizzo nelle informazioni' },
     { key: 'contatti',      label: 'Form di contatto',     hint: attivita.email ? `Messaggi inviati a ${attivita.email}` : "Aggiungi un'email nelle info attività per ricevere i messaggi" },
     { key: 'newsletter',    label: 'Iscrizione newsletter', hint: 'Raccoglie nome, email e telefono dei visitatori' },
+    { key: 'shop',          label: 'Shop / E-commerce',    hint: 'Mostra i prodotti del tuo shop online' },
   ]
 
   const SOCIAL_ITEMS = [

@@ -5,6 +5,7 @@ import { injectTracking } from '../../lib/tracking'
 import CookieBanner from '../../components/CookieBanner'
 import BookingWidget from '../../components/BookingWidget'
 import ChatbotWidget from '../../components/ChatbotWidget'
+import ShopWidget from '../../components/ShopWidget'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -713,6 +714,15 @@ export default function LandingStruttura({ property }) {
                 {mini.newsletter_subtitle || 'News, promozioni ed offerte esclusive direttamente nella tua casella mail.'}
               </p>
               <NewsletterForm aziendaId={property.azienda_id} entityTipo="struttura" primary={primary} privacyUrl={`/s/${property.slug}/privacy`} />
+            </div>
+          </section>
+        )
+
+      case 'shop':
+        return (
+          <section key="shop" style={{ padding: '80px 0', background: '#f8f8f8' }}>
+            <div className="land-section">
+              <ShopWidget aziendaId={property.azienda_id} primaryColor={primary} />
             </div>
           </section>
         )
