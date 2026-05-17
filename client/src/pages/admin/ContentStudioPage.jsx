@@ -5,7 +5,9 @@ import { useAzienda } from '../../context/AziendaContext'
 import {
   Sparkles, Target, Calendar, Pen, Copy, Check,
   ChevronLeft, ChevronRight, AlertCircle, RefreshCw, ExternalLink,
+  Zap, Share2, Package, FileText,
 } from 'lucide-react'
+import PostSocialModal from '../../components/admin/PostSocialModal'
 
 const CANALI = [
   { k: 'instagram',       label: 'Instagram',        color: '#E1306C' },
@@ -513,6 +515,160 @@ function CaptionStudioTab({ strategy }) {
   )
 }
 
+// ── Tab 4: Opportunità (Gap Analyzer) ────────────────────────────────────────
+
+function GapCard({ immagine, titolo, sub, onCrea }) {
+  return (
+    <div style={{ ...card, display: 'flex', alignItems: 'center', gap: 14 }}>
+      {immagine ? (
+        <img src={immagine} alt="" style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+      ) : (
+        <div style={{ width: 56, height: 56, borderRadius: 8, background: '#f5f5f7', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Sparkles size={20} strokeWidth={1.5} color="#ccc" />
+        </div>
+      )}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {titolo}
+        </div>
+        {sub && <div style={{ fontSize: 12, color: '#888' }}>{sub}</div>}
+      </div>
+      <button onClick={onCrea} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f5f0ff', color: '#6b21a8', border: 'none', borderRadius: 8, padding: '7px 12px', cursor: 'pointer', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
+        <Share2 size={13} strokeWidth={1.5} /> Crea post
+      </button>
+    </div>
+  )
+}
+
+function SectionHeader({ icon: Icon, label }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, color: '#555', marginBottom: 12 }}>
+      <Icon size={14} strokeWidth={1.5} /> {label}
+    </div>
+  )
+}
+
+function OpportunitaTab({ nome }) {
+  const [gap, setGap] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [modalData, setModalData] = useState(null)
+
+  useEffect(() => {
+    apiFetch('/api/content-studio/gap')
+      .then(setGap)
+      .catch(() => setGap({ eventi: [], prodotti: [], articoli: [], piano_questo_mese: 0 }))
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading) return <p style={{ color: '#888' }}>Analisi in corso…</p>
+
+  const { eventi = [], prodotti = [], articoli = [], piano_questo_mese = 0 } = gap || {}
+  const totale = eventi.length + prodotti.length + articoli.length
+
+  function apriPost(item) { setModalData(item) }
+
+  return (
+    <div style={{ maxWidth: 740 }}>
+      {/* Banner mese */}
+      <div style={{ ...card, marginBottom: 24, background: piano_questo_mese === 0 ? '#fff8f0' : '#f0fff4', border: `1px solid ${piano_questo_mese === 0 ? '#fed7aa' : '#c6f6d5'}` }}>
+        <div style={{ fontSize: 14, color: '#333', lineHeight: 1.6 }}>
+          {piano_questo_mese === 0
+            ? '⚠️ Non hai ancora pianificato post questo mese. '
+            : `✅ Questo mese hai ${piano_questo_mese} post pianificati. `}
+          {totale > 0
+            ? <span>Hai <strong>{totale}</strong> contenuti che potresti ancora promuovere:</span>
+            : totale === 0 && <span style={{ color: '#888' }}>Nessun contenuto recente da promuovere.</span>}
+        </div>
+      </div>
+
+      {eventi.length > 0 && (
+        <div style={{ marginBottom: 28 }}>
+          <SectionHeader icon={Calendar} label={`Prossimi eventi (${eventi.length})`} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {eventi.map(e => {
+              const dateStr = e.data_inizio ? new Date(e.data_inizio).toLocaleDateString('it-IT') : ''
+              return (
+                <GapCard key={e.id}
+                  immagine={e.cover_url}
+                  titolo={e.titolo}
+                  sub={[dateStr, e.prezzo ? `€${e.prezzo}` : ''].filter(Boolean).join(' · ')}
+                  onCrea={() => apriPost({
+                    titolo: e.titolo,
+                    sottotitolo: [dateStr, e.prezzo ? `€${e.prezzo}` : ''].filter(Boolean).join(' · '),
+                    immagine: e.cover_url || '',
+                    tipo: 'evento',
+                  })}
+                />
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {prodotti.length > 0 && (
+        <div style={{ marginBottom: 28 }}>
+          <SectionHeader icon={Package} label={`Prodotti attivi (${prodotti.length})`} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {prodotti.map(p => (
+              <GapCard key={p.id}
+                immagine={p.immagini?.[0]}
+                titolo={p.nome}
+                sub={p.prezzo ? `€${p.prezzo}` : ''}
+                onCrea={() => apriPost({
+                  titolo: p.nome,
+                  sottotitolo: p.prezzo ? `€${p.prezzo}` : '',
+                  immagine: p.immagini?.[0] || '',
+                  tipo: 'prodotto shop',
+                })}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {articoli.length > 0 && (
+        <div style={{ marginBottom: 28 }}>
+          <SectionHeader icon={FileText} label={`Articoli recenti (${articoli.length})`} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {articoli.map(a => (
+              <GapCard key={a.id}
+                immagine={a.cover_url}
+                titolo={a.title}
+                sub={a.excerpt || ''}
+                onCrea={() => apriPost({
+                  titolo: a.title,
+                  sottotitolo: a.excerpt || '',
+                  immagine: a.cover_url || '',
+                  tipo: 'articolo blog',
+                })}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {totale === 0 && (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#aaa' }}>
+          <Zap size={40} strokeWidth={1} color="#ddd" style={{ display: 'block', margin: '0 auto 16px' }} />
+          <p style={{ fontSize: 14 }}>Nessun contenuto da promuovere al momento.<br />Crea eventi, prodotti o articoli di blog — appariranno qui.</p>
+        </div>
+      )}
+
+      {modalData && (
+        <PostSocialModal
+          isOpen={true}
+          onClose={() => setModalData(null)}
+          titolo={modalData.titolo}
+          sottotitolo={modalData.sottotitolo}
+          immagine={modalData.immagine}
+          tipo={modalData.tipo}
+          nomeBusiness={nome}
+        />
+      )}
+    </div>
+  )
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function ContentStudioPage() {
@@ -530,9 +686,10 @@ export default function ContentStudioPage() {
   }, [])
 
   const TABS = [
-    { k: 'strategia', label: 'Strategia', Icon: Target },
-    { k: 'piano',     label: 'Piano Mensile', Icon: Calendar },
-    { k: 'caption',   label: 'Caption Studio', Icon: Pen },
+    { k: 'strategia',   label: 'Strategia',     Icon: Target },
+    { k: 'piano',       label: 'Piano Mensile',  Icon: Calendar },
+    { k: 'caption',     label: 'Caption Studio', Icon: Pen },
+    { k: 'opportunita', label: 'Opportunità',    Icon: Zap },
   ]
 
   if (loadingInit) return <p style={{ color: '#888' }}>Caricamento…</p>
@@ -567,9 +724,10 @@ export default function ContentStudioPage() {
         })}
       </div>
 
-      {tab === 'strategia' && <StrategiaTab strategy={strategy} nome={nome} onSaved={setStrategy} />}
-      {tab === 'piano'     && <PianoMensileTab strategy={strategy} />}
-      {tab === 'caption'   && <CaptionStudioTab strategy={strategy} />}
+      {tab === 'strategia'   && <StrategiaTab strategy={strategy} nome={nome} onSaved={setStrategy} />}
+      {tab === 'piano'       && <PianoMensileTab strategy={strategy} />}
+      {tab === 'caption'     && <CaptionStudioTab strategy={strategy} />}
+      {tab === 'opportunita' && <OpportunitaTab nome={nome} />}
     </div>
   )
 }
