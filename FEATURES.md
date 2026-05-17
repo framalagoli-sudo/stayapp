@@ -1,7 +1,7 @@
 # FEATURES — Roadmap prodotto StayApp
 
 Documento vivo. Aggiornato sessione per sessione.
-Ultima revisione: **2026-05-17** (Sprint 5 e-commerce completo)
+Ultima revisione: **2026-05-17** (Dashboard KPI + Survey/NPS + Content Studio Sprint B)
 
 ---
 
@@ -191,10 +191,38 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 - **Migration da eseguire su Supabase:** `036_shop.sql` ⚠️
 - **Stripe opzionale:** aggiungere `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` in Railway quando pronto
 
-### Sprint 10 — Stripe payments (prossimo) 🔴
+### Content Studio ✅ 2026-05-17
+- [x] **Strategia editoriale AI** — wizard 4 domande → 5 content pillar, tono di voce, frequenza/canale, hashtag base
+- [x] **Piano mensile AI** — genera 12-16 post distribuiti nel mese con contesto reale (eventi, prodotti, recensioni); "Crea bozze" → inserisce in piano_editoriale
+- [x] **Caption Studio** — 3 varianti per piattaforma (Instagram/Facebook/LinkedIn/TikTok/Google Business) con guida per-canale
+- [x] **Gap Analyzer (Opportunità)** — scansiona eventi prossimi, prodotti attivi, articoli recenti non promossi; bottone "Crea post" → PostSocialModal precompilato
+- [x] **PostSocialModal** — canvas grafico browser-side (4 formati: 1:1 / 4:5 / 9:16 / 16:9), caption AI, aggiungi al piano editoriale; integrato in blog/eventi/prodotti editor
+- **Migration da eseguire:** `037_content_studio.sql` (`ALTER TABLE aziende ADD COLUMN IF NOT EXISTS content_strategy jsonb DEFAULT '{}';`) ⚠️
+- **Richiede:** `ANTHROPIC_API_KEY` su Railway
+
+### Survey & NPS ✅ 2026-05-17
+- [x] **Invio survey via email** — admin invia link token al cliente (nome + email)
+- [x] **Pagina pubblica `/survey?token=`** — scala NPS 0-10 con colori graduali (rosso→verde), commento opzionale, stato "già compilata"
+- [x] **Admin `/admin/survey`** — KPI: NPS score (-100/+100), % promotori (9-10), % neutri (7-8), % detrattori (0-6), totale risposte; lista con chip colorato + commento + timeago
+- [x] Voce sidebar "Survey & NPS"
+- **Migration da eseguire su Supabase:** `038_survey.sql` ✅ eseguita 2026-05-17
+
+### Dashboard migliorata ✅ 2026-05-17
+- [x] +3 KPI card: Recensione media (⭐ media + conteggio), Prossimi eventi (30gg), Bozze piano editoriale
+- [x] Nuova sezione "Prossimi eventi" — lista con visualizzazione data (giorno/mese numerale) + ora + prezzo, click → editor evento
+
+### Sprint 10 — Stripe Subscription Billing (prossimo) 🔴
+- [ ] Piani mensili (base/standard/premium) con prezzi
+- [ ] Checkout Stripe per subscription dalla pagina signup/trial
+- [ ] Banner scadenza trial → upgrade
+- [ ] Webhook Stripe → aggiorna subscription_status su aziende
+- [ ] Gestione rinnovo, cancellazione, downgrade
+- [ ] Dashboard admin super: lista abbonamenti attivi + MRR
+- *Prerequisito per monetizzare la piattaforma*
+
+### Sprint 11 — Stripe payments (futuro) 🟡
 - [ ] Checkout booking risorse (deposito o totale)
 - [ ] Checkout eventi
-- [ ] Subscription billing (piani mensili da self-signup)
 - [ ] Link pagamento rapido (admin genera link "paga €X" → cliente paga)
 - [ ] Webhook Stripe → aggiorna stato prenotazione automaticamente
 - *Richiede: account Stripe + chiavi API in Railway/Vercel env*
@@ -287,7 +315,9 @@ Il refactor verso "Business" generico richiede principalmente:
 - [x] **033_form_builder.sql** — tabelle `form_builder` + `form_submissions` ✅ 2026-05-16
 - [x] **034_piano_editoriale.sql** — tabella `piano_editoriale` ✅ 2026-05-16
 - [ ] **035_domini.sql** — tabella `domini` (sottodomini + domini custom)
-- [ ] **036_shop.sql** — tabelle `prodotti` + `ordini` ⚠️ da eseguire
+- [x] **036_shop.sql** — tabelle `prodotti` + `ordini` ✅ eseguita 2026-05-17
+- [x] **037_content_studio.sql** — colonna `content_strategy` su aziende ✅ eseguita 2026-05-17
+- [x] **038_survey.sql** — tabella `survey_risposte` ✅ eseguita 2026-05-17
 
 ### Infrastruttura
 
