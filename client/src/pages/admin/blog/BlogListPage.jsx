@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
 import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch } from '../../../lib/api'
-import { Plus, Edit2, Trash2, Eye, EyeOff, Tag } from 'lucide-react'
+import { Plus, Edit2, Trash2, Eye, EyeOff, Tag, Sparkles, X } from 'lucide-react'
 
 function fmtDate(iso) {
   if (!iso) return '—'
@@ -27,9 +27,24 @@ export default function BlogListPage() {
   const [categories, setCategories] = useState([])
   const [filterCat, setFilterCat] = useState('')
   const [loading, setLoading] = useState(true)
+  const [showAiModal, setShowAiModal] = useState(false)
+  const [aiArgomento, setAiArgomento] = useState('')
+  const [aiEntityId, setAiEntityId] = useState('')
+  const [aiGenerating, setAiGenerating] = useState(false)
+  const [aiError, setAiError] = useState('')
 
   const aziendaId = azienda?.id || profile?.azienda_id
     || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id
+
+  // Entities available for AI generation
+  const entityOptions = [
+    ...(strutture || []).map(s => ({ id: s.id, label: s.name, tipo: 'struttura' })),
+    ...(ristoranti || []).map(r => ({ id: r.id, label: r.name, tipo: 'ristorante' })),
+  ]
+
+  useEffect(() => {
+    if (entityOptions.length > 0 && !aiEntityId) setAiEntityId(entityOptions[0].id)
+  }, [strutture, ristoranti])
 
   useEffect(() => {
     if (!aziendaId) return
@@ -50,6 +65,25 @@ export default function BlogListPage() {
     setArticoli(prev => prev.map(x => x.id === a.id ? { ...x, ...updated } : x))
   }
 
+  async function handleAiGenerate() {
+    const entity = entityOptions.find(e => e.id === aiEntityId)
+    if (!entity) return
+    setAiGenerating(true)
+    setAiError('')
+    try {
+      const result = await apiFetch('/api/ai/blog-auto', {
+        method: 'POST',
+        body: JSON.stringify({ entity_tipo: entity.tipo, entity_id: entity.id, argomento: aiArgomento }),
+      })
+      setShowAiModal(false)
+      setAiArgomento('')
+      navigate(`/admin/blog/${result.id}`)
+    } catch (e) {
+      setAiError(e.message || 'Errore durante la generazione. Riprova.')
+    }
+    setAiGenerating(false)
+  }
+
   async function deleteArticolo(a) {
     if (!confirm(`Eliminare "${a.title}"?`)) return
     await apiFetch(`/api/blog/${a.id}`, { method: 'DELETE' })
@@ -62,6 +96,64 @@ export default function BlogListPage() {
 
   return (
     <div style={{ maxWidth: 860 }}>
+      {/* Modal AI generation */}
+      {showAiModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 28, width: '100%', maxWidth: 420, boxShadow: '0 16px 48px rgba(0,0,0,0.18)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Sparkles size={18} color="#7c3aed" strokeWidth={1.5} />
+                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Genera articolo AI</h3>
+                </div>
+                <p style={{ margin: '4px 0 0', fontSize: 13, color: '#888' }}>Claude scrive una bozza dal contesto del tuo business.</p>
+              </div>
+              <button onClick={() => setShowAiModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+                <X size={18} color="#888" strokeWidth={1.5} />
+              </button>
+            </div>
+
+            {entityOptions.length > 1 && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Business</label>
+                <select
+                  value={aiEntityId}
+                  onChange={e => setAiEntityId(e.target.value)}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14, background: '#fff' }}
+                >
+                  {entityOptions.map(e => (
+                    <option key={e.id} value={e.id}>{e.label} ({e.tipo})</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Argomento (opzionale)</label>
+              <input
+                value={aiArgomento}
+                onChange={e => setAiArgomento(e.target.value)}
+                placeholder="Es. estate 2026, novità menù, evento speciale…"
+                style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14, boxSizing: 'border-box' }}
+                onKeyDown={e => e.key === 'Enter' && handleAiGenerate()}
+              />
+              <p style={{ margin: '6px 0 0', fontSize: 12, color: '#aaa' }}>Se lasci vuoto, Claude sceglierà l'argomento in base al contesto.</p>
+            </div>
+
+            {aiError && <p style={{ color: '#e53e3e', fontSize: 13, margin: '0 0 14px' }}>{aiError}</p>}
+
+            <button
+              onClick={handleAiGenerate}
+              disabled={aiGenerating || !aiEntityId}
+              style={{ width: '100%', padding: '12px', background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: aiGenerating ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: aiGenerating ? 0.8 : 1 }}
+            >
+              <Sparkles size={16} strokeWidth={2} />
+              {aiGenerating ? 'Generazione in corso…' : 'Genera bozza'}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: 22 }}>Blog & News</h2>
@@ -74,6 +166,14 @@ export default function BlogListPage() {
           >
             <Tag size={14} strokeWidth={2} /> Categorie
           </button>
+          {entityOptions.length > 0 && (
+            <button
+              onClick={() => setShowAiModal(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', background: '#ede9fe', color: '#7c3aed', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            >
+              <Sparkles size={14} strokeWidth={2} /> Genera AI
+            </button>
+          )}
           <button
             onClick={() => navigate('/admin/blog/new')}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}

@@ -195,7 +195,7 @@ export default function RestaurantApp() {
 
           {/* Chatbot widget (floating) */}
           <div style={{ position: 'relative', height: 0, flexShrink: 0 }}>
-            <ChatbotWidget chatbot={ristorante.chatbot} primaryColor={primary} />
+            <ChatbotWidget chatbot={ristorante.chatbot} primaryColor={primary} entityTipo="ristorante" entityId={ristorante.id} />
           </div>
 
           {/* Scroll area */}

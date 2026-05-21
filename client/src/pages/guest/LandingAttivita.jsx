@@ -783,7 +783,7 @@ export default function LandingAttivita({ attivita }) {
         privacyUrl={attivita.slug ? `/a/${attivita.slug}/privacy` : null}
         cookieUrl={attivita.slug  ? `/a/${attivita.slug}/cookie`  : null}
       />
-      <ChatbotWidget chatbot={attivita.chatbot} primaryColor={primary} fixed />
+      <ChatbotWidget chatbot={attivita.chatbot} primaryColor={primary} fixed entityTipo="attivita" entityId={attivita.id} />
     </>
   )
 }

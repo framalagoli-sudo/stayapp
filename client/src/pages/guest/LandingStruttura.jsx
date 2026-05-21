@@ -1108,7 +1108,7 @@ export default function LandingStruttura({ property }) {
         privacyUrl={property.slug ? `/s/${property.slug}/privacy` : null}
         cookieUrl={property.slug  ? `/s/${property.slug}/cookie`  : null}
       />
-      <ChatbotWidget chatbot={property.chatbot} primaryColor={primary} fixed />
+      <ChatbotWidget chatbot={property.chatbot} primaryColor={primary} fixed entityTipo="struttura" entityId={property.id} />
     </>
   )
 }

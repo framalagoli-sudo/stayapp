@@ -142,6 +142,37 @@ export default function ChatbotEditor({ chatbot: initialChatbot, onSave, saving,
             />
           </div>
         </div>
+
+        {/* Modalità AI */}
+        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #f0f0f0', display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={chatbot.ai_mode || false}
+              onChange={e => patch({ ai_mode: e.target.checked })}
+              style={{ width: 18, height: 18, accentColor: '#7c3aed', cursor: 'pointer' }}
+            />
+            <span style={{ fontWeight: 600, fontSize: 15 }}>
+              Modalità AI <span style={{ fontSize: 11, fontWeight: 400, color: '#7c3aed', marginLeft: 4, background: '#ede9fe', padding: '2px 7px', borderRadius: 20 }}>Beta</span>
+            </span>
+          </label>
+          {chatbot.ai_mode && (
+            <div style={{ flex: 1, minWidth: 260 }}>
+              <span style={label}>Messaggio di benvenuto AI</span>
+              <input
+                style={{ ...inp, maxWidth: 420 }}
+                value={chatbot.ai_welcome || ''}
+                onChange={e => patch({ ai_welcome: e.target.value })}
+                placeholder="Ciao! Come posso aiutarti?"
+              />
+            </div>
+          )}
+        </div>
+        {chatbot.ai_mode && (
+          <p style={{ margin: '10px 0 0', fontSize: 13, color: '#7c3aed', background: '#ede9fe', borderRadius: 8, padding: '8px 12px' }}>
+            In modalità AI il chatbot risponde a domande libere usando le informazioni del tuo profilo (nome, orari, servizi, FAQ). Non occorre configurare i passi.
+          </p>
+        )}
         {!chatbot.active && (
           <p style={{ margin: '12px 0 0', fontSize: 13, color: '#888' }}>
             Il chatbot è disattivato. Attivalo per mostrarlo nell'app ospite.

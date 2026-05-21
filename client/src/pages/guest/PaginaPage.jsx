@@ -1063,7 +1063,7 @@ export default function PaginaPage({ entityType }) {
       </footer>
 
       <CookieBanner primaryColor={primary} privacyUrl={privacyUrl} cookieUrl={`${homeUrl}/cookie`} />
-      <ChatbotWidget chatbot={entity.chatbot} primaryColor={primary} fixed />
+      <ChatbotWidget chatbot={entity.chatbot} primaryColor={primary} fixed entityTipo={entityType} entityId={entity?.id} />
     </>
   )
 }

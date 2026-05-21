@@ -1049,7 +1049,7 @@ export default function LandingRistorante({ ristorante }) {
         privacyUrl={ristorante.slug ? `/r/${ristorante.slug}/privacy` : null}
         cookieUrl={ristorante.slug  ? `/r/${ristorante.slug}/cookie`  : null}
       />
-      <ChatbotWidget chatbot={ristorante.chatbot} primaryColor={primary} fixed />
+      <ChatbotWidget chatbot={ristorante.chatbot} primaryColor={primary} fixed entityTipo="ristorante" entityId={ristorante.id} />
     </>
   )
 }

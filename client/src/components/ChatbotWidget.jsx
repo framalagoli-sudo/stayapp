@@ -1,23 +1,30 @@
 import { useState, useEffect, useRef } from 'react'
-import { MessageCircle, X } from 'lucide-react'
+import { MessageCircle, X, Send } from 'lucide-react'
+import { apiFetch } from '../lib/api'
 
 // fixed=false → posizionato dentro il container PWA (position:absolute)
 // fixed=true  → floating su landing page (position:fixed)
-export default function ChatbotWidget({ chatbot, primaryColor, fixed = false }) {
+export default function ChatbotWidget({ chatbot, primaryColor, fixed = false, entityTipo, entityId }) {
   const [open, setOpen]       = useState(false)
   const [messages, setMessages] = useState([])
   const [typing, setTyping]   = useState(false)
-  const endRef = useRef(null)
+  const [inputText, setInputText] = useState('')
+  const endRef  = useRef(null)
+  const inputRef = useRef(null)
   const primary = primaryColor || '#00b5b5'
 
-  const nodes = chatbot?.nodes || []
+  const nodes   = chatbot?.nodes || []
+  const aiMode  = !!chatbot?.ai_mode
   const getNode = (id) => nodes.find(n => n.id === id)
 
   useEffect(() => {
     if (!open || messages.length > 0) return
-    const start = getNode('start')
-    if (start) {
-      setMessages([{ type: 'bot', text: start.message, nodeId: 'start', showOptions: true }])
+    if (aiMode) {
+      const welcome = chatbot?.ai_welcome || `Ciao! Sono l'assistente di ${chatbot?.bot_name || 'questo business'}. Come posso aiutarti?`
+      setMessages([{ type: 'bot', text: welcome }])
+    } else {
+      const start = getNode('start')
+      if (start) setMessages([{ type: 'bot', text: start.message, nodeId: 'start', showOptions: true }])
     }
   }, [open])
 
@@ -25,17 +32,19 @@ export default function ChatbotWidget({ chatbot, primaryColor, fixed = false }) 
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, typing])
 
-  if (!chatbot?.active || !nodes.length) return null
+  useEffect(() => {
+    if (open && aiMode) inputRef.current?.focus()
+  }, [open, aiMode])
 
-  const lastBotMsg = [...messages].reverse().find(m => m.type === 'bot' && m.showOptions)
+  if (!chatbot?.active || (!aiMode && !nodes.length)) return null
+
+  const lastBotMsg    = [...messages].reverse().find(m => m.type === 'bot' && m.showOptions)
   const currentOptions = lastBotMsg ? (getNode(lastBotMsg.nodeId)?.options || []) : []
 
   function handleOption(opt) {
-    // Blocca opzioni del messaggio corrente
     setMessages(prev => prev.map(m =>
       m.nodeId === lastBotMsg?.nodeId ? { ...m, showOptions: false } : m
     ))
-    // Aggiunge risposta utente
     setMessages(prev => [...prev, { type: 'user', text: opt.label }])
 
     if (opt.type === 'go_to' || opt.type === 'restart') {
@@ -56,12 +65,35 @@ export default function ChatbotWidget({ chatbot, primaryColor, fixed = false }) 
     }
   }
 
-  function handleClose() {
-    setOpen(false)
+  async function handleSend() {
+    const text = inputText.trim()
+    if (!text || typing) return
+    setInputText('')
+
+    const userMsg = { type: 'user', text }
+    setMessages(prev => [...prev, userMsg])
+    setTyping(true)
+
+    // Build conversation history for API
+    const history = [...messages, userMsg]
+      .filter(m => m.type === 'user' || (m.type === 'bot' && !m.isWelcome))
+      .map(m => ({ role: m.type === 'user' ? 'user' : 'assistant', content: m.text }))
+
+    try {
+      const data = await apiFetch('/api/guest/chat', {
+        method: 'POST',
+        body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, messages: history }),
+      })
+      setTyping(false)
+      setMessages(prev => [...prev, { type: 'bot', text: data.reply }])
+    } catch {
+      setTyping(false)
+      setMessages(prev => [...prev, { type: 'bot', text: 'Mi dispiace, si è verificato un errore. Riprova tra qualche istante.' }])
+    }
   }
 
-  function handleOpen() {
-    setOpen(true)
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
 
   return (
@@ -83,6 +115,13 @@ export default function ChatbotWidget({ chatbot, primaryColor, fixed = false }) 
           white-space: nowrap;
         }
         .cb-btn-opt:hover { background: ${primary}; color: #fff; }
+        .cb-send-btn {
+          width: 38px; height: 38px; border-radius: 50%; border: none;
+          background: ${primary}; color: #fff; cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0; transition: opacity .15s;
+        }
+        .cb-send-btn:disabled { opacity: 0.5; cursor: default; }
       `}</style>
 
       {/* Pulsante flotante */}
@@ -93,7 +132,7 @@ export default function ChatbotWidget({ chatbot, primaryColor, fixed = false }) 
           zIndex: 9999, animation: 'cb-slidein .3s ease',
         }}>
           <button
-            onClick={handleOpen}
+            onClick={() => setOpen(true)}
             aria-label="Apri chatbot"
             style={{
               width: 52, height: 52, borderRadius: '50%',
@@ -122,24 +161,19 @@ export default function ChatbotWidget({ chatbot, primaryColor, fixed = false }) 
           background: '#f0f0f0', animation: 'cb-slidein .22s ease',
         }}>
           {/* Header */}
-          <div style={{
-            background: primary, padding: '12px 16px',
-            display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
-          }}>
-            <div style={{
-              width: 38, height: 38, borderRadius: '50%',
-              background: 'rgba(255,255,255,0.22)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
+          <div style={{ background: primary, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <MessageCircle size={18} strokeWidth={1.5} color="#fff" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: 15, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {chatbot.bot_name || 'Assistente'}
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>Online ora</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>
+                {aiMode ? 'Assistente AI' : 'Online ora'}
+              </div>
             </div>
-            <button onClick={handleClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, display: 'flex', borderRadius: 6 }}>
+            <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, display: 'flex', borderRadius: 6 }}>
               <X size={20} strokeWidth={1.5} color="#fff" />
             </button>
           </div>
@@ -166,10 +200,7 @@ export default function ChatbotWidget({ chatbot, primaryColor, fixed = false }) 
                 <div style={{ background: '#fff', borderRadius: '18px 18px 18px 4px', padding: '13px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.09)' }}>
                   <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
                     {[0, 1, 2].map(j => (
-                      <span key={j} style={{
-                        width: 7, height: 7, borderRadius: '50%', background: '#bbb', display: 'inline-block',
-                        animation: `cb-typing 1.2s ${j * 0.2}s ease-in-out infinite`,
-                      }} />
+                      <span key={j} style={{ width: 7, height: 7, borderRadius: '50%', background: '#bbb', display: 'inline-block', animation: `cb-typing 1.2s ${j * 0.2}s ease-in-out infinite` }} />
                     ))}
                   </div>
                 </div>
@@ -178,15 +209,32 @@ export default function ChatbotWidget({ chatbot, primaryColor, fixed = false }) 
             <div ref={endRef} />
           </div>
 
-          {/* Opzioni */}
-          {currentOptions.length > 0 && !typing && (
-            <div style={{ padding: '8px 12px 14px', display: 'flex', flexWrap: 'wrap', gap: 8, flexShrink: 0, background: '#f0f0f0' }}>
-              {currentOptions.map(opt => (
-                <button key={opt.id} className="cb-btn-opt" onClick={() => handleOption(opt)}>
-                  {opt.label}
-                </button>
-              ))}
+          {/* Footer: opzioni (modalità albero) o input testo (modalità AI) */}
+          {aiMode ? (
+            <div style={{ padding: '8px 12px 12px', display: 'flex', gap: 8, alignItems: 'center', background: '#f0f0f0', flexShrink: 0 }}>
+              <input
+                ref={inputRef}
+                value={inputText}
+                onChange={e => setInputText(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Scrivi un messaggio…"
+                disabled={typing}
+                style={{ flex: 1, padding: '10px 14px', borderRadius: 24, border: '1px solid #ddd', fontSize: 14, outline: 'none', background: '#fff', fontFamily: 'inherit' }}
+              />
+              <button className="cb-send-btn" onClick={handleSend} disabled={!inputText.trim() || typing}>
+                <Send size={16} strokeWidth={2} />
+              </button>
             </div>
+          ) : (
+            currentOptions.length > 0 && !typing && (
+              <div style={{ padding: '8px 12px 14px', display: 'flex', flexWrap: 'wrap', gap: 8, flexShrink: 0, background: '#f0f0f0' }}>
+                {currentOptions.map(opt => (
+                  <button key={opt.id} className="cb-btn-opt" onClick={() => handleOption(opt)}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )
           )}
         </div>
       )}

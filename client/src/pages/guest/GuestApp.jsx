@@ -297,7 +297,7 @@ export default function GuestApp() {
 
           {/* ── Chatbot widget (floating) ── */}
           <div style={{ position: 'relative', height: 0, flexShrink: 0 }}>
-            <ChatbotWidget chatbot={property.chatbot} primaryColor={primary} />
+            <ChatbotWidget chatbot={property.chatbot} primaryColor={primary} entityTipo="struttura" entityId={property.id} />
           </div>
 
           {/* ── Scroll area ── */}
