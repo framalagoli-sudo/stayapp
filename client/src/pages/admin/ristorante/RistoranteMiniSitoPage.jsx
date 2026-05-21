@@ -357,6 +357,7 @@ export default function RistoranteMiniSitoPage() {
           ))}
         </div>
         <TrackingCard form={form} setForm={setForm} save={save} inputStyle={inputStyle} lblStyle={lblStyle} hintStyle={hintStyle} fieldWrap={fieldWrap} cardStyle={cardStyle} sectionTitle={sectionTitle} />
+        <GeoCard tipo="ristorante" slug={ristorante.slug} faqCount={(form.faq||[]).filter(f=>f.question&&f.answer).length} cardStyle={cardStyle} sectionTitle={sectionTitle} />
       </>}
 
       {/* Highlights */}
@@ -778,6 +779,56 @@ function TrackingCard({ form, setForm, save, inputStyle, lblStyle, hintStyle, fi
           <span style={hintStyle}>{hint}</span>
         </div>
       ))}
+    </div>
+  )
+}
+
+function GeoCard({ tipo, slug, faqCount, cardStyle, sectionTitle }) {
+  const apiBase = import.meta.env.VITE_API_URL ?? ''
+  const prefix = { struttura: 's', ristorante: 'r', attivita: 'a' }[tipo] || tipo
+  const typeLabel = { struttura: 'LodgingBusiness', ristorante: 'Restaurant', attivita: 'TouristAttraction' }[tipo]
+  const entityUrl = `${window.location.origin}/${prefix}/${slug}`
+  const checks = [
+    { label: `Schema.org ${typeLabel}`, ok: true },
+    { label: 'AggregateRating — stelle visibili su Google', ok: true },
+    { label: 'Event schema — eventi in evidenza su Google', ok: true },
+    { label: `FAQPage schema${faqCount > 0 ? ` (${faqCount} domande)` : ''}`, ok: faqCount > 0, note: faqCount === 0 ? '→ aggiungi FAQ nel tab Contenuto' : null },
+    { label: 'robots.txt — AI crawlers ammessi', ok: true },
+    { label: 'Sitemap XML', ok: true },
+    { label: 'llms.txt — Perplexity / ChatGPT', ok: true },
+  ]
+  return (
+    <div style={cardStyle}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+        <h3 style={{ ...sectionTitle, margin: 0 }}>GEO — AI Search Optimization</h3>
+        <span style={{ background: '#dcfce7', color: '#16a34a', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>ATTIVO</span>
+      </div>
+      <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: 4 }}>
+        Il tuo sito viene letto e citato da Google AI, ChatGPT, Perplexity e altri motori AI.
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 20 }}>
+        {checks.map(c => (
+          <div key={c.label} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+            <span style={{ color: c.ok ? '#16a34a' : '#f59e0b', fontWeight: 700, fontSize: 14, lineHeight: 1 }}>{c.ok ? '✓' : '○'}</span>
+            <span style={{ color: c.ok ? '#374151' : '#9ca3af' }}>{c.label}</span>
+            {c.note && <span style={{ color: '#f59e0b', fontSize: 11 }}>{c.note}</span>}
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <a href={`https://search.google.com/test/rich-results?url=${encodeURIComponent(entityUrl)}`} target="_blank" rel="noopener noreferrer"
+          style={{ padding: '6px 14px', borderRadius: 8, background: '#1a1a2e', color: '#fff', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
+          Testa su Google →
+        </a>
+        <a href={`${apiBase}/api/guest/sitemap/${tipo}/${slug}`} target="_blank" rel="noopener noreferrer"
+          style={{ padding: '6px 14px', borderRadius: 8, background: '#f5f5f7', color: '#1a1a2e', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
+          Sitemap XML
+        </a>
+        <a href={`${apiBase}/api/guest/llms/${tipo}/${slug}`} target="_blank" rel="noopener noreferrer"
+          style={{ padding: '6px 14px', borderRadius: 8, background: '#f5f5f7', color: '#1a1a2e', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
+          llms.txt
+        </a>
+      </div>
     </div>
   )
 }

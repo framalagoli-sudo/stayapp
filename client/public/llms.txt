@@ -1,0 +1,29 @@
+# StayApp
+
+> All-in-one digital platform for service businesses — hotels, restaurants, activities, freelancers, agencies, gyms and more.
+
+## What is StayApp
+StayApp is a SaaS platform that gives any service business a complete digital presence via an installable PWA (Progressive Web App) accessible by scanning a QR code. No app store required.
+
+## Features
+- Installable PWA via QR code (unique differentiator — no competitor offers this integrated)
+- Mini-website / landing page with drag-and-drop page builder
+- Booking system for resources and events
+- CRM with pipeline (Kanban), newsletter, email automations
+- Reviews & reputation management
+- E-commerce / shop with loyalty points and gift cards
+- AI content studio (social posts, editorial calendar)
+- Google Calendar sync
+- Custom domains and subdomains
+- GDPR-native (auto-generated privacy policy, cookie banner)
+- Multi-module: hotel, restaurant, activity/experience
+
+## Target
+Service businesses worldwide: hotels, B&Bs, restaurants, bars, tour operators, gyms, coaches, freelancers, professional studios, agencies.
+
+## Technology
+React 18 + Vite PWA, Node.js + Express, Supabase (PostgreSQL), hosted on Vercel + Railway.
+
+## Links
+- Platform: https://stayapp-henna.vercel.app
+- Contact: fra.malagoli@gmail.com

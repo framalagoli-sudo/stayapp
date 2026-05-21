@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { MapPin, Phone, Mail, Clock, ChevronDown, Utensils, Wine, Coffee, Music, Car, Wind, Wifi, Bell, Bus, Star, Heart, Award, Calendar, Users, Plus, Minus } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
 import { injectTracking } from '../../lib/tracking'
+import { injectJsonLd, buildEntitySchema, buildFaqSchema } from '../../lib/geoSchema'
 import CookieBanner from '../../components/CookieBanner'
 import BookingWidget from '../../components/BookingWidget'
 import ChatbotWidget from '../../components/ChatbotWidget'
@@ -130,8 +131,18 @@ export default function LandingRistorante({ ristorante }) {
     setMeta('og:image',    ristorante.cover_url || '')
     setMeta('og:type',     'restaurant')
     const cleanupTracking = injectTracking(mini.tracking_cfg || {})
-    return () => { document.title = 'StayApp'; cleanupTracking() }
+    const apiBase = import.meta.env.VITE_API_URL ?? ''
+    const sitemapEl = Object.assign(document.createElement('link'), { rel: 'sitemap', type: 'application/xml', href: `${apiBase}/api/guest/sitemap/ristorante/${ristorante.slug}` })
+    document.head.appendChild(sitemapEl)
+    return () => { document.title = 'StayApp'; cleanupTracking(); sitemapEl.remove() }
   }, [])
+
+  useEffect(() => {
+    const faqItems = (mini.faq || []).filter(f => f.question && f.answer)
+    const c1 = injectJsonLd('ld-entity', buildEntitySchema({ entity: ristorante, tipo: 'ristorante', recensioni, eventi: upcomingEventi }))
+    const c2 = faqItems.length ? injectJsonLd('ld-faq', buildFaqSchema(faqItems)) : null
+    return () => { c1(); c2?.() }
+  }, [recensioni, upcomingEventi])
 
   function setMeta(name, content) {
     let el = document.querySelector(`meta[name="${name}"],meta[property="${name}"]`)

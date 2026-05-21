@@ -202,6 +202,87 @@ router.get('/confirm-subscription', async (req, res) => {
   res.json({ ok: true })
 })
 
+// GET /api/guest/llms/:tipo/:slug — plain text per AI crawlers (llms.txt standard)
+router.get('/llms/:tipo/:slug', async (req, res) => {
+  try {
+    const { tipo, slug } = req.params
+    const tableMap = { struttura: 'properties', ristorante: 'ristoranti', attivita: 'attivita' }
+    const table = tableMap[tipo]
+    if (!table) return res.status(400).send('Tipo non valido')
+
+    const { data, error } = await supabase.from(table)
+      .select('name, description, address, phone, email, schedule, services, minisito')
+      .eq('slug', slug).eq('active', true).single()
+    if (error || !data) return res.status(404).send('Entità non trovata')
+
+    const mini = data.minisito || {}
+    const lines = [`# ${data.name}`]
+    const desc = mini.seo_description || data.description
+    if (desc) lines.push(`\n> ${desc}`)
+
+    if (data.address || data.phone || data.email) {
+      lines.push('\n## Contatti')
+      if (data.address) lines.push(`- Indirizzo: ${data.address}`)
+      if (data.phone)   lines.push(`- Telefono: ${data.phone}`)
+      if (data.email)   lines.push(`- Email: ${data.email}`)
+    }
+
+    if (data.schedule) {
+      lines.push('\n## Orari')
+      lines.push(data.schedule)
+    }
+
+    const services = Array.isArray(data.services) ? data.services.filter(s => s.name) : []
+    if (services.length) {
+      lines.push('\n## Servizi')
+      services.forEach(s => lines.push(`- ${s.name}${s.description ? ': ' + s.description : ''}`))
+    }
+
+    const faq = (mini.faq || []).filter(f => f.question && f.answer)
+    if (faq.length) {
+      lines.push('\n## Domande frequenti')
+      faq.forEach(f => lines.push(`**${f.question}**\n${f.answer}`))
+    }
+
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+    res.send(lines.join('\n'))
+  } catch (err) { res.status(500).send(err.message) }
+})
+
+// GET /api/guest/sitemap/:tipo/:slug — sitemap XML per entità
+router.get('/sitemap/:tipo/:slug', async (req, res) => {
+  try {
+    const { tipo, slug } = req.params
+    const tableMap = { struttura: 'properties', ristorante: 'ristoranti', attivita: 'attivita' }
+    const prefixMap = { struttura: 's', ristorante: 'r', attivita: 'a' }
+    const table = tableMap[tipo]
+    if (!table) return res.status(400).send('Tipo non valido')
+
+    const { data: entity } = await supabase.from(table)
+      .select('id').eq('slug', slug).eq('active', true).single()
+    if (!entity) return res.status(404).send('Entità non trovata')
+
+    const { data: pagine } = await supabase.from('pagine')
+      .select('slug, updated_at')
+      .eq('entity_tipo', tipo).eq('entity_id', entity.id)
+      .eq('status', 'pubblicata')
+
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173'
+    const base = `${clientUrl}/${prefixMap[tipo]}/${slug}`
+    const now = new Date().toISOString().split('T')[0]
+
+    const urls = [
+      `  <url><loc>${base}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>`,
+      ...(pagine || []).map(p =>
+        `  <url><loc>${base}/p/${p.slug}</loc><lastmod>${(p.updated_at || now).split('T')[0]}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`
+      ),
+    ]
+
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8')
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>`)
+  } catch (err) { res.status(500).send(err.message) }
+})
+
 // GET /api/guest/:slug — struttura (public) — DEVE stare per ultima (catch-all)
 router.get('/:slug', async (req, res) => {
   const { data, error } = await supabase

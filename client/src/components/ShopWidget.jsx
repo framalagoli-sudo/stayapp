@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { apiFetch } from '../lib/api'
 import { useCarrello } from '../context/CarrelloContext'
+import { injectJsonLd, buildProductsSchema } from '../lib/geoSchema'
 import { ShoppingCart, Plus, Minus, X, ArrowRight, Package, Gift } from 'lucide-react'
 
 export default function ShopWidget({ aziendaId, primaryColor = '#1a1a2e' }) {
@@ -35,8 +36,15 @@ export default function ShopWidget({ aziendaId, primaryColor = '#1a1a2e' }) {
   useEffect(() => {
     if (!aziendaId) return
     apiFetch(`/api/shop/public/${aziendaId}/prodotti`)
-      .then(setProdotti).catch(() => {})
+      .then(data => {
+        setProdotti(data)
+        if (Array.isArray(data) && data.length) {
+          injectJsonLd('ld-products', buildProductsSchema(data, document.title))
+        }
+      })
+      .catch(() => {})
       .finally(() => setLoading(false))
+    return () => document.getElementById('ld-products')?.remove()
   }, [aziendaId])
 
   // Fetch loyalty saldo when email changes (debounced 600ms)

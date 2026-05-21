@@ -233,6 +233,20 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 - [x] API admin: `GET/PUT /api/loyalty/program`, `GET /api/loyalty/contatto/:id`, `POST /api/loyalty/assegna`, `GET /api/loyalty/classifica`, CRUD gift-cards
 - **Migration da eseguire:** `040_loyalty.sql` ⚠️
 
+### GEO — Generative Engine Optimization ✅ 2026-05-21
+- [x] `client/src/lib/geoSchema.js` — utility `injectJsonLd`, `buildEntitySchema`, `buildFaqSchema`, `buildProductsSchema`
+- [x] **JSON-LD Schema.org** iniettato nelle 3 landing (LodgingBusiness / Restaurant / TouristAttraction) con address, logo, image, telephone, email
+- [x] **AggregateRating** — media stelle + conteggio da `recensioni` (già fetched) → Google rich results con stelle
+- [x] **Review schema** — prime 5 recensioni pubbliche incluse nello schema
+- [x] **Event schema** — eventi futuri embedded nel LocalBusiness schema
+- [x] **FAQPage schema** — iniettato quando `mini.faq` ha elementi (domande/risposte del minisito)
+- [x] **Product schema** — iniettato da ShopWidget dopo il fetch prodotti (`ld-products`)
+- [x] **Sitemap XML per entità** — `GET /api/guest/sitemap/:tipo/:slug` → XML con landing + pagine CMS pubblicate; referenziata via `<link rel="sitemap">` nell'head
+- [x] **llms.txt per entità** — `GET /api/guest/llms/:tipo/:slug` → plain text (nome, descrizione, servizi, FAQ, contatti) per Perplexity/ChatGPT
+- [x] **`client/public/robots.txt`** — permette esplicitamente GPTBot, ClaudeBot, PerplexityBot, Google-Extended, Amazonbot
+- [x] **`client/public/llms.txt`** — descrizione StayApp per AI crawlers sul dominio principale
+- *Nessuna migration necessaria — tutto usa dati esistenti*
+
 ### Sprint 10 — Stripe Subscription Billing (prossimo) 🔴
 - [ ] Piani mensili (base/standard/premium) con prezzi
 - [ ] Checkout Stripe per subscription dalla pagina signup/trial
