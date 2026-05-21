@@ -46,6 +46,8 @@ import contentStudioRouter from './routes/contentStudio.js'
 import surveyRouter from './routes/survey.js'
 import googleCalendarRouter from './routes/googleCalendar.js'
 import loyaltyRouter from './routes/loyalty.js'
+import blogAutomazioniRouter from './routes/blogAutomazioni.js'
+import { runBlogScheduler } from './lib/blogScheduler.js'
 import { runBackup } from './lib/backup.js'
 import { auditLog } from './middleware/auditLog.js'
 import cron from 'node-cron'
@@ -160,6 +162,7 @@ app.use('/api/content-studio',   contentStudioRouter)
 app.use('/api/survey',           surveyRouter)
 app.use('/api/google-calendar',  googleCalendarRouter)
 app.use('/api/loyalty',          loyaltyRouter)
+app.use('/api/blog-automazioni', adminLimiter, blogAutomazioniRouter)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 
@@ -242,6 +245,9 @@ app.listen(PORT, () => {
 
   // Automazioni scheduler — ogni 60 secondi
   setInterval(() => runAutomazioniScheduler().catch(e => console.error('[automazioni]', e.message)), 60_000)
+
+  // Blog scheduler — ogni ora
+  setInterval(() => runBlogScheduler().catch(e => console.error('[blogScheduler]', e.message)), 60 * 60_000)
 
   // Backup notturno — ogni giorno alle 03:00 UTC
   cron.schedule('0 3 * * *', () => {

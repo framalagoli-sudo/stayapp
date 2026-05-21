@@ -40,6 +40,7 @@ import EventoPrenotazioniPage from './pages/admin/eventi/EventoPrenotazioniPage'
 import AdminBlogListPage from './pages/admin/blog/BlogListPage'
 import BlogEditorPage from './pages/admin/blog/BlogEditorPage'
 import BlogCategoriesPage from './pages/admin/blog/BlogCategoriesPage'
+import BlogAutomazioniPage from './pages/admin/blog/BlogAutomazioniPage'
 import ArticoloPage from './pages/public/ArticoloPage'
 import BlogListPage from './pages/public/BlogListPage'
 import ContattiPage from './pages/admin/ContattiPage'
@@ -309,6 +310,7 @@ export default function App() {
             {/* Blog */}
             <Route path="blog"                   element={<AdminBlogListPage />} />
             <Route path="blog/categories"        element={<BlogCategoriesPage />} />
+            <Route path="blog/automazioni"       element={<BlogAutomazioniPage />} />
             <Route path="blog/:id"               element={<BlogEditorPage />} />
 
             {/* Newsletter */}

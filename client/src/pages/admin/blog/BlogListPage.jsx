@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
 import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch } from '../../../lib/api'
-import { Plus, Edit2, Trash2, Eye, EyeOff, Tag, Sparkles, X } from 'lucide-react'
+import { Plus, Edit2, Trash2, Eye, EyeOff, Tag, Sparkles, X, Zap } from 'lucide-react'
 
 function fmtDate(iso) {
   if (!iso) return '—'
@@ -165,6 +165,12 @@ export default function BlogListPage() {
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', background: '#f0f0f0', color: '#1a1a2e', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
           >
             <Tag size={14} strokeWidth={2} /> Categorie
+          </button>
+          <button
+            onClick={() => navigate('/admin/blog/automazioni')}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', background: '#f5f3ff', color: '#6d28d9', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+          >
+            <Zap size={14} strokeWidth={2} /> Automazioni
           </button>
           {entityOptions.length > 0 && (
             <button

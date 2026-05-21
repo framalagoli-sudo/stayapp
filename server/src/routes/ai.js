@@ -1,6 +1,7 @@
 import express from 'express'
 import { requireAuth } from '../middleware/auth.js'
 import { supabase } from '../lib/supabase.js'
+import { fetchUnsplashCover } from '../lib/unsplash.js'
 
 const router = express.Router()
 
@@ -255,11 +256,14 @@ Rispondi ESCLUSIVAMENTE con un oggetto JSON con questa struttura (nessun testo p
     const { count } = await supabase.from('articoli').select('id', { count: 'exact', head: true }).like('slug', `${slug}%`)
     if (count > 0) slug = `${slug}-${Date.now().toString(36)}`
 
+    const cover_url = await fetchUnsplashCover(parsed.title)
+
     const { data: articolo, error: artErr } = await supabase.from('articoli').insert({
       azienda_id, slug,
       title: parsed.title.trim(),
       excerpt: parsed.excerpt?.trim() || null,
       content: parsed.content,
+      cover_url: cover_url || null,
       author: 'AI',
       entity_tipo,
       entity_id,
