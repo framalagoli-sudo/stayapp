@@ -181,4 +181,30 @@ router.delete('/:id', requireAuth, async (req, res) => {
   res.json({ ok: true })
 })
 
+// POST /api/contatti/:id/erasure — GDPR Art. 17 — anonimizza tutti i dati personali
+router.post('/:id/erasure', requireAuth, async (req, res) => {
+  try {
+    const profile = await getAziendaId(req.user.id)
+    if (!profile?.azienda_id) return res.status(403).json({ error: 'Non autorizzato' })
+
+    let q = supabase.from('contatti').select('id').eq('id', req.params.id)
+    if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
+    const { data: contatto, error } = await q.single()
+    if (error || !contatto) return res.status(404).json({ error: 'Contatto non trovato' })
+
+    const short = req.params.id.slice(0, 8)
+    await supabase.from('contatti').update({
+      nome:                `Anonimo`,
+      email:               `cancellato-${short}@gdpr.anonimo`,
+      telefono:            null,
+      note:                null,
+      tags:                [],
+      iscritto_newsletter: false,
+      updated_at:          new Date().toISOString(),
+    }).eq('id', req.params.id)
+
+    res.json({ ok: true })
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
 export default router

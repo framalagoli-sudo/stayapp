@@ -91,6 +91,16 @@ function ContactModal({ contact, aziendaId, onSave, onClose }) {
     setSaving(false)
   }
 
+  async function handleErasure() {
+    if (!window.confirm('Anonimizzare tutti i dati personali di questo contatto?\n\nNome, email, telefono e note verranno sostituiti con dati anonimi. Questa azione è irreversibile (GDPR Art. 17).')) return
+    setSaving(true)
+    try {
+      await apiFetch(`/api/contatti/${contact.id}/erasure`, { method: 'POST' })
+      onSave()
+    } catch (e) { alert(e.message) }
+    setSaving(false)
+  }
+
   const field = { width: '100%', padding: '9px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box', marginBottom: 12 }
   const label = { fontSize: 12, fontWeight: 600, color: '#666', marginBottom: 4, display: 'block' }
 
@@ -127,6 +137,12 @@ function ContactModal({ contact, aziendaId, onSave, onClose }) {
             style={{ width: '100%', padding: '12px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
             {saving ? 'Salvataggio…' : isNew ? 'Aggiungi contatto' : 'Salva modifiche'}
           </button>
+          {!isNew && (
+            <button type="button" onClick={handleErasure} disabled={saving}
+              style={{ width: '100%', marginTop: 8, padding: '9px', background: 'none', border: '1px solid #fca5a5', color: '#dc2626', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+              Anonimizza dati (GDPR Art. 17)
+            </button>
+          )}
         </form>
       </div>
     </div>
