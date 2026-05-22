@@ -13,14 +13,15 @@ import {
 const API_BASE = import.meta.env.VITE_API_URL ?? ''
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
-const PRIMARY    = '#6C3FC5'
-const ACCENT     = '#F0A500'
-const LIGHT_P    = '#F0EAFF'
-const BG         = '#F8F7FC'
-const TEXT       = '#15112A'
-const TEXT_LIGHT = '#5A5475'
-const DARK       = '#0E0B1E'
-const DARK2      = '#1A1535'
+const PRIMARY    = '#0F7B6C'  // petrolio
+const ACCENT     = '#38BDF8'  // azzurro
+const GOLD       = '#C9A84C'  // oro
+const LIGHT_P    = '#E6F4F2'  // sfondo chiaro teal
+const BG         = '#FAF7F0'  // beige chiaro
+const TEXT       = '#0D2926'
+const TEXT_LIGHT = '#4A6B67'
+const DARK       = '#0A2621'
+const DARK2      = '#123630'
 
 const WA_NUMBER = '393000000000'
 const EMAIL     = 'fra.malagoli@gmail.com'
@@ -67,13 +68,13 @@ const css = `
   a.lp-navlink:hover { color: #fff; }
 
   .lp-featcard { transition: transform .2s, box-shadow .2s; }
-  .lp-featcard:hover { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(108,63,197,0.12) !important; }
+  .lp-featcard:hover { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(15,123,108,0.14) !important; }
 
   .lp-testi-card { transition: transform .25s, box-shadow .25s; }
-  .lp-testi-card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(108,63,197,0.10) !important; }
+  .lp-testi-card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(15,123,108,0.12) !important; }
 
   .lp-ai-card { transition: transform .2s, box-shadow .2s; }
-  .lp-ai-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(108,63,197,0.18) !important; }
+  .lp-ai-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(15,123,108,0.20) !important; }
 
   @media (max-width: 960px) {
     .lp-hero-grid   { grid-template-columns: 1fr; gap: 32px; }
@@ -145,7 +146,7 @@ const TESTIMONIALS = [
     role: 'Istruttore',
     business: 'Centro Sportivo Bianchi, Bologna',
     initials: 'LB',
-    color: ACCENT,
+    color: GOLD,
   },
 ]
 
@@ -176,21 +177,21 @@ const FEATURES = [
 const AI_FEATURES = [
   {
     Icon: BookOpen,
-    color: '#7C3AED',
+    color: PRIMARY,
     title: 'Blog AI automatico',
     text: 'Imposta una frequenza (giornaliera, settimanale, mensile) e OltreNova scrive e pubblica articoli ottimizzati SEO in autonomia. Con foto Unsplash incluse.',
     badge: 'Content',
   },
   {
     Icon: Bot,
-    color: '#0EA5E9',
+    color: ACCENT,
     title: 'Chatbot AI conversazionale',
     text: "Attiva la modalità AI sul tuo chatbot: risponde alle domande dei clienti in tempo reale, alimentato dai dati della tua attività. Nessun copione da programmare.",
     badge: 'Customer care',
   },
   {
     Icon: Sparkles,
-    color: '#F59E0B',
+    color: GOLD,
     title: 'Piano editoriale generato',
     text: "Scegli i canali (Instagram, Facebook, LinkedIn…) e OltreNova genera un mese intero di contenuti social con testi e suggerimenti grafici.",
     badge: 'Social',
@@ -250,7 +251,7 @@ export default function LandingPage() {
       {/* ── NAVBAR ── */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
-        background: scrolled || mobileOpen ? 'rgba(14,11,30,0.96)' : 'transparent',
+        background: scrolled || mobileOpen ? 'rgba(10,38,33,0.96)' : 'transparent',
         backdropFilter: scrolled || mobileOpen ? 'blur(20px)' : 'none',
         borderBottom: scrolled || mobileOpen ? '1px solid rgba(255,255,255,0.07)' : 'none',
         transition: 'all .3s ease',
@@ -294,19 +295,19 @@ export default function LandingPage() {
       <section style={{
         minHeight: '100vh', display: 'flex', alignItems: 'center',
         padding: '120px 24px 80px',
-        background: `linear-gradient(150deg, ${DARK} 0%, #1C1040 55%, #0E0B1E 100%)`,
+        background: `linear-gradient(150deg, ${DARK} 0%, #0D3B35 55%, #061814 100%)`,
         position: 'relative', overflow: 'hidden',
       }}>
         {/* blobs decorativi */}
         <div style={{ position: 'absolute', top: '-15%', right: '-8%', width: 640, height: 640, borderRadius: '50%', background: `radial-gradient(circle, ${PRIMARY}28 0%, transparent 68%)`, pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: '-12%', left: '-6%', width: 480, height: 480, borderRadius: '50%', background: `radial-gradient(circle, ${ACCENT}18 0%, transparent 70%)`, pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', top: '40%', left: '30%', width: 320, height: 320, borderRadius: '50%', background: `radial-gradient(circle, #8B5CF620 0%, transparent 70%)`, pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: '40%', left: '30%', width: 320, height: 320, borderRadius: '50%', background: `radial-gradient(circle, ${GOLD}18 0%, transparent 70%)`, pointerEvents: 'none' }} />
 
         <div style={{ maxWidth: 1140, margin: '0 auto', width: '100%', position: 'relative' }}>
           <div className="lp-hero-grid">
             <div>
               {/* pill badge */}
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: `${PRIMARY}25`, color: '#C4B5FD', padding: '6px 16px', borderRadius: 100, fontSize: 13, fontWeight: 600, marginBottom: 32, border: `1px solid ${PRIMARY}45` }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: `${PRIMARY}25`, color: '#A7D8D3', padding: '6px 16px', borderRadius: 100, fontSize: 13, fontWeight: 600, marginBottom: 32, border: `1px solid ${PRIMARY}45` }}>
                 <Sparkles size={13} strokeWidth={2} />
                 App · Sito · CRM · AI — tutto in uno
               </div>
@@ -335,7 +336,7 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <div style={{ display: 'flex', gap: 2, marginBottom: 2 }}>
-                    {[...Array(5)].map((_,i) => <Star key={i} size={12} strokeWidth={0} fill={ACCENT} color={ACCENT} />)}
+                    {[...Array(5)].map((_,i) => <Star key={i} size={12} strokeWidth={0} fill={GOLD} color={GOLD} />)}
                   </div>
                   <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13 }}>Già usato da decine di attività</div>
                 </div>
@@ -479,12 +480,12 @@ export default function LandingPage() {
       </section>
 
       {/* ── AI SECTION ── */}
-      <section id="ai" style={{ padding: '104px 24px', background: `linear-gradient(135deg, #1E0B3E 0%, #0E0B1E 100%)`, position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: '10%', right: '5%', width: 400, height: 400, borderRadius: '50%', background: `radial-gradient(circle, #7C3AED20 0%, transparent 70%)`, pointerEvents: 'none' }} />
+      <section id="ai" style={{ padding: '104px 24px', background: `linear-gradient(135deg, #0A2F28 0%, ${DARK} 100%)`, position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: '10%', right: '5%', width: 400, height: 400, borderRadius: '50%', background: `radial-gradient(circle, ${GOLD}20 0%, transparent 70%)`, pointerEvents: 'none' }} />
         <div style={{ maxWidth: 1140, margin: '0 auto', position: 'relative' }}>
           <FadeIn>
             <div style={{ textAlign: 'center', marginBottom: 72 }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#7C3AED25', color: '#C4B5FD', padding: '6px 16px', borderRadius: 100, fontSize: 13, fontWeight: 600, marginBottom: 20, border: '1px solid #7C3AED45' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: `${PRIMARY}25`, color: '#A7D8D3', padding: '6px 16px', borderRadius: 100, fontSize: 13, fontWeight: 600, marginBottom: 20, border: `1px solid ${PRIMARY}45` }}>
                 <Sparkles size={13} strokeWidth={2} /> Intelligenza Artificiale
               </div>
               <h2 style={{ fontSize: 42, fontWeight: 700, color: '#fff', letterSpacing: '-0.5px', lineHeight: 1.15, marginBottom: 18 }}>
@@ -645,7 +646,7 @@ function AnimatedStats() {
   }, [go])
 
   return (
-    <section ref={ref} style={{ background: '#080614', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+    <section ref={ref} style={{ background: '#061814', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <div className="lp-stats-grid">
           {STAT_DATA.map(({ suffix, label, sub }, i) => (
@@ -745,7 +746,7 @@ function Testimonials() {
               <div className="lp-testi-card" style={{
                 background: '#fff', borderRadius: 20, padding: '36px 32px',
                 border: `1px solid ${PRIMARY}08`,
-                boxShadow: `0 4px 24px rgba(108,63,197,0.06)`,
+                boxShadow: `0 4px 24px rgba(15,123,108,0.08)`,
                 display: 'flex', flexDirection: 'column', gap: 24, height: '100%',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -888,10 +889,10 @@ function DemoForm() {
 function PhoneMockup({ scale = 1 }) {
   const w = Math.round(264 * scale), h = Math.round(532 * scale)
   return (
-    <div style={{ width: w, height: h, background: '#0D0A1E', borderRadius: 42 * scale, padding: 9 * scale, boxShadow: `0 48px 96px rgba(108,63,197,0.32), 0 0 0 1px rgba(255,255,255,0.05)` }}>
-      <div style={{ width: '100%', height: '100%', borderRadius: 34 * scale, background: `linear-gradient(165deg, ${PRIMARY} 0%, #3B1F7A 40%, #0E0B1E 100%)`, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ width: w, height: h, background: '#061814', borderRadius: 42 * scale, padding: 9 * scale, boxShadow: `0 48px 96px rgba(15,123,108,0.30), 0 0 0 1px rgba(255,255,255,0.05)` }}>
+      <div style={{ width: '100%', height: '100%', borderRadius: 34 * scale, background: `linear-gradient(165deg, ${PRIMARY} 0%, #1B5E53 40%, #061814 100%)`, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <div style={{ height: 28 * scale, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', paddingBottom: 4 }}>
-          <div style={{ width: 72 * scale, height: 18 * scale, background: '#0D0A1E', borderRadius: 10 }} />
+          <div style={{ width: 72 * scale, height: 18 * scale, background: '#061814', borderRadius: 10 }} />
         </div>
         <div style={{ padding: `${16 * scale}px ${20 * scale}px ${12 * scale}px`, display: 'flex', alignItems: 'center', gap: 10 * scale }}>
           <div style={{ width: 34 * scale, height: 34 * scale, borderRadius: 10 * scale, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
