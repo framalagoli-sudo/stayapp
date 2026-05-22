@@ -242,16 +242,29 @@ export default function LandingPage() {
     const onScroll = () => setScrolled(window.scrollY > 40)
     window.addEventListener('scroll', onScroll)
 
-    // JSON-LD dinamico da Supabase
+    // SEO dinamico da Supabase (title, description, JSON-LD)
     fetch(`${API_BASE}/api/landing-seo`)
       .then(r => r.ok ? r.json() : null)
       .then(d => {
-        if (!d?.jsonld) return
-        const s = document.createElement('script')
-        s.type = 'application/ld+json'
-        s.id = 'landing-jsonld'
-        try { s.textContent = JSON.stringify(d.jsonld) } catch {}
-        document.head.appendChild(s)
+        if (!d) return
+        if (d.meta?.title)       document.title = d.meta.title
+        if (d.meta?.description) {
+          let el = document.querySelector('meta[name="description"]')
+          if (!el) { el = document.createElement('meta'); el.name = 'description'; document.head.appendChild(el) }
+          el.setAttribute('content', d.meta.description)
+        }
+        if (d.meta?.keywords) {
+          let el = document.querySelector('meta[name="keywords"]')
+          if (!el) { el = document.createElement('meta'); el.name = 'keywords'; document.head.appendChild(el) }
+          el.setAttribute('content', d.meta.keywords)
+        }
+        if (d.jsonld) {
+          const s = document.createElement('script')
+          s.type = 'application/ld+json'
+          s.id = 'landing-jsonld'
+          try { s.textContent = JSON.stringify(d.jsonld) } catch {}
+          document.head.appendChild(s)
+        }
       })
       .catch(() => {})
 
