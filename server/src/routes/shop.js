@@ -227,7 +227,7 @@ router.post('/public/:azienda_id/ordine', async (req, res) => {
         `<tr><td style="padding:6px 8px;border-bottom:1px solid #eee">${v.nome}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center">${v.qty}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">€${(v.prezzo * v.qty).toFixed(2)}</td></tr>`
       ).join('')
       await resend.emails.send({
-        from: process.env.RESEND_FROM || 'noreply@stayapp.it',
+        from: process.env.RESEND_FROM || 'noreply@oltrenova.com',
         to: email_cliente,
         subject: `Ordine #${ordine.numero} ricevuto`,
         html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:24px">

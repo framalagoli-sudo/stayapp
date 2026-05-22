@@ -34,19 +34,19 @@ router.post('/', validate(demoSchema), async (req, res) => {
   })
   if (error) return res.status(500).json({ error: error.message })
 
-  // Notifica email al team StayApp
+  // Notifica email al team OltreNova
   if (process.env.RESEND_API_KEY) {
     try {
       const { Resend } = await import('resend')
       const resend = new Resend(process.env.RESEND_API_KEY)
       await resend.emails.send({
-        from: process.env.RESEND_FROM || 'StayApp <noreply@stayapp.it>',
+        from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
         to: NOTIFY_EMAIL,
         replyTo: email.trim(),
-        subject: `[StayApp] Nuova richiesta demo — ${nome.trim()}`,
+        subject: `[OltreNova] Nuova richiesta demo — ${nome.trim()}`,
         html: emailTemplate({
           title: 'Nuova richiesta demo',
-          entityName: 'StayApp',
+          entityName: 'OltreNova',
           rows: [
             { label: 'Nome',      value: nome.trim() },
             { label: 'Email',     value: `<a href="mailto:${email}" style="color:#1A6490">${email}</a>` },
@@ -54,7 +54,7 @@ router.post('/', validate(demoSchema), async (req, res) => {
             { label: 'Attività',  value: tipo_attivita?.trim() || '—' },
             { label: 'Messaggio', value: messaggio?.trim() ? messaggio.replace(/\n/g, '<br>') : '—' },
           ],
-          appUrl: process.env.APP_URL || 'https://stayapp.it',
+          appUrl: process.env.APP_URL || 'https://oltrenova.com',
         }),
       })
     } catch (err) { console.error('[demo email]', err.message) }

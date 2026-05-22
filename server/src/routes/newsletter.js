@@ -45,7 +45,7 @@ function nlFooter(unsubscribeUrl, entityName) {
       Hai ricevuto questa email perché sei iscritto alla newsletter di <strong>${esc(entityName)}</strong>.<br>
       <a href="${unsubscribeUrl}" style="color:#aaa;text-decoration:underline">Annulla iscrizione</a>
       <span style="color:#ddd">&nbsp;·&nbsp;</span>
-      <span style="color:#ccc">Powered by StayApp</span>
+      <span style="color:#ccc">Powered by OltreNova</span>
     </p>
   </td></tr>`
 }
@@ -168,10 +168,10 @@ export async function sendNewsletterById(id) {
   if (!contacts?.length) throw new Error('Nessun iscritto trovato')
 
   const entity = await getEntity(nl.entity_tipo, nl.entity_id)
-  const entityName = entity?.name || 'StayApp'
+  const entityName = entity?.name || 'OltreNova'
   const entityLogo = entity?.logo_url || null
   const primary    = entity?.theme?.primaryColor || '#1a1a2e'
-  const appUrl     = process.env.APP_URL || 'https://stayapp.it'
+  const appUrl     = process.env.APP_URL || 'https://oltrenova.com'
 
   if (!process.env.RESEND_API_KEY) throw new Error('RESEND_API_KEY non configurata')
 
@@ -192,7 +192,7 @@ export async function sendNewsletterById(id) {
       const pContent = personalize(nl.content, c.nome)
       const pSubject = personalize(nl.subject, c.nome)
       return {
-        from: process.env.RESEND_FROM || 'StayApp <noreply@stayapp.it>',
+        from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
         to: c.email,
         subject: pSubject,
         html: buildNewsletterHtml({
@@ -326,9 +326,9 @@ router.post('/:id/test', requireAuth, async (req, res) => {
   const { data: nl, error } = await supabase.from('newsletters').select('*').eq('id', req.params.id).single()
   if (error || !nl) return res.status(404).json({ error: 'Non trovata' })
   const entity = await getEntity(nl.entity_tipo, nl.entity_id)
-  const appUrl = process.env.APP_URL || 'https://stayapp.it'
+  const appUrl = process.env.APP_URL || 'https://oltrenova.com'
   const html = buildNewsletterHtml({
-    entityName: entity?.name || 'StayApp', entityLogo: entity?.logo_url || null,
+    entityName: entity?.name || 'OltreNova', entityLogo: entity?.logo_url || null,
     primary: entity?.theme?.primaryColor || '#1a1a2e',
     template_id: nl.template_id,
     content: personalize(nl.content, 'Mario'),
@@ -340,7 +340,7 @@ router.post('/:id/test', requireAuth, async (req, res) => {
     const { Resend } = await import('resend')
     const resend = new Resend(process.env.RESEND_API_KEY)
     await resend.emails.send({
-      from: process.env.RESEND_FROM || 'StayApp <noreply@stayapp.it>',
+      from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
       to: test_email,
       subject: `[TEST] ${personalize(nl.subject, 'Mario') || '(senza oggetto)'}`,
       html,

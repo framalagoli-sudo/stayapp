@@ -99,14 +99,14 @@ router.post('/:id/test', requireAuth, async (req, res) => {
     const body = JSON.stringify({
       evento: 'test',
       timestamp: new Date().toISOString(),
-      messaggio: 'Payload di test da StayApp',
+      messaggio: 'Payload di test da OltreNova',
       azienda_id: profile.azienda_id,
     })
 
     try {
       const resp = await fetch(hook.url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-StayApp-Event': 'test' },
+        headers: { 'Content-Type': 'application/json', 'X-OltreNova-Event': 'test' },
         body,
         signal: AbortSignal.timeout(8000),
       })

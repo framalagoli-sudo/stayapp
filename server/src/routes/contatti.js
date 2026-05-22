@@ -63,13 +63,13 @@ router.post('/subscribe', validate(subscribeSchema), async (req, res) => {
 
 async function sendConfirmationEmail({ email, nome, entityName, token }) {
   if (!email || !process.env.RESEND_API_KEY) return
-  const appUrl = process.env.APP_URL || 'https://stayapp-henna.vercel.app'
+  const appUrl = process.env.APP_URL || 'https://oltrenova.com'
   const confirmUrl = `${appUrl}/confirm-subscription?token=${token}`
   try {
     const { Resend } = await import('resend')
     const resend = new Resend(process.env.RESEND_API_KEY)
     await resend.emails.send({
-      from: process.env.RESEND_FROM || 'StayApp <noreply@stayapp.it>',
+      from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
       to: email,
       subject: `Conferma la tua iscrizione alla newsletter di ${entityName}`,
       html: confirmationEmailHtml({ nome, entityName, confirmUrl }),
@@ -94,7 +94,7 @@ function confirmationEmailHtml({ nome, entityName, confirmUrl }) {
     <p style="font-size:12px;color:#aaa;margin-top:28px;line-height:1.6">Se non hai effettuato questa richiesta, ignora questa email.</p>
   </td></tr>
   <tr><td style="padding:16px 36px;background:#f9f9fb;border-top:1px solid #f0f0f0;text-align:center">
-    <span style="font-size:11px;color:#bbb">Powered by StayApp</span>
+    <span style="font-size:11px;color:#bbb">Powered by OltreNova</span>
   </td></tr>
 </table>
 </td></tr></table>

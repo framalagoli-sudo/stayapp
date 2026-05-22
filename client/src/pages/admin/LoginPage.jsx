@@ -47,7 +47,7 @@ export default function LoginPage() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5' }}>
       {step === 'password' ? (
         <form onSubmit={handlePassword} style={cardStyle}>
-          <h1 style={{ marginTop: 0, marginBottom: 8, fontSize: 24, color: '#1a1a2e' }}>StayApp</h1>
+          <h1 style={{ marginTop: 0, marginBottom: 8, fontSize: 24, color: '#1a1a2e' }}>OltreNova</h1>
           <p style={{ margin: '0 0 28px', color: '#666', fontSize: 14 }}>Accedi al pannello amministrativo</p>
 
           <label style={labelStyle}>Email</label>

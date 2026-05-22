@@ -162,7 +162,7 @@ async function calcolaCoperti(risorsa, date) {
 
 async function inviaEmailConferma(prenotazione, risorsa) {
   if (!process.env.RESEND_API_KEY) return
-  const cancelUrl = `${process.env.CLIENT_URL || 'https://stayapp-henna.vercel.app'}/cancella-prenotazione?token=${prenotazione.cancellation_token}`
+  const cancelUrl = `${process.env.CLIENT_URL || 'https://oltrenova.com'}/cancella-prenotazione?token=${prenotazione.cancellation_token}`
 
   const quando = risorsa.modalita === 'coperti'
     ? `${prenotazione.data} — ${prenotazione.servizio} ore ${prenotazione.ora_inizio}`
@@ -170,7 +170,7 @@ async function inviaEmailConferma(prenotazione, risorsa) {
 
   try {
     await resend.emails.send({
-      from: 'StayApp <noreply@resend.dev>',
+      from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
       to: prenotazione.cliente_email,
       subject: `Prenotazione confermata — ${risorsa.nome}`,
       html: `

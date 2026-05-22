@@ -5,7 +5,7 @@ import { requireAuth } from '../middleware/auth.js'
 const router = Router()
 router.use(requireAuth)
 
-const STAYAPP_DOMAIN = process.env.STAYAPP_DOMAIN || 'stayapp.it'
+const STAYAPP_DOMAIN = process.env.STAYAPP_DOMAIN || 'oltrenova.com'
 const VERCEL_TOKEN      = process.env.VERCEL_TOKEN
 const VERCEL_PROJECT_ID = process.env.VERCEL_PROJECT_ID
 
@@ -245,7 +245,7 @@ function buildDnsFromVercel(dominio, vData) {
 
 // Usato da index.js per creare automaticamente il sottodominio alla creazione entità
 export async function createDefaultSubdomain({ azienda_id, entity_tipo, entity_id, entity_slug }) {
-  const stayappDomain = process.env.STAYAPP_DOMAIN || 'stayapp.it'
+  const stayappDomain = process.env.STAYAPP_DOMAIN || 'oltrenova.com'
   const dominio = `${entity_slug}.${stayappDomain}`
   try {
     await supabase.from('domini').upsert({

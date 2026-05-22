@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
 
-// Ruoli interni StayApp (gli utenti azienda si gestiscono dal pannello Aziende)
+// Ruoli interni OltreNova (gli utenti azienda si gestiscono dal pannello Aziende)
 const INTERNAL_ROLES = ['super_admin', 'admin', 'editor']
 const ROLE_LABELS = { super_admin: 'Super Admin', admin: 'Admin', editor: 'Editor' }
 const ROLE_DESC = {
@@ -72,7 +72,7 @@ export default function UsersPage() {
         )}
       </div>
       <p style={{ margin: '0 0 24px', color: '#888', fontSize: 14 }}>
-        Gestisci gli utenti del team StayApp. Gli accessi clienti si gestiscono dal pannello Aziende.
+        Gestisci gli utenti del team OltreNova. Gli accessi clienti si gestiscono dal pannello Aziende.
       </p>
 
       {error && <p style={{ color: '#c00' }}>{error}</p>}

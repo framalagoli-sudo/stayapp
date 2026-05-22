@@ -192,7 +192,7 @@ router.post('/public/:token/submit', async (req, res) => {
     if (form.email_notifica && process.env.RESEND_API_KEY) {
       const righe = form.campi.map(c => `<tr><td style="padding:4px 8px;color:#888">${c.label}</td><td style="padding:4px 8px">${dati[c.id] ?? ''}</td></tr>`).join('')
       resend.emails.send({
-        from: process.env.RESEND_FROM || 'noreply@stayapp.it',
+        from: process.env.RESEND_FROM || 'noreply@oltrenova.com',
         to: form.email_notifica,
         subject: `Nuova risposta al form: ${form.nome}`,
         html: `<h3>Nuova risposta ricevuta</h3><table>${righe}</table>`,

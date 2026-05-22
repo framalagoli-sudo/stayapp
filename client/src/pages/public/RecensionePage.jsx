@@ -67,7 +67,7 @@ export default function RecensionePage() {
   }
 
   const primary = info?.primary || '#1a1a2e'
-  const entityName = info?.entity_name || 'StayApp'
+  const entityName = info?.entity_name || 'OltreNova'
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5' }}>

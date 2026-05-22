@@ -339,7 +339,7 @@ export default function AdminLayout() {
   const sidebarContent = (
     <>
       <div style={{ padding: '22px 20px 10px', fontWeight: 700, fontSize: 18, letterSpacing: 1, color: '#fff' }}>
-        StayApp
+        OltreNova
       </div>
 
       {/* Entity switcher — admin azienda e staff */}
@@ -559,7 +559,7 @@ export default function AdminLayout() {
         >
           {menuOpen ? '✕' : '☰'}
         </button>
-        <span style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>StayApp</span>
+        <span style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>OltreNova</span>
       </div>
 
       <div className={`admin-backdrop${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(false)} />

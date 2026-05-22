@@ -89,8 +89,8 @@ export default function ChatPage() {
         const isNewGuestMsg = msg.sender === 'guest' && msg.session_id !== activeSession
         if (isNewGuestMsg) {
           playBeep()
-          document.title = '💬 Nuovo messaggio — StayApp'
-          setTimeout(() => { document.title = 'StayApp' }, 5000)
+          document.title = '💬 Nuovo messaggio — OltreNova'
+          setTimeout(() => { document.title = 'OltreNova' }, 5000)
         }
         // Aggiorna lista conversazioni
         setConversations(prev => {

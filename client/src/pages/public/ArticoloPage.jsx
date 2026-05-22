@@ -68,12 +68,12 @@ export default function ArticoloPage() {
 
   useEffect(() => {
     if (!articolo) return
-    document.title = `${articolo.title} — StayApp`
+    document.title = `${articolo.title} — OltreNova`
     const desc = document.querySelector('meta[name="description"]')
     if (desc) desc.setAttribute('content', articolo.excerpt || articolo.title)
     const og = document.querySelector('meta[property="og:image"]')
     if (og && articolo.cover_url) og.setAttribute('content', articolo.cover_url)
-    return () => { document.title = 'StayApp' }
+    return () => { document.title = 'OltreNova' }
   }, [articolo])
 
   if (loading) return (

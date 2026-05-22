@@ -61,8 +61,8 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }, // necessario per immagini Storage
 }))
 
-// ── CORS — whitelist esplicita + wildcard *.stayapp.it + domini custom ───────
-const STAYAPP_DOMAIN = process.env.STAYAPP_DOMAIN || 'stayapp.it'
+// ── CORS — whitelist esplicita + wildcard *.oltrenova.com + domini custom ────
+const STAYAPP_DOMAIN = process.env.STAYAPP_DOMAIN || 'oltrenova.com'
 const STAYAPP_SUBDOMAIN_RE = new RegExp(`^https://[a-z0-9-]+\\.${STAYAPP_DOMAIN.replace('.', '\\.')}$`)
 
 const staticOrigins = new Set([
@@ -238,7 +238,7 @@ app.use((err, _req, res, _next) => {
 })
 
 app.listen(PORT, () => {
-  console.log(`StayApp server running on :${PORT}`)
+  console.log(`OltreNova server running on :${PORT}`)
 
   // Newsletter scheduler — ogni 60 secondi
   setInterval(() => runScheduledSends().catch(e => console.error('[scheduler]', e.message)), 60_000)

@@ -413,7 +413,7 @@ router.post('/book', validate(bookSchema), async (req, res) => {
         ...(notes   ? [{ label: 'Note',     value: notes.replace(/\n/g, '<br>') }] : []),
       ]
       await resend.emails.send({
-        from: process.env.RESEND_FROM || 'StayApp <noreply@stayapp.it>',
+        from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
         to: entityEmail,
         replyTo: email,
         subject: `[${entityName}] Nuova prenotazione ${typeLabel}: ${item_name || ''}`,
@@ -421,7 +421,7 @@ router.post('/book', validate(bookSchema), async (req, res) => {
           title: `Nuova prenotazione ${typeLabel}`,
           entityName,
           rows,
-          appUrl: process.env.APP_URL || 'https://stayapp.it',
+          appUrl: process.env.APP_URL || 'https://oltrenova.com',
         }),
       })
     } catch (err) { console.error('[book]', err.message) }
@@ -496,7 +496,7 @@ router.post('/contact', validate(contactSchema), async (req, res) => {
       const { Resend } = await import('resend')
       const resend = new Resend(process.env.RESEND_API_KEY)
       await resend.emails.send({
-        from: process.env.RESEND_FROM || 'StayApp <noreply@stayapp.it>',
+        from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
         to: entityEmail,
         replyTo: email,
         subject: `[${entityName}] Nuovo messaggio dal sito`,
@@ -508,7 +508,7 @@ router.post('/contact', validate(contactSchema), async (req, res) => {
             { label: 'Email', value: `<a href="mailto:${email}" style="color:#00b5b5">${email}</a>` },
             { label: 'Messaggio', value: message.replace(/\n/g, '<br>') },
           ],
-          appUrl: process.env.APP_URL || 'https://stayapp.it',
+          appUrl: process.env.APP_URL || 'https://oltrenova.com',
         }),
       })
     } catch (err) { console.error('[contact]', err.message) }
@@ -523,7 +523,7 @@ function emailTemplate({ title, entityName, rows, appUrl }) {
   <table width="600" cellpadding="0" cellspacing="0" style="margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
     <tr><td style="background:#1a1a2e;padding:28px 36px">
       <div style="font-size:22px;font-weight:700;color:#fff">${entityName}</div>
-      <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-top:4px">Notifica StayApp</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-top:4px">Notifica OltreNova</div>
     </td></tr>
     <tr><td style="padding:32px 36px">
       <h2 style="margin:0 0 24px;font-size:18px;color:#1a1a2e">${title}</h2>
@@ -536,7 +536,7 @@ function emailTemplate({ title, entityName, rows, appUrl }) {
     </td></tr>
     <tr><td style="padding:20px 36px;background:#f9f9fb;border-top:1px solid #f0f0f0">
       <a href="${appUrl}/admin/requests" style="color:#00b5b5;font-size:13px;text-decoration:none;font-weight:600">Apri il pannello admin →</a>
-      <span style="color:#bbb;font-size:12px;margin-left:16px">Powered by StayApp</span>
+      <span style="color:#bbb;font-size:12px;margin-left:16px">Powered by OltreNova</span>
     </td></tr>
   </table>
   </td></tr></table></body></html>`
@@ -652,9 +652,9 @@ router.post('/recensione/:token', async (req, res) => {
           const r = new Resend(process.env.RESEND_API_KEY)
           const stars = '★'.repeat(Number(stelle)) + '☆'.repeat(5 - Number(stelle))
           await r.emails.send({
-            from: process.env.RESEND_FROM || 'StayApp <noreply@stayapp.it>',
+            from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
             to: az.email,
-            subject: `[StayApp] Nuova recensione ${stars} da ${autore?.trim() || 'Anonimo'}`,
+            subject: `[OltreNova] Nuova recensione ${stars} da ${autore?.trim() || 'Anonimo'}`,
             html: `<p>Hai ricevuto una recensione privata (${stelle}/5 stelle) da <strong>${autore?.trim() || 'Anonimo'}</strong>.</p><p>${testo?.trim() || ''}</p><p>Accedi al pannello admin per visualizzarla e rispondere.</p>`,
           })
         } catch {}

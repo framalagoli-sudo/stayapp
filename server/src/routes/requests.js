@@ -12,7 +12,7 @@ async function sendAdminEmail({ to, subject, html }) {
     const { Resend } = await import('resend')
     const resend = new Resend(process.env.RESEND_API_KEY)
     await resend.emails.send({
-      from: process.env.RESEND_FROM || 'StayApp <noreply@stayapp.it>',
+      from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
       to, subject, html,
     })
   } catch (err) {
@@ -73,7 +73,7 @@ router.post('/', async (req, res) => {
             ...(room ? [{ label: 'Camera', value: room }] : []),
             { label: 'Messaggio', value: message.replace(/\n/g, '<br>') },
           ],
-          appUrl: process.env.APP_URL || 'https://stayapp.it',
+          appUrl: process.env.APP_URL || 'https://oltrenova.com',
         }),
       })
     })

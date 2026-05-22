@@ -159,7 +159,7 @@ export default function DemoRequestsPage() {
                 )}
                 <div style={{ marginTop: 16, display: 'flex', gap: 10 }}>
                   <a
-                    href={`mailto:${r.email}?subject=Re: Richiesta info StayApp`}
+                    href={`mailto:${r.email}?subject=Re: Richiesta info OltreNova`}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: PRIMARY, color: '#fff', padding: '9px 18px', borderRadius: 8, textDecoration: 'none', fontSize: 14, fontWeight: 600 }}
                   >
                     <Mail size={15} strokeWidth={1.5} /> Rispondi via email

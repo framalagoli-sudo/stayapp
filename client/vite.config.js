@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/*.png'],
       manifest: {
-        name: 'StayApp',
-        short_name: 'StayApp',
+        name: 'OltreNova',
+        short_name: 'OltreNova',
         description: 'La tua guida digitale per il soggiorno',
         theme_color: '#1a1a2e',
         background_color: '#ffffff',

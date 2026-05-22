@@ -4,11 +4,11 @@ const CarrelloContext = createContext(null)
 
 export function CarrelloProvider({ children }) {
   const [voci, setVoci] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('stayapp_cart') || '[]') } catch { return [] }
+    try { return JSON.parse(localStorage.getItem('oltrenova_cart') || '[]') } catch { return [] }
   })
 
   useEffect(() => {
-    localStorage.setItem('stayapp_cart', JSON.stringify(voci))
+    localStorage.setItem('oltrenova_cart', JSON.stringify(voci))
   }, [voci])
 
   function aggiungi(prodotto, qty = 1) {

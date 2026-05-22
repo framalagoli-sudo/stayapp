@@ -134,7 +134,7 @@ export default function LandingRistorante({ ristorante }) {
     const apiBase = import.meta.env.VITE_API_URL ?? ''
     const sitemapEl = Object.assign(document.createElement('link'), { rel: 'sitemap', type: 'application/xml', href: `${apiBase}/api/guest/sitemap/ristorante/${ristorante.slug}` })
     document.head.appendChild(sitemapEl)
-    return () => { document.title = 'StayApp'; cleanupTracking(); sitemapEl.remove() }
+    return () => { document.title = 'OltreNova'; cleanupTracking(); sitemapEl.remove() }
   }, [])
 
   useEffect(() => {
@@ -993,7 +993,7 @@ export default function LandingRistorante({ ristorante }) {
           </div>
         )}
         <p style={{ fontSize: 12, color: '#555' }}>
-          © {new Date().getFullYear()} {ristorante.name} · Powered by StayApp
+          © {new Date().getFullYear()} {ristorante.name} · Powered by OltreNova
         </p>
         {ristorante.slug && (
           <p style={{ fontSize: 11, color: '#888', marginTop: 8 }}>

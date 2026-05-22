@@ -76,7 +76,7 @@ export default function SignupPage() {
       <div style={{ background: '#fff', borderRadius: 16, padding: '40px 36px', width: '100%', maxWidth: 420, boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
 
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#1a1a2e', letterSpacing: 0.5 }}>StayApp</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#1a1a2e', letterSpacing: 0.5 }}>OltreNova</div>
           <div style={{ fontSize: 14, color: '#888', marginTop: 6 }}>Crea il tuo account — 14 giorni gratuiti</div>
         </div>
 

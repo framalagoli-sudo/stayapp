@@ -133,13 +133,13 @@ Rispondi ESCLUSIVAMENTE con un oggetto JSON (nessun testo prima o dopo):
       const { Resend } = await import('resend')
       const resend = new Resend(process.env.RESEND_API_KEY)
       await resend.emails.send({
-        from: process.env.RESEND_FROM || 'StayApp <noreply@stayapp.it>',
+        from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
         to: automazione.notifica_email,
         subject: `Nuova bozza AI pronta: "${parsed.title}"`,
         html: `<p>È stata generata automaticamente una nuova bozza di articolo per <strong>${entity.name}</strong>:</p>
 <p><strong>${parsed.title}</strong></p>
 <p>${parsed.excerpt || ''}</p>
-<p><a href="${process.env.CLIENT_URL || 'https://stayapp-henna.vercel.app'}/admin/blog">Apri l'admin Blog →</a></p>`,
+<p><a href="${process.env.CLIENT_URL || 'https://oltrenova.com'}/admin/blog">Apri l'admin Blog →</a></p>`,
       })
     } catch (e) { console.error('[blogScheduler] notifica email:', e.message) }
   }

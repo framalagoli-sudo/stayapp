@@ -780,7 +780,7 @@ export default function PaginaPage({ entityType }) {
   const footerText = footerCfg.style === 'light' ? '#666' : '#555'
   const footerLink = footerCfg.style === 'light' ? '#888' : '#aaa'
   const footerYear = new Date().getFullYear()
-  const footerCopy = footerCfg.copyright || `© ${footerYear} ${entity.name} · Powered by StayApp`
+  const footerCopy = footerCfg.copyright || `© ${footerYear} ${entity.name} · Powered by OltreNova`
 
   return (
     <>

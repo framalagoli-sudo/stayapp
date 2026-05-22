@@ -287,7 +287,7 @@ export default function IntegrazioniPage() {
   return (
     <div style={{ maxWidth: 720 }}>
       <h1 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 700, color: '#1a1a2e' }}>Integrazioni</h1>
-      <p style={{ margin: '0 0 24px', fontSize: 14, color: '#888' }}>Connetti StayApp a Google Calendar, Zapier, Make, n8n e altri sistemi.</p>
+      <p style={{ margin: '0 0 24px', fontSize: 14, color: '#888' }}>Connetti OltreNova a Google Calendar, Zapier, Make, n8n e altri sistemi.</p>
 
       {gcalResult === 'error' && (
         <div style={{ background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#c53030', display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -314,7 +314,7 @@ export default function IntegrazioniPage() {
       {/* Info box */}
       <div style={{ background: '#f0f4ff', border: '1px solid #c7d7f0', borderRadius: 10, padding: '14px 16px', marginBottom: 20, fontSize: 13, color: '#2b4a8f', lineHeight: 1.6 }}>
         <strong>Come funziona:</strong> ogni webhook riceve un POST JSON su ogni evento selezionato.
-        Header <code style={{ background: '#dce8ff', padding: '1px 5px', borderRadius: 3 }}>X-StayApp-Event</code> indica il tipo di evento.
+        Header <code style={{ background: '#dce8ff', padding: '1px 5px', borderRadius: 3 }}>X-OltreNova-Event</code> indica il tipo di evento.
         Usa il pulsante <Send size={11} strokeWidth={1.5} style={{ verticalAlign: 'middle' }} /> per inviare un payload di test.
       </div>
 

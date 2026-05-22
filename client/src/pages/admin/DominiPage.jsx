@@ -4,7 +4,7 @@ import { apiFetch } from '../../lib/api'
 import { Globe, Plus, Trash2, CheckCircle, Clock, AlertCircle, Copy, ExternalLink, RefreshCw, Pencil, X, Check } from 'lucide-react'
 import { useProperty } from '../../hooks/useProperty'
 
-const STAYAPP_DOMAIN = import.meta.env.VITE_STAYAPP_DOMAIN || 'stayapp.it'
+const STAYAPP_DOMAIN = import.meta.env.VITE_STAYAPP_DOMAIN || 'oltrenova.com'
 
 export default function DominiPage({ entityTipo }) {
   const { id: paramId } = useParams()
@@ -156,7 +156,7 @@ export default function DominiPage({ entityTipo }) {
 }
 
 function SubdomainCard({ dom, onCopy, copied, onRename }) {
-  const DOMAIN = import.meta.env.VITE_STAYAPP_DOMAIN || 'stayapp.it'
+  const DOMAIN = import.meta.env.VITE_STAYAPP_DOMAIN || 'oltrenova.com'
   const url = `https://${dom.dominio}`
   const currentSlug = dom.dominio.replace(`.${DOMAIN}`, '')
 

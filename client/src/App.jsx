@@ -116,10 +116,10 @@ function StrutturaLayout() {
   )
 }
 
-const STAYAPP_DOMAIN = import.meta.env.VITE_STAYAPP_DOMAIN || 'stayapp.it'
+const STAYAPP_DOMAIN = import.meta.env.VITE_STAYAPP_DOMAIN || 'oltrenova.com'
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
-// Rileva se siamo su sottodominio *.stayapp.it o dominio custom → redirige alla rotta giusta
+// Rileva se siamo su sottodominio *.oltrenova.com o dominio custom → redirige alla rotta giusta
 function DomainDetector() {
   const [redirectTo, setRedirectTo] = useState(null)
   const [checked, setChecked] = useState(false)
@@ -326,7 +326,7 @@ export default function App() {
             <Route path="pagine/:pageId" element={<PaginaEditorPage />} />
           </Route>
 
-          {/* Root — landing page StayApp */}
+          {/* Root — landing page OltreNova */}
           <Route path="/" element={<LandingPage />} />
         </Routes>
       </BrowserRouter>

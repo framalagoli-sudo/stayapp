@@ -21,8 +21,8 @@ const DARK       = '#0F2330'
 
 const WA_NUMBER = '393000000000'
 const EMAIL     = 'fra.malagoli@gmail.com'
-const WA_DEMO   = `https://wa.me/${WA_NUMBER}?text=Ciao!%20Vorrei%20saperne%20di%20pi%C3%B9%20su%20StayApp.`
-const WA_PRICE  = `https://wa.me/${WA_NUMBER}?text=Ciao!%20Vorrei%20un%20preventivo%20per%20StayApp.`
+const WA_DEMO   = `https://wa.me/${WA_NUMBER}?text=Ciao!%20Vorrei%20saperne%20di%20pi%C3%B9%20su%20OltreNova.`
+const WA_PRICE  = `https://wa.me/${WA_NUMBER}?text=Ciao!%20Vorrei%20un%20preventivo%20per%20OltreNova.`
 
 // ─── CSS ─────────────────────────────────────────────────────────────────────
 const css = `
@@ -156,7 +156,7 @@ const FEATURES = [
   { Icon: Smartphone,     title: 'App per i tuoi clienti',   text: "Un QR code. I tuoi clienti aprono l'app dal telefono, senza download e senza registrazioni." },
   { Icon: Globe,          title: 'Sito web professionale',   text: 'Landing page con SEO, galleria, testimonianze e form contatti. Trovato su Google, aggiornato da te.' },
   { Icon: Edit3,          title: 'Aggiorna dal telefono',    text: 'Testi, foto, prezzi, menu: tutto modificabile dal tuo smartphone in pochi tap.' },
-  { Icon: LayoutDashboard, title: 'Pannello semplice',       text: 'Un pannello pensato per chi non è un tecnico. Se sai usare WhatsApp, sai usare StayApp.' },
+  { Icon: LayoutDashboard, title: 'Pannello semplice',       text: 'Un pannello pensato per chi non è un tecnico. Se sai usare WhatsApp, sai usare OltreNova.' },
   { Icon: UtensilsCrossed, title: 'Menu e servizi digitali', text: "Categorie, voci, prezzi e foto sempre aggiornati. Basta ristampare o aspettare l'agenzia." },
   { Icon: Shield,          title: 'GDPR incluso',            text: 'Privacy policy e cookie policy auto-generate. Consensi nei form. Niente consulente legale.' },
   { Icon: Palette,         title: 'Tema personalizzato',     text: 'Colori, font e stile adattati al tuo brand. Fai da solo o ci pensiamo noi in fase di setup.' },
@@ -204,7 +204,7 @@ export default function LandingPage() {
   const [scrolled, setScrolled]     = useState(false)
 
   useEffect(() => {
-    document.title = "StayApp — L'app e il sito per la tua attività"
+    document.title = "OltreNova — L'app e il sito per la tua attività"
     const onScroll = () => setScrolled(window.scrollY > 40)
     window.addEventListener('scroll', onScroll)
     return () => window.removeEventListener('scroll', onScroll)
@@ -313,7 +313,7 @@ export default function LandingPage() {
       {/* ── DUE STRUMENTI ── */}
       <section style={{ padding: '104px 24px', background: '#fff' }}>
         <div style={{ maxWidth: 1140, margin: '0 auto' }}>
-          <FadeIn><SecHead label="La piattaforma" title="Due strumenti. Un'unica piattaforma." sub="Non devi scegliere tra un'app e un sito. Con StayApp li hai entrambi, gestiti dallo stesso posto." /></FadeIn>
+          <FadeIn><SecHead label="La piattaforma" title="Due strumenti. Un'unica piattaforma." sub="Non devi scegliere tra un'app e un sito. Con OltreNova li hai entrambi, gestiti dallo stesso posto." /></FadeIn>
           <div className="lp-two-grid">
             <FadeIn delay={0}>
               <div style={{ background: DARK, borderRadius: 24, padding: '44px 40px', display: 'flex', flexDirection: 'column', gap: 24, height: '100%' }}>
@@ -371,7 +371,7 @@ export default function LandingPage() {
                 Basta aspettare settimane<br />per un aggiornamento.
               </h2>
               <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 18, maxWidth: 560, margin: '0 auto', lineHeight: 1.75 }}>
-                Quanto hai speso l'anno scorso per far aggiornare il tuo sito? Con StayApp sei tu al comando.
+                Quanto hai speso l'anno scorso per far aggiornare il tuo sito? Con OltreNova sei tu al comando.
               </p>
             </div>
           </FadeIn>
@@ -395,7 +395,7 @@ export default function LandingPage() {
                 <ArrowRight size={28} strokeWidth={1.5} color={ACCENT} />
               </div>
               <div style={{ background: `${PRIMARY}25`, borderRadius: 20, padding: '32px 28px', border: `1px solid ${PRIMARY}40` }}>
-                <div style={{ color: ACCENT, fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 20 }}>Con StayApp</div>
+                <div style={{ color: ACCENT, fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 20 }}>Con OltreNova</div>
                 {[
                   { Icon: Smartphone,  t: "Apri l'app dal telefono" },
                   { Icon: Edit3,       t: 'Modifichi in 2 minuti' },
@@ -441,7 +441,7 @@ export default function LandingPage() {
       {/* ── PER CHI È ── */}
       <section id="perchi" style={{ padding: '104px 24px', background: BG }}>
         <div style={{ maxWidth: 1140, margin: '0 auto' }}>
-          <FadeIn><SecHead label="Per chi è" title="Per qualsiasi attività con clienti" sub="Se hai clienti da gestire e nuovi da trovare, StayApp è per te." /></FadeIn>
+          <FadeIn><SecHead label="Per chi è" title="Per qualsiasi attività con clienti" sub="Se hai clienti da gestire e nuovi da trovare, OltreNova è per te." /></FadeIn>
           <div className="lp-six-grid">
             {TARGETS.map((t, i) => (
               <FadeIn key={i} delay={i * 60}>
@@ -489,7 +489,7 @@ export default function LandingPage() {
       {/* ── ACCEDI ── */}
       <section style={{ padding: '64px 24px', background: LIGHT_P, borderTop: `1px solid ${PRIMARY}20`, borderBottom: `1px solid ${PRIMARY}20` }}>
         <div style={{ maxWidth: 700, margin: '0 auto', textAlign: 'center' }}>
-          <h3 style={{ fontSize: 24, fontWeight: 700, color: TEXT, marginBottom: 10 }}>Hai già un account StayApp?</h3>
+          <h3 style={{ fontSize: 24, fontWeight: 700, color: TEXT, marginBottom: 10 }}>Hai già un account OltreNova?</h3>
           <p style={{ color: TEXT_LIGHT, fontSize: 16, marginBottom: 28 }}>Accedi direttamente al tuo pannello di gestione.</p>
           <Btn href="/admin" bg={PRIMARY} icon={<LogIn size={18} strokeWidth={1.5} />}>Vai al pannello</Btn>
         </div>
@@ -507,7 +507,7 @@ export default function LandingPage() {
           </p>
           <div className="lp-cta-row">
             <Btn href={WA_PRICE} bg="#25D366" icon={<MessageCircle size={19} strokeWidth={1.5} />} shadow="rgba(37,211,102,0.38)">Richiedi un preventivo</Btn>
-            <Btn href={`mailto:${EMAIL}?subject=Preventivo StayApp`} bg="rgba(255,255,255,0.08)" color="#fff" border="2px solid rgba(255,255,255,0.3)" icon={<Mail size={19} strokeWidth={1.5} />}>Scrivi una mail</Btn>
+            <Btn href={`mailto:${EMAIL}?subject=Preventivo OltreNova`} bg="rgba(255,255,255,0.08)" color="#fff" border="2px solid rgba(255,255,255,0.3)" icon={<Mail size={19} strokeWidth={1.5} />}>Scrivi una mail</Btn>
           </div>
         </div>
       </section>
@@ -526,7 +526,7 @@ export default function LandingPage() {
               ))}
               <a href={`mailto:${EMAIL}`} style={{ color: 'rgba(255,255,255,0.42)', textDecoration: 'none', fontSize: 14 }}>{EMAIL}</a>
             </div>
-            <div style={{ fontSize: 13 }}>© 2025 StayApp · P.IVA 00000000000</div>
+            <div style={{ fontSize: 13 }}>© 2025 OltreNova · P.IVA 00000000000</div>
           </div>
         </div>
       </footer>

@@ -124,7 +124,7 @@ export default function ResetPasswordPage() {
   return (
     <div style={pageStyle}>
       <div style={cardStyle}>
-        <h1 style={{ marginTop: 0, marginBottom: 8, fontSize: 24, color: '#1a1a2e' }}>StayApp</h1>
+        <h1 style={{ marginTop: 0, marginBottom: 8, fontSize: 24, color: '#1a1a2e' }}>OltreNova</h1>
         <p style={{ margin: '0 0 28px', color: '#666', fontSize: 14 }}>Scegli una nuova password</p>
 
         <form onSubmit={handleSubmit}>

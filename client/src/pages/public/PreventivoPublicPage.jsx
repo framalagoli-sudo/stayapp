@@ -218,7 +218,7 @@ export default function PreventivoPublicPage() {
         )}
 
         <p style={{ textAlign: 'center', fontSize: 11, color: '#ccc', marginTop: 32 }}>
-          Inviato con StayApp
+          Inviato con OltreNova
         </p>
       </div>
     </div>

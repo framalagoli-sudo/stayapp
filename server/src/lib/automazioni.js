@@ -29,7 +29,7 @@ function buildEmailHtml({ entityName, entityLogo, primary = '#1a1a2e', heading, 
 
   const unsub = unsubscribeUrl
     ? `<p style="font-size:11px;color:#bbb;font-family:Arial,sans-serif;margin:0;line-height:1.6">Hai ricevuto questa email da <strong>${esc(entityName)}</strong>.<br><a href="${unsubscribeUrl}" style="color:#bbb">Annulla iscrizione</a></p>`
-    : `<p style="font-size:11px;color:#bbb;font-family:Arial,sans-serif;margin:0;line-height:1.6">Email inviata da <strong>${esc(entityName)}</strong> tramite StayApp.</p>`
+    : `<p style="font-size:11px;color:#bbb;font-family:Arial,sans-serif;margin:0;line-height:1.6">Email inviata da <strong>${esc(entityName)}</strong> tramite OltreNova.</p>`
 
   return `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif">
@@ -60,7 +60,7 @@ function buildEmailHtml({ entityName, entityLogo, primary = '#1a1a2e', heading, 
 async function getEntityBranding(entity_tipo, entity_id) {
   const table = entity_tipo === 'struttura' ? 'properties' : entity_tipo === 'ristorante' ? 'ristoranti' : 'attivita'
   const { data } = await supabase.from(table).select('name, logo_url, theme').eq('id', entity_id).single()
-  return { name: data?.name || 'StayApp', logo: data?.logo_url || null, primary: data?.theme?.primaryColor || '#1a1a2e' }
+  return { name: data?.name || 'OltreNova', logo: data?.logo_url || null, primary: data?.theme?.primaryColor || '#1a1a2e' }
 }
 
 // ─── Trigger ──────────────────────────────────────────────────────────────────

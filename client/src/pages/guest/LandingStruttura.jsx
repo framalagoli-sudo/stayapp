@@ -158,7 +158,7 @@ export default function LandingStruttura({ property }) {
     const apiBase = import.meta.env.VITE_API_URL ?? ''
     const sitemapEl = Object.assign(document.createElement('link'), { rel: 'sitemap', type: 'application/xml', href: `${apiBase}/api/guest/sitemap/struttura/${property.slug}` })
     document.head.appendChild(sitemapEl)
-    return () => { document.title = 'StayApp'; cleanupTracking(); sitemapEl.remove() }
+    return () => { document.title = 'OltreNova'; cleanupTracking(); sitemapEl.remove() }
   }, [])
 
   useEffect(() => {
@@ -1052,7 +1052,7 @@ export default function LandingStruttura({ property }) {
             {socialLinks.map(({ key, label, color }) => <SocialLink key={key} href={social[key]} label={label} color={color} />)}
           </div>
         )}
-        <p style={{ fontSize: 12, color: '#555' }}>© {new Date().getFullYear()} {property.name} · Powered by StayApp</p>
+        <p style={{ fontSize: 12, color: '#555' }}>© {new Date().getFullYear()} {property.name} · Powered by OltreNova</p>
         {property.slug && (
           <p style={{ fontSize: 11, color: '#888', marginTop: 8 }}>
             <a href={`/s/${property.slug}/privacy`} style={{ color: '#aaa', textDecoration: 'none', marginRight: 12 }}>Privacy Policy</a>

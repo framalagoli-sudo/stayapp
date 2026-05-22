@@ -1,9 +1,9 @@
-# StayApp
+# OltreNova
 
 > All-in-one digital platform for service businesses — hotels, restaurants, activities, freelancers, agencies, gyms and more.
 
-## What is StayApp
-StayApp is a SaaS platform that gives any service business a complete digital presence via an installable PWA (Progressive Web App) accessible by scanning a QR code. No app store required.
+## What is OltreNova
+OltreNova is a SaaS platform that gives any service business a complete digital presence via an installable PWA (Progressive Web App) accessible by scanning a QR code. No app store required.
 
 ## Features
 - Installable PWA via QR code (unique differentiator — no competitor offers this integrated)
@@ -12,7 +12,7 @@ StayApp is a SaaS platform that gives any service business a complete digital pr
 - CRM with pipeline (Kanban), newsletter, email automations
 - Reviews & reputation management
 - E-commerce / shop with loyalty points and gift cards
-- AI content studio (social posts, editorial calendar)
+- AI content studio (social posts, editorial calendar, AI blog generation)
 - Google Calendar sync
 - Custom domains and subdomains
 - GDPR-native (auto-generated privacy policy, cookie banner)
@@ -25,5 +25,5 @@ Service businesses worldwide: hotels, B&Bs, restaurants, bars, tour operators, g
 React 18 + Vite PWA, Node.js + Express, Supabase (PostgreSQL), hosted on Vercel + Railway.
 
 ## Links
-- Platform: https://stayapp-henna.vercel.app
+- Platform: https://oltrenova.com
 - Contact: fra.malagoli@gmail.com

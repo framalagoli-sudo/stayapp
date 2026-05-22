@@ -18,7 +18,7 @@ export async function sendWebhooks(aziendaId, evento, payload) {
     await Promise.allSettled(hooks.map(hook =>
       fetch(hook.url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-StayApp-Event': evento },
+        headers: { 'Content-Type': 'application/json', 'X-OltreNova-Event': evento },
         body,
         signal: AbortSignal.timeout(6000),
       }).catch(() => {}) // ignora errori singoli

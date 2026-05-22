@@ -88,14 +88,14 @@ router.post('/signup', async (req, res) => {
 
     // 5. Email di benvenuto (fire-and-forget)
     if (process.env.RESEND_API_KEY) {
-      const clientUrl = process.env.CLIENT_URL || 'https://stayapp-henna.vercel.app'
+      const clientUrl = process.env.CLIENT_URL || 'https://oltrenova.com'
       new Resend(process.env.RESEND_API_KEY).emails.send({
-        from: process.env.RESEND_FROM || 'StayApp <noreply@resend.dev>',
+        from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
         to: email.trim().toLowerCase(),
-        subject: 'Benvenuto in StayApp!',
+        subject: 'Benvenuto in OltreNova!',
         html: `
           <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px">
-            <h2 style="color:#1a1a2e;margin-top:0">Benvenuto in StayApp!</h2>
+            <h2 style="color:#1a1a2e;margin-top:0">Benvenuto in OltreNova!</h2>
             <p>Il tuo account per <strong>${nome_azienda.trim()}</strong> è pronto.</p>
             <p>Hai <strong>14 giorni di prova gratuita</strong> per esplorare tutte le funzionalità — senza inserire una carta di credito.</p>
             <div style="margin:24px 0">

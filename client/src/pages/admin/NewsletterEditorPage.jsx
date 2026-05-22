@@ -102,7 +102,7 @@ function buildPreview(template_id, content, entityName, primary = '#1a1a2e') {
   </div>
   ${body}
   <div style="background:#f9f9fb;padding:16px 28px;text-align:center;border-top:1px solid #f0f0f0">
-    <span style="font-size:11px;color:#bbb">Annulla iscrizione &nbsp;·&nbsp; Powered by StayApp</span>
+    <span style="font-size:11px;color:#bbb">Annulla iscrizione &nbsp;·&nbsp; Powered by OltreNova</span>
   </div>
 </div>
 </body></html>`

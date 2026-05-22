@@ -328,7 +328,7 @@ function PageShell({ entity, primary, title, children }) {
 
       {/* Footer */}
       <div style={{ borderTop: '1px solid #eee', padding: '20px 24px', textAlign: 'center', fontSize: 12, color: '#aaa', background: '#fff' }}>
-        © {new Date().getFullYear()} {siteName} — Powered by StayApp
+        © {new Date().getFullYear()} {siteName} — Powered by OltreNova
       </div>
     </div>
   )
