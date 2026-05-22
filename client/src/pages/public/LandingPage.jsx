@@ -14,7 +14,7 @@ const API_BASE = import.meta.env.VITE_API_URL ?? ''
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const PRIMARY    = '#0F7B6C'  // petrolio
-const ACCENT     = '#38BDF8'  // azzurro
+const ACCENT     = '#D97706'  // ambra
 const GOLD       = '#C9A84C'  // oro
 const LIGHT_P    = '#E6F4F2'  // sfondo chiaro teal
 const BG         = '#FAF7F0'  // beige chiaro
