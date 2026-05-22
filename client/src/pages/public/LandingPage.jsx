@@ -241,7 +241,24 @@ export default function LandingPage() {
     document.title = "OltreNova — Oltre il solito sito."
     const onScroll = () => setScrolled(window.scrollY > 40)
     window.addEventListener('scroll', onScroll)
-    return () => window.removeEventListener('scroll', onScroll)
+
+    // JSON-LD dinamico da Supabase
+    fetch(`${API_BASE}/api/landing-seo`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d?.jsonld) return
+        const s = document.createElement('script')
+        s.type = 'application/ld+json'
+        s.id = 'landing-jsonld'
+        try { s.textContent = JSON.stringify(d.jsonld) } catch {}
+        document.head.appendChild(s)
+      })
+      .catch(() => {})
+
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      document.getElementById('landing-jsonld')?.remove()
+    }
   }, [])
 
   return (

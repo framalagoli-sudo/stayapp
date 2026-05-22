@@ -47,6 +47,7 @@ import surveyRouter from './routes/survey.js'
 import googleCalendarRouter from './routes/googleCalendar.js'
 import loyaltyRouter from './routes/loyalty.js'
 import blogAutomazioniRouter from './routes/blogAutomazioni.js'
+import landingSeoRouter from './routes/landing_seo.js'
 import { runBlogScheduler } from './lib/blogScheduler.js'
 import { runBackup } from './lib/backup.js'
 import { auditLog } from './middleware/auditLog.js'
@@ -163,6 +164,7 @@ app.use('/api/survey',           surveyRouter)
 app.use('/api/google-calendar',  googleCalendarRouter)
 app.use('/api/loyalty',          loyaltyRouter)
 app.use('/api/blog-automazioni', adminLimiter, blogAutomazioniRouter)
+app.use('/api/landing-seo',     landingSeoRouter)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
 

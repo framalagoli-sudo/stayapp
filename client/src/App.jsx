@@ -87,6 +87,7 @@ import ConfirmSubscriptionPage from './pages/public/ConfirmSubscriptionPage'
 import NewsletterArchivePage from './pages/guest/NewsletterArchivePage'
 import OnboardingPage from './pages/admin/OnboardingPage'
 import ImpostazioniPage from './pages/admin/ImpostazioniPage'
+import SeoGeoPage from './pages/admin/SeoGeoPage'
 import PreventivPage from './pages/admin/PreventivPage'
 import PreventivoEditorPage from './pages/admin/PreventivoEditorPage'
 import PreventivoPublicPage from './pages/public/PreventivoPublicPage'
@@ -220,6 +221,7 @@ export default function App() {
             <Route path="audit-log"      element={<AuditLogPage />} />
             <Route path="security"       element={<SecurityPage />} />
             <Route path="impostazioni"   element={<ImpostazioniPage />} />
+            <Route path="seo-geo"        element={<SeoGeoPage />} />
             <Route path="contatti"   element={<ContattiPage />} />
             <Route path="chat"       element={<ChatPage />} />
             <Route path="aziende"    element={<AziendePage />} />

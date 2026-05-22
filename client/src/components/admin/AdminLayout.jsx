@@ -10,7 +10,7 @@ import {
   QrCode, UserCheck, ClipboardList, LogOut,
   Building, Building2, Store, Zap, Webhook, BotMessageSquare, Star, Settings,
   Info, Layers, Wrench, Image, Palette, MapPin, Globe, Lock, Bot, UtensilsCrossed,
-  FormInput, ShoppingBag, Sparkles, BarChart3, Gift,
+  FormInput, ShoppingBag, Sparkles, BarChart3, Gift, SearchCheck,
 } from 'lucide-react'
 
 // ─── Nav definitions ──────────────────────────────────────────────────────────
@@ -388,6 +388,7 @@ export default function AdminLayout() {
             <SectionHeader label="Account" />
             <NavItem to="/admin/analytics"    icon={BarChart2}     label="Analytics" />
             <NavItem to="/admin/integrazioni" icon={Webhook}       label="Integrazioni" />
+            <NavItem to="/admin/seo-geo"      icon={SearchCheck}   label="SEO & GEO" />
             <NavItem to="/admin/audit-log"    icon={ClipboardList} label="Audit log" />
             <NavItem to="/admin/impostazioni" icon={Settings}      label="Impostazioni" />
             <NavItem to="/admin/security"     icon={Shield}        label="Sicurezza" />
