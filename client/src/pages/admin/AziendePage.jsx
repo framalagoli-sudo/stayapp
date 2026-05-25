@@ -165,6 +165,11 @@ function AziendaCard({ azienda: a, onEdit, onDelete }) {
               Ristoranti
             </button>
           )}
+          {moduli.attivita && (
+            <button onClick={() => togglePanel('attivita')} style={pill({ background: openPanel === 'attivita' ? '#0891b2' : '#f0faff', color: openPanel === 'attivita' ? '#fff' : '#0369a1', padding: '6px 14px', fontSize: 12 })}>
+              Attività
+            </button>
+          )}
           <button onClick={() => togglePanel('accessi')} style={pill({ background: openPanel === 'accessi' ? '#1a1a2e' : '#f5f5f5', color: openPanel === 'accessi' ? '#fff' : '#444', padding: '6px 14px', fontSize: 12 })}>
             Accessi
           </button>
@@ -194,6 +199,17 @@ function AziendaCard({ azienda: a, onEdit, onDelete }) {
           label="ristorante"
           labelPlural="ristoranti"
           accentColor="#e63946"
+        />
+      )}
+      {openPanel === 'attivita' && (
+        <EntitaSection
+          aziendaId={a.id}
+          tipo="attivita"
+          apiBase="/api/attivita"
+          editBase="/admin/attivita"
+          label="attività"
+          labelPlural="attività"
+          accentColor="#0891b2"
         />
       )}
       {openPanel === 'accessi' && (
@@ -576,7 +592,7 @@ function AziendaForm({ title, initialData = {}, onSave, onCancel }) {
 
         <SectionLabel>Moduli attivi</SectionLabel>
         <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
-          {['struttura', 'ristorante'].map(m => (
+          {['struttura', 'ristorante', 'attivita'].map(m => (
             <label key={m} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
               <input
                 type="checkbox"
@@ -584,7 +600,7 @@ function AziendaForm({ title, initialData = {}, onSave, onCancel }) {
                 onChange={e => setModulo(m, e.target.checked)}
                 style={{ width: 16, height: 16, cursor: 'pointer' }}
               />
-              {m.charAt(0).toUpperCase() + m.slice(1)}
+              {m === 'attivita' ? 'Attività' : m.charAt(0).toUpperCase() + m.slice(1)}
             </label>
           ))}
         </div>
