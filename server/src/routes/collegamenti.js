@@ -35,7 +35,7 @@ async function enrichLinks(links, tipo, id) {
   return result
 }
 
-// GET /api/collegamenti?tipo=struttura&entity_id=xxx
+// GET /api/collegamenti?tipo=struttura|ristorante|attivita&entity_id=xxx
 router.get('/', async (req, res) => {
   const { tipo, entity_id } = req.query
   if (!tipo || !entity_id) return res.status(400).json({ error: 'tipo e entity_id obbligatori' })
