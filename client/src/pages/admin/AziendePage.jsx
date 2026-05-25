@@ -544,7 +544,7 @@ function AziendaForm({ title, initialData = {}, onSave, onCancel }) {
     piano: 'base',
     active: true,
     ...initialData,
-    moduli: { struttura: false, ristorante: false, ...(initialData.moduli || {}) },
+    moduli: { struttura: false, ristorante: false, attivita: false, ...(initialData.moduli || {}) },
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
