@@ -2,6 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 
+// Estendi qui per nuovi tipi futuri (libero professionista, studio, palestra, ecc.)
+const MODULO_CONFIG = [
+  { key: 'struttura',  label: 'Struttura',  desc: 'Hotel, B&B, casa vacanze, appartamento', color: '#1a1a2e', apiBase: '/api/properties', editBase: '/admin/struttura' },
+  { key: 'ristorante', label: 'Ristorante', desc: 'Ristorante, bar, pizzeria, caffè',        color: '#e63946', apiBase: '/api/ristoranti',  editBase: '/admin/ristoranti' },
+  { key: 'attivita',   label: 'Attività',   desc: 'Tour, esperienze, servizi, consulenza',   color: '#0891b2', apiBase: '/api/attivita',    editBase: '/admin/attivita' },
+]
+
 const PIANI = ['base', 'standard', 'premium', 'enterprise']
 
 const TEXT_FIELDS = [
@@ -32,8 +39,9 @@ export default function AziendePage() {
   const location = useLocation()
   const [aziende, setAziende] = useState([])
   const [loading, setLoading] = useState(true)
-  const [view, setView] = useState('list')
+  const [view, setView] = useState('list')  // 'list' | 'create' | 'edit' | 'setup'
   const [selected, setSelected] = useState(null)
+  const [setupAzienda, setSetupAzienda] = useState(null)
   const [error, setError] = useState(null)
 
   useEffect(() => { load() }, [])
@@ -55,7 +63,8 @@ export default function AziendePage() {
   async function handleCreate(form) {
     const created = await apiFetch('/api/aziende', { method: 'POST', body: JSON.stringify(form) })
     setAziende(prev => [...prev, created].sort((a, b) => a.ragione_sociale.localeCompare(b.ragione_sociale)))
-    setView('list')
+    setSetupAzienda(created)
+    setView('setup')
   }
 
   async function handleEdit(form) {
@@ -98,6 +107,13 @@ export default function AziendePage() {
         />
       )}
 
+      {view === 'setup' && setupAzienda && (
+        <AziendaSetupStep
+          azienda={setupAzienda}
+          onDone={() => { setSetupAzienda(null); setView('list') }}
+        />
+      )}
+
       {view === 'edit' && selected && (
         <AziendaForm
           title={`Modifica: ${selected.ragione_sociale}`}
@@ -122,6 +138,98 @@ export default function AziendePage() {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function AziendaSetupStep({ azienda, onDone }) {
+  const navigate = useNavigate()
+  const [selectedKey, setSelectedKey] = useState(null)
+  const [name, setName] = useState('')
+  const [creating, setCreating] = useState(false)
+  const [error, setError] = useState(null)
+
+  const moduli = azienda.moduli || {}
+  const available = MODULO_CONFIG.filter(m => moduli[m.key])
+  const cfg = MODULO_CONFIG.find(m => m.key === selectedKey)
+
+  async function handleCrea() {
+    if (!name.trim() || !cfg) return
+    setCreating(true); setError(null)
+    try {
+      const entity = await apiFetch(cfg.apiBase, {
+        method: 'POST',
+        body: JSON.stringify({ name: name.trim(), azienda_id: azienda.id }),
+      })
+      navigate(`${cfg.editBase}/${entity.id}/info`)
+    } catch (e) {
+      setError(e.message)
+      setCreating(false)
+    }
+  }
+
+  return (
+    <div style={{ maxWidth: 640 }}>
+      <div style={{ marginBottom: 24 }}>
+        <h3 style={{ margin: '0 0 4px' }}>Azienda creata ✓</h3>
+        <p style={{ margin: 0, fontSize: 14, color: '#888' }}>
+          Cosa vuoi aggiungere subito per <strong>{azienda.ragione_sociale}</strong>?
+        </p>
+      </div>
+
+      {available.length === 0 ? (
+        <p style={{ fontSize: 14, color: '#888' }}>
+          Nessun modulo attivo — torna indietro e abilita almeno un modulo.
+        </p>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
+          {available.map(m => (
+            <div
+              key={m.key}
+              onClick={() => { setSelectedKey(m.key); setName(''); setError(null) }}
+              style={{
+                cursor: 'pointer', borderRadius: 12, padding: '18px 20px',
+                border: `2px solid ${selectedKey === m.key ? m.color : '#e8e8e8'}`,
+                background: selectedKey === m.key ? `${m.color}0d` : '#fff',
+                transition: 'border-color .15s',
+              }}
+            >
+              <div style={{ fontWeight: 700, fontSize: 15, color: m.color }}>{m.label}</div>
+              <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>{m.desc}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {selectedKey && (
+        <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', border: '1px solid #eee', marginBottom: 16 }}>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>
+            Nome {cfg.label.toLowerCase()} *
+          </label>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <input
+              autoFocus
+              value={name}
+              onChange={e => setName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleCrea()}
+              placeholder={`es. ${cfg.label} Roma Centro`}
+              style={{ flex: 1, padding: '10px 12px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14 }}
+            />
+            <button
+              onClick={handleCrea}
+              disabled={creating || !name.trim()}
+              style={pill({ background: cfg.color, color: '#fff', padding: '10px 20px', opacity: (!name.trim() || creating) ? 0.5 : 1 })}
+            >
+              {creating ? 'Creazione…' : 'Crea →'}
+            </button>
+          </div>
+          {error && <p style={{ color: '#c00', fontSize: 13, margin: '8px 0 0' }}>{error}</p>}
+        </div>
+      )}
+
+      <button onClick={onDone} style={pill({ background: '#f0f0f0', color: '#555', padding: '8px 18px', fontSize: 13 })}>
+        Salta per ora
+      </button>
     </div>
   )
 }
