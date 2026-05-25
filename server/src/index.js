@@ -166,7 +166,7 @@ app.use('/api/loyalty',          loyaltyRouter)
 app.use('/api/blog-automazioni', adminLimiter, blogAutomazioniRouter)
 app.use('/api/landing-seo',     landingSeoRouter)
 
-app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
+app.get('/api/health', (_req, res) => res.json({ status: 'ok', v: 'fix-enrichlinks-attivita' }))
 
 // Backup manuale — solo super_admin, non esposto al rate limiter pubblico
 app.post('/api/admin/backup', async (req, res) => {
