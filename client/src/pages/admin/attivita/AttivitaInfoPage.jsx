@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useAttivita } from '../../../hooks/useAttivita'
 import { uploadMedia } from '../../../lib/api'
 import { ExternalLink } from 'lucide-react'
+import CollegamentiSection from '../../../components/admin/CollegamentiSection'
 
 const FIELDS = [
   { key: 'name',        label: 'Nome *', type: 'text' },
@@ -158,6 +159,14 @@ export default function AttivitaInfoPage() {
           {saving ? 'Salvataggio…' : saved ? '✓ Salvato' : 'Salva'}
         </button>
       </form>
+
+      {attivita.azienda_id && (
+        <CollegamentiSection
+          entitaId={attivita.id}
+          entitaTipo="attivita"
+          aziendaId={attivita.azienda_id}
+        />
+      )}
 
       {/* Slug */}
       <div style={cardStyle}>

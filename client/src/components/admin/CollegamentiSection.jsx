@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../../lib/api'
 
-const TIPO_LABEL = { struttura: 'Struttura', ristorante: 'Ristorante' }
-const TIPO_COLOR = { struttura: '#1a1a2e', ristorante: '#e63946' }
+const TIPO_LABEL = { struttura: 'Struttura', ristorante: 'Ristorante', attivita: 'Attività' }
+const TIPO_COLOR = { struttura: '#1a1a2e', ristorante: '#e63946', attivita: '#0891b2' }
 
 export default function CollegamentiSection({ entitaId, entitaTipo, aziendaId }) {
   const [linked, setLinked]       = useState([])   // entità già collegate
@@ -15,10 +15,11 @@ export default function CollegamentiSection({ entitaId, entitaTipo, aziendaId })
   async function load() {
     setLoading(true)
     try {
-      const [currentLinks, strutture, ristoranti] = await Promise.all([
+      const [currentLinks, strutture, ristoranti, attivitaList] = await Promise.all([
         apiFetch(`/api/collegamenti?tipo=${entitaTipo}&entity_id=${entitaId}`),
         apiFetch(`/api/properties?azienda_id=${aziendaId}`),
         apiFetch(`/api/ristoranti?azienda_id=${aziendaId}`),
+        apiFetch(`/api/attivita?azienda_id=${aziendaId}`),
       ])
 
       setLinked(currentLinks)
@@ -27,6 +28,7 @@ export default function CollegamentiSection({ entitaId, entitaTipo, aziendaId })
       const all = [
         ...strutture.map(s => ({ tipo: 'struttura', ...s })),
         ...ristoranti.map(r => ({ tipo: 'ristorante', ...r })),
+        ...(attivitaList || []).map(a => ({ tipo: 'attivita', ...a })),
       ]
       // Escludi l'entità corrente e quelle già collegate
       setAvailable(all.filter(e => !(e.tipo === entitaTipo && e.id === entitaId) && !linkedIds.has(e.id)))
