@@ -42,7 +42,7 @@ export default function CollegamentiSection({ entitaId, entitaTipo, aziendaId })
   async function handleLink(entity) {
     setSaving(entity.id)
     try {
-      await apiFetch('/api/collegamenti', {
+      const newLink = await apiFetch('/api/collegamenti', {
         method: 'POST',
         body: JSON.stringify({
           from_tipo: entitaTipo,
@@ -52,7 +52,7 @@ export default function CollegamentiSection({ entitaId, entitaTipo, aziendaId })
           azienda_id: aziendaId,
         }),
       })
-      setLinked(prev => [...prev, entity])
+      setLinked(prev => [...prev, { ...entity, collegamento_id: newLink.id }])
       setAvailable(prev => prev.filter(e => !(e.tipo === entity.tipo && e.id === entity.id)))
     } catch (e) { alert(e.message) }
     finally { setSaving(null) }
@@ -62,7 +62,7 @@ export default function CollegamentiSection({ entitaId, entitaTipo, aziendaId })
     setSaving(entity.id)
     try {
       await apiFetch(`/api/collegamenti/${collegamentoId}`, { method: 'DELETE' })
-      setLinked(prev => prev.filter(l => l.id !== collegamentoId))
+      setLinked(prev => prev.filter(l => l.collegamento_id !== collegamentoId))
       setAvailable(prev => [...prev, entity])
     } catch (e) { alert(e.message) }
     finally { setSaving(null) }
@@ -111,7 +111,7 @@ export default function CollegamentiSection({ entitaId, entitaTipo, aziendaId })
                       </code>
                     </div>
                     <button
-                      onClick={() => handleUnlink(entity.id, entity)}
+                      onClick={() => handleUnlink(entity.collegamento_id, entity)}
                       disabled={saving === entity.id}
                       style={pill('#c00', '#fff0f0')}
                     >

@@ -25,8 +25,12 @@ async function enrichLinks(links, tipo, id) {
     } else if (otherTipo === 'ristorante') {
       const { data } = await supabase.from('ristoranti').select('id, name, slug, logo_url').eq('id', otherId).single()
       entity = data
+    } else if (otherTipo === 'attivita') {
+      const { data } = await supabase.from('attivita').select('id, name, slug, logo_url').eq('id', otherId).single()
+      entity = data
     }
-    if (entity) result.push({ id: link.id, tipo: otherTipo, ...entity })
+    // collegamento_id separato da entity.id per evitare che lo spread sovrascriva
+    if (entity) result.push({ collegamento_id: link.id, tipo: otherTipo, ...entity })
   }
   return result
 }
