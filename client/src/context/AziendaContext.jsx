@@ -24,9 +24,8 @@ export function AziendaProvider({ children }) {
     setLoading(true)
     try {
       // staff con azienda_id = company-level staff, carica dati azienda come admin_azienda
-      // super_admin senza azienda_id: non caricare entità di nessuna azienda
-      // (usa AziendePage per navigare tra i clienti)
-      if (profile.role === 'super_admin' && !profile.azienda_id) {
+      // super_admin non carica entità — usa AziendePage per navigare tra i clienti
+      if (profile.role === 'super_admin') {
         setLoading(false)
         return
       }

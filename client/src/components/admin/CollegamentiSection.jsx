@@ -54,7 +54,13 @@ export default function CollegamentiSection({ entitaId, entitaTipo, aziendaId })
       })
       setLinked(prev => [...prev, { ...entity, collegamento_id: newLink.id }])
       setAvailable(prev => prev.filter(e => !(e.tipo === entity.tipo && e.id === entity.id)))
-    } catch (e) { alert(e.message) }
+    } catch (e) {
+      if (e.message?.toLowerCase().includes('duplicate') || e.message?.toLowerCase().includes('unique')) {
+        await load()
+      } else {
+        alert(e.message)
+      }
+    }
     finally { setSaving(null) }
   }
 
