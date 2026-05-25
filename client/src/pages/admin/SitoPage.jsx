@@ -1,54 +1,21 @@
-import { useContext, useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { PropertyIdContext } from '../../context/PropertyIdContext'
 import { useAuth } from '../../context/AuthContext'
-import { GripVertical } from 'lucide-react'
+import {
+  GripVertical, Home, FilePlus, Users, Briefcase, Mail, Tag, HelpCircle,
+  Search, FileText, SearchX, Navigation, PenLine, Layers,
+} from 'lucide-react'
 
 // ── Template definitions ──────────────────────────────────────────────────────
 const TEMPLATES = [
-  {
-    id: 'blank',
-    label: 'Pagina vuota',
-    emoji: '📄',
-    desc: 'Parti da zero e aggiungi i blocchi che vuoi',
-    blockCount: 0,
-  },
-  {
-    id: 'chi_siamo',
-    label: 'Chi siamo',
-    emoji: '👥',
-    desc: 'Presentazione, foto+testo, team',
-    blockCount: 3,
-  },
-  {
-    id: 'servizi',
-    label: 'Servizi',
-    emoji: '🛎️',
-    desc: 'Card servizi, processo e call-to-action',
-    blockCount: 4,
-  },
-  {
-    id: 'contatti',
-    label: 'Contatti',
-    emoji: '📩',
-    desc: 'Testo introduttivo, form contatti e mappa',
-    blockCount: 3,
-  },
-  {
-    id: 'promo',
-    label: 'Promozioni',
-    emoji: '🏷️',
-    desc: 'Statistiche, offerte, testimonianze e CTA',
-    blockCount: 4,
-  },
-  {
-    id: 'faq',
-    label: 'FAQ',
-    emoji: '❓',
-    desc: 'Introduzione e accordion domande/risposte',
-    blockCount: 2,
-  },
+  { id: 'blank',     label: 'Pagina vuota', Icon: FilePlus,   color: '#888',    desc: 'Parti da zero e aggiungi i blocchi che vuoi', blockCount: 0 },
+  { id: 'chi_siamo', label: 'Chi siamo',    Icon: Users,      color: '#5b6af8', desc: 'Presentazione, foto+testo, team', blockCount: 3 },
+  { id: 'servizi',   label: 'Servizi',      Icon: Briefcase,  color: '#0891b2', desc: 'Card servizi, processo e call-to-action', blockCount: 4 },
+  { id: 'contatti',  label: 'Contatti',     Icon: Mail,       color: '#16a34a', desc: 'Testo introduttivo, form contatti e mappa', blockCount: 3 },
+  { id: 'promo',     label: 'Promozioni',   Icon: Tag,        color: '#f97316', desc: 'Statistiche, offerte, testimonianze e CTA', blockCount: 4 },
+  { id: 'faq',       label: 'FAQ',          Icon: HelpCircle, color: '#9333ea', desc: 'Introduzione e accordion domande/risposte', blockCount: 2 },
 ]
 
 function makeTemplateBlocks(templateId) {
@@ -139,7 +106,11 @@ function NewPageModal({ onClose, onConfirm, creating }) {
                     }}
                   >
                     {sel && <div style={{ position: 'absolute', top: 8, right: 10, fontSize: 13, color: '#1a1a2e', fontWeight: 700 }}>✓</div>}
-                    <div style={{ fontSize: 26, marginBottom: 6 }}>{t.emoji}</div>
+                    <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+                      <div style={{ background: `${t.color}18`, borderRadius: 8, padding: '7px 8px', display: 'inline-flex' }}>
+                        <t.Icon size={20} strokeWidth={1.5} color={t.color} />
+                      </div>
+                    </div>
                     <div style={{ fontWeight: 700, fontSize: 13, color: '#1a1a2e', marginBottom: 3 }}>{t.label}</div>
                     <div style={{ fontSize: 11, color: '#888', lineHeight: 1.35 }}>{t.desc}</div>
                     {t.blockCount > 0 && (
@@ -187,6 +158,7 @@ export default function SitoPage({ entityTipo }) {
     ? `/admin/ristoranti/${paramId}/minisito`
     : `/admin/attivita/${paramId}/minisito`
 
+  const [activeTab,    setActiveTab]    = useState('home')
   const [pagine,       setPagine]       = useState([])
   const [entitySlug,   setEntitySlug]   = useState(null)
   const [loading,      setLoading]      = useState(true)
@@ -363,7 +335,6 @@ export default function SitoPage({ entityTipo }) {
     })
     setPagine(updated)
     resetDrag()
-    // fire-and-forget: l'optimistic update è già corretto, non serve reload
     apiFetch('/api/pagine/reorder', {
       method: 'POST',
       body: JSON.stringify({ items: arr.map((x, i) => ({ id: x.id, ordine: i, parent_id: x.parent_id })) }),
@@ -377,7 +348,6 @@ export default function SitoPage({ entityTipo }) {
   const menuSubs  = id => pagine.filter(p => p.nel_menu && p.parent_id === id).sort((a, b) => a.ordine - b.ordine)
   const notInMenu = pagine.filter(p => !p.nel_menu)
 
-  // Filtered for section 2
   const activeFilters = search || filterStatus !== 'tutti' || filterMenu !== 'tutti'
   const filteredPagine = pagine.filter(p => {
     if (search && !p.titolo.toLowerCase().includes(search.toLowerCase()) && !p.slug.toLowerCase().includes(search.toLowerCase())) return false
@@ -475,405 +445,506 @@ export default function SitoPage({ entityTipo }) {
     )
   }
 
+  // ── Entity name for Home tab ──────────────────────────────────────────────────
+  const entityName = entityData?.nome || entityData?.name || entityData?.titolo || null
+  const entitySiteUrl = entitySlug
+    ? (entityTipo === 'struttura' ? `/s/${entitySlug}` : entityTipo === 'ristorante' ? `/r/${entitySlug}` : `/a/${entitySlug}`)
+    : null
+  const activeSections = entityData?.minisito?.section_order ?? []
+
+  // ── Tabs config ───────────────────────────────────────────────────────────────
+  const TABS = [
+    { id: 'home',   label: 'Home',         Icon: Home },
+    { id: 'pagine', label: 'Pagine',        Icon: FileText },
+    { id: 'layout', label: 'Menu & Layout', Icon: Navigation },
+  ]
+
   return (
     <div style={{ maxWidth: 820 }}>
 
-      {/* ── SEZIONE 1: MENU DI NAVIGAZIONE ── */}
-      <div style={{ marginBottom: 36 }}>
-        <div style={{ marginBottom: 16 }}>
-          <h2 style={{ margin: '0 0 4px', fontSize: 18, color: '#1a1a2e' }}>Menu di navigazione</h2>
-          <p style={{ margin: 0, fontSize: 13, color: '#888' }}>
-            Queste voci appaiono nella barra in cima al sito. Trascina per riordinare. Solo le pagine <strong>Pubblicate</strong> sono visibili ai visitatori.
-          </p>
-        </div>
-
-        {/* Home — fisso */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', ...cardStyle, marginBottom: 4, background: '#fafafa' }}>
-          <span style={{ color: '#ddd', fontSize: 15, userSelect: 'none' }}>⠿</span>
-          <span style={{ fontSize: 18 }}>🏠</span>
-          <div style={{ flex: 1 }}>
-            <span style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>Home</span>
-            <span style={{ marginLeft: 8, fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>/</span>
-          </div>
-          <span style={{ fontSize: 11, color: '#888', fontStyle: 'italic' }}>sempre presente</span>
-          <button onClick={() => navigate(homeEditPath)} style={btnAction()}>Modifica →</button>
-        </div>
-
-        {!loading && menuTop.length > 0 && (
-          <div>
-            {menuTop.map(p => (
-              <div key={p.id}>
-                {renderMenuRow(p, false)}
-                {menuSubs(p.id).map(child => renderMenuRow(child, true))}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {notInMenu.length > 0 && (
-          <div style={{ marginTop: 16, padding: '14px 16px', background: '#f9f9fb', borderRadius: 10, border: '1px dashed #ddd' }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#888', marginBottom: 10 }}>
-              Pagine non nel menu — clicca per aggiungerle
-            </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {notInMenu.map(p => (
-                <button key={p.id} onClick={() => addToMenu(p)} style={{ ...btnAction('add'), display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontSize: 16 }}>+</span>
-                  <span style={{ fontWeight: 600 }}>{p.titolo}</span>
-                  {p.status === 'bozza' && <span style={{ fontSize: 10, opacity: 0.6 }}>(bozza)</span>}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {!loading && pagine.length === 0 && (
-          <div style={{ padding: '20px 16px', background: '#f9f9fb', borderRadius: 10, border: '1px dashed #ddd', textAlign: 'center', color: '#aaa', fontSize: 13 }}>
-            Crea le tue prime pagine nella sezione qui sotto, poi aggiungile al menu.
-          </div>
-        )}
+      {/* ── Tab bar ── */}
+      <div style={{ display: 'flex', gap: 0, marginBottom: 28, borderBottom: '2px solid #eeeeee' }}>
+        {TABS.map(tab => {
+          const active = activeTab === tab.id
+          return (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 7,
+                padding: '10px 20px', border: 'none', background: 'none',
+                cursor: 'pointer', fontSize: 14,
+                fontWeight: active ? 700 : 400,
+                color: active ? '#1a1a2e' : '#888',
+                borderBottom: active ? '2px solid #1a1a2e' : '2px solid transparent',
+                marginBottom: -2,
+                transition: 'color 0.15s',
+              }}
+            >
+              <tab.Icon size={15} strokeWidth={1.5} />
+              {tab.label}
+            </button>
+          )
+        })}
       </div>
 
-      {/* ── SEZIONE 2: TUTTE LE PAGINE ── */}
-      <div>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <div>
-            <h2 style={{ margin: '0 0 4px', fontSize: 18, color: '#1a1a2e' }}>Tutte le pagine</h2>
-            <p style={{ margin: 0, fontSize: 13, color: '#888' }}>
-              Crea e modifica il contenuto. Pubblica le pagine per renderle visibili.
-            </p>
-          </div>
-          <button onClick={() => setShowNewModal(true)}
-            style={{ background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 14, flexShrink: 0 }}>
-            + Nuova pagina
-          </button>
-        </div>
-
-        {/* Search + filter bar */}
-        {pagine.length > 0 && (
-          <div style={{ marginBottom: 12 }}>
-            {/* Search */}
-            <div style={{ position: 'relative', marginBottom: 10 }}>
-              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: '#aaa', pointerEvents: 'none' }}>🔍</span>
-              <input
-                type="text"
-                placeholder="Cerca per titolo o slug…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                style={{ width: '100%', padding: '9px 12px 9px 36px', border: '1px solid #e0e0e0', borderRadius: 9, fontSize: 13, boxSizing: 'border-box', background: '#fff' }}
-              />
-              {search && (
-                <button onClick={() => setSearch('')}
-                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#aaa', lineHeight: 1 }}>
-                  ✕
-                </button>
-              )}
-            </div>
-
-            {/* Filter chips */}
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: 11, color: '#aaa', marginRight: 2 }}>Stato:</span>
-              {[['tutti','Tutti'],['bozza','Bozze'],['pubblicata','Pubblicate']].map(([val, label]) => (
-                <button key={val} onClick={() => setFilterStatus(val)} style={filterChip(filterStatus === val)}>{label}</button>
-              ))}
-              <span style={{ fontSize: 11, color: '#aaa', marginLeft: 10, marginRight: 2 }}>Menu:</span>
-              {[['tutti','Tutti'],['si','In menu'],['no','Fuori menu']].map(([val, label]) => (
-                <button key={val} onClick={() => setFilterMenu(val)} style={filterChip(filterMenu === val)}>{label}</button>
-              ))}
-              {activeFilters && (
-                <button onClick={() => { setSearch(''); setFilterStatus('tutti'); setFilterMenu('tutti') }}
-                  style={{ marginLeft: 6, fontSize: 11, color: '#c00', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px' }}>
-                  Reset filtri
-                </button>
-              )}
-            </div>
-
-            {/* Count */}
-            {activeFilters && (
-              <div style={{ fontSize: 12, color: '#888', marginTop: 8 }}>
-                {filteredPagine.length === pagine.length
-                  ? `${pagine.length} pagine`
-                  : `${filteredPagine.length} di ${pagine.length} pagine`}
+      {/* ══════════════════════════════════════════════════════════════════════
+          TAB: HOME
+      ══════════════════════════════════════════════════════════════════════ */}
+      {activeTab === 'home' && (
+        <div>
+          {/* Hero card */}
+          <div style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #2d2d4a 100%)', borderRadius: 16, padding: '28px 28px', color: '#fff', marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 18 }}>
+              <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 12, padding: 14, flexShrink: 0 }}>
+                <Home size={26} strokeWidth={1.5} color="#fff" />
               </div>
-            )}
-          </div>
-        )}
-
-        {loading ? (
-          <p style={{ color: '#888' }}>Caricamento...</p>
-        ) : pagine.length === 0 ? (
-          <div style={{ ...cardStyle, padding: '48px 24px', textAlign: 'center', color: '#aaa' }}>
-            <div style={{ fontSize: 38, marginBottom: 12 }}>📄</div>
-            <p style={{ margin: '0 0 4px', fontWeight: 600, color: '#888', fontSize: 15 }}>Nessuna pagina ancora</p>
-            <p style={{ margin: '0 0 20px', fontSize: 13 }}>
-              Aggiungi pagine come "Chi siamo", "Servizi", "Contatti" e personalizzale con blocchi di contenuto.
-            </p>
-            <button onClick={() => setShowNewModal(true)} style={btnAction('primary')}>
-              + Crea la prima pagina
-            </button>
-          </div>
-        ) : filteredPagine.length === 0 ? (
-          <div style={{ padding: '32px 24px', textAlign: 'center', color: '#aaa', background: '#f9f9fb', borderRadius: 10 }}>
-            <div style={{ fontSize: 28, marginBottom: 8 }}>🔍</div>
-            <div style={{ fontSize: 13 }}>Nessuna pagina corrisponde ai filtri selezionati.</div>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {filteredPagine.map(p => {
-              const url = previewUrl(p)
-              const seoScore = [p.seo_title, p.seo_description].filter(Boolean).length
-              return (
-                <div key={p.id} style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', flexWrap: 'wrap' }}>
-
-                  {/* Titolo */}
-                  <div style={{ flex: 1, minWidth: 140 }}>
-                    <span style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>
-                      {p.parent_id ? '└─ ' : ''}{p.titolo}
-                    </span>
-                    <span style={{ marginLeft: 8, fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>/{p.slug}</span>
-                  </div>
-
-                  {/* Status */}
-                  <button onClick={() => toggleStatus(p)} style={{
-                    ...btnAction(), flexShrink: 0,
-                    background: p.status === 'pubblicata' ? '#d4edda' : '#fff3cd',
-                    color:      p.status === 'pubblicata' ? '#155724' : '#856404',
-                    fontWeight: 600, border: 'none',
-                  }}>
-                    {p.status === 'pubblicata' ? '✓ Pubblicata' : '○ Bozza'}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1, color: 'rgba(255,255,255,0.45)', marginBottom: 4, textTransform: 'uppercase' }}>Home page</div>
+                <div style={{ fontSize: 20, fontWeight: 700, marginBottom: entityData?.minisito?.tagline ? 4 : 16 }}>
+                  {entityName || 'Il tuo sito'}
+                </div>
+                {entityData?.minisito?.tagline && (
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 18 }}>{entityData.minisito.tagline}</div>
+                )}
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <button onClick={() => navigate(homeEditPath)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 22px', background: '#fff', color: '#1a1a2e', border: 'none', borderRadius: 9, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
+                    <PenLine size={15} strokeWidth={2} />
+                    Modifica sezioni
                   </button>
-
-                  {/* Nel menu */}
-                  <span style={{ fontSize: 11, color: p.nel_menu ? '#0066aa' : '#bbb', flexShrink: 0 }}>
-                    {p.nel_menu ? '☰ In menu' : '— Fuori menu'}
-                  </span>
-
-                  {/* SEO */}
-                  <span title={['SEO non configurato','SEO incompleto','SEO completo'][seoScore]}
-                    style={{ fontSize: 10, padding: '2px 6px', borderRadius: 8, flexShrink: 0, fontWeight: 700,
-                      background: ['#fce8e8','#fff3cd','#d4edda'][seoScore],
-                      color:      ['#c00','#856404','#155724'][seoScore] }}>
-                    SEO {['✗','~','✓'][seoScore]}
-                  </span>
-
-                  {/* Data */}
-                  {p.updated_at && (
-                    <span style={{ fontSize: 11, color: '#ccc', flexShrink: 0 }} title="Ultima modifica">
-                      {new Date(p.updated_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}
-                    </span>
-                  )}
-
-                  {/* Apri */}
-                  {url && (
-                    <a href={url} target="_blank" rel="noopener noreferrer"
-                      style={{ ...btnAction(), flexShrink: 0, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                      ↗ Apri
+                  {entitySiteUrl && (
+                    <a href={entitySiteUrl} target="_blank" rel="noopener noreferrer"
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 9, textDecoration: 'none', fontSize: 13 }}>
+                      Vedi sito ↗
                     </a>
                   )}
-
-                  {/* Duplica */}
-                  <button onClick={() => duplicatePage(p)} style={{ ...btnAction(), flexShrink: 0 }} title="Duplica pagina">
-                    ⧉ Duplica
-                  </button>
-
-                  {/* Modifica */}
-                  <button onClick={() => navigate(`/admin/pagine/${p.id}`)} style={btnAction('primary')}>
-                    Modifica
-                  </button>
-
-                  {/* Elimina */}
-                  <button onClick={() => deletePage(p)} style={btnAction('danger')}>✕</button>
                 </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* ── SEZIONE 3: HEADER & FOOTER ── */}
-      <div style={{ marginTop: 36 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <div>
-            <h2 style={{ margin: '0 0 4px', fontSize: 18, color: '#1a1a2e' }}>Header & Footer</h2>
-            <p style={{ margin: 0, fontSize: 13, color: '#888' }}>Personalizza la barra di navigazione e il footer del sito.</p>
-          </div>
-          <button
-            onClick={saveHeaderFooter}
-            disabled={savingCfg || !entityData}
-            style={{ background: savedCfg ? '#d4edda' : '#1a1a2e', color: savedCfg ? '#155724' : '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontSize: 14, fontWeight: 600, transition: 'background 0.3s' }}
-          >
-            {savingCfg ? 'Salvataggio…' : savedCfg ? '✓ Salvato' : 'Salva modifiche'}
-          </button>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-
-          {/* ── Navbar ── */}
-          <div style={{ ...cardStyle, padding: 20 }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>Navigazione (navbar)</div>
-
-            {/* Stile */}
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 8 }}>Stile sfondo</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 6 }}>
-                {[
-                  ['dark',        '████', '#1a1a2e', 'Scuro'],
-                  ['light',       '████', '#ffffff', 'Chiaro'],
-                  ['colored',     '████', null,      'Colore brand'],
-                  ['transparent', '░░░░', '#ffffff', 'Trasparente'],
-                ].map(([val, preview, bg, lbl]) => {
-                  const sel = headerCfg.style === val
-                  return (
-                    <button key={val} onClick={() => setHeaderCfg(h => ({ ...h, style: val }))}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, cursor: 'pointer', textAlign: 'left',
-                        border: sel ? '2px solid #1a1a2e' : '1.5px solid #e8e8e8',
-                        background: sel ? '#f0f2ff' : '#f9f9fb' }}>
-                      <span style={{ fontSize: 10, color: bg || '#999', letterSpacing: -1 }}>{preview}</span>
-                      <span style={{ fontSize: 12, fontWeight: sel ? 700 : 400, color: '#1a1a2e' }}>{lbl}</span>
-                    </button>
-                  )
-                })}
               </div>
             </div>
-
-            {/* Colore custom per "Colorato" */}
-            {headerCfg.style === 'colored' && (
-              <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <label style={{ fontSize: 12, color: '#666', whiteSpace: 'nowrap' }}>Colore:</label>
-                <input type="color" value={headerCfg.bg_color || '#1a1a2e'}
-                  onChange={e => setHeaderCfg(h => ({ ...h, bg_color: e.target.value }))}
-                  style={{ width: 40, height: 32, border: '1px solid #ddd', borderRadius: 6, padding: 2, cursor: 'pointer' }} />
-                <span style={{ fontSize: 11, color: '#888' }}>{headerCfg.bg_color || '#1a1a2e'}</span>
-              </div>
-            )}
-
-            {/* Comportamento */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
-                <input type="checkbox" checked={headerCfg.always_visible} onChange={e => setHeaderCfg(h => ({ ...h, always_visible: e.target.checked }))} />
-                <span><strong>Sempre visibile</strong> <span style={{ color: '#888', fontSize: 11 }}>(default: appare dopo scroll)</span></span>
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
-                <input type="checkbox" checked={headerCfg.logo_in_nav} onChange={e => setHeaderCfg(h => ({ ...h, logo_in_nav: e.target.checked }))} />
-                <span><strong>Mostra logo</strong> nel nav</span>
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
-                <input type="checkbox" checked={headerCfg.show_phone} onChange={e => setHeaderCfg(h => ({ ...h, show_phone: e.target.checked }))} />
-                <span><strong>Mostra telefono</strong> nel nav</span>
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
-                <input type="checkbox" checked={headerCfg.show_cta} onChange={e => setHeaderCfg(h => ({ ...h, show_cta: e.target.checked }))} />
-                <span><strong>Bottone CTA</strong></span>
-              </label>
-            </div>
-
-            {headerCfg.show_cta && (
-              <div style={{ padding: 12, background: '#f9f9fb', borderRadius: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <input type="text" placeholder="Testo (es. Prenota ora)" value={headerCfg.cta_text}
-                  onChange={e => setHeaderCfg(h => ({ ...h, cta_text: e.target.value }))}
-                  style={{ padding: '7px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13 }} />
-                <input type="url" placeholder="URL destinazione" value={headerCfg.cta_url}
-                  onChange={e => setHeaderCfg(h => ({ ...h, cta_url: e.target.value }))}
-                  style={{ padding: '7px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13 }} />
-              </div>
-            )}
           </div>
 
-          {/* ── Footer ── */}
-          <div style={{ ...cardStyle, padding: 20 }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>Footer</div>
-
-            {/* Layout */}
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 8 }}>Layout</label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {[
-                  ['minimal',  'Minimale',  'Solo copyright e link policy'],
-                  ['standard', 'Standard',  'Logo + descrizione + social + link menu'],
-                  ['full',     'Completo',  '3 colonne: logo/socials, menu, contatti'],
-                ].map(([val, lbl, desc]) => {
-                  const sel = (footerCfg.layout || 'standard') === val
-                  return (
-                    <button key={val} onClick={() => setFooterCfg(f => ({ ...f, layout: val }))}
-                      style={{ display: 'flex', flexDirection: 'column', padding: '10px 12px', borderRadius: 8, cursor: 'pointer', textAlign: 'left',
-                        border: sel ? '2px solid #1a1a2e' : '1.5px solid #e8e8e8',
-                        background: sel ? '#f0f2ff' : '#f9f9fb' }}>
-                      <span style={{ fontSize: 13, fontWeight: sel ? 700 : 500, color: '#1a1a2e' }}>{lbl}</span>
-                      <span style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{desc}</span>
-                    </button>
-                  )
-                })}
-              </div>
+          {/* Info sezioni */}
+          <div style={{ background: '#f9f9fb', borderRadius: 12, padding: '20px 24px', border: '1px solid #eeeeee' }}>
+            <div style={{ fontWeight: 600, fontSize: 13, color: '#1a1a2e', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 7 }}>
+              <Layers size={14} strokeWidth={1.5} color="#888" />
+              Sezioni configurate
             </div>
-
-            {/* Stile colore */}
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 8 }}>Sfondo</label>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {[['dark','Scuro'],['light','Chiaro']].map(([val, lbl]) => (
-                  <button key={val} onClick={() => setFooterCfg(f => ({ ...f, style: val }))}
-                    style={{ padding: '5px 14px', borderRadius: 20, fontSize: 12, cursor: 'pointer', fontWeight: footerCfg.style === val ? 700 : 400,
-                      border: footerCfg.style === val ? '2px solid #1a1a2e' : '1.5px solid #e0e0e0',
-                      background: footerCfg.style === val ? '#1a1a2e' : '#fff',
-                      color: footerCfg.style === val ? '#fff' : '#555' }}>
-                    {lbl}
-                  </button>
+            {activeSections.length > 0 ? (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                {activeSections.map(s => (
+                  <span key={s} style={{ padding: '3px 10px', background: '#fff', border: '1px solid #ddd', borderRadius: 20, fontSize: 11, color: '#555' }}>
+                    {s}
+                  </span>
                 ))}
               </div>
+            ) : (
+              <div style={{ fontSize: 12, color: '#aaa', marginBottom: 12 }}>Nessuna sezione configurata — clicca "Modifica sezioni" per iniziare.</div>
+            )}
+            <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6 }}>
+              Personalizza la Home con sezioni trascinabili: highlights, statistiche, about, galleria, testimonianze, form contatti e altro. Per aggiungere pagine extra usa il tab <strong>Pagine</strong>.
             </div>
+          </div>
+        </div>
+      )}
 
-            {/* Opzioni contenuto (layout standard/full) */}
-            {footerCfg.layout !== 'minimal' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
-                  <input type="checkbox" checked={footerCfg.show_description !== false} onChange={e => setFooterCfg(f => ({ ...f, show_description: e.target.checked }))} />
-                  <span>Mostra tagline/descrizione</span>
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
-                  <input type="checkbox" checked={footerCfg.show_socials !== false} onChange={e => setFooterCfg(f => ({ ...f, show_socials: e.target.checked }))} />
-                  <span>Mostra social links</span>
-                </label>
-                {footerCfg.layout === 'full' && (
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
-                    <input type="checkbox" checked={footerCfg.show_contact !== false} onChange={e => setFooterCfg(f => ({ ...f, show_contact: e.target.checked }))} />
-                    <span>Mostra colonna contatti</span>
-                  </label>
+      {/* ══════════════════════════════════════════════════════════════════════
+          TAB: PAGINE
+      ══════════════════════════════════════════════════════════════════════ */}
+      {activeTab === 'pagine' && (
+        <div>
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div>
+              <h2 style={{ margin: '0 0 4px', fontSize: 18, color: '#1a1a2e' }}>Pagine del sito</h2>
+              <p style={{ margin: 0, fontSize: 13, color: '#888' }}>
+                Crea e modifica il contenuto. Pubblica le pagine per renderle visibili.
+              </p>
+            </div>
+            <button onClick={() => setShowNewModal(true)}
+              style={{ background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 14, flexShrink: 0 }}>
+              + Nuova pagina
+            </button>
+          </div>
+
+          {/* Search + filter bar */}
+          {pagine.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ position: 'relative', marginBottom: 10 }}>
+                <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', display: 'flex', alignItems: 'center' }}>
+                  <Search size={14} strokeWidth={1.5} color="#bbb" />
+                </span>
+                <input
+                  type="text"
+                  placeholder="Cerca per titolo o slug…"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  style={{ width: '100%', padding: '9px 12px 9px 36px', border: '1px solid #e0e0e0', borderRadius: 9, fontSize: 13, boxSizing: 'border-box', background: '#fff' }}
+                />
+                {search && (
+                  <button onClick={() => setSearch('')}
+                    style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#aaa', lineHeight: 1 }}>
+                    ✕
+                  </button>
                 )}
               </div>
-            )}
 
-            {/* Copyright + link extra */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 4 }}>Testo copyright</label>
-                <input type="text" placeholder="Lascia vuoto per testo automatico"
-                  value={footerCfg.copyright}
-                  onChange={e => setFooterCfg(f => ({ ...f, copyright: e.target.value }))}
-                  style={{ width: '100%', padding: '7px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }} />
+              {/* Filter chips */}
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontSize: 11, color: '#aaa', marginRight: 2 }}>Stato:</span>
+                {[['tutti','Tutti'],['bozza','Bozze'],['pubblicata','Pubblicate']].map(([val, label]) => (
+                  <button key={val} onClick={() => setFilterStatus(val)} style={filterChip(filterStatus === val)}>{label}</button>
+                ))}
+                <span style={{ fontSize: 11, color: '#aaa', marginLeft: 10, marginRight: 2 }}>Menu:</span>
+                {[['tutti','Tutti'],['si','In menu'],['no','Fuori menu']].map(([val, label]) => (
+                  <button key={val} onClick={() => setFilterMenu(val)} style={filterChip(filterMenu === val)}>{label}</button>
+                ))}
+                {activeFilters && (
+                  <button onClick={() => { setSearch(''); setFilterStatus('tutti'); setFilterMenu('tutti') }}
+                    style={{ marginLeft: 6, fontSize: 11, color: '#c00', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px' }}>
+                    Reset filtri
+                  </button>
+                )}
               </div>
+
+              {activeFilters && (
+                <div style={{ fontSize: 12, color: '#888', marginTop: 8 }}>
+                  {filteredPagine.length === pagine.length
+                    ? `${pagine.length} pagine`
+                    : `${filteredPagine.length} di ${pagine.length} pagine`}
+                </div>
+              )}
+            </div>
+          )}
+
+          {loading ? (
+            <p style={{ color: '#888' }}>Caricamento...</p>
+          ) : pagine.length === 0 ? (
+            <div style={{ ...cardStyle, padding: '48px 24px', textAlign: 'center', color: '#aaa' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+                <div style={{ background: '#f0f0f0', borderRadius: 16, padding: 18 }}>
+                  <FileText size={32} strokeWidth={1} color="#ccc" />
+                </div>
+              </div>
+              <p style={{ margin: '0 0 4px', fontWeight: 600, color: '#888', fontSize: 15 }}>Nessuna pagina ancora</p>
+              <p style={{ margin: '0 0 20px', fontSize: 13 }}>
+                Aggiungi pagine come "Chi siamo", "Servizi", "Contatti" e personalizzale con blocchi di contenuto.
+              </p>
+              <button onClick={() => setShowNewModal(true)} style={btnAction('primary')}>
+                + Crea la prima pagina
+              </button>
+            </div>
+          ) : filteredPagine.length === 0 ? (
+            <div style={{ padding: '32px 24px', textAlign: 'center', color: '#aaa', background: '#f9f9fb', borderRadius: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+                <SearchX size={24} strokeWidth={1.5} color="#ccc" />
+              </div>
+              <div style={{ fontSize: 13 }}>Nessuna pagina corrisponde ai filtri selezionati.</div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {filteredPagine.map(p => {
+                const url = previewUrl(p)
+                const seoScore = [p.seo_title, p.seo_description].filter(Boolean).length
+                return (
+                  <div key={p.id} style={{ ...cardStyle, display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', flexWrap: 'wrap' }}>
+
+                    <div style={{ flex: 1, minWidth: 140 }}>
+                      <span style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>
+                        {p.parent_id ? '└─ ' : ''}{p.titolo}
+                      </span>
+                      <span style={{ marginLeft: 8, fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>/{p.slug}</span>
+                    </div>
+
+                    <button onClick={() => toggleStatus(p)} style={{
+                      ...btnAction(), flexShrink: 0,
+                      background: p.status === 'pubblicata' ? '#d4edda' : '#fff3cd',
+                      color:      p.status === 'pubblicata' ? '#155724' : '#856404',
+                      fontWeight: 600, border: 'none',
+                    }}>
+                      {p.status === 'pubblicata' ? '✓ Pubblicata' : '○ Bozza'}
+                    </button>
+
+                    <span style={{ fontSize: 11, color: p.nel_menu ? '#0066aa' : '#bbb', flexShrink: 0 }}>
+                      {p.nel_menu ? '☰ In menu' : '— Fuori menu'}
+                    </span>
+
+                    <span title={['SEO non configurato','SEO incompleto','SEO completo'][seoScore]}
+                      style={{ fontSize: 10, padding: '2px 6px', borderRadius: 8, flexShrink: 0, fontWeight: 700,
+                        background: ['#fce8e8','#fff3cd','#d4edda'][seoScore],
+                        color:      ['#c00','#856404','#155724'][seoScore] }}>
+                      SEO {['✗','~','✓'][seoScore]}
+                    </span>
+
+                    {p.updated_at && (
+                      <span style={{ fontSize: 11, color: '#ccc', flexShrink: 0 }} title="Ultima modifica">
+                        {new Date(p.updated_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}
+                      </span>
+                    )}
+
+                    {url && (
+                      <a href={url} target="_blank" rel="noopener noreferrer"
+                        style={{ ...btnAction(), flexShrink: 0, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        ↗ Apri
+                      </a>
+                    )}
+
+                    <button onClick={() => duplicatePage(p)} style={{ ...btnAction(), flexShrink: 0 }} title="Duplica pagina">
+                      ⧉ Duplica
+                    </button>
+
+                    <button onClick={() => navigate(`/admin/pagine/${p.id}`)} style={btnAction('primary')}>
+                      Modifica
+                    </button>
+
+                    <button onClick={() => deletePage(p)} style={btnAction('danger')}>✕</button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          TAB: MENU & LAYOUT
+      ══════════════════════════════════════════════════════════════════════ */}
+      {activeTab === 'layout' && (
+        <div>
+
+          {/* ── Menu di navigazione ── */}
+          <div style={{ marginBottom: 36 }}>
+            <div style={{ marginBottom: 16 }}>
+              <h2 style={{ margin: '0 0 4px', fontSize: 18, color: '#1a1a2e' }}>Menu di navigazione</h2>
+              <p style={{ margin: 0, fontSize: 13, color: '#888' }}>
+                Queste voci appaiono nella barra in cima al sito. Trascina per riordinare. Solo le pagine <strong>Pubblicate</strong> sono visibili ai visitatori.
+              </p>
+            </div>
+
+            {/* Home — fisso */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', ...cardStyle, marginBottom: 4, background: '#fafafa' }}>
+              <span style={{ color: '#ddd', fontSize: 15, userSelect: 'none' }}>⠿</span>
+              <Home size={16} strokeWidth={1.5} color="#bbb" />
+              <div style={{ flex: 1 }}>
+                <span style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>Home</span>
+                <span style={{ marginLeft: 8, fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>/</span>
+              </div>
+              <span style={{ fontSize: 11, color: '#888', fontStyle: 'italic' }}>sempre presente</span>
+              <button onClick={() => { setActiveTab('home') }} style={btnAction()}>Modifica sezioni →</button>
+            </div>
+
+            {!loading && menuTop.length > 0 && (
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 6 }}>Link aggiuntivi</label>
-                {(footerCfg.extra_links || []).map((lnk, i) => (
-                  <div key={lnk.id || i} style={{ display: 'flex', gap: 5, marginBottom: 5, alignItems: 'center' }}>
-                    <input type="text" placeholder="Testo" value={lnk.label}
-                      onChange={e => setFooterCfg(f => ({ ...f, extra_links: f.extra_links.map((l, j) => j === i ? { ...l, label: e.target.value } : l) }))}
-                      style={{ flex: 1, padding: '5px 7px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12 }} />
-                    <input type="url" placeholder="URL" value={lnk.url}
-                      onChange={e => setFooterCfg(f => ({ ...f, extra_links: f.extra_links.map((l, j) => j === i ? { ...l, url: e.target.value } : l) }))}
-                      style={{ flex: 2, padding: '5px 7px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12 }} />
-                    <button onClick={() => setFooterCfg(f => ({ ...f, extra_links: f.extra_links.filter((_, j) => j !== i) }))}
-                      style={{ background: '#fce8e8', border: 'none', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', color: '#c00', fontSize: 12 }}>✕</button>
+                {menuTop.map(p => (
+                  <div key={p.id}>
+                    {renderMenuRow(p, false)}
+                    {menuSubs(p.id).map(child => renderMenuRow(child, true))}
                   </div>
                 ))}
-                <button onClick={() => setFooterCfg(f => ({ ...f, extra_links: [...(f.extra_links || []), { id: crypto.randomUUID(), label: '', url: '' }] }))}
-                  style={{ ...btnAction('add'), marginTop: 2, fontSize: 11 }}>+ Aggiungi link</button>
               </div>
+            )}
+
+            {notInMenu.length > 0 && (
+              <div style={{ marginTop: 16, padding: '14px 16px', background: '#f9f9fb', borderRadius: 10, border: '1px dashed #ddd' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#888', marginBottom: 10 }}>
+                  Pagine non nel menu — clicca per aggiungerle
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {notInMenu.map(p => (
+                    <button key={p.id} onClick={() => addToMenu(p)} style={{ ...btnAction('add'), display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 16 }}>+</span>
+                      <span style={{ fontWeight: 600 }}>{p.titolo}</span>
+                      {p.status === 'bozza' && <span style={{ fontSize: 10, opacity: 0.6 }}>(bozza)</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {!loading && pagine.length === 0 && (
+              <div style={{ padding: '20px 16px', background: '#f9f9fb', borderRadius: 10, border: '1px dashed #ddd', textAlign: 'center', color: '#aaa', fontSize: 13 }}>
+                Crea le tue prime pagine nel tab <strong>Pagine</strong>, poi aggiungile al menu.
+              </div>
+            )}
+          </div>
+
+          {/* ── Header & Footer ── */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div>
+                <h2 style={{ margin: '0 0 4px', fontSize: 18, color: '#1a1a2e' }}>Header & Footer</h2>
+                <p style={{ margin: 0, fontSize: 13, color: '#888' }}>Personalizza la barra di navigazione e il footer del sito.</p>
+              </div>
+              <button
+                onClick={saveHeaderFooter}
+                disabled={savingCfg || !entityData}
+                style={{ background: savedCfg ? '#d4edda' : '#1a1a2e', color: savedCfg ? '#155724' : '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', cursor: 'pointer', fontSize: 14, fontWeight: 600, transition: 'background 0.3s' }}
+              >
+                {savingCfg ? 'Salvataggio…' : savedCfg ? '✓ Salvato' : 'Salva modifiche'}
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+
+              {/* ── Navbar ── */}
+              <div style={{ ...cardStyle, padding: 20 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>Navigazione (navbar)</div>
+
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 8 }}>Stile sfondo</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 6 }}>
+                    {[
+                      ['dark',        '████', '#1a1a2e', 'Scuro'],
+                      ['light',       '████', '#ffffff', 'Chiaro'],
+                      ['colored',     '████', null,      'Colore brand'],
+                      ['transparent', '░░░░', '#ffffff', 'Trasparente'],
+                    ].map(([val, preview, bg, lbl]) => {
+                      const sel = headerCfg.style === val
+                      return (
+                        <button key={val} onClick={() => setHeaderCfg(h => ({ ...h, style: val }))}
+                          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, cursor: 'pointer', textAlign: 'left',
+                            border: sel ? '2px solid #1a1a2e' : '1.5px solid #e8e8e8',
+                            background: sel ? '#f0f2ff' : '#f9f9fb' }}>
+                          <span style={{ fontSize: 10, color: bg || '#999', letterSpacing: -1 }}>{preview}</span>
+                          <span style={{ fontSize: 12, fontWeight: sel ? 700 : 400, color: '#1a1a2e' }}>{lbl}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {headerCfg.style === 'colored' && (
+                  <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <label style={{ fontSize: 12, color: '#666', whiteSpace: 'nowrap' }}>Colore:</label>
+                    <input type="color" value={headerCfg.bg_color || '#1a1a2e'}
+                      onChange={e => setHeaderCfg(h => ({ ...h, bg_color: e.target.value }))}
+                      style={{ width: 40, height: 32, border: '1px solid #ddd', borderRadius: 6, padding: 2, cursor: 'pointer' }} />
+                    <span style={{ fontSize: 11, color: '#888' }}>{headerCfg.bg_color || '#1a1a2e'}</span>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
+                    <input type="checkbox" checked={headerCfg.always_visible} onChange={e => setHeaderCfg(h => ({ ...h, always_visible: e.target.checked }))} />
+                    <span><strong>Sempre visibile</strong> <span style={{ color: '#888', fontSize: 11 }}>(default: appare dopo scroll)</span></span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
+                    <input type="checkbox" checked={headerCfg.logo_in_nav} onChange={e => setHeaderCfg(h => ({ ...h, logo_in_nav: e.target.checked }))} />
+                    <span><strong>Mostra logo</strong> nel nav</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
+                    <input type="checkbox" checked={headerCfg.show_phone} onChange={e => setHeaderCfg(h => ({ ...h, show_phone: e.target.checked }))} />
+                    <span><strong>Mostra telefono</strong> nel nav</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
+                    <input type="checkbox" checked={headerCfg.show_cta} onChange={e => setHeaderCfg(h => ({ ...h, show_cta: e.target.checked }))} />
+                    <span><strong>Bottone CTA</strong></span>
+                  </label>
+                </div>
+
+                {headerCfg.show_cta && (
+                  <div style={{ padding: 12, background: '#f9f9fb', borderRadius: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <input type="text" placeholder="Testo (es. Prenota ora)" value={headerCfg.cta_text}
+                      onChange={e => setHeaderCfg(h => ({ ...h, cta_text: e.target.value }))}
+                      style={{ padding: '7px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13 }} />
+                    <input type="url" placeholder="URL destinazione" value={headerCfg.cta_url}
+                      onChange={e => setHeaderCfg(h => ({ ...h, cta_url: e.target.value }))}
+                      style={{ padding: '7px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13 }} />
+                  </div>
+                )}
+              </div>
+
+              {/* ── Footer ── */}
+              <div style={{ ...cardStyle, padding: 20 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>Footer</div>
+
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 8 }}>Layout</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {[
+                      ['minimal',  'Minimale',  'Solo copyright e link policy'],
+                      ['standard', 'Standard',  'Logo + descrizione + social + link menu'],
+                      ['full',     'Completo',  '3 colonne: logo/socials, menu, contatti'],
+                    ].map(([val, lbl, desc]) => {
+                      const sel = (footerCfg.layout || 'standard') === val
+                      return (
+                        <button key={val} onClick={() => setFooterCfg(f => ({ ...f, layout: val }))}
+                          style={{ display: 'flex', flexDirection: 'column', padding: '10px 12px', borderRadius: 8, cursor: 'pointer', textAlign: 'left',
+                            border: sel ? '2px solid #1a1a2e' : '1.5px solid #e8e8e8',
+                            background: sel ? '#f0f2ff' : '#f9f9fb' }}>
+                          <span style={{ fontSize: 13, fontWeight: sel ? 700 : 500, color: '#1a1a2e' }}>{lbl}</span>
+                          <span style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{desc}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 8 }}>Sfondo</label>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {[['dark','Scuro'],['light','Chiaro']].map(([val, lbl]) => (
+                      <button key={val} onClick={() => setFooterCfg(f => ({ ...f, style: val }))}
+                        style={{ padding: '5px 14px', borderRadius: 20, fontSize: 12, cursor: 'pointer', fontWeight: footerCfg.style === val ? 700 : 400,
+                          border: footerCfg.style === val ? '2px solid #1a1a2e' : '1.5px solid #e0e0e0',
+                          background: footerCfg.style === val ? '#1a1a2e' : '#fff',
+                          color: footerCfg.style === val ? '#fff' : '#555' }}>
+                        {lbl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {footerCfg.layout !== 'minimal' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+                      <input type="checkbox" checked={footerCfg.show_description !== false} onChange={e => setFooterCfg(f => ({ ...f, show_description: e.target.checked }))} />
+                      <span>Mostra tagline/descrizione</span>
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+                      <input type="checkbox" checked={footerCfg.show_socials !== false} onChange={e => setFooterCfg(f => ({ ...f, show_socials: e.target.checked }))} />
+                      <span>Mostra social links</span>
+                    </label>
+                    {footerCfg.layout === 'full' && (
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+                        <input type="checkbox" checked={footerCfg.show_contact !== false} onChange={e => setFooterCfg(f => ({ ...f, show_contact: e.target.checked }))} />
+                        <span>Mostra colonna contatti</span>
+                      </label>
+                    )}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 4 }}>Testo copyright</label>
+                    <input type="text" placeholder="Lascia vuoto per testo automatico"
+                      value={footerCfg.copyright}
+                      onChange={e => setFooterCfg(f => ({ ...f, copyright: e.target.value }))}
+                      style={{ width: '100%', padding: '7px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13, boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 6 }}>Link aggiuntivi</label>
+                    {(footerCfg.extra_links || []).map((lnk, i) => (
+                      <div key={lnk.id || i} style={{ display: 'flex', gap: 5, marginBottom: 5, alignItems: 'center' }}>
+                        <input type="text" placeholder="Testo" value={lnk.label}
+                          onChange={e => setFooterCfg(f => ({ ...f, extra_links: f.extra_links.map((l, j) => j === i ? { ...l, label: e.target.value } : l) }))}
+                          style={{ flex: 1, padding: '5px 7px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12 }} />
+                        <input type="url" placeholder="URL" value={lnk.url}
+                          onChange={e => setFooterCfg(f => ({ ...f, extra_links: f.extra_links.map((l, j) => j === i ? { ...l, url: e.target.value } : l) }))}
+                          style={{ flex: 2, padding: '5px 7px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12 }} />
+                        <button onClick={() => setFooterCfg(f => ({ ...f, extra_links: f.extra_links.filter((_, j) => j !== i) }))}
+                          style={{ background: '#fce8e8', border: 'none', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', color: '#c00', fontSize: 12 }}>✕</button>
+                      </div>
+                    ))}
+                    <button onClick={() => setFooterCfg(f => ({ ...f, extra_links: [...(f.extra_links || []), { id: crypto.randomUUID(), label: '', url: '' }] }))}
+                      style={{ ...btnAction('add'), marginTop: 2, fontSize: 11 }}>+ Aggiungi link</button>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
 
         </div>
-      </div>
+      )}
 
       {/* ── Modal nuova pagina ── */}
       {showNewModal && (

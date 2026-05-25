@@ -178,7 +178,7 @@ export default function AnalyticsPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 24 }}>
             <StatCard
               icon={<Eye size={18} strokeWidth={1.5} color="#6366f1" />}
-              label="Visite minisito"
+              label="Visite sito"
               value={data.pageviews.total.toLocaleString('it-IT')}
               sub={`ultimi ${range} giorni`}
               trend={calcTrend(data.pageviews.total, data.pageviews.prev_total)}
@@ -215,11 +215,11 @@ export default function AnalyticsPage() {
           </div>
 
           {/* ── Visite line chart ── */}
-          <Card title={`Visite minisito — ultimi ${range} giorni`} style={{ marginBottom: 16 }}>
+          <Card title={`Visite sito — ultimi ${range} giorni`} style={{ marginBottom: 16 }}>
             {data.pageviews.total === 0 ? (
               <div style={{ padding: '32px 0', textAlign: 'center', color: '#bbb' }}>
                 <Eye size={28} strokeWidth={1.5} color="#e0e0e0" style={{ display: 'block', margin: '0 auto 10px' }} />
-                <p style={{ margin: 0, fontSize: 13 }}>Nessuna visita ancora. Il contatore parte non appena qualcuno apre il minisito.</p>
+                <p style={{ margin: 0, fontSize: 13 }}>Nessuna visita ancora. Il contatore parte non appena qualcuno apre il sito.</p>
               </div>
             ) : (
               <LineChart data={data.pageviews.daily} color="#6366f1" height={100} />

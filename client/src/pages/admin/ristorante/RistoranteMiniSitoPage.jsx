@@ -767,7 +767,7 @@ function TrackingCard({ form, setForm, save, inputStyle, lblStyle, hintStyle, fi
     <div style={cardStyle}>
       <h3 style={sectionTitle}>Tracking & Analytics</h3>
       <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
-        Gli script vengono iniettati automaticamente nel minisito. Lascia vuoti quelli non utilizzati.
+        Gli script vengono iniettati automaticamente nel sito. Lascia vuoti quelli non utilizzati.
       </p>
       {FIELDS.map(({ key, label, placeholder, hint }, i) => (
         <div key={key} style={{ ...fieldWrap, marginBottom: i < FIELDS.length - 1 ? 18 : 0 }}>

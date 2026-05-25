@@ -333,7 +333,7 @@ function RisorseForm({ form, patch, patchDisp, initDisp, onSave, onCancel, savin
                 <label htmlFor="visibile_minisito" style={{ fontSize: 14, cursor: 'pointer', fontWeight: 500 }}>Visibile nel sito pubblico</label>
               </div>
               <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
-                Se disattivato, la risorsa è gestibile in admin ma non appare nel widget di prenotazione del minisito. Utile per risorse ad uso interno o prenotabili solo su richiesta.
+                Se disattivato, la risorsa è gestibile in admin ma non appare nel widget di prenotazione del sito. Utile per risorse ad uso interno o prenotabili solo su richiesta.
               </div>
             </div>
           </Card>

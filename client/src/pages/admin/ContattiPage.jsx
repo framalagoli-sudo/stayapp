@@ -427,7 +427,7 @@ export default function ContattiPage() {
         loading ? <p style={{ color: '#aaa', fontSize: 14 }}>Caricamento…</p>
         : contatti.length === 0 ? (
           <div style={{ background: '#fff', borderRadius: 12, padding: 40, textAlign: 'center', color: '#aaa' }}>
-            {search || tagFilter ? 'Nessun contatto trovato.' : 'Nessun contatto ancora. Aggiungine uno o attiva il widget iscrizione nel minisito.'}
+            {search || tagFilter ? 'Nessun contatto trovato.' : 'Nessun contatto ancora. Aggiungine uno o attiva il widget iscrizione nel sito.'}
           </div>
         ) : (
           <div style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
