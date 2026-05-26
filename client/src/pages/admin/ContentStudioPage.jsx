@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { useAzienda } from '../../context/AziendaContext'
 import {
-  Sparkles, Target, Calendar, Pen, Copy, Check,
+  Sparkles, Target, Calendar, Pen, Copy, Check, CalendarPlus,
   ChevronLeft, ChevronRight, AlertCircle, RefreshCw, ExternalLink,
   Zap, Share2, Package, FileText,
 } from 'lucide-react'
@@ -557,6 +557,8 @@ function StrategiaTab({ strategy, nome, onSaved }) {
 
 // ── Tab 2: Piano Mensile ──────────────────────────────────────────────────────
 
+const EMPTY_NEW_POST = { giorno: '', canale: 'instagram', pillar: '', titolo: '', testo: '', note_visive: '' }
+
 function PianoMensileTab({ strategy }) {
   const navigate = useNavigate()
   const now = new Date()
@@ -564,37 +566,60 @@ function PianoMensileTab({ strategy }) {
   const [anno, setAnno] = useState(now.getFullYear())
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [created, setCreated] = useState(0)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [newPost, setNewPost] = useState(EMPTY_NEW_POST)
+
+  const pillarList = strategy?.pillar || []
 
   function prevMese() {
     if (mese === 1) { setMese(12); setAnno(a => a - 1) } else setMese(m => m - 1)
-    setPosts([]); setCreated(0)
+    setPosts([]); setCreated(0); setShowAddForm(false)
   }
   function nextMese() {
     if (mese === 12) { setMese(1); setAnno(a => a + 1) } else setMese(m => m + 1)
-    setPosts([]); setCreated(0)
+    setPosts([]); setCreated(0); setShowAddForm(false)
   }
 
-  async function genera(crea_bozze = false) {
+  async function generaAI() {
     setLoading(true); setError(''); setCreated(0)
     try {
-      const { posts: p, created: c } = await apiFetch('/api/content-studio/piano', {
-        method: 'POST',
-        body: JSON.stringify({ mese, anno, crea_bozze }),
+      const { posts: p } = await apiFetch('/api/content-studio/piano', {
+        method: 'POST', body: JSON.stringify({ mese, anno, crea_bozze: false }),
       })
       setPosts(p || [])
-      if (crea_bozze) setCreated(c)
     } catch (e) { setError(e.message) }
     setLoading(false)
   }
 
-  if (!strategy?.pillar?.length) return (
-    <div style={{ textAlign: 'center', padding: '60px 20px', color: '#aaa' }}>
-      <Calendar size={40} strokeWidth={1} color="#ddd" style={{ display: 'block', margin: '0 auto 16px' }} />
-      <p style={{ fontSize: 14 }}>Configura prima la <strong>Strategia</strong> per generare il piano mensile.</p>
-    </div>
-  )
+  async function salvaBozze() {
+    if (!posts.length) return
+    setSaving(true); setError(''); setCreated(0)
+    const mesePad = String(mese).padStart(2, '0')
+    try {
+      const bozze = posts.map(p => ({
+        titolo: p.titolo || 'Post social',
+        testo: p.testo || '',
+        canali: [p.canale],
+        stato: 'bozza',
+        data_pianificata: `${anno}-${mesePad}-${String(Math.min(Number(p.giorno) || 1, 28)).padStart(2, '0')}`,
+        note: p.note_visive || '',
+      }))
+      await Promise.all(bozze.map(b => apiFetch('/api/piano-editoriale', { method: 'POST', body: JSON.stringify(b) })))
+      setCreated(bozze.length)
+    } catch (e) { setError(e.message) }
+    setSaving(false)
+  }
+
+  function addManualPost() {
+    if (!newPost.titolo.trim() || !newPost.testo.trim()) return
+    const giorno = Math.max(1, Math.min(31, Number(newPost.giorno) || 1))
+    setPosts(ps => [...ps, { ...newPost, giorno, _manual: true }].sort((a, b) => a.giorno - b.giorno))
+    setNewPost(EMPTY_NEW_POST)
+    setShowAddForm(false)
+  }
 
   return (
     <div style={{ maxWidth: 740 }}>
@@ -615,7 +640,7 @@ function PianoMensileTab({ strategy }) {
 
       {created > 0 && (
         <div style={{ background: '#f0fff4', border: '1px solid #c6f6d5', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#276749', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>✅ {created} bozze create nel piano editoriale</span>
+          <span>✅ {created} bozze salvate nel piano editoriale</span>
           <button onClick={() => navigate('/admin/piano-editoriale')}
             style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#276749', fontWeight: 600, fontSize: 13 }}>
             Vai al piano <ExternalLink size={12} strokeWidth={2} />
@@ -623,39 +648,120 @@ function PianoMensileTab({ strategy }) {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
-        <button onClick={() => genera(false)} disabled={loading} style={{
-          flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          background: loading ? '#ccc' : '#1a1a2e', color: '#fff', border: 'none',
-          borderRadius: 10, padding: '12px 20px', cursor: loading ? 'default' : 'pointer',
-          fontWeight: 700, fontSize: 14,
+      {/* Azioni principali */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+        {strategy?.pillar?.length > 0 && (
+          <button onClick={generaAI} disabled={loading} style={{
+            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            background: loading ? '#ccc' : '#1a1a2e', color: '#fff', border: 'none',
+            borderRadius: 10, padding: '11px 18px', cursor: loading ? 'default' : 'pointer',
+            fontWeight: 700, fontSize: 14, minWidth: 180,
+          }}>
+            <Sparkles size={15} strokeWidth={1.5} />
+            {loading ? 'Generazione…' : `Genera con AI`}
+          </button>
+        )}
+        <button onClick={() => { setShowAddForm(f => !f); setNewPost(EMPTY_NEW_POST) }} style={{
+          display: 'flex', alignItems: 'center', gap: 6, background: '#fff',
+          border: '1.5px solid #1a1a2e', borderRadius: 10, padding: '11px 16px',
+          cursor: 'pointer', fontWeight: 600, fontSize: 14, color: '#1a1a2e',
         }}>
-          <Sparkles size={15} strokeWidth={1.5} />
-          {loading ? 'Generazione in corso (30-60s)…' : `Genera piano ${NOMI_MESI[mese]}`}
+          <Pen size={14} strokeWidth={1.5} /> Aggiungi manualmente
         </button>
         {posts.length > 0 && !loading && (
-          <button onClick={() => genera(true)} style={{
-            display: 'flex', alignItems: 'center', gap: 6, background: '#fff',
-            border: '1.5px solid #1a1a2e', borderRadius: 10, padding: '12px 18px',
-            cursor: 'pointer', fontWeight: 600, fontSize: 13, color: '#1a1a2e',
+          <button onClick={salvaBozze} disabled={saving} style={{
+            display: 'flex', alignItems: 'center', gap: 6, background: '#f0fff4',
+            border: '1.5px solid #276749', borderRadius: 10, padding: '11px 16px',
+            cursor: saving ? 'default' : 'pointer', fontWeight: 600, fontSize: 14, color: '#276749',
           }}>
-            Crea {posts.length} bozze
+            {saving ? 'Salvataggio…' : `Salva ${posts.length} bozze`}
           </button>
         )}
       </div>
 
+      {/* Form aggiunta manuale */}
+      {showAddForm && (
+        <div style={{ ...card, marginBottom: 16, border: '1.5px solid #1a1a2e20' }}>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 14 }}>Nuovo post</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 10, marginBottom: 10 }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#888', marginBottom: 4 }}>Giorno</div>
+              <input type="number" min={1} max={31} value={newPost.giorno}
+                onChange={e => setNewPost(f => ({ ...f, giorno: e.target.value }))}
+                placeholder="1" style={{ ...inputStyle, textAlign: 'center' }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#888', marginBottom: 4 }}>Titolo</div>
+              <input value={newPost.titolo} onChange={e => setNewPost(f => ({ ...f, titolo: e.target.value }))}
+                placeholder="Titolo interno del post" style={inputStyle} />
+            </div>
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#888', marginBottom: 6 }}>Piattaforma</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {CANALI.map(c => (
+                <PillBtn key={c.k} active={newPost.canale === c.k} color={c.color} onClick={() => setNewPost(f => ({ ...f, canale: c.k }))}>
+                  {c.label}
+                </PillBtn>
+              ))}
+            </div>
+          </div>
+          {pillarList.length > 0 && (
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#888', marginBottom: 6 }}>Content Pillar</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                <PillBtn active={!newPost.pillar} onClick={() => setNewPost(f => ({ ...f, pillar: '' }))}>Libero</PillBtn>
+                {pillarList.map(p => (
+                  <PillBtn key={p.id} active={newPost.pillar === p.nome} onClick={() => setNewPost(f => ({ ...f, pillar: p.nome }))}>
+                    {p.emoji} {p.nome}
+                  </PillBtn>
+                ))}
+              </div>
+            </div>
+          )}
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#888', marginBottom: 4 }}>Testo / Caption</div>
+            <textarea value={newPost.testo} onChange={e => setNewPost(f => ({ ...f, testo: e.target.value }))}
+              rows={4} placeholder="Scrivi la caption completa…" style={taStyle} />
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#888', marginBottom: 4 }}>Note visive (opzionale)</div>
+            <input value={newPost.note_visive} onChange={e => setNewPost(f => ({ ...f, note_visive: e.target.value }))}
+              placeholder="Suggerimento foto/immagine…" style={inputStyle} />
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={addManualPost} disabled={!newPost.titolo.trim() || !newPost.testo.trim()} style={{
+              background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8,
+              padding: '9px 20px', cursor: 'pointer', fontWeight: 600, fontSize: 13,
+              opacity: (!newPost.titolo.trim() || !newPost.testo.trim()) ? 0.5 : 1,
+            }}>
+              Aggiungi alla lista
+            </button>
+            <button onClick={() => setShowAddForm(false)} style={{
+              background: '#fff', border: '1px solid #ddd', borderRadius: 8,
+              padding: '9px 16px', cursor: 'pointer', fontSize: 13, color: '#555',
+            }}>
+              Annulla
+            </button>
+          </div>
+        </div>
+      )}
+
       {posts.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {posts.map((p, i) => (
-            <div key={i} style={card}>
+            <div key={i} style={{ ...card, borderLeft: p._manual ? '3px solid #1a1a2e' : 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#444', minWidth: 56 }}>
                   {NOMI_MESI[mese].slice(0, 3)} {p.giorno}
                 </span>
                 <CanaleBadge canale={p.canale} />
-                <span style={{ fontSize: 11, background: '#f5f5f7', borderRadius: 20, padding: '2px 8px', color: '#666' }}>{p.pillar}</span>
+                {p.pillar && <span style={{ fontSize: 11, background: '#f5f5f7', borderRadius: 20, padding: '2px 8px', color: '#666' }}>{p.pillar}</span>}
+                {p._manual && <span style={{ fontSize: 10, background: '#1a1a2e10', color: '#1a1a2e', borderRadius: 20, padding: '2px 8px', fontWeight: 700 }}>Manuale</span>}
                 <div style={{ flex: 1 }} />
                 <CopyBtn text={p.testo} />
+                <button onClick={() => setPosts(ps => ps.filter((_, j) => j !== i))}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 16, padding: '2px 4px', lineHeight: 1 }}>✕</button>
               </div>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', marginBottom: 8 }}>{p.titolo}</div>
               <div style={{ fontSize: 13, color: '#444', lineHeight: 1.7, whiteSpace: 'pre-line' }}>{p.testo}</div>
@@ -668,6 +774,13 @@ function PianoMensileTab({ strategy }) {
           ))}
         </div>
       )}
+
+      {!posts.length && !showAddForm && !strategy?.pillar?.length && (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#aaa' }}>
+          <Calendar size={40} strokeWidth={1} color="#ddd" style={{ display: 'block', margin: '0 auto 16px' }} />
+          <p style={{ fontSize: 14 }}>Genera un piano con AI oppure aggiungi i post manualmente.</p>
+        </div>
+      )}
     </div>
   )
 }
@@ -675,6 +788,8 @@ function PianoMensileTab({ strategy }) {
 // ── Tab 3: Caption Studio ─────────────────────────────────────────────────────
 
 function CaptionStudioTab({ strategy }) {
+  const navigate = useNavigate()
+  const [captionMode, setCaptionMode] = useState('ai') // 'ai' | 'manual'
   const [piattaforma, setPiattaforma] = useState('instagram')
   const [pillar, setPillar] = useState('')
   const [topic, setTopic] = useState('')
@@ -682,6 +797,11 @@ function CaptionStudioTab({ strategy }) {
   const [varianti, setVarianti] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  // Manual mode
+  const [manualTesto, setManualTesto] = useState('')
+  const [manualHashtag, setManualHashtag] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
 
   const pillarList = strategy?.pillar || []
 
@@ -698,88 +818,204 @@ function CaptionStudioTab({ strategy }) {
     setLoading(false)
   }
 
-  return (
-    <div style={{ maxWidth: 680 }}>
-      {/* Platform pills */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 8 }}>Piattaforma</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {CANALI.map(c => (
-            <PillBtn key={c.k} active={piattaforma === c.k} color={c.color} onClick={() => setPiattaforma(c.k)}>
-              {c.label}
-            </PillBtn>
-          ))}
-        </div>
-      </div>
+  async function salvaManuale() {
+    if (!manualTesto.trim()) return
+    setSaving(true); setSaved(false)
+    try {
+      const testo = manualHashtag.trim()
+        ? `${manualTesto}\n\n${manualHashtag}`
+        : manualTesto
+      await apiFetch('/api/piano-editoriale', {
+        method: 'POST',
+        body: JSON.stringify({
+          titolo: topic || 'Caption manuale',
+          testo,
+          canali: [piattaforma],
+          stato: 'bozza',
+          data_pianificata: null,
+          note: pillar || '',
+        }),
+      })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch (e) { setError(e.message) }
+    setSaving(false)
+  }
 
-      {/* Pillar selector */}
-      {pillarList.length > 0 && (
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 8 }}>Content Pillar</div>
+  // Shared: platform + pillar selector
+  function renderSelectors() {
+    return (
+      <>
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 8 }}>Piattaforma</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            <PillBtn active={!pillar} onClick={() => setPillar('')}>Libero</PillBtn>
-            {pillarList.map(p => (
-              <PillBtn key={p.id} active={pillar === p.nome} onClick={() => setPillar(p.nome)}>
-                {p.emoji} {p.nome}
+            {CANALI.map(c => (
+              <PillBtn key={c.k} active={piattaforma === c.k} color={c.color} onClick={() => setPiattaforma(c.k)}>
+                {c.label}
               </PillBtn>
             ))}
           </div>
         </div>
-      )}
-
-      {/* Topic */}
-      <div style={{ marginBottom: 14 }}>
-        <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>Argomento del post *</label>
-        <input value={topic} onChange={e => setTopic(e.target.value)}
-          placeholder="Es: Nuovo piatto estivo, evento di sabato, consiglio per i visitatori…"
-          style={inputStyle} />
-      </div>
-
-      {/* Contesto */}
-      <div style={{ marginBottom: 20 }}>
-        <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>
-          Dettagli aggiuntivi <span style={{ fontWeight: 400, color: '#aaa' }}>(opzionale)</span>
-        </label>
-        <textarea value={contesto} onChange={e => setContesto(e.target.value)} rows={2}
-          placeholder="Prezzo, orario, ingredienti, location, link, qualsiasi info utile…"
-          style={taStyle} />
-      </div>
-
-      <ErrorBanner msg={error} />
-
-      <button onClick={genera} disabled={loading} style={{
-        display: 'flex', alignItems: 'center', gap: 8,
-        background: loading ? '#ccc' : '#1a1a2e', color: '#fff', border: 'none',
-        borderRadius: 10, padding: '12px 24px', cursor: loading ? 'default' : 'pointer',
-        fontWeight: 700, fontSize: 14, marginBottom: 24,
-      }}>
-        <Sparkles size={15} strokeWidth={1.5} />
-        {loading ? 'Generazione in corso…' : 'Genera 3 varianti'}
-      </button>
-
-      {varianti.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {varianti.map((v, i) => (
-            <div key={i} style={card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, background: '#f0f0f8', color: '#5a5a8e', borderRadius: 6, padding: '3px 10px' }}>
-                  Variante {v.variante} — {v.stile}
-                </span>
-                <CopyBtn text={`${v.testo}\n\n${(v.hashtag || []).join(' ')}`} />
-              </div>
-              <p style={{ fontSize: 14, color: '#333', lineHeight: 1.7, whiteSpace: 'pre-line', margin: '0 0 14px' }}>
-                {v.testo}
-              </p>
-              {v.hashtag?.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {v.hashtag.map((h, j) => (
-                    <span key={j} style={{ fontSize: 12, background: '#f0f0f8', color: '#5a5a8e', borderRadius: 6, padding: '2px 8px' }}>{h}</span>
-                  ))}
-                </div>
-              )}
+        {pillarList.length > 0 && (
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 8 }}>Content Pillar</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              <PillBtn active={!pillar} onClick={() => setPillar('')}>Libero</PillBtn>
+              {pillarList.map(p => (
+                <PillBtn key={p.id} active={pillar === p.nome} onClick={() => setPillar(p.nome)}>
+                  {p.emoji} {p.nome}
+                </PillBtn>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        )}
+      </>
+    )
+  }
+
+  return (
+    <div style={{ maxWidth: 680 }}>
+      {/* Mode toggle */}
+      <div style={{ display: 'flex', gap: 2, marginBottom: 24, background: '#f5f5f7', borderRadius: 10, padding: 4, width: 'fit-content' }}>
+        {[{ k: 'ai', label: '✨ Genera con AI' }, { k: 'manual', label: '✍️ Scrivi manualmente' }].map(m => (
+          <button key={m.k} onClick={() => { setCaptionMode(m.k); setError(''); setVarianti([]) }} style={{
+            padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer',
+            fontWeight: 600, fontSize: 13,
+            background: captionMode === m.k ? '#fff' : 'transparent',
+            color: captionMode === m.k ? '#1a1a2e' : '#888',
+            boxShadow: captionMode === m.k ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+          }}>
+            {m.label}
+          </button>
+        ))}
+      </div>
+
+      {captionMode === 'ai' ? (
+        <>
+          {renderSelectors()}
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>Argomento del post *</label>
+            <input value={topic} onChange={e => setTopic(e.target.value)}
+              placeholder="Es: Nuovo piatto estivo, evento di sabato, consiglio per i visitatori…"
+              style={inputStyle} />
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>
+              Dettagli aggiuntivi <span style={{ fontWeight: 400, color: '#aaa' }}>(opzionale)</span>
+            </label>
+            <textarea value={contesto} onChange={e => setContesto(e.target.value)} rows={2}
+              placeholder="Prezzo, orario, ingredienti, location, link…" style={taStyle} />
+          </div>
+          <ErrorBanner msg={error} />
+          <button onClick={genera} disabled={loading} style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            background: loading ? '#ccc' : '#1a1a2e', color: '#fff', border: 'none',
+            borderRadius: 10, padding: '12px 24px', cursor: loading ? 'default' : 'pointer',
+            fontWeight: 700, fontSize: 14, marginBottom: 24,
+          }}>
+            <Sparkles size={15} strokeWidth={1.5} />
+            {loading ? 'Generazione in corso…' : 'Genera 3 varianti'}
+          </button>
+          {varianti.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {varianti.map((v, i) => (
+                <div key={i} style={card}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, background: '#f0f0f8', color: '#5a5a8e', borderRadius: 6, padding: '3px 10px' }}>
+                      Variante {v.variante} — {v.stile}
+                    </span>
+                    <CopyBtn text={`${v.testo}\n\n${(v.hashtag || []).join(' ')}`} />
+                  </div>
+                  <p style={{ fontSize: 14, color: '#333', lineHeight: 1.7, whiteSpace: 'pre-line', margin: '0 0 14px' }}>{v.testo}</p>
+                  {v.hashtag?.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                      {v.hashtag.map((h, j) => (
+                        <span key={j} style={{ fontSize: 12, background: '#f0f0f8', color: '#5a5a8e', borderRadius: 6, padding: '2px 8px' }}>{h}</span>
+                      ))}
+                    </div>
+                  )}
+                  <AggiuntaAlPiano testo={`${v.testo}\n\n${(v.hashtag || []).join(' ')}`} piattaforma={piattaforma} pillar={pillar} />
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          {renderSelectors()}
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>Titolo interno (opzionale)</label>
+            <input value={topic} onChange={e => setTopic(e.target.value)}
+              placeholder="Es: Post lunedì — nuovo prodotto" style={inputStyle} />
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>Caption *</label>
+            <textarea value={manualTesto} onChange={e => setManualTesto(e.target.value)}
+              rows={6} placeholder="Scrivi la tua caption…" style={taStyle} />
+            <div style={{ fontSize: 11, color: '#aaa', textAlign: 'right', marginTop: 2 }}>{manualTesto.length} caratteri</div>
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>Hashtag <span style={{ fontWeight: 400, color: '#aaa' }}>(opzionale)</span></label>
+            <input value={manualHashtag} onChange={e => setManualHashtag(e.target.value)}
+              placeholder="#tag1 #tag2 #tag3…" style={inputStyle} />
+          </div>
+          <ErrorBanner msg={error} />
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <CopyBtn text={manualHashtag ? `${manualTesto}\n\n${manualHashtag}` : manualTesto} />
+            <button onClick={salvaManuale} disabled={saving || !manualTesto.trim()} style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: saved ? '#f0fff4' : '#1a1a2e',
+              color: saved ? '#276749' : '#fff',
+              border: saved ? '1px solid #c6f6d5' : 'none',
+              borderRadius: 8, padding: '8px 18px', cursor: 'pointer',
+              fontWeight: 600, fontSize: 13, opacity: !manualTesto.trim() ? 0.5 : 1,
+            }}>
+              {saved ? <><Check size={14} strokeWidth={2} /> Aggiunto!</> : saving ? 'Salvataggio…' : <><CalendarPlus size={14} strokeWidth={1.5} /> Aggiungi al piano</>}
+            </button>
+            {saved && (
+              <button onClick={() => navigate('/admin/piano-editoriale')}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#276749', fontWeight: 600, fontSize: 13 }}>
+                Vai al piano <ExternalLink size={12} strokeWidth={2} />
+              </button>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function AggiuntaAlPiano({ testo, piattaforma, pillar }) {
+  const navigate = useNavigate()
+  const [adding, setAdding] = useState(false)
+  const [added, setAdded] = useState(false)
+  async function aggiungi() {
+    setAdding(true)
+    try {
+      await apiFetch('/api/piano-editoriale', {
+        method: 'POST',
+        body: JSON.stringify({ titolo: 'Caption AI', testo, canali: [piattaforma], stato: 'bozza', data_pianificata: null, note: pillar || '' }),
+      })
+      setAdded(true)
+    } catch {}
+    setAdding(false)
+  }
+  return (
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <button onClick={aggiungi} disabled={adding || added} style={{
+        display: 'flex', alignItems: 'center', gap: 5,
+        background: added ? '#f0fff4' : '#f5f5f7',
+        border: added ? '1px solid #c6f6d5' : '1px solid #eee',
+        borderRadius: 6, padding: '5px 12px', cursor: added ? 'default' : 'pointer',
+        fontSize: 12, fontWeight: 600, color: added ? '#276749' : '#555',
+      }}>
+        {added ? <><Check size={12} strokeWidth={2} /> Aggiunto!</> : adding ? '…' : <><CalendarPlus size={12} strokeWidth={1.5} /> Aggiungi al piano</>}
+      </button>
+      {added && (
+        <button onClick={() => navigate('/admin/piano-editoriale')}
+          style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#276749', fontWeight: 600, fontSize: 12 }}>
+          Vai al piano <ExternalLink size={11} strokeWidth={2} />
+        </button>
       )}
     </div>
   )
@@ -822,6 +1058,8 @@ function OpportunitaTab({ nome }) {
   const [gap, setGap] = useState(null)
   const [loading, setLoading] = useState(true)
   const [modalData, setModalData] = useState(null)
+  const [showCustomForm, setShowCustomForm] = useState(false)
+  const [customForm, setCustomForm] = useState({ titolo: '', sottotitolo: '' })
 
   useEffect(() => {
     apiFetch('/api/content-studio/gap')
@@ -839,6 +1077,48 @@ function OpportunitaTab({ nome }) {
 
   return (
     <div style={{ maxWidth: 740 }}>
+
+      {/* Bottone post personalizzato */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+        <button onClick={() => setShowCustomForm(f => !f)} style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          background: showCustomForm ? '#1a1a2e' : '#fff',
+          color: showCustomForm ? '#fff' : '#1a1a2e',
+          border: '1.5px solid #1a1a2e', borderRadius: 8, padding: '8px 16px',
+          cursor: 'pointer', fontWeight: 600, fontSize: 13,
+        }}>
+          <Pen size={13} strokeWidth={1.5} /> Post su argomento libero
+        </button>
+      </div>
+
+      {showCustomForm && (
+        <div style={{ ...card, marginBottom: 20, border: '1.5px solid #1a1a2e20' }}>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 12 }}>Argomento personalizzato</div>
+          <div style={{ marginBottom: 10 }}>
+            <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>Titolo / Argomento *</label>
+            <input value={customForm.titolo} onChange={e => setCustomForm(f => ({ ...f, titolo: e.target.value }))}
+              placeholder="Es: Lancio nuova offerta, consiglio stagionale, dietro le quinte…" style={inputStyle} />
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 4 }}>
+              Dettagli <span style={{ fontWeight: 400, color: '#aaa' }}>(opzionale)</span>
+            </label>
+            <input value={customForm.sottotitolo} onChange={e => setCustomForm(f => ({ ...f, sottotitolo: e.target.value }))}
+              placeholder="Prezzo, data, contesto, qualsiasi info utile per la caption…" style={inputStyle} />
+          </div>
+          <button
+            disabled={!customForm.titolo.trim()}
+            onClick={() => { apriPost({ titolo: customForm.titolo, sottotitolo: customForm.sottotitolo, immagine: '', tipo: 'personalizzato' }); setShowCustomForm(false); setCustomForm({ titolo: '', sottotitolo: '' }) }}
+            style={{
+              background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8,
+              padding: '9px 20px', cursor: 'pointer', fontWeight: 600, fontSize: 13,
+              opacity: !customForm.titolo.trim() ? 0.5 : 1,
+            }}>
+            Crea post →
+          </button>
+        </div>
+      )}
+
       {/* Banner mese */}
       <div style={{ ...card, marginBottom: 24, background: piano_questo_mese === 0 ? '#fff8f0' : '#f0fff4', border: `1px solid ${piano_questo_mese === 0 ? '#fed7aa' : '#c6f6d5'}` }}>
         <div style={{ fontSize: 14, color: '#333', lineHeight: 1.6 }}>
