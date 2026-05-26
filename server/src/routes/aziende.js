@@ -77,7 +77,7 @@ router.patch('/:id', async (req, res) => {
     }
 
     const allowed = ['ragione_sociale', 'partita_iva', 'codice_fiscale', 'email', 'pec',
-      'telefono', 'cellulare', 'indirizzo', 'citta', 'cap', 'provincia', 'piano', 'moduli', 'active']
+      'telefono', 'cellulare', 'indirizzo', 'citta', 'cap', 'provincia', 'piano', 'moduli', 'active', 'require_2fa']
     const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)))
 
     if (Object.keys(updates).length === 0) {

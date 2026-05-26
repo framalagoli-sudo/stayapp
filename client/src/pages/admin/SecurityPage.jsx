@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 
 export default function SecurityPage() {
-  const { refreshAAL } = useAuth()
+  const { refreshAAL, require2fa } = useAuth()
   const [factors, setFactors]     = useState([])
   const [step, setStep]           = useState('idle') // 'idle' | 'qr' | 'confirm'
   const [enrollData, setEnroll]   = useState(null)   // { id, totp: { qr_code, secret } }
@@ -62,7 +62,17 @@ export default function SecurityPage() {
   return (
     <div style={{ padding: '24px 32px', maxWidth: 560 }}>
       <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700 }}>Sicurezza account</h2>
-      <p style={{ margin: '0 0 32px', color: '#6b7280', fontSize: 14 }}>Gestisci l'autenticazione a due fattori (2FA)</p>
+      <p style={{ margin: '0 0 20px', color: '#6b7280', fontSize: 14 }}>Gestisci l'autenticazione a due fattori (2FA)</p>
+
+      {require2fa && !is2FAActive && (
+        <div style={{ marginBottom: 24, padding: '14px 18px', borderRadius: 10, background: '#fff3cd', border: '1px solid #ffc107', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+          <span style={{ fontSize: 20, flexShrink: 0 }}>🔒</span>
+          <div>
+            <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: 14, color: '#856404' }}>2FA obbligatorio</p>
+            <p style={{ margin: 0, fontSize: 13, color: '#6c5608' }}>Il tuo amministratore ha attivato il requisito di autenticazione a due fattori. Devi attivare il 2FA per accedere al pannello.</p>
+          </div>
+        </div>
+      )}
 
       {/* Stato attuale */}
       <div style={{ background: is2FAActive ? '#f0fdf4' : '#fef9c3', border: `1px solid ${is2FAActive ? '#bbf7d0' : '#fde68a'}`, borderRadius: 10, padding: '16px 20px', marginBottom: 28, display: 'flex', alignItems: 'center', gap: 12 }}>

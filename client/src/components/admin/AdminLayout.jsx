@@ -450,7 +450,7 @@ export default function AdminLayout() {
         {/* ── Staff (filtrato per permessi) ── */}
         {isStaff && (
           <>
-            {(perm.richieste || perm.prenotazioni || perm.booking || perm.eventi || perm.recensioni) && (
+            {(perm.richieste || perm.prenotazioni || perm.booking || perm.eventi || perm.recensioni || perm.survey) && (
               <>
                 <Divider />
                 <SectionHeader label="Operativo" />
@@ -459,16 +459,24 @@ export default function AdminLayout() {
                 {perm.booking      && renderBookingSection()}
                 {perm.eventi       && <NavItem to="/admin/eventi"       icon={CalendarDays}  label="Eventi" />}
                 {perm.recensioni   && <NavItem to="/admin/recensioni"   icon={Star}          label="Recensioni" />}
+                {perm.survey       && <NavItem to="/admin/survey"       icon={BarChart3}     label="Survey & NPS" />}
               </>
             )}
 
-            {(perm.blog || perm.newsletter || perm.contatti) && (
+            {(perm.contatti || perm.newsletter || perm.blog || perm.automazioni || perm.piano_editoriale || perm.content_studio || perm.preventivi || perm.form_builder || perm.shop || perm.loyalty) && (
               <>
                 <Divider />
                 <SectionHeader label="Marketing" />
-                {perm.blog       && <NavItem to="/admin/blog"       icon={Newspaper} label="Blog & News" />}
-                {perm.newsletter && <NavItem to="/admin/newsletter" icon={Mail}      label="Newsletter" />}
-                {perm.contatti   && <NavItem to="/admin/contatti"   icon={Users}     label="Contatti" />}
+                {perm.contatti         && <NavItem to="/admin/contatti"         icon={Users}            label="Contatti" />}
+                {perm.newsletter       && <NavItem to="/admin/newsletter"       icon={Mail}             label="Newsletter" />}
+                {perm.blog             && <NavItem to="/admin/blog"             icon={Newspaper}        label="Blog & News" />}
+                {perm.automazioni      && <NavItem to="/admin/automazioni"      icon={BotMessageSquare} label="Automazioni" />}
+                {perm.piano_editoriale && <NavItem to="/admin/piano-editoriale" icon={CalendarDays}     label="Piano editoriale" />}
+                {perm.content_studio   && <NavItem to="/admin/content-studio"   icon={Sparkles}         label="Content Studio" />}
+                {perm.preventivi       && <NavItem to="/admin/preventivi"       icon={FileText}         label="Preventivi" />}
+                {perm.form_builder     && <NavItem to="/admin/form-builder"     icon={FormInput}        label="Form Builder" />}
+                {perm.shop             && <NavItem to="/admin/shop"             icon={ShoppingBag}      label="Shop" />}
+                {perm.loyalty          && <NavItem to="/admin/loyalty"          icon={Gift}             label="Loyalty" />}
               </>
             )}
 
@@ -482,6 +490,7 @@ export default function AdminLayout() {
 
             <Divider />
             <SectionHeader label="Account" />
+            {perm.analytics && <NavItem to="/admin/analytics" icon={BarChart2} label="Analytics" />}
             <NavItem to="/admin/security" icon={Shield} label="Sicurezza" />
           </>
         )}

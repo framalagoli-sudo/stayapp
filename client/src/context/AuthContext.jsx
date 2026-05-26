@@ -8,6 +8,7 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [aalStatus, setAalStatus] = useState(null) // { currentLevel, nextLevel }
+  const [require2fa, setRequire2fa] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -32,6 +33,12 @@ export function AuthProvider({ children }) {
       .eq('id', userId)
       .single()
     setProfile(data)
+    if (data?.azienda_id) {
+      const { data: az } = await supabase.from('aziende').select('require_2fa').eq('id', data.azienda_id).single()
+      setRequire2fa(!!az?.require_2fa)
+    } else {
+      setRequire2fa(false)
+    }
     setLoading(false)
   }
 
@@ -50,7 +57,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, aalStatus, refreshAAL, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, aalStatus, require2fa, refreshAAL, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   )
