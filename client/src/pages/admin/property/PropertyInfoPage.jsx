@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useProperty } from '../../../hooks/useProperty'
 import { useAuth } from '../../../context/AuthContext'
+import { uploadMedia } from '../../../lib/api'
 import CollegamentiSection from '../../../components/admin/CollegamentiSection'
 import { ExternalLink, X } from 'lucide-react'
 
@@ -34,11 +35,12 @@ function slugify(str) {
 }
 
 export default function PropertyInfoPage() {
-  const { property, loading, saving, saved, saveError, save } = useProperty()
+  const { property, loading, saving, saved, saveError, save, propertyId } = useProperty()
   const { profile } = useAuth()
   const [form, setForm] = useState({})
   const [amenities, setAmenities] = useState([])
   const [amenityInput, setAmenityInput] = useState('')
+  const [uploading, setUploading] = useState({})
   const [slugInput, setSlugInput] = useState('')
   const [slugSaving, setSlugSaving] = useState(false)
   const [slugSaved, setSlugSaved] = useState(false)
@@ -67,6 +69,18 @@ export default function PropertyInfoPage() {
     save({ amenities: updated }).catch(() => {})
   }
 
+  async function handleUpload(field, file) {
+    if (!file) return
+    setUploading(u => ({ ...u, [field]: true }))
+    try {
+      const type = field === 'logo_url' ? 'logo' : 'cover'
+      const pid = propertyId || property?.id
+      const { url } = await uploadMedia(`/api/upload/${type}?property_id=${pid}`, file)
+      await save({ [field]: url })
+    } catch (e) { alert(`Errore upload: ${e.message}`) }
+    finally { setUploading(u => ({ ...u, [field]: false })) }
+  }
+
   async function handleSlugSave() {
     const clean = slugify(slugInput)
     if (!clean || clean === property.slug) return
@@ -83,7 +97,7 @@ export default function PropertyInfoPage() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    const updates = Object.fromEntries(Object.entries(form).filter(([k]) => INFO_KEYS.includes(k)))
+    const updates = Object.fromEntries(Object.entries(form).filter(([k]) => [...INFO_KEYS, 'active'].includes(k)))
     try { await save(updates) } catch {}
   }
 
@@ -108,6 +122,37 @@ export default function PropertyInfoPage() {
       </div>
       <p style={descStyle}>Dati di base della struttura visibili agli ospiti nell'app.</p>
 
+      {/* Logo & Cover */}
+      <div style={{ ...cardStyle, marginBottom: 20 }}>
+        <h3 style={{ marginTop: 0, marginBottom: 16, fontSize: 15 }}>Logo e copertina</h3>
+        <div style={{ marginBottom: 24 }}>
+          <label style={lblStyle}>Logo</label>
+          {property.logo_url && (
+            <div style={{ marginBottom: 10, padding: 12, background: '#f5f5f5', borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+              <img key={property.logo_url} src={property.logo_url} alt="logo" style={{ maxHeight: 64, maxWidth: 180, objectFit: 'contain' }} />
+              <button type="button" onClick={() => save({ logo_url: null })} style={{ fontSize: 12, color: '#e53e3e', background: 'none', border: 'none', cursor: 'pointer' }}>Rimuovi</button>
+            </div>
+          )}
+          <label style={{ padding: '8px 16px', background: '#f0f0f0', borderRadius: 8, cursor: 'pointer', fontSize: 13, border: '1px solid #ddd', fontWeight: 600, color: '#333', display: 'inline-block' }}>
+            {uploading.logo_url ? 'Upload…' : property.logo_url ? 'Cambia logo' : 'Carica logo'}
+            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleUpload('logo_url', e.target.files[0])} />
+          </label>
+        </div>
+        <div>
+          <label style={lblStyle}>Foto di copertina</label>
+          {property.cover_url && (
+            <div style={{ marginBottom: 10, position: 'relative' }}>
+              <img key={property.cover_url} src={property.cover_url} alt="cover" style={{ width: '100%', maxHeight: 180, objectFit: 'cover', borderRadius: 10, display: 'block', border: '1px solid #ddd' }} />
+              <button type="button" onClick={() => save({ cover_url: null })} style={{ position: 'absolute', top: 8, right: 8, fontSize: 12, color: '#fff', background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '4px 10px' }}>Rimuovi</button>
+            </div>
+          )}
+          <label style={{ padding: '8px 16px', background: '#f0f0f0', borderRadius: 8, cursor: 'pointer', fontSize: 13, border: '1px solid #ddd', fontWeight: 600, color: '#333', display: 'inline-block' }}>
+            {uploading.cover_url ? 'Upload…' : property.cover_url ? 'Cambia foto' : 'Carica copertina'}
+            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleUpload('cover_url', e.target.files[0])} />
+          </label>
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit} style={cardStyle}>
         {FIELDS.map(({ key, label, type, placeholder }) => (
           <div key={key} style={{ marginBottom: 18 }}>
@@ -130,6 +175,13 @@ export default function PropertyInfoPage() {
             )}
           </div>
         ))}
+
+        <div style={{ marginBottom: 18 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
+            <input type="checkbox" checked={!!form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} style={{ width: 16, height: 16 }} />
+            Struttura attiva (visibile agli ospiti via QR code)
+          </label>
+        </div>
 
         {saveError && <p style={{ color: '#c00', fontSize: 13, marginBottom: 12 }}>{saveError}</p>}
 
