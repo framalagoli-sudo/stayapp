@@ -219,12 +219,12 @@ const PWA_MODULES = [
 
 function PwaToggleSection({ attivita, save }) {
   const pwa = attivita.pwa || { active: false, modules: { servizi: true, galleria: true, contatta: true } }
-  const [saving, setSaving] = useState(false)
+  const [saving, setSaving] = useState(null)  // null | 'pwa' | 'mini' | 'module'
   const [saved, setSaved] = useState(false)
 
   async function toggle(path, value) {
-    setSaving(true)
-    setSaved(false)
+    const key = path === 'active' ? 'pwa' : 'module'
+    setSaving(key); setSaved(false)
     try {
       const updated = path === 'active'
         ? { ...pwa, active: value }
@@ -233,17 +233,43 @@ function PwaToggleSection({ attivita, save }) {
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
     } catch (e) { alert(e.message) }
-    finally { setSaving(false) }
+    finally { setSaving(null) }
   }
+
+  async function toggleMinisito(value) {
+    setSaving('mini'); setSaved(false)
+    try {
+      const mini = { ...(attivita.minisito || {}), active: value }
+      await save({ minisito: mini })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+    } catch (e) { alert(e.message) }
+    finally { setSaving(null) }
+  }
+
+  const miniOn = attivita.minisito?.active !== false
 
   return (
     <div style={cardStyle}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>App ospite (PWA)</h3>
+        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Canali di distribuzione</h3>
         {saved && <span style={{ fontSize: 12, color: '#059669', fontWeight: 600 }}>✓ Salvato</span>}
       </div>
-      <p style={{ margin: '0 0 20px', fontSize: 13, color: '#888' }}>
-        Attiva l'app installabile per i tuoi clienti. Con la PWA disattivata viene mostrato il minisito.
+      <p style={{ margin: '0 0 4px', fontSize: 13, color: '#888' }}>Scegli quali esperienze attivare per i clienti.</p>
+
+      {/* Toggle Sito Web */}
+      <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', margin: '16px 0 0', paddingTop: 16, borderTop: '1px solid #f0f0f0' }}>
+        <div onClick={() => saving ? null : toggleMinisito(!miniOn)} style={{ width: 44, height: 24, borderRadius: 12, position: 'relative', cursor: 'pointer', background: miniOn ? '#059669' : '#d1d5db', transition: 'background 0.2s', flexShrink: 0, opacity: saving === 'mini' ? 0.6 : 1 }}>
+          <div style={{ position: 'absolute', top: 3, left: miniOn ? 22 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+        </div>
+        <div>
+          <div style={{ fontWeight: 600, fontSize: 14 }}>Sito Web Pubblico</div>
+          <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>Landing page marketing con URL pubblica</div>
+        </div>
+      </label>
+
+      <p style={{ margin: '20px 0 4px', fontSize: 13, color: '#888', paddingTop: 16, borderTop: '1px solid #f0f0f0' }}>
+        Attiva l'app installabile per i tuoi clienti.
       </p>
 
       {/* Toggle globale PWA */}

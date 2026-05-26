@@ -193,6 +193,55 @@ export default function RistoranteInfoPage() {
         </div>
         {slugError && <p style={{ color: '#c00', fontSize: 13, margin: 0 }}>{slugError}</p>}
       </div>
+
+      <CanaliSection entity={ristorante} entityKey="modules" save={save} />
+    </div>
+  )
+}
+
+function CanaliSection({ entity, save }) {
+  const [saving, setSaving] = useState(null)
+
+  async function togglePwa(value) {
+    setSaving('pwa')
+    const mods = { ...(entity.modules || {}), pwa_active: value }
+    try { await save({ modules: mods }) } catch {}
+    setSaving(null)
+  }
+
+  async function toggleMinisito(value) {
+    setSaving('mini')
+    const mini = { ...(entity.minisito || {}), active: value }
+    try { await save({ minisito: mini }) } catch {}
+    setSaving(null)
+  }
+
+  const pwaOn  = entity.modules?.pwa_active !== false
+  const miniOn = !!entity.minisito?.active
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, padding: 28, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', marginTop: 0 }}>
+      <h3 style={{ marginTop: 0, marginBottom: 4, fontSize: 16, fontWeight: 700 }}>Canali di distribuzione</h3>
+      <p style={{ margin: '0 0 20px', fontSize: 13, color: '#888' }}>Scegli quali esperienze attivare per i clienti.</p>
+      {[
+        { key: 'pwa',  label: 'App Ospiti (PWA)',  desc: 'App installabile accessibile via QR code', on: pwaOn, toggle: togglePwa },
+        { key: 'mini', label: 'Sito Web Pubblico', desc: 'Landing page marketing con URL pubblica',  on: miniOn, toggle: toggleMinisito },
+      ].map(({ key, label, desc, on, toggle }) => (
+        <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0', borderTop: '1px solid #f0f0f0' }}>
+          <div
+            onClick={() => saving ? null : toggle(!on)}
+            style={{ width: 44, height: 24, borderRadius: 12, position: 'relative', cursor: 'pointer', flexShrink: 0,
+              background: on ? '#059669' : '#d1d5db', transition: 'background 0.2s', opacity: saving === key ? 0.6 : 1 }}
+          >
+            <div style={{ position: 'absolute', top: 3, left: on ? 22 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 14 }}>{label}</div>
+            <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{desc}</div>
+          </div>
+          {saving === key && <span style={{ marginLeft: 'auto', fontSize: 12, color: '#888' }}>Salvataggio…</span>}
+        </div>
+      ))}
     </div>
   )
 }

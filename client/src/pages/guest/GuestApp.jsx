@@ -136,7 +136,17 @@ export default function GuestApp() {
   if (error)     return <div style={{ padding: 40, textAlign: 'center', color: '#e53e3e' }}>{error}</div>
   if (!property) return <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Caricamento…</div>
 
-  if (!isQR && property.minisito?.active) return <LandingStruttura property={property} />
+  const pwaOn  = property.modules?.pwa_active !== false  // default true
+  const miniOn = !!property.minisito?.active
+
+  // URL non-QR → mostra minisito se attivo; QR → mostra minisito solo se PWA è spenta
+  if (miniOn && (!isQR || !pwaOn)) return <LandingStruttura property={property} />
+  if (!pwaOn) return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f9fafb', textAlign: 'center', padding: 40 }}>
+      <p style={{ fontSize: 18, fontWeight: 600, color: '#374151', margin: '0 0 8px' }}>Contenuto non disponibile</p>
+      <p style={{ fontSize: 14, color: '#9ca3af', margin: 0 }}>Questo servizio è temporaneamente offline.</p>
+    </div>
+  )
 
   const modules       = { ...DEFAULT_MODULES, ...(property.modules || {}) }
   const theme         = { ...DEFAULT_THEME,   ...(property.theme   || {}) }

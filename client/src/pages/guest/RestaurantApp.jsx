@@ -82,7 +82,16 @@ export default function RestaurantApp() {
   if (error)      return <div style={{ padding: 40, textAlign: 'center', color: '#e53e3e' }}>{error}</div>
   if (!ristorante) return <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Caricamento…</div>
 
-  if (!isQR && ristorante.minisito?.active) return <LandingRistorante ristorante={ristorante} />
+  const pwaOn  = ristorante.modules?.pwa_active !== false  // default true
+  const miniOn = !!ristorante.minisito?.active
+
+  if (miniOn && (!isQR || !pwaOn)) return <LandingRistorante ristorante={ristorante} />
+  if (!pwaOn) return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f9fafb', textAlign: 'center', padding: 40 }}>
+      <p style={{ fontSize: 18, fontWeight: 600, color: '#374151', margin: '0 0 8px' }}>Contenuto non disponibile</p>
+      <p style={{ fontSize: 14, color: '#9ca3af', margin: 0 }}>Questo servizio è temporaneamente offline.</p>
+    </div>
+  )
 
   const theme         = { ...DEFAULT_THEME, ...(ristorante.theme || {}) }
   const primary       = theme.primaryColor

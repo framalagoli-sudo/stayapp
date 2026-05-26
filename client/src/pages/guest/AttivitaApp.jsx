@@ -19,5 +19,12 @@ export default function AttivitaApp() {
   if (!attivita) return <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Caricamento…</div>
 
   if (attivita.pwa?.active) return <AttivitaPWA attivita={attivita} />
-  return <LandingAttivita attivita={attivita} />
+  // minisito.active mancante o true → mostra il sito pubblico (default)
+  if (attivita.minisito?.active !== false) return <LandingAttivita attivita={attivita} />
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f9fafb', textAlign: 'center', padding: 40 }}>
+      <p style={{ fontSize: 18, fontWeight: 600, color: '#374151', margin: '0 0 8px' }}>Contenuto non disponibile</p>
+      <p style={{ fontSize: 14, color: '#9ca3af', margin: 0 }}>Questo servizio è temporaneamente offline.</p>
+    </div>
+  )
 }
