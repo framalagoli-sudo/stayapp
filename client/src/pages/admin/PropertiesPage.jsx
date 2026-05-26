@@ -145,16 +145,16 @@ export default function PropertiesPage() {
               </div>
               <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                 <button
+                  onClick={() => navigate(`/admin/struttura/${p.id}/info`)}
+                  style={pill({ background: '#1a1a2e', color: '#fff' })}
+                >
+                  Gestisci
+                </button>
+                <button
                   onClick={() => setQrProperty(p)}
                   style={pill({ background: '#f0fff4', color: '#276749' })}
                 >
                   QR Code
-                </button>
-                <button
-                  onClick={() => { setSelected(p); setView('edit') }}
-                  style={pill({ background: '#f0f4ff', color: '#1a1a2e' })}
-                >
-                  Modifica
                 </button>
                 <button
                   onClick={() => handleDelete(p.id, p.name)}
