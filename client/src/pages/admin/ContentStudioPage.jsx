@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { useAzienda } from '../../context/AziendaContext'
@@ -92,6 +92,64 @@ function ErrorBanner({ msg }) {
 }
 
 // ── Tab 1: Strategia ──────────────────────────────────────────────────────────
+
+const PILLAR_EMOJIS = [
+  '✨','🎯','💡','🔥','❤️','📸','🎨','💬','🏆','🌟',
+  '📣','🤝','🌱','💎','🚀','📊','🎁','🙌','💪','🌍',
+  '✅','📖','🎤','🍀','⚡','🎶','🏅','🛠️','🌈','👀',
+]
+
+function EmojiPicker({ value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onDown(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [open])
+
+  return (
+    <div ref={ref} style={{ position: 'relative', flexShrink: 0 }}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: 48, height: 40, fontSize: 20, textAlign: 'center',
+          border: `1.5px solid ${open ? '#1a1a2e' : '#ddd'}`, borderRadius: 8,
+          background: open ? '#f5f5f8' : '#fff', cursor: 'pointer', lineHeight: 1,
+        }}
+        title="Scegli emoji"
+      >
+        {value || '✨'}
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: 46, left: 0, zIndex: 50,
+          background: '#fff', border: '1px solid #ddd', borderRadius: 10,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.12)', padding: 10,
+          display: 'grid', gridTemplateColumns: 'repeat(6, 32px)', gap: 4, width: 230,
+        }}>
+          {PILLAR_EMOJIS.map(e => (
+            <button
+              key={e}
+              type="button"
+              onClick={() => { onChange(e); setOpen(false) }}
+              style={{
+                width: 32, height: 32, fontSize: 18, border: 'none', borderRadius: 6,
+                background: value === e ? '#f0f0f8' : 'transparent',
+                cursor: 'pointer', lineHeight: 1,
+              }}
+            >
+              {e}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function emptyStrategy() {
   return {
@@ -207,8 +265,7 @@ function ManualEditor({ initial, nome, onSaved, onCancel }) {
             {form.pillar.map((p, i) => (
               <div key={p.id || i} style={{ background: '#fafafa', border: '1px solid #eee', borderRadius: 8, padding: '14px 16px' }}>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                  <input value={p.emoji} onChange={e => setPillar(i, 'emoji', e.target.value)}
-                    style={{ ...inputStyle, width: 52, textAlign: 'center', fontSize: 18, padding: '6px' }} maxLength={4} />
+                  <EmojiPicker value={p.emoji} onChange={val => setPillar(i, 'emoji', val)} />
                   <input value={p.nome} onChange={e => setPillar(i, 'nome', e.target.value)}
                     placeholder="Nome pillar (es. Behind the scenes)" style={{ ...inputStyle, flex: 1 }} />
                   {form.pillar.length > 1 && (
