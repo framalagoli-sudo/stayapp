@@ -37,6 +37,99 @@ router.get('/', requireAuth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }) }
 })
 
+// ── Idee (backlog senza data) ─────────────────────────────────────────────────
+router.get('/idee', requireAuth, async (req, res) => {
+  try {
+    const azienda_id = await getAziendaId(req.user.id)
+    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { data, error } = await supabase
+      .from('idee_editoriali')
+      .select('*')
+      .eq('azienda_id', azienda_id)
+      .order('created_at', { ascending: false })
+    if (error) return res.status(500).json({ error: error.message })
+    res.json(data)
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
+router.post('/idee', requireAuth, async (req, res) => {
+  try {
+    const azienda_id = await getAziendaId(req.user.id)
+    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { titolo, note, pillar, canali } = req.body
+    const { data, error } = await supabase
+      .from('idee_editoriali')
+      .insert({ azienda_id, titolo: titolo || '', note: note || '', pillar: pillar || '', canali: canali || [] })
+      .select().single()
+    if (error) return res.status(500).json({ error: error.message })
+    res.status(201).json(data)
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
+router.patch('/idee/:id', requireAuth, async (req, res) => {
+  try {
+    const azienda_id = await getAziendaId(req.user.id)
+    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const allowed = ['titolo', 'note', 'pillar', 'canali']
+    const patch = { updated_at: new Date().toISOString() }
+    for (const k of allowed) if (k in req.body) patch[k] = req.body[k]
+    const { data, error } = await supabase
+      .from('idee_editoriali')
+      .update(patch)
+      .eq('id', req.params.id)
+      .eq('azienda_id', azienda_id)
+      .select().single()
+    if (error) return res.status(500).json({ error: error.message })
+    res.json(data)
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
+router.delete('/idee/:id', requireAuth, async (req, res) => {
+  try {
+    const azienda_id = await getAziendaId(req.user.id)
+    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { error } = await supabase
+      .from('idee_editoriali')
+      .delete()
+      .eq('id', req.params.id)
+      .eq('azienda_id', azienda_id)
+    if (error) return res.status(500).json({ error: error.message })
+    res.json({ ok: true })
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
+// Converte un'idea in post sul calendario
+router.post('/idee/:id/pianifica', requireAuth, async (req, res) => {
+  try {
+    const azienda_id = await getAziendaId(req.user.id)
+    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { data: idea, error: ideaErr } = await supabase
+      .from('idee_editoriali')
+      .select('*')
+      .eq('id', req.params.id)
+      .eq('azienda_id', azienda_id)
+      .single()
+    if (ideaErr || !idea) return res.status(404).json({ error: 'Idea non trovata' })
+
+    const { data_pianificata } = req.body
+    const { data: post, error: postErr } = await supabase
+      .from('piano_editoriale')
+      .insert({
+        azienda_id,
+        titolo: idea.titolo,
+        testo: idea.note || '',
+        canali: idea.canali || [],
+        data_pianificata: data_pianificata || null,
+        stato: 'bozza',
+        note: idea.pillar || '',
+      })
+      .select().single()
+    if (postErr) return res.status(500).json({ error: postErr.message })
+    await supabase.from('idee_editoriali').delete().eq('id', idea.id)
+    res.status(201).json(post)
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
 // ── Singolo post ──────────────────────────────────────────────────────────────
 router.get('/:id', requireAuth, async (req, res) => {
   try {

@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
-import { Calendar, Plus, ChevronLeft, ChevronRight, List, AlertCircle, Trash2 } from 'lucide-react'
+import { Calendar, Plus, ChevronLeft, ChevronRight, List, AlertCircle, Trash2, Lightbulb, X, Send } from 'lucide-react'
 
 const CANALI_INFO = {
   instagram:       { label: 'Instagram',       color: '#e1306c', bg: '#fce8ef' },
@@ -13,10 +13,23 @@ const CANALI_INFO = {
 }
 
 const STATO_INFO = {
-  bozza:      { label: 'Bozza',      color: '#666',   bg: '#f5f5f5' },
+  bozza:       { label: 'Bozza',       color: '#666',    bg: '#f5f5f5' },
   pianificato: { label: 'Pianificato', color: '#2b6cb0', bg: '#ebf8ff' },
-  pubblicato:  { label: 'Pubblicato', color: '#276749', bg: '#f0fff4' },
+  pubblicato:  { label: 'Pubblicato',  color: '#276749', bg: '#f0fff4' },
 }
+
+const PILLARS = [
+  { key: '',                 label: 'Nessuno',          color: '#9ca3af', bg: '#f3f4f6' },
+  { key: 'educativo',        label: 'Educativo',        color: '#7c3aed', bg: '#f3e8ff' },
+  { key: 'promozionale',     label: 'Promozionale',     color: '#d97706', bg: '#fef3c7' },
+  { key: 'dietro_le_quinte', label: 'Dietro le quinte', color: '#059669', bg: '#d1fae5' },
+  { key: 'testimonianza',    label: 'Testimonianza',    color: '#2563eb', bg: '#dbeafe' },
+  { key: 'ispirazione',      label: 'Ispirazione',      color: '#db2777', bg: '#fce7f3' },
+  { key: 'annuncio',         label: 'Annuncio',         color: '#dc2626', bg: '#fee2e2' },
+]
+
+const DAYS_LABEL = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
+const MESI = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
 
 function CanaliPills({ canali = [] }) {
   return (
@@ -33,14 +46,19 @@ function CanaliPills({ canali = [] }) {
   )
 }
 
-const DAYS_LABEL = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
-const MESI = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
+function PillarBadge({ pillar }) {
+  if (!pillar) return null
+  const p = PILLARS.find(x => x.key === pillar) || PILLARS[0]
+  return (
+    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: p.bg, color: p.color }}>
+      {p.label}
+    </span>
+  )
+}
 
 function buildCalendarDays(year, month) {
-  // month: 0-indexed JS month
-  const firstDay = new Date(year, month, 1).getDay() // 0=dom
+  const firstDay = new Date(year, month, 1).getDay()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
-  // normalizza a lunedì=0
   const startOffset = (firstDay === 0 ? 6 : firstDay - 1)
   const cells = []
   for (let i = 0; i < startOffset; i++) cells.push(null)
@@ -52,23 +70,26 @@ export default function PianoEditorialePage() {
   const navigate = useNavigate()
   const now = new Date()
   const [year, setYear]   = useState(now.getFullYear())
-  const [month, setMonth] = useState(now.getMonth()) // 0-indexed
+  const [month, setMonth] = useState(now.getMonth())
   const [posts, setPosts]   = useState([])
-  const [drafts, setDrafts] = useState([]) // post senza data pianificata
+  const [drafts, setDrafts] = useState([])
+  const [idee, setIdee]     = useState([])
   const [loading, setLoading] = useState(true)
-  const [view, setView]   = useState('calendar') // 'calendar' | 'list'
+  const [view, setView]   = useState('calendar')
   const [error, setError] = useState('')
 
   async function load(y = year, m = month) {
     setLoading(true)
     try {
       const mm = String(m + 1).padStart(2, '0')
-      const [data, senzaData] = await Promise.all([
+      const [data, senzaData, ideaData] = await Promise.all([
         apiFetch(`/api/piano-editoriale?mese=${y}-${mm}`),
         apiFetch('/api/piano-editoriale?senza_data=1'),
+        apiFetch('/api/piano-editoriale/idee'),
       ])
       setPosts(data)
       setDrafts(senzaData)
+      setIdee(ideaData)
     } catch (e) { setError(e.message) }
     setLoading(false)
   }
@@ -93,6 +114,25 @@ export default function PianoEditorialePage() {
     } catch (e) { setError(e.message) }
   }
 
+  async function handleDeleteIdea(id) {
+    if (!confirm('Eliminare questa idea?')) return
+    try {
+      await apiFetch(`/api/piano-editoriale/idee/${id}`, { method: 'DELETE' })
+      setIdee(prev => prev.filter(i => i.id !== id))
+    } catch (e) { setError(e.message) }
+  }
+
+  async function handlePianifica(idea, data_pianificata) {
+    try {
+      await apiFetch(`/api/piano-editoriale/idee/${idea.id}/pianifica`, {
+        method: 'POST',
+        body: JSON.stringify({ data_pianificata }),
+      })
+      setIdee(prev => prev.filter(i => i.id !== idea.id))
+      load(year, month)
+    } catch (e) { setError(e.message) }
+  }
+
   const cells = buildCalendarDays(year, month)
 
   function postsForDay(day) {
@@ -110,19 +150,33 @@ export default function PianoEditorialePage() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ display: 'flex', background: '#f5f5f5', borderRadius: 8, padding: 2 }}>
-            <button onClick={() => setView('calendar')} style={{ padding: '5px 12px', border: 'none', borderRadius: 6, cursor: 'pointer', background: view === 'calendar' ? '#fff' : 'transparent', color: view === 'calendar' ? '#1a1a2e' : '#888', fontSize: 13, fontWeight: view === 'calendar' ? 600 : 400 }}>
-              Calendario
-            </button>
-            <button onClick={() => setView('list')} style={{ padding: '5px 12px', border: 'none', borderRadius: 6, cursor: 'pointer', background: view === 'list' ? '#fff' : 'transparent', color: view === 'list' ? '#1a1a2e' : '#888', fontSize: 13, fontWeight: view === 'list' ? 600 : 400 }}>
-              Lista
-            </button>
+            {[
+              { key: 'calendar', label: 'Calendario' },
+              { key: 'list', label: 'Lista' },
+              { key: 'idee', label: 'Idee', count: idee.length },
+            ].map(({ key, label, count }) => (
+              <button
+                key={key}
+                onClick={() => setView(key)}
+                style={{ padding: '5px 12px', border: 'none', borderRadius: 6, cursor: 'pointer', background: view === key ? '#fff' : 'transparent', color: view === key ? '#1a1a2e' : '#888', fontSize: 13, fontWeight: view === key ? 600 : 400, display: 'flex', alignItems: 'center', gap: 5 }}
+              >
+                {label}
+                {count > 0 && (
+                  <span style={{ background: view === key ? '#1a1a2e' : '#d1d5db', color: view === key ? '#fff' : '#6b7280', borderRadius: 20, fontSize: 10, fontWeight: 700, padding: '1px 6px' }}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
-          <button
-            onClick={() => navigate('/admin/piano-editoriale/nuovo')}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontWeight: 600 }}
-          >
-            <Plus size={16} strokeWidth={1.5} /> Nuovo post
-          </button>
+          {view !== 'idee' && (
+            <button
+              onClick={() => navigate('/admin/piano-editoriale/nuovo')}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontWeight: 600 }}
+            >
+              <Plus size={16} strokeWidth={1.5} /> Nuovo post
+            </button>
+          )}
         </div>
       </div>
 
@@ -132,80 +186,80 @@ export default function PianoEditorialePage() {
         </div>
       )}
 
-      {/* Navigazione mese */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-        <button onClick={prevMonth} style={{ background: '#fff', border: '1px solid #eee', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' }}>
-          <ChevronLeft size={16} strokeWidth={1.5} color="#555" />
-        </button>
-        <span style={{ fontWeight: 700, fontSize: 16, minWidth: 160, textAlign: 'center' }}>{MESI[month]} {year}</span>
-        <button onClick={nextMonth} style={{ background: '#fff', border: '1px solid #eee', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' }}>
-          <ChevronRight size={16} strokeWidth={1.5} color="#555" />
-        </button>
-      </div>
+      {/* Navigazione mese — solo per calendario e lista */}
+      {view !== 'idee' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <button onClick={prevMonth} style={{ background: '#fff', border: '1px solid #eee', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' }}>
+            <ChevronLeft size={16} strokeWidth={1.5} color="#555" />
+          </button>
+          <span style={{ fontWeight: 700, fontSize: 16, minWidth: 160, textAlign: 'center' }}>{MESI[month]} {year}</span>
+          <button onClick={nextMonth} style={{ background: '#fff', border: '1px solid #eee', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' }}>
+            <ChevronRight size={16} strokeWidth={1.5} color="#555" />
+          </button>
+        </div>
+      )}
 
       {/* Vista calendario */}
       {view === 'calendar' && (
         <div style={{ overflowX: 'auto' }}>
-        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #eee', overflow: 'hidden', minWidth: 560 }}>
-          {/* Intestazioni giorni */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid #eee' }}>
-            {DAYS_LABEL.map(d => (
-              <div key={d} style={{ padding: '8px 4px', textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {d}
-              </div>
-            ))}
-          </div>
-          {/* Celle */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
-            {cells.map((day, idx) => {
-              const dayPosts = day ? postsForDay(day) : []
-              const isToday = day && new Date().getDate() === day && new Date().getMonth() === month && new Date().getFullYear() === year
-              return (
-                <div
-                  key={idx}
-                  onClick={() => day && navigate(`/admin/piano-editoriale/nuovo?data=${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`)}
-                  style={{
-                    minHeight: 90, padding: '6px 6px', borderRight: '1px solid #f5f5f5', borderBottom: '1px solid #f5f5f5',
-                    background: day ? '#fff' : '#fafafa', cursor: day ? 'pointer' : 'default',
-                    boxSizing: 'border-box', position: 'relative',
-                  }}
-                >
-                  {day && (
-                    <>
-                      <div style={{
-                        width: 22, height: 22, borderRadius: '50%',
-                        background: isToday ? '#1a1a2e' : 'transparent',
-                        color: isToday ? '#fff' : '#555',
-                        fontSize: 12, fontWeight: isToday ? 700 : 400,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        marginBottom: 4,
-                      }}>
-                        {day}
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        {dayPosts.slice(0, 3).map(p => {
-                          const stInfo = STATO_INFO[p.stato] || STATO_INFO.bozza
-                          return (
-                            <div
-                              key={p.id}
-                              onClick={e => { e.stopPropagation(); navigate(`/admin/piano-editoriale/${p.id}`) }}
-                              style={{ fontSize: 10, padding: '2px 5px', borderRadius: 4, background: stInfo.bg, color: stInfo.color, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', cursor: 'pointer' }}
-                            >
-                              {p.titolo || p.testo?.slice(0, 30) || '—'}
-                            </div>
-                          )
-                        })}
-                        {dayPosts.length > 3 && (
-                          <div style={{ fontSize: 10, color: '#aaa', paddingLeft: 5 }}>+{dayPosts.length - 3} altri</div>
-                        )}
-                      </div>
-                    </>
-                  )}
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #eee', overflow: 'hidden', minWidth: 560 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid #eee' }}>
+              {DAYS_LABEL.map(d => (
+                <div key={d} style={{ padding: '8px 4px', textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {d}
                 </div>
-              )
-            })}
+              ))}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+              {cells.map((day, idx) => {
+                const dayPosts = day ? postsForDay(day) : []
+                const isToday = day && new Date().getDate() === day && new Date().getMonth() === month && new Date().getFullYear() === year
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => day && navigate(`/admin/piano-editoriale/nuovo?data=${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`)}
+                    style={{
+                      minHeight: 90, padding: '6px 6px', borderRight: '1px solid #f5f5f5', borderBottom: '1px solid #f5f5f5',
+                      background: day ? '#fff' : '#fafafa', cursor: day ? 'pointer' : 'default',
+                      boxSizing: 'border-box', position: 'relative',
+                    }}
+                  >
+                    {day && (
+                      <>
+                        <div style={{
+                          width: 22, height: 22, borderRadius: '50%',
+                          background: isToday ? '#1a1a2e' : 'transparent',
+                          color: isToday ? '#fff' : '#555',
+                          fontSize: 12, fontWeight: isToday ? 700 : 400,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          marginBottom: 4,
+                        }}>
+                          {day}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          {dayPosts.slice(0, 3).map(p => {
+                            const stInfo = STATO_INFO[p.stato] || STATO_INFO.bozza
+                            return (
+                              <div
+                                key={p.id}
+                                onClick={e => { e.stopPropagation(); navigate(`/admin/piano-editoriale/${p.id}`) }}
+                                style={{ fontSize: 10, padding: '2px 5px', borderRadius: 4, background: stInfo.bg, color: stInfo.color, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', cursor: 'pointer' }}
+                              >
+                                {p.titolo || p.testo?.slice(0, 30) || '—'}
+                              </div>
+                            )
+                          })}
+                          {dayPosts.length > 3 && (
+                            <div style={{ fontSize: 10, color: '#aaa', paddingLeft: 5 }}>+{dayPosts.length - 3} altri</div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           </div>
-        </div>
         </div>
       )}
 
@@ -213,7 +267,6 @@ export default function PianoEditorialePage() {
       {view === 'list' && (
         loading ? <p style={{ color: '#888' }}>Caricamento…</p> : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {/* Bozze senza data */}
             {drafts.length > 0 && (
               <>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.6, padding: '4px 0 8px' }}>
@@ -223,7 +276,6 @@ export default function PianoEditorialePage() {
                 {posts.length > 0 && <div style={{ borderTop: '1px solid #eee', margin: '8px 0' }} />}
               </>
             )}
-            {/* Post del mese */}
             {posts.length === 0 && drafts.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '48px 0', color: '#aaa' }}>
                 <Calendar size={40} strokeWidth={1} style={{ marginBottom: 12 }} />
@@ -237,6 +289,219 @@ export default function PianoEditorialePage() {
             )}
           </div>
         )
+      )}
+
+      {/* Vista idee */}
+      {view === 'idee' && (
+        <IdeeView
+          idee={idee}
+          setIdee={setIdee}
+          onDelete={handleDeleteIdea}
+          onPianifica={handlePianifica}
+        />
+      )}
+    </div>
+  )
+}
+
+function IdeeView({ idee, setIdee, onDelete, onPianifica }) {
+  const [adding, setAdding] = useState(false)
+  const [newTitolo, setNewTitolo] = useState('')
+  const [newNote, setNewNote] = useState('')
+  const [newPillar, setNewPillar] = useState('')
+  const [newCanali, setNewCanali] = useState([])
+  const [saving, setSaving] = useState(false)
+  const [pianificaId, setPianificaId] = useState(null)
+  const [pianificaData, setPianificaData] = useState('')
+  const [pianificaSaving, setPianificaSaving] = useState(false)
+  const [filterPillar, setFilterPillar] = useState('')
+
+  async function handleAdd() {
+    if (!newTitolo.trim()) return
+    setSaving(true)
+    try {
+      const idea = await apiFetch('/api/piano-editoriale/idee', {
+        method: 'POST',
+        body: JSON.stringify({ titolo: newTitolo.trim(), note: newNote.trim(), pillar: newPillar, canali: newCanali }),
+      })
+      setIdee(prev => [idea, ...prev])
+      setNewTitolo(''); setNewNote(''); setNewPillar(''); setNewCanali([])
+      setAdding(false)
+    } catch {}
+    setSaving(false)
+  }
+
+  async function confirmPianifica(idea) {
+    setPianificaSaving(true)
+    await onPianifica(idea, pianificaData || null)
+    setPianificaId(null); setPianificaData('')
+    setPianificaSaving(false)
+  }
+
+  const filtered = filterPillar ? idee.filter(i => i.pillar === filterPillar) : idee
+
+  return (
+    <div>
+      {/* Toolbar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {PILLARS.filter(p => p.key).map(p => (
+            <button
+              key={p.key}
+              onClick={() => setFilterPillar(filterPillar === p.key ? '' : p.key)}
+              style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                background: filterPillar === p.key ? p.bg : '#f3f4f6',
+                color: filterPillar === p.key ? p.color : '#9ca3af',
+              }}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => setAdding(a => !a)}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}
+        >
+          <Plus size={15} strokeWidth={1.5} /> Nuova idea
+        </button>
+      </div>
+
+      {/* Form nuova idea */}
+      {adding && (
+        <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '2px solid #1a1a2e', marginBottom: 16 }}>
+          <input
+            autoFocus
+            placeholder="Titolo dell'idea *"
+            value={newTitolo}
+            onChange={e => setNewTitolo(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') handleAdd() }}
+            style={{ width: '100%', padding: '9px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, fontWeight: 600, boxSizing: 'border-box', marginBottom: 10 }}
+          />
+          <textarea
+            placeholder="Note, spunti, angolazione… (opzionale)"
+            value={newNote}
+            onChange={e => setNewNote(e.target.value)}
+            rows={2}
+            style={{ width: '100%', padding: '9px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, boxSizing: 'border-box', resize: 'vertical', marginBottom: 10 }}
+          />
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
+            <select
+              value={newPillar}
+              onChange={e => setNewPillar(e.target.value)}
+              style={{ padding: '6px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, background: '#fff' }}
+            >
+              {PILLARS.map(p => <option key={p.key} value={p.key}>{p.key ? p.label : 'Pillar…'}</option>)}
+            </select>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+              {Object.entries(CANALI_INFO).map(([key, info]) => (
+                <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontSize: 12, padding: '4px 8px', borderRadius: 20,
+                  background: newCanali.includes(key) ? info.bg : '#f5f5f5',
+                  color: newCanali.includes(key) ? info.color : '#888', fontWeight: 600 }}>
+                  <input type="checkbox" checked={newCanali.includes(key)} style={{ display: 'none' }}
+                    onChange={() => setNewCanali(c => c.includes(key) ? c.filter(x => x !== key) : [...c, key])} />
+                  {info.label}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={handleAdd} disabled={saving || !newTitolo.trim()}
+              style={{ padding: '8px 20px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', opacity: !newTitolo.trim() ? 0.5 : 1 }}>
+              {saving ? 'Salvataggio…' : 'Aggiungi'}
+            </button>
+            <button onClick={() => { setAdding(false); setNewTitolo(''); setNewNote(''); setNewPillar(''); setNewCanali([]) }}
+              style={{ padding: '8px 16px', background: '#f5f5f5', border: 'none', borderRadius: 8, cursor: 'pointer', color: '#555' }}>
+              Annulla
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Lista idee */}
+      {filtered.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '56px 0', color: '#aaa' }}>
+          <Lightbulb size={44} strokeWidth={1} style={{ marginBottom: 12, color: '#d1d5db' }} />
+          <p style={{ fontWeight: 600, color: '#9ca3af', margin: '0 0 6px' }}>
+            {filterPillar ? 'Nessuna idea con questo pillar' : 'Nessuna idea nel backlog'}
+          </p>
+          <p style={{ fontSize: 13, color: '#d1d5db', margin: 0 }}>
+            Aggiungi spunti e concetti prima di pianificarli sul calendario
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+          {filtered.map(idea => (
+            <IdeaCard
+              key={idea.id}
+              idea={idea}
+              onDelete={onDelete}
+              pianificaId={pianificaId}
+              setPianificaId={setPianificaId}
+              pianificaData={pianificaData}
+              setPianificaData={setPianificaData}
+              pianificaSaving={pianificaSaving}
+              onConfirmPianifica={confirmPianifica}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function IdeaCard({ idea, onDelete, pianificaId, setPianificaId, pianificaData, setPianificaData, pianificaSaving, onConfirmPianifica }) {
+  const open = pianificaId === idea.id
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #eee', padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+        <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', lineHeight: 1.4, flex: 1 }}>{idea.titolo || '(senza titolo)'}</div>
+        <button onClick={() => onDelete(idea.id)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#ddd', flexShrink: 0, marginTop: 2 }}>
+          <X size={14} strokeWidth={1.5} />
+        </button>
+      </div>
+      {idea.note && (
+        <p style={{ margin: 0, fontSize: 12, color: '#6b7280', lineHeight: 1.5 }}>{idea.note}</p>
+      )}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, alignItems: 'center' }}>
+        <PillarBadge pillar={idea.pillar} />
+        <CanaliPills canali={idea.canali} />
+      </div>
+
+      {/* Pianifica inline */}
+      {open ? (
+        <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <label style={{ fontSize: 12, color: '#666', fontWeight: 600 }}>Data (opzionale)</label>
+          <input
+            type="date"
+            value={pianificaData}
+            onChange={e => setPianificaData(e.target.value)}
+            style={{ padding: '7px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, width: '100%', boxSizing: 'border-box' }}
+          />
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button
+              onClick={() => onConfirmPianifica(idea)}
+              disabled={pianificaSaving}
+              style={{ flex: 1, padding: '8px 0', background: '#059669', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}
+            >
+              <Send size={13} strokeWidth={1.5} />
+              {pianificaSaving ? 'Creazione…' : 'Crea post'}
+            </button>
+            <button
+              onClick={() => { setPianificaId(null); setPianificaData('') }}
+              style={{ padding: '8px 12px', background: '#f5f5f5', border: 'none', borderRadius: 8, cursor: 'pointer', color: '#555', fontSize: 13 }}
+            >
+              Annulla
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => { setPianificaId(idea.id); setPianificaData('') }}
+          style={{ marginTop: 'auto', padding: '7px 14px', background: '#f0fdf4', color: '#059669', border: '1px solid #bbf7d0', borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer', alignSelf: 'flex-start' }}
+        >
+          Pianifica →
+        </button>
       )}
     </div>
   )
@@ -277,4 +542,3 @@ function PostRow({ p, navigate, handleDelete }) {
     </div>
   )
 }
-
