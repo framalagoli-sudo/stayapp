@@ -20,20 +20,34 @@ async function callClaude(prompt, maxTokens = 800) {
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: maxTokens,
+      system: 'Rispondi SEMPRE e SOLO con JSON valido, senza markdown, senza backtick, senza testo prima o dopo.',
       messages: [{ role: 'user', content: prompt }],
     }),
   })
-  if (!resp.ok) throw new Error(`Claude API error: ${resp.status}`)
+  if (!resp.ok) {
+    const errBody = await resp.text().catch(() => '')
+    throw new Error(`Claude API error: ${resp.status} — ${errBody}`)
+  }
   const data = await resp.json()
   return data.content?.[0]?.text || ''
 }
 
 function parseJSON(text) {
-  const arrMatch = text.match(/\[[\s\S]*\]/)
-  const objMatch = text.match(/\{[\s\S]*\}/)
+  // Rimuove eventuali backtick/markdown fence residui
+  const clean = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
+  const arrMatch = clean.match(/\[[\s\S]*\]/)
+  const objMatch = clean.match(/\{[\s\S]*\}/)
   const raw = arrMatch?.[0] || objMatch?.[0]
-  if (!raw) throw new Error('Nessun JSON trovato nella risposta AI')
-  return JSON.parse(raw)
+  if (!raw) {
+    console.error('[contentStudio] parseJSON — nessun JSON trovato. Raw:', text.slice(0, 500))
+    throw new Error('Nessun JSON trovato nella risposta AI')
+  }
+  try {
+    return JSON.parse(raw)
+  } catch (e) {
+    console.error('[contentStudio] parseJSON — JSON.parse fallito:', e.message, '— Raw:', raw.slice(0, 500))
+    throw e
+  }
 }
 
 // GET /api/content-studio/strategia
@@ -84,7 +98,7 @@ Rispondi SOLO con JSON valido, senza testo aggiuntivo prima o dopo:
   "mix": { "Educational": 30, "Intrattenimento": 25, "Promozionale": 25, "Community": 20 }
 }`
 
-    const testo = await callClaude(prompt, 1500)
+    const testo = await callClaude(prompt, 2500)
     let strategy
     try { strategy = parseJSON(testo) } catch {
       return res.status(500).json({ error: 'Risposta AI non valida, riprova' })
