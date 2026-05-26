@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useProperty } from '../../../hooks/useProperty'
 import { useAuth } from '../../../context/AuthContext'
-import { uploadMedia } from '../../../lib/api'
+import { apiFetch, uploadMedia } from '../../../lib/api'
 import CollegamentiSection from '../../../components/admin/CollegamentiSection'
 import { ExternalLink, X } from 'lucide-react'
 
@@ -45,6 +45,8 @@ export default function PropertyInfoPage() {
   const [slugSaving, setSlugSaving] = useState(false)
   const [slugSaved, setSlugSaved] = useState(false)
   const [slugError, setSlugError] = useState('')
+  const [aziende, setAziende] = useState([])
+  const [aziendaSaving, setAziendaSaving] = useState(false)
 
   useEffect(() => {
     if (property) {
@@ -53,6 +55,18 @@ export default function PropertyInfoPage() {
       setSlugInput(property.slug || '')
     }
   }, [property])
+
+  useEffect(() => {
+    if (profile?.role === 'super_admin') {
+      apiFetch('/api/aziende').then(setAziende).catch(() => {})
+    }
+  }, [profile?.role])
+
+  async function handleAssegnaAzienda(azienda_id) {
+    setAziendaSaving(true)
+    try { await save({ azienda_id }) } catch {}
+    finally { setAziendaSaving(false) }
+  }
 
   function addAmenity(label) {
     const val = label.trim()
@@ -121,6 +135,23 @@ export default function PropertyInfoPage() {
         )}
       </div>
       <p style={descStyle}>Dati di base della struttura visibili agli ospiti nell'app.</p>
+
+      {/* Assegna azienda — solo super_admin quando azienda_id è NULL */}
+      {profile?.role === 'super_admin' && !property.azienda_id && aziende.length > 0 && (
+        <div style={{ background: '#fffbeb', border: '1px solid #f59e0b', borderRadius: 10, padding: '14px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#92400e', flexShrink: 0 }}>⚠ Struttura senza azienda</span>
+          <select
+            defaultValue=""
+            onChange={e => e.target.value && handleAssegnaAzienda(e.target.value)}
+            disabled={aziendaSaving}
+            style={{ flex: 1, minWidth: 200, padding: '7px 10px', borderRadius: 7, border: '1px solid #ddd', fontSize: 13 }}
+          >
+            <option value="">Assegna a un'azienda…</option>
+            {aziende.map(a => <option key={a.id} value={a.id}>{a.ragione_sociale}</option>)}
+          </select>
+          {aziendaSaving && <span style={{ fontSize: 12, color: '#888' }}>Salvataggio…</span>}
+        </div>
+      )}
 
       {/* Logo & Cover */}
       <div style={{ ...cardStyle, marginBottom: 20 }}>
