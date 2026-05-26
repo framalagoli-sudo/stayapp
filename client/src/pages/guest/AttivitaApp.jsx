@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import LandingAttivita from './LandingAttivita'
+import AttivitaPWA from './AttivitaPWA'
 import { apiFetch } from '../../lib/api'
 
 export default function AttivitaApp() {
@@ -16,5 +17,7 @@ export default function AttivitaApp() {
 
   if (error) return <div style={{ padding: 40, textAlign: 'center', color: '#e53e3e' }}>{error}</div>
   if (!attivita) return <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Caricamento…</div>
+
+  if (attivita.pwa?.active) return <AttivitaPWA attivita={attivita} />
   return <LandingAttivita attivita={attivita} />
 }

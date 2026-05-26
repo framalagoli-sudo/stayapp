@@ -77,7 +77,7 @@ async function getCollegamenti(tipo, id) {
 router.get('/a/:slug', async (req, res) => {
   const { data, error } = await supabase
     .from('attivita')
-    .select('id, azienda_id, slug, name, tipo, description, address, phone, email, schedule, logo_url, cover_url, theme, gallery, services, minisito, privacy_data, chatbot')
+    .select('id, azienda_id, slug, name, tipo, description, address, phone, email, schedule, logo_url, cover_url, theme, gallery, services, minisito, privacy_data, chatbot, pwa')
     .eq('slug', req.params.slug)
     .eq('active', true)
     .single()

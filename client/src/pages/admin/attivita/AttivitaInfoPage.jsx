@@ -168,6 +168,8 @@ export default function AttivitaInfoPage() {
         />
       )}
 
+      <PwaToggleSection attivita={attivita} save={save} />
+
       {/* Slug */}
       <div style={cardStyle}>
         <h3 style={{ marginTop: 0, marginBottom: 4, fontSize: 16, fontWeight: 700 }}>URL pubblica</h3>
@@ -208,3 +210,99 @@ const uploadLabelStyle = { padding: '8px 16px', background: '#f0f0f0', borderRad
 const removeBtnStyle   = { fontSize: 12, color: '#e53e3e', background: 'none', border: 'none', cursor: 'pointer' }
 const loadingStyle     = { padding: 32, color: '#888' }
 const errorStyle       = { padding: 32, color: '#e53e3e' }
+
+const PWA_MODULES = [
+  { key: 'servizi',  label: 'Tab Servizi',  desc: 'Lista dei servizi offerti con prezzi' },
+  { key: 'galleria', label: 'Tab Galleria', desc: 'Griglia fotografica cliccabile' },
+  { key: 'contatta', label: 'Tab Contatta', desc: 'Form messaggio + bottoni Tel/WhatsApp/Email' },
+]
+
+function PwaToggleSection({ attivita, save }) {
+  const pwa = attivita.pwa || { active: false, modules: { servizi: true, galleria: true, contatta: true } }
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  async function toggle(path, value) {
+    setSaving(true)
+    setSaved(false)
+    try {
+      const updated = path === 'active'
+        ? { ...pwa, active: value }
+        : { ...pwa, modules: { ...pwa.modules, [path]: value } }
+      await save({ pwa: updated })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+    } catch (e) { alert(e.message) }
+    finally { setSaving(false) }
+  }
+
+  return (
+    <div style={cardStyle}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>App ospite (PWA)</h3>
+        {saved && <span style={{ fontSize: 12, color: '#059669', fontWeight: 600 }}>✓ Salvato</span>}
+      </div>
+      <p style={{ margin: '0 0 20px', fontSize: 13, color: '#888' }}>
+        Attiva l'app installabile per i tuoi clienti. Con la PWA disattivata viene mostrato il minisito.
+      </p>
+
+      {/* Toggle globale PWA */}
+      <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', marginBottom: 20 }}>
+        <div
+          onClick={() => toggle('active', !pwa.active)}
+          style={{
+            width: 44, height: 24, borderRadius: 12, position: 'relative', cursor: 'pointer',
+            background: pwa.active ? '#059669' : '#ddd', transition: 'background 0.2s', flexShrink: 0,
+          }}
+        >
+          <div style={{
+            position: 'absolute', top: 3, left: pwa.active ? 22 : 3,
+            width: 18, height: 18, borderRadius: '50%', background: '#fff',
+            transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+          }} />
+        </div>
+        <div>
+          <div style={{ fontWeight: 600, fontSize: 14 }}>
+            {pwa.active ? 'PWA attiva' : 'PWA disattivata'}
+          </div>
+          <div style={{ fontSize: 12, color: '#888' }}>
+            {pwa.active ? 'I clienti vedono l\'app ospite' : 'I clienti vedono il minisito'}
+          </div>
+        </div>
+      </label>
+
+      {/* Toggle moduli (visibili solo se PWA attiva) */}
+      {pwa.active && (
+        <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
+          <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 600, color: '#555' }}>Sezioni visibili nell'app</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {PWA_MODULES.map(({ key, label, desc }) => {
+              const active = pwa.modules?.[key] !== false
+              return (
+                <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+                  <div
+                    onClick={() => toggle(key, !active)}
+                    style={{
+                      width: 36, height: 20, borderRadius: 10, position: 'relative', cursor: 'pointer',
+                      background: active ? '#1a1a2e' : '#ddd', transition: 'background 0.2s', flexShrink: 0,
+                    }}
+                  >
+                    <div style={{
+                      position: 'absolute', top: 2, left: active ? 17 : 2,
+                      width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                      transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                    }} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>{label}</div>
+                    <div style={{ fontSize: 11, color: '#aaa' }}>{desc}</div>
+                  </div>
+                </label>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
