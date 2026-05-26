@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useProperty } from '../../../hooks/useProperty'
+import { useAuth } from '../../../context/AuthContext'
 import CollegamentiSection from '../../../components/admin/CollegamentiSection'
 import { ExternalLink, X } from 'lucide-react'
 
@@ -34,6 +35,7 @@ function slugify(str) {
 
 export default function PropertyInfoPage() {
   const { property, loading, saving, saved, saveError, save } = useProperty()
+  const { profile } = useAuth()
   const [form, setForm] = useState({})
   const [amenities, setAmenities] = useState([])
   const [amenityInput, setAmenityInput] = useState('')
@@ -135,11 +137,11 @@ export default function PropertyInfoPage() {
           {saving ? 'Salvataggio…' : saved ? '✓ Salvato' : 'Salva'}
         </button>
 
-        {property.azienda_id && (
+        {(property.azienda_id || profile?.azienda_id) && (
           <CollegamentiSection
             entitaId={property.id}
             entitaTipo="struttura"
-            aziendaId={property.azienda_id}
+            aziendaId={property.azienda_id || profile?.azienda_id}
           />
         )}
       </form>
