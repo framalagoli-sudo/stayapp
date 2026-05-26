@@ -93,9 +93,199 @@ function ErrorBanner({ msg }) {
 
 // ── Tab 1: Strategia ──────────────────────────────────────────────────────────
 
+function emptyStrategy() {
+  return {
+    tono: 'friendly', target: '', usp: '', piattaforme: ['instagram', 'facebook'],
+    pillar: [{ id: '1', emoji: '✨', nome: '', descrizione: '' }],
+    voice_tips: [''],
+    hashtag_base: [],
+    frequenza: { instagram: 4, facebook: 3, linkedin: 1, tiktok: 2, google_business: 2 },
+  }
+}
+
+function ManualEditor({ initial, nome, onSaved, onCancel }) {
+  const [form, setForm] = useState(() => ({
+    tono: initial?.tono || 'friendly',
+    target: initial?.target || '',
+    usp: initial?.usp || '',
+    piattaforme: initial?.piattaforme || ['instagram', 'facebook'],
+    pillar: initial?.pillar?.length ? initial.pillar.map(p => ({ ...p })) : [{ id: '1', emoji: '✨', nome: '', descrizione: '' }],
+    voice_tips: initial?.voice_tips?.length ? [...initial.voice_tips] : [''],
+    hashtag_input: (initial?.hashtag_base || []).join(' '),
+    frequenza: { instagram: 4, facebook: 3, linkedin: 1, tiktok: 2, google_business: 2, ...(initial?.frequenza || {}) },
+  }))
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  function togglePiattaforma(k) {
+    setForm(f => ({
+      ...f,
+      piattaforme: f.piattaforme.includes(k) ? f.piattaforme.filter(x => x !== k) : [...f.piattaforme, k],
+    }))
+  }
+
+  function setPillar(i, key, val) {
+    setForm(f => { const p = [...f.pillar]; p[i] = { ...p[i], [key]: val }; return { ...f, pillar: p } })
+  }
+  function addPillar() {
+    setForm(f => ({ ...f, pillar: [...f.pillar, { id: String(Date.now()), emoji: '🎯', nome: '', descrizione: '' }] }))
+  }
+  function removePillar(i) {
+    setForm(f => ({ ...f, pillar: f.pillar.filter((_, j) => j !== i) }))
+  }
+
+  function setTip(i, val) {
+    setForm(f => { const t = [...f.voice_tips]; t[i] = val; return { ...f, voice_tips: t } })
+  }
+  function addTip()       { setForm(f => ({ ...f, voice_tips: [...f.voice_tips, ''] })) }
+  function removeTip(i)   { setForm(f => ({ ...f, voice_tips: f.voice_tips.filter((_, j) => j !== i) })) }
+
+  async function save() {
+    if (!form.target.trim() || !form.usp.trim()) return setError('Target e USP sono obbligatori.')
+    if (form.pillar.some(p => !p.nome.trim())) return setError('Ogni pillar deve avere un nome.')
+    setSaving(true); setError('')
+    try {
+      const hashtag_base = form.hashtag_input
+        .split(/[\s,]+/).map(h => h.startsWith('#') ? h : `#${h}`).filter(h => h.length > 1)
+      const { strategy: s } = await apiFetch('/api/content-studio/strategia', {
+        method: 'PUT',
+        body: JSON.stringify({
+          tono: form.tono, target: form.target, usp: form.usp,
+          piattaforme: form.piattaforme, pillar: form.pillar,
+          voice_tips: form.voice_tips.filter(t => t.trim()),
+          hashtag_base, frequenza: form.frequenza,
+        }),
+      })
+      onSaved(s)
+    } catch (e) { setError(e.message) }
+    setSaving(false)
+  }
+
+  const secLabel = { fontSize: 12, fontWeight: 700, color: '#555', display: 'block', marginBottom: 8 }
+  const miniBtn  = (extra = {}) => ({ background: 'none', border: '1px solid #ddd', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: 12, color: '#555', ...extra })
+
+  return (
+    <div style={{ maxWidth: 680 }}>
+      <ErrorBanner msg={error} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+
+        {/* Tono */}
+        <div>
+          <label style={secLabel}>Tono di voce</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {TONI.map(t => <PillBtn key={t.k} active={form.tono === t.k} onClick={() => setForm(f => ({ ...f, tono: t.k }))}>{t.label}</PillBtn>)}
+          </div>
+        </div>
+
+        {/* Target + USP */}
+        <div>
+          <label style={secLabel}>Chi sono i tuoi clienti ideali? *</label>
+          <textarea value={form.target} onChange={e => setForm(f => ({ ...f, target: e.target.value }))}
+            rows={2} placeholder="Es: Coppie 30-50 anni che cercano relax nel verde…" style={taStyle} />
+        </div>
+        <div>
+          <label style={secLabel}>Cosa ti rende unico? (USP) *</label>
+          <textarea value={form.usp} onChange={e => setForm(f => ({ ...f, usp: e.target.value }))}
+            rows={2} placeholder="Es: Unico hotel con piscina panoramica sulla valle…" style={taStyle} />
+        </div>
+
+        {/* Piattaforme */}
+        <div>
+          <label style={secLabel}>Piattaforme</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {CANALI.map(c => <PillBtn key={c.k} active={form.piattaforme.includes(c.k)} color={c.color} onClick={() => togglePiattaforma(c.k)}>{c.label}</PillBtn>)}
+          </div>
+        </div>
+
+        {/* Content Pillar */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <label style={{ ...secLabel, marginBottom: 0 }}>Content Pillar</label>
+            <button onClick={addPillar} style={miniBtn({ color: '#1a1a2e', borderColor: '#1a1a2e' })}>+ Aggiungi</button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {form.pillar.map((p, i) => (
+              <div key={p.id || i} style={{ background: '#fafafa', border: '1px solid #eee', borderRadius: 8, padding: '14px 16px' }}>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                  <input value={p.emoji} onChange={e => setPillar(i, 'emoji', e.target.value)}
+                    style={{ ...inputStyle, width: 52, textAlign: 'center', fontSize: 18, padding: '6px' }} maxLength={4} />
+                  <input value={p.nome} onChange={e => setPillar(i, 'nome', e.target.value)}
+                    placeholder="Nome pillar (es. Behind the scenes)" style={{ ...inputStyle, flex: 1 }} />
+                  {form.pillar.length > 1 && (
+                    <button onClick={() => removePillar(i)} style={{ ...miniBtn(), color: '#c00', borderColor: '#fcc' }}>✕</button>
+                  )}
+                </div>
+                <textarea value={p.descrizione} onChange={e => setPillar(i, 'descrizione', e.target.value)}
+                  rows={2} placeholder="Descrizione: cosa pubblicare, esempi concreti…" style={{ ...taStyle, marginBottom: 0 }} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Voice tips */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <label style={{ ...secLabel, marginBottom: 0 }}>Consigli tono di voce</label>
+            <button onClick={addTip} style={miniBtn({ color: '#1a1a2e', borderColor: '#1a1a2e' })}>+ Aggiungi</button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {form.voice_tips.map((tip, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8 }}>
+                <input value={tip} onChange={e => setTip(i, e.target.value)}
+                  placeholder={`Consiglio ${i + 1}…`} style={{ ...inputStyle, flex: 1 }} />
+                {form.voice_tips.length > 1 && (
+                  <button onClick={() => removeTip(i)} style={{ ...miniBtn(), color: '#c00', borderColor: '#fcc' }}>✕</button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Hashtag */}
+        <div>
+          <label style={secLabel}>Hashtag base (separati da spazio o virgola)</label>
+          <input value={form.hashtag_input} onChange={e => setForm(f => ({ ...f, hashtag_input: e.target.value }))}
+            placeholder="#tag1 #tag2 #tag3…" style={inputStyle} />
+        </div>
+
+        {/* Frequenza */}
+        <div>
+          <label style={secLabel}>Frequenza consigliata (post/settimana)</label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
+            {CANALI.filter(c => form.piattaforme.includes(c.k)).map(c => (
+              <div key={c.k} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 13, color: c.color, fontWeight: 600, flex: 1 }}>{c.label}</span>
+                <input type="number" min={0} max={14} value={form.frequenza[c.k] ?? 0}
+                  onChange={e => setForm(f => ({ ...f, frequenza: { ...f.frequenza, [c.k]: Number(e.target.value) } }))}
+                  style={{ ...inputStyle, width: 56, textAlign: 'center' }} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Azioni */}
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={save} disabled={saving} style={{
+            flex: 1, background: saving ? '#ccc' : '#1a1a2e', color: '#fff', border: 'none',
+            borderRadius: 10, padding: '12px 24px', cursor: saving ? 'default' : 'pointer',
+            fontWeight: 700, fontSize: 14,
+          }}>
+            {saving ? 'Salvataggio…' : 'Salva strategia'}
+          </button>
+          {onCancel && (
+            <button onClick={onCancel} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 10, padding: '12px 20px', cursor: 'pointer', fontSize: 14, color: '#555' }}>
+              Annulla
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function StrategiaTab({ strategy, nome, onSaved }) {
   const hasStrategy = strategy?.pillar?.length > 0
-  const [showForm, setShowForm] = useState(!hasStrategy)
+  const [mode, setMode] = useState(hasStrategy ? 'view' : 'ai') // 'view' | 'ai' | 'manual'
   const [form, setForm] = useState({
     tono: strategy?.tono || 'friendly',
     target: strategy?.target || '',
@@ -124,12 +314,21 @@ function StrategiaTab({ strategy, nome, onSaved }) {
         body: JSON.stringify({ ...form, nome_business: nome }),
       })
       onSaved(s)
-      setShowForm(false)
+      setMode('view')
     } catch (e) { setError(e.message) }
     setLoading(false)
   }
 
-  if (showForm) return (
+  if (mode === 'manual') return (
+    <ManualEditor
+      initial={hasStrategy ? strategy : null}
+      nome={nome}
+      onSaved={s => { onSaved(s); setMode('view') }}
+      onCancel={() => setMode(hasStrategy ? 'view' : 'ai')}
+    />
+  )
+
+  if (mode === 'ai') return (
     <div style={{ maxWidth: 640 }}>
       <p style={{ color: '#666', fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>
         Rispondi a 4 domande — l'AI genera la tua guida editoriale personalizzata con content pillar, tono di voce, frequenza e hashtag base.
@@ -182,15 +381,23 @@ function StrategiaTab({ strategy, nome, onSaved }) {
           </div>
         </div>
 
-        <button onClick={genera} disabled={loading} style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          background: loading ? '#ccc' : '#1a1a2e', color: '#fff', border: 'none',
-          borderRadius: 10, padding: '12px 24px', cursor: loading ? 'default' : 'pointer',
-          fontWeight: 700, fontSize: 14,
-        }}>
-          <Sparkles size={16} strokeWidth={1.5} />
-          {loading ? 'Generazione in corso (30-60s)…' : 'Genera strategia con AI'}
-        </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={genera} disabled={loading} style={{
+            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            background: loading ? '#ccc' : '#1a1a2e', color: '#fff', border: 'none',
+            borderRadius: 10, padding: '12px 24px', cursor: loading ? 'default' : 'pointer',
+            fontWeight: 700, fontSize: 14,
+          }}>
+            <Sparkles size={16} strokeWidth={1.5} />
+            {loading ? 'Generazione in corso (30-60s)…' : 'Genera strategia con AI'}
+          </button>
+          <button onClick={() => setMode('manual')} style={{
+            background: '#fff', border: '1px solid #ddd', borderRadius: 10,
+            padding: '12px 18px', cursor: 'pointer', fontSize: 14, color: '#555', fontWeight: 500,
+          }}>
+            Crea manualmente
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -198,19 +405,25 @@ function StrategiaTab({ strategy, nome, onSaved }) {
   // Vista strategia salvata
   return (
     <div style={{ maxWidth: 740 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 12, padding: '3px 12px', borderRadius: 20, background: '#f0f0f5', color: '#444', fontWeight: 600 }}>
             {TONI.find(t => t.k === strategy.tono)?.label || strategy.tono}
           </span>
           {strategy.generato_il && (
-            <span style={{ fontSize: 12, color: '#aaa' }}>Generata il {strategy.generato_il}</span>
+            <span style={{ fontSize: 12, color: '#aaa' }}>Salvata il {strategy.generato_il}</span>
           )}
         </div>
-        <button onClick={() => { setForm({ tono: strategy.tono || 'friendly', target: strategy.target || '', usp: strategy.usp || '', piattaforme: strategy.piattaforme || [], tipo_business: '' }); setShowForm(true) }}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #ddd', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontSize: 13, color: '#555' }}>
-          <RefreshCw size={13} strokeWidth={1.5} /> Rigenera
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => setMode('manual')}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #ddd', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontSize: 13, color: '#555' }}>
+            <Pen size={12} strokeWidth={1.5} /> Modifica
+          </button>
+          <button onClick={() => { setForm({ tono: strategy.tono || 'friendly', target: strategy.target || '', usp: strategy.usp || '', piattaforme: strategy.piattaforme || [], tipo_business: '' }); setMode('ai') }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #ddd', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontSize: 13, color: '#555' }}>
+            <RefreshCw size={13} strokeWidth={1.5} /> Rigenera AI
+          </button>
+        </div>
       </div>
 
       {/* Target + USP */}

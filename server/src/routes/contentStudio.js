@@ -115,6 +115,28 @@ Rispondi SOLO con JSON valido, senza testo aggiuntivo prima o dopo:
   } catch (e) { res.status(500).json({ error: e.message }) }
 })
 
+// PUT /api/content-studio/strategia — salva manualmente senza AI
+router.put('/strategia', requireAuth, async (req, res) => {
+  try {
+    const azienda_id = await getAziendaId(req.user.id)
+    const { pillar, voice_tips, hashtag_base, frequenza, mix, tono, target, usp, piattaforme } = req.body
+    const strategy = {
+      pillar: pillar || [],
+      voice_tips: voice_tips || [],
+      hashtag_base: hashtag_base || [],
+      frequenza: frequenza || {},
+      mix: mix || {},
+      tono: tono || 'friendly',
+      target: target || '',
+      usp: usp || '',
+      piattaforme: piattaforme || [],
+      generato_il: new Date().toISOString().split('T')[0],
+    }
+    await supabase.from('aziende').update({ content_strategy: strategy }).eq('id', azienda_id)
+    res.json({ strategy })
+  } catch (e) { res.status(500).json({ error: e.message }) }
+})
+
 // POST /api/content-studio/piano
 router.post('/piano', requireAuth, async (req, res) => {
   try {
