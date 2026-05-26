@@ -1219,6 +1219,91 @@ function OpportunitaTab({ nome }) {
   )
 }
 
+// ── Guida ─────────────────────────────────────────────────────────────────────
+
+const GUIDE_SECTIONS = [
+  {
+    k: 'strategia', Icon: Target, label: 'Strategia',
+    short: 'Il punto di partenza — definisce il tuo brand editoriale.',
+    body: 'Qui inserisci chi sei, chi è il tuo cliente ideale e cosa ti differenzia dalla concorrenza. L\'AI (o tu manualmente) genera i content pillar — 5 categorie di contenuto ricorrenti come "Behind the scenes", "Consigli", "Promozioni" — più il tono di voce, la frequenza di pubblicazione consigliata per ogni piattaforma e un set di hashtag base. Tutte le altre sezioni usano questa strategia come contesto per generare contenuti coerenti con il tuo brand.',
+  },
+  {
+    k: 'piano', Icon: Calendar, label: 'Piano Mensile',
+    short: 'Il calendario editoriale — 12–16 post già scritti per il mese.',
+    body: 'L\'AI legge la strategia e i dati reali del tuo business (eventi programmati, prodotti attivi, recensioni recenti) e crea un piano con post distribuiti nel mese, ognuno con giorno, piattaforma, pillar di riferimento, caption pronta e suggerimento fotografico. Puoi anche aggiungere post manualmente, rimuovere quelli che non ti convincono e salvare tutto come bozze nel Piano Editoriale, dove poi le pubblichi o le pianifichi.',
+  },
+  {
+    k: 'caption', Icon: Pen, label: 'Caption Studio',
+    short: 'Il generatore di caption — 3 varianti pronte per ogni post.',
+    body: 'Scegli la piattaforma, il content pillar e scrivi l\'argomento del post. L\'AI genera 3 varianti con stili diversi: diretta e informativa, narrativa e storytelling, orientata all\'engagement. Ogni piattaforma ha istruzioni specifiche — hook forte su Instagram, tono conversazionale su Facebook, autorevole su LinkedIn. Puoi anche scrivere la caption tu a mano e salvarla direttamente nel piano editoriale.',
+  },
+  {
+    k: 'opportunita', Icon: Zap, label: 'Opportunità',
+    short: 'Il suggeritore — trasforma i tuoi contenuti esistenti in post social.',
+    body: 'Analizza automaticamente i tuoi contenuti (eventi in arrivo, prodotti attivi, articoli di blog recenti) e ti mostra cosa potresti ancora promuovere sui social. Per ogni item puoi aprire l\'editor grafico: scegli il formato (feed, story, cover), il colore brand, scrivi o genera la caption con AI, scarica il PNG pronto da pubblicare e aggiungilo al piano editoriale. Puoi anche creare un post su un argomento libero, non legato ad alcun contenuto esistente.',
+  },
+]
+
+function GuideAccordion() {
+  const [open, setOpen] = useState(false)
+  const [openSection, setOpenSection] = useState(null)
+
+  return (
+    <div style={{ marginBottom: 24, border: '1px solid #e8e8f0', borderRadius: 12, overflow: 'hidden' }}>
+      {/* Header banner */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '13px 18px', background: open ? '#f5f5fb' : '#fafafa',
+          border: 'none', cursor: 'pointer', gap: 10,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <AlertCircle size={15} strokeWidth={1.5} color="#6b6b9e" />
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#444' }}>Come funziona Content Studio?</span>
+        </div>
+        <ChevronRight size={16} strokeWidth={1.5} color="#aaa"
+          style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+      </button>
+
+      {/* Accordion sections */}
+      {open && (
+        <div style={{ borderTop: '1px solid #eee' }}>
+          {GUIDE_SECTIONS.map(({ k, Icon, label, short, body }, i) => {
+            const isOpen = openSection === k
+            return (
+              <div key={k} style={{ borderBottom: i < GUIDE_SECTIONS.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
+                <button
+                  onClick={() => setOpenSection(isOpen ? null : k)}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '12px 18px', background: isOpen ? '#f9f9fd' : '#fff',
+                    border: 'none', cursor: 'pointer', textAlign: 'left',
+                  }}
+                >
+                  <Icon size={15} strokeWidth={1.5} color={isOpen ? '#1a1a2e' : '#aaa'} style={{ flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: isOpen ? '#1a1a2e' : '#555', marginBottom: 1 }}>{label}</div>
+                    {!isOpen && <div style={{ fontSize: 12, color: '#aaa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{short}</div>}
+                  </div>
+                  <ChevronRight size={14} strokeWidth={1.5} color="#ccc"
+                    style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }} />
+                </button>
+                {isOpen && (
+                  <div style={{ padding: '0 18px 16px 43px' }}>
+                    <p style={{ margin: 0, fontSize: 13, color: '#555', lineHeight: 1.7 }}>{body}</p>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function ContentStudioPage() {
@@ -1250,9 +1335,11 @@ export default function ContentStudioPage() {
         <Sparkles size={22} strokeWidth={1.5} color="#1a1a2e" />
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Content Studio</h1>
       </div>
-      <p style={{ color: '#888', fontSize: 14, marginBottom: 28, marginTop: 4 }}>
+      <p style={{ color: '#888', fontSize: 14, marginBottom: 20, marginTop: 4 }}>
         Strategia editoriale, piano mensile AI e caption generator — basati sui dati reali di {nome || 'questo business'}.
       </p>
+
+      <GuideAccordion />
 
       {/* Tab bar */}
       <div style={{ display: 'flex', gap: 2, marginBottom: 28, borderBottom: '2px solid #f0f0f0' }}>
