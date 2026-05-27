@@ -5,7 +5,14 @@ import { apiFetch } from '../../lib/api'
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate()
-  const [isRecovery, setIsRecovery]   = useState(false)
+  // Cattura il tipo di flusso dall'hash prima che Supabase lo rimuova
+  const [flowType] = useState(() => {
+    const h = window.location.hash
+    if (h.includes('type=invite'))   return 'invite'
+    if (h.includes('type=recovery')) return 'recovery'
+    return 'unknown'
+  })
+  const [isReady,     setIsReady]     = useState(false)
   const [invalidLink, setInvalidLink] = useState(false)
   const [password,    setPassword]    = useState('')
   const [confirm,     setConfirm]     = useState('')
@@ -15,29 +22,17 @@ export default function ResetPasswordPage() {
   const [showPwd,     setShowPwd]     = useState(false)
 
   useEffect(() => {
-    // Supabase intercetta automaticamente il token dall'URL (hash o code)
-    // e notifica tramite onAuthStateChange con evento PASSWORD_RECOVERY
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setIsRecovery(true)
-      }
+      if (event === 'PASSWORD_RECOVERY') setIsReady(true)
+      if (event === 'SIGNED_IN' && flowType === 'invite') setIsReady(true)
     })
 
-    // Se dopo 8 secondi non arriva PASSWORD_RECOVERY il link è invalido/scaduto
-    const timer = setTimeout(() => {
-      setInvalidLink(true)
-    }, 8000)
+    const timer = setTimeout(() => setInvalidLink(true), 8000)
 
-    return () => {
-      subscription.unsubscribe()
-      clearTimeout(timer)
-    }
-  }, [])
+    return () => { subscription.unsubscribe(); clearTimeout(timer) }
+  }, [flowType])
 
-  // Annulla il timer di invalidità se la recovery è arrivata prima
-  useEffect(() => {
-    if (isRecovery) setInvalidLink(false)
-  }, [isRecovery])
+  useEffect(() => { if (isReady) setInvalidLink(false) }, [isReady])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -71,7 +66,7 @@ export default function ResetPasswordPage() {
   }
 
   // ─── Stato: link scaduto o invalido ───────────────────────────────────────
-  if (invalidLink && !isRecovery) {
+  if (invalidLink && !isReady) {
     return (
       <div style={pageStyle}>
         <div style={cardStyle}>
@@ -102,7 +97,9 @@ export default function ResetPasswordPage() {
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
-          <p style={{ fontWeight: 700, fontSize: 16, color: '#1a1a2e', margin: '0 0 8px' }}>Password aggiornata!</p>
+          <p style={{ fontWeight: 700, fontSize: 16, color: '#1a1a2e', margin: '0 0 8px' }}>
+            {flowType === 'invite' ? 'Account attivato!' : 'Password aggiornata!'}
+          </p>
           <p style={{ fontSize: 14, color: '#666', margin: 0, lineHeight: 1.6 }}>
             Verrai reindirizzato al login tra pochi secondi…
           </p>
@@ -112,7 +109,7 @@ export default function ResetPasswordPage() {
   }
 
   // ─── Stato: loading (attesa token) ────────────────────────────────────────
-  if (!isRecovery) {
+  if (!isReady) {
     return (
       <div style={pageStyle}>
         <div style={cardStyle}>
@@ -127,7 +124,9 @@ export default function ResetPasswordPage() {
     <div style={pageStyle}>
       <div style={cardStyle}>
         <h1 style={{ marginTop: 0, marginBottom: 8, fontSize: 24, color: '#1a1a2e' }}>OltreNova</h1>
-        <p style={{ margin: '0 0 28px', color: '#666', fontSize: 14 }}>Scegli una nuova password</p>
+        <p style={{ margin: '0 0 28px', color: '#666', fontSize: 14 }}>
+          {flowType === 'invite' ? 'Crea la tua password per accedere al pannello' : 'Scegli una nuova password'}
+        </p>
 
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>

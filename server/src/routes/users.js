@@ -98,7 +98,7 @@ router.post('/invite', async (req, res) => {
     const { data, error: inviteErr } = await supabase.auth.admin.generateLink({
       type: 'invite',
       email: email.trim(),
-      options: { redirectTo: `${clientUrl}/admin` },
+      options: { redirectTo: `${clientUrl}/admin/reset-password` },
     })
     if (inviteErr) return res.status(400).json({ error: inviteErr.message })
 
