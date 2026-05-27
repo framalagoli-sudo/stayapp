@@ -164,10 +164,6 @@ export default function DashboardPage() {
   const navigate    = useNavigate()
   const { azienda, strutture, ristoranti, attivita, loading: aziLoading } = useAzienda()
 
-  if (profile?.role === 'staff') {
-    return <StaffDashboard profile={profile} navigate={navigate} strutture={strutture} ristoranti={ristoranti} attivita={attivita} />
-  }
-
   const [analytics,      setAnalytics]      = useState(null)
   const [requests,       setRequests]       = useState([])
   const [prenOggi,       setPrenOggi]       = useState([])
@@ -178,8 +174,13 @@ export default function DashboardPage() {
   const [loading,        setLoading]        = useState(true)
 
   useEffect(() => {
+    if (profile?.role === 'staff') return
     if (profile) load()
   }, [profile])  // eslint-disable-line
+
+  if (profile?.role === 'staff') {
+    return <StaffDashboard profile={profile} navigate={navigate} strutture={strutture} ristoranti={ristoranti} attivita={attivita} />
+  }
 
   async function load() {
     setLoading(true)
