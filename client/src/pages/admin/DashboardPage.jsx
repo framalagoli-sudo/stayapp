@@ -87,11 +87,86 @@ function Loading() {
   return <div style={{ color: '#ccc', fontSize: 14 }}>Caricamento…</div>
 }
 
+// ─── Staff dashboard (collaboratori) ─────────────────────────────────────────
+const STAFF_LINKS = [
+  { key: 'richieste',        label: 'Richieste',        icon: Inbox,        to: '/admin/requests',          color: '#1a1a2e' },
+  { key: 'prenotazioni',     label: 'Prenotazioni',     icon: CalendarCheck, to: '/admin/prenotazioni',     color: '#2563eb' },
+  { key: 'booking',          label: 'Booking',          icon: BedDouble,    to: '/admin/booking',           color: '#059669' },
+  { key: 'eventi',           label: 'Eventi',           icon: CalendarDays, to: '/admin/eventi',            color: '#d97706' },
+  { key: 'recensioni',       label: 'Recensioni',       icon: Star,         to: '/admin/recensioni',        color: '#f59e0b' },
+  { key: 'contatti',         label: 'Contatti',         icon: Users,        to: '/admin/contatti',          color: '#7c3aed' },
+  { key: 'newsletter',       label: 'Newsletter',       icon: Mail,         to: '/admin/newsletter',        color: '#db2777' },
+  { key: 'blog',             label: 'Blog & News',      icon: FileEdit,     to: '/admin/blog',              color: '#0891b2' },
+  { key: 'piano_editoriale', label: 'Piano Editoriale', icon: CalendarDays, to: '/admin/piano-editoriale',  color: '#6366f1' },
+  { key: 'analytics',        label: 'Analytics',        icon: Eye,          to: '/admin/analytics',         color: '#10b981' },
+]
+
+function StaffDashboard({ profile, navigate, strutture, ristoranti, attivita }) {
+  const perm = profile?.permissions || {}
+
+  const links = STAFF_LINKS.filter(l => perm[l.key])
+
+  // Entità Sito & App
+  if (perm.struttura) {
+    const ids = perm.struttura_ids?.length ? perm.struttura_ids : strutture?.map(s => s.id) || []
+    const targets = strutture?.filter(s => ids.includes(s.id)) || strutture || []
+    targets.forEach(s => links.push({ key: `s_${s.id}`, label: s.name, icon: Building2, to: `/admin/struttura/${s.id}/info`, color: '#1a1a2e' }))
+  }
+  if (perm.ristorante) {
+    const ids = perm.ristorante_ids?.length ? perm.ristorante_ids : ristoranti?.map(r => r.id) || []
+    const targets = ristoranti?.filter(r => ids.includes(r.id)) || ristoranti || []
+    targets.forEach(r => links.push({ key: `r_${r.id}`, label: r.name, icon: Store, to: `/admin/ristoranti/${r.id}/info`, color: '#e63946' }))
+  }
+  if (perm.attivita_gestione) {
+    const ids = perm.attivita_ids?.length ? perm.attivita_ids : attivita?.map(a => a.id) || []
+    const targets = attivita?.filter(a => ids.includes(a.id)) || attivita || []
+    targets.forEach(a => links.push({ key: `a_${a.id}`, label: a.name, icon: Zap, to: `/admin/attivita/${a.id}/info`, color: '#6b46c1' }))
+  }
+
+  return (
+    <div style={{ maxWidth: 720 }}>
+      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4, marginTop: 0 }}>
+        {greeting(profile?.full_name)}
+      </h1>
+      <p style={{ color: '#888', fontSize: 14, margin: '0 0 32px' }}>
+        Ecco le sezioni a cui hai accesso.
+      </p>
+
+      {links.length === 0 ? (
+        <div style={{ background: '#fff', borderRadius: 14, padding: 32, textAlign: 'center', color: '#aaa', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <Settings size={32} strokeWidth={1} style={{ marginBottom: 12, color: '#ddd' }} />
+          <p style={{ margin: 0, fontWeight: 600 }}>Nessuna sezione configurata</p>
+          <p style={{ margin: '6px 0 0', fontSize: 13 }}>Contatta l'amministratore per ricevere i permessi.</p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 14 }}>
+          {links.map(({ key, label, icon: Icon, to, color }) => (
+            <div
+              key={key}
+              onClick={() => navigate(to)}
+              style={{ background: '#fff', borderRadius: 14, padding: '20px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 12 }}
+            >
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Icon size={18} strokeWidth={1.8} color={color} />
+              </div>
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a2e', lineHeight: 1.3 }}>{label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { profile } = useAuth()
   const navigate    = useNavigate()
   const { azienda, strutture, ristoranti, attivita, loading: aziLoading } = useAzienda()
+
+  if (profile?.role === 'staff') {
+    return <StaffDashboard profile={profile} navigate={navigate} strutture={strutture} ristoranti={ristoranti} attivita={attivita} />
+  }
 
   const [analytics,      setAnalytics]      = useState(null)
   const [requests,       setRequests]       = useState([])

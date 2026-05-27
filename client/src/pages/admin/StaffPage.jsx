@@ -28,7 +28,7 @@ const PERM_ACCOUNT = [
   { key: 'analytics', label: 'Analytics' },
 ]
 
-const EMPTY_FORM = { email: '', full_name: '', permissions: {} }
+const EMPTY_FORM = { email: '', full_name: '', permissions: { attivita_gestione: true } }
 
 function EntitySelector({ label, entities, selectedIds, onChange }) {
   if (!entities?.length) return null
