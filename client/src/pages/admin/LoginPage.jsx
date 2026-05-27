@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [factorId, setFactorId] = useState(null)
   const [error, setError]       = useState(null)
   const [loading, setLoading]   = useState(false)
+  const [showPwd, setShowPwd]   = useState(false)
 
   async function handlePassword(e) {
     e.preventDefault()
@@ -55,9 +56,14 @@ export default function LoginPage() {
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
             <label style={{ ...labelStyle, marginBottom: 0 }}>Password</label>
-            <Link to="/admin/forgot-password" style={{ fontSize: 12, color: '#888', textDecoration: 'none' }}>Password dimenticata?</Link>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <button type="button" onClick={() => setShowPwd(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#888', padding: 0 }}>
+                {showPwd ? 'Nascondi' : 'Mostra'}
+              </button>
+              <Link to="/admin/forgot-password" style={{ fontSize: 12, color: '#888', textDecoration: 'none' }}>Password dimenticata?</Link>
+            </div>
           </div>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} required style={inputStyle} />
+          <input type={showPwd ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required style={inputStyle} />
 
           {error && <p style={errorStyle}>{error}</p>}
           <button type="submit" disabled={loading} style={buttonStyle}>{loading ? 'Accesso…' : 'Accedi'}</button>
