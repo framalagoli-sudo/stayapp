@@ -55,6 +55,16 @@ const FAQS = [
   { cat: 'account', q: 'I miei dati sono al sicuro?', a: 'Sì. I dati sono ospitati su Supabase (PostgreSQL) con backup notturni automatici su cloud geograficamente ridondante. La connessione è sempre HTTPS. I dati non vengono mai condivisi con terzi. Puoi richiedere l\'esportazione o la cancellazione in qualsiasi momento.' },
 ]
 
+// Quali categorie sono visibili per un dato ruolo/permessi
+function visibleCategories(role, perm) {
+  if (role !== 'staff') return CATEGORIES.map(c => c.key)
+  const cats = ['primi_passi', 'account']
+  if (perm.booking || perm.prenotazioni || perm.eventi) cats.push('booking')
+  if (perm.struttura || perm.ristorante || perm.attivita_gestione) cats.push('sito_app')
+  if (perm.newsletter || perm.contatti || perm.blog || perm.piano_editoriale || perm.automazioni || perm.content_studio) cats.push('marketing')
+  return cats
+}
+
 export default function HelpPage() {
   const { profile } = useAuth()
   const [search,     setSearch]     = useState('')
@@ -66,8 +76,13 @@ export default function HelpPage() {
   const [sent,       setSent]       = useState(false)
   const [sendError,  setSendError]  = useState(null)
 
+  const perm = profile?.permissions || {}
+  const allowedCats = visibleCategories(profile?.role, perm)
+  const visibleCats = CATEGORIES.filter(c => allowedCats.includes(c.key))
+
   const q = search.toLowerCase()
   const filtered = FAQS.filter(f =>
+    allowedCats.includes(f.cat) &&
     (!activecat || f.cat === activecat) &&
     (!q || f.q.toLowerCase().includes(q) || f.a.toLowerCase().includes(q))
   )
@@ -119,7 +134,7 @@ export default function HelpPage() {
       {/* ── Categorie ── */}
       {!search && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 10, marginBottom: 28 }}>
-          {CATEGORIES.map(({ key, label, icon: Icon, color }) => {
+          {visibleCats.map(({ key, label, icon: Icon, color }) => {
             const active = activecat === key
             return (
               <button
