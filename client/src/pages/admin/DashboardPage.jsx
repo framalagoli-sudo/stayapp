@@ -112,7 +112,9 @@ const STAFF_LINKS = [
 function StaffDashboard({ profile, navigate, strutture, ristoranti, attivita }) {
   const perm = profile?.permissions || {}
 
-  const links = STAFF_LINKS.filter(l => perm[l.key])
+  const links = [
+    ...STAFF_LINKS.filter(l => perm[l.key]),
+  ]
 
   // Entità Sito & App
   if (perm.struttura) {
@@ -130,6 +132,8 @@ function StaffDashboard({ profile, navigate, strutture, ristoranti, attivita }) 
     const targets = attivita?.filter(a => ids.includes(a.id)) || attivita || []
     targets.forEach(a => links.push({ key: `a_${a.id}`, label: a.name, icon: Zap, to: `/admin/attivita/${a.id}/info`, color: '#6b46c1' }))
   }
+
+  links.push({ key: 'help', label: 'Aiuto', icon: HelpCircle, to: '/admin/help', color: '#64748b' })
 
   return (
     <div style={{ maxWidth: 720 }}>
