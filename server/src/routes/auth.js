@@ -5,6 +5,57 @@ import { requireAuth } from '../middleware/auth.js'
 
 const router = Router()
 
+// POST /api/auth/forgot-password — genera link recovery e invia via Resend
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body
+  if (!email?.trim()) return res.status(400).json({ error: 'Email obbligatoria' })
+
+  try {
+    const clientUrl = process.env.CLIENT_URL || 'https://www.oltrenova.com'
+
+    const { data, error } = await supabase.auth.admin.generateLink({
+      type: 'recovery',
+      email: email.trim().toLowerCase(),
+      options: { redirectTo: `${clientUrl}/admin/reset-password` },
+    })
+    if (error) return res.status(400).json({ error: error.message })
+
+    const resetLink = data?.properties?.action_link
+    if (!resetLink) return res.status(500).json({ error: 'Impossibile generare il link di ripristino' })
+
+    if (process.env.RESEND_API_KEY) {
+      await new Resend(process.env.RESEND_API_KEY).emails.send({
+        from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
+        to: email.trim().toLowerCase(),
+        subject: 'Ripristino password OltreNova',
+        html: `
+          <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a2e">
+            <h2 style="margin-top:0;margin-bottom:8px;font-size:22px">Ripristino password</h2>
+            <p style="color:#666;margin-top:0;margin-bottom:24px;line-height:1.6">
+              Hai richiesto di reimpostare la password del tuo account OltreNova.<br>
+              Clicca il pulsante qui sotto per scegliere una nuova password.
+            </p>
+            <div style="margin:28px 0">
+              <a href="${resetLink}"
+                 style="display:inline-block;padding:13px 28px;background:#1a1a2e;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">
+                Scegli nuova password →
+              </a>
+            </div>
+            <p style="color:#999;font-size:13px;line-height:1.6">
+              Il link è valido per <strong>1 ora</strong> e può essere usato una sola volta.<br>
+              Se non hai richiesto il ripristino, ignora questa email — il tuo account è al sicuro.
+            </p>
+            <hr style="border:none;border-top:1px solid #eee;margin:24px 0">
+            <p style="color:#bbb;font-size:12px;margin:0">OltreNova · noreply@oltrenova.com</p>
+          </div>
+        `,
+      })
+    }
+
+    res.json({ ok: true })
+  } catch (e) { res.status(500).json({ error: e.message }) }
+})
+
 // GET /api/auth/me
 router.get('/me', requireAuth, async (req, res) => {
   const { data, error } = await supabase

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
+import { apiFetch } from '../../lib/api'
 
 export default function ForgotPasswordPage() {
   const [email,   setEmail]   = useState('')
@@ -13,10 +13,10 @@ export default function ForgotPasswordPage() {
     setError(null)
     setLoading(true)
     try {
-      const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/admin/reset-password`,
+      await apiFetch('/api/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email: email.trim() }),
       })
-      if (err) throw err
       setSent(true)
     } catch (err) {
       setError('Impossibile inviare l\'email. Verifica l\'indirizzo e riprova.')
