@@ -12,6 +12,7 @@ export default function ResetPasswordPage() {
   const [loading,     setLoading]     = useState(false)
   const [done,        setDone]        = useState(false)
   const [error,       setError]       = useState(null)
+  const [showPwd,     setShowPwd]     = useState(false)
 
   useEffect(() => {
     // Supabase intercetta automaticamente il token dall'URL (hash o code)
@@ -129,9 +130,15 @@ export default function ResetPasswordPage() {
         <p style={{ margin: '0 0 28px', color: '#666', fontSize: 14 }}>Scegli una nuova password</p>
 
         <form onSubmit={handleSubmit}>
-          <label style={labelStyle}>Nuova password</label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+            <label style={labelStyle}>Nuova password</label>
+            <button type="button" onClick={() => setShowPwd(v => !v)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#888', padding: 0 }}>
+              {showPwd ? 'Nascondi' : 'Mostra'}
+            </button>
+          </div>
           <input
-            type="password"
+            type={showPwd ? 'text' : 'password'}
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
@@ -142,7 +149,7 @@ export default function ResetPasswordPage() {
 
           <label style={labelStyle}>Conferma password</label>
           <input
-            type="password"
+            type={showPwd ? 'text' : 'password'}
             value={confirm}
             onChange={e => setConfirm(e.target.value)}
             required
