@@ -1,8 +1,8 @@
-import { useState, useEffect, useContext } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { useProperty } from '../../hooks/useProperty'
-import { AuthContext } from '../../context/AuthContext'
+import { useAuth } from '../../context/AuthContext'
 import {
   Save, Trash2, ArrowLeft, Calendar, AlertCircle, Sparkles, X,
   RefreshCw, Copy, Eye, Image, Search, Clock, Tag, CheckCircle,
@@ -68,7 +68,7 @@ export default function PostEditorialePage() {
   const [searchParams] = useSearchParams()
   const isNew = id === 'nuovo'
   const { property } = useProperty()
-  const { profile } = useContext(AuthContext)
+  const { profile } = useAuth()
   const isStaff = profile?.role === 'staff'
 
   const [loading, setLoading] = useState(!isNew)
