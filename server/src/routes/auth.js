@@ -66,7 +66,7 @@ router.post('/reset-password', async (req, res) => {
     const { data: { user }, error: userErr } = await supabase.auth.getUser(access_token)
     if (userErr || !user) return res.status(401).json({ error: 'Token non valido o scaduto' })
 
-    const { error: updateErr } = await supabase.auth.admin.updateUserById(user.id, { password })
+    const { error: updateErr } = await supabase.auth.admin.updateUserById(user.id, { password, email_confirm: true })
     if (updateErr) return res.status(500).json({ error: updateErr.message })
 
     res.json({ ok: true })
