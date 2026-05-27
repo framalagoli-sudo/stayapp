@@ -280,6 +280,35 @@ Rispondi ESCLUSIVAMENTE con un oggetto JSON con questa struttura (nessun testo p
   }
 })
 
+// GET /api/ai/unsplash?q=estate+spiaggia&n=12
+// Cerca foto su Unsplash per query libera — richiede UNSPLASH_ACCESS_KEY su Railway
+router.get('/unsplash', requireAuth, async (req, res) => {
+  const key = process.env.UNSPLASH_ACCESS_KEY
+  if (!key) return res.status(503).json({ error: 'UNSPLASH_ACCESS_KEY non configurata su Railway' })
+  const q = (req.query.q || '').trim().slice(0, 100)
+  if (!q) return res.status(400).json({ error: 'Parametro q obbligatorio' })
+  const n = Math.min(parseInt(req.query.n || '12', 10), 30)
+  try {
+    const r = await fetch(
+      `https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&per_page=${n}&orientation=landscape`,
+      { headers: { Authorization: `Client-ID ${key}` } }
+    )
+    if (!r.ok) return res.status(502).json({ error: 'Unsplash non disponibile' })
+    const body = await r.json()
+    const photos = (body.results || []).map(p => ({
+      id:     p.id,
+      url:    p.urls.regular,
+      thumb:  p.urls.small,
+      alt:    p.alt_description || '',
+      author: p.user.name,
+      link:   p.links.html,
+    }))
+    res.json(photos)
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
 // GET /api/ai/usage
 router.get('/usage', requireAuth, async (req, res) => {
   try {
