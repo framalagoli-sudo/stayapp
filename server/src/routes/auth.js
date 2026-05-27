@@ -77,7 +77,7 @@ router.post('/reset-password', async (req, res) => {
 router.get('/me', requireAuth, async (req, res) => {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, role, full_name, property_id, group_id')
+    .select('id, role, full_name, property_id, group_id, azienda_id, permissions')
     .eq('id', req.user.id)
     .single()
 
