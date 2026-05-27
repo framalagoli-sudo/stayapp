@@ -216,8 +216,6 @@ export default function PostEditorialePage() {
   if (loading) return <p style={{ color: '#888' }}>Caricamento…</p>
 
   const stati = isStaff ? STATI_STAFF : TUTTI_STATI
-  const charsLeft = 280 - testo.length // X è il limite più stretto tra quelli comuni
-
   return (
     <div style={{ maxWidth: 720 }}>
       {/* Header */}

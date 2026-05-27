@@ -24,7 +24,7 @@ router.get('/', requireAuth, async (req, res) => {
       .order('data_pianificata', { ascending: true, nullsFirst: false })
 
     if (req.query.stato) q = q.eq('stato', req.query.stato)
-    if (req.query.label) q = q.contains('labels', [req.query.label])
+    if (req.query.label) q = q.contains('labels', [String(req.query.label).toLowerCase().trim()])
 
     if (req.query.senza_data) {
       q = q.is('data_pianificata', null)
@@ -173,7 +173,7 @@ router.post('/', requireAuth, async (req, res) => {
         data_pianificata: data_pianificata || null,
         stato:           stato_safe,
         note:            note || '',
-        labels:          Array.isArray(labels) ? labels : [],
+        labels:          Array.isArray(labels) ? labels.map(l => String(l).trim().toLowerCase().replace(/[^a-z0-9_àèìòù-]/g, '').slice(0, 50)).filter(Boolean) : [],
         pillar:          pillar || '',
       })
       .select()
@@ -228,6 +228,11 @@ router.patch('/:id', requireAuth, async (req, res) => {
     const patch = { updated_at: new Date().toISOString() }
     for (const k of allowed) if (k in req.body) patch[k] = req.body[k]
     if (patch.stato !== undefined && !ALLOWED_STATO.has(patch.stato)) delete patch.stato
+    if (patch.labels !== undefined) {
+      patch.labels = Array.isArray(patch.labels)
+        ? patch.labels.map(l => String(l).trim().toLowerCase().replace(/[^a-z0-9_àèìòù-]/g, '').slice(0, 50)).filter(Boolean)
+        : []
+    }
 
     const { data, error } = await supabase
       .from('piano_editoriale')

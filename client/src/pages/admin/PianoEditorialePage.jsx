@@ -94,7 +94,7 @@ function PreviewModal({ post, onClose, onClone }) {
           <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: stInfo.bg, color: stInfo.color }}>{stInfo.label}</span>
           {post.data_pianificata && (
             <span style={{ fontSize: 12, color: '#888' }}>
-              {new Date(post.data_pianificata + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
+              {new Date(post.data_pianificata.slice(0, 10) + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
             </span>
           )}
         </div>

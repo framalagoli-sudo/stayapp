@@ -10,3 +10,6 @@ ALTER TABLE public.piano_editoriale
 ALTER TABLE public.piano_editoriale
   ADD CONSTRAINT piano_editoriale_stato_check
   CHECK (stato IN ('bozza', 'pianificato', 'in_revisione', 'pubblicato'));
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.piano_editoriale TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.piano_editoriale TO service_role;
