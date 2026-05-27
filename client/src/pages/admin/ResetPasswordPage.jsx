@@ -21,13 +21,10 @@ export default function ResetPasswordPage() {
       }
     })
 
-    // Se dopo 4 secondi non arriva PASSWORD_RECOVERY il link è invalido/scaduto
+    // Se dopo 8 secondi non arriva PASSWORD_RECOVERY il link è invalido/scaduto
     const timer = setTimeout(() => {
-      setInvalidLink(prev => {
-        // Se isRecovery è già true (impostato nel listener), non mostrare errore
-        return true
-      })
-    }, 4000)
+      setInvalidLink(true)
+    }, 8000)
 
     return () => {
       subscription.unsubscribe()
@@ -44,25 +41,26 @@ export default function ResetPasswordPage() {
     e.preventDefault()
     setError(null)
 
-    if (password.length < 8) {
-      return setError('La password deve avere almeno 8 caratteri.')
-    }
-    if (password !== confirm) {
-      return setError('Le password non coincidono.')
-    }
+    if (password.length < 8) return setError('La password deve avere almeno 8 caratteri.')
+    if (password !== confirm) return setError('Le password non coincidono.')
 
     setLoading(true)
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        setError('Sessione scaduta — richiedi un nuovo link di ripristino.')
+        setLoading(false)
+        return
+      }
       const { error: err } = await supabase.auth.updateUser({ password })
       if (err) throw err
       setDone(true)
-      // Logout e redirect al login dopo 3 secondi
       setTimeout(async () => {
         await supabase.auth.signOut()
         navigate('/admin/login')
       }, 3000)
     } catch (err) {
-      setError('Impossibile aggiornare la password. Richiedi un nuovo link.')
+      setError(err.message || 'Impossibile aggiornare la password. Richiedi un nuovo link.')
     } finally {
       setLoading(false)
     }
