@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { Resend } from 'resend'
 import { supabase } from '../lib/supabase.js'
 import { requireAuth } from '../middleware/auth.js'
 
@@ -92,14 +93,19 @@ router.post('/invite', async (req, res) => {
   if (!azienda_id) return res.status(400).json({ error: 'azienda_id obbligatorio' })
 
   try {
-    const redirectTo = `${process.env.CLIENT_URL || 'http://localhost:5173'}/admin`
-    const { data, error: inviteErr } = await supabase.auth.admin.inviteUserByEmail(email.trim(), {
-      data: { full_name: full_name?.trim() || '' },
-      redirectTo,
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173'
+
+    const { data, error: inviteErr } = await supabase.auth.admin.generateLink({
+      type: 'invite',
+      email: email.trim(),
+      options: { redirectTo: `${clientUrl}/admin` },
     })
     if (inviteErr) return res.status(400).json({ error: inviteErr.message })
 
-    // Upsert profilo — gestisce sia il caso trigger già eseguito sia quello non ancora eseguito
+    const inviteLink = data?.properties?.action_link
+    if (!inviteLink) return res.status(500).json({ error: 'Impossibile generare il link di invito' })
+
+    // Upsert profilo
     await new Promise(r => setTimeout(r, 400))
     await supabase.from('profiles').upsert({
       id: data.user.id,
@@ -108,6 +114,38 @@ router.post('/invite', async (req, res) => {
       full_name: full_name?.trim() || '',
       permissions,
     }, { onConflict: 'id' })
+
+    // Invia email via Resend
+    if (process.env.RESEND_API_KEY) {
+      const nome = full_name?.trim() || email.trim()
+      new Resend(process.env.RESEND_API_KEY).emails.send({
+        from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
+        to: email.trim(),
+        subject: 'Sei stato invitato su OltreNova',
+        html: `
+          <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a2e">
+            <h2 style="margin-top:0;margin-bottom:8px;font-size:22px">Benvenuto su OltreNova</h2>
+            <p style="color:#666;margin-top:0;margin-bottom:24px;line-height:1.6">
+              Ciao <strong>${nome}</strong>,<br>
+              sei stato invitato a collaborare sul pannello OltreNova.<br>
+              Clicca il pulsante qui sotto per impostare la tua password e accedere.
+            </p>
+            <div style="margin:28px 0">
+              <a href="${inviteLink}"
+                 style="display:inline-block;padding:13px 28px;background:#1a1a2e;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">
+                Accetta invito →
+              </a>
+            </div>
+            <p style="color:#999;font-size:13px;line-height:1.6">
+              Il link è valido per <strong>24 ore</strong>.<br>
+              Se non ti aspettavi questo invito, puoi ignorare questa email.
+            </p>
+            <hr style="border:none;border-top:1px solid #eee;margin:24px 0">
+            <p style="color:#bbb;font-size:12px;margin:0">OltreNova · noreply@oltrenova.com</p>
+          </div>
+        `,
+      }).catch(() => {})
+    }
 
     res.status(201).json({
       id: data.user.id, email: data.user.email, role: 'staff',
