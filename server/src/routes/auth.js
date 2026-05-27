@@ -56,6 +56,23 @@ router.post('/forgot-password', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }) }
 })
 
+// POST /api/auth/reset-password — aggiorna password server-side (bypassa AAL2 per recovery)
+router.post('/reset-password', async (req, res) => {
+  const { password, access_token } = req.body
+  if (!password || !access_token) return res.status(400).json({ error: 'Dati mancanti' })
+  if (password.length < 8) return res.status(400).json({ error: 'Password minimo 8 caratteri' })
+
+  try {
+    const { data: { user }, error: userErr } = await supabase.auth.getUser(access_token)
+    if (userErr || !user) return res.status(401).json({ error: 'Token non valido o scaduto' })
+
+    const { error: updateErr } = await supabase.auth.admin.updateUserById(user.id, { password })
+    if (updateErr) return res.status(500).json({ error: updateErr.message })
+
+    res.json({ ok: true })
+  } catch (e) { res.status(500).json({ error: e.message }) }
+})
+
 // GET /api/auth/me
 router.get('/me', requireAuth, async (req, res) => {
   const { data, error } = await supabase

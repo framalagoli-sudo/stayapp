@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { apiFetch } from '../../lib/api'
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate()
@@ -47,13 +48,15 @@ export default function ResetPasswordPage() {
     setLoading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
+      if (!session?.access_token) {
         setError('Sessione scaduta — richiedi un nuovo link di ripristino.')
         setLoading(false)
         return
       }
-      const { error: err } = await supabase.auth.updateUser({ password })
-      if (err) throw err
+      await apiFetch('/api/auth/reset-password', {
+        method: 'POST',
+        body: JSON.stringify({ password, access_token: session.access_token }),
+      })
       setDone(true)
       setTimeout(async () => {
         await supabase.auth.signOut()
