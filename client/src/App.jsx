@@ -105,6 +105,7 @@ import ContentStudioPage from './pages/admin/ContentStudioPage'
 import SurveyPage from './pages/admin/SurveyPage'
 import SurveyPublicPage from './pages/public/SurveyPublicPage'
 import LoyaltyPage from './pages/admin/LoyaltyPage'
+import HelpPage from './pages/admin/HelpPage'
 
 // Injects property ID from URL params into PropertyIdContext
 // so all property sub-pages work without modification
@@ -242,6 +243,7 @@ export default function App() {
             <Route path="shop/:id" element={<ProdottoEditorPage />} />
             <Route path="shop/ordini/:id" element={<OrdineDetailPage />} />
             <Route path="loyalty" element={<LoyaltyPage />} />
+            <Route path="help"    element={<HelpPage />} />
             <Route path="content-studio" element={<ContentStudioPage />} />
             <Route path="survey" element={<SurveyPage />} />
             <Route path="qrcode"       element={<QRCodePage />} />

@@ -10,7 +10,7 @@ import {
   QrCode, UserCheck, ClipboardList, LogOut,
   Building, Building2, Store, Zap, Webhook, BotMessageSquare, Star, Settings,
   Info, Layers, Wrench, Image, Palette, MapPin, Globe, Lock, Bot, UtensilsCrossed,
-  FormInput, ShoppingBag, Sparkles, BarChart3, Gift, SearchCheck,
+  FormInput, ShoppingBag, Sparkles, BarChart3, Gift, SearchCheck, LifeBuoy,
 } from 'lucide-react'
 
 // ─── Nav definitions ──────────────────────────────────────────────────────────
@@ -392,6 +392,7 @@ export default function AdminLayout() {
             <NavItem to="/admin/audit-log"    icon={ClipboardList} label="Audit log" />
             <NavItem to="/admin/impostazioni" icon={Settings}      label="Impostazioni" />
             <NavItem to="/admin/security"     icon={Shield}        label="Sicurezza" />
+            <NavItem to="/admin/help"         icon={LifeBuoy}      label="Aiuto" />
 
             <Divider />
             <SectionHeader label="Piattaforma" />
@@ -444,6 +445,7 @@ export default function AdminLayout() {
             <NavItem to="/admin/staff"        icon={UserCheck}  label="Collaboratori" />
             <NavItem to="/admin/integrazioni" icon={Webhook}    label="Integrazioni" />
             <NavItem to="/admin/security"     icon={Shield}     label="Sicurezza" />
+            <NavItem to="/admin/help"         icon={LifeBuoy}   label="Aiuto" />
           </>
         )}
 
@@ -491,7 +493,8 @@ export default function AdminLayout() {
             <Divider />
             <SectionHeader label="Account" />
             {perm.analytics && <NavItem to="/admin/analytics" icon={BarChart2} label="Analytics" />}
-            <NavItem to="/admin/security" icon={Shield} label="Sicurezza" />
+            <NavItem to="/admin/security" icon={Shield}    label="Sicurezza" />
+            <NavItem to="/admin/help"     icon={LifeBuoy}  label="Aiuto" />
           </>
         )}
 

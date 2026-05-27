@@ -46,6 +46,7 @@ import contentStudioRouter from './routes/contentStudio.js'
 import surveyRouter from './routes/survey.js'
 import googleCalendarRouter from './routes/googleCalendar.js'
 import loyaltyRouter from './routes/loyalty.js'
+import helpRouter from './routes/help.js'
 import blogAutomazioniRouter from './routes/blogAutomazioni.js'
 import landingSeoRouter from './routes/landing_seo.js'
 import { runBlogScheduler } from './lib/blogScheduler.js'
@@ -163,6 +164,7 @@ app.use('/api/content-studio',   contentStudioRouter)
 app.use('/api/survey',           surveyRouter)
 app.use('/api/google-calendar',  googleCalendarRouter)
 app.use('/api/loyalty',          loyaltyRouter)
+app.use('/api/help',             helpRouter)
 app.use('/api/blog-automazioni', adminLimiter, blogAutomazioniRouter)
 app.use('/api/landing-seo',     landingSeoRouter)
 
