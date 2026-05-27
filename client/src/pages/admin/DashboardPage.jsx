@@ -10,6 +10,7 @@ import {
   Phone, Wrench, Sparkles, HelpCircle,
   Clock, Mail, Globe, UserRound, BedDouble,
   Star, CalendarDays, FileEdit,
+  Repeat, Layers, FileText, LayoutList, ShoppingBag, Award, ClipboardList,
 } from 'lucide-react'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -89,16 +90,23 @@ function Loading() {
 
 // ─── Staff dashboard (collaboratori) ─────────────────────────────────────────
 const STAFF_LINKS = [
-  { key: 'richieste',        label: 'Richieste',        icon: Inbox,        to: '/admin/requests',          color: '#1a1a2e' },
-  { key: 'prenotazioni',     label: 'Prenotazioni',     icon: CalendarCheck, to: '/admin/prenotazioni',     color: '#2563eb' },
-  { key: 'booking',          label: 'Booking',          icon: BedDouble,    to: '/admin/booking',           color: '#059669' },
-  { key: 'eventi',           label: 'Eventi',           icon: CalendarDays, to: '/admin/eventi',            color: '#d97706' },
-  { key: 'recensioni',       label: 'Recensioni',       icon: Star,         to: '/admin/recensioni',        color: '#f59e0b' },
-  { key: 'contatti',         label: 'Contatti',         icon: Users,        to: '/admin/contatti',          color: '#7c3aed' },
-  { key: 'newsletter',       label: 'Newsletter',       icon: Mail,         to: '/admin/newsletter',        color: '#db2777' },
-  { key: 'blog',             label: 'Blog & News',      icon: FileEdit,     to: '/admin/blog',              color: '#0891b2' },
-  { key: 'piano_editoriale', label: 'Piano Editoriale', icon: CalendarDays, to: '/admin/piano-editoriale',  color: '#6366f1' },
-  { key: 'analytics',        label: 'Analytics',        icon: Eye,          to: '/admin/analytics',         color: '#10b981' },
+  { key: 'richieste',        label: 'Richieste',        icon: Inbox,         to: '/admin/requests',          color: '#1a1a2e' },
+  { key: 'prenotazioni',     label: 'Prenotazioni',     icon: CalendarCheck, to: '/admin/prenotazioni',      color: '#2563eb' },
+  { key: 'booking',          label: 'Booking',          icon: BedDouble,     to: '/admin/booking',           color: '#059669' },
+  { key: 'eventi',           label: 'Eventi',           icon: CalendarDays,  to: '/admin/eventi',            color: '#d97706' },
+  { key: 'recensioni',       label: 'Recensioni',       icon: Star,          to: '/admin/recensioni',        color: '#f59e0b' },
+  { key: 'survey',           label: 'Survey & NPS',     icon: ClipboardList, to: '/admin/survey',            color: '#06b6d4' },
+  { key: 'contatti',         label: 'Contatti',         icon: Users,         to: '/admin/contatti',          color: '#7c3aed' },
+  { key: 'newsletter',       label: 'Newsletter',       icon: Mail,          to: '/admin/newsletter',        color: '#db2777' },
+  { key: 'blog',             label: 'Blog & News',      icon: FileEdit,      to: '/admin/blog',              color: '#0891b2' },
+  { key: 'automazioni',      label: 'Automazioni',      icon: Repeat,        to: '/admin/automazioni',       color: '#64748b' },
+  { key: 'piano_editoriale', label: 'Piano Editoriale', icon: CalendarDays,  to: '/admin/piano-editoriale',  color: '#6366f1' },
+  { key: 'content_studio',   label: 'Content Studio',   icon: Layers,        to: '/admin/content-studio',    color: '#8b5cf6' },
+  { key: 'preventivi',       label: 'Preventivi',       icon: FileText,      to: '/admin/preventivi',        color: '#0369a1' },
+  { key: 'form_builder',     label: 'Form Builder',     icon: LayoutList,    to: '/admin/form-builder',      color: '#0d9488' },
+  { key: 'shop',             label: 'Shop',             icon: ShoppingBag,   to: '/admin/shop',              color: '#b45309' },
+  { key: 'loyalty',          label: 'Loyalty',          icon: Award,         to: '/admin/loyalty',           color: '#c026d3' },
+  { key: 'analytics',        label: 'Analytics',        icon: Eye,           to: '/admin/analytics',         color: '#10b981' },
 ]
 
 function StaffDashboard({ profile, navigate, strutture, ristoranti, attivita }) {
