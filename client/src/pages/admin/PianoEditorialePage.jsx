@@ -3,8 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import {
   Calendar, Plus, ChevronLeft, ChevronRight, AlertCircle, Trash2,
-  Lightbulb, X, Send, GripVertical, Eye, Pencil, Copy, User,
+  Lightbulb, X, Send, GripVertical, Eye, Pencil, Copy, User, Layers, ExternalLink,
 } from 'lucide-react'
+
+function toEmbedUrl(url) {
+  if (!url) return url
+  if (url.includes('canva.com/design') && !url.includes('embed')) {
+    return url.includes('?') ? `${url}&embed` : `${url}?embed`
+  }
+  return url
+}
 
 const CANALI_INFO = {
   instagram:       { label: 'Instagram',       color: '#e1306c', bg: '#fce8ef' },
@@ -82,6 +90,7 @@ function PillarBadge({ pillar }) {
 }
 
 function PreviewModal({ post, onClose, onClone }) {
+  const [showDesign, setShowDesign] = useState(false)
   if (!post) return null
   const stInfo = STATO_INFO[post.stato] || STATO_INFO.bozza
   return (
@@ -129,15 +138,54 @@ function PreviewModal({ post, onClose, onClone }) {
             )}
           </div>
         )}
-        <div style={{ borderTop: '1px solid #f5f5f5', paddingTop: 14, display: 'flex', gap: 8 }}>
+        <div style={{ borderTop: '1px solid #f5f5f5', paddingTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button
             onClick={onClone}
             style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: '#f5f5f5', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#555' }}
           >
             <Copy size={13} strokeWidth={1.5} /> Duplica
           </button>
+          {post.design_url && (
+            <button
+              onClick={() => setShowDesign(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: '#f0f0ff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#6366f1' }}
+            >
+              <Layers size={13} strokeWidth={1.5} /> Anteprima design
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Modal iframe design */}
+      {showDesign && post.design_url && (
+        <div onClick={() => setShowDesign(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '92vw', height: '92vh', background: '#1a1a2e', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: '#1a1a2e', flexShrink: 0 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Layers size={14} strokeWidth={1.5} color="#a5b4fc" />
+                {post.titolo || 'Anteprima design'}
+              </span>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <a
+                  href={post.design_url} target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', background: 'rgba(255,255,255,0.1)', color: '#fff', borderRadius: 8, fontSize: 12, textDecoration: 'none', fontWeight: 600 }}
+                >
+                  <ExternalLink size={12} strokeWidth={2} /> Apri in nuova tab
+                </a>
+                <button onClick={() => setShowDesign(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', display: 'flex' }}>
+                  <X size={18} strokeWidth={1.5} />
+                </button>
+              </div>
+            </div>
+            <iframe
+              src={toEmbedUrl(post.design_url)}
+              style={{ flex: 1, border: 'none', width: '100%', background: '#fff' }}
+              allowFullScreen
+              title="Anteprima design"
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

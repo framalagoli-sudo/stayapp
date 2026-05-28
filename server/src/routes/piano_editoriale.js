@@ -165,7 +165,7 @@ router.post('/', requireAuth, async (req, res) => {
     const azienda_id = profile.azienda_id
     if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
 
-    const { titolo, testo, immagine_url, canali, data_pianificata, stato, note, labels, pillar } = req.body
+    const { titolo, testo, immagine_url, canali, data_pianificata, stato, note, labels, pillar, design_url } = req.body
     const stato_safe = ALLOWED_STATO.has(stato) ? stato : 'bozza'
     const authorName = profile.full_name || 'Utente'
 
@@ -182,6 +182,7 @@ router.post('/', requireAuth, async (req, res) => {
         note:            note || '',
         labels:          Array.isArray(labels) ? labels.map(l => String(l).trim().toLowerCase().replace(/[^a-z0-9_àèìòù-]/g, '').slice(0, 50)).filter(Boolean) : [],
         pillar:          pillar || '',
+        design_url:      design_url || '',
         created_by:      req.user.id,
         created_by_name: authorName,
         updated_by:      req.user.id,
@@ -221,6 +222,7 @@ router.post('/:id/duplica', requireAuth, async (req, res) => {
         note:            orig.note || '',
         labels:          orig.labels || [],
         pillar:          orig.pillar || '',
+        design_url:      orig.design_url || '',
       })
       .select()
       .single()
@@ -236,7 +238,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
     const azienda_id = profile.azienda_id
     if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
 
-    const allowed = ['titolo', 'testo', 'immagine_url', 'canali', 'data_pianificata', 'stato', 'note', 'labels', 'pillar']
+    const allowed = ['titolo', 'testo', 'immagine_url', 'canali', 'data_pianificata', 'stato', 'note', 'labels', 'pillar', 'design_url']
     const patch = {
       updated_at:      new Date().toISOString(),
       updated_by:      req.user.id,

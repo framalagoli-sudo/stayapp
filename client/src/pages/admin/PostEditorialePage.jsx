@@ -5,8 +5,17 @@ import { useProperty } from '../../hooks/useProperty'
 import { useAuth } from '../../context/AuthContext'
 import {
   Save, Trash2, ArrowLeft, Calendar, AlertCircle, Sparkles, X,
-  RefreshCw, Copy, Eye, Image, Search, Clock, Tag, CheckCircle, User,
+  RefreshCw, Copy, Eye, Image, Search, Clock, Tag, CheckCircle, User, Layers, ExternalLink,
 } from 'lucide-react'
+
+function toEmbedUrl(url) {
+  if (!url) return url
+  // Canva: aggiunge ?embed se non già presente
+  if (url.includes('canva.com/design') && !url.includes('embed')) {
+    return url.includes('?') ? `${url}&embed` : `${url}?embed`
+  }
+  return url
+}
 
 const CANALI = [
   { key: 'instagram',       label: 'Instagram',       color: '#e1306c' },
@@ -85,6 +94,7 @@ export default function PostEditorialePage() {
   const [stato, setStato]           = useState('bozza')
   const [note, setNote]             = useState('')
   const [immagineUrl, setImmagine]  = useState('')
+  const [designUrl, setDesignUrl]   = useState('')
   const [pillar, setPillar]         = useState('')
   const [labels, setLabels]         = useState([])
   const [createdByName, setCreatedByName] = useState('')
@@ -105,7 +115,9 @@ export default function PostEditorialePage() {
   const [aiUsage, setAiUsage]             = useState(null)
 
   // Anteprima canale
-  const [showPreview, setShowPreview]     = useState(false)
+  const [showPreview, setShowPreview]         = useState(false)
+  // Anteprima design (Canva/Figma)
+  const [showDesignPreview, setShowDesignPreview] = useState(false)
 
   // Ricerca foto Unsplash
   const [showPhotos, setShowPhotos]       = useState(false)
@@ -124,6 +136,7 @@ export default function PostEditorialePage() {
         setStato(p.stato || 'bozza')
         setNote(p.note || '')
         setImmagine(p.immagine_url || '')
+        setDesignUrl(p.design_url || '')
         setPillar(p.pillar || '')
         setLabels(p.labels || [])
         setCreatedByName(p.created_by_name || '')
@@ -161,7 +174,7 @@ export default function PostEditorialePage() {
 
   async function save() {
     setSaving(true); setError(''); setSaved(false)
-    const body = { titolo, testo, canali, data_pianificata: buildDataPianificata(), stato, note, immagine_url: immagineUrl, labels, pillar }
+    const body = { titolo, testo, canali, data_pianificata: buildDataPianificata(), stato, note, immagine_url: immagineUrl, labels, pillar, design_url: designUrl }
     try {
       if (isNew) {
         const created = await apiFetch('/api/piano-editoriale', { method: 'POST', body: JSON.stringify(body) })
@@ -415,6 +428,37 @@ export default function PostEditorialePage() {
           )}
         </div>
 
+        {/* Design URL */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <label style={{ fontSize: 12, color: '#888', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <Layers size={11} strokeWidth={2} /> Link design (Canva, Figma, Adobe…)
+            </label>
+            {designUrl && (
+              <button
+                type="button"
+                onClick={() => setShowDesignPreview(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: '#f0f0ff', color: '#6366f1', border: 'none', borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+              >
+                <Eye size={11} strokeWidth={2} /> Apri anteprima
+              </button>
+            )}
+          </div>
+          <input
+            value={designUrl} onChange={e => setDesignUrl(e.target.value)}
+            placeholder="Incolla l'embed URL (Canva: Share → Embed → copia src)"
+            style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 12px', fontSize: 14, boxSizing: 'border-box' }}
+          />
+          {designUrl && (
+            <div style={{ marginTop: 5, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 11, color: '#bbb' }}>Per Canva: Share → Embed → copia l'URL src dell'iframe</span>
+              <a href={designUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#6366f1', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+                <ExternalLink size={10} strokeWidth={2} /> Apri
+              </a>
+            </div>
+          )}
+        </div>
+
         {/* Pillar */}
         <div style={{ marginBottom: 20 }}>
           <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 8 }}>Content pillar</label>
@@ -646,6 +690,36 @@ export default function PostEditorialePage() {
                 {aiGenerating ? <><RefreshCw size={15} strokeWidth={2} style={{ animation: 'spin 1s linear infinite' }} /> Generazione…</> : <><Sparkles size={15} strokeWidth={2} /> Genera post</>}
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal Anteprima design */}
+      {showDesignPreview && designUrl && (
+        <div onClick={() => setShowDesignPreview(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '92vw', height: '92vh', background: '#1a1a2e', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: '#1a1a2e', flexShrink: 0 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Layers size={14} strokeWidth={1.5} color="#a5b4fc" /> Anteprima design
+              </span>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <a
+                  href={designUrl} target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', background: 'rgba(255,255,255,0.1)', color: '#fff', borderRadius: 8, fontSize: 12, textDecoration: 'none', fontWeight: 600 }}
+                >
+                  <ExternalLink size={12} strokeWidth={2} /> Apri in nuova tab
+                </a>
+                <button onClick={() => setShowDesignPreview(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', display: 'flex' }}>
+                  <X size={18} strokeWidth={1.5} />
+                </button>
+              </div>
+            </div>
+            <iframe
+              src={toEmbedUrl(designUrl)}
+              style={{ flex: 1, border: 'none', width: '100%', background: '#fff' }}
+              allowFullScreen
+              title="Anteprima design"
+            />
           </div>
         </div>
       )}
