@@ -205,6 +205,15 @@ export default function StaffPage() {
     load()
   }
 
+  async function handleResendInvite(member) {
+    try {
+      await apiFetch(`/api/users/${member.id}/resend-invite`, { method: 'POST' })
+      alert(`Nuovo link inviato a ${member.email}`)
+    } catch (e) {
+      alert('Errore nel reinvio: ' + e.message)
+    }
+  }
+
   async function toggleRequire2fa() {
     if (!azienda?.id) return
     const newVal = !require2fa
@@ -325,6 +334,11 @@ export default function StaffPage() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {!member.confirmed && (
+                    <button onClick={() => handleResendInvite(member)} style={{ background: '#e8f0fe', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontSize: 13, color: '#1a56db', fontWeight: 600 }}>
+                      Reinvia invito
+                    </button>
+                  )}
                   <button onClick={() => editingId === member.id ? setEditingId(null) : startEdit(member)} style={{ background: '#f0f0f0', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontSize: 13 }}>
                     {editingId === member.id ? 'Annulla' : 'Modifica accessi'}
                   </button>

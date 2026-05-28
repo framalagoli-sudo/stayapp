@@ -156,6 +156,58 @@ router.post('/invite', async (req, res) => {
   }
 })
 
+// ── POST /api/users/:id/resend-invite — reinvia link impostazione password ────
+router.post('/:id/resend-invite', async (req, res) => {
+  const caller = await requireAdminOrAbove(req, res)
+  if (!caller) return
+  try {
+    const { data: authUser, error: fetchErr } = await supabase.auth.admin.getUserById(req.params.id)
+    if (fetchErr || !authUser?.user) return res.status(404).json({ error: 'Utente non trovato' })
+
+    const email = authUser.user.email
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173'
+
+    const { data, error: linkErr } = await supabase.auth.admin.generateLink({
+      type: 'recovery',
+      email,
+      options: { redirectTo: `${clientUrl}/admin/reset-password` },
+    })
+    if (linkErr) return res.status(400).json({ error: linkErr.message })
+
+    const link = data?.properties?.action_link
+    if (!link) return res.status(500).json({ error: 'Impossibile generare il link' })
+
+    if (process.env.RESEND_API_KEY) {
+      const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', req.params.id).single()
+      const nome = profile?.full_name || email
+      new Resend(process.env.RESEND_API_KEY).emails.send({
+        from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
+        to: email,
+        subject: 'Il tuo link per accedere a OltreNova',
+        html: `
+          <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a2e">
+            <h2 style="margin-top:0;margin-bottom:8px;font-size:22px">Nuovo link di accesso</h2>
+            <p style="color:#666;margin-top:0;margin-bottom:24px;line-height:1.6">
+              Ciao <strong>${nome}</strong>,<br>
+              il link precedente è scaduto. Usa questo nuovo link per impostare la tua password.
+            </p>
+            <div style="margin:28px 0">
+              <a href="${link}" style="display:inline-block;padding:13px 28px;background:#1a1a2e;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">
+                Imposta password →
+              </a>
+            </div>
+            <p style="color:#999;font-size:13px;line-height:1.6">Il link è valido per <strong>24 ore</strong>.</p>
+          </div>
+        `,
+      }).catch(() => {})
+    }
+
+    res.json({ ok: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // ── POST /api/users — crea utente con password (solo super_admin) ─────────────
 router.post('/', async (req, res) => {
   if (!await requireSuperAdmin(req, res)) return
