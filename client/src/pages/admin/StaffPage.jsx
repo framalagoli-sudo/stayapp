@@ -334,11 +334,9 @@ export default function StaffPage() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {!member.last_sign_in && (
-                    <button onClick={() => handleResendInvite(member)} style={{ background: '#e8f0fe', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontSize: 13, color: '#1a56db', fontWeight: 600 }}>
-                      Reinvia invito
-                    </button>
-                  )}
+                  <button onClick={() => handleResendInvite(member)} style={{ background: '#e8f0fe', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontSize: 13, color: '#1a56db', fontWeight: 600 }}>
+                    Reinvia invito
+                  </button>
                   <button onClick={() => editingId === member.id ? setEditingId(null) : startEdit(member)} style={{ background: '#f0f0f0', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontSize: 13 }}>
                     {editingId === member.id ? 'Annulla' : 'Modifica accessi'}
                   </button>
