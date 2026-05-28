@@ -7,13 +7,21 @@ export default function ResetPasswordPage() {
   const navigate = useNavigate()
   // Cattura il tipo di flusso dall'hash prima che Supabase lo rimuova
   const [flowType] = useState(() => {
+    // Può arrivare da hash (link diretto Supabase) o da ?flow= (via AcceptInvitePage)
     const h = window.location.hash
-    if (h.includes('type=invite'))   return 'invite'
-    if (h.includes('type=recovery')) return 'recovery'
+    const q = new URLSearchParams(window.location.search)
+    const flow = q.get('flow')
+    if (flow === 'invite'   || h.includes('type=invite'))   return 'invite'
+    if (flow === 'recovery' || h.includes('type=recovery')) return 'recovery'
     return 'unknown'
   })
   const [isReady,     setIsReady]     = useState(false)
-  const [invalidLink, setInvalidLink] = useState(false)
+  const [invalidLink, setInvalidLink] = useState(() => {
+    // Via AcceptInvitePage: sessione già verificata, mai invalido
+    if (new URLSearchParams(window.location.search).get('flow')) return false
+    const p = new URLSearchParams(window.location.hash.slice(1))
+    return !!p.get('error')
+  })
   const [password,    setPassword]    = useState('')
   const [confirm,     setConfirm]     = useState('')
   const [loading,     setLoading]     = useState(false)

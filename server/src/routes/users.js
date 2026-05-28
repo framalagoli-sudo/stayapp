@@ -102,8 +102,15 @@ router.post('/invite', async (req, res) => {
     })
     if (inviteErr) return res.status(400).json({ error: inviteErr.message })
 
-    const inviteLink = data?.properties?.action_link
-    if (!inviteLink) return res.status(500).json({ error: 'Impossibile generare il link di invito' })
+    const actionLink = data?.properties?.action_link
+    if (!actionLink) return res.status(500).json({ error: 'Impossibile generare il link di invito' })
+
+    // Costruiamo un link alla nostra pagina intermedia invece del link Supabase diretto.
+    // Questo evita che email scanner (Outlook, antivirus) pre-fetching consumino il token.
+    const actionUrl   = new URL(actionLink)
+    const tokenHash   = actionUrl.searchParams.get('token')
+    const tokenType   = actionUrl.searchParams.get('type') || 'invite'
+    const inviteLink  = `${clientUrl}/admin/accept-invite?token_hash=${tokenHash}&type=${tokenType}`
 
     // Upsert profilo
     await new Promise(r => setTimeout(r, 400))
@@ -174,8 +181,14 @@ router.post('/:id/resend-invite', async (req, res) => {
     })
     if (linkErr) return res.status(400).json({ error: linkErr.message })
 
-    const link = data?.properties?.action_link
-    if (!link) return res.status(500).json({ error: 'Impossibile generare il link' })
+    const actionLink = data?.properties?.action_link
+    if (!actionLink) return res.status(500).json({ error: 'Impossibile generare il link' })
+
+    // Link alla pagina intermedia per evitare che email scanner consumino il token
+    const actionUrl  = new URL(actionLink)
+    const tokenHash  = actionUrl.searchParams.get('token')
+    const tokenType  = actionUrl.searchParams.get('type') || 'recovery'
+    const link       = `${clientUrl}/admin/accept-invite?token_hash=${tokenHash}&type=${tokenType}`
 
     if (process.env.RESEND_API_KEY) {
       const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', req.params.id).single()
