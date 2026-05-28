@@ -22,17 +22,28 @@ export default function ResetPasswordPage() {
   const [showPwd,     setShowPwd]     = useState(false)
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setIsReady(true)
-      if (event === 'SIGNED_IN' && flowType === 'invite') setIsReady(true)
+    let resolved = false
+    function resolve() {
+      if (resolved) return
+      resolved = true
+      setIsReady(true)
+      setInvalidLink(false)
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') { resolve(); return }
+      if (event === 'SIGNED_IN' && flowType === 'invite') { resolve(); return }
+      // AuthContext may have processed the token first → we get INITIAL_SESSION/SIGNED_IN
+      // instead of PASSWORD_RECOVERY. Handle this race condition.
+      if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && session && flowType !== 'unknown') {
+        resolve()
+      }
     })
 
-    const timer = setTimeout(() => setInvalidLink(true), 8000)
+    const timer = setTimeout(() => { if (!resolved) setInvalidLink(true) }, 10000)
 
     return () => { subscription.unsubscribe(); clearTimeout(timer) }
   }, [flowType])
-
-  useEffect(() => { if (isReady) setInvalidLink(false) }, [isReady])
 
   async function handleSubmit(e) {
     e.preventDefault()
