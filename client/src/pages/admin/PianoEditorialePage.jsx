@@ -6,6 +6,19 @@ import {
   Lightbulb, X, Send, GripVertical, Eye, Pencil, Copy, User, Layers, ExternalLink,
 } from 'lucide-react'
 
+const TIPO_INFO = {
+  post:           { label: 'Post',       color: '#718096' },
+  reel:           { label: 'Reel',       color: '#e53e3e' },
+  story:          { label: 'Story',      color: '#ed8936' },
+  carosello:      { label: 'Carosello',  color: '#38a169' },
+  video:          { label: 'Video',      color: '#dd6b20' },
+  blog_post:      { label: 'Blog Post',  color: '#0077b5' },
+  newsletter:     { label: 'Newsletter', color: '#6366f1' },
+  evento:         { label: 'Evento',     color: '#0ea5e9' },
+  ads:            { label: 'Ads',        color: '#d97706' },
+  collaborazione: { label: 'Collab.',    color: '#ec4899' },
+}
+
 function toEmbedUrl(url) {
   if (!url) return url
   if (url.includes('canva.com/design') && !url.includes('embed')) {
@@ -101,6 +114,10 @@ function PreviewModal({ post, onClose, onClone }) {
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: stInfo.bg, color: stInfo.color }}>{stInfo.label}</span>
+          {post.tipo_contenuto && post.tipo_contenuto !== 'post' && (() => {
+            const ti = TIPO_INFO[post.tipo_contenuto]
+            return ti ? <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: ti.color + '18', color: ti.color }}>{ti.label}</span> : null
+          })()}
           {post.data_pianificata && (
             <span style={{ fontSize: 12, color: '#888' }}>
               {new Date(post.data_pianificata.slice(0, 10) + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -377,6 +394,7 @@ export default function PianoEditorialePage() {
           opacity: draggedId === p.id ? 0.35 : 1,
           cursor: canDrag ? 'grab' : 'default',
           userSelect: 'none',
+          borderLeft: `3px solid ${TIPO_INFO[p.tipo_contenuto]?.color || '#718096'}`,
         }}
       >
         {canDrag && (
@@ -442,7 +460,7 @@ export default function PianoEditorialePage() {
               onClick={() => navigate('/admin/piano-editoriale/nuovo')}
               style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontWeight: 600 }}
             >
-              <Plus size={16} strokeWidth={1.5} /> Nuovo post
+              <Plus size={16} strokeWidth={1.5} /> Nuovo contenuto
             </button>
           )}
         </div>
@@ -854,6 +872,10 @@ function PostRow({ p, navigate, handleDelete, handleClone }) {
           ))}
         </div>
       </div>
+      {p.tipo_contenuto && p.tipo_contenuto !== 'post' && (() => {
+        const ti = TIPO_INFO[p.tipo_contenuto]
+        return ti ? <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: ti.color + '18', color: ti.color, flexShrink: 0 }}>{ti.label}</span> : null
+      })()}
       <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: stInfo.bg, color: stInfo.color, flexShrink: 0 }}>
         {stInfo.label}
       </span>

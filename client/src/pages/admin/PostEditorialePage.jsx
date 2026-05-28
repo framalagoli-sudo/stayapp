@@ -8,6 +8,36 @@ import {
   RefreshCw, Copy, Eye, Image, Search, Clock, Tag, CheckCircle, User, Layers, ExternalLink,
 } from 'lucide-react'
 
+const TIPI = [
+  { key: 'post',           label: 'Post',       color: '#718096' },
+  { key: 'reel',           label: 'Reel',       color: '#e53e3e' },
+  { key: 'story',          label: 'Story',      color: '#ed8936' },
+  { key: 'carosello',      label: 'Carosello',  color: '#38a169' },
+  { key: 'video',          label: 'Video',      color: '#dd6b20' },
+  { key: 'blog_post',      label: 'Blog Post',  color: '#0077b5' },
+  { key: 'newsletter',     label: 'Newsletter', color: '#6366f1' },
+  { key: 'evento',         label: 'Evento',     color: '#0ea5e9' },
+  { key: 'ads',            label: 'Ads',        color: '#d97706' },
+  { key: 'collaborazione', label: 'Collab.',    color: '#ec4899' },
+]
+
+// Mappa tipo → ref_tipo per il collegamento interno
+const TIPO_REF = { blog_post: 'articolo', newsletter: 'newsletter', evento: 'evento' }
+
+// Testi contestuali per ogni tipo di contenuto
+const TIPO_COPY = {
+  post:           { label: 'Testo del post',          placeholder: 'Scrivi il testo del post…',                   titolo_nuovo: 'Nuovo post',           titolo_modifica: 'Modifica post',           immagine: 'Immagine',                     distribuzione: null,               articolo: 'questo post' },
+  reel:           { label: 'Script / didascalia',      placeholder: 'Hook, script voiceover, didascalia…',         titolo_nuovo: 'Nuovo reel',           titolo_modifica: 'Modifica reel',           immagine: 'Thumbnail',                    distribuzione: null,               articolo: 'questo reel' },
+  story:          { label: 'Testo della story',        placeholder: 'Testo, CTA, sticker da usare…',               titolo_nuovo: 'Nuova story',          titolo_modifica: 'Modifica story',          immagine: 'Visual della story',           distribuzione: null,               articolo: 'questa story' },
+  carosello:      { label: 'Testo del carosello',      placeholder: 'Testo slide 1, slide 2, CTA finale…',         titolo_nuovo: 'Nuovo carosello',      titolo_modifica: 'Modifica carosello',      immagine: 'Immagine prima slide',         distribuzione: null,               articolo: 'questo carosello' },
+  video:          { label: 'Script / descrizione',     placeholder: 'Script del video o descrizione da caricare…', titolo_nuovo: 'Nuovo video',          titolo_modifica: 'Modifica video',          immagine: 'Thumbnail',                    distribuzione: null,               articolo: 'questo video' },
+  blog_post:      { label: 'Abstract / introduzione',  placeholder: 'Breve abstract, angolazione, note SEO…',      titolo_nuovo: 'Nuovo blog post',      titolo_modifica: 'Modifica blog post',      immagine: 'Cover / immagine in evidenza', distribuzione: 'Blog',             articolo: 'questo blog post' },
+  newsletter:     { label: 'Testo introduttivo',       placeholder: 'Intro, abstract o note della newsletter…',    titolo_nuovo: 'Nuova newsletter',     titolo_modifica: 'Modifica newsletter',     immagine: 'Immagine header',              distribuzione: 'Email / Newsletter', articolo: 'questa newsletter' },
+  evento:         { label: 'Descrizione evento',       placeholder: 'Descrizione, dettagli pratici, CTA…',         titolo_nuovo: 'Nuovo evento',         titolo_modifica: 'Modifica evento',         immagine: 'Immagine evento',              distribuzione: 'Pagina evento',    articolo: 'questo evento' },
+  ads:            { label: 'Copy dell\'ads',           placeholder: 'Headline, testo principale, CTA…',            titolo_nuovo: 'Nuovo ads',            titolo_modifica: 'Modifica ads',            immagine: 'Creative / visual',            distribuzione: null,               articolo: 'questo ads' },
+  collaborazione: { label: 'Brief collaborazione',     placeholder: 'Brief, dettagli, requisiti, compenso…',       titolo_nuovo: 'Nuova collaborazione', titolo_modifica: 'Modifica collaborazione', immagine: 'Immagine',                     distribuzione: null,               articolo: 'questa collaborazione' },
+}
+
 function toEmbedUrl(url) {
   if (!url) return url
   // Canva: aggiunge ?embed se non già presente
@@ -94,8 +124,12 @@ export default function PostEditorialePage() {
   const [stato, setStato]           = useState('bozza')
   const [note, setNote]             = useState('')
   const [immagineUrl, setImmagine]  = useState('')
-  const [designUrl, setDesignUrl]   = useState('')
-  const [pillar, setPillar]         = useState('')
+  const [designUrl, setDesignUrl]     = useState('')
+  const [tipoContenuto, setTipo]      = useState('post')
+  const [refId, setRefId]             = useState('')
+  const [refs, setRefs]               = useState([])
+  const [loadingRefs, setLoadingRefs] = useState(false)
+  const [pillar, setPillar]           = useState('')
   const [labels, setLabels]         = useState([])
   const [createdByName, setCreatedByName] = useState('')
   const [updatedByName, setUpdatedByName] = useState('')
@@ -137,6 +171,8 @@ export default function PostEditorialePage() {
         setNote(p.note || '')
         setImmagine(p.immagine_url || '')
         setDesignUrl(p.design_url || '')
+        setTipo(p.tipo_contenuto || 'post')
+        setRefId(p.ref_id || '')
         setPillar(p.pillar || '')
         setLabels(p.labels || [])
         setCreatedByName(p.created_by_name || '')
@@ -152,6 +188,16 @@ export default function PostEditorialePage() {
       })
       .catch(e => { setError(e.message); setLoading(false) })
   }, [id, isNew])
+
+  useEffect(() => {
+    const refTipo = TIPO_REF[tipoContenuto]
+    if (!refTipo) { setRefs([]); return }
+    setLoadingRefs(true)
+    apiFetch(`/api/piano-editoriale/refs?tipo=${refTipo}`)
+      .then(data => setRefs(data || []))
+      .catch(() => setRefs([]))
+      .finally(() => setLoadingRefs(false))
+  }, [tipoContenuto])
 
   function toggleCanale(k) {
     setCanali(prev => prev.includes(k) ? prev.filter(c => c !== k) : [...prev, k])
@@ -174,7 +220,8 @@ export default function PostEditorialePage() {
 
   async function save() {
     setSaving(true); setError(''); setSaved(false)
-    const body = { titolo, testo, canali, data_pianificata: buildDataPianificata(), stato, note, immagine_url: immagineUrl, labels, pillar, design_url: designUrl }
+    const refTipo = TIPO_REF[tipoContenuto] || null
+    const body = { titolo, testo, canali, data_pianificata: buildDataPianificata(), stato, note, immagine_url: immagineUrl, labels, pillar, design_url: designUrl, tipo_contenuto: tipoContenuto, ref_id: refId || null, ref_tipo: refTipo }
     try {
       if (isNew) {
         const created = await apiFetch('/api/piano-editoriale', { method: 'POST', body: JSON.stringify(body) })
@@ -189,7 +236,7 @@ export default function PostEditorialePage() {
   }
 
   async function handleDelete() {
-    if (!confirm('Eliminare questo post?')) return
+    if (!confirm(`Eliminare ${TIPO_COPY[tipoContenuto]?.articolo || 'questo contenuto'}?`)) return
     try {
       await apiFetch(`/api/piano-editoriale/${id}`, { method: 'DELETE' })
       navigate('/admin/piano-editoriale')
@@ -246,7 +293,9 @@ export default function PostEditorialePage() {
         </button>
         <Calendar size={22} strokeWidth={1.5} color="#1a1a2e" />
         <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, flex: 1 }}>
-          {isNew ? 'Nuovo post' : (titolo || 'Modifica post')}
+          {isNew
+            ? (TIPO_COPY[tipoContenuto]?.titolo_nuovo || 'Nuovo contenuto')
+            : (titolo || TIPO_COPY[tipoContenuto]?.titolo_modifica || 'Modifica contenuto')}
         </h1>
         {!isNew && (
           <div style={{ display: 'flex', gap: 8 }}>
@@ -282,10 +331,55 @@ export default function PostEditorialePage() {
           />
         </div>
 
+        {/* Tipo contenuto */}
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 8 }}>Tipo di contenuto</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {TIPI.map(t => {
+              const active = tipoContenuto === t.key
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => { setTipo(t.key); setRefId('') }}
+                  style={{
+                    padding: '5px 12px', borderRadius: 20, border: '1.5px solid',
+                    borderColor: active ? t.color : '#eee',
+                    background: active ? t.color : '#fff',
+                    color: active ? '#fff' : '#555',
+                    fontSize: 12, cursor: 'pointer', fontWeight: active ? 700 : 400,
+                  }}
+                >
+                  {t.label}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Collegamento interno opzionale */}
+          {TIPO_REF[tipoContenuto] && (
+            <div style={{ marginTop: 12 }}>
+              <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>
+                Collega a {TIPO_REF[tipoContenuto] === 'articolo' ? 'un articolo del blog' : TIPO_REF[tipoContenuto] === 'newsletter' ? 'una newsletter' : 'un evento'} (opzionale)
+              </label>
+              <select
+                value={refId}
+                onChange={e => setRefId(e.target.value)}
+                style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13, boxSizing: 'border-box', color: refId ? '#1a1a2e' : '#aaa' }}
+              >
+                <option value="">— Nessun collegamento —</option>
+                {loadingRefs && <option disabled>Caricamento…</option>}
+                {refs.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
+                {!loadingRefs && refs.length === 0 && <option disabled>Nessun contenuto trovato</option>}
+              </select>
+            </div>
+          )}
+        </div>
+
         {/* Testo */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, flexWrap: 'wrap', gap: 6 }}>
-            <label style={{ fontSize: 12, color: '#888' }}>Testo del post</label>
+            <label style={{ fontSize: 12, color: '#888' }}>{TIPO_COPY[tipoContenuto]?.label || 'Testo'}</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 11, color: testo.length > 280 ? '#c53030' : testo.length > 200 ? '#d97706' : '#aaa' }}>
                 {testo.length} car.
@@ -308,15 +402,27 @@ export default function PostEditorialePage() {
           </div>
           <textarea
             value={testo} onChange={e => setTesto(e.target.value)}
-            rows={7} placeholder="Scrivi il testo del post…"
+            rows={7} placeholder={TIPO_COPY[tipoContenuto]?.placeholder || 'Scrivi il contenuto…'}
             style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 12px', fontSize: 13, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit', lineHeight: 1.6 }}
           />
         </div>
 
         {/* Canali */}
         <div style={{ marginBottom: 20 }}>
-          <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 8 }}>Canali</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 8 }}>
+            {TIPO_COPY[tipoContenuto]?.distribuzione ? 'Distribuzione' : 'Canali'}
+          </label>
+          {TIPO_COPY[tipoContenuto]?.distribuzione ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, padding: '6px 16px', borderRadius: 20, background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' }}>
+                {TIPO_COPY[tipoContenuto].distribuzione}
+              </span>
+              <span style={{ fontSize: 12, color: '#aaa' }}>
+                Puoi aggiungere canali social per la promozione
+              </span>
+            </div>
+          ) : null}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: TIPO_COPY[tipoContenuto]?.distribuzione ? 10 : 0 }}>
             {CANALI.map(c => {
               const active = canali.includes(c.key)
               return (
@@ -363,7 +469,7 @@ export default function PostEditorialePage() {
         {/* Immagine + Unsplash */}
         <div style={{ marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-            <label style={{ fontSize: 12, color: '#888' }}>Immagine</label>
+            <label style={{ fontSize: 12, color: '#888' }}>{TIPO_COPY[tipoContenuto]?.immagine || 'Immagine'}</label>
             <button
               type="button"
               onClick={() => { setShowPhotos(p => !p); setPhotos([]); setPhotoError('') }}

@@ -142,6 +142,48 @@ router.post('/idee/:id/pianifica', requireAuth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }) }
 })
 
+// ── Refs interni per collegamento (articoli / newsletter / eventi) ─────────────
+router.get('/refs', requireAuth, async (req, res) => {
+  try {
+    const azienda_id = await getAziendaId(req.user.id)
+    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { tipo } = req.query
+
+    if (tipo === 'articolo') {
+      const { data } = await supabase
+        .from('articoli').select('id, titolo')
+        .eq('azienda_id', azienda_id).order('created_at', { ascending: false }).limit(100)
+      return res.json((data || []).map(r => ({ id: r.id, label: r.titolo })))
+    }
+
+    if (tipo === 'evento') {
+      const { data } = await supabase
+        .from('eventi').select('id, title')
+        .eq('azienda_id', azienda_id).order('created_at', { ascending: false }).limit(100)
+      return res.json((data || []).map(r => ({ id: r.id, label: r.title })))
+    }
+
+    if (tipo === 'newsletter') {
+      // Newsletter sono per entità; raccogliamo gli ID di tutte le entità dell'azienda
+      const [props, rists, atts] = await Promise.all([
+        supabase.from('properties').select('id').eq('azienda_id', azienda_id),
+        supabase.from('ristoranti').select('id').eq('azienda_id', azienda_id),
+        supabase.from('attivita').select('id').eq('azienda_id', azienda_id),
+      ])
+      const entityIds = [
+        ...(props.data || []), ...(rists.data || []), ...(atts.data || []),
+      ].map(e => e.id)
+      if (!entityIds.length) return res.json([])
+      const { data } = await supabase
+        .from('newsletters').select('id, subject')
+        .in('entity_id', entityIds).order('created_at', { ascending: false }).limit(100)
+      return res.json((data || []).map(r => ({ id: r.id, label: r.subject })))
+    }
+
+    res.json([])
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
 // ── Singolo post ──────────────────────────────────────────────────────────────
 router.get('/:id', requireAuth, async (req, res) => {
   try {
@@ -165,7 +207,7 @@ router.post('/', requireAuth, async (req, res) => {
     const azienda_id = profile.azienda_id
     if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
 
-    const { titolo, testo, immagine_url, canali, data_pianificata, stato, note, labels, pillar, design_url } = req.body
+    const { titolo, testo, immagine_url, canali, data_pianificata, stato, note, labels, pillar, design_url, tipo_contenuto, ref_id, ref_tipo } = req.body
     const stato_safe = ALLOWED_STATO.has(stato) ? stato : 'bozza'
     const authorName = profile.full_name || 'Utente'
 
@@ -183,6 +225,9 @@ router.post('/', requireAuth, async (req, res) => {
         labels:          Array.isArray(labels) ? labels.map(l => String(l).trim().toLowerCase().replace(/[^a-z0-9_àèìòù-]/g, '').slice(0, 50)).filter(Boolean) : [],
         pillar:          pillar || '',
         design_url:      design_url || '',
+        tipo_contenuto:  tipo_contenuto || 'post',
+        ref_id:          ref_id || null,
+        ref_tipo:        ref_tipo || null,
         created_by:      req.user.id,
         created_by_name: authorName,
         updated_by:      req.user.id,
@@ -223,6 +268,9 @@ router.post('/:id/duplica', requireAuth, async (req, res) => {
         labels:          orig.labels || [],
         pillar:          orig.pillar || '',
         design_url:      orig.design_url || '',
+        tipo_contenuto:  orig.tipo_contenuto || 'post',
+        ref_id:          orig.ref_id || null,
+        ref_tipo:        orig.ref_tipo || null,
       })
       .select()
       .single()
@@ -238,7 +286,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
     const azienda_id = profile.azienda_id
     if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
 
-    const allowed = ['titolo', 'testo', 'immagine_url', 'canali', 'data_pianificata', 'stato', 'note', 'labels', 'pillar', 'design_url']
+    const allowed = ['titolo', 'testo', 'immagine_url', 'canali', 'data_pianificata', 'stato', 'note', 'labels', 'pillar', 'design_url', 'tipo_contenuto', 'ref_id', 'ref_tipo']
     const patch = {
       updated_at:      new Date().toISOString(),
       updated_by:      req.user.id,
