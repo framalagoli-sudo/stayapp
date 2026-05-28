@@ -1,7 +1,7 @@
 # FEATURES — Roadmap prodotto StayApp
 
 Documento vivo. Aggiornato sessione per sessione.
-Ultima revisione: **2026-05-17** (Google Calendar sync + Loyalty & Gift Card)
+Ultima revisione: **2026-05-28** (Sprint 9 completo — Staff 2FA, Canali distribuzione, Piano editoriale Idee+Firma, Fix critici deploy/invite)
 
 ---
 
@@ -247,6 +247,20 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 - [x] **`client/public/llms.txt`** — descrizione StayApp per AI crawlers sul dominio principale
 - *Nessuna migration necessaria — tutto usa dati esistenti*
 
+### Sprint 9 — Collaboratori, Canali, Piano editoriale avanzato ✅ 2026-05-28
+
+- [x] **Permessi staff granulari** — 3 gruppi (Operativo / Marketing / Account), toggle per ogni modulo
+- [x] **2FA obbligatorio per azienda** — toggle `require_2fa` su aziende; ProtectedRoute forza enrollment se attivo
+- [x] **Canali distribuzione** — toggle PWA + Sito Web per struttura/ristorante/attività (JSONB esistenti)
+- [x] **Piano editoriale — tab Idee** — backlog idee con pillar/canali, "Pianifica →" converte in post con data
+- [x] **Piano editoriale — firma autore** — chi ha creato/modificato il post visibile in preview e editor
+- [x] **Reinvia invito collaboratori** — bottone sempre visibile in StaffPage per reinviare link
+- [x] **Fix SPA routing Vercel** — `client/vercel.json` con rewrites → index.html (fix 404 su URL diretti)
+- [x] **Fix favicon** — `client/public/favicon.svg` con logo OltreNova (ON su sfondo petrolio)
+- [x] **Fix link invito email scanner** — pagina intermedia `/admin/accept-invite` evita che Outlook/antivirus consumino il token OTP pre-fetch
+- [x] **Fix ResetPasswordPage** — gestione race condition INITIAL_SESSION + rilevamento immediato errore hash
+- **Migration da eseguire:** `045_idee_editoriali.sql` ⚠️ · `046_piano_editoriale_v2.sql` ⚠️ · `047_piano_editoriale_autore.sql` ⚠️
+
 ### Sprint 10 — Stripe Subscription Billing (prossimo) 🔴
 - [ ] Piani mensili (base/standard/premium) con prezzi
 - [ ] Checkout Stripe per subscription dalla pagina signup/trial
@@ -355,8 +369,12 @@ Il refactor verso "Business" generico richiede principalmente:
 - [x] **036_shop.sql** — tabelle `prodotti` + `ordini` ✅ eseguita 2026-05-17
 - [x] **037_content_studio.sql** — colonna `content_strategy` su aziende ✅ eseguita 2026-05-17
 - [x] **038_survey.sql** — tabella `survey_risposte` ✅ eseguita 2026-05-17
-- [ ] **039_google_calendar.sql** — colonna `google_calendar_token` su aziende + `google_event_id` su prenotazioni ⚠️
-- [ ] **040_loyalty.sql** — tabelle `loyalty_programs`, `loyalty_points`, `gift_cards` + colonne su ordini ⚠️
+- [x] **039_google_calendar.sql** — colonna `google_calendar_token` su aziende + `google_event_id` su prenotazioni ✅ 2026-05-27
+- [x] **040_loyalty.sql** — tabelle `loyalty_programs`, `loyalty_points`, `gift_cards` + colonne su ordini ✅ 2026-05-27
+- [ ] **044_require_2fa.sql** — colonna `require_2fa` su aziende ⚠️
+- [ ] **045_idee_editoriali.sql** — tabella `idee_editoriali` ⚠️
+- [ ] **046_piano_editoriale_v2.sql** — colonne `labels`, `pillar`, `note`, `created_by_name` ecc. su piano_editoriale ⚠️
+- [ ] **047_piano_editoriale_autore.sql** — colonne `created_by`, `created_by_name`, `updated_by`, `updated_by_name` su piano_editoriale ⚠️
 
 ### Infrastruttura
 
