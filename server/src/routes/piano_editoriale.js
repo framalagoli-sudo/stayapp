@@ -6,9 +6,14 @@ const router = Router()
 
 const ALLOWED_STATO = new Set(['bozza', 'pianificato', 'in_revisione', 'pubblicato'])
 
+async function getProfile(userId) {
+  const { data } = await supabase.from('profiles').select('azienda_id, full_name').eq('id', userId).single()
+  return data || {}
+}
+
 async function getAziendaId(userId) {
-  const { data } = await supabase.from('profiles').select('azienda_id').eq('id', userId).single()
-  return data?.azienda_id || null
+  const { azienda_id } = await getProfile(userId)
+  return azienda_id || null
 }
 
 // ── Lista post ────────────────────────────────────────────────────────────────
@@ -156,11 +161,13 @@ router.get('/:id', requireAuth, async (req, res) => {
 // ── Crea post ─────────────────────────────────────────────────────────────────
 router.post('/', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
+    const profile = await getProfile(req.user.id)
+    const azienda_id = profile.azienda_id
     if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
 
     const { titolo, testo, immagine_url, canali, data_pianificata, stato, note, labels, pillar } = req.body
     const stato_safe = ALLOWED_STATO.has(stato) ? stato : 'bozza'
+    const authorName = profile.full_name || 'Utente'
 
     const { data, error } = await supabase
       .from('piano_editoriale')
@@ -175,6 +182,10 @@ router.post('/', requireAuth, async (req, res) => {
         note:            note || '',
         labels:          Array.isArray(labels) ? labels.map(l => String(l).trim().toLowerCase().replace(/[^a-z0-9_àèìòù-]/g, '').slice(0, 50)).filter(Boolean) : [],
         pillar:          pillar || '',
+        created_by:      req.user.id,
+        created_by_name: authorName,
+        updated_by:      req.user.id,
+        updated_by_name: authorName,
       })
       .select()
       .single()
@@ -221,11 +232,16 @@ router.post('/:id/duplica', requireAuth, async (req, res) => {
 // ── Aggiorna post ─────────────────────────────────────────────────────────────
 router.patch('/:id', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
+    const profile = await getProfile(req.user.id)
+    const azienda_id = profile.azienda_id
     if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
 
     const allowed = ['titolo', 'testo', 'immagine_url', 'canali', 'data_pianificata', 'stato', 'note', 'labels', 'pillar']
-    const patch = { updated_at: new Date().toISOString() }
+    const patch = {
+      updated_at:      new Date().toISOString(),
+      updated_by:      req.user.id,
+      updated_by_name: profile.full_name || 'Utente',
+    }
     for (const k of allowed) if (k in req.body) patch[k] = req.body[k]
     if (patch.stato !== undefined && !ALLOWED_STATO.has(patch.stato)) delete patch.stato
     if (patch.labels !== undefined) {

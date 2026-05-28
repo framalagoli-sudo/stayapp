@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import {
   Calendar, Plus, ChevronLeft, ChevronRight, AlertCircle, Trash2,
-  Lightbulb, X, Send, GripVertical, Eye, Pencil, Copy,
+  Lightbulb, X, Send, GripVertical, Eye, Pencil, Copy, User,
 } from 'lucide-react'
 
 const CANALI_INFO = {
@@ -111,6 +111,24 @@ function PreviewModal({ post, onClose, onClone }) {
             <span key={l} style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: '#f0f0ff', color: '#6366f1', fontWeight: 600 }}>#{l}</span>
           ))}
         </div>
+        {(post.created_by_name || post.updated_by_name) && (
+          <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {post.created_by_name && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#aaa' }}>
+                <User size={11} strokeWidth={1.5} />
+                <span>Creato da <strong style={{ color: '#666' }}>{post.created_by_name}</strong>
+                  {post.created_at && <> · {new Date(post.created_at).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}</>}
+                </span>
+              </div>
+            )}
+            {post.updated_by_name && post.updated_by_name !== post.created_by_name && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#aaa' }}>
+                <User size={11} strokeWidth={1.5} />
+                <span>Modificato da <strong style={{ color: '#666' }}>{post.updated_by_name}</strong></span>
+              </div>
+            )}
+          </div>
+        )}
         <div style={{ borderTop: '1px solid #f5f5f5', paddingTop: 14, display: 'flex', gap: 8 }}>
           <button
             onClick={onClone}

@@ -5,7 +5,7 @@ import { useProperty } from '../../hooks/useProperty'
 import { useAuth } from '../../context/AuthContext'
 import {
   Save, Trash2, ArrowLeft, Calendar, AlertCircle, Sparkles, X,
-  RefreshCw, Copy, Eye, Image, Search, Clock, Tag, CheckCircle,
+  RefreshCw, Copy, Eye, Image, Search, Clock, Tag, CheckCircle, User,
 } from 'lucide-react'
 
 const CANALI = [
@@ -87,6 +87,10 @@ export default function PostEditorialePage() {
   const [immagineUrl, setImmagine]  = useState('')
   const [pillar, setPillar]         = useState('')
   const [labels, setLabels]         = useState([])
+  const [createdByName, setCreatedByName] = useState('')
+  const [updatedByName, setUpdatedByName] = useState('')
+  const [createdAt, setCreatedAt]         = useState('')
+  const [updatedAt, setUpdatedAt]         = useState('')
 
   // Label input
   const [labelInput, setLabelInput] = useState('')
@@ -122,6 +126,10 @@ export default function PostEditorialePage() {
         setImmagine(p.immagine_url || '')
         setPillar(p.pillar || '')
         setLabels(p.labels || [])
+        setCreatedByName(p.created_by_name || '')
+        setUpdatedByName(p.updated_by_name || '')
+        setCreatedAt(p.created_at || '')
+        setUpdatedAt(p.updated_at || '')
         if (p.data_pianificata) {
           const d = new Date(p.data_pianificata)
           setData(d.toISOString().slice(0, 10))
@@ -523,7 +531,32 @@ export default function PostEditorialePage() {
       </div>
 
       {/* Salva */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+        {!isNew && (createdByName || updatedByName) ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {createdByName && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#aaa' }}>
+                <User size={11} strokeWidth={1.5} />
+                <span>Creato da <strong style={{ color: '#666' }}>{createdByName}</strong>
+                  {createdAt && <> · {new Date(createdAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' })}</>}
+                </span>
+              </div>
+            )}
+            {updatedByName && updatedByName !== createdByName && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#aaa' }}>
+                <User size={11} strokeWidth={1.5} />
+                <span>Modificato da <strong style={{ color: '#666' }}>{updatedByName}</strong>
+                  {updatedAt && <> · {new Date(updatedAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' })}</>}
+                </span>
+              </div>
+            )}
+            {updatedByName && updatedByName === createdByName && updatedAt !== createdAt && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#aaa' }}>
+                <span>Ultima modifica · {new Date(updatedAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+              </div>
+            )}
+          </div>
+        ) : <div />}
         <button
           onClick={save} disabled={saving}
           style={{ display: 'flex', alignItems: 'center', gap: 6, background: saved ? '#059669' : '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', cursor: 'pointer', fontWeight: 600, fontSize: 14, transition: 'background 0.2s' }}
