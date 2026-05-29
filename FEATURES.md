@@ -1,7 +1,7 @@
 # FEATURES — Roadmap prodotto StayApp
 
 Documento vivo. Aggiornato sessione per sessione.
-Ultima revisione: **2026-05-28** (Sprint 9 completo — Staff 2FA, Canali distribuzione, Piano editoriale Idee+Firma, Fix critici deploy/invite)
+Ultima revisione: **2026-05-28** (Sprint 9 completo — Staff 2FA, Canali distribuzione, Piano editoriale Idee+Firma+TipoContenuto, Fix critici deploy/invite)
 
 ---
 
@@ -259,6 +259,8 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 - [x] **Fix favicon** — `client/public/favicon.svg` con logo OltreNova (ON su sfondo petrolio)
 - [x] **Fix link invito email scanner** — pagina intermedia `/admin/accept-invite` evita che Outlook/antivirus consumino il token OTP pre-fetch
 - [x] **Fix ResetPasswordPage** — gestione race condition INITIAL_SESSION + rilevamento immediato errore hash
+- [x] **Piano editoriale — Design URL** — campo link Canva/Figma/Adobe con anteprima iframe popup (embed automatico Canva)
+- [x] **Piano editoriale — Tipo contenuto** — 10 tipi (Post, Reel, Story, Carosello, Video, Blog Post, Newsletter, Evento, Ads, Collab.) con badge colorati su calendario e lista; label/placeholder/titolo contestuali per tipo; label immagine dinamica (Thumbnail/Cover/Creative…); sezione Canali con badge distribuzione fisso per Blog/Newsletter/Evento; confirm elimina dinamico; collegamento interno opzionale ad articoli/newsletter/eventi
 - **Migration da eseguire:** `045_idee_editoriali.sql` ⚠️ · `046_piano_editoriale_v2.sql` ⚠️ · `047_piano_editoriale_autore.sql` ⚠️
 
 ### Sprint 10 — Stripe Subscription Billing (prossimo) 🔴
@@ -371,10 +373,12 @@ Il refactor verso "Business" generico richiede principalmente:
 - [x] **038_survey.sql** — tabella `survey_risposte` ✅ eseguita 2026-05-17
 - [x] **039_google_calendar.sql** — colonna `google_calendar_token` su aziende + `google_event_id` su prenotazioni ✅ 2026-05-27
 - [x] **040_loyalty.sql** — tabelle `loyalty_programs`, `loyalty_points`, `gift_cards` + colonne su ordini ✅ 2026-05-27
-- [ ] **044_require_2fa.sql** — colonna `require_2fa` su aziende ⚠️
+- [x] **044_require_2fa.sql** — colonna `require_2fa` su aziende ✅
 - [ ] **045_idee_editoriali.sql** — tabella `idee_editoriali` ⚠️
 - [ ] **046_piano_editoriale_v2.sql** — colonne `labels`, `pillar`, `note`, `created_by_name` ecc. su piano_editoriale ⚠️
 - [ ] **047_piano_editoriale_autore.sql** — colonne `created_by`, `created_by_name`, `updated_by`, `updated_by_name` su piano_editoriale ⚠️
+- [x] **048_piano_editoriale_design_url.sql** — colonna `design_url` su piano_editoriale ✅ 2026-05-28
+- [x] **049_piano_editoriale_tipo.sql** — colonne `tipo_contenuto`, `ref_id`, `ref_tipo` su piano_editoriale ✅ 2026-05-28
 
 ### Infrastruttura
 

@@ -328,7 +328,7 @@ export default function PostEditorialePage() {
 
   if (loading) return <p style={{ color: '#888' }}>Caricamento…</p>
 
-  const stati = (isStaff || richiedeApprovazione) ? STATI_STAFF : TUTTI_STATI
+  const stati = isStaff ? STATI_STAFF : TUTTI_STATI
   return (
     <div style={{ maxWidth: 720 }}>
       {/* Header */}
@@ -861,12 +861,23 @@ export default function PostEditorialePage() {
             )}
           </div>
         ) : <div />}
-        <button
-          onClick={save} disabled={saving}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, background: saved ? '#059669' : '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', cursor: 'pointer', fontWeight: 600, fontSize: 14, transition: 'background 0.2s' }}
-        >
-          {saved ? <><CheckCircle size={15} strokeWidth={1.5} /> Salvato</> : <><Save size={15} strokeWidth={1.5} /> {saving ? 'Salvataggio…' : 'Salva'}</>}
-        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {!isStaff && richiedeApprovazione && stato === 'in_revisione' && (
+            <button
+              onClick={() => { setStato('pubblicato'); setTimeout(save, 50) }}
+              disabled={saving}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#059669', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}
+            >
+              <CheckCircle size={15} strokeWidth={1.5} /> Approva e pubblica
+            </button>
+          )}
+          <button
+            onClick={save} disabled={saving}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, background: saved ? '#059669' : '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', cursor: 'pointer', fontWeight: 600, fontSize: 14, transition: 'background 0.2s' }}
+          >
+            {saved ? <><CheckCircle size={15} strokeWidth={1.5} /> Salvato</> : <><Save size={15} strokeWidth={1.5} /> {saving ? 'Salvataggio…' : 'Salva'}</>}
+          </button>
+        </div>
       </div>
 
       {/* Modal AI */}

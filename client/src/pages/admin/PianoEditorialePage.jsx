@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import {
   Calendar, Plus, ChevronLeft, ChevronRight, AlertCircle, Trash2,
-  Lightbulb, X, Send, GripVertical, Eye, Pencil, Copy, User, Layers, ExternalLink, BarChart2, Clock,
+  Lightbulb, X, Send, GripVertical, Eye, Pencil, Copy, User, Layers, ExternalLink, BarChart2, Clock, Hash,
 } from 'lucide-react'
 
 const TIPO_INFO = {
@@ -219,6 +219,7 @@ export default function PianoEditorialePage() {
   const [posts, setPosts]   = useState([])
   const [drafts, setDrafts] = useState([])
   const [idee, setIdee]     = useState([])
+  const [pendingApprovals, setPendingApprovals] = useState([])
   const [loading, setLoading] = useState(true)
 
   // Week state
@@ -242,20 +243,26 @@ export default function PianoEditorialePage() {
   const [statsData, setStatsData] = useState(null)
   const [statsLoading, setStatsLoading] = useState(false)
 
+  // Hashtag sets
+  const [hashtagSets, setHashtagSets]         = useState([])
+  const [hashtagLoading, setHashtagLoading]   = useState(false)
+
   // ── Loaders ────────────────────────────────────────────────────────────────
 
   async function load(y = year, m = month) {
     setLoading(true)
     try {
       const mm = String(m + 1).padStart(2, '0')
-      const [data, senzaData, ideaData] = await Promise.all([
+      const [data, senzaData, ideaData, inRevisione] = await Promise.all([
         apiFetch(`/api/piano-editoriale?mese=${y}-${mm}`),
         apiFetch('/api/piano-editoriale?senza_data=1'),
         apiFetch('/api/piano-editoriale/idee'),
+        apiFetch('/api/piano-editoriale?stato=in_revisione'),
       ])
       setPosts(data)
       setDrafts(senzaData)
       setIdee(ideaData)
+      setPendingApprovals((inRevisione || []).filter(p => p.richiede_approvazione))
     } catch (e) { setError(e.message) }
     setLoading(false)
   }
@@ -285,6 +292,15 @@ export default function PianoEditorialePage() {
       .finally(() => setStatsLoading(false))
   }, [view])
 
+  useEffect(() => {
+    if (view !== 'hashtag') return
+    setHashtagLoading(true)
+    apiFetch('/api/piano-editoriale/hashtag-sets')
+      .then(d => setHashtagSets(d || []))
+      .catch(() => {})
+      .finally(() => setHashtagLoading(false))
+  }, [view])
+
   // ── Navigation ─────────────────────────────────────────────────────────────
 
   function prevMonth() {
@@ -311,6 +327,7 @@ export default function PianoEditorialePage() {
       await apiFetch(`/api/piano-editoriale/${id}`, { method: 'DELETE' })
       setPosts(prev => prev.filter(p => p.id !== id))
       setWeekPosts(prev => prev.filter(p => p.id !== id))
+      setPendingApprovals(prev => prev.filter(p => p.id !== id))
     } catch (e) { setError(e.message) }
   }
 
@@ -454,10 +471,11 @@ export default function PianoEditorialePage() {
             {[
               { key: 'calendar', label: 'Mese' },
               { key: 'week',     label: 'Settimana' },
-              { key: 'list',     label: 'Lista' },
+              { key: 'list',     label: 'Lista', count: pendingApprovals.length, countColor: '#92400e', countBg: '#fef3c7' },
               { key: 'idee',     label: 'Idee', count: idee.length },
               { key: 'stats',    label: 'Stats' },
-            ].map(({ key, label, count }) => (
+              { key: 'hashtag',  label: 'Hashtag' },
+            ].map(({ key, label, count, countColor, countBg }) => (
               <button
                 key={key}
                 onClick={() => setView(key)}
@@ -465,14 +483,14 @@ export default function PianoEditorialePage() {
               >
                 {label}
                 {count > 0 && (
-                  <span style={{ background: view === key ? '#1a1a2e' : '#d1d5db', color: view === key ? '#fff' : '#6b7280', borderRadius: 20, fontSize: 10, fontWeight: 700, padding: '1px 6px' }}>
+                  <span style={{ background: countBg || (view === key ? '#1a1a2e' : '#d1d5db'), color: countColor || (view === key ? '#fff' : '#6b7280'), borderRadius: 20, fontSize: 10, fontWeight: 700, padding: '1px 6px' }}>
                     {count}
                   </span>
                 )}
               </button>
             ))}
           </div>
-          {view !== 'idee' && view !== 'stats' && (
+          {view !== 'idee' && view !== 'stats' && view !== 'hashtag' && (
             <button
               onClick={() => navigate('/admin/piano-editoriale/nuovo')}
               style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontWeight: 600 }}
@@ -666,6 +684,22 @@ export default function PianoEditorialePage() {
       {view === 'list' && (
         loading ? <p style={{ color: '#888' }}>Caricamento…</p> : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {pendingApprovals.length > 0 && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#fef3c7', borderRadius: 10, border: '1px solid #fde68a', marginBottom: 4 }}>
+                  <span style={{ fontSize: 16 }}>⏳</span>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#92400e' }}>
+                      {pendingApprovals.length} {pendingApprovals.length === 1 ? 'contenuto in attesa' : 'contenuti in attesa'} di approvazione
+                    </span>
+                  </div>
+                </div>
+                {pendingApprovals.map(p => (
+                  <PostRow key={p.id} p={p} navigate={navigate} handleDelete={handleDelete} handleClone={handleClone} />
+                ))}
+                <div style={{ borderTop: '1px solid #eee', margin: '4px 0 8px' }} />
+              </>
+            )}
             {applyLabelFilter(drafts).length > 0 && (
               <>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.6, padding: '4px 0 8px' }}>
@@ -696,6 +730,13 @@ export default function PianoEditorialePage() {
         )
       )}
 
+      {/* ── Vista hashtag ── */}
+      {view === 'hashtag' && (
+        hashtagLoading
+          ? <p style={{ color: '#888' }}>Caricamento…</p>
+          : <HashtagView sets={hashtagSets} setSets={setHashtagSets} />
+      )}
+
       {/* ── Vista stats ── */}
       {view === 'stats' && (
         statsLoading ? <p style={{ color: '#888' }}>Caricamento…</p> : <StatsView data={statsData || []} />
@@ -711,6 +752,139 @@ export default function PianoEditorialePage() {
         onClose={() => setPreviewPost(null)}
         onClone={() => previewPost && handleClone(previewPost.id)}
       />
+    </div>
+  )
+}
+
+// ── HashtagView ───────────────────────────────────────────────────────────────
+
+function HashtagView({ sets, setSets }) {
+  const [adding, setAdding]       = useState(false)
+  const [nome, setNome]           = useState('')
+  const [tagsInput, setTagsInput] = useState('')
+  const [canale, setCanale]       = useState('')
+  const [pillar, setPillar]       = useState('')
+  const [saving, setSaving]       = useState(false)
+  const [filterCanale, setFilterCanale] = useState('')
+
+  async function handleAdd() {
+    if (!nome.trim() || !tagsInput.trim()) return
+    setSaving(true)
+    const tags = tagsInput.split(/[\s,]+/).map(t => t.replace(/^#/, '').toLowerCase().trim()).filter(Boolean)
+    try {
+      const set = await apiFetch('/api/piano-editoriale/hashtag-sets', {
+        method: 'POST',
+        body: JSON.stringify({ nome: nome.trim(), canale, pillar, tags }),
+      })
+      setSets(prev => [set, ...prev])
+      setNome(''); setTagsInput(''); setCanale(''); setPillar('')
+      setAdding(false)
+    } catch {}
+    setSaving(false)
+  }
+
+  async function handleDelete(id) {
+    if (!confirm('Eliminare questo set?')) return
+    try {
+      await apiFetch(`/api/piano-editoriale/hashtag-sets/${id}`, { method: 'DELETE' })
+      setSets(prev => prev.filter(s => s.id !== id))
+    } catch {}
+  }
+
+  const filtered = filterCanale ? sets.filter(s => s.canale === filterCanale) : sets
+  const canaliUsati = [...new Set(sets.map(s => s.canale).filter(Boolean))]
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {canaliUsati.map(c => {
+            const info = CANALI_INFO[c] || { label: c, color: '#666', bg: '#f5f5f5' }
+            return (
+              <button key={c} onClick={() => setFilterCanale(filterCanale === c ? '' : c)}
+                style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                  background: filterCanale === c ? info.bg : '#f3f4f6',
+                  color: filterCanale === c ? info.color : '#9ca3af' }}>
+                {info.label}
+              </button>
+            )
+          })}
+        </div>
+        <button onClick={() => setAdding(a => !a)}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
+          <Plus size={15} strokeWidth={1.5} /> Nuovo set
+        </button>
+      </div>
+
+      {adding && (
+        <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '2px solid #1a1a2e', marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10, marginBottom: 10 }}>
+            <input autoFocus placeholder="Nome set *  es. Estate Instagram" value={nome} onChange={e => setNome(e.target.value)}
+              style={{ padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, fontWeight: 600, boxSizing: 'border-box' }} />
+            <select value={canale} onChange={e => setCanale(e.target.value)}
+              style={{ padding: '8px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, background: '#fff' }}>
+              <option value="">Canale (opzionale)</option>
+              {Object.entries(CANALI_INFO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+            </select>
+            <select value={pillar} onChange={e => setPillar(e.target.value)}
+              style={{ padding: '8px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, background: '#fff' }}>
+              <option value="">Pillar (opzionale)</option>
+              {PILLARS.filter(p => p.key).map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
+            </select>
+          </div>
+          <textarea
+            placeholder="#hashtag1 #hashtag2 hashtag3 — separati da spazio o virgola, # opzionale"
+            value={tagsInput} onChange={e => setTagsInput(e.target.value)} rows={2}
+            style={{ width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit', marginBottom: 10 }}
+          />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={handleAdd} disabled={saving || !nome.trim() || !tagsInput.trim()}
+              style={{ padding: '8px 20px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', opacity: (!nome.trim() || !tagsInput.trim()) ? 0.5 : 1 }}>
+              {saving ? 'Salvataggio…' : 'Salva set'}
+            </button>
+            <button onClick={() => { setAdding(false); setNome(''); setTagsInput(''); setCanale(''); setPillar('') }}
+              style={{ padding: '8px 16px', background: '#f5f5f5', border: 'none', borderRadius: 8, cursor: 'pointer', color: '#555' }}>
+              Annulla
+            </button>
+          </div>
+        </div>
+      )}
+
+      {filtered.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '56px 0', color: '#aaa' }}>
+          <Hash size={44} strokeWidth={1} style={{ marginBottom: 12, color: '#d1d5db' }} />
+          <p style={{ fontWeight: 600, color: '#9ca3af', margin: '0 0 6px' }}>Nessun set hashtag</p>
+          <p style={{ fontSize: 13, color: '#d1d5db', margin: 0 }}>Crea set riutilizzabili da inserire nei tuoi contenuti</p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
+          {filtered.map(set => {
+            const cInfo = CANALI_INFO[set.canale]
+            const pInfo = PILLARS.find(p => p.key === set.pillar)
+            return (
+              <div key={set.id} style={{ background: '#fff', borderRadius: 12, border: '1px solid #eee', padding: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
+                  <span style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>{set.nome}</span>
+                  <button onClick={() => handleDelete(set.id)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ddd', padding: 2, flexShrink: 0 }}>
+                    <Trash2 size={14} strokeWidth={1.5} />
+                  </button>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
+                  {set.tags.map(t => (
+                    <span key={t} style={{ fontSize: 12, padding: '2px 8px', borderRadius: 20, background: '#f0f0ff', color: '#6366f1', fontWeight: 600 }}>#{t}</span>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                  {cInfo && <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 20, background: cInfo.bg, color: cInfo.color }}>{cInfo.label}</span>}
+                  {pInfo && <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 20, background: pInfo.bg, color: pInfo.color }}>{pInfo.label}</span>}
+                  <span style={{ fontSize: 11, color: '#bbb', marginLeft: 'auto' }}>{set.tags.length} tag</span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
