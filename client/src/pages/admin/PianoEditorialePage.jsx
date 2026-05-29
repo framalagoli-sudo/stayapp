@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
+import { useAuth } from '../../context/AuthContext'
 import {
   Calendar, Plus, ChevronLeft, ChevronRight, AlertCircle, Trash2,
-  Lightbulb, X, Send, GripVertical, Eye, Pencil, Copy, User, Layers, ExternalLink, BarChart2, Clock, Hash,
+  Lightbulb, X, Send, GripVertical, Eye, Pencil, Copy, User, Layers, ExternalLink, BarChart2, Clock, Hash, Users,
 } from 'lucide-react'
 
 const TIPO_INFO = {
@@ -211,6 +212,7 @@ function PreviewModal({ post, onClose, onClone }) {
 
 export default function PianoEditorialePage() {
   const navigate = useNavigate()
+  const { profile } = useAuth()
   const now = new Date()
 
   // Calendar state
@@ -246,6 +248,10 @@ export default function PianoEditorialePage() {
   // Hashtag sets
   const [hashtagSets, setHashtagSets]         = useState([])
   const [hashtagLoading, setHashtagLoading]   = useState(false)
+
+  // Team
+  const [teamMembers, setTeamMembers]   = useState([])
+  const [teamLoading, setTeamLoading]   = useState(false)
 
   // ── Loaders ────────────────────────────────────────────────────────────────
 
@@ -299,6 +305,16 @@ export default function PianoEditorialePage() {
       .then(d => setHashtagSets(d || []))
       .catch(() => {})
       .finally(() => setHashtagLoading(false))
+  }, [view])
+
+  useEffect(() => {
+    if (view !== 'team') return
+    if (teamMembers.length) return
+    setTeamLoading(true)
+    apiFetch('/api/users')
+      .then(d => setTeamMembers(d || []))
+      .catch(() => {})
+      .finally(() => setTeamLoading(false))
   }, [view])
 
   // ── Navigation ─────────────────────────────────────────────────────────────
@@ -469,6 +485,7 @@ export default function PianoEditorialePage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ display: 'flex', background: '#f5f5f5', borderRadius: 8, padding: 2 }}>
             {[
+              { key: 'team',     label: 'Team' },
               { key: 'calendar', label: 'Mese' },
               { key: 'week',     label: 'Settimana' },
               { key: 'list',     label: 'Lista', count: pendingApprovals.length, countColor: '#92400e', countBg: '#fef3c7' },
@@ -490,7 +507,7 @@ export default function PianoEditorialePage() {
               </button>
             ))}
           </div>
-          {view !== 'idee' && view !== 'stats' && view !== 'hashtag' && (
+          {view !== 'idee' && view !== 'stats' && view !== 'hashtag' && view !== 'team' && (
             <button
               onClick={() => navigate('/admin/piano-editoriale/nuovo')}
               style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontWeight: 600 }}
@@ -695,7 +712,7 @@ export default function PianoEditorialePage() {
                   </div>
                 </div>
                 {pendingApprovals.map(p => (
-                  <PostRow key={p.id} p={p} navigate={navigate} handleDelete={handleDelete} handleClone={handleClone} />
+                  <PostRow key={p.id} p={p} navigate={navigate} handleDelete={handleDelete} handleClone={handleClone} highlight />
                 ))}
                 <div style={{ borderTop: '1px solid #eee', margin: '4px 0 8px' }} />
               </>
@@ -728,6 +745,13 @@ export default function PianoEditorialePage() {
             )}
           </div>
         )
+      )}
+
+      {/* ── Vista team ── */}
+      {view === 'team' && (
+        teamLoading
+          ? <p style={{ color: '#888' }}>Caricamento…</p>
+          : <TeamView profile={profile} members={teamMembers} />
       )}
 
       {/* ── Vista hashtag ── */}
@@ -1190,12 +1214,12 @@ function IdeaCard({ idea, onDelete, pianificaId, setPianificaId, pianificaData, 
 
 // ── PostRow (list view) ────────────────────────────────────────────────────────
 
-function PostRow({ p, navigate, handleDelete, handleClone }) {
+function PostRow({ p, navigate, handleDelete, handleClone, highlight }) {
   const stInfo = STATO_INFO[p.stato] || STATO_INFO.bozza
   return (
     <div
       onClick={() => navigate(`/admin/piano-editoriale/${p.id}`)}
-      style={{ background: '#fff', borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer', border: '1px solid #eee' }}
+      style={{ background: highlight ? '#fff7ed' : '#fff', borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer', border: highlight ? '1px solid #fed7aa' : '1px solid #eee' }}
     >
       <div style={{ width: 40, textAlign: 'center', flexShrink: 0 }}>
         {p.data_pianificata ? (
@@ -1237,6 +1261,64 @@ function PostRow({ p, navigate, handleDelete, handleClone }) {
       <button onClick={(e) => handleDelete(p.id, e)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#ddd', flexShrink: 0 }}>
         <Trash2 size={15} strokeWidth={1.5} />
       </button>
+    </div>
+  )
+}
+
+// ── TeamView ──────────────────────────────────────────────────────────────────
+
+const ROLE_LABEL = {
+  super_admin:   { label: 'Super Admin', color: '#7c3aed', bg: '#f3e8ff' },
+  admin_azienda: { label: 'Admin',       color: '#2563eb', bg: '#dbeafe' },
+  staff:         { label: 'Staff',       color: '#059669', bg: '#d1fae5' },
+}
+
+function TeamView({ profile, members }) {
+  function initials(name) {
+    if (!name) return '?'
+    return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  }
+
+  const allMembers = [
+    { id: profile?.id, full_name: profile?.full_name || 'Tu', role: profile?.role, email: null, isSelf: true },
+    ...(members || []).filter(m => m.id !== profile?.id),
+  ]
+
+  return (
+    <div>
+      <div style={{ marginBottom: 20 }}>
+        <p style={{ margin: 0, fontSize: 13, color: '#888' }}>
+          Persone con accesso al piano editoriale di questa azienda.
+        </p>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {allMembers.map(m => {
+          const ri = ROLE_LABEL[m.role] || { label: m.role || 'Sconosciuto', color: '#666', bg: '#f5f5f5' }
+          return (
+            <div key={m.id} style={{ background: '#fff', borderRadius: 12, padding: '16px 20px', border: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ width: 44, height: 44, borderRadius: '50%', background: m.isSelf ? '#1a1a2e' : '#f0f0ff', color: m.isSelf ? '#fff' : '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, flexShrink: 0 }}>
+                {initials(m.full_name)}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>{m.full_name || '—'}</span>
+                  {m.isSelf && <span style={{ fontSize: 10, fontWeight: 600, color: '#aaa' }}>(tu)</span>}
+                </div>
+                {m.email && <div style={{ fontSize: 12, color: '#888', marginTop: 1 }}>{m.email}</div>}
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: ri.bg, color: ri.color, flexShrink: 0 }}>{ri.label}</span>
+            </div>
+          )
+        })}
+      </div>
+      {members.length === 0 && (
+        <div style={{ marginTop: 20, padding: '20px 24px', background: '#f9fafb', borderRadius: 12, border: '1px dashed #e5e7eb' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#9ca3af' }}>
+            <Users size={18} strokeWidth={1.5} />
+            <span style={{ fontSize: 13 }}>Nessun membro staff aggiunto. Invita collaboratori da <strong style={{ color: '#6366f1', cursor: 'pointer' }}>Impostazioni → Staff</strong>.</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

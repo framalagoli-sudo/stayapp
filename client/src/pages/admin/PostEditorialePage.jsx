@@ -5,7 +5,7 @@ import { useProperty } from '../../hooks/useProperty'
 import { useAuth } from '../../context/AuthContext'
 import {
   Save, Trash2, ArrowLeft, Calendar, AlertCircle, Sparkles, X,
-  RefreshCw, Copy, Eye, Image, Search, Clock, Tag, CheckCircle, User, Layers, ExternalLink,
+  RefreshCw, Copy, Eye, Image, Search, Clock, Tag, CheckCircle, BadgeCheck, User, Layers, ExternalLink,
 } from 'lucide-react'
 
 const TIPI = [
@@ -868,7 +868,7 @@ export default function PostEditorialePage() {
               disabled={saving}
               style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#059669', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}
             >
-              <CheckCircle size={15} strokeWidth={1.5} /> Approva e pubblica
+              <BadgeCheck size={15} strokeWidth={1.5} /> Approva e pubblica
             </button>
           )}
           <button
