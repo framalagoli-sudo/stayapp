@@ -507,7 +507,8 @@ export default function PianoEditorialePage() {
               </button>
             ))}
           </div>
-          {view !== 'idee' && view !== 'stats' && view !== 'hashtag' && view !== 'team' && (
+          {view !== 'idee' && view !== 'stats' && view !== 'hashtag' && view !== 'team' &&
+           (profile?.role !== 'staff' || profile?.permissions?.pe_crea !== false) && (
             <button
               onClick={() => navigate('/admin/piano-editoriale/nuovo')}
               style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontWeight: 600 }}
@@ -751,7 +752,7 @@ export default function PianoEditorialePage() {
       {view === 'team' && (
         teamLoading
           ? <p style={{ color: '#888' }}>Caricamento…</p>
-          : <TeamView profile={profile} members={teamMembers} />
+          : <TeamView profile={profile} members={teamMembers} setMembers={setTeamMembers} />
       )}
 
       {/* ── Vista hashtag ── */}
@@ -1273,7 +1274,36 @@ const ROLE_LABEL = {
   staff:         { label: 'Staff',       color: '#059669', bg: '#d1fae5' },
 }
 
-function TeamView({ profile, members }) {
+const PE_PERMS = [
+  { key: 'pe_crea',      label: 'Crea',      desc: 'Può creare e modificare bozze',        default: true  },
+  { key: 'pe_pianifica', label: 'Pianifica', desc: 'Può impostare date e pianificare',     default: true  },
+  { key: 'pe_pubblica',  label: 'Pubblica',  desc: 'Può pubblicare direttamente',          default: false },
+  { key: 'pe_approva',   label: 'Approva',   desc: 'Può approvare contenuti in revisione', default: false },
+]
+
+function TeamView({ profile, members, setMembers }) {
+  const [localPerms, setLocalPerms] = useState({})
+
+  function getPerms(member) {
+    return localPerms[member.id] ?? member.permissions ?? {}
+  }
+
+  async function togglePerm(member, key, defaultVal) {
+    const current = getPerms(member)
+    const currentVal = key in current ? current[key] : defaultVal
+    const newPerms = { ...current, [key]: !currentVal }
+    setLocalPerms(p => ({ ...p, [member.id]: newPerms }))
+    try {
+      await apiFetch(`/api/users/${member.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ permissions: newPerms }),
+      })
+      setMembers(prev => prev.map(m => m.id === member.id ? { ...m, permissions: newPerms } : m))
+    } catch {
+      setLocalPerms(p => ({ ...p, [member.id]: current }))
+    }
+  }
+
   function initials(name) {
     if (!name) return '?'
     return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
@@ -1288,34 +1318,72 @@ function TeamView({ profile, members }) {
     <div>
       <div style={{ marginBottom: 20 }}>
         <p style={{ margin: 0, fontSize: 13, color: '#888' }}>
-          Persone con accesso al piano editoriale di questa azienda.
+          Persone con accesso al piano editoriale. Configura cosa può fare ogni membro staff.
         </p>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {allMembers.map(m => {
           const ri = ROLE_LABEL[m.role] || { label: m.role || 'Sconosciuto', color: '#666', bg: '#f5f5f5' }
+          const isStaffMember = m.role === 'staff'
+          const perms = getPerms(m)
           return (
-            <div key={m.id} style={{ background: '#fff', borderRadius: 12, padding: '16px 20px', border: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ width: 44, height: 44, borderRadius: '50%', background: m.isSelf ? '#1a1a2e' : '#f0f0ff', color: m.isSelf ? '#fff' : '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, flexShrink: 0 }}>
-                {initials(m.full_name)}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>{m.full_name || '—'}</span>
-                  {m.isSelf && <span style={{ fontSize: 10, fontWeight: 600, color: '#aaa' }}>(tu)</span>}
+            <div key={m.id} style={{ background: '#fff', borderRadius: 12, padding: '16px 20px', border: '1px solid #eee' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: isStaffMember ? 14 : 0 }}>
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: m.isSelf ? '#1a1a2e' : '#f0f0ff', color: m.isSelf ? '#fff' : '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, flexShrink: 0 }}>
+                  {initials(m.full_name)}
                 </div>
-                {m.email && <div style={{ fontSize: 12, color: '#888', marginTop: 1 }}>{m.email}</div>}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>{m.full_name || '—'}</span>
+                    {m.isSelf && <span style={{ fontSize: 10, fontWeight: 600, color: '#aaa' }}>(tu)</span>}
+                  </div>
+                  {m.email && <div style={{ fontSize: 12, color: '#888', marginTop: 1 }}>{m.email}</div>}
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: ri.bg, color: ri.color, flexShrink: 0 }}>{ri.label}</span>
               </div>
-              <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: ri.bg, color: ri.color, flexShrink: 0 }}>{ri.label}</span>
+
+              {isStaffMember && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, paddingLeft: 60 }}>
+                  {PE_PERMS.map(({ key, label, desc, default: def }) => {
+                    const active = key in perms ? !!perms[key] : def
+                    return (
+                      <button
+                        key={key}
+                        title={desc}
+                        onClick={() => togglePerm(m, key, def)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 5,
+                          padding: '5px 12px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                          background: active ? '#1a1a2e' : '#f3f4f6',
+                          color: active ? '#fff' : '#9ca3af',
+                          transition: 'background 0.15s, color 0.15s',
+                        }}
+                      >
+                        <span style={{
+                          width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+                          background: active ? '#4ade80' : '#d1d5db',
+                        }} />
+                        {label}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+
+              {m.isSelf && (
+                <div style={{ paddingLeft: 60, fontSize: 12, color: '#aaa' }}>
+                  Accesso completo — admin
+                </div>
+              )}
             </div>
           )
         })}
       </div>
       {members.length === 0 && (
-        <div style={{ marginTop: 20, padding: '20px 24px', background: '#f9fafb', borderRadius: 12, border: '1px dashed #e5e7eb' }}>
+        <div style={{ marginTop: 16, padding: '20px 24px', background: '#f9fafb', borderRadius: 12, border: '1px dashed #e5e7eb' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#9ca3af' }}>
             <Users size={18} strokeWidth={1.5} />
-            <span style={{ fontSize: 13 }}>Nessun membro staff aggiunto. Invita collaboratori da <strong style={{ color: '#6366f1', cursor: 'pointer' }}>Impostazioni → Staff</strong>.</span>
+            <span style={{ fontSize: 13 }}>Nessun membro staff. Invita collaboratori da <strong>Impostazioni → Staff</strong>.</span>
           </div>
         </div>
       )}

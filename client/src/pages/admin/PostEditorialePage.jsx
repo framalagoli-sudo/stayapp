@@ -108,7 +108,10 @@ export default function PostEditorialePage() {
   const isNew = id === 'nuovo'
   const { property } = useProperty()
   const { profile } = useAuth()
-  const isStaff = profile?.role === 'staff'
+  const isStaff    = profile?.role === 'staff'
+  const canPublish = !isStaff || !!profile?.permissions?.pe_pubblica
+  const canApprove = !isStaff || !!profile?.permissions?.pe_approva
+  const canPlan    = !isStaff || profile?.permissions?.pe_pianifica !== false
 
   const [loading, setLoading] = useState(!isNew)
   const [saving, setSaving]   = useState(false)
@@ -328,7 +331,11 @@ export default function PostEditorialePage() {
 
   if (loading) return <p style={{ color: '#888' }}>Caricamento…</p>
 
-  const stati = isStaff ? STATI_STAFF : TUTTI_STATI
+  const stati = TUTTI_STATI.filter(s => {
+    if (s.key === 'pubblicato') return canPublish
+    if (s.key === 'pianificato') return canPlan
+    return true
+  })
   return (
     <div style={{ maxWidth: 720 }}>
       {/* Header */}
@@ -862,7 +869,7 @@ export default function PostEditorialePage() {
           </div>
         ) : <div />}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {!isStaff && richiedeApprovazione && stato !== 'pubblicato' && (
+          {canApprove && richiedeApprovazione && stato !== 'pubblicato' && (
             <button
               onClick={() => { setStato('pubblicato'); setTimeout(save, 50) }}
               disabled={saving}
