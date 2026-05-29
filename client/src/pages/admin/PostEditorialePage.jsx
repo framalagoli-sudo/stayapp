@@ -136,6 +136,15 @@ export default function PostEditorialePage() {
   const [createdAt, setCreatedAt]         = useState('')
   const [updatedAt, setUpdatedAt]         = useState('')
 
+  // Approvazione
+  const [richiedeApprovazione, setRichiedeApprovazione] = useState(false)
+
+  // Hashtag sets
+  const [hashtagSets, setHashtagSets]       = useState([])
+  const [showHashtagPanel, setShowHashtagPanel] = useState(false)
+  const [showSaveSet, setShowSaveSet]       = useState(false)
+  const [hashtagSaveName, setHashtagSaveName] = useState('')
+
   // Label input
   const [labelInput, setLabelInput] = useState('')
 
@@ -175,6 +184,7 @@ export default function PostEditorialePage() {
         setRefId(p.ref_id || '')
         setPillar(p.pillar || '')
         setLabels(p.labels || [])
+        setRichiedeApprovazione(p.richiede_approvazione || false)
         setCreatedByName(p.created_by_name || '')
         setUpdatedByName(p.updated_by_name || '')
         setCreatedAt(p.created_at || '')
@@ -188,6 +198,12 @@ export default function PostEditorialePage() {
       })
       .catch(e => { setError(e.message); setLoading(false) })
   }, [id, isNew])
+
+  useEffect(() => {
+    apiFetch('/api/piano-editoriale/hashtag-sets')
+      .then(d => setHashtagSets(d || []))
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const refTipo = TIPO_REF[tipoContenuto]
@@ -221,7 +237,7 @@ export default function PostEditorialePage() {
   async function save() {
     setSaving(true); setError(''); setSaved(false)
     const refTipo = TIPO_REF[tipoContenuto] || null
-    const body = { titolo, testo, canali, data_pianificata: buildDataPianificata(), stato, note, immagine_url: immagineUrl, labels, pillar, design_url: designUrl, tipo_contenuto: tipoContenuto, ref_id: refId || null, ref_tipo: refTipo }
+    const body = { titolo, testo, canali, data_pianificata: buildDataPianificata(), stato, note, immagine_url: immagineUrl, labels, pillar, design_url: designUrl, tipo_contenuto: tipoContenuto, ref_id: refId || null, ref_tipo: refTipo, richiede_approvazione: richiedeApprovazione }
     try {
       if (isNew) {
         const created = await apiFetch('/api/piano-editoriale', { method: 'POST', body: JSON.stringify(body) })
@@ -248,6 +264,35 @@ export default function PostEditorialePage() {
       const copy = await apiFetch(`/api/piano-editoriale/${id}/duplica`, { method: 'POST' })
       navigate(`/admin/piano-editoriale/${copy.id}`)
     } catch (e) { setError(e.message) }
+  }
+
+  function insertHashtagSet(set) {
+    const str = set.tags.map(t => `#${t}`).join(' ')
+    setTesto(prev => prev ? `${prev}\n${str}` : str)
+    setShowHashtagPanel(false)
+  }
+
+  async function saveCurrentHashtagSet() {
+    if (!hashtagSaveName.trim()) return
+    const extracted = [...testo.matchAll(/#([a-zA-Z0-9_àèìòù]+)/g)].map(m => m[1].toLowerCase())
+    const unique = [...new Set(extracted)]
+    if (!unique.length) return
+    try {
+      const set = await apiFetch('/api/piano-editoriale/hashtag-sets', {
+        method: 'POST',
+        body: JSON.stringify({ nome: hashtagSaveName.trim(), canale: canali[0] || '', pillar, tags: unique }),
+      })
+      setHashtagSets(prev => [set, ...prev])
+      setHashtagSaveName('')
+      setShowSaveSet(false)
+    } catch {}
+  }
+
+  async function deleteHashtagSet(id) {
+    try {
+      await apiFetch(`/api/piano-editoriale/hashtag-sets/${id}`, { method: 'DELETE' })
+      setHashtagSets(prev => prev.filter(s => s.id !== id))
+    } catch {}
   }
 
   async function generateAI() {
@@ -283,7 +328,7 @@ export default function PostEditorialePage() {
 
   if (loading) return <p style={{ color: '#888' }}>Caricamento…</p>
 
-  const stati = isStaff ? STATI_STAFF : TUTTI_STATI
+  const stati = (isStaff || richiedeApprovazione) ? STATI_STAFF : TUTTI_STATI
   return (
     <div style={{ maxWidth: 720 }}>
       {/* Header */}
@@ -405,6 +450,85 @@ export default function PostEditorialePage() {
             rows={7} placeholder={TIPO_COPY[tipoContenuto]?.placeholder || 'Scrivi il contenuto…'}
             style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 12px', fontSize: 13, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit', lineHeight: 1.6 }}
           />
+        </div>
+
+        {/* Hashtag sets */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <label style={{ fontSize: 12, color: '#888' }}>Set hashtag</label>
+            <button
+              type="button"
+              onClick={() => { setShowHashtagPanel(p => !p); setShowSaveSet(false) }}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', background: showHashtagPanel ? '#1a1a2e' : '#f5f5f5', color: showHashtagPanel ? '#fff' : '#555', border: 'none', borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+            >
+              # Inserisci set
+            </button>
+            {testo.includes('#') && (
+              <button
+                type="button"
+                onClick={() => { setShowSaveSet(p => !p); setShowHashtagPanel(false) }}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', background: showSaveSet ? '#1a1a2e' : '#f5f5f5', color: showSaveSet ? '#fff' : '#555', border: 'none', borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+              >
+                + Salva set
+              </button>
+            )}
+          </div>
+
+          {showHashtagPanel && (
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: 12, marginBottom: 8 }}>
+              {hashtagSets.length === 0 ? (
+                <p style={{ fontSize: 12, color: '#aaa', margin: 0 }}>Nessun set salvato. Scrivi hashtag nel testo e clicca "+ Salva set".</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {hashtagSets.map(s => (
+                    <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: '#fff', borderRadius: 8, border: '1px solid #eee' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#1a1a2e' }}>{s.nome}</span>
+                        <span style={{ fontSize: 11, color: '#888', marginLeft: 8 }}>
+                          {s.tags.slice(0, 6).map(t => `#${t}`).join(' ')}{s.tags.length > 6 ? '…' : ''}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => insertHashtagSet(s)}
+                        style={{ padding: '4px 10px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}
+                      >
+                        Inserisci
+                      </button>
+                      <button
+                        onClick={() => deleteHashtagSet(s.id)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 2, flexShrink: 0, display: 'flex' }}
+                      >
+                        <X size={13} strokeWidth={2} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {showSaveSet && (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+              <input
+                autoFocus
+                value={hashtagSaveName}
+                onChange={e => setHashtagSaveName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') saveCurrentHashtagSet() }}
+                placeholder="Nome del set… es. Estate Instagram"
+                style={{ flex: 1, border: '1px solid #ddd', borderRadius: 8, padding: '7px 10px', fontSize: 12, boxSizing: 'border-box' }}
+              />
+              <button
+                onClick={saveCurrentHashtagSet}
+                disabled={!hashtagSaveName.trim()}
+                style={{ padding: '7px 14px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: !hashtagSaveName.trim() ? 0.5 : 1, flexShrink: 0 }}
+              >
+                Salva
+              </button>
+              <button onClick={() => { setShowSaveSet(false); setHashtagSaveName('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', display: 'flex' }}>
+                <X size={15} strokeWidth={2} />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Canali */}
@@ -646,6 +770,36 @@ export default function PostEditorialePage() {
               {stati.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
             </select>
           </div>
+        </div>
+
+        {/* Richiede approvazione */}
+        <div style={{ marginTop: 12 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', userSelect: 'none' }}>
+            <div
+              onClick={() => setRichiedeApprovazione(p => !p)}
+              style={{
+                width: 36, height: 20, borderRadius: 20, flexShrink: 0,
+                background: richiedeApprovazione ? '#f59e0b' : '#e5e7eb',
+                position: 'relative', transition: 'background 0.2s', cursor: 'pointer',
+              }}
+            >
+              <div style={{
+                position: 'absolute', top: 2, left: richiedeApprovazione ? 18 : 2,
+                width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              }} />
+            </div>
+            <div>
+              <span style={{ fontSize: 13, fontWeight: 600, color: richiedeApprovazione ? '#92400e' : '#555' }}>
+                Richiede approvazione
+              </span>
+              <span style={{ fontSize: 11, color: '#aaa', marginLeft: 8 }}>
+                {richiedeApprovazione
+                  ? 'Il contenuto deve essere approvato prima della pubblicazione'
+                  : 'Pubblicazione libera'}
+              </span>
+            </div>
+          </label>
         </div>
 
         {/* Best time to post */}

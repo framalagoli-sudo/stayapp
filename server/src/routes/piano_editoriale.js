@@ -142,6 +142,63 @@ router.post('/idee/:id/pianifica', requireAuth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }) }
 })
 
+// ── Stats ─────────────────────────────────────────────────────────────────────
+router.get('/stats', requireAuth, async (req, res) => {
+  try {
+    const azienda_id = await getAziendaId(req.user.id)
+    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { data, error } = await supabase
+      .from('piano_editoriale')
+      .select('stato, tipo_contenuto, canali, data_pianificata, created_at')
+      .eq('azienda_id', azienda_id)
+    if (error) return res.status(500).json({ error: error.message })
+    res.json(data || [])
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
+// ── Hashtag sets ──────────────────────────────────────────────────────────────
+router.get('/hashtag-sets', requireAuth, async (req, res) => {
+  try {
+    const azienda_id = await getAziendaId(req.user.id)
+    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { data, error } = await supabase
+      .from('hashtag_sets')
+      .select('*')
+      .eq('azienda_id', azienda_id)
+      .order('created_at', { ascending: false })
+    if (error) return res.status(500).json({ error: error.message })
+    res.json(data || [])
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
+router.post('/hashtag-sets', requireAuth, async (req, res) => {
+  try {
+    const azienda_id = await getAziendaId(req.user.id)
+    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { nome, canale, pillar, tags } = req.body
+    const { data, error } = await supabase
+      .from('hashtag_sets')
+      .insert({ azienda_id, nome: nome || '', canale: canale || '', pillar: pillar || '', tags: Array.isArray(tags) ? tags : [] })
+      .select().single()
+    if (error) return res.status(500).json({ error: error.message })
+    res.status(201).json(data)
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
+router.delete('/hashtag-sets/:id', requireAuth, async (req, res) => {
+  try {
+    const azienda_id = await getAziendaId(req.user.id)
+    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { error } = await supabase
+      .from('hashtag_sets')
+      .delete()
+      .eq('id', req.params.id)
+      .eq('azienda_id', azienda_id)
+    if (error) return res.status(500).json({ error: error.message })
+    res.json({ ok: true })
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
 // ── Refs interni per collegamento (articoli / newsletter / eventi) ─────────────
 router.get('/refs', requireAuth, async (req, res) => {
   try {
@@ -207,7 +264,7 @@ router.post('/', requireAuth, async (req, res) => {
     const azienda_id = profile.azienda_id
     if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
 
-    const { titolo, testo, immagine_url, canali, data_pianificata, stato, note, labels, pillar, design_url, tipo_contenuto, ref_id, ref_tipo } = req.body
+    const { titolo, testo, immagine_url, canali, data_pianificata, stato, note, labels, pillar, design_url, tipo_contenuto, ref_id, ref_tipo, richiede_approvazione } = req.body
     const stato_safe = ALLOWED_STATO.has(stato) ? stato : 'bozza'
     const authorName = profile.full_name || 'Utente'
 
@@ -225,10 +282,11 @@ router.post('/', requireAuth, async (req, res) => {
         labels:          Array.isArray(labels) ? labels.map(l => String(l).trim().toLowerCase().replace(/[^a-z0-9_àèìòù-]/g, '').slice(0, 50)).filter(Boolean) : [],
         pillar:          pillar || '',
         design_url:      design_url || '',
-        tipo_contenuto:  tipo_contenuto || 'post',
-        ref_id:          ref_id || null,
-        ref_tipo:        ref_tipo || null,
-        created_by:      req.user.id,
+        tipo_contenuto:        tipo_contenuto || 'post',
+        ref_id:                ref_id || null,
+        ref_tipo:              ref_tipo || null,
+        richiede_approvazione: richiede_approvazione === true,
+        created_by:            req.user.id,
         created_by_name: authorName,
         updated_by:      req.user.id,
         updated_by_name: authorName,
@@ -286,7 +344,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
     const azienda_id = profile.azienda_id
     if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
 
-    const allowed = ['titolo', 'testo', 'immagine_url', 'canali', 'data_pianificata', 'stato', 'note', 'labels', 'pillar', 'design_url', 'tipo_contenuto', 'ref_id', 'ref_tipo']
+    const allowed = ['titolo', 'testo', 'immagine_url', 'canali', 'data_pianificata', 'stato', 'note', 'labels', 'pillar', 'design_url', 'tipo_contenuto', 'ref_id', 'ref_tipo', 'richiede_approvazione']
     const patch = {
       updated_at:      new Date().toISOString(),
       updated_by:      req.user.id,

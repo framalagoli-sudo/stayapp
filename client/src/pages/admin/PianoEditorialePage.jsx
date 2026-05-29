@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import {
   Calendar, Plus, ChevronLeft, ChevronRight, AlertCircle, Trash2,
-  Lightbulb, X, Send, GripVertical, Eye, Pencil, Copy, User, Layers, ExternalLink,
+  Lightbulb, X, Send, GripVertical, Eye, Pencil, Copy, User, Layers, ExternalLink, BarChart2, Clock,
 } from 'lucide-react'
 
 const TIPO_INFO = {
@@ -238,6 +238,10 @@ export default function PianoEditorialePage() {
   // Preview modal
   const [previewPost, setPreviewPost] = useState(null)
 
+  // Stats
+  const [statsData, setStatsData] = useState(null)
+  const [statsLoading, setStatsLoading] = useState(false)
+
   // ── Loaders ────────────────────────────────────────────────────────────────
 
   async function load(y = year, m = month) {
@@ -271,6 +275,15 @@ export default function PianoEditorialePage() {
 
   useEffect(() => { load() }, [year, month])
   useEffect(() => { if (view === 'week') loadWeek(weekStart) }, [view, weekStart])
+  useEffect(() => {
+    if (view !== 'stats') return
+    if (statsData) return
+    setStatsLoading(true)
+    apiFetch('/api/piano-editoriale/stats')
+      .then(d => setStatsData(d || []))
+      .catch(() => setStatsData([]))
+      .finally(() => setStatsLoading(false))
+  }, [view])
 
   // ── Navigation ─────────────────────────────────────────────────────────────
 
@@ -403,6 +416,9 @@ export default function PianoEditorialePage() {
           </span>
         )}
         <span style={{ flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', padding: compact ? '2px 2px' : '4px 4px', minWidth: 0 }}>
+          {p.richiede_approvazione && p.stato === 'in_revisione' && (
+            <span style={{ marginRight: 3, fontSize: compact ? 8 : 9, background: '#fef3c7', color: '#92400e', borderRadius: 3, padding: '0 3px', fontWeight: 700 }}>⏳</span>
+          )}
           {p.titolo || p.testo?.slice(0, 30) || '—'}
         </span>
         <span
@@ -440,6 +456,7 @@ export default function PianoEditorialePage() {
               { key: 'week',     label: 'Settimana' },
               { key: 'list',     label: 'Lista' },
               { key: 'idee',     label: 'Idee', count: idee.length },
+              { key: 'stats',    label: 'Stats' },
             ].map(({ key, label, count }) => (
               <button
                 key={key}
@@ -455,7 +472,7 @@ export default function PianoEditorialePage() {
               </button>
             ))}
           </div>
-          {view !== 'idee' && (
+          {view !== 'idee' && view !== 'stats' && (
             <button
               onClick={() => navigate('/admin/piano-editoriale/nuovo')}
               style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontWeight: 600 }}
@@ -679,6 +696,11 @@ export default function PianoEditorialePage() {
         )
       )}
 
+      {/* ── Vista stats ── */}
+      {view === 'stats' && (
+        statsLoading ? <p style={{ color: '#888' }}>Caricamento…</p> : <StatsView data={statsData || []} />
+      )}
+
       {/* ── Vista idee ── */}
       {view === 'idee' && (
         <IdeeView idee={idee} setIdee={setIdee} onDelete={handleDeleteIdea} onPianifica={handlePianifica} />
@@ -689,6 +711,155 @@ export default function PianoEditorialePage() {
         onClose={() => setPreviewPost(null)}
         onClone={() => previewPost && handleClone(previewPost.id)}
       />
+    </div>
+  )
+}
+
+// ── StatsView ─────────────────────────────────────────────────────────────────
+
+function StatsView({ data }) {
+  if (!data.length) {
+    return (
+      <div style={{ textAlign: 'center', padding: '56px 0', color: '#aaa' }}>
+        <BarChart2 size={44} strokeWidth={1} style={{ marginBottom: 12, color: '#d1d5db' }} />
+        <p style={{ fontWeight: 600, color: '#9ca3af', margin: 0 }}>Nessun dato ancora</p>
+        <p style={{ fontSize: 13, color: '#d1d5db', margin: '6px 0 0' }}>Inizia a creare contenuti per vedere le statistiche</p>
+      </div>
+    )
+  }
+
+  // KPI
+  const totale      = data.length
+  const pubblicati  = data.filter(p => p.stato === 'pubblicato').length
+  const pianificati = data.filter(p => p.stato === 'pianificato').length
+  const bozze       = data.filter(p => p.stato === 'bozza').length
+  const inRevisione = data.filter(p => p.stato === 'in_revisione').length
+
+  // Tasso pubblicazione (post con data nel passato)
+  const oggi = new Date().toISOString().slice(0, 10)
+  const conDataPassata = data.filter(p => p.data_pianificata && p.data_pianificata.slice(0, 10) <= oggi)
+  const tassoPublicazione = conDataPassata.length
+    ? Math.round((conDataPassata.filter(p => p.stato === 'pubblicato').length / conDataPassata.length) * 100)
+    : null
+
+  // Per tipo
+  const perTipo = {}
+  data.forEach(p => {
+    const k = p.tipo_contenuto || 'post'
+    perTipo[k] = (perTipo[k] || 0) + 1
+  })
+  const tipiSorted = Object.entries(perTipo).sort((a, b) => b[1] - a[1])
+  const maxTipo = Math.max(...tipiSorted.map(e => e[1]))
+
+  // Per canale
+  const perCanale = {}
+  data.forEach(p => {
+    (p.canali || []).forEach(c => { perCanale[c] = (perCanale[c] || 0) + 1 })
+  })
+  const canaliSorted = Object.entries(perCanale).sort((a, b) => b[1] - a[1])
+  const maxCanale = canaliSorted.length ? Math.max(...canaliSorted.map(e => e[1])) : 1
+
+  // Trend ultimi 6 mesi
+  const trend = []
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date()
+    d.setMonth(d.getMonth() - i)
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const key = `${y}-${m}`
+    const count = data.filter(p => p.data_pianificata?.startsWith(key)).length
+    trend.push({ label: MESI[d.getMonth()].slice(0, 3), count })
+  }
+  const maxTrend = Math.max(...trend.map(t => t.count), 1)
+
+  const kpiStyle = { background: '#fff', borderRadius: 12, border: '1px solid #eee', padding: '16px 20px', flex: 1, minWidth: 100 }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* KPI */}
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        {[
+          { label: 'Totale contenuti', value: totale, color: '#1a1a2e' },
+          { label: 'Pubblicati', value: pubblicati, color: '#276749' },
+          { label: 'Pianificati', value: pianificati, color: '#2b6cb0' },
+          { label: 'Bozze', value: bozze, color: '#888' },
+          ...(inRevisione > 0 ? [{ label: 'In revisione', value: inRevisione, color: '#92400e' }] : []),
+          ...(tassoPublicazione !== null ? [{ label: 'Tasso pubblicazione', value: `${tassoPublicazione}%`, color: tassoPublicazione >= 70 ? '#276749' : tassoPublicazione >= 40 ? '#d97706' : '#c53030' }] : []),
+        ].map(k => (
+          <div key={k.label} style={kpiStyle}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: k.color }}>{k.value}</div>
+            <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{k.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+        {/* Per tipo */}
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #eee', padding: 20 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <BarChart2 size={14} strokeWidth={1.5} /> Per tipo di contenuto
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {tipiSorted.map(([tipo, count]) => {
+              const info = TIPO_INFO[tipo] || { label: tipo, color: '#718096' }
+              return (
+                <div key={tipo}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                    <span style={{ fontSize: 12, color: '#555', fontWeight: 600 }}>{info.label}</span>
+                    <span style={{ fontSize: 12, color: '#888', fontWeight: 700 }}>{count}</span>
+                  </div>
+                  <div style={{ height: 6, background: '#f5f5f5', borderRadius: 3, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${(count / maxTipo) * 100}%`, background: info.color, borderRadius: 3, transition: 'width 0.4s' }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Per canale */}
+        {canaliSorted.length > 0 && (
+          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #eee', padding: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <BarChart2 size={14} strokeWidth={1.5} /> Per canale
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {canaliSorted.map(([canale, count]) => {
+                const info = CANALI_INFO[canale] || { label: canale, color: '#718096', bg: '#f5f5f5' }
+                return (
+                  <div key={canale}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                      <span style={{ fontSize: 12, color: '#555', fontWeight: 600 }}>{info.label}</span>
+                      <span style={{ fontSize: 12, color: '#888', fontWeight: 700 }}>{count}</span>
+                    </div>
+                    <div style={{ height: 6, background: '#f5f5f5', borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${(count / maxCanale) * 100}%`, background: info.color, borderRadius: 3, transition: 'width 0.4s' }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Trend 6 mesi */}
+        <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #eee', padding: 20 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Clock size={14} strokeWidth={1.5} /> Trend ultimi 6 mesi
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 80 }}>
+            {trend.map(t => (
+              <div key={t.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <span style={{ fontSize: 10, color: '#888', fontWeight: 700 }}>{t.count || ''}</span>
+                <div style={{ width: '100%', background: '#f5f5f5', borderRadius: 4, overflow: 'hidden', height: 52, display: 'flex', alignItems: 'flex-end' }}>
+                  <div style={{ width: '100%', height: `${Math.max(4, (t.count / maxTrend) * 100)}%`, background: t.count ? '#1a1a2e' : '#e5e7eb', borderRadius: 4, transition: 'height 0.4s' }} />
+                </div>
+                <span style={{ fontSize: 9, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.3 }}>{t.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -876,6 +1047,9 @@ function PostRow({ p, navigate, handleDelete, handleClone }) {
         const ti = TIPO_INFO[p.tipo_contenuto]
         return ti ? <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: ti.color + '18', color: ti.color, flexShrink: 0 }}>{ti.label}</span> : null
       })()}
+      {p.richiede_approvazione && p.stato === 'in_revisione' && (
+        <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: '#fef3c7', color: '#92400e', flexShrink: 0 }}>⏳ Approvazione</span>
+      )}
       <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: stInfo.bg, color: stInfo.color, flexShrink: 0 }}>
         {stInfo.label}
       </span>
