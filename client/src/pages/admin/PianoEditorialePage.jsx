@@ -1474,11 +1474,11 @@ function CampaignView({ campagne, setCampagne }) {
     } catch {}
   }
 
-  function FormCampagna({ onSave, onCancel, submitLabel }) {
+  function renderForm(submitLabel, onCancel) {
     return (
       <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '2px solid #1a1a2e', marginBottom: 8 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginBottom: 12 }}>
-          <input autoFocus placeholder="Nome campagna *" value={nome} onChange={e => setNome(e.target.value)}
+          <input placeholder="Nome campagna *" value={nome} onChange={e => setNome(e.target.value)}
             style={{ padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, fontWeight: 600, boxSizing: 'border-box' }} />
           <input type="date" value={dataInizio} onChange={e => setDataInizio(e.target.value)}
             style={{ padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, background: '#fff', boxSizing: 'border-box' }} />
@@ -1519,9 +1519,7 @@ function CampaignView({ campagne, setCampagne }) {
         </button>
       </div>
 
-      {adding && !editingId && (
-        <FormCampagna submitLabel="Crea campagna" onCancel={() => { resetForm(); setAdding(false) }} />
-      )}
+      {adding && !editingId && renderForm('Crea campagna', () => { resetForm(); setAdding(false) })}
 
       {campagne.length === 0 && !adding ? (
         <div style={{ textAlign: 'center', padding: '56px 0' }}>
@@ -1533,9 +1531,7 @@ function CampaignView({ campagne, setCampagne }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {campagne.map(c => (
             <div key={c.id}>
-              {editingId === c.id && (
-                <FormCampagna submitLabel="Aggiorna" onCancel={() => { resetForm(); setEditingId(null) }} />
-              )}
+              {editingId === c.id && renderForm('Aggiorna', () => { resetForm(); setEditingId(null) })}
               {editingId !== c.id && (
                 <div style={{ background: '#fff', borderRadius: 12, padding: '16px 20px', border: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 16 }}>
                   <div style={{ width: 14, height: 14, borderRadius: '50%', background: c.colore, flexShrink: 0 }} />
