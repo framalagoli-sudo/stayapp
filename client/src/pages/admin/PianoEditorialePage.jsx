@@ -4,7 +4,7 @@ import { apiFetch } from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
 import {
   Calendar, Plus, ChevronLeft, ChevronRight, AlertCircle, Trash2,
-  Lightbulb, X, Send, GripVertical, Eye, Pencil, Copy, User, Layers, ExternalLink, BarChart2, Clock, Hash, Users,
+  Lightbulb, X, Send, GripVertical, Eye, Pencil, Copy, User, Layers, ExternalLink, BarChart2, Clock, Hash, Users, Flag,
 } from 'lucide-react'
 
 const TIPO_INFO = {
@@ -253,6 +253,11 @@ export default function PianoEditorialePage() {
   const [teamMembers, setTeamMembers]   = useState([])
   const [teamLoading, setTeamLoading]   = useState(false)
 
+  // Campagne
+  const [campagne, setCampagne]         = useState([])
+  const [campagneLoading, setCampagneLoading] = useState(false)
+  const [campagnaFilter, setCampagnaFilter]   = useState('')
+
   // ── Loaders ────────────────────────────────────────────────────────────────
 
   async function load(y = year, m = month) {
@@ -316,6 +321,13 @@ export default function PianoEditorialePage() {
       .catch(() => {})
       .finally(() => setTeamLoading(false))
   }, [view])
+
+  useEffect(() => {
+    if (campagne.length) return
+    apiFetch('/api/piano-editoriale/campagne')
+      .then(d => setCampagne(d || []))
+      .catch(() => {})
+  }, [])
 
   // ── Navigation ─────────────────────────────────────────────────────────────
 
@@ -387,6 +399,8 @@ export default function PianoEditorialePage() {
 
   // ── Derived ────────────────────────────────────────────────────────────────
 
+  const campagnaMap = Object.fromEntries(campagne.map(c => [c.id, c]))
+
   const cells = buildCalendarDays(year, month)
 
   const allLabels = [...new Set([...posts, ...drafts, ...weekPosts].flatMap(p => p.labels || []))]
@@ -449,6 +463,9 @@ export default function PianoEditorialePage() {
           </span>
         )}
         <span style={{ flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', padding: compact ? '2px 2px' : '4px 4px', minWidth: 0 }}>
+          {p.campagna_id && campagnaMap[p.campagna_id] && (
+            <span style={{ display: 'inline-block', width: compact ? 5 : 6, height: compact ? 5 : 6, borderRadius: '50%', background: campagnaMap[p.campagna_id].colore, marginRight: 3, flexShrink: 0, verticalAlign: 'middle' }} />
+          )}
           {p.richiede_approvazione && p.stato !== 'pubblicato' && (
             <span style={{ marginRight: 3, fontSize: compact ? 8 : 9, background: '#fef3c7', color: '#92400e', borderRadius: 3, padding: '0 3px', fontWeight: 700 }}>⏳</span>
           )}
@@ -485,7 +502,8 @@ export default function PianoEditorialePage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ display: 'flex', background: '#f5f5f5', borderRadius: 8, padding: 2 }}>
             {[
-              { key: 'team',     label: 'Team' },
+              { key: 'team',      label: 'Team' },
+              { key: 'campagne',  label: 'Campagne', count: campagne.length || undefined },
               { key: 'calendar', label: 'Mese' },
               { key: 'week',     label: 'Settimana' },
               { key: 'list',     label: 'Lista', count: pendingApprovals.length, countColor: '#92400e', countBg: '#fef3c7' },
@@ -507,7 +525,7 @@ export default function PianoEditorialePage() {
               </button>
             ))}
           </div>
-          {view !== 'idee' && view !== 'stats' && view !== 'hashtag' && view !== 'team' &&
+          {view !== 'idee' && view !== 'stats' && view !== 'hashtag' && view !== 'team' && view !== 'campagne' &&
            (profile?.role !== 'staff' || profile?.permissions?.pe_crea !== false) && (
             <button
               onClick={() => navigate('/admin/piano-editoriale/nuovo')}
@@ -713,7 +731,7 @@ export default function PianoEditorialePage() {
                   </div>
                 </div>
                 {pendingApprovals.map(p => (
-                  <PostRow key={p.id} p={p} navigate={navigate} handleDelete={handleDelete} handleClone={handleClone} highlight />
+                  <PostRow key={p.id} p={p} navigate={navigate} handleDelete={handleDelete} handleClone={handleClone} highlight campagnaMap={campagnaMap} />
                 ))}
                 <div style={{ borderTop: '1px solid #eee', margin: '4px 0 8px' }} />
               </>
@@ -724,7 +742,7 @@ export default function PianoEditorialePage() {
                   Bozze non pianificate ({applyLabelFilter(drafts).length})
                 </div>
                 {applyLabelFilter(drafts).map(p => (
-                  <PostRow key={p.id} p={p} navigate={navigate} handleDelete={handleDelete} handleClone={handleClone} />
+                  <PostRow key={p.id} p={p} navigate={navigate} handleDelete={handleDelete} handleClone={handleClone} campagnaMap={campagnaMap} />
                 ))}
                 {applyLabelFilter(posts).length > 0 && <div style={{ borderTop: '1px solid #eee', margin: '8px 0' }} />}
               </>
@@ -740,12 +758,17 @@ export default function PianoEditorialePage() {
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.6, padding: '4px 0 8px' }}>Questo mese</div>
                 )}
                 {applyLabelFilter(posts).map(p => (
-                  <PostRow key={p.id} p={p} navigate={navigate} handleDelete={handleDelete} handleClone={handleClone} />
+                  <PostRow key={p.id} p={p} navigate={navigate} handleDelete={handleDelete} handleClone={handleClone} campagnaMap={campagnaMap} />
                 ))}
               </>
             )}
           </div>
         )
+      )}
+
+      {/* ── Vista campagne ── */}
+      {view === 'campagne' && (
+        <CampaignView campagne={campagne} setCampagne={setCampagne} />
       )}
 
       {/* ── Vista team ── */}
@@ -1215,8 +1238,9 @@ function IdeaCard({ idea, onDelete, pianificaId, setPianificaId, pianificaData, 
 
 // ── PostRow (list view) ────────────────────────────────────────────────────────
 
-function PostRow({ p, navigate, handleDelete, handleClone, highlight }) {
-  const stInfo = STATO_INFO[p.stato] || STATO_INFO.bozza
+function PostRow({ p, navigate, handleDelete, handleClone, highlight, campagnaMap = {} }) {
+  const stInfo   = STATO_INFO[p.stato] || STATO_INFO.bozza
+  const campagna = p.campagna_id ? campagnaMap[p.campagna_id] : null
   return (
     <div
       onClick={() => navigate(`/admin/piano-editoriale/${p.id}`)}
@@ -1246,6 +1270,12 @@ function PostRow({ p, navigate, handleDelete, handleClone, highlight }) {
         const ti = TIPO_INFO[p.tipo_contenuto]
         return ti ? <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: ti.color + '18', color: ti.color, flexShrink: 0 }}>{ti.label}</span> : null
       })()}
+      {campagna && (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: campagna.colore + '20', color: campagna.colore, flexShrink: 0, border: `1px solid ${campagna.colore}40` }}>
+          <span style={{ width: 5, height: 5, borderRadius: '50%', background: campagna.colore, flexShrink: 0 }} />
+          {campagna.nome}
+        </span>
+      )}
       {p.richiede_approvazione && p.stato !== 'pubblicato' && (
         <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: '#fef3c7', color: '#92400e', flexShrink: 0 }}>⏳ Approvazione</span>
       )}
@@ -1385,6 +1415,151 @@ function TeamView({ profile, members, setMembers }) {
             <Users size={18} strokeWidth={1.5} />
             <span style={{ fontSize: 13 }}>Nessun membro staff. Invita collaboratori da <strong>Impostazioni → Staff</strong>.</span>
           </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+// ── CampaignView ──────────────────────────────────────────────────────────────
+
+const COLORS_PRESET = ['#6366f1','#ec4899','#f97316','#059669','#0ea5e9','#7c3aed','#dc2626','#d97706','#0284c7','#16a34a']
+
+function CampaignView({ campagne, setCampagne }) {
+  const [adding, setAdding]           = useState(false)
+  const [editingId, setEditingId]     = useState(null)
+  const [nome, setNome]               = useState('')
+  const [colore, setColore]           = useState('#6366f1')
+  const [dataInizio, setDataInizio]   = useState('')
+  const [dataFine, setDataFine]       = useState('')
+  const [descrizione, setDescrizione] = useState('')
+  const [saving, setSaving]           = useState(false)
+
+  function resetForm() { setNome(''); setColore('#6366f1'); setDataInizio(''); setDataFine(''); setDescrizione('') }
+
+  async function handleSave() {
+    if (!nome.trim()) return
+    setSaving(true)
+    try {
+      if (editingId) {
+        const updated = await apiFetch(`/api/piano-editoriale/campagne/${editingId}`, {
+          method: 'PATCH', body: JSON.stringify({ nome, colore, data_inizio: dataInizio || null, data_fine: dataFine || null, descrizione }),
+        })
+        setCampagne(prev => prev.map(c => c.id === editingId ? updated : c))
+        setEditingId(null)
+      } else {
+        const created = await apiFetch('/api/piano-editoriale/campagne', {
+          method: 'POST', body: JSON.stringify({ nome, colore, data_inizio: dataInizio || null, data_fine: dataFine || null, descrizione }),
+        })
+        setCampagne(prev => [...prev, created])
+        setAdding(false)
+      }
+      resetForm()
+    } catch {}
+    setSaving(false)
+  }
+
+  function startEdit(c) {
+    setEditingId(c.id); setNome(c.nome); setColore(c.colore)
+    setDataInizio(c.data_inizio || ''); setDataFine(c.data_fine || ''); setDescrizione(c.descrizione || '')
+    setAdding(false)
+  }
+
+  async function handleDelete(id) {
+    if (!confirm('Eliminare questa campagna? I post associati non verranno eliminati.')) return
+    try {
+      await apiFetch(`/api/piano-editoriale/campagne/${id}`, { method: 'DELETE' })
+      setCampagne(prev => prev.filter(c => c.id !== id))
+    } catch {}
+  }
+
+  function FormCampagna({ onSave, onCancel, submitLabel }) {
+    return (
+      <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '2px solid #1a1a2e', marginBottom: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginBottom: 12 }}>
+          <input autoFocus placeholder="Nome campagna *" value={nome} onChange={e => setNome(e.target.value)}
+            style={{ padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, fontWeight: 600, boxSizing: 'border-box' }} />
+          <input type="date" value={dataInizio} onChange={e => setDataInizio(e.target.value)}
+            style={{ padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, background: '#fff', boxSizing: 'border-box' }} />
+          <input type="date" value={dataFine} onChange={e => setDataFine(e.target.value)}
+            style={{ padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, background: '#fff', boxSizing: 'border-box' }} />
+        </div>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>Colore</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {COLORS_PRESET.map(col => (
+              <button key={col} onClick={() => setColore(col)}
+                style={{ width: 28, height: 28, borderRadius: '50%', background: col, border: colore === col ? '3px solid #1a1a2e' : '2px solid transparent', cursor: 'pointer', flexShrink: 0 }} />
+            ))}
+          </div>
+        </div>
+        <input placeholder="Descrizione (opzionale)" value={descrizione} onChange={e => setDescrizione(e.target.value)}
+          style={{ width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, boxSizing: 'border-box', marginBottom: 12 }} />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={handleSave} disabled={saving || !nome.trim()}
+            style={{ padding: '8px 20px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', opacity: !nome.trim() ? 0.5 : 1 }}>
+            {saving ? 'Salvataggio…' : submitLabel}
+          </button>
+          <button onClick={onCancel}
+            style={{ padding: '8px 16px', background: '#f5f5f5', border: 'none', borderRadius: 8, cursor: 'pointer', color: '#555' }}>
+            Annulla
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+        <button onClick={() => { setAdding(a => !a); setEditingId(null); resetForm() }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
+          <Plus size={15} strokeWidth={1.5} /> Nuova campagna
+        </button>
+      </div>
+
+      {adding && !editingId && (
+        <FormCampagna submitLabel="Crea campagna" onCancel={() => { resetForm(); setAdding(false) }} />
+      )}
+
+      {campagne.length === 0 && !adding ? (
+        <div style={{ textAlign: 'center', padding: '56px 0' }}>
+          <Flag size={44} strokeWidth={1} style={{ marginBottom: 12, color: '#d1d5db' }} />
+          <p style={{ fontWeight: 600, color: '#9ca3af', margin: '0 0 6px' }}>Nessuna campagna</p>
+          <p style={{ fontSize: 13, color: '#d1d5db', margin: 0 }}>Raggruppa i contenuti per campagna: lanci, stagioni, promozioni</p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {campagne.map(c => (
+            <div key={c.id}>
+              {editingId === c.id && (
+                <FormCampagna submitLabel="Aggiorna" onCancel={() => { resetForm(); setEditingId(null) }} />
+              )}
+              {editingId !== c.id && (
+                <div style={{ background: '#fff', borderRadius: 12, padding: '16px 20px', border: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div style={{ width: 14, height: 14, borderRadius: '50%', background: c.colore, flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>{c.nome}</div>
+                    {(c.data_inizio || c.data_fine) && (
+                      <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
+                        {c.data_inizio ? new Date(c.data_inizio + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }) : '…'}
+                        {' → '}
+                        {c.data_fine ? new Date(c.data_fine + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }) : 'in corso'}
+                      </div>
+                    )}
+                    {c.descrizione && <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{c.descrizione}</div>}
+                  </div>
+                  <button onClick={() => startEdit(c)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 4 }}>
+                    <Pencil size={14} strokeWidth={1.5} />
+                  </button>
+                  <button onClick={() => handleDelete(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ddd', padding: 4 }}>
+                    <Trash2 size={14} strokeWidth={1.5} />
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>

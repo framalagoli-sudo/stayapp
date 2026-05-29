@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext'
 import {
   Save, Trash2, ArrowLeft, Calendar, AlertCircle, Sparkles, X,
   RefreshCw, Copy, Eye, Image, Search, Clock, Tag, CheckCircle, BadgeCheck, User, Layers, ExternalLink,
+  MessageSquare, Send, Target, ChevronDown, ChevronUp,
 } from 'lucide-react'
 
 const TIPI = [
@@ -142,6 +143,19 @@ export default function PostEditorialePage() {
   // Approvazione
   const [richiedeApprovazione, setRichiedeApprovazione] = useState(false)
 
+  // Campagna
+  const [campagnaId, setCampagnaId]   = useState('')
+  const [campagne, setCampagne]       = useState([])
+
+  // Commenti
+  const [commenti, setCommenti]             = useState([])
+  const [commentiLoaded, setCommentiLoaded] = useState(false)
+  const [nuovoCommento, setNuovoCommento]   = useState('')
+  const [sendingCommento, setSendingCommento] = useState(false)
+
+  // Content score
+  const [showScore, setShowScore] = useState(false)
+
   // Hashtag sets
   const [hashtagSets, setHashtagSets]       = useState([])
   const [showHashtagPanel, setShowHashtagPanel] = useState(false)
@@ -188,6 +202,7 @@ export default function PostEditorialePage() {
         setPillar(p.pillar || '')
         setLabels(p.labels || [])
         setRichiedeApprovazione(p.richiede_approvazione || false)
+        setCampagnaId(p.campagna_id || '')
         setCreatedByName(p.created_by_name || '')
         setUpdatedByName(p.updated_by_name || '')
         setCreatedAt(p.created_at || '')
@@ -203,10 +218,16 @@ export default function PostEditorialePage() {
   }, [id, isNew])
 
   useEffect(() => {
-    apiFetch('/api/piano-editoriale/hashtag-sets')
-      .then(d => setHashtagSets(d || []))
-      .catch(() => {})
+    apiFetch('/api/piano-editoriale/hashtag-sets').then(d => setHashtagSets(d || [])).catch(() => {})
+    apiFetch('/api/piano-editoriale/campagne').then(d => setCampagne(d || [])).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (isNew || commentiLoaded) return
+    apiFetch(`/api/piano-editoriale/${id}/commenti`)
+      .then(d => { setCommenti(d || []); setCommentiLoaded(true) })
+      .catch(() => {})
+  }, [id, isNew])
 
   useEffect(() => {
     const refTipo = TIPO_REF[tipoContenuto]
@@ -240,7 +261,7 @@ export default function PostEditorialePage() {
   async function save() {
     setSaving(true); setError(''); setSaved(false)
     const refTipo = TIPO_REF[tipoContenuto] || null
-    const body = { titolo, testo, canali, data_pianificata: buildDataPianificata(), stato, note, immagine_url: immagineUrl, labels, pillar, design_url: designUrl, tipo_contenuto: tipoContenuto, ref_id: refId || null, ref_tipo: refTipo, richiede_approvazione: richiedeApprovazione }
+    const body = { titolo, testo, canali, data_pianificata: buildDataPianificata(), stato, note, immagine_url: immagineUrl, labels, pillar, design_url: designUrl, tipo_contenuto: tipoContenuto, ref_id: refId || null, ref_tipo: refTipo, richiede_approvazione: richiedeApprovazione, campagna_id: campagnaId || null }
     try {
       if (isNew) {
         const created = await apiFetch('/api/piano-editoriale', { method: 'POST', body: JSON.stringify(body) })
@@ -260,6 +281,27 @@ export default function PostEditorialePage() {
       await apiFetch(`/api/piano-editoriale/${id}`, { method: 'DELETE' })
       navigate('/admin/piano-editoriale')
     } catch (e) { setError(e.message) }
+  }
+
+  async function sendCommento() {
+    if (!nuovoCommento.trim()) return
+    setSendingCommento(true)
+    try {
+      const c = await apiFetch(`/api/piano-editoriale/${id}/commenti`, {
+        method: 'POST',
+        body: JSON.stringify({ testo: nuovoCommento.trim() }),
+      })
+      setCommenti(prev => [...prev, c])
+      setNuovoCommento('')
+    } catch (e) { setError(e.message) }
+    setSendingCommento(false)
+  }
+
+  async function deleteCommento(cid) {
+    try {
+      await apiFetch(`/api/piano-editoriale/${id}/commenti/${cid}`, { method: 'DELETE' })
+      setCommenti(prev => prev.filter(c => c.id !== cid))
+    } catch {}
   }
 
   async function handleDuplica() {
@@ -327,6 +369,35 @@ export default function PostEditorialePage() {
       setPhotoError(e.message.includes('503') ? 'Unsplash non configurato su Railway (UNSPLASH_ACCESS_KEY mancante)' : e.message)
     }
     setPhotoLoading(false)
+  }
+
+  function computeScore() {
+    const checks = []
+    checks.push({ label: 'Titolo presente',    pass: !!titolo.trim(),         weight: 10 })
+    checks.push({ label: 'Testo / copy',       pass: !!testo.trim(),          weight: 10 })
+    checks.push({ label: 'Data pianificata',   pass: !!dataPianificata,       weight: 10 })
+    checks.push({ label: 'Almeno un canale',   pass: canali.length > 0,       weight: 10 })
+    const needsImage = ['post','reel','story','carosello','video','ads','blog_post','newsletter','evento'].includes(tipoContenuto)
+    if (needsImage) checks.push({ label: 'Immagine / thumbnail', pass: !!immagineUrl, weight: 10 })
+
+    if (canali.length > 0 && testo.trim()) {
+      const textLen   = testo.replace(/#\w+/g, '').trim().length
+      const hashCount = (testo.match(/#\w+/g) || []).length
+      const hasCTA    = /\b(commenta|salva|condividi|clicca|visita|scopri|leggi|link in bio|iscriviti|prenota|contattaci|registrati)\b/i.test(testo)
+      const LIMITS    = { instagram: 2200, facebook: 63206, linkedin: 3000, tiktok: 2200, x: 280, google_business: 1500 }
+      const HASHTAGS  = { instagram: [3,30], facebook: [1,5], linkedin: [3,5], tiktok: [3,10], x: [1,2], google_business: [0,0] }
+      const CANALE_LABEL = { instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn', tiktok: 'TikTok', x: 'X', google_business: 'Google Business' }
+      canali.forEach(c => {
+        const limit = LIMITS[c]; const [hMin, hMax] = HASHTAGS[c] || [0, 99]
+        const name  = CANALE_LABEL[c] || c
+        if (limit) checks.push({ label: `${name}: testo entro limite (${limit} car.)`, pass: textLen <= limit, weight: 5 })
+        if (hMax > 0) checks.push({ label: `${name}: hashtag (${hMin}–${hMax})`, pass: hashCount >= hMin && hashCount <= hMax, weight: 5 })
+      })
+      checks.push({ label: 'CTA presente', pass: hasCTA, weight: 5 })
+    }
+    const total  = checks.reduce((s, c) => s + c.weight, 0)
+    const passed = checks.filter(c => c.pass).reduce((s, c) => s + c.weight, 0)
+    return { score: total > 0 ? Math.round((passed / total) * 100) : 0, checks }
   }
 
   if (loading) return <p style={{ color: '#888' }}>Caricamento…</p>
@@ -809,6 +880,22 @@ export default function PostEditorialePage() {
           </label>
         </div>
 
+        {/* Campagna */}
+        {campagne.length > 0 && (
+          <div style={{ marginTop: 12 }}>
+            <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>Campagna</label>
+            <select value={campagnaId} onChange={e => setCampagnaId(e.target.value)}
+              style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 12px', fontSize: 13, background: '#fff' }}>
+              <option value="">— Nessuna campagna —</option>
+              {campagne.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}{c.data_inizio ? ` · ${new Date(c.data_inizio).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Best time to post */}
         {canali.length > 0 && (
           <div style={{ marginTop: 10, padding: '10px 14px', background: '#f0f9ff', borderRadius: 8, borderLeft: '3px solid #0ea5e9' }}>
@@ -829,6 +916,40 @@ export default function PostEditorialePage() {
             </div>
           </div>
         )}
+
+        {/* Content Score */}
+        {(testo.trim() || titolo.trim()) && (() => {
+          const { score, checks } = computeScore()
+          const scoreColor = score >= 75 ? '#059669' : score >= 45 ? '#d97706' : '#dc2626'
+          const scoreBg    = score >= 75 ? '#f0fdf4' : score >= 45 ? '#fffbeb' : '#fef2f2'
+          return (
+            <div style={{ marginTop: 12, borderRadius: 10, border: `1px solid ${scoreColor}33`, background: scoreBg, overflow: 'hidden' }}>
+              <button
+                onClick={() => setShowScore(s => !s)}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Target size={14} strokeWidth={1.5} color={scoreColor} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: scoreColor }}>Content Score: {score}/100</span>
+                  <div style={{ width: 80, height: 5, borderRadius: 3, background: `${scoreColor}22`, overflow: 'hidden' }}>
+                    <div style={{ width: `${score}%`, height: '100%', background: scoreColor, borderRadius: 3, transition: 'width 0.4s' }} />
+                  </div>
+                </div>
+                {showScore ? <ChevronUp size={14} strokeWidth={2} color={scoreColor} /> : <ChevronDown size={14} strokeWidth={2} color={scoreColor} />}
+              </button>
+              {showScore && (
+                <div style={{ padding: '0 14px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {checks.map((c, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 14, lineHeight: 1 }}>{c.pass ? '✅' : '⬜'}</span>
+                      <span style={{ fontSize: 12, color: c.pass ? '#374151' : '#9ca3af' }}>{c.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
         {/* Note */}
         <div style={{ marginTop: 16 }}>
@@ -1056,6 +1177,70 @@ export default function PostEditorialePage() {
                 </div>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Commenti / Discussione ─────────────────────────────────────────── */}
+      {!isNew && (
+        <div style={{ marginTop: 36, borderTop: '1px solid #f0f0f0', paddingTop: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+            <MessageSquare size={16} strokeWidth={1.5} color="#888" />
+            <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e' }}>Discussione</span>
+            {commenti.length > 0 && (
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '1px 7px', borderRadius: 20, background: '#f3f4f6', color: '#6b7280' }}>{commenti.length}</span>
+            )}
+          </div>
+
+          {/* Input */}
+          <div style={{ display: 'flex', gap: 10, marginBottom: 20, alignItems: 'flex-start' }}>
+            <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#1a1a2e', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+              {(profile?.full_name || 'U').split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2)}
+            </div>
+            <div style={{ flex: 1 }}>
+              <textarea
+                value={nuovoCommento} onChange={e => setNuovoCommento(e.target.value)} rows={2}
+                placeholder="Aggiungi un commento… (Ctrl+Invio per inviare)"
+                onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) sendCommento() }}
+                style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: 10, padding: '10px 14px', fontSize: 13, resize: 'none', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none' }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
+                <button onClick={sendCommento} disabled={sendingCommento || !nuovoCommento.trim()}
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 16px', background: nuovoCommento.trim() ? '#1a1a2e' : '#f3f4f6', color: nuovoCommento.trim() ? '#fff' : '#9ca3af', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: nuovoCommento.trim() ? 'pointer' : 'default', transition: 'background 0.15s' }}>
+                  <Send size={12} strokeWidth={1.5} /> {sendingCommento ? 'Invio…' : 'Invia'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Lista commenti */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {commenti.length === 0 ? (
+              <p style={{ color: '#d1d5db', fontSize: 13, margin: 0 }}>Nessun commento ancora. Scrivi qualcosa per iniziare.</p>
+            ) : commenti.map(c => (
+              <div key={c.id} style={{ display: 'flex', gap: 10 }}>
+                <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#f0f0ff', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                  {(c.author_name || 'U').split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2)}
+                </div>
+                <div style={{ flex: 1, background: '#f9fafb', borderRadius: 10, padding: '10px 14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontWeight: 700, fontSize: 13, color: '#1a1a2e' }}>{c.author_name}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 11, color: '#9ca3af' }}>
+                        {new Date(c.created_at).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })} {new Date(c.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      {(c.author_id === profile?.id || !isStaff) && (
+                        <button onClick={() => deleteCommento(c.id)} title="Elimina commento"
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e5e7eb', padding: 2 }}>
+                          <Trash2 size={12} strokeWidth={1.5} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <p style={{ margin: 0, fontSize: 13, color: '#374151', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{c.testo}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

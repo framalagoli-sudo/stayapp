@@ -28,7 +28,8 @@ router.get('/', requireAuth, async (req, res) => {
       .eq('azienda_id', azienda_id)
       .order('data_pianificata', { ascending: true, nullsFirst: false })
 
-    if (req.query.stato) q = q.eq('stato', req.query.stato)
+    if (req.query.stato)       q = q.eq('stato', req.query.stato)
+    if (req.query.campagna_id) q = q.eq('campagna_id', req.query.campagna_id)
     if (req.query.richiede_approvazione === 'true') q = q.eq('richiede_approvazione', true)
     if (req.query.label) q = q.contains('labels', [String(req.query.label).toLowerCase().trim()])
 
@@ -200,6 +201,111 @@ router.delete('/hashtag-sets/:id', requireAuth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }) }
 })
 
+// ── Campagne ──────────────────────────────────────────────────────────────────
+router.get('/campagne', requireAuth, async (req, res) => {
+  try {
+    const azienda_id = await getAziendaId(req.user.id)
+    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { data, error } = await supabase
+      .from('pe_campagne')
+      .select('*')
+      .eq('azienda_id', azienda_id)
+      .order('data_inizio', { ascending: true, nullsFirst: false })
+    if (error) return res.status(500).json({ error: error.message })
+    res.json(data)
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
+router.post('/campagne', requireAuth, async (req, res) => {
+  try {
+    const azienda_id = await getAziendaId(req.user.id)
+    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { nome, colore, data_inizio, data_fine, descrizione } = req.body
+    if (!nome?.trim()) return res.status(400).json({ error: 'Nome obbligatorio' })
+    const { data, error } = await supabase
+      .from('pe_campagne')
+      .insert({ azienda_id, nome: nome.trim(), colore: colore || '#6366f1', data_inizio: data_inizio || null, data_fine: data_fine || null, descrizione: descrizione || '' })
+      .select().single()
+    if (error) return res.status(500).json({ error: error.message })
+    res.json(data)
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
+router.patch('/campagne/:cid', requireAuth, async (req, res) => {
+  try {
+    const azienda_id = await getAziendaId(req.user.id)
+    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { nome, colore, data_inizio, data_fine, descrizione } = req.body
+    const patch = {}
+    if (nome !== undefined)        patch.nome = nome.trim()
+    if (colore !== undefined)      patch.colore = colore
+    if (data_inizio !== undefined) patch.data_inizio = data_inizio || null
+    if (data_fine !== undefined)   patch.data_fine = data_fine || null
+    if (descrizione !== undefined) patch.descrizione = descrizione
+    patch.updated_at = new Date().toISOString()
+    const { data, error } = await supabase
+      .from('pe_campagne').update(patch).eq('id', req.params.cid).eq('azienda_id', azienda_id).select().single()
+    if (error) return res.status(500).json({ error: error.message })
+    res.json(data)
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
+router.delete('/campagne/:cid', requireAuth, async (req, res) => {
+  try {
+    const azienda_id = await getAziendaId(req.user.id)
+    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { error } = await supabase
+      .from('pe_campagne').delete().eq('id', req.params.cid).eq('azienda_id', azienda_id)
+    if (error) return res.status(500).json({ error: error.message })
+    res.json({ ok: true })
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
+// ── Commenti ──────────────────────────────────────────────────────────────────
+router.get('/:id/commenti', requireAuth, async (req, res) => {
+  try {
+    const azienda_id = await getAziendaId(req.user.id)
+    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { data, error } = await supabase
+      .from('pe_commenti')
+      .select('*')
+      .eq('post_id', req.params.id)
+      .eq('azienda_id', azienda_id)
+      .order('created_at', { ascending: true })
+    if (error) return res.status(500).json({ error: error.message })
+    res.json(data)
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
+router.post('/:id/commenti', requireAuth, async (req, res) => {
+  try {
+    const profile = await getProfile(req.user.id)
+    if (!profile.azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { testo } = req.body
+    if (!testo?.trim()) return res.status(400).json({ error: 'Testo obbligatorio' })
+    const { data, error } = await supabase
+      .from('pe_commenti')
+      .insert({ post_id: req.params.id, azienda_id: profile.azienda_id, author_id: req.user.id, author_name: profile.full_name || 'Utente', testo: testo.trim() })
+      .select().single()
+    if (error) return res.status(500).json({ error: error.message })
+    res.json(data)
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
+router.delete('/:id/commenti/:cid', requireAuth, async (req, res) => {
+  try {
+    const azienda_id = await getAziendaId(req.user.id)
+    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { error } = await supabase
+      .from('pe_commenti')
+      .delete()
+      .eq('id', req.params.cid)
+      .eq('azienda_id', azienda_id)
+    if (error) return res.status(500).json({ error: error.message })
+    res.json({ ok: true })
+  } catch (err) { res.status(500).json({ error: err.message }) }
+})
+
 // ── Refs interni per collegamento (articoli / newsletter / eventi) ─────────────
 router.get('/refs', requireAuth, async (req, res) => {
   try {
@@ -265,7 +371,7 @@ router.post('/', requireAuth, async (req, res) => {
     const azienda_id = profile.azienda_id
     if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
 
-    const { titolo, testo, immagine_url, canali, data_pianificata, stato, note, labels, pillar, design_url, tipo_contenuto, ref_id, ref_tipo, richiede_approvazione } = req.body
+    const { titolo, testo, immagine_url, canali, data_pianificata, stato, note, labels, pillar, design_url, tipo_contenuto, ref_id, ref_tipo, richiede_approvazione, campagna_id } = req.body
     const stato_safe = ALLOWED_STATO.has(stato) ? stato : 'bozza'
     const authorName = profile.full_name || 'Utente'
 
@@ -287,6 +393,7 @@ router.post('/', requireAuth, async (req, res) => {
         ref_id:                ref_id || null,
         ref_tipo:              ref_tipo || null,
         richiede_approvazione: richiede_approvazione === true,
+        campagna_id:           campagna_id || null,
         created_by:            req.user.id,
         created_by_name: authorName,
         updated_by:      req.user.id,
@@ -345,7 +452,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
     const azienda_id = profile.azienda_id
     if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
 
-    const allowed = ['titolo', 'testo', 'immagine_url', 'canali', 'data_pianificata', 'stato', 'note', 'labels', 'pillar', 'design_url', 'tipo_contenuto', 'ref_id', 'ref_tipo', 'richiede_approvazione']
+    const allowed = ['titolo', 'testo', 'immagine_url', 'canali', 'data_pianificata', 'stato', 'note', 'labels', 'pillar', 'design_url', 'tipo_contenuto', 'ref_id', 'ref_tipo', 'richiede_approvazione', 'campagna_id']
     const patch = {
       updated_at:      new Date().toISOString(),
       updated_by:      req.user.id,
