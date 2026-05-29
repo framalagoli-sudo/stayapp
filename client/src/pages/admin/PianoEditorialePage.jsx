@@ -253,16 +253,16 @@ export default function PianoEditorialePage() {
     setLoading(true)
     try {
       const mm = String(m + 1).padStart(2, '0')
-      const [data, senzaData, ideaData, inRevisione] = await Promise.all([
+      const [data, senzaData, ideaData, daApprovare] = await Promise.all([
         apiFetch(`/api/piano-editoriale?mese=${y}-${mm}`),
         apiFetch('/api/piano-editoriale?senza_data=1'),
         apiFetch('/api/piano-editoriale/idee'),
-        apiFetch('/api/piano-editoriale?stato=in_revisione'),
+        apiFetch('/api/piano-editoriale?richiede_approvazione=true'),
       ])
       setPosts(data)
       setDrafts(senzaData)
       setIdee(ideaData)
-      setPendingApprovals((inRevisione || []).filter(p => p.richiede_approvazione))
+      setPendingApprovals((daApprovare || []).filter(p => p.stato !== 'pubblicato'))
     } catch (e) { setError(e.message) }
     setLoading(false)
   }
@@ -433,7 +433,7 @@ export default function PianoEditorialePage() {
           </span>
         )}
         <span style={{ flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', padding: compact ? '2px 2px' : '4px 4px', minWidth: 0 }}>
-          {p.richiede_approvazione && p.stato === 'in_revisione' && (
+          {p.richiede_approvazione && p.stato !== 'pubblicato' && (
             <span style={{ marginRight: 3, fontSize: compact ? 8 : 9, background: '#fef3c7', color: '#92400e', borderRadius: 3, padding: '0 3px', fontWeight: 700 }}>⏳</span>
           )}
           {p.titolo || p.testo?.slice(0, 30) || '—'}
@@ -1221,7 +1221,7 @@ function PostRow({ p, navigate, handleDelete, handleClone }) {
         const ti = TIPO_INFO[p.tipo_contenuto]
         return ti ? <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: ti.color + '18', color: ti.color, flexShrink: 0 }}>{ti.label}</span> : null
       })()}
-      {p.richiede_approvazione && p.stato === 'in_revisione' && (
+      {p.richiede_approvazione && p.stato !== 'pubblicato' && (
         <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: '#fef3c7', color: '#92400e', flexShrink: 0 }}>⏳ Approvazione</span>
       )}
       <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: stInfo.bg, color: stInfo.color, flexShrink: 0 }}>

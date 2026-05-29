@@ -862,7 +862,7 @@ export default function PostEditorialePage() {
           </div>
         ) : <div />}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {!isStaff && richiedeApprovazione && stato === 'in_revisione' && (
+          {!isStaff && richiedeApprovazione && stato !== 'pubblicato' && (
             <button
               onClick={() => { setStato('pubblicato'); setTimeout(save, 50) }}
               disabled={saving}

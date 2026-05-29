@@ -29,6 +29,7 @@ router.get('/', requireAuth, async (req, res) => {
       .order('data_pianificata', { ascending: true, nullsFirst: false })
 
     if (req.query.stato) q = q.eq('stato', req.query.stato)
+    if (req.query.richiede_approvazione === 'true') q = q.eq('richiede_approvazione', true)
     if (req.query.label) q = q.contains('labels', [String(req.query.label).toLowerCase().trim()])
 
     if (req.query.senza_data) {
