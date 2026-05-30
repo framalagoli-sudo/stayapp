@@ -1,14 +1,25 @@
 import 'dotenv/config'
+import * as Sentry from '@sentry/node'
 import express from 'express'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 import cors from 'cors'
 import { supabase } from './lib/supabase.js'
 
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    tracesSampleRate: 0.1,
+    environment: process.env.NODE_ENV || 'production',
+  })
+}
+
 process.on('unhandledRejection', (reason) => {
+  Sentry.captureException(reason)
   console.error('[unhandledRejection]', reason)
 })
 process.on('uncaughtException', (err) => {
+  Sentry.captureException(err)
   console.error('[uncaughtException]', err.message, err.stack)
 })
 
@@ -234,6 +245,8 @@ app.get('/api/admin/audit-log', async (req, res) => {
 })
 
 // ── Global error handler ─────────────────────────────────────────────────────
+if (process.env.SENTRY_DSN) app.use(Sentry.expressErrorHandler())
+
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
   if (err.message?.startsWith('CORS:')) return res.status(403).json({ error: err.message })
