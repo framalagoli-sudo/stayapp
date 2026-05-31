@@ -25,7 +25,7 @@ jobs:
         working-directory: server
 
       - name: Check schema
-        run: node ../scripts/check-schema.js
+        run: node scripts/check-schema.js
         working-directory: server
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
