@@ -4,8 +4,9 @@ import LandingAttivita from './LandingAttivita'
 import AttivitaPWA from './AttivitaPWA'
 import { apiFetch } from '../../lib/api'
 
-export default function AttivitaApp() {
-  const { slug } = useParams()
+export default function AttivitaApp({ forceSlug } = {}) {
+  const { slug: paramSlug } = useParams()
+  const slug = forceSlug || paramSlug
   const [attivita, setAttivita] = useState(null)
   const [error, setError] = useState(null)
 

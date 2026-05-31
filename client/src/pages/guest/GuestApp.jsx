@@ -86,8 +86,9 @@ function loadFont(key) {
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function GuestApp() {
-  const { slug } = useParams()
+export default function GuestApp({ forceSlug } = {}) {
+  const { slug: paramSlug } = useParams()
+  const slug = forceSlug || paramSlug
   const [searchParams] = useSearchParams()
   const isQR = searchParams.get('qr') === '1'
   const [property,       setProperty]       = useState(null)

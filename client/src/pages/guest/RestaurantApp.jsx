@@ -54,8 +54,9 @@ function loadFont(key) {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export default function RestaurantApp() {
-  const { slug } = useParams()
+export default function RestaurantApp({ forceSlug } = {}) {
+  const { slug: paramSlug } = useParams()
+  const slug = forceSlug || paramSlug
   const [searchParams] = useSearchParams()
   const isQR = searchParams.get('qr') === '1'
   const [ristorante, setRistorante] = useState(null)

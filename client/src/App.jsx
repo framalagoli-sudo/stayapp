@@ -122,44 +122,57 @@ function StrutturaLayout() {
 const STAYAPP_DOMAIN = import.meta.env.VITE_STAYAPP_DOMAIN || 'oltrenova.com'
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
-// Rileva se siamo su sottodominio *.oltrenova.com o dominio custom → redirige alla rotta giusta
-function DomainDetector() {
-  const [redirectTo, setRedirectTo] = useState(null)
-  const [checked, setChecked] = useState(false)
+// Controlla in modo sincrono se siamo su un dominio custom (non OltreNova)
+const _hostname = window.location.hostname
+const _isCustomDomain = !(_hostname === 'localhost' || _hostname === '127.0.0.1' ||
+  _hostname.includes('vercel.app') ||
+  _hostname === STAYAPP_DOMAIN || _hostname === `www.${STAYAPP_DOMAIN}` ||
+  _hostname.startsWith('admin.'))
 
-  useEffect(() => {
-    const h = window.location.hostname
-    const skip = h === 'localhost' || h === '127.0.0.1' ||
-      h.includes('vercel.app') ||
-      h === STAYAPP_DOMAIN || h === `www.${STAYAPP_DOMAIN}` ||
-      h.startsWith('admin.')
-    if (skip) { setChecked(true); return }
-
-    fetch(`${API_BASE}/api/public/resolve-domain?d=${encodeURIComponent(h)}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data?.entity_tipo && data?.entity_slug) {
-          const prefix = data.entity_tipo === 'struttura' ? 's' : data.entity_tipo === 'ristorante' ? 'r' : 'a'
-          setRedirectTo(`/${prefix}/${data.entity_slug}`)
-        }
-        setChecked(true)
-      })
-      .catch(() => setChecked(true))
-  }, [])
-
-  if (!checked) return null
-  if (redirectTo && window.location.pathname === '/') {
-    window.history.replaceState(null, '', redirectTo)
-  }
-  return null
+// Componente per domini custom: renderizza l'entità direttamente senza cambiare URL
+function CustomDomainRoutes({ entity }) {
+  const { entity_tipo: tipo, entity_slug: slug } = entity
+  const prefix = tipo === 'struttura' ? 's' : tipo === 'ristorante' ? 'r' : 'a'
+  const EntityApp = tipo === 'ristorante' ? RestaurantApp : tipo === 'struttura' ? GuestApp : AttivitaApp
+  return (
+    <Routes>
+      {/* Sub-pagine generate internamente dalla PWA (privacy, cookie, ecc.) */}
+      <Route path={`/${prefix}/${slug}/privacy`}        element={<PolicyPage type="privacy" entityType={tipo} />} />
+      <Route path={`/${prefix}/${slug}/cookie`}         element={<PolicyPage type="cookie"  entityType={tipo} />} />
+      <Route path={`/${prefix}/${slug}/newsletter`}     element={<NewsletterArchivePage entityType={tipo} />} />
+      <Route path={`/${prefix}/${slug}/p/:pageSlug`}    element={<PaginaPage entityType={tipo} />} />
+      <Route path="/cancella-prenotazione"              element={<CancellaPrenotazionePage />} />
+      <Route path="/recensione"                         element={<RecensionePage />} />
+      <Route path="/unsubscribe"                        element={<UnsubscribePage />} />
+      <Route path="/confirm-subscription"               element={<ConfirmSubscriptionPage />} />
+      {/* Tutto il resto → entità principale (URL rimane pulito) */}
+      <Route path="/*" element={<EntityApp forceSlug={slug} />} />
+    </Routes>
+  )
 }
 
 export default function App() {
+  // undefined = in attesa del fetch (solo per domini custom); null = nessun dominio custom
+  const [customDomainEntity, setCustomDomainEntity] = useState(_isCustomDomain ? undefined : null)
+
+  useEffect(() => {
+    if (!_isCustomDomain) return
+    fetch(`${API_BASE}/api/public/resolve-domain?d=${encodeURIComponent(_hostname)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => setCustomDomainEntity(data?.entity_tipo ? data : null))
+      .catch(() => setCustomDomainEntity(null))
+  }, [])
+
+  // Breve attesa solo per domini custom durante il fetch iniziale
+  if (customDomainEntity === undefined) return null
+
   return (
     <CarrelloProvider>
     <AuthProvider>
       <BrowserRouter>
-        <DomainDetector />
+        {customDomainEntity ? (
+          <CustomDomainRoutes entity={customDomainEntity} />
+        ) : (
         <Routes>
           {/* Guest PWA */}
           <Route path="/s/:slug" element={<GuestApp />} />
@@ -335,6 +348,7 @@ export default function App() {
           {/* Root — landing page OltreNova */}
           <Route path="/" element={<LandingPage />} />
         </Routes>
+        )}
       </BrowserRouter>
     </AuthProvider>
     </CarrelloProvider>
