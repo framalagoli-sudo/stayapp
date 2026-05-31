@@ -240,6 +240,28 @@ router.delete('/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }) }
 })
 
+// POST /api/domini/sync-subdomains — registra su Vercel tutti i sottodomini esistenti (super_admin)
+router.post('/sync-subdomains', async (req, res) => {
+  try {
+    const profile = await getProfile(req.user.id)
+    if (profile?.role !== 'super_admin') return res.status(403).json({ error: 'Solo super_admin' })
+    if (!VERCEL_TOKEN || !VERCEL_PROJECT_ID) return res.status(400).json({ error: 'VERCEL_TOKEN non configurato' })
+
+    const { data: subdomains } = await supabase.from('domini').select('dominio').eq('tipo', 'subdomain')
+    const results = []
+    for (const { dominio } of (subdomains || [])) {
+      const r = await fetch(`https://api.vercel.com/v10/projects/${VERCEL_PROJECT_ID}/domains`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${VERCEL_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: dominio }),
+      })
+      const d = await r.json()
+      results.push({ dominio, ok: !d.error, error: d.error?.message })
+    }
+    res.json({ synced: results.length, results })
+  } catch (e) { res.status(500).json({ error: e.message }) }
+})
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function buildDnsInstructions(dominio) {
@@ -283,6 +305,15 @@ export async function createDefaultSubdomain({ azienda_id, entity_tipo, entity_i
       azienda_id, entity_tipo, entity_id, entity_slug,
       dominio, tipo: 'subdomain', stato: 'attivo',
     }, { onConflict: 'dominio', ignoreDuplicates: true })
+
+    // Registra il sottodominio su Vercel (ogni sottodominio va aggiunto individualmente)
+    if (VERCEL_TOKEN && VERCEL_PROJECT_ID) {
+      await fetch(`https://api.vercel.com/v10/projects/${VERCEL_PROJECT_ID}/domains`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${VERCEL_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: dominio }),
+      }).catch(e => console.error('[domini] Vercel subdomain register error:', e.message))
+    }
   } catch (e) {
     console.error('[domini] createDefaultSubdomain error:', e.message)
   }
