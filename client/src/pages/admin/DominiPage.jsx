@@ -120,9 +120,11 @@ export default function DominiPage({ entityTipo }) {
           <span style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>Dominio personalizzato</span>
           <span style={{ fontSize: 11, background: '#e3f2fd', color: '#1565c0', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>Opzionale</span>
         </div>
-        <p style={{ fontSize: 13, color: '#888', margin: '0 0 20px' }}>
+        <p style={{ fontSize: 13, color: '#888', margin: '0 0 16px' }}>
           Hai già un dominio (es. <em>www.iltuohotel.it</em>)? Collegalo qui e i tuoi clienti lo vedranno direttamente.
         </p>
+
+        <GuidaSetup />
 
         {customDomains.map(dom => (
           <CustomDomainCard
@@ -292,8 +294,11 @@ function DnsInstructions({ istruzioni }) {
 
   return (
     <div style={{ marginTop: 12, background: '#fff8e1', borderRadius: 8, padding: 16 }}>
-      <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: '#e65100' }}>
-        Configura questi record DNS nel pannello del tuo dominio (Cloudflare, GoDaddy, Namecheap, ecc.):
+      <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: '#e65100' }}>
+        Passo 2 — Aggiungi questi record DNS
+      </p>
+      <p style={{ margin: '0 0 12px', fontSize: 12, color: '#888' }}>
+        Accedi al pannello del tuo fornitore (Aruba, GoDaddy, Cloudflare, Namecheap…) → cerca "DNS" o "Gestione DNS" → aggiungi i record qui sotto copiando esattamente nome e valore.
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -329,6 +334,33 @@ function DnsInstructions({ istruzioni }) {
 
       <p style={{ margin: '14px 0 0', fontSize: 12, color: '#888' }}>
         ⏱ I DNS possono impiegare fino a 48 ore per propagarsi. Clicca <strong>Verifica</strong> dopo aver configurato i record.
+      </p>
+    </div>
+  )
+}
+
+function GuidaSetup() {
+  const steps = [
+    { n: '1', title: 'Aggiungi il dominio', text: 'Inserisci il tuo dominio nel campo qui sotto (es. www.iltuosito.it) e clicca Aggiungi. Appariranno i record DNS da configurare.' },
+    { n: '2', title: 'Configura il DNS', text: 'Accedi al pannello del tuo fornitore (Aruba, GoDaddy, Cloudflare, Namecheap…) → cerca "DNS" o "Gestione DNS" → aggiungi i record esattamente come mostrato, usando i pulsanti Copia.' },
+    { n: '3', title: 'Verifica', text: 'Torna qui e clicca il pulsante Verifica. Di solito basta qualche minuto, ma i DNS possono richiedere fino a 48 ore.' },
+  ]
+  return (
+    <div style={{ background: '#f8faff', border: '1px solid #dde6ff', borderRadius: 10, padding: '16px 20px', marginBottom: 20 }}>
+      <p style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>Come funziona — 3 passi</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {steps.map(({ n, title, text }) => (
+          <div key={n} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#1a1a2e', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>{n}</div>
+            <div>
+              <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>{title}</p>
+              <p style={{ margin: 0, fontSize: 12, color: '#666', lineHeight: 1.55 }}>{text}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <p style={{ margin: '14px 0 0', fontSize: 12, color: '#888', borderTop: '1px solid #e8eeff', paddingTop: 10 }}>
+        💡 Non sai dove gestire il DNS? Si trova di solito nel pannello del sito dove hai acquistato il dominio. Se hai Cloudflare, disabilita temporaneamente il proxy (icona arancione → grigia) sul record CNAME durante la verifica.
       </p>
     </div>
   )
