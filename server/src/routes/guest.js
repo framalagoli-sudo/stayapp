@@ -94,7 +94,10 @@ router.get('/r/:slug', async (req, res) => {
     .eq('active', true)
     .single()
 
-  if (error || !data) return res.status(404).json({ error: 'Ristorante non trovato' })
+  if (error || !data) {
+    console.error('[guest/r/:slug] slug=%s error=%s data=%s', req.params.slug, error?.message, data)
+    return res.status(404).json({ error: 'Ristorante non trovato', _debug: error?.message })
+  }
 
   const collegamenti = await getCollegamenti('ristorante', data.id)
   res.json({ ...data, collegamenti })
