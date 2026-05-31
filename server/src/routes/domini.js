@@ -166,6 +166,25 @@ router.post('/:id/verify', async (req, res) => {
       return res.json({ ...dom, message: 'Verifica manuale: controlla che i DNS siano configurati correttamente' })
     }
 
+    // Se il dominio non era stato registrato in Vercel (vercel_domain_id null), registralo ora
+    if (!dom.vercel_domain_id) {
+      try {
+        const addRes = await fetch(`https://api.vercel.com/v10/projects/${VERCEL_PROJECT_ID}/domains`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${VERCEL_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: dom.dominio }),
+        })
+        const addData = await addRes.json()
+        if (!addData.error) {
+          await supabase.from('domini').update({ vercel_domain_id: dom.dominio, dns_istruzioni: buildDnsFromVercel(dom.dominio, addData) }).eq('id', dom.id)
+          if (addData.verified) {
+            const { data: updated } = await supabase.from('domini').update({ stato: 'attivo' }).eq('id', dom.id).select().single()
+            return res.json(updated)
+          }
+        }
+      } catch (e) { console.error('[domini] re-register error:', e.message) }
+    }
+
     // POST all'endpoint Vercel di verifica per triggare il check DNS attivo
     const vRes = await fetch(
       `https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/domains/${encodeURIComponent(dom.dominio)}/verify`,
