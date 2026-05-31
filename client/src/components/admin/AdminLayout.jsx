@@ -10,7 +10,7 @@ import {
   QrCode, UserCheck, ClipboardList, LogOut,
   Building, Building2, Store, Zap, Webhook, BotMessageSquare, Star, Settings,
   Info, Layers, Wrench, Image, Palette, MapPin, Globe, Lock, Bot, UtensilsCrossed,
-  FormInput, ShoppingBag, Sparkles, BarChart3, Gift, SearchCheck, LifeBuoy,
+  FormInput, ShoppingBag, Sparkles, BarChart3, Gift, SearchCheck, LifeBuoy, LayoutTemplate,
 } from 'lucide-react'
 
 // ─── Nav definitions ──────────────────────────────────────────────────────────
@@ -46,7 +46,8 @@ const RISTORANTE_SUBS = [
   { sub: 'menu',     label: 'Menu',          icon: UtensilsCrossed },
   { sub: 'gallery',  label: 'Galleria',      icon: Image },
   { sub: 'theme',    label: 'Tema e colori', icon: Palette },
-  { sub: 'sito',     label: 'Sito',          icon: Globe },
+  { sub: 'minisito', label: 'Minisito',      icon: LayoutTemplate },
+  { sub: 'sito',     label: 'Pagine CMS',    icon: Globe },
   { sub: 'privacy',  label: 'Privacy',       icon: Lock },
   { sub: 'chatbot',  label: 'Chatbot',       icon: Bot },
   { sub: 'domini',   label: 'Domini',        icon: Globe },

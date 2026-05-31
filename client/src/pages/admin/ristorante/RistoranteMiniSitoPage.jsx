@@ -14,7 +14,7 @@ const DEFAULT_SOCIAL        = { instagram: '', facebook: '', tripadvisor: '', wh
 const DEFAULT_CTA_BANNER    = { active: false, title: '', subtitle: '', cta_label: '', cta_url: '' }
 const DEFAULT_SECTION_ORDER = [
   'highlights', 'stats', 'about', 'foto_testo', 'paragrafi', 'team', 'steps', 'video', 'cta_banner',
-  'testimonianze', 'promozioni', 'menu_speciali', 'menu_preview',
+  'testimonianze', 'recensioni', 'promozioni', 'menu_speciali', 'menu_preview',
   'eventi', 'news', 'gallery', 'faq', 'show_map', 'booking', 'shop', 'contatti', 'newsletter',
 ]
 const DEFAULT = {

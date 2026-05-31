@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import LandingRistorante from './LandingRistorante'
 import CookieBanner from '../../components/CookieBanner'
-import { Utensils, Info, Images, Phone, Mail, MapPin, Clock, X, ChevronRight } from 'lucide-react'
+import { Utensils, Info, Images, Phone, Mail, MapPin, Clock, X, ChevronRight, CalendarCheck, Check } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
 import ChatbotWidget from '../../components/ChatbotWidget'
+import BookingWidget from '../../components/BookingWidget'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DEFAULT_THEME = {
@@ -36,6 +37,12 @@ const BODY_FAMILIES = {
   'open-sans':"'Open Sans', system-ui, sans-serif",
 }
 const BORDER_RADII = { rounded: 16, mixed: 8, square: 0 }
+
+function buildWaUrl(wa, name) {
+  if (!wa) return null
+  const clean = wa.replace(/[\s\-\(\)\+]/g, '').replace(/^00/, '').replace(/^0/, '39')
+  return `https://wa.me/${clean}?text=${encodeURIComponent(`Ciao! Vorrei un tavolo da ${name}. `)}`
+}
 
 function loadFont(key) {
   if (!key || !FONT_URLS[key]) return
@@ -108,12 +115,13 @@ export default function RestaurantApp() {
   const borderColor   = isDark ? '#2a2a3e' : '#efefef'
 
   const hasGallery  = (ristorante.gallery || []).length > 0
-  const rModules    = { gallery: true, allergens: true, info: true, ...(ristorante.modules || {}) }
+  const rModules    = { pwa_active: true, gallery: true, allergens: true, info: true, booking: true, ...(ristorante.modules || {}) }
   const sp = { primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, showAllergens: rModules.allergens }
 
   const NAV_ITEMS = [
-    { key: 'menu',    Icon: Utensils, label: 'Menu' },
-    ...(rModules.info     ? [{ key: 'info',     Icon: Info,   label: 'Info' }]     : []),
+    { key: 'menu',    Icon: Utensils,      label: 'Menu' },
+    ...(rModules.booking  ? [{ key: 'prenota',  Icon: CalendarCheck, label: 'Prenota' }]  : []),
+    ...(rModules.info     ? [{ key: 'info',     Icon: Info,          label: 'Info' }]     : []),
     ...(rModules.gallery && hasGallery ? [{ key: 'galleria', Icon: Images, label: 'Galleria' }] : []),
   ]
 
@@ -178,7 +186,7 @@ export default function RestaurantApp() {
         }
         .r-nav-btn { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; height:60px; border:none; background:none; cursor:pointer; padding:0; -webkit-tap-highlight-color:transparent; }
         @media (min-width:769px) {
-          .r-shell { background:linear-gradient(145deg,#1a0a0a 0%,#2e1010 60%,#1a0a0a 100%); flex-direction:row; justify-content:center; align-items:center; }
+          .r-shell { background:linear-gradient(145deg,#0f0f1a 0%,#1c1020 60%,#0f1a1a 100%); flex-direction:row; justify-content:center; align-items:center; }
           .r-app { flex:none; width:390px; height:812px; max-height:calc(100vh - 48px); border-radius:44px; overflow:hidden; box-shadow:0 32px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.06); }
         }
         @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
@@ -211,8 +219,9 @@ export default function RestaurantApp() {
           <div ref={scrollRef} className="r-scroll" onScroll={handleScroll}>
             {AppHeader}
             <div key={nav} className="fade-up">
-              {nav === 'menu'    && <MenuTab    menu={ristorante.menu || []}    {...sp} />}
-              {nav === 'info'    && <InfoTab    ristorante={ristorante}          {...sp} />}
+              {nav === 'menu'    && <MenuTab    menu={ristorante.menu || []}        {...sp} />}
+              {nav === 'prenota' && <PrenotaTab ristorante={ristorante}             {...sp} />}
+              {nav === 'info'    && <InfoTab    ristorante={ristorante}             {...sp} />}
               {nav === 'galleria'&& <GalleriaTab gallery={ristorante.gallery || []} {...sp} />}
             </div>
           </div>
@@ -385,8 +394,24 @@ function InfoTab({ ristorante, primary, textColor, subText, isDark, radius, head
         </InfoSection>
       )}
 
-      {(ristorante.phone || ristorante.email || ristorante.address) && (
+      {(ristorante.phone || ristorante.email || ristorante.address || ristorante.minisito?.social?.whatsapp) && (
         <InfoSection Icon={MapPin} title="Contatti" primary={primary} headingFamily={headingFamily} textColor={textColor}>
+          {ristorante.minisito?.social?.whatsapp && (() => {
+            const waUrl = buildWaUrl(ristorante.minisito.social.whatsapp, ristorante.name)
+            return waUrl ? (
+              <a href={waUrl} target="_blank" rel="noopener noreferrer" style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                background: '#25D366', color: '#fff', borderRadius: 14, padding: '14px 20px',
+                textDecoration: 'none', fontWeight: 700, fontSize: 15, marginBottom: 12,
+                boxShadow: '0 4px 16px rgba(37,211,102,0.3)',
+              }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                </svg>
+                Chatta su WhatsApp
+              </a>
+            ) : null
+          })()}
           <div style={{ background: cardBg, borderRadius: 16, overflow: 'hidden', boxShadow: shadow }}>
             {ristorante.phone && (
               <ContactRow Icon={Phone} label="Telefono" value={ristorante.phone} href={`tel:${ristorante.phone}`} primary={primary} textColor={textColor} subText={subText} border={borderColor} />
@@ -469,6 +494,39 @@ function GalleriaTab({ gallery, primary, radius }) {
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── PRENOTA ──────────────────────────────────────────────────────────────────
+function PrenotaTab({ ristorante, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor }) {
+  const bookingUrl = ristorante.minisito?.booking_url
+  if (bookingUrl) {
+    return (
+      <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+        <CalendarCheck size={48} strokeWidth={1.5} color={primary} style={{ margin: '0 auto 16px', display: 'block', opacity: 0.85 }} />
+        <h2 style={{ fontFamily: headingFamily, fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 8px' }}>
+          Prenota un tavolo
+        </h2>
+        <p style={{ fontSize: 14, color: subText, margin: '0 0 24px', lineHeight: 1.6 }}>
+          Scegli il giorno e l'orario che preferisci.
+        </p>
+        <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
+          style={{ display: 'inline-block', padding: '14px 36px', background: primary, color: '#fff', borderRadius: 50, fontSize: 16, fontWeight: 700, textDecoration: 'none', boxShadow: `0 6px 24px ${primary}44` }}>
+          Prenota ora →
+        </a>
+      </div>
+    )
+  }
+  return (
+    <div style={{ padding: '20px 16px 28px' }}>
+      <h2 style={{ fontFamily: headingFamily, fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 4px' }}>
+        Prenota un tavolo
+      </h2>
+      <p style={{ fontSize: 14, color: subText, margin: '0 0 24px' }}>
+        Scegli il servizio e il giorno che preferisci.
+      </p>
+      <BookingWidget entityTipo="ristorante" entityId={ristorante.id} primaryColor={primary} />
     </div>
   )
 }

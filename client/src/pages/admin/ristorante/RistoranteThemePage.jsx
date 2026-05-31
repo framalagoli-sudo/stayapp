@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useRistorante } from '../../../hooks/useRistorante'
+import { apiFetch } from '../../../lib/api'
 
 const BG_COLORS = [
   { value: '#ffffff', label: 'Bianco' },
@@ -89,6 +90,9 @@ function ThemePreview({ theme, ristorante }) {
 export default function RistoranteThemePage() {
   const { id } = useParams()
   const { ristorante, loading, save } = useRistorante(id)
+  const [entities, setEntities] = useState([])
+  const [copying,  setCopying]  = useState(false)
+  const [copied,   setCopied]   = useState(false)
 
   useEffect(() => {
     const link = document.createElement('link')
@@ -96,6 +100,31 @@ export default function RistoranteThemePage() {
     document.head.appendChild(link)
     return () => document.head.removeChild(link)
   }, [])
+
+  useEffect(() => {
+    if (!ristorante) return
+    Promise.all([
+      apiFetch('/api/properties'),
+      apiFetch('/api/ristoranti'),
+    ]).then(([props, rests]) => {
+      const others = [
+        ...(props || []).map(p => ({ ...p, _tipo: 'struttura' })),
+        ...(rests || []).filter(r => r.id !== id).map(r => ({ ...r, _tipo: 'ristorante' })),
+      ]
+      setEntities(others)
+    }).catch(() => {})
+  }, [ristorante?.id])
+
+  async function copyThemeFrom(entity) {
+    if (!entity.theme) return
+    setCopying(true)
+    try {
+      await save({ theme: entity.theme })
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    } catch {}
+    finally { setCopying(false) }
+  }
 
   if (loading) return <p style={loadingStyle}>Caricamento…</p>
   if (!ristorante) return <p style={errorStyle}>Ristorante non trovato.</p>
@@ -111,6 +140,22 @@ export default function RistoranteThemePage() {
       <div>
         <h2 style={titleStyle}>Aspetto e tema</h2>
         <p style={descStyle}>Personalizza colori, font e stile dell'app del ristorante. L'anteprima si aggiorna in tempo reale.</p>
+
+        {entities.length > 0 && (
+          <div style={{ background: '#f0f7ff', border: '1px solid #c3dafe', borderRadius: 10, padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#2b4a8a', flexShrink: 0 }}>Copia stile da:</span>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {entities.map(e => (
+                <button key={e.id} type="button" disabled={copying}
+                  onClick={() => copyThemeFrom(e)}
+                  style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: copying ? 'wait' : 'pointer', border: '1.5px solid #93c5fd', background: '#fff', color: '#1d4ed8', whiteSpace: 'nowrap' }}>
+                  {e.name} <span style={{ opacity: 0.6, fontWeight: 400 }}>({e._tipo})</span>
+                </button>
+              ))}
+            </div>
+            {copied && <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 700 }}>✓ Stile copiato!</span>}
+          </div>
+        )}
 
         <div style={cardStyle}>
           <Section label="Colore principale">

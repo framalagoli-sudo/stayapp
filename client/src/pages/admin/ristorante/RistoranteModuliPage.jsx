@@ -3,12 +3,19 @@ import { useParams } from 'react-router-dom'
 import { useRistorante } from '../../../hooks/useRistorante'
 
 const DEFAULT_MODULES = {
-  gallery:   true,
-  allergens: true,
-  info:      true,
+  pwa_active: true,
+  gallery:    true,
+  allergens:  true,
+  info:       true,
+  booking:    true,
 }
 
 const MODULE_CONFIG = [
+  {
+    key: 'pwa_active',
+    label: 'App ospiti attiva',
+    desc: 'Abilita la PWA del ristorante. Se disattivata, il QR code mostra solo il minisito (se attivo) o una pagina offline.',
+  },
   {
     key: 'info',
     label: 'Tab Informazioni',
@@ -23,6 +30,11 @@ const MODULE_CONFIG = [
     key: 'allergens',
     label: 'Badge Allergeni',
     desc: 'Mostra i badge degli allergeni su ogni piatto del menu.',
+  },
+  {
+    key: 'booking',
+    label: 'Tab Prenota',
+    desc: 'Mostra la tab Prenota nella PWA per prenotare tavoli tramite il sistema booking.',
   },
 ]
 

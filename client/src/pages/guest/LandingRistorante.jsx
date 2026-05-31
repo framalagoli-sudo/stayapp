@@ -853,7 +853,7 @@ export default function LandingRistorante({ ristorante }) {
                   onMouseEnter={() => subs.length && setOpenDropdown(p.id)}
                   onMouseLeave={() => setOpenDropdown(null)}>
                   <a href={`/r/${ristorante.slug}/p/${p.slug}`}
-                    style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 13, padding: '6px 12px', borderRadius: 6, display: 'block', whiteSpace: 'nowrap' }}>
+                    style={{ color: '#1a1a2e', textDecoration: 'none', fontSize: 13, padding: '6px 12px', borderRadius: 6, display: 'block', whiteSpace: 'nowrap' }}>
                     {p.titolo}{subs.length > 0 && <span style={{ marginLeft: 4, opacity: 0.5 }}>▾</span>}
                   </a>
                   {subs.length > 0 && openDropdown === p.id && (
