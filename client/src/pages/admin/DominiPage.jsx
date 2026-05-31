@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
-import { Globe, Plus, Trash2, CheckCircle, Clock, AlertCircle, Copy, ExternalLink, RefreshCw, Pencil, X, Check } from 'lucide-react'
+import { Globe, Plus, Trash2, CheckCircle, Clock, AlertCircle, Copy, ExternalLink, RefreshCw, Pencil, X, Check, ArrowRight } from 'lucide-react'
 import { useProperty } from '../../hooks/useProperty'
 
 const STAYAPP_DOMAIN = import.meta.env.VITE_STAYAPP_DOMAIN || 'oltrenova.com'
@@ -11,7 +11,6 @@ export default function DominiPage({ entityTipo }) {
   const { property } = useProperty()
 
   const entityId = paramId || (entityTipo === 'struttura' ? property?.id : null)
-  const entityName = entityTipo === 'struttura' ? property?.name : null
 
   const [domini, setDomini] = useState([])
   const [loading, setLoading] = useState(true)
@@ -99,10 +98,10 @@ export default function DominiPage({ entityTipo }) {
       <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #eee', padding: 24, marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>Sottodominio predefinito</span>
-          <span style={{ fontSize: 11, background: '#e8f5e9', color: '#2e7d32', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>Incluso</span>
+          <span style={{ fontSize: 11, background: '#e8f5e9', color: '#2e7d32', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>Incluso · Zero configurazione</span>
         </div>
         <p style={{ fontSize: 13, color: '#888', margin: '0 0 16px' }}>
-          Ogni entità riceve automaticamente un sottodominio su <strong>{STAYAPP_DOMAIN}</strong>. Zero configurazione richiesta.
+          Ogni entità riceve automaticamente un indirizzo su <strong>{STAYAPP_DOMAIN}</strong> — pronto subito, senza nessuna configurazione.
         </p>
 
         {loading ? (
@@ -120,11 +119,15 @@ export default function DominiPage({ entityTipo }) {
           <span style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>Dominio personalizzato</span>
           <span style={{ fontSize: 11, background: '#e3f2fd', color: '#1565c0', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>Opzionale</span>
         </div>
-        <p style={{ fontSize: 13, color: '#888', margin: '0 0 16px' }}>
-          Hai già un dominio (es. <em>www.iltuohotel.it</em>)? Collegalo qui e i tuoi clienti lo vedranno direttamente.
-        </p>
 
-        <GuidaSetup />
+        {/* Obiettivo chiaro */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f8faff', border: '1px solid #dde6ff', borderRadius: 8, padding: '10px 14px', margin: '12px 0 20px' }}>
+          <span style={{ fontSize: 13, color: '#555' }}>I tuoi visitatori vedranno</span>
+          <span style={{ fontWeight: 700, fontSize: 13, color: '#1a1a2e', background: '#fff', border: '1px solid #ddd', borderRadius: 6, padding: '3px 10px' }}>www.iltuosito.it</span>
+          <ArrowRight size={14} strokeWidth={1.5} color="#888" style={{ flexShrink: 0 }} />
+          <span style={{ fontSize: 13, color: '#555' }}>la tua pagina</span>
+          <span style={{ fontSize: 12, color: '#888', marginLeft: 'auto' }}>invece del sottodominio {STAYAPP_DOMAIN}</span>
+        </div>
 
         {customDomains.map(dom => (
           <CustomDomainCard
@@ -136,6 +139,13 @@ export default function DominiPage({ entityTipo }) {
             onDelete={handleDelete}
           />
         ))}
+
+        {/* Form aggiunta dominio */}
+        {customDomains.length === 0 && (
+          <p style={{ fontSize: 13, color: '#888', marginBottom: 14 }}>
+            Hai già un dominio acquistato (es. <em>www.iltuohotel.it</em>)? Inseriscilo qui sotto — ti mostreremo esattamente cosa configurare.
+          </p>
+        )}
 
         <form onSubmit={handleAdd} style={{ display: 'flex', gap: 8, marginTop: customDomains.length ? 16 : 0 }}>
           <input
@@ -237,53 +247,119 @@ function SubdomainCard({ dom, onCopy, copied, onRename }) {
         </button>
       </div>
       <p style={{ margin: '8px 0 0', fontSize: 12, color: '#888' }}>
-        Condividi questo link con i tuoi clienti — punta automaticamente alla tua pagina. <button onClick={() => setEditing(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1565c0', fontSize: 12, padding: 0, textDecoration: 'underline' }}>Personalizza URL</button>
+        Condividi questo link con i tuoi clienti. <button onClick={() => setEditing(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1565c0', fontSize: 12, padding: 0, textDecoration: 'underline' }}>Personalizza URL</button>
       </p>
     </div>
   )
 }
 
 function CustomDomainCard({ dom, onCopy, copied, onVerify, onDelete }) {
-  const [showDns, setShowDns] = useState(dom.stato === 'pending')
+  const [verifying, setVerifying] = useState(false)
   const url = `https://${dom.dominio}`
   const istruzioni = dom.dns_istruzioni
 
-  return (
-    <div style={{ background: '#fff', border: `1px solid ${dom.stato === 'attivo' ? '#b2dfdb' : dom.stato === 'errore' ? '#ffcdd2' : '#fff3e0'}`, borderRadius: 10, padding: '14px 18px', marginBottom: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <StatoBadge stato={dom.stato} />
-        <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', flex: 1 }}>{dom.dominio}</span>
-        {dom.stato === 'attivo' && (
+  async function handleVerify() {
+    setVerifying(true)
+    await onVerify(dom.id)
+    setVerifying(false)
+  }
+
+  if (dom.stato === 'attivo') {
+    return (
+      <div style={{ background: '#f8fffe', border: '1px solid #b2dfdb', borderRadius: 10, padding: '14px 18px', marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <CheckCircle size={16} strokeWidth={1.5} color="#2e7d32" style={{ flexShrink: 0 }} />
+          <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', flex: 1 }}>{dom.dominio}</span>
+          <span style={{ fontSize: 12, color: '#2e7d32', fontWeight: 600 }}>Attivo</span>
           <a href={url} target="_blank" rel="noreferrer" style={{ color: '#aaa', display: 'flex' }}>
             <ExternalLink size={15} strokeWidth={1.5} />
           </a>
-        )}
-        {dom.stato === 'attivo' && (
           <button onClick={() => onCopy(url)} style={{ display: 'flex', alignItems: 'center', gap: 5, background: copied === url ? '#e8f5e9' : '#f5f5f5', color: copied === url ? '#2e7d32' : '#555', border: 'none', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 12 }}>
             <Copy size={13} strokeWidth={1.5} /> {copied === url ? 'Copiato!' : 'Copia URL'}
           </button>
-        )}
-        {dom.stato === 'pending' && (
-          <button onClick={() => onVerify(dom.id)} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#fff3e0', color: '#e65100', border: 'none', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 12 }}>
-            <RefreshCw size={13} strokeWidth={1.5} /> Verifica
+          <button onClick={() => onDelete(dom.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 4 }}>
+            <Trash2 size={15} strokeWidth={1.5} />
           </button>
-        )}
+        </div>
+      </div>
+    )
+  }
+
+  if (dom.stato === 'errore') {
+    return (
+      <div style={{ background: '#fff5f5', border: '1px solid #ffcdd2', borderRadius: 10, padding: '14px 18px', marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <AlertCircle size={16} strokeWidth={1.5} color="#c62828" style={{ flexShrink: 0 }} />
+          <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', flex: 1 }}>{dom.dominio}</span>
+          <button onClick={handleVerify} disabled={verifying} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#fff3e0', color: '#e65100', border: 'none', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 600, opacity: verifying ? 0.6 : 1 }}>
+            <RefreshCw size={13} strokeWidth={1.5} /> {verifying ? 'Verifica…' : 'Riprova verifica'}
+          </button>
+          <button onClick={() => onDelete(dom.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 4 }}>
+            <Trash2 size={15} strokeWidth={1.5} />
+          </button>
+        </div>
+        <p style={{ margin: '8px 0 0', fontSize: 12, color: '#c62828' }}>
+          Verifica fallita — controlla che i record DNS siano stati salvati correttamente e riprova.
+        </p>
+        {istruzioni && <DnsInstructions istruzioni={istruzioni} />}
+      </div>
+    )
+  }
+
+  // pending — mostra il flusso completo
+  return (
+    <div style={{ border: '1px solid #ffe0b2', borderRadius: 10, marginBottom: 12, overflow: 'hidden' }}>
+      {/* Header dominio */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 18px', background: '#fff8f0', flexWrap: 'wrap' }}>
+        <Clock size={16} strokeWidth={1.5} color="#e65100" style={{ flexShrink: 0 }} />
+        <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', flex: 1 }}>{dom.dominio}</span>
+        <span style={{ fontSize: 12, color: '#e65100', fontWeight: 600, background: '#fff3e0', padding: '2px 10px', borderRadius: 20 }}>In configurazione</span>
         <button onClick={() => onDelete(dom.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 4 }}>
           <Trash2 size={15} strokeWidth={1.5} />
         </button>
       </div>
 
-      {dom.stato === 'pending' && (
-        <div style={{ marginTop: 12 }}>
-          <button
-            onClick={() => setShowDns(v => !v)}
-            style={{ fontSize: 12, color: '#e65100', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}
-          >
-            {showDns ? '▲ Nascondi istruzioni DNS' : '▼ Mostra istruzioni DNS'}
-          </button>
-          {showDns && istruzioni && <DnsInstructions istruzioni={istruzioni} />}
-        </div>
-      )}
+      {/* Step progress */}
+      <div style={{ display: 'flex', alignItems: 'center', padding: '12px 18px', background: '#fffbf5', borderTop: '1px solid #ffe0b2', gap: 0 }}>
+        <StepDot done label="1. Dominio aggiunto" />
+        <div style={{ flex: 1, height: 2, background: '#ffe0b2', margin: '0 6px' }} />
+        <StepDot active label="2. Configura DNS" />
+        <div style={{ flex: 1, height: 2, background: '#ffe0b2', margin: '0 6px' }} />
+        <StepDot label="3. Verifica" />
+      </div>
+
+      {/* DNS instructions — always visible when pending */}
+      {istruzioni && <DnsInstructions istruzioni={istruzioni} />}
+
+      {/* Verify CTA */}
+      <div style={{ padding: '14px 18px', background: '#fff8f0', borderTop: '1px solid #ffe0b2', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <p style={{ margin: 0, fontSize: 12, color: '#888' }}>
+          Dopo aver aggiunto i record DNS, clicca Verifica. I DNS possono impiegare fino a 48 ore — ma di solito bastano pochi minuti.
+        </p>
+        <button
+          onClick={handleVerify}
+          disabled={verifying}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#e65100', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 700, flexShrink: 0, opacity: verifying ? 0.6 : 1 }}
+        >
+          <RefreshCw size={14} strokeWidth={1.5} /> {verifying ? 'Verifica in corso…' : 'Verifica ora'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function StepDot({ done, active, label }) {
+  const bg = done ? '#2e7d32' : active ? '#e65100' : '#ddd'
+  const textColor = done ? '#2e7d32' : active ? '#e65100' : '#aaa'
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 80, textAlign: 'center' }}>
+      <div style={{ width: 22, height: 22, borderRadius: '50%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {done
+          ? <Check size={12} strokeWidth={2.5} color="#fff" />
+          : <div style={{ width: 8, height: 8, borderRadius: '50%', background: active ? '#fff' : '#bbb' }} />
+        }
+      </div>
+      <span style={{ fontSize: 11, fontWeight: 600, color: textColor, whiteSpace: 'nowrap' }}>{label}</span>
     </div>
   )
 }
@@ -293,27 +369,33 @@ function DnsInstructions({ istruzioni }) {
   function copy(v) { navigator.clipboard.writeText(v); setCopied(v); setTimeout(() => setCopied(''), 2000) }
 
   return (
-    <div style={{ marginTop: 12, background: '#fff8e1', borderRadius: 8, padding: 16 }}>
-      <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: '#e65100' }}>
-        Passo 2 — Aggiungi questi record DNS
+    <div style={{ padding: '16px 18px', background: '#fff', borderTop: '1px solid #ffe0b2' }}>
+      <p style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>
+        Cosa fare — accedi al pannello DNS del tuo fornitore e aggiungi questi record
       </p>
-      <p style={{ margin: '0 0 12px', fontSize: 12, color: '#888' }}>
-        Accedi al pannello del tuo fornitore (Aruba, GoDaddy, Cloudflare, Namecheap…) → cerca "DNS" o "Gestione DNS" → aggiungi i record qui sotto copiando esattamente nome e valore.
+      <p style={{ margin: '0 0 14px', fontSize: 12, color: '#888', lineHeight: 1.5 }}>
+        Il fornitore è dove hai <strong>acquistato il dominio</strong> (Aruba, GoDaddy, Cloudflare, Namecheap, Register.it…).
+        Cerca la sezione <em>"DNS"</em> o <em>"Gestione DNS"</em> e aggiungi i record qui sotto — copia i valori esattamente con il pulsante.
       </p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
         {(istruzioni.records || []).map((r, i) => (
-          <div key={i} style={{ background: '#fff', borderRadius: 6, padding: '10px 14px', fontSize: 13 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
-              <span style={{ fontWeight: 700, color: '#1a1a2e', background: '#f5f5f5', padding: '2px 8px', borderRadius: 4 }}>{r.tipo}</span>
-              <span style={{ fontSize: 11, color: '#888' }}>TTL: {r.ttl}</span>
-              <button onClick={() => copy(r.valore)} style={{ marginLeft: 'auto', background: copied === r.valore ? '#e8f5e9' : '#f5f5f5', border: 'none', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontSize: 11, color: copied === r.valore ? '#2e7d32' : '#555', whiteSpace: 'nowrap' }}>
-                {copied === r.valore ? '✓ Copiato' : 'Copia valore'}
+          <div key={i} style={{ background: '#f9f9f9', borderRadius: 8, padding: '12px 14px', border: '1px solid #eee' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontWeight: 700, fontSize: 12, color: '#fff', background: '#1a1a2e', padding: '2px 8px', borderRadius: 4 }}>Tipo: {r.tipo}</span>
+              <span style={{ fontSize: 11, color: '#aaa' }}>TTL: {r.ttl}</span>
+              <button
+                onClick={() => copy(r.valore)}
+                style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, background: copied === r.valore ? '#e8f5e9' : '#1a1a2e', color: copied === r.valore ? '#2e7d32' : '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
+              >
+                <Copy size={11} strokeWidth={1.5} /> {copied === r.valore ? 'Copiato!' : 'Copia valore'}
               </button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <div style={{ color: '#555' }}><strong>Nome:</strong> <code style={{ background: '#f5f5f5', padding: '1px 5px', borderRadius: 3 }}>{r.nome}</code></div>
-              <div style={{ color: '#555', wordBreak: 'break-all' }}><strong>Valore:</strong> <code style={{ background: '#f5f5f5', padding: '1px 5px', borderRadius: 3 }}>{r.valore}</code></div>
+            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '4px 8px', fontSize: 13 }}>
+              <span style={{ color: '#888', fontWeight: 600 }}>Nome:</span>
+              <code style={{ background: '#fff', border: '1px solid #e8e8e8', padding: '2px 8px', borderRadius: 4, fontSize: 12, wordBreak: 'break-all' }}>{r.nome}</code>
+              <span style={{ color: '#888', fontWeight: 600 }}>Valore:</span>
+              <code style={{ background: '#fff', border: '1px solid #e8e8e8', padding: '2px 8px', borderRadius: 4, fontSize: 12, wordBreak: 'break-all' }}>{r.valore}</code>
             </div>
           </div>
         ))}
@@ -321,10 +403,10 @@ function DnsInstructions({ istruzioni }) {
 
       {istruzioni.verifica_txt?.length > 0 && (
         <>
-          <p style={{ margin: '16px 0 8px', fontSize: 12, color: '#888', fontWeight: 600 }}>Record di verifica aggiuntivi (richiesti da Vercel):</p>
+          <p style={{ margin: '0 0 8px', fontSize: 12, color: '#888', fontWeight: 600 }}>Record di verifica aggiuntivi (richiesti da Vercel):</p>
           {istruzioni.verifica_txt.map((r, i) => (
-            <div key={i} style={{ background: '#fff', borderRadius: 6, padding: '8px 14px', display: 'flex', gap: 16, alignItems: 'center', fontSize: 12, marginBottom: 4 }}>
-              <span style={{ fontWeight: 700, background: '#f5f5f5', padding: '1px 6px', borderRadius: 4 }}>{r.tipo}</span>
+            <div key={i} style={{ background: '#f9f9f9', border: '1px solid #eee', borderRadius: 6, padding: '8px 12px', display: 'flex', gap: 16, alignItems: 'center', fontSize: 12, marginBottom: 4, flexWrap: 'wrap' }}>
+              <span style={{ fontWeight: 700, background: '#f0f0f0', padding: '1px 6px', borderRadius: 4 }}>{r.tipo}</span>
               <span><strong>Nome:</strong> {r.nome}</span>
               <span style={{ wordBreak: 'break-all' }}><strong>Valore:</strong> {r.valore}</span>
             </div>
@@ -332,50 +414,9 @@ function DnsInstructions({ istruzioni }) {
         </>
       )}
 
-      <p style={{ margin: '14px 0 0', fontSize: 12, color: '#888' }}>
-        ⏱ I DNS possono impiegare fino a 48 ore per propagarsi. Clicca <strong>Verifica</strong> dopo aver configurato i record.
-      </p>
-    </div>
-  )
-}
-
-function GuidaSetup() {
-  const steps = [
-    { n: '1', title: 'Aggiungi il dominio', text: 'Inserisci il tuo dominio nel campo qui sotto (es. www.iltuosito.it) e clicca Aggiungi. Appariranno i record DNS da configurare.' },
-    { n: '2', title: 'Configura il DNS', text: 'Accedi al pannello del tuo fornitore (Aruba, GoDaddy, Cloudflare, Namecheap…) → cerca "DNS" o "Gestione DNS" → aggiungi i record esattamente come mostrato, usando i pulsanti Copia.' },
-    { n: '3', title: 'Verifica', text: 'Torna qui e clicca il pulsante Verifica. Di solito basta qualche minuto, ma i DNS possono richiedere fino a 48 ore.' },
-  ]
-  return (
-    <div style={{ background: '#f8faff', border: '1px solid #dde6ff', borderRadius: 10, padding: '16px 20px', marginBottom: 20 }}>
-      <p style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>Come funziona — 3 passi</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {steps.map(({ n, title, text }) => (
-          <div key={n} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-            <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#1a1a2e', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>{n}</div>
-            <div>
-              <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>{title}</p>
-              <p style={{ margin: 0, fontSize: 12, color: '#666', lineHeight: 1.55 }}>{text}</p>
-            </div>
-          </div>
-        ))}
+      <div style={{ marginTop: 12, background: '#fffde7', borderRadius: 6, padding: '8px 12px', fontSize: 12, color: '#666' }}>
+        <strong>Cloudflare:</strong> se usi Cloudflare, clicca sull'icona arancione accanto al record per disabilitare il proxy (deve diventare grigia) durante la verifica.
       </div>
-      <p style={{ margin: '14px 0 0', fontSize: 12, color: '#888', borderTop: '1px solid #e8eeff', paddingTop: 10 }}>
-        💡 Non sai dove gestire il DNS? Si trova di solito nel pannello del sito dove hai acquistato il dominio. Se hai Cloudflare, disabilita temporaneamente il proxy (icona arancione → grigia) sul record CNAME durante la verifica.
-      </p>
     </div>
-  )
-}
-
-function StatoBadge({ stato }) {
-  const cfg = {
-    attivo:  { icon: CheckCircle, color: '#2e7d32', bg: '#e8f5e9', label: 'Attivo' },
-    pending: { icon: Clock,        color: '#e65100', bg: '#fff3e0', label: 'In verifica' },
-    errore:  { icon: AlertCircle,  color: '#c62828', bg: '#ffebee', label: 'Errore' },
-  }[stato] || { icon: Clock, color: '#888', bg: '#f5f5f5', label: stato }
-  const Icon = cfg.icon
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: cfg.bg, color: cfg.color, padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
-      <Icon size={12} strokeWidth={2} /> {cfg.label}
-    </span>
   )
 }

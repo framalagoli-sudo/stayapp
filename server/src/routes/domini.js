@@ -166,12 +166,24 @@ router.post('/:id/verify', async (req, res) => {
       return res.json({ ...dom, message: 'Verifica manuale: controlla che i DNS siano configurati correttamente' })
     }
 
+    // POST all'endpoint Vercel di verifica per triggare il check DNS attivo
     const vRes = await fetch(
-      `https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/domains/${encodeURIComponent(dom.dominio)}`,
-      { headers: { 'Authorization': `Bearer ${VERCEL_TOKEN}` } }
+      `https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/domains/${encodeURIComponent(dom.dominio)}/verify`,
+      {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${VERCEL_TOKEN}` },
+      }
     )
     const vData = await vRes.json()
-    const stato = vData.verified ? 'attivo' : 'pending'
+
+    let stato
+    if (vData.verified) {
+      stato = 'attivo'
+    } else if (vRes.ok || vData.error?.code === 'domain_already_in_use') {
+      stato = 'pending'
+    } else {
+      stato = 'errore'
+    }
 
     const { data: updated } = await supabase.from('domini')
       .update({ stato, dns_istruzioni: buildDnsFromVercel(dom.dominio, vData) })
