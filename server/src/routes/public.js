@@ -64,12 +64,15 @@ router.get('/resolve-domain', async (req, res) => {
   const dominio = req.query.d?.trim().toLowerCase()
   if (!dominio) return res.status(400).json({ error: 'Parametro d obbligatorio' })
 
+  // Cerca sia fondaconarni.com che www.fondaconarni.com (Vercel può redirigere da uno all'altro)
+  const variants = dominio.startsWith('www.') ? [dominio, dominio.slice(4)] : [dominio, `www.${dominio}`]
+
   const { data, error } = await supabase
     .from('domini')
     .select('entity_tipo, entity_id, entity_slug, tipo, stato')
-    .eq('dominio', dominio)
+    .in('dominio', variants)
     .eq('stato', 'attivo')
-    .single()
+    .maybeSingle()
 
   if (error || !data) return res.status(404).json({ error: 'Dominio non registrato' })
   res.json(data)
