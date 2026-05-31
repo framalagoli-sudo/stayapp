@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import LandingRistorante from './LandingRistorante'
 import CookieBanner from '../../components/CookieBanner'
-import { Utensils, Info, Images, Phone, Mail, MapPin, Clock, X, ChevronRight, CalendarCheck, Check } from 'lucide-react'
+import { Utensils, Info, Images, Phone, Mail, MapPin, Clock, X, ChevronRight, CalendarCheck, Check, MessageCircle, ArrowLeft } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
 import ChatbotWidget from '../../components/ChatbotWidget'
 import BookingWidget from '../../components/BookingWidget'
@@ -123,6 +123,7 @@ export default function RestaurantApp() {
     ...(rModules.booking  ? [{ key: 'prenota',  Icon: CalendarCheck, label: 'Prenota' }]  : []),
     ...(rModules.info     ? [{ key: 'info',     Icon: Info,          label: 'Info' }]     : []),
     ...(rModules.gallery && hasGallery ? [{ key: 'galleria', Icon: Images, label: 'Galleria' }] : []),
+    ...(ristorante.chatbot?.active ? [{ key: 'chatbot', Icon: MessageCircle, label: 'Chat' }] : []),
   ]
 
   // Header
@@ -210,16 +211,19 @@ export default function RestaurantApp() {
             </div>
           </div>
 
-          {/* Chatbot widget (floating) */}
-          <div style={{ position: 'relative', height: 0, flexShrink: 0 }}>
-            <ChatbotWidget chatbot={ristorante.chatbot} primaryColor={primary} entityTipo="ristorante" entityId={ristorante.id} />
-          </div>
+          {/* Chatbot tab (always mounted per preservare stato messaggi) */}
+          {ristorante.chatbot?.active && (
+            <div style={{ flex: 1, minHeight: 0, display: nav === 'chatbot' ? 'flex' : 'none', flexDirection: 'column', overflow: 'hidden' }}>
+              <ChatbotWidget chatbot={ristorante.chatbot} primaryColor={primary} entityTipo="ristorante" entityId={ristorante.id} embedded={true} />
+            </div>
+          )}
 
           {/* Scroll area */}
-          <div ref={scrollRef} className="r-scroll" onScroll={handleScroll}>
+          <div ref={scrollRef} className="r-scroll" onScroll={handleScroll}
+            style={{ display: nav === 'chatbot' ? 'none' : undefined }}>
             {AppHeader}
             <div key={nav} className="fade-up">
-              {nav === 'menu'    && <MenuTab    menu={ristorante.menu || []}        {...sp} />}
+              {nav === 'menu'    && <MenuTab    menu={ristorante.menu || []}        {...sp} headingFamily={headingFamily} />}
               {nav === 'prenota' && <PrenotaTab ristorante={ristorante}             {...sp} />}
               {nav === 'info'    && <InfoTab    ristorante={ristorante}             {...sp} />}
               {nav === 'galleria'&& <GalleriaTab gallery={ristorante.gallery || []} {...sp} />}
@@ -246,6 +250,8 @@ export default function RestaurantApp() {
 
 // ─── MENU ─────────────────────────────────────────────────────────────────────
 function MenuTab({ menu, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, showAllergens }) {
+  const isCatalogo = menu.length > 0 && menu[0].type === 'catalogo'
+  const [selectedId, setSelectedId] = useState(null)
   const [lightbox, setLightbox] = useState(null)
 
   if (!menu.length) {
@@ -257,51 +263,129 @@ function MenuTab({ menu, primary, textColor, subText, isDark, radius, headingFam
     )
   }
 
+  function renderCategorySection(cat) {
+    return (
+      <section key={cat.id} style={{ marginBottom: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{ flex: 1, height: 1, background: borderColor }} />
+          <h2 style={{ margin: 0, fontSize: 13, fontWeight: 700, fontFamily: headingFamily, color: primary, textTransform: 'uppercase', letterSpacing: 1.2, flexShrink: 0 }}>
+            {cat.name}
+          </h2>
+          <div style={{ flex: 1, height: 1, background: borderColor }} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {(cat.items || []).map(item => (
+            <MenuItem
+              key={item.id}
+              item={item}
+              primary={primary}
+              textColor={textColor}
+              subText={subText}
+              isDark={isDark}
+              radius={radius}
+              cardBg={cardBg}
+              borderColor={borderColor}
+              showAllergens={showAllergens}
+              onOpenPhoto={item.photo_url ? () => setLightbox(item.photo_url) : null}
+            />
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  function renderLightbox() {
+    if (!lightbox) return null
+    return (
+      <div onClick={() => setLightbox(null)}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.93)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
+        <img src={lightbox} alt=""
+          style={{ maxWidth: '100%', maxHeight: '90vh', borderRadius: 10, objectFit: 'contain', display: 'block' }} />
+        <button onClick={() => setLightbox(null)}
+          style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', width: 38, height: 38, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <X size={18} strokeWidth={2} color="#fff" />
+        </button>
+      </div>
+    )
+  }
+
+  // ── Multi-catalogo ─────────────────────────────────────────────────────────
+  if (isCatalogo) {
+    const selected = menu.find(c => c.id === selectedId)
+
+    if (!selected) {
+      // Home: macro-buttons per ogni catalogo
+      return (
+        <div style={{ padding: '20px 16px 28px' }}>
+          <h2 style={{ fontFamily: headingFamily, fontSize: 18, fontWeight: 700, color: textColor, margin: '0 0 16px' }}>
+            Scegli il menu
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {menu.map(c => {
+              const itemCount = (c.categories || []).reduce((n, cat) => n + (cat.items?.length || 0), 0)
+              return (
+                <button key={c.id} type="button" onClick={() => setSelectedId(c.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 16,
+                    padding: '18px 20px', background: cardBg, borderRadius: radius || 14,
+                    border: `1px solid ${borderColor}`, cursor: 'pointer', textAlign: 'left',
+                    boxShadow: isDark ? 'none' : '0 2px 12px rgba(0,0,0,0.06)',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}>
+                  <div style={{ width: 48, height: 48, borderRadius: 12, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Utensils size={22} strokeWidth={1.5} color={primary} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 17, color: textColor, fontFamily: headingFamily }}>{c.name}</div>
+                    <div style={{ fontSize: 12, color: subText, marginTop: 2 }}>
+                      {itemCount} {itemCount === 1 ? 'piatto' : 'piatti'}
+                    </div>
+                  </div>
+                  <ChevronRight size={18} strokeWidth={1.5} color={subText} />
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )
+    }
+
+    // Dettaglio catalogo selezionato
+    const categories = selected.categories || []
+    return (
+      <div>
+        {/* Back bar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: `1px solid ${borderColor}` }}>
+          <button type="button" onClick={() => setSelectedId(null)}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', color: primary, fontWeight: 600, fontSize: 13, padding: 0 }}>
+            <ArrowLeft size={16} strokeWidth={2} color={primary} />
+            Menu
+          </button>
+          <span style={{ fontWeight: 700, fontSize: 16, color: textColor, fontFamily: headingFamily }}>
+            {selected.name}
+          </span>
+        </div>
+
+        <div style={{ padding: '20px 16px 28px' }}>
+          {categories.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '32px 0', color: subText }}>
+              <Utensils size={36} strokeWidth={1.5} color={primary} style={{ display: 'block', margin: '0 auto 12px', opacity: 0.35 }} />
+              <p style={{ margin: 0, fontSize: 14 }}>Nessun piatto disponibile in questa sezione.</p>
+            </div>
+          )}
+          {categories.map(cat => renderCategorySection(cat))}
+        </div>
+
+        {renderLightbox()}
+      </div>
+    )
+  }
+
+  // ── Single menu (legacy) ───────────────────────────────────────────────────
   return (
     <div style={{ padding: '20px 16px 28px' }}>
-      {menu.map(cat => (
-        <section key={cat.id} style={{ marginBottom: 28 }}>
-          {/* Category header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            <div style={{ flex: 1, height: 1, background: borderColor }} />
-            <h2 style={{ margin: 0, fontSize: 13, fontWeight: 700, fontFamily: headingFamily, color: primary, textTransform: 'uppercase', letterSpacing: 1.2, flexShrink: 0 }}>
-              {cat.name}
-            </h2>
-            <div style={{ flex: 1, height: 1, background: borderColor }} />
-          </div>
-
-          {/* Items */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {(cat.items || []).map(item => (
-              <MenuItem
-                key={item.id}
-                item={item}
-                primary={primary}
-                textColor={textColor}
-                subText={subText}
-                isDark={isDark}
-                radius={radius}
-                cardBg={cardBg}
-                borderColor={borderColor}
-                showAllergens={showAllergens}
-                onOpenPhoto={item.photo_url ? () => setLightbox(item.photo_url) : null}
-              />
-            ))}
-          </div>
-        </section>
-      ))}
-
-      {lightbox && (
-        <div onClick={() => setLightbox(null)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.93)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
-          <img src={lightbox} alt=""
-            style={{ maxWidth: '100%', maxHeight: '90vh', borderRadius: 10, objectFit: 'contain', display: 'block' }} />
-          <button onClick={() => setLightbox(null)}
-            style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', width: 38, height: 38, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <X size={18} strokeWidth={2} color="#fff" />
-          </button>
-        </div>
-      )}
+      {menu.map(cat => renderCategorySection(cat))}
+      {renderLightbox()}
     </div>
   )
 }

@@ -66,7 +66,7 @@ const BORDER_RADII = { rounded: 16, mixed: 8, square: 0 }
 const BASE_NAV = [
   { key: 'home',      Icon: Home,     label: 'Home' },
   { key: 'esplora',   Icon: Compass,  label: 'Esplora' },
-  { key: 'richiesta', Icon: Bell,     label: 'Richiesta' },
+  { key: 'richiesta', Icon: Bell,     label: 'Richiesta', module: 'reception' },
   { key: 'info',      Icon: Info,     label: 'Info' },
 ]
 
@@ -165,7 +165,10 @@ export default function GuestApp() {
 
   const sp = { primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor }
 
-  const NAV_ITEMS = BASE_NAV.filter(item => !item.module || modules[item.module])
+  const NAV_ITEMS = [
+    ...BASE_NAV.filter(item => !item.module || modules[item.module]),
+    ...(property.chatbot?.active ? [{ key: 'chatbot', Icon: MessageCircle, label: 'Chat' }] : []),
+  ]
 
   function goExplore(chip) { setExploreChip(chip); setNav('esplora') }
 
@@ -305,13 +308,16 @@ export default function GuestApp() {
             </div>
           )}
 
-          {/* ── Chatbot widget (floating) ── */}
-          <div style={{ position: 'relative', height: 0, flexShrink: 0 }}>
-            <ChatbotWidget chatbot={property.chatbot} primaryColor={primary} entityTipo="struttura" entityId={property.id} />
-          </div>
+          {/* ── Chatbot tab (always mounted per preservare stato messaggi) ── */}
+          {property.chatbot?.active && (
+            <div style={{ flex: 1, minHeight: 0, display: nav === 'chatbot' ? 'flex' : 'none', flexDirection: 'column', overflow: 'hidden' }}>
+              <ChatbotWidget chatbot={property.chatbot} primaryColor={primary} entityTipo="struttura" entityId={property.id} embedded={true} />
+            </div>
+          )}
 
           {/* ── Scroll area ── */}
-          <div ref={scrollRef} className="g-scroll" onScroll={handleScroll}>
+          <div ref={scrollRef} className="g-scroll" onScroll={handleScroll}
+            style={{ display: nav === 'chatbot' ? 'none' : undefined }}>
             {AppHeader}
             <div key={nav} className="fade-up">
               {nav === 'home'      && <HomePage      property={property} upcomingEventi={upcomingEventi} modules={modules} onExplore={goExplore} {...sp} headingFamily={headingFamily} />}

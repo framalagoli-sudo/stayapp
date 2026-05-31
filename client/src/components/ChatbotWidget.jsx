@@ -4,8 +4,9 @@ import { apiFetch } from '../lib/api'
 
 // fixed=false → posizionato dentro il container PWA (position:absolute)
 // fixed=true  → floating su landing page (position:fixed)
-export default function ChatbotWidget({ chatbot, primaryColor, fixed = false, entityTipo, entityId }) {
-  const [open, setOpen]       = useState(false)
+// embedded=true → tab PWA: nessun pulsante flottante, nessun X, riempie il parent
+export default function ChatbotWidget({ chatbot, primaryColor, fixed = false, entityTipo, entityId, embedded = false }) {
+  const [open, setOpen]       = useState(embedded)
   const [messages, setMessages] = useState([])
   const [typing, setTyping]   = useState(false)
   const [inputText, setInputText] = useState('')
@@ -74,7 +75,6 @@ export default function ChatbotWidget({ chatbot, primaryColor, fixed = false, en
     setMessages(prev => [...prev, userMsg])
     setTyping(true)
 
-    // Build conversation history for API
     const history = [...messages, userMsg]
       .filter(m => m.type === 'user' || (m.type === 'bot' && !m.isWelcome))
       .map(m => ({ role: m.type === 'user' ? 'user' : 'assistant', content: m.text }))
@@ -124,8 +124,8 @@ export default function ChatbotWidget({ chatbot, primaryColor, fixed = false, en
         .cb-send-btn:disabled { opacity: 0.5; cursor: default; }
       `}</style>
 
-      {/* Pulsante flotante */}
-      {!open && (
+      {/* Pulsante flottante (solo modalità non-embedded) */}
+      {!embedded && !open && (
         <div style={{
           position: fixed ? 'fixed' : 'absolute',
           bottom: fixed ? 24 : 70, right: fixed ? 24 : 12,
@@ -147,8 +147,10 @@ export default function ChatbotWidget({ chatbot, primaryColor, fixed = false, en
       )}
 
       {/* Pannello chat */}
-      {open && (
-        <div style={fixed ? {
+      {(embedded || open) && (
+        <div style={embedded ? {
+          display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, background: '#f0f0f0',
+        } : fixed ? {
           position: 'fixed', bottom: 90, right: 24, zIndex: 9999,
           width: 360, height: 520, borderRadius: 18,
           display: 'flex', flexDirection: 'column',
@@ -173,9 +175,11 @@ export default function ChatbotWidget({ chatbot, primaryColor, fixed = false, en
                 {aiMode ? 'Assistente AI' : 'Online ora'}
               </div>
             </div>
-            <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, display: 'flex', borderRadius: 6 }}>
-              <X size={20} strokeWidth={1.5} color="#fff" />
-            </button>
+            {!embedded && (
+              <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, display: 'flex', borderRadius: 6 }}>
+                <X size={20} strokeWidth={1.5} color="#fff" />
+              </button>
+            )}
           </div>
 
           {/* Messaggi */}
@@ -209,7 +213,7 @@ export default function ChatbotWidget({ chatbot, primaryColor, fixed = false, en
             <div ref={endRef} />
           </div>
 
-          {/* Footer: opzioni (modalità albero) o input testo (modalità AI) */}
+          {/* Footer: opzioni (albero) o input testo (AI) */}
           {aiMode ? (
             <div style={{ padding: '8px 12px 12px', display: 'flex', gap: 8, alignItems: 'center', background: '#f0f0f0', flexShrink: 0 }}>
               <input
