@@ -38,7 +38,7 @@ const EXPECTED = {
   ],
   piano_editoriale: [
     'id','azienda_id','titolo','testo','immagine_url','canali',
-    'data_pianificata','stato','note_interne',
+    'data_pianificata','stato','note',
     'tipo_contenuto','ref_id','ref_tipo','design_url',
     'labels','pillar',
     'created_by','created_by_name','updated_by','updated_by_name',
@@ -53,10 +53,11 @@ const EXPECTED = {
     'id','post_id','azienda_id','author_id','author_name','testo','created_at',
   ],
   prenotazioni: [
-    'id','risorsa_id','nome','email','telefono','data','slot_inizio','slot_fine',
-    'coperti','note','stato','cancellation_token',
+    'id','risorsa_id','azienda_id','data',
+    'ora_inizio','ora_fine','servizio',
+    'cliente_nome','cliente_email','cliente_telefono','n_persone','note_cliente',
+    'stato','note_interne','cancellation_token',
     'pagamento_stato','pagamento_id',
-    'recensione_token','recensione_inviata',
     'created_at','updated_at',
   ],
   profiles: [

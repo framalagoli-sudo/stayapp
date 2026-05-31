@@ -189,7 +189,7 @@ canali text[] DEFAULT '{}',
 -- canali: 'instagram'|'facebook'|'linkedin'|'tiktok'|'x'|'google_business'
 data_pianificata timestamptz,
 stato text DEFAULT 'bozza',  -- 'bozza'|'pianificato'|'pubblicato'
-note_interne text,
+note text DEFAULT '',
 created_at, updated_at
 ```
 
