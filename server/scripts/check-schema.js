@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 // check-schema.js — Valida che le colonne usate dal codice esistano nel DB
-// Eseguito automaticamente da GitHub Actions ad ogni push su main
+// Usa l'endpoint OpenAPI di Supabase/PostgREST (nessun secret extra necessario)
 
-import { createClient } from '@supabase/supabase-js'
 import 'dotenv/config'
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
+const SUPABASE_URL = process.env.SUPABASE_URL
+const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!SUPABASE_URL || !SERVICE_KEY) {
+  console.error('❌ SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY sono obbligatori')
+  process.exit(1)
+}
 
 // Colonne che il server legge nelle query guest/admin per ogni tabella
 const EXPECTED = {
@@ -62,31 +64,43 @@ const EXPECTED = {
   ],
 }
 
-async function getColumns(table) {
-  const { data, error } = await supabase
-    .from('information_schema.columns')
-    .select('column_name')
-    .eq('table_schema', 'public')
-    .eq('table_name', table)
-  if (error) throw new Error(`Errore query information_schema per ${table}: ${error.message}`)
-  return new Set(data.map(r => r.column_name))
+async function fetchSchema() {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+    headers: {
+      apikey: SERVICE_KEY,
+      Authorization: `Bearer ${SERVICE_KEY}`,
+    },
+  })
+  if (!res.ok) throw new Error(`OpenAPI fetch fallita: ${res.status} ${res.statusText}`)
+  const spec = await res.json()
+  // definitions ha le tabelle; properties ha le colonne
+  return spec.definitions || {}
 }
 
 async function main() {
   console.log('🔍 Check schema DB...\n')
+
+  let definitions
+  try {
+    definitions = await fetchSchema()
+  } catch (e) {
+    console.error('❌ Impossibile recuperare lo schema da Supabase:', e.message)
+    process.exit(1)
+  }
+
   let failures = 0
 
   for (const [table, cols] of Object.entries(EXPECTED)) {
-    let existing
-    try {
-      existing = await getColumns(table)
-    } catch (e) {
-      console.error(`❌ ${table}: ${e.message}`)
+    const def = definitions[table]
+    if (!def) {
+      console.error(`❌ ${table}: tabella non trovata nello schema`)
       failures++
       continue
     }
 
-    const missing = cols.filter(c => !existing.has(c))
+    const existing = new Set(Object.keys(def.properties || {}))
+    const missing  = cols.filter(c => !existing.has(c))
+
     if (missing.length) {
       console.error(`❌ ${table}: colonne mancanti → ${missing.join(', ')}`)
       failures++
@@ -97,7 +111,7 @@ async function main() {
 
   console.log('')
   if (failures > 0) {
-    console.error(`\n⛔ ${failures} tabella/e con colonne mancanti. Esegui le migration necessarie su Supabase.\n`)
+    console.error(`⛔ ${failures} tabella/e con colonne mancanti. Esegui le migration necessarie su Supabase.\n`)
     process.exit(1)
   } else {
     console.log('✅ Schema OK — tutte le colonne attese esistono nel DB.\n')
