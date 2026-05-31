@@ -327,7 +327,7 @@ function ItemRow({ item, ristoranteId, onChange, onDelete }) {
       <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 80px', gap: '8px 12px' }}>
         <input
           value={name} onChange={e => setName(e.target.value)} onBlur={() => onChange({ name })}
-          placeholder="Nome piatto *" style={inpStyle} />
+          placeholder="Nome *" style={inpStyle} />
         <input
           value={price} onChange={e => setPrice(e.target.value)} onBlur={() => onChange({ price })}
           placeholder="Prezzo €" style={inpStyle} type="number" min="0" step="0.5" />
