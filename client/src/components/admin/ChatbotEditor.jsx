@@ -122,16 +122,35 @@ export default function ChatbotEditor({ chatbot: initialChatbot, onSave, saving,
 
       {/* Impostazioni generali */}
       <div style={card}>
-        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'center' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={chatbot.active || false}
-              onChange={e => patch({ active: e.target.checked })}
-              style={{ width: 18, height: 18, accentColor: '#1a1a2e', cursor: 'pointer' }}
-            />
-            <span style={{ fontWeight: 600, fontSize: 15 }}>Chatbot attivo nella PWA</span>
-          </label>
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          {/* Canali */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 0.5 }}>Attivo su</span>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={chatbot.active_app ?? chatbot.active ?? false}
+                onChange={e => {
+                  const val = e.target.checked
+                  patch({ active_app: val, active: val || (chatbot.active_sito ?? chatbot.active ?? false) })
+                }}
+                style={{ width: 16, height: 16, accentColor: '#1a1a2e', cursor: 'pointer' }}
+              />
+              <span style={{ fontSize: 14, fontWeight: 500 }}>App Clienti (QR)</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={chatbot.active_sito ?? chatbot.active ?? false}
+                onChange={e => {
+                  const val = e.target.checked
+                  patch({ active_sito: val, active: (chatbot.active_app ?? chatbot.active ?? false) || val })
+                }}
+                style={{ width: 16, height: 16, accentColor: '#1a1a2e', cursor: 'pointer' }}
+              />
+              <span style={{ fontSize: 14, fontWeight: 500 }}>Sito web pubblico</span>
+            </label>
+          </div>
           <div style={{ flex: 1, minWidth: 200 }}>
             <span style={label}>Nome del bot</span>
             <input
@@ -175,7 +194,7 @@ export default function ChatbotEditor({ chatbot: initialChatbot, onSave, saving,
         )}
         {!chatbot.active && (
           <p style={{ margin: '12px 0 0', fontSize: 13, color: '#888' }}>
-            Il chatbot è disattivato. Attivalo per mostrarlo nell'app ospite.
+            Il chatbot è disattivato. Seleziona almeno un canale per mostrarlo.
           </p>
         )}
       </div>

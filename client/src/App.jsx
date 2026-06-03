@@ -55,6 +55,7 @@ import AttivitaInfoPage from './pages/admin/attivita/AttivitaInfoPage'
 import AttivitaGalleryPage from './pages/admin/attivita/AttivitaGalleryPage'
 import AttivitaThemePage from './pages/admin/attivita/AttivitaThemePage'
 import AttivitaMiniSitoPage from './pages/admin/attivita/AttivitaMiniSitoPage'
+import AttivitaModuliPage from './pages/admin/attivita/AttivitaModuliPage'
 import AttivitaApp from './pages/guest/AttivitaApp'
 import DemoRequestsPage from './pages/admin/DemoRequestsPage'
 import AuditLogPage from './pages/admin/AuditLogPage'
@@ -103,6 +104,7 @@ import ShopPage from './pages/admin/shop/ShopPage'
 import ProdottoEditorPage from './pages/admin/shop/ProdottoEditorPage'
 import OrdineDetailPage from './pages/admin/shop/OrdineDetailPage'
 import ContentStudioPage from './pages/admin/ContentStudioPage'
+import AiSiteBuilderPage from './pages/admin/AiSiteBuilderPage'
 import SurveyPage from './pages/admin/SurveyPage'
 import SurveyPublicPage from './pages/public/SurveyPublicPage'
 import LoyaltyPage from './pages/admin/LoyaltyPage'
@@ -260,11 +262,13 @@ export default function App() {
             <Route path="loyalty" element={<LoyaltyPage />} />
             <Route path="help"    element={<HelpPage />} />
             <Route path="content-studio" element={<ContentStudioPage />} />
+            <Route path="ai-site-builder" element={<AiSiteBuilderPage />} />
             <Route path="survey" element={<SurveyPage />} />
             <Route path="qrcode"       element={<QRCodePage />} />
 
             {/* Attività */}
             <Route path="attivita"                element={<AttivitaListPage />} />
+            <Route path="attivita/:id/moduli"     element={<AttivitaModuliPage />} />
             <Route path="attivita/:id/info"       element={<AttivitaInfoPage />} />
             <Route path="attivita/:id/gallery"    element={<AttivitaGalleryPage />} />
             <Route path="attivita/:id/theme"      element={<AttivitaThemePage />} />

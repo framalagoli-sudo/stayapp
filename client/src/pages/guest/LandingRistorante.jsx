@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { MapPin, Phone, Mail, Clock, ChevronDown, Utensils, Wine, Coffee, Music, Car, Wind, Wifi, Bell, Bus, Star, Heart, Award, Calendar, Users, Plus, Minus } from 'lucide-react'
+import MenuTab from '../../components/MenuTab'
 import { apiFetch } from '../../lib/api'
 import { injectTracking } from '../../lib/tracking'
 import { injectJsonLd, buildEntitySchema, buildFaqSchema } from '../../lib/geoSchema'
@@ -7,6 +8,7 @@ import CookieBanner from '../../components/CookieBanner'
 import BookingWidget from '../../components/BookingWidget'
 import ChatbotWidget from '../../components/ChatbotWidget'
 import ShopWidget from '../../components/ShopWidget'
+import LandingBlockRenderer from '../../components/LandingBlockRenderer'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -89,6 +91,7 @@ export default function LandingRistorante({ ristorante }) {
   const [pagine,         setPagine]         = useState([])
   const [openDropdown,   setOpenDropdown]   = useState(null)
   const [recensioni,     setRecensioni]     = useState([])
+  const [homeBlocks,     setHomeBlocks]     = useState(null)
 
   useEffect(() => {
     if (!ristorante?.id) return
@@ -111,12 +114,16 @@ export default function LandingRistorante({ ristorante }) {
     apiFetch(`/api/guest/recensioni/ristorante/${ristorante.id}`)
       .then(d => Array.isArray(d) && setRecensioni(d))
       .catch(() => {})
+    apiFetch(`/api/guest/pagina/ristorante/${ristorante.id}/__home__`)
+      .then(d => d?.id && Array.isArray(d.blocks) && d.blocks.length && setHomeBlocks(d.blocks))
+      .catch(() => {})
   }, [ristorante.id])
 
-  const theme   = { primaryColor: '#e63946', fontHeading: 'playfair', fontBody: 'inter', ...(ristorante.theme || {}) }
-  const primary = theme.primaryColor
-  const heading = HEADING_FAMILIES[theme.fontHeading] || HEADING_FAMILIES.playfair
-  const body    = BODY_FAMILIES[theme.fontBody]       || BODY_FAMILIES.inter
+  const theme      = { primaryColor: '#e63946', fontHeading: 'playfair', fontBody: 'inter', textColor: '#1a1a2e', borderStyle: 'mixed', ...(ristorante.theme || {}) }
+  const primary    = theme.primaryColor
+  const heading    = HEADING_FAMILIES[theme.fontHeading] || HEADING_FAMILIES.playfair
+  const body       = BODY_FAMILIES[theme.fontBody]       || BODY_FAMILIES.inter
+  const menuRadius = { rounded: 16, mixed: 8, square: 0 }[theme.borderStyle] ?? 8
   const mini    = ristorante.minisito || {}
   const sections = { ...(mini.sections || {}) }
   const social   = mini.social || {}
@@ -134,7 +141,20 @@ export default function LandingRistorante({ ristorante }) {
     const apiBase = import.meta.env.VITE_API_URL ?? ''
     const sitemapEl = Object.assign(document.createElement('link'), { rel: 'sitemap', type: 'application/xml', href: `${apiBase}/api/guest/sitemap/ristorante/${ristorante.slug}` })
     document.head.appendChild(sitemapEl)
-    return () => { document.title = 'OltreNova'; cleanupTracking(); sitemapEl.remove() }
+    let faviconEl = null
+    if (mini.favicon_url) {
+      faviconEl = document.querySelector("link[rel~='icon']")
+      const prevHref = faviconEl?.href
+      if (!faviconEl) { faviconEl = document.createElement('link'); faviconEl.rel = 'icon'; document.head.appendChild(faviconEl) }
+      faviconEl.href = mini.favicon_url
+      faviconEl._prevHref = prevHref
+    }
+    return () => {
+      document.title = 'OltreNova'
+      cleanupTracking()
+      sitemapEl.remove()
+      if (faviconEl) faviconEl.href = faviconEl._prevHref || '/favicon.ico'
+    }
   }, [])
 
   useEffect(() => {
@@ -459,27 +479,20 @@ export default function LandingRistorante({ ristorante }) {
               <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
                 Il menu
               </h2>
-              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>
-                {menu.length} {menu.length === 1 ? 'categoria' : 'categorie'} · {menu.reduce((n, c) => n + (c.items?.length || 0), 0)} piatti
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16, marginBottom: 40 }}>
-                {menu.slice(0, 6).map(cat => (
-                  <div key={cat.id} style={{ background: '#fff', borderRadius: 14, padding: '20px 20px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', borderTop: `3px solid ${primary}` }}>
-                    <div style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, marginBottom: 8 }}>{cat.name}</div>
-                    <div style={{ fontSize: 13, color: '#888' }}>{cat.items?.length || 0} piatti</div>
-                    {cat.items?.slice(0, 2).map(item => (
-                      <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTop: '1px solid #f0f0f0' }}>
-                        <span style={{ fontSize: 13, color: '#444', flex: 1, marginRight: 8 }}>{item.name}</span>
-                        {item.price && <span style={{ fontSize: 13, fontWeight: 700, color: primary, flexShrink: 0 }}>€{item.price}</span>}
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <a href={pwaUrl} style={{ padding: '13px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-                  Menu completo
-                </a>
+              <div style={{ maxWidth: 720, margin: '0 auto' }}>
+                <MenuTab
+                  menu={menu}
+                  primary={primary}
+                  textColor={theme.textColor}
+                  subText="#888"
+                  isDark={false}
+                  radius={menuRadius}
+                  headingFamily={heading}
+                  cardBg="#fff"
+                  surfaceBg="#f5f5f5"
+                  borderColor="#efefef"
+                  showAllergens={ristorante.modules?.allergens !== false}
+                />
               </div>
             </div>
           </section>
@@ -882,102 +895,153 @@ export default function LandingRistorante({ ristorante }) {
         </div>
       </nav>
 
-      {/* Hero */}
-      <section style={{ position: 'relative', height: '100vh', minHeight: 520, overflow: 'hidden' }}>
-        {ristorante.cover_url
-          ? <img src={ristorante.cover_url} alt="cover" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-          : <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${primary} 0%, ${primary}99 100%)` }} />
-        }
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.7) 100%)' }} />
+      {homeBlocks ? (
+        <LandingBlockRenderer
+          blocks={homeBlocks} entity={ristorante} entityType="ristorante"
+          mini={mini} primary={primary} heading={heading} body={body}
+          slug={ristorante.slug} privacyUrl={`/r/${ristorante.slug}/privacy`}
+          aziendaId={ristorante.azienda_id}
+        />
+      ) : (
+        <>
+          {/* Hero */}
+          <section style={{ position: 'relative', height: '100vh', minHeight: 520, overflow: 'hidden' }}>
+            {ristorante.cover_url
+              ? <img src={ristorante.cover_url} alt="cover" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+              : <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${primary} 0%, ${primary}99 100%)` }} />
+            }
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.7) 100%)' }} />
 
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 24px' }}>
-          {ristorante.logo_url && (
-            <img src={ristorante.logo_url} alt="logo" className="fade-up"
-              style={{ maxHeight: 72, maxWidth: 180, objectFit: 'contain', marginBottom: 24, filter: 'brightness(0) invert(1)' }} />
-          )}
-          <h1 className="fade-up-2" style={{ fontFamily: heading, fontSize: 'clamp(36px, 6vw, 72px)', fontWeight: 700, color: '#fff', lineHeight: 1.1, marginBottom: 16, textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}>
-            {ristorante.name}
-          </h1>
-          {tagline && (
-            <p className="fade-up-3" style={{ fontSize: 'clamp(16px, 2.5vw, 22px)', color: 'rgba(255,255,255,0.88)', maxWidth: 560, lineHeight: 1.5, marginBottom: 12 }}>
-              {tagline}
-            </p>
-          )}
-          {ristorante.schedule && (
-            <p className="fade-up-3" style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', fontSize: 14, color: 'rgba(255,255,255,0.7)', marginBottom: 32 }}>
-              <Clock size={14} strokeWidth={2} />
-              {ristorante.schedule}
-            </p>
-          )}
-          <div className="fade-up-3" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-            {bookingUrl && (
-              <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
-                style={{ padding: '14px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 16, fontWeight: 700, textDecoration: 'none', boxShadow: `0 8px 32px ${primary}66` }}>
-                Prenota un tavolo
-              </a>
-            )}
-            <a href={pwaUrl}
-              style={{ padding: '14px 32px', background: 'rgba(255,255,255,0.18)', color: '#fff', borderRadius: 50, fontSize: 16, fontWeight: 600, textDecoration: 'none', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.3)' }}>
-              Vedi il menu
-            </a>
-          </div>
-        </div>
-
-        <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', letterSpacing: 1, textTransform: 'uppercase' }}>Scopri</span>
-          <ChevronDown size={20} color="rgba(255,255,255,0.6)" strokeWidth={1.5} />
-        </div>
-      </section>
-
-      {sectionOrder.map(renderSection)}
-
-      {/* Contatti */}
-      {hasInfo && (
-        <section style={{ padding: '80px 0', background: '#1a1a2e', color: '#fff' }}>
-          <div className="land-section" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 48 }}>
-            <div>
-              <h2 style={{ fontFamily: heading, fontSize: 28, fontWeight: 700, marginBottom: 24 }}>Vieni a trovarci</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {ristorante.schedule && (
-                  <div style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', fontSize: 15 }}>
-                    <Clock size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0, marginTop: 2 }} />
-                    <span style={{ whiteSpace: 'pre-line' }}>{ristorante.schedule}</span>
-                  </div>
-                )}
-                {ristorante.address && (
-                  <a href={`https://maps.google.com/?q=${encodeURIComponent(ristorante.address)}`} target="_blank" rel="noopener noreferrer"
-                    style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}>
-                    <MapPin size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0, marginTop: 2 }} />
-                    {ristorante.address}
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 24px' }}>
+              {ristorante.logo_url && (
+                <img src={ristorante.logo_url} alt="logo" className="fade-up"
+                  style={{ maxHeight: 72, maxWidth: 180, objectFit: 'contain', marginBottom: 24 }} />
+              )}
+              <h1 className="fade-up-2" style={{ fontFamily: heading, fontSize: 'clamp(36px, 6vw, 72px)', fontWeight: 700, color: '#fff', lineHeight: 1.1, marginBottom: 16, textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}>
+                {ristorante.name}
+              </h1>
+              {tagline && (
+                <p className="fade-up-3" style={{ fontSize: 'clamp(16px, 2.5vw, 22px)', color: 'rgba(255,255,255,0.88)', maxWidth: 560, lineHeight: 1.5, marginBottom: 12 }}>
+                  {tagline}
+                </p>
+              )}
+              {ristorante.schedule && (
+                <p className="fade-up-3" style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', fontSize: 14, color: 'rgba(255,255,255,0.7)', marginBottom: 32 }}>
+                  <Clock size={14} strokeWidth={2} />
+                  {ristorante.schedule}
+                </p>
+              )}
+              <div className="fade-up-3" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+                {bookingUrl && (
+                  <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
+                    style={{ padding: '14px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 16, fontWeight: 700, textDecoration: 'none', boxShadow: `0 8px 32px ${primary}66` }}>
+                    Prenota un tavolo
                   </a>
                 )}
-                {ristorante.phone && (
-                  <a href={`tel:${ristorante.phone}`} style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}>
-                    <Phone size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0 }} />
-                    {ristorante.phone}
-                  </a>
-                )}
-                {ristorante.email && (
-                  <a href={`mailto:${ristorante.email}`} style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}>
-                    <Mail size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0 }} />
-                    {ristorante.email}
-                  </a>
-                )}
+                <a href={pwaUrl}
+                  style={{ padding: '14px 32px', background: 'rgba(255,255,255,0.18)', color: '#fff', borderRadius: 50, fontSize: 16, fontWeight: 600, textDecoration: 'none', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.3)' }}>
+                  Vedi il menu
+                </a>
               </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 16 }}>
-              <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>
-                Riserva il tuo tavolo o consulta il menu digitale.
-              </p>
-              {bookingUrl && (
-                <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
-                  style={{ display: 'inline-block', padding: '13px 28px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none', width: 'fit-content' }}>
-                  Prenota un tavolo
-                </a>
-              )}
-              <a href={pwaUrl} style={{ display: 'inline-block', padding: '13px 28px', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 600, textDecoration: 'none', width: 'fit-content' }}>
-                Menu digitale
-              </a>
+
+            <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', letterSpacing: 1, textTransform: 'uppercase' }}>Scopri</span>
+              <ChevronDown size={20} color="rgba(255,255,255,0.6)" strokeWidth={1.5} />
+            </div>
+          </section>
+
+          {sectionOrder.map(renderSection)}
+
+          {/* Contatti */}
+          {hasInfo && (
+            <section style={{ padding: '80px 0', background: '#1a1a2e', color: '#fff' }}>
+              <div className="land-section" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 48 }}>
+                <div>
+                  <h2 style={{ fontFamily: heading, fontSize: 28, fontWeight: 700, marginBottom: 24 }}>Vieni a trovarci</h2>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {ristorante.schedule && (
+                      <div style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', fontSize: 15 }}>
+                        <Clock size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0, marginTop: 2 }} />
+                        <span style={{ whiteSpace: 'pre-line' }}>{ristorante.schedule}</span>
+                      </div>
+                    )}
+                    {ristorante.address && (
+                      <a href={`https://maps.google.com/?q=${encodeURIComponent(ristorante.address)}`} target="_blank" rel="noopener noreferrer"
+                        style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}>
+                        <MapPin size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0, marginTop: 2 }} />
+                        {ristorante.address}
+                      </a>
+                    )}
+                    {ristorante.phone && (
+                      <a href={`tel:${ristorante.phone}`} style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}>
+                        <Phone size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0 }} />
+                        {ristorante.phone}
+                      </a>
+                    )}
+                    {ristorante.email && (
+                      <a href={`mailto:${ristorante.email}`} style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}>
+                        <Mail size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0 }} />
+                        {ristorante.email}
+                      </a>
+                    )}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 16 }}>
+                  <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>
+                    Riserva il tuo tavolo o consulta il menu digitale.
+                  </p>
+                  {bookingUrl && (
+                    <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
+                      style={{ display: 'inline-block', padding: '13px 28px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none', width: 'fit-content' }}>
+                      Prenota un tavolo
+                    </a>
+                  )}
+                  <a href={pwaUrl} style={{ display: 'inline-block', padding: '13px 28px', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 600, textDecoration: 'none', width: 'fit-content' }}>
+                    Menu digitale
+                  </a>
+                </div>
+              </div>
+            </section>
+          )}
+        </>
+      )}
+
+      {/* Scopri anche */}
+      {(ristorante.collegamenti || []).length > 0 && (
+        <section style={{ padding: '64px 0', background: '#f7f7f9' }}>
+          <div className="land-section">
+            <h2 style={{ fontFamily: heading, fontSize: 'clamp(22px, 3vw, 32px)', fontWeight: 700, marginBottom: 32, textAlign: 'center' }}>
+              Scopri anche
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 560, margin: '0 auto' }}>
+              {ristorante.collegamenti.map(c => {
+                const href = c.tipo === 'ristorante' ? `/r/${c.slug}` : `/s/${c.slug}`
+                const typeLabel = c.tipo === 'ristorante' ? 'Ristorante' : 'Struttura'
+                const typeColor = c.tipo === 'ristorante' ? '#e63946' : primary
+                return (
+                  <a key={c.id || c.slug} href={href} style={{
+                    display: 'flex', alignItems: 'center', gap: 16,
+                    background: '#fff', borderRadius: 16, padding: '16px 20px',
+                    boxShadow: '0 2px 16px rgba(0,0,0,0.06)',
+                    textDecoration: 'none', border: '1px solid #eee',
+                  }}>
+                    {c.logo_url ? (
+                      <img src={c.logo_url} alt="" style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
+                    ) : (
+                      <div style={{ width: 52, height: 52, borderRadius: 10, background: `${typeColor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <span style={{ fontSize: 22 }}>{c.tipo === 'ristorante' ? '🍽️' : '🏨'}</span>
+                      </div>
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: typeColor, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>{typeLabel}</div>
+                      <div style={{ fontWeight: 700, fontSize: 16, color: '#1a1a2e' }}>{c.name}</div>
+                      {c.description && <div style={{ fontSize: 13, color: '#888', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.description}</div>}
+                    </div>
+                    <span style={{ fontSize: 22, color: primary, flexShrink: 0, opacity: 0.6 }}>›</span>
+                  </a>
+                )
+              })}
             </div>
           </div>
         </section>
@@ -1049,7 +1113,7 @@ export default function LandingRistorante({ ristorante }) {
         privacyUrl={ristorante.slug ? `/r/${ristorante.slug}/privacy` : null}
         cookieUrl={ristorante.slug  ? `/r/${ristorante.slug}/cookie`  : null}
       />
-      <ChatbotWidget chatbot={ristorante.chatbot} primaryColor={primary} fixed entityTipo="ristorante" entityId={ristorante.id} />
+      <ChatbotWidget chatbot={ristorante.chatbot ? { ...ristorante.chatbot, active: ristorante.chatbot.active_sito ?? ristorante.chatbot.active } : null} primaryColor={primary} fixed entityTipo="ristorante" entityId={ristorante.id} />
     </>
   )
 }

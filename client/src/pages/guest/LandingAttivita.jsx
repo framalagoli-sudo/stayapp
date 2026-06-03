@@ -7,6 +7,7 @@ import CookieBanner from '../../components/CookieBanner'
 import BookingWidget from '../../components/BookingWidget'
 import ChatbotWidget from '../../components/ChatbotWidget'
 import ShopWidget from '../../components/ShopWidget'
+import LandingBlockRenderer from '../../components/LandingBlockRenderer'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -96,6 +97,7 @@ export default function LandingAttivita({ attivita }) {
   const [pagine,         setPagine]         = useState([])
   const [openDropdown,   setOpenDropdown]   = useState(null)
   const [recensioni,     setRecensioni]     = useState([])
+  const [homeBlocks,     setHomeBlocks]     = useState(null)
   const aboutRef = useRef(null)
 
   useEffect(() => {
@@ -116,6 +118,9 @@ export default function LandingAttivita({ attivita }) {
       .catch(() => {})
     apiFetch(`/api/guest/recensioni/attivita/${attivita.id}`)
       .then(d => Array.isArray(d) && setRecensioni(d))
+      .catch(() => {})
+    apiFetch(`/api/guest/pagina/attivita/${attivita.id}/__home__`)
+      .then(d => d?.id && Array.isArray(d.blocks) && d.blocks.length && setHomeBlocks(d.blocks))
       .catch(() => {})
   }, [attivita.id])
 
@@ -139,7 +144,20 @@ export default function LandingAttivita({ attivita }) {
     const apiBase = import.meta.env.VITE_API_URL ?? ''
     const sitemapEl = Object.assign(document.createElement('link'), { rel: 'sitemap', type: 'application/xml', href: `${apiBase}/api/guest/sitemap/attivita/${attivita.slug}` })
     document.head.appendChild(sitemapEl)
-    return () => { document.title = 'OltreNova'; cleanupTracking(); sitemapEl.remove() }
+    let faviconEl = null
+    if (mini.favicon_url) {
+      faviconEl = document.querySelector("link[rel~='icon']")
+      const prevHref = faviconEl?.href
+      if (!faviconEl) { faviconEl = document.createElement('link'); faviconEl.rel = 'icon'; document.head.appendChild(faviconEl) }
+      faviconEl.href = mini.favicon_url
+      faviconEl._prevHref = prevHref
+    }
+    return () => {
+      document.title = 'OltreNova'
+      cleanupTracking()
+      sitemapEl.remove()
+      if (faviconEl) faviconEl.href = faviconEl._prevHref || '/favicon.ico'
+    }
   }, [])
 
   useEffect(() => {
@@ -715,46 +733,57 @@ export default function LandingAttivita({ attivita }) {
         </div>
       </nav>
 
-      <section style={{ position: 'relative', height: '100vh', minHeight: 560, overflow: 'hidden' }}>
-        {attivita.cover_url
-          ? <img src={attivita.cover_url} alt="cover" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-          : <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${primary} 0%, ${primary}99 100%)` }} />
-        }
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.65) 100%)' }} />
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 24px' }}>
-          {attivita.logo_url && <img src={attivita.logo_url} alt="logo" style={{ maxHeight: 80, maxWidth: 200, objectFit: 'contain', marginBottom: 24, filter: 'brightness(0) invert(1)' }} />}
-          <h1 style={{ fontFamily: heading, fontSize: 'clamp(36px, 6vw, 72px)', fontWeight: 700, color: '#fff', lineHeight: 1.1, marginBottom: 16 }}>{attivita.name}</h1>
-          {tagline && <p style={{ fontSize: 'clamp(16px, 2.5vw, 22px)', color: 'rgba(255,255,255,0.88)', maxWidth: 600, lineHeight: 1.5, marginBottom: 36 }}>{tagline}</p>}
-          {attivita.tipo && attivita.tipo !== 'attività' && (
-            <span style={{ fontSize: 13, fontWeight: 700, padding: '6px 16px', borderRadius: 20, background: 'rgba(255,255,255,0.2)', color: '#fff', marginBottom: 24, backdropFilter: 'blur(8px)', textTransform: 'capitalize' }}>{attivita.tipo}</span>
-          )}
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center', marginTop: 8 }}>
-            {bookingUrl && <a href={bookingUrl} target="_blank" rel="noopener noreferrer" style={{ padding: '14px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 16, fontWeight: 700, textDecoration: 'none' }}>Prenota ora</a>}
-          </div>
-        </div>
-        <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer' }}
-          onClick={() => aboutRef.current?.scrollIntoView({ behavior: 'smooth' })}>
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', letterSpacing: 1, textTransform: 'uppercase' }}>Scopri</span>
-          <ChevronDown size={20} color="rgba(255,255,255,0.7)" strokeWidth={1.5} />
-        </div>
-      </section>
-
-      {sectionOrder.map(renderSection)}
-
-      {hasInfo && (
-        <section style={{ padding: '80px 0', background: '#1a1a2e', color: '#fff' }}>
-          <div className="land-section" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 48 }}>
-            <div>
-              <h2 style={{ fontFamily: heading, fontSize: 28, fontWeight: 700, marginBottom: 24 }}>Dove siamo</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {attivita.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(attivita.address)}`} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}><MapPin size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0 }} />{attivita.address}</a>}
-                {attivita.phone && <a href={`tel:${attivita.phone}`} style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}><Phone size={18} strokeWidth={1.5} color={primary} />{attivita.phone}</a>}
-                {attivita.email && <a href={`mailto:${attivita.email}`} style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}><Mail size={18} strokeWidth={1.5} color={primary} />{attivita.email}</a>}
-                {attivita.schedule && <div style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', fontSize: 15 }}><Clock size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0 }} />{attivita.schedule}</div>}
+      {homeBlocks ? (
+        <LandingBlockRenderer
+          blocks={homeBlocks} entity={attivita} entityType="attivita"
+          mini={mini} primary={primary} heading={heading} body={body}
+          slug={attivita.slug} privacyUrl={`/a/${attivita.slug}/privacy`}
+          aziendaId={attivita.azienda_id}
+        />
+      ) : (
+        <>
+          <section style={{ position: 'relative', height: '100vh', minHeight: 560, overflow: 'hidden' }}>
+            {attivita.cover_url
+              ? <img src={attivita.cover_url} alt="cover" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+              : <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${primary} 0%, ${primary}99 100%)` }} />
+            }
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.65) 100%)' }} />
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 24px' }}>
+              {attivita.logo_url && <img src={attivita.logo_url} alt="logo" style={{ maxHeight: 80, maxWidth: 200, objectFit: 'contain', marginBottom: 24 }} />}
+              <h1 style={{ fontFamily: heading, fontSize: 'clamp(36px, 6vw, 72px)', fontWeight: 700, color: '#fff', lineHeight: 1.1, marginBottom: 16 }}>{attivita.name}</h1>
+              {tagline && <p style={{ fontSize: 'clamp(16px, 2.5vw, 22px)', color: 'rgba(255,255,255,0.88)', maxWidth: 600, lineHeight: 1.5, marginBottom: 36 }}>{tagline}</p>}
+              {attivita.tipo && attivita.tipo !== 'attività' && (
+                <span style={{ fontSize: 13, fontWeight: 700, padding: '6px 16px', borderRadius: 20, background: 'rgba(255,255,255,0.2)', color: '#fff', marginBottom: 24, backdropFilter: 'blur(8px)', textTransform: 'capitalize' }}>{attivita.tipo}</span>
+              )}
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center', marginTop: 8 }}>
+                {bookingUrl && <a href={bookingUrl} target="_blank" rel="noopener noreferrer" style={{ padding: '14px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 16, fontWeight: 700, textDecoration: 'none' }}>Prenota ora</a>}
               </div>
             </div>
-          </div>
-        </section>
+            <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer' }}
+              onClick={() => aboutRef.current?.scrollIntoView({ behavior: 'smooth' })}>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', letterSpacing: 1, textTransform: 'uppercase' }}>Scopri</span>
+              <ChevronDown size={20} color="rgba(255,255,255,0.7)" strokeWidth={1.5} />
+            </div>
+          </section>
+
+          {sectionOrder.map(renderSection)}
+
+          {hasInfo && (
+            <section style={{ padding: '80px 0', background: '#1a1a2e', color: '#fff' }}>
+              <div className="land-section" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 48 }}>
+                <div>
+                  <h2 style={{ fontFamily: heading, fontSize: 28, fontWeight: 700, marginBottom: 24 }}>Dove siamo</h2>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {attivita.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(attivita.address)}`} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}><MapPin size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0 }} />{attivita.address}</a>}
+                    {attivita.phone && <a href={`tel:${attivita.phone}`} style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}><Phone size={18} strokeWidth={1.5} color={primary} />{attivita.phone}</a>}
+                    {attivita.email && <a href={`mailto:${attivita.email}`} style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}><Mail size={18} strokeWidth={1.5} color={primary} />{attivita.email}</a>}
+                    {attivita.schedule && <div style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', fontSize: 15 }}><Clock size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0 }} />{attivita.schedule}</div>}
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+        </>
       )}
 
       <footer style={{ background: '#111', padding: '28px 24px', textAlign: 'center' }}>
@@ -783,7 +812,7 @@ export default function LandingAttivita({ attivita }) {
         privacyUrl={attivita.slug ? `/a/${attivita.slug}/privacy` : null}
         cookieUrl={attivita.slug  ? `/a/${attivita.slug}/cookie`  : null}
       />
-      <ChatbotWidget chatbot={attivita.chatbot} primaryColor={primary} fixed entityTipo="attivita" entityId={attivita.id} />
+      <ChatbotWidget chatbot={attivita.chatbot ? { ...attivita.chatbot, active: attivita.chatbot.active_sito ?? attivita.chatbot.active } : null} primaryColor={primary} fixed entityTipo="attivita" entityId={attivita.id} />
     </>
   )
 }

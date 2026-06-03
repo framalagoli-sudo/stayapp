@@ -3,17 +3,17 @@ import { useAzienda } from '../../context/AziendaContext'
 import { ChevronRight } from 'lucide-react'
 
 const PROPERTY_SUBS = {
-  info: 'Informazioni', modules: 'Moduli attivi', services: 'Servizi',
+  info: 'Informazioni', modules: 'App Clienti', services: 'Servizi',
   gallery: 'Galleria', theme: 'Tema e colori', activities: 'Attività',
-  excursions: 'Escursioni', sito: 'Sito', privacy: 'Privacy & Policy', chatbot: 'Chatbot',
+  excursions: 'Escursioni', sito: 'Sito web', privacy: 'Privacy & Policy', chatbot: 'Chatbot',
 }
 const RISTORANTE_SUB_LABELS = {
-  info: 'Informazioni', moduli: 'Moduli attivi', menu: 'Menu',
-  gallery: 'Galleria', theme: 'Tema e colori', sito: 'Sito',
+  info: 'Informazioni', moduli: 'App Clienti', menu: 'Menu',
+  gallery: 'Galleria', theme: 'Tema e colori', minisito: 'Sito web', sito: 'Pagine CMS',
   privacy: 'Privacy & Policy', chatbot: 'Chatbot',
 }
 const ATTIVITA_SUB_LABELS = {
-  info: 'Informazioni', gallery: 'Galleria', theme: 'Tema e colori',
+  info: 'Informazioni', moduli: 'App Clienti', gallery: 'Galleria', theme: 'Tema e colori',
   sito: 'Sito', privacy: 'Privacy & Policy', chatbot: 'Chatbot',
 }
 const TOP_LEVEL = {

@@ -13,8 +13,8 @@ const DEFAULT_MODULES = {
 const MODULE_CONFIG = [
   {
     key: 'pwa_active',
-    label: 'App ospiti attiva',
-    desc: 'Abilita la PWA del ristorante. Se disattivata, il QR code mostra solo il minisito (se attivo) o una pagina offline.',
+    label: 'App Clienti attiva',
+    desc: 'Abilita la PWA del ristorante. Se disattivata, il QR code mostra solo il sito web (se attivo) o una pagina offline.',
   },
   {
     key: 'info',
@@ -59,11 +59,11 @@ export default function RistoranteModuliPage() {
   return (
     <div style={{ maxWidth: 640 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 4 }}>
-        <h2 style={titleStyle}>Moduli attivi</h2>
+        <h2 style={titleStyle}>App Clienti</h2>
         {saved  && <span style={{ fontSize: 13, color: '#38a169', fontWeight: 600 }}>✓ Salvato</span>}
         {saving && <span style={{ fontSize: 13, color: '#888' }}>Salvataggio…</span>}
       </div>
-      <p style={descStyle}>Attiva o disattiva le sezioni visibili ai clienti nella PWA del ristorante.</p>
+      <p style={descStyle}>Configura le sezioni visibili ai clienti nell'app QR del ristorante.</p>
 
       <div style={cardStyle}>
         {MODULE_CONFIG.map(({ key, label, desc }) => (

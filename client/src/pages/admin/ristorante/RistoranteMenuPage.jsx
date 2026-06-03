@@ -1,22 +1,83 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { ChevronDown } from 'lucide-react'
 import { useRistorante } from '../../../hooks/useRistorante'
 import { uploadMedia } from '../../../lib/api'
 
-const BLANK_ITEM = { name: '', description: '', price: '', allergens: '', photo_url: '' }
+const BLANK_ITEM = { name: '', description: '', price: '', allergens: [], dietary: [], photo_url: '', active: true }
+
+const EU_ALLERGENS = [
+  { key: 'glutine',       label: 'Glutine',         abbr: 'Gl'  },
+  { key: 'crostacei',     label: 'Crostacei',       abbr: 'Cr'  },
+  { key: 'uova',          label: 'Uova',            abbr: 'Uo'  },
+  { key: 'pesce',         label: 'Pesce',           abbr: 'Pe'  },
+  { key: 'arachidi',      label: 'Arachidi',        abbr: 'Ar'  },
+  { key: 'soia',          label: 'Soia',            abbr: 'So'  },
+  { key: 'latte',         label: 'Latte',           abbr: 'La'  },
+  { key: 'frutta_guscio', label: 'Frutta a guscio', abbr: 'Fg'  },
+  { key: 'sedano',        label: 'Sedano',          abbr: 'Se'  },
+  { key: 'senape',        label: 'Senape',          abbr: 'Sn'  },
+  { key: 'sesamo',        label: 'Sesamo',          abbr: 'Ss'  },
+  { key: 'solfiti',       label: 'Solfiti',         abbr: 'So2' },
+  { key: 'lupini',        label: 'Lupini',          abbr: 'Lu'  },
+  { key: 'molluschi',     label: 'Molluschi',       abbr: 'Mo'  },
+]
+const DIETARY_FLAGS = [
+  { key: 'vegetariano',    label: 'Vegetariano'    },
+  { key: 'vegano',         label: 'Vegano'         },
+  { key: 'senza_glutine',  label: 'Senza glutine'  },
+  { key: 'senza_lattosio', label: 'Senza lattosio' },
+  { key: 'piccante',       label: 'Piccante'       },
+]
+function normalizeAllergens(val) {
+  if (Array.isArray(val)) return val
+  if (!val || typeof val !== 'string') return []
+  const lower = val.toLowerCase()
+  return EU_ALLERGENS.filter(e => lower.includes(e.key.replace('_', ' ')) || lower.includes(e.key)).map(e => e.key)
+}
+
+const TIPO_PRESETS = ['piatto', 'vino', 'cocktail', 'pizza', 'dolce', 'birra', 'panino']
+const TIPO_LABELS  = {
+  piatto:   'Piatti',
+  vino:     'Vini',
+  cocktail: 'Cocktail',
+  pizza:    'Pizze',
+  dolce:    'Dolci',
+  birra:    'Birre',
+  panino:   'Panini',
+}
 
 export default function RistoranteMenuPage() {
   const { id } = useParams()
-  const { ristorante, loading, saving, saved, save } = useRistorante(id)
+  const { ristorante, loading, saving, saved, saveError, save } = useRistorante(id)
   const [menu, setMenu] = useState([])
+  const menuLoaded = useRef(false)
+  const menuRef    = useRef([])
 
-  useEffect(() => { if (ristorante) setMenu(ristorante.menu || []) }, [ristorante])
+  useEffect(() => {
+    if (ristorante && !menuLoaded.current) {
+      setMenu(ristorante.menu || [])
+      menuRef.current = ristorante.menu || []
+      menuLoaded.current = true
+    }
+  }, [ristorante])
 
+  const [dirty, setDirty] = useState(false)
   const isCatalogo = menu.length > 0 && menu[0].type === 'catalogo'
 
   function persist(newMenu) {
     setMenu(newMenu)
-    save({ menu: newMenu }).catch(() => {})
+    menuRef.current = newMenu
+    setDirty(true)
+  }
+
+  async function handleSave() {
+    setDirty(false)           // ottimistico: azzera subito dirty
+    try {
+      await save({ menu: menuRef.current })
+    } catch {
+      setDirty(true)          // ripristina se il salvataggio fallisce
+    }
   }
 
   // ── Multi-catalogo CRUD ────────────────────────────────────────────────────
@@ -39,13 +100,19 @@ export default function RistoranteMenuPage() {
     const name = prompt('Nome della categoria:')?.trim()
     if (!name) return
     persist(menu.map((c, i) => i !== ci ? c : {
-      ...c, categories: [...(c.categories || []), { id: crypto.randomUUID(), name, items: [] }],
+      ...c, categories: [...(c.categories || []), { id: crypto.randomUUID(), name, tipo: 'piatto', items: [] }],
     }))
   }
 
   function renameCatInCatalogo(ci, catIdx, name) {
     persist(menu.map((c, i) => i !== ci ? c : {
       ...c, categories: (c.categories || []).map((cat, j) => j !== catIdx ? cat : { ...cat, name }),
+    }))
+  }
+
+  function updateCatInCatalogo(ci, catIdx, patch) {
+    persist(menu.map((c, i) => i !== ci ? c : {
+      ...c, categories: (c.categories || []).map((cat, j) => j !== catIdx ? cat : { ...cat, ...patch }),
     }))
   }
 
@@ -80,6 +147,19 @@ export default function RistoranteMenuPage() {
     }))
   }
 
+  function includeItemInCatalogo(sourceCi, sourceCatIdx, sourceItemIdx, targetCi, targetCatIdx) {
+    const source = menu[sourceCi].categories[sourceCatIdx].items[sourceItemIdx]
+    // Check not already present in target
+    const targetCat = menu[targetCi].categories[targetCatIdx]
+    if (targetCat.items.some(it => it.id === source.id || it.shared_from === source.id)) return
+    const copy = { ...source, id: crypto.randomUUID(), shared_from: source.id }
+    persist(menu.map((c, ci) => ci !== targetCi ? c : {
+      ...c, categories: c.categories.map((cat, catIdx) => catIdx !== targetCatIdx ? cat : {
+        ...cat, items: [...cat.items, copy],
+      }),
+    }))
+  }
+
   function switchToMulti() {
     const name = prompt('Nome del primo catalogo:', 'Menu principale')?.trim()
     if (!name) return
@@ -91,11 +171,15 @@ export default function RistoranteMenuPage() {
   function addCategory() {
     const name = prompt('Nome della categoria:')?.trim()
     if (!name) return
-    persist([...menu, { id: crypto.randomUUID(), name, items: [] }])
+    persist([...menu, { id: crypto.randomUUID(), name, tipo: 'piatto', items: [] }])
   }
 
   function renameCategory(ci, name) {
     persist(menu.map((c, i) => i === ci ? { ...c, name } : c))
+  }
+
+  function updateCategory(ci, patch) {
+    persist(menu.map((c, i) => i === ci ? { ...c, ...patch } : c))
   }
 
   function removeCategory(ci) {
@@ -128,18 +212,27 @@ export default function RistoranteMenuPage() {
     <div style={{ maxWidth: 720 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <h2 style={titleStyle}>Menu</h2>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {saved  && <span style={{ fontSize: 13, color: '#38a169', fontWeight: 600 }}>✓ Salvato</span>}
-          {saving && <span style={{ fontSize: 13, color: '#888' }}>Salvataggio…</span>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {saveError && <span style={{ fontSize: 12, color: '#e53e3e', fontWeight: 500 }}>Errore: {saveError}</span>}
+          {saved && !dirty && <span style={{ fontSize: 13, color: '#38a169', fontWeight: 600 }}>✓ Salvato</span>}
+          <button onClick={handleSave} disabled={!dirty || saving}
+            style={{ ...addMainBtnStyle, fontSize: 13, padding: '7px 18px', opacity: (!dirty || saving) ? 0.4 : 1, cursor: (!dirty || saving) ? 'default' : 'pointer' }}>
+            {saving ? 'Salvataggio…' : 'Salva'}
+          </button>
         </div>
       </div>
 
       {isCatalogo ? (
         // ── Multi-catalogo view ──────────────────────────────────────────────
         <div>
-          <p style={descStyle}>
-            Modalità <strong>multi-menu</strong> — ogni catalogo ha le proprie categorie e piatti.
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+            <p style={{ ...descStyle, margin: 0 }}>
+              Modalità <strong>multi-menu</strong> — ogni catalogo ha le proprie categorie e piatti.
+            </p>
+            <button onClick={addCatalogo} style={addMainBtnStyle}>
+              + Nuovo catalogo
+            </button>
+          </div>
 
           {menu.map((catalogo, ci) => (
             <div key={catalogo.id} style={{ ...cardStyle, borderLeft: '4px solid #1a1a2e', marginBottom: 28 }}>
@@ -151,11 +244,16 @@ export default function RistoranteMenuPage() {
 
               {/* Categories within catalogo */}
               <div style={{ paddingLeft: 8 }}>
+                <button onClick={() => addCategoryToCatalogo(ci)} style={{ ...addCatBtnStyle, marginBottom: 16 }}>
+                  + Nuova categoria
+                </button>
                 {(catalogo.categories || []).map((cat, catIdx) => (
                   <div key={cat.id} style={{ marginBottom: 20, paddingLeft: 12, borderLeft: '2px solid #f0f0f0' }}>
                     <CategoryHeader
                       name={cat.name}
+                      tipo={cat.tipo}
                       onRename={name => renameCatInCatalogo(ci, catIdx, name)}
+                      onChangeTipo={tipo => updateCatInCatalogo(ci, catIdx, { tipo })}
                       onDelete={() => removeCatFromCatalogo(ci, catIdx)}
                     />
                     <div style={{ display: 'grid', gap: 10, marginBottom: 10 }}>
@@ -166,41 +264,53 @@ export default function RistoranteMenuPage() {
                           ristoranteId={id}
                           onChange={patch => updateItemInCatalogo(ci, catIdx, ii, patch)}
                           onDelete={() => removeItemFromCatalogo(ci, catIdx, ii)}
+                          allCatalogues={menu}
+                          currentCi={ci}
+                          currentCatIdx={catIdx}
+                          onIncludeIn={(targetCi, targetCatIdx) => includeItemInCatalogo(ci, catIdx, ii, targetCi, targetCatIdx)}
                         />
                       ))}
                     </div>
-                    <button onClick={() => addItemToCatalogo(ci, catIdx)} style={addItemBtnStyle}>
-                      + Aggiungi piatto
-                    </button>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <button onClick={() => addItemToCatalogo(ci, catIdx)} style={addItemBtnStyle}>
+                        + Aggiungi piatto
+                      </button>
+                      {dirty && (
+                        <button onClick={handleSave} disabled={saving} style={saveInlineBtnStyle}>
+                          {saving ? 'Salvataggio…' : '✓ Salva'}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
 
-                <button onClick={() => addCategoryToCatalogo(ci)} style={addCatBtnStyle}>
-                  + Nuova categoria
-                </button>
               </div>
             </div>
           ))}
 
-          <button onClick={addCatalogo} style={addMainBtnStyle}>
-            + Nuovo catalogo
-          </button>
         </div>
       ) : (
         // ── Single menu view (legacy) ────────────────────────────────────────
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 16, flexWrap: 'wrap' }}>
             <p style={{ ...descStyle, margin: 0 }}>Organizza il menu in categorie. Ogni modifica viene salvata automaticamente.</p>
-            <button onClick={switchToMulti} style={switchBtnStyle} title="Crea più menu separati (Pool Bar, Ristorante, Light Lunch...)">
-              Multi-menu →
-            </button>
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+              <button onClick={addCategory} style={addMainBtnStyle}>
+                + Nuova categoria
+              </button>
+              <button onClick={switchToMulti} style={switchBtnStyle} title="Crea più menu separati (Pool Bar, Ristorante, Light Lunch...)">
+                Multi-menu →
+              </button>
+            </div>
           </div>
 
           {menu.map((cat, ci) => (
             <div key={cat.id} style={cardStyle}>
               <CategoryHeader
                 name={cat.name}
+                tipo={cat.tipo}
                 onRename={name => renameCategory(ci, name)}
+                onChangeTipo={tipo => updateCategory(ci, { tipo })}
                 onDelete={() => removeCategory(ci)}
               />
               <div style={{ display: 'grid', gap: 12, marginBottom: 12 }}>
@@ -214,15 +324,19 @@ export default function RistoranteMenuPage() {
                   />
                 ))}
               </div>
-              <button onClick={() => addItem(ci)} style={addItemBtnStyle}>
-                + Aggiungi piatto
-              </button>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button onClick={() => addItem(ci)} style={addItemBtnStyle}>
+                  + Aggiungi piatto
+                </button>
+                {dirty && (
+                  <button onClick={handleSave} disabled={saving} style={saveInlineBtnStyle}>
+                    {saving ? 'Salvataggio…' : '✓ Salva'}
+                  </button>
+                )}
+              </div>
             </div>
           ))}
 
-          <button onClick={addCategory} style={addMainBtnStyle}>
-            + Nuova categoria
-          </button>
         </div>
       )}
     </div>
@@ -262,45 +376,91 @@ function CatalogoHeader({ name, onRename, onDelete }) {
   )
 }
 
-function CategoryHeader({ name, onRename, onDelete }) {
-  const [editing, setEditing] = useState(false)
-  const [val, setVal] = useState(name)
+function CategoryHeader({ name, tipo, onRename, onChangeTipo, onDelete }) {
+  const [editing,    setEditing]    = useState(false)
+  const [val,        setVal]        = useState(name)
+  const isCustom                    = tipo && !TIPO_PRESETS.includes(tipo)
+  const [showCustom, setShowCustom] = useState(isCustom)
+  const [customVal,  setCustomVal]  = useState(isCustom ? tipo : '')
 
   function commit() {
     if (val.trim() && val !== name) onRename(val.trim())
     setEditing(false)
   }
 
+  function handleTipoChange(e) {
+    const v = e.target.value
+    if (v === '__custom') {
+      setShowCustom(true)
+      setCustomVal('')
+      return
+    }
+    setShowCustom(false)
+    setCustomVal('')
+    onChangeTipo(v)
+  }
+
+  function commitCustom() {
+    const v = customVal.trim()
+    if (v) onChangeTipo(v)
+  }
+
+  const selectVal = (showCustom || isCustom) ? '__custom' : (tipo || 'piatto')
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-      {editing ? (
-        <input
-          autoFocus value={val} onChange={e => setVal(e.target.value)}
-          onBlur={commit} onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false) }}
-          style={{ flex: 1, fontSize: 15, fontWeight: 700, padding: '4px 8px', borderRadius: 6, border: '2px solid #1a1a2e' }}
-        />
-      ) : (
-        <h3
-          onClick={() => setEditing(true)}
-          style={{ flex: 1, margin: 0, fontSize: 15, fontWeight: 700, cursor: 'pointer', color: '#1a1a2e' }}
-          title="Clicca per rinominare"
-        >
-          {name}
-        </h3>
-      )}
-      <button onClick={onDelete} style={{ fontSize: 12, color: '#e53e3e', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
-        Elimina categoria
-      </button>
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {editing ? (
+          <input autoFocus value={val} onChange={e => setVal(e.target.value)}
+            onBlur={commit} onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false) }}
+            style={{ flex: 1, fontSize: 15, fontWeight: 700, padding: '4px 8px', borderRadius: 6, border: '2px solid #1a1a2e' }} />
+        ) : (
+          <h3 onClick={() => setEditing(true)}
+            style={{ flex: 1, margin: 0, fontSize: 15, fontWeight: 700, cursor: 'pointer', color: '#1a1a2e' }}
+            title="Clicca per rinominare">
+            {name}
+          </h3>
+        )}
+        <button onClick={onDelete} style={{ fontSize: 12, color: '#e53e3e', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+          Elimina categoria
+        </button>
+      </div>
+
+      {/* Tipo selector */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 11, color: '#999', flexShrink: 0 }}>Tipo voci:</span>
+        <select value={selectVal} onChange={handleTipoChange}
+          style={{ fontSize: 12, padding: '3px 6px', border: '1px solid #e0e0e0', borderRadius: 6, background: '#fafafa', color: '#444', cursor: 'pointer' }}>
+          {TIPO_PRESETS.map(t => (
+            <option key={t} value={t}>{TIPO_LABELS[t]}</option>
+          ))}
+          <option value="__custom">Personalizzato…</option>
+        </select>
+        {(showCustom || isCustom) && (
+          <input
+            autoFocus={showCustom && !isCustom}
+            value={customVal}
+            onChange={e => setCustomVal(e.target.value)}
+            onBlur={commitCustom}
+            onKeyDown={e => { if (e.key === 'Enter') { commitCustom(); e.target.blur() } if (e.key === 'Escape') { setShowCustom(false); setCustomVal('') } }}
+            placeholder="es. tapas, sushi…"
+            style={{ fontSize: 12, padding: '3px 8px', border: '1px solid #1a1a2e', borderRadius: 6, width: 140, background: '#fff', color: '#1a1a2e', outline: 'none' }}
+          />
+        )}
+      </div>
     </div>
   )
 }
 
-function ItemRow({ item, ristoranteId, onChange, onDelete }) {
-  const [name, setName] = useState(item.name)
-  const [desc, setDesc] = useState(item.description)
-  const [price, setPrice] = useState(item.price)
-  const [allergens, setAllergens] = useState(item.allergens)
+function ItemRow({ item, ristoranteId, onChange, onDelete, allCatalogues, currentCi, currentCatIdx, onIncludeIn }) {
+  const [open,      setOpen]      = useState(!item.name)
+  const [name,      setName]      = useState(item.name)
+  const [desc,      setDesc]      = useState(item.description)
+  const [price,     setPrice]     = useState(item.price)
+  const [allergens, setAllergens] = useState(normalizeAllergens(item.allergens))
+  const [dietary,   setDietary]   = useState(item.dietary || [])
   const [uploading, setUploading] = useState(false)
+  const active = item.active !== false
 
   async function handlePhoto(file) {
     if (!file || file.size > 2 * 1024 * 1024) { alert('Max 2 MB'); return }
@@ -312,34 +472,126 @@ function ItemRow({ item, ristoranteId, onChange, onDelete }) {
     finally { setUploading(false) }
   }
 
+  const includeTargets = allCatalogues ? allCatalogues.flatMap((cat, ci) =>
+    (cat.categories || []).map((category, catIdx) => ({ ci, catIdx, label: `${cat.name} › ${category.name}` }))
+  ).filter(t => {
+    if (t.ci === currentCi && t.catIdx === currentCatIdx) return false
+    const targetItems = allCatalogues[t.ci]?.categories?.[t.catIdx]?.items || []
+    return !targetItems.some(it => it.id === item.id || it.shared_from === item.id)
+  }) : []
+
   return (
-    <div style={{ background: '#f9f9f9', borderRadius: 10, padding: '14px 16px', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-      <label style={{ flexShrink: 0, cursor: 'pointer' }}>
-        <div style={{ width: 60, height: 60, borderRadius: 8, overflow: 'hidden', background: '#e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
+    <div style={{ background: active ? '#f9f9f9' : '#f0f0f0', borderRadius: 10, border: active ? '1px solid #eee' : '1px dashed #ccc', opacity: active ? 1 : 0.7, overflow: 'hidden' }}>
+      {/* Collapsed header — always visible */}
+      <div
+        onClick={() => setOpen(o => !o)}
+        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', cursor: 'pointer', userSelect: 'none' }}
+      >
+        {/* Photo thumb */}
+        <div style={{ width: 36, height: 36, borderRadius: 6, overflow: 'hidden', background: '#e8e8e8', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
           {item.photo_url
             ? <img src={item.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : uploading ? '…' : '🍽'}
+            : '🍽'}
         </div>
-        <input type="file" accept="image/*" style={{ display: 'none' }}
-          onChange={e => handlePhoto(e.target.files[0])} />
-      </label>
-
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 80px', gap: '8px 12px' }}>
-        <input
-          value={name} onChange={e => setName(e.target.value)} onBlur={() => onChange({ name })}
-          placeholder="Nome *" style={inpStyle} />
-        <input
-          value={price} onChange={e => setPrice(e.target.value)} onBlur={() => onChange({ price })}
-          placeholder="Prezzo €" style={inpStyle} type="number" min="0" step="0.5" />
-        <input
-          value={desc} onChange={e => setDesc(e.target.value)} onBlur={() => onChange({ description: desc })}
-          placeholder="Descrizione" style={{ ...inpStyle, gridColumn: '1 / -1' }} />
-        <input
-          value={allergens} onChange={e => setAllergens(e.target.value)} onBlur={() => onChange({ allergens })}
-          placeholder="Allergeni" style={{ ...inpStyle, gridColumn: '1 / -1' }} />
+        {/* Name + price + badges */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: name ? '#1a1a2e' : '#bbb', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {name || 'Nuova voce'}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2, flexWrap: 'wrap' }}>
+            {price && <span style={{ fontSize: 11, color: '#666' }}>€ {price}</span>}
+            {allergens.length > 0 && <span style={{ fontSize: 10, background: '#FEF3C7', color: '#92400e', padding: '1px 5px', borderRadius: 4, fontWeight: 600 }}>{allergens.length} all.</span>}
+            {dietary.length > 0 && <span style={{ fontSize: 10, background: '#DCFCE7', color: '#166534', padding: '1px 5px', borderRadius: 4, fontWeight: 600 }}>{dietary.length} car.</span>}
+            {item.shared_from && <span style={{ fontSize: 10, color: '#6366f1', background: '#eef2ff', padding: '1px 5px', borderRadius: 4, fontWeight: 600 }}>condiviso</span>}
+          </div>
+        </div>
+        {/* Visibility toggle */}
+        <button
+          onClick={e => { e.stopPropagation(); onChange({ active: !active }) }}
+          title={active ? 'Nascondi dal menu' : 'Mostra nel menu'}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, lineHeight: 1, padding: '4px', opacity: active ? 1 : 0.5, flexShrink: 0 }}
+        >
+          {active ? '👁' : '🚫'}
+        </button>
+        {/* Delete */}
+        <button
+          onClick={e => { e.stopPropagation(); onDelete() }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 15, lineHeight: 1, padding: '4px', flexShrink: 0 }}
+          title="Elimina piatto"
+        >
+          ✕
+        </button>
+        {/* Chevron */}
+        <ChevronDown size={15} strokeWidth={1.5} color="#aaa" style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
       </div>
 
-      <button onClick={onDelete} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 18, lineHeight: 1, flexShrink: 0, padding: '0 4px' }} title="Elimina piatto">✕</button>
+      {/* Expanded form */}
+      {open && (
+        <div style={{ padding: '0 12px 14px', borderTop: '1px solid #ebebeb' }}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', paddingTop: 12 }}>
+            {/* Photo upload */}
+            <label style={{ flexShrink: 0, cursor: 'pointer' }}>
+              <div style={{ width: 56, height: 56, borderRadius: 8, overflow: 'hidden', background: '#e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
+                {item.photo_url
+                  ? <img src={item.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : uploading ? '…' : '🍽'}
+              </div>
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handlePhoto(e.target.files[0])} />
+            </label>
+
+            {/* Fields */}
+            <div style={{ flex: 1, minWidth: 0, display: 'grid', gridTemplateColumns: '1fr 80px', gap: '8px 12px' }}>
+              <input value={name} onChange={e => setName(e.target.value)} onBlur={() => onChange({ name })} placeholder="Nome *" style={inpStyle} />
+              <input value={price} onChange={e => setPrice(e.target.value)} onBlur={() => onChange({ price })} placeholder="Prezzo €" style={inpStyle} type="number" min="0" step="0.5" />
+              <input value={desc} onChange={e => setDesc(e.target.value)} onBlur={() => onChange({ description: desc })} placeholder="Descrizione" style={{ ...inpStyle, gridColumn: '1 / -1' }} />
+              <div style={{ gridColumn: '1 / -1' }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: '#aaa', marginBottom: 5, letterSpacing: 0.5 }}>ALLERGENI (EU)</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  {EU_ALLERGENS.map(a => {
+                    const on = allergens.includes(a.key)
+                    return (
+                      <button key={a.key} type="button" title={a.label}
+                        onClick={() => { const next = on ? allergens.filter(k => k !== a.key) : [...allergens, a.key]; setAllergens(next); onChange({ allergens: next }) }}
+                        style={{ padding: '4px 9px', borderRadius: 6, border: `1px solid ${on ? '#92400e' : '#e0e0e0'}`, background: on ? '#FEF3C7' : '#f5f5f5', color: on ? '#92400e' : '#bbb', fontSize: 11, fontWeight: on ? 700 : 500, cursor: 'pointer' }}
+                      >
+                        {a.abbr}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: '#aaa', marginBottom: 5, marginTop: 8, letterSpacing: 0.5 }}>CARATTERISTICHE</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  {DIETARY_FLAGS.map(d => {
+                    const on = dietary.includes(d.key)
+                    return (
+                      <button key={d.key} type="button"
+                        onClick={() => { const next = on ? dietary.filter(k => k !== d.key) : [...dietary, d.key]; setDietary(next); onChange({ dietary: next }) }}
+                        style={{ padding: '4px 9px', borderRadius: 6, border: `1px solid ${on ? '#166534' : '#e0e0e0'}`, background: on ? '#DCFCE7' : '#f5f5f5', color: on ? '#166534' : '#bbb', fontSize: 11, fontWeight: on ? 700 : 500, cursor: 'pointer' }}
+                      >
+                        {d.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+              {allCatalogues && includeTargets.length > 0 && (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <select
+                    value=""
+                    onChange={e => { if (e.target.value) { const [ci, catIdx] = e.target.value.split('-').map(Number); onIncludeIn(ci, catIdx); e.target.value = '' } }}
+                    style={{ fontSize: 11, padding: '3px 6px', border: '1px solid #ddd', borderRadius: 6, cursor: 'pointer', color: '#555', background: '#fff' }}
+                  >
+                    <option value="" disabled>+ Includi in un altro menu</option>
+                    {includeTargets.map(t => (
+                      <option key={`${t.ci}-${t.catIdx}`} value={`${t.ci}-${t.catIdx}`}>{t.label}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -353,4 +605,5 @@ const errorStyle      = { padding: 32, color: '#e53e3e' }
 const addMainBtnStyle = { padding: '10px 24px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }
 const addCatBtnStyle  = { fontSize: 13, fontWeight: 600, color: '#1a1a2e', background: '#f0f4ff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', marginBottom: 8 }
 const addItemBtnStyle = { fontSize: 12, fontWeight: 600, color: '#555', background: '#f5f5f5', border: 'none', borderRadius: 7, padding: '6px 14px', cursor: 'pointer' }
-const switchBtnStyle  = { fontSize: 12, fontWeight: 600, color: '#1d4ed8', background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }
+const switchBtnStyle      = { fontSize: 12, fontWeight: 600, color: '#1d4ed8', background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }
+const saveInlineBtnStyle  = { fontSize: 12, fontWeight: 700, color: '#fff', background: '#38a169', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', whiteSpace: 'nowrap' }

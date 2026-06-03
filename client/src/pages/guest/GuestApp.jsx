@@ -85,16 +85,28 @@ function loadFont(key) {
   document.head.appendChild(link)
 }
 
+function EntityLogo({ logoUrl, tipo, typeColor }) {
+  const [err, setErr] = useState(false)
+  const emoji = tipo === 'ristorante' ? '🍽️' : '🏨'
+  return (
+    <div style={{ width: 44, height: 44, borderRadius: 10, background: `${typeColor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+      {logoUrl && !err
+        ? <img src={logoUrl} alt="" onError={() => setErr(true)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : <span style={{ fontSize: 20 }}>{emoji}</span>}
+    </div>
+  )
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function GuestApp({ forceSlug } = {}) {
   const { slug: paramSlug } = useParams()
   const slug = forceSlug || paramSlug
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const isQR = searchParams.get('qr') === '1'
   const [property,       setProperty]       = useState(null)
   const [upcomingEventi, setUpcomingEventi] = useState([])
   const [error,          setError]          = useState(null)
-  const [nav,            setNav]            = useState('home')
+  const [nav,            setNav]            = useState(() => searchParams.get('tab') || 'home')
   const [exploreChip,    setExploreChip]    = useState(null)
   const [compactBar,     setCompactBar]     = useState(false)
   const [showArrow,      setShowArrow]      = useState(true)
@@ -111,6 +123,12 @@ export default function GuestApp({ forceSlug } = {}) {
       })
       .catch(() => setError('Struttura non trovata.'))
   }, [slug])
+
+  useEffect(() => {
+    if (!property) return
+    document.title = property.name
+    return () => { document.title = 'OltreNova — Oltre il solito sito.' }
+  }, [property?.name])
 
   useEffect(() => {
     if (!property) return
@@ -168,10 +186,14 @@ export default function GuestApp({ forceSlug } = {}) {
 
   const NAV_ITEMS = [
     ...BASE_NAV.filter(item => !item.module || modules[item.module]),
-    ...(property.chatbot?.active ? [{ key: 'chatbot', Icon: MessageCircle, label: 'Chat' }] : []),
+    ...((property.chatbot?.active_app ?? property.chatbot?.active) ? [{ key: 'chatbot', Icon: MessageCircle, label: 'Chat' }] : []),
   ]
 
-  function goExplore(chip) { setExploreChip(chip); setNav('esplora') }
+  function switchTab(key) {
+    setNav(key)
+    setSearchParams(p => { const n = new URLSearchParams(p); n.set('tab', key); return n }, { replace: true })
+  }
+  function goExplore(chip) { setExploreChip(chip); switchTab('esplora') }
 
   // Compute chips for Esplora (used both in chip bar and EsploraPage)
   const hasServices   = (property.services  || []).length > 0
@@ -179,12 +201,13 @@ export default function GuestApp({ forceSlug } = {}) {
   const hasActivities = (property.activities|| []).some(c => c.items?.some(i => i.active))
   const hasExcursions = (property.excursions|| []).some(e => e.active)
   const hasEventi     = upcomingEventi.length > 0
+  const appSections = { ...modules.home_sections }
   const CHIPS = [
-    hasGallery    && { key: 'galleria',   label: 'Galleria' },
-    hasServices   && { key: 'servizi',    label: 'Servizi' },
-    hasActivities && { key: 'attivita',   label: 'Attività' },
-    hasExcursions && { key: 'escursioni', label: 'Escursioni' },
-    hasEventi     && { key: 'eventi',     label: 'Eventi' },
+    hasGallery    && appSections.galleria   !== false && { key: 'galleria',   label: 'Galleria' },
+    hasServices   && appSections.servizi    !== false && { key: 'servizi',    label: 'Servizi' },
+    hasActivities && appSections.attivita   !== false && { key: 'attivita',   label: 'Attività' },
+    hasExcursions && appSections.escursioni !== false && { key: 'escursioni', label: 'Escursioni' },
+    hasEventi     && appSections.eventi     !== false && { key: 'eventi',     label: 'Eventi' },
   ].filter(Boolean)
   const activeChip = CHIPS.find(c => c.key === exploreChip) ? exploreChip : CHIPS[0]?.key
 
@@ -310,7 +333,7 @@ export default function GuestApp({ forceSlug } = {}) {
           )}
 
           {/* ── Chatbot tab (always mounted per preservare stato messaggi) ── */}
-          {property.chatbot?.active && (
+          {(property.chatbot?.active_app ?? property.chatbot?.active) && (
             <div style={{ flex: 1, minHeight: 0, display: nav === 'chatbot' ? 'flex' : 'none', flexDirection: 'column', overflow: 'hidden' }}>
               <ChatbotWidget chatbot={property.chatbot} primaryColor={primary} entityTipo="struttura" entityId={property.id} embedded={true} />
             </div>
@@ -332,7 +355,7 @@ export default function GuestApp({ forceSlug } = {}) {
           {/* ── Bottom nav ── */}
           <nav className="g-nav">
             {NAV_ITEMS.map(({ key, Icon, label }) => (
-              <button key={key} type="button" className="g-nav-btn" onClick={() => setNav(key)}>
+              <button key={key} type="button" className="g-nav-btn" onClick={() => switchTab(key)}>
                 <Icon size={22} strokeWidth={1.5} color={primary} style={{ opacity: nav === key ? 1 : 0.4 }} />
                 <span style={{ fontSize: 10, fontWeight: nav === key ? 700 : 400, color: nav === key ? primary : subText, lineHeight: 1 }}>
                   {label}
@@ -360,13 +383,20 @@ function HomePage({ property, upcomingEventi = [], modules, onExplore, primary, 
   const excCount = (property.excursions || []).filter(e => e.active).length
   const galCount = property.gallery?.length || 0
 
-  const CARDS = [
-    hasGallery    && { key: 'galleria',   Icon: Images,    label: 'Galleria',   sub: `${galCount} foto`,             photo: property.gallery?.[0] },
-    hasServices   && { key: 'servizi',    Icon: LayoutGrid, label: 'Servizi',   sub: `${svcCount} disponibili`,      photo: null },
-    hasActivities && { key: 'attivita',   Icon: Zap,        label: 'Attività',  sub: `${actCount} attività`,         photo: null },
-    hasExcursions && { key: 'escursioni', Icon: Mountain,   label: 'Escursioni', sub: `${excCount} disponibili`,     photo: null },
-    hasEventi     && { key: 'eventi',     Icon: Calendar,   label: 'Eventi',    sub: `${upcomingEventi.length} in programma`, photo: upcomingEventi[0]?.cover_url || null },
-  ].filter(Boolean)
+  const homeSections = modules.home_sections || {}
+  const defaultOrder = ['galleria', 'servizi', 'attivita', 'escursioni', 'eventi']
+  const homeOrder = (modules.home_section_order?.length ? modules.home_section_order : defaultOrder)
+  const allCards = {
+    galleria:   hasGallery    && { key: 'galleria',   Icon: Images,    label: 'Galleria',    sub: `${galCount} foto`,                     photo: property.gallery?.[0] },
+    servizi:    hasServices   && { key: 'servizi',    Icon: LayoutGrid, label: 'Servizi',    sub: `${svcCount} disponibili`,              photo: null },
+    attivita:   hasActivities && { key: 'attivita',   Icon: Zap,        label: 'Attività',   sub: `${actCount} attività`,                 photo: null },
+    escursioni: hasExcursions && { key: 'escursioni', Icon: Mountain,   label: 'Escursioni', sub: `${excCount} disponibili`,              photo: null },
+    eventi:     hasEventi     && { key: 'eventi',     Icon: Calendar,   label: 'Eventi',     sub: `${upcomingEventi.length} in programma`, photo: upcomingEventi[0]?.cover_url || null },
+  }
+  const CARDS = homeOrder
+    .filter(k => allCards[k] && homeSections[k] !== false)
+    .map(k => allCards[k])
+    .filter(Boolean)
 
   return (
     <div style={{ padding: '20px 16px 28px' }}>
@@ -462,13 +492,7 @@ function HomePage({ property, upcomingEventi = [], modules, onExplore, primary, 
                   border: isDark ? `1px solid ${borderColor}` : 'none',
                   textDecoration: 'none',
                 }}>
-                  {c.logo_url ? (
-                    <img src={c.logo_url} alt="" style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
-                  ) : (
-                    <div style={{ width: 44, height: 44, borderRadius: 10, background: `${typeColor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <span style={{ fontSize: 20 }}>{c.tipo === 'ristorante' ? '🍽️' : '🏨'}</span>
-                    </div>
-                  )}
+                  <EntityLogo logoUrl={c.logo_url} tipo={c.tipo} typeColor={typeColor} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: typeColor, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>{typeLabel}</div>
                     <div style={{ fontWeight: 700, fontSize: 15, color: textColor, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</div>

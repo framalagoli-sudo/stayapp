@@ -7,6 +7,7 @@ export const BLOCK_GROUPS = [
 ]
 
 export const BLOCK_TYPES = [
+  { type: 'hero',         label: 'Hero / Copertina',   group: 'layout',      emoji: '🌄', desc: 'Sezione full-screen con foto, titolo, tagline e CTA — ideale come primo blocco della homepage' },
   { type: 'about',        label: 'Blocco testo',       group: 'layout',      emoji: '📝', desc: 'Titolo + paragrafo di testo' },
   { type: 'foto_testo',   label: 'Foto + Testo',       group: 'layout',      emoji: '🖼️', desc: 'Immagine affiancata al testo (ripetibile)' },
   { type: 'paragrafi',    label: 'Card paragrafi',     group: 'layout',      emoji: '🗂️', desc: 'Griglia card con icona, titolo, testo' },
@@ -19,6 +20,7 @@ export const BLOCK_TYPES = [
   { type: 'promozioni',   label: 'Promozioni',         group: 'marketing',   emoji: '🏷️', desc: 'Card offerte con badge e scadenza' },
   { type: 'pacchetti',    label: 'Pacchetti / Prezzi', group: 'marketing',   emoji: '📦', desc: 'Pricing card con inclusi e CTA' },
   { type: 'faq',          label: 'FAQ',                group: 'marketing',   emoji: '❓', desc: 'Accordion domande e risposte' },
+  { type: 'clienti',     label: 'Loghi clienti',      group: 'marketing',   emoji: '🏢', desc: 'Carosello infinito di loghi clienti/partner — grigi di default, colorati al hover' },
   { type: 'gallery',      label: 'Galleria foto',      group: 'media',       emoji: '🖼', desc: 'Griglia foto dell\'entità' },
   { type: 'video',        label: 'Video',              group: 'media',       emoji: '▶️', desc: 'Embed YouTube o Vimeo' },
   { type: 'services',     label: 'Servizi',            group: 'servizi',     emoji: '🛎️', desc: 'Lista servizi dell\'entità' },
@@ -34,6 +36,7 @@ export const BLOCK_TYPES = [
 ]
 
 export const BLOCK_DEFAULTS = {
+  hero:         { title: '', tagline: '', bg_image_url: '', overlay_opacity: 0.5, cta1_text: 'Scopri di più', cta1_url: '', cta2_text: '', cta2_url: '', height: 'large' },
   about:        { title: '', text: '' },
   foto_testo:   { title: '', text: '', image_url: '', inverti: false, button_label: '', button_url: '' },
   paragrafi:    { titolo: '', items: [] },
@@ -46,6 +49,7 @@ export const BLOCK_DEFAULTS = {
   promozioni:   { titolo: '', items: [] },
   pacchetti:    { titolo: '', items: [] },
   faq:          { titolo: '', items: [] },
+  clienti:      { titolo: 'I nostri clienti', items: [] },
   gallery:      {},
   video:        { url: '' },
   services:     {},

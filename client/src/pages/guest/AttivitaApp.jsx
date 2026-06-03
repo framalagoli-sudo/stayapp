@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import LandingAttivita from './LandingAttivita'
 import AttivitaPWA from './AttivitaPWA'
 import { apiFetch } from '../../lib/api'
@@ -7,8 +7,10 @@ import { apiFetch } from '../../lib/api'
 export default function AttivitaApp({ forceSlug } = {}) {
   const { slug: paramSlug } = useParams()
   const slug = forceSlug || paramSlug
+  const [searchParams] = useSearchParams()
+  const isQR = searchParams.get('qr') === '1'
   const [attivita, setAttivita] = useState(null)
-  const [error, setError] = useState(null)
+  const [error,    setError]    = useState(null)
 
   useEffect(() => {
     apiFetch(`/api/guest/a/${slug}`)
@@ -16,12 +18,15 @@ export default function AttivitaApp({ forceSlug } = {}) {
       .catch(() => setError('Attività non trovata.'))
   }, [slug])
 
-  if (error) return <div style={{ padding: 40, textAlign: 'center', color: '#e53e3e' }}>{error}</div>
+  if (error)    return <div style={{ padding: 40, textAlign: 'center', color: '#e53e3e' }}>{error}</div>
   if (!attivita) return <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Caricamento…</div>
 
-  if (attivita.pwa?.active) return <AttivitaPWA attivita={attivita} />
-  // minisito.active mancante o true → mostra il sito pubblico (default)
-  if (attivita.minisito?.active !== false) return <LandingAttivita attivita={attivita} />
+  const pwaOn  = attivita.pwa?.active === true
+  const miniOn = attivita.minisito?.active !== false
+
+  // QR con PWA attiva → PWA; qualsiasi altro caso con minisito attivo → minisito
+  if (miniOn && (!isQR || !pwaOn)) return <LandingAttivita attivita={attivita} />
+  if (pwaOn) return <AttivitaPWA attivita={attivita} />
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f9fafb', textAlign: 'center', padding: 40 }}>
       <p style={{ fontSize: 18, fontWeight: 600, color: '#374151', margin: '0 0 8px' }}>Contenuto non disponibile</p>

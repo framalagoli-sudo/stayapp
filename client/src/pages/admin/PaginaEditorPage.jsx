@@ -5,7 +5,7 @@ import {
   GripVertical, AlignLeft, Image, Grid, Users, List, Star, BarChart2, Zap,
   MessageCircle, Tag, Package, HelpCircle, Video, Settings, Compass, Map,
   Calendar, FileText, Clock, Mail, Phone, MapPin, ChevronDown, ChevronUp,
-  Plus, Trash2, ImageIcon,
+  Plus, Trash2, ImageIcon, Layers, Building2,
 } from 'lucide-react'
 import AiButton from '../../components/admin/AiButton'
 import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel } from '../../lib/blockTypes'
@@ -21,13 +21,13 @@ function slugify(s) {
 
 // ── Block icon + color mapping ────────────────────────────────────────────────
 const BLOCK_ICON_MAP = {
-  about: AlignLeft, foto_testo: Image, paragrafi: Grid,
+  hero: Layers, about: AlignLeft, foto_testo: Image, paragrafi: Grid,
   team: Users, steps: List, highlights: Star, stats: BarChart2,
   cta_banner: Zap, testimonianze: MessageCircle, promozioni: Tag,
   pacchetti: Package, faq: HelpCircle, gallery: ImageIcon, video: Video,
   services: Settings, activities: Compass, excursions: Map, eventi: Calendar,
   news: FileText, booking: Clock, newsletter: Mail, contatti: Phone,
-  show_map: MapPin,
+  show_map: MapPin, clienti: Building2,
 }
 const GROUP_COLORS = {
   layout: '#5b6af8', marketing: '#f97316', media: '#0891b2',
@@ -105,6 +105,41 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
   }
 
   switch (type) {
+    case 'hero': return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="Titolo principale" value={data.title} onChange={v => upd('title', v)} />
+        <Field label="Tagline / Sottotitolo" value={data.tagline} onChange={v => upd('tagline', v)} />
+        <Field label="URL immagine di sfondo" value={data.bg_image_url} onChange={v => upd('bg_image_url', v)} placeholder="https://..." />
+        {data.bg_image_url && <img src={data.bg_image_url} alt="" style={{ maxHeight: 100, borderRadius: 8, objectFit: 'cover', width: '100%' }} />}
+        <UploadBtn label="Carica immagine sfondo" entityId={entityId} entityTipo={entityTipo} onUrl={url => upd('bg_image_url', url)} />
+        <div>
+          <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Opacità overlay ({Math.round((data.overlay_opacity ?? 0.5) * 100)}%)</label>
+          <input type="range" min="0" max="1" step="0.05" value={data.overlay_opacity ?? 0.5} onChange={e => upd('overlay_opacity', parseFloat(e.target.value))} style={{ width: '100%' }} />
+        </div>
+        <div>
+          <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Altezza</label>
+          <select value={data.height || 'large'} onChange={e => upd('height', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+            <option value="full">Piena (100vh)</option>
+            <option value="large">Grande (85vh)</option>
+            <option value="medium">Media (65vh)</option>
+          </select>
+        </div>
+        <div style={{ borderTop: '1px solid #eee', paddingTop: 12 }}>
+          <div style={{ fontSize: 12, color: '#555', fontWeight: 600, marginBottom: 8 }}>CTA primario</div>
+          <Field label="Testo pulsante" value={data.cta1_text} onChange={v => upd('cta1_text', v)} />
+          <div style={{ marginTop: 8 }}>
+            <Field label="URL pulsante" value={data.cta1_url} onChange={v => upd('cta1_url', v)} placeholder="https://..." />
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 12, color: '#555', fontWeight: 600, marginBottom: 8 }}>CTA secondario (opz.)</div>
+          <Field label="Testo pulsante" value={data.cta2_text} onChange={v => upd('cta2_text', v)} />
+          <div style={{ marginTop: 8 }}>
+            <Field label="URL pulsante" value={data.cta2_url} onChange={v => upd('cta2_url', v)} placeholder="https://..." />
+          </div>
+        </div>
+      </div>
+    )
     case 'about': return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <Field label="Titolo sezione" value={data.title} onChange={v => upd('title', v)} />
@@ -268,6 +303,35 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
     )
     case 'form_builder': return (
       <FormBuilderBlockEditor data={data} onChange={upd} />
+    )
+    case 'clienti': return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} placeholder="I nostri clienti" />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {(data.items || []).map((it, idx) => (
+            <div key={it.id || idx} style={{ background: '#f8f9ff', border: '1px solid #e8ecff', borderRadius: 10, padding: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#555' }}>Logo {idx + 1}</span>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button onClick={() => { const a=[...(data.items||[])]; if(idx>0){[a[idx-1],a[idx]]=[a[idx],a[idx-1]]; upd('items',a)} }} style={tinyBtn}>▲</button>
+                  <button onClick={() => { const a=[...(data.items||[])]; if(idx<a.length-1){[a[idx],a[idx+1]]=[a[idx+1],a[idx]]; upd('items',a)} }} style={tinyBtn}>▼</button>
+                  <button onClick={() => upd('items', (data.items||[]).filter((_,i) => i!==idx))} style={{ ...tinyBtn, color: '#c00', background: '#fce8e8' }}>✕</button>
+                </div>
+              </div>
+              {it.logo_url && <img src={it.logo_url} alt="" style={{ maxHeight: 60, maxWidth: '100%', objectFit: 'contain', borderRadius: 6, marginBottom: 8, display: 'block' }} />}
+              <UploadBtn label="Carica logo" entityId={entityId} entityTipo={entityTipo} onUrl={url => upd('items', (data.items||[]).map((x,i) => i===idx ? {...x, logo_url: url} : x))} />
+              <div style={{ marginTop: 8 }}>
+                <label style={{ display: 'block', fontSize: 11, color: '#666', marginBottom: 3 }}>URL link (opz.)</label>
+                <input type="text" value={it.link_url||''} onChange={e => upd('items', (data.items||[]).map((x,i) => i===idx ? {...x, link_url: e.target.value} : x))} placeholder="https://..." style={inputStyle()} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <button onClick={() => upd('items', [...(data.items||[]), { id: uid(), logo_url: '', link_url: '' }])}
+          style={{ width: '100%', padding: '8px', background: '#f0f4ff', border: '1px dashed #c8d0f0', borderRadius: 8, cursor: 'pointer', fontSize: 13, color: '#334' }}>
+          + Aggiungi logo
+        </button>
+      </div>
     )
     default:
       return <p style={{ fontSize: 13, color: '#888', margin: 0 }}>Editor non disponibile per questo blocco.</p>
@@ -484,13 +548,16 @@ export default function PaginaEditorPage() {
   function previewUrl() {
     if (!entitySlug || !page) return null
     const base = page.entity_tipo === 'struttura' ? `/s/${entitySlug}` : page.entity_tipo === 'ristorante' ? `/r/${entitySlug}` : `/a/${entitySlug}`
+    if (page.slug === '__home__') return base
     return `${base}/p/${page.slug}`
   }
 
   async function openPreview() {
     if (dirty) await save()
     const url = previewUrl()
-    if (url) window.open(url + '?preview=1', '_blank')
+    if (!url) return
+    if (page.slug === '__home__') window.open(url, '_blank')
+    else window.open(url + '?preview=1', '_blank')
   }
 
   function copyLink() {

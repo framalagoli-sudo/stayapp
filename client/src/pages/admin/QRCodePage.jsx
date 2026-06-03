@@ -26,9 +26,11 @@ async function downloadQR(url, filename) {
 
 function QRCard({ name, tipo, slug }) {
   const [copied, setCopied] = useState(false)
-  const pwaUrl = tipo === 'ristorante' ? `${baseUrl}/r/${slug}?qr=1` : `${baseUrl}/s/${slug}?qr=1`
-  const typeColor = tipo === 'ristorante' ? '#e63946' : '#1a1a2e'
-  const typeLabel = tipo === 'ristorante' ? 'Ristorante' : 'Struttura'
+  const pwaUrl = tipo === 'ristorante' ? `${baseUrl}/r/${slug}?qr=1`
+              : tipo === 'attivita'   ? `${baseUrl}/a/${slug}?qr=1`
+              :                        `${baseUrl}/s/${slug}?qr=1`
+  const typeColor = tipo === 'ristorante' ? '#e63946' : tipo === 'attivita' ? '#7c3aed' : '#1a1a2e'
+  const typeLabel = tipo === 'ristorante' ? 'Ristorante' : tipo === 'attivita' ? 'Attività' : 'Struttura'
 
   function copyUrl() {
     navigator.clipboard.writeText(pwaUrl)
@@ -113,13 +115,34 @@ function QRCard({ name, tipo, slug }) {
 
 export default function QRCodePage() {
   const { profile } = useAuth()
-  const { strutture, ristoranti, loading: aziendaLoading } = useAzienda()
-  const [legacySlug, setLegacySlug] = useState(null)
-  const [legacyError, setLegacyError] = useState(null)
+  const { strutture, ristoranti, attivita, loading: aziendaLoading } = useAzienda()
+  const [legacySlug,   setLegacySlug]   = useState(null)
+  const [legacyError,  setLegacyError]  = useState(null)
+  const [superEntita,  setSuperEntita]  = useState(null)
+  const [superLoading, setSuperLoading] = useState(false)
 
-  const isLegacy = profile && ['admin_struttura', 'staff'].includes(profile.role)
+  const isLegacy     = profile?.role === 'admin_struttura'
+  const isSuperAdmin = profile?.role === 'super_admin'
 
-  // Per admin_struttura / staff carica lo slug dalla property
+  // super_admin: AziendaContext non carica entità → fetch diretto
+  useEffect(() => {
+    if (!isSuperAdmin) return
+    setSuperLoading(true)
+    Promise.all([
+      apiFetch('/api/properties'),
+      apiFetch('/api/ristoranti'),
+      apiFetch('/api/attivita'),
+    ]).then(([s, r, a]) => {
+      setSuperEntita([
+        ...(s || []).map(x => ({ ...x, tipo: 'struttura'  })),
+        ...(r || []).map(x => ({ ...x, tipo: 'ristorante' })),
+        ...(a || []).map(x => ({ ...x, tipo: 'attivita'   })),
+      ])
+    }).catch(() => setSuperEntita([]))
+      .finally(() => setSuperLoading(false))
+  }, [isSuperAdmin])
+
+  // admin_struttura legacy: carica slug dalla property
   useEffect(() => {
     if (!isLegacy || !profile?.property_id) return
     apiFetch(`/api/properties/${profile.property_id}`)
@@ -127,45 +150,53 @@ export default function QRCodePage() {
       .catch(() => setLegacyError('Impossibile caricare i dati della struttura.'))
   }, [profile])
 
-  // ── Legacy view (admin_struttura / staff) ─────────────────────────────────
+  const title = (
+    <div style={{ marginBottom: 28 }}>
+      <h2 style={{ marginTop: 0, marginBottom: 4 }}>QR Code</h2>
+      <p style={{ color: '#888', fontSize: 14, margin: 0 }}>
+        Scarica o condividi i QR code. Inquadrando il codice il cliente accede direttamente alla PWA.
+      </p>
+    </div>
+  )
+
+  // ── Legacy (admin_struttura) ───────────────────────────────────────────────
   if (isLegacy) {
     if (legacyError) return <p style={{ color: '#c00' }}>{legacyError}</p>
     if (!legacySlug)  return <p style={{ color: '#888' }}>Caricamento…</p>
+    return <div>{title}<QRCard name={profile.full_name || 'La mia struttura'} tipo="struttura" slug={legacySlug} /></div>
+  }
+
+  // ── Super admin: fetch diretto ─────────────────────────────────────────────
+  if (isSuperAdmin) {
+    if (superLoading || superEntita === null) return <p style={{ color: '#888' }}>Caricamento…</p>
     return (
       <div>
-        <h2 style={{ marginTop: 0, marginBottom: 4 }}>QR Code</h2>
-        <p style={{ color: '#888', fontSize: 14, marginBottom: 28 }}>
-          Stampa o condividi il QR code per far accedere gli ospiti alla tua app.
-        </p>
-        <QRCard name={profile.full_name || 'La mia struttura'} tipo="struttura" slug={legacySlug} />
+        {title}
+        {superEntita.length === 0
+          ? <p style={{ color: '#aaa' }}>Nessuna entità trovata.</p>
+          : <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
+              {superEntita.map(e => <QRCard key={`${e.tipo}-${e.id}`} name={e.name} tipo={e.tipo} slug={e.slug} />)}
+            </div>
+        }
       </div>
     )
   }
 
-  // ── Azienda / super_admin view ────────────────────────────────────────────
+  // ── Admin azienda / staff ──────────────────────────────────────────────────
   const allEntita = [
-    ...strutture.map(s => ({ ...s, tipo: 'struttura' })),
-    ...ristoranti.map(r => ({ ...r, tipo: 'ristorante' })),
+    ...(strutture  || []).map(s => ({ ...s, tipo: 'struttura'  })),
+    ...(ristoranti || []).map(r => ({ ...r, tipo: 'ristorante' })),
+    ...(attivita   || []).map(a => ({ ...a, tipo: 'attivita'   })),
   ]
 
   return (
     <div>
-      <h2 style={{ marginTop: 0, marginBottom: 4 }}>QR Code</h2>
-      <p style={{ color: '#888', fontSize: 14, marginBottom: 28 }}>
-        Scarica o condividi i QR code per ogni entità. Inquadrando il codice il cliente accede direttamente alla PWA.
-      </p>
-
+      {title}
       {aziendaLoading && <p style={{ color: '#888' }}>Caricamento…</p>}
-
-      {!aziendaLoading && allEntita.length === 0 && (
-        <p style={{ color: '#aaa' }}>Nessuna struttura o ristorante da mostrare.</p>
-      )}
-
+      {!aziendaLoading && allEntita.length === 0 && <p style={{ color: '#aaa' }}>Nessuna entità da mostrare.</p>}
       {!aziendaLoading && allEntita.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
-          {allEntita.map(e => (
-            <QRCard key={`${e.tipo}-${e.id}`} name={e.name} tipo={e.tipo} slug={e.slug} />
-          ))}
+          {allEntita.map(e => <QRCard key={`${e.tipo}-${e.id}`} name={e.name} tipo={e.tipo} slug={e.slug} />)}
         </div>
       )}
     </div>

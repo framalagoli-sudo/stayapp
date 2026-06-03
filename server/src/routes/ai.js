@@ -1,4 +1,5 @@
 import express from 'express'
+import { randomUUID } from 'crypto'
 import { requireAuth } from '../middleware/auth.js'
 import { supabase } from '../lib/supabase.js'
 import { fetchUnsplashCover } from '../lib/unsplash.js'
@@ -8,25 +9,32 @@ const router = express.Router()
 async function callClaude(prompt, maxTokens = 500) {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY non configurata su Railway')
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: maxTokens,
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err?.error?.message || `Anthropic API error ${res.status}`)
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 90_000)
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: maxTokens,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err?.error?.message || `Anthropic API error ${res.status}`)
+    }
+    const data = await res.json()
+    return data.content[0].text.trim()
+  } finally {
+    clearTimeout(timer)
   }
-  const data = await res.json()
-  return data.content[0].text.trim()
 }
 
 const MONTHLY_LIMIT = parseInt(process.env.AI_MONTHLY_LIMIT || '20')
@@ -48,6 +56,18 @@ function consumeCredit(azienda_id) {
   const count = (!rec || rec.month !== month) ? 1 : rec.count + 1
   usageMap.set(azienda_id, { count, month })
   return MONTHLY_LIMIT - count
+}
+
+// Rate limit for generate-site: max 10 generations per hour per user
+const genRateMap = new Map()
+const GEN_LIMIT_PER_HOUR = 10
+
+function checkAndConsumeGenRate(userId) {
+  const now = Date.now()
+  const times = (genRateMap.get(userId) || []).filter(t => now - t < 3_600_000)
+  if (times.length >= GEN_LIMIT_PER_HOUR) return false
+  genRateMap.set(userId, [...times, now])
+  return true
 }
 
 const CHANNEL_RULES = {
@@ -317,6 +337,246 @@ router.get('/usage', requireAuth, async (req, res) => {
     res.json({ remaining: getRemainingCredits(azienda_id), limit: MONTHLY_LIMIT })
   } catch (e) {
     res.json({ remaining: MONTHLY_LIMIT, limit: MONTHLY_LIMIT })
+  }
+})
+
+// ── Helpers generate-site ────────────────────────────────────────────────────
+
+const ALLOWED_OBIETTIVI = ['lead_gen', 'vendita', 'vetrina', 'prenotazioni', 'portfolio', 'evento']
+const ALLOWED_TEMPLATES = ['essential', 'complete', 'narrative']
+const ALLOWED_MODES     = ['landing', 'site']
+
+const OBIETTIVO_CONFIGS = {
+  lead_gen: {
+    label: 'Lead Generation',
+    landing_blocks: 'hero(urgente+CTA principale ben visibile) → highlights(3-4 benefici chiave) → stats(numeri credibilità) → about(problema→soluzione) → testimonianze → cta_banner → faq(rispondi alle obiezioni reali) → contatti(form prominente)',
+    site_home_blocks: 'hero → highlights → stats → cta_banner → testimonianze → contatti',
+    notes: 'CTA form visibile entro i primi 2 blocchi. FAQ risponde a obiezioni reali del cliente. Testi focalizzati sul problema e sulla soluzione offerta.',
+  },
+  vendita: {
+    label: 'Vendita / E-commerce',
+    landing_blocks: 'hero(offerta irresistibile con beneficio principale) → highlights(benefici prodotto/servizio) → pacchetti(prezzi chiari e comparabili) → foto_testo(come funziona, step-by-step) → stats(numeri credibili) → testimonianze(con risultati concreti) → cta_banner(urgency) → faq → contatti',
+    site_home_blocks: 'hero → highlights → pacchetti → testimonianze → cta_banner → faq',
+    notes: 'Mostra prezzi chiaramente. Urgency e scarcity nella CTA. Testimonianze con risultati concreti e misurabili.',
+  },
+  vetrina: {
+    label: 'Vetrina / Branding',
+    landing_blocks: 'hero(mood evocativo, tagline memorabile) → about(storia e valori autentici) → foto_testo(prodotto/servizio principale) → foto_testo(altro aspetto, inverti:true) → gallery → stats → team → testimonianze → contatti',
+    site_home_blocks: 'hero → about → foto_testo → gallery → stats → testimonianze → contatti',
+    notes: 'Atmosfera e brand identity prima di tutto. Usa foto_testo alternati (inverti:true su righe pari). Tono narrativo ed empatico. Gallery per impatto visivo.',
+  },
+  prenotazioni: {
+    label: 'Prenotazioni',
+    landing_blocks: 'hero(prenota subito, CTA molto prominente) → highlights(3-4 motivi per sceglierci) → steps(come funziona: 3-4 passi semplici) → services → stats → testimonianze → faq(domande su prenotazione, disdetta, pagamento) → contatti',
+    site_home_blocks: 'hero → steps → services → highlights → stats → testimonianze → contatti',
+    notes: 'CTA principale = "Prenota ora". Steps chiari e rassicuranti sul processo. FAQ include disdette, modifiche, pagamenti.',
+  },
+  portfolio: {
+    label: 'Portfolio / Credibilità',
+    landing_blocks: 'hero(chi sei e specializzazione) → about(background e approccio) → foto_testo(caso studio 1 concreto con risultati) → foto_testo(caso studio 2, inverti:true) → stats(clienti serviti, anni esperienza, progetti completati) → testimonianze(clienti reali con azienda e ruolo) → contatti',
+    site_home_blocks: 'hero → about → foto_testo → foto_testo → stats → testimonianze → contatti',
+    notes: 'Mostra lavori concreti con risultati misurabili. Stats = numeri professionali credibili. Testimonianze con nome, azienda e ruolo.',
+  },
+  evento: {
+    label: 'Evento',
+    landing_blocks: 'hero(titolo evento + data + CTA iscrizione urgente) → about(cos\'è e perché partecipare) → steps(programma/scaletta dettagliata) → team(speaker/ospiti con bio) → stats(edizioni passate, partecipanti attesi) → faq(dove, quando, costi, accessibilità) → newsletter(registrati per aggiornamenti) → contatti',
+    site_home_blocks: 'hero → about → steps → team → faq → newsletter → contatti',
+    notes: 'Data e urgency prominenti in hero. Steps = programma dettagliato dell\'evento. FAQ su logistica e praticità.',
+  },
+}
+
+const TEMPLATE_CONFIGS = {
+  essential: {
+    label: 'Essenziale',
+    style_hint: 'Template ESSENZIALE: usa al massimo 5-6 blocchi totali. Testi brevi e incisivi. Un messaggio chiaro per blocco. Scegli solo i blocchi più importanti per l\'obiettivo, ometti tutto il resto.',
+  },
+  complete: {
+    label: 'Completo',
+    style_hint: 'Template COMPLETO: struttura professionale con tutti i blocchi utili per l\'obiettivo. 7-9 blocchi per landing, 4-6 per ogni pagina nei siti multi-page. Testi dettagliati e persuasivi.',
+  },
+  narrative: {
+    label: 'Narrativo',
+    style_hint: 'Template NARRATIVO: racconta una storia. Usa foto_testo alternati (inverti:true sulle righe pari). Tono empatico e coinvolgente. Costruisci un percorso emotivo verso la conversione. Preferisci about e foto_testo a highlights e stats.',
+  },
+}
+
+const MAX_LENGTHS = { nome: 100, settore: 150, descrizione: 600, servizi: 500, punti_forza: 400, cta_text: 80, tono: 50, target: 50 }
+function sanitizeStr(val, maxLen) { return String(val || '').trim().slice(0, maxLen) }
+
+function slugifyAI(s) {
+  return (s || '').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'pagina'
+}
+
+function addItemIds(blocks) {
+  return (blocks || []).map(b => ({
+    ...b,
+    id: randomUUID(),
+    data: addIdsToData(b.data || {}),
+  }))
+}
+
+function addIdsToData(data) {
+  const result = { ...data }
+  for (const key of Object.keys(result)) {
+    if (Array.isArray(result[key])) {
+      result[key] = result[key].map(item =>
+        item && typeof item === 'object' ? { id: randomUUID(), ...item } : item
+      )
+    }
+  }
+  return result
+}
+
+function buildSitePrompt({ entity, mode, obiettivo, template, answers }) {
+  const { nome, settore, descrizione, servizi, punti_forza, cta_text, tono, target } = answers
+  const objConf  = OBIETTIVO_CONFIGS[obiettivo] || OBIETTIVO_CONFIGS.vetrina
+  const tmplConf = TEMPLATE_CONFIGS[template]   || TEMPLATE_CONFIGS.complete
+
+  const pagesSpec = mode === 'landing'
+    ? `CREA 1 PAGINA (slug "home", nel_menu false, titolo "${nome || entity.name}").
+Struttura blocchi consigliata per obiettivo "${objConf.label}":
+${objConf.landing_blocks}
+Note obiettivo: ${objConf.notes}`
+    : `CREA 4 PAGINE:
+1. home (slug "home", nel_menu false): ${objConf.site_home_blocks}
+2. chi-siamo (slug "chi-siamo", nel_menu true): about, foto_testo x2, steps o team, stats
+3. servizi (slug "servizi", nel_menu true): about(intro), paragrafi(3-6 card con icona), highlights, cta_banner
+4. contatti (slug "contatti", nel_menu true): about(intro contatti), contatti
+Note obiettivo: ${objConf.notes}`
+
+  return `Sei un web designer e copywriter esperto italiano. Crea ${mode === 'landing' ? 'una landing page' : 'un sito completo'} per un business.
+
+BLOCCHI DISPONIBILI — usa SOLO questi tipi:
+• hero: { title, tagline, cta1_text, cta1_url(""), height("large"|"medium") }
+• about: { title, text }
+• foto_testo: { title, text, inverti(bool), button_label, button_url("") }
+• paragrafi: { titolo, items:[{icon,title,text}] }
+• highlights: { titolo, items:[{icon,text}] }
+• stats: { titolo, items:[{value,label}] }
+• cta_banner: { title, subtitle, button_text, button_url("") }
+• testimonianze: { titolo, items:[{nome,testo,stelle(5)}] }
+• faq: { titolo, items:[{domanda,risposta}] }
+• steps: { titolo, items:[{icon,title,text}] }
+• pacchetti: { titolo, items:[{nome,prezzo,descrizione,features:[]}] }
+• team: { titolo, items:[{nome,ruolo,bio}] }
+• newsletter: { title, subtitle }
+• gallery (auto): data:{}
+• services (auto): data:{}
+• contatti (auto): data:{}
+
+Icone Lucide valide per "icon": star, check, check-circle, heart, home, phone, mail, users, zap, shield, award, clock, map-pin, coffee, utensils, sparkles, leaf, sun, briefcase, wrench, euro, handshake, smile, target, trending-up, calendar, globe, camera, music, activity, book, layers, tag
+
+DATI BUSINESS:
+Nome: ${nome || entity.name}
+Settore: ${settore || 'non specificato'}
+Descrizione: ${descrizione || entity.description || ''}
+Servizi: ${servizi || 'non specificati'}
+Punti di forza: ${punti_forza || 'non specificati'}
+CTA principale: ${cta_text || 'Contattaci'}
+Tono di comunicazione: ${tono || 'professionale'}
+Target: ${target || 'tutti'}
+
+${pagesSpec}
+
+${tmplConf.style_hint}
+
+REGOLE ASSOLUTE:
+- Testi in italiano, specifici e realistici (MAI placeholder come "Lorem ipsum" o "[nome servizio]")
+- Testimonianze: nomi italiani verosimili, testi dettagliati e credibili con contesto reale
+- FAQ: domande reali che un cliente farebbe a questo tipo di business
+- Stats: numeri coerenti e credibili per il settore specifico
+- button_url, cta1_url: sempre stringa vuota "" (l\'utente li imposta in seguito)
+- Ogni blocco deve aggiungere valore concreto — nessun blocco vuoto o generico
+
+Rispondi ESCLUSIVAMENTE con JSON valido (nessun testo prima o dopo il JSON):
+{"pages":[{"titolo":"...","slug":"...","nel_menu":false,"blocks":[{"type":"hero","data":{...}}]}]}`
+}
+
+// POST /api/ai/generate-site  (beta — super_admin only)
+router.post('/generate-site', requireAuth, async (req, res) => {
+  try {
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', req.user.id).single()
+    if (profile?.role !== 'super_admin') return res.status(403).json({ error: 'Accesso riservato ai super_admin (beta)' })
+
+    if (!checkAndConsumeGenRate(req.user.id)) {
+      return res.status(429).json({ error: `Limite orario raggiunto (${GEN_LIMIT_PER_HOUR} generazioni/ora). Riprova tra qualche minuto.` })
+    }
+
+    const { entity_tipo, entity_id, mode, obiettivo, template, answers } = req.body
+
+    if (!entity_tipo || !entity_id || !answers)         return res.status(400).json({ error: 'Parametri mancanti' })
+    if (!ALLOWED_MODES.includes(mode))                  return res.status(400).json({ error: 'mode non valido' })
+    if (!ALLOWED_OBIETTIVI.includes(obiettivo))         return res.status(400).json({ error: 'obiettivo non valido' })
+    if (!ALLOWED_TEMPLATES.includes(template))          return res.status(400).json({ error: 'template non valido' })
+
+    const tableMap = { struttura: 'properties', ristorante: 'ristoranti', attivita: 'attivita' }
+    const table = tableMap[entity_tipo]
+    if (!table) return res.status(400).json({ error: 'entity_tipo non valido' })
+
+    const { data: entity } = await supabase.from(table).select('name, description').eq('id', entity_id).single()
+    if (!entity) return res.status(404).json({ error: 'Entità non trovata' })
+
+    const clean = {
+      nome:        sanitizeStr(answers.nome,        MAX_LENGTHS.nome),
+      settore:     sanitizeStr(answers.settore,     MAX_LENGTHS.settore),
+      descrizione: sanitizeStr(answers.descrizione, MAX_LENGTHS.descrizione),
+      servizi:     sanitizeStr(answers.servizi,     MAX_LENGTHS.servizi),
+      punti_forza: sanitizeStr(answers.punti_forza, MAX_LENGTHS.punti_forza),
+      cta_text:    sanitizeStr(answers.cta_text,    MAX_LENGTHS.cta_text)  || 'Contattaci',
+      tono:        sanitizeStr(answers.tono,        MAX_LENGTHS.tono)      || 'professionale',
+      target:      sanitizeStr(answers.target,      MAX_LENGTHS.target)    || 'tutti',
+    }
+
+    const prompt = buildSitePrompt({ entity, mode, obiettivo, template, answers: clean })
+    const raw = await callClaude(prompt, 6000)
+
+    let parsed
+    try {
+      const m = raw.match(/\{[\s\S]*\}/s) || raw.match(/\{[\s\S]*\}/)
+      parsed = JSON.parse(m ? m[0] : raw)
+    } catch {
+      console.error('[AI generate-site] parse error, raw:', raw.slice(0, 300))
+      return res.status(500).json({ error: 'Risposta AI non parsabile. Riprova.' })
+    }
+
+    if (!Array.isArray(parsed.pages) || parsed.pages.length === 0) {
+      return res.status(500).json({ error: 'Struttura generata non valida. Riprova.' })
+    }
+
+    // Safety caps: max 4 pages, max 12 blocks per page
+    parsed.pages = parsed.pages.slice(0, 4)
+    for (const pg of parsed.pages) {
+      if (Array.isArray(pg.blocks)) pg.blocks = pg.blocks.slice(0, 12)
+    }
+
+    const created = []
+    for (let i = 0; i < parsed.pages.length; i++) {
+      const pg = parsed.pages[i]
+      let slug = slugifyAI(pg.slug || pg.titolo || 'pagina').slice(0, 80)
+
+      const { count } = await supabase.from('pagine').select('id', { count: 'exact', head: true })
+        .eq('entity_tipo', entity_tipo).eq('entity_id', entity_id).eq('slug', slug)
+      if (count > 0) slug = `${slug}-${Date.now().toString(36)}`
+
+      const blocks = addItemIds(pg.blocks || [])
+
+      const { data: p } = await supabase.from('pagine').insert({
+        entity_tipo, entity_id,
+        titolo: pg.titolo || 'Pagina',
+        slug, nel_menu: !!pg.nel_menu,
+        status: 'bozza', blocks, ordine: i,
+      }).select('id, titolo, slug, nel_menu').single()
+
+      if (p) created.push(p)
+    }
+
+    res.json({ pages: created })
+  } catch (e) {
+    console.error('[AI generate-site]', e.message)
+    const isTimeout = e.name === 'AbortError'
+    res.status(500).json({ error: isTimeout ? 'Timeout AI (90s). Prova con meno dettagli o riprova.' : 'Errore durante la generazione. Riprova.' })
   }
 })
 

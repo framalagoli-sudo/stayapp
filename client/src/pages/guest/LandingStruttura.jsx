@@ -7,6 +7,7 @@ import CookieBanner from '../../components/CookieBanner'
 import BookingWidget from '../../components/BookingWidget'
 import ChatbotWidget from '../../components/ChatbotWidget'
 import ShopWidget from '../../components/ShopWidget'
+import LandingBlockRenderer from '../../components/LandingBlockRenderer'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -100,6 +101,7 @@ export default function LandingStruttura({ property }) {
   const [pagine,         setPagine]         = useState([])
   const [openDropdown,   setOpenDropdown]   = useState(null)
   const [recensioni,     setRecensioni]     = useState([])
+  const [homeBlocks,     setHomeBlocks]     = useState(null)
   const aboutRef = useRef(null)
 
   useEffect(() => {
@@ -122,6 +124,9 @@ export default function LandingStruttura({ property }) {
       .catch(() => {})
     apiFetch(`/api/guest/recensioni/struttura/${property.id}`)
       .then(d => Array.isArray(d) && setRecensioni(d))
+      .catch(() => {})
+    apiFetch(`/api/guest/pagina/struttura/${property.id}/__home__`)
+      .then(d => d?.id && Array.isArray(d.blocks) && d.blocks.length && setHomeBlocks(d.blocks))
       .catch(() => {})
   }, [property.id])
 
@@ -158,7 +163,20 @@ export default function LandingStruttura({ property }) {
     const apiBase = import.meta.env.VITE_API_URL ?? ''
     const sitemapEl = Object.assign(document.createElement('link'), { rel: 'sitemap', type: 'application/xml', href: `${apiBase}/api/guest/sitemap/struttura/${property.slug}` })
     document.head.appendChild(sitemapEl)
-    return () => { document.title = 'OltreNova'; cleanupTracking(); sitemapEl.remove() }
+    let faviconEl = null
+    if (mini.favicon_url) {
+      faviconEl = document.querySelector("link[rel~='icon']")
+      const prevHref = faviconEl?.href
+      if (!faviconEl) { faviconEl = document.createElement('link'); faviconEl.rel = 'icon'; document.head.appendChild(faviconEl) }
+      faviconEl.href = mini.favicon_url
+      faviconEl._prevHref = prevHref
+    }
+    return () => {
+      document.title = 'OltreNova'
+      cleanupTracking()
+      sitemapEl.remove()
+      if (faviconEl) faviconEl.href = faviconEl._prevHref || '/favicon.ico'
+    }
   }, [])
 
   useEffect(() => {
@@ -975,72 +993,123 @@ export default function LandingStruttura({ property }) {
         </div>
       </nav>
 
-      <section style={{ position: 'relative', height: '100vh', minHeight: 560, overflow: 'hidden' }}>
-        {property.cover_url
-          ? <img src={property.cover_url} alt="cover" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-          : <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${primary} 0%, ${primary}99 100%)` }} />
-        }
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.65) 100%)' }} />
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 24px' }}>
-          {property.logo_url && <img src={property.logo_url} alt="logo" className="fade-up" style={{ maxHeight: 80, maxWidth: 200, objectFit: 'contain', marginBottom: 24, filter: 'brightness(0) invert(1)' }} />}
-          <h1 className="fade-up-2" style={{ fontFamily: heading, fontSize: 'clamp(36px, 6vw, 72px)', fontWeight: 700, color: '#fff', lineHeight: 1.1, marginBottom: 16, textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}>
-            {property.name}
-          </h1>
-          {tagline && <p className="fade-up-3" style={{ fontSize: 'clamp(16px, 2.5vw, 22px)', color: 'rgba(255,255,255,0.88)', maxWidth: 600, lineHeight: 1.5, marginBottom: 36 }}>{tagline}</p>}
-          <div className="fade-up-3" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-            {bookingUrl && (
-              <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
-                style={{ padding: '14px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 16, fontWeight: 700, textDecoration: 'none', boxShadow: `0 8px 32px ${primary}66` }}>
-                Prenota ora
-              </a>
-            )}
-            <a href={pwaUrl} style={{ padding: '14px 32px', background: 'rgba(255,255,255,0.18)', color: '#fff', borderRadius: 50, fontSize: 16, fontWeight: 600, textDecoration: 'none', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.3)' }}>
-              App ospiti
-            </a>
-          </div>
-        </div>
-        <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer' }}
-          onClick={() => aboutRef.current?.scrollIntoView({ behavior: 'smooth' })}>
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', letterSpacing: 1, textTransform: 'uppercase' }}>Scopri</span>
-          <ChevronDown size={20} color="rgba(255,255,255,0.7)" strokeWidth={1.5} />
-        </div>
-      </section>
-
-      {sectionOrder.map(renderSection)}
-
-      {hasInfo && (
-        <section style={{ padding: '80px 0', background: '#1a1a2e', color: '#fff' }}>
-          <div className="land-section" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 48 }}>
-            <div>
-              <h2 style={{ fontFamily: heading, fontSize: 28, fontWeight: 700, marginBottom: 24 }}>Dove siamo</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {property.address && (
-                  <a href={`https://maps.google.com/?q=${encodeURIComponent(property.address)}`} target="_blank" rel="noopener noreferrer"
-                    style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}>
-                    <MapPin size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0, marginTop: 2 }} />{property.address}
+      {homeBlocks ? (
+        <LandingBlockRenderer
+          blocks={homeBlocks} entity={property} entityType="struttura"
+          mini={mini} primary={primary} heading={heading} body={body}
+          slug={property.slug} privacyUrl={`/s/${property.slug}/privacy`}
+          aziendaId={property.azienda_id}
+        />
+      ) : (
+        <>
+          <section style={{ position: 'relative', height: '100vh', minHeight: 560, overflow: 'hidden' }}>
+            {property.cover_url
+              ? <img src={property.cover_url} alt="cover" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+              : <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${primary} 0%, ${primary}99 100%)` }} />
+            }
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.65) 100%)' }} />
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 24px' }}>
+              {property.logo_url && <img src={property.logo_url} alt="logo" className="fade-up" style={{ maxHeight: 80, maxWidth: 200, objectFit: 'contain', marginBottom: 24 }} />}
+              <h1 className="fade-up-2" style={{ fontFamily: heading, fontSize: 'clamp(36px, 6vw, 72px)', fontWeight: 700, color: '#fff', lineHeight: 1.1, marginBottom: 16, textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}>
+                {property.name}
+              </h1>
+              {tagline && <p className="fade-up-3" style={{ fontSize: 'clamp(16px, 2.5vw, 22px)', color: 'rgba(255,255,255,0.88)', maxWidth: 600, lineHeight: 1.5, marginBottom: 36 }}>{tagline}</p>}
+              <div className="fade-up-3" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+                {bookingUrl && (
+                  <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
+                    style={{ padding: '14px 32px', background: primary, color: '#fff', borderRadius: 50, fontSize: 16, fontWeight: 700, textDecoration: 'none', boxShadow: `0 8px 32px ${primary}66` }}>
+                    Prenota ora
                   </a>
                 )}
-                {property.phone && (
-                  <a href={`tel:${property.phone}`} style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}>
-                    <Phone size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0 }} />{property.phone}
-                  </a>
-                )}
-                {property.email && (
-                  <a href={`mailto:${property.email}`} style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}>
-                    <Mail size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0 }} />{property.email}
-                  </a>
-                )}
+                <a href={pwaUrl} style={{ padding: '14px 32px', background: 'rgba(255,255,255,0.18)', color: '#fff', borderRadius: 50, fontSize: 16, fontWeight: 600, textDecoration: 'none', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.3)' }}>
+                  App ospiti
+                </a>
               </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', gap: 16 }}>
-              <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>Sei un ospite? Accedi all'app per i servizi in struttura.</p>
-              {bookingUrl && (
-                <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
-                  style={{ padding: '13px 28px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-                  Prenota ora
-                </a>
-              )}
-              <a href={pwaUrl} style={{ padding: '13px 28px', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>App ospiti</a>
+            <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer' }}
+              onClick={() => aboutRef.current?.scrollIntoView({ behavior: 'smooth' })}>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', letterSpacing: 1, textTransform: 'uppercase' }}>Scopri</span>
+              <ChevronDown size={20} color="rgba(255,255,255,0.7)" strokeWidth={1.5} />
+            </div>
+          </section>
+
+          {sectionOrder.map(renderSection)}
+
+          {hasInfo && (
+            <section style={{ padding: '80px 0', background: '#1a1a2e', color: '#fff' }}>
+              <div className="land-section" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 48 }}>
+                <div>
+                  <h2 style={{ fontFamily: heading, fontSize: 28, fontWeight: 700, marginBottom: 24 }}>Dove siamo</h2>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {property.address && (
+                      <a href={`https://maps.google.com/?q=${encodeURIComponent(property.address)}`} target="_blank" rel="noopener noreferrer"
+                        style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}>
+                        <MapPin size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0, marginTop: 2 }} />{property.address}
+                      </a>
+                    )}
+                    {property.phone && (
+                      <a href={`tel:${property.phone}`} style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}>
+                        <Phone size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0 }} />{property.phone}
+                      </a>
+                    )}
+                    {property.email && (
+                      <a href={`mailto:${property.email}`} style={{ display: 'flex', gap: 12, color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 15 }}>
+                        <Mail size={18} strokeWidth={1.5} color={primary} style={{ flexShrink: 0 }} />{property.email}
+                      </a>
+                    )}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', gap: 16 }}>
+                  <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>Sei un ospite? Accedi all'app per i servizi in struttura.</p>
+                  {bookingUrl && (
+                    <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
+                      style={{ padding: '13px 28px', background: primary, color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+                      Prenota ora
+                    </a>
+                  )}
+                  <a href={pwaUrl} style={{ padding: '13px 28px', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: 50, fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>App ospiti</a>
+                </div>
+              </div>
+            </section>
+          )}
+        </>
+      )}
+
+      {/* Scopri anche */}
+      {(property.collegamenti || []).length > 0 && (
+        <section style={{ padding: '64px 0', background: '#f7f7f9' }}>
+          <div className="land-section">
+            <h2 style={{ fontFamily: heading, fontSize: 'clamp(22px, 3vw, 32px)', fontWeight: 700, marginBottom: 32, textAlign: 'center' }}>
+              Scopri anche
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 560, margin: '0 auto' }}>
+              {property.collegamenti.map(c => {
+                const href = c.tipo === 'ristorante' ? `/r/${c.slug}` : `/s/${c.slug}`
+                const typeLabel = c.tipo === 'ristorante' ? 'Ristorante' : 'Struttura'
+                const typeColor = c.tipo === 'ristorante' ? '#e63946' : primary
+                return (
+                  <a key={c.id || c.slug} href={href} style={{
+                    display: 'flex', alignItems: 'center', gap: 16,
+                    background: '#fff', borderRadius: 16, padding: '16px 20px',
+                    boxShadow: '0 2px 16px rgba(0,0,0,0.06)',
+                    textDecoration: 'none', border: '1px solid #eee',
+                  }}>
+                    {c.logo_url ? (
+                      <img src={c.logo_url} alt="" style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
+                    ) : (
+                      <div style={{ width: 52, height: 52, borderRadius: 10, background: `${typeColor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <span style={{ fontSize: 22 }}>{c.tipo === 'ristorante' ? '🍽️' : '🏨'}</span>
+                      </div>
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: typeColor, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>{typeLabel}</div>
+                      <div style={{ fontWeight: 700, fontSize: 16, color: '#1a1a2e' }}>{c.name}</div>
+                      {c.description && <div style={{ fontSize: 13, color: '#888', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.description}</div>}
+                    </div>
+                    <span style={{ fontSize: 22, color: primary, flexShrink: 0, opacity: 0.6 }}>›</span>
+                  </a>
+                )
+              })}
             </div>
           </div>
         </section>
@@ -1108,7 +1177,7 @@ export default function LandingStruttura({ property }) {
         privacyUrl={property.slug ? `/s/${property.slug}/privacy` : null}
         cookieUrl={property.slug  ? `/s/${property.slug}/cookie`  : null}
       />
-      <ChatbotWidget chatbot={property.chatbot} primaryColor={primary} fixed entityTipo="struttura" entityId={property.id} />
+      <ChatbotWidget chatbot={property.chatbot ? { ...property.chatbot, active: property.chatbot.active_sito ?? property.chatbot.active } : null} primaryColor={primary} fixed entityTipo="struttura" entityId={property.id} />
     </>
   )
 }

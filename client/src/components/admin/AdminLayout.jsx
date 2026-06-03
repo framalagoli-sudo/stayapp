@@ -10,43 +10,43 @@ import {
   QrCode, UserCheck, ClipboardList, LogOut,
   Building, Building2, Store, Zap, Webhook, BotMessageSquare, Star, Settings,
   Info, Layers, Wrench, Image, Palette, MapPin, Globe, Lock, Bot, UtensilsCrossed,
-  FormInput, ShoppingBag, Sparkles, BarChart3, Gift, SearchCheck, LifeBuoy, LayoutTemplate,
+  FormInput, ShoppingBag, Sparkles, BarChart3, Gift, SearchCheck, LifeBuoy, LayoutTemplate, Wand2,
 } from 'lucide-react'
 
 // ─── Nav definitions ──────────────────────────────────────────────────────────
 const NAV_PROPERTY = [
   { to: '/admin/property/info',       label: 'Informazioni',  icon: Info },
-  { to: '/admin/property/modules',    label: 'Moduli attivi', icon: Layers },
+  { to: '/admin/property/modules',    label: 'App Clienti',   icon: Layers },
   { to: '/admin/property/services',   label: 'Servizi',       icon: Wrench },
   { to: '/admin/property/gallery',    label: 'Galleria',      icon: Image },
   { to: '/admin/property/theme',      label: 'Tema e colori', icon: Palette },
   { to: '/admin/property/activities', label: 'Attività',      icon: Zap },
   { to: '/admin/property/excursions', label: 'Escursioni',    icon: MapPin },
-  { to: '/admin/property/sito',       label: 'Sito',          icon: Globe },
+  { to: '/admin/property/sito',       label: 'Sito web',      icon: Globe },
   { to: '/admin/property/privacy',    label: 'Privacy',       icon: Lock },
   { to: '/admin/property/chatbot',    label: 'Chatbot',       icon: Bot },
   { to: '/admin/property/domini',     label: 'Domini',        icon: Globe },
 ]
 const STRUTTURA_SUBS = [
   { sub: 'info',       label: 'Informazioni',  icon: Info },
-  { sub: 'modules',    label: 'Moduli attivi', icon: Layers },
+  { sub: 'modules',    label: 'App Clienti',   icon: Layers },
   { sub: 'services',   label: 'Servizi',       icon: Wrench },
   { sub: 'gallery',    label: 'Galleria',      icon: Image },
   { sub: 'theme',      label: 'Tema e colori', icon: Palette },
   { sub: 'activities', label: 'Attività',      icon: Zap },
   { sub: 'excursions', label: 'Escursioni',    icon: MapPin },
-  { sub: 'sito',       label: 'Sito',          icon: Globe },
+  { sub: 'sito',       label: 'Sito web',      icon: Globe },
   { sub: 'privacy',    label: 'Privacy',       icon: Lock },
   { sub: 'chatbot',    label: 'Chatbot',       icon: Bot },
   { sub: 'domini',     label: 'Domini',        icon: Globe },
 ]
 const RISTORANTE_SUBS = [
   { sub: 'info',     label: 'Informazioni',  icon: Info },
-  { sub: 'moduli',   label: 'Moduli attivi', icon: Layers },
+  { sub: 'moduli',   label: 'App Clienti',   icon: Layers },
   { sub: 'menu',     label: 'Menu',          icon: UtensilsCrossed },
   { sub: 'gallery',  label: 'Galleria',      icon: Image },
   { sub: 'theme',    label: 'Tema e colori', icon: Palette },
-  { sub: 'minisito', label: 'Minisito',      icon: LayoutTemplate },
+  { sub: 'minisito', label: 'Sito web',      icon: Globe },
   { sub: 'sito',     label: 'Pagine CMS',    icon: Globe },
   { sub: 'privacy',  label: 'Privacy',       icon: Lock },
   { sub: 'chatbot',  label: 'Chatbot',       icon: Bot },
@@ -54,9 +54,10 @@ const RISTORANTE_SUBS = [
 ]
 const ATTIVITA_SUBS = [
   { sub: 'info',    label: 'Informazioni',  icon: Info },
+  { sub: 'moduli',  label: 'App Clienti',   icon: Layers },
   { sub: 'gallery', label: 'Galleria',      icon: Image },
   { sub: 'theme',   label: 'Tema e colori', icon: Palette },
-  { sub: 'sito',    label: 'Sito',          icon: Globe },
+  { sub: 'sito',    label: 'Sito web',      icon: Globe },
   { sub: 'privacy', label: 'Privacy',       icon: Lock },
   { sub: 'chatbot', label: 'Chatbot',       icon: Bot },
   { sub: 'domini',  label: 'Domini',        icon: Globe },
@@ -370,6 +371,7 @@ export default function AdminLayout() {
             <NavItem to="/admin/blog"             icon={Newspaper}        label="Blog & News" />
             <NavItem to="/admin/piano-editoriale" icon={CalendarDays}     label="Piano editoriale" />
             <NavItem to="/admin/content-studio"   icon={Sparkles}         label="Content Studio" />
+            <NavItem to="/admin/ai-site-builder"  icon={Wand2}            label="AI Site Builder" />
             <NavItem to="/admin/preventivi"       icon={FileText}         label="Preventivi" />
             <NavItem to="/admin/form-builder"     icon={FormInput}        label="Form Builder" />
             <NavItem to="/admin/shop"             icon={ShoppingBag}      label="Shop" />
@@ -388,6 +390,7 @@ export default function AdminLayout() {
             <Divider />
             <SectionHeader label="Account" />
             <NavItem to="/admin/analytics"    icon={BarChart2}     label="Analytics" />
+            <NavItem to="/admin/qrcode"       icon={QrCode}        label="QR Code" />
             <NavItem to="/admin/integrazioni" icon={Webhook}       label="Integrazioni" />
             <NavItem to="/admin/seo-geo"      icon={SearchCheck}   label="SEO & GEO" />
             <NavItem to="/admin/audit-log"    icon={ClipboardList} label="Audit log" />
@@ -436,13 +439,13 @@ export default function AdminLayout() {
                 <Divider />
                 <SectionHeader label="Sito & App" />
                 <SitoAppLinks />
+                <NavItem to="/admin/qrcode" icon={QrCode} label="QR Code" />
               </>
             )}
 
             <Divider />
             <SectionHeader label="Account" />
             <NavItem to="/admin/analytics"    icon={BarChart2}  label="Analytics" />
-            <NavItem to="/admin/qrcode"       icon={QrCode}     label="QR Code" />
             <NavItem to="/admin/staff"        icon={UserCheck}  label="Collaboratori" />
             <NavItem to="/admin/integrazioni" icon={Webhook}    label="Integrazioni" />
             <NavItem to="/admin/security"     icon={Shield}     label="Sicurezza" />
@@ -488,6 +491,7 @@ export default function AdminLayout() {
                 <Divider />
                 <SectionHeader label="Sito & App" />
                 <SitoAppLinks />
+                <NavItem to="/admin/qrcode" icon={QrCode} label="QR Code" />
               </>
             )}
 
@@ -521,10 +525,10 @@ export default function AdminLayout() {
             {NAV_PROPERTY.map(({ to, label, icon }) => (
               <NavItem key={to} to={to} icon={icon} label={label} sub />
             ))}
+            <NavItem to="/admin/qrcode" icon={QrCode} label="QR Code" />
 
             <Divider />
             <SectionHeader label="Account" />
-            <NavItem to="/admin/qrcode"   icon={QrCode} label="QR Code" />
             <NavItem to="/admin/security" icon={Shield} label="Sicurezza" />
           </>
         )}
