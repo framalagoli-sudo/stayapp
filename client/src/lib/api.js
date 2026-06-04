@@ -2,6 +2,19 @@ import { supabase } from './supabase'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
 
+// Per endpoint pubblici (guest) — non richiede sessione Supabase
+export async function guestFetch(path, options = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...options.headers },
+  })
+  const text = await res.text()
+  let body
+  try { body = text ? JSON.parse(text) : {} } catch { body = {} }
+  if (!res.ok) throw new Error(body?.error || `Errore ${res.status}`)
+  return body
+}
+
 export async function apiFetch(path, options = {}) {
   const { data: { session } } = await supabase.auth.getSession()
   const res = await fetch(`${API_BASE}${path}`, {

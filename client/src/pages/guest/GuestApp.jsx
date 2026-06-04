@@ -8,7 +8,7 @@ import {
   Wifi, Phone, Mail, MapPin, FileText,
   X, Check, ChevronRight, ArrowLeft,
 } from 'lucide-react'
-import { apiFetch } from '../../lib/api'
+import { apiFetch, guestFetch } from '../../lib/api'
 import { supabase } from '../../lib/supabase'
 import RequestForm from './RequestForm'
 import ServicesTab from './ServicesTab'
@@ -114,10 +114,10 @@ export default function GuestApp({ forceSlug } = {}) {
   const chipBarRef = useRef(null)
 
   useEffect(() => {
-    apiFetch(`/api/guest/${slug}`)
+    guestFetch(`/api/guest/${slug}`)
       .then(prop => {
         setProperty(prop)
-        apiFetch(`/api/guest/eventi?entity_tipo=struttura&entity_id=${prop.id}`)
+        guestFetch(`/api/guest/eventi?entity_tipo=struttura&entity_id=${prop.id}`)
           .then(setUpcomingEventi)
           .catch(() => {})
       })
@@ -701,7 +701,7 @@ function EventoDetailView({ evento, onBack, primary, textColor, subText, isDark,
     if (!guestEmail.trim()) { setBookErr('Inserisci la tua email'); return }
     setBooking(true); setBookErr('')
     try {
-      await apiFetch(`/api/guest/eventi/${evento.id}/book`, {
+      await guestFetch(`/api/guest/eventi/${evento.id}/book`, {
         method: 'POST',
         body: JSON.stringify({ guest_name: guestName, guest_email: guestEmail,
           guest_phone: guestPhone || null, package_id: pkgId || null, seats }),

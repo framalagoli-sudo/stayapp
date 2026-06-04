@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { apiFetch } from '../../lib/api'
+import { guestFetch } from '../../lib/api'
 import { ArrowLeft, Clock, Calendar, Users, ChevronLeft, ChevronRight, X } from 'lucide-react'
 
 const HEADING_FAMILIES = {
@@ -21,7 +21,7 @@ export default function PacchettoPage() {
   const [lightbox, setLightbox] = useState(null)
 
   useEffect(() => {
-    apiFetch(`/api/guest/${slug}`)
+    guestFetch(`/api/guest/${slug}`)
       .then(data => {
         setEntity(data)
         const p = (data.minisito?.pacchetti || []).find(p => p.id === id)

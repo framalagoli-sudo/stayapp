@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import LandingAttivita from './LandingAttivita'
 import AttivitaPWA from './AttivitaPWA'
-import { apiFetch } from '../../lib/api'
+import { apiFetch, guestFetch } from '../../lib/api'
 
 export default function AttivitaApp({ forceSlug } = {}) {
   const { slug: paramSlug } = useParams()
@@ -13,7 +13,7 @@ export default function AttivitaApp({ forceSlug } = {}) {
   const [error,    setError]    = useState(null)
 
   useEffect(() => {
-    apiFetch(`/api/guest/a/${slug}`)
+    guestFetch(`/api/guest/a/${slug}`)
       .then(setAttivita)
       .catch(() => setError('Attività non trovata.'))
   }, [slug])

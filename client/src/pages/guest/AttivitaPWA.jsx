@@ -7,7 +7,7 @@ import {
   Images, Layers, Calendar, Phone, Mail, MapPin, Clock,
   X, Check, ChevronRight, Send,
 } from 'lucide-react'
-import { apiFetch } from '../../lib/api'
+import { apiFetch, guestFetch } from '../../lib/api'
 import ChatbotWidget from '../../components/ChatbotWidget'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -76,7 +76,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug } = {}) 
   useEffect(() => {
     if (attivitaProp) return
     if (!slug) return
-    apiFetch(`/api/guest/a/${slug}`)
+    guestFetch(`/api/guest/a/${slug}`)
       .then(setAttivita)
       .catch(() => setError('Attività non trovata.'))
   }, [slug])
@@ -522,7 +522,7 @@ function ARichiestaTab({ attivita, primary, textColor, subText, isDark, radius, 
     if (!form.nome.trim() || !form.email.trim() || !form.messaggio.trim()) { setError('Compila tutti i campi.'); return }
     setSending(true); setError(null)
     try {
-      await apiFetch('/api/guest/contact', {
+      await guestFetch('/api/guest/contact', {
         method: 'POST',
         body: JSON.stringify({ ...form, entity_tipo: 'attivita', entity_id: attivita.id, entity_slug: attivita.slug }),
       })

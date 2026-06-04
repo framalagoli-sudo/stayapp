@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Euro, Mountain, Wind, CheckCircle, ChevronDown, Menu, X, Calendar, Users } from 'lucide-react'
-import { apiFetch } from '../../lib/api'
+import { guestFetch } from '../../lib/api'
 import CookieBanner from '../../components/CookieBanner'
 import ChatbotWidget from '../../components/ChatbotWidget'
 import BookingWidget from '../../components/BookingWidget'
@@ -87,10 +87,10 @@ export default function PaginaPage({ entityType }) {
 
   useEffect(() => {
     if (!entity?.id) return
-    apiFetch(`/api/guest/eventi?entity_tipo=${entityType}&entity_id=${entity.id}`)
+    guestFetch(`/api/guest/eventi?entity_tipo=${entityType}&entity_id=${entity.id}`)
       .then(d => Array.isArray(d) && setEventi(d.slice(0, 6)))
       .catch(() => {})
-    apiFetch(`/api/blog/public?azienda_id=${entity.azienda_id}&entity_tipo=${entityType}&entity_id=${entity.id}&limit=6`)
+    guestFetch(`/api/blog/public?azienda_id=${entity.azienda_id}&entity_tipo=${entityType}&entity_id=${entity.id}&limit=6`)
       .then(d => Array.isArray(d) && setArticoli(d))
       .catch(() => {})
   }, [entity?.id])
@@ -119,14 +119,14 @@ export default function PaginaPage({ entityType }) {
       const guestPath = entityType === 'struttura' ? `/api/guest/${slug}`
         : entityType === 'ristorante' ? `/api/guest/r/${slug}`
         : `/api/guest/a/${slug}`
-      const entityData = await apiFetch(guestPath)
+      const entityData = await guestFetch(guestPath)
       if (!entityData?.id) { setNotFound(true); setLoading(false); return }
       setEntity(entityData)
 
       const previewParam = isPreview ? '?preview=1' : ''
       const [pageData, pagineData] = await Promise.all([
-        apiFetch(`/api/guest/pagina/${entityType}/${entityData.id}/${pageSlug}${previewParam}`),
-        apiFetch(`/api/guest/pagine/${entityType}/${entityData.id}`),
+        guestFetch(`/api/guest/pagina/${entityType}/${entityData.id}/${pageSlug}${previewParam}`),
+        guestFetch(`/api/guest/pagine/${entityType}/${entityData.id}`),
       ])
       if (!pageData?.id) { setNotFound(true); setLoading(false); return }
       setPage(pageData)
@@ -1135,7 +1135,7 @@ function NewsletterForm({ aziendaId, primary, privacyUrl }) {
     if (!privacy) return
     setState('loading')
     try {
-      await apiFetch('/api/contatti/subscribe', {
+      await guestFetch('/api/contatti/subscribe', {
         method: 'POST',
         body: JSON.stringify({ azienda_id: aziendaId, email, fonte: 'minisito' }),
       })
@@ -1174,7 +1174,7 @@ function ContattiForm({ entity, primary, privacyUrl, heading }) {
     if (!privacy) return
     setState('loading')
     try {
-      await apiFetch('/api/guest/contact', {
+      await guestFetch('/api/guest/contact', {
         method: 'POST',
         body: JSON.stringify({ entity_tipo: 'struttura', entity_id: entity.id, ...form }),
       })

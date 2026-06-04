@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { MapPin, Phone, Mail, ChevronDown, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, Euro, Heart, Award, Mountain, Wind, Calendar, Users, Plus, Minus } from 'lucide-react'
-import { apiFetch } from '../../lib/api'
+import { guestFetch } from '../../lib/api'
 import { injectTracking } from '../../lib/tracking'
 import { injectJsonLd, buildEntitySchema, buildFaqSchema } from '../../lib/geoSchema'
 import CookieBanner from '../../components/CookieBanner'
@@ -105,21 +105,21 @@ export default function LandingAttivita({ attivita }) {
     const key = `pv_${attivita.id}`
     if (sessionStorage.getItem(key)) return
     sessionStorage.setItem(key, '1')
-    apiFetch('/api/guest/pageview', { method: 'POST', body: JSON.stringify({ entity_tipo: 'attivita', entity_id: attivita.id }) }).catch(() => {})
+    guestFetch('/api/guest/pageview', { method: 'POST', body: JSON.stringify({ entity_tipo: 'attivita', entity_id: attivita.id }) }).catch(() => {})
   }, [attivita?.id])
 
   useEffect(() => {
-    apiFetch(`/api/guest/eventi?entity_tipo=attivita&entity_id=${attivita.id}`)
+    guestFetch(`/api/guest/eventi?entity_tipo=attivita&entity_id=${attivita.id}`)
       .then(d => Array.isArray(d) && setUpcomingEventi(d)).catch(() => {})
-    apiFetch(`/api/blog/public?azienda_id=${attivita.azienda_id}&entity_tipo=attivita&entity_id=${attivita.id}&limit=6`)
+    guestFetch(`/api/blog/public?azienda_id=${attivita.azienda_id}&entity_tipo=attivita&entity_id=${attivita.id}&limit=6`)
       .then(d => Array.isArray(d) && setNewsArticoli(d)).catch(() => {})
-    apiFetch(`/api/guest/pagine/attivita/${attivita.id}`)
+    guestFetch(`/api/guest/pagine/attivita/${attivita.id}`)
       .then(d => Array.isArray(d) && setPagine(d))
       .catch(() => {})
-    apiFetch(`/api/guest/recensioni/attivita/${attivita.id}`)
+    guestFetch(`/api/guest/recensioni/attivita/${attivita.id}`)
       .then(d => Array.isArray(d) && setRecensioni(d))
       .catch(() => {})
-    apiFetch(`/api/guest/pagina/attivita/${attivita.id}/__home__`)
+    guestFetch(`/api/guest/pagina/attivita/${attivita.id}/__home__`)
       .then(d => d?.id && Array.isArray(d.blocks) && d.blocks.length && setHomeBlocks(d.blocks))
       .catch(() => {})
   }, [attivita.id])
@@ -827,7 +827,7 @@ function NewsletterForm({ aziendaId, primary, privacyUrl }) {
     if (!privacy) return
     setState('loading')
     try {
-      const data = await apiFetch('/api/contatti/subscribe', {
+      const data = await guestFetch('/api/contatti/subscribe', {
         method: 'POST',
         body: JSON.stringify({ azienda_id: aziendaId, email, fonte: 'minisito' }),
       })
@@ -879,7 +879,7 @@ function ContactForm({ entityTipo, entityId, primary, privacyUrl }) {
   const [nome, setNome] = useState(''); const [email, setEmail] = useState(''); const [message, setMessage] = useState(''); const [privacy, setPrivacy] = useState(false); const [state, setState] = useState('idle')
   async function handleSubmit(e) {
     e.preventDefault(); if (!privacy) return; setState('loading')
-    try { await apiFetch('/api/guest/contact', { method: 'POST', body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, name: nome, email, message }) }); setState('success') } catch { setState('error') }
+    try { await guestFetch('/api/guest/contact', { method: 'POST', body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, name: nome, email, message }) }); setState('success') } catch { setState('error') }
   }
   if (state === 'success') return (<div style={{ textAlign: 'center', padding: '40px 0' }}><div style={{ fontSize: 48, marginBottom: 16 }}>✓</div><p style={{ fontWeight: 700, fontSize: 18, color: primary }}>Messaggio inviato!</p></div>)
   const inp = { width: '100%', padding: '12px 16px', borderRadius: 10, border: '1px solid #e0e0e0', fontSize: 15, marginBottom: 16, boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none' }

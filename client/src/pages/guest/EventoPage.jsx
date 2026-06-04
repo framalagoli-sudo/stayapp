@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Calendar, MapPin, Users, ArrowLeft, Check } from 'lucide-react'
-import { apiFetch } from '../../lib/api'
+import { guestFetch } from '../../lib/api'
 
 export default function EventoPage() {
   const { id } = useParams()
@@ -18,7 +18,7 @@ export default function EventoPage() {
   const [bookErr,    setBookErr]    = useState('')
 
   useEffect(() => {
-    apiFetch(`/api/guest/eventi/${id}`)
+    guestFetch(`/api/guest/eventi/${id}`)
       .then(ev => { setEvento(ev); if (ev.packages?.length === 1) setPkgId(ev.packages[0].id) })
       .catch(() => setError('Evento non trovato.'))
   }, [id])
@@ -28,7 +28,7 @@ export default function EventoPage() {
     if (!guestEmail.trim()) { setBookErr('Inserisci la tua email'); return }
     setBooking(true); setBookErr('')
     try {
-      await apiFetch(`/api/guest/eventi/${id}/book`, {
+      await guestFetch(`/api/guest/eventi/${id}/book`, {
         method: 'POST',
         body: JSON.stringify({ guest_name: guestName, guest_email: guestEmail,
           guest_phone: guestPhone || null, package_id: pkgId || null, seats }),

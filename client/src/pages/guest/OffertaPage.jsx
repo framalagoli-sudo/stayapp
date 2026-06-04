@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { apiFetch } from '../../lib/api'
+import { guestFetch } from '../../lib/api'
 import { ArrowLeft, Calendar, ChevronLeft, ChevronRight, X, Send } from 'lucide-react'
 
 const HEADING_FAMILIES = {
@@ -22,7 +22,7 @@ export default function OffertaPage() {
   const [sheetOpen,   setSheetOpen]   = useState(false)
 
   useEffect(() => {
-    apiFetch(`/api/guest/${slug}`)
+    guestFetch(`/api/guest/${slug}`)
       .then(data => {
         setEntity(data)
         const promo = (data.minisito?.promozioni || []).find(p => p.id === id)
@@ -264,7 +264,7 @@ function InterestForm({ entityTipo, entityId, offertaTitle, primary, privacyUrl,
     if (!privacy) return
     setState('loading')
     try {
-      await apiFetch('/api/guest/contact', {
+      await guestFetch('/api/guest/contact', {
         method: 'POST',
         body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, name, email, message, source: 'offerta', source_name: offertaTitle }),
       })

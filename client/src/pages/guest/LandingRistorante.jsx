@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { MapPin, Phone, Mail, Clock, ChevronDown, Utensils, Wine, Coffee, Music, Car, Wind, Wifi, Bell, Bus, Star, Heart, Award, Calendar, Users, Plus, Minus } from 'lucide-react'
 import MenuTab from '../../components/MenuTab'
-import { apiFetch } from '../../lib/api'
+import { guestFetch } from '../../lib/api'
 import { injectTracking } from '../../lib/tracking'
 import { injectJsonLd, buildEntitySchema, buildFaqSchema } from '../../lib/geoSchema'
 import CookieBanner from '../../components/CookieBanner'
@@ -98,23 +98,23 @@ export default function LandingRistorante({ ristorante }) {
     const key = `pv_${ristorante.id}`
     if (sessionStorage.getItem(key)) return
     sessionStorage.setItem(key, '1')
-    apiFetch('/api/guest/pageview', { method: 'POST', body: JSON.stringify({ entity_tipo: 'ristorante', entity_id: ristorante.id }) }).catch(() => {})
+    guestFetch('/api/guest/pageview', { method: 'POST', body: JSON.stringify({ entity_tipo: 'ristorante', entity_id: ristorante.id }) }).catch(() => {})
   }, [ristorante?.id])
 
   useEffect(() => {
-    apiFetch(`/api/guest/eventi?entity_tipo=ristorante&entity_id=${ristorante.id}`)
+    guestFetch(`/api/guest/eventi?entity_tipo=ristorante&entity_id=${ristorante.id}`)
       .then(d => Array.isArray(d) && setUpcomingEventi(d))
       .catch(() => {})
-    apiFetch(`/api/blog/public?azienda_id=${ristorante.azienda_id}&entity_tipo=ristorante&entity_id=${ristorante.id}&limit=6`)
+    guestFetch(`/api/blog/public?azienda_id=${ristorante.azienda_id}&entity_tipo=ristorante&entity_id=${ristorante.id}&limit=6`)
       .then(d => Array.isArray(d) && setNewsArticoli(d))
       .catch(() => {})
-    apiFetch(`/api/guest/pagine/ristorante/${ristorante.id}`)
+    guestFetch(`/api/guest/pagine/ristorante/${ristorante.id}`)
       .then(d => Array.isArray(d) && setPagine(d))
       .catch(() => {})
-    apiFetch(`/api/guest/recensioni/ristorante/${ristorante.id}`)
+    guestFetch(`/api/guest/recensioni/ristorante/${ristorante.id}`)
       .then(d => Array.isArray(d) && setRecensioni(d))
       .catch(() => {})
-    apiFetch(`/api/guest/pagina/ristorante/${ristorante.id}/__home__`)
+    guestFetch(`/api/guest/pagina/ristorante/${ristorante.id}/__home__`)
       .then(d => d?.id && Array.isArray(d.blocks) && d.blocks.length && setHomeBlocks(d.blocks))
       .catch(() => {})
   }, [ristorante.id])
@@ -1128,7 +1128,7 @@ function NewsletterForm({ aziendaId, primary, privacyUrl }) {
     if (!privacy) return
     setState('loading')
     try {
-      const data = await apiFetch('/api/contatti/subscribe', {
+      const data = await guestFetch('/api/contatti/subscribe', {
         method: 'POST',
         body: JSON.stringify({ azienda_id: aziendaId, email, fonte: 'minisito' }),
       })
@@ -1188,7 +1188,7 @@ function ContactForm({ entityTipo, entityId, primary, privacyUrl }) {
     if (!privacy) return
     setState('loading')
     try {
-      await apiFetch('/api/guest/contact', {
+      await guestFetch('/api/guest/contact', {
         method: 'POST',
         body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, name, email, message }),
       })

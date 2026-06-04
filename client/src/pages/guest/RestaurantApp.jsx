@@ -8,7 +8,7 @@ import {
   X, Check, ChevronRight, ChevronDown, ArrowLeft,
 } from 'lucide-react'
 import MenuTab from '../../components/MenuTab'
-import { apiFetch } from '../../lib/api'
+import { apiFetch, guestFetch } from '../../lib/api'
 import ChatbotWidget from '../../components/ChatbotWidget'
 import BookingWidget from '../../components/BookingWidget'
 
@@ -86,7 +86,7 @@ export default function RestaurantApp({ forceSlug } = {}) {
   const chipBarRef = useRef(null)
 
   useEffect(() => {
-    apiFetch(`/api/guest/r/${slug}`)
+    guestFetch(`/api/guest/r/${slug}`)
       .then(setRistorante)
       .catch(() => setError('Ristorante non trovato.'))
   }, [slug])

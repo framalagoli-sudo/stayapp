@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { MapPin, Phone, Mail, ChevronDown, ChevronLeft, ChevronRight, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Clock, MapPin as LocationPin, Euro, Heart, Award, Mountain, Wind, Calendar, Users, Plus, Minus, CheckCircle, ArrowLeft } from 'lucide-react'
-import { apiFetch } from '../../lib/api'
+import { guestFetch } from '../../lib/api'
 import { injectTracking } from '../../lib/tracking'
 import { injectJsonLd, buildEntitySchema, buildFaqSchema } from '../../lib/geoSchema'
 import CookieBanner from '../../components/CookieBanner'
@@ -109,23 +109,23 @@ export default function LandingStruttura({ property }) {
     const key = `pv_${property.id}`
     if (sessionStorage.getItem(key)) return
     sessionStorage.setItem(key, '1')
-    apiFetch('/api/guest/pageview', { method: 'POST', body: JSON.stringify({ entity_tipo: 'struttura', entity_id: property.id }) }).catch(() => {})
+    guestFetch('/api/guest/pageview', { method: 'POST', body: JSON.stringify({ entity_tipo: 'struttura', entity_id: property.id }) }).catch(() => {})
   }, [property?.id])
 
   useEffect(() => {
-    apiFetch(`/api/guest/eventi?entity_tipo=struttura&entity_id=${property.id}`)
+    guestFetch(`/api/guest/eventi?entity_tipo=struttura&entity_id=${property.id}`)
       .then(d => Array.isArray(d) && setUpcomingEventi(d))
       .catch(() => {})
-    apiFetch(`/api/blog/public?azienda_id=${property.azienda_id}&entity_tipo=struttura&entity_id=${property.id}&limit=6`)
+    guestFetch(`/api/blog/public?azienda_id=${property.azienda_id}&entity_tipo=struttura&entity_id=${property.id}&limit=6`)
       .then(d => Array.isArray(d) && setNewsArticoli(d))
       .catch(() => {})
-    apiFetch(`/api/guest/pagine/struttura/${property.id}`)
+    guestFetch(`/api/guest/pagine/struttura/${property.id}`)
       .then(d => Array.isArray(d) && setPagine(d))
       .catch(() => {})
-    apiFetch(`/api/guest/recensioni/struttura/${property.id}`)
+    guestFetch(`/api/guest/recensioni/struttura/${property.id}`)
       .then(d => Array.isArray(d) && setRecensioni(d))
       .catch(() => {})
-    apiFetch(`/api/guest/pagina/struttura/${property.id}/__home__`)
+    guestFetch(`/api/guest/pagina/struttura/${property.id}/__home__`)
       .then(d => d?.id && Array.isArray(d.blocks) && d.blocks.length && setHomeBlocks(d.blocks))
       .catch(() => {})
   }, [property.id])
@@ -1192,7 +1192,7 @@ function NewsletterForm({ aziendaId, primary, privacyUrl }) {
     if (!privacy) return
     setState('loading')
     try {
-      const res = await apiFetch('/api/contatti/subscribe', {
+      const res = await guestFetch('/api/contatti/subscribe', {
         method: 'POST',
         body: JSON.stringify({ azienda_id: aziendaId, email, fonte: 'minisito' }),
       })
@@ -1252,7 +1252,7 @@ function ContactForm({ entityTipo, entityId, primary, heading, privacyUrl }) {
     if (!privacy) return
     setState('loading')
     try {
-      await apiFetch('/api/guest/contact', {
+      await guestFetch('/api/guest/contact', {
         method: 'POST',
         body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, name, email, message }),
       })
@@ -1341,7 +1341,7 @@ function BookingModal({ type, item, entityId, primary, heading, privacyUrl, onCl
     if (!privacy) return
     setState('loading')
     try {
-      await apiFetch('/api/guest/book', {
+      await guestFetch('/api/guest/book', {
         method: 'POST',
         body: JSON.stringify({
           entity_tipo: 'struttura',
