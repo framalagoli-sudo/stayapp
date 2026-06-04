@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Sparkles, Globe, FileText, ChevronRight, ChevronLeft, Check, Wand2 } from 'lucide-react'
+import { Sparkles, Globe, FileText, ChevronRight, ChevronLeft, Check, Wand2, Target, Tag, Star, Calendar, Briefcase, Users, Home, Utensils, Activity, ShoppingCart, Heart } from 'lucide-react'
 import { apiFetch } from '../../lib/api'
 
 const TOTAL_STEPS = 5
@@ -18,12 +18,12 @@ const TONI   = ['Professionale', 'Amichevole', 'Formale', 'Lusso', 'Minimal', 'E
 const TARGET = ['Tutti', 'Famiglie', 'Business', 'Giovani', 'Luxury', 'Professionisti']
 
 const OBIETTIVI = [
-  { id: 'lead_gen',     emoji: '🎯', label: 'Lead Generation',   desc: 'Cattura contatti e genera richieste qualificate' },
-  { id: 'vendita',      emoji: '💰', label: 'Vendita',           desc: 'Mostra prezzi e offerte per convertire all\'acquisto' },
-  { id: 'vetrina',      emoji: '✨', label: 'Vetrina / Brand',   desc: 'Racconta chi sei e crea una presenza memorabile' },
-  { id: 'prenotazioni', emoji: '📅', label: 'Prenotazioni',      desc: 'Guida l\'utente a prenotare con un processo chiaro' },
-  { id: 'portfolio',    emoji: '🖼️', label: 'Portfolio',         desc: 'Mostra lavori e competenze, costruisci credibilità' },
-  { id: 'evento',       emoji: '🎪', label: 'Evento',            desc: 'Presenta un evento con programma e iscrizioni' },
+  { id: 'lead_gen',     icon: Target,     label: 'Lead Generation',  desc: 'Cattura contatti e genera richieste qualificate' },
+  { id: 'vendita',      icon: Tag,        label: 'Vendita',          desc: 'Mostra prezzi e offerte per convertire all\'acquisto' },
+  { id: 'vetrina',      icon: Star,       label: 'Vetrina / Brand',  desc: 'Racconta chi sei e crea una presenza memorabile' },
+  { id: 'prenotazioni', icon: Calendar,   label: 'Prenotazioni',     desc: 'Guida l\'utente a prenotare con un processo chiaro' },
+  { id: 'portfolio',    icon: Briefcase,  label: 'Portfolio',        desc: 'Mostra lavori e competenze, costruisci credibilità' },
+  { id: 'evento',       icon: Users,      label: 'Evento',           desc: 'Presenta un evento con programma e iscrizioni' },
 ]
 
 const WIRE_BLOCKS = {
@@ -69,14 +69,14 @@ const TEMPLATES = [
 ]
 
 const PRESETS = [
-  { label: 'Hotel / Resort',        icon: '🏨', settore: 'Hotel boutique',                        servizi: 'Camere Superior\nSpa e centro benessere\nRistorante gourmet\nPiscina',       cta_text: 'Prenota ora' },
-  { label: 'Ristorante',            icon: '🍽️', settore: 'Ristorante italiano',                   servizi: 'Cucina tradizionale\nMenu degustazione\nVini selezionati\nPrivate dining',  cta_text: 'Prenota un tavolo' },
-  { label: 'Studio Professionale',  icon: '💼', settore: 'Studio professionale',                  servizi: 'Consulenza specializzata\nAssistenza continuativa\nFormazione',              cta_text: 'Richiedi una consulenza' },
-  { label: 'Palestra / Fitness',    icon: '💪', settore: 'Centro fitness e benessere',            servizi: 'Sala pesi\nCorsi di gruppo\nPersonal trainer\nYoga e pilates',              cta_text: 'Inizia ora' },
-  { label: 'Agenzia Digitale',      icon: '🚀', settore: 'Agenzia di marketing digitale',         servizi: 'Strategia digitale\nWeb design\nSviluppo software\nSocial marketing',       cta_text: 'Parliamoci' },
-  { label: 'E-commerce',            icon: '🛒', settore: 'Negozio online',                        servizi: 'Prodotti di qualità\nSpedizione rapida\nReso facile entro 30gg',            cta_text: 'Acquista ora' },
-  { label: 'Medico / Clinica',      icon: '🏥', settore: 'Studio medico e clinica specialistica', servizi: 'Visite specialistiche\nDiagnostica avanzata\nCheck-up preventivo',          cta_text: 'Prenota una visita' },
-  { label: 'Beauty / SPA',          icon: '💆', settore: 'Centro estetico e spa',                 servizi: 'Trattamenti viso\nMassaggi terapeutici\nUnghie e manicure',                cta_text: 'Prenota ora' },
+  { label: 'Hotel / Resort',        icon: Home,       settore: 'Hotel boutique',                        servizi: 'Camere Superior\nSpa e centro benessere\nRistorante gourmet\nPiscina',       cta_text: 'Prenota ora' },
+  { label: 'Ristorante',            icon: Utensils,   settore: 'Ristorante italiano',                   servizi: 'Cucina tradizionale\nMenu degustazione\nVini selezionati\nPrivate dining',  cta_text: 'Prenota un tavolo' },
+  { label: 'Studio Professionale',  icon: Briefcase,  settore: 'Studio professionale',                  servizi: 'Consulenza specializzata\nAssistenza continuativa\nFormazione',              cta_text: 'Richiedi una consulenza' },
+  { label: 'Palestra / Fitness',    icon: Activity,   settore: 'Centro fitness e benessere',            servizi: 'Sala pesi\nCorsi di gruppo\nPersonal trainer\nYoga e pilates',              cta_text: 'Inizia ora' },
+  { label: 'Agenzia Digitale',      icon: Globe,      settore: 'Agenzia di marketing digitale',         servizi: 'Strategia digitale\nWeb design\nSviluppo software\nSocial marketing',       cta_text: 'Parliamoci' },
+  { label: 'E-commerce',            icon: ShoppingCart, settore: 'Negozio online',                      servizi: 'Prodotti di qualità\nSpedizione rapida\nReso facile entro 30gg',            cta_text: 'Acquista ora' },
+  { label: 'Medico / Clinica',      icon: Heart,      settore: 'Studio medico e clinica specialistica', servizi: 'Visite specialistiche\nDiagnostica avanzata\nCheck-up preventivo',          cta_text: 'Prenota una visita' },
+  { label: 'Beauty / SPA',          icon: Sparkles,   settore: 'Centro estetico e spa',                 servizi: 'Trattamenti viso\nMassaggi terapeutici\nUnghie e manicure',                cta_text: 'Prenota ora' },
 ]
 
 // ── Mini wireframe visual preview ─────────────────────────────────────────────
@@ -209,8 +209,12 @@ function EntitySelector({ onSelect, selectedId }) {
             background: e.id === selectedId ? '#f0f4ff' : '#fff',
             transition: 'all 0.12s',
           }}>
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18 }}>
-            {e.tipo === 'ristorante' ? '🍽️' : e.tipo === 'attivita' ? '🎯' : '🏨'}
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            {e.tipo === 'ristorante'
+              ? <Utensils size={17} strokeWidth={1.5} color="#888" />
+              : e.tipo === 'attivita'
+              ? <Activity size={17} strokeWidth={1.5} color="#888" />
+              : <Home size={17} strokeWidth={1.5} color="#888" />}
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>{e.name}</div>
@@ -401,23 +405,27 @@ export default function AiSiteBuilderPage() {
             Qual è il <strong>risultato principale</strong> che vuoi ottenere con questo sito?
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            {OBIETTIVI.map(obj => (
-              <div key={obj.id} onClick={() => setObiettivo(obj.id)} style={{
-                padding: '16px 14px', borderRadius: 12, cursor: 'pointer', position: 'relative',
-                border: `2px solid ${obiettivo === obj.id ? '#1a1a2e' : '#e8e8e8'}`,
-                background: obiettivo === obj.id ? '#f0f4ff' : '#fff',
-                transition: 'all 0.12s',
-              }}>
-                <div style={{ fontSize: 24, marginBottom: 6 }}>{obj.emoji}</div>
-                <div style={{ fontWeight: 700, fontSize: 13, color: '#1a1a2e', marginBottom: 3 }}>{obj.label}</div>
-                <div style={{ fontSize: 12, color: '#888', lineHeight: 1.4 }}>{obj.desc}</div>
-                {obiettivo === obj.id && (
-                  <div style={{ position: 'absolute', top: 10, right: 10 }}>
-                    <Check size={14} strokeWidth={1.5} color="#1a1a2e" />
-                  </div>
-                )}
-              </div>
-            ))}
+            {OBIETTIVI.map(obj => {
+              const ObjIcon = obj.icon
+              const active = obiettivo === obj.id
+              return (
+                <div key={obj.id} onClick={() => setObiettivo(obj.id)} style={{
+                  padding: '16px 14px', borderRadius: 12, cursor: 'pointer', position: 'relative',
+                  border: `2px solid ${active ? '#1a1a2e' : '#e8e8e8'}`,
+                  background: active ? '#f0f4ff' : '#fff',
+                  transition: 'all 0.12s',
+                }}>
+                  <ObjIcon size={20} strokeWidth={1.5} color={active ? '#1a1a2e' : '#aaa'} style={{ marginBottom: 8 }} />
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#1a1a2e', marginBottom: 3 }}>{obj.label}</div>
+                  <div style={{ fontSize: 12, color: '#888', lineHeight: 1.4 }}>{obj.desc}</div>
+                  {active && (
+                    <div style={{ position: 'absolute', top: 10, right: 10 }}>
+                      <Check size={14} strokeWidth={1.5} color="#1a1a2e" />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
@@ -494,15 +502,18 @@ export default function AiSiteBuilderPage() {
           <StepLabel n={4} label="Il tuo business" />
           <Field label="Preset settore" hint="Clicca per pre-compilare i campi — puoi modificarli">
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {PRESETS.map(p => (
-                <button key={p.label} onClick={() => applyPreset(p)} style={{
-                  padding: '6px 13px', borderRadius: 20, border: '1px solid #e0e0e0',
-                  background: '#fff', color: '#555', fontSize: 12, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: 5, transition: 'border-color 0.12s',
-                }}>
-                  <span>{p.icon}</span> {p.label}
-                </button>
-              ))}
+              {PRESETS.map(p => {
+                const PresetIcon = p.icon
+                return (
+                  <button key={p.label} onClick={() => applyPreset(p)} style={{
+                    padding: '6px 13px', borderRadius: 20, border: '1px solid #e0e0e0',
+                    background: '#fff', color: '#555', fontSize: 12, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 5, transition: 'border-color 0.12s',
+                  }}>
+                    <PresetIcon size={13} strokeWidth={1.5} color="#888" /> {p.label}
+                  </button>
+                )
+              })}
             </div>
           </Field>
           <Field label="Nome del business" hint="Come appare nel sito">
