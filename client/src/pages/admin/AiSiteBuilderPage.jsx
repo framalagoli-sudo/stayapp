@@ -162,6 +162,7 @@ const ta  = { ...inp, resize: 'vertical', minHeight: 88, lineHeight: 1.5 }
 function EntitySelector({ onSelect, selectedId }) {
   const [strutture,  setStrutture]  = useState(null)
   const [ristoranti, setRistoranti] = useState(null)
+  const [attivita,   setAttivita]   = useState(null)
   const [loadingEnt, setLoadingEnt] = useState(false)
 
   useEffect(() => {
@@ -169,13 +170,15 @@ function EntitySelector({ onSelect, selectedId }) {
     async function load() {
       setLoadingEnt(true)
       try {
-        const [s, r] = await Promise.all([
+        const [s, r, a] = await Promise.all([
           apiFetch('/api/properties'),
           apiFetch('/api/ristoranti'),
+          apiFetch('/api/attivita'),
         ])
         if (cancelled) return
         setStrutture(Array.isArray(s) ? s : (s.properties || []))
         setRistoranti(Array.isArray(r) ? r : (r.ristoranti || []))
+        setAttivita(Array.isArray(a) ? a : (a.attivita || []))
       } catch { /* ignore */ }
       if (!cancelled) setLoadingEnt(false)
     }
@@ -188,6 +191,7 @@ function EntitySelector({ onSelect, selectedId }) {
   const items = [
     ...(strutture  || []).map(e => ({ id: e.id, name: e.name, tipo: 'struttura',  label: 'Struttura'  })),
     ...(ristoranti || []).map(e => ({ id: e.id, name: e.name, tipo: 'ristorante', label: 'Ristorante' })),
+    ...(attivita   || []).map(e => ({ id: e.id, name: e.name, tipo: 'attivita',   label: 'Attività'   })),
   ]
 
   if (!items.length) {
@@ -206,13 +210,13 @@ function EntitySelector({ onSelect, selectedId }) {
             transition: 'all 0.12s',
           }}>
           <div style={{ width: 36, height: 36, borderRadius: 8, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18 }}>
-            {e.tipo === 'ristorante' ? '🍽️' : '🏨'}
+            {e.tipo === 'ristorante' ? '🍽️' : e.tipo === 'attivita' ? '🎯' : '🏨'}
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>{e.name}</div>
             <div style={{ fontSize: 12, color: '#aaa' }}>{e.label}</div>
           </div>
-          {e.id === selectedId && <Check size={18} strokeWidth={2.5} color="#1a1a2e" />}
+          {e.id === selectedId && <Check size={18} strokeWidth={1.5} color="#1a1a2e" />}
         </div>
       ))}
     </div>
@@ -353,7 +357,7 @@ export default function AiSiteBuilderPage() {
                 <div style={{ fontSize: 12, color: '#aaa' }}>/{page.slug} · bozza</div>
               </div>
               <button onClick={() => navigate(pageEditUrl(page))} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 14px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                Modifica <ChevronRight size={13} strokeWidth={2} />
+                Modifica <ChevronRight size={13} strokeWidth={1.5} />
               </button>
             </div>
           ))}
@@ -409,7 +413,7 @@ export default function AiSiteBuilderPage() {
                 <div style={{ fontSize: 12, color: '#888', lineHeight: 1.4 }}>{obj.desc}</div>
                 {obiettivo === obj.id && (
                   <div style={{ position: 'absolute', top: 10, right: 10 }}>
-                    <Check size={14} strokeWidth={2.5} color="#1a1a2e" />
+                    <Check size={14} strokeWidth={1.5} color="#1a1a2e" />
                   </div>
                 )}
               </div>
@@ -439,7 +443,7 @@ export default function AiSiteBuilderPage() {
                 <div style={{ padding: '0 12px 14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
                     <div style={{ fontWeight: 700, fontSize: 13, color: '#1a1a2e' }}>{tmpl.name}</div>
-                    {template === tmpl.id && <Check size={12} strokeWidth={2.5} color="#1a1a2e" />}
+                    {template === tmpl.id && <Check size={12} strokeWidth={1.5} color="#1a1a2e" />}
                   </div>
                   <div style={{ fontSize: 11, color: '#777', lineHeight: 1.4, marginBottom: 3 }}>{tmpl.desc}</div>
                   <div style={{ fontSize: 10, color: '#bbb', fontStyle: 'italic' }}>{tmpl.hint}</div>
@@ -471,7 +475,7 @@ export default function AiSiteBuilderPage() {
                   <div style={{ fontSize: 11, color: '#888' }}>{desc}</div>
                   {mode === id && (
                     <div style={{ marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, color: '#1a1a2e', fontWeight: 700 }}>
-                      <Check size={10} strokeWidth={3} /> Selezionato
+                      <Check size={10} strokeWidth={1.5} /> Selezionato
                     </div>
                   )}
                 </div>
@@ -562,7 +566,7 @@ export default function AiSiteBuilderPage() {
           disabled={step === 0}
           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: 'none', border: '1px solid #e0e0e0', borderRadius: 8, fontSize: 14, color: step === 0 ? '#ccc' : '#555', cursor: step === 0 ? 'default' : 'pointer' }}
         >
-          <ChevronLeft size={15} strokeWidth={2} /> Indietro
+          <ChevronLeft size={15} strokeWidth={1.5} /> Indietro
         </button>
 
         {step < TOTAL_STEPS - 1 ? (
@@ -571,7 +575,7 @@ export default function AiSiteBuilderPage() {
             disabled={!canNext}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 22px', background: canNext ? '#1a1a2e' : '#e0e0e0', color: canNext ? '#fff' : '#aaa', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: canNext ? 'pointer' : 'default', transition: 'all 0.12s' }}
           >
-            Avanti <ChevronRight size={15} strokeWidth={2} />
+            Avanti <ChevronRight size={15} strokeWidth={1.5} />
           </button>
         ) : (
           <button
@@ -579,7 +583,7 @@ export default function AiSiteBuilderPage() {
             disabled={!canNext}
             style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 26px', background: canNext ? 'linear-gradient(135deg, #667eea, #764ba2)' : '#e0e0e0', color: canNext ? '#fff' : '#aaa', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: canNext ? 'pointer' : 'default', transition: 'all 0.12s' }}
           >
-            <Wand2 size={16} strokeWidth={2} /> Genera con AI
+            <Wand2 size={16} strokeWidth={1.5} /> Genera con AI
           </button>
         )}
       </div>
