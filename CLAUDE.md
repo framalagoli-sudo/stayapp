@@ -171,9 +171,13 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 
 18. **⚠️ Supabase Redirect URLs**: aggiornare ad ogni cambio dominio in `Supabase Dashboard → Authentication → URL Configuration → Redirect URLs`:
     ```
+    https://www.oltrenova.com/admin/reset-password
+    https://www.oltrenova.com/admin/accept-invite
     https://stayapp-henna.vercel.app/admin/reset-password
     http://localhost:5173/admin/reset-password
+    http://localhost:5173/admin/accept-invite
     ```
+    Site URL: `https://www.oltrenova.com`
 
 19. **⚠️ Supabase Grant espliciti — obbligatori da ottobre 2026**: ogni migration futura deve includere:
     ```sql

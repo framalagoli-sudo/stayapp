@@ -23,6 +23,12 @@ router.post('/forgot-password', async (req, res) => {
     const resetLink = data?.properties?.action_link
     if (!resetLink) return res.status(500).json({ error: 'Impossibile generare il link di ripristino' })
 
+    // Verifica che il link punti al redirectTo corretto (se manca, Supabase ha ignorato il redirectTo)
+    const expectedRedirect = encodeURIComponent(`${clientUrl}/admin/reset-password`)
+    if (!resetLink.includes('/admin/reset-password') && !resetLink.includes(expectedRedirect)) {
+      console.warn('[auth] ATTENZIONE: action_link non contiene /admin/reset-password — aggiungere URL alla whitelist Supabase Redirect URLs:', resetLink.substring(0, 120))
+    }
+
     if (process.env.RESEND_API_KEY) {
       await new Resend(process.env.RESEND_API_KEY).emails.send({
         from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',

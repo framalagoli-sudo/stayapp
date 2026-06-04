@@ -437,7 +437,7 @@ Upload con `upsert: true` + `?v={timestamp}` per cache-bust.
 
     **5. Supabase → Authentication → URL Configuration**:
     - **Site URL** → `https://nuovodominio.com` (fix etichetta 2FA TOTP)
-    - **Redirect URLs** → aggiungi `https://nuovodominio.com/admin/reset-password`
+    - **Redirect URLs** → aggiungi `https://nuovodominio.com/admin/reset-password` e `https://nuovodominio.com/admin/accept-invite`
 
     **6. Re-enrollment 2FA** — dopo cambio Site URL, ogni admin: `/admin/security` → Disattiva → ri-scansiona QR
 
