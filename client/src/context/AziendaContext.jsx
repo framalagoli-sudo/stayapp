@@ -23,13 +23,6 @@ export function AziendaProvider({ children }) {
   async function loadData() {
     setLoading(true)
     try {
-      // staff con azienda_id = company-level staff, carica dati azienda come admin_azienda
-      // super_admin non carica entità — usa AziendePage per navigare tra i clienti
-      if (profile.role === 'super_admin') {
-        setLoading(false)
-        return
-      }
-
       const isAziendaRole = ['admin_azienda', 'super_admin'].includes(profile.role) ||
         (profile.role === 'staff' && !!profile.azienda_id)
 

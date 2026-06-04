@@ -20,7 +20,7 @@ export default function BlogCategoriesPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!aziendaId) return
+    if (!aziendaId) { setLoading(false); return }
     apiFetch(`/api/blog/categories?azienda_id=${aziendaId}`)
       .then(setCategories).catch(() => {}).finally(() => setLoading(false))
   }, [aziendaId])

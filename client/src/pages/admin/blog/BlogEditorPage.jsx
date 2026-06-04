@@ -34,7 +34,7 @@ export default function BlogEditorPage() {
 
   useEffect(() => {
     if (!isNew && !UUID_RE.test(id)) { navigate('/admin/blog', { replace: true }); return }
-    if (!aziendaId) return
+    if (!aziendaId) { return }
     apiFetch(`/api/blog/categories?azienda_id=${aziendaId}`).then(setCategories).catch(() => {})
     if (!isNew) {
       apiFetch(`/api/blog/${id}`).then(d => setForm({

@@ -47,7 +47,7 @@ export default function BlogListPage() {
   }, [strutture, ristoranti])
 
   useEffect(() => {
-    if (!aziendaId) return
+    if (!aziendaId) { setLoading(false); return }
     Promise.all([
       apiFetch(`/api/blog?azienda_id=${aziendaId}`),
       apiFetch(`/api/blog/categories?azienda_id=${aziendaId}`),
