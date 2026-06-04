@@ -13,7 +13,6 @@ export default defineConfig({
 
   use: {
     baseURL: BASE_URL,
-    storageState: '.auth/state.json',
     headless: true,
     screenshot: 'only-on-failure',
     video: 'off',
@@ -24,12 +23,12 @@ export default defineConfig({
     {
       name: 'setup',
       testMatch: 'auth.setup.js',
-      use: { storageState: undefined },
     },
     {
       name: 'smoke',
       testMatch: 'admin.spec.js',
       dependencies: ['setup'],
+      use: { storageState: '.auth/state.json' },
     },
   ],
 })
