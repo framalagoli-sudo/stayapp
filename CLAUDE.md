@@ -177,7 +177,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     http://localhost:5173/admin/reset-password
     http://localhost:5173/admin/accept-invite
     ```
-    Site URL: `https://www.oltrenova.com`
+    Site URL: `https://oltrenova.com` (senza www — impostato su Supabase Dashboard)
 
 19. **⚠️ Supabase Grant espliciti — obbligatori da ottobre 2026**: ogni migration futura deve includere:
     ```sql

@@ -11,7 +11,7 @@ router.post('/forgot-password', async (req, res) => {
   if (!email?.trim()) return res.status(400).json({ error: 'Email obbligatoria' })
 
   try {
-    const clientUrl = process.env.CLIENT_URL || 'https://www.oltrenova.com'
+    const clientUrl = process.env.CLIENT_URL || 'https://oltrenova.com'
 
     const { data, error } = await supabase.auth.admin.generateLink({
       type: 'recovery',
