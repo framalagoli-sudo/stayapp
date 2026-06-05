@@ -45,6 +45,13 @@ npx vercel --prod --yes   # dalla root del repo
 ```
 Progetto Vercel: `rootDirectory: client`. `client/vercel.json` → SPA routing (rewrites → index.html).
 
+**⚠️ Dopo ogni deploy: eseguire sempre gli smoke test:**
+```bash
+cd tests && npm test      # ~3 minuti — verifica 36 pagine admin su prod
+```
+Oppure usa lo script unico dalla root: `.\deploy.ps1`
+Questo script fa deploy Vercel + smoke test in sequenza. Se i test falliscono, il deploy è già avvenuto ma il problema è identificato subito.
+
 > ⚠️ Migration SQL: eseguire a mano su Supabase Dashboard → SQL Editor. Non sono automatiche.
 
 **Account:** Supabase Pro ($25/mese), Vercel Pro ($20/mese), Railway Starter ($5/mese), Cloudflare Free, Resend Free — tutti gestiti da Francesco.
