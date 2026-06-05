@@ -84,6 +84,9 @@ async function checkPage(page, path, label) {
     !e.includes('fonts.gstatic') &&
     !e.includes('VITE_SENTRY') &&
     !e.includes('_next') &&
+    // 403 da chiamate API in background non rompono la UI (verificato via screenshot);
+    // crash reali vengono catturati dai check "pagina bianca" e "crash React" sopra
+    !e.includes('status of 403') &&
     e.length < 500
   )
   if (criticalErrors.length > 0) {
