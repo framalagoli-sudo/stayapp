@@ -3,5 +3,24 @@
     "allow": [
       "Bash(Get-Content *)"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(npx vercel --prod*)",
+            "command": "Start-Sleep -Seconds 15; Set-Location 'C:\\Users\\francesco\\progetti\\hospitality\\tests'; npm test; if ($LASTEXITCODE -ne 0) { exit 2 }",
+            "shell": "powershell",
+            "asyncRewake": true,
+            "timeout": 300,
+            "statusMessage": "Smoke test post-deploy in corso...",
+            "rewakeSummary": "Smoke test falliti dopo il deploy"
+          }
+        ]
+      }
+    ]
   }
 }
