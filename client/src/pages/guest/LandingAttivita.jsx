@@ -815,6 +815,7 @@ export default function LandingAttivita({ attivita }) {
       />
       <WhatsAppButton
         whatsapp={social.whatsapp}
+        entityName={attivita.name}
         fixed
         hasSibling={!!(attivita.chatbot?.active_sito ?? attivita.chatbot?.active)}
       />

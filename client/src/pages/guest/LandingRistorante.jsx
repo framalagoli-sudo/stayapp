@@ -1116,6 +1116,7 @@ export default function LandingRistorante({ ristorante }) {
       />
       <WhatsAppButton
         whatsapp={social.whatsapp}
+        entityName={ristorante.name}
         fixed
         hasSibling={!!(ristorante.chatbot?.active_sito ?? ristorante.chatbot?.active)}
       />

@@ -1180,6 +1180,7 @@ export default function LandingStruttura({ property }) {
       />
       <WhatsAppButton
         whatsapp={property.whatsapp || social.whatsapp}
+        entityName={property.name}
         fixed
         hasSibling={!!(property.chatbot?.active_sito ?? property.chatbot?.active)}
       />
