@@ -1,11 +1,14 @@
 'use client'
 import { AuthProvider } from '@/context/AuthContext'
+import { AziendaProvider } from '@/context/AziendaContext'
 import AdminGuard from '@/components/admin/AdminGuard'
 
-export default function AdminLayout({ children }) {
+export default function RootAdminLayout({ children }) {
   return (
     <AuthProvider>
-      <AdminGuard>{children}</AdminGuard>
+      <AziendaProvider>
+        <AdminGuard>{children}</AdminGuard>
+      </AziendaProvider>
     </AuthProvider>
   )
 }
