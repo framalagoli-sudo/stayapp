@@ -5,6 +5,9 @@ import { readFileSync, rmSync } from 'fs'
 config({ path: '.env.test' })
 
 export default async function globalTeardown() {
+  // Pulizia auth state sempre — indipendente dal CI user
+  rmSync('.auth/state.json', { force: true })
+
   let userId, email
   try {
     ;({ userId, email } = JSON.parse(readFileSync('.auth/ci-user.json', 'utf8')))
@@ -12,6 +15,8 @@ export default async function globalTeardown() {
     console.warn('[teardown] ci-user.json non trovato — nessun utente da eliminare')
     return
   }
+
+  rmSync('.auth/ci-user.json', { force: true })
 
   const admin = createClient(
     process.env.SUPABASE_URL,
@@ -26,7 +31,4 @@ export default async function globalTeardown() {
   } else {
     console.log(`\n[teardown] Utente CI eliminato: ${email}`)
   }
-
-  rmSync('.auth/ci-user.json', { force: true })
-  rmSync('.auth/state.json',   { force: true })
 }

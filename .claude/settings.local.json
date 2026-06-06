@@ -11,7 +11,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$cmd = ([System.Console]::In.ReadToEnd() | ConvertFrom-Json).tool_input.command; if ($cmd -notmatch 'vercel.*--prod') { exit 0 }; Start-Sleep -Seconds 15; Set-Location 'C:\\Users\\francesco\\progetti\\hospitality\\tests'; npm test; if ($LASTEXITCODE -ne 0) { exit 2 }",
+            "command": "$cmd = ([System.Console]::In.ReadToEnd() | ConvertFrom-Json).tool_input.command; if ($cmd -notmatch 'vercel.*--prod') { exit 0 }; $lock = 'C:\\Users\\francesco\\progetti\\hospitality\\tests\\.smoke-lock'; if (Test-Path $lock) { $age = ((Get-Date) - (Get-Item $lock).LastWriteTime).TotalMinutes; if ($age -lt 5) { Write-Host '[smoke] Altro test in corso, skip.'; exit 0 }; Remove-Item $lock -Force }; New-Item -ItemType File -Path $lock -Force | Out-Null; try { Start-Sleep -Seconds 20; Set-Location 'C:\\Users\\francesco\\progetti\\hospitality\\tests'; npm test; $code = $LASTEXITCODE } finally { Remove-Item $lock -Force -ErrorAction SilentlyContinue }; if ($code -ne 0) { exit 2 }",
             "shell": "powershell",
             "asyncRewake": true,
             "timeout": 300,
