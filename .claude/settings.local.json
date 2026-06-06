@@ -11,8 +11,7 @@
         "hooks": [
           {
             "type": "command",
-            "if": "Bash(npx vercel --prod*)",
-            "command": "Start-Sleep -Seconds 15; Set-Location 'C:\\Users\\francesco\\progetti\\hospitality\\tests'; npm test; if ($LASTEXITCODE -ne 0) { exit 2 }",
+            "command": "$cmd = ([System.Console]::In.ReadToEnd() | ConvertFrom-Json).tool_input.command; if ($cmd -notmatch 'vercel.*--prod') { exit 0 }; Start-Sleep -Seconds 15; Set-Location 'C:\\Users\\francesco\\progetti\\hospitality\\tests'; npm test; if ($LASTEXITCODE -ne 0) { exit 2 }",
             "shell": "powershell",
             "asyncRewake": true,
             "timeout": 300,
