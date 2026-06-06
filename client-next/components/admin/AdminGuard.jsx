@@ -5,6 +5,13 @@ import { useAuth } from '@/context/AuthContext'
 
 const PUBLIC_PATHS = ['/admin/login', '/admin/forgot-password', '/admin/reset-password', '/admin/accept-invite', '/admin/mfa-verify']
 
+const Spinner = () => (
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+    <div style={{ width: 32, height: 32, border: '3px solid #eee', borderTopColor: '#0F7B6C', borderRadius: '50%', animation: 'spin .8s linear infinite' }} />
+    <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+  </div>
+)
+
 export default function AdminGuard({ children }) {
   const { user, profile, loading, aalStatus, require2fa } = useAuth()
   const router = useRouter()
@@ -12,15 +19,22 @@ export default function AdminGuard({ children }) {
 
   const isPublic = PUBLIC_PATHS.some(p => pathname.startsWith(p))
 
+  // Se require2fa è attivo, aspetta che aalStatus sia caricato
+  // (refreshAAL è asincrono e arriva dopo fetchProfile)
+  const mfaStillLoading = user && require2fa && aalStatus === null
+
   useEffect(() => {
-    if (loading) return
+    if (loading || mfaStillLoading) return
 
     if (!user && !isPublic) {
       router.replace('/admin/login')
       return
     }
 
-    if (user && require2fa && aalStatus?.currentLevel === 'aal1' && aalStatus?.nextLevel === 'aal2' && !pathname.startsWith('/admin/mfa-verify')) {
+    if (user && require2fa &&
+        aalStatus?.currentLevel === 'aal1' &&
+        aalStatus?.nextLevel === 'aal2' &&
+        !pathname.startsWith('/admin/mfa-verify')) {
       router.replace('/admin/mfa-verify')
       return
     }
@@ -28,15 +42,9 @@ export default function AdminGuard({ children }) {
     if (user && isPublic && pathname === '/admin/login') {
       router.replace('/admin')
     }
-  }, [user, profile, loading, aalStatus, require2fa, pathname])
+  }, [user, profile, loading, aalStatus, require2fa, pathname, mfaStillLoading])
 
-  if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-      <div style={{ width: 32, height: 32, border: '3px solid #eee', borderTopColor: '#0F7B6C', borderRadius: '50%', animation: 'spin .8s linear infinite' }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-    </div>
-  )
-
+  if (loading || mfaStillLoading) return <Spinner />
   if (!user && !isPublic) return null
 
   return children
