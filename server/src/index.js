@@ -80,7 +80,9 @@ const STAYAPP_SUBDOMAIN_RE = new RegExp(`^https://[a-z0-9-]+\\.${STAYAPP_DOMAIN.
 
 const staticOrigins = new Set([
   'http://localhost:5173',
+  'http://localhost:3002',
   'https://stayapp-henna.vercel.app',
+  'https://oltrenova-next.vercel.app',
   `https://${STAYAPP_DOMAIN}`,
   `https://www.${STAYAPP_DOMAIN}`,
   process.env.CLIENT_URL,
