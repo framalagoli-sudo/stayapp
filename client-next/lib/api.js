@@ -12,13 +12,16 @@ export async function guestFetch(path, options = {}) {
 }
 
 // Fetch con Bearer token — usato lato client (admin)
-// Il token viene passato esplicitamente dal contesto auth
-export async function apiFetch(path, token, options = {}) {
+// Firma identica all'originale: auto-fetch sessione da Supabase
+export async function apiFetch(path, options = {}) {
+  const { createClient } = await import('@/lib/supabase/client')
+  const supabase = createClient()
+  const { data: { session } } = await supabase.auth.getSession()
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
       ...options.headers,
     },
   })
@@ -49,12 +52,15 @@ export async function serverFetch(path, options = {}) {
 }
 
 // Upload media — solo client
-export async function uploadMedia(endpoint, file, token) {
+export async function uploadMedia(endpoint, file) {
+  const { createClient } = await import('@/lib/supabase/client')
+  const supabase = createClient()
+  const { data: { session } } = await supabase.auth.getSession()
   const formData = new FormData()
   formData.append('file', file)
   const res = await fetch(`${API_BASE}${endpoint}`, {
     method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
     body: formData,
   })
   if (!res.ok) throw new Error(`upload ${endpoint}: ${res.status}`)
