@@ -31,10 +31,10 @@ export function AuthProvider({ children }) {
       .from('profiles')
       .select('id, role, full_name, property_id, group_id, azienda_id, permissions')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
     setProfile(data)
     if (data?.azienda_id) {
-      const { data: az } = await supabase.from('aziende').select('require_2fa').eq('id', data.azienda_id).single()
+      const { data: az } = await supabase.from('aziende').select('require_2fa').eq('id', data.azienda_id).maybeSingle()
       setRequire2fa(!!az?.require_2fa)
     } else {
       setRequire2fa(false)

@@ -17,7 +17,7 @@ export async function requireRole(roles) {
       .from('profiles')
       .select('role')
       .eq('id', req.user.id)
-      .single()
+      .maybeSingle()
 
     if (!data || !roles.includes(data.role)) {
       return res.status(403).json({ error: 'Insufficient permissions' })
