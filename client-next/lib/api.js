@@ -1,7 +1,7 @@
 // In produzione (Vercel) usa Railway direttamente. In dev usa localhost.
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').trim()
 
-// Fetch pubblico — nessuna auth, usato nelle pagine guest
+// ─── Fetch pubblico (guest, nessuna auth) ────────────────────────────────────
 export async function guestFetch(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
@@ -11,17 +11,18 @@ export async function guestFetch(path, options = {}) {
   return res.json()
 }
 
-// Fetch con Bearer token — usato lato client (admin)
-// Firma identica all'originale: auto-fetch sessione da Supabase
+// ─── Fetch autenticato (admin, client-side) ──────────────────────────────────
+// Firma identica all'originale — importa supabase in modo lazy per evitare
+// conflitti con i Server Components che importano serverFetch dallo stesso file
 export async function apiFetch(path, options = {}) {
-  const { createClient } = await import('@/lib/supabase/client')
-  const supabase = createClient()
+  const { supabase } = await import('@/lib/supabase')
   const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token ?? ''
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   })
@@ -33,12 +34,10 @@ export async function apiFetch(path, options = {}) {
   return res.json()
 }
 
-// Fetch server-side — usato nelle Server Components e Server Actions
-// Nessun token (dati pubblici), con cache Next.js
+// ─── Fetch server-side (SSR, Server Components) ──────────────────────────────
 export async function serverFetch(path, options = {}) {
   try {
-    const url = `${API_BASE}${path}`
-    const res = await fetch(url, {
+    const res = await fetch(`${API_BASE}${path}`, {
       ...options,
       headers: { 'Content-Type': 'application/json', ...options.headers },
       next: options.next || { revalidate: 3600 },
@@ -51,16 +50,16 @@ export async function serverFetch(path, options = {}) {
   }
 }
 
-// Upload media — solo client
+// ─── Upload media (client-side) ───────────────────────────────────────────────
 export async function uploadMedia(endpoint, file) {
-  const { createClient } = await import('@/lib/supabase/client')
-  const supabase = createClient()
+  const { supabase } = await import('@/lib/supabase')
   const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token ?? ''
   const formData = new FormData()
   formData.append('file', file)
   const res = await fetch(`${API_BASE}${endpoint}`, {
     method: 'POST',
-    headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,
   })
   if (!res.ok) throw new Error(`upload ${endpoint}: ${res.status}`)
