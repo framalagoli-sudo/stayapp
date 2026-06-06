@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useEffect, useRef, useState } from 'react'
-import { useParams, useSearchParams } from 'next/navigation'
+import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import LandingRistorante from './LandingRistorante'
 import CookieBanner from '@/components/CookieBanner'
 import {
@@ -77,10 +77,11 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp } 
   const params = useParams()
   const slug = forceSlug || params?.slug || ristoranteProp?.slug
   const searchParams = useSearchParams()
+  const router = useRouter()
   const isQR = searchParams?.get('qr') === '1'
   const [ristorante,  setRistorante]  = useState(ristoranteProp || null)
   const [error,       setError]       = useState(null)
-  const [nav,         setNav]         = useState(() => searchParams.get('tab') || 'home')
+  const [nav,         setNav]         = useState(() => searchParams?.get('tab') || 'home')
   const [chatMode,    setChatMode]    = useState(null)
   const [exploreChip, setExploreChip] = useState(null)
   const [compactBar,  setCompactBar]  = useState(false)
@@ -166,7 +167,9 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp } 
   function switchTab(key) {
     if (key !== 'chatbot') setChatMode(null)
     setNav(key)
-    setSearchParams(p => { const n = new URLSearchParams(p); n.set('tab', key); return n }, { replace: true })
+    const url = new URL(window.location.href)
+    url.searchParams.set('tab', key)
+    router.replace(url.pathname + '?' + url.searchParams.toString(), { scroll: false })
   }
   function goExplore(chip) { setExploreChip(chip); switchTab('esplora') }
 

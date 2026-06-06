@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useEffect, useRef, useState } from 'react'
-import { useParams, useSearchParams } from 'next/navigation'
+import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import LandingAttivita from './LandingAttivita'
 import CookieBanner from '@/components/CookieBanner'
 import {
@@ -62,8 +62,9 @@ function buildWaUrl(wa, name) {
 export default function AttivitaPWA({ attivita: attivitaProp, forceSlug } = {}) {
   const { slug: paramSlug } = useParams()
   const slug = forceSlug || paramSlug
-  const [searchParams, setSearchParams] = useSearchParams()
-  const isQR = searchParams.get('qr') === '1'
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const isQR = searchParams?.get('qr') === '1'
 
   // Can be called directly (slug route) or via AttivitaApp (attivita prop)
   const [attivita,   setAttivita]   = useState(attivitaProp || null)
@@ -152,7 +153,9 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug } = {}) 
   function switchTab(key) {
     if (key !== 'chatbot') setChatMode(null)
     setNav(key)
-    setSearchParams(p => { const n = new URLSearchParams(p); n.set('tab', key); return n }, { replace: true })
+    const url = new URL(window.location.href)
+    url.searchParams.set('tab', key)
+    router.replace(url.pathname + '?' + url.searchParams.toString(), { scroll: false })
   }
   function goExplore(chip) { setExploreChip(chip); switchTab('esplora') }
 

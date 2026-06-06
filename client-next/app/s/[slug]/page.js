@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { serverFetch } from '@/lib/api'
 import LandingStruttura from '@/components/guest/LandingStruttura'
@@ -51,5 +52,5 @@ export default async function StrutturaPage({ params, searchParams }) {
   if (showMinisito) {
     return <LandingStruttura property={property} />
   }
-  return <GuestApp property={property} />
+  return <Suspense><GuestApp property={property} /></Suspense>
 }

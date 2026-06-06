@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { serverFetch } from '@/lib/api'
 import LandingRistorante from '@/components/guest/LandingRistorante'
@@ -34,5 +35,5 @@ export default async function RistorantePage({ params, searchParams }) {
   const showMinisito = !isQR && ristorante.minisito?.active
 
   if (showMinisito) return <LandingRistorante ristorante={ristorante} />
-  return <RestaurantApp ristorante={ristorante} />
+  return <Suspense><RestaurantApp ristorante={ristorante} /></Suspense>
 }
