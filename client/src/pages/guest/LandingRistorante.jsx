@@ -138,6 +138,7 @@ export default function LandingRistorante({ ristorante }) {
     setMeta('og:title',    mini.seo_title || ristorante.name)
     setMeta('og:image',    ristorante.cover_url || '')
     setMeta('og:type',     'restaurant')
+    if (mini.google_site_verification) setMeta('google-site-verification', mini.google_site_verification)
     const cleanupTracking = injectTracking(mini.tracking_cfg || {})
     const apiBase = import.meta.env.VITE_API_URL ?? ''
     const sitemapEl = Object.assign(document.createElement('link'), { rel: 'sitemap', type: 'application/xml', href: `${apiBase}/api/guest/sitemap/ristorante/${ristorante.slug}` })

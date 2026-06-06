@@ -160,6 +160,7 @@ export default function LandingStruttura({ property }) {
     setMeta('og:title',    mini.seo_title || property.name)
     setMeta('og:image',    property.cover_url || '')
     setMeta('og:type',     'website')
+    if (mini.google_site_verification) setMeta('google-site-verification', mini.google_site_verification)
     const cleanupTracking = injectTracking(mini.tracking_cfg || {})
     const apiBase = import.meta.env.VITE_API_URL ?? ''
     const sitemapEl = Object.assign(document.createElement('link'), { rel: 'sitemap', type: 'application/xml', href: `${apiBase}/api/guest/sitemap/struttura/${property.slug}` })

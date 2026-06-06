@@ -16,7 +16,7 @@ const DEFAULT_SECTION_ORDER = [
 ]
 const DEFAULT_TRACKING = { meta_pixel_id: '', ga4_id: '', gtm_id: '', tiktok_pixel_id: '' }
 const DEFAULT = {
-  active: false, tagline: '', booking_url: '', seo_title: '', seo_description: '',
+  active: false, tagline: '', booking_url: '', seo_title: '', seo_description: '', google_site_verification: '',
   video_url: '', section_order: [],
   sections: DEFAULT_SECTIONS, social: DEFAULT_SOCIAL, highlights: [],
   stats: [], promozioni: [], pacchetti: [], testimonianze: [], faq: [],
@@ -498,6 +498,17 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
               placeholder="Breve descrizione che appare nei risultati di Google…" rows={3}
               style={{ ...inputStyle, resize: 'vertical' }} />
             <span style={hintStyle}>{form.seo_description.length}/160 caratteri consigliati</span>
+          </div>
+          <div style={{ marginTop: 16 }}>
+            <label style={lblStyle}>Codice verifica Google Search Console</label>
+            <input value={form.google_site_verification || ''}
+              onChange={e => setForm(f => ({ ...f, google_site_verification: e.target.value }))}
+              onBlur={() => save({ minisito: form }).catch(() => {})}
+              placeholder="Es. abc123XYZ456…"
+              style={inputStyle} />
+            <span style={hintStyle}>
+              Vai su Google Search Console → Aggiungi proprietà → Metodo "Tag HTML" → copia solo il valore dell'attributo content="…" e incollalo qui.
+            </span>
           </div>
         </div>
         <div style={cardStyle}>
