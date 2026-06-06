@@ -153,20 +153,40 @@ function CustomDomainRoutes({ entity }) {
   )
 }
 
+const SESSION_KEY = `dr_${_hostname}`
+
 export default function App() {
-  // undefined = in attesa del fetch (solo per domini custom); null = nessun dominio custom
-  const [customDomainEntity, setCustomDomainEntity] = useState(_isCustomDomain ? undefined : null)
+  // Inizializza da sessionStorage se disponibile (evita blank su cold start Railway)
+  const [customDomainEntity, setCustomDomainEntity] = useState(() => {
+    if (!_isCustomDomain) return null
+    try {
+      const cached = sessionStorage.getItem(SESSION_KEY)
+      if (cached) return JSON.parse(cached) // carica istantaneamente
+    } catch {}
+    return undefined // undefined = fetch in corso
+  })
 
   useEffect(() => {
-    if (!_isCustomDomain) return
+    if (!_isCustomDomain || customDomainEntity !== undefined) return
     fetch(`${API_BASE}/api/public/resolve-domain?d=${encodeURIComponent(_hostname)}`)
       .then(r => r.ok ? r.json() : null)
-      .then(data => setCustomDomainEntity(data?.entity_tipo ? data : null))
+      .then(data => {
+        const entity = data?.entity_tipo ? data : null
+        setCustomDomainEntity(entity)
+        if (entity) {
+          try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(entity)) } catch {}
+        }
+      })
       .catch(() => setCustomDomainEntity(null))
   }, [])
 
-  // Breve attesa solo per domini custom durante il fetch iniziale
-  if (customDomainEntity === undefined) return null
+  // Spinner invece di pagina bianca durante il fetch iniziale
+  if (customDomainEntity === undefined) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh', background: '#fff' }}>
+      <div style={{ width: 36, height: 36, border: '3px solid #eee', borderTopColor: '#25D366', borderRadius: '50%', animation: 'spin .8s linear infinite' }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+    </div>
+  )
 
   return (
     <CarrelloProvider>
