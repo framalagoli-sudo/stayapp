@@ -54,13 +54,14 @@ export default function ImpostazioniPage() {
   const { profile } = useAuth()
   const navigate = useNavigate()
   const [config, setConfig] = useState(null)
+  const [loadError, setLoadError] = useState(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     if (profile && profile.role !== 'super_admin') { navigate('/admin'); return }
     if (profile) {
-      apiFetch('/api/auth/platform-config').then(setConfig).catch(console.error)
+      apiFetch('/api/auth/platform-config').then(setConfig).catch(e => { console.error(e); setLoadError(e.message) })
     }
   }, [profile]) // eslint-disable-line
 
@@ -84,6 +85,7 @@ export default function ImpostazioniPage() {
     setSaving(false)
   }
 
+  if (loadError) return <div style={{ color: '#c53030', padding: 20 }}>Errore caricamento: {loadError}</div>
   if (!config) return <div style={{ color: '#999', padding: 20 }}>Caricamento…</div>
 
 

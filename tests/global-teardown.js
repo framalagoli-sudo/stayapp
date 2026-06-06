@@ -28,4 +28,5 @@ export default async function globalTeardown() {
   }
 
   rmSync('.auth/ci-user.json', { force: true })
+  rmSync('.auth/state.json',   { force: true })
 }
