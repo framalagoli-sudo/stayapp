@@ -20,6 +20,7 @@ import ChatChoice from '@/components/ChatChoice'
 
 // Genera o recupera session_id anonimo del guest
 function getSessionId() {
+  if (typeof window === 'undefined') return null
   const key = 'chat_session_id'
   let id = localStorage.getItem(key)
   if (!id) {
@@ -857,8 +858,8 @@ function ContactRow({ Icon, label, value, href, primary, textColor, subText, bor
 // ─── CHAT ─────────────────────────────────────────────────────────────────────
 function ChatPage({ propertyId, propertyName, primary, textColor, subText, isDark, radius, cardBg, borderColor }) {
   const [messages,  setMessages]  = useState([])
-  const [guestName, setGuestName] = useState(() => localStorage.getItem('chat_guest_name') || '')
-  const [nameSet,   setNameSet]   = useState(() => !!localStorage.getItem('chat_guest_name'))
+  const [guestName, setGuestName] = useState('')
+  const [nameSet,   setNameSet]   = useState(false)
   const [input,     setInput]     = useState('')
   const [sending,   setSending]   = useState(false)
   const [nameInput, setNameInput] = useState('')
