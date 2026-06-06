@@ -20,7 +20,7 @@ export async function generateMetadata({ params, searchParams }) {
   return {
     title,
     description,
-    openGraph: { title, description, url, images: image ? [{ url: image }] : [], type: 'restaurant' },
+    openGraph: { title, description, url, images: image ? [{ url: image }] : [], type: 'website' },
     twitter: { card: 'summary_large_image', title, description, images: image ? [image] : [] },
     ...(mini.google_site_verification && { verification: { google: mini.google_site_verification } }),
   }
