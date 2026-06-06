@@ -375,10 +375,10 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
   ]
 
   const SOCIAL_ITEMS = [
-    { key: 'instagram',   label: 'Instagram',   placeholder: 'https://instagram.com/nomeprofilo' },
-    { key: 'facebook',    label: 'Facebook',    placeholder: 'https://facebook.com/nomepagina' },
-    { key: 'tripadvisor', label: 'TripAdvisor', placeholder: 'https://tripadvisor.it/Hotel-...' },
-    { key: 'whatsapp',    label: 'WhatsApp',    placeholder: 'https://wa.me/39...' },
+    { key: 'instagram',   label: 'Instagram',   placeholder: 'https://instagram.com/nomeprofilo', type: 'url' },
+    { key: 'facebook',    label: 'Facebook',    placeholder: 'https://facebook.com/nomepagina',   type: 'url' },
+    { key: 'tripadvisor', label: 'TripAdvisor', placeholder: 'https://tripadvisor.it/Hotel-...',  type: 'url' },
+    { key: 'whatsapp',    label: 'Numero WhatsApp', placeholder: '+39 333 1234567', type: 'text', hint: 'Inserisci solo il numero — il link viene creato automaticamente.' },
   ]
 
   return (
@@ -505,13 +505,14 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
           <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
             Appaiono come pulsanti nel footer del sito. Lascia vuoti quelli non utilizzati.
           </p>
-          {SOCIAL_ITEMS.map(({ key, label, placeholder }, i) => (
+          {SOCIAL_ITEMS.map(({ key, label, placeholder, type, hint }, i) => (
             <div key={key} style={{ marginBottom: i < SOCIAL_ITEMS.length - 1 ? 16 : 0 }}>
               <label style={lblStyle}>{label}</label>
-              <input type="url" value={form.social[key]}
+              <input type={type} value={form.social[key]}
                 onChange={e => setForm(f => ({ ...f, social: { ...f.social, [key]: e.target.value } }))}
                 onBlur={() => save({ minisito: form }).catch(() => {})}
                 placeholder={placeholder} style={inputStyle} />
+              {hint && <span style={hintStyle}>{hint}</span>}
             </div>
           ))}
         </div>
