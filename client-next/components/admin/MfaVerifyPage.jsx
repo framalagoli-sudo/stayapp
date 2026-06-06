@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext'
 
 export default function MfaVerifyPage() {
   const { refreshAAL, signOut } = useAuth()
-  const navigate   = useRouter()
+  const router = useRouter()
   const [code, setCode]       = useState('')
   const [error, setError]     = useState(null)
   const [loading, setLoading] = useState(false)

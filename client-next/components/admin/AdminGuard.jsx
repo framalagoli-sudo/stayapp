@@ -19,9 +19,8 @@ export default function AdminGuard({ children }) {
 
   const isPublic = PUBLIC_PATHS.some(p => pathname.startsWith(p))
 
-  // Se require2fa è attivo, aspetta che aalStatus sia caricato
-  // (refreshAAL è asincrono e arriva dopo fetchProfile)
-  const mfaStillLoading = user && require2fa && aalStatus === null
+  // Aspetta sempre aalStatus prima di decidere — refreshAAL è asincrono
+  const mfaStillLoading = user && aalStatus === null
 
   useEffect(() => {
     if (loading || mfaStillLoading) return
@@ -31,11 +30,22 @@ export default function AdminGuard({ children }) {
       return
     }
 
-    if (user && require2fa &&
-        aalStatus?.currentLevel === 'aal1' &&
+    // Sessione richiede MFA (utente ha TOTP enrollato ma non ancora verificato)
+    // Valido per tutti i ruoli, incluso super_admin
+    if (user &&
         aalStatus?.nextLevel === 'aal2' &&
+        aalStatus?.currentLevel !== 'aal2' &&
         !pathname.startsWith('/admin/mfa-verify')) {
       router.replace('/admin/mfa-verify')
+      return
+    }
+
+    // L'azienda richiede 2FA ma l'utente non ha ancora enrollato TOTP
+    if (user && require2fa &&
+        aalStatus?.nextLevel !== 'aal2' &&
+        !pathname.startsWith('/admin/mfa-verify') &&
+        !pathname.startsWith('/admin/security')) {
+      router.replace('/admin/security')
       return
     }
 
