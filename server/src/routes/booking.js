@@ -160,9 +160,35 @@ async function calcolaCoperti(risorsa, date) {
 
 // ─── Email di conferma ────────────────────────────────────────────────────────
 
-async function inviaEmailConferma(prenotazione, risorsa) {
+function buildWaUrl(raw) {
+  if (!raw) return null
+  if (raw.startsWith('http')) return raw
+  const clean = raw.replace(/[\s\-\(\)\+]/g, '').replace(/^00/, '').replace(/^0/, '39')
+  return `https://wa.me/${clean}`
+}
+
+async function getEntityWhatsapp(entityTipo, entityId) {
+  try {
+    if (entityTipo === 'struttura') {
+      const { data } = await supabase.from('properties').select('whatsapp').eq('id', entityId).single()
+      return data?.whatsapp || null
+    }
+    if (entityTipo === 'ristorante') {
+      const { data } = await supabase.from('ristoranti').select('minisito').eq('id', entityId).single()
+      return data?.minisito?.social?.whatsapp || null
+    }
+    if (entityTipo === 'attivita') {
+      const { data } = await supabase.from('attivita').select('minisito').eq('id', entityId).single()
+      return data?.minisito?.social?.whatsapp || null
+    }
+  } catch { /* non bloccante */ }
+  return null
+}
+
+async function inviaEmailConferma(prenotazione, risorsa, whatsapp = null) {
   if (!process.env.RESEND_API_KEY) return
   const cancelUrl = `${process.env.CLIENT_URL || 'https://oltrenova.com'}/cancella-prenotazione?token=${prenotazione.cancellation_token}`
+  const waUrl = buildWaUrl(whatsapp)
 
   const quando = risorsa.modalita === 'coperti'
     ? `${prenotazione.data} — ${prenotazione.servizio} ore ${prenotazione.ora_inizio}`
@@ -185,6 +211,13 @@ async function inviaEmailConferma(prenotazione, risorsa) {
             ${prenotazione.importo_totale > 0 ? `<tr style="background:#f5f5f5"><td style="padding:8px;color:#666">Importo</td><td style="padding:8px;font-weight:600">€${prenotazione.importo_totale}</td></tr>` : ''}
           </table>
           ${prenotazione.note_cliente ? `<p style="color:#666;font-size:14px">Note: ${prenotazione.note_cliente}</p>` : ''}
+          ${waUrl ? `
+          <div style="margin:20px 0;padding:14px 18px;background:#f0fdf4;border-radius:10px;text-align:center">
+            <p style="margin:0;font-size:14px;color:#166534">
+              Hai domande?
+              <a href="${waUrl}" style="color:#25D366;font-weight:700;text-decoration:none">Scrivici su WhatsApp →</a>
+            </p>
+          </div>` : ''}
           <hr style="border:none;border-top:1px solid #eee;margin:24px 0" />
           <p style="font-size:13px;color:#999">
             Hai bisogno di cancellare?
@@ -547,7 +580,8 @@ router.post('/public/prenota', async (req, res) => {
     if (pe) return res.status(500).json({ error: pe.message })
 
     // Email conferma + webhook + Google Calendar + automazioni (fire-and-forget)
-    inviaEmailConferma(prenotazione, risorsa)
+    getEntityWhatsapp(risorsa.entity_tipo, risorsa.entity_id)
+      .then(wa => inviaEmailConferma(prenotazione, risorsa, wa))
     syncBookingCreate(prenotazione, risorsa)
     sendWebhooks(prenotazione.azienda_id, 'nuova_prenotazione', {
       prenotazione_id: prenotazione.id,

@@ -7,6 +7,7 @@ import { injectJsonLd, buildEntitySchema, buildFaqSchema } from '../../lib/geoSc
 import CookieBanner from '../../components/CookieBanner'
 import BookingWidget from '../../components/BookingWidget'
 import ChatbotWidget from '../../components/ChatbotWidget'
+import WhatsAppButton from '../../components/WhatsAppButton'
 import ShopWidget from '../../components/ShopWidget'
 import LandingBlockRenderer from '../../components/LandingBlockRenderer'
 
@@ -1112,6 +1113,11 @@ export default function LandingRistorante({ ristorante }) {
         primaryColor={primary}
         privacyUrl={ristorante.slug ? `/r/${ristorante.slug}/privacy` : null}
         cookieUrl={ristorante.slug  ? `/r/${ristorante.slug}/cookie`  : null}
+      />
+      <WhatsAppButton
+        whatsapp={social.whatsapp}
+        fixed
+        hasSibling={!!(ristorante.chatbot?.active_sito ?? ristorante.chatbot?.active)}
       />
       <ChatbotWidget chatbot={ristorante.chatbot ? { ...ristorante.chatbot, active: ristorante.chatbot.active_sito ?? ristorante.chatbot.active } : null} primaryColor={primary} fixed entityTipo="ristorante" entityId={ristorante.id} />
     </>

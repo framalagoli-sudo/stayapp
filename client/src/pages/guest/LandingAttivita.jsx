@@ -6,6 +6,7 @@ import { injectJsonLd, buildEntitySchema, buildFaqSchema } from '../../lib/geoSc
 import CookieBanner from '../../components/CookieBanner'
 import BookingWidget from '../../components/BookingWidget'
 import ChatbotWidget from '../../components/ChatbotWidget'
+import WhatsAppButton from '../../components/WhatsAppButton'
 import ShopWidget from '../../components/ShopWidget'
 import LandingBlockRenderer from '../../components/LandingBlockRenderer'
 
@@ -811,6 +812,11 @@ export default function LandingAttivita({ attivita }) {
         primaryColor={primary}
         privacyUrl={attivita.slug ? `/a/${attivita.slug}/privacy` : null}
         cookieUrl={attivita.slug  ? `/a/${attivita.slug}/cookie`  : null}
+      />
+      <WhatsAppButton
+        whatsapp={social.whatsapp}
+        fixed
+        hasSibling={!!(attivita.chatbot?.active_sito ?? attivita.chatbot?.active)}
       />
       <ChatbotWidget chatbot={attivita.chatbot ? { ...attivita.chatbot, active: attivita.chatbot.active_sito ?? attivita.chatbot.active } : null} primaryColor={primary} fixed entityTipo="attivita" entityId={attivita.id} />
     </>
