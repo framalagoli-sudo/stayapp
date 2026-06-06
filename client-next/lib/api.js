@@ -1,4 +1,5 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+// In produzione (Vercel) usa Railway direttamente. In dev usa localhost.
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').trim()
 
 // Fetch pubblico — nessuna auth, usato nelle pagine guest
 export async function guestFetch(path, options = {}) {
@@ -32,13 +33,19 @@ export async function apiFetch(path, token, options = {}) {
 // Fetch server-side — usato nelle Server Components e Server Actions
 // Nessun token (dati pubblici), con cache Next.js
 export async function serverFetch(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    next: options.next || { revalidate: 3600 }, // cache 1 ora default
-  })
-  if (!res.ok) return null
-  return res.json()
+  try {
+    const url = `${API_BASE}${path}`
+    const res = await fetch(url, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      next: options.next || { revalidate: 3600 },
+    })
+    if (!res.ok) return null
+    return res.json()
+  } catch (e) {
+    console.error(`[serverFetch] ${path}:`, e.message)
+    return null
+  }
 }
 
 // Upload media — solo client

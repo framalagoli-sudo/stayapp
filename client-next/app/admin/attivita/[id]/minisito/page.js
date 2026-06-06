@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import AdminLayout from '@/components/admin/AdminLayout'
-import AttivitaPage_minisito from '@/components/admin/attivita/AttivitaMinisitoPage'
-export default function Page() { return <AdminLayout><AttivitaPage_minisito /></AdminLayout> }
+import AttivitaMiniSitoPage from '@/components/admin/attivita/AttivitaMiniSitoPage'
+export default function Page() { return <AdminLayout><AttivitaMiniSitoPage /></AdminLayout> }

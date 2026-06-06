@@ -3,8 +3,6 @@ import { serverFetch } from '@/lib/api'
 import LandingStruttura from '@/components/guest/LandingStruttura'
 import GuestApp from '@/components/guest/GuestApp'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-
 // Genera i meta tag lato server — Google e WhatsApp vedono questi tag nell'HTML grezzo
 export async function generateMetadata({ params, searchParams }) {
   const { slug } = await params
