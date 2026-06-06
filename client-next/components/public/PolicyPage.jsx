@@ -70,7 +70,7 @@ function PrivacyPolicyContent({ entity, p, primary, entityType }) {
   const tit = titolare(p, entity)
   const entityLabel = entityType === 'struttura' ? 'struttura ricettiva' : entityType === 'ristorante' ? 'ristorante' : 'attività'
   const pwaPrefix = entityType === 'struttura' ? 's' : entityType === 'ristorante' ? 'r' : 'a'
-  const cookieUrl = `${window.location.origin}/${pwaPrefix}/${entity.slug}/cookie`
+  const cookieUrl = `/${pwaPrefix}/${entity.slug}/cookie`
 
   return (
     <PageShell entity={entity} primary={primary} title="Privacy Policy">

@@ -99,7 +99,7 @@ export default function LandingStruttura({ property }) {
   const [newsArticoli,   setNewsArticoli]   = useState([])
   const [bookingModal,   setBookingModal]   = useState(null)
   const [activePage,     setActivePage]     = useState(null)
-  const [isMobile,       setIsMobile]       = useState(() => window.innerWidth < 768)
+  const [isMobile,       setIsMobile]       = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false)
   const [pagine,         setPagine]         = useState([])
   const [openDropdown,   setOpenDropdown]   = useState(null)
   const [recensioni,     setRecensioni]     = useState([])
@@ -202,7 +202,7 @@ export default function LandingStruttura({ property }) {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const pwaUrl     = `${window.location.pathname}?qr=1`
+  const pwaUrl     = `/s/${property.slug}?qr=1`
   const bookingUrl = mini.booking_url || null
   const ctaHref    = bookingUrl || social.whatsapp
     || (property.phone ? `tel:${property.phone}` : null)
@@ -678,7 +678,7 @@ export default function LandingStruttura({ property }) {
               <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Le ultime novità dalla struttura</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
                 {newsArticoli.map(art => (
-                  <a key={art.id} href={`/blog/${art.slug}?back=${encodeURIComponent(window.location.pathname)}`}
+                  <a key={art.id} href={`/blog/${art.slug}?back=${encodeURIComponent(`/s/${property.slug}`)}`}
                     style={{ background: '#f9f9fb', borderRadius: 14, overflow: 'hidden', display: 'block', textDecoration: 'none', color: 'inherit', transition: 'transform 0.14s ease, box-shadow 0.14s ease', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
                     onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.10)' }}
                     onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)' }}>
@@ -1537,7 +1537,7 @@ function MobileCarousel({ items, primary, renderCard }) {
 
 function ActivitiesFullPage({ items, primary, heading, onBook, onBack }) {
   const [catFilter, setCatFilter] = useState('all')
-  const [isMobile,  setIsMobile]  = useState(() => window.innerWidth < 768)
+  const [isMobile,  setIsMobile]  = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false)
   const categories = [...new Set(items.map(i => i.category).filter(Boolean))]
   const displayed  = catFilter === 'all' ? items : items.filter(i => i.category === catFilter)
 
@@ -1596,7 +1596,7 @@ function ActivitiesFullPage({ items, primary, heading, onBook, onBack }) {
 }
 
 function ExcursionsFullPage({ items, primary, heading, onBook, onBack }) {
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false)
 
   useEffect(() => {
     const h = () => setIsMobile(window.innerWidth < 768)

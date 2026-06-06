@@ -180,7 +180,7 @@ export default function LandingRistorante({ ristorante }) {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const pwaUrl     = `${window.location.pathname}?qr=1`
+  const pwaUrl     = `/r/${ristorante.slug}?qr=1`
   const bookingUrl = mini.booking_url || null
   const ctaHref    = bookingUrl || social.whatsapp
     || (ristorante.phone ? `tel:${ristorante.phone}` : null)
@@ -566,7 +566,7 @@ export default function LandingRistorante({ ristorante }) {
               <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Le ultime novità</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
                 {newsArticoli.map(art => (
-                  <a key={art.id} href={`/blog/${art.slug}?back=${encodeURIComponent(window.location.pathname)}`}
+                  <a key={art.id} href={`/blog/${art.slug}?back=${encodeURIComponent(`/r/${ristorante.slug}`)}`}
                     style={{ background: '#f9f9fb', borderRadius: 14, overflow: 'hidden', display: 'block', textDecoration: 'none', color: 'inherit', transition: 'transform 0.14s ease, box-shadow 0.14s ease', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
                     onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.10)' }}
                     onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)' }}>

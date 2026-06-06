@@ -89,7 +89,7 @@ export default function ArticoloPage() {
     </div>
   )
 
-  const pageUrl = window.location.href
+  const pageUrl = typeof window !== 'undefined' ? window.location.href : ''
 
   return (
     <div style={{ background: '#f9f9f9', minHeight: '100vh' }}>

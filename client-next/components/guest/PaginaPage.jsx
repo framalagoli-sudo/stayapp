@@ -69,7 +69,7 @@ function getEmbedUrl(url) {
 // entityType: 'struttura' | 'ristorante' | 'attivita'
 export default function PaginaPage({ entityType }) {
   const { slug, pageSlug } = useParams()
-  const [searchParams] = useSearchParams()
+  const searchParams = useSearchParams()
   const isPreview = searchParams.get('preview') === '1'
   const [entity, setEntity] = useState(null)
   const [page, setPage] = useState(null)
@@ -744,7 +744,7 @@ export default function PaginaPage({ entityType }) {
               <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Le ultime novità</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
                 {articoli.map(art => (
-                  <a key={art.id} href={`/blog/${art.slug}?back=${encodeURIComponent(window.location.pathname)}`}
+                  <a key={art.id} href={`/blog/${art.slug}?back=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')}`}
                     style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', display: 'block', textDecoration: 'none', color: 'inherit', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1px solid #f0f0f0' }}>
                     {art.cover_url && <img src={art.cover_url} alt={art.title} style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />}
                     <div style={{ padding: '16px 18px' }}>
