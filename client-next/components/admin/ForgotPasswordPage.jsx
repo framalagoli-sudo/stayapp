@@ -1,6 +1,7 @@
 ﻿'use client'
+import Link from 'next/link'
 import { useState } from 'react'
-import { Link } from 'next/navigation'
+
 import { apiFetch } from '@/lib/api'
 
 export default function ForgotPasswordPage() {
@@ -75,7 +76,7 @@ export default function ForgotPasswordPage() {
         )}
 
         <div style={{ textAlign: 'center', marginTop: 24, borderTop: '1px solid #f0f0f0', paddingTop: 20 }}>
-          <Link to="/admin/login" style={{ fontSize: 13, color: '#888', textDecoration: 'none' }}>
+          <Link href="/admin/login" style={{ fontSize: 13, color: '#888', textDecoration: 'none' }}>
             ← Torna al login
           </Link>
         </div>

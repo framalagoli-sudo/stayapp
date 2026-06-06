@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import {
@@ -212,7 +212,7 @@ function PreviewModal({ post, onClose, onClone }) {
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function PianoEditorialePage() {
-  const navigate = useNavigate()
+  const router = useRouter()
   const { profile } = useAuth()
   const now = new Date()
 
@@ -364,7 +364,7 @@ export default function PianoEditorialePage() {
     try {
       const copy = await apiFetch(`/api/piano-editoriale/${postId}/duplica`, { method: 'POST' })
       setPreviewPost(null)
-      navigate(`/admin/piano-editoriale/${copy.id}`)
+      router.push(`/admin/piano-editoriale/${copy.id}`)
     } catch (e) { setError(e.message) }
   }
 
@@ -480,7 +480,7 @@ export default function PianoEditorialePage() {
           <Eye size={compact ? 9 : 11} strokeWidth={2.5} />
         </span>
         <span
-          onClick={e => { e.stopPropagation(); navigate(`/admin/piano-editoriale/${p.id}`) }}
+          onClick={e => { e.stopPropagation(); router.push(`/admin/piano-editoriale/${p.id}`) }}
           title="Modifica"
           style={{ padding: '2px 3px 2px 1px', cursor: 'pointer', flexShrink: 0, opacity: 0.5, display: 'flex', alignItems: 'center' }}
         >
@@ -529,7 +529,7 @@ export default function PianoEditorialePage() {
           {view !== 'idee' && view !== 'stats' && view !== 'hashtag' && view !== 'team' && view !== 'campagne' &&
            (profile?.role !== 'staff' || profile?.permissions?.pe_crea !== false) && (
             <button
-              onClick={() => navigate('/admin/piano-editoriale/nuovo')}
+              onClick={() => router.push('/admin/piano-editoriale/nuovo')}
               style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontWeight: 600 }}
             >
               <Plus size={16} strokeWidth={1.5} /> Nuovo contenuto
@@ -614,7 +614,7 @@ export default function PianoEditorialePage() {
                 return (
                   <div
                     key={idx}
-                    onClick={() => day && navigate(`/admin/piano-editoriale/nuovo?data=${dateStr}`)}
+                    onClick={() => day && router.push(`/admin/piano-editoriale/nuovo?data=${dateStr}`)}
                     onDragOver={dateStr ? e => { e.preventDefault(); setDragOverDay(dateStr) } : undefined}
                     onDragLeave={dateStr ? e => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverDay(null) } : undefined}
                     onDrop={dateStr ? e => {
@@ -685,7 +685,7 @@ export default function PianoEditorialePage() {
                   return (
                     <div
                       key={i}
-                      onClick={() => navigate(`/admin/piano-editoriale/nuovo?data=${dateStr}`)}
+                      onClick={() => router.push(`/admin/piano-editoriale/nuovo?data=${dateStr}`)}
                       onDragOver={e => { e.preventDefault(); setDragOverDay(dateStr) }}
                       onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverDay(null) }}
                       onDrop={e => {
@@ -1244,7 +1244,7 @@ function PostRow({ p, navigate, handleDelete, handleClone, highlight, campagnaMa
   const campagna = p.campagna_id ? campagnaMap[p.campagna_id] : null
   return (
     <div
-      onClick={() => navigate(`/admin/piano-editoriale/${p.id}`)}
+      onClick={() => router.push(`/admin/piano-editoriale/${p.id}`)}
       style={{ background: highlight ? '#fff7ed' : '#fff', borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer', border: highlight ? '1px solid #fed7aa' : '1px solid #eee' }}
     >
       <div style={{ width: 40, textAlign: 'center', flexShrink: 0 }}>

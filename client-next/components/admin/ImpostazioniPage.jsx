@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { apiFetch } from '@/lib/api'
 import { ToggleLeft, ToggleRight, RefreshCw } from 'lucide-react'
@@ -53,13 +53,13 @@ function SyncSubdomainsCard() {
 
 export default function ImpostazioniPage() {
   const { profile } = useAuth()
-  const navigate = useNavigate()
+  const router = useRouter()
   const [config, setConfig] = useState(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
-    if (profile && profile.role !== 'super_admin') { navigate('/admin'); return }
+    if (profile && profile.role !== 'super_admin') { router.push('/admin'); return }
     if (profile) {
       apiFetch('/api/auth/platform-config').then(setConfig).catch(console.error)
     }

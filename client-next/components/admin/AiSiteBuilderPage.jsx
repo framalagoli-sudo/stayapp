@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Sparkles, Globe, FileText, ChevronRight, ChevronLeft, Check, Wand2, Target, Tag, Star, Calendar, Briefcase, Users, Home, Utensils, Activity, ShoppingCart, Heart } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 
@@ -230,7 +230,7 @@ function EntitySelector({ onSelect, selectedId }) {
 
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function AiSiteBuilderPage() {
-  const navigate = useNavigate()
+  const router = useRouter()
 
   const [step,    setStep]    = useState(0)
   const [loading, setLoading] = useState(false)
@@ -361,14 +361,14 @@ export default function AiSiteBuilderPage() {
                 <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>{page.titolo}</div>
                 <div style={{ fontSize: 12, color: '#aaa' }}>/{page.slug} · bozza</div>
               </div>
-              <button onClick={() => navigate(pageEditUrl(page))} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 14px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+              <button onClick={() => router.push(pageEditUrl(page))} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 14px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                 Modifica <ChevronRight size={13} strokeWidth={1.5} />
               </button>
             </div>
           ))}
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={() => navigate(entitySitoUrl())} style={{ flex: 1, padding: '12px', background: '#f5f5f5', color: '#1a1a2e', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+          <button onClick={() => router.push(entitySitoUrl())} style={{ flex: 1, padding: '12px', background: '#f5f5f5', color: '#1a1a2e', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
             Gestisci tutte le pagine
           </button>
           <button onClick={() => { setResult(null); setStep(0) }} style={{ padding: '12px 20px', background: '#fff', color: '#666', border: '1px solid #e0e0e0', borderRadius: 10, fontSize: 14, cursor: 'pointer' }}>

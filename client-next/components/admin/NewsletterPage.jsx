@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
@@ -18,7 +18,7 @@ function fmtDate(ts) {
 export default function NewsletterPage() {
   const { profile } = useAuth()
   const { strutture, ristoranti, attivita } = useAzienda()
-  const navigate = useNavigate()
+  const router = useRouter()
   const [list, setList]       = useState([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
@@ -42,7 +42,7 @@ export default function NewsletterPage() {
         method: 'POST',
         body: JSON.stringify({ entity_tipo, entity_id: firstEntity?.id || null }),
       })
-      navigate(`/admin/newsletter/${nl.id}`)
+      router.push(`/admin/newsletter/${nl.id}`)
     } catch (e) {
       alert(e.message)
     } finally { setCreating(false) }
@@ -51,7 +51,7 @@ export default function NewsletterPage() {
   async function handleDuplicate(nl) {
     try {
       const copy = await apiFetch(`/api/newsletter/${nl.id}/duplicate`, { method: 'POST' })
-      navigate(`/admin/newsletter/${copy.id}`)
+      router.push(`/admin/newsletter/${copy.id}`)
     } catch (e) { alert(e.message) }
   }
 
@@ -96,7 +96,7 @@ export default function NewsletterPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
                 {drafts.map(nl => (
                   <NewsletterCard key={nl.id} nl={nl}
-                    onEdit={() => navigate(`/admin/newsletter/${nl.id}`)}
+                    onEdit={() => router.push(`/admin/newsletter/${nl.id}`)}
                     onDuplicate={() => handleDuplicate(nl)}
                     onDelete={() => handleDelete(nl)}
                   />
@@ -110,7 +110,7 @@ export default function NewsletterPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {sent.map(nl => (
                   <NewsletterCard key={nl.id} nl={nl}
-                    onEdit={() => navigate(`/admin/newsletter/${nl.id}`)}
+                    onEdit={() => router.push(`/admin/newsletter/${nl.id}`)}
                     onDuplicate={() => handleDuplicate(nl)}
                   />
                 ))}

@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch } from '../../../lib/api'
 import { Plus, Trash2, ArrowLeft, Clock, Zap, Edit2, Check, X } from 'lucide-react'
@@ -27,7 +27,7 @@ const DEFAULT_FORM = {
 
 export default function BlogAutomazioniPage() {
   const { strutture, ristoranti } = useAzienda()
-  const navigate = useNavigate()
+  const router = useRouter()
   const [lista, setLista] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -132,7 +132,7 @@ export default function BlogAutomazioniPage() {
   return (
     <div style={{ maxWidth: 760 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <button onClick={() => navigate('/admin/blog')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex' }}>
+        <button onClick={() => router.push('/admin/blog')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex' }}>
           <ArrowLeft size={18} strokeWidth={1.5} color="#888" />
         </button>
         <div style={{ flex: 1 }}>

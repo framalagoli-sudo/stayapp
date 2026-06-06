@@ -1,12 +1,12 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { ArrowLeft, Inbox, Download } from 'lucide-react'
 
 export default function FormBuilderSubmissionsPage() {
   const { id } = useParams()
-  const navigate = useNavigate()
+  const router = useRouter()
   const [form, setForm]             = useState(null)
   const [submissions, setSubmissions] = useState([])
   const [total, setTotal]           = useState(0)
@@ -46,7 +46,7 @@ export default function FormBuilderSubmissionsPage() {
   return (
     <div style={{ maxWidth: 960 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <button onClick={() => navigate(`/admin/form-builder/${id}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+        <button onClick={() => router.push(`/admin/form-builder/${id}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
           <ArrowLeft size={20} strokeWidth={1.5} color="#555" />
         </button>
         <div style={{ flex: 1 }}>

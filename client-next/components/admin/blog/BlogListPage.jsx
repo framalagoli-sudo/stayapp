@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../context/AuthContext'
 import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch } from '../../../lib/api'
@@ -23,7 +23,7 @@ function badge(bg, color) {
 export default function BlogListPage() {
   const { profile } = useAuth()
   const { azienda, strutture, ristoranti } = useAzienda()
-  const navigate = useNavigate()
+  const router = useRouter()
   const [articoli, setArticoli] = useState([])
   const [categories, setCategories] = useState([])
   const [filterCat, setFilterCat] = useState('')
@@ -78,7 +78,7 @@ export default function BlogListPage() {
       })
       setShowAiModal(false)
       setAiArgomento('')
-      navigate(`/admin/blog/${result.id}`)
+      router.push(`/admin/blog/${result.id}`)
     } catch (e) {
       setAiError(e.message || 'Errore durante la generazione. Riprova.')
     }
@@ -162,13 +162,13 @@ export default function BlogListPage() {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button
-            onClick={() => navigate('/admin/blog/categories')}
+            onClick={() => router.push('/admin/blog/categories')}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', background: '#f0f0f0', color: '#1a1a2e', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
           >
             <Tag size={14} strokeWidth={2} /> Categorie
           </button>
           <button
-            onClick={() => navigate('/admin/blog/automazioni')}
+            onClick={() => router.push('/admin/blog/automazioni')}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', background: '#f5f3ff', color: '#6d28d9', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
           >
             <Zap size={14} strokeWidth={2} /> Automazioni
@@ -182,7 +182,7 @@ export default function BlogListPage() {
             </button>
           )}
           <button
-            onClick={() => navigate('/admin/blog/new')}
+            onClick={() => router.push('/admin/blog/new')}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
           >
             <Plus size={16} strokeWidth={2.5} /> Nuovo articolo
@@ -240,7 +240,7 @@ export default function BlogListPage() {
                       style={{ ...iconBtn, color: a.published ? '#155724' : '#aaa' }}>
                       {a.published ? <Eye size={15} strokeWidth={2} /> : <EyeOff size={15} strokeWidth={2} />}
                     </button>
-                    <button onClick={() => navigate(`/admin/blog/${a.id}`)} title="Modifica"
+                    <button onClick={() => router.push(`/admin/blog/${a.id}`)} title="Modifica"
                       style={iconBtn}>
                       <Edit2 size={15} strokeWidth={2} />
                     </button>

@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate, useSearchParams } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { useProperty } from '@/hooks/useProperty'
 import { useAuth } from '@/context/AuthContext'
@@ -105,7 +105,7 @@ const BEST_TIMES = {
 
 export default function PostEditorialePage() {
   const { id } = useParams()
-  const navigate = useNavigate()
+  const router = useRouter()
   const [searchParams] = useSearchParams()
   const isNew = id === 'nuovo'
   const { property } = useProperty()
@@ -266,7 +266,7 @@ export default function PostEditorialePage() {
     try {
       if (isNew) {
         const created = await apiFetch('/api/piano-editoriale', { method: 'POST', body: JSON.stringify(body) })
-        navigate(`/admin/piano-editoriale/${created.id}`, { replace: true })
+        router.push(`/admin/piano-editoriale/${created.id}`, { replace: true })
       } else {
         await apiFetch(`/api/piano-editoriale/${id}`, { method: 'PATCH', body: JSON.stringify(body) })
         setSaved(true)
@@ -280,7 +280,7 @@ export default function PostEditorialePage() {
     if (!confirm(`Eliminare ${TIPO_COPY[tipoContenuto]?.articolo || 'questo contenuto'}?`)) return
     try {
       await apiFetch(`/api/piano-editoriale/${id}`, { method: 'DELETE' })
-      navigate('/admin/piano-editoriale')
+      router.push('/admin/piano-editoriale')
     } catch (e) { setError(e.message) }
   }
 
@@ -308,7 +308,7 @@ export default function PostEditorialePage() {
   async function handleDuplica() {
     try {
       const copy = await apiFetch(`/api/piano-editoriale/${id}/duplica`, { method: 'POST' })
-      navigate(`/admin/piano-editoriale/${copy.id}`)
+      router.push(`/admin/piano-editoriale/${copy.id}`)
     } catch (e) { setError(e.message) }
   }
 
@@ -412,7 +412,7 @@ export default function PostEditorialePage() {
     <div style={{ maxWidth: 720 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <button onClick={() => navigate('/admin/piano-editoriale')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+        <button onClick={() => router.push('/admin/piano-editoriale')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
           <ArrowLeft size={20} strokeWidth={1.5} color="#555" />
         </button>
         <Calendar size={22} strokeWidth={1.5} color="#1a1a2e" />

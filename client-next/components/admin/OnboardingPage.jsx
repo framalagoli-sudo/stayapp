@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState } from 'react'
-import { useNavigate } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch, uploadMedia } from '@/lib/api'
 import { Building, UtensilsCrossed, Zap, Check } from 'lucide-react'
@@ -12,7 +12,7 @@ const TIPI = [
 ]
 
 export default function OnboardingPage() {
-  const navigate = useNavigate()
+  const router = useRouter()
   const { azienda, refresh } = useAzienda()
   const [step, setStep] = useState(1)
   const [tipo, setTipo] = useState('struttura')
@@ -192,7 +192,7 @@ export default function OnboardingPage() {
             <p style={{ color: '#888', fontSize: 14, margin: '0 0 32px', lineHeight: 1.6 }}>
               Il tuo account è configurato. Hai <strong>14 giorni di prova gratuita</strong> per esplorare tutte le funzionalità — senza carta di credito.
             </p>
-            <button onClick={() => navigate('/admin')} style={{
+            <button onClick={() => router.push('/admin')} style={{
               width: '100%', padding: '14px', background: '#1a1a2e', color: '#fff',
               border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: 'pointer',
             }}>
@@ -203,7 +203,7 @@ export default function OnboardingPage() {
 
         {step < 3 && (
           <div style={{ textAlign: 'center', marginTop: 18 }}>
-            <button onClick={() => navigate('/admin')} style={{ background: 'none', border: 'none', color: '#bbb', fontSize: 13, cursor: 'pointer' }}>
+            <button onClick={() => router.push('/admin')} style={{ background: 'none', border: 'none', color: '#bbb', fontSize: 13, cursor: 'pointer' }}>
               Salta la configurazione guidata
             </button>
           </div>

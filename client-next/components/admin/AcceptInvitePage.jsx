@@ -1,10 +1,10 @@
 ﻿'use client'
 import { useState } from 'react'
-import { useNavigate } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 export default function AcceptInvitePage() {
-  const navigate = useNavigate()
+  const router = useRouter()
   const params   = new URLSearchParams(window.location.search)
   const tokenHash = params.get('token_hash')
   const type      = params.get('type') || 'recovery'
@@ -19,7 +19,7 @@ export default function AcceptInvitePage() {
     try {
       const { error: otpErr } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
       if (otpErr) throw otpErr
-      navigate(`/admin/reset-password?flow=${type === 'invite' ? 'invite' : 'recovery'}`)
+      router.push(`/admin/reset-password?flow=${type === 'invite' ? 'invite' : 'recovery'}`)
     } catch (err) {
       setError('Link non valido o scaduto. Chiedi all\'amministratore di reinviare l\'invito.')
       setLoading(false)

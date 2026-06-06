@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { apiFetch, uploadMedia } from '../../../lib/api'
 import { ArrowLeft, Save, Trash2, Plus, X, Upload, AlertCircle, ShoppingBag, Share2 } from 'lucide-react'
 import AiButton from '../../../components/admin/AiButton'
@@ -9,7 +9,7 @@ import PostSocialModal from '../../../components/admin/PostSocialModal'
 
 export default function ProdottoEditorPage() {
   const { id } = useParams()
-  const navigate = useNavigate()
+  const router = useRouter()
   const { azienda } = useAzienda()
   const isNew = id === 'nuovo'
   const [showPostModal, setShowPostModal] = useState(false)
@@ -54,7 +54,7 @@ export default function ProdottoEditorPage() {
     try {
       if (isNew) {
         const created = await apiFetch('/api/shop/prodotti', { method: 'POST', body: JSON.stringify(body) })
-        navigate(`/admin/shop/${created.id}`, { replace: true })
+        router.push(`/admin/shop/${created.id}`, { replace: true })
       } else {
         await apiFetch(`/api/shop/prodotti/${id}`, { method: 'PATCH', body: JSON.stringify(body) })
       }
@@ -66,7 +66,7 @@ export default function ProdottoEditorPage() {
     if (!confirm('Eliminare questo prodotto?')) return
     try {
       await apiFetch(`/api/shop/prodotti/${id}`, { method: 'DELETE' })
-      navigate('/admin/shop')
+      router.push('/admin/shop')
     } catch (e) { setError(e.message) }
   }
 
@@ -91,7 +91,7 @@ export default function ProdottoEditorPage() {
     <>
     <div style={{ maxWidth: 720 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <button onClick={() => navigate('/admin/shop')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+        <button onClick={() => router.push('/admin/shop')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
           <ArrowLeft size={20} strokeWidth={1.5} color="#555" />
         </button>
         <ShoppingBag size={22} strokeWidth={1.5} color="#1a1a2e" />

@@ -1,12 +1,12 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { Calendar, MapPin, Users, ArrowLeft, Check } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
 
 export default function EventoPage() {
   const { id } = useParams()
-  const navigate = useNavigate()
+  const router = useRouter()
   const [evento,     setEvento]     = useState(null)
   const [error,      setError]      = useState(null)
   const [pkgId,      setPkgId]      = useState('')
@@ -47,7 +47,7 @@ export default function EventoPage() {
   if (error) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>
       <p style={{ color: '#e53e3e', fontSize: 16 }}>{error}</p>
-      <button onClick={() => navigate(-1)} style={backBtnStyle}>← Torna indietro</button>
+      <button onClick={() => router.push(-1)} style={backBtnStyle}>← Torna indietro</button>
     </div>
   )
 
@@ -66,7 +66,7 @@ export default function EventoPage() {
 
       {/* Back bar */}
       <div style={{ background: '#fff', borderBottom: '1px solid #eee', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center' }}>
-        <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1a1a2e', padding: 0 }}>
+        <button onClick={() => router.push(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1a1a2e', padding: 0 }}>
           <ArrowLeft size={18} strokeWidth={1.5} /> Indietro
         </button>
       </div>

@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { apiFetch } from '../../../lib/api'
 import { ShoppingBag, Plus, Trash2, Eye, EyeOff, Package, AlertCircle, ClipboardList } from 'lucide-react'
 
@@ -14,7 +14,7 @@ const STATO_ORDINE = {
 }
 
 export default function ShopPage() {
-  const navigate = useNavigate()
+  const router = useRouter()
   const [tab, setTab] = useState('prodotti')
   const [prodotti, setProdotti] = useState([])
   const [ordini, setOrdini] = useState([])
@@ -68,7 +68,7 @@ export default function ShopPage() {
             ))}
           </div>
           {tab === 'prodotti' && (
-            <button onClick={() => navigate('/admin/shop/nuovo')}
+            <button onClick={() => router.push('/admin/shop/nuovo')}
               style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontWeight: 600 }}>
               <Plus size={16} strokeWidth={1.5} /> Nuovo prodotto
             </button>
@@ -90,7 +90,7 @@ export default function ShopPage() {
               <div style={{ textAlign: 'center', padding: '60px 0', color: '#aaa' }}>
                 <Package size={40} strokeWidth={1} style={{ marginBottom: 12 }} />
                 <p style={{ margin: 0 }}>Nessun prodotto ancora</p>
-                <button onClick={() => navigate('/admin/shop/nuovo')}
+                <button onClick={() => router.push('/admin/shop/nuovo')}
                   style={{ marginTop: 16, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>
                   Crea il primo prodotto
                 </button>
@@ -98,7 +98,7 @@ export default function ShopPage() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {prodotti.map(p => (
-                  <div key={p.id} onClick={() => navigate(`/admin/shop/${p.id}`)}
+                  <div key={p.id} onClick={() => router.push(`/admin/shop/${p.id}`)}
                     style={{ background: '#fff', borderRadius: 10, border: '1px solid #eee', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
                     {/* Miniatura */}
                     {p.immagini?.[0] ? (
@@ -166,7 +166,7 @@ export default function ShopPage() {
                   {ordiniFiltrati.map(o => {
                     const st = STATO_ORDINE[o.stato] || { label: o.stato, color: '#666', bg: '#f5f5f5' }
                     return (
-                      <div key={o.id} onClick={() => navigate(`/admin/shop/ordini/${o.id}`)}
+                      <div key={o.id} onClick={() => router.push(`/admin/shop/ordini/${o.id}`)}
                         style={{ background: '#fff', borderRadius: 10, border: '1px solid #eee', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
                         <div style={{ width: 40, textAlign: 'center', flexShrink: 0 }}>
                           <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1a2e' }}>#{o.numero}</div>

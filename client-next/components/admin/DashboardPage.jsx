@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
@@ -71,7 +71,7 @@ function SectionCard({ title, icon: Icon, iconColor = '#1a1a2e', action, actionT
           {title}
         </h3>
         {action && (
-          <button onClick={() => navigate(actionTo)} style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, padding: 0 }}>
+          <button onClick={() => router.push(actionTo)} style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 3, padding: 0 }}>
             {action} <ChevronRight size={13} strokeWidth={1.5} />
           </button>
         )}
@@ -156,7 +156,7 @@ function StaffDashboard({ profile, navigate, strutture, ristoranti, attivita }) 
           {links.map(({ key, label, icon: Icon, to, color }) => (
             <div
               key={key}
-              onClick={() => navigate(to)}
+              onClick={() => router.push(to)}
               style={{ background: '#fff', borderRadius: 14, padding: '20px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 12 }}
             >
               <div style={{ width: 38, height: 38, borderRadius: 10, background: color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -174,7 +174,7 @@ function StaffDashboard({ profile, navigate, strutture, ristoranti, attivita }) 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { profile } = useAuth()
-  const navigate    = useNavigate()
+  const navigate    = useRouter()
   const { azienda, strutture, ristoranti, attivita, loading: aziLoading } = useAzienda()
 
   const [analytics,      setAnalytics]      = useState(null)
@@ -301,7 +301,7 @@ export default function DashboardPage() {
                   <div style={{ fontWeight: 700, fontSize: 15 }}>{entita.name}</div>
                   {entita.address && <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{entita.address}</div>}
                   <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                    <button onClick={() => navigate(adminPath)} style={{ flex: 1, padding: '7px 10px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                    <button onClick={() => router.push(adminPath)} style={{ flex: 1, padding: '7px 10px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                       <Settings size={12} strokeWidth={2} color="#fff" /> Gestisci
                     </button>
                     <a href={cfg.pwaBase + entita.slug} target="_blank" rel="noopener noreferrer" style={{ flex: 1, padding: '7px 10px', background: '#f5f5f5', color: '#1a1a2e', borderRadius: 8, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, textDecoration: 'none' }}>
@@ -317,13 +317,13 @@ export default function DashboardPage() {
 
       {/* ── KPI row ── */}
       <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexWrap: 'wrap' }}>
-        <KpiCard icon={Inbox}        label="Richieste aperte"  value={analytics?.requests?.open}       color="#e53e3e" sub="richieste ospiti"      onClick={() => navigate('/admin/requests')} />
-        <KpiCard icon={CalendarCheck} label="Prenotazioni oggi" value={prenOggi.length}                 color="#2e7d32" sub={todayStr()}            onClick={() => navigate('/admin/booking')} />
-        <KpiCard icon={Users}         label="Nuovi contatti"    value={analytics?.contacts?.new_period} color="#6b46c1" sub="ultimi 7 giorni"       onClick={() => navigate('/admin/contatti')} />
-        <KpiCard icon={Eye}           label="Visite sito"       value={analytics?.pageviews?.total}     color="#1a1a2e" sub="ultimi 7 giorni"       onClick={() => navigate('/admin/analytics')} />
-        <KpiCard icon={Star}          label="Recensione media"  value={recensioniKpi ? `⭐ ${recensioniKpi.media}` : '—'} color="#f59e0b" sub={recensioniKpi ? `${recensioniKpi.count} recensioni` : 'nessuna ancora'} onClick={() => navigate('/admin/recensioni')} />
-        <KpiCard icon={CalendarDays}  label="Prossimi eventi"   value={eventiProssimi.length}           color="#0284c7" sub="nei prossimi 30 giorni" onClick={() => navigate('/admin/eventi')} />
-        <KpiCard icon={FileEdit}      label="Bozze piano"       value={pianoCount ?? '—'}               color="#7c3aed" sub="da pubblicare"          onClick={() => navigate('/admin/piano-editoriale')} />
+        <KpiCard icon={Inbox}        label="Richieste aperte"  value={analytics?.requests?.open}       color="#e53e3e" sub="richieste ospiti"      onClick={() => router.push('/admin/requests')} />
+        <KpiCard icon={CalendarCheck} label="Prenotazioni oggi" value={prenOggi.length}                 color="#2e7d32" sub={todayStr()}            onClick={() => router.push('/admin/booking')} />
+        <KpiCard icon={Users}         label="Nuovi contatti"    value={analytics?.contacts?.new_period} color="#6b46c1" sub="ultimi 7 giorni"       onClick={() => router.push('/admin/contatti')} />
+        <KpiCard icon={Eye}           label="Visite sito"       value={analytics?.pageviews?.total}     color="#1a1a2e" sub="ultimi 7 giorni"       onClick={() => router.push('/admin/analytics')} />
+        <KpiCard icon={Star}          label="Recensione media"  value={recensioniKpi ? `⭐ ${recensioniKpi.media}` : '—'} color="#f59e0b" sub={recensioniKpi ? `${recensioniKpi.count} recensioni` : 'nessuna ancora'} onClick={() => router.push('/admin/recensioni')} />
+        <KpiCard icon={CalendarDays}  label="Prossimi eventi"   value={eventiProssimi.length}           color="#0284c7" sub="nei prossimi 30 giorni" onClick={() => router.push('/admin/eventi')} />
+        <KpiCard icon={FileEdit}      label="Bozze piano"       value={pianoCount ?? '—'}               color="#7c3aed" sub="da pubblicare"          onClick={() => router.push('/admin/piano-editoriale')} />
       </div>
 
       {/* ── Richieste + Prenotazioni oggi ── */}
@@ -336,7 +336,7 @@ export default function DashboardPage() {
               const TypeIcon = TYPE_ICONS[r.type] || HelpCircle
               const color = TYPE_COLORS[r.type] || '#888'
               return (
-                <div key={r.id} onClick={() => navigate('/admin/requests')}
+                <div key={r.id} onClick={() => router.push('/admin/requests')}
                   style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid #f5f5f5', cursor: 'pointer' }}>
                   <div style={{ width: 32, height: 32, borderRadius: 8, background: color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <TypeIcon size={15} strokeWidth={1.8} color={color} />
@@ -398,7 +398,7 @@ export default function DashboardPage() {
                 const giorno = data ? data.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }) : '—'
                 const ore    = data ? data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : ''
                 return (
-                  <div key={e.id} onClick={() => navigate(`/admin/eventi/${e.id}`)}
+                  <div key={e.id} onClick={() => router.push(`/admin/eventi/${e.id}`)}
                     style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #f5f5f5', cursor: 'pointer' }}>
                     <div style={{ width: 44, textAlign: 'center', flexShrink: 0 }}>
                       <div style={{ fontSize: 18, fontWeight: 700, color: '#0284c7', lineHeight: 1 }}>
@@ -431,7 +431,7 @@ export default function DashboardPage() {
           : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
               {contatti.map(c => (
-                <div key={c.id} onClick={() => navigate('/admin/contatti')} style={{ background: '#f8f8f8', borderRadius: 10, padding: '12px 14px', cursor: 'pointer' }}>
+                <div key={c.id} onClick={() => router.push('/admin/contatti')} style={{ background: '#f8f8f8', borderRadius: 10, padding: '12px 14px', cursor: 'pointer' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
                     <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#6b46c115', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <UserRound size={14} strokeWidth={1.8} color="#6b46c1" />

@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { apiFetch } from '../../../lib/api'
 import { ArrowLeft, Package, AlertCircle } from 'lucide-react'
 
@@ -15,7 +15,7 @@ const STATI = [
 
 export default function OrdineDetailPage() {
   const { id } = useParams()
-  const navigate = useNavigate()
+  const router = useRouter()
   const [ordine, setOrdine] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -54,7 +54,7 @@ export default function OrdineDetailPage() {
   return (
     <div style={{ maxWidth: 680 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <button onClick={() => navigate('/admin/shop')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+        <button onClick={() => router.push('/admin/shop')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
           <ArrowLeft size={20} strokeWidth={1.5} color="#555" />
         </button>
         <Package size={22} strokeWidth={1.5} color="#1a1a2e" />

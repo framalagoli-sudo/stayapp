@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { uploadMedia, apiFetch } from '@/lib/api'
 import { ExternalLink, Plus, Trash2, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Mountain, Wind, Heart, Award, MapPin, Clock, GripVertical, Users, Layout, ChevronRight } from 'lucide-react'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
@@ -61,7 +61,7 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
   const [form, setForm] = useState(DEFAULT)
   const [activeTab, setActiveTab] = useState('generale')
   const [homepageBusy, setHomepageBusy] = useState(false)
-  const navigate = useNavigate()
+  const router = useRouter()
 
   useEffect(() => {
     if (entity) {
@@ -204,7 +204,7 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
             })
           }
         }
-        return navigate(`/admin/pagine/${existing.id}`)
+        return router.push(`/admin/pagine/${existing.id}`)
       }
 
       const created = await apiFetch('/api/pagine', {
@@ -225,7 +225,7 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
         })
       }
 
-      navigate(`/admin/pagine/${created.id}`)
+      router.push(`/admin/pagine/${created.id}`)
     } catch (e) {
       alert('Errore: ' + e.message)
     } finally {

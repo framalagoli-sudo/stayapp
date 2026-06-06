@@ -1,11 +1,11 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { FormInput, Plus, Trash2, ChevronRight, ToggleLeft, ToggleRight, AlertCircle } from 'lucide-react'
 
 export default function FormBuilderListPage() {
-  const navigate = useNavigate()
+  const router = useRouter()
   const [forms, setForms] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -22,7 +22,7 @@ export default function FormBuilderListPage() {
   async function handleNew() {
     try {
       const f = await apiFetch('/api/form-builder', { method: 'POST', body: JSON.stringify({ nome: 'Nuovo form' }) })
-      navigate(`/admin/form-builder/${f.id}`)
+      router.push(`/admin/form-builder/${f.id}`)
     } catch (e) { setError(e.message) }
   }
 
@@ -77,7 +77,7 @@ export default function FormBuilderListPage() {
           {forms.map(f => (
             <div
               key={f.id}
-              onClick={() => navigate(`/admin/form-builder/${f.id}`)}
+              onClick={() => router.push(`/admin/form-builder/${f.id}`)}
               style={{
                 background: '#fff', borderRadius: 10, padding: '14px 18px',
                 display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
@@ -95,7 +95,7 @@ export default function FormBuilderListPage() {
               </div>
 
               <button
-                onClick={(e) => { e.stopPropagation(); navigate(`/admin/form-builder/${f.id}/submissions`) }}
+                onClick={(e) => { e.stopPropagation(); router.push(`/admin/form-builder/${f.id}/submissions`) }}
                 style={{ fontSize: 12, background: '#f5f5f5', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', color: '#555', whiteSpace: 'nowrap' }}
               >
                 Risposte

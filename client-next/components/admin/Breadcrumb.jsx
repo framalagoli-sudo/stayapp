@@ -1,5 +1,5 @@
 ﻿'use client'
-import { useLocation, useNavigate } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useAzienda } from '@/context/AziendaContext'
 import { ChevronRight } from 'lucide-react'
 
@@ -109,11 +109,11 @@ function buildCrumbs(pathname, strutture, ristoranti, attivita) {
 }
 
 export default function Breadcrumb() {
-  const location = useLocation()
-  const navigate = useNavigate()
+  const pathname = usePathname()
+  const router = useRouter()
   const { strutture = [], ristoranti = [], attivita = [] } = useAzienda()
 
-  const crumbs = buildCrumbs(location.pathname, strutture, ristoranti, attivita)
+  const crumbs = buildCrumbs(pathname, strutture, ristoranti, attivita)
   if (crumbs.length <= 1) return null
 
   return (
@@ -126,7 +126,7 @@ export default function Breadcrumb() {
               <span style={{ color: '#1a1a2e', fontWeight: 500 }}>{crumb.label}</span>
             ) : (
               <button
-                onClick={() => navigate(crumb.to)}
+                onClick={() => router.push(crumb.to)}
                 style={{ background: 'none', border: 'none', color: '#999', cursor: 'pointer', padding: 0, fontSize: 13 }}
               >
                 {crumb.label}

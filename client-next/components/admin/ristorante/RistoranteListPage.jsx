@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
-import { useNavigate, useLocation } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 
@@ -20,8 +20,8 @@ const pill = (extra = {}) => ({
 
 export default function RistorantiListPage() {
   const { profile } = useAuth()
-  const navigate = useNavigate()
-  const location = useLocation()
+  const router = useRouter()
+  const pathname = usePathname()
   const [ristoranti, setRistoranti] = useState([])
   const [aziende, setAziende] = useState([])
   const [loading, setLoading] = useState(true)
@@ -32,7 +32,7 @@ export default function RistorantiListPage() {
 
   useEffect(() => {
     if (profile && !['super_admin', 'admin', 'editor'].includes(profile.role)) {
-      navigate('/admin', { replace: true })
+      router.push('/admin', { replace: true })
     }
   }, [profile])
 
@@ -60,7 +60,7 @@ export default function RistorantiListPage() {
     const created = await apiFetch('/api/ristoranti', { method: 'POST', body: JSON.stringify(form) })
     setRistoranti(prev => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)))
     setShowCreate(false)
-    navigate(`/admin/ristoranti/${created.id}/info`)
+    router.push(`/admin/ristoranti/${created.id}/info`)
   }
 
   async function handleDelete(id, name) {
@@ -117,7 +117,7 @@ export default function RistorantiListPage() {
             </div>
             <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
               <button
-                onClick={() => navigate(`/admin/ristoranti/${r.id}/info`)}
+                onClick={() => router.push(`/admin/ristoranti/${r.id}/info`)}
                 style={pill({ background: '#f0f4ff', color: '#1a1a2e' })}
               >
                 Gestisci

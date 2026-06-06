@@ -1,11 +1,12 @@
 ﻿'use client'
+import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { apiFetch } from '@/lib/api'
 
 export default function ResetPasswordPage() {
-  const navigate = useNavigate()
+  const router = useRouter()
   // Cattura il tipo di flusso dall'hash prima che Supabase lo rimuova
   const [flowType] = useState(() => {
     // Può arrivare da hash (link diretto Supabase) o da ?flow= (via AcceptInvitePage)
@@ -76,7 +77,7 @@ export default function ResetPasswordPage() {
       setDone(true)
       setTimeout(async () => {
         await supabase.auth.signOut()
-        navigate('/admin/login')
+        router.push('/admin/login')
       }, 3000)
     } catch (err) {
       setError(err.message || 'Impossibile aggiornare la password. Richiedi un nuovo link.')
@@ -99,7 +100,7 @@ export default function ResetPasswordPage() {
           <p style={{ fontSize: 14, color: '#666', margin: '0 0 24px', lineHeight: 1.6 }}>
             Il link di ripristino è valido solo per 1 ora e può essere usato una volta sola.
           </p>
-          <Link to="/admin/forgot-password" style={linkBtnStyle}>
+          <Link href="/admin/forgot-password" style={linkBtnStyle}>
             Richiedi un nuovo link
           </Link>
         </div>

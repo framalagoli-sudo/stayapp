@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { FileText, Plus, Trash2, Copy, ChevronRight, AlertCircle } from 'lucide-react'
 
@@ -40,7 +40,7 @@ function calcolaTotale(voci = [], iva_pct = 0) {
 }
 
 export default function PreventivPage() {
-  const navigate = useNavigate()
+  const router = useRouter()
   const [preventivi, setPreventivi] = useState([])
   const [loading, setLoading] = useState(true)
   const [filtroStato, setFiltroStato] = useState('')
@@ -63,7 +63,7 @@ export default function PreventivPage() {
     setCreating(true)
     try {
       const p = await apiFetch('/api/preventivi', { method: 'POST', body: JSON.stringify({ titolo: 'Nuovo preventivo' }) })
-      navigate(`/admin/preventivi/${p.id}`)
+      router.push(`/admin/preventivi/${p.id}`)
     } catch (e) { setError(e.message); setCreating(false) }
   }
 
@@ -132,7 +132,7 @@ export default function PreventivPage() {
             return (
               <div
                 key={p.id}
-                onClick={() => navigate(`/admin/preventivi/${p.id}`)}
+                onClick={() => router.push(`/admin/preventivi/${p.id}`)}
                 style={{
                   background: '#fff', borderRadius: 10, padding: '14px 18px',
                   display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer',

@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
-import { useNavigate, useLocation } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { apiFetch } from '../../../lib/api'
 import { useAuth } from '../../../context/AuthContext'
 
@@ -20,8 +20,8 @@ const pill = (extra = {}) => ({
 
 export default function AttivitaListPage() {
   const { profile } = useAuth()
-  const navigate = useNavigate()
-  const location = useLocation()
+  const router = useRouter()
+  const pathname = usePathname()
   const [attivita, setAttivita] = useState([])
   const [aziende, setAziende] = useState([])
   const [loading, setLoading] = useState(true)
@@ -32,7 +32,7 @@ export default function AttivitaListPage() {
 
   useEffect(() => {
     if (profile && !['super_admin', 'admin_azienda'].includes(profile.role)) {
-      navigate('/admin', { replace: true })
+      router.push('/admin', { replace: true })
     }
   }, [profile])
 
@@ -60,7 +60,7 @@ export default function AttivitaListPage() {
     const created = await apiFetch('/api/attivita', { method: 'POST', body: JSON.stringify(form) })
     setAttivita(prev => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)))
     setShowCreate(false)
-    navigate(`/admin/attivita/${created.id}/info`)
+    router.push(`/admin/attivita/${created.id}/info`)
   }
 
   async function handleDelete(id, name) {
@@ -117,7 +117,7 @@ export default function AttivitaListPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-              <button onClick={() => navigate(`/admin/attivita/${a.id}/info`)} style={pill({ background: '#f5f0ff', color: '#6b46c1' })}>
+              <button onClick={() => router.push(`/admin/attivita/${a.id}/info`)} style={pill({ background: '#f5f0ff', color: '#6b46c1' })}>
                 Gestisci
               </button>
               <button onClick={() => handleDelete(a.id, a.name)} style={pill({ background: '#fff0f0', color: '#c00' })}>

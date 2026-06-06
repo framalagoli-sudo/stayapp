@@ -1,12 +1,13 @@
 ﻿'use client'
+import Link from 'next/link'
 import { useState } from 'react'
-import { useNavigate, Link } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
   const { signIn, refreshAAL } = useAuth()
-  const navigate = useNavigate()
+  const router = useRouter()
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [totp, setTotp]         = useState('')
@@ -31,7 +32,7 @@ export default function LoginPage() {
       if (factor) { setFactorId(factor.id); setStep('totp'); setLoading(false); return }
     }
     setLoading(false)
-    navigate('/admin')
+    router.push('/admin')
   }
 
   async function handleTotp(e) {
@@ -42,7 +43,7 @@ export default function LoginPage() {
     if (err) { setLoading(false); return setError('Codice non valido, riprova.') }
     await refreshAAL()
     setLoading(false)
-    navigate('/admin')
+    router.push('/admin')
   }
 
   return (
@@ -61,7 +62,7 @@ export default function LoginPage() {
               <button type="button" onClick={() => setShowPwd(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#888', padding: 0 }}>
                 {showPwd ? 'Nascondi' : 'Mostra'}
               </button>
-              <Link to="/admin/forgot-password" style={{ fontSize: 12, color: '#888', textDecoration: 'none' }}>Password dimenticata?</Link>
+              <Link href="/admin/forgot-password" style={{ fontSize: 12, color: '#888', textDecoration: 'none' }}>Password dimenticata?</Link>
             </div>
           </div>
           <input type={showPwd ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required style={inputStyle} />

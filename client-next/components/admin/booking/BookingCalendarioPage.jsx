@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { apiFetch } from '../../../lib/api'
 
 const DAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab']
@@ -40,7 +40,7 @@ function occupancyText(count, max) {
 }
 
 export default function BookingCalendarioPage() {
-  const navigate = useNavigate()
+  const router = useRouter()
   const [risorse, setRisorse] = useState([])
   const [occupancy, setOccupancy] = useState({})
   const [weekStart, setWeekStart] = useState(() => lunedìDellaSett(new Date()))
@@ -110,10 +110,10 @@ export default function BookingCalendarioPage() {
           <button onClick={prevWeek} style={btnStyle}>‹</button>
           <button onClick={goToday}  style={btnStyle}>Oggi</button>
           <button onClick={nextWeek} style={btnStyle}>›</button>
-          <button onClick={() => navigate('/admin/booking/risorse')} style={{ ...btnStyle, background: '#1a1a2e', color: '#fff' }}>
+          <button onClick={() => router.push('/admin/booking/risorse')} style={{ ...btnStyle, background: '#1a1a2e', color: '#fff' }}>
             + Gestisci risorse
           </button>
-          <button onClick={() => navigate('/admin/booking/prenotazioni')} style={btnStyle}>
+          <button onClick={() => router.push('/admin/booking/prenotazioni')} style={btnStyle}>
             Lista prenotazioni
           </button>
         </div>
@@ -124,7 +124,7 @@ export default function BookingCalendarioPage() {
           <div style={{ fontSize: 48, marginBottom: 12 }}>📅</div>
           <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Nessuna risorsa configurata</div>
           <div style={{ fontSize: 14, marginBottom: 20 }}>Crea le tue prime risorse prenotabili per iniziare.</div>
-          <button onClick={() => navigate('/admin/booking/risorse')} style={{ ...btnStyle, background: '#1a1a2e', color: '#fff', padding: '10px 20px' }}>
+          <button onClick={() => router.push('/admin/booking/risorse')} style={{ ...btnStyle, background: '#1a1a2e', color: '#fff', padding: '10px 20px' }}>
             Crea risorsa
           </button>
         </div>

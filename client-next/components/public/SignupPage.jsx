@@ -1,12 +1,13 @@
 ﻿'use client'
+import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 
 export default function SignupPage() {
-  const navigate = useNavigate()
+  const router = useRouter()
   const [form, setForm] = useState({ nome_azienda: '', email: '', password: '', confirm: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -38,7 +39,7 @@ export default function SignupPage() {
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email: form.email, password: form.password })
       if (signInErr) { setError(signInErr.message); setLoading(false); return }
 
-      navigate('/admin/onboarding')
+      router.push('/admin/onboarding')
     } catch {
       setError('Errore di rete. Riprova.')
       setLoading(false)
@@ -59,7 +60,7 @@ export default function SignupPage() {
         <p style={{ color: '#888', fontSize: 14, margin: '0 0 24px', lineHeight: 1.6 }}>
           Le registrazioni pubbliche sono temporaneamente disabilitate.
         </p>
-        <Link to="/admin/login" style={{ color: '#1a1a2e', fontSize: 14, fontWeight: 600 }}>
+        <Link href="/admin/login" style={{ color: '#1a1a2e', fontSize: 14, fontWeight: 600 }}>
           Hai già un account? Accedi
         </Link>
       </div>
@@ -128,7 +129,7 @@ export default function SignupPage() {
 
         <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: '#888' }}>
           Hai già un account?{' '}
-          <Link to="/admin/login" style={{ color: '#1a1a2e', fontWeight: 600 }}>Accedi</Link>
+          <Link href="/admin/login" style={{ color: '#1a1a2e', fontWeight: 600 }}>Accedi</Link>
         </div>
       </div>
     </div>

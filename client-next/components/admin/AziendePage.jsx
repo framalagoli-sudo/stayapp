@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useEffect, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 
 // Estendi qui per nuovi tipi futuri (libero professionista, studio, palestra, ecc.)
@@ -37,7 +37,7 @@ const inputStyle = {
 }
 
 export default function AziendePage() {
-  const location = useLocation()
+  const pathname = usePathname()
   const [aziende, setAziende] = useState([])
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState('list')  // 'list' | 'create' | 'edit' | 'setup'
@@ -144,7 +144,7 @@ export default function AziendePage() {
 }
 
 function AziendaSetupStep({ azienda, onDone }) {
-  const navigate = useNavigate()
+  const router = useRouter()
   const [selectedKey, setSelectedKey] = useState(null)
   const [name, setName] = useState('')
   const [creating, setCreating] = useState(false)
@@ -162,7 +162,7 @@ function AziendaSetupStep({ azienda, onDone }) {
         method: 'POST',
         body: JSON.stringify({ name: name.trim(), azienda_id: azienda.id }),
       })
-      navigate(`${cfg.editBase}/${entity.id}/info`)
+      router.push(`${cfg.editBase}/${entity.id}/info`)
     } catch (e) {
       setError(e.message)
       setCreating(false)
@@ -331,7 +331,7 @@ function AziendaCard({ azienda: a, onEdit, onDelete }) {
 // ── Sezione Strutture / Ristoranti ────────────────────────────────────────────
 
 function EntitaSection({ aziendaId, tipo, apiBase, editBase, label, labelPlural, accentColor }) {
-  const navigate = useNavigate()
+  const router = useRouter()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -435,7 +435,7 @@ function EntitaSection({ aziendaId, tipo, apiBase, editBase, label, labelPlural,
             </div>
             <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
               <button
-                onClick={() => navigate(`${editBase}/${item.id}/info`)}
+                onClick={() => router.push(`${editBase}/${item.id}/info`)}
                 style={pill({ background: '#f0f4ff', color: '#1a1a2e', padding: '5px 12px', fontSize: 12 })}
               >
                 Gestisci

@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../context/AuthContext'
 import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch } from '../../../lib/api'
@@ -22,7 +22,7 @@ function statusBadge(ev) {
 export default function EventiListPage() {
   const { profile } = useAuth()
   const { azienda } = useAzienda()
-  const navigate = useNavigate()
+  const router = useRouter()
   const [eventi, setEventi] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -48,7 +48,7 @@ export default function EventiListPage() {
           </p>
         </div>
         <button
-          onClick={() => navigate('/admin/eventi/new')}
+          onClick={() => router.push('/admin/eventi/new')}
           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
         >
           <Plus size={16} strokeWidth={2.5} /> Nuovo evento
@@ -87,7 +87,7 @@ function EventGrid({ eventi, navigate, muted }) {
         const seatsLeft = ev.seats_total ? ev.seats_total - ev.seats_booked : null
         return (
           <div key={ev.id}
-            onClick={() => navigate(`/admin/eventi/${ev.id}`)}
+            onClick={() => router.push(`/admin/eventi/${ev.id}`)}
             style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16, opacity: muted ? 0.65 : 1, transition: 'box-shadow 0.15s' }}
             onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.1)'}
             onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)'}
@@ -125,7 +125,7 @@ function EventGrid({ eventi, navigate, muted }) {
                 {ev.price > 0 ? `€${ev.price}` : 'Gratuito'}
               </span>
               <button
-                onClick={e => { e.stopPropagation(); navigate(`/admin/eventi/${ev.id}/prenotazioni`) }}
+                onClick={e => { e.stopPropagation(); router.push(`/admin/eventi/${ev.id}/prenotazioni`) }}
                 style={{ fontSize: 11, fontWeight: 600, color: '#1a1a2e', background: '#f0f4ff', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}
               >
                 Prenotazioni →

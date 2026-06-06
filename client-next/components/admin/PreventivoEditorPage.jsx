@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, useNavigate } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { useAzienda } from '@/context/AziendaContext'
 import {
@@ -38,7 +38,7 @@ function fmt(n, currency = 'EUR') {
 
 export default function PreventivoEditorPage() {
   const { id } = useParams()
-  const navigate = useNavigate()
+  const router = useRouter()
   const { azienda } = useAzienda()
 
   const [prev, setPrev] = useState(null)
@@ -133,7 +133,7 @@ export default function PreventivoEditorPage() {
     <div style={{ maxWidth: 860 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <button onClick={() => navigate('/admin/preventivi')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+        <button onClick={() => router.push('/admin/preventivi')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
           <ArrowLeft size={20} strokeWidth={1.5} color="#555" />
         </button>
         <FileText size={22} strokeWidth={1.5} color="#1a1a2e" />

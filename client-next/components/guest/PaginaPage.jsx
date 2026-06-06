@@ -1,6 +1,7 @@
 ﻿'use client'
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { useParams, useSearchParams, Link } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Euro, Mountain, Wind, CheckCircle, ChevronDown, Menu, X, Calendar, Users } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
 import CookieBanner from '@/components/CookieBanner'

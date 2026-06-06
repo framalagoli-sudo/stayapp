@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { useParams, useNavigate } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
 import { ArrowLeft, Send, Eye, Save, Plus, Trash2, AlertCircle, CheckCircle, Smile, Clock, X } from 'lucide-react'
@@ -113,7 +113,7 @@ function buildPreview(template_id, content, entityName, primary = '#1a1a2e') {
 
 export default function NewsletterEditorPage() {
   const { id } = useParams()
-  const navigate = useNavigate()
+  const router = useRouter()
   const { strutture, ristoranti, attivita } = useAzienda()
 
   const [nl, setNl]           = useState(null)
@@ -161,7 +161,7 @@ export default function NewsletterEditorPage() {
         setEntityTipo(data.entity_tipo || 'struttura')
         setEntityId(data.entity_id || '')
       })
-      .catch(() => navigate('/admin/newsletter'))
+      .catch(() => router.push('/admin/newsletter'))
       .finally(() => setLoading(false))
   }, [id])
 
@@ -242,7 +242,7 @@ export default function NewsletterEditorPage() {
       await save()
       const res = await apiFetch(`/api/newsletter/${id}/send`, { method: 'POST' })
       setSendState('ok')
-      setTimeout(() => { setSendState('idle'); setSendConfirm(false); navigate('/admin/newsletter') }, 2500)
+      setTimeout(() => { setSendState('idle'); setSendConfirm(false); router.push('/admin/newsletter') }, 2500)
     } catch (e) { setSendState('error_' + e.message) }
   }
 
@@ -258,7 +258,7 @@ export default function NewsletterEditorPage() {
     <div style={{ maxWidth: 1100 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
-        <button onClick={() => navigate('/admin/newsletter')}
+        <button onClick={() => router.push('/admin/newsletter')}
           style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: '#888', fontSize: 14, padding: 0 }}>
           <ArrowLeft size={16} strokeWidth={2} />
           Indietro

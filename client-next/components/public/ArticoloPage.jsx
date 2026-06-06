@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate, useSearchParams } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { ArrowLeft, Calendar, User, Link2, Check } from 'lucide-react'
 
@@ -54,7 +54,7 @@ function ShareBar({ url, title }) {
 
 export default function ArticoloPage() {
   const { slug } = useParams()
-  const navigate = useNavigate()
+  const router = useRouter()
   const [searchParams] = useSearchParams()
   const backUrl = searchParams.get('back')
   const [articolo, setArticolo] = useState(null)
@@ -85,7 +85,7 @@ export default function ArticoloPage() {
   if (!articolo) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, background: '#f9f9f9' }}>
       <p style={{ color: '#888', fontSize: 16 }}>Articolo non trovato.</p>
-      <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: '#1a6fc4', cursor: 'pointer', fontSize: 14 }}>← Torna indietro</button>
+      <button onClick={() => router.push(-1)} style={{ background: 'none', border: 'none', color: '#1a6fc4', cursor: 'pointer', fontSize: 14 }}>← Torna indietro</button>
     </div>
   )
 
@@ -99,7 +99,7 @@ export default function ArticoloPage() {
             <ArrowLeft size={15} strokeWidth={2} /> Torna al sito
           </a>
         ) : (
-          <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>
+          <button onClick={() => router.push(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>
             <ArrowLeft size={15} strokeWidth={2} /> Indietro
           </button>
         )}

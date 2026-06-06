@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useEffect, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 
@@ -24,8 +24,8 @@ const pill = (extra = {}) => ({
 
 export default function PropertiesPage() {
   const { profile } = useAuth()
-  const navigate = useNavigate()
-  const location = useLocation()
+  const router = useRouter()
+  const pathname = usePathname()
   const [properties, setProperties] = useState([])
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState('list') // 'list' | 'create' | 'edit'
@@ -36,7 +36,7 @@ export default function PropertiesPage() {
   // Solo super_admin, admin, editor possono gestire le strutture globalmente
   useEffect(() => {
     if (profile && !['super_admin', 'admin', 'editor'].includes(profile.role)) {
-      navigate('/admin', { replace: true })
+      router.push('/admin', { replace: true })
     }
   }, [profile])
 
@@ -146,7 +146,7 @@ export default function PropertiesPage() {
               </div>
               <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                 <button
-                  onClick={() => navigate(`/admin/struttura/${p.id}/info`)}
+                  onClick={() => router.push(`/admin/struttura/${p.id}/info`)}
                   style={pill({ background: '#1a1a2e', color: '#fff' })}
                 >
                   Gestisci

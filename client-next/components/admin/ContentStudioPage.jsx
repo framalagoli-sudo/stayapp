@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { useAzienda } from '@/context/AziendaContext'
 import {
@@ -561,7 +561,7 @@ function StrategiaTab({ strategy, nome, onSaved }) {
 const EMPTY_NEW_POST = { giorno: '', canale: 'instagram', pillar: '', titolo: '', testo: '', note_visive: '' }
 
 function PianoMensileTab({ strategy }) {
-  const navigate = useNavigate()
+  const router = useRouter()
   const now = new Date()
   const [mese, setMese] = useState(now.getMonth() + 1)
   const [anno, setAnno] = useState(now.getFullYear())
@@ -642,7 +642,7 @@ function PianoMensileTab({ strategy }) {
       {created > 0 && (
         <div style={{ background: '#f0fff4', border: '1px solid #c6f6d5', borderRadius: 8, padding: '10px 16px', marginBottom: 16, fontSize: 13, color: '#276749', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span>✅ {created} bozze salvate nel piano editoriale</span>
-          <button onClick={() => navigate('/admin/piano-editoriale')}
+          <button onClick={() => router.push('/admin/piano-editoriale')}
             style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#276749', fontWeight: 600, fontSize: 13 }}>
             Vai al piano <ExternalLink size={12} strokeWidth={2} />
           </button>
@@ -789,7 +789,7 @@ function PianoMensileTab({ strategy }) {
 // ── Tab 3: Caption Studio ─────────────────────────────────────────────────────
 
 function CaptionStudioTab({ strategy }) {
-  const navigate = useNavigate()
+  const router = useRouter()
   const [captionMode, setCaptionMode] = useState('ai') // 'ai' | 'manual'
   const [piattaforma, setPiattaforma] = useState('instagram')
   const [pillar, setPillar] = useState('')
@@ -974,7 +974,7 @@ function CaptionStudioTab({ strategy }) {
               {saved ? <><Check size={14} strokeWidth={2} /> Aggiunto!</> : saving ? 'Salvataggio…' : <><CalendarPlus size={14} strokeWidth={1.5} /> Aggiungi al piano</>}
             </button>
             {saved && (
-              <button onClick={() => navigate('/admin/piano-editoriale')}
+              <button onClick={() => router.push('/admin/piano-editoriale')}
                 style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#276749', fontWeight: 600, fontSize: 13 }}>
                 Vai al piano <ExternalLink size={12} strokeWidth={2} />
               </button>
@@ -987,7 +987,7 @@ function CaptionStudioTab({ strategy }) {
 }
 
 function AggiuntaAlPiano({ testo, piattaforma, pillar }) {
-  const navigate = useNavigate()
+  const router = useRouter()
   const [adding, setAdding] = useState(false)
   const [added, setAdded] = useState(false)
   async function aggiungi() {
@@ -1013,7 +1013,7 @@ function AggiuntaAlPiano({ testo, piattaforma, pillar }) {
         {added ? <><Check size={12} strokeWidth={2} /> Aggiunto!</> : adding ? '…' : <><CalendarPlus size={12} strokeWidth={1.5} /> Aggiungi al piano</>}
       </button>
       {added && (
-        <button onClick={() => navigate('/admin/piano-editoriale')}
+        <button onClick={() => router.push('/admin/piano-editoriale')}
           style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#276749', fontWeight: 600, fontSize: 12 }}>
           Vai al piano <ExternalLink size={11} strokeWidth={2} />
         </button>

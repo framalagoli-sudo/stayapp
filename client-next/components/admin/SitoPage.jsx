@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useContext, useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { PropertyIdContext } from '@/context/PropertyIdContext'
 import { useAuth } from '@/context/AuthContext'
@@ -142,7 +142,7 @@ function NewPageModal({ onClose, onConfirm, creating }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function SitoPage({ entityTipo }) {
-  const navigate    = useNavigate()
+  const navigate    = useRouter()
   const { id: paramId } = useParams()
   const ctxId       = useContext(PropertyIdContext)
   const { profile } = useAuth()
@@ -246,7 +246,7 @@ export default function SitoPage({ entityTipo }) {
           body: JSON.stringify({ blocks }),
         })
       }
-      navigate(`/admin/pagine/${res.id}`)
+      router.push(`/admin/pagine/${res.id}`)
     } else {
       setCreating(false)
       setShowNewModal(false)
@@ -507,7 +507,7 @@ export default function SitoPage({ entityTipo }) {
                   <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 18 }}>{entityData.minisito.tagline}</div>
                 )}
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  <button onClick={() => navigate(homeEditPath)}
+                  <button onClick={() => router.push(homeEditPath)}
                     style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 22px', background: '#fff', color: '#1a1a2e', border: 'none', borderRadius: 9, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
                     <PenLine size={15} strokeWidth={2} />
                     Modifica sezioni
@@ -692,7 +692,7 @@ export default function SitoPage({ entityTipo }) {
                       ⧉ Duplica
                     </button>
 
-                    <button onClick={() => navigate(`/admin/pagine/${p.id}`)} style={btnAction('primary')}>
+                    <button onClick={() => router.push(`/admin/pagine/${p.id}`)} style={btnAction('primary')}>
                       Modifica
                     </button>
 

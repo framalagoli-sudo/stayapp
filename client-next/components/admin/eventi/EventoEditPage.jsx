@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch, uploadMedia } from '../../../lib/api'
 import { Trash2, Plus, X, Upload, Share2 } from 'lucide-react'
@@ -25,7 +25,7 @@ function toInputDate(iso) {
 
 export default function EventoEditPage() {
   const { id } = useParams()   // 'new' = creation
-  const navigate = useNavigate()
+  const router = useRouter()
   const { azienda, strutture, ristoranti } = useAzienda()
   const isNew = id === 'new'
 
@@ -124,7 +124,7 @@ export default function EventoEditPage() {
 
       if (isNew) {
         const created = await apiFetch('/api/eventi', { method: 'POST', body: JSON.stringify(payload) })
-        navigate(`/admin/eventi/${created.id}`, { replace: true })
+        router.push(`/admin/eventi/${created.id}`, { replace: true })
       } else {
         await apiFetch(`/api/eventi/${id}`, { method: 'PATCH', body: JSON.stringify(payload) })
       }
@@ -138,7 +138,7 @@ export default function EventoEditPage() {
   async function handleDelete() {
     if (!confirm('Eliminare questo evento e tutte le prenotazioni?')) return
     await apiFetch(`/api/eventi/${id}`, { method: 'DELETE' })
-    navigate('/admin/eventi')
+    router.push('/admin/eventi')
   }
 
   const entityOptions = [
@@ -163,7 +163,7 @@ export default function EventoEditPage() {
               <Share2 size={14} strokeWidth={1.5} /> Post social
             </button>
           )}
-          <button onClick={() => navigate('/admin/eventi')}
+          <button onClick={() => router.push('/admin/eventi')}
             style={{ background: 'none', border: '1px solid #ddd', borderRadius: 8, padding: '8px 14px', fontSize: 13, cursor: 'pointer', color: '#555' }}>
             ← Lista
           </button>

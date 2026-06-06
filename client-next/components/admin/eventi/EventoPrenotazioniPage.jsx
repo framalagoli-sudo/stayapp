@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { apiFetch } from '../../../lib/api'
 import { Users, Calendar, Mail, Phone, Package, ArrowLeft, Check, X, Clock } from 'lucide-react'
 
@@ -21,7 +21,7 @@ function statusStyle(status) {
 
 export default function EventoPrenotazioniPage() {
   const { id } = useParams()
-  const navigate = useNavigate()
+  const router = useRouter()
   const [evento, setEvento] = useState(null)
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
@@ -64,7 +64,7 @@ export default function EventoPrenotazioniPage() {
     <div style={{ maxWidth: 860 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <button onClick={() => navigate(`/admin/eventi/${id}`)}
+        <button onClick={() => router.push(`/admin/eventi/${id}`)}
           style={{ background: '#f0f0f0', border: 'none', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#555' }}>
           <ArrowLeft size={14} strokeWidth={2} /> Torna all'evento
         </button>

@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '../../../context/AuthContext'
 import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch, uploadMedia } from '../../../lib/api'
@@ -13,7 +13,7 @@ export default function BlogEditorPage() {
   const { id } = useParams()
   const isNew = id === 'new'
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-  const navigate = useNavigate()
+  const router = useRouter()
   const { profile } = useAuth()
   const { azienda, strutture, ristoranti } = useAzienda()
 
@@ -34,7 +34,7 @@ export default function BlogEditorPage() {
   const fileRef = useRef()
 
   useEffect(() => {
-    if (!isNew && !UUID_RE.test(id)) { navigate('/admin/blog', { replace: true }); return }
+    if (!isNew && !UUID_RE.test(id)) { router.push('/admin/blog', { replace: true }); return }
     if (!aziendaId) { return }
     apiFetch(`/api/blog/categories?azienda_id=${aziendaId}`).then(setCategories).catch(() => {})
     if (!isNew) {
@@ -68,7 +68,7 @@ export default function BlogEditorPage() {
       const body = { ...form, published, azienda_id: aziendaId }
       if (isNew) {
         const created = await apiFetch('/api/blog', { method: 'POST', body: JSON.stringify(body) })
-        navigate(`/admin/blog/${created.id}`, { replace: true })
+        router.push(`/admin/blog/${created.id}`, { replace: true })
       } else {
         await apiFetch(`/api/blog/${id}`, { method: 'PATCH', body: JSON.stringify(body) })
         if (publish !== undefined) setForm(f => ({ ...f, published }))
@@ -88,7 +88,7 @@ export default function BlogEditorPage() {
     <div style={{ maxWidth: 800 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <button onClick={() => navigate('/admin/blog')}
+        <button onClick={() => router.push('/admin/blog')}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', display: 'flex', padding: 4 }}>
           <ArrowLeft size={20} strokeWidth={1.5} />
         </button>
@@ -210,7 +210,7 @@ export default function BlogEditorPage() {
 
         {/* Save footer */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingBottom: 32 }}>
-          <button onClick={() => navigate('/admin/blog')} style={{ padding: '10px 20px', background: '#f0f0f0', color: '#555', border: 'none', borderRadius: 9, fontSize: 14, cursor: 'pointer' }}>
+          <button onClick={() => router.push('/admin/blog')} style={{ padding: '10px 20px', background: '#f0f0f0', color: '#555', border: 'none', borderRadius: 9, fontSize: 14, cursor: 'pointer' }}>
             Annulla
           </button>
           <button onClick={() => handleSave()} disabled={saving} style={{ padding: '10px 28px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 9, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>

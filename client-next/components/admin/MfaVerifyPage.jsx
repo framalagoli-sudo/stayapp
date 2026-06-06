@@ -1,12 +1,12 @@
 ﻿'use client'
 import { useState } from 'react'
-import { useNavigate } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
 
 export default function MfaVerifyPage() {
   const { refreshAAL, signOut } = useAuth()
-  const navigate   = useNavigate()
+  const navigate   = useRouter()
   const [code, setCode]       = useState('')
   const [error, setError]     = useState(null)
   const [loading, setLoading] = useState(false)
@@ -22,7 +22,7 @@ export default function MfaVerifyPage() {
     if (err) { setLoading(false); return setError('Codice non valido, riprova.') }
     await refreshAAL()
     setLoading(false)
-    navigate('/admin')
+    router.push('/admin')
   }
 
   return (

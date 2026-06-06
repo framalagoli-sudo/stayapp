@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { useNavigate, useParams } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import {
   GripVertical, AlignLeft, Image, Grid, Users, List, Star, BarChart2, Zap,
@@ -508,7 +508,7 @@ function BlockPicker({ onPick, onClose }) {
 // ── Main editor ───────────────────────────────────────────────────────────────
 export default function PaginaEditorPage() {
   const { pageId } = useParams()
-  const navigate = useNavigate()
+  const router = useRouter()
 
   const [page,       setPage]       = useState(null)
   const [blocks,     setBlocks]     = useState([])
@@ -530,7 +530,7 @@ export default function PaginaEditorPage() {
 
   useEffect(() => {
     apiFetch(`/api/pagine/${pageId}`).then(data => {
-      if (data?.error) return navigate(-1)
+      if (data?.error) return router.push(-1)
       setPage(data)
       setBlocks(Array.isArray(data.blocks) ? data.blocks : [])
       setOrigSlug(data.slug)
@@ -646,7 +646,7 @@ export default function PaginaEditorPage() {
 
       {/* ── Top bar ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28, flexWrap: 'wrap' }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#888', padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+        <button onClick={() => router.push(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#888', padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
           ← Indietro
         </button>
         <h1 style={{ margin: 0, fontSize: 19, fontWeight: 700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#1a1a2e' }}>

@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { guestFetch } from '@/lib/api'
 import { ArrowLeft, Calendar, ChevronLeft, ChevronRight, X, Send } from 'lucide-react'
 
@@ -15,7 +15,7 @@ const HEADING_FAMILIES = {
 
 export default function OffertaPage() {
   const { slug, id } = useParams()
-  const navigate = useNavigate()
+  const router = useRouter()
   const [entity,      setEntity]      = useState(null)
   const [offerta,     setOfferta]     = useState(null)
   const [loading,     setLoading]     = useState(true)
@@ -41,7 +41,7 @@ export default function OffertaPage() {
   if (!offerta) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui', gap: 16 }}>
       <p>Offerta non trovata.</p>
-      <button onClick={() => navigate(`/s/${slug}`)} style={{ padding: '10px 20px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Torna al sito</button>
+      <button onClick={() => router.push(`/s/${slug}`)} style={{ padding: '10px 20px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Torna al sito</button>
     </div>
   )
 
@@ -60,7 +60,7 @@ export default function OffertaPage() {
     <div style={{ minHeight: '100vh', background: '#fff', fontFamily: "'Inter', system-ui, sans-serif", paddingBottom: 88 }}>
       {/* Back button */}
       <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', borderBottom: '1px solid #f0f0f0', padding: '14px 20px' }}>
-        <button onClick={() => navigate(-1)}
+        <button onClick={() => router.push(-1)}
           style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#555', fontSize: 14, fontWeight: 600, padding: 0 }}>
           <ArrowLeft size={18} strokeWidth={2} />
           Torna indietro

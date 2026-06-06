@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../context/AuthContext'
 import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch } from '../../../lib/api'
@@ -9,7 +9,7 @@ import { ArrowLeft, Trash2, Plus } from 'lucide-react'
 export default function BlogCategoriesPage() {
   const { profile } = useAuth()
   const { azienda, strutture, ristoranti } = useAzienda()
-  const navigate = useNavigate()
+  const router = useRouter()
   const aziendaId = azienda?.id || profile?.azienda_id
     || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id
 
@@ -51,7 +51,7 @@ export default function BlogCategoriesPage() {
   return (
     <div style={{ maxWidth: 560 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <button onClick={() => navigate('/admin/blog')}
+        <button onClick={() => router.push('/admin/blog')}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', display: 'flex', padding: 4 }}>
           <ArrowLeft size={20} strokeWidth={1.5} />
         </button>

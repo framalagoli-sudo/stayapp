@@ -1,12 +1,12 @@
 ﻿'use client'
 import { useContext, useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { PropertyIdContext } from '@/context/PropertyIdContext'
 import { useAuth } from '@/context/AuthContext'
 
 export default function PagineListPage({ entityTipo }) {
-  const navigate = useNavigate()
+  const router = useRouter()
   const { id: paramId } = useParams()
   const ctxId = useContext(PropertyIdContext)
   const { profile } = useAuth()
@@ -39,7 +39,7 @@ export default function PagineListPage({ entityTipo }) {
       body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, titolo: newTitle.trim() }),
     })
     setCreating(false)
-    if (res?.id) { navigate(`/admin/pagine/${res.id}`) }
+    if (res?.id) { router.push(`/admin/pagine/${res.id}`) }
     else { setNewTitle(''); setShowNew(false); load() }
   }
 
@@ -122,7 +122,7 @@ export default function PagineListPage({ entityTipo }) {
           </button>
 
           {/* Azioni */}
-          <button onClick={() => navigate(`/admin/pagine/${p.id}`)}
+          <button onClick={() => router.push(`/admin/pagine/${p.id}`)}
             style={{ fontSize: 12, padding: '5px 14px', borderRadius: 8, border: 'none', background: '#1a1a2e', color: '#fff', cursor: 'pointer' }}>
             Modifica
           </button>

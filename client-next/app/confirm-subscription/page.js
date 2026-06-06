@@ -1,7 +1,6 @@
 import { Suspense } from 'react'
 import ConfirmSubscriptionPage from '@/components/public/ConfirmSubscriptionPage'
 
-export const dynamic = 'force-dynamic'
 
 export default function Page() {
   return (
@@ -10,3 +9,4 @@ export default function Page() {
     </Suspense>
   )
 }
+

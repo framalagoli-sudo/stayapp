@@ -1,6 +1,7 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useLocation, useNavigate } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
 import { useAzienda } from '@/context/AziendaContext'
 import Breadcrumb from './Breadcrumb'
@@ -135,22 +136,22 @@ function TrialBanner({ azienda }) {
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export default function AdminLayout() {
+export default function AdminLayout({ children }) {
   const { profile, signOut } = useAuth()
   const { azienda, strutture, ristoranti, attivita, selectedStrutturaId, setSelectedStrutturaId, selectedRistoranteId, setSelectedRistoranteId, selectedAttivitaId, setSelectedAttivitaId, loading: aziendaLoading } = useAzienda()
-  const navigate = useNavigate()
-  const location = useLocation()
+  const router = useRouter()
+  const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [bookingOpen, setBookingOpen] = useState(() => location.pathname.startsWith('/admin/booking'))
+  const [bookingOpen, setBookingOpen] = useState(false)
 
-  useEffect(() => { setMenuOpen(false) }, [location.pathname])
+  useEffect(() => { setMenuOpen(false) }, [pathname])
   useEffect(() => {
-    if (location.pathname.startsWith('/admin/booking')) setBookingOpen(true)
-  }, [location.pathname])
+    if (pathname.startsWith('/admin/booking')) setBookingOpen(true)
+  }, [pathname])
 
   async function handleSignOut() {
     await signOut()
-    navigate('/admin/login')
+    router.push('/admin/login')
   }
 
   const role = profile?.role
@@ -165,9 +166,9 @@ export default function AdminLayout() {
   const hasRistorante = isAdminAzienda ? (!!moduli.ristorante && !aziendaLoading) : (moduli.ristorante || ristoranti.length > 0)
   const hasAttivita = isAdminAzienda ? (!!moduli.attivita && !aziendaLoading) : (moduli.attivita || attivita?.length > 0)
 
-  const strutturaUrlMatch = location.pathname.match(/^\/admin\/struttura\/([^/]+)/)
-  const ristoranteUrlMatch = location.pathname.match(/^\/admin\/ristoranti\/([^/]+)\//)
-  const attivitaUrlMatch = location.pathname.match(/^\/admin\/attivita\/([^/]+)\//)
+  const strutturaUrlMatch = pathname.match(/^\/admin\/struttura\/([^/]+)/)
+  const ristoranteUrlMatch = pathname.match(/^\/admin\/ristoranti\/([^/]+)\//)
+  const attivitaUrlMatch = pathname.match(/^\/admin\/attivita\/([^/]+)\//)
   const strutturaUrlId = strutturaUrlMatch?.[1]
   const ristoranteUrlId = ristoranteUrlMatch?.[1]
   const attivitaUrlId = attivitaUrlMatch?.[1]
@@ -176,7 +177,7 @@ export default function AdminLayout() {
   const activeEntityType = strutturaUrlId ? 'struttura'
     : ristoranteUrlId ? 'ristorante'
     : attivitaUrlId ? 'attivita'
-    : location.pathname.startsWith('/admin/property/') ? 'struttura'
+    : pathname.startsWith('/admin/property/') ? 'struttura'
     : hasStruttura ? 'struttura'
     : hasRistorante ? 'ristorante'
     : hasAttivita ? 'attivita'
@@ -201,13 +202,14 @@ export default function AdminLayout() {
 
   // ─── Shared sub-components ────────────────────────────────────────────────
   function NavItem({ to, icon: Icon, label, sub = false, end = false, activeOverride = false }) {
+    const isActive = end ? pathname === to : pathname.startsWith(to)
     return (
-      <NavLink to={to} end={end} style={({ isActive }) => navLinkStyle(isActive || activeOverride, sub)}>
+      <Link href={to} style={navLinkStyle(isActive || activeOverride, sub)}>
         <span style={{ display: 'flex', alignItems: 'center', gap: sub ? 7 : 9 }}>
           {Icon && <Icon size={sub ? 13 : 15} strokeWidth={1.8} style={{ flexShrink: 0 }} />}
           {label}
         </span>
-      </NavLink>
+      </Link>
     )
   }
 
@@ -299,9 +301,9 @@ export default function AdminLayout() {
 
     function handleChange(e) {
       const [prefix, id] = e.target.value.split(':')
-      if (prefix === 's') { setSelectedStrutturaId(id); navigate(`/admin/struttura/${id}/info`) }
-      else if (prefix === 'r') { setSelectedRistoranteId(id); navigate(`/admin/ristoranti/${id}/info`) }
-      else if (prefix === 'a') { setSelectedAttivitaId(id); navigate(`/admin/attivita/${id}/info`) }
+      if (prefix === 's') { setSelectedStrutturaId(id); router.push(`/admin/struttura/${id}/info`) }
+      else if (prefix === 'r') { setSelectedRistoranteId(id); router.push(`/admin/ristoranti/${id}/info`) }
+      else if (prefix === 'a') { setSelectedAttivitaId(id); router.push(`/admin/attivita/${id}/info`) }
     }
 
     const activeName = allEntities.find(e => e.key === activeKey)?.name || allEntities[0]?.name
@@ -590,7 +592,7 @@ export default function AdminLayout() {
         <main className="admin-main">
           <Breadcrumb />
           <TrialBanner azienda={azienda} />
-          <Outlet />
+          {children}
         </main>
       </div>
     </>

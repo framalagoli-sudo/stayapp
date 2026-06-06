@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import {
   Save, Plus, Trash2, ArrowLeft, FormInput, Copy, Check,
@@ -24,7 +24,7 @@ function newCampo(tipo = 'text') {
 
 export default function FormBuilderEditorPage() {
   const { id } = useParams()
-  const navigate = useNavigate()
+  const router = useRouter()
 
   const [form, setForm] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -113,12 +113,12 @@ export default function FormBuilderEditorPage() {
     <div style={{ maxWidth: 820 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <button onClick={() => navigate('/admin/form-builder')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+        <button onClick={() => router.push('/admin/form-builder')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
           <ArrowLeft size={20} strokeWidth={1.5} color="#555" />
         </button>
         <FormInput size={22} strokeWidth={1.5} color="#1a1a2e" />
         <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, flex: 1 }}>{nome || 'Editor form'}</h1>
-        <button onClick={() => navigate(`/admin/form-builder/${id}/submissions`)} style={{ fontSize: 13, background: '#f5f5f5', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', color: '#555' }}>
+        <button onClick={() => router.push(`/admin/form-builder/${id}/submissions`)} style={{ fontSize: 13, background: '#f5f5f5', border: 'none', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', color: '#555' }}>
           Risposte
         </button>
       </div>
