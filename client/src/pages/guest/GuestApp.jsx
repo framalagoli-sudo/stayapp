@@ -15,6 +15,7 @@ import ServicesTab from './ServicesTab'
 import ActivitiesTab from './ActivitiesTab'
 import ExcursionsTab from './ExcursionsTab'
 import ChatbotWidget from '../../components/ChatbotWidget'
+import ChatChoice from '../../components/ChatChoice'
 
 // Genera o recupera session_id anonimo del guest
 function getSessionId() {
@@ -107,6 +108,7 @@ export default function GuestApp({ forceSlug } = {}) {
   const [upcomingEventi, setUpcomingEventi] = useState([])
   const [error,          setError]          = useState(null)
   const [nav,            setNav]            = useState(() => searchParams.get('tab') || 'home')
+  const [chatMode,       setChatMode]       = useState(null) // null=scelta, 'chatbot'=chatbot diretto
   const [exploreChip,    setExploreChip]    = useState(null)
   const [compactBar,     setCompactBar]     = useState(false)
   const [showArrow,      setShowArrow]      = useState(true)
@@ -190,6 +192,7 @@ export default function GuestApp({ forceSlug } = {}) {
   ]
 
   function switchTab(key) {
+    if (key !== 'chatbot') setChatMode(null)
     setNav(key)
     setSearchParams(p => { const n = new URLSearchParams(p); n.set('tab', key); return n }, { replace: true })
   }
@@ -335,7 +338,16 @@ export default function GuestApp({ forceSlug } = {}) {
           {/* ── Chatbot tab (always mounted per preservare stato messaggi) ── */}
           {(property.chatbot?.active_app ?? property.chatbot?.active) && (
             <div style={{ flex: 1, minHeight: 0, display: nav === 'chatbot' ? 'flex' : 'none', flexDirection: 'column', overflow: 'hidden' }}>
-              <ChatbotWidget chatbot={property.chatbot} primaryColor={primary} entityTipo="struttura" entityId={property.id} embedded={true} />
+              {property.whatsapp && chatMode !== 'chatbot' ? (
+                <ChatChoice
+                  whatsapp={property.whatsapp}
+                  entityName={property.name}
+                  primary={primary}
+                  onChatbot={() => setChatMode('chatbot')}
+                />
+              ) : (
+                <ChatbotWidget chatbot={property.chatbot} primaryColor={primary} entityTipo="struttura" entityId={property.id} embedded={true} />
+              )}
             </div>
           )}
 

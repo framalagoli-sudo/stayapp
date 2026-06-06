@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { apiFetch, guestFetch } from '../../lib/api'
 import ChatbotWidget from '../../components/ChatbotWidget'
+import ChatChoice from '../../components/ChatChoice'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DEFAULT_THEME = {
@@ -67,6 +68,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug } = {}) 
   const [attivita,   setAttivita]   = useState(attivitaProp || null)
   const [error,      setError]      = useState(null)
   const [nav,        setNav]        = useState(() => searchParams.get('tab') || 'home')
+  const [chatMode,   setChatMode]   = useState(null)
   const [exploreChip, setExploreChip] = useState(null)
   const [compactBar, setCompactBar] = useState(false)
   const [showArrow,  setShowArrow]  = useState(true)
@@ -147,6 +149,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug } = {}) 
   const activeChip = CHIPS.find(c => c.key === exploreChip) ? exploreChip : CHIPS[0]?.key
 
   function switchTab(key) {
+    if (key !== 'chatbot') setChatMode(null)
     setNav(key)
     setSearchParams(p => { const n = new URLSearchParams(p); n.set('tab', key); return n }, { replace: true })
   }
@@ -277,7 +280,16 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug } = {}) 
           {/* Chatbot (always mounted) */}
           {(attivita.chatbot?.active_app ?? attivita.chatbot?.active) && (
             <div style={{ flex: 1, minHeight: 0, display: nav === 'chatbot' ? 'flex' : 'none', flexDirection: 'column', overflow: 'hidden' }}>
-              <ChatbotWidget chatbot={attivita.chatbot} primaryColor={primary} entityTipo="attivita" entityId={attivita.id} embedded={true} />
+              {attivita.minisito?.social?.whatsapp && chatMode !== 'chatbot' ? (
+                <ChatChoice
+                  whatsapp={attivita.minisito.social.whatsapp}
+                  entityName={attivita.name}
+                  primary={primary}
+                  onChatbot={() => setChatMode('chatbot')}
+                />
+              ) : (
+                <ChatbotWidget chatbot={attivita.chatbot} primaryColor={primary} entityTipo="attivita" entityId={attivita.id} embedded={true} />
+              )}
             </div>
           )}
 

@@ -10,6 +10,7 @@ import {
 import MenuTab from '../../components/MenuTab'
 import { apiFetch, guestFetch } from '../../lib/api'
 import ChatbotWidget from '../../components/ChatbotWidget'
+import ChatChoice from '../../components/ChatChoice'
 import BookingWidget from '../../components/BookingWidget'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -79,6 +80,7 @@ export default function RestaurantApp({ forceSlug } = {}) {
   const [ristorante,  setRistorante]  = useState(null)
   const [error,       setError]       = useState(null)
   const [nav,         setNav]         = useState(() => searchParams.get('tab') || 'home')
+  const [chatMode,    setChatMode]    = useState(null)
   const [exploreChip, setExploreChip] = useState(null)
   const [compactBar,  setCompactBar]  = useState(false)
   const [showArrow,   setShowArrow]   = useState(true)
@@ -160,6 +162,7 @@ export default function RestaurantApp({ forceSlug } = {}) {
   const activeChip = CHIPS.find(c => c.key === exploreChip) ? exploreChip : CHIPS[0]?.key
 
   function switchTab(key) {
+    if (key !== 'chatbot') setChatMode(null)
     setNav(key)
     setSearchParams(p => { const n = new URLSearchParams(p); n.set('tab', key); return n }, { replace: true })
   }
@@ -294,7 +297,16 @@ export default function RestaurantApp({ forceSlug } = {}) {
           {/* Chatbot (always mounted) */}
           {(ristorante.chatbot?.active_app ?? ristorante.chatbot?.active) && (
             <div style={{ flex: 1, minHeight: 0, display: nav === 'chatbot' ? 'flex' : 'none', flexDirection: 'column', overflow: 'hidden' }}>
-              <ChatbotWidget chatbot={ristorante.chatbot} primaryColor={primary} entityTipo="ristorante" entityId={ristorante.id} embedded={true} />
+              {ristorante.minisito?.social?.whatsapp && chatMode !== 'chatbot' ? (
+                <ChatChoice
+                  whatsapp={ristorante.minisito.social.whatsapp}
+                  entityName={ristorante.name}
+                  primary={primary}
+                  onChatbot={() => setChatMode('chatbot')}
+                />
+              ) : (
+                <ChatbotWidget chatbot={ristorante.chatbot} primaryColor={primary} entityTipo="ristorante" entityId={ristorante.id} embedded={true} />
+              )}
             </div>
           )}
 
