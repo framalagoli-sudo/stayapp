@@ -269,11 +269,12 @@ export default function PianoEditorialePage() {
     setLoading(true)
     try {
       const mm = String(m + 1).padStart(2, '0')
+      const azQ = aziendaId ? `&azienda_id=${aziendaId}` : ''
       const [data, senzaData, ideaData, daApprovare] = await Promise.all([
-        apiFetch(`/api/piano-editoriale?mese=${y}-${mm}`),
-        apiFetch('/api/piano-editoriale?senza_data=1'),
-        apiFetch('/api/piano-editoriale/idee'),
-        apiFetch('/api/piano-editoriale?richiede_approvazione=true'),
+        apiFetch(`/api/piano-editoriale?mese=${y}-${mm}${azQ}`),
+        apiFetch(`/api/piano-editoriale?senza_data=1${azQ}`),
+        apiFetch(`/api/piano-editoriale/idee${azQ ? `?${azQ.slice(1)}` : ''}`),
+        apiFetch(`/api/piano-editoriale?richiede_approvazione=true${azQ}`),
       ])
       setPosts(data)
       setDrafts(senzaData)
@@ -290,32 +291,35 @@ export default function PianoEditorialePage() {
       end.setDate(end.getDate() + 6)
       const da = start.toISOString().slice(0, 10)
       const a  = end.toISOString().slice(0, 10)
-      const data = await apiFetch(`/api/piano-editoriale?da=${da}&a=${a}`)
+      const azQ = aziendaId ? `&azienda_id=${aziendaId}` : ''
+      const data = await apiFetch(`/api/piano-editoriale?da=${da}&a=${a}${azQ}`)
       setWeekPosts(data)
     } catch (e) { setError(e.message) }
     setWeekLoading(false)
   }
 
-  useEffect(() => { load() }, [year, month])
-  useEffect(() => { if (view === 'week') loadWeek(weekStart) }, [view, weekStart])
+  useEffect(() => { load() }, [year, month, aziendaId])
+  useEffect(() => { if (view === 'week') loadWeek(weekStart) }, [view, weekStart, aziendaId])
   useEffect(() => {
     if (view !== 'stats') return
-    if (statsData) return
     setStatsLoading(true)
-    apiFetch('/api/piano-editoriale/stats')
+    setStatsData(null)
+    const azQ = aziendaId ? `?azienda_id=${aziendaId}` : ''
+    apiFetch(`/api/piano-editoriale/stats${azQ}`)
       .then(d => setStatsData(d || []))
       .catch(() => setStatsData([]))
       .finally(() => setStatsLoading(false))
-  }, [view])
+  }, [view, aziendaId])
 
   useEffect(() => {
     if (view !== 'hashtag') return
     setHashtagLoading(true)
-    apiFetch('/api/piano-editoriale/hashtag-sets')
+    const azQ = aziendaId ? `?azienda_id=${aziendaId}` : ''
+    apiFetch(`/api/piano-editoriale/hashtag-sets${azQ}`)
       .then(d => setHashtagSets(d || []))
       .catch(() => {})
       .finally(() => setHashtagLoading(false))
-  }, [view])
+  }, [view, aziendaId])
 
   useEffect(() => {
     if (view !== 'team') return
@@ -328,11 +332,12 @@ export default function PianoEditorialePage() {
   }, [view])
 
   useEffect(() => {
-    if (campagne.length) return
-    apiFetch('/api/piano-editoriale/campagne')
+    setCampagne([])
+    const azQ = aziendaId ? `?azienda_id=${aziendaId}` : ''
+    apiFetch(`/api/piano-editoriale/campagne${azQ}`)
       .then(d => setCampagne(d || []))
       .catch(() => {})
-  }, [])
+  }, [aziendaId])
 
   // ── Navigation ─────────────────────────────────────────────────────────────
 
