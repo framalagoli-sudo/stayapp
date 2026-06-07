@@ -145,6 +145,7 @@ export default function AdminLayout({ children }) {
     selectedRistoranteId, setSelectedRistoranteId,
     selectedAttivitaId, setSelectedAttivitaId,
     activeAziendaId, setActiveAziendaId,
+    getAllEntities,
     loading: aziendaLoading,
   } = useAzienda()
   const router = useRouter()
@@ -301,7 +302,16 @@ export default function AdminLayout({ children }) {
   function handleAziendaChange(e) {
     const newId = e.target.value || null
     setActiveAziendaId(newId)
-    router.push('/admin')
+    if (!newId) { router.push('/admin'); return }
+    // Naviga direttamente alla prima entità dell'azienda selezionata
+    const { strutture: s, ristoranti: r, attivita: a } = getAllEntities()
+    const firstS = s.find(x => x.azienda_id === newId)
+    const firstR = r.find(x => x.azienda_id === newId)
+    const firstA = a?.find(x => x.azienda_id === newId)
+    if (firstS) router.push(`/admin/struttura/${firstS.id}/info`)
+    else if (firstR) router.push(`/admin/ristoranti/${firstR.id}/info`)
+    else if (firstA) router.push(`/admin/attivita/${firstA.id}/info`)
+    else router.push('/admin')
   }
 
   // ─── Entity switcher (header) ─────────────────────────────────────────────
@@ -343,9 +353,12 @@ export default function AdminLayout({ children }) {
           Entità attiva
         </div>
         {allEntities.length === 1 ? (
-          <div style={{ fontSize: 13, color: '#ddd', fontWeight: 600, padding: '7px 10px', background: 'rgba(255,255,255,0.07)', borderRadius: 8 }}>
+          <button
+            onClick={() => handleChange({ target: { value: allEntities[0].key } })}
+            style={{ fontSize: 13, color: '#ddd', fontWeight: 600, padding: '7px 10px', background: 'rgba(255,255,255,0.07)', borderRadius: 8, border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}
+          >
             {activeName}
-          </div>
+          </button>
         ) : (
           <select className="sidebar-selector" style={{ margin: 0, width: '100%' }} value={activeKey} onChange={handleChange}>
             {strutture.length > 0 && strutture.map(e => <option key={e.id} value={`s:${e.id}`}>{e.name}</option>)}
@@ -430,8 +443,8 @@ export default function AdminLayout({ children }) {
             <NavItem to="/admin/loyalty"          icon={Gift}             label="Loyalty" />
             <NavItem to="/admin/eventi"           icon={CalendarDays}     label="Eventi" />
 
-            {/* Sito & App contestuale: appare solo quando si naviga su un'entità */}
-            {(strutturaUrlId || ristoranteUrlId || attivitaUrlId) && (
+            {/* Sito & App: visibile con URL entità OPPURE quando super_admin ha un'azienda attiva con entità */}
+            {(strutturaUrlId || ristoranteUrlId || attivitaUrlId || (activeAziendaId && activeSitoId)) && (
               <>
                 <Divider />
                 <SectionHeader label="Sito & App" />

@@ -112,6 +112,9 @@ export function AziendaProvider({ children }) {
   function setSelectedRistoranteId(id) { _setSelectedRistoranteId(id) }
   function setSelectedAttivitaId(id) { _setSelectedAttivitaId(id) }
 
+  // Ritorna tutte le entità non filtrate (utile per navigare alla prima entità di una nuova azienda)
+  function getAllEntities() { return allEntitiesRef.current }
+
   return (
     <AziendaContext.Provider value={{
       azienda, strutture, ristoranti, attivita,
@@ -119,6 +122,7 @@ export function AziendaProvider({ children }) {
       selectedRistoranteId, setSelectedRistoranteId,
       selectedAttivitaId, setSelectedAttivitaId,
       activeAziendaId, setActiveAziendaId,
+      getAllEntities,
       loading, refresh,
     }}>
       {children}
