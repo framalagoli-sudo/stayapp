@@ -62,7 +62,8 @@ function KpiCard({ icon: Icon, label, value, color, sub, onClick }) {
   )
 }
 
-function SectionCard({ title, icon: Icon, iconColor = '#1a1a2e', action, actionTo, navigate, children }) {
+function SectionCard({ title, icon: Icon, iconColor = '#1a1a2e', action, actionTo, children }) {
+  const router = useRouter()
   return (
     <div style={{ background: '#fff', borderRadius: 14, padding: '20px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -110,7 +111,8 @@ const STAFF_LINKS = [
   { key: 'analytics',        label: 'Analytics',        icon: Eye,           to: '/admin/analytics',         color: '#10b981' },
 ]
 
-function StaffDashboard({ profile, navigate, strutture, ristoranti, attivita }) {
+function StaffDashboard({ profile, strutture, ristoranti, attivita }) {
+  const router = useRouter()
   const perm = profile?.permissions || {}
 
   const links = [
@@ -174,7 +176,7 @@ function StaffDashboard({ profile, navigate, strutture, ristoranti, attivita }) 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { profile } = useAuth()
-  const navigate    = useRouter()
+  const router      = useRouter()
   const { azienda, strutture, ristoranti, attivita, loading: aziLoading } = useAzienda()
 
   const [analytics,      setAnalytics]      = useState(null)
@@ -192,7 +194,7 @@ export default function DashboardPage() {
   }, [profile])  // eslint-disable-line
 
   if (profile?.role === 'staff') {
-    return <StaffDashboard profile={profile} navigate={navigate} strutture={strutture} ristoranti={ristoranti} attivita={attivita} />
+    return <StaffDashboard profile={profile} strutture={strutture} ristoranti={ristoranti} attivita={attivita} />
   }
 
   async function load() {
@@ -329,7 +331,7 @@ export default function DashboardPage() {
       {/* ── Richieste + Prenotazioni oggi ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, marginBottom: 16 }}>
 
-        <SectionCard title="Richieste aperte" icon={Inbox} iconColor="#e53e3e" action="Vedi tutte" actionTo="/admin/requests" navigate={navigate}>
+        <SectionCard title="Richieste aperte" icon={Inbox} iconColor="#e53e3e" action="Vedi tutte" actionTo="/admin/requests">
           {loading ? <Loading /> : requests.length === 0
             ? <Empty text="Nessuna richiesta aperta" />
             : requests.map(r => {
@@ -356,7 +358,7 @@ export default function DashboardPage() {
           }
         </SectionCard>
 
-        <SectionCard title="Prenotazioni di oggi" icon={CalendarCheck} iconColor="#2e7d32" action="Vai a Booking" actionTo="/admin/booking" navigate={navigate}>
+        <SectionCard title="Prenotazioni di oggi" icon={CalendarCheck} iconColor="#2e7d32" action="Vai a Booking" actionTo="/admin/booking">
           {loading ? <Loading /> : prenOggi.length === 0
             ? <Empty text="Nessuna prenotazione oggi" />
             : prenOggi.map(p => (
@@ -391,7 +393,7 @@ export default function DashboardPage() {
       {/* ── Prossimi eventi ── */}
       {eventiProssimi.length > 0 && (
         <div style={{ marginBottom: 16 }}>
-          <SectionCard title="Prossimi eventi" icon={CalendarDays} iconColor="#0284c7" action="Tutti gli eventi" actionTo="/admin/eventi" navigate={navigate}>
+          <SectionCard title="Prossimi eventi" icon={CalendarDays} iconColor="#0284c7" action="Tutti gli eventi" actionTo="/admin/eventi">
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {eventiProssimi.map(e => {
                 const data = e.date_start ? new Date(e.date_start) : null
@@ -425,7 +427,7 @@ export default function DashboardPage() {
       )}
 
       {/* ── Contatti recenti ── */}
-      <SectionCard title="Contatti recenti" icon={Users} iconColor="#6b46c1" action="Vedi tutti" actionTo="/admin/contatti" navigate={navigate}>
+      <SectionCard title="Contatti recenti" icon={Users} iconColor="#6b46c1" action="Vedi tutti" actionTo="/admin/contatti">
         {loading ? <Loading /> : contatti.length === 0
           ? <Empty text="Nessun contatto ancora" />
           : (
