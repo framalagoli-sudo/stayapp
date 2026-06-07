@@ -17,7 +17,9 @@ function fmtDate(ts) {
 
 export default function NewsletterPage() {
   const { profile } = useAuth()
-  const { strutture, ristoranti, attivita } = useAzienda()
+  const { azienda, strutture, ristoranti, attivita } = useAzienda()
+  const aziendaId = azienda?.id || profile?.azienda_id
+    || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id || attivita?.[0]?.azienda_id
   const router = useRouter()
   const [list, setList]       = useState([])
   const [loading, setLoading] = useState(true)
@@ -40,7 +42,7 @@ export default function NewsletterPage() {
       const entity_tipo = strutture?.[0] ? 'struttura' : ristoranti?.[0] ? 'ristorante' : 'attivita'
       const nl = await apiFetch('/api/newsletter', {
         method: 'POST',
-        body: JSON.stringify({ entity_tipo, entity_id: firstEntity?.id || null }),
+        body: JSON.stringify({ entity_tipo, entity_id: firstEntity?.id || null, azienda_id: aziendaId }),
       })
       router.push(`/admin/newsletter/${nl.id}`)
     } catch (e) {

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
+import { useAzienda } from '@/context/AziendaContext'
 import {
   Calendar, Plus, ChevronLeft, ChevronRight, AlertCircle, Trash2,
   Lightbulb, X, Send, GripVertical, Eye, Pencil, Copy, User, Layers, ExternalLink, BarChart2, Clock, Hash, Users, Flag,
@@ -214,6 +215,9 @@ function PreviewModal({ post, onClose, onClone }) {
 export default function PianoEditorialePage() {
   const router = useRouter()
   const { profile } = useAuth()
+  const { azienda, strutture, ristoranti, attivita } = useAzienda()
+  const aziendaId = azienda?.id || profile?.azienda_id
+    || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id || attivita?.[0]?.azienda_id
   const now = new Date()
 
   // Calendar state
@@ -769,7 +773,7 @@ export default function PianoEditorialePage() {
 
       {/* ── Vista campagne ── */}
       {view === 'campagne' && (
-        <CampaignView campagne={campagne} setCampagne={setCampagne} />
+        <CampaignView campagne={campagne} setCampagne={setCampagne} aziendaId={aziendaId} />
       )}
 
       {/* ── Vista team ── */}
@@ -783,7 +787,7 @@ export default function PianoEditorialePage() {
       {view === 'hashtag' && (
         hashtagLoading
           ? <p style={{ color: '#888' }}>Caricamento…</p>
-          : <HashtagView sets={hashtagSets} setSets={setHashtagSets} />
+          : <HashtagView sets={hashtagSets} setSets={setHashtagSets} aziendaId={aziendaId} />
       )}
 
       {/* ── Vista stats ── */}
@@ -793,7 +797,7 @@ export default function PianoEditorialePage() {
 
       {/* ── Vista idee ── */}
       {view === 'idee' && (
-        <IdeeView idee={idee} setIdee={setIdee} onDelete={handleDeleteIdea} onPianifica={handlePianifica} />
+        <IdeeView idee={idee} setIdee={setIdee} onDelete={handleDeleteIdea} onPianifica={handlePianifica} aziendaId={aziendaId} />
       )}
 
       <PreviewModal
@@ -807,7 +811,7 @@ export default function PianoEditorialePage() {
 
 // ── HashtagView ───────────────────────────────────────────────────────────────
 
-function HashtagView({ sets, setSets }) {
+function HashtagView({ sets, setSets, aziendaId }) {
   const [adding, setAdding]       = useState(false)
   const [nome, setNome]           = useState('')
   const [tagsInput, setTagsInput] = useState('')
@@ -823,7 +827,7 @@ function HashtagView({ sets, setSets }) {
     try {
       const set = await apiFetch('/api/piano-editoriale/hashtag-sets', {
         method: 'POST',
-        body: JSON.stringify({ nome: nome.trim(), canale, pillar, tags }),
+        body: JSON.stringify({ nome: nome.trim(), canale, pillar, tags, azienda_id: aziendaId }),
       })
       setSets(prev => [set, ...prev])
       setNome(''); setTagsInput(''); setCanale(''); setPillar('')
@@ -1089,7 +1093,7 @@ function StatsView({ data }) {
 
 // ── IdeeView ──────────────────────────────────────────────────────────────────
 
-function IdeeView({ idee, setIdee, onDelete, onPianifica }) {
+function IdeeView({ idee, setIdee, onDelete, onPianifica, aziendaId }) {
   const [adding, setAdding] = useState(false)
   const [newTitolo, setNewTitolo] = useState('')
   const [newNote, setNewNote] = useState('')
@@ -1107,7 +1111,7 @@ function IdeeView({ idee, setIdee, onDelete, onPianifica }) {
     try {
       const idea = await apiFetch('/api/piano-editoriale/idee', {
         method: 'POST',
-        body: JSON.stringify({ titolo: newTitolo.trim(), note: newNote.trim(), pillar: newPillar, canali: newCanali }),
+        body: JSON.stringify({ titolo: newTitolo.trim(), note: newNote.trim(), pillar: newPillar, canali: newCanali, azienda_id: aziendaId }),
       })
       setIdee(prev => [idea, ...prev])
       setNewTitolo(''); setNewNote(''); setNewPillar(''); setNewCanali([])
@@ -1427,7 +1431,7 @@ function TeamView({ profile, members, setMembers }) {
 
 const COLORS_PRESET = ['#6366f1','#ec4899','#f97316','#059669','#0ea5e9','#7c3aed','#dc2626','#d97706','#0284c7','#16a34a']
 
-function CampaignView({ campagne, setCampagne }) {
+function CampaignView({ campagne, setCampagne, aziendaId }) {
   const [adding, setAdding]           = useState(false)
   const [editingId, setEditingId]     = useState(null)
   const [nome, setNome]               = useState('')
@@ -1451,7 +1455,7 @@ function CampaignView({ campagne, setCampagne }) {
         setEditingId(null)
       } else {
         const created = await apiFetch('/api/piano-editoriale/campagne', {
-          method: 'POST', body: JSON.stringify({ nome, colore, data_inizio: dataInizio || null, data_fine: dataFine || null, descrizione }),
+          method: 'POST', body: JSON.stringify({ nome, colore, data_inizio: dataInizio || null, data_fine: dataFine || null, descrizione, azienda_id: aziendaId }),
         })
         setCampagne(prev => [...prev, created])
         setAdding(false)

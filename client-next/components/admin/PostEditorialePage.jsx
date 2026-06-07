@@ -4,6 +4,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { useProperty } from '@/hooks/useProperty'
 import { useAuth } from '@/context/AuthContext'
+import { useAzienda } from '@/context/AziendaContext'
 import {
   Save, Trash2, ArrowLeft, Calendar, AlertCircle, Sparkles, X,
   RefreshCw, Copy, Eye, Image, Search, Clock, Tag, CheckCircle, BadgeCheck, User, Layers, ExternalLink,
@@ -110,6 +111,9 @@ export default function PostEditorialePage() {
   const isNew = id === 'nuovo'
   const { property } = useProperty()
   const { profile } = useAuth()
+  const { azienda, strutture, ristoranti, attivita } = useAzienda()
+  const aziendaId = azienda?.id || profile?.azienda_id
+    || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id || attivita?.[0]?.azienda_id
   const isStaff    = profile?.role === 'staff'
   const canPublish = !isStaff || !!profile?.permissions?.pe_pubblica
   const canApprove = !isStaff || !!profile?.permissions?.pe_approva
@@ -262,7 +266,7 @@ export default function PostEditorialePage() {
   async function save() {
     setSaving(true); setError(''); setSaved(false)
     const refTipo = TIPO_REF[tipoContenuto] || null
-    const body = { titolo, testo, canali, data_pianificata: buildDataPianificata(), stato, note, immagine_url: immagineUrl, labels, pillar, design_url: designUrl, tipo_contenuto: tipoContenuto, ref_id: refId || null, ref_tipo: refTipo, richiede_approvazione: richiedeApprovazione, campagna_id: campagnaId || null }
+    const body = { titolo, testo, canali, data_pianificata: buildDataPianificata(), stato, note, immagine_url: immagineUrl, labels, pillar, design_url: designUrl, tipo_contenuto: tipoContenuto, ref_id: refId || null, ref_tipo: refTipo, richiede_approvazione: richiedeApprovazione, campagna_id: campagnaId || null, azienda_id: aziendaId }
     try {
       if (isNew) {
         const created = await apiFetch('/api/piano-editoriale', { method: 'POST', body: JSON.stringify(body) })

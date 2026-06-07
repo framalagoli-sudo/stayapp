@@ -7,26 +7,40 @@ const router = Router()
 const ALLOWED_STATO = new Set(['bozza', 'pianificato', 'in_revisione', 'pubblicato'])
 
 async function getProfile(userId) {
-  const { data } = await supabase.from('profiles').select('azienda_id, full_name').eq('id', userId).single()
+  const { data } = await supabase.from('profiles').select('role, azienda_id, full_name').eq('id', userId).single()
   return data || {}
 }
 
-async function getAziendaId(userId) {
-  const { azienda_id } = await getProfile(userId)
-  return azienda_id || null
+// Per super_admin: accetta azienda_id da query (GET) o body (POST/PATCH/DELETE)
+// Per altri ruoli: usa profile.azienda_id
+async function getAziendaId(userId, req) {
+  const profile = await getProfile(userId)
+  if (profile.role === 'super_admin') {
+    return req?.body?.azienda_id || req?.query?.azienda_id || null
+  }
+  return profile.azienda_id || null
+}
+
+async function getProfileData(userId, req) {
+  const profile = await getProfile(userId)
+  const isSuperAdmin = profile.role === 'super_admin'
+  const azienda_id = isSuperAdmin
+    ? (req?.body?.azienda_id || req?.query?.azienda_id || null)
+    : (profile.azienda_id || null)
+  return { ...profile, azienda_id, isSuperAdmin }
 }
 
 // ── Lista post ────────────────────────────────────────────────────────────────
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { azienda_id, isSuperAdmin } = await getProfileData(req.user.id, req)
+    if (!isSuperAdmin && !azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
 
     let q = supabase
       .from('piano_editoriale')
       .select('*')
-      .eq('azienda_id', azienda_id)
       .order('data_pianificata', { ascending: true, nullsFirst: false })
+    if (azienda_id) q = q.eq('azienda_id', azienda_id)
 
     if (req.query.stato)       q = q.eq('stato', req.query.stato)
     if (req.query.campagna_id) q = q.eq('campagna_id', req.query.campagna_id)
@@ -53,13 +67,11 @@ router.get('/', requireAuth, async (req, res) => {
 // ── Idee ──────────────────────────────────────────────────────────────────────
 router.get('/idee', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
-    const { data, error } = await supabase
-      .from('idee_editoriali')
-      .select('*')
-      .eq('azienda_id', azienda_id)
-      .order('created_at', { ascending: false })
+    const { azienda_id, isSuperAdmin } = await getProfileData(req.user.id, req)
+    if (!isSuperAdmin && !azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    let q = supabase.from('idee_editoriali').select('*').order('created_at', { ascending: false })
+    if (azienda_id) q = q.eq('azienda_id', azienda_id)
+    const { data, error } = await q
     if (error) return res.status(500).json({ error: error.message })
     res.json(data)
   } catch (err) { res.status(500).json({ error: err.message }) }
@@ -67,8 +79,8 @@ router.get('/idee', requireAuth, async (req, res) => {
 
 router.post('/idee', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const azienda_id = await getAziendaId(req.user.id, req)
+    if (!azienda_id) return res.status(400).json({ error: 'azienda_id obbligatorio' })
     const { titolo, note, pillar, canali } = req.body
     const { data, error } = await supabase
       .from('idee_editoriali')
@@ -81,17 +93,14 @@ router.post('/idee', requireAuth, async (req, res) => {
 
 router.patch('/idee/:id', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { azienda_id, isSuperAdmin } = await getProfileData(req.user.id, req)
+    if (!isSuperAdmin && !azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
     const allowed = ['titolo', 'note', 'pillar', 'canali']
     const patch = { updated_at: new Date().toISOString() }
     for (const k of allowed) if (k in req.body) patch[k] = req.body[k]
-    const { data, error } = await supabase
-      .from('idee_editoriali')
-      .update(patch)
-      .eq('id', req.params.id)
-      .eq('azienda_id', azienda_id)
-      .select().single()
+    let q = supabase.from('idee_editoriali').update(patch).eq('id', req.params.id)
+    if (azienda_id) q = q.eq('azienda_id', azienda_id)
+    const { data, error } = await q.select().single()
     if (error) return res.status(500).json({ error: error.message })
     res.json(data)
   } catch (err) { res.status(500).json({ error: err.message }) }
@@ -99,13 +108,11 @@ router.patch('/idee/:id', requireAuth, async (req, res) => {
 
 router.delete('/idee/:id', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
-    const { error } = await supabase
-      .from('idee_editoriali')
-      .delete()
-      .eq('id', req.params.id)
-      .eq('azienda_id', azienda_id)
+    const { azienda_id, isSuperAdmin } = await getProfileData(req.user.id, req)
+    if (!isSuperAdmin && !azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    let q = supabase.from('idee_editoriali').delete().eq('id', req.params.id)
+    if (azienda_id) q = q.eq('azienda_id', azienda_id)
+    const { error } = await q
     if (error) return res.status(500).json({ error: error.message })
     res.json({ ok: true })
   } catch (err) { res.status(500).json({ error: err.message }) }
@@ -113,21 +120,18 @@ router.delete('/idee/:id', requireAuth, async (req, res) => {
 
 router.post('/idee/:id/pianifica', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
-    const { data: idea, error: ideaErr } = await supabase
-      .from('idee_editoriali')
-      .select('*')
-      .eq('id', req.params.id)
-      .eq('azienda_id', azienda_id)
-      .single()
+    const { azienda_id, isSuperAdmin } = await getProfileData(req.user.id, req)
+    if (!isSuperAdmin && !azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    let ideaQ = supabase.from('idee_editoriali').select('*').eq('id', req.params.id)
+    if (azienda_id) ideaQ = ideaQ.eq('azienda_id', azienda_id)
+    const { data: idea, error: ideaErr } = await ideaQ.single()
     if (ideaErr || !idea) return res.status(404).json({ error: 'Idea non trovata' })
 
     const { data_pianificata } = req.body
     const { data: post, error: postErr } = await supabase
       .from('piano_editoriale')
       .insert({
-        azienda_id,
+        azienda_id: azienda_id || idea.azienda_id,
         titolo: idea.titolo,
         testo:  idea.note || '',
         canali: idea.canali || [],
@@ -147,12 +151,11 @@ router.post('/idee/:id/pianifica', requireAuth, async (req, res) => {
 // ── Stats ─────────────────────────────────────────────────────────────────────
 router.get('/stats', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
-    const { data, error } = await supabase
-      .from('piano_editoriale')
-      .select('stato, tipo_contenuto, canali, data_pianificata, created_at')
-      .eq('azienda_id', azienda_id)
+    const { azienda_id, isSuperAdmin } = await getProfileData(req.user.id, req)
+    if (!isSuperAdmin && !azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    let q = supabase.from('piano_editoriale').select('stato, tipo_contenuto, canali, data_pianificata, created_at')
+    if (azienda_id) q = q.eq('azienda_id', azienda_id)
+    const { data, error } = await q
     if (error) return res.status(500).json({ error: error.message })
     res.json(data || [])
   } catch (err) { res.status(500).json({ error: err.message }) }
@@ -161,13 +164,11 @@ router.get('/stats', requireAuth, async (req, res) => {
 // ── Hashtag sets ──────────────────────────────────────────────────────────────
 router.get('/hashtag-sets', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
-    const { data, error } = await supabase
-      .from('hashtag_sets')
-      .select('*')
-      .eq('azienda_id', azienda_id)
-      .order('created_at', { ascending: false })
+    const { azienda_id, isSuperAdmin } = await getProfileData(req.user.id, req)
+    if (!isSuperAdmin && !azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    let q = supabase.from('hashtag_sets').select('*').order('created_at', { ascending: false })
+    if (azienda_id) q = q.eq('azienda_id', azienda_id)
+    const { data, error } = await q
     if (error) return res.status(500).json({ error: error.message })
     res.json(data || [])
   } catch (err) { res.status(500).json({ error: err.message }) }
@@ -175,8 +176,8 @@ router.get('/hashtag-sets', requireAuth, async (req, res) => {
 
 router.post('/hashtag-sets', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const azienda_id = await getAziendaId(req.user.id, req)
+    if (!azienda_id) return res.status(400).json({ error: 'azienda_id obbligatorio' })
     const { nome, canale, pillar, tags } = req.body
     const { data, error } = await supabase
       .from('hashtag_sets')
@@ -189,13 +190,11 @@ router.post('/hashtag-sets', requireAuth, async (req, res) => {
 
 router.delete('/hashtag-sets/:id', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
-    const { error } = await supabase
-      .from('hashtag_sets')
-      .delete()
-      .eq('id', req.params.id)
-      .eq('azienda_id', azienda_id)
+    const { azienda_id, isSuperAdmin } = await getProfileData(req.user.id, req)
+    if (!isSuperAdmin && !azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    let q = supabase.from('hashtag_sets').delete().eq('id', req.params.id)
+    if (azienda_id) q = q.eq('azienda_id', azienda_id)
+    const { error } = await q
     if (error) return res.status(500).json({ error: error.message })
     res.json({ ok: true })
   } catch (err) { res.status(500).json({ error: err.message }) }
@@ -204,13 +203,11 @@ router.delete('/hashtag-sets/:id', requireAuth, async (req, res) => {
 // ── Campagne ──────────────────────────────────────────────────────────────────
 router.get('/campagne', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
-    const { data, error } = await supabase
-      .from('pe_campagne')
-      .select('*')
-      .eq('azienda_id', azienda_id)
-      .order('data_inizio', { ascending: true, nullsFirst: false })
+    const { azienda_id, isSuperAdmin } = await getProfileData(req.user.id, req)
+    if (!isSuperAdmin && !azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    let q = supabase.from('pe_campagne').select('*').order('data_inizio', { ascending: true, nullsFirst: false })
+    if (azienda_id) q = q.eq('azienda_id', azienda_id)
+    const { data, error } = await q
     if (error) return res.status(500).json({ error: error.message })
     res.json(data)
   } catch (err) { res.status(500).json({ error: err.message }) }
@@ -218,8 +215,8 @@ router.get('/campagne', requireAuth, async (req, res) => {
 
 router.post('/campagne', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const azienda_id = await getAziendaId(req.user.id, req)
+    if (!azienda_id) return res.status(400).json({ error: 'azienda_id obbligatorio' })
     const { nome, colore, data_inizio, data_fine, descrizione } = req.body
     if (!nome?.trim()) return res.status(400).json({ error: 'Nome obbligatorio' })
     const { data, error } = await supabase
@@ -233,8 +230,8 @@ router.post('/campagne', requireAuth, async (req, res) => {
 
 router.patch('/campagne/:cid', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { azienda_id, isSuperAdmin } = await getProfileData(req.user.id, req)
+    if (!isSuperAdmin && !azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
     const { nome, colore, data_inizio, data_fine, descrizione } = req.body
     const patch = {}
     if (nome !== undefined)        patch.nome = nome.trim()
@@ -243,8 +240,9 @@ router.patch('/campagne/:cid', requireAuth, async (req, res) => {
     if (data_fine !== undefined)   patch.data_fine = data_fine || null
     if (descrizione !== undefined) patch.descrizione = descrizione
     patch.updated_at = new Date().toISOString()
-    const { data, error } = await supabase
-      .from('pe_campagne').update(patch).eq('id', req.params.cid).eq('azienda_id', azienda_id).select().single()
+    let q = supabase.from('pe_campagne').update(patch).eq('id', req.params.cid)
+    if (azienda_id) q = q.eq('azienda_id', azienda_id)
+    const { data, error } = await q.select().single()
     if (error) return res.status(500).json({ error: error.message })
     res.json(data)
   } catch (err) { res.status(500).json({ error: err.message }) }
@@ -252,10 +250,11 @@ router.patch('/campagne/:cid', requireAuth, async (req, res) => {
 
 router.delete('/campagne/:cid', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
-    const { error } = await supabase
-      .from('pe_campagne').delete().eq('id', req.params.cid).eq('azienda_id', azienda_id)
+    const { azienda_id, isSuperAdmin } = await getProfileData(req.user.id, req)
+    if (!isSuperAdmin && !azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    let q = supabase.from('pe_campagne').delete().eq('id', req.params.cid)
+    if (azienda_id) q = q.eq('azienda_id', azienda_id)
+    const { error } = await q
     if (error) return res.status(500).json({ error: error.message })
     res.json({ ok: true })
   } catch (err) { res.status(500).json({ error: err.message }) }
@@ -264,14 +263,11 @@ router.delete('/campagne/:cid', requireAuth, async (req, res) => {
 // ── Commenti ──────────────────────────────────────────────────────────────────
 router.get('/:id/commenti', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
-    const { data, error } = await supabase
-      .from('pe_commenti')
-      .select('*')
-      .eq('post_id', req.params.id)
-      .eq('azienda_id', azienda_id)
-      .order('created_at', { ascending: true })
+    const { azienda_id, isSuperAdmin } = await getProfileData(req.user.id, req)
+    if (!isSuperAdmin && !azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    let q = supabase.from('pe_commenti').select('*').eq('post_id', req.params.id).order('created_at', { ascending: true })
+    if (azienda_id) q = q.eq('azienda_id', azienda_id)
+    const { data, error } = await q
     if (error) return res.status(500).json({ error: error.message })
     res.json(data)
   } catch (err) { res.status(500).json({ error: err.message }) }
@@ -279,13 +275,20 @@ router.get('/:id/commenti', requireAuth, async (req, res) => {
 
 router.post('/:id/commenti', requireAuth, async (req, res) => {
   try {
-    const profile = await getProfile(req.user.id)
-    if (!profile.azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { azienda_id, isSuperAdmin, full_name } = await getProfileData(req.user.id, req)
+    if (!isSuperAdmin && !azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
     const { testo } = req.body
     if (!testo?.trim()) return res.status(400).json({ error: 'Testo obbligatorio' })
+    // Per super_admin senza azienda_id: usa azienda_id del post
+    let effectiveAziendaId = azienda_id
+    if (!effectiveAziendaId) {
+      const { data: post } = await supabase.from('piano_editoriale').select('azienda_id').eq('id', req.params.id).single()
+      effectiveAziendaId = post?.azienda_id
+    }
+    if (!effectiveAziendaId) return res.status(400).json({ error: 'azienda_id non determinabile' })
     const { data, error } = await supabase
       .from('pe_commenti')
-      .insert({ post_id: req.params.id, azienda_id: profile.azienda_id, author_id: req.user.id, author_name: profile.full_name || 'Utente', testo: testo.trim() })
+      .insert({ post_id: req.params.id, azienda_id: effectiveAziendaId, author_id: req.user.id, author_name: full_name || 'Utente', testo: testo.trim() })
       .select().single()
     if (error) return res.status(500).json({ error: error.message })
     res.json(data)
@@ -294,13 +297,11 @@ router.post('/:id/commenti', requireAuth, async (req, res) => {
 
 router.delete('/:id/commenti/:cid', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
-    const { error } = await supabase
-      .from('pe_commenti')
-      .delete()
-      .eq('id', req.params.cid)
-      .eq('azienda_id', azienda_id)
+    const { azienda_id, isSuperAdmin } = await getProfileData(req.user.id, req)
+    if (!isSuperAdmin && !azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    let q = supabase.from('pe_commenti').delete().eq('id', req.params.cid)
+    if (azienda_id) q = q.eq('azienda_id', azienda_id)
+    const { error } = await q
     if (error) return res.status(500).json({ error: error.message })
     res.json({ ok: true })
   } catch (err) { res.status(500).json({ error: err.message }) }
@@ -309,8 +310,9 @@ router.delete('/:id/commenti/:cid', requireAuth, async (req, res) => {
 // ── Refs interni per collegamento (articoli / newsletter / eventi) ─────────────
 router.get('/refs', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { azienda_id, isSuperAdmin } = await getProfileData(req.user.id, req)
+    if (!isSuperAdmin && !azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    if (!azienda_id) return res.json([])
     const { tipo } = req.query
 
     if (tipo === 'articolo') {
@@ -351,14 +353,11 @@ router.get('/refs', requireAuth, async (req, res) => {
 // ── Singolo post ──────────────────────────────────────────────────────────────
 router.get('/:id', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
-    const { data, error } = await supabase
-      .from('piano_editoriale')
-      .select('*')
-      .eq('id', req.params.id)
-      .eq('azienda_id', azienda_id)
-      .single()
+    const { azienda_id, isSuperAdmin } = await getProfileData(req.user.id, req)
+    if (!isSuperAdmin && !azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    let q = supabase.from('piano_editoriale').select('*').eq('id', req.params.id)
+    if (azienda_id) q = q.eq('azienda_id', azienda_id)
+    const { data, error } = await q.single()
     if (error) return res.status(404).json({ error: 'Non trovato' })
     res.json(data)
   } catch (err) { res.status(500).json({ error: err.message }) }
@@ -367,13 +366,12 @@ router.get('/:id', requireAuth, async (req, res) => {
 // ── Crea post ─────────────────────────────────────────────────────────────────
 router.post('/', requireAuth, async (req, res) => {
   try {
-    const profile = await getProfile(req.user.id)
-    const azienda_id = profile.azienda_id
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { azienda_id, isSuperAdmin, full_name } = await getProfileData(req.user.id, req)
+    if (!azienda_id) return res.status(400).json({ error: 'azienda_id obbligatorio' })
 
     const { titolo, testo, immagine_url, canali, data_pianificata, stato, note, labels, pillar, design_url, tipo_contenuto, ref_id, ref_tipo, richiede_approvazione, campagna_id } = req.body
     const stato_safe = ALLOWED_STATO.has(stato) ? stato : 'bozza'
-    const authorName = profile.full_name || 'Utente'
+    const authorName = full_name || 'Utente'
 
     const { data, error } = await supabase
       .from('piano_editoriale')
@@ -409,15 +407,12 @@ router.post('/', requireAuth, async (req, res) => {
 // ── Duplica post ──────────────────────────────────────────────────────────────
 router.post('/:id/duplica', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { azienda_id, isSuperAdmin } = await getProfileData(req.user.id, req)
+    if (!isSuperAdmin && !azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
 
-    const { data: orig, error: origErr } = await supabase
-      .from('piano_editoriale')
-      .select('*')
-      .eq('id', req.params.id)
-      .eq('azienda_id', azienda_id)
-      .single()
+    let origQ = supabase.from('piano_editoriale').select('*').eq('id', req.params.id)
+    if (azienda_id) origQ = origQ.eq('azienda_id', azienda_id)
+    const { data: orig, error: origErr } = await origQ.single()
     if (origErr || !orig) return res.status(404).json({ error: 'Post non trovato' })
 
     const { data: copy, error: copyErr } = await supabase
@@ -448,15 +443,14 @@ router.post('/:id/duplica', requireAuth, async (req, res) => {
 // ── Aggiorna post ─────────────────────────────────────────────────────────────
 router.patch('/:id', requireAuth, async (req, res) => {
   try {
-    const profile = await getProfile(req.user.id)
-    const azienda_id = profile.azienda_id
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    const { azienda_id, isSuperAdmin, full_name } = await getProfileData(req.user.id, req)
+    if (!isSuperAdmin && !azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
 
     const allowed = ['titolo', 'testo', 'immagine_url', 'canali', 'data_pianificata', 'stato', 'note', 'labels', 'pillar', 'design_url', 'tipo_contenuto', 'ref_id', 'ref_tipo', 'richiede_approvazione', 'campagna_id']
     const patch = {
       updated_at:      new Date().toISOString(),
       updated_by:      req.user.id,
-      updated_by_name: profile.full_name || 'Utente',
+      updated_by_name: full_name || 'Utente',
     }
     for (const k of allowed) if (k in req.body) patch[k] = req.body[k]
     if (patch.stato !== undefined && !ALLOWED_STATO.has(patch.stato)) delete patch.stato
@@ -466,13 +460,9 @@ router.patch('/:id', requireAuth, async (req, res) => {
         : []
     }
 
-    const { data, error } = await supabase
-      .from('piano_editoriale')
-      .update(patch)
-      .eq('id', req.params.id)
-      .eq('azienda_id', azienda_id)
-      .select()
-      .single()
+    let q = supabase.from('piano_editoriale').update(patch).eq('id', req.params.id)
+    if (azienda_id) q = q.eq('azienda_id', azienda_id)
+    const { data, error } = await q.select().single()
     if (error) return res.status(500).json({ error: error.message })
     res.json(data)
   } catch (err) { res.status(500).json({ error: err.message }) }
@@ -481,13 +471,11 @@ router.patch('/:id', requireAuth, async (req, res) => {
 // ── Elimina post ──────────────────────────────────────────────────────────────
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
-    const azienda_id = await getAziendaId(req.user.id)
-    if (!azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
-    const { error } = await supabase
-      .from('piano_editoriale')
-      .delete()
-      .eq('id', req.params.id)
-      .eq('azienda_id', azienda_id)
+    const { azienda_id, isSuperAdmin } = await getProfileData(req.user.id, req)
+    if (!isSuperAdmin && !azienda_id) return res.status(403).json({ error: 'Nessuna azienda' })
+    let q = supabase.from('piano_editoriale').delete().eq('id', req.params.id)
+    if (azienda_id) q = q.eq('azienda_id', azienda_id)
+    const { error } = await q
     if (error) return res.status(500).json({ error: error.message })
     res.json({ ok: true })
   } catch (err) { res.status(500).json({ error: err.message }) }
