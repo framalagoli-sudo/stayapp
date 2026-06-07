@@ -151,11 +151,16 @@ export default function AdminLayout({ children }) {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
   const [bookingOpen, setBookingOpen] = useState(false)
+  const [aziendeLista, setAziendeLista] = useState([])
 
   useEffect(() => { setMenuOpen(false) }, [pathname])
   useEffect(() => {
     if (pathname.startsWith('/admin/booking')) setBookingOpen(true)
   }, [pathname])
+  useEffect(() => {
+    if (profile?.role !== 'super_admin') return
+    apiFetch('/api/aziende').then(setAziendeLista).catch(() => {})
+  }, [profile?.role])
 
   async function handleSignOut() {
     await signOut()
@@ -293,31 +298,10 @@ export default function AdminLayout({ children }) {
     )
   }
 
-  // ─── Super admin: selettore azienda ──────────────────────────────────────
-  function SuperAdminAziendaSelector() {
-    const [aziende, setAziende] = useState([])
-    useEffect(() => {
-      apiFetch('/api/aziende').then(setAziende).catch(() => {})
-    }, [])
-    if (aziende.length === 0) return null
-    return (
-      <div style={{ padding: '0 12px 12px' }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: '#444', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 5 }}>
-          Azienda attiva
-        </div>
-        <select
-          className="sidebar-selector"
-          style={{ margin: 0, width: '100%' }}
-          value={activeAziendaId || ''}
-          onChange={e => setActiveAziendaId(e.target.value || null)}
-        >
-          <option value="">— tutte —</option>
-          {aziende.map(a => (
-            <option key={a.id} value={a.id}>{a.ragione_sociale}</option>
-          ))}
-        </select>
-      </div>
-    )
+  function handleAziendaChange(e) {
+    const newId = e.target.value || null
+    setActiveAziendaId(newId)
+    router.push('/admin')
   }
 
   // ─── Entity switcher (header) ─────────────────────────────────────────────
@@ -327,7 +311,17 @@ export default function AdminLayout({ children }) {
       ...ristoranti.map(e => ({ id: e.id, name: e.name, key: `r:${e.id}` })),
       ...(attivita || []).map(e => ({ id: e.id, name: e.name, key: `a:${e.id}` })),
     ]
-    if (allEntities.length === 0) return null
+    if (allEntities.length === 0) {
+      // Super_admin ha selezionato un'azienda senza entità → mostra feedback
+      if (isSuperAdmin && activeAziendaId) {
+        return (
+          <div style={{ padding: '0 12px 12px', fontSize: 12, color: '#555', fontStyle: 'italic' }}>
+            Nessuna entità registrata.
+          </div>
+        )
+      }
+      return null
+    }
 
     const activeKey = activeEntityType === 'struttura' && activeSitoId ? `s:${activeSitoId}`
       : activeEntityType === 'ristorante' && activeSitoId ? `r:${activeSitoId}`
@@ -383,7 +377,24 @@ export default function AdminLayout({ children }) {
       </div>
 
       {/* Selettore azienda — solo super_admin */}
-      {isSuperAdmin && <SuperAdminAziendaSelector />}
+      {isSuperAdmin && aziendeLista.length > 0 && (
+        <div style={{ padding: '0 12px 12px' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#444', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 5 }}>
+            Azienda attiva
+          </div>
+          <select
+            className="sidebar-selector"
+            style={{ margin: 0, width: '100%' }}
+            value={activeAziendaId || ''}
+            onChange={handleAziendaChange}
+          >
+            <option value="">— tutte —</option>
+            {aziendeLista.map(a => (
+              <option key={a.id} value={a.id}>{a.ragione_sociale}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Entity switcher — admin azienda, staff, e super_admin quando ha un'azienda attiva */}
       {(isAdminAzienda || isStaff || (isSuperAdmin && activeAziendaId)) && <EntitySwitcher />}
