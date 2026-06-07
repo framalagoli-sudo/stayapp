@@ -243,7 +243,7 @@ function KanbanColumn({ stage, contacts, onEdit, onDelete, onAdd }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function ContattiPage() {
   const { profile } = useAuth()
-  const { azienda, strutture, ristoranti, attivita } = useAzienda()
+  const { azienda, strutture, ristoranti, attivita, activeAziendaId } = useAzienda()
   const [contatti,  setContatti]  = useState([])
   const [loading,   setLoading]   = useState(true)
   const [search,    setSearch]    = useState('')
@@ -254,7 +254,7 @@ export default function ContattiPage() {
   const [allTags,   setAllTags]   = useState([])
   const [recLinks,  setRecLinks]  = useState({}) // { [contactId]: { link, copied, picking, entityKey } }
 
-  const aziendaId = azienda?.id || profile?.azienda_id
+  const aziendaId = azienda?.id || profile?.azienda_id || activeAziendaId
     || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))

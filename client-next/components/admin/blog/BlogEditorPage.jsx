@@ -15,10 +15,10 @@ export default function BlogEditorPage() {
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   const router = useRouter()
   const { profile } = useAuth()
-  const { azienda, strutture, ristoranti } = useAzienda()
+  const { azienda, strutture, ristoranti, activeAziendaId } = useAzienda()
 
   // super_admin ha profile.azienda_id = null → fallback alla prima struttura/ristorante disponibile
-  const aziendaId = azienda?.id || profile?.azienda_id
+  const aziendaId = azienda?.id || profile?.azienda_id || activeAziendaId
     || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id
 
   const [form, setForm] = useState({

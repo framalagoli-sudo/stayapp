@@ -22,7 +22,7 @@ function badge(bg, color) {
 
 export default function BlogListPage() {
   const { profile } = useAuth()
-  const { azienda, strutture, ristoranti } = useAzienda()
+  const { azienda, strutture, ristoranti, activeAziendaId } = useAzienda()
   const router = useRouter()
   const [articoli, setArticoli] = useState([])
   const [categories, setCategories] = useState([])
@@ -34,7 +34,7 @@ export default function BlogListPage() {
   const [aiGenerating, setAiGenerating] = useState(false)
   const [aiError, setAiError] = useState('')
 
-  const aziendaId = azienda?.id || profile?.azienda_id
+  const aziendaId = azienda?.id || profile?.azienda_id || activeAziendaId
     || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id
 
   // Entities available for AI generation

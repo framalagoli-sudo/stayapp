@@ -8,9 +8,9 @@ import { ArrowLeft, Trash2, Plus } from 'lucide-react'
 
 export default function BlogCategoriesPage() {
   const { profile } = useAuth()
-  const { azienda, strutture, ristoranti } = useAzienda()
+  const { azienda, strutture, ristoranti, activeAziendaId } = useAzienda()
   const router = useRouter()
-  const aziendaId = azienda?.id || profile?.azienda_id
+  const aziendaId = azienda?.id || profile?.azienda_id || activeAziendaId
     || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id
 
   const [categories, setCategories] = useState([])

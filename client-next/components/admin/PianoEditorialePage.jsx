@@ -215,8 +215,8 @@ function PreviewModal({ post, onClose, onClone }) {
 export default function PianoEditorialePage() {
   const router = useRouter()
   const { profile } = useAuth()
-  const { azienda, strutture, ristoranti, attivita } = useAzienda()
-  const aziendaId = azienda?.id || profile?.azienda_id
+  const { azienda, strutture, ristoranti, attivita, activeAziendaId } = useAzienda()
+  const aziendaId = azienda?.id || profile?.azienda_id || activeAziendaId
     || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id || attivita?.[0]?.azienda_id
   const now = new Date()
 
@@ -736,7 +736,7 @@ export default function PianoEditorialePage() {
                   </div>
                 </div>
                 {pendingApprovals.map(p => (
-                  <PostRow key={p.id} p={p} navigate={navigate} handleDelete={handleDelete} handleClone={handleClone} highlight campagnaMap={campagnaMap} />
+                  <PostRow key={p.id} p={p} handleDelete={handleDelete} handleClone={handleClone} highlight campagnaMap={campagnaMap} />
                 ))}
                 <div style={{ borderTop: '1px solid #eee', margin: '4px 0 8px' }} />
               </>
@@ -747,7 +747,7 @@ export default function PianoEditorialePage() {
                   Bozze non pianificate ({applyLabelFilter(drafts).length})
                 </div>
                 {applyLabelFilter(drafts).map(p => (
-                  <PostRow key={p.id} p={p} navigate={navigate} handleDelete={handleDelete} handleClone={handleClone} campagnaMap={campagnaMap} />
+                  <PostRow key={p.id} p={p} handleDelete={handleDelete} handleClone={handleClone} campagnaMap={campagnaMap} />
                 ))}
                 {applyLabelFilter(posts).length > 0 && <div style={{ borderTop: '1px solid #eee', margin: '8px 0' }} />}
               </>
@@ -763,7 +763,7 @@ export default function PianoEditorialePage() {
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.6, padding: '4px 0 8px' }}>Questo mese</div>
                 )}
                 {applyLabelFilter(posts).map(p => (
-                  <PostRow key={p.id} p={p} navigate={navigate} handleDelete={handleDelete} handleClone={handleClone} campagnaMap={campagnaMap} />
+                  <PostRow key={p.id} p={p} handleDelete={handleDelete} handleClone={handleClone} campagnaMap={campagnaMap} />
                 ))}
               </>
             )}
@@ -1243,7 +1243,7 @@ function IdeaCard({ idea, onDelete, pianificaId, setPianificaId, pianificaData, 
 
 // ── PostRow (list view) ────────────────────────────────────────────────────────
 
-function PostRow({ p, navigate, handleDelete, handleClone, highlight, campagnaMap = {} }) {
+function PostRow({ p, handleDelete, handleClone, highlight, campagnaMap = {} }) {
   const stInfo   = STATO_INFO[p.stato] || STATO_INFO.bozza
   const campagna = p.campagna_id ? campagnaMap[p.campagna_id] : null
   return (

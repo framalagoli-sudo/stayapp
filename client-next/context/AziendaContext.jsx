@@ -1,5 +1,5 @@
-﻿'use client'
-import { createContext, useContext, useEffect, useState } from 'react'
+'use client'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { useAuth } from './AuthContext'
 import { apiFetch } from '@/lib/api'
 
@@ -15,6 +15,29 @@ export function AziendaProvider({ children }) {
   const [selectedRistoranteId, _setSelectedRistoranteId] = useState(null)
   const [selectedAttivitaId, _setSelectedAttivitaId] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  // Per super_admin: azienda attiva selezionata (persiste in sessionStorage)
+  const [activeAziendaId, _setActiveAziendaId] = useState(() => {
+    if (typeof window === 'undefined') return null
+    return sessionStorage.getItem('sa_azienda_id') || null
+  })
+  // Cache di tutte le entità (non filtrate) per super_admin
+  const allEntitiesRef = useRef({ strutture: [], ristoranti: [], attivita: [] })
+
+  function setActiveAziendaId(id) {
+    _setActiveAziendaId(id)
+    if (id) sessionStorage.setItem('sa_azienda_id', id)
+    else sessionStorage.removeItem('sa_azienda_id')
+    // Rifiltra le entità senza ricaricare dal server
+    const { strutture: s, ristoranti: r, attivita: a } = allEntitiesRef.current
+    const filtered = (list) => id ? list.filter(e => e.azienda_id === id) : list
+    setStrutture(filtered(s))
+    setRistoranti(filtered(r))
+    setAttivita(filtered(a))
+    _setSelectedStrutturaId(id ? (filtered(s)[0]?.id || null) : (s[0]?.id || null))
+    _setSelectedRistoranteId(id ? (filtered(r)[0]?.id || null) : (r[0]?.id || null))
+    _setSelectedAttivitaId(id ? (filtered(a)[0]?.id || null) : (a[0]?.id || null))
+  }
 
   useEffect(() => {
     if (!profile) { setLoading(false); return }
@@ -59,6 +82,17 @@ export function AziendaProvider({ children }) {
         if (perm.attivita_ids?.length) allAttivita = allAttivita.filter(a => perm.attivita_ids.includes(a.id))
       }
 
+      // Per super_admin: salva tutte le entità nella cache e filtra per activeAziendaId
+      if (profile.role === 'super_admin') {
+        allEntitiesRef.current = { strutture: allStrutture, ristoranti: allRistoranti, attivita: allAttivita }
+        const currentAziendaId = sessionStorage.getItem('sa_azienda_id')
+        if (currentAziendaId) {
+          allStrutture = allStrutture.filter(e => e.azienda_id === currentAziendaId)
+          allRistoranti = allRistoranti.filter(e => e.azienda_id === currentAziendaId)
+          allAttivita = allAttivita.filter(e => e.azienda_id === currentAziendaId)
+        }
+      }
+
       setStrutture(allStrutture)
       setRistoranti(allRistoranti)
       setAttivita(allAttivita)
@@ -84,6 +118,7 @@ export function AziendaProvider({ children }) {
       selectedStrutturaId, setSelectedStrutturaId,
       selectedRistoranteId, setSelectedRistoranteId,
       selectedAttivitaId, setSelectedAttivitaId,
+      activeAziendaId, setActiveAziendaId,
       loading, refresh,
     }}>
       {children}

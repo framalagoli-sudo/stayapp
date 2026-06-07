@@ -17,8 +17,8 @@ function fmtDate(ts) {
 
 export default function NewsletterPage() {
   const { profile } = useAuth()
-  const { azienda, strutture, ristoranti, attivita } = useAzienda()
-  const aziendaId = azienda?.id || profile?.azienda_id
+  const { azienda, strutture, ristoranti, attivita, activeAziendaId } = useAzienda()
+  const aziendaId = azienda?.id || profile?.azienda_id || activeAziendaId
     || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id || attivita?.[0]?.azienda_id
   const router = useRouter()
   const [list, setList]       = useState([])

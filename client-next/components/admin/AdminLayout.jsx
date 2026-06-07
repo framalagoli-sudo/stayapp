@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
 import { useAzienda } from '@/context/AziendaContext'
+import { apiFetch } from '@/lib/api'
 import Breadcrumb from './Breadcrumb'
 import {
   LayoutDashboard, BarChart2, Shield,
@@ -138,7 +139,14 @@ function TrialBanner({ azienda }) {
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function AdminLayout({ children }) {
   const { profile, signOut } = useAuth()
-  const { azienda, strutture, ristoranti, attivita, selectedStrutturaId, setSelectedStrutturaId, selectedRistoranteId, setSelectedRistoranteId, selectedAttivitaId, setSelectedAttivitaId, loading: aziendaLoading } = useAzienda()
+  const {
+    azienda, strutture, ristoranti, attivita,
+    selectedStrutturaId, setSelectedStrutturaId,
+    selectedRistoranteId, setSelectedRistoranteId,
+    selectedAttivitaId, setSelectedAttivitaId,
+    activeAziendaId, setActiveAziendaId,
+    loading: aziendaLoading,
+  } = useAzienda()
   const router = useRouter()
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -285,6 +293,33 @@ export default function AdminLayout({ children }) {
     )
   }
 
+  // ─── Super admin: selettore azienda ──────────────────────────────────────
+  function SuperAdminAziendaSelector() {
+    const [aziende, setAziende] = useState([])
+    useEffect(() => {
+      apiFetch('/api/aziende').then(setAziende).catch(() => {})
+    }, [])
+    if (aziende.length === 0) return null
+    return (
+      <div style={{ padding: '0 12px 12px' }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: '#444', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 5 }}>
+          Azienda attiva
+        </div>
+        <select
+          className="sidebar-selector"
+          style={{ margin: 0, width: '100%' }}
+          value={activeAziendaId || ''}
+          onChange={e => setActiveAziendaId(e.target.value || null)}
+        >
+          <option value="">— tutte —</option>
+          {aziende.map(a => (
+            <option key={a.id} value={a.id}>{a.ragione_sociale}</option>
+          ))}
+        </select>
+      </div>
+    )
+  }
+
   // ─── Entity switcher (header) ─────────────────────────────────────────────
   function EntitySwitcher() {
     const allEntities = [
@@ -347,8 +382,11 @@ export default function AdminLayout({ children }) {
         OltreNova
       </div>
 
-      {/* Entity switcher — admin azienda e staff */}
-      {(isAdminAzienda || isStaff) && <EntitySwitcher />}
+      {/* Selettore azienda — solo super_admin */}
+      {isSuperAdmin && <SuperAdminAziendaSelector />}
+
+      {/* Entity switcher — admin azienda, staff, e super_admin quando ha un'azienda attiva */}
+      {(isAdminAzienda || isStaff || (isSuperAdmin && activeAziendaId)) && <EntitySwitcher />}
 
       <nav style={{ flex: 1, padding: '0 12px', overflowY: 'auto' }}>
 
