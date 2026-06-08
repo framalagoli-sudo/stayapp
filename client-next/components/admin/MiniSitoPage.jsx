@@ -1051,7 +1051,6 @@ function TrackingCard({ form, setForm, save, inputStyle, lblStyle, hintStyle, fi
 }
 
 function GeoCard({ tipo, slug, faqCount, cardStyle, sectionTitle, customDomain }) {
-  const apiBase = process.env.NEXT_PUBLIC_API_URL ?? ''
   const prefix = ENTITY_PREFIX[tipo] || tipo
   const typeLabel = { struttura: 'LodgingBusiness', ristorante: 'Restaurant', attivita: 'TouristAttraction' }[tipo] || 'LocalBusiness'
   const entityUrl = customDomain ? `https://${customDomain}` : `${window.location.origin}/${prefix}/${slug}`
@@ -1087,11 +1086,11 @@ function GeoCard({ tipo, slug, faqCount, cardStyle, sectionTitle, customDomain }
           style={{ padding: '6px 14px', borderRadius: 8, background: '#1a1a2e', color: '#fff', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
           Testa su Google →
         </a>
-        <a href={`${apiBase}/api/guest/sitemap/${tipo}/${slug}`} target="_blank" rel="noopener noreferrer"
+        <a href={`/api/sitemap/${tipo}/${slug}`} target="_blank" rel="noopener noreferrer"
           style={{ padding: '6px 14px', borderRadius: 8, background: '#f5f5f7', color: '#1a1a2e', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
           Sitemap XML
         </a>
-        <a href={`${apiBase}/api/guest/llms/${tipo}/${slug}`} target="_blank" rel="noopener noreferrer"
+        <a href={`/api/llms/${tipo}/${slug}`} target="_blank" rel="noopener noreferrer"
           style={{ padding: '6px 14px', borderRadius: 8, background: '#f5f5f7', color: '#1a1a2e', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
           llms.txt
         </a>
