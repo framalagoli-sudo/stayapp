@@ -93,6 +93,7 @@ export default async function globalSetup() {
   mkdirSync('.auth', { recursive: true })
   writeFileSync('.auth/state.json',   JSON.stringify(storageState, null, 2))
   writeFileSync('.auth/ci-user.json', JSON.stringify({ userId, email }))
+  writeFileSync('.auth/ci-token.json', JSON.stringify({ accessToken: session.access_token }))
 
   console.log(`\n[setup] Utente CI creato: ${email}`)
   console.log(`[setup] Sessione valida ~1h — user eliminato in teardown\n`)

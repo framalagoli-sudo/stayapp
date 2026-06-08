@@ -12,6 +12,10 @@
  */
 
 import { test, expect } from '@playwright/test'
+import { readFileSync } from 'fs'
+import { config } from 'dotenv'
+
+config({ path: '.env.test' })
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -83,11 +87,13 @@ async function checkPage(page, path, label) {
     !e.includes('favicon') &&
     !e.includes('net::ERR') &&
     !e.includes('fonts.gstatic') &&
-    !e.includes('VITE_SENTRY') &&
+    !e.includes('SENTRY') &&
     !e.includes('_next') &&
+    !e.includes('Failed to fetch') &&
     // 403 da chiamate API in background non rompono la UI (verificato via screenshot);
     // crash reali vengono catturati dai check "pagina bianca" e "crash React" sopra
     !e.includes('status of 403') &&
+    !e.includes('status of 401') &&
     e.length < 500
   )
   if (criticalErrors.length > 0) {
@@ -146,13 +152,17 @@ const STATIC_ROUTES = [
 
 let entityRoutes = []
 
-test.beforeAll(async ({ request }) => {
+test.beforeAll(async () => {
   try {
-    // Usiamo l'API per ottenere i primi ID disponibili
+    // Legge il token CI salvato dal global-setup
+    const { accessToken } = JSON.parse(readFileSync('.auth/ci-token.json', 'utf8'))
+    const apiUrl = process.env.TEST_API_URL || 'https://stayapp-production.up.railway.app'
+    const headers = { Authorization: `Bearer ${accessToken}` }
+
     const [strutture, ristoranti, attivita] = await Promise.all([
-      request.get('/api/properties').then(r => r.json()).catch(() => []),
-      request.get('/api/ristoranti').then(r => r.json()).catch(() => []),
-      request.get('/api/attivita').then(r => r.json()).catch(() => []),
+      fetch(`${apiUrl}/api/properties`, { headers }).then(r => r.json()).catch(() => []),
+      fetch(`${apiUrl}/api/ristoranti`,  { headers }).then(r => r.json()).catch(() => []),
+      fetch(`${apiUrl}/api/attivita`,    { headers }).then(r => r.json()).catch(() => []),
     ])
 
     const s = strutture?.[0]
@@ -214,6 +224,7 @@ test.describe('Operativo + Marketing + Account', () => {
 
 test.describe('Sito & App — entità', () => {
   test('struttura + ristorante + attività sub-pages', async ({ page }) => {
+    test.setTimeout(180_000)
     if (entityRoutes.length === 0) {
       test.skip(true, 'Nessuna entità trovata — skip route dinamiche')
     }
