@@ -17,7 +17,7 @@ const DEFAULT_SECTION_ORDER = [
 ]
 const DEFAULT_TRACKING = { meta_pixel_id: '', ga4_id: '', gtm_id: '', tiktok_pixel_id: '' }
 const DEFAULT = {
-  active: false, tagline: '', booking_url: '', seo_title: '', seo_description: '', google_site_verification: '',
+  active: false, tagline: '', booking_url: '', show_pwa_link: true, seo_title: '', seo_description: '', google_site_verification: '',
   video_url: '', section_order: [],
   sections: DEFAULT_SECTIONS, social: DEFAULT_SOCIAL, highlights: [],
   stats: [], promozioni: [], pacchetti: [], testimonianze: [], faq: [],
@@ -61,6 +61,7 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
   const [form, setForm] = useState(DEFAULT)
   const [activeTab, setActiveTab] = useState('generale')
   const [homepageBusy, setHomepageBusy] = useState(false)
+  const [customDomain, setCustomDomain] = useState(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -90,6 +91,15 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
       })
     }
   }, [entity])
+
+  useEffect(() => {
+    if (!entity?.id) return
+    apiFetch(`/api/domini?entity_tipo=${entityType}&entity_id=${entity.id}`)
+      .then(list => {
+        const d = Array.isArray(list) && list.find(d => d.tipo === 'custom' && d.stato === 'attivo')
+        if (d) setCustomDomain(d.dominio)
+      }).catch(() => {})
+  }, [entity?.id, entityType])
 
   function patch(key, value) {
     const updated = { ...form, [key]: value }
@@ -193,16 +203,15 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
       const existing = Array.isArray(pages) && pages.find(p => p.slug === '__home__')
 
       if (existing) {
-        // Se la pagina esiste ma è vuota, migra i dati esistenti
         const full = await apiFetch(`/api/pagine/${existing.id}`)
+        const patch = {}
         if (!full?.blocks?.length) {
           const blocks = buildHomeBlocks(entity, form)
-          if (blocks.length > 0) {
-            await apiFetch(`/api/pagine/${existing.id}`, {
-              method: 'PATCH',
-              body: JSON.stringify({ blocks }),
-            })
-          }
+          if (blocks.length > 0) patch.blocks = blocks
+        }
+        if (full?.status !== 'pubblicata') patch.status = 'pubblicata'
+        if (Object.keys(patch).length > 0) {
+          await apiFetch(`/api/pagine/${existing.id}`, { method: 'PATCH', body: JSON.stringify(patch) })
         }
         return router.push(`/admin/pagine/${existing.id}`)
       }
@@ -458,24 +467,19 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
         <div style={cardStyle}>
           <h3 style={sectionTitle}>Impostazioni generali</h3>
           <div style={fieldWrap}>
-            <label style={lblStyle}>Tagline</label>
-            <input value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))}
-              onBlur={() => save({ minisito: form }).catch(() => {})}
-              placeholder="es. Il comfort di casa, nel cuore delle Dolomiti" style={inputStyle} />
-          </div>
-          <div style={fieldWrap}>
             <label style={lblStyle}>Link prenotazione esterno</label>
             <input type="url" value={form.booking_url} onChange={e => setForm(f => ({ ...f, booking_url: e.target.value }))}
               onBlur={() => save({ minisito: form }).catch(() => {})}
               placeholder="https://www.booking.com/hotel/..." style={inputStyle} />
             <span style={hintStyle}>Booking.com, sito proprietario, ecc. Appare come pulsante "Prenota" nel sito.</span>
           </div>
-          <div style={fieldWrap}>
-            <label style={lblStyle}>Video (YouTube o Vimeo)</label>
-            <input type="url" value={form.video_url} onChange={e => setForm(f => ({ ...f, video_url: e.target.value }))}
-              onBlur={() => save({ minisito: form }).catch(() => {})}
-              placeholder="https://www.youtube.com/watch?v=..." style={inputStyle} />
-            <span style={hintStyle}>Appare come sezione video dedicata nel sito.</span>
+          <div style={{ ...fieldWrap, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <input type="checkbox" id="show_pwa_link" checked={form.show_pwa_link !== false}
+              onChange={e => { const updated = { ...form, show_pwa_link: e.target.checked }; setForm(updated); save({ minisito: updated }).catch(() => {}) }} />
+            <div>
+              <label htmlFor="show_pwa_link" style={{ ...lblStyle, cursor: 'pointer', marginBottom: 2 }}>Mostra link App ospiti nella navigazione</label>
+              <div style={hintStyle}>Se disabilitato, il pulsante "App ospiti" / "Vedi menù" non appare nel menu del sito.</div>
+            </div>
           </div>
           <FaviconUpload form={form} entityType={entityType} entityId={entity?.id} patch={patch} />
         </div>
@@ -529,7 +533,7 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
           ))}
         </div>
         <TrackingCard form={form} setForm={setForm} save={save} inputStyle={inputStyle} lblStyle={lblStyle} hintStyle={hintStyle} fieldWrap={fieldWrap} cardStyle={cardStyle} sectionTitle={sectionTitle} />
-        <GeoCard tipo={entityType} slug={entity.slug} faqCount={(form.faq||[]).filter(f=>f.question&&f.answer).length} cardStyle={cardStyle} sectionTitle={sectionTitle} />
+        <GeoCard tipo={entityType} slug={entity.slug} faqCount={(form.faq||[]).filter(f=>f.question&&f.answer).length} cardStyle={cardStyle} sectionTitle={sectionTitle} customDomain={customDomain} />
       </>}
 
       {activeTab === '__none__' && <>
@@ -1046,11 +1050,11 @@ function TrackingCard({ form, setForm, save, inputStyle, lblStyle, hintStyle, fi
   )
 }
 
-function GeoCard({ tipo, slug, faqCount, cardStyle, sectionTitle }) {
+function GeoCard({ tipo, slug, faqCount, cardStyle, sectionTitle, customDomain }) {
   const apiBase = process.env.NEXT_PUBLIC_API_URL ?? ''
   const prefix = ENTITY_PREFIX[tipo] || tipo
   const typeLabel = { struttura: 'LodgingBusiness', ristorante: 'Restaurant', attivita: 'TouristAttraction' }[tipo] || 'LocalBusiness'
-  const entityUrl = `${window.location.origin}/${prefix}/${slug}`
+  const entityUrl = customDomain ? `https://${customDomain}` : `${window.location.origin}/${prefix}/${slug}`
   const checks = [
     { label: `Schema.org ${typeLabel}`, ok: true },
     { label: 'AggregateRating — stelle visibili su Google', ok: true },

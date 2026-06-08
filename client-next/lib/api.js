@@ -40,7 +40,7 @@ export async function serverFetch(path, options = {}) {
     const res = await fetch(`${API_BASE}${path}`, {
       ...options,
       headers: { 'Content-Type': 'application/json', ...options.headers },
-      next: options.next || { revalidate: 3600 },
+      next: options.next || { revalidate: 60 },
     })
     if (!res.ok) return null
     return res.json()

@@ -92,7 +92,7 @@ const DEFAULT_ORDER = [
   'booking', 'contatti', 'newsletter',
 ]
 
-export default function LandingStruttura({ property }) {
+export default function LandingStruttura({ property, initialHomeBlocks }) {
   const [scrolled,       setScrolled]       = useState(false)
   const [lightbox,       setLightbox]       = useState(null)
   const [upcomingEventi, setUpcomingEventi] = useState([])
@@ -103,7 +103,7 @@ export default function LandingStruttura({ property }) {
   const [pagine,         setPagine]         = useState([])
   const [openDropdown,   setOpenDropdown]   = useState(null)
   const [recensioni,     setRecensioni]     = useState([])
-  const [homeBlocks,     setHomeBlocks]     = useState(null)
+  const [homeBlocks,     setHomeBlocks]     = useState(initialHomeBlocks)
   const aboutRef = useRef(null)
 
   useEffect(() => {
@@ -127,9 +127,11 @@ export default function LandingStruttura({ property }) {
     guestFetch(`/api/guest/recensioni/struttura/${property.id}`)
       .then(d => Array.isArray(d) && setRecensioni(d))
       .catch(() => {})
-    guestFetch(`/api/guest/pagina/struttura/${property.id}/__home__`)
-      .then(d => d?.id && Array.isArray(d.blocks) && d.blocks.length && setHomeBlocks(d.blocks))
-      .catch(() => {})
+    if (initialHomeBlocks === undefined) {
+      guestFetch(`/api/guest/pagina/struttura/${property.id}/__home__`)
+        .then(d => setHomeBlocks(d?.id && Array.isArray(d.blocks) && d.blocks.length ? d.blocks : null))
+        .catch(() => setHomeBlocks(null))
+    }
   }, [property.id])
 
   useEffect(() => {
@@ -149,6 +151,7 @@ export default function LandingStruttura({ property }) {
   const heading = HEADING_FAMILIES[theme.fontHeading] || HEADING_FAMILIES.playfair
   const body    = BODY_FAMILIES[theme.fontBody]       || BODY_FAMILIES.inter
   const mini    = property.minisito || {}
+  const showPwaLink = mini.show_pwa_link !== false
   const sections    = { ...(mini.sections || {}) }
   const social      = mini.social || {}
   const socialLinks = SOCIAL_CONFIG.filter(s => social[s.key])
@@ -991,12 +994,12 @@ export default function LandingStruttura({ property }) {
           </div>
         )}
         <div style={{ display: 'flex', gap: 10 }}>
-          <a href={pwaUrl} style={navBtnSecondary}>App ospiti</a>
+          {showPwaLink && <a href={pwaUrl} style={navBtnSecondary}>App ospiti</a>}
           {bookingUrl && <a href={bookingUrl} target="_blank" rel="noopener noreferrer" style={{ ...navBtnPrimary, background: primary }}>Prenota</a>}
         </div>
       </nav>
 
-      {homeBlocks ? (
+      {homeBlocks === undefined ? null : homeBlocks ? (
         <LandingBlockRenderer
           blocks={homeBlocks} entity={property} entityType="struttura"
           mini={mini} primary={primary} heading={heading} body={body}

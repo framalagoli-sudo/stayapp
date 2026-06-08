@@ -26,8 +26,11 @@ export async function generateMetadata({ params, searchParams }) {
 
 export default async function AttivitaPage({ params, searchParams }) {
   const { slug } = await params
-  const attivita = await serverFetch(`/api/guest/a/${slug}`)
+  const attivita = await serverFetch(`/api/guest/a/${slug}`, { next: { revalidate: 60 } })
   if (!attivita) notFound()
 
-  return <LandingAttivita attivita={attivita} />
+  const preview = searchParams?.preview === '1'
+  const homePage = await serverFetch(`/api/guest/pagina/attivita/${attivita.id}/__home__${preview ? '?preview=1' : ''}`, { next: { revalidate: 0 } }).catch(() => null)
+  const initialHomeBlocks = homePage?.id && Array.isArray(homePage.blocks) && homePage.blocks.length ? homePage.blocks : null
+  return <LandingAttivita attivita={attivita} initialHomeBlocks={initialHomeBlocks} />
 }

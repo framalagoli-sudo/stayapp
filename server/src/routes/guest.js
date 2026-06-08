@@ -210,8 +210,11 @@ router.get('/llms/:tipo/:slug', async (req, res) => {
     const table = tableMap[tipo]
     if (!table) return res.status(400).send('Tipo non valido')
 
+    const selectFields = tipo === 'ristorante'
+      ? 'name, description, address, phone, email, schedule, minisito'
+      : 'name, description, address, phone, email, schedule, services, minisito'
     const { data, error } = await supabase.from(table)
-      .select('name, description, address, phone, email, schedule, services, minisito')
+      .select(selectFields)
       .eq('slug', slug).eq('active', true).single()
     if (error || !data) return res.status(404).send('Entità non trovata')
 
@@ -262,17 +265,26 @@ router.get('/sitemap/:tipo/:slug', async (req, res) => {
       .select('id').eq('slug', slug).eq('active', true).single()
     if (!entity) return res.status(404).send('Entità non trovata')
 
-    const { data: pagine } = await supabase.from('pagine')
-      .select('slug, updated_at')
-      .eq('entity_tipo', tipo).eq('entity_id', entity.id)
-      .eq('status', 'pubblicata')
+    const [{ data: pagine }, { data: dominio }] = await Promise.all([
+      supabase.from('pagine')
+        .select('slug, updated_at')
+        .eq('entity_tipo', tipo).eq('entity_id', entity.id)
+        .eq('status', 'pubblicata')
+        .neq('slug', '__home__'),
+      supabase.from('domini')
+        .select('dominio')
+        .eq('entity_tipo', tipo).eq('entity_id', entity.id)
+        .eq('stato', 'attivo').eq('tipo', 'custom')
+        .limit(1).maybeSingle(),
+    ])
 
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173'
-    const base = `${clientUrl}/${prefixMap[tipo]}/${slug}`
+    const clientUrl = process.env.CLIENT_URL || 'https://www.oltrenova.com'
+    const baseOrigin = dominio?.dominio ? `https://${dominio.dominio}` : clientUrl
+    const base = `${baseOrigin}/${prefixMap[tipo]}/${slug}`
     const now = new Date().toISOString().split('T')[0]
 
     const urls = [
-      `  <url><loc>${base}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>`,
+      `  <url><loc>${dominio?.dominio ? `https://${dominio.dominio}` : base}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>`,
       ...(pagine || []).map(p =>
         `  <url><loc>${base}/p/${p.slug}</loc><lastmod>${(p.updated_at || now).split('T')[0]}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`
       ),

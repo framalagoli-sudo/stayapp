@@ -28,12 +28,17 @@ export async function generateMetadata({ params, searchParams }) {
 
 export default async function RistorantePage({ params, searchParams }) {
   const { slug } = await params
-  const ristorante = await serverFetch(`/api/guest/r/${slug}`)
+  const ristorante = await serverFetch(`/api/guest/r/${slug}`, { next: { revalidate: 60 } })
   if (!ristorante) notFound()
 
   const isQR = searchParams?.qr === '1'
   const showMinisito = !isQR && ristorante.minisito?.active
 
-  if (showMinisito) return <LandingRistorante ristorante={ristorante} />
+  if (showMinisito) {
+    const preview = searchParams?.preview === '1'
+    const homePage = await serverFetch(`/api/guest/pagina/ristorante/${ristorante.id}/__home__${preview ? '?preview=1' : ''}`, { next: { revalidate: 0 } }).catch(() => null)
+    const initialHomeBlocks = homePage?.id && Array.isArray(homePage.blocks) && homePage.blocks.length ? homePage.blocks : null
+    return <LandingRistorante ristorante={ristorante} initialHomeBlocks={initialHomeBlocks} />
+  }
   return <Suspense><RestaurantApp ristorante={ristorante} /></Suspense>
 }

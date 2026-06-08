@@ -36,11 +36,22 @@ export async function middleware(request) {
     const { entity_tipo: tipo, entity_slug: slug } = data
     const prefix = tipo === 'struttura' ? 's' : tipo === 'ristorante' ? 'r' : 'a'
 
-    // Rewrite trasparente: fondaconarni.com/qualsiasi-path → /s/slug/qualsiasi-path
+    // Rewrite trasparente: fondaconarni.com/qualsiasi-path → /{prefix}/{slug}/...
     // L'URL nel browser rimane fondaconarni.com — il visitatore non vede niente
-    const newPath = pathname === '/' ? `/${prefix}/${slug}` : `/${prefix}/${slug}${pathname}`
-    const rewriteUrl = new URL(newPath, request.url)
-    rewriteUrl.searchParams.set('_domain', hostname) // passa il dominio per og: tags
+    const entityPath = `/${prefix}/${slug}`
+    let newPath
+    if (pathname === '/' || pathname === '') {
+      newPath = entityPath
+    } else if (pathname.startsWith(entityPath)) {
+      newPath = pathname  // già il path corretto (es. clic su ?qr=1 dal sito custom)
+    } else {
+      newPath = `${entityPath}${pathname}`  // sotto-pagina: /p/about → /r/slug/p/about
+    }
+
+    // Clona nextUrl per preservare tutti i query params originali (incluso ?qr=1)
+    const rewriteUrl = request.nextUrl.clone()
+    rewriteUrl.pathname = newPath
+    rewriteUrl.searchParams.set('_domain', hostname)
 
     return NextResponse.rewrite(rewriteUrl)
   } catch {

@@ -557,8 +557,7 @@ export default function PaginaEditorPage() {
     if (dirty) await save()
     const url = previewUrl()
     if (!url) return
-    if (page.slug === '__home__') window.open(url, '_blank')
-    else window.open(url + '?preview=1', '_blank')
+    window.open(url + (page.slug === '__home__' && page.status === 'pubblicata' ? '' : '?preview=1'), '_blank')
   }
 
   function copyLink() {

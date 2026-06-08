@@ -43,14 +43,17 @@ export async function generateMetadata({ params, searchParams }) {
 
 export default async function StrutturaPage({ params, searchParams }) {
   const { slug } = await params
-  const property = await serverFetch(`/api/guest/${slug}`)
+  const property = await serverFetch(`/api/guest/${slug}`, { next: { revalidate: 60 } })
   if (!property) notFound()
 
   const isQR = searchParams?.qr === '1'
   const showMinisito = !isQR && property.minisito?.active
 
   if (showMinisito) {
-    return <LandingStruttura property={property} />
+    const preview = searchParams?.preview === '1'
+    const homePage = await serverFetch(`/api/guest/pagina/struttura/${property.id}/__home__${preview ? '?preview=1' : ''}`, { next: { revalidate: 0 } }).catch(() => null)
+    const initialHomeBlocks = homePage?.id && Array.isArray(homePage.blocks) && homePage.blocks.length ? homePage.blocks : null
+    return <LandingStruttura property={property} initialHomeBlocks={initialHomeBlocks} />
   }
   return <Suspense><GuestApp property={property} /></Suspense>
 }

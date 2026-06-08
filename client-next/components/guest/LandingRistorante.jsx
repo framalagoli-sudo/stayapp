@@ -84,7 +84,7 @@ const DEFAULT_ORDER = [
   'eventi', 'news', 'gallery', 'faq', 'show_map', 'booking', 'contatti', 'newsletter',
 ]
 
-export default function LandingRistorante({ ristorante }) {
+export default function LandingRistorante({ ristorante, initialHomeBlocks }) {
   const [scrolled,       setScrolled]       = useState(false)
   const [lightbox,       setLightbox]       = useState(null)
   const [upcomingEventi, setUpcomingEventi] = useState([])
@@ -93,7 +93,7 @@ export default function LandingRistorante({ ristorante }) {
   const [pagine,         setPagine]         = useState([])
   const [openDropdown,   setOpenDropdown]   = useState(null)
   const [recensioni,     setRecensioni]     = useState([])
-  const [homeBlocks,     setHomeBlocks]     = useState(null)
+  const [homeBlocks,     setHomeBlocks]     = useState(initialHomeBlocks)
 
   useEffect(() => {
     if (!ristorante?.id) return
@@ -116,9 +116,11 @@ export default function LandingRistorante({ ristorante }) {
     guestFetch(`/api/guest/recensioni/ristorante/${ristorante.id}`)
       .then(d => Array.isArray(d) && setRecensioni(d))
       .catch(() => {})
-    guestFetch(`/api/guest/pagina/ristorante/${ristorante.id}/__home__`)
-      .then(d => d?.id && Array.isArray(d.blocks) && d.blocks.length && setHomeBlocks(d.blocks))
-      .catch(() => {})
+    if (initialHomeBlocks === undefined) {
+      guestFetch(`/api/guest/pagina/ristorante/${ristorante.id}/__home__`)
+        .then(d => setHomeBlocks(d?.id && Array.isArray(d.blocks) && d.blocks.length ? d.blocks : null))
+        .catch(() => setHomeBlocks(null))
+    }
   }, [ristorante.id])
 
   const theme      = { primaryColor: '#e63946', fontHeading: 'playfair', fontBody: 'inter', textColor: '#1a1a2e', borderStyle: 'mixed', ...(ristorante.theme || {}) }
@@ -127,6 +129,7 @@ export default function LandingRistorante({ ristorante }) {
   const body       = BODY_FAMILIES[theme.fontBody]       || BODY_FAMILIES.inter
   const menuRadius = { rounded: 16, mixed: 8, square: 0 }[theme.borderStyle] ?? 8
   const mini    = ristorante.minisito || {}
+  const showPwaLink = mini.show_pwa_link !== false
   const sections = { ...(mini.sections || {}) }
   const social   = mini.social || {}
   const socialLinks = SOCIAL_CONFIG.filter(s => social[s.key])
@@ -888,7 +891,7 @@ export default function LandingRistorante({ ristorante }) {
           </div>
         )}
         <div style={{ display: 'flex', gap: 10 }}>
-          <a href={pwaUrl} style={navBtnSecondary}>Vedi menu</a>
+          {showPwaLink && <a href={pwaUrl} style={navBtnSecondary}>Vedi menu</a>}
           {bookingUrl && (
             <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
               style={{ ...navBtnPrimary, background: primary }}>
@@ -898,7 +901,7 @@ export default function LandingRistorante({ ristorante }) {
         </div>
       </nav>
 
-      {homeBlocks ? (
+      {homeBlocks === undefined ? null : homeBlocks ? (
         <LandingBlockRenderer
           blocks={homeBlocks} entity={ristorante} entityType="ristorante"
           mini={mini} primary={primary} heading={heading} body={body}

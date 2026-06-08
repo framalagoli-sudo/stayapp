@@ -5,9 +5,12 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-Write-Host "`n=== Deploy Vercel ===" -ForegroundColor Cyan
+Write-Host "`n=== Deploy Vercel (Next.js) ===" -ForegroundColor Cyan
+Set-Location client-next
 npx vercel --prod --yes
-if ($LASTEXITCODE -ne 0) {
+$deployExit = $LASTEXITCODE
+Set-Location ..
+if ($deployExit -ne 0) {
     Write-Host "`n❌ Deploy fallito." -ForegroundColor Red
     exit 1
 }

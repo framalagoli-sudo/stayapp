@@ -91,7 +91,7 @@ const DEFAULT_ORDER = [
   'eventi', 'news', 'gallery', 'faq', 'show_map', 'booking', 'contatti', 'newsletter',
 ]
 
-export default function LandingAttivita({ attivita }) {
+export default function LandingAttivita({ attivita, initialHomeBlocks }) {
   const [scrolled,       setScrolled]       = useState(false)
   const [lightbox,       setLightbox]       = useState(null)
   const [upcomingEventi, setUpcomingEventi] = useState([])
@@ -99,7 +99,7 @@ export default function LandingAttivita({ attivita }) {
   const [pagine,         setPagine]         = useState([])
   const [openDropdown,   setOpenDropdown]   = useState(null)
   const [recensioni,     setRecensioni]     = useState([])
-  const [homeBlocks,     setHomeBlocks]     = useState(null)
+  const [homeBlocks,     setHomeBlocks]     = useState(initialHomeBlocks)
   const aboutRef = useRef(null)
 
   useEffect(() => {
@@ -121,9 +121,11 @@ export default function LandingAttivita({ attivita }) {
     guestFetch(`/api/guest/recensioni/attivita/${attivita.id}`)
       .then(d => Array.isArray(d) && setRecensioni(d))
       .catch(() => {})
-    guestFetch(`/api/guest/pagina/attivita/${attivita.id}/__home__`)
-      .then(d => d?.id && Array.isArray(d.blocks) && d.blocks.length && setHomeBlocks(d.blocks))
-      .catch(() => {})
+    if (initialHomeBlocks === undefined) {
+      guestFetch(`/api/guest/pagina/attivita/${attivita.id}/__home__`)
+        .then(d => setHomeBlocks(d?.id && Array.isArray(d.blocks) && d.blocks.length ? d.blocks : null))
+        .catch(() => setHomeBlocks(null))
+    }
   }, [attivita.id])
 
   const theme   = { primaryColor: '#6b46c1', fontHeading: 'playfair', fontBody: 'inter', ...(attivita.theme || {}) }
@@ -736,7 +738,7 @@ export default function LandingAttivita({ attivita }) {
         </div>
       </nav>
 
-      {homeBlocks ? (
+      {homeBlocks === undefined ? null : homeBlocks ? (
         <LandingBlockRenderer
           blocks={homeBlocks} entity={attivita} entityType="attivita"
           mini={mini} primary={primary} heading={heading} body={body}
