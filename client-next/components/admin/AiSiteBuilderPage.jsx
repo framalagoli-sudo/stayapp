@@ -190,9 +190,9 @@ function EntitySelector({ onSelect, selectedId }) {
   if (loadingEnt) return <p style={{ color: '#aaa', fontSize: 14, textAlign: 'center', padding: '24px 0' }}>Caricamento entità…</p>
 
   const items = [
-    ...(strutture  || []).map(e => ({ id: e.id, name: e.name, tipo: 'struttura',  label: 'Struttura'  })),
-    ...(ristoranti || []).map(e => ({ id: e.id, name: e.name, tipo: 'ristorante', label: 'Ristorante' })),
-    ...(attivita   || []).map(e => ({ id: e.id, name: e.name, tipo: 'attivita',   label: 'Attività'   })),
+    ...(strutture  || []).map(e => ({ id: e.id, name: e.name, slug: e.slug, tipo: 'struttura',  label: 'Struttura'  })),
+    ...(ristoranti || []).map(e => ({ id: e.id, name: e.name, slug: e.slug, tipo: 'ristorante', label: 'Ristorante' })),
+    ...(attivita   || []).map(e => ({ id: e.id, name: e.name, slug: e.slug, tipo: 'attivita',   label: 'Attività'   })),
   ]
 
   if (!items.length) {
@@ -202,7 +202,7 @@ function EntitySelector({ onSelect, selectedId }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {items.map(e => (
-        <div key={e.id} onClick={() => onSelect(e.tipo, e.id, e.name)}
+        <div key={e.id} onClick={() => onSelect(e.tipo, e.id, e.name, e.slug)}
           style={{
             display: 'flex', alignItems: 'center', gap: 14,
             padding: '14px 16px', borderRadius: 10, cursor: 'pointer',
@@ -247,6 +247,7 @@ export default function AiSiteBuilderPage() {
   const [entityTipo,  setEntityTipo]  = useState('struttura')
   const [entityId,    setEntityId]    = useState('')
   const [entityName,  setEntityName]  = useState('')
+  const [entitySlug,  setEntitySlug]  = useState('')
   // Step 3: business
   const [nome,        setNome]        = useState('')
   const [settore,     setSettore]     = useState('')
@@ -266,10 +267,11 @@ export default function AiSiteBuilderPage() {
     !!servizi.trim(),
   ][step] ?? false
 
-  function selectEntity(tipo, id, name) {
+  function selectEntity(tipo, id, name, slug) {
     setEntityTipo(tipo)
     setEntityId(id)
     setEntityName(name)
+    setEntitySlug(slug || '')
     if (!nome) setNome(name)
   }
 
@@ -340,26 +342,39 @@ export default function AiSiteBuilderPage() {
 
   // ── Result ────────────────────────────────────────────────────────────────────
   if (result) {
+    const prefix = { struttura: 's', ristorante: 'r', attivita: 'a' }[entityTipo] || entityTipo
+    const liveSiteUrl = entitySlug ? `/${prefix}/${entitySlug}` : null
+
     return (
       <div style={{ maxWidth: 560 }}>
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}>🎉</div>
           <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a2e', margin: '0 0 8px' }}>
             {mode === 'landing' ? 'Landing page creata!' : 'Sito creato!'}
           </h2>
           <p style={{ color: '#666', fontSize: 15, margin: 0 }}>
-            {result.length} {result.length === 1 ? 'pagina generata' : 'pagine generate'} come bozza — pronte da modificare.
+            Homepage pubblicata e visibile subito.{result.length > 1 ? ` Le altre ${result.length - 1} pagine sono in bozza — pubblicale quando sei pronto.` : ''}
           </p>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
+
+        {liveSiteUrl && (
+          <a href={liveSiteUrl} target="_blank" rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px', marginBottom: 20, background: 'linear-gradient(135deg, #667eea, #764ba2)', color: '#fff', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: 14 }}>
+            <ExternalLink size={15} strokeWidth={1.5} /> Vedi il sito live
+          </a>
+        )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
           {result.map(page => (
             <div key={page.id} style={{ display: 'flex', alignItems: 'center', gap: 14, background: '#fff', borderRadius: 12, padding: '14px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: '#f0f4ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <FileText size={16} strokeWidth={1.5} color="#1a1a2e" />
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: page.published ? '#e8f9f0' : '#f0f4ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <FileText size={16} strokeWidth={1.5} color={page.published ? '#1a7a4a' : '#1a1a2e'} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>{page.titolo}</div>
-                <div style={{ fontSize: 12, color: '#aaa' }}>/{page.slug} · bozza</div>
+                <div style={{ fontSize: 12, color: page.published ? '#1a7a4a' : '#aaa' }}>
+                  {page.published ? 'Homepage · pubblicata' : `/${page.slug} · bozza`}
+                </div>
               </div>
               <button onClick={() => router.push(pageEditUrl(page))} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 14px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                 Modifica <ChevronRight size={13} strokeWidth={1.5} />
@@ -369,7 +384,7 @@ export default function AiSiteBuilderPage() {
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={() => router.push(entitySitoUrl())} style={{ flex: 1, padding: '12px', background: '#f5f5f5', color: '#1a1a2e', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-            Gestisci tutte le pagine
+            Gestisci pagine
           </button>
           <button onClick={() => { setResult(null); setStep(0) }} style={{ padding: '12px 20px', background: '#fff', color: '#666', border: '1px solid #e0e0e0', borderRadius: 10, fontSize: 14, cursor: 'pointer' }}>
             Genera un altro

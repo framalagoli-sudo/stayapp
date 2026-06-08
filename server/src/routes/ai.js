@@ -438,12 +438,12 @@ function buildSitePrompt({ entity, mode, obiettivo, template, answers }) {
   const tmplConf = TEMPLATE_CONFIGS[template]   || TEMPLATE_CONFIGS.complete
 
   const pagesSpec = mode === 'landing'
-    ? `CREA 1 PAGINA (slug "home", nel_menu false, titolo "${nome || entity.name}").
+    ? `CREA 1 PAGINA (slug "__home__", nel_menu false, titolo "${nome || entity.name}").
 Struttura blocchi consigliata per obiettivo "${objConf.label}":
 ${objConf.landing_blocks}
 Note obiettivo: ${objConf.notes}`
     : `CREA 4 PAGINE:
-1. home (slug "home", nel_menu false): ${objConf.site_home_blocks}
+1. Homepage (slug "__home__", nel_menu false): ${objConf.site_home_blocks}
 2. chi-siamo (slug "chi-siamo", nel_menu true): about, foto_testo x2, steps o team, stats
 3. servizi (slug "servizi", nel_menu true): about(intro), paragrafi(3-6 card con icona), highlights, cta_banner
 4. contatti (slug "contatti", nel_menu true): about(intro contatti), contatti
@@ -556,23 +556,47 @@ router.post('/generate-site', requireAuth, async (req, res) => {
 
     const created = []
     for (let i = 0; i < parsed.pages.length; i++) {
-      const pg = parsed.pages[i]
-      let slug = slugifyAI(pg.slug || pg.titolo || 'pagina').slice(0, 80)
-
-      const { count } = await supabase.from('pagine').select('id', { count: 'exact', head: true })
-        .eq('entity_tipo', entity_tipo).eq('entity_id', entity_id).eq('slug', slug)
-      if (count > 0) slug = `${slug}-${Date.now().toString(36)}`
-
+      const pg    = parsed.pages[i]
+      const isHome = i === 0
       const blocks = addItemIds(pg.blocks || [])
 
-      const { data: p } = await supabase.from('pagine').insert({
-        entity_tipo, entity_id,
-        titolo: pg.titolo || 'Pagina',
-        slug, nel_menu: !!pg.nel_menu,
-        status: 'bozza', blocks, ordine: i,
-      }).select('id, titolo, slug, nel_menu').single()
+      if (isHome) {
+        // Upsert __home__ e pubblica subito
+        const { data: existing } = await supabase.from('pagine').select('id')
+          .eq('entity_tipo', entity_tipo).eq('entity_id', entity_id).eq('slug', '__home__').maybeSingle()
+        let p
+        if (existing) {
+          const { data } = await supabase.from('pagine').update({
+            titolo: pg.titolo || entity.name, status: 'pubblicata', blocks, nel_menu: false,
+          }).eq('id', existing.id).select('id, titolo, slug, nel_menu').single()
+          p = data
+        } else {
+          const { data } = await supabase.from('pagine').insert({
+            entity_tipo, entity_id, titolo: pg.titolo || entity.name,
+            slug: '__home__', nel_menu: false, status: 'pubblicata', blocks, ordine: 0,
+          }).select('id, titolo, slug, nel_menu').single()
+          p = data
+        }
+        if (p) created.push({ ...p, published: true })
+      } else {
+        let slug = slugifyAI(pg.slug || pg.titolo || 'pagina').slice(0, 80)
+        const { count } = await supabase.from('pagine').select('id', { count: 'exact', head: true })
+          .eq('entity_tipo', entity_tipo).eq('entity_id', entity_id).eq('slug', slug)
+        if (count > 0) slug = `${slug}-${Date.now().toString(36)}`
+        const { data: p } = await supabase.from('pagine').insert({
+          entity_tipo, entity_id, titolo: pg.titolo || 'Pagina',
+          slug, nel_menu: !!pg.nel_menu, status: 'bozza', blocks, ordine: i,
+        }).select('id, titolo, slug, nel_menu').single()
+        if (p) created.push({ ...p, published: false })
+      }
+    }
 
-      if (p) created.push(p)
+    // Auto-attiva il minisito se non già attivo
+    const { data: currentEntity } = await supabase.from(table).select('minisito').eq('id', entity_id).single()
+    if (!currentEntity?.minisito?.active) {
+      await supabase.from(table).update({
+        minisito: { ...(currentEntity?.minisito || {}), active: true },
+      }).eq('id', entity_id)
     }
 
     res.json({ pages: created })
