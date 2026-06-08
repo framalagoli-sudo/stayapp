@@ -80,8 +80,11 @@ const CHANNEL_RULES = {
 }
 
 async function getAziendaId(userId) {
-  const { data } = await supabase.from('profiles').select('azienda_id').eq('id', userId).single()
-  return data?.azienda_id || null
+  const { data } = await supabase.from('profiles').select('azienda_id, role').eq('id', userId).single()
+  if (data?.azienda_id) return data.azienda_id
+  // super_admin non ha azienda_id — usa userId come chiave rate-limit
+  if (data?.role === 'super_admin') return userId
+  return null
 }
 
 // POST /api/ai/social-post
