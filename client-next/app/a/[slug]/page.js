@@ -32,5 +32,5 @@ export default async function AttivitaPage({ params, searchParams }) {
   const preview = searchParams?.preview === '1'
   const homePage = await serverFetch(`/api/guest/pagina/attivita/${attivita.id}/__home__${preview ? '?preview=1' : ''}`, { next: { revalidate: 0 } }).catch(() => null)
   const initialHomeBlocks = homePage?.id && Array.isArray(homePage.blocks) && homePage.blocks.length ? homePage.blocks : null
-  return <LandingAttivita attivita={attivita} initialHomeBlocks={initialHomeBlocks} />
+  return <LandingAttivita attivita={attivita} initialHomeBlocks={initialHomeBlocks} domain={searchParams?._domain || null} />
 }

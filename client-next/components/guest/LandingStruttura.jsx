@@ -92,7 +92,7 @@ const DEFAULT_ORDER = [
   'booking', 'contatti', 'newsletter',
 ]
 
-export default function LandingStruttura({ property, initialHomeBlocks }) {
+export default function LandingStruttura({ property, initialHomeBlocks, domain }) {
   const [scrolled,       setScrolled]       = useState(false)
   const [lightbox,       setLightbox]       = useState(null)
   const [upcomingEventi, setUpcomingEventi] = useState([])
@@ -205,7 +205,7 @@ export default function LandingStruttura({ property, initialHomeBlocks }) {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const pwaUrl     = `/s/${property.slug}?qr=1`
+  const pwaUrl     = domain ? `https://${domain}?qr=1` : `/s/${property.slug}?qr=1`
   const bookingUrl = mini.booking_url || null
   const ctaHref    = bookingUrl || social.whatsapp
     || (property.phone ? `tel:${property.phone}` : null)

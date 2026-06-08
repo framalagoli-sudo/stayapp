@@ -26,7 +26,7 @@ export async function middleware(request) {
   try {
     const res = await fetch(
       `${API_BASE}/api/public/resolve-domain?d=${encodeURIComponent(hostname)}`,
-      { next: { revalidate: 3600 } }  // cache 1 ora — il dominio non cambia spesso
+      { next: { revalidate: 60 } }
     )
     if (!res.ok) return NextResponse.next()
 

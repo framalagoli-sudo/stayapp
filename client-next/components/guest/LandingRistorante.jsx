@@ -84,7 +84,7 @@ const DEFAULT_ORDER = [
   'eventi', 'news', 'gallery', 'faq', 'show_map', 'booking', 'contatti', 'newsletter',
 ]
 
-export default function LandingRistorante({ ristorante, initialHomeBlocks }) {
+export default function LandingRistorante({ ristorante, initialHomeBlocks, domain }) {
   const [scrolled,       setScrolled]       = useState(false)
   const [lightbox,       setLightbox]       = useState(null)
   const [upcomingEventi, setUpcomingEventi] = useState([])
@@ -183,7 +183,7 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks }) {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const pwaUrl     = `/r/${ristorante.slug}?qr=1`
+  const pwaUrl     = domain ? `https://${domain}?qr=1` : `/r/${ristorante.slug}?qr=1`
   const bookingUrl = mini.booking_url || null
   const ctaHref    = bookingUrl || social.whatsapp
     || (ristorante.phone ? `tel:${ristorante.phone}` : null)

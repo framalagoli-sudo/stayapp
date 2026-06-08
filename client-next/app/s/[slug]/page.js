@@ -53,7 +53,7 @@ export default async function StrutturaPage({ params, searchParams }) {
     const preview = searchParams?.preview === '1'
     const homePage = await serverFetch(`/api/guest/pagina/struttura/${property.id}/__home__${preview ? '?preview=1' : ''}`, { next: { revalidate: 0 } }).catch(() => null)
     const initialHomeBlocks = homePage?.id && Array.isArray(homePage.blocks) && homePage.blocks.length ? homePage.blocks : null
-    return <LandingStruttura property={property} initialHomeBlocks={initialHomeBlocks} />
+    return <LandingStruttura property={property} initialHomeBlocks={initialHomeBlocks} domain={searchParams?._domain || null} />
   }
   return <Suspense><GuestApp property={property} /></Suspense>
 }
