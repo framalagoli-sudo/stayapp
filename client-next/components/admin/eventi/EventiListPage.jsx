@@ -65,21 +65,22 @@ export default function EventiListPage() {
       {upcoming.length > 0 && (
         <>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#888', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>In programma</div>
-          <EventGrid eventi={upcoming} navigate={navigate} />
+          <EventGrid eventi={upcoming} />
         </>
       )}
 
       {past.length > 0 && (
         <>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#888', letterSpacing: 1, textTransform: 'uppercase', margin: '24px 0 10px' }}>Passati</div>
-          <EventGrid eventi={past} navigate={navigate} muted />
+          <EventGrid eventi={past} muted />
         </>
       )}
     </div>
   )
 }
 
-function EventGrid({ eventi, navigate, muted }) {
+function EventGrid({ eventi, muted }) {
+  const router = useRouter()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {eventi.map(ev => {

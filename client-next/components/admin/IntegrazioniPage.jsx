@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { Webhook, Plus, Trash2, Send, Check, X, ToggleLeft, ToggleRight, ChevronDown, ChevronUp, Calendar, CheckCircle, AlertCircle, Loader } from 'lucide-react'
 
@@ -9,7 +9,9 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
 function GoogleCalendarSection() {
   const [status, setStatus] = useState(null) // null=loading, { connected, email }
   const [disconnecting, setDisconnecting] = useState(false)
-  const [searchParams, setSearchParams] = useSearchParams()
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     apiFetch('/api/google-calendar/status')
@@ -23,9 +25,9 @@ function GoogleCalendarSection() {
     if (gcal === 'ok') {
       setStatus(null)
       apiFetch('/api/google-calendar/status').then(d => setStatus(d)).catch(() => {})
-      setSearchParams({}, { replace: true })
+      router.replace(pathname)
     } else if (gcal === 'error') {
-      setSearchParams({}, { replace: true })
+      router.replace(pathname)
     }
   }, [searchParams])
 
@@ -282,7 +284,7 @@ export default function IntegrazioniPage() {
     setHooks(h => h.filter(x => x.id !== id))
   }
 
-  const [searchParams] = useSearchParams()
+  const searchParams = useSearchParams()
   const gcalResult = searchParams.get('gcal')
 
   return (

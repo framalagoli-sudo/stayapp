@@ -23,6 +23,7 @@ const LOADING_SELECTORS = [
 
 const CRASH_SELECTORS = [
   'text=Something went wrong',
+  'text=Application error',
   'text=Errore critico',
   'text=Cannot read properties',
   'text=is not a function',
