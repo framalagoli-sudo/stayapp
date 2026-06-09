@@ -28,6 +28,18 @@ export default async function globalSetup() {
     auth: { autoRefreshToken: false, persistSession: false },
   })
 
+  // ── 0. Elimina utenti CI stale da run precedenti (crash/kill) ─────────────
+  try {
+    const { data: allUsers } = await admin.auth.admin.listUsers({ perPage: 1000 })
+    const stale = (allUsers?.users || []).filter(u => u.email?.endsWith('@playwright.internal'))
+    for (const u of stale) {
+      await admin.auth.admin.deleteUser(u.id).catch(() => {})
+      console.log(`[setup] Utente CI stale rimosso: ${u.email}`)
+    }
+  } catch (e) {
+    console.warn('[setup] Pre-cleanup fallito (non bloccante):', e.message)
+  }
+
   // ── 1. Crea utente effimero ────────────────────────────────────────────────
   const email    = `ci-${Date.now()}@playwright.internal`
   const password = randomBytes(32).toString('base64url')

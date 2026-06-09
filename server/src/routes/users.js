@@ -30,13 +30,39 @@ async function requireAdminOrAbove(req, res) {
 }
 
 // ── GET /api/users — lista utenti ────────────────────────────────────────────
-// super_admin: tutti | admin_azienda: solo staff della propria azienda
+// super_admin: tutti (o filtrati per ?azienda_id=) | admin_azienda: solo staff propria azienda
 router.get('/', async (req, res) => {
   const caller = await getCallerProfile(req.user.id)
   if (!caller) return res.status(403).json({ error: 'Profilo non trovato' })
 
   try {
     if (caller.role === 'super_admin') {
+      const filterAzienda = req.query.azienda_id || null
+
+      if (filterAzienda) {
+        // super_admin con ?azienda_id= → stessa logica di admin_azienda per quella azienda
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, role, full_name, azienda_id, permissions')
+          .eq('azienda_id', filterAzienda)
+          .eq('role', 'staff')
+        if (!profiles?.length) return res.json([])
+
+        const ids = profiles.map(p => p.id)
+        const { data: authData } = await supabase.auth.admin.listUsers({ perPage: 1000 })
+        const authMap = Object.fromEntries((authData?.users || []).filter(u => ids.includes(u.id)).map(u => [u.id, u]))
+        const users = profiles.map(p => ({
+          id: p.id, role: p.role, full_name: p.full_name, azienda_id: p.azienda_id, permissions: p.permissions || {},
+          email: authMap[p.id]?.email || null,
+          banned: !!authMap[p.id]?.banned_until,
+          confirmed: !!authMap[p.id]?.email_confirmed_at,
+          last_sign_in: authMap[p.id]?.last_sign_in_at || null,
+          invited: !authMap[p.id]?.email_confirmed_at,
+        }))
+        return res.json(users)
+      }
+
+      // super_admin senza filtro → tutti gli utenti (pannello globale)
       const { data: authData, error: authErr } = await supabase.auth.admin.listUsers({ perPage: 1000 })
       if (authErr) return res.status(500).json({ error: authErr.message })
       const { data: profiles } = await supabase.from('profiles').select('id, role, full_name, azienda_id, property_id, permissions')

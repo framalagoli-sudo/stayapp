@@ -323,13 +323,13 @@ export default function PianoEditorialePage() {
 
   useEffect(() => {
     if (view !== 'team') return
-    if (teamMembers.length) return
     setTeamLoading(true)
-    apiFetch('/api/users')
+    const qs = aziendaId ? `?azienda_id=${aziendaId}` : ''
+    apiFetch(`/api/users${qs}`)
       .then(d => setTeamMembers(d || []))
       .catch(() => {})
       .finally(() => setTeamLoading(false))
-  }, [view])
+  }, [view, aziendaId])
 
   useEffect(() => {
     setCampagne([])

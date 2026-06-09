@@ -4,7 +4,38 @@ import {
   Utensils, ChevronDown, ChevronRight, ArrowLeft, X, Flame,
   Wheat, Shrimp, Egg, Fish, Nut, Bean, Milk, LeafyGreen,
   Flower2, Sprout, Wine, Shell,
+  UtensilsCrossed, Pizza, Beer, Coffee, GlassWater,
+  ChefHat, Beef, Cookie, Leaf, Waves, Sun, Moon, Sunset,
+  Star, Sparkles, Droplets, Grape, IceCream2, Sandwich, Salad, CupSoda,
 } from 'lucide-react'
+
+const CATALOG_ICON_MAP = {
+  'utensils':         Utensils,
+  'utensils-crossed': UtensilsCrossed,
+  'pizza':            Pizza,
+  'wine':             Wine,
+  'grape':            Grape,
+  'beer':             Beer,
+  'cup-soda':         CupSoda,
+  'glass-water':      GlassWater,
+  'droplets':         Droplets,
+  'coffee':           Coffee,
+  'sandwich':         Sandwich,
+  'salad':            Salad,
+  'fish':             Fish,
+  'beef':             Beef,
+  'flame':            Flame,
+  'chef-hat':         ChefHat,
+  'ice-cream-2':      IceCream2,
+  'cookie':           Cookie,
+  'leaf':             Leaf,
+  'waves':            Waves,
+  'sun':              Sun,
+  'moon':             Moon,
+  'sunset':           Sunset,
+  'star':             Star,
+  'sparkles':         Sparkles,
+}
 
 // ─── Costanti EU Reg. 1169/2011 ───────────────────────────────────────────────
 export const EU_ALLERGENS = [
@@ -333,7 +364,7 @@ export default function MenuTab({ menu, primary, textColor, subText, isDark, rad
                 <button key={c.id} type="button" onClick={() => setSelectedId(c.id)}
                   style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 20px', background: cardBg, borderRadius: radius || 14, border: `1px solid ${borderColor}`, cursor: 'pointer', textAlign: 'left', boxShadow: isDark ? 'none' : '0 2px 12px rgba(0,0,0,0.06)', WebkitTapHighlightColor: 'transparent' }}>
                   <div style={{ width: 48, height: 48, borderRadius: 12, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Utensils size={22} strokeWidth={1.5} color={primary} />
+                    {(() => { const Icon = CATALOG_ICON_MAP[c.icon] || Utensils; return <Icon size={22} strokeWidth={1.5} color={primary} /> })()}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: 17, color: textColor, fontFamily: headingFamily }}>{c.name}</div>

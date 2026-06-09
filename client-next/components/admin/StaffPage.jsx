@@ -162,7 +162,8 @@ export default function StaffPage() {
 
   async function load() {
     setLoading(true)
-    const data = await apiFetch('/api/users')
+    const qs = azienda?.id ? `?azienda_id=${azienda.id}` : ''
+    const data = await apiFetch(`/api/users${qs}`)
     setStaff(Array.isArray(data) ? data : [])
     setLoading(false)
   }

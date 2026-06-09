@@ -16,9 +16,6 @@ export default async function globalTeardown() {
     return
   }
 
-  rmSync('.auth/ci-user.json',  { force: true })
-  rmSync('.auth/ci-token.json', { force: true })
-
   const admin = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -29,7 +26,10 @@ export default async function globalTeardown() {
 
   if (error) {
     console.warn(`[teardown] deleteUser fallito per ${email}: ${error.message}`)
+    // Non eliminare ci-user.json — il pre-cleanup del prossimo run lo gestirà
   } else {
     console.log(`\n[teardown] Utente CI eliminato: ${email}`)
+    rmSync('.auth/ci-user.json',  { force: true })
+    rmSync('.auth/ci-token.json', { force: true })
   }
 }
