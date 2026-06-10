@@ -585,9 +585,9 @@ router.post('/generate-site', requireAuth, async (req, res) => {
         if (count > 0) slug = `${slug}-${Date.now().toString(36)}`
         const { data: p } = await supabase.from('pagine').insert({
           entity_tipo, entity_id, titolo: pg.titolo || 'Pagina',
-          slug, nel_menu: !!pg.nel_menu, status: 'bozza', blocks, ordine: i,
+          slug, nel_menu: !!pg.nel_menu, status: 'pubblicata', blocks, ordine: i,
         }).select('id, titolo, slug, nel_menu').single()
-        if (p) created.push({ ...p, published: false })
+        if (p) created.push({ ...p, published: true })
       }
     }
 

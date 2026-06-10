@@ -345,6 +345,7 @@ export default function SitoPage({ entityTipo }) {
   function resetDrag() { setDragId(null); setDragOverId(null) }
 
   // ── Derived lists ─────────────────────────────────────────────────────────────
+  const homePage   = pagine.find(p => p.slug === '__home__') || null
   const menuTop   = pagine.filter(p => p.nel_menu && !p.parent_id).sort((a, b) => a.ordine - b.ordine)
   const menuSubs  = id => pagine.filter(p => p.nel_menu && p.parent_id === id).sort((a, b) => a.ordine - b.ordine)
   const notInMenu = pagine.filter(p => !p.nel_menu)
@@ -507,10 +508,22 @@ export default function SitoPage({ entityTipo }) {
                   <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 18 }}>{entityData.minisito.tagline}</div>
                 )}
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  {homePage ? (
+                    <button onClick={() => router.push(`/admin/pagine/${homePage.id}`)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 22px', background: '#fff', color: '#1a1a2e', border: 'none', borderRadius: 9, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
+                      <PenLine size={15} strokeWidth={2} />
+                      Modifica homepage
+                    </button>
+                  ) : (
+                    <button onClick={() => router.push(homeEditPath)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 22px', background: '#fff', color: '#1a1a2e', border: 'none', borderRadius: 9, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
+                      <PenLine size={15} strokeWidth={2} />
+                      Modifica sezioni
+                    </button>
+                  )}
                   <button onClick={() => router.push(homeEditPath)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 22px', background: '#fff', color: '#1a1a2e', border: 'none', borderRadius: 9, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
-                    <PenLine size={15} strokeWidth={2} />
-                    Modifica sezioni
+                    style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 9, cursor: 'pointer', fontSize: 13 }}>
+                    Impostazioni sito
                   </button>
                   {entitySiteUrl && (
                     <a href={entitySiteUrl} target="_blank" rel="noopener noreferrer"

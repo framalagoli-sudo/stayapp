@@ -31,4 +31,5 @@
 - [Session 2026-06-09b — Fix CI users stale + footer responsive](project_session_2026_06_09b.md) — 21 utenti @playwright.internal rimossi, pre-cleanup in globalSetup, teardown robusto
 - [Session 2026-06-10 — Fix team PE per azienda + deploy.ps1 git push](project_session_2026_06_10.md) — /api/users?azienda_id= per super_admin, deploy.ps1 ora include git push come primo step
 - [Deploy corretto](feedback_deploy.md) — usare `.\deploy.ps1` dalla root, mai `npx vercel` dalla root (deploya il vecchio Vite)
+- [Session 2026-06-10b — Debug Fase 1 Sito & App, fix AttivitaApp](project_session_2026_06_10b.md) — fix useSearchParams array destructuring in AttivitaApp.jsx, analisi statica OK, test manuale pendente
 - [Acquisti pendenti ⚠️](project_acquisti_pendenti.md) — Supabase Pro $25/mese + Vercel Pro $20/mese — ricordare all'inizio della prossima sessione

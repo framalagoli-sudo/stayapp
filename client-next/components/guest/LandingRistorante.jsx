@@ -7,6 +7,7 @@ import CookieBanner from '@/components/CookieBanner'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import WhatsAppButton from '@/components/WhatsAppButton'
 import LandingBlockRenderer from '@/components/LandingBlockRenderer'
+import LandingFooter from '@/components/guest/LandingFooter'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -80,6 +81,13 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
   const showPwaLink = mini.show_pwa_link !== false
   const social     = mini.social || {}
 
+  const hdrCfg         = mini.header || {}
+  const navDark        = hdrCfg.style === 'dark'
+  const navAlwaysVisible = hdrCfg.always_visible === true
+  const navBg          = navDark ? 'rgba(18,18,32,0.93)'   : 'rgba(255,255,255,0.95)'
+  const navBorderColor = navDark ? 'rgba(255,255,255,0.08)' : '#eee'
+  const navTextColor   = navDark ? 'rgba(255,255,255,0.8)' : '#1a1a2e'
+
   useEffect(() => {
     loadFont(theme.fontHeading)
     loadFont(theme.fontBody)
@@ -138,10 +146,10 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
         body { font-family: ${body}; color: #1a1a2e; background: #fff; }
         .land-nav {
           position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-          background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
-          border-bottom: 1px solid #eee; padding: 0 32px;
+          background: ${navBg}; backdrop-filter: blur(12px);
+          border-bottom: 1px solid ${navBorderColor}; padding: 0 32px;
           display: flex; align-items: center; justify-content: space-between; height: 64px;
-          transform: translateY(${scrolled ? '0' : '-100%'}); transition: transform 0.3s ease;
+          transform: translateY(${navAlwaysVisible || scrolled ? '0' : '-100%'}); transition: transform 0.3s ease;
         }
         .land-section { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
         @media (max-width: 768px) {
@@ -153,7 +161,7 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
       <nav className="land-nav">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {ristorante.logo_url && <img src={ristorante.logo_url} alt="logo" style={{ height: 32, objectFit: 'contain' }} />}
-          <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 16 }}>{ristorante.name}</span>
+          <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, color: navTextColor }}>{ristorante.name}</span>
         </div>
         {pagine.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -164,7 +172,7 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
                   onMouseEnter={() => subs.length && setOpenDropdown(p.id)}
                   onMouseLeave={() => setOpenDropdown(null)}>
                   <a href={`/r/${ristorante.slug}/p/${p.slug}`}
-                    style={{ color: '#1a1a2e', textDecoration: 'none', fontSize: 13, padding: '6px 12px', borderRadius: 6, display: 'block', whiteSpace: 'nowrap' }}>
+                    style={{ color: navTextColor, textDecoration: 'none', fontSize: 13, padding: '6px 12px', borderRadius: 6, display: 'block', whiteSpace: 'nowrap' }}>
                     {p.titolo}{subs.length > 0 && <span style={{ marginLeft: 4, opacity: 0.5 }}>▾</span>}
                   </a>
                   {subs.length > 0 && openDropdown === p.id && (
@@ -183,10 +191,10 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
           </div>
         )}
         <div style={{ display: 'flex', gap: 10 }}>
-          {showPwaLink && <a href={pwaUrl} style={navBtnSecondary}>Vedi menu</a>}
+          {showPwaLink && <a href={pwaUrl} style={{ padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 600, textDecoration: 'none', color: navTextColor, border: `1px solid ${navDark ? 'rgba(255,255,255,0.3)' : '#ddd'}` }}>Vedi menu</a>}
           {bookingUrl && (
             <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
-              style={{ ...navBtnPrimary, background: primary }}>
+              style={{ padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 700, textDecoration: 'none', color: '#fff', background: primary }}>
               Prenota
             </a>
           )}
@@ -201,6 +209,8 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
           aziendaId={ristorante.azienda_id}
         />
       ) : null}
+
+      <LandingFooter entity={ristorante} mini={mini} primary={primary} heading={heading} body={body} entityType="ristorante" />
 
       <CookieBanner
         primaryColor={primary}
@@ -218,5 +228,3 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
   )
 }
 
-const navBtnPrimary   = { padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 700, textDecoration: 'none', color: '#fff' }
-const navBtnSecondary = { padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 600, textDecoration: 'none', color: '#1a1a2e', border: '1px solid #ddd' }

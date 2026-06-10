@@ -353,7 +353,7 @@ export default function AiSiteBuilderPage() {
             {mode === 'landing' ? 'Landing page creata!' : 'Sito creato!'}
           </h2>
           <p style={{ color: '#666', fontSize: 15, margin: 0 }}>
-            Homepage pubblicata e visibile subito.{result.length > 1 ? ` Le altre ${result.length - 1} pagine sono in bozza — pubblicale quando sei pronto.` : ''}
+            {result.length} {result.length === 1 ? 'pagina pubblicata' : 'pagine pubblicate'} e visibili subito.
           </p>
         </div>
 
@@ -372,8 +372,8 @@ export default function AiSiteBuilderPage() {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>{page.titolo}</div>
-                <div style={{ fontSize: 12, color: page.published ? '#1a7a4a' : '#aaa' }}>
-                  {page.published ? 'Homepage · pubblicata' : `/${page.slug} · bozza`}
+                <div style={{ fontSize: 12, color: '#1a7a4a' }}>
+                  {page.slug === '__home__' ? 'Homepage · pubblicata' : `/${page.slug} · pubblicata`}
                 </div>
               </div>
               <button onClick={() => router.push(pageEditUrl(page))} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 14px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>

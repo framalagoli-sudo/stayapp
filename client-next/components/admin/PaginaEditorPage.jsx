@@ -521,6 +521,7 @@ export default function PaginaEditorPage() {
   const [origSlug,   setOrigSlug]   = useState(null)
   const [saved,      setSaved]      = useState(false)
   const [loading,    setLoading]    = useState(true)
+  const [loadError,  setLoadError]  = useState(null)
   const [entitySlug, setEntitySlug] = useState(null)
   const [copied,     setCopied]     = useState(false)
 
@@ -530,10 +531,12 @@ export default function PaginaEditorPage() {
 
   useEffect(() => {
     apiFetch(`/api/pagine/${pageId}`).then(data => {
-      if (data?.error) return router.push(-1)
       setPage(data)
       setBlocks(Array.isArray(data.blocks) ? data.blocks : [])
       setOrigSlug(data.slug)
+      setLoading(false)
+    }).catch(err => {
+      setLoadError(err.message || 'Errore caricamento pagina')
       setLoading(false)
     })
   }, [pageId])
@@ -619,20 +622,31 @@ export default function PaginaEditorPage() {
 
   async function save() {
     setSaving(true)
-    const res = await apiFetch(`/api/pagine/${pageId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({
-        titolo: page.titolo, slug: page.slug, status: page.status,
-        nel_menu: page.nel_menu, seo_title: page.seo_title,
-        seo_description: page.seo_description, og_image_url: page.og_image_url,
-        blocks,
-      }),
-    })
-    setSaving(false)
-    if (!res?.error) { setDirty(false); setSaved(true); setTimeout(() => setSaved(false), 2000) }
+    try {
+      await apiFetch(`/api/pagine/${pageId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          titolo: page.titolo, slug: page.slug, status: page.status,
+          nel_menu: page.nel_menu, seo_title: page.seo_title,
+          seo_description: page.seo_description, og_image_url: page.og_image_url,
+          blocks,
+        }),
+      })
+      setDirty(false); setSaved(true); setTimeout(() => setSaved(false), 2000)
+    } catch {
+      // save failed — button re-enables, user can retry
+    } finally {
+      setSaving(false)
+    }
   }
 
   if (loading) return <p style={{ padding: 40, color: '#888' }}>Caricamento...</p>
+  if (loadError) return (
+    <div style={{ padding: 40 }}>
+      <p style={{ color: '#c00', marginBottom: 12 }}>Errore: {loadError}</p>
+      <button onClick={() => router.back()} style={{ background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontSize: 13 }}>← Indietro</button>
+    </div>
+  )
 
   const entityTipo  = page.entity_tipo
   const entityId    = page.entity_id
@@ -645,7 +659,7 @@ export default function PaginaEditorPage() {
 
       {/* ── Top bar ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28, flexWrap: 'wrap' }}>
-        <button onClick={() => router.push(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#888', padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+        <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#888', padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
           ← Indietro
         </button>
         <h1 style={{ margin: 0, fontSize: 19, fontWeight: 700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#1a1a2e' }}>

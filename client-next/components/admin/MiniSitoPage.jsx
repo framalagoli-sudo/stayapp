@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { uploadMedia, apiFetch } from '@/lib/api'
-import { ExternalLink, Plus, Trash2, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Mountain, Wind, Heart, Award, MapPin, Clock, GripVertical, Users, Layout, ChevronRight } from 'lucide-react'
+import { ExternalLink, Plus, Trash2, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Mountain, Wind, Heart, Award, MapPin, Clock, GripVertical, Users, Layout, ChevronRight, FileText, Search, SearchX, Home, PenLine, FilePlus, Briefcase, Mail, Tag, HelpCircle } from 'lucide-react'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -16,6 +16,8 @@ const DEFAULT_SECTION_ORDER = [
   'services', 'activities', 'excursions', 'eventi', 'news', 'gallery', 'faq', 'show_map', 'booking', 'shop', 'contatti', 'newsletter',
 ]
 const DEFAULT_TRACKING = { meta_pixel_id: '', ga4_id: '', gtm_id: '', tiktok_pixel_id: '' }
+const DEFAULT_HEADER   = { style: null, always_visible: false }
+const DEFAULT_FOOTER   = { show_footer: true, bg_color: '', text_color: '', copyright_text: '', show_address: true, show_phone: true, show_email: true, show_social: true, extra_links: [] }
 const DEFAULT = {
   active: false, tagline: '', booking_url: '', show_pwa_link: true, seo_title: '', seo_description: '', google_site_verification: '',
   video_url: '', section_order: [],
@@ -25,6 +27,8 @@ const DEFAULT = {
   foto_testo: [], paragrafi_titolo: '', paragrafi: [],
   team_titolo: '', team: [], steps_titolo: '', steps: [],
   tracking_cfg: DEFAULT_TRACKING,
+  header: DEFAULT_HEADER,
+  footer: DEFAULT_FOOTER,
 }
 
 const HIGHLIGHT_ICONS = [
@@ -53,16 +57,127 @@ const ICON_MAP = Object.fromEntries(HIGHLIGHT_ICONS.map(({ key, Icon }) => [key,
 const ENTITY_PREFIX = { struttura: 's', ristorante: 'r', attivita: 'a' }
 
 const TABS = [
-  { key: 'generale', label: 'Generale' },
-  { key: 'seo',      label: 'SEO & Social' },
+  { key: 'pagine',       label: 'Pagine' },
+  { key: 'menu',         label: 'Menu & Aspetto' },
+  { key: 'impostazioni', label: 'Impostazioni' },
+  { key: 'seo',          label: 'SEO & Social' },
 ]
+
+const PAGE_TEMPLATES = [
+  { id: 'blank',     label: 'Pagina vuota', Icon: FilePlus,   color: '#888',    desc: 'Parti da zero' },
+  { id: 'chi_siamo', label: 'Chi siamo',    Icon: Users,      color: '#5b6af8', desc: 'Foto+testo, team' },
+  { id: 'servizi',   label: 'Servizi',      Icon: Briefcase,  color: '#0891b2', desc: 'Card servizi, CTA' },
+  { id: 'contatti',  label: 'Contatti',     Icon: Mail,       color: '#16a34a', desc: 'Form + mappa' },
+  { id: 'promo',     label: 'Promozioni',   Icon: Tag,        color: '#f97316', desc: 'Offerte, CTA' },
+  { id: 'faq',       label: 'FAQ',          Icon: HelpCircle, color: '#9333ea', desc: 'Accordion FAQ' },
+]
+
+function makeTemplateBlocks(templateId) {
+  const id = () => crypto.randomUUID()
+  switch (templateId) {
+    case 'chi_siamo': return [
+      { id: id(), type: 'about',      data: { title: 'Chi siamo', text: '' } },
+      { id: id(), type: 'foto_testo', data: { title: '', text: '', image_url: '', inverti: false, button_label: '', button_url: '' } },
+      { id: id(), type: 'team',       data: { titolo: 'Il nostro team', items: [] } },
+    ]
+    case 'servizi': return [
+      { id: id(), type: 'about',      data: { title: 'I nostri servizi', text: '' } },
+      { id: id(), type: 'paragrafi',  data: { titolo: 'Cosa offriamo', items: [] } },
+      { id: id(), type: 'steps',      data: { titolo: 'Come funziona', items: [] } },
+      { id: id(), type: 'cta_banner', data: { title: 'Pronto a iniziare?', subtitle: '', button_text: 'Contattaci', button_url: '' } },
+    ]
+    case 'contatti': return [
+      { id: id(), type: 'about',    data: { title: 'Contattaci', text: 'Siamo a tua disposizione.' } },
+      { id: id(), type: 'contatti', data: {} },
+      { id: id(), type: 'show_map', data: {} },
+    ]
+    case 'promo': return [
+      { id: id(), type: 'stats',         data: { titolo: '', items: [] } },
+      { id: id(), type: 'promozioni',    data: { titolo: 'Le nostre offerte', items: [] } },
+      { id: id(), type: 'testimonianze', data: { titolo: 'Cosa dicono di noi', items: [] } },
+      { id: id(), type: 'cta_banner',    data: { title: 'Non perdere questa occasione', subtitle: '', button_text: 'Scopri di più', button_url: '' } },
+    ]
+    case 'faq': return [
+      { id: id(), type: 'about', data: { title: 'Domande frequenti', text: '' } },
+      { id: id(), type: 'faq',   data: { titolo: '', items: [] } },
+    ]
+    default: return []
+  }
+}
+
+function NewPageModal({ onClose, onConfirm, creating }) {
+  const [title, setTitle] = useState('')
+  const [template, setTemplate] = useState('blank')
+  function handleSubmit(e) {
+    e.preventDefault()
+    if (!title.trim()) return
+    onConfirm(title.trim(), template)
+  }
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={{ background: '#fff', borderRadius: 18, width: '100%', maxWidth: 560, maxHeight: '88vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.25)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '22px 24px 0' }}>
+          <h2 style={{ margin: 0, fontSize: 18, color: '#1a1a2e' }}>Nuova pagina</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#888' }}>✕</button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div style={{ padding: '20px 24px 0' }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 6 }}>Titolo della pagina *</label>
+            <input autoFocus required placeholder="es. Chi siamo, Servizi, Contatti…" value={title} onChange={e => setTitle(e.target.value)}
+              style={{ width: '100%', padding: '10px 14px', border: '1px solid #ddd', borderRadius: 9, fontSize: 15, boxSizing: 'border-box' }} />
+          </div>
+          <div style={{ padding: '20px 24px' }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 10 }}>Template di partenza</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8 }}>
+              {PAGE_TEMPLATES.map(t => {
+                const sel = template === t.id
+                return (
+                  <button key={t.id} type="button" onClick={() => setTemplate(t.id)}
+                    style={{ textAlign: 'left', padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
+                      border: sel ? '2px solid #1a1a2e' : '2px solid #e8e8ee',
+                      background: sel ? '#f0f2ff' : '#f9f9fb', position: 'relative' }}>
+                    {sel && <div style={{ position: 'absolute', top: 6, right: 8, fontSize: 12, color: '#1a1a2e', fontWeight: 700 }}>✓</div>}
+                    <div style={{ background: `${t.color}18`, borderRadius: 7, padding: '6px 7px', display: 'inline-flex', marginBottom: 7 }}>
+                      <t.Icon size={18} strokeWidth={1.5} color={t.color} />
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: 12, color: '#1a1a2e', marginBottom: 2 }}>{t.label}</div>
+                    <div style={{ fontSize: 10, color: '#888' }}>{t.desc}</div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '0 24px 22px', borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
+            <button type="button" onClick={onClose} style={{ padding: '10px 18px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', cursor: 'pointer', fontSize: 14 }}>Annulla</button>
+            <button type="submit" disabled={creating || !title.trim()}
+              style={{ padding: '10px 22px', borderRadius: 8, border: 'none', background: title.trim() ? '#1a1a2e' : '#ccc', color: '#fff', cursor: title.trim() ? 'pointer' : 'default', fontSize: 14, fontWeight: 600 }}>
+              {creating ? 'Creazione...' : 'Crea pagina →'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
 
 export default function MiniSitoEditor({ entity, entityType, save, loading, saving, saved, saveError }) {
   const [form, setForm] = useState(DEFAULT)
-  const [activeTab, setActiveTab] = useState('generale')
+  const [activeTab, setActiveTab] = useState('pagine')
   const [homepageBusy, setHomepageBusy] = useState(false)
   const [customDomain, setCustomDomain] = useState(null)
   const router = useRouter()
+
+  // Pagine state
+  const [pagine,        setPagine]        = useState([])
+  const [pagineLoading, setPagineLoading] = useState(false)
+  const [showNewModal,  setShowNewModal]  = useState(false)
+  const [creating,      setCreating]      = useState(false)
+  const [search,        setSearch]        = useState('')
+  const [filterStatus,  setFilterStatus]  = useState('tutti')
+  const [filterMenu,    setFilterMenu]    = useState('tutti')
+  const [dragId,        setDragId]        = useState(null)
+  const [dragOverId,    setDragOverId]    = useState(null)
 
   useEffect(() => {
     if (entity) {
@@ -88,6 +203,8 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
         steps_titolo:  s.steps_titolo || '',
         steps:         s.steps        || [],
         tracking_cfg:  { ...DEFAULT_TRACKING, ...(s.tracking_cfg || {}) },
+        header:        { ...DEFAULT_HEADER,   ...(s.header       || {}) },
+        footer:        { ...DEFAULT_FOOTER,   ...(s.footer       || {}) },
       })
     }
   }, [entity])
@@ -101,6 +218,106 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
       }).catch(() => {})
   }, [entity?.id, entityType])
 
+  useEffect(() => { if (entity?.id) loadPagine() }, [entity?.id])
+
+  async function loadPagine() {
+    setPagineLoading(true)
+    try {
+      const data = await apiFetch(`/api/pagine?entity_tipo=${entityType}&entity_id=${entity.id}`)
+      setPagine(Array.isArray(data) ? data : [])
+    } catch {} finally { setPagineLoading(false) }
+  }
+
+  async function createPage(title, templateId) {
+    setCreating(true)
+    try {
+      const res = await apiFetch('/api/pagine', {
+        method: 'POST',
+        body: JSON.stringify({ entity_tipo: entityType, entity_id: entity.id, titolo: title }),
+      })
+      if (res?.id) {
+        const blocks = makeTemplateBlocks(templateId)
+        if (blocks.length > 0) await apiFetch(`/api/pagine/${res.id}`, { method: 'PATCH', body: JSON.stringify({ blocks }) })
+        router.push(`/admin/pagine/${res.id}`)
+      }
+    } catch {} finally { setCreating(false); setShowNewModal(false) }
+  }
+
+  async function duplicatePage(p) {
+    const res = await apiFetch('/api/pagine', {
+      method: 'POST',
+      body: JSON.stringify({ entity_tipo: entityType, entity_id: entity.id, titolo: `${p.titolo} (copia)` }),
+    })
+    if (!res?.id) return
+    await apiFetch(`/api/pagine/${res.id}`, { method: 'PATCH', body: JSON.stringify({ blocks: p.blocks ?? [], nel_menu: false }) })
+    loadPagine()
+  }
+
+  async function togglePageStatus(p) {
+    await apiFetch(`/api/pagine/${p.id}`, { method: 'PATCH', body: JSON.stringify({ status: p.status === 'pubblicata' ? 'bozza' : 'pubblicata' }) })
+    loadPagine()
+  }
+
+  async function addToMenu(p) {
+    await apiFetch(`/api/pagine/${p.id}`, { method: 'PATCH', body: JSON.stringify({ nel_menu: true }) })
+    loadPagine()
+  }
+
+  async function removeFromMenu(p) {
+    await apiFetch(`/api/pagine/${p.id}`, { method: 'PATCH', body: JSON.stringify({ nel_menu: false }) })
+    loadPagine()
+  }
+
+  async function deletePage(p) {
+    if (!confirm(`Elimina "${p.titolo}"?`)) return
+    await apiFetch(`/api/pagine/${p.id}`, { method: 'DELETE' })
+    loadPagine()
+  }
+
+  function movePage(p, dir) {
+    const arr = [...pagine]
+    const idx = arr.indexOf(p)
+    const t = idx + dir
+    if (t < 0 || t >= arr.length) return
+    ;[arr[idx], arr[t]] = [arr[t], arr[idx]]
+    setPagine(arr)
+    apiFetch('/api/pagine/reorder', { method: 'POST', body: JSON.stringify({ items: arr.map((x, i) => ({ id: x.id, ordine: i, parent_id: x.parent_id })) }) })
+  }
+
+  async function makeChild(p) {
+    const topMenu = pagine.filter(x => x.nel_menu && !x.parent_id)
+    const idx = topMenu.findIndex(x => x.id === p.id)
+    if (idx <= 0) return
+    await apiFetch(`/api/pagine/${p.id}`, { method: 'PATCH', body: JSON.stringify({ parent_id: topMenu[idx - 1].id }) })
+    loadPagine()
+  }
+
+  async function makeTopLevel(p) {
+    await apiFetch(`/api/pagine/${p.id}`, { method: 'PATCH', body: JSON.stringify({ parent_id: null }) })
+    loadPagine()
+  }
+
+  function onDragOverMenu(e, p) {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (p.id !== dragId && dragOverId !== p.id) setDragOverId(p.id)
+  }
+
+  async function onDropMenu(e, target, menuTopArr) {
+    e.preventDefault()
+    if (!dragId || dragId === target.id) { resetDrag(); return }
+    const arr = [...menuTopArr]
+    const fromIdx = arr.findIndex(x => x.id === dragId)
+    const toIdx   = arr.findIndex(x => x.id === target.id)
+    if (fromIdx === -1 || toIdx === -1) { resetDrag(); return }
+    arr.splice(toIdx, 0, arr.splice(fromIdx, 1)[0])
+    setPagine(prev => prev.map(p => { const f = arr.findIndex(x => x.id === p.id); return f !== -1 ? { ...p, ordine: f } : p }))
+    resetDrag()
+    apiFetch('/api/pagine/reorder', { method: 'POST', body: JSON.stringify({ items: arr.map((x, i) => ({ id: x.id, ordine: i, parent_id: x.parent_id })) }) })
+  }
+
+  function resetDrag() { setDragId(null); setDragOverId(null) }
+
   function patch(key, value) {
     const updated = { ...form, [key]: value }
     setForm(updated)
@@ -109,6 +326,18 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
 
   function patchSection(key, value) {
     const updated = { ...form, sections: { ...form.sections, [key]: value } }
+    setForm(updated)
+    save({ minisito: updated }).catch(() => {})
+  }
+
+  function patchHeader(key, value) {
+    const updated = { ...form, header: { ...form.header, [key]: value } }
+    setForm(updated)
+    save({ minisito: updated }).catch(() => {})
+  }
+
+  function patchFooter(key, value) {
+    const updated = { ...form, footer: { ...form.footer, [key]: value } }
     setForm(updated)
     save({ minisito: updated }).catch(() => {})
   }
@@ -391,21 +620,97 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
     { key: 'whatsapp',    label: 'Numero WhatsApp', placeholder: '+39 333 1234567', type: 'text', hint: 'Inserisci solo il numero — il link viene creato automaticamente.' },
   ]
 
+  // Pagine derived
+  const homePage     = pagine.find(p => p.slug === '__home__') || null
+  const menuTop      = pagine.filter(p => p.nel_menu && !p.parent_id).sort((a, b) => a.ordine - b.ordine)
+  const menuSubs     = id => pagine.filter(p => p.nel_menu && p.parent_id === id).sort((a, b) => a.ordine - b.ordine)
+  const notInMenu    = pagine.filter(p => !p.nel_menu && p.slug !== '__home__')
+  const activeFilters = search || filterStatus !== 'tutti' || filterMenu !== 'tutti'
+  const filteredPagine = pagine.filter(p => p.slug !== '__home__').filter(p => {
+    if (search && !p.titolo.toLowerCase().includes(search.toLowerCase()) && !p.slug.toLowerCase().includes(search.toLowerCase())) return false
+    if (filterStatus !== 'tutti' && p.status !== filterStatus) return false
+    if (filterMenu === 'si' && !p.nel_menu) return false
+    if (filterMenu === 'no' &&  p.nel_menu) return false
+    return true
+  })
+
+  function previewPageUrl(p) {
+    if (!entity?.slug) return null
+    return `/${prefix}/${entity.slug}/p/${p.slug}`
+  }
+
+  const btnTiny = { background: '#f0f0f0', border: 'none', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontSize: 11, color: '#444' }
+  const btnPageAction = (variant = 'default') => ({
+    border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 12, padding: '5px 12px', fontWeight: 500,
+    ...(variant === 'primary' ? { background: '#1a1a2e', color: '#fff' } :
+        variant === 'danger'  ? { background: '#fce8e8', color: '#c00' } :
+        variant === 'add'     ? { background: '#e8f4fb', color: '#0066aa', border: '1px solid #c8e4f4' } :
+        variant === 'remove'  ? { background: '#fff3f3', color: '#c00', border: '1px solid #f4c8c8' } :
+                                { background: '#f4f4f6', color: '#444', border: '1px solid #e4e4e8' }),
+  })
+  const filterChip = (active) => ({
+    padding: '4px 12px', borderRadius: 20, fontSize: 12, cursor: 'pointer',
+    border: active ? '1.5px solid #1a1a2e' : '1.5px solid #e0e0e0',
+    background: active ? '#1a1a2e' : '#fff', color: active ? '#fff' : '#555', fontWeight: active ? 600 : 400,
+  })
+
+  // renderMenuRow — funzione normale (non componente React) per evitare unmount/remount drag
+  function renderMenuRow(p, isChild = false) {
+    const topIdx    = menuTop.findIndex(x => x.id === p.id)
+    const canIndent = !isChild && topIdx > 0 && menuSubs(menuTop[topIdx - 1]?.id).length === 0
+    const isDragging = dragId === p.id
+    const isDragOver = dragOverId === p.id && !isChild
+    return (
+      <div key={p.id}
+        onDragOver={!isChild ? e => onDragOverMenu(e, p) : undefined}
+        onDrop={!isChild ? e => onDropMenu(e, p, menuTop) : undefined}
+        onDragEnd={resetDrag}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 8, padding: '10px 8px 10px 14px',
+          background: isDragging ? '#f0f4ff' : '#fff', borderRadius: 8, marginBottom: 4,
+          border: isDragOver ? '2px solid #4a7cdc' : '1px solid #eeeeee',
+          boxShadow: isDragging ? '0 4px 12px rgba(74,124,220,0.18)' : '0 1px 2px rgba(0,0,0,0.04)',
+          marginLeft: isChild ? 28 : 0, opacity: isDragging ? 0.55 : 1,
+        }}>
+        {!isChild ? (
+          <div draggable onDragStart={e => { e.stopPropagation(); setDragId(p.id); e.dataTransfer.effectAllowed = 'move' }}
+            style={{ padding: '4px 6px', cursor: 'grab', color: '#bbb', flexShrink: 0, display: 'flex', alignItems: 'center', userSelect: 'none' }}>
+            <GripVertical size={15} strokeWidth={1.5} />
+          </div>
+        ) : <div style={{ width: 16, flexShrink: 0 }} />}
+        {!isChild && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0 }}>
+            <button onClick={e => { e.stopPropagation(); movePage(p, -1) }} style={btnTiny}>▲</button>
+            <button onClick={e => { e.stopPropagation(); movePage(p, 1)  }} style={btnTiny}>▼</button>
+          </div>
+        )}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>{p.titolo}</span>
+          {p.status === 'bozza' && <span style={{ marginLeft: 8, fontSize: 10, background: '#fff3cd', color: '#856404', borderRadius: 4, padding: '1px 6px', fontWeight: 600 }}>BOZZA</span>}
+          <span style={{ marginLeft: 6, fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>/{p.slug}</span>
+        </div>
+        {canIndent && <button onClick={() => makeChild(p)} style={btnPageAction()}>Rendi sottopagina ↳</button>}
+        {isChild   && <button onClick={() => makeTopLevel(p)} style={btnPageAction()}>↱ Al primo livello</button>}
+        <button onClick={() => removeFromMenu(p)} style={btnPageAction('remove')}>✕ Rimuovi</button>
+      </div>
+    )
+  }
+
   return (
-    <div style={{ maxWidth: 640 }}>
+    <div style={{ maxWidth: 860 }}>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <h2 style={{ ...titleStyle, marginBottom: 0 }}>Sito pubblico</h2>
+        <h2 style={{ ...titleStyle, marginBottom: 0 }}>Sito web</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {saving && <span style={{ fontSize: 12, color: '#888' }}>Salvataggio…</span>}
           {!saving && saved && <span style={{ fontSize: 12, color: '#38a169', fontWeight: 600 }}>✓ Salvato</span>}
           {saveError && <span style={{ fontSize: 12, color: '#c00' }}>{saveError}</span>}
-          {form.active && entity.slug && (
+          {entity.slug && (
             <a href={landingUrl} target="_blank" rel="noopener noreferrer"
               style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: '#1a1a2e', fontWeight: 600, textDecoration: 'none', padding: '6px 12px', background: '#f0f0f0', borderRadius: 8 }}>
               <ExternalLink size={13} strokeWidth={2} />
-              Anteprima
+              {form.active ? 'Vedi sito' : 'Anteprima'}
             </a>
           )}
         </div>
@@ -424,29 +729,6 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
         </div>
       </div>
 
-      {/* Homepage editor card */}
-      <div style={{ ...cardStyle, background: 'linear-gradient(135deg, #1a1a2e 0%, #0d1a2a 100%)', color: '#fff', marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 12, padding: 12, flexShrink: 0 }}>
-            <Layout size={24} strokeWidth={1.5} color="#fff" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>Homepage a blocchi</div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.4 }}>
-              Costruisci la homepage con l'editor visuale. Trascina e personalizza 24 tipi di blocco.
-            </div>
-          </div>
-          <button
-            onClick={openHomepageBuilder}
-            disabled={homepageBusy}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: '#fff', color: '#1a1a2e', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: homepageBusy ? 'wait' : 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
-          >
-            {homepageBusy ? 'Carico…' : 'Modifica homepage'}
-            {!homepageBusy && <ChevronRight size={16} strokeWidth={2.5} />}
-          </button>
-        </div>
-      </div>
-
       {/* Tab bar */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
         {TABS.map(t => (
@@ -462,8 +744,291 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
         ))}
       </div>
 
-      {/* Generale */}
-      {activeTab === 'generale' && (
+      {/* ── TAB: PAGINE ── */}
+      {activeTab === 'pagine' && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 16, color: '#1a1a2e' }}>Pagine del sito</div>
+              <div style={{ fontSize: 13, color: '#888', marginTop: 3 }}>Crea e modifica il contenuto. Pubblica per rendere visibile.</div>
+            </div>
+            <button onClick={() => setShowNewModal(true)}
+              style={{ background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', cursor: 'pointer', fontSize: 14, flexShrink: 0 }}>
+              + Nuova pagina
+            </button>
+          </div>
+
+          {/* Homepage speciale */}
+          <div style={{ ...cardStyle, marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #0d1a2a 100%)', borderRadius: 10, padding: 10, flexShrink: 0 }}>
+                <Layout size={20} strokeWidth={1.5} color="#fff" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>Homepage a blocchi</div>
+                <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
+                  {homePage ? 'Editor visuale attivo — trascina e personalizza i blocchi.' : 'Costruisci la homepage con il drag & drop. 24 tipi di blocco.'}
+                </div>
+              </div>
+              <button onClick={openHomepageBuilder} disabled={homepageBusy}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: homepageBusy ? 'wait' : 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                <PenLine size={14} strokeWidth={2} />
+                {homepageBusy ? 'Carico…' : homePage ? 'Modifica homepage' : 'Crea homepage'}
+              </button>
+            </div>
+          </div>
+
+          {/* Search + filter */}
+          {pagine.filter(p => p.slug !== '__home__').length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ position: 'relative', marginBottom: 10 }}>
+                <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                  <Search size={14} strokeWidth={1.5} color="#bbb" />
+                </span>
+                <input type="text" placeholder="Cerca per titolo o slug…" value={search} onChange={e => setSearch(e.target.value)}
+                  style={{ width: '100%', padding: '9px 12px 9px 36px', border: '1px solid #e0e0e0', borderRadius: 9, fontSize: 13, boxSizing: 'border-box', background: '#fff' }} />
+                {search && <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#aaa' }}>✕</button>}
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontSize: 11, color: '#aaa', marginRight: 2 }}>Stato:</span>
+                {[['tutti','Tutti'],['bozza','Bozze'],['pubblicata','Pubblicate']].map(([val, label]) => (
+                  <button key={val} onClick={() => setFilterStatus(val)} style={filterChip(filterStatus === val)}>{label}</button>
+                ))}
+                <span style={{ fontSize: 11, color: '#aaa', marginLeft: 8, marginRight: 2 }}>Menu:</span>
+                {[['tutti','Tutti'],['si','In menu'],['no','Fuori menu']].map(([val, label]) => (
+                  <button key={val} onClick={() => setFilterMenu(val)} style={filterChip(filterMenu === val)}>{label}</button>
+                ))}
+                {activeFilters && <button onClick={() => { setSearch(''); setFilterStatus('tutti'); setFilterMenu('tutti') }} style={{ marginLeft: 6, fontSize: 11, color: '#c00', background: 'none', border: 'none', cursor: 'pointer' }}>Reset</button>}
+              </div>
+            </div>
+          )}
+
+          {pagineLoading ? (
+            <p style={{ color: '#888', fontSize: 13 }}>Caricamento...</p>
+          ) : filteredPagine.length === 0 && !search ? (
+            <div style={{ ...cardStyle, padding: '40px 24px', textAlign: 'center', color: '#aaa' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+                <div style={{ background: '#f0f0f0', borderRadius: 14, padding: 16 }}>
+                  <FileText size={28} strokeWidth={1} color="#ccc" />
+                </div>
+              </div>
+              <p style={{ margin: '0 0 4px', fontWeight: 600, color: '#888', fontSize: 14 }}>Nessuna pagina ancora</p>
+              <p style={{ margin: '0 0 16px', fontSize: 13 }}>Aggiungi "Chi siamo", "Servizi", "Contatti" e personalizzale con blocchi di contenuto.</p>
+              <button onClick={() => setShowNewModal(true)} style={btnPageAction('primary')}>+ Crea la prima pagina</button>
+            </div>
+          ) : filteredPagine.length === 0 ? (
+            <div style={{ padding: '28px 24px', textAlign: 'center', color: '#aaa', background: '#f9f9fb', borderRadius: 10 }}>
+              <SearchX size={22} strokeWidth={1.5} color="#ccc" style={{ marginBottom: 8 }} />
+              <div style={{ fontSize: 13 }}>Nessuna pagina corrisponde ai filtri.</div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {filteredPagine.map(p => {
+                const url = previewPageUrl(p)
+                const seoScore = [p.seo_title, p.seo_description].filter(Boolean).length
+                return (
+                  <div key={p.id} style={{ background: '#fff', borderRadius: 10, border: '1px solid #eee', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: 140 }}>
+                      <span style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>{p.parent_id ? '└─ ' : ''}{p.titolo}</span>
+                      <span style={{ marginLeft: 8, fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>/{p.slug}</span>
+                    </div>
+                    <button onClick={() => togglePageStatus(p)} style={{ ...btnPageAction(), flexShrink: 0, background: p.status === 'pubblicata' ? '#d4edda' : '#fff3cd', color: p.status === 'pubblicata' ? '#155724' : '#856404', fontWeight: 600, border: 'none' }}>
+                      {p.status === 'pubblicata' ? '✓ Pubblicata' : '○ Bozza'}
+                    </button>
+                    <span style={{ fontSize: 11, color: p.nel_menu ? '#0066aa' : '#bbb', flexShrink: 0 }}>
+                      {p.nel_menu ? '☰ In menu' : '— Fuori menu'}
+                    </span>
+                    <span title={['SEO non configurato','SEO incompleto','SEO completo'][seoScore]}
+                      style={{ fontSize: 10, padding: '2px 6px', borderRadius: 8, flexShrink: 0, fontWeight: 700,
+                        background: ['#fce8e8','#fff3cd','#d4edda'][seoScore], color: ['#c00','#856404','#155724'][seoScore] }}>
+                      SEO {['✗','~','✓'][seoScore]}
+                    </span>
+                    {url && <a href={url} target="_blank" rel="noopener noreferrer" style={{ ...btnPageAction(), flexShrink: 0, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>↗ Apri</a>}
+                    <button onClick={() => duplicatePage(p)} style={{ ...btnPageAction(), flexShrink: 0 }}>⧉ Duplica</button>
+                    <button onClick={() => router.push(`/admin/pagine/${p.id}`)} style={btnPageAction('primary')}>Modifica</button>
+                    <button onClick={() => deletePage(p)} style={btnPageAction('danger')}>✕</button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── TAB: MENU & ASPETTO ── */}
+      {activeTab === 'menu' && (
+        <div>
+          {/* Menu di navigazione */}
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ fontWeight: 700, fontSize: 16, color: '#1a1a2e', marginBottom: 4 }}>Menu di navigazione</div>
+            <div style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>
+              Queste voci appaiono nella barra del sito. Trascina per riordinare. Solo le pagine <strong>Pubblicate</strong> sono visibili ai visitatori.
+            </div>
+
+            {/* Home — fisso */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: '#fff', borderRadius: 8, border: '1px solid #eee', marginBottom: 4, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}>
+              <span style={{ color: '#ddd', fontSize: 15, userSelect: 'none' }}>⠿</span>
+              <Home size={16} strokeWidth={1.5} color="#bbb" />
+              <div style={{ flex: 1 }}>
+                <span style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>Home</span>
+                <span style={{ marginLeft: 8, fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>/</span>
+              </div>
+              <span style={{ fontSize: 11, color: '#888', fontStyle: 'italic' }}>sempre presente</span>
+              <button onClick={() => { openHomepageBuilder() }} style={{ ...btnPageAction(), fontSize: 12 }}>Modifica homepage →</button>
+            </div>
+
+            {menuTop.length > 0 && (
+              <div>
+                {menuTop.map(p => (
+                  <div key={p.id}>
+                    {renderMenuRow(p, false)}
+                    {menuSubs(p.id).map(child => renderMenuRow(child, true))}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {notInMenu.length > 0 && (
+              <div style={{ marginTop: 16, padding: '14px 16px', background: '#f9f9fb', borderRadius: 10, border: '1px dashed #ddd' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#888', marginBottom: 10 }}>Pagine non nel menu — clicca per aggiungerle</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {notInMenu.map(p => (
+                    <button key={p.id} onClick={() => addToMenu(p)} style={{ ...btnPageAction('add'), display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 15 }}>+</span>
+                      <span style={{ fontWeight: 600 }}>{p.titolo}</span>
+                      {p.status === 'bozza' && <span style={{ fontSize: 10, opacity: 0.6 }}>(bozza)</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {!pagineLoading && pagine.filter(p => p.slug !== '__home__').length === 0 && (
+              <div style={{ padding: '16px', background: '#f9f9fb', borderRadius: 10, border: '1px dashed #ddd', textAlign: 'center', color: '#aaa', fontSize: 13 }}>
+                Crea le pagine nel tab <strong>Pagine</strong>, poi aggiungile al menu.
+              </div>
+            )}
+          </div>
+
+          {/* Header */}
+          <div style={cardStyle}>
+            <h3 style={sectionTitle}>Barra di navigazione (header)</h3>
+            <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+              La barra compare in cima al sito. Puoi cambiarne lo stile o tenerla sempre visibile.
+            </p>
+            <div style={fieldWrap}>
+              <label style={lblStyle}>Stile barra</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[
+                  { value: null,    label: 'Predefinito' },
+                  { value: 'light', label: 'Chiara' },
+                  { value: 'dark',  label: 'Scura' },
+                ].map(opt => (
+                  <button key={String(opt.value)} type="button" onClick={() => patchHeader('style', opt.value)}
+                    style={{ padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                      background: form.header.style === opt.value ? '#1a1a2e' : '#f0f0f0',
+                      color:      form.header.style === opt.value ? '#fff'    : '#555' }}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Toggle value={form.header.always_visible} onChange={v => patchHeader('always_visible', v)} />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>Sempre visibile</div>
+                <div style={{ fontSize: 12, color: '#888' }}>Se attivo la barra è sempre in cima, anche prima di scorrere.</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div style={cardStyle}>
+            <h3 style={sectionTitle}>Footer</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+              <Toggle value={form.footer.show_footer !== false} onChange={v => patchFooter('show_footer', v)} />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>Mostra footer</div>
+                <div style={{ fontSize: 12, color: '#888' }}>Sezione in fondo al sito con contatti, social e link utili.</div>
+              </div>
+            </div>
+            {form.footer.show_footer !== false && <>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                <div>
+                  <label style={lblStyle}>Colore sfondo</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <input type="color" value={form.footer.bg_color || '#1a1a2e'}
+                      onChange={e => setForm(f => ({ ...f, footer: { ...f.footer, bg_color: e.target.value } }))}
+                      onBlur={() => save({ minisito: form }).catch(() => {})}
+                      style={{ width: 40, height: 36, borderRadius: 6, border: '1px solid #ddd', padding: 2, cursor: 'pointer' }} />
+                    <input value={form.footer.bg_color || '#1a1a2e'}
+                      onChange={e => setForm(f => ({ ...f, footer: { ...f.footer, bg_color: e.target.value } }))}
+                      onBlur={() => save({ minisito: form }).catch(() => {})}
+                      placeholder="#1a1a2e" style={{ ...inputStyle, flex: 1 }} />
+                  </div>
+                </div>
+                <div>
+                  <label style={lblStyle}>Colore testo</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <input type="color" value={form.footer.text_color || '#ffffff'}
+                      onChange={e => setForm(f => ({ ...f, footer: { ...f.footer, text_color: e.target.value } }))}
+                      onBlur={() => save({ minisito: form }).catch(() => {})}
+                      style={{ width: 40, height: 36, borderRadius: 6, border: '1px solid #ddd', padding: 2, cursor: 'pointer' }} />
+                    <input value={form.footer.text_color || ''}
+                      onChange={e => setForm(f => ({ ...f, footer: { ...f.footer, text_color: e.target.value } }))}
+                      onBlur={() => save({ minisito: form }).catch(() => {})}
+                      placeholder="#ffffff (default)" style={{ ...inputStyle, flex: 1 }} />
+                  </div>
+                </div>
+              </div>
+              <div style={fieldWrap}>
+                <label style={lblStyle}>Testo copyright</label>
+                <input value={form.footer.copyright_text || ''}
+                  onChange={e => setForm(f => ({ ...f, footer: { ...f.footer, copyright_text: e.target.value } }))}
+                  onBlur={() => save({ minisito: form }).catch(() => {})}
+                  placeholder={`© ${new Date().getFullYear()} ${entity.name}. Tutti i diritti riservati.`}
+                  style={inputStyle} />
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ ...lblStyle, marginBottom: 10 }}>Sezioni visibili nel footer</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {[
+                    { key: 'show_address', label: 'Indirizzo' },
+                    { key: 'show_phone',   label: 'Telefono' },
+                    { key: 'show_email',   label: 'Email' },
+                    { key: 'show_social',  label: 'Social (Instagram, Facebook, ecc.)' },
+                  ].map(({ key, label }) => (
+                    <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <Toggle value={form.footer[key] !== false} onChange={v => patchFooter(key, v)} />
+                      <span style={{ fontSize: 13 }}>{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label style={lblStyle}>Link aggiuntivi nel footer</label>
+                {(form.footer.extra_links || []).map((l, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                    <input value={l.label} onChange={e => { const links = [...(form.footer.extra_links || [])]; links[i] = { ...links[i], label: e.target.value }; setForm(f => ({ ...f, footer: { ...f.footer, extra_links: links } })) }}
+                      onBlur={() => save({ minisito: form }).catch(() => {})} placeholder="Testo" style={{ ...inputStyle, flex: 1 }} />
+                    <input value={l.url} onChange={e => { const links = [...(form.footer.extra_links || [])]; links[i] = { ...links[i], url: e.target.value }; setForm(f => ({ ...f, footer: { ...f.footer, extra_links: links } })) }}
+                      onBlur={() => save({ minisito: form }).catch(() => {})} placeholder="https://…" style={{ ...inputStyle, flex: 2 }} />
+                    <button type="button" onClick={() => patchFooter('extra_links', (form.footer.extra_links || []).filter((_, j) => j !== i))}
+                      style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: '#fff0f0', color: '#c00', cursor: 'pointer', fontSize: 16 }}>×</button>
+                  </div>
+                ))}
+                <button type="button" onClick={() => patchFooter('extra_links', [...(form.footer.extra_links || []), { label: '', url: '' }])}
+                  style={{ fontSize: 13, padding: '7px 14px', background: '#f0f4ff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                  + Aggiungi link
+                </button>
+              </div>
+            </>}
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB: IMPOSTAZIONI ── */}
+      {activeTab === 'impostazioni' && (
         <div style={cardStyle}>
           <h3 style={sectionTitle}>Impostazioni generali</h3>
           <div style={fieldWrap}>
@@ -485,7 +1050,7 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
         </div>
       )}
 
-      {/* SEO & Social */}
+      {/* ── TAB: SEO & SOCIAL ── */}
       {activeTab === 'seo' && <>
         <div style={cardStyle}>
           <h3 style={sectionTitle}>SEO</h3>
@@ -536,7 +1101,146 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
         <GeoCard tipo={entityType} slug={entity.slug} faqCount={(form.faq||[]).filter(f=>f.question&&f.answer).length} cardStyle={cardStyle} sectionTitle={sectionTitle} customDomain={customDomain} />
       </>}
 
-      {activeTab === '__none__' && <>
+      {activeTab === '__removed__' && <>
+        {/* ── HEADER ── */}
+        <div style={cardStyle}>
+          <h3 style={sectionTitle}>Barra di navigazione (header)</h3>
+          <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
+            La barra compare in cima al sito quando l'utente scorre. Puoi cambiarle stile o tenerla sempre visibile.
+          </p>
+          <div style={{ ...fieldWrap }}>
+            <label style={lblStyle}>Stile barra</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[
+                { value: null,    label: 'Predefinito', hint: 'Scura per struttura, chiara per ristorante/attività' },
+                { value: 'light', label: 'Chiara',      hint: 'Sfondo bianco, testo scuro' },
+                { value: 'dark',  label: 'Scura',       hint: 'Sfondo scuro, testo bianco' },
+              ].map(opt => (
+                <button key={String(opt.value)} type="button"
+                  onClick={() => patchHeader('style', opt.value)}
+                  title={opt.hint}
+                  style={{
+                    padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                    background: form.header.style === opt.value ? '#1a1a2e' : '#f0f0f0',
+                    color:      form.header.style === opt.value ? '#fff'    : '#555',
+                  }}>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <span style={hintStyle}>
+              {form.header.style === 'dark' ? 'Sfondo scuro, testo bianco — ideale con hero scuro o immagine.' : form.header.style === 'light' ? 'Sfondo bianco, testo scuro — classico e leggibile.' : 'Usa il colore di default per questo tipo di sito.'}
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Toggle value={form.header.always_visible} onChange={v => patchHeader('always_visible', v)} />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>Sempre visibile</div>
+              <div style={{ fontSize: 12, color: '#888' }}>Se attivo la barra è sempre in cima, anche prima di scorrere.</div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── FOOTER ── */}
+        <div style={cardStyle}>
+          <h3 style={sectionTitle}>Footer</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+            <Toggle value={form.footer.show_footer !== false} onChange={v => patchFooter('show_footer', v)} />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>Mostra footer</div>
+              <div style={{ fontSize: 12, color: '#888' }}>Sezione in fondo al sito con contatti, social e link utili.</div>
+            </div>
+          </div>
+          {form.footer.show_footer !== false && <>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+              <div>
+                <label style={lblStyle}>Colore sfondo</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <input type="color" value={form.footer.bg_color || '#1a1a2e'}
+                    onChange={e => setForm(f => ({ ...f, footer: { ...f.footer, bg_color: e.target.value } }))}
+                    onBlur={() => save({ minisito: form }).catch(() => {})}
+                    style={{ width: 40, height: 36, borderRadius: 6, border: '1px solid #ddd', padding: 2, cursor: 'pointer' }} />
+                  <input value={form.footer.bg_color || '#1a1a2e'}
+                    onChange={e => setForm(f => ({ ...f, footer: { ...f.footer, bg_color: e.target.value } }))}
+                    onBlur={() => save({ minisito: form }).catch(() => {})}
+                    placeholder="#1a1a2e" style={{ ...inputStyle, flex: 1 }} />
+                </div>
+              </div>
+              <div>
+                <label style={lblStyle}>Colore testo</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <input type="color" value={form.footer.text_color || '#ffffff'}
+                    onChange={e => setForm(f => ({ ...f, footer: { ...f.footer, text_color: e.target.value } }))}
+                    onBlur={() => save({ minisito: form }).catch(() => {})}
+                    style={{ width: 40, height: 36, borderRadius: 6, border: '1px solid #ddd', padding: 2, cursor: 'pointer' }} />
+                  <input value={form.footer.text_color || ''}
+                    onChange={e => setForm(f => ({ ...f, footer: { ...f.footer, text_color: e.target.value } }))}
+                    onBlur={() => save({ minisito: form }).catch(() => {})}
+                    placeholder="#ffffff (default)" style={{ ...inputStyle, flex: 1 }} />
+                </div>
+              </div>
+            </div>
+            <div style={fieldWrap}>
+              <label style={lblStyle}>Testo copyright</label>
+              <input value={form.footer.copyright_text || ''}
+                onChange={e => setForm(f => ({ ...f, footer: { ...f.footer, copyright_text: e.target.value } }))}
+                onBlur={() => save({ minisito: form }).catch(() => {})}
+                placeholder={`© ${new Date().getFullYear()} ${entity.name}. Tutti i diritti riservati.`}
+                style={inputStyle} />
+              <span style={hintStyle}>Lascia vuoto per usare il testo automatico con anno e nome.</span>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ ...lblStyle, marginBottom: 10 }}>Sezioni visibili</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[
+                  { key: 'show_address', label: 'Indirizzo' },
+                  { key: 'show_phone',   label: 'Telefono' },
+                  { key: 'show_email',   label: 'Email' },
+                  { key: 'show_social',  label: 'Social (Instagram, Facebook, ecc.)' },
+                ].map(({ key, label }) => (
+                  <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <Toggle value={form.footer[key] !== false} onChange={v => patchFooter(key, v)} />
+                    <span style={{ fontSize: 13 }}>{label}</span>
+                  </div>
+                ))}
+              </div>
+              <span style={hintStyle}>Vengono mostrati solo se il dato è presente nel profilo dell'entità.</span>
+            </div>
+            <div>
+              <label style={lblStyle}>Link aggiuntivi</label>
+              <p style={{ fontSize: 12, color: '#888', marginBottom: 10, marginTop: -4 }}>
+                Appaiono nella colonna "Link utili" del footer.
+              </p>
+              {(form.footer.extra_links || []).map((l, i) => (
+                <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                  <input value={l.label} onChange={e => {
+                    const links = [...(form.footer.extra_links || [])]
+                    links[i] = { ...links[i], label: e.target.value }
+                    setForm(f => ({ ...f, footer: { ...f.footer, extra_links: links } }))
+                  }} onBlur={() => save({ minisito: form }).catch(() => {})}
+                    placeholder="Testo" style={{ ...inputStyle, flex: 1 }} />
+                  <input value={l.url} onChange={e => {
+                    const links = [...(form.footer.extra_links || [])]
+                    links[i] = { ...links[i], url: e.target.value }
+                    setForm(f => ({ ...f, footer: { ...f.footer, extra_links: links } }))
+                  }} onBlur={() => save({ minisito: form }).catch(() => {})}
+                    placeholder="https://…" style={{ ...inputStyle, flex: 2 }} />
+                  <button type="button" onClick={() => {
+                    const links = (form.footer.extra_links || []).filter((_, j) => j !== i)
+                    patchFooter('extra_links', links)
+                  }} style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: '#fff0f0', color: '#c00', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>×</button>
+                </div>
+              ))}
+              <button type="button" onClick={() => patchFooter('extra_links', [...(form.footer.extra_links || []), { label: '', url: '' }])}
+                style={{ fontSize: 13, padding: '7px 14px', background: '#f0f4ff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                + Aggiungi link
+              </button>
+            </div>
+          </>}
+        </div>
+      </>}
+
+      {activeTab === '__removed__' && <>
         <div style={cardStyle}>
           <h3 style={sectionTitle}>Numeri in evidenza</h3>
           <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
@@ -553,7 +1257,7 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
         </div>
       </>}
 
-      {activeTab === '__none__' && (
+      {activeTab === '__removed__' && (
         <div style={cardStyle}>
           <h3 style={sectionTitle}>Offerte e promozioni</h3>
           <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
@@ -568,7 +1272,7 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
         </div>
       )}
 
-      {activeTab === '__none__' && (
+      {activeTab === '__removed__' && (
         <div style={cardStyle}>
           <h3 style={sectionTitle}>Pacchetti</h3>
           <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
@@ -583,7 +1287,7 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
         </div>
       )}
 
-      {activeTab === '__none__' && (
+      {activeTab === '__removed__' && (
         <div style={cardStyle}>
           <h3 style={sectionTitle}>Testimonianze</h3>
           <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
@@ -602,7 +1306,7 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
         </div>
       )}
 
-      {activeTab === '__none__' && (
+      {activeTab === '__removed__' && (
         <div style={cardStyle}>
           <h3 style={sectionTitle}>Domande frequenti (FAQ)</h3>
           <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
@@ -620,7 +1324,7 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
         </div>
       )}
 
-      {activeTab === '__none__' && (
+      {activeTab === '__removed__' && (
         <div style={cardStyle}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
             <h3 style={{ ...sectionTitle, marginBottom: 0 }}>Banner CTA</h3>
@@ -662,7 +1366,7 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
         </div>
       )}
 
-      {activeTab === '__none__' && <>
+      {activeTab === '__removed__' && <>
         <div style={cardStyle}>
           <h3 style={sectionTitle}>Blocchi foto + testo</h3>
           <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
@@ -787,7 +1491,7 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
         </div>
       </>}
 
-      {activeTab === '__none__' && (
+      {activeTab === '__removed__' && (
         <>
         <div style={{ ...cardStyle, background: 'linear-gradient(135deg, #1a1a2e 0%, #0d1a2a 100%)', color: '#fff', marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -835,6 +1539,10 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
           </DndContext>
         </div>
         </>
+      )}
+
+      {showNewModal && (
+        <NewPageModal onClose={() => setShowNewModal(false)} onConfirm={createPage} creating={creating} />
       )}
 
     </div>

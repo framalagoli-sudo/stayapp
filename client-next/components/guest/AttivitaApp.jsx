@@ -8,8 +8,8 @@ import { apiFetch, guestFetch } from '@/lib/api'
 export default function AttivitaApp({ forceSlug } = {}) {
   const { slug: paramSlug } = useParams()
   const slug = forceSlug || paramSlug
-  const [searchParams] = useSearchParams()
-  const isQR = searchParams.get('qr') === '1'
+  const searchParams = useSearchParams()
+  const isQR = searchParams?.get('qr') === '1'
   const [attivita, setAttivita] = useState(null)
   const [error,    setError]    = useState(null)
 
