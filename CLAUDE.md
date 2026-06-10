@@ -18,13 +18,48 @@ Azienda (top-level)
 
 ---
 
+## Recovery da zero (PC nuovo o crash)
+
+Tutto il necessario per ripristinare l'ambiente completo:
+
+**1. Clona il repo**
+```bash
+git clone https://github.com/framalagoli-sudo/stayapp.git hospitality
+cd hospitality
+cd client-next && npm install
+cd ../server && npm install
+cd ../tests && npm install
+```
+
+**2. Variabili d'ambiente** (ricopia dai dashboard):
+- `server/.env` → Railway Dashboard → Variables
+- `client-next/.env.local` → Vercel Dashboard → Project → Settings → Environment Variables
+- `tests/.env.test` → credenziali Supabase (URL + anon key + service role key)
+
+**3. Memory Claude Code** (ripristina il contesto AI accumulato):
+```bash
+# Su Windows, copia i file dalla cartella nel repo alla posizione attesa da Claude:
+$dest = "$env:USERPROFILE\.claude\projects\C--Users-<TUO-USERNAME>-progetti-hospitality\memory"
+New-Item -ItemType Directory -Force $dest
+Copy-Item .claude-memory\* $dest
+```
+> La cartella `.claude-memory/` nel repo contiene tutte le memory di sessione. Aggiornata ad ogni sessione con `git push`.
+
+**4. Avvio locale**
+```bash
+cd server && npm run dev    # → http://localhost:3001
+cd client-next && npm run dev  # → http://localhost:3000
+```
+
+---
+
 ## Setup nuovo sviluppatore
 
 **Prerequisiti:** Node.js 18+, Git, credenziali Supabase/Railway/Vercel (da Francesco — fra.malagoli@gmail.com)
 
 ```bash
-git clone <repo-url> && cd hospitality
-cd client && npm install
+git clone https://github.com/framalagoli-sudo/stayapp.git && cd hospitality
+cd client-next && npm install
 cd ../server && npm install
 ```
 

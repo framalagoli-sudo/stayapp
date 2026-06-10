@@ -391,3 +391,194 @@ Il refactor verso "Business" generico richiede principalmente:
 ---
 
 *Aggiornare questo file a inizio sessione quando si completano feature o cambia la priorità.*
+
+---
+
+## PIANO TECNICO — Stabilità → Migrazione → Sicurezza → Automazione
+*(aggiunto 2026-06-10)*
+
+---
+
+### FASE 1 — Debug funzionale completo 🔴 (prima di tutto)
+
+Smoke test = le pagine caricano. Debug = le funzioni funzionano davvero.
+Metodologia: voce per voce, spunta quando confermato ok in produzione.
+
+#### Operativo
+- [ ] Dashboard — KPI corretti, link entità funzionanti
+- [ ] Richieste — lista, filtri, cambio stato, note
+- [ ] Prenotazioni — lista, filtri, cambio stato, email conferma
+- [ ] Booking — Calendario disponibilità corretto
+- [ ] Booking — Risorse CRUD, slot/coperti, promozioni
+- [ ] Booking — Lista prenotazioni con filtri
+- [ ] Richieste demo — lista, segna letto
+- [ ] Recensioni — import manuale, toggle pubblica, risposta, richiesta via email, smart redirect ≥4 stelle
+- [ ] Survey & NPS — invio, form pubblico, KPI score
+- [ ] Contatti — lista, filtri, tag, pipeline Kanban, import, newsletter opt-in
+- [ ] Newsletter — crea, template, test email, invio batch, schedulazione, archivio pubblico
+- [ ] Automazioni — crea trigger, steps, log esecuzioni, test email
+- [ ] Blog & News — editor, categorie, pubblica, SEO
+- [ ] Piano editoriale — calendario, crea post, tipi contenuto, AI generate, team, campagne, idee, hashtag
+- [ ] Content Studio — strategia AI, piano mensile, caption studio, gap analyzer
+- [ ] AI Site Builder — wizard 5 step, genera blocchi, salva
+- [ ] Preventivi — crea, invia link, accettazione cliente con firma, webhook
+- [ ] Form Builder — crea form, embed iframe, risposte, export CSV, lead auto in CRM
+- [ ] Shop — prodotti CRUD, ordini, loyalty/gift card nel checkout
+- [ ] Loyalty — programma punti, gift card, classifica
+- [ ] Eventi — CRUD, prenotazione pubblica, export CSV
+
+#### Account & Configurazione
+- [ ] Analytics — pageviews, richieste, prenotazioni, newsletter (range 7/30/90gg)
+- [ ] QR Code — genera per struttura/ristorante/attività, download
+- [ ] Collaboratori — invito email, accetta invito, permessi granulari, ban/unban, reinvia invito
+- [ ] Integrazioni — Google Calendar connect/disconnect, Webhook CRUD + test
+- [ ] SEO & GEO — meta tags, JSON-LD, llms.txt, robots.txt, tracking pixel
+- [ ] Audit log — lista azioni, filtri
+- [ ] Impostazioni — profilo azienda, moduli on/off, require_2fa, signup toggle
+- [ ] Sicurezza — cambio password, 2FA enrollment/disattiva
+
+#### Piattaforma (super_admin)
+- [ ] Aziende — CRUD, trial/subscription, moduli
+- [ ] Strutture — CRUD, assegna azienda
+- [ ] Ristoranti — CRUD, assegna azienda
+- [ ] Attività — CRUD, assegna azienda
+- [ ] Utenti interni — crea/modifica/ban, ruoli (super_admin/admin/editor)
+
+#### Sito & App (per ogni entità: struttura, ristorante, attività)
+- [ ] Struttura Info — dati base, logo, cover, galleria, tema colori
+- [ ] Struttura PWA — chatbot, bottom nav, sezioni
+- [ ] Struttura Sito web — page builder, menu, impostazioni, SEO
+- [ ] Ristorante Info — dati, logo, cover, galleria
+- [ ] Ristorante Menu — multi-catalogo, DnD, icone, categorie, piatti, allergeni
+- [ ] Ristorante PWA — menu PWA, chatbot
+- [ ] Ristorante Sito web — page builder, SEO
+- [ ] Attività Info — dati, logo, cover, galleria
+- [ ] Attività PWA — chatbot, moduli
+- [ ] Attività Sito web — page builder, SEO
+- [ ] Domini — subdomain auto, dominio custom, DNS instructions, verifica
+
+#### Pubblico (guest)
+- [ ] PWA struttura — carica senza auth, chatbot, booking widget, QR diretto
+- [ ] PWA ristorante — menu, allergeni, chatbot
+- [ ] PWA attività — moduli, chatbot
+- [ ] Landing struttura — hero, sezioni, footer, SEO, Schema.org
+- [ ] Landing ristorante — menu tab, sezioni, footer, SEO
+- [ ] Landing attività — sezioni, footer, SEO
+- [ ] Privacy/Cookie policy — genera da dati azienda
+- [ ] Form contatto pubblico → lead in CRM
+- [ ] Booking widget pubblico — slot, coperti, email conferma, cancellazione token
+- [ ] Shop widget pubblico — prodotti, carrello, checkout, loyalty/gift card
+
+---
+
+### FASE 2 — Migrazione Railway → Vercel API Routes 🔴
+
+Elimina Railway ($5/mese), tutto su Vercel. Il server Express diventa Next.js API routes.
+
+**Strategia:** route per route, non big bang. Ogni file `server/src/routes/xxx.js` diventa `client-next/app/api/xxx/route.js`.
+
+**Ordine consigliato:**
+- [ ] Setup middleware auth condiviso (`lib/auth-middleware.ts`)
+- [ ] Migra route leggere: `auth.js`, `health`
+- [ ] Migra route CRUD: `properties`, `ristoranti`, `attivita`, `contatti`
+- [ ] Migra route complesse: `booking`, `newsletter`, `eventi`
+- [ ] Migra upload (`/api/upload/*`) — Vercel ha limite 4.5MB body su serverless; valutare Vercel Blob o tenere upload su Supabase Storage direttamente dal client
+- [ ] Migra scheduler (`runScheduledSends`, `runAutomazioniScheduler`) → Vercel Cron Jobs
+- [ ] Migra backup R2 → Vercel Cron Job notturno
+- [ ] Rimuovi Railway, aggiorna env vars su Vercel
+
+**Note:**
+- Vercel serverless = stateless, no `setInterval` → scheduler diventano Vercel Cron
+- Vercel timeout max 60s (Pro) — ok per quasi tutto tranne AI generation lunga
+- Variabili d'ambiente: Railway → Vercel env settings
+
+---
+
+### FASE 3 — Sicurezza 🔴
+
+#### Rate limiting (mancante sulle route pubbliche)
+- [ ] `/api/guest/contact` — max 5 req/IP/ora
+- [ ] `/api/guest/book` — max 10 req/IP/ora
+- [ ] `/api/contatti/subscribe` — max 3 req/IP/ora
+- [ ] `/api/auth/forgot-password` — max 3 req/IP/ora (già ha qualcosa?)
+- [ ] `/api/ai/*` — già limitato per azienda, aggiungere anche IP rate limit
+
+#### Headers di sicurezza (Next.js `next.config.js`)
+- [ ] `Content-Security-Policy` — whitelist domini (Supabase, Resend, Stripe, Google)
+- [ ] `X-Frame-Options: DENY`
+- [ ] `Referrer-Policy: strict-origin-when-cross-origin`
+- [ ] `Permissions-Policy` — disabilita camera/mic/geolocation non usati
+
+#### Input validation
+- [ ] Audit campi liberi nelle route pubbliche (XSS, injection)
+- [ ] Validazione zod già presente in alcune route — estendere a tutte
+
+#### Audit accessi
+- [ ] Rotazione periodica `SUPABASE_SERVICE_ROLE_KEY` (reminder ogni 90gg)
+- [ ] Alert automatico su N login falliti per stesso account
+- [ ] Verifica RLS attiva su tutte le tabelle pubbliche
+
+---
+
+### FASE 4 — Backup 🟡
+
+#### Backup Supabase Pro (già incluso)
+Supabase Pro fa backup giornalieri automatici con PITR (Point-in-Time Recovery) 7 giorni.
+È un backup dell'**intero database** — restore = ripristina tutto, non una singola azienda.
+
+#### Backup Vercel Pro
+Non gestisce dati — il codice è già su git. Nessun backup necessario.
+
+#### Backup per singola azienda (da implementare) 🟡
+Utile per: azienda che vuole i propri dati (GDPR portabilità), ripristino dopo errore utente, offboarding.
+
+**Piano:**
+- [ ] Endpoint `POST /api/admin/backup/azienda/:id` (solo super_admin)
+- [ ] Esporta tutte le tabelle filtrate per `azienda_id`: azienda, properties, ristoranti, attivita, contatti, newsletter, prenotazioni, richieste, eventi, articoli, recensioni, preventivi, ordini, form_builder, piano_editoriale, pagine
+- [ ] Formato: ZIP con un JSON per tabella (`contatti.json`, `prenotazioni.json`, ecc.)
+- [ ] Opzione: upload automatico su R2 (già configurato per backup notturno) con path `backups/aziende/{azienda_id}/{timestamp}.zip`
+- [ ] UI super_admin: pulsante "Esporta dati" nella pagina dettaglio azienda
+- [ ] Retention: mantieni ultimi 30 backup per azienda, elimina i più vecchi
+
+**Backup notturno R2 già attivo** (`server/lib/backup.js`) — esporta tutto il DB in JSON → R2. Estendibile.
+
+---
+
+### FASE 5 — CI/CD e Automazioni di routine 🟡
+
+#### GitHub Actions (sostituisce smoke test manuali)
+- [ ] Workflow `ci.yml`: su ogni push → build Next.js → deploy preview Vercel → smoke test
+- [ ] Badge stato CI nel README
+- [ ] Alert email/Telegram se smoke test fallisce su main
+
+#### Monitoring uptime
+- [ ] Betteruptime o UptimeRobot (free) — check ogni 5 min su `oltrenova.com`, alert immediato
+- [ ] Check anche su `api.oltrenova.com/api/health`
+
+#### Sentry (codice già presente, manca DSN)
+- [ ] Crea account sentry.io free → 2 progetti (Node.js + Next.js)
+- [ ] `SENTRY_DSN` su Railway (o Vercel dopo migrazione), `VITE_SENTRY_DSN` su Vercel
+- [ ] Alert su Sentry per error rate > 5% in 5 minuti
+
+#### AI agent per verifiche di routine
+- [ ] Cron giornaliero: verifica che tutte le landing pubbliche rispondano 200 (struttura/ristorante/attività)
+- [ ] Cron settimanale: controlla che nessun utente `super_admin` non autorizzato sia presente
+- [ ] Cron mensile: report performance AI-generato (KPI + anomalie) → email Francesco
+- [ ] Alert automatico se una prenotazione non ha ricevuto email di conferma entro 5 min
+
+---
+
+### FASE 6 — "Cosa fanno i grandi" 🟢
+
+| Pratica | Tool | Stato |
+|---|---|---|
+| Error tracking | Sentry | codice pronto, manca DSN |
+| Uptime monitoring | Betteruptime/UptimeRobot | da configurare |
+| Structured logging | Winston/Pino su Railway | da aggiungere |
+| CI/CD automatico | GitHub Actions | da configurare |
+| Feature flags | growthbook.io (free) | futuro |
+| Backup verificati | test restore mensile | da automatizzare |
+| Security scanning | Snyk (free tier) | da configurare su GitHub |
+| Dependency audit | `npm audit` in CI | da aggiungere |
+| Performance | Vercel Analytics (già incluso in Pro) | da attivare |
+| Alerting | Telegram bot o email | da configurare |

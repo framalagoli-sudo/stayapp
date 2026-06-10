@@ -1,9 +1,16 @@
-# deploy.ps1 — deploy Vercel + smoke test
+# deploy.ps1 — git push + deploy Vercel + smoke test
 # Uso: .\deploy.ps1
 # Da lanciare dalla root del repo.
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+Write-Host "`n=== Git push (Railway) ===" -ForegroundColor Cyan
+git push origin main
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "`nGit push fallito." -ForegroundColor Red
+    exit 1
+}
 
 Write-Host "`n=== Deploy Vercel (Next.js) ===" -ForegroundColor Cyan
 Set-Location client-next
@@ -11,7 +18,7 @@ npx vercel --prod --yes
 $deployExit = $LASTEXITCODE
 Set-Location ..
 if ($deployExit -ne 0) {
-    Write-Host "`n❌ Deploy fallito." -ForegroundColor Red
+    Write-Host "`nDeploy fallito." -ForegroundColor Red
     exit 1
 }
 
@@ -25,8 +32,8 @@ $testExit = $LASTEXITCODE
 Set-Location ..
 
 if ($testExit -ne 0) {
-    Write-Host "`n❌ Smoke test falliti — il deploy è avvenuto ma ci sono regressioni da investigare." -ForegroundColor Red
+    Write-Host "`nSmoke test falliti." -ForegroundColor Red
     exit 1
 }
 
-Write-Host "`n✅ Deploy + smoke test completati con successo." -ForegroundColor Green
+Write-Host "`nDeploy + smoke test completati con successo." -ForegroundColor Green

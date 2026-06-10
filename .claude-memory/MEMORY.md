@@ -1,0 +1,34 @@
+# Memory Index
+
+- [Stato lancio OltreNova](project_google_calendar_pending.md) — cutover Next.js ✅, smoke test 37/37 ✅, SW deregistrante ✅ — rimane: PWA, fondaconarni apex, Google Calendar, Stripe Sprint 10
+- [Session 2026-05-29 — Piano editoriale Sprint](project_session_2026_05_29.md) — campagne, commenti, content score, team + permessi PE, fix FormCampagna → renderForm
+- [Session 2026-05-28 — Fix critici deploy/invite](project_session_2026_05_28.md) — vercel.json SPA, favicon, AcceptInvitePage anti-scanner, ResetPasswordPage fix, firma autore piano editoriale
+- [Lingua](feedback_lingua.md) — Rispondere sempre in italiano
+- [Entità sempre tre](feedback_entita_tre.md) — Menzionare sempre struttura, ristorante E attività — mai solo due
+- [Icone flat](feedback_icone_flat.md) — strokeWidth={1.5} sempre su tutte le icone lucide-react, nessuna eccezione
+- [Roadmap Sprint 10-15](project_roadmap_sprint.md) — Stripe billing → WhatsApp+Push → CRM avanzato → Automazioni branch → Check-in+Upsell → Multi-lingua
+- [Session 2026-05-25 — Collegamenti & PropertyInfoPage](project_collegamentisession.md) — fix CollegamentiSection attività, wizard azienda 2-step, PropertyInfoPage refactor, PropertiesPage bottone Gestisci
+- [Session 2026-05-26 — 2FA, Canali distribuzione, Idee editoriali](project_session_2026_05_26.md) — StaffPage permessi granulari + require_2fa, toggle PWA/Sito per entità, tab Idee nel piano editoriale (migration 045 pendente)
+- [TODO — Adattamento campi piano editoriale](todo_piano_editoriale_campi.md) — completato ✅ (migration 049 eseguita, label/placeholder/canali/confirm dinamici per tipo)
+- [Session 2026-05-31 — Schema drift fix & check-schema](project_session_2026_05_31.md) — Sentry, bug Borgo del Lago (migration 054 pendente), check-schema GitHub Actions verde
+- [Session 2026-06-01 — Domini custom fix completo](project_session_2026_06_01.md) — chatbot bottom nav, multi-menu ristorante, sistema domini risolto end-to-end, URL puliti su domini custom
+- [Session 2026-06-01b — Homepage block editor](project_session_2026_06_01b.md) — unica strada minisito, LandingBlockRenderer, hero block, migrazione automatica da vecchio sistema, tab semplificati
+- [Session 2026-06-01c — PWA unificata ristorante+attività](project_session_2026_06_01c.md) — Home/Esplora/Richiesta/Info/Chat su tutte le PWA, AttivitaModuliPage, chatbot active_app, rename App Clienti/Sito web
+- [Session 2026-06-01d — Menu tipo+visibilità+multi, PWA document.title](project_session_2026_06_01d.md) — CategoryHeader tipo personalizzato bug fix, accordion, toggle visibilità, multi-menu shared_from, home "N voci", document.title su tutte e tre le PWA
+- [Session 2026-06-02 — Allergeni EU + menu sito](project_session_2026_06_02.md) — sistema allergeni strutturato (14 EU + dietary), icone Lucide per allergeni, MenuTab condiviso PWA+sito, fix QR Code/SW/collegamenti
+- [Session 2026-06-03 — AI Site Builder v2](project_session_2026_06_03.md) — wizard 5 step con obiettivi/template/preset, rate limit, timeout, fix menu save, fix EntityLogo, PWA icons, deploy ✅
+- [Session 2026-06-04 — AI Site Builder fix icone](project_session_2026_06_04.md) — emoji → icone Lucide flat, attività in EntitySelector, deploy ✅
+- [Session 2026-06-04b — Fix QR code caricamento](project_session_2026_06_04b.md) — guestFetch su 12 pagine guest, QR carica al primo scan senza refresh, deploy ✅
+- [guestFetch vs apiFetch](feedback_guestfetch.md) — pagine guest usano sempre guestFetch, mai apiFetch (causa bug QR code clienti reali)
+- [Traccia il dato fino alle API](feedback_traccia_dato_fino_api.md) — verificare sempre che un valore calcolato raggiunga i fetch API, non solo che venga computato
+- [Session 2026-06-04c — Reset password fix + smoke test](project_session_2026_06_04c.md) — Supabase Redirect URLs configurati ✅, reset password risolto, smoke test bloccati dal 2FA → risolto nella sessione successiva
+- [Session 2026-06-05 — Smoke test completo + hook auto deploy](project_session_2026_06_05.md) — utente CI effimero via Admin API, 36/36 verde, hook PostToolUse auto post-deploy ✅
+- [Session 2026-06-06/07 — Migrazione Next.js + Fix MFA + Fix 500](project_session_2026_06_06.md) — build verde, SSR live, MFA fix (3 bug), fix SSR window.*, fix openGraph.type restaurant→website. Prossimo: test pannello → cutover dominio
+- [Session 2026-06-07 — Fix super_admin selector + piano_editoriale + struttura layout](project_session_2026_06_07.md) — azienda selector funzionante, azienda_id nei fetch PE, struttura layout, EntitySwitcher cliccabile. Pending: cutover dominio, smoke test, PWA
+- [Session 2026-06-08 — Cutover oltrenova.com + fix middleware domini custom](project_session_2026_06_08.md) — cutover ✅, fondaconarni.com ripristinato, NEXT_INTERNAL_API_URL per bypass Cloudflare edge. Pending: fondaconarni apex A record, smoke test Next.js, PWA
+- [Session 2026-06-08b — SW stale fix + Sito web unificato](project_session_2026_06_08b.md) — sw.js deregistra (fix deploy invisibili), PaginaEditorPage fix, Sito web 4 tab (Pagine/Menu/Impostazioni/SEO) per tutte e 3 le entità
+- [Session 2026-06-09 — RistoranteMenuPage collapse + DnD + include grouped](project_session_2026_06_09.md) — collapse accordion, DnD a 3 livelli, copia categoria, 25 icone Lucide per catalogo (admin+PWA) ✅
+- [Session 2026-06-09b — Fix CI users stale + footer responsive](project_session_2026_06_09b.md) — 21 utenti @playwright.internal rimossi, pre-cleanup in globalSetup, teardown robusto
+- [Session 2026-06-10 — Fix team PE per azienda + deploy.ps1 git push](project_session_2026_06_10.md) — /api/users?azienda_id= per super_admin, deploy.ps1 ora include git push come primo step
+- [Deploy corretto](feedback_deploy.md) — usare `.\deploy.ps1` dalla root, mai `npx vercel` dalla root (deploya il vecchio Vite)
+- [Acquisti pendenti ⚠️](project_acquisti_pendenti.md) — Supabase Pro $25/mese + Vercel Pro $20/mese — ricordare all'inizio della prossima sessione
