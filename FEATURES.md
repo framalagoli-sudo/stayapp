@@ -1,7 +1,7 @@
 # FEATURES — Roadmap prodotto StayApp
 
 Documento vivo. Aggiornato sessione per sessione.
-Ultima revisione: **2026-05-28** (Sprint 9 completo — Staff 2FA, Canali distribuzione, Piano editoriale Idee+Firma+TipoContenuto, Fix critici deploy/invite)
+Ultima revisione: **2026-06-11** (Next.js migration + cutover oltrenova.com, PWA unificata, allergeni EU, AI Site Builder v2, RistoranteMenu refactor, fix QR code, CI/CD smoke test, fix AttivitaApp, debug Fase 1)
 
 ---
 
@@ -261,7 +261,96 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 - [x] **Fix ResetPasswordPage** — gestione race condition INITIAL_SESSION + rilevamento immediato errore hash
 - [x] **Piano editoriale — Design URL** — campo link Canva/Figma/Adobe con anteprima iframe popup (embed automatico Canva)
 - [x] **Piano editoriale — Tipo contenuto** — 10 tipi (Post, Reel, Story, Carosello, Video, Blog Post, Newsletter, Evento, Ads, Collab.) con badge colorati su calendario e lista; label/placeholder/titolo contestuali per tipo; label immagine dinamica (Thumbnail/Cover/Creative…); sezione Canali con badge distribuzione fisso per Blog/Newsletter/Evento; confirm elimina dinamico; collegamento interno opzionale ad articoli/newsletter/eventi
-- **Migration da eseguire:** `045_idee_editoriali.sql` ⚠️ · `046_piano_editoriale_v2.sql` ⚠️ · `047_piano_editoriale_autore.sql` ⚠️
+- **Migration eseguite:** `045_idee_editoriali.sql` ✅ · `046_piano_editoriale_v2.sql` ✅ · `047_piano_editoriale_autore.sql` ✅
+
+### Sessioni 2026-06-01 — Sistema Domini + PWA unificata + Block Editor ✅
+
+- [x] **Sistema domini end-to-end** — subdomain auto (`slug.oltrenova.com`), dominio custom con istruzioni DNS inline, bottone Verifica, URL puliti su domini custom ✅
+- [x] **Chatbot bottom nav fix** — bottom nav correttamente attiva sul tab Chat ✅
+- [x] **Multi-menu ristorante** — cataloghi multipli con shared_from, accordion, toggle visibilità ✅
+- [x] **Homepage block editor** — `LandingBlockRenderer`, hero block, migrazione automatica da vecchio sistema landing ✅
+- [x] **PWA unificata ristorante + attività** — Home/Esplora/Richiesta/Info/Chat su tutte le PWA ✅
+- [x] **AttivitaModuliPage** — moduli configurabili nella PWA attività ✅
+- [x] **Chatbot `active_app`** — chatbot ora disponibile per tutte e tre le entità ✅
+- [x] **Rename UI** — "App ospiti" → "App Clienti", "Minisito" → "Sito web" ✅
+- [x] **document.title dinamico** — titolo browser aggiornato su tutte e tre le PWA ✅
+
+### Sessione 2026-06-02 — Allergeni EU ✅
+
+- [x] **Sistema allergeni strutturato** — 14 allergeni EU obbligatori + dietary (vegan, vegetariano, senza lattosio, senza glutine) ✅
+- [x] **Icone Lucide per allergeni** — icona dedicata per ogni allergene, visualizzate su piatto in PWA e sito ✅
+- [x] **MenuTab condiviso PWA + sito** — unico componente `MenuTab.jsx` usato sia nella PWA ospite che nel minisito ✅
+
+### Sessioni 2026-06-03/04 — AI Site Builder v2 ✅
+
+- [x] **AI Site Builder v2** — wizard 5 step con obiettivi business, template wireframe, preset settore ✅
+- [x] **Icone Lucide flat** — sostituiti tutti gli emoji con icone Lucide nel sito generato dall'AI ✅
+- [x] **Attività in EntitySelector** — AI Site Builder ora supporta tutte e tre le entità ✅
+- [x] **Rate limit + timeout AI** — protezione endpoint generazione sito ✅
+- [x] **Fix salvataggio menu ristorante** — `menuRef` + reset ottimistico ✅
+- [x] **Fix EntityLogo PWA** — fallback immagine corretto ✅
+- [x] **PWA icons** — `icon-192.png`, `icon-512.png`, `apple-touch-icon.png` ✅
+
+### Sessione 2026-06-04b — Fix QR code ✅
+
+- [x] **Fix critico QR code** — `guestFetch` (senza auth) su tutte le 12 pagine guest; le pagine caricano al primo scan senza refresh ✅
+  - Causa: `apiFetch` chiamava `supabase.auth.getSession()` che bloccava il caricamento iniziale se la sessione admin era scaduta nel browser
+
+### Sessione 2026-06-04c — Reset password ✅
+
+- [x] **Supabase Redirect URLs** configurati correttamente su Supabase Dashboard ✅
+- [x] **Reset password end-to-end** — flusso risolto completamente ✅
+
+### Sessione 2026-06-05 — CI/CD smoke test automatico ✅
+
+- [x] **Utente CI effimero** — creato via Supabase Admin API in `globalSetup`, eliminato in `globalTeardown`; non lascia utenti stale ✅
+- [x] **Pre-cleanup in globalSetup** — rimozione utenti `@playwright.internal` precedenti prima di ogni run ✅
+- [x] **Smoke test 37/37 verde** su oltrenova.com ✅
+- [x] **Hook PostToolUse auto post-deploy** — smoke test girano automaticamente dopo ogni deploy ✅
+
+### Sessioni 2026-06-06/07/08 — Migrazione Next.js + Cutover ✅
+
+- [x] **Migrazione Next.js** — `client-next/` buildato e deployato su `oltrenova-next.vercel.app` ✅
+- [x] **MFA fix completo** — 3 bug risolti: bypass guard, router crash, AdminLayout ✅
+- [x] **SSR fix `window.*`** — 6 file corretti (LandingRistorante, LandingStruttura, LandingBlockRenderer, PaginaPage, ArticoloPage, PolicyPage) ✅
+- [x] **Fix 500 `/r/fondaco-narni`** — `openGraph.type: 'restaurant'` → `'website'` ✅
+- [x] **Fix smoke test 406** — `.maybeSingle()` in AuthContext + auth middleware ✅
+- [x] **Cutover `oltrenova.com` → Next.js** ✅ 2026-06-08
+- [x] **`NEXT_INTERNAL_API_URL`** — bypass Cloudflare da edge Next.js per chiamate API server-side ✅
+- [x] **Middleware domini custom** — funzionante su Next.js ✅
+
+### Sessione 2026-06-08b — Fix SW + Sito web unificato ✅
+
+- [x] **Fix Service Worker stale** — `public/sw.js` sostituito con script deregistrante; risolve deploy invisibili (utente vedeva vecchio codice) ✅
+- [x] **`PaginaEditorPage` fix** — loading bloccato + `router.back()` + try/catch su save ✅
+- [x] **Sito web unificato 4 tab** — per struttura, ristorante e attività: Pagine / Menu & Aspetto / Impostazioni / SEO & Social ✅
+  - Tab Pagine: CRUD pagine CMS, pubblica/bozza, homepage blocchi
+  - Tab Menu & Aspetto: DnD menu navigazione, header, footer
+  - Tab Impostazioni: link prenotazione esterno, toggle App ospiti, favicon
+  - Tab SEO & Social: SEO, Google Search Console, social links, tracking (Meta Pixel/GA4/GTM/TikTok), GEO
+
+### Sessione 2026-06-09 — RistoranteMenuPage refactor ✅
+
+- [x] **Collapse / accordion cataloghi** — cataloghi collassati di default, accordion categorie ✅
+- [x] **Drag & drop 3 livelli** — DnD cataloghi + DnD categorie dentro catalogo + DnD piatti dentro categoria ✅
+- [x] **Copia categoria in altro catalogo** — bottone "Copia in…" per duplicare categoria completa con tutti i piatti ✅
+- [x] **25 icone Lucide selezionabili per catalogo** — griglia picker in admin, icona visualizzata in PWA cliente ✅
+- [x] **Fix icone catalogo in PWA (`MenuTab.jsx`)** — era hardcodata `Utensils`, ora usa `CATALOG_ICON_MAP` ✅
+
+### Sessione 2026-06-09b — CI fix + footer ✅
+
+- [x] **Fix CI users stale** — 21 utenti `@playwright.internal` rimossi, cleanup pre-run + post-run robusto ✅
+- [x] **Footer responsive** — `repeat(auto-fit, minmax(200px, 1fr))` + media query per mobile ✅
+
+### Sessione 2026-06-10 — Fix super_admin + deploy.ps1 ✅
+
+- [x] **Fix team PE filtrato per azienda** — `/api/users?azienda_id=` per super_admin, vede solo staff dell'azienda corrente ✅
+- [x] **`deploy.ps1` include `git push`** — Railway si aggiornava solo con git push, non con il deploy Vercel ✅
+
+### Sessione 2026-06-10b — Fix AttivitaApp + analisi Fase 1 ✅
+
+- [x] **Fix `AttivitaApp.jsx`** — `useSearchParams()` array destructuring errata in Next.js → corretto ✅
+- [x] **Analisi statica Fase 1** — routing simmetrico, useEffect dipendenze, DominiPage error handling: tutto OK ✅
 
 ### Sprint 10 — Stripe Subscription Billing (prossimo) 🔴
 - [ ] Piani mensili (base/standard/premium) con prezzi
@@ -367,18 +456,19 @@ Il refactor verso "Business" generico richiede principalmente:
 - [x] **032_preventivi.sql** — tabella `preventivi` ✅ 2026-05-16
 - [x] **033_form_builder.sql** — tabelle `form_builder` + `form_submissions` ✅ 2026-05-16
 - [x] **034_piano_editoriale.sql** — tabella `piano_editoriale` ✅ 2026-05-16
-- [ ] **035_domini.sql** — tabella `domini` (sottodomini + domini custom)
+- [x] **035_domini.sql** — tabella `domini` (sottodomini + domini custom) ✅ 2026-06-01
 - [x] **036_shop.sql** — tabelle `prodotti` + `ordini` ✅ eseguita 2026-05-17
 - [x] **037_content_studio.sql** — colonna `content_strategy` su aziende ✅ eseguita 2026-05-17
 - [x] **038_survey.sql** — tabella `survey_risposte` ✅ eseguita 2026-05-17
 - [x] **039_google_calendar.sql** — colonna `google_calendar_token` su aziende + `google_event_id` su prenotazioni ✅ 2026-05-27
 - [x] **040_loyalty.sql** — tabelle `loyalty_programs`, `loyalty_points`, `gift_cards` + colonne su ordini ✅ 2026-05-27
 - [x] **044_require_2fa.sql** — colonna `require_2fa` su aziende ✅
-- [ ] **045_idee_editoriali.sql** — tabella `idee_editoriali` ⚠️
-- [ ] **046_piano_editoriale_v2.sql** — colonne `labels`, `pillar`, `note`, `created_by_name` ecc. su piano_editoriale ⚠️
-- [ ] **047_piano_editoriale_autore.sql** — colonne `created_by`, `created_by_name`, `updated_by`, `updated_by_name` su piano_editoriale ⚠️
+- [x] **045_idee_editoriali.sql** — tabella `idee_editoriali` ✅ 2026-05-31
+- [x] **046_piano_editoriale_v2.sql** — colonne `labels`, `pillar`, `note`, `created_by_name` ecc. su piano_editoriale ✅ 2026-05-31
+- [x] **047_piano_editoriale_autore.sql** — colonne `created_by`, `created_by_name`, `updated_by`, `updated_by_name` su piano_editoriale ✅ 2026-05-31
 - [x] **048_piano_editoriale_design_url.sql** — colonna `design_url` su piano_editoriale ✅ 2026-05-28
 - [x] **049_piano_editoriale_tipo.sql** — colonne `tipo_contenuto`, `ref_id`, `ref_tipo` su piano_editoriale ✅ 2026-05-28
+- [x] **054_ristoranti_modules.sql** — colonna `modules` su ristoranti (fix Borgo del Lago) ✅ 2026-05-31
 
 ### Infrastruttura
 
@@ -395,7 +485,7 @@ Il refactor verso "Business" generico richiede principalmente:
 ---
 
 ## PIANO TECNICO — Stabilità → Migrazione → Sicurezza → Automazione
-*(aggiunto 2026-06-10)*
+*(aggiunto 2026-06-10 — IN CORSO da 2026-06-10b)*
 
 ---
 
@@ -445,6 +535,7 @@ Metodologia: voce per voce, spunta quando confermato ok in produzione.
 - [ ] Utenti interni — crea/modifica/ban, ruoli (super_admin/admin/editor)
 
 #### Sito & App (per ogni entità: struttura, ristorante, attività)
+- [x] **Fix `AttivitaApp.jsx`** — useSearchParams array destructuring corretta ✅ 2026-06-10b
 - [ ] Struttura Info — dati base, logo, cover, galleria, tema colori
 - [ ] Struttura PWA — chatbot, bottom nav, sezioni
 - [ ] Struttura Sito web — page builder, menu, impostazioni, SEO
