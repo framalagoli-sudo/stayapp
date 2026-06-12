@@ -1,6 +1,6 @@
 # Memory Index
 
-- [Stato lancio OltreNova](project_google_calendar_pending.md) — cutover Next.js ✅, smoke test 37/37 ✅, SW deregistrante ✅ — rimane: PWA, fondaconarni apex, Google Calendar, Stripe Sprint 10
+- [Stato lancio OltreNova](project_google_calendar_pending.md) — cutover Next.js ✅, smoke test 37/37 ✅, SW deregistrante ✅, PWA installabile ✅ — rimane: fondaconarni apex, Google Calendar, Stripe Sprint 10
 - [Session 2026-05-29 — Piano editoriale Sprint](project_session_2026_05_29.md) — campagne, commenti, content score, team + permessi PE, fix FormCampagna → renderForm
 - [Session 2026-05-28 — Fix critici deploy/invite](project_session_2026_05_28.md) — vercel.json SPA, favicon, AcceptInvitePage anti-scanner, ResetPasswordPage fix, firma autore piano editoriale
 - [Lingua](feedback_lingua.md) — Rispondere sempre in italiano
@@ -35,3 +35,4 @@
 - [Session 2026-06-10b — Debug Fase 1 Sito & App, fix AttivitaApp](project_session_2026_06_10b.md) — fix useSearchParams array destructuring in AttivitaApp.jsx, analisi statica OK, test manuale pendente
 - [Session 2026-06-11 — Allineamento docs e memoria](project_session_2026_06_11.md) — FEATURES.md aggiornato al 2026-06-11, roadmap sprint 6 fasi salvata, workflow review memorizzato
 - [Acquisti pendenti ⚠️](project_acquisti_pendenti.md) — Supabase Pro $25/mese + Vercel Pro $20/mese — ricordare all'inizio della prossima sessione
+- [Session 2026-06-12 — PWA InstallButton + InstallBanner fix iOS Chrome](project_session_2026_06_12.md) — opzione B+C: icona fissa header nei 3 PWA, banner no iOS Chrome, smoke 37/37 ✅
