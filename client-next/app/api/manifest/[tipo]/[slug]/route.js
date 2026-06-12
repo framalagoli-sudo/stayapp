@@ -19,8 +19,8 @@ export async function GET(request, { params }) {
 
   const icons = logoUrl
     ? [
-        { src: logoUrl, sizes: 'any', type: 'image/png', purpose: 'any' },
-        { src: logoUrl, sizes: 'any', type: 'image/png', purpose: 'maskable' },
+        { src: logoUrl, sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: logoUrl, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
       ]
     : [
         { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
