@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import LandingRistorante from './LandingRistorante'
 import CookieBanner from '@/components/CookieBanner'
+import InstallBanner from './InstallBanner'
 import {
   Home, Compass, Bell, Info, MessageCircle,
   Utensils, Images, CalendarCheck, Phone, Mail, MapPin, Clock,
@@ -254,6 +255,7 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp } 
       `}</style>
 
       <CookieBanner primaryColor={primary} privacyUrl={`/r/${slug}/privacy`} cookieUrl={`/r/${slug}/cookie`} />
+      <InstallBanner primaryColor={primary} entityName={ristorante.name} />
       <div className="r-shell">
         <div className="r-app" style={{ fontFamily: bodyFamily, color: textColor }}>
 

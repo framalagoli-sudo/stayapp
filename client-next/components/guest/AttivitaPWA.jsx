@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import LandingAttivita from './LandingAttivita'
 import CookieBanner from '@/components/CookieBanner'
+import InstallBanner from './InstallBanner'
 import {
   Home, Compass, Bell, Info, MessageCircle,
   Images, Layers, Calendar, Phone, Mail, MapPin, Clock,
@@ -237,6 +238,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug } = {}) 
       `}</style>
 
       <CookieBanner primaryColor={primary} privacyUrl={`/a/${attivita.slug}/privacy`} cookieUrl={`/a/${attivita.slug}/cookie`} />
+      <InstallBanner primaryColor={primary} entityName={attivita.name} />
       <div className="a-shell">
         <div className="a-app" style={{ fontFamily: bodyFamily, color: textColor }}>
 

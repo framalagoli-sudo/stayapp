@@ -17,6 +17,7 @@ import ActivitiesTab from './ActivitiesTab'
 import ExcursionsTab from './ExcursionsTab'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import ChatChoice from '@/components/ChatChoice'
+import InstallBanner from './InstallBanner'
 
 // Genera o recupera session_id anonimo del guest
 function getSessionId() {
@@ -294,6 +295,7 @@ export default function GuestApp({ forceSlug, property: propertyProp } = {}) {
       `}</style>
 
       <CookieBanner primaryColor={primary} privacyUrl={`/s/${slug}/privacy`} cookieUrl={`/s/${slug}/cookie`} />
+      <InstallBanner primaryColor={primary} entityName={property.name} />
       <div className="g-shell">
         <div className="g-app" style={{ fontFamily: bodyFamily, color: textColor, position: 'relative' }}>
 
