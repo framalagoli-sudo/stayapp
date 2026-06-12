@@ -88,10 +88,18 @@ export default function InstallBanner({ primaryColor = '#00b5b5', entityName = '
       <div style={{ flex: 1, minWidth: 0 }}>
         {isIOSChrome ? (
           <>
-            <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 700, color: '#fff' }}>Installa l'app</p>
-            <p style={{ margin: 0, fontSize: 12, color: '#aaa', lineHeight: 1.4 }}>
-              Apri questo link in <strong style={{ color: '#fff' }}>Safari</strong> per aggiungere l'app alla schermata Home
-            </p>
+            <p style={{ margin: '0 0 6px', fontSize: 13, fontWeight: 700, color: '#fff' }}>Installa l'app</p>
+            <button onClick={async () => {
+              try {
+                await navigator.share({ title: entityName, url: window.location.href })
+              } catch {}
+            }} style={{
+              background: primaryColor, color: '#fff', border: 'none',
+              borderRadius: 8, padding: '7px 16px', fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+            }}>
+              Apri in Safari
+            </button>
           </>
         ) : isIOSSafari ? (
           <>
