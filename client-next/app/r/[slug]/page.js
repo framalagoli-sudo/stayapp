@@ -20,6 +20,13 @@ export async function generateMetadata({ params, searchParams }) {
   return {
     title,
     description,
+    manifest: `/api/manifest/r/${slug}`,
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'default',
+      title: ristorante.name,
+    },
+    icons: { apple: ristorante.logo_url || '/icons/apple-touch-icon.png' },
     openGraph: { title, description, url, images: image ? [{ url: image }] : [], type: 'website' },
     twitter: { card: 'summary_large_image', title, description, images: image ? [image] : [] },
     ...(mini.google_site_verification && { verification: { google: mini.google_site_verification } }),

@@ -21,6 +21,13 @@ export async function generateMetadata({ params, searchParams }) {
   return {
     title,
     description,
+    manifest: `/api/manifest/s/${slug}`,
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'default',
+      title: property.name,
+    },
+    icons: { apple: property.logo_url || '/icons/apple-touch-icon.png' },
     openGraph: {
       title,
       description,
