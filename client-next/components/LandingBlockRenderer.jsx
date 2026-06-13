@@ -781,13 +781,28 @@ function ContattiForm({ entity, entityType, primary, privacyUrl, heading }) {
   )
 }
 
+function fbFieldVisible(campo, dati) {
+  if (!campo.condizione?.campo_id) return true
+  const rawVal = dati[campo.condizione.campo_id]
+  const val = typeof rawVal === 'boolean' ? String(rawVal) : String(rawVal ?? '').toLowerCase()
+  const target = String(campo.condizione.valore ?? '').toLowerCase()
+  switch (campo.condizione.operatore) {
+    case 'eq':       return val === target
+    case 'neq':      return val !== target
+    case 'contains': return val.includes(target)
+    default:         return true
+  }
+}
+
 function FormBuilderBlock({ token, primary }) {
-  const [form, setForm] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [dati, setDati] = useState({})
-  const [submitting, setSubmitting] = useState(false)
-  const [success, setSuccess] = useState(false)
-  const [error, setError] = useState('')
+  const [form, setForm]               = useState(null)
+  const [loading, setLoading]         = useState(true)
+  const [dati, setDati]               = useState({})
+  const [hp, setHp]                   = useState('')
+  const [currentStep, setCurrentStep] = useState(0)
+  const [submitting, setSubmitting]   = useState(false)
+  const [success, setSuccess]         = useState(false)
+  const [error, setError]             = useState('')
 
   useEffect(() => {
     fetch(`${API_BASE_FB}/api/form-builder/public/${token}`)
@@ -799,16 +814,56 @@ function FormBuilderBlock({ token, primary }) {
 
   function setField(id, value) { setDati(d => ({ ...d, [id]: value })) }
 
+  const allStepNumbers = form
+    ? [...new Set((form.campi || []).map(c => c.step ?? 0))].sort((a, b) => a - b)
+    : [0]
+  const totalSteps = Math.max(allStepNumbers.length, 1)
+  const isMultiStep = !!(form?.multi_step && totalSteps > 1)
+  const currentStepNumber = allStepNumbers[currentStep] ?? 0
+
+  const visibleCampi = (form?.campi || []).filter(c => {
+    if (isMultiStep && (c.step ?? 0) !== currentStepNumber) return false
+    return fbFieldVisible(c, dati)
+  })
+
+  function handleNext() {
+    const mancanti = visibleCampi.filter(c => {
+      if (c.tipo === 'consenso' || c.required) {
+        const val = dati[c.id]
+        return typeof val === 'boolean' ? !val : !String(val ?? '').trim()
+      }
+      return false
+    })
+    if (mancanti.length) { setError(`Obbligatori: ${mancanti.map(c => c.label).join(', ')}`); return }
+    setError('')
+    setCurrentStep(s => s + 1)
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
-    const mancanti = (form?.campi || []).filter(c => c.required && !dati[c.id]?.toString().trim())
+    setError('')
+    if (isMultiStep && currentStep < totalSteps - 1) { handleNext(); return }
+
+    const datiPuliti = {}
+    for (const c of (form?.campi || [])) {
+      if (fbFieldVisible(c, dati)) datiPuliti[c.id] = dati[c.id]
+    }
+    const mancanti = (form?.campi || []).filter(c => {
+      if (!fbFieldVisible(c, dati)) return false
+      if (c.tipo === 'consenso' || c.required) {
+        const val = datiPuliti[c.id]
+        return typeof val === 'boolean' ? !val : !String(val ?? '').trim()
+      }
+      return false
+    })
     if (mancanti.length) { setError(`Obbligatori: ${mancanti.map(c => c.label).join(', ')}`); return }
-    setSubmitting(true); setError('')
+
+    setSubmitting(true)
     try {
       const res = await fetch(`${API_BASE_FB}/api/form-builder/public/${token}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dati),
+        body: JSON.stringify({ ...datiPuliti, _hp: hp }),
       })
       const body = await res.json()
       if (!res.ok) throw new Error(body.error || 'Errore invio')
@@ -826,34 +881,84 @@ function FormBuilderBlock({ token, primary }) {
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Honeypot anti-bot */}
+      <div style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
+        <input tabIndex={-1} autoComplete="off" value={hp} onChange={e => setHp(e.target.value)} name="_hp" />
+      </div>
+
+      {isMultiStep && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+            <span style={{ fontSize: 13, color: '#888' }}>Passo {currentStep + 1} di {totalSteps}</span>
+            <span style={{ fontSize: 12, color: '#aaa' }}>{Math.round(((currentStep + 1) / totalSteps) * 100)}%</span>
+          </div>
+          <div style={{ height: 4, background: '#eee', borderRadius: 2 }}>
+            <div style={{ height: '100%', background: primary || '#1a1a2e', borderRadius: 2, width: `${((currentStep + 1) / totalSteps) * 100}%`, transition: 'width 0.3s ease' }} />
+          </div>
+        </div>
+      )}
+
       {form?.descrizione && <p style={{ fontSize: 14, color: '#666', margin: '0 0 8px' }}>{form.descrizione}</p>}
-      {(form?.campi || []).map(c => (
+      {visibleCampi.map(c => (
         <div key={c.id}>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 5 }}>
-            {c.label}{c.required && <span style={{ color: '#c53030' }}> *</span>}
-          </label>
-          {c.tipo === 'textarea' ? (
-            <textarea value={dati[c.id] || ''} onChange={e => setField(c.id, e.target.value)} placeholder={c.placeholder} rows={4} style={{ ...inp, resize: 'vertical' }} />
-          ) : c.tipo === 'select' ? (
-            <select value={dati[c.id] || ''} onChange={e => setField(c.id, e.target.value)} style={inp}>
-              <option value="">— Seleziona —</option>
-              {(c.opzioni || []).map((op, i) => <option key={i} value={op}>{op}</option>)}
-            </select>
-          ) : c.tipo === 'checkbox' ? (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, color: '#555' }}>
-              <input type="checkbox" checked={!!dati[c.id]} onChange={e => setField(c.id, e.target.checked)} style={{ width: 16, height: 16 }} />
-              {c.placeholder || 'Sì'}
+          {c.tipo === 'consenso' ? (
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontSize: 14, color: '#444' }}>
+              <input type="checkbox" checked={!!dati[c.id]} onChange={e => setField(c.id, e.target.checked)} required style={{ width: 16, height: 16, marginTop: 2, flexShrink: 0 }} />
+              <span>
+                {c.privacy_url ? (
+                  <a href={c.privacy_url} target="_blank" rel="noopener noreferrer" style={{ color: '#2b6cb0' }}>
+                    {c.label || 'Accetto il trattamento dei dati personali'}
+                  </a>
+                ) : (
+                  c.label || 'Accetto il trattamento dei dati personali'
+                )}
+                <span style={{ color: '#c53030' }}> *</span>
+              </span>
             </label>
           ) : (
-            <input type={c.tipo} value={dati[c.id] || ''} onChange={e => setField(c.id, e.target.value)} placeholder={c.placeholder} style={inp} />
+            <>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 5 }}>
+                {c.label}{c.required && <span style={{ color: '#c53030' }}> *</span>}
+              </label>
+              {c.tipo === 'textarea' ? (
+                <textarea value={dati[c.id] || ''} onChange={e => setField(c.id, e.target.value)} placeholder={c.placeholder} rows={4} style={{ ...inp, resize: 'vertical' }} />
+              ) : c.tipo === 'select' ? (
+                <select value={dati[c.id] || ''} onChange={e => setField(c.id, e.target.value)} style={inp}>
+                  <option value="">— Seleziona —</option>
+                  {(c.opzioni || []).map((op, i) => <option key={i} value={op}>{op}</option>)}
+                </select>
+              ) : c.tipo === 'checkbox' ? (
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, color: '#555' }}>
+                  <input type="checkbox" checked={!!dati[c.id]} onChange={e => setField(c.id, e.target.checked)} style={{ width: 16, height: 16 }} />
+                  {c.placeholder || 'Sì'}
+                </label>
+              ) : (
+                <input type={c.tipo} value={dati[c.id] || ''} onChange={e => setField(c.id, e.target.value)} placeholder={c.placeholder} style={inp} />
+              )}
+            </>
           )}
         </div>
       ))}
       {error && <p style={{ color: '#c53030', fontSize: 13, margin: 0 }}>{error}</p>}
-      <button type="submit" disabled={submitting}
-        style={{ padding: '13px', background: primary, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: submitting ? 'not-allowed' : 'pointer' }}>
-        {submitting ? 'Invio…' : 'Invia'}
-      </button>
+      <div style={{ display: 'flex', gap: 8 }}>
+        {isMultiStep && currentStep > 0 && (
+          <button type="button" onClick={() => { setError(''); setCurrentStep(s => s - 1) }}
+            style={{ flex: 1, padding: '13px', background: '#f5f5f5', color: '#555', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: 15, cursor: 'pointer' }}>
+            ← Indietro
+          </button>
+        )}
+        {isMultiStep && currentStep < totalSteps - 1 ? (
+          <button type="button" onClick={handleNext}
+            style={{ flex: 1, padding: '13px', background: primary || '#1a1a2e', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: 'pointer' }}>
+            Avanti →
+          </button>
+        ) : (
+          <button type="submit" disabled={submitting}
+            style={{ flex: 1, padding: '13px', background: primary, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: submitting ? 'not-allowed' : 'pointer' }}>
+            {submitting ? 'Invio…' : 'Invia'}
+          </button>
+        )}
+      </div>
     </form>
   )
 }
