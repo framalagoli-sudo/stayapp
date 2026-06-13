@@ -37,3 +37,8 @@
 - [Acquisti pendenti ⚠️](project_acquisti_pendenti.md) — Supabase Pro $25/mese + Vercel Pro $20/mese — ricordare all'inizio della prossima sessione
 - [Session 2026-06-12 — PWA InstallButton + InstallBanner fix iOS Chrome](project_session_2026_06_12.md) — opzione B+C: icona fissa header nei 3 PWA, banner no iOS Chrome, smoke 37/37 ✅
 - [Session 2026-06-13 — Sprint A+B Form Security + Automazioni](project_session_2026_06_13.md) — rate limit, honeypot, GDPR consent, autoresponder, auto-tag, webhook, migration 055+056 ✅, smoke 37/37 ✅
+- [Session 2026-06-13b — Sprint C form builder](project_session_2026_06_13b.md) — conditional fields (eq/neq/contains), multi-step form (step per campo, progress bar), migration 057 ✅, smoke 37/37 ✅
+- [Session 2026-06-13c — Form security stack completo](project_session_2026_06_13c.md) — spam filter, flood alert, bounce webhook, email validation, newsletter skip, migration 058 ✅, smoke 37/37 ✅
+- [Migrazione Railway → Vercel](project_session_railway_migration.md) — tutte le route portate, cron newsletter/automazioni/blog/backup, vercel.json aggiornato. Prossimo: env vars + NEXT_PUBLIC_API_URL="" + spegni Railway
+- [Session 2026-06-14 — Form Builder public routes + Sprint A-D check](project_session_2026_06_14.md) — route pubbliche create (GET+POST), route morte rimosse, Sprint A-D tutti completi su Vercel, smoke 37/37 ✅
+- [To-Do prossima sessione](todo_prossima_sessione.md) — 1) spegni Railway 2) Resend bounce webhook 3) test form end-to-end 4) CF Bot Fight Mode 5) debug admin sezione per sezione
