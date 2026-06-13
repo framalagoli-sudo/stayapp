@@ -36,3 +36,4 @@
 - [Session 2026-06-11 — Allineamento docs e memoria](project_session_2026_06_11.md) — FEATURES.md aggiornato al 2026-06-11, roadmap sprint 6 fasi salvata, workflow review memorizzato
 - [Acquisti pendenti ⚠️](project_acquisti_pendenti.md) — Supabase Pro $25/mese + Vercel Pro $20/mese — ricordare all'inizio della prossima sessione
 - [Session 2026-06-12 — PWA InstallButton + InstallBanner fix iOS Chrome](project_session_2026_06_12.md) — opzione B+C: icona fissa header nei 3 PWA, banner no iOS Chrome, smoke 37/37 ✅
+- [Session 2026-06-13 — Sprint A Form Security + GDPR](project_session_2026_06_13.md) — rate limit, honeypot, sanitize, consenso GDPR, migration 055 ✅, smoke 37/37 ✅
