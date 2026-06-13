@@ -274,7 +274,7 @@ export default function ContattiPage() {
     setLoading(false)
   }
 
-  useEffect(() => { if (aziendaId) load() }, [aziendaId, search, tagFilter]) // eslint-disable-line
+  useEffect(() => { load() }, [aziendaId, search, tagFilter]) // eslint-disable-line
 
   const allEntities = [
     ...(strutture || []).map(e => ({ id: e.id, name: e.name, tipo: 'struttura', key: `struttura:${e.id}` })),
