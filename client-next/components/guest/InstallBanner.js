@@ -15,9 +15,9 @@ function getPlatform() {
   const isIOSSafari = isIOS && !isIOSChrome && /Safari/.test(ua)
   const isAndroid = /Android/.test(ua)
 
-  if (isIOSSafari)  return 'ios-safari'
-  if (isIOSChrome)  return 'ios-chrome'
-  if (isAndroid)    return 'android'
+  if (isIOSSafari) return 'ios-safari'
+  if (isAndroid)   return 'android'
+  // iOS Chrome: banner non supportato (limitazione Apple)
   return null
 }
 
@@ -94,10 +94,6 @@ export default function InstallBanner({ primaryColor = '#00b5b5', entityName = '
     }
     if (platform === 'ios-safari') {
       setShowModal(true)
-      return
-    }
-    if (platform === 'ios-chrome') {
-      try { await navigator.share({ title: entityName, url: window.location.href }) } catch {}
       return
     }
   }

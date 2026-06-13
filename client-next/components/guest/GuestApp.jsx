@@ -18,6 +18,7 @@ import ExcursionsTab from './ExcursionsTab'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import ChatChoice from '@/components/ChatChoice'
 import InstallBanner from './InstallBanner'
+import InstallButton from './InstallButton'
 
 // Genera o recupera session_id anonimo del guest
 function getSessionId() {
@@ -246,14 +247,17 @@ export default function GuestApp({ forceSlug, property: propertyProp } = {}) {
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%)' }} />
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 20px 18px' }}>{headerContent}</div>
+      <InstallButton primaryColor={primary} entityName={property.name} />
     </div>
   ) : (
     <div style={{
+      position: 'relative',
       background: theme.headerStyle === 'gradient'
         ? `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)` : primary,
       padding: '28px 20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       {headerContent}
+      <InstallButton primaryColor={primary} entityName={property.name} />
     </div>
   )
 

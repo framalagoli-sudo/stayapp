@@ -4,6 +4,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import LandingAttivita from './LandingAttivita'
 import CookieBanner from '@/components/CookieBanner'
 import InstallBanner from './InstallBanner'
+import InstallButton from './InstallButton'
 import {
   Home, Compass, Bell, Info, MessageCircle,
   Images, Layers, Calendar, Phone, Mail, MapPin, Clock,
@@ -181,14 +182,17 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug } = {}) 
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 100%)' }} />
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 20px 20px' }}>{headerContent}</div>
+      <InstallButton primaryColor={primary} entityName={attivita.name} />
     </div>
   ) : (
     <div style={{
+      position: 'relative',
       background: theme.headerStyle === 'gradient'
         ? `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)` : primary,
       padding: '32px 20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       {headerContent}
+      <InstallButton primaryColor={primary} entityName={attivita.name} />
     </div>
   )
 

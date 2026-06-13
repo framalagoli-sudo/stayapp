@@ -81,9 +81,10 @@ function GoogleCalendarSection() {
 }
 
 const EVENTI = [
-  { key: 'nuovo_contatto',       label: 'Nuovo contatto' },
-  { key: 'nuova_prenotazione',   label: 'Nuova prenotazione' },
-  { key: 'nuova_richiesta',      label: 'Nuova richiesta' },
+  { key: 'nuovo_contatto',        label: 'Nuovo contatto' },
+  { key: 'nuova_prenotazione',    label: 'Nuova prenotazione' },
+  { key: 'nuova_richiesta',       label: 'Nuova richiesta' },
+  { key: 'form_submit',           label: 'Submit form' },
   { key: 'cambio_stage_pipeline', label: 'Cambio stage pipeline' },
 ]
 

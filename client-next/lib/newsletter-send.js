@@ -1,0 +1,81 @@
+import { supabaseAdmin } from './supabase-server.js'
+import { buildNewsletterHtml, personalize } from './newsletter-html.js'
+
+async function getEntity(entity_tipo, entity_id) {
+  if (!entity_tipo || !entity_id) return null
+  const table = entity_tipo === 'struttura' ? 'properties' : entity_tipo === 'ristorante' ? 'ristoranti' : 'attivita'
+  const { data } = await supabaseAdmin.from(table).select('id, name, logo_url, theme').eq('id', entity_id).single()
+  return data
+}
+
+export async function sendNewsletterById(id) {
+  const { data: nl, error } = await supabaseAdmin.from('newsletters').select('*').eq('id', id).single()
+  if (error || !nl) throw new Error('Newsletter non trovata')
+  if (nl.status === 'sent') throw new Error('Newsletter già inviata')
+  if (!nl.subject?.trim()) throw new Error('Oggetto obbligatorio prima di inviare')
+
+  const { data: contacts } = await supabaseAdmin.from('contatti')
+    .select('email, nome, unsubscribe_token')
+    .eq('azienda_id', nl.azienda_id)
+    .eq('iscritto_newsletter', true)
+    .not('email', 'is', null)
+    .not('email_non_valida', 'is', true)
+
+  if (!contacts?.length) throw new Error('Nessun iscritto trovato')
+
+  const entity = await getEntity(nl.entity_tipo, nl.entity_id)
+  const entityName = entity?.name || 'OltreNova'
+  const entityLogo = entity?.logo_url || null
+  const primary    = entity?.theme?.primaryColor || '#1a1a2e'
+  const appUrl     = process.env.APP_URL || 'https://oltrenova.com'
+
+  if (!process.env.RESEND_API_KEY) throw new Error('RESEND_API_KEY non configurata')
+
+  const { data: marked } = await supabaseAdmin.from('newsletters')
+    .update({ status: 'sent', sent_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq('id', nl.id).eq('status', nl.status === 'draft' ? 'draft' : 'scheduled')
+    .select('id').single()
+  if (!marked) throw new Error('Newsletter già inviata da un altro processo')
+
+  let sent = 0
+  const { Resend } = await import('resend')
+  const resend = new Resend(process.env.RESEND_API_KEY)
+
+  for (let i = 0; i < contacts.length; i += 50) {
+    const batch = contacts.slice(i, i + 50)
+    const emails = batch.map(c => {
+      const pContent = personalize(nl.content, c.nome)
+      const pSubject = personalize(nl.subject, c.nome)
+      return {
+        from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
+        to: c.email,
+        subject: pSubject,
+        html: buildNewsletterHtml({
+          entityName, entityLogo, primary,
+          template_id: nl.template_id,
+          content: pContent,
+          preheader: nl.preheader || '',
+          unsubscribeUrl: `${appUrl}/unsubscribe?token=${c.unsubscribe_token || 'na'}&nl=${nl.id}`,
+        }),
+      }
+    })
+    await resend.batch.send(emails)
+    sent += batch.length
+  }
+
+  await supabaseAdmin.from('newsletters').update({ recipients_count: sent, updated_at: new Date().toISOString() }).eq('id', nl.id)
+  return sent
+}
+
+export async function runScheduledSends() {
+  const { data: due } = await supabaseAdmin.from('newsletters')
+    .select('id').eq('status', 'draft')
+    .not('scheduled_at', 'is', null)
+    .lte('scheduled_at', new Date().toISOString())
+  for (const { id } of due || []) {
+    try {
+      const sent = await sendNewsletterById(id)
+      console.log(`[scheduler] Newsletter ${id} inviata a ${sent} iscritti`)
+    } catch (e) { console.error(`[scheduler] Newsletter ${id}:`, e.message) }
+  }
+}
