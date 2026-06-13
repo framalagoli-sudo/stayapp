@@ -1,5 +1,5 @@
-// In produzione (Vercel) usa Railway direttamente. In dev usa localhost.
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').trim()
+// "" = relative URLs (Vercel prod). Usa ?? non || per non perdere l'empty string.
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').trim()
 
 // ─── Fetch pubblico (guest, nessuna auth) ────────────────────────────────────
 export async function guestFetch(path, options = {}) {

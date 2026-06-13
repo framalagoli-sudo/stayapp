@@ -2,9 +2,6 @@
   "buildCommand": "next build",
   "outputDirectory": ".next",
   "framework": "nextjs",
-  "env": {
-    "NEXT_PUBLIC_API_URL": "https://stayapp-production.up.railway.app"
-  },
   "crons": [
     { "path": "/api/cron/newsletter",  "schedule": "* * * * *" },
     { "path": "/api/cron/automazioni", "schedule": "* * * * *" },
