@@ -30,7 +30,78 @@ setInterval(() => {
   for (const [key, entry] of submitRateMap.entries()) {
     if (entry.resetAt < now) submitRateMap.delete(key)
   }
+  for (const [key, entry] of formFloodMap.entries()) {
+    if (entry.resetAt < now) formFloodMap.delete(key)
+  }
 }, 600_000)
+
+// ── Spam content detection ────────────────────────────────────────────────────
+// Keyword classiche dello spam e script non-latini in contesto italiano/inglese
+const SPAM_KEYWORDS = /\b(viagra|cialis|casino|crypto|bitcoin|nft|forex|backlink|seo service|buy followers|make money fast)\b/i
+const SPAM_SCRIPTS  = /[а-яА-Я一-鿿؀-ۿ]/  // cirillico, cinese, arabo
+
+function isSpamContent(dati, campi) {
+  for (const c of (campi || [])) {
+    if (c.tipo !== 'text' && c.tipo !== 'textarea') continue
+    const val = String(dati[c.id] ?? '')
+    if (!val) continue
+    if (SPAM_KEYWORDS.test(val)) return true
+    if (SPAM_SCRIPTS.test(val)) return true
+    if ((val.match(/https?:\/\//gi) || []).length >= 2) return true  // 2+ URL = spam certo
+  }
+  return false
+}
+
+// ── Flood detection per-form (max 20 submit / 10 minuti) ─────────────────────
+const formFloodMap = new Map()
+const FLOOD_THRESHOLD = 20
+const FLOOD_WINDOW_MS = 600_000
+
+function trackFlood(form) {
+  const now = Date.now()
+  const entry = formFloodMap.get(form.id)
+
+  if (!entry || entry.resetAt < now) {
+    formFloodMap.set(form.id, { count: 1, resetAt: now + FLOOD_WINDOW_MS, alertSent: false })
+    return false
+  }
+
+  entry.count++
+
+  if (entry.count >= FLOOD_THRESHOLD && !entry.alertSent) {
+    entry.alertSent = true
+    if (form.email_notifica && process.env.RESEND_API_KEY) {
+      resend.emails.send({
+        from: process.env.RESEND_FROM || 'noreply@oltrenova.com',
+        to: form.email_notifica,
+        subject: `⚠️ Form "${escHtml(form.nome)}" sotto attacco`,
+        html: `<div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;color:#333">
+          <h2 style="color:#c53030">⚠️ Possibile attacco al form</h2>
+          <p>Il form <strong>${escHtml(form.nome)}</strong> ha ricevuto <strong>${entry.count} invii in 10 minuti</strong>.</p>
+          <p>I nuovi submit sono stati <strong>bloccati automaticamente</strong> per proteggere il tuo account.</p>
+          <p style="font-size:13px;color:#888">Puoi disattivare il form dall&apos;editor StayApp se il problema persiste.</p>
+        </div>`,
+      }).catch(() => {})
+    }
+  }
+
+  return entry.count >= FLOOD_THRESHOLD
+}
+
+// ── Email validation via Abstract API ────────────────────────────────────────
+// Verifica che l'indirizzo sia realmente consegnabile prima di inviare autoresponder.
+// Se ABSTRACT_API_KEY non è configurata, passa tutto (sicuro fallback).
+async function isEmailDeliverable(email) {
+  const key = process.env.ABSTRACT_API_KEY
+  if (!key) return true
+  try {
+    const url = `https://emailvalidation.abstractapi.com/v1/?api_key=${key}&email=${encodeURIComponent(email)}`
+    const res = await fetch(url, { signal: AbortSignal.timeout(3000) })
+    if (!res.ok) return true
+    const data = await res.json()
+    return data.deliverability === 'DELIVERABLE'
+  } catch { return true }
+}
 
 // ── Sicurezza: sanitizzazione e escape ───────────────────────────────────────
 
@@ -242,11 +313,21 @@ router.post('/public/:token/submit', async (req, res) => {
     if (!form) return res.status(404).json({ error: 'Form non trovato' })
     if (!form.attivo) return res.status(403).json({ error: 'Form non attivo' })
 
+    // 3b. Flood protection: blocca se superati 20 submit in 10 minuti su questo form
+    if (trackFlood(form)) {
+      return res.status(429).json({ error: 'Troppe richieste. Riprova tra qualche minuto.' })
+    }
+
     // 4. Sanitizza dati — solo campi noti, valori ripuliti da HTML
     const campiIds = (form.campi || []).map(c => c.id)
     const rawDati = { ...req.body }
     delete rawDati._hp
     const dati = sanitizeDati(rawDati, campiIds)
+
+    // 4b. Spam content detection: silent reject per bot avanzati
+    if (isSpamContent(dati, form.campi)) {
+      return res.json({ ok: true, redirect_url: form.redirect_url || null })
+    }
 
     // 5. Valida campo Consenso GDPR (obbligatorio se presente nel form)
     const consensoCampo = (form.campi || []).find(c => c.tipo === 'consenso')
@@ -268,6 +349,7 @@ router.post('/public/:token/submit', async (req, res) => {
 
     // 7. Crea/trova contatto se presente campo email
     let contattoId = null
+    let emailNonValida = false
     const emailCampo = (form.campi || []).find(c => c.tipo === 'email')
     const email = emailCampo ? String(dati[emailCampo.id] || '').toLowerCase().trim() : null
     const nomeCampo = (form.campi || []).find(c => c.tipo === 'text' && c.label.toLowerCase().includes('nome'))
@@ -276,15 +358,24 @@ router.post('/public/:token/submit', async (req, res) => {
     const telefono = telCampo ? String(dati[telCampo.id] || '').trim() : null
 
     if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      // Valida consegnabilità prima di salvare (Abstract API — skip se non configurata)
+      const deliverable = await isEmailDeliverable(email)
+      emailNonValida = !deliverable
+
       const { data: existing } = await supabase
         .from('contatti')
-        .select('id')
+        .select('id, email_non_valida')
         .eq('azienda_id', form.azienda_id)
         .eq('email', email)
         .maybeSingle()
 
       if (existing) {
         contattoId = existing.id
+        emailNonValida = existing.email_non_valida || emailNonValida
+        // Se l'email risulta ora non consegnabile, aggiorna il record esistente
+        if (!existing.email_non_valida && !deliverable) {
+          supabase.from('contatti').update({ email_non_valida: true }).eq('id', existing.id).catch(() => {})
+        }
       } else {
         const { data: newContatto } = await supabase
           .from('contatti')
@@ -294,6 +385,7 @@ router.post('/public/:token/submit', async (req, res) => {
             nome: nome || email,
             telefono: telefono || null,
             fonte: 'form',
+            email_non_valida: emailNonValida,
           })
           .select('id')
           .single()
@@ -358,7 +450,8 @@ router.post('/public/:token/submit', async (req, res) => {
     }
 
     // 11. Email di conferma automatica all'utente (autoresponder)
-    if (form.email_conferma_attiva && email && process.env.RESEND_API_KEY) {
+    // Skip se l'indirizzo è marcato come non valido (bounce o complaint)
+    if (form.email_conferma_attiva && email && !emailNonValida && process.env.RESEND_API_KEY) {
       const vars = { nome: nome || email, form_nome: form.nome }
       const oggetto = applyTemplate(
         form.email_conferma_oggetto || `Abbiamo ricevuto il tuo messaggio — ${form.nome}`,

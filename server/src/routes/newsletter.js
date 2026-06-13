@@ -164,6 +164,7 @@ export async function sendNewsletterById(id) {
     .eq('azienda_id', nl.azienda_id)
     .eq('iscritto_newsletter', true)
     .not('email', 'is', null)
+    .not('email_non_valida', 'is', true)
 
   if (!contacts?.length) throw new Error('Nessun iscritto trovato')
 

@@ -60,6 +60,7 @@ import loyaltyRouter from './routes/loyalty.js'
 import helpRouter from './routes/help.js'
 import blogAutomazioniRouter from './routes/blogAutomazioni.js'
 import landingSeoRouter from './routes/landing_seo.js'
+import resendWebhookRouter from './routes/resend_webhook.js'
 import { runBlogScheduler } from './lib/blogScheduler.js'
 import { runBackup } from './lib/backup.js'
 import { auditLog } from './middleware/auditLog.js'
@@ -139,8 +140,9 @@ const adminLimiter = rateLimit({
 app.use('/api/guest', guestLimiter)
 app.use('/api/auth',  authLimiter)
 
-// Raw body per Stripe webhook (deve stare prima di express.json)
+// Raw body per webhook esterni (deve stare prima di express.json)
 app.use('/api/shop/webhook/stripe', express.raw({ type: 'application/json' }))
+app.use('/api/resend-webhook', express.raw({ type: 'application/json' }))
 app.use(express.json({ limit: '2mb' }))
 app.use(auditLog) // audit log PATCH/DELETE su tutte le route admin
 
@@ -180,6 +182,7 @@ app.use('/api/loyalty',          loyaltyRouter)
 app.use('/api/help',             helpRouter)
 app.use('/api/blog-automazioni', adminLimiter, blogAutomazioniRouter)
 app.use('/api/landing-seo',     landingSeoRouter)
+app.use('/api/resend-webhook',  resendWebhookRouter)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', v: 'fix-enrichlinks-attivita' }))
 
