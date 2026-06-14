@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server'
 
 const STAYAPP_DOMAIN = process.env.NEXT_PUBLIC_STAYAPP_DOMAIN || 'oltrenova.com'
-// Usa Railway direttamente per evitare il roundtrip Cloudflare → Railway (bloccato da edge)
-const API_BASE = process.env.NEXT_INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+// NEXT_INTERNAL_API_URL o VERCEL_URL danno l'URL Vercel interno (bypassa Cloudflare proxy).
+// VERCEL_URL è impostata automaticamente da Vercel per ogni deployment.
+const API_BASE = process.env.NEXT_INTERNAL_API_URL?.trim()
+  || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+  || 'http://localhost:3000'
 
 function isOwnDomain(hostname) {
   return (

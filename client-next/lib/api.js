@@ -1,5 +1,13 @@
-// "" = relative URLs (Vercel prod). Usa ?? non || per non perdere l'empty string.
+// Client-side: "" = URL relative (il browser aggiunge l'hostname corrente).
+// Server-side (SSR/Server Components): URL relative non funzionano in Node.js fetch —
+// serve un URL assoluto. VERCEL_URL è impostata automaticamente da Vercel con l'URL
+// del deployment corrente (es. oltrenova-next-abc.vercel.app), bypassa Cloudflare.
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').trim()
+function serverBase() {
+  if (process.env.NEXT_INTERNAL_API_URL) return process.env.NEXT_INTERNAL_API_URL.replace(/^﻿/, '').trim()
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
+  return 'http://localhost:3000'
+}
 
 // ─── Fetch pubblico (guest, nessuna auth) ────────────────────────────────────
 export async function guestFetch(path, options = {}) {
@@ -36,8 +44,9 @@ export async function apiFetch(path, options = {}) {
 
 // ─── Fetch server-side (SSR, Server Components) ──────────────────────────────
 export async function serverFetch(path, options = {}) {
+  const base = serverBase()
   try {
-    const res = await fetch(`${API_BASE}${path}`, {
+    const res = await fetch(`${base}${path}`, {
       ...options,
       headers: { 'Content-Type': 'application/json', ...options.headers },
       next: options.next || { revalidate: 60 },
