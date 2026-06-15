@@ -9,7 +9,7 @@ import {
   Wifi, Phone, Mail, MapPin, FileText,
   X, Check, ChevronRight, ArrowLeft,
 } from 'lucide-react'
-import { apiFetch, guestFetch } from '@/lib/api'
+import { guestFetch } from '@/lib/api'
 import { supabase } from '@/lib/supabase'
 import RequestForm from './RequestForm'
 import ServicesTab from './ServicesTab'
@@ -904,7 +904,7 @@ function ChatPage({ propertyId, propertyName, primary, textColor, subText, isDar
 
   async function loadMessages() {
     try {
-      const data = await apiFetch(`/api/messages?property_id=${propertyId}&session_id=${SESSION_ID}`)
+      const data = await guestFetch(`/api/messages?property_id=${propertyId}&session_id=${SESSION_ID}`)
       setMessages(data)
     } catch {}
   }
@@ -924,7 +924,7 @@ function ChatPage({ propertyId, propertyName, primary, textColor, subText, isDar
     const body = input.trim()
     setInput('')
     try {
-      const msg = await apiFetch('/api/messages', {
+      const msg = await guestFetch('/api/messages', {
         method: 'POST',
         body: JSON.stringify({ property_id: propertyId, session_id: SESSION_ID, guest_name: guestName || null, sender: 'guest', body }),
       })

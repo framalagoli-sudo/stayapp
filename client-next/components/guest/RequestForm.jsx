@@ -1,7 +1,7 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
 import { CheckCircle, Clock, Loader, CheckCheck, XCircle } from 'lucide-react'
-import { apiFetch } from '@/lib/api'
+import { guestFetch } from '@/lib/api'
 
 const DEFAULT_MODULES = {
   reception: true, housekeeping: false, restaurant: false,
@@ -54,7 +54,7 @@ export default function RequestForm({ propertyId, modules = {}, primary = '#00b5
     const saved = loadSavedRequests(propertyId)
     if (!saved.length) return
     const ids = saved.map(r => r.id).join(',')
-    apiFetch(`/api/requests/public?ids=${ids}`)
+    guestFetch(`/api/requests/public?ids=${ids}`)
       .then(data => {
         const statusMap = Object.fromEntries(data.map(r => [r.id, r.status]))
         setHistory(saved.map(r => ({ ...r, status: statusMap[r.id] || r.status })))
@@ -70,7 +70,7 @@ export default function RequestForm({ propertyId, modules = {}, primary = '#00b5
     e.preventDefault()
     setState('loading')
     try {
-      const data = await apiFetch('/api/requests', {
+      const data = await guestFetch('/api/requests', {
         method: 'POST',
         body: JSON.stringify({ property_id: propertyId, type, room, message }),
       })

@@ -51,6 +51,17 @@ export function resolveAziendaId(profile, bodyAziendaId) {
   return profile.azienda_id || null
 }
 
+// Verifica se un profilo può accedere a una property (struttura).
+// super_admin: sempre; admin_struttura/staff: solo la propria; altri ruoli: stessa azienda.
+// Usato per risorse legate a property_id (requests, messages, ...).
+export async function userCanAccessProperty(profile, property_id) {
+  if (!profile || !property_id) return false
+  if (profile.role === 'super_admin') return true
+  if (['admin_struttura', 'staff'].includes(profile.role)) return profile.property_id === property_id
+  const { data: prop } = await supabaseAdmin.from('properties').select('azienda_id').eq('id', property_id).single()
+  return !!prop && prop.azienda_id === profile.azienda_id
+}
+
 // Autorizza l'accesso a un record che possiede una colonna azienda_id diretta
 // (eventi, articoli, collegamenti, blog_categories, recensioni, ...).
 // Carica il record, verifica la proprietà e risponde 404 se non autorizzato.

@@ -1,7 +1,7 @@
 ﻿'use client'
 import { useState } from 'react'
 import { MapPin, Clock, CheckCircle } from 'lucide-react'
-import { apiFetch } from '@/lib/api'
+import { guestFetch } from '@/lib/api'
 
 const AGE_FILTERS = [
   { value: 'tutti',    label: 'Tutti' },
@@ -36,7 +36,7 @@ export default function ActivitiesTab({ activities = [], propertyId, primary, te
   async function sendBooking(activity) {
     setBookState('loading')
     try {
-      await apiFetch('/api/requests', {
+      await guestFetch('/api/requests', {
         method: 'POST',
         body: JSON.stringify({
           property_id: propertyId,

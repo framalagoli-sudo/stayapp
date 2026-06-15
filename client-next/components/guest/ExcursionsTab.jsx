@@ -1,7 +1,7 @@
 ﻿'use client'
 import { useState } from 'react'
 import { MapPin, Clock, CalendarDays, CheckCircle } from 'lucide-react'
-import { apiFetch } from '@/lib/api'
+import { guestFetch } from '@/lib/api'
 
 export default function ExcursionsTab({ excursions = [], propertyId, primary, textColor, subText, isDark, radius }) {
   const [booking,   setBooking]   = useState(null)
@@ -19,7 +19,7 @@ export default function ExcursionsTab({ excursions = [], propertyId, primary, te
   async function sendBooking() {
     setBookState('loading')
     try {
-      await apiFetch('/api/requests', {
+      await guestFetch('/api/requests', {
         method: 'POST',
         body: JSON.stringify({
           property_id: propertyId,
