@@ -10,12 +10,47 @@ export async function getAuthUser(request) {
   return user
 }
 
-// Scorciatoia: restituisce Response 401 se non autorizzato, altrimenti l'utente
+// Decodifica il payload di un JWT (senza verifica — la firma è già validata da getUser).
+function decodeJwtPayload(token) {
+  try {
+    const part = token.split('.')[1]
+    const json = Buffer.from(part.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8')
+    return JSON.parse(json)
+  } catch { return null }
+}
+
+// Path esenti dall'enforcement 2FA: servono al client per determinare lo stato
+// (profilo, config) e per il flusso di login/setup, anche a sessione aal1.
+const MFA_EXEMPT_PREFIXES = ['/api/auth/']
+
+// Enforcement 2FA server-side: se l'azienda dell'utente ha require_2fa attivo e la
+// sessione NON è aal2 (secondo fattore completato), blocca con 403 mfa_required.
+// Ottimizzazione: gli utenti già aal2 escono subito senza query DB.
+async function enforceMfa(request, user) {
+  const pathname = new URL(request.url).pathname
+  if (MFA_EXEMPT_PREFIXES.some(p => pathname.startsWith(p))) return null
+
+  const token = request.headers.get('authorization')?.slice(7) || ''
+  const aal = decodeJwtPayload(token)?.aal
+  if (aal === 'aal2') return null // già verificato 2FA → nessun costo
+
+  const { data: profile } = await supabaseAdmin.from('profiles').select('azienda_id').eq('id', user.id).single()
+  if (!profile?.azienda_id) return null // super_admin senza azienda o profilo orfano
+  const { data: az } = await supabaseAdmin.from('aziende').select('require_2fa').eq('id', profile.azienda_id).single()
+  if (!az?.require_2fa) return null
+
+  return Response.json({ error: 'Verifica a due fattori richiesta', code: 'mfa_required' }, { status: 403 })
+}
+
+// Scorciatoia: restituisce Response 401 se non autorizzato, altrimenti l'utente.
+// Applica anche l'enforcement 2FA (se l'azienda lo richiede).
 // Uso: const { user, response } = await requireAuth(request)
 //      if (response) return response
 export async function requireAuth(request) {
   const user = await getAuthUser(request)
   if (!user) return { user: null, response: Response.json({ error: 'Non autorizzato' }, { status: 401 }) }
+  const mfaResponse = await enforceMfa(request, user)
+  if (mfaResponse) return { user: null, response: mfaResponse }
   return { user, response: null }
 }
 

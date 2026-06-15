@@ -82,13 +82,11 @@ Ordine scelto da Francesco:
 
 ## ⚠️ FINDING APERTO — Enforcement server-side (sessione dedicata, priorità ALTA)
 
-### 2FA obbligatorio non applicato server-side
-`require_2fa` (azienda) è enforced solo client-side (AdminGuard/ProtectedRoute → mfa-verify).
-`requireAuth` valida il token ma NON controlla l'AAL2 (MFA completato); il server usa service
-role → niente RLS/AAL a livello DB. Un utente AAL1 (solo password) può chiamare le API
-saltando il 2FA imposto. Fix: in `requireAuth` (o un wrapper) leggere il claim `aal` del JWT e,
-se l'azienda ha `require_2fa`, esigere `aal2`. Testare bene per non bloccare chi non ha ancora
-MFA (deve poter raggiungere solo /admin/security per configurarlo).
+### ✅ 2FA obbligatorio — ENFORCED server-side (FATTO)
+`requireAuth` ora applica il 2FA: se `aal !== 'aal2'` e l'azienda ha `require_2fa` → 403
+`mfa_required`. Ottimizzato (aal2 esce senza query DB). Esenti `/api/auth/*` + super_admin
+senza azienda. Il client (AuthContext via supabase diretto + AdminGuard) gestisce già il
+redirect a mfa-verify/security, quindi nessuno resta chiuso fuori. Deploy + smoke ok.
 
 ### Permessi staff non applicati server-side
 I permessi granulari `staff` (profiles.permissions: richieste/contatti/newsletter/...) sono
