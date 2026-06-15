@@ -13,6 +13,7 @@
 - [Authz multi-tenant](feedback_multitenant_authz.md) — ogni route API deve scopare per azienda; usare requireRecordAccess/requireEntityAccess/resolveAziendaId, mai .eq('id') nudo
 - [Contratto nomi campo](feedback_field_name_contract.md) — form frontend e route backend stessi nomi campo (name vs nome) o si perdono dati in silenzio; test live POST+query DB
 - [Stato infrastruttura](project_acquisti_pendenti.md) — Vercel Pro ✅, Railway freezato ✅, migrazione completa ✅, Supabase Pro da valutare
+- [Robustezza infra — 3 azioni](project_robustezza_infra.md) — Supabase Pro, verifica cron Vercel, RLS come 2° muro (stack Supabase+Vercel confermato buono)
 - [Stato OltreNova + azioni manuali](project_google_calendar_pending.md) — Google Calendar, Sentry DSN, Cloudflare Bot Fight, og-image, fondaconarni apex, GitHub→Vercel auto-deploy
 - [Migrazione Railway → Vercel COMPLETA](project_session_railway_migration.md) — tutto su Vercel, Railway freezato, bounce webhook ✅, NEXT_PUBLIC_API_URL="" ✅
 - [Roadmap Sprint + Piano tecnico 6 fasi](project_roadmap_sprint.md) — Fase 1 debug in corso, Fase 2 COMPLETA, Sprint 10 = Stripe billing
