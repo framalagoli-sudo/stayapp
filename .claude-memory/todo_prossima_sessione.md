@@ -7,48 +7,23 @@ metadata:
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
 ---
 
-## Prossima sessione — To-Do in ordine di priorità
+## To-Do — stato aggiornato 2026-06-15
 
-### 1. Spegnere Railway ⚠️ (risparmio $5/mese)
-- Verificare che NESSUNA route del client Next.js punti ancora a Railway
-- Andare su Railway dashboard → progetto stayapp → Delete/Pause
-- Rimuovere CNAME `api.oltrenova.com` da Cloudflare (era il dominio Railway)
-- Eliminare `client-next/lib/newsletter-scheduler.js` (dead code Railway, non importato da nessuno)
+### ✅ FATTO
+- **Railway spento/freezato** — dead code `newsletter-scheduler.js` eliminato, CNAME `api.oltrenova.com` rimosso da Cloudflare (15/6)
+- **Resend bounce webhook** attivo — bounce/complained → `email_non_valida=true`
+- **Test Form Builder end-to-end** — trovati e fixati: env Resend vuote su Vercel, bug `.catch()` Postgrest 500, config form senza campo email; UX consensi GDPR rifatta. Vedi [[project_session_2026_06_15b_formbuilder]]
+- **Cloudflare Bot Fight Mode** attivato (15/6)
 
-### 2. Attivare Resend bounce webhook (zero costo, alta priorità)
-- resend.com → Webhooks → Add endpoint
-- URL: `https://oltrenova.com/api/resend-webhook`
-- Events: `email.bounced` + `email.complained`
-- `RESEND_WEBHOOK_SECRET` è già configurata su Vercel ✅
-- Questo protegge reputazione email: bounce → `email_non_valida=true` → skip newsletter + autoresponder
+### ⏳ TODO — sviluppo
+- **Debug sezione per sezione del pannello admin** ← IN CORSO, si parte dal **SITO WEB** (priorità di Francesco)
+  - Sito web (minisito/pagine CMS) per Struttura / Ristorante / Attività
+  - poi: Info, Galleria, Menu, Tema, Chatbot, Domini
+  - Globali: Analytics, Newsletter, Booking, Contatti, Form Builder, Blog, Piano Editoriale, Staff
+- **Stripe Sprint 10 (billing SaaS)** — piani Free/Starter/Pro, checkout, webhook stripe, upgrade/downgrade. Sprint futuro grosso.
 
-### 3. Test manuale Form Builder end-to-end
-- Creare un form di test con: campo testo, email, consenso GDPR
-- Compilare il form dal minisito pubblico
-- Verificare: email admin ricevuta, contatto CRM creato, submission salvata
-- Abilitare autoresponder e verificare email conferma all'utente
+### ⏳ TODO — azioni manuali (quando pronto)
+- **Google Calendar** — configurare `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` su Vercel; codice backend scritto lato Railway, va portato su Next.js. Vedi [[project_google_calendar_pending]]
 
-### 4. Attivare Cloudflare Bot Fight Mode (1 click, gratis)
-- Dashboard CF → oltrenova.com → Security → Bots → Bot Fight Mode → ON
-
-### 5. Debug sezione per sezione del pannello admin
-- Percorrere ogni sezione dell'admin e verificare che funzioni tutto
-- Struttura: Info, Camere/Servizi, Galleria, Tema, Sito web, Chatbot, Domini
-- Ristorante: Info, Menu, Galleria, Sito web, Chatbot, Domini
-- Attività: Info, Galleria, Sito web, Chatbot, Domini
-- Sezioni globali: Analytics, Newsletter, Booking, Contatti, Form Builder, Blog, Piano Editoriale, Staff
-
-### 6. Abstract API email validation (opzionale, free 100/mese)
-- Registrare su abstractapi.com/email-validation
-- `vercel env add ABSTRACT_API_KEY production`
-- Rideploy
-
-### 7. Google Calendar (quando pronto)
-- Configurare `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` su Vercel
-- Il codice backend è già scritto lato Railway — va portato su Next.js
-
-### 8. Stripe Sprint 10 (billing SaaS)
-- Piano tecnico: piani Free/Starter/Pro, checkout, webhook stripe, upgrade/downgrade
-
-**Why:** Migrazione Railway→Vercel completa. Railway costa $5/mese e non serve più.
-**How to apply:** Iniziare la sessione da punto 1 (Railway shutdown) poi seguire in ordine.
+### ❌ SCARTATO
+- **Abstract API email validation** — limite free 100/mese troppo basso, non vale la pena (15/6)

@@ -1,45 +1,35 @@
 ---
 name: project-acquisti-pendenti
-description: "Servizi a pagamento da acquistare/upgradare per OltreNova — ricordare all'inizio di ogni sessione"
+description: "Stato infrastruttura e acquisti — Vercel Pro ✅, Railway freezato ✅, Supabase Pro da valutare"
 metadata: 
   node_type: memory
   type: project
-  originSessionId: 892c8ecf-57dd-42fe-8347-eeea60ae3b4f
+  originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
 ---
 
-Francesco ha chiesto di essere ricordato di questi acquisti all'inizio della prossima sessione.
+## Infrastruttura attuale (aggiornato 2026-06-14)
 
-## Da acquistare / upgradare ⚠️
+### Vercel Pro ✅ — ATTIVO
+Confermato da Francesco 2026-06-14. Timeout funzioni: 60s (Pro). Build: 4 cores, 8GB.
 
-### Supabase Pro — $25/mese
-- Piano attuale: Free (limite 500MB DB, 1GB storage, 50.000 MAU)
-- Upgrade necessario per: più storage media, più utenti attivi, backup automatici
-- Link: https://supabase.com/dashboard → Settings → Billing
+### Railway — FREEZATO ✅
+Francesco ha freezato Railway (Deployments → Freeze). Non paga più.
+La migrazione Railway → Vercel è COMPLETA — tutte le route sono su Vercel API Routes.
 
-### Vercel Pro — $20/mese
-- Piano attuale: Hobby (no custom domain su team, limite bandwidth)
-- Upgrade necessario per: domini custom multipli su team, analytics avanzate, più build concurrenti
-- Link: https://vercel.com/account/billing
+### Supabase — stato da verificare
+Free plan ha limite 500MB DB, 1GB storage, 50.000 MAU.
+Pro ($25/mese) aggiunge: storage illimitato, PITR backup 7gg, più connessioni.
+Se non ancora upgradato, valutare prima che il DB cresca.
 
-### Totale mensile stimato: $45/mese
+### Cloudflare Free ✅
+### Resend Free ✅ (bounce webhook configurato ✅)
+### Stripe — installato nel codice, non integrato (Sprint 10)
 
-## Già attivi (non da comprare)
-- Railway Starter: $5/mese ✅
-- Cloudflare Free ✅
-- Resend Free ✅
+## Non più pendenti (aggiornato 2026-06-14)
+- ~~Upgrade Vercel Pro~~ → **già attivo** ✅
+- ~~Migrazione Railway → Vercel~~ → **completa** ✅
+- ~~Spegnere Railway~~ → **freezato** ✅
+- ~~NEXT_PUBLIC_API_URL=""~~ → **già impostato su Vercel** ✅
+- ~~Resend bounce webhook~~ → **configurato** ✅
 
-## Note
-- Supabase Pro è più urgente (storage media può esaurirsi con upload utenti)
-- Vercel Pro sblocca anche GitHub auto-deploy su team (ora deploy manuale)
-- **Vercel Pro è prerequisito per la migrazione Railway → Vercel** (serve per Cron Jobs e maxDuration 300s)
-
-## Dopo l'acquisto — migrare Railway → Vercel ⭐
-Sprint da fare DOPO aver comprato entrambi i piani Pro:
-- Convertire route Express → Next.js API routes (meccanico, 1-2 sessioni)
-- `setInterval` scheduler → Vercel Cron Jobs
-- File upload: multer → `request.formData()`
-- Auth middleware: Express → helper function per route
-- Risultato: stack finale **Vercel + Supabase only** — Railway eliminato ($5/mese in meno, zero CORS, deploy unico)
-
-**Why:** Francesco ha chiesto esplicitamente di essere ricordato di questi acquisti.
-**How to apply:** Ricordare SEMPRE all'inizio E alla fine di ogni sessione, senza eccezioni. Dopo l'acquisto Pro, proporre la migrazione Railway → Vercel come prossimo sprint.
+**How to apply:** Non ricordare più Railway o la migrazione come pending. L'unica infrastruttura davvero pendente è eventuale upgrade Supabase Pro.
