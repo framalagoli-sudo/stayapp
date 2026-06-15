@@ -136,9 +136,10 @@ sensibili (es. PII contatti) → OR-mapping per route condivise.
   gli sviluppatori che toccano le API. Vedi [[feedback_multitenant_authz]].
 - **Upgrade Supabase Pro ($25/mese)**: connection pooling, niente pausa del progetto, backup
   giornalieri automatici, più risorse. Da fare prima di andare in vendita con clienti veri.
-- **Verificare i cron Vercel** (`/api/cron/*`: newsletter, backup R2, automazioni, blog):
-  con la migrazione da Railway (processo persistente con setInterval) a Vercel (serverless)
-  devono girare via Vercel Cron — confermare che siano schedulati e davvero firano.
+- ~~**Verificare i cron Vercel**~~ ✅ FATTO — TROVATO BUG GRAVE: i 4 cron erano fermi perché
+  mancava `CRON_SECRET` su Vercel (i route richiedono `Bearer ${CRON_SECRET}`, Vercel cron
+  riceveva 401 → backup notturno/newsletter/automazioni mai eseguiti). Fixato: impostato
+  `CRON_SECRET` (env Production) + redeploy. Verificato: secret corretto → 200, sbagliato → 401.
 
 ---
 
