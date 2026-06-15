@@ -6,10 +6,10 @@ export async function GET(request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
   try {
-    await runBackup()
-    return Response.json({ ok: true })
+    const result = await runBackup()
+    return Response.json({ ok: true, ...result })
   } catch (e) {
     console.error('[cron/backup]', e.message)
-    return Response.json({ error: e.message }, { status: 500 })
+    return Response.json({ ok: false, error: e.message }, { status: 500 })
   }
 }
