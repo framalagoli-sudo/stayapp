@@ -16,11 +16,14 @@ metadata:
 - **Cloudflare Bot Fight Mode** attivato (15/6)
 - **🔒 Audit sicurezza multi-tenant COMPLETO** (15/6) — chiusi ~19 IDOR su collection + tutti i 31 route `[id]` verificati. Primitive riusabili in server-auth.js. Vedi [[project_session_2026_06_15c_security]] e [[feedback_multitenant_authz]]. Bug Sito web `navigate→router` fixato.
 
-### ⏳ TODO — ricognizione a blocchi (tracker: `PIANO_LAVORO.md` nel repo!)
-**Fonte di verità ora = `PIANO_LAVORO.md`** (root repo). 3 fasi: 0 sicurezza/bug → 1 funzionale → 2 sviluppi.
-- ✅ **Sito web** (CMS pagine + editor blocchi + rendering): bug navigate→router, anteprima bozze, save error.
-- ✅ **Guest/PWA + Minisito** (blocco 1, QUASI CHIUSO): GuestApp+RestaurantApp+MenuTab ok; sicurezza chat `/api/messages` + IDOR event_bookings; **bug perdita dati form contatto fixato** (nome/messaggio vs name/message); **overbooking eventi fixato** + backfill; **PWA attività CABLATA e attivabile** (route /a/[slug] QR→PWA, toggle admin già esistente); Landing/GuestSubPage puliti. Resta solo: PWA tecnica (manifest/SW/install) polish. Vedi PIANO_LAVORO.md.
-- ⬜ Poi: Operativo → Entità → Marketing/CRM → Account/Piattaforma.
+### ✅ FASE 0 COMPLETA — sicurezza + data-write su TUTTI e 6 i blocchi (tracker: `PIANO_LAVORO.md`)
+- Sicurezza multi-tenant blindata: IDOR su tutta l'API (collection + 31 route [id]); 2FA + permessi staff enforced server-side in `requireAuth` (verificati live).
+- Perdita dati cacciata ovunque: fixati form contatto guest (lead persi), overbooking eventi (+backfill), manifest PWA start_url, route sync-subdomains 404. Altri contratti data-write tutti allineati (Sito web, Form Builder, Guest, Marketing 9 moduli, Entità/Menu, Operativo).
+- **PWA attività CABLATA** (palestre/corsi): /a/[slug] QR→AttivitaPWA. Menu editor solido + guard modifiche-non-salvate.
+- Primitive in server-auth.js: requireEntityAccess, requireRecordAccess, resolveAziendaId, userCanAccessProperty, hasPermission, enforceMfa/enforcePermission.
+
+### ⏳ PROSSIMO — FASE 1 (deep funzionale UI/edge-case per modulo)
+La Fase 0 ha coperto sicurezza + data-write. Resta il deep-review UI/edge-case (flussi completi, validazioni, stati limite) dove serve. Miglioria trasversale: estendere guard "modifiche non salvate" (beforeunload) ad altri editor (es. PaginaEditorPage).
 - **Stripe Sprint 10 (billing SaaS)** — Fase 2, sprint futuro grosso.
 
 ### ⏳ TODO — azioni manuali (quando pronto)
