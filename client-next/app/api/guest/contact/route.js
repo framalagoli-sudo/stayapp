@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabase-server'
+﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { Resend } from 'resend'
 import { emailTemplate } from '@/lib/email-template'
 import { triggerAutomazione } from '@/lib/guest-utils'
@@ -6,7 +6,12 @@ import { triggerAutomazione } from '@/lib/guest-utils'
 export async function POST(request) {
   try {
     const body = await request.json()
-    const { entity_tipo, entity_id, name, email, message, source, source_name } = body
+    const { entity_tipo, entity_id, source, source_name } = body
+    // Accetta sia i nomi EN (name/message) sia IT (nome/messaggio): diversi form
+    // del frontend usano convenzioni diverse — non perdere lead per questo.
+    const name = body.name ?? body.nome ?? ''
+    const email = body.email ?? ''
+    const message = body.message ?? body.messaggio ?? ''
     if (!name?.trim() || !email?.trim() || !message?.trim())
       return Response.json({ error: 'Nome, email e messaggio sono obbligatori' }, { status: 400 })
 
@@ -44,14 +49,14 @@ export async function POST(request) {
     }
 
     if (entityEmail && process.env.RESEND_API_KEY) {
-      new Resend(process.env.RESEND_API_KEY).emails.send({
-        from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
+      new Resend((process.env.RESEND_API_KEY ?? '').trim()).emails.send({
+        from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
         to: entityEmail, replyTo: email,
         subject: `[${entityName}] Nuovo messaggio dal sito`,
         html: emailTemplate({
           title: 'Nuovo messaggio dal sito', entityName,
           rows: [{ label: 'Nome', value: name }, { label: 'Email', value: `<a href="mailto:${email}" style="color:#00b5b5">${email}</a>` }, { label: 'Messaggio', value: message.replace(/\n/g, '<br>') }],
-          appUrl: process.env.CLIENT_URL || 'https://oltrenova.com',
+          appUrl: (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com',
         }),
       }).catch(() => {})
     }

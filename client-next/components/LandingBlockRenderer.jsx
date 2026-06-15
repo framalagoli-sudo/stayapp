@@ -1,7 +1,7 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
 import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Mountain, Wind, ChevronDown, Calendar, Users } from 'lucide-react'
-import { apiFetch } from '@/lib/api'
+import { guestFetch } from '@/lib/api'
 import BookingWidget from './BookingWidget'
 
 const HIGHLIGHT_LUCIDE = {
@@ -29,7 +29,7 @@ function getEmbedUrl(url) {
   return null
 }
 
-const API_BASE_FB = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+const API_BASE_FB = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').trim()
 
 export default function LandingBlockRenderer({ blocks, entity, entityType, mini, primary, heading, body, slug, privacyUrl, aziendaId }) {
   const [faqOpen, setFaqOpen] = useState({})
@@ -41,9 +41,9 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
 
   useEffect(() => {
     if (!entity?.id) return
-    apiFetch(`/api/guest/eventi?entity_tipo=${entityType}&entity_id=${entity.id}`)
+    guestFetch(`/api/guest/eventi?entity_tipo=${entityType}&entity_id=${entity.id}`)
       .then(d => Array.isArray(d) && setEventi(d.slice(0, 6))).catch(() => {})
-    apiFetch(`/api/blog/public?azienda_id=${aziendaId}&entity_tipo=${entityType}&entity_id=${entity.id}&limit=6`)
+    guestFetch(`/api/blog/public?azienda_id=${aziendaId}&entity_tipo=${entityType}&entity_id=${entity.id}&limit=6`)
       .then(d => Array.isArray(d) && setArticoli(d)).catch(() => {})
   }, [entity?.id])
 
@@ -327,14 +327,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         )
 
       case 'contatti':
-        return (
-          <section key={block.id} id="contatti-section" style={{ padding: '72px 0', background: '#fafafa' }}>
-            <div className="lbr-section">
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: '#1a1a2e', marginBottom: 48 }}>Contatti</h2>
-              <ContattiForm entity={entity} entityType={entityType} primary={primary} privacyUrl={privacyUrl} heading={heading} />
-            </div>
-          </section>
-        )
+        return null
 
       case 'show_map':
         if (!entity.address) return null
@@ -716,7 +709,7 @@ function NewsletterForm({ aziendaId, primary, privacyUrl }) {
     if (!privacy) return
     setState('loading')
     try {
-      await apiFetch('/api/contatti/subscribe', {
+      await guestFetch('/api/contatti/subscribe', {
         method: 'POST',
         body: JSON.stringify({ azienda_id: aziendaId, email, fonte: 'minisito' }),
       })
@@ -753,7 +746,7 @@ function ContattiForm({ entity, entityType, primary, privacyUrl, heading }) {
     if (!privacy) return
     setState('loading')
     try {
-      await apiFetch('/api/guest/contact', {
+      await guestFetch('/api/guest/contact', {
         method: 'POST',
         body: JSON.stringify({ entity_tipo: entityType, entity_id: entity.id, ...form }),
       })
@@ -913,6 +906,19 @@ function FormBuilderBlock({ token, primary }) {
                   c.label || 'Accetto il trattamento dei dati personali'
                 )}
                 <span style={{ color: '#c53030' }}> *</span>
+              </span>
+            </label>
+          ) : c.tipo === 'consenso_marketing' ? (
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontSize: 14, color: '#444' }}>
+              <input type="checkbox" checked={!!dati[c.id]} onChange={e => setField(c.id, e.target.checked)} style={{ width: 16, height: 16, marginTop: 2, flexShrink: 0 }} />
+              <span>
+                {c.privacy_url ? (
+                  <a href={c.privacy_url} target="_blank" rel="noopener noreferrer" style={{ color: '#2b6cb0' }}>
+                    {c.label || 'Acconsento a ricevere comunicazioni commerciali'}
+                  </a>
+                ) : (
+                  c.label || 'Acconsento a ricevere comunicazioni commerciali'
+                )}
               </span>
             </label>
           ) : (

@@ -46,9 +46,11 @@ Ordine scelto da Francesco:
 - **Sicurezza chat** `/api/messages` GET inbox + POST staff → auth+proprietà; `/read` proprietà. Helper `userCanAccessProperty`.
 - **Convenzione guestFetch** allineata: GuestApp, RequestForm, ActivitiesTab, ExcursionsTab + puliti import morti apiFetch in RestaurantApp/AttivitaApp/AttivitaPWA
 
+**Rivisto ✅ (cont.)**
+- `RestaurantApp.jsx` + `MenuTab.jsx` (PWA ristorante + menu pubblico) — solido, nessun fix. MenuTab gestisce catalogo + menu singolo, preserva tutti i campi piatto (active:false nascosti ma conservati). Nessuna perdita dati lato render.
+
 **Da rivedere ⬜ (prossima sessione)**
-- `RestaurantApp.jsx` + `RestaurantTab.jsx` (PWA ristorante, menu pubblico)
-- `AttivitaApp.jsx` / `AttivitaPWA.jsx` (PWA attività)
+- `AttivitaApp.jsx` / `AttivitaPWA.jsx` (PWA attività) — ha form contatto `/api/guest/contact`
 - Minisito varianti `LandingRistorante` / `LandingAttivita` / `LandingStruttura`
 - Pagine dettaglio guest: `EventoPage`, `OffertaPage`, `PacchettoPage`, `GuestSubPage`, `PaginaPage`, `NewsletterArchivePage`
 - `ServicesTab` (verificare guestFetch/funzionale)
