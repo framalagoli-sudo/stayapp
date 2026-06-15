@@ -28,7 +28,7 @@ Ordine scelto da Francesco:
 | 1 | **Guest/PWA + Minisito pubblico** | ✅ | ✅ | ✅ | ✅ | **CHIUSO** — PWA su 3 entità, data-write verificati, sicurezza, overbooking, manifest. Vedi dettaglio sotto |
 | 2 | Operativo (Dashboard, Richieste, Prenotazioni, Booking, Recensioni, Survey) | ✅API | ⬜ | ⬜ | ⬜ | |
 | 3 | Entità (Info, Galleria, Menu, Tema, Chatbot, Domini) | ✅API | ⬜ | ⬜ | ⬜ | Sito web già fatto ✅ |
-| 4 | Marketing/CRM (Contatti, Newsletter, Automazioni, Blog, Piano Editoriale, Content Studio, AI Site Builder, Preventivi, Shop, Loyalty, Eventi, Analytics) | ✅API | 🟡 | 🟡 | ⬜ | Form Builder ✅ già fatto |
+| 4 | Marketing/CRM (Contatti, Newsletter, Automazioni, Blog, Piano Editoriale, Content Studio, AI Site Builder, Preventivi, Shop, Loyalty, Eventi, Analytics) | ✅ | 🟡 | 🟡 | ⬜ | **Triage data-write FATTA**: contratti frontend↔route verificati su 9 moduli → tutti allineati, ZERO perdita dati (il bug guest era isolato). Eventi: overbooking già fixato. Form Builder ✅. Resta deep-review UI/edge-case per modulo |
 | 5 | Account/Piattaforma (Collaboratori, Integrazioni, SEO, Impostazioni, Sicurezza, Aziende/Strutture/Utenti) | ✅ | ✅ | ✅ | ⬜ | **CHIUSO** sicurezza+funzionale. 2FA + permessi staff enforced (live). Impostazioni: route sync-subdomains creato (era 404). SecurityPage/SeoGeo/Integrazioni ok |
 
 ---
