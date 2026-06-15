@@ -29,7 +29,7 @@ Ordine scelto da Francesco:
 | 2 | Operativo (Dashboard, Richieste, Prenotazioni, Booking, Recensioni, Survey) | ✅API | ⬜ | ⬜ | ⬜ | |
 | 3 | Entità (Info, Galleria, Menu, Tema, Chatbot, Domini) | ✅API | ⬜ | ⬜ | ⬜ | Sito web già fatto ✅ |
 | 4 | Marketing/CRM (Contatti, Newsletter, Automazioni, Blog, Piano Editoriale, Content Studio, AI Site Builder, Preventivi, Shop, Loyalty, Eventi, Analytics) | ✅API | 🟡 | 🟡 | ⬜ | Form Builder ✅ già fatto |
-| 5 | Account/Piattaforma (Collaboratori, Integrazioni, SEO, Impostazioni, Sicurezza, Aziende/Strutture/Utenti) | ✅API | ⬜ | ⬜ | ⬜ | |
+| 5 | Account/Piattaforma (Collaboratori, Integrazioni, SEO, Impostazioni, Sicurezza, Aziende/Strutture/Utenti) | 🟡 | 🟡 | ⬜ | ⬜ | Gestione aziende/utenti VERIFICATA sicura. 2 finding (permessi + 2FA non enforced server-side) → sessione dedicata. Resta funzionale: SecurityPage, Impostazioni, SEO, Integrazioni |
 
 ---
 
@@ -79,6 +79,27 @@ Ordine scelto da Francesco:
 
 ## FASE 1 — Consolidamento funzionale
 (Si compila man mano che la Fase 0 chiude ogni modulo.)
+
+## ⚠️ FINDING APERTO — Enforcement server-side (sessione dedicata, priorità ALTA)
+
+### 2FA obbligatorio non applicato server-side
+`require_2fa` (azienda) è enforced solo client-side (AdminGuard/ProtectedRoute → mfa-verify).
+`requireAuth` valida il token ma NON controlla l'AAL2 (MFA completato); il server usa service
+role → niente RLS/AAL a livello DB. Un utente AAL1 (solo password) può chiamare le API
+saltando il 2FA imposto. Fix: in `requireAuth` (o un wrapper) leggere il claim `aal` del JWT e,
+se l'azienda ha `require_2fa`, esigere `aal2`. Testare bene per non bloccare chi non ha ancora
+MFA (deve poter raggiungere solo /admin/security per configurarlo).
+
+### Permessi staff non applicati server-side
+I permessi granulari `staff` (profiles.permissions: richieste/contatti/newsletter/...) sono
+**salvati e usati solo client-side** (nascondono la sidebar). **Nessun route API li verifica** →
+un collaboratore `staff` può chiamare le API direttamente e scavalcare i limiti del titolare
+(intra-azienda; lo scoping azienda regge, non vede altre aziende).
+**Perché serve design, non un fix rapido**: molte route sono condivise tra sezioni (es.
+`/api/contatti` serve Contatti MA anche Preventivi/Dashboard). Gating naïf route-per-route
+romperebbe accessi legittimi. Da fare: mappa permesso↔risorsa + dipendenze cross-sezione +
+helper `hasPermission(profile, key)` (solo `staff` ristretto; admin_azienda/super_admin pieni) +
+test per ruolo. Modello permessi: vedi `StaffPage.jsx` (PERM_OPERATIVO/MARKETING/ACCOUNT).
 
 ## FASE 2 — Predisposizione sviluppi futuri
 - Stripe billing (Sprint 10), Multi-lingua IT/EN/DE, GitHub→Vercel auto-deploy, Notifiche realtime.
