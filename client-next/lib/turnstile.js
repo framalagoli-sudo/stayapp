@@ -6,6 +6,13 @@
 export async function verifyTurnstile(token, ip) {
   const secret = (process.env.TURNSTILE_SECRET_KEY ?? '').trim()
   if (!secret) return { success: true, skipped: true } // non ancora configurato
+
+  // Bypass per gli smoke test CI: token = TURNSTILE_TEST_BYPASS (secret server-only,
+  // stesso modello di CRON_SECRET). Permette ai test automatici di inviare i form
+  // senza un browser, lasciando Turnstile attivo per tutti gli altri.
+  const bypass = (process.env.TURNSTILE_TEST_BYPASS ?? '').trim()
+  if (bypass && token === bypass) return { success: true, bypass: true }
+
   if (!token) return { success: false, error: 'missing-token' }
 
   try {

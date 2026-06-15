@@ -86,7 +86,7 @@ test.describe('Regression sicurezza (ruolo staff)', () => {
     // Usa l'entità di TEST (no email) → verifica il salvataggio senza spammare titolari reali.
     const res = await request.post(`${TEST_URL}/api/guest/contact`, {
       headers: { 'Content-Type': 'application/json' },
-      data: { entity_tipo: ctx.testEntity.tipo, entity_id: ctx.testEntity.id, nome: 'CI Sec Lead', email: CONTACT_EMAIL, messaggio: 'regressione' },
+      data: { entity_tipo: ctx.testEntity.tipo, entity_id: ctx.testEntity.id, nome: 'CI Sec Lead', email: CONTACT_EMAIL, messaggio: 'regressione', turnstileToken: process.env.TURNSTILE_TEST_BYPASS },
     })
     expect(res.status(), 'il form con campi IT deve rispondere 200 (non 400)').toBe(200)
     // Conferma che il contatto sia stato creato nell'azienda di test (regressione vera).
