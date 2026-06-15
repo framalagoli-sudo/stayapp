@@ -10,7 +10,7 @@ import {
   Images, Layers, Calendar, Phone, Mail, MapPin, Clock,
   X, Check, ChevronRight, Send,
 } from 'lucide-react'
-import { apiFetch, guestFetch } from '@/lib/api'
+import { guestFetch } from '@/lib/api'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import ChatChoice from '@/components/ChatChoice'
 

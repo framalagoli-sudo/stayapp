@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import LandingAttivita from './LandingAttivita'
 import AttivitaPWA from './AttivitaPWA'
-import { apiFetch, guestFetch } from '@/lib/api'
+import { guestFetch } from '@/lib/api'
 
 export default function AttivitaApp({ forceSlug } = {}) {
   const { slug: paramSlug } = useParams()

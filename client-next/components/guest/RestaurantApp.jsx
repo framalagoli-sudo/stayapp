@@ -11,7 +11,7 @@ import {
   X, Check, ChevronRight, ChevronDown, ArrowLeft,
 } from 'lucide-react'
 import MenuTab from '@/components/MenuTab'
-import { apiFetch, guestFetch } from '@/lib/api'
+import { guestFetch } from '@/lib/api'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import ChatChoice from '@/components/ChatChoice'
 import BookingWidget from '@/components/BookingWidget'
