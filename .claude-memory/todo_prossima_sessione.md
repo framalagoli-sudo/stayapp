@@ -16,12 +16,12 @@ metadata:
 - **Cloudflare Bot Fight Mode** attivato (15/6)
 - **🔒 Audit sicurezza multi-tenant COMPLETO** (15/6) — chiusi ~19 IDOR su collection + tutti i 31 route `[id]` verificati. Primitive riusabili in server-auth.js. Vedi [[project_session_2026_06_15c_security]] e [[feedback_multitenant_authz]]. Bug Sito web `navigate→router` fixato.
 
-### ⏳ TODO — sviluppo
-- **Debug sezione per sezione del pannello admin** ← IN CORSO, si parte dal **SITO WEB** (priorità di Francesco)
-  - Sito web (minisito/pagine CMS) per Struttura / Ristorante / Attività
-  - poi: Info, Galleria, Menu, Tema, Chatbot, Domini
-  - Globali: Analytics, Newsletter, Booking, Contatti, Form Builder, Blog, Piano Editoriale, Staff
-- **Stripe Sprint 10 (billing SaaS)** — piani Free/Starter/Pro, checkout, webhook stripe, upgrade/downgrade. Sprint futuro grosso.
+### ⏳ TODO — ricognizione a blocchi (tracker: `PIANO_LAVORO.md` nel repo!)
+**Fonte di verità ora = `PIANO_LAVORO.md`** (root repo). 3 fasi: 0 sicurezza/bug → 1 funzionale → 2 sviluppi.
+- ✅ **Sito web** (CMS pagine + editor blocchi + rendering): bug navigate→router, anteprima bozze, save error.
+- 🟡 **Guest/PWA + Minisito** (blocco 1, IN CORSO): fatto GuestApp struttura + sicurezza chat `/api/messages` + convenzione guestFetch. **Da fare**: RestaurantApp, AttivitaApp/PWA, Landing varianti, pagine dettaglio guest (Evento/Offerta/Pacchetto/SubPage), PWA tecnica. Vedi dettaglio in PIANO_LAVORO.md.
+- ⬜ Poi: Operativo → Entità → Marketing/CRM → Account/Piattaforma.
+- **Stripe Sprint 10 (billing SaaS)** — Fase 2, sprint futuro grosso.
 
 ### ⏳ TODO — azioni manuali (quando pronto)
 - **Google Calendar** — configurare `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` su Vercel; codice backend scritto lato Railway, va portato su Next.js. Vedi [[project_google_calendar_pending]]

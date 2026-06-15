@@ -29,6 +29,13 @@ Bug funzionale: `SitoPage.jsx` navigate→router.
 - **IDOR**: `.update()/.delete().eq('id', params.id)` SENZA scope azienda. ATTENZIONE: alcuni route avevano il GET protetto ma PATCH/DELETE no (es. booking/risorse) → l'euristica "menziona azienda" dà falsi negativi, verificare ogni handler.
 - **body.azienda_id**: deve passare da `resolveAziendaId`. Route già corretti pre-esistenti: attivita/ristoranti/properties/form-builder/users-invite/piano-editoriale (gate su super_admin).
 
+## Aggiunta — chat ospite `/api/messages` (trovato dopo, fuori dall'audit azienda_id)
+Il route `/api/messages` non usa azienda_id né è `[id]` → sfuggito ai grep. Era **tutto pubblico**:
+- GET con solo `property_id` (inbox admin) → leggeva TUTTE le conversazioni di qualsiasi struttura → ora `requireAuth` + `userCanAccessProperty`.
+- POST `sender:'staff'` → impersonazione reception → ora auth+proprietà. Lato guest (session_id + sender='guest') resta pubblico.
+- Nuovo helper **`userCanAccessProperty(profile, property_id)`** (property→azienda, ruoli admin_struttura/staff su property_id). Usabile anche per `requests`.
+**Lezione**: l'audit per azienda_id non copre risorse scopate per `property_id` o pubbliche per sessione — controllarle a parte.
+
 ## Note
 - CI user smoke test = **super_admin** → gli smoke validano build + path super_admin, NON il blocco multi-tenant (che è verificato a livello di codice). 37/37 ✅ su entrambi i batch.
 - Ruoli enum: super_admin | admin_gruppo | admin_azienda | admin_struttura | staff. (Nel codice si vede sia admin_azienda che admin_gruppo.)
