@@ -19,7 +19,7 @@ metadata:
 ### ⏳ TODO — ricognizione a blocchi (tracker: `PIANO_LAVORO.md` nel repo!)
 **Fonte di verità ora = `PIANO_LAVORO.md`** (root repo). 3 fasi: 0 sicurezza/bug → 1 funzionale → 2 sviluppi.
 - ✅ **Sito web** (CMS pagine + editor blocchi + rendering): bug navigate→router, anteprima bozze, save error.
-- 🟡 **Guest/PWA + Minisito** (blocco 1, IN CORSO): fatto GuestApp struttura + sicurezza chat `/api/messages` + convenzione guestFetch. **Da fare**: RestaurantApp, AttivitaApp/PWA, Landing varianti, pagine dettaglio guest (Evento/Offerta/Pacchetto/SubPage), PWA tecnica. Vedi dettaglio in PIANO_LAVORO.md.
+- ✅ **Guest/PWA + Minisito** (blocco 1, QUASI CHIUSO): GuestApp+RestaurantApp+MenuTab ok; sicurezza chat `/api/messages` + IDOR event_bookings; **bug perdita dati form contatto fixato** (nome/messaggio vs name/message); **overbooking eventi fixato** + backfill; **PWA attività CABLATA e attivabile** (route /a/[slug] QR→PWA, toggle admin già esistente); Landing/GuestSubPage puliti. Resta solo: PWA tecnica (manifest/SW/install) polish. Vedi PIANO_LAVORO.md.
 - ⬜ Poi: Operativo → Entità → Marketing/CRM → Account/Piattaforma.
 - **Stripe Sprint 10 (billing SaaS)** — Fase 2, sprint futuro grosso.
 
