@@ -56,10 +56,15 @@ Ordine scelto da Francesco:
 - Booking eventi `/api/guest/eventi/[id]/book` (GuestApp + EventoPage) → campi ok
 - Booking tavoli/risorse `/api/booking/public/prenota` (BookingWidget) → campi ok, payload completo
 - Newsletter `/api/contatti/subscribe` → ok
-- ⚠️ **DA DECIDERE (logica business, non bug)**: booking eventi non incrementa `seats_booked` (solo l'admin a conferma) → le prenotazioni in attesa non bloccano i posti → rischio overbooking. Chiedere a Francesco se le pending devono riservare.
+- ✅ **Overbooking eventi FIXATO** (deciso: pending riservano i posti). `seats_booked` ora = somma posti non-cancelled, ricalcolato da event_bookings (helper `recomputeEventSeats`) su booking guest + cambio stato admin. + 2 IDOR chiusi su event_bookings (PATCH/GET). Backfill: corretto 1 evento (0→3 posti reali non contati). Verificato live.
 
-**Da rivedere ⬜ (prossima sessione)**
-- `AttivitaApp.jsx` / `AttivitaPWA.jsx` (PWA attività) — UI completa (contact form già ok)
+**Codice morto trovato ⚠️ (decisione Francesco)**
+- `AttivitaApp.jsx` + `AttivitaPWA.jsx` — importati solo l'uno dall'altro, NESSUN route li renderizza. L'attività ha solo il minisito (`LandingAttivita`), niente PWA attiva. Da eliminare o cablare?
+
+**Da rivedere ⬜ (display, basso rischio dati)**
+- `LandingAttivita` / `LandingRistorante` / `LandingStruttura` (wrapper minisito: header/footer + blocchi)
+- `PaginaPage` / `GuestSubPage` (rendering pagine CMS guest — usano guestFetch)
+- PWA tecnica: manifest, service worker, InstallButton/InstallBanner, icone
 - Minisito varianti `LandingRistorante` / `LandingAttivita` / `LandingStruttura`
 - Pagine dettaglio guest: `EventoPage`, `OffertaPage`, `PacchettoPage`, `GuestSubPage`, `PaginaPage`, `NewsletterArchivePage`
 - `ServicesTab` (verificare guestFetch/funzionale)
