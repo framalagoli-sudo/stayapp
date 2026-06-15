@@ -1,17 +1,19 @@
 import { notFound } from 'next/navigation'
-import { serverFetch } from '@/lib/api'
+import { getRistorante, getPagina } from '@/lib/guest-data'
 import GuestSubPage from '@/components/guest/GuestSubPage'
 
 export async function generateMetadata({ params, searchParams }) {
   const { slug, pageSlug } = await params
-  const ristorante = await serverFetch(`/api/guest/r/${slug}`)
+  const ristorante = await getRistorante(slug)
   if (!ristorante) return { title: 'OltreNova' }
-  const pagina = await serverFetch(`/api/guest/pagina/ristorante/${ristorante.id}/${pageSlug}`).catch(() => null)
+  const pagina = await getPagina('ristorante', ristorante.id, pageSlug)
   if (!pagina) return { title: ristorante.name }
   const title = pagina.seo_title || `${pagina.titolo} — ${ristorante.name}`
   const description = pagina.seo_description || ristorante.minisito?.seo_description || ''
   const image = pagina.og_image_url || ristorante.cover_url || ''
-  const url = searchParams?._domain ? `https://${searchParams._domain}/p/${pageSlug}` : `https://www.oltrenova.com/r/${slug}/p/${pageSlug}`
+  const url = searchParams?._domain
+    ? `https://${searchParams._domain}/p/${pageSlug}`
+    : `https://www.oltrenova.com/r/${slug}/p/${pageSlug}`
   return {
     title, description,
     openGraph: { title, description, url, images: image ? [{ url: image }] : [], type: 'website' },
@@ -20,9 +22,10 @@ export async function generateMetadata({ params, searchParams }) {
 
 export default async function RistoranteSubPage({ params, searchParams }) {
   const { slug, pageSlug } = await params
-  const ristorante = await serverFetch(`/api/guest/r/${slug}`, { next: { revalidate: 60 } })
+  const ristorante = await getRistorante(slug)
   if (!ristorante) notFound()
-  const pagina = await serverFetch(`/api/guest/pagina/ristorante/${ristorante.id}/${pageSlug}`, { next: { revalidate: 0 } }).catch(() => null)
+  const preview = searchParams?.preview === '1'
+  const pagina = await getPagina('ristorante', ristorante.id, pageSlug, preview)
   if (!pagina) notFound()
   return <GuestSubPage entity={ristorante} entityType="ristorante" pagina={pagina} domain={searchParams?._domain || null} />
 }

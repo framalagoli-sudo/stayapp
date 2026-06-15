@@ -94,7 +94,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
   const { type, data } = block
   const upd = (key, val) => onChange({ ...data, [key]: val })
 
-  if (['gallery','services','activities','excursions','eventi','news','booking','contatti','show_map'].includes(type)) {
+  if (['gallery','services','activities','excursions','eventi','news','booking','show_map'].includes(type)) {
     return (
       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: 12, background: '#f8f9ff', borderRadius: 8, border: '1px solid #e8ecff' }}>
         <BlockTypeIcon type={type} size={16} />
@@ -520,6 +520,7 @@ export default function PaginaEditorPage() {
   const [slugManual, setSlugManual] = useState(false)
   const [origSlug,   setOrigSlug]   = useState(null)
   const [saved,      setSaved]      = useState(false)
+  const [saveError,  setSaveError]  = useState(null)
   const [loading,    setLoading]    = useState(true)
   const [loadError,  setLoadError]  = useState(null)
   const [entitySlug, setEntitySlug] = useState(null)
@@ -621,7 +622,7 @@ export default function PaginaEditorPage() {
   function resetBlockDrag() { setDragBlockId(null); setDragOverPos(null) }
 
   async function save() {
-    setSaving(true)
+    setSaving(true); setSaveError(null)
     try {
       await apiFetch(`/api/pagine/${pageId}`, {
         method: 'PATCH',
@@ -633,8 +634,8 @@ export default function PaginaEditorPage() {
         }),
       })
       setDirty(false); setSaved(true); setTimeout(() => setSaved(false), 2000)
-    } catch {
-      // save failed — button re-enables, user can retry
+    } catch (err) {
+      setSaveError(err?.message || 'Salvataggio fallito — riprova')
     } finally {
       setSaving(false)
     }
@@ -678,6 +679,12 @@ export default function PaginaEditorPage() {
           {saving ? 'Salvando...' : 'Salva'}
         </button>
       </div>
+
+      {saveError && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fce8e8', color: '#c00', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13 }}>
+          ⚠ {saveError}
+        </div>
+      )}
 
       {/* ── Metadata ── */}
       <div style={{ background: '#fff', borderRadius: 12, padding: 20, marginBottom: 16, border: '1px solid #e8e8ee', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
