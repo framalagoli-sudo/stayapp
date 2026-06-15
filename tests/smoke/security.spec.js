@@ -46,17 +46,23 @@ test.describe('Regression sicurezza (ruolo staff)', () => {
     const { data: sess } = await anon.auth.signInWithPassword({ email, password })
     ctx.staffToken = sess.session.access_token
 
-    // un'entità di un'ALTRA azienda (per IDOR) + una qualsiasi (per il form contatto)
+    // un'entità di un'ALTRA azienda (per IDOR, sola lettura → 404)
     const { data: otherProp } = await admin.from('properties').select('id').neq('azienda_id', az.id).limit(1).maybeSingle()
     if (otherProp) ctx.otherEntity = { tipo: 'struttura', id: otherProp.id }
-    const { data: anyProp } = await admin.from('properties').select('id').limit(1).maybeSingle()
-    if (anyProp) ctx.anyEntity = { tipo: 'struttura', id: anyProp.id }
+
+    // entità di TEST nell'azienda fittizia (senza email/automazioni/webhook → ZERO mail reali).
+    // Usata per il test form contatto, così non si notifica un titolare reale.
+    const { data: testProp } = await admin.from('properties')
+      .insert({ azienda_id: az.id, slug: `ci-sec-${Date.now()}`, name: 'CI Sec Prop', active: false })
+      .select('id').single()
+    ctx.testEntity = { tipo: 'struttura', id: testProp.id }
   })
 
   test.afterAll(async () => {
     try { await admin.from('contatti').delete().eq('email', CONTACT_EMAIL) } catch {}
+    if (ctx.testEntity)  { try { await admin.from('properties').delete().eq('id', ctx.testEntity.id) } catch {} }
     if (ctx.staffUserId) { try { await admin.auth.admin.deleteUser(ctx.staffUserId) } catch {} }
-    if (ctx.aziendaId)   { try { await admin.from('aziende').delete().eq('id', ctx.aziendaId) } catch {} } // cascade contatti
+    if (ctx.aziendaId)   { try { await admin.from('aziende').delete().eq('id', ctx.aziendaId) } catch {} } // cascade contatti/properties
   })
 
   test('permessi: staff senza permesso → POST /api/newsletter bloccato (403)', async ({ request }) => {
@@ -77,12 +83,15 @@ test.describe('Regression sicurezza (ruolo staff)', () => {
   })
 
   test('contact form: campi IT (nome/messaggio) salvati — regressione lead persi', async ({ request }) => {
-    test.skip(!ctx.anyEntity, 'nessuna entità disponibile')
+    // Usa l'entità di TEST (no email) → verifica il salvataggio senza spammare titolari reali.
     const res = await request.post(`${TEST_URL}/api/guest/contact`, {
       headers: { 'Content-Type': 'application/json' },
-      data: { entity_tipo: ctx.anyEntity.tipo, entity_id: ctx.anyEntity.id, nome: 'CI Sec Lead', email: CONTACT_EMAIL, messaggio: 'regressione' },
+      data: { entity_tipo: ctx.testEntity.tipo, entity_id: ctx.testEntity.id, nome: 'CI Sec Lead', email: CONTACT_EMAIL, messaggio: 'regressione' },
     })
     expect(res.status(), 'il form con campi IT deve rispondere 200 (non 400)').toBe(200)
+    // Conferma che il contatto sia stato creato nell'azienda di test (regressione vera).
+    const { data: c } = await admin.from('contatti').select('id, nome').eq('azienda_id', ctx.aziendaId).eq('email', CONTACT_EMAIL).maybeSingle()
+    expect(c?.nome, 'il contatto deve essere salvato con nome valorizzato').toBe('CI Sec Lead')
   })
 
   test('2FA: require_2fa ON + sessione aal1 → 403 mfa_required', async ({ request }) => {
