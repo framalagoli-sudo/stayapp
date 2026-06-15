@@ -14,10 +14,17 @@ const TABLES = [
   'collegamenti', 'messages',
 ]
 
+// Vercel può iniettare un BOM o spazi invisibili nelle env var → l'SDK AWS
+// li mette negli header della firma e lancia "Invalid character in header content".
+// Ripuliamo SEMPRE le credenziali prima dell'uso.
+function cleanEnv(v) {
+  return v ? v.replace(/^﻿/, '').replace(/[\r\n\t]/g, '').trim() : v
+}
+
 function getR2Client() {
-  const accountId = process.env.R2_ACCOUNT_ID
-  const accessKeyId = process.env.R2_ACCESS_KEY_ID
-  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY
+  const accountId = cleanEnv(process.env.R2_ACCOUNT_ID)
+  const accessKeyId = cleanEnv(process.env.R2_ACCESS_KEY_ID)
+  const secretAccessKey = cleanEnv(process.env.R2_SECRET_ACCESS_KEY)
   if (!accountId || !accessKeyId || !secretAccessKey) return null
   return new S3Client({
     region: 'auto',
@@ -28,7 +35,7 @@ function getR2Client() {
 
 export async function runBackup() {
   const startedAt = new Date()
-  const bucket = process.env.R2_BUCKET_NAME || 'stayapp-backups'
+  const bucket = cleanEnv(process.env.R2_BUCKET_NAME) || 'stayapp-backups'
   const r2 = getR2Client()
   if (!r2) {
     // NON fallire in silenzio: un backup non eseguito DEVE essere un errore visibile.
