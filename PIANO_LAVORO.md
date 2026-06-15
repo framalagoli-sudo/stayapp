@@ -50,8 +50,16 @@ Ordine scelto da Francesco:
 - `RestaurantApp.jsx` + `MenuTab.jsx` (PWA ristorante + menu pubblico) — solido, nessun fix. MenuTab gestisce catalogo + menu singolo, preserva tutti i campi piatto (active:false nascosti ma conservati). Nessuna perdita dati lato render.
 - **🐛 PERDITA DATI FIXATA** — form contatto (blocco minisito + PaginaPage + AttivitaPWA) inviavano `nome/messaggio`, route leggeva `name/message` → ogni lead perso (400 silenzioso). Route ora tollerante. Verificato live: salva nel CRM. + LandingBlockRenderer → guestFetch.
 
+**Data-write Guest — TUTTI i contratti di campo verificati ✅**
+- Contatto `/api/guest/contact` → era rotto, FIXATO + verificato live
+- Richieste `/api/requests` (RequestForm/ActivitiesTab/ExcursionsTab) → ok
+- Booking eventi `/api/guest/eventi/[id]/book` (GuestApp + EventoPage) → campi ok
+- Booking tavoli/risorse `/api/booking/public/prenota` (BookingWidget) → campi ok, payload completo
+- Newsletter `/api/contatti/subscribe` → ok
+- ⚠️ **DA DECIDERE (logica business, non bug)**: booking eventi non incrementa `seats_booked` (solo l'admin a conferma) → le prenotazioni in attesa non bloccano i posti → rischio overbooking. Chiedere a Francesco se le pending devono riservare.
+
 **Da rivedere ⬜ (prossima sessione)**
-- `AttivitaApp.jsx` / `AttivitaPWA.jsx` (PWA attività) — ha form contatto `/api/guest/contact`
+- `AttivitaApp.jsx` / `AttivitaPWA.jsx` (PWA attività) — UI completa (contact form già ok)
 - Minisito varianti `LandingRistorante` / `LandingAttivita` / `LandingStruttura`
 - Pagine dettaglio guest: `EventoPage`, `OffertaPage`, `PacchettoPage`, `GuestSubPage`, `PaginaPage`, `NewsletterArchivePage`
 - `ServicesTab` (verificare guestFetch/funzionale)
