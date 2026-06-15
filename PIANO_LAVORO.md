@@ -48,6 +48,7 @@ Ordine scelto da Francesco:
 
 **Rivisto ✅ (cont.)**
 - `RestaurantApp.jsx` + `MenuTab.jsx` (PWA ristorante + menu pubblico) — solido, nessun fix. MenuTab gestisce catalogo + menu singolo, preserva tutti i campi piatto (active:false nascosti ma conservati). Nessuna perdita dati lato render.
+- **🐛 PERDITA DATI FIXATA** — form contatto (blocco minisito + PaginaPage + AttivitaPWA) inviavano `nome/messaggio`, route leggeva `name/message` → ogni lead perso (400 silenzioso). Route ora tollerante. Verificato live: salva nel CRM. + LandingBlockRenderer → guestFetch.
 
 **Da rivedere ⬜ (prossima sessione)**
 - `AttivitaApp.jsx` / `AttivitaPWA.jsx` (PWA attività) — ha form contatto `/api/guest/contact`

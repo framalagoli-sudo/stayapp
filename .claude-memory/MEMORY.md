@@ -11,6 +11,7 @@
 - [Vercel env CLI tranelli](reference_vercel_env_cli.md) — 2 progetti (oltrenova-next è il LIVE), env pull maschera sensitive, npx env add stdin non funziona Windows → secret solo da dashboard
 - [Supabase .catch() vietato](feedback_supabase_catch.md) — mai .catch() su query builder Postgrest (non è Promise) → await + check error
 - [Authz multi-tenant](feedback_multitenant_authz.md) — ogni route API deve scopare per azienda; usare requireRecordAccess/requireEntityAccess/resolveAziendaId, mai .eq('id') nudo
+- [Contratto nomi campo](feedback_field_name_contract.md) — form frontend e route backend stessi nomi campo (name vs nome) o si perdono dati in silenzio; test live POST+query DB
 - [Stato infrastruttura](project_acquisti_pendenti.md) — Vercel Pro ✅, Railway freezato ✅, migrazione completa ✅, Supabase Pro da valutare
 - [Stato OltreNova + azioni manuali](project_google_calendar_pending.md) — Google Calendar, Sentry DSN, Cloudflare Bot Fight, og-image, fondaconarni apex, GitHub→Vercel auto-deploy
 - [Migrazione Railway → Vercel COMPLETA](project_session_railway_migration.md) — tutto su Vercel, Railway freezato, bounce webhook ✅, NEXT_PUBLIC_API_URL="" ✅
