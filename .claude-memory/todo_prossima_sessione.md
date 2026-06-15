@@ -14,6 +14,7 @@ metadata:
 - **Resend bounce webhook** attivo — bounce/complained → `email_non_valida=true`
 - **Test Form Builder end-to-end** — trovati e fixati: env Resend vuote su Vercel, bug `.catch()` Postgrest 500, config form senza campo email; UX consensi GDPR rifatta. Vedi [[project_session_2026_06_15b_formbuilder]]
 - **Cloudflare Bot Fight Mode** attivato (15/6)
+- **🔒 Audit sicurezza multi-tenant COMPLETO** (15/6) — chiusi ~19 IDOR su collection + tutti i 31 route `[id]` verificati. Primitive riusabili in server-auth.js. Vedi [[project_session_2026_06_15c_security]] e [[feedback_multitenant_authz]]. Bug Sito web `navigate→router` fixato.
 
 ### ⏳ TODO — sviluppo
 - **Debug sezione per sezione del pannello admin** ← IN CORSO, si parte dal **SITO WEB** (priorità di Francesco)

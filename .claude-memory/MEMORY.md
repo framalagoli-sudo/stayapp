@@ -10,12 +10,14 @@
 - [BOM env var](feedback_bom_api_base.md) — Vercel inietta BOM → usare sempre .trim() su TUTTE le env var server-side
 - [Vercel env CLI tranelli](reference_vercel_env_cli.md) — 2 progetti (oltrenova-next è il LIVE), env pull maschera sensitive, npx env add stdin non funziona Windows → secret solo da dashboard
 - [Supabase .catch() vietato](feedback_supabase_catch.md) — mai .catch() su query builder Postgrest (non è Promise) → await + check error
+- [Authz multi-tenant](feedback_multitenant_authz.md) — ogni route API deve scopare per azienda; usare requireRecordAccess/requireEntityAccess/resolveAziendaId, mai .eq('id') nudo
 - [Stato infrastruttura](project_acquisti_pendenti.md) — Vercel Pro ✅, Railway freezato ✅, migrazione completa ✅, Supabase Pro da valutare
 - [Stato OltreNova + azioni manuali](project_google_calendar_pending.md) — Google Calendar, Sentry DSN, Cloudflare Bot Fight, og-image, fondaconarni apex, GitHub→Vercel auto-deploy
 - [Migrazione Railway → Vercel COMPLETA](project_session_railway_migration.md) — tutto su Vercel, Railway freezato, bounce webhook ✅, NEXT_PUBLIC_API_URL="" ✅
 - [Roadmap Sprint + Piano tecnico 6 fasi](project_roadmap_sprint.md) — Fase 1 debug in corso, Fase 2 COMPLETA, Sprint 10 = Stripe billing
 - [Session 2026-06-15 — Fix sistemico super_admin azienda_id](project_session_2026_06_15.md) — 6 pagine + 5 route, fix newsletter searchParams 500, email conferma form builder
 - [Session 2026-06-15b — Debug Form Builder completo](project_session_2026_06_15b_formbuilder.md) — env Vercel RESEND vuote, bug .catch() Postgrest 500, UX consensi GDPR, vercel env pull maschera sensitive, npx stdin non funziona su Windows
+- [Session 2026-06-15c — Audit sicurezza multi-tenant](project_session_2026_06_15c_security.md) — chiusi ~19 IDOR (collection + 31/31 route [id]), primitive requireEntityAccess/requireRecordAccess/resolveAziendaId, fix SitoPage navigate→router
 - [Session 2026-06-14d — BOM fix + AI Builder + icone PWA](project_session_2026_06_14d.md) — BOM sistematico ✅, ExternalLink fix, maxDuration 60s, icone Next.js, 37/37 ✅
 - [Session 2026-06-14c — Form Builder template picker + CRM upsert](project_session_2026_06_14c.md) — 5 template, filtro azienda, newsletter_optin, tag_filter
 - [Session 2026-06-14b — Fix SSR guest + BOM](project_session_2026_06_14b.md) — guest-data.js Supabase diretto, BOM fix 12 componenti
