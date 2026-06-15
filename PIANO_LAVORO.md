@@ -25,7 +25,7 @@ Ordine scelto da Francesco:
 
 | # | Blocco | 🔒 | 🐛 | ⚙️ | 🚀 | Note |
 |---|---|---|---|---|---|---|
-| 1 | **Guest/PWA + Minisito pubblico** | 🟡 | 🟡 | 🟡 | ⬜ | IN CORSO — vedi dettaglio sotto |
+| 1 | **Guest/PWA + Minisito pubblico** | ✅ | ✅ | ✅ | 🟡 | Quasi chiuso — resta solo PWA tecnica (manifest/SW/install). Vedi dettaglio sotto |
 | 2 | Operativo (Dashboard, Richieste, Prenotazioni, Booking, Recensioni, Survey) | ✅API | ⬜ | ⬜ | ⬜ | |
 | 3 | Entità (Info, Galleria, Menu, Tema, Chatbot, Domini) | ✅API | ⬜ | ⬜ | ⬜ | Sito web già fatto ✅ |
 | 4 | Marketing/CRM (Contatti, Newsletter, Automazioni, Blog, Piano Editoriale, Content Studio, AI Site Builder, Preventivi, Shop, Loyalty, Eventi, Analytics) | ✅API | 🟡 | 🟡 | ⬜ | Form Builder ✅ già fatto |
@@ -61,9 +61,10 @@ Ordine scelto da Francesco:
 **Codice morto trovato ⚠️ (decisione Francesco)**
 - `AttivitaApp.jsx` + `AttivitaPWA.jsx` — importati solo l'uno dall'altro, NESSUN route li renderizza. L'attività ha solo il minisito (`LandingAttivita`), niente PWA attiva. Da eliminare o cablare?
 
-**Da rivedere ⬜ (display, basso rischio dati)**
-- `LandingAttivita` / `LandingRistorante` / `LandingStruttura` (wrapper minisito: header/footer + blocchi)
-- `PaginaPage` / `GuestSubPage` (rendering pagine CMS guest — usano guestFetch)
+**Rivisto ✅ (display)**
+- `LandingAttivita` / `LandingRistorante` / `LandingStruttura` + `GuestSubPage` — guestFetch ovunque (pageview/eventi/pagine/recensioni/sitemap), nessun form data-write, convenzione ok. Puliti.
+
+**Resta solo ⬜ (polish, basso rischio)**
 - PWA tecnica: manifest, service worker, InstallButton/InstallBanner, icone
 - Minisito varianti `LandingRistorante` / `LandingAttivita` / `LandingStruttura`
 - Pagine dettaglio guest: `EventoPage`, `OffertaPage`, `PacchettoPage`, `GuestSubPage`, `PaginaPage`, `NewsletterArchivePage`
