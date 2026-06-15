@@ -4,6 +4,13 @@
 > Principio: **prima fondamenta sane (sicurezza + bug), poi consolidamento, poi feature nuove.**
 > Aggiornato: 2026-06-15
 
+## 🏁 STATO: FASE 0 COMPLETA — sicurezza + data-write verificati su tutti e 6 i blocchi
+Sicurezza multi-tenant blindata end-to-end (IDOR su tutta l'API, 2FA + permessi staff
+enforced server-side e verificati live). Perdita dati cacciata su ogni blocco: trovati e
+fixati form contatto guest (lead persi), overbooking eventi, manifest PWA, +2FA/permessi.
+Tutti gli altri contratti data-write verificati allineati. Resta il deep-funzionale UI/edge
+per-modulo (Fase 1) dove serve.
+
 ## Legenda stato
 - 🔒 Sicurezza (authz multi-tenant, IDOR, leak)
 - 🐛 Bug bloccanti / funzionali
@@ -26,7 +33,7 @@ Ordine scelto da Francesco:
 | # | Blocco | 🔒 | 🐛 | ⚙️ | 🚀 | Note |
 |---|---|---|---|---|---|---|
 | 1 | **Guest/PWA + Minisito pubblico** | ✅ | ✅ | ✅ | ✅ | **CHIUSO** — PWA su 3 entità, data-write verificati, sicurezza, overbooking, manifest. Vedi dettaglio sotto |
-| 2 | Operativo (Dashboard, Richieste, Prenotazioni, Booking, Recensioni, Survey) | ✅API | ⬜ | ⬜ | ⬜ | |
+| 2 | Operativo (Dashboard, Richieste, Prenotazioni, Booking, Recensioni, Survey) | ✅ | ✅ | ✅ | ⬜ | **CHIUSO data-write**: Dashboard read-only; status updates (richieste/prenotazioni/recensioni) contratti ok + securizzati; Booking risorse config (disponibilita/blocchi) in ALLOWED; survey/genera-link allineati. Zero perdita dati |
 | 3 | Entità (Info, Galleria, Menu, Tema, Chatbot, Domini) | ✅ | ✅ | 🟡 | ⬜ | **Data-write verificato**: Menu (max rischio) SOLIDO — mutazioni immutabili, persist→menuRef, save ok + aggiunto guard modifiche-non-salvate. Info/Galleria/Tema via hook save() con campi allineati. Zero perdita dati. Sito web ✅. Deep UI/edge per tab da fare |
 | 4 | Marketing/CRM (Contatti, Newsletter, Automazioni, Blog, Piano Editoriale, Content Studio, AI Site Builder, Preventivi, Shop, Loyalty, Eventi, Analytics) | ✅ | 🟡 | 🟡 | ⬜ | **Triage data-write FATTA**: contratti frontend↔route verificati su 9 moduli → tutti allineati, ZERO perdita dati (il bug guest era isolato). Eventi: overbooking già fixato. Form Builder ✅. Resta deep-review UI/edge-case per modulo |
 | 5 | Account/Piattaforma (Collaboratori, Integrazioni, SEO, Impostazioni, Sicurezza, Aziende/Strutture/Utenti) | ✅ | ✅ | ✅ | ⬜ | **CHIUSO** sicurezza+funzionale. 2FA + permessi staff enforced (live). Impostazioni: route sync-subdomains creato (era 404). SecurityPage/SeoGeo/Integrazioni ok |
