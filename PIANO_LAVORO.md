@@ -96,6 +96,11 @@ Ordine scelto da Francesco:
 - **Guard "modifiche non salvate" (beforeunload)**: aggiunto al Menu. Stesso rischio (perdita
   lavoro navigando via senza salvare) su altri editor con `dirty` — es. `PaginaEditorPage`
   (Sito web). Valutare di estenderlo.
+- **Link cross-entità → dominio brandizzato** (estetica, non bug): i link "Scopri anche" verso
+  un'altra entità ora puntano alla URL canonica `oltrenova.com/s/slug` (corretto, non si rompono).
+  Per puntare al dominio custom dell'entità collegata (es. `hotel.com`) servirebbe includere il
+  dominio nei dati `collegamenti` (oggi: solo nome/slug/logo/tipo). Fix: enrichLinks in
+  `/api/collegamenti` aggiunge il dominio custom attivo, poi i 3 PWA lo usano se presente.
 
 ## FASE 1 — Consolidamento funzionale
 (Si compila man mano che la Fase 0 chiude ogni modulo.)
