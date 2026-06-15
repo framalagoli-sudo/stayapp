@@ -1,14 +1,12 @@
-import { serverFetch } from '@/lib/api'
+import { getStruttura, getRistorante, getAttivita } from '@/lib/guest-data'
 
 export async function GET(request, { params }) {
   const { tipo, slug } = await params
 
   let entity = null
-  try {
-    if (tipo === 's') entity = await serverFetch(`/api/guest/${slug}`)
-    else if (tipo === 'r') entity = await serverFetch(`/api/guest/r/${slug}`)
-    else if (tipo === 'a') entity = await serverFetch(`/api/guest/a/${slug}`)
-  } catch {}
+  if (tipo === 's') entity = await getStruttura(slug)
+  else if (tipo === 'r') entity = await getRistorante(slug)
+  else if (tipo === 'a') entity = await getAttivita(slug)
 
   if (!entity) return new Response('Not found', { status: 404 })
 
@@ -31,7 +29,7 @@ export async function GET(request, { params }) {
     name,
     short_name: shortName,
     description: entity.description || '',
-    start_url: `/${tipo}/${slug}?source=pwa`,
+    start_url: `/${tipo}/${slug}?qr=1&source=pwa`,
     display: 'standalone',
     orientation: 'portrait',
     theme_color: primaryColor,

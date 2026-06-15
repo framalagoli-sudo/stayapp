@@ -25,7 +25,7 @@ Ordine scelto da Francesco:
 
 | # | Blocco | 🔒 | 🐛 | ⚙️ | 🚀 | Note |
 |---|---|---|---|---|---|---|
-| 1 | **Guest/PWA + Minisito pubblico** | ✅ | ✅ | ✅ | 🟡 | Quasi chiuso — resta solo PWA tecnica (manifest/SW/install). Vedi dettaglio sotto |
+| 1 | **Guest/PWA + Minisito pubblico** | ✅ | ✅ | ✅ | ✅ | **CHIUSO** — PWA su 3 entità, data-write verificati, sicurezza, overbooking, manifest. Vedi dettaglio sotto |
 | 2 | Operativo (Dashboard, Richieste, Prenotazioni, Booking, Recensioni, Survey) | ✅API | ⬜ | ⬜ | ⬜ | |
 | 3 | Entità (Info, Galleria, Menu, Tema, Chatbot, Domini) | ✅API | ⬜ | ⬜ | ⬜ | Sito web già fatto ✅ |
 | 4 | Marketing/CRM (Contatti, Newsletter, Automazioni, Blog, Piano Editoriale, Content Studio, AI Site Builder, Preventivi, Shop, Loyalty, Eventi, Analytics) | ✅API | 🟡 | 🟡 | ⬜ | Form Builder ✅ già fatto |
@@ -67,8 +67,11 @@ Ordine scelto da Francesco:
 **Rivisto ✅ (display)**
 - `LandingAttivita` / `LandingRistorante` / `LandingStruttura` + `GuestSubPage` — guestFetch ovunque (pageview/eventi/pagine/recensioni/sitemap), nessun form data-write, convenzione ok. Puliti.
 
-**Resta solo ⬜ (polish, basso rischio)**
-- PWA tecnica: manifest, service worker, InstallButton/InstallBanner, icone
+**Rivisto ✅ — PWA tecnica (polish)**
+- 🐛 **Manifest `start_url` FIXATO**: era `?source=pwa` (senza `?qr=1`) → la PWA installata apriva il MINISITO invece dell'app, su tutte e 3 le entità. Ora `?qr=1&source=pwa`.
+- InstallButton/InstallBanner: solidi (Android beforeinstallprompt, iOS Safari istruzioni, iOS Chrome nascosto, nascosti se già installato).
+- Icone 192/512/apple-touch presenti. Service worker generato da next-pwa. theme_color/display:standalone ok.
+- Navigazione interna PWA preserva `qr=1` (switchTab) → resta in modalità app.
 - Minisito varianti `LandingRistorante` / `LandingAttivita` / `LandingStruttura`
 - Pagine dettaglio guest: `EventoPage`, `OffertaPage`, `PacchettoPage`, `GuestSubPage`, `PaginaPage`, `NewsletterArchivePage`
 - `ServicesTab` (verificare guestFetch/funzionale)
