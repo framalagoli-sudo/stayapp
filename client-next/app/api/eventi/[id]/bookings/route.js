@@ -1,9 +1,10 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireRecordAccess } from '@/lib/server-auth'
 
 export async function GET(request, { params }) {
   try {
-    const { user, response } = await requireAuth(request)
+    // Verifica che l'evento appartenga all'azienda dell'utente.
+    const { response } = await requireRecordAccess(request, 'eventi', params.id)
     if (response) return response
     const { data, error } = await supabaseAdmin
       .from('event_bookings').select('*').eq('event_id', params.id)

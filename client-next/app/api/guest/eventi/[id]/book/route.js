@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { recomputeEventSeats } from '@/lib/event-seats'
 
 export async function POST(request, { params }) {
   try {
@@ -26,6 +27,10 @@ export async function POST(request, { params }) {
       seats: reqSeats, total_amount: price * reqSeats, notes: notes || null, status: 'pending',
     }).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
+
+    // Le prenotazioni in attesa riservano subito i posti (anti-overbooking).
+    await recomputeEventSeats(params.id)
+
     return Response.json(data, { status: 201 })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
