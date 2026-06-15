@@ -13,7 +13,16 @@ export async function verifyTurnstile(token, ip) {
   const bypass = (process.env.TURNSTILE_TEST_BYPASS ?? '').trim()
   if (bypass && token === bypass) return { success: true, bypass: true }
 
-  if (!token) return { success: false, error: 'missing-token' }
+  // MODALITÀ SOFT di default durante il rollout: registra il motivo del fallimento
+  // ma NON blocca il lead (le altre difese — honeypot, rate-limit, spam filter —
+  // restano attive). L'enforcement vero si attiva SOLO con TURNSTILE_STRICT=1,
+  // dopo aver confermato dai log che il widget produce token validi.
+  const soft = (process.env.TURNSTILE_STRICT ?? '').trim() !== '1'
+
+  if (!token) {
+    if (soft) { console.error('[turnstile] SOFT: token mancante (widget non ha prodotto token)'); return { success: true, softfail: 'missing-token' } }
+    return { success: false, error: 'missing-token' }
+  }
 
   try {
     const body = new URLSearchParams({ secret, response: token })
@@ -24,10 +33,14 @@ export async function verifyTurnstile(token, ip) {
       body,
     })
     const data = await res.json()
+    if (!data.success) {
+      console.error('[turnstile] verify FAIL — error-codes:', JSON.stringify(data['error-codes'] || []), 'hostname:', data.hostname || '?')
+      if (soft) return { success: true, softfail: data['error-codes'] }
+    }
     return { success: !!data.success, data }
-  } catch {
-    // FAIL-OPEN su errore di rete verso Cloudflare: non bloccare utenti legittimi
-    // se il servizio CF è momentaneamente irraggiungibile.
+  } catch (e) {
+    // FAIL-OPEN su errore di rete verso Cloudflare: non bloccare utenti legittimi.
+    console.error('[turnstile] errore rete siteverify:', e.message)
     return { success: true, degraded: true }
   }
 }
