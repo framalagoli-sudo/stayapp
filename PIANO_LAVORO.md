@@ -29,7 +29,7 @@ Ordine scelto da Francesco:
 | 2 | Operativo (Dashboard, Richieste, Prenotazioni, Booking, Recensioni, Survey) | ✅API | ⬜ | ⬜ | ⬜ | |
 | 3 | Entità (Info, Galleria, Menu, Tema, Chatbot, Domini) | ✅API | ⬜ | ⬜ | ⬜ | Sito web già fatto ✅ |
 | 4 | Marketing/CRM (Contatti, Newsletter, Automazioni, Blog, Piano Editoriale, Content Studio, AI Site Builder, Preventivi, Shop, Loyalty, Eventi, Analytics) | ✅API | 🟡 | 🟡 | ⬜ | Form Builder ✅ già fatto |
-| 5 | Account/Piattaforma (Collaboratori, Integrazioni, SEO, Impostazioni, Sicurezza, Aziende/Strutture/Utenti) | ✅ | 🟡 | ⬜ | ⬜ | Sicurezza CHIUSA: aziende/utenti ok, **2FA + permessi staff ora enforced server-side** (verificati live). Resta funzionale: SecurityPage, Impostazioni, SEO, Integrazioni |
+| 5 | Account/Piattaforma (Collaboratori, Integrazioni, SEO, Impostazioni, Sicurezza, Aziende/Strutture/Utenti) | ✅ | ✅ | ✅ | ⬜ | **CHIUSO** sicurezza+funzionale. 2FA + permessi staff enforced (live). Impostazioni: route sync-subdomains creato (era 404). SecurityPage/SeoGeo/Integrazioni ok |
 
 ---
 
