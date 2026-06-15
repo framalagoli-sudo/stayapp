@@ -11,6 +11,7 @@ import {
   X, Check, ChevronRight, Send,
 } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
+import Turnstile from '@/components/Turnstile'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import ChatChoice from '@/components/ChatChoice'
 
@@ -538,6 +539,7 @@ function ARichiestaTab({ attivita, primary, textColor, subText, isDark, radius, 
   const [sending, setSending] = useState(false)
   const [sent,    setSent]    = useState(false)
   const [error,   setError]   = useState(null)
+  const [turnstileToken, setTurnstileToken] = useState('')
   const waUrl = buildWaUrl(attivita.minisito?.social?.whatsapp, attivita.name)
   const inp = { width: '100%', padding: '11px 13px', borderRadius: radius, border: `1px solid ${isDark ? 'rgba(255,255,255,0.15)' : '#ddd'}`, background: isDark ? 'rgba(255,255,255,0.07)' : '#fff', color: textColor, fontSize: 14, boxSizing: 'border-box', fontFamily: 'inherit' }
 
@@ -548,7 +550,7 @@ function ARichiestaTab({ attivita, primary, textColor, subText, isDark, radius, 
     try {
       await guestFetch('/api/guest/contact', {
         method: 'POST',
-        body: JSON.stringify({ ...form, entity_tipo: 'attivita', entity_id: attivita.id, entity_slug: attivita.slug }),
+        body: JSON.stringify({ ...form, entity_tipo: 'attivita', entity_id: attivita.id, entity_slug: attivita.slug, turnstileToken }),
       })
       setSent(true)
     } catch (e) { setError(e.message || 'Errore nell\'invio.') }
@@ -602,6 +604,7 @@ function ARichiestaTab({ attivita, primary, textColor, subText, isDark, radius, 
             <textarea value={form.messaggio} onChange={e => setForm(f => ({ ...f, messaggio: e.target.value }))} rows={4} placeholder="Come possiamo aiutarti?" style={{ ...inp, resize: 'vertical' }} />
           </div>
           {error && <p style={{ color: '#e53e3e', fontSize: 13, margin: '0 0 12px' }}>{error}</p>}
+          <Turnstile onToken={setTurnstileToken} />
           <button type="submit" disabled={sending}
             style={{ width: '100%', padding: 14, background: primary, color: '#fff', border: 'none', borderRadius: radius, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
             {sending ? 'Invio…' : 'Invia messaggio'}

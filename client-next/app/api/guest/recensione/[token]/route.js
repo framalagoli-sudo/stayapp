@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabase-server'
+﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { Resend } from 'resend'
 
 export async function GET(request, { params }) {
@@ -45,8 +45,8 @@ export async function POST(request, { params }) {
       const { data: az } = await supabaseAdmin.from('aziende').select('email').eq('id', rec.azienda_id).single()
       if (az?.email) {
         const stars = '★'.repeat(Number(stelle)) + '☆'.repeat(5 - Number(stelle))
-        new Resend(process.env.RESEND_API_KEY).emails.send({
-          from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
+        new Resend((process.env.RESEND_API_KEY ?? '').trim()).emails.send({
+          from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
           to: az.email,
           subject: `[OltreNova] Nuova recensione ${stars} da ${autore?.trim() || 'Anonimo'}`,
           html: `<p>Hai ricevuto una recensione privata (${stelle}/5 stelle) da <strong>${autore?.trim() || 'Anonimo'}</strong>.</p><p>${testo?.trim() || ''}</p><p>Accedi al pannello admin per visualizzarla e rispondere.</p>`,

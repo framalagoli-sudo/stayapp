@@ -11,7 +11,7 @@ import {
   FileText, Webhook, BookOpen, CreditCard,
 } from 'lucide-react'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? '').trim()
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const PRIMARY    = '#0F7B6C'  // petrolio

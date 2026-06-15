@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabase-server'
+﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 
 export async function POST(request) {
@@ -18,7 +18,7 @@ export async function POST(request) {
     }).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
 
-    const link = `${process.env.CLIENT_URL || 'https://oltrenova.com'}/recensione?token=${data.token}`
+    const link = `${(process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'}/recensione?token=${data.token}`
     return Response.json({ token: data.token, link }, { status: 201 })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }

@@ -1,14 +1,14 @@
-import { supabaseAdmin } from '@/lib/supabase-server'
+﻿import { supabaseAdmin } from '@/lib/supabase-server'
 
 async function exchangeCode(code) {
-  const APP_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://oltrenova.com'
+  const APP_URL = (process.env.APP_URL ?? '').trim() || process.env.NEXT_PUBLIC_APP_URL || 'https://oltrenova.com'
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       code,
-      client_id: process.env.GOOGLE_CLIENT_ID,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      client_id: (process.env.GOOGLE_CLIENT_ID ?? '').trim(),
+      client_secret: (process.env.GOOGLE_CLIENT_SECRET ?? '').trim(),
       redirect_uri: `${APP_URL}/api/google-calendar/callback`,
       grant_type: 'authorization_code',
     }),
@@ -21,7 +21,7 @@ export async function GET(request) {
   const code = searchParams.get('code')
   const aziendaId = searchParams.get('state')
   const error = searchParams.get('error')
-  const clientUrl = process.env.CLIENT_URL || 'https://oltrenova.com'
+  const clientUrl = (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'
 
   if (error || !code || !aziendaId) {
     return Response.redirect(`${clientUrl}/admin/integrazioni?gcal=error`)

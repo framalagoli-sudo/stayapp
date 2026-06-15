@@ -1,4 +1,4 @@
-import { supabaseAdmin } from './supabase-server'
+﻿import { supabaseAdmin } from './supabase-server'
 
 export function calcNextRun(frequenza, ora, giornoSettimana, giornoMese, from = new Date()) {
   const d = new Date(from)
@@ -81,7 +81,7 @@ async function generateArticle(automazione) {
     topicLine = `\nArgomento: ${argList[idx]}`
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
+  const apiKey = (process.env.ANTHROPIC_API_KEY ?? '').trim()
   if (!apiKey) return
 
   const prompt = `Sei un content writer esperto. Scrivi un articolo di blog in italiano per "${entity.name}".
@@ -138,15 +138,15 @@ Rispondi ESCLUSIVAMENTE con un oggetto JSON (nessun testo prima o dopo):
   if (modalita === 'bozza' && automazione.notifica_email && process.env.RESEND_API_KEY) {
     try {
       const { Resend } = await import('resend')
-      const resend = new Resend(process.env.RESEND_API_KEY)
+      const resend = new Resend((process.env.RESEND_API_KEY ?? '').trim())
       await resend.emails.send({
-        from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
+        from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
         to: automazione.notifica_email,
         subject: `Nuova bozza AI pronta: "${parsed.title}"`,
         html: `<p>È stata generata automaticamente una nuova bozza di articolo per <strong>${entity.name}</strong>:</p>
 <p><strong>${parsed.title}</strong></p>
 <p>${parsed.excerpt || ''}</p>
-<p><a href="${process.env.CLIENT_URL || 'https://oltrenova.com'}/admin/blog">Apri l'admin Blog →</a></p>`,
+<p><a href="${(process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'}/admin/blog">Apri l'admin Blog →</a></p>`,
       })
     } catch (e) { console.error('[blogScheduler] notifica email:', e.message) }
   }

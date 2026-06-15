@@ -2,28 +2,81 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
-import { FormInput, Plus, Trash2, ChevronRight, ToggleLeft, ToggleRight, AlertCircle } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
+import { useAzienda } from '@/context/AziendaContext'
+import { FormInput, Plus, Trash2, ChevronRight, ToggleLeft, ToggleRight, AlertCircle, X, Mail, FileText, Briefcase, Star, LayoutTemplate } from 'lucide-react'
+
+const GDPR = { id: 'gdpr', tipo: 'consenso', label: 'Accetto il trattamento dei miei dati personali ai sensi del GDPR', required: true, privacy_url: '' }
+const MARKETING = { id: 'marketing', tipo: 'consenso_marketing', label: 'Acconsento a ricevere comunicazioni commerciali e promozionali', required: false, privacy_url: '' }
+const CAMPO = (tipo, label, placeholder = '', required = false) => ({ id: crypto.randomUUID(), tipo, label, placeholder, required, opzioni: [] })
+
+const TEMPLATES = [
+  {
+    key: 'contatto',
+    icon: Mail,
+    nome: 'Form contatti',
+    desc: 'Il classico — nome, email, messaggio',
+    campi: [CAMPO('text','Nome','Il tuo nome',true), CAMPO('email','Email','la-tua@email.it',true), CAMPO('textarea','Messaggio','Come possiamo aiutarti?',true), GDPR, MARKETING],
+  },
+  {
+    key: 'preventivo',
+    icon: FileText,
+    nome: 'Richiesta preventivo',
+    desc: 'Con telefono e descrizione richiesta',
+    campi: [CAMPO('text','Nome','Il tuo nome',true), CAMPO('email','Email','la-tua@email.it',true), CAMPO('tel','Telefono','',false), CAMPO('textarea','Descrizione richiesta','Descrivi quello che cerchi…',true), GDPR, MARKETING],
+  },
+  {
+    key: 'candidatura',
+    icon: Briefcase,
+    nome: 'Candidatura lavoro',
+    desc: 'Per raccogliere candidature spontanee',
+    campi: [CAMPO('text','Nome','Il tuo nome',true), CAMPO('email','Email','la-tua@email.it',true), CAMPO('tel','Telefono','',false), CAMPO('text','Posizione desiderata','Es. Barista, Receptionist…',false), CAMPO('textarea','Presentati','Raccontaci di te…',true), GDPR],
+  },
+  {
+    key: 'feedback',
+    icon: Star,
+    nome: 'Feedback / Recensione',
+    desc: 'Raccoglie valutazione e commento',
+    campi: [CAMPO('text','Nome','Il tuo nome',true), CAMPO('email','Email','la-tua@email.it',true), { ...CAMPO('select','Valutazione generale','',true), opzioni: ['⭐ Scarso','⭐⭐ Sufficiente','⭐⭐⭐ Buono','⭐⭐⭐⭐ Ottimo','⭐⭐⭐⭐⭐ Eccellente'] }, CAMPO('textarea','Commento','Dicci la tua esperienza…',false), GDPR],
+  },
+  {
+    key: 'vuoto',
+    icon: LayoutTemplate,
+    nome: 'Form vuoto',
+    desc: 'Parti da zero e aggiungi i tuoi campi',
+    campi: [],
+  },
+]
 
 export default function FormBuilderListPage() {
   const router = useRouter()
+  const { profile } = useAuth()
+  const { azienda, strutture, ristoranti, activeAziendaId } = useAzienda()
   const [forms, setForms] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [showPicker, setShowPicker] = useState(false)
+  const [creating, setCreating] = useState(false)
+
+  const aziendaId = azienda?.id || profile?.azienda_id || activeAziendaId
+    || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id
 
   async function load() {
+    if (!aziendaId) return
     try {
-      const data = await apiFetch('/api/form-builder')
+      const data = await apiFetch(`/api/form-builder?azienda_id=${aziendaId}`)
       setForms(data)
     } catch (e) { setError(e.message) }
     setLoading(false)
   }
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [aziendaId]) // eslint-disable-line
 
-  async function handleNew() {
+  async function handleNew(tpl) {
+    setCreating(true)
     try {
-      const f = await apiFetch('/api/form-builder', { method: 'POST', body: JSON.stringify({ nome: 'Nuovo form' }) })
+      const f = await apiFetch('/api/form-builder', { method: 'POST', body: JSON.stringify({ nome: tpl.nome, campi: tpl.campi, azienda_id: aziendaId }) })
       router.push(`/admin/form-builder/${f.id}`)
-    } catch (e) { setError(e.message) }
+    } catch (e) { setError(e.message); setCreating(false) }
   }
 
   async function handleToggle(id, attivo, e) {
@@ -51,7 +104,7 @@ export default function FormBuilderListPage() {
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Form Builder</h1>
         </div>
         <button
-          onClick={handleNew}
+          onClick={() => setShowPicker(true)}
           style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontWeight: 600 }}
         >
           <Plus size={16} strokeWidth={1.5} /> Nuovo form
@@ -115,6 +168,42 @@ export default function FormBuilderListPage() {
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {showPicker && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 28, maxWidth: 560, width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.16)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Scegli un template</h2>
+              <button onClick={() => setShowPicker(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', padding: 4 }}>
+                <X size={20} strokeWidth={1.5} />
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {TEMPLATES.map(tpl => (
+                <button
+                  key={tpl.key}
+                  onClick={() => { setShowPicker(false); handleNew(tpl) }}
+                  disabled={creating}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px',
+                    background: '#f8f8f8', border: '1.5px solid #eee', borderRadius: 10,
+                    cursor: 'pointer', textAlign: 'left', width: '100%',
+                    transition: 'border-color 0.15s',
+                  }}
+                >
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: '#f0f0f5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <tpl.icon size={20} strokeWidth={1.5} color="#1a1a2e" />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>{tpl.nome}</div>
+                    <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{tpl.desc}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>

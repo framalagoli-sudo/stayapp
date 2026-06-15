@@ -2,11 +2,21 @@
 import { Resend } from 'resend'
 import { emailTemplate } from '@/lib/email-template'
 import { triggerAutomazione } from '@/lib/guest-utils'
+import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
+import { verifyTurnstile } from '@/lib/turnstile'
 
 export async function POST(request) {
   try {
+    const ip = getClientIp(request)
+    // Anti-spam: max 5 invii del form contatto per IP all'ora.
+    const rl = await rateLimit(request, { name: 'guest-contact', limit: 5, windowSec: 3600, ip })
+    if (!rl.allowed) return tooManyRequests()
+
     const body = await request.json()
     const { entity_tipo, entity_id, source, source_name } = body
+
+    const captcha = await verifyTurnstile(body.turnstileToken, ip)
+    if (!captcha.success) return Response.json({ error: 'Verifica anti-bot fallita' }, { status: 403 })
     // Accetta sia i nomi EN (name/message) sia IT (nome/messaggio): diversi form
     // del frontend usano convenzioni diverse — non perdere lead per questo.
     const name = body.name ?? body.nome ?? ''

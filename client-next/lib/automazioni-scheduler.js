@@ -1,4 +1,4 @@
-import { supabaseAdmin } from './supabase-server'
+﻿import { supabaseAdmin } from './supabase-server'
 
 function applyVars(str, vars) {
   if (typeof str !== 'string') return str
@@ -88,11 +88,11 @@ export async function runAutomazioniScheduler() {
       const resp = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Authorization': `Bearer ${(process.env.RESEND_API_KEY ?? '').trim()}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: process.env.RESEND_FROM || 'noreply@stayapp.io',
+          from: (process.env.RESEND_FROM ?? '').trim() || 'noreply@stayapp.io',
           to: [log.contact_email],
           subject,
           html,

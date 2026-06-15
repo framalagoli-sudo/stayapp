@@ -1,9 +1,9 @@
-import { serverFetch } from '@/lib/api'
+import { getArticolo } from '@/lib/guest-data'
 import ArticoloPage from '@/components/public/ArticoloPage'
 
 export async function generateMetadata({ params }) {
   const { slug } = await params
-  const art = await serverFetch(`/api/blog/public/${slug}`)
+  const art = await getArticolo(slug)
   if (!art) return { title: 'Articolo — OltreNova' }
   return {
     title: art.title || 'Articolo',

@@ -31,7 +31,7 @@ export function checkAndConsumeGenRate(userId) {
 export { MONTHLY_LIMIT }
 
 export async function callClaude(prompt, maxTokens = 500) {
-  const apiKey = process.env.ANTHROPIC_API_KEY
+  const apiKey = (process.env.ANTHROPIC_API_KEY ?? '').trim()
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY non configurata')
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 90_000)

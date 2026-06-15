@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabase-server'
+﻿import { supabaseAdmin } from '@/lib/supabase-server'
 
 export async function GET(request, { params }) {
   try {
@@ -18,7 +18,7 @@ export async function GET(request, { params }) {
         .eq('stato', 'attivo').eq('tipo', 'custom').limit(1).maybeSingle(),
     ])
 
-    const clientUrl = process.env.CLIENT_URL || 'https://www.oltrenova.com'
+    const clientUrl = (process.env.CLIENT_URL ?? '').trim() || 'https://www.oltrenova.com'
     const baseOrigin = dominio?.dominio ? `https://${dominio.dominio}` : clientUrl
     const base = `${baseOrigin}/${prefixMap[tipo]}/${slug}`
     const now = new Date().toISOString().split('T')[0]

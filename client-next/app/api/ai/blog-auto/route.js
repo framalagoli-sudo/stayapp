@@ -1,4 +1,6 @@
-import { requireAuth } from '@/lib/server-auth'
+﻿import { requireAuth } from '@/lib/server-auth'
+
+export const maxDuration = 60
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { callClaude, getRemainingCredits, consumeCredit, MONTHLY_LIMIT } from '@/lib/ai-helpers'
 

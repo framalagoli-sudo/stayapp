@@ -25,11 +25,14 @@ export default function NewsletterPage() {
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
 
-  useEffect(() => { fetchList() }, [profile])
+  useEffect(() => { fetchList() }, [aziendaId]) // eslint-disable-line
 
   async function fetchList() {
     setLoading(true)
-    try { setList(await apiFetch('/api/newsletter')) }
+    try {
+      const url = aziendaId ? `/api/newsletter?azienda_id=${aziendaId}` : '/api/newsletter'
+      setList(await apiFetch(url))
+    }
     catch { setList([]) }
     finally { setLoading(false) }
   }

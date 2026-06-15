@@ -1,4 +1,4 @@
-import { supabaseAdmin } from './supabase-server.js'
+﻿import { supabaseAdmin } from './supabase-server.js'
 import { buildNewsletterHtml, personalize } from './newsletter-html.js'
 
 async function getEntity(entity_tipo, entity_id) {
@@ -14,20 +14,25 @@ export async function sendNewsletterById(id) {
   if (nl.status === 'sent') throw new Error('Newsletter già inviata')
   if (!nl.subject?.trim()) throw new Error('Oggetto obbligatorio prima di inviare')
 
-  const { data: contacts } = await supabaseAdmin.from('contatti')
+  let contactsQuery = supabaseAdmin.from('contatti')
     .select('email, nome, unsubscribe_token')
     .eq('azienda_id', nl.azienda_id)
     .eq('iscritto_newsletter', true)
     .not('email', 'is', null)
     .not('email_non_valida', 'is', true)
 
+  if (nl.tag_filter?.length) {
+    contactsQuery = contactsQuery.overlaps('tags', nl.tag_filter)
+  }
+
+  const { data: contacts } = await contactsQuery
   if (!contacts?.length) throw new Error('Nessun iscritto trovato')
 
   const entity = await getEntity(nl.entity_tipo, nl.entity_id)
   const entityName = entity?.name || 'OltreNova'
   const entityLogo = entity?.logo_url || null
   const primary    = entity?.theme?.primaryColor || '#1a1a2e'
-  const appUrl     = process.env.APP_URL || 'https://oltrenova.com'
+  const appUrl     = (process.env.APP_URL ?? '').trim() || 'https://oltrenova.com'
 
   if (!process.env.RESEND_API_KEY) throw new Error('RESEND_API_KEY non configurata')
 
@@ -39,7 +44,7 @@ export async function sendNewsletterById(id) {
 
   let sent = 0
   const { Resend } = await import('resend')
-  const resend = new Resend(process.env.RESEND_API_KEY)
+  const resend = new Resend((process.env.RESEND_API_KEY ?? '').trim())
 
   for (let i = 0; i < contacts.length; i += 50) {
     const batch = contacts.slice(i, i + 50)
@@ -47,7 +52,7 @@ export async function sendNewsletterById(id) {
       const pContent = personalize(nl.content, c.nome)
       const pSubject = personalize(nl.subject, c.nome)
       return {
-        from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
+        from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
         to: c.email,
         subject: pSubject,
         html: buildNewsletterHtml({

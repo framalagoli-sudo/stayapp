@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
+import { useAuth } from '@/context/AuthContext'
 import { useAzienda } from '@/context/AziendaContext'
 import {
   Save, Send, Trash2, Plus, Copy, Check, AlertCircle, ArrowLeft, FileText,
@@ -39,7 +40,10 @@ function fmt(n, currency = 'EUR') {
 export default function PreventivoEditorPage() {
   const { id } = useParams()
   const router = useRouter()
-  const { azienda } = useAzienda()
+  const { profile } = useAuth()
+  const { azienda, strutture, ristoranti, attivita, activeAziendaId } = useAzienda()
+  const aziendaId = azienda?.id || profile?.azienda_id || activeAziendaId
+    || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id || attivita?.[0]?.azienda_id
 
   const [prev, setPrev] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -59,9 +63,10 @@ export default function PreventivoEditorPage() {
   const [scadenza, setScadenza] = useState('')
 
   useEffect(() => {
+    const cUrl = aziendaId ? `/api/contatti?azienda_id=${aziendaId}` : '/api/contatti'
     Promise.all([
       apiFetch(`/api/preventivi/${id}`),
-      apiFetch('/api/contatti'),
+      apiFetch(cUrl),
     ]).then(([p, ct]) => {
       setPrev(p)
       setTitolo(p.titolo || '')

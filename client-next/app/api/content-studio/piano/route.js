@@ -1,4 +1,6 @@
-import { supabaseAdmin } from '@/lib/supabase-server'
+﻿import { supabaseAdmin } from '@/lib/supabase-server'
+
+export const maxDuration = 60
 import { requireAuth } from '@/lib/server-auth'
 
 async function getAziendaId(userId) {
@@ -10,7 +12,7 @@ async function callClaude(prompt, maxTokens = 800) {
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'x-api-key': (process.env.ANTHROPIC_API_KEY ?? '').trim(),
       'anthropic-version': '2023-06-01',
       'content-type': 'application/json',
     },

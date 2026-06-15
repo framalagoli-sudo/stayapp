@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CheckCircle, XCircle, Loader } from 'lucide-react'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? '').trim()
 
 export default function ConfirmSubscriptionPage() {
   const [params] = useSearchParams()

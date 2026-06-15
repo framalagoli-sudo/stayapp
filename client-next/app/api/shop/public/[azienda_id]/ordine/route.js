@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabase-server'
+﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { applicaLoyaltyOrdine, registraRiscatto, assegnaPuntiOrdine } from '@/lib/loyalty-helpers'
 import { Resend } from 'resend'
 
@@ -32,7 +32,7 @@ export async function POST(request, { params }) {
 
     let stripe_session_id = null
     let checkout_url = null
-    const stripeKey = process.env.STRIPE_SECRET_KEY
+    const stripeKey = (process.env.STRIPE_SECRET_KEY ?? '').trim()
     if (stripeKey) {
       try {
         const Stripe = (await import('stripe')).default
@@ -49,8 +49,8 @@ export async function POST(request, { params }) {
             quantity: v.qty,
           })),
           customer_email: email_cliente,
-          success_url: `${process.env.CLIENT_URL}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${process.env.CLIENT_URL}/checkout/annullato`,
+          success_url: `${(process.env.CLIENT_URL ?? '').trim()}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${(process.env.CLIENT_URL ?? '').trim()}/checkout/annullato`,
           metadata: { azienda_id },
         })
         stripe_session_id = session.id
@@ -75,12 +75,12 @@ export async function POST(request, { params }) {
 
     if (process.env.RESEND_API_KEY) {
       try {
-        const resend = new Resend(process.env.RESEND_API_KEY)
+        const resend = new Resend((process.env.RESEND_API_KEY ?? '').trim())
         const righeProdotti = vociSicure.map(v =>
           `<tr><td style="padding:6px 8px;border-bottom:1px solid #eee">${v.nome}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center">${v.qty}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">€${(v.prezzo * v.qty).toFixed(2)}</td></tr>`
         ).join('')
         await resend.emails.send({
-          from: process.env.RESEND_FROM || 'noreply@oltrenova.com',
+          from: (process.env.RESEND_FROM ?? '').trim() || 'noreply@oltrenova.com',
           to: email_cliente,
           subject: `Ordine #${ordine.numero} ricevuto`,
           html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:24px">

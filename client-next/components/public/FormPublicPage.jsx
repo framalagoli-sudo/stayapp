@@ -1,8 +1,10 @@
 'use client'
+// v2
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Turnstile from '@/components/Turnstile'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').trim()
 
 function fieldVisible(campo, dati) {
   if (!campo.condizione?.campo_id) return true
@@ -18,7 +20,7 @@ function fieldVisible(campo, dati) {
 }
 
 export default function FormPublicPage() {
-  const [searchParams] = useSearchParams()
+  const searchParams = useSearchParams()
   const token = searchParams.get('token')
 
   const [form, setForm]               = useState(null)
@@ -30,6 +32,7 @@ export default function FormPublicPage() {
   const [submitting, setSubmitting]   = useState(false)
   const [success, setSuccess]         = useState(false)
   const [submitError, setSubmitError] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState('')
 
   useEffect(() => {
     if (!token) { setError('Token form mancante'); setLoading(false); return }
@@ -108,7 +111,7 @@ export default function FormPublicPage() {
       const res = await fetch(`${API_BASE}/api/form-builder/public/${token}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...datiPuliti, _hp: hp }),
+        body: JSON.stringify({ ...datiPuliti, _hp: hp, turnstileToken }),
       })
       const body = await res.json()
       if (!res.ok) throw new Error(body.error || 'Errore invio')
@@ -193,6 +196,23 @@ export default function FormPublicPage() {
                     <span style={{ color: '#c53030' }}> *</span>
                   </span>
                 </label>
+              ) : c.tipo === 'consenso_marketing' ? (
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontSize: 14, color: '#444' }}>
+                  <input
+                    type="checkbox"
+                    checked={!!dati[c.id]} onChange={e => setField(c.id, e.target.checked)}
+                    style={{ width: 16, height: 16, marginTop: 2, flexShrink: 0 }}
+                  />
+                  <span>
+                    {c.privacy_url ? (
+                      <a href={c.privacy_url} target="_blank" rel="noopener noreferrer" style={{ color: '#2b6cb0' }}>
+                        {c.label || 'Acconsento a ricevere comunicazioni commerciali'}
+                      </a>
+                    ) : (
+                      c.label || 'Acconsento a ricevere comunicazioni commerciali'
+                    )}
+                  </span>
+                </label>
               ) : (
                 <>
                   <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 6 }}>
@@ -221,6 +241,9 @@ export default function FormPublicPage() {
               )}
             </div>
           ))}
+
+          {/* CAPTCHA invisibile (appare solo se NEXT_PUBLIC_TURNSTILE_SITE_KEY è impostata) */}
+          {(!isMultiStep || currentStep === totalSteps - 1) && <Turnstile onToken={setTurnstileToken} />}
 
           {submitError && <p style={{ color: '#c53030', fontSize: 13, margin: '12px 0' }}>{submitError}</p>}
 

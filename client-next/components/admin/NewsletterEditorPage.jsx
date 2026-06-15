@@ -120,6 +120,7 @@ export default function NewsletterEditorPage() {
   const [subject, setSubject] = useState('')
   const [preheader, setPreheader] = useState('')
   const [scheduledAt, setScheduledAt] = useState('')
+  const [tagFilter, setTagFilter] = useState([])
   const [templateId, setTemplateId] = useState('semplice')
   const [content, setContent] = useState(DEFAULT_CONTENT.semplice)
   const [entityTipo, setEntityTipo] = useState('struttura')
@@ -156,6 +157,7 @@ export default function NewsletterEditorPage() {
         setSubject(data.subject || '')
         setPreheader(data.preheader || '')
         setScheduledAt(data.scheduled_at ? data.scheduled_at.slice(0, 16) : '')
+        setTagFilter(data.tag_filter || [])
         setTemplateId(data.template_id || 'semplice')
         setContent(data.content && Object.keys(data.content).length ? data.content : DEFAULT_CONTENT[data.template_id] || DEFAULT_CONTENT.semplice)
         setEntityTipo(data.entity_tipo || 'struttura')
@@ -185,6 +187,7 @@ export default function NewsletterEditorPage() {
           subject, preheader, template_id: templateId, content,
           entity_tipo: entityTipo, entity_id: entityId || null,
           scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+          tag_filter: tagFilter.length ? tagFilter : null,
         }),
       })
       setNl(updated)
@@ -369,6 +372,34 @@ export default function NewsletterEditorPage() {
                   <option value="">— seleziona —</option>
                   {allEntities.map(e => <option key={e.id} value={e.id}>{e.label} ({e.tipo})</option>)}
                 </select>
+              </div>
+            )}
+            {!isSent && (
+              <div>
+                <span style={label}>Filtra destinatari per tag</span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 6 }}>
+                  {tagFilter.map(t => (
+                    <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#eef2ff', color: '#3730a3', fontSize: 12, borderRadius: 6, padding: '3px 8px' }}>
+                      {t}
+                      <button onClick={() => setTagFilter(ts => ts.filter(x => x !== t))} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1, color: '#818cf8', fontSize: 14 }}>×</button>
+                    </span>
+                  ))}
+                </div>
+                <input
+                  placeholder="Tag (Invio per aggiungere) — lascia vuoto per tutti gli iscritti"
+                  style={{ ...inp, fontSize: 13 }}
+                  onKeyDown={e => {
+                    if ((e.key === 'Enter' || e.key === ',') && e.target.value.trim()) {
+                      e.preventDefault()
+                      const t = e.target.value.trim().replace(/,/g, '')
+                      if (t && !tagFilter.includes(t)) setTagFilter(ts => [...ts, t])
+                      e.target.value = ''
+                    }
+                  }}
+                />
+                <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>
+                  {tagFilter.length ? `Invierà solo agli iscritti con tag: ${tagFilter.join(', ')}` : 'Invierà a tutti gli iscritti alla newsletter'}
+                </div>
               </div>
             )}
             {!isSent && (

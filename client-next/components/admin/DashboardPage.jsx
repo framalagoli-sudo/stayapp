@@ -177,7 +177,9 @@ function StaffDashboard({ profile, strutture, ristoranti, attivita }) {
 export default function DashboardPage() {
   const { profile } = useAuth()
   const router      = useRouter()
-  const { azienda, strutture, ristoranti, attivita, loading: aziLoading } = useAzienda()
+  const { azienda, strutture, ristoranti, attivita, activeAziendaId, loading: aziLoading } = useAzienda()
+  const aziendaId = azienda?.id || profile?.azienda_id || activeAziendaId
+    || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id || attivita?.[0]?.azienda_id
 
   const [analytics,      setAnalytics]      = useState(null)
   const [requests,       setRequests]       = useState([])
@@ -191,7 +193,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (profile?.role === 'staff') return
     if (profile) load()
-  }, [profile])  // eslint-disable-line
+  }, [aziendaId])  // eslint-disable-line
 
   if (profile?.role === 'staff') {
     return <StaffDashboard profile={profile} strutture={strutture} ristoranti={ristoranti} attivita={attivita} />
@@ -200,14 +202,15 @@ export default function DashboardPage() {
   async function load() {
     setLoading(true)
     const today = todayStr()
+    const az = aziendaId ? `&azienda_id=${aziendaId}` : ''
     const [ana, req, pre, cnt, ev, rec, pia] = await Promise.allSettled([
-      apiFetch('/api/analytics?range=7'),
-      apiFetch('/api/requests'),
-      apiFetch(`/api/booking/prenotazioni?data_da=${today}&data_a=${today}`),
-      apiFetch('/api/contatti'),
-      apiFetch('/api/eventi'),
-      apiFetch('/api/recensioni'),
-      apiFetch('/api/piano-editoriale'),
+      apiFetch(`/api/analytics?range=7${az}`),
+      apiFetch(`/api/requests${az ? '?' + az.slice(1) : ''}`),
+      apiFetch(`/api/booking/prenotazioni?data_da=${today}&data_a=${today}${az}`),
+      apiFetch(`/api/contatti${az ? '?' + az.slice(1) : ''}`),
+      apiFetch(`/api/eventi${az ? '?' + az.slice(1) : ''}`),
+      apiFetch(`/api/recensioni${az ? '?' + az.slice(1) : ''}`),
+      apiFetch(`/api/piano-editoriale${az ? '?' + az.slice(1) : ''}`),
     ])
     if (ana.status === 'fulfilled') setAnalytics(ana.value)
     if (req.status === 'fulfilled') {

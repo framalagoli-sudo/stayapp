@@ -4,7 +4,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { Webhook, Plus, Trash2, Send, Check, X, ToggleLeft, ToggleRight, ChevronDown, ChevronUp, Calendar, CheckCircle, AlertCircle, Loader } from 'lucide-react'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? '').trim()
 
 function GoogleCalendarSection() {
   const [status, setStatus] = useState(null) // null=loading, { connected, email }

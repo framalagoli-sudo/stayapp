@@ -1,12 +1,22 @@
-import { supabaseAdmin } from '@/lib/supabase-server'
+﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { Resend } from 'resend'
+import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
+import { verifyTurnstile } from '@/lib/turnstile'
 
 export async function POST(request) {
   try {
-    const { email } = await request.json()
+    const ip = getClientIp(request)
+    // Anti mail-bombing: max 3 richieste di reset per IP all'ora.
+    const rl = await rateLimit(request, { name: 'forgot-password', limit: 3, windowSec: 3600, ip })
+    if (!rl.allowed) return tooManyRequests()
+
+    const { email, turnstileToken } = await request.json()
     if (!email?.trim()) return Response.json({ error: 'Email obbligatoria' }, { status: 400 })
 
-    const clientUrl = process.env.CLIENT_URL || 'https://oltrenova.com'
+    const captcha = await verifyTurnstile(turnstileToken, ip)
+    if (!captcha.success) return Response.json({ error: 'Verifica anti-bot fallita' }, { status: 403 })
+
+    const clientUrl = (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
       email: email.trim().toLowerCase(),
@@ -18,8 +28,8 @@ export async function POST(request) {
     if (!resetLink) return Response.json({ error: 'Impossibile generare il link di ripristino' }, { status: 500 })
 
     if (process.env.RESEND_API_KEY) {
-      await new Resend(process.env.RESEND_API_KEY).emails.send({
-        from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
+      await new Resend((process.env.RESEND_API_KEY ?? '').trim()).emails.send({
+        from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
         to: email.trim().toLowerCase(),
         subject: 'Ripristino password OltreNova',
         html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a2e">

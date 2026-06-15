@@ -5,11 +5,13 @@ export async function GET(request, { params }) {
   try {
     const { user, response } = await requireAuth(request)
     if (response) return response
-    const { data: profile } = await supabaseAdmin.from('profiles').select('azienda_id').eq('id', user.id).single()
-    if (!profile?.azienda_id) return Response.json({ error: 'Nessuna azienda' }, { status: 403 })
+    const { data: profile } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', user.id).single()
+    if (!profile) return Response.json({ error: 'Profilo non trovato' }, { status: 403 })
 
-    const { data: form } = await supabaseAdmin.from('form_builder').select('id')
-      .eq('id', params.id).eq('azienda_id', profile.azienda_id).single()
+    // Verifica che il form esista (super_admin bypassa il filtro azienda)
+    let q = supabaseAdmin.from('form_builder').select('id').eq('id', params.id)
+    if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
+    const { data: form } = await q.single()
     if (!form) return Response.json({ error: 'Accesso negato' }, { status: 403 })
 
     const { searchParams } = new URL(request.url)

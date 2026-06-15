@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ''
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? '').trim()
 
 export default function SignupPage() {
   const router = useRouter()

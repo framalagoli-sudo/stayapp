@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabase-server'
+﻿import { supabaseAdmin } from '@/lib/supabase-server'
 
 export async function POST(request) {
   try {
@@ -29,7 +29,7 @@ export async function POST(request) {
     if (services.length)    system += '\n\nServizi:\n' + services.map(s => `- ${s.name}${s.description ? ': ' + s.description : ''}`).join('\n')
     if (faq.length)         system += '\n\nFAQ:\n' + faq.map(f => `D: ${f.question}\nR: ${f.answer}`).join('\n\n')
 
-    const apiKey = process.env.ANTHROPIC_API_KEY
+    const apiKey = (process.env.ANTHROPIC_API_KEY ?? '').trim()
     if (!apiKey) return Response.json({ error: 'Servizio AI non configurato' }, { status: 500 })
 
     const chatMessages = messages.slice(-10).map(m => ({

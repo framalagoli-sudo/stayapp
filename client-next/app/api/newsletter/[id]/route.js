@@ -29,7 +29,7 @@ export async function PATCH(request, { params }) {
     if (!profile) return Response.json({ error: 'Profilo non trovato' }, { status: 403 })
 
     const body = await request.json()
-    const allowed = ['subject', 'preheader', 'template_id', 'content', 'entity_tipo', 'entity_id', 'scheduled_at']
+    const allowed = ['subject', 'preheader', 'template_id', 'content', 'entity_tipo', 'entity_id', 'scheduled_at', 'tag_filter']
     const updates = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
     updates.updated_at = new Date().toISOString()
 

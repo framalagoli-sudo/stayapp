@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabase-server'
+﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { buildNewsletterHtml, personalize } from '@/lib/newsletter-html'
 
@@ -21,7 +21,7 @@ export async function POST(request, { params }) {
     if (error || !nl) return Response.json({ error: 'Non trovata' }, { status: 404 })
 
     const entity = await getEntity(nl.entity_tipo, nl.entity_id)
-    const appUrl = process.env.APP_URL || 'https://oltrenova.com'
+    const appUrl = (process.env.APP_URL ?? '').trim() || 'https://oltrenova.com'
     const html = buildNewsletterHtml({
       entityName: entity?.name || 'OltreNova', entityLogo: entity?.logo_url || null,
       primary: entity?.theme?.primaryColor || '#1a1a2e',
@@ -33,9 +33,9 @@ export async function POST(request, { params }) {
 
     if (!process.env.RESEND_API_KEY) return Response.json({ error: 'RESEND_API_KEY non configurata' }, { status: 500 })
     const { Resend } = await import('resend')
-    const resend = new Resend(process.env.RESEND_API_KEY)
+    const resend = new Resend((process.env.RESEND_API_KEY ?? '').trim())
     await resend.emails.send({
-      from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
+      from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
       to: test_email,
       subject: `[TEST] ${personalize(nl.subject, 'Mario') || '(senza oggetto)'}`,
       html,

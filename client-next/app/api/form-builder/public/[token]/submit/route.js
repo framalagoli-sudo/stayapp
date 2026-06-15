@@ -1,28 +1,14 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { sendWebhooks } from '@/lib/send-webhooks'
+import { rateLimit } from '@/lib/rate-limit'
+import { verifyTurnstile } from '@/lib/turnstile'
 
 let _resend = null
 function getResend() {
-  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY)
+  if (!_resend) _resend = new Resend((process.env.RESEND_API_KEY ?? '').trim())
   return _resend
-}
-
-// ── Rate limiter in-memory (max 5 submit/ora per IP per form) ─────────────────
-const submitRateMap = new Map()
-
-function checkRateLimit(token, ip) {
-  const key = `${token}:${ip}`
-  const now = Date.now()
-  const entry = submitRateMap.get(key)
-  if (!entry || entry.resetAt < now) {
-    submitRateMap.set(key, { count: 1, resetAt: now + 3_600_000 })
-    return true
-  }
-  if (entry.count >= 5) return false
-  entry.count++
-  return true
 }
 
 // ── Flood detection per-form (max 20 submit / 10 minuti) ─────────────────────
@@ -42,7 +28,7 @@ function trackFlood(form) {
     entry.alertSent = true
     if (form.email_notifica && process.env.RESEND_API_KEY) {
       getResend().emails.send({
-        from: process.env.RESEND_FROM || 'noreply@oltrenova.com',
+        from: (process.env.RESEND_FROM ?? '').trim() || 'noreply@oltrenova.com',
         to: form.email_notifica,
         subject: `⚠️ Form "${escHtml(form.nome)}" sotto attacco`,
         html: `<div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;color:#333">
@@ -75,7 +61,7 @@ function isSpamContent(dati, campi) {
 
 // ── Email validation via Abstract API ────────────────────────────────────────
 async function isEmailDeliverable(email) {
-  const key = process.env.ABSTRACT_API_KEY
+  const key = (process.env.ABSTRACT_API_KEY ?? '').trim()
   if (!key) return true
   try {
     const url = `https://emailvalidation.abstractapi.com/v1/?api_key=${key}&email=${encodeURIComponent(email)}`
@@ -146,15 +132,23 @@ export async function POST(request, { params }) {
       return NextResponse.json({ ok: true, redirect_url: null })
     }
 
-    // 2. Rate limit: max 5 submit/ora per IP per form
-    if (!checkRateLimit(token, clientIp)) {
+    // 2. Rate limit condiviso (Postgres): max 5 submit/ora per IP per form.
+    //    Sostituisce il vecchio limitatore in-memory, inefficace su serverless.
+    const rl = await rateLimit(request, { name: `form:${token}`, limit: 5, windowSec: 3600, ip: clientIp })
+    if (!rl.allowed) {
       return NextResponse.json({ error: 'Troppe richieste. Riprova tra qualche minuto.' }, { status: 429 })
+    }
+
+    // 2b. Verifica anti-bot Turnstile (inerte finché non configurata)
+    const captcha = await verifyTurnstile(body.turnstileToken, clientIp)
+    if (!captcha.success) {
+      return NextResponse.json({ error: 'Verifica anti-bot fallita' }, { status: 403 })
     }
 
     // 3. Carica form
     const { data: form } = await supabaseAdmin
       .from('form_builder')
-      .select('id, azienda_id, nome, campi, redirect_url, email_notifica, attivo, email_conferma_attiva, email_conferma_oggetto, email_conferma_testo, tag_auto')
+      .select('id, azienda_id, nome, campi, redirect_url, email_notifica, attivo, email_conferma_attiva, email_conferma_oggetto, email_conferma_testo, tag_auto, newsletter_optin')
       .eq('token', token)
       .single()
     if (!form) return NextResponse.json({ error: 'Form non trovato' }, { status: 404 })
@@ -204,25 +198,33 @@ export async function POST(request, { params }) {
     const telCampo = (form.campi || []).find(c => c.tipo === 'tel')
     const telefono = telCampo ? String(dati[telCampo.id] || '').trim() : null
 
+    const marketingCampo = (form.campi || []).find(c => c.tipo === 'consenso_marketing')
+    const marketingConsent = marketingCampo ? !!dati[marketingCampo.id] : false
+
     if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       const deliverable = await isEmailDeliverable(email)
       emailNonValida = !deliverable
 
       const { data: existing } = await supabaseAdmin
         .from('contatti')
-        .select('id, email_non_valida')
+        .select('id, email_non_valida, iscritto_newsletter')
         .eq('azienda_id', form.azienda_id)
         .eq('email', email)
         .maybeSingle()
 
+      const newsletterOptin = (!!form.newsletter_optin && consensoDato) || marketingConsent
       if (existing) {
         contattoId = existing.id
         emailNonValida = existing.email_non_valida || emailNonValida
-        if (!existing.email_non_valida && !deliverable) {
-          supabaseAdmin.from('contatti').update({ email_non_valida: true }).eq('id', existing.id).catch(() => {})
+        const upd = {}
+        if (!existing.email_non_valida && !deliverable) upd.email_non_valida = true
+        if (newsletterOptin && !existing.iscritto_newsletter) upd.iscritto_newsletter = true
+        if (Object.keys(upd).length) {
+          const { error: updErr } = await supabaseAdmin.from('contatti').update(upd).eq('id', existing.id)
+          if (updErr) console.error('[form-submit] contatti update error:', updErr.message)
         }
       } else {
-        const { data: newContatto } = await supabaseAdmin
+        const { data: newContatto, error: contattoErr } = await supabaseAdmin
           .from('contatti')
           .insert({
             azienda_id: form.azienda_id,
@@ -231,9 +233,11 @@ export async function POST(request, { params }) {
             telefono: telefono || null,
             fonte: 'form',
             email_non_valida: emailNonValida,
+            iscritto_newsletter: newsletterOptin,
           })
           .select('id')
           .single()
+        if (contattoErr) console.error('[form-submit] contatti insert error:', contattoErr.message)
         contattoId = newContatto?.id || null
       }
     }
@@ -271,7 +275,7 @@ export async function POST(request, { params }) {
         : ''
 
       getResend().emails.send({
-        from: process.env.RESEND_FROM || 'noreply@oltrenova.com',
+        from: (process.env.RESEND_FROM ?? '').trim() || 'noreply@oltrenova.com',
         to: form.email_notifica,
         subject: `Nuova risposta: ${escHtml(form.nome)}`,
         html: `
@@ -280,18 +284,16 @@ export async function POST(request, { params }) {
             <p style="color:#888;font-size:13px;margin-top:0">Form: <strong>${escHtml(form.nome)}</strong></p>
             <table style="width:100%;border-collapse:collapse;margin-top:16px">${righe}${consentRow}</table>
           </div>`,
-      }).catch(() => {})
+      }).catch(e => console.error('[form-submit] email notifica admin error:', e?.message || e))
     }
 
     // 10. Auto-tagging contatto CRM
     if (contattoId && form.tag_auto?.length) {
-      supabaseAdmin.from('contatti').select('tags').eq('id', contattoId).single()
-        .then(({ data: ct }) => {
-          const current = ct?.tags || []
-          const merged = [...new Set([...current, ...form.tag_auto])]
-          return supabaseAdmin.from('contatti').update({ tags: merged }).eq('id', contattoId)
-        })
-        .catch(() => {})
+      const { data: ct } = await supabaseAdmin.from('contatti').select('tags').eq('id', contattoId).single()
+      const current = ct?.tags || []
+      const merged = [...new Set([...current, ...form.tag_auto])]
+      const { error: tagErr } = await supabaseAdmin.from('contatti').update({ tags: merged }).eq('id', contattoId)
+      if (tagErr) console.error('[form-submit] auto-tag error:', tagErr.message)
     }
 
     // 11. Autoresponder email all'utente
@@ -319,11 +321,11 @@ export async function POST(request, { params }) {
         }).join('')
 
       getResend().emails.send({
-        from: process.env.RESEND_FROM || 'noreply@oltrenova.com',
+        from: (process.env.RESEND_FROM ?? '').trim() || 'noreply@oltrenova.com',
         to: email,
         subject: oggetto,
         html: buildAutoresponderHtml(testo, righeRiepilogo),
-      }).catch(() => {})
+      }).catch(e => console.error('[form-submit] autoresponder email error:', e?.message || e))
     }
 
     // 12. Webhook form_submit (Zapier / Make / n8n)

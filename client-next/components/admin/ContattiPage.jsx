@@ -264,6 +264,7 @@ export default function ContattiPage() {
     try {
       let url = '/api/contatti'
       const params = []
+      if (aziendaId) params.push(`azienda_id=${aziendaId}`)
       if (search)    params.push(`search=${encodeURIComponent(search)}`)
       if (tagFilter) params.push(`tag=${encodeURIComponent(tagFilter)}`)
       if (params.length) url += '?' + params.join('&')

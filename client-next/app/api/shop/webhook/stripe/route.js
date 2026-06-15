@@ -1,8 +1,8 @@
-import { supabaseAdmin } from '@/lib/supabase-server'
+﻿import { supabaseAdmin } from '@/lib/supabase-server'
 
 export async function POST(request) {
-  const stripeKey = process.env.STRIPE_SECRET_KEY
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+  const stripeKey = (process.env.STRIPE_SECRET_KEY ?? '').trim()
+  const webhookSecret = (process.env.STRIPE_WEBHOOK_SECRET ?? '').trim()
   if (!stripeKey) return Response.json({ ok: true })
 
   try {

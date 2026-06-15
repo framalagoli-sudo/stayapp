@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { guestFetch } from '@/lib/api'
+import Turnstile from '@/components/Turnstile'
 import { ArrowLeft, Calendar, ChevronLeft, ChevronRight, X, Send } from 'lucide-react'
 
 const HEADING_FAMILIES = {
@@ -259,6 +260,7 @@ function InterestForm({ entityTipo, entityId, offertaTitle, primary, privacyUrl,
   const [message, setMessage] = useState(`Sono interessato all'offerta: ${offertaTitle}`)
   const [privacy, setPrivacy] = useState(false)
   const [state,   setState]   = useState('idle')
+  const [turnstileToken, setTurnstileToken] = useState('')
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -267,7 +269,7 @@ function InterestForm({ entityTipo, entityId, offertaTitle, primary, privacyUrl,
     try {
       await guestFetch('/api/guest/contact', {
         method: 'POST',
-        body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, name, email, message, source: 'offerta', source_name: offertaTitle }),
+        body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, name, email, message, source: 'offerta', source_name: offertaTitle, turnstileToken }),
       })
       setState('success')
       onSuccess?.()
@@ -306,6 +308,7 @@ function InterestForm({ entityTipo, entityId, offertaTitle, primary, privacyUrl,
         </span>
       </label>
       {state === 'error' && <p style={{ color: '#e53e3e', fontSize: 13, marginBottom: 12 }}>Errore nell'invio. Riprova.</p>}
+      <Turnstile onToken={setTurnstileToken} />
       <button type="submit" disabled={state === 'loading' || !privacy}
         style={{ width: '100%', padding: '15px', background: privacy ? primary : '#ccc', color: '#fff', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 700, cursor: privacy ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'background 0.2s' }}>
         <Send size={18} strokeWidth={2} />

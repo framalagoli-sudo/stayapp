@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Mountain, Wind, ChevronDown, Calendar, Users } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
 import BookingWidget from './BookingWidget'
+import Turnstile from '@/components/Turnstile'
 
 const HIGHLIGHT_LUCIDE = {
   star: Star, heart: Heart, award: Award, wifi: Wifi, parking: Car,
@@ -703,6 +704,7 @@ function NewsletterForm({ aziendaId, primary, privacyUrl }) {
   const [email, setEmail] = useState('')
   const [privacy, setPrivacy] = useState(false)
   const [state, setState] = useState('idle')
+  const [turnstileToken, setTurnstileToken] = useState('')
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -711,7 +713,7 @@ function NewsletterForm({ aziendaId, primary, privacyUrl }) {
     try {
       await guestFetch('/api/contatti/subscribe', {
         method: 'POST',
-        body: JSON.stringify({ azienda_id: aziendaId, email, fonte: 'minisito' }),
+        body: JSON.stringify({ azienda_id: aziendaId, email, fonte: 'minisito', turnstileToken }),
       })
       setState('done')
     } catch { setState('error') }
@@ -732,6 +734,7 @@ function NewsletterForm({ aziendaId, primary, privacyUrl }) {
         <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} style={{ marginTop: 1, flexShrink: 0 }} />
         <span>Acconsento al trattamento dei dati personali. <a href={privacyUrl} style={{ color: primary }}>Privacy Policy</a></span>
       </label>
+      <Turnstile onToken={setTurnstileToken} />
     </form>
   )
 }
@@ -740,6 +743,7 @@ function ContattiForm({ entity, entityType, primary, privacyUrl, heading }) {
   const [form, setForm] = useState({ nome: '', email: '', messaggio: '' })
   const [privacy, setPrivacy] = useState(false)
   const [state, setState] = useState('idle')
+  const [turnstileToken, setTurnstileToken] = useState('')
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -748,7 +752,7 @@ function ContattiForm({ entity, entityType, primary, privacyUrl, heading }) {
     try {
       await guestFetch('/api/guest/contact', {
         method: 'POST',
-        body: JSON.stringify({ entity_tipo: entityType, entity_id: entity.id, ...form }),
+        body: JSON.stringify({ entity_tipo: entityType, entity_id: entity.id, ...form, turnstileToken }),
       })
       setState('done')
     } catch { setState('error') }
@@ -766,6 +770,7 @@ function ContattiForm({ entity, entityType, primary, privacyUrl, heading }) {
         <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} style={{ marginTop: 1, flexShrink: 0 }} />
         <span>Acconsento al trattamento dei dati. <a href={privacyUrl} style={{ color: primary }}>Privacy Policy</a></span>
       </label>
+      <Turnstile onToken={setTurnstileToken} />
       <button type="submit" disabled={!privacy || state === 'loading'}
         style={{ padding: '13px', background: privacy ? primary : '#ccc', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: privacy ? 'pointer' : 'not-allowed' }}>
         {state === 'loading' ? 'Invio...' : 'Invia messaggio'}

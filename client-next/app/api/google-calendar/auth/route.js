@@ -1,12 +1,12 @@
-import { requireAuth } from '@/lib/server-auth'
+﻿import { requireAuth } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase-server'
 
 const SCOPES = 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.email'
 
 function getAuthUrl(state) {
-  const APP_URL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://oltrenova.com'
+  const APP_URL = (process.env.APP_URL ?? '').trim() || process.env.NEXT_PUBLIC_APP_URL || 'https://oltrenova.com'
   const p = new URLSearchParams({
-    client_id: process.env.GOOGLE_CLIENT_ID,
+    client_id: (process.env.GOOGLE_CLIENT_ID ?? '').trim(),
     redirect_uri: `${APP_URL}/api/google-calendar/callback`,
     response_type: 'code',
     scope: SCOPES,

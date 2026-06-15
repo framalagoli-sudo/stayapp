@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabase-server'
+﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { sendWebhooks } from '@/lib/send-webhooks'
 import { triggerAutomazione } from '@/lib/guest-utils'
 import { syncBookingCreate } from '@/lib/google-calendar-stub'
@@ -42,8 +42,8 @@ async function getEntityWhatsapp(entityTipo, entityId) {
 
 async function inviaEmailConferma(prenotazione, risorsa, whatsapp = null) {
   if (!process.env.RESEND_API_KEY) return
-  const resend = new Resend(process.env.RESEND_API_KEY)
-  const cancelUrl = `${process.env.CLIENT_URL || 'https://oltrenova.com'}/cancella-prenotazione?token=${prenotazione.cancellation_token}`
+  const resend = new Resend((process.env.RESEND_API_KEY ?? '').trim())
+  const cancelUrl = `${(process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'}/cancella-prenotazione?token=${prenotazione.cancellation_token}`
   const waUrl = buildWaUrl(whatsapp)
 
   const quando = risorsa.modalita === 'coperti'
@@ -52,7 +52,7 @@ async function inviaEmailConferma(prenotazione, risorsa, whatsapp = null) {
 
   try {
     await resend.emails.send({
-      from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
+      from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
       to: prenotazione.cliente_email,
       subject: `Prenotazione confermata — ${risorsa.nome}`,
       html: `
@@ -172,7 +172,7 @@ export async function POST(request) {
           verificata: false, pubblica: false,
         }).select('token').single()
         if (recData?.token) {
-          reviewLink = `${process.env.CLIENT_URL || 'https://oltrenova.com'}/recensione?token=${recData.token}`
+          reviewLink = `${(process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'}/recensione?token=${recData.token}`
         }
       } catch (e) { console.error('[booking] genera token recensione:', e.message) }
     }

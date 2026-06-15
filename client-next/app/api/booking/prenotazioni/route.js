@@ -20,6 +20,8 @@ export async function GET(request) {
     if (profile.role !== 'super_admin') {
       if (!isUUID(profile.azienda_id)) return Response.json([])
       query = query.eq('azienda_id', profile.azienda_id)
+    } else if (isUUID(searchParams.get('azienda_id'))) {
+      query = query.eq('azienda_id', searchParams.get('azienda_id'))
     }
     if (isUUID(searchParams.get('risorsa_id'))) query = query.eq('risorsa_id', searchParams.get('risorsa_id'))
     if (searchParams.get('data'))    query = query.eq('data', searchParams.get('data'))

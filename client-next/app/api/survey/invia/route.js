@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabase-server'
+﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { Resend } from 'resend'
 
@@ -20,14 +20,14 @@ export async function POST(request) {
       .select().single()
     if (error) throw error
 
-    const link = `${process.env.CLIENT_URL}/survey?token=${survey.token}`
+    const link = `${(process.env.CLIENT_URL ?? "").trim()}/survey?token=${survey.token}`
     const nomeDisplay = nome?.trim() || 'Cliente'
     const business = az?.ragione_sociale || 'il nostro team'
 
     if (process.env.RESEND_API_KEY) {
-      const resend = new Resend(process.env.RESEND_API_KEY)
+      const resend = new Resend((process.env.RESEND_API_KEY ?? '').trim())
       await resend.emails.send({
-        from: process.env.RESEND_FROM,
+        from: (process.env.RESEND_FROM ?? '').trim(),
         to: email.trim(),
         subject: `Come valuteresti la tua esperienza con ${business}?`,
         html: `

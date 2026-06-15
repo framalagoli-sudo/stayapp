@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabase-server'
+﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 
 async function getProfile(userId) {
@@ -18,6 +18,8 @@ export async function GET(request) {
     if (profile.role !== 'super_admin') {
       if (!profile.azienda_id) return Response.json([])
       q = q.eq('azienda_id', profile.azienda_id)
+    } else if (searchParams.get('azienda_id')) {
+      q = q.eq('azienda_id', searchParams.get('azienda_id'))
     }
     if (searchParams.get('entity_tipo')) q = q.eq('entity_tipo', searchParams.get('entity_tipo'))
     if (searchParams.get('entity_id'))   q = q.eq('entity_id', searchParams.get('entity_id'))
@@ -45,7 +47,7 @@ export async function POST(request) {
         verificata: false, pubblica: false,
       }).select().single()
       if (error) return Response.json({ error: error.message }, { status: 500 })
-      const link = `${process.env.CLIENT_URL || 'https://oltrenova.com'}/recensione?token=${data.token}`
+      const link = `${(process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'}/recensione?token=${data.token}`
       return Response.json({ ...data, link }, { status: 201 })
     }
 

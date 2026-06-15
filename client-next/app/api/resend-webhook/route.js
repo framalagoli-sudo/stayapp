@@ -1,9 +1,9 @@
-import crypto from 'crypto'
+﻿import crypto from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-server'
 
 function verifySignature(rawBody, headers) {
-  const secret = process.env.RESEND_WEBHOOK_SECRET
-  if (!secret) return true // accetta senza verifica finché il secret non è configurato
+  const secret = (process.env.RESEND_WEBHOOK_SECRET ?? '').trim()
+  if (!secret) return false
 
   const msgId        = headers.get('svix-id')
   const msgTimestamp = headers.get('svix-timestamp')

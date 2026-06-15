@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+const API = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').trim()
 
 function StarPicker({ value, onChange }) {
   const [hover, setHover] = useState(0)

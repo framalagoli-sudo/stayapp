@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabase-server'
+﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { Resend } from 'resend'
 
 export async function POST(request) {
@@ -43,9 +43,9 @@ export async function POST(request) {
     }
 
     if (process.env.RESEND_API_KEY) {
-      const clientUrl = process.env.CLIENT_URL || 'https://oltrenova.com'
-      new Resend(process.env.RESEND_API_KEY).emails.send({
-        from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
+      const clientUrl = (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'
+      new Resend((process.env.RESEND_API_KEY ?? '').trim()).emails.send({
+        from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
         to: email.trim().toLowerCase(),
         subject: 'Benvenuto in OltreNova!',
         html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px">

@@ -12,6 +12,7 @@ export async function GET(request) {
     if (response) return response
     const profile = await getProfile(user.id)
     if (!profile) return Response.json({ error: 'Profilo non trovato' }, { status: 403 })
+    const { searchParams } = new URL(request.url)
 
     let q = supabaseAdmin.from('newsletters')
       .select('id, subject, preheader, template_id, status, sent_at, scheduled_at, recipients_count, unsubscribes_count, entity_tipo, entity_id, created_at, updated_at')
@@ -19,6 +20,8 @@ export async function GET(request) {
     if (profile.role !== 'super_admin') {
       if (!profile.azienda_id) return Response.json([])
       q = q.eq('azienda_id', profile.azienda_id)
+    } else if (searchParams.get('azienda_id')) {
+      q = q.eq('azienda_id', searchParams.get('azienda_id'))
     }
     const { data, error } = await q
     if (error) return Response.json({ error: error.message }, { status: 500 })

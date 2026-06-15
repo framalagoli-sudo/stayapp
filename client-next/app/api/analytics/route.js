@@ -21,10 +21,12 @@ export async function GET(request) {
     const prevSince = new Date(now - range * 2 * 86400000).toISOString()
 
     const isSuperAdmin = profile.role === 'super_admin'
-    const azienda_id   = profile.azienda_id
+    const azienda_id   = isSuperAdmin
+      ? (searchParams.get('azienda_id') || null)
+      : profile.azienda_id
 
     let propertyIds = [], ristoranteIds = [], attivitaIds = []
-    if (!isSuperAdmin) {
+    if (!isSuperAdmin || azienda_id) {
       if (!azienda_id) return Response.json(emptyResponse(range, now))
       const [p, r, a] = await Promise.all([
         supabaseAdmin.from('properties').select('id').eq('azienda_id', azienda_id),
@@ -36,11 +38,11 @@ export async function GET(request) {
       attivitaIds   = (a.data || []).map(x => x.id)
     }
     const allEntityIds = [...propertyIds, ...ristoranteIds, ...attivitaIds]
-    if (!isSuperAdmin && !allEntityIds.length) return Response.json(emptyResponse(range, now))
+    if (azienda_id && !allEntityIds.length) return Response.json(emptyResponse(range, now))
 
     let pvQ = supabaseAdmin.from('page_views').select('viewed_at').gte('viewed_at', since)
     let pvPrevQ = supabaseAdmin.from('page_views').select('id', { count: 'exact', head: true }).gte('viewed_at', prevSince).lt('viewed_at', since)
-    if (!isSuperAdmin) { pvQ = pvQ.in('entity_id', allEntityIds); pvPrevQ = pvPrevQ.in('entity_id', allEntityIds) }
+    if (allEntityIds.length) { pvQ = pvQ.in('entity_id', allEntityIds); pvPrevQ = pvPrevQ.in('entity_id', allEntityIds) }
     const [pvRes, pvPrevRes] = await Promise.all([pvQ, pvPrevQ])
     const pvRows = pvRes.data || []
     const pvByDate = {}
@@ -49,8 +51,8 @@ export async function GET(request) {
     for (let i = range - 1; i >= 0; i--) { const d = new Date(now - i * 86400000).toISOString().split('T')[0]; pvDaily.push({ date: d, count: pvByDate[d] || 0 }) }
 
     let reqQ = supabaseAdmin.from('requests').select('type, status, message, created_at').gte('created_at', since)
-    if (!isSuperAdmin && propertyIds.length) reqQ = reqQ.in('property_id', propertyIds)
-    else if (!isSuperAdmin) reqQ = reqQ.eq('property_id', 'none')
+    if (propertyIds.length) reqQ = reqQ.in('property_id', propertyIds)
+    else if (azienda_id) reqQ = reqQ.eq('property_id', 'none')
     const { data: reqAll = [] } = await reqQ
     const requests = reqAll.filter(r => !r.message?.startsWith('[Prenotazione') && !r.message?.startsWith('[Interesse offerta'))
     const bookings = reqAll.filter(r =>  r.message?.startsWith('[Prenotazione') ||  r.message?.startsWith('[Interesse offerta'))

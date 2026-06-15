@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabase-server'
+﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { sendWebhooks } from '@/lib/send-webhooks'
 import { emailTemplate } from '@/lib/email-template'
@@ -16,14 +16,14 @@ export async function POST(request) {
     supabaseAdmin.from('properties').select('name, email, azienda_id').eq('id', property_id).single().then(({ data: prop }) => {
       if (prop?.azienda_id) sendWebhooks(prop.azienda_id, 'nuova_richiesta', { richiesta_id: data.id, property_id, tipo: type, messaggio: message })
       if (!prop?.email || !process.env.RESEND_API_KEY) return
-      new Resend(process.env.RESEND_API_KEY).emails.send({
-        from: process.env.RESEND_FROM || 'OltreNova <noreply@oltrenova.com>',
+      new Resend((process.env.RESEND_API_KEY ?? '').trim()).emails.send({
+        from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
         to: prop.email,
         subject: `[${prop.name}] Nuova richiesta: ${type}`,
         html: emailTemplate({
           title: 'Nuova richiesta ospite', entityName: prop.name,
           rows: [{ label: 'Tipo', value: type }, ...(room ? [{ label: 'Camera', value: room }] : []), { label: 'Messaggio', value: message.replace(/\n/g, '<br>') }],
-          appUrl: process.env.CLIENT_URL || 'https://oltrenova.com',
+          appUrl: (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com',
         }),
       }).catch(() => {})
     }).catch(() => {})
@@ -48,6 +48,11 @@ export async function GET(request) {
     } else if (profile.role === 'admin_azienda') {
       if (!profile.azienda_id) return Response.json([])
       const { data: props } = await supabaseAdmin.from('properties').select('id').eq('azienda_id', profile.azienda_id)
+      const ids = props?.map(p => p.id) || []
+      if (!ids.length) return Response.json([])
+      query = query.in('property_id', ids)
+    } else if (profile.role === 'super_admin' && searchParams.get('azienda_id')) {
+      const { data: props } = await supabaseAdmin.from('properties').select('id').eq('azienda_id', searchParams.get('azienda_id'))
       const ids = props?.map(p => p.id) || []
       if (!ids.length) return Response.json([])
       query = query.in('property_id', ids)

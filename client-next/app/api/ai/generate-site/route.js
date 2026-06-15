@@ -3,6 +3,8 @@ import { requireAuth } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { callClaude, checkAndConsumeGenRate } from '@/lib/ai-helpers'
 
+export const maxDuration = 60
+
 const ALLOWED_OBIETTIVI = ['lead_gen', 'vendita', 'vetrina', 'prenotazioni', 'portfolio', 'evento']
 const ALLOWED_TEMPLATES = ['essential', 'complete', 'narrative']
 const ALLOWED_MODES = ['landing', 'site']
@@ -10,12 +12,12 @@ const MAX_LENGTHS = { nome: 100, settore: 150, descrizione: 600, servizi: 500, p
 const GEN_LIMIT_PER_HOUR = 10
 
 const OBIETTIVO_CONFIGS = {
-  lead_gen: { label: 'Lead Generation', landing_blocks: 'hero(urgente+CTA principale ben visibile) → highlights(3-4 benefici chiave) → stats(numeri credibilità) → about(problema→soluzione) → testimonianze → cta_banner → faq(rispondi alle obiezioni reali) → contatti(form prominente)', site_home_blocks: 'hero → highlights → stats → cta_banner → testimonianze → contatti', notes: 'CTA form visibile entro i primi 2 blocchi. FAQ risponde a obiezioni reali del cliente.' },
-  vendita: { label: 'Vendita / E-commerce', landing_blocks: 'hero(offerta irresistibile) → highlights → pacchetti(prezzi chiari) → foto_testo(come funziona) → stats → testimonianze(con risultati concreti) → cta_banner(urgency) → faq → contatti', site_home_blocks: 'hero → highlights → pacchetti → testimonianze → cta_banner → faq', notes: 'Mostra prezzi chiaramente. Urgency e scarcity nella CTA.' },
-  vetrina: { label: 'Vetrina / Branding', landing_blocks: 'hero(mood evocativo) → about(storia e valori) → foto_testo → foto_testo(inverti:true) → gallery → stats → team → testimonianze → contatti', site_home_blocks: 'hero → about → foto_testo → gallery → stats → testimonianze → contatti', notes: 'Atmosfera e brand identity prima di tutto. Usa foto_testo alternati (inverti:true su righe pari).' },
-  prenotazioni: { label: 'Prenotazioni', landing_blocks: 'hero(prenota subito) → highlights(motivi per sceglierci) → steps(come funziona) → services → stats → testimonianze → faq → contatti', site_home_blocks: 'hero → steps → services → highlights → stats → testimonianze → contatti', notes: 'CTA principale = "Prenota ora". Steps chiari e rassicuranti.' },
-  portfolio: { label: 'Portfolio / Credibilità', landing_blocks: 'hero(chi sei e specializzazione) → about(background) → foto_testo(caso studio 1 con risultati) → foto_testo(caso studio 2, inverti:true) → stats → testimonianze(clienti reali con azienda) → contatti', site_home_blocks: 'hero → about → foto_testo → foto_testo → stats → testimonianze → contatti', notes: 'Mostra lavori concreti con risultati misurabili.' },
-  evento: { label: 'Evento', landing_blocks: "hero(titolo evento + data + CTA iscrizione urgente) → about(cos'è) → steps(programma/scaletta) → team(speaker/ospiti) → stats → faq(dove,quando,costi) → newsletter → contatti", site_home_blocks: 'hero → about → steps → team → faq → newsletter → contatti', notes: 'Data e urgency prominenti in hero. Steps = programma dettagliato.' },
+  lead_gen: { label: 'Lead Generation', landing_blocks: 'hero(urgente+CTA principale ben visibile) → highlights(3-4 benefici chiave) → stats(numeri credibilità) → about(problema→soluzione) → testimonianze → cta_banner → faq(rispondi alle obiezioni reali) → form_builder(form prominente)', site_home_blocks: 'hero → highlights → stats → cta_banner → testimonianze → form_builder', notes: 'CTA form visibile entro i primi 2 blocchi. FAQ risponde a obiezioni reali del cliente.' },
+  vendita: { label: 'Vendita / E-commerce', landing_blocks: 'hero(offerta irresistibile) → highlights → pacchetti(prezzi chiari) → foto_testo(come funziona) → stats → testimonianze(con risultati concreti) → cta_banner(urgency) → faq → form_builder', site_home_blocks: 'hero → highlights → pacchetti → testimonianze → cta_banner → faq', notes: 'Mostra prezzi chiaramente. Urgency e scarcity nella CTA.' },
+  vetrina: { label: 'Vetrina / Branding', landing_blocks: 'hero(mood evocativo) → about(storia e valori) → foto_testo → foto_testo(inverti:true) → gallery → stats → team → testimonianze → form_builder', site_home_blocks: 'hero → about → foto_testo → gallery → stats → testimonianze → form_builder', notes: 'Atmosfera e brand identity prima di tutto. Usa foto_testo alternati (inverti:true su righe pari).' },
+  prenotazioni: { label: 'Prenotazioni', landing_blocks: 'hero(prenota subito) → highlights(motivi per sceglierci) → steps(come funziona) → services → stats → testimonianze → faq → form_builder', site_home_blocks: 'hero → steps → services → highlights → stats → testimonianze → form_builder', notes: 'CTA principale = "Prenota ora". Steps chiari e rassicuranti.' },
+  portfolio: { label: 'Portfolio / Credibilità', landing_blocks: 'hero(chi sei e specializzazione) → about(background) → foto_testo(caso studio 1 con risultati) → foto_testo(caso studio 2, inverti:true) → stats → testimonianze(clienti reali con azienda) → form_builder', site_home_blocks: 'hero → about → foto_testo → foto_testo → stats → testimonianze → form_builder', notes: 'Mostra lavori concreti con risultati misurabili.' },
+  evento: { label: 'Evento', landing_blocks: "hero(titolo evento + data + CTA iscrizione urgente) → about(cos'è) → steps(programma/scaletta) → team(speaker/ospiti) → stats → faq(dove,quando,costi) → newsletter → form_builder", site_home_blocks: 'hero → about → steps → team → faq → newsletter → form_builder', notes: 'Data e urgency prominenti in hero. Steps = programma dettagliato.' },
 }
 const TEMPLATE_CONFIGS = {
   essential: { label: 'Essenziale', style_hint: 'Template ESSENZIALE: usa al massimo 5-6 blocchi totali. Testi brevi e incisivi.' },
@@ -40,7 +42,7 @@ function buildSitePrompt({ entity, mode, obiettivo, template, answers }) {
   const tmplConf = TEMPLATE_CONFIGS[template] || TEMPLATE_CONFIGS.complete
   const pagesSpec = mode === 'landing'
     ? `CREA 1 PAGINA (slug "__home__", nel_menu false, titolo "${nome || entity.name}").\nStruttura blocchi consigliata per obiettivo "${objConf.label}":\n${objConf.landing_blocks}\nNote obiettivo: ${objConf.notes}`
-    : `CREA 4 PAGINE:\n1. Homepage (slug "__home__", nel_menu false): ${objConf.site_home_blocks}\n2. chi-siamo (slug "chi-siamo", nel_menu true): about, foto_testo x2, steps o team, stats\n3. servizi (slug "servizi", nel_menu true): about(intro), paragrafi(3-6 card con icona), highlights, cta_banner\n4. contatti (slug "contatti", nel_menu true): about(intro contatti), contatti\nNote obiettivo: ${objConf.notes}`
+    : `CREA 4 PAGINE:\n1. Homepage (slug "__home__", nel_menu false): ${objConf.site_home_blocks}\n2. chi-siamo (slug "chi-siamo", nel_menu true): about, foto_testo x2, steps o team, stats\n3. servizi (slug "servizi", nel_menu true): about(intro), paragrafi(3-6 card con icona), highlights, cta_banner\n4. contatti (slug "contatti", nel_menu true): about(intro contatti), form_builder\nNote obiettivo: ${objConf.notes}`
 
   return `Sei un web designer e copywriter esperto italiano. Crea ${mode === 'landing' ? 'una landing page' : 'un sito completo'} per un business.
 
@@ -58,9 +60,9 @@ BLOCCHI DISPONIBILI — usa SOLO questi tipi:
 • pacchetti: { titolo, items:[{nome,prezzo,descrizione,features:[]}] }
 • team: { titolo, items:[{nome,ruolo,bio}] }
 • newsletter: { title, subtitle }
+• form_builder: { form_token(""), titolo_sezione("Contattaci") }
 • gallery (auto): data:{}
 • services (auto): data:{}
-• contatti (auto): data:{}
 
 Icone Lucide valide per "icon": star, check, check-circle, heart, home, phone, mail, users, zap, shield, award, clock, map-pin, coffee, utensils, sparkles, leaf, sun, briefcase, wrench, euro, handshake, smile, target, trending-up, calendar, globe, camera, music, activity, book, layers, tag
 
@@ -143,7 +145,11 @@ export async function POST(request) {
 
     parsed.pages = parsed.pages.slice(0, 4)
     for (const pg of parsed.pages) {
-      if (Array.isArray(pg.blocks)) pg.blocks = pg.blocks.slice(0, 12)
+      if (Array.isArray(pg.blocks)) {
+        pg.blocks = pg.blocks.slice(0, 12).map(b =>
+          b.type === 'contatti' ? { ...b, type: 'form_builder', data: { form_token: '', titolo_sezione: 'Contattaci', ...(b.data || {}) } } : b
+        )
+      }
     }
 
     const created = []
@@ -193,6 +199,6 @@ export async function POST(request) {
   } catch (e) {
     console.error('[AI generate-site]', e.message)
     const isTimeout = e.name === 'AbortError'
-    return Response.json({ error: isTimeout ? 'Timeout AI (90s). Prova con meno dettagli o riprova.' : 'Errore durante la generazione. Riprova.' }, { status: 500 })
+    return Response.json({ error: isTimeout ? 'Timeout AI (90s). Prova con meno dettagli o riprova.' : (e.message || 'Errore durante la generazione. Riprova.') }, { status: 500 })
   }
 }
