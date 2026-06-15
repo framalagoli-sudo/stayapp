@@ -122,6 +122,19 @@ sensibili (es. PII contatti) → OR-mapping per route condivise.
 - Stripe billing (Sprint 10), Multi-lingua IT/EN/DE, GitHub→Vercel auto-deploy, Notifiche realtime.
 - Refactor/pulizia emersi durante Fase 0-1 (raccolti qui).
 
+### Robustezza / infrastruttura (medio termine)
+- **RLS (Row Level Security) come 2° muro** sui dati sensibili (contatti, prenotazioni, ecc.).
+  Oggi tutta l'authz è solo nel codice (server usa service role → bypassa RLS). Il 1° muro
+  (codice) è completo + coperto da test di regressione, ma manca la difesa-in-profondità a DB.
+  È un progetto architetturale (policy RLS su ogni tabella + far girare le query "per conto
+  utente" col token utente invece della service role), NON una patch. Valutare quando crescono
+  gli sviluppatori che toccano le API. Vedi [[feedback_multitenant_authz]].
+- **Upgrade Supabase Pro ($25/mese)**: connection pooling, niente pausa del progetto, backup
+  giornalieri automatici, più risorse. Da fare prima di andare in vendita con clienti veri.
+- **Verificare i cron Vercel** (`/api/cron/*`: newsletter, backup R2, automazioni, blog):
+  con la migrazione da Railway (processo persistente con setInterval) a Vercel (serverless)
+  devono girare via Vercel Cron — confermare che siano schedulati e davvero firano.
+
 ---
 
 ## Hardening minori in sospeso (bassa priorità, da valutare)
