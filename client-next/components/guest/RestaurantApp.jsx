@@ -75,7 +75,7 @@ function EntityLogo({ logoUrl, tipo, typeColor }) {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp } = {}) {
+export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, domain = null } = {}) {
   const params = useParams()
   const slug = forceSlug || params?.slug || ristoranteProp?.slug
   const searchParams = useSearchParams()
@@ -326,7 +326,7 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp } 
             style={{ display: nav === 'chatbot' ? 'none' : undefined }}>
             {AppHeader}
             <div key={nav} className="fade-up">
-              {nav === 'home'    && <RHomePage    ristorante={ristorante} rModules={rModules} hasGallery={hasGallery} menuCount={menuCount} onExplore={goExplore} {...sp} headingFamily={headingFamily} />}
+              {nav === 'home'    && <RHomePage    ristorante={ristorante} rModules={rModules} hasGallery={hasGallery} menuCount={menuCount} onExplore={goExplore} domain={domain} {...sp} headingFamily={headingFamily} />}
               {nav === 'esplora' && <REsploraPage ristorante={ristorante} activeChip={activeChip} {...sp} headingFamily={headingFamily} />}
               {nav === 'prenota' && <PrenotaTab   ristorante={ristorante} {...sp} />}
               {nav === 'info'    && <InfoTab      ristorante={ristorante} {...sp} />}
@@ -352,7 +352,7 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp } 
 }
 
 // ─── HOME ─────────────────────────────────────────────────────────────────────
-function RHomePage({ ristorante, rModules, hasGallery, menuCount, onExplore, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, borderColor }) {
+function RHomePage({ ristorante, rModules, hasGallery, menuCount, onExplore, domain = null, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, borderColor }) {
   const galCount = (ristorante.gallery || []).length
   const homeSections = rModules.home_sections || {}
 
@@ -441,7 +441,9 @@ function RHomePage({ ristorante, rModules, hasGallery, menuCount, onExplore, pri
           <h2 style={{ fontSize: 18, fontWeight: 700, fontFamily: headingFamily, color: textColor, margin: '0 0 14px' }}>Scopri anche</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {ristorante.collegamenti.map(c => {
-              const href = c.tipo === 'ristorante' ? `/r/${c.slug}` : `/s/${c.slug}`
+              // Su dominio custom: link cross-entità assoluti al dominio principale.
+              const base = domain ? 'https://www.oltrenova.com' : ''
+              const href = base + (c.tipo === 'ristorante' ? `/r/${c.slug}` : `/s/${c.slug}`)
               const typeLabel = c.tipo === 'ristorante' ? 'Ristorante' : 'Struttura'
               const typeColor = c.tipo === 'struttura' ? primary : '#e63946'
               const shadow = isDark ? 'none' : '0 2px 12px rgba(0,0,0,0.07)'

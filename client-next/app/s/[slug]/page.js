@@ -1,13 +1,12 @@
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
-import { serverFetch } from '@/lib/api'
+import { getStruttura, getPagina } from '@/lib/guest-data'
 import LandingStruttura from '@/components/guest/LandingStruttura'
 import GuestApp from '@/components/guest/GuestApp'
 
-// Genera i meta tag lato server — Google e WhatsApp vedono questi tag nell'HTML grezzo
 export async function generateMetadata({ params, searchParams }) {
   const { slug } = await params
-  const property = await serverFetch(`/api/guest/${slug}`)
+  const property = await getStruttura(slug)
   if (!property) return { title: 'OltreNova' }
 
   const mini = property.minisito || {}
@@ -22,35 +21,21 @@ export async function generateMetadata({ params, searchParams }) {
     title,
     description,
     manifest: `/api/manifest/s/${slug}`,
-    appleWebApp: {
-      capable: true,
-      statusBarStyle: 'default',
-      title: property.name,
-    },
+    appleWebApp: { capable: true, statusBarStyle: 'default', title: property.name },
     icons: { apple: property.logo_url || '/icons/apple-touch-icon.png' },
     openGraph: {
-      title,
-      description,
-      url,
+      title, description, url,
       images: image ? [{ url: image, width: 1200, height: 630 }] : [],
-      type: 'website',
-      locale: 'it_IT',
+      type: 'website', locale: 'it_IT',
     },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: image ? [image] : [],
-    },
-    ...(mini.google_site_verification && {
-      verification: { google: mini.google_site_verification },
-    }),
+    twitter: { card: 'summary_large_image', title, description, images: image ? [image] : [] },
+    ...(mini.google_site_verification && { verification: { google: mini.google_site_verification } }),
   }
 }
 
 export default async function StrutturaPage({ params, searchParams }) {
   const { slug } = await params
-  const property = await serverFetch(`/api/guest/${slug}`, { next: { revalidate: 60 } })
+  const property = await getStruttura(slug)
   if (!property) notFound()
 
   const isQR = searchParams?.qr === '1'
@@ -58,9 +43,9 @@ export default async function StrutturaPage({ params, searchParams }) {
 
   if (showMinisito) {
     const preview = searchParams?.preview === '1'
-    const homePage = await serverFetch(`/api/guest/pagina/struttura/${property.id}/__home__${preview ? '?preview=1' : ''}`, { next: { revalidate: 0 } }).catch(() => null)
+    const homePage = await getPagina('struttura', property.id, '__home__', preview)
     const initialHomeBlocks = homePage?.id && Array.isArray(homePage.blocks) && homePage.blocks.length ? homePage.blocks : null
     return <LandingStruttura property={property} initialHomeBlocks={initialHomeBlocks} domain={searchParams?._domain || null} />
   }
-  return <Suspense><GuestApp property={property} /></Suspense>
+  return <Suspense><GuestApp property={property} domain={searchParams?._domain || null} /></Suspense>
 }

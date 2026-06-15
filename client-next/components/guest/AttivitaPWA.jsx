@@ -61,7 +61,7 @@ function buildWaUrl(wa, name) {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export default function AttivitaPWA({ attivita: attivitaProp, forceSlug } = {}) {
+export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain = null } = {}) {
   const { slug: paramSlug } = useParams()
   const slug = forceSlug || paramSlug
   const searchParams = useSearchParams()
@@ -308,7 +308,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug } = {}) 
             style={{ display: nav === 'chatbot' ? 'none' : undefined }}>
             {AppHeader}
             <div key={nav} className="fade-up">
-              {nav === 'home'      && <AHomePage      attivita={attivita} aMods={aMods} hasGallery={hasGallery} hasServizi={hasServizi} onExplore={goExplore} {...sp} headingFamily={headingFamily} />}
+              {nav === 'home'      && <AHomePage      attivita={attivita} aMods={aMods} hasGallery={hasGallery} hasServizi={hasServizi} onExplore={goExplore} domain={domain} {...sp} headingFamily={headingFamily} />}
               {nav === 'esplora'   && <AEsploraPage   attivita={attivita} activeChip={activeChip} {...sp} headingFamily={headingFamily} />}
               {nav === 'richiesta' && <ARichiestaTab  attivita={attivita} {...sp} headingFamily={headingFamily} />}
               {nav === 'info'      && <AInfoPage      attivita={attivita} {...sp} headingFamily={headingFamily} />}
@@ -334,7 +334,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug } = {}) 
 }
 
 // ─── HOME ─────────────────────────────────────────────────────────────────────
-function AHomePage({ attivita, aMods, hasGallery, hasServizi, onExplore, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, borderColor }) {
+function AHomePage({ attivita, aMods, hasGallery, hasServizi, onExplore, domain = null, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, borderColor }) {
   const galCount = (attivita.gallery || []).length
   const svcCount = (attivita.services || []).length
   const homeSections = aMods.home_sections || {}
@@ -426,7 +426,9 @@ function AHomePage({ attivita, aMods, hasGallery, hasServizi, onExplore, primary
           <h2 style={{ fontSize: 18, fontWeight: 700, fontFamily: headingFamily, color: textColor, margin: '0 0 14px' }}>Scopri anche</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {attivita.collegamenti.map(c => {
-              const href = c.tipo === 'ristorante' ? `/r/${c.slug}` : c.tipo === 'attivita' ? `/a/${c.slug}` : `/s/${c.slug}`
+              // Su dominio custom: link cross-entità assoluti al dominio principale.
+              const base = domain ? 'https://www.oltrenova.com' : ''
+              const href = base + (c.tipo === 'ristorante' ? `/r/${c.slug}` : c.tipo === 'attivita' ? `/a/${c.slug}` : `/s/${c.slug}`)
               const typeLabel = c.tipo === 'ristorante' ? 'Ristorante' : c.tipo === 'attivita' ? 'Attività' : 'Struttura'
               const shadow = isDark ? 'none' : '0 2px 12px rgba(0,0,0,0.07)'
               return (

@@ -104,7 +104,7 @@ function EntityLogo({ logoUrl, tipo, typeColor }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 // In Next.js: property viene dal Server Component (SSR). Se non presente, fa fetch client-side.
-export default function GuestApp({ forceSlug, property: propertyProp } = {}) {
+export default function GuestApp({ forceSlug, property: propertyProp, domain = null } = {}) {
   const params = useParams()
   const slug = forceSlug || params?.slug || propertyProp?.slug
   const searchParams = useSearchParams()
@@ -374,7 +374,7 @@ export default function GuestApp({ forceSlug, property: propertyProp } = {}) {
             style={{ display: nav === 'chatbot' ? 'none' : undefined }}>
             {AppHeader}
             <div key={nav} className="fade-up">
-              {nav === 'home'      && <HomePage      property={property} upcomingEventi={upcomingEventi} modules={modules} onExplore={goExplore} {...sp} headingFamily={headingFamily} />}
+              {nav === 'home'      && <HomePage      property={property} upcomingEventi={upcomingEventi} modules={modules} onExplore={goExplore} domain={domain} {...sp} headingFamily={headingFamily} />}
               {nav === 'esplora'   && <EsploraPage   property={property} upcomingEventi={upcomingEventi} activeChip={activeChip} {...sp} headingFamily={headingFamily} />}
               {nav === 'richiesta' && <div style={{ padding: 20 }}><RequestForm propertyId={property.id} modules={modules} primary={primary} radius={radius} textColor={textColor} isDark={isDark} /></div>}
               {nav === 'chat'      && <ChatPage      propertyId={property.id} propertyName={property.name} {...sp} headingFamily={headingFamily} />}
@@ -401,7 +401,7 @@ export default function GuestApp({ forceSlug, property: propertyProp } = {}) {
 }
 
 // ─── HOME ─────────────────────────────────────────────────────────────────────
-function HomePage({ property, upcomingEventi = [], modules, onExplore, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor }) {
+function HomePage({ property, upcomingEventi = [], modules, onExplore, domain = null, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor }) {
   const hasServices   = (property.services  || []).length > 0
   const hasGallery    = (property.gallery   || []).length > 0
   const hasActivities = (property.activities|| []).some(c => c.items?.some(i => i.active))
@@ -510,7 +510,10 @@ function HomePage({ property, upcomingEventi = [], modules, onExplore, primary, 
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {property.collegamenti.map(c => {
-              const href = c.tipo === 'ristorante' ? `/r/${c.slug}` : `/s/${c.slug}`
+              // Su dominio custom i link cross-entità devono essere assoluti al dominio
+              // principale, altrimenti il middleware li riscrive sotto l'entità sbagliata.
+              const base = domain ? 'https://www.oltrenova.com' : ''
+              const href = base + (c.tipo === 'ristorante' ? `/r/${c.slug}` : `/s/${c.slug}`)
               const typeLabel = c.tipo === 'ristorante' ? 'Ristorante' : 'Struttura'
               const typeColor = c.tipo === 'ristorante' ? '#e63946' : primary
               return (

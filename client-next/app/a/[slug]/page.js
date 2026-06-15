@@ -39,7 +39,7 @@ export default async function AttivitaPage({ params, searchParams }) {
   const isQR = searchParams?.qr === '1'
   const pwaActive = attivita.pwa?.active !== false
   if (isQR && pwaActive) {
-    return <Suspense><AttivitaPWA attivita={attivita} /></Suspense>
+    return <Suspense><AttivitaPWA attivita={attivita} domain={searchParams?._domain || null} /></Suspense>
   }
 
   const preview = searchParams?.preview === '1'

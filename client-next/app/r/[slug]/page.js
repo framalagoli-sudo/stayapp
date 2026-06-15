@@ -1,12 +1,12 @@
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
-import { serverFetch } from '@/lib/api'
+import { getRistorante, getPagina } from '@/lib/guest-data'
 import LandingRistorante from '@/components/guest/LandingRistorante'
 import RestaurantApp from '@/components/guest/RestaurantApp'
 
 export async function generateMetadata({ params, searchParams }) {
   const { slug } = await params
-  const ristorante = await serverFetch(`/api/guest/r/${slug}`)
+  const ristorante = await getRistorante(slug)
   if (!ristorante) return { title: 'OltreNova' }
 
   const mini = ristorante.minisito || {}
@@ -21,11 +21,7 @@ export async function generateMetadata({ params, searchParams }) {
     title,
     description,
     manifest: `/api/manifest/r/${slug}`,
-    appleWebApp: {
-      capable: true,
-      statusBarStyle: 'default',
-      title: ristorante.name,
-    },
+    appleWebApp: { capable: true, statusBarStyle: 'default', title: ristorante.name },
     icons: { apple: ristorante.logo_url || '/icons/apple-touch-icon.png' },
     openGraph: { title, description, url, images: image ? [{ url: image }] : [], type: 'website' },
     twitter: { card: 'summary_large_image', title, description, images: image ? [image] : [] },
@@ -35,7 +31,7 @@ export async function generateMetadata({ params, searchParams }) {
 
 export default async function RistorantePage({ params, searchParams }) {
   const { slug } = await params
-  const ristorante = await serverFetch(`/api/guest/r/${slug}`, { next: { revalidate: 60 } })
+  const ristorante = await getRistorante(slug)
   if (!ristorante) notFound()
 
   const isQR = searchParams?.qr === '1'
@@ -43,9 +39,9 @@ export default async function RistorantePage({ params, searchParams }) {
 
   if (showMinisito) {
     const preview = searchParams?.preview === '1'
-    const homePage = await serverFetch(`/api/guest/pagina/ristorante/${ristorante.id}/__home__${preview ? '?preview=1' : ''}`, { next: { revalidate: 0 } }).catch(() => null)
+    const homePage = await getPagina('ristorante', ristorante.id, '__home__', preview)
     const initialHomeBlocks = homePage?.id && Array.isArray(homePage.blocks) && homePage.blocks.length ? homePage.blocks : null
     return <LandingRistorante ristorante={ristorante} initialHomeBlocks={initialHomeBlocks} domain={searchParams?._domain || null} />
   }
-  return <Suspense><RestaurantApp ristorante={ristorante} /></Suspense>
+  return <Suspense><RestaurantApp ristorante={ristorante} domain={searchParams?._domain || null} /></Suspense>
 }
