@@ -29,7 +29,7 @@ Ordine scelto da Francesco:
 | 2 | Operativo (Dashboard, Richieste, Prenotazioni, Booking, Recensioni, Survey) | ✅API | ⬜ | ⬜ | ⬜ | |
 | 3 | Entità (Info, Galleria, Menu, Tema, Chatbot, Domini) | ✅API | ⬜ | ⬜ | ⬜ | Sito web già fatto ✅ |
 | 4 | Marketing/CRM (Contatti, Newsletter, Automazioni, Blog, Piano Editoriale, Content Studio, AI Site Builder, Preventivi, Shop, Loyalty, Eventi, Analytics) | ✅API | 🟡 | 🟡 | ⬜ | Form Builder ✅ già fatto |
-| 5 | Account/Piattaforma (Collaboratori, Integrazioni, SEO, Impostazioni, Sicurezza, Aziende/Strutture/Utenti) | 🟡 | 🟡 | ⬜ | ⬜ | Gestione aziende/utenti VERIFICATA sicura. 2 finding (permessi + 2FA non enforced server-side) → sessione dedicata. Resta funzionale: SecurityPage, Impostazioni, SEO, Integrazioni |
+| 5 | Account/Piattaforma (Collaboratori, Integrazioni, SEO, Impostazioni, Sicurezza, Aziende/Strutture/Utenti) | ✅ | 🟡 | ⬜ | ⬜ | Sicurezza CHIUSA: aziende/utenti ok, **2FA + permessi staff ora enforced server-side** (verificati live). Resta funzionale: SecurityPage, Impostazioni, SEO, Integrazioni |
 
 ---
 
@@ -88,16 +88,15 @@ Ordine scelto da Francesco:
 senza azienda. Il client (AuthContext via supabase diretto + AdminGuard) gestisce già il
 redirect a mfa-verify/security, quindi nessuno resta chiuso fuori. Deploy + smoke ok.
 
-### Permessi staff non applicati server-side
-I permessi granulari `staff` (profiles.permissions: richieste/contatti/newsletter/...) sono
-**salvati e usati solo client-side** (nascondono la sidebar). **Nessun route API li verifica** →
-un collaboratore `staff` può chiamare le API direttamente e scavalcare i limiti del titolare
-(intra-azienda; lo scoping azienda regge, non vede altre aziende).
-**Perché serve design, non un fix rapido**: molte route sono condivise tra sezioni (es.
-`/api/contatti` serve Contatti MA anche Preventivi/Dashboard). Gating naïf route-per-route
-romperebbe accessi legittimi. Da fare: mappa permesso↔risorsa + dipendenze cross-sezione +
-helper `hasPermission(profile, key)` (solo `staff` ristretto; admin_azienda/super_admin pieni) +
-test per ruolo. Modello permessi: vedi `StaffPage.jsx` (PERM_OPERATIVO/MARKETING/ACCOUNT).
+### ✅ Permessi staff — ENFORCED server-side (FATTO)
+`requireAuth` ora applica i permessi via `enforcePermission`: una mappa prefisso-route→permesso
+gate le MUTAZIONI (POST/PATCH/PUT/DELETE) — uno `staff` può mutare solo le sezioni concesse.
+Le GET restano libere (Dashboard e cross-sezione intatti). Solo `staff` ristretto;
+admin_azienda/super_admin pieni. Helper `hasPermission(profile, key)` esportato.
+Verificato live: staff con solo `contatti` → POST newsletter 403, POST contatti 201.
+Nota: i permessi gate le SCRITTURE; le letture intra-azienda restano accessibili (scelta
+consapevole per non rompere Dashboard/Preventivi). Se in futuro serve gate anche letture
+sensibili (es. PII contatti) → OR-mapping per route condivise.
 
 ## FASE 2 — Predisposizione sviluppi futuri
 - Stripe billing (Sprint 10), Multi-lingua IT/EN/DE, GitHub→Vercel auto-deploy, Notifiche realtime.

@@ -42,8 +42,51 @@ async function enforceMfa(request, user) {
   return Response.json({ error: 'Verifica a due fattori richiesta', code: 'mfa_required' }, { status: 403 })
 }
 
+// Verifica un permesso granulare. SOLO il ruolo 'staff' è ristretto dai permessi;
+// admin_azienda/super_admin/altri ruoli admin hanno accesso pieno alla propria azienda.
+export function hasPermission(profile, permKey) {
+  if (!profile) return false
+  if (profile.role !== 'staff') return true
+  return !!profile.permissions?.[permKey]
+}
+
+// Mappa prefisso-route → chiave permesso. Le mutazioni (POST/PATCH/PUT/DELETE) su queste
+// route sono consentite a uno 'staff' solo se ha il permesso corrispondente.
+// Le GET restano libere (scoping per azienda già applicato) per non rompere Dashboard e
+// flussi cross-sezione (es. Preventivi che leggono Contatti).
+const PERMISSION_BY_PREFIX = [
+  ['/api/contatti',         'contatti'],
+  ['/api/newsletter',       'newsletter'],
+  ['/api/blog',             'blog'],            // include /api/blog/categories, /api/blog-automazioni
+  ['/api/automazioni',      'automazioni'],
+  ['/api/piano-editoriale', 'piano_editoriale'],
+  ['/api/content-studio',   'content_studio'],
+  ['/api/preventivi',       'preventivi'],
+  ['/api/form-builder',     'form_builder'],
+  ['/api/shop',             'shop'],
+  ['/api/loyalty',          'loyalty'],
+  ['/api/recensioni',       'recensioni'],
+  ['/api/survey',           'survey'],
+  ['/api/eventi',           'eventi'],
+  ['/api/booking',          'booking'],
+  ['/api/requests',         'richieste'],
+]
+const MUTATION_METHODS = new Set(['POST', 'PATCH', 'PUT', 'DELETE'])
+
+// Enforcement permessi staff: blocca le mutazioni su sezioni non concesse.
+async function enforcePermission(request, user) {
+  if (!MUTATION_METHODS.has(request.method)) return null
+  const pathname = new URL(request.url).pathname
+  const entry = PERMISSION_BY_PREFIX.find(([prefix]) => pathname.startsWith(prefix))
+  if (!entry) return null
+  const { data: profile } = await supabaseAdmin.from('profiles').select('role, permissions').eq('id', user.id).single()
+  if (!profile || profile.role !== 'staff') return null // solo staff è ristretto
+  if (profile.permissions?.[entry[1]]) return null       // permesso concesso
+  return Response.json({ error: 'Permesso negato per questa sezione', code: 'permission_denied' }, { status: 403 })
+}
+
 // Scorciatoia: restituisce Response 401 se non autorizzato, altrimenti l'utente.
-// Applica anche l'enforcement 2FA (se l'azienda lo richiede).
+// Applica anche l'enforcement 2FA e dei permessi staff.
 // Uso: const { user, response } = await requireAuth(request)
 //      if (response) return response
 export async function requireAuth(request) {
@@ -51,6 +94,8 @@ export async function requireAuth(request) {
   if (!user) return { user: null, response: Response.json({ error: 'Non autorizzato' }, { status: 401 }) }
   const mfaResponse = await enforceMfa(request, user)
   if (mfaResponse) return { user: null, response: mfaResponse }
+  const permResponse = await enforcePermission(request, user)
+  if (permResponse) return { user: null, response: permResponse }
   return { user, response: null }
 }
 
