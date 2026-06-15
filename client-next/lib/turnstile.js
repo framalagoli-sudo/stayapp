@@ -13,11 +13,11 @@ export async function verifyTurnstile(token, ip) {
   const bypass = (process.env.TURNSTILE_TEST_BYPASS ?? '').trim()
   if (bypass && token === bypass) return { success: true, bypass: true }
 
-  // MODALITÀ SOFT di default durante il rollout: registra il motivo del fallimento
-  // ma NON blocca il lead (le altre difese — honeypot, rate-limit, spam filter —
-  // restano attive). L'enforcement vero si attiva SOLO con TURNSTILE_STRICT=1,
-  // dopo aver confermato dai log che il widget produce token validi.
-  const soft = (process.env.TURNSTILE_STRICT ?? '').trim() !== '1'
+  // Enforcement attivo di default. LEVA D'EMERGENZA: impostando TURNSTILE_SOFT=1
+  // su Vercel, Turnstile smette di bloccare (logga solo il motivo) senza perdere
+  // lead — utile se un domani il widget desse problemi. Le altre difese (honeypot,
+  // rate-limit, spam filter) restano comunque sempre attive.
+  const soft = (process.env.TURNSTILE_SOFT ?? '').trim() === '1'
 
   if (!token) {
     if (soft) { console.error('[turnstile] SOFT: token mancante (widget non ha prodotto token)'); return { success: true, softfail: 'missing-token' } }
