@@ -1,10 +1,12 @@
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
-import { serverFetch } from '@/lib/api'
+import { getAttivita, getPagina } from '@/lib/guest-data'
 import LandingAttivita from '@/components/guest/LandingAttivita'
+import AttivitaPWA from '@/components/guest/AttivitaPWA'
 
 export async function generateMetadata({ params, searchParams }) {
   const { slug } = await params
-  const attivita = await serverFetch(`/api/guest/a/${slug}`)
+  const attivita = await getAttivita(slug)
   if (!attivita) return { title: 'OltreNova' }
 
   const mini = attivita.minisito || {}
@@ -19,11 +21,7 @@ export async function generateMetadata({ params, searchParams }) {
     title,
     description,
     manifest: `/api/manifest/a/${slug}`,
-    appleWebApp: {
-      capable: true,
-      statusBarStyle: 'default',
-      title: attivita.name,
-    },
+    appleWebApp: { capable: true, statusBarStyle: 'default', title: attivita.name },
     icons: { apple: attivita.logo_url || '/icons/apple-touch-icon.png' },
     openGraph: { title, description, url, images: image ? [{ url: image }] : [], type: 'website' },
     twitter: { card: 'summary_large_image', title, description, images: image ? [image] : [] },
@@ -33,11 +31,19 @@ export async function generateMetadata({ params, searchParams }) {
 
 export default async function AttivitaPage({ params, searchParams }) {
   const { slug } = await params
-  const attivita = await serverFetch(`/api/guest/a/${slug}`, { next: { revalidate: 60 } })
+  const attivita = await getAttivita(slug)
   if (!attivita) notFound()
 
+  // QR + PWA attiva → app installabile; ogni altro caso → minisito (marketing).
+  // Default ON (coerente con AttivitaModuliPage: pwa.active !== false).
+  const isQR = searchParams?.qr === '1'
+  const pwaActive = attivita.pwa?.active !== false
+  if (isQR && pwaActive) {
+    return <Suspense><AttivitaPWA attivita={attivita} /></Suspense>
+  }
+
   const preview = searchParams?.preview === '1'
-  const homePage = await serverFetch(`/api/guest/pagina/attivita/${attivita.id}/__home__${preview ? '?preview=1' : ''}`, { next: { revalidate: 0 } }).catch(() => null)
+  const homePage = await getPagina('attivita', attivita.id, '__home__', preview)
   const initialHomeBlocks = homePage?.id && Array.isArray(homePage.blocks) && homePage.blocks.length ? homePage.blocks : null
   return <LandingAttivita attivita={attivita} initialHomeBlocks={initialHomeBlocks} domain={searchParams?._domain || null} />
 }

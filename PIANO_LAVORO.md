@@ -58,8 +58,11 @@ Ordine scelto da Francesco:
 - Newsletter `/api/contatti/subscribe` → ok
 - ✅ **Overbooking eventi FIXATO** (deciso: pending riservano i posti). `seats_booked` ora = somma posti non-cancelled, ricalcolato da event_bookings (helper `recomputeEventSeats`) su booking guest + cambio stato admin. + 2 IDOR chiusi su event_bookings (PATCH/GET). Backfill: corretto 1 evento (0→3 posti reali non contati). Verificato live.
 
-**Codice morto trovato ⚠️ (decisione Francesco)**
-- `AttivitaApp.jsx` + `AttivitaPWA.jsx` — importati solo l'uno dall'altro, NESSUN route li renderizza. L'attività ha solo il minisito (`LandingAttivita`), niente PWA attiva. Da eliminare o cablare?
+**✅ PWA Attività CABLATA** (Francesco: la vuole attiva — palestre, corsi lingue, ecc.)
+- Route `/a/[slug]` ora branccia: QR + `pwa.active !== false` → `AttivitaPWA` (installabile); altrimenti minisito. Pattern identico a struttura/ristorante.
+- Toggle admin "App Clienti attiva" già esistente in `AttivitaModuliPage` (salva `attivita.pwa.active`, default ON).
+- QR code già genera `/a/:slug?qr=1`. Mancava solo il branching nel route → aggiunto.
+- `AttivitaApp.jsx` eliminato (superato dal branching server-side).
 
 **Rivisto ✅ (display)**
 - `LandingAttivita` / `LandingRistorante` / `LandingStruttura` + `GuestSubPage` — guestFetch ovunque (pageview/eventi/pagine/recensioni/sitemap), nessun form data-write, convenzione ok. Puliti.
