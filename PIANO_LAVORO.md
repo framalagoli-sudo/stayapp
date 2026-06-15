@@ -11,6 +11,14 @@ fixati form contatto guest (lead persi), overbooking eventi, manifest PWA, +2FA/
 Tutti gli altri contratti data-write verificati allineati. Resta il deep-funzionale UI/edge
 per-modulo (Fase 1) dove serve.
 
+## 🛡️ Test di regressione sicurezza — AGGIUNTI (`tests/smoke/security.spec.js`)
+Suite API-level che gira come ruolo `staff` reale (project Playwright `security`), copre i
+fix critici: permessi (403 su sezione negata), IDOR cross-azienda (404), 2FA (403 mfa_required
++ no falsi positivi), form contatto IT (regressione lead persi). Crea fixture effimere
+(azienda+staff) con cleanup. Girano con `npm test`. **Sono i test che avrebbero preso ogni bug
+di oggi** → ora i fix restano blindati anche su refactor di `requireAuth`.
+Da estendere in futuro: più route per modulo, ruolo admin_azienda.
+
 ## Legenda stato
 - 🔒 Sicurezza (authz multi-tenant, IDOR, leak)
 - 🐛 Bug bloccanti / funzionali

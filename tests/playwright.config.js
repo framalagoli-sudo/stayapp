@@ -29,5 +29,11 @@ export default defineConfig({
       testMatch: 'admin.spec.js',
       use: { storageState: '.auth/state.json' },
     },
+    {
+      // Regression sicurezza: API-level, ruolo staff. Gestisce i propri token,
+      // niente storageState (nessun browser/sessione super_admin).
+      name: 'security',
+      testMatch: 'security.spec.js',
+    },
   ],
 })
