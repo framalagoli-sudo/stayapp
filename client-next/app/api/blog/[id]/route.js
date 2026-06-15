@@ -1,14 +1,14 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireRecordAccess } from '@/lib/server-auth'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 function toUuid(v) { return (v && UUID_RE.test(v)) ? v : null }
 
 export async function GET(request, { params }) {
   try {
-    const { user, response } = await requireAuth(request)
-    if (response) return response
     if (!UUID_RE.test(params.id)) return Response.json({ error: 'ID non valido' }, { status: 400 })
+    const { response } = await requireRecordAccess(request, 'articoli', params.id)
+    if (response) return response
     const { data, error } = await supabaseAdmin.from('articoli').select('*').eq('id', params.id).single()
     if (error || !data) return Response.json({ error: 'Non trovato' }, { status: 404 })
     return Response.json(data)
@@ -17,9 +17,9 @@ export async function GET(request, { params }) {
 
 export async function PATCH(request, { params }) {
   try {
-    const { user, response } = await requireAuth(request)
-    if (response) return response
     if (!UUID_RE.test(params.id)) return Response.json({ error: 'ID articolo non valido' }, { status: 400 })
+    const { response } = await requireRecordAccess(request, 'articoli', params.id)
+    if (response) return response
 
     const body = await request.json()
     const allowed = ['title', 'excerpt', 'content', 'cover_url', 'author', 'category_id', 'entity_tipo', 'entity_id', 'published', 'active']
@@ -42,7 +42,8 @@ export async function PATCH(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const { user, response } = await requireAuth(request)
+    if (!UUID_RE.test(params.id)) return Response.json({ error: 'ID articolo non valido' }, { status: 400 })
+    const { response } = await requireRecordAccess(request, 'articoli', params.id)
     if (response) return response
     const { error } = await supabaseAdmin.from('articoli').delete().eq('id', params.id)
     if (error) return Response.json({ error: error.message }, { status: 500 })

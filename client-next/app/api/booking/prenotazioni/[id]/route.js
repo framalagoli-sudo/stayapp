@@ -1,10 +1,10 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireRecordAccess } from '@/lib/server-auth'
 import { syncBookingCreate, syncBookingDelete } from '@/lib/google-calendar-stub'
 
 export async function PATCH(request, { params }) {
   try {
-    const { user, response } = await requireAuth(request)
+    const { response } = await requireRecordAccess(request, 'prenotazioni', params.id)
     if (response) return response
     const body = await request.json()
     const allowed = ['stato', 'note_interne', 'n_persone']
@@ -30,7 +30,7 @@ export async function PATCH(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const { user, response } = await requireAuth(request)
+    const { response } = await requireRecordAccess(request, 'prenotazioni', params.id)
     if (response) return response
     const { error } = await supabaseAdmin.from('prenotazioni').delete().eq('id', params.id)
     if (error) return Response.json({ error: error.message }, { status: 500 })

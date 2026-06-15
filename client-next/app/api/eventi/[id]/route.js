@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireRecordAccess } from '@/lib/server-auth'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 function isUUID(v) { return UUID_RE.test(v) }
@@ -9,7 +9,7 @@ const ALLOWED = ['title', 'description', 'cover_url', 'date_start', 'date_end',
 
 export async function GET(request, { params }) {
   try {
-    const { user, response } = await requireAuth(request)
+    const { response } = await requireRecordAccess(request, 'eventi', params.id)
     if (response) return response
     const { data, error } = await supabaseAdmin.from('eventi').select('*').eq('id', params.id).single()
     if (error || !data) return Response.json({ error: 'Evento non trovato' }, { status: 404 })
@@ -19,7 +19,7 @@ export async function GET(request, { params }) {
 
 export async function PATCH(request, { params }) {
   try {
-    const { user, response } = await requireAuth(request)
+    const { response } = await requireRecordAccess(request, 'eventi', params.id)
     if (response) return response
     const body = await request.json()
     const payload = Object.fromEntries(Object.entries(body).filter(([k]) => ALLOWED.includes(k)))
@@ -33,7 +33,7 @@ export async function PATCH(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const { user, response } = await requireAuth(request)
+    const { response } = await requireRecordAccess(request, 'eventi', params.id)
     if (response) return response
     const { error } = await supabaseAdmin.from('eventi').delete().eq('id', params.id)
     if (error) return Response.json({ error: error.message }, { status: 500 })

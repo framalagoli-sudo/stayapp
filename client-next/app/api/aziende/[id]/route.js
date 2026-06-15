@@ -10,6 +10,11 @@ export async function GET(request, { params }) {
   try {
     const { user, response } = await requireAuth(request)
     if (response) return response
+    const profile = await getProfile(user.id)
+    if (!profile) return Response.json({ error: 'Profilo non trovato' }, { status: 403 })
+    // Un utente può leggere solo la propria azienda; super_admin tutte.
+    if (profile.role !== 'super_admin' && profile.azienda_id !== params.id)
+      return Response.json({ error: 'Azienda non trovata' }, { status: 404 })
     const { data, error } = await supabaseAdmin.from('aziende').select('*').eq('id', params.id).single()
     if (error || !data) return Response.json({ error: 'Azienda non trovata' }, { status: 404 })
     return Response.json(data)

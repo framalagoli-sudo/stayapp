@@ -51,6 +51,25 @@ export function resolveAziendaId(profile, bodyAziendaId) {
   return profile.azienda_id || null
 }
 
+// Autorizza l'accesso a un record che possiede una colonna azienda_id diretta
+// (eventi, articoli, collegamenti, blog_categories, recensioni, ...).
+// Carica il record, verifica la proprietà e risponde 404 se non autorizzato.
+// Uso:
+//   const { response } = await requireRecordAccess(request, 'eventi', params.id)
+//   if (response) return response
+export async function requireRecordAccess(request, table, id, aziendaColumn = 'azienda_id') {
+  const { user, response } = await requireAuth(request)
+  if (response) return { response }
+  const profile = await getProfile(user.id)
+  if (!profile) return { response: Response.json({ error: 'Profilo non trovato' }, { status: 403 }) }
+  const { data: record } = await supabaseAdmin.from(table).select(aziendaColumn).eq('id', id).single()
+  if (!record) return { response: Response.json({ error: 'Non trovato' }, { status: 404 }) }
+  if (profile.role !== 'super_admin' && record[aziendaColumn] !== profile.azienda_id) {
+    return { response: Response.json({ error: 'Non trovato' }, { status: 404 }) }
+  }
+  return { user, profile, aziendaId: record[aziendaColumn], response: null }
+}
+
 // ── Autorizzazione entità ─────────────────────────────────────────────────────
 // Autentica l'utente E verifica che possa accedere all'entità indicata.
 // super_admin passa sempre; gli altri solo se l'entità appartiene alla loro azienda.

@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireRecordAccess } from '@/lib/server-auth'
 
 function slugify(str) {
   return str.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
@@ -7,7 +7,7 @@ function slugify(str) {
 
 export async function PATCH(request, { params }) {
   try {
-    const { user, response } = await requireAuth(request)
+    const { response } = await requireRecordAccess(request, 'blog_categories', params.id)
     if (response) return response
     const { name, description } = await request.json()
     const updates = {}
@@ -21,7 +21,7 @@ export async function PATCH(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const { user, response } = await requireAuth(request)
+    const { response } = await requireRecordAccess(request, 'blog_categories', params.id)
     if (response) return response
     const { error } = await supabaseAdmin.from('blog_categories').delete().eq('id', params.id)
     if (error) return Response.json({ error: error.message }, { status: 500 })
