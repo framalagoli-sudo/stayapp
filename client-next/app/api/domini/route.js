@@ -58,7 +58,9 @@ export async function GET(request) {
     if (entity_tipo && entity_id && !list.some(d => d.tipo === 'subdomain')) {
       const table = entity_tipo === 'struttura' ? 'properties' : entity_tipo === 'ristorante' ? 'ristoranti' : 'attivita'
       const { data: entity } = await supabaseAdmin.from(table).select('azienda_id, slug').eq('id', entity_id).single()
-      if (entity?.slug) {
+      // Solo per entità della propria azienda (super_admin può tutto).
+      const owns = profile.role === 'super_admin' || entity?.azienda_id === profile.azienda_id
+      if (entity?.slug && owns) {
         await createDefaultSubdomain({ azienda_id: entity.azienda_id, entity_tipo, entity_id, entity_slug: entity.slug })
         const { data: fresh } = await supabaseAdmin.from('domini').select('*')
           .eq('entity_tipo', entity_tipo).eq('entity_id', entity_id).order('created_at', { ascending: true })

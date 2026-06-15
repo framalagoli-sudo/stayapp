@@ -142,7 +142,7 @@ function NewPageModal({ onClose, onConfirm, creating }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function SitoPage({ entityTipo }) {
-  const navigate    = useRouter()
+  const router      = useRouter()
   const { id: paramId } = useParams()
   const ctxId       = useContext(PropertyIdContext)
   const { profile } = useAuth()

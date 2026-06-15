@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireAuth, resolveAziendaId } from '@/lib/server-auth'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 function isUUID(v) { return UUID_RE.test(v) }
@@ -54,7 +54,7 @@ export async function POST(request) {
     if (!title?.trim()) return Response.json({ error: 'Il titolo è obbligatorio' }, { status: 400 })
     if (!date_start) return Response.json({ error: 'La data è obbligatoria' }, { status: 400 })
 
-    const azienda_id = isUUID(body.azienda_id) ? body.azienda_id : (isUUID(profile.azienda_id) ? profile.azienda_id : null)
+    const azienda_id = resolveAziendaId(profile, isUUID(body.azienda_id) ? body.azienda_id : null)
     if (!azienda_id) return Response.json({ error: 'Nessuna azienda valida associata al profilo.' }, { status: 400 })
 
     let base = slugify(title), slug = base, n = 0

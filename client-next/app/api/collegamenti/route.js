@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireAuth, getProfile, resolveAziendaId } from '@/lib/server-auth'
 
 async function enrichLinks(links, tipo, id) {
   const result = []
@@ -18,14 +18,22 @@ export async function GET(request) {
   try {
     const { user, response } = await requireAuth(request)
     if (response) return response
+    const profile = await getProfile(user.id)
+    if (!profile) return Response.json({ error: 'Profilo non trovato' }, { status: 403 })
     const { searchParams } = new URL(request.url)
     const tipo = searchParams.get('tipo')
     const entity_id = searchParams.get('entity_id')
     if (!tipo || !entity_id) return Response.json({ error: 'tipo e entity_id obbligatori' }, { status: 400 })
 
-    const { data: links, error } = await supabaseAdmin
+    let linksQ = supabaseAdmin
       .from('collegamenti').select('*')
       .or(`and(from_tipo.eq.${tipo},from_id.eq.${entity_id}),and(to_tipo.eq.${tipo},to_id.eq.${entity_id})`)
+    // Scope per azienda: un utente vede solo i collegamenti della propria azienda.
+    if (profile.role !== 'super_admin') {
+      if (!profile.azienda_id) return Response.json([])
+      linksQ = linksQ.eq('azienda_id', profile.azienda_id)
+    }
+    const { data: links, error } = await linksQ
     if (error) return Response.json({ error: error.message }, { status: 500 })
 
     const enriched = await enrichLinks(links || [], tipo, entity_id)
@@ -37,18 +45,29 @@ export async function POST(request) {
   try {
     const { user, response } = await requireAuth(request)
     if (response) return response
-    const { data: profile } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', user.id).single()
+    const profile = await getProfile(user.id)
     if (!profile) return Response.json({ error: 'Profilo non trovato' }, { status: 403 })
 
-    const { from_tipo, from_id, to_tipo, to_id, azienda_id } = await request.json()
-    if (!from_tipo || !from_id || !to_tipo || !to_id || !azienda_id)
+    const body = await request.json()
+    const { from_tipo, from_id, to_tipo, to_id } = body
+    if (!from_tipo || !from_id || !to_tipo || !to_id)
       return Response.json({ error: 'Campi mancanti' }, { status: 400 })
 
-    const allowedAziendaId = ['super_admin', 'admin', 'editor'].includes(profile.role) ? azienda_id : profile.azienda_id
-    if (!allowedAziendaId) return Response.json({ error: 'Permessi insufficienti' }, { status: 403 })
+    // Solo super_admin può specificare un'azienda diversa; gli altri sono vincolati alla propria.
+    const azienda_id = resolveAziendaId(profile, body.azienda_id)
+    if (!azienda_id) return Response.json({ error: 'Permessi insufficienti' }, { status: 403 })
+
+    // Verifica che entrambe le entità collegate appartengano a quell'azienda.
+    const ENTITY_TABLES = { struttura: 'properties', ristorante: 'ristoranti', attivita: 'attivita' }
+    for (const [tipo, id] of [[from_tipo, from_id], [to_tipo, to_id]]) {
+      const table = ENTITY_TABLES[tipo]
+      if (!table) return Response.json({ error: 'Tipo entità non valido' }, { status: 400 })
+      const { data: ent } = await supabaseAdmin.from(table).select('azienda_id').eq('id', id).single()
+      if (!ent || ent.azienda_id !== azienda_id) return Response.json({ error: 'Entità non valida' }, { status: 404 })
+    }
 
     const { data, error } = await supabaseAdmin
-      .from('collegamenti').insert({ azienda_id: allowedAziendaId, from_tipo, from_id, to_tipo, to_id })
+      .from('collegamenti').insert({ azienda_id, from_tipo, from_id, to_tipo, to_id })
       .select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
     return Response.json(data, { status: 201 })

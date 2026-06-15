@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireAuth, resolveAziendaId } from '@/lib/server-auth'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isUUID = v => UUID_RE.test(v)
@@ -46,7 +46,7 @@ export async function POST(request) {
     if (!profile) return Response.json({ error: 'Profilo non trovato' }, { status: 403 })
 
     const body = await request.json()
-    const azienda_id = isUUID(body.azienda_id) ? body.azienda_id : isUUID(profile.azienda_id) ? profile.azienda_id : null
+    const azienda_id = resolveAziendaId(profile, isUUID(body.azienda_id) ? body.azienda_id : null)
     if (!azienda_id) return Response.json({ error: 'Nessuna azienda valida' }, { status: 400 })
     if (!body.nome?.trim()) return Response.json({ error: 'Il nome è obbligatorio' }, { status: 400 })
 

@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireAuth, resolveAziendaId } from '@/lib/server-auth'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 function toUuid(v) { return (v && UUID_RE.test(v)) ? v : null }
@@ -45,7 +45,7 @@ export async function POST(request) {
     const profile = await getProfile(user.id)
     const body = await request.json()
     const { title, excerpt, content, cover_url, author, category_id, entity_tipo, entity_id, published } = body
-    const azienda_id = body.azienda_id || profile?.azienda_id
+    const azienda_id = resolveAziendaId(profile, body.azienda_id)
     if (!azienda_id || !title?.trim()) return Response.json({ error: 'azienda_id e title obbligatori' }, { status: 400 })
 
     let slug = slugify(title) || `articolo-${Date.now().toString(36)}`

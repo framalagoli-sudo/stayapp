@@ -1,11 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireAuth, getProfile, resolveAziendaId } from '@/lib/server-auth'
 import { sendWebhooks } from '@/lib/send-webhooks'
-
-async function getProfile(userId) {
-  const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
-  return data
-}
 
 export async function GET(request) {
   try {
@@ -42,7 +37,7 @@ export async function POST(request) {
     const profile = await getProfile(user.id)
     const body = await request.json()
     const { nome, email, telefono, tags, note, iscritto_newsletter } = body
-    const azienda_id = body.azienda_id || profile?.azienda_id
+    const azienda_id = resolveAziendaId(profile, body.azienda_id)
     if (!azienda_id || !nome?.trim()) return Response.json({ error: 'azienda_id e nome obbligatori' }, { status: 400 })
 
     const { data, error } = await supabaseAdmin.from('contatti').insert({

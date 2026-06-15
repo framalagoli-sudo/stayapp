@@ -1,10 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
-
-async function getProfile(userId) {
-  const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
-  return data
-}
+import { requireEntityAccess } from '@/lib/server-auth'
 
 function slugify(str) {
   return (str || '').toLowerCase()
@@ -16,12 +11,13 @@ function slugify(str) {
 
 export async function GET(request) {
   try {
-    const { user, response } = await requireAuth(request)
-    if (response) return response
     const { searchParams } = new URL(request.url)
     const entity_tipo = searchParams.get('entity_tipo')
     const entity_id = searchParams.get('entity_id')
     if (!entity_tipo || !entity_id) return Response.json({ error: 'entity_tipo e entity_id obbligatori' }, { status: 400 })
+
+    const { response } = await requireEntityAccess(request, entity_tipo, entity_id)
+    if (response) return response
 
     const { data, error } = await supabaseAdmin.from('pagine')
       .select('id, parent_id, slug, titolo, status, nel_menu, ordine, seo_title, seo_description, og_image_url, created_at, updated_at')
@@ -33,11 +29,12 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const { user, response } = await requireAuth(request)
-    if (response) return response
     const body = await request.json()
     const { entity_tipo, entity_id, titolo, slug, parent_id, status, nel_menu } = body
     if (!entity_tipo || !entity_id || !titolo?.trim()) return Response.json({ error: 'entity_tipo, entity_id e titolo obbligatori' }, { status: 400 })
+
+    const { response } = await requireEntityAccess(request, entity_tipo, entity_id)
+    if (response) return response
 
     const { data: existing } = await supabaseAdmin.from('pagine').select('ordine')
       .eq('entity_tipo', entity_tipo).eq('entity_id', entity_id).order('ordine', { ascending: false }).limit(1)
