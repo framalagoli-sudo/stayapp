@@ -1,3 +1,4 @@
+const { withSentryConfig } = require('@sentry/nextjs')
 const withPWA = require('next-pwa')({
   dest: 'public',
   disable: process.env.NODE_ENV === 'development',
@@ -54,4 +55,13 @@ const nextConfig = {
   },
 }
 
-module.exports = withPWA(nextConfig)
+// withSentryConfig wrappa SOPRA next-pwa: gestisce l'inizializzazione corretta
+// del SDK in tutti i runtime (server/edge/client) su Vercel serverless — cosa che
+// il solo instrumentation.js non faceva. Upload source-map disattivato (niente
+// auth token necessario): vogliamo solo la cattura errori.
+module.exports = withSentryConfig(withPWA(nextConfig), {
+  org: 'oltrenova',
+  project: 'javascript-nextjs',
+  silent: true,
+  sourcemaps: { disable: true },
+})
