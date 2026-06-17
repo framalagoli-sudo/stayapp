@@ -13,11 +13,11 @@ export async function verifyTurnstile(token, ip) {
   const bypass = (process.env.TURNSTILE_TEST_BYPASS ?? '').trim()
   if (bypass && token === bypass) return { success: true, bypass: true }
 
-  // Enforcement attivo di default. LEVA D'EMERGENZA: impostando TURNSTILE_SOFT=1
-  // su Vercel, Turnstile smette di bloccare (logga solo il motivo) senza perdere
-  // lead — utile se un domani il widget desse problemi. Le altre difese (honeypot,
-  // rate-limit, spam filter) restano comunque sempre attive.
-  const soft = (process.env.TURNSTILE_SOFT ?? '').trim() === '1'
+  // SOFT di default (emergenza 17/6: il widget aveva smesso di rendere → form bloccati
+  // con campagna live). NON blocca: logga il motivo ma fa passare il lead. Le altre
+  // difese (honeypot, rate-limit, spam filter) restano attive. Riattivare l'enforcement
+  // con TURNSTILE_STRICT=1 SOLO dopo aver verificato che il widget produce token validi.
+  const soft = (process.env.TURNSTILE_STRICT ?? '').trim() !== '1'
 
   if (!token) {
     if (soft) { console.error('[turnstile] SOFT: token mancante (widget non ha prodotto token)'); return { success: true, softfail: 'missing-token' } }
