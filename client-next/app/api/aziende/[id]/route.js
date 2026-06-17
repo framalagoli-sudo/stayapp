@@ -30,7 +30,7 @@ export async function PATCH(request, { params }) {
     const isOwner = profile.azienda_id === params.id
     if (profile.role !== 'super_admin' && !isOwner) return Response.json({ error: 'Permessi insufficienti' }, { status: 403 })
     const body = await request.json()
-    const allowed = ['ragione_sociale', 'partita_iva', 'codice_fiscale', 'email', 'pec', 'telefono', 'cellulare', 'indirizzo', 'citta', 'cap', 'provincia', 'piano', 'moduli', 'active', 'require_2fa']
+    const allowed = ['ragione_sociale', 'partita_iva', 'codice_fiscale', 'email', 'pec', 'telefono', 'cellulare', 'indirizzo', 'citta', 'cap', 'provincia', 'rea', 'capitale_sociale', 'piano', 'moduli', 'active', 'require_2fa']
     const updates = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
     if (!Object.keys(updates).length) return Response.json({ error: 'Nessun campo da aggiornare' }, { status: 400 })
     const { data, error } = await supabaseAdmin.from('aziende').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', params.id).select().single()

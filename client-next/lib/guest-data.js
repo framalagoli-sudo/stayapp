@@ -5,6 +5,22 @@ import { getCollegamenti } from './guest-utils'
 // Più sicure (nessun endpoint esposto chiamato internamente), più stabili
 // (nessuna dipendenza da URL interni/VERCEL_URL), più veloci (nessun round-trip).
 
+// Dati legali dell'azienda da mostrare nel footer del minisito (P.IVA, sede, REA…).
+// Obbligo di legge per i siti business (D.Lgs. 70/2003, art. 2250 c.c.).
+// Resiliente: se le colonne rea/capitale_sociale non esistono ancora (migration 061
+// non eseguita), ripiega sui campi base senza rompere il minisito.
+export async function getAziendaLegale(aziendaId) {
+  if (!aziendaId) return null
+  const full = 'ragione_sociale, partita_iva, indirizzo, citta, cap, provincia, pec, rea, capitale_sociale'
+  const base = 'ragione_sociale, partita_iva, indirizzo, citta, cap, provincia, pec'
+  let { data, error } = await supabaseAdmin.from('aziende').select(full).eq('id', aziendaId).single()
+  if (error) {
+    const r = await supabaseAdmin.from('aziende').select(base).eq('id', aziendaId).single()
+    data = r.data || null
+  }
+  return data || null
+}
+
 export async function getStruttura(slug) {
   const { data, error } = await supabaseAdmin
     .from('properties')
@@ -14,7 +30,8 @@ export async function getStruttura(slug) {
     .single()
   if (error || !data) return null
   const collegamenti = await getCollegamenti('struttura', data.id)
-  return { ...data, collegamenti }
+  const azienda_legale = await getAziendaLegale(data.azienda_id)
+  return { ...data, collegamenti, azienda_legale }
 }
 
 export async function getRistorante(slug) {
@@ -26,7 +43,8 @@ export async function getRistorante(slug) {
     .single()
   if (error || !data) return null
   const collegamenti = await getCollegamenti('ristorante', data.id)
-  return { ...data, collegamenti }
+  const azienda_legale = await getAziendaLegale(data.azienda_id)
+  return { ...data, collegamenti, azienda_legale }
 }
 
 export async function getAttivita(slug) {
@@ -37,7 +55,8 @@ export async function getAttivita(slug) {
     .eq('active', true)
     .single()
   if (error || !data) return null
-  return data
+  const azienda_legale = await getAziendaLegale(data.azienda_id)
+  return { ...data, azienda_legale }
 }
 
 export async function getArticolo(slug) {

@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from 'next/navigation'
 import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Euro, Mountain, Wind, CheckCircle, ChevronDown, Menu, X, Calendar, Users } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
 import Turnstile from '@/components/Turnstile'
+import LegalInfo from '@/components/guest/LegalInfo'
 import CookieBanner from '@/components/CookieBanner'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import BookingWidget from '@/components/BookingWidget'
@@ -1118,6 +1119,13 @@ export default function PaginaPage({ entityType }) {
                 ))}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Dati legali (obbligo di legge: P.IVA, sede, ecc.) */}
+        {entity.azienda_legale && (
+          <div style={{ maxWidth: 1100, margin: '0 auto', paddingTop: footerCfg.layout === 'minimal' ? 6 : 14 }}>
+            <LegalInfo azienda={entity.azienda_legale} color={footerLink} />
           </div>
         )}
       </footer>

@@ -24,6 +24,8 @@ const TEXT_FIELDS = [
   { key: 'citta',           label: 'Città' },
   { key: 'cap',             label: 'CAP' },
   { key: 'provincia',       label: 'Provincia' },
+  { key: 'rea',             label: 'REA (n. + CCIAA, es. TR-12345)' },
+  { key: 'capitale_sociale', label: 'Capitale sociale (es. € 10.000 i.v.)' },
 ]
 
 const pill = (extra = {}) => ({
@@ -689,6 +691,7 @@ function AziendaForm({ title, initialData = {}, onSave, onCancel }) {
     ragione_sociale: '', partita_iva: '', codice_fiscale: '',
     email: '', pec: '', telefono: '', cellulare: '',
     indirizzo: '', citta: '', cap: '', provincia: '',
+    rea: '', capitale_sociale: '',
     piano: 'base',
     active: true,
     ...initialData,

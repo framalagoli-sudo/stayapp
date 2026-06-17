@@ -32,7 +32,7 @@ export async function POST(request) {
     if (profile?.role !== 'super_admin') return Response.json({ error: 'Solo super_admin può creare aziende' }, { status: 403 })
     const body = await request.json()
     if (!body.ragione_sociale?.trim()) return Response.json({ error: 'ragione_sociale è obbligatoria' }, { status: 400 })
-    const allowed = ['ragione_sociale', 'partita_iva', 'codice_fiscale', 'email', 'pec', 'telefono', 'cellulare', 'indirizzo', 'citta', 'cap', 'provincia', 'piano', 'moduli']
+    const allowed = ['ragione_sociale', 'partita_iva', 'codice_fiscale', 'email', 'pec', 'telefono', 'cellulare', 'indirizzo', 'citta', 'cap', 'provincia', 'rea', 'capitale_sociale', 'piano', 'moduli']
     const insert = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
     const { data, error } = await supabaseAdmin.from('aziende').insert(insert).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })

@@ -1,4 +1,5 @@
 'use client'
+import LegalInfo from './LegalInfo'
 
 const SOCIAL_LABELS = {
   instagram:   'Instagram',
@@ -124,6 +125,9 @@ export default function LandingFooter({ entity, mini, primary, heading, body, en
             <a href={`/${prefix}/${entity.slug}/cookie`}  style={{ color, textDecoration: 'none' }}>Cookie Policy</a>
           </div>
         </div>
+
+        {/* Dati legali (obbligo di legge: P.IVA, sede, ecc.) */}
+        <LegalInfo azienda={entity.azienda_legale} color={color} style={{ paddingBottom: 24, opacity: 0.55 }} />
       </div>
     </footer>
   )
