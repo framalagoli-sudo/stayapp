@@ -13,7 +13,13 @@ export const supabaseAdmin = new Proxy({}, {
     if (!_admin) {
       const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/^﻿/, '')
       const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').replace(/^﻿/, '')
-      _admin = createClient(url, key, { auth: { persistSession: false } })
+      // cache:'no-store' su TUTTE le fetch di supabase-js: Next 14 altrimenti cacha
+      // le fetch lato server → letture stale (le modifiche admin non si vedevano sul
+      // sito pubblico finché non si rideployava). Vogliamo sempre dati freschi dal DB.
+      _admin = createClient(url, key, {
+        auth: { persistSession: false },
+        global: { fetch: (input, init = {}) => fetch(input, { ...init, cache: 'no-store' }) },
+      })
     }
     return _admin[prop]
   },
