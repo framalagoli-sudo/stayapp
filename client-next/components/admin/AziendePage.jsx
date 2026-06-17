@@ -239,9 +239,45 @@ function AziendaCard({ azienda: a, onEdit, onDelete }) {
   const moduli = a.moduli || {}
   const moduliAttivi = Object.entries(moduli).filter(([, v]) => v).map(([k]) => k)
   const [openPanel, setOpenPanel] = useState(null) // null | 'strutture' | 'ristoranti' | 'accessi'
+  const [exporting, setExporting] = useState(false)
 
   function togglePanel(name) {
     setOpenPanel(p => p === name ? null : name)
+  }
+
+  // Export GDPR: scarica tutti i dati dell'azienda in un JSON. Fetch autenticato
+  // (serve il Bearer) → blob → download. apiFetch non va bene perché ritorna JSON.
+  async function handleExport() {
+    setExporting(true)
+    try {
+      const { supabase } = await import('@/lib/supabase')
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token ?? ''
+      const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? '').trim()
+      const res = await fetch(`${API_BASE}/api/admin/backup/azienda/${a.id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `Errore ${res.status}`)
+      }
+      const blob = await res.blob()
+      const cd = res.headers.get('Content-Disposition') || ''
+      const m = cd.match(/filename="([^"]+)"/)
+      const filename = m ? m[1] : `oltrenova-export-${a.id}.json`
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      alert('Export fallito: ' + e.message)
+    } finally {
+      setExporting(false)
+    }
   }
 
   return (
@@ -283,6 +319,9 @@ function AziendaCard({ azienda: a, onEdit, onDelete }) {
             Accessi
           </button>
           <button onClick={onEdit} style={pill({ background: '#f0f4ff', color: '#1a1a2e', padding: '6px 14px', fontSize: 12 })}>Modifica</button>
+          <button onClick={handleExport} disabled={exporting} title="Scarica tutti i dati dell'azienda (GDPR)" style={pill({ background: '#f0fff4', color: '#276749', padding: '6px 14px', fontSize: 12, opacity: exporting ? 0.6 : 1 })}>
+            {exporting ? 'Esporto…' : 'Esporta dati'}
+          </button>
           <button onClick={onDelete} style={pill({ background: '#fff0f0', color: '#c00', padding: '6px 14px', fontSize: 12 })}>Elimina</button>
         </div>
       </div>
