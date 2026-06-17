@@ -1,6 +1,9 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { getCollegamenti } from '@/lib/guest-utils'
 
+// Dati live: mai cachare (vedi nota in /api/guest/a/[slug]).
+export const dynamic = 'force-dynamic'
+
 export async function GET(request, { params }) {
   const { data, error } = await supabaseAdmin
     .from('ristoranti')

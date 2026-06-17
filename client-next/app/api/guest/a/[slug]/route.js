@@ -1,5 +1,9 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 
+// Dati live (privacy_data, minisito, ecc.): mai cachare, altrimenti le modifiche
+// fatte nell'admin non si vedono sul sito pubblico finché non si rideploya.
+export const dynamic = 'force-dynamic'
+
 export async function GET(request, { params }) {
   const { data, error } = await supabaseAdmin
     .from('attivita')

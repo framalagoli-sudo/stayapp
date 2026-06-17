@@ -1,5 +1,8 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 
+// Dati live: mai cachare (vedi nota in /api/guest/a/[slug]).
+export const dynamic = 'force-dynamic'
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const entity_tipo = searchParams.get('entity_tipo')
