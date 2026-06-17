@@ -1,7 +1,7 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { apiFetch } from '@/lib/api'
+import { guestFetch } from '@/lib/api'
 
 // type: 'privacy' | 'cookie'
 // entityType: 'struttura' | 'ristorante' | 'attivita'
@@ -17,7 +17,7 @@ export default function PolicyPage({ type, entityType }) {
     : `/api/guest/a/${slug}`
 
   useEffect(() => {
-    apiFetch(apiPath).then(setEntity).catch(() => setError(true))
+    guestFetch(apiPath).then(setEntity).catch(() => setError(true))
   }, [slug])
 
   if (error) return <ErrorPage />
