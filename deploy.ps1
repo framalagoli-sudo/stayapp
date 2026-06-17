@@ -14,7 +14,11 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host "`n=== Deploy Vercel (Next.js) ===" -ForegroundColor Cyan
 Set-Location client-next
-npx vercel --prod --yes
+# --force: rebuild SENZA build cache. Necessario perché Vercel, riusando la cache,
+# può NON re-inlinare le env var NEXT_PUBLIC_* nel bundle client (es. la Site Key
+# Turnstile) → widget rotto → form bloccati. La cache stale ci ha già rotto i form
+# in produzione (17/6, campagna live). Affidabilità > 1-2 min di build in più.
+npx vercel --prod --force --yes
 $deployExit = $LASTEXITCODE
 Set-Location ..
 if ($deployExit -ne 0) {
