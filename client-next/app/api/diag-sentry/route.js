@@ -1,18 +1,26 @@
 import * as Sentry from '@sentry/nextjs'
 
-// Route diagnostica TEMPORANEA: dice se Sentry è inizializzato lato server e
-// se l'evento viene catturato. Da rimuovere dopo la verifica.
+// Route diagnostica TEMPORANEA: testa se l'init MANUALE di Sentry funziona
+// (l'auto-init via instrumentation/withSentryConfig non si aggancia su Next 14).
 export async function GET() {
-  const client = Sentry.getClient()
-  const dsnEnvPresent = !!(process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN)
+  let client = Sentry.getClient()
+  let manualInit = false
+  if (!client) {
+    const dsn = (process.env.SENTRY_DSN || '').trim()
+    if (dsn) {
+      Sentry.init({ dsn, environment: 'production', tracesSampleRate: 0 })
+      client = Sentry.getClient()
+      manualInit = true
+    }
+  }
   const eventId = Sentry.captureException(
-    new Error('OltreNova — test cattura Sentry server-side v2 (diagnostico)')
+    new Error('OltreNova — test cattura Sentry server-side v3 (init manuale)')
   )
-  await Sentry.flush(3000) // attende l'invio prima del freeze serverless
+  await Sentry.flush(3000)
   return Response.json({
     ok: true,
     sentry_initialized: !!client,
-    dsn_env_present: dsnEnvPresent,
+    manual_init_used: manualInit,
     event_id: eventId || null,
   })
 }
