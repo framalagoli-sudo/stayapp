@@ -1,8 +1,12 @@
 const { withSentryConfig } = require('@sentry/nextjs')
+// next-pwa DISABILITATO: il suo SW precacheava lo shell e serviva versioni stale dopo
+// i deploy -> pagine bianche (Chrome bianco / Edge ok). Al suo posto un kill-switch SW
+// statico in public/sw.js che si auto-distrugge. La PWA installabile si potrà ri-abilitare
+// in futuro con una config NetworkFirst sicura. Vedi public/sw.js e PWARegister.js.
 const withPWA = require('next-pwa')({
   dest: 'public',
-  disable: process.env.NODE_ENV === 'development',
-  register: false, // registrazione manuale via PWARegister.js
+  disable: true,
+  register: false,
   skipWaiting: true,
 })
 

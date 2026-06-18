@@ -31,8 +31,7 @@ yarn-error.log*
 # vercel
 .vercel
 
-# next-pwa generated files
-/public/sw.js
+# next-pwa generated files (next-pwa ora DISABILITATO; /public/sw.js è il kill-switch committato)
 /public/workbox-*.js
 /public/sw.js.map
 /public/workbox-*.js.map
