@@ -35,5 +35,11 @@ export default defineConfig({
       name: 'security',
       testMatch: 'security.spec.js',
     },
+    {
+      // Render pubblico siti: verifica via HTTP che i minisiti siano visibili da
+      // ogni browser (contenuto nell'HTML server + nessun SW che precachea).
+      name: 'public',
+      testMatch: 'public-render.spec.js',
+    },
   ],
 })
