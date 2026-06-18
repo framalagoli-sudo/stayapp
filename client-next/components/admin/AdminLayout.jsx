@@ -384,8 +384,8 @@ export default function AdminLayout({ children }) {
   // ─── Sidebar content ──────────────────────────────────────────────────────
   const sidebarContent = (
     <>
-      <div style={{ padding: '22px 20px 10px', fontWeight: 700, fontSize: 18, letterSpacing: 1, color: '#fff' }}>
-        OltreNova
+      <div style={{ padding: '22px 20px 10px' }}>
+        <img src="/logo-ondark.png" alt="OltreNova" style={{ height: 30, width: 'auto', display: 'block' }} />
       </div>
 
       {/* Selettore azienda — solo super_admin */}
@@ -641,7 +641,7 @@ export default function AdminLayout({ children }) {
         >
           {menuOpen ? '✕' : '☰'}
         </button>
-        <span style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>OltreNova</span>
+        <img src="/logo-ondark.png" alt="OltreNova" style={{ height: 24, width: 'auto', display: 'block' }} />
       </div>
 
       <div className={`admin-backdrop${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(false)} />

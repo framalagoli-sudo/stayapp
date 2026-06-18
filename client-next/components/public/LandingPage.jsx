@@ -812,10 +812,7 @@ function Testimonials() {
 // ─── Sub-componenti ───────────────────────────────────────────────────────────
 function Logo() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-      <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px' }}>Oltre</span>
-      <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, fontWeight: 800, color: ACCENT, letterSpacing: '-0.5px' }}>Nova</span>
-    </div>
+    <img src="/logo-ondark.png" alt="OltreNova" style={{ height: 30, width: 'auto', display: 'block' }} />
   )
 }
 
