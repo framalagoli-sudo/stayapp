@@ -812,7 +812,7 @@ function Testimonials() {
 // ─── Sub-componenti ───────────────────────────────────────────────────────────
 function Logo() {
   return (
-    <img src="/logo-ondark.png" alt="OltreNova" style={{ height: 30, width: 'auto', display: 'block' }} />
+    <img src="/logo-ondark.png" alt="OltreNova" style={{ height: 36, width: 'auto', display: 'block' }} />
   )
 }
 

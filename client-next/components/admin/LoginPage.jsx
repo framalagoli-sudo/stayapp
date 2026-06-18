@@ -50,7 +50,7 @@ export default function LoginPage() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5' }}>
       {step === 'password' ? (
         <form onSubmit={handlePassword} style={cardStyle}>
-          <img src="/logo-onlight.png" alt="OltreNova" style={{ height: 34, width: 'auto', display: 'block', marginBottom: 14 }} />
+          <img src="/logo-onlight.png" alt="OltreNova" style={{ height: 41, width: 'auto', display: 'block', marginBottom: 14 }} />
           <p style={{ margin: '0 0 28px', color: '#666', fontSize: 14 }}>Accedi al pannello amministrativo</p>
 
           <label style={labelStyle}>Email</label>
