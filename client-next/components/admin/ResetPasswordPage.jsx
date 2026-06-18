@@ -144,7 +144,7 @@ export default function ResetPasswordPage() {
   return (
     <div style={pageStyle}>
       <div style={cardStyle}>
-        <h1 style={{ marginTop: 0, marginBottom: 8, fontSize: 24, color: '#1a1a2e' }}>OltreNova</h1>
+        <img src="/logo-onlight.png" alt="OltreNova" style={{ height: 41, width: 'auto', display: 'block', marginBottom: 14 }} />
         <p style={{ margin: '0 0 28px', color: '#666', fontSize: 14 }}>
           {flowType === 'invite' ? 'Crea la tua password per accedere al pannello' : 'Scegli una nuova password'}
         </p>

@@ -17,7 +17,7 @@ export function emailTemplate({ title, entityName, rows, appUrl }) {
     </td></tr>
     <tr><td style="padding:20px 36px;background:#f9f9fb;border-top:1px solid #f0f0f0">
       <a href="${appUrl}/admin/requests" style="color:#00b5b5;font-size:13px;text-decoration:none;font-weight:600">Apri il pannello admin →</a>
-      <span style="color:#bbb;font-size:12px;margin-left:16px">Powered by OltreNova</span>
+      <img src="https://www.oltrenova.com/logo-onlight.png" alt="OltreNova" width="51" height="16" style="vertical-align:middle;margin-left:16px;opacity:0.45">
     </td></tr>
   </table>
   </td></tr></table></body></html>`

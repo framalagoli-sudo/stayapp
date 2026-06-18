@@ -39,7 +39,7 @@ export default function AcceptInvitePage() {
   return (
     <div style={pageStyle}>
       <div style={cardStyle}>
-        <h1 style={{ marginTop: 0, marginBottom: 8, fontSize: 22, color: '#1a1a2e' }}>OltreNova</h1>
+        <img src="/logo-onlight.png" alt="OltreNova" style={{ height: 38, width: 'auto', display: 'block', margin: '0 auto 16px' }} />
         <p style={{ margin: '0 0 28px', color: '#555', fontSize: 14, lineHeight: 1.6 }}>
           Sei stato invitato a collaborare sul pannello OltreNova.<br />
           Clicca il pulsante per impostare la tua password.

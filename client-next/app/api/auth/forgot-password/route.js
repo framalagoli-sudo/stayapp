@@ -33,6 +33,7 @@ export async function POST(request) {
         to: email.trim().toLowerCase(),
         subject: 'Ripristino password OltreNova',
         html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a2e">
+          <img src="https://www.oltrenova.com/logo-onlight.png" alt="OltreNova" width="138" height="43" style="display:block;margin-bottom:24px">
           <h2 style="margin-top:0;margin-bottom:8px;font-size:22px">Ripristino password</h2>
           <p style="color:#666;margin-top:0;margin-bottom:24px;line-height:1.6">Hai richiesto di reimpostare la password del tuo account OltreNova.<br>Clicca il pulsante qui sotto per scegliere una nuova password.</p>
           <div style="margin:28px 0"><a href="${resetLink}" style="display:inline-block;padding:13px 28px;background:#1a1a2e;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">Scegli nuova password →</a></div>
