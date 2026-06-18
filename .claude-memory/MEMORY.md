@@ -10,6 +10,7 @@
 - [BOM env var](feedback_bom_api_base.md) — Vercel inietta BOM → usare sempre .trim() su TUTTE le env var server-side
 - [Diagnosi prima del deploy](feedback_diagnosi_prima_del_deploy.md) — diagnosticare il meccanismo alla radice PRIMA di deployare; un deploy = una causa accertata; prove a freddo (curl/header/DB), niente "provo e vedo" sulla prod live
 - [Next 14 fetch cache](reference_next14_fetch_cache.md) — Next cacha le fetch() di supabase-js → letture stale; fix cache:'no-store' sul client server (force-dynamic non basta)
+- [🔴 Siti cross-browser (anti pagina bianca)](reference_siti_cross_browser.md) — CRITICO: siti = SSR (contenuto nell'HTML) + NIENTE service worker che precachea (causa pagine bianche). Guardrail test public-render. Mai ri-aggiungere SW precache
 - [Vercel env CLI tranelli](reference_vercel_env_cli.md) — 2 progetti (oltrenova-next è il LIVE), env pull maschera sensitive, npx env add stdin non funziona Windows → secret solo da dashboard
 - [Supabase .catch() vietato](feedback_supabase_catch.md) — mai .catch() su query builder Postgrest (non è Promise) → await + check error
 - [Authz multi-tenant](feedback_multitenant_authz.md) — ogni route API deve scopare per azienda; usare requireRecordAccess/requireEntityAccess/resolveAziendaId, mai .eq('id') nudo
