@@ -20,6 +20,12 @@ metadata:
 ## ⚠️ PRINCIPIO WHITE-LABEL (importante, riusabile)
 Le email/touchpoint **business→cliente finale** (newsletter, conferma iscrizione, autoresponder form, ecc.) portano il brand del **CLIENTE**, MAI quello di OltreNova. Mettere il nostro logo lì = far vedere "OltreNova" ai clienti dei nostri clienti → sbagliato per un SaaS white-label. Il logo OltreNova va SOLO nei touchpoint piattaforma→titolare (reset, invito, notifiche admin) o sulla piattaforma stessa (admin/login/landing). Un eventuale "Powered by OltreNova" discreto nelle email cliente è una scelta di prodotto da fare apposta.
 
+## 🔴 Fix service worker stale → pagine bianche (fine sessione, campagna live)
+Collega vedeva **pagina bianca su Chrome, ok su Edge** (stesso motore → non è il codice). Causa: `next-pwa` registrava un SW (`PWARegister` → `/sw.js`) che **precacheava lo shell** con hash di chunk specifici; dopo i tanti deploy gli hash cambiano e su browser con visite precedenti il SW serviva una versione rotta → bianco. **Problema RICORRENTE** (già emerso, vedi [[project_session_2026_06_08b]] "SW stale").
+**Fix**: (1) `next-pwa` **disabilitato** (`disable: true` in next.config), (2) `public/sw.js` ora è un **kill-switch** committato (si auto-distrugge: svuota cache, `unregister`, ricarica le tab) — i browser ricontrollano `/sw.js` a ogni navigazione quindi anche quelli incastrati si ripuliscono, (3) `PWARegister` ora **disiscrive** invece di registrare. `/public/sw.js` tolto da .gitignore. Verificato live: /sw.js = kill-switch 1KB, pagina 200.
+⚠️ **Trade-off**: la PWA installabile/offline è DISABILITATA. Ri-abilitarla in futuro SOLO con strategia **NetworkFirst** per la navigazione (mai precache dello shell servito stale). È in [[todo_prossima_sessione]].
+**Lezione**: un SW che precachea lo shell di un'app che deploya spesso = pagine bianche garantite. Per un sito che cambia spesso, SW solo NetworkFirst o niente SW.
+
 ## Note tecniche
 - Loghi forniti da design spesso hanno **sfondo opaco** (pecetta su superfici colorate): servono transparent-background o SVG. Se monocromatici si possono rendere trasparenti via luminanza→alpha (fatto al volo con jimp `--no-save`, poi ripristinato package.json). Ma meglio chiedere a Francesco l'export trasparente.
 - Favicon/logo: i browser le cachano aggressivamente → serve hard refresh per vederle aggiornate.

@@ -40,6 +40,9 @@ Valutato il 17/6. Progetto medio-grande, NON una patch. Comporta:
 - Tempo realistico: 1-2 sessioni dedicate, con i 43 smoke test come rete.
 - Quando si farà Next 15, **Sentry verrà gratis** (instrumentation stabile). Vedi sopra le 3 opzioni Sentry.
 
+## 🔧 PWA da ri-abilitare BENE (disabilitata il 18/6 per pagine bianche)
+Il SW next-pwa (precache shell) causava pagine bianche dopo i deploy → disabilitato + kill-switch in `public/sw.js`. Se si vuole la PWA installabile/offline, ri-abilitarla con `next-pwa` ma config **NetworkFirst per la navigazione** (NO precacheAndRoute dello shell HTML), così non serve mai versioni stale. Prima rimuovere il kill-switch sw.js e ripristinare la registrazione in PWARegister. Testare a fondo i deploy successivi. Vedi [[project_session_2026_06_18]].
+
 ## Stato 5 interventi sicurezza — vedi [[project_session_2026_06_16_security]]
 ✅ Rate limit (migration 060 eseguita), ✅ Turnstile LIVE, ✅ Header CSP, ✅ DMARC quarantine, 🟡 Sentry (init bloccato, vedi sopra).
 
