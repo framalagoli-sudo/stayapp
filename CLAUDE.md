@@ -39,12 +39,14 @@ cd ../tests && npm install
 
 **3. Memory Claude Code** (ripristina il contesto AI accumulato):
 ```bash
-# Su Windows, copia i file dalla cartella nel repo alla posizione attesa da Claude:
+# Su Windows, copia i file dalla cartella nel repo alla posizione attesa da Claude.
+# CLAUDE.global.md è la config globale "come lavoro" → va in ~/.claude, NON in memory/.
 $dest = "$env:USERPROFILE\.claude\projects\C--Users-<TUO-USERNAME>-progetti-hospitality\memory"
 New-Item -ItemType Directory -Force $dest
-Copy-Item .claude-memory\* $dest
+Copy-Item .claude-memory\* $dest -Exclude CLAUDE.global.md
+Copy-Item .claude-memory\CLAUDE.global.md "$env:USERPROFILE\.claude\CLAUDE.md"
 ```
-> La cartella `.claude-memory/` nel repo contiene tutte le memory di sessione. Aggiornata ad ogni sessione con `git push`.
+> La cartella `.claude-memory/` nel repo contiene tutte le memory di sessione **+** il backup del CLAUDE.md globale (`CLAUDE.global.md`). Aggiornata ad ogni sessione con `git push`.
 
 **4. Avvio locale**
 ```bash
