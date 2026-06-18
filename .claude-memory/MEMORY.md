@@ -8,6 +8,8 @@
 - [Deploy corretto](feedback_deploy.md) — usare `.\deploy.ps1` dalla root, mai `npx vercel` dalla root
 - [Workflow review](feedback_workflow_review.md) — test manuali → fix → deploy → `/code-review max` alla fine
 - [BOM env var](feedback_bom_api_base.md) — Vercel inietta BOM → usare sempre .trim() su TUTTE le env var server-side
+- [Diagnosi prima del deploy](feedback_diagnosi_prima_del_deploy.md) — diagnosticare il meccanismo alla radice PRIMA di deployare; un deploy = una causa accertata; prove a freddo (curl/header/DB), niente "provo e vedo" sulla prod live
+- [Next 14 fetch cache](reference_next14_fetch_cache.md) — Next cacha le fetch() di supabase-js → letture stale; fix cache:'no-store' sul client server (force-dynamic non basta)
 - [Vercel env CLI tranelli](reference_vercel_env_cli.md) — 2 progetti (oltrenova-next è il LIVE), env pull maschera sensitive, npx env add stdin non funziona Windows → secret solo da dashboard
 - [Supabase .catch() vietato](feedback_supabase_catch.md) — mai .catch() su query builder Postgrest (non è Promise) → await + check error
 - [Authz multi-tenant](feedback_multitenant_authz.md) — ogni route API deve scopare per azienda; usare requireRecordAccess/requireEntityAccess/resolveAziendaId, mai .eq('id') nudo
@@ -17,6 +19,9 @@
 - [Stato OltreNova + azioni manuali](project_google_calendar_pending.md) — Google Calendar, Sentry DSN, Cloudflare Bot Fight, og-image, fondaconarni apex, GitHub→Vercel auto-deploy
 - [Migrazione Railway → Vercel COMPLETA](project_session_railway_migration.md) — tutto su Vercel, Railway freezato, bounce webhook ✅, NEXT_PUBLIC_API_URL="" ✅
 - [Roadmap Sprint + Piano tecnico 6 fasi](project_roadmap_sprint.md) — Fase 1 debug in corso, Fase 2 COMPLETA, Sprint 10 = Stripe billing
+- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — TOP: Sentry init BLOCCATO su Next 14.2 (serve sessione dedicata: wizard/upgrade Next15/alternativa)
+- [Session 2026-06-16/17 — Backup fix + 5 interventi sicurezza](project_session_2026_06_16_security.md) — backup R2 silent-fail+BOM, rate limit+Turnstile LIVE, header CSP, DMARC quarantine; Sentry init bloccato (Next14 vs SDK)
+- [Session 2026-06-18 — CLAUDE.md + brand completo](project_session_2026_06_18.md) — client-next/CLAUDE.md + globale ~/.claude, favicon/icone/OG/logo brand reale, white-label email (logo OltreNova solo piattaforma→titolare, mai business→cliente)
 - [Session 2026-06-15 — Fix sistemico super_admin azienda_id](project_session_2026_06_15.md) — 6 pagine + 5 route, fix newsletter searchParams 500, email conferma form builder
 - [Session 2026-06-15b — Debug Form Builder completo](project_session_2026_06_15b_formbuilder.md) — env Vercel RESEND vuote, bug .catch() Postgrest 500, UX consensi GDPR, vercel env pull maschera sensitive, npx stdin non funziona su Windows
 - [Session 2026-06-15c — Audit sicurezza multi-tenant](project_session_2026_06_15c_security.md) — chiusi ~19 IDOR (collection + 31/31 route [id]), primitive requireEntityAccess/requireRecordAccess/resolveAziendaId, fix SitoPage navigate→router

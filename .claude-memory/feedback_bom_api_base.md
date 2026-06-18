@@ -12,6 +12,7 @@ Vercel inietta un BOM (Byte Order Mark, U+FEFF, `%EF%BB%BF`, valore decimale 652
 **Colpisce qualsiasi env var**, non solo `NEXT_PUBLIC_API_URL`. Esempi già colpiti:
 - `NEXT_PUBLIC_API_URL` → URL fetch con `/%EF%BB%BF/api/...` → 404 HTML → crash JSON parse
 - `ANTHROPIC_API_KEY` → header HTTP ByteString error: "character at index 0 has value 65279"
+- `R2_ACCESS_KEY_ID` / credenziali R2 → SDK AWS lancia `Invalid character in header content ["authorization"]` mentre firma SigV4 → **upload R2 SEMPRE fallito**. Era mascherato dal silent-fail di `runBackup()` (usciva con `return`, la route rispondeva `{ok:true}` anche se non salvava niente). Fix in `client-next/lib/backup.js`: helper `cleanEnv()` (strip BOM + `\r\n\t` + trim) su `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`. Inoltre `runBackup()` ora lancia eccezione su fallimento (niente più `{ok:true}` falsi) e fa read-back di verifica (`verified:true`). Vedi [[project_robustezza_infra]].
 
 **Regola:** ogni env var letta da codice server o client deve usare `.trim()`:
 

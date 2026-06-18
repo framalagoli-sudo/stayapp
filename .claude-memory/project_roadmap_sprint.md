@@ -38,37 +38,55 @@ Test voce per voce in produzione su oltrenova.com.
 Tutto migrato. Railway freezato. Stack: Vercel Pro + Supabase only.
 Dettagli in [[project-session-railway-migration]].
 
-### FASE 3 — Sicurezza 🔴
+### FASE 3 — Sicurezza 🟢 (grosso lavoro fatto 2026-06-16)
 
-**Rate limiting (mancante su route pubbliche Next.js):**
-- `/api/guest/contact` — max 5 req/IP/ora
-- `/api/guest/book` — max 10 req/IP/ora
-- `/api/contatti/subscribe` — max 3 req/IP/ora
-- `/api/auth/forgot-password` — max 3 req/IP/ora
-- `/api/ai/*` — aggiungere IP rate limit (già ha per-azienda)
+**Rate limiting** ✅ FATTO — store condiviso via Postgres (migration `060_rate_limits.sql`,
+funzione atomica `check_rate_limit`, lib `client-next/lib/rate-limit.js`, FAIL-OPEN).
+Il vecchio limitatore in-memory (Map) NON funzionava su serverless (istanze usa-e-getta).
+Applicato a: `/api/auth/forgot-password` (3/h, anti mail-bombing), `/api/guest/contact`
+(5/h), `/api/contatti/subscribe` (3/h), form-builder submit (5/h).
+⚠️ Richiede esecuzione manuale migration 060 su Supabase per attivarsi (prima è fail-open).
+TODO futuro: estendere a `/api/guest/book` e `/api/ai/*`.
 
-**Form security già attivo (Sprint A-D 2026-06-13):**
-- Honeypot, rate limit per form, flood alert, spam filter, bounce webhook ✅
-- Email validation Abstract API (attiva se `ABSTRACT_API_KEY` presente) ✅
-- Resend bounce webhook configurato ✅
+**Turnstile (CAPTCHA invisibile Cloudflare)** ✅ LIVE e verificato (2026-06-16) — verifica
+server-side (`lib/turnstile.js`) su tutte le route pubbliche + widget client su TUTTI i form.
+Chiavi su Vercel: `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (0x4AAAAAADlbOrVGDpfHnxkA) + `TURNSTILE_SECRET_KEY`.
+Enforcement attivo (403 senza token); utenti veri passano (widget Managed). LEVA D'EMERGENZA:
+`TURNSTILE_SOFT=1` su Vercel disattiva il blocco senza perdere lead. Bypass CI: `TURNSTILE_TEST_BYPASS`
+(usato in security.spec.js). **Lezione rollout**: il primo deploy NON funzionava perché la Site Key
+`NEXT_PUBLIC` non era inlinata per build cache stale → serviva `vercel --prod --force` (vedi [[reference_vercel_env_cli]]).
 
-**Headers di sicurezza (da aggiungere in `next.config.js`):**
-- `Content-Security-Policy`
-- `X-Frame-Options: DENY`
-- `Referrer-Policy: strict-origin-when-cross-origin`
-- `Permissions-Policy`
+**Headers di sicurezza** ✅ FATTO in `next.config.js` (verificati live): CSP livello 1
+(restringe script-src a self+CF+vercel+maps, blocca framing/object/base, permissiva su
+img/connect/frame per non rompere PWA/embed/stili inline), Referrer-Policy,
+Permissions-Policy, X-DNS-Prefetch-Control, oltre a nosniff + X-Frame-Options già presenti.
+HSTS già attivo via Cloudflare/Vercel.
 
-**Cloudflare Bot Fight Mode**: 1 click nel dashboard CF → Security → Bots → ON (gratis, non fatto)
+**Sentry** 🔴 BLOCCATO (17/6) — DSN creato + `SENTRY_DSN` su Vercel + verificato via ingest diretto,
+MA l'SDK NON inizializza lato server su Next 14.2 (`sentry_initialized:false` anche con init manuale;
+falliti instrumentation, withSentryConfig, downgrade v10→v8.55). Serve sessione dedicata.
+Opzioni: wizard completo Next14 / upgrade Next 15 / alternativa leggera (Vercel Log Drains).
+Dettagli e stato codice in [[todo_prossima_sessione]] e [[project_session_2026_06_16_security]].
+DMARC, rate-limit, Turnstile, header = tutti LIVE.
+
+**DMARC** ⚠️ DA FARE (manuale, solo DNS): oggi `p=none` (non blocca lo spoofing).
+Passare a `v=DMARC1; p=quarantine; adkim=r; aspf=r` (poi `p=reject`). Sicuro perché Resend
+firma in DKIM allineato (`resend._domainkey.oltrenova.com` presente) → la mail legittima passa.
+
+**Form security già attivo (Sprint A-D 2026-06-13):** honeypot, flood alert, spam filter,
+email validation Abstract API, bounce webhook ✅
+
+**Cloudflare Bot Fight Mode**: ✅ FATTO
 
 ### FASE 4 — Backup 🟡
 
 **Supabase Pro** (se non ancora upgradato): backup giornalieri automatici + PITR 7gg.
 **Backup notturno R2** (`/api/cron/backup`) già attivo su Vercel Cron.
 
-**Backup per singola azienda (da implementare):**
-- Endpoint `POST /api/admin/backup/azienda/:id` (solo super_admin)
-- ZIP con JSON per tabella filtrati per `azienda_id`
-- UI super_admin: bottone "Esporta dati" nella pagina dettaglio azienda
+**Backup per singola azienda** ✅ FATTO (17/6):
+- `GET /api/admin/backup/azienda/[id]` (super_admin o admin della propria azienda) → JSON scaricabile
+- Tutte le tabelle filtrate per azienda (azienda_id diretto + property_id/entity_id/event_id/risorsa_id)
+- Bottone "Esporta dati" nella card azienda (AziendePage.jsx, download blob autenticato)
 
 ### FASE 5 — CI/CD e Automazioni 🟡
 
