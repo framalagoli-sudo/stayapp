@@ -1,6 +1,8 @@
-# StayApp — Frontend (client/)
+# StayApp — Frontend (client/) — ⚠️ DISMESSO
 
-Questo file è auto-caricato da Claude Code quando si lavora in `client/`. Per il root e le note operative vedere `../CLAUDE.md`. Per DB schema e API vedere `../server/CLAUDE.md`.
+> 🛑 **QUESTO È IL VECCHIO FRONTEND VITE, NON PIÙ IN USO.** Il frontend live è in `../client-next/` (Next.js). Le convenzioni aggiornate sono in **`../client-next/CLAUDE.md`**. Questo file resta solo come riferimento storico — non basarti su routing/path qui (Vite, `App.jsx`, `/admin/property/*`), in Next sono cambiati.
+
+Questo file era auto-caricato quando si lavorava in `client/` (Vite). Per il root vedere `../CLAUDE.md`, per DB/API `../server/CLAUDE.md`.
 
 ---
 

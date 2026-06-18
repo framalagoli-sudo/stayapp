@@ -14,7 +14,8 @@ Azienda (top-level)
 ```
 
 > **Schema DB, endpoint API, note backend** → `server/CLAUDE.md` (auto-caricato quando si lavora in server/)
-> **Route frontend, JSONB structures, moduli admin/guest** → `client/CLAUDE.md` (auto-caricato quando si lavora in client/)
+> **Route frontend, JSONB structures, moduli admin/guest, pattern Next** → `client-next/CLAUDE.md` (auto-caricato quando si lavora in client-next/ — il frontend LIVE)
+> ⚠️ `client/CLAUDE.md` è il vecchio frontend Vite **dismesso**: ignorarlo, il codice live è in `client-next/`.
 
 ---
 
