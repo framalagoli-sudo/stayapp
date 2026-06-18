@@ -30,6 +30,17 @@ Il 17/6 con campagna live i form si sono bloccati ("Verifica anti-bot fallita") 
 3. Alternativa leggera: error-tracking via **Vercel Log Drains / Better Stack**, o un wrapper `Sentry.captureException` con init lazy in un modulo condiviso.
 NB: visibilità errori NON è zero oggi — i **log runtime Vercel** ci sono (`npx vercel logs <dep> --json`), usati per debug.
 
+## 🔭 PROGETTO PIANIFICATO — URL puliti: namespace unico `/[slug]` (sessione dedicata, architetturale)
+Idea di Francesco (18/6): togliere i prefissi `/s/ /r/ /a/` e usare `/[slug]` unico → URL più puliti sul dominio condiviso `oltrenova.com`. Farlo ORA che è piccolo costa meno (al 19/6: **solo 11 slug, NESSUNA collisione tra tipi**, diversi sono test/demo). **Decisione: discutere PRIMA di implementare** (refactor routing).
+NB onesto: il valore è **modesto** — sui domini custom il prefisso già sparisce (middleware), quindi il guadagno è solo sugli URL di default. Non è un fix né urgente. "Pochi siti" abbassa il RISCHIO, non il LAVORO (il costo è nel codice).
+**Lavoro necessario (farlo BENE o niente):**
+1. Resolver in `app/[slug]/page.js` (+ `/p/[pageSlug]`, `/privacy`, `/cookie`): cerca lo slug nelle 3 tabelle (properties/ristoranti/attivita) → determina il tipo → renderizza il componente giusto.
+2. **Lista slug RISERVATI**: `/[slug]` alla radice cattura tutto → escludere admin, blog, form, api, signup, preventivo, recensione, eventi, unsubscribe, ecc. + impedire ai clienti di crearli.
+3. **Redirect compatibilità**: tenere i vecchi `/s//r//a/` come 301 → `/slug` perché i **QR code già stampati** puntano a `/a/slug?qr=1` e si romperebbero.
+4. **Sweep di TUTTI i link interni** che usano `/s//r//a/`: collegamenti tra entità, footer/LandingFooter, sitemap, generazione QR, manifest PWA start_url, middleware (rewrite domini custom → /slug), PolicyPage, guardrail test public-render (i prefissi nel test).
+5. **Slug unici GLOBALI**: oggi unici per-tabella → con namespace unico serve controllo di unicità cross-tabella nella generazione slug (altrimenti collisione silenziosa rompe il routing).
+Collegato al ripensamento "worldwide / qualsiasi business" (i prefissi struttura/ristorante/attività sono un residuo dei primi 3 verticali).
+
 ## 🔭 PROGETTO PIANIFICATO — Upgrade Next 14.2 → 15 (sessione dedicata)
 Valutato il 17/6. Progetto medio-grande, NON una patch. Comporta:
 - `params`/`searchParams` diventano async (codemod automatico; in parte già usiamo `await params`).
