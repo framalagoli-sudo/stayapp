@@ -17,10 +17,14 @@ export async function verifyTurnstile(token, ip) {
   // TURNSTILE_STRICT=1. LEVA D'EMERGENZA PRIORITARIA: TURNSTILE_SOFT=1 forza il soft
   // anche se STRICT è attivo → kill-switch istantaneo se il widget desse problemi.
   // (La Site Key ora è servita a runtime via meta tag → niente più rotture da build cache.)
-  // EMERGENZA 19/6: lo strict ha bloccato un token REALE del widget → SOFT FORZATO
-  // mentre diagnostico (in soft i log mostrano il motivo: token mancante o error-codes).
-  // Ripristinare la logica STRICT/SOFT solo dopo aver capito e risolto.
-  const soft = true
+  // DECISIONE 19/6: Turnstile resta SOFT in modo definitivo. Lo strict ha bloccato
+  // invii REALI ("token mancante" = il widget non produce sempre un token) → per un
+  // business di lead non vale il rischio: la protezione anti-bot è già data da
+  // honeypot + rate-limit + spam filter + email validation. NON impostare
+  // TURNSTILE_STRICT=1 senza una sessione dedicata di debug del widget (vedi memoria).
+  // TURNSTILE_SOFT=1 resta come kill-switch d'emergenza (forza soft anche su strict).
+  const killSwitch = (process.env.TURNSTILE_SOFT ?? '').trim() === '1'
+  const soft = killSwitch || (process.env.TURNSTILE_STRICT ?? '').trim() !== '1'
 
   if (!token) {
     if (soft) { console.error('[turnstile] SOFT: token mancante (widget non ha prodotto token)'); return { success: true, softfail: 'missing-token' } }
