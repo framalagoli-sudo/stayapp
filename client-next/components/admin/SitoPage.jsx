@@ -6,7 +6,7 @@ import { PropertyIdContext } from '@/context/PropertyIdContext'
 import { useAuth } from '@/context/AuthContext'
 import {
   GripVertical, Home, FilePlus, Users, Briefcase, Mail, Tag, HelpCircle,
-  Search, FileText, SearchX, Navigation, PenLine, Layers,
+  Search, FileText, SearchX, Navigation, PenLine, Layers, History,
 } from 'lucide-react'
 
 // ── Template definitions ──────────────────────────────────────────────────────
@@ -459,6 +459,7 @@ export default function SitoPage({ entityTipo }) {
     { id: 'home',   label: 'Home',         Icon: Home },
     { id: 'pagine', label: 'Pagine',        Icon: FileText },
     { id: 'layout', label: 'Menu & Layout', Icon: Navigation },
+    { id: 'versioni', label: 'Versioni',    Icon: History },
   ]
 
   return (
@@ -487,6 +488,11 @@ export default function SitoPage({ entityTipo }) {
           )
         })}
       </div>
+
+      {/* TAB: VERSIONI (snapshot/ripristino del sito) */}
+      {activeTab === 'versioni' && (
+        <VersioniSito entityTipo={entityTipo} entityId={entityId} onRestored={load} />
+      )}
 
       {/* ══════════════════════════════════════════════════════════════════════
           TAB: HOME
@@ -967,6 +973,112 @@ export default function SitoPage({ entityTipo }) {
           onConfirm={createPage}
           creating={creating}
         />
+      )}
+    </div>
+  )
+}
+
+// ── Versioni del sito (snapshot / ripristino) ─────────────────────────────────
+function VersioniSito({ entityTipo, entityId, onRestored }) {
+  const [list,    setList]    = useState([])
+  const [loading, setLoading] = useState(true)
+  const [saving,  setSaving]  = useState(false)
+  const [busyId,  setBusyId]  = useState(null)
+  const [label,   setLabel]   = useState('')
+  const [msg,     setMsg]     = useState(null)
+
+  async function load() {
+    setLoading(true)
+    try { setList(await apiFetch(`/api/sito-snapshots?entity_tipo=${entityTipo}&entity_id=${entityId}`)) }
+    catch { setList([]) }
+    finally { setLoading(false) }
+  }
+  useEffect(() => { if (entityId) load() }, [entityId])
+
+  async function salva() {
+    setSaving(true); setMsg(null)
+    try {
+      await apiFetch('/api/sito-snapshots', {
+        method: 'POST',
+        body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, label: label.trim() }),
+      })
+      setLabel(''); setMsg('Versione salvata.'); await load()
+    } catch (e) { setMsg('Errore: ' + e.message) }
+    finally { setSaving(false) }
+  }
+
+  async function ripristina(s) {
+    const nome = s.label || fmt(s.created_at)
+    if (!confirm(`Ripristinare la versione "${nome}"?\nLo stato attuale del sito verrà salvato come backup automatico, così potrai annullare.`)) return
+    setBusyId(s.id); setMsg(null)
+    try {
+      await apiFetch(`/api/sito-snapshots/${s.id}/restore`, { method: 'POST' })
+      setMsg('Sito ripristinato a questa versione.')
+      await load()
+      onRestored?.()
+    } catch (e) { setMsg('Errore: ' + e.message) }
+    finally { setBusyId(null) }
+  }
+
+  async function elimina(s) {
+    if (!confirm('Eliminare questa versione? (non tocca il sito attuale)')) return
+    setBusyId(s.id)
+    try { await apiFetch(`/api/sito-snapshots/${s.id}`, { method: 'DELETE' }); await load() }
+    catch (e) { alert(e.message) }
+    finally { setBusyId(null) }
+  }
+
+  function fmt(d) {
+    return new Date(d).toLocaleString('it-IT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  }
+
+  return (
+    <div>
+      <p style={{ color: '#666', fontSize: 14, margin: '0 0 18px', lineHeight: 1.6 }}>
+        Salva una "fotografia" del tuo sito (contenuti, tema, pagine) e ripristinala con un clic se qualcosa va storto.
+        Prima di ogni ripristino lo stato attuale viene salvato in automatico, così puoi sempre tornare indietro.
+      </p>
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
+        <input value={label} onChange={e => setLabel(e.target.value)} placeholder="Etichetta (es. prima del restyling)"
+          style={{ flex: 1, minWidth: 220, padding: '10px 12px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14 }} />
+        <button onClick={salva} disabled={saving}
+          style={{ padding: '10px 20px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+          {saving ? 'Salvataggio…' : '+ Salva versione'}
+        </button>
+      </div>
+      {msg && <p style={{ fontSize: 13, color: msg.startsWith('Errore') ? '#c00' : '#276749', margin: '0 0 14px' }}>{msg}</p>}
+
+      {loading ? (
+        <p style={{ color: '#888' }}>Caricamento…</p>
+      ) : list.length === 0 ? (
+        <p style={{ color: '#aaa', fontSize: 14 }}>Nessuna versione salvata. Salvane una prima di fare modifiche importanti.</p>
+      ) : (
+        <div style={{ display: 'grid', gap: 8 }}>
+          {list.map(s => (
+            <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 16px', background: '#fff', border: '1px solid #eee', borderRadius: 10 }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>
+                  {s.label || 'Versione'}
+                  {s.kind === 'auto_pre_restore' && (
+                    <span style={{ marginLeft: 8, fontSize: 11, background: '#fff7ed', color: '#c05600', padding: '2px 7px', borderRadius: 5 }}>auto · pre-ripristino</span>
+                  )}
+                </div>
+                <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{fmt(s.created_at)}{s.created_by ? ` · ${s.created_by}` : ''}</div>
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                <button onClick={() => ripristina(s)} disabled={busyId === s.id}
+                  style={{ padding: '6px 14px', background: '#f0f4ff', color: '#1a1a2e', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                  {busyId === s.id ? '…' : 'Ripristina'}
+                </button>
+                <button onClick={() => elimina(s)} disabled={busyId === s.id}
+                  style={{ padding: '6px 12px', background: '#fff0f0', color: '#c00', border: 'none', borderRadius: 7, fontSize: 12, cursor: 'pointer' }}>
+                  Elimina
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   )
