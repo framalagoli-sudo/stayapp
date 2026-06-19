@@ -1,19 +1,30 @@
 'use client'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-const SITE_KEY = (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '').trim()
+// Legge la Site Key a RUNTIME dal meta tag iniettato dal layout server
+// (`<meta name="cf-turnstile-sitekey">`). Così la chiave NON dipende dall'inlining
+// build-time delle var NEXT_PUBLIC_* (che la build cache poteva perdere → widget
+// non renderizzato → form bloccati in strict). Fallback alla versione build-inlined.
+function readSiteKey() {
+  if (typeof document !== 'undefined') {
+    const m = document.querySelector('meta[name="cf-turnstile-sitekey"]')?.content?.trim()
+    if (m) return m
+  }
+  return (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '').trim()
+}
 
-// Widget Cloudflare Turnstile. Si renderizza SOLO se NEXT_PUBLIC_TURNSTILE_SITE_KEY
-// è impostata → finché non crei la chiave nel dashboard CF, è invisibile e i form
-// funzionano come prima. Chiama onToken(token) quando l'utente passa la verifica.
+// Widget Cloudflare Turnstile. Si renderizza solo se la Site Key è disponibile.
 export default function Turnstile({ onToken }) {
   const ref = useRef(null)
   const widgetId = useRef(null)
   const onTokenRef = useRef(onToken)
   onTokenRef.current = onToken
+  const [active, setActive] = useState(false)
 
   useEffect(() => {
+    const SITE_KEY = readSiteKey()
     if (!SITE_KEY) return
+    setActive(true)
     let cancelled = false
 
     function render() {
@@ -46,6 +57,6 @@ export default function Turnstile({ onToken }) {
     return () => { cancelled = true }
   }, [])
 
-  if (!SITE_KEY) return null
-  return <div ref={ref} style={{ margin: '8px 0' }} />
+  // Il container c'è sempre (serve il ref all'effect); il margine appare solo col widget.
+  return <div ref={ref} style={active ? { margin: '8px 0' } : undefined} />
 }

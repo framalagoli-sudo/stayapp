@@ -13,11 +13,12 @@ export async function verifyTurnstile(token, ip) {
   const bypass = (process.env.TURNSTILE_TEST_BYPASS ?? '').trim()
   if (bypass && token === bypass) return { success: true, bypass: true }
 
-  // SOFT di default (emergenza 17/6: il widget aveva smesso di rendere → form bloccati
-  // con campagna live). NON blocca: logga il motivo ma fa passare il lead. Le altre
-  // difese (honeypot, rate-limit, spam filter) restano attive. Riattivare l'enforcement
-  // con TURNSTILE_STRICT=1 SOLO dopo aver verificato che il widget produce token validi.
-  const soft = (process.env.TURNSTILE_STRICT ?? '').trim() !== '1'
+  // SOFT (non blocca, logga soltanto) di default. L'enforcement vero si attiva con
+  // TURNSTILE_STRICT=1. LEVA D'EMERGENZA PRIORITARIA: TURNSTILE_SOFT=1 forza il soft
+  // anche se STRICT è attivo → kill-switch istantaneo se il widget desse problemi.
+  // (La Site Key ora è servita a runtime via meta tag → niente più rotture da build cache.)
+  const killSwitch = (process.env.TURNSTILE_SOFT ?? '').trim() === '1'
+  const soft = killSwitch || (process.env.TURNSTILE_STRICT ?? '').trim() !== '1'
 
   if (!token) {
     if (soft) { console.error('[turnstile] SOFT: token mancante (widget non ha prodotto token)'); return { success: true, softfail: 'missing-token' } }

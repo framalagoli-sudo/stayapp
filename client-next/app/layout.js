@@ -27,10 +27,14 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }) {
+  // Site Key Turnstile servita a RUNTIME via meta (no inlining build-time → immune
+  // alla build cache che poteva farla sparire dal bundle). Vedi components/Turnstile.jsx.
+  const turnstileKey = (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '').trim()
   return (
     <html lang="it">
       <head>
         <meta name="theme-color" content="#1a1a2e" />
+        {turnstileKey && <meta name="cf-turnstile-sitekey" content={turnstileKey} />}
       </head>
       <body>
         {children}
