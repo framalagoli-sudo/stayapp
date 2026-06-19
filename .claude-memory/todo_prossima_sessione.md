@@ -7,14 +7,18 @@ metadata:
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
 ---
 
-## 🔝🔝 PROSSIMA SESSIONE (deciso 17/6) — OPZIONE B: Snapshot Sito/PWA (restore sicuro)
-Sistema di versioni della **configurazione editabile** di un'entità (minisito JSONB, pagine, tema, menu) con **ripristino a 1 click** — il paracadute contro "ho rotto il sito mentre editavo". SICURO perché tocca solo config, non dati transazionali (niente prenotazioni/FK/foto da perdere). Tipo cronologia Google Docs.
-Da fare: capire dove stanno le config (struttura JSONB su properties/ristoranti/attivita, tabella `pagine`, menu) → tabella `snapshots` → capture (manuale + auto pre-modifica) → UI "Versioni del sito" con Ripristina.
-NB: il restore COMPLETO del backup GDPR (Linea A) resta operazione ASSISTITA d'emergenza, NON un bottone (rischio: sovrascrive, FK, righe nuove, foto in Storage non incluse).
+## ✅ OPZIONE B — Snapshot Sito/PWA: FATTA (19/6)
+Versioni della config editabile di un'entità con ripristino a 1 click ("cronologia Google Docs" del sito). LIVE + 45/45 smoke + round-trip validato (pagine integre).
+- Migration `062_site_snapshots.sql` (eseguita): tabella `site_snapshots` (entity_data + pagine_data jsonb).
+- `lib/site-snapshot.js`: `SNAP` (colonne config per tipo, escluso `active`), `captureSnapshot`, `applySnapshot` (pagine: delete + reinsert senza parent_id poi 2ª passata per i parent → evita FK self-reference).
+- API: `POST/GET /api/sito-snapshots`, `POST /[id]/restore` (auto-snapshot pre-ripristino = annullabile), `DELETE /[id]`. Auth `requireEntityAccess`. Retention 25 manuali/entità.
+- UI: tab **"Versioni"** in `SitoPage.jsx` (componente `VersioniSito`): salva con etichetta / lista / ripristina / elimina.
+- Tocca SOLO config (minisito/theme/pagine/menu/gallery/privacy_data), NON dati transazionali.
+NB: il restore COMPLETO del backup GDPR (Linea A) resta operazione ASSISTITA d'emergenza, NON un bottone.
 
-## ⚠️ TURNSTILE ORA È SOFT (non blocca) — fix robusto da fare
-Il 17/6 con campagna live i form si sono bloccati ("Verifica anti-bot fallita") perché un deploy con build cache ha perso la Site Key `NEXT_PUBLIC` dal bundle → widget non rende → strict blocca. Mitigato: (a) Turnstile **SOFT di default** (form non bloccano mai più, `TURNSTILE_STRICT=1` per riattivare), (b) `deploy.ps1` ora usa `--force` (no cache). 
-**Fix robusto per riattivare strict in sicurezza**: NON far dipendere il blocco da una var `NEXT_PUBLIC` build-time. Servire la Site Key a **runtime** (es. server component nel layout inietta `window.__TURNSTILE_KEY__` da `process.env.TURNSTILE_SITE_KEY` non-public, oppure endpoint `/api/public/turnstile-key`), poi il componente Turnstile la legge da lì. Così la cache non può più romperla. Solo DOPO → `TURNSTILE_STRICT=1`. Finché non fatto, lasciare SOFT (honeypot + rate-limit + spam filter proteggono comunque).
+## ✅ TURNSTILE: deciso SOFT in modo DEFINITIVO (19/6) — NON ri-attivare strict
+Storia: 17/6 strict ruppe i form (build cache perse la Site Key NEXT_PUBLIC). 19/6 ho fatto il fix robusto (Site Key servita a **runtime** via meta tag `cf-turnstile-sitekey` nel layout + componente la legge da lì + fallback build-inlined → immune alla cache) e provato di nuovo lo strict. **Ha RI-bloccato un invio reale**: log = `[turnstile] SOFT: token mancante (widget non ha prodotto token)` → il widget non produce SEMPRE un token (rendering o timing del Managed mode), non hostname-mismatch.
+**DECISIONE con Francesco: restare SOFT per sempre.** Per un business di lead, bloccare anche un solo cliente vero > beneficio marginale (l'anti-bot è già dato da honeypot + rate-limit + spam filter + email validation). `TURNSTILE_STRICT` rimosso da Vercel. Codice (`lib/turnstile.js`): logica env ripristinata con warning, default soft; `TURNSTILE_SOFT=1` = kill-switch. **NON impostare TURNSTILE_STRICT=1** senza una sessione dedicata di debug del widget in più browser (e onestamente sconsigliato: rischio sui lead per guadagno ~nullo). Il fix runtime della chiave (meta tag) resta in place, utile a prescindere.
 
 ## ⛔ DEFERITO — STEP D Sentry: BLOCCATO da incompatibilità versione (17/6)
 **Sentry NON cattura** e serve una sessione dedicata. Cosa scoperto il 17/6:
@@ -61,7 +65,7 @@ Il SW next-pwa (precache shell) causava pagine bianche dopo i deploy → disabil
 - **Supabase Pro** ($25/mese) — manuale dashboard, prima dei clienti veri.
 - **RLS 2° muro** — progetto architetturale a freddo.
 - ~~**Backup per singola azienda** (GDPR)~~ ✅ FATTO (17/6): `GET /api/admin/backup/azienda/[id]` (super_admin o admin propria azienda) → JSON scaricabile, tutte le tabelle filtrate per azienda. Bottone "Esporta dati" nella card azienda. Logica filtri validata sul DB + 401 senza auth.
-- ~~**Dati legali nel footer minisiti** (P.IVA, sede, REA — obbligo di legge)~~ ✅ FATTO (17/6): migration 061 (rea+capitale_sociale su aziende), `LegalInfo` nel footer home (LandingFooter) e sotto-pagine (PaginaPage), `getAziendaLegale` resiliente in guest-data, campi nel form admin azienda. Verificato rendering live (con revert). **Campi opzionali** → worldwide-safe. ⚠️ AZIONE FRANCESCO: compilare P.IVA (+ REA/cap.soc. per s.r.l.) di ogni azienda nel pannello admin, altrimenti il footer resta vuoto. Oggi tutte le aziende hanno P.IVA vuota.
+- ~~**Dati legali nel footer minisiti** (P.IVA, sede, REA — obbligo di legge)~~ ✅ FATTO (17/6): migration 061 (rea+capitale_sociale su aziende), `LegalInfo` nel footer home (LandingFooter) e sotto-pagine (PaginaPage), `getAziendaLegale` resiliente in guest-data, campi nel form admin azienda. Verificato rendering live (con revert). **Campi opzionali** → worldwide-safe. ✅ AZIONE FRANCESCO FATTA (19/6): P.IVA + dati privacy compilati e funzionanti (footer legali + pagine privacy popolate).
 
 ## Note operative (vedi [[reference_vercel_env_cli]])
 - Var `NEXT_PUBLIC_*`: dopo cambio su Vercel serve `vercel --prod --force` (build cache stale).
