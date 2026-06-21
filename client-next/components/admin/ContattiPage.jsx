@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
-import { Search, Plus, X, Pencil, Trash2, Users, Mail, Phone, Tag, List, LayoutGrid, GripVertical, ChevronDown, Star, Copy, Check } from 'lucide-react'
+import { Search, Plus, X, Pencil, Trash2, Users, Mail, Phone, Tag, List, LayoutGrid, GripVertical, ChevronDown, Star, Copy, Check, Download } from 'lucide-react'
 import { DndContext, PointerSensor, useSensor, useSensors, useDraggable, useDroppable } from '@dnd-kit/core'
 
 // ─── Pipeline stages ─────────────────────────────────────────────────────────
@@ -51,6 +51,38 @@ function TagInput({ tags, onChange }) {
         style={{ border: 'none', outline: 'none', fontSize: 13, flex: 1, minWidth: 120, background: 'transparent' }} />
     </div>
   )
+}
+
+// ─── Export CSV ────────────────────────────────────────────────────────────────
+// Separatore ';' (Excel IT/EU non spezza in colonne) + BOM UTF-8 (accenti corretti).
+function csvCell(v) {
+  const s = v == null ? '' : String(v)
+  return `"${s.replace(/"/g, '""')}"`
+}
+
+function downloadContattiCSV(contatti) {
+  const headers = ['Nome', 'Email', 'Telefono', 'Stage', 'Tag', 'Newsletter', 'Note', 'Fonte', 'Data creazione']
+  const rows = contatti.map(c => [
+    c.nome,
+    c.email,
+    c.telefono,
+    (STAGE_MAP[c.pipeline_stage] || STAGE_MAP.lead).label,
+    (c.tags || []).join(', '),
+    c.iscritto_newsletter ? 'Sì' : 'No',
+    c.note,
+    c.fonte || 'manuale',
+    c.created_at ? new Date(c.created_at).toLocaleDateString('it-IT') : '',
+  ])
+  const csv = [headers, ...rows].map(r => r.map(csvCell).join(';')).join('\r\n')
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `contatti-${new Date().toISOString().slice(0, 10)}.csv`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
 }
 
 // ─── Stage badge ──────────────────────────────────────────────────────────────
@@ -360,6 +392,11 @@ export default function ContattiPage() {
               </button>
             ))}
           </div>
+          <button onClick={() => downloadContattiCSV(contatti)} disabled={contatti.length === 0}
+            title={contatti.length === 0 ? 'Nessun contatto da esportare' : 'Esporta i contatti visibili in CSV'}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#fff', color: contatti.length === 0 ? '#bbb' : '#1a1a2e', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: contatti.length === 0 ? 'not-allowed' : 'pointer' }}>
+            <Download size={15} strokeWidth={2} /> Esporta
+          </button>
           <button onClick={() => openNewContact()}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <Plus size={15} strokeWidth={2} /> Aggiungi
