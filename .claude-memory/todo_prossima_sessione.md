@@ -68,6 +68,7 @@ Il SW next-pwa (precache shell) causava pagine bianche dopo i deploy → disabil
 - ~~**Dati legali nel footer minisiti** (P.IVA, sede, REA — obbligo di legge)~~ ✅ FATTO (17/6): migration 061 (rea+capitale_sociale su aziende), `LegalInfo` nel footer home (LandingFooter) e sotto-pagine (PaginaPage), `getAziendaLegale` resiliente in guest-data, campi nel form admin azienda. Verificato rendering live (con revert). **Campi opzionali** → worldwide-safe. ✅ AZIONE FRANCESCO FATTA (19/6): P.IVA + dati privacy compilati e funzionanti (footer legali + pagine privacy popolate).
 
 ## Note operative (vedi [[reference_vercel_env_cli]])
+- 🟡 **`deploy` da ovunque** (proposto 21/6, da confermare con Francesco): aggiungere al `$PROFILE` PowerShell `function deploy { & "C:\Users\francesco\progetti\hospitality\deploy.ps1" }` così non serve essere in root né digitare `.\`. `deploy.ps1` già ancorato a `$PSScriptRoot` (21/6). Vedi [[project_session_2026_06_21]].
 - Var `NEXT_PUBLIC_*`: dopo cambio su Vercel serve `vercel --prod --force` (build cache stale).
 - Log prod: `npx vercel logs <dep-url> --json` da `client-next/`.
 - Leva emergenza Turnstile: `TURNSTILE_SOFT=1` su Vercel disattiva il blocco senza perdere lead.

@@ -21,6 +21,7 @@
 - [Migrazione Railway → Vercel COMPLETA](project_session_railway_migration.md) — tutto su Vercel, Railway freezato, bounce webhook ✅, NEXT_PUBLIC_API_URL="" ✅
 - [Roadmap Sprint + Piano tecnico 6 fasi](project_roadmap_sprint.md) — Fase 1 debug in corso, Fase 2 COMPLETA, Sprint 10 = Stripe billing
 - [➡️ TODO prossima sessione](todo_prossima_sessione.md) — TOP: Sentry init BLOCCATO su Next 14.2 (serve sessione dedicata: wizard/upgrade Next15/alternativa)
+- [Session 2026-06-21 — Export contatti CSV + fix deploy.ps1](project_session_2026_06_21.md) — bottone Esporta CSV (BOM+`;`), fix deploy.ps1 da subfolder ($PSScriptRoot), chiarito rosso PowerShell (stderr nativo benigno)
 - [Session 2026-06-16/17 — Backup fix + 5 interventi sicurezza](project_session_2026_06_16_security.md) — backup R2 silent-fail+BOM, rate limit+Turnstile LIVE, header CSP, DMARC quarantine; Sentry init bloccato (Next14 vs SDK)
 - [Session 2026-06-18 — CLAUDE.md + brand completo](project_session_2026_06_18.md) — client-next/CLAUDE.md + globale ~/.claude, favicon/icone/OG/logo brand reale, white-label email (logo OltreNova solo piattaforma→titolare, mai business→cliente)
 - [Session 2026-06-15 — Fix sistemico super_admin azienda_id](project_session_2026_06_15.md) — 6 pagine + 5 route, fix newsletter searchParams 500, email conferma form builder
