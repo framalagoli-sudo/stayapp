@@ -54,6 +54,20 @@ cd server && npm run dev    # → http://localhost:3001
 cd client-next && npm run dev  # → http://localhost:3000
 ```
 
+**5. Comando `deploy` (Windows, opzionale ma comodo)**
+Crea la funzione `deploy` nel profilo PowerShell così da lanciare `deploy.ps1` da **qualsiasi** cartella (senza `.\` e senza dover essere in root). Il file profilo è fuori dal repo → va ricreato a mano al recovery:
+```powershell
+# Percorso profilo: C:\Users\<TUO-USERNAME>\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1
+$dir = Split-Path $PROFILE
+New-Item -ItemType Directory -Force $dir | Out-Null
+@'
+# Lancia il deploy di StayApp (push + Vercel + smoke test) da qualsiasi cartella.
+# deploy.ps1 si riposiziona da solo sulla root del repo ($PSScriptRoot).
+function deploy { & "C:\Users\<TUO-USERNAME>\progetti\hospitality\deploy.ps1" }
+'@ | Out-File $PROFILE -Encoding utf8
+```
+Poi riavvia il terminale (oppure `. $PROFILE`) e usa `deploy`. Richiede ExecutionPolicy ≠ `Restricted` (di default qui è `Bypass`).
+
 ---
 
 ## Setup nuovo sviluppatore
