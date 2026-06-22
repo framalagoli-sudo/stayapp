@@ -26,7 +26,7 @@ const BLOCK_ICON_MAP = {
   hero: Layers, about: AlignLeft, foto_testo: Image, paragrafi: Grid,
   team: Users, steps: List, highlights: Star, stats: BarChart2,
   cta_banner: Zap, testimonianze: MessageCircle, promozioni: Tag,
-  pacchetti: Package, faq: HelpCircle, immagine: Image, gallery: ImageIcon, video: Video,
+  pacchetti: Package, faq: HelpCircle, immagine: Image, galleria_immagini: Grid, gallery: ImageIcon, video: Video,
   services: Settings, activities: Compass, excursions: Map, eventi: Calendar,
   news: FileText, booking: Clock, newsletter: Mail, contatti: Phone,
   show_map: MapPin, clienti: Building2,
@@ -190,6 +190,43 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
     )
     case 'video': return (
       <Field label="URL video (YouTube o Vimeo)" value={data.url} onChange={v => upd('url', v)} placeholder="https://youtube.com/watch?v=..." />
+    )
+    case 'galleria_immagini': return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} />
+        <div>
+          <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 500 }}>Colonne</label>
+          <select value={data.columns || 3} onChange={e => upd('columns', Number(e.target.value))} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+            <option value={2}>2 colonne</option>
+            <option value={3}>3 colonne</option>
+            <option value={4}>4 colonne</option>
+          </select>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {(data.images || []).map((it, idx) => (
+            <div key={it.id || idx} style={{ background: '#f8f9ff', border: '1px solid #e8ecff', borderRadius: 10, padding: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#555' }}>Immagine {idx + 1}</span>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button onClick={() => { const a = [...(data.images || [])]; if (idx > 0) { [a[idx - 1], a[idx]] = [a[idx], a[idx - 1]]; upd('images', a) } }} style={tinyBtn}>▲</button>
+                  <button onClick={() => { const a = [...(data.images || [])]; if (idx < a.length - 1) { [a[idx], a[idx + 1]] = [a[idx + 1], a[idx]]; upd('images', a) } }} style={tinyBtn}>▼</button>
+                  <button onClick={() => upd('images', (data.images || []).filter((_, i) => i !== idx))} style={{ ...tinyBtn, color: '#c00', background: '#fce8e8' }}>✕</button>
+                </div>
+              </div>
+              {it.url && <img src={it.url} alt="" style={{ maxHeight: 80, maxWidth: '100%', objectFit: 'cover', borderRadius: 6, marginBottom: 8, display: 'block' }} />}
+              <UploadBtn label="Carica immagine" entityId={entityId} entityTipo={entityTipo} onUrl={url => upd('images', (data.images || []).map((x, i) => i === idx ? { ...x, url } : x))} />
+              <div style={{ marginTop: 8 }}>
+                <label style={{ display: 'block', fontSize: 11, color: '#666', marginBottom: 3 }}>Testo alternativo (alt)</label>
+                <input type="text" value={it.alt || ''} onChange={e => upd('images', (data.images || []).map((x, i) => i === idx ? { ...x, alt: e.target.value } : x))} placeholder="Descrizione" style={inputStyle()} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <button onClick={() => upd('images', [...(data.images || []), { id: uid(), url: '', alt: '' }])}
+          style={{ width: '100%', padding: '8px', background: '#f0f4ff', border: '1px dashed #c8d0f0', borderRadius: 8, cursor: 'pointer', fontSize: 13, color: '#334' }}>
+          + Aggiungi immagine
+        </button>
+      </div>
     )
     case 'immagine': return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

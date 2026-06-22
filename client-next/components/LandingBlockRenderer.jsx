@@ -349,6 +349,22 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
           </section>
         )
 
+      case 'galleria_immagini': {
+        const imgs = (d.images || []).filter(im => im.url)
+        if (!imgs.length) return null
+        const cols = d.columns || 3
+        return (
+          <section key={block.id} style={{ padding: '64px 0', background: '#fff' }}>
+            <div className="lbr-section">
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: '#1a1a2e', marginBottom: 40 }}>{d.titolo}</h2>}
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: 10 }}>
+                {imgs.map((im, i) => <img key={im.id || i} src={im.url} alt={im.alt || ''} loading="lazy" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: 8 }} />)}
+              </div>
+            </div>
+          </section>
+        )
+      }
+
       case 'immagine': {
         if (!d.image_url) return null
         const wMap = { full: '100%', large: 860, medium: 600, small: 380 }
