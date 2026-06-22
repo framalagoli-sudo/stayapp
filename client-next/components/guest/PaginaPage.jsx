@@ -9,6 +9,7 @@ import LegalInfo from '@/components/guest/LegalInfo'
 import CookieBanner from '@/components/CookieBanner'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import BookingWidget from '@/components/BookingWidget'
+import { applyBlockStyle } from '@/lib/blockTypes'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -1009,7 +1010,7 @@ export default function PaginaPage({ entityType }) {
       </div>
 
       {/* Blocchi */}
-      {blocks.map(block => renderBlock(block))}
+      {blocks.map(block => applyBlockStyle(renderBlock(block), block))}
 
       {/* Footer */}
       <footer style={{ background: footerBg, padding: footerCfg.layout === 'minimal' ? '28px 24px' : '56px 24px 28px' }}>

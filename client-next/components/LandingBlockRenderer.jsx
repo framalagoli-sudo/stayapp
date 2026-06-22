@@ -4,6 +4,7 @@ import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Ut
 import { guestFetch } from '@/lib/api'
 import BookingWidget from './BookingWidget'
 import Turnstile from '@/components/Turnstile'
+import { applyBlockStyle } from '@/lib/blockTypes'
 
 const HIGHLIGHT_LUCIDE = {
   star: Star, heart: Heart, award: Award, wifi: Wifi, parking: Car,
@@ -695,7 +696,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         .lbr-logo-item img:hover { filter: grayscale(0%) opacity(1); }
         .lbr-logo-item a { display: block; }
       `}</style>
-      {blocks.map(b => renderBlock(b))}
+      {blocks.map(b => applyBlockStyle(renderBlock(b), b))}
     </>
   )
 }

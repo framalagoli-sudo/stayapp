@@ -9,7 +9,7 @@ import {
   Plus, Trash2, ImageIcon, Layers, Building2,
 } from 'lucide-react'
 import AiButton from '@/components/admin/AiButton'
-import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel } from '@/lib/blockTypes'
+import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS, BLOCK_PADY_OPTIONS, blockSupportsBg } from '@/lib/blockTypes'
 
 function uid() { return crypto.randomUUID() }
 
@@ -339,6 +339,36 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
   }
 }
 
+// ── BlockStylePanel — stile per-blocco (Fase 0: sfondo + spaziatura) ─────────
+function BlockStylePanel({ block, onChange }) {
+  const st = block.style || {}
+  const set = (key, val) => onChange({ ...st, [key]: val })
+  const showBg = blockSupportsBg(block.type)
+  const sel = { width: '100%', border: '1px solid #e0e0e8', borderRadius: 7, padding: '8px 10px', fontSize: 13, background: '#fff', fontFamily: 'inherit' }
+  const lbl = { display: 'block', fontSize: 11, color: '#666', marginBottom: 4 }
+  return (
+    <div style={{ borderTop: '1px solid #ececf2', marginTop: 18, paddingTop: 16 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 10 }}>Stile sezione</div>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        {showBg && (
+          <div style={{ flex: 1, minWidth: 150 }}>
+            <label style={lbl}>Sfondo</label>
+            <select value={st.bg || 'default'} onChange={e => set('bg', e.target.value)} style={sel}>
+              {BLOCK_BG_OPTIONS.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+            </select>
+          </div>
+        )}
+        <div style={{ flex: 1, minWidth: 150 }}>
+          <label style={lbl}>Spaziatura verticale</label>
+          <select value={st.paddingY || 'default'} onChange={e => set('paddingY', e.target.value)} style={sel}>
+            {BLOCK_PADY_OPTIONS.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+          </select>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── FormBuilderBlockEditor — carica lista form e mostra picker ───────────────
 function FormBuilderBlockEditor({ data, onChange }) {
   const [forms, setForms] = useState([])
@@ -579,6 +609,7 @@ export default function PaginaEditorPage() {
     setExpandedId(b.id)
   }
   function updateBlock(id, data) { patchBlocks(blocks.map(b => b.id === id ? { ...b, data } : b)) }
+  function updateBlockStyle(id, style) { patchBlocks(blocks.map(b => b.id === id ? { ...b, style } : b)) }
   function deleteBlock(id) {
     if (!confirm('Eliminare questo blocco?')) return
     patchBlocks(blocks.filter(b => b.id !== id))
@@ -813,6 +844,7 @@ export default function PaginaEditorPage() {
                 {isOpen && (
                   <div style={{ borderTop: '1px solid #f0f0f0', padding: '18px 20px', background: '#fafafa' }}>
                     <BlockEditor block={block} onChange={data => updateBlock(block.id, data)} entityId={entityId} entityTipo={entityTipo} />
+                    <BlockStylePanel block={block} onChange={style => updateBlockStyle(block.id, style)} />
                   </div>
                 )}
               </div>

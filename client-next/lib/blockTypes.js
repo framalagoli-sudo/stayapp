@@ -1,4 +1,6 @@
 ﻿'use client'
+import { cloneElement } from 'react'
+
 export const BLOCK_GROUPS = [
   { key: 'layout',      label: 'Testo & Layout' },
   { key: 'marketing',   label: 'Marketing' },
@@ -61,6 +63,68 @@ export const BLOCK_DEFAULTS = {
   newsletter:   { title: '', subtitle: '' },
   show_map:     {},
   form_builder: { form_token: '', titolo_sezione: '' },
+}
+
+// ── Stile per-blocco (Fase 0) ───────────────────────────────────────────────
+// Schema: block.style = { bg, paddingY }. Tutto opzionale e retrocompatibile:
+// un blocco senza `style` rende esattamente come prima. Valori da whitelist
+// (niente colore/HTML arbitrario nel DOM). Sfondo limitato a tinte CHIARE così
+// il testo scuro dei blocchi resta sempre leggibile; lo sfondo scuro/colorato
+// arriverà quando i contenuti useranno colori ereditati (fase successiva).
+export const BLOCK_BG = { default: null, white: '#ffffff', light: '#fafafa', muted: '#f4f4f7' }
+export const BLOCK_BG_OPTIONS = [
+  { key: 'default', label: 'Predefinito' },
+  { key: 'white',   label: 'Bianco' },
+  { key: 'light',   label: 'Grigio chiaro' },
+  { key: 'muted',   label: 'Grigio' },
+]
+// px verticali; null = non toccare (mantiene la spaziatura nativa del blocco)
+export const BLOCK_PADY = { default: null, none: 0, compact: 40, spacious: 96, xl: 128 }
+export const BLOCK_PADY_OPTIONS = [
+  { key: 'default',  label: 'Predefinita' },
+  { key: 'none',     label: 'Nessuna' },
+  { key: 'compact',  label: 'Compatta' },
+  { key: 'spacious', label: 'Ampia' },
+  { key: 'xl',       label: 'Extra' },
+]
+// Blocchi con testo chiaro / sfondo intenzionalmente scuro: niente controllo sfondo
+// (un fondo chiaro renderebbe il testo illeggibile).
+export const BG_EXCLUDED_TYPES = ['hero', 'stats', 'cta_banner', 'video']
+export function blockSupportsBg(type) { return !BG_EXCLUDED_TYPES.includes(type) }
+
+// Spezza una shorthand CSS `padding` (1-4 valori) nei 4 lati.
+function parsePadding(p) {
+  if (p == null) return { top: '0', right: '0', bottom: '0', left: '0' }
+  const a = String(p).trim().split(/\s+/)
+  if (a.length === 1) return { top: a[0], right: a[0], bottom: a[0], left: a[0] }
+  if (a.length === 2) return { top: a[0], right: a[1], bottom: a[0], left: a[1] }
+  if (a.length === 3) return { top: a[0], right: a[1], bottom: a[2], left: a[1] }
+  return { top: a[0], right: a[1], bottom: a[2], left: a[3] }
+}
+
+// Fase 0 — applica block.style (sfondo + spaziatura) all'unica <section> di un blocco
+// via cloneElement, senza riscrivere i singoli case dei renderer. Additivo: se non
+// c'è style o non ci sono override validi, ritorna l'elemento immutato. Condiviso da
+// PaginaPage (sotto-pagine) e LandingBlockRenderer (home) per evitare duplicazione.
+export function applyBlockStyle(el, block) {
+  if (!el || !block?.style) return el
+  const st = block.style
+  const ov = {}
+  if (blockSupportsBg(block.type) && st.bg && BLOCK_BG[st.bg]) ov.background = BLOCK_BG[st.bg]
+  const pad = BLOCK_PADY[st.paddingY]
+  const hasPad = st.paddingY && st.paddingY !== 'default' && pad != null
+  if (!Object.keys(ov).length && !hasPad) return el
+  const base = { ...(el.props.style || {}) }
+  if (hasPad) {
+    // preserva la spaziatura orizzontale nativa, sovrascrive solo la verticale
+    const cur = parsePadding(base.padding)
+    delete base.padding
+    if (base.paddingLeft == null) base.paddingLeft = cur.left
+    if (base.paddingRight == null) base.paddingRight = cur.right
+    ov.paddingTop = `${pad}px`
+    ov.paddingBottom = `${pad}px`
+  }
+  return cloneElement(el, { style: { ...base, ...ov } })
 }
 
 export function blockLabel(type) {
