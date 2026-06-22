@@ -9,6 +9,7 @@ import {
   Plus, Trash2, ImageIcon, Layers, Building2,
 } from 'lucide-react'
 import AiButton from '@/components/admin/AiButton'
+import RichTextEditor from '@/components/admin/RichTextEditor'
 import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS, BLOCK_PADY_OPTIONS, blockSupportsBg } from '@/lib/blockTypes'
 
 function uid() { return crypto.randomUUID() }
@@ -157,14 +158,17 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
               onInsert={v => upd('text', v)}
             />
           </div>
-          <textarea value={data.text || ''} onChange={e => upd('text', e.target.value)} rows={5} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+          <RichTextEditor content={data.text} onChange={v => upd('text', v)} format="json" minimal placeholder="Scrivi il testo…" />
         </div>
       </div>
     )
     case 'foto_testo': return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <Field label="Titolo" value={data.title} onChange={v => upd('title', v)} />
-        <Field label="Testo" value={data.text} onChange={v => upd('text', v)} multiline rows={4} />
+        <div>
+          <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 500 }}>Testo</label>
+          <RichTextEditor content={data.text} onChange={v => upd('text', v)} format="json" minimal placeholder="Scrivi il testo…" />
+        </div>
         <Field label="URL immagine" value={data.image_url} onChange={v => upd('image_url', v)} placeholder="https://..." />
         {data.image_url && <img src={data.image_url} alt="" style={{ maxHeight: 120, borderRadius: 8, objectFit: 'cover', width: '100%' }} />}
         <UploadBtn label="Carica immagine" entityId={entityId} entityTipo={entityTipo} onUrl={url => upd('image_url', url)} />

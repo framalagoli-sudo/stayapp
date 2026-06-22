@@ -21,23 +21,35 @@ function ToolbarButton({ onClick, active, title, children }) {
   )
 }
 
-export default function RichTextEditor({ content, onChange, placeholder = 'Scrivi il contenuto dell\'articolo…' }) {
+// format: 'html' (blog, default) | 'json' (blocchi sito → render sicuro via walker).
+// minimal: nasconde citazione/separatore per una toolbar essenziale (target SMB).
+export default function RichTextEditor({ content, onChange, placeholder = 'Scrivi il contenuto dell\'articolo…', format = 'html', minimal = false }) {
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
-      Link.configure({ openOnClick: false, autolink: true }),
+      Link.configure({ openOnClick: false, autolink: true, protocols: ['http', 'https', 'mailto', 'tel'] }),
       Placeholder.configure({ placeholder }),
     ],
     content: content || '',
-    onUpdate: ({ editor }) => onChange(editor.getHTML()),
+    onUpdate: ({ editor }) => onChange(format === 'json' ? editor.getJSON() : editor.getHTML()),
   })
 
-  // Aggiorna il contenuto quando cambia esternamente (es. caricamento articolo da DB)
+  // Aggiorna il contenuto quando cambia esternamente (es. caricamento da DB, insert AI)
   useEffect(() => {
-    if (editor && content !== undefined && editor.getHTML() !== content) {
+    if (!editor || content === undefined) return
+    if (format === 'json') {
+      const incoming = content && typeof content === 'object' ? JSON.stringify(content) : null
+      if (incoming === null) {
+        // stringa legacy o da AI: imposta solo se non vuota (Tiptap la converte in doc)
+        if (typeof content === 'string' && content.trim() !== '') editor.commands.setContent(content)
+      } else if (incoming !== JSON.stringify(editor.getJSON())) {
+        editor.commands.setContent(content)
+      }
+    } else if (editor.getHTML() !== content) {
       editor.commands.setContent(content || '')
     }
-  }, [editor, content])
+  }, [editor, content, format])
 
   if (!editor) return null
 
@@ -76,12 +88,16 @@ export default function RichTextEditor({ content, onChange, placeholder = 'Scriv
         <ToolbarButton onClick={() => tb.chain().focus().toggleOrderedList().run()} active={tb.isActive('orderedList')} title="Lista numerata">
           <ListOrdered size={sz} strokeWidth={2} />
         </ToolbarButton>
-        <ToolbarButton onClick={() => tb.chain().focus().toggleBlockquote().run()} active={tb.isActive('blockquote')} title="Citazione">
-          <Quote size={sz} strokeWidth={2} />
-        </ToolbarButton>
-        <ToolbarButton onClick={() => tb.chain().focus().setHorizontalRule().run()} active={false} title="Separatore">
-          <Minus size={sz} strokeWidth={2} />
-        </ToolbarButton>
+        {!minimal && (
+          <>
+            <ToolbarButton onClick={() => tb.chain().focus().toggleBlockquote().run()} active={tb.isActive('blockquote')} title="Citazione">
+              <Quote size={sz} strokeWidth={2} />
+            </ToolbarButton>
+            <ToolbarButton onClick={() => tb.chain().focus().setHorizontalRule().run()} active={false} title="Separatore">
+              <Minus size={sz} strokeWidth={2} />
+            </ToolbarButton>
+          </>
+        )}
         <div style={{ width: 1, background: '#e0e0e0', margin: '0 2px' }} />
         <ToolbarButton onClick={setLink} active={tb.isActive('link')} title="Inserisci link">
           <Link2 size={sz} strokeWidth={2} />
