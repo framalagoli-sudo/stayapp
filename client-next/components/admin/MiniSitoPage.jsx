@@ -5,6 +5,7 @@ import { uploadMedia, apiFetch } from '@/lib/api'
 import { ExternalLink, Plus, Trash2, Waves, Sparkles, Utensils, Activity, Car, Wifi, Umbrella, Music, Wine, Coffee, Bell, Bus, Star, Mountain, Wind, Heart, Award, MapPin, Clock, GripVertical, Users, Layout, ChevronRight, FileText, Search, SearchX, Home, PenLine, FilePlus, Briefcase, Mail, Tag, HelpCircle } from 'lucide-react'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import FontPairPicker from '@/components/admin/FontPairPicker'
 import { CSS } from '@dnd-kit/utilities'
 
 const DEFAULT_SECTIONS      = { gallery: true, services: true, activities: true, excursions: true, eventi: true }
@@ -59,6 +60,7 @@ const ENTITY_PREFIX = { struttura: 's', ristorante: 'r', attivita: 'a' }
 const TABS = [
   { key: 'pagine',       label: 'Pagine' },
   { key: 'menu',         label: 'Menu & Aspetto' },
+  { key: 'stile',        label: 'Stile' },
   { key: 'impostazioni', label: 'Impostazioni' },
   { key: 'seo',          label: 'SEO & Social' },
 ]
@@ -326,6 +328,12 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
 
   function patchSection(key, value) {
     const updated = { ...form, sections: { ...form.sections, [key]: value } }
+    setForm(updated)
+    save({ minisito: updated }).catch(() => {})
+  }
+
+  function patchTheme(patchObj) {
+    const updated = { ...form, theme: { ...(form.theme || {}), ...patchObj } }
     setForm(updated)
     save({ minisito: updated }).catch(() => {})
   }
@@ -1100,6 +1108,47 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
         <TrackingCard form={form} setForm={setForm} save={save} inputStyle={inputStyle} lblStyle={lblStyle} hintStyle={hintStyle} fieldWrap={fieldWrap} cardStyle={cardStyle} sectionTitle={sectionTitle} />
         <GeoCard tipo={entityType} slug={entity.slug} faqCount={(form.faq||[]).filter(f=>f.question&&f.answer).length} cardStyle={cardStyle} sectionTitle={sectionTitle} customDomain={customDomain} />
       </>}
+
+      {activeTab === 'stile' && (() => {
+        const sameStyle = form.use_app_style !== false
+        const t = form.theme || {}
+        return (
+          <div style={cardStyle}>
+            <h3 style={sectionTitle}>Stile del sito</h3>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+              <input type="checkbox" checked={sameStyle} onChange={e => patch('use_app_style', e.target.checked)} />
+              <span style={{ fontSize: 14, fontWeight: 600 }}>Usa lo stesso stile dell'app</span>
+            </label>
+            <p style={hintStyle}>
+              {sameStyle
+                ? "Il sito eredita colori e font dell'app. Per cambiarli, vai nella sezione Tema."
+                : 'Il sito ha uno stile tutto suo, indipendente dall\'app. Configuralo qui sotto.'}
+            </p>
+            {!sameStyle && (
+              <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 20 }}>
+                <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+                  {[['Colore principale', 'primaryColor', '#00b5b5'], ['Sfondo', 'bgColor', '#ffffff'], ['Colore testo', 'textColor', '#1a1a2e']].map(([label, key, def]) => (
+                    <div key={key}>
+                      <label style={lblStyle}>{label}</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <input type="color" value={t[key] || def} onChange={e => patchTheme({ [key]: e.target.value })}
+                          style={{ width: 44, height: 34, border: '1px solid #ddd', borderRadius: 6, cursor: 'pointer', padding: 0 }} />
+                        <span style={{ fontSize: 12, color: '#888' }}>{(t[key] || def).toUpperCase()}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <label style={lblStyle}>Coppia di font</label>
+                  <FontPairPicker
+                    theme={{ primaryColor: t.primaryColor || '#00b5b5', fontHeading: t.fontHeading, fontBody: t.fontBody }}
+                    updateTheme={patchTheme} />
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {activeTab === '__removed__' && <>
         {/* ── HEADER ── */}

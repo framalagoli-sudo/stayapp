@@ -11,6 +11,7 @@ import ChatbotWidget from '@/components/ChatbotWidget'
 import BookingWidget from '@/components/BookingWidget'
 import { applyBlockStyle, textSizeScale, textColorFor } from '@/lib/blockTypes'
 import { RichText, richIsEmpty } from '@/lib/richText'
+import { resolveSiteTheme } from '@/lib/siteTheme'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -156,7 +157,7 @@ export default function PaginaPage({ entityType }) {
     </div>
   )
 
-  const theme   = { primaryColor: '#00b5b5', fontHeading: 'playfair', fontBody: 'inter', ...(entity.theme || {}) }
+  const theme   = { primaryColor: '#00b5b5', fontHeading: 'playfair', fontBody: 'inter', ...resolveSiteTheme(entity) }
   const primary = theme.primaryColor
   const heading = HEADING_FAMILIES[theme.fontHeading] || HEADING_FAMILIES.playfair
   const body    = BODY_FAMILIES[theme.fontBody]       || BODY_FAMILIES.inter

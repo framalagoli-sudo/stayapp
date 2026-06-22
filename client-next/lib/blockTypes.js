@@ -5,7 +5,7 @@ export const BLOCK_GROUPS = [
   { key: 'layout',      label: 'Testo & Layout' },
   { key: 'marketing',   label: 'Marketing' },
   { key: 'media',       label: 'Media' },
-  { key: 'servizi',     label: 'Contenuti entità' },
+  { key: 'servizi',     label: 'Contenuti condivisi (app + sito)' },
   { key: 'conversione', label: 'Conversione' },
 ]
 

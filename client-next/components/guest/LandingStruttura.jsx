@@ -8,6 +8,7 @@ import ChatbotWidget from '@/components/ChatbotWidget'
 import WhatsAppButton from '@/components/WhatsAppButton'
 import LandingBlockRenderer from '@/components/LandingBlockRenderer'
 import LandingFooter from '@/components/guest/LandingFooter'
+import { resolveSiteTheme } from '@/lib/siteTheme'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -73,7 +74,7 @@ export default function LandingStruttura({ property, initialHomeBlocks, domain }
     }
   }, [property.id])
 
-  const theme   = { primaryColor: '#00b5b5', fontHeading: 'playfair', fontBody: 'inter', ...(property.theme || {}) }
+  const theme   = { primaryColor: '#00b5b5', fontHeading: 'playfair', fontBody: 'inter', ...resolveSiteTheme(property) }
   const primary = theme.primaryColor
   const heading = HEADING_FAMILIES[theme.fontHeading] || HEADING_FAMILIES.playfair
   const body    = BODY_FAMILIES[theme.fontBody]       || BODY_FAMILIES.inter

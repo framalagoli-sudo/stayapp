@@ -8,6 +8,7 @@ import ChatbotWidget from '@/components/ChatbotWidget'
 import WhatsAppButton from '@/components/WhatsAppButton'
 import LandingBlockRenderer from '@/components/LandingBlockRenderer'
 import LandingFooter from '@/components/guest/LandingFooter'
+import { resolveSiteTheme } from '@/lib/siteTheme'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -73,7 +74,7 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
     }
   }, [ristorante.id])
 
-  const theme      = { primaryColor: '#e63946', fontHeading: 'playfair', fontBody: 'inter', textColor: '#1a1a2e', borderStyle: 'mixed', ...(ristorante.theme || {}) }
+  const theme      = { primaryColor: '#e63946', fontHeading: 'playfair', fontBody: 'inter', textColor: '#1a1a2e', borderStyle: 'mixed', ...resolveSiteTheme(ristorante) }
   const primary    = theme.primaryColor
   const heading    = HEADING_FAMILIES[theme.fontHeading] || HEADING_FAMILIES.playfair
   const body       = BODY_FAMILIES[theme.fontBody]       || BODY_FAMILIES.inter
