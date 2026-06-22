@@ -9,7 +9,7 @@ import LegalInfo from '@/components/guest/LegalInfo'
 import CookieBanner from '@/components/CookieBanner'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import BookingWidget from '@/components/BookingWidget'
-import { applyBlockStyle, textSizeScale, textColorFor } from '@/lib/blockTypes'
+import { applyBlockStyle, textSizeScale, textColorFor, gridTemplate } from '@/lib/blockTypes'
 import { RichText, richIsEmpty } from '@/lib/richText'
 import { resolveSiteTheme } from '@/lib/siteTheme'
 
@@ -507,7 +507,7 @@ export default function PaginaPage({ entityType }) {
           <section key={block.id} style={{ padding: '64px 0', background: '#fff' }}>
             <div className="pp-section">
               {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: '#1a1a2e', marginBottom: 40 }}>{d.titolo}</h2>}
-              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(cols, 320), gap: 10 }}>
                 {imgs.map((im, i) => <img key={im.id || i} src={im.url} alt={im.alt || ''} loading="lazy" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: 8 }} />)}
               </div>
             </div>
@@ -533,14 +533,16 @@ export default function PaginaPage({ entityType }) {
       }
 
       case 'gallery': {
-        const gallery = (entity.gallery || []).slice(0, 9)
+        const gallery = (entity.gallery || []).slice(0, d.limit || 9)
         if (!gallery.length) return null
         return (
           <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
             <div className="pp-section">
-              <div className="land-gallery">
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: d.sottotitolo ? 12 : 40, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo}</h2>}
+              {d.sottotitolo && <p style={{ textAlign: 'center', color: '#888', marginBottom: 40, fontSize: 15 }}>{d.sottotitolo}</p>}
+              <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 320), gap: 8 }}>
                 {gallery.map((url, i) => (
-                  <img key={i} src={url} alt="" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: 4 }} />
+                  <img key={i} src={url} alt="" loading="lazy" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: 4 }} />
                 ))}
               </div>
             </div>
@@ -563,9 +565,10 @@ export default function PaginaPage({ entityType }) {
         return (
           <section key={block.id} style={{ padding: '72px 0', background: '#f9f9fb' }}>
             <div className="pp-section">
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 48, textAlign: 'center', color: '#1a1a2e' }}>I nostri servizi</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 20 }}>
-                {services.map(s => {
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: d.sottotitolo ? 12 : 48, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || 'I nostri servizi'}</h2>
+              {d.sottotitolo && <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo}</p>}
+              <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 160), gap: 20 }}>
+                {services.slice(0, d.limit || services.length).map(s => {
                   const Icon = serviceIcon(s.icon)
                   return (
                     <div key={s.id} style={{ background: '#fff', borderRadius: 16, padding: '24px 16px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
@@ -588,10 +591,10 @@ export default function PaginaPage({ entityType }) {
         return (
           <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
             <div className="pp-section">
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>Attività</h2>
-              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{actItems.length} {actItems.length === 1 ? 'attività disponibile' : 'attività disponibili'}</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
-                {actItems.map(item => (
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || 'Attività'}</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || `${actItems.length} ${actItems.length === 1 ? 'attività disponibile' : 'attività disponibili'}`}</p>
+              <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 20 }}>
+                {actItems.slice(0, d.limit || actItems.length).map(item => (
                   <div key={item.id} style={{ background: '#fafafa', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0' }}>
                     {item.photo_url && <img src={item.photo_url} alt={item.name} style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />}
                     <div style={{ padding: '16px 18px' }}>
@@ -614,10 +617,10 @@ export default function PaginaPage({ entityType }) {
         return (
           <section key={block.id} style={{ padding: '72px 0', background: '#f9f9fb' }}>
             <div className="pp-section">
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>Escursioni</h2>
-              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{excItems.length} {excItems.length === 1 ? 'escursione disponibile' : 'escursioni disponibili'}</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
-                {excItems.map(exc => (
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || 'Escursioni'}</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || `${excItems.length} ${excItems.length === 1 ? 'escursione disponibile' : 'escursioni disponibili'}`}</p>
+              <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 20 }}>
+                {excItems.slice(0, d.limit || excItems.length).map(exc => (
                   <div key={exc.id} style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0' }}>
                     {exc.photo_url && <img src={exc.photo_url} alt={exc.name} style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />}
                     <div style={{ padding: '16px 18px' }}>
@@ -755,10 +758,10 @@ export default function PaginaPage({ entityType }) {
         return (
           <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
             <div className="pp-section">
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>Prossimi eventi</h2>
-              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{eventi.length} {eventi.length === 1 ? 'evento in programma' : 'eventi in programma'}</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-                {eventi.map(ev => {
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || 'Prossimi eventi'}</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || `${eventi.length} ${eventi.length === 1 ? 'evento in programma' : 'eventi in programma'}`}</p>
+              <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 16 }}>
+                {eventi.slice(0, d.limit || eventi.length).map(ev => {
                   const dateStr = new Date(ev.date_start).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
                   return (
                     <a key={ev.id} href={`/eventi/${ev.id}`} style={{ background: '#fafafa', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', border: '1px solid #f0f0f0' }}>
@@ -792,10 +795,10 @@ export default function PaginaPage({ entityType }) {
         return (
           <section key={block.id} style={{ padding: '72px 0', background: '#f9f9fb' }}>
             <div className="pp-section">
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>News & Aggiornamenti</h2>
-              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Le ultime novità</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
-                {articoli.map(art => (
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || 'News & Aggiornamenti'}</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || 'Le ultime novità'}</p>
+              <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 20 }}>
+                {articoli.slice(0, d.limit || articoli.length).map(art => (
                   <a key={art.id} href={`/blog/${art.slug}?back=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')}`}
                     style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', display: 'block', textDecoration: 'none', color: 'inherit', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1px solid #f0f0f0' }}>
                     {art.cover_url && <img src={art.cover_url} alt={art.title} style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />}

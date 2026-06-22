@@ -160,6 +160,23 @@ export function applyBlockStyle(el, block) {
   return cloneElement(el, { style: { ...base, ...ov } })
 }
 
+// ── Configurazione blocchi auto-entità (Fase 5) ──────────────────────────────
+// Blocchi a griglia di item dell'entità che accettano titolo/sottotitolo/limite/colonne.
+export const GRID_AUTO_BLOCKS = ['services', 'activities', 'excursions', 'eventi', 'news', 'gallery']
+export const BLOCK_COLUMNS_OPTIONS = [
+  { key: '',  label: 'Automatiche' },
+  { key: '2', label: '2 colonne' },
+  { key: '3', label: '3 colonne' },
+  { key: '4', label: '4 colonne' },
+]
+// min px per colonna scelta: l'auto-fill ne mette quante ne stanno → su desktop ~N,
+// su mobile collassa da solo (il min(100%, …) garantisce 1 colonna sui telefoni).
+const GRID_COL_MIN = { '2': 480, '3': 320, '4': 240 }
+export function gridTemplate(columns, defaultMinPx = 260) {
+  const px = GRID_COL_MIN[String(columns)] || defaultMinPx
+  return `repeat(auto-fill, minmax(min(100%, ${px}px), 1fr))`
+}
+
 export function blockLabel(type) {
   return BLOCK_TYPES.find(b => b.type === type)?.label || type
 }

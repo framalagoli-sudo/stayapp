@@ -12,7 +12,7 @@ import AiButton from '@/components/admin/AiButton'
 import RichTextEditor from '@/components/admin/RichTextEditor'
 import MediaPickerButton from '@/components/admin/MediaPicker'
 import { BLOCK_PATTERNS } from '@/lib/blockPatterns'
-import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS, BLOCK_PADY_OPTIONS, blockSupportsBg, BLOCK_TEXT_SIZE_OPTIONS, BLOCK_TEXT_COLOR_OPTIONS, blockHasText } from '@/lib/blockTypes'
+import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS, BLOCK_PADY_OPTIONS, blockSupportsBg, BLOCK_TEXT_SIZE_OPTIONS, BLOCK_TEXT_COLOR_OPTIONS, blockHasText, GRID_AUTO_BLOCKS, BLOCK_COLUMNS_OPTIONS } from '@/lib/blockTypes'
 
 function uid() { return crypto.randomUUID() }
 
@@ -97,7 +97,35 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
   const { type, data } = block
   const upd = (key, val) => onChange({ ...data, [key]: val })
 
-  if (['gallery','services','activities','excursions','eventi','news','booking','show_map'].includes(type)) {
+  if (GRID_AUTO_BLOCKS.includes(type)) {
+    const numStyle = { width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13, boxSizing: 'border-box' }
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px 12px', background: '#f8f9ff', borderRadius: 8, border: '1px solid #e8ecff' }}>
+          <BlockTypeIcon type={type} size={16} />
+          <p style={{ fontSize: 12, color: '#555', fontStyle: 'italic', margin: 0, lineHeight: 1.5 }}>
+            Mostra i dati dell'entità (condivisi con l'app). Personalizza titolo e impaginazione qui sotto.
+          </p>
+        </div>
+        <Field label="Titolo sezione (vuoto = predefinito)" value={data.titolo} onChange={v => upd('titolo', v)} />
+        <Field label="Sottotitolo (vuoto = predefinito)" value={data.sottotitolo} onChange={v => upd('sottotitolo', v)} />
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 120 }}>
+            <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 500 }}>Quanti elementi</label>
+            <input type="number" min="1" value={data.limit ?? ''} onChange={e => upd('limit', e.target.value ? Number(e.target.value) : undefined)} placeholder="Tutti" style={numStyle} />
+          </div>
+          <div style={{ flex: 1, minWidth: 120 }}>
+            <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 500 }}>Colonne (desktop)</label>
+            <select value={data.columns || ''} onChange={e => upd('columns', e.target.value)} style={{ ...numStyle, background: '#fff' }}>
+              {BLOCK_COLUMNS_OPTIONS.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+            </select>
+          </div>
+        </div>
+        <p style={{ fontSize: 11, color: '#aaa', margin: 0 }}>Su mobile le colonne si adattano automaticamente.</p>
+      </div>
+    )
+  }
+  if (['booking', 'show_map'].includes(type)) {
     return (
       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: 12, background: '#f8f9ff', borderRadius: 8, border: '1px solid #e8ecff' }}>
         <BlockTypeIcon type={type} size={16} />
