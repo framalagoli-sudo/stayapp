@@ -26,7 +26,7 @@ const BLOCK_ICON_MAP = {
   hero: Layers, about: AlignLeft, foto_testo: Image, paragrafi: Grid,
   team: Users, steps: List, highlights: Star, stats: BarChart2,
   cta_banner: Zap, testimonianze: MessageCircle, promozioni: Tag,
-  pacchetti: Package, faq: HelpCircle, gallery: ImageIcon, video: Video,
+  pacchetti: Package, faq: HelpCircle, immagine: Image, gallery: ImageIcon, video: Video,
   services: Settings, activities: Compass, excursions: Map, eventi: Calendar,
   news: FileText, booking: Clock, newsletter: Mail, contatti: Phone,
   show_map: MapPin, clienti: Building2,
@@ -190,6 +190,25 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
     )
     case 'video': return (
       <Field label="URL video (YouTube o Vimeo)" value={data.url} onChange={v => upd('url', v)} placeholder="https://youtube.com/watch?v=..." />
+    )
+    case 'immagine': return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {data.image_url && <img src={data.image_url} alt="" style={{ maxHeight: 140, borderRadius: 8, objectFit: 'cover', width: '100%' }} />}
+        <UploadBtn label="Carica immagine" entityId={entityId} entityTipo={entityTipo} onUrl={url => upd('image_url', url)} />
+        <Field label="URL immagine" value={data.image_url} onChange={v => upd('image_url', v)} placeholder="https://..." />
+        <Field label="Testo alternativo (alt — SEO e accessibilità)" value={data.alt} onChange={v => upd('alt', v)} placeholder="Descrizione dell'immagine" />
+        <Field label="Didascalia (opz.)" value={data.caption} onChange={v => upd('caption', v)} />
+        <Field label="Link al click (opz.)" value={data.link_url} onChange={v => upd('link_url', v)} placeholder="https://..." />
+        <div>
+          <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 500 }}>Larghezza</label>
+          <select value={data.width || 'large'} onChange={e => upd('width', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+            <option value="full">Piena</option>
+            <option value="large">Grande</option>
+            <option value="medium">Media</option>
+            <option value="small">Piccola</option>
+          </select>
+        </div>
+      </div>
     )
     case 'newsletter': return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

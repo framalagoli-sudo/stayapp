@@ -349,6 +349,23 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
           </section>
         )
 
+      case 'immagine': {
+        if (!d.image_url) return null
+        const wMap = { full: '100%', large: 860, medium: 600, small: 380 }
+        const mw = wMap[d.width || 'large'] || 860
+        const img = <img src={d.image_url} alt={d.alt || ''} loading="lazy" style={{ width: '100%', height: 'auto', borderRadius: 12, display: 'block' }} />
+        return (
+          <section key={block.id} style={{ padding: '48px 0', background: '#fff' }}>
+            <div className="lbr-section">
+              <figure style={{ margin: 0, maxWidth: mw === '100%' ? '100%' : mw, marginLeft: 'auto', marginRight: 'auto' }}>
+                {d.link_url ? <a href={d.link_url} target="_blank" rel="noopener noreferrer">{img}</a> : img}
+                {d.caption && <figcaption style={{ fontSize: 13, color: '#888', marginTop: 8, textAlign: 'center' }}>{d.caption}</figcaption>}
+              </figure>
+            </div>
+          </section>
+        )
+      }
+
       case 'gallery': {
         const gallery = (entity.gallery || []).slice(0, 9)
         if (!gallery.length) return null
