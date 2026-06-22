@@ -4,7 +4,8 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
-import { Bold, Italic, Link2, List, ListOrdered, Quote, Heading2, Heading3, Minus } from 'lucide-react'
+import TextAlign from '@tiptap/extension-text-align'
+import { Bold, Italic, Link2, List, ListOrdered, Quote, Heading2, Heading3, Minus, AlignLeft, AlignCenter, AlignRight } from 'lucide-react'
 
 const BTN = {
   background: 'none', border: '1px solid #e0e0e0', borderRadius: 6,
@@ -29,6 +30,7 @@ export default function RichTextEditor({ content, onChange, placeholder = 'Scriv
     extensions: [
       StarterKit,
       Link.configure({ openOnClick: false, autolink: true, protocols: ['http', 'https', 'mailto', 'tel'] }),
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
       Placeholder.configure({ placeholder }),
     ],
     content: content || '',
@@ -98,6 +100,16 @@ export default function RichTextEditor({ content, onChange, placeholder = 'Scriv
             </ToolbarButton>
           </>
         )}
+        <div style={{ width: 1, background: '#e0e0e0', margin: '0 2px' }} />
+        <ToolbarButton onClick={() => tb.chain().focus().setTextAlign('left').run()} active={tb.isActive({ textAlign: 'left' })} title="Allinea a sinistra">
+          <AlignLeft size={sz} strokeWidth={2} />
+        </ToolbarButton>
+        <ToolbarButton onClick={() => tb.chain().focus().setTextAlign('center').run()} active={tb.isActive({ textAlign: 'center' })} title="Centra">
+          <AlignCenter size={sz} strokeWidth={2} />
+        </ToolbarButton>
+        <ToolbarButton onClick={() => tb.chain().focus().setTextAlign('right').run()} active={tb.isActive({ textAlign: 'right' })} title="Allinea a destra">
+          <AlignRight size={sz} strokeWidth={2} />
+        </ToolbarButton>
         <div style={{ width: 1, background: '#e0e0e0', margin: '0 2px' }} />
         <ToolbarButton onClick={setLink} active={tb.isActive('link')} title="Inserisci link">
           <Link2 size={sz} strokeWidth={2} />

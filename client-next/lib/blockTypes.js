@@ -92,6 +92,33 @@ export const BLOCK_PADY_OPTIONS = [
 export const BG_EXCLUDED_TYPES = ['hero', 'stats', 'cta_banner', 'video']
 export function blockSupportsBg(type) { return !BG_EXCLUDED_TYPES.includes(type) }
 
+// ── Tipografia per-blocco (Fase 1.5) — solo blocchi con rich-text ────────────
+// Dimensione: scala applicata al fontSize base del blocco (preset, no px liberi).
+export const BLOCK_TEXT_SIZE = { normal: 1, small: 0.88, large: 1.18 }
+export const BLOCK_TEXT_SIZE_OPTIONS = [
+  { key: 'normal', label: 'Normale' },
+  { key: 'small',  label: 'Piccolo' },
+  { key: 'large',  label: 'Grande' },
+]
+export function textSizeScale(key) { return BLOCK_TEXT_SIZE[key] || 1 }
+
+// Colore: palette ristretta ('primary' risolto a runtime dal tema). Niente picker libero.
+export const BLOCK_TEXT_COLOR_OPTIONS = [
+  { key: 'default', label: 'Predefinito' },
+  { key: 'dark',    label: 'Scuro' },
+  { key: 'grey',    label: 'Grigio' },
+  { key: 'primary', label: 'Colore tema' },
+]
+export function textColorFor(key, primary) {
+  if (key === 'dark') return '#1a1a2e'
+  if (key === 'grey') return '#666'
+  if (key === 'primary') return primary
+  return null
+}
+
+// Blocchi con campo rich-text: mostrano dimensione/colore testo nel pannello stile.
+export function blockHasText(type) { return type === 'about' || type === 'foto_testo' }
+
 // Spezza una shorthand CSS `padding` (1-4 valori) nei 4 lati.
 function parsePadding(p) {
   if (p == null) return { top: '0', right: '0', bottom: '0', left: '0' }

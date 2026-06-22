@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import AiButton from '@/components/admin/AiButton'
 import RichTextEditor from '@/components/admin/RichTextEditor'
-import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS, BLOCK_PADY_OPTIONS, blockSupportsBg } from '@/lib/blockTypes'
+import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS, BLOCK_PADY_OPTIONS, blockSupportsBg, BLOCK_TEXT_SIZE_OPTIONS, BLOCK_TEXT_COLOR_OPTIONS, blockHasText } from '@/lib/blockTypes'
 
 function uid() { return crypto.randomUUID() }
 
@@ -348,6 +348,7 @@ function BlockStylePanel({ block, onChange }) {
   const st = block.style || {}
   const set = (key, val) => onChange({ ...st, [key]: val })
   const showBg = blockSupportsBg(block.type)
+  const showText = blockHasText(block.type)
   const sel = { width: '100%', border: '1px solid #e0e0e8', borderRadius: 7, padding: '8px 10px', fontSize: 13, background: '#fff', fontFamily: 'inherit' }
   const lbl = { display: 'block', fontSize: 11, color: '#666', marginBottom: 4 }
   return (
@@ -368,6 +369,22 @@ function BlockStylePanel({ block, onChange }) {
             {BLOCK_PADY_OPTIONS.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
           </select>
         </div>
+        {showText && (
+          <div style={{ flex: 1, minWidth: 150 }}>
+            <label style={lbl}>Dimensione testo</label>
+            <select value={st.textSize || 'normal'} onChange={e => set('textSize', e.target.value)} style={sel}>
+              {BLOCK_TEXT_SIZE_OPTIONS.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+            </select>
+          </div>
+        )}
+        {showText && (
+          <div style={{ flex: 1, minWidth: 150 }}>
+            <label style={lbl}>Colore testo</label>
+            <select value={st.textColor || 'default'} onChange={e => set('textColor', e.target.value)} style={sel}>
+              {BLOCK_TEXT_COLOR_OPTIONS.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+            </select>
+          </div>
+        )}
       </div>
     </div>
   )

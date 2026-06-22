@@ -4,7 +4,7 @@ import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Ut
 import { guestFetch } from '@/lib/api'
 import BookingWidget from './BookingWidget'
 import Turnstile from '@/components/Turnstile'
-import { applyBlockStyle } from '@/lib/blockTypes'
+import { applyBlockStyle, textSizeScale, textColorFor } from '@/lib/blockTypes'
 import { RichText, richIsEmpty } from '@/lib/richText'
 
 const HIGHLIGHT_LUCIDE = {
@@ -84,7 +84,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
           <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
             <div className="lbr-section">
               {d.title && <h2 style={{ fontFamily: heading, fontSize: 'clamp(28px,4vw,44px)', fontWeight: 700, color: '#1a1a2e', marginBottom: 24 }}>{d.title}</h2>}
-              <RichText value={d.text} primary={primary} style={{ fontSize: 17, lineHeight: 1.75, color: '#444', maxWidth: 720 }} />
+              <RichText value={d.text} primary={primary} style={{ fontSize: Math.round(17 * textSizeScale(block.style?.textSize)), lineHeight: 1.75, color: textColorFor(block.style?.textColor, primary) || '#444', maxWidth: 720 }} />
             </div>
           </section>
         )
@@ -102,7 +102,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                 )}
                 <div className="lbr-ft-txt">
                   {d.title && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, color: '#1a1a2e', marginBottom: 16 }}>{d.title}</h2>}
-                  <RichText value={d.text} primary={primary} style={{ fontSize: 16, lineHeight: 1.75, color: '#555', marginBottom: 24 }} />
+                  <RichText value={d.text} primary={primary} style={{ fontSize: Math.round(16 * textSizeScale(block.style?.textSize)), lineHeight: 1.75, color: textColorFor(block.style?.textColor, primary) || '#555', marginBottom: 24 }} />
                   {d.button_label && d.button_url && (
                     <a href={d.button_url} style={{ display: 'inline-block', padding: '12px 28px', background: primary, color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>{d.button_label}</a>
                   )}

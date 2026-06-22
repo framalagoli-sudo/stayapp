@@ -53,12 +53,14 @@ function renderInline(content, primary) {
 function renderBlocks(content, primary) {
   if (!Array.isArray(content)) return null
   return content.map((n, i) => {
+    const align = n.attrs?.textAlign
+    const alignStyle = align && align !== 'left' ? { textAlign: align } : null
     switch (n.type) {
       case 'paragraph':
-        return <p key={i} style={{ margin: '0 0 1em' }}>{renderInline(n.content, primary)}</p>
+        return <p key={i} style={{ margin: '0 0 1em', ...alignStyle }}>{renderInline(n.content, primary)}</p>
       case 'heading': {
         const Tag = n.attrs?.level === 3 ? 'h3' : 'h2'
-        return <Tag key={i} style={{ margin: '1.2em 0 0.4em', fontWeight: 700, lineHeight: 1.25 }}>{renderInline(n.content, primary)}</Tag>
+        return <Tag key={i} style={{ margin: '1.2em 0 0.4em', fontWeight: 700, lineHeight: 1.25, ...alignStyle }}>{renderInline(n.content, primary)}</Tag>
       }
       case 'bulletList':
         return <ul key={i} style={{ margin: '0 0 1em', paddingLeft: 22 }}>{renderBlocks(n.content, primary)}</ul>
