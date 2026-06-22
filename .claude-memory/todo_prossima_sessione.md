@@ -1,11 +1,16 @@
 ---
 name: todo_prossima_sessione
-description: Lista to-do prossima sessione — TOP: Step D Sentry (codice pronto, serve solo DSN)
+description: To-do prossima sessione — block system COMPLETO (22/6); prossimo candidato = debito sicurezza blog
 metadata: 
   node_type: memory
   type: project
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
 ---
+
+## 🟢 STATO AL 22/6
+**Block system del sito: COMPLETO** (Fasi 0-5 + coppie font + sito autonomo, tutto LIVE) → vedi [[project_block_system_roadmap]] e [[project_session_2026_06_22]]. Supabase Pro attivo. Backlog residuo qui sotto.
+
+**Candidato prossimo step (consigliato):** 🟠 **debito sicurezza blog** (HTML non sanitizzato in `ArticoloPage`, vedi sotto in Robustezza). Poi, voci grosse: URL puliti `/[slug]`, upgrade Next 15 (sblocca Sentry), PWA da ri-abilitare, Stripe, multi-lingua. Cleanup minore: centralizzare le liste font duplicate nelle 3 pagine Tema (coppie già condivise).
 
 ## ✅ OPZIONE B — Snapshot Sito/PWA: FATTA (19/6)
 Versioni della config editabile di un'entità con ripristino a 1 click ("cronologia Google Docs" del sito). LIVE + 45/45 smoke + round-trip validato (pagine integre).
