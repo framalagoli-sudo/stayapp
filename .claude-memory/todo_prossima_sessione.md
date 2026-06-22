@@ -62,7 +62,8 @@ Il SW next-pwa (precache shell) causava pagine bianche dopo i deploy → disabil
 ✅ Rate limit (migration 060 eseguita), ✅ Turnstile LIVE, ✅ Header CSP, ✅ DMARC quarantine, 🟡 Sentry (init bloccato, vedi sopra).
 
 ## Robustezza residua (non urgente) — [[project_robustezza_infra]]
-- **Supabase Pro** ($25/mese) — manuale dashboard, prima dei clienti veri.
+- 🟠 **Blog: rendering HTML grezzo NON sanitizzato** (debito da chiudere — annotato 22/6 su richiesta Francesco). `ArticoloPage.jsx` (riga ~147) fa `dangerouslySetInnerHTML={{__html: articolo.content}}` con HTML da `RichTextEditor` (format html) senza sanitizzazione → potenziale XSS (autore = admin azienda sul proprio sito, rischio contenuto). I blocchi sito invece usano già l'approccio sicuro JSON→React ([[project_block_system_roadmap]] Fase 1). **Fix possibili:** (a) sanitizzare il content in output (sanitizer) o in scrittura sull'API blog; (b) migrare il blog allo stesso storage JSON + walker `lib/richText.jsx` dei blocchi (più lavoro, ma allinea lo standard). Decidere quando si tocca il blog.
+- **Supabase Pro** ✅ FATTO (22/6, vedi [[project_acquisti_pendenti]]).
 - **RLS 2° muro** — progetto architetturale a freddo.
 - ~~**Backup per singola azienda** (GDPR)~~ ✅ FATTO (17/6): `GET /api/admin/backup/azienda/[id]` (super_admin o admin propria azienda) → JSON scaricabile, tutte le tabelle filtrate per azienda. Bottone "Esporta dati" nella card azienda. Logica filtri validata sul DB + 401 senza auth.
 - ~~**Dati legali nel footer minisiti** (P.IVA, sede, REA — obbligo di legge)~~ ✅ FATTO (17/6): migration 061 (rea+capitale_sociale su aziende), `LegalInfo` nel footer home (LandingFooter) e sotto-pagine (PaginaPage), `getAziendaLegale` resiliente in guest-data, campi nel form admin azienda. Verificato rendering live (con revert). **Campi opzionali** → worldwide-safe. ✅ AZIONE FRANCESCO FATTA (19/6): P.IVA + dati privacy compilati e funzionanti (footer legali + pagine privacy popolate).
