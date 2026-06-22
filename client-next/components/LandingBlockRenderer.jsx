@@ -157,6 +157,20 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         )
       }
 
+      case 'pulsante': {
+        if (!d.text || !d.url) return null
+        const padMap = { small: '10px 22px', medium: '14px 32px', large: '17px 44px' }
+        const fsMap = { small: 14, medium: 16, large: 18 }
+        const outline = d.style === 'outline'
+        return (
+          <section key={block.id} style={{ padding: '40px 0', background: '#fff' }}>
+            <div className="lbr-section" style={{ textAlign: d.align || 'center' }}>
+              <a href={d.url} style={{ display: 'inline-block', padding: padMap[d.size || 'medium'], borderRadius: 50, fontWeight: 700, fontSize: fsMap[d.size || 'medium'], textDecoration: 'none', background: outline ? 'transparent' : primary, color: outline ? primary : '#fff', border: `2px solid ${primary}` }}>{d.text}</a>
+            </div>
+          </section>
+        )
+      }
+
       case 'cta_banner':
         if (!d.title) return null
         return (

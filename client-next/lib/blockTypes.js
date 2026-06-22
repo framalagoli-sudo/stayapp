@@ -12,6 +12,7 @@ export const BLOCK_GROUPS = [
 export const BLOCK_TYPES = [
   { type: 'hero',         label: 'Hero / Copertina',   group: 'layout',      emoji: '🌄', desc: 'Sezione full-screen con foto, titolo, tagline e CTA — ideale come primo blocco della homepage' },
   { type: 'about',        label: 'Blocco testo',       group: 'layout',      emoji: '📝', desc: 'Titolo + paragrafo di testo' },
+  { type: 'pulsante',     label: 'Pulsante',           group: 'layout',      emoji: '🔘', desc: 'Bottone con link, stile (pieno/bordato) e allineamento' },
   { type: 'foto_testo',   label: 'Foto + Testo',       group: 'layout',      emoji: '🖼️', desc: 'Immagine affiancata al testo (ripetibile)' },
   { type: 'paragrafi',    label: 'Card paragrafi',     group: 'layout',      emoji: '🗂️', desc: 'Griglia card con icona, titolo, testo' },
   { type: 'team',         label: 'Team',               group: 'layout',      emoji: '👥', desc: 'Card con foto, nome, ruolo, bio' },
@@ -42,6 +43,7 @@ export const BLOCK_TYPES = [
 export const BLOCK_DEFAULTS = {
   hero:         { title: '', tagline: '', bg_image_url: '', overlay_opacity: 0.5, cta1_text: 'Scopri di più', cta1_url: '', cta2_text: '', cta2_url: '', height: 'large' },
   about:        { title: '', text: '' },
+  pulsante:     { text: 'Scopri di più', url: '', style: 'filled', size: 'medium', align: 'center' },
   foto_testo:   { title: '', text: '', image_url: '', inverti: false, button_label: '', button_url: '' },
   paragrafi:    { titolo: '', items: [] },
   team:         { titolo: '', items: [] },

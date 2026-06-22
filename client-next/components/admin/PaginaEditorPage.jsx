@@ -10,6 +10,8 @@ import {
 } from 'lucide-react'
 import AiButton from '@/components/admin/AiButton'
 import RichTextEditor from '@/components/admin/RichTextEditor'
+import MediaPickerButton from '@/components/admin/MediaPicker'
+import { BLOCK_PATTERNS } from '@/lib/blockPatterns'
 import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS, BLOCK_PADY_OPTIONS, blockSupportsBg, BLOCK_TEXT_SIZE_OPTIONS, BLOCK_TEXT_COLOR_OPTIONS, blockHasText } from '@/lib/blockTypes'
 
 function uid() { return crypto.randomUUID() }
@@ -23,7 +25,7 @@ function slugify(s) {
 
 // ── Block icon + color mapping ────────────────────────────────────────────────
 const BLOCK_ICON_MAP = {
-  hero: Layers, about: AlignLeft, foto_testo: Image, paragrafi: Grid,
+  hero: Layers, about: AlignLeft, pulsante: Zap, foto_testo: Image, paragrafi: Grid,
   team: Users, steps: List, highlights: Star, stats: BarChart2,
   cta_banner: Zap, testimonianze: MessageCircle, promozioni: Tag,
   pacchetti: Package, faq: HelpCircle, immagine: Image, galleria_immagini: Grid, gallery: ImageIcon, video: Video,
@@ -188,6 +190,37 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
         <Field label="URL pulsante" value={data.button_url} onChange={v => upd('button_url', v)} placeholder="https://..." />
       </div>
     )
+    case 'pulsante': return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="Testo del pulsante" value={data.text} onChange={v => upd('text', v)} />
+        <Field label="Link (URL)" value={data.url} onChange={v => upd('url', v)} placeholder="https://..." />
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 120 }}>
+            <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 500 }}>Stile</label>
+            <select value={data.style || 'filled'} onChange={e => upd('style', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+              <option value="filled">Pieno</option>
+              <option value="outline">Bordato</option>
+            </select>
+          </div>
+          <div style={{ flex: 1, minWidth: 120 }}>
+            <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 500 }}>Dimensione</label>
+            <select value={data.size || 'medium'} onChange={e => upd('size', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+              <option value="small">Piccolo</option>
+              <option value="medium">Medio</option>
+              <option value="large">Grande</option>
+            </select>
+          </div>
+          <div style={{ flex: 1, minWidth: 120 }}>
+            <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 500 }}>Allineamento</label>
+            <select value={data.align || 'center'} onChange={e => upd('align', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+              <option value="left">Sinistra</option>
+              <option value="center">Centro</option>
+              <option value="right">Destra</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    )
     case 'video': return (
       <Field label="URL video (YouTube o Vimeo)" value={data.url} onChange={v => upd('url', v)} placeholder="https://youtube.com/watch?v=..." />
     )
@@ -222,16 +255,23 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
             </div>
           ))}
         </div>
-        <button onClick={() => upd('images', [...(data.images || []), { id: uid(), url: '', alt: '' }])}
-          style={{ width: '100%', padding: '8px', background: '#f0f4ff', border: '1px dashed #c8d0f0', borderRadius: 8, cursor: 'pointer', fontSize: 13, color: '#334' }}>
-          + Aggiungi immagine
-        </button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button onClick={() => upd('images', [...(data.images || []), { id: uid(), url: '', alt: '' }])}
+            style={{ flex: 1, minWidth: 140, padding: '8px', background: '#f0f4ff', border: '1px dashed #c8d0f0', borderRadius: 8, cursor: 'pointer', fontSize: 13, color: '#334' }}>
+            + Aggiungi immagine
+          </button>
+          <MediaPickerButton entityId={entityId} entityTipo={entityTipo} label="Sfoglia e aggiungi"
+            onPick={url => upd('images', [...(data.images || []), { id: uid(), url, alt: '' }])} />
+        </div>
       </div>
     )
     case 'immagine': return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {data.image_url && <img src={data.image_url} alt="" style={{ maxHeight: 140, borderRadius: 8, objectFit: 'cover', width: '100%' }} />}
-        <UploadBtn label="Carica immagine" entityId={entityId} entityTipo={entityTipo} onUrl={url => upd('image_url', url)} />
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <UploadBtn label="Carica immagine" entityId={entityId} entityTipo={entityTipo} onUrl={url => upd('image_url', url)} />
+          <MediaPickerButton entityId={entityId} entityTipo={entityTipo} onPick={url => upd('image_url', url)} />
+        </div>
         <Field label="URL immagine" value={data.image_url} onChange={v => upd('image_url', v)} placeholder="https://..." />
         <Field label="Testo alternativo (alt — SEO e accessibilità)" value={data.alt} onChange={v => upd('alt', v)} placeholder="Descrizione dell'immagine" />
         <Field label="Didascalia (opz.)" value={data.caption} onChange={v => upd('caption', v)} />
@@ -621,6 +661,7 @@ export default function PaginaEditorPage() {
   const [blocks,     setBlocks]     = useState([])
   const [expandedId, setExpandedId] = useState(null)
   const [showPicker, setShowPicker] = useState(false)
+  const [showPatterns, setShowPatterns] = useState(false)
   const [showSeo,    setShowSeo]    = useState(false)
   const [saving,     setSaving]     = useState(false)
   const [dirty,      setDirty]      = useState(false)
@@ -684,6 +725,12 @@ export default function PaginaEditorPage() {
     const b = { id: uid(), type, data: { ...BLOCK_DEFAULTS[type] } }
     patchBlocks([...blocks, b])
     setExpandedId(b.id)
+  }
+  function addPattern(key) {
+    const p = BLOCK_PATTERNS.find(x => x.key === key)
+    if (!p) return
+    const nb = p.blocks.map(b => ({ id: uid(), type: b.type, data: JSON.parse(JSON.stringify(b.data || {})) }))
+    patchBlocks([...blocks, ...nb])
   }
   function updateBlock(id, data) { patchBlocks(blocks.map(b => b.id === id ? { ...b, data } : b)) }
   function updateBlockStyle(id, style) { patchBlocks(blocks.map(b => b.id === id ? { ...b, style } : b)) }
@@ -931,12 +978,19 @@ export default function PaginaEditorPage() {
         })}
       </div>
 
-      {/* ── Add block button ── */}
-      <button onClick={() => setShowPicker(true)}
-        style={{ width: '100%', padding: 14, background: '#fff', border: '2px dashed #c8d0e8', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#5b6af8', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-        <Plus size={16} strokeWidth={2} />
-        Aggiungi blocco
-      </button>
+      {/* ── Add block / pattern buttons ── */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 24, flexWrap: 'wrap' }}>
+        <button onClick={() => setShowPicker(true)}
+          style={{ flex: 1, minWidth: 200, padding: 14, background: '#fff', border: '2px dashed #c8d0e8', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#5b6af8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <Plus size={16} strokeWidth={2} />
+          Aggiungi blocco
+        </button>
+        <button onClick={() => setShowPatterns(true)}
+          style={{ flex: 1, minWidth: 200, padding: 14, background: '#fff', border: '2px dashed #c8d0e8', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#5b6af8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <Layers size={16} strokeWidth={2} />
+          Inserisci sezione pronta
+        </button>
+      </div>
 
       {/* ── SEO panel ── */}
       <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e8e8ee', overflow: 'hidden' }}>
@@ -972,6 +1026,34 @@ export default function PaginaEditorPage() {
       </div>
 
       {showPicker && <BlockPicker onPick={addBlock} onClose={() => setShowPicker(false)} />}
+
+      {showPatterns && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+          onClick={e => { if (e.target === e.currentTarget) setShowPatterns(false) }}>
+          <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 540, maxHeight: '82vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 80px rgba(0,0,0,0.22)' }}>
+            <div style={{ padding: '18px 20px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 700, fontSize: 16, color: '#1a1a2e' }}>Inserisci una sezione pronta</span>
+              <button onClick={() => setShowPatterns(false)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#999', lineHeight: 1 }}>✕</button>
+            </div>
+            <div style={{ overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {BLOCK_PATTERNS.map(p => (
+                <button key={p.key} onClick={() => { addPattern(p.key); setShowPatterns(false) }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 10, border: '1px solid #eee', cursor: 'pointer', background: '#fff', textAlign: 'left', width: '100%' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#f5f5ff'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
+                  <div style={{ width: 36, height: 36, borderRadius: 9, background: '#5b6af818', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Layers size={18} strokeWidth={1.5} color="#5b6af8" />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 13, color: '#1a1a2e' }}>{p.label}</div>
+                    <div style={{ fontSize: 11, color: '#888', marginTop: 1 }}>{p.desc}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
