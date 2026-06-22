@@ -1,6 +1,6 @@
 ---
 name: project-acquisti-pendenti
-description: "Stato infrastruttura e acquisti — Vercel Pro ✅, Railway freezato ✅, Supabase Pro da valutare"
+description: "Stato infrastruttura e acquisti — Vercel Pro ✅, Railway freezato ✅, Supabase Pro ✅ (22/6); nessun acquisto infra pendente"
 metadata: 
   node_type: memory
   type: project
@@ -16,10 +16,12 @@ Confermato da Francesco 2026-06-14. Timeout funzioni: 60s (Pro). Build: 4 cores,
 Francesco ha freezato Railway (Deployments → Freeze). Non paga più.
 La migrazione Railway → Vercel è COMPLETA — tutte le route sono su Vercel API Routes.
 
-### Supabase — stato da verificare
-Free plan ha limite 500MB DB, 1GB storage, 50.000 MAU.
-Pro ($25/mese) aggiunge: storage illimitato, PITR backup 7gg, più connessioni.
-Se non ancora upgradato, valutare prima che il DB cresca.
+### Supabase Pro ✅ — ATTIVO
+Acquistato da Francesco il 2026-06-22. Niente da fare lato codice (URL/chiavi invariati, nessun redeploy).
+- **Spend cap ON di default**: oltre quota l'uso a-quota va in pausa invece di fatturare (no bollette a sorpresa, ma rischio downtime se sfori). Compute/PITR/IPv4/repliche fatturano comunque. Deciso: lasciarlo ON finché non ci sono clienti veri. (Organization → Billing → Cost Control)
+- **Backup giornalieri automatici, 7gg** (nessuna impostazione). No più pausing del progetto.
+- **PITR NON incluso** (add-on a pagamento, richiede compute Small; abilitarlo disattiva i daily backup) → per ora saltato.
+- Copertura doppia: backup infra Supabase + backup applicativo nostro (R2 / `/api/cron/backup`).
 
 ### Cloudflare Free ✅
 ### Resend Free ✅ (bounce webhook configurato ✅)
@@ -32,4 +34,4 @@ Se non ancora upgradato, valutare prima che il DB cresca.
 - ~~NEXT_PUBLIC_API_URL=""~~ → **già impostato su Vercel** ✅
 - ~~Resend bounce webhook~~ → **configurato** ✅
 
-**How to apply:** Non ricordare più Railway o la migrazione come pending. L'unica infrastruttura davvero pendente è eventuale upgrade Supabase Pro.
+**How to apply:** Non ricordare più Railway, la migrazione né Supabase Pro come pending — tutto attivo. Nessun acquisto infra pendente (resta solo Stripe per lo Sprint 10 billing, che è feature non infra).

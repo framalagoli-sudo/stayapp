@@ -1,6 +1,6 @@
 ---
 name: project_robustezza_infra
-description: "3 azioni infrastruttura/robustezza pendenti: Supabase Pro, verifica cron Vercel, RLS come 2° muro"
+description: "Robustezza infra: Supabase Pro ✅ (22/6), cron Vercel ✅; resta RLS come 2° muro (progetto a freddo)"
 metadata: 
   node_type: memory
   type: project
@@ -9,7 +9,7 @@ metadata:
 
 Architettura confermata buona: **Supabase + Vercel** (Railway dismesso, scelta corretta — vedi [[project_session_railway_migration]]). Da NON ri-architettare. Tre azioni di robustezza pendenti:
 
-1. **Upgrade Supabase Pro ($25/mese)** — da fare PRIMA di vendere a clienti veri. Dà: connection pooling, niente pausa automatica del progetto, backup giornalieri automatici, più risorse.
+1. ~~**Upgrade Supabase Pro ($25/mese)**~~ ✅ FATTO (2026-06-22). Niente da fare lato codice. Spend cap lasciato ON (default) finché non ci sono clienti veri; PITR saltato (add-on a pagamento, disattiverebbe i daily backup). Backup giornalieri 7gg automatici + niente pausing. Dettaglio in [[project_acquisti_pendenti]].
 
 2. ~~**Verificare i cron Vercel**~~ ✅ FATTO. Due fix:
    - **CRON_SECRET**: impostato su Vercel (env Production) + redeploy. Verificato: cron con secret corretto → 200, sbagliato → 401.
