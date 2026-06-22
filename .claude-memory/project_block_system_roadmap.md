@@ -34,8 +34,8 @@ CSS custom per blocco/sito, editing responsive per-breakpoint → rimandati/escl
 ## Già pari a WordPress (NON rifare)
 Revisioni → Snapshot "Versioni" (Opzione B) ✅; Header/Footer builder ✅; Blog/CMS ✅; Form Builder ✅; SEO per pagina ✅; ruoli/permessi staff ✅; contenuti dinamici (auto-entità) ✅ (anzi avanti a WP base).
 
-## Coppie di font curate (idea Francesco 22/6, da fare — NON ancora implementato)
-Verificato: NON esistono abbinamenti curati. Oggi le 3 pagine Tema (`PropertyThemePage` 326 righe, `RistoranteThemePage` 264, `AttivitaThemePage` 211 — **parallele e divergenti**) hanno due selettori font INDIPENDENTI (`HEADING_FONTS` 6 famiglie + `BODY_FONTS` 3) + "Copia stile da". Proposta: coppie pronte con nome ("Elegante" Playfair+Lato, "Moderno" Montserrat+Inter, ...) + opzione avanzata a mano. **Farlo bene = estrarre un componente font condiviso** usato dalle 3 pagine (aggiunge le coppie E riduce la duplicazione esistente). Font resta a livello SITO, non per-blocco.
+## Coppie di font curate ✅ FATTO (22/6, LIVE, commit 363a45a, 45/45)
+`lib/fonts.js` (HEADING_FAMILIES/BODY_FAMILIES + 6 coppie: Elegante/Raffinato/Moderno/Minimal/Friendly/Pulito) + `components/admin/FontPairPicker.jsx` condiviso. Sezione "Abbinamenti consigliati" aggiunta sopra i selettori font nelle 3 pagine Tema (property/ristorante/attivita) — un click imposta fontHeading+fontBody. Selettori singoli restano come avanzato. NB: i selettori singoli locali (HEADING_FONTS/BODY_FONTS) NON sono stati centralizzati (restano duplicati nelle 3 pagine) — cleanup futuro possibile.
 
 ## Decisioni aperte
 - Anticipare Fase 3 prima/dopo Fase 2 (da confermare quando partiamo).
