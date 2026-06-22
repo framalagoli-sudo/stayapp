@@ -2,6 +2,7 @@
 import { useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { useAttivita } from '../../../hooks/useAttivita'
+import FontPairPicker from '@/components/admin/FontPairPicker'
 
 const BG_COLORS = [
   { value: '#ffffff', label: 'Bianco' },
@@ -139,6 +140,10 @@ export default function AttivitaThemePage() {
                 </button>
               ))}
             </div>
+          </Section>
+
+          <Section label="Abbinamenti consigliati">
+            <FontPairPicker theme={theme} updateTheme={updateTheme} />
           </Section>
 
           <Section label="Font titoli">

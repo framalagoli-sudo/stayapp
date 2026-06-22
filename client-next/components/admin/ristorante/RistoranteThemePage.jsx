@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useRistorante } from '../../../hooks/useRistorante'
 import { apiFetch } from '../../../lib/api'
+import FontPairPicker from '@/components/admin/FontPairPicker'
 
 const BG_COLORS = [
   { value: '#ffffff', label: 'Bianco' },
@@ -192,6 +193,10 @@ export default function RistoranteThemePage() {
                 </button>
               ))}
             </div>
+          </Section>
+
+          <Section label="Abbinamenti consigliati">
+            <FontPairPicker theme={theme} updateTheme={updateTheme} />
           </Section>
 
           <Section label="Font titoli">

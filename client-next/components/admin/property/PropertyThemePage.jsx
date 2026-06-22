@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useProperty } from '../../../hooks/useProperty'
 import { apiFetch } from '../../../lib/api'
+import FontPairPicker from '@/components/admin/FontPairPicker'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const BG_COLORS = [
@@ -236,7 +237,12 @@ export default function PropertyThemePage() {
             </div>
           </Section>
 
-          {/* Heading font */}
+          {/* Abbinamenti font curati (condiviso) */}
+          <Section label="Abbinamenti consigliati">
+            <FontPairPicker theme={theme} updateTheme={updateTheme} />
+          </Section>
+
+          {/* Heading font (avanzato) */}
           <Section label="Font titoli">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8 }}>
               {HEADING_FONTS.map(({ key, label, family, desc }) => {
