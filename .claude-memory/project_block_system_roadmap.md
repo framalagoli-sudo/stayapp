@@ -36,7 +36,7 @@ CSS custom per blocco/sito, editing responsive per-breakpoint → rimandati/escl
 Revisioni → Snapshot "Versioni" (Opzione B) ✅; Header/Footer builder ✅; Blog/CMS ✅; Form Builder ✅; SEO per pagina ✅; ruoli/permessi staff ✅; contenuti dinamici (auto-entità) ✅ (anzi avanti a WP base).
 
 ## Coppie di font curate ✅ FATTO (22/6, LIVE, commit 363a45a, 45/45)
-`lib/fonts.js` (HEADING_FAMILIES/BODY_FAMILIES + 6 coppie: Elegante/Raffinato/Moderno/Minimal/Friendly/Pulito) + `components/admin/FontPairPicker.jsx` condiviso. Sezione "Abbinamenti consigliati" aggiunta sopra i selettori font nelle 3 pagine Tema (property/ristorante/attivita) — un click imposta fontHeading+fontBody. Selettori singoli restano come avanzato. NB: i selettori singoli locali (HEADING_FONTS/BODY_FONTS) NON sono stati centralizzati (restano duplicati nelle 3 pagine) — cleanup futuro possibile.
+`lib/fonts.js` (HEADING_FAMILIES/BODY_FAMILIES + 6 coppie: Elegante/Raffinato/Moderno/Minimal/Friendly/Pulito) + `components/admin/FontPairPicker.jsx` condiviso. Sezione "Abbinamenti consigliati" aggiunta sopra i selettori font nelle 3 pagine Tema (property/ristorante/attivita) — un click imposta fontHeading+fontBody. Selettori singoli restano come avanzato. Cleanup ✅ FATTO (23/6, commit 82b6990): HEADING_FONTS/BODY_FONTS/getHeadingFamily/getBodyFamily/FONTS_URL centralizzati in `lib/fonts.js` (fonte unica), le 3 pagine Tema + FontPairPicker importano da lì. NB residuo: BG_COLORS/TEXT_COLORS/BORDER_STYLES ancora duplicati nelle 3 pagine (fuori scope font).
 
 ## Decisioni aperte
 - Anticipare Fase 3 prima/dopo Fase 2 (da confermare quando partiamo).
