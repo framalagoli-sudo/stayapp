@@ -10,7 +10,7 @@ metadata:
 ## 🟢 STATO AL 22/6
 **Block system del sito: COMPLETO** (Fasi 0-5 + coppie font + sito autonomo, tutto LIVE) → vedi [[project_block_system_roadmap]] e [[project_session_2026_06_22]]. Supabase Pro attivo. Backlog residuo qui sotto.
 
-**Candidato prossimo step (consigliato):** 🟠 **debito sicurezza blog** (HTML non sanitizzato in `ArticoloPage`, vedi sotto in Robustezza). Poi, voci grosse: URL puliti `/[slug]`, upgrade Next 15 (sblocca Sentry), PWA da ri-abilitare, Stripe, multi-lingua. Cleanup minore: centralizzare le liste font duplicate nelle 3 pagine Tema (coppie già condivise).
+**Debito sicurezza blog: ✅ CHIUSO (23/6).** Prossimi candidati: cleanup minore (centralizzare liste font duplicate nelle 3 pagine Tema — coppie già condivise) oppure voci grosse: URL puliti `/[slug]`, upgrade Next 15 (sblocca Sentry), PWA da ri-abilitare, Stripe, multi-lingua.
 
 ## ✅ OPZIONE B — Snapshot Sito/PWA: FATTA (19/6)
 Versioni della config editabile di un'entità con ripristino a 1 click ("cronologia Google Docs" del sito). LIVE + 45/45 smoke + round-trip validato (pagine integre).
@@ -67,7 +67,7 @@ Il SW next-pwa (precache shell) causava pagine bianche dopo i deploy → disabil
 ✅ Rate limit (migration 060 eseguita), ✅ Turnstile LIVE, ✅ Header CSP, ✅ DMARC quarantine, 🟡 Sentry (init bloccato, vedi sopra).
 
 ## Robustezza residua (non urgente) — [[project_robustezza_infra]]
-- 🟠 **Blog: rendering HTML grezzo NON sanitizzato** (debito da chiudere — annotato 22/6 su richiesta Francesco). `ArticoloPage.jsx` (riga ~147) fa `dangerouslySetInnerHTML={{__html: articolo.content}}` con HTML da `RichTextEditor` (format html) senza sanitizzazione → potenziale XSS (autore = admin azienda sul proprio sito, rischio contenuto). I blocchi sito invece usano già l'approccio sicuro JSON→React ([[project_block_system_roadmap]] Fase 1). **Fix possibili:** (a) sanitizzare il content in output (sanitizer) o in scrittura sull'API blog; (b) migrare il blog allo stesso storage JSON + walker `lib/richText.jsx` dei blocchi (più lavoro, ma allinea lo standard). Decidere quando si tocca il blog.
+- ~~🟠 **Blog: rendering HTML grezzo NON sanitizzato**~~ ✅ FATTO (23/6, LIVE, commit fa799a6, 45/45). `ArticoloPage.jsx` ora sanitizza `articolo.content` con **DOMPurify** (import dinamico, solo browser → SSR-safe) prima del `dangerouslySetInnerHTML`. Copre articoli esistenti+futuri, nessuna migrazione dati. Dep `dompurify ^3.4.11` aggiunta. XSS chiuso.
 - **Supabase Pro** ✅ FATTO (22/6, vedi [[project_acquisti_pendenti]]).
 - **RLS 2° muro** — progetto architetturale a freddo.
 - ~~**Backup per singola azienda** (GDPR)~~ ✅ FATTO (17/6): `GET /api/admin/backup/azienda/[id]` (super_admin o admin propria azienda) → JSON scaricabile, tutte le tabelle filtrate per azienda. Bottone "Esporta dati" nella card azienda. Logica filtri validata sul DB + 401 senza auth.
