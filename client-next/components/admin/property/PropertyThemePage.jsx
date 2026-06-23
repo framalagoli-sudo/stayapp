@@ -4,34 +4,18 @@ import { useProperty } from '../../../hooks/useProperty'
 import { apiFetch } from '../../../lib/api'
 import FontPairPicker from '@/components/admin/FontPairPicker'
 import { HEADING_FONTS, BODY_FONTS, getHeadingFamily, getBodyFamily, FONTS_URL } from '@/lib/fonts'
+import { BG_COLORS, TEXT_COLORS, BORDER_STYLES, getBorderRadius } from '@/lib/themeOptions'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const BG_COLORS = [
-  { value: '#ffffff', label: 'Bianco' },
-  { value: '#f8f6f2', label: 'Crema' },
-  { value: '#f0f4f8', label: 'Azzurro chiaro' },
-  { value: '#f5f0fa', label: 'Lavanda' },
-  { value: '#1a1a2e', label: 'Notte' },
-]
-const TEXT_COLORS = [
-  { value: '#1a1a2e', label: 'Scuro' },
-  { value: '#ffffff', label: 'Chiaro' },
-]
 const HEADER_STYLES = [
   { key: 'solid',    label: 'Solido',    desc: 'Header colorato' },
   { key: 'gradient', label: 'Gradiente', desc: 'Con sfumatura' },
   { key: 'cover',    label: 'Cover',     desc: 'Foto di sfondo' },
 ]
-const BORDER_STYLES = [
-  { key: 'rounded', label: 'Arrotondato', desc: '16px', radius: 16 },
-  { key: 'mixed',   label: 'Misto',       desc: '8px',  radius: 8 },
-  { key: 'square',  label: 'Squadrato',   desc: '0px',  radius: 0 },
-]
 const DEFAULT_THEME = {
   primaryColor: '#00b5b5', bgColor: '#ffffff', textColor: '#1a1a2e',
   fontHeading: 'playfair', fontBody: 'inter', headerStyle: 'solid', borderStyle: 'mixed',
 }
-function getBorderRadius(key)  { return BORDER_STYLES.find(s => s.key === key)?.radius ?? 8 }
 
 // ─── Live Preview ─────────────────────────────────────────────────────────────
 function ThemePreview({ theme, property }) {
