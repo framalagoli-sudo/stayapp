@@ -24,6 +24,7 @@
 - [🎯 Posizionamento target](project_positioning_target.md) — SMB self-serve ≤€100/mese, semplicità > potenza da designer (filtro di ogni scelta prodotto)
 - [🧱 Roadmap block system](project_block_system_roadmap.md) — COMPLETA (fasi 0-5 + coppie font + sito autonomo): stile per-blocco, rich-text, tipografia, immagini+media library, pulsante+pattern, sito autonomo, blocchi auto-entità configurabili
 - [Session 2026-06-22 — Block system completo](project_session_2026_06_22.md) — Fasi 0-5 LIVE + coppie font + sito autonomo + Supabase Pro + deploy function; tutto senza migration
+- [Session 2026-06-23 — Sicurezza blog + cleanup](project_session_2026_06_23.md) — debito blog chiuso (DOMPurify) + centralizzazione font/opzioni tema (lib/fonts.js, lib/themeOptions.js)
 - [Session 2026-06-21 — Export contatti CSV + fix deploy.ps1](project_session_2026_06_21.md) — bottone Esporta CSV (BOM+`;`), fix deploy.ps1 da subfolder ($PSScriptRoot), chiarito rosso PowerShell (stderr nativo benigno)
 - [Session 2026-06-16/17 — Backup fix + 5 interventi sicurezza](project_session_2026_06_16_security.md) — backup R2 silent-fail+BOM, rate limit+Turnstile LIVE, header CSP, DMARC quarantine; Sentry init bloccato (Next14 vs SDK)
 - [Session 2026-06-18 — CLAUDE.md + brand completo](project_session_2026_06_18.md) — client-next/CLAUDE.md + globale ~/.claude, favicon/icone/OG/logo brand reale, white-label email (logo OltreNova solo piattaforma→titolare, mai business→cliente)
