@@ -59,6 +59,7 @@ export default function ArticoloPage() {
   const backUrl = searchParams.get('back')
   const [articolo, setArticolo] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [cleanHtml, setCleanHtml] = useState('')
 
   useEffect(() => {
     apiFetch(`/api/blog/public/${slug}`)
@@ -75,6 +76,18 @@ export default function ArticoloPage() {
     const og = document.querySelector('meta[property="og:image"]')
     if (og && articolo.cover_url) og.setAttribute('content', articolo.cover_url)
     return () => { document.title = 'OltreNova' }
+  }, [articolo])
+
+  // Sanitizza il contenuto HTML prima di iniettarlo (anti-XSS). Import dinamico:
+  // DOMPurify gira solo in browser → niente problemi in SSR, niente peso altrove.
+  useEffect(() => {
+    if (!articolo?.content) { setCleanHtml(''); return }
+    let active = true
+    import('dompurify').then(({ default: DOMPurify }) => {
+      if (!active) return
+      setCleanHtml(DOMPurify.sanitize(articolo.content, { USE_PROFILES: { html: true }, ADD_ATTR: ['target', 'rel'] }))
+    })
+    return () => { active = false }
   }, [articolo])
 
   if (loading) return (
@@ -144,7 +157,7 @@ export default function ArticoloPage() {
 
         {/* Contenuto */}
         <div
-          dangerouslySetInnerHTML={{ __html: articolo.content || '' }}
+          dangerouslySetInnerHTML={{ __html: cleanHtml }}
           style={{ fontSize: 16, lineHeight: 1.8, color: '#333' }}
           className="articolo-content"
         />
