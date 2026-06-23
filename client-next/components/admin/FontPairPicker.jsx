@@ -1,8 +1,6 @@
 'use client'
 import { useEffect } from 'react'
-import { FONT_PAIRS, HEADING_FAMILIES, BODY_FAMILIES } from '@/lib/fonts'
-
-const FONTS_URL = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Lato:wght@400;600&family=Open+Sans:wght@400;600&family=Playfair+Display:wght@400;600&family=Cormorant+Garamond:wght@400;600&family=Raleway:wght@400;600&family=Montserrat:wght@400;600&family=Nunito:wght@400;600&family=DM+Sans:wght@400;600&display=swap'
+import { FONT_PAIRS, HEADING_FAMILIES, BODY_FAMILIES, FONTS_URL } from '@/lib/fonts'
 
 // Selettore di abbinamenti font curati, condiviso dalle 3 pagine Tema + Sito.
 // Imposta insieme theme.fontHeading + theme.fontBody. I selettori singoli

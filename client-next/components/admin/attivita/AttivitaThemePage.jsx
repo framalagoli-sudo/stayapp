@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { useAttivita } from '../../../hooks/useAttivita'
 import FontPairPicker from '@/components/admin/FontPairPicker'
+import { HEADING_FONTS, BODY_FONTS, getHeadingFamily, getBodyFamily, FONTS_URL } from '@/lib/fonts'
 
 const BG_COLORS = [
   { value: '#ffffff', label: 'Bianco' },
@@ -15,19 +16,6 @@ const TEXT_COLORS = [
   { value: '#1a1a2e', label: 'Scuro' },
   { value: '#ffffff', label: 'Chiaro' },
 ]
-const HEADING_FONTS = [
-  { key: 'playfair',   label: 'Playfair Display', family: "'Playfair Display', Georgia, serif",   desc: 'Elegante serif' },
-  { key: 'cormorant',  label: 'Cormorant Garamond',family: "'Cormorant Garamond', Georgia, serif", desc: 'Lusso raffinato' },
-  { key: 'raleway',    label: 'Raleway',           family: "'Raleway', system-ui, sans-serif",     desc: 'Geometrico slim' },
-  { key: 'montserrat', label: 'Montserrat',        family: "'Montserrat', system-ui, sans-serif",  desc: 'Moderno forte' },
-  { key: 'nunito',     label: 'Nunito',            family: "'Nunito', system-ui, sans-serif",      desc: 'Friendly rotondo' },
-  { key: 'dm-sans',    label: 'DM Sans',           family: "'DM Sans', system-ui, sans-serif",     desc: 'Minimal contemporaneo' },
-]
-const BODY_FONTS = [
-  { key: 'inter',     label: 'Inter',     family: "'Inter', system-ui, sans-serif",     desc: 'Leggibile, neutro' },
-  { key: 'lato',      label: 'Lato',      family: "'Lato', system-ui, sans-serif",      desc: 'Caldo, umano' },
-  { key: 'open-sans', label: 'Open Sans', family: "'Open Sans', system-ui, sans-serif", desc: 'Classico digitale' },
-]
 const BORDER_STYLES = [
   { key: 'rounded', label: 'Arrotondato', desc: '16px', radius: 16 },
   { key: 'mixed',   label: 'Misto',       desc: '8px',  radius: 8 },
@@ -37,10 +25,6 @@ const DEFAULT_THEME = {
   primaryColor: '#6b46c1', bgColor: '#ffffff', textColor: '#1a1a2e',
   fontHeading: 'montserrat', fontBody: 'inter', headerStyle: 'solid', borderStyle: 'mixed',
 }
-const FONTS_URL = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Lato:wght@400;600&family=Open+Sans:wght@400;600&family=Playfair+Display:wght@400;600&family=Cormorant+Garamond:wght@400;600&family=Raleway:wght@400;600&family=Montserrat:wght@400;600&family=Nunito:wght@400;600&family=DM+Sans:wght@400;600&display=swap'
-
-function getHeadingFamily(key) { return HEADING_FONTS.find(f => f.key === key)?.family || HEADING_FONTS[0].family }
-function getBodyFamily(key)    { return BODY_FONTS.find(f => f.key === key)?.family    || BODY_FONTS[0].family }
 function getBorderRadius(key)  { return BORDER_STYLES.find(s => s.key === key)?.radius ?? 8 }
 
 function ThemePreview({ theme, attivita }) {
