@@ -38,7 +38,9 @@ export async function middleware(request) {
     const url = request.nextUrl.clone()
     url.pathname = pathname               // URL nel browser resta /en/... (SEO), serviamo la pagina IT-path
     url.searchParams.set('_lang', 'en')
-    return NextResponse.rewrite(url)
+    const requestHeaders = new Headers(request.headers)
+    requestHeaders.set('x-stayapp-lang', 'en')  // il root layout lo legge per <html lang>
+    return NextResponse.rewrite(url, { request: { headers: requestHeaders } })
   }
 
   // Domini custom → risolvi l'entità e fai rewrite trasparente
@@ -73,7 +75,9 @@ export async function middleware(request) {
     rewriteUrl.searchParams.set('_domain', hostname)
     if (lang) rewriteUrl.searchParams.set('_lang', 'en')
 
-    return NextResponse.rewrite(rewriteUrl)
+    const requestHeaders = new Headers(request.headers)
+    if (lang) requestHeaders.set('x-stayapp-lang', 'en')  // il root layout lo legge per <html lang>
+    return NextResponse.rewrite(rewriteUrl, { request: { headers: requestHeaders } })
   } catch {
     return NextResponse.next()
   }

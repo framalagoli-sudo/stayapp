@@ -63,6 +63,28 @@ test.describe('Render pubblico siti — cross-browser safety net', () => {
     expect(tested, 'almeno un minisito attivo deve essere testato').toBeGreaterThan(0)
   })
 
+  test('versione inglese /en raggiungibile (no 404 da middleware/dominio)', async ({ request }) => {
+    // Guard del bug 24/6: un BOM in NEXT_PUBLIC_STAYAPP_DOMAIN faceva sì che il dominio
+    // proprio non venisse riconosciuto → ogni /en cadeva nel ramo domini-custom → 404.
+    // Le pagine IT non lo mostravano (fallback next() le serve comunque): solo /en lo rivela.
+    const home = await request.get('/en')
+    expect(home.status(), '/en (marketing) deve rispondere 200, non 404').toBe(200)
+
+    let tested = 0
+    for (const { table, prefix } of TYPES) {
+      const entity = await activeMinisito(table)
+      if (!entity) continue
+      const path = `/en/${prefix}/${entity.slug}`
+      const res = await request.get(path)
+      expect(res.status(), `${path} deve rispondere 200 (no 404 /en)`).toBe(200)
+      const text = visibleText(await res.text())
+      const firstWord = entity.name.split(/\s+/)[0]
+      expect(text, `${path}: contenuto entità renderizzato server-side anche in EN`).toContain(firstWord)
+      tested++
+    }
+    expect(tested, 'almeno un minisito attivo deve essere testato in /en').toBeGreaterThan(0)
+  })
+
   test('nessun service worker che precachea lo shell (causa pagine bianche)', async ({ request }) => {
     const res = await request.get('/sw.js')
     if (res.status() === 200) {

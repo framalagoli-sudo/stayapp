@@ -1,4 +1,5 @@
 import './globals.css'
+import { headers } from 'next/headers'
 import PWARegister from '@/components/PWARegister'
 
 export const metadata = {
@@ -30,8 +31,10 @@ export default function RootLayout({ children }) {
   // Site Key Turnstile servita a RUNTIME via meta (no inlining build-time → immune
   // alla build cache che poteva farla sparire dal bundle). Vedi components/Turnstile.jsx.
   const turnstileKey = (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '').trim()
+  // Lingua impostata dal middleware (header x-stayapp-lang) per le pagine /en → <html lang> corretto in SSR.
+  const lang = headers().get('x-stayapp-lang') === 'en' ? 'en' : 'it'
   return (
-    <html lang="it">
+    <html lang={lang}>
       <head>
         <meta name="theme-color" content="#1a1a2e" />
         {turnstileKey && <meta name="cf-turnstile-sitekey" content={turnstileKey} />}
