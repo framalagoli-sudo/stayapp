@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 
-const STAYAPP_DOMAIN = process.env.NEXT_PUBLIC_STAYAPP_DOMAIN || 'oltrenova.com'
+// .trim() obbligatorio: Vercel può iniettare un BOM (U+FEFF) in testa al valore,
+// che fa fallire il confronto con l'hostname → il dominio proprio non viene riconosciuto.
+const STAYAPP_DOMAIN = process.env.NEXT_PUBLIC_STAYAPP_DOMAIN?.trim() || 'oltrenova.com'
 // NEXT_INTERNAL_API_URL o VERCEL_URL danno l'URL Vercel interno (bypassa Cloudflare proxy).
 // VERCEL_URL è impostata automaticamente da Vercel per ogni deployment.
 const API_BASE = process.env.NEXT_INTERNAL_API_URL?.trim()

@@ -2,7 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { createDefaultSubdomain } from '@/lib/create-subdomain'
 
-const STAYAPP_DOMAIN   = process.env.STAYAPP_DOMAIN || 'oltrenova.com'
+const STAYAPP_DOMAIN   = process.env.STAYAPP_DOMAIN?.trim() || 'oltrenova.com'
 const VERCEL_TOKEN      = process.env.VERCEL_TOKEN
 const VERCEL_PROJECT_ID = process.env.VERCEL_PROJECT_ID
 

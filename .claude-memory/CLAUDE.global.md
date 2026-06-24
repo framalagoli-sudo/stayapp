@@ -29,6 +29,7 @@ Quando chiedi una cosa, la faccio — incluse le ovvie azioni di contorno per co
 - Traccio in git i cambiamenti non banali. Faccio commit/push quando me lo chiedi o secondo il flusso del progetto (non a sorpresa).
 
 ## Test e verifica
+- **Prima di dichiarare "fatto" QUALSIASI cosa (EN o no): verifica SEMPRE dal vivo in produzione** — status + contenuto reale nella risposta (curl/header/HTML), non solo `build` OK + smoke verdi. `build` dice solo "compila"; gli smoke coprono solo ciò che testano (es. non toccano `/en`). Una feature non caricata dal vivo **non è "fatta"**. Lezione 24/6: ho dichiarato fatto il multilingua per più deploy mentre `/en` dava 404, perché non avevo mai aperto un URL `/en` vero.
 - Il modo di testare **dipende dal progetto**: uso quello che c'è (es. smoke test + verifica live) e **non assumo TDD se non esiste**. Non invento un gate che non c'è.
 - Non cancello né disabilito un test che fallisce: indago. Output dei test pulito. **Mai ignorare log/output**: spesso contengono l'informazione critica.
 
