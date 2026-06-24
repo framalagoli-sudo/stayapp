@@ -61,6 +61,10 @@ const DICT = {
     read_arrow: 'Leggi →',
     book_arrow: 'Prenota →',
     free: 'Gratuito',
+    useful_links: 'Link utili',
+    follow_us: 'Seguici',
+    cookie_policy: 'Cookie Policy',
+    all_rights: 'Tutti i diritti riservati.',
   },
   en: {
     book: 'Book now',
@@ -105,6 +109,10 @@ const DICT = {
     read_arrow: 'Read →',
     book_arrow: 'Book →',
     free: 'Free',
+    useful_links: 'Useful links',
+    follow_us: 'Follow us',
+    cookie_policy: 'Cookie Policy',
+    all_rights: 'All rights reserved.',
   },
 }
 

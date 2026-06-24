@@ -210,7 +210,7 @@ export default function LandingStruttura({ property, initialHomeBlocks, domain, 
         />
       ) : null}
 
-      <LandingFooter entity={property} mini={mini} primary={primary} heading={heading} body={body} entityType="struttura" />
+      <LandingFooter entity={property} mini={mini} primary={primary} heading={heading} body={body} entityType="struttura" lang={lang} />
 
       <CookieBanner
         primaryColor={primary}

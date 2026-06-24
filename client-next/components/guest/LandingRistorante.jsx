@@ -211,7 +211,7 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
         />
       ) : null}
 
-      <LandingFooter entity={ristorante} mini={mini} primary={primary} heading={heading} body={body} entityType="ristorante" />
+      <LandingFooter entity={ristorante} mini={mini} primary={primary} heading={heading} body={body} entityType="ristorante" lang={lang} />
 
       <CookieBanner
         primaryColor={primary}

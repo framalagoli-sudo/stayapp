@@ -1,5 +1,6 @@
 'use client'
 import LegalInfo from './LegalInfo'
+import { t } from '@/lib/i18n'
 
 const SOCIAL_LABELS = {
   instagram:   'Instagram',
@@ -10,7 +11,8 @@ const SOCIAL_LABELS = {
 
 const ENTITY_PREFIX = { struttura: 's', ristorante: 'r', attivita: 'a' }
 
-export default function LandingFooter({ entity, mini, primary, heading, body, entityType }) {
+export default function LandingFooter({ entity, mini, primary, heading, body, entityType, lang = 'it' }) {
+  const lp = lang === 'en' ? '/en' : ''
   const footer = mini?.footer || {}
   if (footer.show_footer === false) return null
 
@@ -25,7 +27,7 @@ export default function LandingFooter({ entity, mini, primary, heading, body, en
   const showSocial = footer.show_social  !== false
   const extraLinks = footer.extra_links  || []
   const copyright  = footer.copyright_text
-    || `© ${new Date().getFullYear()} ${entity.name}. Tutti i diritti riservati.`
+    || `© ${new Date().getFullYear()} ${entity.name}. ${t('all_rights', lang)}`
 
   const socialEntries = Object.entries(social).filter(([, v]) => v)
   const hasContact    = hasAddress || hasPhone || hasEmail
@@ -66,7 +68,7 @@ export default function LandingFooter({ entity, mini, primary, heading, body, en
           {hasContact && (
             <div>
               <div style={{ fontWeight: 700, fontSize: 11, color: accent, marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                Contatti
+                {t('contacts', lang)}
               </div>
               {hasAddress && <p style={{ fontSize: 13, margin: '0 0 8px', lineHeight: 1.5, color }}>{entity.address}</p>}
               {hasPhone   && <p style={{ fontSize: 13, margin: '0 0 8px', color }}>
@@ -84,7 +86,7 @@ export default function LandingFooter({ entity, mini, primary, heading, body, en
               {extraLinks.length > 0 && (
                 <>
                   <div style={{ fontWeight: 700, fontSize: 11, color: accent, marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                    Link utili
+                    {t('useful_links', lang)}
                   </div>
                   {extraLinks.map((l, i) => (
                     <p key={i} style={{ margin: '0 0 8px' }}>
@@ -99,7 +101,7 @@ export default function LandingFooter({ entity, mini, primary, heading, body, en
               {showSocial && socialEntries.length > 0 && (
                 <div style={{ marginTop: extraLinks.length > 0 ? 20 : 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 11, color: accent, marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                    Seguici
+                    {t('follow_us', lang)}
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {socialEntries.map(([key, url]) => (
@@ -121,8 +123,8 @@ export default function LandingFooter({ entity, mini, primary, heading, body, en
         <div className="lf-copy" style={{ color, opacity: 0.65 }}>
           <span>{copyright}</span>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <a href={`/${prefix}/${entity.slug}/privacy`} style={{ color, textDecoration: 'none' }}>Privacy Policy</a>
-            <a href={`/${prefix}/${entity.slug}/cookie`}  style={{ color, textDecoration: 'none' }}>Cookie Policy</a>
+            <a href={`${lp}/${prefix}/${entity.slug}/privacy`} style={{ color, textDecoration: 'none' }}>{t('privacy_policy', lang)}</a>
+            <a href={`${lp}/${prefix}/${entity.slug}/cookie`}  style={{ color, textDecoration: 'none' }}>{t('cookie_policy', lang)}</a>
           </div>
         </div>
 

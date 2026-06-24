@@ -203,7 +203,7 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
         />
       ) : null}
 
-      <LandingFooter entity={attivita} mini={mini} primary={primary} heading={heading} body={body} entityType="attivita" />
+      <LandingFooter entity={attivita} mini={mini} primary={primary} heading={heading} body={body} entityType="attivita" lang={lang} />
 
       <CookieBanner
         primaryColor={primary}
