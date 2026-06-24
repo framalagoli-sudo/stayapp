@@ -137,6 +137,15 @@ export function t(key, lang) {
   return DICT[l]?.[key] ?? DICT[DEFAULT_LANG][key] ?? key
 }
 
+// Path base di un'entità per costruire link interni (privacy, cookie, /p/...).
+// Su dominio CUSTOM la root È già l'entità → niente /prefix/slug. Su dominio PROPRIO
+// serve /prefix/slug. In entrambi i casi /en davanti se lang=en.
+// Es. proprio IT → '/r/slug'; proprio EN → '/en/r/slug'; custom IT → ''; custom EN → '/en'.
+export function entityBasePath(prefix, slug, domain, lang) {
+  const lp = lang === 'en' ? '/en' : ''
+  return domain ? lp : `${lp}/${prefix}/${slug}`
+}
+
 // Costruisce il path equivalente in un'altra lingua. IT = nessun prefisso,
 // EN = prefisso /en. Es. ('/s/slug','en') → '/en/s/slug'; ('/en/s/slug','it') → '/s/slug'.
 export function pathForLang(pathname, lang) {

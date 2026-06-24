@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { guestFetch } from '@/lib/api'
+import { entityBasePath } from '@/lib/i18n'
 import LandingBlockRenderer from '@/components/LandingBlockRenderer'
 import LandingFooter from '@/components/guest/LandingFooter'
 import CookieBanner from '@/components/CookieBanner'
@@ -50,10 +51,10 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
   const navTextColor   = navDark ? 'rgba(255,255,255,0.8)'  : '#1a1a2e'
 
   const prefix     = ENTITY_PREFIX[entityType] || entityType
-  const lp         = lang === 'en' ? '/en' : ''
-  const privacyUrl = `${lp}/${prefix}/${entity.slug}/privacy`
-  const cookieUrl  = `${lp}/${prefix}/${entity.slug}/cookie`
-  const homeUrl    = `${lp}/${prefix}/${entity.slug}`
+  const base       = entityBasePath(prefix, entity.slug, domain, lang)
+  const privacyUrl = `${base}/privacy`
+  const cookieUrl  = `${base}/cookie`
+  const homeUrl    = base || '/'
 
   return (
     <>
@@ -87,7 +88,7 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
                 <div key={p.id} style={{ position: 'relative' }}
                   onMouseEnter={() => subs.length && setOpenDropdown(p.id)}
                   onMouseLeave={() => setOpenDropdown(null)}>
-                  <a href={`${lp}/${prefix}/${entity.slug}/p/${p.slug}`}
+                  <a href={`${base}/p/${p.slug}`}
                     style={{ color: navTextColor, textDecoration: 'none', fontSize: 13, padding: '6px 12px', borderRadius: 6, display: 'block', whiteSpace: 'nowrap',
                       fontWeight: p.slug === pagina.slug ? 700 : 400 }}>
                     {p.titolo}{subs.length > 0 && <span style={{ marginLeft: 4, opacity: 0.5 }}>▾</span>}
@@ -95,7 +96,7 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
                   {subs.length > 0 && openDropdown === p.id && (
                     <div style={{ position: 'absolute', top: '100%', left: 0, minWidth: 180, background: '#1a1a2e', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', padding: '6px 0', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 200 }}>
                       {subs.map(s => (
-                        <a key={s.id} href={`${lp}/${prefix}/${entity.slug}/p/${s.slug}`}
+                        <a key={s.id} href={`${base}/p/${s.slug}`}
                           style={{ display: 'block', padding: '9px 16px', color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 13 }}>
                           {s.titolo}
                         </a>
@@ -125,7 +126,7 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
         )}
       </div>
 
-      <LandingFooter entity={entity} mini={mini} primary={primary} heading={heading} body={body} entityType={entityType} lang={lang} />
+      <LandingFooter entity={entity} mini={mini} primary={primary} heading={heading} body={body} entityType={entityType} lang={lang} domain={domain} />
 
       <CookieBanner primaryColor={primary} privacyUrl={privacyUrl} cookieUrl={cookieUrl} />
       <WhatsAppButton

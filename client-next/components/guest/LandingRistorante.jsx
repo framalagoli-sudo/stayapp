@@ -9,6 +9,7 @@ import WhatsAppButton from '@/components/WhatsAppButton'
 import LandingBlockRenderer from '@/components/LandingBlockRenderer'
 import LandingFooter from '@/components/guest/LandingFooter'
 import { resolveSiteTheme } from '@/lib/siteTheme'
+import { entityBasePath } from '@/lib/i18n'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -81,6 +82,7 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
   const mini       = ristorante.minisito || {}
   const showPwaLink = mini.show_pwa_link !== false
   const social     = mini.social || {}
+  const base       = entityBasePath('r', ristorante.slug, domain, lang)
 
   const hdrCfg         = mini.header || {}
   const navDark        = hdrCfg.style === 'dark'
@@ -172,14 +174,14 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
                 <div key={p.id} style={{ position: 'relative' }}
                   onMouseEnter={() => subs.length && setOpenDropdown(p.id)}
                   onMouseLeave={() => setOpenDropdown(null)}>
-                  <a href={`/r/${ristorante.slug}/p/${p.slug}`}
+                  <a href={`${base}/p/${p.slug}`}
                     style={{ color: navTextColor, textDecoration: 'none', fontSize: 13, padding: '6px 12px', borderRadius: 6, display: 'block', whiteSpace: 'nowrap' }}>
                     {p.titolo}{subs.length > 0 && <span style={{ marginLeft: 4, opacity: 0.5 }}>▾</span>}
                   </a>
                   {subs.length > 0 && openDropdown === p.id && (
                     <div style={{ position: 'absolute', top: '100%', left: 0, minWidth: 180, background: '#1a1a2e', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', padding: '6px 0', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 200 }}>
                       {subs.map(s => (
-                        <a key={s.id} href={`/r/${ristorante.slug}/p/${s.slug}`}
+                        <a key={s.id} href={`${base}/p/${s.slug}`}
                           style={{ display: 'block', padding: '9px 16px', color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 13 }}>
                           {s.titolo}
                         </a>
@@ -206,17 +208,17 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
         <LandingBlockRenderer
           blocks={homeBlocks} entity={ristorante} entityType="ristorante"
           mini={mini} primary={primary} heading={heading} body={body}
-          slug={ristorante.slug} privacyUrl={`/r/${ristorante.slug}/privacy`}
+          slug={ristorante.slug} privacyUrl={`${base}/privacy`}
           aziendaId={ristorante.azienda_id} lang={lang}
         />
       ) : null}
 
-      <LandingFooter entity={ristorante} mini={mini} primary={primary} heading={heading} body={body} entityType="ristorante" lang={lang} />
+      <LandingFooter entity={ristorante} mini={mini} primary={primary} heading={heading} body={body} entityType="ristorante" lang={lang} domain={domain} />
 
       <CookieBanner
         primaryColor={primary}
-        privacyUrl={ristorante.slug ? `/r/${ristorante.slug}/privacy` : null}
-        cookieUrl={ristorante.slug  ? `/r/${ristorante.slug}/cookie`  : null}
+        privacyUrl={ristorante.slug ? `${base}/privacy` : null}
+        cookieUrl={ristorante.slug  ? `${base}/cookie`  : null}
       />
       <WhatsAppButton
         whatsapp={social.whatsapp}

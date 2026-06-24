@@ -9,6 +9,7 @@ import WhatsAppButton from '@/components/WhatsAppButton'
 import LandingBlockRenderer from '@/components/LandingBlockRenderer'
 import LandingFooter from '@/components/guest/LandingFooter'
 import { resolveSiteTheme } from '@/lib/siteTheme'
+import { entityBasePath } from '@/lib/i18n'
 
 const HEADING_FAMILIES = {
   playfair:   "'Playfair Display', Georgia, serif",
@@ -80,6 +81,7 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
   const body    = BODY_FAMILIES[theme.fontBody]       || BODY_FAMILIES.inter
   const mini    = attivita.minisito || {}
   const social  = mini.social || {}
+  const base    = entityBasePath('a', attivita.slug, domain, lang)
 
   const hdrCfg         = mini.header || {}
   const navDark        = hdrCfg.style === 'dark'
@@ -170,14 +172,14 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
                 <div key={p.id} style={{ position: 'relative' }}
                   onMouseEnter={() => subs.length && setOpenDropdown(p.id)}
                   onMouseLeave={() => setOpenDropdown(null)}>
-                  <a href={`/a/${attivita.slug}/p/${p.slug}`}
+                  <a href={`${base}/p/${p.slug}`}
                     style={{ color: navTextColor, textDecoration: 'none', fontSize: 13, padding: '6px 12px', borderRadius: 6, display: 'block', whiteSpace: 'nowrap' }}>
                     {p.titolo}{subs.length > 0 && <span style={{ marginLeft: 4, opacity: 0.5 }}>▾</span>}
                   </a>
                   {subs.length > 0 && openDropdown === p.id && (
                     <div style={{ position: 'absolute', top: '100%', left: 0, minWidth: 180, background: '#1a1a2e', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', padding: '6px 0', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 200 }}>
                       {subs.map(s => (
-                        <a key={s.id} href={`/a/${attivita.slug}/p/${s.slug}`}
+                        <a key={s.id} href={`${base}/p/${s.slug}`}
                           style={{ display: 'block', padding: '9px 16px', color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 13 }}>
                           {s.titolo}
                         </a>
@@ -198,17 +200,17 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
         <LandingBlockRenderer
           blocks={homeBlocks} entity={attivita} entityType="attivita"
           mini={mini} primary={primary} heading={heading} body={body}
-          slug={attivita.slug} privacyUrl={`/a/${attivita.slug}/privacy`}
+          slug={attivita.slug} privacyUrl={`${base}/privacy`}
           aziendaId={attivita.azienda_id} lang={lang}
         />
       ) : null}
 
-      <LandingFooter entity={attivita} mini={mini} primary={primary} heading={heading} body={body} entityType="attivita" lang={lang} />
+      <LandingFooter entity={attivita} mini={mini} primary={primary} heading={heading} body={body} entityType="attivita" lang={lang} domain={domain} />
 
       <CookieBanner
         primaryColor={primary}
-        privacyUrl={attivita.slug ? `/a/${attivita.slug}/privacy` : null}
-        cookieUrl={attivita.slug  ? `/a/${attivita.slug}/cookie`  : null}
+        privacyUrl={attivita.slug ? `${base}/privacy` : null}
+        cookieUrl={attivita.slug  ? `${base}/cookie`  : null}
       />
       <WhatsAppButton
         whatsapp={social.whatsapp}

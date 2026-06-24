@@ -1,6 +1,6 @@
 'use client'
 import LegalInfo from './LegalInfo'
-import { t } from '@/lib/i18n'
+import { t, entityBasePath } from '@/lib/i18n'
 
 const SOCIAL_LABELS = {
   instagram:   'Instagram',
@@ -11,8 +11,7 @@ const SOCIAL_LABELS = {
 
 const ENTITY_PREFIX = { struttura: 's', ristorante: 'r', attivita: 'a' }
 
-export default function LandingFooter({ entity, mini, primary, heading, body, entityType, lang = 'it' }) {
-  const lp = lang === 'en' ? '/en' : ''
+export default function LandingFooter({ entity, mini, primary, heading, body, entityType, lang = 'it', domain = null }) {
   const footer = mini?.footer || {}
   if (footer.show_footer === false) return null
 
@@ -33,6 +32,7 @@ export default function LandingFooter({ entity, mini, primary, heading, body, en
   const hasContact    = hasAddress || hasPhone || hasEmail
   const hasLinks      = (showSocial && socialEntries.length > 0) || extraLinks.length > 0
   const prefix        = ENTITY_PREFIX[entityType] || entityType
+  const base          = entityBasePath(prefix, entity.slug, domain, lang)
 
   return (
     <footer style={{ background: bg, fontFamily: body }}>
@@ -123,8 +123,8 @@ export default function LandingFooter({ entity, mini, primary, heading, body, en
         <div className="lf-copy" style={{ color, opacity: 0.65 }}>
           <span>{copyright}</span>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <a href={`${lp}/${prefix}/${entity.slug}/privacy`} style={{ color, textDecoration: 'none' }}>{t('privacy_policy', lang)}</a>
-            <a href={`${lp}/${prefix}/${entity.slug}/cookie`}  style={{ color, textDecoration: 'none' }}>{t('cookie_policy', lang)}</a>
+            <a href={`${base}/privacy`} style={{ color, textDecoration: 'none' }}>{t('privacy_policy', lang)}</a>
+            <a href={`${base}/cookie`}  style={{ color, textDecoration: 'none' }}>{t('cookie_policy', lang)}</a>
           </div>
         </div>
 
