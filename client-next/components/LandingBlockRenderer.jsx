@@ -792,46 +792,6 @@ function NewsletterForm({ aziendaId, primary, privacyUrl, lang = 'it' }) {
   )
 }
 
-function ContattiForm({ entity, entityType, primary, privacyUrl, heading }) {
-  const [form, setForm] = useState({ nome: '', email: '', messaggio: '' })
-  const [privacy, setPrivacy] = useState(false)
-  const [state, setState] = useState('idle')
-  const [turnstileToken, setTurnstileToken] = useState('')
-
-  async function handleSubmit(e) {
-    e.preventDefault()
-    if (!privacy) return
-    setState('loading')
-    try {
-      await guestFetch('/api/guest/contact', {
-        method: 'POST',
-        body: JSON.stringify({ entity_tipo: entityType, entity_id: entity.id, ...form, turnstileToken }),
-      })
-      setState('done')
-    } catch { setState('error') }
-  }
-
-  const inp = { padding: '11px 14px', border: '1px solid #ddd', borderRadius: 10, fontSize: 15, outline: 'none', width: '100%', display: 'block' }
-
-  if (state === 'done') return <p style={{ color: '#2d7a2d', fontWeight: 600, textAlign: 'center' }}>Messaggio inviato! Ti risponderemo presto.</p>
-  return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 520, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <input required placeholder="Nome e cognome" value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} style={inp} />
-      <input required type="email" placeholder="Email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inp} />
-      <textarea required rows={4} placeholder="Messaggio" value={form.messaggio} onChange={e => setForm(f => ({ ...f, messaggio: e.target.value }))} style={{ ...inp, resize: 'vertical' }} />
-      <label style={{ display: 'flex', gap: 8, fontSize: 12, color: '#666', cursor: 'pointer', alignItems: 'flex-start' }}>
-        <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} style={{ marginTop: 1, flexShrink: 0 }} />
-        <span>Acconsento al trattamento dei dati. <a href={privacyUrl} style={{ color: primary }}>Privacy Policy</a></span>
-      </label>
-      <Turnstile onToken={setTurnstileToken} />
-      <button type="submit" disabled={!privacy || state === 'loading'}
-        style={{ padding: '13px', background: privacy ? primary : '#ccc', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: privacy ? 'pointer' : 'not-allowed' }}>
-        {state === 'loading' ? 'Invio...' : 'Invia messaggio'}
-      </button>
-    </form>
-  )
-}
-
 function fbFieldVisible(campo, dati) {
   if (!campo.condizione?.campo_id) return true
   const rawVal = dati[campo.condizione.campo_id]

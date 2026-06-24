@@ -85,7 +85,8 @@ export async function middleware(request) {
 
 export const config = {
   matcher: [
-    // Escludi static files e api routes interne
-    '/((?!_next/static|_next/image|favicon.ico|icons/|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp)).*)',
+    // Escludi le route /api (lavorano per slug: il rewrite del dominio custom le
+    // storpierebbe → fetch client rotte) e gli static files.
+    '/((?!api/|_next/static|_next/image|favicon.ico|icons/|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp)).*)',
   ],
 }
