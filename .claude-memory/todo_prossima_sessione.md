@@ -1,11 +1,22 @@
 ---
 name: todo_prossima_sessione
-description: To-do prossima sessione — block system COMPLETO (22/6); prossimo candidato = debito sicurezza blog
+description: To-do prossima sessione — Multilingua Fase 1+2 LIVE (24-25/6); prossimo = link custom residui, Fase 3 override, PWA i18n
 metadata: 
   node_type: memory
   type: project
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
 ---
+
+## 🟢 STATO AL 24-25/6 — MULTILINGUA (IT+EN) — vedi [[project_multilingua_roadmap]]
+**Fase 1 (UI) + Fase 2 (contenuto auto-tradotto Haiku) LIVE e verificate dal vivo.** Tradotti: home, sotto-pagine `/p`, footer, Privacy/Cookie (versione EN parallela), contenuto entità (minisito/descrizioni/blocchi/menu via cache `entity_translations`), form builder (label/placeholder/descrizione; opzioni/valori NO per integrità submission). `<html lang>` corretto in SSR. Smoke test `/en` aggiunto.
+**Bug grossi risolti**: (1) BOM in `NEXT_PUBLIC_STAYAPP_DOMAIN` rompeva `isOwnDomain` → /en 404 [[feedback_bom_api_base]]; (2) middleware storpiava `/api/*` sui domini custom → tutte le fetch client rotte (privacy "non trovata", form/booking/chatbot); (3) link footer/nav puliti sui domini custom (`entityBasePath`).
+**Codice morto rimosso**: `components/guest/PaginaPage.jsx` + `ContattiForm` in LandingBlockRenderer.
+
+### ⏭️ DA FARE prossima sessione (multilingua), in ordine:
+1. **Link interni residui sui domini custom** (stesso difetto, non convertiti a `entityBasePath`): `pwaUrl` ("App ospiti"/"Vedi menu") in LandingStruttura/Ristorante + link blog/eventi nei blocchi del renderer. Probabile che siano rotti/brutti sui domini custom. Allinearli con `entityBasePath`.
+2. **Fase 3 multilingua**: pannello admin per correggere a mano le traduzioni EN. Infrastruttura `overrides` GIÀ pronta (colonna `entity_translations.overrides` + merge prioritario nel motore `lib/translate.js`). Manca solo la UI.
+3. **PWA ospite** (GuestApp/RestaurantApp/AttivitaPWA, dietro QR) non ancora localizzata — bassa priorità.
+**Regola nuova nel CLAUDE.md globale**: prima di dire "fatto" verificare SEMPRE dal vivo (curl status+contenuto), non basta build+smoke.
 
 ## 🟢 STATO AL 22/6
 **Block system del sito: COMPLETO** (Fasi 0-5 + coppie font + sito autonomo, tutto LIVE) → vedi [[project_block_system_roadmap]] e [[project_session_2026_06_22]]. Supabase Pro attivo. Backlog residuo qui sotto.
