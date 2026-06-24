@@ -15,6 +15,9 @@ const TRANSLATABLE_FIELDS = {
   ristorante: ['description', 'menu', 'minisito'],
   attivita:   ['description', 'services', 'minisito'],
   pagina:     ['titolo', 'seo_title', 'seo_description', 'blocks'],
+  // Form builder: solo testo display-only. MAI 'opzioni' (sono valori inviati + display:
+  // tradurli romperebbe le submission e la logica condizionale) né tipo/operatore/condizione.
+  form:       ['descrizione', 'campi'],
 }
 
 // Chiavi che NON sono prosa (config, id, identificatori, riferimenti). Match su
@@ -28,6 +31,8 @@ const CONFIG_KEYS = [
   'timezone', 'currency', 'value', 'schedule', 'hours', 'orari', 'price', 'prezzo',
   'width', 'height', 'size', 'order', 'position', 'align', 'section_order',
   'sections', 'parent_id', 'entity_id', 'entity_tipo', 'gridtemplate',
+  // Identificatori/enum/valori-dato (form builder, blocchi): NON sono prosa.
+  'tipo', 'opzioni', 'valore', 'operatore', 'condizione', 'step', 'campo_id', 'redirect_url',
 ]
 
 function isConfigKey(key) {

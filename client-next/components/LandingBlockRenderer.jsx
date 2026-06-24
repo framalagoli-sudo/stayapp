@@ -686,7 +686,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                   {d.titolo_sezione}
                 </h2>
               )}
-              <FormBuilderBlock token={d.form_token} primary={primary} />
+              <FormBuilderBlock token={d.form_token} primary={primary} lang={lang} />
             </div>
           </section>
         )
@@ -845,7 +845,7 @@ function fbFieldVisible(campo, dati) {
   }
 }
 
-function FormBuilderBlock({ token, primary }) {
+function FormBuilderBlock({ token, primary, lang = 'it' }) {
   const [form, setForm]               = useState(null)
   const [loading, setLoading]         = useState(true)
   const [dati, setDati]               = useState({})
@@ -856,12 +856,12 @@ function FormBuilderBlock({ token, primary }) {
   const [error, setError]             = useState('')
 
   useEffect(() => {
-    fetch(`${API_BASE_FB}/api/form-builder/public/${token}`)
+    fetch(`${API_BASE_FB}/api/form-builder/public/${token}?lang=${lang}`)
       .then(r => r.json())
       .then(d => { if (d.error) throw new Error(d.error); setForm(d) })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
-  }, [token])
+  }, [token, lang])
 
   function setField(id, value) { setDati(d => ({ ...d, [id]: value })) }
 
@@ -885,7 +885,7 @@ function FormBuilderBlock({ token, primary }) {
       }
       return false
     })
-    if (mancanti.length) { setError(`Obbligatori: ${mancanti.map(c => c.label).join(', ')}`); return }
+    if (mancanti.length) { setError(`${tr('required_prefix', lang)} ${mancanti.map(c => c.label).join(', ')}`); return }
     setError('')
     setCurrentStep(s => s + 1)
   }
@@ -907,7 +907,7 @@ function FormBuilderBlock({ token, primary }) {
       }
       return false
     })
-    if (mancanti.length) { setError(`Obbligatori: ${mancanti.map(c => c.label).join(', ')}`); return }
+    if (mancanti.length) { setError(`${tr('required_prefix', lang)} ${mancanti.map(c => c.label).join(', ')}`); return }
 
     setSubmitting(true)
     try {
@@ -917,7 +917,7 @@ function FormBuilderBlock({ token, primary }) {
         body: JSON.stringify({ ...datiPuliti, _hp: hp }),
       })
       const body = await res.json()
-      if (!res.ok) throw new Error(body.error || 'Errore invio')
+      if (!res.ok) throw new Error(body.error || tr('send_error', lang))
       if (body.redirect_url) window.location.href = body.redirect_url
       else setSuccess(true)
     } catch (e) { setError(e.message) }
@@ -926,9 +926,9 @@ function FormBuilderBlock({ token, primary }) {
 
   const inp = { padding: '11px 14px', border: '1px solid #ddd', borderRadius: 10, fontSize: 15, outline: 'none', width: '100%', display: 'block', fontFamily: 'inherit', boxSizing: 'border-box' }
 
-  if (loading) return <p style={{ color: '#888', textAlign: 'center' }}>Caricamento form…</p>
+  if (loading) return <p style={{ color: '#888', textAlign: 'center' }}>{tr('loading_form', lang)}</p>
   if (error && !form) return <p style={{ color: '#c53030', textAlign: 'center' }}>{error}</p>
-  if (success) return <p style={{ color: '#2d7a2d', fontWeight: 600, textAlign: 'center', padding: '32px 0' }}>✓ Messaggio inviato! Grazie.</p>
+  if (success) return <p style={{ color: '#2d7a2d', fontWeight: 600, textAlign: 'center', padding: '32px 0' }}>{tr('form_sent', lang)}</p>
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -940,7 +940,7 @@ function FormBuilderBlock({ token, primary }) {
       {isMultiStep && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ fontSize: 13, color: '#888' }}>Passo {currentStep + 1} di {totalSteps}</span>
+            <span style={{ fontSize: 13, color: '#888' }}>{tr('form_step', lang)} {currentStep + 1}/{totalSteps}</span>
             <span style={{ fontSize: 12, color: '#aaa' }}>{Math.round(((currentStep + 1) / totalSteps) * 100)}%</span>
           </div>
           <div style={{ height: 4, background: '#eee', borderRadius: 2 }}>
@@ -988,13 +988,13 @@ function FormBuilderBlock({ token, primary }) {
                 <textarea value={dati[c.id] || ''} onChange={e => setField(c.id, e.target.value)} placeholder={c.placeholder} rows={4} style={{ ...inp, resize: 'vertical' }} />
               ) : c.tipo === 'select' ? (
                 <select value={dati[c.id] || ''} onChange={e => setField(c.id, e.target.value)} style={inp}>
-                  <option value="">— Seleziona —</option>
+                  <option value="">{tr('select_ph', lang)}</option>
                   {(c.opzioni || []).map((op, i) => <option key={i} value={op}>{op}</option>)}
                 </select>
               ) : c.tipo === 'checkbox' ? (
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, color: '#555' }}>
                   <input type="checkbox" checked={!!dati[c.id]} onChange={e => setField(c.id, e.target.checked)} style={{ width: 16, height: 16 }} />
-                  {c.placeholder || 'Sì'}
+                  {c.placeholder || tr('yes', lang)}
                 </label>
               ) : (
                 <input type={c.tipo} value={dati[c.id] || ''} onChange={e => setField(c.id, e.target.value)} placeholder={c.placeholder} style={inp} />
@@ -1008,18 +1008,18 @@ function FormBuilderBlock({ token, primary }) {
         {isMultiStep && currentStep > 0 && (
           <button type="button" onClick={() => { setError(''); setCurrentStep(s => s - 1) }}
             style={{ flex: 1, padding: '13px', background: '#f5f5f5', color: '#555', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: 15, cursor: 'pointer' }}>
-            ← Indietro
+            ← {tr('back', lang)}
           </button>
         )}
         {isMultiStep && currentStep < totalSteps - 1 ? (
           <button type="button" onClick={handleNext}
             style={{ flex: 1, padding: '13px', background: primary || '#1a1a2e', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: 'pointer' }}>
-            Avanti →
+            {tr('next', lang)} →
           </button>
         ) : (
           <button type="submit" disabled={submitting}
             style={{ flex: 1, padding: '13px', background: primary, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: submitting ? 'not-allowed' : 'pointer' }}>
-            {submitting ? 'Invio…' : 'Invia'}
+            {submitting ? tr('sending', lang) : tr('send', lang)}
           </button>
         )}
       </div>
