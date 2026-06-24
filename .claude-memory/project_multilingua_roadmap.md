@@ -49,7 +49,8 @@ Lo switcher EN dava **404 su tutti gli /en** dal primo deploy impianto: `NEXT_PU
 **Note/aperti Fase 2:**
 - `components/guest/PaginaPage.jsx` = CODICE MORTO (non importato da nessuna route; le sotto-pagine usano `GuestSubPage`). Ha un `ContattiForm` IT non tradotto ma non è renderizzato. Valutare rimozione.
 - `ContattiForm` in `LandingBlockRenderer` (riga ~795) = morto (`case 'contatti'` ritorna null).
-- Bug 404 segnalato su `www.fondaconarni.com/r/fondaco-narni/privacy`: NON riproducibile (200 ovunque a freddo) → probabile 404 cachato/swap deploy. Da riconfermare con hard refresh.
+- ✅ RISOLTO 24/6 — "Pagina non trovata" su `www.fondaconarni.com/r/fondaco-narni/privacy`: NON era 404 HTTP (server 200) ma il messaggio d'errore di `PolicyPage` quando la fetch dati fallisce. CAUSA: il middleware sui domini custom anteponeva `/r/slug` a **tutte** le richieste, **incluse `/api/*`** → le fetch client su dominio custom andavano su `/r/slug/api/...` → 404 HTML → JSON parse fallito. Rompeva TUTTE le interazioni sui domini custom (form/newsletter/booking/chatbot), non solo privacy; invisibile sulla home (dati in SSR, fetch falliscono in silenzio). FIX: escluso `api/` dal matcher del middleware (le route /api lavorano per slug, non gli serve il rewrite). Verificato live: API custom domain ora 200 JSON.
+- ⚠️ Miglioria aperta (intuizione Francesco): sui domini custom i link footer/nav generano il path interno `/r/slug/privacy` invece del pulito `/privacy`. Funziona (middleware reindirizza) ma è brutto/espone lo slug. Per sistemarlo: far generare ai componenti link root-relative quando si è su dominio custom (serve passare `domain` a LandingFooter/GuestSubPage).
 - PWA guest (GuestApp/RestaurantApp/AttivitaPWA) ancora non localizzate (dietro QR, bassa priorità).
 
 ## Fasi
