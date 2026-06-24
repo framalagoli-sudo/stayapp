@@ -23,8 +23,17 @@ NESSUN framework i18n (no next-intl/i18next). Contenuto in JSONB per-entità, un
 **Fase 1 impianto ✅ LIVE** (commit f1cacd4): `lib/i18n.js` (LANGS, `t()`, detect, `pathForLang`, dizionario), middleware `/en/` (strip → `_lang=en` searchParam, domini propri+custom), `components/guest/LanguageSwitcher.jsx` (overlay bandierina + `<html lang>` + autodetect client SEO-safe), 3 pagine entità (`app/{s,r,a}/[slug]/page.js`) leggono `_lang` → hreflang/canonical/OG locale + montano lo switcher.
 **Stringhe UI migrate finora:**
 - ✅ Home renderer `LandingBlockRenderer` (commit 3de7d3e): titoli/sottotitoli sezioni auto-entità + conteggi + micro-testi (Prenota/Leggi/Gratuito/Vedi tutti) + form newsletter. NB: in questo file `t` importato come **`tr`** (collisione con var locale `t` nel map testimonianze).
-- ✅ Footer `LandingFooter` (commit d5aae16, deploy READY/live; smoke verdi fino a #16 alla pausa — **verificare esito completo al ritorno**): Contatti/Link utili/Seguici/Privacy/Cookie/copyright + link privacy-cookie prefissati `/en` quando lang=en.
-- `lang` collegato: page → Landing(struttura/ristorante/attivita) → LandingBlockRenderer + LandingFooter.
+- ✅ Footer `LandingFooter` (d5aae16): Contatti/Link utili/Seguici/Privacy/Cookie/copyright + link privacy-cookie prefissati `/en`.
+- ✅ Sotto-pagine CMS `/p` — `GuestSubPage` + 3 route `app/{s,r,a}/[slug]/p/[pageSlug]/page.js`: `lang` threadato, link interni prefissati `/en`, hreflang/OG, switcher. (Quasi zero stringhe hardcoded: contenuto = renderer.)
+- ✅ Privacy/Cookie `PolicyPage` (`components/public/PolicyPage.jsx`) — versione **EN completa parallela** (IT intatta), selezionata da `lang`; 6 route privacy/cookie leggono `_lang` + montano switcher. Decisione 24/6: tradurre tutto EN (riferimenti normativi GDPR/Garante restano italiani).
+- `lang` collegato: page → Landing(struttura/ristorante/attivita) → LandingBlockRenderer + LandingFooter; route `/p` → GuestSubPage; route policy → PolicyPage.
+
+### 🔴 BUG /en risolto 24/6 (BOM) — leggere [[feedback_bom_api_base]]
+Lo switcher EN dava **404 su tutti gli /en** dal primo deploy impianto: `NEXT_PUBLIC_STAYAPP_DOMAIN` aveva un BOM (`﻿oltrenova.com`) → `isOwnDomain(www.oltrenova.com)` false → `/en` cadeva nel ramo domini-custom → 404. Invisibile per le pagine IT (fallback `next()` le serve), visibile solo su /en. **Non preso dagli smoke** (non testano /en) né dal build (compila e basta). Fix: `.trim()` su middleware + DominiPage + route domini. **Verificato dal vivo** (curl): /en, /en/blog, /en/r/<slug>, /en/.../privacy = 200 + stringhe EN reali ("Follow us" vs "Seguici"). Lezione → regola "verifica live prima di dire fatto" nel CLAUDE.md globale.
+
+### Follow-up minori aperti
+- `<html lang>` servito è `"it"` anche sulle pagine /en (root layout statico); lo switcher lo corregge client-side ma i crawler senza JS vedono `it`. SEO nicety, non bloccante. Per fixarlo davvero servirebbe root layout lang-aware.
+- Smoke test su `/en` da aggiungere (così il 404 non può più passare silenzioso).
 
 **PROSSIMI LOTTI stringhe UI (stesso pattern, build+deploy+smoke a ogni lotto):**
 1. **`PaginaPage`** (sotto-pagine `/p/[pageSlug]`): è 'use client', legge `useParams`/`useSearchParams` → leggere `_lang` da searchParams; ha un proprio `renderBlock` con gli STESSI titoli sezione + `NewsletterForm`/`ContattiForm` definiti localmente da tradurre. Inoltre le route `app/{s,r,a}/[slug]/p/[pageSlug]/page.js` vanno wired come le pagine entità (hreflang + pass lang).
