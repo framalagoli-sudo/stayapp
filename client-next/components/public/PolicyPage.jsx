@@ -1,11 +1,12 @@
-﻿'use client'
+'use client'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { guestFetch } from '@/lib/api'
 
 // type: 'privacy' | 'cookie'
 // entityType: 'struttura' | 'ristorante' | 'attivita'
-export default function PolicyPage({ type, entityType }) {
+// lang: 'it' | 'en'
+export default function PolicyPage({ type, entityType, lang = 'it' }) {
   const { slug } = useParams()
   const [entity, setEntity] = useState(null)
   const [error, setError] = useState(null)
@@ -20,14 +21,20 @@ export default function PolicyPage({ type, entityType }) {
     guestFetch(apiPath).then(setEntity).catch(() => setError(true))
   }, [slug])
 
-  if (error) return <ErrorPage />
-  if (!entity) return <LoadingPage />
+  if (error) return <ErrorPage lang={lang} />
+  if (!entity) return <LoadingPage lang={lang} />
 
   const p = { ...DEFAULT_PRIVACY, ...(entity.privacy_data || {}) }
   const primary = entity.theme?.primaryColor || '#1a1a2e'
 
-  if (type === 'cookie') return <CookiePolicyContent entity={entity} p={p} primary={primary} />
-  return <PrivacyPolicyContent entity={entity} p={p} primary={primary} entityType={entityType} />
+  if (type === 'cookie') {
+    return lang === 'en'
+      ? <CookiePolicyContentEN entity={entity} p={p} primary={primary} />
+      : <CookiePolicyContent entity={entity} p={p} primary={primary} />
+  }
+  return lang === 'en'
+    ? <PrivacyPolicyContentEN entity={entity} p={p} primary={primary} entityType={entityType} />
+    : <PrivacyPolicyContent entity={entity} p={p} primary={primary} entityType={entityType} />
 }
 
 const DEFAULT_PRIVACY = {
@@ -51,13 +58,15 @@ const DEFAULT_PRIVACY = {
   email_provider: '',
 }
 
-const oggi = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+function formatOggi(lang) {
+  return new Date().toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+}
 
-function titolare(p, entity) {
+function titolare(p, entity, lang = 'it') {
   const parts = [
     p.titolare_nome || entity.name,
     p.titolare_forma_giuridica,
-    p.titolare_piva ? `P.IVA ${p.titolare_piva}` : '',
+    p.titolare_piva ? `${lang === 'en' ? 'VAT no.' : 'P.IVA'} ${p.titolare_piva}` : '',
     p.titolare_indirizzo,
     [p.titolare_cap, p.titolare_citta, p.titolare_provincia ? `(${p.titolare_provincia})` : ''].filter(Boolean).join(' '),
     p.titolare_email || entity.email,
@@ -66,14 +75,17 @@ function titolare(p, entity) {
   return parts
 }
 
+/* ============================== ITALIANO ============================== */
+
 function PrivacyPolicyContent({ entity, p, primary, entityType }) {
   const tit = titolare(p, entity)
+  const oggi = formatOggi('it')
   const entityLabel = entityType === 'struttura' ? 'struttura ricettiva' : entityType === 'ristorante' ? 'ristorante' : 'attività'
   const pwaPrefix = entityType === 'struttura' ? 's' : entityType === 'ristorante' ? 'r' : 'a'
   const cookieUrl = `/${pwaPrefix}/${entity.slug}/cookie`
 
   return (
-    <PageShell entity={entity} primary={primary} title="Privacy Policy">
+    <PageShell entity={entity} primary={primary} title="Privacy Policy" lang="it">
       <Section title="1. Titolare del trattamento">
         <p>Il Titolare del trattamento dei dati personali è:</p>
         <address style={{ fontStyle: 'normal', lineHeight: 2 }}>
@@ -203,8 +215,9 @@ function PrivacyPolicyContent({ entity, p, primary, entityType }) {
 }
 
 function CookiePolicyContent({ entity, p, primary }) {
+  const oggi = formatOggi('it')
   return (
-    <PageShell entity={entity} primary={primary} title="Cookie Policy">
+    <PageShell entity={entity} primary={primary} title="Cookie Policy" lang="it">
       <p style={{ color: '#666', marginBottom: 32 }}>
         Questa Cookie Policy descrive i cookie e le tecnologie di tracciamento utilizzate da questo sito web,
         in conformità con il Provvedimento del Garante Privacy italiano dell'8 maggio 2014 e le successive
@@ -299,9 +312,251 @@ function CookiePolicyContent({ entity, p, primary }) {
   )
 }
 
-function PageShell({ entity, primary, title, children }) {
+/* ============================== ENGLISH ============================== */
+
+function PrivacyPolicyContentEN({ entity, p, primary, entityType }) {
+  const tit = titolare(p, entity, 'en')
+  const oggi = formatOggi('en')
+  const entityLabel = entityType === 'struttura' ? 'accommodation facility' : entityType === 'ristorante' ? 'restaurant' : 'business'
+  const pwaPrefix = entityType === 'struttura' ? 's' : entityType === 'ristorante' ? 'r' : 'a'
+  const cookieUrl = `/en/${pwaPrefix}/${entity.slug}/cookie`
+
+  return (
+    <PageShell entity={entity} primary={primary} title="Privacy Policy" lang="en">
+      <Section title="1. Data Controller">
+        <p>The Data Controller of personal data is:</p>
+        <address style={{ fontStyle: 'normal', lineHeight: 2 }}>
+          {tit.map((t, i) => <span key={i}>{t}<br /></span>)}
+        </address>
+        {p.dpo_email && (
+          <>
+            <p style={{ marginTop: 16 }}><strong>Data Protection Officer (DPO):</strong></p>
+            <p>{p.dpo_nome && `${p.dpo_nome} — `}<a href={`mailto:${p.dpo_email}`}>{p.dpo_email}</a></p>
+          </>
+        )}
+      </Section>
+
+      <Section title="2. Categories of data collected">
+        <p>Depending on the services in use, this {entityLabel} collects the following categories of personal data:</p>
+        <ul>
+          {p.usa_form_contatti && (
+            <li><strong>Contact form:</strong> name, email address, phone number (optional), free-text message.</li>
+          )}
+          {p.usa_newsletter && (
+            <li><strong>Newsletter subscription:</strong> name, email address, phone number (optional).</li>
+          )}
+          {p.usa_richieste_ospiti && (
+            <li><strong>Guest requests (app):</strong> room/unit number, type of request, free-text message. No mandatory identifying data is required.</li>
+          )}
+          {p.usa_prenotazioni && (
+            <li><strong>Bookings:</strong> data provided as part of the booking process (name, email, phone, stay or service dates).</li>
+          )}
+          <li><strong>Technical browsing data:</strong> IP addresses, browser type, pages visited, time of visit — collected automatically by the hosting server for security and technical diagnostic purposes. They are not associated with identified users.</li>
+        </ul>
+        {!p.usa_form_contatti && !p.usa_newsletter && !p.usa_richieste_ospiti && !p.usa_prenotazioni && (
+          <p>At present no personal data is collected through active forms. Only technical browsing data is processed, as indicated above.</p>
+        )}
+      </Section>
+
+      <Section title="3. Purposes and legal basis of processing">
+        <table style={tableStyle}>
+          <thead>
+            <tr style={{ background: '#f5f5f5' }}>
+              <th style={thStyle}>Purpose</th>
+              <th style={thStyle}>Legal basis (Art. 6 GDPR)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {p.usa_form_contatti && (
+              <tr>
+                <td style={tdStyle}>Responding to contact requests</td>
+                <td style={tdStyle}>Art. 6(1)(b) — performance of a contract or pre-contractual measures</td>
+              </tr>
+            )}
+            {p.usa_newsletter && (
+              <tr>
+                <td style={tdStyle}>Sending promotional communications and newsletters</td>
+                <td style={tdStyle}>Art. 6(1)(a) — consent of the data subject</td>
+              </tr>
+            )}
+            {p.usa_richieste_ospiti && (
+              <tr>
+                <td style={tdStyle}>Handling requests during the stay</td>
+                <td style={tdStyle}>Art. 6(1)(b) — performance of the hospitality contract</td>
+              </tr>
+            )}
+            {p.usa_prenotazioni && (
+              <tr>
+                <td style={tdStyle}>Managing bookings</td>
+                <td style={tdStyle}>Art. 6(1)(b) — performance of the contract</td>
+              </tr>
+            )}
+            <tr>
+              <td style={tdStyle}>System security and technical diagnostics</td>
+              <td style={tdStyle}>Art. 6(1)(f) — legitimate interest of the controller</td>
+            </tr>
+          </tbody>
+        </table>
+      </Section>
+
+      <Section title="4. Data retention">
+        <ul>
+          {p.usa_form_contatti && <li><strong>Contact form data:</strong> retained for as long as strictly necessary to handle the request and, where a contractual relationship is established, for 10 years for tax and accounting purposes.</li>}
+          {p.usa_newsletter && <li><strong>Newsletter data:</strong> retained until the data subject withdraws consent. Unsubscription is available in every communication sent.</li>}
+          {p.usa_richieste_ospiti && <li><strong>Guest request data:</strong> retained for the duration of the stay and for a maximum of 12 months afterwards for service quality purposes.</li>}
+          <li><strong>Technical logs:</strong> retained for a maximum of 30 days.</li>
+        </ul>
+      </Section>
+
+      <Section title="5. Data recipients">
+        <p>Personal data may be disclosed to the following categories of recipients, acting as Data Processors pursuant to Art. 28 GDPR:</p>
+        <ul>
+          <li><strong>Hosting and database provider:</strong> certified servers located within the European Economic Area — processing necessary to deliver the digital service.</li>
+          {(p.usa_form_contatti || p.usa_newsletter) && (
+            <li><strong>Email delivery provider:</strong> transactional email service — used to send notifications and communications to the addresses provided.</li>
+          )}
+        </ul>
+        <p>Data is not sold, transferred or disclosed to third parties for their own commercial purposes.</p>
+        <p><strong>Transfers outside the EU:</strong> Data is processed within the European Economic Area (EEA). Any transfers to third countries take place in compliance with the safeguards set out in Arts. 44-49 GDPR.</p>
+      </Section>
+
+      <Section title="6. Rights of the data subject">
+        <p>As a data subject, you have the right to:</p>
+        <ul>
+          <li><strong>Access (Art. 15):</strong> obtain confirmation of processing and a copy of your data.</li>
+          <li><strong>Rectification (Art. 16):</strong> correct inaccurate or incomplete data.</li>
+          <li><strong>Erasure ("right to be forgotten", Art. 17):</strong> obtain the deletion of your data, subject to legal obligations.</li>
+          <li><strong>Restriction (Art. 18):</strong> request the restriction of processing in certain cases.</li>
+          <li><strong>Portability (Art. 20):</strong> receive your data in a structured, machine-readable format.</li>
+          <li><strong>Objection (Art. 21):</strong> object to processing based on legitimate interest.</li>
+          {p.usa_newsletter && <li><strong>Withdrawal of consent (Art. 7):</strong> withdraw at any time the consent given for the newsletter, without affecting the lawfulness of prior processing.</li>}
+        </ul>
+        <p>To exercise your rights, send a request to: <a href={`mailto:${p.titolare_email || entity.email}`}>{p.titolare_email || entity.email}</a></p>
+        <p>You also have the right to lodge a complaint with the Italian <strong>Data Protection Authority</strong> (Garante per la protezione dei dati personali, <a href="https://www.garanteprivacy.it" target="_blank" rel="noopener noreferrer">www.garanteprivacy.it</a>), Piazza Venezia 11, 00187 Rome, Italy.</p>
+      </Section>
+
+      <Section title="7. Cookies">
+        <p>For detailed information about the cookies used by this website, please see our <a href={cookieUrl}>Cookie Policy</a>.</p>
+      </Section>
+
+      <Section title="8. Changes to this notice">
+        <p>
+          The Controller reserves the right to amend this notice at any time.
+          Changes will be published on this page with an update to the date indicated below.
+          You are advised to review this page periodically.
+        </p>
+        <p><strong>Last updated:</strong> {oggi}</p>
+      </Section>
+    </PageShell>
+  )
+}
+
+function CookiePolicyContentEN({ entity, p, primary }) {
+  const oggi = formatOggi('en')
+  return (
+    <PageShell entity={entity} primary={primary} title="Cookie Policy" lang="en">
+      <p style={{ color: '#666', marginBottom: 32 }}>
+        This Cookie Policy describes the cookies and tracking technologies used by this website,
+        in compliance with the Italian Data Protection Authority's ruling of 8 May 2014 and the subsequent
+        Guidelines of 10 June 2021, as well as with the GDPR (Reg. EU 2016/679).
+      </p>
+
+      <Section title="1. What cookies are">
+        <p>
+          Cookies are small text files that the websites visited by the user send to the user's device
+          (computer, tablet, smartphone), where they are stored and then sent back to the same sites
+          on the next visit. Cookies allow a website to recognise the user's device.
+        </p>
+        <p>
+          This website uses only the browser's local storage (localStorage) — a technology similar to
+          cookies — and does not install third-party profiling cookies.
+        </p>
+      </Section>
+
+      <Section title="2. Types of cookies used">
+        <h4 style={{ margin: '0 0 8px', fontSize: 15 }}>2.1 Technical cookies (necessary)</h4>
+        <p>
+          These cookies are strictly necessary for the website to function and do not require the user's
+          consent pursuant to Art. 122 of the Italian Privacy Code and the Authority's Guidelines.
+        </p>
+        <table style={tableStyle}>
+          <thead>
+            <tr style={{ background: '#f5f5f5' }}>
+              <th style={thStyle}>Name / Key</th>
+              <th style={thStyle}>Type</th>
+              <th style={thStyle}>Purpose</th>
+              <th style={thStyle}>Duration</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style={tdStyle}><code>cookie_consent</code></td>
+              <td style={tdStyle}>localStorage</td>
+              <td style={tdStyle}>Stores the user's choice regarding cookies (accepted / rejected)</td>
+              <td style={tdStyle}>Persistent (until manually deleted)</td>
+            </tr>
+            {p.usa_richieste_ospiti && (
+              <tr>
+                <td style={tdStyle}><code>requests_[id]</code></td>
+                <td style={tdStyle}>localStorage</td>
+                <td style={tdStyle}>Stores the history of requests made during the stay to show their updated status</td>
+                <td style={tdStyle}>Session (removed automatically)</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+
+        <h4 style={{ margin: '24px 0 8px', fontSize: 15 }}>2.2 Analytics cookies</h4>
+        <p>This website <strong>does not use</strong> analytics cookies (e.g. Google Analytics) or tools that track user behaviour.</p>
+
+        <h4 style={{ margin: '24px 0 8px', fontSize: 15 }}>2.3 Profiling and marketing cookies</h4>
+        <p>This website <strong>does not use</strong> third-party profiling or marketing cookies.</p>
+      </Section>
+
+      <Section title="3. How to manage cookies">
+        <p>The user can manage cookie preferences through:</p>
+        <ul>
+          <li><strong>Cookie banner:</strong> on first access to the website a banner is shown that allows non-essential cookies to be accepted or rejected. The choice can be changed by clearing the website data in the browser settings.</li>
+          <li>
+            <strong>Browser settings:</strong> most browsers allow cookies to be managed through their settings. Below are links to the instructions for the most common browsers:
+            <ul style={{ marginTop: 8 }}>
+              <li><a href="https://support.google.com/chrome/answer/95647" target="_blank" rel="noopener noreferrer">Google Chrome</a></li>
+              <li><a href="https://support.mozilla.org/en-US/kb/enhanced-tracking-protection-firefox-desktop" target="_blank" rel="noopener noreferrer">Mozilla Firefox</a></li>
+              <li><a href="https://support.apple.com/en-us/guide/safari/sfri11471/mac" target="_blank" rel="noopener noreferrer">Apple Safari</a></li>
+              <li><a href="https://support.microsoft.com/en-us/microsoft-edge/delete-cookies-in-microsoft-edge-63947406-40ac-c3b8-57b9-2a946a29ae09" target="_blank" rel="noopener noreferrer">Microsoft Edge</a></li>
+            </ul>
+          </li>
+        </ul>
+        <p>Disabling technical cookies may compromise some website features.</p>
+      </Section>
+
+      <Section title="4. Data Controller">
+        <p>The Data Controller is:</p>
+        <address style={{ fontStyle: 'normal', lineHeight: 2 }}>
+          {titolare(p, entity, 'en').map((t, i) => <span key={i}>{t}<br /></span>)}
+        </address>
+        <p style={{ marginTop: 12 }}>For any request relating to cookies, please contact: <a href={`mailto:${p.titolare_email || entity.email}`}>{p.titolare_email || entity.email}</a></p>
+      </Section>
+
+      <Section title="5. Updates">
+        <p>
+          This Cookie Policy may be updated to reflect any changes to the technologies used or to the
+          applicable legislation.
+        </p>
+        <p><strong>Last updated:</strong> {oggi}</p>
+      </Section>
+    </PageShell>
+  )
+}
+
+/* ============================== SHARED ============================== */
+
+function PageShell({ entity, primary, title, children, lang = 'it' }) {
   const siteName = entity?.name || 'Sito'
   useEffect(() => { document.title = `${title} — ${siteName}` }, [title, siteName])
+  const subtitle = lang === 'en'
+    ? 'Information notice pursuant to Regulation (EU) 2016/679 (GDPR) and Italian Legislative Decree 196/2003 as amended by Legislative Decree 101/2018'
+    : 'Informativa ai sensi del Regolamento UE 2016/679 (GDPR) e del D.Lgs. 196/2003 come modificato dal D.Lgs. 101/2018'
 
   return (
     <div style={{ fontFamily: "'Inter', system-ui, sans-serif", minHeight: '100vh', background: '#f8f8f8' }}>
@@ -322,7 +577,7 @@ function PageShell({ entity, primary, title, children }) {
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '40px 24px 80px' }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8, color: '#1a1a2e' }}>{title}</h1>
         <p style={{ color: '#aaa', fontSize: 13, marginBottom: 40, borderBottom: '1px solid #eee', paddingBottom: 20 }}>
-          Informativa ai sensi del Regolamento UE 2016/679 (GDPR) e del D.Lgs. 196/2003 come modificato dal D.Lgs. 101/2018
+          {subtitle}
         </p>
         {children}
       </div>
@@ -344,11 +599,11 @@ function Section({ title, children }) {
   )
 }
 
-function ErrorPage() {
-  return <div style={{ padding: 60, textAlign: 'center', color: '#e53e3e' }}>Pagina non trovata.</div>
+function ErrorPage({ lang = 'it' }) {
+  return <div style={{ padding: 60, textAlign: 'center', color: '#e53e3e' }}>{lang === 'en' ? 'Page not found.' : 'Pagina non trovata.'}</div>
 }
-function LoadingPage() {
-  return <div style={{ padding: 60, textAlign: 'center', color: '#aaa' }}>Caricamento…</div>
+function LoadingPage({ lang = 'it' }) {
+  return <div style={{ padding: 60, textAlign: 'center', color: '#aaa' }}>{lang === 'en' ? 'Loading…' : 'Caricamento…'}</div>
 }
 
 const tableStyle = { width: '100%', borderCollapse: 'collapse', fontSize: 14, marginTop: 8 }
