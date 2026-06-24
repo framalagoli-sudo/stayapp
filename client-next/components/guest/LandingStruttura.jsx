@@ -44,7 +44,7 @@ function loadFont(key) {
   document.head.appendChild(link)
 }
 
-export default function LandingStruttura({ property, initialHomeBlocks, domain }) {
+export default function LandingStruttura({ property, initialHomeBlocks, domain, lang = 'it' }) {
   const [scrolled,       setScrolled]       = useState(false)
   const [upcomingEventi, setUpcomingEventi] = useState([])
   const [pagine,         setPagine]         = useState([])
@@ -206,7 +206,7 @@ export default function LandingStruttura({ property, initialHomeBlocks, domain }
           blocks={homeBlocks} entity={property} entityType="struttura"
           mini={mini} primary={primary} heading={heading} body={body}
           slug={property.slug} privacyUrl={`/s/${property.slug}/privacy`}
-          aziendaId={property.azienda_id}
+          aziendaId={property.azienda_id} lang={lang}
         />
       ) : null}
 

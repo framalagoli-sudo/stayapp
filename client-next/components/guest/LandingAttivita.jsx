@@ -44,7 +44,7 @@ function loadFont(key) {
   document.head.appendChild(link)
 }
 
-export default function LandingAttivita({ attivita, initialHomeBlocks, domain }) {
+export default function LandingAttivita({ attivita, initialHomeBlocks, domain, lang = 'it' }) {
   const [scrolled,       setScrolled]       = useState(false)
   const [upcomingEventi, setUpcomingEventi] = useState([])
   const [pagine,         setPagine]         = useState([])
@@ -199,7 +199,7 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain })
           blocks={homeBlocks} entity={attivita} entityType="attivita"
           mini={mini} primary={primary} heading={heading} body={body}
           slug={attivita.slug} privacyUrl={`/a/${attivita.slug}/privacy`}
-          aziendaId={attivita.azienda_id}
+          aziendaId={attivita.azienda_id} lang={lang}
         />
       ) : null}
 

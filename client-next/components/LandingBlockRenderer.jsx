@@ -6,6 +6,7 @@ import BookingWidget from './BookingWidget'
 import Turnstile from '@/components/Turnstile'
 import { applyBlockStyle, textSizeScale, textColorFor, gridTemplate } from '@/lib/blockTypes'
 import { RichText, richIsEmpty } from '@/lib/richText'
+import { t as tr } from '@/lib/i18n'
 
 const HIGHLIGHT_LUCIDE = {
   star: Star, heart: Heart, award: Award, wifi: Wifi, parking: Car,
@@ -34,7 +35,7 @@ function getEmbedUrl(url) {
 
 const API_BASE_FB = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').trim()
 
-export default function LandingBlockRenderer({ blocks, entity, entityType, mini, primary, heading, body, slug, privacyUrl, aziendaId }) {
+export default function LandingBlockRenderer({ blocks, entity, entityType, mini, primary, heading, body, slug, privacyUrl, aziendaId, lang = 'it' }) {
   const [faqOpen, setFaqOpen] = useState({})
   const [eventi, setEventi] = useState([])
   const [articoli, setArticoli] = useState([])
@@ -338,7 +339,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
             <div className="lbr-section" style={{ maxWidth: 560 }}>
               {d.title && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, color: '#1a1a2e', marginBottom: 12 }}>{d.title}</h2>}
               {d.subtitle && <p style={{ fontSize: 16, color: '#666', marginBottom: 28 }}>{d.subtitle}</p>}
-              <NewsletterForm aziendaId={aziendaId} primary={primary} privacyUrl={privacyUrl} />
+              <NewsletterForm aziendaId={aziendaId} primary={primary} privacyUrl={privacyUrl} lang={lang} />
             </div>
           </section>
         )
@@ -429,7 +430,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         return (
           <section key={block.id} style={{ padding: '72px 0', background: '#f9f9fb' }}>
             <div className="lbr-section">
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: d.sottotitolo ? 12 : 48, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || 'I nostri servizi'}</h2>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: d.sottotitolo ? 12 : 48, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || tr('our_services', lang)}</h2>
               {d.sottotitolo && <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo}</p>}
               <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 160), gap: 20 }}>
                 {services.slice(0, d.limit || services.length).map(s => {
@@ -455,8 +456,8 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         return (
           <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
             <div className="lbr-section">
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || 'Attività'}</h2>
-              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || `${actItems.length} ${actItems.length === 1 ? 'attività disponibile' : 'attività disponibili'}`}</p>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || tr('activities_title', lang)}</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || `${actItems.length} ${tr(actItems.length === 1 ? 'activity_available' : 'activities_available', lang)}`}</p>
               <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 20 }}>
                 {actItems.slice(0, d.limit || actItems.length).map(item => (
                   <div key={item.id} style={{ background: '#fafafa', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0' }}>
@@ -481,8 +482,8 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         return (
           <section key={block.id} style={{ padding: '72px 0', background: '#f9f9fb' }}>
             <div className="lbr-section">
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || 'Escursioni'}</h2>
-              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || `${excItems.length} ${excItems.length === 1 ? 'escursione disponibile' : 'escursioni disponibili'}`}</p>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || tr('excursions_title', lang)}</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || `${excItems.length} ${tr(excItems.length === 1 ? 'excursion_available' : 'excursions_available', lang)}`}</p>
               <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 20 }}>
                 {excItems.slice(0, d.limit || excItems.length).map(exc => (
                   <div key={exc.id} style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0' }}>
@@ -513,8 +514,8 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         return (
           <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
             <div className="lbr-section">
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>Offerte speciali</h2>
-              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Promozioni esclusive per i nostri ospiti</p>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{tr('offers_title', lang)}</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{tr('offers_subtitle', lang)}</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
                 {promo.map(p => {
                   const promoUrl = p.cta_url?.trim() && p.cta_url !== '#' ? p.cta_url.trim() : ctaHref
@@ -558,8 +559,8 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         return (
           <section key={block.id} style={{ padding: '72px 0', background: '#f9f9fb' }}>
             <div className="lbr-section">
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>Pacchetti e soggiorni</h2>
-              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>Scegli il soggiorno pensato per te</p>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{tr('packages_title', lang)}</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{tr('packages_subtitle', lang)}</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
                 {packs.map(p => {
                   const hasDetail = p.description_full || (p.gallery || []).length > 0
@@ -611,8 +612,8 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         return (
           <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
             <div className="lbr-section">
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || 'Prossimi eventi'}</h2>
-              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || `${eventi.length} ${eventi.length === 1 ? 'evento in programma' : 'eventi in programma'}`}</p>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || tr('events_title', lang)}</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || `${eventi.length} ${tr(eventi.length === 1 ? 'event_scheduled' : 'events_scheduled', lang)}`}</p>
               <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 16 }}>
                 {eventi.slice(0, d.limit || eventi.length).map(ev => {
                   const dateStr = new Date(ev.date_start).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
@@ -629,8 +630,8 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                           {ev.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}><MapPin size={12} strokeWidth={1.5} color={primary} />{ev.location}</span>}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-                          <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>{ev.price > 0 ? `€${ev.price}` : 'Gratuito'}</span>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: primary }}>Prenota →</span>
+                          <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>{ev.price > 0 ? `€${ev.price}` : tr('free', lang)}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: primary }}>{tr('book_arrow', lang)}</span>
                         </div>
                       </div>
                     </a>
@@ -647,8 +648,8 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         return (
           <section key={block.id} style={{ padding: '72px 0', background: '#f9f9fb' }}>
             <div className="lbr-section">
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || 'News & Aggiornamenti'}</h2>
-              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || 'Le ultime novità'}</p>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || tr('news_title', lang)}</h2>
+              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || tr('news_subtitle', lang)}</p>
               <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 20 }}>
                 {articoli.slice(0, d.limit || articoli.length).map(art => (
                   <a key={art.id} href={`/blog/${art.slug}?back=${encodeURIComponent(homeUrl)}`}
@@ -658,7 +659,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                       {art.published_at && <div style={{ fontSize: 11, color: '#aaa', marginBottom: 6 }}>{new Date(art.published_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
                       <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', marginBottom: 8 }}>{art.title}</div>
                       {art.excerpt && <div style={{ fontSize: 13, color: '#777', lineHeight: 1.5 }}>{art.excerpt}</div>}
-                      <div style={{ marginTop: 12, fontSize: 13, fontWeight: 700, color: primary }}>Leggi →</div>
+                      <div style={{ marginTop: 12, fontSize: 13, fontWeight: 700, color: primary }}>{tr('read_arrow', lang)}</div>
                     </div>
                   </a>
                 ))}
@@ -666,7 +667,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
               {articoli.length >= 6 && (
                 <div style={{ textAlign: 'center', marginTop: 40 }}>
                   <a href={`/blog?azienda_id=${entity.azienda_id}`} style={{ display: 'inline-block', padding: '12px 32px', borderRadius: 50, border: `2px solid ${primary}`, color: primary, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
-                    Vedi tutti gli articoli →
+                    {tr('view_all_articles', lang)}
                   </a>
                 </div>
               )}
@@ -752,7 +753,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
   )
 }
 
-function NewsletterForm({ aziendaId, primary, privacyUrl }) {
+function NewsletterForm({ aziendaId, primary, privacyUrl, lang = 'it' }) {
   const [email, setEmail] = useState('')
   const [privacy, setPrivacy] = useState(false)
   const [state, setState] = useState('idle')
@@ -771,20 +772,20 @@ function NewsletterForm({ aziendaId, primary, privacyUrl }) {
     } catch { setState('error') }
   }
 
-  if (state === 'done') return <p style={{ color: '#2d7a2d', fontWeight: 600 }}>Controlla la tua email per confermare l'iscrizione.</p>
+  if (state === 'done') return <p style={{ color: '#2d7a2d', fontWeight: 600 }}>{tr('newsletter_confirm', lang)}</p>
   return (
     <form onSubmit={handleSubmit}>
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-        <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="La tua email"
+        <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder={tr('newsletter_email', lang)}
           style={{ flex: 1, padding: '12px 16px', borderRadius: 50, border: '1px solid #ddd', fontSize: 15, outline: 'none' }} />
         <button type="submit" disabled={!privacy || state === 'loading'}
           style={{ padding: '12px 24px', borderRadius: 50, background: privacy ? primary : '#ccc', color: '#fff', border: 'none', cursor: privacy ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: 15 }}>
-          {state === 'loading' ? '...' : 'Iscriviti'}
+          {state === 'loading' ? '...' : tr('subscribe', lang)}
         </button>
       </div>
       <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: '#666', cursor: 'pointer' }}>
         <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} style={{ marginTop: 1, flexShrink: 0 }} />
-        <span>Acconsento al trattamento dei dati personali. <a href={privacyUrl} style={{ color: primary }}>Privacy Policy</a></span>
+        <span>{tr('consent_privacy', lang)} <a href={privacyUrl} style={{ color: primary }}>{tr('privacy_policy', lang)}</a></span>
       </label>
       <Turnstile onToken={setTurnstileToken} />
     </form>

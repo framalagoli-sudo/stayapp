@@ -44,7 +44,7 @@ function loadFont(key) {
   document.head.appendChild(link)
 }
 
-export default function LandingRistorante({ ristorante, initialHomeBlocks, domain }) {
+export default function LandingRistorante({ ristorante, initialHomeBlocks, domain, lang = 'it' }) {
   const [scrolled,       setScrolled]       = useState(false)
   const [upcomingEventi, setUpcomingEventi] = useState([])
   const [pagine,         setPagine]         = useState([])
@@ -207,7 +207,7 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
           blocks={homeBlocks} entity={ristorante} entityType="ristorante"
           mini={mini} primary={primary} heading={heading} body={body}
           slug={ristorante.slug} privacyUrl={`/r/${ristorante.slug}/privacy`}
-          aziendaId={ristorante.azienda_id}
+          aziendaId={ristorante.azienda_id} lang={lang}
         />
       ) : null}
 
