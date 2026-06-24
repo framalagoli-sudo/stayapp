@@ -22,6 +22,7 @@
 - [Roadmap Sprint + Piano tecnico 6 fasi](project_roadmap_sprint.md) — Fase 1 debug in corso, Fase 2 COMPLETA, Sprint 10 = Stripe billing
 - [➡️ TODO prossima sessione](todo_prossima_sessione.md) — TOP: Sentry init BLOCCATO su Next 14.2 (serve sessione dedicata: wizard/upgrade Next15/alternativa)
 - [🎯 Posizionamento target](project_positioning_target.md) — SMB self-serve ≤€100/mese, semplicità > potenza da designer (filtro di ogni scelta prodotto)
+- [🌍 Roadmap multilingua](project_multilingua_roadmap.md) — IT+EN, auto-traduzione ibrida, URL /en + hreflang, motore Claude Haiku (no DeepL); Fase 1 impianto in corso
 - [🧱 Roadmap block system](project_block_system_roadmap.md) — COMPLETA (fasi 0-5 + coppie font + sito autonomo): stile per-blocco, rich-text, tipografia, immagini+media library, pulsante+pattern, sito autonomo, blocchi auto-entità configurabili
 - [Session 2026-06-22 — Block system completo](project_session_2026_06_22.md) — Fasi 0-5 LIVE + coppie font + sito autonomo + Supabase Pro + deploy function; tutto senza migration
 - [Session 2026-06-23 — Sicurezza blog + cleanup](project_session_2026_06_23.md) — debito blog chiuso (DOMPurify) + centralizzazione font/opzioni tema (lib/fonts.js, lib/themeOptions.js)
