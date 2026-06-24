@@ -43,6 +43,15 @@ Lo switcher EN dava **404 su tutti gli /en** dal primo deploy impianto: `NEXT_PU
 5. Marketing homepage `app/page.js` — non wired per /en (valutare se serve).
 **Dizionario:** aggiungere chiavi in `lib/i18n.js` (blocchi `it` e `en`).
 
+## Fase 2 LIVE (24/6) — traduzione contenuto via Haiku
+`lib/translate.js`: walker JSONB (denylist config/id/url/colori/icone/`section_order`/`tipo`/`opzioni`/`valore`/`operatore`/`condizione`), cache `entity_translations` (hash sorgente → ritraduce solo se IT cambia), **una** chiamata Haiku per entità, fallback IT su errore, override Fase 3 prioritari. `localizeEntity(obj, tipo, lang)` agganciato a home + sotto-pagine 3 entità (`maxDuration=30`). TRANSLATABLE_FIELDS per tipo (struttura/ristorante/attivita/pagina/form). **Verificato live**: /en/r/fondaco-narni traduce contenuto reale (IT "piatti tipici umbri" → EN "Discover our menu / Book a table").
+**Form builder tradotti**: `/api/form-builder/public/[token]?lang=en` traduce SOLO testo display-only (descrizione, campi[].label, campi[].placeholder); **MAI opzioni/valori** (sono valori inviati + logica condizionale → si romperebbero le submission). `FormBuilderBlock` riceve `lang`, fetch `?lang`, stringhe UI via `t()`.
+**Note/aperti Fase 2:**
+- `components/guest/PaginaPage.jsx` = CODICE MORTO (non importato da nessuna route; le sotto-pagine usano `GuestSubPage`). Ha un `ContattiForm` IT non tradotto ma non è renderizzato. Valutare rimozione.
+- `ContattiForm` in `LandingBlockRenderer` (riga ~795) = morto (`case 'contatti'` ritorna null).
+- Bug 404 segnalato su `www.fondaconarni.com/r/fondaco-narni/privacy`: NON riproducibile (200 ovunque a freddo) → probabile 404 cachato/swap deploy. Da riconfermare con hard refresh.
+- PWA guest (GuestApp/RestaurantApp/AttivitaPWA) ancora non localizzate (dietro QR, bassa priorità).
+
 ## Fasi
 - **Fase 1 — Impianto i18n + UI** (IN CORSO): sistema locale (dizionario stringhe UI IT/EN + helper `t`), `<html lang>`, persistenza scelta; routing `/en/...` via middleware (IT a root, EN prefissato, + domini custom); autodetect browser + bandierina switch; hreflang + SEO localizzabile; estrazione stringhe IT hardcoded → dizionario (la parte meccanica grossa, iterativa). Risultato: pagine /en/ esistono, UI in inglese (contenuto ancora IT).
 - **Fase 2 — Auto-traduzione contenuto (cachata):** migration tabella `entity_translations` (grant/RLS, scope azienda no IDOR) — azione manuale Supabase; servizio walk JSONB → traduce campi testo via Claude Haiku → salva copia EN con hash sorgente (ritraduce solo se cambia originale); lazy + cache. Render guest EN legge tradotto. Qui arriva il vero valore SEO.
