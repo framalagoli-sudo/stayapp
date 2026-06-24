@@ -1,9 +1,13 @@
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { getAttivita, getPagina } from '@/lib/guest-data'
+import { localizeEntity } from '@/lib/translate'
 import LandingAttivita from '@/components/guest/LandingAttivita'
 import AttivitaPWA from '@/components/guest/AttivitaPWA'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
+
+// Copre la traduzione Haiku al primo caricamento EN (cache miss). Visite dopo = cache, istantanee.
+export const maxDuration = 30
 
 export async function generateMetadata({ params, searchParams }) {
   const { slug } = await params
@@ -48,11 +52,16 @@ export default async function AttivitaPage({ params, searchParams }) {
 
   const lang = searchParams?._lang === 'en' ? 'en' : 'it'
   const preview = searchParams?.preview === '1'
-  const homePage = await getPagina('attivita', attivita.id, '__home__', preview)
+  let homePage = await getPagina('attivita', attivita.id, '__home__', preview)
+  let localized = attivita
+  if (lang === 'en') {
+    localized = await localizeEntity(attivita, 'attivita', lang)
+    if (homePage) homePage = await localizeEntity(homePage, 'pagina', lang)
+  }
   const initialHomeBlocks = homePage?.id && Array.isArray(homePage.blocks) && homePage.blocks.length ? homePage.blocks : null
   return (
     <>
-      <LandingAttivita attivita={attivita} initialHomeBlocks={initialHomeBlocks} domain={searchParams?._domain || null} lang={lang} />
+      <LandingAttivita attivita={localized} initialHomeBlocks={initialHomeBlocks} domain={searchParams?._domain || null} lang={lang} />
       <LanguageSwitcher lang={lang} />
     </>
   )

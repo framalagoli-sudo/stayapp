@@ -1,9 +1,13 @@
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { getRistorante, getPagina } from '@/lib/guest-data'
+import { localizeEntity } from '@/lib/translate'
 import LandingRistorante from '@/components/guest/LandingRistorante'
 import RestaurantApp from '@/components/guest/RestaurantApp'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
+
+// Copre la traduzione Haiku al primo caricamento EN (cache miss). Visite dopo = cache, istantanee.
+export const maxDuration = 30
 
 export async function generateMetadata({ params, searchParams }) {
   const { slug } = await params
@@ -44,11 +48,16 @@ export default async function RistorantePage({ params, searchParams }) {
 
   if (showMinisito) {
     const preview = searchParams?.preview === '1'
-    const homePage = await getPagina('ristorante', ristorante.id, '__home__', preview)
+    let homePage = await getPagina('ristorante', ristorante.id, '__home__', preview)
+    let localized = ristorante
+    if (lang === 'en') {
+      localized = await localizeEntity(ristorante, 'ristorante', lang)
+      if (homePage) homePage = await localizeEntity(homePage, 'pagina', lang)
+    }
     const initialHomeBlocks = homePage?.id && Array.isArray(homePage.blocks) && homePage.blocks.length ? homePage.blocks : null
     return (
       <>
-        <LandingRistorante ristorante={ristorante} initialHomeBlocks={initialHomeBlocks} domain={searchParams?._domain || null} lang={lang} />
+        <LandingRistorante ristorante={localized} initialHomeBlocks={initialHomeBlocks} domain={searchParams?._domain || null} lang={lang} />
         <LanguageSwitcher lang={lang} />
       </>
     )

@@ -1,7 +1,10 @@
 import { notFound } from 'next/navigation'
 import { getRistorante, getPagina } from '@/lib/guest-data'
+import { localizeEntity } from '@/lib/translate'
 import GuestSubPage from '@/components/guest/GuestSubPage'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
+
+export const maxDuration = 30
 
 export async function generateMetadata({ params, searchParams }) {
   const { slug, pageSlug } = await params
@@ -29,12 +32,17 @@ export default async function RistoranteSubPage({ params, searchParams }) {
   const ristorante = await getRistorante(slug)
   if (!ristorante) notFound()
   const preview = searchParams?.preview === '1'
-  const pagina = await getPagina('ristorante', ristorante.id, pageSlug, preview)
+  let pagina = await getPagina('ristorante', ristorante.id, pageSlug, preview)
   if (!pagina) notFound()
   const lang = searchParams?._lang === 'en' ? 'en' : 'it'
+  let entity = ristorante
+  if (lang === 'en') {
+    entity = await localizeEntity(ristorante, 'ristorante', lang)
+    pagina = await localizeEntity(pagina, 'pagina', lang)
+  }
   return (
     <>
-      <GuestSubPage entity={ristorante} entityType="ristorante" pagina={pagina} domain={searchParams?._domain || null} lang={lang} />
+      <GuestSubPage entity={entity} entityType="ristorante" pagina={pagina} domain={searchParams?._domain || null} lang={lang} />
       <LanguageSwitcher lang={lang} />
     </>
   )

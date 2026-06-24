@@ -1,9 +1,13 @@
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { getStruttura, getPagina } from '@/lib/guest-data'
+import { localizeEntity } from '@/lib/translate'
 import LandingStruttura from '@/components/guest/LandingStruttura'
 import GuestApp from '@/components/guest/GuestApp'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
+
+// Copre la traduzione Haiku al primo caricamento EN (cache miss). Visite dopo = cache, istantanee.
+export const maxDuration = 30
 
 export async function generateMetadata({ params, searchParams }) {
   const { slug } = await params
@@ -48,11 +52,16 @@ export default async function StrutturaPage({ params, searchParams }) {
 
   if (showMinisito) {
     const preview = searchParams?.preview === '1'
-    const homePage = await getPagina('struttura', property.id, '__home__', preview)
+    let homePage = await getPagina('struttura', property.id, '__home__', preview)
+    let localized = property
+    if (lang === 'en') {
+      localized = await localizeEntity(property, 'struttura', lang)
+      if (homePage) homePage = await localizeEntity(homePage, 'pagina', lang)
+    }
     const initialHomeBlocks = homePage?.id && Array.isArray(homePage.blocks) && homePage.blocks.length ? homePage.blocks : null
     return (
       <>
-        <LandingStruttura property={property} initialHomeBlocks={initialHomeBlocks} domain={searchParams?._domain || null} lang={lang} />
+        <LandingStruttura property={localized} initialHomeBlocks={initialHomeBlocks} domain={searchParams?._domain || null} lang={lang} />
         <LanguageSwitcher lang={lang} />
       </>
     )
