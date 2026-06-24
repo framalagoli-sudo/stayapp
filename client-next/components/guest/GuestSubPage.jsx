@@ -23,7 +23,7 @@ const BODY_FAMILIES = {
 const DEFAULT_PRIMARY = { struttura: '#00b5b5', ristorante: '#e63946', attivita: '#6b46c1' }
 const ENTITY_PREFIX   = { struttura: 's', ristorante: 'r', attivita: 'a' }
 
-export default function GuestSubPage({ entity, entityType, pagina, domain }) {
+export default function GuestSubPage({ entity, entityType, pagina, domain, lang = 'it' }) {
   const [pagine,       setPagine]       = useState([])
   const [openDropdown, setOpenDropdown] = useState(null)
 
@@ -50,9 +50,10 @@ export default function GuestSubPage({ entity, entityType, pagina, domain }) {
   const navTextColor   = navDark ? 'rgba(255,255,255,0.8)'  : '#1a1a2e'
 
   const prefix     = ENTITY_PREFIX[entityType] || entityType
-  const privacyUrl = `/${prefix}/${entity.slug}/privacy`
-  const cookieUrl  = `/${prefix}/${entity.slug}/cookie`
-  const homeUrl    = `/${prefix}/${entity.slug}`
+  const lp         = lang === 'en' ? '/en' : ''
+  const privacyUrl = `${lp}/${prefix}/${entity.slug}/privacy`
+  const cookieUrl  = `${lp}/${prefix}/${entity.slug}/cookie`
+  const homeUrl    = `${lp}/${prefix}/${entity.slug}`
 
   return (
     <>
@@ -86,7 +87,7 @@ export default function GuestSubPage({ entity, entityType, pagina, domain }) {
                 <div key={p.id} style={{ position: 'relative' }}
                   onMouseEnter={() => subs.length && setOpenDropdown(p.id)}
                   onMouseLeave={() => setOpenDropdown(null)}>
-                  <a href={`/${prefix}/${entity.slug}/p/${p.slug}`}
+                  <a href={`${lp}/${prefix}/${entity.slug}/p/${p.slug}`}
                     style={{ color: navTextColor, textDecoration: 'none', fontSize: 13, padding: '6px 12px', borderRadius: 6, display: 'block', whiteSpace: 'nowrap',
                       fontWeight: p.slug === pagina.slug ? 700 : 400 }}>
                     {p.titolo}{subs.length > 0 && <span style={{ marginLeft: 4, opacity: 0.5 }}>▾</span>}
@@ -94,7 +95,7 @@ export default function GuestSubPage({ entity, entityType, pagina, domain }) {
                   {subs.length > 0 && openDropdown === p.id && (
                     <div style={{ position: 'absolute', top: '100%', left: 0, minWidth: 180, background: '#1a1a2e', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', padding: '6px 0', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 200 }}>
                       {subs.map(s => (
-                        <a key={s.id} href={`/${prefix}/${entity.slug}/p/${s.slug}`}
+                        <a key={s.id} href={`${lp}/${prefix}/${entity.slug}/p/${s.slug}`}
                           style={{ display: 'block', padding: '9px 16px', color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 13 }}>
                           {s.titolo}
                         </a>
@@ -115,7 +116,7 @@ export default function GuestSubPage({ entity, entityType, pagina, domain }) {
             blocks={pagina.blocks} entity={entity} entityType={entityType}
             mini={mini} primary={primary} heading={heading} body={body}
             slug={entity.slug} privacyUrl={privacyUrl}
-            aziendaId={entity.azienda_id}
+            aziendaId={entity.azienda_id} lang={lang}
           />
         ) : (
           <div style={{ maxWidth: 800, margin: '0 auto', padding: '64px 24px' }}>
@@ -124,7 +125,7 @@ export default function GuestSubPage({ entity, entityType, pagina, domain }) {
         )}
       </div>
 
-      <LandingFooter entity={entity} mini={mini} primary={primary} heading={heading} body={body} entityType={entityType} />
+      <LandingFooter entity={entity} mini={mini} primary={primary} heading={heading} body={body} entityType={entityType} lang={lang} />
 
       <CookieBanner primaryColor={primary} privacyUrl={privacyUrl} cookieUrl={cookieUrl} />
       <WhatsAppButton
