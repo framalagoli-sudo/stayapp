@@ -20,10 +20,24 @@ function isOwnDomain(hostname) {
 
 export async function middleware(request) {
   const hostname = request.headers.get('host')?.split(':')[0] || ''
-  const { pathname } = request.nextUrl
+  let pathname = request.nextUrl.pathname
 
-  // Domini propri di OltreNova → routing normale
-  if (isOwnDomain(hostname)) return NextResponse.next()
+  // Lingua dal prefisso URL: IT = nessun prefisso, EN = /en/... .
+  // Strippiamo /en e propaghiamo _lang=en come searchParam (le pagine lo leggono).
+  let lang = null
+  if (pathname === '/en' || pathname.startsWith('/en/')) {
+    lang = 'en'
+    pathname = pathname.slice(3) || '/'  // rimuove '/en'
+  }
+
+  // Domini propri di OltreNova
+  if (isOwnDomain(hostname)) {
+    if (!lang) return NextResponse.next()  // IT a root → routing normale
+    const url = request.nextUrl.clone()
+    url.pathname = pathname               // URL nel browser resta /en/... (SEO), serviamo la pagina IT-path
+    url.searchParams.set('_lang', 'en')
+    return NextResponse.rewrite(url)
+  }
 
   // Domini custom → risolvi l'entità e fai rewrite trasparente
   try {
@@ -55,6 +69,7 @@ export async function middleware(request) {
     const rewriteUrl = request.nextUrl.clone()
     rewriteUrl.pathname = newPath
     rewriteUrl.searchParams.set('_domain', hostname)
+    if (lang) rewriteUrl.searchParams.set('_lang', 'en')
 
     return NextResponse.rewrite(rewriteUrl)
   } catch {
