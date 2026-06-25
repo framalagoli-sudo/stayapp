@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import MenuTab from '@/components/MenuTab'
 import { guestFetch } from '@/lib/api'
+import { t as tr } from '@/lib/i18n'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import ChatChoice from '@/components/ChatChoice'
 import BookingWidget from '@/components/BookingWidget'
@@ -107,7 +108,7 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
     if (ristoranteProp && lang === 'it') { setRistorante(ristoranteProp); return }
     guestFetch(`/api/guest/r/${slug}?lang=${lang}`)
       .then(setRistorante)
-      .catch(() => setError('Ristorante non trovato.'))
+      .catch(() => setError(tr('not_found', lang)))
   }, [slug, lang])
 
   useEffect(() => {
@@ -135,7 +136,7 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
   }
 
   if (error)       return <div style={{ padding: 40, textAlign: 'center', color: '#e53e3e' }}>{error}</div>
-  if (!ristorante) return <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Caricamento…</div>
+  if (!ristorante) return <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>{tr('loading', lang)}</div>
 
   const pwaOn  = ristorante.modules?.pwa_active !== false
   const miniOn = !!ristorante.minisito?.active
@@ -143,8 +144,8 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
   if (miniOn && (!isQR || !pwaOn)) return <LandingRistorante ristorante={ristorante} />
   if (!pwaOn) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f9fafb', textAlign: 'center', padding: 40 }}>
-      <p style={{ fontSize: 18, fontWeight: 600, color: '#374151', margin: '0 0 8px' }}>Contenuto non disponibile</p>
-      <p style={{ fontSize: 14, color: '#9ca3af', margin: 0 }}>Questo servizio è temporaneamente offline.</p>
+      <p style={{ fontSize: 18, fontWeight: 600, color: '#374151', margin: '0 0 8px' }}>{tr('content_unavailable', lang)}</p>
+      <p style={{ fontSize: 14, color: '#9ca3af', margin: 0 }}>{tr('content_offline', lang)}</p>
     </div>
   )
 
@@ -164,7 +165,7 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
 
   const rModules = { pwa_active: true, gallery: true, allergens: true, info: true, booking: true, ...(ristorante.modules || {}) }
   const hasGallery = (ristorante.gallery || []).length > 0
-  const sp = { primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, showAllergens: rModules.allergens }
+  const sp = { primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, showAllergens: rModules.allergens, lang }
 
   // Chips per Esplora
   const menuCount = (ristorante.menu || []).reduce((n, c) => {
@@ -173,8 +174,8 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
   }, 0)
   const homeSections = rModules.home_sections || {}
   const CHIPS = [
-    homeSections.menu    !== false && { key: 'menu',    label: 'Menu' },
-    hasGallery && homeSections.galleria !== false && { key: 'galleria', label: 'Galleria' },
+    homeSections.menu    !== false && { key: 'menu',    label: tr('menu', lang) },
+    hasGallery && homeSections.galleria !== false && { key: 'galleria', label: tr('gallery', lang) },
   ].filter(Boolean)
   const activeChip = CHIPS.find(c => c.key === exploreChip) ? exploreChip : CHIPS[0]?.key
 
@@ -238,11 +239,11 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
   )
 
   const NAV_ITEMS = [
-    { key: 'home',     Icon: Home,           label: 'Home' },
-    { key: 'esplora',  Icon: Compass,        label: 'Esplora' },
-    ...(rModules.booking ? [{ key: 'prenota', Icon: Bell, label: 'Prenota' }] : []),
-    ...(rModules.info    ? [{ key: 'info',    Icon: Info, label: 'Info' }]    : []),
-    ...((ristorante.chatbot?.active_app ?? ristorante.chatbot?.active) ? [{ key: 'chatbot', Icon: MessageCircle, label: 'Chat' }] : []),
+    { key: 'home',     Icon: Home,           label: tr('nav_home', lang) },
+    { key: 'esplora',  Icon: Compass,        label: tr('nav_explore', lang) },
+    ...(rModules.booking ? [{ key: 'prenota', Icon: Bell, label: tr('nav_book', lang) }] : []),
+    ...(rModules.info    ? [{ key: 'info',    Icon: Info, label: tr('nav_info', lang) }]    : []),
+    ...((ristorante.chatbot?.active_app ?? ristorante.chatbot?.active) ? [{ key: 'chatbot', Icon: MessageCircle, label: tr('nav_chat', lang) }] : []),
   ]
 
   return (
@@ -376,14 +377,14 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
 }
 
 // ─── HOME ─────────────────────────────────────────────────────────────────────
-function RHomePage({ ristorante, rModules, hasGallery, menuCount, onExplore, domain = null, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, borderColor }) {
+function RHomePage({ ristorante, rModules, hasGallery, menuCount, onExplore, domain = null, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, borderColor, lang = 'it' }) {
   const galCount = (ristorante.gallery || []).length
   const homeSections = rModules.home_sections || {}
 
   const allCards = {
-    menu:    { key: 'menu',    Icon: Utensils,     label: 'Menu',     sub: `${menuCount} voci`,     photo: null },
-    galleria: hasGallery && { key: 'galleria', Icon: Images,      label: 'Galleria', sub: `${galCount} foto`, photo: ristorante.gallery?.[0] },
-    prenota: rModules.booking && { key: 'prenota', Icon: CalendarCheck, label: 'Prenota',  sub: 'Riserva un tavolo', photo: null },
+    menu:    { key: 'menu',    Icon: Utensils,     label: tr('menu', lang),     sub: `${menuCount} ${lang === 'en' ? 'items' : 'voci'}`,     photo: null },
+    galleria: hasGallery && { key: 'galleria', Icon: Images,      label: tr('gallery', lang), sub: `${galCount} ${lang === 'en' ? 'photos' : 'foto'}`, photo: ristorante.gallery?.[0] },
+    prenota: rModules.booking && { key: 'prenota', Icon: CalendarCheck, label: tr('nav_book', lang),  sub: tr('reserve_table', lang), photo: null },
   }
   const defaultOrder = ['menu', 'galleria', 'prenota']
   const homeOrder = (rModules.home_section_order?.length ? rModules.home_section_order : defaultOrder)
@@ -419,7 +420,7 @@ function RHomePage({ ristorante, rModules, hasGallery, menuCount, onExplore, dom
       {/* Feature cards */}
       {CARDS.length > 0 && (
         <>
-          <h2 style={{ fontSize: 20, fontWeight: 700, fontFamily: headingFamily, color: textColor, margin: '0 0 14px' }}>Esplora</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, fontFamily: headingFamily, color: textColor, margin: '0 0 14px' }}>{tr('nav_explore', lang)}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {CARDS.map(({ key, Icon, label, sub, photo }, i) => {
               const isAlone = i === CARDS.length - 1 && CARDS.length % 2 !== 0
@@ -456,19 +457,19 @@ function RHomePage({ ristorante, rModules, hasGallery, menuCount, onExplore, dom
       )}
 
       {CARDS.length === 0 && !ristorante.description && (
-        <p style={{ textAlign: 'center', color: subText, marginTop: 48, fontSize: 15 }}>Benvenuto!</p>
+        <p style={{ textAlign: 'center', color: subText, marginTop: 48, fontSize: 15 }}>{tr('welcome', lang)}</p>
       )}
 
       {/* Scopri anche */}
       {ristorante.collegamenti?.length > 0 && (
         <div style={{ marginTop: 32 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, fontFamily: headingFamily, color: textColor, margin: '0 0 14px' }}>Scopri anche</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 700, fontFamily: headingFamily, color: textColor, margin: '0 0 14px' }}>{tr('discover_also', lang)}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {ristorante.collegamenti.map(c => {
               // Su dominio custom: link cross-entità assoluti al dominio principale.
               const base = domain ? 'https://www.oltrenova.com' : ''
               const href = base + (c.tipo === 'ristorante' ? `/r/${c.slug}` : `/s/${c.slug}`)
-              const typeLabel = c.tipo === 'ristorante' ? 'Ristorante' : 'Struttura'
+              const typeLabel = c.tipo === 'ristorante' ? tr('label_ristorante', lang) : tr('label_struttura', lang)
               const typeColor = c.tipo === 'struttura' ? primary : '#e63946'
               const shadow = isDark ? 'none' : '0 2px 12px rgba(0,0,0,0.07)'
               return (
@@ -495,14 +496,14 @@ function RHomePage({ ristorante, rModules, hasGallery, menuCount, onExplore, dom
 }
 
 // ─── ESPLORA ──────────────────────────────────────────────────────────────────
-function REsploraPage({ ristorante, activeChip, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, showAllergens }) {
+function REsploraPage({ ristorante, activeChip, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, showAllergens, lang = 'it' }) {
   const [lightbox, setLightbox] = useState(null)
   const sp = { primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, showAllergens }
 
   if (!activeChip) return (
     <div style={{ padding: 40, textAlign: 'center', color: subText }}>
       <Compass size={40} strokeWidth={1.5} color={primary} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
-      <p style={{ margin: 0, fontSize: 15 }}>Nessun contenuto disponibile.</p>
+      <p style={{ margin: 0, fontSize: 15 }}>{tr('no_content', lang)}</p>
     </div>
   )
 
@@ -541,32 +542,32 @@ function GalleriaTab({ gallery, primary, radius, onOpen }) {
 }
 
 // ─── PRENOTA ──────────────────────────────────────────────────────────────────
-function PrenotaTab({ ristorante, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor }) {
+function PrenotaTab({ ristorante, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, lang = 'it' }) {
   const bookingUrl = ristorante.minisito?.booking_url
   if (bookingUrl) {
     return (
       <div style={{ padding: '32px 16px', textAlign: 'center' }}>
         <CalendarCheck size={48} strokeWidth={1.5} color={primary} style={{ margin: '0 auto 16px', display: 'block', opacity: 0.85 }} />
-        <h2 style={{ fontFamily: headingFamily, fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 8px' }}>Prenota un tavolo</h2>
-        <p style={{ fontSize: 14, color: subText, margin: '0 0 24px', lineHeight: 1.6 }}>Scegli il giorno e l'orario che preferisci.</p>
+        <h2 style={{ fontFamily: headingFamily, fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 8px' }}>{tr('book_table', lang)}</h2>
+        <p style={{ fontSize: 14, color: subText, margin: '0 0 24px', lineHeight: 1.6 }}>{tr('book_choose_day', lang)}</p>
         <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
           style={{ display: 'inline-block', padding: '14px 36px', background: primary, color: '#fff', borderRadius: 50, fontSize: 16, fontWeight: 700, textDecoration: 'none', boxShadow: `0 6px 24px ${primary}44` }}>
-          Prenota ora →
+          {tr('book_now', lang)} →
         </a>
       </div>
     )
   }
   return (
     <div style={{ padding: '20px 16px 28px' }}>
-      <h2 style={{ fontFamily: headingFamily, fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 4px' }}>Prenota un tavolo</h2>
-      <p style={{ fontSize: 14, color: subText, margin: '0 0 24px' }}>Scegli il servizio e il giorno che preferisci.</p>
+      <h2 style={{ fontFamily: headingFamily, fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 4px' }}>{tr('book_table', lang)}</h2>
+      <p style={{ fontSize: 14, color: subText, margin: '0 0 24px' }}>{tr('book_choose_service', lang)}</p>
       <BookingWidget entityTipo="ristorante" entityId={ristorante.id} primaryColor={primary} />
     </div>
   )
 }
 
 // ─── INFO ─────────────────────────────────────────────────────────────────────
-function InfoTab({ ristorante, primary, textColor, subText, isDark, radius, headingFamily, cardBg, borderColor }) {
+function InfoTab({ ristorante, primary, textColor, subText, isDark, radius, headingFamily, cardBg, borderColor, lang = 'it' }) {
   const shadow = isDark ? 'none' : '0 2px 16px rgba(0,0,0,0.07)'
 
   return (
@@ -579,7 +580,7 @@ function InfoTab({ ristorante, primary, textColor, subText, isDark, radius, head
       )}
 
       {ristorante.schedule && (
-        <InfoSection Icon={Clock} title="Orari" primary={primary} headingFamily={headingFamily} textColor={textColor}>
+        <InfoSection Icon={Clock} title={tr('hours_title', lang)} primary={primary} headingFamily={headingFamily} textColor={textColor}>
           <div style={{ background: cardBg, borderRadius: 16, padding: '16px 20px', boxShadow: shadow }}>
             <p style={{ margin: 0, fontSize: 14, color: textColor, lineHeight: 1.8, whiteSpace: 'pre-line' }}>{ristorante.schedule}</p>
           </div>
@@ -587,7 +588,7 @@ function InfoTab({ ristorante, primary, textColor, subText, isDark, radius, head
       )}
 
       {(ristorante.phone || ristorante.email || ristorante.address || ristorante.minisito?.social?.whatsapp) && (
-        <InfoSection Icon={MapPin} title="Contatti" primary={primary} headingFamily={headingFamily} textColor={textColor}>
+        <InfoSection Icon={MapPin} title={tr('contacts', lang)} primary={primary} headingFamily={headingFamily} textColor={textColor}>
           {ristorante.minisito?.social?.whatsapp && (() => {
             const waUrl = buildWaUrl(ristorante.minisito.social.whatsapp, ristorante.name)
             return waUrl ? (
@@ -606,8 +607,8 @@ function InfoTab({ ristorante, primary, textColor, subText, isDark, radius, head
       )}
 
       <div style={{ textAlign: 'center', paddingTop: 20, borderTop: `1px solid ${borderColor}`, marginTop: 8 }}>
-        <a href={`/r/${ristorante.slug}/privacy`} style={{ fontSize: 12, color: subText, marginRight: 16, textDecoration: 'none' }}>Privacy Policy</a>
-        <a href={`/r/${ristorante.slug}/cookie`}  style={{ fontSize: 12, color: subText, textDecoration: 'none' }}>Cookie Policy</a>
+        <a href={`/r/${ristorante.slug}/privacy`} style={{ fontSize: 12, color: subText, marginRight: 16, textDecoration: 'none' }}>{tr('privacy_policy', lang)}</a>
+        <a href={`/r/${ristorante.slug}/cookie`}  style={{ fontSize: 12, color: subText, textDecoration: 'none' }}>{tr('cookie_policy', lang)}</a>
       </div>
     </div>
   )
