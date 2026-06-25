@@ -6,7 +6,7 @@ import { PropertyIdContext } from '@/context/PropertyIdContext'
 import { useAuth } from '@/context/AuthContext'
 import {
   GripVertical, Home, FilePlus, Users, Briefcase, Mail, Tag, HelpCircle,
-  Search, FileText, SearchX, Navigation, PenLine, Layers, History, Languages,
+  Search, FileText, SearchX, Navigation, PenLine, Layers, History, Languages, Settings,
 } from 'lucide-react'
 import TraduzioniSito from '@/components/admin/TraduzioniSito'
 
@@ -179,11 +179,15 @@ export default function SitoPage({ entityTipo }) {
   // Header/Footer config
   const DEFAULT_HEADER = { style: 'dark', always_visible: false, logo_in_nav: true, show_cta: false, cta_text: 'Prenota ora', cta_url: '', show_phone: false, bg_color: '' }
   const DEFAULT_FOOTER = { layout: 'standard', style: 'dark', copyright: '', show_socials: true, show_description: true, show_contact: true, extra_links: [] }
+  const DEFAULT_SEO = { seo_title: '', seo_description: '', google_site_verification: '', booking_url: '', tagline: '', show_pwa_link: true, social: { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' } }
   const [entityData,  setEntityData]  = useState(null)
   const [headerCfg,   setHeaderCfg]   = useState(DEFAULT_HEADER)
   const [footerCfg,   setFooterCfg]   = useState(DEFAULT_FOOTER)
+  const [seoForm,     setSeoForm]     = useState(DEFAULT_SEO)
   const [savingCfg,   setSavingCfg]   = useState(false)
   const [savedCfg,    setSavedCfg]    = useState(false)
+  const [savingSeo,   setSavingSeo]   = useState(false)
+  const [savedSeo,    setSavedSeo]    = useState(false)
 
   useEffect(() => { if (entityId) load() }, [entityId])
 
@@ -200,6 +204,13 @@ export default function SitoPage({ entityTipo }) {
       const mini = eData.minisito || {}
       if (mini.header_cfg) setHeaderCfg(h => ({ ...h, ...mini.header_cfg }))
       if (mini.footer_cfg) setFooterCfg(f => ({ ...f, ...mini.footer_cfg }))
+      setSeoForm({
+        seo_title: mini.seo_title || '', seo_description: mini.seo_description || '',
+        google_site_verification: mini.google_site_verification || '',
+        booking_url: mini.booking_url || '', tagline: mini.tagline || '',
+        show_pwa_link: mini.show_pwa_link !== false,
+        social: { instagram: '', facebook: '', tripadvisor: '', whatsapp: '', ...(mini.social || {}) },
+      })
     }
     setLoading(false)
   }
@@ -225,6 +236,28 @@ export default function SitoPage({ entityTipo }) {
     setSavingCfg(false)
     setSavedCfg(true)
     setTimeout(() => setSavedCfg(false), 2500)
+  }
+
+  async function saveSeo() {
+    if (!entityData) return
+    setSavingSeo(true)
+    const endpoint = entityTipo === 'struttura' ? `/api/properties/${entityId}`
+      : entityTipo === 'ristorante' ? `/api/ristoranti/${entityId}`
+      : `/api/attivita/${entityId}`
+    const patch = {
+      seo_title: seoForm.seo_title, seo_description: seoForm.seo_description,
+      google_site_verification: seoForm.google_site_verification,
+      booking_url: seoForm.booking_url, tagline: seoForm.tagline,
+      show_pwa_link: seoForm.show_pwa_link, social: seoForm.social,
+    }
+    await apiFetch(endpoint, {
+      method: 'PATCH',
+      body: JSON.stringify({ minisito: { ...(entityData.minisito || {}), ...patch } }),
+    })
+    setEntityData(d => ({ ...d, minisito: { ...(d?.minisito || {}), ...patch } }))
+    setSavingSeo(false)
+    setSavedSeo(true)
+    setTimeout(() => setSavedSeo(false), 2500)
   }
 
   function previewUrl(p) {
@@ -460,6 +493,7 @@ export default function SitoPage({ entityTipo }) {
     { id: 'home',   label: 'Home',         Icon: Home },
     { id: 'pagine', label: 'Pagine',        Icon: FileText },
     { id: 'layout', label: 'Menu & Layout', Icon: Navigation },
+    { id: 'impostazioni', label: 'SEO & Impostazioni', Icon: Settings },
     { id: 'traduzioni', label: 'Traduzioni', Icon: Languages },
     { id: 'versioni', label: 'Versioni',    Icon: History },
   ]
@@ -499,6 +533,57 @@ export default function SitoPage({ entityTipo }) {
       {activeTab === 'traduzioni' && (
         <TraduzioniSito entityTipo={entityTipo} entityId={entityId} />
       )}
+
+      {activeTab === 'impostazioni' && (() => {
+        const inp = { width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box', fontFamily: 'inherit' }
+        const lbl = { display: 'block', fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 6, marginTop: 16 }
+        const setF = (k, v) => setSeoForm(f => ({ ...f, [k]: v }))
+        const setSoc = (k, v) => setSeoForm(f => ({ ...f, social: { ...f.social, [k]: v } }))
+        return (
+          <div style={{ maxWidth: 640 }}>
+            <h3 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 700 }}>SEO & Impostazioni</h3>
+            <p style={{ color: '#666', fontSize: 13, marginTop: 0, marginBottom: 8 }}>Titolo e descrizione per Google e social, link prenotazione, social del sito.</p>
+
+            <label style={lbl}>Titolo SEO</label>
+            <input style={inp} value={seoForm.seo_title} maxLength={70} onChange={e => setF('seo_title', e.target.value)} placeholder="Es. Hotel Belvedere — Mare e relax in Puglia" />
+            <span style={{ fontSize: 11, color: '#aaa' }}>{seoForm.seo_title.length}/60 consigliati</span>
+
+            <label style={lbl}>Descrizione SEO</label>
+            <textarea style={{ ...inp, resize: 'vertical' }} rows={3} value={seoForm.seo_description} maxLength={180} onChange={e => setF('seo_description', e.target.value)} placeholder="Breve descrizione mostrata nei risultati di ricerca." />
+            <span style={{ fontSize: 11, color: '#aaa' }}>{seoForm.seo_description.length}/160 consigliati</span>
+
+            <label style={lbl}>Tagline (sottotitolo)</label>
+            <input style={inp} value={seoForm.tagline} onChange={e => setF('tagline', e.target.value)} placeholder="Es. La tua vacanza inizia qui" />
+
+            <label style={lbl}>Link prenotazione (booking esterno)</label>
+            <input style={inp} value={seoForm.booking_url} onChange={e => setF('booking_url', e.target.value)} placeholder="https://..." />
+
+            <label style={lbl}>Verifica Google Search Console</label>
+            <input style={inp} value={seoForm.google_site_verification} onChange={e => setF('google_site_verification', e.target.value)} placeholder="codice meta google-site-verification" />
+
+            <label style={{ ...lbl, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input type="checkbox" checked={seoForm.show_pwa_link} onChange={e => setF('show_pwa_link', e.target.checked)} />
+              Mostra il link "App ospiti" nell'header del sito
+            </label>
+
+            <h4 style={{ margin: '24px 0 4px', fontSize: 14, fontWeight: 700 }}>Social</h4>
+            {[['instagram', 'Instagram'], ['facebook', 'Facebook'], ['tripadvisor', 'TripAdvisor'], ['whatsapp', 'WhatsApp (numero)']].map(([k, label]) => (
+              <div key={k}>
+                <label style={lbl}>{label}</label>
+                <input style={inp} value={seoForm.social[k] || ''} onChange={e => setSoc(k, e.target.value)} placeholder={k === 'whatsapp' ? '+39...' : 'https://...'} />
+              </div>
+            ))}
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 24 }}>
+              <button type="button" onClick={saveSeo} disabled={savingSeo}
+                style={{ padding: '11px 24px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: savingSeo ? 'not-allowed' : 'pointer' }}>
+                {savingSeo ? 'Salvataggio…' : 'Salva'}
+              </button>
+              {savedSeo && <span style={{ color: '#16a34a', fontSize: 13, fontWeight: 600 }}>✓ Salvato</span>}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ══════════════════════════════════════════════════════════════════════
           TAB: HOME
