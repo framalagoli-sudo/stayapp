@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth, requireEntityAccess, ENTITY_TABLES } from '@/lib/server-auth'
+import { requireAuth, requireEntityAccess, requireRecordAccess, ENTITY_TABLES } from '@/lib/server-auth'
 import { getTranslatableSource } from '@/lib/translate'
 
 // Editor traduzioni (Fase 3 multilingua). Legge i testi traducibili IT di un'entità
@@ -20,6 +20,14 @@ async function resolveTarget(request, tipo, id) {
     const { response } = await requireEntityAccess(request, pagina.entity_tipo, pagina.entity_id)
     if (response) return { error: response }
     return { record: pagina }
+  }
+  if (tipo === 'form') {
+    // I form sono azienda-scoped: auth via azienda_id del record.
+    const { response } = await requireRecordAccess(request, 'form_builder', id, 'azienda_id')
+    if (response) return { error: response }
+    const { data: form } = await supabaseAdmin.from('form_builder').select('*').eq('id', id).single()
+    if (!form) return { error: NextResponse.json({ error: 'Form non trovato' }, { status: 404 }) }
+    return { record: form }
   }
   const table = ENTITY_TABLES[tipo]
   if (!table) return { error: NextResponse.json({ error: 'Tipo non valido' }, { status: 400 }) }

@@ -18,17 +18,21 @@ export default function TraduzioniSito({ entityTipo, entityId }) {
   const [saved, setSaved]     = useState(false)
   const [error, setError]     = useState('')
 
-  // Elenco pagine → target selezionabili (oltre al sito principale).
+  // Pagine + form dell'azienda → target selezionabili (oltre al sito principale).
   useEffect(() => {
     if (!entityId) return
-    apiFetch(`/api/pagine?entity_tipo=${entityTipo}&entity_id=${entityId}`)
-      .then(pagine => {
-        const extra = (Array.isArray(pagine) ? pagine : []).map(p => ({
-          tipo: 'pagina', id: p.id, label: p.slug === '__home__' ? 'Home' : (p.titolo || 'Pagina'),
-        }))
-        setTargets([{ tipo: entityTipo, id: entityId, label: 'Sito principale' }, ...extra])
-      })
-      .catch(() => {})
+    Promise.all([
+      apiFetch(`/api/pagine?entity_tipo=${entityTipo}&entity_id=${entityId}`).catch(() => []),
+      apiFetch('/api/form-builder').catch(() => []),
+    ]).then(([pagine, forms]) => {
+      const pg = (Array.isArray(pagine) ? pagine : []).map(p => ({
+        tipo: 'pagina', id: p.id, label: p.slug === '__home__' ? 'Home' : (p.titolo || 'Pagina'),
+      }))
+      const fm = (Array.isArray(forms) ? forms : []).map(f => ({
+        tipo: 'form', id: f.id, label: `Form: ${f.nome || 'senza nome'}`,
+      }))
+      setTargets([{ tipo: entityTipo, id: entityId, label: 'Sito principale' }, ...pg, ...fm])
+    })
   }, [entityTipo, entityId])
 
   async function load(t) {
