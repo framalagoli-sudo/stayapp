@@ -6,9 +6,10 @@ import { PropertyIdContext } from '@/context/PropertyIdContext'
 import { useAuth } from '@/context/AuthContext'
 import {
   GripVertical, Home, FilePlus, Users, Briefcase, Mail, Tag, HelpCircle,
-  Search, FileText, SearchX, Navigation, PenLine, Layers, History, Languages, Settings,
+  Search, FileText, SearchX, Navigation, PenLine, Layers, History, Languages, Settings, LayoutTemplate,
 } from 'lucide-react'
 import TraduzioniSito from '@/components/admin/TraduzioniSito'
+import SiteTemplateGallery from '@/components/admin/SiteTemplateGallery'
 
 // ── Template definitions ──────────────────────────────────────────────────────
 const TEMPLATES = [
@@ -491,6 +492,7 @@ export default function SitoPage({ entityTipo }) {
   // ── Tabs config ───────────────────────────────────────────────────────────────
   const TABS = [
     { id: 'home',   label: 'Home',         Icon: Home },
+    { id: 'template', label: 'Template',    Icon: LayoutTemplate },
     { id: 'pagine', label: 'Pagine',        Icon: FileText },
     { id: 'layout', label: 'Menu & Layout', Icon: Navigation },
     { id: 'impostazioni', label: 'SEO & Impostazioni', Icon: Settings },
@@ -532,6 +534,11 @@ export default function SitoPage({ entityTipo }) {
 
       {activeTab === 'traduzioni' && (
         <TraduzioniSito entityTipo={entityTipo} entityId={entityId} />
+      )}
+
+      {activeTab === 'template' && (
+        <SiteTemplateGallery entityTipo={entityTipo} entityId={entityId}
+          onApplied={() => { load(); setActiveTab('home') }} />
       )}
 
       {activeTab === 'impostazioni' && (() => {
