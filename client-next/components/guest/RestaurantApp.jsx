@@ -498,7 +498,7 @@ function RHomePage({ ristorante, rModules, hasGallery, menuCount, onExplore, dom
 // ─── ESPLORA ──────────────────────────────────────────────────────────────────
 function REsploraPage({ ristorante, activeChip, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, showAllergens, lang = 'it' }) {
   const [lightbox, setLightbox] = useState(null)
-  const sp = { primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, showAllergens }
+  const sp = { primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, showAllergens, lang }
 
   if (!activeChip) return (
     <div style={{ padding: 40, textAlign: 'center', color: subText }}>
