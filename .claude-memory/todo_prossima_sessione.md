@@ -16,10 +16,15 @@ metadata:
 1. ~~Link interni residui domini custom~~ — route globali /blog//eventi fixate via `isGlobalPublicPath` nel middleware (pwaUrl era già a posto). Verificato live.
 2. ~~Fase 3 (editor override traduzioni EN)~~ — tab "Traduzioni" in SitoPage + API. Ambito v1 = solo contenuto entità. Auth verificata; scrittura da testare interattivamente (Francesco).
 
+### ✅ FATTO anche (25/6 pomeriggio)
+- Editor traduzioni esteso alle **sotto-pagine** (selettore "Pagina" in TraduzioniSito; API gestisce tipo='pagina').
+- Rename UI **"minisito" → "sito"** nei testi visibili (Aiuto/Eventi/Blog/Attività/Dashboard). Campo jsonb `minisito`, route `/minisito` e identificatori interni INVARIATI (rinominarli = refactor rischioso; `/sito` già occupato da SitoPage).
+
 ### ⏭️ DA FARE (multilingua, residui bassa priorità):
-- **Estendere editor Fase 3** a sotto-pagine (`pagina`) e form builder (`form`) — ora copre solo l'entità. L'API e il motore già supportano quei tipi (TRANSLATABLE_FIELDS), manca la UI per sceglierli.
+- **Form builder nell'editor manuale Fase 3** — oggi i form sono auto-tradotti ma non correggibili a mano dall'editor (l'API supporta tipo='form', manca la voce nel selettore).
 - **PWA ospite** (GuestApp/RestaurantApp/AttivitaPWA, dietro QR) non ancora localizzata.
-- Blog/eventi: contenuto non ancora tradotto in EN (sono route globali; la traduzione contenuto Fase 2 copre entità, non articoli/eventi).
+- Blog/eventi: contenuto non ancora tradotto in EN (route globali; Fase 2 copre entità+pagine, non articoli/eventi).
+- Eventuale rename URL `/minisito` (richiede decisione: `/sito` è preso → nuovo nome o merge dei due editor).
 **Regola nuova nel CLAUDE.md globale**: prima di dire "fatto" verificare SEMPRE dal vivo (curl status+contenuto), non basta build+smoke.
 
 ## 🟢 STATO AL 22/6
