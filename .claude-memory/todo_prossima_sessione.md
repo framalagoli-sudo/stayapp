@@ -40,7 +40,7 @@ metadata:
 - **Nomi piatti**: il prompt diceva "mantieni nomi piatti in originale" → lasciava IT anche le descrizioni. Ora traduce tutto tranne nomi iconici (Carbonara/Tiramisù).
 - **MenuTab allergeni** (`components/MenuTab.jsx`): EU_ALLERGENS/DIETARY con label EN (`allergenLabel(a,lang)`), getTipoLabel lang-aware, header tradotti. `lang` arriva via `sp` — ATTENZIONE: c'erano DUE `sp` in RestaurantApp (riga 168 e 501 in REsploraPage); il 501 non aveva lang → bug allergeni IT, fixato.
 - **CookieBanner**: ora riceve `lang` da tutti i renderer (3 PWA + 3 Landing + GuestSubPage).
-- Residui minori ancora IT (non bloccanti): in GuestApp booking eventi "I tuoi dati" + placeholder form + placeholder chat "Scrivi un messaggio…"; lista eventi PWA (`/api/guest/eventi`) non localizzata.
+- ✅ Residui chiusi (25/6): GuestApp form prenotazione eventi (your_data/placeholder/submit) + chat (placeholder) via t(lang); lista eventi `/api/guest/eventi` localizzata con `?lang` (fetch PWA+Landing passano lang). NB: non verificabile a video ora (nessun evento futuro nel sistema; form/chat richiedono dati/chatbot attivi) — codice corretto, build verde, stesso pattern verificato altrove.
 - **Lezione**: verificare le PWA col browser HEADLESS (Playwright `chromium`, locale it-IT, click toggle), non solo build/API — i bug di `lang` non passato ai sottocomponenti si vedono solo a video.
 
 ### 🏗️ UNIFICARE I DUE EDITOR SITO (architetturale, ANALISI PRIMA di codice)
