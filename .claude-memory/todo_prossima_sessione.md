@@ -30,7 +30,10 @@ metadata:
 ### 🔄 PWA ospite — in corso (25/6), per STADI sicuri (default IT col prop server = invariato):
 - ✅ Stadio 1: API guest (`/api/guest/[slug]`, `/r/[slug]`, `/a/[slug]`) localizzano contenuto con `?lang=en` (riusa cache sito). Verificato.
 - ✅ Stadio 2: toggle bandierina in tutte e 3 le PWA (GuestApp/RestaurantApp/AttivitaPWA) — autodetect navigator.language + persistenza `localStorage 'pwa_lang'`, default IT; refetch `?lang` al cambio. Contenuto EN OK. PWA caricano 200, nessuna regressione.
-- ⏭️ Stadio 3 DA FARE: **stringhe UI chrome** (NAV_ITEMS Home/Esplora/Prenota/Info/Chat, chips Menu/Galleria, "Caricamento…", "Contenuto non disponibile", booking form labels) → `t(lang)`. Pattern: passare `lang` ai sottocomponenti/sezioni. Lista eventi PWA (`/api/guest/eventi`) non localizzata (solo dettaglio).
+- ✅ Stadio 3 FATTO (25/6) su tutte e 3 le PWA: UI chrome via `t(lang)` (nav, chip, card home, sezioni Info WiFi/Contatti/Dotazioni/Regole, booking eventi, chat, footer). `lang` propagato ai sottocomponenti via `sp` + firme con `lang='it'`. Import `t as tr` (collisione `t`=tema). Chiavi PWA in i18n. Verificato headless: struttura+ristorante nav IT→EN OK ("Esplora"→"Explore", "Prenota"→"Book"). Attività: stesso pattern, build/deploy ok, ma entità di test mostrava minisito → da verificare a video su un'attività con PWA attiva.
+  - Residui MINORI ancora IT (deep form, non bloccanti): in GuestApp EventoDetail "I tuoi dati" + placeholder form prenotazione + placeholder chat "Scrivi un messaggio…"; lista eventi PWA (`/api/guest/eventi`) non localizzata (solo dettaglio).
+
+### ✅ MULTILINGUA COMPLETO (25/6): sito, sotto-pagine, footer, privacy/cookie, form, blog (lista+articoli), eventi, PWA ospite (3 app). Fasi 1-2-3 + override admin + domini custom.
 
 ### 🏗️ UNIFICARE I DUE EDITOR SITO (architetturale, ANALISI PRIMA di codice)
 Francesco vuole UN solo editor (AI genera la prima stesura "come un umano", poi si modifica nello stesso editor). Oggi: `/minisito`→MiniSitoPage (sezioni, sidebar) vs `/sito`→SitoPage (blocchi, da AI builder). Direzione probabile = block system (completato). Serve: analisi cosa scrive l'AI, overlap dati (entrambi toccano `pagine`), migrazione siti esistenti, cosa fare di MiniSitoPage. NON improvvisare. Sessione dedicata con piano.
