@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireEntityAccess, ENTITY_TABLES } from '@/lib/server-auth'
+import { requireAuth, requireEntityAccess, ENTITY_TABLES } from '@/lib/server-auth'
 import { getTranslatableSource } from '@/lib/translate'
 
 // Editor traduzioni (Fase 3 multilingua). Legge i testi traducibili IT di un'entità
@@ -10,6 +10,10 @@ import { getTranslatableSource } from '@/lib/translate'
 // Risolve il record da tradurre e ne verifica l'accesso. Per 'pagina' l'auth passa
 // dall'entità proprietaria (entity_tipo/entity_id sulla riga pagine).
 async function resolveTarget(request, tipo, id) {
+  // Auth prima di qualsiasi lettura → niente leak di esistenza (404 vs 401) ai non loggati.
+  const { response: authResp } = await requireAuth(request)
+  if (authResp) return { error: authResp }
+
   if (tipo === 'pagina') {
     const { data: pagina } = await supabaseAdmin.from('pagine').select('*').eq('id', id).single()
     if (!pagina) return { error: NextResponse.json({ error: 'Pagina non trovata' }, { status: 404 }) }
