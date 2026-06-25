@@ -10,6 +10,7 @@ import {
   X, Check, ChevronRight, ArrowLeft,
 } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
+import { t as tr } from '@/lib/i18n'
 import { supabase } from '@/lib/supabase'
 import RequestForm from './RequestForm'
 import ServicesTab from './ServicesTab'
@@ -69,10 +70,10 @@ const BODY_FAMILIES = {
 const BORDER_RADII = { rounded: 16, mixed: 8, square: 0 }
 
 const BASE_NAV = [
-  { key: 'home',      Icon: Home,     label: 'Home' },
-  { key: 'esplora',   Icon: Compass,  label: 'Esplora' },
-  { key: 'richiesta', Icon: Bell,     label: 'Richiesta', module: 'reception' },
-  { key: 'info',      Icon: Info,     label: 'Info' },
+  { key: 'home',      Icon: Home,     labelKey: 'nav_home' },
+  { key: 'esplora',   Icon: Compass,  labelKey: 'nav_explore' },
+  { key: 'richiesta', Icon: Bell,     labelKey: 'nav_request', module: 'reception' },
+  { key: 'info',      Icon: Info,     labelKey: 'nav_info' },
 ]
 
 function buildWaUrl(wa, name) {
@@ -147,7 +148,7 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
           .then(setUpcomingEventi)
           .catch(() => {})
       })
-      .catch(() => setError('Struttura non trovata.'))
+      .catch(() => setError(tr('not_found', lang)))
   }, [slug, lang])
 
   useEffect(() => {
@@ -179,7 +180,7 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
   }
 
   if (error)     return <div style={{ padding: 40, textAlign: 'center', color: '#e53e3e' }}>{error}</div>
-  if (!property) return <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Caricamento…</div>
+  if (!property) return <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>{tr('loading', lang)}</div>
 
   const pwaOn  = property.modules?.pwa_active !== false  // default true
   const miniOn = !!property.minisito?.active
@@ -188,8 +189,8 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
   if (miniOn && (!isQR || !pwaOn)) return <LandingStruttura property={property} />
   if (!pwaOn) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f9fafb', textAlign: 'center', padding: 40 }}>
-      <p style={{ fontSize: 18, fontWeight: 600, color: '#374151', margin: '0 0 8px' }}>Contenuto non disponibile</p>
-      <p style={{ fontSize: 14, color: '#9ca3af', margin: 0 }}>Questo servizio è temporaneamente offline.</p>
+      <p style={{ fontSize: 18, fontWeight: 600, color: '#374151', margin: '0 0 8px' }}>{tr('content_unavailable', lang)}</p>
+      <p style={{ fontSize: 14, color: '#9ca3af', margin: 0 }}>{tr('content_offline', lang)}</p>
     </div>
   )
 
@@ -208,11 +209,11 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
   const navBg         = isDark ? '#12121f' : '#ffffff'
   const borderColor   = isDark ? '#2a2a3e' : '#efefef'
 
-  const sp = { primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor }
+  const sp = { primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, lang }
 
   const NAV_ITEMS = [
-    ...BASE_NAV.filter(item => !item.module || modules[item.module]),
-    ...((property.chatbot?.active_app ?? property.chatbot?.active) ? [{ key: 'chatbot', Icon: MessageCircle, label: 'Chat' }] : []),
+    ...BASE_NAV.filter(item => !item.module || modules[item.module]).map(item => ({ ...item, label: tr(item.labelKey, lang) })),
+    ...((property.chatbot?.active_app ?? property.chatbot?.active) ? [{ key: 'chatbot', Icon: MessageCircle, label: tr('nav_chat', lang) }] : []),
   ]
 
   function switchTab(key) {
@@ -232,11 +233,11 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
   const hasEventi     = upcomingEventi.length > 0
   const appSections = { ...modules.home_sections }
   const CHIPS = [
-    hasGallery    && appSections.galleria   !== false && { key: 'galleria',   label: 'Galleria' },
-    hasServices   && appSections.servizi    !== false && { key: 'servizi',    label: 'Servizi' },
-    hasActivities && appSections.attivita   !== false && { key: 'attivita',   label: 'Attività' },
-    hasExcursions && appSections.escursioni !== false && { key: 'escursioni', label: 'Escursioni' },
-    hasEventi     && appSections.eventi     !== false && { key: 'eventi',     label: 'Eventi' },
+    hasGallery    && appSections.galleria   !== false && { key: 'galleria',   label: tr('gallery', lang) },
+    hasServices   && appSections.servizi    !== false && { key: 'servizi',    label: tr('services_title', lang) },
+    hasActivities && appSections.attivita   !== false && { key: 'attivita',   label: tr('activities_title', lang) },
+    hasExcursions && appSections.escursioni !== false && { key: 'escursioni', label: tr('excursions_title', lang) },
+    hasEventi     && appSections.eventi     !== false && { key: 'eventi',     label: tr('events_chip', lang) },
   ].filter(Boolean)
   const activeChip = CHIPS.find(c => c.key === exploreChip) ? exploreChip : CHIPS[0]?.key
 
@@ -425,7 +426,7 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
 }
 
 // ─── HOME ─────────────────────────────────────────────────────────────────────
-function HomePage({ property, upcomingEventi = [], modules, onExplore, domain = null, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor }) {
+function HomePage({ property, upcomingEventi = [], modules, onExplore, domain = null, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, lang = 'it' }) {
   const hasServices   = (property.services  || []).length > 0
   const hasGallery    = (property.gallery   || []).length > 0
   const hasActivities = (property.activities|| []).some(c => c.items?.some(i => i.active))
@@ -440,12 +441,13 @@ function HomePage({ property, upcomingEventi = [], modules, onExplore, domain = 
   const homeSections = modules.home_sections || {}
   const defaultOrder = ['galleria', 'servizi', 'attivita', 'escursioni', 'eventi']
   const homeOrder = (modules.home_section_order?.length ? modules.home_section_order : defaultOrder)
+  const av = lang === 'en' ? 'available' : 'disponibili'
   const allCards = {
-    galleria:   hasGallery    && { key: 'galleria',   Icon: Images,    label: 'Galleria',    sub: `${galCount} foto`,                     photo: property.gallery?.[0] },
-    servizi:    hasServices   && { key: 'servizi',    Icon: LayoutGrid, label: 'Servizi',    sub: `${svcCount} disponibili`,              photo: null },
-    attivita:   hasActivities && { key: 'attivita',   Icon: Zap,        label: 'Attività',   sub: `${actCount} attività`,                 photo: null },
-    escursioni: hasExcursions && { key: 'escursioni', Icon: Mountain,   label: 'Escursioni', sub: `${excCount} disponibili`,              photo: null },
-    eventi:     hasEventi     && { key: 'eventi',     Icon: Calendar,   label: 'Eventi',     sub: `${upcomingEventi.length} in programma`, photo: upcomingEventi[0]?.cover_url || null },
+    galleria:   hasGallery    && { key: 'galleria',   Icon: Images,    label: tr('gallery', lang),    sub: `${galCount} ${lang === 'en' ? 'photos' : 'foto'}`,                     photo: property.gallery?.[0] },
+    servizi:    hasServices   && { key: 'servizi',    Icon: LayoutGrid, label: tr('services_title', lang),    sub: `${svcCount} ${av}`,              photo: null },
+    attivita:   hasActivities && { key: 'attivita',   Icon: Zap,        label: tr('activities_title', lang),   sub: `${actCount} ${lang === 'en' ? 'activities' : 'attività'}`,                 photo: null },
+    escursioni: hasExcursions && { key: 'escursioni', Icon: Mountain,   label: tr('excursions_title', lang), sub: `${excCount} ${av}`,              photo: null },
+    eventi:     hasEventi     && { key: 'eventi',     Icon: Calendar,   label: tr('events_chip', lang),     sub: `${upcomingEventi.length} ${lang === 'en' ? 'scheduled' : 'in programma'}`, photo: upcomingEventi[0]?.cover_url || null },
   }
   const CARDS = homeOrder
     .filter(k => allCards[k] && homeSections[k] !== false)
@@ -489,7 +491,7 @@ function HomePage({ property, upcomingEventi = [], modules, onExplore, domain = 
       {/* Feature cards */}
       {CARDS.length > 0 && (
         <>
-          <h2 style={{ fontSize: 20, fontWeight: 700, fontFamily: headingFamily, color: textColor, margin: '0 0 14px' }}>Esplora</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, fontFamily: headingFamily, color: textColor, margin: '0 0 14px' }}>{tr('nav_explore', lang)}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {CARDS.map(({ key, Icon, label, sub, photo }, i) => {
               const isAlone = i === CARDS.length - 1 && CARDS.length % 2 !== 0
@@ -523,14 +525,14 @@ function HomePage({ property, upcomingEventi = [], modules, onExplore, domain = 
       )}
 
       {CARDS.length === 0 && !property.checkin_time && !property.checkout_time && (
-        <p style={{ textAlign: 'center', color: subText, marginTop: 48, fontSize: 15 }}>Benvenuto!</p>
+        <p style={{ textAlign: 'center', color: subText, marginTop: 48, fontSize: 15 }}>{tr('welcome', lang)}</p>
       )}
 
       {/* Scopri anche — entità collegate */}
       {property.collegamenti?.length > 0 && (
         <div style={{ marginTop: 32 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, fontFamily: headingFamily, color: textColor, margin: '0 0 14px' }}>
-            Scopri anche
+            {tr('discover_also', lang)}
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {property.collegamenti.map(c => {
@@ -538,7 +540,7 @@ function HomePage({ property, upcomingEventi = [], modules, onExplore, domain = 
               // principale, altrimenti il middleware li riscrive sotto l'entità sbagliata.
               const base = domain ? 'https://www.oltrenova.com' : ''
               const href = base + (c.tipo === 'ristorante' ? `/r/${c.slug}` : `/s/${c.slug}`)
-              const typeLabel = c.tipo === 'ristorante' ? 'Ristorante' : 'Struttura'
+              const typeLabel = c.tipo === 'ristorante' ? tr('label_ristorante', lang) : tr('label_struttura', lang)
               const typeColor = c.tipo === 'ristorante' ? '#e63946' : primary
               return (
                 <a key={c.id || c.slug} href={href} style={{
@@ -567,16 +569,16 @@ function HomePage({ property, upcomingEventi = [], modules, onExplore, domain = 
 }
 
 // ─── ESPLORA ──────────────────────────────────────────────────────────────────
-function EsploraPage({ property, upcomingEventi = [], activeChip, primary, textColor, subText, isDark, radius, headingFamily }) {
+function EsploraPage({ property, upcomingEventi = [], activeChip, primary, textColor, subText, isDark, radius, headingFamily, lang = 'it' }) {
   const [lightbox,      setLightbox]      = useState(null)
   const [selectedEvento, setSelectedEvento] = useState(null)
-  const sp = { primary, textColor, subText, isDark, radius, headingFamily }
+  const sp = { primary, textColor, subText, isDark, radius, headingFamily, lang }
 
   if (!activeChip) {
     return (
       <div style={{ padding: 40, textAlign: 'center', color: subText }}>
         <Compass size={40} strokeWidth={1.5} color={primary} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
-        <p style={{ margin: 0, fontSize: 15 }}>Nessun contenuto disponibile.</p>
+        <p style={{ margin: 0, fontSize: 15 }}>{tr('no_content', lang)}</p>
       </div>
     )
   }
@@ -611,7 +613,7 @@ function EsploraPage({ property, upcomingEventi = [], activeChip, primary, textC
 }
 
 // ─── INFO ─────────────────────────────────────────────────────────────────────
-function InfoPage({ property, modules, primary, textColor, subText, isDark, radius, headingFamily, cardBg, borderColor }) {
+function InfoPage({ property, modules, primary, textColor, subText, isDark, radius, headingFamily, cardBg, borderColor, lang = 'it' }) {
   const [copied, setCopied] = useState(false)
   const shadow = isDark ? 'none' : '0 2px 16px rgba(0,0,0,0.07)'
 
@@ -627,7 +629,7 @@ function InfoPage({ property, modules, primary, textColor, subText, isDark, radi
       {modules.wifi && property.wifi_name && (
         <InfoSection Icon={Wifi} title="WiFi" primary={primary} headingFamily={headingFamily} textColor={textColor}>
           <div style={{ background: cardBg, borderRadius: 16, padding: 20, boxShadow: shadow }}>
-            <div style={{ fontSize: 11, color: subText, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 3 }}>Rete</div>
+            <div style={{ fontSize: 11, color: subText, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 3 }}>{tr('wifi_network', lang)}</div>
             <div style={{ fontSize: 16, fontWeight: 700, color: textColor, marginBottom: 16 }}>{property.wifi_name}</div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
               <div>
@@ -637,8 +639,8 @@ function InfoPage({ property, modules, primary, textColor, subText, isDark, radi
               <button onClick={copyPassword}
                 style={{ padding: '10px 20px', background: copied ? '#22c55e' : primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0 }}>
                 {copied
-                  ? <><Check size={14} strokeWidth={2.5} style={{ verticalAlign: 'middle', marginRight: 3 }} />Copiata</>
-                  : 'Copia'}
+                  ? <><Check size={14} strokeWidth={2.5} style={{ verticalAlign: 'middle', marginRight: 3 }} />{tr('copied', lang)}</>
+                  : (lang === 'en' ? 'Copy' : 'Copia')}
               </button>
             </div>
           </div>
@@ -646,7 +648,7 @@ function InfoPage({ property, modules, primary, textColor, subText, isDark, radi
       )}
 
       {(property.phone || property.whatsapp || property.email || property.address) && (
-        <InfoSection Icon={MapPin} title="Contatti" primary={primary} headingFamily={headingFamily} textColor={textColor}>
+        <InfoSection Icon={MapPin} title={tr('contacts', lang)} primary={primary} headingFamily={headingFamily} textColor={textColor}>
           {property.whatsapp && (() => {
             const waUrl = buildWaUrl(property.whatsapp, property.name)
             return waUrl ? (
@@ -659,26 +661,26 @@ function InfoPage({ property, modules, primary, textColor, subText, isDark, radi
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                 </svg>
-                Chatta su WhatsApp
+                {lang === 'en' ? 'Chat on WhatsApp' : 'Chatta su WhatsApp'}
               </a>
             ) : null
           })()}
           <div style={{ background: cardBg, borderRadius: 16, overflow: 'hidden', boxShadow: shadow }}>
             {property.phone && (
-              <ContactRow Icon={Phone} label="Telefono" value={property.phone} href={`tel:${property.phone}`} primary={primary} textColor={textColor} subText={subText} border={borderColor} />
+              <ContactRow Icon={Phone} label={tr('phone_label', lang)} value={property.phone} href={`tel:${property.phone}`} primary={primary} textColor={textColor} subText={subText} border={borderColor} />
             )}
             {property.email && (
-              <ContactRow Icon={Mail} label="Email" value={property.email} href={`mailto:${property.email}`} primary={primary} textColor={textColor} subText={subText} border={borderColor} />
+              <ContactRow Icon={Mail} label={tr('email', lang)} value={property.email} href={`mailto:${property.email}`} primary={primary} textColor={textColor} subText={subText} border={borderColor} />
             )}
             {property.address && (
-              <ContactRow Icon={MapPin} label="Indirizzo" value={property.address} href={`https://maps.google.com/?q=${encodeURIComponent(property.address)}`} primary={primary} textColor={textColor} subText={subText} border="transparent" />
+              <ContactRow Icon={MapPin} label={tr('address_label', lang)} value={property.address} href={`https://maps.google.com/?q=${encodeURIComponent(property.address)}`} primary={primary} textColor={textColor} subText={subText} border="transparent" />
             )}
           </div>
         </InfoSection>
       )}
 
       {(property.amenities || []).length > 0 && (
-        <InfoSection Icon={LayoutGrid} title="Dotazioni" primary={primary} headingFamily={headingFamily} textColor={textColor}>
+        <InfoSection Icon={LayoutGrid} title={tr('amenities_title', lang)} primary={primary} headingFamily={headingFamily} textColor={textColor}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {property.amenities.map(a => (
               <span key={a} style={{ background: cardBg, color: textColor, fontSize: 13, fontWeight: 600, padding: '7px 14px', borderRadius: 20, boxShadow: shadow }}>
@@ -690,7 +692,7 @@ function InfoPage({ property, modules, primary, textColor, subText, isDark, radi
       )}
 
       {property.rules && (
-        <InfoSection Icon={FileText} title="Regole della struttura" primary={primary} headingFamily={headingFamily} textColor={textColor}>
+        <InfoSection Icon={FileText} title={tr('rules_title', lang)} primary={primary} headingFamily={headingFamily} textColor={textColor}>
           <div style={{ background: cardBg, borderRadius: 16, padding: 20, boxShadow: shadow }}>
             <p style={{ margin: 0, fontSize: 14, color: subText, lineHeight: 1.8, whiteSpace: 'pre-line' }}>
               {property.rules}
@@ -700,8 +702,8 @@ function InfoPage({ property, modules, primary, textColor, subText, isDark, radi
       )}
 
       <div style={{ textAlign: 'center', paddingTop: 20, borderTop: `1px solid ${borderColor}`, marginTop: 8 }}>
-        <a href={`/s/${property.slug}/privacy`} style={{ fontSize: 12, color: subText, marginRight: 16, textDecoration: 'none' }}>Privacy Policy</a>
-        <a href={`/s/${property.slug}/cookie`} style={{ fontSize: 12, color: subText, textDecoration: 'none' }}>Cookie Policy</a>
+        <a href={`/s/${property.slug}/privacy`} style={{ fontSize: 12, color: subText, marginRight: 16, textDecoration: 'none' }}>{tr('privacy_policy', lang)}</a>
+        <a href={`/s/${property.slug}/cookie`} style={{ fontSize: 12, color: subText, textDecoration: 'none' }}>{tr('cookie_policy', lang)}</a>
       </div>
 
     </div>
@@ -709,7 +711,7 @@ function InfoPage({ property, modules, primary, textColor, subText, isDark, radi
 }
 
 // ─── EventiTab ────────────────────────────────────────────────────────────────
-function EventiTab({ eventi, onOpen, primary, textColor, subText, isDark, radius }) {
+function EventiTab({ eventi, onOpen, primary, textColor, subText, isDark, radius, lang = 'it' }) {
   function fmtDate(iso) {
     if (!iso) return '—'
     return new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -728,12 +730,12 @@ function EventiTab({ eventi, onOpen, primary, textColor, subText, isDark, radius
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}><Calendar size={12} strokeWidth={1.5} color={primary} /> {fmtDate(ev.date_start)}</span>
               {ev.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}><MapPin size={12} strokeWidth={1.5} color={primary} /> {ev.location}</span>}
-              {ev.seats_total && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}><Users size={12} strokeWidth={1.5} color={primary} /> {ev.seats_total - (ev.seats_booked || 0)} posti</span>}
+              {ev.seats_total && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}><Users size={12} strokeWidth={1.5} color={primary} /> {ev.seats_total - (ev.seats_booked || 0)} {lang === 'en' ? 'seats' : 'posti'}</span>}
             </div>
             {ev.description && <p style={{ margin: '0 0 10px', fontSize: 13, color: subText, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ev.description}</p>}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>{ev.price > 0 ? `€${ev.price}` : 'Gratuito'}</span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: primary }}>Dettagli →</span>
+              <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>{ev.price > 0 ? `€${ev.price}` : tr('free', lang)}</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: primary }}>{tr('details_arrow', lang)}</span>
             </div>
           </div>
         </div>
@@ -743,7 +745,7 @@ function EventiTab({ eventi, onOpen, primary, textColor, subText, isDark, radius
 }
 
 // ─── EventoDetailView — pagina dettaglio evento dentro la PWA (nessun overlay) ──
-function EventoDetailView({ evento, onBack, primary, textColor, subText, isDark, radius }) {
+function EventoDetailView({ evento, onBack, primary, textColor, subText, isDark, radius, lang = 'it' }) {
   const [pkgId,      setPkgId]      = useState(evento.packages?.length === 1 ? evento.packages[0].id : '')
   const [seats,      setSeats]      = useState(1)
   const [guestName,  setGuestName]  = useState('')
@@ -805,7 +807,7 @@ function EventoDetailView({ evento, onBack, primary, textColor, subText, isDark,
         <div style={{ background: cardBg, borderRadius: radius || 14, padding: 16, border: `1px solid ${border}` }}>
           {(evento.packages || []).length > 0 && (
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontWeight: 700, fontSize: 13, color: textColor, marginBottom: 8 }}>Scegli pacchetto</div>
+              <div style={{ fontWeight: 700, fontSize: 13, color: textColor, marginBottom: 8 }}>{tr('choose_package', lang)}</div>
               {evento.packages.map(pkg => (
                 <label key={pkg.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: radius || 10, border: `1.5px solid ${pkgId === pkg.id ? primary : (isDark ? 'rgba(255,255,255,0.1)' : '#e0e0e0')}`, marginBottom: 8, cursor: 'pointer', background: pkgId === pkg.id ? `${primary}18` : 'transparent' }}>
                   <input type="radio" name="pkg" value={pkg.id} checked={pkgId === pkg.id} onChange={() => setPkgId(pkg.id)} style={{ accentColor: primary }} />
@@ -813,21 +815,21 @@ function EventoDetailView({ evento, onBack, primary, textColor, subText, isDark,
                     <div style={{ fontWeight: 600, fontSize: 14, color: textColor }}>{pkg.name}</div>
                     {pkg.description && <div style={{ fontSize: 12, color: subText }}>{pkg.description}</div>}
                   </div>
-                  <div style={{ fontWeight: 700, color: primary }}>{pkg.price > 0 ? `€${pkg.price}` : 'Gratis'}</div>
+                  <div style={{ fontWeight: 700, color: primary }}>{pkg.price > 0 ? `€${pkg.price}` : tr('free', lang)}</div>
                 </label>
               ))}
             </div>
           )}
 
           <div style={{ fontWeight: 800, fontSize: 22, color: primary, marginBottom: 16 }}>
-            {(() => { const pkg = (evento.packages || []).find(p => p.id === pkgId); const price = pkg ? pkg.price : (evento.price || 0); return price > 0 ? `€${price} / persona` : 'Gratuito' })()}
+            {(() => { const pkg = (evento.packages || []).find(p => p.id === pkgId); const price = pkg ? pkg.price : (evento.price || 0); return price > 0 ? `€${price} / ${lang === 'en' ? 'person' : 'persona'}` : tr('free', lang) })()}
           </div>
 
           {done ? (
             <div style={{ textAlign: 'center', padding: '16px 0' }}>
               <Check size={36} strokeWidth={1.5} color={primary} style={{ marginBottom: 8 }} />
-              <div style={{ fontWeight: 700, fontSize: 15, color: textColor, marginBottom: 4 }}>Prenotazione inviata!</div>
-              <div style={{ fontSize: 13, color: subText }}>Riceverai una conferma via email.</div>
+              <div style={{ fontWeight: 700, fontSize: 15, color: textColor, marginBottom: 4 }}>{tr('booking_sent', lang)}</div>
+              <div style={{ fontSize: 13, color: subText }}>{tr('booking_sent_sub', lang)}</div>
             </div>
           ) : (
             <>
@@ -836,7 +838,7 @@ function EventoDetailView({ evento, onBack, primary, textColor, subText, isDark,
               <input value={guestEmail} onChange={e => setGuestEmail(e.target.value)} placeholder="Email *" type="email" style={inp} />
               <input value={guestPhone} onChange={e => setGuestPhone(e.target.value)} placeholder="Telefono (opzionale)" type="tel" style={inp} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                <label style={{ fontSize: 13, color: subText }}>Posti:</label>
+                <label style={{ fontSize: 13, color: subText }}>{tr('seats_label', lang)}</label>
                 <input type="number" min="1" value={seats} onChange={e => setSeats(parseInt(e.target.value) || 1)} style={{ ...inp, width: 70, textAlign: 'center', marginBottom: 0 }} />
               </div>
               {bookErr && <p style={{ color: '#e53e3e', fontSize: 13, marginBottom: 10 }}>{bookErr}</p>}
@@ -892,7 +894,7 @@ function ContactRow({ Icon, label, value, href, primary, textColor, subText, bor
 }
 
 // ─── CHAT ─────────────────────────────────────────────────────────────────────
-function ChatPage({ propertyId, propertyName, primary, textColor, subText, isDark, radius, cardBg, borderColor }) {
+function ChatPage({ propertyId, propertyName, primary, textColor, subText, isDark, radius, cardBg, borderColor, lang = 'it' }) {
   const [messages,  setMessages]  = useState([])
   const [guestName, setGuestName] = useState('')
   const [nameSet,   setNameSet]   = useState(false)
@@ -974,7 +976,7 @@ function ChatPage({ propertyId, propertyName, primary, textColor, subText, isDar
           <MessageCircle size={28} strokeWidth={1.5} color={primary} />
         </div>
         <div style={{ textAlign: 'center' }}>
-          <h2 style={{ margin: '0 0 6px', fontSize: 20, color: textColor }}>Chat con la reception</h2>
+          <h2 style={{ margin: '0 0 6px', fontSize: 20, color: textColor }}>{tr('chat_reception', lang)}</h2>
           <p style={{ margin: 0, fontSize: 14, color: subText }}>Siamo qui per aiutarti. Come ti chiami?</p>
         </div>
         <form onSubmit={saveName} style={{ width: '100%', maxWidth: 300 }}>
@@ -1010,7 +1012,7 @@ function ChatPage({ propertyId, propertyName, primary, textColor, subText, isDar
         {messages.length === 0 && (
           <div style={{ textAlign: 'center', marginTop: 32, color: subText }}>
             <MessageCircle size={36} strokeWidth={1.5} color={`${primary}40`} style={{ display: 'block', margin: '0 auto 10px' }} />
-            <p style={{ margin: 0, fontSize: 14 }}>Scrivi il tuo primo messaggio!</p>
+            <p style={{ margin: 0, fontSize: 14 }}>{tr('chat_first', lang)}</p>
           </div>
         )}
         {messages.map(msg => (
