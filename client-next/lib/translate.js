@@ -91,9 +91,13 @@ function applyTranslations(obj, map) {
   return clone
 }
 
+// Bump quando cambiano le istruzioni di traduzione: invalida le cache esistenti
+// (l'hash cambia → ri-traduzione alla prossima visita EN).
+const PROMPT_VERSION = 'v2'
+
 function hashSource(map) {
   const stable = JSON.stringify(Object.keys(map).sort().map(k => [k, map[k]]))
-  return createHash('sha1').update(stable).digest('hex')
+  return createHash('sha1').update(PROMPT_VERSION + '|' + stable).digest('hex')
 }
 
 async function claudeTranslate(sourceMap, lang) {
@@ -104,7 +108,8 @@ async function claudeTranslate(sourceMap, lang) {
 `Translate the following website texts from Italian to ${target}.
 You receive a JSON object {key: text}. Return ONLY a JSON object with the SAME keys and the translated values. No commentary, no markdown fences.
 Rules:
-- Keep proper nouns unchanged: brand/business names, people's names, dish/menu item names, place names.
+- Keep unchanged: brand/business names, people's names, place names, and iconic Italian dish names (e.g. Carbonara, Tiramisù, Pizza Margherita, Amatriciana).
+- TRANSLATE everything else, including dish DESCRIPTIONS and descriptive menu item names (e.g. "Tartare di salmone norvegese, avocado e cialda ai semi" → "Norwegian salmon tartare, avocado and seeded wafer").
 - Translate descriptions, taglines, labels, feature names (e.g. "Piscina" → "Pool"), questions and answers.
 - Keep any HTML tags, markdown and placeholders exactly as they are; translate only the visible text.
 - Preserve tone and meaning. Do not add or remove text. Do not translate the keys.
