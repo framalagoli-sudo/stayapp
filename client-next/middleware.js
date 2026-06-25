@@ -20,6 +20,16 @@ function isOwnDomain(hostname) {
   )
 }
 
+// Route pubbliche globali: esistono alla root, NON sotto un'entità. Sul dominio
+// custom NON vanno prefissate con /prefix/slug (altrimenti /blog → /r/slug/blog → 404).
+const GLOBAL_PUBLIC_PATHS = [
+  '/blog', '/eventi', '/form', '/preventivo', '/recensione',
+  '/cancella-prenotazione', '/confirm-subscription', '/unsubscribe', '/signup',
+]
+function isGlobalPublicPath(pathname) {
+  return GLOBAL_PUBLIC_PATHS.some(r => pathname === r || pathname.startsWith(r + '/'))
+}
+
 export async function middleware(request) {
   const hostname = request.headers.get('host')?.split(':')[0] || ''
   let pathname = request.nextUrl.pathname
@@ -61,7 +71,9 @@ export async function middleware(request) {
     // L'URL nel browser rimane fondaconarni.com — il visitatore non vede niente
     const entityPath = `/${prefix}/${slug}`
     let newPath
-    if (pathname === '/' || pathname === '') {
+    if (isGlobalPublicPath(pathname)) {
+      newPath = pathname  // /blog, /eventi… → route globale, niente prefisso entità
+    } else if (pathname === '/' || pathname === '') {
       newPath = entityPath
     } else if (pathname.startsWith(entityPath)) {
       newPath = pathname  // già il path corretto (es. clic su ?qr=1 dal sito custom)
