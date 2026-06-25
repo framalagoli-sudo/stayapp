@@ -27,8 +27,10 @@ metadata:
 - Blog lista: API blog/public traduce title/excerpt in EN riusando cache dettaglio (include content per hash, poi lo scarta); BlogListPage legge _lang, link /en, testi EN. Verificato live.
 - Form nell'editor traduzioni: ramo 'form' nella route translations (azienda-scoped, auth requireRecordAccess); selettore TraduzioniSito elenca anche i form dell'azienda. 401 verificato.
 
-### ⏭️ DA FARE (per chiudere multilingua):
-- **PWA ospite** (GuestApp/RestaurantApp/AttivitaPWA, dietro QR) — ULTIMO grosso pezzo non localizzato (interfaccia + contenuti). La più corposa.
+### 🔄 PWA ospite — in corso (25/6), per STADI sicuri (default IT col prop server = invariato):
+- ✅ Stadio 1: API guest (`/api/guest/[slug]`, `/r/[slug]`, `/a/[slug]`) localizzano contenuto con `?lang=en` (riusa cache sito). Verificato.
+- ✅ Stadio 2: toggle bandierina in tutte e 3 le PWA (GuestApp/RestaurantApp/AttivitaPWA) — autodetect navigator.language + persistenza `localStorage 'pwa_lang'`, default IT; refetch `?lang` al cambio. Contenuto EN OK. PWA caricano 200, nessuna regressione.
+- ⏭️ Stadio 3 DA FARE: **stringhe UI chrome** (NAV_ITEMS Home/Esplora/Prenota/Info/Chat, chips Menu/Galleria, "Caricamento…", "Contenuto non disponibile", booking form labels) → `t(lang)`. Pattern: passare `lang` ai sottocomponenti/sezioni. Lista eventi PWA (`/api/guest/eventi`) non localizzata (solo dettaglio).
 
 ### 🏗️ UNIFICARE I DUE EDITOR SITO (architetturale, ANALISI PRIMA di codice)
 Francesco vuole UN solo editor (AI genera la prima stesura "come un umano", poi si modifica nello stesso editor). Oggi: `/minisito`→MiniSitoPage (sezioni, sidebar) vs `/sito`→SitoPage (blocchi, da AI builder). Direzione probabile = block system (completato). Serve: analisi cosa scrive l'AI, overlap dati (entrambi toccano `pagine`), migrazione siti esistenti, cosa fare di MiniSitoPage. NON improvvisare. Sessione dedicata con piano.
