@@ -252,7 +252,7 @@ export default function EventoEditPage() {
                 {entityOptions.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
               </select>
               <span style={{ fontSize: 11, color: '#aaa', marginTop: 4, display: 'block' }}>
-                L'evento apparirà nel minisito e nell'app della struttura/ristorante selezionata.
+                L'evento apparirà nel sito e nell'app della struttura/ristorante selezionata.
               </span>
             </div>
           )}

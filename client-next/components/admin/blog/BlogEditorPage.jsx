@@ -169,7 +169,7 @@ export default function BlogEditorPage() {
         {/* Associazione entità */}
         <div style={card}>
           <label style={lbl}>Associa a (opzionale)</label>
-          <p style={{ margin: '0 0 12px', fontSize: 12, color: '#aaa' }}>Se vuoi che l'articolo appaia anche nel minisito di una struttura o ristorante specifico.</p>
+          <p style={{ margin: '0 0 12px', fontSize: 12, color: '#aaa' }}>Se vuoi che l'articolo appaia anche nel sito di una struttura o ristorante specifico.</p>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 160 }}>
               <label style={lbl}>Tipo</label>

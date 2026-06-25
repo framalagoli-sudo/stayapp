@@ -449,7 +449,7 @@ export default function DashboardPage() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: '#1a1a2e12', color: '#1a1a2e', display: 'flex', alignItems: 'center', gap: 3 }}>
-                      <Globe size={10} strokeWidth={1.5} />{c.fonte || 'minisito'}
+                      <Globe size={10} strokeWidth={1.5} />{c.fonte || 'sito'}
                     </span>
                     <span style={{ fontSize: 11, color: '#ccc', display: 'flex', alignItems: 'center', gap: 3 }}>
                       <Clock size={10} strokeWidth={1.5} />{timeAgo(c.created_at)}

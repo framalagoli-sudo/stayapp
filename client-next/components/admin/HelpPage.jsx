@@ -54,7 +54,7 @@ const FAQS = [
   { sec: 'booking', q: 'Come creo una risorsa prenotabile?', a: 'In Booking → Risorse clicca "+ Nuova risorsa". Scegli "Slot" (durata fissa, es. campo da tennis) o "Coperti" (posti per servizio, es. ristorante). Imposta orari, quantità disponibile e giorni di apertura.' },
   { sec: 'booking', q: 'Come blocco date o orari specifici?', a: 'In Booking → Risorse, apri la risorsa e aggiungi un Blocco con date di inizio e fine. In quel periodo la risorsa non sarà prenotabile dal widget pubblico.' },
   { sec: 'booking', q: 'Come gestisco le prenotazioni ricevute?', a: 'In Booking → Prenotazioni filtra per data, risorsa e stato. Clicca su una prenotazione per i dettagli, aggiungere note interne o cambiare stato. Puoi anche inviare un link recensione al completamento.' },
-  { sec: 'booking', q: 'Come mostro il booking nel mio sito?', a: 'In Booking → Risorse attiva "Visibile nel minisito" per ogni risorsa. Poi in Sito & App → Sito aggiungi la sezione "Booking" nell\'ordine sezioni. Il widget appare automaticamente.' },
+  { sec: 'booking', q: 'Come mostro il booking nel mio sito?', a: 'In Booking → Risorse attiva "Visibile nel sito pubblico" per ogni risorsa. Poi in Sito & App → Sito aggiungi la sezione "Booking" nell\'ordine sezioni. Il widget appare automaticamente.' },
 
   // ── Eventi ──
   { sec: 'eventi', q: 'Come creo un evento?', a: 'Vai su Eventi e clicca "+ Nuovo evento". Inserisci titolo, data, ora, descrizione, prezzo e foto. Puoi impostare il numero massimo di posti. L\'evento appare automaticamente nel sito se la sezione "eventi" è attiva.' },
@@ -114,11 +114,11 @@ const FAQS = [
   { sec: 'loyalty', q: 'Come assegno punti a un cliente?', a: 'In Loyalty → Clienti cerca il cliente e clicca "+ Aggiungi punti". Puoi assegnare punti manualmente o configurare regole automatiche legate agli ordini o prenotazioni.' },
 
   // ── Analytics ──
-  { sec: 'analytics', q: 'Cosa mostrano le analytics?', a: 'In Analytics trovi grafici su: visite al minisito, richieste ospiti, prenotazioni, iscrizioni newsletter e nuovi contatti. Puoi scegliere il range temporale (7, 30 o 90 giorni).' },
-  { sec: 'analytics', q: 'Come viene contata una visita?', a: 'Una visita viene registrata quando un utente apre la pagina del minisito. Il sistema deduplica per sessione: la stessa persona che apre la pagina più volte nella stessa sessione browser conta come 1 visita.' },
+  { sec: 'analytics', q: 'Cosa mostrano le analytics?', a: 'In Analytics trovi grafici su: visite al sito, richieste ospiti, prenotazioni, iscrizioni newsletter e nuovi contatti. Puoi scegliere il range temporale (7, 30 o 90 giorni).' },
+  { sec: 'analytics', q: 'Come viene contata una visita?', a: 'Una visita viene registrata quando un utente apre la pagina del sito. Il sistema deduplica per sessione: la stessa persona che apre la pagina più volte nella stessa sessione browser conta come 1 visita.' },
 
   // ── Sito & App ──
-  { sec: 'sito_app', q: 'Come attivo il minisito pubblico?', a: 'In Sito & App → Sito, in alto c\'è il toggle "Minisito attivo". Una volta attivato, il QR mostra la landing page pubblica. Puoi configurare sezioni, ordine, header, footer e tema.' },
+  { sec: 'sito_app', q: 'Come attivo il sito pubblico?', a: 'In Sito & App → Sito, in alto c\'è il toggle "Sito attivo". Una volta attivato, il QR mostra la landing page pubblica. Puoi configurare sezioni, ordine, header, footer e tema.' },
   { sec: 'sito_app', q: 'Come aggiungo pagine al sito?', a: 'In Sito & App → Sito vai su "Pagine". Clicca "+ Nuova pagina", scegli un template o parti da zero. L\'editor a blocchi supporta 23 tipi di blocchi (testi, immagini, CTA, FAQ, gallery, ecc.).' },
   { sec: 'sito_app', q: 'Come collego un dominio personalizzato?', a: 'In Sito & App → Domini inserisci il tuo dominio. Il sistema fornisce le istruzioni DNS. Dopo la propagazione (24-48 ore) clicca "Verifica".' },
   { sec: 'sito_app', q: 'Come configuro il chatbot?', a: 'In Sito & App → Chatbot costruisci l\'albero di conversazione con nodi e opzioni (rimanda a nodo, link, chiamata, WhatsApp). Appare come pulsante floating nel sito quando è attivo.' },

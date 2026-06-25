@@ -293,7 +293,7 @@ function PwaToggleSection({ attivita, save }) {
             {pwa.active ? 'PWA attiva' : 'PWA disattivata'}
           </div>
           <div style={{ fontSize: 12, color: '#888' }}>
-            {pwa.active ? 'I clienti vedono l\'app ospite' : 'I clienti vedono il minisito'}
+            {pwa.active ? 'I clienti vedono l\'app ospite' : 'I clienti vedono il sito'}
           </div>
         </div>
       </label>
