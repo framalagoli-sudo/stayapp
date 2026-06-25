@@ -4,22 +4,35 @@ import { requireEntityAccess, ENTITY_TABLES } from '@/lib/server-auth'
 import { getTranslatableSource } from '@/lib/translate'
 
 // Editor traduzioni (Fase 3 multilingua). Legge i testi traducibili IT di un'entità
-// + la traduzione automatica (entity_translations.translations) e gli override manuali.
+// o di una sotto-pagina + la traduzione automatica e gli override manuali.
 // Il PUT salva gli override: il motore guest li fa già vincere sull'automatica.
+
+// Risolve il record da tradurre e ne verifica l'accesso. Per 'pagina' l'auth passa
+// dall'entità proprietaria (entity_tipo/entity_id sulla riga pagine).
+async function resolveTarget(request, tipo, id) {
+  if (tipo === 'pagina') {
+    const { data: pagina } = await supabaseAdmin.from('pagine').select('*').eq('id', id).single()
+    if (!pagina) return { error: NextResponse.json({ error: 'Pagina non trovata' }, { status: 404 }) }
+    const { response } = await requireEntityAccess(request, pagina.entity_tipo, pagina.entity_id)
+    if (response) return { error: response }
+    return { record: pagina }
+  }
+  const table = ENTITY_TABLES[tipo]
+  if (!table) return { error: NextResponse.json({ error: 'Tipo non valido' }, { status: 400 }) }
+  const { response } = await requireEntityAccess(request, tipo, id)
+  if (response) return { error: response }
+  const { data: entity, err } = await supabaseAdmin.from(table).select('*').eq('id', id).single()
+  if (err || !entity) return { error: NextResponse.json({ error: 'Entità non trovata' }, { status: 404 }) }
+  return { record: entity }
+}
 
 export async function GET(request, { params }) {
   const { tipo, id } = await params
-  const { response } = await requireEntityAccess(request, tipo, id)
-  if (response) return response
-
-  const table = ENTITY_TABLES[tipo]
-  if (!table) return NextResponse.json({ error: 'Tipo non valido' }, { status: 400 })
+  const { record, error } = await resolveTarget(request, tipo, id)
+  if (error) return error
 
   const lang = 'en'
-  const { data: entity, error } = await supabaseAdmin.from(table).select('*').eq('id', id).single()
-  if (error || !entity) return NextResponse.json({ error: 'Entità non trovata' }, { status: 404 })
-
-  const source = getTranslatableSource(entity, tipo)
+  const source = getTranslatableSource(record, tipo)
   const { data: row } = await supabaseAdmin
     .from('entity_translations')
     .select('translations, overrides')
@@ -40,11 +53,8 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
   const { tipo, id } = await params
-  const { response } = await requireEntityAccess(request, tipo, id)
-  if (response) return response
-
-  const table = ENTITY_TABLES[tipo]
-  if (!table) return NextResponse.json({ error: 'Tipo non valido' }, { status: 400 })
+  const { error } = await resolveTarget(request, tipo, id)
+  if (error) return error
 
   const body = await request.json().catch(() => ({}))
   const lang = 'en'
@@ -56,7 +66,7 @@ export async function PUT(request, { params }) {
     .eq('entity_tipo', tipo).eq('entity_id', id).eq('lang', lang)
     .maybeSingle()
 
-  const { error } = await supabaseAdmin
+  const { error: upErr } = await supabaseAdmin
     .from('entity_translations')
     .upsert({
       entity_tipo: tipo,
@@ -70,6 +80,6 @@ export async function PUT(request, { params }) {
       updated_at: new Date().toISOString(),
     }, { onConflict: 'entity_tipo,entity_id,lang' })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }
