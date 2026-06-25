@@ -23,10 +23,12 @@ metadata:
 ### 🎯 OBIETTIVO Francesco (25/6): "tutto ciò che vede l'utente in doppia lingua" + UNIFICARE i due editor sito.
 ### ✅ Blog ed Eventi tradotti (25/6): tipi 'articolo'/'evento' in translate.js (+ prompt preserva HTML); API blog/public/[slug] e guest/eventi/[id] con ?lang; ArticoloPage/EventoPage leggono _lang; hreflang+switcher. Verificato live ("Flour Tasting", "Hands in dough…").
 
+### ✅ Card blog (lista) tradotte + Form nell'editor (25/6)
+- Blog lista: API blog/public traduce title/excerpt in EN riusando cache dettaglio (include content per hash, poi lo scarta); BlogListPage legge _lang, link /en, testi EN. Verificato live.
+- Form nell'editor traduzioni: ramo 'form' nella route translations (azienda-scoped, auth requireRecordAccess); selettore TraduzioniSito elenca anche i form dell'azienda. 401 verificato.
+
 ### ⏭️ DA FARE (per chiudere multilingua):
 - **PWA ospite** (GuestApp/RestaurantApp/AttivitaPWA, dietro QR) — ULTIMO grosso pezzo non localizzato (interfaccia + contenuti). La più corposa.
-- Liste blog (titoli/excerpt nelle card) non tradotte — solo le pagine di dettaglio lo sono. Minore.
-- Form builder nell'editor manuale Fase 3 (auto-tradotti ma non correggibili a mano; API supporta tipo='form', manca voce nel selettore). Minore.
 
 ### 🏗️ UNIFICARE I DUE EDITOR SITO (architetturale, ANALISI PRIMA di codice)
 Francesco vuole UN solo editor (AI genera la prima stesura "come un umano", poi si modifica nello stesso editor). Oggi: `/minisito`→MiniSitoPage (sezioni, sidebar) vs `/sito`→SitoPage (blocchi, da AI builder). Direzione probabile = block system (completato). Serve: analisi cosa scrive l'AI, overlap dati (entrambi toccano `pagine`), migrazione siti esistenti, cosa fare di MiniSitoPage. NON improvvisare. Sessione dedicata con piano.
