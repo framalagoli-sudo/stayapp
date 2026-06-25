@@ -1,11 +1,17 @@
 ---
 name: todo_prossima_sessione
-description: To-do prossima sessione — Multilingua Fase 1+2 LIVE (24-25/6); prossimo = link custom residui, Fase 3 override, PWA i18n
+description: To-do prossima sessione — RIPARTIRE da template AI Fase B/C (26/6). Multilingua COMPLETO, editor unificato (passo 2 fatto), galleria template Fase A fatta.
 metadata: 
   node_type: memory
   type: project
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
 ---
+
+## ▶️ RIPARTIRE DA QUI (chiuso 26/6)
+Frontiera attuale = **sistema template AI builder** (galleria stile Elementor) → vedi [[project_template_gallery]].
+- ✅ Fatto oggi: **Multilingua COMPLETO** (sito/PWA/menu/blog/eventi/cookie + override admin) end-to-end; **unificazione editor** Passo 2 (sidebar "Sito web" → SitoPage block editor + tab SEO&Impostazioni); **galleria template Fase A** (3 template + applica + tab Template in SitoPage), verificata (render su /s/prova).
+- ⏭️ PROSSIMO (in ordine): **Template Fase B** (AI riempie testi/immagini al business: "uguale" vs "usalo come traccia") → **Fase C** (wizard domande settore/obiettivo → filtri + "Sfoglia") → anteprime live + più template. Poi **Passo 3 unificazione**: ritirare MiniSitoPage (route /minisito ancora esiste, non linkata).
+- 🔎 DA TESTARE A VIDEO da Francesco (auth admin, non verificabili da me): (a) tab "SEO & Impostazioni" in Sito salva ok; (b) tab "Template" → "Usa questo template" popola la home; (c) PWA: form prenotazione/chat in EN (servono evento/chatbot attivi). NB: entità test `prova` ha il template Vetrina applicato (demo, innocuo).
 
 ## 🟢 STATO AL 24-25/6 — MULTILINGUA (IT+EN) — vedi [[project_multilingua_roadmap]]
 **Fase 1 (UI) + Fase 2 (contenuto auto-tradotto Haiku) LIVE e verificate dal vivo.** Tradotti: home, sotto-pagine `/p`, footer, Privacy/Cookie (versione EN parallela), contenuto entità (minisito/descrizioni/blocchi/menu via cache `entity_translations`), form builder (label/placeholder/descrizione; opzioni/valori NO per integrità submission). `<html lang>` corretto in SSR. Smoke test `/en` aggiunto.
