@@ -11,6 +11,7 @@ import {
   X, Check, ChevronRight, Send,
 } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
+import { t as tr } from '@/lib/i18n'
 import Turnstile from '@/components/Turnstile'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import ChatChoice from '@/components/ChatChoice'
@@ -97,7 +98,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
     if (!slug) return
     guestFetch(`/api/guest/a/${slug}?lang=${lang}`)
       .then(setAttivita)
-      .catch(() => setError('Attività non trovata.'))
+      .catch(() => setError(tr('not_found', lang)))
   }, [slug, lang])
 
   useEffect(() => {
@@ -125,7 +126,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
   }
 
   if (error)    return <div style={{ padding: 40, textAlign: 'center', color: '#e53e3e' }}>{error}</div>
-  if (!attivita) return <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Caricamento…</div>
+  if (!attivita) return <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>{tr('loading', lang)}</div>
 
   const pwaOn  = attivita.pwa?.active === true
   const miniOn = attivita.minisito?.active !== false
@@ -134,8 +135,8 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
   if (!attivitaProp && miniOn && (!isQR || !pwaOn)) return <LandingAttivita attivita={attivita} />
   if (!attivitaProp && !pwaOn) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f9fafb', textAlign: 'center', padding: 40 }}>
-      <p style={{ fontSize: 18, fontWeight: 600, color: '#374151', margin: '0 0 8px' }}>Contenuto non disponibile</p>
-      <p style={{ fontSize: 14, color: '#9ca3af', margin: 0 }}>Questo servizio è temporaneamente offline.</p>
+      <p style={{ fontSize: 18, fontWeight: 600, color: '#374151', margin: '0 0 8px' }}>{tr('content_unavailable', lang)}</p>
+      <p style={{ fontSize: 14, color: '#9ca3af', margin: 0 }}>{tr('content_offline', lang)}</p>
     </div>
   )
 
@@ -156,12 +157,12 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
   const aMods = { ...(attivita.pwa?.modules || {}) }
   const hasGallery  = (attivita.gallery || []).length > 0
   const hasServizi  = (attivita.services || []).length > 0
-  const sp = { primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor }
+  const sp = { primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, lang }
 
   const homeSections = aMods.home_sections || {}
   const CHIPS = [
-    hasServizi  && homeSections.servizi  !== false && { key: 'servizi',  label: 'Servizi' },
-    hasGallery  && homeSections.galleria !== false && { key: 'galleria', label: 'Galleria' },
+    hasServizi  && homeSections.servizi  !== false && { key: 'servizi',  label: tr('services_title', lang) },
+    hasGallery  && homeSections.galleria !== false && { key: 'galleria', label: tr('gallery', lang) },
   ].filter(Boolean)
   const activeChip = CHIPS.find(c => c.key === exploreChip) ? exploreChip : CHIPS[0]?.key
 
@@ -222,11 +223,11 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
   )
 
   const NAV_ITEMS = [
-    { key: 'home',     Icon: Home,    label: 'Home' },
-    { key: 'esplora',  Icon: Compass, label: 'Esplora' },
-    { key: 'richiesta', Icon: Bell,   label: 'Richiesta' },
-    { key: 'info',     Icon: Info,    label: 'Info' },
-    ...((attivita.chatbot?.active_app ?? attivita.chatbot?.active) ? [{ key: 'chatbot', Icon: MessageCircle, label: 'Chat' }] : []),
+    { key: 'home',     Icon: Home,    label: tr('nav_home', lang) },
+    { key: 'esplora',  Icon: Compass, label: tr('nav_explore', lang) },
+    { key: 'richiesta', Icon: Bell,   label: tr('nav_request', lang) },
+    { key: 'info',     Icon: Info,    label: tr('nav_info', lang) },
+    ...((attivita.chatbot?.active_app ?? attivita.chatbot?.active) ? [{ key: 'chatbot', Icon: MessageCircle, label: tr('nav_chat', lang) }] : []),
   ]
 
   return (
@@ -359,14 +360,14 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
 }
 
 // ─── HOME ─────────────────────────────────────────────────────────────────────
-function AHomePage({ attivita, aMods, hasGallery, hasServizi, onExplore, domain = null, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, borderColor }) {
+function AHomePage({ attivita, aMods, hasGallery, hasServizi, onExplore, domain = null, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, borderColor, lang = 'it' }) {
   const galCount = (attivita.gallery || []).length
   const svcCount = (attivita.services || []).length
   const homeSections = aMods.home_sections || {}
 
   const allCards = {
-    servizi:  hasServizi  && { key: 'servizi',  Icon: Layers,   label: 'Servizi',  sub: `${svcCount} disponibili`,   photo: null },
-    galleria: hasGallery  && { key: 'galleria', Icon: Images,   label: 'Galleria', sub: `${galCount} foto`,           photo: attivita.gallery?.[0]?.url || attivita.gallery?.[0] },
+    servizi:  hasServizi  && { key: 'servizi',  Icon: Layers,   label: tr('services_title', lang),  sub: `${svcCount} ${lang === 'en' ? 'available' : 'disponibili'}`,   photo: null },
+    galleria: hasGallery  && { key: 'galleria', Icon: Images,   label: tr('gallery', lang), sub: `${galCount} ${lang === 'en' ? 'photos' : 'foto'}`,           photo: attivita.gallery?.[0]?.url || attivita.gallery?.[0] },
   }
   const defaultOrder = ['servizi', 'galleria']
   const homeOrder = (aMods.home_section_order?.length ? aMods.home_section_order : defaultOrder)
@@ -408,7 +409,7 @@ function AHomePage({ attivita, aMods, hasGallery, hasServizi, onExplore, domain 
       {/* Feature cards */}
       {CARDS.length > 0 && (
         <>
-          <h2 style={{ fontSize: 20, fontWeight: 700, fontFamily: headingFamily, color: textColor, margin: '0 0 14px' }}>Esplora</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, fontFamily: headingFamily, color: textColor, margin: '0 0 14px' }}>{tr('nav_explore', lang)}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {CARDS.map(({ key, Icon, label, sub, photo }, i) => {
               const isAlone = i === CARDS.length - 1 && CARDS.length % 2 !== 0
@@ -442,19 +443,19 @@ function AHomePage({ attivita, aMods, hasGallery, hasServizi, onExplore, domain 
       )}
 
       {CARDS.length === 0 && !attivita.description && (
-        <p style={{ textAlign: 'center', color: subText, marginTop: 48, fontSize: 15 }}>Benvenuto!</p>
+        <p style={{ textAlign: 'center', color: subText, marginTop: 48, fontSize: 15 }}>{tr('welcome', lang)}</p>
       )}
 
       {/* Scopri anche */}
       {attivita.collegamenti?.length > 0 && (
         <div style={{ marginTop: 32 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, fontFamily: headingFamily, color: textColor, margin: '0 0 14px' }}>Scopri anche</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 700, fontFamily: headingFamily, color: textColor, margin: '0 0 14px' }}>{tr('discover_also', lang)}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {attivita.collegamenti.map(c => {
               // Su dominio custom: link cross-entità assoluti al dominio principale.
               const base = domain ? 'https://www.oltrenova.com' : ''
               const href = base + (c.tipo === 'ristorante' ? `/r/${c.slug}` : c.tipo === 'attivita' ? `/a/${c.slug}` : `/s/${c.slug}`)
-              const typeLabel = c.tipo === 'ristorante' ? 'Ristorante' : c.tipo === 'attivita' ? 'Attività' : 'Struttura'
+              const typeLabel = c.tipo === 'ristorante' ? tr('label_ristorante', lang) : c.tipo === 'attivita' ? tr('label_attivita', lang) : tr('label_struttura', lang)
               const shadow = isDark ? 'none' : '0 2px 12px rgba(0,0,0,0.07)'
               return (
                 <a key={c.slug} href={href} style={{ display: 'flex', alignItems: 'center', gap: 14, background: isDark ? cardBg : '#fff', borderRadius: radius, padding: '14px 16px', boxShadow: shadow, textDecoration: 'none', border: isDark ? `1px solid ${borderColor}` : 'none' }}>
@@ -478,13 +479,13 @@ function AHomePage({ attivita, aMods, hasGallery, hasServizi, onExplore, domain 
 }
 
 // ─── ESPLORA ──────────────────────────────────────────────────────────────────
-function AEsploraPage({ attivita, activeChip, primary, textColor, subText, isDark, radius, headingFamily, cardBg, borderColor }) {
+function AEsploraPage({ attivita, activeChip, primary, textColor, subText, isDark, radius, headingFamily, cardBg, borderColor, lang = 'it' }) {
   const [lightbox, setLightbox] = useState(null)
 
   if (!activeChip) return (
     <div style={{ padding: 40, textAlign: 'center', color: subText }}>
       <Compass size={40} strokeWidth={1.5} color={primary} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
-      <p style={{ margin: 0, fontSize: 15 }}>Nessun contenuto disponibile.</p>
+      <p style={{ margin: 0, fontSize: 15 }}>{tr('no_content', lang)}</p>
     </div>
   )
 
@@ -494,7 +495,7 @@ function AEsploraPage({ attivita, activeChip, primary, textColor, subText, isDar
     <div>
       <div key={activeChip} className="fade-up" style={{ padding: '20px 16px 28px' }}>
         {activeChip === 'servizi' && (
-          <AServiziContent attivita={attivita} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} headingFamily={headingFamily} cardBg={cardBg} borderColor={borderColor} />
+          <AServiziContent attivita={attivita} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} headingFamily={headingFamily} cardBg={cardBg} borderColor={borderColor} lang={lang} />
         )}
         {activeChip === 'galleria' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -524,14 +525,14 @@ function AEsploraPage({ attivita, activeChip, primary, textColor, subText, isDar
   )
 }
 
-function AServiziContent({ attivita, primary, textColor, subText, isDark, radius, cardBg, borderColor }) {
+function AServiziContent({ attivita, primary, textColor, subText, isDark, radius, cardBg, borderColor, lang = 'it' }) {
   const servizi = attivita.services || []
   const shadow = isDark ? 'none' : '0 1px 6px rgba(0,0,0,0.07)'
 
   if (!servizi.length) return (
     <div style={{ textAlign: 'center', color: subText, paddingTop: 32 }}>
       <Layers size={36} strokeWidth={1.5} color={primary} style={{ display: 'block', margin: '0 auto 12px', opacity: 0.35 }} />
-      <p style={{ margin: 0, fontSize: 14 }}>Nessun servizio configurato.</p>
+      <p style={{ margin: 0, fontSize: 14 }}>{tr('no_services', lang)}</p>
     </div>
   )
 
@@ -558,7 +559,7 @@ function AServiziContent({ attivita, primary, textColor, subText, isDark, radius
 }
 
 // ─── RICHIESTA ────────────────────────────────────────────────────────────────
-function ARichiestaTab({ attivita, primary, textColor, subText, isDark, radius, headingFamily, cardBg, borderColor }) {
+function ARichiestaTab({ attivita, primary, textColor, subText, isDark, radius, headingFamily, cardBg, borderColor, lang = 'it' }) {
   const [form,    setForm]    = useState({ nome: '', email: '', messaggio: '' })
   const [sending, setSending] = useState(false)
   const [sent,    setSent]    = useState(false)
@@ -569,7 +570,7 @@ function ARichiestaTab({ attivita, primary, textColor, subText, isDark, radius, 
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!form.nome.trim() || !form.email.trim() || !form.messaggio.trim()) { setError('Compila tutti i campi.'); return }
+    if (!form.nome.trim() || !form.email.trim() || !form.messaggio.trim()) { setError(tr('fill_fields', lang)); return }
     setSending(true); setError(null)
     try {
       await guestFetch('/api/guest/contact', {
@@ -583,14 +584,14 @@ function ARichiestaTab({ attivita, primary, textColor, subText, isDark, radius, 
 
   return (
     <div style={{ padding: '20px 16px 28px' }}>
-      <h2 style={{ fontFamily: headingFamily, fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 8px' }}>Contatta</h2>
-      <p style={{ fontSize: 14, color: subText, margin: '0 0 20px', lineHeight: 1.5 }}>Hai domande o vuoi prenotare? Scrivici.</p>
+      <h2 style={{ fontFamily: headingFamily, fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 8px' }}>{tr('contact_btn', lang)}</h2>
+      <p style={{ fontSize: 14, color: subText, margin: '0 0 20px', lineHeight: 1.5 }}>{tr('request_intro', lang)}</p>
 
       {/* CTA rapide */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
         {attivita.phone && (
           <a href={`tel:${attivita.phone}`} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: radius, border: `1.5px solid ${primary}`, color: primary, fontWeight: 600, fontSize: 13, textDecoration: 'none' }}>
-            <Phone size={15} strokeWidth={1.5} color={primary} /> Chiama
+            <Phone size={15} strokeWidth={1.5} color={primary} /> {tr('call', lang)}
           </a>
         )}
         {waUrl && (
@@ -610,28 +611,28 @@ function ARichiestaTab({ attivita, primary, textColor, subText, isDark, radius, 
           <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
             <Check size={26} color="#059669" strokeWidth={2} />
           </div>
-          <p style={{ fontWeight: 700, fontSize: 16, color: textColor, margin: '0 0 4px' }}>Messaggio inviato!</p>
-          <p style={{ color: subText, fontSize: 13, margin: 0 }}>Ti risponderemo al più presto.</p>
+          <p style={{ fontWeight: 700, fontSize: 16, color: textColor, margin: '0 0 4px' }}>{tr('request_sent', lang)}</p>
+          <p style={{ color: subText, fontSize: 13, margin: 0 }}>{tr('request_sent_sub', lang)}</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 14 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: textColor, marginBottom: 5 }}>Nome</label>
-            <input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} placeholder="Il tuo nome" style={inp} />
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: textColor, marginBottom: 5 }}>{tr('name', lang)}</label>
+            <input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} placeholder={tr('name_ph', lang)} style={inp} />
           </div>
           <div style={{ marginBottom: 14 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: textColor, marginBottom: 5 }}>Email</label>
-            <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="La tua email" style={inp} />
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: textColor, marginBottom: 5 }}>{tr('email', lang)}</label>
+            <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder={tr('email_ph', lang)} style={inp} />
           </div>
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: textColor, marginBottom: 5 }}>Messaggio</label>
-            <textarea value={form.messaggio} onChange={e => setForm(f => ({ ...f, messaggio: e.target.value }))} rows={4} placeholder="Come possiamo aiutarti?" style={{ ...inp, resize: 'vertical' }} />
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: textColor, marginBottom: 5 }}>{tr('message', lang)}</label>
+            <textarea value={form.messaggio} onChange={e => setForm(f => ({ ...f, messaggio: e.target.value }))} rows={4} placeholder={tr('message_ph', lang)} style={{ ...inp, resize: 'vertical' }} />
           </div>
           {error && <p style={{ color: '#e53e3e', fontSize: 13, margin: '0 0 12px' }}>{error}</p>}
           <Turnstile onToken={setTurnstileToken} />
           <button type="submit" disabled={sending}
             style={{ width: '100%', padding: 14, background: primary, color: '#fff', border: 'none', borderRadius: radius, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
-            {sending ? 'Invio…' : 'Invia messaggio'}
+            {sending ? tr('sending', lang) : tr('send_message', lang)}
           </button>
         </form>
       )}
@@ -640,14 +641,14 @@ function ARichiestaTab({ attivita, primary, textColor, subText, isDark, radius, 
 }
 
 // ─── INFO ─────────────────────────────────────────────────────────────────────
-function AInfoPage({ attivita, primary, textColor, subText, isDark, radius, headingFamily, cardBg, borderColor }) {
+function AInfoPage({ attivita, primary, textColor, subText, isDark, radius, headingFamily, cardBg, borderColor, lang = 'it' }) {
   const shadow = isDark ? 'none' : '0 2px 16px rgba(0,0,0,0.07)'
 
   return (
     <div style={{ padding: '20px 16px 28px' }}>
 
       {attivita.schedule && (
-        <AInfoSection Icon={Clock} title="Orari" primary={primary} headingFamily={headingFamily} textColor={textColor}>
+        <AInfoSection Icon={Clock} title={tr('hours_title', lang)} primary={primary} headingFamily={headingFamily} textColor={textColor}>
           <div style={{ background: cardBg, borderRadius: 16, padding: '16px 20px', boxShadow: shadow }}>
             <p style={{ margin: 0, fontSize: 14, color: textColor, lineHeight: 1.8, whiteSpace: 'pre-line' }}>{attivita.schedule}</p>
           </div>
@@ -655,18 +656,18 @@ function AInfoPage({ attivita, primary, textColor, subText, isDark, radius, head
       )}
 
       {(attivita.phone || attivita.email || attivita.address) && (
-        <AInfoSection Icon={MapPin} title="Contatti" primary={primary} headingFamily={headingFamily} textColor={textColor}>
+        <AInfoSection Icon={MapPin} title={tr('contacts', lang)} primary={primary} headingFamily={headingFamily} textColor={textColor}>
           <div style={{ background: cardBg, borderRadius: 16, overflow: 'hidden', boxShadow: shadow }}>
-            {attivita.phone   && <AContactRow Icon={Phone}  label="Telefono"  value={attivita.phone}   href={`tel:${attivita.phone}`}              primary={primary} textColor={textColor} subText={subText} border={borderColor} />}
-            {attivita.email   && <AContactRow Icon={Mail}   label="Email"     value={attivita.email}   href={`mailto:${attivita.email}`}            primary={primary} textColor={textColor} subText={subText} border={borderColor} />}
-            {attivita.address && <AContactRow Icon={MapPin} label="Indirizzo" value={attivita.address} href={`https://maps.google.com/?q=${encodeURIComponent(attivita.address)}`} primary={primary} textColor={textColor} subText={subText} border="transparent" />}
+            {attivita.phone   && <AContactRow Icon={Phone}  label={tr('phone_label', lang)}  value={attivita.phone}   href={`tel:${attivita.phone}`}              primary={primary} textColor={textColor} subText={subText} border={borderColor} />}
+            {attivita.email   && <AContactRow Icon={Mail}   label={tr('email', lang)}     value={attivita.email}   href={`mailto:${attivita.email}`}            primary={primary} textColor={textColor} subText={subText} border={borderColor} />}
+            {attivita.address && <AContactRow Icon={MapPin} label={tr('address_label', lang)} value={attivita.address} href={`https://maps.google.com/?q=${encodeURIComponent(attivita.address)}`} primary={primary} textColor={textColor} subText={subText} border="transparent" />}
           </div>
         </AInfoSection>
       )}
 
       <div style={{ textAlign: 'center', paddingTop: 20, borderTop: `1px solid ${borderColor}`, marginTop: 8 }}>
-        <a href={`/a/${attivita.slug}/privacy`} style={{ fontSize: 12, color: subText, marginRight: 16, textDecoration: 'none' }}>Privacy Policy</a>
-        <a href={`/a/${attivita.slug}/cookie`}  style={{ fontSize: 12, color: subText, textDecoration: 'none' }}>Cookie Policy</a>
+        <a href={`/a/${attivita.slug}/privacy`} style={{ fontSize: 12, color: subText, marginRight: 16, textDecoration: 'none' }}>{tr('privacy_policy', lang)}</a>
+        <a href={`/a/${attivita.slug}/cookie`}  style={{ fontSize: 12, color: subText, textDecoration: 'none' }}>{tr('cookie_policy', lang)}</a>
       </div>
     </div>
   )
