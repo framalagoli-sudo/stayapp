@@ -283,7 +283,7 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
         .chip-bar::-webkit-scrollbar { display:none; }
       `}</style>
 
-      <CookieBanner primaryColor={primary} privacyUrl={`/r/${slug}/privacy`} cookieUrl={`/r/${slug}/cookie`} />
+      <CookieBanner primaryColor={primary} privacyUrl={`/r/${slug}/privacy`} cookieUrl={`/r/${slug}/cookie`} lang={lang} />
       <InstallBanner primaryColor={primary} entityName={ristorante.name} />
       <div className="r-shell">
         <div className="r-app" style={{ fontFamily: bodyFamily, color: textColor }}>

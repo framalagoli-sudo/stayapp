@@ -1,10 +1,11 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { t } from '@/lib/i18n'
 
 const KEY = 'cookie_consent_v2'
 
-export default function CookieBanner({ primaryColor = '#00b5b5', privacyUrl, cookieUrl }) {
+export default function CookieBanner({ primaryColor = '#00b5b5', privacyUrl, cookieUrl, lang = 'it' }) {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -27,15 +28,15 @@ export default function CookieBanner({ primaryColor = '#00b5b5', privacyUrl, coo
       boxShadow: '0 -2px 16px rgba(0,0,0,0.2)',
     }}>
       <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, flex: 1, minWidth: 200 }}>
-        Questo sito utilizza cookie tecnici necessari al funzionamento.{' '}
+        {t('cookie_notice', lang)}{' '}
         {privacyUrl && (
           <a href={privacyUrl} target="_blank" rel="noopener noreferrer"
-            style={{ color: primaryColor, fontWeight: 600 }}>Privacy Policy</a>
+            style={{ color: primaryColor, fontWeight: 600 }}>{t('privacy_policy', lang)}</a>
         )}
         {privacyUrl && cookieUrl && ' · '}
         {cookieUrl && (
           <a href={cookieUrl} target="_blank" rel="noopener noreferrer"
-            style={{ color: primaryColor, fontWeight: 600 }}>Cookie Policy</a>
+            style={{ color: primaryColor, fontWeight: 600 }}>{t('cookie_policy', lang)}</a>
         )}
       </p>
       <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
@@ -43,13 +44,13 @@ export default function CookieBanner({ primaryColor = '#00b5b5', privacyUrl, coo
           padding: '8px 16px', borderRadius: 50, border: '1px solid rgba(255,255,255,0.3)',
           background: 'transparent', color: '#ccc', fontSize: 12, fontWeight: 600, cursor: 'pointer',
         }}>
-          Rifiuta
+          {t('reject', lang)}
         </button>
         <button onClick={accept} style={{
           padding: '8px 20px', borderRadius: 50, border: 'none',
           background: primaryColor, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
         }}>
-          Accetto
+          {t('accept', lang)}
         </button>
       </div>
     </div>,

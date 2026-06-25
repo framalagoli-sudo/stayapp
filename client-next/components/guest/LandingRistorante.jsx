@@ -219,6 +219,7 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
         primaryColor={primary}
         privacyUrl={ristorante.slug ? `${base}/privacy` : null}
         cookieUrl={ristorante.slug  ? `${base}/cookie`  : null}
+        lang={lang}
       />
       <WhatsAppButton
         whatsapp={social.whatsapp}

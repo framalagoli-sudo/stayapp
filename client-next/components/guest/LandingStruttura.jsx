@@ -218,6 +218,7 @@ export default function LandingStruttura({ property, initialHomeBlocks, domain, 
         primaryColor={primary}
         privacyUrl={property.slug ? `${base}/privacy` : null}
         cookieUrl={property.slug  ? `${base}/cookie`  : null}
+        lang={lang}
       />
       <WhatsAppButton
         whatsapp={property.whatsapp || social.whatsapp}

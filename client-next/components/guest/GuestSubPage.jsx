@@ -128,7 +128,7 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
 
       <LandingFooter entity={entity} mini={mini} primary={primary} heading={heading} body={body} entityType={entityType} lang={lang} domain={domain} />
 
-      <CookieBanner primaryColor={primary} privacyUrl={privacyUrl} cookieUrl={cookieUrl} />
+      <CookieBanner primaryColor={primary} privacyUrl={privacyUrl} cookieUrl={cookieUrl} lang={lang} />
       <WhatsAppButton
         whatsapp={entity.whatsapp || social.whatsapp}
         entityName={entity.name}

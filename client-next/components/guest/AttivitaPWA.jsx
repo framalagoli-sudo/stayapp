@@ -267,7 +267,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
         .chip-bar::-webkit-scrollbar { display:none; }
       `}</style>
 
-      <CookieBanner primaryColor={primary} privacyUrl={`/a/${attivita.slug}/privacy`} cookieUrl={`/a/${attivita.slug}/cookie`} />
+      <CookieBanner primaryColor={primary} privacyUrl={`/a/${attivita.slug}/privacy`} cookieUrl={`/a/${attivita.slug}/cookie`} lang={lang} />
       <InstallBanner primaryColor={primary} entityName={attivita.name} />
       <div className="a-shell">
         <div className="a-app" style={{ fontFamily: bodyFamily, color: textColor }}>

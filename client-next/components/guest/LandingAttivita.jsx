@@ -211,6 +211,7 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
         primaryColor={primary}
         privacyUrl={attivita.slug ? `${base}/privacy` : null}
         cookieUrl={attivita.slug  ? `${base}/cookie`  : null}
+        lang={lang}
       />
       <WhatsAppButton
         whatsapp={social.whatsapp}

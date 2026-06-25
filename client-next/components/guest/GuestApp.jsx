@@ -323,7 +323,7 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
         .chip-bar::-webkit-scrollbar { display:none; }
       `}</style>
 
-      <CookieBanner primaryColor={primary} privacyUrl={`/s/${slug}/privacy`} cookieUrl={`/s/${slug}/cookie`} />
+      <CookieBanner primaryColor={primary} privacyUrl={`/s/${slug}/privacy`} cookieUrl={`/s/${slug}/cookie`} lang={lang} />
       <InstallBanner primaryColor={primary} entityName={property.name} />
       <div className="g-shell">
         <div className="g-app" style={{ fontFamily: bodyFamily, color: textColor, position: 'relative' }}>
