@@ -33,7 +33,15 @@ metadata:
 - ✅ Stadio 3 FATTO (25/6) su tutte e 3 le PWA: UI chrome via `t(lang)` (nav, chip, card home, sezioni Info WiFi/Contatti/Dotazioni/Regole, booking eventi, chat, footer). `lang` propagato ai sottocomponenti via `sp` + firme con `lang='it'`. Import `t as tr` (collisione `t`=tema). Chiavi PWA in i18n. Verificato headless: struttura+ristorante nav IT→EN OK ("Esplora"→"Explore", "Prenota"→"Book"). Attività: stesso pattern, build/deploy ok, ma entità di test mostrava minisito → da verificare a video su un'attività con PWA attiva.
   - Residui MINORI ancora IT (deep form, non bloccanti): in GuestApp EventoDetail "I tuoi dati" + placeholder form prenotazione + placeholder chat "Scrivi un messaggio…"; lista eventi PWA (`/api/guest/eventi`) non localizzata (solo dettaglio).
 
-### ✅ MULTILINGUA COMPLETO (25/6): sito, sotto-pagine, footer, privacy/cookie, form, blog (lista+articoli), eventi, PWA ospite (3 app). Fasi 1-2-3 + override admin + domini custom.
+### ✅ MULTILINGUA COMPLETO (25/6): sito, sotto-pagine, footer, privacy/cookie, form, blog (lista+articoli), eventi, PWA ospite (3 app), menu ristorante (piatti+allergeni), cookie banner. Fasi 1-2-3 + override admin + domini custom.
+
+### 🐛 FIX IMPORTANTI traduzione (25/6) — non ripetere gli errori:
+- **Overflow token su contenuti grandi** (menu 70 voci → tutta l'entità tornava IT): la singola chiamata Haiku con chiavi-percorso lunghe gonfiava l'output → JSON troncato → parse fail → fallback IT totale. FIX in `lib/translate.js`: `translateChunk` con **chiavi numeriche** + **chunking ~2500 char** + try/catch per-blocco. `PROMPT_VERSION` nell'hash per invalidare cache al cambio prompt (ora 'v3').
+- **Nomi piatti**: il prompt diceva "mantieni nomi piatti in originale" → lasciava IT anche le descrizioni. Ora traduce tutto tranne nomi iconici (Carbonara/Tiramisù).
+- **MenuTab allergeni** (`components/MenuTab.jsx`): EU_ALLERGENS/DIETARY con label EN (`allergenLabel(a,lang)`), getTipoLabel lang-aware, header tradotti. `lang` arriva via `sp` — ATTENZIONE: c'erano DUE `sp` in RestaurantApp (riga 168 e 501 in REsploraPage); il 501 non aveva lang → bug allergeni IT, fixato.
+- **CookieBanner**: ora riceve `lang` da tutti i renderer (3 PWA + 3 Landing + GuestSubPage).
+- Residui minori ancora IT (non bloccanti): in GuestApp booking eventi "I tuoi dati" + placeholder form + placeholder chat "Scrivi un messaggio…"; lista eventi PWA (`/api/guest/eventi`) non localizzata.
+- **Lezione**: verificare le PWA col browser HEADLESS (Playwright `chromium`, locale it-IT, click toggle), non solo build/API — i bug di `lang` non passato ai sottocomponenti si vedono solo a video.
 
 ### 🏗️ UNIFICARE I DUE EDITOR SITO (architetturale, ANALISI PRIMA di codice)
 Francesco vuole UN solo editor (AI genera la prima stesura "come un umano", poi si modifica nello stesso editor). Oggi: `/minisito`→MiniSitoPage (sezioni, sidebar) vs `/sito`→SitoPage (blocchi, da AI builder). Direzione probabile = block system (completato). Serve: analisi cosa scrive l'AI, overlap dati (entrambi toccano `pagine`), migrazione siti esistenti, cosa fare di MiniSitoPage. NON improvvisare. Sessione dedicata con piano.
