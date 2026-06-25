@@ -62,7 +62,7 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
   }, [ristorante?.id])
 
   useEffect(() => {
-    guestFetch(`/api/guest/eventi?entity_tipo=ristorante&entity_id=${ristorante.id}`)
+    guestFetch(`/api/guest/eventi?entity_tipo=ristorante&entity_id=${ristorante.id}&lang=${lang}`)
       .then(d => Array.isArray(d) && setUpcomingEventi(d)).catch(() => {})
     guestFetch(`/api/guest/pagine/ristorante/${ristorante.id}`)
       .then(d => Array.isArray(d) && setPagine(d)).catch(() => {})

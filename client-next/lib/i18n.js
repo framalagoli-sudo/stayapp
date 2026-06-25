@@ -127,6 +127,12 @@ const DICT = {
     seats_label: 'Posti:',
     chat_reception: 'Chat con la reception',
     chat_first: 'Scrivi il tuo primo messaggio!',
+    your_data: 'I tuoi dati',
+    name_full_req: 'Nome e cognome *',
+    email_req: 'Email *',
+    phone_opt: 'Telefono (opzionale)',
+    name_opt: 'Il tuo nome (opzionale)',
+    write_message: 'Scrivi un messaggio…',
   },
   en: {
     book: 'Book now',
@@ -237,6 +243,12 @@ const DICT = {
     seats_label: 'Seats:',
     chat_reception: 'Chat with reception',
     chat_first: 'Write your first message!',
+    your_data: 'Your details',
+    name_full_req: 'Full name *',
+    email_req: 'Email *',
+    phone_opt: 'Phone (optional)',
+    name_opt: 'Your name (optional)',
+    write_message: 'Write a message…',
   },
 }
 

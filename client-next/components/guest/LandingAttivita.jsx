@@ -62,7 +62,7 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
   }, [attivita?.id])
 
   useEffect(() => {
-    guestFetch(`/api/guest/eventi?entity_tipo=attivita&entity_id=${attivita.id}`)
+    guestFetch(`/api/guest/eventi?entity_tipo=attivita&entity_id=${attivita.id}&lang=${lang}`)
       .then(d => Array.isArray(d) && setUpcomingEventi(d)).catch(() => {})
     guestFetch(`/api/guest/pagine/attivita/${attivita.id}`)
       .then(d => Array.isArray(d) && setPagine(d)).catch(() => {})

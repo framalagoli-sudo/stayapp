@@ -62,7 +62,7 @@ export default function LandingStruttura({ property, initialHomeBlocks, domain, 
   }, [property?.id])
 
   useEffect(() => {
-    guestFetch(`/api/guest/eventi?entity_tipo=struttura&entity_id=${property.id}`)
+    guestFetch(`/api/guest/eventi?entity_tipo=struttura&entity_id=${property.id}&lang=${lang}`)
       .then(d => Array.isArray(d) && setUpcomingEventi(d)).catch(() => {})
     guestFetch(`/api/guest/pagine/struttura/${property.id}`)
       .then(d => Array.isArray(d) && setPagine(d)).catch(() => {})

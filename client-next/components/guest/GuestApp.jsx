@@ -137,14 +137,14 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
     // IT col prop server = nessun fetch dei dati (invariato); carica solo gli eventi.
     if (propertyProp && lang === 'it') {
       setProperty(propertyProp)
-      guestFetch(`/api/guest/eventi?entity_tipo=struttura&entity_id=${propertyProp.id}`)
+      guestFetch(`/api/guest/eventi?entity_tipo=struttura&entity_id=${propertyProp.id}&lang=${lang}`)
         .then(setUpcomingEventi).catch(() => {})
       return
     }
     guestFetch(`/api/guest/${slug}?lang=${lang}`)
       .then(prop => {
         setProperty(prop)
-        guestFetch(`/api/guest/eventi?entity_tipo=struttura&entity_id=${prop.id}`)
+        guestFetch(`/api/guest/eventi?entity_tipo=struttura&entity_id=${prop.id}&lang=${lang}`)
           .then(setUpcomingEventi)
           .catch(() => {})
       })
@@ -833,10 +833,10 @@ function EventoDetailView({ evento, onBack, primary, textColor, subText, isDark,
             </div>
           ) : (
             <>
-              <div style={{ fontWeight: 700, fontSize: 13, color: textColor, marginBottom: 10 }}>I tuoi dati</div>
-              <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Nome e cognome *" style={inp} />
-              <input value={guestEmail} onChange={e => setGuestEmail(e.target.value)} placeholder="Email *" type="email" style={inp} />
-              <input value={guestPhone} onChange={e => setGuestPhone(e.target.value)} placeholder="Telefono (opzionale)" type="tel" style={inp} />
+              <div style={{ fontWeight: 700, fontSize: 13, color: textColor, marginBottom: 10 }}>{tr('your_data', lang)}</div>
+              <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder={tr('name_full_req', lang)} style={inp} />
+              <input value={guestEmail} onChange={e => setGuestEmail(e.target.value)} placeholder={tr('email_req', lang)} type="email" style={inp} />
+              <input value={guestPhone} onChange={e => setGuestPhone(e.target.value)} placeholder={tr('phone_opt', lang)} type="tel" style={inp} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                 <label style={{ fontSize: 13, color: subText }}>{tr('seats_label', lang)}</label>
                 <input type="number" min="1" value={seats} onChange={e => setSeats(parseInt(e.target.value) || 1)} style={{ ...inp, width: 70, textAlign: 'center', marginBottom: 0 }} />
@@ -844,7 +844,7 @@ function EventoDetailView({ evento, onBack, primary, textColor, subText, isDark,
               {bookErr && <p style={{ color: '#e53e3e', fontSize: 13, marginBottom: 10 }}>{bookErr}</p>}
               <button onClick={handleBook} disabled={booking}
                 style={{ width: '100%', padding: 14, background: primary, color: '#fff', border: 'none', borderRadius: radius || 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
-                {booking ? 'Invio in corso…' : 'Prenota'}
+                {booking ? tr('sending', lang) : tr('nav_book', lang)}
               </button>
             </>
           )}
@@ -983,7 +983,7 @@ function ChatPage({ propertyId, propertyName, primary, textColor, subText, isDar
           <input
             value={nameInput}
             onChange={e => setNameInput(e.target.value)}
-            placeholder="Il tuo nome (opzionale)"
+            placeholder={tr('name_opt', lang)}
             style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: `1px solid ${borderColor}`, fontSize: 16, boxSizing: 'border-box', background: cardBg, color: textColor, marginBottom: 10 }}
           />
           <button type="submit" style={{ width: '100%', padding: '12px', background: primary, color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
@@ -1046,7 +1046,7 @@ function ChatPage({ propertyId, propertyName, primary, textColor, subText, isDar
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
-          placeholder="Scrivi un messaggio…"
+          placeholder={tr('write_message', lang)}
           style={{ flex: 1, padding: '10px 14px', borderRadius: 24, border: `1px solid ${borderColor}`, fontSize: 16, background: cardBg, color: textColor, outline: 'none' }}
         />
         <button type="submit" disabled={sending || !input.trim()} style={{
