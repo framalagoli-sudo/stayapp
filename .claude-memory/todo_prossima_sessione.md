@@ -20,11 +20,16 @@ metadata:
 - Editor traduzioni esteso alle **sotto-pagine** (selettore "Pagina" in TraduzioniSito; API gestisce tipo='pagina').
 - Rename UI **"minisito" → "sito"** nei testi visibili (Aiuto/Eventi/Blog/Attività/Dashboard). Campo jsonb `minisito`, route `/minisito` e identificatori interni INVARIATI (rinominarli = refactor rischioso; `/sito` già occupato da SitoPage).
 
-### ⏭️ DA FARE (multilingua, residui bassa priorità):
-- **Form builder nell'editor manuale Fase 3** — oggi i form sono auto-tradotti ma non correggibili a mano dall'editor (l'API supporta tipo='form', manca la voce nel selettore).
-- **PWA ospite** (GuestApp/RestaurantApp/AttivitaPWA, dietro QR) non ancora localizzata.
-- Blog/eventi: contenuto non ancora tradotto in EN (route globali; Fase 2 copre entità+pagine, non articoli/eventi).
-- Eventuale rename URL `/minisito` (richiede decisione: `/sito` è preso → nuovo nome o merge dei due editor).
+### 🎯 OBIETTIVO Francesco (25/6): "tutto ciò che vede l'utente in doppia lingua" + UNIFICARE i due editor sito.
+### ✅ Blog ed Eventi tradotti (25/6): tipi 'articolo'/'evento' in translate.js (+ prompt preserva HTML); API blog/public/[slug] e guest/eventi/[id] con ?lang; ArticoloPage/EventoPage leggono _lang; hreflang+switcher. Verificato live ("Flour Tasting", "Hands in dough…").
+
+### ⏭️ DA FARE (per chiudere multilingua):
+- **PWA ospite** (GuestApp/RestaurantApp/AttivitaPWA, dietro QR) — ULTIMO grosso pezzo non localizzato (interfaccia + contenuti). La più corposa.
+- Liste blog (titoli/excerpt nelle card) non tradotte — solo le pagine di dettaglio lo sono. Minore.
+- Form builder nell'editor manuale Fase 3 (auto-tradotti ma non correggibili a mano; API supporta tipo='form', manca voce nel selettore). Minore.
+
+### 🏗️ UNIFICARE I DUE EDITOR SITO (architetturale, ANALISI PRIMA di codice)
+Francesco vuole UN solo editor (AI genera la prima stesura "come un umano", poi si modifica nello stesso editor). Oggi: `/minisito`→MiniSitoPage (sezioni, sidebar) vs `/sito`→SitoPage (blocchi, da AI builder). Direzione probabile = block system (completato). Serve: analisi cosa scrive l'AI, overlap dati (entrambi toccano `pagine`), migrazione siti esistenti, cosa fare di MiniSitoPage. NON improvvisare. Sessione dedicata con piano.
 **Regola nuova nel CLAUDE.md globale**: prima di dire "fatto" verificare SEMPRE dal vivo (curl status+contenuto), non basta build+smoke.
 
 ## 🟢 STATO AL 22/6
