@@ -90,13 +90,25 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
   const [showArrow,   setShowArrow]   = useState(true)
   const scrollRef  = useRef(null)
   const chipBarRef = useRef(null)
+  const [lang, setLang] = useState('it')
 
+  // Lingua: scelta salvata, altrimenti autodetect browser. Default IT.
   useEffect(() => {
-    if (ristoranteProp) return
-    guestFetch(`/api/guest/r/${slug}`)
+    try {
+      const saved = localStorage.getItem('pwa_lang')
+      if (saved === 'en' || saved === 'it') { setLang(saved); return }
+    } catch {}
+    if ((navigator.language || '').toLowerCase().startsWith('en')) setLang('en')
+  }, [])
+  function changeLang(l) { setLang(l); try { localStorage.setItem('pwa_lang', l) } catch {} }
+
+  // Ricarica i dati nella lingua scelta. IT col prop server = nessun fetch (comportamento invariato).
+  useEffect(() => {
+    if (ristoranteProp && lang === 'it') { setRistorante(ristoranteProp); return }
+    guestFetch(`/api/guest/r/${slug}?lang=${lang}`)
       .then(setRistorante)
       .catch(() => setError('Ristorante non trovato.'))
-  }, [slug])
+  }, [slug, lang])
 
   useEffect(() => {
     if (!ristorante) return
@@ -193,12 +205,23 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
     </div>
   )
 
+  const langToggle = (
+    <button onClick={() => changeLang(lang === 'en' ? 'it' : 'en')}
+      aria-label={lang === 'en' ? 'Passa all’italiano' : 'Switch to English'}
+      style={{ position: 'absolute', top: 12, left: 12, zIndex: 6, display: 'flex', alignItems: 'center', gap: 5,
+        padding: '5px 10px', borderRadius: 18, border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(0,0,0,0.35)',
+        backdropFilter: 'blur(6px)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+      {lang === 'en' ? '🇮🇹 IT' : '🇬🇧 EN'}
+    </button>
+  )
+
   const AppHeader = ristorante.cover_url ? (
     <div style={{ position: 'relative', height: 220, overflow: 'hidden' }}>
       <img src={ristorante.cover_url} alt="cover"
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 100%)' }} />
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 20px 20px' }}>{headerContent}</div>
+      {langToggle}
       <InstallButton primaryColor={primary} entityName={ristorante.name} />
     </div>
   ) : (
@@ -209,6 +232,7 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
       padding: '32px 20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       {headerContent}
+      {langToggle}
       <InstallButton primaryColor={primary} entityName={ristorante.name} />
     </div>
   )
