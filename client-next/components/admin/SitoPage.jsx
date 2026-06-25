@@ -6,8 +6,9 @@ import { PropertyIdContext } from '@/context/PropertyIdContext'
 import { useAuth } from '@/context/AuthContext'
 import {
   GripVertical, Home, FilePlus, Users, Briefcase, Mail, Tag, HelpCircle,
-  Search, FileText, SearchX, Navigation, PenLine, Layers, History,
+  Search, FileText, SearchX, Navigation, PenLine, Layers, History, Languages,
 } from 'lucide-react'
+import TraduzioniSito from '@/components/admin/TraduzioniSito'
 
 // ── Template definitions ──────────────────────────────────────────────────────
 const TEMPLATES = [
@@ -459,6 +460,7 @@ export default function SitoPage({ entityTipo }) {
     { id: 'home',   label: 'Home',         Icon: Home },
     { id: 'pagine', label: 'Pagine',        Icon: FileText },
     { id: 'layout', label: 'Menu & Layout', Icon: Navigation },
+    { id: 'traduzioni', label: 'Traduzioni', Icon: Languages },
     { id: 'versioni', label: 'Versioni',    Icon: History },
   ]
 
@@ -492,6 +494,10 @@ export default function SitoPage({ entityTipo }) {
       {/* TAB: VERSIONI (snapshot/ripristino del sito) */}
       {activeTab === 'versioni' && (
         <VersioniSito entityTipo={entityTipo} entityId={entityId} onRestored={load} />
+      )}
+
+      {activeTab === 'traduzioni' && (
+        <TraduzioniSito entityTipo={entityTipo} entityId={entityId} />
       )}
 
       {/* ══════════════════════════════════════════════════════════════════════

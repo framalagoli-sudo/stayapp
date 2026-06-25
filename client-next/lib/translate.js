@@ -155,15 +155,22 @@ async function getCachedOrTranslate(entityTipo, entityId, lang, sourceMap) {
   return { ...translations, ...overrides }
 }
 
+// Mappa {percorso: testo IT} dei campi traducibili di un'entità/record.
+// Usata sia dal motore di traduzione sia dall'editor admin (Fase 3).
+export function getTranslatableSource(obj, entityTipo) {
+  if (!obj) return {}
+  const fields = TRANSLATABLE_FIELDS[entityTipo] || ['description', 'minisito']
+  const subset = {}
+  for (const f of fields) if (obj[f] != null) subset[f] = obj[f]
+  return collectStrings(subset, '', {})
+}
+
 // Restituisce l'oggetto con i testi tradotti nella lingua richiesta.
 // lang !== 'en' o errori → ritorna l'oggetto originale (italiano) invariato.
 export async function localizeEntity(obj, entityTipo, lang) {
   if (lang !== 'en' || !obj || !obj.id) return obj
   try {
-    const fields = TRANSLATABLE_FIELDS[entityTipo] || ['description', 'minisito']
-    const subset = {}
-    for (const f of fields) if (obj[f] != null) subset[f] = obj[f]
-    const sourceMap = collectStrings(subset, '', {})
+    const sourceMap = getTranslatableSource(obj, entityTipo)
     if (!Object.keys(sourceMap).length) return obj
     const translated = await getCachedOrTranslate(entityTipo, obj.id, lang, sourceMap)
     return applyTranslations(obj, translated)
