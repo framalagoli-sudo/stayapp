@@ -6,6 +6,7 @@ import { ExternalLink, Plus, Trash2, Waves, Sparkles, Utensils, Activity, Car, W
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import FontPairPicker from '@/components/admin/FontPairPicker'
+import TraduzioniSito from '@/components/admin/TraduzioniSito'
 import { CSS } from '@dnd-kit/utilities'
 
 const DEFAULT_SECTIONS      = { gallery: true, services: true, activities: true, excursions: true, eventi: true }
@@ -63,6 +64,7 @@ const TABS = [
   { key: 'stile',        label: 'Stile' },
   { key: 'impostazioni', label: 'Impostazioni' },
   { key: 'seo',          label: 'SEO & Social' },
+  { key: 'traduzioni',   label: 'Traduzioni' },
 ]
 
 const PAGE_TEMPLATES = [
@@ -751,6 +753,11 @@ export default function MiniSitoEditor({ entity, entityType, save, loading, savi
           </button>
         ))}
       </div>
+
+      {/* ── TAB: TRADUZIONI ── */}
+      {activeTab === 'traduzioni' && (
+        <TraduzioniSito entityTipo={entityType} entityId={entity?.id} />
+      )}
 
       {/* ── TAB: PAGINE ── */}
       {activeTab === 'pagine' && (
