@@ -12,10 +12,14 @@ metadata:
 **Bug grossi risolti**: (1) BOM in `NEXT_PUBLIC_STAYAPP_DOMAIN` rompeva `isOwnDomain` → /en 404 [[feedback_bom_api_base]]; (2) middleware storpiava `/api/*` sui domini custom → tutte le fetch client rotte (privacy "non trovata", form/booking/chatbot); (3) link footer/nav puliti sui domini custom (`entityBasePath`).
 **Codice morto rimosso**: `components/guest/PaginaPage.jsx` + `ContattiForm` in LandingBlockRenderer.
 
-### ⏭️ DA FARE prossima sessione (multilingua), in ordine:
-1. **Link interni residui sui domini custom** (stesso difetto, non convertiti a `entityBasePath`): `pwaUrl` ("App ospiti"/"Vedi menu") in LandingStruttura/Ristorante + link blog/eventi nei blocchi del renderer. Probabile che siano rotti/brutti sui domini custom. Allinearli con `entityBasePath`.
-2. **Fase 3 multilingua**: pannello admin per correggere a mano le traduzioni EN. Infrastruttura `overrides` GIÀ pronta (colonna `entity_translations.overrides` + merge prioritario nel motore `lib/translate.js`). Manca solo la UI.
-3. **PWA ospite** (GuestApp/RestaurantApp/AttivitaPWA, dietro QR) non ancora localizzata — bassa priorità.
+### ✅ FATTO 25/6
+1. ~~Link interni residui domini custom~~ — route globali /blog//eventi fixate via `isGlobalPublicPath` nel middleware (pwaUrl era già a posto). Verificato live.
+2. ~~Fase 3 (editor override traduzioni EN)~~ — tab "Traduzioni" in SitoPage + API. Ambito v1 = solo contenuto entità. Auth verificata; scrittura da testare interattivamente (Francesco).
+
+### ⏭️ DA FARE (multilingua, residui bassa priorità):
+- **Estendere editor Fase 3** a sotto-pagine (`pagina`) e form builder (`form`) — ora copre solo l'entità. L'API e il motore già supportano quei tipi (TRANSLATABLE_FIELDS), manca la UI per sceglierli.
+- **PWA ospite** (GuestApp/RestaurantApp/AttivitaPWA, dietro QR) non ancora localizzata.
+- Blog/eventi: contenuto non ancora tradotto in EN (sono route globali; la traduzione contenuto Fase 2 copre entità, non articoli/eventi).
 **Regola nuova nel CLAUDE.md globale**: prima di dire "fatto" verificare SEMPRE dal vivo (curl status+contenuto), non basta build+smoke.
 
 ## 🟢 STATO AL 22/6
