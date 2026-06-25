@@ -93,20 +93,22 @@ function applyTranslations(obj, map) {
 
 // Bump quando cambiano le istruzioni di traduzione: invalida le cache esistenti
 // (l'hash cambia → ri-traduzione alla prossima visita EN).
-const PROMPT_VERSION = 'v2'
+const PROMPT_VERSION = 'v3'
 
 function hashSource(map) {
   const stable = JSON.stringify(Object.keys(map).sort().map(k => [k, map[k]]))
   return createHash('sha1').update(PROMPT_VERSION + '|' + stable).digest('hex')
 }
 
-async function claudeTranslate(sourceMap, lang) {
-  const entries = Object.entries(sourceMap)
-  if (!entries.length) return {}
+// Traduce un singolo blocco di voci. Usa chiavi NUMERICHE (non le path lunghe) per
+// non gonfiare l'output JSON → evita troncamenti/overflow di token.
+async function translateChunk(entries, lang) {
   const target = lang === 'en' ? 'English' : lang
+  const indexed = {}
+  entries.forEach(([, v], i) => { indexed[i] = v })
   const prompt =
 `Translate the following website texts from Italian to ${target}.
-You receive a JSON object {key: text}. Return ONLY a JSON object with the SAME keys and the translated values. No commentary, no markdown fences.
+You receive a JSON object {number: text}. Return ONLY a JSON object with the SAME numeric keys and the translated values. No commentary, no markdown fences.
 Rules:
 - Keep unchanged: brand/business names, people's names, place names, and iconic Italian dish names (e.g. Carbonara, Tiramisù, Pizza Margherita, Amatriciana).
 - TRANSLATE everything else, including dish DESCRIPTIONS and descriptive menu item names (e.g. "Tartare di salmone norvegese, avocado e cialda ai semi" → "Norwegian salmon tartare, avocado and seeded wafer").
@@ -115,19 +117,38 @@ Rules:
 - Preserve tone and meaning. Do not add or remove text. Do not translate the keys.
 
 JSON:
-${JSON.stringify(sourceMap)}`
+${JSON.stringify(indexed)}`
 
-  // Stima token output: ~ caratteri/2 + margine; cap a 8000.
   const chars = entries.reduce((n, [, v]) => n + v.length, 0)
-  const maxTokens = Math.min(8000, Math.max(1024, Math.ceil(chars / 2) + 512))
-
+  const maxTokens = Math.min(8000, Math.max(1024, Math.ceil(chars / 1.4) + 800))
   const raw = await callClaude(prompt, maxTokens)
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
   const parsed = JSON.parse(cleaned)
-  // Tieni solo le chiavi note e con valore stringa (difesa da output sporco).
+  const out = {}
+  entries.forEach(([k], i) => {
+    if (typeof parsed[i] === 'string' && parsed[i].trim()) out[k] = parsed[i]
+  })
+  return out
+}
+
+async function claudeTranslate(sourceMap, lang) {
+  const entries = Object.entries(sourceMap)
+  if (!entries.length) return {}
+  // Chunking per ~2500 caratteri di valore: ogni chiamata resta ben sotto i limiti
+  // di output → niente più fallback totale su menu/contenuti grandi.
+  const chunks = []
+  let cur = [], curChars = 0
+  for (const e of entries) {
+    cur.push(e); curChars += (e[1] || '').length
+    if (curChars >= 2500) { chunks.push(cur); cur = []; curChars = 0 }
+  }
+  if (cur.length) chunks.push(cur)
+
   const result = {}
-  for (const [k] of entries) {
-    if (typeof parsed[k] === 'string' && parsed[k].trim()) result[k] = parsed[k]
+  for (const chunk of chunks) {
+    // Resilienza: un blocco che fallisce non azzera la traduzione degli altri.
+    try { Object.assign(result, await translateChunk(chunk, lang)) }
+    catch (e) { console.error('[translate] blocco fallito:', e?.message) }
   }
   return result
 }
