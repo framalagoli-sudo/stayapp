@@ -39,37 +39,42 @@ const CATALOG_ICON_MAP = {
 
 // ─── Costanti EU Reg. 1169/2011 ───────────────────────────────────────────────
 export const EU_ALLERGENS = [
-  { key: 'glutine',       label: 'Glutine',         icon: Wheat      },
-  { key: 'crostacei',     label: 'Crostacei',       icon: Shrimp     },
-  { key: 'uova',          label: 'Uova',            icon: Egg        },
-  { key: 'pesce',         label: 'Pesce',           icon: Fish       },
-  { key: 'arachidi',      label: 'Arachidi',        icon: Nut        },
-  { key: 'soia',          label: 'Soia',            icon: Bean       },
-  { key: 'latte',         label: 'Latte',           icon: Milk       },
-  { key: 'frutta_guscio', label: 'Frutta a guscio', icon: Nut        },
-  { key: 'sedano',        label: 'Sedano',          icon: LeafyGreen },
-  { key: 'senape',        label: 'Senape',          icon: Flower2    },
-  { key: 'sesamo',        label: 'Sesamo',          icon: Sprout     },
-  { key: 'solfiti',       label: 'Solfiti',         icon: Wine       },
-  { key: 'lupini',        label: 'Lupini',          icon: Bean       },
-  { key: 'molluschi',     label: 'Molluschi',       icon: Shell      },
+  { key: 'glutine',       label: 'Glutine',         en: 'Gluten',       icon: Wheat      },
+  { key: 'crostacei',     label: 'Crostacei',       en: 'Crustaceans',  icon: Shrimp     },
+  { key: 'uova',          label: 'Uova',            en: 'Eggs',         icon: Egg        },
+  { key: 'pesce',         label: 'Pesce',           en: 'Fish',         icon: Fish       },
+  { key: 'arachidi',      label: 'Arachidi',        en: 'Peanuts',      icon: Nut        },
+  { key: 'soia',          label: 'Soia',            en: 'Soy',          icon: Bean       },
+  { key: 'latte',         label: 'Latte',           en: 'Milk',         icon: Milk       },
+  { key: 'frutta_guscio', label: 'Frutta a guscio', en: 'Tree nuts',    icon: Nut        },
+  { key: 'sedano',        label: 'Sedano',          en: 'Celery',       icon: LeafyGreen },
+  { key: 'senape',        label: 'Senape',          en: 'Mustard',      icon: Flower2    },
+  { key: 'sesamo',        label: 'Sesamo',          en: 'Sesame',       icon: Sprout     },
+  { key: 'solfiti',       label: 'Solfiti',         en: 'Sulphites',    icon: Wine       },
+  { key: 'lupini',        label: 'Lupini',          en: 'Lupin',        icon: Bean       },
+  { key: 'molluschi',     label: 'Molluschi',       en: 'Molluscs',     icon: Shell      },
 ]
+// Etichetta allergene nella lingua scelta.
+export function allergenLabel(a, lang) { return lang === 'en' && a.en ? a.en : a.label }
 
 export const DIETARY_FLAGS = [
-  { key: 'vegetariano',    label: 'Veg',   filterLabel: 'Vegetariano',   color: '#166534', bg: '#DCFCE7', border: '#86EFAC' },
-  { key: 'vegano',         label: 'Vegan', filterLabel: 'Vegano',        color: '#166534', bg: '#DCFCE7', border: '#86EFAC' },
-  { key: 'senza_glutine',  label: 'GF',    filterLabel: 'Senza glutine', color: '#166534', bg: '#DCFCE7', border: '#86EFAC' },
-  { key: 'senza_lattosio', label: 'LF',    filterLabel: 'Senza lattosio',color: '#166534', bg: '#DCFCE7', border: '#86EFAC' },
-  { key: 'piccante',       label: null,    filterLabel: 'Piccante',      color: '#9A3412', bg: '#FEF3C7', border: '#FDE68A', icon: true },
+  { key: 'vegetariano',    label: 'Veg',   filterLabel: 'Vegetariano',   filterEn: 'Vegetarian',   color: '#166534', bg: '#DCFCE7', border: '#86EFAC' },
+  { key: 'vegano',         label: 'Vegan', filterLabel: 'Vegano',        filterEn: 'Vegan',        color: '#166534', bg: '#DCFCE7', border: '#86EFAC' },
+  { key: 'senza_glutine',  label: 'GF',    filterLabel: 'Senza glutine', filterEn: 'Gluten-free',  color: '#166534', bg: '#DCFCE7', border: '#86EFAC' },
+  { key: 'senza_lattosio', label: 'LF',    filterLabel: 'Senza lattosio',filterEn: 'Lactose-free', color: '#166534', bg: '#DCFCE7', border: '#86EFAC' },
+  { key: 'piccante',       label: null,    filterLabel: 'Piccante',      filterEn: 'Spicy',        color: '#9A3412', bg: '#FEF3C7', border: '#FDE68A', icon: true },
 ]
 
 const TIPO_SING = { piatto: 'piatto', vino: 'vino', cocktail: 'cocktail', pizza: 'pizza', dolce: 'dolce', birra: 'birra', panino: 'panino' }
 const TIPO_PLUR = { piatto: 'piatti', vino: 'vini',  cocktail: 'cocktail', pizza: 'pizze', dolce: 'dolci', birra: 'birre', panino: 'panini' }
+const TIPO_SING_EN = { piatto: 'dish', vino: 'wine', cocktail: 'cocktail', pizza: 'pizza', dolce: 'dessert', birra: 'beer', panino: 'sandwich' }
+const TIPO_PLUR_EN = { piatto: 'dishes', vino: 'wines', cocktail: 'cocktails', pizza: 'pizzas', dolce: 'desserts', birra: 'beers', panino: 'sandwiches' }
 
-function getTipoLabel(cat, count) {
+function getTipoLabel(cat, count, lang = 'it') {
   const t = cat.tipo || 'piatto'
-  if (count === 1) return TIPO_SING[t] || t
-  return TIPO_PLUR[t] || t
+  const sing = lang === 'en' ? TIPO_SING_EN : TIPO_SING
+  const plur = lang === 'en' ? TIPO_PLUR_EN : TIPO_PLUR
+  return count === 1 ? (sing[t] || t) : (plur[t] || t)
 }
 
 export function normalizeAllergens(val) {
@@ -99,11 +104,11 @@ export function DietaryBadge({ flag }) {
   )
 }
 
-export function AllergenFilterBar({ excluded, setExcluded, dietaryFilters, setDietaryFilters, subText, cardBg, borderColor }) {
+export function AllergenFilterBar({ excluded, setExcluded, dietaryFilters, setDietaryFilters, subText, cardBg, borderColor, lang = 'it' }) {
   const hasFilters = excluded.length > 0 || dietaryFilters.length > 0
   return (
     <div style={{ marginBottom: 14 }}>
-      <div style={{ fontSize: 10, color: subText, fontWeight: 700, marginBottom: 6, letterSpacing: 0.8, opacity: 0.7 }}>ESCLUDI ALLERGENI</div>
+      <div style={{ fontSize: 10, color: subText, fontWeight: 700, marginBottom: 6, letterSpacing: 0.8, opacity: 0.7 }}>{lang === 'en' ? 'EXCLUDE ALLERGENS' : 'ESCLUDI ALLERGENI'}</div>
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         {EU_ALLERGENS.map(a => {
           const active = excluded.includes(a.key)
@@ -114,13 +119,13 @@ export function AllergenFilterBar({ excluded, setExcluded, dietaryFilters, setDi
               style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 11px', borderRadius: 20, border: `1.5px solid ${active ? '#92400E' : borderColor}`, background: active ? '#FEF3C7' : cardBg, color: active ? '#92400E' : subText, fontSize: 11, fontWeight: active ? 700 : 400, cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
             >
               {Icon && <Icon size={12} strokeWidth={1.5} color={active ? '#92400E' : subText} />}
-              {a.label}
+              {allergenLabel(a, lang)}
             </button>
           )
         })}
       </div>
 
-      <div style={{ fontSize: 10, color: subText, fontWeight: 700, marginBottom: 6, marginTop: 10, letterSpacing: 0.8, opacity: 0.7 }}>MOSTRA SOLO</div>
+      <div style={{ fontSize: 10, color: subText, fontWeight: 700, marginBottom: 6, marginTop: 10, letterSpacing: 0.8, opacity: 0.7 }}>{lang === 'en' ? 'SHOW ONLY' : 'MOSTRA SOLO'}</div>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {DIETARY_FLAGS.map(d => {
           const active = dietaryFilters.includes(d.key)
@@ -130,7 +135,7 @@ export function AllergenFilterBar({ excluded, setExcluded, dietaryFilters, setDi
               style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 11px', borderRadius: 20, border: `1.5px solid ${active ? d.border : borderColor}`, background: active ? d.bg : cardBg, color: active ? d.color : subText, fontSize: 11, fontWeight: active ? 700 : 400, cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
             >
               {d.icon && <Flame size={12} strokeWidth={1.5} color={active ? d.color : subText} />}
-              {d.filterLabel}
+              {lang === 'en' ? (d.filterEn || d.filterLabel) : d.filterLabel}
             </button>
           )
         })}
@@ -139,7 +144,7 @@ export function AllergenFilterBar({ excluded, setExcluded, dietaryFilters, setDi
       {hasFilters && (
         <button type="button" onClick={() => { setExcluded([]); setDietaryFilters([]) }}
           style={{ fontSize: 11, color: '#92400E', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', marginTop: 4, fontWeight: 600 }}>
-          ✕ Rimuovi filtri ({excluded.length + dietaryFilters.length})
+          ✕ {lang === 'en' ? 'Clear filters' : 'Rimuovi filtri'} ({excluded.length + dietaryFilters.length})
         </button>
       )}
     </div>
@@ -147,7 +152,7 @@ export function AllergenFilterBar({ excluded, setExcluded, dietaryFilters, setDi
 }
 
 // ─── MenuItem ─────────────────────────────────────────────────────────────────
-export function MenuItem({ item, primary, textColor, subText, isDark, radius, cardBg, borderColor, onOpenPhoto, showAllergens }) {
+export function MenuItem({ item, primary, textColor, subText, isDark, radius, cardBg, borderColor, onOpenPhoto, showAllergens, lang = 'it' }) {
   const shadow = isDark ? 'none' : '0 1px 8px rgba(0,0,0,0.06)'
   const allergens = showAllergens ? normalizeAllergens(item.allergens) : []
   const dietary   = showAllergens ? (item.dietary || []) : []
@@ -178,11 +183,11 @@ export function MenuItem({ item, primary, textColor, subText, isDark, radius, ca
             )}
             {allergens.length > 0 && (
               <div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: '#92400E', letterSpacing: 0.7, marginBottom: 3, opacity: 0.75 }}>ALLERGENI</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: '#92400E', letterSpacing: 0.7, marginBottom: 3, opacity: 0.75 }}>{lang === 'en' ? 'ALLERGENS' : 'ALLERGENI'}</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                   {allergens.map(a => {
                     const obj = EU_ALLERGENS.find(e => e.key === a)
-                    return obj ? <AllergenChip key={a} label={obj.label} icon={obj.icon} /> : null
+                    return obj ? <AllergenChip key={a} label={allergenLabel(obj, lang)} icon={obj.icon} /> : null
                   })}
                 </div>
               </div>
@@ -195,11 +200,11 @@ export function MenuItem({ item, primary, textColor, subText, isDark, radius, ca
 }
 
 // ─── AllergenLegend ───────────────────────────────────────────────────────────
-function AllergenLegend({ subText, cardBg, borderColor }) {
+function AllergenLegend({ subText, cardBg, borderColor, lang = 'it' }) {
   return (
     <div style={{ marginTop: 20, padding: '14px 16px', background: cardBg, borderRadius: 10, border: `1px solid ${borderColor}` }}>
       <div style={{ fontSize: 10, fontWeight: 700, color: subText, letterSpacing: 0.7, marginBottom: 10, opacity: 0.7 }}>
-        ALLERGENI — REG. UE 1169/2011
+        {lang === 'en' ? 'ALLERGENS — EU REG. 1169/2011' : 'ALLERGENI — REG. UE 1169/2011'}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '7px 10px' }}>
         {EU_ALLERGENS.map(a => {
@@ -207,7 +212,7 @@ function AllergenLegend({ subText, cardBg, borderColor }) {
           return (
             <div key={a.key} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: subText }}>
               {Icon && <Icon size={12} strokeWidth={1.5} color={subText} style={{ flexShrink: 0 }} />}
-              <span>{a.label}</span>
+              <span>{allergenLabel(a, lang)}</span>
             </div>
           )
         })}
@@ -217,7 +222,7 @@ function AllergenLegend({ subText, cardBg, borderColor }) {
 }
 
 // ─── CatalogoDetail ───────────────────────────────────────────────────────────
-function CatalogoDetail({ selected, onBack, primary, textColor, subText, isDark, radius, headingFamily, cardBg, borderColor, showAllergens, excluded, setExcluded, dietaryFilters, setDietaryFilters }) {
+function CatalogoDetail({ selected, onBack, primary, textColor, subText, isDark, radius, headingFamily, cardBg, borderColor, showAllergens, excluded, setExcluded, dietaryFilters, setDietaryFilters, lang = 'it' }) {
   const firstId = selected.categories?.[0]?.id || null
   const [openCat,  setOpenCat]  = useState(firstId)
   const [lightbox, setLightbox] = useState(null)
@@ -234,7 +239,7 @@ function CatalogoDetail({ selected, onBack, primary, textColor, subText, isDark,
         <span style={{ fontWeight: 700, fontSize: 16, color: textColor, fontFamily: headingFamily }}>{selected.name}</span>
       </div>
 
-      {showAllergens && <AllergenFilterBar excluded={excluded} setExcluded={setExcluded} dietaryFilters={dietaryFilters} setDietaryFilters={setDietaryFilters} subText={subText} cardBg={cardBg} borderColor={borderColor} />}
+      {showAllergens && <AllergenFilterBar excluded={excluded} setExcluded={setExcluded} dietaryFilters={dietaryFilters} setDietaryFilters={setDietaryFilters} subText={subText} cardBg={cardBg} borderColor={borderColor} lang={lang} />}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {(selected.categories || []).map(cat => {
@@ -252,7 +257,7 @@ function CatalogoDetail({ selected, onBack, primary, textColor, subText, isDark,
                   <h2 style={{ margin: 0, fontSize: 14, fontWeight: 700, fontFamily: headingFamily, color: isOpen ? primary : textColor, textTransform: 'uppercase', letterSpacing: 0.8 }}>
                     {cat.name}
                   </h2>
-                  <span style={{ fontSize: 11, color: subText }}>{activeItems.length} {getTipoLabel(cat, activeItems.length)}</span>
+                  <span style={{ fontSize: 11, color: subText }}>{activeItems.length} {getTipoLabel(cat, activeItems.length, lang)}</span>
                 </div>
                 <ChevronDown size={16} strokeWidth={2} color={isOpen ? primary : subText}
                   style={{ transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'none', flexShrink: 0 }} />
@@ -260,7 +265,7 @@ function CatalogoDetail({ selected, onBack, primary, textColor, subText, isDark,
               {isOpen && (
                 <div className="fade-up" style={{ padding: '10px 12px 14px', display: 'flex', flexDirection: 'column', gap: 10, background: isDark ? cardBg : '#fafafa' }}>
                   {activeItems.map(item => (
-                    <MenuItem key={item.id} item={item} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} cardBg={cardBg} borderColor={borderColor} showAllergens={showAllergens} onOpenPhoto={item.photo_url ? () => setLightbox(item.photo_url) : null} />
+                    <MenuItem key={item.id} item={item} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} cardBg={cardBg} borderColor={borderColor} showAllergens={showAllergens} onOpenPhoto={item.photo_url ? () => setLightbox(item.photo_url) : null} lang={lang} />
                   ))}
                 </div>
               )}
@@ -269,7 +274,7 @@ function CatalogoDetail({ selected, onBack, primary, textColor, subText, isDark,
         })}
       </div>
 
-      {showAllergens && <AllergenLegend subText={subText} cardBg={cardBg} borderColor={borderColor} />}
+      {showAllergens && <AllergenLegend subText={subText} cardBg={cardBg} borderColor={borderColor} lang={lang} />}
 
       {lightbox && (
         <div onClick={() => setLightbox(null)}
@@ -286,7 +291,7 @@ function CatalogoDetail({ selected, onBack, primary, textColor, subText, isDark,
 }
 
 // ─── MenuTab (export default) ─────────────────────────────────────────────────
-export default function MenuTab({ menu, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, showAllergens }) {
+export default function MenuTab({ menu, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, showAllergens, lang = 'it' }) {
   const isCatalogo = menu.length > 0 && menu[0].type === 'catalogo'
   const [selectedId, setSelectedId] = useState(null)
   const firstCatId = !isCatalogo ? (menu[0]?.id || null) : null
@@ -301,7 +306,7 @@ export default function MenuTab({ menu, primary, textColor, subText, isDark, rad
     return (
       <div style={{ padding: 40, textAlign: 'center', color: subText }}>
         <Utensils size={40} strokeWidth={1.5} color={primary} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
-        <p style={{ margin: 0, fontSize: 15 }}>Menu non ancora disponibile.</p>
+        <p style={{ margin: 0, fontSize: 15 }}>{lang === 'en' ? 'Menu not available yet.' : 'Menu non ancora disponibile.'}</p>
       </div>
     )
   }
@@ -321,7 +326,7 @@ export default function MenuTab({ menu, primary, textColor, subText, isDark, rad
             <h2 style={{ margin: 0, fontSize: 14, fontWeight: 700, fontFamily: headingFamily, color: isOpen ? primary : textColor, textTransform: 'uppercase', letterSpacing: 0.8 }}>
               {cat.name}
             </h2>
-            <span style={{ fontSize: 11, color: subText, fontWeight: 400 }}>{activeItems.length} {getTipoLabel(cat, activeItems.length)}</span>
+            <span style={{ fontSize: 11, color: subText, fontWeight: 400 }}>{activeItems.length} {getTipoLabel(cat, activeItems.length, lang)}</span>
           </div>
           <ChevronDown size={16} strokeWidth={2} color={isOpen ? primary : subText}
             style={{ transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'none', flexShrink: 0 }} />
@@ -329,7 +334,7 @@ export default function MenuTab({ menu, primary, textColor, subText, isDark, rad
         {isOpen && (
           <div className="fade-up" style={{ padding: '10px 12px 14px', display: 'flex', flexDirection: 'column', gap: 10, background: isDark ? cardBg : '#fafafa' }}>
             {activeItems.map(item => (
-              <MenuItem key={item.id} item={item} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} cardBg={cardBg} borderColor={borderColor} showAllergens={showAllergens} onOpenPhoto={item.photo_url ? () => setLightbox(item.photo_url) : null} />
+              <MenuItem key={item.id} item={item} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} cardBg={cardBg} borderColor={borderColor} showAllergens={showAllergens} onOpenPhoto={item.photo_url ? () => setLightbox(item.photo_url) : null} lang={lang} />
             ))}
           </div>
         )}
@@ -378,15 +383,15 @@ export default function MenuTab({ menu, primary, textColor, subText, isDark, rad
         </div>
       )
     }
-    return <CatalogoDetail selected={selected} onBack={() => setSelectedId(null)} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} headingFamily={headingFamily} cardBg={cardBg} borderColor={borderColor} showAllergens={showAllergens} excluded={excluded} setExcluded={setExcluded} dietaryFilters={dietaryFilters} setDietaryFilters={setDietaryFilters} />
+    return <CatalogoDetail selected={selected} onBack={() => setSelectedId(null)} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} headingFamily={headingFamily} cardBg={cardBg} borderColor={borderColor} showAllergens={showAllergens} excluded={excluded} setExcluded={setExcluded} dietaryFilters={dietaryFilters} setDietaryFilters={setDietaryFilters} lang={lang} />
   }
 
   // Single menu
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      {showAllergens && <AllergenFilterBar excluded={excluded} setExcluded={setExcluded} dietaryFilters={dietaryFilters} setDietaryFilters={setDietaryFilters} subText={subText} cardBg={cardBg} borderColor={borderColor} />}
+      {showAllergens && <AllergenFilterBar excluded={excluded} setExcluded={setExcluded} dietaryFilters={dietaryFilters} setDietaryFilters={setDietaryFilters} subText={subText} cardBg={cardBg} borderColor={borderColor} lang={lang} />}
       {menu.map(cat => renderCategoryAccordion(cat))}
-      {showAllergens && <AllergenLegend subText={subText} cardBg={cardBg} borderColor={borderColor} />}
+      {showAllergens && <AllergenLegend subText={subText} cardBg={cardBg} borderColor={borderColor} lang={lang} />}
       {renderLightbox()}
     </div>
   )
