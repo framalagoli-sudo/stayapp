@@ -361,7 +361,7 @@ export default function MenuTab({ menu, primary, textColor, subText, isDark, rad
     if (!selected) {
       return (
         <div>
-          <h2 style={{ fontFamily: headingFamily, fontSize: 18, fontWeight: 700, color: textColor, margin: '0 0 16px' }}>Scegli il menu</h2>
+          <h2 style={{ fontFamily: headingFamily, fontSize: 18, fontWeight: 700, color: textColor, margin: '0 0 16px' }}>{lang === 'en' ? 'Choose the menu' : 'Scegli il menu'}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {menu.map(c => {
               const activeCount = (c.categories || []).reduce((n, cat) => n + (cat.items || []).filter(i => i.active !== false).length, 0)
@@ -373,7 +373,7 @@ export default function MenuTab({ menu, primary, textColor, subText, isDark, rad
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: 17, color: textColor, fontFamily: headingFamily }}>{c.name}</div>
-                    <div style={{ fontSize: 12, color: subText, marginTop: 2 }}>{activeCount} {activeCount === 1 ? 'voce' : 'voci'}</div>
+                    <div style={{ fontSize: 12, color: subText, marginTop: 2 }}>{activeCount} {lang === 'en' ? (activeCount === 1 ? 'item' : 'items') : (activeCount === 1 ? 'voce' : 'voci')}</div>
                   </div>
                   <ChevronRight size={18} strokeWidth={1.5} color={subText} />
                 </button>
