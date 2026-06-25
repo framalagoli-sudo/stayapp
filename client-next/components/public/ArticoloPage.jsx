@@ -57,16 +57,17 @@ export default function ArticoloPage() {
   const router = useRouter()
   const [searchParams] = useSearchParams()
   const backUrl = searchParams.get('back')
+  const lang = searchParams.get('_lang') === 'en' ? 'en' : 'it'
   const [articolo, setArticolo] = useState(null)
   const [loading, setLoading] = useState(true)
   const [cleanHtml, setCleanHtml] = useState('')
 
   useEffect(() => {
-    apiFetch(`/api/blog/public/${slug}`)
+    apiFetch(`/api/blog/public/${slug}?lang=${lang}`)
       .then(setArticolo)
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [slug])
+  }, [slug, lang])
 
   useEffect(() => {
     if (!articolo) return

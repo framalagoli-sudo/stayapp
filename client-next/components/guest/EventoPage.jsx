@@ -1,12 +1,14 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Calendar, MapPin, Users, ArrowLeft, Check } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
 
 export default function EventoPage() {
   const { id } = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const lang = searchParams.get('_lang') === 'en' ? 'en' : 'it'
   const [evento,     setEvento]     = useState(null)
   const [error,      setError]      = useState(null)
   const [pkgId,      setPkgId]      = useState('')
@@ -19,10 +21,10 @@ export default function EventoPage() {
   const [bookErr,    setBookErr]    = useState('')
 
   useEffect(() => {
-    guestFetch(`/api/guest/eventi/${id}`)
+    guestFetch(`/api/guest/eventi/${id}?lang=${lang}`)
       .then(ev => { setEvento(ev); if (ev.packages?.length === 1) setPkgId(ev.packages[0].id) })
       .catch(() => setError('Evento non trovato.'))
-  }, [id])
+  }, [id, lang])
 
   async function handleBook() {
     if (!guestName.trim()) { setBookErr('Inserisci il tuo nome'); return }

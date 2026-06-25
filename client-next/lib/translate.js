@@ -15,6 +15,8 @@ const TRANSLATABLE_FIELDS = {
   ristorante: ['description', 'menu', 'minisito'],
   attivita:   ['description', 'services', 'minisito'],
   pagina:     ['titolo', 'seo_title', 'seo_description', 'blocks'],
+  articolo:   ['title', 'excerpt', 'content'],
+  evento:     ['title', 'description', 'location', 'packages'],
   // Form builder: solo testo display-only. MAI 'opzioni' (sono valori inviati + display:
   // tradurli romperebbe le submission e la logica condizionale) né tipo/operatore/condizione.
   form:       ['descrizione', 'campi'],
@@ -104,6 +106,7 @@ You receive a JSON object {key: text}. Return ONLY a JSON object with the SAME k
 Rules:
 - Keep proper nouns unchanged: brand/business names, people's names, dish/menu item names, place names.
 - Translate descriptions, taglines, labels, feature names (e.g. "Piscina" → "Pool"), questions and answers.
+- Keep any HTML tags, markdown and placeholders exactly as they are; translate only the visible text.
 - Preserve tone and meaning. Do not add or remove text. Do not translate the keys.
 
 JSON:
