@@ -7,7 +7,13 @@ metadata:
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
 ---
 
-## ▶️ RIPARTIRE DA QUI (chiuso 26/6)
+## ▶️ RIPARTIRE DA QUI (aggiornato 26/6 sera)
+### Fix dopo test Francesco (26/6 sera) — tutti live+verificati:
+- **Anteprima template REALE**: route `app/template-preview/[id]/page.js` + `TemplatePreviewClient.jsx` (render via LandingBlockRenderer, entità fittizia); galleria la mostra in iframe scalato. Prima erano stack astratti.
+- **ChatbotWidget tradotto** (era IT): lang + EN (Assistant/Online now/welcome/errore/placeholder), lang passato dai 7 renderer.
+- **amenities tradotte** (erano IT): bug `collectStrings` in `lib/translate.js` → SALTAVA gli array di stringhe semplici (es. amenities ["Wi-Fi","Piscina"]). FIX: raccogli elementi stringa degli array + denylist spostato a monte (salta anche chiavi array/oggetto: opzioni/section_order/condizione restano escluse → submission al sicuro). PROMPT_VERSION v4. LEZIONE: array di stringhe semplici nei JSONB ora tradotti.
+
+## ▶️ Stato precedente (chiuso 26/6)
 Frontiera attuale = **sistema template AI builder** (galleria stile Elementor) → vedi [[project_template_gallery]].
 - ✅ Fatto oggi: **Multilingua COMPLETO** (sito/PWA/menu/blog/eventi/cookie + override admin) end-to-end; **unificazione editor** Passo 2 (sidebar "Sito web" → SitoPage block editor + tab SEO&Impostazioni); **galleria template Fase A** (3 template + applica + tab Template in SitoPage), verificata (render su /s/prova).
 - ⏭️ PROSSIMO (in ordine): **Template Fase B** (AI riempie testi/immagini al business: "uguale" vs "usalo come traccia") → **Fase C** (wizard domande settore/obiettivo → filtri + "Sfoglia") → anteprime live + più template. Poi **Passo 3 unificazione**: ritirare MiniSitoPage (route /minisito ancora esiste, non linkata).
