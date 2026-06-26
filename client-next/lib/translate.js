@@ -59,7 +59,7 @@ function isNonText(v) {
 
 // Raccoglie i testi traducibili in {percorso: testo}. I percorsi usano '.' e
 // indicizzano gli array per numero (es. "minisito.highlights.0.text").
-function collectStrings(node, prefix, out) {
+export function collectStrings(node, prefix, out) {
   if (Array.isArray(node)) {
     node.forEach((v, i) => {
       const p = prefix ? `${prefix}.${i}` : String(i)
@@ -93,7 +93,7 @@ function setByPath(root, path, value) {
   if (cur != null) cur[segs[segs.length - 1]] = value
 }
 
-function applyTranslations(obj, map) {
+export function applyTranslations(obj, map) {
   const clone = JSON.parse(JSON.stringify(obj))
   for (const [path, value] of Object.entries(map)) setByPath(clone, path, value)
   return clone
