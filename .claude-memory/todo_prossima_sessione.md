@@ -9,7 +9,7 @@ metadata:
 
 ## ▶️ RIPARTIRE DA QUI (aggiornato 26/6 sera)
 ### Fix dopo test Francesco (26/6 sera) — tutti live+verificati:
-- **Anteprima template REALE**: route `app/template-preview/[id]/page.js` + `TemplatePreviewClient.jsx` (render via LandingBlockRenderer, entità fittizia); galleria la mostra in iframe scalato. Prima erano stack astratti.
+- **Anteprima template REALE**: route `app/template-preview/[id]/page.js` + `TemplatePreviewClient.jsx` (render via LandingBlockRenderer, entità fittizia); galleria la mostra in iframe scalato. Prima erano stack astratti. ⚠️ FIX necessario: la CSP globale (`next.config.js`) aveva `frame-ancestors 'none'` + `X-Frame-Options DENY` → bloccava l'iframe same-origin (anteprima "rotta"/immagine non trovata). Cambiato a `frame-ancestors 'self'` + `SAMEORIGIN` (esterno resta vietato). + immagini placeholder picsum su hero/foto_testo dei template per anteprime piene.
 - **ChatbotWidget tradotto** (era IT): lang + EN (Assistant/Online now/welcome/errore/placeholder), lang passato dai 7 renderer.
 - **amenities tradotte** (erano IT): bug `collectStrings` in `lib/translate.js` → SALTAVA gli array di stringhe semplici (es. amenities ["Wi-Fi","Piscina"]). FIX: raccogli elementi stringa degli array + denylist spostato a monte (salta anche chiavi array/oggetto: opzioni/section_order/condizione restano escluse → submission al sicuro). PROMPT_VERSION v4. LEZIONE: array di stringhe semplici nei JSONB ora tradotti.
 
