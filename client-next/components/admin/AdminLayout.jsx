@@ -13,7 +13,7 @@ import {
   QrCode, UserCheck, ClipboardList, LogOut,
   Building, Building2, Store, Zap, Webhook, BotMessageSquare, Star, Settings,
   Info, Layers, Wrench, Image, Palette, MapPin, Globe, Lock, Bot, UtensilsCrossed,
-  FormInput, ShoppingBag, Sparkles, BarChart3, Gift, SearchCheck, LifeBuoy, LayoutTemplate, Wand2,
+  FormInput, ShoppingBag, Sparkles, BarChart3, Gift, SearchCheck, LifeBuoy, LayoutTemplate,
 } from 'lucide-react'
 
 // ─── Nav definitions ──────────────────────────────────────────────────────────
@@ -435,7 +435,6 @@ export default function AdminLayout({ children }) {
             <NavItem to="/admin/blog"             icon={Newspaper}        label="Blog & News" />
             <NavItem to="/admin/piano-editoriale" icon={CalendarDays}     label="Piano editoriale" />
             <NavItem to="/admin/content-studio"   icon={Sparkles}         label="Content Studio" />
-            <NavItem to="/admin/ai-site-builder"  icon={Wand2}            label="AI Site Builder" />
             <NavItem to="/admin/preventivi"       icon={FileText}         label="Preventivi" />
             <NavItem to="/admin/form-builder"     icon={FormInput}        label="Form Builder" />
             <NavItem to="/admin/shop"             icon={ShoppingBag}      label="Shop" />
