@@ -61,12 +61,20 @@ function isNonText(v) {
 // indicizzano gli array per numero (es. "minisito.highlights.0.text").
 function collectStrings(node, prefix, out) {
   if (Array.isArray(node)) {
-    node.forEach((v, i) => collectStrings(v, prefix ? `${prefix}.${i}` : String(i), out))
+    node.forEach((v, i) => {
+      const p = prefix ? `${prefix}.${i}` : String(i)
+      // Elementi stringa di un array (es. amenities ["Wi-Fi","Piscina"]) vanno raccolti.
+      if (typeof v === 'string') { if (!isNonText(v)) out[p] = v }
+      else if (v && typeof v === 'object') collectStrings(v, p, out)
+    })
   } else if (node && typeof node === 'object') {
     for (const [k, v] of Object.entries(node)) {
+      // Denylist a monte: salta le chiavi config anche se array/oggetto
+      // (opzioni, section_order, condizione, sections…) → niente da tradurre lì.
+      if (isConfigKey(k)) continue
       const path = prefix ? `${prefix}.${k}` : k
       if (typeof v === 'string') {
-        if (!isConfigKey(k) && !isNonText(v)) out[path] = v
+        if (!isNonText(v)) out[path] = v
       } else if (v && typeof v === 'object') {
         collectStrings(v, path, out)
       }
@@ -93,7 +101,7 @@ function applyTranslations(obj, map) {
 
 // Bump quando cambiano le istruzioni di traduzione: invalida le cache esistenti
 // (l'hash cambia → ri-traduzione alla prossima visita EN).
-const PROMPT_VERSION = 'v3'
+const PROMPT_VERSION = 'v4'
 
 function hashSource(map) {
   const stable = JSON.stringify(Object.keys(map).sort().map(k => [k, map[k]]))
