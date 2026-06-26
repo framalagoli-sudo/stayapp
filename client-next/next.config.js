@@ -18,7 +18,7 @@ const CSP = [
   "default-src 'self'",
   "base-uri 'self'",
   "object-src 'none'",
-  "frame-ancestors 'none'",
+  "frame-ancestors 'self'",
   "form-action 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://va.vercel-scripts.com https://maps.googleapis.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -35,7 +35,7 @@ const CSP = [
 const securityHeaders = [
   { key: 'Content-Security-Policy', value: CSP },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
-  { key: 'X-Frame-Options', value: 'DENY' },
+  { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(self), interest-cohort=()' },
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
