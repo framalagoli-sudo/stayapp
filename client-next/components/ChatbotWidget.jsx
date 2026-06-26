@@ -2,11 +2,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { MessageCircle, X, Send } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
+import { t } from '@/lib/i18n'
 
 // fixed=false → posizionato dentro il container PWA (position:absolute)
 // fixed=true  → floating su landing page (position:fixed)
 // embedded=true → tab PWA: nessun pulsante flottante, nessun X, riempie il parent
-export default function ChatbotWidget({ chatbot, primaryColor, fixed = false, entityTipo, entityId, embedded = false }) {
+export default function ChatbotWidget({ chatbot, primaryColor, fixed = false, entityTipo, entityId, embedded = false, lang = 'it' }) {
   const [open, setOpen]       = useState(embedded)
   const [messages, setMessages] = useState([])
   const [typing, setTyping]   = useState(false)
@@ -22,7 +23,9 @@ export default function ChatbotWidget({ chatbot, primaryColor, fixed = false, en
   useEffect(() => {
     if (!open || messages.length > 0) return
     if (aiMode) {
-      const welcome = chatbot?.ai_welcome || `Ciao! Sono l'assistente di ${chatbot?.bot_name || 'questo business'}. Come posso aiutarti?`
+      const welcome = chatbot?.ai_welcome || (lang === 'en'
+        ? `Hi! I'm ${chatbot?.bot_name || 'this business'}'s assistant. How can I help you?`
+        : `Ciao! Sono l'assistente di ${chatbot?.bot_name || 'questo business'}. Come posso aiutarti?`)
       setMessages([{ type: 'bot', text: welcome }])
     } else {
       const start = getNode('start')
@@ -89,7 +92,7 @@ export default function ChatbotWidget({ chatbot, primaryColor, fixed = false, en
       setMessages(prev => [...prev, { type: 'bot', text: data.reply }])
     } catch {
       setTyping(false)
-      setMessages(prev => [...prev, { type: 'bot', text: 'Mi dispiace, si è verificato un errore. Riprova tra qualche istante.' }])
+      setMessages(prev => [...prev, { type: 'bot', text: t('chatbot_error', lang) }])
     }
   }
 
@@ -170,10 +173,10 @@ export default function ChatbotWidget({ chatbot, primaryColor, fixed = false, en
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: 15, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {chatbot.bot_name || 'Assistente'}
+                {chatbot.bot_name || t('assistant', lang)}
               </div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>
-                {aiMode ? 'Assistente AI' : 'Online ora'}
+                {aiMode ? t('assistant_ai', lang) : t('online_now', lang)}
               </div>
             </div>
             {!embedded && (
@@ -222,7 +225,7 @@ export default function ChatbotWidget({ chatbot, primaryColor, fixed = false, en
                 value={inputText}
                 onChange={e => setInputText(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Scrivi un messaggio…"
+                placeholder={t('write_message', lang)}
                 disabled={typing}
                 style={{ flex: 1, padding: '10px 14px', borderRadius: 24, border: '1px solid #ddd', fontSize: 14, outline: 'none', background: '#fff', fontFamily: 'inherit' }}
               />

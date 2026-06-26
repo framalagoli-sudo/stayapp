@@ -389,7 +389,7 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
                   onChatbot={() => setChatMode('chatbot')}
                 />
               ) : (
-                <ChatbotWidget chatbot={property.chatbot} primaryColor={primary} entityTipo="struttura" entityId={property.id} embedded={true} />
+                <ChatbotWidget chatbot={property.chatbot} primaryColor={primary} entityTipo="struttura" entityId={property.id} embedded={true} lang={lang} />
               )}
             </div>
           )}

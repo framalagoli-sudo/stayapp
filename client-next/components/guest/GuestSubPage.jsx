@@ -137,7 +137,7 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
       />
       <ChatbotWidget
         chatbot={entity.chatbot ? { ...entity.chatbot, active: entity.chatbot.active_sito ?? entity.chatbot.active } : null}
-        primaryColor={primary} fixed entityTipo={entityType} entityId={entity.id}
+        primaryColor={primary} fixed entityTipo={entityType} entityId={entity.id} lang={lang}
       />
     </>
   )

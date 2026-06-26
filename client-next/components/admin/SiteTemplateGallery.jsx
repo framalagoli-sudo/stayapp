@@ -1,37 +1,25 @@
 'use client'
 import { useState } from 'react'
 import { apiFetch } from '@/lib/api'
-import { blockEmoji, blockLabel } from '@/lib/blockTypes'
 import { SITE_TEMPLATES } from '@/lib/siteTemplates'
 
-// Galleria template di sito (Fase A). Card con anteprima (tema + struttura blocchi)
-// + "Applica" → crea la home dal template, poi si modifica nell'editor.
-// Anteprima v1: rappresentazione fedele a colori/struttura (non live render).
+// Galleria template di sito. Card con ANTEPRIMA REALE (render del template in iframe
+// scalato) + "Applica" → crea la home dal template, poi si modifica nell'editor.
 
+// L'iframe renderizza il sito a larghezza piena e lo riduciamo in scala: si vede
+// il template "vero" (hero, sezioni, colori, font), non un'astrazione.
 function Preview({ tpl }) {
-  const c = tpl.theme?.primaryColor || '#1a1a2e'
-  const rows = tpl.blocks.slice(0, 6)
+  const W = 1180          // larghezza logica del render
+  const scale = 0.235     // riduzione → ~277px, ritagliata dal contenitore
   return (
-    <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid #eee', background: '#fff' }}>
-      {/* finta barra browser */}
-      <div style={{ height: 16, background: '#f2f2f4', display: 'flex', alignItems: 'center', gap: 4, padding: '0 8px' }}>
-        {['#ff5f56', '#ffbd2e', '#27c93f'].map(d => <span key={d} style={{ width: 6, height: 6, borderRadius: '50%', background: d }} />)}
-      </div>
-      {/* hero */}
-      <div style={{ height: 54, background: `linear-gradient(135deg, ${c} 0%, ${c}cc 100%)`, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 12px', gap: 4 }}>
-        <div style={{ height: 8, width: '55%', borderRadius: 4, background: 'rgba(255,255,255,0.9)' }} />
-        <div style={{ height: 5, width: '38%', borderRadius: 3, background: 'rgba(255,255,255,0.55)' }} />
-      </div>
-      {/* righe blocchi */}
-      <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {rows.slice(1).map((b, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: '#999' }}>
-            <span style={{ fontSize: 11 }}>{blockEmoji(b.type)}</span>
-            <span style={{ flex: 1, height: 4, borderRadius: 2, background: '#ececf0' }} />
-            <span style={{ fontSize: 9, color: '#bbb', whiteSpace: 'nowrap' }}>{blockLabel(b.type)}</span>
-          </div>
-        ))}
-      </div>
+    <div style={{ position: 'relative', width: '100%', height: 190, overflow: 'hidden', borderRadius: 10, border: '1px solid #eee', background: '#fff' }}>
+      <iframe
+        src={`/template-preview/${tpl.id}`}
+        title={tpl.nome}
+        loading="lazy"
+        scrolling="no"
+        style={{ width: W, height: W * 1.3, border: 0, transform: `scale(${scale})`, transformOrigin: 'top left', pointerEvents: 'none' }}
+      />
     </div>
   )
 }

@@ -11,7 +11,7 @@ import { callClaude } from './ai-helpers'
 // Campi top-level traducibili per tipo. Limitarsi a questi evita di toccare
 // dati sensibili/letterali (wifi_password, indirizzi, orari, telefoni…).
 const TRANSLATABLE_FIELDS = {
-  struttura:  ['description', 'rules', 'services', 'activities', 'excursions', 'minisito'],
+  struttura:  ['description', 'rules', 'amenities', 'services', 'activities', 'excursions', 'minisito'],
   ristorante: ['description', 'menu', 'minisito'],
   attivita:   ['description', 'services', 'minisito'],
   pagina:     ['titolo', 'seo_title', 'seo_description', 'blocks'],

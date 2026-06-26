@@ -227,7 +227,7 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
         fixed
         hasSibling={!!(ristorante.chatbot?.active_sito ?? ristorante.chatbot?.active)}
       />
-      <ChatbotWidget chatbot={ristorante.chatbot ? { ...ristorante.chatbot, active: ristorante.chatbot.active_sito ?? ristorante.chatbot.active } : null} primaryColor={primary} fixed entityTipo="ristorante" entityId={ristorante.id} />
+      <ChatbotWidget chatbot={ristorante.chatbot ? { ...ristorante.chatbot, active: ristorante.chatbot.active_sito ?? ristorante.chatbot.active } : null} primaryColor={primary} fixed entityTipo="ristorante" entityId={ristorante.id} lang={lang} />
     </>
   )
 }

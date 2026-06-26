@@ -341,7 +341,7 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
                   onChatbot={() => setChatMode('chatbot')}
                 />
               ) : (
-                <ChatbotWidget chatbot={ristorante.chatbot} primaryColor={primary} entityTipo="ristorante" entityId={ristorante.id} embedded={true} />
+                <ChatbotWidget chatbot={ristorante.chatbot} primaryColor={primary} entityTipo="ristorante" entityId={ristorante.id} embedded={true} lang={lang} />
               )}
             </div>
           )}

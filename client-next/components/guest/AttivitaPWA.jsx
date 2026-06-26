@@ -324,7 +324,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
                   onChatbot={() => setChatMode('chatbot')}
                 />
               ) : (
-                <ChatbotWidget chatbot={attivita.chatbot} primaryColor={primary} entityTipo="attivita" entityId={attivita.id} embedded={true} />
+                <ChatbotWidget chatbot={attivita.chatbot} primaryColor={primary} entityTipo="attivita" entityId={attivita.id} embedded={true} lang={lang} />
               )}
             </div>
           )}

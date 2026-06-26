@@ -226,7 +226,7 @@ export default function LandingStruttura({ property, initialHomeBlocks, domain, 
         fixed
         hasSibling={!!(property.chatbot?.active_sito ?? property.chatbot?.active)}
       />
-      <ChatbotWidget chatbot={property.chatbot ? { ...property.chatbot, active: property.chatbot.active_sito ?? property.chatbot.active } : null} primaryColor={primary} fixed entityTipo="struttura" entityId={property.id} />
+      <ChatbotWidget chatbot={property.chatbot ? { ...property.chatbot, active: property.chatbot.active_sito ?? property.chatbot.active } : null} primaryColor={primary} fixed entityTipo="struttura" entityId={property.id} lang={lang} />
     </>
   )
 }

@@ -219,7 +219,7 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
         fixed
         hasSibling={!!(attivita.chatbot?.active_sito ?? attivita.chatbot?.active)}
       />
-      <ChatbotWidget chatbot={attivita.chatbot ? { ...attivita.chatbot, active: attivita.chatbot.active_sito ?? attivita.chatbot.active } : null} primaryColor={primary} fixed entityTipo="attivita" entityId={attivita.id} />
+      <ChatbotWidget chatbot={attivita.chatbot ? { ...attivita.chatbot, active: attivita.chatbot.active_sito ?? attivita.chatbot.active } : null} primaryColor={primary} fixed entityTipo="attivita" entityId={attivita.id} lang={lang} />
     </>
   )
 }
