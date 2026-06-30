@@ -1,18 +1,29 @@
 'use client'
 import { useState } from 'react'
+import { Eye } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import { SITE_TEMPLATES } from '@/lib/siteTemplates'
 
 // Galleria template di sito. Card con ANTEPRIMA REALE (render del template in iframe
 // scalato) + "Applica" → crea la home dal template, poi si modifica nell'editor.
 
-// L'iframe renderizza il sito a larghezza piena e lo riduciamo in scala: si vede
-// il template "vero" (hero, sezioni, colori, font), non un'astrazione.
+// L'iframe è una THUMBNAIL del sito vero (hero, sezioni, colori, font), non un'astrazione.
+// Cliccandola si apre il template a tutto schermo e navigabile in una nuova scheda
+// (stile Elementor: "clic → vedi davvero"), perché l'iframe scalato non è navigabile.
 function Preview({ tpl }) {
+  const [hover, setHover] = useState(false)
   const W = 1180          // larghezza logica del render
   const scale = 0.235     // riduzione → ~277px, ritagliata dal contenitore
   return (
-    <div style={{ position: 'relative', width: '100%', height: 190, overflow: 'hidden', borderRadius: 10, border: '1px solid #eee', background: '#fff' }}>
+    <a
+      href={`/template-preview/${tpl.id}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={`Anteprima a tutto schermo — ${tpl.nome}`}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{ display: 'block', position: 'relative', width: '100%', height: 190, overflow: 'hidden', borderRadius: 10, border: '1px solid #eee', background: '#fff', cursor: 'pointer', textDecoration: 'none' }}
+    >
       <iframe
         src={`/template-preview/${tpl.id}`}
         title={tpl.nome}
@@ -20,7 +31,19 @@ function Preview({ tpl }) {
         scrolling="no"
         style={{ width: W, height: W * 1.3, border: 0, transform: `scale(${scale})`, transformOrigin: 'top left', pointerEvents: 'none' }}
       />
-    </div>
+      <div style={{
+        position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: hover ? 'rgba(26,26,46,0.45)' : 'transparent', transition: 'background 0.15s',
+      }}>
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 20,
+          background: '#fff', color: '#1a1a2e', fontWeight: 700, fontSize: 13, boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+          opacity: hover ? 1 : 0, transform: hover ? 'translateY(0)' : 'translateY(6px)', transition: 'opacity 0.15s, transform 0.15s',
+        }}>
+          <Eye size={16} strokeWidth={1.5} /> Anteprima
+        </span>
+      </div>
+    </a>
   )
 }
 

@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireEntityAccess, ENTITY_TABLES } from '@/lib/server-auth'
 import { getTemplate } from '@/lib/siteTemplates'
+import { resolveBlockImages } from '@/lib/unsplash'
 
 // Applica un template di sito all'entità: crea/aggiorna la pagina home (__home__)
 // con i blocchi del template + applica il tema + attiva il minisito.
@@ -11,6 +12,7 @@ import { getTemplate } from '@/lib/siteTemplates'
 function addIdsToData(data) {
   const out = { ...(data || {}) }
   if (Array.isArray(out.items)) out.items = out.items.map(it => ({ id: randomUUID(), ...it }))
+  if (Array.isArray(out.slides)) out.slides = out.slides.map(s => ({ id: randomUUID(), ...s }))
   return out
 }
 function withIds(blocks) {
@@ -33,7 +35,8 @@ export async function POST(request) {
   const tpl = getTemplate(template_id)
   if (!tpl) return NextResponse.json({ error: 'Template non trovato' }, { status: 404 })
 
-  const blocks = withIds(tpl.blocks)
+  // immagini pertinenti da Unsplash (fail-safe: senza chiave restano i fallback dei blocchi)
+  const blocks = await resolveBlockImages(withIds(tpl.blocks), [])
 
   // Upsert pagina __home__
   const { data: existing } = await supabaseAdmin.from('pagine').select('id')

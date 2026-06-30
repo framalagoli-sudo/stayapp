@@ -11,6 +11,7 @@ export const BLOCK_GROUPS = [
 
 export const BLOCK_TYPES = [
   { type: 'hero',         label: 'Hero / Copertina',   group: 'layout',      emoji: '🌄', desc: 'Sezione full-screen con foto, titolo, tagline e CTA — ideale come primo blocco della homepage' },
+  { type: 'hero_slider',  label: 'Hero slider',        group: 'layout',      emoji: '🎞️', desc: 'Copertina full-screen con più slide a scorrimento (immagine, titolo, sottotitolo, pulsanti) — frecce, puntini, swipe e autoplay' },
   { type: 'about',        label: 'Blocco testo',       group: 'layout',      emoji: '📝', desc: 'Titolo + paragrafo di testo' },
   { type: 'pulsante',     label: 'Pulsante',           group: 'layout',      emoji: '🔘', desc: 'Bottone con link, stile (pieno/bordato) e allineamento' },
   { type: 'foto_testo',   label: 'Foto + Testo',       group: 'layout',      emoji: '🖼️', desc: 'Immagine affiancata al testo (ripetibile)' },
@@ -42,6 +43,7 @@ export const BLOCK_TYPES = [
 
 export const BLOCK_DEFAULTS = {
   hero:         { title: '', tagline: '', bg_image_url: '', overlay_opacity: 0.5, cta1_text: 'Scopri di più', cta1_url: '', cta2_text: '', cta2_url: '', height: 'large' },
+  hero_slider:  { slides: [], autoplay: true, interval: 6, height: 'full', overlay_opacity: 0.45, text_align: 'center' },
   about:        { title: '', text: '' },
   pulsante:     { text: 'Scopri di più', url: '', style: 'filled', size: 'medium', align: 'center' },
   foto_testo:   { title: '', text: '', image_url: '', inverti: false, button_label: '', button_url: '' },
@@ -95,7 +97,7 @@ export const BLOCK_PADY_OPTIONS = [
 ]
 // Blocchi con testo chiaro / sfondo intenzionalmente scuro: niente controllo sfondo
 // (un fondo chiaro renderebbe il testo illeggibile).
-export const BG_EXCLUDED_TYPES = ['hero', 'stats', 'cta_banner', 'video']
+export const BG_EXCLUDED_TYPES = ['hero', 'hero_slider', 'stats', 'cta_banner', 'video']
 export function blockSupportsBg(type) { return !BG_EXCLUDED_TYPES.includes(type) }
 
 // ── Tipografia per-blocco (Fase 1.5) — solo blocchi con rich-text ────────────
@@ -120,6 +122,32 @@ export function textColorFor(key, primary) {
   if (key === 'grey') return '#666'
   if (key === 'primary') return primary
   return null
+}
+
+// ── Contrasto colori (WCAG) ──────────────────────────────────────────────────
+// Serve a non far sparire un testo colorato col tema su uno sfondo dello stesso
+// tono (es. numeri primary su banda scura quando primary È scuro).
+function relLuminance(hex) {
+  const h = String(hex || '').replace('#', '')
+  const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h
+  if (!/^[0-9a-f]{6}$/i.test(full)) return null
+  const n = parseInt(full, 16)
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => {
+    const s = v / 255
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+  })
+  return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2]
+}
+// Rapporto di contrasto WCAG tra due hex (1 = identico, 21 = max).
+export function contrastRatio(a, b) {
+  const la = relLuminance(a), lb = relLuminance(b)
+  if (la == null || lb == null) return 21
+  const [hi, lo] = la > lb ? [la, lb] : [lb, la]
+  return (hi + 0.05) / (lo + 0.05)
+}
+// `color` se contrasta a sufficienza con `bg`, altrimenti `fallback`.
+export function readableOn(color, bg, fallback = '#fff') {
+  return contrastRatio(color, bg) >= 3 ? color : fallback
 }
 
 // Blocchi con campo rich-text: mostrano dimensione/colore testo nel pannello stile.

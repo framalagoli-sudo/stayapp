@@ -35,6 +35,7 @@ const CONFIG_KEYS = [
   'sections', 'parent_id', 'entity_id', 'entity_tipo', 'gridtemplate',
   // Identificatori/enum/valori-dato (form builder, blocchi): NON sono prosa.
   'tipo', 'opzioni', 'valore', 'operatore', 'condizione', 'step', 'campo_id', 'redirect_url',
+  'query', 'image_query',  // termini di ricerca immagini (Unsplash), non prosa
 ]
 
 function isConfigKey(key) {

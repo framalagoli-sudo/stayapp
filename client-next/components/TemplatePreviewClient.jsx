@@ -6,7 +6,7 @@ import { getHeadingFamily, getBodyFamily, FONTS_URL } from '@/lib/fonts'
 
 // Anteprima reale di un template: renderizza i suoi blocchi con LandingBlockRenderer
 // e un'entità fittizia. Usata in iframe (scalata) dalla galleria template.
-export default function TemplatePreviewClient({ id }) {
+export default function TemplatePreviewClient({ id, blocks: blocksProp }) {
   const tpl = getTemplate(id)
 
   useEffect(() => {
@@ -17,13 +17,14 @@ export default function TemplatePreviewClient({ id }) {
   }, [])
 
   const blocks = useMemo(() => {
-    if (!tpl) return []
+    const src = blocksProp || tpl?.blocks
+    if (!src) return []
     const uid = () => (crypto?.randomUUID ? crypto.randomUUID() : String(Math.random()))
-    return tpl.blocks.map(b => ({
+    return src.map(b => ({
       ...b, id: uid(),
       data: { ...b.data, ...(Array.isArray(b.data.items) ? { items: b.data.items.map(i => ({ id: uid(), ...i })) } : {}) },
     }))
-  }, [tpl])
+  }, [tpl, blocksProp])
 
   if (!tpl) return <div style={{ padding: 24, color: '#888' }}>Template non trovato.</div>
 

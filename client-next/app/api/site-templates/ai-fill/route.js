@@ -5,8 +5,12 @@ import { requireEntityAccess, ENTITY_TABLES } from '@/lib/server-auth'
 import { getTemplate } from '@/lib/siteTemplates'
 import { collectStrings, applyTranslations } from '@/lib/translate'
 import { callClaude } from '@/lib/ai-helpers'
+import { resolveBlockImages } from '@/lib/unsplash'
 
 export const maxDuration = 60
+
+// Termine di settore accodato alle query immagine per renderle pertinenti.
+const SECTOR_TERM = { struttura: 'hotel', ristorante: 'restaurant', attivita: '' }
 
 // Fase B galleria template: l'AI riempie il template coi dati del business.
 // Riscrive SOLO i testi (collectStrings di translate.js esclude già immagini/icone/
@@ -17,6 +21,7 @@ export const maxDuration = 60
 function addIdsToData(data) {
   const out = { ...(data || {}) }
   if (Array.isArray(out.items)) out.items = out.items.map(it => ({ id: randomUUID(), ...it }))
+  if (Array.isArray(out.slides)) out.slides = out.slides.map(s => ({ id: randomUUID(), ...s }))
   return out
 }
 function withIds(blocks) {
@@ -100,7 +105,9 @@ export async function POST(request) {
     aiUsed = false
   }
 
-  const blocks = withIds(filledBlocks)
+  // immagini pertinenti da Unsplash (settore + brief); fail-safe se non configurato
+  const terms = [SECTOR_TERM[entity_tipo], (brief || '').trim().split(/\s+/).slice(0, 3).join(' ')].filter(Boolean)
+  const blocks = await resolveBlockImages(withIds(filledBlocks), terms)
 
   const { data: existing } = await supabaseAdmin.from('pagine').select('id')
     .eq('entity_tipo', entity_tipo).eq('entity_id', entity_id).eq('slug', '__home__').maybeSingle()

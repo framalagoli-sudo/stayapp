@@ -1,10 +1,10 @@
 ﻿'use client'
-import { useState, useEffect } from 'react'
-import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Mountain, Wind, ChevronDown, Calendar, Users } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Mountain, Wind, ChevronDown, ChevronLeft, ChevronRight, Calendar, Users, Check, CheckCircle, Gift } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
 import BookingWidget from './BookingWidget'
 import Turnstile from '@/components/Turnstile'
-import { applyBlockStyle, textSizeScale, textColorFor, gridTemplate } from '@/lib/blockTypes'
+import { applyBlockStyle, textSizeScale, textColorFor, gridTemplate, readableOn } from '@/lib/blockTypes'
 import { RichText, richIsEmpty } from '@/lib/richText'
 import { t as tr } from '@/lib/i18n'
 
@@ -13,6 +13,9 @@ const HIGHLIGHT_LUCIDE = {
   pool: Waves, spa: Sparkles, restaurant: Utensils, gym: Activity,
   beach: Umbrella, mountain: Mountain, breakfast: Coffee, bar: Wine,
   shuttle: Bus, reception: Bell, ac: Wind, location: MapPin, time: Clock, music: Music,
+  // chiavi usate da template/sezioni pronte (prima cadevano sul fallback Star)
+  'check-circle': CheckCircle, check: Check, clock: Clock, phone: Phone,
+  calendar: Calendar, coffee: Coffee, users: Users, gift: Gift,
 }
 function highlightIcon(key) { return HIGHLIGHT_LUCIDE[key] || Star }
 
@@ -34,6 +37,95 @@ function getEmbedUrl(url) {
 }
 
 const API_BASE_FB = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').trim()
+
+// Hero a tutto schermo con più slide a scorrimento (crossfade), frecce, puntini,
+// swipe su mobile e autoplay con pausa al passaggio del mouse. Componente a sé
+// (usa hook) renderizzato dal case 'hero_slider'.
+function HeroSlider({ block, primary, heading }) {
+  const d = block.data || {}
+  const slides = (d.slides || []).filter(s => s.image_url || s.title || s.subtitle)
+  const n = slides.length
+  const [i, setI] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const touchX = useRef(null)
+
+  const heightMap = { full: '100vh', large: '85vh', medium: '65vh' }
+  const h = heightMap[d.height || 'full'] || '100vh'
+  const align = d.text_align === 'left' ? 'left' : 'center'
+  const overlay = d.overlay_opacity ?? 0.45
+  const autoplay = d.autoplay !== false && n > 1
+  const interval = Math.max(2, d.interval || 6) * 1000
+
+  useEffect(() => {
+    if (i >= n && n > 0) setI(0)
+  }, [n, i])
+  useEffect(() => {
+    if (!autoplay || paused || n < 2) return
+    const t = setTimeout(() => setI(p => (p + 1) % n), interval)
+    return () => clearTimeout(t)
+  }, [autoplay, paused, i, n, interval])
+
+  if (n === 0) return null
+  const go = idx => setI((idx % n + n) % n)
+  const onTouchStart = e => { touchX.current = e.touches[0].clientX }
+  const onTouchEnd = e => {
+    if (touchX.current == null) return
+    const dx = e.changedTouches[0].clientX - touchX.current
+    if (Math.abs(dx) > 45) go(i + (dx < 0 ? 1 : -1))
+    touchX.current = null
+  }
+
+  const arrowStyle = side => ({
+    position: 'absolute', top: '50%', [side]: 'clamp(8px,2vw,24px)', transform: 'translateY(-50%)',
+    zIndex: 4, width: 46, height: 46, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.5)',
+    background: 'rgba(0,0,0,0.25)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    cursor: 'pointer', backdropFilter: 'blur(4px)',
+  })
+
+  return (
+    <section style={{ position: 'relative', height: h, minHeight: 440, overflow: 'hidden', background: '#1a1a2e' }}
+      onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
+      onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      {slides.map((s, idx) => (
+        <div key={s.id || idx} aria-hidden={idx !== i}
+          style={{ position: 'absolute', inset: 0, opacity: idx === i ? 1 : 0, transition: 'opacity 0.9s ease', pointerEvents: idx === i ? 'auto' : 'none' }}>
+          {s.image_url && <img src={s.image_url} alt={s.title || ''} loading={idx === 0 ? 'eager' : 'lazy'}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
+          <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(to bottom, rgba(0,0,0,${overlay * 0.6}), rgba(0,0,0,${overlay}))` }} />
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: align === 'left' ? 'flex-start' : 'center' }}>
+            <div style={{ textAlign: align, padding: '90px clamp(24px,6vw,90px)', maxWidth: align === 'left' ? 780 : 920, width: '100%' }}>
+              {s.title && <h1 style={{ fontFamily: heading, fontSize: 'clamp(34px,6vw,72px)', fontWeight: 700, color: '#fff', lineHeight: 1.08, margin: 0, textShadow: '0 2px 24px rgba(0,0,0,0.35)' }}>{s.title}</h1>}
+              {s.subtitle && <p style={{ fontFamily: heading, fontStyle: 'italic', fontSize: 'clamp(18px,2.6vw,28px)', color: 'rgba(255,255,255,0.92)', lineHeight: 1.4, margin: '18px 0 0', maxWidth: align === 'left' ? 620 : 760, marginLeft: align === 'center' ? 'auto' : 0, marginRight: align === 'center' ? 'auto' : 0, textShadow: '0 2px 18px rgba(0,0,0,0.35)' }}>{s.subtitle}</p>}
+              {((s.cta1_text && s.cta1_url) || (s.cta2_text && s.cta2_url)) && (
+                <div style={{ display: 'flex', gap: 14, marginTop: 34, flexWrap: 'wrap', justifyContent: align === 'left' ? 'flex-start' : 'center' }}>
+                  {s.cta1_text && s.cta1_url && (
+                    <a href={s.cta1_url} style={{ display: 'inline-block', padding: '15px 34px', background: primary, color: readableOn('#ffffff', primary, '#1a1a2e'), borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none', boxShadow: '0 8px 28px rgba(0,0,0,0.25)' }}>{s.cta1_text}</a>
+                  )}
+                  {s.cta2_text && s.cta2_url && (
+                    <a href={s.cta2_url} style={{ display: 'inline-block', padding: '15px 34px', background: 'rgba(255,255,255,0.12)', color: '#fff', borderRadius: 50, fontWeight: 600, fontSize: 16, textDecoration: 'none', border: '2px solid rgba(255,255,255,0.65)', backdropFilter: 'blur(8px)' }}>{s.cta2_text}</a>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {n > 1 && (
+        <>
+          <button aria-label="Precedente" onClick={() => go(i - 1)} style={arrowStyle('left')}><ChevronLeft size={22} strokeWidth={1.5} /></button>
+          <button aria-label="Successiva" onClick={() => go(i + 1)} style={arrowStyle('right')}><ChevronRight size={22} strokeWidth={1.5} /></button>
+          <div style={{ position: 'absolute', bottom: 22, left: 0, right: 0, zIndex: 4, display: 'flex', gap: 9, justifyContent: 'center' }}>
+            {slides.map((_, idx) => (
+              <button key={idx} aria-label={`Slide ${idx + 1}`} onClick={() => go(idx)}
+                style={{ width: idx === i ? 26 : 9, height: 9, borderRadius: 50, border: 'none', cursor: 'pointer', padding: 0, background: idx === i ? '#fff' : 'rgba(255,255,255,0.5)', transition: 'width 0.3s, background 0.3s' }} />
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  )
+}
 
 export default function LandingBlockRenderer({ blocks, entity, entityType, mini, primary, heading, body, slug, privacyUrl, aziendaId, lang = 'it' }) {
   const [faqOpen, setFaqOpen] = useState({})
@@ -79,13 +171,17 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         )
       }
 
+      case 'hero_slider':
+        return <HeroSlider key={block.id} block={block} primary={primary} heading={heading} />
+
       case 'about':
         if (!d.title && richIsEmpty(d.text)) return null
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+          <section key={block.id} style={{ padding: '84px 0', background: '#fff' }}>
             <div className="lbr-section">
-              {d.title && <h2 style={{ fontFamily: heading, fontSize: 'clamp(28px,4vw,44px)', fontWeight: 700, color: '#1a1a2e', marginBottom: 24 }}>{d.title}</h2>}
-              <RichText value={d.text} primary={primary} style={{ fontSize: Math.round(17 * textSizeScale(block.style?.textSize)), lineHeight: 1.75, color: textColorFor(block.style?.textColor, primary) || '#444', maxWidth: 720 }} />
+              {d.title && <h2 style={{ fontFamily: heading, fontSize: 'clamp(28px,4vw,46px)', fontWeight: 700, color: '#1a1a2e', marginBottom: 18 }}>{d.title}</h2>}
+              {d.title && <div style={{ width: 54, height: 3, background: primary, borderRadius: 2, marginBottom: 28 }} />}
+              <RichText value={d.text} primary={primary} style={{ fontSize: Math.round(18 * textSizeScale(block.style?.textSize)), lineHeight: 1.8, color: textColorFor(block.style?.textColor, primary) || '#444', maxWidth: 720 }} />
             </div>
           </section>
         )
@@ -117,18 +213,18 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const items = (d.items || []).filter(h => h.text)
         if (!items.length) return null
         return (
-          <section key={block.id} style={{ padding: '56px 0', background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
             <div className="lbr-section">
-              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 28, fontWeight: 700, textAlign: 'center', marginBottom: 40, color: '#1a1a2e' }}>{d.titolo}</h2>}
-              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(items.length, 3)}, 1fr)`, gap: 24 }}>
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,40px)', fontWeight: 700, textAlign: 'center', marginBottom: 48, color: '#1a1a2e' }}>{d.titolo}</h2>}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24 }}>
                 {items.map(h => {
                   const Icon = highlightIcon(h.icon)
                   return (
-                    <div key={h.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 12 }}>
-                      <div style={{ width: 56, height: 56, borderRadius: '50%', background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Icon size={24} strokeWidth={1.5} color={primary} />
+                    <div key={h.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 16, padding: '32px 22px', background: '#fafafa', border: '1px solid #f0f0f0', borderRadius: 16 }}>
+                      <div style={{ width: 60, height: 60, borderRadius: '50%', background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Icon size={26} strokeWidth={1.5} color={primary} />
                       </div>
-                      <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#1a1a2e', lineHeight: 1.4 }}>{h.text}</p>
+                      <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#1a1a2e', lineHeight: 1.5 }}>{h.text}</p>
                     </div>
                   )
                 })}
@@ -148,7 +244,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
                 {items.map((s, i) => (
                   <div key={s.id} style={{ textAlign: 'center', padding: '8px 24px', borderRight: i < items.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
-                    <div style={{ fontFamily: heading, fontSize: 'clamp(40px,5vw,64px)', fontWeight: 700, color: primary, lineHeight: 1, marginBottom: 10 }}>{s.value}</div>
+                    <div style={{ fontFamily: heading, fontSize: 'clamp(40px,5vw,64px)', fontWeight: 700, color: readableOn(primary, '#1a1a2e'), lineHeight: 1, marginBottom: 10 }}>{s.value}</div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.5 }}>{s.label}</div>
                   </div>
                 ))}

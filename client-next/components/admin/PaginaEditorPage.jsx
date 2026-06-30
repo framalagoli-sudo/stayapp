@@ -6,11 +6,12 @@ import {
   GripVertical, AlignLeft, Image, Grid, Users, List, Star, BarChart2, Zap,
   MessageCircle, Tag, Package, HelpCircle, Video, Settings, Compass, Map,
   Calendar, FileText, Clock, Mail, Phone, MapPin, ChevronDown, ChevronUp,
-  Plus, Trash2, ImageIcon, Layers, Building2,
+  Plus, Trash2, ImageIcon, Layers, Building2, GalleryHorizontal,
 } from 'lucide-react'
 import AiButton from '@/components/admin/AiButton'
 import RichTextEditor from '@/components/admin/RichTextEditor'
 import MediaPickerButton from '@/components/admin/MediaPicker'
+import UnsplashPicker from '@/components/admin/UnsplashPicker'
 import { BLOCK_PATTERNS } from '@/lib/blockPatterns'
 import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS, BLOCK_PADY_OPTIONS, blockSupportsBg, BLOCK_TEXT_SIZE_OPTIONS, BLOCK_TEXT_COLOR_OPTIONS, blockHasText, GRID_AUTO_BLOCKS, BLOCK_COLUMNS_OPTIONS } from '@/lib/blockTypes'
 
@@ -25,7 +26,7 @@ function slugify(s) {
 
 // ── Block icon + color mapping ────────────────────────────────────────────────
 const BLOCK_ICON_MAP = {
-  hero: Layers, about: AlignLeft, pulsante: Zap, foto_testo: Image, paragrafi: Grid,
+  hero: Layers, hero_slider: GalleryHorizontal, about: AlignLeft, pulsante: Zap, foto_testo: Image, paragrafi: Grid,
   team: Users, steps: List, highlights: Star, stats: BarChart2,
   cta_banner: Zap, testimonianze: MessageCircle, promozioni: Tag,
   pacchetti: Package, faq: HelpCircle, immagine: Image, galleria_immagini: Grid, gallery: ImageIcon, video: Video,
@@ -87,6 +88,49 @@ function ItemListEditor({ items = [], onChange, fields, newItem }) {
       ))}
       <button onClick={add} style={{ width: '100%', padding: '8px', background: '#f0f4ff', border: '1px dashed #c8d0f0', borderRadius: 8, cursor: 'pointer', fontSize: 13, color: '#334' }}>
         + Aggiungi elemento
+      </button>
+    </div>
+  )
+}
+
+// ── SlidesEditor (hero_slider) ────────────────────────────────────────────────
+function SlidesEditor({ slides = [], onChange, entityId, entityTipo }) {
+  function update(idx, key, val) { onChange(slides.map((s, i) => i === idx ? { ...s, [key]: val } : s)) }
+  function add() { onChange([...slides, { id: uid(), image_url: '', title: '', subtitle: '', cta1_text: '', cta1_url: '', cta2_text: '', cta2_url: '' }]) }
+  function remove(idx) { onChange(slides.filter((_, i) => i !== idx)) }
+  function move(idx, dir) { const a = [...slides]; const t = idx + dir; if (t < 0 || t >= a.length) return; [a[idx], a[t]] = [a[t], a[idx]]; onChange(a) }
+  return (
+    <div>
+      {slides.map((s, idx) => (
+        <div key={s.id || idx} style={{ background: '#f9f9fb', borderRadius: 10, padding: 12, marginBottom: 10, border: '1px solid #eee' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#555' }}>Slide {idx + 1}</span>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button onClick={() => move(idx, -1)} style={tinyBtn}>▲</button>
+              <button onClick={() => move(idx, 1)} style={tinyBtn}>▼</button>
+              <button onClick={() => remove(idx)} style={{ ...tinyBtn, color: '#c00', background: '#fce8e8' }}>✕</button>
+            </div>
+          </div>
+          {s.image_url && <img src={s.image_url} alt="" style={{ width: '100%', maxHeight: 110, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }} />}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+            <UnsplashPicker label="Cerca su Unsplash" defaultQuery={s.title} onPick={url => update(idx, 'image_url', url)} />
+            <UploadBtn label="Carica" entityId={entityId} entityTipo={entityTipo} onUrl={url => update(idx, 'image_url', url)} />
+          </div>
+          <Field label="URL immagine" value={s.image_url} onChange={v => update(idx, 'image_url', v)} placeholder="https://..." style={{ marginBottom: 8 }} />
+          <Field label="Titolo" value={s.title} onChange={v => update(idx, 'title', v)} style={{ marginBottom: 8 }} />
+          <Field label="Sottotitolo (corsivo)" value={s.subtitle} onChange={v => update(idx, 'subtitle', v)} style={{ marginBottom: 8 }} />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Field label="Pulsante 1 — testo" value={s.cta1_text} onChange={v => update(idx, 'cta1_text', v)} style={{ flex: 1 }} />
+            <Field label="Pulsante 1 — URL" value={s.cta1_url} onChange={v => update(idx, 'cta1_url', v)} placeholder="https://..." style={{ flex: 1 }} />
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <Field label="Pulsante 2 — testo (opz.)" value={s.cta2_text} onChange={v => update(idx, 'cta2_text', v)} style={{ flex: 1 }} />
+            <Field label="Pulsante 2 — URL" value={s.cta2_url} onChange={v => update(idx, 'cta2_url', v)} placeholder="https://..." style={{ flex: 1 }} />
+          </div>
+        </div>
+      ))}
+      <button onClick={add} style={{ width: '100%', padding: '9px', background: '#f0f4ff', border: '1px dashed #c8d0f0', borderRadius: 8, cursor: 'pointer', fontSize: 13, color: '#334' }}>
+        + Aggiungi slide
       </button>
     </div>
   )
@@ -168,6 +212,47 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
           <Field label="Testo pulsante" value={data.cta2_text} onChange={v => upd('cta2_text', v)} />
           <div style={{ marginTop: 8 }}>
             <Field label="URL pulsante" value={data.cta2_url} onChange={v => upd('cta2_url', v)} placeholder="https://..." />
+          </div>
+        </div>
+      </div>
+    )
+    case 'hero_slider': return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <SlidesEditor slides={data.slides} onChange={v => upd('slides', v)} entityId={entityId} entityTipo={entityTipo} />
+        <div style={{ borderTop: '1px solid #eee', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 130 }}>
+              <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Altezza</label>
+              <select value={data.height || 'full'} onChange={e => upd('height', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+                <option value="full">Piena (100vh)</option>
+                <option value="large">Grande (85vh)</option>
+                <option value="medium">Media (65vh)</option>
+              </select>
+            </div>
+            <div style={{ flex: 1, minWidth: 130 }}>
+              <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Allineamento testo</label>
+              <select value={data.text_align || 'center'} onChange={e => upd('text_align', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+                <option value="center">Centrato</option>
+                <option value="left">A sinistra</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Opacità velo scuro ({Math.round((data.overlay_opacity ?? 0.45) * 100)}%)</label>
+            <input type="range" min="0" max="0.85" step="0.05" value={data.overlay_opacity ?? 0.45} onChange={e => upd('overlay_opacity', parseFloat(e.target.value))} style={{ width: '100%' }} />
+          </div>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
+              <input type="checkbox" checked={data.autoplay !== false} onChange={e => upd('autoplay', e.target.checked)} />
+              Scorrimento automatico
+            </label>
+            {data.autoplay !== false && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#555' }}>
+                ogni
+                <input type="number" min="2" max="20" value={data.interval ?? 6} onChange={e => upd('interval', Number(e.target.value))} style={{ width: 60, border: '1px solid #ddd', borderRadius: 6, padding: '5px 8px', fontSize: 13 }} />
+                secondi
+              </label>
+            )}
           </div>
         </div>
       </div>
