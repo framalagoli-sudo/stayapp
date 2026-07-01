@@ -43,7 +43,7 @@ export default async function StrutturaSubPage({ params, searchParams }) {
   return (
     <>
       <GuestSubPage entity={entity} entityType="struttura" pagina={pagina} domain={searchParams?._domain || null} lang={lang} />
-      <LanguageSwitcher lang={lang} />
+      {!pagina.hide_header && <LanguageSwitcher lang={lang} />}
     </>
   )
 }

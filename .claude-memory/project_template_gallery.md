@@ -110,9 +110,13 @@ Opzione B (scelta da Francesco): header/footer condivisi di default, ma ogni pag
 
 ### 🎉 FEEDBACK 1/7 COMPLETATO: carosello ✅ + template diversi (8) ✅ + Fase C ✅. Anche header/footer per-pagina (opzione B) ✅ + smart header ✅ + anteprima header/footer/mobile ✅.
 
-### ⏭️ PROSSIMO (backlog):
-- AI bespoke avanzato: query immagini dal brief; magari l'AI sceglie i soggetti.
-- Rifiniture immagini template (es. "product showcase studio" rende studio fotografico); switcher lingua su landing header-nascosto.
+### ✅ BACKLOG 1-2-3 fatti (1/7, deploy):
+1. **Query immagini AI dal brief**: `ai-fill/route.js` nuova `aiImageQueries(blocks, business)` → l'AI genera una query foto EN per ogni slot immagine (hero/foto_testo/slider/carosello) mirata al business; poi resolveBlockImages con extraTerms=[] (o [settore] se l'AI fallisce). Fallback: query del template. Solo via AI-fill (auth) → Francesco verifica interattivo.
+2. **Rifinite query template**: prodotti hero 'product showcase studio'→'retail product display shelf', 'modern factory production'→'factory production line'.
+3. **Switcher lingua nascosto su landing header-nascosto**: le 3 route /p/ montano LanguageSwitcher solo se `!pagina.hide_header`.
+
+### ⏭️ BACKLOG residuo (nice to have):
+- (eventuale) l'AI sceglie anche i template/blocchi, non solo testi/immagini.
 - Screenshot Playwright in scratchpad (temporanei).
 
 ## STATO

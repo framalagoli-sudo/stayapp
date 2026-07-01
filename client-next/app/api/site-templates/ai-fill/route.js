@@ -70,6 +70,44 @@ ${JSON.stringify(indexed)}`
   return applyTranslations(blocks, map)
 }
 
+// L'AI genera una query foto (in inglese) mirata al business per ogni slot
+// immagine del template, così le foto sono pertinenti al cliente e non generiche.
+// Lavora su una copia; fallback: se l'AI fallisce o salta uno slot resta la query
+// del template. Slot: hero.image_query, foto_testo/immagine.image_query,
+// hero_slider slides[].image_query, carosello items[].image_query.
+async function aiImageQueries(blocks, business) {
+  const clone = JSON.parse(JSON.stringify(blocks))
+  const refs = []
+  for (const b of clone) {
+    const d = b.data || {}
+    if ((b.type === 'hero' || b.type === 'foto_testo' || b.type === 'immagine') && d.image_query) refs.push(d)
+    if (b.type === 'hero_slider' && Array.isArray(d.slides)) for (const s of d.slides) if (s.image_query) refs.push(s)
+    if (b.type === 'carosello'  && Array.isArray(d.items))  for (const it of d.items) if (it.image_query) refs.push(it)
+  }
+  if (!refs.length) return blocks
+
+  const indexed = {}
+  refs.forEach((r, i) => { indexed[i] = r.image_query })
+  const prompt =
+`Sei un esperto di stock photography (Unsplash). Per questo business, riscrivi ogni "soggetto immagine" come una query di ricerca foto in INGLESE: breve (2-5 parole), concreta e specifica per QUESTO business, mantenendo lo stesso ruolo/tipo di soggetto dell'originale (es. hero resta un'ambientazione, un piatto resta un piatto).
+Restituisci SOLO un oggetto JSON con le STESSE chiavi numeriche: {"0":"query", ...}. Niente markdown, niente commenti.
+
+Business:
+${business}
+
+Soggetti attuali (JSON {numero: soggetto}):
+${JSON.stringify(indexed)}`
+
+  const raw = await callClaude(prompt, 700)
+  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+  const parsed = JSON.parse(cleaned)
+  refs.forEach((r, i) => {
+    const q = parsed[i]
+    if (typeof q === 'string' && q.trim()) r.image_query = q.trim().slice(0, 80)
+  })
+  return clone
+}
+
 export async function POST(request) {
   const body = await request.json().catch(() => ({}))
   const { entity_tipo, entity_id, template_id, modalita = 'uguale', brief = '' } = body
@@ -105,8 +143,15 @@ export async function POST(request) {
     aiUsed = false
   }
 
-  // immagini pertinenti da Unsplash (settore + brief); fail-safe se non configurato
-  const terms = [SECTOR_TERM[entity_tipo], (brief || '').trim().split(/\s+/).slice(0, 3).join(' ')].filter(Boolean)
+  // L'AI sceglie soggetti foto mirati al business; fallback: query template + settore.
+  let imgAiOk = true
+  try {
+    filledBlocks = await aiImageQueries(filledBlocks, business)
+  } catch (e) {
+    console.error('[ai-fill] query immagini AI fallite, uso quelle del template:', e?.message)
+    imgAiOk = false
+  }
+  const terms = imgAiOk ? [] : [SECTOR_TERM[entity_tipo]].filter(Boolean)
   const blocks = await resolveBlockImages(withIds(filledBlocks), terms)
 
   const { data: existing } = await supabaseAdmin.from('pagine').select('id')

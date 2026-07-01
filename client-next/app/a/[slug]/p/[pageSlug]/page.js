@@ -43,7 +43,7 @@ export default async function AttivitaSubPage({ params, searchParams }) {
   return (
     <>
       <GuestSubPage entity={entity} entityType="attivita" pagina={pagina} domain={searchParams?._domain || null} lang={lang} />
-      <LanguageSwitcher lang={lang} />
+      {!pagina.hide_header && <LanguageSwitcher lang={lang} />}
     </>
   )
 }

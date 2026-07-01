@@ -84,8 +84,8 @@ export const SITE_TEMPLATES = [
     theme: { primaryColor: '#2563eb', bgColor: '#ffffff', textColor: '#1a1a2e', fontHeading: 'montserrat', fontBody: 'inter', borderStyle: 'rounded' },
     blocks: [
       { type: 'hero_slider', data: { height: 'large', autoplay: true, interval: 6, overlay_opacity: 0.4, text_align: 'left', slides: [
-        { image_query: 'product showcase studio', title: 'I nostri prodotti', subtitle: 'Qualità che si vede e si tocca', cta1_text: 'Scopri la gamma', cta1_url: '' },
-        { image_query: 'modern factory production', title: 'Fatto come si deve', subtitle: 'Dalla materia prima al prodotto finito', cta1_text: '', cta1_url: '' },
+        { image_query: 'retail product display shelf', title: 'I nostri prodotti', subtitle: 'Qualità che si vede e si tocca', cta1_text: 'Scopri la gamma', cta1_url: '' },
+        { image_query: 'factory production line', title: 'Fatto come si deve', subtitle: 'Dalla materia prima al prodotto finito', cta1_text: '', cta1_url: '' },
       ] } },
       { type: 'highlights', data: { titolo: 'Perché i nostri prodotti', items: [
         { icon: 'award', text: 'Qualità certificata' }, { icon: 'check-circle', text: 'Materiali selezionati' }, { icon: 'heart', text: 'Cura artigianale' },
