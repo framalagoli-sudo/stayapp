@@ -23,6 +23,12 @@ export const SITE_TEMPLATES = [
       { type: 'about', data: { title: 'La nostra storia', text: 'Racconta chi sei, da dove vieni e cosa ti rende unico. Poche righe sincere valgono più di mille parole.' } },
       { type: 'foto_testo', data: { title: 'Cosa ci distingue', text: 'Descrivi un punto di forza con un’immagine evocativa accanto.', image_query: 'artisan craftsmanship detail', inverti: false, button_label: '', button_url: '' } },
       { type: 'foto_testo', data: { title: 'La cura dei dettagli', text: 'Un secondo blocco, immagine sul lato opposto, per dare ritmo alla pagina.', image_query: 'cozy elegant atmosphere', inverti: true, button_label: '', button_url: '' } },
+      { type: 'carosello', data: { titolo: 'Le nostre proposte', per_view: 3, autoplay: true, interval: 5, show_arrows: true, show_dots: true, items: [
+        { image_query: 'elegant bedroom suite', title: 'Comfort', text: 'Descrivi qui una proposta o un servizio che offri.' },
+        { image_query: 'gourmet plated dish', title: 'Gusto', text: 'Descrivi qui una seconda proposta con poche parole.' },
+        { image_query: 'relaxing spa wellness', title: 'Relax', text: 'Descrivi qui una terza proposta per i tuoi clienti.' },
+        { image_query: 'scenic landscape view', title: 'Esperienze', text: 'Descrivi qui un’altra proposta o esperienza.' },
+      ] } },
       { type: 'stats', data: { titolo: '', items: [{ value: '10+', label: 'Anni di esperienza' }, { value: '500+', label: 'Clienti felici' }, { value: '4.9', label: 'Valutazione media' }] } },
       { type: 'faq', data: { titolo: 'Domande frequenti', items: [{ question: 'Come vi contatto?', answer: 'Trovi tutti i recapiti in fondo alla pagina.' }, { question: 'Dove vi trovate?', answer: 'Indica qui la tua posizione e come raggiungerti.' }] } },
       { type: 'cta_banner', data: { title: 'Ti aspettiamo', subtitle: 'Mettiti in contatto con noi', button_text: 'Contattaci', button_url: '' } },

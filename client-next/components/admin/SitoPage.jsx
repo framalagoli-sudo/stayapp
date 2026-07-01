@@ -178,7 +178,7 @@ export default function SitoPage({ entityTipo }) {
   const [dragOverId, setDragOverId] = useState(null)
 
   // Header/Footer config
-  const DEFAULT_HEADER = { style: 'dark', always_visible: false, logo_in_nav: true, show_cta: false, cta_text: 'Prenota ora', cta_url: '', show_phone: false, bg_color: '' }
+  const DEFAULT_HEADER = { style: 'dark', always_visible: false, scroll_behavior: 'appear', logo_in_nav: true, show_cta: false, cta_text: 'Prenota ora', cta_url: '', show_phone: false, bg_color: '' }
   const DEFAULT_FOOTER = { layout: 'standard', style: 'dark', copyright: '', show_socials: true, show_description: true, show_contact: true, extra_links: [] }
   const DEFAULT_SEO = { seo_title: '', seo_description: '', google_site_verification: '', booking_url: '', tagline: '', show_pwa_link: true, social: { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' } }
   const [entityData,  setEntityData]  = useState(null)
@@ -938,6 +938,17 @@ export default function SitoPage({ entityTipo }) {
                     <span style={{ fontSize: 11, color: '#888' }}>{headerCfg.bg_color || '#1a1a2e'}</span>
                   </div>
                 )}
+
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 6 }}>Comportamento allo scroll</label>
+                  <select value={headerCfg.scroll_behavior || 'appear'} disabled={headerCfg.always_visible}
+                    onChange={e => setHeaderCfg(h => ({ ...h, scroll_behavior: e.target.value }))}
+                    style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13, background: headerCfg.always_visible ? '#f5f5f5' : '#fff', color: headerCfg.always_visible ? '#aaa' : '#1a1a2e' }}>
+                    <option value="appear">Appare dopo lo scroll</option>
+                    <option value="smart">Intelligente — si nasconde scorrendo giù, riappare scorrendo su</option>
+                  </select>
+                  {headerCfg.always_visible && <p style={{ fontSize: 11, color: '#aaa', margin: '4px 0 0' }}>Ignorato: "Sempre visibile" è attivo.</p>}
+                </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>

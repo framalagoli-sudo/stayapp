@@ -46,7 +46,7 @@ function loadFont(key) {
 }
 
 export default function LandingStruttura({ property, initialHomeBlocks, domain, lang = 'it' }) {
-  const [scrolled,       setScrolled]       = useState(false)
+  const [navVisible,     setNavVisible]     = useState(false)
   const [upcomingEventi, setUpcomingEventi] = useState([])
   const [pagine,         setPagine]         = useState([])
   const [openDropdown,   setOpenDropdown]   = useState(null)
@@ -84,9 +84,10 @@ export default function LandingStruttura({ property, initialHomeBlocks, domain, 
   const social  = mini.social || {}
   const base    = entityBasePath('s', property.slug, domain, lang)
 
-  const hdrCfg         = mini.header || {}
+  const hdrCfg         = mini.header_cfg || mini.header || {}
   const navDark        = hdrCfg.style !== 'light'
   const navAlwaysVisible = hdrCfg.always_visible === true
+  const smartNav       = hdrCfg.scroll_behavior === 'smart'
   const navBg          = navDark ? 'rgba(18,18,32,0.93)'    : 'rgba(255,255,255,0.95)'
   const navBorderColor = navDark ? 'rgba(255,255,255,0.08)' : '#eee'
   const navTextColor   = navDark ? 'rgba(255,255,255,0.8)'  : '#1a1a2e'
@@ -134,10 +135,23 @@ export default function LandingStruttura({ property, initialHomeBlocks, domain, 
   }
 
   useEffect(() => {
-    function onScroll() { setScrolled(window.scrollY > 80) }
-    window.addEventListener('scroll', onScroll)
+    if (navAlwaysVisible) { setNavVisible(true); return }
+    let last = window.scrollY
+    function onScroll() {
+      const y = window.scrollY
+      if (smartNav) {
+        if (y < 80) setNavVisible(true)                // in cima: visibile (sopra l'hero)
+        else if (y > last + 4) setNavVisible(false)     // scroll giù: nascondi
+        else if (y < last - 4) setNavVisible(true)      // scroll su: mostra
+      } else {
+        setNavVisible(y > 80)                            // default: appare dopo lo scroll
+      }
+      last = y
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+  }, [smartNav, navAlwaysVisible])
 
   const pwaUrl     = domain ? `https://${domain}?qr=1` : `/s/${property.slug}?qr=1`
   const bookingUrl = mini.booking_url || null
@@ -152,7 +166,7 @@ export default function LandingStruttura({ property, initialHomeBlocks, domain, 
           background: ${navBg}; backdrop-filter: blur(14px);
           border-bottom: 1px solid ${navBorderColor}; padding: 0 32px;
           display: flex; align-items: center; justify-content: space-between; height: 64px;
-          transform: translateY(${navAlwaysVisible || scrolled ? '0' : '-100%'}); transition: transform 0.3s ease;
+          transform: translateY(${navVisible ? '0' : '-100%'}); transition: transform 0.3s ease;
         }
         .land-section { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
         @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }

@@ -67,11 +67,33 @@ Niente più picsum random. `lib/unsplash.js` (NUOVO, server-only): `searchUnspla
 - ⚠️ Modifiche a highlights/about toccano TUTTI i siti live (sono blocchi condivisi) ma sono migliorie additive, nessun break. Verificato: 46/46 smoke.
 - Risultato: i 3 template ora sembrano siti veri e coerenti. Francesco: "il fregatura è andato" (obiettivo raggiunto).
 
-### ⏭️ PROSSIMO (rifiniture, quando si torna):
-- **Feedback Francesco sullo stile** dei template dall'editor (deve provarli sotto auth: Sito→Template).
-- **AI bespoke avanzato**: query immagini più mirate dal brief (oltre al settore), magari l'AI che sceglie i soggetti delle foto.
-- Eventuali altri blocchi da rifinire (paragrafi/team/steps già decenti); più template in galleria; Fase C wizard filtri settore/obiettivo + "Sfoglia".
-- Screenshot Playwright dei riferimenti/template in scratchpad sessione (temporanei).
+### ✅ ANTEPRIMA con HEADER + FOOTER + MOBILE — LIVE (1/7, verificato a video):
+Feedback Francesco (1/7): template "meglio di prima ma senza header né footer; serve anteprima mobile; stile carino ma troppo simili tra loro, intensificare (carosello?); più template solo se DIVERSI; ok Fase C".
+- `TemplatePreviewClient.jsx` riscritto: rende NAV (nome+link+Prenota, overlay sull'hero, responsive) + blocchi + `LandingFooter` riusato (entità fittizia realistica) → anteprima = sito completo. Nav overlay ok perché tutti i template iniziano con hero_slider (immagine scura).
+- **Toggle Desktop/Mobile**: barra in alto SOLO standalone (`window.self!==window.top`). Mobile = iframe 390px in cornice telefono → viewport reale, media query scattano (mobile fedele). Embedded (thumbnail galleria o iframe mobile) = solo chrome.
+
+### ✅ CAROSELLO contenuti — NUOVO blocco LIVE (1/7, verificato a video):
+Blocco `carosello` (Francesco ha scelto questo per primo). File:
+- `blockTypes.js`: BLOCK_TYPES (group media) + BLOCK_DEFAULTS `{titolo,items:[],per_view:3,autoplay,interval:5,show_arrows,show_dots}`.
+- `LandingBlockRenderer.jsx`: componente `Carousel` (track translateX, per_view responsive via resize→1 su <640px, frecce disabilitate ai bordi, puntini=pagine, swipe, autoplay+pausa, card immagine 4:3 + titolo + testo + pulsante opz.). Case `carosello`.
+- `PaginaEditorPage.jsx`: `ItemListEditor` esteso con prop entityId/entityTipo + tipo campo `image` (preview + UnsplashPicker + UploadBtn + url) — riusabile per altri blocchi. Case editor carosello (lista item + per_view/autoplay/interval/frecce/puntini).
+- `unsplash.js` resolveBlockImages: gestisce anche `carosello` items[].image_query.
+- Aggiunto un carosello "Le nostre proposte" (4 card) al template vetrina per demo → immagini Unsplash pertinenti OK.
+- Carousel-like ora: hero_slider (hero), carosello (contenuti), clienti (loghi).
+
+### ✅ SMART HEADER (headroom) — LIVE (1/7, verificato a video):
+Francesco voleva l'effetto di borgodellago.com. VERIFICATO borgodellago (Elementor `header-scroll-smart`): in cima visibile, scroll giù→nascosto (translateY -100%), scroll su→riappare, IDLE→resta nascosto (NON riappare da fermo — Francesco ricordava male, glielo ho detto). Replicato ESATTO (no idle-reappear).
+- Opzione `scroll_behavior: 'smart' | 'appear'` in header_cfg. `appear`=default (appare dopo scroll), `smart`=headroom, `always_visible`=override.
+- 3 landing (LandingStruttura/Ristorante/Attivita): stato `navVisible` + effetto direzione scroll; transform usa navVisible.
+- ⚠️ FIX bug pre-esistente: i landing leggevano `mini.header` ma SitoPage salva `mini.header_cfg` → la config header di SitoPace NON arrivava ai siti. Ora `mini.header_cfg || mini.header` (fallback). Quindi ora la config header di SitoPage si applica davvero (verificare che non cambi header a siti live che avevano header_cfg diverso — rischio basso, valori benigni).
+- Config UI in SitoPage: select "Comportamento allo scroll" (disabilitato se Sempre visibile).
+- Preview (`TemplatePreviewClient`): nav ora FIXED + smart headroom (demo), barra Desktop/Mobile spostata in pill flottante in BASSO per non scontrarsi. Verificato: top Y0 → down Y-76 → up Y0.
+
+### ⏭️ PROSSIMO (feedback Francesco 1/7):
+2. **Template più DIVERSI**: i 3 attuali troppo simili (stesso stack). Archetipi con DNA diverso (editoriale/luxury, bold one-page, griglia/portfolio, local-business mappa+orari). Usare hero_slider/carosello per differenziare.
+3. **Fase C**: wizard domande settore/obiettivo → filtra template + "Sfoglia".
+- AI bespoke avanzato: query immagini dal brief. Screenshot Playwright in scratchpad (temporanei).
+- ⚠️ MOLTO codice 1/7 LIVE su Vercel ma NON committato in git (flusso: commit su "salva"). Da committare: TemplatePreviewClient (nav+footer+mobile+smart), blocco carosello, ItemListEditor image field, unsplash carosello, smart header 3 landing + SitoPage config + fix header_cfg fallback, template vetrina (carosello). RICORDARE a Francesco di far salvare.
 
 ## STATO
 - ✅ **Fase A FATTA (26/6)**: `lib/siteTemplates.js` (3 template: vetrina-elegante, servizi-pro, evento — struttura+tema+contenuti esempio, forme blocco validate). API `POST /api/site-templates/apply` (auth requireEntityAccess, crea __home__ + applica theme + attiva minisito). `components/admin/SiteTemplateGallery.jsx` + tab "Template" in SitoPage (card con anteprima colori/struttura + "Usa questo template"). Verificato: 401 unauth, template renderizza su /s/prova (tutti i markers), smoke verde. Anteprima v1 = stack colorato (non live render).

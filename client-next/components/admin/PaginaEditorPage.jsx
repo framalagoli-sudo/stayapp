@@ -26,7 +26,7 @@ function slugify(s) {
 
 // ── Block icon + color mapping ────────────────────────────────────────────────
 const BLOCK_ICON_MAP = {
-  hero: Layers, hero_slider: GalleryHorizontal, about: AlignLeft, pulsante: Zap, foto_testo: Image, paragrafi: Grid,
+  hero: Layers, hero_slider: GalleryHorizontal, carosello: GalleryHorizontal, about: AlignLeft, pulsante: Zap, foto_testo: Image, paragrafi: Grid,
   team: Users, steps: List, highlights: Star, stats: BarChart2,
   cta_banner: Zap, testimonianze: MessageCircle, promozioni: Tag,
   pacchetti: Package, faq: HelpCircle, immagine: Image, galleria_immagini: Grid, gallery: ImageIcon, video: Video,
@@ -48,7 +48,7 @@ function BlockTypeIcon({ type, size = 15, muted = false }) {
 }
 
 // ── ItemListEditor ────────────────────────────────────────────────────────────
-function ItemListEditor({ items = [], onChange, fields, newItem }) {
+function ItemListEditor({ items = [], onChange, fields, newItem, entityId, entityTipo }) {
   function update(idx, key, val) { onChange(items.map((it, i) => i === idx ? { ...it, [key]: val } : it)) }
   function add() { onChange([...items, { id: uid(), ...newItem }]) }
   function remove(idx) { onChange(items.filter((_, i) => i !== idx)) }
@@ -71,7 +71,16 @@ function ItemListEditor({ items = [], onChange, fields, newItem }) {
           {fields.map(f => (
             <div key={f.key} style={{ marginBottom: 8 }}>
               {f.label && <label style={{ display: 'block', fontSize: 11, color: '#666', marginBottom: 3 }}>{f.label}</label>}
-              {f.type === 'textarea'
+              {f.type === 'image'
+                ? <div>
+                    {it[f.key] && <img src={it[f.key]} alt="" style={{ width: '100%', maxHeight: 100, objectFit: 'cover', borderRadius: 8, marginBottom: 6 }} />}
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
+                      <UnsplashPicker label="Unsplash" defaultQuery={it.title || ''} onPick={url => update(idx, f.key, url)} />
+                      <UploadBtn label="Carica" entityId={entityId} entityTipo={entityTipo} onUrl={url => update(idx, f.key, url)} />
+                    </div>
+                    <input type="text" value={it[f.key] || ''} onChange={e => update(idx, f.key, e.target.value)} placeholder="https://..." style={inputStyle()} />
+                  </div>
+                : f.type === 'textarea'
                 ? <textarea value={it[f.key] || ''} onChange={e => update(idx, f.key, e.target.value)} rows={f.rows || 3} style={inputStyle()} />
                 : f.type === 'toggle'
                 ? <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
@@ -253,6 +262,47 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
                 secondi
               </label>
             )}
+          </div>
+        </div>
+      </div>
+    )
+    case 'carosello': return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} />
+        <ItemListEditor items={data.items} onChange={v => upd('items', v)} entityId={entityId} entityTipo={entityTipo}
+          newItem={{ image_url: '', title: '', text: '', button_label: '', button_url: '' }}
+          fields={[
+            { key: 'image_url', label: 'Immagine', type: 'image' },
+            { key: 'title', label: 'Titolo' },
+            { key: 'text', label: 'Testo', type: 'textarea', rows: 2 },
+            { key: 'button_label', label: 'Pulsante (opz.)' },
+            { key: 'button_url', label: 'URL pulsante', placeholder: 'https://...' },
+          ]} />
+        <div style={{ borderTop: '1px solid #eee', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div>
+            <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Card visibili (desktop)</label>
+            <select value={data.per_view || 3} onChange={e => upd('per_view', Number(e.target.value))} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+              <option value={1}>1</option><option value={2}>2</option><option value={3}>3</option><option value={4}>4</option>
+            </select>
+            <p style={{ fontSize: 11, color: '#aaa', margin: '4px 0 0' }}>Su mobile si adatta automaticamente (1 per volta).</p>
+          </div>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
+              <input type="checkbox" checked={data.autoplay !== false} onChange={e => upd('autoplay', e.target.checked)} /> Scorrimento automatico
+            </label>
+            {data.autoplay !== false && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#555' }}>
+                ogni <input type="number" min="2" max="20" value={data.interval ?? 5} onChange={e => upd('interval', Number(e.target.value))} style={{ width: 60, border: '1px solid #ddd', borderRadius: 6, padding: '5px 8px', fontSize: 13 }} /> secondi
+              </label>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
+              <input type="checkbox" checked={data.show_arrows !== false} onChange={e => upd('show_arrows', e.target.checked)} /> Frecce
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
+              <input type="checkbox" checked={data.show_dots !== false} onChange={e => upd('show_dots', e.target.checked)} /> Puntini
+            </label>
           </div>
         </div>
       </div>

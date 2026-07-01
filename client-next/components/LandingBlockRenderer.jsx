@@ -127,6 +127,92 @@ function HeroSlider({ block, primary, heading }) {
   )
 }
 
+// Carosello scorrevole di card (immagine + titolo + testo + pulsante). Più card
+// visibili per volta (responsive: 1 su mobile), frecce, puntini, swipe, autoplay.
+function Carousel({ block, primary, heading }) {
+  const d = block.data || {}
+  const items = (d.items || []).filter(it => it.image_url || it.title || it.text)
+  const cfgPv = Math.min(Math.max(parseInt(d.per_view) || 3, 1), 4)
+  const [pv, setPv] = useState(1)
+  const [i, setI] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const touchX = useRef(null)
+
+  useEffect(() => {
+    const calc = () => {
+      const w = window.innerWidth
+      setPv(w < 640 ? 1 : w < 960 ? Math.min(2, cfgPv) : cfgPv)
+    }
+    calc(); window.addEventListener('resize', calc)
+    return () => window.removeEventListener('resize', calc)
+  }, [cfgPv])
+
+  const maxI = Math.max(0, items.length - pv)
+  useEffect(() => { if (i > maxI) setI(maxI) }, [maxI, i])
+  const autoplay = d.autoplay !== false && items.length > pv
+  const interval = Math.max(2, d.interval || 5) * 1000
+  useEffect(() => {
+    if (!autoplay || paused) return
+    const t = setTimeout(() => setI(p => (p >= maxI ? 0 : p + 1)), interval)
+    return () => clearTimeout(t)
+  }, [autoplay, paused, i, maxI, interval])
+
+  if (!items.length) return null
+  const go = idx => setI(Math.max(0, Math.min(idx, maxI)))
+  const onTouchStart = e => { touchX.current = e.touches[0].clientX }
+  const onTouchEnd = e => { if (touchX.current == null) return; const dx = e.changedTouches[0].clientX - touchX.current; if (Math.abs(dx) > 45) go(i + (dx < 0 ? 1 : -1)); touchX.current = null }
+  const showArrows = d.show_arrows !== false && items.length > pv
+  const showDots = d.show_dots !== false && maxI > 0
+  const arrow = (side, disabled) => ({
+    position: 'absolute', top: '50%', [side]: -8, transform: 'translateY(-50%)', zIndex: 3,
+    width: 44, height: 44, borderRadius: '50%', border: '1px solid #e5e5ea', background: '#fff', color: '#1a1a2e',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: disabled ? 'default' : 'pointer',
+    boxShadow: '0 4px 14px rgba(0,0,0,0.12)', opacity: disabled ? 0.35 : 1,
+  })
+
+  return (
+    <section style={{ padding: '72px 0', background: '#fff' }}>
+      <div className="lbr-section">
+        {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,40px)', fontWeight: 700, textAlign: 'center', color: '#1a1a2e', marginBottom: 44 }}>{d.titolo}</h2>}
+        <div style={{ position: 'relative' }} onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+          <div style={{ overflow: 'hidden' }}>
+            <div style={{ display: 'flex', transform: `translateX(-${i * (100 / pv)}%)`, transition: 'transform 0.5s ease' }}>
+              {items.map(it => (
+                <div key={it.id} style={{ flex: `0 0 ${100 / pv}%`, padding: '0 10px', boxSizing: 'border-box' }}>
+                  <div style={{ background: '#fafafa', border: '1px solid #f0f0f0', borderRadius: 16, overflow: 'hidden', height: '100%' }}>
+                    {it.image_url && <img src={it.image_url} alt={it.title || ''} loading="lazy" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />}
+                    {(it.title || it.text || (it.button_label && it.button_url)) && (
+                      <div style={{ padding: 22 }}>
+                        {it.title && <h3 style={{ fontFamily: heading, fontSize: 19, fontWeight: 700, color: '#1a1a2e', margin: '0 0 8px' }}>{it.title}</h3>}
+                        {it.text && <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6, margin: 0 }}>{it.text}</p>}
+                        {it.button_label && it.button_url && <a href={it.button_url} style={{ display: 'inline-block', marginTop: 14, color: primary, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>{it.button_label} →</a>}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {showArrows && (
+            <>
+              <button onClick={() => go(i - 1)} disabled={i <= 0} aria-label="Precedente" style={arrow('left', i <= 0)}><ChevronLeft size={22} strokeWidth={1.5} /></button>
+              <button onClick={() => go(i + 1)} disabled={i >= maxI} aria-label="Successiva" style={arrow('right', i >= maxI)}><ChevronRight size={22} strokeWidth={1.5} /></button>
+            </>
+          )}
+        </div>
+        {showDots && (
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 26 }}>
+            {Array.from({ length: maxI + 1 }).map((_, idx) => (
+              <button key={idx} onClick={() => go(idx)} aria-label={`Vai a ${idx + 1}`}
+                style={{ width: idx === i ? 24 : 8, height: 8, borderRadius: 50, border: 'none', cursor: 'pointer', padding: 0, background: idx === i ? primary : '#d5d5dd', transition: 'width 0.3s, background 0.3s' }} />
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
 export default function LandingBlockRenderer({ blocks, entity, entityType, mini, primary, heading, body, slug, privacyUrl, aziendaId, lang = 'it' }) {
   const [faqOpen, setFaqOpen] = useState({})
   const [eventi, setEventi] = useState([])
@@ -173,6 +259,9 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
 
       case 'hero_slider':
         return <HeroSlider key={block.id} block={block} primary={primary} heading={heading} />
+
+      case 'carosello':
+        return <Carousel key={block.id} block={block} primary={primary} heading={heading} />
 
       case 'about':
         if (!d.title && richIsEmpty(d.text)) return null

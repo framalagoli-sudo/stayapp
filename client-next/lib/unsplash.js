@@ -49,6 +49,9 @@ export async function resolveBlockImages(blocks, extraTerms = []) {
     if (b.type === 'hero_slider' && Array.isArray(d.slides)) {
       for (const s of d.slides) if (s.image_query) addNeed(q(s.image_query))
     }
+    if (b.type === 'carosello' && Array.isArray(d.items)) {
+      for (const it of d.items) if (it.image_query) addNeed(q(it.image_query))
+    }
   }
   if (need.size === 0) return blocks
 
@@ -74,6 +77,13 @@ export async function resolveBlockImages(blocks, extraTerms = []) {
         if (!s.image_query) return s
         const u = take(q(s.image_query))
         return u ? { ...s, image_url: u } : s
+      })
+    }
+    if (b.type === 'carosello' && Array.isArray(d.items)) {
+      d.items = d.items.map(it => {
+        if (!it.image_query) return it
+        const u = take(q(it.image_query))
+        return u ? { ...it, image_url: u } : it
       })
     }
     return { ...b, data: d }
