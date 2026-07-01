@@ -89,11 +89,24 @@ Francesco voleva l'effetto di borgodellago.com. VERIFICATO borgodellago (Element
 - Config UI in SitoPage: select "Comportamento allo scroll" (disabilitato se Sempre visibile).
 - Preview (`TemplatePreviewClient`): nav ora FIXED + smart headroom (demo), barra Desktop/Mobile spostata in pill flottante in BASSO per non scontrarsi. Verificato: top Y0 → down Y-76 → up Y0.
 
-### ⏭️ PROSSIMO (feedback Francesco 1/7):
-2. **Template più DIVERSI**: i 3 attuali troppo simili (stesso stack). Archetipi con DNA diverso (editoriale/luxury, bold one-page, griglia/portfolio, local-business mappa+orari). Usare hero_slider/carosello per differenziare.
-3. **Fase C**: wizard domande settore/obiettivo → filtra template + "Sfoglia".
+### ✅ 8 TEMPLATE PER VERTICALE — LIVE (1/7, verificato a video, distinti):
+`siteTemplates.js` riscritto: da 3 a 8 template dal DNA diverso (Francesco: "8, uno per tipo"). Sostituiti i vecchi (vetrina/servizi-pro/evento rimossi; evento folded in esperienze).
+1. hotel (navy/playfair, luxury) 2. ristorante (bordeaux/cormorant) 3. prodotti (blu/montserrat, hero sinistra, showroom) 4. servizi (ciano/dm-sans, conversione) 5. esperienze (teal/raleway, avventura) 6. beauty (rosa/cormorant, spa) 7. fitness (arancio/montserrat, bold, con pacchetti) 8. professionista (slate/playfair, sobrio, hero singolo).
+Ognuno: theme distinto + mix blocchi diverso (hero_slider/hero, carosello, steps, pacchetti, testimonianze, paragrafi...) + image_query a tema + campi `settori`/`obiettivi` pronti per Fase C.
+- Rifiniture note (non bloccanti): query "product showcase studio" (prodotti) rende uno studio fotografico più che prodotti; prodotti/servizi sono la coppia più simile (dark/ufficio). Ritoccabili via image_query.
+
+### ✅ HEADER/FOOTER PER-PAGINA (opzione B) — LIVE + VERIFICATO (1/7):
+Fix header sotto-pagine: `GuestSubPage` ora legge `mini.header_cfg || mini.header` (config SitoPage si applica) + smart headroom anche sulla sub-nav (prima sempre visibile). Footer già applicato.
+Opzione B (scelta da Francesco): header/footer condivisi di default, ma ogni pagina può nasconderli (landing distraction-free). NON multi-header chooser (contro "for dummies").
+- Migration `063_pagine_hide_header_footer.sql` (hide_header/hide_footer boolean default false) — ESEGUITA da Francesco 1/7.
+- PATCH `/api/pagine/[id]` ALLOWED += hide_header/hide_footer. Editor: 2 toggle in PaginaEditorPage (accanto a status/nel_menu). Rendering: GuestSubPage salta nav (+ padding-top 0) e/o LandingFooter. Home (__home__ via LandingStruttura) tiene sempre header/footer.
+- Verificato a video: pagina temp su entità 'prova' (id 270f8e90...) con hide entrambi → DOM hasNav:false hasFooter:false, screenshot ok; pagina poi cancellata. (Verifica DB fatta via REST + service role da tests/.env.test, project ref decodificato dal JWT.)
+- Nota minore aperta: su landing con header nascosto lo switcher lingua (chip GB/EN) resta visibile — eventualmente nasconderlo anche lì.
+
+### ⏭️ PROSSIMO:
+3. **Fase C**: wizard domande settore/obiettivo → filtra template (usa `settori`/`obiettivi` già presenti negli 8 template) + "Sfoglia tutti". ULTIMO punto del feedback 1/7.
 - AI bespoke avanzato: query immagini dal brief. Screenshot Playwright in scratchpad (temporanei).
-- ⚠️ MOLTO codice 1/7 LIVE su Vercel ma NON committato in git (flusso: commit su "salva"). Da committare: TemplatePreviewClient (nav+footer+mobile+smart), blocco carosello, ItemListEditor image field, unsplash carosello, smart header 3 landing + SitoPage config + fix header_cfg fallback, template vetrina (carosello). RICORDARE a Francesco di far salvare.
+- ⚠️ DA COMMITTARE (flusso "salva"): 8 template, fix header sotto-pagine (GuestSubPage), opzione B (migration+API+editor+render). Migration 063 già eseguita in DB.
 
 ## STATO
 - ✅ **Fase A FATTA (26/6)**: `lib/siteTemplates.js` (3 template: vetrina-elegante, servizi-pro, evento — struttura+tema+contenuti esempio, forme blocco validate). API `POST /api/site-templates/apply` (auth requireEntityAccess, crea __home__ + applica theme + attiva minisito). `components/admin/SiteTemplateGallery.jsx` + tab "Template" in SitoPage (card con anteprima colori/struttura + "Usa questo template"). Verificato: 401 unauth, template renderizza su /s/prova (tutti i markers), smoke verde. Anteprima v1 = stack colorato (non live render).

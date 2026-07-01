@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireEntityAccess } from '@/lib/server-auth'
 
-const ALLOWED = ['titolo','slug','status','nel_menu','ordine','parent_id','seo_title','seo_description','og_image_url','blocks']
+const ALLOWED = ['titolo','slug','status','nel_menu','ordine','parent_id','seo_title','seo_description','og_image_url','blocks','hide_header','hide_footer']
 
 // Carica la pagina e autorizza l'accesso all'entità che la possiede.
 // Ritorna { pagina, response }. Se response != null, ritornalo subito.

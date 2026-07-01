@@ -44,11 +44,31 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
   const mini    = entity.minisito || {}
   const social  = mini.social || {}
 
-  const hdrCfg         = mini.header || {}
+  const hdrCfg         = mini.header_cfg || mini.header || {}
   const navDark        = entityType === 'struttura' ? hdrCfg.style !== 'light' : hdrCfg.style === 'dark'
   const navBg          = navDark ? 'rgba(18,18,32,0.93)'    : 'rgba(255,255,255,0.95)'
   const navBorderColor = navDark ? 'rgba(255,255,255,0.08)' : '#eee'
   const navTextColor   = navDark ? 'rgba(255,255,255,0.8)'  : '#1a1a2e'
+  const smartNav       = hdrCfg.scroll_behavior === 'smart'
+  const [navHidden, setNavHidden] = useState(false)
+
+  useEffect(() => {
+    if (!smartNav) return
+    let last = window.scrollY
+    const onScroll = () => {
+      const y = window.scrollY
+      if (y < 80) setNavHidden(false)
+      else if (y > last + 4) setNavHidden(true)
+      else if (y < last - 4) setNavHidden(false)
+      last = y
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [smartNav])
+
+  // Opzione B: la singola pagina può nascondere header/footer (es. landing).
+  const hideHeader = pagina.hide_header === true
+  const hideFooter = pagina.hide_footer === true
 
   const prefix     = ENTITY_PREFIX[entityType] || entityType
   const base       = entityBasePath(prefix, entity.slug, domain, lang)
@@ -75,7 +95,8 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
         }
       `}</style>
 
-      <nav className="sub-nav">
+      {!hideHeader && (
+      <nav className="sub-nav" style={{ transform: navHidden ? 'translateY(-100%)' : 'translateY(0)', transition: 'transform 0.3s ease' }}>
         <a href={homeUrl} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
           {entity.logo_url && <img src={entity.logo_url} alt="logo" style={{ height: 30, objectFit: 'contain' }} />}
           <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 15, color: navTextColor }}>{entity.name}</span>
@@ -110,8 +131,9 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
         )}
         <div />
       </nav>
+      )}
 
-      <div className="sub-content">
+      <div className="sub-content" style={hideHeader ? { paddingTop: 0 } : undefined}>
         {pagina.blocks?.length > 0 ? (
           <LandingBlockRenderer
             blocks={pagina.blocks} entity={entity} entityType={entityType}
@@ -126,7 +148,7 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
         )}
       </div>
 
-      <LandingFooter entity={entity} mini={mini} primary={primary} heading={heading} body={body} entityType={entityType} lang={lang} domain={domain} />
+      {!hideFooter && <LandingFooter entity={entity} mini={mini} primary={primary} heading={heading} body={body} entityType={entityType} lang={lang} domain={domain} />}
 
       <CookieBanner primaryColor={primary} privacyUrl={privacyUrl} cookieUrl={cookieUrl} lang={lang} />
       <WhatsAppButton

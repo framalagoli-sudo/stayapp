@@ -1041,6 +1041,14 @@ export default function PaginaEditorPage() {
             <input type="checkbox" checked={!!page.nel_menu} onChange={e => patchPage('nel_menu', e.target.checked)} />
             Mostra nel menu di navigazione
           </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }} title="Utile per le landing page (senza distrazioni)">
+            <input type="checkbox" checked={!!page.hide_header} onChange={e => patchPage('hide_header', e.target.checked)} />
+            Nascondi header
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }} title="Utile per le landing page (senza distrazioni)">
+            <input type="checkbox" checked={!!page.hide_footer} onChange={e => patchPage('hide_footer', e.target.checked)} />
+            Nascondi footer
+          </label>
         </div>
       </div>
 
