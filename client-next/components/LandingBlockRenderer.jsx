@@ -4,7 +4,7 @@ import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Ut
 import { guestFetch } from '@/lib/api'
 import BookingWidget from './BookingWidget'
 import Turnstile from '@/components/Turnstile'
-import { applyBlockStyle, textSizeScale, textColorFor, gridTemplate, readableOn } from '@/lib/blockTypes'
+import { applyBlockStyle, blockInverted, textSizeScale, textColorFor, gridTemplate, readableOn } from '@/lib/blockTypes'
 import { RichText, richIsEmpty } from '@/lib/richText'
 import { t as tr } from '@/lib/i18n'
 
@@ -229,8 +229,11 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
       .then(d => Array.isArray(d) && setArticoli(d)).catch(() => {})
   }, [entity?.id])
 
-  function renderBlock(block) {
+  function renderBlock(block, inverted = false) {
     const d = block.data || {}
+    // Colori adattivi allo sfondo di sezione (scuro/immagine → testo chiaro).
+    const cTitle = inverted ? '#ffffff' : '#1a1a2e'
+    const cBody  = inverted ? 'rgba(255,255,255,0.82)' : null   // null = usa il colore nativo del blocco
     switch (block.type) {
 
       case 'hero': {
@@ -270,7 +273,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
             <div className="lbr-section">
               {d.title && <h2 style={{ fontFamily: heading, fontSize: 'clamp(28px,4vw,46px)', fontWeight: 700, color: '#1a1a2e', marginBottom: 18 }}>{d.title}</h2>}
               {d.title && <div style={{ width: 54, height: 3, background: primary, borderRadius: 2, marginBottom: 28 }} />}
-              <RichText value={d.text} primary={primary} style={{ fontSize: Math.round(18 * textSizeScale(block.style?.textSize)), lineHeight: 1.8, color: textColorFor(block.style?.textColor, primary) || '#444', maxWidth: 720 }} />
+              <RichText value={d.text} primary={primary} style={{ fontSize: Math.round(18 * textSizeScale(block.style?.textSize)), lineHeight: 1.8, color: cBody || textColorFor(block.style?.textColor, primary) || '#444', maxWidth: 720 }} />
             </div>
           </section>
         )
@@ -288,7 +291,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                 )}
                 <div className="lbr-ft-txt">
                   {d.title && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, color: '#1a1a2e', marginBottom: 16 }}>{d.title}</h2>}
-                  <RichText value={d.text} primary={primary} style={{ fontSize: Math.round(16 * textSizeScale(block.style?.textSize)), lineHeight: 1.75, color: textColorFor(block.style?.textColor, primary) || '#555', marginBottom: 24 }} />
+                  <RichText value={d.text} primary={primary} style={{ fontSize: Math.round(16 * textSizeScale(block.style?.textSize)), lineHeight: 1.75, color: cBody || textColorFor(block.style?.textColor, primary) || '#555', marginBottom: 24 }} />
                   {d.button_label && d.button_url && (
                     <a href={d.button_url} style={{ display: 'inline-block', padding: '12px 28px', background: primary, color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>{d.button_label}</a>
                   )}
@@ -412,9 +415,9 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                       ? <img src={m.photo_url} alt={m.nome} style={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover', marginBottom: 14, border: `3px solid ${primary}30` }} />
                       : <div style={{ width: 96, height: 96, borderRadius: '50%', background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', fontSize: 32 }}>👤</div>
                     }
-                    <div style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, color: '#1a1a2e', marginBottom: 4 }}>{m.nome}</div>
+                    <div style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, color: cTitle, marginBottom: 4 }}>{m.nome}</div>
                     {m.ruolo && <div style={{ fontSize: 12, color: primary, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>{m.ruolo}</div>}
-                    {m.bio && <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6 }}>{m.bio}</p>}
+                    {m.bio && <p style={{ fontSize: 13, color: cBody || '#666', lineHeight: 1.6 }}>{m.bio}</p>}
                   </div>
                 ))}
               </div>
@@ -441,8 +444,8 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                         </div>
                         <div style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: '50%', background: primary, color: '#fff', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{idx + 1}</div>
                       </div>
-                      {step.title && <h3 style={{ fontFamily: heading, fontSize: 17, fontWeight: 700, color: '#1a1a2e', marginBottom: 8 }}>{step.title}</h3>}
-                      {step.text && <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6 }}>{step.text}</p>}
+                      {step.title && <h3 style={{ fontFamily: heading, fontSize: 17, fontWeight: 700, color: cTitle, marginBottom: 8 }}>{step.title}</h3>}
+                      {step.text && <p style={{ fontSize: 14, color: cBody || '#666', lineHeight: 1.6 }}>{step.text}</p>}
                     </div>
                   )
                 })}
@@ -933,7 +936,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         .lbr-logo-item img:hover { filter: grayscale(0%) opacity(1); }
         .lbr-logo-item a { display: block; }
       `}</style>
-      {blocks.map(b => applyBlockStyle(renderBlock(b), b))}
+      {blocks.map(b => applyBlockStyle(renderBlock(b, blockInverted(b, primary)), b, { primary }))}
     </>
   )
 }

@@ -6,7 +6,7 @@ import {
   GripVertical, AlignLeft, Image, Grid, Users, List, Star, BarChart2, Zap,
   MessageCircle, Tag, Package, HelpCircle, Video, Settings, Compass, Map,
   Calendar, FileText, Clock, Mail, Phone, MapPin, ChevronDown, ChevronUp,
-  Plus, Trash2, ImageIcon, Layers, Building2, GalleryHorizontal,
+  Plus, Trash2, Copy, ImageIcon, Layers, Building2, GalleryHorizontal,
 } from 'lucide-react'
 import AiButton from '@/components/admin/AiButton'
 import RichTextEditor from '@/components/admin/RichTextEditor'
@@ -196,7 +196,10 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
         <Field label="Tagline / Sottotitolo" value={data.tagline} onChange={v => upd('tagline', v)} />
         <Field label="URL immagine di sfondo" value={data.bg_image_url} onChange={v => upd('bg_image_url', v)} placeholder="https://..." />
         {data.bg_image_url && <img src={data.bg_image_url} alt="" style={{ maxHeight: 100, borderRadius: 8, objectFit: 'cover', width: '100%' }} />}
-        <UploadBtn label="Carica immagine sfondo" entityId={entityId} entityTipo={entityTipo} onUrl={url => upd('bg_image_url', url)} />
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <UnsplashPicker label="Cerca su Unsplash" defaultQuery={data.title} onPick={url => upd('bg_image_url', url)} />
+          <UploadBtn label="Carica immagine sfondo" entityId={entityId} entityTipo={entityTipo} onUrl={url => upd('bg_image_url', url)} />
+        </div>
         <div>
           <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Opacità overlay ({Math.round((data.overlay_opacity ?? 0.5) * 100)}%)</label>
           <input type="range" min="0" max="1" step="0.05" value={data.overlay_opacity ?? 0.5} onChange={e => upd('overlay_opacity', parseFloat(e.target.value))} style={{ width: '100%' }} />
@@ -336,7 +339,10 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
         </div>
         <Field label="URL immagine" value={data.image_url} onChange={v => upd('image_url', v)} placeholder="https://..." />
         {data.image_url && <img src={data.image_url} alt="" style={{ maxHeight: 120, borderRadius: 8, objectFit: 'cover', width: '100%' }} />}
-        <UploadBtn label="Carica immagine" entityId={entityId} entityTipo={entityTipo} onUrl={url => upd('image_url', url)} />
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <UnsplashPicker label="Cerca su Unsplash" defaultQuery={data.title} onPick={url => upd('image_url', url)} />
+          <UploadBtn label="Carica immagine" entityId={entityId} entityTipo={entityTipo} onUrl={url => upd('image_url', url)} />
+        </div>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
           <input type="checkbox" checked={!!data.inverti} onChange={e => upd('inverti', e.target.checked)} />
           Inverti: testo a sinistra, immagine a destra
@@ -432,6 +438,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {data.image_url && <img src={data.image_url} alt="" style={{ maxHeight: 140, borderRadius: 8, objectFit: 'cover', width: '100%' }} />}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <UnsplashPicker label="Cerca su Unsplash" defaultQuery={data.alt} onPick={url => upd('image_url', url)} />
           <UploadBtn label="Carica immagine" entityId={entityId} entityTipo={entityTipo} onUrl={url => upd('image_url', url)} />
           <MediaPickerButton entityId={entityId} entityTipo={entityTipo} onPick={url => upd('image_url', url)} />
         </div>
@@ -603,7 +610,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
 }
 
 // ── BlockStylePanel — stile per-blocco (Fase 0: sfondo + spaziatura) ─────────
-function BlockStylePanel({ block, onChange }) {
+function BlockStylePanel({ block, onChange, entityId, entityTipo }) {
   const st = block.style || {}
   const set = (key, val) => onChange({ ...st, [key]: val })
   const showBg = blockSupportsBg(block.type)
@@ -645,6 +652,19 @@ function BlockStylePanel({ block, onChange }) {
           </div>
         )}
       </div>
+      {showBg && st.bg === 'image' && (
+        <div style={{ marginTop: 12, background: '#fafafd', border: '1px solid #eee', borderRadius: 8, padding: 12 }}>
+          <label style={lbl}>Immagine di sfondo</label>
+          {st.bg_image && <img src={st.bg_image} alt="" style={{ width: '100%', maxHeight: 90, objectFit: 'cover', borderRadius: 6, marginBottom: 6 }} />}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
+            <UnsplashPicker label="Cerca su Unsplash" onPick={url => set('bg_image', url)} />
+            <UploadBtn label="Carica" entityId={entityId} entityTipo={entityTipo} onUrl={url => set('bg_image', url)} />
+          </div>
+          <input type="text" value={st.bg_image || ''} onChange={e => set('bg_image', e.target.value)} placeholder="https://..." style={{ ...sel, marginBottom: 8 }} />
+          <label style={lbl}>Velo scuro ({Math.round((st.bg_overlay ?? 0.5) * 100)}%)</label>
+          <input type="range" min="0" max="0.85" step="0.05" value={st.bg_overlay ?? 0.5} onChange={e => set('bg_overlay', parseFloat(e.target.value))} style={{ width: '100%' }} />
+        </div>
+      )}
     </div>
   )
 }
@@ -902,6 +922,17 @@ export default function PaginaEditorPage() {
     patchBlocks(blocks.filter(b => b.id !== id))
     if (expandedId === id) setExpandedId(null)
   }
+  function duplicateBlock(id) {
+    const idx = blocks.findIndex(b => b.id === id)
+    if (idx < 0) return
+    const src = blocks[idx]
+    const data = JSON.parse(JSON.stringify(src.data || {}))
+    if (Array.isArray(data.items))  data.items  = data.items.map(it => ({ ...it, id: uid() }))
+    if (Array.isArray(data.slides)) data.slides = data.slides.map(s => ({ ...s, id: uid() }))
+    const copy = { id: uid(), type: src.type, data, ...(src.style ? { style: { ...src.style } } : {}) }
+    const nb = [...blocks]; nb.splice(idx + 1, 0, copy)
+    patchBlocks(nb); setExpandedId(copy.id)
+  }
 
   // ── Drag & drop ──────────────────────────────────────────────────────────────
   function onBlockDragStart(e, blockId) {
@@ -1115,6 +1146,17 @@ export default function PaginaEditorPage() {
                     {blockLabel(block.type)}
                   </span>
 
+                  {/* Duplicate */}
+                  <button
+                    onClick={() => duplicateBlock(block.id)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px 6px', color: '#ddd', lineHeight: 0, flexShrink: 0 }}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#5b6af8' }}
+                    onMouseLeave={e => { e.currentTarget.style.color = '#ddd' }}
+                    title="Duplica blocco"
+                  >
+                    <Copy size={14} strokeWidth={1.5} />
+                  </button>
+
                   {/* Delete */}
                   <button
                     onClick={() => deleteBlock(block.id)}
@@ -1139,7 +1181,7 @@ export default function PaginaEditorPage() {
                 {isOpen && (
                   <div style={{ borderTop: '1px solid #f0f0f0', padding: '18px 20px', background: '#fafafa' }}>
                     <BlockEditor block={block} onChange={data => updateBlock(block.id, data)} entityId={entityId} entityTipo={entityTipo} />
-                    <BlockStylePanel block={block} onChange={style => updateBlockStyle(block.id, style)} />
+                    <BlockStylePanel block={block} entityId={entityId} entityTipo={entityTipo} onChange={style => updateBlockStyle(block.id, style)} />
                   </div>
                 )}
               </div>

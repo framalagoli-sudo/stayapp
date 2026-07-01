@@ -81,13 +81,34 @@ export const BLOCK_DEFAULTS = {
 // (niente colore/HTML arbitrario nel DOM). Sfondo limitato a tinte CHIARE così
 // il testo scuro dei blocchi resta sempre leggibile; lo sfondo scuro/colorato
 // arriverà quando i contenuti useranno colori ereditati (fase successiva).
-export const BLOCK_BG = { default: null, white: '#ffffff', light: '#fafafa', muted: '#f4f4f7' }
+export const BLOCK_BG = { default: null, white: '#ffffff', light: '#fafafa', muted: '#f4f4f7', dark: '#14141f' }
 export const BLOCK_BG_OPTIONS = [
   { key: 'default', label: 'Predefinito' },
   { key: 'white',   label: 'Bianco' },
   { key: 'light',   label: 'Grigio chiaro' },
   { key: 'muted',   label: 'Grigio' },
+  { key: 'dark',    label: 'Scuro' },
+  { key: 'primary', label: 'Colore tema' },
+  { key: 'image',   label: 'Immagine' },
 ]
+// Risolve lo sfondo di una sezione dallo style + tema. Ritorna { background, inverted }.
+// inverted = testo da schiarire (fondo scuro/immagine). 'primary' invertito solo se il
+// colore tema è scuro. 'image' usa bg_image + velo scuro (overlay 0-0.85).
+export function resolveBlockBg(style, primary) {
+  const st = style || {}
+  if (st.bg === 'primary') {
+    const p = primary || '#1a1a2e'
+    return { background: p, inverted: contrastRatio('#ffffff', p) >= 3 }
+  }
+  if (st.bg === 'image') {
+    if (!st.bg_image) return { background: null, inverted: false }
+    const ov = st.bg_overlay ?? 0.5
+    return { background: `linear-gradient(rgba(0,0,0,${ov}),rgba(0,0,0,${ov})), url("${st.bg_image}") center/cover no-repeat`, inverted: true }
+  }
+  const solid = BLOCK_BG[st.bg]
+  if (!solid) return { background: null, inverted: false }
+  return { background: solid, inverted: contrastRatio('#ffffff', solid) >= 4.5 }
+}
 // px verticali; null = non toccare (mantiene la spaziatura nativa del blocco)
 export const BLOCK_PADY = { default: null, none: 0, compact: 40, spacious: 96, xl: 128 }
 export const BLOCK_PADY_OPTIONS = [
@@ -169,11 +190,20 @@ function parsePadding(p) {
 // via cloneElement, senza riscrivere i singoli case dei renderer. Additivo: se non
 // c'è style o non ci sono override validi, ritorna l'elemento immutato. Condiviso da
 // PaginaPage (sotto-pagine) e LandingBlockRenderer (home) per evitare duplicazione.
-export function applyBlockStyle(el, block) {
+export function blockInverted(block, primary) {
+  if (!block?.style || !blockSupportsBg(block.type)) return false
+  return resolveBlockBg(block.style, primary).inverted
+}
+
+export function applyBlockStyle(el, block, opts = {}) {
   if (!el || !block?.style) return el
   const st = block.style
   const ov = {}
-  if (blockSupportsBg(block.type) && st.bg && BLOCK_BG[st.bg]) ov.background = BLOCK_BG[st.bg]
+  let inverted = false
+  if (blockSupportsBg(block.type)) {
+    const r = resolveBlockBg(st, opts.primary)
+    if (r.background) { ov.background = r.background; inverted = r.inverted }
+  }
   const pad = BLOCK_PADY[st.paddingY]
   const hasPad = st.paddingY && st.paddingY !== 'default' && pad != null
   if (!Object.keys(ov).length && !hasPad) return el
@@ -187,7 +217,9 @@ export function applyBlockStyle(el, block) {
     ov.paddingTop = `${pad}px`
     ov.paddingBottom = `${pad}px`
   }
-  return cloneElement(el, { style: { ...base, ...ov } })
+  const props = { style: { ...base, ...ov } }
+  if (inverted) props.className = ((el.props.className || '') + ' lbr-inv').trim()
+  return cloneElement(el, props)
 }
 
 // ── Configurazione blocchi auto-entità (Fase 5) ──────────────────────────────

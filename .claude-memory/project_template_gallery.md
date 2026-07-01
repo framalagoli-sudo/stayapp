@@ -115,8 +115,24 @@ Opzione B (scelta da Francesco): header/footer condivisi di default, ma ogni pag
 2. **Rifinite query template**: prodotti hero 'product showcase studio'→'retail product display shelf', 'modern factory production'→'factory production line'.
 3. **Switcher lingua nascosto su landing header-nascosto**: le 3 route /p/ montano LanguageSwitcher solo se `!pagina.hide_header`.
 
-### ⏭️ BACKLOG residuo (nice to have):
-- (eventuale) l'AI sceglie anche i template/blocchi, non solo testi/immagini.
+## 🎨 DEEPENING DESIGN SYSTEM (2/7) — Francesco: "voglio fare tuttoooooo". Piano 7 filoni, a batch deployabili.
+Gap identificati (mia analisi): non manca la QUANTITÀ di blocchi (~30) ma la PROFONDITÀ. Ordine: sfondi sezione → picker unsplash ovunque → accento → varianti → blocchi nuovi → animazioni/duplica → anteprima live editor.
+
+### ✅ FATTO (2/7, live+verificato):
+- **Picker Unsplash ovunque**: aggiunto a hero, foto_testo, immagine (hero_slider/carosello già l'avevano) in PaginaEditorPage.
+- **Duplica blocco**: `duplicateBlock` in PaginaEditorPage (nuovi id per items/slides) + pulsante Copy nella toolbar blocco.
+- **Sfondi di sezione (FLAGSHIP)**: `blockTypes.js` BLOCK_BG + 'dark'/'primary'/'image'; `resolveBlockBg(style,primary)`→{background,inverted}; `applyBlockStyle(el,block,{primary})` aggiunge classe `lbr-inv` se scuro; `blockInverted()`. globals.css `.lbr-inv h2{color:#fff!important}` (titoli; card usano h3→restano scure). Testo diretto adattivo via prop `inverted` in renderBlock (about/foto_testo/steps/team: cTitle/cBody). Editor: BlockStylePanel opzioni + pannello immagine (Unsplash/upload/url + velo). Verificato a video su pagina test 'prova': sezione scura (titolo bianco+testo chiaro+card chiare che staccano), sfondo immagine con velo, sezione chiara invariata. VERIFICA DB via mksec.mjs (service role), pagina poi cancellata.
+
+### ⏭️ RESTA (stessa iniziativa):
+- Colore secondario/accento nel tema (theme.secondaryColor + UI Tema + uso in accenti).
+- Varianti layout per blocco (testimonianze/hero/foto_testo).
+- Blocchi nuovi: divisore/spaziatore, colonne, barra annuncio, menù ristorante.
+- Animazioni allo scroll (fade-in, pattern SSR-safe con classe abilitata da JS).
+- Anteprima live/mobile nell'editor pagine (feature grossa).
+- ⚠️ DA COMMITTARE (2/7): unsplash-ovunque, duplica blocco, sfondi sezione. (Batch 1 già deployato, non committato.)
+
+### ⏭️ BACKLOG (nice to have):
+- (eventuale) l'AI sceglie anche template/blocchi, non solo testi/immagini.
 - Screenshot Playwright in scratchpad (temporanei).
 
 ## STATO
