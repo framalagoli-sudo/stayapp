@@ -103,10 +103,17 @@ Opzione B (scelta da Francesco): header/footer condivisi di default, ma ogni pag
 - Verificato a video: pagina temp su entità 'prova' (id 270f8e90...) con hide entrambi → DOM hasNav:false hasFooter:false, screenshot ok; pagina poi cancellata. (Verifica DB fatta via REST + service role da tests/.env.test, project ref decodificato dal JWT.)
 - Nota minore aperta: su landing con header nascosto lo switcher lingua (chip GB/EN) resta visibile — eventualmente nasconderlo anche lì.
 
-### ⏭️ PROSSIMO:
-3. **Fase C**: wizard domande settore/obiettivo → filtra template (usa `settori`/`obiettivi` già presenti negli 8 template) + "Sfoglia tutti". ULTIMO punto del feedback 1/7.
-- AI bespoke avanzato: query immagini dal brief. Screenshot Playwright in scratchpad (temporanei).
-- ⚠️ DA COMMITTARE (flusso "salva"): 8 template, fix header sotto-pagine (GuestSubPage), opzione B (migration+API+editor+render). Migration 063 già eseguita in DB.
+### ✅ FASE C — wizard galleria template (1/7, deploy fatto):
+`SiteTemplateGallery.jsx`: wizard chip "1. Di cosa ti occupi?" (8 settori → intersecano i `settori` dei template) + "2. Obiettivo?" (vetrina/lead_gen/prenotazioni, opzionale, ordina i risultati) + link "Sfoglia tutti i template". Header risultati "Consigliati per te (N)" / "Tutti i template (N)". Nessuna API — filtro client puro. Costanti WIZARD_SECTORS/WIZARD_GOALS in cima al file.
+- ⚠️ È area admin (sotto login): verificato build + logica; la UX la verifica Francesco interattivamente (Sito → Template).
+- Da committare (flusso "salva").
+
+### 🎉 FEEDBACK 1/7 COMPLETATO: carosello ✅ + template diversi (8) ✅ + Fase C ✅. Anche header/footer per-pagina (opzione B) ✅ + smart header ✅ + anteprima header/footer/mobile ✅.
+
+### ⏭️ PROSSIMO (backlog):
+- AI bespoke avanzato: query immagini dal brief; magari l'AI sceglie i soggetti.
+- Rifiniture immagini template (es. "product showcase studio" rende studio fotografico); switcher lingua su landing header-nascosto.
+- Screenshot Playwright in scratchpad (temporanei).
 
 ## STATO
 - ✅ **Fase A FATTA (26/6)**: `lib/siteTemplates.js` (3 template: vetrina-elegante, servizi-pro, evento — struttura+tema+contenuti esempio, forme blocco validate). API `POST /api/site-templates/apply` (auth requireEntityAccess, crea __home__ + applica theme + attiva minisito). `components/admin/SiteTemplateGallery.jsx` + tab "Template" in SitoPage (card con anteprima colori/struttura + "Usa questo template"). Verificato: 401 unauth, template renderizza su /s/prova (tutti i markers), smoke verde. Anteprima v1 = stack colorato (non live render).

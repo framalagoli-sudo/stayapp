@@ -4,6 +4,29 @@ import { Eye } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import { SITE_TEMPLATES } from '@/lib/siteTemplates'
 
+// Fase C — wizard: settore + obiettivo filtrano/ordinano i template. I `match`
+// intersecano i `settori` di ogni template (lib/siteTemplates.js).
+const WIZARD_SECTORS = [
+  { key: 'ospitalita',     label: 'Ospitalità',            match: ['hotel', 'b&b', 'agriturismo', 'resort'] },
+  { key: 'ristorazione',   label: 'Ristorazione',          match: ['ristorante', 'trattoria', 'pizzeria', 'bistrot'] },
+  { key: 'prodotti',       label: 'Prodotti',              match: ['produzione', 'artigianato', 'negozio', 'e-commerce'] },
+  { key: 'servizi',        label: 'Servizi',               match: ['servizi', 'agenzia', 'impresa', 'consulenza'] },
+  { key: 'esperienze',     label: 'Attività & Esperienze', match: ['tour', 'guida', 'escursioni', 'eventi'] },
+  { key: 'beauty',         label: 'Beauty & Wellness',     match: ['parrucchiere', 'estetista', 'spa', 'benessere'] },
+  { key: 'fitness',        label: 'Palestra & Fitness',    match: ['palestra', 'fitness', 'personal trainer', 'crossfit'] },
+  { key: 'professionista', label: 'Studio professionale',  match: ['avvocato', 'commercialista', 'consulente', 'studio'] },
+]
+const WIZARD_GOALS = [
+  { key: 'vetrina',      label: 'Farmi conoscere' },
+  { key: 'lead_gen',     label: 'Ricevere contatti' },
+  { key: 'prenotazioni', label: 'Ricevere prenotazioni' },
+]
+const chipStyle = (active) => ({
+  padding: '7px 14px', borderRadius: 20, fontSize: 13, cursor: 'pointer',
+  border: `1.5px solid ${active ? '#1a1a2e' : '#ddd'}`,
+  background: active ? '#1a1a2e' : '#fff', color: active ? '#fff' : '#555', fontWeight: active ? 700 : 500,
+})
+
 // Galleria template di sito. Card con ANTEPRIMA REALE (render del template in iframe
 // scalato) + "Applica" → crea la home dal template, poi si modifica nell'editor.
 
@@ -53,6 +76,8 @@ export default function SiteTemplateGallery({ entityTipo, entityId, onApplied })
   const [confirmId, setConfirmId] = useState(null)
   const [brief, setBrief]     = useState('')
   const [error, setError]     = useState('')
+  const [sector, setSector]   = useState(null)   // Fase C: filtro settore
+  const [goal, setGoal]       = useState(null)   // Fase C: obiettivo (ordina)
 
   // Solo struttura: testi-esempio del template, niente AI.
   async function apply(id) {
@@ -86,15 +111,55 @@ export default function SiteTemplateGallery({ entityTipo, entityId, onApplied })
 
   function openConfirm(id) { setConfirmId(id); setBrief(''); setError('') }
 
+  // Fase C — filtra per settore e ordina mettendo prima chi centra l'obiettivo.
+  const sectorDef = WIZARD_SECTORS.find(s => s.key === sector)
+  let visible = SITE_TEMPLATES
+  if (sectorDef) {
+    const m = SITE_TEMPLATES.filter(t => (t.settori || []).some(x => sectorDef.match.includes(x)))
+    visible = m.length ? m : SITE_TEMPLATES
+    if (goal) visible = [...visible].sort((a, b) => (b.obiettivi?.includes(goal) ? 1 : 0) - (a.obiettivi?.includes(goal) ? 1 : 0))
+  }
+
   return (
     <div>
       <h3 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 700 }}>Parti da un template</h3>
-      <p style={{ color: '#666', fontSize: 13, marginTop: 0, marginBottom: 8 }}>
+      <p style={{ color: '#666', fontSize: 13, marginTop: 0, marginBottom: 12 }}>
         Scegli un layout pronto: l'AI lo riempie coi testi del tuo business, poi modifichi tutto nell'editor. ⚠️ Sostituisce la home attuale.
       </p>
+
+      {/* Wizard: settore → obiettivo */}
+      <div style={{ background: '#fafafd', border: '1px solid #eee', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', marginBottom: 8 }}>1. Di cosa ti occupi?</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {WIZARD_SECTORS.map(s => (
+            <button key={s.key} onClick={() => { setSector(sector === s.key ? null : s.key); if (sector === s.key) setGoal(null) }} style={chipStyle(sector === s.key)}>{s.label}</button>
+          ))}
+        </div>
+        {sector && (
+          <div style={{ marginTop: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', marginBottom: 8 }}>2. Qual è l'obiettivo? <span style={{ fontWeight: 400, color: '#999' }}>(opzionale)</span></div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {WIZARD_GOALS.map(g => (
+                <button key={g.key} onClick={() => setGoal(goal === g.key ? null : g.key)} style={chipStyle(goal === g.key)}>{g.label}</button>
+              ))}
+            </div>
+          </div>
+        )}
+        {(sector || goal) && (
+          <button onClick={() => { setSector(null); setGoal(null) }}
+            style={{ marginTop: 14, background: 'none', border: 'none', color: '#5b6af8', fontSize: 13, cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
+            Sfoglia tutti i template
+          </button>
+        )}
+      </div>
+
+      <div style={{ fontSize: 13, color: '#888', marginBottom: 10 }}>
+        {sector ? `Consigliati per te (${visible.length})` : `Tutti i template (${visible.length})`}
+      </div>
+
       {error && <p style={{ color: '#c53030', fontSize: 13 }}>{error}</p>}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 16, marginTop: 12 }}>
-        {SITE_TEMPLATES.map(tpl => (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 16, marginTop: 4 }}>
+        {visible.map(tpl => (
           <div key={tpl.id} style={{ border: '1px solid #eee', borderRadius: 12, padding: 12, background: '#fff', display: 'flex', flexDirection: 'column', gap: 10 }}>
             <Preview tpl={tpl} />
             <div>
