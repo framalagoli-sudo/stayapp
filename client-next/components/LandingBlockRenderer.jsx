@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useEffect, useRef, cloneElement } from 'react'
-import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Mountain, Wind, ChevronDown, ChevronLeft, ChevronRight, Calendar, Users, Check, CheckCircle, Gift } from 'lucide-react'
+import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Mountain, Wind, ChevronDown, ChevronLeft, ChevronRight, Calendar, Users, Check, CheckCircle, Gift, Home, Zap, Shield, Leaf, Sun, Briefcase, Wrench, Euro, Handshake, Smile, Target, TrendingUp, Globe, Camera, BookOpen, Layers, Tag } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
 import BookingWidget from './BookingWidget'
 import MenuTab from '@/components/MenuTab'
@@ -17,6 +17,11 @@ const HIGHLIGHT_LUCIDE = {
   // chiavi usate da template/sezioni pronte (prima cadevano sul fallback Star)
   'check-circle': CheckCircle, check: Check, clock: Clock, phone: Phone,
   calendar: Calendar, coffee: Coffee, users: Users, gift: Gift,
+  // set completo icone ammesse dall'AI builder (niente più fallback a stella)
+  home: Home, mail: Mail, zap: Zap, shield: Shield, 'map-pin': MapPin, utensils: Utensils,
+  sparkles: Sparkles, leaf: Leaf, sun: Sun, briefcase: Briefcase, wrench: Wrench, euro: Euro,
+  handshake: Handshake, smile: Smile, target: Target, 'trending-up': TrendingUp, globe: Globe,
+  camera: Camera, activity: Activity, book: BookOpen, layers: Layers, tag: Tag,
 }
 function highlightIcon(key) { return HIGHLIGHT_LUCIDE[key] || Star }
 

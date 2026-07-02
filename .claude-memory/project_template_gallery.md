@@ -167,6 +167,14 @@ Era rimasto indietro: generava solo blocchi vecchi E aveva un BUG (nomi-campo it
 - entity_tipo passato al prompt (nota menu per ristoranti).
 - ⚠️ super_admin-only beta → verifica live la fa Francesco (generare un sito). Build ok, nomi-campo verificati contro renderer.
 
+## 🏠 LANDING OLTRENOVA a blocchi — fattibilità DIMOSTRATA (2/7)
+La landing marketing di OltreNova (`/` → `components/public/LandingPage.jsx`, ~900 righe hardcoded, NON generata da me né a blocchi) può diventare editabile a blocchi. Passo 1 fatto: bozza a blocchi (testi reali estratti dalla landing attuale) inserita su entità test 'prova' → resa bene (hero, highlights 3 pilastri, about, paragrafi features, stats dark animate, testimonianze quote, accordion FAQ). Editabile, SSR. Bozza poi cancellata.
+- NON posso triggerare l'AI builder headless (super_admin) → ho ricostruito a mano la bozza.
+- Nodi per il Passo 2 (swap route `/`): mantenere la nav marketing (login/registrati) diversa dalla nav sito; pezzi interattivi custom → blocco embed o restano custom; serve un'entità dedicata "OltreNova"; è una RI-progettazione (bella ma diversa), Francesco la rifinisce; senza immagini prodotto è text-heavy (servono screenshot uploadati).
+- Passo 2 (swap) = decisione + mini-progetto a sé, reversibile. IN ATTESA decisione Francesco.
+
+## 🔧 FIX icone (2/7): HIGHLIGHT_LUCIDE in LandingBlockRenderer completato con TUTTE le icone ammesse dall'AI builder (home,mail,zap,shield,map-pin,utensils,sparkles,leaf,sun,briefcase,wrench,euro,handshake,smile,target,trending-up,globe,camera,book,layers,tag) — prima cadevano su Star.
+
 ### ⏭️ PROSSIMO FRONTE (cambio tema): Stripe billing (monetizzazione, alto impatto — Stripe già installato, campi trial/subscription a DB) oppure Sentry (visibilità errori). Vedi [[project_roadmap_sprint]] Sprint 10.
 
 ### ⏭️ BACKLOG (nice to have):
