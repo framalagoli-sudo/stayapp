@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 import { requireAuth } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { callClaude, checkAndConsumeGenRate } from '@/lib/ai-helpers'
+import { resolveBlockImages } from '@/lib/unsplash'
 
 export const maxDuration = 60
 
@@ -12,12 +13,12 @@ const MAX_LENGTHS = { nome: 100, settore: 150, descrizione: 600, servizi: 500, p
 const GEN_LIMIT_PER_HOUR = 10
 
 const OBIETTIVO_CONFIGS = {
-  lead_gen: { label: 'Lead Generation', landing_blocks: 'hero(urgente+CTA principale ben visibile) → highlights(3-4 benefici chiave) → stats(numeri credibilità) → about(problema→soluzione) → testimonianze → cta_banner → faq(rispondi alle obiezioni reali) → form_builder(form prominente)', site_home_blocks: 'hero → highlights → stats → cta_banner → testimonianze → form_builder', notes: 'CTA form visibile entro i primi 2 blocchi. FAQ risponde a obiezioni reali del cliente.' },
-  vendita: { label: 'Vendita / E-commerce', landing_blocks: 'hero(offerta irresistibile) → highlights → pacchetti(prezzi chiari) → foto_testo(come funziona) → stats → testimonianze(con risultati concreti) → cta_banner(urgency) → faq → form_builder', site_home_blocks: 'hero → highlights → pacchetti → testimonianze → cta_banner → faq', notes: 'Mostra prezzi chiaramente. Urgency e scarcity nella CTA.' },
-  vetrina: { label: 'Vetrina / Branding', landing_blocks: 'hero(mood evocativo) → about(storia e valori) → foto_testo → foto_testo(inverti:true) → gallery → stats → team → testimonianze → form_builder', site_home_blocks: 'hero → about → foto_testo → gallery → stats → testimonianze → form_builder', notes: 'Atmosfera e brand identity prima di tutto. Usa foto_testo alternati (inverti:true su righe pari).' },
-  prenotazioni: { label: 'Prenotazioni', landing_blocks: 'hero(prenota subito) → highlights(motivi per sceglierci) → steps(come funziona) → services → stats → testimonianze → faq → form_builder', site_home_blocks: 'hero → steps → services → highlights → stats → testimonianze → form_builder', notes: 'CTA principale = "Prenota ora". Steps chiari e rassicuranti.' },
-  portfolio: { label: 'Portfolio / Credibilità', landing_blocks: 'hero(chi sei e specializzazione) → about(background) → foto_testo(caso studio 1 con risultati) → foto_testo(caso studio 2, inverti:true) → stats → testimonianze(clienti reali con azienda) → form_builder', site_home_blocks: 'hero → about → foto_testo → foto_testo → stats → testimonianze → form_builder', notes: 'Mostra lavori concreti con risultati misurabili.' },
-  evento: { label: 'Evento', landing_blocks: "hero(titolo evento + data + CTA iscrizione urgente) → about(cos'è) → steps(programma/scaletta) → team(speaker/ospiti) → stats → faq(dove,quando,costi) → newsletter → form_builder", site_home_blocks: 'hero → about → steps → team → faq → newsletter → form_builder', notes: 'Data e urgency prominenti in hero. Steps = programma dettagliato.' },
+  lead_gen: { label: 'Lead Generation', landing_blocks: 'hero_slider(1 slide, promessa + CTA) → highlights(3-4 benefici) → stats(style:dark) → about(problema→soluzione) → testimonianze → cta_banner(variant:split) → accordion(obiezioni) → form_builder', site_home_blocks: 'hero_slider → highlights → stats(style:dark) → cta_banner → testimonianze → form_builder', notes: 'CTA form visibile presto. Accordion risponde a obiezioni reali.' },
+  vendita: { label: 'Vendita / E-commerce', landing_blocks: 'hero_slider(offerta) → highlights → pacchetti(prezzi chiari) → foto_testo(come funziona) → stats(style:dark) → testimonianze → cta_banner(variant:split, urgency) → accordion → form_builder', site_home_blocks: 'hero_slider → highlights → pacchetti → testimonianze → cta_banner → accordion', notes: 'Prezzi chiari. Urgency nella CTA.' },
+  vetrina: { label: 'Vetrina / Branding', landing_blocks: 'hero_slider(2-3 slide, mood evocativo) → about(storia e valori) → foto_testo → foto_testo(inverti:true) → carosello(proposte/gallery) → stats(style:dark) → testimonianze → form_builder', site_home_blocks: 'hero_slider → about → foto_testo → carosello → stats(style:dark) → testimonianze → form_builder', notes: 'Atmosfera e brand prima di tutto. foto_testo alternati (inverti:true su righe pari).' },
+  prenotazioni: { label: 'Prenotazioni', landing_blocks: 'hero_slider(prenota subito) → highlights(perché noi) → steps(come funziona) → services → stats(style:dark) → testimonianze → accordion → form_builder', site_home_blocks: 'hero_slider → steps → services → highlights → stats(style:dark) → testimonianze → form_builder', notes: 'CTA = "Prenota ora". Steps rassicuranti. Se ristorante, includi un blocco menu.' },
+  portfolio: { label: 'Portfolio / Credibilità', landing_blocks: 'hero_slider(chi sei) → about(background) → foto_testo(caso 1 con risultati) → foto_testo(caso 2, inverti:true) → carosello(lavori) → stats(style:dark) → testimonianze → form_builder', site_home_blocks: 'hero_slider → about → foto_testo → carosello → stats(style:dark) → testimonianze → form_builder', notes: 'Lavori concreti con risultati misurabili.' },
+  evento: { label: 'Evento', landing_blocks: "hero_slider(titolo evento + data) → countdown(target = data evento) → about(cos'è) → steps(programma) → team(speaker) → stats(style:dark) → accordion(dove,quando,costi) → newsletter → form_builder", site_home_blocks: 'hero_slider → countdown → about → steps → team → accordion → newsletter → form_builder', notes: 'Countdown verso la data. Steps = programma dettagliato.' },
 }
 const TEMPLATE_CONFIGS = {
   essential: { label: 'Essenziale', style_hint: 'Template ESSENZIALE: usa al massimo 5-6 blocchi totali. Testi brevi e incisivi.' },
@@ -36,33 +37,44 @@ function addIdsToData(data) {
   return result
 }
 
-function buildSitePrompt({ entity, mode, obiettivo, template, answers }) {
+function buildSitePrompt({ entity, entity_tipo, mode, obiettivo, template, answers }) {
   const { nome, settore, descrizione, servizi, punti_forza, cta_text, tono, target } = answers
   const objConf = OBIETTIVO_CONFIGS[obiettivo] || OBIETTIVO_CONFIGS.vetrina
   const tmplConf = TEMPLATE_CONFIGS[template] || TEMPLATE_CONFIGS.complete
+  const menuNote = entity_tipo === 'ristorante' ? ' Includi un blocco "menu" nella home (mostra il menù reale del ristorante).' : ''
   const pagesSpec = mode === 'landing'
-    ? `CREA 1 PAGINA (slug "__home__", nel_menu false, titolo "${nome || entity.name}").\nStruttura blocchi consigliata per obiettivo "${objConf.label}":\n${objConf.landing_blocks}\nNote obiettivo: ${objConf.notes}`
-    : `CREA 4 PAGINE:\n1. Homepage (slug "__home__", nel_menu false): ${objConf.site_home_blocks}\n2. chi-siamo (slug "chi-siamo", nel_menu true): about, foto_testo x2, steps o team, stats\n3. servizi (slug "servizi", nel_menu true): about(intro), paragrafi(3-6 card con icona), highlights, cta_banner\n4. contatti (slug "contatti", nel_menu true): about(intro contatti), form_builder\nNote obiettivo: ${objConf.notes}`
+    ? `CREA 1 PAGINA (slug "__home__", nel_menu false, titolo "${nome || entity.name}").\nStruttura blocchi consigliata per obiettivo "${objConf.label}":\n${objConf.landing_blocks}\nNote obiettivo: ${objConf.notes}${menuNote}`
+    : `CREA 4 PAGINE:\n1. Homepage (slug "__home__", nel_menu false): ${objConf.site_home_blocks}${menuNote}\n2. chi-siamo (slug "chi-siamo", nel_menu true): about, foto_testo x2, steps o team, stats(style:dark)\n3. servizi (slug "servizi", nel_menu true): about(intro), paragrafi(3-6 card con icona), highlights, cta_banner\n4. contatti (slug "contatti", nel_menu true): about(intro contatti), form_builder\nNote obiettivo: ${objConf.notes}`
 
-  return `Sei un web designer e copywriter esperto italiano. Crea ${mode === 'landing' ? 'una landing page' : 'un sito completo'} per un business.
+  return `Sei un web designer e copywriter esperto italiano. Crea ${mode === 'landing' ? 'una landing page' : 'un sito completo'} moderno e professionale per un business.
 
-BLOCCHI DISPONIBILI — usa SOLO questi tipi:
-• hero: { title, tagline, cta1_text, cta1_url(""), height("large"|"medium") }
+BLOCCHI DISPONIBILI — usa SOLO questi tipi (rispetta ESATTAMENTE i nomi dei campi):
+• hero_slider: { height("full"), slides:[{ image_query, title, subtitle, cta1_text, cta1_url("") }] }  ← PREFERISCILO all'hero come primo blocco
+• hero: { title, tagline, cta1_text, cta1_url(""), image_query, height("large"|"full") }
 • about: { title, text }
-• foto_testo: { title, text, inverti(bool), button_label, button_url("") }
+• foto_testo: { title, text, image_query, inverti(bool), button_label(""), button_url("") }
+• carosello: { titolo, items:[{ image_query, title, text }] }
+• colonne: { titolo, columns(2|3), items:[{ title, text }] }
 • paragrafi: { titolo, items:[{icon,title,text}] }
 • highlights: { titolo, items:[{icon,text}] }
 • stats: { titolo, items:[{value,label}] }
-• cta_banner: { title, subtitle, button_text, button_url("") }
-• testimonianze: { titolo, items:[{nome,testo,stelle(5)}] }
-• faq: { titolo, items:[{domanda,risposta}] }
 • steps: { titolo, items:[{icon,title,text}] }
-• pacchetti: { titolo, items:[{nome,prezzo,descrizione,features:[]}] }
+• accordion: { titolo, items:[{title,text}] }
+• faq: { titolo, items:[{question,answer}] }
+• testimonianze: { titolo, items:[{author,role,text,stars(5)}] }
+• pacchetti: { titolo, items:[{name,tagline,price,price_label,badge}] }
 • team: { titolo, items:[{nome,ruolo,bio}] }
+• cta_banner: { title, subtitle, button_text, button_url(""), variant("center"|"split") }
+• countdown: { titolo, sottotitolo, target("YYYY-MM-DDTHH:MM") }  ← solo eventi con una data
+• menu: { titolo }  ← SOLO ristoranti
+• divisore: { variant("wave"|"diagonal"), color("muted"|"primary") }  ← separatore decorativo tra sezioni
 • newsletter: { title, subtitle }
 • form_builder: { form_token(""), titolo_sezione("Contattaci") }
-• gallery (auto): data:{}
-• services (auto): data:{}
+• gallery (auto): data:{} · services (auto): data:{}
+
+IMMAGINI: per ogni campo "image_query" scrivi 2-5 parole in INGLESE che descrivono la foto ideale per QUESTO business (es. "cozy italian restaurant interior", "modern dental studio"). NON inventare URL: verranno risolte automaticamente.
+
+SFONDI DI SEZIONE (ritmo premium): puoi aggiungere a un blocco "style":{"bg":"dark"} o "style":{"bg":"gradient"} o "style":{"bg":"light"}. La maggior parte delle sezioni resta chiara; usa 1-2 sezioni scure/gradiente (tipicamente stats o una cta_banner) per dare ritmo. Non esagerare.
 
 Icone Lucide valide per "icon": star, check, check-circle, heart, home, phone, mail, users, zap, shield, award, clock, map-pin, coffee, utensils, sparkles, leaf, sun, briefcase, wrench, euro, handshake, smile, target, trending-up, calendar, globe, camera, music, activity, book, layers, tag
 
@@ -82,14 +94,16 @@ ${tmplConf.style_hint}
 
 REGOLE ASSOLUTE:
 - Testi in italiano, specifici e realistici (MAI placeholder come "Lorem ipsum" o "[nome servizio]")
-- Testimonianze: nomi italiani verosimili, testi dettagliati e credibili
-- FAQ: domande reali che un cliente farebbe a questo tipo di business
-- Stats: numeri coerenti e credibili per il settore specifico
-- button_url, cta1_url: sempre stringa vuota ""
-- Ogni blocco deve aggiungere valore concreto
+- Rispetta ESATTAMENTE i nomi dei campi (es. faq → question/answer; testimonianze → author/text/stars; pacchetti → name/price)
+- Testimonianze: nomi italiani verosimili, testi credibili
+- FAQ/accordion: domande reali del cliente
+- Stats: numeri credibili per il settore
+- button_url, cta1_url, form_token: sempre stringa vuota ""
+- Ogni blocco deve aggiungere valore
 
-Rispondi ESCLUSIVAMENTE con JSON valido (nessun testo prima o dopo il JSON):
-{"pages":[{"titolo":"...","slug":"...","nel_menu":false,"blocks":[{"type":"hero","data":{...}}]}]}`
+Rispondi ESCLUSIVAMENTE con JSON valido (nessun testo prima o dopo):
+{"theme":{"secondaryColor":"#RRGGBB"},"pages":[{"titolo":"...","slug":"...","nel_menu":false,"blocks":[{"type":"hero_slider","data":{...},"style":{}}]}]}
+"secondaryColor" = colore accento coerente col brand (usato per badge e dettagli).`
 }
 
 export async function POST(request) {
@@ -128,7 +142,7 @@ export async function POST(request) {
       target:      sanitizeStr(answers.target,      MAX_LENGTHS.target)    || 'tutti',
     }
 
-    const prompt = buildSitePrompt({ entity, mode, obiettivo, template, answers: clean })
+    const prompt = buildSitePrompt({ entity, entity_tipo, mode, obiettivo, template, answers: clean })
     const raw = await callClaude(prompt, 6000)
 
     let parsed
@@ -156,7 +170,8 @@ export async function POST(request) {
     for (let i = 0; i < parsed.pages.length; i++) {
       const pg = parsed.pages[i]
       const isHome = i === 0
-      const blocks = addItemIds(pg.blocks || [])
+      // immagini pertinenti da Unsplash (image_query → URL); fail-safe se non configurato
+      const blocks = await resolveBlockImages(addItemIds(pg.blocks || []), [])
 
       if (isHome) {
         const { data: existing } = await supabaseAdmin.from('pagine').select('id')
@@ -188,12 +203,13 @@ export async function POST(request) {
       }
     }
 
-    const { data: currentEntity } = await supabaseAdmin.from(table).select('minisito').eq('id', entity_id).single()
-    if (!currentEntity?.minisito?.active) {
-      await supabaseAdmin.from(table).update({
-        minisito: { ...(currentEntity?.minisito || {}), active: true },
-      }).eq('id', entity_id)
-    }
+    const secondary = typeof parsed.theme?.secondaryColor === 'string' && /^#[0-9a-f]{6}$/i.test(parsed.theme.secondaryColor.trim())
+      ? parsed.theme.secondaryColor.trim() : null
+    const { data: currentEntity } = await supabaseAdmin.from(table).select('minisito, theme').eq('id', entity_id).single()
+    const entityUpdate = {}
+    if (!currentEntity?.minisito?.active) entityUpdate.minisito = { ...(currentEntity?.minisito || {}), active: true }
+    if (secondary) entityUpdate.theme = { ...(currentEntity?.theme || {}), secondaryColor: secondary }
+    if (Object.keys(entityUpdate).length) await supabaseAdmin.from(table).update(entityUpdate).eq('id', entity_id)
 
     return Response.json({ pages: created })
   } catch (e) {

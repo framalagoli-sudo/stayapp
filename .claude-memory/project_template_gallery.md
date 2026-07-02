@@ -158,6 +158,15 @@ Commit 74c90f5 + chunk3:
 - Tutto verificato a video (chunk1/2 su pagine test 'prova' poi cancellate); undo/redo/video = editor/additivo, verifica interattiva Francesco.
 - 🏁 BUILDER: ora completo "a livello Elementor" per il target SMB.
 
+## 🤖 AI SITE BUILDER aggiornato ai nuovi blocchi (2/7) — `app/api/ai/generate-site/route.js`
+Era rimasto indietro: generava solo blocchi vecchi E aveva un BUG (nomi-campo italiani non più combacianti col renderer → FAQ/testimonianze/pacchetti generati USCIVANO VUOTI: faq domanda/risposta vs question/answer, testimonianze nome/testo/stelle vs author/text/stars, pacchetti nome/prezzo vs name/price). Fix fatto:
+- Nomi-campo allineati al renderer (question/answer, author/role/text/stars, name/tagline/price/price_label/badge).
+- Palette estesa: hero_slider (preferito per home), carosello, colonne, accordion, countdown (eventi), menu (ristoranti), divisore shape. Ricette OBIETTIVO_CONFIGS aggiornate.
+- image_query su hero/hero_slider/foto_testo/carosello + `resolveBlockImages` chiamato per pagina nel POST → foto Unsplash reali (prima gli hero AI erano senza immagine!).
+- Sfondi di sezione: istruzione ad alternare style.bg dark/gradient; `secondaryColor` nel JSON output → applicato a entity.theme.
+- entity_tipo passato al prompt (nota menu per ristoranti).
+- ⚠️ super_admin-only beta → verifica live la fa Francesco (generare un sito). Build ok, nomi-campo verificati contro renderer.
+
 ### ⏭️ PROSSIMO FRONTE (cambio tema): Stripe billing (monetizzazione, alto impatto — Stripe già installato, campi trial/subscription a DB) oppure Sentry (visibilità errori). Vedi [[project_roadmap_sprint]] Sprint 10.
 
 ### ⏭️ BACKLOG (nice to have):
