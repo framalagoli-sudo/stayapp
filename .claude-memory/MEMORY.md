@@ -58,3 +58,4 @@
 - [Session 2026-06-01b — Block editor](project_session_2026_06_01b.md) — LandingBlockRenderer, hero block
 - [Session 2026-06-01 — Domini custom](project_session_2026_06_01.md) — sistema domini end-to-end
 - [Galleria template AI](project_template_gallery.md) — sistema template stile Elementor; Fase A fatta (galleria+applica), B/C da fare
+- [Landing marketing OltreNova](project_landing_marketing.md) — `/` è hardcoded (LandingPage.jsx), NON a blocchi; palette nero/bianco/petrolio/ocra + sfumato instagram; contatti+P.IVA; smoke NON copre `/`
