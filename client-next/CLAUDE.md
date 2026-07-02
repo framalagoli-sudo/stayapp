@@ -124,7 +124,7 @@ Ogni entità ha `privacy_data jsonb` (dati titolare). Le pagine `/{s,r,a}/[slug]
 ```
 
 ### Editor pagine CMS (`pagine`)
-Builder a blocchi (23 tipi in 5 gruppi), drag&drop handle-only, SEO, slug auto. ⚠️ Drag&drop: i componenti riga vanno definiti come funzioni normali chiamate `{renderXxx(item)}`, NON componenti React inline (causano unmount/remount → rompe il drag). Vedi nota 22 in `../CLAUDE.md`.
+Builder a blocchi (39 tipi in 5 gruppi), drag&drop handle-only, SEO, slug auto. Include hero slider, carosello, menù ristorante, colonne, divisore (anche a forma onda/diagonale), accordion, HTML/embed sandbox, countdown, before/after, social, barra annuncio. Per blocco: sfondo (chiaro/scuro/gradiente/primary/immagine+velo con testo adattivo), spaziatura, varianti (testimonianze/stats/cta_banner/highlights), nascondi su mobile/desktop, duplica, copia/incolla tra pagine. Editor: undo/redo (Ctrl+Z/Y), anteprima live Desktop/Mobile, picker Unsplash ovunque, animazioni scroll. Colore tema primario+secondario. ⚠️ Drag&drop: i componenti riga vanno definiti come funzioni normali chiamate `{renderXxx(item)}`, NON componenti React inline (causano unmount/remount → rompe il drag). Vedi nota 22 in `../CLAUDE.md`. ⚠️ Quando si clona/mappa gli elementi dei blocchi (es. wrap animazioni), gestire SEMPRE il caso `null` (molti blocchi ritornano null se vuoti) o va in 500 SSR.
 
 ---
 

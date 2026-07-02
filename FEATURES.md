@@ -84,7 +84,7 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 - [x] Password reset via email
 - [x] Analytics con grafici SVG (range 7/30/90gg)
 - [x] Gestione aziende, strutture, ristoranti, attività (CRUD)
-- [x] Minisito drag-and-drop + page builder CMS (23 blocchi, SEO, header/footer)
+- [x] Site-builder maturo: 8 template per verticale + page builder CMS (39 blocchi), sfondi sezione (scuro/gradiente/immagine, testo adattivo), colore primario+secondario, varianti blocco, hero slider/carosello/menù/countdown/before-after/accordion/embed/social, animazioni scroll, anteprima live Desktop/Mobile, undo/redo, copia/incolla blocchi, header/footer per-pagina, immagini AI (Unsplash), SEO
 - [x] Chatbot visual builder (decision tree, preview live)
 - [x] Booking risorse (slot/coperti, calendario, promozioni, cancellazione self-service)
 - [x] Newsletter (4 template, double opt-in, schedulazione, test, archivio)

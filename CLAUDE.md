@@ -254,7 +254,8 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 ## Roadmap
 
 ### Completato
-- Analytics, Newsletter (4 fasi), Booking risorse, Chatbot, Password reset, Sicurezza Fase 1+2, Gestione staff, Sistema pagine CMS (23 tipi blocchi, drag&drop, SEO, header/footer configuratore) ✅ 2026-05-14
+- Analytics, Newsletter (4 fasi), Booking risorse, Chatbot, Password reset, Sicurezza Fase 1+2, Gestione staff, Sistema pagine CMS (39 tipi blocchi, drag&drop, SEO, header/footer configuratore) ✅ 2026-05-14
+- **Site-builder maturo** ✅ 2026-07-02: 8 template per verticale, hero slider + carosello + menù + 39 blocchi, sfondi sezione (scuro/gradiente/immagine) con testo adattivo, colore primario+secondario, varianti blocco, animazioni scroll, anteprima live in-editor, undo/redo, copia/incolla blocchi, header/footer per-pagina, immagini AI (Unsplash). "Livello Elementor" per il target SMB.
 
 ### Da fare (in ordine)
 - [ ] **Upgrade Supabase Pro + Vercel Pro** — azione manuale ($45/mese totale)
