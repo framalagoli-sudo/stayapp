@@ -131,12 +131,17 @@ Gap identificati (mia analisi): non manca la QUANTITÀ di blocchi (~30) ma la PR
 ### 🔴 INCIDENTE 2/7 (mio errore, risolto): 500 sui minisiti in prod
 Il wrap animazioni faceva `cloneElement(el)` anche su blocchi che rendono `null` (blocchi vuoti) → throw in SSR → 500 su TUTTI i minisiti. Deploy mette live PRIMA dello smoke → prod 500 per ~min. Lo smoke public-render l'ha beccato. FIX: `(!el || i===0) ? el : cloneElement(...)`. Redeploy → IT/EN=200. LEZIONE: quando si clona/mappa gli elementi dei blocchi, SEMPRE gestire il caso null (molti blocchi ritornano null se vuoti).
 
-### ⏭️ RESTA (stessa iniziativa):
-- Varianti layout per blocco (testimonianze/hero/foto_testo).
-- Blocchi nuovi: divisore/spaziatore, colonne, barra annuncio, menù ristorante.
-- Anteprima live/mobile nell'editor pagine (feature grossa, sessione a sé).
-- (minore) pacchetti usa titolo i18n "Pacchetti e soggiorni", ignora d.titolo → far usare d.titolo se presente.
-- ⚠️ DA COMMITTARE (2/7): secondario, animazioni, fix cloneElement null, fallback pacchetti/promozioni, fitness secondaryColor.
+### ✅ TUTTI E 7 I FILONI COMPLETATI (2/7):
+5. **Varianti blocco**: testimonianze (grid|quote), stats (dark|plain). Campo `variant` + branch renderer + select editor.
+6. **Blocchi nuovi**: `colonne` (2-3 col titolo+testo), `divisore` (spazio|linea, small/med/large), `annuncio` (striscia primary/secondary/dark + link). Catalogo+editor+renderer+icone. (Menù ristorante NON fatto: entità-driven grosso, lasciato fuori.)
+8. **Anteprima live in-editor**: drawer laterale in PaginaEditorPage (toggle "👁 Anteprima") con iframe alla preview URL (?preview=1), toggle Desktop(scale 0.4 su iframe 1350)/Mobile(390 phone frame), reload al salvataggio (previewNonce). Auth-gated → build verificata, UX da Francesco.
+- ⚠️ FIX BUG: `save()` NON inviava hide_header/hide_footer → i toggle opzione B non si salvavano dall'editor (verificati prima solo via REST). Aggiunti al body PATCH.
+
+### 🎉 INIZIATIVA "profondità design" COMPLETA (7/7): sfondi sezione, unsplash ovunque, duplica blocco, secondario, animazioni, varianti, blocchi nuovi, anteprima live.
+### ⏭️ Backlog minore residuo:
+- pacchetti usa titolo i18n "Pacchetti e soggiorni", ignora d.titolo → usare d.titolo se presente.
+- (eventuale) menù ristorante come blocco sito; più varianti su altri blocchi.
+- ⚠️ DA COMMITTARE: anteprima live + fix save hide_header/footer.
 
 ### ⏭️ BACKLOG (nice to have):
 - (eventuale) l'AI sceglie anche template/blocchi, non solo testi/immagini.

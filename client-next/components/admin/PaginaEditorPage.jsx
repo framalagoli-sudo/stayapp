@@ -923,6 +923,9 @@ export default function PaginaEditorPage() {
   // Drag & drop
   const [dragBlockId, setDragBlockId] = useState(null)
   const [dragOverPos, setDragOverPos] = useState(null) // { blockId, position: 'before'|'after' }
+  const [showPreview, setShowPreview]   = useState(false)
+  const [previewDevice, setPreviewDevice] = useState('desktop')
+  const [previewNonce, setPreviewNonce]  = useState(0)
 
   useEffect(() => {
     apiFetch(`/api/pagine/${pageId}`).then(data => {
@@ -1042,10 +1045,12 @@ export default function PaginaEditorPage() {
           titolo: page.titolo, slug: page.slug, status: page.status,
           nel_menu: page.nel_menu, seo_title: page.seo_title,
           seo_description: page.seo_description, og_image_url: page.og_image_url,
+          hide_header: !!page.hide_header, hide_footer: !!page.hide_footer,
           blocks,
         }),
       })
       setDirty(false); setSaved(true); setTimeout(() => setSaved(false), 2000)
+      setPreviewNonce(n => n + 1)   // ricarica l'anteprima in-editor
     } catch (err) {
       setSaveError(err?.message || 'Salvataggio fallito — riprova')
     } finally {
@@ -1081,6 +1086,12 @@ export default function PaginaEditorPage() {
         {dirty && <span style={{ fontSize: 11, color: '#856404', background: '#fff3cd', padding: '3px 10px', borderRadius: 20, flexShrink: 0, fontWeight: 600 }}>Non salvato</span>}
         {saved && <span style={{ fontSize: 11, color: '#155724', background: '#d4edda', padding: '3px 10px', borderRadius: 20, flexShrink: 0, fontWeight: 600 }}>Salvato ✓</span>}
         {pUrl && (
+          <button onClick={() => setShowPreview(s => !s)}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, background: showPreview ? '#1a1a2e' : '#f0f4ff', color: showPreview ? '#fff' : '#1a1a2e', border: '1.5px solid #c8d4f4', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontSize: 13, flexShrink: 0 }}>
+            👁 Anteprima
+          </button>
+        )}
+        {pUrl && (
           <button onClick={openPreview}
             style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f0f4ff', color: '#1a1a2e', border: '1.5px solid #c8d4f4', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontSize: 13, flexShrink: 0 }}>
             {dirty ? '💾 Salva e apri' : '↗ Apri'}
@@ -1091,6 +1102,37 @@ export default function PaginaEditorPage() {
           {saving ? 'Salvando...' : 'Salva'}
         </button>
       </div>
+
+      {/* ── Anteprima live in-editor (drawer) ── */}
+      {showPreview && pUrl && (() => {
+        const src = `${pUrl}?preview=1&_n=${previewNonce}`
+        const devBtn = a => ({ padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: a ? '#1a1a2e' : '#eee', color: a ? '#fff' : '#555' })
+        const iconBtn = { background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#888', padding: '4px 6px' }
+        return (
+          <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 540, maxWidth: '46vw', background: '#e9e9ee', borderLeft: '1px solid #d5d5dd', zIndex: 60, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 30px rgba(0,0,0,0.12)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: '#fff', borderBottom: '1px solid #eee' }}>
+              <strong style={{ fontSize: 13, flex: 1, color: '#1a1a2e' }}>Anteprima</strong>
+              <button onClick={() => setPreviewDevice('desktop')} style={devBtn(previewDevice === 'desktop')}>Desktop</button>
+              <button onClick={() => setPreviewDevice('mobile')} style={devBtn(previewDevice === 'mobile')}>Mobile</button>
+              <button onClick={() => setPreviewNonce(n => n + 1)} title="Aggiorna" style={iconBtn}>↻</button>
+              <button onClick={() => setShowPreview(false)} title="Chiudi" style={iconBtn}>✕</button>
+            </div>
+            {dirty && <div style={{ fontSize: 11, color: '#856404', background: '#fff3cd', padding: '6px 12px', textAlign: 'center' }}>Salva per aggiornare l'anteprima</div>}
+            <div style={{ flex: 1, overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: previewDevice === 'mobile' ? 14 : 0 }}>
+              {previewDevice === 'desktop' ? (
+                <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
+                  <iframe key={previewNonce} src={src} title="Anteprima desktop"
+                    style={{ width: 1350, height: '250%', border: 0, transform: 'scale(0.4)', transformOrigin: 'top left' }} />
+                </div>
+              ) : (
+                <div style={{ width: 390, height: '100%', border: '8px solid #1a1a2e', borderRadius: 30, overflow: 'hidden', background: '#fff' }}>
+                  <iframe key={previewNonce} src={src} title="Anteprima mobile" style={{ width: '100%', height: '100%', border: 0 }} />
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })()}
 
       {saveError && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fce8e8', color: '#c00', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13 }}>
