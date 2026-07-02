@@ -18,9 +18,12 @@ export const BLOCK_TYPES = [
   { type: 'paragrafi',    label: 'Card paragrafi',     group: 'layout',      emoji: '🗂️', desc: 'Griglia card con icona, titolo, testo' },
   { type: 'team',         label: 'Team',               group: 'layout',      emoji: '👥', desc: 'Card con foto, nome, ruolo, bio' },
   { type: 'steps',        label: 'Steps / Processo',   group: 'layout',      emoji: '🔢', desc: 'Passaggi numerati con icona e testo' },
+  { type: 'colonne',      label: 'Colonne',            group: 'layout',      emoji: '▦', desc: 'Due o tre colonne di testo affiancate' },
+  { type: 'divisore',     label: 'Divisore / Spazio',  group: 'layout',      emoji: '➖', desc: 'Spazio vuoto o linea sottile tra le sezioni' },
   { type: 'highlights',   label: 'Highlights',         group: 'marketing',   emoji: '⭐', desc: 'Icona + testo breve, griglia 3 colonne' },
   { type: 'stats',        label: 'Statistiche',        group: 'marketing',   emoji: '📊', desc: 'Banda scura con numeri grandi' },
   { type: 'cta_banner',   label: 'Banner CTA',         group: 'marketing',   emoji: '📣', desc: 'Banda colorata con call to action (ripetibile)' },
+  { type: 'annuncio',     label: 'Barra annuncio',     group: 'marketing',   emoji: '📢', desc: 'Striscia sottile con annuncio/promo e link — di solito come primo blocco' },
   { type: 'testimonianze',label: 'Testimonianze',      group: 'marketing',   emoji: '💬', desc: 'Card recensioni con stelle e autore' },
   { type: 'promozioni',   label: 'Promozioni',         group: 'marketing',   emoji: '🏷️', desc: 'Card offerte con badge e scadenza' },
   { type: 'pacchetti',    label: 'Pacchetti / Prezzi', group: 'marketing',   emoji: '📦', desc: 'Pricing card con inclusi e CTA' },
@@ -45,6 +48,9 @@ export const BLOCK_TYPES = [
 export const BLOCK_DEFAULTS = {
   hero:         { title: '', tagline: '', bg_image_url: '', overlay_opacity: 0.5, cta1_text: 'Scopri di più', cta1_url: '', cta2_text: '', cta2_url: '', height: 'large' },
   hero_slider:  { slides: [], autoplay: true, interval: 6, height: 'full', overlay_opacity: 0.45, text_align: 'center' },
+  colonne:      { titolo: '', columns: 2, items: [] },
+  divisore:     { variant: 'space', size: 'medium' },
+  annuncio:     { text: '', link_text: '', link_url: '', bg: 'primary' },
   about:        { title: '', text: '' },
   pulsante:     { text: 'Scopri di più', url: '', style: 'filled', size: 'medium', align: 'center' },
   foto_testo:   { title: '', text: '', image_url: '', inverti: false, button_label: '', button_url: '' },
@@ -120,7 +126,7 @@ export const BLOCK_PADY_OPTIONS = [
 ]
 // Blocchi con testo chiaro / sfondo intenzionalmente scuro: niente controllo sfondo
 // (un fondo chiaro renderebbe il testo illeggibile).
-export const BG_EXCLUDED_TYPES = ['hero', 'hero_slider', 'stats', 'cta_banner', 'video']
+export const BG_EXCLUDED_TYPES = ['hero', 'hero_slider', 'stats', 'cta_banner', 'video', 'divisore', 'annuncio']
 export function blockSupportsBg(type) { return !BG_EXCLUDED_TYPES.includes(type) }
 
 // ── Tipografia per-blocco (Fase 1.5) — solo blocchi con rich-text ────────────

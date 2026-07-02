@@ -286,6 +286,50 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
       case 'carosello':
         return <Carousel key={block.id} block={block} primary={primary} heading={heading} />
 
+      case 'annuncio': {
+        if (!d.text) return null
+        const abg = d.bg === 'dark' ? '#14141f' : d.bg === 'secondary' ? sec : primary
+        const atxt = readableOn('#ffffff', abg, '#1a1a2e')
+        return (
+          <section key={block.id} style={{ background: abg, color: atxt, padding: '11px 20px', textAlign: 'center', fontSize: 14 }}>
+            <span>{d.text}</span>
+            {d.link_text && d.link_url && <a href={d.link_url} style={{ color: atxt, fontWeight: 700, marginLeft: 10, textDecoration: 'underline' }}>{d.link_text}</a>}
+          </section>
+        )
+      }
+
+      case 'divisore': {
+        const sizeMap = { small: 32, medium: 64, large: 120 }
+        const dh = sizeMap[d.size] || 64
+        if (d.variant === 'line') return (
+          <section key={block.id} style={{ padding: `${Math.round(dh / 2)}px 0` }}>
+            <div className="lbr-section"><hr style={{ border: 0, borderTop: '1px solid #e5e5ea' }} /></div>
+          </section>
+        )
+        return <div key={block.id} style={{ height: dh }} />
+      }
+
+      case 'colonne': {
+        const cols = (d.items || []).filter(c => c.title || c.text)
+        if (!cols.length) return null
+        const n = Math.min(Math.max(parseInt(d.columns) || 2, 1), 3)
+        return (
+          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+            <div className="lbr-section">
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,40px)', fontWeight: 700, textAlign: 'center', color: cTitle, marginBottom: 44 }}>{d.titolo}</h2>}
+              <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(n), gap: 32 }}>
+                {cols.map(c => (
+                  <div key={c.id}>
+                    {c.title && <h3 style={{ fontFamily: heading, fontSize: 20, fontWeight: 700, color: cTitle, marginBottom: 10 }}>{c.title}</h3>}
+                    {c.text && <p style={{ fontSize: 15, lineHeight: 1.7, color: cBody || '#555', whiteSpace: 'pre-line' }}>{c.text}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )
+      }
+
       case 'about':
         if (!d.title && richIsEmpty(d.text)) return null
         return (
@@ -349,15 +393,16 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
       case 'stats': {
         const items = (d.items || []).filter(s => s.value && s.label)
         if (!items.length) return null
+        const plain = d.variant === 'plain'
         return (
-          <section key={block.id} style={{ padding: '64px 0', background: 'linear-gradient(135deg, #1a1a2e 0%, #0f1a1a 100%)' }}>
+          <section key={block.id} style={{ padding: '64px 0', background: plain ? '#fff' : 'linear-gradient(135deg, #1a1a2e 0%, #0f1a1a 100%)' }}>
             <div className="lbr-section">
-              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 28, fontWeight: 700, textAlign: 'center', marginBottom: 48, color: '#fff' }}>{d.titolo}</h2>}
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 28, fontWeight: 700, textAlign: 'center', marginBottom: 48, color: plain ? '#1a1a2e' : '#fff' }}>{d.titolo}</h2>}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
                 {items.map((s, i) => (
-                  <div key={s.id} style={{ textAlign: 'center', padding: '8px 24px', borderRight: i < items.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
-                    <div style={{ fontFamily: heading, fontSize: 'clamp(40px,5vw,64px)', fontWeight: 700, color: readableOn(primary, '#1a1a2e'), lineHeight: 1, marginBottom: 10 }}>{s.value}</div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.5 }}>{s.label}</div>
+                  <div key={s.id} style={{ textAlign: 'center', padding: '8px 24px', borderRight: i < items.length - 1 ? `1px solid ${plain ? '#eee' : 'rgba(255,255,255,0.1)'}` : 'none' }}>
+                    <div style={{ fontFamily: heading, fontSize: 'clamp(40px,5vw,64px)', fontWeight: 700, color: plain ? primary : readableOn(primary, '#1a1a2e'), lineHeight: 1, marginBottom: 10 }}>{s.value}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: plain ? '#888' : 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.5 }}>{s.label}</div>
                   </div>
                 ))}
               </div>
@@ -492,22 +537,38 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
       case 'testimonianze': {
         const items = (d.items || []).filter(t => t.text && t.author)
         if (!items.length) return null
+        const quote = d.variant === 'quote'
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#fafafa' }}>
-            <div className="lbr-section">
-              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: '#1a1a2e', marginBottom: 48 }}>{d.titolo}</h2>}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
-                {items.map(t => (
-                  <div key={t.id} style={{ background: '#fff', borderRadius: 16, padding: 28, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-                    <div style={{ display: 'flex', gap: 2, marginBottom: 14 }}>
-                      {Array.from({ length: t.stars || 5 }).map((_, i) => <Star key={i} size={14} fill={primary} color={primary} strokeWidth={0} />)}
+          <section key={block.id} style={{ padding: '72px 0', background: quote ? '#fff' : '#fafafa' }}>
+            <div className="lbr-section" style={quote ? { maxWidth: 780 } : undefined}>
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: cTitle, marginBottom: 48 }}>{d.titolo}</h2>}
+              {quote ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 52 }}>
+                  {items.map(t => (
+                    <div key={t.id} style={{ textAlign: 'center' }}>
+                      <p style={{ fontFamily: heading, fontSize: 'clamp(20px,3vw,30px)', color: cTitle, lineHeight: 1.5, fontStyle: 'italic', marginBottom: 18 }}>“{t.text}”</p>
+                      <div style={{ display: 'flex', gap: 2, marginBottom: 10, justifyContent: 'center' }}>
+                        {Array.from({ length: t.stars || 5 }).map((_, i) => <Star key={i} size={16} fill={primary} color={primary} strokeWidth={0} />)}
+                      </div>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: cTitle }}>{t.author}</div>
+                      {t.role && <div style={{ fontSize: 13, color: cBody || '#888', marginTop: 2 }}>{t.role}</div>}
                     </div>
-                    <p style={{ fontSize: 15, color: '#444', lineHeight: 1.65, marginBottom: 16, fontStyle: 'italic' }}>"{t.text}"</p>
-                    <div style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>{t.author}</div>
-                    {t.role && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{t.role}</div>}
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
+                  {items.map(t => (
+                    <div key={t.id} style={{ background: '#fff', borderRadius: 16, padding: 28, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+                      <div style={{ display: 'flex', gap: 2, marginBottom: 14 }}>
+                        {Array.from({ length: t.stars || 5 }).map((_, i) => <Star key={i} size={14} fill={primary} color={primary} strokeWidth={0} />)}
+                      </div>
+                      <p style={{ fontSize: 15, color: '#444', lineHeight: 1.65, marginBottom: 16, fontStyle: 'italic' }}>"{t.text}"</p>
+                      <div style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>{t.author}</div>
+                      {t.role && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{t.role}</div>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
         )

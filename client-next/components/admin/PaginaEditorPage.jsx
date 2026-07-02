@@ -6,7 +6,7 @@ import {
   GripVertical, AlignLeft, Image, Grid, Users, List, Star, BarChart2, Zap,
   MessageCircle, Tag, Package, HelpCircle, Video, Settings, Compass, Map,
   Calendar, FileText, Clock, Mail, Phone, MapPin, ChevronDown, ChevronUp,
-  Plus, Trash2, Copy, ImageIcon, Layers, Building2, GalleryHorizontal,
+  Plus, Trash2, Copy, ImageIcon, Layers, Building2, GalleryHorizontal, Columns, Minus, Megaphone,
 } from 'lucide-react'
 import AiButton from '@/components/admin/AiButton'
 import RichTextEditor from '@/components/admin/RichTextEditor'
@@ -27,6 +27,7 @@ function slugify(s) {
 // ── Block icon + color mapping ────────────────────────────────────────────────
 const BLOCK_ICON_MAP = {
   hero: Layers, hero_slider: GalleryHorizontal, carosello: GalleryHorizontal, about: AlignLeft, pulsante: Zap, foto_testo: Image, paragrafi: Grid,
+  colonne: Columns, divisore: Minus, annuncio: Megaphone,
   team: Users, steps: List, highlights: Star, stats: BarChart2,
   cta_banner: Zap, testimonianze: MessageCircle, promozioni: Tag,
   pacchetti: Package, faq: HelpCircle, immagine: Image, galleria_immagini: Grid, gallery: ImageIcon, video: Video,
@@ -310,6 +311,54 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
         </div>
       </div>
     )
+    case 'colonne': return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} />
+        <div>
+          <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Numero colonne</label>
+          <select value={data.columns || 2} onChange={e => upd('columns', Number(e.target.value))} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+            <option value={2}>2</option><option value={3}>3</option>
+          </select>
+        </div>
+        <ItemListEditor items={data.items} onChange={v => upd('items', v)}
+          newItem={{ title: '', text: '' }}
+          fields={[{ key: 'title', label: 'Titolo colonna' }, { key: 'text', label: 'Testo', type: 'textarea', rows: 3 }]} />
+      </div>
+    )
+    case 'divisore': return (
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 140 }}>
+          <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Tipo</label>
+          <select value={data.variant || 'space'} onChange={e => upd('variant', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+            <option value="space">Spazio vuoto</option>
+            <option value="line">Linea sottile</option>
+          </select>
+        </div>
+        <div style={{ flex: 1, minWidth: 140 }}>
+          <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Dimensione</label>
+          <select value={data.size || 'medium'} onChange={e => upd('size', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+            <option value="small">Piccola</option><option value="medium">Media</option><option value="large">Grande</option>
+          </select>
+        </div>
+      </div>
+    )
+    case 'annuncio': return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="Testo annuncio" value={data.text} onChange={v => upd('text', v)} placeholder="Es. Spedizione gratuita sopra i 50€" />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Field label="Testo link (opz.)" value={data.link_text} onChange={v => upd('link_text', v)} style={{ flex: 1 }} />
+          <Field label="URL link" value={data.link_url} onChange={v => upd('link_url', v)} placeholder="https://..." style={{ flex: 1 }} />
+        </div>
+        <div>
+          <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Colore</label>
+          <select value={data.bg || 'primary'} onChange={e => upd('bg', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+            <option value="primary">Colore principale</option>
+            <option value="secondary">Colore accento</option>
+            <option value="dark">Scuro</option>
+          </select>
+        </div>
+      </div>
+    )
     case 'about': return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <Field label="Titolo sezione" value={data.title} onChange={v => upd('title', v)} />
@@ -474,6 +523,13 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
     case 'stats': return (
       <div>
         <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Variante</label>
+          <select value={data.variant || 'dark'} onChange={e => upd('variant', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+            <option value="dark">Banda scura</option>
+            <option value="plain">Sfondo chiaro</option>
+          </select>
+        </div>
         <ItemListEditor items={data.items} onChange={v => upd('items', v)}
           newItem={{ value: '', label: '' }}
           fields={[{ key: 'value', label: 'Valore (es. 150+)', placeholder: '150+' }, { key: 'label', label: 'Etichetta' }]} />
@@ -520,6 +576,13 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
     case 'testimonianze': return (
       <div>
         <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Variante</label>
+          <select value={data.variant || 'grid'} onChange={e => upd('variant', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+            <option value="grid">Griglia di card</option>
+            <option value="quote">Citazione grande</option>
+          </select>
+        </div>
         <ItemListEditor items={data.items} onChange={v => upd('items', v)}
           newItem={{ author: '', location: '', rating: 5, text: '' }}
           fields={[
