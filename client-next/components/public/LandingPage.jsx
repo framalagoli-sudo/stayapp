@@ -13,19 +13,28 @@ import {
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? '').trim()
 
-// ─── Palette ──────────────────────────────────────────────────────────────────
-const PRIMARY    = '#0F7B6C'  // petrolio
-const ACCENT     = '#D97706'  // ambra
-const GOLD       = '#C9A84C'  // oro
-const LIGHT_P    = '#E6F4F2'  // sfondo chiaro teal
-const BG         = '#FAF7F0'  // beige chiaro
-const TEXT       = '#0D2926'
-const TEXT_LIGHT = '#4A6B67'
-const DARK       = '#0A2621'
-const DARK2      = '#123630'
+// ─── Palette: nero · bianco · blu petrolio · ocra + sfumato instagram ──────────
+const PETROL      = '#0E4F5C'  // blu petrolio
+const PETROL_DEEP = '#0A3A44'  // blu petrolio profondo (gradienti)
+const BLACK       = '#151515'  // nero
+const OCRA        = '#CC8A2C'  // ocra
+const OCRA_SOFT   = '#F1E6D1'  // ocra chiaro (sezioni leggere)
+// sfumato "instagram" arancio → rosa → fucsia: l'accento che spicca su CTA e highlight
+const INSTA       = 'linear-gradient(135deg, #FA8E3C 0%, #F4406D 52%, #C837AB 100%)'
+const INSTA_SH    = 'rgba(225,48,108,0.45)'  // ombra coordinata per le CTA
 
-const WA_NUMBER = '393000000000'
-const EMAIL     = 'fra.malagoli@gmail.com'
+const PRIMARY    = PETROL       // accento su sfondo chiaro
+const ACCENT     = OCRA         // accento caldo su sfondo scuro (icone, badge, stelle)
+const GOLD       = OCRA         // accento decorativo
+const LIGHT_P    = '#F1E6D1'    // ocra tint (chip icone, card chiare)
+const BG         = '#F7F3EC'    // sfondo chiaro caldo
+const TEXT       = '#1B1A18'
+const TEXT_LIGHT = '#6E675E'
+const DARK       = BLACK         // sezioni scure = nero
+const DARK2      = '#242424'
+
+const WA_NUMBER = '393939822698'
+const EMAIL     = 'oltrenova@gmail.com'
 const WA_DEMO   = `https://wa.me/${WA_NUMBER}?text=Ciao!%20Vorrei%20saperne%20di%20pi%C3%B9%20su%20OltreNova.`
 const WA_PRICE  = `https://wa.me/${WA_NUMBER}?text=Ciao!%20Vorrei%20un%20preventivo%20per%20OltreNova.`
 
@@ -69,13 +78,13 @@ const css = `
   a.lp-navlink:hover { color: #fff; }
 
   .lp-featcard { transition: transform .2s, box-shadow .2s; }
-  .lp-featcard:hover { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(15,123,108,0.14) !important; }
+  .lp-featcard:hover { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(20,20,20,0.10) !important; }
 
   .lp-testi-card { transition: transform .25s, box-shadow .25s; }
-  .lp-testi-card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(15,123,108,0.12) !important; }
+  .lp-testi-card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(20,20,20,0.10) !important; }
 
   .lp-ai-card { transition: transform .2s, box-shadow .2s; }
-  .lp-ai-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(15,123,108,0.20) !important; }
+  .lp-ai-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.28) !important; }
 
   @media (max-width: 960px) {
     .lp-hero-grid   { grid-template-columns: 1fr; gap: 32px; }
@@ -139,7 +148,7 @@ const TESTIMONIALS = [
     role: 'Proprietaria',
     business: 'B&B Villa Rosa, Amalfi',
     initials: 'GM',
-    color: '#2E7D5E',
+    color: '#DD2A7B',
   },
   {
     quote: "Ho attivato il sito in una settimana. In un mese avevo già 3 nuovi clienti arrivati da Google che non mi conoscevano. Prima non avevo nemmeno una pagina online.",
@@ -178,21 +187,21 @@ const FEATURES = [
 const AI_FEATURES = [
   {
     Icon: BookOpen,
-    color: PRIMARY,
+    color: '#FA8E3C',
     title: 'Blog AI automatico',
     text: 'Imposta una frequenza (giornaliera, settimanale, mensile) e OltreNova scrive e pubblica articoli ottimizzati SEO in autonomia. Con foto Unsplash incluse.',
     badge: 'Content',
   },
   {
     Icon: Bot,
-    color: ACCENT,
+    color: '#F4406D',
     title: 'Chatbot AI conversazionale',
     text: "Attiva la modalità AI sul tuo chatbot: risponde alle domande dei clienti in tempo reale, alimentato dai dati della tua attività. Nessun copione da programmare.",
     badge: 'Customer care',
   },
   {
     Icon: Sparkles,
-    color: GOLD,
+    color: '#C837AB',
     title: 'Piano editoriale generato',
     text: "Scegli i canali (Instagram, Facebook, LinkedIn…) e OltreNova genera un mese intero di contenuti social con testi e suggerimenti grafici.",
     badge: 'Social',
@@ -282,7 +291,7 @@ export default function LandingPage() {
       {/* ── NAVBAR ── */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
-        background: scrolled || mobileOpen ? 'rgba(10,38,33,0.96)' : 'transparent',
+        background: scrolled || mobileOpen ? 'rgba(21,21,21,0.96)' : 'transparent',
         backdropFilter: scrolled || mobileOpen ? 'blur(20px)' : 'none',
         borderBottom: scrolled || mobileOpen ? '1px solid rgba(255,255,255,0.07)' : 'none',
         transition: 'all .3s ease',
@@ -296,11 +305,11 @@ export default function LandingPage() {
             <a href="/admin" className="lp-navlink" style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
               <LogIn size={16} strokeWidth={1.5} /> Accedi
             </a>
-            <Btn href="#richiedi-demo" bg={ACCENT} color={DARK}>Richiedi una demo</Btn>
+            <Btn href="#richiedi-demo" bg={INSTA} color="#fff">Richiedi una demo</Btn>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <a href="#richiedi-demo" className="lp-demo-cta" style={{
-              background: ACCENT, color: DARK, borderRadius: 8,
+              background: INSTA, color: '#fff', borderRadius: 8,
               padding: '8px 14px', fontSize: 13, fontWeight: 700,
               textDecoration: 'none', fontFamily: "'Space Grotesk', sans-serif",
             }}>Demo</a>
@@ -326,19 +335,19 @@ export default function LandingPage() {
       <section style={{
         minHeight: '100vh', display: 'flex', alignItems: 'center',
         padding: '120px 24px 80px',
-        background: `linear-gradient(150deg, ${DARK} 0%, #0D3B35 55%, #061814 100%)`,
+        background: `linear-gradient(150deg, ${PETROL} 0%, ${PETROL_DEEP} 100%)`,
         position: 'relative', overflow: 'hidden',
       }}>
         {/* blobs decorativi */}
-        <div style={{ position: 'absolute', top: '-15%', right: '-8%', width: 640, height: 640, borderRadius: '50%', background: `radial-gradient(circle, ${PRIMARY}28 0%, transparent 68%)`, pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '-12%', left: '-6%', width: 480, height: 480, borderRadius: '50%', background: `radial-gradient(circle, ${ACCENT}18 0%, transparent 70%)`, pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', top: '40%', left: '30%', width: 320, height: 320, borderRadius: '50%', background: `radial-gradient(circle, ${GOLD}18 0%, transparent 70%)`, pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: '-15%', right: '-8%', width: 640, height: 640, borderRadius: '50%', background: `radial-gradient(circle, rgba(244,64,109,0.18) 0%, transparent 68%)`, pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: '-12%', left: '-6%', width: 480, height: 480, borderRadius: '50%', background: `radial-gradient(circle, rgba(250,142,60,0.16) 0%, transparent 70%)`, pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: '40%', left: '30%', width: 320, height: 320, borderRadius: '50%', background: `radial-gradient(circle, rgba(200,55,171,0.16) 0%, transparent 70%)`, pointerEvents: 'none' }} />
 
         <div style={{ maxWidth: 1140, margin: '0 auto', width: '100%', position: 'relative' }}>
           <div className="lp-hero-grid">
             <div>
               {/* pill badge */}
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: `${PRIMARY}25`, color: '#A7D8D3', padding: '6px 16px', borderRadius: 100, fontSize: 13, fontWeight: 600, marginBottom: 32, border: `1px solid ${PRIMARY}45` }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.12)', color: '#fff', padding: '6px 16px', borderRadius: 100, fontSize: 13, fontWeight: 600, marginBottom: 32, border: '1px solid rgba(255,255,255,0.25)' }}>
                 <Sparkles size={13} strokeWidth={2} />
                 App · Sito · CRM · AI — tutto in uno
               </div>
@@ -348,13 +357,13 @@ export default function LandingPage() {
                 Oltre il solito sito.
               </h1>
               <h1 style={{ fontSize: 58, fontWeight: 800, lineHeight: 1.06, letterSpacing: '-2px', marginBottom: 28 }}>
-                <span style={{ color: ACCENT }}>Molto oltre.</span>
+                <span style={{ background: INSTA, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>Molto oltre.</span>
               </h1>
               <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.58)', lineHeight: 1.82, marginBottom: 44, maxWidth: 480 }}>
                 OltreNova è la piattaforma all-in-one per la tua attività: app per i clienti, sito web professionale, CRM, prenotazioni, newsletter, chatbot AI e molto altro. Tutto aggiornabile dal telefono in 2 minuti.
               </p>
               <div className="lp-hero-btns">
-                <Btn href="#richiedi-demo" bg={ACCENT} color={DARK} shadow={`${ACCENT}55`}>Richiedi una demo gratuita</Btn>
+                <Btn href="#richiedi-demo" bg={INSTA} color="#fff" shadow={INSTA_SH}>Richiedi una demo gratuita</Btn>
                 <Btn href={WA_DEMO} bg="rgba(255,255,255,0.07)" color="#fff" border="1.5px solid rgba(255,255,255,0.15)" icon={<MessageCircle size={18} strokeWidth={1.5} />}>
                   Scrivici su WhatsApp
                 </Btn>
@@ -362,7 +371,7 @@ export default function LandingPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 48 }}>
                 <div style={{ display: 'flex' }}>
                   {[0,1,2,3].map(i => (
-                    <div key={i} style={{ width: 32, height: 32, borderRadius: '50%', background: `hsl(${260+i*20},60%,${45+i*5}%)`, border: '2px solid rgba(255,255,255,0.12)', marginLeft: i > 0 ? -8 : 0 }} />
+                    <div key={i} style={{ width: 32, height: 32, borderRadius: '50%', background: `hsl(${28+i*6},32%,${56+i*5}%)`, border: '2px solid rgba(255,255,255,0.18)', marginLeft: i > 0 ? -8 : 0 }} />
                   ))}
                 </div>
                 <div>
@@ -511,12 +520,12 @@ export default function LandingPage() {
       </section>
 
       {/* ── AI SECTION ── */}
-      <section id="ai" style={{ padding: '104px 24px', background: `linear-gradient(135deg, #0A2F28 0%, ${DARK} 100%)`, position: 'relative', overflow: 'hidden' }}>
+      <section id="ai" style={{ padding: '104px 24px', background: `linear-gradient(135deg, ${PETROL} 0%, ${PETROL_DEEP} 100%)`, position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: '10%', right: '5%', width: 400, height: 400, borderRadius: '50%', background: `radial-gradient(circle, ${GOLD}20 0%, transparent 70%)`, pointerEvents: 'none' }} />
         <div style={{ maxWidth: 1140, margin: '0 auto', position: 'relative' }}>
           <FadeIn>
             <div style={{ textAlign: 'center', marginBottom: 72 }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: `${PRIMARY}25`, color: '#A7D8D3', padding: '6px 16px', borderRadius: 100, fontSize: 13, fontWeight: 600, marginBottom: 20, border: `1px solid ${PRIMARY}45` }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.12)', color: '#fff', padding: '6px 16px', borderRadius: 100, fontSize: 13, fontWeight: 600, marginBottom: 20, border: '1px solid rgba(255,255,255,0.25)' }}>
                 <Sparkles size={13} strokeWidth={2} /> Intelligenza Artificiale
               </div>
               <h2 style={{ fontSize: 42, fontWeight: 700, color: '#fff', letterSpacing: '-0.5px', lineHeight: 1.15, marginBottom: 18 }}>
@@ -553,9 +562,9 @@ export default function LandingPage() {
       </section>
 
       {/* ── PER CHI È ── */}
-      <section id="perchi" style={{ padding: '104px 24px', background: BG }}>
+      <section id="perchi" style={{ padding: '104px 24px', background: INSTA }}>
         <div style={{ maxWidth: 1140, margin: '0 auto' }}>
-          <FadeIn><SecHead label="Per chi è" title="Per qualsiasi attività con clienti" sub="Se hai clienti da gestire e nuovi da trovare, OltreNova è per te." /></FadeIn>
+          <FadeIn><SecHead light label="Per chi è" title="Per qualsiasi attività con clienti" sub="Se hai clienti da gestire e nuovi da trovare, OltreNova è per te." /></FadeIn>
           <div className="lp-six-grid">
             {TARGETS.map((t, i) => (
               <FadeIn key={i} delay={i * 60}>
@@ -578,13 +587,13 @@ export default function LandingPage() {
       <Testimonials />
 
       {/* ── FUNZIONALITÀ ── */}
-      <section id="funzionalita" style={{ padding: '104px 24px', background: '#fff' }}>
+      <section id="funzionalita" style={{ padding: '104px 24px', background: OCRA_SOFT }}>
         <div style={{ maxWidth: 1140, margin: '0 auto' }}>
           <FadeIn><SecHead label="Features" title="Tutto quello che ti serve. In un posto solo." sub="Nessun abbonamento extra, nessuna integrazione, nessun tecnico." /></FadeIn>
           <div className="lp-feat-grid">
             {FEATURES.map(({ Icon, title, text }, i) => (
               <FadeIn key={i} delay={i * 45}>
-                <div className="lp-featcard" style={{ padding: 24, borderRadius: 16, background: BG, border: `1px solid ${PRIMARY}10`, height: '100%' }}>
+                <div className="lp-featcard" style={{ padding: 24, borderRadius: 16, background: '#fff', border: `1px solid ${PRIMARY}10`, height: '100%' }}>
                   <div style={{ width: 46, height: 46, borderRadius: 13, background: LIGHT_P, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
                     <Icon size={21} strokeWidth={1.5} color={PRIMARY} />
                   </div>
@@ -640,7 +649,10 @@ export default function LandingPage() {
               ))}
               <a href={`mailto:${EMAIL}`} style={{ color: 'rgba(255,255,255,0.38)', textDecoration: 'none', fontSize: 14 }}>{EMAIL}</a>
             </div>
-            <div style={{ fontSize: 13 }}>© {new Date().getFullYear()} OltreNova</div>
+            <div style={{ fontSize: 13, lineHeight: 1.7, textAlign: 'right' }}>
+              <div>© {new Date().getFullYear()} OltreNova</div>
+              <div style={{ opacity: 0.8 }}>P.IVA 01630670550</div>
+            </div>
           </div>
         </div>
       </footer>
@@ -677,7 +689,7 @@ function AnimatedStats() {
   }, [go])
 
   return (
-    <section ref={ref} style={{ background: '#061814', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+    <section ref={ref} style={{ background: BLACK, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <div className="lp-stats-grid">
           {STAT_DATA.map(({ suffix, label, sub }, i) => (
@@ -766,7 +778,7 @@ function JourneyFlow() {
 // ─── Testimonianze ────────────────────────────────────────────────────────────
 function Testimonials() {
   return (
-    <section style={{ padding: '104px 24px', background: BG }}>
+    <section style={{ padding: '104px 24px', background: '#fff' }}>
       <div style={{ maxWidth: 1140, margin: '0 auto' }}>
         <FadeIn>
           <SecHead label="Chi lo usa" title="Lo dicono i nostri clienti" sub="Attività reali, risultati concreti. Senza tecnicismi, senza intermediari." />
@@ -777,7 +789,7 @@ function Testimonials() {
               <div className="lp-testi-card" style={{
                 background: '#fff', borderRadius: 20, padding: '36px 32px',
                 border: `1px solid ${PRIMARY}08`,
-                boxShadow: `0 4px 24px rgba(15,123,108,0.08)`,
+                boxShadow: `0 4px 24px rgba(20,20,20,0.08)`,
                 display: 'flex', flexDirection: 'column', gap: 24, height: '100%',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -834,12 +846,12 @@ function Btn({ href, bg, color = '#fff', border, shadow, icon, children }) {
   )
 }
 
-function SecHead({ label, title, sub }) {
+function SecHead({ label, title, sub, light }) {
   return (
     <div style={{ textAlign: 'center', marginBottom: 64 }}>
-      {label && <div style={{ color: PRIMARY, fontWeight: 700, fontSize: 11, letterSpacing: 2.5, textTransform: 'uppercase', marginBottom: 14 }}>{label}</div>}
-      <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.5px', color: TEXT }}>{title}</h2>
-      {sub && <p style={{ color: TEXT_LIGHT, fontSize: 17, marginTop: 14 }}>{sub}</p>}
+      {label && <div style={{ color: light ? 'rgba(255,255,255,0.9)' : PRIMARY, fontWeight: 700, fontSize: 11, letterSpacing: 2.5, textTransform: 'uppercase', marginBottom: 14 }}>{label}</div>}
+      <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.5px', color: light ? '#fff' : TEXT }}>{title}</h2>
+      {sub && <p style={{ color: light ? 'rgba(255,255,255,0.88)' : TEXT_LIGHT, fontSize: 17, marginTop: 14 }}>{sub}</p>}
     </div>
   )
 }
@@ -903,7 +915,7 @@ function DemoForm() {
                 <span style={{ fontSize: 13, color: TEXT_LIGHT, lineHeight: 1.6 }}>Ho letto e accetto il trattamento dei dati personali per ricevere una risposta alla mia richiesta.</span>
               </label>
               {errore && <div style={{ background: '#fff5f5', color: '#c62828', padding: '10px 14px', borderRadius: 8, fontSize: 14 }}>{errore}</div>}
-              <button type="submit" disabled={!privacy || sending} style={{ background: privacy ? PRIMARY : '#ccc', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 28px', fontSize: 16, fontWeight: 700, cursor: privacy ? 'pointer' : 'not-allowed', fontFamily: "'Space Grotesk', sans-serif" }}>
+              <button type="submit" disabled={!privacy || sending} style={{ background: privacy ? INSTA : '#ccc', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 28px', fontSize: 16, fontWeight: 700, cursor: privacy ? 'pointer' : 'not-allowed', fontFamily: "'Space Grotesk', sans-serif" }}>
                 {sending ? 'Invio in corso…' : 'Invia la richiesta'}
               </button>
             </form>
@@ -917,10 +929,10 @@ function DemoForm() {
 function PhoneMockup({ scale = 1 }) {
   const w = Math.round(264 * scale), h = Math.round(532 * scale)
   return (
-    <div style={{ width: w, height: h, background: '#061814', borderRadius: 42 * scale, padding: 9 * scale, boxShadow: `0 48px 96px rgba(15,123,108,0.30), 0 0 0 1px rgba(255,255,255,0.05)` }}>
-      <div style={{ width: '100%', height: '100%', borderRadius: 34 * scale, background: `linear-gradient(165deg, ${PRIMARY} 0%, #1B5E53 40%, #061814 100%)`, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ width: w, height: h, background: BLACK, borderRadius: 42 * scale, padding: 9 * scale, boxShadow: `0 48px 96px rgba(14,79,92,0.32), 0 0 0 1px rgba(255,255,255,0.05)` }}>
+      <div style={{ width: '100%', height: '100%', borderRadius: 34 * scale, background: `linear-gradient(165deg, ${PETROL} 0%, ${PETROL_DEEP} 55%, ${BLACK} 100%)`, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <div style={{ height: 28 * scale, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', paddingBottom: 4 }}>
-          <div style={{ width: 72 * scale, height: 18 * scale, background: '#061814', borderRadius: 10 }} />
+          <div style={{ width: 72 * scale, height: 18 * scale, background: BLACK, borderRadius: 10 }} />
         </div>
         <div style={{ padding: `${16 * scale}px ${20 * scale}px ${12 * scale}px`, display: 'flex', alignItems: 'center', gap: 10 * scale }}>
           <div style={{ width: 34 * scale, height: 34 * scale, borderRadius: 10 * scale, background: ACCENT, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
