@@ -363,8 +363,10 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const h = heightMap[d.height || 'large'] || '85vh'
         const bgImg = d.bg_image_url || entity.cover_url
         return (
-          <section key={block.id} style={{ position: 'relative', minHeight: h, display: 'flex', alignItems: 'center', justifyContent: 'center', background: bgImg ? 'transparent' : `linear-gradient(135deg, #1a1a2e 0%, #0d1a2a 100%)`, overflow: 'hidden' }}>
-            {bgImg && <img src={bgImg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
+          <section key={block.id} style={{ position: 'relative', minHeight: h, display: 'flex', alignItems: 'center', justifyContent: 'center', background: (bgImg || d.bg_video) ? 'transparent' : `linear-gradient(135deg, #1a1a2e 0%, #0d1a2a 100%)`, overflow: 'hidden' }}>
+            {d.bg_video
+              ? <video src={d.bg_video} autoPlay muted loop playsInline poster={bgImg || undefined} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+              : bgImg && <img src={bgImg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
             <div style={{ position: 'absolute', inset: 0, background: `rgba(0,0,0,${d.overlay_opacity ?? 0.5})` }} />
             <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '80px 24px', maxWidth: 860, margin: '0 auto', width: '100%' }}>
               {d.title && <h1 style={{ fontFamily: heading, fontSize: 'clamp(36px,6vw,72px)', fontWeight: 700, color: '#fff', lineHeight: 1.1, marginBottom: 20 }}>{d.title}</h1>}

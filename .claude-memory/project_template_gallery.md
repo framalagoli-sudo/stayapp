@@ -142,10 +142,23 @@ Il wrap animazioni faceva `cloneElement(el)` anche su blocchi che rendono `null`
 - pacchetti: usa d.titolo/d.sottotitolo se impostati (prima titolo fisso i18n) + campo sottotitolo editor.
 - Nuove varianti: cta_banner (centrato|diviso testo+pulsante a lato), highlights (card|minimal).
 
-### ⏭️ Backlog minore residuo (davvero minore):
-- (eventuale) menù ristorante come blocco sito (entità-driven, grosso).
-- (eventuale) altre varianti su altri blocchi.
-- Site-builder ORA molto completo. Prossimo fronte suggerito: Stripe billing (monetizzazione) o Sentry (visibilità errori). Vedi [[project_roadmap_sprint]].
+### ✅ BLOCCO MENÙ RISTORANTE — LIVE+verificato (commit 1d3d5d6): blocco `menu` (entità-driven) riusa MenuTab; mostra i menù del ristorante sul sito (verificato su ristorante-borgo-del-lago: 3 menù selezionabili). NB fondaco-narni ha menù vuoto → blocco rende null (corretto). getRistorante include già `menu`.
+
+## 🏁 CAPITOLO SITE-BUILDER CHIUSO (2/7)
+Fatto tutto: 8 template per verticale, hero_slider, carosello, sfondi sezione dark/immagine + testo adattivo, colore secondario, animazioni scroll, varianti (testimonianze/stats/cta_banner/highlights), blocchi nuovi (colonne/divisore/annuncio/menù), duplica blocco, picker Unsplash ovunque, immagini AI, opzione B header/footer per-pagina, smart header, anteprima live in-editor. Site-builder MATURO.
+
+## 🧩 CLOSING PACK builder (2/7 sera) — confronto vs Elementor, chiude i "dettagli mancanti"
+Analisi gap fatta con Francesco: il set blocchi era ampio, mancavano controlli/dettagli. Fatto tutto il "vale la pena" + dettagli minori; NON fatto l'off-brand (colonne annidate con qualsiasi blocco, responsive per-breakpoint, tipografia per-elemento, CSS custom, canvas WYSIWYG — deliberatamente, per restare "per dummies").
+Commit 74c90f5 + chunk3:
+- **Capacità**: nascondi blocco su mobile/desktop (style.hide_mobile/hide_desktop + CSS), sfondo **gradiente** (primary→secondary), **stats count-up** (CountUp anima allo scroll, snap all'originale).
+- **Blocchi nuovi**: accordion, HTML/embed (iframe sandbox), countdown (gate-on-mount anti-hydration), before/after (clip-path drag), social (pill etichette — lucide NON ha icone brand!), + divisore con **shape** onda/diagonale.
+- **Video sfondo hero** (data.bg_video mp4).
+- **Editor UX**: undo/redo (stack past/future su patchBlocks + Ctrl+Z/Y, esclude i campi testo), **copia/incolla blocco tra pagine** (localStorage lbr_block_clip: Clipboard su ogni blocco + "Incolla blocco copiato"). FIX collaterale già fatto: save() invia hide_header/footer.
+- ⚠️ SKIP onesti: breadcrumbs + table-of-contents (goffi/basso valore nell'architettura a blocchi); libreria blocchi salvati backend-side (il copia/incolla localStorage copre il bisogno).
+- Tutto verificato a video (chunk1/2 su pagine test 'prova' poi cancellate); undo/redo/video = editor/additivo, verifica interattiva Francesco.
+- 🏁 BUILDER: ora completo "a livello Elementor" per il target SMB.
+
+### ⏭️ PROSSIMO FRONTE (cambio tema): Stripe billing (monetizzazione, alto impatto — Stripe già installato, campi trial/subscription a DB) oppure Sentry (visibilità errori). Vedi [[project_roadmap_sprint]] Sprint 10.
 
 ### ⏭️ BACKLOG (nice to have):
 - (eventuale) l'AI sceglie anche template/blocchi, non solo testi/immagini.

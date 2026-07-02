@@ -6,7 +6,7 @@ import {
   GripVertical, AlignLeft, Image, Grid, Users, List, Star, BarChart2, Zap,
   MessageCircle, Tag, Package, HelpCircle, Video, Settings, Compass, Map,
   Calendar, FileText, Clock, Mail, Phone, MapPin, ChevronDown, ChevronUp,
-  Plus, Trash2, Copy, ImageIcon, Layers, Building2, GalleryHorizontal, Columns, Minus, Megaphone, Utensils, Share2, Code, SlidersHorizontal,
+  Plus, Trash2, Copy, Clipboard, ImageIcon, Layers, Building2, GalleryHorizontal, Columns, Minus, Megaphone, Utensils, Share2, Code, SlidersHorizontal,
 } from 'lucide-react'
 import AiButton from '@/components/admin/AiButton'
 import RichTextEditor from '@/components/admin/RichTextEditor'
@@ -202,6 +202,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
           <UnsplashPicker label="Cerca su Unsplash" defaultQuery={data.title} onPick={url => upd('bg_image_url', url)} />
           <UploadBtn label="Carica immagine sfondo" entityId={entityId} entityTipo={entityTipo} onUrl={url => upd('bg_image_url', url)} />
         </div>
+        <Field label="Video di sfondo (URL mp4, opz.)" value={data.bg_video} onChange={v => upd('bg_video', v)} placeholder="https://....mp4" />
         <div>
           <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Opacità overlay ({Math.round((data.overlay_opacity ?? 0.5) * 100)}%)</label>
           <input type="range" min="0" max="1" step="0.05" value={data.overlay_opacity ?? 0.5} onChange={e => upd('overlay_opacity', parseFloat(e.target.value))} style={{ width: '100%' }} />
@@ -1012,6 +1013,9 @@ export default function PaginaEditorPage() {
 
   const [page,       setPage]       = useState(null)
   const [blocks,     setBlocks]     = useState([])
+  const [past,       setPast]       = useState([])   // undo stack
+  const [future,     setFuture]     = useState([])   // redo stack
+  const [hasClip,    setHasClip]    = useState(false) // blocco copiato in localStorage
   const [expandedId, setExpandedId] = useState(null)
   const [showPicker, setShowPicker] = useState(false)
   const [showPatterns, setShowPatterns] = useState(false)
@@ -1075,7 +1079,43 @@ export default function PaginaEditorPage() {
   }
 
   function patchPage(key, val) { setPage(p => ({ ...p, [key]: val })); setDirty(true) }
-  function patchBlocks(nb) { setBlocks(nb); setDirty(true) }
+  function patchBlocks(nb) { setPast(p => [...p.slice(-49), blocks]); setFuture([]); setBlocks(nb); setDirty(true) }
+  function undo() { if (!past.length) return; setFuture(f => [blocks, ...f]); setBlocks(past[past.length - 1]); setPast(p => p.slice(0, -1)); setDirty(true) }
+  function redo() { if (!future.length) return; setPast(p => [...p, blocks]); setBlocks(future[0]); setFuture(f => f.slice(1)); setDirty(true) }
+
+  // Copia/incolla blocco tra pagine (via localStorage, stesso browser).
+  const CLIP_KEY = 'lbr_block_clip'
+  useEffect(() => { try { setHasClip(!!localStorage.getItem(CLIP_KEY)) } catch {} }, [])
+  function copyBlock(id) {
+    const b = blocks.find(x => x.id === id); if (!b) return
+    try { localStorage.setItem(CLIP_KEY, JSON.stringify({ type: b.type, data: b.data, style: b.style })); setHasClip(true) } catch {}
+  }
+  function pasteBlock() {
+    let raw; try { raw = localStorage.getItem(CLIP_KEY) } catch {}
+    if (!raw) return
+    try {
+      const b = JSON.parse(raw)
+      const data = JSON.parse(JSON.stringify(b.data || {}))
+      if (Array.isArray(data.items))  data.items  = data.items.map(it => ({ ...it, id: uid() }))
+      if (Array.isArray(data.slides)) data.slides = data.slides.map(s => ({ ...s, id: uid() }))
+      const nb = { id: uid(), type: b.type, data, ...(b.style ? { style: b.style } : {}) }
+      patchBlocks([...blocks, nb]); setExpandedId(nb.id)
+    } catch {}
+  }
+
+  // Undo/redo da tastiera (fuori dai campi di testo, dove vince l'undo nativo).
+  useEffect(() => {
+    const onKey = e => {
+      if (!(e.ctrlKey || e.metaKey)) return
+      const t = e.target
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
+      const k = e.key.toLowerCase()
+      if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
+      else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo() }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
 
   function addBlock(type) {
     const b = { id: uid(), type, data: { ...BLOCK_DEFAULTS[type] } }
@@ -1192,6 +1232,12 @@ export default function PaginaEditorPage() {
         </h1>
         {dirty && <span style={{ fontSize: 11, color: '#856404', background: '#fff3cd', padding: '3px 10px', borderRadius: 20, flexShrink: 0, fontWeight: 600 }}>Non salvato</span>}
         {saved && <span style={{ fontSize: 11, color: '#155724', background: '#d4edda', padding: '3px 10px', borderRadius: 20, flexShrink: 0, fontWeight: 600 }}>Salvato ✓</span>}
+        <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+          <button onClick={undo} disabled={!past.length} title="Annulla (Ctrl+Z)"
+            style={{ background: '#f0f0f4', border: 'none', borderRadius: '8px 0 0 8px', padding: '8px 12px', cursor: past.length ? 'pointer' : 'default', fontSize: 15, color: past.length ? '#1a1a2e' : '#bbb' }}>↶</button>
+          <button onClick={redo} disabled={!future.length} title="Ripeti (Ctrl+Y)"
+            style={{ background: '#f0f0f4', border: 'none', borderRadius: '0 8px 8px 0', padding: '8px 12px', cursor: future.length ? 'pointer' : 'default', fontSize: 15, color: future.length ? '#1a1a2e' : '#bbb' }}>↷</button>
+        </div>
         {pUrl && (
           <button onClick={() => setShowPreview(s => !s)}
             style={{ display: 'flex', alignItems: 'center', gap: 6, background: showPreview ? '#1a1a2e' : '#f0f4ff', color: showPreview ? '#fff' : '#1a1a2e', border: '1.5px solid #c8d4f4', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontSize: 13, flexShrink: 0 }}>
@@ -1358,6 +1404,17 @@ export default function PaginaEditorPage() {
                     {blockLabel(block.type)}
                   </span>
 
+                  {/* Copia (per incollare su altre pagine) */}
+                  <button
+                    onClick={() => copyBlock(block.id)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px 6px', color: '#ddd', lineHeight: 0, flexShrink: 0 }}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#5b6af8' }}
+                    onMouseLeave={e => { e.currentTarget.style.color = '#ddd' }}
+                    title="Copia blocco (incollabile su altre pagine)"
+                  >
+                    <Clipboard size={14} strokeWidth={1.5} />
+                  </button>
+
                   {/* Duplicate */}
                   <button
                     onClick={() => duplicateBlock(block.id)}
@@ -1415,6 +1472,13 @@ export default function PaginaEditorPage() {
           <Layers size={16} strokeWidth={2} />
           Inserisci sezione pronta
         </button>
+        {hasClip && (
+          <button onClick={pasteBlock}
+            style={{ flex: 1, minWidth: 200, padding: 14, background: '#fff', border: '2px dashed #c8d0e8', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#5b6af8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <Clipboard size={16} strokeWidth={2} />
+            Incolla blocco copiato
+          </button>
+        )}
       </div>
 
       {/* ── SEO panel ── */}
