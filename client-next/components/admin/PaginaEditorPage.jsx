@@ -402,6 +402,13 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
     )
     case 'cta_banner': return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div>
+          <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Variante</label>
+          <select value={data.variant || 'center'} onChange={e => upd('variant', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+            <option value="center">Centrato</option>
+            <option value="split">Diviso (testo + pulsante a lato)</option>
+          </select>
+        </div>
         <Field label="Titolo" value={data.title} onChange={v => upd('title', v)} />
         <Field label="Sottotitolo" value={data.subtitle} onChange={v => upd('subtitle', v)} />
         <Field label="Testo pulsante" value={data.button_text} onChange={v => upd('button_text', v)} />
@@ -515,6 +522,13 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
     case 'highlights': return (
       <div>
         <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Variante</label>
+          <select value={data.variant || 'card'} onChange={e => upd('variant', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+            <option value="card">Card</option>
+            <option value="plain">Minimal (senza card)</option>
+          </select>
+        </div>
         <ItemListEditor items={data.items} onChange={v => upd('items', v)}
           newItem={{ icon: 'star', text: '' }}
           fields={[{ key: 'icon', label: 'Icona (es. star, heart, wifi)', placeholder: 'star' }, { key: 'text', label: 'Testo' }]} />
@@ -622,6 +636,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
     case 'pacchetti': return (
       <div>
         <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <Field label="Sottotitolo (opz.)" value={data.sottotitolo} onChange={v => upd('sottotitolo', v)} style={{ marginBottom: 12 }} />
         <ItemListEditor items={data.items} onChange={v => upd('items', v)}
           newItem={{ badge: '', name: '', tagline: '', price: '', price_label: 'a persona', cta_label: 'Scegli', cta_url: '' }}
           fields={[

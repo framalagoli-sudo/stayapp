@@ -368,19 +368,23 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
       case 'highlights': {
         const items = (d.items || []).filter(h => h.text)
         if (!items.length) return null
+        const hlPlain = d.variant === 'plain'
+        const cardStyle = hlPlain
+          ? { display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 16 }
+          : { display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 16, padding: '32px 22px', background: '#fafafa', border: '1px solid #f0f0f0', borderRadius: 16 }
         return (
           <section key={block.id} style={{ padding: '72px 0', background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
             <div className="lbr-section">
-              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,40px)', fontWeight: 700, textAlign: 'center', marginBottom: 48, color: '#1a1a2e' }}>{d.titolo}</h2>}
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,40px)', fontWeight: 700, textAlign: 'center', marginBottom: 48, color: cTitle }}>{d.titolo}</h2>}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24 }}>
                 {items.map(h => {
                   const Icon = highlightIcon(h.icon)
                   return (
-                    <div key={h.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 16, padding: '32px 22px', background: '#fafafa', border: '1px solid #f0f0f0', borderRadius: 16 }}>
+                    <div key={h.id} style={cardStyle}>
                       <div style={{ width: 60, height: 60, borderRadius: '50%', background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Icon size={26} strokeWidth={1.5} color={primary} />
                       </div>
-                      <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#1a1a2e', lineHeight: 1.5 }}>{h.text}</p>
+                      <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: hlPlain ? cTitle : '#1a1a2e', lineHeight: 1.5 }}>{h.text}</p>
                     </div>
                   )
                 })}
@@ -425,17 +429,25 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         )
       }
 
-      case 'cta_banner':
+      case 'cta_banner': {
         if (!d.title) return null
+        const split = d.variant === 'split'
+        const ctaBtn = d.button_text && d.button_url
+          ? <a href={d.button_url} style={{ display: 'inline-block', padding: '15px 36px', background: '#fff', color: primary, borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.15)', whiteSpace: 'nowrap' }}>{d.button_text}</a>
+          : null
         return (
-          <section key={block.id} style={{ padding: '72px 24px', background: `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)`, textAlign: 'center' }}>
-            <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, color: '#fff', marginBottom: 12 }}>{d.title}</h2>
-            {d.subtitle && <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.88)', marginBottom: 32, maxWidth: 600, margin: '0 auto 32px' }}>{d.subtitle}</p>}
-            {d.button_text && d.button_url && (
-              <a href={d.button_url} style={{ display: 'inline-block', padding: '15px 36px', background: '#fff', color: primary, borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.15)' }}>{d.button_text}</a>
-            )}
+          <section key={block.id} style={{ padding: '72px 24px', background: `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)`, textAlign: split ? 'left' : 'center' }}>
+            <div className="lbr-section" style={split ? { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 32, flexWrap: 'wrap' } : undefined}>
+              <div style={split ? { flex: 1, minWidth: 260 } : undefined}>
+                <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, color: '#fff', marginBottom: 12 }}>{d.title}</h2>
+                {d.subtitle && <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.88)', maxWidth: 600, margin: split ? 0 : '0 auto', marginBottom: split ? 0 : 32 }}>{d.subtitle}</p>}
+                {!split && ctaBtn}
+              </div>
+              {split && ctaBtn}
+            </div>
           </section>
         )
+      }
 
       case 'paragrafi': {
         const items = (d.items || []).filter(i => i.title || i.text)
@@ -828,8 +840,8 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         return (
           <section key={block.id} style={{ padding: '72px 0', background: '#f9f9fb' }}>
             <div className="lbr-section">
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{tr('packages_title', lang)}</h2>
-              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{tr('packages_subtitle', lang)}</p>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: cTitle }}>{d.titolo || tr('packages_title', lang)}</h2>
+              <p style={{ textAlign: 'center', color: cBody || '#888', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || tr('packages_subtitle', lang)}</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
                 {packs.map(p => {
                   const hasDetail = p.description_full || (p.gallery || []).length > 0
