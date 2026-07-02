@@ -138,10 +138,14 @@ Il wrap animazioni faceva `cloneElement(el)` anche su blocchi che rendono `null`
 - ⚠️ FIX BUG: `save()` NON inviava hide_header/hide_footer → i toggle opzione B non si salvavano dall'editor (verificati prima solo via REST). Aggiunti al body PATCH.
 
 ### 🎉 INIZIATIVA "profondità design" COMPLETA (7/7): sfondi sezione, unsplash ovunque, duplica blocco, secondario, animazioni, varianti, blocchi nuovi, anteprima live.
-### ⏭️ Backlog minore residuo:
-- pacchetti usa titolo i18n "Pacchetti e soggiorni", ignora d.titolo → usare d.titolo se presente.
-- (eventuale) menù ristorante come blocco sito; più varianti su altri blocchi.
-- ⚠️ DA COMMITTARE: anteprima live + fix save hide_header/footer.
+### ✅ RIFINITURE site-builder (2/7 sera, live+verificato, commit 033ae2e):
+- pacchetti: usa d.titolo/d.sottotitolo se impostati (prima titolo fisso i18n) + campo sottotitolo editor.
+- Nuove varianti: cta_banner (centrato|diviso testo+pulsante a lato), highlights (card|minimal).
+
+### ⏭️ Backlog minore residuo (davvero minore):
+- (eventuale) menù ristorante come blocco sito (entità-driven, grosso).
+- (eventuale) altre varianti su altri blocchi.
+- Site-builder ORA molto completo. Prossimo fronte suggerito: Stripe billing (monetizzazione) o Sentry (visibilità errori). Vedi [[project_roadmap_sprint]].
 
 ### ⏭️ BACKLOG (nice to have):
 - (eventuale) l'AI sceglie anche template/blocchi, non solo testi/immagini.

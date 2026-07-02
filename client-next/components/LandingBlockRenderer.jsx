@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, cloneElement } from 'react'
 import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Mountain, Wind, ChevronDown, ChevronLeft, ChevronRight, Calendar, Users, Check, CheckCircle, Gift } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
 import BookingWidget from './BookingWidget'
+import MenuTab from '@/components/MenuTab'
 import Turnstile from '@/components/Turnstile'
 import { applyBlockStyle, blockInverted, textSizeScale, textColorFor, gridTemplate, readableOn } from '@/lib/blockTypes'
 import { RichText, richIsEmpty } from '@/lib/richText'
@@ -704,6 +705,19 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
             </div>
           </section>
         )
+
+      case 'menu': {
+        const menus = entity?.menu
+        if (!Array.isArray(menus) || !menus.length) return null
+        return (
+          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+            <div className="lbr-section">
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: '#1a1a2e', marginBottom: 40 }}>{d.titolo}</h2>}
+              <MenuTab menu={menus} primary={primary} textColor="#1a1a2e" subText="#777" isDark={false} radius={12} headingFamily={heading} cardBg="#fff" surfaceBg="#f7f7f9" borderColor="#efefef" showAllergens lang={lang} />
+            </div>
+          </section>
+        )
+      }
 
       case 'services': {
         const services = (entity.services || []).filter(s => s.name)

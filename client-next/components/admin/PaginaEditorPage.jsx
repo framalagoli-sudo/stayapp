@@ -6,7 +6,7 @@ import {
   GripVertical, AlignLeft, Image, Grid, Users, List, Star, BarChart2, Zap,
   MessageCircle, Tag, Package, HelpCircle, Video, Settings, Compass, Map,
   Calendar, FileText, Clock, Mail, Phone, MapPin, ChevronDown, ChevronUp,
-  Plus, Trash2, Copy, ImageIcon, Layers, Building2, GalleryHorizontal, Columns, Minus, Megaphone,
+  Plus, Trash2, Copy, ImageIcon, Layers, Building2, GalleryHorizontal, Columns, Minus, Megaphone, Utensils,
 } from 'lucide-react'
 import AiButton from '@/components/admin/AiButton'
 import RichTextEditor from '@/components/admin/RichTextEditor'
@@ -27,7 +27,7 @@ function slugify(s) {
 // ── Block icon + color mapping ────────────────────────────────────────────────
 const BLOCK_ICON_MAP = {
   hero: Layers, hero_slider: GalleryHorizontal, carosello: GalleryHorizontal, about: AlignLeft, pulsante: Zap, foto_testo: Image, paragrafi: Grid,
-  colonne: Columns, divisore: Minus, annuncio: Megaphone,
+  colonne: Columns, divisore: Minus, annuncio: Megaphone, menu: Utensils,
   team: Users, steps: List, highlights: Star, stats: BarChart2,
   cta_banner: Zap, testimonianze: MessageCircle, promozioni: Tag,
   pacchetti: Package, faq: HelpCircle, immagine: Image, galleria_immagini: Grid, gallery: ImageIcon, video: Video,
@@ -309,6 +309,15 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
             </label>
           </div>
         </div>
+      </div>
+    )
+    case 'menu': return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: 12, background: '#f8f9ff', borderRadius: 8, border: '1px solid #e8ecff' }}>
+          <BlockTypeIcon type="menu" size={16} />
+          <p style={{ fontSize: 13, color: '#555', fontStyle: 'italic', margin: 0, lineHeight: 1.5 }}>Mostra il menù del ristorante (categorie, piatti, prezzi, allergeni). Le voci si gestiscono nella tab <strong>Menu</strong> del ristorante.</p>
+        </div>
+        <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} />
       </div>
     )
     case 'colonne': return (

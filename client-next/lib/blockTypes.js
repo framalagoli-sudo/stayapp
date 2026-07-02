@@ -34,6 +34,7 @@ export const BLOCK_TYPES = [
   { type: 'galleria_immagini', label: 'Galleria immagini', group: 'media',   emoji: '🖼', desc: 'Griglia di immagini caricate ad hoc (indipendente dall\'app)' },
   { type: 'gallery',      label: 'Galleria foto (app)',group: 'media',       emoji: '🖼', desc: 'Griglia automatica con le foto dell\'entità' },
   { type: 'video',        label: 'Video',              group: 'media',       emoji: '▶️', desc: 'Embed YouTube o Vimeo' },
+  { type: 'menu',         label: 'Menù ristorante',    group: 'servizi',     emoji: '🍽️', desc: 'Mostra il menù del ristorante (categorie, piatti, prezzi, allergeni) — si configura nella tab Menu' },
   { type: 'services',     label: 'Servizi',            group: 'servizi',     emoji: '🛎️', desc: 'Lista servizi dell\'entità' },
   { type: 'activities',   label: 'Attività',           group: 'servizi',     emoji: '🧭', desc: 'Attività prenotabili' },
   { type: 'excursions',   label: 'Escursioni',         group: 'servizi',     emoji: '🗺️', desc: 'Escursioni disponibili' },
@@ -70,6 +71,7 @@ export const BLOCK_DEFAULTS = {
   galleria_immagini: { titolo: '', images: [], columns: 3 },
   gallery:      {},
   video:        { url: '' },
+  menu:         { titolo: '' },
   services:     {},
   activities:   {},
   excursions:   {},
@@ -126,7 +128,7 @@ export const BLOCK_PADY_OPTIONS = [
 ]
 // Blocchi con testo chiaro / sfondo intenzionalmente scuro: niente controllo sfondo
 // (un fondo chiaro renderebbe il testo illeggibile).
-export const BG_EXCLUDED_TYPES = ['hero', 'hero_slider', 'stats', 'cta_banner', 'video', 'divisore', 'annuncio']
+export const BG_EXCLUDED_TYPES = ['hero', 'hero_slider', 'stats', 'cta_banner', 'video', 'divisore', 'annuncio', 'menu']
 export function blockSupportsBg(type) { return !BG_EXCLUDED_TYPES.includes(type) }
 
 // ── Tipografia per-blocco (Fase 1.5) — solo blocchi con rich-text ────────────
