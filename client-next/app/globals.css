@@ -45,3 +45,10 @@ a {
    titoli di sezione (h2). Le card interne usano h3 → restano scure su fondo chiaro.
    !important perché i titoli hanno color inline. Il testo diretto è gestito via prop. */
 .lbr-inv h2 { color: #ffffff !important; }
+
+/* Reveal soft allo scroll. .lbr-anim la aggiunge il JS (senza JS resta tutto visibile). */
+.lbr-anim .lbr-reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
+.lbr-anim .lbr-reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .lbr-anim .lbr-reveal { opacity: 1; transform: none; transition: none; }
+}

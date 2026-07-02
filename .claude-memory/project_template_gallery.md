@@ -123,13 +123,20 @@ Gap identificati (mia analisi): non manca la QUANTITÀ di blocchi (~30) ma la PR
 - **Duplica blocco**: `duplicateBlock` in PaginaEditorPage (nuovi id per items/slides) + pulsante Copy nella toolbar blocco.
 - **Sfondi di sezione (FLAGSHIP)**: `blockTypes.js` BLOCK_BG + 'dark'/'primary'/'image'; `resolveBlockBg(style,primary)`→{background,inverted}; `applyBlockStyle(el,block,{primary})` aggiunge classe `lbr-inv` se scuro; `blockInverted()`. globals.css `.lbr-inv h2{color:#fff!important}` (titoli; card usano h3→restano scure). Testo diretto adattivo via prop `inverted` in renderBlock (about/foto_testo/steps/team: cTitle/cBody). Editor: BlockStylePanel opzioni + pannello immagine (Unsplash/upload/url + velo). Verificato a video su pagina test 'prova': sezione scura (titolo bianco+testo chiaro+card chiare che staccano), sfondo immagine con velo, sezione chiara invariata. VERIFICA DB via mksec.mjs (service role), pagina poi cancellata.
 
+### ✅ FATTO (2/7 continua): colore secondario + animazioni
+- **Colore secondario/accento**: theme.secondaryColor sulle 3 pagine Tema (default ''→come primario); passato a LandingBlockRenderer (prop `secondary`, `sec=secondary||primary`) da tutti i renderer + TemplatePreviewClient; usato in filetto about + badge promozioni/pacchetti. Template Fitness ha secondaryColor '#111827' (verificato: badge "Più scelto" scuro, prezzi arancioni).
+- **Animazioni scroll**: LandingBlockRenderer wrappa i blocchi in div[ref], IntersectionObserver aggiunge `.in`; classe `.lbr-anim` aggiunta da JS (SSR-safe: senza JS tutto visibile); blocchi già a schermo mostrati subito (no flash); primo blocco/hero escluso. CSS in globals.css. Verificato: 0 blocchi rimasti nascosti dopo scroll.
+- **Fix pacchetti/promozioni**: leggevano SOLO da mini.* (dati entità) → ora fallback su d.items → rendono anche nei template. (Prima "Abbonamenti" Fitness non appariva.)
+
+### 🔴 INCIDENTE 2/7 (mio errore, risolto): 500 sui minisiti in prod
+Il wrap animazioni faceva `cloneElement(el)` anche su blocchi che rendono `null` (blocchi vuoti) → throw in SSR → 500 su TUTTI i minisiti. Deploy mette live PRIMA dello smoke → prod 500 per ~min. Lo smoke public-render l'ha beccato. FIX: `(!el || i===0) ? el : cloneElement(...)`. Redeploy → IT/EN=200. LEZIONE: quando si clona/mappa gli elementi dei blocchi, SEMPRE gestire il caso null (molti blocchi ritornano null se vuoti).
+
 ### ⏭️ RESTA (stessa iniziativa):
-- Colore secondario/accento nel tema (theme.secondaryColor + UI Tema + uso in accenti).
 - Varianti layout per blocco (testimonianze/hero/foto_testo).
 - Blocchi nuovi: divisore/spaziatore, colonne, barra annuncio, menù ristorante.
-- Animazioni allo scroll (fade-in, pattern SSR-safe con classe abilitata da JS).
-- Anteprima live/mobile nell'editor pagine (feature grossa).
-- ⚠️ DA COMMITTARE (2/7): unsplash-ovunque, duplica blocco, sfondi sezione. (Batch 1 già deployato, non committato.)
+- Anteprima live/mobile nell'editor pagine (feature grossa, sessione a sé).
+- (minore) pacchetti usa titolo i18n "Pacchetti e soggiorni", ignora d.titolo → far usare d.titolo se presente.
+- ⚠️ DA COMMITTARE (2/7): secondario, animazioni, fix cloneElement null, fallback pacchetti/promozioni, fitness secondaryColor.
 
 ### ⏭️ BACKLOG (nice to have):
 - (eventuale) l'AI sceglie anche template/blocchi, non solo testi/immagini.

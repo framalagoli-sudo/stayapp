@@ -213,7 +213,7 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
       {homeBlocks === undefined ? null : homeBlocks ? (
         <LandingBlockRenderer
           blocks={homeBlocks} entity={attivita} entityType="attivita"
-          mini={mini} primary={primary} heading={heading} body={body}
+          mini={mini} primary={primary} secondary={theme.secondaryColor} heading={heading} body={body}
           slug={attivita.slug} privacyUrl={`${base}/privacy`}
           aziendaId={attivita.azienda_id} lang={lang}
         />

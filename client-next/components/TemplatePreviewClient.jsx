@@ -88,7 +88,7 @@ export default function TemplatePreviewClient({ id, blocks: blocksProp }) {
 
       <LandingBlockRenderer
         blocks={blocks} entity={entity} entityType="struttura" mini={previewMini}
-        primary={primary} heading={heading} body={body}
+        primary={primary} secondary={theme.secondaryColor} heading={heading} body={body}
         slug="preview" privacyUrl="#" aziendaId={null} lang="it"
       />
 

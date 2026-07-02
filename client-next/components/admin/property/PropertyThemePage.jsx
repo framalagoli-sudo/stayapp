@@ -13,7 +13,7 @@ const HEADER_STYLES = [
   { key: 'cover',    label: 'Cover',     desc: 'Foto di sfondo' },
 ]
 const DEFAULT_THEME = {
-  primaryColor: '#00b5b5', bgColor: '#ffffff', textColor: '#1a1a2e',
+  primaryColor: '#00b5b5', secondaryColor: '', bgColor: '#ffffff', textColor: '#1a1a2e',
   fontHeading: 'playfair', fontBody: 'inter', headerStyle: 'solid', borderStyle: 'mixed',
 }
 
@@ -176,6 +176,20 @@ export default function PropertyThemePage() {
               <div>
                 <div style={{ fontWeight: 600, fontSize: 14 }}>{theme.primaryColor.toUpperCase()}</div>
                 <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>Header, pulsanti, tab attivi</div>
+              </div>
+            </div>
+          </Section>
+
+          {/* Secondary / accent color */}
+          <Section label="Colore accento (secondario)">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <input type="color" value={theme.secondaryColor || theme.primaryColor}
+                onChange={e => save({ theme: { ...theme, secondaryColor: e.target.value } }).catch(() => {})}
+                onBlur={e => updateTheme({ secondaryColor: e.target.value })}
+                style={{ width: 52, height: 52, border: '1px solid #ddd', borderRadius: 10, cursor: 'pointer', padding: 3, background: 'none' }} />
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>{(theme.secondaryColor || theme.primaryColor).toUpperCase()}</div>
+                <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>Badge e dettagli (vuoto = come principale)</div>
               </div>
             </div>
           </Section>

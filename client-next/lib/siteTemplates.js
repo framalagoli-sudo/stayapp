@@ -211,7 +211,7 @@ export const SITE_TEMPLATES = [
     descrizione: 'Grintoso e diretto. Corsi, abbonamenti e risultati.',
     settori: ['palestra', 'fitness', 'personal trainer', 'crossfit'],
     obiettivi: ['lead_gen', 'prenotazioni'],
-    theme: { primaryColor: '#f97316', bgColor: '#ffffff', textColor: '#171717', fontHeading: 'montserrat', fontBody: 'inter', borderStyle: 'square' },
+    theme: { primaryColor: '#f97316', secondaryColor: '#111827', bgColor: '#ffffff', textColor: '#171717', fontHeading: 'montserrat', fontBody: 'inter', borderStyle: 'square' },
     blocks: [
       { type: 'hero_slider', data: { height: 'full', autoplay: true, interval: 5, overlay_opacity: 0.55, text_align: 'left', slides: [
         { image_query: 'gym workout intense', title: 'Dai il massimo', subtitle: 'Il tuo obiettivo inizia oggi', cta1_text: 'Inizia ora', cta1_url: '' },

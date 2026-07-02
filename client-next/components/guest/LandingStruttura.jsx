@@ -220,7 +220,7 @@ export default function LandingStruttura({ property, initialHomeBlocks, domain, 
       {homeBlocks === undefined ? null : homeBlocks ? (
         <LandingBlockRenderer
           blocks={homeBlocks} entity={property} entityType="struttura"
-          mini={mini} primary={primary} heading={heading} body={body}
+          mini={mini} primary={primary} secondary={theme.secondaryColor} heading={heading} body={body}
           slug={property.slug} privacyUrl={`${base}/privacy`}
           aziendaId={property.azienda_id} lang={lang}
         />

@@ -1,5 +1,5 @@
 ﻿'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, cloneElement } from 'react'
 import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Mountain, Wind, ChevronDown, ChevronLeft, ChevronRight, Calendar, Users, Check, CheckCircle, Gift } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
 import BookingWidget from './BookingWidget'
@@ -213,12 +213,32 @@ function Carousel({ block, primary, heading }) {
   )
 }
 
-export default function LandingBlockRenderer({ blocks, entity, entityType, mini, primary, heading, body, slug, privacyUrl, aziendaId, lang = 'it' }) {
+export default function LandingBlockRenderer({ blocks, entity, entityType, mini, primary, secondary, heading, body, slug, privacyUrl, aziendaId, lang = 'it' }) {
   const [faqOpen, setFaqOpen] = useState({})
   const [eventi, setEventi] = useState([])
   const [articoli, setArticoli] = useState([])
 
+  const sec = secondary || primary   // colore accento; default = primario
   const sections = mini.sections || {}
+  const animRef = useRef(null)
+
+  // Reveal soft allo scroll. SSR-safe: la classe .lbr-anim (che nasconde) la aggiunge
+  // il JS → senza JS tutto resta visibile. I blocchi già a schermo si mostrano subito
+  // (niente flash); gli altri sfumano quando entrano in viewport.
+  useEffect(() => {
+    const root = animRef.current
+    if (!root) return
+    root.classList.add('lbr-anim')
+    const els = [...root.querySelectorAll('.lbr-reveal')]
+    const vh = window.innerHeight || 800
+    els.forEach(e => { if (e.getBoundingClientRect().top < vh * 0.9) e.classList.add('in') })
+    if (!('IntersectionObserver' in window)) { els.forEach(e => e.classList.add('in')); return }
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target) } })
+    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 })
+    els.forEach(e => { if (!e.classList.contains('in')) io.observe(e) })
+    return () => io.disconnect()
+  }, [blocks])
   const homeUrl = entityType === 'struttura' ? `/s/${slug}` : entityType === 'ristorante' ? `/r/${slug}` : `/a/${slug}`
 
   useEffect(() => {
@@ -272,7 +292,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
           <section key={block.id} style={{ padding: '84px 0', background: '#fff' }}>
             <div className="lbr-section">
               {d.title && <h2 style={{ fontFamily: heading, fontSize: 'clamp(28px,4vw,46px)', fontWeight: 700, color: '#1a1a2e', marginBottom: 18 }}>{d.title}</h2>}
-              {d.title && <div style={{ width: 54, height: 3, background: primary, borderRadius: 2, marginBottom: 28 }} />}
+              {d.title && <div style={{ width: 54, height: 3, background: sec, borderRadius: 2, marginBottom: 28 }} />}
               <RichText value={d.text} primary={primary} style={{ fontSize: Math.round(18 * textSizeScale(block.style?.textSize)), lineHeight: 1.8, color: cBody || textColorFor(block.style?.textColor, primary) || '#444', maxWidth: 720 }} />
             </div>
           </section>
@@ -695,7 +715,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
 
       case 'promozioni': {
         const now = new Date()
-        const promo = (mini.promozioni || []).filter(p => p.title && (!p.expires_at || new Date(p.expires_at) >= now))
+        const promo = (mini.promozioni?.length ? mini.promozioni : (d.items || [])).filter(p => p.title && (!p.expires_at || new Date(p.expires_at) >= now))
         if (!promo.length) return null
         const ctaHref = mini.booking_url || homeUrl
         const offerteBase = entityType === 'struttura' ? `/s/${slug}/offerte/` : entityType === 'ristorante' ? `/r/${slug}/offerte/` : `/a/${slug}/offerte/`
@@ -714,7 +734,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                       {p.cover_url && <img src={p.cover_url} alt={p.title} style={{ width: '100%', height: 180, objectFit: 'cover' }} />}
                       <div style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 14 }}>
-                          {p.badge && <span style={{ display: 'inline-block', background: `${primary}18`, color: primary, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase' }}>{p.badge}</span>}
+                          {p.badge && <span style={{ display: 'inline-block', background: `${sec}18`, color: sec, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase' }}>{p.badge}</span>}
                         </div>
                         <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 12, color: '#1a1a2e' }}>{p.title}</h3>
                         {p.text && <p style={{ fontSize: 15, color: '#555', lineHeight: 1.7, marginBottom: 16, flex: 1 }}>{p.text}</p>}
@@ -741,7 +761,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
       }
 
       case 'pacchetti': {
-        const packs = (mini.pacchetti || []).filter(p => p.name)
+        const packs = (mini.pacchetti?.length ? mini.pacchetti : (d.items || [])).filter(p => p.name)
         if (!packs.length) return null
         const pacchettiBase = entityType === 'struttura' ? `/s/${slug}/pacchetti/` : entityType === 'ristorante' ? `/r/${slug}/pacchetti/` : `/a/${slug}/pacchetti/`
         return (
@@ -756,7 +776,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                     <div key={p.id} style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column' }}>
                       {p.cover_url && <img src={p.cover_url} alt={p.name} style={{ width: '100%', height: 180, objectFit: 'cover' }} />}
                       <div style={{ padding: '28px 28px 0' }}>
-                        {p.badge && <span style={{ display: 'inline-block', background: primary, color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 16 }}>{p.badge}</span>}
+                        {p.badge && <span style={{ display: 'inline-block', background: sec, color: readableOn('#ffffff', sec, '#1a1a2e'), fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 16 }}>{p.badge}</span>}
                         <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 6, color: '#1a1a2e' }}>{p.name}</h3>
                         {p.tagline && <p style={{ fontSize: 14, color: '#888', marginBottom: 20, lineHeight: 1.5 }}>{p.tagline}</p>}
                         {p.price && (
@@ -936,7 +956,12 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         .lbr-logo-item img:hover { filter: grayscale(0%) opacity(1); }
         .lbr-logo-item a { display: block; }
       `}</style>
-      {blocks.map(b => applyBlockStyle(renderBlock(b, blockInverted(b, primary)), b, { primary }))}
+      <div ref={animRef}>
+        {blocks.map((b, i) => {
+          const el = applyBlockStyle(renderBlock(b, blockInverted(b, primary)), b, { primary })
+          return (!el || i === 0) ? el : cloneElement(el, { className: ((el.props.className || '') + ' lbr-reveal').trim() })
+        })}
+      </div>
     </>
   )
 }

@@ -7,7 +7,7 @@ import { HEADING_FONTS, BODY_FONTS, getHeadingFamily, getBodyFamily, FONTS_URL }
 import { BG_COLORS, TEXT_COLORS, BORDER_STYLES, getBorderRadius } from '@/lib/themeOptions'
 
 const DEFAULT_THEME = {
-  primaryColor: '#6b46c1', bgColor: '#ffffff', textColor: '#1a1a2e',
+  primaryColor: '#6b46c1', secondaryColor: '', bgColor: '#ffffff', textColor: '#1a1a2e',
   fontHeading: 'montserrat', fontBody: 'inter', headerStyle: 'solid', borderStyle: 'mixed',
 }
 
@@ -84,6 +84,19 @@ export default function AttivitaThemePage() {
               <div>
                 <div style={{ fontWeight: 600, fontSize: 14 }}>{theme.primaryColor.toUpperCase()}</div>
                 <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>Header, accenti</div>
+              </div>
+            </div>
+          </Section>
+
+          <Section label="Colore accento (secondario)">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <input type="color" value={theme.secondaryColor || theme.primaryColor}
+                onChange={e => save({ theme: { ...theme, secondaryColor: e.target.value } }).catch(() => {})}
+                onBlur={e => updateTheme({ secondaryColor: e.target.value })}
+                style={{ width: 52, height: 52, border: '1px solid #ddd', borderRadius: 10, cursor: 'pointer', padding: 3, background: 'none' }} />
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>{(theme.secondaryColor || theme.primaryColor).toUpperCase()}</div>
+                <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>Badge e dettagli (vuoto = come principale)</div>
               </div>
             </div>
           </Section>
