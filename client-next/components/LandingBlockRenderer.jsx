@@ -20,6 +20,8 @@ const HIGHLIGHT_LUCIDE = {
 }
 function highlightIcon(key) { return HIGHLIGHT_LUCIDE[key] || Star }
 
+const SOCIAL_LABELS = { instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn', youtube: 'YouTube', twitter: 'X', x: 'X', whatsapp: 'WhatsApp', tripadvisor: 'TripAdvisor', tiktok: 'TikTok' }
+
 const SERVICE_ICONS = {
   pool: Waves, spa: Sparkles, restaurant: Utensils, gym: Activity,
   parking: Car, wifi: Wifi, beach: Umbrella, bar: Wine,
@@ -214,6 +216,105 @@ function Carousel({ block, primary, heading }) {
   )
 }
 
+// Numero animato 0→valore quando entra in viewport. SSR-safe: parte dal valore
+// reale, anima solo lato client; a fine animazione ripristina la stringa esatta.
+function CountUp({ value, style }) {
+  const ref = useRef(null)
+  const [disp, setDisp] = useState(value)
+  useEffect(() => {
+    const el = ref.current; if (!el) return
+    const m = String(value).trim().match(/^(\D*?)([\d.,]+)(\D*)$/)
+    if (!m) { setDisp(value); return }
+    const [, prefix, core, suffix] = m
+    let target, decimals = 0, decSep = '.', thousands = false
+    if (/^\d{1,3}([.,]\d{3})+$/.test(core)) { thousands = true; target = parseInt(core.replace(/[.,]/g, ''), 10) }
+    else if (/^\d+[.,]\d+$/.test(core)) { decSep = core.includes(',') ? ',' : '.'; decimals = core.split(/[.,]/)[1].length; target = parseFloat(core.replace(',', '.')) }
+    else { target = parseInt(core.replace(/\D/g, ''), 10) }
+    if (!isFinite(target)) { setDisp(value); return }
+    const fmt = n => {
+      const body = decimals ? n.toFixed(decimals).replace('.', decSep) : thousands ? Math.round(n).toLocaleString('it-IT') : String(Math.round(n))
+      return prefix + body + suffix
+    }
+    let raf, io, done = false
+    setDisp(fmt(0))
+    const run = () => {
+      const dur = 1200, t0 = performance.now()
+      const step = now => {
+        const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3)
+        if (p < 1) { setDisp(fmt(target * e)); raf = requestAnimationFrame(step) } else setDisp(value)
+      }
+      raf = requestAnimationFrame(step)
+    }
+    if (!('IntersectionObserver' in window)) { setDisp(value); return }
+    io = new IntersectionObserver(ents => { if (ents[0].isIntersecting && !done) { done = true; run(); io.disconnect() } }, { threshold: 0.3 })
+    io.observe(el)
+    return () => { if (io) io.disconnect(); if (raf) cancelAnimationFrame(raf) }
+  }, [value])
+  return <div ref={ref} style={style}>{disp}</div>
+}
+
+// Confronto prima/dopo con maniglia trascinabile (clip-path).
+function BeforeAfter({ block, primary }) {
+  const d = block.data || {}
+  const [pos, setPos] = useState(50)
+  const ref = useRef(null)
+  if (!d.before_url || !d.after_url) return null
+  const move = x => { const r = ref.current?.getBoundingClientRect(); if (r) setPos(Math.max(0, Math.min(100, ((x - r.left) / r.width) * 100))) }
+  return (
+    <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+      <div className="lbr-section">
+        <div ref={ref} style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden', borderRadius: 16, userSelect: 'none', touchAction: 'none', cursor: 'ew-resize' }}
+          onMouseDown={e => move(e.clientX)} onMouseMove={e => e.buttons === 1 && move(e.clientX)}
+          onTouchStart={e => move(e.touches[0].clientX)} onTouchMove={e => move(e.touches[0].clientX)}>
+          <img src={d.after_url} alt={d.after_label || ''} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img src={d.before_url} alt={d.before_label || ''} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', clipPath: `inset(0 ${100 - pos}% 0 0)` }} />
+          {d.before_label && <span style={{ position: 'absolute', top: 12, left: 12, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 12, padding: '4px 10px', borderRadius: 20 }}>{d.before_label}</span>}
+          {d.after_label && <span style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 12, padding: '4px 10px', borderRadius: 20 }}>{d.after_label}</span>}
+          <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${pos}%`, width: 2, background: '#fff', transform: 'translateX(-1px)', boxShadow: '0 0 8px rgba(0,0,0,0.4)' }}>
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 38, height: 38, borderRadius: '50%', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: primary }}>
+              <ChevronLeft size={14} strokeWidth={2} style={{ marginRight: -4 }} /><ChevronRight size={14} strokeWidth={2} style={{ marginLeft: -4 }} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Conto alla rovescia. Gate su mount per evitare mismatch di idratazione (ora server≠client).
+function Countdown({ block, primary, heading }) {
+  const d = block.data || {}
+  const [mounted, setMounted] = useState(false)
+  const [now, setNow] = useState(0)
+  useEffect(() => {
+    setMounted(true); setNow(Date.now())
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [])
+  if (!d.target) return null
+  const diff = new Date(d.target).getTime() - now
+  const done = mounted && diff <= 0
+  const s = Math.max(0, Math.floor(diff / 1000))
+  const dd = Math.floor(s / 86400), hh = Math.floor((s % 86400) / 3600), mm = Math.floor((s % 3600) / 60), ss = s % 60
+  const cell = (n, l) => (
+    <div style={{ textAlign: 'center', minWidth: 70 }}>
+      <div style={{ fontFamily: heading, fontSize: 'clamp(32px,5vw,52px)', fontWeight: 700, color: primary, lineHeight: 1 }}>{mounted ? String(n).padStart(2, '0') : '—'}</div>
+      <div style={{ fontSize: 12, color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginTop: 6 }}>{l}</div>
+    </div>
+  )
+  return (
+    <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+      <div className="lbr-section" style={{ textAlign: 'center' }}>
+        {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, color: '#1a1a2e', marginBottom: d.sottotitolo ? 8 : 32 }}>{d.titolo}</h2>}
+        {d.sottotitolo && <p style={{ color: '#888', marginBottom: 32, fontSize: 15 }}>{d.sottotitolo}</p>}
+        {done
+          ? <p style={{ fontSize: 20, fontWeight: 700, color: primary }}>È arrivato il momento!</p>
+          : <div style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap' }}>{cell(dd, 'giorni')}{cell(hh, 'ore')}{cell(mm, 'min')}{cell(ss, 'sec')}</div>}
+      </div>
+    </section>
+  )
+}
+
 export default function LandingBlockRenderer({ blocks, entity, entityType, mini, primary, secondary, heading, body, slug, privacyUrl, aziendaId, lang = 'it' }) {
   const [faqOpen, setFaqOpen] = useState({})
   const [eventi, setEventi] = useState([])
@@ -307,7 +408,82 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
             <div className="lbr-section"><hr style={{ border: 0, borderTop: '1px solid #e5e5ea' }} /></div>
           </section>
         )
+        if (d.variant === 'wave' || d.variant === 'diagonal') {
+          const fill = d.color === 'dark' ? '#14141f' : d.color === 'primary' ? primary : d.color === 'secondary' ? sec : '#f4f4f7'
+          return (
+            <div key={block.id} aria-hidden style={{ lineHeight: 0 }}>
+              <svg viewBox="0 0 1200 120" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: dh }}>
+                {d.variant === 'wave'
+                  ? <path d="M0,40 C300,120 900,-20 1200,60 L1200,120 L0,120 Z" fill={fill} />
+                  : <path d="M0,120 L1200,0 L1200,120 Z" fill={fill} />}
+              </svg>
+            </div>
+          )
+        }
         return <div key={block.id} style={{ height: dh }} />
+      }
+
+      case 'accordion': {
+        const items = (d.items || []).filter(i => i.title)
+        if (!items.length) return null
+        return (
+          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+            <div className="lbr-section" style={{ maxWidth: 760 }}>
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: cTitle, marginBottom: 40 }}>{d.titolo}</h2>}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {items.map(it => {
+                  const open = faqOpen[block.id + it.id]
+                  return (
+                    <div key={it.id} style={{ background: '#fafafa', borderRadius: 12, overflow: 'hidden', border: '1px solid #f0f0f0' }}>
+                      <button onClick={() => setFaqOpen(p => ({ ...p, [block.id + it.id]: !open }))}
+                        style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                        <span style={{ fontWeight: 600, fontSize: 16, color: '#1a1a2e' }}>{it.title}</span>
+                        <ChevronDown size={18} strokeWidth={1.5} color="#888" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
+                      </button>
+                      {open && <div style={{ padding: '0 20px 18px', fontSize: 15, color: '#555', lineHeight: 1.7, whiteSpace: 'pre-line' }}>{it.text}</div>}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+        )
+      }
+
+      case 'social': {
+        const items = (d.items || []).filter(i => i.url)
+        if (!items.length) return null
+        return (
+          <section key={block.id} style={{ padding: '48px 0', background: '#fff' }}>
+            <div className="lbr-section" style={{ textAlign: 'center' }}>
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, color: cTitle, marginBottom: 20 }}>{d.titolo}</h2>}
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+                {items.map(it => {
+                  const label = SOCIAL_LABELS[(it.network || '').toLowerCase()] || it.network || 'Link'
+                  return <a key={it.id} href={it.url} target="_blank" rel="noopener noreferrer" style={{ padding: '9px 20px', borderRadius: 50, border: `1.5px solid ${primary}`, color: primary, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>{label}</a>
+                })}
+              </div>
+            </div>
+          </section>
+        )
+      }
+
+      case 'before_after':
+        return <BeforeAfter key={block.id} block={block} primary={primary} />
+
+      case 'countdown':
+        return <Countdown key={block.id} block={block} primary={primary} heading={heading} />
+
+      case 'embed': {
+        if (!d.html) return null
+        return (
+          <section key={block.id} style={{ padding: '40px 0', background: '#fff' }}>
+            <div className="lbr-section">
+              <iframe srcDoc={d.html} title="Contenuto incorporato" sandbox="allow-scripts allow-popups allow-forms allow-presentation"
+                style={{ width: '100%', height: Number(d.height) || 400, border: 0, borderRadius: 12 }} />
+            </div>
+          </section>
+        )
       }
 
       case 'colonne': {
@@ -406,7 +582,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
                 {items.map((s, i) => (
                   <div key={s.id} style={{ textAlign: 'center', padding: '8px 24px', borderRight: i < items.length - 1 ? `1px solid ${plain ? '#eee' : 'rgba(255,255,255,0.1)'}` : 'none' }}>
-                    <div style={{ fontFamily: heading, fontSize: 'clamp(40px,5vw,64px)', fontWeight: 700, color: plain ? primary : readableOn(primary, '#1a1a2e'), lineHeight: 1, marginBottom: 10 }}>{s.value}</div>
+                    <CountUp value={s.value} style={{ fontFamily: heading, fontSize: 'clamp(40px,5vw,64px)', fontWeight: 700, color: plain ? primary : readableOn(primary, '#1a1a2e'), lineHeight: 1, marginBottom: 10 }} />
                     <div style={{ fontSize: 13, fontWeight: 600, color: plain ? '#888' : 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.5 }}>{s.label}</div>
                   </div>
                 ))}
@@ -1045,7 +1221,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
       `}</style>
       <div ref={animRef}>
         {blocks.map((b, i) => {
-          const el = applyBlockStyle(renderBlock(b, blockInverted(b, primary)), b, { primary })
+          const el = applyBlockStyle(renderBlock(b, blockInverted(b, primary, sec)), b, { primary, secondary: sec })
           return (!el || i === 0) ? el : cloneElement(el, { className: ((el.props.className || '') + ' lbr-reveal').trim() })
         })}
       </div>

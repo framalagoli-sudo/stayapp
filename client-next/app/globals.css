@@ -52,3 +52,7 @@ a {
 @media (prefers-reduced-motion: reduce) {
   .lbr-anim .lbr-reveal { opacity: 1; transform: none; transition: none; }
 }
+
+/* Visibilità per dispositivo (per-blocco). */
+@media (max-width: 768px) { .lbr-hide-mob { display: none !important; } }
+@media (min-width: 769px) { .lbr-hide-desk { display: none !important; } }

@@ -19,17 +19,22 @@ export const BLOCK_TYPES = [
   { type: 'team',         label: 'Team',               group: 'layout',      emoji: '👥', desc: 'Card con foto, nome, ruolo, bio' },
   { type: 'steps',        label: 'Steps / Processo',   group: 'layout',      emoji: '🔢', desc: 'Passaggi numerati con icona e testo' },
   { type: 'colonne',      label: 'Colonne',            group: 'layout',      emoji: '▦', desc: 'Due o tre colonne di testo affiancate' },
-  { type: 'divisore',     label: 'Divisore / Spazio',  group: 'layout',      emoji: '➖', desc: 'Spazio vuoto o linea sottile tra le sezioni' },
+  { type: 'accordion',    label: 'Accordion',          group: 'layout',      emoji: '🪗', desc: 'Sezioni a fisarmonica (titolo + contenuto) apribili — per contenuti lunghi' },
+  { type: 'divisore',     label: 'Divisore / Spazio',  group: 'layout',      emoji: '➖', desc: 'Spazio vuoto, linea o separatore a forma (onda/diagonale) tra le sezioni' },
+  { type: 'social',       label: 'Social',             group: 'layout',      emoji: '🔗', desc: 'Icone dei social con link' },
   { type: 'highlights',   label: 'Highlights',         group: 'marketing',   emoji: '⭐', desc: 'Icona + testo breve, griglia 3 colonne' },
   { type: 'stats',        label: 'Statistiche',        group: 'marketing',   emoji: '📊', desc: 'Banda scura con numeri grandi' },
   { type: 'cta_banner',   label: 'Banner CTA',         group: 'marketing',   emoji: '📣', desc: 'Banda colorata con call to action (ripetibile)' },
   { type: 'annuncio',     label: 'Barra annuncio',     group: 'marketing',   emoji: '📢', desc: 'Striscia sottile con annuncio/promo e link — di solito come primo blocco' },
+  { type: 'countdown',    label: 'Countdown',          group: 'marketing',   emoji: '⏳', desc: 'Conto alla rovescia verso una data (evento, lancio, offerta)' },
   { type: 'testimonianze',label: 'Testimonianze',      group: 'marketing',   emoji: '💬', desc: 'Card recensioni con stelle e autore' },
   { type: 'promozioni',   label: 'Promozioni',         group: 'marketing',   emoji: '🏷️', desc: 'Card offerte con badge e scadenza' },
   { type: 'pacchetti',    label: 'Pacchetti / Prezzi', group: 'marketing',   emoji: '📦', desc: 'Pricing card con inclusi e CTA' },
   { type: 'faq',          label: 'FAQ',                group: 'marketing',   emoji: '❓', desc: 'Accordion domande e risposte' },
   { type: 'clienti',     label: 'Loghi clienti',      group: 'marketing',   emoji: '🏢', desc: 'Carosello infinito di loghi clienti/partner — grigi di default, colorati al hover' },
   { type: 'carosello',    label: 'Carosello',          group: 'media',       emoji: '🎠', desc: 'Carosello scorrevole di card (immagine + titolo + testo) — frecce, puntini, swipe e autoplay. Più elementi visibili per volta' },
+  { type: 'before_after', label: 'Prima / Dopo',       group: 'media',       emoji: '🔀', desc: 'Confronto tra due immagini con maniglia trascinabile' },
+  { type: 'embed',        label: 'HTML / Embed',       group: 'media',       emoji: '</>', desc: 'Incolla codice HTML/iframe (mappe, widget, prenotazioni…) — mostrato in sandbox sicura' },
   { type: 'immagine',     label: 'Immagine',           group: 'media',       emoji: '🖼', desc: 'Immagine singola caricata, con didascalia e link — indipendente dall\'app' },
   { type: 'galleria_immagini', label: 'Galleria immagini', group: 'media',   emoji: '🖼', desc: 'Griglia di immagini caricate ad hoc (indipendente dall\'app)' },
   { type: 'gallery',      label: 'Galleria foto (app)',group: 'media',       emoji: '🖼', desc: 'Griglia automatica con le foto dell\'entità' },
@@ -52,6 +57,11 @@ export const BLOCK_DEFAULTS = {
   colonne:      { titolo: '', columns: 2, items: [] },
   divisore:     { variant: 'space', size: 'medium' },
   annuncio:     { text: '', link_text: '', link_url: '', bg: 'primary' },
+  accordion:    { titolo: '', items: [] },
+  social:       { titolo: '', items: [] },
+  countdown:    { titolo: '', sottotitolo: '', target: '' },
+  before_after: { before_url: '', after_url: '', before_label: 'Prima', after_label: 'Dopo' },
+  embed:        { html: '', height: 400 },
   about:        { title: '', text: '' },
   pulsante:     { text: 'Scopri di più', url: '', style: 'filled', size: 'medium', align: 'center' },
   foto_testo:   { title: '', text: '', image_url: '', inverti: false, button_label: '', button_url: '' },
@@ -97,16 +107,22 @@ export const BLOCK_BG_OPTIONS = [
   { key: 'muted',   label: 'Grigio' },
   { key: 'dark',    label: 'Scuro' },
   { key: 'primary', label: 'Colore tema' },
+  { key: 'gradient',label: 'Gradiente' },
   { key: 'image',   label: 'Immagine' },
 ]
 // Risolve lo sfondo di una sezione dallo style + tema. Ritorna { background, inverted }.
 // inverted = testo da schiarire (fondo scuro/immagine). 'primary' invertito solo se il
 // colore tema è scuro. 'image' usa bg_image + velo scuro (overlay 0-0.85).
-export function resolveBlockBg(style, primary) {
+export function resolveBlockBg(style, primary, secondary) {
   const st = style || {}
   if (st.bg === 'primary') {
     const p = primary || '#1a1a2e'
     return { background: p, inverted: contrastRatio('#ffffff', p) >= 3 }
+  }
+  if (st.bg === 'gradient') {
+    const a = primary || '#1a1a2e'
+    const b = secondary || primary || '#1a1a2e'
+    return { background: `linear-gradient(135deg, ${a} 0%, ${b} 100%)`, inverted: contrastRatio('#ffffff', a) >= 3 }
   }
   if (st.bg === 'image') {
     if (!st.bg_image) return { background: null, inverted: false }
@@ -128,7 +144,7 @@ export const BLOCK_PADY_OPTIONS = [
 ]
 // Blocchi con testo chiaro / sfondo intenzionalmente scuro: niente controllo sfondo
 // (un fondo chiaro renderebbe il testo illeggibile).
-export const BG_EXCLUDED_TYPES = ['hero', 'hero_slider', 'stats', 'cta_banner', 'video', 'divisore', 'annuncio', 'menu']
+export const BG_EXCLUDED_TYPES = ['hero', 'hero_slider', 'stats', 'cta_banner', 'video', 'divisore', 'annuncio', 'menu', 'embed', 'before_after']
 export function blockSupportsBg(type) { return !BG_EXCLUDED_TYPES.includes(type) }
 
 // ── Tipografia per-blocco (Fase 1.5) — solo blocchi con rich-text ────────────
@@ -198,9 +214,9 @@ function parsePadding(p) {
 // via cloneElement, senza riscrivere i singoli case dei renderer. Additivo: se non
 // c'è style o non ci sono override validi, ritorna l'elemento immutato. Condiviso da
 // PaginaPage (sotto-pagine) e LandingBlockRenderer (home) per evitare duplicazione.
-export function blockInverted(block, primary) {
+export function blockInverted(block, primary, secondary) {
   if (!block?.style || !blockSupportsBg(block.type)) return false
-  return resolveBlockBg(block.style, primary).inverted
+  return resolveBlockBg(block.style, primary, secondary).inverted
 }
 
 export function applyBlockStyle(el, block, opts = {}) {
@@ -209,12 +225,16 @@ export function applyBlockStyle(el, block, opts = {}) {
   const ov = {}
   let inverted = false
   if (blockSupportsBg(block.type)) {
-    const r = resolveBlockBg(st, opts.primary)
+    const r = resolveBlockBg(st, opts.primary, opts.secondary)
     if (r.background) { ov.background = r.background; inverted = r.inverted }
   }
   const pad = BLOCK_PADY[st.paddingY]
   const hasPad = st.paddingY && st.paddingY !== 'default' && pad != null
-  if (!Object.keys(ov).length && !hasPad) return el
+  const classes = []
+  if (inverted) classes.push('lbr-inv')
+  if (st.hide_mobile) classes.push('lbr-hide-mob')
+  if (st.hide_desktop) classes.push('lbr-hide-desk')
+  if (!Object.keys(ov).length && !hasPad && !classes.length) return el
   const base = { ...(el.props.style || {}) }
   if (hasPad) {
     // preserva la spaziatura orizzontale nativa, sovrascrive solo la verticale
@@ -226,7 +246,7 @@ export function applyBlockStyle(el, block, opts = {}) {
     ov.paddingBottom = `${pad}px`
   }
   const props = { style: { ...base, ...ov } }
-  if (inverted) props.className = ((el.props.className || '') + ' lbr-inv').trim()
+  if (classes.length) props.className = ((el.props.className || '') + ' ' + classes.join(' ')).trim()
   return cloneElement(el, props)
 }
 

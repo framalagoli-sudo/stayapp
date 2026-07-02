@@ -6,7 +6,7 @@ import {
   GripVertical, AlignLeft, Image, Grid, Users, List, Star, BarChart2, Zap,
   MessageCircle, Tag, Package, HelpCircle, Video, Settings, Compass, Map,
   Calendar, FileText, Clock, Mail, Phone, MapPin, ChevronDown, ChevronUp,
-  Plus, Trash2, Copy, ImageIcon, Layers, Building2, GalleryHorizontal, Columns, Minus, Megaphone, Utensils,
+  Plus, Trash2, Copy, ImageIcon, Layers, Building2, GalleryHorizontal, Columns, Minus, Megaphone, Utensils, Share2, Code, SlidersHorizontal,
 } from 'lucide-react'
 import AiButton from '@/components/admin/AiButton'
 import RichTextEditor from '@/components/admin/RichTextEditor'
@@ -28,6 +28,7 @@ function slugify(s) {
 const BLOCK_ICON_MAP = {
   hero: Layers, hero_slider: GalleryHorizontal, carosello: GalleryHorizontal, about: AlignLeft, pulsante: Zap, foto_testo: Image, paragrafi: Grid,
   colonne: Columns, divisore: Minus, annuncio: Megaphone, menu: Utensils,
+  accordion: ChevronDown, social: Share2, countdown: Clock, before_after: SlidersHorizontal, embed: Code,
   team: Users, steps: List, highlights: Star, stats: BarChart2,
   cta_banner: Zap, testimonianze: MessageCircle, promozioni: Tag,
   pacchetti: Package, faq: HelpCircle, immagine: Image, galleria_immagini: Grid, gallery: ImageIcon, video: Video,
@@ -311,6 +312,67 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
         </div>
       </div>
     )
+    case 'accordion': return (
+      <div>
+        <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <ItemListEditor items={data.items} onChange={v => upd('items', v)}
+          newItem={{ title: '', text: '' }}
+          fields={[{ key: 'title', label: 'Titolo' }, { key: 'text', label: 'Contenuto', type: 'textarea', rows: 3 }]} />
+      </div>
+    )
+    case 'social': return (
+      <div>
+        <Field label="Titolo (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <ItemListEditor items={data.items} onChange={v => upd('items', v)}
+          newItem={{ network: 'instagram', url: '' }}
+          fields={[{ key: 'network', label: 'Social', placeholder: 'instagram, facebook, whatsapp, youtube…' }, { key: 'url', label: 'Link', placeholder: 'https://...' }]} />
+      </div>
+    )
+    case 'countdown': return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="Titolo (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} />
+        <Field label="Sottotitolo (opz.)" value={data.sottotitolo} onChange={v => upd('sottotitolo', v)} />
+        <div>
+          <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Data e ora di fine</label>
+          <input type="datetime-local" value={data.target || ''} onChange={e => upd('target', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }} />
+        </div>
+      </div>
+    )
+    case 'before_after': return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {['before', 'after'].map(side => {
+          const key = `${side}_url`
+          return (
+            <div key={side}>
+              <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 600 }}>{side === 'before' ? 'Immagine PRIMA' : 'Immagine DOPO'}</label>
+              {data[key] && <img src={data[key]} alt="" style={{ width: '100%', maxHeight: 90, objectFit: 'cover', borderRadius: 8, marginBottom: 6 }} />}
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
+                <UnsplashPicker label="Unsplash" onPick={url => upd(key, url)} />
+                <UploadBtn label="Carica" entityId={entityId} entityTipo={entityTipo} onUrl={url => upd(key, url)} />
+              </div>
+              <input type="text" value={data[key] || ''} onChange={e => upd(key, e.target.value)} placeholder="https://..." style={{ width: '100%', border: '1px solid #e0e0e8', borderRadius: 7, padding: '9px 12px', fontSize: 13, boxSizing: 'border-box' }} />
+            </div>
+          )
+        })}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Field label="Etichetta PRIMA" value={data.before_label} onChange={v => upd('before_label', v)} style={{ flex: 1 }} />
+          <Field label="Etichetta DOPO" value={data.after_label} onChange={v => upd('after_label', v)} style={{ flex: 1 }} />
+        </div>
+      </div>
+    )
+    case 'embed': return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div>
+          <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Codice HTML / iframe</label>
+          <textarea value={data.html || ''} onChange={e => upd('html', e.target.value)} rows={6} placeholder="<iframe src=... ></iframe>" style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '9px 12px', fontSize: 12, fontFamily: 'monospace', boxSizing: 'border-box' }} />
+          <p style={{ fontSize: 11, color: '#aaa', margin: '4px 0 0' }}>Incolla il codice fornito dal servizio (mappe, prenotazioni, widget). Mostrato in una sandbox sicura.</p>
+        </div>
+        <div style={{ maxWidth: 160 }}>
+          <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Altezza (px)</label>
+          <input type="number" min="100" value={data.height || 400} onChange={e => upd('height', Number(e.target.value))} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }} />
+        </div>
+      </div>
+    )
     case 'menu': return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: 12, background: '#f8f9ff', borderRadius: 8, border: '1px solid #e8ecff' }}>
@@ -341,6 +403,8 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
           <select value={data.variant || 'space'} onChange={e => upd('variant', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
             <option value="space">Spazio vuoto</option>
             <option value="line">Linea sottile</option>
+            <option value="wave">Onda</option>
+            <option value="diagonal">Diagonale</option>
           </select>
         </div>
         <div style={{ flex: 1, minWidth: 140 }}>
@@ -349,6 +413,17 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
             <option value="small">Piccola</option><option value="medium">Media</option><option value="large">Grande</option>
           </select>
         </div>
+        {(data.variant === 'wave' || data.variant === 'diagonal') && (
+          <div style={{ flex: 1, minWidth: 140 }}>
+            <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Colore forma</label>
+            <select value={data.color || 'muted'} onChange={e => upd('color', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+              <option value="muted">Grigio</option>
+              <option value="primary">Colore tema</option>
+              <option value="secondary">Accento</option>
+              <option value="dark">Scuro</option>
+            </select>
+          </div>
+        )}
       </div>
     )
     case 'annuncio': return (
@@ -752,6 +827,14 @@ function BlockStylePanel({ block, onChange, entityId, entityTipo }) {
           <input type="range" min="0" max="0.85" step="0.05" value={st.bg_overlay ?? 0.5} onChange={e => set('bg_overlay', parseFloat(e.target.value))} style={{ width: '100%' }} />
         </div>
       )}
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 14, borderTop: '1px solid #f0f0f0', paddingTop: 14 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
+          <input type="checkbox" checked={!!st.hide_mobile} onChange={e => set('hide_mobile', e.target.checked)} /> Nascondi su mobile
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
+          <input type="checkbox" checked={!!st.hide_desktop} onChange={e => set('hide_desktop', e.target.checked)} /> Nascondi su desktop
+        </label>
+      </div>
     </div>
   )
 }
