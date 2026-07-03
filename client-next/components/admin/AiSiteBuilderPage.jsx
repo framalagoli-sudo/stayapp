@@ -255,6 +255,7 @@ export default function AiSiteBuilderPage() {
   // Modalità "ho già i contenuti": incolla un documento → l'AI costruisce i blocchi
   const [srcMode,     setSrcMode]     = useState('guided')  // 'guided' | 'document'
   const [documento,   setDocumento]   = useState('')
+  const [docMulti,    setDocMulti]    = useState(false)     // false = one-page, true = più pagine
 
   const canNext = [
     !!entityId,
@@ -320,7 +321,7 @@ export default function AiSiteBuilderPage() {
     try {
       const data = await apiFetch('/api/ai/from-document', {
         method: 'POST',
-        body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, documento, template_id: template }),
+        body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, documento, template_id: template, multipagina: docMulti }),
       })
       setResult(data || { ok: true })
     } catch (e) {
@@ -414,6 +415,23 @@ export default function AiSiteBuilderPage() {
           <textarea value={documento} onChange={e => setDocumento(e.target.value)}
             placeholder={'Incolla qui il documento con tutte le sezioni del sito…'} style={{ ...ta, minHeight: 220 }} maxLength={12000} />
           <div style={{ fontSize: 11, color: '#bbb', textAlign: 'right', marginTop: 4 }}>{documento.length}/12000</div>
+        </Field>
+        <Field label="Struttura del sito" hint="Una pagina è più semplice; scegli più pagine se il documento ha sezioni distinte da separare">
+          <div style={{ display: 'flex', gap: 10 }}>
+            {[
+              { v: false, label: 'Una pagina sola', desc: 'Consigliato · tutto in uno scroll' },
+              { v: true,  label: 'Più pagine',       desc: 'Home + pagine seguendo il documento' },
+            ].map(o => (
+              <div key={String(o.v)} onClick={() => setDocMulti(o.v)} style={{
+                flex: 1, padding: '12px 14px', borderRadius: 10, cursor: 'pointer',
+                border: `2px solid ${docMulti === o.v ? '#1a1a2e' : '#e8e8e8'}`,
+                background: docMulti === o.v ? '#f0f4ff' : '#fff', transition: 'all 0.12s',
+              }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: '#1a1a2e' }}>{o.label}</div>
+                <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{o.desc}</div>
+              </div>
+            ))}
+          </div>
         </Field>
         <Field label="Scegli il design (colori e stile) *" hint="La struttura viene dal tuo documento; da qui prendiamo solo il look">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 14 }}>
