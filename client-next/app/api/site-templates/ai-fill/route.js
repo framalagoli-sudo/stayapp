@@ -110,7 +110,7 @@ ${JSON.stringify(indexed)}`
 
 export async function POST(request) {
   const body = await request.json().catch(() => ({}))
-  const { entity_tipo, entity_id, template_id, modalita = 'uguale', brief = '' } = body
+  const { entity_tipo, entity_id, template_id, modalita = 'uguale', brief = '', answers = {} } = body
   if (!entity_tipo || !entity_id || !template_id) {
     return NextResponse.json({ error: 'Parametri mancanti' }, { status: 400 })
   }
@@ -127,11 +127,21 @@ export async function POST(request) {
   const { data: ent } = await supabaseAdmin.from(table)
     .select('name, description, theme, minisito').eq('id', entity_id).single()
 
+  // Profilo business per l'AI: i dati raccolti nel wizard (settore/servizi/punti
+  // forza/tono/target/obiettivo) — più ne arrivano, più i testi sono su misura.
+  const a = answers || {}
   const business = [
     `Nome: ${ent?.name || '(senza nome)'}`,
     `Tipo: ${TIPO_LABEL[entity_tipo] || entity_tipo}`,
-    `Descrizione: ${(brief && brief.trim()) || ent?.description || '(non fornita — usa un tono generico adatto al tipo)'}`,
-  ].join('\n')
+    a.settore     && `Settore: ${a.settore}`,
+    `Descrizione: ${(a.descrizione && a.descrizione.trim()) || (brief && brief.trim()) || ent?.description || '(non fornita — usa un tono generico adatto al tipo)'}`,
+    a.servizi     && `Servizi/prodotti principali:\n${a.servizi}`,
+    a.punti_forza && `Punti di forza / cosa lo distingue:\n${a.punti_forza}`,
+    a.obiettivo   && `Obiettivo del sito: ${a.obiettivo}`,
+    a.tono        && `Tono di comunicazione: ${a.tono}`,
+    a.target      && `Target principale: ${a.target}`,
+    a.cta_text    && `Call to action preferita: ${a.cta_text}`,
+  ].filter(Boolean).join('\n')
 
   // Riempi i testi via AI; su errore ripiega sui testi d'esempio del template.
   let filledBlocks = tpl.blocks

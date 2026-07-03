@@ -1,19 +1,23 @@
-﻿'use client'
+'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Sparkles, Globe, FileText, ChevronRight, ChevronLeft, Check, Wand2, Target, Tag, Star, Calendar, Briefcase, Users, Home, Utensils, Activity, ShoppingCart, Heart, ExternalLink, LayoutTemplate } from 'lucide-react'
+import { Sparkles, Globe, ChevronRight, ChevronLeft, Check, Wand2, Target, Tag, Star, Calendar, Briefcase, Users, Home, Utensils, Activity, ShoppingCart, Heart, ExternalLink, Eye } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
-import SiteTemplateGallery from '@/components/admin/SiteTemplateGallery'
+import { SITE_TEMPLATES } from '@/lib/siteTemplates'
 
-const TOTAL_STEPS = 5
+// AI Site Builder — un unico flusso lineare "per dummies":
+//   Sito → Obiettivo → Il tuo business → Design (scegli un modello)
+// e poi l'AI riempie il modello scelto coi dati raccolti (endpoint ai-fill).
+// Niente più bivio template/da-zero: il modello è semplicemente lo step "design".
+
+const TOTAL_STEPS = 4
 
 const LOADING_MSGS = [
   'Analizzando il tuo business…',
-  'Progettando la struttura delle pagine…',
-  'Scrivendo i contenuti…',
-  'Creando titoli e descrizioni…',
-  'Ottimizzando per l\'obiettivo scelto…',
-  'Finalizzando le pagine…',
+  'Scegliendo le foto giuste…',
+  'Scrivendo i contenuti sul tuo business…',
+  'Adattando il modello scelto…',
+  'Finalizzando la home…',
 ]
 
 const TONI   = ['Professionale', 'Amichevole', 'Formale', 'Lusso', 'Minimal', 'Energico']
@@ -28,48 +32,6 @@ const OBIETTIVI = [
   { id: 'evento',       icon: Users,      label: 'Evento',           desc: 'Presenta un evento con programma e iscrizioni' },
 ]
 
-const WIRE_BLOCKS = {
-  hero:          { bg: '#1a1a2e', h: 38, label: 'HERO',          dark: true },
-  highlights:    { bg: '#eef2ff', h: 15, label: 'HIGHLIGHTS',    dark: false },
-  stats:         { bg: '#374151', h: 15, label: 'STATS',         dark: true },
-  about:         { bg: '#f9fafb', h: 18, label: 'CHI SIAMO',     dark: false },
-  foto_testo:    { bg: '#fff',    h: 20, label: 'FOTO + TESTO',  dark: false, border: true },
-  testimonianze: { bg: '#f0fdf4', h: 16, label: 'RECENSIONI',    dark: false },
-  faq:           { bg: '#fffbeb', h: 13, label: 'FAQ',           dark: false },
-  cta_banner:    { bg: '#6366f1', h: 18, label: 'CTA',          dark: true },
-  gallery:       { bg: '#fdf2f8', h: 16, label: 'GALLERY',       dark: false },
-  team:          { bg: '#ecfdf5', h: 16, label: 'TEAM',          dark: false },
-  steps:         { bg: '#eff6ff', h: 16, label: 'COME FUNZIONA', dark: false },
-  pacchetti:     { bg: '#fef9c3', h: 18, label: 'PREZZI',        dark: false },
-  contatti:      { bg: '#f5f5f5', h: 16, label: 'CONTATTI',      dark: false },
-  newsletter:    { bg: '#fdf4ff', h: 13, label: 'NEWSLETTER',    dark: false },
-  paragrafi:     { bg: '#f0f9ff', h: 16, label: 'SERVIZI',       dark: false },
-}
-
-const TEMPLATES = [
-  {
-    id:      'essential',
-    name:    'Essenziale',
-    desc:    'Diretto e pulito. Pochi blocchi, messaggio chiaro.',
-    hint:    '5-6 blocchi · testi brevi e incisivi',
-    preview: ['hero', 'highlights', 'about', 'cta_banner', 'contatti'],
-  },
-  {
-    id:      'complete',
-    name:    'Completo',
-    desc:    'Struttura professionale con tutto il necessario.',
-    hint:    '7-9 blocchi · ottimizzato per l\'obiettivo',
-    preview: ['hero', 'highlights', 'foto_testo', 'stats', 'testimonianze', 'faq', 'cta_banner', 'contatti'],
-  },
-  {
-    id:      'narrative',
-    name:    'Narrativo',
-    desc:    'Storia e coinvolgimento emotivo.',
-    hint:    'foto+testo alternati · percorso empatico',
-    preview: ['hero', 'about', 'foto_testo', 'foto_testo', 'testimonianze', 'cta_banner', 'contatti'],
-  },
-]
-
 const PRESETS = [
   { label: 'Hotel / Resort',        icon: Home,       settore: 'Hotel boutique',                        servizi: 'Camere Superior\nSpa e centro benessere\nRistorante gourmet\nPiscina',       cta_text: 'Prenota ora' },
   { label: 'Ristorante',            icon: Utensils,   settore: 'Ristorante italiano',                   servizi: 'Cucina tradizionale\nMenu degustazione\nVini selezionati\nPrivate dining',  cta_text: 'Prenota un tavolo' },
@@ -81,48 +43,22 @@ const PRESETS = [
   { label: 'Beauty / SPA',          icon: Sparkles,   settore: 'Centro estetico e spa',                 servizi: 'Trattamenti viso\nMassaggi terapeutici\nUnghie e manicure',                cta_text: 'Prenota ora' },
 ]
 
-// ── Mini wireframe visual preview ─────────────────────────────────────────────
-function MiniWireframe({ blocks }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, borderRadius: 8, overflow: 'hidden', border: '1px solid #e0e0e0', background: '#fff' }}>
-      {blocks.map((b, i) => {
-        const w = WIRE_BLOCKS[b] || { bg: '#f0f0f0', h: 13, label: b.toUpperCase(), dark: false }
-        return (
-          <div key={i} style={{
-            height: w.h, background: w.bg,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 6.5, fontWeight: 800, letterSpacing: 0.6,
-            color: w.dark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.28)',
-            borderTop: w.border ? '1px solid #e8e8e8' : 'none',
-          }}>
-            {w.label}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
+// Modelli suggeriti in base al tipo di entità (ordinati per primi nello step Design).
+const TIPO_HINT = { struttura: ['hotel'], ristorante: ['ristorante'], attivita: ['esperienze', 'fitness', 'beauty', 'professionista', 'servizi'] }
 
-// ── Step indicator ─────────────────────────────────────────────────────────────
-function BuilderHeader({ onBack }) {
+// ── Header ──────────────────────────────────────────────────────────────────────
+function BuilderHeader() {
   return (
-    <div style={{ marginBottom: 24 }}>
-      {onBack && (
-        <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 12 }}>
-          <ChevronLeft size={15} strokeWidth={1.5} /> Cambia modo
-        </button>
-      )}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Sparkles size={20} strokeWidth={1.5} color="#fff" />
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+      <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Sparkles size={20} strokeWidth={1.5} color="#fff" />
+      </div>
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#1a1a2e' }}>AI Site Builder</h1>
+          <span style={{ fontSize: 10, fontWeight: 800, color: '#fff', background: '#6366f1', padding: '2px 7px', borderRadius: 4, letterSpacing: 0.5 }}>BETA</span>
         </div>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#1a1a2e' }}>AI Site Builder</h1>
-            <span style={{ fontSize: 10, fontWeight: 800, color: '#fff', background: '#6366f1', padding: '2px 7px', borderRadius: 4, letterSpacing: 0.5 }}>BETA</span>
-          </div>
-          <p style={{ margin: 0, fontSize: 13, color: '#999' }}>Crea il tuo sito con l'intelligenza artificiale</p>
-        </div>
+        <p style={{ margin: 0, fontSize: 13, color: '#999' }}>Crea il tuo sito con l'intelligenza artificiale</p>
       </div>
     </div>
   )
@@ -253,45 +189,74 @@ function EntitySelector({ onSelect, selectedId }) {
   )
 }
 
+// ── TemplateCard: anteprima reale (iframe scalato) + selezione ──────────────────
+function TemplateCard({ tpl, selected, recommended, onSelect }) {
+  const W = 1180, scale = 0.19
+  return (
+    <div onClick={() => onSelect(tpl.id)} style={{
+      border: `2px solid ${selected ? '#1a1a2e' : '#e8e8e8'}`, borderRadius: 12, padding: 10,
+      background: selected ? '#f0f4ff' : '#fff', cursor: 'pointer',
+      display: 'flex', flexDirection: 'column', gap: 8, transition: 'all 0.12s',
+    }}>
+      <div style={{ position: 'relative', width: '100%', height: 150, overflow: 'hidden', borderRadius: 8, border: '1px solid #eee', background: '#fff' }}>
+        <iframe src={`/template-preview/${tpl.id}`} title={tpl.nome} loading="lazy" scrolling="no"
+          style={{ width: W, height: W * 1.25, border: 0, transform: `scale(${scale})`, transformOrigin: 'top left', pointerEvents: 'none' }} />
+        {recommended && (
+          <span style={{ position: 'absolute', top: 8, left: 8, fontSize: 9, fontWeight: 800, color: '#1a7a4a', background: '#e8f9f0', padding: '3px 7px', borderRadius: 6, letterSpacing: 0.3 }}>CONSIGLIATO</span>
+        )}
+        {selected && (
+          <div style={{ position: 'absolute', top: 8, right: 8, width: 22, height: 22, borderRadius: '50%', background: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Check size={13} color="#fff" strokeWidth={2} />
+          </div>
+        )}
+      </div>
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+          <div style={{ fontWeight: 700, fontSize: 13.5, color: '#1a1a2e' }}>{tpl.nome}</div>
+          <a href={`/template-preview/${tpl.id}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: '#5b6af8', textDecoration: 'none', flexShrink: 0 }}>
+            <Eye size={12} strokeWidth={1.5} /> Anteprima
+          </a>
+        </div>
+        <div style={{ fontSize: 11.5, color: '#888', lineHeight: 1.4, marginTop: 2 }}>{tpl.descrizione}</div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function AiSiteBuilderPage() {
   const router = useRouter()
 
-  const [flow,    setFlow]    = useState(null)   // null = scelta, 'template' = galleria, 'ai' = wizard
-  const [tplDone, setTplDone] = useState(false)  // modello applicato con successo
   const [step,    setStep]    = useState(0)
   const [loading, setLoading] = useState(false)
   const [loadMsg, setLoadMsg] = useState(0)
   const [result,  setResult]  = useState(null)
   const [error,   setError]   = useState(null)
 
-  // Step 0: obiettivo
-  const [obiettivo,   setObiettivo]   = useState('')
-  // Step 1: template
-  const [template,    setTemplate]    = useState('')
-  // Step 2: tipo + entità
-  const [mode,        setMode]        = useState('landing')
+  // Step 0: entità
   const [entityTipo,  setEntityTipo]  = useState('struttura')
   const [entityId,    setEntityId]    = useState('')
   const [entityName,  setEntityName]  = useState('')
   const [entitySlug,  setEntitySlug]  = useState('')
-  // Step 3: business
-  const [nome,        setNome]        = useState('')
+  // Step 1: obiettivo
+  const [obiettivo,   setObiettivo]   = useState('')
+  // Step 2: business
   const [settore,     setSettore]     = useState('')
   const [descrizione, setDescrizione] = useState('')
-  // Step 4: contenuto + stile
-  const [servizi,    setServizi]    = useState('')
-  const [puntiForza, setPuntiForza] = useState('')
-  const [ctaText,    setCtaText]    = useState('Contattaci')
-  const [tono,       setTono]       = useState('Professionale')
-  const [target,     setTarget]     = useState('Tutti')
+  const [servizi,     setServizi]     = useState('')
+  const [puntiForza,  setPuntiForza]  = useState('')
+  const [ctaText,     setCtaText]     = useState('Contattaci')
+  const [tono,        setTono]        = useState('Professionale')
+  const [target,      setTarget]      = useState('Tutti')
+  // Step 3: design
+  const [template,    setTemplate]    = useState('')
 
   const canNext = [
-    !!obiettivo,
-    !!template,
     !!entityId,
-    !!nome.trim() && !!settore.trim(),
-    !!servizi.trim(),
+    !!obiettivo,
+    !!settore.trim() && !!servizi.trim(),
+    !!template,
   ][step] ?? false
 
   function selectEntity(tipo, id, name, slug) {
@@ -299,7 +264,6 @@ export default function AiSiteBuilderPage() {
     setEntityId(id)
     setEntityName(name)
     setEntitySlug(slug || '')
-    if (!nome) setNome(name)
   }
 
   function applyPreset(preset) {
@@ -317,22 +281,22 @@ export default function AiSiteBuilderPage() {
       setLoadMsg(msgIdx)
     }, 2200)
     try {
-      const data = await apiFetch('/api/ai/generate-site', {
+      const data = await apiFetch('/api/site-templates/ai-fill', {
         method: 'POST',
         body: JSON.stringify({
           entity_tipo: entityTipo,
           entity_id:   entityId,
-          mode,
-          obiettivo,
-          template,
+          template_id: template,
+          modalita:    'uguale',
           answers: {
-            nome, settore, descrizione,
-            servizi, punti_forza: puntiForza,
+            obiettivo: OBIETTIVI.find(o => o.id === obiettivo)?.label || obiettivo,
+            settore, descrizione, servizi,
+            punti_forza: puntiForza,
             cta_text: ctaText, tono, target,
           },
         }),
       })
-      setResult(data.pages || [])
+      setResult(data || { ok: true })
     } catch (e) {
       setError(e.message || 'Errore durante la generazione')
     } finally {
@@ -341,12 +305,10 @@ export default function AiSiteBuilderPage() {
     }
   }
 
-  function pageEditUrl(page) { return `/admin/pagine/${page.id}` }
-
   function entitySitoUrl() {
-    if (entityTipo === 'struttura') return `/admin/struttura/${entityId}/sito`
-    if (entityTipo === 'ristorante') return `/admin/ristoranti/${entityId}/pagine`
-    if (entityTipo === 'attivita') return `/admin/attivita/${entityId}/pagine`
+    if (entityTipo === 'struttura')  return `/admin/struttura/${entityId}/sito`
+    if (entityTipo === 'ristorante') return `/admin/ristoranti/${entityId}/sito`
+    if (entityTipo === 'attivita')   return `/admin/attivita/${entityId}/sito`
     return '/admin'
   }
 
@@ -376,143 +338,57 @@ export default function AiSiteBuilderPage() {
       <div style={{ maxWidth: 560 }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}>🎉</div>
-          <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a2e', margin: '0 0 8px' }}>
-            {mode === 'landing' ? 'Landing page creata!' : 'Sito creato!'}
-          </h2>
+          <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a2e', margin: '0 0 8px' }}>Sito creato!</h2>
           <p style={{ color: '#666', fontSize: 15, margin: 0 }}>
-            {result.length} {result.length === 1 ? 'pagina pubblicata' : 'pagine pubblicate'} e visibili subito.
+            La home è pubblicata e già online. Ora rifiniscila come vuoi nell'editor.
           </p>
         </div>
 
         {liveSiteUrl && (
           <a href={liveSiteUrl} target="_blank" rel="noopener noreferrer"
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px', marginBottom: 20, background: 'linear-gradient(135deg, #667eea, #764ba2)', color: '#fff', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: 14 }}>
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px', marginBottom: 16, background: 'linear-gradient(135deg, #667eea, #764ba2)', color: '#fff', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: 14 }}>
             <ExternalLink size={15} strokeWidth={1.5} /> Vedi il sito live
           </a>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
-          {result.map(page => (
-            <div key={page.id} style={{ display: 'flex', alignItems: 'center', gap: 14, background: '#fff', borderRadius: 12, padding: '14px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: page.published ? '#e8f9f0' : '#f0f4ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <FileText size={16} strokeWidth={1.5} color={page.published ? '#1a7a4a' : '#1a1a2e'} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>{page.titolo}</div>
-                <div style={{ fontSize: 12, color: '#1a7a4a' }}>
-                  {page.slug === '__home__' ? 'Homepage · pubblicata' : `/${page.slug} · pubblicata`}
-                </div>
-              </div>
-              <button onClick={() => router.push(pageEditUrl(page))} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 14px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                Modifica <ChevronRight size={13} strokeWidth={1.5} />
-              </button>
-            </div>
-          ))}
-        </div>
         <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={() => router.push(entitySitoUrl())} style={{ flex: 1, padding: '12px', background: '#f5f5f5', color: '#1a1a2e', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-            Gestisci pagine
+          <button onClick={() => router.push(entitySitoUrl())} style={{ flex: 1, padding: '12px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+            Vai all'editor
           </button>
-          <button onClick={() => { setResult(null); setStep(0) }} style={{ padding: '12px 20px', background: '#fff', color: '#666', border: '1px solid #e0e0e0', borderRadius: 10, fontSize: 14, cursor: 'pointer' }}>
-            Genera un altro
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // ── Scelta iniziale: parti da un modello o genera con l'AI ────────────────────
-  const choiceCard = {
-    display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8,
-    padding: '22px 20px', borderRadius: 14, cursor: 'pointer', textAlign: 'left',
-    border: '2px solid #e8e8e8', background: '#fff', transition: 'all 0.12s',
-  }
-  if (!flow) {
-    return (
-      <div style={{ maxWidth: 640 }}>
-        <BuilderHeader />
-        <p style={{ fontSize: 14, color: '#555', margin: '0 0 20px', lineHeight: 1.6 }}>
-          Come vuoi creare il sito? Parti da un <strong>modello pronto</strong> (l'AI lo riempie coi tuoi dati) oppure <strong>generalo da zero</strong> dalle tue risposte. In entrambi i casi poi lo rifinisci nell'editor.
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          <button onClick={() => setFlow('template')} style={choiceCard}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: '#f0f4ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <LayoutTemplate size={20} strokeWidth={1.5} color="#1a1a2e" />
-              </div>
-              <span style={{ fontSize: 10, fontWeight: 800, color: '#1a7a4a', background: '#e8f9f0', padding: '3px 8px', borderRadius: 6 }}>CONSIGLIATO</span>
-            </div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e' }}>Parti da un modello</div>
-            <div style={{ fontSize: 12.5, color: '#888', lineHeight: 1.5 }}>Scegli tra i modelli pronti per il tuo settore. L'AI scrive i testi sul tuo business.</div>
-          </button>
-          <button onClick={() => { setFlow('ai'); setStep(0) }} style={choiceCard}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Wand2 size={20} strokeWidth={1.5} color="#fff" />
-            </div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e' }}>Generalo con l'AI</div>
-            <div style={{ fontSize: 12.5, color: '#888', lineHeight: 1.5 }}>Rispondi a poche domande e l'AI costruisce le pagine da zero.</div>
+          <button onClick={() => { setResult(null); setStep(0); setTemplate('') }} style={{ padding: '12px 20px', background: '#fff', color: '#666', border: '1px solid #e0e0e0', borderRadius: 10, fontSize: 14, cursor: 'pointer' }}>
+            Crea un altro
           </button>
         </div>
       </div>
     )
   }
 
-  // ── Flusso "Parti da un modello" (galleria template) ──────────────────────────
-  if (flow === 'template') {
-    const prefix = { struttura: 's', ristorante: 'r', attivita: 'a' }[entityTipo] || entityTipo
-    return (
-      <div style={{ maxWidth: 980 }}>
-        <BuilderHeader onBack={() => { setFlow(null); setTplDone(false) }} />
-        {!entityId ? (
-          <Field label="Per quale sito?" hint="Il modello verrà applicato a questa entità">
-            <EntitySelector onSelect={selectEntity} selectedId={entityId} />
-          </Field>
-        ) : tplDone ? (
-          <div style={{ maxWidth: 560 }}>
-            <div style={{ textAlign: 'center', marginBottom: 20 }}>
-              <div style={{ fontSize: 40, marginBottom: 8 }}>🎉</div>
-              <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1a1a2e', margin: '0 0 8px' }}>Sito creato dal modello!</h2>
-              <p style={{ color: '#666', fontSize: 15, margin: 0 }}>La home è pubblicata. Ora rifiniscila nell'editor.</p>
-            </div>
-            {entitySlug && (
-              <a href={`/${prefix}/${entitySlug}`} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px', marginBottom: 16, background: 'linear-gradient(135deg, #667eea, #764ba2)', color: '#fff', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: 14 }}>
-                <ExternalLink size={15} strokeWidth={1.5} /> Vedi il sito live
-              </a>
-            )}
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => router.push(entitySitoUrl())} style={{ flex: 1, padding: '12px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-                Vai all'editor
-              </button>
-              <button onClick={() => setTplDone(false)} style={{ padding: '12px 18px', background: '#fff', color: '#666', border: '1px solid #e0e0e0', borderRadius: 10, fontSize: 14, cursor: 'pointer' }}>
-                Scegli un altro modello
-              </button>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18, fontSize: 13, color: '#555' }}>
-              <span>Sito: <strong>{entityName}</strong></span>
-              <button onClick={() => setEntityId('')} style={{ background: 'none', border: 'none', color: '#5b6af8', fontSize: 13, cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>cambia</button>
-            </div>
-            <SiteTemplateGallery entityTipo={entityTipo} entityId={entityId} onApplied={() => setTplDone(true)} />
-          </>
-        )}
-      </div>
-    )
-  }
+  // ── Design step: modelli ordinati (consigliati per tipo/obiettivo in cima) ──────
+  const isRecommended = (t) =>
+    (TIPO_HINT[entityTipo] || []).includes(t.id) || (obiettivo && (t.obiettivi || []).includes(obiettivo))
+  const orderedTemplates = [...SITE_TEMPLATES].sort((a, b) => (isRecommended(b) ? 1 : 0) - (isRecommended(a) ? 1 : 0))
 
   // ── Wizard ────────────────────────────────────────────────────────────────────
   return (
-    <div style={{ maxWidth: 580 }}>
-      <BuilderHeader onBack={() => { setFlow(null); setStep(0) }} />
-
+    <div style={{ maxWidth: step === 3 ? 900 : 620 }}>
+      <BuilderHeader />
       <StepDots current={step} />
 
-      {/* ── Step 0: Obiettivo ── */}
+      {/* ── Step 0: Sito (entità) ── */}
       {step === 0 && (
         <div>
-          <StepLabel n={1} label="Obiettivo" />
+          <StepLabel n={1} label="Sito" />
+          <p style={{ fontSize: 14, color: '#555', marginBottom: 18, lineHeight: 1.6 }}>
+            Per quale <strong>attività</strong> vuoi creare il sito? La home verrà associata a questa entità.
+          </p>
+          <EntitySelector onSelect={selectEntity} selectedId={entityId} />
+        </div>
+      )}
+
+      {/* ── Step 1: Obiettivo ── */}
+      {step === 1 && (
+        <div>
+          <StepLabel n={2} label="Obiettivo" />
           <p style={{ fontSize: 14, color: '#555', marginBottom: 18, lineHeight: 1.6 }}>
             Qual è il <strong>risultato principale</strong> che vuoi ottenere con questo sito?
           </p>
@@ -542,76 +418,10 @@ export default function AiSiteBuilderPage() {
         </div>
       )}
 
-      {/* ── Step 1: Stile ── */}
-      {step === 1 && (
-        <div>
-          <StepLabel n={2} label="Stile" />
-          <p style={{ fontSize: 14, color: '#555', marginBottom: 18, lineHeight: 1.6 }}>
-            Scegli lo <strong>stile e la densità</strong> delle tue pagine.
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-            {TEMPLATES.map(tmpl => (
-              <div key={tmpl.id} onClick={() => setTemplate(tmpl.id)} style={{
-                borderRadius: 12, cursor: 'pointer', overflow: 'hidden',
-                border: `2px solid ${template === tmpl.id ? '#1a1a2e' : '#e8e8e8'}`,
-                background: template === tmpl.id ? '#f0f4ff' : '#fff',
-                transition: 'all 0.12s',
-              }}>
-                <div style={{ padding: '10px 10px 8px' }}>
-                  <MiniWireframe blocks={tmpl.preview} />
-                </div>
-                <div style={{ padding: '0 12px 14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: '#1a1a2e' }}>{tmpl.name}</div>
-                    {template === tmpl.id && <Check size={12} strokeWidth={1.5} color="#1a1a2e" />}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#777', lineHeight: 1.4, marginBottom: 3 }}>{tmpl.desc}</div>
-                  <div style={{ fontSize: 10, color: '#bbb', fontStyle: 'italic' }}>{tmpl.hint}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Step 2: Tipo + Entità ── */}
+      {/* ── Step 2: Il tuo business ── */}
       {step === 2 && (
         <div>
-          <StepLabel n={3} label="Tipo e entità" />
-          <Field label="Tipo di sito">
-            <div style={{ display: 'flex', gap: 10 }}>
-              {[
-                { id: 'landing', icon: FileText, label: 'Landing page', desc: '1 pagina scroll' },
-                { id: 'site',    icon: Globe,    label: 'Sito completo', desc: '4 pagine con nav' },
-              ].map(({ id, icon: Icon, label, desc }) => (
-                <div key={id} onClick={() => setMode(id)} style={{
-                  flex: 1, padding: '14px 12px', borderRadius: 10, cursor: 'pointer', textAlign: 'center',
-                  border: `2px solid ${mode === id ? '#1a1a2e' : '#e8e8e8'}`,
-                  background: mode === id ? '#f0f4ff' : '#fff',
-                  transition: 'all 0.12s',
-                }}>
-                  <Icon size={24} strokeWidth={1.5} color={mode === id ? '#1a1a2e' : '#bbb'} style={{ marginBottom: 6 }} />
-                  <div style={{ fontWeight: 700, fontSize: 13, color: '#1a1a2e', marginBottom: 2 }}>{label}</div>
-                  <div style={{ fontSize: 11, color: '#888' }}>{desc}</div>
-                  {mode === id && (
-                    <div style={{ marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, color: '#1a1a2e', fontWeight: 700 }}>
-                      <Check size={10} strokeWidth={1.5} /> Selezionato
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </Field>
-          <Field label="Entità di destinazione" hint="Le pagine generate verranno associate a questa entità">
-            <EntitySelector onSelect={selectEntity} selectedId={entityId} />
-          </Field>
-        </div>
-      )}
-
-      {/* ── Step 3: Business ── */}
-      {step === 3 && (
-        <div>
-          <StepLabel n={4} label="Il tuo business" />
+          <StepLabel n={3} label="Il tuo business" />
           <Field label="Preset settore" hint="Clicca per pre-compilare i campi — puoi modificarli">
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {PRESETS.map(p => {
@@ -628,22 +438,12 @@ export default function AiSiteBuilderPage() {
               })}
             </div>
           </Field>
-          <Field label="Nome del business" hint="Come appare nel sito">
-            <input value={nome} onChange={e => setNome(e.target.value)} placeholder={entityName || 'es. Borgo del Lago'} style={inp} maxLength={100} />
-          </Field>
-          <Field label="Settore / tipo attività *" hint="Più sei specifico, più i testi saranno precisi">
+          <Field label="Settore / tipo di attività *" hint="In breve, che attività è">
             <input value={settore} onChange={e => setSettore(e.target.value)} placeholder="es. Hotel boutique 4 stelle sul Lago di Garda" style={inp} maxLength={150} />
           </Field>
           <Field label="Descrizione" hint="Cosa ti rende unico? La tua storia, il tuo approccio. (opzionale)">
             <textarea value={descrizione} onChange={e => setDescrizione(e.target.value)} placeholder="Racconta cosa ti distingue dalla concorrenza, la tua filosofia, la tua storia…" style={{ ...ta, minHeight: 80 }} maxLength={600} />
           </Field>
-        </div>
-      )}
-
-      {/* ── Step 4: Contenuto + Stile ── */}
-      {step === 4 && (
-        <div>
-          <StepLabel n={5} label="Contenuto e stile" />
           <Field label="Servizi / prodotti principali *" hint="Un servizio per riga — più dettagli = testi migliori">
             <textarea value={servizi} onChange={e => setServizi(e.target.value)} placeholder={'Piscina infinity\nSpa e centro benessere\nRistorante con vista lago'} style={ta} maxLength={500} />
           </Field>
@@ -659,23 +459,23 @@ export default function AiSiteBuilderPage() {
           <Field label="Target principale">
             <ChipGroup options={TARGET} value={target} onChange={setTarget} />
           </Field>
+        </div>
+      )}
 
-          {/* Summary */}
-          <div style={{ marginTop: 18, padding: '14px 16px', background: '#f8f9ff', borderRadius: 10, border: '1px solid #e8ecff' }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: '#1a1a2e', marginBottom: 6, letterSpacing: 0.5 }}>RIEPILOGO</div>
-            <div style={{ fontSize: 13, color: '#555', lineHeight: 1.9 }}>
-              <strong>{mode === 'landing' ? 'Landing page' : 'Sito completo'}</strong>
-              {' · '}<strong>{OBIETTIVI.find(o => o.id === obiettivo)?.label}</strong>
-              {' · '}<strong>{TEMPLATES.find(t => t.id === template)?.name}</strong>
-              <br />
-              Per: <strong>{nome || entityName}</strong>{settore ? ` · ${settore}` : ''}
-              <br />
-              Tono: <strong>{tono}</strong> · Target: <strong>{target}</strong>
-            </div>
+      {/* ── Step 3: Design (scegli il modello) ── */}
+      {step === 3 && (
+        <div>
+          <StepLabel n={4} label="Design" />
+          <p style={{ fontSize: 14, color: '#555', marginBottom: 18, lineHeight: 1.6 }}>
+            Scegli il <strong>look</strong>: l'AI riempirà questo modello coi dati del tuo business. Potrai cambiare tutto nell'editor.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 14 }}>
+            {orderedTemplates.map(tpl => (
+              <TemplateCard key={tpl.id} tpl={tpl} selected={template === tpl.id} recommended={isRecommended(tpl)} onSelect={setTemplate} />
+            ))}
           </div>
-
           {error && (
-            <div style={{ marginTop: 14, padding: '12px 16px', background: '#fff5f5', border: '1px solid #fca5a5', borderRadius: 8, fontSize: 13, color: '#dc2626' }}>
+            <div style={{ marginTop: 16, padding: '12px 16px', background: '#fff5f5', border: '1px solid #fca5a5', borderRadius: 8, fontSize: 13, color: '#dc2626' }}>
               ❌ {error}
             </div>
           )}
@@ -706,7 +506,7 @@ export default function AiSiteBuilderPage() {
             disabled={!canNext}
             style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 26px', background: canNext ? 'linear-gradient(135deg, #667eea, #764ba2)' : '#e0e0e0', color: canNext ? '#fff' : '#aaa', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: canNext ? 'pointer' : 'default', transition: 'all 0.12s' }}
           >
-            <Wand2 size={16} strokeWidth={1.5} /> Genera con AI
+            <Wand2 size={16} strokeWidth={1.5} /> Crea il sito con l'AI
           </button>
         )}
       </div>
