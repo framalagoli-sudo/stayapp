@@ -7,6 +7,13 @@ metadata:
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
 ---
 
+## ✅ IMPORT DA DOCUMENTO (3/7) — "Ho già i contenuti"
+LIVE. Nell'AI Site Builder, link discreto nello step 0 "Hai già i contenuti pronti? Incolla un documento →" (NON un bivio: il wizard guidato resta primario). Modalità `srcMode='document'` in `AiSiteBuilderPage.jsx`: entità + textarea documento + scelta design → `POST /api/ai/from-document`.
+- **Opzione A** (decisa con Francesco): la STRUTTURA viene dal documento (l'AI mappa le sezioni nei nostri blocchi), NON riempie un template fisso. Il template scelto dà solo il **look** (tema/colori).
+- Schema blocchi estratto in **`lib/ai-blocks.js`** e condiviso tra `generate-site` e `from-document` (una fonte sola).
+- **Caveat MVP**: solo incolla-testo (no upload PDF/DOCX), `DOC_MAX=12000` char, no chunking → doc lunghi possono troncare il JSON (ritorna errore "accorcialo"). Chunking + upload file = v2. Immagini auto-Unsplash.
+- `from-document` usa `requireEntityAccess` (come ai-fill), niente gate super_admin (a differenza di generate-site).
+
 ## ✅ AI SITE BUILDER UNIFICATO (3/7) — un solo flusso, niente bivio
 Deciso con Francesco e LIVE. `AiSiteBuilderPage.jsx` ora è **un unico wizard lineare "per dummies"**: Sito → Obiettivo → Il tuo business (settore/servizi/punti forza/tono/target) → **Design (scegli un modello)**. Il template NON è più un ramo alternativo: è lo step "design". Poi l'AI riempie il modello scelto coi dati raccolti via `ai-fill` (esteso per usare `answers`, prima prendeva solo un brief opzionale → testi generici).
 - **Niente più scelta iniziale a due strade** (template vs genera-da-zero): confondeva l'utente.
