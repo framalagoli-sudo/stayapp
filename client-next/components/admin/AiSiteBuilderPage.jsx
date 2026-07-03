@@ -1,8 +1,9 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Sparkles, Globe, FileText, ChevronRight, ChevronLeft, Check, Wand2, Target, Tag, Star, Calendar, Briefcase, Users, Home, Utensils, Activity, ShoppingCart, Heart, ExternalLink } from 'lucide-react'
+import { Sparkles, Globe, FileText, ChevronRight, ChevronLeft, Check, Wand2, Target, Tag, Star, Calendar, Briefcase, Users, Home, Utensils, Activity, ShoppingCart, Heart, ExternalLink, LayoutTemplate } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
+import SiteTemplateGallery from '@/components/admin/SiteTemplateGallery'
 
 const TOTAL_STEPS = 5
 
@@ -103,6 +104,30 @@ function MiniWireframe({ blocks }) {
 }
 
 // ── Step indicator ─────────────────────────────────────────────────────────────
+function BuilderHeader({ onBack }) {
+  return (
+    <div style={{ marginBottom: 24 }}>
+      {onBack && (
+        <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 12 }}>
+          <ChevronLeft size={15} strokeWidth={1.5} /> Cambia modo
+        </button>
+      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Sparkles size={20} strokeWidth={1.5} color="#fff" />
+        </div>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#1a1a2e' }}>AI Site Builder</h1>
+            <span style={{ fontSize: 10, fontWeight: 800, color: '#fff', background: '#6366f1', padding: '2px 7px', borderRadius: 4, letterSpacing: 0.5 }}>BETA</span>
+          </div>
+          <p style={{ margin: 0, fontSize: 13, color: '#999' }}>Crea il tuo sito con l'intelligenza artificiale</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function StepDots({ current }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 28 }}>
@@ -232,6 +257,8 @@ function EntitySelector({ onSelect, selectedId }) {
 export default function AiSiteBuilderPage() {
   const router = useRouter()
 
+  const [flow,    setFlow]    = useState(null)   // null = scelta, 'template' = galleria, 'ai' = wizard
+  const [tplDone, setTplDone] = useState(false)  // modello applicato con successo
   const [step,    setStep]    = useState(0)
   const [loading, setLoading] = useState(false)
   const [loadMsg, setLoadMsg] = useState(0)
@@ -394,22 +421,91 @@ export default function AiSiteBuilderPage() {
     )
   }
 
+  // ── Scelta iniziale: parti da un modello o genera con l'AI ────────────────────
+  const choiceCard = {
+    display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8,
+    padding: '22px 20px', borderRadius: 14, cursor: 'pointer', textAlign: 'left',
+    border: '2px solid #e8e8e8', background: '#fff', transition: 'all 0.12s',
+  }
+  if (!flow) {
+    return (
+      <div style={{ maxWidth: 640 }}>
+        <BuilderHeader />
+        <p style={{ fontSize: 14, color: '#555', margin: '0 0 20px', lineHeight: 1.6 }}>
+          Come vuoi creare il sito? Parti da un <strong>modello pronto</strong> (l'AI lo riempie coi tuoi dati) oppure <strong>generalo da zero</strong> dalle tue risposte. In entrambi i casi poi lo rifinisci nell'editor.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <button onClick={() => setFlow('template')} style={choiceCard}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: '#f0f4ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <LayoutTemplate size={20} strokeWidth={1.5} color="#1a1a2e" />
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 800, color: '#1a7a4a', background: '#e8f9f0', padding: '3px 8px', borderRadius: 6 }}>CONSIGLIATO</span>
+            </div>
+            <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e' }}>Parti da un modello</div>
+            <div style={{ fontSize: 12.5, color: '#888', lineHeight: 1.5 }}>Scegli tra i modelli pronti per il tuo settore. L'AI scrive i testi sul tuo business.</div>
+          </button>
+          <button onClick={() => { setFlow('ai'); setStep(0) }} style={choiceCard}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Wand2 size={20} strokeWidth={1.5} color="#fff" />
+            </div>
+            <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e' }}>Generalo con l'AI</div>
+            <div style={{ fontSize: 12.5, color: '#888', lineHeight: 1.5 }}>Rispondi a poche domande e l'AI costruisce le pagine da zero.</div>
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Flusso "Parti da un modello" (galleria template) ──────────────────────────
+  if (flow === 'template') {
+    const prefix = { struttura: 's', ristorante: 'r', attivita: 'a' }[entityTipo] || entityTipo
+    return (
+      <div style={{ maxWidth: 980 }}>
+        <BuilderHeader onBack={() => { setFlow(null); setTplDone(false) }} />
+        {!entityId ? (
+          <Field label="Per quale sito?" hint="Il modello verrà applicato a questa entità">
+            <EntitySelector onSelect={selectEntity} selectedId={entityId} />
+          </Field>
+        ) : tplDone ? (
+          <div style={{ maxWidth: 560 }}>
+            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>🎉</div>
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1a1a2e', margin: '0 0 8px' }}>Sito creato dal modello!</h2>
+              <p style={{ color: '#666', fontSize: 15, margin: 0 }}>La home è pubblicata. Ora rifiniscila nell'editor.</p>
+            </div>
+            {entitySlug && (
+              <a href={`/${prefix}/${entitySlug}`} target="_blank" rel="noopener noreferrer"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px', marginBottom: 16, background: 'linear-gradient(135deg, #667eea, #764ba2)', color: '#fff', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: 14 }}>
+                <ExternalLink size={15} strokeWidth={1.5} /> Vedi il sito live
+              </a>
+            )}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => router.push(entitySitoUrl())} style={{ flex: 1, padding: '12px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                Vai all'editor
+              </button>
+              <button onClick={() => setTplDone(false)} style={{ padding: '12px 18px', background: '#fff', color: '#666', border: '1px solid #e0e0e0', borderRadius: 10, fontSize: 14, cursor: 'pointer' }}>
+                Scegli un altro modello
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18, fontSize: 13, color: '#555' }}>
+              <span>Sito: <strong>{entityName}</strong></span>
+              <button onClick={() => setEntityId('')} style={{ background: 'none', border: 'none', color: '#5b6af8', fontSize: 13, cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>cambia</button>
+            </div>
+            <SiteTemplateGallery entityTipo={entityTipo} entityId={entityId} onApplied={() => setTplDone(true)} />
+          </>
+        )}
+      </div>
+    )
+  }
+
   // ── Wizard ────────────────────────────────────────────────────────────────────
   return (
     <div style={{ maxWidth: 580 }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Sparkles size={20} strokeWidth={1.5} color="#fff" />
-        </div>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#1a1a2e' }}>AI Site Builder</h1>
-            <span style={{ fontSize: 10, fontWeight: 800, color: '#fff', background: '#6366f1', padding: '2px 7px', borderRadius: 4, letterSpacing: 0.5 }}>BETA</span>
-          </div>
-          <p style={{ margin: 0, fontSize: 13, color: '#999' }}>Crea il tuo sito con l'intelligenza artificiale</p>
-        </div>
-      </div>
+      <BuilderHeader onBack={() => { setFlow(null); setStep(0) }} />
 
       <StepDots current={step} />
 
@@ -446,12 +542,12 @@ export default function AiSiteBuilderPage() {
         </div>
       )}
 
-      {/* ── Step 1: Template ── */}
+      {/* ── Step 1: Stile ── */}
       {step === 1 && (
         <div>
-          <StepLabel n={2} label="Template" />
+          <StepLabel n={2} label="Stile" />
           <p style={{ fontSize: 14, color: '#555', marginBottom: 18, lineHeight: 1.6 }}>
-            Scegli la <strong>struttura visiva</strong> delle tue pagine.
+            Scegli lo <strong>stile e la densità</strong> delle tue pagine.
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
             {TEMPLATES.map(tmpl => (
