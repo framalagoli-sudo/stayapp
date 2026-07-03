@@ -252,6 +252,10 @@ export default function AiSiteBuilderPage() {
   // Step 3: design
   const [template,    setTemplate]    = useState('')
 
+  // Modalità "ho già i contenuti": incolla un documento → l'AI costruisce i blocchi
+  const [srcMode,     setSrcMode]     = useState('guided')  // 'guided' | 'document'
+  const [documento,   setDocumento]   = useState('')
+
   const canNext = [
     !!entityId,
     !!obiettivo,
@@ -295,6 +299,28 @@ export default function AiSiteBuilderPage() {
             cta_text: ctaText, tono, target,
           },
         }),
+      })
+      setResult(data || { ok: true })
+    } catch (e) {
+      setError(e.message || 'Errore durante la generazione')
+    } finally {
+      clearInterval(interval)
+      setLoading(false)
+    }
+  }
+
+  async function generateFromDoc() {
+    setLoading(true)
+    setError(null)
+    let msgIdx = 0
+    const interval = setInterval(() => {
+      msgIdx = (msgIdx + 1) % LOADING_MSGS.length
+      setLoadMsg(msgIdx)
+    }, 2200)
+    try {
+      const data = await apiFetch('/api/ai/from-document', {
+        method: 'POST',
+        body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, documento, template_id: template }),
       })
       setResult(data || { ok: true })
     } catch (e) {
@@ -368,11 +394,59 @@ export default function AiSiteBuilderPage() {
     (TIPO_HINT[entityTipo] || []).includes(t.id) || (obiettivo && (t.obiettivi || []).includes(obiettivo))
   const orderedTemplates = [...SITE_TEMPLATES].sort((a, b) => (isRecommended(b) ? 1 : 0) - (isRecommended(a) ? 1 : 0))
 
+  // ── Modalità "ho già i contenuti": incolla un documento ─────────────────────────
+  if (srcMode === 'document') {
+    const canGen = !!entityId && documento.trim().length >= 40 && !!template
+    return (
+      <div style={{ maxWidth: 900 }}>
+        <BuilderHeader />
+        <button onClick={() => { setSrcMode('guided'); setError(null) }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 16 }}>
+          <ChevronLeft size={15} strokeWidth={1.5} /> Torna al wizard guidato
+        </button>
+        <p style={{ fontSize: 14, color: '#555', marginBottom: 20, lineHeight: 1.6 }}>
+          Hai già i contenuti pronti (es. un documento generato con ChatGPT)? <strong>Incollalo qui</strong>: l'AI costruisce la home rispettando le tue sezioni. Poi scegli un design e rifinisci nell'editor.
+        </p>
+        <Field label="Per quale sito?" hint="La home verrà associata a questa entità">
+          <EntitySelector onSelect={selectEntity} selectedId={entityId} />
+        </Field>
+        <Field label="Il tuo documento *" hint="Incolla il testo completo: titoli e testi di ogni sezione. Più è strutturato, meglio è.">
+          <textarea value={documento} onChange={e => setDocumento(e.target.value)}
+            placeholder={'Incolla qui il documento con tutte le sezioni del sito…'} style={{ ...ta, minHeight: 220 }} maxLength={12000} />
+          <div style={{ fontSize: 11, color: '#bbb', textAlign: 'right', marginTop: 4 }}>{documento.length}/12000</div>
+        </Field>
+        <Field label="Scegli il design (colori e stile) *" hint="La struttura viene dal tuo documento; da qui prendiamo solo il look">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 14 }}>
+            {orderedTemplates.map(tpl => (
+              <TemplateCard key={tpl.id} tpl={tpl} selected={template === tpl.id} recommended={isRecommended(tpl)} onSelect={setTemplate} />
+            ))}
+          </div>
+        </Field>
+        {error && (
+          <div style={{ marginTop: 8, marginBottom: 14, padding: '12px 16px', background: '#fff5f5', border: '1px solid #fca5a5', borderRadius: 8, fontSize: 13, color: '#dc2626' }}>❌ {error}</div>
+        )}
+        <button onClick={generateFromDoc} disabled={!canGen}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 26px', background: canGen ? 'linear-gradient(135deg, #667eea, #764ba2)' : '#e0e0e0', color: canGen ? '#fff' : '#aaa', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: canGen ? 'pointer' : 'default' }}>
+          <Wand2 size={16} strokeWidth={1.5} /> Crea il sito dal documento
+        </button>
+      </div>
+    )
+  }
+
   // ── Wizard ────────────────────────────────────────────────────────────────────
   return (
     <div style={{ maxWidth: step === 3 ? 900 : 620 }}>
       <BuilderHeader />
       <StepDots current={step} />
+
+      {step === 0 && (
+        <p style={{ textAlign: 'center', margin: '-8px 0 20px' }}>
+          <button onClick={() => { setSrcMode('document'); setError(null) }}
+            style={{ background: 'none', border: 'none', color: '#5b6af8', fontSize: 13, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+            Hai già i contenuti pronti? Incolla un documento →
+          </button>
+        </p>
+      )}
 
       {/* ── Step 0: Sito (entità) ── */}
       {step === 0 && (
