@@ -7,7 +7,23 @@ metadata:
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
 ---
 
-## ▶️ RIPARTIRE DA QUI (aggiornato 26/6 sera)
+## ✅ AI SITE BUILDER UNIFICATO (3/7) — un solo flusso, niente bivio
+Deciso con Francesco e LIVE. `AiSiteBuilderPage.jsx` ora è **un unico wizard lineare "per dummies"**: Sito → Obiettivo → Il tuo business (settore/servizi/punti forza/tono/target) → **Design (scegli un modello)**. Il template NON è più un ramo alternativo: è lo step "design". Poi l'AI riempie il modello scelto coi dati raccolti via `ai-fill` (esteso per usare `answers`, prima prendeva solo un brief opzionale → testi generici).
+- **Niente più scelta iniziale a due strade** (template vs genera-da-zero): confondeva l'utente.
+- **`generate-site` (genera da zero) è RITIRATO dalla UI** — resta la route come fallback, ma il wizard NON lo chiama più (usa solo `ai-fill`). Non riesporlo come scelta front-door senza ridiscuterne.
+- **Template = gli 8 di `lib/siteTemplates.js`** (hotel/ristorante/prodotti/servizi/esperienze/beauty/fitness/professionista), ordinati "consigliati" per tipo entità + obiettivo.
+- **SitoPage = solo editor** (tab Template rimossa). `SiteTemplateGallery.jsx` ora è **codice morto** (non più importato) → candidato cleanup.
+- Editor post-creazione: `entitySitoUrl()` punta a `/sito` per tutte e 3 le entità.
+
+## ✅ SUPERATO (2/7): Fase B E Fase C DEL TEMPLATE SONO FATTE E LIVE
+Non ripartire da "Fase B/C" — è stato completato. In main/prod ci sono:
+- **Fase B**: `app/api/site-templates/ai-fill/route.js` — l'AI riempie il template coi dati del business (modalità `uguale` vs `traccia`) + query immagini mirate Unsplash + fallback ai testi-esempio (commit 96bbdd0).
+- **Fase C**: wizard galleria (settore+obiettivo, "sfoglia tutti") (commit e81e535).
+- **8 template per verticale** + hero slider/carosello/menù + 39 blocchi + sfondi sezione + colore 2°/animazioni + closing pack (site-builder MATURO, vedi Roadmap CLAUDE.md "✅ 2026-07-02").
+- Landing marketing OltreNova ridisegnata (2/7) → [[project_landing_marketing]].
+**Backlog reale residuo** (scegliere con Francesco): ritiro `MiniSitoPage` (/minisito non linkato ma route esiste); test a-video interattivo di Fase B/C (auth admin, non verificabile headless); Sentry (bloccato Next14, vedi sotto); URL puliti `/[slug]`; PWA da ri-abilitare; Stripe billing.
+
+## ▶️ (STORICO) RIPARTIRE DA QUI (aggiornato 26/6 sera)
 ### Fix dopo test Francesco (26/6 sera) — tutti live+verificati:
 - **Anteprima template REALE**: route `app/template-preview/[id]/page.js` + `TemplatePreviewClient.jsx` (render via LandingBlockRenderer, entità fittizia); galleria la mostra in iframe scalato. Prima erano stack astratti. ⚠️ FIX necessario: la CSP globale (`next.config.js`) aveva `frame-ancestors 'none'` + `X-Frame-Options DENY` → bloccava l'iframe same-origin (anteprima "rotta"/immagine non trovata). Cambiato a `frame-ancestors 'self'` + `SAMEORIGIN` (esterno resta vietato). + immagini placeholder picsum su hero/foto_testo dei template per anteprime piene.
 - **ChatbotWidget tradotto** (era IT): lang + EN (Assistant/Online now/welcome/errore/placeholder), lang passato dai 7 renderer.
