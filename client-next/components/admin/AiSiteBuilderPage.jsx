@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Sparkles, Globe, ChevronRight, ChevronLeft, Check, Wand2, Target, Tag, Star, Calendar, Briefcase, Users, Home, Utensils, Activity, ShoppingCart, Heart, ExternalLink, Eye } from 'lucide-react'
+import { Sparkles, Globe, ChevronRight, ChevronLeft, Check, Wand2, Target, Tag, Star, Calendar, Briefcase, Users, Home, Utensils, Activity, ShoppingCart, Heart, ExternalLink, Eye, FileText } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import { SITE_TEMPLATES } from '@/lib/siteTemplates'
 
@@ -47,18 +47,25 @@ const PRESETS = [
 const TIPO_HINT = { struttura: ['hotel'], ristorante: ['ristorante'], attivita: ['esperienze', 'fitness', 'beauty', 'professionista', 'servizi'] }
 
 // ── Header ──────────────────────────────────────────────────────────────────────
-function BuilderHeader() {
+function BuilderHeader({ onBack }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-      <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Sparkles size={20} strokeWidth={1.5} color="#fff" />
-      </div>
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#1a1a2e' }}>AI Site Builder</h1>
-          <span style={{ fontSize: 10, fontWeight: 800, color: '#fff', background: '#6366f1', padding: '2px 7px', borderRadius: 4, letterSpacing: 0.5 }}>BETA</span>
+    <div style={{ marginBottom: 24 }}>
+      {onBack && (
+        <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 12 }}>
+          <ChevronLeft size={15} strokeWidth={1.5} /> Cambia
+        </button>
+      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Sparkles size={20} strokeWidth={1.5} color="#fff" />
         </div>
-        <p style={{ margin: 0, fontSize: 13, color: '#999' }}>Crea il tuo sito con l'intelligenza artificiale</p>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#1a1a2e' }}>AI Site Builder</h1>
+            <span style={{ fontSize: 10, fontWeight: 800, color: '#fff', background: '#6366f1', padding: '2px 7px', borderRadius: 4, letterSpacing: 0.5 }}>BETA</span>
+          </div>
+          <p style={{ margin: 0, fontSize: 13, color: '#999' }}>Crea il tuo sito con l'intelligenza artificiale</p>
+        </div>
       </div>
     </div>
   )
@@ -253,7 +260,7 @@ export default function AiSiteBuilderPage() {
   const [template,    setTemplate]    = useState('')
 
   // Modalità "ho già i contenuti": incolla un documento → l'AI costruisce i blocchi
-  const [srcMode,     setSrcMode]     = useState('guided')  // 'guided' | 'document'
+  const [srcMode,     setSrcMode]     = useState(null)      // null = scelta, 'guided' | 'document'
   const [documento,   setDocumento]   = useState('')
   const [docMulti,    setDocMulti]    = useState(false)     // false = one-page, true = più pagine
 
@@ -395,16 +402,48 @@ export default function AiSiteBuilderPage() {
     (TIPO_HINT[entityTipo] || []).includes(t.id) || (obiettivo && (t.obiettivi || []).includes(obiettivo))
   const orderedTemplates = [...SITE_TEMPLATES].sort((a, b) => (isRecommended(b) ? 1 : 0) - (isRecommended(a) ? 1 : 0))
 
+  // ── Scelta iniziale: creiamolo insieme oppure ho già un documento ───────────────
+  if (!srcMode) {
+    const card = {
+      display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10,
+      padding: '24px 22px', borderRadius: 14, cursor: 'pointer', textAlign: 'left',
+      border: '2px solid #e8e8e8', background: '#fff', transition: 'all 0.12s', width: '100%',
+    }
+    return (
+      <div style={{ maxWidth: 680 }}>
+        <BuilderHeader />
+        <p style={{ fontSize: 15, color: '#444', margin: '0 0 22px', lineHeight: 1.6 }}>
+          Come vuoi creare il sito?
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <button onClick={() => { setSrcMode('guided'); setStep(0) }} style={card}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Wand2 size={22} strokeWidth={1.5} color="#fff" />
+            </div>
+            <div style={{ fontWeight: 800, fontSize: 16, color: '#1a1a2e' }}>Creiamolo insieme</div>
+            <div style={{ fontSize: 13, color: '#888', lineHeight: 1.5 }}>Rispondi a qualche domanda e l'AI costruisce il sito da zero, con un modello a scelta.</div>
+          </button>
+          <button onClick={() => { setSrcMode('document'); setError(null) }} style={card}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <FileText size={22} strokeWidth={1.5} color="#5b6af8" />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ fontWeight: 800, fontSize: 16, color: '#1a1a2e' }}>Ho già un documento</div>
+              <span style={{ fontSize: 10, fontWeight: 800, color: '#1a7a4a', background: '#e8f9f0', padding: '3px 7px', borderRadius: 6 }}>NOVITÀ</span>
+            </div>
+            <div style={{ fontSize: 13, color: '#888', lineHeight: 1.5 }}>Hai già un progetto o un documento coi contenuti (es. fatto con ChatGPT)? Incollalo e l'AI lo trasforma in sito.</div>
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   // ── Modalità "ho già i contenuti": incolla un documento ─────────────────────────
   if (srcMode === 'document') {
     const canGen = !!entityId && documento.trim().length >= 40 && !!template
     return (
       <div style={{ maxWidth: 900 }}>
-        <BuilderHeader />
-        <button onClick={() => { setSrcMode('guided'); setError(null) }}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 16 }}>
-          <ChevronLeft size={15} strokeWidth={1.5} /> Torna al wizard guidato
-        </button>
+        <BuilderHeader onBack={() => { setSrcMode(null); setError(null) }} />
         <p style={{ fontSize: 14, color: '#555', marginBottom: 20, lineHeight: 1.6 }}>
           Hai già i contenuti pronti (es. un documento generato con ChatGPT)? <strong>Incollalo qui</strong>: l'AI costruisce la home rispettando le tue sezioni. Poi scegli un design e rifinisci nell'editor.
         </p>
@@ -454,17 +493,8 @@ export default function AiSiteBuilderPage() {
   // ── Wizard ────────────────────────────────────────────────────────────────────
   return (
     <div style={{ maxWidth: step === 3 ? 900 : 620 }}>
-      <BuilderHeader />
+      <BuilderHeader onBack={() => setSrcMode(null)} />
       <StepDots current={step} />
-
-      {step === 0 && (
-        <p style={{ textAlign: 'center', margin: '-8px 0 20px' }}>
-          <button onClick={() => { setSrcMode('document'); setError(null) }}
-            style={{ background: 'none', border: 'none', color: '#5b6af8', fontSize: 13, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
-            Hai già i contenuti pronti? Incolla un documento →
-          </button>
-        </p>
-      )}
 
       {/* ── Step 0: Sito (entità) ── */}
       {step === 0 && (
