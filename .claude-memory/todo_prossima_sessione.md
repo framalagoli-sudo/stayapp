@@ -12,7 +12,8 @@ LIVE. **Prima schermata dell'AI Site Builder = scelta esplicita** "Come vuoi cre
 - **Opzione A** (decisa con Francesco): la STRUTTURA viene dal documento (l'AI mappa le sezioni nei nostri blocchi), NON riempie un template fisso. Il template scelto dà solo il **look** (tema/colori).
 - **Toggle una-pagina / più-pagine** (default one-page). Se `multipagina=true` l'AI spezza in pagine SEGUENDO le sezioni del documento (home + chi-siamo/servizi/contatti…, max 5); one-page = tutto nella home. Scrittura multi-pagina con slug+collisioni.
 - Schema blocchi estratto in **`lib/ai-blocks.js`** e condiviso tra `generate-site` e `from-document` (una fonte sola).
-- **Caveat MVP**: solo incolla-testo (no upload PDF/DOCX), `DOC_MAX=12000` char, no chunking → doc lunghi possono troncare il JSON (ritorna errore "accorcialo"). Chunking + upload file = v2. Immagini auto-Unsplash.
+- **Fedeltà (fix 4/7)**: la prima versione con Haiku RIASSUMEVA/saltava contenuti. Fix: `from-document` usa **Claude Sonnet** (`callClaude(prompt, 16000, 'claude-sonnet-4-6')` — callClaude ora accetta il modello come 3° param, default Haiku), prompt anti-riassunto (inquadra l'AI come TRASCRITTORE), `DOC_MAX=25000`, cap blocchi/pagina 40, `maxDuration=120` (Sonnet più lento). Gli altri usi restano Haiku.
+- **Caveat MVP**: solo incolla-testo (no upload PDF/DOCX), no chunking → doc oltre ~25000 char troncati in input. Chunking + upload file = v2. Immagini auto-Unsplash.
 - `from-document` usa `requireEntityAccess` (come ai-fill), niente gate super_admin (a differenza di generate-site).
 
 ## ✅ AI SITE BUILDER UNIFICATO (3/7) — un solo flusso, niente bivio
