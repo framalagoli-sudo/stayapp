@@ -452,8 +452,8 @@ export default function AiSiteBuilderPage() {
         </Field>
         <Field label="Il tuo documento *" hint="Incolla il testo completo: titoli e testi di ogni sezione. Più è strutturato, meglio è.">
           <textarea value={documento} onChange={e => setDocumento(e.target.value)}
-            placeholder={'Incolla qui il documento con tutte le sezioni del sito…'} style={{ ...ta, minHeight: 220 }} maxLength={12000} />
-          <div style={{ fontSize: 11, color: '#bbb', textAlign: 'right', marginTop: 4 }}>{documento.length}/12000</div>
+            placeholder={'Incolla qui il documento con tutte le sezioni del sito…'} style={{ ...ta, minHeight: 220 }} maxLength={25000} />
+          <div style={{ fontSize: 11, color: '#bbb', textAlign: 'right', marginTop: 4 }}>{documento.length}/25000</div>
         </Field>
         <Field label="Struttura del sito" hint="Una pagina è più semplice; scegli più pagine se il documento ha sezioni distinte da separare">
           <div style={{ display: 'flex', gap: 10 }}>

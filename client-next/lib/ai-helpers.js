@@ -30,7 +30,7 @@ export function checkAndConsumeGenRate(userId) {
 
 export { MONTHLY_LIMIT }
 
-export async function callClaude(prompt, maxTokens = 500) {
+export async function callClaude(prompt, maxTokens = 500, model = 'claude-haiku-4-5-20251001') {
   const apiKey = (process.env.ANTHROPIC_API_KEY ?? '').trim()
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY non configurata')
   const controller = new AbortController()
@@ -45,7 +45,7 @@ export async function callClaude(prompt, maxTokens = 500) {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model,
         max_tokens: maxTokens,
         messages: [{ role: 'user', content: prompt }],
       }),

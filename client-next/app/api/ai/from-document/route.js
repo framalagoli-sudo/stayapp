@@ -7,7 +7,7 @@ import { callClaude } from '@/lib/ai-helpers'
 import { resolveBlockImages } from '@/lib/unsplash'
 import { AI_BLOCKS_SCHEMA, AI_IMAGE_RULE, AI_BG_RULE, AI_ICONS } from '@/lib/ai-blocks'
 
-export const maxDuration = 60
+export const maxDuration = 120  // Sonnet + output ampio può superare i 60s (callClaude aborta a 90s)
 
 // "Ho già i contenuti": l'utente incolla un documento (es. generato con ChatGPT)
 // con le sezioni già scritte. L'AI lo converte nei NOSTRI blocchi PRESERVANDO la
@@ -18,7 +18,7 @@ export const maxDuration = 60
 
 const TIPO_LABEL = { struttura: 'struttura ricettiva', ristorante: 'ristorante / locale', attivita: 'attività / servizio' }
 const MENU_NOTE  = { ristorante: ' Se il documento parla del menù, includi un blocco "menu".' }
-const DOC_MAX = 12000  // limite input per non sforare i token (MVP: no chunking)
+const DOC_MAX = 25000  // limite input (MVP: no chunking; doc più lunghi → v2 chunking)
 
 function slugify(s) {
   return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -34,7 +34,7 @@ function addIdsToData(data) {
 function withIds(blocks) { return (blocks || []).map(b => ({ ...b, id: randomUUID(), data: addIdsToData(b.data) })) }
 
 function normalizeBlocks(blocks) {
-  return (blocks || []).slice(0, 16).map(b =>
+  return (blocks || []).slice(0, 40).map(b =>
     b.type === 'contatti' ? { ...b, type: 'form_builder', data: { form_token: '', titolo_sezione: 'Contattaci', ...(b.data || {}) } } : b
   )
 }
@@ -48,7 +48,13 @@ Rispondi ESCLUSIVAMENTE con JSON valido (nessun testo prima o dopo):
 Rispondi ESCLUSIVAMENTE con JSON valido (nessun testo prima o dopo):
 {"theme":{"secondaryColor":"#RRGGBB"},"blocks":[{"type":"...","data":{...},"style":{}}]}`
 
-  return `Sei un web designer e copywriter esperto italiano. Un cliente ti fornisce un DOCUMENTO con i contenuti già scritti del suo sito (sezioni, titoli, testi). Convertilo usando i NOSTRI blocchi, PRESERVANDO le sue sezioni e i suoi testi. NON inventare sezioni che non ci sono, NON perdere contenuti importanti; puoi migliorare la forma ma resta fedele al contenuto del documento.
+  return `Sei un assistente che TRASCRIVE un documento in una struttura di blocchi per un sito web. Un cliente ti dà un DOCUMENTO coi contenuti del suo sito (sezioni, titoli, testi). Devi riportare INTEGRALMENTE tutti i contenuti nei NOSTRI blocchi.
+
+⚠️ REGOLE DI FEDELTÀ (le più importanti, prima di tutto):
+- NON riassumere, NON accorciare, NON accorpare, NON saltare nulla. OGNI sezione, paragrafo e testo del documento deve finire in un blocco.
+- Usa QUANTI BLOCCHI SERVONO (anche 20-30): è meglio avere molti blocchi che perdere contenuti. Se un contenuto non ha un blocco dedicato, mettilo comunque in 'about', 'foto_testo' o 'paragrafi' — MAI scartarlo.
+- Mantieni i testi del cliente il più fedeli possibile: puoi solo adattare la forma per il web (titoli, elenchi), NON tagliare il contenuto.
+- NON inventare sezioni che nel documento non ci sono.
 
 ${AI_BLOCKS_SCHEMA}
 
@@ -68,6 +74,7 @@ ${documento}
 """
 
 REGOLE:
+- Ribadisco: riporta TUTTO il documento, non perdere nessuna sezione né dettaglio (è l'errore più grave).
 - Il primo blocco della Home = hero_slider o hero col titolo/claim principale del documento.
 - Metti un form_builder (contatti) dove il documento accenna ai contatti.
 - Testi in italiano, fedeli al documento (niente "Lorem ipsum" o placeholder).
@@ -96,7 +103,8 @@ export async function POST(request) {
 
   let parsed
   try {
-    const raw = await callClaude(prompt, 8000)
+    // Sonnet (più fedele di Haiku) + output ampio: serve trascrivere, non riassumere.
+    const raw = await callClaude(prompt, 16000, 'claude-sonnet-4-6')
     const m = raw.match(/\{[\s\S]*\}/)
     parsed = JSON.parse(m ? m[0] : raw)
   } catch (e) {
