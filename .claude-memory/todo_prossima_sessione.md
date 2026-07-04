@@ -8,7 +8,7 @@ metadata:
 ---
 
 ## ✅ IMPORT DA DOCUMENTO (3/7) — "Ho già i contenuti"
-LIVE. Nell'AI Site Builder, link discreto nello step 0 "Hai già i contenuti pronti? Incolla un documento →" (NON un bivio: il wizard guidato resta primario). Modalità `srcMode='document'` in `AiSiteBuilderPage.jsx`: entità + textarea documento + scelta design → `POST /api/ai/from-document`.
+LIVE. **Prima schermata dell'AI Site Builder = scelta esplicita** "Come vuoi creare il sito?" con due card: "Creiamolo insieme" (questionario guidato) e "Ho già un documento" (incolla progetto). `srcMode` parte da `null` (scelta), poi 'guided' | 'document'; "← Cambia" nell'header per tornare. [Il link sottile iniziale era invisibile → Francesco ha chiesto scelta esplicita.] Modalità documento: entità + textarea (incolla-testo, NON upload file) + toggle una/più-pagine + scelta design → `POST /api/ai/from-document`.
 - **Opzione A** (decisa con Francesco): la STRUTTURA viene dal documento (l'AI mappa le sezioni nei nostri blocchi), NON riempie un template fisso. Il template scelto dà solo il **look** (tema/colori).
 - **Toggle una-pagina / più-pagine** (default one-page). Se `multipagina=true` l'AI spezza in pagine SEGUENDO le sezioni del documento (home + chi-siamo/servizi/contatti…, max 5); one-page = tutto nella home. Scrittura multi-pagina con slug+collisioni.
 - Schema blocchi estratto in **`lib/ai-blocks.js`** e condiviso tra `generate-site` e `from-document` (una fonte sola).
