@@ -46,6 +46,28 @@ const PRESETS = [
 // Modelli suggeriti in base al tipo di entità (ordinati per primi nello step Design).
 const TIPO_HINT = { struttura: ['hotel'], ristorante: ['ristorante'], attivita: ['esperienze', 'fitness', 'beauty', 'professionista', 'servizi'] }
 
+// Prompt pronto: l'utente lo incolla in ChatGPT, risponde alle domande e ottiene un
+// documento con le sezioni che il nostro builder mappa meglio sui blocchi.
+const CHATGPT_PROMPT = `Sei un copywriter esperto. Aiutami a scrivere i contenuti del sito web della mia attività.
+
+1) Prima fammi qualche domanda essenziale (nome dell'attività, cosa faccio e dove, cosa mi distingue, servizi/prodotti principali, a chi mi rivolgo, contatti e orari).
+2) Poi scrivi un DOCUMENTO completo e ben strutturato, in italiano, con queste sezioni. Usa un titolo chiaro per ognuna (una riga), e salta quelle che non servono:
+
+- TITOLO E CLAIM: il nome dell'attività + una frase forte che dice cosa offri
+- CHI SIAMO: storia, valori, cosa vi rende unici
+- SERVIZI / PRODOTTI: elenco, con una breve descrizione per ciascuno
+- PERCHÉ SCEGLIERCI: 3-5 punti di forza
+- COME FUNZIONA: gli step principali (se ha senso)
+- NUMERI: dati/statistiche credibili (anni di attività, clienti, ecc.)
+- RECENSIONI: 2-3 testimonianze di clienti (nome + frase)
+- PREZZI / PACCHETTI: se hai listini o pacchetti
+- DOMANDE FREQUENTI: 3-5 domande con risposta
+- TEAM: persone chiave (nome, ruolo)
+- CONTATTI: indirizzo, telefono, email, orari
+- COSA FARE ORA: l'azione che vuoi dal visitatore (prenota, contattaci…)
+
+Regole: testi concreti e completi (niente segnaposto tipo "inserisci qui"), un titolo per ogni sezione, scrivi TUTTO il contenuto reale. Alla fine dammi solo il documento, pronto da copiare.`
+
 // ── Header ──────────────────────────────────────────────────────────────────────
 function BuilderHeader({ onBack }) {
   return (
@@ -263,6 +285,8 @@ export default function AiSiteBuilderPage() {
   const [srcMode,     setSrcMode]     = useState(null)      // null = scelta, 'guided' | 'document'
   const [documento,   setDocumento]   = useState('')
   const [docMulti,    setDocMulti]    = useState(false)     // false = one-page, true = più pagine
+  const [promptCopied, setPromptCopied] = useState(false)
+  const [showGuide,    setShowGuide]    = useState(false)
 
   const canNext = [
     !!entityId,
@@ -314,6 +338,16 @@ export default function AiSiteBuilderPage() {
     } finally {
       clearInterval(interval)
       setLoading(false)
+    }
+  }
+
+  async function copyPrompt() {
+    try {
+      await navigator.clipboard.writeText(CHATGPT_PROMPT)
+      setPromptCopied(true)
+      setTimeout(() => setPromptCopied(false), 2500)
+    } catch {
+      setShowGuide(true)  // fallback: mostra il prompt per la copia manuale
     }
   }
 
@@ -450,6 +484,29 @@ export default function AiSiteBuilderPage() {
         <Field label="Per quale sito?" hint="La home verrà associata a questa entità">
           <EntitySelector onSelect={selectEntity} selectedId={entityId} />
         </Field>
+
+        <div style={{ background: '#f0f4ff', border: '1px solid #dfe6ff', borderRadius: 12, padding: '14px 16px', marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 13.5, color: '#1a1a2e', fontWeight: 700 }}>💡 Non sai cosa scrivere? Fattelo preparare da ChatGPT</div>
+            <button type="button" onClick={copyPrompt}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+              {promptCopied ? '✓ Copiato' : 'Copia il prompt per ChatGPT'}
+            </button>
+          </div>
+          <div style={{ fontSize: 12.5, color: '#5a6270', lineHeight: 1.55, marginTop: 8 }}>
+            Incolla il prompt in ChatGPT, rispondi alle domande, poi incolla qui il documento che ti restituisce.
+            {' '}
+            <button type="button" onClick={() => setShowGuide(v => !v)}
+              style={{ background: 'none', border: 'none', color: '#5b6af8', cursor: 'pointer', padding: 0, fontSize: 12.5, textDecoration: 'underline' }}>
+              {showGuide ? 'Nascondi il prompt' : 'Mostralo / copialo a mano'}
+            </button>
+          </div>
+          {showGuide && (
+            <textarea readOnly value={CHATGPT_PROMPT} onFocus={e => e.target.select()}
+              style={{ ...ta, minHeight: 170, marginTop: 10, fontSize: 12, background: '#fff' }} />
+          )}
+        </div>
+
         <Field label="Il tuo documento *" hint="Incolla il testo completo: titoli e testi di ogni sezione. Più è strutturato, meglio è.">
           <textarea value={documento} onChange={e => setDocumento(e.target.value)}
             placeholder={'Incolla qui il documento con tutte le sezioni del sito…'} style={{ ...ta, minHeight: 220 }} maxLength={25000} />
