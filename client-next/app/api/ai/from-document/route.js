@@ -41,7 +41,7 @@ function normalizeBlocks(blocks) {
 
 function buildPrompt({ entity, entity_tipo, documento, multi }) {
   const output = multi
-    ? `Il documento può prevedere PIÙ PAGINE. Crea le pagine SEGUENDO la struttura del documento: la 1ª è la Home (slug "__home__", nel_menu false); le altre sono pagine tematiche (es. chi-siamo, servizi, contatti) con slug breve e nel_menu true. NON creare pagine che il documento non suggerisce — meglio poche pagine piene che tante vuote. Massimo 5 pagine.
+    ? `Il documento può prevedere PIÙ PAGINE. Crea le pagine SEGUENDO la struttura del documento: la 1ª è la Home (slug "__home__", nel_menu false); le altre sono pagine tematiche (es. chi-siamo, servizi, contatti) con slug breve e nel_menu true. Se il documento indica PAGINE esplicite (es. "PAGINA 1: HOME", "PAGINA 2: CHI SIAMO", "PAGINA 3: ..."), crea UNA pagina per ciascuna con quel titolo e quei contenuti. NON creare pagine che il documento non suggerisce — meglio poche pagine piene che tante vuote. Massimo 5 pagine.
 Rispondi ESCLUSIVAMENTE con JSON valido (nessun testo prima o dopo):
 {"theme":{"secondaryColor":"#RRGGBB"},"pages":[{"titolo":"...","slug":"...","nel_menu":false,"blocks":[{"type":"...","data":{...},"style":{}}]}]}`
     : `Convertilo in UNA SOLA pagina (one-page): tutte le sezioni impilate nella home.
@@ -55,6 +55,8 @@ Rispondi ESCLUSIVAMENTE con JSON valido (nessun testo prima o dopo):
 - Usa QUANTI BLOCCHI SERVONO (anche 20-30): è meglio avere molti blocchi che perdere contenuti. Se un contenuto non ha un blocco dedicato, mettilo comunque in 'about', 'foto_testo' o 'paragrafi' — MAI scartarlo.
 - Mantieni i testi del cliente il più fedeli possibile: puoi solo adattare la forma per il web (titoli, elenchi), NON tagliare il contenuto.
 - NON inventare sezioni che nel documento non ci sono.
+- L'INPUT PUÒ ARRIVARE NON FORMATTATO (titoli attaccati al testo tipo "INVESTMENTSTRUTTURA", doppi spazi al posto degli a-capo). RICOSTRUISCI TU la struttura: riconosci i titoli di sezione (di solito in MAIUSCOLO o seguiti da ":", es. TITOLO E CLAIM, CHI SIAMO, PERCHÉ SCEGLIERCI, NUMERI, SERVIZI, COME FUNZIONA, TEAM, DOMANDE FREQUENTI, CONTATTI, COSA FARE ORA) e usali per scegliere i blocchi.
+- Trasforma gli ELENCHI (punti di forza, servizi, fasi/step, FAQ, numeri) in blocchi STRUTTURATI (highlights, paragrafi, steps, faq, stats) — NON in un unico testo piatto.
 
 ${AI_BLOCKS_SCHEMA}
 

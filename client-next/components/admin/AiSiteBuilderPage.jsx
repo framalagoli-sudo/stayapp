@@ -66,7 +66,27 @@ const CHATGPT_PROMPT = `Sei un copywriter esperto. Aiutami a scrivere i contenut
 - CONTATTI: indirizzo, telefono, email, orari
 - COSA FARE ORA: l'azione che vuoi dal visitatore (prenota, contattaci…)
 
-Regole: testi concreti e completi (niente segnaposto tipo "inserisci qui"), un titolo per ogni sezione, scrivi TUTTO il contenuto reale. Alla fine dammi solo il documento, pronto da copiare.`
+Regole: testi concreti e completi (niente segnaposto tipo "inserisci qui"), un titolo per ogni sezione, scrivi TUTTO il contenuto reale.
+FORMATTAZIONE: ogni TITOLO di sezione su una riga a sé, e una RIGA VUOTA tra un paragrafo e l'altro. Alla fine dammi SOLO il documento, racchiuso in un blocco di codice, così posso copiarlo senza perdere gli a-capo.`
+
+// Converte l'HTML incollato (es. copiato da ChatGPT/Gemini) in testo strutturato:
+// titoli e paragrafi su righe separate, elenchi con "- ". Evita il muro di testo che
+// si ottiene incollando testo formattato in una textarea semplice.
+function htmlToStructuredText(html) {
+  try {
+    const div = document.createElement('div')
+    div.innerHTML = html
+    div.querySelectorAll('br').forEach(br => br.replaceWith('\n'))
+    div.querySelectorAll('li').forEach(li => { li.prepend('- '); li.append('\n') })
+    div.querySelectorAll('h1,h2,h3,h4,h5,h6,p,div,tr,section,article,ul,ol,blockquote').forEach(el => el.append('\n\n'))
+    let text = (div.textContent || '')
+      .replace(/[^\S\n]+/g, ' ')     // collassa spazi/tab, non gli a-capo
+      .replace(/ *\n */g, '\n')      // togli spazi attorno agli a-capo
+      .replace(/\n{3,}/g, '\n\n')    // max una riga vuota
+      .trim()
+    return text
+  } catch { return '' }
+}
 
 // ── Header ──────────────────────────────────────────────────────────────────────
 function BuilderHeader({ onBack }) {
@@ -351,6 +371,14 @@ export default function AiSiteBuilderPage() {
     }
   }
 
+  function handleDocPaste(e) {
+    const html = e.clipboardData?.getData('text/html')
+    if (html && html.trim()) {
+      const structured = htmlToStructuredText(html)
+      if (structured) { e.preventDefault(); setDocumento(structured.slice(0, 25000)) }
+    }
+  }
+
   async function generateFromDoc() {
     setLoading(true)
     setError(null)
@@ -508,7 +536,7 @@ export default function AiSiteBuilderPage() {
         </div>
 
         <Field label="Il tuo documento *" hint="Incolla il testo completo: titoli e testi di ogni sezione. Più è strutturato, meglio è.">
-          <textarea value={documento} onChange={e => setDocumento(e.target.value)}
+          <textarea value={documento} onChange={e => setDocumento(e.target.value)} onPaste={handleDocPaste}
             placeholder={'Incolla qui il documento con tutte le sezioni del sito…'} style={{ ...ta, minHeight: 220 }} maxLength={25000} />
           <div style={{ fontSize: 11, color: '#bbb', textAlign: 'right', marginTop: 4 }}>{documento.length}/25000</div>
         </Field>
