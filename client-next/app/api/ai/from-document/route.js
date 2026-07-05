@@ -75,6 +75,7 @@ ${documento}
 
 REGOLE:
 - Ribadisco: riporta TUTTO il documento, non perdere nessuna sezione né dettaglio (è l'errore più grave).
+- Nei testi lunghi (es. about, foto_testo) SEPARA i paragrafi con una RIGA VUOTA (doppio a-capo \\n\\n): non incollare più paragrafi in un unico blocco senza stacchi, altrimenti sul sito il testo appare tutto attaccato.
 - Il primo blocco della Home = hero_slider o hero col titolo/claim principale del documento.
 - Metti un form_builder (contatti) dove il documento accenna ai contatti.
 - Testi in italiano, fedeli al documento (niente "Lorem ipsum" o placeholder).

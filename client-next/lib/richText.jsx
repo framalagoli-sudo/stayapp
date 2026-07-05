@@ -78,7 +78,11 @@ function renderBlocks(content, primary) {
 export function RichText({ value, primary = '#1a6fc4', style }) {
   if (richIsEmpty(value)) return null
   if (typeof value === 'string') {
-    return <div style={style}><p style={{ margin: 0, whiteSpace: 'pre-line' }}>{value}</p></div>
+    // Testo semplice: separa i paragrafi (righe vuote) in <p> distinti così la
+    // spaziatura si vede; dentro un paragrafo i singoli a-capo restano (pre-line).
+    const paras = value.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean)
+    if (paras.length <= 1) return <div style={style}><p style={{ margin: 0, whiteSpace: 'pre-line' }}>{value}</p></div>
+    return <div style={style}>{paras.map((p, i) => <p key={i} style={{ margin: i ? '0.85em 0 0' : 0, whiteSpace: 'pre-line' }}>{p}</p>)}</div>
   }
   if (!isRichDoc(value)) return null
   return <div style={style}>{renderBlocks(value.content, primary)}</div>
