@@ -6,7 +6,7 @@ import { PropertyIdContext } from '@/context/PropertyIdContext'
 import { useAuth } from '@/context/AuthContext'
 import {
   GripVertical, Home, FilePlus, Users, Briefcase, Mail, Tag, HelpCircle,
-  Search, FileText, SearchX, Navigation, PenLine, Layers, History, Languages, Settings,
+  Search, FileText, SearchX, Navigation, PenLine, Layers, History, Languages, Settings, Sparkles,
 } from 'lucide-react'
 import TraduzioniSito from '@/components/admin/TraduzioniSito'
 
@@ -152,14 +152,6 @@ export default function SitoPage({ entityTipo }) {
     ? (ctxId || paramId || profile?.property_id)
     : paramId
 
-  const homeEditPath = entityTipo === 'struttura'
-    ? (ctxId ? `/admin/struttura/${ctxId}/minisito`
-             : paramId ? `/admin/struttura/${paramId}/minisito`
-             : '/admin/property/minisito')
-    : entityTipo === 'ristorante'
-    ? `/admin/ristoranti/${paramId}/minisito`
-    : `/admin/attivita/${paramId}/minisito`
-
   const [activeTab,    setActiveTab]    = useState('home')
   const [pagine,       setPagine]       = useState([])
   const [entitySlug,   setEntitySlug]   = useState(null)
@@ -179,7 +171,8 @@ export default function SitoPage({ entityTipo }) {
   // Header/Footer config
   const DEFAULT_HEADER = { style: 'dark', always_visible: false, scroll_behavior: 'appear', logo_in_nav: true, show_cta: false, cta_text: 'Prenota ora', cta_url: '', show_phone: false, bg_color: '' }
   const DEFAULT_FOOTER = { layout: 'standard', style: 'dark', copyright: '', show_socials: true, show_description: true, show_contact: true, extra_links: [] }
-  const DEFAULT_SEO = { seo_title: '', seo_description: '', google_site_verification: '', booking_url: '', tagline: '', show_pwa_link: true, social: { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' } }
+  const DEFAULT_TRACKING = { meta_pixel_id: '', ga4_id: '', gtm_id: '', tiktok_pixel_id: '' }
+  const DEFAULT_SEO = { seo_title: '', seo_description: '', google_site_verification: '', booking_url: '', tagline: '', show_pwa_link: true, social: { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' }, tracking_cfg: DEFAULT_TRACKING }
   const [entityData,  setEntityData]  = useState(null)
   const [headerCfg,   setHeaderCfg]   = useState(DEFAULT_HEADER)
   const [footerCfg,   setFooterCfg]   = useState(DEFAULT_FOOTER)
@@ -210,6 +203,7 @@ export default function SitoPage({ entityTipo }) {
         booking_url: mini.booking_url || '', tagline: mini.tagline || '',
         show_pwa_link: mini.show_pwa_link !== false,
         social: { instagram: '', facebook: '', tripadvisor: '', whatsapp: '', ...(mini.social || {}) },
+        tracking_cfg: { meta_pixel_id: '', ga4_id: '', gtm_id: '', tiktok_pixel_id: '', ...(mini.tracking_cfg || {}) },
       })
     }
     setLoading(false)
@@ -249,6 +243,7 @@ export default function SitoPage({ entityTipo }) {
       google_site_verification: seoForm.google_site_verification,
       booking_url: seoForm.booking_url, tagline: seoForm.tagline,
       show_pwa_link: seoForm.show_pwa_link, social: seoForm.social,
+      tracking_cfg: seoForm.tracking_cfg,
     }
     await apiFetch(endpoint, {
       method: 'PATCH',
@@ -486,7 +481,6 @@ export default function SitoPage({ entityTipo }) {
   const entitySiteUrl = entitySlug
     ? (entityTipo === 'struttura' ? `/s/${entitySlug}` : entityTipo === 'ristorante' ? `/r/${entitySlug}` : `/a/${entitySlug}`)
     : null
-  const activeSections = entityData?.minisito?.section_order ?? []
 
   // ── Tabs config ───────────────────────────────────────────────────────────────
   const TABS = [
@@ -539,6 +533,8 @@ export default function SitoPage({ entityTipo }) {
         const lbl = { display: 'block', fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 6, marginTop: 16 }
         const setF = (k, v) => setSeoForm(f => ({ ...f, [k]: v }))
         const setSoc = (k, v) => setSeoForm(f => ({ ...f, social: { ...f.social, [k]: v } }))
+        const setTrack = (k, v) => setSeoForm(f => ({ ...f, tracking_cfg: { ...(f.tracking_cfg || {}), [k]: v } }))
+        const trk = seoForm.tracking_cfg || {}
         return (
           <div style={{ maxWidth: 640 }}>
             <h3 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 700 }}>SEO & Impostazioni</h3>
@@ -571,6 +567,21 @@ export default function SitoPage({ entityTipo }) {
               <div key={k}>
                 <label style={lbl}>{label}</label>
                 <input style={inp} value={seoForm.social[k] || ''} onChange={e => setSoc(k, e.target.value)} placeholder={k === 'whatsapp' ? '+39...' : 'https://...'} />
+              </div>
+            ))}
+
+            <h4 style={{ margin: '24px 0 4px', fontSize: 14, fontWeight: 700 }}>Tracking / Pixel</h4>
+            <p style={{ color: '#888', fontSize: 12, marginTop: 0, marginBottom: 4 }}>Codici di monitoraggio iniettati sul sito pubblico. Lascia vuoto se non li usi.</p>
+            {[
+              ['meta_pixel_id',   'Meta Pixel ID',                        'es. 1234567890123456',   'Meta Business Suite → Gestione eventi → Pixel'],
+              ['ga4_id',          'Google Analytics 4 — Measurement ID',  'es. G-XXXXXXXXXX',       'Google Analytics → Amministrazione → Stream dati'],
+              ['gtm_id',          'Google Tag Manager — Container ID',    'es. GTM-XXXXXXX',        'Google Tag Manager → Container ID'],
+              ['tiktok_pixel_id', 'TikTok Pixel ID',                      'es. C4ABCDE12345678901', 'TikTok Ads Manager → Assets → Events → Web'],
+            ].map(([k, label, ph, hint]) => (
+              <div key={k}>
+                <label style={lbl}>{label}</label>
+                <input style={inp} value={trk[k] || ''} onChange={e => setTrack(k, e.target.value.trim())} placeholder={ph} />
+                <span style={{ fontSize: 11, color: '#bbb' }}>{hint}</span>
               </div>
             ))}
 
@@ -612,13 +623,13 @@ export default function SitoPage({ entityTipo }) {
                       Modifica homepage
                     </button>
                   ) : (
-                    <button onClick={() => router.push(homeEditPath)}
+                    <button onClick={() => router.push('/admin/ai-site-builder')}
                       style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 22px', background: '#fff', color: '#1a1a2e', border: 'none', borderRadius: 9, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
-                      <PenLine size={15} strokeWidth={2} />
-                      Modifica sezioni
+                      <Sparkles size={15} strokeWidth={2} />
+                      Crea la home
                     </button>
                   )}
-                  <button onClick={() => router.push(homeEditPath)}
+                  <button onClick={() => setActiveTab('impostazioni')}
                     style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 9, cursor: 'pointer', fontSize: 13 }}>
                     Impostazioni sito
                   </button>
@@ -633,25 +644,14 @@ export default function SitoPage({ entityTipo }) {
             </div>
           </div>
 
-          {/* Info sezioni */}
+          {/* Info home */}
           <div style={{ background: '#f9f9fb', borderRadius: 12, padding: '20px 24px', border: '1px solid #eeeeee' }}>
             <div style={{ fontWeight: 600, fontSize: 13, color: '#1a1a2e', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 7 }}>
               <Layers size={14} strokeWidth={1.5} color="#888" />
-              Sezioni configurate
+              La tua home
             </div>
-            {activeSections.length > 0 ? (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-                {activeSections.map(s => (
-                  <span key={s} style={{ padding: '3px 10px', background: '#fff', border: '1px solid #ddd', borderRadius: 20, fontSize: 11, color: '#555' }}>
-                    {s}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <div style={{ fontSize: 12, color: '#aaa', marginBottom: 12 }}>Nessuna sezione configurata — clicca "Modifica sezioni" per iniziare.</div>
-            )}
             <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6 }}>
-              Personalizza la Home con sezioni trascinabili: highlights, statistiche, about, galleria, testimonianze, form contatti e altro. Per aggiungere pagine extra usa il tab <strong>Pagine</strong>.
+              La home è una pagina a blocchi: modificala con l'editor visuale (trascina, aggiungi sezioni, immagini). Non ne hai ancora una? Creala con l'<strong>AI Site Builder</strong>. Per aggiungere pagine extra usa il tab <strong>Pagine</strong>.
             </div>
           </div>
         </div>
