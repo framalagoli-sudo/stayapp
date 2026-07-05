@@ -7,6 +7,13 @@ metadata:
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
 ---
 
+## ✅ MINISITOPAGE RITIRATA (5/7) — editor sito ora UNICO in SitoPage
+Fatto e LIVE. `MiniSitoPage.jsx` + 3 wrapper + 4 route `/minisito` + `SiteTemplateGallery.jsx` **cancellati** (−2700 righe).
+- ⚠️ CORREZIONE a memoria precedente: MiniSitoPage NON era codice morto. Era ancora agganciato da 2 pulsanti in SitoPage e **editava da solo il Tracking/Pixel** (`minisito.tracking_cfg`: Meta/GA4/GTM/TikTok), che è **live** (`injectTracking` in Landing{Struttura,Ristorante,Attivita} → `lib/tracking.js`). Cancellarlo a secco AVREBBE fatto danni.
+- **Migrato il Tracking** nella tab "SEO & Impostazioni" di SitoPage (campi meta_pixel_id/ga4_id/gtm_id/tiktok_pixel_id in `seoForm.tracking_cfg`, salvato con merge sul jsonb → nessuna perdita). Header/footer erano GIÀ in SitoPage (`header_cfg`/`footer_cfg`), non serviva migrarli. Le sezioni legacy (highlights/stats/…) non renderizzavano → perse solo in editing, impatto ~0.
+- Pulsanti Home in SitoPage: "Impostazioni sito" → `setActiveTab('impostazioni')`; "Crea la home" (ex "Modifica sezioni") → `/admin/ai-site-builder`.
+- `/api/upload/minisito-image` NON è MiniSitoPage: è endpoint upload condiviso (usato anche da PaginaEditorPage) → RESTA.
+
 ## ✅ IMPORT DA DOCUMENTO (3/7) — "Ho già i contenuti"
 LIVE. **Prima schermata dell'AI Site Builder = scelta esplicita** "Come vuoi creare il sito?" con due card: "Creiamolo insieme" (questionario guidato) e "Ho già un documento" (incolla progetto). `srcMode` parte da `null` (scelta), poi 'guided' | 'document'; "← Cambia" nell'header per tornare. [Il link sottile iniziale era invisibile → Francesco ha chiesto scelta esplicita.] Modalità documento: entità + textarea (incolla-testo, NON upload file) + toggle una/più-pagine + scelta design → `POST /api/ai/from-document`.
 - **Opzione A** (decisa con Francesco): la STRUTTURA viene dal documento (l'AI mappa le sezioni nei nostri blocchi), NON riempie un template fisso. Il template scelto dà solo il **look** (tema/colori).
