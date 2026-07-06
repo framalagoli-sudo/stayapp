@@ -19,9 +19,10 @@ export async function POST(request) {
       if (!prop || prop.azienda_id !== profile?.azienda_id) return Response.json({ error: 'Accesso negato' }, { status: 403 })
     }
 
-    const result = await uploadToStorage(`${propertyId}/logo_url-${Date.now()}.${parsed.ext}`, parsed.buffer, parsed.contentType)
+    const field = searchParams.get('field') === 'logo_dark_url' ? 'logo_dark_url' : 'logo_url'
+    const result = await uploadToStorage(`${propertyId}/${field}-${Date.now()}.${parsed.ext}`, parsed.buffer, parsed.contentType)
     if (result.error) return Response.json({ error: result.error }, { status: 500 })
-    await supabaseAdmin.from('properties').update({ logo_url: result.url }).eq('id', propertyId)
+    await supabaseAdmin.from('properties').update({ [field]: result.url }).eq('id', propertyId)
     return Response.json({ url: result.url })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
@@ -32,12 +33,13 @@ export async function DELETE(request) {
     if (response) return response
     const { data: profile } = await supabaseAdmin.from('profiles').select('property_id').eq('id', user.id).single()
     if (!profile?.property_id) return Response.json({ error: 'Struttura non associata' }, { status: 403 })
-    const { data: prop } = await supabaseAdmin.from('properties').select('logo_url').eq('id', profile.property_id).single()
-    if (prop?.logo_url) {
-      const idx = prop.logo_url.indexOf('/property-media/')
-      if (idx !== -1) await supabaseAdmin.storage.from('property-media').remove([prop.logo_url.slice(idx + 16).split('?')[0]])
+    const field = new URL(request.url).searchParams.get('field') === 'logo_dark_url' ? 'logo_dark_url' : 'logo_url'
+    const { data: prop } = await supabaseAdmin.from('properties').select(field).eq('id', profile.property_id).single()
+    if (prop?.[field]) {
+      const idx = prop[field].indexOf('/property-media/')
+      if (idx !== -1) await supabaseAdmin.storage.from('property-media').remove([prop[field].slice(idx + 16).split('?')[0]])
     }
-    await supabaseAdmin.from('properties').update({ logo_url: null }).eq('id', profile.property_id)
+    await supabaseAdmin.from('properties').update({ [field]: null }).eq('id', profile.property_id)
     return Response.json({ success: true })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }

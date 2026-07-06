@@ -1,6 +1,7 @@
 'use client'
 import LegalInfo from './LegalInfo'
 import { t, entityBasePath } from '@/lib/i18n'
+import { isDarkColor } from '@/lib/color'
 
 const SOCIAL_LABELS = {
   instagram:   'Instagram',
@@ -16,6 +17,7 @@ export default function LandingFooter({ entity, mini, primary, heading, body, en
   if (footer.show_footer === false) return null
 
   const bg     = footer.bg_color   || '#1a1a2e'
+  const brandLogo = (isDarkColor(bg) && entity.logo_dark_url) ? entity.logo_dark_url : entity.logo_url
   const color  = footer.text_color || 'rgba(255,255,255,0.75)'
   const accent = footer.text_color || '#fff'
   const social = mini?.social || {}
@@ -50,8 +52,8 @@ export default function LandingFooter({ entity, mini, primary, heading, body, en
         <div className="lf-cols">
           {/* Brand */}
           <div>
-            {entity.logo_url && (
-              <img src={entity.logo_url} alt={entity.name}
+            {brandLogo && (
+              <img src={brandLogo} alt={entity.name}
                 style={{ height: 36, objectFit: 'contain', marginBottom: 12 }} />
             )}
             <div style={{ fontFamily: heading, fontWeight: 700, fontSize: 18, color: accent, marginBottom: 8 }}>

@@ -12,9 +12,10 @@ export async function POST(request) {
 
     const parsed = await parseUpload(request)
     if (parsed.error) return Response.json({ error: parsed.error }, { status: 400 })
-    const result = await uploadToStorage(`attivita/${attivita_id}/logo_url-${Date.now()}.${parsed.ext}`, parsed.buffer, parsed.contentType)
+    const field = searchParams.get('field') === 'logo_dark_url' ? 'logo_dark_url' : 'logo_url'
+    const result = await uploadToStorage(`attivita/${attivita_id}/${field}-${Date.now()}.${parsed.ext}`, parsed.buffer, parsed.contentType)
     if (result.error) return Response.json({ error: result.error }, { status: 500 })
-    await supabaseAdmin.from('attivita').update({ logo_url: result.url }).eq('id', attivita_id)
+    await supabaseAdmin.from('attivita').update({ [field]: result.url }).eq('id', attivita_id)
     return Response.json({ url: result.url })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }

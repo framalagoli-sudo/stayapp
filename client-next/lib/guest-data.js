@@ -24,7 +24,7 @@ export async function getAziendaLegale(aziendaId) {
 export async function getStruttura(slug) {
   const { data, error } = await supabaseAdmin
     .from('properties')
-    .select('id, azienda_id, slug, name, description, address, phone, whatsapp, wifi_name, wifi_password, checkin_time, checkout_time, rules, amenities, logo_url, cover_url, plan, modules, theme, services, gallery, restaurant, activities, excursions, minisito, privacy_data, chatbot')
+    .select('id, azienda_id, slug, name, description, address, phone, whatsapp, wifi_name, wifi_password, checkin_time, checkout_time, rules, amenities, logo_url, logo_dark_url, cover_url, plan, modules, theme, services, gallery, restaurant, activities, excursions, minisito, privacy_data, chatbot')
     .eq('slug', slug)
     .eq('active', true)
     .single()
@@ -37,7 +37,7 @@ export async function getStruttura(slug) {
 export async function getRistorante(slug) {
   const { data, error } = await supabaseAdmin
     .from('ristoranti')
-    .select('id, azienda_id, slug, name, description, address, phone, email, schedule, logo_url, cover_url, theme, gallery, menu, modules, minisito, privacy_data, chatbot')
+    .select('id, azienda_id, slug, name, description, address, phone, email, schedule, logo_url, logo_dark_url, cover_url, theme, gallery, menu, modules, minisito, privacy_data, chatbot')
     .eq('slug', slug)
     .eq('active', true)
     .single()
@@ -50,7 +50,7 @@ export async function getRistorante(slug) {
 export async function getAttivita(slug) {
   const { data, error } = await supabaseAdmin
     .from('attivita')
-    .select('id, azienda_id, slug, name, tipo, description, address, phone, email, schedule, logo_url, cover_url, theme, gallery, services, minisito, privacy_data, chatbot, pwa')
+    .select('id, azienda_id, slug, name, tipo, description, address, phone, email, schedule, logo_url, logo_dark_url, cover_url, theme, gallery, services, minisito, privacy_data, chatbot, pwa')
     .eq('slug', slug)
     .eq('active', true)
     .single()

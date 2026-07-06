@@ -27,7 +27,7 @@ export async function PATCH(request, { params }) {
     const body = await request.json()
 
     const allowed = ['name', 'description', 'address', 'phone', 'email', 'schedule',
-      'theme', 'logo_url', 'cover_url', 'gallery', 'menu', 'active', 'modules', 'minisito', 'privacy_data', 'chatbot']
+      'theme', 'logo_url', 'logo_dark_url', 'cover_url', 'gallery', 'menu', 'active', 'modules', 'minisito', 'privacy_data', 'chatbot']
     const updates = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
 
     if (body.slug !== undefined) {

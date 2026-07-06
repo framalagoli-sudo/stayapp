@@ -28,7 +28,7 @@ export async function PATCH(request, { params }) {
 
     const allowed = ['name', 'description', 'address', 'phone', 'whatsapp', 'email',
       'wifi_name', 'wifi_password', 'checkin_time', 'checkout_time', 'rules', 'amenities',
-      'modules', 'theme', 'logo_url', 'cover_url', 'services', 'gallery', 'restaurant',
+      'modules', 'theme', 'logo_url', 'logo_dark_url', 'cover_url', 'services', 'gallery', 'restaurant',
       'activities', 'excursions', 'minisito', 'privacy_data', 'chatbot']
     const updates = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
 

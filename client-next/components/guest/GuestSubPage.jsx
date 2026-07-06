@@ -47,6 +47,7 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
 
   const hdrCfg         = mini.header_cfg || mini.header || {}
   const navDark        = entityType === 'struttura' ? hdrCfg.style !== 'light' : hdrCfg.style === 'dark'
+  const navLogo        = (navDark && entity.logo_dark_url) ? entity.logo_dark_url : entity.logo_url
   const navBg          = navDark ? 'rgba(18,18,32,0.93)'    : 'rgba(255,255,255,0.95)'
   const navBorderColor = navDark ? 'rgba(255,255,255,0.08)' : '#eee'
   const navTextColor   = navDark ? 'rgba(255,255,255,0.8)'  : '#1a1a2e'
@@ -105,7 +106,7 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
       {!hideHeader && (<>
       <nav className="sub-nav" style={{ transform: navHidden ? 'translateY(-100%)' : 'translateY(0)', transition: 'transform 0.3s ease' }}>
         <a href={homeUrl} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          {entity.logo_url && <img src={entity.logo_url} alt="logo" style={{ height: 30, objectFit: 'contain' }} />}
+          {navLogo && <img src={navLogo} alt="logo" style={{ height: 30, objectFit: 'contain' }} />}
           <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 15, color: navTextColor }}>{entity.name}</span>
         </a>
         {pagine.length > 0 && (

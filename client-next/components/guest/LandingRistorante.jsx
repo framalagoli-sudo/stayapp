@@ -88,6 +88,7 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
 
   const hdrCfg         = mini.header_cfg || mini.header || {}
   const navDark        = hdrCfg.style === 'dark'
+  const navLogo        = (navDark && ristorante.logo_dark_url) ? ristorante.logo_dark_url : ristorante.logo_url
   const navAlwaysVisible = hdrCfg.always_visible === true
   const smartNav       = hdrCfg.scroll_behavior === 'smart'
   const navBg          = navDark ? 'rgba(18,18,32,0.93)'   : 'rgba(255,255,255,0.95)'
@@ -184,7 +185,7 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
 
       <nav className="land-nav">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {ristorante.logo_url && <img src={ristorante.logo_url} alt="logo" style={{ height: 32, objectFit: 'contain' }} />}
+          {navLogo && <img src={navLogo} alt="logo" style={{ height: 32, objectFit: 'contain' }} />}
           <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, color: navTextColor }}>{ristorante.name}</span>
         </div>
         {pagine.length > 0 && (

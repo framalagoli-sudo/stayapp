@@ -22,14 +22,16 @@ export default function PropertyGalleryPage() {
     if (!file) return
     setUploading(u => ({ ...u, [field]: true }))
     try {
-      const type = field === 'logo_url' ? 'logo' : 'cover'
-      const { url } = await uploadMedia(`/api/upload/${type}`, file)
+      const type = (field === 'logo_url' || field === 'logo_dark_url') ? 'logo' : 'cover'
+      const qs = field === 'logo_dark_url' ? '?field=logo_dark_url' : ''
+      const { url } = await uploadMedia(`/api/upload/${type}${qs}`, file)
       await save({ [field]: url })
     } catch (e) { alert(`Errore upload: ${e.message}`) }
     finally { setUploading(u => ({ ...u, [field]: false })) }
   }
 
   async function removeMedia(field) {
+    if (field === 'logo_dark_url') { await save({ logo_dark_url: null }).catch(() => {}); return }
     const type = field === 'logo_url' ? 'logo' : 'cover'
     try { await apiFetch(`/api/upload/${type}`, { method: 'DELETE' }) }
     catch (e) { alert(`Errore rimozione: ${e.message}`) }
@@ -64,6 +66,26 @@ export default function PropertyGalleryPage() {
             </label>
           </div>
           <p style={hintStyle}>Consigliato: 300×100 px, max 200 KB, PNG trasparente</p>
+        </div>
+
+        {/* Logo negativo (sfondi scuri) */}
+        <div style={{ marginBottom: 24 }}>
+          <label style={lblStyle}>Logo per sfondi scuri (negativo)</label>
+          {property.logo_dark_url && (
+            <div style={{ marginBottom: 10, padding: 12, background: '#1a1a2e', borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+              <img key={property.logo_dark_url} src={property.logo_dark_url} alt="logo negativo"
+                style={{ maxHeight: 64, maxWidth: 180, objectFit: 'contain' }} />
+              <button type="button" onClick={() => removeMedia('logo_dark_url')} style={{ ...removeBtnStyle, color: '#ff8080' }}>Rimuovi</button>
+            </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <label style={uploadLabelStyle}>
+              {uploading.logo_dark_url ? 'Upload…' : property.logo_dark_url ? 'Cambia logo' : 'Carica logo negativo'}
+              <input type="file" accept="image/*" style={{ display: 'none' }}
+                onChange={e => handleUpload('logo_dark_url', e.target.files[0])} />
+            </label>
+          </div>
+          <p style={hintStyle}>Versione chiara del logo, usata su footer e header scuri. Se vuota, si usa il logo normale.</p>
         </div>
 
         {/* Cover */}

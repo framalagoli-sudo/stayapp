@@ -58,8 +58,9 @@ export default function RistoranteInfoPage() {
     if (!file) return
     setUploading(u => ({ ...u, [field]: true }))
     try {
-      const type = field === 'logo_url' ? 'restaurant-logo' : 'restaurant-cover'
-      const { url } = await uploadMedia(`/api/upload/${type}?ristorante_id=${id}`, file)
+      const type = (field === 'logo_url' || field === 'logo_dark_url') ? 'restaurant-logo' : 'restaurant-cover'
+      const qs = field === 'logo_dark_url' ? '&field=logo_dark_url' : ''
+      const { url } = await uploadMedia(`/api/upload/${type}?ristorante_id=${id}${qs}`, file)
       await save({ [field]: url })
     } catch (e) { alert(`Errore upload: ${e.message}`) }
     finally { setUploading(u => ({ ...u, [field]: false })) }
@@ -108,6 +109,23 @@ export default function RistoranteInfoPage() {
             <input type="file" accept="image/*" style={{ display: 'none' }}
               onChange={e => handleUpload('logo_url', e.target.files[0])} />
           </label>
+        </div>
+
+        <div style={{ marginBottom: 24 }}>
+          <label style={lblStyle}>Logo per sfondi scuri (negativo)</label>
+          {ristorante.logo_dark_url && (
+            <div style={{ marginBottom: 10, padding: 12, background: '#1a1a2e', borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+              <img key={ristorante.logo_dark_url} src={ristorante.logo_dark_url} alt="logo negativo"
+                style={{ maxHeight: 64, maxWidth: 180, objectFit: 'contain' }} />
+              <button type="button" onClick={() => handleRemove('logo_dark_url')} style={{ ...removeBtnStyle, color: '#ff8080' }}>Rimuovi</button>
+            </div>
+          )}
+          <label style={uploadLabelStyle}>
+            {uploading.logo_dark_url ? 'Upload…' : ristorante.logo_dark_url ? 'Cambia logo' : 'Carica logo negativo'}
+            <input type="file" accept="image/*" style={{ display: 'none' }}
+              onChange={e => handleUpload('logo_dark_url', e.target.files[0])} />
+          </label>
+          <p style={{ margin: '6px 0 0', fontSize: 11, color: '#aaa' }}>Versione chiara del logo, usata su footer e header scuri. Se vuota, si usa il logo normale.</p>
         </div>
 
         <div>
