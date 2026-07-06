@@ -94,7 +94,7 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
         .sub-mobile-menu { position: fixed; top: 64px; left: 0; right: 0; z-index: 99; background: ${navBg}; backdrop-filter: blur(12px); border-bottom: 1px solid ${navBorderColor}; padding: 8px 16px 16px; display: flex; flex-direction: column; }
         @media (min-width: 769px) { .sub-mobile-menu { display: none !important; } }
         @media (max-width: 768px) {
-          .sub-nav { padding: 0 16px; }
+          .sub-nav { padding: 0 64px 0 16px; }
           .land-section { padding: 0 16px; }
           .sub-nav-desktop { display: none !important; }
           .sub-burger { display: flex !important; align-items: center; }
@@ -135,7 +135,9 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
             })}
           </div>
         )}
-        <button className="sub-burger" onClick={() => setMobileOpen(v => !v)} aria-label="Menu">{mobileOpen ? '✕' : '☰'}</button>
+        {pagine.length > 0 && (
+          <button className="sub-burger" onClick={() => setMobileOpen(v => !v)} aria-label="Menu">{mobileOpen ? '✕' : '☰'}</button>
+        )}
       </nav>
       {mobileOpen && (
         <div className="sub-mobile-menu">

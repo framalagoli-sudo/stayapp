@@ -174,7 +174,7 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
         .land-mobile-menu { position: fixed; top: 64px; left: 0; right: 0; z-index: 99; background: ${navBg}; backdrop-filter: blur(12px); border-bottom: 1px solid ${navBorderColor}; padding: 8px 16px 16px; display: flex; flex-direction: column; }
         @media (min-width: 769px) { .land-mobile-menu { display: none !important; } }
         @media (max-width: 768px) {
-          .land-nav { padding: 0 16px; }
+          .land-nav { padding: 0 64px 0 16px; }
           .land-section { padding: 0 16px; }
           .land-nav-desktop { display: none !important; }
           .land-burger { display: flex !important; align-items: center; }
@@ -222,7 +222,9 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
             </a>
           )}
         </div>
-        <button className="land-burger" onClick={() => setMobileOpen(v => !v)} aria-label="Menu">{mobileOpen ? '✕' : '☰'}</button>
+        {(pagine.length > 0 || showPwaLink || bookingUrl) && (
+          <button className="land-burger" onClick={() => setMobileOpen(v => !v)} aria-label="Menu">{mobileOpen ? '✕' : '☰'}</button>
+        )}
       </nav>
       {mobileOpen && (
         <div className="land-mobile-menu">

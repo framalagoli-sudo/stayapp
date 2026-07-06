@@ -172,7 +172,7 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
         .land-mobile-menu { position: fixed; top: 64px; left: 0; right: 0; z-index: 99; background: ${navBg}; backdrop-filter: blur(12px); border-bottom: 1px solid ${navBorderColor}; padding: 8px 16px 16px; display: flex; flex-direction: column; }
         @media (min-width: 769px) { .land-mobile-menu { display: none !important; } }
         @media (max-width: 768px) {
-          .land-nav { padding: 0 16px; }
+          .land-nav { padding: 0 64px 0 16px; }
           .land-section { padding: 0 16px; }
           .land-nav-desktop { display: none !important; }
           .land-burger { display: flex !important; align-items: center; }
@@ -214,7 +214,9 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
         <div className="land-nav-desktop" style={{ display: 'flex', gap: 10 }}>
           {bookingUrl && <a href={bookingUrl} target="_blank" rel="noopener noreferrer" style={{ padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 700, textDecoration: 'none', color: '#fff', background: primary }}>Prenota</a>}
         </div>
-        <button className="land-burger" onClick={() => setMobileOpen(v => !v)} aria-label="Menu">{mobileOpen ? '✕' : '☰'}</button>
+        {(pagine.length > 0 || bookingUrl) && (
+          <button className="land-burger" onClick={() => setMobileOpen(v => !v)} aria-label="Menu">{mobileOpen ? '✕' : '☰'}</button>
+        )}
       </nav>
       {mobileOpen && (
         <div className="land-mobile-menu">
