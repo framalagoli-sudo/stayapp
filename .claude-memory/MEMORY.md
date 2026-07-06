@@ -60,3 +60,4 @@
 - [Galleria template AI](project_template_gallery.md) — sistema template stile Elementor; Fase A fatta (galleria+applica), B/C da fare
 - [Landing marketing OltreNova](project_landing_marketing.md) — `/` è hardcoded (LandingPage.jsx), NON a blocchi; palette nero/bianco/petrolio/ocra + sfumato instagram; contatti+P.IVA; smoke NON copre `/`
 - [Fedeltà modelli AI](reference_ai_model_fidelity.md) — task che devono NON perdere contenuti: Haiku riassume → Sonnet + prompt "trascrittore"; callClaude accetta il modello come 3° param
+- [Header sito pubblico](reference_header_sito_pubblico.md) — nav duplicato in 4 componenti guest; logo visibile in cima + hamburger mobile; attenzione allo switcher lingua fixed top-right z2000
