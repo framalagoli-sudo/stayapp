@@ -88,6 +88,23 @@ export default function PropertyGalleryPage() {
           <p style={hintStyle}>Versione chiara del logo, usata su footer e header scuri. Se vuota, si usa il logo normale.</p>
         </div>
 
+        {/* Dimensione logo */}
+        <div style={{ marginBottom: 24 }}>
+          <label style={lblStyle}>Dimensione logo (header)</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {[['small', 'Piccolo'], ['medium', 'Medio'], ['large', 'Grande']].map(([v, label]) => {
+              const active = (property.minisito?.logo_size || 'medium') === v
+              return (
+                <button key={v} type="button"
+                  onClick={() => save({ minisito: { ...(property.minisito || {}), logo_size: v } }).catch(() => {})}
+                  style={{ padding: '8px 16px', borderRadius: 8, border: `1.5px solid ${active ? '#1a1a2e' : '#ddd'}`, background: active ? '#1a1a2e' : '#fff', color: active ? '#fff' : '#555', fontSize: 13, fontWeight: active ? 700 : 500, cursor: 'pointer' }}>
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         {/* Cover */}
         <div>
           <label style={lblStyle}>Foto di copertina</label>

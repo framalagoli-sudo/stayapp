@@ -128,6 +128,22 @@ export default function RistoranteInfoPage() {
           <p style={{ margin: '6px 0 0', fontSize: 11, color: '#aaa' }}>Versione chiara del logo, usata su footer e header scuri. Se vuota, si usa il logo normale.</p>
         </div>
 
+        <div style={{ marginBottom: 24 }}>
+          <label style={lblStyle}>Dimensione logo (header)</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {[['small', 'Piccolo'], ['medium', 'Medio'], ['large', 'Grande']].map(([v, label]) => {
+              const active = (ristorante.minisito?.logo_size || 'medium') === v
+              return (
+                <button key={v} type="button"
+                  onClick={() => save({ minisito: { ...(ristorante.minisito || {}), logo_size: v } }).catch(() => {})}
+                  style={{ padding: '8px 16px', borderRadius: 8, border: `1.5px solid ${active ? '#1a1a2e' : '#ddd'}`, background: active ? '#1a1a2e' : '#fff', color: active ? '#fff' : '#555', fontSize: 13, fontWeight: active ? 700 : 500, cursor: 'pointer' }}>
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         <div>
           <label style={lblStyle}>Foto di copertina</label>
           {ristorante.cover_url && (

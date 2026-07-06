@@ -89,6 +89,7 @@ export default function LandingStruttura({ property, initialHomeBlocks, domain, 
   const hdrCfg         = mini.header_cfg || mini.header || {}
   const navDark        = hdrCfg.style !== 'light'
   const navLogo        = (navDark && property.logo_dark_url) ? property.logo_dark_url : property.logo_url
+  const logoH          = { small: 24, medium: 32, large: 48 }[mini.logo_size] || 32
   const navAlwaysVisible = hdrCfg.always_visible === true
   const smartNav       = hdrCfg.scroll_behavior === 'smart'
   const navBg          = navDark ? 'rgba(18,18,32,0.93)'    : 'rgba(255,255,255,0.95)'
@@ -189,7 +190,7 @@ export default function LandingStruttura({ property, initialHomeBlocks, domain, 
 
       <nav className="land-nav">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {navLogo && <img src={navLogo} alt="logo" style={{ height: 32, objectFit: 'contain' }} />}
+          {navLogo && <img src={navLogo} alt="logo" style={{ height: logoH, objectFit: 'contain' }} />}
           {!navLogo && <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, color: navTextColor }}>{property.name}</span>}
         </div>
         {pagine.length > 0 && (
