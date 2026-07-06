@@ -8,6 +8,7 @@ import ChatbotWidget from '@/components/ChatbotWidget'
 import WhatsAppButton from '@/components/WhatsAppButton'
 import LandingBlockRenderer from '@/components/LandingBlockRenderer'
 import LandingFooter from '@/components/guest/LandingFooter'
+import LangToggle from '@/components/guest/LangToggle'
 import { resolveSiteTheme } from '@/lib/siteTheme'
 import { entityBasePath } from '@/lib/i18n'
 
@@ -178,7 +179,7 @@ export default function LandingStruttura({ property, initialHomeBlocks, domain, 
         .fade-up-3 { animation: fadeUp 0.7s 0.4s ease both; }
         @media (min-width: 769px) { .land-mobile-menu { display: none !important; } }
         @media (max-width: 768px) {
-          .land-nav { padding: 0 64px 0 16px; }
+          .land-nav { padding: 0 16px; }
           .land-section { padding: 0 16px; }
           .land-nav-desktop { display: none !important; }
           .land-burger { display: flex !important; align-items: center; }
@@ -217,13 +218,16 @@ export default function LandingStruttura({ property, initialHomeBlocks, domain, 
             })}
           </div>
         )}
-        <div className="land-nav-desktop" style={{ display: 'flex', gap: 10 }}>
-          {showPwaLink && <a href={pwaUrl} style={{ padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 600, textDecoration: 'none', color: navTextColor, border: `1px solid ${navDark ? 'rgba(255,255,255,0.3)' : '#ddd'}` }}>App ospiti</a>}
-          {bookingUrl && <a href={bookingUrl} target="_blank" rel="noopener noreferrer" style={{ padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 700, textDecoration: 'none', color: '#fff', background: primary }}>Prenota</a>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div className="land-nav-desktop" style={{ display: 'flex', gap: 10 }}>
+            {showPwaLink && <a href={pwaUrl} style={{ padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 600, textDecoration: 'none', color: navTextColor, border: `1px solid ${navDark ? 'rgba(255,255,255,0.3)' : '#ddd'}` }}>App ospiti</a>}
+            {bookingUrl && <a href={bookingUrl} target="_blank" rel="noopener noreferrer" style={{ padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 700, textDecoration: 'none', color: '#fff', background: primary }}>Prenota</a>}
+          </div>
+          <LangToggle lang={lang} color={navTextColor} />
+          {(pagine.length > 0 || showPwaLink || bookingUrl) && (
+            <button className="land-burger" onClick={() => setMobileOpen(v => !v)} aria-label="Menu">{mobileOpen ? '✕' : '☰'}</button>
+          )}
         </div>
-        {(pagine.length > 0 || showPwaLink || bookingUrl) && (
-          <button className="land-burger" onClick={() => setMobileOpen(v => !v)} aria-label="Menu">{mobileOpen ? '✕' : '☰'}</button>
-        )}
       </nav>
       {mobileOpen && (
         <div className="land-mobile-menu">
