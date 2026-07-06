@@ -1209,6 +1209,10 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         .lbr-al-left,   .lbr-al-left *   { text-align: left   !important; }
         .lbr-al-center, .lbr-al-center * { text-align: center !important; }
         .lbr-al-right,  .lbr-al-right *  { text-align: right  !important; }
+        /* gli elementi a larghezza fissa/limitata (barrette, colonne maxWidth) seguono l'allineamento */
+        .lbr-al-left   > .lbr-section > * { margin-left: 0    !important; margin-right: auto !important; }
+        .lbr-al-center > .lbr-section > * { margin-left: auto !important; margin-right: auto !important; }
+        .lbr-al-right  > .lbr-section > * { margin-left: auto !important; margin-right: 0    !important; }
         .lbr-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .lbr-ft { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
         .lbr-ft-img { order: 0; }
