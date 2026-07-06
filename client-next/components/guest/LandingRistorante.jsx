@@ -186,7 +186,7 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
       <nav className="land-nav">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {navLogo && <img src={navLogo} alt="logo" style={{ height: 32, objectFit: 'contain' }} />}
-          <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, color: navTextColor }}>{ristorante.name}</span>
+          {!navLogo && <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, color: navTextColor }}>{ristorante.name}</span>}
         </div>
         {pagine.length > 0 && (
           <div className="land-nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>

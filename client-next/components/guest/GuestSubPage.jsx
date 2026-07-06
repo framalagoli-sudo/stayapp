@@ -107,7 +107,7 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
       <nav className="sub-nav" style={{ transform: navHidden ? 'translateY(-100%)' : 'translateY(0)', transition: 'transform 0.3s ease' }}>
         <a href={homeUrl} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
           {navLogo && <img src={navLogo} alt="logo" style={{ height: 30, objectFit: 'contain' }} />}
-          <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 15, color: navTextColor }}>{entity.name}</span>
+          {!navLogo && <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 15, color: navTextColor }}>{entity.name}</span>}
         </a>
         {pagine.length > 0 && (
           <div className="sub-nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>

@@ -190,7 +190,7 @@ export default function LandingStruttura({ property, initialHomeBlocks, domain, 
       <nav className="land-nav">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {navLogo && <img src={navLogo} alt="logo" style={{ height: 32, objectFit: 'contain' }} />}
-          <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, color: navTextColor }}>{property.name}</span>
+          {!navLogo && <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, color: navTextColor }}>{property.name}</span>}
         </div>
         {pagine.length > 0 && (
           <div className="land-nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>

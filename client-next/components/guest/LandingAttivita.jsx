@@ -184,7 +184,7 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
       <nav className="land-nav">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {navLogo && <img src={navLogo} alt="logo" style={{ height: 32, objectFit: 'contain' }} />}
-          <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, color: navTextColor }}>{attivita.name}</span>
+          {!navLogo && <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, color: navTextColor }}>{attivita.name}</span>}
         </div>
         {pagine.length > 0 && (
           <div className="land-nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
