@@ -798,6 +798,15 @@ function BlockStylePanel({ block, onChange, entityId, entityTipo }) {
             {BLOCK_PADY_OPTIONS.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
           </select>
         </div>
+        <div style={{ flex: 1, minWidth: 150 }}>
+          <label style={lbl}>Allineamento</label>
+          <select value={st.align || 'default'} onChange={e => set('align', e.target.value)} style={sel}>
+            <option value="default">Predefinito</option>
+            <option value="left">Sinistra</option>
+            <option value="center">Centro</option>
+            <option value="right">Destra</option>
+          </select>
+        </div>
         {showText && (
           <div style={{ flex: 1, minWidth: 150 }}>
             <label style={lbl}>Dimensione testo</label>

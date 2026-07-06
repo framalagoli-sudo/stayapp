@@ -234,6 +234,7 @@ export function applyBlockStyle(el, block, opts = {}) {
   if (inverted) classes.push('lbr-inv')
   if (st.hide_mobile) classes.push('lbr-hide-mob')
   if (st.hide_desktop) classes.push('lbr-hide-desk')
+  if (st.align === 'left' || st.align === 'center' || st.align === 'right') classes.push('lbr-al-' + st.align)
   if (!Object.keys(ov).length && !hasPad && !classes.length) return el
   const base = { ...(el.props.style || {}) }
   if (hasPad) {

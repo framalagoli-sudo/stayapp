@@ -1206,6 +1206,9 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
     <>
       <style>{`
         .lbr-section { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+        .lbr-al-left,   .lbr-al-left *   { text-align: left   !important; }
+        .lbr-al-center, .lbr-al-center * { text-align: center !important; }
+        .lbr-al-right,  .lbr-al-right *  { text-align: right  !important; }
         .lbr-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .lbr-ft { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
         .lbr-ft-img { order: 0; }
