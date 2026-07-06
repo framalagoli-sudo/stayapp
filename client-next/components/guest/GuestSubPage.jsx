@@ -51,6 +51,7 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
   const navTextColor   = navDark ? 'rgba(255,255,255,0.8)'  : '#1a1a2e'
   const smartNav       = hdrCfg.scroll_behavior === 'smart'
   const [navHidden, setNavHidden] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
     if (!smartNav) return
@@ -89,20 +90,25 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
         }
         .sub-content { padding-top: 64px; min-height: calc(100vh - 64px); }
         .land-section { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+        .sub-burger { display: none; background: none; border: none; cursor: pointer; color: ${navTextColor}; font-size: 22px; line-height: 1; padding: 6px; }
+        .sub-mobile-menu { position: fixed; top: 64px; left: 0; right: 0; z-index: 99; background: ${navBg}; backdrop-filter: blur(12px); border-bottom: 1px solid ${navBorderColor}; padding: 8px 16px 16px; display: flex; flex-direction: column; }
+        @media (min-width: 769px) { .sub-mobile-menu { display: none !important; } }
         @media (max-width: 768px) {
           .sub-nav { padding: 0 16px; }
           .land-section { padding: 0 16px; }
+          .sub-nav-desktop { display: none !important; }
+          .sub-burger { display: flex !important; align-items: center; }
         }
       `}</style>
 
-      {!hideHeader && (
+      {!hideHeader && (<>
       <nav className="sub-nav" style={{ transform: navHidden ? 'translateY(-100%)' : 'translateY(0)', transition: 'transform 0.3s ease' }}>
         <a href={homeUrl} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
           {entity.logo_url && <img src={entity.logo_url} alt="logo" style={{ height: 30, objectFit: 'contain' }} />}
           <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 15, color: navTextColor }}>{entity.name}</span>
         </a>
         {pagine.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <div className="sub-nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             {pagine.filter(p => !p.parent_id).map(p => {
               const subs = pagine.filter(c => c.parent_id === p.id)
               return (
@@ -129,9 +135,17 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
             })}
           </div>
         )}
-        <div />
+        <button className="sub-burger" onClick={() => setMobileOpen(v => !v)} aria-label="Menu">{mobileOpen ? '✕' : '☰'}</button>
       </nav>
+      {mobileOpen && (
+        <div className="sub-mobile-menu">
+          {pagine.filter(p => !p.parent_id).map(p => (
+            <a key={p.id} href={`${base}/p/${p.slug}`} onClick={() => setMobileOpen(false)}
+              style={{ color: navTextColor, textDecoration: 'none', fontSize: 15, padding: '11px 4px', borderBottom: `1px solid ${navBorderColor}`, fontWeight: p.slug === pagina.slug ? 700 : 400 }}>{p.titolo}</a>
+          ))}
+        </div>
       )}
+      </>)}
 
       <div className="sub-content" style={hideHeader ? { paddingTop: 0 } : undefined}>
         {pagina.blocks?.length > 0 ? (

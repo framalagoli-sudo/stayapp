@@ -46,7 +46,8 @@ function loadFont(key) {
 }
 
 export default function LandingAttivita({ attivita, initialHomeBlocks, domain, lang = 'it' }) {
-  const [navVisible,     setNavVisible]     = useState(false)
+  const [navVisible,     setNavVisible]     = useState(true)
+  const [mobileOpen,     setMobileOpen]     = useState(false)
   const [upcomingEventi, setUpcomingEventi] = useState([])
   const [pagine,         setPagine]         = useState([])
   const [openDropdown,   setOpenDropdown]   = useState(null)
@@ -143,7 +144,7 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
         else if (y > last + 4) setNavVisible(false)     // scroll giù: nascondi
         else if (y < last - 4) setNavVisible(true)      // scroll su: mostra
       } else {
-        setNavVisible(y > 80)                            // default: appare dopo lo scroll
+        setNavVisible(true)                              // default: sempre visibile (logo in cima)
       }
       last = y
     }
@@ -167,9 +168,14 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
           transform: translateY(${navVisible ? '0' : '-100%'}); transition: transform 0.3s ease;
         }
         .land-section { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+        .land-burger { display: none; background: none; border: none; cursor: pointer; color: ${navTextColor}; font-size: 22px; line-height: 1; padding: 6px; }
+        .land-mobile-menu { position: fixed; top: 64px; left: 0; right: 0; z-index: 99; background: ${navBg}; backdrop-filter: blur(12px); border-bottom: 1px solid ${navBorderColor}; padding: 8px 16px 16px; display: flex; flex-direction: column; }
+        @media (min-width: 769px) { .land-mobile-menu { display: none !important; } }
         @media (max-width: 768px) {
           .land-nav { padding: 0 16px; }
           .land-section { padding: 0 16px; }
+          .land-nav-desktop { display: none !important; }
+          .land-burger { display: flex !important; align-items: center; }
         }
       `}</style>
 
@@ -179,7 +185,7 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
           <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, color: navTextColor }}>{attivita.name}</span>
         </div>
         {pagine.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <div className="land-nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             {pagine.filter(p => !p.parent_id).map(p => {
               const subs = pagine.filter(c => c.parent_id === p.id)
               return (
@@ -205,10 +211,24 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
             })}
           </div>
         )}
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div className="land-nav-desktop" style={{ display: 'flex', gap: 10 }}>
           {bookingUrl && <a href={bookingUrl} target="_blank" rel="noopener noreferrer" style={{ padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 700, textDecoration: 'none', color: '#fff', background: primary }}>Prenota</a>}
         </div>
+        <button className="land-burger" onClick={() => setMobileOpen(v => !v)} aria-label="Menu">{mobileOpen ? '✕' : '☰'}</button>
       </nav>
+      {mobileOpen && (
+        <div className="land-mobile-menu">
+          {pagine.filter(p => !p.parent_id).map(p => (
+            <a key={p.id} href={`${base}/p/${p.slug}`} onClick={() => setMobileOpen(false)}
+              style={{ color: navTextColor, textDecoration: 'none', fontSize: 15, padding: '11px 4px', borderBottom: `1px solid ${navBorderColor}` }}>{p.titolo}</a>
+          ))}
+          {bookingUrl && (
+            <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+              <a href={bookingUrl} target="_blank" rel="noopener noreferrer" style={{ padding: '10px 20px', borderRadius: 50, fontSize: 14, fontWeight: 700, textDecoration: 'none', color: '#fff', background: primary }}>Prenota</a>
+            </div>
+          )}
+        </div>
+      )}
 
       {homeBlocks === undefined ? null : homeBlocks ? (
         <LandingBlockRenderer
