@@ -255,14 +255,20 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 
 ### Completato
 - Analytics, Newsletter (4 fasi), Booking risorse, Chatbot, Password reset, Sicurezza Fase 1+2, Gestione staff, Sistema pagine CMS (39 tipi blocchi, drag&drop, SEO, header/footer configuratore) ✅ 2026-05-14
-- **Site-builder maturo** ✅ 2026-07-02: 8 template per verticale, hero slider + carosello + menù + 39 blocchi, sfondi sezione (scuro/gradiente/immagine) con testo adattivo, colore primario+secondario, varianti blocco, animazioni scroll, anteprima live in-editor, undo/redo, copia/incolla blocchi, header/footer per-pagina, immagini AI (Unsplash). "Livello Elementor" per il target SMB.
+- **Infra**: Supabase Pro ✅, Vercel Pro ✅, dominio **oltrenova.com** live (cutover) ✅, Railway freezato (tutto su Vercel) ✅
+- **Multi-lingua IT/EN** ✅: sito, sotto-pagine, footer, privacy/cookie, form, blog, eventi, PWA ospite, menu ristorante — auto-traduzione ibrida (Claude Haiku) + URL /en + hreflang + override admin. Toggle lingua **inline nell'header** (non più pill flottante). DE non fatto.
+- **Site-builder maturo** ✅ 2026-07-02: 8 template per verticale, hero slider + carosello + menù + 39 blocchi, sfondi sezione con testo adattivo, colore primario+secondario, varianti blocco, animazioni scroll, anteprima live in-editor, undo/redo, copia/incolla blocchi, header/footer per-pagina, immagini AI (Unsplash). "Livello Elementor" per il target SMB.
+- **AI Site Builder unificato** ✅ 2026-07: un unico flusso lineare (Sito→Obiettivo→Business→Design), template = step design; **import da documento** ("Ho già i contenuti": incolla testo da ChatGPT + prompt pronto, una/più pagine, modello Sonnet per fedeltà). Editor sito unico in SitoPage (ritirata MiniSitoPage; tracking/pixel migrati).
+- **Landing marketing OltreNova** ridisegnata ✅ 2026-07 (palette nero/bianco/petrolio/ocra + sfumato instagram, contatti + P.IVA).
+- **Header sito pubblico** ✅ 2026-07: logo visibile in cima (anche con slider), menu **hamburger** su mobile, **logo negativo** per sfondi scuri (footer/header, colonna `logo_dark_url`).
 
 ### Da fare (in ordine)
-- [ ] **Upgrade Supabase Pro + Vercel Pro** — azione manuale ($45/mese totale)
-- [ ] **Dominio** — acquisto + configurazione (vedi nota 21 in `server/CLAUDE.md`)
 - [ ] **Pagamenti Stripe** — checkout booking risorse ed eventi (colonne `pagamento_stato/pagamento_id` già su prenotazioni)
-- [ ] **Multi-lingua** — IT/EN/DE per PWA ospite
-- [ ] **Collegare GitHub → Vercel auto-deploy**
+- [ ] **Collegare GitHub → Vercel auto-deploy** (oggi deploy manuale via `deploy.ps1`)
+- [ ] **Sentry** — bloccato su Next 14.2 (serve upgrade Next 15 o alternativa)
+- [ ] **Import documento v2** — upload file PDF/DOCX + chunking per documenti lunghi
+- [ ] **Cleanup** — estrarre un `SiteNav` condiviso (header pubblico duplicato in 4 componenti)
+- [ ] **Multi-lingua DE** (IT/EN già fatti)
 - [ ] **Notifiche real-time** — Supabase Realtime su `requests` (bassa priorità)
 - [ ] Email reminder booking, QR Code con logo, Modalità offline PWA, Recensioni ospiti, Integrazione PMS
 

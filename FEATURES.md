@@ -1,7 +1,8 @@
 # FEATURES — Roadmap prodotto StayApp
 
 Documento vivo. Aggiornato sessione per sessione.
-Ultima revisione: **2026-06-11** (Next.js migration + cutover oltrenova.com, PWA unificata, allergeni EU, AI Site Builder v2, RistoranteMenu refactor, fix QR code, CI/CD smoke test, fix AttivitaApp, debug Fase 1)
+Ultima revisione: **2026-07-06** — Site-builder maturo (8 template, 39 blocchi, undo/redo, anteprima live); **AI Site Builder unificato** (un flusso; import da documento con incolla-ChatGPT, una/più pagine, Sonnet per fedeltà); editor sito unico in SitoPage (ritirata MiniSitoPage, tracking migrato); **multilingua IT/EN completo** (sito+PWA, toggle inline nell'header); landing OltreNova ridisegnata; **header pubblico** (logo in cima, hamburger mobile, logo negativo `logo_dark_url` per sfondi scuri). Infra: Supabase Pro + Vercel Pro + oltrenova.com live.
+Storico: 2026-06-11 (Next.js migration + cutover oltrenova.com, PWA unificata, allergeni EU, AI Site Builder v2, RistoranteMenu refactor, fix QR code, CI/CD smoke test).
 
 ---
 
