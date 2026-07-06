@@ -41,3 +41,6 @@ Revisioni → Snapshot "Versioni" (Opzione B) ✅; Header/Footer builder ✅; Bl
 ## Decisioni aperte
 - Anticipare Fase 3 prima/dopo Fase 2 (da confermare quando partiamo).
 - Convergenza editor-pagine ↔ minisito (MiniSitoPage/SitoPage hanno un loro sistema di sezioni che si sovrappone): valutare unificazione in Fase 0/4.
+
+## Allineamento per blocco (6/7)
+Ogni blocco ha `style.align` = left|center|right (controllo nel pannello stile di PaginaEditorPage, accanto a Sfondo/Spaziatura). `applyBlockStyle` (lib/blockTypes.js) aggiunge la classe `lbr-al-{align}` alla sezione; il CSS nel `<style>` di LandingBlockRenderer forza `text-align: {align} !important` su blocco + tutto il contenuto (batte gli allineamenti inline hardcoded). Vale per tutti i blocchi, home e sotto-pagine; l'anteprima in-editor (iframe della pagina reale) lo riflette. ⚠️ Allinea TESTI/titoli; le righe di bottoni (flex justify-content) restano centrate — non forzato per non spostare icone/avatar centrati.
