@@ -1,7 +1,8 @@
 ﻿'use client'
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useState, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
+import { LinkPicker, buildInternalLinks } from '@/components/admin/LinkPicker'
 import { PropertyIdContext } from '@/context/PropertyIdContext'
 import { useAuth } from '@/context/AuthContext'
 import {
@@ -481,6 +482,11 @@ export default function SitoPage({ entityTipo }) {
   const entitySiteUrl = entitySlug
     ? (entityTipo === 'struttura' ? `/s/${entitySlug}` : entityTipo === 'ristorante' ? `/r/${entitySlug}` : `/a/${entitySlug}`)
     : null
+
+  const internalLinks = useMemo(
+    () => buildInternalLinks({ tipo: entityTipo, slug: entitySlug, pages: pagine }),
+    [entityTipo, entitySlug, pagine]
+  )
 
   // ── Tabs config ───────────────────────────────────────────────────────────────
   const TABS = [
@@ -967,9 +973,12 @@ export default function SitoPage({ entityTipo }) {
                     <input type="text" placeholder="Testo (es. Prenota ora)" value={headerCfg.cta_text}
                       onChange={e => setHeaderCfg(h => ({ ...h, cta_text: e.target.value }))}
                       style={{ padding: '7px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13 }} />
-                    <input type="url" placeholder="URL destinazione" value={headerCfg.cta_url}
-                      onChange={e => setHeaderCfg(h => ({ ...h, cta_url: e.target.value }))}
-                      style={{ padding: '7px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13 }} />
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'stretch' }}>
+                      <input type="text" placeholder="URL destinazione" value={headerCfg.cta_url}
+                        onChange={e => setHeaderCfg(h => ({ ...h, cta_url: e.target.value }))}
+                        style={{ flex: 1, padding: '7px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13 }} />
+                      <LinkPicker links={internalLinks} onPick={url => setHeaderCfg(h => ({ ...h, cta_url: url }))} />
+                    </div>
                   </div>
                 )}
               </div>
@@ -1049,9 +1058,10 @@ export default function SitoPage({ entityTipo }) {
                         <input type="text" placeholder="Testo" value={lnk.label}
                           onChange={e => setFooterCfg(f => ({ ...f, extra_links: f.extra_links.map((l, j) => j === i ? { ...l, label: e.target.value } : l) }))}
                           style={{ flex: 1, padding: '5px 7px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12 }} />
-                        <input type="url" placeholder="URL" value={lnk.url}
+                        <input type="text" placeholder="URL" value={lnk.url}
                           onChange={e => setFooterCfg(f => ({ ...f, extra_links: f.extra_links.map((l, j) => j === i ? { ...l, url: e.target.value } : l) }))}
                           style={{ flex: 2, padding: '5px 7px', border: '1px solid #ddd', borderRadius: 6, fontSize: 12 }} />
+                        <LinkPicker links={internalLinks} onPick={url => setFooterCfg(f => ({ ...f, extra_links: f.extra_links.map((l, j) => j === i ? { ...l, url } : l) }))} />
                         <button onClick={() => setFooterCfg(f => ({ ...f, extra_links: f.extra_links.filter((_, j) => j !== i) }))}
                           style={{ background: '#fce8e8', border: 'none', borderRadius: 6, padding: '5px 8px', cursor: 'pointer', color: '#c00', fontSize: 12 }}>✕</button>
                       </div>

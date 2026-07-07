@@ -1,7 +1,8 @@
 ﻿'use client'
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo, createContext, useContext } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
+import { LinkPicker, buildInternalLinks } from '@/components/admin/LinkPicker'
 import {
   GripVertical, AlignLeft, Image, Grid, Users, List, Star, BarChart2, Zap,
   MessageCircle, Tag, Package, HelpCircle, Video, Settings, Compass, Map,
@@ -49,8 +50,27 @@ function BlockTypeIcon({ type, size = 15, muted = false }) {
   return <Icon size={size} strokeWidth={1.5} color={muted ? '#aaa' : blockColor(type)} />
 }
 
+// Destinazioni interne (Home/pagine/Privacy/Cookie) condivise da tutti gli editor
+// di blocco senza prop-drilling. Riempito dal componente principale.
+const LinkContext = createContext([])
+
+// Campo URL con selettore di pagine interne. Drop-in per <Field> sui link.
+function LinkField({ label, value, onChange, placeholder = 'https://...', style: extraStyle }) {
+  const links = useContext(LinkContext)
+  return (
+    <div style={extraStyle}>
+      {label && <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 500 }}>{label}</label>}
+      <div style={{ display: 'flex', gap: 6, alignItems: 'stretch' }}>
+        <input type="text" value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={inputStyle()} />
+        <LinkPicker links={links} onPick={onChange} />
+      </div>
+    </div>
+  )
+}
+
 // ── ItemListEditor ────────────────────────────────────────────────────────────
 function ItemListEditor({ items = [], onChange, fields, newItem, entityId, entityTipo }) {
+  const links = useContext(LinkContext)
   function update(idx, key, val) { onChange(items.map((it, i) => i === idx ? { ...it, [key]: val } : it)) }
   function add() { onChange([...items, { id: uid(), ...newItem }]) }
   function remove(idx) { onChange(items.filter((_, i) => i !== idx)) }
@@ -91,6 +111,11 @@ function ItemListEditor({ items = [], onChange, fields, newItem, entityId, entit
                   </label>
                 : f.type === 'number'
                 ? <input type="number" value={it[f.key] ?? ''} onChange={e => update(idx, f.key, Number(e.target.value))} style={{ ...inputStyle(), width: 80 }} />
+                : f.type === 'link'
+                ? <div style={{ display: 'flex', gap: 6, alignItems: 'stretch' }}>
+                    <input type="text" value={it[f.key] || ''} onChange={e => update(idx, f.key, e.target.value)} placeholder={f.placeholder || 'https://...'} style={inputStyle()} />
+                    <LinkPicker links={links} onPick={url => update(idx, f.key, url)} />
+                  </div>
                 : <input type="text" value={it[f.key] || ''} onChange={e => update(idx, f.key, e.target.value)} placeholder={f.placeholder || ''} style={inputStyle()} />
               }
             </div>
@@ -132,11 +157,11 @@ function SlidesEditor({ slides = [], onChange, entityId, entityTipo }) {
           <Field label="Sottotitolo (corsivo)" value={s.subtitle} onChange={v => update(idx, 'subtitle', v)} style={{ marginBottom: 8 }} />
           <div style={{ display: 'flex', gap: 8 }}>
             <Field label="Pulsante 1 — testo" value={s.cta1_text} onChange={v => update(idx, 'cta1_text', v)} style={{ flex: 1 }} />
-            <Field label="Pulsante 1 — URL" value={s.cta1_url} onChange={v => update(idx, 'cta1_url', v)} placeholder="https://..." style={{ flex: 1 }} />
+            <LinkField label="Pulsante 1 — URL" value={s.cta1_url} onChange={v => update(idx, 'cta1_url', v)} style={{ flex: 1 }} />
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
             <Field label="Pulsante 2 — testo (opz.)" value={s.cta2_text} onChange={v => update(idx, 'cta2_text', v)} style={{ flex: 1 }} />
-            <Field label="Pulsante 2 — URL" value={s.cta2_url} onChange={v => update(idx, 'cta2_url', v)} placeholder="https://..." style={{ flex: 1 }} />
+            <LinkField label="Pulsante 2 — URL" value={s.cta2_url} onChange={v => update(idx, 'cta2_url', v)} style={{ flex: 1 }} />
           </div>
         </div>
       ))}
@@ -151,6 +176,7 @@ function SlidesEditor({ slides = [], onChange, entityId, entityTipo }) {
 function BlockEditor({ block, onChange, entityId, entityTipo }) {
   const { type, data } = block
   const upd = (key, val) => onChange({ ...data, [key]: val })
+  const links = useContext(LinkContext)
 
   if (GRID_AUTO_BLOCKS.includes(type)) {
     const numStyle = { width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13, boxSizing: 'border-box' }
@@ -219,14 +245,14 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
           <div style={{ fontSize: 12, color: '#555', fontWeight: 600, marginBottom: 8 }}>CTA primario</div>
           <Field label="Testo pulsante" value={data.cta1_text} onChange={v => upd('cta1_text', v)} />
           <div style={{ marginTop: 8 }}>
-            <Field label="URL pulsante" value={data.cta1_url} onChange={v => upd('cta1_url', v)} placeholder="https://..." />
+            <LinkField label="URL pulsante" value={data.cta1_url} onChange={v => upd('cta1_url', v)} />
           </div>
         </div>
         <div>
           <div style={{ fontSize: 12, color: '#555', fontWeight: 600, marginBottom: 8 }}>CTA secondario (opz.)</div>
           <Field label="Testo pulsante" value={data.cta2_text} onChange={v => upd('cta2_text', v)} />
           <div style={{ marginTop: 8 }}>
-            <Field label="URL pulsante" value={data.cta2_url} onChange={v => upd('cta2_url', v)} placeholder="https://..." />
+            <LinkField label="URL pulsante" value={data.cta2_url} onChange={v => upd('cta2_url', v)} />
           </div>
         </div>
       </div>
@@ -282,7 +308,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
             { key: 'title', label: 'Titolo' },
             { key: 'text', label: 'Testo', type: 'textarea', rows: 2 },
             { key: 'button_label', label: 'Pulsante (opz.)' },
-            { key: 'button_url', label: 'URL pulsante', placeholder: 'https://...' },
+            { key: 'button_url', label: 'URL pulsante', type: 'link' },
           ]} />
         <div style={{ borderTop: '1px solid #eee', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
@@ -326,7 +352,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
         <Field label="Titolo (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
         <ItemListEditor items={data.items} onChange={v => upd('items', v)}
           newItem={{ network: 'instagram', url: '' }}
-          fields={[{ key: 'network', label: 'Social', placeholder: 'instagram, facebook, whatsapp, youtube…' }, { key: 'url', label: 'Link', placeholder: 'https://...' }]} />
+          fields={[{ key: 'network', label: 'Social', placeholder: 'instagram, facebook, whatsapp, youtube…' }, { key: 'url', label: 'Link', type: 'link' }]} />
       </div>
     )
     case 'countdown': return (
@@ -432,7 +458,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
         <Field label="Testo annuncio" value={data.text} onChange={v => upd('text', v)} placeholder="Es. Spedizione gratuita sopra i 50€" />
         <div style={{ display: 'flex', gap: 8 }}>
           <Field label="Testo link (opz.)" value={data.link_text} onChange={v => upd('link_text', v)} style={{ flex: 1 }} />
-          <Field label="URL link" value={data.link_url} onChange={v => upd('link_url', v)} placeholder="https://..." style={{ flex: 1 }} />
+          <LinkField label="URL link" value={data.link_url} onChange={v => upd('link_url', v)} style={{ flex: 1 }} />
         </div>
         <div>
           <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Colore</label>
@@ -482,7 +508,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
           Inverti: testo a sinistra, immagine a destra
         </label>
         <Field label="Testo pulsante (opz.)" value={data.button_label} onChange={v => upd('button_label', v)} />
-        <Field label="URL pulsante (opz.)" value={data.button_url} onChange={v => upd('button_url', v)} placeholder="https://..." />
+        <LinkField label="URL pulsante (opz.)" value={data.button_url} onChange={v => upd('button_url', v)} />
       </div>
     )
     case 'cta_banner': return (
@@ -497,13 +523,13 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
         <Field label="Titolo" value={data.title} onChange={v => upd('title', v)} />
         <Field label="Sottotitolo" value={data.subtitle} onChange={v => upd('subtitle', v)} />
         <Field label="Testo pulsante" value={data.button_text} onChange={v => upd('button_text', v)} />
-        <Field label="URL pulsante" value={data.button_url} onChange={v => upd('button_url', v)} placeholder="https://..." />
+        <LinkField label="URL pulsante" value={data.button_url} onChange={v => upd('button_url', v)} />
       </div>
     )
     case 'pulsante': return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <Field label="Testo del pulsante" value={data.text} onChange={v => upd('text', v)} />
-        <Field label="Link (URL)" value={data.url} onChange={v => upd('url', v)} placeholder="https://..." />
+        <LinkField label="Link (URL)" value={data.url} onChange={v => upd('url', v)} />
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 120 }}>
             <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 500 }}>Stile</label>
@@ -586,7 +612,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
         <Field label="URL immagine" value={data.image_url} onChange={v => upd('image_url', v)} placeholder="https://..." />
         <Field label="Testo alternativo (alt — SEO e accessibilità)" value={data.alt} onChange={v => upd('alt', v)} placeholder="Descrizione dell'immagine" />
         <Field label="Didascalia (opz.)" value={data.caption} onChange={v => upd('caption', v)} />
-        <Field label="Link al click (opz.)" value={data.link_url} onChange={v => upd('link_url', v)} placeholder="https://..." />
+        <LinkField label="Link al click (opz.)" value={data.link_url} onChange={v => upd('link_url', v)} />
         <div>
           <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 500 }}>Larghezza</label>
           <select value={data.width || 'large'} onChange={e => upd('width', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
@@ -713,7 +739,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
             { key: 'title', label: 'Titolo offerta' },
             { key: 'text', label: 'Descrizione', type: 'textarea', rows: 2 },
             { key: 'cta_label', label: 'Testo pulsante' },
-            { key: 'cta_url', label: 'URL pulsante', placeholder: 'https://...' },
+            { key: 'cta_url', label: 'URL pulsante', type: 'link' },
             { key: 'expires_at', label: 'Scadenza (YYYY-MM-DD)', placeholder: '2026-12-31' },
           ]} />
       </div>
@@ -731,7 +757,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
             { key: 'price', label: 'Prezzo', placeholder: '€ 99' },
             { key: 'price_label', label: 'Etichetta prezzo', placeholder: 'a persona' },
             { key: 'cta_label', label: 'Testo pulsante' },
-            { key: 'cta_url', label: 'URL pulsante', placeholder: 'https://...' },
+            { key: 'cta_url', label: 'URL pulsante', type: 'link' },
           ]} />
       </div>
     )
@@ -756,7 +782,10 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
               <UploadBtn label="Carica logo" entityId={entityId} entityTipo={entityTipo} onUrl={url => upd('items', (data.items||[]).map((x,i) => i===idx ? {...x, logo_url: url} : x))} />
               <div style={{ marginTop: 8 }}>
                 <label style={{ display: 'block', fontSize: 11, color: '#666', marginBottom: 3 }}>URL link (opz.)</label>
-                <input type="text" value={it.link_url||''} onChange={e => upd('items', (data.items||[]).map((x,i) => i===idx ? {...x, link_url: e.target.value} : x))} placeholder="https://..." style={inputStyle()} />
+                <div style={{ display: 'flex', gap: 6, alignItems: 'stretch' }}>
+                  <input type="text" value={it.link_url||''} onChange={e => upd('items', (data.items||[]).map((x,i) => i===idx ? {...x, link_url: e.target.value} : x))} placeholder="https://..." style={inputStyle()} />
+                  <LinkPicker links={links} onPick={url => upd('items', (data.items||[]).map((x,i) => i===idx ? {...x, link_url: url} : x))} />
+                </div>
               </div>
             </div>
           ))}
@@ -1038,6 +1067,7 @@ export default function PaginaEditorPage() {
   const [loading,    setLoading]    = useState(true)
   const [loadError,  setLoadError]  = useState(null)
   const [entitySlug, setEntitySlug] = useState(null)
+  const [sitePages,  setSitePages]  = useState([])   // pagine sorelle → link interni
   const [copied,     setCopied]     = useState(false)
 
   // Drag & drop
@@ -1065,7 +1095,14 @@ export default function PaginaEditorPage() {
       : page.entity_tipo === 'ristorante' ? `/api/ristoranti/${page.entity_id}`
       : `/api/attivita/${page.entity_id}`
     apiFetch(ep).then(d => { if (d?.slug) setEntitySlug(d.slug) })
+    apiFetch(`/api/pagine?entity_tipo=${page.entity_tipo}&entity_id=${page.entity_id}`)
+      .then(d => Array.isArray(d) && setSitePages(d)).catch(() => {})
   }, [page?.entity_id])
+
+  const internalLinks = useMemo(
+    () => buildInternalLinks({ tipo: page?.entity_tipo, slug: entitySlug, pages: sitePages }),
+    [page?.entity_tipo, entitySlug, sitePages]
+  )
 
   function previewUrl() {
     if (!entitySlug || !page) return null
@@ -1229,6 +1266,7 @@ export default function PaginaEditorPage() {
   const pUrl        = previewUrl()
 
   return (
+   <LinkContext.Provider value={internalLinks}>
     <div style={{ maxWidth: 780 }}>
 
       {/* ── Top bar ── */}
@@ -1553,5 +1591,6 @@ export default function PaginaEditorPage() {
         </div>
       )}
     </div>
+   </LinkContext.Provider>
   )
 }
