@@ -286,7 +286,7 @@ export default function LandingPage() {
 
   return (
     <div className="lp" style={{ background: BG, color: TEXT, minHeight: '100vh' }}>
-      <style>{css}</style>
+      <style dangerouslySetInnerHTML={{ __html: css }} />
 
       {/* ── NAVBAR ── */}
       <nav style={{
