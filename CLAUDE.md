@@ -261,6 +261,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - **AI Site Builder unificato** ✅ 2026-07: un unico flusso lineare (Sito→Obiettivo→Business→Design), template = step design; **import da documento** ("Ho già i contenuti": incolla testo da ChatGPT + prompt pronto, una/più pagine, modello Sonnet per fedeltà). Editor sito unico in SitoPage (ritirata MiniSitoPage; tracking/pixel migrati).
 - **Landing marketing OltreNova** ridisegnata ✅ 2026-07 (palette nero/bianco/petrolio/ocra + sfumato instagram, contatti + P.IVA).
 - **Header sito pubblico** ✅ 2026-07: logo visibile in cima (anche con slider), menu **hamburger** su mobile, **logo negativo** per sfondi scuri (footer/header, colonna `logo_dark_url`).
+- **Link a pagine interne nei blocchi** ✅ 2026-07-07: selettore "🔗 Pagine" (Home/pagine pubblicate/Privacy/Cookie) su tutti i campi URL dell'editor pagine + CTA header/footer sito (`components/admin/LinkPicker.jsx`). Link interni del renderer resi **lingua/dominio-aware** (`base` + `siteHref` in `LandingBlockRenderer`): su `/en` e domini custom i link puntano al target giusto. Restano IT-only i dettagli offerte/pacchetti.
 
 ### Da fare (in ordine)
 - [ ] **Pagamenti Stripe** — checkout booking risorse ed eventi (colonne `pagamento_stato/pagamento_id` già su prenotazioni)
