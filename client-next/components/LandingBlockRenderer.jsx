@@ -107,10 +107,10 @@ function HeroSlider({ block, primary, heading }) {
               {((s.cta1_text && s.cta1_url) || (s.cta2_text && s.cta2_url)) && (
                 <div style={{ display: 'flex', gap: 14, marginTop: 34, flexWrap: 'wrap', justifyContent: align === 'left' ? 'flex-start' : 'center' }}>
                   {s.cta1_text && s.cta1_url && (
-                    <a href={s.cta1_url} style={{ display: 'inline-block', padding: '15px 34px', background: primary, color: readableOn('#ffffff', primary, '#1a1a2e'), borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none', boxShadow: '0 8px 28px rgba(0,0,0,0.25)' }}>{s.cta1_text}</a>
+                    <a href={siteHref(s.cta1_url)} style={{ display: 'inline-block', padding: '15px 34px', background: primary, color: readableOn('#ffffff', primary, '#1a1a2e'), borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none', boxShadow: '0 8px 28px rgba(0,0,0,0.25)' }}>{s.cta1_text}</a>
                   )}
                   {s.cta2_text && s.cta2_url && (
-                    <a href={s.cta2_url} style={{ display: 'inline-block', padding: '15px 34px', background: 'rgba(255,255,255,0.12)', color: '#fff', borderRadius: 50, fontWeight: 600, fontSize: 16, textDecoration: 'none', border: '2px solid rgba(255,255,255,0.65)', backdropFilter: 'blur(8px)' }}>{s.cta2_text}</a>
+                    <a href={siteHref(s.cta2_url)} style={{ display: 'inline-block', padding: '15px 34px', background: 'rgba(255,255,255,0.12)', color: '#fff', borderRadius: 50, fontWeight: 600, fontSize: 16, textDecoration: 'none', border: '2px solid rgba(255,255,255,0.65)', backdropFilter: 'blur(8px)' }}>{s.cta2_text}</a>
                   )}
                 </div>
               )}
@@ -193,7 +193,7 @@ function Carousel({ block, primary, heading }) {
                       <div style={{ padding: 22 }}>
                         {it.title && <h3 style={{ fontFamily: heading, fontSize: 19, fontWeight: 700, color: '#1a1a2e', margin: '0 0 8px' }}>{it.title}</h3>}
                         {it.text && <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6, margin: 0 }}>{it.text}</p>}
-                        {it.button_label && it.button_url && <a href={it.button_url} style={{ display: 'inline-block', marginTop: 14, color: primary, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>{it.button_label} →</a>}
+                        {it.button_label && it.button_url && <a href={siteHref(it.button_url)} style={{ display: 'inline-block', marginTop: 14, color: primary, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>{it.button_label} →</a>}
                       </div>
                     )}
                   </div>
@@ -320,7 +320,7 @@ function Countdown({ block, primary, heading }) {
   )
 }
 
-export default function LandingBlockRenderer({ blocks, entity, entityType, mini, primary, secondary, heading, body, slug, privacyUrl, aziendaId, lang = 'it' }) {
+export default function LandingBlockRenderer({ blocks, entity, entityType, mini, primary, secondary, heading, body, slug, privacyUrl, aziendaId, lang = 'it', base }) {
   const [faqOpen, setFaqOpen] = useState({})
   const [eventi, setEventi] = useState([])
   const [articoli, setArticoli] = useState([])
@@ -346,7 +346,18 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
     els.forEach(e => { if (!e.classList.contains('in')) io.observe(e) })
     return () => io.disconnect()
   }, [blocks])
-  const homeUrl = entityType === 'struttura' ? `/s/${slug}` : entityType === 'ristorante' ? `/r/${slug}` : `/a/${slug}`
+  // Base dei link interni, lingua/dominio-aware (dal chiamante via entityBasePath).
+  // Fallback all'URL canonico se non fornita (es. anteprima template in admin).
+  const linkBase = base != null ? base : (entityType === 'struttura' ? `/s/${slug}` : entityType === 'ristorante' ? `/r/${slug}` : `/a/${slug}`)
+  const homeUrl = linkBase || '/'
+  // Riscrive un URL salvato in un blocco sulla base corrente: solo i link interni
+  // all'entità (path assoluto /s|/r|/a/…, anche con prefisso /en) vengono rimappati,
+  // così restano coerenti su /en e domini custom. Esterni e altri path invariati.
+  function siteHref(u) {
+    if (typeof u !== 'string' || !u) return u
+    const m = u.match(/^(?:\/en)?\/(?:s|r|a)\/[^/?#]+(.*)$/)
+    return m ? (linkBase + m[1]) || '/' : u
+  }
 
   useEffect(() => {
     if (!entity?.id) return
@@ -378,10 +389,10 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
               {d.tagline && <p style={{ fontSize: 'clamp(16px,2.5vw,22px)', color: 'rgba(255,255,255,0.82)', lineHeight: 1.5, maxWidth: 640, margin: '0 auto 40px' }}>{d.tagline}</p>}
               <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginTop: 8 }}>
                 {d.cta1_text && d.cta1_url && (
-                  <a href={d.cta1_url} style={{ display: 'inline-block', padding: '16px 36px', background: primary, color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 17, textDecoration: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>{d.cta1_text}</a>
+                  <a href={siteHref(d.cta1_url)} style={{ display: 'inline-block', padding: '16px 36px', background: primary, color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 17, textDecoration: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>{d.cta1_text}</a>
                 )}
                 {d.cta2_text && d.cta2_url && (
-                  <a href={d.cta2_url} style={{ display: 'inline-block', padding: '16px 36px', background: 'rgba(255,255,255,0.15)', color: '#fff', borderRadius: 50, fontWeight: 600, fontSize: 17, textDecoration: 'none', border: '2px solid rgba(255,255,255,0.4)', backdropFilter: 'blur(10px)' }}>{d.cta2_text}</a>
+                  <a href={siteHref(d.cta2_url)} style={{ display: 'inline-block', padding: '16px 36px', background: 'rgba(255,255,255,0.15)', color: '#fff', borderRadius: 50, fontWeight: 600, fontSize: 17, textDecoration: 'none', border: '2px solid rgba(255,255,255,0.4)', backdropFilter: 'blur(10px)' }}>{d.cta2_text}</a>
                 )}
               </div>
             </div>
@@ -402,7 +413,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         return (
           <section key={block.id} style={{ background: abg, color: atxt, padding: '11px 20px', textAlign: 'center', fontSize: 14 }}>
             <span>{d.text}</span>
-            {d.link_text && d.link_url && <a href={d.link_url} style={{ color: atxt, fontWeight: 700, marginLeft: 10, textDecoration: 'underline' }}>{d.link_text}</a>}
+            {d.link_text && d.link_url && <a href={siteHref(d.link_url)} style={{ color: atxt, fontWeight: 700, marginLeft: 10, textDecoration: 'underline' }}>{d.link_text}</a>}
           </section>
         )
       }
@@ -467,7 +478,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
               <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
                 {items.map(it => {
                   const label = SOCIAL_LABELS[(it.network || '').toLowerCase()] || it.network || 'Link'
-                  return <a key={it.id} href={it.url} target="_blank" rel="noopener noreferrer" style={{ padding: '9px 20px', borderRadius: 50, border: `1.5px solid ${primary}`, color: primary, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>{label}</a>
+                  return <a key={it.id} href={siteHref(it.url)} target="_blank" rel="noopener noreferrer" style={{ padding: '9px 20px', borderRadius: 50, border: `1.5px solid ${primary}`, color: primary, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>{label}</a>
                 })}
               </div>
             </div>
@@ -541,7 +552,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                   {d.title && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, color: '#1a1a2e', marginBottom: 16 }}>{d.title}</h2>}
                   <RichText value={d.text} primary={primary} style={{ fontSize: Math.round(16 * textSizeScale(block.style?.textSize)), lineHeight: 1.75, color: cBody || textColorFor(block.style?.textColor, primary) || '#555', marginBottom: 24 }} />
                   {d.button_label && d.button_url && (
-                    <a href={d.button_url} style={{ display: 'inline-block', padding: '12px 28px', background: primary, color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>{d.button_label}</a>
+                    <a href={siteHref(d.button_url)} style={{ display: 'inline-block', padding: '12px 28px', background: primary, color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>{d.button_label}</a>
                   )}
                 </div>
               </div>
@@ -607,7 +618,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         return (
           <section key={block.id} style={{ padding: '40px 0', background: '#fff' }}>
             <div className="lbr-section" style={{ textAlign: d.align || 'center' }}>
-              <a href={d.url} style={{ display: 'inline-block', padding: padMap[d.size || 'medium'], borderRadius: 50, fontWeight: 700, fontSize: fsMap[d.size || 'medium'], textDecoration: 'none', background: outline ? 'transparent' : primary, color: outline ? primary : '#fff', border: `2px solid ${primary}` }}>{d.text}</a>
+              <a href={siteHref(d.url)} style={{ display: 'inline-block', padding: padMap[d.size || 'medium'], borderRadius: 50, fontWeight: 700, fontSize: fsMap[d.size || 'medium'], textDecoration: 'none', background: outline ? 'transparent' : primary, color: outline ? primary : '#fff', border: `2px solid ${primary}` }}>{d.text}</a>
             </div>
           </section>
         )
@@ -617,7 +628,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         if (!d.title) return null
         const split = d.variant === 'split'
         const ctaBtn = d.button_text && d.button_url
-          ? <a href={d.button_url} style={{ display: 'inline-block', padding: '15px 36px', background: '#fff', color: primary, borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.15)', whiteSpace: 'nowrap' }}>{d.button_text}</a>
+          ? <a href={siteHref(d.button_url)} style={{ display: 'inline-block', padding: '15px 36px', background: '#fff', color: primary, borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.15)', whiteSpace: 'nowrap' }}>{d.button_text}</a>
           : null
         return (
           <section key={block.id} style={{ padding: '72px 24px', background: `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)`, textAlign: split ? 'left' : 'center' }}>
@@ -854,7 +865,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
           <section key={block.id} style={{ padding: '48px 0', background: '#fff' }}>
             <div className="lbr-section">
               <figure style={{ margin: 0, maxWidth: mw === '100%' ? '100%' : mw, marginLeft: 'auto', marginRight: 'auto' }}>
-                {d.link_url ? <a href={d.link_url} target="_blank" rel="noopener noreferrer">{img}</a> : img}
+                {d.link_url ? <a href={siteHref(d.link_url)} target="_blank" rel="noopener noreferrer">{img}</a> : img}
                 {d.caption && <figcaption style={{ fontSize: 13, color: '#888', marginTop: 8, textAlign: 'center' }}>{d.caption}</figcaption>}
               </figure>
             </div>
@@ -996,7 +1007,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
               <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{tr('offers_subtitle', lang)}</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
                 {promo.map(p => {
-                  const promoUrl = p.cta_url?.trim() && p.cta_url !== '#' ? p.cta_url.trim() : ctaHref
+                  const promoUrl = siteHref(p.cta_url?.trim() && p.cta_url !== '#' ? p.cta_url.trim() : ctaHref)
                   const isExternal = promoUrl?.startsWith('http') || promoUrl?.startsWith('tel:') || promoUrl?.startsWith('mailto:')
                   const hasDetail = p.description_full || (p.gallery || []).length > 0
                   return (
@@ -1073,7 +1084,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                           <a href={`${pacchettiBase}${p.id}`} style={{ display: 'block', textAlign: 'center', padding: '12px', background: 'transparent', color: primary, border: `2px solid ${primary}`, borderRadius: 12, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>Scopri di più</a>
                         )}
                         {p.cta_label && p.cta_url && (
-                          <a href={p.cta_url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textAlign: 'center', padding: '13px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>{p.cta_label}</a>
+                          <a href={siteHref(p.cta_url)} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textAlign: 'center', padding: '13px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>{p.cta_label}</a>
                         )}
                       </div>
                     </div>
@@ -1186,7 +1197,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                 {doubled.map((it, i) => (
                   <div key={i} className="lbr-logo-item">
                     {it.link_url
-                      ? <a href={it.link_url} target="_blank" rel="noopener noreferrer"><img src={it.logo_url} alt="" /></a>
+                      ? <a href={siteHref(it.link_url)} target="_blank" rel="noopener noreferrer"><img src={it.logo_url} alt="" /></a>
                       : <img src={it.logo_url} alt="" />
                     }
                   </div>

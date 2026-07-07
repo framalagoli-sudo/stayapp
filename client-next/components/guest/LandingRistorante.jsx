@@ -249,7 +249,7 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
         <LandingBlockRenderer
           blocks={homeBlocks} entity={ristorante} entityType="ristorante"
           mini={mini} primary={primary} secondary={theme.secondaryColor} heading={heading} body={body}
-          slug={ristorante.slug} privacyUrl={`${base}/privacy`}
+          slug={ristorante.slug} privacyUrl={`${base}/privacy`} base={base}
           aziendaId={ristorante.azienda_id} lang={lang}
         />
       ) : null}

@@ -160,7 +160,7 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
           <LandingBlockRenderer
             blocks={pagina.blocks} entity={entity} entityType={entityType}
             mini={mini} primary={primary} secondary={theme.secondaryColor} heading={heading} body={body}
-            slug={entity.slug} privacyUrl={privacyUrl}
+            slug={entity.slug} privacyUrl={privacyUrl} base={base}
             aziendaId={entity.azienda_id} lang={lang}
           />
         ) : (

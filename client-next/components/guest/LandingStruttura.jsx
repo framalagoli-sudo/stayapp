@@ -248,7 +248,7 @@ export default function LandingStruttura({ property, initialHomeBlocks, domain, 
         <LandingBlockRenderer
           blocks={homeBlocks} entity={property} entityType="struttura"
           mini={mini} primary={primary} secondary={theme.secondaryColor} heading={heading} body={body}
-          slug={property.slug} privacyUrl={`${base}/privacy`}
+          slug={property.slug} privacyUrl={`${base}/privacy`} base={base}
           aziendaId={property.azienda_id} lang={lang}
         />
       ) : null}
