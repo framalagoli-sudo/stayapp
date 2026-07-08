@@ -26,9 +26,14 @@ metadata:
 - Dettaglio **SSR** a `/{s|r|a}/[slug]/v/[itemSlug]` (3 route): loader `getElementoVetrina` (solo colonne pubbliche), reso via **pagina sintetica + GuestSubPage** (nav/footer/lingua gratis). Voce in sitemap per elemento. Link interni lang/dominio-aware via `base`.
 - Verificato live: endpoint e HTML dettaglio NON espongono `dati_privati` (0 leak), SSR ok.
 
-**Da fare:**
-- **Fase 3** — lead gated: il form/CTA "Voglio partecipare" (oggi placeholder che ancora ai contatti) → `requests` con prefisso `[Interesse progetto: nome]` (pattern nota 9); i `dati_privati` recapitati solo dopo il lead (email). Serve un endpoint pubblico che, su submit del lead, salvi in requests e recapiti i numeri riservati.
+**Fase 3 LIVE dal 2026-07-08** (lead → CRM):
+- Il CTA "Voglio partecipare" del dettaglio apre `VetrinaLeadForm` (in `LandingBlockRenderer`): nome/email/messaggio + privacy + Turnstile → `POST /api/guest/contact` con `source:'vetrina'`. Riusa l'endpoint contatti esistente → **upsert nel CRM `contatti`** (NON un silo nuovo, era il requisito di Francesco), tag `['lead', entity_tipo, 'vetrina']`, progetto nella nota via prefisso `[Interesse progetto: nome]`, notifica email al titolare, automazione `nuovo_contatto`. Unica modifica endpoint: la `source` finisce nei tag del contatto.
+- Numeri riservati: NON consegnati in automatico — il titolare ricontatta dal CRM (auto-delivery via email = opzione futura, richiede caricare dati_privati server-side).
+- Verificato live: POST → 200, lead in `contatti` con tag `vetrina` e progetto in nota.
+
+**Vetrine COMPLETA (Fasi 1+2+3 live).** Migliorie future opzionali:
 - Multilingua dei campi elemento (oggi il dettaglio /en localizza solo la chrome, non i dati).
-- Spike futuri se cresce: filtri su JSONB (promuovere altri campi a colonna) già mitigato con GIN.
+- Auto-delivery dei numeri riservati via email dopo il lead.
+- Filtri su JSONB (promuovere altri campi a colonna) — già mitigato con GIN.
 
 Coerente con [[project_positioning_target]] (SMB, semplicità > potenza).
