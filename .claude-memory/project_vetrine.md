@@ -50,7 +50,13 @@ Per un nuovo verticale (es. immobili in vendita, nautica): nuovo oggetto preset 
 - UI barra filtri: contenitore arrotondato, controlli h44 coerenti, ricerca con icona, fascia prezzo raggruppata, link "Azzera".
 - ⚠️ Range su numerici JSONB oltre il prezzo (km/durata) non ancora fatti: servono colonne generiche (framework già pronto → è un'aggiunta, non un rifacimento).
 
-**Vetrine COMPLETA + verticali flipping, auto, viaggi + filtri/ricerca.** Migliorie future opzionali:
+**Investimento MOTORE (8/7) — le 4 cose trasversali decise dopo l'analisi per-verticale:**
+- **Nuovi tipi-campo generici** (in `PresetField`/`cleanDati` + render dettaglio): `list` (sotto-elenco → `<ul>`), `geo` (indirizzo → mappa Google embed, no dep/no key), `file` (URL PDF → download). ⚠️ **Sicurezza**: `safeUrl()` in LandingBlockRenderer sui `file` — solo http(s)/interni, blocca `javascript:`/`data:` (verificato live: href malevolo NON renderizzato). Il preset `viaggi` li usa (itinerario/incluso/escluso/date=list, luogo=geo, brochure=file).
+- **Filtro range su 2° numerico** (migration **066**: colonne `num1/num2` + indici). Il preset mappa via `numColumns` (auto→km, viaggi→durata_giorni, flipping→mq); l'editor popola num1/num2 al salvataggio; endpoint filtra `min_<key>`/`max_<key>` sulle colonne. ⚠️ I range su JSONB non sono indicizzabili → servono colonne vere. Elementi vecchi: num1/num2 null finché non ri-salvati. Verificato live (km≥80k→2, combinato con prezzo→1).
+- **Barra filtri**: stato come **pill** con attivo nel colore del tema + focus accent tema; icone lucide flat (Search/ChevronDown/Euro/X/FileText); ricerca+select+prezzo+range in riga, "Azzera" centrato.
+- Decisione: **calendario/disponibilità** (affitti/noleggi/eventi) → modulo booking, NON in vetrina; **varianti+pagamento** → Shop. Prossimi verticali = preset al bisogno; il motore ora è ricco.
+
+**Vetrine COMPLETA + verticali flipping, auto, viaggi + filtri/ricerca + tipi-campo (list/geo/file) + range.** Migliorie future opzionali:
 - Multilingua dei campi elemento (oggi il dettaglio /en localizza solo la chrome, non i dati).
 - Auto-delivery dei numeri riservati via email dopo il lead.
 - Filtri su JSONB (promuovere altri campi a colonna) — già mitigato con GIN.

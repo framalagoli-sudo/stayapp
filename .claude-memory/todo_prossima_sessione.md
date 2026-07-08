@@ -9,7 +9,8 @@ metadata:
 
 ## ▶️ RIPARTIRE DA QUI (8/7) — Vetrine COMPLETA, resta rifinitura UI filtri
 **Vetrine** (motore collezioni generico: verticali flipping/auto/viaggi, admin + pubblico blocco+dettaglio SSR + lead→CRM + filtri/ricerca server-side + WhatsApp) è **COMPLETA e live** → dettaglio in [[project_vetrine]].
-- 🎨 **DA FARE (l'unico aperto): rifinire l'estetica della barra filtri** della griglia (`VetrinaGrid` in `components/LandingBlockRenderer.jsx`). Ora ha icone lucide flat (Search/ChevronDown/Euro/X) + controlli a pillola con ombra, ma a Francesco NON convince ancora. È **solo estetica** — i filtri funzionano (verificati live). Direzioni da decidere con lui: pill/segmented per lo stato invece della tendina; accento col **colore tema** invece del grigio; barra più compatta/ariosa o **sticky**; sfondo sezione; allineamento.
+- ✅ **Barra filtri rifatta (8/7)**: stato come **pill** con attivo nel **colore del tema** + focus accent, icone lucide flat. (Se Francesco vuole ancora ritocchi: compattezza/sticky/sfondo sezione.)
+- ✅ **Investimento motore (8/7)**: nuovi tipi-campo `list`/`geo`(mappa)/`file` (con `safeUrl`), + **filtro range su 2° numerico** (migration 066, colonne num1/num2, `numColumns` nel preset). Tutto verificato live. Vedi [[project_vetrine]].
 - Follow-up Vetrine opzionali (in [[project_vetrine]]): range su numerici JSONB oltre il prezzo (km/durata → colonna generica, è un'aggiunta non un rifacimento); multilingua dei campi elemento; auto-delivery numeri riservati via email; **editor schema self-serve** (creare nuovi tipi-campo senza dev — fondamenta in `vetrine.schema`).
 - Nuovo verticale = nuovo preset in `lib/vetrinePresets.js` (~20-30 righe), zero migration.
 
