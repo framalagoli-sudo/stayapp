@@ -167,15 +167,18 @@ function ElementoEditor({ elemento, preset, vetrina, onSaved }) {
     setSaving(true); setError(null)
     const cleanPub = cleanDati(dati, preset.campiPubblici)
     const cleanPriv = cleanDati(datiPrivati, preset.campiPrivati)
-    const valoreRaw = cleanPub[preset.valorePrimario]
+    const toNum = v => (v === undefined || v === '' || v === null || Number.isNaN(Number(v))) ? null : Number(v)
+    const nums = preset.numColumns || []   // 2° numerici filtrabili a fascia → colonne num1/num2
     const patch = {
       titolo,
       copertina_url: copertina,
       immagini,
       dati: cleanPub,
       dati_privati: cleanPriv,
-      valore_primario: valoreRaw === undefined || valoreRaw === '' ? null : Number(valoreRaw),
+      valore_primario: toNum(cleanPub[preset.valorePrimario]),
       stato_pubblico: cleanPub[preset.statoPubblico] || '',
+      num1: nums[0] ? toNum(cleanPub[nums[0]]) : null,
+      num2: nums[1] ? toNum(cleanPub[nums[1]]) : null,
     }
     const res = await apiFetch(`/api/vetrina-elementi/${elemento.id}`, { method: 'PATCH', body: JSON.stringify(patch) })
     setSaving(false)

@@ -16,6 +16,7 @@ export const VETRINA_PRESETS = {
     elementoLabel: 'Progetto',
     valorePrimario: 'quota_minima',   // colonna valore_primario
     statoPubblico:  'stato',          // colonna stato_pubblico
+    numColumns:     ['mq'],           // 2° numerico filtrabile a fascia → colonna num1
     stati: [
       { value: 'in_raccolta',        label: 'In raccolta' },
       { value: 'in_ristrutturazione', label: 'In ristrutturazione' },
@@ -55,6 +56,7 @@ export const VETRINA_PRESETS = {
     elementoLabel: 'Auto',
     valorePrimario: 'prezzo',
     statoPubblico:  'condizione',
+    numColumns:     ['km'],
     stati: [
       { value: 'nuovo', label: 'Nuovo' },
       { value: 'usato', label: 'Usato' },
@@ -88,6 +90,7 @@ export const VETRINA_PRESETS = {
     elementoLabel: 'Viaggio',
     valorePrimario: 'prezzo_da',
     statoPubblico:  'tipologia',
+    numColumns:     ['durata_giorni'],
     stati: [
       { value: 'mare',      label: 'Mare' },
       { value: 'montagna',  label: 'Montagna' },

@@ -37,6 +37,15 @@ export async function GET(request, { params }) {
     if (pmin && !Number.isNaN(Number(pmin))) q = q.gte('valore_primario', Number(pmin))
     if (pmax && !Number.isNaN(Number(pmax))) q = q.lte('valore_primario', Number(pmax))
 
+    // range sui 2° numerici (km/durata/mq…) mappati dal preset → colonne num1/num2
+    ;(preset.numColumns || []).slice(0, 2).forEach((key, i) => {
+      const col = i === 0 ? 'num1' : 'num2'
+      const mn = searchParams.get('min_' + key)
+      const mx = searchParams.get('max_' + key)
+      if (mn && !Number.isNaN(Number(mn))) q = q.gte(col, Number(mn))
+      if (mx && !Number.isNaN(Number(mx))) q = q.lte(col, Number(mx))
+    })
+
     const search = searchParams.get('q')
     if (search?.trim()) q = q.ilike('titolo', `%${search.trim()}%`)
 

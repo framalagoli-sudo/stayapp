@@ -37,7 +37,7 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [loaded, setLoaded] = useState(false)
-  const [filters, setFilters] = useState({ stato: '', sel: {}, pmin: '', pmax: '', q: '' })
+  const [filters, setFilters] = useState({ stato: '', sel: {}, pmin: '', pmax: '', q: '', nums: {} })
   const LIMIT = 12
 
   function buildParams(offset) {
@@ -47,6 +47,7 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
     Object.entries(filters.sel).forEach(([k, v]) => { if (v) p.set('sel_' + k, v) })
     if (filters.pmin) p.set('prezzo_min', filters.pmin)
     if (filters.pmax) p.set('prezzo_max', filters.pmax)
+    Object.entries(filters.nums).forEach(([k, r]) => { if (r?.min) p.set('min_' + k, r.min); if (r?.max) p.set('max_' + k, r.max) })
     if (filters.q.trim()) p.set('q', filters.q.trim())
     p.set('limit', LIMIT); p.set('offset', offset)
     return p.toString()
@@ -76,12 +77,15 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
   const cols = Math.min(Math.max(Number(d.colonne) || 3, 1), 4)
   const setF = (patch) => setFilters(f => ({ ...f, ...patch }))
   const setSel = (k, v) => setFilters(f => ({ ...f, sel: { ...f.sel, [k]: v } }))
+  const setNum = (k, which, val) => setFilters(f => ({ ...f, nums: { ...f.nums, [k]: { ...f.nums[k], [which]: val } } }))
   const statoField = (preset.campiPubblici || []).find(f => f.type === 'select' && f.key === preset.statoPubblico)
   const showStatoPills = statoField && !d.filtro   // lo stato come pill; se il blocco è pre-filtrato non serve
   const statoKey = preset.statoPubblico
   const selectFacets = (preset.campiPubblici || []).filter(f => f.type === 'select' && f.key !== preset.statoPubblico)
+  const rangeFacets = (preset.numColumns || []).slice(0, 2).map(k => (preset.campiPubblici || []).find(f => f.key === k)).filter(Boolean)
   const showPrice = valoreField && (valoreField.type === 'currency' || valoreField.type === 'number')
-  const anyFilter = !!(filters.q || filters.pmin || filters.pmax || filters.stato || Object.values(filters.sel).some(Boolean))
+  const numsActive = Object.values(filters.nums).some(r => r?.min || r?.max)
+  const anyFilter = !!(filters.q || filters.pmin || filters.pmax || filters.stato || numsActive || Object.values(filters.sel).some(Boolean))
   if (loaded && total === 0 && !anyFilter && !d.titolo) return null   // vetrina vuota, non filtrata → nascondi il blocco
 
   const ctrl = { height: 46, padding: '0 16px', border: '1px solid #e8e8f0', borderRadius: 12, fontSize: 14, background: '#fff', fontFamily: 'inherit', color: '#2a2a35', outline: 'none', boxSizing: 'border-box', boxShadow: '0 1px 3px rgba(20,20,40,0.05)' }
@@ -93,7 +97,7 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
     <section style={{ padding: '64px 0' }}>
       <div className="lbr-section">
         {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,36px)', fontWeight: 700, textAlign: 'center', marginBottom: 28, color: '#1a1a2e' }}>{d.titolo}</h2>}
-        {d.mostra_filtri !== false && (showStatoPills || selectFacets.length > 0 || showPrice) && (
+        {d.mostra_filtri !== false && (showStatoPills || selectFacets.length > 0 || showPrice || rangeFacets.length > 0) && (
           <div style={{ marginBottom: 40 }}>
             {showStatoPills && (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 16 }}>
@@ -103,7 +107,7 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
                 ))}
               </div>
             )}
-            {(selectFacets.length > 0 || showPrice) && (
+            {(selectFacets.length > 0 || showPrice || rangeFacets.length > 0) && (
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
                 <div style={{ position: 'relative', flex: '0 1 260px', minWidth: 190 }}>
                   <Search size={17} strokeWidth={1.5} style={{ position: 'absolute', left: 15, top: '50%', transform: 'translateY(-50%)', color: '#a6a6b2', pointerEvents: 'none' }} />
@@ -127,11 +131,19 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
                     <input type="number" value={filters.pmax} onChange={e => setF({ pmax: e.target.value })} placeholder="max" style={numInp} />
                   </div>
                 )}
+                {rangeFacets.map(f => (
+                  <div key={f.key} style={{ ...ctrl, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0 14px', width: 'auto' }}>
+                    <span style={{ fontSize: 12, color: '#8a8a95', whiteSpace: 'nowrap' }}>{f.label}</span>
+                    <input type="number" value={filters.nums[f.key]?.min || ''} onChange={e => setNum(f.key, 'min', e.target.value)} placeholder="min" style={numInp} />
+                    <span style={{ color: '#d4d4dc' }}>–</span>
+                    <input type="number" value={filters.nums[f.key]?.max || ''} onChange={e => setNum(f.key, 'max', e.target.value)} placeholder="max" style={numInp} />
+                  </div>
+                ))}
               </div>
             )}
             {anyFilter && (
               <div style={{ textAlign: 'center', marginTop: 14 }}>
-                <button onClick={() => setFilters({ stato: '', sel: {}, pmin: '', pmax: '', q: '' })}
+                <button onClick={() => setFilters({ stato: '', sel: {}, pmin: '', pmax: '', q: '', nums: {} })}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', border: 'none', background: 'none', color: primary, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                   <X size={15} strokeWidth={1.5} /> Azzera filtri
                 </button>
