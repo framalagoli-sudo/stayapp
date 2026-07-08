@@ -33,7 +33,7 @@ const BLOCK_ICON_MAP = {
   team: Users, steps: List, highlights: Star, stats: BarChart2,
   cta_banner: Zap, testimonianze: MessageCircle, promozioni: Tag,
   pacchetti: Package, faq: HelpCircle, immagine: Image, galleria_immagini: Grid, gallery: ImageIcon, video: Video,
-  services: Settings, activities: Compass, excursions: Map, eventi: Calendar,
+  services: Settings, activities: Compass, excursions: Map, eventi: Calendar, vetrina: Package,
   news: FileText, booking: Clock, newsletter: Mail, contatti: Phone,
   show_map: MapPin, clienti: Building2,
 }
@@ -764,6 +764,9 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
     case 'form_builder': return (
       <FormBuilderBlockEditor data={data} onChange={upd} />
     )
+    case 'vetrina': return (
+      <VetrinaBlockEditor data={data} onChange={upd} entityId={entityId} entityTipo={entityTipo} />
+    )
     case 'clienti': return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} placeholder="I nostri clienti" />
@@ -925,6 +928,45 @@ function FormBuilderBlockEditor({ data, onChange }) {
           ✓ Form selezionato: <strong>{selectedForm.nome}</strong> ({selectedForm.attivo ? 'attivo' : 'disattivo'})
         </div>
       )}
+    </div>
+  )
+}
+
+// ── VetrinaBlockEditor — sceglie quale vetrina mostrare e come ────────────────
+function VetrinaBlockEditor({ data, onChange, entityId, entityTipo }) {
+  const [vetrine, setVetrine] = useState([])
+  useEffect(() => {
+    if (!entityId) return
+    apiFetch(`/api/vetrine?entity_tipo=${entityTipo}&entity_id=${entityId}`).then(v => setVetrine(Array.isArray(v) ? v : [])).catch(() => {})
+  }, [entityId, entityTipo])
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div>
+        <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 500 }}>Vetrina da mostrare</label>
+        <select value={data.vetrina_id || ''} onChange={e => onChange('vetrina_id', e.target.value)}
+          style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13, background: '#fff' }}>
+          <option value="">— Scegli una vetrina —</option>
+          {vetrine.map(v => <option key={v.id} value={v.id}>{v.titolo}{v.status !== 'pubblicata' ? ' (bozza)' : ''}</option>)}
+        </select>
+        {vetrine.length === 0 && (
+          <p style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>Nessuna vetrina. Creala nella tab <strong>Vetrine</strong> dell'entità.</p>
+        )}
+      </div>
+      <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => onChange('titolo', v)} />
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 120 }}>
+          <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 500 }}>Colonne</label>
+          <select value={data.colonne || 3} onChange={e => onChange('colonne', Number(e.target.value))}
+            style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13, background: '#fff' }}>
+            <option value={2}>2</option><option value={3}>3</option><option value={4}>4</option>
+          </select>
+        </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', alignSelf: 'flex-end', paddingBottom: 8 }}>
+          <input type="checkbox" checked={data.mostra_filtri !== false} onChange={e => onChange('mostra_filtri', e.target.checked)} />
+          Mostra filtri per stato
+        </label>
+      </div>
     </div>
   )
 }

@@ -11,9 +11,11 @@ export async function GET(request, { params }) {
     const { data: entity } = await supabaseAdmin.from(table).select('id').eq('slug', slug).eq('active', true).single()
     if (!entity) return new Response('Entità non trovata', { status: 404 })
 
-    const [{ data: pagine }, { data: dominio }] = await Promise.all([
+    const [{ data: pagine }, { data: elementi }, { data: dominio }] = await Promise.all([
       supabaseAdmin.from('pagine').select('slug, updated_at').eq('entity_tipo', tipo).eq('entity_id', entity.id)
         .eq('status', 'pubblicata').neq('slug', '__home__'),
+      supabaseAdmin.from('vetrina_elementi').select('slug, updated_at').eq('entity_tipo', tipo).eq('entity_id', entity.id)
+        .eq('status', 'pubblicata'),
       supabaseAdmin.from('domini').select('dominio').eq('entity_tipo', tipo).eq('entity_id', entity.id)
         .eq('stato', 'attivo').eq('tipo', 'custom').limit(1).maybeSingle(),
     ])
@@ -27,6 +29,9 @@ export async function GET(request, { params }) {
       `  <url><loc>${dominio?.dominio ? `https://${dominio.dominio}` : base}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>`,
       ...(pagine || []).map(p =>
         `  <url><loc>${base}/p/${p.slug}</loc><lastmod>${(p.updated_at || now).split('T')[0]}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`
+      ),
+      ...(elementi || []).map(el =>
+        `  <url><loc>${base}/v/${el.slug}</loc><lastmod>${(el.updated_at || now).split('T')[0]}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>`
       ),
     ]
 

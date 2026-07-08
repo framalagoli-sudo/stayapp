@@ -68,6 +68,23 @@ export async function getArticolo(slug) {
   return data
 }
 
+// Carica un elemento di vetrina per il dettaglio pubblico. Seleziona SOLO le
+// colonne pubbliche: dati_privati NON viene mai letto qui (gating). Aggiunge il
+// preset della vetrina (serve alle etichette dei campi lato pubblico).
+export async function getElementoVetrina(tipo, entityId, itemSlug, preview = false) {
+  let q = supabaseAdmin
+    .from('vetrina_elementi')
+    .select('id, vetrina_id, titolo, slug, copertina_url, valore_primario, stato_pubblico, dati, immagini, status, seo_title, seo_description, og_image_url')
+    .eq('entity_tipo', tipo)
+    .eq('entity_id', entityId)
+    .eq('slug', itemSlug)
+  if (!preview) q = q.eq('status', 'pubblicata')
+  const { data, error } = await q.single()
+  if (error || !data) return null
+  const { data: vetrina } = await supabaseAdmin.from('vetrine').select('preset, titolo').eq('id', data.vetrina_id).single()
+  return { ...data, preset: vetrina?.preset || 'progetti_immobiliari', vetrina_titolo: vetrina?.titolo || '' }
+}
+
 export async function getPagina(tipo, entityId, pageSlug, preview = false) {
   let q = supabaseAdmin
     .from('pagine')

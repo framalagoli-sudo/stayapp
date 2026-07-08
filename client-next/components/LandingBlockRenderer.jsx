@@ -8,6 +8,152 @@ import Turnstile from '@/components/Turnstile'
 import { applyBlockStyle, blockInverted, textSizeScale, textColorFor, gridTemplate, readableOn } from '@/lib/blockTypes'
 import { RichText, richIsEmpty } from '@/lib/richText'
 import { t as tr } from '@/lib/i18n'
+import { getPreset } from '@/lib/vetrinePresets'
+
+// Formatta un numero (separatore migliaia). I campi currency mostrano il simbolo €.
+function fmtVetrina(value, type) {
+  if (value === null || value === undefined || value === '') return ''
+  const n = Number(value)
+  if (Number.isNaN(n)) return String(value)
+  const s = n.toLocaleString('it-IT')
+  if (type === 'currency') return `€ ${s}`
+  if (type === 'percent') return `${s}%`
+  return s
+}
+
+// Griglia pubblica di una vetrina: carica gli elementi pubblicati (client-side,
+// come i blocchi eventi/news), con filtro per stato e link al dettaglio.
+function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
+  const d = block.data || {}
+  const [data, setData] = useState(null)
+  const [stato, setStato] = useState('')
+  useEffect(() => {
+    if (!d.vetrina_id) return
+    guestFetch(`/api/guest/vetrina/${d.vetrina_id}`).then(r => setData(r && !r.error ? r : { elementi: [] })).catch(() => setData({ elementi: [] }))
+  }, [d.vetrina_id])
+
+  if (!d.vetrina_id) return null
+  const preset = getPreset(data?.preset)
+  const valoreField = (preset.campiPubblici || []).find(f => f.key === preset.valorePrimario)
+  const cols = Math.min(Math.max(Number(d.colonne) || 3, 1), 4)
+  const all = data?.elementi || []
+  const stati = (preset.stati || []).filter(s => all.some(e => e.stato_pubblico === s.value))
+  const elementi = stato ? all.filter(e => e.stato_pubblico === stato) : all
+  if (data && all.length === 0) return null
+
+  return (
+    <section style={{ padding: '64px 0' }}>
+      <div className="lbr-section">
+        {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,36px)', fontWeight: 700, textAlign: 'center', marginBottom: 28, color: '#1a1a2e' }}>{d.titolo}</h2>}
+        {d.mostra_filtri !== false && stati.length > 1 && (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 28 }}>
+            <button onClick={() => setStato('')} style={filtroBtn(stato === '', primary)}>Tutti</button>
+            {stati.map(s => <button key={s.value} onClick={() => setStato(s.value)} style={filtroBtn(stato === s.value, primary)}>{s.label}</button>)}
+          </div>
+        )}
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${cols >= 4 ? 220 : cols === 3 ? 280 : 340}px, 1fr))`, gap: 24 }}>
+          {elementi.map(el => {
+            const statoLbl = (preset.stati || []).find(s => s.value === el.stato_pubblico)?.label
+            const raccolto = Number(el.dati?.raccolto_perc)
+            const roi = el.dati?.roi_atteso
+            return (
+              <a key={el.id} href={`${linkBase}/v/${el.slug}`} style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column', textDecoration: 'none', color: 'inherit', borderTop: `4px solid ${primary}` }}>
+                {el.copertina_url && <img src={el.copertina_url} alt={el.titolo} loading="lazy" style={{ width: '100%', height: 180, objectFit: 'cover' }} />}
+                <div style={{ padding: '20px 20px 24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  {statoLbl && <span style={{ alignSelf: 'flex-start', background: `${sec}18`, color: sec, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>{statoLbl}</span>}
+                  <h3 style={{ fontFamily: heading, fontSize: 20, fontWeight: 700, margin: '0 0 6px', color: '#1a1a2e' }}>{el.titolo}</h3>
+                  {el.dati?.zona && <div style={{ fontSize: 13, color: '#888', marginBottom: 12 }}>{el.dati.zona}</div>}
+                  <div style={{ marginTop: 'auto', display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'baseline' }}>
+                    {el.valore_primario != null && (
+                      <div>
+                        <div style={{ fontSize: 11, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5 }}>{valoreField?.label || 'Da'}</div>
+                        <div style={{ fontSize: 19, fontWeight: 700, color: '#1a1a2e' }}>{fmtVetrina(el.valore_primario, valoreField?.type || 'currency')}</div>
+                      </div>
+                    )}
+                    {roi != null && roi !== '' && (
+                      <div>
+                        <div style={{ fontSize: 11, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5 }}>ROI</div>
+                        <div style={{ fontSize: 19, fontWeight: 700, color: primary }}>{fmtVetrina(roi, 'percent')}</div>
+                      </div>
+                    )}
+                  </div>
+                  {!Number.isNaN(raccolto) && el.dati?.raccolto_perc !== undefined && el.dati?.raccolto_perc !== '' && (
+                    <div style={{ marginTop: 16 }}>
+                      <div style={{ height: 7, background: '#eee', borderRadius: 4, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${Math.min(Math.max(raccolto, 0), 100)}%`, background: primary }} />
+                      </div>
+                      <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>Raccolto {Math.min(Math.max(raccolto, 0), 100)}%</div>
+                    </div>
+                  )}
+                </div>
+              </a>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}
+function filtroBtn(active, primary) {
+  return { padding: '7px 16px', borderRadius: 50, border: `1.5px solid ${active ? primary : '#ddd'}`, background: active ? primary : '#fff', color: active ? '#fff' : '#555', fontSize: 13, fontWeight: 600, cursor: 'pointer' }
+}
+
+// Dettaglio pubblico di un elemento di vetrina (renderizzato dentro una pagina
+// sintetica via GuestSubPage). Mostra galleria, campi pubblici, stato, CTA lead.
+function VetrinaDettaglio({ block, linkBase, primary, sec, heading }) {
+  const d = block.data || {}
+  const preset = getPreset(d.preset)
+  const dati = d.dati || {}
+  const immagini = Array.isArray(d.immagini) ? d.immagini : []
+  const statoLbl = (preset.stati || []).find(s => s.value === d.stato_pubblico)?.label
+  const raccolto = Number(dati.raccolto_perc)
+  const campi = (preset.campiPubblici || []).filter(f => f.key !== 'descrizione' && f.key !== 'stato' && dati[f.key] !== undefined && dati[f.key] !== '')
+  return (
+    <section style={{ padding: '48px 0 72px' }}>
+      <div className="lbr-section" style={{ maxWidth: 900, margin: '0 auto' }}>
+        {statoLbl && <span style={{ display: 'inline-block', background: `${sec}18`, color: sec, fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 14 }}>{statoLbl}</span>}
+        <h1 style={{ fontFamily: heading, fontSize: 'clamp(28px,4vw,44px)', fontWeight: 800, margin: '0 0 24px', color: '#1a1a2e' }}>{d.titolo}</h1>
+
+        {(d.copertina_url || immagini.length > 0) && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10, marginBottom: 32 }}>
+            {[d.copertina_url, ...immagini].filter(Boolean).map((url, i) => (
+              <img key={i} src={url} alt={d.titolo} loading={i === 0 ? 'eager' : 'lazy'} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: 12, gridColumn: i === 0 ? 'span 2' : 'auto' }} />
+            ))}
+          </div>
+        )}
+
+        {campi.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 18, padding: '24px', background: '#f8f9fb', borderRadius: 16, marginBottom: 28 }}>
+            {campi.map(f => (
+              <div key={f.key}>
+                <div style={{ fontSize: 11, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>{f.label}</div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a2e' }}>{fmtVetrina(dati[f.key], f.type)}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!Number.isNaN(raccolto) && dati.raccolto_perc !== undefined && dati.raccolto_perc !== '' && (
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ height: 10, background: '#eee', borderRadius: 6, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${Math.min(Math.max(raccolto, 0), 100)}%`, background: primary }} />
+            </div>
+            <div style={{ fontSize: 13, color: '#666', marginTop: 6, fontWeight: 600 }}>Raccolto {Math.min(Math.max(raccolto, 0), 100)}%</div>
+          </div>
+        )}
+
+        {dati.descrizione && <p style={{ fontSize: 16, lineHeight: 1.8, color: '#444', whiteSpace: 'pre-line', marginBottom: 32 }}>{dati.descrizione}</p>}
+
+        {/* CTA — il form lead vero arriva in Fase 3; per ora ancora ai contatti dell'entità */}
+        <div style={{ textAlign: 'center', padding: '32px', background: '#1a1a2e', borderRadius: 16 }}>
+          <div style={{ color: '#fff', fontSize: 20, fontWeight: 700, marginBottom: 8, fontFamily: heading }}>Interessato a questo progetto?</div>
+          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, marginBottom: 20 }}>Lascia i tuoi dati per ricevere il business plan completo e i numeri riservati.</div>
+          <a href={`${linkBase}#contatti`} style={{ display: 'inline-block', padding: '14px 34px', background: primary, color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none' }}>Voglio partecipare</a>
+        </div>
+      </div>
+    </section>
+  )
+}
 
 const HIGHLIGHT_LUCIDE = {
   star: Star, heart: Heart, award: Award, wifi: Wifi, parking: Car,
@@ -1207,6 +1353,12 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
           </section>
         )
       }
+
+      case 'vetrina':
+        return <VetrinaGrid key={block.id} block={block} linkBase={linkBase} primary={primary} sec={sec} heading={heading} />
+
+      case 'vetrina_dettaglio':
+        return <VetrinaDettaglio key={block.id} block={block} linkBase={linkBase} primary={primary} sec={sec} heading={heading} />
 
       default:
         return null
