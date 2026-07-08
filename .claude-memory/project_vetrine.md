@@ -45,7 +45,9 @@ Per un nuovo verticale (es. immobili in vendita, nautica): nuovo oggetto preset 
 **Filtri/ricerca server-side + paginazione** LIVE 8/7 (fatti UNA volta, scalabili — vedi discussione "non farlo due volte"):
 - Endpoint `/api/guest/vetrina/[id]` accetta: `stato`, `sel_<key>` (eq sui campi select via `dati->>key`), `prezzo_min/max` (range su colonna `valore_primario`), `q` (ilike su titolo), `limit/offset` (+ `total`).
 - `VetrinaGrid` genera la **barra filtri dal preset per convenzione**: ogni campo `select` → tendina, `valore_primario` → fascia prezzo, + barra ricerca. Debounce + "Carica altri". Nessun flag da mettere nei preset.
-- Verificato live: select-facet (Diesel→2), range prezzo, ricerca titolo, combinato, paginazione (limit=2 di 4), 0 leak. `dati->>key` di PostgREST funziona.
+- Verificato live: select-facet (Diesel→2), range prezzo, ricerca titolo, combinato, paginazione (limit=2 di 4), filtro **stato** (raccolta/concluso), 0 leak. `dati->>key` di PostgREST funziona.
+- ⚠️ NON saltare il campo `statoPubblico` nel ciclo dei filtri select dell'endpoint (bug fixato 8/7): la griglia lo manda come `sel_<key>` e il valore è anche in `dati.<key>` → filtra via `dati->>key`. Il param `stato` (colonna) resta per il pre-filtro blocco.
+- UI barra filtri: contenitore arrotondato, controlli h44 coerenti, ricerca con icona, fascia prezzo raggruppata, link "Azzera".
 - ⚠️ Range su numerici JSONB oltre il prezzo (km/durata) non ancora fatti: servono colonne generiche (framework già pronto → è un'aggiunta, non un rifacimento).
 
 **Vetrine COMPLETA + verticali flipping, auto, viaggi + filtri/ricerca.** Migliorie future opzionali:
