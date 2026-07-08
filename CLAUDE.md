@@ -262,8 +262,10 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - **Landing marketing OltreNova** ridisegnata ✅ 2026-07 (palette nero/bianco/petrolio/ocra + sfumato instagram, contatti + P.IVA).
 - **Header sito pubblico** ✅ 2026-07: logo visibile in cima (anche con slider), menu **hamburger** su mobile, **logo negativo** per sfondi scuri (footer/header, colonna `logo_dark_url`).
 - **Link a pagine interne nei blocchi** ✅ 2026-07-07: selettore "🔗 Pagine" (Home/pagine pubblicate/Privacy/Cookie) su tutti i campi URL dell'editor pagine + CTA header/footer sito (`components/admin/LinkPicker.jsx`). Link interni del renderer resi **lingua/dominio-aware** (`base` + `siteHref` in `LandingBlockRenderer`): su `/en` e domini custom i link puntano al target giusto. Restano IT-only i dettagli offerte/pacchetti.
+- **Vetrine — Fase 1 (dati + admin)** ✅ 2026-07-08: motore generico "collezioni + elementi" (migration `065`, preset in `lib/vetrinePresets.js`, API `/api/vetrine` + `/api/vetrina-elementi`, tab admin **Vetrine** con editor guidato dal preset). Primo preset **progetti immobiliari (flipping)**; numeri sensibili in `dati_privati` (gating). Nuovo verticale = nuovo preset, zero migration. Fase 2 (vetrina pubblica: blocco + dettaglio SSR) e Fase 3 (lead gated → `requests`) da fare. Vedi memoria `project_vetrine`.
 
 ### Da fare (in ordine)
+- [ ] **Vetrine Fase 2 + 3** — vetrina pubblica (blocco site-builder + dettaglio SSR con `siteHref`) e lead gated (CTA → `requests`, numeri riservati dopo il contatto)
 - [ ] **Pagamenti Stripe** — checkout booking risorse ed eventi (colonne `pagamento_stato/pagamento_id` già su prenotazioni)
 - [ ] **Collegare GitHub → Vercel auto-deploy** (oggi deploy manuale via `deploy.ps1`)
 - [ ] **Sentry** — bloccato su Next 14.2 (serve upgrade Next 15 o alternativa)
