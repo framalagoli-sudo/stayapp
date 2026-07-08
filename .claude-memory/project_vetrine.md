@@ -40,7 +40,15 @@ metadata:
 
 Per un nuovo verticale (es. immobili in vendita, nautica): nuovo oggetto preset (~20 righe) + eventuale `cta`, zero migration, zero modifiche a render/editor (già generici).
 
-**Vetrine COMPLETA (Fasi 1+2+3 live) + verticali flipping & auto.** Migliorie future opzionali:
+**Preset `viaggi` (agenzie/tour operator)** LIVE 8/7: tipologia (mare/città/tour/crociera…) come stato, campi destinazione/durata/date/prezzo_da/include/esclude/itinerario, CTA "Richiedi preventivo". Niente gating (lead→CRM).
+
+**Filtri/ricerca server-side + paginazione** LIVE 8/7 (fatti UNA volta, scalabili — vedi discussione "non farlo due volte"):
+- Endpoint `/api/guest/vetrina/[id]` accetta: `stato`, `sel_<key>` (eq sui campi select via `dati->>key`), `prezzo_min/max` (range su colonna `valore_primario`), `q` (ilike su titolo), `limit/offset` (+ `total`).
+- `VetrinaGrid` genera la **barra filtri dal preset per convenzione**: ogni campo `select` → tendina, `valore_primario` → fascia prezzo, + barra ricerca. Debounce + "Carica altri". Nessun flag da mettere nei preset.
+- Verificato live: select-facet (Diesel→2), range prezzo, ricerca titolo, combinato, paginazione (limit=2 di 4), 0 leak. `dati->>key` di PostgREST funziona.
+- ⚠️ Range su numerici JSONB oltre il prezzo (km/durata) non ancora fatti: servono colonne generiche (framework già pronto → è un'aggiunta, non un rifacimento).
+
+**Vetrine COMPLETA + verticali flipping, auto, viaggi + filtri/ricerca.** Migliorie future opzionali:
 - Multilingua dei campi elemento (oggi il dettaglio /en localizza solo la chrome, non i dati).
 - Auto-delivery dei numeri riservati via email dopo il lead.
 - Filtri su JSONB (promuovere altri campi a colonna) — già mitigato con GIN.

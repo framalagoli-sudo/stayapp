@@ -63,4 +63,4 @@
 - [Header sito pubblico](reference_header_sito_pubblico.md) — nav duplicato in 4 componenti guest; logo visibile in cima + hamburger mobile; attenzione allo switcher lingua fixed top-right z2000
 - [Link interni nei blocchi (lingua/dominio)](reference_link_interni_renderer.md) — picker salva path assoluti /{s|r|a}/slug/...; LandingBlockRenderer li rimappa con base+siteHref → /en e domini custom corretti (fix 7/7)
 - [Session 2026-07-07 — Link interni + fix IT/EN + hydration](project_session_2026_07_07.md) — dropdown pagine su tutti i campi URL, link interni renderer lingua/dominio-aware, fix hydration landing
-- [🪟 Vetrine (motore collezioni)](project_vetrine.md) — motore generico collezioni+elementi COMPLETO (Fasi 1+2+3 live 8/7): admin, vetrina pubblica (blocco+dettaglio SSR), lead→CRM contatti (source 'vetrina'). Preset flipping, gating dati_privati verificato
+- [🪟 Vetrine (motore collezioni)](project_vetrine.md) — motore generico COMPLETO (8/7): admin + pubblico (blocco+dettaglio SSR) + lead→CRM + **filtri/ricerca server-side + paginazione**. Verticali: flipping, auto, viaggi. WhatsApp per-elemento, CTA per-preset, gating dati_privati verificato
