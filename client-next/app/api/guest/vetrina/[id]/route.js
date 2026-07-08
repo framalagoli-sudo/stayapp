@@ -27,9 +27,9 @@ export async function GET(request, { params }) {
     if (stato) q = q.eq('stato_pubblico', stato)
 
     for (const f of preset.campiPubblici || []) {
-      if (f.type !== 'select' || f.key === preset.statoPubblico) continue
+      if (f.type !== 'select') continue
       const v = searchParams.get('sel_' + f.key)
-      if (v) q = q.eq(`dati->>${f.key}`, v)
+      if (v) q = q.eq(`dati->>${f.key}`, v)   // include lo statoPubblico: il valore è anche in dati.<key>
     }
 
     const pmin = searchParams.get('prezzo_min')

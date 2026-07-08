@@ -74,24 +74,38 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
   const anyFilter = !!(filters.q || filters.pmin || filters.pmax || filters.stato || Object.values(filters.sel).some(Boolean))
   if (loaded && total === 0 && !anyFilter && !d.titolo) return null   // vetrina vuota, non filtrata → nascondi il blocco
 
-  const inp = { padding: '9px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, background: '#fff', fontFamily: 'inherit' }
+  const ctrl = { height: 44, padding: '0 14px', border: '1px solid #e4e4ec', borderRadius: 10, fontSize: 14, background: '#fff', fontFamily: 'inherit', color: '#2a2a35', outline: 'none', boxSizing: 'border-box' }
   return (
     <section style={{ padding: '64px 0' }}>
       <div className="lbr-section">
         {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,36px)', fontWeight: 700, textAlign: 'center', marginBottom: 28, color: '#1a1a2e' }}>{d.titolo}</h2>}
         {d.mostra_filtri !== false && (selectFacets.length > 0 || showPrice) && (
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 28 }}>
-            <input value={filters.q} onChange={e => setF({ q: e.target.value })} placeholder="Cerca…" style={{ ...inp, minWidth: 180 }} />
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', marginBottom: 32, padding: 14, background: '#f5f6f8', borderRadius: 16 }}>
+            <div style={{ position: 'relative', flex: '0 1 240px', minWidth: 180 }}>
+              <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 13, opacity: 0.4, pointerEvents: 'none' }}>🔍</span>
+              <input value={filters.q} onChange={e => setF({ q: e.target.value })} placeholder="Cerca…" style={{ ...ctrl, width: '100%', paddingLeft: 38 }} />
+            </div>
             {selectFacets.map(f => (
-              <select key={f.key} value={filters.sel[f.key] || ''} onChange={e => setSel(f.key, e.target.value)} style={inp}>
-                <option value="">{f.label}: tutti</option>
-                {fieldOptions(preset, f).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              <select key={f.key} value={filters.sel[f.key] || ''} onChange={e => setSel(f.key, e.target.value)}
+                style={{ ...ctrl, cursor: 'pointer', color: filters.sel[f.key] ? '#2a2a35' : '#8a8a95' }}>
+                <option value="" style={{ color: '#8a8a95' }}>{f.label}</option>
+                {fieldOptions(preset, f).map(o => <option key={o.value} value={o.value} style={{ color: '#2a2a35' }}>{o.label}</option>)}
               </select>
             ))}
-            {showPrice && <>
-              <input type="number" value={filters.pmin} onChange={e => setF({ pmin: e.target.value })} placeholder={`${valoreField.label} min`} style={{ ...inp, width: 130 }} />
-              <input type="number" value={filters.pmax} onChange={e => setF({ pmax: e.target.value })} placeholder="max" style={{ ...inp, width: 100 }} />
-            </>}
+            {showPrice && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #e4e4ec', borderRadius: 10, padding: '0 12px', height: 44 }}>
+                <span style={{ fontSize: 13, color: '#aaa' }}>€</span>
+                <input type="number" value={filters.pmin} onChange={e => setF({ pmin: e.target.value })} placeholder="min" style={{ width: 62, height: 42, border: 'none', outline: 'none', fontSize: 14, background: 'transparent', fontFamily: 'inherit', color: '#2a2a35' }} />
+                <span style={{ color: '#ccc' }}>–</span>
+                <input type="number" value={filters.pmax} onChange={e => setF({ pmax: e.target.value })} placeholder="max" style={{ width: 62, height: 42, border: 'none', outline: 'none', fontSize: 14, background: 'transparent', fontFamily: 'inherit', color: '#2a2a35' }} />
+              </div>
+            )}
+            {anyFilter && (
+              <button onClick={() => setFilters({ stato: '', sel: {}, pmin: '', pmax: '', q: '' })}
+                style={{ height: 44, padding: '0 12px', border: 'none', background: 'none', color: primary, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                ✕ Azzera
+              </button>
+            )}
           </div>
         )}
         {loading && elementi.length === 0
