@@ -6,15 +6,22 @@ import { getPreset, fieldOptions } from '@/lib/vetrinePresets'
 
 const NUMERIC = new Set(['number', 'currency', 'percent'])
 
-// Coerce i campi numerici del preset in Number (o li rimuove se vuoti) prima del salvataggio.
+// Normalizza i campi del preset prima del salvataggio: numerici → Number,
+// liste → array di stringhe non vuote. I vuoti vengono rimossi.
 function cleanDati(dati, fields) {
   const out = { ...(dati || {}) }
   for (const f of fields) {
-    if (!NUMERIC.has(f.type)) continue
     const v = out[f.key]
-    if (v === '' || v === null || v === undefined) { delete out[f.key]; continue }
-    const n = Number(v)
-    if (!Number.isNaN(n)) out[f.key] = n
+    if (NUMERIC.has(f.type)) {
+      if (v === '' || v === null || v === undefined) { delete out[f.key]; continue }
+      const n = Number(v)
+      if (!Number.isNaN(n)) out[f.key] = n
+    } else if (f.type === 'list') {
+      const arr = Array.isArray(v) ? v : String(v || '').split('\n')
+      const clean = arr.map(s => String(s).trim()).filter(Boolean)
+      if (clean.length) out[f.key] = clean
+      else delete out[f.key]
+    }
   }
   return out
 }
@@ -238,6 +245,12 @@ function PresetField({ field, preset, value, onChange }) {
     </select>
   )
   if (field.type === 'date') return <input type="date" value={v} onChange={e => onChange(e.target.value)} style={inp} />
+  if (field.type === 'list') {
+    const text = Array.isArray(value) ? value.join('\n') : (value || '')
+    return <textarea value={text} onChange={e => onChange(e.target.value.split('\n'))} rows={4} placeholder="Una voce per riga" style={{ ...inp, resize: 'vertical' }} />
+  }
+  if (field.type === 'geo') return <input type="text" value={v} onChange={e => onChange(e.target.value)} placeholder="Indirizzo o città (es. Via Roma 1, Milano)" style={inp} />
+  if (field.type === 'file') return <input type="text" value={v} onChange={e => onChange(e.target.value)} placeholder="https://…/documento.pdf" style={inp} />
   if (NUMERIC.has(field.type)) return <input type="number" step="any" value={v} onChange={e => onChange(e.target.value)} style={inp} />
   return <input type="text" value={v} onChange={e => onChange(e.target.value)} style={inp} />
 }

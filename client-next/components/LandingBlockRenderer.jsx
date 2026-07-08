@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useEffect, useRef, cloneElement } from 'react'
-import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Mountain, Wind, ChevronDown, ChevronLeft, ChevronRight, Calendar, Users, Check, CheckCircle, Gift, Home, Zap, Shield, Leaf, Sun, Briefcase, Wrench, Euro, Handshake, Smile, Target, TrendingUp, Globe, Camera, BookOpen, Layers, Tag, Search, X } from 'lucide-react'
+import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Mountain, Wind, ChevronDown, ChevronLeft, ChevronRight, Calendar, Users, Check, CheckCircle, Gift, Home, Zap, Shield, Leaf, Sun, Briefcase, Wrench, Euro, Handshake, Smile, Target, TrendingUp, Globe, Camera, BookOpen, Layers, Tag, Search, X, FileText } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
 import BookingWidget from './BookingWidget'
 import MenuTab from '@/components/MenuTab'
@@ -9,6 +9,13 @@ import { applyBlockStyle, blockInverted, textSizeScale, textColorFor, gridTempla
 import { RichText, richIsEmpty } from '@/lib/richText'
 import { t as tr } from '@/lib/i18n'
 import { getPreset, fieldOptions } from '@/lib/vetrinePresets'
+
+// Sicurezza: accetta solo URL http(s) o path interni; blocca javascript:/data: ecc.
+function safeUrl(u) {
+  if (typeof u !== 'string') return null
+  const t = u.trim()
+  return (/^https?:\/\//i.test(t) || t.startsWith('/')) ? t : null
+}
 
 // Formatta un numero (separatore migliaia). I campi currency mostrano il simbolo €.
 function fmtVetrina(value, type) {
@@ -200,7 +207,14 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, enti
   const immagini = Array.isArray(d.immagini) ? d.immagini : []
   const statoLbl = (preset.stati || []).find(s => s.value === d.stato_pubblico)?.label
   const raccolto = Number(dati.raccolto_perc)
-  const campi = (preset.campiPubblici || []).filter(f => f.key !== 'descrizione' && f.key !== 'stato' && dati[f.key] !== undefined && dati[f.key] !== '')
+  const has = (k) => { const x = dati[k]; return x !== undefined && x !== '' && !(Array.isArray(x) && x.length === 0) }
+  const fields = (preset.campiPubblici || []).filter(f => f.key !== 'descrizione' && f.key !== preset.statoPubblico && has(f.key))
+  const infoFields = fields.filter(f => ['text', 'number', 'currency', 'percent', 'select', 'date', 'boolean'].includes(f.type))
+  const listFields = fields.filter(f => f.type === 'list')
+  const geoField   = fields.find(f => f.type === 'geo')
+  const fileFields = fields.filter(f => f.type === 'file' && safeUrl(dati[f.key]))
+  const cellValue = (f) => f.type === 'select' ? (fieldOptions(preset, f).find(o => o.value === dati[f.key])?.label || dati[f.key])
+    : f.type === 'boolean' ? (dati[f.key] ? 'Sì' : 'No') : fmtVetrina(dati[f.key], f.type)
   return (
     <section style={{ padding: '48px 0 72px' }}>
       <div className="lbr-section" style={{ maxWidth: 900, margin: '0 auto' }}>
@@ -215,16 +229,25 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, enti
           </div>
         )}
 
-        {campi.length > 0 && (
+        {infoFields.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 18, padding: '24px', background: '#f8f9fb', borderRadius: 16, marginBottom: 28 }}>
-            {campi.map(f => (
+            {infoFields.map(f => (
               <div key={f.key}>
                 <div style={{ fontSize: 11, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>{f.label}</div>
-                <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a2e' }}>{fmtVetrina(dati[f.key], f.type)}</div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a2e' }}>{cellValue(f)}</div>
               </div>
             ))}
           </div>
         )}
+
+        {listFields.map(f => (
+          <div key={f.key} style={{ marginBottom: 28 }}>
+            <h3 style={{ fontFamily: heading, fontSize: 19, fontWeight: 700, margin: '0 0 10px', color: '#1a1a2e' }}>{f.label}</h3>
+            <ul style={{ margin: 0, paddingLeft: 20, color: '#444', lineHeight: 1.9, fontSize: 15 }}>
+              {dati[f.key].map((it, i) => <li key={i}>{it}</li>)}
+            </ul>
+          </div>
+        ))}
 
         {!Number.isNaN(raccolto) && dati.raccolto_perc !== undefined && dati.raccolto_perc !== '' && (
           <div style={{ marginBottom: 28 }}>
@@ -236,6 +259,23 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, enti
         )}
 
         {dati.descrizione && <p style={{ fontSize: 16, lineHeight: 1.8, color: '#444', whiteSpace: 'pre-line', marginBottom: 32 }}>{dati.descrizione}</p>}
+
+        {geoField && (
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: '#555', fontWeight: 600, marginBottom: 10 }}><MapPin size={16} strokeWidth={1.5} color={primary} /> {dati[geoField.key]}</div>
+            <iframe title="Mappa" src={`https://www.google.com/maps?q=${encodeURIComponent(dati[geoField.key])}&output=embed`} loading="lazy" style={{ width: '100%', height: 320, border: 0, borderRadius: 16 }} />
+          </div>
+        )}
+
+        {fileFields.length > 0 && (
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 32 }}>
+            {fileFields.map(f => (
+              <a key={f.key} href={safeUrl(dati[f.key])} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 18px', border: `1.5px solid ${primary}`, color: primary, borderRadius: 10, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
+                <FileText size={16} strokeWidth={1.5} /> {f.label}
+              </a>
+            ))}
+          </div>
+        )}
 
         {/* CTA lead → CRM (contatti) via /api/guest/contact, + WhatsApp diretto */}
         <div id="partecipa" style={{ padding: '32px', background: '#1a1a2e', borderRadius: 16 }}>
