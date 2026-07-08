@@ -201,13 +201,15 @@ function ElementoEditor({ elemento, preset, vetrina, onSaved }) {
         </FieldWrap>
       ))}
 
-      {/* Campi riservati */}
-      <div style={{ ...sectionHead, color: '#8a5a00' }}>🔒 Riservato — mostrato solo dopo la richiesta di contatto</div>
-      {preset.campiPrivati.map(f => (
-        <FieldWrap key={f.key} label={f.label}>
-          <PresetField field={f} preset={preset} value={datiPrivati[f.key]} onChange={v => setField(false, f.key, v)} />
-        </FieldWrap>
-      ))}
+      {/* Campi riservati — solo se il preset ne ha */}
+      {preset.campiPrivati.length > 0 && <>
+        <div style={{ ...sectionHead, color: '#8a5a00' }}>🔒 Riservato — mostrato solo dopo la richiesta di contatto</div>
+        {preset.campiPrivati.map(f => (
+          <FieldWrap key={f.key} label={f.label}>
+            <PresetField field={f} preset={preset} value={datiPrivati[f.key]} onChange={v => setField(false, f.key, v)} />
+          </FieldWrap>
+        ))}
+      </>}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
         <button onClick={save} disabled={saving} style={{ background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 22px', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>

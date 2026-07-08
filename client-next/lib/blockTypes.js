@@ -87,7 +87,7 @@ export const BLOCK_DEFAULTS = {
   activities:   {},
   excursions:   {},
   eventi:       {},
-  vetrina:      { vetrina_id: '', titolo: '', colonne: 3, mostra_filtri: true },
+  vetrina:      { vetrina_id: '', titolo: '', colonne: 3, mostra_filtri: true, filtro: '' },
   news:         {},
   booking:      {},
   newsletter:   { title: '', subtitle: '' },

@@ -42,6 +42,44 @@ export const VETRINA_PRESETS = {
       { key: 'business_plan',   label: 'Business plan completo', type: 'textarea' },
       { key: 'documenti',       label: 'Documenti (un URL per riga)', type: 'textarea' },
     ],
+    cta: {
+      text: 'Voglio partecipare',
+      desc: 'Lascia i tuoi dati: ti ricontattiamo con il business plan completo e i numeri riservati.',
+      success: 'Richiesta inviata ✓ Ti ricontattiamo a breve con i dettagli riservati.',
+    },
+  },
+
+  auto: {
+    label: 'Auto (nuovo + usato)',
+    descrizione: 'Vetrina di veicoli nuovi e usati: presenti le auto con foto e schede, e raccogli richieste di informazioni o prenotazioni prova. Un unico elenco, con filtro nuovo/usato.',
+    elementoLabel: 'Auto',
+    valorePrimario: 'prezzo',
+    statoPubblico:  'condizione',
+    stati: [
+      { value: 'nuovo', label: 'Nuovo' },
+      { value: 'usato', label: 'Usato' },
+    ],
+    campiPubblici: [
+      { key: 'condizione',    label: 'Condizione', type: 'select', optionsFromStati: true },
+      { key: 'marca',         label: 'Marca',      type: 'text' },
+      { key: 'modello',       label: 'Modello',    type: 'text' },
+      { key: 'allestimento',  label: 'Allestimento', type: 'text' },
+      { key: 'anno',          label: 'Anno / immatricolazione (usato)', type: 'number' },
+      { key: 'km',            label: 'Chilometri (usato)', type: 'number' },
+      { key: 'alimentazione', label: 'Alimentazione', type: 'select', options: ['Benzina', 'Diesel', 'GPL', 'Metano', 'Ibrida', 'Elettrica'] },
+      { key: 'cambio',        label: 'Cambio', type: 'select', options: ['Manuale', 'Automatico'] },
+      { key: 'potenza_cv',    label: 'Potenza (CV)', type: 'number' },
+      { key: 'prezzo',        label: 'Prezzo (€)', type: 'currency' },
+      { key: 'garanzia_mesi', label: 'Garanzia (mesi)', type: 'number' },
+      { key: 'consegna',      label: 'Disponibilità / consegna', type: 'text' },
+      { key: 'descrizione',   label: 'Descrizione', type: 'textarea' },
+    ],
+    campiPrivati: [],
+    cta: {
+      text: 'Richiedi informazioni',
+      desc: 'Lasciaci i tuoi dati: ti ricontattiamo per questa auto.',
+      success: 'Richiesta inviata ✓ Ti ricontattiamo a breve.',
+    },
   },
 }
 

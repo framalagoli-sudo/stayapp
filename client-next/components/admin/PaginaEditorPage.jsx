@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useCallback, useMemo, createContext, useCo
 import { useRouter, useParams } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { LinkPicker, buildInternalLinks } from '@/components/admin/LinkPicker'
+import { getPreset as getVetrinaPreset } from '@/lib/vetrinePresets'
 import {
   GripVertical, AlignLeft, Image, Grid, Users, List, Star, BarChart2, Zap,
   MessageCircle, Tag, Package, HelpCircle, Video, Settings, Compass, Map,
@@ -940,11 +941,14 @@ function VetrinaBlockEditor({ data, onChange, entityId, entityTipo }) {
     apiFetch(`/api/vetrine?entity_tipo=${entityTipo}&entity_id=${entityId}`).then(v => setVetrine(Array.isArray(v) ? v : [])).catch(() => {})
   }, [entityId, entityTipo])
 
+  const selected = vetrine.find(v => v.id === data.vetrina_id)
+  const stati = selected ? (getVetrinaPreset(selected.preset).stati || []) : []
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div>
         <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 500 }}>Vetrina da mostrare</label>
-        <select value={data.vetrina_id || ''} onChange={e => onChange('vetrina_id', e.target.value)}
+        <select value={data.vetrina_id || ''} onChange={e => { onChange('vetrina_id', e.target.value); onChange('filtro', '') }}
           style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13, background: '#fff' }}>
           <option value="">— Scegli una vetrina —</option>
           {vetrine.map(v => <option key={v.id} value={v.id}>{v.titolo}{v.status !== 'pubblicata' ? ' (bozza)' : ''}</option>)}
@@ -953,6 +957,17 @@ function VetrinaBlockEditor({ data, onChange, entityId, entityTipo }) {
           <p style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>Nessuna vetrina. Creala nella tab <strong>Vetrine</strong> dell'entità.</p>
         )}
       </div>
+      {stati.length > 0 && (
+        <div>
+          <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 500 }}>Mostra solo</label>
+          <select value={data.filtro || ''} onChange={e => onChange('filtro', e.target.value)}
+            style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13, background: '#fff' }}>
+            <option value="">Tutti gli elementi</option>
+            {stati.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+          <p style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>Es. una pagina "Auto nuove" e una "Auto usate" dalla stessa vetrina.</p>
+        </div>
+      )}
       <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => onChange('titolo', v)} />
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 120 }}>

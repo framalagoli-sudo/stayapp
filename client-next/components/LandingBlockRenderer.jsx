@@ -36,16 +36,17 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
   const preset = getPreset(data?.preset)
   const valoreField = (preset.campiPubblici || []).find(f => f.key === preset.valorePrimario)
   const cols = Math.min(Math.max(Number(d.colonne) || 3, 1), 4)
-  const all = data?.elementi || []
-  const stati = (preset.stati || []).filter(s => all.some(e => e.stato_pubblico === s.value))
-  const elementi = stato ? all.filter(e => e.stato_pubblico === stato) : all
-  if (data && all.length === 0) return null
+  const fetched = data?.elementi || []
+  const pool = d.filtro ? fetched.filter(e => e.stato_pubblico === d.filtro) : fetched   // pre-filtro a livello di blocco (es. pagina "Auto nuove")
+  const stati = (preset.stati || []).filter(s => pool.some(e => e.stato_pubblico === s.value))
+  const elementi = stato ? pool.filter(e => e.stato_pubblico === stato) : pool
+  if (data && pool.length === 0) return null
 
   return (
     <section style={{ padding: '64px 0' }}>
       <div className="lbr-section">
         {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,36px)', fontWeight: 700, textAlign: 'center', marginBottom: 28, color: '#1a1a2e' }}>{d.titolo}</h2>}
-        {d.mostra_filtri !== false && stati.length > 1 && (
+        {d.mostra_filtri !== false && !d.filtro && stati.length > 1 && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 28 }}>
             <button onClick={() => setStato('')} style={filtroBtn(stato === '', primary)}>Tutti</button>
             {stati.map(s => <button key={s.value} onClick={() => setStato(s.value)} style={filtroBtn(stato === s.value, primary)}>{s.label}</button>)}
@@ -104,6 +105,9 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, enti
   const [showForm, setShowForm] = useState(false)
   const d = block.data || {}
   const preset = getPreset(d.preset)
+  const cta = preset.cta || {}
+  const waNumber = (entity?.whatsapp || entity?.minisito?.social?.whatsapp || '').replace(/\D/g, '')
+  const waHref = waNumber ? `https://wa.me/${waNumber}?text=${encodeURIComponent(`Ciao, sono interessato a ${d.titolo || ''} che ho visto sul sito.`)}` : null
   const dati = d.dati || {}
   const immagini = Array.isArray(d.immagini) ? d.immagini : []
   const statoLbl = (preset.stati || []).find(s => s.value === d.stato_pubblico)?.label
@@ -145,14 +149,15 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, enti
 
         {dati.descrizione && <p style={{ fontSize: 16, lineHeight: 1.8, color: '#444', whiteSpace: 'pre-line', marginBottom: 32 }}>{dati.descrizione}</p>}
 
-        {/* CTA lead → CRM (contatti) via /api/guest/contact */}
+        {/* CTA lead → CRM (contatti) via /api/guest/contact, + WhatsApp diretto */}
         <div id="partecipa" style={{ padding: '32px', background: '#1a1a2e', borderRadius: 16 }}>
-          <div style={{ color: '#fff', fontSize: 20, fontWeight: 700, marginBottom: 8, fontFamily: heading, textAlign: 'center' }}>Interessato a questo progetto?</div>
-          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, marginBottom: 20, textAlign: 'center' }}>Lascia i tuoi dati: ti ricontattiamo con il business plan completo e i numeri riservati.</div>
+          <div style={{ color: '#fff', fontSize: 20, fontWeight: 700, marginBottom: 8, fontFamily: heading, textAlign: 'center' }}>Ti interessa?</div>
+          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, marginBottom: 20, textAlign: 'center' }}>{cta.desc || 'Lascia i tuoi dati: ti ricontattiamo al più presto.'}</div>
           {showForm
-            ? <VetrinaLeadForm entity={entity} entityType={entityType} projectTitle={d.titolo} primary={primary} privacyUrl={privacyUrl} />
-            : <div style={{ textAlign: 'center' }}>
-                <button onClick={() => setShowForm(true)} style={{ padding: '14px 34px', background: primary, color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 16, border: 'none', cursor: 'pointer' }}>Voglio partecipare</button>
+            ? <VetrinaLeadForm entity={entity} entityType={entityType} projectTitle={d.titolo} primary={primary} privacyUrl={privacyUrl} successText={cta.success} />
+            : <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button onClick={() => setShowForm(true)} style={{ padding: '14px 34px', background: primary, color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 16, border: 'none', cursor: 'pointer' }}>{cta.text || 'Richiedi informazioni'}</button>
+                {waHref && <a href={waHref} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 28px', background: '#25D366', color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none' }}>💬 WhatsApp</a>}
               </div>}
         </div>
       </div>
@@ -474,7 +479,7 @@ function Countdown({ block, primary, heading }) {
 // Form lead del dettaglio vetrina → CRM contatti via /api/guest/contact
 // (stesso percorso dei contatti del sito: upsert in `contatti`, tag 'vetrina',
 // notifica al titolare, automazione nuovo_contatto). Il progetto finisce nella nota.
-function VetrinaLeadForm({ entity, entityType, projectTitle, primary, privacyUrl }) {
+function VetrinaLeadForm({ entity, entityType, projectTitle, primary, privacyUrl, successText }) {
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [messaggio, setMessaggio] = useState('')
@@ -497,7 +502,7 @@ function VetrinaLeadForm({ entity, entityType, projectTitle, primary, privacyUrl
     } catch { setState('error') }
   }
 
-  if (state === 'done') return <p style={{ color: '#7ee787', fontWeight: 600, textAlign: 'center', margin: 0 }}>Richiesta inviata ✓ Ti ricontattiamo a breve con i dettagli riservati.</p>
+  if (state === 'done') return <p style={{ color: '#7ee787', fontWeight: 600, textAlign: 'center', margin: 0 }}>{successText || 'Richiesta inviata ✓ Ti ricontattiamo a breve.'}</p>
 
   const inp = { width: '100%', padding: '12px 16px', borderRadius: 10, border: 'none', fontSize: 15, outline: 'none', boxSizing: 'border-box' }
   return (
