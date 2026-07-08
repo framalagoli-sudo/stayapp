@@ -69,46 +69,66 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
   const cols = Math.min(Math.max(Number(d.colonne) || 3, 1), 4)
   const setF = (patch) => setFilters(f => ({ ...f, ...patch }))
   const setSel = (k, v) => setFilters(f => ({ ...f, sel: { ...f.sel, [k]: v } }))
-  const selectFacets = (preset.campiPubblici || []).filter(f => f.type === 'select' && !(d.filtro && f.key === preset.statoPubblico))
+  const statoField = (preset.campiPubblici || []).find(f => f.type === 'select' && f.key === preset.statoPubblico)
+  const showStatoPills = statoField && !d.filtro   // lo stato come pill; se il blocco è pre-filtrato non serve
+  const statoKey = preset.statoPubblico
+  const selectFacets = (preset.campiPubblici || []).filter(f => f.type === 'select' && f.key !== preset.statoPubblico)
   const showPrice = valoreField && (valoreField.type === 'currency' || valoreField.type === 'number')
   const anyFilter = !!(filters.q || filters.pmin || filters.pmax || filters.stato || Object.values(filters.sel).some(Boolean))
   if (loaded && total === 0 && !anyFilter && !d.titolo) return null   // vetrina vuota, non filtrata → nascondi il blocco
 
   const ctrl = { height: 46, padding: '0 16px', border: '1px solid #e8e8f0', borderRadius: 12, fontSize: 14, background: '#fff', fontFamily: 'inherit', color: '#2a2a35', outline: 'none', boxSizing: 'border-box', boxShadow: '0 1px 3px rgba(20,20,40,0.05)' }
   const numInp = { width: 56, height: 44, border: 'none', outline: 'none', fontSize: 14, background: 'transparent', fontFamily: 'inherit', color: '#2a2a35' }
+  const pill = (active) => ({ padding: '9px 18px', borderRadius: 50, border: `1.5px solid ${active ? primary : '#e4e4ec'}`, background: active ? primary : '#fff', color: active ? '#fff' : '#555', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', transition: 'all .15s', boxShadow: active ? `0 4px 14px ${primary}44` : 'none' })
+  const onFocusA = (e) => { e.currentTarget.style.borderColor = primary; e.currentTarget.style.boxShadow = `0 0 0 3px ${primary}22` }
+  const onBlurA  = (e) => { e.currentTarget.style.borderColor = '#e8e8f0'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(20,20,40,0.05)' }
   return (
     <section style={{ padding: '64px 0' }}>
       <div className="lbr-section">
         {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,36px)', fontWeight: 700, textAlign: 'center', marginBottom: 28, color: '#1a1a2e' }}>{d.titolo}</h2>}
-        {d.mostra_filtri !== false && (selectFacets.length > 0 || showPrice) && (
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', marginBottom: 40 }}>
-            <div style={{ position: 'relative', flex: '0 1 260px', minWidth: 190 }}>
-              <Search size={17} strokeWidth={1.5} style={{ position: 'absolute', left: 15, top: '50%', transform: 'translateY(-50%)', color: '#a6a6b2', pointerEvents: 'none' }} />
-              <input value={filters.q} onChange={e => setF({ q: e.target.value })} placeholder="Cerca…" style={{ ...ctrl, width: '100%', paddingLeft: 44 }} />
-            </div>
-            {selectFacets.map(f => (
-              <div key={f.key} style={{ position: 'relative' }}>
-                <select value={filters.sel[f.key] || ''} onChange={e => setSel(f.key, e.target.value)}
-                  style={{ ...ctrl, appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none', paddingRight: 40, cursor: 'pointer', color: filters.sel[f.key] ? '#2a2a35' : '#8a8a95' }}>
-                  <option value="" style={{ color: '#8a8a95' }}>{f.label}</option>
-                  {fieldOptions(preset, f).map(o => <option key={o.value} value={o.value} style={{ color: '#2a2a35' }}>{o.label}</option>)}
-                </select>
-                <ChevronDown size={16} strokeWidth={1.5} style={{ position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)', color: '#a6a6b2', pointerEvents: 'none' }} />
+        {d.mostra_filtri !== false && (showStatoPills || selectFacets.length > 0 || showPrice) && (
+          <div style={{ marginBottom: 40 }}>
+            {showStatoPills && (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 16 }}>
+                <button onClick={() => setSel(statoKey, '')} style={pill(!filters.sel[statoKey])}>Tutti</button>
+                {fieldOptions(preset, statoField).map(o => (
+                  <button key={o.value} onClick={() => setSel(statoKey, o.value)} style={pill(filters.sel[statoKey] === o.value)}>{o.label}</button>
+                ))}
               </div>
-            ))}
-            {showPrice && (
-              <div style={{ ...ctrl, display: 'inline-flex', alignItems: 'center', gap: 4, padding: '0 14px', width: 'auto' }}>
-                <Euro size={15} strokeWidth={1.5} style={{ color: '#a6a6b2', flexShrink: 0 }} />
-                <input type="number" value={filters.pmin} onChange={e => setF({ pmin: e.target.value })} placeholder="min" style={numInp} />
-                <span style={{ color: '#d4d4dc' }}>–</span>
-                <input type="number" value={filters.pmax} onChange={e => setF({ pmax: e.target.value })} placeholder="max" style={numInp} />
+            )}
+            {(selectFacets.length > 0 || showPrice) && (
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
+                <div style={{ position: 'relative', flex: '0 1 260px', minWidth: 190 }}>
+                  <Search size={17} strokeWidth={1.5} style={{ position: 'absolute', left: 15, top: '50%', transform: 'translateY(-50%)', color: '#a6a6b2', pointerEvents: 'none' }} />
+                  <input value={filters.q} onChange={e => setF({ q: e.target.value })} onFocus={onFocusA} onBlur={onBlurA} placeholder="Cerca…" style={{ ...ctrl, width: '100%', paddingLeft: 44 }} />
+                </div>
+                {selectFacets.map(f => (
+                  <div key={f.key} style={{ position: 'relative' }}>
+                    <select value={filters.sel[f.key] || ''} onChange={e => setSel(f.key, e.target.value)} onFocus={onFocusA} onBlur={onBlurA}
+                      style={{ ...ctrl, appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none', paddingRight: 40, cursor: 'pointer', color: filters.sel[f.key] ? '#2a2a35' : '#8a8a95' }}>
+                      <option value="" style={{ color: '#8a8a95' }}>{f.label}</option>
+                      {fieldOptions(preset, f).map(o => <option key={o.value} value={o.value} style={{ color: '#2a2a35' }}>{o.label}</option>)}
+                    </select>
+                    <ChevronDown size={16} strokeWidth={1.5} style={{ position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)', color: '#a6a6b2', pointerEvents: 'none' }} />
+                  </div>
+                ))}
+                {showPrice && (
+                  <div style={{ ...ctrl, display: 'inline-flex', alignItems: 'center', gap: 4, padding: '0 14px', width: 'auto' }}>
+                    <Euro size={15} strokeWidth={1.5} style={{ color: '#a6a6b2', flexShrink: 0 }} />
+                    <input type="number" value={filters.pmin} onChange={e => setF({ pmin: e.target.value })} placeholder="min" style={numInp} />
+                    <span style={{ color: '#d4d4dc' }}>–</span>
+                    <input type="number" value={filters.pmax} onChange={e => setF({ pmax: e.target.value })} placeholder="max" style={numInp} />
+                  </div>
+                )}
               </div>
             )}
             {anyFilter && (
-              <button onClick={() => setFilters({ stato: '', sel: {}, pmin: '', pmax: '', q: '' })}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 46, padding: '0 14px', border: 'none', background: 'none', color: primary, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                <X size={15} strokeWidth={1.5} /> Azzera
-              </button>
+              <div style={{ textAlign: 'center', marginTop: 14 }}>
+                <button onClick={() => setFilters({ stato: '', sel: {}, pmin: '', pmax: '', q: '' })}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', border: 'none', background: 'none', color: primary, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                  <X size={15} strokeWidth={1.5} /> Azzera filtri
+                </button>
+              </div>
             )}
           </div>
         )}
