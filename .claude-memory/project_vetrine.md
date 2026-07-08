@@ -31,7 +31,16 @@ metadata:
 - Numeri riservati: NON consegnati in automatico — il titolare ricontatta dal CRM (auto-delivery via email = opzione futura, richiede caricare dati_privati server-side).
 - Verificato live: POST → 200, lead in `contatti` con tag `vetrina` e progetto in nota.
 
-**Vetrine COMPLETA (Fasi 1+2+3 live).** Migliorie future opzionali:
+**Preset `auto` (autosalone nuovo+usato) + capability generiche** LIVE 8/7:
+- Preset `auto` in `vetrinePresets.js`: `condizione` (nuovo/usato) come stato, campi superset (marca/modello/anno/km/alimentazione/cambio/prezzo/garanzia…), `campiPrivati: []` (niente gating — per le auto si mostra tutto).
+- **Filtro a livello di blocco** (`data.filtro`): una vetrina "Auto", due pagine (blocco pre-filtrato nuove/usate). Il filtro-compratore in-griglia si nasconde quando il blocco è pre-filtrato. Editor blocco (`VetrinaBlockEditor`) offre gli stati del preset della vetrina scelta.
+- **CTA guidata dal preset** (`preset.cta.text/desc/success`): per le auto "Richiedi informazioni" invece del wording flipping. Ogni preset ha il suo.
+- **Bottone WhatsApp** per-elemento sul dettaglio (`wa.me/{entity.whatsapp||minisito.social.whatsapp}` con testo precompilato col titolo), accanto al form→CRM. WhatsApp = chat diretta, NON logga nel CRM (il form sì).
+- Editor: sezione "🔒 Riservato" nascosta quando `campiPrivati` è vuoto.
+
+Per un nuovo verticale (es. immobili in vendita, nautica): nuovo oggetto preset (~20 righe) + eventuale `cta`, zero migration, zero modifiche a render/editor (già generici).
+
+**Vetrine COMPLETA (Fasi 1+2+3 live) + verticali flipping & auto.** Migliorie future opzionali:
 - Multilingua dei campi elemento (oggi il dettaglio /en localizza solo la chrome, non i dati).
 - Auto-delivery dei numeri riservati via email dopo il lead.
 - Filtri su JSONB (promuovere altri campi a colonna) — già mitigato con GIN.
