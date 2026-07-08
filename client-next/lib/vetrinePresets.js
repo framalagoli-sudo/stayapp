@@ -81,6 +81,40 @@ export const VETRINA_PRESETS = {
       success: 'Richiesta inviata ✓ Ti ricontattiamo a breve.',
     },
   },
+
+  viaggi: {
+    label: 'Pacchetti viaggio (agenzia)',
+    descrizione: 'Catalogo di viaggi e tour: presenti le proposte con foto, itinerario e prezzi, e raccogli richieste di preventivo. Adatto ad agenzie e tour operator.',
+    elementoLabel: 'Viaggio',
+    valorePrimario: 'prezzo_da',
+    statoPubblico:  'tipologia',
+    stati: [
+      { value: 'mare',      label: 'Mare' },
+      { value: 'montagna',  label: 'Montagna' },
+      { value: 'citta',     label: 'Città' },
+      { value: 'tour',      label: 'Tour' },
+      { value: 'crociera',  label: 'Crociera' },
+      { value: 'avventura', label: 'Avventura' },
+    ],
+    campiPubblici: [
+      { key: 'tipologia',      label: 'Tipologia', type: 'select', optionsFromStati: true },
+      { key: 'destinazione',   label: 'Destinazione', type: 'text' },
+      { key: 'durata_giorni',  label: 'Durata (giorni)', type: 'number' },
+      { key: 'date_partenza',  label: 'Date di partenza (una per riga)', type: 'textarea' },
+      { key: 'prezzo_da',      label: 'Prezzo da (€ a persona)', type: 'currency' },
+      { key: 'posti',          label: 'Posti disponibili', type: 'number' },
+      { key: 'cosa_include',   label: 'La quota include (una voce per riga)', type: 'textarea' },
+      { key: 'cosa_esclude',   label: 'La quota non include (una voce per riga)', type: 'textarea' },
+      { key: 'itinerario',     label: 'Itinerario', type: 'textarea' },
+      { key: 'descrizione',    label: 'Descrizione', type: 'textarea' },
+    ],
+    campiPrivati: [],
+    cta: {
+      text: 'Richiedi preventivo',
+      desc: 'Lasciaci i tuoi dati: ti prepariamo un preventivo su misura per questo viaggio.',
+      success: 'Richiesta inviata ✓ Ti ricontattiamo con il preventivo.',
+    },
+  },
 }
 
 export function getPreset(key) {
