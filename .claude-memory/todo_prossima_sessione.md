@@ -7,12 +7,14 @@ metadata:
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
 ---
 
-## ▶️ RIPARTIRE DA QUI (8/7) — Vetrine COMPLETA, resta rifinitura UI filtri
-**Vetrine** (motore collezioni generico: verticali flipping/auto/viaggi, admin + pubblico blocco+dettaglio SSR + lead→CRM + filtri/ricerca server-side + WhatsApp) è **COMPLETA e live** → dettaglio in [[project_vetrine]].
-- ✅ **Barra filtri rifatta (8/7)**: stato come **pill** con attivo nel **colore del tema** + focus accent, icone lucide flat. (Se Francesco vuole ancora ritocchi: compattezza/sticky/sfondo sezione.)
-- ✅ **Investimento motore (8/7)**: nuovi tipi-campo `list`/`geo`(mappa)/`file` (con `safeUrl`), + **filtro range su 2° numerico** (migration 066, colonne num1/num2, `numColumns` nel preset). Tutto verificato live. Vedi [[project_vetrine]].
-- Follow-up Vetrine opzionali (in [[project_vetrine]]): range su numerici JSONB oltre il prezzo (km/durata → colonna generica, è un'aggiunta non un rifacimento); multilingua dei campi elemento; auto-delivery numeri riservati via email; **editor schema self-serve** (creare nuovi tipi-campo senza dev — fondamenta in `vetrine.schema`).
-- Nuovo verticale = nuovo preset in `lib/vetrinePresets.js` (~20-30 righe), zero migration.
+## ⏸️ VETRINE — PARCHEGGIATE (8/7, decisione Francesco)
+**Vetrine** è COMPLETA e live (motore generico: verticali flipping/auto/viaggi; admin + pubblico blocco+dettaglio SSR + lead→CRM + filtri/ricerca/range server-side + tipi-campo list/geo/file + WhatsApp + pill filtri col colore tema). Tutto verificato dal vivo. Dettaglio in [[project_vetrine]]. **Ci fermiamo qui**; nuovo verticale = preset al bisogno (~20-30 righe).
+
+### 🔭 Ottimizzazioni Vetrine (BACKLOG, al bisogno — non urgenti)
+- **Sicurezza (priorità, [[feedback_sicurezza_priorita]])**: rate-limit sull'endpoint pubblico `/api/guest/vetrina/[id]` (oggi nessuno → scraping/abuso); sanitizzazione URL anche al SALVATAGGIO (oggi solo a render con `safeUrl`, difesa-in-profondità); rivedere che nel payload SSR del dettaglio finiscano solo dati pubblici (già così, ma ricontrollare a ogni aggiunta campo).
+- **Funzionali**: import CSV (cataloghi grandi); ordinamento compratore (prezzo/recenti); riordino elementi (drag&drop) in admin; JSON-LD schema.org per-preset (rich results Google); "non disponibile" con badge invece di spubblicare; in evidenza/scadenza; analytics viste/lead per elemento.
+- **Estetica**: eventuali ritocchi barra filtri (compattezza/sticky/sfondo) se Francesco lo chiede dopo averla vista.
+- **Grandi**: editor schema self-serve (campi da Admin senza dev, fondamenta in `vetrine.schema`); multilingua dei campi elemento; vista mappa della griglia (pin, serve lib); range su altri numerici (già framework pronto, aggiungere colonne).
 
 ---
 

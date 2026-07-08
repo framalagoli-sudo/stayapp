@@ -1,6 +1,7 @@
 # Memory Index
 
 - [Lingua](feedback_lingua.md) — Rispondere sempre in italiano
+- [🔒 Sicurezza sempre priorità](feedback_sicurezza_priorita.md) — la sicurezza è un vincolo di OGNI intervento (authz, sanitizzazione URL/HTML, gating dati, verifica caso ostile dal vivo)
 - [Entità sempre tre](feedback_entita_tre.md) — Menzionare sempre struttura, ristorante E attività — mai solo due
 - [Icone flat](feedback_icone_flat.md) — strokeWidth={1.5} sempre su tutte le icone lucide-react, nessuna eccezione
 - [guestFetch vs apiFetch](feedback_guestfetch.md) — pagine guest usano sempre guestFetch, mai apiFetch (causa bug QR code)
