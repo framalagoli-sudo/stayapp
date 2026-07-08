@@ -100,7 +100,8 @@ function filtroBtn(active, primary) {
 
 // Dettaglio pubblico di un elemento di vetrina (renderizzato dentro una pagina
 // sintetica via GuestSubPage). Mostra galleria, campi pubblici, stato, CTA lead.
-function VetrinaDettaglio({ block, linkBase, primary, sec, heading }) {
+function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, entityType, privacyUrl }) {
+  const [showForm, setShowForm] = useState(false)
   const d = block.data || {}
   const preset = getPreset(d.preset)
   const dati = d.dati || {}
@@ -144,11 +145,15 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading }) {
 
         {dati.descrizione && <p style={{ fontSize: 16, lineHeight: 1.8, color: '#444', whiteSpace: 'pre-line', marginBottom: 32 }}>{dati.descrizione}</p>}
 
-        {/* CTA — il form lead vero arriva in Fase 3; per ora ancora ai contatti dell'entità */}
-        <div style={{ textAlign: 'center', padding: '32px', background: '#1a1a2e', borderRadius: 16 }}>
-          <div style={{ color: '#fff', fontSize: 20, fontWeight: 700, marginBottom: 8, fontFamily: heading }}>Interessato a questo progetto?</div>
-          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, marginBottom: 20 }}>Lascia i tuoi dati per ricevere il business plan completo e i numeri riservati.</div>
-          <a href={`${linkBase}#contatti`} style={{ display: 'inline-block', padding: '14px 34px', background: primary, color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none' }}>Voglio partecipare</a>
+        {/* CTA lead → CRM (contatti) via /api/guest/contact */}
+        <div id="partecipa" style={{ padding: '32px', background: '#1a1a2e', borderRadius: 16 }}>
+          <div style={{ color: '#fff', fontSize: 20, fontWeight: 700, marginBottom: 8, fontFamily: heading, textAlign: 'center' }}>Interessato a questo progetto?</div>
+          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, marginBottom: 20, textAlign: 'center' }}>Lascia i tuoi dati: ti ricontattiamo con il business plan completo e i numeri riservati.</div>
+          {showForm
+            ? <VetrinaLeadForm entity={entity} entityType={entityType} projectTitle={d.titolo} primary={primary} privacyUrl={privacyUrl} />
+            : <div style={{ textAlign: 'center' }}>
+                <button onClick={() => setShowForm(true)} style={{ padding: '14px 34px', background: primary, color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 16, border: 'none', cursor: 'pointer' }}>Voglio partecipare</button>
+              </div>}
         </div>
       </div>
     </section>
@@ -463,6 +468,54 @@ function Countdown({ block, primary, heading }) {
           : <div style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap' }}>{cell(dd, 'giorni')}{cell(hh, 'ore')}{cell(mm, 'min')}{cell(ss, 'sec')}</div>}
       </div>
     </section>
+  )
+}
+
+// Form lead del dettaglio vetrina → CRM contatti via /api/guest/contact
+// (stesso percorso dei contatti del sito: upsert in `contatti`, tag 'vetrina',
+// notifica al titolare, automazione nuovo_contatto). Il progetto finisce nella nota.
+function VetrinaLeadForm({ entity, entityType, projectTitle, primary, privacyUrl }) {
+  const [nome, setNome] = useState('')
+  const [email, setEmail] = useState('')
+  const [messaggio, setMessaggio] = useState('')
+  const [privacy, setPrivacy] = useState(false)
+  const [state, setState] = useState('idle')
+  const [turnstileToken, setTurnstileToken] = useState('')
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!privacy) return
+    setState('loading')
+    const message = `[Interesse progetto: ${projectTitle || ''}]${messaggio.trim() ? `\n${messaggio.trim()}` : ''}`
+    try {
+      const r = await guestFetch('/api/guest/contact', {
+        method: 'POST',
+        body: JSON.stringify({ entity_tipo: entityType, entity_id: entity?.id, source: 'vetrina', source_name: projectTitle, name: nome, email, message, turnstileToken }),
+      })
+      if (r?.error) throw new Error(r.error)
+      setState('done')
+    } catch { setState('error') }
+  }
+
+  if (state === 'done') return <p style={{ color: '#7ee787', fontWeight: 600, textAlign: 'center', margin: 0 }}>Richiesta inviata ✓ Ti ricontattiamo a breve con i dettagli riservati.</p>
+
+  const inp = { width: '100%', padding: '12px 16px', borderRadius: 10, border: 'none', fontSize: 15, outline: 'none', boxSizing: 'border-box' }
+  return (
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 460, margin: '0 auto' }}>
+      <input required value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome e cognome" style={inp} />
+      <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" style={inp} />
+      <textarea value={messaggio} onChange={e => setMessaggio(e.target.value)} placeholder="Messaggio (opzionale)" rows={2} style={{ ...inp, resize: 'vertical' }} />
+      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}>
+        <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} style={{ marginTop: 2, flexShrink: 0 }} />
+        <span>Acconsento al trattamento dei dati secondo la <a href={privacyUrl} style={{ color: primary }}>privacy policy</a></span>
+      </label>
+      <Turnstile onToken={setTurnstileToken} />
+      <button type="submit" disabled={!privacy || state === 'loading'}
+        style={{ padding: '13px', borderRadius: 50, background: privacy ? primary : '#555', color: '#fff', border: 'none', cursor: privacy ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: 15 }}>
+        {state === 'loading' ? 'Invio...' : 'Invia richiesta'}
+      </button>
+      {state === 'error' && <p style={{ color: '#ff9b9b', fontSize: 13, textAlign: 'center', margin: 0 }}>Errore nell'invio. Riprova.</p>}
+    </form>
   )
 }
 
@@ -1358,7 +1411,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         return <VetrinaGrid key={block.id} block={block} linkBase={linkBase} primary={primary} sec={sec} heading={heading} />
 
       case 'vetrina_dettaglio':
-        return <VetrinaDettaglio key={block.id} block={block} linkBase={linkBase} primary={primary} sec={sec} heading={heading} />
+        return <VetrinaDettaglio key={block.id} block={block} linkBase={linkBase} primary={primary} sec={sec} heading={heading} entity={entity} entityType={entityType} privacyUrl={privacyUrl} />
 
       default:
         return null

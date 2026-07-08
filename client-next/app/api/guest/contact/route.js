@@ -48,7 +48,7 @@ export async function POST(request) {
       } else {
         await supabaseAdmin.from('contatti').insert({
           azienda_id, nome: name.trim(), email: email.trim(),
-          fonte: 'minisito', tags: ['lead', entity_tipo], note: message.trim(), iscritto_newsletter: false,
+          fonte: 'minisito', tags: ['lead', entity_tipo, ...(source && source !== 'minisito' ? [source] : [])], note: message.trim(), iscritto_newsletter: false,
         })
         isNewContact = true
       }
