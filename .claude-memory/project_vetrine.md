@@ -21,9 +21,14 @@ metadata:
 - Admin: tab **Vetrine** (icona Store) in tutti e 3 gli `*_SUBS` di `AdminLayout`; `VetrineListPage` (lista+crea) + `VetrinaEditorPage` (editor elementi guidato dal preset, sezione 🔒 riservata, galleria upload). Editor vetrina a `/admin/vetrine/[id]`.
 - Verificato live: insert/select/gating/cascade sul DB prod; API 401 senza token; UI create+save OK.
 
+**Fase 2 LIVE dal 2026-07-08** (vetrina pubblica):
+- Blocco `vetrina` nel site-builder (`blockTypes` + `VetrinaBlockEditor` in PaginaEditorPage: sceglie quale vetrina, colonne, filtri). Griglia **client-fetch** (come eventi/news) via endpoint pubblico `GET /api/guest/vetrina/[id]` che ritorna `{preset, elementi}` con **solo colonne pubbliche** (gating). Componenti `VetrinaGrid` + `VetrinaDettaglio` in `LandingBlockRenderer` (case `vetrina` e `vetrina_dettaglio`).
+- Dettaglio **SSR** a `/{s|r|a}/[slug]/v/[itemSlug]` (3 route): loader `getElementoVetrina` (solo colonne pubbliche), reso via **pagina sintetica + GuestSubPage** (nav/footer/lingua gratis). Voce in sitemap per elemento. Link interni lang/dominio-aware via `base`.
+- Verificato live: endpoint e HTML dettaglio NON espongono `dati_privati` (0 leak), SSR ok.
+
 **Da fare:**
-- **Fase 2** — vetrina pubblica: blocco `vetrina` nel site-builder (griglia+filtri) + pagina dettaglio SSR (usa il `siteHref` di [[reference_link_interni_renderer]], sitemap per elemento).
-- **Fase 3** — lead gated: CTA "Voglio partecipare" → `requests` con prefisso `[Interesse progetto: nome]` (pattern nota 9); i `dati_privati` recapitati solo dopo il lead (email).
+- **Fase 3** — lead gated: il form/CTA "Voglio partecipare" (oggi placeholder che ancora ai contatti) → `requests` con prefisso `[Interesse progetto: nome]` (pattern nota 9); i `dati_privati` recapitati solo dopo il lead (email). Serve un endpoint pubblico che, su submit del lead, salvi in requests e recapiti i numeri riservati.
+- Multilingua dei campi elemento (oggi il dettaglio /en localizza solo la chrome, non i dati).
 - Spike futuri se cresce: filtri su JSONB (promuovere altri campi a colonna) già mitigato con GIN.
 
 Coerente con [[project_positioning_target]] (SMB, semplicità > potenza).
