@@ -8,7 +8,7 @@ import Turnstile from '@/components/Turnstile'
 import { applyBlockStyle, blockInverted, textSizeScale, textColorFor, gridTemplate, readableOn } from '@/lib/blockTypes'
 import { RichText, richIsEmpty } from '@/lib/richText'
 import { t as tr } from '@/lib/i18n'
-import { getPreset } from '@/lib/vetrinePresets'
+import { getPreset, fieldOptions } from '@/lib/vetrinePresets'
 
 // Formatta un numero (separatore migliaia). I campi currency mostrano il simbolo €.
 function fmtVetrina(value, type) {
@@ -25,33 +25,80 @@ function fmtVetrina(value, type) {
 // come i blocchi eventi/news), con filtro per stato e link al dettaglio.
 function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
   const d = block.data || {}
-  const [data, setData] = useState(null)
-  const [stato, setStato] = useState('')
+  const [presetKey, setPresetKey] = useState(null)
+  const [elementi, setElementi] = useState([])
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [loaded, setLoaded] = useState(false)
+  const [filters, setFilters] = useState({ stato: '', sel: {}, pmin: '', pmax: '', q: '' })
+  const LIMIT = 12
+
+  function buildParams(offset) {
+    const p = new URLSearchParams()
+    const stato = d.filtro || filters.stato
+    if (stato) p.set('stato', stato)
+    Object.entries(filters.sel).forEach(([k, v]) => { if (v) p.set('sel_' + k, v) })
+    if (filters.pmin) p.set('prezzo_min', filters.pmin)
+    if (filters.pmax) p.set('prezzo_max', filters.pmax)
+    if (filters.q.trim()) p.set('q', filters.q.trim())
+    p.set('limit', LIMIT); p.set('offset', offset)
+    return p.toString()
+  }
+
+  // Ricarica (pagina 0) quando cambiano i filtri — debounced per la ricerca.
   useEffect(() => {
     if (!d.vetrina_id) return
-    guestFetch(`/api/guest/vetrina/${d.vetrina_id}`).then(r => setData(r && !r.error ? r : { elementi: [] })).catch(() => setData({ elementi: [] }))
-  }, [d.vetrina_id])
+    setLoading(true)
+    const t = setTimeout(() => {
+      guestFetch(`/api/guest/vetrina/${d.vetrina_id}?${buildParams(0)}`)
+        .then(r => { const rr = r && !r.error ? r : { elementi: [], total: 0 }; if (rr.preset) setPresetKey(rr.preset); setElementi(rr.elementi || []); setTotal(rr.total || 0) })
+        .catch(() => { setElementi([]); setTotal(0) })
+        .finally(() => { setLoading(false); setLoaded(true) })
+    }, 300)
+    return () => clearTimeout(t)
+  }, [d.vetrina_id, d.filtro, filters])
+
+  function loadMore() {
+    guestFetch(`/api/guest/vetrina/${d.vetrina_id}?${buildParams(elementi.length)}`)
+      .then(r => { if (r && !r.error) { setElementi(prev => [...prev, ...(r.elementi || [])]); setTotal(r.total || 0) } }).catch(() => {})
+  }
 
   if (!d.vetrina_id) return null
-  const preset = getPreset(data?.preset)
+  const preset = getPreset(presetKey)
   const valoreField = (preset.campiPubblici || []).find(f => f.key === preset.valorePrimario)
   const cols = Math.min(Math.max(Number(d.colonne) || 3, 1), 4)
-  const fetched = data?.elementi || []
-  const pool = d.filtro ? fetched.filter(e => e.stato_pubblico === d.filtro) : fetched   // pre-filtro a livello di blocco (es. pagina "Auto nuove")
-  const stati = (preset.stati || []).filter(s => pool.some(e => e.stato_pubblico === s.value))
-  const elementi = stato ? pool.filter(e => e.stato_pubblico === stato) : pool
-  if (data && pool.length === 0) return null
+  const setF = (patch) => setFilters(f => ({ ...f, ...patch }))
+  const setSel = (k, v) => setFilters(f => ({ ...f, sel: { ...f.sel, [k]: v } }))
+  const selectFacets = (preset.campiPubblici || []).filter(f => f.type === 'select' && !(d.filtro && f.key === preset.statoPubblico))
+  const showPrice = valoreField && (valoreField.type === 'currency' || valoreField.type === 'number')
+  const anyFilter = !!(filters.q || filters.pmin || filters.pmax || filters.stato || Object.values(filters.sel).some(Boolean))
+  if (loaded && total === 0 && !anyFilter && !d.titolo) return null   // vetrina vuota, non filtrata → nascondi il blocco
 
+  const inp = { padding: '9px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, background: '#fff', fontFamily: 'inherit' }
   return (
     <section style={{ padding: '64px 0' }}>
       <div className="lbr-section">
         {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,36px)', fontWeight: 700, textAlign: 'center', marginBottom: 28, color: '#1a1a2e' }}>{d.titolo}</h2>}
-        {d.mostra_filtri !== false && !d.filtro && stati.length > 1 && (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 28 }}>
-            <button onClick={() => setStato('')} style={filtroBtn(stato === '', primary)}>Tutti</button>
-            {stati.map(s => <button key={s.value} onClick={() => setStato(s.value)} style={filtroBtn(stato === s.value, primary)}>{s.label}</button>)}
+        {d.mostra_filtri !== false && (selectFacets.length > 0 || showPrice) && (
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 28 }}>
+            <input value={filters.q} onChange={e => setF({ q: e.target.value })} placeholder="Cerca…" style={{ ...inp, minWidth: 180 }} />
+            {selectFacets.map(f => (
+              <select key={f.key} value={filters.sel[f.key] || ''} onChange={e => setSel(f.key, e.target.value)} style={inp}>
+                <option value="">{f.label}: tutti</option>
+                {fieldOptions(preset, f).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            ))}
+            {showPrice && <>
+              <input type="number" value={filters.pmin} onChange={e => setF({ pmin: e.target.value })} placeholder={`${valoreField.label} min`} style={{ ...inp, width: 130 }} />
+              <input type="number" value={filters.pmax} onChange={e => setF({ pmax: e.target.value })} placeholder="max" style={{ ...inp, width: 100 }} />
+            </>}
           </div>
         )}
+        {loading && elementi.length === 0
+          ? <p style={{ textAlign: 'center', color: '#888' }}>Caricamento…</p>
+          : elementi.length === 0
+          ? <p style={{ textAlign: 'center', color: '#888' }}>Nessun risultato con questi filtri.</p>
+          : (<>
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${cols >= 4 ? 220 : cols === 3 ? 280 : 340}px, 1fr))`, gap: 24 }}>
           {elementi.map(el => {
             const statoLbl = (preset.stati || []).find(s => s.value === el.stato_pubblico)?.label
@@ -91,12 +138,15 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
             )
           })}
         </div>
+        {elementi.length < total && (
+          <div style={{ textAlign: 'center', marginTop: 32 }}>
+            <button onClick={loadMore} style={{ padding: '12px 28px', background: '#fff', color: primary, border: `1.5px solid ${primary}`, borderRadius: 50, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>Carica altri</button>
+          </div>
+        )}
+        </>)}
       </div>
     </section>
   )
-}
-function filtroBtn(active, primary) {
-  return { padding: '7px 16px', borderRadius: 50, border: `1.5px solid ${active ? primary : '#ddd'}`, background: active ? primary : '#fff', color: active ? '#fff' : '#555', fontSize: 13, fontWeight: 600, cursor: 'pointer' }
 }
 
 // Dettaglio pubblico di un elemento di vetrina (renderizzato dentro una pagina
