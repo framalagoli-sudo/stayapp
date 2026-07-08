@@ -1,10 +1,18 @@
 ---
 name: todo_prossima_sessione
-description: To-do prossima sessione — RIPARTIRE da template AI Fase B/C (26/6). Multilingua COMPLETO, editor unificato (passo 2 fatto), galleria template Fase A fatta.
+description: To-do prossima sessione (8/7) — Vetrine COMPLETA (flipping/auto/viaggi + filtri). RESTA: rifinire estetica barra filtri Vetrina (solo UI). Sotto, storico multilingua/template/Sentry.
 metadata: 
   node_type: memory
   type: project
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
+---
+
+## ▶️ RIPARTIRE DA QUI (8/7) — Vetrine COMPLETA, resta rifinitura UI filtri
+**Vetrine** (motore collezioni generico: verticali flipping/auto/viaggi, admin + pubblico blocco+dettaglio SSR + lead→CRM + filtri/ricerca server-side + WhatsApp) è **COMPLETA e live** → dettaglio in [[project_vetrine]].
+- 🎨 **DA FARE (l'unico aperto): rifinire l'estetica della barra filtri** della griglia (`VetrinaGrid` in `components/LandingBlockRenderer.jsx`). Ora ha icone lucide flat (Search/ChevronDown/Euro/X) + controlli a pillola con ombra, ma a Francesco NON convince ancora. È **solo estetica** — i filtri funzionano (verificati live). Direzioni da decidere con lui: pill/segmented per lo stato invece della tendina; accento col **colore tema** invece del grigio; barra più compatta/ariosa o **sticky**; sfondo sezione; allineamento.
+- Follow-up Vetrine opzionali (in [[project_vetrine]]): range su numerici JSONB oltre il prezzo (km/durata → colonna generica, è un'aggiunta non un rifacimento); multilingua dei campi elemento; auto-delivery numeri riservati via email; **editor schema self-serve** (creare nuovi tipi-campo senza dev — fondamenta in `vetrine.schema`).
+- Nuovo verticale = nuovo preset in `lib/vetrinePresets.js` (~20-30 righe), zero migration.
+
 ---
 
 ## ✅ MINISITOPAGE RITIRATA (5/7) — editor sito ora UNICO in SitoPage
