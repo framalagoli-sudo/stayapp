@@ -63,14 +63,19 @@ function splitPages(doc) {
   let m
   while ((m = re.exec(doc)) !== null) marks.push({ name: m[1].trim(), start: m.index, bodyStart: re.lastIndex })
   if (marks.length < 2) return null
-  return marks.map((mk, i) => {
-    let to = i + 1 < marks.length ? marks[i + 1].start : doc.length
-    if (i === marks.length - 1) {
-      const tail = doc.slice(mk.bodyStart, to).match(SUMMARY_RE)
-      if (tail) to = mk.bodyStart + tail.index
-    }
+  // Il blocco "componenti riusabili" in fondo (recensioni/faq/team/numeri/prezzi) inizia
+  // al primo marcatore riassunto dopo l'ultima pagina: le pagine si fermano lì.
+  const lastBody = doc.slice(marks[marks.length - 1].bodyStart)
+  const sm = lastBody.match(SUMMARY_RE)
+  const summaryStart = sm ? marks[marks.length - 1].bodyStart + sm.index : doc.length
+  const summary = doc.slice(summaryStart).trim()
+  const pages = marks.map((mk, i) => {
+    const to = i + 1 < marks.length ? marks[i + 1].start : summaryStart
     return { name: mk.name, content: doc.slice(mk.bodyStart, to).trim() }
   }).filter(p => p.content)
+  // I componenti riusabili → sulla HOME, una volta sola (recensioni/faq/team/numeri/prezzi).
+  if (summary && pages[0]) pages[0].content += `\n\n--- SEZIONI RIUSABILI (per la HOME) ---\n${summary}`
+  return pages
 }
 
 function toTitle(s) {
@@ -98,7 +103,7 @@ ${STYLE_GUIDE}
 
 MAPPATURA: apertura/claim → hero o hero_slider; chi siamo/storia → about o foto_testo; servizi/benefici → paragrafi/highlights/colonne; come funziona → steps; numeri → stats; recensioni → testimonianze; prezzi → pacchetti; domande → faq o accordion; team → team; call to action → cta_banner; contatti → form_builder; mappa/dove siamo → show_map o embed.${MENU_NOTE[entity_tipo] || ''}
 
-${isHome ? 'Questa è la HOME: il PRIMO blocco = hero o hero_slider col claim/titolo principale.' : `Questa è la pagina "${toTitle(name)}".`}
+${isHome ? 'Questa è la HOME: il PRIMO blocco = hero o hero_slider col claim/titolo principale. In fondo al contenuto potresti trovare "SEZIONI RIUSABILI": rendi RECENSIONI→testimonianze, FAQ/DOMANDE→faq, TEAM→team, NUMERI→stats, PREZZI→pacchetti. IGNORA invece eventuali sezioni "BREVE"/"RIASSUNTO", FOOTER e NOTE SEO (sono ripetizioni o istruzioni, NON contenuti da mostrare).' : `Questa è la pagina "${toTitle(name)}".`}
 
 ENTITÀ (contesto): "${entity?.name || ''}" (${TIPO_LABEL[entity_tipo] || entity_tipo}).
 
