@@ -41,5 +41,11 @@ export default defineConfig({
       name: 'public',
       testMatch: 'public-render.spec.js',
     },
+    {
+      // Flussi pubblici con JS (browser vero, no auth): cattura i crash client-side
+      // (useSearchParams mal destrutturato, router.push(-1)) invisibili ai test HTTP.
+      name: 'public-flows',
+      testMatch: 'public-flows.spec.js',
+    },
   ],
 })

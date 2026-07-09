@@ -22,8 +22,9 @@ const anon  = createClient(SUPABASE_URL, SUPABASE_ANON_KEY,         { auth: { pe
 const RS = 'CI-SEC-TEST'           // ragione_sociale fixture, per pre-cleanup
 const CONTACT_EMAIL = `ci-sec-contact-${Date.now()}@playwright.internal`
 
-const ctx = { aziendaId: null, staffUserId: null, staffToken: null, otherEntity: null, anyEntity: null }
+const ctx = { aziendaId: null, staffUserId: null, staffToken: null, otherEntity: null, anyEntity: null, vetrinaId: null }
 const authH = token => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' })
+const ENTITY_TBL = { struttura: 'properties', ristorante: 'ristoranti', attivita: 'attivita' }
 
 test.describe('Regression sicurezza (ruolo staff)', () => {
   test.describe.configure({ mode: 'serial' })
@@ -60,6 +61,7 @@ test.describe('Regression sicurezza (ruolo staff)', () => {
 
   test.afterAll(async () => {
     try { await admin.from('contatti').delete().eq('email', CONTACT_EMAIL) } catch {}
+    if (ctx.vetrinaId)   { try { await admin.from('vetrine').delete().eq('id', ctx.vetrinaId) } catch {} } // cascade elementi
     if (ctx.testEntity)  { try { await admin.from('properties').delete().eq('id', ctx.testEntity.id) } catch {} }
     if (ctx.staffUserId) { try { await admin.auth.admin.deleteUser(ctx.staffUserId) } catch {} }
     if (ctx.aziendaId)   { try { await admin.from('aziende').delete().eq('id', ctx.aziendaId) } catch {} } // cascade contatti/properties
@@ -106,5 +108,64 @@ test.describe('Regression sicurezza (ruolo staff)', () => {
   test('2FA OFF: stessa sessione torna ad accedere (no falsi positivi)', async ({ request }) => {
     const res = await request.get(`${TEST_URL}/api/contatti?azienda_id=${ctx.aziendaId}`, { headers: authH(ctx.staffToken) })
     expect(res.status(), 'senza require_2fa deve passare').toBe(200)
+  })
+
+  test('authz: endpoint admin senza token → 401 (nessun accesso anonimo)', async ({ request }) => {
+    for (const path of ['/api/eventi', '/api/contatti', '/api/newsletter']) {
+      const res = await request.get(`${TEST_URL}${path}`)
+      expect(res.status(), `${path} senza auth deve essere 401`).toBe(401)
+    }
+  })
+
+  test('scoping eventi: /api/guest/eventi non fa leak cross-azienda', async ({ request }) => {
+    // Un evento reale pubblicato e futuro (anche "aziendale", entity_id null).
+    const { data: ev } = await admin.from('eventi')
+      .select('azienda_id')
+      .eq('published', true).eq('active', true)
+      .gte('date_start', new Date().toISOString()).limit(1).maybeSingle()
+    test.skip(!ev, 'nessun evento pubblicato futuro disponibile')
+
+    // Un'entità di QUELLA azienda con cui interrogare l'endpoint entity-scoped.
+    let entity = null
+    for (const [tipo, table] of Object.entries(ENTITY_TBL)) {
+      const { data: e } = await admin.from(table).select('id').eq('azienda_id', ev.azienda_id).limit(1).maybeSingle()
+      if (e) { entity = { tipo, id: e.id }; break }
+    }
+    test.skip(!entity, 'nessuna entità per l\'azienda dell\'evento')
+
+    const res = await request.get(`${TEST_URL}/api/guest/eventi?entity_tipo=${entity.tipo}&entity_id=${entity.id}`)
+    expect(res.status(), 'guest eventi deve rispondere 200').toBe(200)
+    const ids = (await res.json() || []).map(e => e.id)
+    if (!ids.length) return
+    // Verifica l'azienda dal DB (non fidarsi del payload): ogni evento mostrato deve
+    // appartenere all'azienda dell'entità interrogata, mai ad altre.
+    const { data: rows } = await admin.from('eventi').select('id, azienda_id').in('id', ids)
+    for (const r of rows) {
+      expect(r.azienda_id, `evento ${r.id} è di un'altra azienda → LEAK`).toBe(ev.azienda_id)
+    }
+  })
+
+  test('gating vetrine: dati_privati mai nella risposta pubblica', async ({ request }) => {
+    // Fixture effimera: vetrina + elemento pubblicato con un valore PRIVATO sentinella.
+    const SENTINEL = `CI-SEC-SECRET-${Date.now()}`
+    const { data: v } = await admin.from('vetrine').insert({
+      entity_tipo: ctx.testEntity.tipo, entity_id: ctx.testEntity.id,
+      slug: `ci-sec-vet-${Date.now()}`, titolo: 'CI Sec Vetrina', status: 'pubblicata',
+    }).select('id').single()
+    ctx.vetrinaId = v.id
+    await admin.from('vetrina_elementi').insert({
+      vetrina_id: v.id, entity_tipo: ctx.testEntity.tipo, entity_id: ctx.testEntity.id,
+      titolo: 'CI Sec Elemento', status: 'pubblicata',
+      dati: { nota: 'campo pubblico' }, dati_privati: { segreto: SENTINEL },
+    })
+
+    const res = await request.get(`${TEST_URL}/api/guest/vetrina/${v.id}`)
+    expect(res.status(), 'guest vetrina deve rispondere 200').toBe(200)
+    const text = await res.text()
+    expect(text, 'il valore in dati_privati NON deve comparire nella risposta pubblica → LEAK').not.toContain(SENTINEL)
+    const body = JSON.parse(text)
+    for (const el of (body.elementi || [])) {
+      expect(el, 'nessun elemento pubblico deve esporre la chiave dati_privati').not.toHaveProperty('dati_privati')
+    }
   })
 })
