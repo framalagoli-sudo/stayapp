@@ -16,6 +16,14 @@ const HEADING_FAMILIES = {
 export default function PacchettoPage() {
   const { slug, id } = useParams()
   const router = useRouter()
+
+  // Ritorno: history se disponibile, altrimenti la home dell'entità ricavata dal path.
+  function goBack() {
+    if (typeof window !== 'undefined' && window.history.length > 1) { router.back(); return }
+    const m = typeof window !== 'undefined' ? window.location.pathname.match(/^(\/(?:s|r|a)\/[^/]+)/) : null
+    router.push(m ? m[1] : '/')
+  }
+
   const [entity, setEntity] = useState(null)
   const [pacchetto, setPacchetto] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -49,7 +57,7 @@ export default function PacchettoPage() {
     <div style={{ minHeight: '100vh', background: '#fff', fontFamily: "'Inter', system-ui, sans-serif" }}>
       {/* Back button */}
       <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', borderBottom: '1px solid #f0f0f0', padding: '14px 20px' }}>
-        <button onClick={() => router.push(-1)}
+        <button onClick={goBack}
           style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#555', fontSize: 14, fontWeight: 600, padding: 0 }}>
           <ArrowLeft size={18} strokeWidth={2} />
           Torna indietro

@@ -21,7 +21,7 @@ function StarPicker({ value, onChange }) {
 }
 
 export default function RecensionePage() {
-  const [params] = useSearchParams()
+  const params = useSearchParams()
   const token = params.get('token')
 
   const [info, setInfo]       = useState(null)

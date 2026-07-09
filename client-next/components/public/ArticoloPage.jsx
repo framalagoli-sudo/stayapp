@@ -55,9 +55,15 @@ function ShareBar({ url, title }) {
 export default function ArticoloPage() {
   const { slug } = useParams()
   const router = useRouter()
-  const [searchParams] = useSearchParams()
+  const searchParams = useSearchParams()
   const backUrl = searchParams.get('back')
   const lang = searchParams.get('_lang') === 'en' ? 'en' : 'it'
+
+  function goBack() {
+    if (backUrl) router.push(backUrl)
+    else if (typeof window !== 'undefined' && window.history.length > 1) router.back()
+    else router.push('/blog')
+  }
   const [articolo, setArticolo] = useState(null)
   const [loading, setLoading] = useState(true)
   const [cleanHtml, setCleanHtml] = useState('')
@@ -99,7 +105,7 @@ export default function ArticoloPage() {
   if (!articolo) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, background: '#f9f9f9' }}>
       <p style={{ color: '#888', fontSize: 16 }}>Articolo non trovato.</p>
-      <button onClick={() => router.push(-1)} style={{ background: 'none', border: 'none', color: '#1a6fc4', cursor: 'pointer', fontSize: 14 }}>← Torna indietro</button>
+      <button onClick={goBack} style={{ background: 'none', border: 'none', color: '#1a6fc4', cursor: 'pointer', fontSize: 14 }}>← Torna indietro</button>
     </div>
   )
 
@@ -113,7 +119,7 @@ export default function ArticoloPage() {
             <ArrowLeft size={15} strokeWidth={2} /> Torna al sito
           </a>
         ) : (
-          <button onClick={() => router.push(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>
+          <button onClick={goBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>
             <ArrowLeft size={15} strokeWidth={2} /> Indietro
           </button>
         )}

@@ -5,7 +5,7 @@ import { apiFetch } from '@/lib/api'
 import { t } from '@/lib/i18n'
 
 export default function BlogListPage() {
-  const [params]   = useSearchParams()
+  const params = useSearchParams()
   const aziendaId  = params.get('azienda_id')
   const lang       = params.get('_lang') === 'en' ? 'en' : 'it'
   const lp         = lang === 'en' ? '/en' : ''

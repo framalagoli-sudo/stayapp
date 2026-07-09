@@ -6,7 +6,7 @@ import { CheckCircle, XCircle } from 'lucide-react'
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? '').trim()
 
 export default function UnsubscribePage() {
-  const [params] = useSearchParams()
+  const params = useSearchParams()
   const token = params.get('token')
   const [state, setState] = useState('loading')
 

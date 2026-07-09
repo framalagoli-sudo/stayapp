@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').trim()
 
 export default function CancellaPrenotazionePage() {
-  const [params] = useSearchParams()
+  const params = useSearchParams()
   const token = params.get('token')
 
   const [stato, setStato] = useState('loading') // loading | ok | error | invalid

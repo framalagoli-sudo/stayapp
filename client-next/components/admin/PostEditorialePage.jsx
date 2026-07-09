@@ -107,7 +107,7 @@ const BEST_TIMES = {
 export default function PostEditorialePage() {
   const { id } = useParams()
   const router = useRouter()
-  const [searchParams] = useSearchParams()
+  const searchParams = useSearchParams()
   const isNew = id === 'nuovo'
   const { property } = useProperty()
   const { profile } = useAuth()

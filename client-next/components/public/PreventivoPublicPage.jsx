@@ -21,7 +21,7 @@ const STATO_INFO = {
 }
 
 export default function PreventivoPublicPage() {
-  const [searchParams] = useSearchParams()
+  const searchParams = useSearchParams()
   const token = searchParams.get('token')
 
   const [data, setData]       = useState(null)
