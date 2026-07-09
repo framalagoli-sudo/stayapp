@@ -4,6 +4,13 @@
 - [🔒 Sicurezza sempre priorità](feedback_sicurezza_priorita.md) — la sicurezza è un vincolo di OGNI intervento (authz, sanitizzazione URL/HTML, gating dati, verifica caso ostile dal vivo)
 - [Entità sempre tre](feedback_entita_tre.md) — Menzionare sempre struttura, ristorante E attività — mai solo due
 - [Icone flat](feedback_icone_flat.md) — strokeWidth={1.5} sempre su tutte le icone lucide-react, nessuna eccezione
+- [⚠️ lucide shadowa global](reference_lucide_global_shadow.md) — import lucide `Image` (o altri omonimi di global) shadowa `window.Image` → `new Image()` crasha; aliasare o usare `window.X`
+- [Eventi aziendali](reference_eventi_aziendali.md) — evento senza entità = aziendale, compare sui siti di TUTTE le entità dell'azienda; API guest eventi include entity match OR aziendali (scopato per azienda); editor associa anche attività
+- [📋 Backlog: permessi staff attività](project_backlog_staff_attivita_perm.md) — permessi staff attività sono tutto-o-niente (booleano `attivita_gestione`), non per-entità come struttura/ristorante; manca `attivita_ids` nell'editor
+- [⚠️ Residui migrazione react-router→Next](reference_migrazione_react_router_next.md) — `const [x]=useSearchParams()` crasha (usa `const x=`), `router.push(-1)` non torna (usa `router.back()`/goBack), blocchi async eventi/news invisibili (reveal dep `[blocks,eventi.length,articoli.length]`); guard smoke `public-flows.spec.js`
+- [📋 Backlog: hydration landing #425](project_backlog_hydration_landing.md) — la landing pubblica emette ~8 errori hydration React #425 (mismatch SSR/client); da indagare a parte
+- [💡 Idea: agent AI review sicurezza](project_idea_security_review_agent.md) — agent security-reviewer ON-DEMAND sul diff (non cron); da approfondire con Francesco. Guard deterministici già in security.spec.js (authz anon, scoping eventi, gating vetrine)
+- [Notifiche email eventi](reference_eventi_notifiche_email.md) — prenotazione evento → event_bookings; 2 toggle per-evento (notifica titolare default ON, conferma ospite white-label default OFF); rate limit 10/h; testo guest adattivo
 - [guestFetch vs apiFetch](feedback_guestfetch.md) — pagine guest usano sempre guestFetch, mai apiFetch (causa bug QR code)
 - [Traccia il dato fino alle API](feedback_traccia_dato_fino_api.md) — verificare che un valore calcolato raggiunga i fetch API
 - [Deploy corretto](feedback_deploy.md) — usare `.\deploy.ps1` dalla root, mai `npx vercel` dalla root

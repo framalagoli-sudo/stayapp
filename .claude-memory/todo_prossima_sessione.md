@@ -7,7 +7,22 @@ metadata:
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
 ---
 
-## ▶️ RIPARTIRE DA QUI (9/7)
+## ▶️ RIPARTIRE DA QUI (10/7 mattina)
+Sessione 9/7 sera chiusa: cluster EVENTI + sweep migrazione react-router + copertura smoke/sicurezza + notifiche email prenotazioni. Tutto LIVE, **56/56**, committato+pushato, migrations 067+068 eseguite. Dettaglio: [[project_session_2026_07_09b]].
+
+**🔎 Francesco: verifiche a VIDEO (hard-refresh) — non coperte da smoke:**
+- Editor evento → card **"Notifiche email"** sotto "Stato": i due toggle ci sono? evento inLingua risulta associato all'**attività** Inlingua?
+- **Drag-to-nest** sottopagine (Menu & Layout): trascina una voce a destra su un'altra → diventa sottopagina? (calibrare soglia 44px se serve)
+- Blocco **eventi** sulla home Inlingua visibile (non bianco) + click evento → "Indietro" funziona?
+- Prova reale email: evento con toggle ON → prenota di test → arriva la mail al titolare/ospite? (se no: config Resend `RESEND_FROM`/dominio).
+
+**🔭 Backlog aperto (scegliere con Francesco):**
+- 💡 **Agent AI review sicurezza** on-demand — "pensiero profondo" da fare insieme ([[project_idea_security_review_agent]]).
+- 📋 Permessi staff **attività** per-entità (oggi tutto-o-niente) ([[project_backlog_staff_attivita_perm]]).
+- 📋 **Hydration #425** sulla landing (~8 mismatch SSR/client) ([[project_backlog_hydration_landing]]).
+- 🔭 Onboarding **"Inizia qui"** in dashboard (checklist primo accesso) — proposto, non fatto.
+
+### (storico 9/7 giorno)
 - ✅ **AI Builder pesca i dati reali dell'entità** (lib/ai-entity-context, whitelist) + **sidebar admin riorganizzata** (2 livelli, AI Builder nel menu). Vedi [[project_session_2026_07_09]]. Verificati struttura+smoke; **Francesco deve guardare il VISIVO** della nuova sidebar (hard-refresh).
 - 🔭 **DA FARE — onboarding "Inizia qui" in dashboard**: checklist primo accesso (① completa attività → ② genera sito con AI → ③ pubblica → ④ dominio → ⑤ primi contatti). È il pezzo che rende davvero "semplice" per il dummy — proposto, non ancora implementato.
 - Eventuale: propagare i nuovi nomi gruppo anche allo **staff** (oggi Livello 1 rifatto solo per admin_azienda; staff/legacy/super invariati).
