@@ -1,5 +1,5 @@
 ﻿'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch, uploadMedia } from '../../../lib/api'
@@ -149,6 +149,19 @@ export default function EventoEditPage() {
     ...ristoranti.map(r => ({ tipo: 'ristorante', id: r.id, name: `Ristorante: ${r.name}`, azienda_id: r.azienda_id })),
     ...attivita.map(a => ({ tipo: 'attivita', id: a.id, name: `Attività: ${a.name}`, azienda_id: a.azienda_id })),
   ]
+
+  // Con una sola entità disponibile, un nuovo evento si associa in automatico a
+  // quella (evita l'evento "aziendale" per sbaglio). Una volta sola: se poi
+  // l'utente sceglie "nessuna associazione", non lo forziamo di nuovo.
+  const autoAssociated = useRef(false)
+  useEffect(() => {
+    if (!isNew || autoAssociated.current) return
+    if (entityOptions.length === 1 && !form.entity_id) {
+      autoAssociated.current = true
+      const o = entityOptions[0]
+      setForm(f => ({ ...f, entity_id: o.id, entity_tipo: o.tipo, azienda_id: o.azienda_id }))
+    }
+  }, [isNew, entityOptions.length])
 
   return (
     <>
