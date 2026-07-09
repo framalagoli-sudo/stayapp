@@ -9,6 +9,15 @@ export default function EventoPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const lang = searchParams.get('_lang') === 'en' ? 'en' : 'it'
+  const backUrl = searchParams.get('back')
+
+  // Ritorno: preferisci l'URL di provenienza (?back=, funziona anche senza history
+  // e su domini custom); altrimenti torna nella history; ultimo fallback: home.
+  function goBack() {
+    if (backUrl) router.push(backUrl)
+    else if (typeof window !== 'undefined' && window.history.length > 1) router.back()
+    else router.push('/')
+  }
   const [evento,     setEvento]     = useState(null)
   const [error,      setError]      = useState(null)
   const [pkgId,      setPkgId]      = useState('')
@@ -49,7 +58,7 @@ export default function EventoPage() {
   if (error) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>
       <p style={{ color: '#e53e3e', fontSize: 16 }}>{error}</p>
-      <button onClick={() => router.push(-1)} style={backBtnStyle}>← Torna indietro</button>
+      <button onClick={goBack} style={backBtnStyle}>← Torna indietro</button>
     </div>
   )
 
@@ -68,7 +77,7 @@ export default function EventoPage() {
 
       {/* Back bar */}
       <div style={{ background: '#fff', borderBottom: '1px solid #eee', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center' }}>
-        <button onClick={() => router.push(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1a1a2e', padding: 0 }}>
+        <button onClick={goBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1a1a2e', padding: 0 }}>
           <ArrowLeft size={18} strokeWidth={1.5} /> Indietro
         </button>
       </div>

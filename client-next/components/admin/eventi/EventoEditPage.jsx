@@ -26,7 +26,7 @@ function toInputDate(iso) {
 export default function EventoEditPage() {
   const { id } = useParams()   // 'new' = creation
   const router = useRouter()
-  const { azienda, strutture, ristoranti } = useAzienda()
+  const { azienda, strutture, ristoranti, attivita } = useAzienda()
   const isNew = id === 'new'
 
   const [form, setForm] = useState({
@@ -144,6 +144,7 @@ export default function EventoEditPage() {
   const entityOptions = [
     ...strutture.map(s => ({ tipo: 'struttura', id: s.id, name: `Struttura: ${s.name}`, azienda_id: s.azienda_id })),
     ...ristoranti.map(r => ({ tipo: 'ristorante', id: r.id, name: `Ristorante: ${r.name}`, azienda_id: r.azienda_id })),
+    ...attivita.map(a => ({ tipo: 'attivita', id: a.id, name: `Attività: ${a.name}`, azienda_id: a.azienda_id })),
   ]
 
   return (
@@ -237,7 +238,7 @@ export default function EventoEditPage() {
 
           {entityOptions.length > 0 && (
             <div style={fieldWrap}>
-              <label style={lbl}>Associa a struttura / ristorante</label>
+              <label style={lbl}>Associa a struttura / ristorante / attività</label>
               <select
                 value={form.entity_id}
                 onChange={e => {
@@ -252,7 +253,7 @@ export default function EventoEditPage() {
                 {entityOptions.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
               </select>
               <span style={{ fontSize: 11, color: '#aaa', marginTop: 4, display: 'block' }}>
-                L'evento apparirà nel sito e nell'app della struttura/ristorante selezionata.
+                L'evento apparirà nel sito e nell'app dell'entità selezionata. Senza associazione è un evento aziendale: comparirà sui siti di tutte le tue entità.
               </span>
             </div>
           )}

@@ -21,17 +21,23 @@ function statusBadge(ev) {
 
 export default function EventiListPage() {
   const { profile } = useAuth()
-  const { azienda } = useAzienda()
+  const { azienda, activeAziendaId, loading: aziLoading } = useAzienda()
   const router = useRouter()
   const [eventi, setEventi] = useState([])
   const [loading, setLoading] = useState(true)
 
+  // Azienda in contesto: per super_admin è quella selezionata nella sidebar
+  // (senza filtro, la GET restituirebbe gli eventi di TUTTE le aziende).
+  const aziendaId = azienda?.id || profile?.azienda_id || activeAziendaId
+
   useEffect(() => {
-    apiFetch('/api/eventi')
-      .then(setEventi)
+    if (aziLoading) return   // aspetta che il contesto azienda sia pronto (evita fetch non filtrato)
+    const qs = aziendaId ? `?azienda_id=${aziendaId}` : ''
+    apiFetch(`/api/eventi${qs}`)
+      .then(data => setEventi(Array.isArray(data) ? data : []))
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [])
+  }, [aziendaId, aziLoading])
 
   if (loading) return <p style={{ padding: 32, color: '#888' }}>Caricamento…</p>
 

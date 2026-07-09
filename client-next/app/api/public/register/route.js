@@ -12,7 +12,7 @@ export async function POST(request) {
 
     const { data: az, error: azErr } = await supabaseAdmin.from('aziende').insert({
       ragione_sociale: ragione_sociale.trim(), email: email.trim(),
-      moduli: { struttura: false, ristorante: false }, piano: 'base', active: false,
+      moduli: { struttura: false, ristorante: false, attivita: false }, piano: 'base', active: false,
     }).select().single()
     if (azErr) { await supabaseAdmin.auth.admin.deleteUser(authData.user.id); return Response.json({ error: azErr.message }, { status: 500 }) }
 

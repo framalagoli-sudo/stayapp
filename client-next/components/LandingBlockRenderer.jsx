@@ -689,7 +689,9 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
     }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 })
     els.forEach(e => { if (!e.classList.contains('in')) io.observe(e) })
     return () => io.disconnect()
-  }, [blocks])
+    // eventi/articoli si caricano async: quando arrivano, i loro blocchi compaiono
+    // DOPO il primo setup → vanno ri-scansionati o restano invisibili (opacity:0).
+  }, [blocks, eventi.length, articoli.length])
   // Base dei link interni, lingua/dominio-aware (dal chiamante via entityBasePath).
   // Fallback all'URL canonico se non fornita (es. anteprima template in admin).
   const linkBase = base != null ? base : (entityType === 'struttura' ? `/s/${slug}` : entityType === 'ristorante' ? `/r/${slug}` : `/a/${slug}`)
@@ -1451,7 +1453,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                 {eventi.slice(0, d.limit || eventi.length).map(ev => {
                   const dateStr = new Date(ev.date_start).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
                   return (
-                    <a key={ev.id} href={`/eventi/${ev.id}`} style={{ background: '#fafafa', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', border: '1px solid #f0f0f0' }}>
+                    <a key={ev.id} href={`/eventi/${ev.id}?back=${encodeURIComponent(homeUrl)}`} style={{ background: '#fafafa', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', border: '1px solid #f0f0f0' }}>
                       {ev.cover_url
                         ? <img src={ev.cover_url} alt={ev.title} style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }} />
                         : <div style={{ height: 100, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Calendar size={36} strokeWidth={1.5} color={primary} /></div>

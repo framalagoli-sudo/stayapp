@@ -1,7 +1,7 @@
 ﻿'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { apiFetch } from '@/lib/api'
-import { X, Download, CalendarPlus, Sparkles, Check, AlertCircle, Image } from 'lucide-react'
+import { X, Download, CalendarPlus, Sparkles, Check, AlertCircle, Image as ImageIcon } from 'lucide-react'
 
 const FORMATI = [
   { k: '1:1',  label: 'Feed',      w: 1080, h: 1080 },
@@ -116,7 +116,7 @@ function useRemoteImage(src) {
   const [img, setImg] = useState(null)
   useEffect(() => {
     if (!src) { setImg(null); return }
-    const image = new Image()
+    const image = new window.Image()   // costruttore DOM, non l'icona lucide
     image.crossOrigin = 'anonymous'
     image.onload  = () => setImg(image)
     image.onerror = () => setImg(null)
@@ -221,7 +221,7 @@ export default function PostSocialModal({ isOpen, onClose, titolo, sottotitolo, 
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 22px', borderBottom: '1px solid #f0f0f0' }}>
-          <Image size={18} strokeWidth={1.5} color="#1a1a2e" />
+          <ImageIcon size={18} strokeWidth={1.5} color="#1a1a2e" />
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 700, fontSize: 15 }}>Crea post grafico</div>
             <div style={{ fontSize: 12, color: '#888', marginTop: 1 }}>{titolo}</div>
