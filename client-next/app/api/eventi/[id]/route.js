@@ -5,7 +5,8 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 function isUUID(v) { return UUID_RE.test(v) }
 
 const ALLOWED = ['title', 'description', 'cover_url', 'date_start', 'date_end',
-  'location', 'price', 'seats_total', 'active', 'published', 'packages', 'entity_tipo', 'entity_id']
+  'location', 'price', 'seats_total', 'active', 'published', 'packages', 'entity_tipo', 'entity_id',
+  'notify_owner_on_booking', 'send_guest_confirmation']
 
 export async function GET(request, { params }) {
   try {

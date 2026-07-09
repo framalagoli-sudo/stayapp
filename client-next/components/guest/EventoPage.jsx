@@ -27,6 +27,7 @@ export default function EventoPage() {
   const [guestPhone, setGuestPhone] = useState('')
   const [booking,    setBooking]    = useState(false)
   const [done,       setDone]       = useState(false)
+  const [emailSent,  setEmailSent]  = useState(false)
   const [bookErr,    setBookErr]    = useState('')
 
   useEffect(() => {
@@ -40,11 +41,12 @@ export default function EventoPage() {
     if (!guestEmail.trim()) { setBookErr('Inserisci la tua email'); return }
     setBooking(true); setBookErr('')
     try {
-      await guestFetch(`/api/guest/eventi/${id}/book`, {
+      const res = await guestFetch(`/api/guest/eventi/${id}/book`, {
         method: 'POST',
         body: JSON.stringify({ guest_name: guestName, guest_email: guestEmail,
           guest_phone: guestPhone || null, package_id: pkgId || null, seats }),
       })
+      setEmailSent(!!res?.guest_confirmation_sent)
       setDone(true)
     } catch (e) { setBookErr(e.message) }
     finally { setBooking(false) }
@@ -142,7 +144,7 @@ export default function EventoPage() {
             <div style={{ textAlign: 'center', padding: '32px 0' }}>
               <Check size={52} strokeWidth={1.5} color="#00b5b5" style={{ display: 'block', margin: '0 auto 14px' }} />
               <div style={{ fontWeight: 700, fontSize: 20, color: '#1a1a2e', marginBottom: 6 }}>Prenotazione inviata!</div>
-              <div style={{ fontSize: 14, color: '#888' }}>Riceverai una conferma via email.</div>
+              <div style={{ fontSize: 14, color: '#888' }}>{emailSent ? 'Ti abbiamo spedito una mail di conferma.' : 'La tua prenotazione è stata registrata.'}</div>
             </div>
           ) : (
             <>

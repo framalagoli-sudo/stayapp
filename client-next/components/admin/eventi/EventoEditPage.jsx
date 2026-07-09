@@ -33,6 +33,7 @@ export default function EventoEditPage() {
     title: '', description: '', date_start: '', date_end: '', location: '',
     price: '', seats_total: '', active: true, published: false,
     entity_tipo: '', entity_id: '', azienda_id: '', packages: [],
+    notify_owner_on_booking: true, send_guest_confirmation: false,
   })
   const [cover, setCover] = useState(null)       // URL attuale
   const [uploading, setUploading] = useState(false)
@@ -57,6 +58,8 @@ export default function EventoEditPage() {
           entity_tipo: ev.entity_tipo || '',
           entity_id:   ev.entity_id   || '',
           azienda_id:  ev.azienda_id  || '',
+          notify_owner_on_booking: ev.notify_owner_on_booking ?? true,
+          send_guest_confirmation: ev.send_guest_confirmation ?? false,
           packages:    (ev.packages || []).map(p => ({
             ...p, price: p.price ?? '', includes: p.includes || [],
           })),
@@ -265,6 +268,15 @@ export default function EventoEditPage() {
           <div style={{ display: 'flex', gap: 32 }}>
             <Toggle label="Attivo" hint="L'evento è visibile nell'admin" value={form.active} onChange={v => set('active', v)} />
             <Toggle label="Pubblicato" hint="Visibile sul sito e nell'app ospiti" value={form.published} onChange={v => set('published', v)} />
+          </div>
+        </div>
+
+        {/* Notifiche email */}
+        <div style={cardStyle}>
+          <h3 style={sectionTitle}>Notifiche email</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <Toggle label="Avvisami di ogni prenotazione" hint="Ricevi una mail ad ogni nuova prenotazione di questo evento" value={form.notify_owner_on_booking} onChange={v => set('notify_owner_on_booking', v)} />
+            <Toggle label="Manda conferma all'ospite" hint="Chi prenota riceve una mail di conferma. Se spento, non gli arriva nulla (e non promettiamo email a schermo)." value={form.send_guest_confirmation} onChange={v => set('send_guest_confirmation', v)} />
           </div>
         </div>
 
