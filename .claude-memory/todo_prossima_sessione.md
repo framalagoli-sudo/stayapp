@@ -7,6 +7,11 @@ metadata:
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
 ---
 
+## ▶️ RIPARTIRE DA QUI (9/7)
+- ✅ **AI Builder pesca i dati reali dell'entità** (lib/ai-entity-context, whitelist) + **sidebar admin riorganizzata** (2 livelli, AI Builder nel menu). Vedi [[project_session_2026_07_09]]. Verificati struttura+smoke; **Francesco deve guardare il VISIVO** della nuova sidebar (hard-refresh).
+- 🔭 **DA FARE — onboarding "Inizia qui" in dashboard**: checklist primo accesso (① completa attività → ② genera sito con AI → ③ pubblica → ④ dominio → ⑤ primi contatti). È il pezzo che rende davvero "semplice" per il dummy — proposto, non ancora implementato.
+- Eventuale: propagare i nuovi nomi gruppo anche allo **staff** (oggi Livello 1 rifatto solo per admin_azienda; staff/legacy/super invariati).
+
 ## ⏸️ VETRINE — PARCHEGGIATE (8/7, decisione Francesco)
 **Vetrine** è COMPLETA e live (motore generico: verticali flipping/auto/viaggi; admin + pubblico blocco+dettaglio SSR + lead→CRM + filtri/ricerca/range server-side + tipi-campo list/geo/file + WhatsApp + pill filtri col colore tema). Tutto verificato dal vivo. Dettaglio in [[project_vetrine]]. **Ci fermiamo qui**; nuovo verticale = preset al bisogno (~20-30 righe).
 
