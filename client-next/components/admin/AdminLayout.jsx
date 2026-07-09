@@ -30,42 +30,46 @@ const NAV_PROPERTY = [
   { to: '/admin/property/chatbot',    label: 'Chatbot',       icon: Bot },
   { to: '/admin/property/domini',     label: 'Domini',        icon: Globe },
 ]
+// Sub-menu entità, raggruppati: Contenuti → Sito & presenza → Impostazioni.
+// L'ordine dell'array definisce l'ordine di render; il campo `group` genera gli
+// header di sezione (vedi renderSubs). AI Site Builder e QR Code vengono iniettati
+// nel gruppo "Sito & presenza".
 const STRUTTURA_SUBS = [
-  { sub: 'info',       label: 'Informazioni',  icon: Info },
-  { sub: 'modules',    label: 'App Clienti',   icon: Layers },
-  { sub: 'services',   label: 'Servizi',       icon: Wrench },
-  { sub: 'gallery',    label: 'Galleria',      icon: Image },
-  { sub: 'theme',      label: 'Tema e colori', icon: Palette },
-  { sub: 'activities', label: 'Attività',      icon: Zap },
-  { sub: 'excursions', label: 'Escursioni',    icon: MapPin },
-  { sub: 'sito',       label: 'Sito web',      icon: Globe },
-  { sub: 'vetrine',    label: 'Vetrine',       icon: Store },
-  { sub: 'privacy',    label: 'Privacy',       icon: Lock },
-  { sub: 'chatbot',    label: 'Chatbot',       icon: Bot },
-  { sub: 'domini',     label: 'Domini',        icon: Globe },
+  { sub: 'info',       label: 'Informazioni',  icon: Info,    group: 'Contenuti' },
+  { sub: 'services',   label: 'Servizi',       icon: Wrench,  group: 'Contenuti' },
+  { sub: 'activities', label: 'Attività',      icon: Zap,     group: 'Contenuti' },
+  { sub: 'excursions', label: 'Escursioni',    icon: MapPin,  group: 'Contenuti' },
+  { sub: 'gallery',    label: 'Galleria',      icon: Image,   group: 'Contenuti' },
+  { sub: 'sito',       label: 'Sito web',      icon: Globe,   group: 'Sito & presenza' },
+  { sub: 'vetrine',    label: 'Vetrine',       icon: Store,   group: 'Sito & presenza' },
+  { sub: 'modules',    label: 'App Clienti',   icon: Layers,  group: 'Sito & presenza' },
+  { sub: 'chatbot',    label: 'Chatbot',       icon: Bot,     group: 'Sito & presenza' },
+  { sub: 'domini',     label: 'Domini',        icon: Globe,   group: 'Sito & presenza' },
+  { sub: 'theme',      label: 'Tema e colori', icon: Palette, group: 'Impostazioni' },
+  { sub: 'privacy',    label: 'Privacy',       icon: Lock,    group: 'Impostazioni' },
 ]
 const RISTORANTE_SUBS = [
-  { sub: 'info',     label: 'Informazioni',  icon: Info },
-  { sub: 'moduli',   label: 'App Clienti',   icon: Layers },
-  { sub: 'menu',     label: 'Menu',          icon: UtensilsCrossed },
-  { sub: 'gallery',  label: 'Galleria',      icon: Image },
-  { sub: 'theme',    label: 'Tema e colori', icon: Palette },
-  { sub: 'sito',     label: 'Sito web',      icon: Globe },
-  { sub: 'vetrine',  label: 'Vetrine',       icon: Store },
-  { sub: 'privacy',  label: 'Privacy',       icon: Lock },
-  { sub: 'chatbot',  label: 'Chatbot',       icon: Bot },
-  { sub: 'domini',   label: 'Domini',        icon: Globe },
+  { sub: 'info',     label: 'Informazioni',  icon: Info,           group: 'Contenuti' },
+  { sub: 'menu',     label: 'Menu',          icon: UtensilsCrossed, group: 'Contenuti' },
+  { sub: 'gallery',  label: 'Galleria',      icon: Image,          group: 'Contenuti' },
+  { sub: 'sito',     label: 'Sito web',      icon: Globe,          group: 'Sito & presenza' },
+  { sub: 'vetrine',  label: 'Vetrine',       icon: Store,          group: 'Sito & presenza' },
+  { sub: 'moduli',   label: 'App Clienti',   icon: Layers,         group: 'Sito & presenza' },
+  { sub: 'chatbot',  label: 'Chatbot',       icon: Bot,            group: 'Sito & presenza' },
+  { sub: 'domini',   label: 'Domini',        icon: Globe,          group: 'Sito & presenza' },
+  { sub: 'theme',    label: 'Tema e colori', icon: Palette,        group: 'Impostazioni' },
+  { sub: 'privacy',  label: 'Privacy',       icon: Lock,           group: 'Impostazioni' },
 ]
 const ATTIVITA_SUBS = [
-  { sub: 'info',     label: 'Informazioni',  icon: Info },
-  { sub: 'moduli',   label: 'App Clienti',   icon: Layers },
-  { sub: 'gallery',  label: 'Galleria',      icon: Image },
-  { sub: 'theme',    label: 'Tema e colori', icon: Palette },
-  { sub: 'sito',     label: 'Sito web',      icon: Globe },
-  { sub: 'vetrine',  label: 'Vetrine',       icon: Store },
-  { sub: 'privacy',  label: 'Privacy',       icon: Lock },
-  { sub: 'chatbot',  label: 'Chatbot',       icon: Bot },
-  { sub: 'domini',   label: 'Domini',        icon: Globe },
+  { sub: 'info',     label: 'Informazioni',  icon: Info,    group: 'Contenuti' },
+  { sub: 'gallery',  label: 'Galleria',      icon: Image,   group: 'Contenuti' },
+  { sub: 'sito',     label: 'Sito web',      icon: Globe,   group: 'Sito & presenza' },
+  { sub: 'vetrine',  label: 'Vetrine',       icon: Store,   group: 'Sito & presenza' },
+  { sub: 'moduli',   label: 'App Clienti',   icon: Layers,  group: 'Sito & presenza' },
+  { sub: 'chatbot',  label: 'Chatbot',       icon: Bot,     group: 'Sito & presenza' },
+  { sub: 'domini',   label: 'Domini',        icon: Globe,   group: 'Sito & presenza' },
+  { sub: 'theme',    label: 'Tema e colori', icon: Palette, group: 'Impostazioni' },
+  { sub: 'privacy',  label: 'Privacy',       icon: Lock,    group: 'Impostazioni' },
 ]
 
 // ─── CSS ──────────────────────────────────────────────────────────────────────
@@ -258,37 +262,31 @@ export default function AdminLayout({ children }) {
     )
   }
 
+  // Rende i sub-menu entità raggruppati: un SectionHeader per ogni `group`, e inietta
+  // AI Site Builder (dopo "Sito web") e QR Code (dopo "Domini") nel gruppo del sito.
+  function renderSubs(subs, hrefFor) {
+    const out = []
+    let lastGroup = null
+    subs.forEach(({ sub, label, icon, group }) => {
+      if (group !== lastGroup) { out.push(<SectionHeader key={`h-${group}`} label={group} />); lastGroup = group }
+      out.push(<NavItem key={sub} to={hrefFor(sub)} icon={icon} label={label} sub />)
+      if (sub === 'sito')   out.push(<NavItem key="ai-builder" to="/admin/ai-site-builder" icon={Wand2}  label="AI Site Builder" sub />)
+      if (sub === 'domini') out.push(<NavItem key="qr"         to="/admin/qrcode"          icon={QrCode} label="QR Code"        sub />)
+    })
+    return out
+  }
+
+  const noneMsg = (txt) => (
+    <div style={{ padding: '6px 12px 10px 20px', fontSize: 12, color: '#666', fontStyle: 'italic' }}>{txt}</div>
+  )
   function StrutturaSubLinks({ baseId }) {
-    if (!baseId) return (
-      <div style={{ padding: '6px 12px 10px 20px', fontSize: 12, color: '#666', fontStyle: 'italic' }}>
-        Nessuna struttura creata.
-      </div>
-    )
-    return STRUTTURA_SUBS.map(({ sub, label, icon }) => (
-      <NavItem key={sub} to={`/admin/struttura/${baseId}/${sub}`} icon={icon} label={label} sub />
-    ))
+    return baseId ? renderSubs(STRUTTURA_SUBS, sub => `/admin/struttura/${baseId}/${sub}`) : noneMsg('Nessuna struttura creata.')
   }
-
   function RistoranteSubLinks({ baseId }) {
-    if (!baseId) return (
-      <div style={{ padding: '6px 12px 10px 20px', fontSize: 12, color: '#666', fontStyle: 'italic' }}>
-        Nessun ristorante creato.
-      </div>
-    )
-    return RISTORANTE_SUBS.map(({ sub, label, icon }) => (
-      <NavItem key={sub} to={`/admin/ristoranti/${baseId}/${sub}`} icon={icon} label={label} sub />
-    ))
+    return baseId ? renderSubs(RISTORANTE_SUBS, sub => `/admin/ristoranti/${baseId}/${sub}`) : noneMsg('Nessun ristorante creato.')
   }
-
   function AttivitaSubLinks({ baseId }) {
-    if (!baseId) return (
-      <div style={{ padding: '6px 12px 10px 20px', fontSize: 12, color: '#666', fontStyle: 'italic' }}>
-        Nessuna attività creata.
-      </div>
-    )
-    return ATTIVITA_SUBS.map(({ sub, label, icon }) => (
-      <NavItem key={sub} to={`/admin/attivita/${baseId}/${sub}`} icon={icon} label={label} sub />
-    ))
+    return baseId ? renderSubs(ATTIVITA_SUBS, sub => `/admin/attivita/${baseId}/${sub}`) : noneMsg('Nessuna attività creata.')
   }
 
   function renderBookingSection() {
@@ -449,7 +447,6 @@ export default function AdminLayout({ children }) {
             {(strutturaUrlId || ristoranteUrlId || attivitaUrlId || (activeAziendaId && activeSitoId)) && (
               <>
                 <Divider />
-                <SectionHeader label="Sito & App" />
                 <SitoAppLinks />
               </>
             )}
@@ -504,9 +501,7 @@ export default function AdminLayout({ children }) {
             {(hasStruttura || hasRistorante || hasAttivita) && (
               <>
                 <Divider />
-                <SectionHeader label="Sito & App" />
                 <SitoAppLinks />
-                <NavItem to="/admin/qrcode" icon={QrCode} label="QR Code" />
               </>
             )}
 
@@ -556,9 +551,7 @@ export default function AdminLayout({ children }) {
             {(perm.struttura || perm.ristorante || perm.attivita_gestione) && (hasStruttura || hasRistorante || hasAttivita) && (
               <>
                 <Divider />
-                <SectionHeader label="Sito & App" />
                 <SitoAppLinks />
-                <NavItem to="/admin/qrcode" icon={QrCode} label="QR Code" />
               </>
             )}
 
