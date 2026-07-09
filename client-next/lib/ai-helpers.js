@@ -30,11 +30,11 @@ export function checkAndConsumeGenRate(userId) {
 
 export { MONTHLY_LIMIT }
 
-export async function callClaude(prompt, maxTokens = 500, model = 'claude-haiku-4-5-20251001') {
+export async function callClaude(prompt, maxTokens = 500, model = 'claude-haiku-4-5-20251001', timeoutMs = 90_000) {
   const apiKey = (process.env.ANTHROPIC_API_KEY ?? '').trim()
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY non configurata')
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 90_000)
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',

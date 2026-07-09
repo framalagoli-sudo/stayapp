@@ -7,7 +7,7 @@ import { callClaude } from '@/lib/ai-helpers'
 import { resolveBlockImages } from '@/lib/unsplash'
 import { AI_BLOCKS_SCHEMA, AI_IMAGE_RULE, AI_BG_RULE, AI_ICONS } from '@/lib/ai-blocks'
 
-export const maxDuration = 120  // Sonnet + output ampio può superare i 60s (callClaude aborta a 90s)
+export const maxDuration = 300  // Sonnet su doc grandi + output multi-pagina è lento; usiamo il max Vercel Pro (l'abort di callClaude è alzato a 285s sotto)
 
 // "Ho già i contenuti": l'utente incolla un documento (es. generato con ChatGPT)
 // con le sezioni già scritte. L'AI lo converte nei NOSTRI blocchi PRESERVANDO la
@@ -107,12 +107,17 @@ export async function POST(request) {
   let parsed
   try {
     // Sonnet (più fedele di Haiku) + output ampio: serve trascrivere, non riassumere.
-    const raw = await callClaude(prompt, 16000, 'claude-sonnet-4-6')
+    const raw = await callClaude(prompt, 16000, 'claude-sonnet-4-6', 285_000)   // budget lungo: doc grandi sono lenti
     const m = raw.match(/\{[\s\S]*\}/)
     parsed = JSON.parse(m ? m[0] : raw)
   } catch (e) {
     console.error('[from-document] parse/AI error:', e?.message)
-    return NextResponse.json({ error: 'Non sono riuscito a interpretare il documento (forse troppo lungo). Prova ad accorciarlo o riprova.' }, { status: 502 })
+    const aborted = /abort/i.test(e?.message || '')
+    return NextResponse.json({
+      error: aborted
+        ? 'La generazione ha richiesto troppo tempo. Con documenti grandi conviene la modalità "una pagina" (più veloce), oppure riprova.'
+        : 'Non sono riuscito a interpretare il documento. Riprova, o prova ad accorciarlo un po\'.',
+    }, { status: 502 })
   }
 
   // Normalizza in un array di pagine (one-page = 1 sola pagina home).
