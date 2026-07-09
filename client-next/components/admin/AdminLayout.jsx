@@ -479,27 +479,27 @@ export default function AdminLayout({ children }) {
         {isAdminAzienda && (
           <>
             <Divider />
-            <SectionHeader label="Operativo" />
+            <SectionHeader label="Clienti & richieste" />
             <NavItem to="/admin/requests"     icon={Inbox}         label="Richieste" />
             <NavItem to="/admin/prenotazioni" icon={CalendarCheck} label="Prenotazioni" />
             {renderBookingSection()}
-            <NavItem to="/admin/chat"         icon={MessageCircle} label="Chat" />
+            <NavItem to="/admin/contatti"     icon={Users}         label="Contatti" />
+            <NavItem to="/admin/preventivi"   icon={FileText}      label="Preventivi" />
             <NavItem to="/admin/recensioni"   icon={Star}          label="Recensioni" />
             <NavItem to="/admin/survey"       icon={BarChart3}     label="Survey & NPS" />
+            <NavItem to="/admin/chat"         icon={MessageCircle} label="Chat" />
+            <NavItem to="/admin/form-builder" icon={FormInput}     label="Form Builder" />
 
             <Divider />
-            <SectionHeader label="Marketing" />
-            <NavItem to="/admin/contatti"         icon={Users}            label="Contatti" />
+            <SectionHeader label="Contenuti & promo" />
+            <NavItem to="/admin/blog"             icon={Newspaper}        label="Blog & News" />
+            <NavItem to="/admin/eventi"           icon={CalendarDays}     label="Eventi" />
             <NavItem to="/admin/newsletter"       icon={Mail}             label="Newsletter" />
             <NavItem to="/admin/automazioni"      icon={BotMessageSquare} label="Automazioni" />
-            <NavItem to="/admin/blog"             icon={Newspaper}        label="Blog & News" />
             <NavItem to="/admin/piano-editoriale" icon={CalendarDays}     label="Piano editoriale" />
             <NavItem to="/admin/content-studio"   icon={Sparkles}         label="Content Studio" />
-            <NavItem to="/admin/preventivi"       icon={FileText}         label="Preventivi" />
-            <NavItem to="/admin/form-builder"     icon={FormInput}        label="Form Builder" />
-            <NavItem to="/admin/shop"             icon={ShoppingBag}      label="Shop" />
             <NavItem to="/admin/loyalty"          icon={Gift}             label="Loyalty" />
-            <NavItem to="/admin/eventi"           icon={CalendarDays}     label="Eventi" />
+            <NavItem to="/admin/shop"             icon={ShoppingBag}      label="Shop" />
 
             {(hasStruttura || hasRistorante || hasAttivita) && (
               <>
