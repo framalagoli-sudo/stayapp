@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { callClaude, checkAndConsumeGenRate } from '@/lib/ai-helpers'
 import { resolveBlockImages } from '@/lib/unsplash'
 import { AI_BLOCKS_SCHEMA, AI_IMAGE_RULE, AI_BG_RULE, AI_ICONS } from '@/lib/ai-blocks'
+import { entityDataSummary } from '@/lib/ai-entity-context'
 
 export const maxDuration = 60
 
@@ -38,7 +39,7 @@ function addIdsToData(data) {
   return result
 }
 
-function buildSitePrompt({ entity, entity_tipo, mode, obiettivo, template, answers }) {
+function buildSitePrompt({ entity, entity_tipo, mode, obiettivo, template, answers, entityData }) {
   const { nome, settore, descrizione, servizi, punti_forza, cta_text, tono, target } = answers
   const objConf = OBIETTIVO_CONFIGS[obiettivo] || OBIETTIVO_CONFIGS.vetrina
   const tmplConf = TEMPLATE_CONFIGS[template] || TEMPLATE_CONFIGS.complete
@@ -66,7 +67,7 @@ Punti di forza: ${punti_forza || 'non specificati'}
 CTA principale: ${cta_text || 'Contattaci'}
 Tono di comunicazione: ${tono || 'professionale'}
 Target: ${target || 'tutti'}
-
+${entityData ? `\nDATI GIÀ INSERITI (contenuti reali dell'attività — usali per scrivere testi fedeli, non generici):\n${entityData}\n` : ''}
 ${pagesSpec}
 
 ${tmplConf.style_hint}
@@ -107,7 +108,7 @@ export async function POST(request) {
     const table = tableMap[entity_tipo]
     if (!table) return Response.json({ error: 'entity_tipo non valido' }, { status: 400 })
 
-    const { data: entity } = await supabaseAdmin.from(table).select('name, description').eq('id', entity_id).single()
+    const { data: entity } = await supabaseAdmin.from(table).select('*').eq('id', entity_id).single()
     if (!entity) return Response.json({ error: 'Entità non trovata' }, { status: 404 })
 
     const clean = {
@@ -121,7 +122,7 @@ export async function POST(request) {
       target:      sanitizeStr(answers.target,      MAX_LENGTHS.target)    || 'tutti',
     }
 
-    const prompt = buildSitePrompt({ entity, entity_tipo, mode, obiettivo, template, answers: clean })
+    const prompt = buildSitePrompt({ entity, entity_tipo, mode, obiettivo, template, answers: clean, entityData: entityDataSummary(entity, entity_tipo) })
     const raw = await callClaude(prompt, 6000)
 
     let parsed

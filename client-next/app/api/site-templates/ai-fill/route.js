@@ -6,6 +6,7 @@ import { getTemplate } from '@/lib/siteTemplates'
 import { collectStrings, applyTranslations } from '@/lib/translate'
 import { callClaude } from '@/lib/ai-helpers'
 import { resolveBlockImages } from '@/lib/unsplash'
+import { entityDataSummary } from '@/lib/ai-entity-context'
 
 export const maxDuration = 60
 
@@ -125,7 +126,7 @@ export async function POST(request) {
   if (!tpl) return NextResponse.json({ error: 'Template non trovato' }, { status: 404 })
 
   const { data: ent } = await supabaseAdmin.from(table)
-    .select('name, description, theme, minisito').eq('id', entity_id).single()
+    .select('*').eq('id', entity_id).single()
 
   // Profilo business per l'AI: i dati raccolti nel wizard (settore/servizi/punti
   // forza/tono/target/obiettivo) — più ne arrivano, più i testi sono su misura.
@@ -143,11 +144,18 @@ export async function POST(request) {
     a.cta_text    && `Call to action preferita: ${a.cta_text}`,
   ].filter(Boolean).join('\n')
 
+  // Aggancia i DATI REALI già inseriti (servizi, menu, attività, dotazioni, orari,
+  // punti forza…): l'AI scrive testi fedeli a ciò che offre davvero, non generici.
+  const entityData = entityDataSummary(ent, entity_tipo)
+  const businessFull = entityData
+    ? `${business}\n\n— DATI GIÀ INSERITI dall'utente (contenuti reali: usali per testi fedeli e per capire cosa offre davvero) —\n${entityData}`
+    : business
+
   // Riempi i testi via AI; su errore ripiega sui testi d'esempio del template.
   let filledBlocks = tpl.blocks
   let aiUsed = true
   try {
-    filledBlocks = await fillTexts(tpl.blocks, business, modalita)
+    filledBlocks = await fillTexts(tpl.blocks, businessFull, modalita)
   } catch (e) {
     console.error('[ai-fill] AI fallita, uso testi esempio:', e?.message)
     aiUsed = false
@@ -156,7 +164,7 @@ export async function POST(request) {
   // L'AI sceglie soggetti foto mirati al business; fallback: query template + settore.
   let imgAiOk = true
   try {
-    filledBlocks = await aiImageQueries(filledBlocks, business)
+    filledBlocks = await aiImageQueries(filledBlocks, businessFull)
   } catch (e) {
     console.error('[ai-fill] query immagini AI fallite, uso quelle del template:', e?.message)
     imgAiOk = false
