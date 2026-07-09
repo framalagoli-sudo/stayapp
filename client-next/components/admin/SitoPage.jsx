@@ -7,7 +7,7 @@ import { PropertyIdContext } from '@/context/PropertyIdContext'
 import { useAuth } from '@/context/AuthContext'
 import {
   GripVertical, Home, FilePlus, Users, Briefcase, Mail, Tag, HelpCircle,
-  Search, FileText, SearchX, Navigation, PenLine, Layers, History, Languages, Settings, Sparkles,
+  Search, FileText, SearchX, Navigation, PenLine, Layers, History, Languages, Settings, Sparkles, CornerDownRight,
 } from 'lucide-react'
 import TraduzioniSito from '@/components/admin/TraduzioniSito'
 
@@ -168,6 +168,7 @@ export default function SitoPage({ entityTipo }) {
   // Drag & drop state
   const [dragId,     setDragId]     = useState(null)
   const [dragOverId, setDragOverId] = useState(null)
+  const [dropNest,   setDropNest]   = useState(false)  // true = il drop nidifica (crea sottopagina)
 
   // Header/Footer config
   const DEFAULT_HEADER = { style: 'dark', always_visible: false, scroll_behavior: 'appear', logo_in_nav: true, show_cta: false, cta_text: 'Prenota ora', cta_url: '', show_phone: false, bg_color: '' }
@@ -346,17 +347,42 @@ export default function SitoPage({ entityTipo }) {
   }
 
   // ── Drag & drop ──────────────────────────────────────────────────────────────
+  const INDENT_ZONE = 44  // px dal bordo sx della riga oltre cui il drop nidifica (crea sottopagina)
+
   function onDragOver(e, p) {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
-    if (p.id !== dragId && dragOverId !== p.id) setDragOverId(p.id)
+    // Nidificazione valida solo se: target di primo livello, non è la riga trascinata,
+    // e la pagina trascinata non ha già sottopagine (il menu supporta un solo livello).
+    const canNest = dragId && p.id !== dragId && !p.parent_id && menuSubs(dragId).length === 0
+    const rect = e.currentTarget.getBoundingClientRect()
+    const nest = !!canNest && (e.clientX - rect.left) > INDENT_ZONE
+    if (dragOverId !== p.id) setDragOverId(p.id)
+    if (dropNest !== nest) setDropNest(nest)
   }
 
   async function onDrop(e, target) {
     e.preventDefault()
-    if (!dragId || dragId === target.id) { resetDrag(); return }
+    const draggedId = dragId
+    const nest = dropNest
+    if (!draggedId || draggedId === target.id) { resetDrag(); return }
+
+    // ── Nidifica: la pagina trascinata (spostata a destra) diventa sottopagina di target ──
+    if (nest && !target.parent_id && menuSubs(draggedId).length === 0) {
+      const newOrdine = menuSubs(target.id).length
+      const updated = pagine.map(p => p.id === draggedId ? { ...p, parent_id: target.id, ordine: newOrdine } : p)
+      setPagine(updated)
+      resetDrag()
+      apiFetch(`/api/pagine/${draggedId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ parent_id: target.id, ordine: newOrdine }),
+      })
+      return
+    }
+
+    // ── Riordino tra le pagine di primo livello (comportamento esistente) ──
     const arr = [...menuTop]
-    const fromIdx = arr.findIndex(x => x.id === dragId)
+    const fromIdx = arr.findIndex(x => x.id === draggedId)
     const toIdx   = arr.findIndex(x => x.id === target.id)
     if (fromIdx === -1 || toIdx === -1) { resetDrag(); return }
     arr.splice(toIdx, 0, arr.splice(fromIdx, 1)[0])
@@ -372,7 +398,7 @@ export default function SitoPage({ entityTipo }) {
     })
   }
 
-  function resetDrag() { setDragId(null); setDragOverId(null) }
+  function resetDrag() { setDragId(null); setDragOverId(null); setDropNest(false) }
 
   // ── Derived lists ─────────────────────────────────────────────────────────────
   const homePage   = pagine.find(p => p.slug === '__home__') || null
@@ -422,6 +448,7 @@ export default function SitoPage({ entityTipo }) {
     const canIndent = !isChild && topIdx > 0 && menuSubs(menuTop[topIdx - 1]?.id).length === 0
     const isDragging = dragId === p.id
     const isDragOver = dragOverId === p.id && !isChild
+    const isNestTarget = isDragOver && dropNest   // il drop qui crea una sottopagina
     return (
       <div
         key={p.id}
@@ -431,16 +458,21 @@ export default function SitoPage({ entityTipo }) {
         style={{
           display: 'flex', alignItems: 'center', gap: 8,
           padding: '10px 8px 10px 14px',
-          background: isDragging ? '#f0f4ff' : '#fff',
+          background: isNestTarget ? '#f0fdf4' : isDragging ? '#f0f4ff' : '#fff',
           borderRadius: 8, marginBottom: 4,
-          border: isDragOver ? '2px solid #4a7cdc' : '1px solid #eeeeee',
+          border: isNestTarget ? '2px dashed #16a34a' : isDragOver ? '2px solid #4a7cdc' : '1px solid #eeeeee',
           boxShadow: isDragging ? '0 4px 12px rgba(74,124,220,0.18)' : '0 1px 2px rgba(0,0,0,0.04)',
-          marginLeft: isChild ? 28 : 0,
+          marginLeft: isChild ? 28 : (isNestTarget ? 20 : 0),
           position: 'relative',
           opacity: isDragging ? 0.55 : 1,
-          transition: 'box-shadow 0.15s, border-color 0.15s',
+          transition: 'box-shadow 0.15s, border-color 0.15s, margin-left 0.12s',
         }}
       >
+        {isNestTarget && (
+          <span style={{ position: 'absolute', right: 12, top: -11, background: '#16a34a', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 5, padding: '2px 8px', display: 'flex', alignItems: 'center', gap: 4, boxShadow: '0 2px 6px rgba(22,163,74,0.3)', whiteSpace: 'nowrap' }}>
+            <CornerDownRight size={11} strokeWidth={2} /> sottopagina di «{p.titolo}»
+          </span>
+        )}
         {isChild && <div style={{ position: 'absolute', left: -20, top: '50%', width: 14, height: 1, background: '#ddd' }} />}
         {!isChild ? (
           <div
@@ -832,7 +864,7 @@ export default function SitoPage({ entityTipo }) {
             <div style={{ marginBottom: 16 }}>
               <h2 style={{ margin: '0 0 4px', fontSize: 18, color: '#1a1a2e' }}>Menu di navigazione</h2>
               <p style={{ margin: 0, fontSize: 13, color: '#888' }}>
-                Queste voci appaiono nella barra in cima al sito. Trascina per riordinare. Solo le pagine <strong>Pubblicate</strong> sono visibili ai visitatori.
+                Queste voci appaiono nella barra in cima al sito. Trascina per riordinare, oppure trascina una voce <strong>leggermente a destra</strong> su un'altra per renderla una <strong>sottopagina</strong> (menu a tendina). Solo le pagine <strong>Pubblicate</strong> sono visibili ai visitatori.
               </p>
             </div>
 
