@@ -18,7 +18,7 @@ export const maxDuration = 300  // Sonnet su doc grandi + output multi-pagina è
 
 const TIPO_LABEL = { struttura: 'struttura ricettiva', ristorante: 'ristorante / locale', attivita: 'attività / servizio' }
 const MENU_NOTE  = { ristorante: ' Se il documento parla del menù, includi un blocco "menu".' }
-const DOC_MAX = 25000  // limite input (MVP: no chunking; doc più lunghi → v2 chunking)
+const DOC_MAX = 40000  // il doc si legge una volta per lo split; ogni pagina è poi una chiamata a sé (bounded)
 
 function slugify(s) {
   return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -37,6 +37,81 @@ function normalizeBlocks(blocks) {
   return (blocks || []).slice(0, 40).map(b =>
     b.type === 'contatti' ? { ...b, type: 'form_builder', data: { form_token: '', titolo_sezione: 'Contattaci', ...(b.data || {}) } } : b
   )
+}
+
+// Esegue fn su ogni item con al massimo `limit` chiamate in parallelo (gentile sui
+// rate-limit dell'API, ma molto più veloce che sequenziale).
+async function mapPool(items, limit, fn) {
+  const results = new Array(items.length)
+  let idx = 0
+  async function worker() {
+    while (idx < items.length) { const i = idx++; results[i] = await fn(items[i], i) }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
+  return results
+}
+
+// Sezioni "componente" in fondo al documento (riassunti/blocchi riusabili): non sono
+// pagine e non vanno duplicate nelle pagine → segnano la fine dell'ultima pagina.
+const SUMMARY_RE = /^[ \t]*(TITOLO E CLAIM|CHI SIAMO BREVE|SERVIZI RIASSUNTO|PERCH[EÉ] SCEGLIERCI|COME FUNZIONA|NUMERI|RECENSIONI|PREZZI|FAQ|DOMANDE FREQUENTI|TEAM|FOOTER|NOTE SEO)/im
+
+// Spezza un documento multi-pagina sui marcatori "PAGINA <NOME>" a inizio riga.
+// Ritorna [{ name, content }] oppure null se non è un doc a pagine esplicite.
+function splitPages(doc) {
+  const re = /^[ \t]*PAGINA[ \t:>-]+(.+?)[ \t]*$/gim
+  const marks = []
+  let m
+  while ((m = re.exec(doc)) !== null) marks.push({ name: m[1].trim(), start: m.index, bodyStart: re.lastIndex })
+  if (marks.length < 2) return null
+  return marks.map((mk, i) => {
+    let to = i + 1 < marks.length ? marks[i + 1].start : doc.length
+    if (i === marks.length - 1) {
+      const tail = doc.slice(mk.bodyStart, to).match(SUMMARY_RE)
+      if (tail) to = mk.bodyStart + tail.index
+    }
+    return { name: mk.name, content: doc.slice(mk.bodyStart, to).trim() }
+  }).filter(p => p.content)
+}
+
+function toTitle(s) {
+  return (s || '').toLowerCase().replace(/\b\p{L}/gu, c => c.toUpperCase())
+}
+
+// Stile condiviso da TUTTE le pagine → coerenza visiva (ogni pagina è una chiamata a sé).
+const STYLE_GUIDE = `STILE COERENTE (identico su TUTTE le pagine): sfondo di sezione CHIARO di default; usa 'dark'/'primary' SOLO per stats e cta_banner; hero/hero_slider con immagine di sfondo + overlay. Non variare lo stile pagina per pagina: stesso ritmo visivo ovunque.`
+
+// Prompt per UNA pagina: output piccolo (niente troncamento), stile coerente, SEO dal doc.
+function buildPagePrompt({ entity, entity_tipo, name, content, isHome }) {
+  return `Sei un assistente che TRASCRIVE il contenuto di UNA pagina di un sito nei NOSTRI blocchi, INTEGRALMENTE, senza riassumere o saltare nulla.
+
+⚠️ FEDELTÀ: riporta TUTTI i testi della pagina; usa quanti blocchi servono; gli ELENCHI (servizi, punti di forza, step, FAQ, numeri) → blocchi STRUTTURATI (highlights/paragrafi/steps/faq/stats), NON testo piatto; separa i paragrafi lunghi con una riga vuota (\\n\\n).
+
+${AI_BLOCKS_SCHEMA}
+
+${AI_IMAGE_RULE}
+
+${AI_BG_RULE}
+
+${AI_ICONS}
+
+${STYLE_GUIDE}
+
+MAPPATURA: apertura/claim → hero o hero_slider; chi siamo/storia → about o foto_testo; servizi/benefici → paragrafi/highlights/colonne; come funziona → steps; numeri → stats; recensioni → testimonianze; prezzi → pacchetti; domande → faq o accordion; team → team; call to action → cta_banner; contatti → form_builder; mappa/dove siamo → show_map o embed.${MENU_NOTE[entity_tipo] || ''}
+
+${isHome ? 'Questa è la HOME: il PRIMO blocco = hero o hero_slider col claim/titolo principale.' : `Questa è la pagina "${toTitle(name)}".`}
+
+ENTITÀ (contesto): "${entity?.name || ''}" (${TIPO_LABEL[entity_tipo] || entity_tipo}).
+
+CONTENUTO DELLA PAGINA:
+"""
+${content}
+"""
+
+Rispondi ESCLUSIVAMENTE con JSON valido (nessun testo prima o dopo). Popola seo_title e seo_description se il documento li indica (righe "SEO title"/"Meta description"):
+${isHome
+    ? '{"titolo":"...","seo_title":"...","seo_description":"...","theme":{"secondaryColor":"#RRGGBB"},"blocks":[{"type":"...","data":{...},"style":{}}]}'
+    : '{"titolo":"...","seo_title":"...","seo_description":"...","blocks":[{"type":"...","data":{...},"style":{}}]}'}
+Regole campi: rispetta ESATTAMENTE i nomi; button_url/cta1_url/form_token = "".`
 }
 
 function buildPrompt({ entity, entity_tipo, documento, multi }) {
@@ -102,75 +177,95 @@ export async function POST(request) {
 
   const doc = documento.trim().slice(0, DOC_MAX)
   const multi = !!multipagina
-  const prompt = buildPrompt({ entity: ent, entity_tipo, documento: doc, multi })
 
-  let parsed
-  try {
-    // Sonnet (più fedele di Haiku) + output ampio: serve trascrivere, non riassumere.
-    const raw = await callClaude(prompt, 16000, 'claude-sonnet-4-6', 285_000)   // budget lungo: doc grandi sono lenti
-    const m = raw.match(/\{[\s\S]*\}/)
-    parsed = JSON.parse(m ? m[0] : raw)
-  } catch (e) {
-    console.error('[from-document] parse/AI error:', e?.message)
-    const aborted = /abort/i.test(e?.message || '')
-    return NextResponse.json({
-      error: aborted
-        ? 'La generazione ha richiesto troppo tempo. Con documenti grandi conviene la modalità "una pagina" (più veloce), oppure riprova.'
-        : 'Non sono riuscito a interpretare il documento. Riprova, o prova ad accorciarlo un po\'.',
-    }, { status: 502 })
-  }
+  // ── Elenco pagine da generare ─────────────────────────────────────────────
+  // Multi-pagina con marcatori "PAGINA X" → UNA chiamata AI per pagina (in parallelo
+  // con pool): niente troncamento, stile coerente, nessun doppione. Altrimenti
+  // fallback single-call (one-page, o multi senza marcatori espliciti).
+  let pages = []   // { titolo, slug, nel_menu, seo_title, seo_description, blocks }
+  let secondary = null
 
-  // Normalizza in un array di pagine (one-page = 1 sola pagina home).
-  let pages
-  if (multi) {
-    if (!Array.isArray(parsed.pages) || !parsed.pages.length) {
-      return NextResponse.json({ error: 'Nessuna pagina generata dal documento. Riprova.' }, { status: 502 })
-    }
-    pages = parsed.pages.slice(0, 5)
+  const chunks = multi ? splitPages(doc) : null
+  if (chunks && chunks.length >= 2) {
+    const gen = await mapPool(chunks.slice(0, 15), 4, async (pc, i) => {
+      const isHome = i === 0
+      try {
+        const raw = await callClaude(buildPagePrompt({ entity: ent, entity_tipo, name: pc.name, content: pc.content, isHome }), 6000, 'claude-sonnet-4-6', 120_000)
+        const m = raw.match(/\{[\s\S]*\}/)
+        const parsed = JSON.parse(m ? m[0] : raw)
+        if (!Array.isArray(parsed.blocks) || !parsed.blocks.length) return null
+        if (isHome && typeof parsed.theme?.secondaryColor === 'string' && /^#[0-9a-f]{6}$/i.test(parsed.theme.secondaryColor.trim())) secondary = parsed.theme.secondaryColor.trim()
+        return {
+          titolo: (parsed.titolo || toTitle(pc.name)).slice(0, 120),
+          slug: isHome ? '__home__' : slugify(pc.name).slice(0, 80),
+          nel_menu: !isHome,
+          seo_title: (parsed.seo_title || '').slice(0, 160),
+          seo_description: (parsed.seo_description || '').slice(0, 300),
+          blocks: parsed.blocks,
+        }
+      } catch (e) {
+        console.error(`[from-document] pagina "${pc.name}" fallita:`, e?.message)
+        return null
+      }
+    })
+    pages = gen.filter(Boolean)
+    if (!pages.length) return NextResponse.json({ error: 'Non sono riuscito a generare le pagine dal documento. Riprova.' }, { status: 502 })
   } else {
-    if (!Array.isArray(parsed.blocks) || !parsed.blocks.length) {
-      return NextResponse.json({ error: 'Nessun blocco generato dal documento. Riprova.' }, { status: 502 })
+    let parsed
+    try {
+      const raw = await callClaude(buildPrompt({ entity: ent, entity_tipo, documento: doc, multi }), 16000, 'claude-sonnet-4-6', 285_000)
+      const m = raw.match(/\{[\s\S]*\}/)
+      parsed = JSON.parse(m ? m[0] : raw)
+    } catch (e) {
+      console.error('[from-document] parse/AI error:', e?.message)
+      const aborted = /abort/i.test(e?.message || '')
+      return NextResponse.json({
+        error: aborted
+          ? 'La generazione ha richiesto troppo tempo. Con documenti grandi conviene la modalità "una pagina", oppure riprova.'
+          : 'Non sono riuscito a interpretare il documento. Riprova, o accorcialo un po\'.',
+      }, { status: 502 })
     }
-    pages = [{ titolo: 'Home', slug: '__home__', nel_menu: false, blocks: parsed.blocks }]
+    if (typeof parsed.theme?.secondaryColor === 'string' && /^#[0-9a-f]{6}$/i.test(parsed.theme.secondaryColor.trim())) secondary = parsed.theme.secondaryColor.trim()
+    if (multi) {
+      if (!Array.isArray(parsed.pages) || !parsed.pages.length) return NextResponse.json({ error: 'Nessuna pagina generata dal documento. Riprova.' }, { status: 502 })
+      pages = parsed.pages.slice(0, 8).map((pg, i) => ({
+        titolo: (pg.titolo || (i === 0 ? 'Home' : 'Pagina')).slice(0, 120),
+        slug: (i === 0 || pg.slug === '__home__') ? '__home__' : slugify(pg.slug || pg.titolo).slice(0, 80),
+        nel_menu: i !== 0 && pg.nel_menu !== false,
+        seo_title: '', seo_description: '',
+        blocks: Array.isArray(pg.blocks) ? pg.blocks : [],
+      })).filter(p => p.blocks.length)
+    } else {
+      if (!Array.isArray(parsed.blocks) || !parsed.blocks.length) return NextResponse.json({ error: 'Nessun blocco generato dal documento. Riprova.' }, { status: 502 })
+      pages = [{ titolo: 'Home', slug: '__home__', nel_menu: false, seo_title: '', seo_description: '', blocks: parsed.blocks }]
+    }
   }
 
+  // dedup per slug (tiene la prima occorrenza)
+  const seen = new Set()
+  pages = pages.filter(p => (seen.has(p.slug) ? false : (seen.add(p.slug), true)))
+
+  // ── Scrittura con UPSERT per slug (rigenerare rimpiazza, NON duplica) ──────
   let created = 0
   for (let i = 0; i < pages.length; i++) {
     const pg = pages[i]
-    const isHome = i === 0 || pg.slug === '__home__'
     const blocks = await resolveBlockImages(withIds(normalizeBlocks(pg.blocks)), [])
-
-    if (isHome) {
-      const { data: existing } = await supabaseAdmin.from('pagine').select('id')
-        .eq('entity_tipo', entity_tipo).eq('entity_id', entity_id).eq('slug', '__home__').maybeSingle()
-      if (existing) {
-        await supabaseAdmin.from('pagine').update({ blocks, status: 'pubblicata', titolo: pg.titolo || 'Home', nel_menu: false }).eq('id', existing.id)
-      } else {
-        await supabaseAdmin.from('pagine').insert({
-          entity_tipo, entity_id, titolo: pg.titolo || 'Home', slug: '__home__', nel_menu: false, status: 'pubblicata', blocks, ordine: 0,
-        })
-      }
-    } else {
-      let slug = slugify(pg.slug || pg.titolo).slice(0, 80)
-      const { count } = await supabaseAdmin.from('pagine').select('id', { count: 'exact', head: true })
-        .eq('entity_tipo', entity_tipo).eq('entity_id', entity_id).eq('slug', slug)
-      if (count > 0) slug = `${slug}-${Date.now().toString(36)}`
-      await supabaseAdmin.from('pagine').insert({
-        entity_tipo, entity_id, titolo: pg.titolo || 'Pagina', slug, nel_menu: pg.nel_menu !== false, status: 'pubblicata', blocks, ordine: i,
-      })
+    const row = {
+      titolo: pg.titolo, nel_menu: pg.nel_menu, status: 'pubblicata', blocks, ordine: i,
+      ...(pg.seo_title ? { seo_title: pg.seo_title } : {}),
+      ...(pg.seo_description ? { seo_description: pg.seo_description } : {}),
     }
+    const { data: existing } = await supabaseAdmin.from('pagine').select('id')
+      .eq('entity_tipo', entity_tipo).eq('entity_id', entity_id).eq('slug', pg.slug).maybeSingle()
+    if (existing) await supabaseAdmin.from('pagine').update(row).eq('id', existing.id)
+    else await supabaseAdmin.from('pagine').insert({ entity_tipo, entity_id, slug: pg.slug, ...row })
     created++
   }
 
-  // Look: tema del template scelto (se valido) + colore accento suggerito dall'AI; attiva il minisito.
+  // Tema: template scelto + accento suggerito dall'AI; attiva il minisito.
   const tpl = template_id ? getTemplate(template_id) : null
-  const secondary = typeof parsed.theme?.secondaryColor === 'string' && /^#[0-9a-f]{6}$/i.test(parsed.theme.secondaryColor.trim())
-    ? parsed.theme.secondaryColor.trim() : null
   const theme = { ...(ent?.theme || {}), ...(tpl?.theme || {}), ...(secondary ? { secondaryColor: secondary } : {}) }
-  await supabaseAdmin.from(table).update({
-    theme,
-    minisito: { ...(ent?.minisito || {}), active: true },
-  }).eq('id', entity_id)
+  await supabaseAdmin.from(table).update({ theme, minisito: { ...(ent?.minisito || {}), active: true } }).eq('id', entity_id)
 
   return NextResponse.json({ ok: true, pages: created })
 }
