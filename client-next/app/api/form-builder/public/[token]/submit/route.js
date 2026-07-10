@@ -1,15 +1,9 @@
 ﻿import { NextResponse } from 'next/server'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/send-email'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { sendWebhooks } from '@/lib/send-webhooks'
 import { rateLimit } from '@/lib/rate-limit'
 import { verifyTurnstile } from '@/lib/turnstile'
-
-let _resend = null
-function getResend() {
-  if (!_resend) _resend = new Resend((process.env.RESEND_API_KEY ?? '').trim())
-  return _resend
-}
 
 // ── Flood detection per-form (max 20 submit / 10 minuti) ─────────────────────
 const formFloodMap = new Map()
@@ -27,7 +21,7 @@ function trackFlood(form) {
   if (entry.count >= FLOOD_THRESHOLD && !entry.alertSent) {
     entry.alertSent = true
     if (form.email_notifica && process.env.RESEND_API_KEY) {
-      getResend().emails.send({
+      sendEmail({ _ctx: 'form-builder',
         from: (process.env.RESEND_FROM ?? '').trim() || 'noreply@oltrenova.com',
         to: form.email_notifica,
         subject: `⚠️ Form "${escHtml(form.nome)}" sotto attacco`,
@@ -274,7 +268,7 @@ export async function POST(request, { params }) {
         ? `<tr><td style="padding:6px 12px;color:#666;font-size:13px;border-bottom:1px solid #f0f0f0">Consenso GDPR</td><td style="padding:6px 12px;font-size:13px;border-bottom:1px solid #f0f0f0;color:#276749">✓ Accettato — IP: ${escHtml(clientIp)}</td></tr>`
         : ''
 
-      getResend().emails.send({
+      sendEmail({ _ctx: 'form-builder',
         from: (process.env.RESEND_FROM ?? '').trim() || 'noreply@oltrenova.com',
         to: form.email_notifica,
         subject: `Nuova risposta: ${escHtml(form.nome)}`,
@@ -320,7 +314,7 @@ export async function POST(request, { params }) {
           </tr>`
         }).join('')
 
-      getResend().emails.send({
+      sendEmail({ _ctx: 'form-builder',
         from: (process.env.RESEND_FROM ?? '').trim() || 'noreply@oltrenova.com',
         to: email,
         subject: oggetto,

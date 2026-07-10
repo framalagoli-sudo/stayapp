@@ -1,7 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
-import { Resend } from 'resend'
-
 async function getAziendaId(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('azienda_id').eq('id', userId).single()
   return data?.azienda_id

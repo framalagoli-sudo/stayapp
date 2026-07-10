@@ -2,7 +2,7 @@
 import { requireAuth } from '@/lib/server-auth'
 import { sendWebhooks } from '@/lib/send-webhooks'
 import { emailTemplate } from '@/lib/email-template'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/send-email'
 
 export async function POST(request) {
   try {
@@ -16,7 +16,8 @@ export async function POST(request) {
     supabaseAdmin.from('properties').select('name, email, azienda_id').eq('id', property_id).single().then(({ data: prop }) => {
       if (prop?.azienda_id) sendWebhooks(prop.azienda_id, 'nuova_richiesta', { richiesta_id: data.id, property_id, tipo: type, messaggio: message })
       if (!prop?.email || !process.env.RESEND_API_KEY) return
-      new Resend((process.env.RESEND_API_KEY ?? '').trim()).emails.send({
+      sendEmail({
+        _ctx: 'richiesta',
         from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
         to: prop.email,
         subject: `[${prop.name}] Nuova richiesta: ${type}`,

@@ -1,6 +1,6 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/send-email'
 
 export async function POST(request) {
   try {
@@ -25,8 +25,8 @@ export async function POST(request) {
     const business = az?.ragione_sociale || 'il nostro team'
 
     if (process.env.RESEND_API_KEY) {
-      const resend = new Resend((process.env.RESEND_API_KEY ?? '').trim())
-      await resend.emails.send({
+      await sendEmail({
+        _ctx: 'survey',
         from: (process.env.RESEND_FROM ?? '').trim(),
         to: email.trim(),
         subject: `Come valuteresti la tua esperienza con ${business}?`,

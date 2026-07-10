@@ -1,7 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
-import { Resend } from 'resend'
-
 async function getCallerProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
   return data

@@ -1,5 +1,5 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/send-email'
 import { emailTemplate } from '@/lib/email-template'
 import { triggerAutomazione } from '@/lib/guest-utils'
 
@@ -46,7 +46,8 @@ export async function POST(request) {
     }
 
     if (entityEmail && process.env.RESEND_API_KEY) {
-      new Resend((process.env.RESEND_API_KEY ?? '').trim()).emails.send({
+      sendEmail({
+        _ctx: 'guest-book',
         from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
         to: entityEmail, replyTo: email,
         subject: `[${entityName}] Nuova prenotazione ${typeLabel}: ${item_name || ''}`,

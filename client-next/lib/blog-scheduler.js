@@ -1,4 +1,5 @@
 ﻿import { supabaseAdmin } from './supabase-server'
+import { sendEmail } from './send-email.js'
 
 export function calcNextRun(frequenza, ora, giornoSettimana, giornoMese, from = new Date()) {
   const d = new Date(from)
@@ -137,9 +138,8 @@ Rispondi ESCLUSIVAMENTE con un oggetto JSON (nessun testo prima o dopo):
 
   if (modalita === 'bozza' && automazione.notifica_email && process.env.RESEND_API_KEY) {
     try {
-      const { Resend } = await import('resend')
-      const resend = new Resend((process.env.RESEND_API_KEY ?? '').trim())
-      await resend.emails.send({
+      await sendEmail({
+        _ctx: 'blog-bozza',
         from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
         to: automazione.notifica_email,
         subject: `Nuova bozza AI pronta: "${parsed.title}"`,

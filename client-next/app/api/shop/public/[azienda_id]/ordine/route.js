@@ -1,6 +1,6 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { applicaLoyaltyOrdine, registraRiscatto, assegnaPuntiOrdine } from '@/lib/loyalty-helpers'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/send-email'
 
 export async function POST(request, { params }) {
   try {
@@ -75,11 +75,11 @@ export async function POST(request, { params }) {
 
     if (process.env.RESEND_API_KEY) {
       try {
-        const resend = new Resend((process.env.RESEND_API_KEY ?? '').trim())
-        const righeProdotti = vociSicure.map(v =>
+        const righeProdotti =vociSicure.map(v =>
           `<tr><td style="padding:6px 8px;border-bottom:1px solid #eee">${v.nome}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center">${v.qty}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">€${(v.prezzo * v.qty).toFixed(2)}</td></tr>`
         ).join('')
-        await resend.emails.send({
+        await sendEmail({
+          _ctx: 'shop-ordine',
           from: (process.env.RESEND_FROM ?? '').trim() || 'noreply@oltrenova.com',
           to: email_cliente,
           subject: `Ordine #${ordine.numero} ricevuto`,

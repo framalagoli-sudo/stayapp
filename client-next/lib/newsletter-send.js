@@ -64,7 +64,8 @@ export async function sendNewsletterById(id) {
         }),
       }
     })
-    await resend.batch.send(emails)
+    const { error: batchErr } = await resend.batch.send(emails)
+    if (batchErr) console.error(`[email:newsletter] batch FALLITA (${batch.length} dest) →`, batchErr)
     sent += batch.length
   }
 

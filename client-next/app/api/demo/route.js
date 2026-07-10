@@ -1,6 +1,7 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { emailTemplate } from '@/lib/email-template'
+import { sendEmail } from '@/lib/send-email'
 
 const NOTIFY_EMAIL = process.env.DEMO_NOTIFY_EMAIL || 'fra.malagoli@gmail.com'
 
@@ -26,9 +27,8 @@ export async function POST(request) {
 
     if (process.env.RESEND_API_KEY) {
       try {
-        const { Resend } = await import('resend')
-        const resend = new Resend((process.env.RESEND_API_KEY ?? '').trim())
-        await resend.emails.send({
+        await sendEmail({
+          _ctx: 'demo',
           from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
           to: NOTIFY_EMAIL,
           replyTo: email.trim(),

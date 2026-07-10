@@ -1,6 +1,7 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { buildNewsletterHtml, personalize } from '@/lib/newsletter-html'
+import { sendEmail } from '@/lib/send-email'
 
 async function getEntity(entity_tipo, entity_id) {
   if (!entity_tipo || !entity_id) return null
@@ -32,9 +33,8 @@ export async function POST(request, { params }) {
     })
 
     if (!process.env.RESEND_API_KEY) return Response.json({ error: 'RESEND_API_KEY non configurata' }, { status: 500 })
-    const { Resend } = await import('resend')
-    const resend = new Resend((process.env.RESEND_API_KEY ?? '').trim())
-    await resend.emails.send({
+    await sendEmail({
+      _ctx: 'newsletter-test',
       from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
       to: test_email,
       subject: `[TEST] ${personalize(nl.subject, 'Mario') || '(senza oggetto)'}`,

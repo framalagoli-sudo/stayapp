@@ -1,6 +1,6 @@
 ﻿import { randomUUID } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/send-email'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { verifyTurnstile } from '@/lib/turnstile'
 
@@ -8,7 +8,8 @@ async function sendConfirmationEmail({ email, nome, entityName, token }) {
   if (!email || !process.env.RESEND_API_KEY) return
   const appUrl = (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'
   const confirmUrl = `${appUrl}/api/guest/confirm-subscription?token=${token}`
-  new Resend((process.env.RESEND_API_KEY ?? '').trim()).emails.send({
+  sendEmail({
+    _ctx: 'newsletter-subscribe',
     from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
     to: email,
     subject: `Conferma la tua iscrizione alla newsletter di ${entityName}`,

@@ -2,7 +2,7 @@
 import { sendWebhooks } from '@/lib/send-webhooks'
 import { triggerAutomazione } from '@/lib/guest-utils'
 import { syncBookingCreate } from '@/lib/google-calendar-stub'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/send-email'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isUUID = v => UUID_RE.test(v)
@@ -42,8 +42,7 @@ async function getEntityWhatsapp(entityTipo, entityId) {
 
 async function inviaEmailConferma(prenotazione, risorsa, whatsapp = null) {
   if (!process.env.RESEND_API_KEY) return
-  const resend = new Resend((process.env.RESEND_API_KEY ?? '').trim())
-  const cancelUrl = `${(process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'}/cancella-prenotazione?token=${prenotazione.cancellation_token}`
+  const cancelUrl =`${(process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'}/cancella-prenotazione?token=${prenotazione.cancellation_token}`
   const waUrl = buildWaUrl(whatsapp)
 
   const quando = risorsa.modalita === 'coperti'
@@ -51,7 +50,8 @@ async function inviaEmailConferma(prenotazione, risorsa, whatsapp = null) {
     : `${prenotazione.data} ore ${prenotazione.ora_inizio?.slice(0, 5)}–${prenotazione.ora_fine?.slice(0, 5)}`
 
   try {
-    await resend.emails.send({
+    await sendEmail({
+      _ctx: 'booking-conferma',
       from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
       to: prenotazione.cliente_email,
       subject: `Prenotazione confermata — ${risorsa.nome}`,

@@ -1,5 +1,5 @@
 ﻿import { requireAuth } from '@/lib/server-auth'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/send-email'
 
 export async function POST(request) {
   try {
@@ -9,7 +9,7 @@ export async function POST(request) {
     if (!descrizione?.trim()) return Response.json({ error: 'Descrizione obbligatoria' }, { status: 400 })
 
     if (process.env.RESEND_API_KEY) {
-      await new Resend((process.env.RESEND_API_KEY ?? '').trim()).emails.send({
+      await sendEmail({ _ctx: 'segnalazione',
         from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
         to: 'fra.malagoli@gmail.com',
         subject: `[${tipo || 'Segnalazione'}] da ${email || 'utente sconosciuto'}`,

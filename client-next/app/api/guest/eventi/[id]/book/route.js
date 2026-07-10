@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { recomputeEventSeats } from '@/lib/event-seats'
-import { Resend } from 'resend'
+import { sendEmail } from '@/lib/send-email'
 import { emailTemplate, guestEmailTemplate } from '@/lib/email-template'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 
@@ -69,7 +69,8 @@ export async function POST(request, { params }) {
 
     // 1) Notifica al titolare (brand OltreNova, è piattaforma → titolare).
     if (evento.notify_owner_on_booking && ownerEmail && resendKey) {
-      new Resend(resendKey).emails.send({
+      sendEmail({
+        _ctx: 'evento-owner',
         from, to: ownerEmail, replyTo: guest_email,
         subject: `[${bizName}] Nuova prenotazione: ${evento.title}`,
         html: emailTemplate({
@@ -92,7 +93,8 @@ export async function POST(request, { params }) {
     let guest_confirmation_sent = false
     if (evento.send_guest_confirmation && resendKey && guest_email) {
       guest_confirmation_sent = true
-      new Resend(resendKey).emails.send({
+      sendEmail({
+        _ctx: 'evento-guest',
         from, to: guest_email,
         subject: `Conferma prenotazione — ${evento.title}`,
         html: guestEmailTemplate({
