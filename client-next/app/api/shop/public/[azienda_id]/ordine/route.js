@@ -80,6 +80,13 @@ export async function POST(request, { params }) {
           `<tr><td style="padding:6px 8px;border-bottom:1px solid #eee">${v.nome}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center">${v.qty}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">€${(v.prezzo * v.qty).toFixed(2)}</td></tr>`
         ).join('')
         const { data: azShop } = await supabaseAdmin.from('aziende').select('ragione_sociale, partita_iva, indirizzo, citta, cap, provincia').eq('id', azienda_id).single()
+        // Lo shop è azienda-level → per il link privacy uso la prima entità attiva dell'azienda.
+        const shopAppUrl = (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'
+        let shopPrivacyUrl = null
+        for (const [table, prefix] of [['properties', 's'], ['ristoranti', 'r'], ['attivita', 'a']]) {
+          const { data: e } = await supabaseAdmin.from(table).select('slug').eq('azienda_id', azienda_id).eq('active', true).limit(1).maybeSingle()
+          if (e?.slug) { shopPrivacyUrl = `${shopAppUrl}/${prefix}/${e.slug}/privacy`; break }
+        }
         const tabellaOrdine = `<table style="width:100%;border-collapse:collapse;margin:8px 0 16px">
             <thead><tr style="background:#f5f5f5">
               <th style="padding:8px;text-align:left;font-size:13px">Prodotto</th>
@@ -99,7 +106,7 @@ export async function POST(request, { params }) {
             entityName: azShop?.ragione_sociale || 'Il tuo ordine',
             title: 'Grazie per il tuo ordine!',
             intro: `Ciao ${nome_cliente || ''}, abbiamo ricevuto il tuo ordine <strong>#${ordine.numero}</strong>.`,
-            bodyHtml: tabellaOrdine, legale: azShop, privacyUrl: null,
+            bodyHtml: tabellaOrdine, legale: azShop, privacyUrl: shopPrivacyUrl,
           }),
         })
       } catch (mailErr) { console.error('[Shop] Email error:', mailErr.message) }

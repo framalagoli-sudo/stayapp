@@ -1,5 +1,6 @@
 ﻿import { NextResponse } from 'next/server'
 import { sendEmail } from '@/lib/send-email'
+import { emailTemplate } from '@/lib/email-template'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { sendWebhooks } from '@/lib/send-webhooks'
 import { rateLimit } from '@/lib/rate-limit'
@@ -21,16 +22,14 @@ function trackFlood(form) {
   if (entry.count >= FLOOD_THRESHOLD && !entry.alertSent) {
     entry.alertSent = true
     if (form.email_notifica && process.env.RESEND_API_KEY) {
-      sendEmail({ _ctx: 'form-builder',
-        from: (process.env.RESEND_FROM ?? '').trim() || 'noreply@oltrenova.com',
+      sendEmail({ _ctx: 'form-flood',
         to: form.email_notifica,
         subject: `⚠️ Form "${escHtml(form.nome)}" sotto attacco`,
-        html: `<div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;color:#333">
-          <h2 style="color:#c53030">⚠️ Possibile attacco al form</h2>
-          <p>Il form <strong>${escHtml(form.nome)}</strong> ha ricevuto <strong>${entry.count} invii in 10 minuti</strong>.</p>
-          <p>I nuovi submit sono stati <strong>bloccati automaticamente</strong> per proteggere il tuo account.</p>
-          <p style="font-size:13px;color:#888">Puoi disattivare il form dall&apos;editor StayApp se il problema persiste.</p>
-        </div>`,
+        html: emailTemplate({
+          title: '⚠️ Possibile attacco al form', entityName: 'OltreNova',
+          bodyHtml: `<p style="font-size:14px;color:#444;line-height:1.7">Il form <strong>${escHtml(form.nome)}</strong> ha ricevuto <strong>${entry.count} invii in 10 minuti</strong>. I nuovi submit sono stati <strong>bloccati automaticamente</strong> per proteggere il tuo account.</p><p style="font-size:13px;color:#888">Puoi disattivare il form dall'editor se il problema persiste.</p>`,
+          appUrl: (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com',
+        }),
       }).catch(() => {})
     }
   }
@@ -268,16 +267,14 @@ export async function POST(request, { params }) {
         ? `<tr><td style="padding:6px 12px;color:#666;font-size:13px;border-bottom:1px solid #f0f0f0">Consenso GDPR</td><td style="padding:6px 12px;font-size:13px;border-bottom:1px solid #f0f0f0;color:#276749">✓ Accettato — IP: ${escHtml(clientIp)}</td></tr>`
         : ''
 
-      sendEmail({ _ctx: 'form-builder',
-        from: (process.env.RESEND_FROM ?? '').trim() || 'noreply@oltrenova.com',
+      sendEmail({ _ctx: 'form-notifica',
         to: form.email_notifica,
         subject: `Nuova risposta: ${escHtml(form.nome)}`,
-        html: `
-          <div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto">
-            <h2 style="color:#1a1a2e;margin-bottom:4px">Nuova risposta ricevuta</h2>
-            <p style="color:#888;font-size:13px;margin-top:0">Form: <strong>${escHtml(form.nome)}</strong></p>
-            <table style="width:100%;border-collapse:collapse;margin-top:16px">${righe}${consentRow}</table>
-          </div>`,
+        html: emailTemplate({
+          title: 'Nuova risposta ricevuta', entityName: 'OltreNova',
+          bodyHtml: `<p style="color:#888;font-size:13px;margin:0 0 12px">Form: <strong>${escHtml(form.nome)}</strong></p><table style="width:100%;border-collapse:collapse">${righe}${consentRow}</table>`,
+          appUrl: (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com',
+        }),
       }).catch(e => console.error('[form-submit] email notifica admin error:', e?.message || e))
     }
 
@@ -314,8 +311,7 @@ export async function POST(request, { params }) {
           </tr>`
         }).join('')
 
-      sendEmail({ _ctx: 'form-builder',
-        from: (process.env.RESEND_FROM ?? '').trim() || 'noreply@oltrenova.com',
+      sendEmail({ _ctx: 'form-autoresponder',
         to: email,
         subject: oggetto,
         html: buildAutoresponderHtml(testo, righeRiepilogo),

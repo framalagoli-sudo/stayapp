@@ -1,5 +1,6 @@
 ﻿import { requireAuth } from '@/lib/server-auth'
 import { sendEmail } from '@/lib/send-email'
+import { emailTemplate } from '@/lib/email-template'
 
 export async function POST(request) {
   try {
@@ -10,19 +11,17 @@ export async function POST(request) {
 
     if (process.env.RESEND_API_KEY) {
       await sendEmail({ _ctx: 'segnalazione',
-        from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
         to: 'fra.malagoli@gmail.com',
         subject: `[${tipo || 'Segnalazione'}] da ${email || 'utente sconosciuto'}`,
-        html: `
-          <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a2e">
-            <h2 style="margin-top:0">Nuova segnalazione — ${tipo || 'Segnalazione'}</h2>
-            <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
-              <tr><td style="padding:8px 0;color:#888;font-size:13px;width:100px">Da</td><td style="padding:8px 0;font-size:14px">${email || '—'}</td></tr>
-              <tr><td style="padding:8px 0;color:#888;font-size:13px">Tipo</td><td style="padding:8px 0;font-size:14px">${tipo || '—'}</td></tr>
-            </table>
-            <div style="background:#f5f5f5;border-radius:8px;padding:16px;font-size:14px;line-height:1.7;white-space:pre-wrap">${descrizione.trim()}</div>
-          </div>
-        `,
+        html: emailTemplate({
+          title: `Nuova segnalazione — ${tipo || 'Segnalazione'}`, entityName: 'OltreNova',
+          rows: [
+            { label: 'Da', value: email || '—' },
+            { label: 'Tipo', value: tipo || '—' },
+            { label: 'Messaggio', value: descrizione.trim().replace(/\n/g, '<br>') },
+          ],
+          appUrl: (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com',
+        }),
         replyTo: email || undefined,
       })
     }

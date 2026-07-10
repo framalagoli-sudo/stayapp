@@ -1,6 +1,7 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { sendEmail } from '@/lib/send-email'
+import { platformEmailTemplate } from '@/lib/email-template'
 
 export async function POST(request, { params }) {
   try {
@@ -28,9 +29,13 @@ export async function POST(request, { params }) {
       const { data: profile } = await supabaseAdmin.from('profiles').select('full_name').eq('id', params.id).single()
       const nome = profile?.full_name || email
       sendEmail({ _ctx: 'reinvito-staff',
-        from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
         to: email, subject: 'Il tuo link per accedere a OltreNova',
-        html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a2e"><img src="https://www.oltrenova.com/logo-onlight.png" alt="OltreNova" width="138" height="43" style="display:block;margin-bottom:24px"><h2 style="margin-top:0">Nuovo link di accesso</h2><p style="color:#666;line-height:1.6">Ciao <strong>${nome}</strong>,<br>il link precedente è scaduto. Usa questo nuovo link per impostare la tua password.</p><div style="margin:28px 0"><a href="${link}" style="display:inline-block;padding:13px 28px;background:#1a1a2e;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Imposta password →</a></div><p style="color:#999;font-size:13px">Il link è valido per <strong>24 ore</strong>.</p></div>`,
+        html: platformEmailTemplate({
+          title: 'Nuovo link di accesso',
+          intro: `Ciao <strong>${nome}</strong>, il link precedente è scaduto. Usa questo nuovo link per impostare la tua password.`,
+          ctaText: 'Imposta password →', ctaUrl: link,
+          footerNote: 'Il link è valido per <strong>24 ore</strong>.',
+        }),
       }).catch(() => {})
     }
     return Response.json({ ok: true })

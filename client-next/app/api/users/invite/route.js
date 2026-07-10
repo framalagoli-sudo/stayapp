@@ -1,6 +1,7 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { sendEmail } from '@/lib/send-email'
+import { platformEmailTemplate } from '@/lib/email-template'
 
 export async function POST(request) {
   try {
@@ -35,9 +36,13 @@ export async function POST(request) {
     if (process.env.RESEND_API_KEY) {
       const nome = full_name?.trim() || email.trim()
       sendEmail({ _ctx: 'invito-staff',
-        from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
         to: email.trim(), subject: 'Sei stato invitato su OltreNova',
-        html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a2e"><img src="https://www.oltrenova.com/logo-onlight.png" alt="OltreNova" width="138" height="43" style="display:block;margin-bottom:24px"><h2 style="margin-top:0">Benvenuto su OltreNova</h2><p style="color:#666;line-height:1.6">Ciao <strong>${nome}</strong>,<br>sei stato invitato a collaborare sul pannello OltreNova.</p><div style="margin:28px 0"><a href="${inviteLink}" style="display:inline-block;padding:13px 28px;background:#1a1a2e;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Accetta invito →</a></div><p style="color:#999;font-size:13px">Il link è valido per <strong>24 ore</strong>.</p></div>`,
+        html: platformEmailTemplate({
+          title: 'Benvenuto su OltreNova',
+          intro: `Ciao <strong>${nome}</strong>, sei stato invitato a collaborare sul pannello OltreNova.`,
+          ctaText: 'Accetta invito →', ctaUrl: inviteLink,
+          footerNote: 'Il link è valido per <strong>24 ore</strong>.',
+        }),
       }).catch(() => {})
     }
     return Response.json({ id: data.user.id, email: data.user.email, role: 'staff', full_name: full_name?.trim() || '', azienda_id, permissions, invited: true }, { status: 201 })

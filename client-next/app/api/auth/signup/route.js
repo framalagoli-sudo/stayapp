@@ -1,5 +1,6 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { sendEmail } from '@/lib/send-email'
+import { platformEmailTemplate } from '@/lib/email-template'
 
 export async function POST(request) {
   try {
@@ -45,15 +46,13 @@ export async function POST(request) {
     if (process.env.RESEND_API_KEY) {
       const clientUrl = (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'
       sendEmail({ _ctx: 'signup',
-        from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
         to: email.trim().toLowerCase(),
         subject: 'Benvenuto in OltreNova!',
-        html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px">
-          <h2 style="color:#1a1a2e;margin-top:0">Benvenuto in OltreNova!</h2>
-          <p>Il tuo account per <strong>${nome_azienda.trim()}</strong> è pronto.</p>
-          <p>Hai <strong>14 giorni di prova gratuita</strong> — senza carta di credito.</p>
-          <div style="margin:24px 0"><a href="${clientUrl}/admin/onboarding" style="display:inline-block;padding:12px 24px;background:#1a1a2e;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Completa il setup →</a></div>
-        </div>`,
+        html: platformEmailTemplate({
+          title: 'Benvenuto in OltreNova!',
+          intro: `Il tuo account per <strong>${nome_azienda.trim()}</strong> è pronto. Hai <strong>14 giorni di prova gratuita</strong> — senza carta di credito.`,
+          ctaText: 'Completa il setup →', ctaUrl: `${clientUrl}/admin/onboarding`,
+        }),
       }).catch(() => {})
     }
     return Response.json({ ok: true }, { status: 201 })

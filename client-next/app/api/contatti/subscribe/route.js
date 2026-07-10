@@ -1,6 +1,7 @@
 ﻿import { randomUUID } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { sendEmail } from '@/lib/send-email'
+import { guestEmailTemplate } from '@/lib/email-template'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { verifyTurnstile } from '@/lib/turnstile'
 
@@ -10,19 +11,13 @@ async function sendConfirmationEmail({ email, nome, entityName, token }) {
   const confirmUrl = `${appUrl}/api/guest/confirm-subscription?token=${token}`
   sendEmail({
     _ctx: 'newsletter-subscribe', fromName: entityName,
-    from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
     to: email,
     subject: `Conferma la tua iscrizione alla newsletter di ${entityName}`,
-    html: `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif">
-<table width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:40px 20px">
-<table width="600" cellpadding="0" cellspacing="0" style="margin:0 auto;background:#fff;border-radius:12px;overflow:hidden">
-  <tr><td style="background:#1a1a2e;padding:28px 36px"><div style="font-size:22px;font-weight:700;color:#fff">${entityName}</div></td></tr>
-  <tr><td style="padding:36px"><h2 style="margin:0 0 14px;font-size:20px;color:#1a1a2e">Conferma la tua iscrizione</h2>
-    ${nome ? `<p style="font-size:15px;color:#555;margin:0 0 14px">Ciao ${nome},</p>` : ''}
-    <p style="font-size:15px;color:#555;margin:0 0 28px">Clicca il pulsante per confermare e iniziare a ricevere le nostre comunicazioni.</p>
-    <a href="${confirmUrl}" style="display:inline-block;padding:14px 32px;background:#1a1a2e;color:#fff;text-decoration:none;border-radius:8px;font-weight:700">Conferma iscrizione &rarr;</a>
-  </td></tr>
-</table></td></tr></table></body></html>`,
+    html: guestEmailTemplate({
+      entityName, title: 'Conferma la tua iscrizione',
+      intro: `${nome ? `Ciao ${nome}, ` : ''}clicca il pulsante per confermare e iniziare a ricevere le nostre comunicazioni.`,
+      bodyHtml: `<div style="margin:24px 0"><a href="${confirmUrl}" style="display:inline-block;padding:14px 32px;background:#1a1a2e;color:#fff;text-decoration:none;border-radius:8px;font-weight:700">Conferma iscrizione &rarr;</a></div>`,
+    }),
   }).catch(() => {})
 }
 

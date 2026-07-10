@@ -1,5 +1,6 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { sendEmail } from '@/lib/send-email'
+import { emailTemplate } from '@/lib/email-template'
 
 export async function GET(request, { params }) {
   try {
@@ -46,10 +47,17 @@ export async function POST(request, { params }) {
       if (az?.email) {
         const stars = '★'.repeat(Number(stelle)) + '☆'.repeat(5 - Number(stelle))
         sendEmail({ _ctx: 'recensione-privata',
-          from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
           to: az.email,
           subject: `[OltreNova] Nuova recensione ${stars} da ${autore?.trim() || 'Anonimo'}`,
-          html: `<p>Hai ricevuto una recensione privata (${stelle}/5 stelle) da <strong>${autore?.trim() || 'Anonimo'}</strong>.</p><p>${testo?.trim() || ''}</p><p>Accedi al pannello admin per visualizzarla e rispondere.</p>`,
+          html: emailTemplate({
+            title: `Nuova recensione ${stars}`, entityName: 'OltreNova',
+            rows: [
+              { label: 'Autore', value: autore?.trim() || 'Anonimo' },
+              { label: 'Voto', value: `${stelle}/5 stelle` },
+              { label: 'Recensione', value: (testo?.trim() || '—').replace(/\n/g, '<br>') },
+            ],
+            appUrl: (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com',
+          }),
         }).catch(() => {})
       }
     }
