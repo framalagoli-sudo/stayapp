@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { recomputeEventSeats } from '@/lib/event-seats'
 import { sendEmail } from '@/lib/send-email'
 import { emailTemplate, guestEmailTemplate } from '@/lib/email-template'
+import { getAziendaLegale } from '@/lib/guest-data'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 
 const ENTITY_TBL = { struttura: 'properties', ristorante: 'ristoranti', attivita: 'attivita' }
@@ -56,16 +57,22 @@ export async function POST(request, { params }) {
     const dateStr = fmtDate(evento.date_start)
 
     // Nome/e-mail del titolare: dall'entità associata o, se aziendale, dall'azienda.
-    let ownerEmail = null, ownerName = null
+    let ownerEmail = null, ownerName = null, entSlug = null
     if (evento.entity_tipo && evento.entity_id && ENTITY_TBL[evento.entity_tipo]) {
-      const { data: ent } = await supabaseAdmin.from(ENTITY_TBL[evento.entity_tipo]).select('name, email').eq('id', evento.entity_id).single()
-      if (ent) { ownerEmail = ent.email; ownerName = ent.name }
+      const { data: ent } = await supabaseAdmin.from(ENTITY_TBL[evento.entity_tipo]).select('name, email, slug').eq('id', evento.entity_id).single()
+      if (ent) { ownerEmail = ent.email; ownerName = ent.name; entSlug = ent.slug }
     }
     if (!ownerEmail && evento.azienda_id) {
       const { data: az } = await supabaseAdmin.from('aziende').select('ragione_sociale, email').eq('id', evento.azienda_id).single()
       if (az) { ownerEmail = ownerEmail || az.email; ownerName = ownerName || az.ragione_sociale }
     }
     const bizName = ownerName || evento.title
+
+    // Footer conforme per la mail all'ospite: identificazione legale + link privacy.
+    const legale = evento.azienda_id ? await getAziendaLegale(evento.azienda_id) : null
+    const PREFIX = { struttura: 's', ristorante: 'r', attivita: 'a' }
+    const appUrl = (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'
+    const privacyUrl = (entSlug && PREFIX[evento.entity_tipo]) ? `${appUrl}/${PREFIX[evento.entity_tipo]}/${entSlug}/privacy` : null
 
     // 1) Notifica al titolare (brand OltreNova, è piattaforma → titolare).
     if (evento.notify_owner_on_booking && ownerEmail && resendKey) {
@@ -98,7 +105,7 @@ export async function POST(request, { params }) {
         from, to: guest_email, replyTo: ownerEmail || undefined,
         subject: `Conferma prenotazione — ${evento.title}`,
         html: guestEmailTemplate({
-          entityName: bizName, title: 'Prenotazione confermata',
+          entityName: bizName, title: 'Prenotazione confermata', legale, privacyUrl,
           intro: `Ciao ${guest_name}, abbiamo ricevuto la tua prenotazione per <strong>${evento.title}</strong>. Ecco il riepilogo:`,
           rows: [
             dateStr ? { label: 'Data', value: dateStr } : null,

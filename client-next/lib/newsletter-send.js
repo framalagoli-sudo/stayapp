@@ -1,10 +1,11 @@
 ﻿import { supabaseAdmin } from './supabase-server.js'
 import { buildNewsletterHtml, personalize } from './newsletter-html.js'
+import { getAziendaLegale } from './guest-data.js'
 
 async function getEntity(entity_tipo, entity_id) {
   if (!entity_tipo || !entity_id) return null
   const table = entity_tipo === 'struttura' ? 'properties' : entity_tipo === 'ristorante' ? 'ristoranti' : 'attivita'
-  const { data } = await supabaseAdmin.from(table).select('id, name, logo_url, theme').eq('id', entity_id).single()
+  const { data } = await supabaseAdmin.from(table).select('id, name, logo_url, theme, slug').eq('id', entity_id).single()
   return data
 }
 
@@ -33,6 +34,9 @@ export async function sendNewsletterById(id) {
   const entityLogo = entity?.logo_url || null
   const primary    = entity?.theme?.primaryColor || '#1a1a2e'
   const appUrl     = (process.env.APP_URL ?? '').trim() || 'https://oltrenova.com'
+  const legale     = await getAziendaLegale(nl.azienda_id)
+  const NL_PREFIX  = { struttura: 's', ristorante: 'r', attivita: 'a' }
+  const privacyUrl = (entity?.slug && NL_PREFIX[nl.entity_tipo]) ? `${appUrl}/${NL_PREFIX[nl.entity_tipo]}/${entity.slug}/privacy` : null
 
   if (!process.env.RESEND_API_KEY) throw new Error('RESEND_API_KEY non configurata')
 
@@ -64,6 +68,7 @@ export async function sendNewsletterById(id) {
           content: pContent,
           preheader: nl.preheader || '',
           unsubscribeUrl: `${appUrl}/unsubscribe?token=${c.unsubscribe_token || 'na'}&nl=${nl.id}`,
+          legale, privacyUrl,
         }),
       }
     })

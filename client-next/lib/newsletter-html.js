@@ -9,14 +9,29 @@ function nlHeader(entityName, entityLogo) {
   </td></tr>`
 }
 
-function nlFooter(unsubscribeUrl, entityName) {
+function nlLegalLine(legale, entityName) {
+  const l = legale || {}
+  const name = l.ragione_sociale || entityName || ''
+  const cityLine = [l.cap, l.citta].filter(Boolean).join(' ')
+  const addr = [l.indirizzo, cityLine, l.provincia ? `(${l.provincia})` : ''].filter(Boolean).join(', ')
+  return [
+    name && `<strong>${esc(name)}</strong>`,
+    addr && esc(addr),
+    l.partita_iva && `P.IVA ${esc(l.partita_iva)}`,
+  ].filter(Boolean).join(' · ')
+}
+
+function nlFooter(unsubscribeUrl, entityName, legale, privacyUrl) {
+  const legalLine = nlLegalLine(legale, entityName)
   return `<tr><td style="padding:24px 36px;background:#f9f9fb;border-top:1px solid #f0f0f0;text-align:center">
-    <p style="font-size:12px;color:#aaa;font-family:Arial,sans-serif;line-height:1.7;margin:0">
+    <p style="font-size:12px;color:#aaa;font-family:Arial,sans-serif;line-height:1.7;margin:0 0 8px">
       Hai ricevuto questa email perché sei iscritto alla newsletter di <strong>${esc(entityName)}</strong>.<br>
       <a href="${unsubscribeUrl}" style="color:#aaa;text-decoration:underline">Annulla iscrizione</a>
+      ${privacyUrl ? `<span style="color:#ddd">&nbsp;·&nbsp;</span><a href="${esc(privacyUrl)}" style="color:#aaa;text-decoration:underline">Privacy</a>` : ''}
       <span style="color:#ddd">&nbsp;·&nbsp;</span>
       <span style="color:#ccc">Powered by OltreNova</span>
     </p>
+    ${legalLine ? `<p style="font-size:11px;color:#bbb;font-family:Arial,sans-serif;line-height:1.6;margin:0">${legalLine}</p>` : ''}
   </td></tr>`
 }
 
@@ -96,7 +111,7 @@ function bodyEvento(c, primary) {
     </td></tr>`
 }
 
-export function buildNewsletterHtml({ entityName, entityLogo, primary = '#1a1a2e', template_id, content, unsubscribeUrl, preheader = '' }) {
+export function buildNewsletterHtml({ entityName, entityLogo, primary = '#1a1a2e', template_id, content, unsubscribeUrl, preheader = '', legale, privacyUrl }) {
   const body = template_id === 'promozione' ? bodyPromozione(content, primary)
     : template_id === 'notizie' ? bodyNotizie(content, primary)
     : template_id === 'evento' ? bodyEvento(content, primary)
@@ -115,7 +130,7 @@ ${preheaderHtml}
 <table width="600" align="center" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);max-width:100%">
   ${nlHeader(entityName, entityLogo)}
   ${body}
-  ${nlFooter(unsubscribeUrl, entityName)}
+  ${nlFooter(unsubscribeUrl, entityName, legale, privacyUrl)}
 </table>
 </td></tr></table>
 </body></html>`
