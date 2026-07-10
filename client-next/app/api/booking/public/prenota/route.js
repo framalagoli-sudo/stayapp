@@ -3,6 +3,8 @@ import { sendWebhooks } from '@/lib/send-webhooks'
 import { triggerAutomazione } from '@/lib/guest-utils'
 import { syncBookingCreate } from '@/lib/google-calendar-stub'
 import { sendEmail } from '@/lib/send-email'
+import { guestEmailTemplate } from '@/lib/email-template'
+import { getAziendaLegale } from '@/lib/guest-data'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isUUID = v => UUID_RE.test(v)
@@ -40,48 +42,51 @@ async function getEntityWhatsapp(entityTipo, entityId) {
   return null
 }
 
+const ENTITY_TBL = { struttura: 'properties', ristorante: 'ristoranti', attivita: 'attivita' }
+const ENTITY_PREFIX = { struttura: 's', ristorante: 'r', attivita: 'a' }
+
 async function inviaEmailConferma(prenotazione, risorsa, whatsapp = null) {
   if (!process.env.RESEND_API_KEY) return
-  const cancelUrl =`${(process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'}/cancella-prenotazione?token=${prenotazione.cancellation_token}`
+  const appUrl = (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'
+  const cancelUrl = `${appUrl}/cancella-prenotazione?token=${prenotazione.cancellation_token}`
   const waUrl = buildWaUrl(whatsapp)
 
   const quando = risorsa.modalita === 'coperti'
     ? `${prenotazione.data} — ${prenotazione.servizio} ore ${prenotazione.ora_inizio}`
     : `${prenotazione.data} ore ${prenotazione.ora_inizio?.slice(0, 5)}–${prenotazione.ora_fine?.slice(0, 5)}`
 
+  // Nome business + slug (branding/privacy) + dati legali per il footer conforme.
+  let bizName = risorsa.nome, entSlug = null
+  if (risorsa.entity_tipo && risorsa.entity_id && ENTITY_TBL[risorsa.entity_tipo]) {
+    const { data: ent } = await supabaseAdmin.from(ENTITY_TBL[risorsa.entity_tipo]).select('name, slug').eq('id', risorsa.entity_id).single()
+    if (ent) { bizName = ent.name || bizName; entSlug = ent.slug }
+  }
+  const legale = risorsa.azienda_id ? await getAziendaLegale(risorsa.azienda_id) : null
+  const privacyUrl = (entSlug && ENTITY_PREFIX[risorsa.entity_tipo]) ? `${appUrl}/${ENTITY_PREFIX[risorsa.entity_tipo]}/${entSlug}/privacy` : null
+
+  const rows = [
+    { label: 'Servizio', value: risorsa.nome },
+    { label: 'Quando', value: quando },
+    { label: 'Persone', value: String(prenotazione.n_persone) },
+    prenotazione.importo_totale > 0 ? { label: 'Importo', value: `€${prenotazione.importo_totale}` } : null,
+    prenotazione.note_cliente ? { label: 'Note', value: prenotazione.note_cliente } : null,
+  ].filter(Boolean)
+
+  const bodyHtml = `${waUrl ? `<div style="margin:20px 0;padding:14px 18px;background:#f0fdf4;border-radius:10px;text-align:center">
+      <p style="margin:0;font-size:14px;color:#166534">Hai domande? <a href="${waUrl}" style="color:#25D366;font-weight:700;text-decoration:none">Scrivici su WhatsApp →</a></p>
+    </div>` : ''}
+    <p style="font-size:13px;color:#999;margin-top:20px">Hai bisogno di cancellare? <a href="${cancelUrl}" style="color:#00b5b5">Clicca qui</a> (entro ${risorsa.cancellazione_ore || 24} ore prima).</p>`
+
   try {
     await sendEmail({
-      _ctx: 'booking-conferma',
-      from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
+      _ctx: 'booking-conferma', fromName: bizName,
       to: prenotazione.cliente_email,
       subject: `Prenotazione confermata — ${risorsa.nome}`,
-      html: `
-        <div style="font-family:sans-serif;max-width:520px;margin:0 auto">
-          <h2 style="color:#1a1a2e">Prenotazione confermata ✓</h2>
-          <p>Ciao <strong>${prenotazione.cliente_nome}</strong>,</p>
-          <p>La tua prenotazione è confermata.</p>
-          <table style="border-collapse:collapse;width:100%;margin:16px 0">
-            <tr><td style="padding:8px;color:#666">Servizio</td><td style="padding:8px;font-weight:600">${risorsa.nome}</td></tr>
-            <tr style="background:#f5f5f5"><td style="padding:8px;color:#666">Quando</td><td style="padding:8px;font-weight:600">${quando}</td></tr>
-            <tr><td style="padding:8px;color:#666">Persone</td><td style="padding:8px;font-weight:600">${prenotazione.n_persone}</td></tr>
-            ${prenotazione.importo_totale > 0 ? `<tr style="background:#f5f5f5"><td style="padding:8px;color:#666">Importo</td><td style="padding:8px;font-weight:600">€${prenotazione.importo_totale}</td></tr>` : ''}
-          </table>
-          ${prenotazione.note_cliente ? `<p style="color:#666;font-size:14px">Note: ${prenotazione.note_cliente}</p>` : ''}
-          ${waUrl ? `
-          <div style="margin:20px 0;padding:14px 18px;background:#f0fdf4;border-radius:10px;text-align:center">
-            <p style="margin:0;font-size:14px;color:#166534">
-              Hai domande?
-              <a href="${waUrl}" style="color:#25D366;font-weight:700;text-decoration:none">Scrivici su WhatsApp →</a>
-            </p>
-          </div>` : ''}
-          <hr style="border:none;border-top:1px solid #eee;margin:24px 0" />
-          <p style="font-size:13px;color:#999">
-            Hai bisogno di cancellare?
-            <a href="${cancelUrl}" style="color:#00b5b5">Clicca qui</a>
-            (entro ${risorsa.cancellazione_ore || 24} ore prima).
-          </p>
-        </div>
-      `,
+      html: guestEmailTemplate({
+        entityName: bizName, title: 'Prenotazione confermata ✓',
+        intro: `Ciao <strong>${prenotazione.cliente_nome}</strong>, la tua prenotazione è confermata.`,
+        rows, bodyHtml, legale, privacyUrl,
+      }),
     })
   } catch (e) {
     console.error('[booking] email conferma fallita:', e.message)

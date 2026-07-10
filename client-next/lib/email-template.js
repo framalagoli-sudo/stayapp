@@ -23,7 +23,8 @@ export function legalFooterHtml({ entityName, legale, privacyUrl } = {}) {
 // business, nessun riferimento a OltreNova né link all'admin (vedi regola
 // white-label). `intro` è HTML libero; `rows` opzionale per i dettagli.
 // `legale`/`privacyUrl` → footer conforme (identificazione + privacy).
-export function guestEmailTemplate({ entityName, title, intro, rows = [], legale, privacyUrl }) {
+// `bodyHtml` → slot HTML libero DOPO le rows (tabelle ricche, pulsanti, ecc.).
+export function guestEmailTemplate({ entityName, title, intro, rows = [], bodyHtml, legale, privacyUrl }) {
   return `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f5f5f5;font-family:Inter,sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:40px 20px">
   <table width="600" cellpadding="0" cellspacing="0" style="margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
@@ -39,6 +40,7 @@ export function guestEmailTemplate({ entityName, title, intro, rows = [], legale
           <td style="padding:10px 0 10px 16px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#1a1a2e;line-height:1.6">${r.value}</td>
         </tr>`).join('')}
       </table>` : ''}
+      ${bodyHtml || ''}
     </td></tr>
     <tr><td style="padding:18px 36px;background:#f9f9fb;border-top:1px solid #f0f0f0;font-size:11px;color:#999;line-height:1.7">
       ${legalFooterHtml({ entityName, legale, privacyUrl })}
