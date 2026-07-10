@@ -17,7 +17,7 @@ export async function POST(request) {
       if (prop?.azienda_id) sendWebhooks(prop.azienda_id, 'nuova_richiesta', { richiesta_id: data.id, property_id, tipo: type, messaggio: message })
       if (!prop?.email || !process.env.RESEND_API_KEY) return
       sendEmail({
-        _ctx: 'richiesta',
+        _ctx: 'richiesta', fromName: prop.name,
         from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
         to: prop.email,
         subject: `[${prop.name}] Nuova richiesta: ${type}`,

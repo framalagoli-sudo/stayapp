@@ -26,7 +26,7 @@ export async function POST(request) {
 
     if (process.env.RESEND_API_KEY) {
       await sendEmail({
-        _ctx: 'survey',
+        _ctx: 'survey', fromName: business,
         from: (process.env.RESEND_FROM ?? '').trim(),
         to: email.trim(),
         subject: `Come valuteresti la tua esperienza con ${business}?`,

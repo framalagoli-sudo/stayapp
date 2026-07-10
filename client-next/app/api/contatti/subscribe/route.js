@@ -9,7 +9,7 @@ async function sendConfirmationEmail({ email, nome, entityName, token }) {
   const appUrl = (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'
   const confirmUrl = `${appUrl}/api/guest/confirm-subscription?token=${token}`
   sendEmail({
-    _ctx: 'newsletter-subscribe',
+    _ctx: 'newsletter-subscribe', fromName: entityName,
     from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
     to: email,
     subject: `Conferma la tua iscrizione alla newsletter di ${entityName}`,

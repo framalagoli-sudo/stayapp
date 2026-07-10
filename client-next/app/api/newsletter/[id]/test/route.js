@@ -34,7 +34,7 @@ export async function POST(request, { params }) {
 
     if (!process.env.RESEND_API_KEY) return Response.json({ error: 'RESEND_API_KEY non configurata' }, { status: 500 })
     await sendEmail({
-      _ctx: 'newsletter-test',
+      _ctx: 'newsletter-test', fromName: entity?.name || 'OltreNova',
       from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
       to: test_email,
       subject: `[TEST] ${personalize(nl.subject, 'Mario') || '(senza oggetto)'}`,

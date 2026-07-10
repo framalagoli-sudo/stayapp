@@ -70,7 +70,7 @@ export async function POST(request, { params }) {
     // 1) Notifica al titolare (brand OltreNova, è piattaforma → titolare).
     if (evento.notify_owner_on_booking && ownerEmail && resendKey) {
       sendEmail({
-        _ctx: 'evento-owner',
+        _ctx: 'evento-owner', fromName: bizName,
         from, to: ownerEmail, replyTo: guest_email,
         subject: `[${bizName}] Nuova prenotazione: ${evento.title}`,
         html: emailTemplate({
@@ -94,8 +94,8 @@ export async function POST(request, { params }) {
     if (evento.send_guest_confirmation && resendKey && guest_email) {
       guest_confirmation_sent = true
       sendEmail({
-        _ctx: 'evento-guest',
-        from, to: guest_email,
+        _ctx: 'evento-guest', fromName: bizName,
+        from, to: guest_email, replyTo: ownerEmail || undefined,
         subject: `Conferma prenotazione — ${evento.title}`,
         html: guestEmailTemplate({
           entityName: bizName, title: 'Prenotazione confermata',

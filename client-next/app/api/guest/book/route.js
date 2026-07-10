@@ -47,7 +47,7 @@ export async function POST(request) {
 
     if (entityEmail && process.env.RESEND_API_KEY) {
       sendEmail({
-        _ctx: 'guest-book',
+        _ctx: 'guest-book', fromName: entityName,
         from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
         to: entityEmail, replyTo: email,
         subject: `[${entityName}] Nuova prenotazione ${typeLabel}: ${item_name || ''}`,

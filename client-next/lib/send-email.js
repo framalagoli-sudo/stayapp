@@ -9,10 +9,11 @@ import { Resend } from 'resend'
 //   [email:<ctx>] THREW → to=...             (eccezione rete/SDK)
 // Non lancia mai: i chiamati possono usarla fire-and-forget o con await senza
 // cambiare la logica di risposta. `from` default se non specificato.
+// `fromName`: nome mittente visibile (white-label) → "Nome Business <noreply@oltrenova.com>".
+// L'indirizzo resta il dominio verificato (oltrenova.com); solo l'etichetta cambia.
 export async function sendEmail(payload, ctxArg) {
-  // Il contesto può arrivare come 2° argomento o come campo `_ctx` nel payload
-  // (comodo per la migrazione inline). Viene rimosso prima dell'invio a Resend.
-  const { _ctx, ...rest } = payload || {}
+  // `_ctx` e `fromName` sono campi nostri: rimossi prima dell'invio a Resend.
+  const { _ctx, fromName, ...rest } = payload || {}
   const ctx = ctxArg || _ctx || 'email'
   const key = (process.env.RESEND_API_KEY ?? '').trim()
   const to = Array.isArray(rest.to) ? rest.to.join(',') : rest.to
@@ -20,7 +21,12 @@ export async function sendEmail(payload, ctxArg) {
     console.error(`[email:${ctx}] RESEND_API_KEY assente → non inviata a ${to}`)
     return { data: null, error: { message: 'RESEND_API_KEY assente' } }
   }
-  const from = rest.from || (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>'
+  const rawFrom = rest.from || (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>'
+  // Indirizzo email nudo (da "Nome <email>" o "email"); su questo si costruisce l'etichetta.
+  const addr = (rawFrom.match(/<([^>]+)>/)?.[1] || rawFrom).trim()
+  // Sanitizza il nome mittente: no caratteri che romperebbero l'header (", <, >, a-capo).
+  const name = typeof fromName === 'string' ? fromName.replace(/["<>\r\n]/g, '').trim() : ''
+  const from = name ? `${name} <${addr}>` : rawFrom
   try {
     const r = await new Resend(key).emails.send({ ...rest, from })
     if (r?.error) console.error(`[email:${ctx}] FALLITA → to=${to} err=`, r.error)

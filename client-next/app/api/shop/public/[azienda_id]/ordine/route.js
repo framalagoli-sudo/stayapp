@@ -78,8 +78,9 @@ export async function POST(request, { params }) {
         const righeProdotti =vociSicure.map(v =>
           `<tr><td style="padding:6px 8px;border-bottom:1px solid #eee">${v.nome}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center">${v.qty}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">€${(v.prezzo * v.qty).toFixed(2)}</td></tr>`
         ).join('')
+        const { data: azShop } = await supabaseAdmin.from('aziende').select('ragione_sociale').eq('id', azienda_id).single()
         await sendEmail({
-          _ctx: 'shop-ordine',
+          _ctx: 'shop-ordine', fromName: azShop?.ragione_sociale,
           from: (process.env.RESEND_FROM ?? '').trim() || 'noreply@oltrenova.com',
           to: email_cliente,
           subject: `Ordine #${ordine.numero} ricevuto`,

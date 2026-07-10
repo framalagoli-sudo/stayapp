@@ -45,6 +45,9 @@ export async function sendNewsletterById(id) {
   let sent = 0
   const { Resend } = await import('resend')
   const resend = new Resend((process.env.RESEND_API_KEY ?? '').trim())
+  // Mittente white-label: nome del business + indirizzo del dominio verificato.
+  const fromAddr = ((process.env.RESEND_FROM ?? '').trim().match(/<([^>]+)>/)?.[1]) || (process.env.RESEND_FROM ?? '').trim() || 'noreply@oltrenova.com'
+  const fromLine = `${(entityName || 'OltreNova').replace(/["<>\r\n]/g, '').trim()} <${fromAddr}>`
 
   for (let i = 0; i < contacts.length; i += 50) {
     const batch = contacts.slice(i, i + 50)
@@ -52,7 +55,7 @@ export async function sendNewsletterById(id) {
       const pContent = personalize(nl.content, c.nome)
       const pSubject = personalize(nl.subject, c.nome)
       return {
-        from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
+        from: fromLine,
         to: c.email,
         subject: pSubject,
         html: buildNewsletterHtml({
