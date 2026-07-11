@@ -38,6 +38,12 @@ Dove possibile ognuno ha un test in `tests/smoke/security.spec.js`.
 10. **RLS come secondo muro** (progetto architetturale, backlog).
 
 ### Il SISTEMA di monitoraggio (a strati — "sempre" senza sprechi)
+- **Strato 0 — Aggiornamento dipendenze (il "processo tipo WordPress-update").** `.github/dependabot.yml`
+  apre PR automatiche per gli aggiornamenti + quelle di **sicurezza (CVE)** se sono attivi i toggle repo
+  (Settings → Code security → Dependabot alerts + security updates). `deploy.ps1` esegue `npm audit
+  --audit-level=high` (informativo) ad ogni deploy. Impegno reale: **mergiare le PR di Dependabot** e
+  **aggiornare Next.js quando esce una patch di sicurezza** (Next ha avuto CVE gravi, es. bypass auth middleware).
+  Giudizio: non ogni finding di `npm audit` è urgente (molti sono deps di build/dev non runtime-exploitable).
 - **Strato 1 — Test deterministici in CI (0 token, ogni deploy) = spina dorsale.** `tests/smoke/security.spec.js`
   gira ad ogni `deploy.ps1`: un test per invariante (authz anon→401, IDOR cross-azienda→404, scoping,
   gating campi privati, 2FA, permessi). **Regola: ogni buco chiuso diventa un test qui → non regredisce mai.**
