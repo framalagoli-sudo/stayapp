@@ -10,6 +10,15 @@ $ErrorActionPreference = 'Stop'
 # Set-Location relativi sotto si romperebbero e .\deploy.ps1 da subfolder fallisce.
 Set-Location $PSScriptRoot
 
+# Sorveglianza vulnerabilità dipendenze (CVE). Informativo: NON blocca il deploy,
+# ma stampa high/critical così le vedi ad ogni rilascio. Fix: aggiorna il pacchetto
+# (o mergia la PR di Dependabot). Vedi SECURITY.md §0.
+Write-Host "`n=== npm audit (dipendenze — informativo) ===" -ForegroundColor Cyan
+Set-Location client-next
+npm audit --audit-level=high
+if ($LASTEXITCODE -ne 0) { Write-Host "  Vulnerabilita high/critical rilevate (vedi sopra) — valuta un aggiornamento." -ForegroundColor Yellow }
+Set-Location ..
+
 Write-Host "`n=== Git push (Railway) ===" -ForegroundColor Cyan
 git push origin main
 if ($LASTEXITCODE -ne 0) {

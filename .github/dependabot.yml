@@ -1,0 +1,41 @@
+# Aggiornamento continuo delle dipendenze (il "processo tipo WordPress-update").
+# Dependabot apre PR quando escono nuove versioni; le PR di SICUREZZA (CVE) arrivano
+# comunque, se attivo il toggle repo (Settings → Code security → Dependabot).
+# I minor/patch sono raggruppati in una sola PR (meno rumore); i major arrivano
+# separati (sono i rischiosi, si guardano uno a uno).
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/client-next"        # frontend LIVE
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels: ["dependencies"]
+    groups:
+      minori-e-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "npm"
+    directory: "/server"             # backend (freezato ma con deps)
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    labels: ["dependencies"]
+    groups:
+      minori-e-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "npm"
+    directory: "/tests"              # smoke/e2e
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 3
+    labels: ["dependencies"]
+
+  - package-ecosystem: "github-actions"   # aggiorna anche le action della CI
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels: ["dependencies"]
