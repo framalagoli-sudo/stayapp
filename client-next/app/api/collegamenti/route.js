@@ -24,6 +24,9 @@ export async function GET(request) {
     const tipo = searchParams.get('tipo')
     const entity_id = searchParams.get('entity_id')
     if (!tipo || !entity_id) return Response.json({ error: 'tipo e entity_id obbligatori' }, { status: 400 })
+    // Validazione anti filter-injection prima dell'interpolazione nella .or().
+    if (!['struttura', 'ristorante', 'attivita'].includes(tipo) || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(entity_id))
+      return Response.json({ error: 'tipo o entity_id non validi' }, { status: 400 })
 
     let linksQ = supabaseAdmin
       .from('collegamenti').select('*')

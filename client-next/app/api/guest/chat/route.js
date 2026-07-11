@@ -1,7 +1,13 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
+import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 
 export async function POST(request) {
   try {
+    // Endpoint pubblico che consuma crediti Anthropic → rate-limit anti cost-abuse.
+    const ip = getClientIp(request)
+    const rl = await rateLimit(request, { name: 'guest-chat', limit: 40, windowSec: 3600, ip })
+    if (!rl.allowed) return tooManyRequests()
+
     const { entity_tipo, entity_id, messages } = await request.json()
     if (!entity_tipo || !entity_id || !Array.isArray(messages) || messages.length === 0)
       return Response.json({ error: 'entity_tipo, entity_id, messages obbligatori' }, { status: 400 })

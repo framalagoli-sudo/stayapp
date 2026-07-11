@@ -1,4 +1,5 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
+import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { sendWebhooks } from '@/lib/send-webhooks'
 import { triggerAutomazione } from '@/lib/guest-utils'
 import { syncBookingCreate } from '@/lib/google-calendar-stub'
@@ -95,6 +96,9 @@ async function inviaEmailConferma(prenotazione, risorsa, whatsapp = null) {
 
 export async function POST(request) {
   try {
+    const ip = getClientIp(request)
+    const rl = await rateLimit(request, { name: 'booking-prenota', limit: 12, windowSec: 3600, ip })
+    if (!rl.allowed) return tooManyRequests()
     const body = await request.json()
     const { risorsa_id, data, ora_inizio, servizio,
       cliente_nome, cliente_email, cliente_telefono,

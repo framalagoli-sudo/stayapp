@@ -1,7 +1,13 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 
 export async function GET(request, { params }) {
   try {
+    // Anti brute-force dei codici gift card.
+    const ip = getClientIp(request)
+    const rl = await rateLimit(request, { name: 'loyalty-giftcard', limit: 15, windowSec: 600, ip })
+    if (!rl.allowed) return tooManyRequests()
+
     const { aziendaId } = params
     const { searchParams } = new URL(request.url)
     const codice = searchParams.get('codice')

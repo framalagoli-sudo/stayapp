@@ -47,9 +47,24 @@ test.describe('Regression sicurezza (ruolo staff)', () => {
     const { data: sess } = await anon.auth.signInWithPassword({ email, password })
     ctx.staffToken = sess.session.access_token
 
+    // admin_azienda della stessa azienda (permessi pieni) — per IDOR/escalation reali,
+    // che uno staff senza permesso non raggiunge (viene bloccato prima da enforcePermission).
+    const adminEmail = `ci-sec-admin-${Date.now()}@playwright.internal`
+    const { data: au } = await admin.auth.admin.createUser({ email: adminEmail, password, email_confirm: true })
+    ctx.adminUserId = au.user.id
+    await admin.from('profiles').upsert({ id: au.user.id, role: 'admin_azienda', azienda_id: az.id, full_name: 'CI Sec Admin' })
+    const { data: asess } = await anon.auth.signInWithPassword({ email: adminEmail, password })
+    ctx.adminToken = asess.session.access_token
+
     // un'entità di un'ALTRA azienda (per IDOR, sola lettura → 404)
     const { data: otherProp } = await admin.from('properties').select('id').neq('azienda_id', az.id).limit(1).maybeSingle()
     if (otherProp) ctx.otherEntity = { tipo: 'struttura', id: otherProp.id }
+
+    // Seconda azienda (VITTIMA) + newsletter bozza per i test IDOR cross-tenant (dati fittizi).
+    const { data: azB } = await admin.from('aziende').insert({ ragione_sociale: `${RS}-B`, require_2fa: false }).select('id').single()
+    ctx.victimAziendaId = azB?.id
+    const { data: nlB } = await admin.from('newsletters').insert({ azienda_id: azB.id, subject: 'Bozza vittima', content: 'contenuto riservato', status: 'draft' }).select('id').single()
+    ctx.victimNewsletterId = nlB?.id
 
     // entità di TEST nell'azienda fittizia (senza email/automazioni/webhook → ZERO mail reali).
     // Usata per il test form contatto, così non si notifica un titolare reale.
@@ -61,9 +76,12 @@ test.describe('Regression sicurezza (ruolo staff)', () => {
 
   test.afterAll(async () => {
     try { await admin.from('contatti').delete().eq('email', CONTACT_EMAIL) } catch {}
+    if (ctx.victimNewsletterId) { try { await admin.from('newsletters').delete().eq('id', ctx.victimNewsletterId) } catch {} }
+    if (ctx.victimAziendaId)    { try { await admin.from('aziende').delete().eq('id', ctx.victimAziendaId) } catch {} }
     if (ctx.vetrinaId)   { try { await admin.from('vetrine').delete().eq('id', ctx.vetrinaId) } catch {} } // cascade elementi
     if (ctx.testEntity)  { try { await admin.from('properties').delete().eq('id', ctx.testEntity.id) } catch {} }
     if (ctx.staffUserId) { try { await admin.auth.admin.deleteUser(ctx.staffUserId) } catch {} }
+    if (ctx.adminUserId) { try { await admin.auth.admin.deleteUser(ctx.adminUserId) } catch {} }
     if (ctx.aziendaId)   { try { await admin.from('aziende').delete().eq('id', ctx.aziendaId) } catch {} } // cascade contatti/properties
   })
 
@@ -167,5 +185,39 @@ test.describe('Regression sicurezza (ruolo staff)', () => {
     for (const el of (body.elementi || [])) {
       expect(el, 'nessun elemento pubblico deve esporre la chiave dati_privati').not.toHaveProperty('dati_privati')
     }
+  })
+
+  test('IDOR newsletter: send/test/duplicate di un\'altra azienda → 404, e non viene inviata', async ({ request }) => {
+    test.skip(!ctx.victimNewsletterId, 'fixture newsletter vittima non creata')
+    const id = ctx.victimNewsletterId
+    const send = await request.post(`${TEST_URL}/api/newsletter/${id}/send`, { headers: authH(ctx.adminToken), data: {} })
+    expect(send.status(), 'send cross-tenant deve essere 404').toBe(404)
+    const t = await request.post(`${TEST_URL}/api/newsletter/${id}/test`, { headers: authH(ctx.adminToken), data: { test_email: 'ci@playwright.internal' } })
+    expect(t.status(), 'test (leak contenuto) cross-tenant deve essere 404').toBe(404)
+    const dup = await request.post(`${TEST_URL}/api/newsletter/${id}/duplicate`, { headers: authH(ctx.adminToken), data: {} })
+    expect(dup.status(), 'duplicate cross-tenant deve essere 404').toBe(404)
+    const { data: still } = await admin.from('newsletters').select('status').eq('id', id).single()
+    expect(still?.status, 'la newsletter vittima non deve risultare inviata').not.toBe('sent')
+  })
+
+  test('escalation billing: un non-super non può auto-assegnarsi piano/moduli della propria azienda', async ({ request }) => {
+    const res = await request.patch(`${TEST_URL}/api/aziende/${ctx.aziendaId}`, {
+      headers: authH(ctx.adminToken),
+      data: { piano: 'enterprise', moduli: { struttura: true, ristorante: true, attivita: true }, active: true },
+    })
+    // La PATCH può passare (isOwner), ma i campi commerciali NON devono essere applicati.
+    const { data: az } = await admin.from('aziende').select('piano, moduli').eq('id', ctx.aziendaId).single()
+    expect(az?.piano, 'il piano non deve essere auto-assegnato da un non-super').not.toBe('enterprise')
+    expect(az?.moduli?.ristorante, 'i moduli non devono essere auto-abilitati da un non-super').not.toBe(true)
+  })
+
+  test('rate-limit: /api/public/register blocca il flood (429)', async ({ request }) => {
+    // Limite 5/ora per IP. Body vuoto → 400 dopo il rate-limit (nessun utente creato).
+    let got429 = false
+    for (let i = 0; i < 8; i++) {
+      const res = await request.post(`${TEST_URL}/api/public/register`, { data: {} })
+      if (res.status() === 429) { got429 = true; break }
+    }
+    expect(got429, 'oltre il limite, register deve rispondere 429').toBe(true)
   })
 })

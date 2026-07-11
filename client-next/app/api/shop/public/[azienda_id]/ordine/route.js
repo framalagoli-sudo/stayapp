@@ -1,10 +1,14 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
+import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { applicaLoyaltyOrdine, registraRiscatto, assegnaPuntiOrdine } from '@/lib/loyalty-helpers'
 import { sendEmail } from '@/lib/send-email'
 import { guestEmailTemplate } from '@/lib/email-template'
 
 export async function POST(request, { params }) {
   try {
+    const ip = getClientIp(request)
+    const rl = await rateLimit(request, { name: 'shop-ordine', limit: 15, windowSec: 3600, ip })
+    if (!rl.allowed) return tooManyRequests()
     const { azienda_id } = params
     const { email_cliente, nome_cliente, telefono_cliente, indirizzo, voci, note_cliente, punti_da_usare, codice_gift_card } = await request.json()
 

@@ -21,8 +21,9 @@ export async function GET(request) {
     if (searchParams.get('tag')) q = q.contains('tags', [searchParams.get('tag')])
     if (searchParams.get('newsletter') === 'true') q = q.eq('iscritto_newsletter', true)
     if (searchParams.get('search')) {
-      const s = searchParams.get('search')
-      q = q.or(`nome.ilike.%${s}%,email.ilike.%${s}%,telefono.ilike.%${s}%`)
+      // Sanitizza i metacaratteri PostgREST (,()\\*) per evitare filter-injection nella .or().
+      const s = searchParams.get('search').replace(/[,()\\*]/g, '').trim()
+      if (s) q = q.or(`nome.ilike.%${s}%,email.ilike.%${s}%,telefono.ilike.%${s}%`)
     }
     const { data, error } = await q
     if (error) return Response.json({ error: error.message }, { status: 500 })

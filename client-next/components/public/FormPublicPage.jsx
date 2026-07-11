@@ -6,6 +6,13 @@ import Turnstile from '@/components/Turnstile'
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').trim()
 
+// Sicurezza: solo http(s)/mailto/tel/path interni; blocca javascript:/data: (XSS da privacy_url).
+function safeUrl(u) {
+  if (typeof u !== 'string') return '#'
+  const t = u.trim()
+  return (/^https?:\/\//i.test(t) || /^mailto:/i.test(t) || /^tel:/i.test(t) || t.startsWith('/')) ? t : '#'
+}
+
 function fieldVisible(campo, dati) {
   if (!campo.condizione?.campo_id) return true
   const rawVal = dati[campo.condizione.campo_id]
@@ -187,7 +194,7 @@ export default function FormPublicPage() {
                   />
                   <span>
                     {c.privacy_url ? (
-                      <a href={c.privacy_url} target="_blank" rel="noopener noreferrer" style={{ color: '#2b6cb0' }}>
+                      <a href={safeUrl(c.privacy_url)} target="_blank" rel="noopener noreferrer" style={{ color: '#2b6cb0' }}>
                         {c.label || 'Accetto il trattamento dei dati personali'}
                       </a>
                     ) : (
@@ -205,7 +212,7 @@ export default function FormPublicPage() {
                   />
                   <span>
                     {c.privacy_url ? (
-                      <a href={c.privacy_url} target="_blank" rel="noopener noreferrer" style={{ color: '#2b6cb0' }}>
+                      <a href={safeUrl(c.privacy_url)} target="_blank" rel="noopener noreferrer" style={{ color: '#2b6cb0' }}>
                         {c.label || 'Acconsento a ricevere comunicazioni commerciali'}
                       </a>
                     ) : (

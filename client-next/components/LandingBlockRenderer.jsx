@@ -10,11 +10,11 @@ import { RichText, richIsEmpty } from '@/lib/richText'
 import { t as tr } from '@/lib/i18n'
 import { getPreset, fieldOptions } from '@/lib/vetrinePresets'
 
-// Sicurezza: accetta solo URL http(s) o path interni; blocca javascript:/data: ecc.
+// Sicurezza: accetta solo http(s), mailto:, tel: o path interni; blocca javascript:/data: ecc.
 function safeUrl(u) {
   if (typeof u !== 'string') return null
   const t = u.trim()
-  return (/^https?:\/\//i.test(t) || t.startsWith('/')) ? t : null
+  return (/^https?:\/\//i.test(t) || /^mailto:/i.test(t) || /^tel:/i.test(t) || t.startsWith('/')) ? t : null
 }
 
 // Formatta un numero (separatore migliaia). I campi currency mostrano il simbolo €.
@@ -702,7 +702,9 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
   function siteHref(u) {
     if (typeof u !== 'string' || !u) return u
     const m = u.match(/^(?:\/en)?\/(?:s|r|a)\/[^/?#]+(.*)$/)
-    return m ? (linkBase + m[1]) || '/' : u
+    if (m) return (linkBase + m[1]) || '/'
+    // Esterni/altri: sanitizza (blocca javascript:/data: → XSS stored da URL salvati nei blocchi).
+    return safeUrl(u) || '#'
   }
 
   useEffect(() => {
@@ -1770,7 +1772,7 @@ function FormBuilderBlock({ token, primary, lang = 'it' }) {
               <input type="checkbox" checked={!!dati[c.id]} onChange={e => setField(c.id, e.target.checked)} required style={{ width: 16, height: 16, marginTop: 2, flexShrink: 0 }} />
               <span>
                 {c.privacy_url ? (
-                  <a href={c.privacy_url} target="_blank" rel="noopener noreferrer" style={{ color: '#2b6cb0' }}>
+                  <a href={safeUrl(c.privacy_url) || '#'} target="_blank" rel="noopener noreferrer" style={{ color: '#2b6cb0' }}>
                     {c.label || 'Accetto il trattamento dei dati personali'}
                   </a>
                 ) : (
@@ -1784,7 +1786,7 @@ function FormBuilderBlock({ token, primary, lang = 'it' }) {
               <input type="checkbox" checked={!!dati[c.id]} onChange={e => setField(c.id, e.target.checked)} style={{ width: 16, height: 16, marginTop: 2, flexShrink: 0 }} />
               <span>
                 {c.privacy_url ? (
-                  <a href={c.privacy_url} target="_blank" rel="noopener noreferrer" style={{ color: '#2b6cb0' }}>
+                  <a href={safeUrl(c.privacy_url) || '#'} target="_blank" rel="noopener noreferrer" style={{ color: '#2b6cb0' }}>
                     {c.label || 'Acconsento a ricevere comunicazioni commerciali'}
                   </a>
                 ) : (

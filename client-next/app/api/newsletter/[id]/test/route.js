@@ -1,5 +1,5 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireAuth, getProfile } from '@/lib/server-auth'
 import { buildNewsletterHtml, personalize } from '@/lib/newsletter-html'
 import { sendEmail } from '@/lib/send-email'
 
@@ -14,11 +14,16 @@ export async function POST(request, { params }) {
   try {
     const { user, response } = await requireAuth(request)
     if (response) return response
+    const profile = await getProfile(user.id)
+    if (!profile) return Response.json({ error: 'Profilo non trovato' }, { status: 403 })
 
     const { test_email } = await request.json()
     if (!test_email) return Response.json({ error: 'test_email obbligatoria' }, { status: 400 })
 
-    const { data: nl, error } = await supabaseAdmin.from('newsletters').select('*').eq('id', params.id).single()
+    // Anti-IDOR: la newsletter deve appartenere all'azienda del chiamante.
+    let nlq = supabaseAdmin.from('newsletters').select('*').eq('id', params.id)
+    if (profile.role !== 'super_admin') nlq = nlq.eq('azienda_id', profile.azienda_id)
+    const { data: nl, error } = await nlq.single()
     if (error || !nl) return Response.json({ error: 'Non trovata' }, { status: 404 })
 
     const entity = await getEntity(nl.entity_tipo, nl.entity_id)

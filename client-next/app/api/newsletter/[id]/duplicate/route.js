@@ -1,12 +1,17 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireAuth, getProfile } from '@/lib/server-auth'
 
 export async function POST(request, { params }) {
   try {
     const { user, response } = await requireAuth(request)
     if (response) return response
+    const profile = await getProfile(user.id)
+    if (!profile) return Response.json({ error: 'Profilo non trovato' }, { status: 403 })
 
-    const { data: orig, error } = await supabaseAdmin.from('newsletters').select('*').eq('id', params.id).single()
+    // Anti-IDOR: l'originale deve appartenere all'azienda del chiamante.
+    let origq = supabaseAdmin.from('newsletters').select('*').eq('id', params.id)
+    if (profile.role !== 'super_admin') origq = origq.eq('azienda_id', profile.azienda_id)
+    const { data: orig, error } = await origq.single()
     if (error || !orig) return Response.json({ error: 'Non trovata' }, { status: 404 })
 
     const { data, error: e2 } = await supabaseAdmin.from('newsletters').insert({

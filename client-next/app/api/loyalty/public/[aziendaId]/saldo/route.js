@@ -1,8 +1,14 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { getSaldo } from '@/lib/loyalty-helpers'
+import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 
 export async function GET(request, { params }) {
   try {
+    // Anti enumerazione clientela / email.
+    const ip = getClientIp(request)
+    const rl = await rateLimit(request, { name: 'loyalty-saldo', limit: 20, windowSec: 600, ip })
+    if (!rl.allowed) return tooManyRequests()
+
     const { aziendaId } = params
     const { searchParams } = new URL(request.url)
     const email = searchParams.get('email')

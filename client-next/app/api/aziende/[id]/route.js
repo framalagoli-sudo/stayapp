@@ -27,10 +27,15 @@ export async function PATCH(request, { params }) {
     if (response) return response
     const profile = await getProfile(user.id)
     if (!profile) return Response.json({ error: 'Profilo non trovato' }, { status: 403 })
+    const isSuper = profile.role === 'super_admin'
     const isOwner = profile.azienda_id === params.id
-    if (profile.role !== 'super_admin' && !isOwner) return Response.json({ error: 'Permessi insufficienti' }, { status: 403 })
+    if (!isSuper && !isOwner) return Response.json({ error: 'Permessi insufficienti' }, { status: 403 })
     const body = await request.json()
-    const allowed = ['ragione_sociale', 'partita_iva', 'codice_fiscale', 'email', 'pec', 'telefono', 'cellulare', 'indirizzo', 'citta', 'cap', 'provincia', 'rea', 'capitale_sociale', 'piano', 'moduli', 'active', 'require_2fa']
+    // Il titolare può modificare i dati anagrafici + require_2fa; piano/moduli/active
+    // (commerciale/entitlement/stato) sono riservati a super_admin (no self-upgrade/billing bypass).
+    const OWNER_FIELDS = ['ragione_sociale', 'partita_iva', 'codice_fiscale', 'email', 'pec', 'telefono', 'cellulare', 'indirizzo', 'citta', 'cap', 'provincia', 'rea', 'capitale_sociale', 'require_2fa']
+    const SUPER_FIELDS = ['piano', 'moduli', 'active']
+    const allowed = isSuper ? [...OWNER_FIELDS, ...SUPER_FIELDS] : OWNER_FIELDS
     const updates = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
     if (!Object.keys(updates).length) return Response.json({ error: 'Nessun campo da aggiornare' }, { status: 400 })
     const { data, error } = await supabaseAdmin.from('aziende').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', params.id).select().single()
