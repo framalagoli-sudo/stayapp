@@ -9,8 +9,12 @@
 - [📋 Backlog: permessi staff attività](project_backlog_staff_attivita_perm.md) — permessi staff attività sono tutto-o-niente (booleano `attivita_gestione`), non per-entità come struttura/ristorante; manca `attivita_ids` nell'editor
 - [⚠️ Residui migrazione react-router→Next](reference_migrazione_react_router_next.md) — `const [x]=useSearchParams()` crasha (usa `const x=`), `router.push(-1)` non torna (usa `router.back()`/goBack), blocchi async eventi/news invisibili (reveal dep `[blocks,eventi.length,articoli.length]`); guard smoke `public-flows.spec.js`
 - [📋 Backlog: hydration landing #425](project_backlog_hydration_landing.md) — la landing pubblica emette ~8 errori hydration React #425 (mismatch SSR/client); da indagare a parte
-- [💡 Idea: agent AI review sicurezza](project_idea_security_review_agent.md) — agent security-reviewer ON-DEMAND sul diff (non cron); da approfondire con Francesco. Guard deterministici già in security.spec.js (authz anon, scoping eventi, gating vetrine)
+- [🔒 Sistema sicurezza continuo](reference_security_audit.md) — DECISO: SECURITY.md §0 autorevole (invarianti+checklist), 4 strati (test CI/convenzione/review-diff/workflow audit), workflow `security-audit` con verifica avversariale; ogni buco chiuso → test in security.spec.js
+- [💡 Idea: agent AI review sicurezza](project_idea_security_review_agent.md) — (assorbita in reference_security_audit) agent review ON-DEMAND sul diff = Strato 3
 - [Notifiche email eventi](reference_eventi_notifiche_email.md) — prenotazione evento → event_bookings; 2 toggle per-evento (notifica titolare default ON, conferma ospite white-label default OFF); rate limit 10/h; testo guest adattivo
+- [📧 Email/Resend](reference_email_resend.md) — Resend FUNZIONA (dominio verificato, chiave send-only); invio centralizzato+osservabile in lib/send-email.js (log `[email:<ctx>]`); notifiche vanno all'email ENTITÀ non a Francesco; Gmail le mette in Spam/Promozioni
+- [✉️ Regola template email](feedback_email_templates.md) — ogni email da sendEmail + template centralizzato (guest/platform/emailTemplate/newsletter); MAI HTML inline nelle route; footer legale+privacy sulle mail cliente
+- [Session 2026-07-11 — email rifatto + AUDIT sicurezza](project_session_2026_07_11.md) — sistema email unificato/osservabile/GDPR + audit sicurezza (16 fix, sistema a strati, Dependabot); prossimo = azione GitHub di Francesco + core journey
 - [guestFetch vs apiFetch](feedback_guestfetch.md) — pagine guest usano sempre guestFetch, mai apiFetch (causa bug QR code)
 - [Traccia il dato fino alle API](feedback_traccia_dato_fino_api.md) — verificare che un valore calcolato raggiunga i fetch API
 - [Deploy corretto](feedback_deploy.md) — usare `.\deploy.ps1` dalla root, mai `npx vercel` dalla root

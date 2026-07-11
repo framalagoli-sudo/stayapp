@@ -7,7 +7,31 @@ metadata:
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
 ---
 
-## ▶️ RIPARTIRE DA QUI (10/7 mattina)
+## ▶️ RIPARTIRE DA QUI (11/7) — leggere questo
+
+**Dove siamo, in parole semplici.** Obiettivo di Francesco: rendere il prodotto "pronto per il mercato". Lui ha detto che "pronto" = **più rifinito/affidabile + sicuro**. Oggi (11/7) abbiamo fatto tutta la **SICUREZZA**. Resta l'**affidabilità del core journey**.
+
+**✅ Sicurezza — FATTA oggi** (dettaglio in [[reference_security_audit]] + `SECURITY.md §0` nel repo):
+- Audit profondo (workflow) → 18 buchi trovati e confermati → **16 corretti** e messi live → **3 test** che vigilano che non tornino.
+- Creato il sistema per monitorarla **sempre** (a strati): test automatici ad ogni deploy (gratis), + Dependabot per gli aggiornamenti, + audit AI solo quando serve.
+
+**👉 AZIONE MANUALE DI FRANCESCO (2 min, una volta):** su **GitHub → repo `stayapp` → Settings → Code security and analysis**, attivare:
+1. **Dependabot alerts** = ON
+2. **Dependabot security updates** = ON ← ti apre da solo le PR quando esce una vulnerabilità in una libreria (il "come fa WordPress").
+3. **Secret scanning + Push protection** = ON (blocca chiavi committate per sbaglio).
+   - ⚠️ Se il repo è **privato** e 3 è a pagamento (GitHub Advanced Security): NON pagare → dire a Claude "usa gitleaks" (gratis, in CI).
+- Poi il suo unico impegno continuo: **mergiare le PR di Dependabot** + **aggiornare Next.js** quando esce una patch di sicurezza.
+
+**🔭 DECISIONE aperta alla ripresa (scegliere una):**
+- (a) Continuare sulla sicurezza coi tasselli extra: **SAST in CI** (CodeQL/Semgrep, scanner codice automatico), **WAF Cloudflare** (toggle di Francesco), **Sentry** (bloccato su Next 14 → decidere Next 15 o alternativa), **agente `security-reviewer` riutilizzabile** (comando on-demand).
+- (b) **Passare al core journey** (l'altra metà del "pronto"): percorrere iscrizione→onboarding→AI builder→pubblica→prenotazioni/lead come un cliente vero, trovare gli spigoli e chiuderli. L'onboarding "Inizia qui" è il pezzo più incompleto.
+- Consiglio di Claude: fare (a) i pezzi gratis/automatici (Dependabot toggle + SAST) e poi passare a (b), che è quello che davvero rende il prodotto "usabile da solo".
+
+**Sessione 11/7 completa** in [[project_session_2026_07_11]] (include anche il sistema email rifatto).
+
+---
+
+## ▶️ (storico) RIPARTIRE DA QUI (10/7 mattina)
 Sessione 9/7 sera chiusa: cluster EVENTI + sweep migrazione react-router + copertura smoke/sicurezza + notifiche email prenotazioni. Tutto LIVE, **56/56**, committato+pushato, migrations 067+068 eseguite. Dettaglio: [[project_session_2026_07_09b]].
 
 **🔎 Francesco: verifiche a VIDEO (hard-refresh) — non coperte da smoke:**
