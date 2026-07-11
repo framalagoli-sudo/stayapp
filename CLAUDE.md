@@ -13,6 +13,7 @@ Azienda (top-level)
 └── Attività 1  → Minisito /a/:slug
 ```
 
+> **🔒 Sicurezza (invarianti, checklist route, procedure rigide)** → `SECURITY.md` §0 — LEGGERE prima di toccare route API/auth/esposizione dati. Multi-tenant + service_role = la sicurezza dipende dai controlli applicativi.
 > **Schema DB, endpoint API, note backend** → `server/CLAUDE.md` (auto-caricato quando si lavora in server/)
 > **Route frontend, JSONB structures, moduli admin/guest, pattern Next** → `client-next/CLAUDE.md` (auto-caricato quando si lavora in client-next/ — il frontend LIVE)
 > ⚠️ `client/CLAUDE.md` è il vecchio frontend Vite **dismesso**: ignorarlo, il codice live è in `client-next/`.

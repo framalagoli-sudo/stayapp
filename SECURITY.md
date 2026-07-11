@@ -1,7 +1,62 @@
 # StayApp — Sicurezza & GDPR
 
 Documento operativo. Aggiornare ad ogni cambio infrastruttura o nuova feature sensibile.
-Ultima revisione: **2026-05-21**
+Ultima revisione: **2026-07-11** (aggiunta §0 procedure rigide codice).
+
+> ⚠️ **Nota architettura:** la §2 "Sicurezza applicativa" descrive il **vecchio backend Express/Railway
+> (dismesso)**: `helmet`, CORS middleware, `express-rate-limit`, `zod`, `express.json` **non** esistono
+> più. Il backend live è **Next.js su Vercel** (route in `client-next/app/api`). Le regole vere e
+> attuali sono nella **§0 qui sotto**. Le §3-8 (GDPR, dati, incident, DPA) restano valide.
+
+---
+
+## 0. 🔒 INVARIANTI E PROCEDURE RIGIDE (codice) — LEGGERE PRIMA
+
+StayApp è **multi-tenant** e il server usa **sempre la service_role key** (bypassa la RLS di Postgres):
+**la sicurezza dipende al 100% dai controlli applicativi**. Un errore = dati di un cliente esposti a un
+altro. Questi invarianti non sono negoziabili; ogni nuova route passa la checklist.
+
+### Gli INVARIANTI (definizione finita di "sicuro")
+Dove possibile ognuno ha un test in `tests/smoke/security.spec.js`.
+1. **Isolamento multi-tenant.** Ogni route API scopa i dati per l'azienda dell'utente. Le route `[id]`
+   verificano la **proprietà** del record prima di leggerlo/mutarlo. Mai `.eq('id', params.id)` nudo su
+   dati altrui → usa `requireEntityAccess` / `requireRecordAccess`.
+2. **Auth su tutto ciò che non è esplicitamente pubblico** (`requireAuth`). Pubbliche legittime SOLO:
+   `/api/guest/**`, `/api/*/public/**`, `/api/public/**`, `/api/cron/**` (con secret), `/api/sitemap`,
+   `/api/llms`, `/api/webhooks` (bounce), auth pubbliche (signup, forgot/reset-password, me, ecc.).
+3. **Un non-super non sceglie l'azienda.** `resolveAziendaId(profile, body.azienda_id)`: solo
+   `super_admin` può indicare un `azienda_id` diverso dal proprio. Mai fidarsi di `body.azienda_id`.
+4. **Zero leak di campi sensibili** negli endpoint pubblici/guest: mai `dati_privati` (vetrine), token,
+   segreti, regole interne. (Eccezione **voluta**: `wifi_password` nella PWA ospite `/api/guest/[slug]`.)
+5. **Input sanitizzato prima dei filtri.** Input utente in filtri PostgREST (`.or/.filter/.ilike`,
+   `dati->>${key}`) → **UUID-validato o whitelistato**, mai grezzo (filter-injection).
+6. **URL/HTML sanitizzati al render.** URL → `safeUrl` (blocca `javascript:`/`data:`); HTML utente → DOMPurify.
+7. **Endpoint pubblici rate-limited** (`lib/rate-limit.js`) su ogni POST/mutation.
+8. **Cron/webhook protetti da secret** (`Authorization: Bearer ${CRON_SECRET}`).
+9. **Secret solo server-side.** `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`,
+   `CRON_SECRET` mai lato client né in una risposta.
+10. **RLS come secondo muro** (progetto architetturale, backlog).
+
+### Il SISTEMA di monitoraggio (a strati — "sempre" senza sprechi)
+- **Strato 1 — Test deterministici in CI (0 token, ogni deploy) = spina dorsale.** `tests/smoke/security.spec.js`
+  gira ad ogni `deploy.ps1`: un test per invariante (authz anon→401, IDOR cross-azienda→404, scoping,
+  gating campi privati, 2FA, permessi). **Regola: ogni buco chiuso diventa un test qui → non regredisce mai.**
+- **Strato 2 — Convenzione al momento di scrivere = questa §0 + la checklist.**
+- **Strato 3 — Review AI sul DIFF, on-demand,** quando si tocca auth/route API/esposizione dati (non tutto il codebase).
+- **Strato 4 — Audit profondo (workflow `security-audit`, raro):** fan-out multi-dimensione + verifica
+  avversariale, **solo prima di release importanti**. I confermati → fix + test (Strato 1).
+
+### CHECKLIST per OGNI nuova route API
+**Admin:** [ ] `requireAuth`/`requireEntityAccess`/`requireRecordAccess` · [ ] dati scopati per
+`azienda_id` (no `.eq('id')` nudo) · [ ] scrittura via `resolveAziendaId` · [ ] input nei filtri validato.
+**Pubblica/guest:** [ ] è davvero pubblica? · [ ] `.select()` senza campi sensibili · [ ] rate-limit +
+(form) honeypot/Turnstile · [ ] URL/HTML → `safeUrl`/DOMPurify.
+**Sempre:** [ ] nessun secret in risposta · [ ] tocchi il sensibile → review sul diff · [ ] chiudi un buco → test in `security.spec.js`.
+
+### Primitive
+`client-next/lib/server-auth.js` (requireAuth, requireEntityAccess, requireRecordAccess, resolveAziendaId,
+getEntityAziendaId, ENTITY_TABLES) · `lib/rate-limit.js` · `lib/turnstile.js` · `safeUrl` in
+`LandingBlockRenderer.jsx` · DOMPurify in `ArticoloPage.jsx` · test in `tests/smoke/security.spec.js`.
 
 ---
 
