@@ -23,10 +23,12 @@ export async function POST(request) {
       email: email.trim().toLowerCase(),
       options: { redirectTo: `${clientUrl}/admin/reset-password` },
     })
-    if (error) return Response.json({ error: error.message }, { status: 400 })
+    // Anti account-enumeration: non rivelare MAI se l'email esiste. Su qualsiasi
+    // esito (email inesistente, errore) rispondiamo ok:true e logghiamo lato server.
+    if (error) { console.warn('[forgot-password] generateLink:', error.message); return Response.json({ ok: true }) }
 
     const resetLink = data?.properties?.action_link
-    if (!resetLink) return Response.json({ error: 'Impossibile generare il link di ripristino' }, { status: 500 })
+    if (!resetLink) { console.warn('[forgot-password] nessun action_link'); return Response.json({ ok: true }) }
 
     if (process.env.RESEND_API_KEY) {
       await sendEmail({ _ctx: 'reset-password',
