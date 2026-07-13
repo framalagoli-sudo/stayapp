@@ -41,8 +41,13 @@ const TIPO_COPY = {
   collaborazione: { label: 'Brief collaborazione',     placeholder: 'Brief, dettagli, requisiti, compenso…',       titolo_nuovo: 'Nuova collaborazione', titolo_modifica: 'Modifica collaborazione', immagine: 'Immagine',                     distribuzione: null,               articolo: 'questa collaborazione' },
 }
 
+// Accetta solo URL http(s): blocca javascript:/data: negli href e nell'iframe di
+// anteprima design (il valore è digitato dall'admin → difesa in profondità).
+const safeHttp = u => /^https?:\/\//i.test(String(u || '').trim()) ? String(u).trim() : ''
+
 function toEmbedUrl(url) {
-  if (!url) return url
+  url = safeHttp(url)
+  if (!url) return ''
   // Canva: aggiunge ?embed se non già presente
   if (url.includes('canva.com/design') && !url.includes('embed')) {
     return url.includes('?') ? `${url}&embed` : `${url}?embed`
@@ -765,7 +770,7 @@ export default function PostEditorialePage() {
           {designUrl && (
             <div style={{ marginTop: 5, display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 11, color: '#bbb' }}>Per Canva: Share → Embed → copia l'URL src dell'iframe</span>
-              <a href={designUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#6366f1', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+              <a href={safeHttp(designUrl)} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#6366f1', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
                 <ExternalLink size={10} strokeWidth={2} /> Apri
               </a>
             </div>
@@ -1108,7 +1113,7 @@ export default function PostEditorialePage() {
               </span>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <a
-                  href={designUrl} target="_blank" rel="noopener noreferrer"
+                  href={safeHttp(designUrl)} target="_blank" rel="noopener noreferrer"
                   style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', background: 'rgba(255,255,255,0.1)', color: '#fff', borderRadius: 8, fontSize: 12, textDecoration: 'none', fontWeight: 600 }}
                 >
                   <ExternalLink size={12} strokeWidth={2} /> Apri in nuova tab
