@@ -1,0 +1,51 @@
+name: CI
+
+# Gate di integrità: ad ogni PR (e push su main) compila il frontend LIVE
+# (client-next). Se una dipendenza aggiornata da Dependabot rompe il build, la
+# PR diventa rossa e NON entra. È la "porta" che protegge la produzione dagli
+# aggiornamenti automatici. L'app è dynamic a runtime → il build non ha bisogno
+# dei segreti veri: bastano placeholder non-sensibili qui sotto per far girare
+# l'init dei client (Supabase) senza esplodere.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Una PR che riceve più push annulla i build vecchi in corso (risparmio minuti CI).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build client-next
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: client-next/package-lock.json
+
+      - name: Installa dipendenze (client-next)
+        run: npm ci
+        working-directory: client-next
+
+      - name: Build
+        run: npm run build
+        working-directory: client-next
+        env:
+          # Placeholder NON segreti: servono solo a far compilare. I valori veri
+          # vivono su Vercel e vengono usati a runtime, non in questo build.
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          NEXT_PUBLIC_API_URL: ""
+          NEXT_PUBLIC_APP_URL: https://www.oltrenova.com
+          NEXT_PUBLIC_STAYAPP_DOMAIN: oltrenova.com
+          # Sentry: senza auth token salta l'upload sourcemap (warn, non errore).
+          SENTRY_AUTH_TOKEN: ""
