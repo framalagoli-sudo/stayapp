@@ -1,4 +1,4 @@
-# deploy.ps1 — git push + deploy Vercel + smoke test
+# deploy.ps1 - git push + deploy Vercel + smoke test
 # Uso: .\deploy.ps1
 # Da lanciare dalla root del repo.
 
@@ -13,10 +13,10 @@ Set-Location $PSScriptRoot
 # Sorveglianza vulnerabilità dipendenze (CVE). Informativo: NON blocca il deploy,
 # ma stampa high/critical così le vedi ad ogni rilascio. Fix: aggiorna il pacchetto
 # (o mergia la PR di Dependabot). Vedi SECURITY.md §0.
-Write-Host "`n=== npm audit (dipendenze — informativo) ===" -ForegroundColor Cyan
+Write-Host "`n=== npm audit (dipendenze - informativo) ===" -ForegroundColor Cyan
 Set-Location client-next
 npm audit --audit-level=high
-if ($LASTEXITCODE -ne 0) { Write-Host "  Vulnerabilita high/critical rilevate (vedi sopra) — valuta un aggiornamento." -ForegroundColor Yellow }
+if ($LASTEXITCODE -ne 0) { Write-Host "  Vulnerabilita high/critical rilevate (vedi sopra) - valuta un aggiornamento." -ForegroundColor Yellow }
 Set-Location ..
 
 Write-Host "`n=== Git push (Railway) ===" -ForegroundColor Cyan
