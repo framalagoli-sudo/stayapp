@@ -16,16 +16,8 @@ updates:
         patterns: ["*"]
         update-types: ["minor", "patch"]
 
-  - package-ecosystem: "npm"
-    directory: "/server"             # backend (freezato ma con deps)
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 3
-    labels: ["dependencies"]
-    groups:
-      minori-e-patch:
-        patterns: ["*"]
-        update-types: ["minor", "patch"]
+  # server/ (vecchio backend Express, Railway freezato) NON è più deployato → fuori
+  # dal raggio Dependabot. Se confermato morto, va cancellato come client/.
 
   - package-ecosystem: "npm"
     directory: "/tests"              # smoke/e2e
