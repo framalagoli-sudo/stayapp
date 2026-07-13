@@ -84,8 +84,10 @@ export function collectStrings(node, prefix, out) {
   return out
 }
 
+const UNSAFE_KEY = k => k === '__proto__' || k === 'constructor' || k === 'prototype'
 function setByPath(root, path, value) {
   const segs = path.split('.')
+  if (segs.some(UNSAFE_KEY)) return // anti prototype-pollution: mai scrivere su __proto__/constructor/prototype
   let cur = root
   for (let i = 0; i < segs.length - 1; i++) {
     if (cur == null) return

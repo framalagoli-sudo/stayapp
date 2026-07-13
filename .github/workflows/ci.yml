@@ -18,6 +18,11 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Permessi minimi per il token del workflow (least privilege): al build serve
+# solo leggere il codice. Niente permessi di scrittura.
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build client-next

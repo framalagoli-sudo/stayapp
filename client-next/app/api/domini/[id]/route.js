@@ -24,7 +24,7 @@ export async function PATCH(request, { params }) {
     if (dom.tipo !== 'subdomain') return Response.json({ error: 'Solo i sottodomini possono essere rinominati qui' }, { status: 400 })
 
     const body = await request.json()
-    const raw = String(body.slug || '').trim().toLowerCase()
+    const raw = String(body.slug || '').trim().toLowerCase().slice(0, 63) // cap = label DNS, anche anti-ReDoS
     const cleanSlug = raw.replace(/[^a-z0-9-]/g, '-').replace(/^-+|-+$/g, '')
     if (!cleanSlug) return Response.json({ error: 'URL non valido: usa solo lettere, numeri e trattini' }, { status: 400 })
 

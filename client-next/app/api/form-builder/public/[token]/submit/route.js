@@ -73,7 +73,11 @@ function getClientIp(request) {
 }
 
 function sanitizeStr(val) {
-  return String(val).replace(/<[^>]*>/g, '').trim().slice(0, 10_000)
+  // strip tag in loop finché stabile: un singolo passaggio è aggirabile con tag
+  // annidati (<scri<script>pt> si ri-assembla dopo la rimozione interna).
+  let s = String(val), prev
+  do { prev = s; s = s.replace(/<[^>]*>/g, '') } while (s !== prev)
+  return s.trim().slice(0, 10_000)
 }
 
 function sanitizeDati(rawDati, campiIds) {

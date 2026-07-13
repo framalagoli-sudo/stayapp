@@ -1,9 +1,17 @@
-function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }
+function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') }
+
+// URL sicuro per attributi href/src: solo schemi benigni (blocca javascript:/data:),
+// sempre escaped (niente breakout dall'attributo). I dati sono per-tenant → non fidati.
+function safeUrl(u) {
+  const s = String(u || '').trim()
+  if (/^(https?:|mailto:|tel:)/i.test(s) || s.startsWith('/')) return esc(s)
+  return '#'
+}
 
 function nlHeader(entityName, entityLogo) {
   return `<tr><td style="background:#1a1a2e;padding:24px 36px">
     <table width="100%" cellpadding="0" cellspacing="0"><tr>
-      ${entityLogo ? `<td style="width:48px;padding-right:14px;vertical-align:middle"><img src="${entityLogo}" alt="" style="height:40px;width:40px;object-fit:contain;border-radius:8px;display:block"></td>` : ''}
+      ${entityLogo ? `<td style="width:48px;padding-right:14px;vertical-align:middle"><img src="${safeUrl(entityLogo)}" alt="" style="height:40px;width:40px;object-fit:contain;border-radius:8px;display:block"></td>` : ''}
       <td style="vertical-align:middle"><span style="font-size:20px;font-weight:700;color:#ffffff;font-family:Arial,sans-serif">${esc(entityName)}</span></td>
     </tr></table>
   </td></tr>`
@@ -26,8 +34,8 @@ function nlFooter(unsubscribeUrl, entityName, legale, privacyUrl) {
   return `<tr><td style="padding:24px 36px;background:#f9f9fb;border-top:1px solid #f0f0f0;text-align:center">
     <p style="font-size:12px;color:#aaa;font-family:Arial,sans-serif;line-height:1.7;margin:0 0 8px">
       Hai ricevuto questa email perché sei iscritto alla newsletter di <strong>${esc(entityName)}</strong>.<br>
-      <a href="${unsubscribeUrl}" style="color:#aaa;text-decoration:underline">Annulla iscrizione</a>
-      ${privacyUrl ? `<span style="color:#ddd">&nbsp;·&nbsp;</span><a href="${esc(privacyUrl)}" style="color:#aaa;text-decoration:underline">Privacy</a>` : ''}
+      <a href="${safeUrl(unsubscribeUrl)}" style="color:#aaa;text-decoration:underline">Annulla iscrizione</a>
+      ${privacyUrl ? `<span style="color:#ddd">&nbsp;·&nbsp;</span><a href="${safeUrl(privacyUrl)}" style="color:#aaa;text-decoration:underline">Privacy</a>` : ''}
       <span style="color:#ddd">&nbsp;·&nbsp;</span>
       <span style="color:#ccc">Powered by OltreNova</span>
     </p>
@@ -39,7 +47,7 @@ function ctaButton(text, url, primary) {
   if (!text || !url) return ''
   return `<table cellpadding="0" cellspacing="0" style="margin-top:24px"><tr>
     <td style="background:${primary};border-radius:8px">
-      <a href="${url}" style="display:inline-block;padding:14px 28px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;font-family:Arial,sans-serif">${esc(text)}</a>
+      <a href="${safeUrl(url)}" style="display:inline-block;padding:14px 28px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;font-family:Arial,sans-serif">${esc(text)}</a>
     </td>
   </tr></table>`
 }
