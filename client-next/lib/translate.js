@@ -84,16 +84,18 @@ export function collectStrings(node, prefix, out) {
   return out
 }
 
-const UNSAFE_KEY = k => k === '__proto__' || k === 'constructor' || k === 'prototype'
 function setByPath(root, path, value) {
   const segs = path.split('.')
-  if (segs.some(UNSAFE_KEY)) return // anti prototype-pollution: mai scrivere su __proto__/constructor/prototype
   let cur = root
   for (let i = 0; i < segs.length - 1; i++) {
     if (cur == null) return
-    cur = cur[segs[i]]
+    const key = segs[i]
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') return // anti prototype-pollution
+    cur = cur[key]
   }
-  if (cur != null) cur[segs[segs.length - 1]] = value
+  const last = segs[segs.length - 1]
+  if (last === '__proto__' || last === 'constructor' || last === 'prototype') return
+  if (cur != null) cur[last] = value
 }
 
 export function applyTranslations(obj, map) {
