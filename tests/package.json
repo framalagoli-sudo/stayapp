@@ -10,7 +10,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
-    "@supabase/supabase-js": "^2.107.0",
+    "@supabase/supabase-js": "^2.110.2",
     "dotenv": "^17.4.2"
   }
 }
