@@ -4,3 +4,9 @@ dist/
 .DS_Store
 
 .vercel
+
+# Vecchi progetti dismessi (frontend Vite + backend Express, Railway spento):
+# rimossi dal repo. Ignorati per evitare che un dev server locale ne rigeneri
+# la cache e li re-inserisca in git. Il codice vivo e' in client-next/.
+/client/
+/server/
