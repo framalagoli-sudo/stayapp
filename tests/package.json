@@ -9,7 +9,7 @@
     "test:report": "playwright show-report"
   },
   "devDependencies": {
-    "@playwright/test": "^1.44.0",
+    "@playwright/test": "^1.61.1",
     "@supabase/supabase-js": "^2.107.0",
     "dotenv": "^17.4.2"
   }
