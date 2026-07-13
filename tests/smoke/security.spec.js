@@ -220,4 +220,27 @@ test.describe('Regression sicurezza (ruolo staff)', () => {
     }
     expect(got429, 'oltre il limite, register deve rispondere 429').toBe(true)
   })
+
+  test('upload: SVG con <script> rifiutato → 400 (no stored XSS)', async ({ request }) => {
+    // Prima del fix ext/content-type venivano dal client → si caricava un .svg con
+    // <script> e si otteneva un URL pubblico che lo serviva. Ora allowlist immagini.
+    // parseUpload gira PRIMA del check property → il 400 arriva anche senza entità.
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'
+    const res = await request.post(`${TEST_URL}/api/upload/gallery`, {
+      headers: { Authorization: `Bearer ${ctx.adminToken}` },
+      multipart: { file: { name: 'x.svg', mimeType: 'image/svg+xml', buffer: Buffer.from(svg) } },
+    })
+    expect(res.status(), 'upload SVG deve essere rifiutato (400)').toBe(400)
+  })
+
+  test('upload: markup con content-type falsificato (image/png) rifiutato → 400', async ({ request }) => {
+    // File HTML che mente sul tipo (image/png): passa la allowlist MIME ma il
+    // controllo anti-spoofing sul contenuto (inizia con "<") lo blocca.
+    const html = '<!doctype html><script>alert(1)</script>'
+    const res = await request.post(`${TEST_URL}/api/upload/gallery`, {
+      headers: { Authorization: `Bearer ${ctx.adminToken}` },
+      multipart: { file: { name: 'x.png', mimeType: 'image/png', buffer: Buffer.from(html) } },
+    })
+    expect(res.status(), 'upload markup spoofato deve essere rifiutato (400)').toBe(400)
+  })
 })
