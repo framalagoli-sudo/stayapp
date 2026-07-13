@@ -1,0 +1,31 @@
+name: Dependabot auto-merge
+
+# Aggiornamenti automatici "tipo WordPress": quando Dependabot apre una PR di
+# tipo minor o patch (i sicuri), abilita l'auto-merge. La PR entra DA SOLA ma
+# solo se il gate CI ("Build client-next") è verde — se l'aggiornamento rompe
+# il build, resta rossa e ferma. I major (React, Next, Sentry, Stripe...) NON
+# sono toccati qui: si guardano a mano, uno alla volta.
+
+on: pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  automerge:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Metadati Dependabot
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Auto-merge (solo minor/patch)
+        if: steps.meta.outputs.update-type == 'version-update:semver-minor' || steps.meta.outputs.update-type == 'version-update:semver-patch'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
