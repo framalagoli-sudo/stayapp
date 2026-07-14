@@ -243,4 +243,28 @@ test.describe('Regression sicurezza (ruolo staff)', () => {
     })
     expect(res.status(), 'upload markup spoofato deve essere rifiutato (400)').toBe(400)
   })
+
+  // RLS 2° muro: il browser NON deve poter scrivere profiles/aziende (solo SELECT).
+  // Client autenticato come lo staff (JWT nel header) → gira come ruolo `authenticated`.
+  const staffDb = () => createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${ctx.staffToken}` } },
+  })
+
+  test('RLS: utente loggato può ancora leggere il PROPRIO profilo (login non rotto)', async () => {
+    const { data } = await staffDb().from('profiles').select('role').eq('id', ctx.staffUserId).single()
+    expect(data?.role, 'lo staff deve leggere il proprio profilo (serve al login)').toBe('staff')
+  })
+
+  test('RLS: utente loggato NON può auto-promuoversi super_admin (profiles UPDATE negata)', async () => {
+    await staffDb().from('profiles').update({ role: 'super_admin' }).eq('id', ctx.staffUserId)
+    const { data } = await admin.from('profiles').select('role').eq('id', ctx.staffUserId).single()
+    expect(data?.role, 'escalation client-side deve essere bloccata da RLS').toBe('staff')
+  })
+
+  test('RLS: utente loggato NON può modificare la propria azienda dal client (aziende UPDATE negata)', async () => {
+    await staffDb().from('aziende').update({ piano: 'enterprise' }).eq('id', ctx.aziendaId)
+    const { data } = await admin.from('aziende').select('piano').eq('id', ctx.aziendaId).single()
+    expect(data?.piano, 'update azienda client-side deve essere bloccata da RLS').not.toBe('enterprise')
+  })
 })
