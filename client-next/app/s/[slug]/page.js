@@ -59,9 +59,12 @@ export default async function StrutturaPage({ params, searchParams }) {
       if (homePage) homePage = await localizeEntity(homePage, 'pagina', lang)
     }
     const initialHomeBlocks = homePage?.id && Array.isArray(homePage.blocks) && homePage.blocks.length ? homePage.blocks : null
+    // Il minisito è la pagina marketing (anonima, indicizzata dai motori): non deve
+    // spedire credenziali. Rimuovo i campi wifi (li usa solo la PWA-ospite, ramo sotto).
+    const { wifi_password, wifi_name, ...safeProperty } = localized
     return (
       <>
-        <LandingStruttura property={localized} initialHomeBlocks={initialHomeBlocks} domain={searchParams?._domain || null} lang={lang} />
+        <LandingStruttura property={safeProperty} initialHomeBlocks={initialHomeBlocks} domain={searchParams?._domain || null} lang={lang} />
         <LanguageSwitcher lang={lang} />
       </>
     )
