@@ -21,4 +21,10 @@ begin;
 
   -- aziende: via la UPDATE client-side (la SELECT scoping resta)
   drop policy "aziende_update" on public.aziende;
+
+  -- properties/ristoranti: avevano UPDATE-policy scoped all'azienda (NON escalation,
+  -- ma porta di scrittura client inutile — l'app scrive solo via server). Via anche
+  -- quelle: restano le SELECT scoping. Chiude la Fase 1 dell'audit RLS.
+  drop policy "property update" on public.properties;
+  drop policy "ristoranti_update" on public.ristoranti;
 commit;

@@ -267,4 +267,16 @@ test.describe('Regression sicurezza (ruolo staff)', () => {
     const { data } = await admin.from('aziende').select('piano').eq('id', ctx.aziendaId).single()
     expect(data?.piano, 'update azienda client-side deve essere bloccata da RLS').not.toBe('enterprise')
   })
+
+  test('RLS: admin_azienda NON può scrivere le proprie properties dal client (UPDATE negata)', async () => {
+    // admin_azienda prima matchava la policy "property update" (azienda_id) → poteva
+    // scrivere le properties della propria azienda dal browser. Ora la policy è tolta.
+    const adminDb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { headers: { Authorization: `Bearer ${ctx.adminToken}` } },
+    })
+    await adminDb.from('properties').update({ name: 'HACKED-CLIENT' }).eq('id', ctx.testEntity.id)
+    const { data } = await admin.from('properties').select('name').eq('id', ctx.testEntity.id).single()
+    expect(data?.name, 'update properties client-side deve essere bloccata da RLS').not.toBe('HACKED-CLIENT')
+  })
 })
