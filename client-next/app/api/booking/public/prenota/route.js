@@ -5,6 +5,7 @@ import { triggerAutomazione } from '@/lib/guest-utils'
 import { syncBookingCreate } from '@/lib/google-calendar-stub'
 import { sendEmail } from '@/lib/send-email'
 import { guestEmailTemplate } from '@/lib/email-template'
+import { logError } from '@/lib/observability'
 import { getAziendaLegale } from '@/lib/guest-data'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -207,5 +208,5 @@ export async function POST(request) {
     }
 
     return Response.json(prenotazione, { status: 201 })
-  } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
+  } catch (e) { await logError('booking/prenota', e, { alert: true }); return Response.json({ error: e.message }, { status: 500 }) }
 }

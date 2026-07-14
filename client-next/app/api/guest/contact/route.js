@@ -4,6 +4,7 @@ import { emailTemplate } from '@/lib/email-template'
 import { triggerAutomazione } from '@/lib/guest-utils'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { verifyTurnstile } from '@/lib/turnstile'
+import { logError } from '@/lib/observability'
 
 export async function POST(request) {
   try {
@@ -72,5 +73,5 @@ export async function POST(request) {
       }).catch(() => {})
     }
     return Response.json({ ok: true })
-  } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
+  } catch (e) { await logError('guest/contact', e, { alert: true }); return Response.json({ error: e.message }, { status: 500 }) }
 }

@@ -1,5 +1,4 @@
 const { withSentryConfig } = require('@sentry/nextjs')
-const { withAxiom } = require('next-axiom')
 // next-pwa DISABILITATO: il suo SW precacheava lo shell e serviva versioni stale dopo
 // i deploy -> pagine bianche (Chrome bianco / Edge ok). Al suo posto un kill-switch SW
 // statico in public/sw.js che si auto-distrugge. La PWA installabile si potrà ri-abilitare
@@ -64,12 +63,9 @@ const nextConfig = {
 // del SDK in tutti i runtime (server/edge/client) su Vercel serverless — cosa che
 // il solo instrumentation.js non faceva. Upload source-map disattivato (niente
 // auth token necessario): vogliamo solo la cattura errori.
-// withAxiom (monitoring via next-axiom): invia i log via HTTP diretto ad Axiom,
-// senza log-drain Vercel a pagamento. No-op finché non ci sono le env
-// NEXT_PUBLIC_AXIOM_DATASET / NEXT_PUBLIC_AXIOM_TOKEN → deploy sicuro anche prima.
-module.exports = withAxiom(withSentryConfig(withPWA(nextConfig), {
+module.exports = withSentryConfig(withPWA(nextConfig), {
   org: 'oltrenova',
   project: 'javascript-nextjs',
   silent: true,
   sourcemaps: { disable: true },
-}))
+})

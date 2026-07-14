@@ -1,25 +1,29 @@
 'use client'
 import { useEffect } from 'react'
-import { useLogger, LogLevel } from 'next-axiom'
 import { usePathname } from 'next/navigation'
 
-// Error boundary globale (App Router): cattura i crash lato client, li manda ad
-// Axiom (monitoring) e mostra un fallback pulito invece della schermata di errore
-// grezza di Next. Prima non c'era nessun boundary.
+// Error boundary globale (App Router): cattura i crash lato client, mostra un
+// fallback pulito (prima c'era la schermata grezza di Next) e manda l'errore al
+// server (→ Runtime Logs di Vercel) in modo best-effort, senza bloccare nulla.
 export default function Error({ error, reset }) {
-  const log = useLogger({ source: 'error.js' })
   const pathname = usePathname()
 
   useEffect(() => {
     try {
-      log.logHttpRequest(
-        LogLevel.error,
-        error?.message || 'Errore client non gestito',
-        { host: typeof window !== 'undefined' ? window.location.href : '', path: pathname, statusCode: 500 },
-        { error: error?.name, stack: error?.stack, digest: error?.digest },
-      )
+      fetch('/api/client-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: error?.message,
+          name: error?.name,
+          stack: error?.stack,
+          digest: error?.digest,
+          path: pathname,
+        }),
+        keepalive: true,
+      }).catch(() => {})
     } catch {}
-  }, [error])
+  }, [error, pathname])
 
   return (
     <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24, textAlign: 'center', fontFamily: 'system-ui, sans-serif' }}>

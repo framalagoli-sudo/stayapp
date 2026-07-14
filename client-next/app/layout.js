@@ -1,6 +1,5 @@
 import './globals.css'
 import { headers } from 'next/headers'
-import { AxiomWebVitals } from 'next-axiom'
 import PWARegister from '@/components/PWARegister'
 
 export const metadata = {
@@ -42,7 +41,6 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         {children}
-        <AxiomWebVitals />
         <PWARegister />
       </body>
     </html>

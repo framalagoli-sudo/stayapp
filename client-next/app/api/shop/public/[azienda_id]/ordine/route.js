@@ -3,6 +3,7 @@ import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { applicaLoyaltyOrdine, registraRiscatto, assegnaPuntiOrdine } from '@/lib/loyalty-helpers'
 import { sendEmail } from '@/lib/send-email'
 import { guestEmailTemplate } from '@/lib/email-template'
+import { logError } from '@/lib/observability'
 
 export async function POST(request, { params }) {
   try {
@@ -117,5 +118,5 @@ export async function POST(request, { params }) {
     }
 
     return Response.json({ ordine, checkout_url }, { status: 201 })
-  } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
+  } catch (e) { await logError('shop/ordine', e, { alert: true }); return Response.json({ error: e.message }, { status: 500 }) }
 }
