@@ -279,4 +279,21 @@ test.describe('Regression sicurezza (ruolo staff)', () => {
     const { data } = await admin.from('properties').select('name').eq('id', ctx.testEntity.id).single()
     expect(data?.name, 'update properties client-side deve essere bloccata da RLS').not.toBe('HACKED-CLIENT')
   })
+
+  // PENTEST: un attaccante con la sola chiave anon PUBBLICA (estraibile dal bundle)
+  // non deve poter leggere/scrivere direttamente le tabelle sensibili (bypassando le API).
+  const pubDb = () => createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
+
+  test('PENTEST: chiave anon pubblica NON legge le tabelle sensibili (RLS deny-all)', async () => {
+    const pub = pubDb()
+    for (const t of ['contatti', 'newsletters', 'prenotazioni', 'form_submissions', 'profiles', 'ordini', 'preventivi']) {
+      const { data } = await pub.from(t).select('*').limit(1)
+      expect(data?.length || 0, `anon non deve leggere ${t}`).toBe(0)
+    }
+  })
+
+  test('PENTEST: chiave anon pubblica NON scrive (no spam diretto nel CRM)', async () => {
+    const { error } = await pubDb().from('contatti').insert({ nome: 'PENTEST', email: 'x@x.it', azienda_id: '00000000-0000-0000-0000-000000000000' })
+    expect(error, 'INSERT anon su contatti deve essere bloccata da RLS').not.toBeNull()
+  })
 })
