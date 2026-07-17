@@ -2,15 +2,16 @@
 import LegalInfo from './LegalInfo'
 import { t, entityBasePath } from '@/lib/i18n'
 import { isDarkColor } from '@/lib/color'
-
-const SOCIAL_LABELS = {
-  instagram:   'Instagram',
-  facebook:    'Facebook',
-  tripadvisor: 'TripAdvisor',
-  whatsapp:    'WhatsApp',
-}
+import { SocialIcon, SOCIAL_LABEL, socialKey, hasSocialIcon } from '@/lib/socialIcons'
 
 const ENTITY_PREFIX = { struttura: 's', ristorante: 'r', attivita: 'a' }
+
+// URL sicuro per href (blocca javascript:/data: da input tenant). I social/extra
+// links sono impostati dal cliente → non fidati. Restituisce '#' se non valido.
+function safeUrl(u) {
+  const s = String(u || '').trim()
+  return (/^(https?:|mailto:|tel:)/i.test(s) || s.startsWith('/')) ? s : '#'
+}
 
 export default function LandingFooter({ entity, mini, primary, heading, body, entityType, lang = 'it', domain = null }) {
   const footer = mini?.footer || {}
@@ -92,7 +93,7 @@ export default function LandingFooter({ entity, mini, primary, heading, body, en
                   </div>
                   {extraLinks.map((l, i) => (
                     <p key={i} style={{ margin: '0 0 8px' }}>
-                      <a href={l.url} target="_blank" rel="noopener noreferrer"
+                      <a href={safeUrl(l.url)} target="_blank" rel="noopener noreferrer"
                         style={{ color, textDecoration: 'none', fontSize: 13 }}>
                         {l.label}
                       </a>
@@ -105,15 +106,20 @@ export default function LandingFooter({ entity, mini, primary, heading, body, en
                   <div style={{ fontWeight: 700, fontSize: 11, color: accent, marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                     {t('follow_us', lang)}
                   </div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {socialEntries.map(([key, url]) => (
-                      <a key={key}
-                        href={key === 'whatsapp' ? `https://wa.me/${url.replace(/\D/g, '')}` : url}
-                        target="_blank" rel="noopener noreferrer"
-                        style={{ fontSize: 12, color, textDecoration: 'none', padding: '5px 12px', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 20 }}>
-                        {SOCIAL_LABELS[key] || key}
-                      </a>
-                    ))}
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    {socialEntries.map(([key, url]) => {
+                      const k = socialKey(key)
+                      const href = k === 'whatsapp' ? `https://wa.me/${String(url).replace(/\D/g, '')}` : safeUrl(url)
+                      return (
+                        <a key={key} href={href} target="_blank" rel="noopener noreferrer"
+                          aria-label={SOCIAL_LABEL[k] || k} title={SOCIAL_LABEL[k] || k}
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 38, height: 38, padding: hasSocialIcon(k) ? 0 : '0 14px', color, border: `1px solid ${color}`, borderRadius: hasSocialIcon(k) ? '50%' : 20, fontSize: 12, textDecoration: 'none', transition: 'opacity 0.2s' }}
+                          onMouseEnter={e => { e.currentTarget.style.opacity = '0.6' }}
+                          onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}>
+                          {hasSocialIcon(k) ? <SocialIcon name={k} size={18} /> : (SOCIAL_LABEL[k] || key)}
+                        </a>
+                      )
+                    })}
                   </div>
                 </div>
               )}
