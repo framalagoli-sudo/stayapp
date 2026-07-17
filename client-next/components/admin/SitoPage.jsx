@@ -171,7 +171,7 @@ export default function SitoPage({ entityTipo }) {
   const [dropNest,   setDropNest]   = useState(false)  // true = il drop nidifica (crea sottopagina)
 
   // Header/Footer config
-  const DEFAULT_HEADER = { style: 'dark', always_visible: false, scroll_behavior: 'appear', logo_in_nav: true, show_cta: false, cta_text: 'Prenota ora', cta_url: '', show_phone: false, bg_color: '' }
+  const DEFAULT_HEADER = { style: 'dark', layout: 'classic', hover: 'underline', buttons: [], always_visible: false, scroll_behavior: 'appear', logo_in_nav: true, show_cta: false, cta_text: 'Prenota ora', cta_url: '', show_phone: false, bg_color: '' }
   const DEFAULT_FOOTER = { layout: 'standard', style: 'dark', copyright: '', show_socials: true, show_description: true, show_contact: true, extra_links: [] }
   const DEFAULT_TRACKING = { meta_pixel_id: '', ga4_id: '', gtm_id: '', tiktok_pixel_id: '' }
   const DEFAULT_SEO = { seo_title: '', seo_description: '', google_site_verification: '', booking_url: '', tagline: '', show_pwa_link: true, social: { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' }, tracking_cfg: DEFAULT_TRACKING }
@@ -971,6 +971,39 @@ export default function SitoPage({ entityTipo }) {
                 )}
 
                 <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 8 }}>Disposizione logo e menu</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {[
+                      ['classic',  'Classico',  'Logo a sinistra, menu a destra'],
+                      ['centered', 'Centrato',  'Logo al centro, menu ai lati'],
+                      ['stacked',  'Impilato',  'Logo sopra, menu sotto (centrati)'],
+                    ].map(([val, lbl, desc]) => {
+                      const sel = (headerCfg.layout || 'classic') === val
+                      return (
+                        <button key={val} onClick={() => setHeaderCfg(h => ({ ...h, layout: val }))}
+                          style={{ display: 'flex', flexDirection: 'column', padding: '9px 12px', borderRadius: 8, cursor: 'pointer', textAlign: 'left',
+                            border: sel ? '2px solid #1a1a2e' : '1.5px solid #e8e8e8', background: sel ? '#f0f2ff' : '#f9f9fb' }}>
+                          <span style={{ fontSize: 13, fontWeight: sel ? 700 : 500, color: '#1a1a2e' }}>{lbl}</span>
+                          <span style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{desc}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 6 }}>Effetto al passaggio del mouse (voci menu)</label>
+                  <select value={headerCfg.hover || 'underline'}
+                    onChange={e => setHeaderCfg(h => ({ ...h, hover: e.target.value }))}
+                    style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13, background: '#fff', color: '#1a1a2e' }}>
+                    <option value="underline">Sottolineatura animata</option>
+                    <option value="highlight">Evidenziazione</option>
+                    <option value="color">Cambio colore</option>
+                    <option value="none">Nessuno</option>
+                  </select>
+                </div>
+
+                <div style={{ marginBottom: 14 }}>
                   <label style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 6 }}>Comportamento allo scroll</label>
                   <select value={headerCfg.scroll_behavior || 'appear'} disabled={headerCfg.always_visible}
                     onChange={e => setHeaderCfg(h => ({ ...h, scroll_behavior: e.target.value }))}
@@ -994,25 +1027,60 @@ export default function SitoPage({ entityTipo }) {
                     <input type="checkbox" checked={headerCfg.show_phone} onChange={e => setHeaderCfg(h => ({ ...h, show_phone: e.target.checked }))} />
                     <span><strong>Mostra telefono</strong> nel nav</span>
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13 }}>
-                    <input type="checkbox" checked={headerCfg.show_cta} onChange={e => setHeaderCfg(h => ({ ...h, show_cta: e.target.checked }))} />
-                    <span><strong>Bottone CTA</strong></span>
-                  </label>
                 </div>
 
-                {headerCfg.show_cta && (
-                  <div style={{ padding: 12, background: '#f9f9fb', borderRadius: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <input type="text" placeholder="Testo (es. Prenota ora)" value={headerCfg.cta_text}
-                      onChange={e => setHeaderCfg(h => ({ ...h, cta_text: e.target.value }))}
-                      style={{ padding: '7px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13 }} />
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'stretch' }}>
-                      <input type="text" placeholder="URL destinazione" value={headerCfg.cta_url}
-                        onChange={e => setHeaderCfg(h => ({ ...h, cta_url: e.target.value }))}
-                        style={{ flex: 1, padding: '7px 10px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13 }} />
-                      <LinkPicker links={internalLinks} onPick={url => setHeaderCfg(h => ({ ...h, cta_url: url }))} />
-                    </div>
-                  </div>
-                )}
+                {/* Bottoni in evidenza (Prenota, Offerte…) */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 6 }}>Bottoni in evidenza</label>
+                  <p style={{ fontSize: 11, color: '#999', margin: '0 0 8px' }}>Pulsanti extra nell'header (es. Prenota, Offerte). Uno o più, con forma e colore.</p>
+                  {(headerCfg.buttons || []).map((b, i) => {
+                    const upd = patch => setHeaderCfg(h => ({ ...h, buttons: h.buttons.map((x, j) => j === i ? { ...x, ...patch } : x) }))
+                    return (
+                      <div key={b.id || i} style={{ padding: 10, background: '#f9f9fb', borderRadius: 10, marginBottom: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <input type="text" placeholder="Testo (es. Prenota)" value={b.label || ''}
+                            onChange={e => upd({ label: e.target.value })}
+                            style={{ flex: 1, padding: '6px 9px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13 }} />
+                          <button onClick={() => setHeaderCfg(h => ({ ...h, buttons: h.buttons.filter((_, j) => j !== i) }))}
+                            style={{ background: '#fce8e8', border: 'none', borderRadius: 6, padding: '6px 9px', cursor: 'pointer', color: '#c00', fontSize: 12 }}>✕</button>
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'stretch' }}>
+                          <input type="text" placeholder="URL o pagina" value={b.url || ''}
+                            onChange={e => upd({ url: e.target.value })}
+                            style={{ flex: 1, padding: '6px 9px', border: '1px solid #ddd', borderRadius: 7, fontSize: 13 }} />
+                          <LinkPicker links={internalLinks} onPick={url => upd({ url })} />
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          <select value={b.shape || 'pill'} onChange={e => upd({ shape: e.target.value })}
+                            style={{ flex: 1, minWidth: 88, padding: '6px 8px', border: '1px solid #ddd', borderRadius: 7, fontSize: 12 }}>
+                            <option value="pill">Pillola</option>
+                            <option value="rounded">Arrotondato</option>
+                            <option value="square">Squadrato</option>
+                          </select>
+                          <select value={b.variant || 'solid'} onChange={e => upd({ variant: e.target.value })}
+                            style={{ flex: 1, minWidth: 88, padding: '6px 8px', border: '1px solid #ddd', borderRadius: 7, fontSize: 12 }}>
+                            <option value="solid">Pieno</option>
+                            <option value="outline">Bordo</option>
+                            <option value="text">Testo</option>
+                          </select>
+                          <select value={(b.color === 'primary' || b.color === 'secondary' || !b.color) ? (b.color || 'primary') : 'custom'}
+                            onChange={e => upd({ color: e.target.value === 'custom' ? '#1a1a2e' : e.target.value })}
+                            style={{ flex: 1, minWidth: 88, padding: '6px 8px', border: '1px solid #ddd', borderRadius: 7, fontSize: 12 }}>
+                            <option value="primary">Colore primario</option>
+                            <option value="secondary">Colore secondario</option>
+                            <option value="custom">Personalizzato</option>
+                          </select>
+                          {typeof b.color === 'string' && b.color.startsWith('#') && (
+                            <input type="color" value={b.color} onChange={e => upd({ color: e.target.value })}
+                              style={{ width: 34, height: 30, border: '1px solid #ddd', borderRadius: 6, padding: 2, cursor: 'pointer' }} />
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                  <button onClick={() => setHeaderCfg(h => ({ ...h, buttons: [...(h.buttons || []), { id: crypto.randomUUID(), label: '', url: '', shape: 'pill', variant: 'solid', color: 'primary' }] }))}
+                    style={{ ...btnAction('add'), fontSize: 11 }}>+ Aggiungi bottone</button>
+                </div>
               </div>
 
               {/* ── Footer ── */}

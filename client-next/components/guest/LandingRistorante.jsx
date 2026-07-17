@@ -9,6 +9,7 @@ import WhatsAppButton from '@/components/WhatsAppButton'
 import LandingBlockRenderer from '@/components/LandingBlockRenderer'
 import LandingFooter from '@/components/guest/LandingFooter'
 import LangToggle from '@/components/guest/LangToggle'
+import SiteNav from '@/components/guest/SiteNav'
 import { resolveSiteTheme } from '@/lib/siteTheme'
 import { entityBasePath } from '@/lib/i18n'
 
@@ -184,66 +185,9 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
         }
       `}</style>
 
-      <nav className="land-nav">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {navLogo && <img src={navLogo} alt="logo" style={{ height: logoH, objectFit: 'contain' }} />}
-          {!navLogo && <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, color: navTextColor }}>{ristorante.name}</span>}
-        </div>
-        {pagine.length > 0 && (
-          <div className="land-nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {pagine.filter(p => !p.parent_id).map(p => {
-              const subs = pagine.filter(c => c.parent_id === p.id)
-              return (
-                <div key={p.id} style={{ position: 'relative' }}
-                  onMouseEnter={() => subs.length && setOpenDropdown(p.id)}
-                  onMouseLeave={() => setOpenDropdown(null)}>
-                  <a href={`${base}/p/${p.slug}`}
-                    style={{ color: navTextColor, textDecoration: 'none', fontSize: 13, padding: '6px 12px', borderRadius: 6, display: 'block', whiteSpace: 'nowrap' }}>
-                    {p.titolo}{subs.length > 0 && <span style={{ marginLeft: 4, opacity: 0.5 }}>▾</span>}
-                  </a>
-                  {subs.length > 0 && openDropdown === p.id && (
-                    <div style={{ position: 'absolute', top: '100%', left: 0, minWidth: 180, background: '#1a1a2e', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', padding: '6px 0', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 200 }}>
-                      {subs.map(s => (
-                        <a key={s.id} href={`${base}/p/${s.slug}`}
-                          style={{ display: 'block', padding: '9px 16px', color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 13 }}>
-                          {s.titolo}
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div className="land-nav-desktop" style={{ display: 'flex', gap: 10 }}>
-            {showPwaLink && <a href={pwaUrl} style={{ padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 600, textDecoration: 'none', color: navTextColor, border: `1px solid ${navDark ? 'rgba(255,255,255,0.3)' : '#ddd'}` }}>Vedi menu</a>}
-            {bookingUrl && (
-              <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
-                style={{ padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 700, textDecoration: 'none', color: '#fff', background: primary }}>
-                Prenota
-              </a>
-            )}
-          </div>
-          <LangToggle lang={lang} color={navTextColor} />
-          {(pagine.length > 0 || showPwaLink || bookingUrl) && (
-            <button className="land-burger" onClick={() => setMobileOpen(v => !v)} aria-label="Menu">{mobileOpen ? '✕' : '☰'}</button>
-          )}
-        </div>
-      </nav>
-      {mobileOpen && (
-        <div className="land-mobile-menu">
-          {pagine.filter(p => !p.parent_id).map(p => (
-            <a key={p.id} href={`${base}/p/${p.slug}`} onClick={() => setMobileOpen(false)}
-              style={{ color: navTextColor, textDecoration: 'none', fontSize: 15, padding: '11px 4px', borderBottom: `1px solid ${navBorderColor}` }}>{p.titolo}</a>
-          ))}
-          <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
-            {showPwaLink && <a href={pwaUrl} style={{ padding: '10px 20px', borderRadius: 50, fontSize: 14, fontWeight: 600, textDecoration: 'none', color: navTextColor, border: `1px solid ${navDark ? 'rgba(255,255,255,0.3)' : '#ddd'}` }}>Vedi menu</a>}
-            {bookingUrl && <a href={bookingUrl} target="_blank" rel="noopener noreferrer" style={{ padding: '10px 20px', borderRadius: 50, fontSize: 14, fontWeight: 700, textDecoration: 'none', color: '#fff', background: primary }}>Prenota</a>}
-          </div>
-        </div>
-      )}
+      <SiteNav entity={ristorante} mini={mini} pagine={pagine} prefix="r"
+        primary={primary} secondary={theme.secondaryColor} heading={heading} lang={lang} domain={domain}
+        pwa={showPwaLink ? { url: pwaUrl, label: 'Vedi menu' } : null} bookingUrl={bookingUrl} />
 
       {homeBlocks === undefined ? null : homeBlocks ? (
         <LandingBlockRenderer
