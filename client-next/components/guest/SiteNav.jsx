@@ -160,14 +160,13 @@ export default function SiteNav({ entity, mini, pagine = [], prefix, primary, se
 
       {layout === 'centered' ? (
         <nav className="snav snav-centered">
-          <div style={{ justifySelf: 'start' }}>
+          <div className="snav-centered-spacer" />
+          <div style={{ justifySelf: 'center', display: 'flex', alignItems: 'center', gap: 20 }}>
             {hasMenu && <div className={`snav-desktop snav-h-${hover}`} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>{leftPages.map(menuLink)}</div>}
-          </div>
-          <div style={{ justifySelf: 'center' }}>{brand}</div>
-          <div style={{ justifySelf: 'end', display: 'flex', alignItems: 'center', gap: 12 }}>
+            {brand}
             {hasMenu && rightPages.length > 0 && <div className={`snav-desktop snav-h-${hover}`} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>{rightPages.map(menuLink)}</div>}
-            {actionRow}
           </div>
+          <div style={{ justifySelf: 'end' }}>{actionRow}</div>
         </nav>
       ) : layout === 'stacked' ? (
         <nav className="snav snav-stacked">
