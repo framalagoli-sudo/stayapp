@@ -30,7 +30,7 @@ function buttonStyle(b, { primary, secondary }) {
   return { ...base, color: '#fff', background: col } // solid (default)
 }
 
-export default function SiteNav({ entity, mini, pagine = [], prefix, primary, secondary, heading, lang = 'it', domain = null, pwa = null, bookingUrl = null }) {
+export default function SiteNav({ entity, mini, pagine = [], prefix, primary, secondary, heading, lang = 'it', domain = null, pwa = null, bookingUrl = null, currentSlug = null }) {
   const hdrCfg = mini?.header_cfg || mini?.header || {}
   const layout = ['classic', 'centered', 'stacked'].includes(hdrCfg.layout) ? hdrCfg.layout : 'classic'
   const hover  = ['underline', 'highlight', 'color', 'none'].includes(hdrCfg.hover) ? hdrCfg.hover : 'underline'
@@ -87,7 +87,7 @@ export default function SiteNav({ entity, mini, pagine = [], prefix, primary, se
         onMouseEnter={() => subs.length && setOpenDropdown(p.id)}
         onMouseLeave={() => setOpenDropdown(null)}>
         <a href={`${base}/p/${p.slug}`} className="snav-link"
-          style={{ color: navTextColor, textDecoration: 'none', fontSize: 13, padding: '6px 12px', borderRadius: 6, display: 'block', whiteSpace: 'nowrap' }}>
+          style={{ color: navTextColor, textDecoration: 'none', fontSize: 13, padding: '6px 12px', borderRadius: 6, display: 'block', whiteSpace: 'nowrap', fontWeight: currentSlug && p.slug === currentSlug ? 700 : 400 }}>
           {p.titolo}{subs.length > 0 && <span style={{ marginLeft: 4, opacity: 0.5 }}>▾</span>}
         </a>
         {subs.length > 0 && openDropdown === p.id && (

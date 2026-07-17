@@ -8,7 +8,6 @@ import ChatbotWidget from '@/components/ChatbotWidget'
 import WhatsAppButton from '@/components/WhatsAppButton'
 import LandingBlockRenderer from '@/components/LandingBlockRenderer'
 import LandingFooter from '@/components/guest/LandingFooter'
-import LangToggle from '@/components/guest/LangToggle'
 import SiteNav from '@/components/guest/SiteNav'
 import { resolveSiteTheme } from '@/lib/siteTheme'
 import { entityBasePath } from '@/lib/i18n'
@@ -48,11 +47,8 @@ function loadFont(key) {
 }
 
 export default function LandingAttivita({ attivita, initialHomeBlocks, domain, lang = 'it' }) {
-  const [navVisible,     setNavVisible]     = useState(true)
-  const [mobileOpen,     setMobileOpen]     = useState(false)
   const [upcomingEventi, setUpcomingEventi] = useState([])
   const [pagine,         setPagine]         = useState([])
-  const [openDropdown,   setOpenDropdown]   = useState(null)
   const [recensioni,     setRecensioni]     = useState([])
   const [homeBlocks,     setHomeBlocks]     = useState(initialHomeBlocks)
 
@@ -86,15 +82,6 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
   const social  = mini.social || {}
   const base    = entityBasePath('a', attivita.slug, domain, lang)
 
-  const hdrCfg         = mini.header_cfg || mini.header || {}
-  const navDark        = hdrCfg.style === 'dark'
-  const navLogo        = (navDark && attivita.logo_dark_url) ? attivita.logo_dark_url : attivita.logo_url
-  const logoH          = { small: 24, medium: 32, large: 48 }[mini.logo_size] || 32
-  const navAlwaysVisible = hdrCfg.always_visible === true
-  const smartNav       = hdrCfg.scroll_behavior === 'smart'
-  const navBg          = navDark ? 'rgba(18,18,32,0.93)'    : 'rgba(255,255,255,0.95)'
-  const navBorderColor = navDark ? 'rgba(255,255,255,0.08)' : '#eee'
-  const navTextColor   = navDark ? 'rgba(255,255,255,0.8)'  : '#1a1a2e'
 
   useEffect(() => {
     loadFont(theme.fontHeading)
@@ -138,25 +125,6 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
     el.setAttribute('content', content)
   }
 
-  useEffect(() => {
-    if (navAlwaysVisible) { setNavVisible(true); return }
-    let last = window.scrollY
-    function onScroll() {
-      const y = window.scrollY
-      if (smartNav) {
-        if (y < 80) setNavVisible(true)                // in cima: visibile (sopra l'hero)
-        else if (y > last + 4) setNavVisible(false)     // scroll giù: nascondi
-        else if (y < last - 4) setNavVisible(true)      // scroll su: mostra
-      } else {
-        setNavVisible(true)                              // default: sempre visibile (logo in cima)
-      }
-      last = y
-    }
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [smartNav, navAlwaysVisible])
-
   const bookingUrl = mini.booking_url || null
 
   return (
@@ -164,23 +132,8 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: ${body}; color: #1a1a2e; background: #fff; }
-        .land-nav {
-          position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-          background: ${navBg}; backdrop-filter: blur(12px);
-          border-bottom: 1px solid ${navBorderColor}; padding: 0 32px;
-          display: flex; align-items: center; justify-content: space-between; height: 64px;
-          transform: translateY(${navVisible ? '0' : '-100%'}); transition: transform 0.3s ease;
-        }
         .land-section { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
-        .land-burger { display: none; background: none; border: none; cursor: pointer; color: ${navTextColor}; font-size: 22px; line-height: 1; padding: 6px; }
-        .land-mobile-menu { position: fixed; top: 64px; left: 0; right: 0; z-index: 99; background: ${navBg}; backdrop-filter: blur(12px); border-bottom: 1px solid ${navBorderColor}; padding: 8px 16px 16px; display: flex; flex-direction: column; }
-        @media (min-width: 769px) { .land-mobile-menu { display: none !important; } }
-        @media (max-width: 768px) {
-          .land-nav { padding: 0 16px; }
-          .land-section { padding: 0 16px; }
-          .land-nav-desktop { display: none !important; }
-          .land-burger { display: flex !important; align-items: center; }
-        }
+        @media (max-width: 768px) { .land-section { padding: 0 16px; } }
       `}</style>
 
       <SiteNav entity={attivita} mini={mini} pagine={pagine} prefix="a"
