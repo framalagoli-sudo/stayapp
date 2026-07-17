@@ -160,10 +160,12 @@ export default function SiteNav({ entity, mini, pagine = [], prefix, primary, se
 
       {layout === 'centered' ? (
         <nav className="snav snav-centered">
-          <div style={{ justifySelf: 'start' }}>{menuRow || <span />}</div>
+          <div style={{ justifySelf: 'start' }}>
+            {hasMenu && <div className={`snav-desktop snav-h-${hover}`} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>{leftPages.map(menuLink)}</div>}
+          </div>
           <div style={{ justifySelf: 'center' }}>{brand}</div>
           <div style={{ justifySelf: 'end', display: 'flex', alignItems: 'center', gap: 12 }}>
-            {hasMenu && <div className={`snav-desktop snav-h-${hover}`} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>{rightPages.map(menuLink)}</div>}
+            {hasMenu && rightPages.length > 0 && <div className={`snav-desktop snav-h-${hover}`} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>{rightPages.map(menuLink)}</div>}
             {actionRow}
           </div>
         </nav>
