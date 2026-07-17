@@ -172,7 +172,7 @@ export default function SitoPage({ entityTipo }) {
 
   // Header/Footer config
   const DEFAULT_HEADER = { style: 'dark', layout: 'classic', hover: 'underline', buttons: [], always_visible: false, scroll_behavior: 'appear', logo_in_nav: true, show_cta: false, cta_text: 'Prenota ora', cta_url: '', show_phone: false, bg_color: '' }
-  const DEFAULT_FOOTER = { layout: 'standard', style: 'dark', copyright: '', show_socials: true, show_description: true, show_contact: true, extra_links: [] }
+  const DEFAULT_FOOTER = { layout: 'standard', style: 'dark', align: 'left', copyright: '', show_socials: true, show_description: true, show_contact: true, extra_links: [] }
   const DEFAULT_TRACKING = { meta_pixel_id: '', ga4_id: '', gtm_id: '', tiktok_pixel_id: '' }
   const DEFAULT_SEO = { seo_title: '', seo_description: '', google_site_verification: '', booking_url: '', tagline: '', show_pwa_link: true, social: { instagram: '', facebook: '', tripadvisor: '', whatsapp: '' }, tracking_cfg: DEFAULT_TRACKING }
   const [entityData,  setEntityData]  = useState(null)
@@ -1121,6 +1121,23 @@ export default function SitoPage({ entityTipo }) {
                         {lbl}
                       </button>
                     ))}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', marginBottom: 8 }}>Allineamento</label>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {[['left','Sinistra'],['center','Centrato']].map(([val, lbl]) => {
+                      const sel = (footerCfg.align || 'left') === val
+                      return (
+                        <button key={val} onClick={() => setFooterCfg(f => ({ ...f, align: val }))}
+                          style={{ padding: '5px 14px', borderRadius: 20, fontSize: 12, cursor: 'pointer', fontWeight: sel ? 700 : 400,
+                            border: sel ? '2px solid #1a1a2e' : '1.5px solid #e0e0e0',
+                            background: sel ? '#1a1a2e' : '#fff', color: sel ? '#fff' : '#555' }}>
+                          {lbl}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 

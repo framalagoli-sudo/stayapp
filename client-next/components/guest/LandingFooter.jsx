@@ -45,6 +45,7 @@ export default function LandingFooter({ entity, mini, primary, heading, body, en
   const hasContact    = hasAddress || hasPhone || hasEmail
   const hasLinks      = (showSocial && socialEntries.length > 0) || extraLinks.length > 0
   const isMinimal     = layout === 'minimal'
+  const centered      = (cfg.align || legacy.align) === 'center'
   const prefix        = ENTITY_PREFIX[entityType] || entityType
   const base          = entityBasePath(prefix, entity.slug, domain, lang)
 
@@ -62,7 +63,7 @@ export default function LandingFooter({ entity, mini, primary, heading, body, en
       `}</style>
       <div className="lf-wrap">
         {!isMinimal && (
-        <div className="lf-cols">
+        <div className="lf-cols" style={centered ? { display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' } : undefined}>
           {/* Brand */}
           <div>
             {brandLogo && (
@@ -118,7 +119,7 @@ export default function LandingFooter({ entity, mini, primary, heading, body, en
                   <div style={{ fontWeight: 700, fontSize: 11, color: accent, marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                     {t('follow_us', lang)}
                   </div>
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: centered ? 'center' : 'flex-start' }}>
                     {socialEntries.map(([key, url]) => {
                       const k = socialKey(key)
                       const href = k === 'whatsapp' ? `https://wa.me/${String(url).replace(/\D/g, '')}` : safeUrl(url)
@@ -141,9 +142,9 @@ export default function LandingFooter({ entity, mini, primary, heading, body, en
         )}
 
         {/* Copyright bar */}
-        <div className="lf-copy" style={{ color, opacity: 0.65 }}>
+        <div className="lf-copy" style={{ color, opacity: 0.65, ...(centered ? { flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' } : {}) }}>
           <span>{copyright}</span>
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: centered ? 'center' : 'flex-start' }}>
             <a href={`${base}/privacy`} style={{ color, textDecoration: 'none' }}>{t('privacy_policy', lang)}</a>
             <a href={`${base}/cookie`}  style={{ color, textDecoration: 'none' }}>{t('cookie_policy', lang)}</a>
           </div>
