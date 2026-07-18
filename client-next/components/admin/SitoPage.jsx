@@ -285,6 +285,18 @@ export default function SitoPage({ entityTipo }) {
     }
   }
 
+  // Crea una home vuota a blocchi (senza AI) e apre l'editor visuale.
+  // Per chi vuole costruirla a mano invece che dall'AI Site Builder.
+  async function createBlankHome() {
+    setCreating(true)
+    const res = await apiFetch('/api/pagine', {
+      method: 'POST',
+      body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, titolo: 'Home', slug: '__home__', status: 'pubblicata' }),
+    })
+    if (res?.id) router.push(`/admin/pagine/${res.id}`)
+    else { setCreating(false); load() }
+  }
+
   async function duplicatePage(p) {
     const res = await apiFetch('/api/pagine', {
       method: 'POST',
@@ -661,11 +673,18 @@ export default function SitoPage({ entityTipo }) {
                       Modifica homepage
                     </button>
                   ) : (
-                    <button onClick={() => router.push('/admin/ai-site-builder')}
-                      style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 22px', background: '#fff', color: '#1a1a2e', border: 'none', borderRadius: 9, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
-                      <Sparkles size={15} strokeWidth={2} />
-                      Crea la home
-                    </button>
+                    <>
+                      <button onClick={() => router.push('/admin/ai-site-builder')}
+                        style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 22px', background: '#fff', color: '#1a1a2e', border: 'none', borderRadius: 9, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
+                        <Sparkles size={15} strokeWidth={2} />
+                        Crea con AI
+                      </button>
+                      <button onClick={createBlankHome} disabled={creating}
+                        style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 22px', background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 9, cursor: creating ? 'default' : 'pointer', fontSize: 14, fontWeight: 700, opacity: creating ? 0.6 : 1 }}>
+                        <PenLine size={15} strokeWidth={2} />
+                        {creating ? 'Creo…' : 'Crea a mano'}
+                      </button>
+                    </>
                   )}
                   <button onClick={() => setActiveTab('impostazioni')}
                     style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 9, cursor: 'pointer', fontSize: 13 }}>
@@ -689,7 +708,7 @@ export default function SitoPage({ entityTipo }) {
               La tua home
             </div>
             <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6 }}>
-              La home è una pagina a blocchi: modificala con l'editor visuale (trascina, aggiungi sezioni, immagini). Non ne hai ancora una? Creala con l'<strong>AI Site Builder</strong>. Per aggiungere pagine extra usa il tab <strong>Pagine</strong>.
+              La home è una pagina a blocchi: modificala con l'editor visuale (trascina, aggiungi sezioni, immagini). Non ne hai ancora una? Creala con l'<strong>AI Site Builder</strong> oppure <strong>a mano</strong> partendo da una pagina vuota. Per aggiungere pagine extra usa il tab <strong>Pagine</strong>.
             </div>
           </div>
         </div>
