@@ -11,6 +11,7 @@ import {
   X, Check, ChevronRight, Send,
 } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
+import { pickAppLogo } from '@/lib/appLogo'
 import { t as tr } from '@/lib/i18n'
 import Turnstile from '@/components/Turnstile'
 import ChatbotWidget from '@/components/ChatbotWidget'
@@ -175,10 +176,11 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
   }
   function goExplore(chip) { setExploreChip(chip); switchTab('esplora') }
 
+  const appLogo = pickAppLogo(attivita, attivita.minisito)
   const headerContent = (
     <div style={{ textAlign: 'center' }}>
-      {attivita.logo_url && (
-        <img key={attivita.logo_url} src={attivita.logo_url} alt="logo"
+      {appLogo && (
+        <img key={appLogo} src={appLogo} alt="logo"
           style={{ maxHeight: 80, maxWidth: 200, objectFit: 'contain', display: 'block', margin: '0 auto 8px' }} />
       )}
       <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, fontFamily: headingFamily, color: '#fff', textShadow: '0 1px 6px rgba(0,0,0,0.35)' }}>
@@ -275,8 +277,8 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
           {/* Compact bar */}
           <div className="a-compact" style={{ maxHeight: compactBar ? 44 : 0 }}>
             <div style={{ background: primary, height: 44, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10 }}>
-              {attivita.logo_url && (
-                <img src={attivita.logo_url} alt="logo" style={{ height: 24, maxWidth: 60, objectFit: 'contain', flexShrink: 0 }} />
+              {appLogo && (
+                <img src={appLogo} alt="logo" style={{ height: 24, maxWidth: 60, objectFit: 'contain', flexShrink: 0 }} />
               )}
               <span style={{ color: '#fff', fontWeight: 700, fontFamily: headingFamily, fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {attivita.name}

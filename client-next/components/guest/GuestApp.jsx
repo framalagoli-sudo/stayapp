@@ -10,6 +10,7 @@ import {
   X, Check, ChevronRight, ArrowLeft,
 } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
+import { pickAppLogo } from '@/lib/appLogo'
 import { t as tr } from '@/lib/i18n'
 import { supabase } from '@/lib/supabase'
 import RequestForm from './RequestForm'
@@ -241,11 +242,14 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
   ].filter(Boolean)
   const activeChip = CHIPS.find(c => c.key === exploreChip) ? exploreChip : CHIPS[0]?.key
 
+  // Logo dell'app: header scuro → default logo negativo (vedi pickAppLogo).
+  const appLogo = pickAppLogo(property, property.minisito)
+
   // Full header (scrolls away inside g-scroll)
   const headerContent = (
     <div style={{ textAlign: 'center' }}>
-      {property.logo_url && (
-        <img key={property.logo_url} src={property.logo_url} alt="logo"
+      {appLogo && (
+        <img key={appLogo} src={appLogo} alt="logo"
           style={{ maxHeight: 100, maxWidth: 220, objectFit: 'contain', display: 'block', margin: '0 auto 8px' }} />
       )}
       <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, fontFamily: headingFamily, color: '#fff',
@@ -334,8 +338,8 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
               background: primary,
               height: 44, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10,
             }}>
-              {property.logo_url && (
-                <img src={property.logo_url} alt="logo"
+              {appLogo && (
+                <img src={appLogo} alt="logo"
                   style={{ height: 24, maxWidth: 60, objectFit: 'contain', flexShrink: 0 }} />
               )}
               <span style={{ color: '#fff', fontWeight: 700, fontFamily: headingFamily, fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

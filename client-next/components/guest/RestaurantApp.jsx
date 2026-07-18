@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import MenuTab from '@/components/MenuTab'
 import { guestFetch } from '@/lib/api'
+import { pickAppLogo } from '@/lib/appLogo'
 import { t as tr } from '@/lib/i18n'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import ChatChoice from '@/components/ChatChoice'
@@ -188,10 +189,11 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
   }
   function goExplore(chip) { setExploreChip(chip); switchTab('esplora') }
 
+  const appLogo = pickAppLogo(ristorante, ristorante.minisito)
   const headerContent = (
     <div style={{ textAlign: 'center' }}>
-      {ristorante.logo_url && (
-        <img key={ristorante.logo_url} src={ristorante.logo_url} alt="logo"
+      {appLogo && (
+        <img key={appLogo} src={appLogo} alt="logo"
           style={{ maxHeight: 80, maxWidth: 200, objectFit: 'contain', display: 'block', margin: '0 auto 8px' }} />
       )}
       <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, fontFamily: headingFamily, color: '#fff', textShadow: '0 1px 6px rgba(0,0,0,0.35)' }}>
@@ -291,8 +293,8 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
           {/* Compact bar */}
           <div className="r-compact" style={{ maxHeight: compactBar ? 44 : 0 }}>
             <div style={{ background: primary, height: 44, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10 }}>
-              {ristorante.logo_url && (
-                <img src={ristorante.logo_url} alt="logo"
+              {appLogo && (
+                <img src={appLogo} alt="logo"
                   style={{ height: 24, maxWidth: 60, objectFit: 'contain', flexShrink: 0 }} />
               )}
               <span style={{ color: '#fff', fontWeight: 700, fontFamily: headingFamily, fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

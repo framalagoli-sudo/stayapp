@@ -88,6 +88,24 @@ export default function PropertyGalleryPage() {
           <p style={hintStyle}>Versione chiara del logo, usata su footer e header scuri. Se vuota, si usa il logo normale.</p>
         </div>
 
+        {/* Logo da mostrare nell'app ospite */}
+        <div style={{ marginBottom: 24 }}>
+          <label style={lblStyle}>Logo nell'app ospite</label>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {[['auto', 'Automatico'], ['light', 'Chiaro'], ['dark', 'Scuro (negativo)']].map(([v, label]) => {
+              const active = (property.minisito?.app_logo || 'auto') === v
+              return (
+                <button key={v} type="button"
+                  onClick={() => save({ minisito: { ...(property.minisito || {}), app_logo: v } }).catch(() => {})}
+                  style={{ padding: '8px 16px', borderRadius: 8, border: `1.5px solid ${active ? '#1a1a2e' : '#ddd'}`, background: active ? '#1a1a2e' : '#fff', color: active ? '#fff' : '#555', fontSize: 13, fontWeight: active ? 700 : 500, cursor: 'pointer' }}>
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+          <p style={hintStyle}>L'header dell'app ha sfondo scuro: "Automatico" usa il logo negativo se caricato, altrimenti quello normale. Scegli "Chiaro" o "Scuro" per forzare.</p>
+        </div>
+
         {/* Dimensione logo */}
         <div style={{ marginBottom: 24 }}>
           <label style={lblStyle}>Dimensione logo (header)</label>

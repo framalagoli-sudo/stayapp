@@ -129,6 +129,23 @@ export default function RistoranteInfoPage() {
         </div>
 
         <div style={{ marginBottom: 24 }}>
+          <label style={lblStyle}>Logo nell'app ospite</label>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {[['auto', 'Automatico'], ['light', 'Chiaro'], ['dark', 'Scuro (negativo)']].map(([v, label]) => {
+              const active = (ristorante.minisito?.app_logo || 'auto') === v
+              return (
+                <button key={v} type="button"
+                  onClick={() => save({ minisito: { ...(ristorante.minisito || {}), app_logo: v } }).catch(() => {})}
+                  style={{ padding: '8px 16px', borderRadius: 8, border: `1.5px solid ${active ? '#1a1a2e' : '#ddd'}`, background: active ? '#1a1a2e' : '#fff', color: active ? '#fff' : '#555', fontSize: 13, fontWeight: active ? 700 : 500, cursor: 'pointer' }}>
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+          <p style={{ margin: '6px 0 0', fontSize: 11, color: '#aaa' }}>L'header dell'app ha sfondo scuro: "Automatico" usa il logo negativo se caricato. Scegli "Chiaro" o "Scuro" per forzare.</p>
+        </div>
+
+        <div style={{ marginBottom: 24 }}>
           <label style={lblStyle}>Dimensione logo (header)</label>
           <div style={{ display: 'flex', gap: 8 }}>
             {[['small', 'Piccolo'], ['medium', 'Medio'], ['large', 'Grande']].map(([v, label]) => {
