@@ -67,7 +67,7 @@ export default function ExcursionsTab({ excursions = [], propertyId, primary, te
 
             {bookState === 'success' ? (
               <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                <CheckCircle size={44} strokeWidth={1.5} color={primary} style={{ marginBottom: 8 }} />
+                <CheckCircle size={44} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ marginBottom: 8 }} />
                 <p style={{ fontWeight: 600, color: primary, margin: '0 0 6px' }}>Richiesta inviata!</p>
                 <p style={{ color: subText, fontSize: 13, margin: '0 0 16px' }}>Il personale la contatterà per confermare la disponibilità.</p>
                 <button onClick={closeBooking}
@@ -80,7 +80,7 @@ export default function ExcursionsTab({ excursions = [], propertyId, primary, te
                 <h3 style={{ margin: '0 0 4px', fontSize: 16, color: textColor }}>{booking.name}</h3>
                 {booking.dates && (
                   <p style={{ margin: '0 0 16px', color: subText, fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <CalendarDays size={13} strokeWidth={1.5} color={primary} />{booking.dates}
+                    <CalendarDays size={13} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{booking.dates}
                   </p>
                 )}
 
@@ -149,17 +149,17 @@ function ExcursionCard({ exc, primary, textColor, subText, cardBg, cardShadow, r
 
           {exc.duration && (
             <div style={{ fontSize: 12, color: subText, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <Clock size={12} strokeWidth={1.5} color={primary} />{exc.duration}
+              <Clock size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{exc.duration}
             </div>
           )}
           {exc.meeting_point && (
             <div style={{ fontSize: 12, color: subText, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <MapPin size={12} strokeWidth={1.5} color={primary} />{exc.meeting_point}
+              <MapPin size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{exc.meeting_point}
             </div>
           )}
           {exc.dates && (
             <div style={{ fontSize: 12, color: subText, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <CalendarDays size={12} strokeWidth={1.5} color={primary} />{exc.dates}
+              <CalendarDays size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{exc.dates}
             </div>
           )}
 

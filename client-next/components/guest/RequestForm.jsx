@@ -87,7 +87,7 @@ export default function RequestForm({ propertyId, modules = {}, primary = '#00b5
     return (
       <div>
         <div style={{ textAlign: 'center', padding: '24px 0 16px' }}>
-          <CheckCircle size={48} strokeWidth={1.5} color={primary} style={{ marginBottom: 12 }} />
+          <CheckCircle size={48} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ marginBottom: 12 }} />
           <p style={{ fontWeight: 600, color: primary, marginBottom: 4 }}>Richiesta inviata!</p>
           <p style={{ color: isDark ? '#aaa' : '#666', fontSize: 14, marginBottom: 16 }}>Il personale la riceverà a breve.</p>
           <button

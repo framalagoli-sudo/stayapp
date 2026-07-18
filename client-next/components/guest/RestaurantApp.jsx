@@ -287,7 +287,7 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
 
       <CookieBanner primaryColor={primary} privacyUrl={`/r/${slug}/privacy`} cookieUrl={`/r/${slug}/cookie`} lang={lang} />
       <InstallBanner primaryColor={primary} entityName={ristorante.name} />
-      <div className="r-shell">
+      <div className="r-shell" style={{ '--icon-color': theme.iconColor || primary }}>
         <div className="r-app" style={{ fontFamily: bodyFamily, color: textColor }}>
 
           {/* Compact bar */}
@@ -325,7 +325,7 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
                 {showArrow && CHIPS.length > 2 && (
                   <div onClick={() => chipBarRef.current?.scrollBy({ left: 120, behavior: 'smooth' })}
                     style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 44, background: `linear-gradient(to right, transparent, ${bgColor} 70%)`, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', cursor: 'pointer' }}>
-                    <ChevronRight size={18} strokeWidth={1.5} color={primary} style={{ opacity: 0.7 }} />
+                    <ChevronRight size={18} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ opacity: 0.7 }} />
                   </div>
                 )}
               </div>
@@ -364,7 +364,7 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
           <nav className="r-nav">
             {NAV_ITEMS.map(({ key, Icon, label }) => (
               <button key={key} type="button" className="r-nav-btn" onClick={() => switchTab(key)}>
-                <Icon size={22} strokeWidth={1.5} color={primary} style={{ opacity: nav === key ? 1 : 0.4 }} />
+                <Icon size={22} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ opacity: nav === key ? 1 : 0.4 }} />
                 <span style={{ fontSize: 10, fontWeight: nav === key ? 700 : 400, color: nav === key ? primary : subText, lineHeight: 1 }}>
                   {label}
                 </span>
@@ -504,7 +504,7 @@ function REsploraPage({ ristorante, activeChip, primary, textColor, subText, isD
 
   if (!activeChip) return (
     <div style={{ padding: 40, textAlign: 'center', color: subText }}>
-      <Compass size={40} strokeWidth={1.5} color={primary} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
+      <Compass size={40} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
       <p style={{ margin: 0, fontSize: 15 }}>{tr('no_content', lang)}</p>
     </div>
   )
@@ -549,7 +549,7 @@ function PrenotaTab({ ristorante, primary, textColor, subText, isDark, radius, h
   if (bookingUrl) {
     return (
       <div style={{ padding: '32px 16px', textAlign: 'center' }}>
-        <CalendarCheck size={48} strokeWidth={1.5} color={primary} style={{ margin: '0 auto 16px', display: 'block', opacity: 0.85 }} />
+        <CalendarCheck size={48} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ margin: '0 auto 16px', display: 'block', opacity: 0.85 }} />
         <h2 style={{ fontFamily: headingFamily, fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 8px' }}>{tr('book_table', lang)}</h2>
         <p style={{ fontSize: 14, color: subText, margin: '0 0 24px', lineHeight: 1.6 }}>{tr('book_choose_day', lang)}</p>
         <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
@@ -621,7 +621,7 @@ function InfoSection({ Icon, title, primary, headingFamily, textColor, children 
   return (
     <section style={{ marginBottom: 24 }}>
       <h2 style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 18, fontWeight: 700, fontFamily: headingFamily, color: textColor, margin: '0 0 12px' }}>
-        <Icon size={18} strokeWidth={1.5} color={primary} />{title}
+        <Icon size={18} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{title}
       </h2>
       {children}
     </section>
@@ -632,7 +632,7 @@ function ContactRow({ Icon, label, value, href, primary, textColor, subText, bor
   return (
     <a href={href} target="_blank" rel="noopener noreferrer"
       style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', borderBottom: `1px solid ${border}`, textDecoration: 'none' }}>
-      <Icon size={20} strokeWidth={1.5} color={primary} style={{ flexShrink: 0 }} />
+      <Icon size={20} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 11, color: subText, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>{label}</div>
         <div style={{ fontSize: 14, fontWeight: 600, color: textColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>

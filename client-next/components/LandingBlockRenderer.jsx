@@ -274,7 +274,7 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, enti
 
         {geoField && (
           <div style={{ marginBottom: 32 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: '#555', fontWeight: 600, marginBottom: 10 }}><MapPin size={16} strokeWidth={1.5} color={primary} /> {dati[geoField.key]}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: '#555', fontWeight: 600, marginBottom: 10 }}><MapPin size={16} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {dati[geoField.key]}</div>
             <iframe title="Mappa" src={`https://www.google.com/maps?q=${encodeURIComponent(dati[geoField.key])}&output=embed`} loading="lazy" style={{ width: '100%', height: 320, border: 0, borderRadius: 16 }} />
           </div>
         )}
@@ -925,7 +925,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                   return (
                     <div key={h.id} style={cardStyle}>
                       <div style={{ width: 60, height: 60, borderRadius: '50%', background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Icon size={26} strokeWidth={1.5} color={primary} />
+                        <Icon size={26} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />
                       </div>
                       <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: hlPlain ? cTitle : '#1a1a2e', lineHeight: 1.5 }}>{h.text}</p>
                     </div>
@@ -1007,7 +1007,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                       {it.image_url && <img src={it.image_url} alt={it.title} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover' }} />}
                       <div style={{ padding: 24 }}>
                         <div style={{ width: 44, height: 44, borderRadius: '50%', background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
-                          <Icon size={20} strokeWidth={1.5} color={primary} />
+                          <Icon size={20} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />
                         </div>
                         {it.title && <h3 style={{ fontFamily: heading, fontSize: 18, fontWeight: 700, color: '#1a1a2e', marginBottom: 8 }}>{it.title}</h3>}
                         {it.text && <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6 }}>{it.text}</p>}
@@ -1060,7 +1060,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                     <div key={step.id} style={{ textAlign: 'center', padding: '0 8px' }}>
                       <div style={{ position: 'relative', display: 'inline-flex', marginBottom: 20 }}>
                         <div style={{ width: 64, height: 64, borderRadius: '50%', background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Icon size={28} strokeWidth={1.5} color={primary} />
+                          <Icon size={28} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />
                         </div>
                         <div style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: '50%', background: primary, color: '#fff', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{idx + 1}</div>
                       </div>
@@ -1103,7 +1103,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                     <div key={t.id} style={{ textAlign: 'center' }}>
                       <p style={{ fontFamily: heading, fontSize: 'clamp(20px,3vw,30px)', color: cTitle, lineHeight: 1.5, fontStyle: 'italic', marginBottom: 18 }}>“{t.text}”</p>
                       <div style={{ display: 'flex', gap: 2, marginBottom: 10, justifyContent: 'center' }}>
-                        {Array.from({ length: t.stars || 5 }).map((_, i) => <Star key={i} size={16} fill={primary} color={primary} strokeWidth={0} />)}
+                        {Array.from({ length: t.stars || 5 }).map((_, i) => <Star key={i} size={16} fill={primary} color={`var(--icon-color, ${primary})`} strokeWidth={0} />)}
                       </div>
                       <div style={{ fontWeight: 700, fontSize: 15, color: cTitle }}>{t.author}</div>
                       {t.role && <div style={{ fontSize: 13, color: cBody || '#888', marginTop: 2 }}>{t.role}</div>}
@@ -1115,7 +1115,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                   {items.map(t => (
                     <div key={t.id} style={{ background: '#fff', borderRadius: 16, padding: 28, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
                       <div style={{ display: 'flex', gap: 2, marginBottom: 14 }}>
-                        {Array.from({ length: t.stars || 5 }).map((_, i) => <Star key={i} size={14} fill={primary} color={primary} strokeWidth={0} />)}
+                        {Array.from({ length: t.stars || 5 }).map((_, i) => <Star key={i} size={14} fill={primary} color={`var(--icon-color, ${primary})`} strokeWidth={0} />)}
                       </div>
                       <p style={{ fontSize: 15, color: '#444', lineHeight: 1.65, marginBottom: 16, fontStyle: 'italic' }}>"{t.text}"</p>
                       <div style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>{t.author}</div>
@@ -1274,7 +1274,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                   const Icon = serviceIcon(s.icon)
                   return (
                     <div key={s.id} style={{ background: '#fff', borderRadius: 16, padding: '24px 16px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-                      <Icon size={28} strokeWidth={1.5} color={primary} style={{ marginBottom: 10 }} />
+                      <Icon size={28} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ marginBottom: 10 }} />
                       <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 4 }}>{s.name}</div>
                       {s.hours && <div style={{ fontSize: 12, color: '#888' }}>{s.hours}</div>}
                     </div>
@@ -1303,7 +1303,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                       {item.category && <div style={{ fontSize: 11, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>{item.category}</div>}
                       <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', marginBottom: 6 }}>{item.name}</div>
                       {item.description && <p style={{ fontSize: 13, color: '#666', lineHeight: 1.5, margin: 0 }}>{item.description}</p>}
-                      {item.location && <div style={{ fontSize: 12, color: '#888', marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} strokeWidth={1.5} color={primary} />{item.location}</div>}
+                      {item.location && <div style={{ fontSize: 12, color: '#888', marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{item.location}</div>}
                     </div>
                   </div>
                 ))}
@@ -1329,9 +1329,9 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                       <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', marginBottom: 6 }}>{exc.name}</div>
                       {exc.description && <p style={{ fontSize: 13, color: '#666', lineHeight: 1.5, margin: '0 0 10px' }}>{exc.description}</p>}
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontSize: 12, color: '#888' }}>
-                        {exc.duration && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={12} strokeWidth={1.5} color={primary} />{exc.duration}</span>}
+                        {exc.duration && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{exc.duration}</span>}
                         {exc.price > 0 && <span style={{ fontWeight: 700, color: primary, fontSize: 14 }}>€{exc.price}</span>}
-                        {exc.seats && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Users size={12} strokeWidth={1.5} color={primary} />Max {exc.seats}</span>}
+                        {exc.seats && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Users size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />Max {exc.seats}</span>}
                       </div>
                     </div>
                   </div>
@@ -1458,13 +1458,13 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                     <a key={ev.id} href={`/eventi/${ev.id}?back=${encodeURIComponent(homeUrl)}`} style={{ background: '#fafafa', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', border: '1px solid #f0f0f0' }}>
                       {ev.cover_url
                         ? <img src={ev.cover_url} alt={ev.title} style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }} />
-                        : <div style={{ height: 100, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Calendar size={36} strokeWidth={1.5} color={primary} /></div>
+                        : <div style={{ height: 100, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Calendar size={36} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /></div>
                       }
                       <div style={{ padding: '16px 18px' }}>
                         <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', marginBottom: 8 }}>{ev.title}</div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}><Calendar size={12} strokeWidth={1.5} color={primary} />{dateStr}</span>
-                          {ev.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}><MapPin size={12} strokeWidth={1.5} color={primary} />{ev.location}</span>}
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}><Calendar size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{dateStr}</span>
+                          {ev.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}><MapPin size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{ev.location}</span>}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
                           <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>{ev.price > 0 ? `€${ev.price}` : tr('free', lang)}</span>
@@ -1598,7 +1598,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         .lbr-logo-item img:hover { filter: grayscale(0%) opacity(1); }
         .lbr-logo-item a { display: block; }
       `}</style>
-      <div ref={animRef}>
+      <div ref={animRef} style={{ '--icon-color': (entity?.theme?.iconColor || primary) }}>
         {blocks.map((b, i) => {
           const el = applyBlockStyle(renderBlock(b, blockInverted(b, primary, sec)), b, { primary, secondary: sec })
           return (!el || i === 0) ? el : cloneElement(el, { className: ((el.props.className || '') + ' lbr-reveal').trim() })

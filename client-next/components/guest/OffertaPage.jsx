@@ -126,13 +126,13 @@ export default function OffertaPage() {
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 28, padding: '16px 20px', background: '#f9f9fb', borderRadius: 12 }}>
             {offerta.valid_from && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#555' }}>
-                <Calendar size={16} strokeWidth={1.5} color={primary} />
+                <Calendar size={16} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />
                 <span>Dal <strong>{formatDate(offerta.valid_from)}</strong></span>
               </div>
             )}
             {offerta.expires_at && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#555' }}>
-                <Calendar size={16} strokeWidth={1.5} color={primary} />
+                <Calendar size={16} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />
                 <span>Al <strong>{formatDate(offerta.expires_at)}</strong></span>
               </div>
             )}

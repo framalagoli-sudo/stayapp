@@ -271,7 +271,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
 
       <CookieBanner primaryColor={primary} privacyUrl={`/a/${attivita.slug}/privacy`} cookieUrl={`/a/${attivita.slug}/cookie`} lang={lang} />
       <InstallBanner primaryColor={primary} entityName={attivita.name} />
-      <div className="a-shell">
+      <div className="a-shell" style={{ '--icon-color': theme.iconColor || primary }}>
         <div className="a-app" style={{ fontFamily: bodyFamily, color: textColor }}>
 
           {/* Compact bar */}
@@ -308,7 +308,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
                 {showArrow && CHIPS.length > 2 && (
                   <div onClick={() => chipBarRef.current?.scrollBy({ left: 120, behavior: 'smooth' })}
                     style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 44, background: `linear-gradient(to right, transparent, ${bgColor} 70%)`, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', cursor: 'pointer' }}>
-                    <ChevronRight size={18} strokeWidth={1.5} color={primary} style={{ opacity: 0.7 }} />
+                    <ChevronRight size={18} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ opacity: 0.7 }} />
                   </div>
                 )}
               </div>
@@ -347,7 +347,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
           <nav className="a-nav">
             {NAV_ITEMS.map(({ key, Icon, label }) => (
               <button key={key} type="button" className="a-nav-btn" onClick={() => switchTab(key)}>
-                <Icon size={22} strokeWidth={1.5} color={primary} style={{ opacity: nav === key ? 1 : 0.4 }} />
+                <Icon size={22} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ opacity: nav === key ? 1 : 0.4 }} />
                 <span style={{ fontSize: 10, fontWeight: nav === key ? 700 : 400, color: nav === key ? primary : subText, lineHeight: 1 }}>
                   {label}
                 </span>
@@ -486,7 +486,7 @@ function AEsploraPage({ attivita, activeChip, primary, textColor, subText, isDar
 
   if (!activeChip) return (
     <div style={{ padding: 40, textAlign: 'center', color: subText }}>
-      <Compass size={40} strokeWidth={1.5} color={primary} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
+      <Compass size={40} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
       <p style={{ margin: 0, fontSize: 15 }}>{tr('no_content', lang)}</p>
     </div>
   )
@@ -533,7 +533,7 @@ function AServiziContent({ attivita, primary, textColor, subText, isDark, radius
 
   if (!servizi.length) return (
     <div style={{ textAlign: 'center', color: subText, paddingTop: 32 }}>
-      <Layers size={36} strokeWidth={1.5} color={primary} style={{ display: 'block', margin: '0 auto 12px', opacity: 0.35 }} />
+      <Layers size={36} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ display: 'block', margin: '0 auto 12px', opacity: 0.35 }} />
       <p style={{ margin: 0, fontSize: 14 }}>{tr('no_services', lang)}</p>
     </div>
   )
@@ -593,7 +593,7 @@ function ARichiestaTab({ attivita, primary, textColor, subText, isDark, radius, 
       <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
         {attivita.phone && (
           <a href={`tel:${attivita.phone}`} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: radius, border: `1.5px solid ${primary}`, color: primary, fontWeight: 600, fontSize: 13, textDecoration: 'none' }}>
-            <Phone size={15} strokeWidth={1.5} color={primary} /> {tr('call', lang)}
+            <Phone size={15} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {tr('call', lang)}
           </a>
         )}
         {waUrl && (
@@ -680,7 +680,7 @@ function AInfoSection({ Icon, title, primary, headingFamily, textColor, children
   return (
     <section style={{ marginBottom: 24 }}>
       <h2 style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 18, fontWeight: 700, fontFamily: headingFamily, color: textColor, margin: '0 0 12px' }}>
-        <Icon size={18} strokeWidth={1.5} color={primary} />{title}
+        <Icon size={18} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{title}
       </h2>
       {children}
     </section>
@@ -691,7 +691,7 @@ function AContactRow({ Icon, label, value, href, primary, textColor, subText, bo
   return (
     <a href={href} target="_blank" rel="noopener noreferrer"
       style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', borderBottom: `1px solid ${border}`, textDecoration: 'none' }}>
-      <Icon size={20} strokeWidth={1.5} color={primary} style={{ flexShrink: 0 }} />
+      <Icon size={20} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 11, color: subText, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>{label}</div>
         <div style={{ fontSize: 14, fontWeight: 600, color: textColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>

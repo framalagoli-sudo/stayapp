@@ -18,7 +18,7 @@ export default function ServicesTab({ services = [], primary, textColor, subText
           boxShadow: cardShadow, textAlign: 'center',
           border: isDark ? '1px solid #3a3a5e' : 'none',
         }}>
-          {(() => { const Icon = iconLucide(s.icon); return <Icon size={34} strokeWidth={1.5} color={primary} style={{ marginBottom: 10 }} /> })()}
+          {(() => { const Icon = iconLucide(s.icon); return <Icon size={34} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ marginBottom: 10 }} /> })()}
           <div style={{ fontSize: 13, fontWeight: 700, color: textColor, marginBottom: s.description || s.hours ? 6 : 0 }}>
             {s.name}
           </div>
@@ -29,7 +29,7 @@ export default function ServicesTab({ services = [], primary, textColor, subText
           )}
           {s.hours && (
             <div style={{ fontSize: 11, color: primary, fontWeight: 600, marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
-              <Clock size={11} strokeWidth={1.5} color={primary} />{s.hours}
+              <Clock size={11} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{s.hours}
             </div>
           )}
         </div>

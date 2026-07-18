@@ -75,7 +75,7 @@ export default function NewsletterArchivePage({ entityType }) {
                 onClick={() => setSelected({ ...nl, _html: buildArchivePreview(nl, entity) })}
                 style={{ background: '#fff', borderRadius: 12, padding: '18px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16 }}>
                 <div style={{ width: 40, height: 40, borderRadius: 10, background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Mail size={18} strokeWidth={1.5} color={primary} />
+                  <Mail size={18} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

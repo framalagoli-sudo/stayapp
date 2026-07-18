@@ -101,6 +101,42 @@ export default function AttivitaThemePage() {
             </div>
           </Section>
 
+          {/* Icon color */}
+          <Section label="Colore icone">
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+              {[
+                { key: 'principale', label: 'Principale', val: '', swatch: theme.primaryColor },
+                { key: 'secondario', label: 'Secondario', val: (theme.secondaryColor || theme.primaryColor), swatch: (theme.secondaryColor || theme.primaryColor) },
+                { key: 'bianco', label: 'Bianco', val: '#ffffff', swatch: '#ffffff' },
+                { key: 'scuro', label: 'Scuro', val: '#1a1a2e', swatch: '#1a1a2e' },
+              ].map(p => {
+                const cur = (theme.iconColor || '').toLowerCase()
+                const active = p.key === 'principale' ? cur === '' : cur === p.val.toLowerCase()
+                return (
+                  <button key={p.key} type="button" onClick={() => updateTheme({ iconColor: p.val })}
+                    style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: active ? 700 : 500,
+                      border: `2px solid ${active ? theme.primaryColor : '#e0e0e0'}`, background: active ? `${theme.primaryColor}10` : '#fff' }}>
+                    <span style={{ width: 16, height: 16, borderRadius: 4, background: p.swatch, border: '1px solid rgba(0,0,0,0.15)' }} />
+                    {p.label}
+                  </button>
+                )
+              })}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <input type="color" value={theme.iconColor || theme.primaryColor}
+                onChange={e => save({ theme: { ...theme, iconColor: e.target.value } }).catch(() => {})}
+                onBlur={e => updateTheme({ iconColor: e.target.value })}
+                style={{ width: 52, height: 52, border: '1px solid #ddd', borderRadius: 10, cursor: 'pointer', padding: 3, background: 'none' }} />
+              <div>
+                <input type="text" value={theme.iconColor || ''} placeholder="Vuoto = principale"
+                  onChange={e => save({ theme: { ...theme, iconColor: e.target.value } }).catch(() => {})}
+                  onBlur={e => updateTheme({ iconColor: e.target.value })}
+                  style={{ width: 140, padding: '8px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, fontFamily: 'monospace' }} />
+                <div style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>Icone di app e sito. Picker o codice #. Vuoto = colore principale.</div>
+              </div>
+            </div>
+          </Section>
+
           <Section label="Sfondo app">
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {BG_COLORS.map(({ value, label }) => (

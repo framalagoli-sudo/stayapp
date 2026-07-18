@@ -329,7 +329,7 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
 
       <CookieBanner primaryColor={primary} privacyUrl={`/s/${slug}/privacy`} cookieUrl={`/s/${slug}/cookie`} lang={lang} />
       <InstallBanner primaryColor={primary} entityName={property.name} />
-      <div className="g-shell">
+      <div className="g-shell" style={{ '--icon-color': theme.iconColor || primary }}>
         <div className="g-app" style={{ fontFamily: bodyFamily, color: textColor, position: 'relative' }}>
 
           {/* ── Compact name bar (appears after scroll) ── */}
@@ -375,7 +375,7 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
                       display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
                       cursor: 'pointer',
                     }}>
-                    <ChevronRight size={18} strokeWidth={1.5} color={primary} style={{ opacity: 0.7 }} />
+                    <ChevronRight size={18} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ opacity: 0.7 }} />
                   </div>
                 )}
               </div>
@@ -415,7 +415,7 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
           <nav className="g-nav">
             {NAV_ITEMS.map(({ key, Icon, label }) => (
               <button key={key} type="button" className="g-nav-btn" onClick={() => switchTab(key)}>
-                <Icon size={22} strokeWidth={1.5} color={primary} style={{ opacity: nav === key ? 1 : 0.4 }} />
+                <Icon size={22} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ opacity: nav === key ? 1 : 0.4 }} />
                 <span style={{ fontSize: 10, fontWeight: nav === key ? 700 : 400, color: nav === key ? primary : subText, lineHeight: 1 }}>
                   {label}
                 </span>
@@ -581,7 +581,7 @@ function EsploraPage({ property, upcomingEventi = [], activeChip, primary, textC
   if (!activeChip) {
     return (
       <div style={{ padding: 40, textAlign: 'center', color: subText }}>
-        <Compass size={40} strokeWidth={1.5} color={primary} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
+        <Compass size={40} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
         <p style={{ margin: 0, fontSize: 15 }}>{tr('no_content', lang)}</p>
       </div>
     )
@@ -732,9 +732,9 @@ function EventiTab({ eventi, onOpen, primary, textColor, subText, isDark, radius
           <div style={{ padding: '14px 16px' }}>
             <div style={{ fontWeight: 700, fontSize: 16, color: textColor, marginBottom: 6 }}>{ev.title}</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}><Calendar size={12} strokeWidth={1.5} color={primary} /> {fmtDate(ev.date_start)}</span>
-              {ev.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}><MapPin size={12} strokeWidth={1.5} color={primary} /> {ev.location}</span>}
-              {ev.seats_total && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}><Users size={12} strokeWidth={1.5} color={primary} /> {ev.seats_total - (ev.seats_booked || 0)} {lang === 'en' ? 'seats' : 'posti'}</span>}
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}><Calendar size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {fmtDate(ev.date_start)}</span>
+              {ev.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}><MapPin size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {ev.location}</span>}
+              {ev.seats_total && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}><Users size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {ev.seats_total - (ev.seats_booked || 0)} {lang === 'en' ? 'seats' : 'posti'}</span>}
             </div>
             {ev.description && <p style={{ margin: '0 0 10px', fontSize: 13, color: subText, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ev.description}</p>}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -788,7 +788,7 @@ function EventoDetailView({ evento, onBack, primary, textColor, subText, isDark,
       {/* Back bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderBottom: `1px solid ${border}` }}>
         <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: primary, padding: 0 }}>
-          <ArrowLeft size={16} strokeWidth={2} color={primary} /> Eventi
+          <ArrowLeft size={16} strokeWidth={2} color={`var(--icon-color, ${primary})`} /> Eventi
         </button>
       </div>
 
@@ -800,9 +800,9 @@ function EventoDetailView({ evento, onBack, primary, textColor, subText, isDark,
         <h2 style={{ fontSize: 20, fontWeight: 700, color: textColor, marginBottom: 12, lineHeight: 1.3 }}>{evento.title}</h2>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><Calendar size={13} strokeWidth={1.5} color={primary} /> {fmtDate(evento.date_start)}</span>
-          {evento.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><MapPin size={13} strokeWidth={1.5} color={primary} /> {evento.location}</span>}
-          {evento.seats_total && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><Users size={13} strokeWidth={1.5} color={primary} /> {evento.seats_total - (evento.seats_booked || 0)} posti</span>}
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><Calendar size={13} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {fmtDate(evento.date_start)}</span>
+          {evento.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><MapPin size={13} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {evento.location}</span>}
+          {evento.seats_total && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><Users size={13} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {evento.seats_total - (evento.seats_booked || 0)} posti</span>}
         </div>
 
         {evento.description && <p style={{ margin: '0 0 20px', fontSize: 14, color: subText, lineHeight: 1.6 }}>{evento.description}</p>}
@@ -831,7 +831,7 @@ function EventoDetailView({ evento, onBack, primary, textColor, subText, isDark,
 
           {done ? (
             <div style={{ textAlign: 'center', padding: '16px 0' }}>
-              <Check size={36} strokeWidth={1.5} color={primary} style={{ marginBottom: 8 }} />
+              <Check size={36} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ marginBottom: 8 }} />
               <div style={{ fontWeight: 700, fontSize: 15, color: textColor, marginBottom: 4 }}>{tr('booking_sent', lang)}</div>
               <div style={{ fontSize: 13, color: subText }}>{tr('booking_sent_sub', lang)}</div>
             </div>
@@ -875,7 +875,7 @@ function InfoSection({ Icon, title, primary, headingFamily, textColor, children 
   return (
     <section style={{ marginBottom: 28 }}>
       <h2 style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 18, fontWeight: 700, fontFamily: headingFamily, color: textColor, margin: '0 0 12px' }}>
-        <Icon size={18} strokeWidth={1.5} color={primary} />
+        <Icon size={18} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />
         {title}
       </h2>
       {children}
@@ -887,7 +887,7 @@ function ContactRow({ Icon, label, value, href, primary, textColor, subText, bor
   return (
     <a href={href} target="_blank" rel="noopener noreferrer"
       style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', borderBottom: `1px solid ${border}`, textDecoration: 'none' }}>
-      <Icon size={20} strokeWidth={1.5} color={primary} style={{ flexShrink: 0 }} />
+      <Icon size={20} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 11, color: subText, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>{label}</div>
         <div style={{ fontSize: 14, fontWeight: 600, color: textColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
@@ -977,7 +977,7 @@ function ChatPage({ propertyId, propertyName, primary, textColor, subText, isDar
     return (
       <div style={{ padding: '40px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
         <div style={{ width: 64, height: 64, borderRadius: '50%', background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <MessageCircle size={28} strokeWidth={1.5} color={primary} />
+          <MessageCircle size={28} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />
         </div>
         <div style={{ textAlign: 'center' }}>
           <h2 style={{ margin: '0 0 6px', fontSize: 20, color: textColor }}>{tr('chat_reception', lang)}</h2>
