@@ -166,6 +166,16 @@ export const BLOCK_TEXT_COLOR_OPTIONS = [
   { key: 'grey',    label: 'Grigio' },
   { key: 'primary', label: 'Colore tema' },
 ]
+
+// Colore icone per-blocco (positivo/negativo o custom). 'custom' → hex in st.iconColor.
+export const BLOCK_ICON_COLOR_OPTIONS = [
+  { key: 'default',   label: 'Predefinito' },
+  { key: 'primary',   label: 'Colore tema' },
+  { key: 'secondary', label: 'Secondario' },
+  { key: 'dark',      label: 'Scuro (positivo)' },
+  { key: 'light',     label: 'Chiaro (negativo)' },
+  { key: 'custom',    label: 'Personalizzato…' },
+]
 export function textColorFor(key, primary) {
   if (key === 'dark') return '#1a1a2e'
   if (key === 'grey') return '#666'
@@ -229,6 +239,13 @@ export function applyBlockStyle(el, block, opts = {}) {
   if (blockSupportsBg(block.type)) {
     const r = resolveBlockBg(st, opts.primary, opts.secondary)
     if (r.background) { ov.background = r.background; inverted = r.inverted }
+  }
+  // Colore icone per-blocco → CSS var che le icone lucide dentro al blocco ereditano
+  // (override del colore globale del tema). Chiave preset o hex diretto.
+  if (st.iconColor && st.iconColor !== 'default') {
+    const map = { light: '#ffffff', dark: '#1a1a2e', primary: opts.primary, secondary: opts.secondary || opts.primary }
+    const c = map[st.iconColor] || (typeof st.iconColor === 'string' && st.iconColor.startsWith('#') ? st.iconColor : null)
+    if (c) ov['--icon-color'] = c
   }
   const pad = BLOCK_PADY[st.paddingY]
   const hasPad = st.paddingY && st.paddingY !== 'default' && pad != null

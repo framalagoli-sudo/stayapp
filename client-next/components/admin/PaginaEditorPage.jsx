@@ -15,7 +15,7 @@ import RichTextEditor from '@/components/admin/RichTextEditor'
 import MediaPickerButton from '@/components/admin/MediaPicker'
 import UnsplashPicker from '@/components/admin/UnsplashPicker'
 import { BLOCK_PATTERNS } from '@/lib/blockPatterns'
-import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS, BLOCK_PADY_OPTIONS, blockSupportsBg, BLOCK_TEXT_SIZE_OPTIONS, BLOCK_TEXT_COLOR_OPTIONS, blockHasText, GRID_AUTO_BLOCKS, BLOCK_COLUMNS_OPTIONS } from '@/lib/blockTypes'
+import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS, BLOCK_PADY_OPTIONS, blockSupportsBg, BLOCK_TEXT_SIZE_OPTIONS, BLOCK_TEXT_COLOR_OPTIONS, BLOCK_ICON_COLOR_OPTIONS, blockHasText, GRID_AUTO_BLOCKS, BLOCK_COLUMNS_OPTIONS } from '@/lib/blockTypes'
 
 function uid() { return crypto.randomUUID() }
 
@@ -856,6 +856,20 @@ function BlockStylePanel({ block, onChange, entityId, entityTipo }) {
             </select>
           </div>
         )}
+        <div style={{ flex: 1, minWidth: 150 }}>
+          <label style={lbl}>Colore icone</label>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <select
+              value={(typeof st.iconColor === 'string' && st.iconColor.startsWith('#')) ? 'custom' : (st.iconColor || 'default')}
+              onChange={e => set('iconColor', e.target.value === 'custom' ? '#1a1a2e' : e.target.value)} style={{ ...sel, flex: 1 }}>
+              {BLOCK_ICON_COLOR_OPTIONS.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+            </select>
+            {typeof st.iconColor === 'string' && st.iconColor.startsWith('#') && (
+              <input type="color" value={st.iconColor} onChange={e => set('iconColor', e.target.value)}
+                style={{ width: 34, height: 34, border: '1px solid #ddd', borderRadius: 7, padding: 2, cursor: 'pointer', flexShrink: 0 }} />
+            )}
+          </div>
+        </div>
       </div>
       {showBg && st.bg === 'image' && (
         <div style={{ marginTop: 12, background: '#fafafd', border: '1px solid #eee', borderRadius: 8, padding: 12 }}>
