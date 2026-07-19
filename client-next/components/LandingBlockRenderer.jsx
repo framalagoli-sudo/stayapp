@@ -47,7 +47,7 @@ function ArrowCarousel({ items, perView = 3, gap = 24, minCard = 280, maxCard = 
   if (items.length <= 1) return <div style={{ maxWidth: maxCard, margin: '0 auto' }}>{items[0]?.node}</div>
   return (
     <div style={{ position: 'relative' }}>
-      <div ref={ref} style={{ display: 'flex', gap, overflowX: 'auto', scrollSnapType: 'x mandatory', paddingBottom: 8, justifyContent: st.overflow ? 'flex-start' : 'center' }}>
+      <div ref={ref} className="lbr-carousel" style={{ display: 'flex', gap, overflowX: 'auto', scrollSnapType: 'x mandatory', justifyContent: st.overflow ? 'flex-start' : 'center' }}>
         {items.map(it => (
           <div key={it.key} style={{ flex: `0 0 calc((100% - ${gap * (perView - 1)}px) / ${perView})`, minWidth: minCard, maxWidth: maxCard, scrollSnapAlign: 'start' }}>{it.node}</div>
         ))}
@@ -1637,6 +1637,8 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
     <>
       <style>{`
         .lbr-section { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+        .lbr-carousel { scrollbar-width: none; -ms-overflow-style: none; }
+        .lbr-carousel::-webkit-scrollbar { display: none; }
         .lbr-al-left,   .lbr-al-left *   { text-align: left   !important; }
         .lbr-al-center, .lbr-al-center * { text-align: center !important; }
         .lbr-al-right,  .lbr-al-right *  { text-align: right  !important; }
