@@ -325,6 +325,30 @@ export default function SitoPage({ entityTipo }) {
     load()
   }
 
+  // Promuove una pagina a home (come "Imposta come pagina statica" di WordPress):
+  // la pagina scelta prende lo slug fisso __home__; l'eventuale home attuale
+  // "retrocede" a pagina normale con uno slug libero derivato dal titolo.
+  async function setAsHome(p) {
+    if (p.slug === '__home__') return
+    const oldHome = pagine.find(x => x.slug === '__home__')
+    const ok = window.confirm(oldHome
+      ? `Rendere "${p.titolo}" la nuova home?\nLa home attuale diventerà una pagina normale (resta accessibile dal menu).`
+      : `Rendere "${p.titolo}" la home del sito?`)
+    if (!ok) return
+    const slugify = s => (s || '').toLowerCase()
+      .replace(/[àáâ]/g, 'a').replace(/[èé]/g, 'e').replace(/[ìí]/g, 'i').replace(/[òó]/g, 'o').replace(/[ùú]/g, 'u')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+    if (oldHome) {
+      const taken = new Set(pagine.map(x => x.slug))
+      const base = slugify(oldHome.titolo) || 'pagina'
+      let s = base, n = 2
+      while (taken.has(s) || s === '__home__') s = `${base}-${n++}`
+      await apiFetch(`/api/pagine/${oldHome.id}`, { method: 'PATCH', body: JSON.stringify({ slug: s, nel_menu: true }) })
+    }
+    await apiFetch(`/api/pagine/${p.id}`, { method: 'PATCH', body: JSON.stringify({ slug: '__home__', nel_menu: false, status: 'pubblicata' }) })
+    load()
+  }
+
   async function deletePage(p) {
     if (!confirm(`Elimina "${p.titolo}"?`)) return
     await apiFetch(`/api/pagine/${p.id}`, { method: 'DELETE' })
@@ -416,7 +440,7 @@ export default function SitoPage({ entityTipo }) {
   const homePage   = pagine.find(p => p.slug === '__home__') || null
   const menuTop   = pagine.filter(p => p.nel_menu && !p.parent_id).sort((a, b) => a.ordine - b.ordine)
   const menuSubs  = id => pagine.filter(p => p.nel_menu && p.parent_id === id).sort((a, b) => a.ordine - b.ordine)
-  const notInMenu = pagine.filter(p => !p.nel_menu)
+  const notInMenu = pagine.filter(p => !p.nel_menu && p.slug !== '__home__')
 
   const activeFilters = search || filterStatus !== 'tutti' || filterMenu !== 'tutti'
   const filteredPagine = pagine.filter(p => {
@@ -515,6 +539,9 @@ export default function SitoPage({ entityTipo }) {
         )}
         {isChild && (
           <button onClick={() => makeTopLevel(p)} style={btnAction()}>↱ Al primo livello</button>
+        )}
+        {!isChild && p.slug !== '__home__' && (
+          <button onClick={() => setAsHome(p)} style={btnAction()} title="Rendi questa pagina la home del sito">🏠 Rendi home</button>
         )}
         <button onClick={() => removeFromMenu(p)} style={btnAction('remove')}>✕ Rimuovi</button>
       </div>
