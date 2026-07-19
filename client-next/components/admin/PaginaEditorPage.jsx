@@ -1608,30 +1608,40 @@ export default function PaginaEditorPage() {
           style={{ width: '100%', padding: '14px 20px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a2e' }}>Impostazioni SEO</span>
-            <span style={{
-              fontSize: 11, padding: '2px 8px', borderRadius: 20, fontWeight: 600,
-              background: ['#fce8e8','#fff3cd','#d4edda'][seoScore],
-              color: ['#c00','#856404','#155724'][seoScore],
-            }}>
-              {['✗ Non configurato','⚠ Incompleto','✓ Completo'][seoScore]}
-            </span>
+            {page.slug !== '__home__' && (
+              <span style={{
+                fontSize: 11, padding: '2px 8px', borderRadius: 20, fontWeight: 600,
+                background: ['#fce8e8','#fff3cd','#d4edda'][seoScore],
+                color: ['#c00','#856404','#155724'][seoScore],
+              }}>
+                {['✗ Non configurato','⚠ Incompleto','✓ Completo'][seoScore]}
+              </span>
+            )}
           </span>
           {showSeo ? <ChevronUp size={15} strokeWidth={2} color="#aaa" /> : <ChevronDown size={15} strokeWidth={2} color="#aaa" />}
         </button>
         {showSeo && (
-          <div style={{ borderTop: '1px solid #f0f0f0', padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <Field label="Titolo SEO (<title>)" value={page.seo_title} onChange={v => patchPage('seo_title', v)} placeholder={page.titolo} />
-            <div>
-              <Field label="Meta description (max 160 caratteri)" value={page.seo_description} onChange={v => patchPage('seo_description', v)} multiline rows={2} />
-              {page.seo_description && (
-                <div style={{ fontSize: 11, marginTop: 4, color: page.seo_description.length > 160 ? '#c00' : '#999' }}>
-                  {page.seo_description.length}/160 caratteri
-                </div>
-              )}
+          page.slug === '__home__' ? (
+            <div style={{ borderTop: '1px solid #f0f0f0', padding: 20, fontSize: 13, color: '#666', lineHeight: 1.6 }}>
+              La SEO della home (titolo, descrizione, immagine social) si imposta in
+              <strong> Sito → SEO &amp; Impostazioni</strong>, così non ci sono doppioni.
+              Qui costruisci solo i contenuti a blocchi.
             </div>
-            <Field label="Immagine Open Graph (URL)" value={page.og_image_url} onChange={v => patchPage('og_image_url', v)} placeholder="https://..." />
-            {page.og_image_url && <img src={page.og_image_url} alt="" style={{ maxHeight: 100, borderRadius: 8, objectFit: 'cover' }} />}
-          </div>
+          ) : (
+            <div style={{ borderTop: '1px solid #f0f0f0', padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <Field label="Titolo SEO (<title>)" value={page.seo_title} onChange={v => patchPage('seo_title', v)} placeholder={page.titolo} />
+              <div>
+                <Field label="Meta description (max 160 caratteri)" value={page.seo_description} onChange={v => patchPage('seo_description', v)} multiline rows={2} />
+                {page.seo_description && (
+                  <div style={{ fontSize: 11, marginTop: 4, color: page.seo_description.length > 160 ? '#c00' : '#999' }}>
+                    {page.seo_description.length}/160 caratteri
+                  </div>
+                )}
+              </div>
+              <Field label="Immagine Open Graph (URL)" value={page.og_image_url} onChange={v => patchPage('og_image_url', v)} placeholder="https://..." />
+              {page.og_image_url && <img src={page.og_image_url} alt="" style={{ maxHeight: 100, borderRadius: 8, objectFit: 'cover' }} />}
+            </div>
+          )
         )}
       </div>
 
