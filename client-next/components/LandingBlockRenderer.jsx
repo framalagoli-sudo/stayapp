@@ -1081,6 +1081,8 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         return (
           <section key={block.id} style={{ padding: '72px 0', background: '#000' }}>
             <div className="lbr-section">
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, textAlign: 'center', color: '#fff', margin: `0 auto ${d.testo ? 12 : 32}px` }}>{d.titolo}</h2>}
+              {d.testo && <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.72)', fontSize: 16, lineHeight: 1.6, maxWidth: 720, margin: '0 auto 32px', whiteSpace: 'pre-wrap' }}>{d.testo}</p>}
               <div style={{ position: 'relative', paddingBottom: '56.25%', borderRadius: 16, overflow: 'hidden' }}>
                 <iframe src={embedUrl} title="video" frameBorder="0" allowFullScreen style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
               </div>

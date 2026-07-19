@@ -81,7 +81,7 @@ export const BLOCK_DEFAULTS = {
   immagine:     { image_url: '', alt: '', caption: '', link_url: '', width: 'large' },
   galleria_immagini: { titolo: '', images: [], columns: 3 },
   gallery:      {},
-  video:        { url: '' },
+  video:        { url: '', titolo: '', testo: '' },
   menu:         { titolo: '' },
   services:     {},
   activities:   {},

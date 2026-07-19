@@ -559,7 +559,11 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
       </div>
     )
     case 'video': return (
-      <Field label="URL video (YouTube o Vimeo)" value={data.url} onChange={v => upd('url', v)} placeholder="https://youtube.com/watch?v=..." />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="URL video (YouTube o Vimeo)" value={data.url} onChange={v => upd('url', v)} placeholder="https://youtube.com/watch?v=..." />
+        <Field label="Titolo (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} placeholder="Es. Guarda il video" />
+        <Field label="Testo (opz.)" value={data.testo} onChange={v => upd('testo', v)} placeholder="Una breve descrizione…" multiline rows={3} />
+      </div>
     )
     case 'galleria_immagini': return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
