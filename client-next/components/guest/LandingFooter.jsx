@@ -64,15 +64,16 @@ export default function LandingFooter({ entity, mini, primary, heading, body, en
       <div className="lf-wrap">
         {!isMinimal && (
         <div className="lf-cols" style={centered ? { display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' } : undefined}>
-          {/* Brand */}
+          {/* Brand — logo OPPURE nome, come nell'header (non entrambi) */}
           <div>
-            {brandLogo && (
+            {brandLogo ? (
               <img src={brandLogo} alt={entity.name}
                 style={{ height: 36, objectFit: 'contain', marginBottom: 12 }} />
+            ) : (
+              <div style={{ fontFamily: heading, fontWeight: 700, fontSize: 18, color: accent, marginBottom: 8 }}>
+                {entity.name}
+              </div>
             )}
-            <div style={{ fontFamily: heading, fontWeight: 700, fontSize: 18, color: accent, marginBottom: 8 }}>
-              {entity.name}
-            </div>
             {showDescription && entity.description && (
               <p style={{ fontSize: 13, lineHeight: 1.6, margin: 0, color }}>
                 {entity.description.length > 130 ? entity.description.slice(0, 130) + '…' : entity.description}

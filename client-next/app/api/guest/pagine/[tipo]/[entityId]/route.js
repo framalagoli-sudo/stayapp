@@ -6,6 +6,7 @@ export async function GET(request, { params }) {
       .select('id, parent_id, slug, titolo, nel_menu, ordine')
       .eq('entity_tipo', params.tipo).eq('entity_id', params.entityId)
       .eq('status', 'pubblicata').eq('nel_menu', true)
+      .neq('slug', '__home__')   // la home non è mai una voce di menu (il logo/nome ci linka già)
       .order('ordine', { ascending: true })
     if (error) return Response.json({ error: error.message }, { status: 500 })
     return Response.json(data || [])
