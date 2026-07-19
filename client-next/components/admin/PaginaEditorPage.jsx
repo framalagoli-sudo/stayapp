@@ -764,6 +764,14 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
     case 'promozioni': return (
       <div>
         <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Quante mostrarne per volta (desktop) — su mobile diventa uno slider con frecce</label>
+          <select value={data.per_view || 3} onChange={e => upd('per_view', Number(e.target.value))} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+            <option value={2}>2 per riga</option>
+            <option value={3}>3 per riga</option>
+            <option value={4}>4 per riga</option>
+          </select>
+        </div>
         <ItemListEditor items={data.items} onChange={v => upd('items', v)}
           newItem={{ badge: '', title: '', text: '', cta_label: '', cta_url: '', expires_at: '' }}
           fields={[

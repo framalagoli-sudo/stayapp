@@ -18,6 +18,40 @@ function safeUrl(u) {
   return (/^https?:\/\//i.test(t) || /^mailto:/i.test(t) || /^tel:/i.test(t) || t.startsWith('/') || t.startsWith('#')) ? t : null
 }
 
+// Carosello responsivo con frecce: mostra `perView` card su desktop; su schermi
+// stretti (mobile) le card mantengono una larghezza minima → diventa uno slider
+// scorrevole/swipe. Frecce mostrate solo se il contenuto sborda. Una sola card = centrata.
+function arrowBtn(side, primary) {
+  return { position: 'absolute', top: '50%', [side]: -8, transform: 'translateY(-50%)', width: 40, height: 40, borderRadius: '50%', background: '#fff', border: '1px solid #eee', boxShadow: '0 2px 12px rgba(0,0,0,0.15)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: primary, zIndex: 3 }
+}
+function ArrowCarousel({ items, perView = 3, gap = 24, minCard = 280, primary }) {
+  const ref = useRef(null)
+  const [overflow, setOverflow] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const check = () => setOverflow(el.scrollWidth > el.clientWidth + 4)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [items.length, perView])
+  const scroll = d => { const el = ref.current; if (el) el.scrollBy({ left: d * el.clientWidth * 0.85, behavior: 'smooth' }) }
+  if (items.length <= 1) return <div style={{ maxWidth: 460, margin: '0 auto' }}>{items[0]?.node}</div>
+  return (
+    <div style={{ position: 'relative' }}>
+      <div ref={ref} style={{ display: 'flex', gap, overflowX: 'auto', scrollSnapType: 'x mandatory', paddingBottom: 8, justifyContent: overflow ? 'flex-start' : 'center' }}>
+        {items.map(it => (
+          <div key={it.key} style={{ flex: `0 0 calc((100% - ${gap * (perView - 1)}px) / ${perView})`, minWidth: minCard, maxWidth: 460, scrollSnapAlign: 'start' }}>{it.node}</div>
+        ))}
+      </div>
+      {overflow && <>
+        <button onClick={() => scroll(-1)} aria-label="Precedente" style={arrowBtn('left', primary)}><ChevronLeft size={20} strokeWidth={2} /></button>
+        <button onClick={() => scroll(1)} aria-label="Successivo" style={arrowBtn('right', primary)}><ChevronRight size={20} strokeWidth={2} /></button>
+      </>}
+    </div>
+  )
+}
+
 // Formatta un numero (separatore migliaia). I campi currency mostrano il simbolo €.
 function fmtVetrina(value, type) {
   if (value === null || value === undefined || value === '') return ''
@@ -1382,13 +1416,12 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
             <div className="lbr-section">
               <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{tr('offers_title', lang)}</h2>
               <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{tr('offers_subtitle', lang)}</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
-                {promo.map(p => {
+              <ArrowCarousel primary={primary} perView={Math.min(promo.length, d.per_view || 3)} minCard={280} items={promo.map(p => {
                   const promoUrl = siteHref(p.cta_url?.trim() && p.cta_url !== '#' ? p.cta_url.trim() : ctaHref)
                   const isExternal = promoUrl?.startsWith('http') || promoUrl?.startsWith('tel:') || promoUrl?.startsWith('mailto:')
                   const hasDetail = p.description_full || (p.gallery || []).length > 0
-                  return (
-                    <div key={p.id} style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', borderTop: `4px solid ${primary}`, display: 'flex', flexDirection: 'column' }}>
+                  return { key: p.id, node: (
+                    <div style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', borderTop: `4px solid ${primary}`, display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}>
                       {p.cover_url && <img src={p.cover_url} alt={p.title} style={{ width: '100%', height: 180, objectFit: 'cover' }} />}
                       <div style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 14 }}>
@@ -1410,9 +1443,8 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                         </div>
                       </div>
                     </div>
-                  )
-                })}
-              </div>
+                  ) }
+                })} />
             </div>
           </section>
         )

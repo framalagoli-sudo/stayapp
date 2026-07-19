@@ -73,7 +73,7 @@ export const BLOCK_DEFAULTS = {
   stats:        { titolo: '', items: [] },
   cta_banner:   { title: '', subtitle: '', button_text: 'Scopri di più', button_url: '' },
   testimonianze:{ titolo: '', items: [] },
-  promozioni:   { titolo: '', items: [] },
+  promozioni:   { titolo: '', items: [], per_view: 3 },
   pacchetti:    { titolo: '', items: [] },
   faq:          { titolo: '', items: [] },
   clienti:      { titolo: 'I nostri clienti', items: [] },
