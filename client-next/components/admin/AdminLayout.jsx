@@ -41,11 +41,11 @@ const STRUTTURA_SUBS = [
   { sub: 'excursions', label: 'Escursioni',    icon: MapPin,  group: 'Contenuti' },
   { sub: 'gallery',    label: 'Galleria',      icon: Image,   group: 'Contenuti' },
   { sub: 'sito',       label: 'Sito web',      icon: Globe,   group: 'Sito & presenza' },
+  { sub: 'theme',      label: 'Tema e colori', icon: Palette, group: 'Sito & presenza' },
   { sub: 'vetrine',    label: 'Vetrine',       icon: Store,   group: 'Sito & presenza' },
+  { sub: 'domini',     label: 'Domini',        icon: Globe,   group: 'Sito & presenza' },
   { sub: 'modules',    label: 'App Clienti',   icon: Layers,  group: 'Sito & presenza' },
   { sub: 'chatbot',    label: 'Chatbot',       icon: Bot,     group: 'Sito & presenza' },
-  { sub: 'domini',     label: 'Domini',        icon: Globe,   group: 'Sito & presenza' },
-  { sub: 'theme',      label: 'Tema e colori', icon: Palette, group: 'Impostazioni' },
   { sub: 'privacy',    label: 'Privacy',       icon: Lock,    group: 'Impostazioni' },
 ]
 const RISTORANTE_SUBS = [
@@ -53,22 +53,22 @@ const RISTORANTE_SUBS = [
   { sub: 'menu',     label: 'Menu',          icon: UtensilsCrossed, group: 'Contenuti' },
   { sub: 'gallery',  label: 'Galleria',      icon: Image,          group: 'Contenuti' },
   { sub: 'sito',     label: 'Sito web',      icon: Globe,          group: 'Sito & presenza' },
+  { sub: 'theme',    label: 'Tema e colori', icon: Palette,        group: 'Sito & presenza' },
   { sub: 'vetrine',  label: 'Vetrine',       icon: Store,          group: 'Sito & presenza' },
+  { sub: 'domini',   label: 'Domini',        icon: Globe,          group: 'Sito & presenza' },
   { sub: 'moduli',   label: 'App Clienti',   icon: Layers,         group: 'Sito & presenza' },
   { sub: 'chatbot',  label: 'Chatbot',       icon: Bot,            group: 'Sito & presenza' },
-  { sub: 'domini',   label: 'Domini',        icon: Globe,          group: 'Sito & presenza' },
-  { sub: 'theme',    label: 'Tema e colori', icon: Palette,        group: 'Impostazioni' },
   { sub: 'privacy',  label: 'Privacy',       icon: Lock,           group: 'Impostazioni' },
 ]
 const ATTIVITA_SUBS = [
   { sub: 'info',     label: 'Informazioni',  icon: Info,    group: 'Contenuti' },
   { sub: 'gallery',  label: 'Galleria',      icon: Image,   group: 'Contenuti' },
   { sub: 'sito',     label: 'Sito web',      icon: Globe,   group: 'Sito & presenza' },
+  { sub: 'theme',    label: 'Tema e colori', icon: Palette, group: 'Sito & presenza' },
   { sub: 'vetrine',  label: 'Vetrine',       icon: Store,   group: 'Sito & presenza' },
+  { sub: 'domini',   label: 'Domini',        icon: Globe,   group: 'Sito & presenza' },
   { sub: 'moduli',   label: 'App Clienti',   icon: Layers,  group: 'Sito & presenza' },
   { sub: 'chatbot',  label: 'Chatbot',       icon: Bot,     group: 'Sito & presenza' },
-  { sub: 'domini',   label: 'Domini',        icon: Globe,   group: 'Sito & presenza' },
-  { sub: 'theme',    label: 'Tema e colori', icon: Palette, group: 'Impostazioni' },
   { sub: 'privacy',  label: 'Privacy',       icon: Lock,    group: 'Impostazioni' },
 ]
 

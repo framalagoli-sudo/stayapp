@@ -609,7 +609,7 @@ export default function SitoPage({ entityTipo }) {
 
             <label style={{ ...lbl, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
               <input type="checkbox" checked={seoForm.show_pwa_link} onChange={e => setF('show_pwa_link', e.target.checked)} />
-              Mostra il link "App ospiti" nell'header del sito
+              Mostra nell'header il link all'app ospiti / menu (ristoranti: "Vedi menu")
             </label>
 
             <h4 style={{ margin: '24px 0 4px', fontSize: 14, fontWeight: 700 }}>Social</h4>
