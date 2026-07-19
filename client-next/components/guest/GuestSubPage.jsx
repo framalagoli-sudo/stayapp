@@ -47,6 +47,9 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
   // Opzione B: la singola pagina può nascondere header/footer (es. landing).
   const hideHeader = pagina.hide_header === true
   const hideFooter = pagina.hide_footer === true
+  // Se il primo blocco è un hero, va a tutta pagina SOTTO l'header (come la home):
+  // niente padding-top, così la foto parte dall'alto e l'header ci galleggia sopra.
+  const firstIsHero = ['hero', 'hero_slider'].includes(pagina.blocks?.[0]?.type)
 
   const prefix     = ENTITY_PREFIX[entityType] || entityType
   const base       = entityBasePath(prefix, entity.slug, domain, lang)
@@ -69,7 +72,7 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
           currentSlug={pagina.slug} />
       )}
 
-      <div className="sub-content" style={hideHeader ? { paddingTop: 0 } : undefined}>
+      <div className="sub-content" style={(hideHeader || firstIsHero) ? { paddingTop: 0 } : undefined}>
         {pagina.blocks?.length > 0 ? (
           <LandingBlockRenderer
             blocks={pagina.blocks} entity={entity} entityType={entityType}
