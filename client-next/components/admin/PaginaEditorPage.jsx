@@ -1449,16 +1449,20 @@ export default function PaginaEditorPage() {
             <input value={page.titolo || ''} onChange={e => {
               const t = e.target.value
               patchPage('titolo', t)
-              if (!slugManual) patchPage('slug', slugify(t))
+              // La home ha slug fisso __home__: modificare il titolo NON deve toccarlo.
+              if (!slugManual && page.slug !== '__home__') patchPage('slug', slugify(t))
             }} style={inputStyle()} />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#444', marginBottom: 4 }}>
-              Slug URL {slugChanged && <span style={{ color: '#856404', fontWeight: 400 }}>⚠ cambiando lo slug si rompono i link esistenti</span>}
+              Slug URL {page.slug === '__home__'
+                ? <span style={{ color: '#888', fontWeight: 400 }}>· la home ha uno slug fisso, non modificabile</span>
+                : slugChanged && <span style={{ color: '#856404', fontWeight: 400 }}>⚠ cambiando lo slug si rompono i link esistenti</span>}
             </label>
             <div style={{ display: 'flex', gap: 6 }}>
-              <input value={page.slug || ''} onChange={e => { setSlugManual(true); patchPage('slug', slugify(e.target.value)) }}
-                style={{ ...inputStyle(), fontFamily: 'monospace', flex: 1 }} />
+              <input value={page.slug === '__home__' ? 'home (fisso)' : (page.slug || '')} disabled={page.slug === '__home__'}
+                onChange={e => { if (page.slug === '__home__') return; setSlugManual(true); patchPage('slug', slugify(e.target.value)) }}
+                style={{ ...inputStyle(), fontFamily: 'monospace', flex: 1, ...(page.slug === '__home__' ? { background: '#f4f4f6', color: '#999', cursor: 'not-allowed' } : {}) }} />
               {pUrl && (
                 <button onClick={copyLink} style={{ flexShrink: 0, padding: '9px 10px', border: '1px solid #e0e0e8', borderRadius: 7, background: copied ? '#d4edda' : '#fafafa', cursor: 'pointer', fontSize: 12, color: copied ? '#155724' : '#666' }}>
                   {copied ? '✓' : '📋'}
