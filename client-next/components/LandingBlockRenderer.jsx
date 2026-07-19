@@ -24,29 +24,37 @@ function safeUrl(u) {
 function arrowBtn(side, primary) {
   return { position: 'absolute', top: '50%', [side]: -8, transform: 'translateY(-50%)', width: 40, height: 40, borderRadius: '50%', background: '#fff', border: '1px solid #eee', boxShadow: '0 2px 12px rgba(0,0,0,0.15)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: primary, zIndex: 3 }
 }
-function ArrowCarousel({ items, perView = 3, gap = 24, minCard = 280, primary }) {
+function ArrowCarousel({ items, perView = 3, gap = 24, minCard = 280, maxCard = 460, primary }) {
   const ref = useRef(null)
-  const [overflow, setOverflow] = useState(false)
+  const [st, setSt] = useState({ overflow: false, atStart: true, atEnd: false })
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    const check = () => setOverflow(el.scrollWidth > el.clientWidth + 4)
-    check()
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
+    const update = () => setSt({
+      overflow: el.scrollWidth > el.clientWidth + 4,
+      atStart: el.scrollLeft <= 2,
+      atEnd: el.scrollLeft + el.clientWidth >= el.scrollWidth - 2,
+    })
+    update()
+    const raf = requestAnimationFrame(update)   // ricontrolla dopo il layout definitivo
+    el.addEventListener('scroll', update, { passive: true })
+    window.addEventListener('resize', update)
+    let ro
+    if (typeof ResizeObserver !== 'undefined') { ro = new ResizeObserver(update); ro.observe(el) }
+    return () => { cancelAnimationFrame(raf); el.removeEventListener('scroll', update); window.removeEventListener('resize', update); ro && ro.disconnect() }
   }, [items.length, perView])
   const scroll = d => { const el = ref.current; if (el) el.scrollBy({ left: d * el.clientWidth * 0.85, behavior: 'smooth' }) }
-  if (items.length <= 1) return <div style={{ maxWidth: 460, margin: '0 auto' }}>{items[0]?.node}</div>
+  if (items.length <= 1) return <div style={{ maxWidth: maxCard, margin: '0 auto' }}>{items[0]?.node}</div>
   return (
     <div style={{ position: 'relative' }}>
-      <div ref={ref} style={{ display: 'flex', gap, overflowX: 'auto', scrollSnapType: 'x mandatory', paddingBottom: 8, justifyContent: overflow ? 'flex-start' : 'center' }}>
+      <div ref={ref} style={{ display: 'flex', gap, overflowX: 'auto', scrollSnapType: 'x mandatory', paddingBottom: 8, justifyContent: st.overflow ? 'flex-start' : 'center' }}>
         {items.map(it => (
-          <div key={it.key} style={{ flex: `0 0 calc((100% - ${gap * (perView - 1)}px) / ${perView})`, minWidth: minCard, maxWidth: 460, scrollSnapAlign: 'start' }}>{it.node}</div>
+          <div key={it.key} style={{ flex: `0 0 calc((100% - ${gap * (perView - 1)}px) / ${perView})`, minWidth: minCard, maxWidth: maxCard, scrollSnapAlign: 'start' }}>{it.node}</div>
         ))}
       </div>
-      {overflow && <>
-        <button onClick={() => scroll(-1)} aria-label="Precedente" style={arrowBtn('left', primary)}><ChevronLeft size={20} strokeWidth={2} /></button>
-        <button onClick={() => scroll(1)} aria-label="Successivo" style={arrowBtn('right', primary)}><ChevronRight size={20} strokeWidth={2} /></button>
+      {st.overflow && <>
+        <button onClick={() => scroll(-1)} disabled={st.atStart} aria-label="Precedente" style={{ ...arrowBtn('left', primary), opacity: st.atStart ? 0.35 : 1 }}><ChevronLeft size={20} strokeWidth={2} /></button>
+        <button onClick={() => scroll(1)} disabled={st.atEnd} aria-label="Successivo" style={{ ...arrowBtn('right', primary), opacity: st.atEnd ? 0.35 : 1 }}><ChevronRight size={20} strokeWidth={2} /></button>
       </>}
     </div>
   )
@@ -1166,9 +1174,8 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                   ))}
                 </div>
               ) : carousel ? (
-                <div style={{ display: 'flex', gap: 20, overflowX: 'auto', scrollSnapType: 'x mandatory', paddingBottom: 10, WebkitOverflowScrolling: 'touch' }}>
-                  {items.map(t => <div key={t.id} style={{ flex: '0 0 auto', width: 'min(85%, 360px)', scrollSnapAlign: 'center' }}>{card(t)}</div>)}
-                </div>
+                <ArrowCarousel primary={primary} perView={3} gap={20} minCard={300} maxCard={400}
+                  items={items.map(t => ({ key: t.id, node: card(t) }))} />
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
                   {items.map(t => <div key={t.id}>{card(t)}</div>)}
@@ -1250,13 +1257,11 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
             <div className="lbr-section">
               {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: '#1a1a2e', marginBottom: 40 }}>{d.titolo}</h2>}
               {isCarousel ? (
-                <div style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollSnapType: 'x mandatory', paddingBottom: 10, WebkitOverflowScrolling: 'touch' }}>
-                  {imgs.map((im, i) => (
-                    <div key={im.id || i} style={{ flex: '0 0 auto', width: d.format === 'card' ? 'min(72%, 300px)' : d.format === 'square' ? 'min(80%, 380px)' : 'min(88%, 520px)', scrollSnapAlign: 'center' }}>
-                      <img src={im.url} alt={im.alt || ''} loading="lazy" style={imgStyle} />
-                    </div>
-                  ))}
-                </div>
+                <ArrowCarousel primary={primary} gap={12}
+                  perView={d.format === 'card' ? 4 : d.format === 'square' ? 3 : 2}
+                  minCard={d.format === 'card' ? 220 : d.format === 'square' ? 300 : 380}
+                  maxCard={d.format === 'card' ? 300 : d.format === 'square' ? 440 : 620}
+                  items={imgs.map((im, i) => ({ key: im.id || i, node: <img src={im.url} alt={im.alt || ''} loading="lazy" style={imgStyle} /> }))} />
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(cols, 320), gap: 10 }}>
                   {imgs.map((im, i) => <img key={im.id || i} src={im.url} alt={im.alt || ''} loading="lazy" style={imgStyle} />)}
