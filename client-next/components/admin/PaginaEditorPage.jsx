@@ -871,6 +871,18 @@ function BlockStylePanel({ block, onChange, entityId, entityTipo }) {
           </div>
         </div>
       </div>
+      {/* Àncora del blocco — per i link interni (#ancora) che scrollano a questa sezione */}
+      <div style={{ marginTop: 14, borderTop: '1px solid #f0f0f0', paddingTop: 14 }}>
+        <label style={lbl}>Àncora (link interno alla sezione)</label>
+        <input type="text" value={st.anchor || ''}
+          onChange={e => set('anchor', e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-'))}
+          placeholder="es. prenota" style={sel} />
+        <p style={{ fontSize: 11, color: '#999', margin: '4px 0 0' }}>
+          {st.anchor
+            ? `Richiamabile con il link  #${st.anchor.replace(/^-+|-+$/g, '')}  (es. un bottone che salta qui).`
+            : 'Dai un nome a questa sezione per poterci puntare da un bottone/menu (jump nella pagina).'}
+        </p>
+      </div>
       {showBg && st.bg === 'image' && (
         <div style={{ marginTop: 12, background: '#fafafd', border: '1px solid #eee', borderRadius: 8, padding: 12 }}>
           <label style={lbl}>Immagine di sfondo</label>
@@ -1174,8 +1186,19 @@ export default function PaginaEditorPage() {
   }, [page?.entity_id])
 
   const internalLinks = useMemo(
-    () => buildInternalLinks({ tipo: page?.entity_tipo, slug: entitySlug, pages: sitePages }),
-    [page?.entity_tipo, entitySlug, sitePages]
+    () => {
+      const base = buildInternalLinks({ tipo: page?.entity_tipo, slug: entitySlug, pages: sitePages })
+      // Àncore dei blocchi di QUESTA pagina → link interni #ancora (scroll alla sezione).
+      // Stessa sanitizzazione del render (applyBlockStyle) così #id combacia.
+      const seen = new Set()
+      const anchors = []
+      for (const b of (page?.blocks || [])) {
+        const a = (b.style?.anchor || '').toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '')
+        if (a && !seen.has(a)) { seen.add(a); anchors.push({ icon: '⚓', label: `Sezione: ${a}`, url: `#${a}` }) }
+      }
+      return [...base, ...anchors]
+    },
+    [page?.entity_tipo, entitySlug, sitePages, page?.blocks]
   )
 
   function previewUrl() {

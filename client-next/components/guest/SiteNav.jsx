@@ -14,7 +14,7 @@ import { entityBasePath } from '@/lib/i18n'
 // URL sicuro (blocca javascript:/data: da input tenant). Ammette http(s)/mailto/tel e path interni.
 function safeUrl(u) {
   const s = String(u || '').trim()
-  return (/^(https?:|mailto:|tel:)/i.test(s) || s.startsWith('/')) ? s : '#'
+  return (/^(https?:|mailto:|tel:)/i.test(s) || s.startsWith('/') || s.startsWith('#')) ? s : '#'
 }
 
 const SHAPE_RADIUS = { rounded: 8, pill: 50, square: 0 }

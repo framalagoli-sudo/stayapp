@@ -14,7 +14,7 @@ import { getPreset, fieldOptions } from '@/lib/vetrinePresets'
 function safeUrl(u) {
   if (typeof u !== 'string') return null
   const t = u.trim()
-  return (/^https?:\/\//i.test(t) || /^mailto:/i.test(t) || /^tel:/i.test(t) || t.startsWith('/')) ? t : null
+  return (/^https?:\/\//i.test(t) || /^mailto:/i.test(t) || /^tel:/i.test(t) || t.startsWith('/') || t.startsWith('#')) ? t : null
 }
 
 // Formatta un numero (separatore migliaia). I campi currency mostrano il simbolo €.

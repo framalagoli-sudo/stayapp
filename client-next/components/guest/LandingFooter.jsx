@@ -10,7 +10,7 @@ const ENTITY_PREFIX = { struttura: 's', ristorante: 'r', attivita: 'a' }
 // links sono impostati dal cliente → non fidati. Restituisce '#' se non valido.
 function safeUrl(u) {
   const s = String(u || '').trim()
-  return (/^(https?:|mailto:|tel:)/i.test(s) || s.startsWith('/')) ? s : '#'
+  return (/^(https?:|mailto:|tel:)/i.test(s) || s.startsWith('/') || s.startsWith('#')) ? s : '#'
 }
 
 export default function LandingFooter({ entity, mini, primary, heading, body, entityType, lang = 'it', domain = null }) {

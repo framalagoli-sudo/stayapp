@@ -254,7 +254,11 @@ export function applyBlockStyle(el, block, opts = {}) {
   if (st.hide_mobile) classes.push('lbr-hide-mob')
   if (st.hide_desktop) classes.push('lbr-hide-desk')
   if (st.align === 'left' || st.align === 'center' || st.align === 'right') classes.push('lbr-al-' + st.align)
-  if (!Object.keys(ov).length && !hasPad && !classes.length) return el
+  // Àncora: id sul blocco → i link interni #ancora ci scrollano sopra. Offset per
+  // non finire sotto l'header fisso (64px).
+  const anchorId = st.anchor ? String(st.anchor).toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '') : null
+  if (anchorId) ov.scrollMarginTop = '80px'
+  if (!Object.keys(ov).length && !hasPad && !classes.length && !anchorId) return el
   const base = { ...(el.props.style || {}) }
   if (hasPad) {
     // preserva la spaziatura orizzontale nativa, sovrascrive solo la verticale
@@ -267,6 +271,7 @@ export function applyBlockStyle(el, block, opts = {}) {
   }
   const props = { style: { ...base, ...ov } }
   if (classes.length) props.className = ((el.props.className || '') + ' ' + classes.join(' ')).trim()
+  if (anchorId) props.id = anchorId
   return cloneElement(el, props)
 }
 
