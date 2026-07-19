@@ -1052,10 +1052,13 @@ function DropLine() {
 }
 
 // ── Block Picker Modal ────────────────────────────────────────────────────────
-function BlockPicker({ onPick, onClose }) {
+function BlockPicker({ onPick, onClose, entityTipo }) {
   const [search, setSearch] = useState('')
+  // Il blocco "Menù ristorante" ha senso solo per i ristoranti (pesca entity.menu):
+  // nascosto per struttura/attività per non offrire un blocco che resterebbe vuoto.
+  const available = BLOCK_TYPES.filter(b => b.type !== 'menu' || entityTipo === 'ristorante')
   const filtered = search
-    ? BLOCK_TYPES.filter(b => b.label.toLowerCase().includes(search.toLowerCase()) || b.desc?.toLowerCase().includes(search.toLowerCase()))
+    ? available.filter(b => b.label.toLowerCase().includes(search.toLowerCase()) || b.desc?.toLowerCase().includes(search.toLowerCase()))
     : null
 
   return (
@@ -1076,7 +1079,7 @@ function BlockPicker({ onPick, onClose }) {
         {/* Body */}
         <div style={{ overflowY: 'auto', padding: '12px 12px' }}>
           {(filtered ? [{ key: 'results', label: `${filtered.length} risultati` }] : BLOCK_GROUPS).map(group => {
-            const blocks = filtered || BLOCK_TYPES.filter(b => b.group === group.key)
+            const blocks = filtered || available.filter(b => b.group === group.key)
             if (!blocks.length) return null
             const color = GROUP_COLORS[group.key] || '#666'
             return (
@@ -1632,7 +1635,7 @@ export default function PaginaEditorPage() {
         )}
       </div>
 
-      {showPicker && <BlockPicker onPick={addBlock} onClose={() => setShowPicker(false)} />}
+      {showPicker && <BlockPicker onPick={addBlock} onClose={() => setShowPicker(false)} entityTipo={page?.entity_tipo} />}
 
       {showPatterns && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
