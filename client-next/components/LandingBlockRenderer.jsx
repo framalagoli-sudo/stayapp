@@ -6,6 +6,7 @@ import BookingWidget from './BookingWidget'
 import MenuTab from '@/components/MenuTab'
 import Turnstile from '@/components/Turnstile'
 import { applyBlockStyle, blockInverted, textSizeScale, textColorFor, gridTemplate, readableOn } from '@/lib/blockTypes'
+import { ReviewSourceLogo } from '@/lib/reviewLogos'
 import { RichText, richIsEmpty } from '@/lib/richText'
 import { t as tr } from '@/lib/i18n'
 import { getPreset, fieldOptions } from '@/lib/vetrinePresets'
@@ -1095,6 +1096,23 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const items = (d.items || []).filter(t => t.text && t.author)
         if (!items.length) return null
         const quote = d.variant === 'quote'
+        const carousel = d.variant === 'carousel'
+        const starsRow = (n, size) => (
+          <div style={{ display: 'flex', gap: 2 }}>
+            {Array.from({ length: n || 5 }).map((_, i) => <Star key={i} size={size} fill={primary} color={`var(--icon-color, ${primary})`} strokeWidth={0} />)}
+          </div>
+        )
+        const card = (t) => (
+          <div style={{ background: '#fff', borderRadius: 16, padding: 28, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', height: '100%', boxSizing: 'border-box' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              {starsRow(t.rating ?? t.stars, 14)}
+              <ReviewSourceLogo source={t.source} size={22} />
+            </div>
+            <p style={{ fontSize: 15, color: '#444', lineHeight: 1.65, marginBottom: 16, fontStyle: 'italic' }}>"{t.text}"</p>
+            <div style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>{t.author}</div>
+            {(t.location || t.role) && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{t.location || t.role}</div>}
+          </div>
+        )
         return (
           <section key={block.id} style={{ padding: '72px 0', background: quote ? '#fff' : '#fafafa' }}>
             <div className="lbr-section" style={quote ? { maxWidth: 780 } : undefined}>
@@ -1104,26 +1122,22 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                   {items.map(t => (
                     <div key={t.id} style={{ textAlign: 'center' }}>
                       <p style={{ fontFamily: heading, fontSize: 'clamp(20px,3vw,30px)', color: cTitle, lineHeight: 1.5, fontStyle: 'italic', marginBottom: 18 }}>“{t.text}”</p>
-                      <div style={{ display: 'flex', gap: 2, marginBottom: 10, justifyContent: 'center' }}>
-                        {Array.from({ length: t.stars || 5 }).map((_, i) => <Star key={i} size={16} fill={primary} color={`var(--icon-color, ${primary})`} strokeWidth={0} />)}
+                      <div style={{ display: 'flex', gap: 2, marginBottom: 10, justifyContent: 'center' }}>{starsRow(t.rating ?? t.stars, 16)}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        <span style={{ fontWeight: 700, fontSize: 15, color: cTitle }}>{t.author}</span>
+                        <ReviewSourceLogo source={t.source} size={18} />
                       </div>
-                      <div style={{ fontWeight: 700, fontSize: 15, color: cTitle }}>{t.author}</div>
-                      {t.role && <div style={{ fontSize: 13, color: cBody || '#888', marginTop: 2 }}>{t.role}</div>}
+                      {(t.location || t.role) && <div style={{ fontSize: 13, color: cBody || '#888', marginTop: 2 }}>{t.location || t.role}</div>}
                     </div>
                   ))}
                 </div>
+              ) : carousel ? (
+                <div style={{ display: 'flex', gap: 20, overflowX: 'auto', scrollSnapType: 'x mandatory', paddingBottom: 10, WebkitOverflowScrolling: 'touch' }}>
+                  {items.map(t => <div key={t.id} style={{ flex: '0 0 auto', width: 'min(85%, 360px)', scrollSnapAlign: 'center' }}>{card(t)}</div>)}
+                </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
-                  {items.map(t => (
-                    <div key={t.id} style={{ background: '#fff', borderRadius: 16, padding: 28, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-                      <div style={{ display: 'flex', gap: 2, marginBottom: 14 }}>
-                        {Array.from({ length: t.stars || 5 }).map((_, i) => <Star key={i} size={14} fill={primary} color={`var(--icon-color, ${primary})`} strokeWidth={0} />)}
-                      </div>
-                      <p style={{ fontSize: 15, color: '#444', lineHeight: 1.65, marginBottom: 16, fontStyle: 'italic' }}>"{t.text}"</p>
-                      <div style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>{t.author}</div>
-                      {t.role && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{t.role}</div>}
-                    </div>
-                  ))}
+                  {items.map(t => <div key={t.id}>{card(t)}</div>)}
                 </div>
               )}
             </div>
@@ -1194,13 +1208,26 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const imgs = (d.images || []).filter(im => im.url)
         if (!imgs.length) return null
         const cols = d.columns || 3
+        const ratio = { square: '1 / 1', card: '1080 / 1920', classic: '1920 / 1080' }[d.format] || '4 / 3'
+        const imgStyle = { width: '100%', aspectRatio: ratio, objectFit: 'cover', borderRadius: 8, display: 'block' }
+        const isCarousel = d.layout === 'carousel'
         return (
           <section key={block.id} style={{ padding: '64px 0', background: '#fff' }}>
             <div className="lbr-section">
               {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: '#1a1a2e', marginBottom: 40 }}>{d.titolo}</h2>}
-              <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(cols, 320), gap: 10 }}>
-                {imgs.map((im, i) => <img key={im.id || i} src={im.url} alt={im.alt || ''} loading="lazy" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: 8 }} />)}
-              </div>
+              {isCarousel ? (
+                <div style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollSnapType: 'x mandatory', paddingBottom: 10, WebkitOverflowScrolling: 'touch' }}>
+                  {imgs.map((im, i) => (
+                    <div key={im.id || i} style={{ flex: '0 0 auto', width: d.format === 'card' ? 'min(72%, 300px)' : d.format === 'square' ? 'min(80%, 380px)' : 'min(88%, 520px)', scrollSnapAlign: 'center' }}>
+                      <img src={im.url} alt={im.alt || ''} loading="lazy" style={imgStyle} />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(cols, 320), gap: 10 }}>
+                  {imgs.map((im, i) => <img key={im.id || i} src={im.url} alt={im.alt || ''} loading="lazy" style={imgStyle} />)}
+                </div>
+              )}
             </div>
           </section>
         )

@@ -117,6 +117,10 @@ function ItemListEditor({ items = [], onChange, fields, newItem, entityId, entit
                     <input type="text" value={it[f.key] || ''} onChange={e => update(idx, f.key, e.target.value)} placeholder={f.placeholder || 'https://...'} style={inputStyle()} />
                     <LinkPicker links={links} onPick={url => update(idx, f.key, url)} />
                   </div>
+                : f.type === 'select'
+                ? <select value={it[f.key] || ''} onChange={e => update(idx, f.key, e.target.value)} style={inputStyle()}>
+                    {(f.options || []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
                 : <input type="text" value={it[f.key] || ''} onChange={e => update(idx, f.key, e.target.value)} placeholder={f.placeholder || ''} style={inputStyle()} />
               }
             </div>
@@ -568,13 +572,30 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
     case 'galleria_immagini': return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} />
-        <div>
-          <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 500 }}>Colonne</label>
-          <select value={data.columns || 3} onChange={e => upd('columns', Number(e.target.value))} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
-            <option value={2}>2 colonne</option>
-            <option value={3}>3 colonne</option>
-            <option value={4}>4 colonne</option>
-          </select>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 130 }}>
+            <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 500 }}>Formato foto</label>
+            <select value={data.format || 'classic'} onChange={e => upd('format', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+              <option value="classic">Classico · orizzontale (1920×1080)</option>
+              <option value="square">Quadrato (1080×1080)</option>
+              <option value="card">Card · verticale (1080×1920)</option>
+            </select>
+          </div>
+          <div style={{ flex: 1, minWidth: 130 }}>
+            <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 500 }}>Disposizione</label>
+            <select value={data.layout || 'grid'} onChange={e => upd('layout', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+              <option value="grid">Griglia</option>
+              <option value="carousel">Carosello (scorrevole)</option>
+            </select>
+          </div>
+          <div style={{ flex: 1, minWidth: 110 }}>
+            <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 500 }}>Colonne (griglia)</label>
+            <select value={data.columns || 3} onChange={e => upd('columns', Number(e.target.value))} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+              <option value={2}>2 colonne</option>
+              <option value={3}>3 colonne</option>
+              <option value={4}>4 colonne</option>
+            </select>
+          </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {(data.images || []).map((it, idx) => (
@@ -711,15 +732,21 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
           <select value={data.variant || 'grid'} onChange={e => upd('variant', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
             <option value="grid">Griglia di card</option>
             <option value="quote">Citazione grande</option>
+            <option value="carousel">Carosello (scorrevole)</option>
           </select>
         </div>
         <ItemListEditor items={data.items} onChange={v => upd('items', v)}
-          newItem={{ author: '', location: '', rating: 5, text: '' }}
+          newItem={{ author: '', location: '', rating: 5, text: '', source: '' }}
           fields={[
             { key: 'author', label: 'Autore' },
             { key: 'location', label: 'Luogo (opz.)' },
             { key: 'rating', label: 'Stelle (1-5)', type: 'number' },
             { key: 'text', label: 'Testo', type: 'textarea', rows: 3 },
+            { key: 'source', label: 'Fonte (mostra il logo)', type: 'select', options: [
+              { value: '', label: 'Nessuna' },
+              { value: 'google', label: 'Google' },
+              { value: 'tripadvisor', label: 'TripAdvisor' },
+            ] },
           ]} />
       </div>
     )
