@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useCallback, useMemo, createContext, useCo
 import { useRouter, useParams } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { LinkPicker, buildInternalLinks } from '@/components/admin/LinkPicker'
+import { IconPicker } from '@/components/admin/IconPicker'
 import { getPreset as getVetrinaPreset } from '@/lib/vetrinePresets'
 import {
   GripVertical, AlignLeft, Image, Grid, Users, List, Star, BarChart2, Zap,
@@ -121,6 +122,8 @@ function ItemListEditor({ items = [], onChange, fields, newItem, entityId, entit
                 ? <select value={it[f.key] || ''} onChange={e => update(idx, f.key, e.target.value)} style={inputStyle()}>
                     {(f.options || []).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
+                : f.type === 'icon'
+                ? <IconPicker value={it[f.key] || ''} onChange={v => update(idx, f.key, v)} />
                 : <input type="text" value={it[f.key] || ''} onChange={e => update(idx, f.key, e.target.value)} placeholder={f.placeholder || ''} style={inputStyle()} />
               }
             </div>
@@ -668,7 +671,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
         </div>
         <ItemListEditor items={data.items} onChange={v => upd('items', v)}
           newItem={{ icon: 'star', text: '' }}
-          fields={[{ key: 'icon', label: 'Icona (es. star, heart, wifi)', placeholder: 'star' }, { key: 'text', label: 'Testo' }]} />
+          fields={[{ key: 'icon', label: 'Icona', type: 'icon' }, { key: 'text', label: 'Testo' }]} />
       </div>
     )
     case 'stats': return (
@@ -692,7 +695,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
         <ItemListEditor items={data.items} onChange={v => upd('items', v)}
           newItem={{ icon: 'star', title: '', text: '', image_url: '' }}
           fields={[
-            { key: 'icon', label: 'Icona', placeholder: 'star' },
+            { key: 'icon', label: 'Icona', type: 'icon' },
             { key: 'title', label: 'Titolo' },
             { key: 'text', label: 'Testo', type: 'textarea', rows: 2 },
             { key: 'image_url', label: 'Immagine URL (opz.)', placeholder: 'https://...' },
@@ -718,7 +721,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
         <ItemListEditor items={data.items} onChange={v => upd('items', v)}
           newItem={{ icon: 'check-circle', title: '', text: '' }}
           fields={[
-            { key: 'icon', label: 'Icona', placeholder: 'check-circle' },
+            { key: 'icon', label: 'Icona', type: 'icon' },
             { key: 'title', label: 'Titolo passo' },
             { key: 'text', label: 'Descrizione', type: 'textarea', rows: 2 },
           ]} />
