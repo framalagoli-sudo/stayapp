@@ -4,6 +4,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { LinkPicker, buildInternalLinks } from '@/components/admin/LinkPicker'
 import { IconPicker } from '@/components/admin/IconPicker'
+import { FocalPointPicker } from '@/components/admin/FocalPointPicker'
 import { getPreset as getVetrinaPreset } from '@/lib/vetrinePresets'
 import {
   GripVertical, AlignLeft, Image, Grid, Users, List, Star, BarChart2, Zap,
@@ -155,8 +156,8 @@ function SlidesEditor({ slides = [], onChange, entityId, entityTipo }) {
               <button onClick={() => remove(idx)} style={{ ...tinyBtn, color: '#c00', background: '#fce8e8' }}>✕</button>
             </div>
           </div>
-          {s.image_url && <img src={s.image_url} alt="" style={{ width: '100%', maxHeight: 110, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }} />}
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+          {s.image_url && <FocalPointPicker src={s.image_url} value={s.focal} onChange={v => update(idx, 'focal', v)} />}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '8px 0' }}>
             <UnsplashPicker label="Cerca su Unsplash" defaultQuery={s.title} onPick={url => update(idx, 'image_url', url)} />
             <UploadBtn label="Carica" entityId={entityId} entityTipo={entityTipo} onUrl={url => update(idx, 'image_url', url)} />
           </div>
@@ -231,11 +232,12 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
         <Field label="Titolo principale" value={data.title} onChange={v => upd('title', v)} />
         <Field label="Tagline / Sottotitolo" value={data.tagline} onChange={v => upd('tagline', v)} />
         <Field label="URL immagine di sfondo" value={data.bg_image_url} onChange={v => upd('bg_image_url', v)} placeholder="https://..." />
-        {data.bg_image_url && <img src={data.bg_image_url} alt="" style={{ maxHeight: 100, borderRadius: 8, objectFit: 'cover', width: '100%' }} />}
+        {data.bg_image_url && <FocalPointPicker src={data.bg_image_url} value={data.focal} onChange={v => upd('focal', v)} />}
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           <UnsplashPicker label="Cerca su Unsplash" defaultQuery={data.title} onPick={url => upd('bg_image_url', url)} />
           <UploadBtn label="Carica immagine sfondo" entityId={entityId} entityTipo={entityTipo} onUrl={url => upd('bg_image_url', url)} />
         </div>
+        <p style={{ fontSize: 11, color: '#aaa', margin: 0 }}>Consigliato: orizzontale, almeno 2000×1200 px (nitida su schermi grandi).</p>
         <Field label="Video di sfondo (URL mp4, opz.)" value={data.bg_video} onChange={v => upd('bg_video', v)} placeholder="https://....mp4" />
         <div>
           <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Opacità overlay ({Math.round((data.overlay_opacity ?? 0.5) * 100)}%)</label>
@@ -928,8 +930,8 @@ function BlockStylePanel({ block, onChange, entityId, entityTipo }) {
       {showBg && st.bg === 'image' && (
         <div style={{ marginTop: 12, background: '#fafafd', border: '1px solid #eee', borderRadius: 8, padding: 12 }}>
           <label style={lbl}>Immagine di sfondo</label>
-          {st.bg_image && <img src={st.bg_image} alt="" style={{ width: '100%', maxHeight: 90, objectFit: 'cover', borderRadius: 6, marginBottom: 6 }} />}
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
+          {st.bg_image && <FocalPointPicker src={st.bg_image} value={st.bg_focal} onChange={v => set('bg_focal', v)} />}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '6px 0' }}>
             <UnsplashPicker label="Cerca su Unsplash" onPick={url => set('bg_image', url)} />
             <UploadBtn label="Carica" entityId={entityId} entityTipo={entityTipo} onUrl={url => set('bg_image', url)} />
           </div>

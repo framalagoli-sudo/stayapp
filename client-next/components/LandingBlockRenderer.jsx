@@ -437,7 +437,7 @@ function HeroSlider({ block, primary, heading }) {
         <div key={s.id || idx} aria-hidden={idx !== i}
           style={{ position: 'absolute', inset: 0, opacity: idx === i ? 1 : 0, transition: 'opacity 0.9s ease', pointerEvents: idx === i ? 'auto' : 'none' }}>
           {s.image_url && <img src={s.image_url} alt={s.title || ''} loading={idx === 0 ? 'eager' : 'lazy'}
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: s.focal || 'center' }} />}
           <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(to bottom, rgba(0,0,0,${overlay * 0.6}), rgba(0,0,0,${overlay}))` }} />
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: align === 'left' ? 'flex-start' : 'center' }}>
             <div style={{ textAlign: align, padding: '90px clamp(24px,6vw,90px)', maxWidth: align === 'left' ? 780 : 920, width: '100%' }}>
@@ -769,11 +769,12 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const heightMap = { full: '100vh', large: '85vh', medium: '65vh' }
         const h = heightMap[d.height || 'large'] || '85vh'
         const bgImg = d.bg_image_url || entity.cover_url
+        const focal = d.focal || 'center'
         return (
           <section key={block.id} style={{ position: 'relative', minHeight: h, display: 'flex', alignItems: 'center', justifyContent: 'center', background: (bgImg || d.bg_video) ? 'transparent' : `linear-gradient(135deg, #1a1a2e 0%, #0d1a2a 100%)`, overflow: 'hidden' }}>
             {d.bg_video
-              ? <video src={d.bg_video} autoPlay muted loop playsInline poster={bgImg || undefined} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-              : bgImg && <img src={bgImg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
+              ? <video src={d.bg_video} autoPlay muted loop playsInline poster={bgImg || undefined} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: focal }} />
+              : bgImg && <img src={bgImg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: focal }} />}
             <div style={{ position: 'absolute', inset: 0, background: `rgba(0,0,0,${d.overlay_opacity ?? 0.5})` }} />
             <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '80px 24px', maxWidth: 860, margin: '0 auto', width: '100%' }}>
               {d.title && <h1 style={{ fontFamily: heading, fontSize: 'clamp(36px,6vw,72px)', fontWeight: 700, color: '#fff', lineHeight: 1.1, marginBottom: 20 }}>{d.title}</h1>}

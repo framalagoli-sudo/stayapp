@@ -129,7 +129,8 @@ export function resolveBlockBg(style, primary, secondary) {
   if (st.bg === 'image') {
     if (!st.bg_image) return { background: null, inverted: false }
     const ov = st.bg_overlay ?? 0.5
-    return { background: `linear-gradient(rgba(0,0,0,${ov}),rgba(0,0,0,${ov})), url("${st.bg_image}") center/cover no-repeat`, inverted: true }
+    const pos = st.bg_focal || 'center'
+    return { background: `linear-gradient(rgba(0,0,0,${ov}),rgba(0,0,0,${ov})), url("${st.bg_image}") ${pos}/cover no-repeat`, inverted: true }
   }
   const solid = BLOCK_BG[st.bg]
   if (!solid) return { background: null, inverted: false }
