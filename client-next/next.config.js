@@ -1,4 +1,3 @@
-const { withSentryConfig } = require('@sentry/nextjs')
 // next-pwa DISABILITATO: il suo SW precacheava lo shell e serviva versioni stale dopo
 // i deploy -> pagine bianche (Chrome bianco / Edge ok). Al suo posto un kill-switch SW
 // statico in public/sw.js che si auto-distrugge. La PWA installabile si potrà ri-abilitare
@@ -43,9 +42,6 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    instrumentationHook: true, // abilita instrumentation.js (init Sentry server/edge)
-  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '*.supabase.co' },
@@ -59,13 +55,4 @@ const nextConfig = {
   },
 }
 
-// withSentryConfig wrappa SOPRA next-pwa: gestisce l'inizializzazione corretta
-// del SDK in tutti i runtime (server/edge/client) su Vercel serverless — cosa che
-// il solo instrumentation.js non faceva. Upload source-map disattivato (niente
-// auth token necessario): vogliamo solo la cattura errori.
-module.exports = withSentryConfig(withPWA(nextConfig), {
-  org: 'oltrenova',
-  project: 'javascript-nextjs',
-  silent: true,
-  sourcemaps: { disable: true },
-})
+module.exports = withPWA(nextConfig)
