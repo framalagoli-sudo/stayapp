@@ -31,7 +31,7 @@
     "react": "^18",
     "react-dom": "^18",
     "resend": "^6.17.2",
-    "stripe": "^14.17.0"
+    "stripe": "^22.3.2"
   },
   "overrides": {
     "postcss": "^8.5.10",
