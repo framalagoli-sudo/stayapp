@@ -1,13 +1,11 @@
-// next-pwa DISABILITATO: il suo SW precacheava lo shell e serviva versioni stale dopo
-// i deploy -> pagine bianche (Chrome bianco / Edge ok). Al suo posto un kill-switch SW
-// statico in public/sw.js che si auto-distrugge. La PWA installabile si potrà ri-abilitare
-// in futuro con una config NetworkFirst sicura. Vedi public/sw.js e PWARegister.js.
-const withPWA = require('next-pwa')({
-  dest: 'public',
-  disable: true,
-  register: false,
-  skipWaiting: true,
-})
+// next-pwa RIMOSSO (era già `disable: true` dal 18/6, quindi inerte a runtime): il suo SW
+// precacheava lo shell e serviva versioni stale dopo i deploy -> pagine bianche. Restava
+// solo a trascinare workbox/clean-webpack-plugin in build (4 alert Dependabot high su
+// brace-expansion) ed era il blocco principale all'upgrade di Next.
+// Il service worker vivo è il kill-switch statico committato in public/sw.js, che NON
+// dipende da next-pwa; PWARegister.js si limita a disiscrivere i SW residui.
+// Per ri-abilitare la PWA installabile: config NetworkFirst per la navigazione, MAI
+// precacheAndRoute dello shell HTML (è la causa delle pagine bianche).
 
 // Content-Security-Policy "livello 1": restringe da DOVE possono arrivare gli
 // script (vera difesa anti-XSS) e blocca il framing del sito (anti-clickjacking),
@@ -55,4 +53,4 @@ const nextConfig = {
   },
 }
 
-module.exports = withPWA(nextConfig)
+module.exports = nextConfig
