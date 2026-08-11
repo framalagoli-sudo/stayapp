@@ -14,9 +14,9 @@ Azienda (top-level)
 ```
 
 > **🔒 Sicurezza (invarianti, checklist route, procedure rigide)** → `SECURITY.md` §0 — LEGGERE prima di toccare route API/auth/esposizione dati. Multi-tenant + service_role = la sicurezza dipende dai controlli applicativi.
-> **Schema DB, endpoint API, note backend** → `server/CLAUDE.md` (auto-caricato quando si lavora in server/)
-> **Route frontend, JSONB structures, moduli admin/guest, pattern Next** → `client-next/CLAUDE.md` (auto-caricato quando si lavora in client-next/ — il frontend LIVE)
-> ⚠️ `client/CLAUDE.md` è il vecchio frontend Vite **dismesso**: ignorarlo, il codice live è in `client-next/`.
+> **Route frontend E backend, JSONB structures, moduli admin/guest, pattern Next** → `client-next/CLAUDE.md` (auto-caricato quando si lavora in client-next/ — tutto il codice LIVE)
+> **Schema DB** → `supabase/migrations/` (unica fonte di verità sulle tabelle).
+> ⚠️ Non esiste più un backend separato: le API sono **route Next in `client-next/app/api/`**. Il vecchio Express in `server/` è stato rimosso (commit `9b0e484`, 13/07/2026) insieme al frontend Vite in `client/`; entrambi sono in `.gitignore`. Non ricostruirli.
 
 ---
 
@@ -29,13 +29,11 @@ Tutto il necessario per ripristinare l'ambiente completo:
 git clone https://github.com/framalagoli-sudo/stayapp.git hospitality
 cd hospitality
 cd client-next && npm install
-cd ../server && npm install
 cd ../tests && npm install
 ```
 
 **2. Variabili d'ambiente** (ricopia dai dashboard):
-- `server/.env` → Railway Dashboard → Variables
-- `client-next/.env.local` → Vercel Dashboard → Project → Settings → Environment Variables
+- `client-next/.env.local` → Vercel Dashboard → Project → Settings → Environment Variables (contiene sia le var pubbliche `NEXT_PUBLIC_*` sia i segreti server-side usati dalle route API)
 - `tests/.env.test` → credenziali Supabase (URL + anon key + service role key)
 
 **3. Memory Claude Code** (ripristina il contesto AI accumulato):
@@ -49,10 +47,9 @@ Copy-Item .claude-memory\CLAUDE.global.md "$env:USERPROFILE\.claude\CLAUDE.md"
 ```
 > La cartella `.claude-memory/` nel repo contiene tutte le memory di sessione **+** il backup del CLAUDE.md globale (`CLAUDE.global.md`). Aggiornata ad ogni sessione con `git push`.
 
-**4. Avvio locale**
+**4. Avvio locale** — un solo processo: le API girano dentro la stessa app Next.
 ```bash
-cd server && npm run dev    # → http://localhost:3001
-cd client-next && npm run dev  # → http://localhost:3000
+cd client-next && npm run dev  # → http://localhost:3000 (frontend + /api/*)
 ```
 
 **5. Comando `deploy` (Windows, opzionale ma comodo)**
@@ -73,41 +70,32 @@ Poi riavvia il terminale (oppure `. $PROFILE`) e usa `deploy`. Richiede Executio
 
 ## Setup nuovo sviluppatore
 
-**Prerequisiti:** Node.js 18+, Git, credenziali Supabase/Railway/Vercel (da Francesco — fra.malagoli@gmail.com)
+**Prerequisiti:** Node.js 18+, Git, credenziali Supabase/Vercel (da Francesco — fra.malagoli@gmail.com)
 
 ```bash
 git clone https://github.com/framalagoli-sudo/stayapp.git && cd hospitality
 cd client-next && npm install
-cd ../server && npm install
 ```
 
-**Variabili d'ambiente:**
-- `server/.env` → copia da Railway → Variables: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `RESEND_FROM`, `APP_URL`, `CLIENT_URL`, `DEMO_NOTIFY_EMAIL`, `PORT=3001`
-- `client/.env` → copia da Vercel → Settings → Env Variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL`
+**Variabili d'ambiente:** un solo file, `client-next/.env.local` → copia da Vercel → Settings → Environment Variables. Include le `NEXT_PUBLIC_*` (esposte al browser) e i segreti usati **solo** dalle route API server-side (`SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, …).
+> ⚠️ Vercel inietta un BOM: applicare sempre `.trim()` alle env var server-side.
 
 **Avvio locale:**
 ```bash
-cd server && npm run dev   # → http://localhost:3001
-cd client && npm run dev   # → http://localhost:5173
+cd client-next && npm run dev   # → http://localhost:3000 (frontend + /api/*)
 ```
-Proxy `/api/*` → `localhost:3001` via `vite.config.js`
 
-**Deploy Vercel (manuale):**
-```bash
-npx vercel --prod --yes   # dalla root del repo
+**Deploy — sempre e solo `.\deploy.ps1` dalla root:**
+```powershell
+.\deploy.ps1
 ```
-Progetto Vercel: `rootDirectory: client`. `client/vercel.json` → SPA routing (rewrites → index.html).
+Lo script fa in sequenza: `npm audit` (informativo) → `git push origin main` → `npx vercel --prod --force --yes` **da `client-next/`** → attesa 15s → smoke test (`tests/`, ~3 min). Se i test falliscono il deploy è già avvenuto, ma il problema emerge subito.
 
-**⚠️ Dopo ogni deploy: eseguire sempre gli smoke test:**
-```bash
-cd tests && npm test      # ~3 minuti — verifica 36 pagine admin su prod
-```
-Oppure usa lo script unico dalla root: `.\deploy.ps1`
-Questo script fa deploy Vercel + smoke test in sequenza. Se i test falliscono, il deploy è già avvenuto ma il problema è identificato subito.
+> 🚫 **Mai `npx vercel` dalla root.** Il file `.vercel/project.json` in root è ancora agganciato al vecchio progetto `stayapp` (`framework: vite`, `rootDirectory: client`) — un deploy da lì pubblicherebbe il frontend dismesso. Il progetto live è quello linkato dentro `client-next/`.
 
 > ⚠️ Migration SQL: eseguire a mano su Supabase Dashboard → SQL Editor. Non sono automatiche.
 
-**Account:** Supabase Pro ($25/mese), Vercel Pro ($20/mese), Railway Starter ($5/mese), Cloudflare Free, Resend Free — tutti gestiti da Francesco.
+**Account:** Supabase Pro ($25/mese), Vercel Pro ($20/mese), Cloudflare Free, Resend Free — tutti gestiti da Francesco. Railway dismesso (backend migrato su Vercel).
 
 ---
 
@@ -115,15 +103,15 @@ Questo script fa deploy Vercel + smoke test in sequenza. Se i test falliscono, i
 
 | Layer | Tecnologia |
 |---|---|
-| Frontend | React 18 + Vite 5 (PWA via vite-plugin-pwa) |
-| Backend | Node.js + Express 4 (ES modules) |
+| Frontend | Next.js 14.2 (App Router) + React 18 |
+| Backend | Route API Next in `client-next/app/api/` (nessun server separato) |
 | Database | Supabase (PostgreSQL + Auth + Storage) |
-| Icone | lucide-react ^1.8.0 |
-| Router | react-router-dom v6 |
+| Icone | lucide-react ^1.24.0 |
+| Router | Next App Router (file-based) |
 | Email | Resend (RESEND_API_KEY in env) |
-| Pagamenti | Stripe (installato, non integrato) |
-| Hosting frontend | **Vercel** — `https://stayapp-henna.vercel.app` |
-| Hosting backend | **Railway** |
+| Pagamenti | Stripe — integrato per lo **shop**; booking/eventi ancora da fare |
+| Hosting | **Vercel** (frontend + route API nella stessa app) — dominio live `https://oltrenova.com` |
+| Cron | Vercel Cron → `client-next/vercel.json` (`/api/cron/*`) |
 
 ---
 
@@ -131,40 +119,25 @@ Questo script fa deploy Vercel + smoke test in sequenza. Se i test falliscono, i
 
 ```
 hospitality/
-├── client/
-│   ├── vercel.json                 # SPA routing: tutte le route → index.html
-│   └── src/
-│       ├── App.jsx                 # Router principale
-│       ├── context/AuthContext.jsx
-│       ├── hooks/useProperty.js, useRistorante.js, useAttivita.js
-│       ├── lib/api.js, supabase.js
-│       ├── components/
-│       │   ├── admin/AdminLayout.jsx, ProtectedRoute.jsx, ChatbotEditor.jsx
-│       │   ├── CookieBanner.jsx    # React Portal, key cookie_consent_v2
-│       │   ├── BookingWidget.jsx   # wizard pubblico prenotazione risorse
-│       │   └── ChatbotWidget.jsx   # chatbot floating (PWA=absolute, landing=fixed)
-│       └── pages/
-│           ├── admin/              # vedi client/CLAUDE.md
-│           ├── guest/              # vedi client/CLAUDE.md
-│           └── public/PolicyPage.jsx, CancellaPrenotazionePage.jsx
-├── server/
-│   └── src/
-│       ├── index.js
-│       ├── middleware/auth.js
-│       ├── lib/supabase.js         # service role key — bypassa RLS
-│       └── routes/
-│           ├── auth.js, properties.js, ristoranti.js, attivita.js
-│           ├── guest.js            # endpoint pubblici (no auth)
-│           ├── requests.js, upload.js, eventi.js, blog.js
-│           ├── contatti.js, newsletter.js, analytics.js
-│           ├── booking.js          # sistema booking risorse (slot/coperti)
-│           └── demo.js
-└── supabase/migrations/            # 015–028, eseguire a mano su Supabase
-    ├── 015_blog, 016_contatti, 017_attivita, 018_privacy_data
-    ├── 019_demo_requests, 020_newsletter, 021_page_views, 022_newsletter_v2
-    ├── 023_booking, 024_booking_visibility, 025_chatbot
-    ├── 026_staff_permissions, 027_staff_permissions, 028_pagine
+├── client-next/                    # TUTTO il codice live (frontend + backend)
+│   ├── vercel.json                 # build Next + definizione dei cron
+│   ├── middleware.js               # domini custom, redirect, lingua
+│   ├── app/
+│   │   ├── page.js                 # landing marketing OltreNova (hardcoded)
+│   │   ├── admin/                  # pannello di gestione
+│   │   ├── s/ · r/ · a/            # PWA ospite + minisiti pubblici per entità
+│   │   └── api/                    # ~196 route API — il backend
+│   │       ├── auth/ · users/ · aziende/ · properties/
+│   │       ├── guest/              # endpoint pubblici (no auth)
+│   │       ├── booking/ · eventi/ · shop/ · vetrine/ · pagine/ …
+│   │       ├── cron/               # newsletter, automazioni, blog, backup
+│   │       └── webhooks/ · resend-webhook/ · shop/webhook/stripe/
+│   ├── components/ · context/ · hooks/
+│   └── lib/                        # supabase, send-email, guest-data, blockTypes …
+├── tests/                          # smoke test Playwright su produzione
+└── supabase/migrations/            # 001–069, eseguire a mano su Supabase
 ```
+> `client/` e `server/` non esistono più nel repo (vedi nota in cima). Se li vedi in locale sono residui: sono in `.gitignore` e vanno cancellati, non aggiornati.
 
 ---
 
@@ -211,33 +184,34 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 
 4. **CookieBanner**: usa `createPortal(document.body)` per evitare problemi di stacking context in Firefox. Key localStorage: `cookie_consent_v2`.
 
-5. **vercel.json**: in `client/vercel.json`, configura `rewrites → index.html` per SPA routing. Senza, Firefox e accessi diretti a URL profondi restituiscono 404.
+5. **vercel.json**: `client-next/vercel.json` definisce build Next + i cron. Nessun rewrite SPA: il routing è file-based e le pagine pubbliche sono SSR.
 
-6. **Deploy Vercel**: il progetto `stayapp` su Vercel ha `rootDirectory: client`. Deployare dalla root del repo con `npx vercel --prod --yes`. GitHub auto-deploy non ancora collegato — deploy manuale per ora.
+6. **Deploy**: sempre `.\deploy.ps1` dalla root (mai `npx vercel` dalla root — vedi sopra). GitHub auto-deploy non ancora collegato: il deploy è manuale.
 
-7. **Server Railway**: riavvio automatico al push. `EADDRINUSE :3001` in locale = istanza precedente attiva → `Stop-Process -Id <PID> -Force`.
+7. **Dev locale**: un solo processo, `npm run dev` in `client-next/` → `:3000`. Se la porta è occupata da un'istanza precedente: `Stop-Process -Id <PID> -Force`.
 
-8. **Supabase service role**: il server usa sempre la service role key → bypassa RLS. La RLS vale solo per query client-side (AuthContext, useProperty).
+8. **Supabase service role**: le route API usano la service role key → **bypassano RLS**. La sicurezza multi-tenant dipende quindi dai controlli applicativi in ogni route (vedi `SECURITY.md` §0). La RLS resta come secondo muro per le query client-side (AuthContext, useProperty).
 
 9. **Discriminazione booking vs richieste**: prenotazioni salvate in `requests` con `message` che inizia con `[Prenotazione attività]`, `[Prenotazione escursione]` o `[Interesse offerta: nome]`. `BookingsPage` filtra con `message.startsWith('[Prenotazione') || message.startsWith('[Interesse offerta')`, `RequestsPage` le esclude.
 
-10. **Newsletter — double opt-in**: `POST /api/contatti/subscribe` salva con `iscritto_newsletter: false` + invia email conferma `/confirm-subscription?token=uuid`. Token azzerato su conferma. `runScheduledSends()` gira ogni 60s via `setInterval` in `index.js`.
+10. **Newsletter — double opt-in**: `POST /api/contatti/subscribe` salva con `iscritto_newsletter: false` + invia email conferma `/confirm-subscription?token=uuid`. Token azzerato su conferma.
 
-11. **Newsletter — named exports**: `newsletter.js` esporta router (`export default`) + `sendNewsletterById` e `runScheduledSends` come named exports. `index.js`: `import newsletterRouter, { runScheduledSends } from './routes/newsletter.js'`.
+11. **Cron (Vercel)**: gli invii schedulati non girano più con `setInterval` in un processo sempre acceso. Sono route in `app/api/cron/*` invocate da Vercel Cron secondo `client-next/vercel.json` (newsletter e automazioni ogni minuto, blog ogni ora, backup alle 3). Ogni route è **protetta da `CRON_SECRET`** via header `Authorization: Bearer` — nuove route cron devono fare lo stesso controllo. La logica sta in `lib/` (es. `runScheduledSends` in `lib/newsletter-send.js`).
 
 12. **Pageview tracking**: landing page fanno `POST /api/guest/pageview` al mount, deduplicato con `sessionStorage` key `pv_{entity.id}`. 1 visita per sessione browser.
 
-13. **Analytics route**: tutto inside async handlers con try-catch. Express 4 non gestisce automaticamente eccezioni async.
+13. **Route handler**: ogni handler con try-catch e ritorno JSON esplicito; un'eccezione non gestita in una route Next diventa un 500 opaco.
 
 18. **⚠️ Supabase Redirect URLs**: aggiornare ad ogni cambio dominio in `Supabase Dashboard → Authentication → URL Configuration → Redirect URLs`:
     ```
     https://www.oltrenova.com/admin/reset-password
     https://www.oltrenova.com/admin/accept-invite
     https://stayapp-henna.vercel.app/admin/reset-password
-    http://localhost:5173/admin/reset-password
-    http://localhost:5173/admin/accept-invite
+    http://localhost:3000/admin/reset-password
+    http://localhost:3000/admin/accept-invite
     ```
     Site URL: `https://oltrenova.com` (senza www — impostato su Supabase Dashboard)
+    > ⚠️ Le voci `localhost` erano su `:5173` (vecchio dev server Vite). Il dev locale ora è su `:3000`: **da correggere a mano sul Dashboard Supabase**, altrimenti reset password e accept-invite in locale non tornano indietro.
 
 19. **⚠️ Supabase Grant espliciti — obbligatori da ottobre 2026**: ogni migration futura deve includere:
     ```sql

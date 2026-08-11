@@ -6,7 +6,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # Ancora alla cartella dello script (= root del repo) così funziona anche se
-# lanciato da una sottocartella (client-next, server, ...). Senza questo, i
+# lanciato da una sottocartella (client-next, tests, ...). Senza questo, i
 # Set-Location relativi sotto si romperebbero e .\deploy.ps1 da subfolder fallisce.
 Set-Location $PSScriptRoot
 
@@ -19,7 +19,7 @@ npm audit --audit-level=high
 if ($LASTEXITCODE -ne 0) { Write-Host "  Vulnerabilita high/critical rilevate (vedi sopra) - valuta un aggiornamento." -ForegroundColor Yellow }
 Set-Location ..
 
-Write-Host "`n=== Git push (Railway) ===" -ForegroundColor Cyan
+Write-Host "`n=== Git push ===" -ForegroundColor Cyan
 git push origin main
 if ($LASTEXITCODE -ne 0) {
     Write-Host "`nGit push fallito." -ForegroundColor Red

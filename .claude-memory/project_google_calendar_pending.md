@@ -5,6 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
+  modified: 2026-08-11T08:28:36.149Z
 ---
 
 ## Stack attuale — tutto su Vercel + Supabase (2026-06-14)
@@ -44,6 +45,7 @@ metadata:
 
 ### ⚠️ ANCORA PENDENTI (verificate 17/7)
 - **Google Calendar** ⚠️ CONFERMATO pendente: `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` NON presenti su Vercel. Codice = stub. Priorità bassa.
+- **Supabase Redirect URLs `localhost`** ⚠️ DA VERIFICARE (rilevato 11/8, non verificato sul Dashboard — non ho accesso): `CLAUDE.md` elencava `http://localhost:5173/admin/{reset-password,accept-invite}`, porta del dev server Vite dismesso. Il dev locale ora è Next su `:3000` → se il Dashboard ha ancora `:5173`, reset password e accept-invite **in locale** non tornano indietro (la produzione non è toccata). Azione: Supabase Dashboard → Authentication → URL Configuration, sostituire 5173 con 3000. Doc già corretta.
 - **fondaconarni.com apex** ⚠️ CONFERMATO + DECISO DI SISTEMARE (è un cliente specifico): `www.fondaconarni.com` → HTTP 200 (ok), ma apex `fondaconarni.com` → HTTP 000. Manca record apex (A `@ → 76.76.21.21` o redirect apex→www). Azione DNS sul pannello dove sta il dominio (SiteGround o Cloudflare — da chiarire con Francesco dove gestisce il DNS di QUEL dominio). Non è codice. Bassa priorità ma reale (cliente).
 
 ### ✅ DECISE / chiuse (17/7)
