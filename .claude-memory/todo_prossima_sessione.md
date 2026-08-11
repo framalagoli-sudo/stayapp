@@ -1,10 +1,123 @@
 ---
 name: todo_prossima_sessione
-description: To-do prossima sessione (8/7) — Vetrine COMPLETA (flipping/auto/viaggi + filtri). RESTA: rifinire estetica barra filtri Vetrina (solo UI). Sotto, storico multilingua/template/Sentry.
+description: To-do prossima sessione (11/8) — sessione chiusa pulita, niente lavoro a metà. Aperti: CORE JOURNEY/onboarding (il grande capitolo), upgrade Next (27 vuln, 13 high), stesso bug grid in altri editor. Sotto, storico.
 metadata: 
   node_type: memory
   type: project
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
+  modified: 2026-08-11T12:33:30.383Z
+---
+
+## ▶️ RIPARTIRE DA QUI (11/8) — leggere questo
+
+**Sessione chiusa pulita: niente lavoro a metà, working tree pulito, tutto
+pushato e deployato.** Dettaglio in [[project_session_2026_08_11]].
+
+**Cosa è successo (in breve):**
+1. Francesco ha chiesto di **ricostruire il server Express**. **NON fatto, ed è
+   giusto così**: era codice morto rimosso apposta il 13/07 (commit `9b0e484`).
+   Il backend sono le **196 route Next** in `client-next/app/api/`. Rimosso solo
+   il guscio locale `server/`. ⚠️ Se ricapita la richiesta: non ricostruirlo.
+2. **`CLAUDE.md` allineato** (`00675029`): diceva ancora di avviare un server su
+   `:3001` e puntava a due file cancellati. **Avvio locale corretto = un solo
+   processo: `cd client-next && npm run dev` → `:3000`.**
+3. **Fix bug menu ristorante** (`fd2023e5`), live e verificato: la riga piatto
+   sforava la scheda di 107px, prezzo e pulsanti finivano fuori, i nomi non si
+   troncavano. Causa: `display:grid` senza `gridTemplateColumns` → fix
+   `minmax(0, 1fr)`. NON era colpa della duplicazione menu.
+
+**🎯 IL GRANDE CAPITOLO È SEMPRE LO STESSO: affidabilità CORE JOURNEY** —
+percorrere iscrizione→onboarding→AI builder→pubblica→prenotazioni come cliente
+vero. Pezzo più incompleto = **onboarding "Inizia qui"**. La sicurezza è fatta
+(~8/10); questa è l'altra metà del "pronto per il mercato". **Consiglio di
+ripartire da qui.**
+
+**Aperti concreti, in ordine di peso:**
+- ⚠️ **Upgrade Next 14.2 → 15/16**: le vulnerabilità Dependabot sono risalite a
+  **27 (13 high)** da 1 di fine luglio — sono ~20 **nuovi advisory su Next 14.2**
+  (cache poisoning, SSRF, XSS, DoS). Non è una regressione nostra, ma non è più
+  rinviabile a cuor leggero. È una **sessione dedicata** (React 19 + rischio
+  next-pwa: vedi blocco "PROGETTO PIANIFICATO — Upgrade Next" più sotto).
+- 📋 **Stesso bug grid altrove**: il difetto di [[reference_grid_liste_admin]] può
+  esserci in altri editor admin con liste annidate e nomi lunghi (pagine CMS,
+  vetrine, form builder). Non verificati. La sonda Playwright per misurarlo è
+  descritta nella memoria di sessione.
+- 📋 `client/` (vecchio Vite) è ancora in locale, gitignorato: va cancellato come
+  è stato fatto per `server/`, non aggiornato.
+- 📋 **`deploy.ps1` scavalca il branch protection** (Francesco ha il bypass): il
+  gate CI "Build client-next" non fa da guardia sui push diretti a `main`.
+  Cambiarlo = passare a branch + PR: **decisione di Francesco**.
+
+**Trappole operative da ricordare:**
+- **Mai `npx vercel` dalla root**: `.vercel/project.json` in root punta ancora al
+  progetto morto (`stayapp`, vite) → pubblicherebbe il frontend dismesso. Solo `.\deploy.ps1`.
+- **Vercel "Not authorized" è transitorio**: rilanciare prima di indagare.
+- **Smoke: 8 rossi `ENOENT .auth/state.json`** = corsa del harness, non il sito. Rilanciare.
+
+---
+
+## ▶️ (storico) RIPARTIRE DA QUI (17/7) — leggere questo
+
+**Ultima sessione** (dettaglio [[project_session_2026_07_17]]): (a) **2FA account infra CHIUSA** — Google blindato al massimo (chiave madre, tutto login-via-Google); (b) **feature DESIGN header/footer COMPLETA e LIVE** — SiteNav condiviso (3 layout + hover + bottoni extra), icone social loghi veri, sotto-pagine allineate, footer landmine risolta (footer_cfg ora renderizzato) + allineamento left/center. Vedi [[project_header_footer_design]].
+
+**🎯 IL GRANDE CAPITOLO ANCORA APERTO = affidabilità CORE JOURNEY**: percorrere iscrizione→onboarding→AI builder→pubblica→prenotazioni come cliente vero e togliere gli spigoli. Pezzo più incompleto = **onboarding "Inizia qui"** (checklist primo accesso). È l'altra metà del "pronto per il mercato" (la sicurezza è fatta). Consiglio di ripartire da qui.
+
+**Refinement bassi rimasti** (non urgenti): footer varianti extra; link interni bottoni header lang/dominio-aware; Google Calendar env; fondaconarni apex (DNS cliente); onboarding "Inizia qui".
+
+---
+
+## ▶️ (storico) RIPARTIRE DA QUI (15/7)
+
+**Contesto:** Francesco ha chiesto "a freddo, come sicurezza possiamo stare tranquilli?" → risposta onesta: **sì per lo stadio (~8/10)**, la sicurezza del CODICE è solida e auto-sorvegliata. MA il vero vettore rimasto **non è nel codice**: sono i **login personali** degli account infra (se phishano un account, tutto il lavoro sul codice è inutile).
+
+**🔐 AZIONE #1 DI FRANCESCO — 2FA su tutti gli account infra. IMPORTANTE: Francesco entra su TUTTI i servizi con "Accedi con Google" → il suo account Google è la CHIAVE MADRE di tutta l'infra (non solo recovery: è proprio il login). Blindare Google = blindare tutto in un colpo.**
+1. ✅ **Google/Gmail — FATTA E BLINDATA AL MASSIMO (17/7)**: 2FA + **passkey** + app authenticator (codici 60s) + codici di backup salvati + **Advanced Protection Program** attivo. Chiave madre protetta. NON migrare a Gmail dedicata (tutto è legato via "Sign in with Google" → ri-collegare l'identità su ogni servizio = fiddly/rischioso, guadagno marginale).
+2-6. ✅ **GitHub / Supabase / Vercel / Cloudflare / Resend — COPERTI (17/7)**: Francesco ha confermato che entra su TUTTI via "Accedi con Google" → nessuna password separata da proteggere, l'accesso dipende dalla chiave madre Google (blindata). Un solo muro, reso fortissimo. **2FA/account infra = CHIUSO.**
+**Nota futura**: se un domani Francesco creasse una password diretta su uno di questi servizi (o GitHub forzasse la 2FA nativa), riverificare quel singolo account. Finché è "login via Google", è coperto.
+
+**Poi:** l'ALTRA METÀ del "pronto mercato" = **affidabilità del CORE JOURNEY** (iscrizione→onboarding→sito→pubblica→prenotazioni), onboarding "Inizia qui" in testa. La sicurezza del codice è chiusa (vedi sotto, blocco 14/7).
+
+---
+
+## ▶️ RIPARTIRE DA QUI (14/7) — leggere questo
+
+**Dove eravamo:** dopo aver chiuso la sicurezza-base (vedi blocco 13/7 sotto), Francesco ha chiesto un voto onesto → **7/10** → "facciamo tutti e 6 i punti". Dettaglio pieno in [[project_session_2026_07_13]].
+
+**Stato dei 6 punti:**
+- ✅ **#1 auth-hardening — FATTO e LIVE**: upload blindati (`lib/upload-helper.js`, allowlist immagini + ext/content-type forzati dal server + reject markup) + forgot-password enumeration chiusa + 2 test regressione (verificati live). Deployato, 59/59 smoke + 2/2 upload verdi.
+- ✅ **login hardening (Supabase dashboard) — Francesco FATTO**: "Prevent use of leaked passwords" ON + min password length alzata. Rate-limit auth = default, OK. IP forwarding OFF.
+- ✅ **#2 WAF — DECISO: non ora**: managed WAF OWASP è Cloudflare Pro (~$20/mese); DDoS + Bot Fight già gratis&attivi; app ha già rate-limit/honeypot/Turnstile. Valutare Pro **prima del lancio pubblico**, non urgente. (Opzionale free: 1 rate-limit rule su /admin/login.)
+- ✅ **#4 RLS Fase 1 — FATTA (14/7), ha trovato un buco CRITICO**. Vedi [[reference_security_audit]].
+  - **Stato DB**: RLS attiva su TUTTE le 48 tabelle, ma quasi tutte con **0 policy** = deny-all per `anon`/`authenticated` (default SICURO — il browser non tocca nulla). L'app funziona perché il server usa `service_role` (bypassa RLS). Solo 7 tabelle avevano policy.
+  - **Architettura chiave**: il browser legge SOLO 2 tabelle (AuthContext: `profiles` + `aziende`, dati propri); tutto il resto (hook inclusi) via `apiFetch`→server→service_role. Quindi la RLS come "2° muro per le API" **oggi non esiste** e richiederebbe la **Fase 2** (togliere service_role dalle letture per-tenant = ri-architettura). Valore/costo Fase 2 = modesto (l'authz applicativo è già auditato+testato) → **deprioritizzata**.
+  - **🔴 BUCO CRITICO trovato+chiuso (migration 069)**: policy `profiles` "self profile" era `ALL` e `aziende` "aziende_update" era `UPDATE`, con grant UPDATE su `authenticated` → un utente loggato poteva `supabase.from('profiles').update({role:'super_admin'})` dal browser = **auto-escalation a super_admin**, sfruttabile LIVE. Fix: policy ridotte a SOLO SELECT (l'app non scrive queste tabelle dal client). Verificato live + 3 test regressione in security.spec.js. 64/64 smoke.
+  - **✅ Follow-up chiuso**: tolte anche le UPDATE-policy client da `properties`/`ristoranti` (in migration 069, +1 test, 65/65 smoke). **Grant in eccesso: DECISO di NON revocare** — ora che le policy negano le scritture client (deny-all o SELECT-only ovunque) i grant sono inerti, la REVOKE di massa = rischio senza beneficio. **RLS Fase 1 = COMPLETA.**
+  - **📋 Resta (bassa priorità)**: `collegamenti` — ruoli legacy admin/editor leggono cross-tenant (ma non è letta dal client → inerte); Fase 2 RLS (service_role → user-JWT) deprioritizzata.
+  - **💡 Perché c'erano i buchi** (Francesco l'ha chiesto): policy RLS **legacy** dell'era client-diretto, diventate residui pericolosi dopo la migrazione a server/service_role e mai riviste; gli audit precedenti guardavano lo strato APPLICATIVO (route API), non la RLS (invisibile dal codice perché l'app non fa quelle scritture). Lezione: la sicurezza viene dagli **strati di controllo**, non dall'infallibilità di chi scrive.
+- ✅ **#3 monitoring — FATTO IN CASA (14/7)**. Valutato Axiom → **scartato** (Francesco: "siamo sicuri di tutte queste piattaforme esterne? Vercel non ha nulla?" — istinto giusto, YAGNI). Vercel Pro ha già Observability+Runtime Logs per *vedere*; il buco era solo l'*alerting*. Soluzione in-casa (zero vendor nuovi): `lib/observability.js` → `logError(source, err, {alert})` logga SEMPRE su console (→ Vercel Runtime Logs) e con `alert:true` manda 1 mail via Resend deduplicata max 1/ora per source (riusa `check_rate_limit`). Destinatario `ERROR_ALERT_EMAIL || DEMO_NOTIFY_EMAIL` (già set → arriva a Francesco). Agganciato ai catch di booking/prenota, shop/ordine, guest/contact (stesso pattern per gli altri, incrementale). **Nuovo**: `app/error.js` (error boundary globale, prima assente → fallback UI + POST crash a `/api/client-error` → Vercel logs). Verificato live (endpoint 200 + 65/65 smoke). Lezione: preferire Vercel/Supabase/Resend che già paghiamo prima di aggiungere piattaforme.
+- ✅ **#5 pentest AI-driven — FATTO (14/7)**. (a) **Probe attivo** con la chiave anon pubblica: 0 leak in lettura su 20 tabelle sensibili + 0 scritture (INSERT bloccata 42501) → superficie "accesso diretto al DB" BLINDATA. Formalizzato in 2 test PENTEST in security.spec.js. (b) **Agente `security-reviewer`** creato (`.claude/agents/security-reviewer.md`, riutilizzabile on-demand). (c) **Audit white-box** del perimetro pubblico (via agente): 3 finding modesti, **2 fixati+deployati** [wifi_password non esce più nel minisito indicizzato; /api/guest/pageview validato+rate-limited], resto PULITO (injection/IDOR/gating). Finding 2 (`preview=1` legge bozze same-tenant senza auth) = **backlog basso**. → Il **pentest ESTERNO a pagamento** resta consigliato solo prima di clienti enterprise/compliance, NON urgente.
+- ✅ **#6 Turnstile — CHIUSO**: resta SOFT per scelta deliberata (strict bloccava clienti veri; anti-bot già dato da honeypot+rate-limit+spam-filter+email-validation). Non è un gap.
+- 📋 **Restano**: #2 WAF Pro (prima del lancio pubblico), #4 RLS Fase 2 (deprioritizzata). Follow-up minori: agganciare `logError` agli altri catch critici (register, eventi/book, form submit); Finding 2 preview auth.
+- 🎯 **BILANCIO SICUREZZA (fine 14/7)**: 1→10 ora ~**8**. Fatti: dipendenze auto (Dependabot+CI+auto-merge), SAST CodeQL (0 alert), authz applicativo auditato, RLS lockdown (chiuso escalation critica), upload blindati, monitoring in-casa, pentest AI (DB blindato). Manca per 8→9: WAF, pentest esterno credibile, RLS Fase 2. **L'ALTRA METÀ del "pronto mercato" resta l'AFFIDABILITÀ del core journey** (onboarding "Inizia qui" in testa) — non ancora toccata.
+
+**Repo pulito, tutto committato+pushato+deployato al 13/7 sera.** `gh` autenticato (percorso pieno). CodeQL SAST attivo (0 alert). Dependabot auto-merge attivo.
+
+---
+
+## ▶️ RIPARTIRE DA QUI (13/7) — leggere questo
+
+**Strato 0 sicurezza ora OPERATIVO (non solo configurato).** Oggi chiuso il loop "aggiornamenti tipo WordPress" + pulizia codice morto. Dettaglio in [[project_session_2026_07_13]].
+- **gh CLI installato + autenticato** (`C:\Program Files\GitHub CLI\gh.exe`; account framalagoli-sudo, keyring). Da qui gestisco PR/CI/merge. ⚠️ `gh` non è sul PATH della shell tool → usarlo col percorso pieno. ⚠️ jq con `\(...)` si rompe in PowerShell → usare path jq semplici o output tabellare.
+- **Cancellati `client/` (168 file, vecchio Vite) e `server/` (55 file, Express/Railway spento)** = codice morto → vulnerabilità Dependabot **40 → 19** solo con la pulizia. Reversibile via git.
+- **CI gate**: `.github/workflows/ci.yml` compila client-next ad ogni PR (placeholder env, no segreti). **PROVATO VERDE** (1m44s). `main` **protetto**: richiede il check "Build client-next" (enforce_admins=false → Francesco/`deploy.ps1` pushano diretto senza intoppi).
+- **Auto-merge Dependabot minor/patch**: `.github/workflows/dependabot-automerge.yml` → le PR sicure entrano da sole SE il gate è verde. I **major restano manuali**.
+- **In flush automatico**: PR #9 (client-next minor/patch, 15 update) + #3/#4/#5 (test) → auto-merge attivo + rebase richiesto; entrano quando il CI è verde (verificare che si chiudano).
+- **⏸️ Major PARCHEGGIATI** (upgrade dedicati, uno alla volta): #22 Next 14→16, #11 React 19, #12/#20/#21 Sentry 10 (bloccato su Next 14), #10 Stripe 22 (non integrato). NON auto-mergiati apposta.
+- **⚠️ Perso il check di drift schema DB** (era `server/scripts/check-schema.js`, sparito con server/) → backlog: reintrodurlo su client-next se utile.
+- **Impegno continuo Francesco**: quasi zero. Le minor/patch entrano da sole; ogni tanto guardare i major parcheggiati e decidere. Su una CVE, Dependabot apre la PR di sicurezza.
+
+**Resta** (come 11/7): l'altra metà del "pronto per il mercato" = **affidabilità del core journey** (b sotto). Sicurezza = fatta e ora auto-vigilata.
+
 ---
 
 ## ▶️ RIPARTIRE DA QUI (11/7) — leggere questo
@@ -15,12 +128,7 @@ metadata:
 - Audit profondo (workflow) → 18 buchi trovati e confermati → **16 corretti** e messi live → **3 test** che vigilano che non tornino.
 - Creato il sistema per monitorarla **sempre** (a strati): test automatici ad ogni deploy (gratis), + Dependabot per gli aggiornamenti, + audit AI solo quando serve.
 
-**👉 AZIONE MANUALE DI FRANCESCO (2 min, una volta):** su **GitHub → repo `stayapp` → Settings → Code security and analysis**, attivare:
-1. **Dependabot alerts** = ON
-2. **Dependabot security updates** = ON ← ti apre da solo le PR quando esce una vulnerabilità in una libreria (il "come fa WordPress").
-3. **Secret scanning + Push protection** = ON (blocca chiavi committate per sbaglio).
-   - ⚠️ Se il repo è **privato** e 3 è a pagamento (GitHub Advanced Security): NON pagare → dire a Claude "usa gitleaks" (gratis, in CI).
-- Poi il suo unico impegno continuo: **mergiare le PR di Dependabot** + **aggiornare Next.js** quando esce una patch di sicurezza.
+**✅ AZIONE MANUALE DI FRANCESCO — FATTA E CONFERMATA (12/7):** Dependabot alerts + security updates = ON; "Secret Protection" (secret scanning + push protection) = ON, **gratis (GitHub NON ha chiesto pagamento)** → niente gitleaks necessario. Setup sorveglianza sicurezza COMPLETO. Impegno continuo di Francesco: solo **mergiare le PR di Dependabot** + aggiornare Next su patch di sicurezza.
 
 **🔭 DECISIONE aperta alla ripresa (scegliere una):**
 - (a) Continuare sulla sicurezza coi tasselli extra: **SAST in CI** (CodeQL/Semgrep, scanner codice automatico), **WAF Cloudflare** (toggle di Francesco), **Sentry** (bloccato su Next 14 → decidere Next 15 o alternativa), **agente `security-reviewer` riutilizzabile** (comando on-demand).
