@@ -243,13 +243,18 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - **Sidebar admin riorganizzata** ✅ 2026-07-09: L1 barra principale in linguaggio umano (**Clienti & richieste** / **Contenuti & promo**); L2 menu entità raggruppato (**Contenuti / Sito & presenza / Impostazioni**) con **AI Site Builder** e QR nel menu. Solo `admin_azienda`; super/legacy invariati. Manca onboarding "Inizia qui" (backlog).
 
 ### Da fare (in ordine)
-- [ ] **Pagamenti Stripe** — checkout booking risorse ed eventi (colonne `pagamento_stato/pagamento_id` già su prenotazioni)
-- [ ] **Collegare GitHub → Vercel auto-deploy** (oggi deploy manuale via `deploy.ps1`)
-- [ ] **Sentry** — bloccato su Next 14.2 (serve upgrade Next 15 o alternativa)
+- [ ] 🎯 **Onboarding "Inizia qui"** — checklist primo accesso (completa i dati → genera il sito con l'AI → pubblica → dominio → primi contatti). **È il capitolo aperto più importante**: la sicurezza è fatta, quello che manca è che un cliente nuovo arrivi al sito pubblicato *da solo*.
+- [ ] **Pagamenti Stripe** — checkout booking risorse ed eventi (colonne `pagamento_stato/pagamento_id` già su prenotazioni). NB: lo Stripe dello **shop** è già integrato (`app/api/shop/webhook/stripe`).
+- [ ] **Upgrade Next 14.2 → 15/16** — **manutenzione, non sicurezza** (triage 11/8: nessuno degli advisory high ci riguarda). Si farà per React 19 / Sentry / attualità. L'ostacolo `next-pwa` è stato rimosso, quindi ora è meno rischioso.
 - [ ] **Import documento v2** — upload file PDF/DOCX + chunking per documenti lunghi
-- [ ] **Cleanup** — estrarre un `SiteNav` condiviso (header pubblico duplicato in 4 componenti)
 - [ ] **Multi-lingua DE** (IT/EN già fatti)
 - [ ] **Notifiche real-time** — Supabase Realtime su `requests` (bassa priorità)
-- [ ] Email reminder booking, QR Code con logo, Modalità offline PWA, Recensioni ospiti, Integrazione PMS
+- [ ] Email reminder booking, QR Code con logo, PWA installabile da ri-abilitare (NetworkFirst, **mai** precache dello shell), Recensioni ospiti, Integrazione PMS
+
+### Decisioni prese (NON sono "da fare")
+- **GitHub → Vercel auto-deploy: NO, deliberato** (17/7). Il deploy resta manuale via `deploy.ps1` proprio perché così gira sempre lo smoke test integrato: è un valore, non un limite.
+- **Sentry: rimosso** (23/7). Era installato ma inerte su Next 14. Il monitoring è **in casa**: `lib/observability.js` → log su Vercel + alert email via Resend. Riconsiderarlo semmai dopo l'upgrade di Next.
+- **`SiteNav` condiviso: fatto** — l'header pubblico non è più duplicato.
+- **Turnstile: resta SOFT per sempre** — lo strict bloccava clienti veri.
 
 > Per il dettaglio completo vedere `FEATURES.md` nella root del repo.

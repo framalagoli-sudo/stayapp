@@ -1,8 +1,9 @@
 # StayApp — Frontend (client-next/)
 
-Auto-caricato da Claude Code quando si lavora in `client-next/` (il frontend **LIVE**, Next.js 14 App Router). Per root e note operative → `../CLAUDE.md`. Per DB schema e API → `../server/CLAUDE.md`.
+Auto-caricato da Claude Code quando si lavora in `client-next/` (Next.js 14 App Router). Per root e note operative → `../CLAUDE.md`. Per lo schema DB → `../supabase/migrations/`.
 
-> ⚠️ `client/` è il **vecchio frontend Vite, dismesso**. Non toccarlo. Tutto il codice in produzione è qui in `client-next/`.
+> ⚠️ Qui dentro c'è **tutto il codice live: frontend E backend**. Le API sono le ~196 route in `app/api/`. Non esiste un server separato: l'Express in `server/` e il frontend Vite in `client/` sono stati rimossi dal repo (commit `9b0e484`, 13/07/2026) e sono in `.gitignore`. **Non ricostruirli.**
+> Avvio locale = un solo processo: `npm run dev` → `:3000` (frontend + `/api/*`).
 
 ---
 

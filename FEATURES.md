@@ -1,6 +1,9 @@
 # FEATURES — Roadmap prodotto StayApp
 
 Documento vivo. Aggiornato sessione per sessione.
+
+> ⚠️ **Nota di lettura (11/08/2026).** Questo file contiene anche la **cronaca storica** del prodotto: alcune sezioni raccontano fasi già superate. In particolare **Railway è dismesso** — il backend Express in `server/` non esiste più (rimosso il 13/07/2026), le API sono le route Next in `client-next/app/api/`. Ovunque si legga "env var su Railway", **oggi vanno su Vercel**. Le sezioni che descrivono la migrazione Railway→Vercel sono storia, non lavoro da fare: quella migrazione è **completa**. Per lo stato attuale fai fede a `CLAUDE.md`.
+
 Ultima revisione: **2026-07-06** — Site-builder maturo (8 template, 39 blocchi, undo/redo, anteprima live); **AI Site Builder unificato** (un flusso; import da documento con incolla-ChatGPT, una/più pagine, Sonnet per fedeltà); editor sito unico in SitoPage (ritirata MiniSitoPage, tracking migrato); **multilingua IT/EN completo** (sito+PWA, toggle inline nell'header); landing OltreNova ridisegnata; **header pubblico** (logo in cima, hamburger mobile, logo negativo `logo_dark_url` per sfondi scuri). Infra: Supabase Pro + Vercel Pro + oltrenova.com live.
 Storico: 2026-06-11 (Next.js migration + cutover oltrenova.com, PWA unificata, allergeni EU, AI Site Builder v2, RistoranteMenu refactor, fix QR code, CI/CD smoke test).
 
@@ -167,7 +170,7 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 - [x] `GET /api/public/resolve-domain?d=` — endpoint pubblico per la risoluzione
 - [x] Auto-creazione record sottodominio alla creazione di ogni entità
 - **Migration da eseguire:** `035_domini.sql`
-- **Env vars da aggiungere in Railway:** `STAYAPP_DOMAIN=stayapp.it`, `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`
+- **Env vars da aggiungere su Vercel:** `STAYAPP_DOMAIN=stayapp.it`, `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`
 
 ### Sprint 9-mini — Responsive mobile audit ✅ 2026-05-16
 - [x] 23 pagine admin — tutti `gridTemplateColumns: '1fr 1fr'` e `'1fr 1fr 1fr'` → `repeat(auto-fit, minmax(Xpx, 1fr))` (stacking automatico su mobile)
@@ -190,7 +193,7 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 - [x] Landing pages Struttura/Ristorante/Attività: case 'shop' → `<ShopWidget aziendaId primaryColor />`
 - [x] MiniSito admin: 'shop' in DEFAULT_SECTION_ORDER + labels in tutte e 3 le pagine
 - **Migration da eseguire su Supabase:** `036_shop.sql` ⚠️
-- **Stripe opzionale:** aggiungere `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` in Railway quando pronto
+- **Stripe opzionale:** aggiungere `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` su Vercel quando pronto
 
 ### Content Studio ✅ 2026-05-17
 - [x] **Strategia editoriale AI** — wizard 4 domande → 5 content pillar, tono di voce, frequenza/canale, hashtag base
@@ -199,7 +202,7 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 - [x] **Gap Analyzer (Opportunità)** — scansiona eventi prossimi, prodotti attivi, articoli recenti non promossi; bottone "Crea post" → PostSocialModal precompilato
 - [x] **PostSocialModal** — canvas grafico browser-side (4 formati: 1:1 / 4:5 / 9:16 / 16:9), caption AI, aggiungi al piano editoriale; integrato in blog/eventi/prodotti editor
 - **Migration da eseguire:** `037_content_studio.sql` (`ALTER TABLE aziende ADD COLUMN IF NOT EXISTS content_strategy jsonb DEFAULT '{}';`) ⚠️
-- **Richiede:** `ANTHROPIC_API_KEY` su Railway
+- **Richiede:** `ANTHROPIC_API_KEY` su Vercel
 
 ### Survey & NPS ✅ 2026-05-17
 - [x] **Invio survey via email** — admin invia link token al cliente (nome + email)
@@ -221,7 +224,7 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 - [x] `google_event_id` salvato su prenotazione per aggiornamenti/cancellazioni
 - [x] UI admin `/admin/integrazioni` — sezione Google Calendar: Connetti / Disconnetti, email account collegato
 - **Migration da eseguire:** `039_google_calendar.sql` ⚠️
-- **Setup manuale richiesto:** Google Cloud Console (API Calendar, OAuth 2.0, redirect URI) + Railway env `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`
+- **Setup manuale richiesto:** Google Cloud Console (API Calendar, OAuth 2.0, redirect URI) + env `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` su Vercel
 - **Test mode:** in "test mode" Google, aggiungere email clienti manualmente come utenti di test
 
 ### Loyalty & Gift Card ✅ 2026-05-17
@@ -367,7 +370,7 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 - [ ] Checkout eventi
 - [ ] Link pagamento rapido (admin genera link "paga €X" → cliente paga)
 - [ ] Webhook Stripe → aggiorna stato prenotazione automaticamente
-- *Richiede: account Stripe + chiavi API in Railway/Vercel env*
+- *Richiede: account Stripe + chiavi API nelle env di Vercel*
 
 ---
 
@@ -388,7 +391,7 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 - [x] Canali: Instagram, Facebook, LinkedIn, TikTok, X, Google Business
 - [x] Stato workflow: bozza → pianificato → pubblicato (senza Meta API — pubblicazione manuale)
 - [x] Note interne non pubblicate
-- [x] **AI social post generator** — bottone "✨ Genera con AI" nell'editor post; modal con tema/brief + tono (4 opzioni); genera testo ottimizzato per canale via Claude Haiku; anteprima + "Usa testo" o "Rigenera"; limite 20 gen/mese per azienda (configurabile `AI_MONTHLY_LIMIT`). Usa `fetch` nativo → `POST https://api.anthropic.com/v1/messages`. Richiede `ANTHROPIC_API_KEY` su Railway.
+- [x] **AI social post generator** — bottone "✨ Genera con AI" nell'editor post; modal con tema/brief + tono (4 opzioni); genera testo ottimizzato per canale via Claude Haiku; anteprima + "Usa testo" o "Rigenera"; limite 20 gen/mese per azienda (configurabile `AI_MONTHLY_LIMIT`). Usa `fetch` nativo → `POST https://api.anthropic.com/v1/messages`. Richiede `ANTHROPIC_API_KEY` su Vercel.
 - **Migration da eseguire su Supabase:** `034_piano_editoriale.sql`
 
 ### Form builder ✅ 2026-05-16
@@ -473,11 +476,11 @@ Il refactor verso "Business" generico richiede principalmente:
 
 ### Infrastruttura
 
-- [ ] Upgrade Supabase Pro ($25/mese)
-- [ ] Upgrade Vercel Pro ($20/mese)
-- [ ] Acquisto dominio + configurazione (checklist in server/CLAUDE.md)
-- [ ] Creare account Stripe (quando si vuole sbloccare pagamenti — Sprint 8)
-- [ ] Collegare GitHub → Vercel per auto-deploy
+- [x] Upgrade Supabase Pro ($25/mese) ✅ 2026-06-22
+- [x] Upgrade Vercel Pro ($20/mese) ✅
+- [x] Acquisto dominio + configurazione — **oltrenova.com live** (cutover 2026-06-08), SSL Cloudflare Full-strict ✅
+- [ ] Creare account Stripe (quando si vuole sbloccare i pagamenti booking/eventi — lo Stripe dello **shop** è già integrato)
+- ~~Collegare GitHub → Vercel per auto-deploy~~ — **deciso di NO** (17/7): il deploy resta manuale via `deploy.ps1` così gira sempre lo smoke test integrato
 
 ---
 
@@ -563,26 +566,22 @@ Metodologia: voce per voce, spunta quando confermato ok in produzione.
 
 ---
 
-### FASE 2 — Migrazione Railway → Vercel API Routes 🔴
+### FASE 2 — Migrazione Railway → Vercel API Routes ✅ COMPLETATA
 
-Elimina Railway ($5/mese), tutto su Vercel. Il server Express diventa Next.js API routes.
+> Sezione **storica**: la migrazione è finita. Railway è spento e il backend Express in
+> `server/` è stato **rimosso dal repo** il 13/07/2026 (commit `9b0e484`). Tutte le
+> route vivono in `client-next/app/api/` (~196 `route.js`). Non c'è più niente da migrare.
 
-**Strategia:** route per route, non big bang. Ogni file `server/src/routes/xxx.js` diventa `client-next/app/api/xxx/route.js`.
+- [x] Middleware auth condiviso → `lib/server-auth.js` (`requireAuth`, `requireEntityAccess`, `requireRecordAccess`)
+- [x] Route auth, CRUD (`properties`, `ristoranti`, `attivita`, `contatti`) e complesse (`booking`, `newsletter`, `eventi`)
+- [x] Upload → `/api/upload/*` su Supabase Storage (`lib/upload-helper.js`, allowlist immagini)
+- [x] Scheduler → **Vercel Cron** (`app/api/cron/*`, definiti in `client-next/vercel.json`, protetti da `CRON_SECRET`)
+- [x] Backup → cron notturno `/api/cron/backup`
+- [x] Railway dismesso, env var tutte su Vercel
 
-**Ordine consigliato:**
-- [ ] Setup middleware auth condiviso (`lib/auth-middleware.ts`)
-- [ ] Migra route leggere: `auth.js`, `health`
-- [ ] Migra route CRUD: `properties`, `ristoranti`, `attivita`, `contatti`
-- [ ] Migra route complesse: `booking`, `newsletter`, `eventi`
-- [ ] Migra upload (`/api/upload/*`) — Vercel ha limite 4.5MB body su serverless; valutare Vercel Blob o tenere upload su Supabase Storage direttamente dal client
-- [ ] Migra scheduler (`runScheduledSends`, `runAutomazioniScheduler`) → Vercel Cron Jobs
-- [ ] Migra backup R2 → Vercel Cron Job notturno
-- [ ] Rimuovi Railway, aggiorna env vars su Vercel
-
-**Note:**
-- Vercel serverless = stateless, no `setInterval` → scheduler diventano Vercel Cron
-- Vercel timeout max 60s (Pro) — ok per quasi tutto tranne AI generation lunga
-- Variabili d'ambiente: Railway → Vercel env settings
+**Lezioni rimaste valide:**
+- Vercel serverless = stateless, niente `setInterval` → gli scheduler sono Cron
+- Timeout max 60s (Pro) — stretto per le generazioni AI lunghe (`maxDuration` alzato dove serve)
 
 ---
 
@@ -647,10 +646,13 @@ Utile per: azienda che vuole i propri dati (GDPR portabilità), ripristino dopo 
 - [ ] Betteruptime o UptimeRobot (free) — check ogni 5 min su `oltrenova.com`, alert immediato
 - [ ] Check anche su `api.oltrenova.com/api/health`
 
-#### Sentry (codice già presente, manca DSN)
-- [ ] Crea account sentry.io free → 2 progetti (Node.js + Next.js)
-- [ ] `SENTRY_DSN` su Railway (o Vercel dopo migrazione), `VITE_SENTRY_DSN` su Vercel
-- [ ] Alert su Sentry per error rate > 5% in 5 minuti
+#### ~~Sentry~~ → sostituito da monitoring IN CASA ✅
+Sentry è stato **rimosso** il 23/07/2026: su Next 14.2 non si inizializzava mai (restava
+inerte) e portava 3 vulnerabilità. Al suo posto, zero vendor nuovi:
+- [x] `lib/observability.js` → `logError(source, err, { alert })`: logga sempre sui Runtime Logs di Vercel e, con `alert: true`, manda **una** mail via Resend deduplicata (max 1/ora per source)
+- [x] `app/error.js` — error boundary globale + invio crash client a `/api/client-error`
+- [ ] Agganciare `logError` ai catch critici rimasti (register, eventi/book, form submit)
+> Riconsiderare Sentry semmai **dopo** l'upgrade di Next (con `instrumentationHook` stabile funziona nativo).
 
 #### AI agent per verifiche di routine
 - [ ] Cron giornaliero: verifica che tutte le landing pubbliche rispondano 200 (struttura/ristorante/attività)
@@ -666,7 +668,7 @@ Utile per: azienda che vuole i propri dati (GDPR portabilità), ripristino dopo 
 |---|---|---|
 | Error tracking | Sentry | codice pronto, manca DSN |
 | Uptime monitoring | Betteruptime/UptimeRobot | da configurare |
-| Structured logging | Winston/Pino su Railway | da aggiungere |
+| Structured logging | `lib/observability.js` → Runtime Logs Vercel + alert Resend | ✅ in casa |
 | CI/CD automatico | GitHub Actions | da configurare |
 | Feature flags | growthbook.io (free) | futuro |
 | Backup verificati | test restore mensile | da automatizzare |
