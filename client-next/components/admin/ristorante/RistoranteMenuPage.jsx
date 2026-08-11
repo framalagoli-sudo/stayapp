@@ -440,7 +440,10 @@ export default function RistoranteMenuPage() {
                                         <div style={{ borderTop: '1px solid #ebebeb', padding: '10px 14px 14px' }}>
                                           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={e => handleItemDragEnd(e, ci, catIdx)}>
                                             <SortableContext items={cat.items.map(it => it.id)} strategy={verticalListSortingStrategy}>
-                                              <div style={{ display: 'grid', gap: 8, marginBottom: 10 }}>
+                                              {/* minmax(0,1fr): senza, la colonna si dimensiona sul nome piatto
+                                                  (whiteSpace nowrap) e la riga sfora la scheda — prezzo e pulsanti
+                                                  finiscono fuori e i puntini di troncamento non scattano mai. */}
+                                              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 8, marginBottom: 10 }}>
                                                 {cat.items.map((item, ii) => (
                                                   <SortableItem key={item.id} id={item.id}>
                                                     {(itemListeners, itemAttrs) => (
@@ -533,7 +536,7 @@ export default function RistoranteMenuPage() {
                         <div style={{ marginTop: 12, borderTop: '1px solid #f0f0f0', paddingTop: 12 }}>
                           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={e => handleSingleItemDragEnd(e, ci)}>
                             <SortableContext items={cat.items.map(it => it.id)} strategy={verticalListSortingStrategy}>
-                              <div style={{ display: 'grid', gap: 12, marginBottom: 12 }}>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 12, marginBottom: 12 }}>
                                 {cat.items.map((item, ii) => (
                                   <SortableItem key={item.id} id={item.id}>
                                     {(itemListeners, itemAttrs) => (
@@ -888,7 +891,7 @@ function ItemRow({ item, ristoranteId, onChange, onDelete, allCatalogues, curren
             </label>
 
             {/* Campi */}
-            <div style={{ flex: 1, minWidth: 0, display: 'grid', gridTemplateColumns: '1fr 80px', gap: '8px 12px' }}>
+            <div style={{ flex: 1, minWidth: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 80px', gap: '8px 12px' }}>
               <input value={name} onChange={e => setName(e.target.value)} onBlur={() => onChange({ name })} placeholder="Nome *" style={inpStyle} />
               <input value={price} onChange={e => setPrice(e.target.value)} onBlur={() => onChange({ price })} placeholder="Prezzo €" style={inpStyle} type="number" min="0" step="0.5" />
               <input value={desc} onChange={e => setDesc(e.target.value)} onBlur={() => onChange({ description: desc })} placeholder="Descrizione" style={{ ...inpStyle, gridColumn: '1 / -1' }} />
