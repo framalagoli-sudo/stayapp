@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
-  modified: 2026-08-11T12:33:30.383Z
+  modified: 2026-08-11T18:23:46.077Z
 ---
 
 ## ▶️ RIPARTIRE DA QUI (11/8) — leggere questo
@@ -33,11 +33,17 @@ vero. Pezzo più incompleto = **onboarding "Inizia qui"**. La sicurezza è fatta
 ripartire da qui.**
 
 **Aperti concreti, in ordine di peso:**
-- ⚠️ **Upgrade Next 14.2 → 15/16**: le vulnerabilità Dependabot sono risalite a
-  **27 (13 high)** da 1 di fine luglio — sono ~20 **nuovi advisory su Next 14.2**
-  (cache poisoning, SSRF, XSS, DoS). Non è una regressione nostra, ma non è più
-  rinviabile a cuor leggero. È una **sessione dedicata** (React 19 + rischio
-  next-pwa: vedi blocco "PROGETTO PIANIFICATO — Upgrade Next" più sotto).
+- ✅ **Vulnerabilità Next: TRIAGE FATTO, allarme rientrato.** Verificati uno per
+  uno i 27 alert contro la nostra config: **nessuno degli 8 high ci riguarda**
+  (richiedono Server Actions / `rewrites()` / Pages Router i18n / WebSocket /
+  custom server: non ne abbiamo nessuno). I 6 non-Next sono solo build-time.
+  **L'upgrade Next scende da "sicurezza" a "manutenzione"** — si farà per React 19
+  / Sentry, pianificato, non di corsa. Dettaglio §6 in [[project_session_2026_08_11]].
+  - ✅ **`next-pwa` RIMOSSO** (commit `40a223a8`, live, verificato): era inerte
+    (`disable:true` dal 18/6) ma portava i 4 alert high di brace-expansion ed era
+    il **blocco principale all'upgrade Next 15** → ora l'upgrade è meno rischioso.
+  - ⚠️ **VINCOLO**: introdurre una **Server Action** su Next 14.2 accende ~6 di
+    quegli advisory. Valutarlo prima di usarle.
 - 📋 **Stesso bug grid altrove**: il difetto di [[reference_grid_liste_admin]] può
   esserci in altri editor admin con liste annidate e nomi lunghi (pagine CMS,
   vetrine, form builder). Non verificati. La sonda Playwright per misurarlo è

@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 7defb6ab-c608-4221-b1b5-1731818ba405
-  modified: 2026-08-11T12:32:59.142Z
+  modified: 2026-08-11T18:23:29.563Z
 ---
 
 # Sessione 11/08/2026
@@ -104,5 +104,51 @@ prezzo NON era tagliato: la prima ipotesi era errata).
   guardia sui suoi push**. Non è una regressione, è il flusso attuale. Cambiarlo
   richiede branch + PR = decisione di Francesco.
 - ⚠️ **Vulnerabilità Dependabot risalite a 27 (13 high)**, da 1 di fine luglio.
-  Non è una regressione: sono **nuovi advisory su Next 14.2** (~20: cache
-  poisoning, SSRF, XSS, DoS). Rende l'upgrade Next meno rinviabile.
+  Non è una regressione: sono **nuovi advisory su Next 14.2**. → **TRIAGE FATTO,
+  vedi §6: l'allarme era ingiustificato.**
+
+## 6. TRIAGE dei 27 alert Dependabot (stessa giornata) — CONCLUSIONE: nessuna urgenza
+
+Fatto su richiesta di Francesco. **Correzione a quanto avevo scritto sopra**: avevo
+segnalato l'upgrade Next come "meno rinviabile" sulla base del solo *conteggio*.
+Verificando advisory per advisory contro la nostra configurazione, **non regge**.
+
+**Gli 8 `high` su Next: NESSUNO applicabile.** Ognuno richiede una condizione che
+non abbiamo (verificato nel codice, non dedotto):
+| Advisory | Richiede | Noi |
+|---|---|---|
+| GHSA-p9j2 SSRF rewrites | `rewrites()` con hostname da input | nessun `rewrites()`/`redirects()` in next.config; il middleware fa rewrite **same-origin** |
+| GHSA-36qx bypass middleware | **Pages Router** + i18n | App Router, nessun i18n config |
+| GHSA-m99w DoS Server Actions | ≥1 Server Action | **zero** `'use server'` (l'advisory dice testualmente che senza non si è vulnerabili) |
+| GHSA-89xv SSRF Server Actions | Server Actions + **custom server** | nessuno dei due |
+| GHSA-h25m / q4gf / 8h8q DoS RSC | endpoint **Server Function** | non ne esponiamo (nessun `'use server'`) |
+| GHSA-c4j6 SSRF WebSocket | upgrade WebSocket | non usati |
+
+⚠️ **VINCOLO DA RICORDARE: il giorno che si introduce una Server Action, ~6 di
+questi advisory diventano vivi.** Da valutare prima di usarle finché siamo su 14.2.
+
+**Altri:** `next/image` non è importato da nessun file; `/_next/image` in prod
+respinge host non in allowlist (400 verificato). Gli advisory Image Optimizer sono
+espliciti **self-hosted** → N/A (siamo su Vercel). I 6 alert non-Next
+(brace-expansion ×4, nanoid, postcss) sono **solo build-time**.
+
+**Residuo reale**: la famiglia cache-poisoning RSC (medium/low). Unica cosa da
+riesaminare, non urgente.
+
+### Azione presa: rimosso `next-pwa` (commit `40a223a8`, live)
+Scoperta durante il triage: `next-pwa` era `disable: true, register: false` dal
+18/6 → **inerte a runtime**, ma trascinava workbox/clean-webpack-plugin in build,
+cioè **tutti e 4 gli alert high di brace-expansion**, ed era il "rischio
+principale" annotato per l'upgrade Next 15. Stesso identico caso di Sentry (23/7).
+- `npm audit`: 4 vuln (3 high) → **3 (2 high)**.
+- **Bundle invariato** (First Load JS 87.6 kB prima e dopo) = prova che a runtime
+  non faceva nulla.
+- **NON toccati** (sono file nostri committati, non generati): `public/sw.js`
+  (kill-switch anti-pagina-bianca), `public/manifest.json`, `PWARegister.js`.
+- Verificato live dopo il deploy: `/sw.js` 200 col contenuto giusto,
+  `/manifest.json` 200, `/workbox-*.js` 404 (correttamente sparito), sito
+  pubblico e PWA `?qr=1` 200 con SSR reale. Smoke 66/66.
+
+**Conseguenza sulla roadmap:** l'upgrade Next scende da "sicurezza" a
+**manutenzione** (si farà per React 19 / Sentry / attualità del framework), ed è
+ora **meno rischioso** perché l'ostacolo next-pwa non c'è più.
