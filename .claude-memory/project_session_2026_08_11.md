@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 7defb6ab-c608-4221-b1b5-1731818ba405
-  modified: 2026-08-11T18:23:29.563Z
+  modified: 2026-08-11T21:42:53.008Z
 ---
 
 # Sessione 11/08/2026
@@ -152,3 +152,32 @@ principale" annotato per l'upgrade Next 15. Stesso identico caso di Sentry (23/7
 **Conseguenza sulla roadmap:** l'upgrade Next scende da "sicurezza" a
 **manutenzione** (si farà per React 19 / Sentry / attualità del framework), ed è
 ora **meno rischioso** perché l'ostacolo next-pwa non c'è più.
+
+**Bilancio alert**: `npm audit` 4 (3 high) → **1 high**; Dependabot 27 → **21**,
+**tutti e 21 su `next`** (Dependabot ha anche auto-mergiato postcss 8.5.26, che ha
+chiuso postcss + nanoid).
+
+## 7. Documentazione allineata — 2° giro (commit finale)
+
+Il 1° giro aveva sistemato solo il `CLAUDE.md` di root. Gli **altri** file di
+progetto raccontavano ancora un mondo inesistente:
+- **`client-next/CLAUDE.md`** — il peggiore, perché è **auto-caricato** lavorando
+  nel frontend: rimandava a `../server/CLAUDE.md` (cancellato). Ora dice che lì
+  dentro c'è frontend **E** backend, che `server/`/`client/` non vanno ricostruiti
+  e come si avvia (`:3000`).
+- **`CLAUDE.md`, lista "Da fare"** — conteneva lavoro già fatto o già deciso:
+  GitHub→Vercel auto-deploy (deciso NO il 17/7), Sentry (rimosso il 23/7),
+  `SiteNav` condiviso (fatto, esiste ed è usato da 5 componenti). Spostati in una
+  nuova sezione **"Decisioni prese (NON sono da fare)"**. Aggiunto in cima
+  l'**onboarding "Inizia qui"**, che è il capitolo aperto più importante e
+  incredibilmente non era in lista.
+- **`FEATURES.md`** — nota di lettura in testa (è anche cronaca storica); corrette
+  6 istruzioni che dicevano di mettere le env var su **Railway**; la sezione
+  "FASE 2 — Migrazione Railway→Vercel" aveva ancora le **caselle da spuntare per
+  un lavoro completato**; checklist infrastruttura (Supabase Pro/Vercel Pro/dominio)
+  segnata da fare da mesi.
+- **`SECURITY.md` non toccato**: aveva già la nota corretta sul vecchio Express.
+
+**Lezione**: quando si dismette un pezzo di architettura, la doc va sistemata
+**tutta insieme**, non solo il file principale. I puntatori rotti in un file
+auto-caricato costano a ogni sessione futura.

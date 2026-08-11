@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
-  modified: 2026-08-11T18:23:46.077Z
+  modified: 2026-08-11T21:43:00.426Z
 ---
 
 ## ▶️ RIPARTIRE DA QUI (11/8) — leggere questo
@@ -25,6 +25,11 @@ pushato e deployato.** Dettaglio in [[project_session_2026_08_11]].
    sforava la scheda di 107px, prezzo e pulsanti finivano fuori, i nomi non si
    troncavano. Causa: `display:grid` senza `gridTemplateColumns` → fix
    `minmax(0, 1fr)`. NON era colpa della duplicazione menu.
+
+4. **Triage vulnerabilità Next → allarme rientrato** + rimosso `next-pwa` inerte
+   (vedi sotto). **Doc di progetto allineate tutte**: `client-next/CLAUDE.md`
+   (era auto-caricato e puntava a un file cancellato), `FEATURES.md`, roadmap
+   `CLAUDE.md` ripulita dalle voci già fatte/decise.
 
 **🎯 IL GRANDE CAPITOLO È SEMPRE LO STESSO: affidabilità CORE JOURNEY** —
 percorrere iscrizione→onboarding→AI builder→pubblica→prenotazioni come cliente
