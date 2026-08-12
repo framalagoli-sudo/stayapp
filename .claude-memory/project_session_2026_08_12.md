@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: def02397-c897-4edf-bae0-413b418c3dd2
-  modified: 2026-08-12T11:02:39.867Z
+  modified: 2026-08-12T16:38:30.972Z
 ---
 
 # Sessione 12/08/2026 — gli "aperti piccoli" lasciati dall'11/08
@@ -36,6 +36,9 @@ Messaggio esplicito anche nel caso scomodo "deploy ok ma push fallito".
 
 Riscritto il file in **UTF-8 con BOM**: PS 5.1 legge i `.ps1` senza BOM come
 ANSI e storpiava gli accenti a schermo (era già così prima, non una regressione).
+⚠️ Questo **supera la regola del 13/07 "solo ASCII nei `.ps1`"** (nata quando un
+em-dash `—` ruppe il parse): la causa era l'assenza del BOM, non i caratteri in
+sé. Col BOM accenti e frecce passano — verificato, lo script gira due volte.
 
 ## 3. Bug grid: dalla teoria alla misura
 Scanner statico (graffe bilanciate sugli oggetti `style`) → **10 candidati**

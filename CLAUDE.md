@@ -79,6 +79,7 @@ cd client-next && npm install
 
 **Variabili d'ambiente:** un solo file, `client-next/.env.local` → copia da Vercel → Settings → Environment Variables. Include le `NEXT_PUBLIC_*` (esposte al browser) e i segreti usati **solo** dalle route API server-side (`SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, …).
 > ⚠️ Vercel inietta un BOM: applicare sempre `.trim()` alle env var server-side.
+> ⚠️ **`SUPABASE_SERVICE_ROLE_KEY` è indispensabile anche in locale**: le pagine ospite sono SSR (`lib/guest-data.js` interroga Supabase server-side) e senza quella chiave ogni `/s|/r|/a` risponde **500 `supabaseKey is required`** — mentre l'admin continua a caricare, quindi il guasto passa inosservato. Il dev locale lavora sul **DB di produzione**: si guarda, non si sperimenta.
 
 **Avvio locale:**
 ```bash
@@ -89,7 +90,12 @@ cd client-next && npm run dev   # → http://localhost:3000 (frontend + /api/*)
 ```powershell
 .\deploy.ps1
 ```
-Lo script fa in sequenza: `npm audit` (informativo) → `git push origin main` → `npx vercel --prod --force --yes` **da `client-next/`** → attesa 15s → smoke test (`tests/`, ~3 min). Se i test falliscono il deploy è già avvenuto, ma il problema emerge subito.
+Lo script fa in sequenza: **guardie** → `npm audit` (informativo) → `npx vercel --prod --force --yes` **da `client-next/`** → `git push origin main` → attesa 15s → smoke test (`tests/`, ~3 min). Se i test falliscono il deploy è già avvenuto, ma il problema emerge subito.
+
+> **Perché il deploy viene PRIMA del push** (dal 12/08/2026): `vercel --prod` pubblica i **file locali**, non il commit. Mettendolo per primo, la build Vercel fa da gate — se il codice non compila, `main` resta pulito. Serve perché il check CI "Build client-next" non protegge i push diretti a `main` (bypass admin).
+> **Le due guardie** escono prima di toccare Vercel: si deploya **solo da `main`** e **solo con working tree pulito** (altrimenti finirebbe in produzione codice che in git non esiste). Emergenza consapevole: `.\deploy.ps1 -AllowDirty`.
+> ⚠️ Se il push fallisce **dopo** un deploy riuscito, la produzione è avanti rispetto a git: sanare subito con `git push origin main`.
+> ⚠️ Il `Not authorized` di Vercel è **transitorio**: rilanciare prima di indagare.
 
 > 🚫 **Mai `npx vercel` dalla root.** Il file `.vercel/project.json` in root è ancora agganciato al vecchio progetto `stayapp` (`framework: vite`, `rootDirectory: client`) — un deploy da lì pubblicherebbe il frontend dismesso. Il progetto live è quello linkato dentro `client-next/`.
 
@@ -188,7 +194,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 
 5. **vercel.json**: `client-next/vercel.json` definisce build Next + i cron. Nessun rewrite SPA: il routing è file-based e le pagine pubbliche sono SSR.
 
-6. **Deploy**: sempre `.\deploy.ps1` dalla root (mai `npx vercel` dalla root — vedi sopra). GitHub auto-deploy non ancora collegato: il deploy è manuale.
+6. **Deploy**: sempre `.\deploy.ps1` dalla root (mai `npx vercel` dalla root — vedi sopra). GitHub auto-deploy **non** collegato per scelta: il deploy è manuale, così gira sempre lo smoke test. Ordine: deploy Vercel → `git push` → smoke; lo script si rifiuta di partire fuori da `main` o con modifiche non committate. **`push` ≠ pubblicare**: il push scrive su GitHub (archivio), è il deploy che aggiorna `oltrenova.com`.
 
 7. **Dev locale**: un solo processo, `npm run dev` in `client-next/` → `:3000`. Se la porta è occupata da un'istanza precedente: `Stop-Process -Id <PID> -Force`.
 

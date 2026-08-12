@@ -5,6 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: b1ce3b18-eb34-4a91-a99d-4e4300ee6cb8
+  modified: 2026-08-12T16:38:44.189Z
 ---
 
 Chiuso il loop del "processo tipo WordPress-update" deciso l'11/7. Prima era solo configurato (dependabot.yml); ora è **operativo e automatico**. Vedi [[reference_security_audit]] (Strato 0) e [[todo_prossima_sessione]] (punto ripresa 13/7).
@@ -24,7 +25,8 @@ Chiuso il loop del "processo tipo WordPress-update" deciso l'11/7. Prima era sol
 - `jq` con interpolazione `\(...)` si rompe nel quoting PowerShell (`unknown command "\(.field)"`) → usare path jq semplici (`.field`) o l'output tabellare di default.
 - `gh api -X PUT .../branches/main/protection` con payload JSON annidato: passarlo da **file** con `--input file.json` (non stdin, come per gli altri comandi Windows).
 - **`deploy.ps1` + branch protection**: da quando `main` è protetto, `git push` (admin bypass) stampa `remote: Bypassed rule violations` su **stderr**. In PS 5.1, se catturi l'output con `2>&1` **e** `$ErrorActionPreference='Stop'`, quello stderr diventa `NativeCommandError` fatale → lo script aborta *dopo* aver pushato. Il `deploy` interattivo di Francesco (senza cattura) NON ha il problema. Quando devo deployare io: lancio i due passi a mano (`npx vercel --prod --force --yes` in client-next, poi `npm test` in tests) senza `2>&1`.
-- **`deploy.ps1` em-dash**: i `—` (U+2014) dentro stringhe `Write-Host` rompono il parse PS 5.1 (letto come Windows-1252 → `â€"`, il `"` chiude la stringa). Fix: solo ASCII nei .ps1. Committato (`cf2ea3e`).
+- **`deploy.ps1` em-dash**: i `—` (U+2014) dentro stringhe `Write-Host` rompono il parse PS 5.1 (letto come Windows-1252 → `â€"`, il `"` chiude la stringa). Fix di allora: solo ASCII nei .ps1. Committato (`cf2ea3e`).
+  > ⚠️ **Superato il 12/08/2026**: la causa vera era il file **senza BOM** (PS 5.1 lo legge come ANSI). Salvando `deploy.ps1` in **UTF-8 con BOM**, accenti e frecce funzionano — il vincolo "solo ASCII" non serve più. Vedi [[project_session_2026_08_12]].
 
 **ESITO deploy (13/7)**: tutti i fix + i 15 update Dependabot portati LIVE su Vercel (oltrenova-next, READY, aliasato `*.oltrenova.com`). **59/59 smoke verdi**. CodeQL SAST: 16→**0 alert aperti**.
 
