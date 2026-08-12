@@ -1,14 +1,49 @@
 ---
 name: todo_prossima_sessione
-description: To-do prossima sessione (11/8) — sessione chiusa pulita, niente lavoro a metà. Aperti: CORE JOURNEY/onboarding (il grande capitolo), upgrade Next (27 vuln, 13 high), stesso bug grid in altri editor. Sotto, storico.
+description: To-do prossima sessione (12/8) — chiusi i 3 aperti piccoli (client/, deploy.ps1, bug grid). Resta il CORE JOURNEY/onboarding come unico capitolo grosso. Sotto, storico.
 metadata: 
   node_type: memory
   type: project
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
-  modified: 2026-08-11T21:43:00.426Z
+  modified: 2026-08-12T11:03:04.953Z
 ---
 
-## ▶️ RIPARTIRE DA QUI (11/8) — leggere questo
+## ▶️ RIPARTIRE DA QUI (12/8) — leggere questo
+
+**I tre "aperti piccoli" dell'11/8 sono CHIUSI**, live e verificati in
+produzione (commit `f06d0c45`, smoke 66/1 skipped). Dettaglio in
+[[project_session_2026_08_12]]:
+1. **`client/` residuo** rimosso (era solo cache `.vite`).
+2. **`deploy.ps1`**: ora deploya **prima** e pusha **dopo** → la build Vercel fa
+   da gate e `main` non riceve codice che non compila; più due guardie (solo da
+   `main`, solo con working tree pulito; `-AllowDirty` per l'emergenza). Vedi
+   [[feedback_deploy]], riscritta.
+3. **Bug grid**: misurato invece che dedotto. 3 liste admin + la **card check-in
+   della PWA ospite** cedevano a un nome lungo → fixate
+   (`minmax(0,1fr)` + `overflowWrap:'anywhere'`, servono entrambi). Regola in
+   [[reference_grid_liste_admin]] e nota 23 del `CLAUDE.md`.
+   Nuove sonde `tests/probe-*.mjs` per misurare il layout dal vivo.
+
+**🎯 RESTA IL CAPITOLO GROSSO, SEMPRE LO STESSO: affidabilità CORE JOURNEY** —
+percorrere iscrizione→onboarding→AI builder→pubblica→prenotazioni come cliente
+vero. Pezzo più incompleto = **onboarding "Inizia qui"**. La sicurezza è fatta
+(~8/10); questa è l'altra metà del "pronto per il mercato". **Ripartire da qui.**
+
+**Piccoli rimasti aperti:**
+- 📋 **`components/admin/RistorantiListPage.jsx` è codice morto**: nessuno lo
+  importa, è il duplicato di `ristorante/RistoranteListPage.jsx` (quello vivo,
+  montato da `/admin/ristoranti`). Da cancellare con l'ok di Francesco.
+- 📋 **Dev locale**: ora funziona (aggiunta `SUPABASE_SERVICE_ROLE_KEY` a
+  `.env.local`), ma punta al **DB di produzione** → nessuna scrittura di prova.
+  Vedi [[reference_dev_locale_env]].
+- 📋 **Upgrade Next 14.2 → 15/16**: manutenzione, non sicurezza (triage 11/8 +
+  ri-verifica 12/8 dei due nuovi advisory XSS: non ci riguardano).
+- ⚠️ **VINCOLO**: introdurre una **Server Action** su Next 14.2 accende ~6
+  advisory oggi inerti. Valutarlo prima di usarle.
+
+---
+
+## ▶️ (storico) RIPARTIRE DA QUI (11/8)
 
 **Sessione chiusa pulita: niente lavoro a metà, working tree pulito, tutto
 pushato e deployato.** Dettaglio in [[project_session_2026_08_11]].

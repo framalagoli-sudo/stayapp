@@ -1,19 +1,34 @@
 ---
 name: feedback-deploy
-description: Flusso deploy completo — git push (Railway) PRIMA di Vercel, poi smoke test
+description: Deploy solo con .\deploy.ps1 dalla root — ordine deploy Vercel PRIMA del git push, con guardie su branch e working tree
 metadata: 
   node_type: memory
   type: feedback
   originSessionId: 814df534-7fb3-41f8-b657-a325f7b1931d
+  modified: 2026-08-12T11:01:27.217Z
 ---
 
-Flusso deploy completo obbligatorio, sempre in quest'ordine:
-1. `git add <files>` + `git commit` + `git push origin main` → aggiorna Railway (server)
-2. Deploy Vercel: `cd client-next && npx vercel --prod --yes`
-3. Smoke test: `cd tests && npm test`
+Si deploya **solo** con `.\deploy.ps1` dalla root (mai `npx vercel` dalla root:
+`.vercel/project.json` lì punta ancora al progetto morto `stayapp`/vite).
 
-**Why:** In sessione 2026-06-09 ho saltato il `git push` prima del deploy Vercel — Railway continuava a girare il vecchio codice e il bug persisteva anche dopo il deploy frontend. Railway si aggiorna SOLO con git push, non con il deploy Vercel.
+Ordine dello script (dal 12/08/2026): guardie → `npm audit` informativo →
+**deploy Vercel** → **git push** → attesa 15s → smoke test.
 
-**How to apply:** Ogni volta che si deploya, il `git push` deve sempre essere il primo passo. Anche se le modifiche sono solo frontend, fare sempre il push per tenere il repo allineato.
+**Why:** `vercel --prod` pubblica i **file locali**, non il commit. Mettere il
+deploy prima del push fa sì che la build Vercel funga da gate: se il codice non
+compila, `main` resta pulito. Serve perché il check CI "Build client-next" non
+protegge i push diretti a `main` (Francesco ha il bypass del branch protection).
+Per lo stesso motivo lo script si rifiuta di partire se non sei su `main` o se
+il working tree è sporco: altrimenti finirebbe in produzione codice che in git
+non esiste. Override consapevole: `.\deploy.ps1 -AllowDirty`.
 
-Nota: `deploy.ps1` dalla root NON include il git push — va fatto manualmente prima. Il deploy.ps1 fa solo Vercel + smoke test.
+**How to apply:** committare *prima* di lanciare il deploy. Se il push fallisce
+dopo un deploy riuscito, lo script lo dice: sanare subito con `git push origin
+main`, altrimenti il deploy successivo parte da una base diversa dal live.
+
+La vecchia regola "git push per primo, perché aggiorna Railway" **non vale
+più**: Railway è dismesso, tutto (frontend + API) sta su Vercel.
+
+Vedi [[feedback_diagnosi_prima_del_deploy]] e [[reference_vercel_env_cli]].
+Nota operativa: il `Not authorized` di Vercel è **transitorio** — rilanciare
+prima di indagare (successo al secondo tentativo sia l'11/08 che il 12/08).
