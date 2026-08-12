@@ -134,10 +134,12 @@ hospitality/
 │   │       └── webhooks/ · resend-webhook/ · shop/webhook/stripe/
 │   ├── components/ · context/ · hooks/
 │   └── lib/                        # supabase, send-email, guest-data, blockTypes …
-├── tests/                          # smoke test Playwright su produzione
+├── tests/                          # smoke test Playwright su produzione + sonde `probe-*.mjs`
 └── supabase/migrations/            # 001–069, eseguire a mano su Supabase
 ```
 > `client/` e `server/` non esistono più nel repo (vedi nota in cima). Se li vedi in locale sono residui: sono in `.gitignore` e vanno cancellati, non aggiornati.
+
+**Sonde diagnostiche** (`tests/probe-*.mjs`, da lanciare a mano con `node`, non fanno parte dello smoke): misurano il layout **dal vivo** invece di dedurlo dal codice. Creano un utente admin effimero (`probe-auth.mjs`, stesso pattern di `global-setup.js`) e lo eliminano sempre. `probe-overflow` cerca overflow orizzontale nelle pagine admin; `probe-grid-stress` / `probe-guest-stress` iniettano un nome lunghissimo per vedere quali liste cedono (vedi nota 23); `probe-shot` / `probe-page-shot` fanno screenshot di una pagina admin/pubblica. Puntano a produzione: `$env:TEST_URL='http://localhost:3000'` per usarle sul dev locale.
 
 ---
 
@@ -223,6 +225,8 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     ```
 
 22. **⚠️ Drag & drop con componenti React inline**: definire un componente React DENTRO un altro componente causa unmount/remount ad ogni render (nuova identità di funzione) → interrompe il drag. **Fix**: usare funzione normale `renderXxx()` chiamata direttamente `{renderXxx(item)}`. Applicato a `renderMenuRow` in `SitoPage.jsx`. Stesso vale per qualsiasi altro editor drag & drop futuro.
+
+23. **⚠️ Liste in `display:grid` e nomi lunghi**: senza `gridTemplateColumns`, la colonna implicita si dimensiona sul **contenuto** → un nome lungo (dato del cliente!) allarga la riga oltre la scheda e spinge fuori campi e pulsanti. Vale anche per `1fr`, che equivale a `minmax(auto, 1fr)` e conserva il minimo automatico. **Fix**: `gridTemplateColumns: 'minmax(0, 1fr)'` sulla lista, più `overflowWrap: 'anywhere'` sul testo che può essere una parola sola lunghissima (senza spazi né trattini il browser non può andare a capo da solo). Applicato a `RistoranteMenuPage` (11/08), poi a `PropertiesPage` / `RistoranteListPage` / `AttivitaListPage` e alla card check-in di `GuestApp` (12/08). Le sonde `tests/probe-grid-stress.mjs` e `probe-guest-stress.mjs` verificano il difetto dal vivo.
 
 ---
 

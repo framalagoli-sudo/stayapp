@@ -474,17 +474,17 @@ function HomePage({ property, upcomingEventi = [], modules, onExplore, domain = 
             </p>
           )}
           {(property.checkin_time || property.checkout_time) && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 16 }}>
               {property.checkin_time && (
                 <div>
                   <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Check-in</div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: '#fff', fontFamily: headingFamily, lineHeight: 1 }}>{property.checkin_time}</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: '#fff', fontFamily: headingFamily, lineHeight: 1.1, overflowWrap: 'anywhere' }}>{property.checkin_time}</div>
                 </div>
               )}
               {property.checkout_time && (
                 <div>
                   <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Check-out</div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: '#fff', fontFamily: headingFamily, lineHeight: 1 }}>{property.checkout_time}</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: '#fff', fontFamily: headingFamily, lineHeight: 1.1, overflowWrap: 'anywhere' }}>{property.checkout_time}</div>
                 </div>
               )}
             </div>

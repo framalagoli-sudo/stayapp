@@ -97,7 +97,7 @@ export default function AttivitaListPage() {
         />
       )}
 
-      <div style={{ display: 'grid', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 12 }}>
         {attivita.length === 0 && !showCreate && (
           <p style={{ color: '#888' }}>Nessuna attività trovata. Creane una nuova per iniziare.</p>
         )}
@@ -108,7 +108,7 @@ export default function AttivitaListPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
           }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: 15 }}>{a.name}</div>
+              <div style={{ fontWeight: 600, fontSize: 15, overflowWrap: 'anywhere' }}>{a.name}</div>
               <div style={{ fontSize: 12, color: '#888', marginTop: 3, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 <code style={{ background: '#f5f5f5', padding: '1px 6px', borderRadius: 4 }}>{a.slug}</code>
                 {a.tipo && <span style={{ color: '#6b46c1', fontWeight: 600 }}>{a.tipo}</span>}

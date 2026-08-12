@@ -117,7 +117,7 @@ export default function PropertiesPage() {
       )}
 
       {view === 'list' && (
-        <div style={{ display: 'grid', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 12 }}>
           {properties.length === 0 && (
             <p style={{ color: '#888' }}>
               Nessuna struttura trovata. Creane una nuova per iniziare.
@@ -130,7 +130,7 @@ export default function PropertiesPage() {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
             }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 15 }}>{p.name}</div>
+                <div style={{ fontWeight: 600, fontSize: 15, overflowWrap: 'anywhere' }}>{p.name}</div>
                 <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
                   <code style={{ background: '#f5f5f5', padding: '1px 6px', borderRadius: 4 }}>
                     {p.slug}
