@@ -384,7 +384,7 @@ function CardDominio({ dom, onCopia, copiato, onControlla, onRimuovi }) {
         <>
           <Passi passo={passo} />
           <Diagnosi d={d} records={records} />
-          <IstruzioniDns records={records} verificaTxt={verificaTxt} provider={d.provider} onCopia={onCopia} copiato={copiato} />
+          <IstruzioniDns fase={d.fase} records={records} verificaTxt={verificaTxt} provider={d.provider} onCopia={onCopia} copiato={copiato} />
           <div style={{ padding: '14px 18px', background: C.attesaBg, borderTop: `1px solid ${C.attesaBordo}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
             <p style={{ margin: 0, fontSize: 12, color: C.tenue, flex: 1, minWidth: 200 }}>
               Controlliamo da soli ogni minuto: puoi anche chiudere questa pagina e tornare più tardi.
@@ -435,7 +435,12 @@ function Diagnosi({ d, records }) {
   if (!d.messaggio) return null
   const attuali = [...(d.dns_attuale?.a || []), ...(d.dns_attuale?.cname || [])]
   const attesi = records.map(r => r.valore)
-  const puntaAltrove = attuali.length > 0 && !attuali.some(v => attesi.includes(v))
+  // Il confronto si mostra solo quando i DNS sono davvero da sistemare. Vercel
+  // accetta più valori equivalenti (es. il CNAME generico oltre a quello del
+  // nostro account): segnalare "punta altrove" quando funziona già spingerebbe
+  // il cliente a cambiare una configurazione corretta.
+  const daCorreggere = d.fase === 'dns_errato' || d.fase === 'dns_mancante'
+  const puntaAltrove = daCorreggere && attuali.length > 0
   const inEmissione = d.fase === 'certificato'
 
   return (
@@ -462,12 +467,27 @@ function Diagnosi({ d, records }) {
   )
 }
 
-function IstruzioniDns({ records, verificaTxt, provider, onCopia, copiato }) {
+function IstruzioniDns({ fase, records, verificaTxt, provider, onCopia, copiato }) {
   if (!records.length) return null
+
+  // A DNS già corretti non c'è più niente da fare: mostrare comunque i record
+  // inviterebbe a rimettere le mani dove funziona.
+  if (fase === 'certificato') {
+    return (
+      <div style={{ padding: '14px 18px', background: '#fff', borderTop: `1px solid ${C.attesaBordo}`, fontSize: 13, color: '#555', display: 'flex', gap: 9, alignItems: 'flex-start' }}>
+        <CheckCircle size={16} strokeWidth={1.5} color={C.ok} style={{ flexShrink: 0, marginTop: 1 }} />
+        <span>Hai già fatto la tua parte: i DNS sono impostati correttamente. Non devi toccare altro, ci pensiamo noi.</span>
+      </div>
+    )
+  }
+
+  const soloVerifica = fase === 'proprieta'
   return (
     <div style={{ padding: '16px 18px', background: '#fff', borderTop: `1px solid ${C.attesaBordo}` }}>
       <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: C.testo }}>
-        Cosa devi fare: aggiungere {records.length === 1 ? 'questo record' : 'questi record'} dove hai comprato il dominio
+        {soloVerifica
+          ? 'Cosa devi fare: aggiungere il record di verifica qui sotto'
+          : `Cosa devi fare: aggiungere ${records.length === 1 ? 'questo record' : 'questi record'} dove hai comprato il dominio`}
       </p>
 
       {provider && (
