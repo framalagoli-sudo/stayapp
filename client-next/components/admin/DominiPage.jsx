@@ -406,11 +406,14 @@ function CardDominio({ dom, onCopia, copiato, onControlla, onRimuovi }) {
       </div>
 
       {online ? (
-        <div style={{ padding: '14px 18px', background: '#fff', fontSize: 13, color: '#555', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <ShieldCheck size={15} strokeWidth={1.5} color={C.ok} style={{ flexShrink: 0 }} />
-          Il dominio è collegato e protetto da certificato di sicurezza.
-          {dom.variante_dominio && <span style={{ color: C.tenue }}>Funziona anche <strong>{dom.variante_dominio}</strong>.</span>}
-        </div>
+        <>
+          <div style={{ padding: '14px 18px', background: '#fff', fontSize: 13, color: '#555', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <ShieldCheck size={15} strokeWidth={1.5} color={C.ok} style={{ flexShrink: 0 }} />
+            Il dominio è collegato e protetto da certificato di sicurezza.
+            {d.gemello?.raggiungibile && <span style={{ color: C.tenue }}>Funziona anche <strong>{d.gemello.dominio}</strong>.</span>}
+          </div>
+          <Gemello gemello={d.gemello} provider={d.provider} onCopia={onCopia} copiato={copiato} />
+        </>
       ) : (
         <>
           <Passi passo={passo} />
@@ -430,6 +433,42 @@ function CardDominio({ dom, onCopia, copiato, onControlla, onRimuovi }) {
           </div>
         </>
       )}
+    </div>
+  )
+}
+
+// Il dominio principale può funzionare mentre l'altra sua forma (con o senza www)
+// è spenta: chi digita l'indirizzo a mano non arriva. Va detto anche quando tutto
+// il resto è verde, altrimenti il problema resta invisibile.
+function Gemello({ gemello, provider, onCopia, copiato }) {
+  if (!gemello || gemello.raggiungibile) return null
+  return (
+    <div style={{ padding: '14px 18px', background: C.attesaBg, borderTop: `1px solid ${C.attesaBordo}` }}>
+      <div style={{ display: 'flex', gap: 9, alignItems: 'flex-start', marginBottom: 10 }}>
+        <AlertCircle size={16} strokeWidth={1.5} color={C.attesa} style={{ flexShrink: 0, marginTop: 1 }} />
+        <div>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: C.testo }}>
+            Manca l’indirizzo {gemello.senza_www ? 'senza «www»' : 'con «www»'}: <strong>{gemello.dominio}</strong>
+          </p>
+          <p style={{ margin: '4px 0 0', fontSize: 12, color: '#666', lineHeight: 1.5 }}>
+            Chi lo digita così trova un errore del browser. Succede spesso a chi legge l’indirizzo
+            su un volantino o su un biglietto da visita. Si risolve aggiungendo un record
+            {provider?.nome ? <> su <strong>{provider.nome}</strong></> : ' dal tuo provider'}.
+          </p>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 8 }}>
+        {gemello.records.map((r, i) => (
+          <div key={i} style={{ background: '#fff', borderRadius: 8, padding: '12px 14px', border: `1px solid ${C.attesaBordo}` }}>
+            <div style={{ marginBottom: 10 }}>
+              <span style={{ fontWeight: 700, fontSize: 11, color: '#fff', background: C.testo, padding: '2px 8px', borderRadius: 4 }}>{r.tipo}</span>
+              <span style={{ fontSize: 11, color: '#aaa', marginLeft: 8 }}>TTL: {r.ttl || 'Auto'}</span>
+            </div>
+            <CampoRecord etichetta="Nome" valore={r.nome} onCopia={onCopia} copiato={copiato} />
+            <CampoRecord etichetta="Valore" valore={r.valore} onCopia={onCopia} copiato={copiato} />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

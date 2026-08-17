@@ -79,14 +79,14 @@ export async function getDnsConfig(name) {
 // perché il certificato TLS per quell'hostname non è stato emesso (è il caso dei
 // sottodomini coperti solo dal wildcard: handshake rifiutato, il visitatore vede 525).
 // L'unica verifica che conta è chiamare l'indirizzo come farebbe un cliente.
-export async function probeHttps(name) {
+export async function probeHttps(name, { timeoutMs = 10000 } = {}) {
   try {
     const res = await fetch(`https://${name}/`, {
       method: 'GET',
       redirect: 'manual',
       cache: 'no-store',
       headers: { 'user-agent': 'StayApp-DomainCheck/1.0' },
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(timeoutMs),
     })
     return { raggiungibile: true, status: res.status }
   } catch (e) {
@@ -216,6 +216,30 @@ export function riconosciProvider(nameservers) {
   return host ? { nome: host, url: null, nota: null } : null
 }
 
+// L'altra forma dello stesso indirizzo (con o senza www) è un dominio a sé: può
+// essere spenta mentre la principale funziona, e allora una parte dei visitatori
+// — chi digita l'indirizzo a mano, chi lo legge su un volantino — trova un errore
+// del browser. Va controllata e detta, non data per scontata.
+export async function controllaGemello(dominio, apexName) {
+  const gemello = gemelloDi(dominio, apexName)
+  if (!gemello) return null
+
+  const [prova, cfg] = await Promise.all([
+    probeHttps(gemello, { timeoutMs: 6000 }),
+    getDnsConfig(gemello),
+  ])
+  const raggiungibile = prova.raggiungibile
+  return {
+    dominio: gemello,
+    raggiungibile,
+    senza_www: !gemello.startsWith('www.'),
+    records: raggiungibile ? [] : recordDns(gemello, { apexName, config: cfg.data }),
+    messaggio: raggiungibile
+      ? null
+      : `Chi digita ${gemello} non arriva al sito: manca un record nei DNS.`,
+  }
+}
+
 // ── Diagnosi completa ─────────────────────────────────────────────────────────
 // Raccoglie stato Vercel + DNS reale + prova HTTPS e produce un verdetto unico,
 // già in lingua umana, che UI e cron condividono.
@@ -276,6 +300,7 @@ export async function diagnosticaDominio(dominio) {
     registrato_su_vercel: registrato,
     verificato: verified,
     apex_name: apexName,
+    gemello: await controllaGemello(dominio, apexName),
     dns_attuale: dnsAttuale,
     provider: riconosciProvider(dnsAttuale.nameservers),
     prova_https: prova,

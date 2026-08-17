@@ -1,7 +1,7 @@
 import { supabaseAdmin } from './supabase-server'
 import { ENTITY_TABLES } from './server-auth'
 import { assicuraSottodominio, registraSottodominio } from './create-subdomain'
-import { diagnosticaDominio, verifyProjectDomain, removeProjectDomain, vercelReady } from './vercel-domains'
+import { diagnosticaDominio, verifyProjectDomain, addProjectDomain, removeProjectDomain, vercelReady } from './vercel-domains'
 
 // Manutenzione dei domini: tiene allineato ciò che è scritto nel DB con ciò che
 // succede davvero in rete. Serve perché tre cose si muovono in modo indipendente:
@@ -55,6 +55,17 @@ export async function rimuoviDominiEntita(entity_tipo, entity_id) {
 // Ricontrolla un dominio dal vivo e salva l'esito. Ritorna il record aggiornato.
 export async function ricontrolla(record) {
   const diagnosi = await diagnosticaDominio(record.dominio)
+
+  // Domini collegati prima che registrassimo la coppia apex/www: il gemello va
+  // agganciato ora, così appena il cliente aggiunge il record DNS funziona senza
+  // bisogno di altri interventi da parte nostra.
+  if (record.tipo === 'custom' && !record.variante_dominio && diagnosi.gemello && vercelReady()) {
+    const g = await addProjectDomain(diagnosi.gemello.dominio, { redirect: record.dominio })
+    if (g.ok) {
+      await supabaseAdmin.from('domini').update({ variante_dominio: diagnosi.gemello.dominio }).eq('id', record.id)
+      record.variante_dominio = diagnosi.gemello.dominio
+    }
+  }
 
   // Un dominio che risulta non registrato su Vercel non si collegherà mai: è il
   // caso dei sottodomini creati prima che li registrassimo davvero. Si recupera
