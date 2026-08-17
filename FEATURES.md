@@ -4,7 +4,8 @@ Documento vivo. Aggiornato sessione per sessione.
 
 > ⚠️ **Nota di lettura (11/08/2026).** Questo file contiene anche la **cronaca storica** del prodotto: alcune sezioni raccontano fasi già superate. In particolare **Railway è dismesso** — il backend Express in `server/` non esiste più (rimosso il 13/07/2026), le API sono le route Next in `client-next/app/api/`. Ovunque si legga "env var su Railway", **oggi vanno su Vercel**. Le sezioni che descrivono la migrazione Railway→Vercel sono storia, non lavoro da fare: quella migrazione è **completa**. Per lo stato attuale fai fede a `CLAUDE.md`.
 
-Ultima revisione: **2026-07-06** — Site-builder maturo (8 template, 39 blocchi, undo/redo, anteprima live); **AI Site Builder unificato** (un flusso; import da documento con incolla-ChatGPT, una/più pagine, Sonnet per fedeltà); editor sito unico in SitoPage (ritirata MiniSitoPage, tracking migrato); **multilingua IT/EN completo** (sito+PWA, toggle inline nell'header); landing OltreNova ridisegnata; **header pubblico** (logo in cima, hamburger mobile, logo negativo `logo_dark_url` per sfondi scuri). Infra: Supabase Pro + Vercel Pro + oltrenova.com live.
+Ultima revisione: **2026-08-17** — **sistema domini rifatto**: il collegamento di un dominio del cliente ora funziona davvero (istruzioni DNS chieste a Vercel invece che hardcodate, sottodomini registrati con certificato, stato misurato con una GET HTTPS reale, apex+www in coppia, rinomina che non rompe i QR, UI in tre passi con diagnosi in chiaro). Vedi la sessione 2026-08-17 più sotto e la nota 24 in `CLAUDE.md`.
+Precedente: **2026-07-06** — Site-builder maturo (8 template, 39 blocchi, undo/redo, anteprima live); **AI Site Builder unificato** (un flusso; import da documento con incolla-ChatGPT, una/più pagine, Sonnet per fedeltà); editor sito unico in SitoPage (ritirata MiniSitoPage, tracking migrato); **multilingua IT/EN completo** (sito+PWA, toggle inline nell'header); landing OltreNova ridisegnata; **header pubblico** (logo in cima, hamburger mobile, logo negativo `logo_dark_url` per sfondi scuri). Infra: Supabase Pro + Vercel Pro + oltrenova.com live.
 Storico: 2026-06-11 (Next.js migration + cutover oltrenova.com, PWA unificata, allergeni EU, AI Site Builder v2, RistoranteMenu refactor, fix QR code, CI/CD smoke test).
 
 ---
@@ -356,6 +357,21 @@ generiche ("Business") è meno complesso di quanto sembri — pianificato come v
 - [x] **Fix `AttivitaApp.jsx`** — `useSearchParams()` array destructuring errata in Next.js → corretto ✅
 - [x] **Analisi statica Fase 1** — routing simmetrico, useEffect dipendenze, DominiPage error handling: tutto OK ✅
 
+### Sessione 2026-08-17 — Sistema domini rifatto (collegamento autonomo davvero funzionante) ✅
+
+Lo Sprint 8 aveva costruito il flusso "dominio custom autonomo", ma alla prova dei fatti un cliente non riusciva ad arrivare online. Quattro difetti verificati dal vivo e chiusi:
+
+- [x] **Istruzioni DNS dinamiche** — l'IP hardcodato `76.76.19.19` **non risponde più**: chi seguiva le istruzioni per un dominio radice restava offline. Ora i record si chiedono a Vercel per quel dominio (`/v6/domains/{d}/config` → `recommendedIPv4`/`recommendedCNAME`), mai scritti nel codice
+- [x] **Sottodomini registrati davvero su Vercel** — il wildcard `*.oltrenova.com` non fa emettere il certificato: 4 sottodomini su 11 erano irraggiungibili (525) pur segnati "attivo"
+- [x] **Slug letto dall'entità viva** — `domini.entity_slug` era una copia che si disallineava alla rinomina: 5 domini puntavano a pagine inesistenti (404)
+- [x] **Stato misurato, non dichiarato** — ogni controllo fa una GET HTTPS reale: Vercel riportava `verified: true` su domini che nessuno poteva aprire
+- [x] **Apex e www in coppia** + avviso quando l'altra forma dell'indirizzo è spenta (riguardava 2 clienti veri, DNS su SiteGround)
+- [x] **Rinomina non distruttiva** — il vecchio indirizzo resta come alias con redirect 308 (path e query conservati): i QR stampati continuano a funzionare
+- [x] **UI rifatta** — tre passi, diagnosi in chiaro ("adesso punta a X, deve puntare a Y"), provider riconosciuto dai nameserver con link al suo pannello, ricontrollo automatico ogni 45s
+- [x] **Manutenzione automatica** — cron ogni 15 min (`/api/cron/domini`) + `/api/domini/manutenzione` per super_admin; sonde `tests/probe-domini.mjs`, `probe-rinomina.mjs`
+- Migration `070` + `071`. Dettaglio tecnico: nota 24 in `CLAUDE.md`
+- Esito misurato: **14 domini, 0 irraggiungibili, 0 disallineati**
+
 ### Sprint 10 — Stripe Subscription Billing (prossimo) 🔴
 - [ ] Piani mensili (base/standard/premium) con prezzi
 - [ ] Checkout Stripe per subscription dalla pagina signup/trial
@@ -450,7 +466,16 @@ Il refactor verso "Business" generico richiede principalmente:
 
 ## Azioni manuali da fare (Francesco)
 
+### Aperte (aggiornate 2026-08-17)
+
+- [ ] **Record DNS per due clienti** — `fondaconarni.com` e `garage22terni.it` funzionano solo con `www`. Il DNS di entrambi è su **SiteGround**: serve un record `A` con nome `@` verso gli IP mostrati nella pagina Domini della loro scheda (leggerli da lì: Vercel li cambia). Da noi è già tutto agganciato, appena il record esiste funziona
+- [ ] **Struttura orfana** — `futura-club-spiagge-bianche` ("Hotel di prova due", creata 23/04/2026) ha `azienda_id` **NULL**, unica nel DB: non può avere un indirizzo incluso e compare nei problemi della manutenzione domini. Assegnarla a un'azienda o cancellarla
+- [ ] **`fondaconarni.com` apex nel pannello** — valutare se aggiungerlo come dominio collegato nella scheda del ristorante, così lo stato è visibile e la pagina dice da sola quando è a posto
+
 ### Migration SQL (eseguire su Supabase Dashboard → SQL Editor)
+
+- [x] **070_domini_stato_reale.sql** — `updated_at`, `ultima_verifica`, `verifica_dettaglio`, `variante_dominio` + indice unico sul sottodominio ✅ 2026-08-17
+- [x] **071_domini_alias_redirect.sql** — `tipo='alias'` + `redirect_a` (il vecchio indirizzo reindirizza al nuovo) ✅ 2026-08-17
 
 - [x] Migration pipeline kanban: `ALTER TABLE contatti ADD COLUMN IF NOT EXISTS pipeline_stage text DEFAULT 'lead';`
 - [x] **Migration webhooks** (`028_webhooks`) — eseguita 2026-05-16

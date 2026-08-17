@@ -1,5 +1,7 @@
 # Memory Index
 
+- [Session 2026-08-17 — Sistema domini rifatto](project_session_2026_08_17_domini.md) — 4 difetti (IP DNS morto, sottodomini senza certificato, slug disallineato, updated_at inesistente) + UI in 3 passi; produzione riparata: 14 domini, 0 rotti; sonda `probe-domini.mjs`
+- [🌐 Domini su Vercel (lezioni verificate)](reference_domini_vercel.md) — IP DNS mai hardcodati (76.76.19.19 è morto), il wildcard non emette certificati per i sottodomini, `verified` non significa raggiungibile: misurare con una GET HTTPS vera
 - [Lingua](feedback_lingua.md) — Rispondere sempre in italiano
 - [🔒 Sicurezza sempre priorità](feedback_sicurezza_priorita.md) — la sicurezza è un vincolo di OGNI intervento (authz, sanitizzazione URL/HTML, gating dati, verifica caso ostile dal vivo)
 - [Entità sempre tre](feedback_entita_tre.md) — Menzionare sempre struttura, ristorante E attività — mai solo due
