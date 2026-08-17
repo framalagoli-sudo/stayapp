@@ -97,6 +97,8 @@ Lo script fa in sequenza: **guardie** → `npm audit` (informativo) → `npx ver
 > ⚠️ Se il push fallisce **dopo** un deploy riuscito, la produzione è avanti rispetto a git: sanare subito con `git push origin main`.
 > ⚠️ Il `Not authorized` di Vercel è **transitorio**: rilanciare prima di indagare.
 
+> 🚫 **Mai `npx vercel` con `--cwd` o `--prefix`.** Deployando con `npx --prefix client-next vercel --cwd client-next --prod` **tutte le route dinamiche spariscono dal deployment**: `/r/[slug]`, `/s/[slug]` e ogni `/api/*/[id]` rispondono 404, mentre i segmenti statici (`/blog`) rispondono normalmente — quindi il guasto non si vede se non si prova una pagina cliente. Successo il 17/08/2026, siti giù ~10 minuti. Entrare in `client-next/` ed eseguire `npx vercel --prod --force --yes`, oppure usare `deploy.ps1`.
+>
 > 🚫 **Mai `npx vercel` dalla root.** Il file `.vercel/project.json` in root è ancora agganciato al vecchio progetto `stayapp` (`framework: vite`, `rootDirectory: client`) — un deploy da lì pubblicherebbe il frontend dismesso. Il progetto live è quello linkato dentro `client-next/`.
 
 > ⚠️ Migration SQL: eseguire a mano su Supabase Dashboard → SQL Editor. Non sono automatiche.
