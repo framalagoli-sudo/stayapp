@@ -62,6 +62,14 @@ export async function middleware(request) {
     if (!res.ok) return NextResponse.next()
 
     const data = await res.json()
+
+    // Indirizzo precedente di un'entità rinominata: redirect permanente al nuovo,
+    // conservando path e query (QR stampati, link condivisi, risultati di ricerca).
+    if (data?.redirect_a) {
+      const destinazione = new URL(request.nextUrl.pathname + request.nextUrl.search, `https://${data.redirect_a}`)
+      return NextResponse.redirect(destinazione, 308)
+    }
+
     if (!data?.entity_tipo || !data?.entity_slug) return NextResponse.next()
 
     const { entity_tipo: tipo, entity_slug: slug } = data

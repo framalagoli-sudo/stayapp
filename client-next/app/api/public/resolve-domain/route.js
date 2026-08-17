@@ -14,9 +14,19 @@ export async function GET(request) {
 
   const variants = dominio.startsWith('www.') ? [dominio, dominio.slice(4)] : [dominio, `www.${dominio}`]
   const { data, error } = await supabaseAdmin.from('domini')
-    .select('id, entity_tipo, entity_id, entity_slug, tipo, stato')
+    .select('id, entity_tipo, entity_id, entity_slug, tipo, stato, redirect_a')
     .in('dominio', variants).eq('stato', 'attivo').maybeSingle()
   if (error || !data) return Response.json({ error: 'Dominio non registrato' }, { status: 404 })
+
+  // Indirizzo precedente dopo una rinomina: si manda il visitatore su quello
+  // nuovo invece di servirgli il sito, così i link vecchi non si spezzano e i
+  // motori di ricerca aggiornano l'indirizzo indicizzato.
+  if (data.tipo === 'alias' && data.redirect_a) {
+    return Response.json(
+      { redirect_a: data.redirect_a },
+      { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } }
+    )
+  }
 
   const table = ENTITY_TABLES[data.entity_tipo]
   const { data: entity } = table

@@ -38,8 +38,15 @@ export async function PATCH(request, { params }) {
     const nuovoDominio = `${nome}.${STAYAPP_DOMAIN}`
     if (nuovoDominio === dom.dominio) return Response.json(dom)
 
-    const { data: occupato } = await supabaseAdmin.from('domini').select('id').eq('dominio', nuovoDominio).neq('id', dom.id).maybeSingle()
-    if (occupato) return Response.json({ error: 'Questo indirizzo è già usato da un’altra scheda' }, { status: 409 })
+    const { data: occupato } = await supabaseAdmin.from('domini')
+      .select('id, tipo, entity_id').eq('dominio', nuovoDominio).neq('id', dom.id).maybeSingle()
+    if (occupato) {
+      // Tornare a un indirizzo già usato in passato è legittimo: l'alias che lo
+      // teneva in vita viene consumato. Se invece è di qualcun altro, no.
+      const eraMio = occupato.tipo === 'alias' && occupato.entity_id === dom.entity_id
+      if (!eraMio) return Response.json({ error: 'Questo indirizzo è già usato da un’altra scheda' }, { status: 409 })
+      await supabaseAdmin.from('domini').delete().eq('id', occupato.id)
+    }
 
     if (vercelReady()) {
       const r = await addProjectDomain(nuovoDominio)
@@ -51,9 +58,20 @@ export async function PATCH(request, { params }) {
       .eq('id', dom.id).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
 
-    // Il vecchio indirizzo smette di esistere: liberiamolo su Vercel per non
-    // lasciare hostname appesi (e certificati che si rinnovano a vuoto).
-    if (vercelReady() && dom.vercel_domain_id) await removeProjectDomain(dom.dominio)
+    // Il vecchio indirizzo resta vivo come alias e reindirizza al nuovo: i QR già
+    // stampati e i link in giro continuano a funzionare. L'hostname va quindi
+    // lasciato registrato su Vercel, altrimenti il redirect non verrebbe servito.
+    await supabaseAdmin.from('domini').insert({
+      azienda_id: dom.azienda_id, entity_tipo: dom.entity_tipo, entity_id: dom.entity_id,
+      entity_slug: dom.entity_slug, dominio: dom.dominio, tipo: 'alias',
+      stato: 'attivo', vercel_domain_id: dom.vercel_domain_id, redirect_a: nuovoDominio,
+    })
+
+    // Niente catene di redirect: se l'entità era già stata rinominata, tutti gli
+    // alias precedenti puntano direttamente all'indirizzo attuale.
+    await supabaseAdmin.from('domini')
+      .update({ redirect_a: nuovoDominio, updated_at: new Date().toISOString() })
+      .eq('entity_tipo', dom.entity_tipo).eq('entity_id', dom.entity_id).eq('tipo', 'alias')
 
     return Response.json(await ricontrolla(aggiornato) || aggiornato)
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
@@ -66,6 +84,7 @@ export async function DELETE(request, { params }) {
     if (dom.tipo === 'subdomain') {
       return Response.json({ error: 'L’indirizzo incluso non può essere rimosso' }, { status: 400 })
     }
+    // Un alias si può togliere, ma da quel momento i vecchi QR smettono di funzionare.
 
     if (vercelReady()) {
       await removeProjectDomain(dom.dominio)

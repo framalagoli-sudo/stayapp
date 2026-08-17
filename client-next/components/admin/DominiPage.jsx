@@ -75,8 +75,8 @@ export default function DominiPage({ entityTipo }) {
     } catch (e) { if (!silenzioso) setError(e.message) }
   }
 
-  async function rimuovi(id, dominio) {
-    if (!confirm(`Scollegare ${dominio}?\n\nIl sito resterà online sul tuo indirizzo ${STAYAPP_DOMAIN}.`)) return
+  async function rimuovi(id, dominio, avviso) {
+    if (!confirm(avviso || `Scollegare ${dominio}?\n\nIl sito resterà online sul tuo indirizzo ${STAYAPP_DOMAIN}.`)) return
     try {
       await apiFetch(`/api/domini/${id}`, { method: 'DELETE' })
       setDomini(prev => prev.filter(d => d.id !== id))
@@ -96,6 +96,7 @@ export default function DominiPage({ entityTipo }) {
 
   const incluso = domini.find(d => d.tipo === 'subdomain')
   const personali = domini.filter(d => d.tipo === 'custom')
+  const precedenti = domini.filter(d => d.tipo === 'alias')
 
   return (
     <div style={{ maxWidth: 760 }}>
@@ -127,6 +128,7 @@ export default function DominiPage({ entityTipo }) {
           : incluso
             ? <CardIncluso dom={incluso} onCopia={copia} copiato={copiato} onRinomina={rinomina} onControlla={controlla} />
             : <Attesa testo="Preparo il tuo indirizzo…" />}
+        <IndirizziPrecedenti alias={precedenti} onRimuovi={rimuovi} />
       </Scheda>
 
       <Scheda
@@ -218,7 +220,7 @@ function CardIncluso({ dom, onCopia, copiato, onRinomina, onControlla }) {
   async function salva() {
     const pulito = nome.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-+|-+$/g, '')
     if (!pulito || pulito === nomeAttuale) { setModifica(false); setNome(nomeAttuale); return }
-    if (!confirm(`Il tuo indirizzo diventerà:\n${pulito}.${STAYAPP_DOMAIN}\n\nIl precedente smetterà di funzionare: se hai già stampato dei QR code, andranno rifatti.`)) return
+    if (!confirm(`Il tuo indirizzo diventerà:\n${pulito}.${STAYAPP_DOMAIN}\n\nIl precedente continuerà a funzionare e porterà automaticamente al nuovo, quindi i QR già stampati restano validi.`)) return
     setSalvo(true); setErroreSalva('')
     try {
       await onRinomina(dom.id, pulito)
@@ -285,6 +287,35 @@ function CardIncluso({ dom, onCopia, copiato, onRinomina, onControlla }) {
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+// Indirizzi usati in passato: restano attivi e portano a quello nuovo, così i QR
+// stampati e i link già in circolazione continuano a funzionare.
+function IndirizziPrecedenti({ alias, onRimuovi }) {
+  if (!alias.length) return null
+  return (
+    <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${C.bordo}` }}>
+      <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 600, color: C.tenue }}>
+        Indirizzi precedenti — continuano a funzionare e portano a quello attuale
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 6 }}>
+        {alias.map(a => (
+          <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fafafa', border: `1px solid ${C.bordo}`, borderRadius: 8, padding: '8px 12px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 13, color: '#555', overflowWrap: 'anywhere' }}>{a.dominio}</span>
+            <ArrowRight size={13} strokeWidth={1.5} color="#bbb" style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: 13, color: C.testo, fontWeight: 600, overflowWrap: 'anywhere' }}>{a.redirect_a}</span>
+            <button
+              onClick={() => onRimuovi(a.id, a.dominio, `Rimuovere il vecchio indirizzo ${a.dominio}?\n\nDa quel momento i QR code e i link che lo usano smetteranno di funzionare.`)}
+              title="Rimuovi"
+              style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 4, display: 'flex' }}
+            >
+              <Trash2 size={14} strokeWidth={1.5} />
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
