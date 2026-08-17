@@ -146,8 +146,9 @@ export async function manutenzioneDomini({ soloPendenti = true, limite = 10 } = 
     const { data: entita } = await supabaseAdmin.from(table).select('id, slug, azienda_id').not('slug', 'is', null)
     for (const e of entita || []) {
       if (conSub.has(e.id)) continue
-      await assicuraSottodominio({ azienda_id: e.azienda_id, entity_tipo, entity_id: e.id, entity_slug: e.slug })
-      esito.riparati++
+      const creato = await assicuraSottodominio({ azienda_id: e.azienda_id, entity_tipo, entity_id: e.id, entity_slug: e.slug })
+      if (creato) esito.riparati++
+      else esito.problemi.push({ entita: e.slug, fase: 'sottodominio_non_creato' })
     }
   }
 

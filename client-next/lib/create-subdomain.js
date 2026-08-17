@@ -10,6 +10,12 @@ const STAYAPP_DOMAIN = process.env.STAYAPP_DOMAIN?.trim() || 'oltrenova.com'
 // il sottodominio e lo stato salvato riflette l'esito, non un'assunzione.
 export async function assicuraSottodominio({ azienda_id, entity_tipo, entity_id, entity_slug }) {
   if (!entity_slug || !entity_id) return null
+  // Un'entità senza azienda è un dato incoerente che va sanato a mano: qui si
+  // esce subito, altrimenti ogni giro di manutenzione ritenterebbe a vuoto.
+  if (!azienda_id) {
+    console.error('[assicuraSottodominio] entità senza azienda_id, saltata:', entity_tipo, entity_slug)
+    return null
+  }
   try {
     const { data: esistente } = await supabaseAdmin.from('domini').select('*')
       .eq('entity_tipo', entity_tipo).eq('entity_id', entity_id).eq('tipo', 'subdomain').maybeSingle()
