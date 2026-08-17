@@ -40,18 +40,19 @@ export async function PATCH(request, { params }) {
 
     const { data: occupato } = await supabaseAdmin.from('domini')
       .select('id, tipo, entity_id').eq('dominio', nuovoDominio).neq('id', dom.id).maybeSingle()
-    if (occupato) {
-      // Tornare a un indirizzo già usato in passato è legittimo: l'alias che lo
-      // teneva in vita viene consumato. Se invece è di qualcun altro, no.
-      const eraMio = occupato.tipo === 'alias' && occupato.entity_id === dom.entity_id
-      if (!eraMio) return Response.json({ error: 'Questo indirizzo è già usato da un’altra scheda' }, { status: 409 })
-      await supabaseAdmin.from('domini').delete().eq('id', occupato.id)
+    // Tornare a un indirizzo già usato in passato è legittimo: l'alias che lo
+    // teneva in vita va consumato. Se invece è di qualcun altro, no.
+    if (occupato && !(occupato.tipo === 'alias' && occupato.entity_id === dom.entity_id)) {
+      return Response.json({ error: 'Questo indirizzo è già usato da un’altra scheda' }, { status: 409 })
     }
 
+    // Prima si attiva il nuovo indirizzo: se Vercel rifiuta, non deve essere già
+    // stato smontato niente (l'alias vecchio resta a servire i link in giro).
     if (vercelReady()) {
       const r = await addProjectDomain(nuovoDominio)
       if (!r.ok) return Response.json({ error: `Non siamo riusciti ad attivare il nuovo indirizzo: ${r.error}` }, { status: 400 })
     }
+    if (occupato) await supabaseAdmin.from('domini').delete().eq('id', occupato.id)
 
     const { data: aggiornato, error } = await supabaseAdmin.from('domini')
       .update({ dominio: nuovoDominio, vercel_domain_id: vercelReady() ? nuovoDominio : null, updated_at: new Date().toISOString() })

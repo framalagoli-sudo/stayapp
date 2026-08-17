@@ -44,13 +44,17 @@ async function vercelFetch(path, { method = 'GET', body } = {}) {
 const projectPath = () => `/v10/projects/${VERCEL_PROJECT_ID}/domains`
 
 // Aggiunge il dominio al progetto. `redirect` serve per il gemello apex/www.
-// Un dominio già presente NON è un errore: lo trattiamo come successo idempotente.
+// Se l'hostname risulta già in uso non ci fidiamo del testo del messaggio (Vercel
+// ne usa più varianti, fra cui "one of your projects", che può voler dire un altro
+// progetto dell'account): chiediamo se sta sul NOSTRO progetto. Se sì è un successo
+// idempotente — capita rinominando un indirizzo e tornando poi a uno già usato.
 export async function addProjectDomain(name, { redirect } = {}) {
   const r = await vercelFetch(projectPath(), { method: 'POST', body: { name, ...(redirect ? { redirect } : {}) } })
-  if (!r.ok && /already in use by your project|already exists/i.test(r.error || '')) {
-    return await getProjectDomain(name)
-  }
-  return r
+  if (r.ok || !/already in use|already exists|is already assigned/i.test(r.error || '')) return r
+
+  const attuale = await getProjectDomain(name)
+  if (attuale.ok && attuale.data?.name) return attuale
+  return { ...r, error: `${name} è già collegato a un altro progetto` }
 }
 
 export async function getProjectDomain(name) {
