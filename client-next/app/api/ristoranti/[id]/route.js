@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
+import { sincronizzaSlugDomini, rimuoviDominiEntita } from '@/lib/domini-manutenzione'
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
@@ -47,6 +48,7 @@ export async function PATCH(request, { params }) {
     if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
     const { data, error } = await q.select().single()
     if (error) return Response.json({ error: error.message }, { status: error.code === 'PGRST116' ? 404 : 500 })
+    if (updates.slug) await sincronizzaSlugDomini('ristorante', params.id, data.slug)
     return Response.json(data)
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
@@ -62,6 +64,7 @@ export async function DELETE(request, { params }) {
     if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
     const { error } = await q
     if (error) return Response.json({ error: error.message }, { status: 500 })
+    await rimuoviDominiEntita('ristorante', params.id)
     return Response.json({ success: true })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }

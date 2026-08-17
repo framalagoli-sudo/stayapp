@@ -43,7 +43,7 @@ Auto-caricato da Claude Code quando si lavora in `client-next/` (Next.js 14 App 
 | `/preventivo/[token]`, `/recensione?token=`, `/signup`, `/unsubscribe`, `/confirm-subscription`, `/cancella-prenotazione` | `app/...` | vari flussi pubblici |
 | `/` | `app/page.js` | landing marketing StayApp |
 
-I **domini custom** entrano via `middleware.js`: risolve il dominio → rewrite trasparente su `/{prefix}/{slug}/...` (param `_domain` propagato).
+I **domini custom** entrano via `middleware.js`: risolve il dominio → rewrite trasparente su `/{prefix}/{slug}/...` (param `_domain` propagato). Lo slug arriva da `/api/public/resolve-domain`, che lo legge **dall'entità** (non dalla copia in `domini`) e riallinea la copia se disallineata. Tutto il resto del sistema domini sta in `lib/vercel-domains.js` + `lib/domini-manutenzione.js` — vedi nota 24 in `../CLAUDE.md` prima di toccarli.
 
 ### Admin (`app/admin/...`, UI in `components/admin/*Page.jsx`)
 ```

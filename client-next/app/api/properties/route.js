@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
-import { createDefaultSubdomain } from '@/lib/create-subdomain'
+import { assicuraSottodominio } from '@/lib/create-subdomain'
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, property_id, azienda_id').eq('id', userId).single()
@@ -59,7 +59,9 @@ export async function POST(request) {
     const { data, error } = await supabaseAdmin.from('properties')
       .insert({ name: name.trim(), slug, azienda_id, ...extras }).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
-    createDefaultSubdomain({ azienda_id, entity_tipo: 'struttura', entity_id: data.id, entity_slug: data.slug })
+    // await necessario: registra il sottodominio su Vercel e in serverless una
+    // chiamata lasciata in sospeso muore con la risposta.
+    await assicuraSottodominio({ azienda_id, entity_tipo: 'struttura', entity_id: data.id, entity_slug: data.slug })
     return Response.json(data, { status: 201 })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }

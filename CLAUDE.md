@@ -204,7 +204,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 
 10. **Newsletter — double opt-in**: `POST /api/contatti/subscribe` salva con `iscritto_newsletter: false` + invia email conferma `/confirm-subscription?token=uuid`. Token azzerato su conferma.
 
-11. **Cron (Vercel)**: gli invii schedulati non girano più con `setInterval` in un processo sempre acceso. Sono route in `app/api/cron/*` invocate da Vercel Cron secondo `client-next/vercel.json` (newsletter e automazioni ogni minuto, blog ogni ora, backup alle 3). Ogni route è **protetta da `CRON_SECRET`** via header `Authorization: Bearer` — nuove route cron devono fare lo stesso controllo. La logica sta in `lib/` (es. `runScheduledSends` in `lib/newsletter-send.js`).
+11. **Cron (Vercel)**: gli invii schedulati non girano più con `setInterval` in un processo sempre acceso. Sono route in `app/api/cron/*` invocate da Vercel Cron secondo `client-next/vercel.json` (newsletter e automazioni ogni minuto, blog ogni ora, **domini ogni 15 minuti**, backup alle 3). Ogni route è **protetta da `CRON_SECRET`** via header `Authorization: Bearer` — nuove route cron devono fare lo stesso controllo. La logica sta in `lib/` (es. `runScheduledSends` in `lib/newsletter-send.js`).
 
 12. **Pageview tracking**: landing page fanno `POST /api/guest/pageview` al mount, deduplicato con `sessionStorage` key `pv_{entity.id}`. 1 visita per sessione browser.
 
@@ -233,6 +233,14 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 22. **⚠️ Drag & drop con componenti React inline**: definire un componente React DENTRO un altro componente causa unmount/remount ad ogni render (nuova identità di funzione) → interrompe il drag. **Fix**: usare funzione normale `renderXxx()` chiamata direttamente `{renderXxx(item)}`. Applicato a `renderMenuRow` in `SitoPage.jsx`. Stesso vale per qualsiasi altro editor drag & drop futuro.
 
 23. **⚠️ Liste in `display:grid` e nomi lunghi**: senza `gridTemplateColumns`, la colonna implicita si dimensiona sul **contenuto** → un nome lungo (dato del cliente!) allarga la riga oltre la scheda e spinge fuori campi e pulsanti. Vale anche per `1fr`, che equivale a `minmax(auto, 1fr)` e conserva il minimo automatico. **Fix**: `gridTemplateColumns: 'minmax(0, 1fr)'` sulla lista, più `overflowWrap: 'anywhere'` sul testo che può essere una parola sola lunghissima (senza spazi né trattini il browser non può andare a capo da solo). Applicato a `RistoranteMenuPage` (11/08), poi a `PropertiesPage` / `RistoranteListPage` / `AttivitaListPage` e alla card check-in di `GuestApp` (12/08). Le sonde `tests/probe-grid-stress.mjs` e `probe-guest-stress.mjs` verificano il difetto dal vivo.
+
+24. **⚠️ Domini (sottodominio incluso + dominio del cliente)** — `lib/vercel-domains.js` è l'**unico** punto che parla con l'API Vercel; `lib/domini-manutenzione.js` tiene allineato il DB alla realtà di rete. Regole apprese sul campo (17/08/2026), da non violare:
+    - **Mai scrivere valori DNS nel codice.** Gli IP di Vercel cambiano: l'IP hardcodato `76.76.19.19` oggi **non risponde più**, e ogni cliente con dominio apex che seguiva le istruzioni restava offline. I record si chiedono a `GET /v6/domains/{d}/config` (`recommendedIPv4`/`recommendedCNAME`).
+    - **Il wildcard `*.oltrenova.com` su Vercel NON basta**: senza registrare il singolo hostname sul progetto, Vercel non emette il certificato e il browser riceve un errore TLS (525 dietro Cloudflare). Ogni sottodominio va registrato davvero (`assicuraSottodominio`).
+    - **Apex e www vanno in coppia**: chi collega `miosito.it` deve trovare online anche `www.miosito.it` (registrato come redirect, colonna `variante_dominio`).
+    - **Apex ≠ "due punti"**: `miosito.co.uk` è una radice. L'apex si legge da `apexName` nella risposta Vercel (Public Suffix List), l'euristica in `apexDiRipiego` è solo il ripiego.
+    - **`domini.entity_slug` è una cache, non la verità**: lo slug dell'entità è modificabile, quindi `resolve-domain` legge sempre lo slug vivo via `entity_id` e riallinea la copia. Senza questo, rinominare un'entità mandava il dominio su un 404.
+    - **`stato` non si dichiara, si misura**: `diagnosticaDominio` combina stato Vercel + DNS reali + **una GET HTTPS vera** all'indirizzo. Vercel può dire `verified` e `misconfigured:false` mentre il sito è irraggiungibile.
 
 ---
 

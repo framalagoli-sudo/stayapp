@@ -1,37 +1,21 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
-import { createDefaultSubdomain } from '@/lib/create-subdomain'
+import { requireAuth, getProfile, requireEntityAccess, ENTITY_TABLES } from '@/lib/server-auth'
+import { rateLimit, tooManyRequests } from '@/lib/rate-limit'
+import { assicuraSottodominio } from '@/lib/create-subdomain'
+import { riallineaSlug, ricontrolla } from '@/lib/domini-manutenzione'
+import {
+  normalizzaDominio, addProjectDomain, gemelloDi, diagnosticaDominio, vercelReady,
+} from '@/lib/vercel-domains'
 
-const STAYAPP_DOMAIN   = process.env.STAYAPP_DOMAIN?.trim() || 'oltrenova.com'
-const VERCEL_TOKEN      = process.env.VERCEL_TOKEN
-const VERCEL_PROJECT_ID = process.env.VERCEL_PROJECT_ID
+const STAYAPP_DOMAIN = process.env.STAYAPP_DOMAIN?.trim() || 'oltrenova.com'
 
-async function getProfile(userId) {
-  const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
-  return data
-}
+// Un dominio non ricontrollato da un po' viene riverificato all'apertura della
+// pagina: così il cliente non vede mai uno stato vecchio di giorni.
+const FRESCHEZZA_MS = 6 * 60 * 60 * 1000
 
-function buildDnsInstructions(dominio) {
-  const isApex = !dominio.startsWith('www.') && dominio.split('.').length === 2
-  if (isApex) {
-    return { type: 'apex', records: [
-      { tipo: 'A', nome: '@', valore: '76.76.19.19', ttl: 'Auto' },
-      { tipo: 'CNAME', nome: 'www', valore: 'cname.vercel-dns.com', ttl: 'Auto' },
-    ]}
-  }
-  const sub = dominio.split('.').slice(0, -2).join('.')
-  return { type: 'subdomain', records: [
-    { tipo: 'CNAME', nome: sub || 'www', valore: 'cname.vercel-dns.com', ttl: 'Auto' },
-  ]}
-}
-
-function buildDnsFromVercel(dominio, vData) {
-  const base = buildDnsInstructions(dominio)
-  if (vData?.verification?.length) {
-    base.verifica_txt = vData.verification.map(v => ({ tipo: v.type || 'TXT', nome: v.domain || `_vercel.${dominio}`, valore: v.value || '' }))
-  }
-  return base
-}
+// Il ricontrollo interroga Vercel e prova l'indirizzo dal vivo: serve più dei
+// 10 secondi di default.
+export const maxDuration = 30
 
 export async function GET(request) {
   try {
@@ -51,25 +35,36 @@ export async function GET(request) {
 
     const { data, error } = await q
     if (error) return Response.json({ error: error.message }, { status: 500 })
+    let lista = data || []
 
-    const list = data || []
+    if (entity_tipo && entity_id) {
+      const { response: accessDenied } = await requireEntityAccess(request, entity_tipo, entity_id)
+      if (accessDenied) return accessDenied
 
-    // Auto-crea sottodominio se mancante
-    if (entity_tipo && entity_id && !list.some(d => d.tipo === 'subdomain')) {
-      const table = entity_tipo === 'struttura' ? 'properties' : entity_tipo === 'ristorante' ? 'ristoranti' : 'attivita'
-      const { data: entity } = await supabaseAdmin.from(table).select('azienda_id, slug').eq('id', entity_id).single()
-      // Solo per entità della propria azienda (super_admin può tutto).
-      const owns = profile.role === 'super_admin' || entity?.azienda_id === profile.azienda_id
-      if (entity?.slug && owns) {
-        await createDefaultSubdomain({ azienda_id: entity.azienda_id, entity_tipo, entity_id, entity_slug: entity.slug })
-        const { data: fresh } = await supabaseAdmin.from('domini').select('*')
-          .eq('entity_tipo', entity_tipo).eq('entity_id', entity_id).order('created_at', { ascending: true })
-        return Response.json(fresh || list)
+      // Ogni entità deve avere il suo indirizzo pronto: se manca lo si crea ora.
+      if (!lista.some(d => d.tipo === 'subdomain')) {
+        const table = ENTITY_TABLES[entity_tipo]
+        const { data: entity } = await supabaseAdmin.from(table).select('azienda_id, slug').eq('id', entity_id).single()
+        if (entity?.slug) {
+          await assicuraSottodominio({ azienda_id: entity.azienda_id, entity_tipo, entity_id, entity_slug: entity.slug })
+          const { data: fresh } = await supabaseAdmin.from('domini').select('*')
+            .eq('entity_tipo', entity_tipo).eq('entity_id', entity_id).order('created_at', { ascending: true })
+          lista = fresh || lista
+        }
       }
+
+      lista = await Promise.all(lista.map(aggiornaSeStantio))
     }
 
-    return Response.json(list)
+    return Response.json(lista)
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
+}
+
+async function aggiornaSeStantio(record) {
+  await riallineaSlug(record)
+  const eta = record.ultima_verifica ? Date.now() - new Date(record.ultima_verifica).getTime() : Infinity
+  if (eta < FRESCHEZZA_MS) return record
+  return (await ricontrolla(record)) || record
 }
 
 export async function POST(request) {
@@ -80,43 +75,86 @@ export async function POST(request) {
     if (!profile) return Response.json({ error: 'Profilo non trovato' }, { status: 403 })
 
     const { entity_tipo, entity_id, dominio } = await request.json()
-    if (!entity_tipo || !entity_id || !dominio?.trim())
-      return Response.json({ error: 'entity_tipo, entity_id e dominio obbligatori' }, { status: 400 })
+    if (!entity_tipo || !entity_id) {
+      return Response.json({ error: 'entity_tipo ed entity_id obbligatori' }, { status: 400 })
+    }
+    const { response: accessDenied } = await requireEntityAccess(request, entity_tipo, entity_id)
+    if (accessDenied) return accessDenied
 
-    const table = entity_tipo === 'struttura' ? 'properties' : entity_tipo === 'ristorante' ? 'ristoranti' : 'attivita'
-    let entityQ = supabaseAdmin.from(table).select('azienda_id, slug').eq('id', entity_id)
-    if (profile.role !== 'super_admin') entityQ = entityQ.eq('azienda_id', profile.azienda_id)
-    const { data: entity } = await entityQ.single()
+    // Collegare un dominio costa chiamate a Vercel: limitiamo i tentativi.
+    const { allowed } = await rateLimit(request, { name: 'domini-add', limit: 10, windowSec: 3600 })
+    if (!allowed) return tooManyRequests()
+
+    const { dominio: pulito, error: erroreFormato } = normalizzaDominio(dominio)
+    if (erroreFormato) return Response.json({ error: erroreFormato }, { status: 400 })
+
+    // Il dominio della piattaforma non è collegabile come "dominio personalizzato":
+    // altrimenti un cliente potrebbe prenotarsi l'indirizzo di un altro.
+    if (pulito === STAYAPP_DOMAIN || pulito.endsWith(`.${STAYAPP_DOMAIN}`)) {
+      return Response.json({
+        error: `${STAYAPP_DOMAIN} è il nostro dominio. Per cambiare il tuo indirizzo su ${STAYAPP_DOMAIN} usa "Personalizza indirizzo"; qui va il dominio che hai acquistato tu.`,
+      }, { status: 400 })
+    }
+
+    const { data: giaPresente } = await supabaseAdmin.from('domini').select('id, entity_id').eq('dominio', pulito).maybeSingle()
+    if (giaPresente) {
+      return Response.json({
+        error: giaPresente.entity_id === entity_id
+          ? 'Questo dominio è già collegato a questa scheda.'
+          : 'Questo dominio risulta già collegato. Rimuovilo prima dall’altra scheda.',
+      }, { status: 409 })
+    }
+
+    const table = ENTITY_TABLES[entity_tipo]
+    const { data: entity } = await supabaseAdmin.from(table).select('azienda_id, slug').eq('id', entity_id).single()
     if (!entity) return Response.json({ error: 'Entità non trovata' }, { status: 404 })
 
-    const cleanDominio = dominio.trim().toLowerCase()
-    let vercel_domain_id = null
-    let dns_istruzioni = buildDnsInstructions(cleanDominio)
-    let stato = 'pending'
+    // Registrazione su Vercel. Senza questo passo il cliente può configurare i DNS
+    // alla perfezione e il sito non risponderà comunque.
+    let apexName = null
+    let variante = null
+    if (vercelReady()) {
+      const r = await addProjectDomain(pulito)
+      if (!r.ok) return Response.json({ error: messaggioVercel(r.error, pulito) }, { status: 400 })
+      apexName = r.data?.apexName || null
 
-    if (VERCEL_TOKEN && VERCEL_PROJECT_ID) {
-      try {
-        const vRes = await fetch(`https://api.vercel.com/v10/projects/${VERCEL_PROJECT_ID}/domains`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${VERCEL_TOKEN}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: cleanDominio }),
-        })
-        const vData = await vRes.json()
-        if (vData.error) return Response.json({ error: `Vercel: ${vData.error.message}` }, { status: 400 })
-        vercel_domain_id = vData.name || cleanDominio
-        dns_istruzioni = buildDnsFromVercel(cleanDominio, vData)
-        stato = vData.verified ? 'attivo' : 'pending'
-      } catch (e) { console.error('[domini] Vercel API error:', e.message) }
+      // Il gemello (apex↔www) va registrato come redirect sul dominio scelto:
+      // chi digita l'indirizzo senza www deve arrivare lo stesso.
+      variante = gemelloDi(pulito, apexName)
+      if (variante) {
+        const g = await addProjectDomain(variante, { redirect: pulito })
+        if (!g.ok) variante = null // già usato altrove: non è un motivo per bloccare il principale
+      }
     }
+
+    const diagnosi = await diagnosticaDominio(pulito)
 
     const { data, error } = await supabaseAdmin.from('domini').insert({
       azienda_id: entity.azienda_id, entity_tipo, entity_id, entity_slug: entity.slug,
-      dominio: cleanDominio, tipo: 'custom', stato, vercel_domain_id, dns_istruzioni,
+      dominio: pulito, tipo: 'custom', stato: diagnosi.stato,
+      vercel_domain_id: diagnosi.registrato_su_vercel ? pulito : null,
+      variante_dominio: variante,
+      dns_istruzioni: { records: diagnosi.records, verifica_txt: diagnosi.verifica_txt },
+      verifica_dettaglio: diagnosi,
+      ultima_verifica: diagnosi.controllato_il,
     }).select().single()
+
     if (error) {
       if (error.code === '23505') return Response.json({ error: 'Questo dominio è già registrato' }, { status: 409 })
       return Response.json({ error: error.message }, { status: 500 })
     }
     return Response.json(data, { status: 201 })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
+}
+
+// Gli errori di Vercel sono in inglese e parlano di progetti e account: al cliente
+// serve sapere cosa deve fare lui.
+function messaggioVercel(errore, dominio) {
+  const t = String(errore || '')
+  if (/already in use|is already assigned|domain_already_in_use/i.test(t)) {
+    return `${dominio} risulta già collegato a un altro sito. Scollegalo da lì e riprova, oppure scrivici.`
+  }
+  if (/invalid|not a valid/i.test(t)) return `${dominio} non sembra un dominio valido.`
+  if (/forbidden|not authorized/i.test(t)) return 'Non riusciamo a completare il collegamento: riprova tra poco.'
+  return `Non siamo riusciti a collegare il dominio: ${t}`
 }
