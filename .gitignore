@@ -10,3 +10,6 @@ dist/
 # la cache e li re-inserisca in git. Il codice vivo e' in client-next/.
 /client/
 /server/
+
+# Screenshot delle sonde diagnostiche (usa e getta)
+tests/*.png
