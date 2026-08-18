@@ -483,8 +483,8 @@ Il refactor verso "Business" generico richiede principalmente:
 
 ### Aperte (aggiornate 2026-08-18)
 
-- [ ] **Ripristinare l'audit log** — fermo dal 9 giugno, nessuno ci scrive più: senza, una sessione rubata non lascia traccia (lavoro nostro, non tuo)
-- [ ] **`.single()` in AuthContext** — 406 e admin bloccato su "Caricamento…" in modo intermittente (lavoro nostro)
+- [x] **Audit log ripristinato** ✅ 18/08 — scrive di nuovo da `lib/audit.js` agganciato a `requireAuth`: mutazioni e tentativi respinti, segreti redatti, ~20 ms di costo
+- [x] **`.single()` in AuthContext** ✅ 18/08 — `.maybeSingle()` + messaggio con Riprova/Esci al posto dello spinner eterno
 - [x] **2FA obbligatorio** su tutte le aziende + default per le nuove ✅ 18/08 — migration `072` eseguita
 - [x] **Passkey attivate** su Supabase (RP ID `oltrenova.com`, origins con e senza `www`) ✅ 18/08 — ⚠️ da rifare se cambia il dominio del pannello, altrimenti le passkey registrate smettono di funzionare
 

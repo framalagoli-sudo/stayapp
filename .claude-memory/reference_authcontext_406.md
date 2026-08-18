@@ -1,16 +1,12 @@
 ---
 name: reference_authcontext_406
-description: AuthContext usa .single() su profiles/aziende — 0 righe da RLS producono 406 e lasciano l'admin in "Caricamento…" infinito
+description: RISOLTO 18/08 — AuthContext usava .single() su profiles/aziende, 406 e admin bloccato su "Caricamento…"
 metadata:
   type: reference
 ---
 
-`context/AuthContext.jsx` (`fetchProfile`) legge il profilo con `.single()` su `profiles` e, se c'è un'azienda, `require_2fa` su `aziende` con un altro `.single()`.
+**Risolto il 18/08/2026.** `context/AuthContext.jsx` (`fetchProfile`) leggeva profilo e azienda con `.single()`, che su PostgREST risponde **406** quando le righe non sono esattamente una — cosa che con le policy RLS può succedere legittimamente. Il profilo restava `null`, nessuno lo diceva, e le pagine admin che ne dipendono giravano all'infinito su **"Caricamento…"** (osservato nello smoke test su `/admin/prenotazioni`, intermittente).
 
-`.single()` su PostgREST risponde **406** quando le righe restituite non sono esattamente una. Dopo il lockdown RLS (migration `069`) può succedere legittimamente che una di quelle letture torni vuota lato client: allora `profile` resta `null`, nessun errore viene mostrato e le pagine admin che dipendono dal profilo restano in **"Caricamento…" a tempo indeterminato**.
+Correzione: `.maybeSingle()` su entrambe le letture, stato `erroreProfilo` esposto dal contesto e `AdminGuard` che mostra un messaggio con **Riprova** ed **Esci** invece dello spinner eterno. Sull'azienda, se la lettura fallisce si assume `require_2fa: true`: meglio chiedere un secondo fattore di troppo che saltarlo per un errore di lettura.
 
-Osservato il 18/08/2026 nello smoke test: `/admin/prenotazioni` bloccata su "Caricamento…" dopo 9.5s con due `406` in console — esattamente le due query. Il test è poi passato al riavvio (flaky) e la pagina aperta con un utente reale funziona, quindi il difetto è **intermittente**, non costante.
-
-Correzione ragionevole (non ancora applicata, fuori dallo scopo del lavoro sui domini): `.maybeSingle()` su entrambe + stato d'errore esplicito quando il profilo non arriva, invece di lasciare l'interfaccia in caricamento.
-
-Vedi [[project_session_2026_08_17_domini]].
+**Regola generale**: `.single()` va usato solo quando l'assenza della riga è davvero un errore. Per tutto ciò che dipende da RLS, `.maybeSingle()` + gestione esplicita del caso vuoto. Vedi [[feedback_supabase_catch]].
