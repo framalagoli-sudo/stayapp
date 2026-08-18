@@ -16,6 +16,21 @@ export default function LoginPage() {
   const [error, setError]       = useState(null)
   const [loading, setLoading]   = useState(false)
   const [showPwd, setShowPwd]   = useState(false)
+  const passkeySupportata = typeof window !== 'undefined' && !!window.PublicKeyCredential
+
+  // Accesso con passkey: un solo gesto, e non c'e' niente da digitare che un sito
+  // civetta possa intercettare. Chi entra cosi' non deve poi inserire alcun codice.
+  async function accediConPasskey() {
+    setError(null); setLoading(true)
+    const { error: err } = await supabase.auth.signInWithPasskey()
+    setLoading(false)
+    if (err) {
+      if (/abort|cancel|NotAllowed/i.test(err.message || '')) return   // l'utente ha chiuso il popup
+      return setError('Accesso con passkey non riuscito. Puoi entrare con email e password.')
+    }
+    await refreshAAL()
+    router.replace('/admin')
+  }
 
   async function handlePassword(e) {
     e.preventDefault()
@@ -69,6 +84,27 @@ export default function LoginPage() {
 
           {error && <p style={errorStyle}>{error}</p>}
           <button type="submit" disabled={loading} style={buttonStyle}>{loading ? 'Accesso…' : 'Accedi'}</button>
+
+          {passkeySupportata && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0 12px' }}>
+                <div style={{ flex: 1, height: 1, background: '#eee' }} />
+                <span style={{ fontSize: 12, color: '#aaa' }}>oppure</span>
+                <div style={{ flex: 1, height: 1, background: '#eee' }} />
+              </div>
+              <button
+                type="button"
+                onClick={accediConPasskey}
+                disabled={loading}
+                style={{ ...buttonStyle, background: 'transparent', color: '#1a1a2e', border: '1px solid #ddd' }}
+              >
+                Entra con impronta o volto
+              </button>
+              <p style={{ margin: '8px 0 0', fontSize: 12, color: '#aaa', textAlign: 'center' }}>
+                Se hai registrato questo dispositivo in Sicurezza
+              </p>
+            </>
+          )}
         </form>
       ) : (
         <form onSubmit={handleTotp} style={cardStyle}>

@@ -13,7 +13,7 @@ const Spinner = () => (
 )
 
 export default function AdminGuard({ children }) {
-  const { user, profile, loading, aalStatus, require2fa } = useAuth()
+  const { user, profile, loading, aalStatus, require2fa, conPasskey } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
 
@@ -29,6 +29,10 @@ export default function AdminGuard({ children }) {
       router.replace('/admin/login')
       return
     }
+
+    // Chi e' entrato con una passkey ha gia' fatto l'accesso piu' forte che
+    // abbiamo: non gli si chiede anche il codice.
+    if (user && conPasskey) return
 
     // Sessione richiede MFA (utente ha TOTP enrollato ma non ancora verificato)
     // Valido per tutti i ruoli, incluso super_admin
@@ -52,7 +56,7 @@ export default function AdminGuard({ children }) {
     if (user && isPublic && pathname === '/admin/login') {
       router.replace('/admin')
     }
-  }, [user, profile, loading, aalStatus, require2fa, pathname, mfaStillLoading])
+  }, [user, profile, loading, aalStatus, require2fa, conPasskey, pathname, mfaStillLoading])
 
   if (loading || mfaStillLoading) return <Spinner />
   if (!user && !isPublic) return null

@@ -12,8 +12,36 @@ export default function SecurityPage() {
   const [error, setError]         = useState(null)
   const [success, setSuccess]     = useState(null)
   const [loading, setLoading]     = useState(false)
+  const [passkeys, setPasskeys]   = useState([])
+  const [passkeySupportata]       = useState(() => typeof window !== 'undefined' && !!window.PublicKeyCredential)
 
-  useEffect(() => { loadFactors() }, [])
+  useEffect(() => { loadFactors(); loadPasskeys() }, [])
+
+  async function loadPasskeys() {
+    const { data } = await supabase.auth.listPasskeys()
+    setPasskeys(data?.passkeys ?? data ?? [])
+  }
+
+  // La passkey usa il riconoscimento del dispositivo (impronta, volto, PIN) al posto
+  // del codice: essendo legata al dominio, un sito civetta non puo' riutilizzarla.
+  async function registraPasskey() {
+    setError(null); setSuccess(null); setLoading(true)
+    const { error: err } = await supabase.auth.registerPasskey({ friendlyName: navigator.platform || 'Questo dispositivo' })
+    setLoading(false)
+    if (err) return setError(err.message === 'AbortError' ? 'Registrazione annullata.' : err.message)
+    await loadPasskeys()
+    setSuccess('Passkey registrata. Al prossimo accesso ti bastera’ il riconoscimento del dispositivo.')
+  }
+
+  async function eliminaPasskey(id) {
+    if (!window.confirm('Eliminare questa passkey? Su quel dispositivo dovrai rientrare con password e codice.')) return
+    setError(null); setLoading(true)
+    const { error: err } = await supabase.auth.deletePasskey({ passkeyId: id })
+    setLoading(false)
+    if (err) return setError(err.message)
+    await loadPasskeys()
+    setSuccess('Passkey eliminata.')
+  }
 
   async function loadFactors() {
     const { data } = await supabase.auth.mfa.listFactors()
@@ -89,6 +117,34 @@ export default function SecurityPage() {
           </p>
         </div>
       </div>
+
+      {passkeySupportata && (
+        <div style={{ border: '1px solid #e5e7eb', borderRadius: 10, padding: '16px 20px', marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+            <p style={{ margin: 0, fontWeight: 700, fontSize: 15 }}>Passkey</p>
+            <span style={{ fontSize: 11, background: '#eef2ff', color: '#3730a3', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>Consigliata</span>
+          </div>
+          <p style={{ margin: '0 0 14px', fontSize: 13, color: '#6b7280', lineHeight: 1.5 }}>
+            Entra con l’impronta, il volto o il PIN del dispositivo, senza digitare codici.
+            È anche il metodo più sicuro: essendo legata a questo sito, non funziona su
+            pagine false che imitano il nostro indirizzo.
+          </p>
+
+          {passkeys.map(p => (
+            <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '12px 16px', marginBottom: 10, flexWrap: 'wrap' }}>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ margin: 0, fontWeight: 600, fontSize: 14, overflowWrap: 'anywhere' }}>{p.friendly_name || p.friendlyName || 'Dispositivo'}</p>
+                {p.created_at && <p style={{ margin: '2px 0 0', fontSize: 12, color: '#9ca3af' }}>Aggiunta il {new Date(p.created_at).toLocaleDateString('it-IT')}</p>}
+              </div>
+              <button onClick={() => eliminaPasskey(p.id)} disabled={loading} style={btnDanger}>Elimina</button>
+            </div>
+          ))}
+
+          <button onClick={registraPasskey} disabled={loading} style={btnPrimary}>
+            {loading ? 'Attendi…' : passkeys.length ? 'Aggiungi un altro dispositivo' : 'Aggiungi una passkey'}
+          </button>
+        </div>
+      )}
 
       {success && <p style={{ color: '#16a34a', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: 20 }}>{success}</p>}
       {error && <p style={{ color: '#b91c1c', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: 20 }}>{error}</p>}

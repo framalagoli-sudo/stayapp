@@ -31,8 +31,16 @@ async function enforceMfa(request, user) {
   if (MFA_EXEMPT_PREFIXES.some(p => pathname.startsWith(p))) return null
 
   const token = request.headers.get('authorization')?.slice(7) || ''
-  const aal = decodeJwtPayload(token)?.aal
-  if (aal === 'aal2') return null // già verificato 2FA → nessun costo
+  const claims = decodeJwtPayload(token)
+  if (claims?.aal === 'aal2') return null // già verificato 2FA → nessun costo
+
+  // Chi è entrato con una passkey ha già fatto di più, non di meno: la credenziale
+  // è legata crittograficamente al dominio, quindi un sito civetta non può
+  // rigiocarla e il phishing che intercetta password e codici non la tocca.
+  // Supabase la classifica come primo fattore (aal1) ma registra il metodo in
+  // `amr`: per noi vale come autenticazione completa, altrimenti chiederemmo un
+  // codice più debole a chi ha già usato il mezzo più forte.
+  if (claims?.amr?.some(m => m?.method === 'passkey' || m?.method === 'webauthn')) return null
 
   const { data: profile } = await supabaseAdmin.from('profiles').select('azienda_id').eq('id', user.id).single()
   if (!profile?.azienda_id) return null // super_admin senza azienda o profilo orfano
