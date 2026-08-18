@@ -85,6 +85,15 @@ try {
       console.log('[3] livello della sessione ottenuta → aal:', claims.aal, '| amr:', JSON.stringify(claims.amr))
       const r = await fetch(TEST_URL + '/api/properties', { headers: { Authorization: `Bearer ${esito.access_token}` } })
       console.log('[4] le nostre API con quella sessione → HTTP', r.status, r.status === 200 ? '(passa)' : '(bloccata da require_2fa)')
+
+      // La pagina Sicurezza deve poter ELENCARE le passkey, altrimenti sembra che
+      // la registrazione non sia riuscita e ricompare il pulsante per aggiungerla.
+      const lista = await fetch(`${SUPABASE_URL}/auth/v1/passkeys`, {
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${esito.access_token}` },
+      })
+      const elenco = await lista.json()
+      console.log('[5] elenco passkey del profilo        → HTTP', lista.status, '| trovate:', Array.isArray(elenco) ? elenco.length : '?')
+      if (Array.isArray(elenco) && elenco.length) console.log('    campi disponibili:', Object.keys(elenco[0]).join(', '))
     } else {
       console.log('    risposta:', JSON.stringify(esito.body)?.slice(0, 300))
     }

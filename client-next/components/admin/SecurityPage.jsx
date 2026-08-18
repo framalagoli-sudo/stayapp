@@ -18,8 +18,13 @@ export default function SecurityPage() {
   useEffect(() => { loadFactors(); loadPasskeys() }, [])
 
   async function loadPasskeys() {
-    const { data } = await supabase.auth.listPasskeys()
-    setPasskeys(data?.passkeys ?? data ?? [])
+    try {
+      const { data, error: err } = await supabase.auth.passkey.list()
+      if (err) return setError('Non riesco a leggere le passkey registrate: ' + err.message)
+      setPasskeys(Array.isArray(data) ? data : (data?.passkeys ?? []))
+    } catch (e) {
+      setError('Non riesco a leggere le passkey registrate: ' + e.message)
+    }
   }
 
   // La passkey usa il riconoscimento del dispositivo (impronta, volto, PIN) al posto
@@ -36,7 +41,7 @@ export default function SecurityPage() {
   async function eliminaPasskey(id) {
     if (!window.confirm('Eliminare questa passkey? Su quel dispositivo dovrai rientrare con password e codice.')) return
     setError(null); setLoading(true)
-    const { error: err } = await supabase.auth.deletePasskey({ passkeyId: id })
+    const { error: err } = await supabase.auth.passkey.delete({ passkeyId: id })
     setLoading(false)
     if (err) return setError(err.message)
     await loadPasskeys()
@@ -134,7 +139,10 @@ export default function SecurityPage() {
             <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '12px 16px', marginBottom: 10, flexWrap: 'wrap' }}>
               <div style={{ minWidth: 0 }}>
                 <p style={{ margin: 0, fontWeight: 600, fontSize: 14, overflowWrap: 'anywhere' }}>{p.friendly_name || p.friendlyName || 'Dispositivo'}</p>
-                {p.created_at && <p style={{ margin: '2px 0 0', fontSize: 12, color: '#9ca3af' }}>Aggiunta il {new Date(p.created_at).toLocaleDateString('it-IT')}</p>}
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: '#9ca3af' }}>
+                  {p.created_at && `Aggiunta il ${new Date(p.created_at).toLocaleDateString('it-IT')}`}
+                  {p.last_used_at && ` · usata il ${new Date(p.last_used_at).toLocaleDateString('it-IT')}`}
+                </p>
               </div>
               <button onClick={() => eliminaPasskey(p.id)} disabled={loading} style={btnDanger}>Elimina</button>
             </div>
