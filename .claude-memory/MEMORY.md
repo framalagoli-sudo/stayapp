@@ -1,5 +1,6 @@
 # Memory Index
 
+- [⚠️ AuthContext 406 → admin in caricamento infinito](reference_authcontext_406.md) — `.single()` su profiles/aziende: 0 righe da RLS danno 406, profile null e pagine bloccate su "Caricamento…" (intermittente)
 - [Session 2026-08-17 — Sistema domini rifatto](project_session_2026_08_17_domini.md) — 4 difetti (IP DNS morto, sottodomini senza certificato, slug disallineato, updated_at inesistente) + UI in 3 passi; produzione riparata: 14 domini, 0 rotti; sonda `probe-domini.mjs`
 - [🌐 Domini su Vercel (lezioni verificate)](reference_domini_vercel.md) — IP DNS mai hardcodati (76.76.19.19 è morto), il wildcard non emette certificati per i sottodomini, `verified` non significa raggiungibile: misurare con una GET HTTPS vera
 - [Lingua](feedback_lingua.md) — Rispondere sempre in italiano
