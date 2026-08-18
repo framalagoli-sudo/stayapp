@@ -53,7 +53,9 @@ export default function DominiPage({ entityTipo }) {
   async function carica() {
     setLoading(true)
     try {
-      setDomini(await apiFetch(`/api/domini?entity_tipo=${entityTipo}&entity_id=${entityId}`))
+      const lista = await apiFetch(`/api/domini?entity_tipo=${entityTipo}&entity_id=${entityId}`)
+      // Deduplica per id: una risposta con la stessa voce ripetuta la mostrerebbe due volte.
+      setDomini(Array.isArray(lista) ? [...new Map(lista.map(d => [d.id, d])).values()] : [])
     } catch (e) { setError(e.message) }
     setLoading(false)
   }
@@ -64,13 +66,15 @@ export default function DominiPage({ entityTipo }) {
       body: JSON.stringify({ entity_tipo: entityTipo, entity_id: entityId, dominio }),
     })
     tentativi.current = 0
-    setDomini(prev => [...prev, nuovo])
+    setDomini(prev => (prev.some(d => d.id === nuovo.id) ? prev : [...prev, nuovo]))
   }
 
   async function controlla(id, { silenzioso = false } = {}) {
     try {
       const agg = await apiFetch(`/api/domini/${id}/verify`, { method: 'POST' })
-      setDomini(prev => prev.map(d => d.id === id ? agg : d))
+      // Senza il controllo su agg, una risposta vuota sostituirebbe la voce con undefined
+      // e la pagina andrebbe in errore al render successivo.
+      if (agg?.id) setDomini(prev => prev.map(d => d.id === id ? agg : d))
       return agg
     } catch (e) { if (!silenzioso) setError(e.message) }
   }
@@ -407,11 +411,7 @@ function CardDominio({ dom, onCopia, copiato, onControlla, onRimuovi }) {
 
       {online ? (
         <>
-          <div style={{ padding: '14px 18px', background: '#fff', fontSize: 13, color: '#555', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <ShieldCheck size={15} strokeWidth={1.5} color={C.ok} style={{ flexShrink: 0 }} />
-            Il dominio è collegato e protetto da certificato di sicurezza.
-            {d.gemello?.raggiungibile && <span style={{ color: C.tenue }}>Funziona anche <strong>{d.gemello.dominio}</strong>.</span>}
-          </div>
+          <IndirizziCollegati dom={dom} d={d} onCopia={onCopia} copiato={copiato} />
           <Gemello gemello={d.gemello} provider={d.provider} onCopia={onCopia} copiato={copiato} />
         </>
       ) : (
@@ -433,6 +433,55 @@ function CardDominio({ dom, onCopia, copiato, onControlla, onRimuovi }) {
           </div>
         </>
       )}
+    </div>
+  )
+}
+
+// Un dominio collegato vive in due forme, con e senza «www»: vanno mostrate
+// entrambe con il loro esito. Prima quella secondaria compariva solo come inciso
+// quando funzionava, così chi aveva appena sistemato i DNS non vedeva conferma.
+function IndirizziCollegati({ dom, d, onCopia, copiato }) {
+  const principale = {
+    dominio: dom.dominio,
+    ok: true,
+    nota: d.prova_https?.status >= 300 && d.prova_https?.status < 400
+      ? 'Porta all’altro indirizzo'
+      : 'Apre il sito · protetto da certificato',
+  }
+  const voci = [principale]
+  if (d.gemello) {
+    voci.push({
+      dominio: d.gemello.dominio,
+      ok: d.gemello.raggiungibile,
+      nota: d.gemello.raggiungibile
+        ? (d.gemello.reindirizza ? 'Porta all’indirizzo principale' : 'Apre il sito')
+        : 'Non raggiungibile — manca un record nei DNS',
+    })
+  }
+
+  return (
+    <div style={{ padding: '14px 18px', background: '#fff', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 8 }}>
+      {voci.map(v => (
+        <div key={v.dominio} style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
+          {v.ok
+            ? <CheckCircle size={15} strokeWidth={1.5} color={C.ok} style={{ flexShrink: 0 }} />
+            : <AlertCircle size={15} strokeWidth={1.5} color={C.attesa} style={{ flexShrink: 0 }} />}
+          <a
+            href={`https://${v.dominio}`}
+            target="_blank"
+            rel="noreferrer"
+            style={{ fontSize: 14, fontWeight: 600, color: v.ok ? C.testo : C.attesa, textDecoration: 'none', overflowWrap: 'anywhere' }}
+          >
+            {v.dominio}
+          </a>
+          <span style={{ fontSize: 12, color: v.ok ? C.tenue : C.attesa }}>{v.nota}</span>
+          {v.ok && (
+            <span style={{ marginLeft: 'auto' }}>
+              <BottoneCopia valore={`https://${v.dominio}`} copiato={copiato} onCopia={onCopia} />
+            </span>
+          )}
+        </div>
+      ))}
     </div>
   )
 }

@@ -229,13 +229,20 @@ export async function controllaGemello(dominio, apexName) {
     getDnsConfig(gemello),
   ])
   const raggiungibile = prova.raggiungibile
+  // Un 3xx qui non e' un difetto: e' la forma non canonica che porta i visitatori
+  // su quella principale, ed e' esattamente cio' che deve fare.
+  const reindirizza = raggiungibile && prova.status >= 300 && prova.status < 400
   return {
     dominio: gemello,
     raggiungibile,
+    reindirizza,
+    stato_http: prova.status ?? null,
     senza_www: !gemello.startsWith('www.'),
     records: raggiungibile ? [] : recordDns(gemello, { apexName, config: cfg.data }),
     messaggio: raggiungibile
-      ? null
+      ? (reindirizza
+          ? 'Chi lo digita viene portato all’indirizzo principale.'
+          : 'Apre il sito come l’indirizzo principale.')
       : `Chi digita ${gemello} non arriva al sito: manca un record nei DNS.`,
   }
 }
