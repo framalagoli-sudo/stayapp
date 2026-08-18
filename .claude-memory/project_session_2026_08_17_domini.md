@@ -34,8 +34,3 @@ Sessione del 17/08/2026. Francesco segnalava difficoltà a configurare un domini
 - `fondaconarni.com` e `garage22terni.it` (apex): serve che il cliente aggiunga su SiteGround un record `A` con nome `@` verso gli IP che il pannello mostra (oggi `216.150.1.1` / `216.150.16.1` — **leggerli sempre dal pannello**, non da qui: cambiano).
 - Rinominando l'indirizzo incluso il vecchio smette di funzionare (QR stampati si rompono): oggi la UI avvisa prima di salvare, un redirect dal vecchio indirizzo è da decidere.
 - `deploy.ps1` muore in sessione Claude Code: il plugin Vercel scrive un hint su stderr e con `$ErrorActionPreference='Stop'` PowerShell lo tratta come errore terminante. Il deploy parte comunque (va verificato con `vercel ls --prod`). Nel terminale normale di Francesco il problema non si presenta.
-
-**Seguito del 18/08/2026.** Francesco ha aggiunto su SiteGround il record per `garage22terni.it` (senza www): verificato, risponde **307 → www.garage22terni.it**. Due difetti di interfaccia emersi da lì, corretti:
-- l'indirizzo secondario, **quando funzionava**, spariva dalla vista (restava solo l'inciso "Funziona anche…"): chi sistemava i DNS non aveva conferma. Ora la scheda elenca **entrambe le forme** con il proprio esito (apre il sito / porta all'indirizzo principale / non raggiungibile + record da aggiungere);
-- lo stesso indirizzo compariva **due volte** (riga di stato + titolo del riquadro sottostante) — è questa la "voce doppia" segnalata: nel database non c'erano duplicati. Il riquadro ora parte da "Come farlo funzionare".
-Aggiunte protezioni in `DominiPage`: dedup per id della lista e nessuna sostituzione con `undefined` quando un controllo non restituisce il record.
