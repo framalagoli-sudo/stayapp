@@ -1,5 +1,6 @@
 # Memory Index
 
+- [🧪 Triage vulnerabilità Next (18/08/2026)](reference_triage_next_vulns.md) — le 21 Dependabot sono tutte su `next` e nessuna ci tocca (no Server Actions, no self-hosting, no rewrites esterni, pagine no-store): la 14.x però non riceve più patch → upgrade a 15 da pianificare
 - [🔐 Check MFA 18/08/2026](project_check_mfa_2026_08_18.md) — l'impianto 2FA regge ai test avversariali (unenroll e require_2fa non aggirabili con aal1), ma è VOLONTARIO: 3/12 utenti lo usano, 0 aziende lo impongono; audit log fermo al 9 giugno; passkey disabilitati
 - [⚠️ AuthContext 406 → admin in caricamento infinito](reference_authcontext_406.md) — `.single()` su profiles/aziende: 0 righe da RLS danno 406, profile null e pagine bloccate su "Caricamento…" (intermittente)
 - [Session 2026-08-17 — Sistema domini rifatto](project_session_2026_08_17_domini.md) — 4 difetti (IP DNS morto, sottodomini senza certificato, slug disallineato, updated_at inesistente) + UI in 3 passi; produzione riparata: 14 domini, 0 rotti; sonda `probe-domini.mjs`
