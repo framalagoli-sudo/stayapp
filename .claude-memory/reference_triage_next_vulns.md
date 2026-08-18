@@ -1,6 +1,6 @@
 ---
 name: reference_triage_next_vulns
-description: Triage 18/08/2026 delle 21 vulnerabilità Dependabot — tutte su `next`, nessuna applicabile alla nostra configurazione, ma la linea 14.x non riceve più patch
+description: Triage 18/08/2026 delle 21 vulnerabilità Dependabot (tutte su next, nessuna applicabile) — poi RISOLTE con l'upgrade a Next 15; chiuso anche sharp: zero alert
 metadata:
   type: reference
 ---
@@ -24,3 +24,10 @@ Le 21 vulnerabilità aperte su GitHub sono **tutte sullo stesso pacchetto: `next
 **Conclusione**: nessuna urgenza di sicurezza (conferma il triage dell'11/08 con dati aggiornati), **ma** restare su 14.2.35 significa che il prossimo advisory che *ci riguarda davvero* non avrà una patch applicabile senza fare comunque l'upgrade. L'upgrade a **Next 15** va pianificato come manutenzione necessaria, non rimandato a oltranza: chiude tutti e 21 gli alert e ci rimette su una linea supportata. Ultime disponibili al 18/08: 15.5.23 e 16.3.1.
 
 **Non fare dismissing degli alert**: sono l'unico promemoria visibile che la linea è fuori manutenzione.
+
+
+---
+
+**Esito (18/08/2026, stesso giorno)**: chiuse tutte con l'upgrade a **Next 15.5.23 + React 19** (vedi [[project_upgrade_next15]]), più l'override di `sharp` a 0.35.3. Da **21 vulnerabilità (8 alte) a zero**.
+
+Il triage resta valido come **metodo**: confrontare ogni advisory con la configurazione reale — usiamo Server Actions? siamo self-hosted? abbiamo rewrites verso backend esterni? le risposte finiscono in cache condivise? — invece di reagire alla sola severità.

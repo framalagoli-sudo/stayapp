@@ -16,3 +16,7 @@ Fatto il 18/08/2026 su richiesta di Francesco, **a step e con la produzione live
 **Esito**: le 21 vulnerabilità Dependabot su `next` sono chiuse. Ne restano **2 su `sharp`** (`<0.35.0`, CVE libvips), dipendenza transitiva: da valutare a parte.
 
 **Nota sui test**: durante le verifiche una corsa smoke si è interrotta a metà (37/67) subito dopo il deploy, con le funzioni ancora fredde; le due corse complete prima e dopo hanno dato **66/66**. Se ricapita, rilanciare a freddo prima di sospettare una regressione.
+
+**Coda: `sharp` chiuso lo stesso giorno.** Era l'unico alert rimasto (CVE libvips, `<0.35.0`). Non è una nostra dipendenza: entra come **optionalDependency di Next** (`^0.34.3`) e non è importato da nessuna parte; `/_next/image` in produzione è servito da Vercel (`Server: Vercel`) e non usiamo `next/image`, quindi il rischio pratico era basso. Chiuso con un **override a `^0.35.3`** — versione fuori dal range dichiarato da Next, quindi verificata a mano: build pulita, `/_next/image` che restituisce un PNG vero (627 byte), log del server senza lamentele, smoke **66/66** contro il binario nuovo, `npm audit` → **found 0 vulnerabilities**.
+
+⚠️ **Trappola in cui sono caduto**: la prima prova girava contro il **server vecchio**, perché la porta 3001 era ancora occupata da un'istanza precedente (`EADDRINUSE` nel log). Prima di dichiarare buono un binario, verificare che il server sia davvero quello nuovo — o usare una porta libera.
