@@ -30,7 +30,7 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "resend": "^6.19.0",
-    "stripe": "^14.17.0"
+    "stripe": "^22.5.0"
   },
   "overrides": {
     "postcss": "^8.5.10",
