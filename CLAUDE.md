@@ -111,7 +111,7 @@ Lo script fa in sequenza: **guardie** → `npm audit` (informativo) → `npx ver
 
 | Layer | Tecnologia |
 |---|---|
-| Frontend | Next.js 14.2 (App Router) + React 18 |
+| Frontend | Next.js 15.5 (App Router) + React 19 |
 | Backend | Route API Next in `client-next/app/api/` (nessun server separato) |
 | Database | Supabase (PostgreSQL + Auth + Storage) |
 | Icone | lucide-react ^1.24.0 |
@@ -272,7 +272,8 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 ### Da fare (in ordine)
 - [ ] 🎯 **Onboarding "Inizia qui"** — checklist primo accesso (completa i dati → genera il sito con l'AI → pubblica → dominio → primi contatti). **È il capitolo aperto più importante**: la sicurezza è fatta, quello che manca è che un cliente nuovo arrivi al sito pubblicato *da solo*.
 - [ ] **Pagamenti Stripe** — checkout booking risorse ed eventi (colonne `pagamento_stato/pagamento_id` già su prenotazioni). NB: lo Stripe dello **shop** è già integrato (`app/api/shop/webhook/stripe`).
-- [ ] **Upgrade Next 14.2 → 15/16** — **manutenzione, non sicurezza** (triage 11/8: nessuno degli advisory high ci riguarda). Si farà per React 19 / Sentry / attualità. L'ostacolo `next-pwa` è stato rimosso, quindi ora è meno rischioso.
+- [x] **Next 15.5 + React 19** ✅ 18/08/2026 — chiuse le 21 vulnerabilità su `next`. ⚠️ Prima di tentare la **16** vanno migrati i `params` sincroni (~102 occorrenze, codemod `next-async-request-api`): la 15 li tollera, la 16 no
+- [ ] **Upgrade Next 16** — **manutenzione, non sicurezza** (triage 11/8: nessuno degli advisory high ci riguarda). Si farà per React 19 / Sentry / attualità. L'ostacolo `next-pwa` è stato rimosso, quindi ora è meno rischioso.
 - [ ] **Import documento v2** — upload file PDF/DOCX + chunking per documenti lunghi
 - [ ] **Multi-lingua DE** (IT/EN già fatti)
 - [ ] **Notifiche real-time** — Supabase Realtime su `requests` (bassa priorità)
