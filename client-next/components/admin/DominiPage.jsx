@@ -493,19 +493,17 @@ function Gemello({ gemello, provider, onCopia, copiato }) {
   if (!gemello || gemello.raggiungibile) return null
   return (
     <div style={{ padding: '14px 18px', background: C.attesaBg, borderTop: `1px solid ${C.attesaBordo}` }}>
-      <div style={{ display: 'flex', gap: 9, alignItems: 'flex-start', marginBottom: 10 }}>
-        <AlertCircle size={16} strokeWidth={1.5} color={C.attesa} style={{ flexShrink: 0, marginTop: 1 }} />
-        <div>
-          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: C.testo }}>
-            Manca l’indirizzo {gemello.senza_www ? 'senza «www»' : 'con «www»'}: <strong>{gemello.dominio}</strong>
-          </p>
-          <p style={{ margin: '4px 0 0', fontSize: 12, color: '#666', lineHeight: 1.5 }}>
-            Chi lo digita così trova un errore del browser. Succede spesso a chi legge l’indirizzo
-            su un volantino o su un biglietto da visita. Si risolve aggiungendo un record
-            {provider?.nome ? <> su <strong>{provider.nome}</strong></> : ' dal tuo provider'}.
-          </p>
-        </div>
-      </div>
+      {/* Il nome dell'indirizzo è già nella riga di stato qui sopra: ripeterlo qui
+          faceva sembrare che fossero due voci distinte. */}
+      <p style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: C.testo }}>
+        Come farlo funzionare: aggiungi {gemello.records.length === 1 ? 'questo record' : 'questi record'}
+        {provider?.nome ? <> su <strong>{provider.nome}</strong></> : ' dal tuo provider'}
+      </p>
+      <p style={{ margin: '0 0 12px', fontSize: 12, color: '#666', lineHeight: 1.5 }}>
+        Finché manca, chi digita l’indirizzo {gemello.senza_www ? 'senza «www»' : 'con «www»'} trova un errore
+        del browser — succede spesso a chi lo legge su un volantino o su un biglietto da visita.
+        {provider?.nota ? ` ${provider.nota}` : ''}
+      </p>
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 8 }}>
         {gemello.records.map((r, i) => (
           <div key={i} style={{ background: '#fff', borderRadius: 8, padding: '12px 14px', border: `1px solid ${C.attesaBordo}` }}>
