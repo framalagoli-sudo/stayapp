@@ -4,7 +4,8 @@ Documento vivo. Aggiornato sessione per sessione.
 
 > ⚠️ **Nota di lettura (11/08/2026).** Questo file contiene anche la **cronaca storica** del prodotto: alcune sezioni raccontano fasi già superate. In particolare **Railway è dismesso** — il backend Express in `server/` non esiste più (rimosso il 13/07/2026), le API sono le route Next in `client-next/app/api/`. Ovunque si legga "env var su Railway", **oggi vanno su Vercel**. Le sezioni che descrivono la migrazione Railway→Vercel sono storia, non lavoro da fare: quella migrazione è **completa**. Per lo stato attuale fai fede a `CLAUDE.md`.
 
-Ultima revisione: **2026-08-17** — **sistema domini rifatto**: il collegamento di un dominio del cliente ora funziona davvero (istruzioni DNS chieste a Vercel invece che hardcodate, sottodomini registrati con certificato, stato misurato con una GET HTTPS reale, apex+www in coppia, rinomina che non rompe i QR, UI in tre passi con diagnosi in chiaro). Vedi la sessione 2026-08-17 più sotto e la nota 24 in `CLAUDE.md`.
+Ultima revisione: **2026-08-18** — **identità**: secondo fattore obbligatorio su tutte le aziende (e predefinito per le nuove) + **passkey** attive, riconosciute come accesso completo. Restano aperti audit log e `.single()` di AuthContext. Vedi la sessione 2026-08-18 e la nota 25 in `CLAUDE.md`.
+Precedente: **2026-08-17** — **sistema domini rifatto**: il collegamento di un dominio del cliente ora funziona davvero (istruzioni DNS chieste a Vercel invece che hardcodate, sottodomini registrati con certificato, stato misurato con una GET HTTPS reale, apex+www in coppia, rinomina che non rompe i QR, UI in tre passi con diagnosi in chiaro). Vedi la sessione 2026-08-17 più sotto e la nota 24 in `CLAUDE.md`.
 Precedente: **2026-07-06** — Site-builder maturo (8 template, 39 blocchi, undo/redo, anteprima live); **AI Site Builder unificato** (un flusso; import da documento con incolla-ChatGPT, una/più pagine, Sonnet per fedeltà); editor sito unico in SitoPage (ritirata MiniSitoPage, tracking migrato); **multilingua IT/EN completo** (sito+PWA, toggle inline nell'header); landing OltreNova ridisegnata; **header pubblico** (logo in cima, hamburger mobile, logo negativo `logo_dark_url` per sfondi scuri). Infra: Supabase Pro + Vercel Pro + oltrenova.com live.
 Storico: 2026-06-11 (Next.js migration + cutover oltrenova.com, PWA unificata, allergeni EU, AI Site Builder v2, RistoranteMenu refactor, fix QR code, CI/CD smoke test).
 
@@ -372,6 +373,20 @@ Lo Sprint 8 aveva costruito il flusso "dominio custom autonomo", ma alla prova d
 - Migration `070` + `071`. Dettaglio tecnico: nota 24 in `CLAUDE.md`
 - Esito misurato: **14 domini, 0 irraggiungibili, 0 disallineati**
 
+### Sessione 2026-08-18 — Identità: 2FA obbligatorio + passkey ✅
+
+Check di sicurezza sull'MFA (spunto: articolo sui bypass — AiTM, percorsi laterali, "l'MFA è un passaggio, non una fortezza"), verificato con test avversariali su utenti e aziende effimeri invece che leggendo il codice.
+
+**Ha retto alla prova** (`tests/probe-mfa-bypass.mjs`): una sessione con la sola password non disattiva il TOTP (Supabase pretende AAL2), non spegne `require_2fa` (403), non legge dati (403 su properties/contatti/aziende); la revoca di sessione invalida il token **subito**, non a scadenza.
+
+**Non reggeva:**
+- [x] **2FA volontario e quasi inutilizzato** — 3 utenti su 12, nessuna azienda lo imponeva. Ora `require_2fa` è **attivo su tutte le aziende** e il default della colonna è `true` (migration `072`): ogni azienda nuova nasce protetta, da tutti e tre i percorsi di creazione. Prima di attivarlo, `probe-onboarding-2fa.mjs` ha verificato che chi se lo trova imposto riesca davvero ad attivarlo e tornare operativo
+- [x] **Passkey** (`registerPasskey` / `signInWithPasskey`, abilitate sul progetto Supabase): registrazione ed eliminazione in Sicurezza, "Entra con impronta o volto" nel login. Sono la sola difesa strutturale contro il phishing adversary-in-the-middle, perché la credenziale è legata al dominio e non è rigiocabile da un sito civetta
+- [x] **Riconosciute come autenticazione completa** — producono una sessione `aal1` con `amr:[{method:'passkey'}]` e venivano respinte con 403: chiedere un codice a chi ha usato il metodo più forte era un controsenso. `enforceMfa` ora legge `amr`
+- [ ] **Audit log fermo dal 9 giugno** — 965 righe e nessuno che ci scriva più (il pezzo che lo popolava non è stato riportato nella migrazione a Next). È il monitoraggio post-autenticazione che manca proprio dove servirebbe dopo un furto di sessione → **da fare alla prossima rassegna**
+- [ ] **`AuthContext` usa `.single()`** su profiles/aziende: 0 righe da RLS danno 406 e lasciano l'admin in "Caricamento…" infinito (intermittente) → da fare alla prossima rassegna
+
+Percorso completo provato in un browser reale con autenticatore virtuale (`probe-login-passkey.mjs`): accesso con password → registrazione passkey → logout → rientro con la sola passkey → dentro, senza codice. Dettaglio tecnico: nota 25 in `CLAUDE.md`.
 ### Sprint 10 — Stripe Subscription Billing (prossimo) 🔴
 - [ ] Piani mensili (base/standard/premium) con prezzi
 - [ ] Checkout Stripe per subscription dalla pagina signup/trial
@@ -466,9 +481,15 @@ Il refactor verso "Business" generico richiede principalmente:
 
 ## Azioni manuali da fare (Francesco)
 
-### Aperte (aggiornate 2026-08-17)
+### Aperte (aggiornate 2026-08-18)
 
-- [ ] **Record DNS per due clienti** — `fondaconarni.com` e `garage22terni.it` funzionano solo con `www`. Il DNS di entrambi è su **SiteGround**: serve un record `A` con nome `@` verso gli IP mostrati nella pagina Domini della loro scheda (leggerli da lì: Vercel li cambia). Da noi è già tutto agganciato, appena il record esiste funziona
+- [ ] **Ripristinare l'audit log** — fermo dal 9 giugno, nessuno ci scrive più: senza, una sessione rubata non lascia traccia (lavoro nostro, non tuo)
+- [ ] **`.single()` in AuthContext** — 406 e admin bloccato su "Caricamento…" in modo intermittente (lavoro nostro)
+- [x] **2FA obbligatorio** su tutte le aziende + default per le nuove ✅ 18/08 — migration `072` eseguita
+- [x] **Passkey attivate** su Supabase (RP ID `oltrenova.com`, origins con e senza `www`) ✅ 18/08 — ⚠️ da rifare se cambia il dominio del pannello, altrimenti le passkey registrate smettono di funzionare
+
+- [ ] **Record DNS per Fondaco Narni** — `fondaconarni.com` senza `www` non risolve ancora (DNS su **SiteGround**): serve un record `A` con nome `@` verso gli IP mostrati nella pagina Domini della sua scheda (leggerli da lì: Vercel li cambia). Da noi è già tutto agganciato
+- [x] **`garage22terni.it` senza www** ✅ 18/08 — record aggiunto su SiteGround da Francesco, verificato: risponde e reindirizza a `www`
 - [ ] **Struttura orfana** — `futura-club-spiagge-bianche` ("Hotel di prova due", creata 23/04/2026) ha `azienda_id` **NULL**, unica nel DB: non può avere un indirizzo incluso e compare nei problemi della manutenzione domini. Assegnarla a un'azienda o cancellarla
 - [ ] **`fondaconarni.com` apex nel pannello** — valutare se aggiungerlo come dominio collegato nella scheda del ristorante, così lo stato è visibile e la pagina dice da sola quando è a posto
 
