@@ -1,4 +1,5 @@
 import { supabaseAdmin } from './supabase-server'
+import { registraAudit } from './audit'
 
 // Verifica il Bearer token e restituisce l'utente Supabase, o null se non autorizzato
 export async function getAuthUser(request) {
@@ -99,11 +100,26 @@ async function enforcePermission(request, user) {
 //      if (response) return response
 export async function requireAuth(request) {
   const user = await getAuthUser(request)
-  if (!user) return { user: null, response: Response.json({ error: 'Non autorizzato' }, { status: 401 }) }
+  if (!user) {
+    // Anche i tentativi respinti vanno registrati: sono il segnale che serve
+    // per accorgersi di qualcuno che bussa con credenziali che non ha.
+    await registraAudit(request, { user: null, statusCode: 401 })
+    return { user: null, response: Response.json({ error: 'Non autorizzato' }, { status: 401 }) }
+  }
   const mfaResponse = await enforceMfa(request, user)
-  if (mfaResponse) return { user: null, response: mfaResponse }
+  if (mfaResponse) {
+    await registraAudit(request, { user, statusCode: 403 })
+    return { user: null, response: mfaResponse }
+  }
   const permResponse = await enforcePermission(request, user)
-  if (permResponse) return { user: null, response: permResponse }
+  if (permResponse) {
+    await registraAudit(request, { user, statusCode: 403 })
+    return { user: null, response: permResponse }
+  }
+  // Richiesta ammessa. Lo status finale lo decide la route, quindi qui resta
+  // nullo: il registro dice chi ha tentato cosa, che è ciò che serve a
+  // ricostruire l'attività di una sessione.
+  await registraAudit(request, { user })
   return { user, response: null }
 }
 

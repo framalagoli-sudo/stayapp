@@ -13,7 +13,7 @@ const Spinner = () => (
 )
 
 export default function AdminGuard({ children }) {
-  const { user, profile, loading, aalStatus, require2fa, conPasskey } = useAuth()
+  const { user, profile, loading, aalStatus, require2fa, conPasskey, erroreProfilo, signOut } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
 
@@ -59,6 +59,28 @@ export default function AdminGuard({ children }) {
   }, [user, profile, loading, aalStatus, require2fa, conPasskey, pathname, mfaStillLoading])
 
   if (loading || mfaStillLoading) return <Spinner />
+
+  // Profilo non caricato: senza questo l'utente restava davanti a uno spinner
+  // eterno, senza sapere che qualcosa era andato storto né cosa fare.
+  if (user && !profile && erroreProfilo && !isPublic) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: 14, padding: 24, textAlign: 'center' }}>
+        <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#1a1a2e' }}>Non riusciamo a caricare il tuo profilo</p>
+        <p style={{ margin: 0, fontSize: 13, color: '#888', maxWidth: 380, lineHeight: 1.5 }}>
+          {erroreProfilo} Riprova: se il problema resta, esci e rientra.
+        </p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => window.location.reload()} style={{ background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+            Riprova
+          </button>
+          <button onClick={() => signOut?.()} style={{ background: 'transparent', color: '#555', border: '1px solid #ddd', borderRadius: 8, padding: '9px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+            Esci
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (!user && !isPublic) return null
 
   return children

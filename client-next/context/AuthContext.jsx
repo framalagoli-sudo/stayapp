@@ -20,6 +20,7 @@ export function AuthProvider({ children }) {
   const [aalStatus, setAalStatus] = useState(null) // { currentLevel, nextLevel }
   const [require2fa, setRequire2fa] = useState(false)
   const [conPasskey, setConPasskey] = useState(false)
+  const [erroreProfilo, setErroreProfilo] = useState(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -39,20 +40,38 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
+  // `.single()` risponde 406 quando la query non restituisce esattamente una riga,
+  // e con le policy RLS può capitare legittimamente: il profilo restava null,
+  // nessuno lo diceva e le pagine che ne dipendono giravano all'infinito su
+  // "Caricamento…". Con `.maybeSingle()` l'assenza è un caso normale, e se il
+  // profilo non arriva lo si dichiara invece di lasciare l'interfaccia sospesa.
   async function fetchProfile(userId) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, role, full_name, property_id, group_id, azienda_id, permissions')
-      .eq('id', userId)
-      .single()
-    setProfile(data)
-    if (data?.azienda_id) {
-      const { data: az } = await supabase.from('aziende').select('require_2fa').eq('id', data.azienda_id).single()
-      setRequire2fa(!!az?.require_2fa)
-    } else {
-      setRequire2fa(false)
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, role, full_name, property_id, group_id, azienda_id, permissions')
+        .eq('id', userId)
+        .maybeSingle()
+
+      if (error) throw new Error(error.message)
+      setProfile(data ?? null)
+      setErroreProfilo(data ? null : 'Il tuo profilo non è raggiungibile.')
+
+      if (data?.azienda_id) {
+        const { data: az, error: azErr } = await supabase
+          .from('aziende').select('require_2fa').eq('id', data.azienda_id).maybeSingle()
+        // Se l'azienda non è leggibile non si abbassa la guardia: meglio chiedere
+        // il secondo fattore di troppo che saltarlo per un errore di lettura.
+        setRequire2fa(azErr ? true : !!az?.require_2fa)
+      } else {
+        setRequire2fa(false)
+      }
+    } catch (e) {
+      setProfile(null)
+      setErroreProfilo(e.message || 'Errore nel caricamento del profilo.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   async function refreshAAL() {
@@ -70,7 +89,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, aalStatus, require2fa, conPasskey, refreshAAL, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, aalStatus, require2fa, conPasskey, erroreProfilo, refreshAAL, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   )
