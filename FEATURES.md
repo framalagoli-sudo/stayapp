@@ -4,7 +4,8 @@ Documento vivo. Aggiornato sessione per sessione.
 
 > ⚠️ **Nota di lettura (11/08/2026).** Questo file contiene anche la **cronaca storica** del prodotto: alcune sezioni raccontano fasi già superate. In particolare **Railway è dismesso** — il backend Express in `server/` non esiste più (rimosso il 13/07/2026), le API sono le route Next in `client-next/app/api/`. Ovunque si legga "env var su Railway", **oggi vanno su Vercel**. Le sezioni che descrivono la migrazione Railway→Vercel sono storia, non lavoro da fare: quella migrazione è **completa**. Per lo stato attuale fai fede a `CLAUDE.md`.
 
-Ultima revisione: **2026-08-18** — **Next 15.5.23 + React 19 in produzione** e **zero vulnerabilità** (erano 21, più `sharp` chiuso con override).
+Ultima revisione: **2026-08-21** — **WhatsApp**: decisioni prese (strada autonoma Meta, catalogo template nostro, paga il cliente) e **fase 0 in produzione** — import contatti CSV, liste e consensi. Il canale dipende dalla verifica Meta. Vedi `WHATSAPP.md`.
+Precedente: **2026-08-18** — **Next 15.5.23 + React 19 in produzione** e **zero vulnerabilità** (erano 21, più `sharp` chiuso con override).
 Stessa giornata: — **identità**: secondo fattore obbligatorio su tutte le aziende (e predefinito per le nuove) + **passkey** attive, riconosciute come accesso completo. **Audit log** di nuovo attivo e `.single()` di AuthContext risolto. Vedi la sessione 2026-08-18 e la nota 25 in `CLAUDE.md`.
 Precedente: **2026-08-17** — **sistema domini rifatto**: il collegamento di un dominio del cliente ora funziona davvero (istruzioni DNS chieste a Vercel invece che hardcodate, sottodomini registrati con certificato, stato misurato con una GET HTTPS reale, apex+www in coppia, rinomina che non rompe i QR, UI in tre passi con diagnosi in chiaro). Vedi la sessione 2026-08-17 più sotto e la nota 24 in `CLAUDE.md`.
 Precedente: **2026-07-06** — Site-builder maturo (8 template, 39 blocchi, undo/redo, anteprima live); **AI Site Builder unificato** (un flusso; import da documento con incolla-ChatGPT, una/più pagine, Sonnet per fedeltà); editor sito unico in SitoPage (ritirata MiniSitoPage, tracking migrato); **multilingua IT/EN completo** (sito+PWA, toggle inline nell'header); landing OltreNova ridisegnata; **header pubblico** (logo in cima, hamburger mobile, logo negativo `logo_dark_url` per sfondi scuri). Infra: Supabase Pro + Vercel Pro + oltrenova.com live.
@@ -388,6 +389,15 @@ Check di sicurezza sull'MFA (spunto: articolo sui bypass — AiTM, percorsi late
 - [ ] **`AuthContext` usa `.single()`** su profiles/aziende: 0 righe da RLS danno 406 e lasciano l'admin in "Caricamento…" infinito (intermittente) → da fare alla prossima rassegna
 
 Percorso completo provato in un browser reale con autenticatore virtuale (`probe-login-passkey.mjs`): accesso con password → registrazione passkey → logout → rientro con la sola passkey → dentro, senza codice. Dettaglio tecnico: nota 25 in `CLAUDE.md`.
+### Sessione 2026-08-19/21 — WhatsApp: decisioni e fase 0 (liste e consensi) ✅
+
+Modulo **incluso nel prodotto**, chiesto da due clienti (Garage 22, Debora Resinart). Piano completo in `WHATSAPP.md`.
+
+**Decisioni**: strada autonoma (Meta Tech Provider + Embedded Signup, il WABA è del cliente che paga Meta direttamente — stesso modello di Spoki); **catalogo template nostro** creato via API sul WABA di ogni cliente, così il cliente non scrive mai un template; la stima di costo si mostra sempre prima dell'invio.
+
+- [x] **Import contatti CSV** — l'unica porta d'ingresso possibile: WhatsApp non ha una rubrica propria, si esporta da Google/iCloud/gestionale. Anteprima che non scrive nulla, poi conferma; chi c'è già non viene sovrascritto; stesso file due volte non crea doppioni
+- [x] **Consenso WhatsApp** come dato a sé (migration 073/074): raccolto dai form pubblici, dall'inserimento manuale (con nota bene al clic) e mai presunto dagli import
+- [ ] **Fase 1-2** (collegamento numero, template, campagne su lista) — dipendono dalla **verifica Meta**, parte lunga a carico di Francesco. Meta fornisce un numero di test: si può sviluppare prima dell'approvazione
 ### Sprint 10 — Stripe Subscription Billing (prossimo) 🔴
 - [ ] Piani mensili (base/standard/premium) con prezzi
 - [ ] Checkout Stripe per subscription dalla pagina signup/trial
@@ -482,7 +492,10 @@ Il refactor verso "Business" generico richiede principalmente:
 
 ## Azioni manuali da fare (Francesco)
 
-### Aperte (aggiornate 2026-08-18)
+### Aperte (aggiornate 2026-08-21)
+
+- [ ] 🔴 **Avviare Business Verification e App Review su Meta** — è la parte lunga e blocca le fasi 1-2 di WhatsApp. Serve accompagnamento: al momento buono, farsi scrivere i passaggi uno per uno
+- [ ] **Decidere il pilota WhatsApp**: Garage 22 (l'ha chiesto, acquisti ripetuti, dominio collegato)
 
 - [x] **Audit log ripristinato** ✅ 18/08 — scrive di nuovo da `lib/audit.js` agganciato a `requireAuth`: mutazioni e tentativi respinti, segreti redatti, ~20 ms di costo
 - [x] **`.single()` in AuthContext** ✅ 18/08 — `.maybeSingle()` + messaggio con Riprova/Esci al posto dello spinner eterno
@@ -496,6 +509,7 @@ Il refactor verso "Business" generico richiede principalmente:
 
 ### Migration SQL (eseguire su Supabase Dashboard → SQL Editor)
 
+- [x] **073_whatsapp_optin.sql** + **074_form_whatsapp_optin.sql** — consenso WhatsApp su contatti e form ✅ 2026-08-21
 - [x] **070_domini_stato_reale.sql** — `updated_at`, `ultima_verifica`, `verifica_dettaglio`, `variante_dominio` + indice unico sul sottodominio ✅ 2026-08-17
 - [x] **071_domini_alias_redirect.sql** — `tipo='alias'` + `redirect_a` (il vecchio indirizzo reindirizza al nuovo) ✅ 2026-08-17
 
