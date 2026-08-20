@@ -31,6 +31,7 @@ export default function FormPublicPage() {
   const token = searchParams.get('token')
 
   const [form, setForm]               = useState(null)
+  const [whatsappOptin, setWhatsappOptin] = useState(false)
   const [loading, setLoading]         = useState(true)
   const [error, setError]             = useState('')
   const [dati, setDati]               = useState({})
@@ -118,7 +119,7 @@ export default function FormPublicPage() {
       const res = await fetch(`${API_BASE}/api/form-builder/public/${token}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...datiPuliti, _hp: hp, turnstileToken }),
+        body: JSON.stringify({ ...datiPuliti, _hp: hp, turnstileToken, _whatsapp_optin: whatsappOptin }),
       })
       const body = await res.json()
       if (!res.ok) throw new Error(body.error || 'Errore invio')
@@ -251,6 +252,23 @@ export default function FormPublicPage() {
 
           {/* CAPTCHA invisibile (appare solo se NEXT_PUBLIC_TURNSTILE_SITE_KEY è impostata) */}
           {(!isMultiStep || currentStep === totalSteps - 1) && <Turnstile onToken={setTurnstileToken} />}
+
+          {/* Consenso WhatsApp: facoltativo e separato da quello privacy, mostrato
+              solo se il form lo chiede e nell'ultimo passo. */}
+          {form?.whatsapp_optin && (!isMultiStep || currentStep === totalSteps - 1) && (
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 9, cursor: 'pointer', margin: '4px 0 14px' }}>
+              <input
+                type="checkbox"
+                checked={whatsappOptin}
+                onChange={e => setWhatsappOptin(e.target.checked)}
+                style={{ marginTop: 3, flexShrink: 0 }}
+              />
+              <span style={{ fontSize: 13, color: '#555', lineHeight: 1.5 }}>
+                Voglio ricevere aggiornamenti e comunicazioni su <strong>WhatsApp</strong> a questo numero.
+                Potrò annullare quando voglio.
+              </span>
+            </label>
+          )}
 
           {submitError && <p style={{ color: '#c53030', fontSize: 13, margin: '12px 0' }}>{submitError}</p>}
 

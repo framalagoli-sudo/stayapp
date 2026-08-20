@@ -57,6 +57,7 @@ export default function FormBuilderEditorPage() {
   const [tagInput, setTagInput]               = useState('')
   const [multiStep, setMultiStep]             = useState(false)
   const [newsletterOptin, setNewsletterOptin] = useState(false)
+  const [whatsappOptin, setWhatsappOptin] = useState(false)
   const [saved, setSaved]                     = useState(false)
   const [urlExpand, setUrlExpand]             = useState({ consenso: false, consenso_marketing: false })
 
@@ -76,6 +77,7 @@ export default function FormBuilderEditorPage() {
         setTagAuto(f.tag_auto || [])
         setMultiStep(f.multi_step ?? false)
         setNewsletterOptin(f.newsletter_optin ?? false)
+        setWhatsappOptin(f.whatsapp_optin ?? false)
         // espandi url se già valorizzato
         const hasPrivacyUrl = (f.campi || []).find(c => c.tipo === 'consenso')?.privacy_url
         const hasMarketingUrl = (f.campi || []).find(c => c.tipo === 'consenso_marketing')?.privacy_url
@@ -101,6 +103,7 @@ export default function FormBuilderEditorPage() {
           tag_auto: tagAuto,
           multi_step: multiStep,
           newsletter_optin: newsletterOptin,
+          whatsapp_optin: whatsappOptin,
         }),
       })
       setForm(updated)
@@ -161,6 +164,9 @@ export default function FormBuilderEditorPage() {
   const marketingCampo  = campi.find(c => c.tipo === 'consenso_marketing')
   const campiNormali    = campi.map((c, idx) => ({ c, idx })).filter(({ c }) => c.tipo !== 'consenso' && c.tipo !== 'consenso_marketing')
   const hasEmailField   = campi.some(c => c.tipo === 'email')
+  // Senza un campo telefono il consenso WhatsApp non serve a nulla: non avremmo
+  // il numero a cui scrivere.
+  const hasPhoneField   = campi.some(c => c.tipo === 'tel' || c.tipo === 'telefono' || /telefono|cellulare|whatsapp/i.test(c.label || ''))
 
   if (loading) return <p style={{ color: '#888' }}>Caricamento…</p>
 
@@ -609,6 +615,29 @@ export default function FormBuilderEditorPage() {
           {newsletterOptin && hasEmailField && (
             <div style={{ paddingLeft: 34, fontSize: 12, color: '#276749', background: '#f0fff4', borderRadius: 8, padding: '8px 12px' }}>
               I contatti saranno iscritti con i tag: <strong>{tagAuto.length ? tagAuto.join(', ') : '(nessun tag)'}</strong> — filtrabili poi nella Newsletter.
+            </div>
+          )}
+        </div>
+
+        {/* Consenso WhatsApp */}
+        <div style={{ marginTop: 20, borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: whatsappOptin ? 8 : 0 }}>
+            <button onClick={() => setWhatsappOptin(o => !o)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: whatsappOptin ? '#276749' : '#aaa' }}>
+              {whatsappOptin ? <ToggleRight size={24} strokeWidth={1.5} /> : <ToggleLeft size={24} strokeWidth={1.5} />}
+            </button>
+            <div>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>Chiedi il consenso per WhatsApp</span>
+              <div style={{ fontSize: 11, color: '#888' }}>Aggiunge una casella facoltativa: chi la spunta potrà ricevere i tuoi messaggi su WhatsApp</div>
+            </div>
+          </div>
+          {whatsappOptin && !hasPhoneField && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginLeft: 34, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#92400e' }}>
+              <AlertCircle size={14} strokeWidth={1.5} /> Aggiungi un campo Telefono: senza numero il consenso non serve a niente.
+            </div>
+          )}
+          {whatsappOptin && hasPhoneField && (
+            <div style={{ paddingLeft: 34, fontSize: 12, color: '#276749', background: '#f0fff4', borderRadius: 8, padding: '8px 12px' }}>
+              Il consenso viene registrato con data e provenienza. Solo chi lo dà potrà essere incluso nelle campagne WhatsApp.
             </div>
           )}
         </div>

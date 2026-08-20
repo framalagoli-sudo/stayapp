@@ -31,7 +31,7 @@ export async function PATCH(request, { params }) {
 
     const body = await request.json()
     const allowed = ['nome', 'descrizione', 'campi', 'redirect_url', 'email_notifica', 'attivo',
-      'email_conferma_attiva', 'email_conferma_oggetto', 'email_conferma_testo', 'tag_auto', 'multi_step', 'newsletter_optin']
+      'email_conferma_attiva', 'email_conferma_oggetto', 'email_conferma_testo', 'tag_auto', 'multi_step', 'newsletter_optin', 'whatsapp_optin']
     const patch = { updated_at: new Date().toISOString() }
     for (const k of allowed) if (k in body) patch[k] = body[k]
 

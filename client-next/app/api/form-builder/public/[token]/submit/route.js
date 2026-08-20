@@ -145,7 +145,7 @@ export async function POST(request, { params }) {
     // 3. Carica form
     const { data: form } = await supabaseAdmin
       .from('form_builder')
-      .select('id, azienda_id, nome, campi, redirect_url, email_notifica, attivo, email_conferma_attiva, email_conferma_oggetto, email_conferma_testo, tag_auto, newsletter_optin')
+      .select('id, azienda_id, nome, campi, redirect_url, email_notifica, attivo, email_conferma_attiva, email_conferma_oggetto, email_conferma_testo, tag_auto, newsletter_optin, whatsapp_optin')
       .eq('token', token)
       .single()
     if (!form) return NextResponse.json({ error: 'Form non trovato' }, { status: 404 })
@@ -210,12 +210,23 @@ export async function POST(request, { params }) {
         .maybeSingle()
 
       const newsletterOptin = (!!form.newsletter_optin && consensoDato) || marketingConsent
+      // Consenso WhatsApp: casella dedicata, separata da quella privacy. Vale solo
+      // se il form lo chiede E la persona l'ha spuntata: mai dedotto da altro.
+      const whatsappOptin = !!form.whatsapp_optin && body._whatsapp_optin === true
       if (existing) {
         contattoId = existing.id
         emailNonValida = existing.email_non_valida || emailNonValida
         const upd = {}
         if (!existing.email_non_valida && !deliverable) upd.email_non_valida = true
         if (newsletterOptin && !existing.iscritto_newsletter) upd.iscritto_newsletter = true
+        if (whatsappOptin && !existing.whatsapp_optin) {
+          upd.whatsapp_optin = true
+          upd.whatsapp_optin_il = new Date().toISOString()
+          upd.whatsapp_optin_fonte = `form: ${form.nome || 'senza nome'}`
+          upd.whatsapp_optout_il = null
+        }
+        // Senza numero il consenso non serve a niente: se lo ha appena lasciato, si salva.
+        if (whatsappOptin && telefono && !existing.telefono) upd.telefono = telefono
         if (Object.keys(upd).length) {
           const { error: updErr } = await supabaseAdmin.from('contatti').update(upd).eq('id', existing.id)
           if (updErr) console.error('[form-submit] contatti update error:', updErr.message)
@@ -231,6 +242,9 @@ export async function POST(request, { params }) {
             fonte: 'form',
             email_non_valida: emailNonValida,
             iscritto_newsletter: newsletterOptin,
+            whatsapp_optin: whatsappOptin,
+            whatsapp_optin_il: whatsappOptin ? new Date().toISOString() : null,
+            whatsapp_optin_fonte: whatsappOptin ? `form: ${form.nome || 'senza nome'}` : null,
           })
           .select('id')
           .single()
