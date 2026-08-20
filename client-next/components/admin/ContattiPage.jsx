@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
-import { Search, Plus, X, Pencil, Trash2, Users, Mail, Phone, Tag, List, LayoutGrid, GripVertical, ChevronDown, Star, Copy, Check, Download } from 'lucide-react'
+import { Search, Plus, X, Pencil, Trash2, Users, Mail, Phone, Tag, List, LayoutGrid, GripVertical, ChevronDown, Star, Copy, Check, Download, Upload } from 'lucide-react'
+import ContattiImportModal from './ContattiImportModal'
 import { DndContext, PointerSensor, useSensor, useSensors, useDraggable, useDroppable } from '@dnd-kit/core'
 
 // ─── Pipeline stages ─────────────────────────────────────────────────────────
@@ -106,7 +107,7 @@ function StageSelect({ value, onChange }) {
 }
 
 // ─── Contact modal ────────────────────────────────────────────────────────────
-const EMPTY = { nome: '', email: '', telefono: '', tags: [], note: '', iscritto_newsletter: false, pipeline_stage: 'lead' }
+const EMPTY = { nome: '', email: '', telefono: '', tags: [], note: '', iscritto_newsletter: false, whatsapp_optin: false, pipeline_stage: 'lead' }
 
 function ContactModal({ contact, aziendaId, onSave, onClose }) {
   const [form, setForm] = useState(contact ? { ...EMPTY, ...contact } : { ...EMPTY })
@@ -162,10 +163,35 @@ function ContactModal({ contact, aziendaId, onSave, onClose }) {
           </div>
           <label style={label}>Note</label>
           <textarea value={form.note || ''} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} rows={3} style={{ ...field, resize: 'vertical' }} placeholder="Note interne…" />
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 20 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 10 }}>
             <input type="checkbox" checked={!!form.iscritto_newsletter} onChange={e => setForm(f => ({ ...f, iscritto_newsletter: e.target.checked }))} />
             <span style={{ fontSize: 14 }}>Iscritto alla newsletter</span>
           </label>
+
+          {/* Il consenso WhatsApp e' l'unica spunta che puo' far bloccare il numero
+              del cliente da Meta: va messa solo se il consenso c'e' davvero, e chi
+              la mette deve saperlo nel momento in cui clicca, non dopo. */}
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', marginBottom: 6 }}>
+            <input
+              type="checkbox"
+              checked={!!form.whatsapp_optin}
+              onChange={e => setForm(f => ({ ...f, whatsapp_optin: e.target.checked }))}
+              style={{ marginTop: 3 }}
+            />
+            <span style={{ fontSize: 14 }}>Può ricevere messaggi su WhatsApp</span>
+          </label>
+          {form.whatsapp_optin && (
+            <div style={{ display: 'flex', gap: 8, background: '#fffaf5', border: '1px solid #ffe0b2', borderRadius: 8, padding: '10px 12px', marginBottom: 20 }}>
+              <span style={{ fontSize: 15, lineHeight: 1.2 }}>⚠️</span>
+              <p style={{ margin: 0, fontSize: 12, color: '#7a4a00', lineHeight: 1.5 }}>
+                <strong>Nota bene:</strong> spunta questa casella solo se la persona ti ha
+                autorizzato a scriverle su WhatsApp. Inviare messaggi a chi non ha dato il
+                consenso porta a segnalazioni e <strong>può farti bloccare il numero da Meta</strong> —
+                oltre a non essere consentito dalla normativa privacy.
+              </p>
+            </div>
+          )}
+
           <button type="submit" disabled={saving}
             style={{ width: '100%', padding: '12px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
             {saving ? 'Salvataggio…' : isNew ? 'Aggiungi contatto' : 'Salva modifiche'}
@@ -282,6 +308,7 @@ export default function ContattiPage() {
   const [tagFilter, setTagFilter] = useState('')
   const [view,      setView]      = useState('lista') // 'lista' | 'kanban'
   const [modal,     setModal]     = useState(null)    // null | 'new' | contact obj
+  const [importOpen, setImportOpen] = useState(false)
   const [newStage,  setNewStage]  = useState('lead')  // stage pre-selezionato per "Aggiungi" da colonna
   const [allTags,   setAllTags]   = useState([])
   const [recLinks,  setRecLinks]  = useState({}) // { [contactId]: { link, copied, picking, entityKey } }
@@ -392,6 +419,11 @@ export default function ContattiPage() {
               </button>
             ))}
           </div>
+          <button onClick={() => setImportOpen(true)}
+            title="Importa contatti da un file CSV"
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#fff', color: '#1a1a2e', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <Upload size={15} strokeWidth={2} /> Importa
+          </button>
           <button onClick={() => downloadContattiCSV(contatti)} disabled={contatti.length === 0}
             title={contatti.length === 0 ? 'Nessun contatto da esportare' : 'Esporta i contatti visibili in CSV'}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#fff', color: contatti.length === 0 ? '#bbb' : '#1a1a2e', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: contatti.length === 0 ? 'not-allowed' : 'pointer' }}>
@@ -550,6 +582,14 @@ export default function ContattiPage() {
       )}
 
       {/* ── Modal ── */}
+      {importOpen && (
+        <ContattiImportModal
+          aziendaId={aziendaId}
+          onFatto={load}
+          onClose={() => setImportOpen(false)}
+        />
+      )}
+
       {modal && (
         <ContactModal
           contact={modal === 'new' ? { pipeline_stage: newStage } : modal}

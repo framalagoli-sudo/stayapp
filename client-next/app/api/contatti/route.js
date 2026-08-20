@@ -37,7 +37,7 @@ export async function POST(request) {
     if (response) return response
     const profile = await getProfile(user.id)
     const body = await request.json()
-    const { nome, email, telefono, tags, note, iscritto_newsletter } = body
+    const { nome, email, telefono, tags, note, iscritto_newsletter, whatsapp_optin } = body
     const azienda_id = resolveAziendaId(profile, body.azienda_id)
     if (!azienda_id || !nome?.trim()) return Response.json({ error: 'azienda_id e nome obbligatori' }, { status: 400 })
 
@@ -46,6 +46,10 @@ export async function POST(request) {
       email: email?.trim() || null, telefono: telefono?.trim() || null,
       tags: tags || [], note: note || null,
       iscritto_newsletter: !!iscritto_newsletter, fonte: 'manuale',
+      // Data e provenienza del consenso: servono a dimostrarlo se qualcuno contesta.
+      whatsapp_optin: !!whatsapp_optin,
+      whatsapp_optin_il: whatsapp_optin ? new Date().toISOString() : null,
+      whatsapp_optin_fonte: whatsapp_optin ? 'inserimento manuale' : null,
     }).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
     sendWebhooks(data.azienda_id, 'nuovo_contatto', { contatto_id: data.id, nome: data.nome, email: data.email, telefono: data.telefono })

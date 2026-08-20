@@ -15,8 +15,20 @@ export async function PATCH(request, { params }) {
     if (!profile) return Response.json({ error: 'Profilo non trovato' }, { status: 403 })
 
     const body = await request.json()
-    const allowed = ['nome', 'email', 'telefono', 'tags', 'note', 'iscritto_newsletter', 'pipeline_stage']
+    const allowed = ['nome', 'email', 'telefono', 'tags', 'note', 'iscritto_newsletter', 'pipeline_stage', 'whatsapp_optin']
     const updates = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
+
+    // Quando il consenso WhatsApp cambia si annota il momento: concesso o revocato
+    // che sia, deve restarne traccia.
+    if (body.whatsapp_optin !== undefined) {
+      if (body.whatsapp_optin) {
+        updates.whatsapp_optin_il = new Date().toISOString()
+        updates.whatsapp_optin_fonte = body.whatsapp_optin_fonte || 'inserimento manuale'
+        updates.whatsapp_optout_il = null
+      } else {
+        updates.whatsapp_optout_il = new Date().toISOString()
+      }
+    }
     updates.updated_at = new Date().toISOString()
 
     let q = supabaseAdmin.from('contatti').update(updates).eq('id', params.id)
