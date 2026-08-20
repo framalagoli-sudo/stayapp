@@ -141,3 +141,41 @@ La fase 0 non dipende da Meta: si può fare mentre la verifica è in corso. **La
 1. Avviare **Business Verification** e **App Review** su Meta (parte lunga, indipendente da noi).
 2. Decidere se il modulo WhatsApp è incluso nel piano o è un supplemento.
 3. Un cliente pilota: **Garage 22** — l'ha chiesto, ha acquisti ripetuti e il dominio già collegato.
+
+---
+
+## 11. Il vero rischio: "ma WhatsApp non è gratis?"
+
+Il cliente conosce **tre prodotti con lo stesso nome** e ne usa solo il primo:
+
+| | Cos'è | Costo |
+|---|---|---|
+| WhatsApp | l'app sul telefono | gratis |
+| WhatsApp Business | app aziendale, dal telefono, un messaggio alla volta | gratis |
+| WhatsApp Business Platform | la nostra: invii da software, a liste, automatici | **a messaggio** |
+
+Se scopre il costo in fattura invece che prima, il danno non è economico ma di fiducia — e per un'attività locale la fiducia è tutto il rapporto.
+
+**Come si spiega** (paragone che funziona, perché lo conosce già):
+
+> "Scrivere una mail dal suo indirizzo è gratis. Mandarne duemila insieme, sapendo chi l'ha aperta e con il tasto per disiscriversi, è un servizio e si paga. Con WhatsApp è identico: scrivere a un cliente dal suo telefono resta gratis; mandare lo stesso messaggio a trecento persone dalla piattaforma è la parte che Meta fa pagare, pochi centesimi a messaggio."
+
+**Ancorare al ritorno**: per Garage 22 un tagliando vale ~100 €. Una campagna a 200 contatti costa pochi euro: se torna **una persona**, è già ripagata molte volte. Da confrontare con ciò che spende già (volantini, sponsorizzate).
+
+**Nel prodotto** — regola di design, non opzionale: la stima di costo si mostra **prima** dell'invio.
+`200 destinatari · costo stimato ≈ 2,40 € · addebitati da Meta sulla tua carta`
+
+### Onboarding: non è self-serve, e va bene così (all'inizio)
+
+La carta la inserisce il cliente **dentro Meta, sul suo account**: noi non la vediamo mai (per questo non c'è rischio di credito).
+
+⚠️ **Non verificato**: quante schermate sia il flusso Embedded Signup e quanto duri. La documentazione pubblica non lo descrive. **Da scoprire facendolo noi una volta con un numero di test** — un'ora di lavoro, vale più di qualsiasi ipotesi.
+
+Piano di attivazione consigliato:
+1. I **primi clienti li attiva Francesco in videochiamata** (~30 min), per vedere dove si inceppano davvero.
+2. **Cronometrare**: se sono 10 minuti → wizard self-serve; se è un'ora con tre punti di blocco → l'attivazione diventa un **servizio a pagamento** (da ostacolo a valore).
+3. Wizard e video guida **dopo**, scritti su casi reali.
+
+### Piano B se l'attrito è bloccante
+
+Passare a **Solution Partner**: paghiamo noi Meta e rifatturiamo, il cliente non vede né Meta né carte. Costa rischio di credito, complessità fiscale e requisiti Meta diversi. Non è la partenza, ma è la via d'uscita se metà dei clienti si ferma davanti alla verifica.
