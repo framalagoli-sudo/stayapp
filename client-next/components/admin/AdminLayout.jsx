@@ -432,6 +432,7 @@ export default function AdminLayout({ children }) {
             <SectionHeader label="Marketing" />
             <NavItem to="/admin/contatti"         icon={Users}            label="Contatti" />
             <NavItem to="/admin/newsletter"       icon={Mail}             label="Newsletter" />
+            <NavItem to="/admin/whatsapp"         icon={MessageCircle}    label="WhatsApp" />
             <NavItem to="/admin/automazioni"      icon={BotMessageSquare} label="Automazioni" />
             <NavItem to="/admin/blog"             icon={Newspaper}        label="Blog & News" />
             <NavItem to="/admin/piano-editoriale" icon={CalendarDays}     label="Piano editoriale" />
@@ -492,6 +493,7 @@ export default function AdminLayout({ children }) {
             <NavItem to="/admin/blog"             icon={Newspaper}        label="Blog & News" />
             <NavItem to="/admin/eventi"           icon={CalendarDays}     label="Eventi" />
             <NavItem to="/admin/newsletter"       icon={Mail}             label="Newsletter" />
+            <NavItem to="/admin/whatsapp"         icon={MessageCircle}    label="WhatsApp" />
             <NavItem to="/admin/automazioni"      icon={BotMessageSquare} label="Automazioni" />
             <NavItem to="/admin/piano-editoriale" icon={CalendarDays}     label="Piano editoriale" />
             <NavItem to="/admin/content-studio"   icon={Sparkles}         label="Content Studio" />
@@ -537,6 +539,7 @@ export default function AdminLayout({ children }) {
                 <SectionHeader label="Marketing" />
                 {perm.contatti         && <NavItem to="/admin/contatti"         icon={Users}            label="Contatti" />}
                 {perm.newsletter       && <NavItem to="/admin/newsletter"       icon={Mail}             label="Newsletter" />}
+                {perm.newsletter       && <NavItem to="/admin/whatsapp"         icon={MessageCircle}    label="WhatsApp" />}
                 {perm.blog             && <NavItem to="/admin/blog"             icon={Newspaper}        label="Blog & News" />}
                 {perm.automazioni      && <NavItem to="/admin/automazioni"      icon={BotMessageSquare} label="Automazioni" />}
                 {perm.piano_editoriale && <NavItem to="/admin/piano-editoriale" icon={CalendarDays}     label="Piano editoriale" />}

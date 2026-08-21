@@ -3,10 +3,29 @@
   "outputDirectory": ".next",
   "framework": "nextjs",
   "crons": [
-    { "path": "/api/cron/newsletter",  "schedule": "* * * * *" },
-    { "path": "/api/cron/automazioni", "schedule": "* * * * *" },
-    { "path": "/api/cron/blog",        "schedule": "0 * * * *" },
-    { "path": "/api/cron/domini",      "schedule": "*/15 * * * *" },
-    { "path": "/api/cron/backup",      "schedule": "0 3 * * *" }
+    {
+      "path": "/api/cron/newsletter",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/automazioni",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/blog",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/domini",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/whatsapp",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/backup",
+      "schedule": "0 3 * * *"
+    }
   ]
 }
