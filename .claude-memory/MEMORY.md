@@ -1,5 +1,6 @@
 # Memory Index
 
+- [🧪 Smoke con risultati parziali](reference_smoke_corse_parziali.md) — 37/54/58 invece di 66 = due corse sovrapposte (il teardown cancella `.auth/ci-token.json`) o smoke lanciato durante un deploy: non è una regressione
 - [💬 WhatsApp: decisioni + fase 0 live](project_whatsapp_fase0.md) — modulo incluso, strada autonoma Meta, catalogo template nostro, il cliente paga Meta; liste e consensi in produzione dal 21/08, il canale dipende dalla verifica Meta
 - [⬆️ Upgrade Next 15 (18/08/2026)](project_upgrade_next15.md) — fatto e live; la 15 tollera ancora i `params` sincroni (102 occorrenze) ma la **16 no**: migrarli col codemod prima di tentarla
 - [🧪 Triage vulnerabilità Next (18/08/2026)](reference_triage_next_vulns.md) — le 21 Dependabot sono tutte su `next` e nessuna ci tocca (no Server Actions, no self-hosting, no rewrites esterni, pagine no-store): la 14.x però non riceve più patch → upgrade a 15 da pianificare
