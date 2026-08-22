@@ -4,7 +4,8 @@ Documento vivo. Aggiornato sessione per sessione.
 
 > ⚠️ **Nota di lettura (11/08/2026).** Questo file contiene anche la **cronaca storica** del prodotto: alcune sezioni raccontano fasi già superate. In particolare **Railway è dismesso** — il backend Express in `server/` non esiste più (rimosso il 13/07/2026), le API sono le route Next in `client-next/app/api/`. Ovunque si legga "env var su Railway", **oggi vanno su Vercel**. Le sezioni che descrivono la migrazione Railway→Vercel sono storia, non lavoro da fare: quella migrazione è **completa**. Per lo stato attuale fai fede a `CLAUDE.md`.
 
-Ultima revisione: **2026-08-21** — **WhatsApp**: decisioni prese (strada autonoma Meta, catalogo template nostro, paga il cliente) e **fase 0 in produzione** — import contatti CSV, liste e consensi. Il canale dipende dalla verifica Meta. Vedi `WHATSAPP.md`.
+Ultima revisione: **2026-08-22** — **WhatsApp fasi 1-2 in produzione** (numero, template, campagne, esiti) in attesa delle credenziali Meta; **`params` asincroni** su 94 file: pronti per Next 16.
+Precedente: **2026-08-21** — **WhatsApp**: decisioni prese (strada autonoma Meta, catalogo template nostro, paga il cliente) e **fase 0 in produzione** — import contatti CSV, liste e consensi. Il canale dipende dalla verifica Meta. Vedi `WHATSAPP.md`.
 Precedente: **2026-08-18** — **Next 15.5.23 + React 19 in produzione** e **zero vulnerabilità** (erano 21, più `sharp` chiuso con override).
 Stessa giornata: — **identità**: secondo fattore obbligatorio su tutte le aziende (e predefinito per le nuove) + **passkey** attive, riconosciute come accesso completo. **Audit log** di nuovo attivo e `.single()` di AuthContext risolto. Vedi la sessione 2026-08-18 e la nota 25 in `CLAUDE.md`.
 Precedente: **2026-08-17** — **sistema domini rifatto**: il collegamento di un dominio del cliente ora funziona davvero (istruzioni DNS chieste a Vercel invece che hardcodate, sottodomini registrati con certificato, stato misurato con una GET HTTPS reale, apex+www in coppia, rinomina che non rompe i QR, UI in tre passi con diagnosi in chiaro). Vedi la sessione 2026-08-17 più sotto e la nota 24 in `CLAUDE.md`.
@@ -398,6 +399,13 @@ Modulo **incluso nel prodotto**, chiesto da due clienti (Garage 22, Debora Resin
 - [x] **Import contatti CSV** — l'unica porta d'ingresso possibile: WhatsApp non ha una rubrica propria, si esporta da Google/iCloud/gestionale. Anteprima che non scrive nulla, poi conferma; chi c'è già non viene sovrascritto; stesso file due volte non crea doppioni
 - [x] **Consenso WhatsApp** come dato a sé (migration 073/074): raccolto dai form pubblici, dall'inserimento manuale (con nota bene al clic) e mai presunto dagli import
 - [ ] **Fase 1-2** (collegamento numero, template, campagne su lista) — dipendono dalla **verifica Meta**, parte lunga a carico di Francesco. Meta fornisce un numero di test: si può sviluppare prima dell'approvazione
+### Sessione 2026-08-22 — WhatsApp fasi 1-2 + params asincroni ✅
+
+- [x] **Modulo WhatsApp completo** (migration `075`): collegamento numero con token cifrato, catalogo di 5 messaggi creati via API sull'account del cliente, campagne su lista con **stima costi prima dell'invio**, webhook esiti con firma verificata, cron ogni 5 min per programmate e approvazioni. Pagina `/admin/whatsapp`
+- [x] **`params` e `searchParams` asincroni** su 94 file (codemod ufficiale + riparazione a mano): l'app è pronta per **Next 16**
+- [ ] **Manca solo l'attivazione**: `META_APP_ID` e `META_APP_SECRET` da Meta for Developers. Il modulo è in produzione ma dorme: la pagina dice "Stiamo completando l'attivazione" finché non arrivano
+
+⚠️ Il codemod ha rotto 10 pagine pubbliche (500 su tutti i siti clienti) **senza che il build se ne accorgesse**: trovato provando il server prima del deploy. Dettaglio in memoria.
 ### Sprint 10 — Stripe Subscription Billing (prossimo) 🔴
 - [ ] Piani mensili (base/standard/premium) con prezzi
 - [ ] Checkout Stripe per subscription dalla pagina signup/trial
@@ -492,7 +500,11 @@ Il refactor verso "Business" generico richiede principalmente:
 
 ## Azioni manuali da fare (Francesco)
 
-### Aperte (aggiornate 2026-08-21)
+### Aperte (aggiornate 2026-08-22)
+
+- [ ] 🔴 **Rientrare nell'account Facebook** (recupero password in avaria il 22/08) e creare l'app su Meta for Developers → `META_APP_ID` + `META_APP_SECRET` su Vercel. È l'unica cosa che separa il modulo WhatsApp dal funzionare
+- [ ] **Business Verification** su Meta: serve per collegare i clienti veri (col numero di test si può provare prima)
+- [x] `WHATSAPP_TOKEN_KEY` su Vercel ✅ 22/08
 
 - [ ] 🔴 **Avviare Business Verification e App Review su Meta** — è la parte lunga e blocca le fasi 1-2 di WhatsApp. Serve accompagnamento: al momento buono, farsi scrivere i passaggi uno per uno
 - [ ] **Decidere il pilota WhatsApp**: Garage 22 (l'ha chiesto, acquisti ripetuti, dominio collegato)

@@ -35,3 +35,15 @@ Le liste devono esistere prima del canale: Garage 22 aveva **zero contatti**.
 - Limite noto: **10 clienti/settimana** finché Business Verification e App Review non sono complete, poi 200.
 - **Meta genera un numero di test**: si può sviluppare e provare tutto *prima* dell'approvazione.
 - ⚠️ Da WhatsApp **non si esportano i contatti**: non ha una rubrica propria, legge quella del telefono. L'unica via è l'export da Google/iCloud/gestionale. Non promettere collegamenti diretti.
+
+## Fasi 1-2 — codice completo in produzione (22/08/2026)
+
+Migration `075` (4 tabelle) eseguita. In produzione ma **in attesa delle credenziali**: la pagina mostra "Stiamo completando l'attivazione" finché mancano `META_APP_ID` e `META_APP_SECRET`. `WHATSAPP_TOKEN_KEY` è già su Vercel.
+
+- `lib/whatsapp.js` — unico punto verso Graph; token cifrato **AES-256-GCM**, mai verso il browser; senza la chiave il modulo resta spento di proposito. Errori Meta tradotti in cosa deve fare il cliente.
+- `lib/whatsapp-catalogo.js` — 5 messaggi nostri con variabili; la versione entra nel nome Meta, così due versioni convivono durante una migrazione.
+- `lib/whatsapp-send.js` — scrive **solo a chi ha il consenso**; se Meta inizia a limitare, l'invio **si sospende** e riprende dopo 15 min invece di bruciare la reputazione del numero; non parte se il template non è approvato.
+- `/api/whatsapp/webhook` — pubblica per forza: **firma HMAC verificata a tempo costante**; chi risponde STOP viene disiscritto; i contatori si **ricalcolano** dai messaggi (i webhook arrivano anche due volte).
+- Pagina: stato numero con qualità tradotta, messaggi con stato approvazione, invio con anteprima del testo e **stima costi prima di premere invia**.
+
+**Bloccante attuale**: Francesco non riesce a rientrare nell'account Facebook (recupero password in avaria il 22/08), quindi l'app Meta non è ancora creata.
