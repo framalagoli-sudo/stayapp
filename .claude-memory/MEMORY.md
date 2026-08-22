@@ -1,5 +1,6 @@
 # Memory Index
 
+- [⚠️ Codemod params async (22/08/2026)](reference_codemod_params_async.md) — fatto, pronti per Next 16; ma il codemod ROMPE i file che già facevano `await params` e il build non lo rileva: controllare gli orfani e provare il server
 - [🧪 Smoke con risultati parziali](reference_smoke_corse_parziali.md) — 37/54/58 invece di 66 = due corse sovrapposte (il teardown cancella `.auth/ci-token.json`) o smoke lanciato durante un deploy: non è una regressione
 - [💬 WhatsApp: decisioni + fase 0 live](project_whatsapp_fase0.md) — modulo incluso, strada autonoma Meta, catalogo template nostro, il cliente paga Meta; liste e consensi in produzione dal 21/08, il canale dipende dalla verifica Meta
 - [⬆️ Upgrade Next 15 (18/08/2026)](project_upgrade_next15.md) — fatto e live; la 15 tollera ancora i `params` sincroni (102 occorrenze) ma la **16 no**: migrarli col codemod prima di tentarla
