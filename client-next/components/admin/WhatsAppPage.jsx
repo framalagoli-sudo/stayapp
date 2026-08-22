@@ -26,7 +26,10 @@ export default function WhatsAppPage() {
   const [errore, setErrore] = useState('')
   const [nuova, setNuova] = useState(false)
 
-  useEffect(() => { if (aziendaId) carica() }, [aziendaId]) // eslint-disable-line
+  useEffect(() => {
+    if (aziendaId) carica()
+    else setLoading(false)
+  }, [aziendaId]) // eslint-disable-line
 
   async function carica() {
     setLoading(true)
@@ -60,7 +63,14 @@ export default function WhatsAppPage() {
         </div>
       )}
 
-      {loading ? (
+      {!aziendaId ? (
+        <div style={{ display: 'flex', gap: 9, background: C.infoBg, border: `1px solid ${C.infoBordo}`, borderRadius: 10, padding: '14px 16px' }}>
+          <AlertCircle size={16} strokeWidth={1.5} color={C.info} style={{ flexShrink: 0, marginTop: 1 }} />
+          <p style={{ margin: 0, fontSize: 13, color: '#555', lineHeight: 1.5 }}>
+            Scegli un’azienda dal menu in alto a sinistra: WhatsApp si collega a un numero per azienda.
+          </p>
+        </div>
+      ) : loading ? (
         <Attesa testo="Carico…" />
       ) : (
         <>
