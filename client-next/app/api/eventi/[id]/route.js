@@ -8,7 +8,8 @@ const ALLOWED = ['title', 'description', 'cover_url', 'date_start', 'date_end',
   'location', 'price', 'seats_total', 'active', 'published', 'packages', 'entity_tipo', 'entity_id',
   'notify_owner_on_booking', 'send_guest_confirmation']
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   try {
     const { response } = await requireRecordAccess(request, 'eventi', params.id)
     if (response) return response
@@ -18,7 +19,8 @@ export async function GET(request, { params }) {
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
 
-export async function PATCH(request, { params }) {
+export async function PATCH(request, props) {
+  const params = await props.params;
   try {
     const { response } = await requireRecordAccess(request, 'eventi', params.id)
     if (response) return response
@@ -32,7 +34,8 @@ export async function PATCH(request, { params }) {
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
 
-export async function DELETE(request, { params }) {
+export async function DELETE(request, props) {
+  const params = await props.params;
   try {
     const { response } = await requireRecordAccess(request, 'eventi', params.id)
     if (response) return response

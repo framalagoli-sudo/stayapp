@@ -5,7 +5,8 @@ const ALLOWED = ['nome', 'descrizione', 'modalita', 'entity_tipo', 'entity_id',
   'durata_minuti', 'quantita', 'max_coperti', 'prezzo', 'valuta', 'colore',
   'disponibilita', 'blocchi', 'anticipo_ore', 'cancellazione_ore', 'conferma_auto', 'attiva', 'visibile_minisito']
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   try {
     const { response } = await requireRecordAccess(request, 'risorse', params.id)
     if (response) return response
@@ -15,7 +16,8 @@ export async function GET(request, { params }) {
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
 
-export async function PATCH(request, { params }) {
+export async function PATCH(request, props) {
+  const params = await props.params;
   try {
     const { response } = await requireRecordAccess(request, 'risorse', params.id)
     if (response) return response
@@ -28,7 +30,8 @@ export async function PATCH(request, { params }) {
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
 
-export async function DELETE(request, { params }) {
+export async function DELETE(request, props) {
+  const params = await props.params;
   try {
     const { response } = await requireRecordAccess(request, 'risorse', params.id)
     if (response) return response

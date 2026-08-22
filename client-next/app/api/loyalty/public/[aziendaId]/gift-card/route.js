@@ -1,7 +1,8 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   try {
     // Anti brute-force dei codici gift card.
     const ip = getClientIp(request)

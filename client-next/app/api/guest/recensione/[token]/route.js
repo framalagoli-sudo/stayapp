@@ -2,7 +2,8 @@
 import { sendEmail } from '@/lib/send-email'
 import { emailTemplate } from '@/lib/email-template'
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   try {
     const { data, error } = await supabaseAdmin.from('recensioni')
       .select('id, autore, entity_tipo, entity_id, pubblica').eq('token', params.token).single()
@@ -21,7 +22,8 @@ export async function GET(request, { params }) {
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
 
-export async function POST(request, { params }) {
+export async function POST(request, props) {
+  const params = await props.params;
   try {
     const { autore, stelle, testo } = await request.json()
     if (!stelle || stelle < 1 || stelle > 5) return Response.json({ error: 'stelle obbligatorie (1-5)' }, { status: 400 })

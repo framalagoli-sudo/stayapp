@@ -2,7 +2,8 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { getSaldo } from '@/lib/loyalty-helpers'
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   try {
     const { user, response } = await requireAuth(request)
     if (response) return response

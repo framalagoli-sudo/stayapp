@@ -19,7 +19,9 @@ function buildPagina(elemento) {
   }
 }
 
-export async function generateMetadata({ params, searchParams }) {
+export async function generateMetadata(props) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const { slug, itemSlug } = await params
   const attivita = await getAttivita(slug)
   if (!attivita) return { title: 'OltreNova' }
@@ -40,7 +42,9 @@ export async function generateMetadata({ params, searchParams }) {
   }
 }
 
-export default async function AttivitaVetrinaDetail({ params, searchParams }) {
+export default async function AttivitaVetrinaDetail(props) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const { slug, itemSlug } = await params
   const attivita = await getAttivita(slug)
   if (!attivita) notFound()

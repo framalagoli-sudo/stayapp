@@ -2,7 +2,9 @@ import { getArticolo } from '@/lib/guest-data'
 import ArticoloPage from '@/components/public/ArticoloPage'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
 
-export async function generateMetadata({ params, searchParams }) {
+export async function generateMetadata(props) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const { slug } = await params
   const art = await getArticolo(slug)
   if (!art) return { title: 'Articolo — OltreNova' }
@@ -27,7 +29,9 @@ export async function generateMetadata({ params, searchParams }) {
   }
 }
 
-export default function ArticoloRoute({ searchParams }) {
+export default async function ArticoloRoute(props) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const lang = searchParams?._lang === 'en' ? 'en' : 'it'
   return (
     <>

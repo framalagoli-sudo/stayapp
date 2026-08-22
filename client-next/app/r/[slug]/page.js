@@ -9,7 +9,9 @@ import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
 // Copre la traduzione Haiku al primo caricamento EN (cache miss). Visite dopo = cache, istantanee.
 export const maxDuration = 30
 
-export async function generateMetadata({ params, searchParams }) {
+export async function generateMetadata(props) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const { slug } = await params
   const ristorante = await getRistorante(slug)
   if (!ristorante) return { title: 'OltreNova' }
@@ -37,7 +39,9 @@ export async function generateMetadata({ params, searchParams }) {
   }
 }
 
-export default async function RistorantePage({ params, searchParams }) {
+export default async function RistorantePage(props) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const { slug } = await params
   const ristorante = await getRistorante(slug)
   if (!ristorante) notFound()

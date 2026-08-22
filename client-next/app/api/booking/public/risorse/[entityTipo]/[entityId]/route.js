@@ -3,7 +3,8 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isUUID = v => UUID_RE.test(v)
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   try {
     const { entityTipo, entityId } = params
     if (!isUUID(entityId)) return Response.json({ error: 'entity_id non valido' }, { status: 400 })

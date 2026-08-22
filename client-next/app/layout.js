@@ -27,12 +27,12 @@ export const metadata = {
   },
 }
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
   // Site Key Turnstile servita a RUNTIME via meta (no inlining build-time → immune
   // alla build cache che poteva farla sparire dal bundle). Vedi components/Turnstile.jsx.
   const turnstileKey = (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '').trim()
   // Lingua impostata dal middleware (header x-stayapp-lang) per le pagine /en → <html lang> corretto in SSR.
-  const lang = headers().get('x-stayapp-lang') === 'en' ? 'en' : 'it'
+  const lang = (await headers()).get('x-stayapp-lang') === 'en' ? 'en' : 'it'
   return (
     <html lang={lang}>
       <head>

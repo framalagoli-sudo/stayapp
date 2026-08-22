@@ -6,7 +6,9 @@ import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
 
 export const maxDuration = 30
 
-export async function generateMetadata({ params, searchParams }) {
+export async function generateMetadata(props) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const { slug, pageSlug } = await params
   const property = await getStruttura(slug)
   if (!property) return { title: 'OltreNova' }
@@ -27,7 +29,9 @@ export async function generateMetadata({ params, searchParams }) {
   }
 }
 
-export default async function StrutturaSubPage({ params, searchParams }) {
+export default async function StrutturaSubPage(props) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const { slug, pageSlug } = await params
   const property = await getStruttura(slug)
   if (!property) notFound()

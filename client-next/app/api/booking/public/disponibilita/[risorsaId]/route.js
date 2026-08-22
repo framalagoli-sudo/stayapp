@@ -122,7 +122,8 @@ async function calcolaCoperti(risorsa, date) {
   return result
 }
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   try {
     const { risorsaId } = params
     if (!isUUID(risorsaId)) return Response.json({ error: 'risorsa_id non valido' }, { status: 400 })

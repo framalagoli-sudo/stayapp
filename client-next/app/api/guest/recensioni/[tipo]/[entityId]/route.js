@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   try {
     const { data, error } = await supabaseAdmin.from('recensioni')
       .select('id, autore, stelle, testo, fonte, verificata, created_at')

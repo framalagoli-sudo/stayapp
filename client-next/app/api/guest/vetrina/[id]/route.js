@@ -11,7 +11,8 @@ export const dynamic = 'force-dynamic'
 //  - prezzo_min/max → range su valore_primario (colonna calda, indicizzata)
 //  - q              → ricerca testuale sul titolo
 //  - limit/offset   → paginazione (+ total per il "Carica altri")
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   try {
     const { searchParams } = new URL(request.url)
     const { data: vetrina } = await supabaseAdmin.from('vetrine')

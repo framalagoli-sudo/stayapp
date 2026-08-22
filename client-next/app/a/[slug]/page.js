@@ -9,7 +9,9 @@ import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
 // Copre la traduzione Haiku al primo caricamento EN (cache miss). Visite dopo = cache, istantanee.
 export const maxDuration = 30
 
-export async function generateMetadata({ params, searchParams }) {
+export async function generateMetadata(props) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const { slug } = await params
   const attivita = await getAttivita(slug)
   if (!attivita) return { title: 'OltreNova' }
@@ -37,7 +39,9 @@ export async function generateMetadata({ params, searchParams }) {
   }
 }
 
-export default async function AttivitaPage({ params, searchParams }) {
+export default async function AttivitaPage(props) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const { slug } = await params
   const attivita = await getAttivita(slug)
   if (!attivita) notFound()

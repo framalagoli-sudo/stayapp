@@ -5,7 +5,8 @@ import { sendEmail } from '@/lib/send-email'
 import { guestEmailTemplate } from '@/lib/email-template'
 import { logError } from '@/lib/observability'
 
-export async function POST(request, { params }) {
+export async function POST(request, props) {
+  const params = await props.params;
   try {
     const ip = getClientIp(request)
     const rl = await rateLimit(request, { name: 'shop-ordine', limit: 15, windowSec: 3600, ip })

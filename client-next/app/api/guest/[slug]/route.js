@@ -6,7 +6,8 @@ import { localizeEntity } from '@/lib/translate'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   const { data, error } = await supabaseAdmin
     .from('properties')
     .select('id, azienda_id, slug, name, description, address, phone, whatsapp, wifi_name, wifi_password, checkin_time, checkout_time, rules, amenities, logo_url, cover_url, plan, modules, theme, services, gallery, restaurant, activities, excursions, minisito, privacy_data, chatbot')

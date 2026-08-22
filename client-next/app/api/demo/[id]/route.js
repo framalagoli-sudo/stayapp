@@ -6,11 +6,12 @@ async function isSuperAdmin(userId) {
   return data?.role === 'super_admin'
 }
 
-export async function PATCH(request, { params }) {
+export async function PATCH(request, props) {
+  const params = await props.params;
   try {
     const { user, response } = await requireAuth(request)
     if (response) return response
-    if (!await isSuperAdmin(user.id)) return Response.json({ error: 'Accesso negato' }, { status: 403 })
+    if (!(await isSuperAdmin(user.id))) return Response.json({ error: 'Accesso negato' }, { status: 403 })
 
     const body = await request.json()
     const { data, error } = await supabaseAdmin
@@ -21,11 +22,12 @@ export async function PATCH(request, { params }) {
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
 
-export async function DELETE(request, { params }) {
+export async function DELETE(request, props) {
+  const params = await props.params;
   try {
     const { user, response } = await requireAuth(request)
     if (response) return response
-    if (!await isSuperAdmin(user.id)) return Response.json({ error: 'Accesso negato' }, { status: 403 })
+    if (!(await isSuperAdmin(user.id))) return Response.json({ error: 'Accesso negato' }, { status: 403 })
 
     const { error } = await supabaseAdmin.from('demo_requests').delete().eq('id', params.id)
     if (error) return Response.json({ error: error.message }, { status: 500 })

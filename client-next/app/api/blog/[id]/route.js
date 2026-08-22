@@ -4,7 +4,8 @@ import { requireRecordAccess } from '@/lib/server-auth'
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 function toUuid(v) { return (v && UUID_RE.test(v)) ? v : null }
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   try {
     if (!UUID_RE.test(params.id)) return Response.json({ error: 'ID non valido' }, { status: 400 })
     const { response } = await requireRecordAccess(request, 'articoli', params.id)
@@ -15,7 +16,8 @@ export async function GET(request, { params }) {
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
 
-export async function PATCH(request, { params }) {
+export async function PATCH(request, props) {
+  const params = await props.params;
   try {
     if (!UUID_RE.test(params.id)) return Response.json({ error: 'ID articolo non valido' }, { status: 400 })
     const { response } = await requireRecordAccess(request, 'articoli', params.id)
@@ -40,7 +42,8 @@ export async function PATCH(request, { params }) {
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
 
-export async function DELETE(request, { params }) {
+export async function DELETE(request, props) {
+  const params = await props.params;
   try {
     if (!UUID_RE.test(params.id)) return Response.json({ error: 'ID articolo non valido' }, { status: 400 })
     const { response } = await requireRecordAccess(request, 'articoli', params.id)

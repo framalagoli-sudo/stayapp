@@ -1,6 +1,7 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   try {
     const { tipo, slug } = params
     const tableMap = { struttura: 'properties', ristorante: 'ristoranti', attivita: 'attivita' }

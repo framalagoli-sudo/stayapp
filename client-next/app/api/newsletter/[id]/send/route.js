@@ -2,7 +2,8 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth, getProfile } from '@/lib/server-auth'
 import { sendNewsletterById } from '@/lib/newsletter-send'
 
-export async function POST(request, { params }) {
+export async function POST(request, props) {
+  const params = await props.params;
   try {
     const { user, response } = await requireAuth(request)
     if (response) return response

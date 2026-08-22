@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   try {
     const { data, error } = await supabaseAdmin.from('preventivi')
       .select('id, numero, titolo, stato, valuta, iva_pct, voci, note, scadenza, accettato_at, firma_nome, aziende(ragione_sociale, email)')

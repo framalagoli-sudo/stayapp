@@ -4,7 +4,8 @@ import { localizeEntity } from '@/lib/translate'
 // Copre la traduzione Haiku dell'evento al primo caricamento EN (cache miss).
 export const maxDuration = 30
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   const { data, error } = await supabaseAdmin.from('eventi')
     .select('id, slug, title, description, cover_url, date_start, date_end, location, price, seats_total, seats_booked, packages')
     .eq('id', params.id).eq('published', true).eq('active', true).single()
