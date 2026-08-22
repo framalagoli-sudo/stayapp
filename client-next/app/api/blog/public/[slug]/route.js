@@ -4,7 +4,8 @@ import { localizeEntity } from '@/lib/translate'
 // Copre la traduzione Haiku dell'articolo al primo caricamento EN (cache miss).
 export const maxDuration = 30
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   try {
     const { data, error } = await supabaseAdmin.from('articoli')
       .select('id, title, slug, excerpt, content, cover_url, author, published_at, category_id, entity_tipo, entity_id, azienda_id')

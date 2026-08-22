@@ -19,7 +19,8 @@ async function authorize(request, id) {
   return { response: null }
 }
 
-export async function PATCH(request, { params }) {
+export async function PATCH(request, props) {
+  const params = await props.params;
   try {
     const { response } = await authorize(request, params.id)
     if (response) return response
@@ -31,7 +32,8 @@ export async function PATCH(request, { params }) {
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
 
-export async function DELETE(request, { params }) {
+export async function DELETE(request, props) {
+  const params = await props.params;
   try {
     const { response } = await authorize(request, params.id)
     if (response) return response

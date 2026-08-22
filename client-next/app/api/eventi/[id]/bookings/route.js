@@ -1,7 +1,8 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireRecordAccess } from '@/lib/server-auth'
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   try {
     // Verifica che l'evento appartenga all'azienda dell'utente.
     const { response } = await requireRecordAccess(request, 'eventi', params.id)

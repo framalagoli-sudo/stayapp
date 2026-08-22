@@ -6,11 +6,12 @@ async function isSuperAdmin(userId) {
   return data?.role === 'super_admin'
 }
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   try {
     const { user, response } = await requireAuth(request)
     if (response) return response
-    if (!await isSuperAdmin(user.id)) return Response.json({ error: 'Accesso negato' }, { status: 403 })
+    if (!(await isSuperAdmin(user.id))) return Response.json({ error: 'Accesso negato' }, { status: 403 })
 
     const { data: profiles } = await supabaseAdmin.from('profiles').select('id, full_name').eq('azienda_id', params.id).eq('role', 'admin_azienda').limit(1)
     if (!profiles?.length) return Response.json(null)
@@ -20,11 +21,12 @@ export async function GET(request, { params }) {
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
 
-export async function POST(request, { params }) {
+export async function POST(request, props) {
+  const params = await props.params;
   try {
     const { user, response } = await requireAuth(request)
     if (response) return response
-    if (!await isSuperAdmin(user.id)) return Response.json({ error: 'Accesso negato' }, { status: 403 })
+    if (!(await isSuperAdmin(user.id))) return Response.json({ error: 'Accesso negato' }, { status: 403 })
     const { email, password, full_name } = await request.json()
     if (!email?.trim()) return Response.json({ error: 'Email obbligatoria' }, { status: 400 })
     if (!password || password.length < 6) return Response.json({ error: 'Password minimo 6 caratteri' }, { status: 400 })

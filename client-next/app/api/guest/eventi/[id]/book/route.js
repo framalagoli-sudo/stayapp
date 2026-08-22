@@ -12,7 +12,8 @@ function fmtDate(iso) {
   return new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-export async function POST(request, { params }) {
+export async function POST(request, props) {
+  const params = await props.params;
   try {
     // Anti-abuso: l'endpoint è pubblico e ora invia email → limita gli invii per IP.
     const ip = getClientIp(request)

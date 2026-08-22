@@ -1,7 +1,8 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 
-export async function PATCH(request, { params }) {
+export async function PATCH(request, props) {
+  const params = await props.params;
   try {
     const { user, response } = await requireAuth(request)
     if (response) return response
@@ -27,7 +28,8 @@ export async function PATCH(request, { params }) {
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
 
-export async function DELETE(request, { params }) {
+export async function DELETE(request, props) {
+  const params = await props.params;
   try {
     const { user, response } = await requireAuth(request)
     if (response) return response

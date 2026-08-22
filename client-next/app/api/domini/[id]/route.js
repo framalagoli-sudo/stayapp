@@ -22,7 +22,8 @@ async function caricaDominio(request, id) {
 // Cambia l'indirizzo sul dominio della piattaforma (es. pizzeria.oltrenova.com).
 // Non tocca lo slug dell'entità: il collegamento fra dominio e pagina passa da
 // entity_id, quindi i due nomi possono essere diversi senza rompere niente.
-export async function PATCH(request, { params }) {
+export async function PATCH(request, props) {
+  const params = await props.params;
   try {
     const { dom, response } = await caricaDominio(request, params.id)
     if (response) return response
@@ -74,11 +75,12 @@ export async function PATCH(request, { params }) {
       .update({ redirect_a: nuovoDominio, updated_at: new Date().toISOString() })
       .eq('entity_tipo', dom.entity_tipo).eq('entity_id', dom.entity_id).eq('tipo', 'alias')
 
-    return Response.json(await ricontrolla(aggiornato) || aggiornato)
+    return Response.json((await ricontrolla(aggiornato)) || aggiornato);
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
 
-export async function DELETE(request, { params }) {
+export async function DELETE(request, props) {
+  const params = await props.params;
   try {
     const { dom, response } = await caricaDominio(request, params.id)
     if (response) return response

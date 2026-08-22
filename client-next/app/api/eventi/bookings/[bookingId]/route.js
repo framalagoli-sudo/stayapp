@@ -2,7 +2,8 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth, getProfile } from '@/lib/server-auth'
 import { recomputeEventSeats } from '@/lib/event-seats'
 
-export async function PATCH(request, { params }) {
+export async function PATCH(request, props) {
+  const params = await props.params;
   try {
     const { user, response } = await requireAuth(request)
     if (response) return response

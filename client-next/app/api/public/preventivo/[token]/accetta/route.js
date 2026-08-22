@@ -1,7 +1,8 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { sendWebhooks } from '@/lib/send-webhooks'
 
-export async function POST(request, { params }) {
+export async function POST(request, props) {
+  const params = await props.params;
   try {
     const { firma_nome } = await request.json()
     if (!firma_nome?.trim()) return Response.json({ error: 'Il campo firma è obbligatorio' }, { status: 400 })
