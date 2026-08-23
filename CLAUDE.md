@@ -15,6 +15,7 @@ Azienda (top-level)
 
 > **🌐 Registrazione domini (piano, non ancora implementato)** → `REGISTRAR.md` — il fornitore dev'essere sostituibile: interfaccia unica in `lib/registrar/`, implementazioni sotto. Né Cloudflare né Vercel vendono `.it`.
 > **🔒 Sicurezza (invarianti, checklist route, procedure rigide)** → `SECURITY.md` §0 — LEGGERE prima di toccare route API/auth/esposizione dati. Multi-tenant + service_role = la sicurezza dipende dai controlli applicativi.
+> **🔍 Check di sicurezza in corso (roadmap A1–A8)** → `SECURITY-CHECK.md` — cosa è già stato verificato e cosa no. A1 (authz) e A2-shop/loyalty fatti; prossimi A3 (mass assignment), A5 (costi AI), A2-booking.
 > **Route frontend E backend, JSONB structures, moduli admin/guest, pattern Next** → `client-next/CLAUDE.md` (auto-caricato quando si lavora in client-next/ — tutto il codice LIVE)
 > **Schema DB** → `supabase/migrations/` (unica fonte di verità sulle tabelle).
 > ⚠️ Non esiste più un backend separato: le API sono **route Next in `client-next/app/api/`**. Il vecchio Express in `server/` è stato rimosso (commit `9b0e484`, 13/07/2026) insieme al frontend Vite in `client/`; entrambi sono in `.gitignore`. Non ricostruirli.

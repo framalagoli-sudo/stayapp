@@ -36,6 +36,11 @@ Dove possibile ognuno ha un test in `tests/smoke/security.spec.js`.
 9. **Secret solo server-side.** `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`,
    `CRON_SECRET` mai lato client né in una risposta.
 10. **RLS come secondo muro** (progetto architetturale, backlog).
+11. **Il valore si consuma solo a pagamento accertato.** Punti, gift card, crediti e posti non si
+    scalano né si accreditano quando l'ordine viene *creato* — solo quando risulta **pagato** (webhook
+    firmato o conferma del titolare), e in modo **idempotente**: gli eventi Stripe si ripetono. Un ordine
+    mai pagato che accredita punti è denaro fabbricato dal nulla (trovato e chiuso il 23/08, vedi
+    `SECURITY-CHECK.md` §A2). Vale per ogni flusso futuro: booking, eventi, abbonamenti.
 
 ### Il SISTEMA di monitoraggio (a strati — "sempre" senza sprechi)
 - **Strato 0 — Aggiornamento dipendenze (il "processo tipo WordPress-update").** `.github/dependabot.yml`
