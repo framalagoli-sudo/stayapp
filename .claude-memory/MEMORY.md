@@ -1,5 +1,7 @@
 # Memory Index
 
+- [🔍 Check sicurezza Parte A (23/08/2026)](project_session_2026_08_23_check_A.md) — 202 route provate con credenziali sbagliate: multi-tenant integro (92 liste, 0 perdite), 4 buchi chiusi e live; prossimo = Parte B (revisione per aree)
+- [👁️ Anteprima bozze solo con token firmato](reference_anteprima_bozze_token.md) — `?preview=1` mostrava le bozze a chiunque; iframe e window.open NON portano il Bearer → token HMAC nell'URL, controllo unico in getPagina/getElementoVetrina
 - [🚧 Meta: blocco "dispositivo non abituale"](reference_meta_blocco_dispositivo.md) — blocca la creazione dell'app dal 22/08; si sblocca dall'app del telefono o lasciando sedimentare il dispositivo, oppure fa creare l'app a un altro account
 - [🌐 Registrare i domini per i clienti](project_registrar_domini.md) — sblocca l'onboarding (il DNS altrui è ciò che blocca la messa online); fornitore sostituibile per scelta, ⚠️ né Cloudflare né Vercel vendono `.it`
 - [⚠️ Codemod params async (22/08/2026)](reference_codemod_params_async.md) — fatto, pronti per Next 16; ma il codemod ROMPE i file che già facevano `await params` e il build non lo rileva: controllare gli orfani e provare il server

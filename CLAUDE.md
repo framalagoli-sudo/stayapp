@@ -251,6 +251,13 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - ⚠️ Se cambia il dominio del pannello vanno aggiornati **Relying Party ID e Origins** su Supabase (oggi ID `oltrenova.com`, origins con **e senza** `www`: il pannello gira su `www`), altrimenti le passkey esistenti smettono di funzionare.
     - Sonde: `tests/probe-mfa-bypass.mjs` (una sessione a un fattore non deve poter disattivare il TOTP né leggere dati), `probe-passkey.mjs` (flusso completo con autenticatore virtuale), `probe-onboarding-2fa.mjs` (chi si trova il 2FA imposto riesce ad attivarlo).
 
+26. **👁️ Anteprima delle bozze — solo con token firmato** (23/08/2026). `?preview=1` mostrava a **chiunque** pagine, home ed elementi vetrina non pubblicati: listini e campagne non ancora usciti, con URL indovinabile. Ora il permesso è un token HMAC nell'URL (`lib/preview-token.js`), legato a tipo+entità e con scadenza 2h; lo rilascia `GET /api/pagine/preview-token` solo a chi passa `requireEntityAccess`.
+    - **Il controllo sta in `getPagina` / `getElementoVetrina`** (`lib/guest-data.js`): un solo punto che copre insieme le pagine SSR e la route API. Aggiungendo un contenuto con stato bozza, passare di lì — non reintrodurre un flag booleano `preview`.
+    - ⚠️ **L'anteprima si apre in `window.open` e in un `<iframe>`**: sono navigazioni del browser e **non possono portare un header Bearer**. Per questo il permesso viaggia nell'URL firmato: pretendere il token di sessione spegnerebbe l'anteprima ai clienti.
+    - Il segreto è `CRON_SECRET` (ripiego `SUPABASE_SERVICE_ROLE_KEY`), già presente in produzione: nessuna env var nuova.
+    - Stessa sessione: catalogo shop pubblico con select esplicita (un `select('*')` su route pubblica pubblica da solo ogni colonna futura), saldo fedeltà che non rivela più se un'email è cliente, codici gift card da `crypto.randomBytes` e non `Math.random()`.
+    - Sonda `tests/probe-security-sweep.mjs`: prova **tutte** le route API con nessun token / token di un'altra azienda, e verifica che nessuna lista perda dati altrui. Da rilanciare quando si aggiungono route.
+
 ---
 
 ## Roadmap
