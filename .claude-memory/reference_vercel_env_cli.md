@@ -5,6 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
+  modified: 2026-08-23T17:40:30.035Z
 ---
 
 Verità durature su Vercel CLI in questo repo (scoperte 2026-06-15, vedi [[project_session_2026_06_15b_formbuilder]]):
@@ -24,4 +25,6 @@ Verità durature su Vercel CLI in questo repo (scoperte 2026-06-15, vedi [[proje
 
 6. **Leggere i log runtime Vercel funziona** (utile per debug prod): `npx vercel logs <deployment-url> --json` da `client-next/` (avvolgere in Start-Job con timeout perché può streammare). Mostra i `console.error/log` delle route. Usato per leggere le error-codes di Turnstile siteverify.
 
-7. **`npx vercel env ls production`** (da `client-next/`) elenca NOMI e scope delle var (non i valori) — utile per confermare che una var esiste col nome giusto.
+7. **`npx vercel env ls production`** (da `client-next/`) elenca NOMI e scope delle var (non i valori) — utile per confermare che una var esiste col nome giusto. Mostra anche **da quanto esiste** ("1d ago"): confrontarlo con la data dell'ultimo deploy dice se è già stata raccolta.
+
+8. **⚠️ Una var nuova NON esiste finché non si rideploya — anche se è server-side** (23/08/2026). Le variabili sono legate al **deployment**: aggiungerne una dal dashboard non tocca quello in esecuzione. È l'avviso *"redeploy to apply"* di Vercel — una condizione, non un consiglio. Aggravante: i moduli le leggono spesso **una volta sola al caricamento** (`const CHIAVE = process.env.X?.trim()` in `lib/whatsapp.js`), quindi la var risulta configurata sul dashboard mentre il codice la vede `undefined` e la funzione **resta spenta in silenzio**, senza errori. Regola: dopo ogni inserimento, `.\deploy.ps1`.

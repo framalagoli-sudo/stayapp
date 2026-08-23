@@ -500,7 +500,12 @@ Il refactor verso "Business" generico richiede principalmente:
 
 ## Azioni manuali da fare (Francesco)
 
-### Aperte (aggiornate 2026-08-22)
+### Aperte (aggiornate 2026-08-23)
+
+- [ ] 🟡 **Verificare gli URL dei webhook registrati presso Stripe e Meta** — devono essere su `https://www.oltrenova.com/...`, **mai sull'apex**: `oltrenova.com` risponde 308 e per Svix un 3xx è una consegna fallita. È così che il webhook rimbalzi di Resend è rimasto muto dal 9/7 al 23/8 (nota 27 in `CLAUDE.md`). Ora conta di più: il webhook Stripe è il punto che conferma i pagamenti e finalizza i punti fedeltà
+- [x] **Webhook Resend riparato** ✅ 23/08 — URL corretto su `www` + endpoint riabilitato; verificato end-to-end con `tests/probe-webhook-resend.mjs` (contatto marcato in 5 s)
+- [ ] 🟡 **Decidere su Stripe per lo shop** — `STRIPE_SECRET_KEY` **non è configurata** in produzione: il codice è integrato ma lo shop **non incassa**. Da accendere quando serve a un cliente vero (serve anche `STRIPE_WEBHOOK_SECRET`)
+- [ ] 📌 **Loyalty, pezzo mancante per quando verrà acceso** — mostrare il saldo punti solo a chi dimostra di possedere quell'email (link o codice inviato per posta). Oggi il modulo è a zero utilizzo, quindi non urge; nota nel codice e in `SECURITY-CHECK.md` §A2
 
 - [ ] 🔴 **Creare l'app su Meta for Developers** → `META_APP_ID` + `META_APP_SECRET` su Vercel: è l'unica cosa che separa il modulo WhatsApp dal funzionare. ⚠️ **Bloccato dal blocco antifrode di Meta** ("dispositivo che non usi abitualmente"): provare dall'app del telefono, o far creare l'app a un altro account anziano. Dettagli e piano B in `WHATSAPP.md` §12
 - [ ] **Business Verification** su Meta: serve per collegare i clienti veri (col numero di test si può provare prima)

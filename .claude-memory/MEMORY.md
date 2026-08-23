@@ -1,105 +1,107 @@
 # Memory Index
 
-- [🔍 Check sicurezza Parte A (23/08/2026)](project_session_2026_08_23_check_A.md) — 202 route provate con credenziali sbagliate: multi-tenant integro (92 liste, 0 perdite), 4 buchi chiusi e live; prossimo = Parte B (revisione per aree)
+- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: dentro il CHECK COMPLETO, punto A sicurezza (A1+A2-shop fatti; prossimi A3 mass assignment, A5 costi AI); roadmap in `SECURITY-CHECK.md`
+- [🔍 Sessione 23/08 — check sicurezza A1 + buco loyalty](project_session_2026_08_23_check_A.md) — 202 route con credenziali sbagliate (multi-tenant integro), 4 buchi chiusi + valore consumato senza pagamento; shop/loyalty a ZERO uso, Stripe non configurato
+- [💰 Il valore si consuma solo a pagamento accertato](reference_valore_a_pagamento_accertato.md) — invariante 11: punti/gift card/posti mai alla creazione dell'ordine, sempre idempotenti; classe di buchi che la sonda sui permessi NON vede
+- [🪝 Webhook su www, mai sull'apex](reference_webhook_url_www.md) — l'apex dà 308 e per Svix un 3xx è consegna fallita; ⚠️ un invio email fallito dà lo STESSO sintomo di un webhook morto: prima guardare i log `[email:`
 - [👁️ Anteprima bozze solo con token firmato](reference_anteprima_bozze_token.md) — `?preview=1` mostrava le bozze a chiunque; iframe e window.open NON portano il Bearer → token HMAC nell'URL, controllo unico in getPagina/getElementoVetrina
-- [🚧 Meta: blocco "dispositivo non abituale"](reference_meta_blocco_dispositivo.md) — blocca la creazione dell'app dal 22/08; si sblocca dall'app del telefono o lasciando sedimentare il dispositivo, oppure fa creare l'app a un altro account
+- [🚧 Meta: blocco "dispositivo non abituale"](reference_meta_blocco_dispositivo.md) — blocca la creazione dell'app dal 22/08; si sblocca dal telefono, lasciando sedimentare il dispositivo, o con un altro account
 - [🌐 Registrare i domini per i clienti](project_registrar_domini.md) — sblocca l'onboarding (il DNS altrui è ciò che blocca la messa online); fornitore sostituibile per scelta, ⚠️ né Cloudflare né Vercel vendono `.it`
 - [⚠️ Codemod params async (22/08/2026)](reference_codemod_params_async.md) — fatto, pronti per Next 16; ma il codemod ROMPE i file che già facevano `await params` e il build non lo rileva: controllare gli orfani e provare il server
-- [🧪 Smoke con risultati parziali](reference_smoke_corse_parziali.md) — 37/54/58 invece di 66 = due corse sovrapposte (il teardown cancella `.auth/ci-token.json`) o smoke lanciato durante un deploy: non è una regressione
-- [💬 WhatsApp: decisioni + fase 0 live](project_whatsapp_fase0.md) — modulo incluso, strada autonoma Meta, catalogo template nostro, il cliente paga Meta; liste e consensi in produzione dal 21/08, il canale dipende dalla verifica Meta
-- [⬆️ Upgrade Next 15 (18/08/2026)](project_upgrade_next15.md) — fatto e live; la 15 tollera ancora i `params` sincroni (102 occorrenze) ma la **16 no**: migrarli col codemod prima di tentarla
-- [🧪 Triage vulnerabilità Next (18/08/2026)](reference_triage_next_vulns.md) — le 21 Dependabot sono tutte su `next` e nessuna ci tocca (no Server Actions, no self-hosting, no rewrites esterni, pagine no-store): la 14.x però non riceve più patch → upgrade a 15 da pianificare
-- [🔐 Check MFA 18/08/2026](project_check_mfa_2026_08_18.md) — l'impianto 2FA regge ai test avversariali (unenroll e require_2fa non aggirabili con aal1), ma è VOLONTARIO: 3/12 utenti lo usano, 0 aziende lo impongono; audit log fermo al 9 giugno; passkey disabilitati
+- [🧪 Smoke con risultati parziali](reference_smoke_corse_parziali.md) — 37/54/58 invece di 66-70 = due corse sovrapposte (il teardown cancella `.auth/ci-token.json`) o smoke lanciato durante un deploy: non è una regressione
+- [💬 WhatsApp: decisioni + fase 0 live](project_whatsapp_fase0.md) — modulo incluso, strada autonoma Meta, catalogo template nostro, il cliente paga Meta; liste e consensi live dal 21/08, il canale dipende dalla verifica Meta
+- [⬆️ Upgrade Next 15 (18/08/2026)](project_upgrade_next15.md) — fatto e live; la 15 tollera i `params` sincroni ma la **16 no**: migrarli col codemod prima di tentarla
+- [🧪 Triage vulnerabilità Next (18/08/2026)](reference_triage_next_vulns.md) — le Dependabot sono tutte su `next` e nessuna ci tocca (no Server Actions, no self-hosting, no rewrites esterni, pagine no-store)
+- [🔐 Check MFA 18/08/2026](project_check_mfa_2026_08_18.md) — l'impianto 2FA regge ai test avversariali (unenroll e require_2fa non aggirabili con aal1); poi reso obbligatorio su tutte le aziende
 - [⚠️ AuthContext 406 → admin in caricamento infinito](reference_authcontext_406.md) — `.single()` su profiles/aziende: 0 righe da RLS danno 406, profile null e pagine bloccate su "Caricamento…" (intermittente)
-- [Session 2026-08-17 — Sistema domini rifatto](project_session_2026_08_17_domini.md) — 4 difetti (IP DNS morto, sottodomini senza certificato, slug disallineato, updated_at inesistente) + UI in 3 passi; produzione riparata: 14 domini, 0 rotti; sonda `probe-domini.mjs`
 - [🌐 Domini su Vercel (lezioni verificate)](reference_domini_vercel.md) — IP DNS mai hardcodati (76.76.19.19 è morto), il wildcard non emette certificati per i sottodomini, `verified` non significa raggiungibile: misurare con una GET HTTPS vera
+- [Session 2026-08-17 — Sistema domini rifatto](project_session_2026_08_17_domini.md) — 4 difetti (IP morto, sottodomini senza certificato, slug disallineato, updated_at) + UI in 3 passi; 14 domini, 0 rotti; sonda `probe-domini.mjs`
 - [Lingua](feedback_lingua.md) — Rispondere sempre in italiano
 - [🔒 Sicurezza sempre priorità](feedback_sicurezza_priorita.md) — la sicurezza è un vincolo di OGNI intervento (authz, sanitizzazione URL/HTML, gating dati, verifica caso ostile dal vivo)
 - [Entità sempre tre](feedback_entita_tre.md) — Menzionare sempre struttura, ristorante E attività — mai solo due
 - [Icone flat](feedback_icone_flat.md) — strokeWidth={1.5} sempre su tutte le icone lucide-react, nessuna eccezione
 - [⚠️ lucide shadowa global](reference_lucide_global_shadow.md) — import lucide `Image` (o altri omonimi di global) shadowa `window.Image` → `new Image()` crasha; aliasare o usare `window.X`
-- [Eventi aziendali](reference_eventi_aziendali.md) — evento senza entità = aziendale, compare sui siti di TUTTE le entità dell'azienda; API guest eventi include entity match OR aziendali (scopato per azienda); editor associa anche attività
-- [📋 Backlog: permessi staff attività](project_backlog_staff_attivita_perm.md) — permessi staff attività sono tutto-o-niente (booleano `attivita_gestione`), non per-entità come struttura/ristorante; manca `attivita_ids` nell'editor
-- [⚠️ Residui migrazione react-router→Next](reference_migrazione_react_router_next.md) — `const [x]=useSearchParams()` crasha (usa `const x=`), `router.push(-1)` non torna (usa `router.back()`/goBack), blocchi async eventi/news invisibili (reveal dep `[blocks,eventi.length,articoli.length]`); guard smoke `public-flows.spec.js`
+- [Eventi aziendali](reference_eventi_aziendali.md) — evento senza entità = aziendale, compare sui siti di TUTTE le entità dell'azienda; API guest include entity match OR aziendali (scopato per azienda)
+- [📋 Backlog: permessi staff attività](project_backlog_staff_attivita_perm.md) — permessi staff attività tutto-o-niente (booleano `attivita_gestione`), non per-entità come struttura/ristorante; manca `attivita_ids` nell'editor
+- [⚠️ Residui migrazione react-router→Next](reference_migrazione_react_router_next.md) — `const [x]=useSearchParams()` crasha (usa `const x=`), `router.push(-1)` non torna (usa `router.back()`); blocchi async eventi/news invisibili (reveal dep)
 - [📋 Backlog: hydration landing #425](project_backlog_hydration_landing.md) — la landing pubblica emette ~8 errori hydration React #425 (mismatch SSR/client); da indagare a parte
-- [🔒 Sistema sicurezza continuo](reference_security_audit.md) — DECISO: SECURITY.md §0 autorevole (invarianti+checklist), 4 strati (test CI/convenzione/review-diff/workflow audit), workflow `security-audit` con verifica avversariale; ogni buco chiuso → test in security.spec.js
+- [🔒 Sistema sicurezza continuo](reference_security_audit.md) — SECURITY.md §0 autorevole (invarianti+checklist), 4 strati (test CI/convenzione/review-diff/workflow audit); ogni buco chiuso → test in security.spec.js
 - [💡 Idea: agent AI review sicurezza](project_idea_security_review_agent.md) — (assorbita in reference_security_audit) agent review ON-DEMAND sul diff = Strato 3
-- [Notifiche email eventi](reference_eventi_notifiche_email.md) — prenotazione evento → event_bookings; 2 toggle per-evento (notifica titolare default ON, conferma ospite white-label default OFF); rate limit 10/h; testo guest adattivo
-- [📧 Email/Resend](reference_email_resend.md) — Resend FUNZIONA (dominio verificato, chiave send-only); invio centralizzato+osservabile in lib/send-email.js (log `[email:<ctx>]`); notifiche vanno all'email ENTITÀ non a Francesco; Gmail le mette in Spam/Promozioni
-- [✉️ Regola template email](feedback_email_templates.md) — ogni email da sendEmail + template centralizzato (guest/platform/emailTemplate/newsletter); MAI HTML inline nelle route; footer legale+privacy sulle mail cliente
-- [Session 2026-07-11 — email rifatto + AUDIT sicurezza](project_session_2026_07_11.md) — sistema email unificato/osservabile/GDPR + audit sicurezza (16 fix, sistema a strati, Dependabot); prossimo = azione GitHub di Francesco + core journey
+- [Notifiche email eventi](reference_eventi_notifiche_email.md) — prenotazione evento → event_bookings; 2 toggle per-evento (notifica titolare ON, conferma ospite OFF); rate limit 10/h
+- [📧 Email/Resend](reference_email_resend.md) — Resend FUNZIONA (dominio verificato, chiave send-only); invio centralizzato+osservabile in lib/send-email.js (log `[email:<ctx>]`); notifiche all'email ENTITÀ non a Francesco
+- [✉️ Regola template email](feedback_email_templates.md) — ogni email da sendEmail + template centralizzato; MAI HTML inline nelle route; footer legale+privacy sulle mail cliente
 - [guestFetch vs apiFetch](feedback_guestfetch.md) — pagine guest usano sempre guestFetch, mai apiFetch (causa bug QR code)
 - [Traccia il dato fino alle API](feedback_traccia_dato_fino_api.md) — verificare che un valore calcolato raggiunga i fetch API
 - [Deploy corretto](feedback_deploy.md) — usare `.\deploy.ps1` dalla root, mai `npx vercel` dalla root
 - [Workflow review](feedback_workflow_review.md) — test manuali → fix → deploy → `/code-review max` alla fine
 - [BOM env var](feedback_bom_api_base.md) — Vercel inietta BOM → usare sempre .trim() su TUTTE le env var server-side
-- [Diagnosi prima del deploy](feedback_diagnosi_prima_del_deploy.md) — diagnosticare il meccanismo alla radice PRIMA di deployare; un deploy = una causa accertata; prove a freddo (curl/header/DB), niente "provo e vedo" sulla prod live
+- [Diagnosi prima del deploy](feedback_diagnosi_prima_del_deploy.md) — diagnosticare il meccanismo alla radice PRIMA di deployare; un deploy = una causa accertata; prove a freddo (curl/header/DB)
 - [Next 14 fetch cache](reference_next14_fetch_cache.md) — Next cacha le fetch() di supabase-js → letture stale; fix cache:'no-store' sul client server (force-dynamic non basta)
-- [🔴 Siti cross-browser (anti pagina bianca)](reference_siti_cross_browser.md) — CRITICO: siti = SSR (contenuto nell'HTML) + NIENTE service worker che precachea (causa pagine bianche). Guardrail test public-render. Mai ri-aggiungere SW precache
-- [Vercel env CLI tranelli](reference_vercel_env_cli.md) — 2 progetti (oltrenova-next è il LIVE), env pull maschera sensitive, npx env add stdin non funziona Windows → secret solo da dashboard
+- [🔴 Siti cross-browser (anti pagina bianca)](reference_siti_cross_browser.md) — CRITICO: siti = SSR (contenuto nell'HTML) + NIENTE service worker che precachea. Mai ri-aggiungere SW precache
+- [Vercel env CLI tranelli](reference_vercel_env_cli.md) — 2 progetti (oltrenova-next è il LIVE), env pull maschera sensitive, secret solo da dashboard; ⚠️ ogni var nuova richiede un redeploy o resta invisibile al codice
 - [Supabase .catch() vietato](feedback_supabase_catch.md) — mai .catch() su query builder Postgrest (non è Promise) → await + check error
 - [Authz multi-tenant](feedback_multitenant_authz.md) — ogni route API deve scopare per azienda; usare requireRecordAccess/requireEntityAccess/resolveAziendaId, mai .eq('id') nudo
-- [Contratto nomi campo](feedback_field_name_contract.md) — form frontend e route backend stessi nomi campo (name vs nome) o si perdono dati in silenzio; test live POST+query DB
-- [Stato infrastruttura](project_acquisti_pendenti.md) — Vercel Pro ✅, Railway freezato ✅, migrazione completa ✅, Supabase Pro ✅ (22/6); nessun acquisto infra pendente
-- [Robustezza infra](project_robustezza_infra.md) — Supabase Pro ✅ (22/6), cron Vercel ✅; resta RLS come 2° muro (stack Supabase+Vercel confermato buono)
-- [Stato OltreNova + azioni manuali](project_google_calendar_pending.md) — Google Calendar, Sentry DSN, Cloudflare Bot Fight, og-image, fondaconarni apex, GitHub→Vercel auto-deploy
-- [Migrazione Railway → Vercel COMPLETA](project_session_railway_migration.md) — tutto su Vercel, Railway freezato, bounce webhook ✅, NEXT_PUBLIC_API_URL="" ✅
-- [Roadmap Sprint + Piano tecnico 6 fasi](project_roadmap_sprint.md) — Fase 1 debug in corso, Fase 2 COMPLETA, Sprint 10 = Stripe billing
-- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — TOP: Sentry init BLOCCATO su Next 14.2 (serve sessione dedicata: wizard/upgrade Next15/alternativa)
+- [Contratto nomi campo](feedback_field_name_contract.md) — form frontend e route backend stessi nomi campo (name vs nome) o si perdono dati in silenzio
+- [🖥️ Dev locale (.env.local)](reference_dev_locale_env.md) — serve SUPABASE_SERVICE_ROLE_KEY o le pagine guest danno 500; il dev punta al DB di PRODUZIONE
+- [🧩 Grid liste admin (sforo riga)](reference_grid_liste_admin.md) — display:grid senza gridTemplateColumns si dimensiona sul contenuto → riga fuori dalla scheda; fix minmax(0,1fr) + overflowWrap:anywhere
+- [⚠️ Slug entità È modificabile](reference_slug_entita_modificabile.md) — si cambia in Info → "URL pubblica"; manca il redirect dal vecchio slug (QR stampati si rompono)
 - [🎯 Posizionamento target](project_positioning_target.md) — SMB self-serve ≤€100/mese, semplicità > potenza da designer (filtro di ogni scelta prodotto)
-- [🌍 Roadmap multilingua](project_multilingua_roadmap.md) — IT+EN, auto-traduzione ibrida, URL /en + hreflang, motore Claude Haiku (no DeepL); Fase 1 impianto in corso
-- [🧱 Roadmap block system](project_block_system_roadmap.md) — COMPLETA (fasi 0-5 + coppie font + sito autonomo): stile per-blocco, rich-text, tipografia, immagini+media library, pulsante+pattern, sito autonomo, blocchi auto-entità configurabili
-- [Session 2026-06-22 — Block system completo](project_session_2026_06_22.md) — Fasi 0-5 LIVE + coppie font + sito autonomo + Supabase Pro + deploy function; tutto senza migration
-- [Session 2026-06-23 — Sicurezza blog + cleanup](project_session_2026_06_23.md) — debito blog chiuso (DOMPurify) + centralizzazione font/opzioni tema (lib/fonts.js, lib/themeOptions.js)
-- [Session 2026-06-21 — Export contatti CSV + fix deploy.ps1](project_session_2026_06_21.md) — bottone Esporta CSV (BOM+`;`), fix deploy.ps1 da subfolder ($PSScriptRoot), chiarito rosso PowerShell (stderr nativo benigno)
-- [Session 2026-06-16/17 — Backup fix + 5 interventi sicurezza](project_session_2026_06_16_security.md) — backup R2 silent-fail+BOM, rate limit+Turnstile LIVE, header CSP, DMARC quarantine; Sentry init bloccato (Next14 vs SDK)
-- [Session 2026-06-18 — CLAUDE.md + brand completo](project_session_2026_06_18.md) — client-next/CLAUDE.md + globale ~/.claude, favicon/icone/OG/logo brand reale, white-label email (logo OltreNova solo piattaforma→titolare, mai business→cliente)
-- [Session 2026-06-15 — Fix sistemico super_admin azienda_id](project_session_2026_06_15.md) — 6 pagine + 5 route, fix newsletter searchParams 500, email conferma form builder
-- [Session 2026-06-15b — Debug Form Builder completo](project_session_2026_06_15b_formbuilder.md) — env Vercel RESEND vuote, bug .catch() Postgrest 500, UX consensi GDPR, vercel env pull maschera sensitive, npx stdin non funziona su Windows
-- [Session 2026-06-15c — Audit sicurezza multi-tenant](project_session_2026_06_15c_security.md) — chiusi ~19 IDOR (collection + 31/31 route [id]), primitive requireEntityAccess/requireRecordAccess/resolveAziendaId, fix SitoPage navigate→router
-- [Session 2026-06-14d — BOM fix + AI Builder + icone PWA](project_session_2026_06_14d.md) — BOM sistematico ✅, ExternalLink fix, maxDuration 60s, icone Next.js, 37/37 ✅
-- [Session 2026-06-14c — Form Builder template picker + CRM upsert](project_session_2026_06_14c.md) — 5 template, filtro azienda, newsletter_optin, tag_filter
+- [🪟 Vetrine (motore collezioni)](project_vetrine.md) — motore generico COMPLETO: admin + pubblico + lead→CRM + filtri/range + tipi-campo list/geo/file. Verticali: flipping, auto, viaggi
+- [🧱 Roadmap block system](project_block_system_roadmap.md) — COMPLETA (fasi 0-5 + coppie font + sito autonomo)
+- [🌍 Roadmap multilingua](project_multilingua_roadmap.md) — IT+EN fatti, DE no; auto-traduzione ibrida, URL /en + hreflang, motore Claude Haiku
+- [Galleria template AI](project_template_gallery.md) — sistema template stile Elementor; Fase A fatta (galleria+applica), B/C da fare
+- [Landing marketing OltreNova](project_landing_marketing.md) — `/` è hardcoded (LandingPage.jsx), NON a blocchi; smoke NON copre `/`
+- [🎨 Design header/footer sito](project_header_footer_design.md) — SiteNav condiviso + icone social + footer allineato; TUTTO FATTO+LIVE
+- [Header sito pubblico](reference_header_sito_pubblico.md) — nav duplicato in 4 componenti guest; logo in cima + hamburger mobile; switcher lingua fixed top-right z2000
+- [Link interni nei blocchi (lingua/dominio)](reference_link_interni_renderer.md) — picker salva path assoluti; LandingBlockRenderer li rimappa con base+siteHref → /en e domini custom corretti
+- [Fedeltà modelli AI](reference_ai_model_fidelity.md) — task che non devono perdere contenuti: Haiku riassume → Sonnet + prompt "trascrittore"; callClaude accetta il modello come 3° param
+- [Stato infrastruttura](project_acquisti_pendenti.md) — Vercel Pro ✅, Railway freezato ✅, Supabase Pro ✅; nessun acquisto infra pendente
+- [Robustezza infra](project_robustezza_infra.md) — Supabase Pro ✅, cron Vercel ✅; resta RLS come 2° muro
+- [Stato OltreNova + azioni manuali](project_google_calendar_pending.md) — Google Calendar, Cloudflare Bot Fight, og-image, fondaconarni apex
+- [Migrazione Railway → Vercel COMPLETA](project_session_railway_migration.md) — tutto su Vercel, Railway freezato, NEXT_PUBLIC_API_URL=""
+- [Roadmap Sprint + Piano tecnico 6 fasi](project_roadmap_sprint.md) — Fase 2 COMPLETA, Sprint 10 = Stripe billing
+- [Session 2026-08-12 — Chiusi i 3 aperti piccoli](project_session_2026_08_12.md) — client/ rimosso, deploy.ps1 con gate build + guardie, bug grid misurato dal vivo; nuove sonde probe-*.mjs
+- [Session 2026-08-11 — Server Express NON ricostruito](project_session_2026_08_11.md) — server/ era codice morto rimosso apposta (backend = route Next); fix sforo riga menu ristorante
+- [Session 2026-07-23 — Pulizia dipendenze (Sentry rimosso)](project_session_2026_07_23.md) — vuln 19→1, @sentry/nextjs inerte rimosso (monitoring in-casa); bundle 148→88 kB
+- [Session 2026-07-20 — IconPicker + Punto focale foto](project_session_2026_07_20.md) — griglia icone cercabile + selettore punto focale hero/slider/sfondo
+- [Session 2026-07-19 — micro-feature blocchi sito](project_session_2026_07_19.md) — ancore, video testo, caroselli (ArrowCarousel), home slug blindato, hero sotto-pagina
+- [Session 2026-07-18 — feature design app/sito](project_session_2026_07_18.md) — logo PWA, colore icone globale+per-blocco (CSS var), home "crea a mano"
+- [Session 2026-07-17 — 2FA account + design header/footer](project_session_2026_07_17.md) — Google blindato, SSL Full-strict, SiteNav + icone social
+- [Session 2026-07-14 — Chiusi i "6 punti" sicurezza](project_session_2026_07_14.md) — RLS lockdown (escalation CRITICA profiles/aziende, migr.069) + monitoring in-casa + pentest AI + agente security-reviewer
+- [Session 2026-07-13 — Strato 0 sicurezza OPERATIVO](project_session_2026_07_13.md) — gh CLI, pulizia codice morto, CI gate "Build client-next", branch protection, auto-merge Dependabot
+- [Session 2026-07-11 — email rifatto + AUDIT sicurezza](project_session_2026_07_11.md) — sistema email unificato/osservabile/GDPR + audit sicurezza (16 fix, sistema a strati)
+- [Session 2026-07-09 — AI Builder pesca entità + riorg sidebar](project_session_2026_07_09.md) — AI builder legge i dati reali dell'entità; sidebar admin 2 livelli
+- [Session 2026-07-07 — Link interni + fix IT/EN](project_session_2026_07_07.md) — dropdown pagine su tutti i campi URL, link renderer lingua/dominio-aware
+- [Session 2026-06-23 — Sicurezza blog + cleanup](project_session_2026_06_23.md) — debito blog chiuso (DOMPurify) + centralizzazione font/tema
+- [Session 2026-06-22 — Block system completo](project_session_2026_06_22.md) — Fasi 0-5 LIVE + coppie font + sito autonomo + Supabase Pro
+- [Session 2026-06-21 — Export contatti CSV + fix deploy.ps1](project_session_2026_06_21.md) — Esporta CSV (BOM+`;`), deploy.ps1 da subfolder ($PSScriptRoot)
+- [Session 2026-06-18 — CLAUDE.md + brand completo](project_session_2026_06_18.md) — client-next/CLAUDE.md + globale, brand reale, white-label email
+- [Session 2026-06-16/17 — Backup fix + 5 interventi sicurezza](project_session_2026_06_16_security.md) — backup R2 silent-fail+BOM, rate limit+Turnstile LIVE, CSP, DMARC quarantine
+- [Session 2026-06-15c — Audit sicurezza multi-tenant](project_session_2026_06_15c_security.md) — chiusi ~19 IDOR, primitive requireEntityAccess/requireRecordAccess/resolveAziendaId
+- [Session 2026-06-15b — Debug Form Builder completo](project_session_2026_06_15b_formbuilder.md) — env Vercel RESEND vuote, bug .catch() Postgrest 500, UX consensi GDPR
+- [Session 2026-06-15 — Fix sistemico super_admin azienda_id](project_session_2026_06_15.md) — 6 pagine + 5 route, fix newsletter searchParams 500
+- [Session 2026-06-14d — BOM fix + AI Builder + icone PWA](project_session_2026_06_14d.md) — BOM sistematico, ExternalLink fix, maxDuration 60s
+- [Session 2026-06-14c — Form Builder template picker + CRM upsert](project_session_2026_06_14c.md) — 5 template, filtro azienda, newsletter_optin
 - [Session 2026-06-14b — Fix SSR guest + BOM](project_session_2026_06_14b.md) — guest-data.js Supabase diretto, BOM fix 12 componenti
-- [Session 2026-06-14 — Form Builder public routes](project_session_2026_06_14.md) — route pubbliche GET+POST, Sprint A-D completi su Vercel
-- [Session 2026-06-13c — Form security stack](project_session_2026_06_13c.md) — spam filter, flood alert, bounce webhook ✅, email validation
+- [Session 2026-06-14 — Form Builder public routes](project_session_2026_06_14.md) — route pubbliche GET+POST, Sprint A-D completi
+- [Session 2026-06-13c — Form security stack](project_session_2026_06_13c.md) — spam filter, flood alert, bounce webhook, email validation
 - [Session 2026-06-13b — Form builder avanzato](project_session_2026_06_13b.md) — conditional fields, multi-step form
-- [Session 2026-06-13 — Sprint A+B Form Security](project_session_2026_06_13.md) — rate limit, honeypot, GDPR, autoresponder, auto-tag, webhook
+- [Session 2026-06-13 — Sprint A+B Form Security](project_session_2026_06_13.md) — rate limit, honeypot, GDPR, autoresponder, auto-tag
 - [Session 2026-06-12 — PWA InstallButton](project_session_2026_06_12.md) — icona fissa header, banner no iOS Chrome
 - [Session 2026-06-11 — Allineamento docs](project_session_2026_06_11.md) — FEATURES.md aggiornato, roadmap salvata
 - [Session 2026-06-10b — Fix AttivitaApp](project_session_2026_06_10b.md) — useSearchParams fix
 - [Session 2026-06-10 — Fix team PE + deploy.ps1](project_session_2026_06_10.md) — users filtrati per azienda, git push in deploy.ps1
 - [Session 2026-06-09b — CI fix + footer](project_session_2026_06_09b.md) — cleanup utenti playwright, footer responsive
-- [Session 2026-06-09 — RistoranteMenu refactor](project_session_2026_06_09.md) — accordion, DnD 3 livelli, copia categoria, 25 icone Lucide
-- [Session 2026-06-08b — SW stale + Sito web unificato](project_session_2026_06_08b.md) — sw.js deregistra, 4 tab Sito web per tutte e 3 le entità
-- [Session 2026-06-08 — Cutover oltrenova.com](project_session_2026_06_08.md) — cutover ✅, NEXT_INTERNAL_API_URL
+- [Session 2026-06-09 — RistoranteMenu refactor](project_session_2026_06_09.md) — accordion, DnD 3 livelli, copia categoria
+- [Session 2026-06-08b — SW stale + Sito web unificato](project_session_2026_06_08b.md) — sw.js deregistra, 4 tab Sito web
+- [Session 2026-06-08 — Cutover oltrenova.com](project_session_2026_06_08.md) — cutover, NEXT_INTERNAL_API_URL
 - [Session 2026-06-06/07 — Migrazione Next.js](project_session_2026_06_06.md) — build, MFA fix, SSR fix
-- [Session 2026-06-05 — CI/CD smoke test](project_session_2026_06_05.md) — utente CI effimero, 37/37, hook auto post-deploy
+- [Session 2026-06-05 — CI/CD smoke test](project_session_2026_06_05.md) — utente CI effimero, hook auto post-deploy
 - [Session 2026-06-04c — Reset password](project_session_2026_06_04c.md) — Supabase Redirect URLs, reset password fix
 - [Session 2026-06-04b — Fix QR code](project_session_2026_06_04b.md) — guestFetch su 12 pagine guest
-- [Session 2026-06-03/04 — AI Site Builder v2](project_session_2026_06_03.md) — wizard 5 step, icone Lucide, attività in EntitySelector
-- [Session 2026-06-02 — Allergeni EU](project_session_2026_06_02.md) — 14 allergeni EU, icone Lucide, MenuTab condiviso
-- [Session 2026-06-01d — Menu multi+visibilità](project_session_2026_06_01d.md) — accordion, toggle, shared_from, document.title
+- [Session 2026-06-03/04 — AI Site Builder v2](project_session_2026_06_03.md) — wizard 5 step, attività in EntitySelector
+- [Session 2026-06-02 — Allergeni EU](project_session_2026_06_02.md) — 14 allergeni EU, MenuTab condiviso
+- [Session 2026-06-01d — Menu multi+visibilità](project_session_2026_06_01d.md) — accordion, toggle, shared_from
 - [Session 2026-06-01c — PWA unificata](project_session_2026_06_01c.md) — PWA ristorante+attività, AttivitaModuliPage
 - [Session 2026-06-01b — Block editor](project_session_2026_06_01b.md) — LandingBlockRenderer, hero block
 - [Session 2026-06-01 — Domini custom](project_session_2026_06_01.md) — sistema domini end-to-end
-- [Galleria template AI](project_template_gallery.md) — sistema template stile Elementor; Fase A fatta (galleria+applica), B/C da fare
-- [Landing marketing OltreNova](project_landing_marketing.md) — `/` è hardcoded (LandingPage.jsx), NON a blocchi; palette nero/bianco/petrolio/ocra + sfumato instagram; contatti+P.IVA; smoke NON copre `/`
-- [Fedeltà modelli AI](reference_ai_model_fidelity.md) — task che devono NON perdere contenuti: Haiku riassume → Sonnet + prompt "trascrittore"; callClaude accetta il modello come 3° param
-- [Header sito pubblico](reference_header_sito_pubblico.md) — nav duplicato in 4 componenti guest; logo visibile in cima + hamburger mobile; attenzione allo switcher lingua fixed top-right z2000
-- [Link interni nei blocchi (lingua/dominio)](reference_link_interni_renderer.md) — picker salva path assoluti /{s|r|a}/slug/...; LandingBlockRenderer li rimappa con base+siteHref → /en e domini custom corretti (fix 7/7)
-- [Session 2026-07-07 — Link interni + fix IT/EN + hydration](project_session_2026_07_07.md) — dropdown pagine su tutti i campi URL, link interni renderer lingua/dominio-aware, fix hydration landing
-- [Session 2026-07-09 — AI Builder pesca entità + riorg sidebar](project_session_2026_07_09.md) — AI builder legge i dati reali dell'entità (lib/ai-entity-context, whitelist); sidebar admin riorganizzata 2 livelli + AI Builder nel menu
-- [🪟 Vetrine (motore collezioni)](project_vetrine.md) — motore generico COMPLETO (8/7): admin + pubblico (blocco+dettaglio SSR) + lead→CRM + **filtri/ricerca server-side + range (num1/num2, migr.066)** + tipi-campo **list/geo-mappa/file** (safeUrl). Verticali: flipping, auto, viaggi. Filtri a pill col colore tema, WhatsApp, CTA per-preset, gating verificato
-- [Session 2026-07-13 — Strato 0 sicurezza OPERATIVO](project_session_2026_07_13.md) — gh CLI + pulizia codice morto (client/+server/, vuln 40→19) + CI gate "Build client-next" + branch protection + auto-merge Dependabot (minor/patch hands-free, major manuali)
-- [🎨 Design header/footer sito](project_header_footer_design.md) — SiteNav condiviso (3 layout+hover+bottoni extra) + icone social loghi veri + footer collegato/allineamento; TUTTO FATTO+LIVE
-- [Session 2026-07-17 — 2FA account + pending infra + design header/footer](project_session_2026_07_17.md) — Google blindato (chiave madre, tutto login-via-Google), SSL Full-strict, feature design header/footer completa (SiteNav, icone social, footer landmine risolta)
-- [⚠️ Slug entità È modificabile](reference_slug_entita_modificabile.md) — la doc CLAUDE.md dice il falso; si cambia in Info → "URL pubblica"; manca solo il redirect dal vecchio slug (QR stampati si rompono)
-- [Session 2026-07-18 — feature design app/sito](project_session_2026_07_18.md) — scelta logo PWA, colore icone globale+per-blocco (CSS var pattern), allineamento footer, home "crea a mano", AI builder non super-only
-- [Session 2026-07-19 — micro-feature blocchi sito](project_session_2026_07_19.md) — ancore per-blocco, video testo, recensioni logo+carosello, gallery formato+carosello, promozioni carosello frecce (ArrowCarousel, scrollbar nascosta), home slug blindato + "Rendi home", hero sotto-pagina; RIPRESA da: verifica aspetto caroselli
-- [Session 2026-07-23 — Pulizia dipendenze (Sentry rimosso)](project_session_2026_07_23.md) — vuln Dependabot 19→1: rimosso @sentry/nextjs inerte (monitoring è in-casa) + override postcss/rollup/serialize-javascript; resta solo Next (major rinviato); bundle 148→88 kB
-- [Session 2026-07-20 — IconPicker visuale + Punto focale foto](project_session_2026_07_20.md) — griglia icone cercabile nei campi icona (blockIcons.jsx) + selettore punto focale hero/slider/sfondo sezione (object-position/background-position, crop responsive one-image)
-- [Session 2026-07-14 — Chiusi i "6 punti" sicurezza (7→~8)](project_session_2026_07_14.md) — RLS lockdown (escalation CRITICA profiles/aziende, migr.069) + monitoring in-casa (Vercel+Resend, no Axiom) + pentest AI (DB blindato) + agente security-reviewer; resta il CORE JOURNEY (onboarding)
-- [🧩 Grid liste admin (sforo riga)](reference_grid_liste_admin.md) — display:grid senza gridTemplateColumns si dimensiona sul contenuto → riga fuori dalla scheda; fix minmax(0,1fr) + overflowWrap:anywhere; la scansione statica sovrastima, misurare con le sonde
-- [🖥️ Dev locale (.env.local)](reference_dev_locale_env.md) — serve SUPABASE_SERVICE_ROLE_KEY o le pagine guest danno 500; il dev punta al DB di PRODUZIONE; verificare che la pagina mostri contenuto vero prima di fidarsi
-- [Session 2026-08-12 — Chiusi i 3 aperti piccoli](project_session_2026_08_12.md) — client/ rimosso, deploy.ps1 con gate build + guardie (branch/tree pulito), bug grid misurato dal vivo: 3 liste admin + card check-in PWA fixate; nuove sonde probe-*.mjs
-- [Session 2026-08-11 — Server Express NON ricostruito + fix menu ristorante](project_session_2026_08_11.md) — server/ era codice morto rimosso apposta (backend = 196 route Next); CLAUDE.md allineato; fix sforo riga menu (grid minmax) live; vuln Next risalite a 27

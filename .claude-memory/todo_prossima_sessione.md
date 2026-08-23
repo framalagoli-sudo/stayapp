@@ -1,14 +1,65 @@
 ---
 name: todo_prossima_sessione
-description: To-do prossima sessione (12/8) — chiusi i 3 aperti piccoli (client/, deploy.ps1, bug grid). Resta il CORE JOURNEY/onboarding come unico capitolo grosso. Sotto, storico.
+description: "To-do prossima sessione (23/8) — dentro il CHECK COMPLETO: punto A sicurezza (A1+A2-shop fatti, prossimi A3 mass assignment e A5 costi AI), roadmap in SECURITY-CHECK.md; punto B funzionale dopo. Sotto, storico."
 metadata: 
   node_type: memory
   type: project
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
-  modified: 2026-08-12T11:03:04.953Z
+  modified: 2026-08-23T17:41:59.703Z
 ---
 
-## ▶️ RIPARTIRE DA QUI (12/8) — leggere questo
+## ▶️ RIPARTIRE DA QUI (23/8) — leggere questo
+
+**Siamo dentro il CHECK COMPLETO deciso con Francesco**, diviso in due punti:
+il **punto A = sicurezza** (in corso), il **punto B = revisione funzionale** area
+per area (dopo). La roadmap con le sotto-fasi sta in **`SECURITY-CHECK.md`** nel
+repo — è quello il documento da aprire per primo.
+
+**Punto A, stato delle sotto-fasi:**
+- **A1 authz/multi-tenant** ✅ fatto (202 route, muro integro, 4 buchi chiusi)
+- **A2 logica di valore** 🔶 shop e loyalty fatti; **restano booking, eventi, preventivi**
+- **A3 mass assignment / campi privilegiati** ⬜
+- **A4 injection nei filtri + XSS** ⬜
+- **A5 abuso a volume e costi** ⬜
+- **A6 file e caricamenti** ⬜
+- **A7 segreti, webhook, cron** ⬜
+- **A8 account e sessione** 🔶 grosso fatto il 18/8
+
+**Ordine concordato, e il perché di ciascuno:**
+1. **A3** — è la più vicina ad A1 per gravità (porta all'escalation di ruolo);
+   l'invariante 3 esiste ma non è **mai stato verificato route per route**.
+2. **A5** — l'unica che ci costa **denaro adesso**: il chatbot ospite chiama il
+   modello **senza login** e ogni richiesta la paghiamo noi.
+3. **A2 restante** — booking ed eventi, perché il **booking è l'unico di quei
+   moduli davvero in uso** dai clienti (shop e loyalty sono a zero).
+4. **A7** — cercare altri token generati con `Math.random()`: quello delle gift
+   card era un **pattern**, difficilmente un caso isolato (preventivi,
+   disiscrizione, conferma newsletter).
+5. A4 e A6 dopo (più lunghi, meno probabili nell'uso attuale). Poi A8.
+
+**Poi il punto B**: revisione funzionale a lotti di 3-4 aree, prima quelle che i
+clienti usano (Contatti, Richieste, Prenotazioni, Sito), poi quelle mai
+verificate sul campo (Loyalty, Shop, Survey, Piano editoriale).
+
+**A carico di Francesco (non bloccano il punto A):**
+- 🔴 **Meta**: sbloccare `developers.facebook.com` → `META_APP_ID` +
+  `META_APP_SECRET` (vedi [[reference_meta_blocco_dispositivo]]).
+- 🟡 **Stripe**: `STRIPE_SECRET_KEY` **non è configurata** in produzione → lo
+  shop non incassa, malgrado il codice sia integrato. Da decidere se accenderlo.
+- 🟡 **Webhook presso i fornitori**: verificare che gli URL registrati su
+  **Stripe e Meta** siano su `www` e non sull'apex → [[reference_webhook_url_www]].
+- 🟡 Record `A` su SiteGround per `fondaconarni.com`; "Hotel di prova due"
+  (azienda_id NULL).
+
+⚠️ **Dopo ogni env var inserita su Vercel serve `.\deploy.ps1`**, altrimenti il
+deployment in esecuzione non la vede e la funzione resta spenta in silenzio
+→ [[reference_vercel_env_cli]] punto 8.
+
+Dettaglio della sessione in [[project_session_2026_08_23_check_A]].
+
+---
+
+## ▶️ (storico) RIPARTIRE DA QUI (12/8)
 
 **I tre "aperti piccoli" dell'11/8 sono CHIUSI**, live e verificati in
 produzione (commit `f06d0c45`, smoke 66/1 skipped). Dettaglio in
