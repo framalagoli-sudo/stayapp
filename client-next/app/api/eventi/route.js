@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth, resolveAziendaId } from '@/lib/server-auth'
+import { requireAuth, resolveAziendaId, entitaDellaAzienda } from '@/lib/server-auth'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 function isUUID(v) { return UUID_RE.test(v) }
@@ -67,6 +67,11 @@ export async function POST(request) {
 
     const payload = Object.fromEntries(Object.entries(body).filter(([k]) => ALLOWED.includes(k)))
     if (payload.entity_id && !isUUID(payload.entity_id)) { payload.entity_id = null; payload.entity_tipo = null }
+    // L'entità dev'essere propria: altrimenti l'evento comparirebbe sul sito di
+    // un altro cliente, raccogliendone anche le prenotazioni.
+    if (!(await entitaDellaAzienda(profile, payload.entity_tipo, payload.entity_id))) {
+      return Response.json({ error: 'Entità non valida' }, { status: 404 })
+    }
     const { data, error } = await supabaseAdmin.from('eventi').insert({ ...payload, azienda_id, slug }).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
     return Response.json(data, { status: 201 })

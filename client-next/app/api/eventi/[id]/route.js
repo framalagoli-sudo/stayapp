@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireRecordAccess } from '@/lib/server-auth'
+import { requireRecordAccess, entitaDellaAzienda } from '@/lib/server-auth'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 function isUUID(v) { return UUID_RE.test(v) }
@@ -22,11 +22,16 @@ export async function GET(request, props) {
 export async function PATCH(request, props) {
   const params = await props.params;
   try {
-    const { response } = await requireRecordAccess(request, 'eventi', params.id)
+    const { profile, response } = await requireRecordAccess(request, 'eventi', params.id)
     if (response) return response
     const body = await request.json()
     const payload = Object.fromEntries(Object.entries(body).filter(([k]) => ALLOWED.includes(k)))
     if (payload.entity_id && !isUUID(payload.entity_id)) { payload.entity_id = null; payload.entity_tipo = null }
+    // Spostare l'evento su un'entità altrui lo pubblicherebbe sul sito di un
+    // altro cliente: il record è mio, la destinazione no.
+    if (!(await entitaDellaAzienda(profile, payload.entity_tipo, payload.entity_id))) {
+      return Response.json({ error: 'Entità non valida' }, { status: 404 })
+    }
     payload.updated_at = new Date().toISOString()
     const { data, error } = await supabaseAdmin.from('eventi').update(payload).eq('id', params.id).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })

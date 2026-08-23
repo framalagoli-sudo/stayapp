@@ -1,5 +1,5 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireAuth, entitaDellaAzienda } from '@/lib/server-auth'
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
@@ -39,6 +39,10 @@ export async function POST(request) {
 
     const { entity_tipo, entity_id, autore, stelle, testo, fonte = 'manuale' } = await request.json()
     if (!entity_tipo || !entity_id) return Response.json({ error: 'entity_tipo e entity_id obbligatori' }, { status: 400 })
+    // Senza questo controllo si scrivono recensioni sulla scheda di un altro.
+    if (!(await entitaDellaAzienda(profile, entity_tipo, entity_id))) {
+      return Response.json({ error: 'Entità non valida' }, { status: 404 })
+    }
 
     if (!stelle) {
       const { data, error } = await supabaseAdmin.from('recensioni').insert({

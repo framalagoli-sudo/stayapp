@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireAuth, entitaDellaAzienda } from '@/lib/server-auth'
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
@@ -41,6 +41,10 @@ export async function POST(request) {
     if (!entity_tipo || !entity_id) return Response.json({ error: 'entity_tipo e entity_id obbligatori' }, { status: 400 })
     if (!trigger_evento) return Response.json({ error: 'trigger_evento obbligatorio' }, { status: 400 })
     if (!VALID_TRIGGERS.includes(trigger_evento)) return Response.json({ error: 'trigger_evento non valido' }, { status: 400 })
+    // L'automazione scatta sugli eventi di un'entità: dev'essere la propria.
+    if (!(await entitaDellaAzienda(profile, entity_tipo, entity_id))) {
+      return Response.json({ error: 'Entità non valida' }, { status: 404 })
+    }
 
     const { data, error } = await supabaseAdmin.from('automazioni').insert({
       azienda_id: profile.azienda_id,

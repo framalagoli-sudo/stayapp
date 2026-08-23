@@ -298,6 +298,52 @@ test.describe('Regression sicurezza (ruolo staff)', () => {
     expect(error, 'INSERT anon su contatti deve essere bloccata da RLS').not.toBeNull()
   })
 
+  // ENTITÀ ALTRUI NEL CORPO: `azienda_id` era protetto, `entity_id` no. Si creava
+  // un proprio evento puntato all'entità di un'altra azienda e finiva pubblicato
+  // sul sito di quella, raccogliendone anche le prenotazioni.
+  test('mass assignment: non si aggancia un evento a un’entità di un’altra azienda', async ({ request }) => {
+    if (!ctx.otherEntity) test.skip()
+    const res = await request.post(`${TEST_URL}/api/eventi`, {
+      headers: authH(ctx.adminToken),
+      data: {
+        title: `CI-SEC-INTRUSO-${Date.now()}`,
+        date_start: new Date(Date.now() + 7 * 864e5).toISOString(),
+        seats_total: 5, active: true, published: true,
+        entity_tipo: 'struttura', entity_id: ctx.otherEntity.id,
+      },
+    })
+    expect(res.status(), 'entità di un’altra azienda deve essere respinta').toBe(404)
+    if (res.status() < 300) { const b = await res.json(); if (b?.id) await admin.from('eventi').delete().eq('id', b.id) }
+  })
+
+  test('mass assignment: non si aggancia una risorsa booking a un’entità altrui', async ({ request }) => {
+    if (!ctx.otherEntity) test.skip()
+    const res = await request.post(`${TEST_URL}/api/booking/risorse`, {
+      headers: authH(ctx.adminToken),
+      data: {
+        nome: `CI-SEC-RIS-${Date.now()}`, modalita: 'slot', durata_minuti: 60, attiva: true,
+        entity_tipo: 'struttura', entity_id: ctx.otherEntity.id,
+      },
+    })
+    expect(res.status(), 'entità di un’altra azienda deve essere respinta').toBe(404)
+    if (res.status() < 300) { const b = await res.json(); if (b?.id) await admin.from('risorse').delete().eq('id', b.id) }
+  })
+
+  test('mass assignment: l’entità PROPRIA continua a funzionare (non-regressione)', async ({ request }) => {
+    const res = await request.post(`${TEST_URL}/api/eventi`, {
+      headers: authH(ctx.adminToken),
+      data: {
+        title: `CI-SEC-LEGITTIMO-${Date.now()}`,
+        date_start: new Date(Date.now() + 7 * 864e5).toISOString(),
+        seats_total: 5, active: true, published: true,
+        entity_tipo: 'struttura', entity_id: ctx.testEntity.id,
+      },
+    })
+    expect(res.status(), 'sulla propria entità la creazione deve funzionare').toBeLessThan(300)
+    const b = await res.json()
+    if (b?.id) await admin.from('eventi').delete().eq('id', b.id)
+  })
+
   // ANTEPRIMA BOZZE: `?preview=1` mostrava a chiunque le pagine non pubblicate
   // (listini, campagne, annunci in preparazione). Ora serve un token firmato,
   // legato all'entità e a scadenza.

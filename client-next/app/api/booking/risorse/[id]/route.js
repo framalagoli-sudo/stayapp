@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireRecordAccess } from '@/lib/server-auth'
+import { requireRecordAccess, entitaDellaAzienda } from '@/lib/server-auth'
 
 const ALLOWED = ['nome', 'descrizione', 'modalita', 'entity_tipo', 'entity_id',
   'durata_minuti', 'quantita', 'max_coperti', 'prezzo', 'valuta', 'colore',
@@ -19,10 +19,15 @@ export async function GET(request, props) {
 export async function PATCH(request, props) {
   const params = await props.params;
   try {
-    const { response } = await requireRecordAccess(request, 'risorse', params.id)
+    const { profile, response } = await requireRecordAccess(request, 'risorse', params.id)
     if (response) return response
     const body = await request.json()
     const payload = Object.fromEntries(Object.entries(body).filter(([k]) => ALLOWED.includes(k)))
+    // Spostare la risorsa su un'entità altrui la renderebbe prenotabile dal
+    // sito di un altro cliente: il record è mio, la destinazione no.
+    if (!(await entitaDellaAzienda(profile, payload.entity_tipo, payload.entity_id))) {
+      return Response.json({ error: 'Entità non valida' }, { status: 404 })
+    }
     payload.updated_at = new Date().toISOString()
     const { data, error } = await supabaseAdmin.from('risorse').update(payload).eq('id', params.id).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })

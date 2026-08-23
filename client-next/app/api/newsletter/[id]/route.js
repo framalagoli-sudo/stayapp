@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireAuth, entitaDellaAzienda } from '@/lib/server-auth'
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
@@ -33,6 +33,10 @@ export async function PATCH(request, props) {
     const body = await request.json()
     const allowed = ['subject', 'preheader', 'template_id', 'content', 'entity_tipo', 'entity_id', 'scheduled_at', 'tag_filter']
     const updates = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
+    // L'entità determina mittente e destinatari: dev'essere la propria.
+    if (!(await entitaDellaAzienda(profile, updates.entity_tipo, updates.entity_id))) {
+      return Response.json({ error: 'Entità non valida' }, { status: 404 })
+    }
     updates.updated_at = new Date().toISOString()
 
     let q = supabaseAdmin.from('newsletters').update(updates).eq('id', params.id)

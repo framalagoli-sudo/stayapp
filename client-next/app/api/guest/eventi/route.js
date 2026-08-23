@@ -19,12 +19,17 @@ export async function GET(request) {
     .eq('published', true).eq('active', true)
     .gte('date_start', new Date().toISOString()).order('date_start')
 
-  if (entity_tipo && UUID_RE.test(entity_id || '')) {
+  // `entity_tipo` finisce interpolato dentro la .or() qui sotto: va whitelistato
+  // prima, come già si fa in /api/collegamenti (anti filter-injection).
+  if (['struttura', 'ristorante', 'attivita'].includes(entity_tipo) && UUID_RE.test(entity_id || '')) {
     // Mostra gli eventi di questa entità + gli eventi "aziendali" (senza entità)
     // della stessa azienda: un evento aziendale compare sui siti di tutte le sue entità.
     const aziendaId = await getEntityAziendaId(entity_tipo, entity_id)
     if (aziendaId) {
-      query = query.or(`and(entity_tipo.eq.${entity_tipo},entity_id.eq.${entity_id}),and(entity_id.is.null,azienda_id.eq.${aziendaId})`)
+      // `azienda_id` anche sul primo ramo: un evento di un'ALTRA azienda puntato
+      // a questa entità non deve comparire qui (difesa in profondità — la scrittura
+      // è già bloccata da `entitaDellaAzienda`, ma i record vecchi restano).
+      query = query.or(`and(entity_tipo.eq.${entity_tipo},entity_id.eq.${entity_id},azienda_id.eq.${aziendaId}),and(entity_id.is.null,azienda_id.eq.${aziendaId})`)
     } else {
       query = query.eq('entity_tipo', entity_tipo).eq('entity_id', entity_id)
     }

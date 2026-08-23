@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireRecordAccess } from '@/lib/server-auth'
+import { requireRecordAccess, entitaDellaAzienda } from '@/lib/server-auth'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 function toUuid(v) { return (v && UUID_RE.test(v)) ? v : null }
@@ -20,7 +20,7 @@ export async function PATCH(request, props) {
   const params = await props.params;
   try {
     if (!UUID_RE.test(params.id)) return Response.json({ error: 'ID articolo non valido' }, { status: 400 })
-    const { response } = await requireRecordAccess(request, 'articoli', params.id)
+    const { profile, response } = await requireRecordAccess(request, 'articoli', params.id)
     if (response) return response
 
     const body = await request.json()
@@ -29,6 +29,10 @@ export async function PATCH(request, props) {
 
     if ('category_id' in updates) updates.category_id = toUuid(updates.category_id)
     if ('entity_id'   in updates) updates.entity_id   = toUuid(updates.entity_id)
+    // Spostare l'articolo su un'entità altrui lo pubblicherebbe sul blog di un altro.
+    if (!(await entitaDellaAzienda(profile, updates.entity_tipo, updates.entity_id))) {
+      return Response.json({ error: 'Entità non valida' }, { status: 404 })
+    }
 
     if (updates.published === true) {
       const { data: cur } = await supabaseAdmin.from('articoli').select('published_at').eq('id', params.id).single()

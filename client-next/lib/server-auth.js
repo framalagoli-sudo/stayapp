@@ -204,3 +204,23 @@ export async function requireEntityAccess(request, entity_tipo, entity_id) {
   }
   return { user, profile, response: null }
 }
+
+// L'entità indicata NEL CORPO della richiesta è davvero della propria azienda?
+//
+// Serve quando si crea o modifica un contenuto agganciato a un'entità (evento,
+// risorsa, recensione, articolo, newsletter): l'`azienda_id` del record è già
+// protetto da `resolveAziendaId`, ma `entity_id` arriva dal client e senza
+// questo controllo si aggancia il proprio contenuto al **sito di un altro
+// cliente** — dove compare al pubblico e ne raccoglie le prenotazioni.
+// Verificato sfruttabile il 24/08/2026 su eventi e risorse booking.
+//
+// entity_id assente = contenuto aziendale (vale per tutte le proprie entità): ok.
+// Uso:  if (!(await entitaDellaAzienda(profile, tipo, id)))
+//         return Response.json({ error: 'Entità non valida' }, { status: 404 })
+export async function entitaDellaAzienda(profile, entity_tipo, entity_id) {
+  if (!entity_id) return true
+  if (!profile) return false
+  if (profile.role === 'super_admin') return true
+  const aziendaId = await getEntityAziendaId(entity_tipo, entity_id)
+  return !!aziendaId && aziendaId === profile.azienda_id
+}

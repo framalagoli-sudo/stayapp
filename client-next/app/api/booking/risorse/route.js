@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth, resolveAziendaId } from '@/lib/server-auth'
+import { requireAuth, resolveAziendaId, entitaDellaAzienda } from '@/lib/server-auth'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isUUID = v => UUID_RE.test(v)
@@ -51,6 +51,11 @@ export async function POST(request) {
     if (!body.nome?.trim()) return Response.json({ error: 'Il nome è obbligatorio' }, { status: 400 })
 
     const payload = Object.fromEntries(Object.entries(body).filter(([k]) => ALLOWED.includes(k)))
+    // L'entità dev'essere propria: altrimenti la risorsa finirebbe prenotabile
+    // dal sito di un altro cliente, con le prenotazioni dirottate a noi.
+    if (!(await entitaDellaAzienda(profile, payload.entity_tipo, payload.entity_id))) {
+      return Response.json({ error: 'Entità non valida' }, { status: 404 })
+    }
     const { data, error } = await supabaseAdmin.from('risorse').insert({ ...payload, azienda_id }).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
     return Response.json(data, { status: 201 })
