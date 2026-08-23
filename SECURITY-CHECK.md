@@ -116,7 +116,11 @@ milione di volte?
 **Domanda**: chi può far eseguire alla piattaforma qualcosa fingendosi un servizio esterno?
 
 - [ ] Ogni route `cron/*` controlla davvero `CRON_SECRET`? (la convenzione c'è, va verificata una per una)
-- [ ] I webhook verificano la **firma**: Stripe ✅ verificato, restano Resend e WhatsApp.
+- [x] I webhook verificano la **firma**: Stripe ✅ e Resend ✅ (svix, con finestra anti-replay di 5
+      minuti e confronto a tempo costante); resta WhatsApp.
+- [ ] ⚠️ **Gli URL registrati presso i fornitori** vanno provati come sono scritti là, non a mano su
+      `www`: l'apex risponde 308 e per Svix un 3xx è una consegna fallita — è così che il webhook bounce
+      di Resend è morto dal 9/7 al 23/8 (nota 27 in `CLAUDE.md`). Da ricontrollare per Stripe e Meta.
 - [ ] Nessun segreto raggiunge il browser né compare in una risposta di errore.
 - [ ] I token in tabella (preventivi, disiscrizione, conferma newsletter) sono generati con
       `crypto`, non con `Math.random()` — l'errore trovato oggi nelle gift card **va cercato altrove**:

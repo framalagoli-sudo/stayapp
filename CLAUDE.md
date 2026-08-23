@@ -259,6 +259,11 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - Stessa sessione: catalogo shop pubblico con select esplicita (un `select('*')` su route pubblica pubblica da solo ogni colonna futura), saldo fedeltà che non rivela più se un'email è cliente, codici gift card da `crypto.randomBytes` e non `Math.random()`.
     - Sonda `tests/probe-security-sweep.mjs`: prova **tutte** le route API con nessun token / token di un'altra azienda, e verifica che nessuna lista perda dati altrui. Da rilanciare quando si aggiungono route.
 
+27. **🪝 Gli URL dei webhook vanno registrati su `www`, mai sull'apex** (23/08/2026). `https://oltrenova.com/...` risponde **308** verso `www`, e **un 3xx è un fallimento di consegna**: Svix (il motore che Resend usa per i webhook — header `svix-*`) non segue i redirect, per non trascinare gli header di firma su un altro host. Risultato: il webhook bounce di Resend è rimasto muto **dal 9 luglio al 23 agosto 2026** e Resend lo ha disattivato da solo.
+    - Vale per **tutti** i fornitori: verificato che `resend-webhook`, `shop/webhook/stripe`, `whatsapp/webhook` e `webhooks` danno **308 sull'apex e rispondono solo su `www`**.
+    - Sintomo ingannevole: l'endpoint provato a mano su `www` funziona benissimo, quindi sembra tutto a posto. Il guasto si vede **solo** provando l'URL esattamente com'è registrato dal fornitore.
+    - Conseguenza silenziosa di un webhook bounce morto: le email inesistenti non vengono più marcate `email_non_valida`, si continua a scrivere a caselle morte e la reputazione del dominio peggiora — senza nessun errore visibile.
+
 ---
 
 ## Roadmap
