@@ -48,7 +48,7 @@ export default async function StrutturaVetrinaDetail(props) {
   const { slug, itemSlug } = await params
   const property = await getStruttura(slug)
   if (!property) notFound()
-  const preview = searchParams?.preview === '1'
+  const preview = searchParams?.preview || null // token firmato dall'editor
   const el = await getElementoVetrina('struttura', property.id, itemSlug, preview)
   if (!el) notFound()
   const lang = searchParams?._lang === 'en' ? 'en' : 'it'

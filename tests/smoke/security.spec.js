@@ -78,6 +78,7 @@ test.describe('Regression sicurezza (ruolo staff)', () => {
     try { await admin.from('contatti').delete().eq('email', CONTACT_EMAIL) } catch {}
     if (ctx.victimNewsletterId) { try { await admin.from('newsletters').delete().eq('id', ctx.victimNewsletterId) } catch {} }
     if (ctx.victimAziendaId)    { try { await admin.from('aziende').delete().eq('id', ctx.victimAziendaId) } catch {} }
+    if (ctx.previewPageId) { try { await admin.from('pagine').delete().eq('id', ctx.previewPageId) } catch {} }
     if (ctx.vetrinaId)   { try { await admin.from('vetrine').delete().eq('id', ctx.vetrinaId) } catch {} } // cascade elementi
     if (ctx.testEntity)  { try { await admin.from('properties').delete().eq('id', ctx.testEntity.id) } catch {} }
     if (ctx.staffUserId) { try { await admin.auth.admin.deleteUser(ctx.staffUserId) } catch {} }
@@ -295,5 +296,65 @@ test.describe('Regression sicurezza (ruolo staff)', () => {
   test('PENTEST: chiave anon pubblica NON scrive (no spam diretto nel CRM)', async () => {
     const { error } = await pubDb().from('contatti').insert({ nome: 'PENTEST', email: 'x@x.it', azienda_id: '00000000-0000-0000-0000-000000000000' })
     expect(error, 'INSERT anon su contatti deve essere bloccata da RLS').not.toBeNull()
+  })
+
+  // ANTEPRIMA BOZZE: `?preview=1` mostrava a chiunque le pagine non pubblicate
+  // (listini, campagne, annunci in preparazione). Ora serve un token firmato,
+  // legato all'entità e a scadenza.
+  test('anteprima: le pagine in bozza NON sono leggibili senza token firmato', async ({ request }) => {
+    const slug = `ci-sec-bozza-${Date.now()}`
+    const { data: pag } = await admin.from('pagine').insert({
+      entity_tipo: 'struttura', entity_id: ctx.testEntity.id, slug,
+      titolo: 'Bozza riservata', status: 'bozza', blocks: [],
+    }).select('id').single()
+    ctx.previewPageId = pag?.id
+    const url = `${TEST_URL}/api/guest/pagina/struttura/${ctx.testEntity.id}/${slug}`
+
+    for (const [caso, qs] of [
+      ['senza parametro', ''],
+      ['vecchio preview=1', '?preview=1'],
+      ['firma inventata', '?preview=99999999999999.deadbeefdeadbeefdeadbeefdeadbeef'],
+    ]) {
+      const res = await request.get(url + qs)
+      expect(res.status(), `bozza non deve aprirsi (${caso})`).toBe(404)
+    }
+  })
+
+  test('anteprima: il titolare vede la propria bozza, ma il token non apre altre entità', async ({ request }) => {
+    const tokRes = await request.get(`${TEST_URL}/api/pagine/preview-token?tipo=struttura&entityId=${ctx.testEntity.id}`, { headers: authH(ctx.adminToken) })
+    expect(tokRes.status(), 'il titolare deve ottenere il token').toBe(200)
+    const { token } = await tokRes.json()
+    expect(token, 'token di anteprima assente').toBeTruthy()
+
+    const { data: pag } = await admin.from('pagine').select('slug').eq('id', ctx.previewPageId).single()
+    const mia = await request.get(`${TEST_URL}/api/guest/pagina/struttura/${ctx.testEntity.id}/${pag.slug}?preview=${token}`)
+    expect(mia.status(), 'con token valido l’anteprima deve funzionare').toBe(200)
+
+    // Lo stesso token puntato a un'entità altrui non deve aprirne le bozze.
+    if (ctx.otherEntity) {
+      const altrui = await request.get(`${TEST_URL}/api/guest/pagina/struttura/${ctx.otherEntity.id}/qualsiasi?preview=${token}`)
+      expect(altrui.status(), 'il token non deve valere per un’altra entità').toBe(404)
+    }
+  })
+
+  // PRIVACY: il saldo punti di un'email non si consegna a chi conosce l'indirizzo
+  // (rivelerebbe che quella persona è cliente di quel negozio e quanto ci spende).
+  test('privacy: il saldo fedeltà non rivela se un’email è cliente', async ({ request }) => {
+    const { data: c } = await admin.from('contatti')
+      .insert({ azienda_id: ctx.aziendaId, nome: 'CI Loyalty', email: CONTACT_EMAIL }).select('id').single()
+    const url = e => `${TEST_URL}/api/loyalty/public/${ctx.aziendaId}/saldo?email=${encodeURIComponent(e)}`
+
+    const esiste = await request.get(url(CONTACT_EMAIL))
+    const inventata = await request.get(url(`mai-visto-${Date.now()}@playwright.internal`))
+    expect(await esiste.json(), 'la risposta non deve distinguere un cliente da uno sconosciuto')
+      .toEqual(await inventata.json())
+
+    if (c?.id) await admin.from('contatti').delete().eq('id', c.id)
+  })
+
+  test('anteprima: chi non ha accesso all’entità non ottiene il token', async ({ request }) => {
+    if (!ctx.otherEntity) test.skip()
+    const res = await request.get(`${TEST_URL}/api/pagine/preview-token?tipo=struttura&entityId=${ctx.otherEntity.id}`, { headers: authH(ctx.adminToken) })
+    expect(res.status(), 'token per entità di un’altra azienda deve essere negato').toBe(404)
   })
 })

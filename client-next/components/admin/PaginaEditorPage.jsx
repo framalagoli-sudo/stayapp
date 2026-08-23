@@ -1206,6 +1206,7 @@ export default function PaginaEditorPage() {
   const [showPreview, setShowPreview]   = useState(false)
   const [previewDevice, setPreviewDevice] = useState('desktop')
   const [previewNonce, setPreviewNonce]  = useState(0)
+  const [previewToken, setPreviewToken]  = useState(null)
 
   useEffect(() => {
     apiFetch(`/api/pagine/${pageId}`).then(data => {
@@ -1227,6 +1228,10 @@ export default function PaginaEditorPage() {
     apiFetch(ep).then(d => { if (d?.slug) setEntitySlug(d.slug) })
     apiFetch(`/api/pagine?entity_tipo=${page.entity_tipo}&entity_id=${page.entity_id}`)
       .then(d => Array.isArray(d) && setSitePages(d)).catch(() => {})
+    // Permesso di vedere le proprie bozze: l'anteprima si apre in iframe o in
+    // scheda nuova, dove il token di sessione non arriverebbe.
+    apiFetch(`/api/pagine/preview-token?tipo=${page.entity_tipo}&entityId=${page.entity_id}`)
+      .then(d => d?.token && setPreviewToken(d.token)).catch(() => {})
   }, [page?.entity_id])
 
   const internalLinks = useMemo(
@@ -1256,7 +1261,19 @@ export default function PaginaEditorPage() {
     if (dirty) await save()
     const url = previewUrl()
     if (!url) return
-    window.open(url + (page.slug === '__home__' && page.status === 'pubblicata' ? '' : '?preview=1'), '_blank')
+    const giaPubblica = page.slug === '__home__' && page.status === 'pubblicata'
+    const t = giaPubblica ? null : await tokenAnteprima()
+    window.open(url + (t ? `?preview=${t}` : ''), '_blank')
+  }
+
+  // Il permesso di anteprima scade: se ne chiede uno fresco al momento di aprirla.
+  async function tokenAnteprima() {
+    if (!page?.entity_id) return null
+    try {
+      const d = await apiFetch(`/api/pagine/preview-token?tipo=${page.entity_tipo}&entityId=${page.entity_id}`)
+      if (d?.token) { setPreviewToken(d.token); return d.token }
+    } catch {}
+    return previewToken
   }
 
   function copyLink() {
@@ -1446,7 +1463,7 @@ export default function PaginaEditorPage() {
 
       {/* ── Anteprima live in-editor (drawer) ── */}
       {showPreview && pUrl && (() => {
-        const src = `${pUrl}?preview=1&_n=${previewNonce}`
+        const src = `${pUrl}?preview=${previewToken || ''}&_n=${previewNonce}`
         const devBtn = a => ({ padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: a ? '#1a1a2e' : '#eee', color: a ? '#fff' : '#555' })
         const iconBtn = { background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#888', padding: '4px 6px' }
         return (

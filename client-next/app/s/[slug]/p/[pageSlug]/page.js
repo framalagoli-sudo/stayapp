@@ -35,7 +35,7 @@ export default async function StrutturaSubPage(props) {
   const { slug, pageSlug } = await params
   const property = await getStruttura(slug)
   if (!property) notFound()
-  const preview = searchParams?.preview === '1'
+  const preview = searchParams?.preview || null // token firmato dall'editor
   let pagina = await getPagina('struttura', property.id, pageSlug, preview)
   if (!pagina) notFound()
   const lang = searchParams?._lang === 'en' ? 'en' : 'it'

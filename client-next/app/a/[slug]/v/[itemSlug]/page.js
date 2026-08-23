@@ -48,7 +48,7 @@ export default async function AttivitaVetrinaDetail(props) {
   const { slug, itemSlug } = await params
   const attivita = await getAttivita(slug)
   if (!attivita) notFound()
-  const preview = searchParams?.preview === '1'
+  const preview = searchParams?.preview || null // token firmato dall'editor
   const el = await getElementoVetrina('attivita', attivita.id, itemSlug, preview)
   if (!el) notFound()
   const lang = searchParams?._lang === 'en' ? 'en' : 'it'

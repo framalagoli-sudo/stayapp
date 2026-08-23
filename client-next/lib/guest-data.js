@@ -1,5 +1,6 @@
 import { supabaseAdmin } from './supabase-server'
 import { getCollegamenti } from './guest-utils'
+import { verificaTokenAnteprima } from './preview-token'
 
 // Query dirette a Supabase dai Server Components — nessun HTTP hop intermedio.
 // Più sicure (nessun endpoint esposto chiamato internamente), più stabili
@@ -71,28 +72,31 @@ export async function getArticolo(slug) {
 // Carica un elemento di vetrina per il dettaglio pubblico. Seleziona SOLO le
 // colonne pubbliche: dati_privati NON viene mai letto qui (gating). Aggiunge il
 // preset della vetrina (serve alle etichette dei campi lato pubblico).
-export async function getElementoVetrina(tipo, entityId, itemSlug, preview = false) {
+// `anteprima`: stesso token firmato di getPagina — senza, solo elementi pubblicati.
+export async function getElementoVetrina(tipo, entityId, itemSlug, anteprima = null) {
   let q = supabaseAdmin
     .from('vetrina_elementi')
     .select('id, vetrina_id, titolo, slug, copertina_url, valore_primario, stato_pubblico, dati, immagini, status, seo_title, seo_description, og_image_url')
     .eq('entity_tipo', tipo)
     .eq('entity_id', entityId)
     .eq('slug', itemSlug)
-  if (!preview) q = q.eq('status', 'pubblicata')
+  if (!verificaTokenAnteprima(anteprima, tipo, entityId)) q = q.eq('status', 'pubblicata')
   const { data, error } = await q.single()
   if (error || !data) return null
   const { data: vetrina } = await supabaseAdmin.from('vetrine').select('preset, titolo').eq('id', data.vetrina_id).single()
   return { ...data, preset: vetrina?.preset || 'progetti_immobiliari', vetrina_titolo: vetrina?.titolo || '' }
 }
 
-export async function getPagina(tipo, entityId, pageSlug, preview = false) {
+// `anteprima` è il token firmato che l'editor mette nell'URL: senza una firma
+// valida per QUESTA entità si vedono solo le pagine pubblicate.
+export async function getPagina(tipo, entityId, pageSlug, anteprima = null) {
   let q = supabaseAdmin
     .from('pagine')
     .select('*')
     .eq('entity_tipo', tipo)
     .eq('entity_id', entityId)
     .eq('slug', pageSlug)
-  if (!preview) q = q.eq('status', 'pubblicata')
+  if (!verificaTokenAnteprima(anteprima, tipo, entityId)) q = q.eq('status', 'pubblicata')
   const { data, error } = await q.single()
   if (error || !data) return null
   return data

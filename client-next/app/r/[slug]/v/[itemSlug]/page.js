@@ -48,7 +48,7 @@ export default async function RistoranteVetrinaDetail(props) {
   const { slug, itemSlug } = await params
   const ristorante = await getRistorante(slug)
   if (!ristorante) notFound()
-  const preview = searchParams?.preview === '1'
+  const preview = searchParams?.preview || null // token firmato dall'editor
   const el = await getElementoVetrina('ristorante', ristorante.id, itemSlug, preview)
   if (!el) notFound()
   const lang = searchParams?._lang === 'en' ? 'en' : 'it'

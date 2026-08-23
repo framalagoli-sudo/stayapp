@@ -1,5 +1,17 @@
+import crypto from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
+
+// Una gift card vale denaro: il codice dev'essere imprevedibile, quindi
+// generatore crittografico e non Math.random(). Alfabeto senza caratteri
+// ambigui (0/O, 1/I) perché è un codice che la gente legge e digita a mano.
+const ALFABETO = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+function generaCodice(lunghezza = 12) {
+  const b = crypto.randomBytes(lunghezza)
+  let out = ''
+  for (let i = 0; i < lunghezza; i++) out += ALFABETO[b[i] % ALFABETO.length]
+  return out
+}
 
 async function getAziendaId(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('azienda_id').eq('id', userId).single()
@@ -26,8 +38,7 @@ export async function POST(request) {
     const { codice, valore, intestatario_nome, intestatario_email, scadenza } = await request.json()
     if (!valore || valore <= 0) return Response.json({ error: 'Valore obbligatorio' }, { status: 400 })
 
-    const codiceFinale = (codice || '').trim().toUpperCase() ||
-      Math.random().toString(36).substring(2, 10).toUpperCase()
+    const codiceFinale = (codice || '').trim().toUpperCase() || generaCodice()
 
     const { data, error } = await supabaseAdmin.from('gift_cards').insert({
       azienda_id, codice: codiceFinale,

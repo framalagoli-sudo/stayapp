@@ -35,7 +35,7 @@ export default async function RistoranteSubPage(props) {
   const { slug, pageSlug } = await params
   const ristorante = await getRistorante(slug)
   if (!ristorante) notFound()
-  const preview = searchParams?.preview === '1'
+  const preview = searchParams?.preview || null // token firmato dall'editor
   let pagina = await getPagina('ristorante', ristorante.id, pageSlug, preview)
   if (!pagina) notFound()
   const lang = searchParams?._lang === 'en' ? 'en' : 'it'

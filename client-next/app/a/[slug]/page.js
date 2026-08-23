@@ -55,7 +55,7 @@ export default async function AttivitaPage(props) {
   }
 
   const lang = searchParams?._lang === 'en' ? 'en' : 'it'
-  const preview = searchParams?.preview === '1'
+  const preview = searchParams?.preview || null // token firmato dall'editor
   let homePage = await getPagina('attivita', attivita.id, '__home__', preview)
   let localized = attivita
   if (lang === 'en') {

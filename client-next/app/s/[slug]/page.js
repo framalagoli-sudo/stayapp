@@ -55,7 +55,7 @@ export default async function StrutturaPage(props) {
   const lang = searchParams?._lang === 'en' ? 'en' : 'it'
 
   if (showMinisito) {
-    const preview = searchParams?.preview === '1'
+    const preview = searchParams?.preview || null // token firmato dall'editor
     let homePage = await getPagina('struttura', property.id, '__home__', preview)
     let localized = property
     if (lang === 'en') {

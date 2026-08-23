@@ -51,7 +51,7 @@ export default async function RistorantePage(props) {
   const lang = searchParams?._lang === 'en' ? 'en' : 'it'
 
   if (showMinisito) {
-    const preview = searchParams?.preview === '1'
+    const preview = searchParams?.preview || null // token firmato dall'editor
     let homePage = await getPagina('ristorante', ristorante.id, '__home__', preview)
     let localized = ristorante
     if (lang === 'en') {
