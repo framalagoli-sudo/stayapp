@@ -23,6 +23,7 @@ Auto-caricato da Claude Code quando si lavora in `client-next/` (Next.js 14 App 
 - **Letture sempre fresche**: `lib/supabase-server.js` forza `cache:'no-store'` su tutte le fetch di supabase-js. Next 14 altrimenti cacha le fetch lato server → modifiche admin invisibili sul sito. Vedi `[[reference_next14_fetch_cache]]` in memoria.
 - Gli endpoint guest che servono dati live hanno `export const dynamic = 'force-dynamic'`.
 - Env `NEXT_PUBLIC_*`: inlinate al **build** → dopo un cambio serve `vercel --prod --force` (la build cache può non re-inlinarle). `deploy.ps1` usa già `--force`.
+- ⚠️ **Ogni env var nuova richiede un redeploy, anche quelle server-side.** Su Vercel le variabili sono legate al *deployment*: aggiungerne una dal dashboard **non tocca** quello già in esecuzione, che continua a girare senza. È l'avviso "redeploy to apply" che Vercel mostra dopo il salvataggio — non è un consiglio, è una condizione. Peggiora il fatto che molti moduli leggono la chiave **una volta sola al caricamento** (es. `const CHIAVE = process.env.WHATSAPP_TOKEN_KEY?.trim()` in `lib/whatsapp.js`): la variabile appare configurata sul dashboard mentre il codice la vede `undefined`, e la funzione resta spenta in silenzio. Dopo ogni inserimento: `.\deploy.ps1`.
 - Tutte le env var lette server-side vanno `.trim()` + strip BOM (Vercel inietta BOM).
 
 ---
