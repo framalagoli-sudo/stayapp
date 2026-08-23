@@ -1,6 +1,6 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
-import { applicaLoyaltyOrdine, registraRiscatto, assegnaPuntiOrdine } from '@/lib/loyalty-helpers'
+import { applicaLoyaltyOrdine } from '@/lib/loyalty-helpers'
 import { sendEmail } from '@/lib/send-email'
 import { guestEmailTemplate } from '@/lib/email-template'
 import { logError } from '@/lib/observability'
@@ -36,11 +36,14 @@ export async function POST(request, props) {
     const loyalty = await applicaLoyaltyOrdine(azienda_id, email_cliente,
       { punti_da_usare: parseInt(punti_da_usare) || 0, codice_gift_card: codice_gift_card || '' }, totale)
     const totaleFinale = Math.max(0, totale - loyalty.scontoLoyalty - loyalty.scontoGiftCard)
+    const scontoTotale = +(totale - totaleFinale).toFixed(2)
 
     let stripe_session_id = null
     let checkout_url = null
     const stripeKey = (process.env.STRIPE_SECRET_KEY ?? '').trim()
-    if (stripeKey) {
+    // Un checkout da zero euro Stripe non lo accetta: se lo sconto copre tutto,
+    // l'ordine resta da confermare a mano dal titolare.
+    if (stripeKey && totaleFinale > 0) {
       try {
         const Stripe = (await import('stripe')).default
         const stripe = new Stripe(stripeKey)
@@ -55,6 +58,16 @@ export async function POST(request, props) {
             },
             quantity: v.qty,
           })),
+          // Lo sconto deve arrivare anche alla cassa: senza, il cliente paga il
+          // pieno e si vede consumare punti e gift card lo stesso.
+          ...(scontoTotale > 0 ? {
+            discounts: [{
+              coupon: (await stripe.coupons.create({
+                amount_off: Math.round(scontoTotale * 100), currency: 'eur',
+                duration: 'once', name: 'Sconto fedeltà',
+              })).id,
+            }],
+          } : {}),
           customer_email: email_cliente,
           success_url: `${(process.env.CLIENT_URL ?? '').trim()}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${(process.env.CLIENT_URL ?? '').trim()}/checkout/annullato`,
@@ -77,8 +90,9 @@ export async function POST(request, props) {
     }).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
 
-    registraRiscatto(azienda_id, ordine.id, loyalty)
-    assegnaPuntiOrdine(azienda_id, email_cliente, ordine.id, totaleFinale)
+    // Punti e gift card NON si toccano qui: l'ordine è ancora solo un'intenzione.
+    // Si consumano e si accreditano quando risulta pagato — vedi
+    // finalizzaLoyaltyOrdine, chiamata dal webhook Stripe e dalla conferma manuale.
 
     if (process.env.RESEND_API_KEY) {
       try {
