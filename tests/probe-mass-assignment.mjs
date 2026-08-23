@@ -120,6 +120,40 @@ try {
   esito(!rottura, `il filtro regge a un entity_tipo ostile (${g3.status})${rottura ? ' — QUERY ALTERATA' : ''}`)
   if (rottura) console.log(`     risposta: ${testo3.slice(0, 200)}`)
 
+  // ── 6. Escalation di ruolo: diventare super_admin da soli ──────────────────
+  console.log('\n[6] l’admin dell’azienda A prova a promuoversi e a invadere l’azienda B')
+
+  const p6 = await fetch(`${BASE}/api/users/${A.userId}`, {
+    method: 'PATCH', headers: { Authorization: `Bearer ${A.token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role: 'super_admin' }),
+  })
+  const { data: ioDopo } = await admin.from('profiles').select('role').eq('id', A.userId).maybeSingle()
+  esito(ioDopo?.role === 'admin_azienda', `non si è promosso a super_admin (ruolo: ${ioDopo?.role}, HTTP ${p6.status})`)
+
+  // Spostare sé stessi nell'azienda della vittima ne aprirebbe tutti i dati.
+  const p7 = await fetch(`${BASE}/api/users/${A.userId}`, {
+    method: 'PATCH', headers: { Authorization: `Bearer ${A.token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ azienda_id: B.aziendaId }),
+  })
+  const { data: azDopo } = await admin.from('profiles').select('azienda_id').eq('id', A.userId).maybeSingle()
+  esito(azDopo?.azienda_id === A.aziendaId, `non si è spostato nell’azienda della vittima (HTTP ${p7.status})`)
+
+  // Invitare un collaboratore chiedendo per lui il ruolo di super_admin.
+  const invito = `probe-inv-${Date.now()}@playwright.internal`
+  const p8 = await fetch(`${BASE}/api/users/invite`, {
+    method: 'POST', headers: { Authorization: `Bearer ${A.token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: invito, full_name: 'Invitato', role: 'super_admin', azienda_id: B.aziendaId }),
+  })
+  const inv = await p8.json().catch(() => ({}))
+  if (inv?.id) {
+    const { data: pInv } = await admin.from('profiles').select('role, azienda_id').eq('id', inv.id).maybeSingle()
+    esito(pInv?.role === 'staff', `l’invitato nasce staff, non super_admin (${pInv?.role})`)
+    esito(pInv?.azienda_id === A.aziendaId, `l’invitato finisce nell’azienda di chi invita, non in quella scelta`)
+    try { await admin.auth.admin.deleteUser(inv.id) } catch {}
+  } else {
+    esito(true, `invito non riuscito (${p8.status}) — nessuna escalation possibile`)
+  }
+
   console.log('\n' + '─'.repeat(62))
   console.log(problemi ? `${problemi} PROBLEMI DA GUARDARE` : 'NESSUN PROBLEMA')
 } catch (e) {

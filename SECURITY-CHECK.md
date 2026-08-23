@@ -52,20 +52,32 @@ idempotente, agganciata al pagamento accertato. Sonda: `tests/probe-loyalty-dena
 
 ---
 
-## A3 — Campi privilegiati e mass assignment ⬜ DA FARE
+## A3 — Campi privilegiati e mass assignment ✅ FATTO (24/08)
 
 **Domanda**: posso cambiare *quale* record scrivo, o *chi sono*, infilando un campo in più nel corpo
 della richiesta?
 
-Il caso classico: una route che passa il corpo intero a `insert`/`update` accetta anche `azienda_id`,
-`role`, `permissions`, `prezzo`, `stato`. L'invariante 3 di `SECURITY.md` lo vieta, ma **non è mai stato
-verificato route per route**.
+**Trovato e chiuso — l'entità altrui.** `azienda_id` era protetto ovunque da `resolveAziendaId`
+(invariante 3 rispettato), ma **`entity_id` no**: arrivava dal client validato solo come UUID. Un'azienda
+poteva creare un proprio evento puntandolo all'entità di un'altra, e **l'evento compariva sul sito
+pubblico della vittima** — titolo, descrizione, immagine e prezzo arbitrari sulla pagina di un altro
+cliente, con le prenotazioni dirottate all'attaccante. Verificato sfruttabile in produzione su **eventi**
+e **risorse booking**.
 
-Metodo: censire ogni `insert(`/`update(` che riceve un oggetto non filtrato, e provare dal vivo a
-inviare `azienda_id` di un'altra azienda, `role: 'super_admin'`, `permissions` piene.
+Fix: primitiva `entitaDellaAzienda(profile, tipo, id)` in `lib/server-auth.js`, applicata dove l'entità
+arriva dal corpo — eventi (POST+PATCH), risorse booking (POST+PATCH), recensioni, automazioni, blog,
+newsletter. Difesa in profondità: `/api/guest/eventi` ora filtra il primo ramo della `.or()` anche per
+azienda, così un record già sporco resta invisibile; e `entity_tipo` è whitelistato prima
+dell'interpolazione nel filtro, come già si faceva in `/api/collegamenti`.
 
-Bersagli prioritari: `/api/users` e inviti (escalation di ruolo), tutte le collection admin, i campi
-`stato` degli ordini e delle prenotazioni.
+**Verificato integro — l'escalation di ruolo.** Provato dal vivo: un `admin_azienda` non riesce a
+promuoversi `super_admin` (403), non riesce a spostarsi nell'azienda di un altro (403), e un invito con
+`role: 'super_admin'` + `azienda_id` altrui produce comunque uno **staff nella propria azienda**. In
+`/api/users/[id]` `role` e `azienda_id` sono scrivibili solo da super_admin; in `/api/users/invite` il
+ruolo è hardcoded.
+
+Sonda: `tests/probe-mass-assignment.mjs` — prova anche i casi **legittimi** (propria entità), perché un
+controllo che blocca tutto non è un fix ma un guasto. Tre test in `security.spec.js`.
 
 ---
 
@@ -141,8 +153,8 @@ Il grosso è stato chiuso il 18/08 (2FA obbligatorio su tutte le aziende, passke
 
 ## Ordine consigliato
 
-1. **A3** (mass assignment) — è la classe più vicina ad A1 come gravità: porta all'escalation di ruolo.
-2. **A5** (costi AI) — l'unica che ci costa denaro *adesso*, e il chatbot è pubblico.
+1. ~~**A3** (mass assignment)~~ ✅ fatto 24/08 — l'escalation di ruolo reggeva, l'entità altrui no.
+2. **A5** (costi AI) — l'unica che ci costa denaro *adesso*, e il chatbot è pubblico. ← **prossimo**
 3. **A2 restante** (booking ed eventi) — perché il booking è l'unico di questi moduli davvero in uso.
 4. **A7** (token da `Math.random`) — ricerca del pattern, veloce.
 5. **A4** e **A6** — più lunghi, meno probabili nell'uso attuale.
