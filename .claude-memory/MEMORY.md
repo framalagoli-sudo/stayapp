@@ -1,5 +1,6 @@
 # Memory Index
 
+- [🚧 Meta: blocco "dispositivo non abituale"](reference_meta_blocco_dispositivo.md) — blocca la creazione dell'app dal 22/08; si sblocca dall'app del telefono o lasciando sedimentare il dispositivo, oppure fa creare l'app a un altro account
 - [🌐 Registrare i domini per i clienti](project_registrar_domini.md) — sblocca l'onboarding (il DNS altrui è ciò che blocca la messa online); fornitore sostituibile per scelta, ⚠️ né Cloudflare né Vercel vendono `.it`
 - [⚠️ Codemod params async (22/08/2026)](reference_codemod_params_async.md) — fatto, pronti per Next 16; ma il codemod ROMPE i file che già facevano `await params` e il build non lo rileva: controllare gli orfani e provare il server
 - [🧪 Smoke con risultati parziali](reference_smoke_corse_parziali.md) — 37/54/58 invece di 66 = due corse sovrapposte (il teardown cancella `.auth/ci-token.json`) o smoke lanciato durante un deploy: non è una regressione

@@ -502,7 +502,7 @@ Il refactor verso "Business" generico richiede principalmente:
 
 ### Aperte (aggiornate 2026-08-22)
 
-- [ ] 🔴 **Rientrare nell'account Facebook** (recupero password in avaria il 22/08) e creare l'app su Meta for Developers → `META_APP_ID` + `META_APP_SECRET` su Vercel. È l'unica cosa che separa il modulo WhatsApp dal funzionare
+- [ ] 🔴 **Creare l'app su Meta for Developers** → `META_APP_ID` + `META_APP_SECRET` su Vercel: è l'unica cosa che separa il modulo WhatsApp dal funzionare. ⚠️ **Bloccato dal blocco antifrode di Meta** ("dispositivo che non usi abitualmente"): provare dall'app del telefono, o far creare l'app a un altro account anziano. Dettagli e piano B in `WHATSAPP.md` §12
 - [ ] **Business Verification** su Meta: serve per collegare i clienti veri (col numero di test si può provare prima)
 - [x] `WHATSAPP_TOKEN_KEY` su Vercel ✅ 22/08
 

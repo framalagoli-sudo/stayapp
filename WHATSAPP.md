@@ -179,3 +179,19 @@ Piano di attivazione consigliato:
 ### Piano B se l'attrito è bloccante
 
 Passare a **Solution Partner**: paghiamo noi Meta e rifatturiamo, il cliente non vede né Meta né carte. Costa rischio di credito, complessità fiscale e requisiti Meta diversi. Non è la partenza, ma è la via d'uscita se metà dei clienti si ferma davanti alla verifica.
+
+---
+
+## 12. ⚠️ Bloccante attuale (dal 22/08/2026)
+
+Il codice delle fasi 1-2 è **completo e in produzione**, ma il modulo dorme: mancano `META_APP_ID` e `META_APP_SECRET`, e non si riesce a creare l'app perché **Meta blocca l'accesso a developers.facebook.com**:
+
+> *"abbiamo notato che stai usando un dispositivo che non usi abitualmente… Ti consentiremo di apportare questa modifica dopo che avrai usato questo dispositivo per un po' di tempo"*
+
+È il blocco antifrode, e scatta anche sul PC di sempre (guarda cookie e impronta del browser). Vie d'uscita, in ordine:
+
+1. **dall'app Facebook del telefono**, se loggata da tempo: è il dispositivo più fidato per Meta;
+2. **lasciar sedimentare** il PC qualche giorno usandolo normalmente, senza cancellare cookie né VPN — e **senza insistere**, perché ogni tentativo fallito peggiora il punteggio;
+3. **far creare l'app a un altro account** Facebook anziano (socio, collaboratore) e farsi aggiungere come amministratore: l'app non deve nascere per forza dall'account del titolare.
+
+**Piano B se il blocco dura**: intermediario **a consumo** (tipo Twilio, ~0,005 $/messaggio sopra Meta, nessun canone) e **non a canone** (360dialog: 49 €/mese per numero, o 250 €/mese per il programma partner — insostenibile sotto i 100 €/mese di canone cliente). L'intermediario toglie solo la parte da Tech Provider: l'account Meta Business del cliente **serve comunque**. Il cambio costa poco perché Meta è isolata in `lib/whatsapp.js`.
