@@ -1,6 +1,7 @@
 import { supabaseAdmin } from './supabase-server'
 import { getCollegamenti } from './guest-utils'
 import { verificaTokenAnteprima } from './preview-token'
+import { allaFormaStorica } from './entita'
 
 // Query dirette a Supabase dai Server Components — nessun HTTP hop intermedio.
 // Più sicure (nessun endpoint esposto chiamato internamente), più stabili
@@ -22,40 +23,48 @@ export async function getAziendaLegale(aziendaId) {
   return data || null
 }
 
-export async function getStruttura(slug) {
+// Le tre entità si leggono ora dalla tabella unificata. Cambia da dove arrivano
+// i dati, non cosa contengono: `allaFormaStorica` restituisce gli stessi campi
+// di prima (`modules`, `pwa`, `tipo` come settore) così pagine e componenti non
+// si accorgono del passaggio. Ogni funzione porta con sé i campi che quel
+// verticale mostra davvero — non `select('*')`, che porterebbe fuori anche la
+// password del WiFi sulle pagine pubbliche.
+// ⚠️ Sono ESATTAMENTE i campi che ogni verticale chiedeva prima, né uno di più.
+// Unificare dà la possibilità di avere tutti i campi; non li accende da sola.
+// Chiedendone qualcuno in più il sito cambierebbe da solo: aggiungendo `email`
+// alle strutture, l'indirizzo è comparso sulla pagina di un cliente che non lo
+// mostrava. Un passaggio infrastrutturale dev'essere invisibile — mostrare un
+// campo nuovo è una decisione di prodotto, e si prende a parte.
+const CAMPI_STRUTTURA = 'id, azienda_id, tipo, settore, slug, name, description, address, phone, whatsapp, wifi_name, wifi_password, checkin_time, checkout_time, rules, amenities, logo_url, logo_dark_url, cover_url, plan, moduli, theme, services, gallery, restaurant, activities, excursions, minisito, privacy_data, chatbot'
+const CAMPI_RISTORANTE = 'id, azienda_id, tipo, settore, slug, name, description, address, phone, email, schedule, logo_url, logo_dark_url, cover_url, theme, gallery, menu, moduli, minisito, privacy_data, chatbot'
+const CAMPI_ATTIVITA = 'id, azienda_id, tipo, settore, slug, name, description, address, phone, email, schedule, logo_url, logo_dark_url, cover_url, theme, gallery, services, minisito, privacy_data, chatbot, moduli'
+
+async function leggiEntita(slug, tipo, campi) {
   const { data, error } = await supabaseAdmin
-    .from('properties')
-    .select('id, azienda_id, slug, name, description, address, phone, whatsapp, wifi_name, wifi_password, checkin_time, checkout_time, rules, amenities, logo_url, logo_dark_url, cover_url, plan, modules, theme, services, gallery, restaurant, activities, excursions, minisito, privacy_data, chatbot')
-    .eq('slug', slug)
-    .eq('active', true)
-    .single()
+    .from('entita').select(campi).eq('slug', slug).eq('tipo', tipo).eq('active', true).maybeSingle()
   if (error || !data) return null
+  return allaFormaStorica(data)
+}
+
+export async function getStruttura(slug) {
+  const data = await leggiEntita(slug, 'struttura', CAMPI_STRUTTURA)
+  if (!data) return null
   const collegamenti = await getCollegamenti('struttura', data.id)
   const azienda_legale = await getAziendaLegale(data.azienda_id)
   return { ...data, collegamenti, azienda_legale }
 }
 
 export async function getRistorante(slug) {
-  const { data, error } = await supabaseAdmin
-    .from('ristoranti')
-    .select('id, azienda_id, slug, name, description, address, phone, email, schedule, logo_url, logo_dark_url, cover_url, theme, gallery, menu, modules, minisito, privacy_data, chatbot')
-    .eq('slug', slug)
-    .eq('active', true)
-    .single()
-  if (error || !data) return null
+  const data = await leggiEntita(slug, 'ristorante', CAMPI_RISTORANTE)
+  if (!data) return null
   const collegamenti = await getCollegamenti('ristorante', data.id)
   const azienda_legale = await getAziendaLegale(data.azienda_id)
   return { ...data, collegamenti, azienda_legale }
 }
 
 export async function getAttivita(slug) {
-  const { data, error } = await supabaseAdmin
-    .from('attivita')
-    .select('id, azienda_id, slug, name, tipo, description, address, phone, email, schedule, logo_url, logo_dark_url, cover_url, theme, gallery, services, minisito, privacy_data, chatbot, pwa')
-    .eq('slug', slug)
-    .eq('active', true)
-    .single()
-  if (error || !data) return null
+  const data = await leggiEntita(slug, 'attivita', CAMPI_ATTIVITA)
+  if (!data) return null
   const azienda_legale = await getAziendaLegale(data.azienda_id)
   return { ...data, azienda_legale }
 }

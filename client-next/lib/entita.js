@@ -82,6 +82,25 @@ export function moduloAttivo(ent, chiave, predefinito = false) {
   return chiave in m ? !!m[chiave] : predefinito
 }
 
+// Traduce una riga di `entita` nella forma che il resto del codice conosce da
+// sempre. Durante la migrazione si cambia la SORGENTE dei dati, non il contratto:
+// componenti e pagine continuano a leggere `modules`, `pwa` e — per le attività —
+// `tipo` come descrizione del settore. Così il passaggio non tocca decine di
+// file e ogni pezzo migrato si può verificare da solo.
+//
+// Quando tutto leggerà da qui, questi tre alias si tolgono in un colpo: è un
+// debito dichiarato, con una scadenza, non una scelta di stile.
+export function allaFormaStorica(ent) {
+  if (!ent) return null
+  const { moduli, settore, ...resto } = ent
+  if (ent.tipo === 'attivita') {
+    // Nelle attività `tipo` era la descrizione del settore, mostrata come
+    // sottotitolo nella PWA e nell'editor.
+    return { ...resto, tipo: settore || null, pwa: moduli || {} }
+  }
+  return { ...resto, modules: moduli || {} }
+}
+
 // Preset per tipo: cosa si accende quando un cliente crea una nuova entità.
 // Sono suggerimenti di partenza, non vincoli — si cambiano dal pannello.
 export const MODULI_PREDEFINITI = {
