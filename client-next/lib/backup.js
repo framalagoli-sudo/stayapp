@@ -1,17 +1,38 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { S3Client, PutObjectCommand, ListObjectsV2Command, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { gzip } from 'zlib'
+import { logError } from '@/lib/observability'
 import { promisify } from 'util'
 
 const gzipAsync = promisify(gzip)
 const RETENTION_DAYS = 30
 
+// ⚠️ QUESTA LISTA VA AGGIORNATA A OGNI MODULO NUOVO.
+// Era rimasta ferma a quando il prodotto aveva meno funzioni: il 24/08/2026
+// salvava 1504 righe e ne lasciava fuori 1404 — comprese le `pagine`, cioè il
+// CONTENUTO DEI SITI dei clienti, e i `domini`. Il backup girava ogni notte e
+// nessuno se n'era accorto, perché un backup incompleto ha lo stesso aspetto di
+// uno completo finché non serve.
+// Regola: se una tabella contiene dati che un cliente si arrabbierebbe a
+// perdere, sta qui dentro.
 const TABLES = [
-  'aziende', 'profiles', 'properties', 'ristoranti', 'attivita',
-  'requests', 'contatti', 'newsletters', 'page_views', 'demo_requests',
-  'eventi', 'event_bookings', 'articoli', 'blog_categories',
-  'risorse', 'risorse_promozioni', 'prenotazioni',
-  'collegamenti', 'messages',
+  // identità e struttura
+  'aziende', 'profiles', 'properties', 'ristoranti', 'attivita', 'collegamenti',
+  // il sito: è il prodotto più usato, e mancava del tutto
+  'pagine', 'sito_snapshots', 'landing_seo', 'domini',
+  // clienti e richieste
+  'contatti', 'requests', 'messages', 'demo_requests',
+  // moduli
+  'eventi', 'event_bookings', 'risorse', 'risorse_promozioni', 'prenotazioni',
+  'articoli', 'blog_categories', 'newsletters',
+  'vetrine', 'vetrina_elementi',
+  'form_builder', 'form_submissions', 'preventivi', 'recensioni',
+  'prodotti', 'ordini', 'gift_cards', 'loyalty_programs', 'loyalty_points',
+  'survey', 'survey_risposte', 'automazioni', 'automazioni_log',
+  'whatsapp_account', 'whatsapp_template', 'whatsapp_campagne', 'whatsapp_optin',
+  'translations', 'webhooks', 'platform_config',
+  // tracciamento e conformità
+  'page_views', 'audit_log',
 ]
 
 // Vercel può iniettare un BOM o spazi invisibili nelle env var → l'SDK AWS
@@ -62,6 +83,18 @@ export async function runBackup() {
       backup.tables[table] = { error: err.message }
       rowCounts[table] = `ERRORE: ${err.message}`
     }
+  }
+
+  // Un backup a metà ha lo stesso aspetto di uno completo: il file c'è, pesa,
+  // sembra a posto. Se una tabella non è stata esportata va detto SUBITO, non
+  // il giorno in cui la si cerca dentro l'archivio.
+  const falliteEsportazioni = Object.entries(rowCounts)
+    .filter(([, v]) => typeof v === 'string' && v.startsWith('ERRORE'))
+    .map(([t]) => t)
+  if (falliteEsportazioni.length) {
+    await logError('backup/tabelle-mancanti',
+      `Il backup è stato scritto SENZA queste tabelle: ${falliteEsportazioni.join(', ')}. L'archivio è incompleto.`,
+      { alert: true })
   }
 
   const compressed = await gzipAsync(Buffer.from(JSON.stringify(backup), 'utf8'))
