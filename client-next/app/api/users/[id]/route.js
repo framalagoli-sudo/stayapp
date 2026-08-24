@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
+import { logError } from '@/lib/observability'
 async function getCallerProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
   return data
@@ -32,6 +33,18 @@ export async function PATCH(request, props) {
       const { error } = await supabaseAdmin.from('profiles').update(profileUpdates).eq('id', params.id)
       if (error) return Response.json({ error: error.message }, { status: 500 })
     }
+
+    // Un super_admin vede TUTTE le aziende: è la chiave universale della
+    // piattaforma, e per scelta ne esiste uno solo. Se ne compare un altro — per
+    // errore o perché qualcuno è entrato nell'account che può crearli — va saputo
+    // subito, non alla prossima verifica manuale.
+    if (profileUpdates.role === 'super_admin') {
+      const { data: promosso } = await supabaseAdmin.auth.admin.getUserById(params.id)
+      await logError('ruolo/super-admin-creato',
+        `${promosso?.user?.email || params.id} è stato promosso a super_admin da ${user.email || user.id}`,
+        { alert: true })
+    }
+
     return Response.json({ success: true })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
