@@ -1,5 +1,6 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
+import { confermaPostiPrenotazione } from '@/lib/capienza'
 import { sendWebhooks } from '@/lib/send-webhooks'
 import { triggerAutomazione } from '@/lib/guest-utils'
 import { syncBookingCreate } from '@/lib/google-calendar-stub'
@@ -150,6 +151,14 @@ export async function POST(request) {
 
     const { data: prenotazione, error: pe } = await supabaseAdmin.from('prenotazioni').insert(payload).select().single()
     if (pe) return Response.json({ error: pe.message }, { status: 500 })
+
+    // La disponibilità qui non era verificata affatto: gli slot liberi li calcolava
+    // solo la pagina, e chiamando l'API si prenotava un posto già pieno. Il
+    // controllo sta dopo l'inserimento perché deve reggere anche a richieste
+    // simultanee — chi eccede la capienza si ritira, prima di ogni notifica.
+    if (!(await confermaPostiPrenotazione(risorsa, prenotazione.id))) {
+      return Response.json({ error: 'Questo orario non è più disponibile' }, { status: 409 })
+    }
 
     // Fire-and-forget: email + webhook + Google Calendar
     getEntityWhatsapp(risorsa.entity_tipo, risorsa.entity_id)

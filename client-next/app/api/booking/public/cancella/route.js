@@ -3,31 +3,67 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isUUID = v => UUID_RE.test(v)
 
+// La cancellazione è una MUTAZIONE e sta sulla POST, non sulla GET.
+//
+// Prima bastava aprire il link per annullare la prenotazione: i client di posta e
+// gli antivirus aziendali seguono i link in anteprima, quindi una prenotazione
+// vera poteva sparire senza che il cliente avesse cliccato niente — e senza che
+// nessuno capisse perché. La GET ora si limita a mostrare cosa si sta per
+// disdire; a cancellare è il pulsante di conferma.
+
+async function caricaPrenotazione(token) {
+  if (!isUUID(token)) return { errore: 'Token non valido', status: 400 }
+  const { data: pren, error } = await supabaseAdmin.from('prenotazioni')
+    .select('id, data, ora_inizio, stato, cliente_nome, n_persone, risorse(nome, cancellazione_ore)')
+    .eq('cancellation_token', token).single()
+  if (error || !pren) return { errore: 'Prenotazione non trovata', status: 404 }
+  return { pren }
+}
+
+// Oltre il termine non si disdice più: la regola la decide il titolare.
+function fuoriTermine(pren) {
+  if (!pren.ora_inizio) return null
+  const ore = pren.risorse?.cancellazione_ore || 24
+  const appuntamento = new Date(`${pren.data}T${pren.ora_inizio}`)
+  if (new Date() > new Date(appuntamento.getTime() - ore * 3600000)) {
+    return `Non è più possibile cancellare (limite ${ore}h prima)`
+  }
+  return null
+}
+
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
-    const token = searchParams.get('token')
-    if (!isUUID(token)) return Response.json({ error: 'Token non valido' }, { status: 400 })
+    const { pren, errore, status } = await caricaPrenotazione(searchParams.get('token'))
+    if (errore) return Response.json({ error: errore }, { status })
 
-    const { data: pren, error } = await supabaseAdmin.from('prenotazioni')
-      .select('*, risorse(nome, cancellazione_ore)')
-      .eq('cancellation_token', token)
-      .single()
+    return Response.json({
+      cancellabile: pren.stato !== 'cancellata' && !fuoriTermine(pren),
+      gia_cancellata: pren.stato === 'cancellata',
+      motivo: pren.stato === 'cancellata' ? 'Questa prenotazione è già stata cancellata' : fuoriTermine(pren),
+      prenotazione: {
+        risorsa: pren.risorse?.nome || '',
+        data: pren.data, ora: pren.ora_inizio,
+        cliente: pren.cliente_nome, persone: pren.n_persone,
+      },
+    })
+  } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
+}
 
-    if (error || !pren) return Response.json({ error: 'Prenotazione non trovata' }, { status: 404 })
+export async function POST(request) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const { pren, errore, status } = await caricaPrenotazione(searchParams.get('token'))
+    if (errore) return Response.json({ error: errore }, { status })
     if (pren.stato === 'cancellata') return Response.json({ error: 'Già cancellata' }, { status: 400 })
 
-    if (pren.ora_inizio) {
-      const appuntamento = new Date(`${pren.data}T${pren.ora_inizio}`)
-      const limite = new Date(appuntamento.getTime() - (pren.risorse?.cancellazione_ore || 24) * 3600000)
-      if (new Date() > limite) {
-        return Response.json({ error: `Non è più possibile cancellare (limite ${pren.risorse?.cancellazione_ore || 24}h prima)` }, { status: 400 })
-      }
-    }
+    const tardi = fuoriTermine(pren)
+    if (tardi) return Response.json({ error: tardi }, { status: 400 })
 
-    await supabaseAdmin.from('prenotazioni')
+    const { error } = await supabaseAdmin.from('prenotazioni')
       .update({ stato: 'cancellata', updated_at: new Date().toISOString() })
       .eq('id', pren.id)
+    if (error) return Response.json({ error: error.message }, { status: 500 })
 
     return Response.json({ ok: true, messaggio: 'Prenotazione cancellata con successo' })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }

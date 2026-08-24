@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { recomputeEventSeats } from '@/lib/event-seats'
+import { confermaPostiEvento } from '@/lib/capienza'
 import { sendEmail } from '@/lib/send-email'
 import { emailTemplate, guestEmailTemplate } from '@/lib/email-template'
 import { getAziendaLegale } from '@/lib/guest-data'
@@ -47,6 +48,14 @@ export async function POST(request, props) {
       seats: reqSeats, total_amount: price * reqSeats, notes: notes || null, status: 'pending',
     }).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
+
+    // Il controllo qui sopra legge i posti prima di inserire: due richieste
+    // simultanee lo superano entrambe. Qui si verifica l'ordine di arrivo e chi
+    // è in eccesso si ritira — prima di scrivere email a chiunque.
+    if (!(await confermaPostiEvento(params.id, data.id))) {
+      await recomputeEventSeats(params.id)
+      return Response.json({ error: 'Posti non disponibili' }, { status: 400 })
+    }
 
     // Le prenotazioni in attesa riservano subito i posti (anti-overbooking).
     await recomputeEventSeats(params.id)
