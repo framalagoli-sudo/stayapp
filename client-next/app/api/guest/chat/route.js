@@ -12,13 +12,21 @@ export async function POST(request) {
     if (!entity_tipo || !entity_id || !Array.isArray(messages) || messages.length === 0)
       return Response.json({ error: 'entity_tipo, entity_id, messages obbligatori' }, { status: 400 })
 
-    const tableMap = { struttura: 'properties', ristorante: 'ristoranti', attivita: 'attivita' }
-    const table = tableMap[entity_tipo]
-    if (!table) return Response.json({ error: 'entity_tipo non valido' }, { status: 400 })
+    // Le tre tabelle non hanno le stesse colonne: `properties` non ha `schedule`,
+    // `ristoranti` non ha `services`. Chiederle tutte a tutte faceva fallire la
+    // query e il chatbot rispondeva "Entità non trovata" a qualsiasi domanda —
+    // muto su strutture e ristoranti, cioè su due verticali su tre.
+    // Campi elencati uno per uno di proposito: qui NON deve entrare
+    // `wifi_password`, che sta in `properties` e finirebbe nel prompt.
+    const FONTE = {
+      struttura:  { tabella: 'properties',  campi: 'name, description, address, phone, email, services, minisito' },
+      ristorante: { tabella: 'ristoranti',  campi: 'name, description, address, phone, email, schedule, minisito' },
+      attivita:   { tabella: 'attivita',    campi: 'name, description, address, phone, email, schedule, services, minisito' },
+    }[entity_tipo]
+    if (!FONTE) return Response.json({ error: 'entity_tipo non valido' }, { status: 400 })
 
-    const { data: entity, error } = await supabaseAdmin.from(table)
-      .select('name, description, address, phone, email, schedule, services, minisito')
-      .eq('id', entity_id).single()
+    const { data: entity, error } = await supabaseAdmin.from(FONTE.tabella)
+      .select(FONTE.campi).eq('id', entity_id).single()
     if (error || !entity) return Response.json({ error: 'Entità non trovata' }, { status: 404 })
 
     const mini = entity.minisito || {}
