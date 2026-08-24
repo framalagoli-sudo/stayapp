@@ -24,6 +24,15 @@ export async function PATCH(request, props) {
       const { error } = await supabaseAdmin.auth.admin.updateUserById(params.id, { ban_duration: banned ? '87600h' : 'none' })
       if (error) return Response.json({ error: error.message }, { status: 500 })
     }
+    // Di super_admin ne esiste UNO solo, per scelta: è la chiave che apre tutte
+    // le aziende, e la piattaforma ha un unico proprietario. Nessuno può
+    // crearne altri da qui — nemmeno un super_admin, nemmeno per sbaglio.
+    // Se un giorno servisse davvero (recupero dell'accesso), si fa dal SQL
+    // Editor di Supabase: un gesto deliberato, non una spunta nel pannello.
+    if (role === 'super_admin') {
+      return Response.json({ error: 'Il ruolo super_admin non è assegnabile' }, { status: 403 })
+    }
+
     const profileUpdates = {}
     if (role !== undefined && caller.role === 'super_admin') profileUpdates.role = role
     if (azienda_id !== undefined && caller.role === 'super_admin') profileUpdates.azienda_id = azienda_id || null
@@ -32,17 +41,6 @@ export async function PATCH(request, props) {
     if (Object.keys(profileUpdates).length > 0) {
       const { error } = await supabaseAdmin.from('profiles').update(profileUpdates).eq('id', params.id)
       if (error) return Response.json({ error: error.message }, { status: 500 })
-    }
-
-    // Un super_admin vede TUTTE le aziende: è la chiave universale della
-    // piattaforma, e per scelta ne esiste uno solo. Se ne compare un altro — per
-    // errore o perché qualcuno è entrato nell'account che può crearli — va saputo
-    // subito, non alla prossima verifica manuale.
-    if (profileUpdates.role === 'super_admin') {
-      const { data: promosso } = await supabaseAdmin.auth.admin.getUserById(params.id)
-      await logError('ruolo/super-admin-creato',
-        `${promosso?.user?.email || params.id} è stato promosso a super_admin da ${user.email || user.id}`,
-        { alert: true })
     }
 
     return Response.json({ success: true })

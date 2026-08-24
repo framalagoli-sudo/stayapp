@@ -10,7 +10,7 @@ import {
   LayoutDashboard, BarChart2, Shield,
   Inbox, CalendarCheck, Calendar, CalendarDays, Package, ListChecks,
   MessageCircle, FileText, Newspaper, Mail, Users,
-  QrCode, UserCheck, ClipboardList, LogOut,
+  QrCode, UserCheck, ClipboardList, LogOut, Activity,
   Building, Building2, Store, Zap, Webhook, BotMessageSquare, Star, Settings,
   Info, Layers, Wrench, Image, Palette, MapPin, Globe, Lock, Bot, UtensilsCrossed,
   FormInput, ShoppingBag, Sparkles, BarChart3, Gift, SearchCheck, LifeBuoy, LayoutTemplate, Wand2,
@@ -470,6 +470,7 @@ export default function AdminLayout({ children }) {
             <NavItem to="/admin/ristoranti" icon={Store}     label="Ristoranti" />
             <NavItem to="/admin/attivita"   icon={Zap}       label="Attività" />
             <NavItem to="/admin/users"      icon={Users}     label="Utenti" />
+            <NavItem to="/admin/diagnostica" icon={Activity}  label="Stato piattaforma" />
           </>
         )}
 
