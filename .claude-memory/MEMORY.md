@@ -1,6 +1,8 @@
 # Memory Index
 
 - [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: dentro il CHECK COMPLETO, punto A sicurezza (A1+A2-shop fatti; prossimi A3 mass assignment, A5 costi AI); roadmap in `SECURITY-CHECK.md`
+- [🛡️ Punto A (sicurezza) CHIUSO — 24/08](project_check_sicurezza_punto_A.md) — 8 sotto-fasi, 6 con buchi veri corretti; il metodo per classi separate è ciò che li ha fatti emergere (A1 è cieca sulle richieste legittime). Dettaglio in `SECURITY-CHECK.md`
+- [🎭 entity_id dal corpo va verificato](reference_entita_dal_corpo.md) — `azienda_id` era protetto, `entity_id` no → si pubblicava un proprio evento sul sito di un'ALTRA azienda; usare `entitaDellaAzienda`. Vale anche per gli upload, che aggiornano il record
 - [🔍 Sessione 23/08 — check sicurezza A1 + buco loyalty](project_session_2026_08_23_check_A.md) — 202 route con credenziali sbagliate (multi-tenant integro), 4 buchi chiusi + valore consumato senza pagamento; shop/loyalty a ZERO uso, Stripe non configurato
 - [💰 Il valore si consuma solo a pagamento accertato](reference_valore_a_pagamento_accertato.md) — invariante 11: punti/gift card/posti mai alla creazione dell'ordine, sempre idempotenti; classe di buchi che la sonda sui permessi NON vede
 - [🪝 Webhook su www, mai sull'apex](reference_webhook_url_www.md) — l'apex dà 308 e per Svix un 3xx è consegna fallita; ⚠️ un invio email fallito dà lo STESSO sintomo di un webhook morto: prima guardare i log `[email:`

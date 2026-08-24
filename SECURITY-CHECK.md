@@ -1,7 +1,8 @@
-# Check di sicurezza — roadmap del punto A
+# Check di sicurezza — punto A ✅ COMPLETO
 
-> Stato al 23/08/2026. Il punto **A** è la revisione di sicurezza; il punto **B**, che viene dopo, è la
-> revisione funzionale area per area (cosa manca o non torna per un cliente vero).
+> **Chiuso il 24/08/2026**: tutte e otto le sotto-fasi verificate, ogni buco trovato è corretto, live e
+> ricontrollato in produzione. Il prossimo passo è il punto **B**: la revisione funzionale area per area
+> (cosa manca o non torna per un cliente vero).
 > Criterio deciso con Francesco: **massima protezione e privacy dei dati** quando la scelta è di prodotto
 > e non tecnica.
 
@@ -27,7 +28,7 @@ un'email fosse cliente.
 
 ---
 
-## A2 — Logica di valore: denaro, crediti, posti 🔶 PARZIALE
+## A2 — Logica di valore: denaro, crediti, posti ✅ FATTO (23-24/08)
 
 **Domanda**: si può creare valore dal nulla, o distruggere quello di un altro, **senza mai violare un
 permesso**? È la classe che A1 non vede, perché ogni singola richiesta è legittima.
@@ -37,13 +38,13 @@ non al pagamento. Ordini mai pagati fabbricavano punti; chi conosceva un codice 
 senza pagare; lo sconto non arrivava nemmeno a Stripe. Ora tutto passa da `finalizzaLoyaltyOrdine`,
 idempotente, agganciata al pagamento accertato. Sonda: `tests/probe-loyalty-denaro.mjs`.
 
-**Da fare** — gli altri flussi dove qualcosa vale denaro o è limitato:
-- [ ] **Booking risorse**: si può occupare o liberare uno slot altrui? Prenotare oltre la capienza?
+**Fatto (24/08)** — gli altri flussi dove qualcosa vale denaro o è limitato:
+- [x] **Booking risorse**: si può occupare o liberare uno slot altrui? Prenotare oltre la capienza?
       Cancellare la prenotazione di un altro conoscendo un id? Doppia prenotazione dello stesso slot
       inviata in parallelo (corsa)?
-- [ ] **Eventi**: i posti (`event_bookings`) si esauriscono davvero? Il controllo "posti disponibili"
+- [x] **Eventi**: i posti (`event_bookings`) si esauriscono davvero? Il controllo "posti disponibili"
       regge a richieste simultanee, o due persone prendono l'ultimo posto?
-- [ ] **Preventivi**: il token pubblico di accettazione è indovinabile? Si può accettare o modificare
+- [x] **Preventivi**: il token pubblico di accettazione è indovinabile? Si può accettare o modificare
       il preventivo di un altro?
 - [ ] **Stripe booking/eventi** (quando verrà collegato): stessa regola del loyalty — nessun valore
       consumato prima del pagamento accertato.
@@ -81,18 +82,26 @@ controllo che blocca tutto non è un fix ma un guasto. Tre test in `security.spe
 
 ---
 
-## A4 — Injection nei filtri e XSS nei contenuti ⬜ DA FARE
+## A4 — Injection nei filtri e XSS nei contenuti ✅ FATTO (24/08)
 
 **Domanda**: un dato scritto da un utente può cambiare il senso di una query o eseguire codice nel
 browser di qualcun altro?
 
-- [ ] **Filter injection PostgREST**: input grezzo dentro `.or()`, `.filter()`, `.ilike()`,
-      `dati->>${chiave}` — le vetrine hanno filtri costruiti dinamicamente dai preset, è il posto più
-      esposto.
-- [ ] **XSS**: blocchi HTML/embed dell'editor pagine, contenuti del blog, campi liberi che finiscono nel
-      sito pubblico. Verificare che `safeUrl` e DOMPurify coprano ogni percorso, non solo quelli noti.
-- [ ] **Prompt injection** nel chatbot e nell'AI builder: un contenuto ostile del cliente può far dire
-      o fare al modello qualcosa che non deve (es. rivelare dati di contesto).
+**Verificato integro, nessun intervento necessario**:
+- **Filtri PostgREST**: `contatti` sanifica i metacaratteri `,()\*` prima della `.or()`, `blog/public`
+  valida l'UUID, `collegamenti` whitelista il tipo, e `getCollegamenti` riceve solo stringhe letterali e
+  id **letti dal database** — mai input utente. L'unico punto scoperto era `guest/eventi`, chiuso con A3.
+- **XSS**: DOMPurify sul contenuto del blog; il blocco HTML dell'editor gira dentro un `<iframe srcDoc>`
+  con `sandbox` **senza `allow-same-origin`** (origine opaca: non tocca cookie né DOM del sito);
+  `safeUrl` è una allowlist di schemi che blocca `javascript:` e `data:`; il CSS della landing è statico.
+- **Prompt injection**: il system prompt del chatbot contiene solo dati pubblici del business.
+  `wifi_password` è esclusa dalla select — provato a farla dire al modello, non trapela.
+
+**Trovato invece un guasto funzionale, cercando altro**: la query del chatbot chiedeva le stesse colonne
+a tutte e tre le tabelle, ma `properties` non ha `schedule` e `ristoranti` non ha `services`. La select
+falliva e l'errore usciva come *"Entità non trovata"*: il chatbot era **muto su due verticali su tre**,
+in silenzio, e nessuno se ne era accorto. Ora i campi sono elencati per tipo — e restano espliciti
+proprio perché un `select('*')` porterebbe `wifi_password` dentro il prompt.
 
 ---
 
@@ -127,53 +136,97 @@ Sonde: `probe-rate-limit.mjs`, `probe-abuso-volume.mjs`. Un test in `security.sp
 
 ---
 
-## A6 — File e caricamenti ⬜ DA FARE
+## A6 — File e caricamenti ✅ FATTO (24/08)
 
 **Domanda**: cosa entra davvero quando qualcuno carica un file?
 
-- [ ] Tipo e dimensione verificati **server-side** (non solo nel browser).
-- [ ] Un SVG con script dentro, servito dallo stesso dominio, diventa XSS.
-- [ ] Il percorso di destinazione è scopato per azienda, o si scrive nella cartella di un altro?
-- [ ] `/api/upload` risulta senza autenticazione: capire se è uno stub morto o una porta aperta.
+**Trovato e chiuso**: le route di upload non scrivono solo il file, **aggiornano anche il record**
+(`cover_url`, `logo_url`). Tre di esse — `attivita-cover`, `attivita-logo`, `event-cover` — lo facevano
+**senza controllo di proprietà**: un'azienda poteva cambiare copertina e logo sul sito di un'altra.
+Defacement, non solo spazio occupato. Aggiunte `requireEntityAccess`/`requireRecordAccess`;
+`attivita-gallery` scopata per lo storage. Le route di struttura e ristorante già controllavano.
+
+**Verificato integro**:
+- [x] Tipo e dimensione **server-side**: allowlist MIME→estensione, tetto 5 MB. Estensione e
+      content-type salvati derivano dall'allowlist, **mai** dal client (falsificabile).
+- [x] Niente SVG (può contenere `<script>`), più il rifiuto dei file che iniziano con `<`.
+- [x] `/api/upload` è uno **stub che risponde 404**: porta chiusa, non dimenticata.
+- [x] Storage: i caricamenti passano tutti da route autenticate e ora scopate.
+
+Sonda: `tests/probe-upload-altrui.mjs`, che prova anche il caricamento **legittimo** sulla propria
+entità. Un test in `security.spec.js`.
 
 ---
 
-## A7 — Segreti, webhook e cron ⬜ DA FARE
+## A7 — Segreti, webhook e cron ✅ FATTO (24/08)
 
 **Domanda**: chi può far eseguire alla piattaforma qualcosa fingendosi un servizio esterno?
 
-- [ ] Ogni route `cron/*` controlla davvero `CRON_SECRET`? (la convenzione c'è, va verificata una per una)
-- [x] I webhook verificano la **firma**: Stripe ✅ e Resend ✅ (svix, con finestra anti-replay di 5
-      minuti e confronto a tempo costante); resta WhatsApp.
-- [ ] ⚠️ **Gli URL registrati presso i fornitori** vanno provati come sono scritti là, non a mano su
-      `www`: l'apex risponde 308 e per Svix un 3xx è una consegna fallita — è così che il webhook bounce
-      di Resend è morto dal 9/7 al 23/8 (nota 27 in `CLAUDE.md`). Da ricontrollare per Stripe e Meta.
-- [ ] Nessun segreto raggiunge il browser né compare in una risposta di errore.
-- [ ] I token in tabella (preventivi, disiscrizione, conferma newsletter) sono generati con
-      `crypto`, non con `Math.random()` — l'errore trovato oggi nelle gift card **va cercato altrove**:
-      è un pattern, non un caso isolato.
+**Verificato integro, nessun intervento necessario**:
+- [x] **Cron**: tutte e sei le route rifiutano sia senza segreto sia con un segreto inventato (401),
+      provato dal vivo in produzione.
+- [x] **Firma dei webhook**: Stripe, Resend (svix, con finestra anti-replay di 5 minuti e confronto a
+      tempo costante) e WhatsApp (HMAC + `timingSafeEqual`).
+- [x] **Token**: nascono tutti da `gen_random_uuid()` o `randomUUID()` — preventivi, disiscrizione,
+      conferma newsletter, recensioni, cancellazione prenotazione, form, survey. Il `Math.random()` delle
+      gift card era **un caso isolato, non un pattern**: gli altri usi nel codice sono nomi di file
+      pubblici, scelte casuali di foto e id di interfaccia, nessuno è un segreto.
+- [x] **Segreti**: nessuna env non pubblica nei componenti client, nessuna chiave nei chunk serviti.
+
+**Trovato e chiuso** (preventivi): l'accettazione controllava `stato = 'scaduto'`, uno stato che **nessuno
+scrive mai** — non esiste un cron che lo imposti. Un preventivo oltre la data di scadenza restava quindi
+accettabile per sempre, a un prezzo di mesi prima. Ora si guarda la **data**, non lo stato.
+
+- [ ] ⚠️ Resta a carico di Francesco: **gli URL registrati presso Stripe e Meta** vanno provati come sono
+      scritti là, non a mano su `www`. L'apex risponde 308 e per Svix un 3xx è una consegna fallita — è
+      così che il webhook bounce di Resend è morto dal 9/7 al 23/8 (nota 27 in `CLAUDE.md`).
 
 ---
 
-## A8 — Account e sessione 🔶 IN GRAN PARTE FATTO
+## A8 — Account e sessione ✅ FATTO (24/08)
 
-Il grosso è stato chiuso il 18/08 (2FA obbligatorio su tutte le aziende, passkey, sonde di bypass).
+Il grosso era stato chiuso il 18/08 (2FA obbligatorio su tutte le aziende, passkey, sonde di bypass).
 
-**Resta da guardare**:
-- [ ] Recupero password e inviti: il link scade? è riutilizzabile? cambiare email annulla le sessioni?
-- [ ] Che succede alle sessioni attive quando un utente viene rimosso dall'azienda o gli si tolgono i
-      permessi — restano valide fino alla scadenza?
+**Verificato integro il resto** (`tests/probe-sessioni.mjs`). Il token è firmato e vive fino alla
+scadenza, quindi la domanda era se i controlli si fidassero di quanto c'è scritto dentro. **Non lo
+fanno**: il profilo si rilegge a ogni richiesta.
+- [x] **Permesso revocato** → effetto **immediato** sulla sessione già aperta (403), senza aspettare che
+      scada.
+- [x] **Persona tolta dall'azienda** → non vede più i dati di quell'azienda.
+- [x] **Utente eliminato** → il token non vale più (401).
 
 ---
 
-## Ordine consigliato
+## Cosa ha insegnato questo giro
 
-1. ~~**A3** (mass assignment)~~ ✅ fatto 24/08 — l'escalation di ruolo reggeva, l'entità altrui no.
-2. ~~**A5** (abuso a volume)~~ ✅ fatto 24/08 — i limiti sono veri; scoperte 3 route email senza freno.
-3. **A2 restante** (booking ed eventi) — il booking è l'unico di questi moduli davvero in uso. ← **prossimo**
-4. **A7** (token da `Math.random`) — ricerca del pattern, veloce.
-5. **A4** e **A6** — più lunghi, meno probabili nell'uso attuale.
-6. **A8** — completamento.
+**Le classi separate servivano davvero.** Ogni sotto-fase ha trovato cose che le altre non potevano
+vedere: la sonda sui permessi (A1) è cieca sugli abusi fatti con richieste legittime, ed è lì che si
+nascondevano i due problemi più gravi — il valore consumato senza pagamento (A2) e il contenuto
+agganciato al sito di un altro (A3). Fossimo rimasti ad A1, avremmo dichiarato tutto a posto.
 
-Ogni buco chiuso diventa un test in `tests/smoke/security.spec.js`, così non torna (Strato 1 di
-`SECURITY.md` §0).
+**Quello che regge non va toccato.** Metà delle sotto-fasi si sono chiuse senza modifiche: escalation di
+ruolo, filtri PostgREST, XSS, cron, firme dei webhook, token, sessioni. Verificarlo dal vivo è servito
+comunque: adesso è misurato, non presunto.
+
+**Ogni fix va provato anche al contrario.** Le sonde verificano sempre il caso legittimo — la prenotazione
+che deve passare, l'anteprima che deve funzionare, l'upload sulla propria scheda. Un controllo che blocca
+tutto non è un fix, è un guasto peggiore del problema.
+
+**Il sintomo inganna.** Due volte ho quasi accusato la cosa sbagliata: un invio email fallito sembrava un
+webhook morto, e un 429 da rate limit sembrava un difetto della capienza. Prima di dare la colpa a
+qualcosa, conviene togliere di mezzo ciò che gli sta davanti.
+
+## Resta aperto
+
+- ⚠️ **A carico di Francesco**: verificare che gli URL dei webhook registrati su **Stripe e Meta** siano
+  su `www` e non sull'apex (vedi A7).
+- 📌 **Loyalty**, per quando verrà acceso: mostrare il saldo solo a chi dimostra di possedere quell'email.
+- 📌 **Stripe su booking ed eventi**, quando si collegherà: vale l'invariante 11 — nessun valore consumato
+  prima del pagamento accertato.
+
+Ogni buco chiuso è diventato un test in `tests/smoke/security.spec.js`, così non torna (Strato 1 di
+`SECURITY.md` §0). Le sonde `tests/probe-*.mjs` si rilanciano a mano quando si tocca l'area relativa.
+
+**Prossimo: il punto B** — revisione funzionale a lotti di 3-4 aree, prima quelle che i clienti usano
+(Contatti, Richieste, Prenotazioni, Sito), poi quelle mai verificate sul campo (Loyalty, Shop, Survey,
+Piano editoriale).

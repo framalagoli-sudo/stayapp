@@ -1,14 +1,53 @@
 ---
 name: todo_prossima_sessione
-description: "To-do prossima sessione (23/8) — dentro il CHECK COMPLETO: punto A sicurezza (A1+A2-shop fatti, prossimi A3 mass assignment e A5 costi AI), roadmap in SECURITY-CHECK.md; punto B funzionale dopo. Sotto, storico."
+description: "To-do prossima sessione (24/8) — PUNTO A (sicurezza) CHIUSO: tutte le sotto-fasi A1-A8 verificate e i buchi corretti, dettaglio in SECURITY-CHECK.md. Prossimo: punto B, revisione funzionale per aree. Sotto, storico."
 metadata: 
   node_type: memory
   type: project
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
-  modified: 2026-08-23T17:41:59.703Z
+  modified: 2026-08-24T08:23:18.002Z
 ---
 
-## ▶️ RIPARTIRE DA QUI (23/8) — leggere questo
+## ▶️ RIPARTIRE DA QUI (24/8) — leggere questo
+
+**IL PUNTO A (sicurezza) È CHIUSO.** Tutte e otto le sotto-fasi verificate, ogni
+buco corretto, live e ricontrollato in produzione. Dettaglio completo in
+**`SECURITY-CHECK.md`** nel repo. Smoke a 75 test.
+
+**I buchi trovati e chiusi il 24/8:**
+- **A3** — `entity_id` arrivava dal client validato solo come UUID: si creava un
+  proprio evento puntato all'entità di un'ALTRA azienda e **compariva sul sito
+  della vittima**, prenotazioni comprese. Primitiva `entitaDellaAzienda`.
+- **A5** — tre route pubbliche spedivano email senza limite (`guest/book` la più
+  concreta perché in uso); e la guardia anti-reinvio delle recensioni stava su
+  `pubblica`, che resta false proprio quando il voto è basso → una recensione
+  negativa si reinviava all'infinito.
+- **A2** — la capienza non reggeva alle richieste simultanee (4 prenotazioni su
+  un evento da 1 posto) e il **booking non aveva alcun controllo**; la disdetta
+  stava su una GET eseguita al caricamento della pagina → bastava che il client
+  di posta seguisse il link in anteprima e la prenotazione spariva.
+- **A6** — tre route di upload aggiornavano il record senza controllo di
+  proprietà: si cambiava **copertina e logo sul sito di un'altra azienda**.
+- **A7** — i preventivi controllavano `stato='scaduto'`, che nessuno scrive mai:
+  restavano accettabili per sempre.
+- **A4** — trovato cercando altro: il **chatbot era muto su strutture e
+  ristoranti** (colonne inesistenti nella select) e nessuno se n'era accorto.
+
+**Verificati integri** (nessuna modifica): escalation di ruolo, filtri
+PostgREST, XSS, cron, firme webhook, generazione dei token, sessioni.
+
+**➡️ PROSSIMO: IL PUNTO B** — revisione funzionale a lotti di 3-4 aree: prima
+quelle che i clienti usano (Contatti, Richieste, Prenotazioni, Sito), poi quelle
+mai verificate sul campo (Loyalty, Shop, Survey, Piano editoriale). Non si
+cercano più buchi: si percorrono i flussi da cliente vero e si guarda cosa manca
+o non torna.
+
+**A carico di Francesco:** vedi sotto (Meta, Stripe, URL webhook presso i
+fornitori) — nessuno di questi blocca il punto B.
+
+---
+
+## ▶️ (storico) RIPARTIRE DA QUI (23/8)
 
 **Siamo dentro il CHECK COMPLETO deciso con Francesco**, diviso in due punti:
 il **punto A = sicurezza** (in corso), il **punto B = revisione funzionale** area
