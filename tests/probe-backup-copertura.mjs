@@ -40,7 +40,7 @@ const DEL_PRODOTTO = [
   'survey_risposte', 'automazioni', 'automazioni_log',
   'piano_editoriale', 'pe_campagne', 'pe_commenti', 'hashtag_sets', 'blog_automazioni',
   'whatsapp_account', 'whatsapp_template', 'whatsapp_campagna', 'whatsapp_messaggio',
-  'translations', 'webhooks', 'platform_config', 'audit_log', 'page_views',
+  'entity_translations', 'webhooks', 'platform_config', 'audit_log', 'page_views',
 ]
 // Effimere: non ha senso salvarle.
 const ESCLUSE = new Set(['rate_limits', 'cron_battiti'])

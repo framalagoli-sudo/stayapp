@@ -31,7 +31,7 @@ const TABLES = [
   'survey_risposte', 'automazioni', 'automazioni_log',
   'piano_editoriale', 'pe_campagne', 'pe_commenti', 'hashtag_sets', 'blog_automazioni',
   'whatsapp_account', 'whatsapp_template', 'whatsapp_campagna', 'whatsapp_messaggio',
-  'translations', 'webhooks', 'platform_config',
+  'entity_translations', 'webhooks', 'platform_config',
   // tracciamento e conformità
   'page_views', 'audit_log',
 ]
