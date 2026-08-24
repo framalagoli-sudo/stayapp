@@ -1,14 +1,56 @@
 ---
 name: todo_prossima_sessione
-description: "To-do prossima sessione (24/8) — PUNTO A (sicurezza) CHIUSO: tutte le sotto-fasi A1-A8 verificate e i buchi corretti, dettaglio in SECURITY-CHECK.md. Prossimo: punto B, revisione funzionale per aree. Sotto, storico."
+description: "To-do prossima sessione (24/8 sera) — sicurezza/performance/monitoraggio a posto. PROSSIMO: percorso da cliente nuovo = specifica onboarding. I clienti usano solo sito+contatti+richieste; 6 moduli su 15 a zero. Sotto, storico."
 metadata: 
   node_type: memory
   type: project
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
-  modified: 2026-08-24T08:23:18.002Z
+  modified: 2026-08-24T10:50:16.236Z
 ---
 
-## ▶️ RIPARTIRE DA QUI (24/8) — leggere questo
+## ▶️ RIPARTIRE DA QUI (24/8, sera) — leggere questo
+
+**Sicurezza, performance e monitoraggio sono a posto.** Il capitolo aperto ora è
+uno solo, ed è quello che sposta i ricavi: **il percorso da cliente nuovo**.
+
+**➡️ IL PROSSIMO LAVORO — l'onboarding.** Aprire OltreNova come farebbe un
+cliente appena iscritto (crea azienda → costruisci il sito → pubblica → collega
+il dominio → ricevi il primo contatto) e **annotare ogni punto in cui ci si
+blocca o in cui servirebbe chiamare Francesco**. Quella lista *è* la specifica
+dell'onboarding "Inizia qui". Finché non esiste, ogni cliente nuovo costa giorni
+del suo tempo e a ~€100/mese non rientra: non è un SaaS, è una software house.
+
+**Il dato che deve guidare le scelte** (misurato, non supposto): i clienti usano
+**sito (28 pagine), contatti (49), richieste (15)**. Sei moduli su quindici sono
+a **zero** — prenotazioni, risorse, recensioni, shop, loyalty, automazioni.
+OltreNova oggi *è* un costruttore di siti con un CRM leggero: l'onboarding deve
+portare al **sito pubblicato e al primo contatto**, non a "usare la piattaforma".
+⚠️ Avevo detto più volte che «il booking è l'unico modulo davvero in uso»: era
+**falso**, mai misurato. Zero risorse configurate, zero prenotazioni.
+
+**Fatto il 24/8 sera** (tutto live e verificato):
+- **Un solo super_admin**, garantito dal database (migr. 076+078): la route
+  rifiuta, e il trigger blocca anche la service_role. ⚠️ La 078 esiste perché la
+  076 aveva rotto gli smoke test — l'utente CI nasce super_admin.
+- **Immagini**: compresse al caricamento (WebP, max 1920px) e ricompresse quelle
+  già online: **23,3 MB → 5,4 MB (-77%)**, 13/13 valide. Il server era veloce
+  (640 ms), ma il browser scaricava 4 MB: su rete mobile, dieci secondi di attesa.
+- **Guasti silenziosi** → [[reference_guasti_silenziosi]]: tutti i cron avvisano
+  se falliscono, e un **battito** (migr. 077) accorge chi smette di girare.
+- **Pagina `/admin/diagnostica`** (solo super_admin): allarmi + prova invio, stato
+  dei processi, uso reale dei moduli.
+
+**Ancora aperto (non blocca l'onboarding):**
+- Verificare gli URL dei webhook registrati su **Stripe e Meta**: devono essere su
+  `www`, non sull'apex.
+- **Backup**: gira (ultimo 24/8, su R2) ma **non è mai stato provato un
+  ripristino**. Un backup non ripristinato è una speranza, non un backup.
+- Meta blocca ancora l'accesso da sviluppatore → WhatsApp fermo.
+- `STRIPE_SECRET_KEY` non configurata: lo shop non incassa.
+
+---
+
+## ▶️ (storico) RIPARTIRE DA QUI (24/8, mattina)
 
 **IL PUNTO A (sicurezza) È CHIUSO.** Tutte e otto le sotto-fasi verificate, ogni
 buco corretto, live e ricontrollato in produzione. Dettaglio completo in
