@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { decifra, statoTemplate } from '@/lib/whatsapp'
 import { CATALOGO, nomeMeta } from '@/lib/whatsapp-catalogo'
 import { logError } from '@/lib/observability'
+import { battitoEControllo } from '@/lib/cron-battito'
 
 // Due lavori: mandare le campagne programmate arrivate a scadenza, e controllare
 // se Meta ha approvato i messaggi in attesa — altrimenti il cliente resterebbe a
@@ -18,6 +19,7 @@ export async function GET(request) {
     const campagne = await eseguiProgrammate()
     const template = await aggiornaTemplateInAttesa()
     console.log('[cron/whatsapp]', JSON.stringify({ campagne: campagne.length, template }))
+    await battitoEControllo('whatsapp')
     return Response.json({ ok: true, campagne, template })
   } catch (e) {
     await logError('cron/whatsapp', e, { alert: true })

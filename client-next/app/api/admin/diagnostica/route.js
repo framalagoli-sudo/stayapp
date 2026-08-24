@@ -51,6 +51,24 @@ export async function GET(request) {
       moduli.push({ nome, righe: error ? null : count })
     }
 
+    // Processi automatici: quando hanno lavorato l'ultima volta. È l'unico modo
+    // di accorgersi di uno che ha smesso di girare — il silenzio non produce
+    // errori, e senza questo il guasto resterebbe invisibile come lo è stato per
+    // il webhook dei rimbalzi.
+    const { data: battiti } = await supabaseAdmin.from('cron_battiti').select('*').order('nome')
+    const ora = Date.now()
+    const processi = (battiti || []).map(b => {
+      const fermoDa = Math.floor((ora - new Date(b.ultimo_ok).getTime()) / 60000)
+      return {
+        nome: b.nome,
+        ultimoOk: b.ultimo_ok,
+        fermoDaMinuti: fermoDa,
+        sogliaMinuti: b.soglia_minuti,
+        inRitardo: fermoDa > b.soglia_minuti,
+        esecuzioni: b.esecuzioni,
+      }
+    })
+
     // Storico degli errori: oggi `logError` scrive solo su console ed email, non
     // in tabella. Va detto invece di mostrare una lista vuota — che si leggerebbe
     // come "nessun errore" mentre significa "non li registriamo". È lo stesso
@@ -65,6 +83,9 @@ export async function GET(request) {
         attivi: !!destinatario,
         nota: destinatario ? null : 'Nessun indirizzo configurato: gli avvisi non partono. Aggiungi ERROR_ALERT_EMAIL su Vercel e rideploya.',
       },
+      processi: battiti
+        ? processi
+        : null, // migration 077 non ancora eseguita
       moduli,
       errori: err
         ? { registrati: true, recenti: err }

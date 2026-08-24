@@ -1,5 +1,6 @@
 import { runAutomazioniScheduler } from '@/lib/automazioni-scheduler'
 import { logError } from '@/lib/observability'
+import { battitoEControllo } from '@/lib/cron-battito'
 
 export async function GET(request) {
   const auth = request.headers.get('authorization')
@@ -8,6 +9,7 @@ export async function GET(request) {
   }
   try {
     await runAutomazioniScheduler()
+    await battitoEControllo('automazioni')
     return Response.json({ ok: true })
   } catch (e) {
     await logError('cron/automazioni', e, { alert: true })

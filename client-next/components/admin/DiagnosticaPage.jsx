@@ -44,6 +44,7 @@ export default function DiagnosticaPage() {
   )
 
   const { avvisi, moduli, errori } = dati
+  const inRitardo = (dati.processi || []).filter(p => p.inRitardo)
   const usati = moduli.filter(m => m.righe > 0).sort((a, b) => b.righe - a.righe)
   const fermi = moduli.filter(m => m.righe === 0)
   const massimo = Math.max(...usati.map(m => m.righe), 1)
@@ -93,6 +94,39 @@ export default function DiagnosticaPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ── Processi automatici ────────────────────────────────────────────── */}
+      <div style={{ ...card, marginBottom: 20, borderColor: inRitardo.length ? '#f5c6cb' : '#eee' }}>
+        <div style={titoletto}>Processi automatici</div>
+        {!dati.processi ? (
+          <div style={{ fontSize: 14, color: '#e65100' }}>
+            Il controllo non è attivo: manca la migration <code>077_cron_battiti.sql</code>.
+          </div>
+        ) : (
+          <>
+            <div style={{ fontSize: 13, color: '#888', marginBottom: 14 }}>
+              Un processo che <em>fallisce</em> manda un errore. Uno che <em>smette di girare</em> non dice niente:
+              qui si vede quando ognuno ha lavorato l’ultima volta.
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 8 }}>
+              {dati.processi.map(p => (
+                <div key={p.nome} style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 14 }}>
+                  {p.inRitardo
+                    ? <AlertTriangle size={17} strokeWidth={1.5} color="#c0392b" />
+                    : <CheckCircle2 size={17} strokeWidth={1.5} color="#2e7d32" />}
+                  <div style={{ width: 130, flexShrink: 0, color: '#1a1a2e', overflowWrap: 'anywhere' }}>{p.nome}</div>
+                  <div style={{ flex: 1, minWidth: 0, color: p.inRitardo ? '#c0392b' : '#888', fontSize: 13 }}>
+                    {p.inRitardo
+                      ? `fermo da ${p.fermoDaMinuti} min (soglia ${p.sogliaMinuti})`
+                      : `ultimo giro ${p.fermoDaMinuti < 1 ? 'poco fa' : `${p.fermoDaMinuti} min fa`}`}
+                  </div>
+                  <div style={{ fontSize: 12.5, color: '#aaa' }}>{p.esecuzioni} giri</div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* ── Uso reale dei moduli ───────────────────────────────────────────── */}

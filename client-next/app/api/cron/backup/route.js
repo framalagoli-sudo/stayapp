@@ -1,5 +1,6 @@
 import { runBackup } from '@/lib/backup'
 import { logError } from '@/lib/observability'
+import { battitoEControllo } from '@/lib/cron-battito'
 
 export async function GET(request) {
   const auth = request.headers.get('authorization')
@@ -9,6 +10,7 @@ export async function GET(request) {
   }
   try {
     const result = await runBackup()
+    await battitoEControllo('backup')
     return Response.json({ ok: true, ...result })
   } catch (e) {
     // `alert: true`: un backup che smette di girare va SAPUTO subito, non il

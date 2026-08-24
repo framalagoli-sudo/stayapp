@@ -50,3 +50,9 @@ CREATE TRIGGER trg_un_solo_super_admin
   BEFORE INSERT OR UPDATE OF role ON public.profiles
   FOR EACH ROW
   EXECUTE FUNCTION public.impedisci_secondo_super_admin();
+
+-- NOTA per chi scrive test e sonde: il trigger blocca anche la service_role, che
+-- normalmente bypassa la RLS. È voluto — è il senso del vincolo — ma significa
+-- che una sonda non può più crearsi un super_admin effimero per provare le
+-- funzioni riservate. Va provata entrando col proprio account, oppure
+-- disattivando il trigger per il tempo del test e riattivandolo subito.

@@ -1,5 +1,6 @@
 import { runBlogScheduler } from '@/lib/blog-scheduler'
 import { logError } from '@/lib/observability'
+import { battitoEControllo } from '@/lib/cron-battito'
 
 export async function GET(request) {
   const auth = request.headers.get('authorization')
@@ -8,6 +9,7 @@ export async function GET(request) {
   }
   try {
     await runBlogScheduler()
+    await battitoEControllo('blog')
     return Response.json({ ok: true })
   } catch (e) {
     await logError('cron/blog', e, { alert: true })

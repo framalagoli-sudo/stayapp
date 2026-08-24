@@ -1,5 +1,6 @@
 import { manutenzioneDomini } from '@/lib/domini-manutenzione'
 import { logError } from '@/lib/observability'
+import { battitoEControllo } from '@/lib/cron-battito'
 
 // Ogni dominio costa qualche secondo (chiamate a Vercel + prova HTTPS reale).
 export const maxDuration = 60
@@ -16,6 +17,7 @@ export async function GET(request) {
   try {
     const esito = await manutenzioneDomini({ soloPendenti: true })
     console.log('[cron/domini]', JSON.stringify(esito))
+    await battitoEControllo('domini')
     return Response.json({ ok: true, ...esito })
   } catch (e) {
     await logError('cron/domini', e, { alert: true })
