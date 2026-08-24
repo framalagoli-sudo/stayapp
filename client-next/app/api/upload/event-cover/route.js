@@ -1,14 +1,15 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireRecordAccess } from '@/lib/server-auth'
 import { parseUpload, uploadToStorage } from '@/lib/upload-helper'
 
 export async function POST(request) {
   try {
-    const { user, response } = await requireAuth(request)
-    if (response) return response
     const { searchParams } = new URL(request.url)
     const evento_id = searchParams.get('evento_id')
     if (!evento_id) return Response.json({ error: 'evento_id obbligatorio' }, { status: 400 })
+    // Questa route SCRIVE la copertina sull'evento: dev'essere il proprio.
+    const { response } = await requireRecordAccess(request, 'eventi', evento_id)
+    if (response) return response
 
     const parsed = await parseUpload(request)
     if (parsed.error) return Response.json({ error: parsed.error }, { status: 400 })

@@ -1,13 +1,14 @@
-import { requireAuth } from '@/lib/server-auth'
+import { requireEntityAccess } from '@/lib/server-auth'
 import { parseUpload, uploadToStorage } from '@/lib/upload-helper'
 
 export async function POST(request) {
   try {
-    const { user, response } = await requireAuth(request)
-    if (response) return response
     const { searchParams } = new URL(request.url)
     const attivita_id = searchParams.get('attivita_id')
     if (!attivita_id) return Response.json({ error: 'attivita_id obbligatorio' }, { status: 400 })
+    // Il file finisce nella cartella dell'attività: dev'essere la propria.
+    const { response } = await requireEntityAccess(request, 'attivita', attivita_id)
+    if (response) return response
 
     const parsed = await parseUpload(request)
     if (parsed.error) return Response.json({ error: parsed.error }, { status: 400 })

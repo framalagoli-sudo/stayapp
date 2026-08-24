@@ -8,11 +8,17 @@ export async function POST(request, props) {
     if (!firma_nome?.trim()) return Response.json({ error: 'Il campo firma è obbligatorio' }, { status: 400 })
 
     const { data: prev } = await supabaseAdmin.from('preventivi')
-      .select('id, stato, azienda_id').eq('token', params.token).single()
+      .select('id, stato, scadenza, azienda_id').eq('token', params.token).single()
     if (!prev) return Response.json({ error: 'Preventivo non trovato' }, { status: 404 })
     if (prev.stato === 'accettato') return Response.json({ error: 'Già accettato' }, { status: 400 })
     if (prev.stato === 'scaduto' || prev.stato === 'rifiutato')
       return Response.json({ error: 'Preventivo non più accettabile' }, { status: 400 })
+    // La scadenza si legge dalla data, non dallo stato: nessuno scrive mai
+    // `scaduto` (non c'è un cron che lo faccia), quindi affidarsi allo stato
+    // significava tenere accettabile per sempre un prezzo di mesi prima.
+    if (prev.scadenza && new Date(prev.scadenza) < new Date(new Date().toDateString())) {
+      return Response.json({ error: 'Questo preventivo è scaduto. Chiedi un aggiornamento.' }, { status: 400 })
+    }
 
     const { data, error } = await supabaseAdmin.from('preventivi')
       .update({ stato: 'accettato', accettato_at: new Date().toISOString(), firma_nome: firma_nome.trim(), updated_at: new Date().toISOString() })

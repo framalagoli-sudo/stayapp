@@ -298,6 +298,19 @@ test.describe('Regression sicurezza (ruolo staff)', () => {
     expect(error, 'INSERT anon su contatti deve essere bloccata da RLS').not.toBeNull()
   })
 
+  // UPLOAD SU SCHEDA ALTRUI: le route di upload non scrivono solo il file,
+  // aggiornano anche il record (cover_url, logo_url). Senza controllo di
+  // proprietà si cambiava la copertina sul sito di un altro cliente.
+  test('upload: non si cambia la copertina di un’entità di un’altra azienda', async ({ request }) => {
+    if (!ctx.otherEntity) test.skip()
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64')
+    const res = await request.post(`${TEST_URL}/api/upload/cover?propertyId=${ctx.otherEntity.id}`, {
+      headers: { Authorization: `Bearer ${ctx.adminToken}` },
+      multipart: { file: { name: 'p.png', mimeType: 'image/png', buffer: png } },
+    })
+    expect([403, 404], `upload su entità altrui deve essere respinto (ricevuto ${res.status()})`).toContain(res.status())
+  })
+
   // ABUSO A VOLUME: la guardia contro il reinvio stava su `pubblica`, che resta
   // false proprio quando il voto è basso → una recensione negativa si reinviava
   // all'infinito e ogni colpo spediva un'altra email al titolare.
