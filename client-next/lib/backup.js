@@ -19,7 +19,7 @@ const TABLES = [
   // identità e struttura
   'aziende', 'profiles', 'properties', 'ristoranti', 'attivita', 'collegamenti',
   // il sito: è il prodotto più usato, e mancava del tutto
-  'pagine', 'sito_snapshots', 'landing_seo', 'domini',
+  'pagine', 'site_snapshots', 'landing_seo', 'domini',
   // clienti e richieste
   'contatti', 'requests', 'messages', 'demo_requests',
   // moduli
@@ -28,8 +28,9 @@ const TABLES = [
   'vetrine', 'vetrina_elementi',
   'form_builder', 'form_submissions', 'preventivi', 'recensioni',
   'prodotti', 'ordini', 'gift_cards', 'loyalty_programs', 'loyalty_points',
-  'survey', 'survey_risposte', 'automazioni', 'automazioni_log',
-  'whatsapp_account', 'whatsapp_template', 'whatsapp_campagne', 'whatsapp_optin',
+  'survey_risposte', 'automazioni', 'automazioni_log',
+  'piano_editoriale', 'pe_campagne', 'pe_commenti', 'hashtag_sets', 'blog_automazioni',
+  'whatsapp_account', 'whatsapp_template', 'whatsapp_campagna', 'whatsapp_messaggio',
   'translations', 'webhooks', 'platform_config',
   // tracciamento e conformità
   'page_views', 'audit_log',
@@ -54,6 +55,30 @@ function getR2Client() {
   })
 }
 
+// Supabase restituisce al massimo 1000 righe per interrogazione, e **taglia in
+// silenzio**: nessun errore, semplicemente il resto non arriva. Il 24/08/2026 il
+// backup salvava 1000 righe di `page_views` su 1390 e 1000 di `audit_log` su
+// 1319, e diceva di essere andato a buon fine. Oggi tocca tabelle poco
+// importanti; domani, appena i contatti o i lead superano il migliaio, si
+// perderebbero i dati veri dei clienti senza il minimo avviso.
+// Qui si legge a blocchi finché la tabella non è finita.
+const BLOCCO = 1000
+
+async function leggiTutto(tabella) {
+  const righe = []
+  for (let inizio = 0; ; inizio += BLOCCO) {
+    const { data, error } = await supabaseAdmin.from(tabella).select('*').range(inizio, inizio + BLOCCO - 1)
+    if (error) return { righe: [], error: error.message }
+    righe.push(...(data || []))
+    if (!data || data.length < BLOCCO) return { righe, error: null }
+    // Guardia contro una tabella smisurata: meglio un backup grande di uno infinito.
+    if (righe.length >= 200_000) {
+      console.error(`[backup] ${tabella}: fermato a ${righe.length} righe (limite di sicurezza)`)
+      return { righe, error: null }
+    }
+  }
+}
+
 export async function runBackup() {
   const startedAt = new Date()
   const bucket = cleanEnv(process.env.R2_BUCKET_NAME) || 'stayapp-backups'
@@ -68,15 +93,15 @@ export async function runBackup() {
   console.log('[backup] Avvio esportazione tabelle...')
   for (const table of TABLES) {
     try {
-      const { data, error } = await supabaseAdmin.from(table).select('*')
+      const { righe, error } = await leggiTutto(table)
       if (error) {
-        console.error(`[backup] ${table}: ${error.message}`)
-        backup.tables[table] = { error: error.message }
-        rowCounts[table] = `ERRORE: ${error.message}`
+        console.error(`[backup] ${table}: ${error}`)
+        backup.tables[table] = { error }
+        rowCounts[table] = `ERRORE: ${error}`
       } else {
-        backup.tables[table] = data || []
-        rowCounts[table] = (data || []).length
-        console.log(`[backup] ${table}: ${(data || []).length} righe`)
+        backup.tables[table] = righe
+        rowCounts[table] = righe.length
+        console.log(`[backup] ${table}: ${righe.length} righe`)
       }
     } catch (err) {
       console.error(`[backup] ${table}: ${err.message}`)
