@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Activity, Bell, BellOff, RefreshCw, Send, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { Activity, Bell, BellOff, RefreshCw, Send, CheckCircle2, AlertTriangle, Database } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 
 // Stato di salute della piattaforma.
@@ -16,7 +16,8 @@ export default function DiagnosticaPage() {
   const [dati, setDati] = useState(null)
   const [errore, setErrore] = useState('')
   const [caricando, setCaricando] = useState(true)
-  const [invio, setInvio] = useState(null) // null | 'corso' | {ok, messaggio}
+  const [invio, setInvio] = useState(null)   // null | 'corso' | {ok, messaggio}
+  const [backup, setBackup] = useState(null) // idem
 
   async function carica() {
     setCaricando(true); setErrore('')
@@ -34,6 +35,15 @@ export default function DiagnosticaPage() {
       const r = await apiFetch('/api/admin/diagnostica', { method: 'POST' })
       setInvio(r)
     } catch (e) { setInvio({ ok: false, messaggio: e?.message || 'Invio fallito' }) }
+  }
+
+  async function eseguiBackup() {
+    setBackup('corso')
+    try {
+      const r = await apiFetch('/api/admin/diagnostica', { method: 'POST', body: JSON.stringify({ azione: 'backup' }) })
+      setBackup(r)
+      carica()
+    } catch (e) { setBackup({ ok: false, messaggio: e?.message || 'Backup fallito' }) }
   }
 
   if (caricando) return <div style={{ padding: 40, color: '#888' }}>Caricamento…</div>
@@ -94,6 +104,42 @@ export default function DiagnosticaPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ── Backup ─────────────────────────────────────────────────────────── */}
+      <div style={{ ...card, marginBottom: 20 }}>
+        <div style={titoletto}>Backup</div>
+        <div style={{ fontSize: 13, color: '#888', marginBottom: 14 }}>
+          Gira ogni notte alle 3 su Cloudflare R2, conserva 30 giorni. Qui lo si può far girare
+          <strong> adesso</strong> — utile prima di un intervento che tocca i dati.
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <button onClick={eseguiBackup} disabled={backup === 'corso'}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: backup === 'corso' ? '#ccc' : '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 14, fontWeight: 600, cursor: backup === 'corso' ? 'default' : 'pointer' }}>
+            <Database size={15} strokeWidth={1.5} color="#fff" />
+            {backup === 'corso' ? 'Backup in corso… (può richiedere un minuto)' : 'Esegui il backup adesso'}
+          </button>
+          {backup && backup !== 'corso' && (
+            <span style={{ fontSize: 13, color: backup.ok ? '#2e7d32' : '#c0392b' }}>
+              {backup.ok ? '✓ ' : '✕ '}{backup.messaggio}
+            </span>
+          )}
+        </div>
+        {backup?.ok && backup.dettaglio && (
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #f0f0f0' }}>
+            <div style={{ fontSize: 12.5, color: '#888', marginBottom: 8 }}>
+              {backup.righeTotali} righe salvate{backup.verificatoSuR2 ? ', file verificato su R2' : ''}
+              {backup.tabelleFallite?.length ? ` · ⚠ non esportate: ${backup.tabelleFallite.join(', ')}` : ''}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {Object.entries(backup.dettaglio).sort((a, b) => b[1] - a[1]).slice(0, 14).map(([t, n]) => (
+                <span key={t} style={{ fontSize: 12, background: '#f7f7f7', color: '#666', border: '1px solid #eee', borderRadius: 999, padding: '3px 10px' }}>
+                  {t} <strong>{n}</strong>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Processi automatici ────────────────────────────────────────────── */}

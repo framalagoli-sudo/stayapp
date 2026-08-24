@@ -95,11 +95,41 @@ export async function GET(request) {
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
 
-// Avviso di prova: la catena si verifica prima di doverci contare.
+// Il backup su 45 tabelle non sta nei pochi secondi di default.
+export const maxDuration = 60
+
+// Due azioni, entrambe cose che si vogliono poter fare SUBITO e non domani:
+//   (nessuna) → manda un avviso di prova, per verificare che la catena arrivi
+//   backup    → fa girare il backup adesso, senza aspettare le 3 di notte e
+//               senza dover conoscere il CRON_SECRET
 export async function POST(request) {
   try {
     const { response } = await soloSuperAdmin(request)
     if (response) return response
+
+    const { azione } = await request.json().catch(() => ({}))
+
+    if (azione === 'backup') {
+      try {
+        const { runBackup } = await import('@/lib/backup')
+        const esito = await runBackup()
+        const righe = Object.entries(esito.rowCounts || {})
+        const conDati = righe.filter(([, v]) => typeof v === 'number' && v > 0)
+        const fallite = righe.filter(([, v]) => typeof v === 'string')
+        return Response.json({
+          ok: true,
+          messaggio: `Backup completato: ${esito.filename} (${esito.sizeKB} KB), ${conDati.length} tabelle con dati su ${righe.length}.`,
+          file: esito.filename,
+          verificatoSuR2: esito.verified,
+          tabelleConDati: conDati.length,
+          tabelleFallite: fallite.map(([t]) => t),
+          righeTotali: conDati.reduce((s, [, v]) => s + v, 0),
+          dettaglio: Object.fromEntries(conDati),
+        })
+      } catch (e) {
+        return Response.json({ ok: false, messaggio: `Backup fallito: ${e.message}` }, { status: 500 })
+      }
+    }
 
     const destinatario = (process.env.ERROR_ALERT_EMAIL || process.env.DEMO_NOTIFY_EMAIL || '').trim()
     if (!destinatario) {
