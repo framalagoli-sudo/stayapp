@@ -35,7 +35,12 @@ export async function getAziendaLegale(aziendaId) {
 // alle strutture, l'indirizzo è comparso sulla pagina di un cliente che non lo
 // mostrava. Un passaggio infrastrutturale dev'essere invisibile — mostrare un
 // campo nuovo è una decisione di prodotto, e si prende a parte.
-const CAMPI_STRUTTURA = 'id, azienda_id, tipo, settore, slug, name, description, address, phone, whatsapp, wifi_name, wifi_password, checkin_time, checkout_time, rules, amenities, logo_url, logo_dark_url, cover_url, plan, moduli, theme, services, gallery, restaurant, activities, excursions, minisito, privacy_data, chatbot'
+// `email` è stata aggiunta alle strutture il 25/08 come scelta di prodotto
+// (uniformare i tre verticali), non come effetto della migrazione. Non era solo
+// estetica: la pagina privacy usa quell'indirizzo per far esercitare i diritti
+// GDPR, e senza — se il titolare non ha compilato `privacy_data` — quella
+// pagina restava priva di un contatto.
+const CAMPI_STRUTTURA = 'id, azienda_id, tipo, settore, slug, name, description, address, phone, email, whatsapp, wifi_name, wifi_password, checkin_time, checkout_time, rules, amenities, logo_url, logo_dark_url, cover_url, plan, moduli, theme, services, gallery, restaurant, activities, excursions, minisito, privacy_data, chatbot'
 const CAMPI_RISTORANTE = 'id, azienda_id, tipo, settore, slug, name, description, address, phone, email, schedule, logo_url, logo_dark_url, cover_url, theme, gallery, menu, moduli, minisito, privacy_data, chatbot'
 const CAMPI_ATTIVITA = 'id, azienda_id, tipo, settore, slug, name, description, address, phone, email, schedule, logo_url, logo_dark_url, cover_url, theme, gallery, services, minisito, privacy_data, chatbot, moduli'
 

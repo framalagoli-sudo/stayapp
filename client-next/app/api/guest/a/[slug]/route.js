@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { allaFormaStorica } from '@/lib/entita'
 import { localizeEntity } from '@/lib/translate'
 
 // Dati live (privacy_data, minisito, ecc.): mai cachare, altrimenti le modifiche
