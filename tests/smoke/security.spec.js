@@ -298,6 +298,26 @@ test.describe('Regression sicurezza (ruolo staff)', () => {
     expect(error, 'INSERT anon su contatti deve essere bloccata da RLS').not.toBeNull()
   })
 
+  // ABUSO A VOLUME: la guardia contro il reinvio stava su `pubblica`, che resta
+  // false proprio quando il voto è basso → una recensione negativa si reinviava
+  // all'infinito e ogni colpo spediva un'altra email al titolare.
+  test('abuso: la recensione già inviata non si reinvia (nemmeno se negativa)', async ({ request }) => {
+    const { data: rec } = await admin.from('recensioni').insert({
+      azienda_id: ctx.aziendaId, entity_tipo: 'struttura', entity_id: ctx.testEntity.id,
+      autore: 'CI Sec', stelle: 5, testo: '', fonte: 'form', verificata: false, pubblica: false,
+    }).select().single()
+    if (!rec?.token) { await admin.from('recensioni').delete().eq('id', rec.id); test.skip() }
+
+    const invia = () => request.post(`${TEST_URL}/api/guest/recensione/${rec.token}`,
+      { data: { autore: 'CI Sec', stelle: 1, testo: 'prova' } })
+    const primo = await invia()
+    const secondo = await invia()
+    expect(primo.ok(), 'il primo invio deve funzionare').toBeTruthy()
+    expect(secondo.status(), 'il reinvio deve essere respinto').toBe(410)
+
+    await admin.from('recensioni').delete().eq('id', rec.id)
+  })
+
   // ENTITÀ ALTRUI NEL CORPO: `azienda_id` era protetto, `entity_id` no. Si creava
   // un proprio evento puntato all'entità di un'altra azienda e finiva pubblicato
   // sul sito di quella, raccogliendone anche le prenotazioni.

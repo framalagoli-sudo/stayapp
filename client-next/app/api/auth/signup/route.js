@@ -1,9 +1,19 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { sendEmail } from '@/lib/send-email'
 import { platformEmailTemplate } from '@/lib/email-template'
+import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 
 export async function POST(request) {
   try {
+    // Ogni registrazione crea un utente, un'azienda e spedisce un'email
+    // all'indirizzo indicato: senza limite si riempie il database e si bombarda
+    // una casella altrui (i suffissi `+etichetta` valgono come indirizzi diversi
+    // ma arrivano tutti nella stessa). Oggi la porta è chiusa da `signup_enabled`,
+    // ma resterà aperta quando partirà l'onboarding self-serve.
+    const ip = getClientIp(request)
+    const rl = await rateLimit(request, { name: 'signup', limit: 3, windowSec: 3600, ip })
+    if (!rl.allowed) return tooManyRequests()
+
     const { data: cfg } = await supabaseAdmin.from('platform_config').select('signup_enabled').eq('id', 1).single()
     if (!cfg?.signup_enabled) return Response.json({ error: 'Le registrazioni sono temporaneamente chiuse.' }, { status: 403 })
 

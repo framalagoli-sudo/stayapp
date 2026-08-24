@@ -2,9 +2,18 @@
 import { sendEmail } from '@/lib/send-email'
 import { emailTemplate } from '@/lib/email-template'
 import { triggerAutomazione } from '@/lib/guest-utils'
+import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 
 export async function POST(request) {
   try {
+    // Ogni richiesta scrive nel CRM del cliente, gli manda un'email e fa scattare
+    // le sue automazioni: senza limite si inonda la casella di un nostro cliente.
+    // Soglia larga perché gli ospiti di una struttura escono spesso dallo stesso
+    // IP (il WiFi comune), e bloccare una prenotazione vera costa più dello spam.
+    const ip = getClientIp(request)
+    const rl = await rateLimit(request, { name: 'guest-book', limit: 10, windowSec: 3600, ip })
+    if (!rl.allowed) return tooManyRequests()
+
     const body = await request.json()
     const { entity_tipo, entity_id, item_type, item_name, name, email, phone, persons, notes } = body
     if (!name?.trim() || !email?.trim()) return Response.json({ error: 'Nome e email obbligatori' }, { status: 400 })

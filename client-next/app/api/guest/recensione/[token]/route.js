@@ -29,9 +29,12 @@ export async function POST(request, props) {
     if (!stelle || stelle < 1 || stelle > 5) return Response.json({ error: 'stelle obbligatorie (1-5)' }, { status: 400 })
 
     const { data: rec, error: fe } = await supabaseAdmin.from('recensioni')
-      .select('id, pubblica, entity_tipo, entity_id, azienda_id').eq('token', params.token).single()
+      .select('id, autore, pubblica, verificata, entity_tipo, entity_id, azienda_id').eq('token', params.token).single()
     if (fe || !rec) return Response.json({ error: 'Link non valido' }, { status: 404 })
-    if (rec.pubblica) return Response.json({ error: 'Recensione già inviata' }, { status: 410 })
+    // La guardia va su `verificata`, non su `pubblica`: una recensione negativa
+    // resta non pubblica, quindi con `pubblica` si poteva reinviare all'infinito
+    // e ogni invio spediva un'altra email al titolare.
+    if (rec.verificata || rec.pubblica) return Response.json({ error: 'Recensione già inviata' }, { status: 410 })
 
     const table = rec.entity_tipo === 'struttura' ? 'properties' : rec.entity_tipo === 'ristorante' ? 'ristoranti' : 'attivita'
     const { data: entity } = await supabaseAdmin.from(table).select('minisito').eq('id', rec.entity_id).single()
