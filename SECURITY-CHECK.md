@@ -96,19 +96,34 @@ browser di qualcun altro?
 
 ---
 
-## A5 — Abuso a volume e costi ⬜ DA FARE
+## A5 — Abuso a volume e costi ✅ FATTO (24/08)
 
 **Domanda**: quanto può costarci, in denaro o reputazione, qualcuno che ripete una richiesta lecita un
 milione di volte?
 
-- [ ] **Route AI pubbliche**: il chatbot ospite chiama il modello **senza login**. Ogni richiesta costa.
-      Va verificato che il rate limit ci sia davvero e che regga, altrimenti si brucia il credito
-      Anthropic a spese nostre.
-- [ ] **Email**: form e newsletter possono essere usati per spedire posta a terzi o per far finire il
-      dominio in blacklist? (esistono già honeypot, rate limit e Turnstile soft — vanno *misurati*).
-- [ ] **Rate limit reali**: `lib/rate-limit.js` conta per IP. Verificare cosa succede dietro proxy e con
-      IP variabile — un limite aggirabile è un limite che non c'è.
-- [ ] **Storage**: caricamenti ripetuti che riempiono lo spazio.
+**Il presupposto, verificato per primo**: `getClientIp` prende il **primo** valore di
+`x-forwarded-for`. Se il proxy appendesse invece di sostituire, chiunque si sceglierebbe l'identità a
+ogni richiesta e **ogni limite della piattaforma sarebbe decorativo**. Misurato dal vivo: il proxy impone
+l'IP reale, l'header falsificato viene ignorato — 0 richieste su 12 passate cambiando IP a ogni colpo.
+I limiti sono veri (`tests/probe-rate-limit.mjs`).
+
+- [x] **Chatbot AI pubblico**: già protetto — 40/ora per IP, modello Haiku, 300 token, storico troncato
+      agli ultimi 10 messaggi da 800 caratteri. È l'unica route AI raggiungibile senza login.
+- [x] **Route pubbliche che spediscono email** — tre erano scoperte:
+      **`guest/book`** (la più concreta, perché è in uso: scriveva nel CRM del cliente, gli mandava
+      un'email e faceva scattare le sue automazioni, senza alcun limite → 10/ora, soglia larga perché gli
+      ospiti condividono il WiFi);
+      **`auth/signup`** (ogni chiamata creava utente + azienda + email a un indirizzo scelto da chi
+      chiama; latente perché `signup_enabled=false`, ma si aprirà con l'onboarding self-serve → 3/ora);
+      **`guest/recensione/[token]`** — non un limite mancante ma un **difetto di logica**: la guardia
+      contro il reinvio stava su `pubblica`, che resta `false` proprio quando il voto è basso, quindi una
+      recensione **negativa** si reinviava all'infinito spedendo ogni volta un'email al titolare. Guardia
+      spostata su `verificata`.
+      `form-builder/public/submit` sembrava scoperta a una prima scansione: ha invece 5/ora + Turnstile.
+- [ ] **Storage**: caricamenti ripetuti che riempiono lo spazio — rimandato ad **A6**, dove si guardano
+      i file nel loro insieme.
+
+Sonde: `probe-rate-limit.mjs`, `probe-abuso-volume.mjs`. Un test in `security.spec.js`.
 
 ---
 
@@ -154,8 +169,8 @@ Il grosso è stato chiuso il 18/08 (2FA obbligatorio su tutte le aziende, passke
 ## Ordine consigliato
 
 1. ~~**A3** (mass assignment)~~ ✅ fatto 24/08 — l'escalation di ruolo reggeva, l'entità altrui no.
-2. **A5** (costi AI) — l'unica che ci costa denaro *adesso*, e il chatbot è pubblico. ← **prossimo**
-3. **A2 restante** (booking ed eventi) — perché il booking è l'unico di questi moduli davvero in uso.
+2. ~~**A5** (abuso a volume)~~ ✅ fatto 24/08 — i limiti sono veri; scoperte 3 route email senza freno.
+3. **A2 restante** (booking ed eventi) — il booking è l'unico di questi moduli davvero in uso. ← **prossimo**
 4. **A7** (token da `Math.random`) — ricerca del pattern, veloce.
 5. **A4** e **A6** — più lunghi, meno probabili nell'uso attuale.
 6. **A8** — completamento.
