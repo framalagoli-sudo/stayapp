@@ -264,6 +264,23 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - Sintomo ingannevole: l'endpoint provato a mano su `www` funziona benissimo, quindi sembra tutto a posto. Il guasto si vede **solo** provando l'URL esattamente com'è registrato dal fornitore.
     - Conseguenza silenziosa di un webhook bounce morto: le email inesistenti non vengono più marcate `email_non_valida`, si continua a scrivere a caselle morte e la reputazione del dominio peggiora — senza nessun errore visibile.
 
+28. **🔇 Guasti silenziosi: due forme, due difese** (24/08/2026). Il webhook dei rimbalzi muto 45 giorni e il chatbot che rispondeva *"Entità non trovata"* su due verticali su tre hanno lo stesso padre: **niente gridava**.
+    - **Quando qualcosa fallisce** → `logError(source, err, { alert: true })` manda un'email, deduplicata a 1/ora per sorgente. Lo fanno **tutti e sei i cron** (prima due su sei scrivevano solo in console, il backup nemmeno quello). Il destinatario è `ERROR_ALERT_EMAIL`, con ripiego su `DEMO_NOTIFY_EMAIL`.
+    - **Quando qualcosa smette di girare** → `try/catch` è cieco: *nessuno lancia un'eccezione se una funzione non viene mai chiamata*. Serve accorgersi di un'**assenza**. `lib/cron-battito.js` + migration `077`: ogni cron chiama `battitoEControllo(nome)` a fine giro riuscito; chi gira dopo verifica che gli altri non siano fermi oltre la loro soglia e avvisa. Nessun guardiano dedicato: basta che **uno qualsiasi** sia vivo.
+    - Soglie generose rispetto alla cadenza (newsletter 15 min, backup 30 ore): meglio accorgersi tardi che avere falsi allarmi a ogni rallentamento di Vercel.
+    - **`/admin/diagnostica`** (solo super_admin) mostra tutto: destinatario degli allarmi + pulsante per **provarli davvero**, battito dei processi, uso reale dei moduli, errori. ⚠️ Sullo storico errori dice esplicitamente che **non viene conservato**: una lista vuota si leggerebbe come "nessun errore" mentre significa "non li registriamo".
+    - Giro periodico: `tests/probe-e-vivo.mjs` distingue **viva / spenta (nessun dato: non è un guasto) / rotta**.
+
+29. **👑 Un solo super_admin, garantito dal database** (24/08/2026, migration `076`+`078`). È la chiave che apre i dati di **tutte** le aziende, e la piattaforma ha un unico proprietario.
+    - La route rifiuta `role: 'super_admin'` con 403 — anche a un super_admin. E il trigger `trg_un_solo_super_admin` lo impedisce comunque, **anche alla service_role**, perché le route bypassano la RLS e una route futura scritta distrattamente non deve poter aggirare la regola.
+    - ⚠️ **Le sonde non possono più crearsi un super_admin effimero.** Unica eccezione: il dominio finto `@playwright.internal`, che serve all'utente CI degli smoke (la `076` da sola aveva **rotto l'intera suite**, da qui la `078`).
+    - **Recupero dell'accesso**: `ALTER TABLE profiles DISABLE TRIGGER trg_un_solo_super_admin;` → promuovi → riattiva. Dal SQL Editor: un gesto deliberato, non una spunta nel pannello.
+
+30. **🖼️ Le immagini si comprimono al caricamento** (24/08/2026, `lib/upload-helper.js`). Le foto arrivavano dal telefono del cliente e finivano online tali e quali: media **1 MB**, punte di 3,9 MB. Le pagine rispondevano in 640 ms e poi il browser scaricava quattro megabyte — su rete mobile, dieci secondi di pagina bianca. **Il numero del server diceva "veloce", l'esperienza reale diceva il contrario.**
+    - Ora: lato lungo max 1920px, riscrittura in **WebP** q82, orientamento EXIF rispettato (altrimenti le foto da telefono restano coricate). Le GIF si saltano (ucciderebbe l'animazione) e se la compressione non guadagna nulla si tiene l'originale. Se fallisce si pubblica comunque: è un miglioramento, non un requisito.
+    - `sharp` era già una dipendenza. Le immagini **già online** sono state ricompresse una tantum con `tests/probe-comprimi-esistenti.mjs` (23,3 MB → 5,4 MB): quello script mantiene formato e percorso originali, così gli URL nel DB non cambiano — e **simula soltanto** se non gli si passa `--esegui`.
+    - ⚠️ Dopo una sostituzione, la CDN serve ancora la vecchia copia finché la cache non scade: per verificare, aggiungere un parametro nuovo all'URL.
+
 ---
 
 ## Roadmap

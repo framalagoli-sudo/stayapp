@@ -500,6 +500,14 @@ Il refactor verso "Business" generico richiede principalmente:
 
 ## Azioni manuali da fare (Francesco)
 
+### Aperte (aggiornate 2026-08-24)
+
+- [ ] 🔴 **Provare un RIPRISTINO del backup** — gira ogni notte su R2 e i file ci sono (ultimo: 24/08), ma non è mai stato provato un recupero. Un backup mai ripristinato è una speranza, non un backup. È il rischio più grosso rimasto.
+- [ ] 🟡 **URL dei webhook su Stripe e Meta**: devono essere su `https://www.oltrenova.com/...`, mai sull'apex (nota 27). Il webhook Stripe è il punto che conferma i pagamenti e finalizza i punti fedeltà.
+- [x] **Migration 076+077+078** eseguite ✅ 24/08 — un solo super_admin (garantito dal DB) e battito dei processi automatici
+- [x] **Avvisi verificati** ✅ 24/08 — arrivano a `fra.malagoli@gmail.com` via `DEMO_NOTIFY_EMAIL`. Aggiungere `ERROR_ALERT_EMAIL` solo se si vogliono separare gli allarmi tecnici dalle notifiche demo (poi `.\deploy.ps1`, perché una variabile nuova non entra senza redeploy)
+- [x] **Immagini ricompresse** ✅ 24/08 — 23,3 MB → 5,4 MB sulle 23 già online, e le nuove si comprimono al caricamento
+
 ### Aperte (aggiornate 2026-08-23)
 
 - [ ] 🟡 **Verificare gli URL dei webhook registrati presso Stripe e Meta** — devono essere su `https://www.oltrenova.com/...`, **mai sull'apex**: `oltrenova.com` risponde 308 e per Svix un 3xx è una consegna fallita. È così che il webhook rimbalzi di Resend è rimasto muto dal 9/7 al 23/8 (nota 27 in `CLAUDE.md`). Ora conta di più: il webhook Stripe è il punto che conferma i pagamenti e finalizza i punti fedeltà
