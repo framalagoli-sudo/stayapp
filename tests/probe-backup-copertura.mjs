@@ -30,7 +30,7 @@ const salvate = new Set([...(blocco?.[1] || '').matchAll(/'([a-z_]+)'/g)].map(m 
 // può accorgersene. Per questo elenca anche cosa NON riconosce.
 const DEL_PRODOTTO = [
   'aziende', 'profiles', 'properties', 'ristoranti', 'attivita', 'collegamenti',
-  'pagine', 'sito_snapshots', 'landing_seo', 'domini',
+  'pagine', 'site_snapshots', 'landing_seo', 'domini',
   'contatti', 'requests', 'messages', 'demo_requests',
   'eventi', 'event_bookings', 'risorse', 'risorse_promozioni', 'prenotazioni',
   'articoli', 'blog_categories', 'newsletters',
@@ -38,7 +38,8 @@ const DEL_PRODOTTO = [
   'preventivi', 'recensioni', 'prodotti', 'ordini',
   'gift_cards', 'loyalty_programs', 'loyalty_points',
   'survey_risposte', 'automazioni', 'automazioni_log',
-  'whatsapp_account', 'whatsapp_template', 'whatsapp_campagne',
+  'piano_editoriale', 'pe_campagne', 'pe_commenti', 'hashtag_sets', 'blog_automazioni',
+  'whatsapp_account', 'whatsapp_template', 'whatsapp_campagna', 'whatsapp_messaggio',
   'translations', 'webhooks', 'platform_config', 'audit_log', 'page_views',
 ]
 // Effimere: non ha senso salvarle.
