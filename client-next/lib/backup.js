@@ -17,7 +17,7 @@ const RETENTION_DAYS = 30
 // perdere, sta qui dentro.
 const TABLES = [
   // identità e struttura
-  'aziende', 'profiles', 'properties', 'ristoranti', 'attivita', 'collegamenti',
+  'aziende', 'profiles', 'entita', 'properties', 'ristoranti', 'attivita', 'collegamenti',
   // il sito: è il prodotto più usato, e mancava del tutto
   'pagine', 'site_snapshots', 'landing_seo', 'domini',
   // clienti e richieste

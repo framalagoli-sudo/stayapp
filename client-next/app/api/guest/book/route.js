@@ -20,10 +20,10 @@ export async function POST(request) {
 
     let propertyId = null, entityEmail = null, entityName = null, azienda_id = null
     if (entity_tipo === 'struttura' && entity_id) {
-      const { data } = await supabaseAdmin.from('properties').select('id, name, email, azienda_id').eq('id', entity_id).single()
+      const { data } = await supabaseAdmin.from('entita').select('id, name, email, azienda_id').eq('id', entity_id).single()
       if (data) { propertyId = data.id; entityEmail = data.email; entityName = data.name; azienda_id = data.azienda_id }
     } else if (entity_tipo === 'ristorante' && entity_id) {
-      const { data } = await supabaseAdmin.from('ristoranti').select('id, name, email, azienda_id').eq('id', entity_id).single()
+      const { data } = await supabaseAdmin.from('entita').select('id, name, email, azienda_id').eq('id', entity_id).single()
       if (data) { entityEmail = data.email; entityName = data.name; azienda_id = data.azienda_id }
     }
 

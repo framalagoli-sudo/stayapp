@@ -50,7 +50,7 @@ async function fetchUnsplashCover(query) {
 
 async function generateArticle(automazione) {
   const { entity_tipo, entity_id, azienda_id, argomenti, modalita } = automazione
-  const tableMap = { struttura: 'properties', ristorante: 'ristoranti', attivita: 'attivita' }
+  const tableMap = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
   const table = tableMap[entity_tipo]
   if (!table) return
 

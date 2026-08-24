@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { assicuraSottodominio } from '@/lib/create-subdomain'
+import { allaFormaStorica, MODULI_PREDEFINITI } from '@/lib/entita'
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
@@ -15,7 +16,7 @@ export async function GET(request) {
     if (!profile) return Response.json({ error: 'Profilo non trovato' }, { status: 403 })
 
     const { searchParams } = new URL(request.url)
-    let query = supabaseAdmin.from('ristoranti').select('*').order('name')
+    let query = supabaseAdmin.from('entita').select('*').eq('tipo', 'ristorante').order('name')
     if (profile.role !== 'super_admin') {
       if (!profile.azienda_id) return Response.json([])
       query = query.eq('azienda_id', profile.azienda_id)
@@ -24,7 +25,9 @@ export async function GET(request) {
     }
     const { data, error } = await query
     if (error) return Response.json({ error: error.message }, { status: 500 })
-    return Response.json(data)
+    // Il pannello conosce i nomi storici: si cambia da dove arrivano i dati, non
+    // come si chiamano i campi.
+    return Response.json((data || []).map(allaFormaStorica))
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
 
@@ -44,17 +47,21 @@ export async function POST(request) {
 
     const baseSlug = name.toLowerCase().normalize('NFD')
       .replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'ristorante'
-    const { data: existing } = await supabaseAdmin.from('ristoranti').select('id').eq('slug', baseSlug).limit(1)
+    // Lo slug ora è unico fra TUTTE le entità, non più solo fra i ristoranti:
+    // il controllo va fatto sull'intera tabella.
+    const { data: existing } = await supabaseAdmin.from('entita').select('id').eq('slug', baseSlug).limit(1)
     const slug = existing?.length > 0 ? `${baseSlug}-${Date.now().toString(36)}` : baseSlug
 
     const allowed = ['name', 'description', 'address', 'phone', 'email', 'schedule']
     const extras = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
 
-    const { data, error } = await supabaseAdmin.from('ristoranti').insert({ azienda_id, slug, ...extras }).select().single()
+    const { data, error } = await supabaseAdmin.from('entita')
+      .insert({ azienda_id, tipo: 'ristorante', slug, moduli: MODULI_PREDEFINITI.ristorante, ...extras })
+      .select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
     // await necessario: registra il sottodominio su Vercel e in serverless una
     // chiamata lasciata in sospeso muore con la risposta.
     await assicuraSottodominio({ azienda_id, entity_tipo: 'ristorante', entity_id: data.id, entity_slug: data.slug })
-    return Response.json(data, { status: 201 })
+    return Response.json(allaFormaStorica(data), { status: 201 })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }

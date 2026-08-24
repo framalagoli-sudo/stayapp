@@ -13,7 +13,7 @@ export async function POST(request) {
       .insert({ property_id, room: room || null, type, message, status: 'open' }).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
 
-    supabaseAdmin.from('properties').select('name, email, azienda_id').eq('id', property_id).single().then(({ data: prop }) => {
+    supabaseAdmin.from('entita').select('name, email, azienda_id').eq('id', property_id).single().then(({ data: prop }) => {
       if (prop?.azienda_id) sendWebhooks(prop.azienda_id, 'nuova_richiesta', { richiesta_id: data.id, property_id, tipo: type, messaggio: message })
       if (!prop?.email || !process.env.RESEND_API_KEY) return
       sendEmail({
@@ -48,12 +48,12 @@ export async function GET(request) {
       query = query.eq('property_id', profile.property_id)
     } else if (profile.role === 'admin_azienda') {
       if (!profile.azienda_id) return Response.json([])
-      const { data: props } = await supabaseAdmin.from('properties').select('id').eq('azienda_id', profile.azienda_id)
+      const { data: props } = await supabaseAdmin.from('entita').select('id').eq('azienda_id', profile.azienda_id)
       const ids = props?.map(p => p.id) || []
       if (!ids.length) return Response.json([])
       query = query.in('property_id', ids)
     } else if (profile.role === 'super_admin' && searchParams.get('azienda_id')) {
-      const { data: props } = await supabaseAdmin.from('properties').select('id').eq('azienda_id', searchParams.get('azienda_id'))
+      const { data: props } = await supabaseAdmin.from('entita').select('id').eq('azienda_id', searchParams.get('azienda_id'))
       const ids = props?.map(p => p.id) || []
       if (!ids.length) return Response.json([])
       query = query.in('property_id', ids)

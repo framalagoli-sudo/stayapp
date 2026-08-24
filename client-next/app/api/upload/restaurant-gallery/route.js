@@ -12,7 +12,7 @@ export async function POST(request) {
 
     const { data: profile } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', user.id).single()
     if (profile?.role !== 'super_admin') {
-      const { data: rist } = await supabaseAdmin.from('ristoranti').select('azienda_id').eq('id', ristorante_id).single()
+      const { data: rist } = await supabaseAdmin.from('entita').select('azienda_id').eq('id', ristorante_id).single()
       if (!rist || rist.azienda_id !== profile?.azienda_id) return Response.json({ error: 'Accesso negato' }, { status: 403 })
     }
 

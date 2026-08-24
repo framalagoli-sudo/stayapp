@@ -134,13 +134,17 @@ export async function getProfile(userId) {
 }
 
 // Mappa entity_tipo → tabella. Unica fonte di verità.
-export const ENTITY_TABLES = { struttura: 'properties', ristorante: 'ristoranti', attivita: 'attivita' }
+export const ENTITY_TABLES = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
 
 // Restituisce l'azienda_id proprietaria di una entità (struttura/ristorante/attivita), o null.
+// Legge dalla tabella unificata: è la domanda che ogni controllo di
+// autorizzazione deve poter fare, e ora ha una risposta sola invece di tre.
+// Il `tipo` resta nel filtro perché un id di tipo sbagliato non deve passare
+// per buono solo perché esiste.
 export async function getEntityAziendaId(entity_tipo, entity_id) {
-  const table = ENTITY_TABLES[entity_tipo]
-  if (!table || !entity_id) return null
-  const { data } = await supabaseAdmin.from(table).select('azienda_id').eq('id', entity_id).single()
+  if (!ENTITY_TABLES[entity_tipo] || !entity_id) return null
+  const { data } = await supabaseAdmin
+    .from('entita').select('azienda_id').eq('id', entity_id).eq('tipo', entity_tipo).maybeSingle()
   return data?.azienda_id ?? null
 }
 
@@ -162,7 +166,8 @@ export async function userCanAccessProperty(profile, property_id) {
   if (!profile || !property_id) return false
   if (profile.role === 'super_admin') return true
   if (['admin_struttura', 'staff'].includes(profile.role)) return profile.property_id === property_id
-  const { data: prop } = await supabaseAdmin.from('properties').select('azienda_id').eq('id', property_id).single()
+  const { data: prop } = await supabaseAdmin.from('entita')
+    .select('azienda_id').eq('id', property_id).eq('tipo', 'struttura').maybeSingle()
   return !!prop && prop.azienda_id === profile.azienda_id
 }
 

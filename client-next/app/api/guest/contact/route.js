@@ -27,7 +27,7 @@ export async function POST(request) {
       return Response.json({ error: 'Nome, email e messaggio sono obbligatori' }, { status: 400 })
 
     let entityEmail = null, entityName = null, azienda_id = null
-    const tableMap = { struttura: 'properties', ristorante: 'ristoranti', attivita: 'attivita' }
+    const tableMap = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
     if (entity_tipo && entity_id && tableMap[entity_tipo]) {
       const { data } = await supabaseAdmin.from(tableMap[entity_tipo]).select('name, email, azienda_id').eq('id', entity_id).single()
       if (data) { entityEmail = data.email; entityName = data.name; azienda_id = data.azienda_id }

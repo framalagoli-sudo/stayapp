@@ -15,15 +15,15 @@ export async function POST(request) {
     if (!profile) return Response.json({ error: 'Accesso negato' }, { status: 403 })
 
     if (entity_type === 'struttura') {
-      const { data: prop } = await supabaseAdmin.from('properties').select('azienda_id').eq('id', entity_id).single()
+      const { data: prop } = await supabaseAdmin.from('entita').select('azienda_id').eq('id', entity_id).single()
       if (!prop || (profile.role !== 'super_admin' && prop.azienda_id !== profile.azienda_id && profile.property_id !== entity_id))
         return Response.json({ error: 'Accesso negato' }, { status: 403 })
     } else if (entity_type === 'ristorante') {
-      const { data: rist } = await supabaseAdmin.from('ristoranti').select('azienda_id').eq('id', entity_id).single()
+      const { data: rist } = await supabaseAdmin.from('entita').select('azienda_id').eq('id', entity_id).single()
       if (!rist || (profile.role !== 'super_admin' && rist.azienda_id !== profile.azienda_id))
         return Response.json({ error: 'Accesso negato' }, { status: 403 })
     } else if (entity_type === 'attivita') {
-      const { data: att } = await supabaseAdmin.from('attivita').select('azienda_id').eq('id', entity_id).single()
+      const { data: att } = await supabaseAdmin.from('entita').select('azienda_id').eq('id', entity_id).single()
       if (!att || (profile.role !== 'super_admin' && att.azienda_id !== profile.azienda_id))
         return Response.json({ error: 'Accesso negato' }, { status: 403 })
     } else { return Response.json({ error: 'entity_type non valido' }, { status: 400 }) }

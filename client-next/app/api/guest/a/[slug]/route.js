@@ -9,11 +9,13 @@ export const maxDuration = 30
 export async function GET(request, props) {
   const params = await props.params;
   const { data, error } = await supabaseAdmin
-    .from('attivita')
-    .select('id, azienda_id, slug, name, tipo, description, address, phone, email, schedule, logo_url, cover_url, theme, gallery, services, minisito, privacy_data, chatbot, pwa')
-    .eq('slug', params.slug).eq('active', true).single()
+    .from('entita')
+    .select('id, azienda_id, tipo, slug, name, settore, description, address, phone, email, schedule, logo_url, cover_url, theme, gallery, services, minisito, privacy_data, chatbot, moduli')
+    .eq('slug', params.slug).eq('tipo', 'attivita').eq('active', true).maybeSingle()
   if (error || !data) return Response.json({ error: 'Attività non trovata' }, { status: 404 })
+  // Il client conosce i nomi storici: cambia la sorgente, non il contratto.
+  const ent = allaFormaStorica(data)
   const lang = new URL(request.url).searchParams.get('lang') === 'en' ? 'en' : 'it'
-  const out = lang === 'en' ? await localizeEntity(data, 'attivita', lang) : data
+  const out = lang === 'en' ? await localizeEntity(ent, 'attivita', lang) : ent
   return Response.json(out)
 }

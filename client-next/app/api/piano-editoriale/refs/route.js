@@ -23,9 +23,9 @@ export async function GET(request) {
     }
     if (tipo === 'newsletter') {
       const [props, rists, atts] = await Promise.all([
-        supabaseAdmin.from('properties').select('id').eq('azienda_id', azienda_id),
-        supabaseAdmin.from('ristoranti').select('id').eq('azienda_id', azienda_id),
-        supabaseAdmin.from('attivita').select('id').eq('azienda_id', azienda_id),
+        supabaseAdmin.from('entita').select('id').eq('azienda_id', azienda_id),
+        supabaseAdmin.from('entita').select('id').eq('azienda_id', azienda_id),
+        supabaseAdmin.from('entita').select('id').eq('azienda_id', azienda_id),
       ])
       const entityIds = [...(props.data || []), ...(rists.data || []), ...(atts.data || [])].map(e => e.id)
       if (!entityIds.length) return Response.json([])

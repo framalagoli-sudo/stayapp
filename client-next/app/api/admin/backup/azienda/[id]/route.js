@@ -25,9 +25,9 @@ export async function GET(request, { params }) {
 
   // Raccogli gli ID delle entità dell'azienda (per le tabelle collegate indirettamente)
   const [propsRes, ristRes, attRes, eventiRes, risorseRes] = await Promise.all([
-    supabaseAdmin.from('properties').select('id').eq('azienda_id', aziendaId),
-    supabaseAdmin.from('ristoranti').select('id').eq('azienda_id', aziendaId),
-    supabaseAdmin.from('attivita').select('id').eq('azienda_id', aziendaId),
+    supabaseAdmin.from('entita').select('id').eq('azienda_id', aziendaId),
+    supabaseAdmin.from('entita').select('id').eq('azienda_id', aziendaId),
+    supabaseAdmin.from('entita').select('id').eq('azienda_id', aziendaId),
     supabaseAdmin.from('eventi').select('id').eq('azienda_id', aziendaId),
     supabaseAdmin.from('risorse').select('id').eq('azienda_id', aziendaId),
   ])
@@ -63,7 +63,7 @@ export async function GET(request, { params }) {
 
   // Tabelle con azienda_id diretto
   const directTables = [
-    'profiles', 'properties', 'ristoranti', 'attivita', 'contatti', 'newsletters',
+    'profiles', 'entita', 'contatti', 'newsletters',
     'eventi', 'articoli', 'blog_categories', 'collegamenti', 'risorse', 'prenotazioni',
   ]
   for (const t of directTables) {

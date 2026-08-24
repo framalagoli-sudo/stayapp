@@ -41,7 +41,7 @@ export async function POST(request) {
     if (remaining <= 0)
       return Response.json({ error: `Limite mensile raggiunto (${MONTHLY_LIMIT} generazioni/mese). Si rinnova il mese prossimo.` }, { status: 429 })
 
-    const tableMap = { struttura: 'properties', ristorante: 'ristoranti', attivita: 'attivita' }
+    const tableMap = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
     const table = tableMap[entity_tipo]
     if (!table) return Response.json({ error: 'entity_tipo non valido' }, { status: 400 })
 

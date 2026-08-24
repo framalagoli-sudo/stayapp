@@ -4,7 +4,7 @@ export async function GET(request, props) {
   const params = await props.params;
   try {
     const { tipo, slug } = params
-    const tableMap = { struttura: 'properties', ristorante: 'ristoranti', attivita: 'attivita' }
+    const tableMap = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
     const prefixMap = { struttura: 's', ristorante: 'r', attivita: 'a' }
     const table = tableMap[tipo]
     if (!table) return new Response('Tipo non valido', { status: 400 })

@@ -13,15 +13,13 @@ export async function getCollegamenti(tipo, id) {
     const otherTipo = isFrom ? link.to_tipo : link.from_tipo
     const otherId   = isFrom ? link.to_id   : link.from_id
     let entity = null
-    if (otherTipo === 'struttura') {
-      const { data } = await supabaseAdmin.from('properties')
-        .select('id, name, slug, logo_url, cover_url, description')
-        .eq('id', otherId).eq('active', true).single()
-      entity = data
-    } else if (otherTipo === 'ristorante') {
-      const { data } = await supabaseAdmin.from('ristoranti')
+    if (otherTipo === 'struttura' || otherTipo === 'ristorante') {
+      // Una tabella sola: prima erano due rami identici tranne che per il nome
+      // della tabella e un campo. `schedule` ora esiste per entrambi, quindi si
+      // chiede sempre — chi non ce l'ha valorizzato restituisce null, come prima.
+      const { data } = await supabaseAdmin.from('entita')
         .select('id, name, slug, logo_url, cover_url, description, schedule')
-        .eq('id', otherId).eq('active', true).single()
+        .eq('id', otherId).eq('tipo', otherTipo).eq('active', true).maybeSingle()
       entity = data
     }
     if (entity) result.push({ tipo: otherTipo, ...entity })

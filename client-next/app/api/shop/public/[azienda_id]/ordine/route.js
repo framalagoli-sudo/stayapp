@@ -102,10 +102,14 @@ export async function POST(request, props) {
         const { data: azShop } = await supabaseAdmin.from('aziende').select('ragione_sociale, partita_iva, indirizzo, citta, cap, provincia').eq('id', azienda_id).single()
         // Lo shop è azienda-level → per il link privacy uso la prima entità attiva dell'azienda.
         const shopAppUrl = (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'
+        // Con la tabella unificata basta una interrogazione sola, invece di
+        // provarne tre in fila finché una risponde.
         let shopPrivacyUrl = null
-        for (const [table, prefix] of [['properties', 's'], ['ristoranti', 'r'], ['attivita', 'a']]) {
-          const { data: e } = await supabaseAdmin.from(table).select('slug').eq('azienda_id', azienda_id).eq('active', true).limit(1).maybeSingle()
-          if (e?.slug) { shopPrivacyUrl = `${shopAppUrl}/${prefix}/${e.slug}/privacy`; break }
+        const { data: entPrivacy } = await supabaseAdmin.from('entita')
+          .select('slug, tipo').eq('azienda_id', azienda_id).eq('active', true).limit(1).maybeSingle()
+        if (entPrivacy?.slug) {
+          const prefisso = { struttura: 's', ristorante: 'r', attivita: 'a' }[entPrivacy.tipo] || 'a'
+          shopPrivacyUrl = `${shopAppUrl}/${prefisso}/${entPrivacy.slug}/privacy`
         }
         const tabellaOrdine = `<table style="width:100%;border-collapse:collapse;margin:8px 0 16px">
             <thead><tr style="background:#f5f5f5">

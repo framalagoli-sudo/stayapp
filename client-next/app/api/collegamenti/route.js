@@ -7,8 +7,8 @@ async function enrichLinks(links, tipo, id) {
     const isFrom = link.from_tipo === tipo && link.from_id === id
     const otherTipo = isFrom ? link.to_tipo : link.from_tipo
     const otherId   = isFrom ? link.to_id   : link.from_id
-    const table = otherTipo === 'struttura' ? 'properties' : otherTipo === 'ristorante' ? 'ristoranti' : 'attivita'
-    const { data: entity } = await supabaseAdmin.from(table).select('id, name, slug, logo_url').eq('id', otherId).single()
+    const { data: entity } = await supabaseAdmin.from('entita')
+      .select('id, name, slug, logo_url').eq('id', otherId).eq('tipo', otherTipo).maybeSingle()
     if (entity) result.push({ collegamento_id: link.id, tipo: otherTipo, ...entity })
   }
   return result
@@ -61,7 +61,7 @@ export async function POST(request) {
     if (!azienda_id) return Response.json({ error: 'Permessi insufficienti' }, { status: 403 })
 
     // Verifica che entrambe le entità collegate appartengano a quell'azienda.
-    const ENTITY_TABLES = { struttura: 'properties', ristorante: 'ristoranti', attivita: 'attivita' }
+    const ENTITY_TABLES = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
     for (const [tipo, id] of [[from_tipo, from_id], [to_tipo, to_id]]) {
       const table = ENTITY_TABLES[tipo]
       if (!table) return Response.json({ error: 'Tipo entità non valido' }, { status: 400 })

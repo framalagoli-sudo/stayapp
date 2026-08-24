@@ -104,7 +104,7 @@ export async function POST(request) {
     if (!ALLOWED_OBIETTIVI.includes(obiettivo)) return Response.json({ error: 'obiettivo non valido' }, { status: 400 })
     if (!ALLOWED_TEMPLATES.includes(template)) return Response.json({ error: 'template non valido' }, { status: 400 })
 
-    const tableMap = { struttura: 'properties', ristorante: 'ristoranti', attivita: 'attivita' }
+    const tableMap = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
     const table = tableMap[entity_tipo]
     if (!table) return Response.json({ error: 'entity_tipo non valido' }, { status: 400 })
 

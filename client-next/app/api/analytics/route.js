@@ -29,9 +29,9 @@ export async function GET(request) {
     if (!isSuperAdmin || azienda_id) {
       if (!azienda_id) return Response.json(emptyResponse(range, now))
       const [p, r, a] = await Promise.all([
-        supabaseAdmin.from('properties').select('id').eq('azienda_id', azienda_id),
-        supabaseAdmin.from('ristoranti').select('id').eq('azienda_id', azienda_id),
-        supabaseAdmin.from('attivita').select('id').eq('azienda_id', azienda_id),
+        supabaseAdmin.from('entita').select('id').eq('azienda_id', azienda_id),
+        supabaseAdmin.from('entita').select('id').eq('azienda_id', azienda_id),
+        supabaseAdmin.from('entita').select('id').eq('azienda_id', azienda_id),
       ])
       propertyIds   = (p.data || []).map(x => x.id)
       ristoranteIds = (r.data || []).map(x => x.id)

@@ -92,13 +92,32 @@ export function moduloAttivo(ent, chiave, predefinito = false) {
 // debito dichiarato, con una scadenza, non una scelta di stile.
 export function allaFormaStorica(ent) {
   if (!ent) return null
-  const { moduli, settore, ...resto } = ent
+  // `origine_tabella` serve solo durante la transizione, per riconciliare e per
+  // tornare indietro: non deve uscire nelle risposte.
+  const { moduli, settore, origine_tabella, ...resto } = ent
   if (ent.tipo === 'attivita') {
     // Nelle attività `tipo` era la descrizione del settore, mostrata come
     // sottotitolo nella PWA e nell'editor.
     return { ...resto, tipo: settore || null, pwa: moduli || {} }
   }
   return { ...resto, modules: moduli || {} }
+}
+
+// L'inverso: prende i campi come li manda il pannello (nomi storici) e li
+// riporta a quelli della tabella. Serve in scrittura, dove il pannello continua
+// a parlare la lingua di prima.
+export function dallaFormaStorica(campi, tipo) {
+  const out = { ...campi }
+  if ('modules' in out) { out.moduli = out.modules; delete out.modules }
+  if ('pwa' in out) { out.moduli = out.pwa; delete out.pwa }
+  if (tipo === 'attivita' && 'tipo' in out) {
+    // Nel pannello delle attività `tipo` è la descrizione del settore. Qui `tipo`
+    // decide l'indirizzo pubblico e non si tocca mai da fuori.
+    const v = typeof out.tipo === 'string' ? out.tipo.trim() : ''
+    out.settore = v && !['attivita', 'attività'].includes(v) ? v : null
+  }
+  delete out.tipo   // il tipo tecnico non è mai modificabile dal client
+  return out
 }
 
 // Preset per tipo: cosa si accende quando un cliente crea una nuova entità.

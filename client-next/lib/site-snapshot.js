@@ -4,20 +4,20 @@ import { supabaseAdmin } from './supabase-server'
 // escluso `active` (lo stato di pubblicazione non va ripristinato da uno snapshot di contenuto).
 export const SNAP = {
   struttura: {
-    table: 'properties',
+    table: 'entita',
     cols: ['name', 'description', 'address', 'phone', 'whatsapp', 'email', 'wifi_name', 'wifi_password',
-      'checkin_time', 'checkout_time', 'rules', 'amenities', 'modules', 'theme', 'logo_url', 'cover_url',
+      'checkin_time', 'checkout_time', 'rules', 'amenities', 'moduli', 'theme', 'logo_url', 'cover_url',
       'services', 'gallery', 'restaurant', 'activities', 'excursions', 'minisito', 'privacy_data', 'chatbot'],
   },
   ristorante: {
-    table: 'ristoranti',
+    table: 'entita',
     cols: ['name', 'description', 'address', 'phone', 'email', 'schedule', 'theme', 'logo_url', 'cover_url',
-      'gallery', 'menu', 'modules', 'minisito', 'privacy_data', 'chatbot'],
+      'gallery', 'menu', 'moduli', 'minisito', 'privacy_data', 'chatbot'],
   },
   attivita: {
-    table: 'attivita',
-    cols: ['name', 'tipo', 'description', 'address', 'phone', 'email', 'schedule', 'theme', 'logo_url',
-      'cover_url', 'gallery', 'services', 'minisito', 'privacy_data', 'chatbot', 'pwa'],
+    table: 'entita',
+    cols: ['name', 'settore', 'description', 'address', 'phone', 'email', 'schedule', 'theme', 'logo_url',
+      'cover_url', 'gallery', 'services', 'minisito', 'privacy_data', 'chatbot', 'moduli'],
   },
 }
 

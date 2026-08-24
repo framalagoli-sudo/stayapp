@@ -12,7 +12,7 @@ export async function POST(request) {
 
     const { data: profile } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', user.id).single()
     if (profile?.role !== 'super_admin') {
-      const { data: rist } = await supabaseAdmin.from('ristoranti').select('azienda_id').eq('id', ristorante_id).single()
+      const { data: rist } = await supabaseAdmin.from('entita').select('azienda_id').eq('id', ristorante_id).single()
       if (!rist || rist.azienda_id !== profile?.azienda_id) return Response.json({ error: 'Accesso negato' }, { status: 403 })
     }
 
@@ -21,7 +21,7 @@ export async function POST(request) {
     const field = searchParams.get('field') === 'logo_dark_url' ? 'logo_dark_url' : 'logo_url'
     const result = await uploadToStorage(`ristoranti/${ristorante_id}/${field}-${Date.now()}.${parsed.ext}`, parsed.buffer, parsed.contentType)
     if (result.error) return Response.json({ error: result.error }, { status: 500 })
-    await supabaseAdmin.from('ristoranti').update({ [field]: result.url }).eq('id', ristorante_id)
+    await supabaseAdmin.from('entita').update({ [field]: result.url }).eq('id', ristorante_id)
     return Response.json({ url: result.url })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }

@@ -6,7 +6,7 @@ import { emailTemplate, guestEmailTemplate } from '@/lib/email-template'
 import { getAziendaLegale } from '@/lib/guest-data'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 
-const ENTITY_TBL = { struttura: 'properties', ristorante: 'ristoranti', attivita: 'attivita' }
+const ENTITY_TBL = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
 
 function fmtDate(iso) {
   if (!iso) return ''

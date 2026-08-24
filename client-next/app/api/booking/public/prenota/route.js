@@ -30,22 +30,22 @@ function buildWaUrl(raw) {
 async function getEntityWhatsapp(entityTipo, entityId) {
   try {
     if (entityTipo === 'struttura') {
-      const { data } = await supabaseAdmin.from('properties').select('whatsapp').eq('id', entityId).single()
+      const { data } = await supabaseAdmin.from('entita').select('whatsapp').eq('id', entityId).single()
       return data?.whatsapp || null
     }
     if (entityTipo === 'ristorante') {
-      const { data } = await supabaseAdmin.from('ristoranti').select('minisito').eq('id', entityId).single()
+      const { data } = await supabaseAdmin.from('entita').select('minisito').eq('id', entityId).single()
       return data?.minisito?.social?.whatsapp || null
     }
     if (entityTipo === 'attivita') {
-      const { data } = await supabaseAdmin.from('attivita').select('minisito').eq('id', entityId).single()
+      const { data } = await supabaseAdmin.from('entita').select('minisito').eq('id', entityId).single()
       return data?.minisito?.social?.whatsapp || null
     }
   } catch { /* non bloccante */ }
   return null
 }
 
-const ENTITY_TBL = { struttura: 'properties', ristorante: 'ristoranti', attivita: 'attivita' }
+const ENTITY_TBL = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
 const ENTITY_PREFIX = { struttura: 's', ristorante: 'r', attivita: 'a' }
 
 async function inviaEmailConferma(prenotazione, risorsa, whatsapp = null) {
