@@ -78,7 +78,20 @@ const campiTotali = entita.length ? Object.keys(entita[0]).length : 0
 console.log(`\n  ogni entità dispone ora di ${campiTotali} campi, indipendentemente dal tipo`)
 const perTipo = {}
 for (const e of entita) perTipo[e.tipo] = (perTipo[e.tipo] || 0) + 1
-console.log(`  tipi presenti: ${Object.entries(perTipo).map(([t,n])=>`${t} (${n})`).join(', ')}`)
+console.log(`  tipi (tecnici): ${Object.entries(perTipo).map(([t, n]) => `${t} (${n})`).join(', ')}`)
+
+// Il `tipo` decide l'indirizzo pubblico (/s/, /r/, /a/): deve restare uno dei
+// tre tecnici. Le descrizioni del settore stanno in `settore`, dove non fanno
+// danni. Senza questa separazione, al passo 2 il routing di quei clienti si
+// romperebbe.
+const TIPI_VALIDI = ['struttura', 'ristorante', 'attivita']
+const tipiLiberi = entita.filter(e => !TIPI_VALIDI.includes(e.tipo))
+esito(tipiLiberi.length === 0, tipiLiberi.length
+  ? `${tipiLiberi.length} entità hanno un tipo non tecnico (${[...new Set(tipiLiberi.map(e => e.tipo))].join(', ')}) — serve la migration 080`
+  : 'tutti i tipi sono tecnici: il routing regge')
+
+const conSettore = entita.filter(e => e.settore)
+if (conSettore.length) console.log(`  settori descritti: ${conSettore.map(e => e.settore).join(' · ')}`)
 
 console.log('\n' + '─'.repeat(60))
 console.log(problemi ? `${problemi} PROBLEMI — non procedere al passo 2` : 'COPIA CORRETTA — si può procedere al passo 2')
