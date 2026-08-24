@@ -1,4 +1,5 @@
 import { runScheduledSends } from '@/lib/newsletter-send'
+import { logError } from '@/lib/observability'
 
 export async function GET(request) {
   const auth = request.headers.get('authorization')
@@ -9,7 +10,7 @@ export async function GET(request) {
     await runScheduledSends()
     return Response.json({ ok: true })
   } catch (e) {
-    console.error('[cron/newsletter]', e.message)
+    await logError('cron/newsletter', e, { alert: true })
     return Response.json({ error: e.message }, { status: 500 })
   }
 }

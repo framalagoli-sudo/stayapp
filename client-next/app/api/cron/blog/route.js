@@ -1,4 +1,5 @@
 import { runBlogScheduler } from '@/lib/blog-scheduler'
+import { logError } from '@/lib/observability'
 
 export async function GET(request) {
   const auth = request.headers.get('authorization')
@@ -9,7 +10,7 @@ export async function GET(request) {
     await runBlogScheduler()
     return Response.json({ ok: true })
   } catch (e) {
-    console.error('[cron/blog]', e.message)
+    await logError('cron/blog', e, { alert: true })
     return Response.json({ error: e.message }, { status: 500 })
   }
 }

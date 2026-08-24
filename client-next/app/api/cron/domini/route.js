@@ -18,7 +18,7 @@ export async function GET(request) {
     console.log('[cron/domini]', JSON.stringify(esito))
     return Response.json({ ok: true, ...esito })
   } catch (e) {
-    await logError('cron/domini', e)
+    await logError('cron/domini', e, { alert: true })
     return Response.json({ error: e.message }, { status: 500 })
   }
 }

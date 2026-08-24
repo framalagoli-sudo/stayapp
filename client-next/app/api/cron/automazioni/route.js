@@ -1,4 +1,5 @@
 import { runAutomazioniScheduler } from '@/lib/automazioni-scheduler'
+import { logError } from '@/lib/observability'
 
 export async function GET(request) {
   const auth = request.headers.get('authorization')
@@ -9,7 +10,7 @@ export async function GET(request) {
     await runAutomazioniScheduler()
     return Response.json({ ok: true })
   } catch (e) {
-    console.error('[cron/automazioni]', e.message)
+    await logError('cron/automazioni', e, { alert: true })
     return Response.json({ error: e.message }, { status: 500 })
   }
 }

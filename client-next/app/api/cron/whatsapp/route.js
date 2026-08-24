@@ -20,7 +20,7 @@ export async function GET(request) {
     console.log('[cron/whatsapp]', JSON.stringify({ campagne: campagne.length, template }))
     return Response.json({ ok: true, campagne, template })
   } catch (e) {
-    await logError('cron/whatsapp', e)
+    await logError('cron/whatsapp', e, { alert: true })
     return Response.json({ error: e.message }, { status: 500 })
   }
 }
