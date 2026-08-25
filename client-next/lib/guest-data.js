@@ -40,9 +40,27 @@ export async function getAziendaLegale(aziendaId) {
 // estetica: la pagina privacy usa quell'indirizzo per far esercitare i diritti
 // GDPR, e senza — se il titolare non ha compilato `privacy_data` — quella
 // pagina restava priva di un contatto.
-const CAMPI_STRUTTURA = 'id, azienda_id, tipo, settore, slug, name, description, address, phone, email, whatsapp, wifi_name, wifi_password, checkin_time, checkout_time, rules, amenities, logo_url, logo_dark_url, cover_url, plan, moduli, theme, services, gallery, restaurant, activities, excursions, minisito, privacy_data, chatbot'
-const CAMPI_RISTORANTE = 'id, azienda_id, tipo, settore, slug, name, description, address, phone, email, schedule, logo_url, logo_dark_url, cover_url, theme, gallery, menu, moduli, minisito, privacy_data, chatbot'
-const CAMPI_ATTIVITA = 'id, azienda_id, tipo, settore, slug, name, description, address, phone, email, schedule, logo_url, logo_dark_url, cover_url, theme, gallery, services, minisito, privacy_data, chatbot, moduli'
+// I campi che le pagine pubbliche ricevono. **Una lista sola per tutti i tipi.**
+//
+// Erano tre liste diverse, ereditate da quando erano tre tabelle: una struttura
+// non riceveva `menu`, un ristorante non riceveva `services`. Il risultato è
+// che un hotel poteva riempire il menù dal pannello e poi non vederlo comparire
+// sul proprio sito — l'interruttore c'era, il dato non arrivava.
+//
+// Restano fuori le credenziali del WiFi: le chiede soltanto chi rende l'app
+// dell'ospite, con `getStruttura(slug, { ospite: true })`.
+const CAMPI_ENTITA = [
+  'id', 'azienda_id', 'tipo', 'settore', 'slug', 'name', 'description',
+  'address', 'phone', 'email', 'schedule', 'whatsapp',
+  'logo_url', 'logo_dark_url', 'cover_url', 'gallery', 'theme', 'minisito',
+  'services', 'activities', 'excursions', 'menu', 'amenities', 'restaurant',
+  'checkin_time', 'checkout_time', 'rules',
+  'plan', 'moduli', 'privacy_data', 'chatbot',
+].join(', ')
+
+// L'app dell'ospite (dietro il QR della camera) è l'unica che vede le
+// credenziali del WiFi.
+const CAMPI_OSPITE = `${CAMPI_ENTITA}, wifi_name, wifi_password`
 
 async function leggiEntita(slug, tipo, campi) {
   const { data, error } = await supabaseAdmin
@@ -51,8 +69,8 @@ async function leggiEntita(slug, tipo, campi) {
   return allaFormaStorica(data)
 }
 
-export async function getStruttura(slug) {
-  const data = await leggiEntita(slug, 'struttura', CAMPI_STRUTTURA)
+export async function getStruttura(slug, { ospite = false } = {}) {
+  const data = await leggiEntita(slug, 'struttura', ospite ? CAMPI_OSPITE : CAMPI_ENTITA)
   if (!data) return null
   const collegamenti = await getCollegamenti('struttura', data.id)
   const azienda_legale = await getAziendaLegale(data.azienda_id)
@@ -60,7 +78,7 @@ export async function getStruttura(slug) {
 }
 
 export async function getRistorante(slug) {
-  const data = await leggiEntita(slug, 'ristorante', CAMPI_RISTORANTE)
+  const data = await leggiEntita(slug, 'ristorante', CAMPI_ENTITA)
   if (!data) return null
   const collegamenti = await getCollegamenti('ristorante', data.id)
   const azienda_legale = await getAziendaLegale(data.azienda_id)
@@ -68,7 +86,7 @@ export async function getRistorante(slug) {
 }
 
 export async function getAttivita(slug) {
-  const data = await leggiEntita(slug, 'attivita', CAMPI_ATTIVITA)
+  const data = await leggiEntita(slug, 'attivita', CAMPI_ENTITA)
   if (!data) return null
   const azienda_legale = await getAziendaLegale(data.azienda_id)
   return { ...data, azienda_legale }

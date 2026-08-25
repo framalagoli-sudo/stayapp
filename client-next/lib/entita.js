@@ -120,10 +120,38 @@ export function dallaFormaStorica(campi, tipo) {
   return out
 }
 
-// Preset per tipo: cosa si accende quando un cliente crea una nuova entità.
-// Sono suggerimenti di partenza, non vincoli — si cambiano dal pannello.
-export const MODULI_PREDEFINITI = {
-  struttura:  { info: true, galleria: true, servizi: true, wifi: true, reception: true, chat: true },
-  ristorante: { info: true, galleria: true, menu: true, prenota: true, allergeni: true },
-  attivita:   { info: true, galleria: true, servizi: true, contatti: true },
+// I campi che il pannello può modificare. **Uno solo per tutti i tipi.**
+//
+// Prima ogni route aveva la sua lista e le liste erano diverse: una struttura
+// non poteva scrivere `menu`, un ristorante non poteva scrivere `services`. Non
+// era una regola di prodotto, era un residuo di quando erano tre tabelle
+// separate — e teneva in piedi il recinto anche dopo averlo tolto dai dati.
+//
+// La lista resta perché serve: senza, un PATCH potrebbe riscrivere
+// `azienda_id` e spostare l'entità sotto un'altra azienda. Quello che cambia è
+// che ora il confine è fra "contenuto del cliente" e "chiavi di sistema", non
+// fra un verticale e l'altro.
+//
+// Fuori di proposito: `id`, `azienda_id`, `created_at`, `plan`, `group_id`,
+// `origine_tabella` (chi appartiene a chi non si decide da una richiesta HTTP) e
+// `slug`, che ha una strada sua perché va normalizzato e verificato unico.
+export const CAMPI_MODIFICABILI = [
+  'name', 'description', 'address', 'phone', 'email', 'schedule', 'whatsapp',
+  'logo_url', 'logo_dark_url', 'cover_url', 'gallery', 'theme', 'minisito',
+  'services', 'activities', 'excursions', 'menu', 'amenities', 'restaurant',
+  'wifi_name', 'wifi_password', 'checkin_time', 'checkout_time', 'rules',
+  'chatbot', 'privacy_data', 'active',
+  // Nomi storici che il pannello manda ancora: `dallaFormaStorica` li riporta
+  // a `moduli` e a `settore` prima della scrittura.
+  'modules', 'pwa', 'tipo',
+]
+
+// Tiene del corpo della richiesta solo ciò che è lecito modificare.
+export function campiAmmessi(body) {
+  return Object.fromEntries(Object.entries(body || {}).filter(([k]) => CAMPI_MODIFICABILI.includes(k)))
 }
+
+// Il catalogo delle funzioni vive in `lib/funzioni.js` (senza dipendenze
+// server, perché lo legge anche il browser). Ri-esportato qui perché le route
+// continuino a trovarlo dove l'hanno sempre cercato.
+export { FUNZIONI, funzioneAttiva, MODULI_PREDEFINITI } from '@/lib/funzioni'

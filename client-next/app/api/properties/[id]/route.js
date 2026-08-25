@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
-import { allaFormaStorica, dallaFormaStorica } from '@/lib/entita'
+import { allaFormaStorica, dallaFormaStorica, campiAmmessi } from '@/lib/entita'
 import { sincronizzaSlugDomini, rimuoviDominiEntita } from '@/lib/domini-manutenzione'
 
 async function getProfile(userId) {
@@ -30,11 +30,9 @@ export async function PATCH(request, props) {
     if (response) return response
     const body = await request.json()
 
-    const allowed = ['name', 'description', 'address', 'phone', 'whatsapp', 'email',
-      'wifi_name', 'wifi_password', 'checkin_time', 'checkout_time', 'rules', 'amenities',
-      'modules', 'theme', 'logo_url', 'logo_dark_url', 'cover_url', 'services', 'gallery', 'restaurant',
-      'activities', 'excursions', 'minisito', 'privacy_data', 'chatbot']
-    const updates = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
+    // Una sola lista per tutti i tipi: il verticale non decide più cosa si
+    // può scrivere (vedi CAMPI_MODIFICABILI in lib/entita.js).
+    const updates = campiAmmessi(body)
 
     if (body.slug !== undefined) {
       const clean = String(body.slug).toLowerCase().normalize('NFD')

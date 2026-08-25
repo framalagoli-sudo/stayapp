@@ -15,7 +15,7 @@ import {
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useRistorante } from '../../../hooks/useRistorante'
+import { useEntita } from '../../../hooks/useEntita'
 import { uploadMedia } from '../../../lib/api'
 
 const BLANK_ITEM = { name: '', description: '', price: '', allergens: [], dietary: [], photo_url: '', active: true }
@@ -93,9 +93,9 @@ function SortableItem({ id, children }) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function RistoranteMenuPage() {
+export default function RistoranteMenuPage({ entityType = 'ristorante' }) {
   const { id } = useParams()
-  const { ristorante, loading, saving, saved, saveError, save } = useRistorante(id)
+  const { entita: ristorante, loading, saving, saved, saveError, save } = useEntita(entityType, id)
   const [menu, setMenu] = useState([])
   const menuLoaded = useRef(false)
   const menuRef    = useRef([])

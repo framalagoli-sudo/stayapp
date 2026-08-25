@@ -1,9 +1,9 @@
 ﻿'use client'
-import { useProperty } from '../../../hooks/useProperty'
+import { useEntita } from '../../../hooks/useEntita'
 import ExcursionsSection from '../ExcursionsSection'
 
-export default function PropertyExcursionsPage() {
-  const { property, loading, save } = useProperty()
+export default function PropertyExcursionsPage({ entityType = 'struttura' }) {
+  const { entita: property, loading, save } = useEntita(entityType)
 
   if (loading) return <p style={loadingStyle}>Caricamento…</p>
   if (!property) return <p style={errorStyle}>Nessuna struttura associata al profilo.</p>

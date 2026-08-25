@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { funzioneAttiva } from '@/lib/funzioni'
 import { useAuth } from '@/context/AuthContext'
 import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
@@ -13,7 +14,7 @@ import {
   QrCode, UserCheck, ClipboardList, LogOut, Activity,
   Building, Building2, Store, Zap, Webhook, BotMessageSquare, Star, Settings,
   Info, Layers, Wrench, Image, Palette, MapPin, Globe, Lock, Bot, UtensilsCrossed,
-  FormInput, ShoppingBag, Sparkles, BarChart3, Gift, SearchCheck, LifeBuoy, LayoutTemplate, Wand2,
+  FormInput, ShoppingBag, Sparkles, BarChart3, Gift, SearchCheck, LifeBuoy, LayoutTemplate, Wand2, SlidersHorizontal,
 } from 'lucide-react'
 
 // ─── Nav definitions ──────────────────────────────────────────────────────────
@@ -34,42 +35,32 @@ const NAV_PROPERTY = [
 // L'ordine dell'array definisce l'ordine di render; il campo `group` genera gli
 // header di sezione (vedi renderSubs). AI Site Builder e QR Code vengono iniettati
 // nel gruppo "Sito & presenza".
-const STRUTTURA_SUBS = [
-  { sub: 'info',       label: 'Informazioni',  icon: Info,    group: 'Contenuti' },
-  { sub: 'services',   label: 'Servizi',       icon: Wrench,  group: 'Contenuti' },
-  { sub: 'activities', label: 'Attività',      icon: Zap,     group: 'Contenuti' },
-  { sub: 'excursions', label: 'Escursioni',    icon: MapPin,  group: 'Contenuti' },
-  { sub: 'gallery',    label: 'Galleria',      icon: Image,   group: 'Contenuti' },
-  { sub: 'sito',       label: 'Sito web',      icon: Globe,   group: 'Sito & presenza' },
-  { sub: 'theme',      label: 'Tema e colori', icon: Palette, group: 'Sito & presenza' },
-  { sub: 'vetrine',    label: 'Vetrine',       icon: Store,   group: 'Sito & presenza' },
-  { sub: 'domini',     label: 'Domini',        icon: Globe,   group: 'Sito & presenza' },
-  { sub: 'modules',    label: 'App Clienti',   icon: Layers,  group: 'Sito & presenza' },
-  { sub: 'chatbot',    label: 'Chatbot',       icon: Bot,     group: 'Sito & presenza' },
-  { sub: 'privacy',    label: 'Privacy',       icon: Lock,    group: 'Impostazioni' },
-]
-const RISTORANTE_SUBS = [
-  { sub: 'info',     label: 'Informazioni',  icon: Info,           group: 'Contenuti' },
-  { sub: 'menu',     label: 'Menu',          icon: UtensilsCrossed, group: 'Contenuti' },
-  { sub: 'gallery',  label: 'Galleria',      icon: Image,          group: 'Contenuti' },
-  { sub: 'sito',     label: 'Sito web',      icon: Globe,          group: 'Sito & presenza' },
-  { sub: 'theme',    label: 'Tema e colori', icon: Palette,        group: 'Sito & presenza' },
-  { sub: 'vetrine',  label: 'Vetrine',       icon: Store,          group: 'Sito & presenza' },
-  { sub: 'domini',   label: 'Domini',        icon: Globe,          group: 'Sito & presenza' },
-  { sub: 'moduli',   label: 'App Clienti',   icon: Layers,         group: 'Sito & presenza' },
-  { sub: 'chatbot',  label: 'Chatbot',       icon: Bot,            group: 'Sito & presenza' },
-  { sub: 'privacy',  label: 'Privacy',       icon: Lock,           group: 'Impostazioni' },
-]
-const ATTIVITA_SUBS = [
-  { sub: 'info',     label: 'Informazioni',  icon: Info,    group: 'Contenuti' },
-  { sub: 'gallery',  label: 'Galleria',      icon: Image,   group: 'Contenuti' },
-  { sub: 'sito',     label: 'Sito web',      icon: Globe,   group: 'Sito & presenza' },
-  { sub: 'theme',    label: 'Tema e colori', icon: Palette, group: 'Sito & presenza' },
-  { sub: 'vetrine',  label: 'Vetrine',       icon: Store,   group: 'Sito & presenza' },
-  { sub: 'domini',   label: 'Domini',        icon: Globe,   group: 'Sito & presenza' },
-  { sub: 'moduli',   label: 'App Clienti',   icon: Layers,  group: 'Sito & presenza' },
-  { sub: 'chatbot',  label: 'Chatbot',       icon: Bot,     group: 'Sito & presenza' },
-  { sub: 'privacy',  label: 'Privacy',       icon: Lock,    group: 'Impostazioni' },
+// Le sezioni di un'entità. UNA LISTA SOLA per tutti i tipi: prima ce n'erano
+// tre, ed è il motivo per cui un hotel non poteva avere un menù e un ristorante
+// non poteva elencare i servizi.
+//
+// `funzione` collega la voce all'interruttore nella pagina Funzioni: se quella
+// funzione è spenta, la voce non compare. Le voci senza `funzione` sono
+// l'ossatura del pannello e ci sono sempre.
+//
+// `nomeSezione` esiste perché lo stesso schermo ha percorsi storici diversi fra
+// i tipi (`modules` per le strutture, `moduli` per gli altri): finché gli URL
+// restano quelli, la differenza si gestisce qui e non in tre liste separate.
+const SEZIONI_ENTITA = [
+  { sub: 'info',       label: 'Informazioni',  icon: Info,             group: 'Contenuti' },
+  { sub: 'menu',       label: 'Menù',          icon: UtensilsCrossed,  group: 'Contenuti',        funzione: 'menu' },
+  { sub: 'services',   label: 'Servizi',       icon: Wrench,           group: 'Contenuti',        funzione: 'servizi' },
+  { sub: 'activities', label: 'Attività',      icon: Zap,              group: 'Contenuti',        funzione: 'attivita' },
+  { sub: 'excursions', label: 'Escursioni',    icon: MapPin,           group: 'Contenuti',        funzione: 'escursioni' },
+  { sub: 'gallery',    label: 'Galleria',      icon: Image,            group: 'Contenuti',        funzione: 'galleria' },
+  { sub: 'sito',       label: 'Sito web',      icon: Globe,            group: 'Sito & presenza' },
+  { sub: 'theme',      label: 'Tema e colori', icon: Palette,          group: 'Sito & presenza' },
+  { sub: 'vetrine',    label: 'Vetrine',       icon: Store,            group: 'Sito & presenza',  funzione: 'vetrine' },
+  { sub: 'domini',     label: 'Domini',        icon: Globe,            group: 'Sito & presenza' },
+  { sub: 'moduli',     label: 'App Clienti',   icon: Layers,           group: 'Sito & presenza',  nomeSezione: { struttura: 'modules' } },
+  { sub: 'chatbot',    label: 'Chatbot',       icon: Bot,              group: 'Sito & presenza',  funzione: 'chatbot' },
+  { sub: 'funzioni',   label: 'Funzioni',      icon: SlidersHorizontal, group: 'Impostazioni' },
+  { sub: 'privacy',    label: 'Privacy',       icon: Lock,             group: 'Impostazioni' },
 ]
 
 // ─── CSS ──────────────────────────────────────────────────────────────────────
@@ -267,9 +258,10 @@ export default function AdminLayout({ children }) {
   function renderSubs(subs, hrefFor) {
     const out = []
     let lastGroup = null
-    subs.forEach(({ sub, label, icon, group }) => {
+    subs.forEach((voce) => {
+      const { sub, label, icon, group } = voce
       if (group !== lastGroup) { out.push(<SectionHeader key={`h-${group}`} label={group} />); lastGroup = group }
-      out.push(<NavItem key={sub} to={hrefFor(sub)} icon={icon} label={label} sub />)
+      out.push(<NavItem key={sub} to={hrefFor(sub, voce)} icon={icon} label={label} sub />)
       if (sub === 'sito')   out.push(<NavItem key="ai-builder" to="/admin/ai-site-builder" icon={Wand2}  label="AI Site Builder" sub />)
       if (sub === 'domini') out.push(<NavItem key="qr"         to="/admin/qrcode"          icon={QrCode} label="QR Code"        sub />)
     })
@@ -279,14 +271,22 @@ export default function AdminLayout({ children }) {
   const noneMsg = (txt) => (
     <div style={{ padding: '6px 12px 10px 20px', fontSize: 12, color: '#666', fontStyle: 'italic' }}>{txt}</div>
   )
-  function StrutturaSubLinks({ baseId }) {
-    return baseId ? renderSubs(STRUTTURA_SUBS, sub => `/admin/struttura/${baseId}/${sub}`) : noneMsg('Nessuna struttura creata.')
-  }
-  function RistoranteSubLinks({ baseId }) {
-    return baseId ? renderSubs(RISTORANTE_SUBS, sub => `/admin/ristoranti/${baseId}/${sub}`) : noneMsg('Nessun ristorante creato.')
-  }
-  function AttivitaSubLinks({ baseId }) {
-    return baseId ? renderSubs(ATTIVITA_SUBS, sub => `/admin/attivita/${baseId}/${sub}`) : noneMsg('Nessuna attività creata.')
+  // Le voci di un'entità dipendono da cosa il cliente ha acceso, non dal tipo.
+  // Una lista sola per tutti e tre: prima erano tre, ed è la ragione per cui un
+  // hotel non poteva avere un menù.
+  function EntitaSubLinks({ tipo, baseId }) {
+    const vuoto = { struttura: 'Nessuna struttura creata.', ristorante: 'Nessun ristorante creato.', attivita: 'Nessuna attività creata.' }
+    if (!baseId) return noneMsg(vuoto[tipo])
+
+    const elenco = { struttura: strutture, ristorante: ristoranti, attivita }[tipo] || []
+    const ent = elenco.find(e => e.id === baseId)
+    // `modules` per strutture e ristoranti, `pwa` per le attività: sono i nomi
+    // storici che le route restituiscono ancora.
+    const conModuli = { ...(ent || {}), tipo, moduli: ent?.moduli || ent?.modules || ent?.pwa }
+
+    const base = { struttura: 'struttura', ristorante: 'ristoranti', attivita: 'attivita' }[tipo]
+    const visibili = SEZIONI_ENTITA.filter(s => !s.funzione || (ent && funzioneAttiva(conModuli, s.funzione)))
+    return renderSubs(visibili, (sub, voce) => `/admin/${base}/${baseId}/${voce?.nomeSezione?.[tipo] || sub}`)
   }
 
   function renderBookingSection() {
@@ -372,9 +372,7 @@ export default function AdminLayout({ children }) {
 
   // ─── Sito & App links (derivati dall'entità attiva) ───────────────────────
   function SitoAppLinks() {
-    if (activeEntityType === 'struttura') return <StrutturaSubLinks baseId={activeSitoId} />
-    if (activeEntityType === 'ristorante') return <RistoranteSubLinks baseId={activeSitoId} />
-    if (activeEntityType === 'attivita') return <AttivitaSubLinks baseId={activeSitoId} />
+    if (activeEntityType) return <EntitaSubLinks tipo={activeEntityType} baseId={activeSitoId} />
     return (
       <div style={{ padding: '6px 12px 10px', fontSize: 12, color: '#555', fontStyle: 'italic' }}>
         Nessuna entità attiva.

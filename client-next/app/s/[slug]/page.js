@@ -18,6 +18,13 @@ export async function generateMetadata(props) {
 
   const lang = searchParams?._lang === 'en' ? 'en' : 'it'
   const mini = property.minisito || {}
+  // L'app dell'ospite non è una pagina da motore di ricerca: è quello che si
+  // apre inquadrando il QR in camera, e contiene la password del WiFi, gli
+  // orari e le regole della casa. Senza questo, basta che un link finisca in
+  // giro perché Google indicizzi la password di un cliente — misurato il
+  // 25/08/2026 su una struttura vera. Il minisito, che è la pagina di
+  // marketing, resta indicizzabile come prima.
+  const mostraApp = searchParams?.qr === '1' || !mini.active
   const title = mini.seo_title || property.name
   const description = mini.seo_description || property.description || ''
   const image = property.cover_url || ''
@@ -29,6 +36,7 @@ export async function generateMetadata(props) {
   return {
     title,
     description,
+    ...(mostraApp && { robots: { index: false, follow: false } }),
     manifest: `/api/manifest/s/${slug}`,
     appleWebApp: { capable: true, statusBarStyle: 'default', title: property.name },
     icons: { apple: property.logo_url || '/icons/apple-touch-icon.png' },
@@ -47,12 +55,18 @@ export default async function StrutturaPage(props) {
   const searchParams = await props.searchParams;
   const params = await props.params;
   const { slug } = await params
-  const property = await getStruttura(slug)
+  let property = await getStruttura(slug)
   if (!property) notFound()
 
   const isQR = searchParams?.qr === '1'
   const showMinisito = !isQR && property.minisito?.active
   const lang = searchParams?._lang === 'en' ? 'en' : 'it'
+
+  // Le credenziali del WiFi si chiedono solo quando si rende davvero l'app
+  // dell'ospite. Le sotto-pagine e il minisito non le ricevono nemmeno dal
+  // database: prima arrivavano ovunque e venivano tolte dopo, che è una difesa
+  // sola e facile da dimenticare al prossimo ramo che qualcuno aggiunge.
+  if (!showMinisito) property = await getStruttura(slug, { ospite: true })
 
   if (showMinisito) {
     const preview = searchParams?.preview || null // token firmato dall'editor
