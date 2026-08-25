@@ -16,6 +16,10 @@ import { t as tr } from '@/lib/i18n'
 import Turnstile from '@/components/Turnstile'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import ChatChoice from '@/components/ChatChoice'
+import MenuTab from '@/components/MenuTab'
+import ActivitiesTab from '@/components/guest/ActivitiesTab'
+import ExcursionsTab from '@/components/guest/ExcursionsTab'
+import { sezioniOspite, ETICHETTA_OSPITE } from '@/lib/funzioni'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DEFAULT_THEME = {
@@ -161,10 +165,16 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
   const sp = { primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, lang }
 
   const homeSections = aMods.home_sections || {}
-  const CHIPS = [
-    hasServizi  && homeSections.servizi  !== false && { key: 'servizi',  label: tr('services_title', lang) },
-    hasGallery  && homeSections.galleria !== false && { key: 'galleria', label: tr('gallery', lang) },
-  ].filter(Boolean)
+  // Un'attività può essere una palestra, un bar, uno studio: il menù e le
+  // escursioni non sono "roba da ristoranti o da hotel", sono funzioni che
+  // accende chi ne ha bisogno.
+  const CHIPS = sezioniOspite(attivita, {
+    servizi:    hasServizi,
+    galleria:   hasGallery,
+    menu:       (attivita.menu || []).length > 0,
+    attivita:   (attivita.activities || []).some(c => c.items?.some(i => i.active)),
+    escursioni: (attivita.excursions || []).some(e => e.active),
+  }).map(k => ({ key: k, label: tr(ETICHETTA_OSPITE[k], lang) }))
   const activeChip = CHIPS.find(c => c.key === exploreChip) ? exploreChip : CHIPS[0]?.key
 
   function switchTab(key) {
@@ -481,7 +491,7 @@ function AHomePage({ attivita, aMods, hasGallery, hasServizi, onExplore, domain 
 }
 
 // ─── ESPLORA ──────────────────────────────────────────────────────────────────
-function AEsploraPage({ attivita, activeChip, primary, textColor, subText, isDark, radius, headingFamily, cardBg, borderColor, lang = 'it' }) {
+function AEsploraPage({ attivita, activeChip, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, lang = 'it' }) {
   const [lightbox, setLightbox] = useState(null)
 
   if (!activeChip) return (
@@ -498,6 +508,15 @@ function AEsploraPage({ attivita, activeChip, primary, textColor, subText, isDar
       <div key={activeChip} className="fade-up" style={{ padding: '20px 16px 28px' }}>
         {activeChip === 'servizi' && (
           <AServiziContent attivita={attivita} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} headingFamily={headingFamily} cardBg={cardBg} borderColor={borderColor} lang={lang} />
+        )}
+        {activeChip === 'menu' && (
+          <MenuTab menu={attivita.menu || []} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} headingFamily={headingFamily} cardBg={cardBg} surfaceBg={surfaceBg} borderColor={borderColor} showAllergens lang={lang} />
+        )}
+        {activeChip === 'attivita' && (
+          <ActivitiesTab activities={attivita.activities} propertyId={attivita.id} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} lang={lang} />
+        )}
+        {activeChip === 'escursioni' && (
+          <ExcursionsTab excursions={attivita.excursions} propertyId={attivita.id} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} lang={lang} />
         )}
         {activeChip === 'galleria' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>

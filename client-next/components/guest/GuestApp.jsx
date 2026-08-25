@@ -15,6 +15,8 @@ import { t as tr } from '@/lib/i18n'
 import { supabase } from '@/lib/supabase'
 import RequestForm from './RequestForm'
 import ServicesTab from './ServicesTab'
+import MenuTab from '@/components/MenuTab'
+import { sezioniOspite, ETICHETTA_OSPITE } from '@/lib/funzioni'
 import ActivitiesTab from './ActivitiesTab'
 import ExcursionsTab from './ExcursionsTab'
 import ChatbotWidget from '@/components/ChatbotWidget'
@@ -233,13 +235,17 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
   const hasExcursions = (property.excursions|| []).some(e => e.active)
   const hasEventi     = upcomingEventi.length > 0
   const appSections = { ...modules.home_sections }
+  const hasMenu = (property.menu || []).length > 0
+  // Le sezioni dell'app le decide `sezioniOspite`: funzione accesa dal pannello
+  // **e** contenuto dentro. Prima erano cinque condizioni scritte a mano qui, e
+  // il menù non era fra queste — per questo un hotel poteva riempirlo senza
+  // vederlo mai nell'app della camera.
   const CHIPS = [
-    hasGallery    && appSections.galleria   !== false && { key: 'galleria',   label: tr('gallery', lang) },
-    hasServices   && appSections.servizi    !== false && { key: 'servizi',    label: tr('services_title', lang) },
-    hasActivities && appSections.attivita   !== false && { key: 'attivita',   label: tr('activities_title', lang) },
-    hasExcursions && appSections.escursioni !== false && { key: 'escursioni', label: tr('excursions_title', lang) },
-    hasEventi     && appSections.eventi     !== false && { key: 'eventi',     label: tr('events_chip', lang) },
-  ].filter(Boolean)
+    ...sezioniOspite(property, { galleria: hasGallery, servizi: hasServices, attivita: hasActivities, escursioni: hasExcursions, menu: hasMenu })
+      .map(k => ({ key: k, label: tr(ETICHETTA_OSPITE[k], lang) })),
+    // Gli eventi non sono una funzione dell'entità: arrivano dall'azienda.
+    ...(hasEventi && appSections.eventi !== false ? [{ key: 'eventi', label: tr('events_chip', lang) }] : []),
+  ]
   const activeChip = CHIPS.find(c => c.key === exploreChip) ? exploreChip : CHIPS[0]?.key
 
   // Logo dell'app: header scuro → default logo negativo (vedi pickAppLogo).
@@ -573,7 +579,7 @@ function HomePage({ property, upcomingEventi = [], modules, onExplore, domain = 
 }
 
 // ─── ESPLORA ──────────────────────────────────────────────────────────────────
-function EsploraPage({ property, upcomingEventi = [], activeChip, primary, textColor, subText, isDark, radius, headingFamily, lang = 'it' }) {
+function EsploraPage({ property, upcomingEventi = [], activeChip, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, lang = 'it' }) {
   const [lightbox,      setLightbox]      = useState(null)
   const [selectedEvento, setSelectedEvento] = useState(null)
   const sp = { primary, textColor, subText, isDark, radius, headingFamily, lang }
@@ -595,6 +601,7 @@ function EsploraPage({ property, upcomingEventi = [], activeChip, primary, textC
     <div>
       <div key={activeChip} className="fade-up" style={{ padding: '20px 16px 28px' }}>
         {activeChip === 'galleria'   && <GalleriaGrid gallery={property.gallery || []} radius={radius} onOpen={setLightbox} />}
+        {activeChip === 'menu'       && <MenuTab menu={property.menu || []} cardBg={cardBg} surfaceBg={surfaceBg} borderColor={borderColor} showAllergens {...sp} />}
         {activeChip === 'servizi'    && <ServicesTab services={property.services} {...sp} />}
         {activeChip === 'attivita'   && <ActivitiesTab activities={property.activities} propertyId={property.id} {...sp} />}
         {activeChip === 'escursioni' && <ExcursionsTab excursions={property.excursions} propertyId={property.id} {...sp} />}

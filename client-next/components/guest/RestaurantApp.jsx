@@ -11,6 +11,10 @@ import {
   X, Check, ChevronRight, ChevronDown, ArrowLeft,
 } from 'lucide-react'
 import MenuTab from '@/components/MenuTab'
+import ServicesTab from '@/components/guest/ServicesTab'
+import ActivitiesTab from '@/components/guest/ActivitiesTab'
+import ExcursionsTab from '@/components/guest/ExcursionsTab'
+import { sezioniOspite, ETICHETTA_OSPITE } from '@/lib/funzioni'
 import { guestFetch } from '@/lib/api'
 import { pickAppLogo } from '@/lib/appLogo'
 import { t as tr } from '@/lib/i18n'
@@ -174,10 +178,15 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
     return n + (c.items?.length || 0)
   }, 0)
   const homeSections = rModules.home_sections || {}
-  const CHIPS = [
-    homeSections.menu    !== false && { key: 'menu',    label: tr('menu', lang) },
-    hasGallery && homeSections.galleria !== false && { key: 'galleria', label: tr('gallery', lang) },
-  ].filter(Boolean)
+  // Un ristorante non è più solo un menù: se accende servizi, attività o
+  // escursioni dal pannello, l'app della sala li mostra come tutti gli altri.
+  const CHIPS = sezioniOspite(ristorante, {
+    menu:       (ristorante.menu || []).length > 0,
+    galleria:   hasGallery,
+    servizi:    (ristorante.services || []).length > 0,
+    attivita:   (ristorante.activities || []).some(c => c.items?.some(i => i.active)),
+    escursioni: (ristorante.excursions || []).some(e => e.active),
+  }).map(k => ({ key: k, label: tr(ETICHETTA_OSPITE[k], lang) }))
   const activeChip = CHIPS.find(c => c.key === exploreChip) ? exploreChip : CHIPS[0]?.key
 
   function switchTab(key) {
@@ -513,6 +522,9 @@ function REsploraPage({ ristorante, activeChip, primary, textColor, subText, isD
     <div>
       <div key={activeChip} className="fade-up" style={{ padding: '20px 16px 28px' }}>
         {activeChip === 'menu'    && <MenuTab    menu={ristorante.menu || []}        {...sp} />}
+        {activeChip === 'servizi'    && <ServicesTab   services={ristorante.services} {...sp} />}
+        {activeChip === 'attivita'   && <ActivitiesTab activities={ristorante.activities} propertyId={ristorante.id} {...sp} />}
+        {activeChip === 'escursioni' && <ExcursionsTab excursions={ristorante.excursions} propertyId={ristorante.id} {...sp} />}
         {activeChip === 'galleria'&& <GalleriaTab gallery={ristorante.gallery || []} primary={primary} radius={radius} onOpen={setLightbox} />}
       </div>
 
