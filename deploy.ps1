@@ -85,4 +85,28 @@ if ($testExit -ne 0) {
     exit 1
 }
 
-Write-Host "`nDeploy + smoke test completati con successo." -ForegroundColor Green
+# ── Sonde di sicurezza ───────────────────────────────────────────────────────
+# Un check di sicurezza fatto una volta e' una fotografia: vale finche' nessuno
+# tocca il codice. Queste tre girano a ogni deploy perche' le classi che coprono
+# sono esattamente quelle che in passato sono rientrate da una porta laterale:
+#   - security-sweep      chi puo' leggere cosa senza titolo (multi-tenant)
+#   - rls-secondo-muro    cosa esce bussando al database, colonne comprese
+#   - colonne-pubbliche   quali colonne escono da una route senza login
+# Non bloccano il deploy (e' gia' avvenuto): segnalano subito, forte.
+Write-Host "`n=== Sonde di sicurezza ===" -ForegroundColor Cyan
+Set-Location tests
+$sicurezzaKo = 0
+foreach ($sonda in @("probe-security-sweep.mjs", "probe-rls-secondo-muro.mjs", "probe-colonne-pubbliche.mjs")) {
+    Write-Host "-- $sonda" -ForegroundColor DarkGray
+    node $sonda
+    if ($LASTEXITCODE -ne 0) { $sicurezzaKo++ }
+}
+Set-Location ..
+
+if ($sicurezzaKo -gt 0) {
+    Write-Host "`n!! $sicurezzaKo sonde di sicurezza hanno segnalato qualcosa: GUARDARE SOPRA." -ForegroundColor Red
+    Write-Host "   Il deploy e' gia' avvenuto. Se e' un buco vero, si chiude adesso." -ForegroundColor Yellow
+    exit 1
+}
+
+Write-Host "`nDeploy + smoke test + sonde di sicurezza: tutto a posto." -ForegroundColor Green

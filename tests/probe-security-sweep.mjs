@@ -27,6 +27,17 @@ const PUBBLICHE = [
   /^\/api\/contatti\/subscribe/, /^\/api\/client-error/, /^\/api\/upload$/,
   /^\/api\/(llms|manifest|sitemap)\//, /^\/api\/newsletter\/archive\//,
   /^\/api\/form-builder\/public\//, /^\/api\/preventivi\/public\//,
+  // Aggiunte il 25/08/2026 dopo averle guardate una per una: rispondono a
+  // visitatori senza account ed e' il loro mestiere. Verificato che espongano
+  // solo dati destinati al pubblico; probe-colonne-pubbliche.mjs sorveglia che
+  // resti cosi anche quando qualcuno aggiunge una colonna.
+  /^\/api\/blog\/public/,              // elenco articoli del blog di un cliente
+  /^\/api\/booking\/public\//,         // disponibilità e prenotazione da parte dell'ospite
+  /^\/api\/loyalty\/public\//,         // saldo punti, già reso cieco sull'esistenza di un'email
+  /^\/api\/shop\/public\//,            // catalogo, con select esplicita
+  /^\/api\/requests\/public/,          // il form contatti di un sito
+  /^\/api\/landing-seo$/,              // i meta della landing OltreNova, già nell'HTML
+  /^\/api\/google-calendar\/callback/, // ritorno OAuth: arriva dal browser di Google
 ]
 const eProtetta = p => !PUBBLICHE.some(r => r.test(p))
 
