@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { formatoValido, focalValido } from '@/lib/formati-foto'
 import { requireRecordAccess, entitaDellaAzienda } from '@/lib/server-auth'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -6,7 +7,7 @@ function isUUID(v) { return UUID_RE.test(v) }
 
 const ALLOWED = ['title', 'description', 'cover_url', 'date_start', 'date_end',
   'location', 'price', 'seats_total', 'active', 'published', 'packages', 'entity_tipo', 'entity_id',
-  'notify_owner_on_booking', 'send_guest_confirmation']
+  'notify_owner_on_booking', 'send_guest_confirmation', 'formato_cover', 'cover_focal']
 
 export async function GET(request, props) {
   const params = await props.params;
@@ -26,6 +27,11 @@ export async function PATCH(request, props) {
     if (response) return response
     const body = await request.json()
     const payload = Object.fromEntries(Object.entries(body).filter(([k]) => ALLOWED.includes(k)))
+    // Questi due finiscono in una proprietà CSS della pagina pubblica: si
+    // accettano solo una chiave del catalogo e una coppia di percentuali.
+    // Qualsiasi altra cosa diventa null, cioè il predefinito.
+    if ('formato_cover' in payload) payload.formato_cover = formatoValido(payload.formato_cover)
+    if ('cover_focal' in payload) payload.cover_focal = focalValido(payload.cover_focal)
     if (payload.entity_id && !isUUID(payload.entity_id)) { payload.entity_id = null; payload.entity_tipo = null }
     // Spostare l'evento su un'entità altrui lo pubblicherebbe sul sito di un
     // altro cliente: il record è mio, la destinazione no.

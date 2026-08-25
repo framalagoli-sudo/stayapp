@@ -1,5 +1,6 @@
 ﻿'use client'
 import React, { useEffect, useRef, useState } from 'react'
+import { rapportoDi } from '@/lib/formati-foto'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import LandingStruttura from './LandingStruttura'
 import CookieBanner from '@/components/CookieBanner'
@@ -800,7 +801,7 @@ function EventoDetailView({ evento, onBack, primary, textColor, subText, isDark,
       </div>
 
       {evento.cover_url && (
-        <img src={evento.cover_url} alt={evento.title} style={{ width: '100%', height: 200, objectFit: 'cover', display: 'block' }} />
+        <img src={evento.cover_url} alt={evento.title} style={{ width: '100%', aspectRatio: rapportoDi(evento.formato_cover), maxHeight: 420, objectFit: 'cover', objectPosition: evento.cover_focal || 'center', display: 'block' }} />
       )}
 
       <div style={{ padding: '20px 16px' }}>

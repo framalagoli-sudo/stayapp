@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch, uploadMedia } from '../../../lib/api'
+import { FORMATI, FORMATO_PREDEFINITO, rapportoDi } from '@/lib/formati-foto'
+import { FocalPointPicker } from '@/components/admin/FocalPointPicker'
 import { Trash2, Plus, X, Upload, Share2 } from 'lucide-react'
 import PostSocialModal from '../../../components/admin/PostSocialModal'
 
@@ -36,6 +38,8 @@ export default function EventoEditPage() {
     notify_owner_on_booking: true, send_guest_confirmation: false,
   })
   const [cover, setCover] = useState(null)       // URL attuale
+  const [formato, setFormato] = useState(FORMATO_PREDEFINITO)
+  const [focal, setFocal] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -45,6 +49,8 @@ export default function EventoEditPage() {
     if (!isNew) {
       apiFetch(`/api/eventi/${id}`).then(ev => {
         setCover(ev.cover_url || null)
+        setFormato(ev.formato_cover || FORMATO_PREDEFINITO)
+        setFocal(ev.cover_focal || null)
         setForm({
           title:       ev.title || '',
           description: ev.description || '',
@@ -123,6 +129,10 @@ export default function EventoEditPage() {
           ...p,
           price: p.price === '' ? 0 : parseFloat(p.price),
         })),
+        // Formato e punto focale vivono nel loro stato, non in `form`: senza
+        // queste due righe si scelgono, sembrano salvati e non arrivano mai.
+        formato_cover: formato,
+        cover_focal: focal,
       }
 
       if (isNew) {
@@ -194,7 +204,7 @@ export default function EventoEditPage() {
             <h3 style={sectionTitle}>Copertina</h3>
             <label style={{ cursor: 'pointer', display: 'block' }}>
               {cover
-                ? <img src={cover} alt="cover" style={{ width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 10, marginBottom: 10 }} />
+                ? <img src={cover} alt="cover" style={{ width: '100%', maxWidth: 420, aspectRatio: rapportoDi(formato), objectFit: 'cover', objectPosition: focal || 'center', borderRadius: 10, marginBottom: 10, display: 'block' }} />
                 : <div style={{ height: 120, borderRadius: 10, border: '2px dashed #ddd', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#aaa', marginBottom: 10 }}>
                     <Upload size={18} strokeWidth={1.5} /> {uploading ? 'Caricamento…' : 'Clicca per caricare l\'immagine'}
                   </div>
@@ -203,10 +213,55 @@ export default function EventoEditPage() {
                 onChange={e => handleCoverUpload(e.target.files[0])} />
             </label>
             {cover && (
-              <button type="button" onClick={() => handleCoverUpload(null)}
-                style={{ fontSize: 12, color: '#e53e3e', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                Rimuovi copertina
-              </button>
+              <>
+                <div style={{ marginTop: 14, marginBottom: 10 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 2 }}>Formato</div>
+                  <div style={{ fontSize: 12.5, color: '#888', marginBottom: 10, lineHeight: 1.5 }}>
+                    Come si vede la foto nella pagina dell’evento. Nell’elenco tutte le schede
+                    restano della stessa forma, così la pagina non si scompone.
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {FORMATI.map(f => {
+                      const scelto = formato === f.chiave
+                      return (
+                        <button key={f.chiave} type="button" onClick={() => setFormato(f.chiave)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 9, background: scelto ? '#e8f7f7' : '#fff',
+                            border: `1.5px solid ${scelto ? '#00b5b5' : '#e2e2e2'}`, borderRadius: 10,
+                            padding: '9px 13px 9px 10px', cursor: 'pointer', textAlign: 'left' }}>
+                          <span style={{ width: 22, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+                            <span style={{ display: 'block', width: '100%', aspectRatio: f.rapporto, maxHeight: 26,
+                              background: scelto ? '#00b5b5' : '#ccc', borderRadius: 3 }} />
+                          </span>
+                          <span style={{ minWidth: 0 }}>
+                            <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#1a1a2e' }}>{f.etichetta}</span>
+                            <span style={{ display: 'block', fontSize: 11.5, color: '#999' }}>{f.misura}</span>
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 2 }}>Punto da tenere sempre visibile</div>
+                  <div style={{ fontSize: 12.5, color: '#888', marginBottom: 8, lineHeight: 1.5 }}>
+                    Nell’elenco la foto viene ritagliata: clicca sul soggetto e resterà lui al centro.
+                  </div>
+                  <FocalPointPicker src={cover} value={focal} onChange={setFocal} />
+                </div>
+
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 12.5, color: '#888', marginBottom: 6 }}>Come apparirà nell’elenco:</div>
+                  <div style={{ width: 190, aspectRatio: '16 / 9', borderRadius: 10, overflow: 'hidden', border: '1px solid #eee' }}>
+                    <img src={cover} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: focal || 'center', display: 'block' }} />
+                  </div>
+                </div>
+
+                <button type="button" onClick={() => handleCoverUpload(null)}
+                  style={{ fontSize: 12, color: '#e53e3e', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                  Rimuovi copertina
+                </button>
+              </>
             )}
           </div>
         )}

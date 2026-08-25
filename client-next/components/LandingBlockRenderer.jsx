@@ -1525,7 +1525,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                   return (
                     <a key={ev.id} href={`/eventi/${ev.id}?back=${encodeURIComponent(homeUrl)}`} style={{ background: '#fafafa', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', border: '1px solid #f0f0f0' }}>
                       {ev.cover_url
-                        ? <img src={ev.cover_url} alt={ev.title} style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block' }} />
+                        ? <img src={ev.cover_url} alt={ev.title} style={{ width: '100%', height: 180, objectFit: 'cover', objectPosition: ev.cover_focal || 'center', display: 'block' }} />
                         : <div style={{ height: 100, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Calendar size={36} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /></div>
                       }
                       <div style={{ padding: '16px 18px' }}>

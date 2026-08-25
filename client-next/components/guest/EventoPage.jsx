@@ -1,5 +1,6 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
+import { rapportoDi } from '@/lib/formati-foto'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Calendar, MapPin, Users, ArrowLeft, Check } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
@@ -86,8 +87,8 @@ export default function EventoPage() {
 
       {/* Cover */}
       {evento.cover_url && (
-        <div style={{ height: 320, overflow: 'hidden' }}>
-          <img src={evento.cover_url} alt={evento.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        <div style={{ overflow: 'hidden', aspectRatio: rapportoDi(evento.formato_cover), maxHeight: 560 }}>
+          <img src={evento.cover_url} alt={evento.title} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: evento.cover_focal || 'center', display: 'block' }} />
         </div>
       )}
 

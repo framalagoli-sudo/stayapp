@@ -15,7 +15,7 @@ export async function GET(request) {
   const lang = searchParams.get('lang') === 'en' ? 'en' : 'it'
 
   let query = supabaseAdmin.from('eventi')
-    .select('id, slug, title, description, cover_url, date_start, date_end, location, price, seats_total, seats_booked, packages')
+    .select('id, slug, title, description, cover_url, formato_cover, cover_focal, date_start, date_end, location, price, seats_total, seats_booked, packages')
     .eq('published', true).eq('active', true)
     .gte('date_start', new Date().toISOString()).order('date_start')
 
