@@ -42,6 +42,20 @@ Dove possibile ognuno ha un test in `tests/smoke/security.spec.js`.
     mai pagato che accredita punti è denaro fabbricato dal nulla (trovato e chiuso il 23/08, vedi
     `SECURITY-CHECK.md` §A2). Vale per ogni flusso futuro: booking, eventi, abbonamenti.
 
+12. **Il codice del browser non importa mai un file che tocca `supabaseAdmin`.** Il pannello, le
+    pagine ospite e ogni componente `'use client'` finiscono in un bundle che chiunque può scaricare.
+    Importare da lì un modulo che apre la connessione con la chiave di servizio trascina codice server
+    nel browser; oggi senza fuga di segreti (Next inlina solo le `NEXT_PUBLIC_*`), ma è la vicinanza da
+    cui nasce l'incidente al primo refactor distratto. Le costanti e i cataloghi condivisi vanno in
+    file senza dipendenze (es. `lib/funzioni.js`). Trovato e separato il 25/08.
+
+13. **Un dato riservato non si toglie a valle: non si legge a monte.** `wifi_password` arrivava a ogni
+    ramo delle pagine struttura e veniva rimosso solo in quello del minisito — quindi viaggiava nel
+    payload pubblico di sito, privacy, cookie e manifest, senza `noindex` da nessuna parte (misurato in
+    produzione il 25/08 su un cliente vero). La select deve chiedere il campo **solo** al ramo che ne ha
+    diritto (`getStruttura(slug, { ospite: true })`). Una difesa a valle sopravvive finché qualcuno non
+    aggiunge un ramo nuovo — e nessuno se ne accorge.
+
 ### Il SISTEMA di monitoraggio (a strati — "sempre" senza sprechi)
 - **Strato 0 — Aggiornamento dipendenze (il "processo tipo WordPress-update").** `.github/dependabot.yml`
   apre PR automatiche per gli aggiornamenti + quelle di **sicurezza (CVE)** se sono attivi i toggle repo

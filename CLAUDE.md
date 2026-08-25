@@ -289,7 +289,20 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - Le vecchie tabelle restano come rete finché non si esegue la migration di dismissione. I trigger `081` le sincronizzano verso `entita`, ma **nessuno ci scrive più**: sono ferme.
     - ⚠️ **Il `next build` NON segnala una funzione non importata** dentro un handler: è passato due volte con import mancanti, e la seconda ha mandato in 500 le tre route `/api/guest/*` in produzione. Dopo una modifica per script, verificare a mano che ogni file che usa una funzione la importi.
     - Sonde: `probe-entita-unificata.mjs` (copia corretta), `probe-sincronizzazione.mjs` (i trigger seguono), `probe-entita-ciclo.mjs` (crea/rileggi/modifica/pubblica sui tre tipi), `probe-confronto-siti.mjs` (i siti sono identici prima e dopo).
-    - 📌 **Manca ancora il pezzo che dà valore al cliente**: il pannello non espone le funzioni fuori dal verticale. Un hotel *può* avere il menù nei dati, ma non vede la voce nel menu laterale. Finché non si fa, l'all-in-one è vero nel database e non nell'esperienza.
+    - ✅ **Il pannello espone le funzioni fuori dal verticale** (25/08/2026). Il recinto sopravviveva in tre punti oltre ai dati, tutti rimossi: la whitelist dei campi scrivibili (una per verticale → `CAMPI_MODIFICABILI` in `lib/entita.js`), il menu laterale (tre liste → `SEZIONI_ENTITA` in `AdminLayout.jsx`) e i campi serviti alle pagine pubbliche (tre select → `CAMPI_ENTITA` in `lib/guest-data.js`, senza cui il dato non arrivava comunque al sito).
+
+32. **🎛️ Le funzioni si accendono dal pannello** (25/08/2026, `lib/funzioni.js` + `FunzioniPage.jsx` → `/admin/<tipo>/[id]/funzioni`). `FUNZIONI` è il catalogo, **uno solo per tutti i tipi**; `funzioneAttiva(ent, chiave)` è l'unica risposta alla domanda "questa funzione è accesa?", e la usano sia il menu laterale sia le pagine.
+    - Chiave **assente** nei `moduli` = mai deciso → vale `MODULI_PREDEFINITI[tipo]`, così chi c'era prima vede esattamente quello che vedeva. Chiave **presente** = scelta del cliente, e vince sempre.
+    - `sempre: true` (Informazioni, Sito) = ossatura, non si spegne.
+    - ⚠️ **Il catalogo NON sta in `lib/entita.js`**: quel file apre la connessione con la chiave di servizio, e importarlo dal pannello — che è codice di browser — ci trascina dentro il bundle client. Verificato il 25/08 che nessun segreto fosse esposto (Next inlina solo le `NEXT_PUBLIC_*`), ma il codice server c'era. Regola: **quello che legge il browser non importa mai un file che tocca `supabaseAdmin`.**
+    - 📌 Cantiere aperto: le **tre PWA ospite** (`GuestApp`, `RestaurantApp`, `AttivitaPWA`) restano separate e hanno vocabolari annidati diversi (`modules.home_sections` vs `pwa.modules.home_sections`). Un hotel che accende il menù lo vede sul **sito**, non ancora nell'app del QR.
+    - Sonde: `probe-funzioni-universali.mjs` (ogni tipo apre ogni sezione e ne salva i contenuti), `probe-entita-campi-sistema.mjs` (la whitelist allargata non lascia scrivere `azienda_id`, `tipo`, `plan`, `created_at`).
+
+33. **📶 Le credenziali del WiFi escono solo dall'app dell'ospite** (25/08/2026). Misurato in produzione: la password WiFi di una struttura vera viaggiava nel payload di **ogni** pagina pubblica di quella struttura — sito, privacy, cookie, manifest — e nessuna diceva ai motori di ricerca di non indicizzarla.
+    - Ora `getStruttura(slug)` **non** legge i campi wifi; li chiede solo il ramo che rende l'app del QR, con `getStruttura(slug, { ospite: true })`. Prima arrivavano ovunque e venivano tolti dopo: una difesa sola, che il prossimo ramo aggiunto avrebbe scavalcato in silenzio.
+    - L'app dell'ospite è **noindex**: è quello che si apre inquadrando il QR in camera, non una pagina da motore di ricerca. Il minisito di marketing resta indicizzabile.
+    - ⚠️ Cercare un segreto nell'HTML **confrontando pochi caratteri dà falsi positivi**: i primi 40 di un JWT sono l'header, uguale per tutti, e una password corta come `214` si trova dentro un path SVG. Confrontare la **coda** e guardare il contesto.
+    - Sonda: `probe-wifi-privacy.mjs` (verifica sia che sparisca dove non serve, sia che **resti** dove serve).
 
 ---
 
