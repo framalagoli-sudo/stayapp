@@ -44,9 +44,14 @@ export async function POST(request) {
     }).select().single()
     if (azErr) { await supabaseAdmin.auth.admin.deleteUser(userId); return Response.json({ error: azErr.message }, { status: 500 }) }
 
-    const { error: profileErr } = await supabaseAdmin.from('profiles').insert({
+    // `upsert`, non `insert`: alla creazione dell'utente un trigger del database
+    // ha già scritto una riga in `profiles` con ruolo `staff` e nessuna azienda.
+    // Con `insert` la chiave duplicata faceva fallire la registrazione — e il
+    // rollback qui sotto cancellava utente e azienda, quindi nessuno riusciva a
+    // iscriversi. Misurato il 25/08/2026 percorrendo il flusso da capo.
+    const { error: profileErr } = await supabaseAdmin.from('profiles').upsert({
       id: userId, role: 'admin_azienda', azienda_id: az.id, full_name: nome_azienda.trim(),
-    })
+    }, { onConflict: 'id' })
     if (profileErr) {
       await supabaseAdmin.auth.admin.deleteUser(userId)
       await supabaseAdmin.from('aziende').delete().eq('id', az.id)
