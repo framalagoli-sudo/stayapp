@@ -56,6 +56,23 @@ Dove possibile ognuno ha un test in `tests/smoke/security.spec.js`.
     diritto (`getStruttura(slug, { ospite: true })`). Una difesa a valle sopravvive finché qualcuno non
     aggiunge un ramo nuovo — e nessuno se ne accorge.
 
+14. **La RLS filtra le righe, non le colonne.** Una tabella leggibile senza sessione perché
+    serve alle pagine pubbliche consegna **l'intera riga** a chiunque abbia la chiave anon — che
+    sta nel bundle di ogni pagina. Per le colonne servono i `GRANT SELECT (col, ...)`: vedi la
+    migration 082 su `entita`, dove uscivano la password del WiFi e i codici fiscali dei
+    titolari. Ogni colonna nuova su una tabella pubblica nasce **non concessa**.
+
+15. **La chiave che scrive i backup non deve poterli cancellare.** Sta nelle stesse variabili
+    d'ambiente della chiave del database: se ha il permesso di cancellazione, un solo furto porta
+    via i dati e l'archivio insieme. La scadenza dei file vecchi si imposta come regola del
+    bucket, non dal codice — e il codice non deve pretendere quel permesso.
+
+16. **Le sonde di sicurezza girano a ogni deploy, non quando qualcuno se ne ricorda.** Sono in
+    coda a `deploy.ps1`. Aggiungendo route o cambiando cosa esce dalle pagine pubbliche, si
+    guarda il loro esito prima di considerare finito il lavoro. E se una segnala qualcosa che
+    è corretto così, va messa in allowlist **con il motivo scritto**: un allarme che suona
+    sempre viene ignorato, ed è peggio che non averlo.
+
 ### Il SISTEMA di monitoraggio (a strati — "sempre" senza sprechi)
 - **Strato 0 — Aggiornamento dipendenze (il "processo tipo WordPress-update").** `.github/dependabot.yml`
   apre PR automatiche per gli aggiornamenti + quelle di **sicurezza (CVE)** se sono attivi i toggle repo

@@ -1,49 +1,72 @@
 ---
 name: todo_prossima_sessione
-description: "To-do prossima sessione (25/8) — UNIFICAZIONE ENTITÀ FATTA E LIVE (una sola tabella, il tipo non limita più le funzioni). PROSSIMO: rendere l'all-in-one visibile nel pannello, poi onboarding. Sotto, storico."
-metadata: 
-  node_type: memory
+description: "To-do prossima sessione (26/8) — RIPARTIRE DAI 3 PUNTI SU FRANCESCO (chiave R2 sola scrittura, prova del backup, 2FA sulle 4 porte). Poi valutare un agent AI per il pentest. Sotto, storico."
+metadata:
   type: project
-  originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
-  modified: 2026-08-25T07:33:41.736Z
 ---
 
-## ▶️ RIPARTIRE DA QUI (25/8) — leggere questo
+## ▶️ RIPARTIRE DA QUI (26/8) — leggere questo
 
-**L'UNIFICAZIONE DELLE ENTITÀ È FATTA E LIVE.** Una sola tabella `entita`; il
-tipo decide solo indirizzo e preset, non quali funzioni un cliente può usare.
-Dettaglio e trappole in [[reference_entita_unificata]] e nota 31 del `CLAUDE.md`.
-Verificato sul campo da Francesco: menu e privacy di un ristorante funzionano.
+### I tre punti che aspettano FRANCESCO — chiedere subito se sono fatti
 
-**➡️ IL PROSSIMO PASSO — rendere l'all-in-one VISIBILE.** Oggi un hotel *può*
-avere il menù nei dati ma **non vede la voce nel pannello**: le sezioni sono
-ancora legate al verticale. Finché non si fa, l'unificazione è vera nel database
-e non nell'esperienza del cliente — cioè non ha ancora prodotto valore.
-Serve: menu laterale guidato dai `moduli` invece che dal tipo, e una pagina dove
-il cliente accende ciò che gli serve («questa attività ha un menù? un listino?
-prenotazioni?»). È anche il pezzo che rende sensato l'onboarding.
+Sono usciti dalla sessione del 25/8 sulla sicurezza. Nessuno dei tre lo posso
+fare io: servono i suoi account. **Chiederglielo all'inizio, non a metà.**
 
-**Poi, in ordine:**
-- **Percorso da cliente nuovo** → specifica dell'onboarding (era il piano prima
-  dell'unificazione; ora ha molto più senso, perché il preset iniziale esiste).
-  ⛔ Ostacolo noto: le registrazioni sono CHIUSE (`signup_enabled=false`) e la
-  pagina `/signup` si apre lo stesso, facendo compilare il modulo per niente.
-- **Dismissione delle vecchie tabelle** (migration 084): quando Francesco è
-  tranquillo. Ora sono ferme, nessuno ci scrive, servono solo da rete.
-- **Togliere gli alias storici** (`modules`/`pwa`/`tipo`) quando il pannello
-  userà i nomi nuovi. È un debito dichiarato, non una scelta di stile.
+1. **Chiave R2 in sola scrittura** (Cloudflare → R2 → Manage API tokens) +
+   scadenza a 30 giorni come **regola del bucket**, non dal codice.
+   Perché: la chiave che scrive i backup sta nelle variabili di Vercel accanto a
+   quella del database. Se può anche cancellare, un solo furto porta via i dati
+   **e** l'archivio. Il codice è già pronto: se il permesso non c'è, il backup
+   riporta `pulizia: 'non permessa (chiave in sola scrittura: corretto)'` e
+   prosegue senza errore.
+2. **Prova del backup**: scaricare l'ultimo file da R2 e lanciare
+   `node tests/verifica-backup.mjs <percorso>`. Dieci minuti. Finché non è fatto,
+   «abbiamo i backup» è una speranza, non un fatto. Lo script è già provato in
+   entrambe le direzioni (verde su archivio integro, rosso su uno danneggiato).
+3. **Secondo fattore sulle quattro porte**: Vercel, Supabase, Cloudflare, GitHub.
+   In `INCIDENTE.md` la tabella dice «da verificare»: quando conferma, **mettere
+   la data** al posto di quella dicitura.
 
-**⚠️ Trappola che è costata un guasto in produzione:** `next build` NON segnala
-una funzione non importata dentro un handler. È passato due volte con import
-mancanti; la seconda ha mandato in 500 le tre route `/api/guest/*` (PWA del QR e
-pagine privacy) mentre siti e smoke restavano verdi, perché non le toccano.
-Dopo modifiche fatte via script: controllare a mano gli import.
+### Poi: valutare un agent AI per il pentest — chiesto da Francesco
 
-**A carico di Francesco:** compilare l'email di `futura-club-spiagge-bianche` e
-`piano-editoriale-futura-vacanze` (pagine privacy senza contatto, obbligo GDPR);
-verificare gli URL webhook su Stripe e Meta; provare un ripristino del backup.
+Idea sua, da valutare insieme alla ripresa: costruire un **agent che faccia da
+attaccante esterno** invece di (o prima di) pagare un pentest umano.
+Il punto onesto da portare al tavolo: il mio limite non è la capacità di
+attaccare, è che **cerco i difetti nel codice che ho letto io** — un agent che
+eredita il mio stesso contesto eredita anche i miei punti ciechi. Perché serva
+davvero dovrebbe partire **senza** conoscenza del sorgente, lavorando solo
+sull'esterno (URL, risposte, comportamenti), come farebbe un estraneo.
+Da discutere: fin dove ha senso, e cosa resta comunque da chiedere a un umano.
 
----
+### Lo stato della sicurezza dopo il 25/8
+
+- Le sonde girano **da sole a ogni deploy** (`deploy.ps1`):
+  `probe-security-sweep` (204 route, pulita), `probe-rls-secondo-muro`,
+  `probe-colonne-pubbliche`. Non è più una fotografia.
+- Chiusi tre difetti veri: registrazione che non poteva riuscire, password WiFi
+  leggibile da chiunque con la chiave pubblica (migration 082, permessi per
+  colonna), chiave dei backup che poteva cancellarli.
+- ⚠️ **Detto a Francesco e da non dimenticare**: «invulnerabili» non esiste. La
+  domanda giusta è quanto si perde e in quanto tempo si torna online. Vedi
+  [[reference_backup_e_ripristino]] e [[project_sicurezza_continua]].
+
+### E il lavoro di prodotto che resta aperto
+
+- **Onboarding, Fase Uno** (mappa completa in [[project_onboarding_mappa]]):
+  pagina «Inizia qui» (`/admin/onboarding` risponde **404** mentre l'email di
+  benvenuto ci manda), azienda nuova che nasce con i moduli accesi, prima entità
+  creata dall'onboarding, decidere cosa fare di `/signup`.
+- ⚠️ **Correzione di Francesco da tenere a mente**: l'uso reale delle funzioni
+  **non** è un segnale di mercato. Attiva lui tutti i clienti, a mano, e per ora
+  vende solo siti e menu per ristoranti. Zero righe in una tabella significa «non
+  ancora offerto», non «non lo vuole nessuno». Non ricascarci.
+- Sua richiesta di riflessione (25/8): quello che manca a OltreNova non sono
+  funzioni, è **una definizione di "finito"** e un prodotto che non ha mai
+  incontrato un utente che non sia lui. Primo passo concordato: portare al 100%
+  provato ciò che già vende — sito + menu ristorante — con un criterio scritto.
+- Dismissione vecchie tabelle (migration 084) e rimozione degli alias storici
+  (`modules`/`pwa`/`tipo`): quando è tranquillo.
+
 
 ## ▶️ (storico) RIPARTIRE DA QUI (24/8, sera)
 

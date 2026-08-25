@@ -308,6 +308,19 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - ⚠️ Cercare un segreto nell'HTML **confrontando pochi caratteri dà falsi positivi**: i primi 40 di un JWT sono l'header, uguale per tutti, e una password corta come `214` si trova dentro un path SVG. Confrontare la **coda** e guardare il contesto.
     - Sonda: `probe-wifi-privacy.mjs` (verifica sia che sparisca dove non serve, sia che **resti** dove serve).
 
+
+34. **🛡️ La sicurezza non è una fotografia: gira a ogni deploy** (25/08/2026). Il Punto A del check era stato chiuso il 24; il 25 è saltata fuori la password WiFi di un cliente vero, esposta da una classe che nessuna delle otto sotto-fasi copriva. **Il catalogo delle classi non è chiuso**, quindi un controllo una tantum vale finché nessuno tocca il codice.
+    - `deploy.ps1` lancia tre sonde dopo gli smoke: `probe-security-sweep` (204 route, con nessun token e con quello di un'altra azienda), `probe-rls-secondo-muro` (cosa legge un estraneo bussando al database, **tabelle e colonne**), `probe-colonne-pubbliche` (quali colonne escono dalle route senza login, con **elenco atteso fissato**: una colonna aggiunta domani fa scattare la segnalazione).
+    - ⚠️ **Un allarme che suona sempre viene ignorato.** La sweep aveva 7 segnalazioni permanenti — route pubbliche per costruzione: guardate una per una e messe in allowlist con il motivo scritto. Ora è pulita, quindi quando suona vuol dire qualcosa.
+    - **La RLS filtra le righe, non le colonne** (migration `082`): `entita` è leggibile senza sessione perché serve alle pagine pubbliche, e con la riga partivano `wifi_password`, `wifi_name` e `privacy_data` (codici fiscali dei titolari). Lo strumento sono i `GRANT SELECT (colonne)`. Da ora **ogni colonna nuova su `entita` nasce invisibile al ruolo pubblico**.
+    - **La chiave che scrive i backup non deve poterli cancellare.** Sta su Vercel accanto a quella del database: se può cancellare, un solo furto porta via i dati e l'archivio. La pulizia dei file scaduti ora è facoltativa — se il permesso manca non è un errore — così la chiave può stare in sola scrittura e la scadenza diventa una regola del bucket.
+    - **`tests/verifica-backup.mjs`**: apre un archivio scaricato da R2 e dice se da lì si torna in piedi. Confronta con la produzione, trova le tabelle mai esportate e guarda **dentro** i dati (slug, blocchi) — i conteggi da soli non bastano.
+    - **`INCIDENTE.md`**: cosa fare alle tre di notte, da soli. Prima si chiude, poi si guarda. Comprese le **72 ore del GDPR**, che si pagano a parte a prescindere dalla violazione.
+
+35. **🔑 Dopo `createUser` il profilo si scrive con `upsert`, mai `insert`** (25/08/2026). Alla creazione di un utente un trigger inserisce già la riga in `profiles` (ruolo `staff`, nessuna azienda). `/api/auth/signup` faceva un `insert`: chiave duplicata, 500, e il rollback cancellava utente e azienda appena creati — **la registrazione self-serve non poteva riuscire**. Non se n'era accorto nessuno perché le iscrizioni sono chiuse e ogni account è nato da invito.
+    - Le sonde usavano `upsert` e quindi funzionavano: **provare in un modo diverso da come il codice gira nasconde il difetto invece di rivelarlo.**
+    - `tests/probe-percorso-cliente.mjs` non legge il codice, **percorre** i passi di un cliente il primo giorno e segnala dove servirebbe una telefonata. Da rilanciare prima di aprire le registrazioni.
+
 ---
 
 ## Roadmap

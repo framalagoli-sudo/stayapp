@@ -230,3 +230,49 @@ Ogni buco chiuso è diventato un test in `tests/smoke/security.spec.js`, così n
 **Prossimo: il punto B** — revisione funzionale a lotti di 3-4 aree, prima quelle che i clienti usano
 (Contatti, Richieste, Prenotazioni, Sito), poi quelle mai verificate sul campo (Loyalty, Shop, Survey,
 Piano editoriale).
+
+---
+
+## Dopo il Punto A — 25/08/2026
+
+**Il check una tantum non basta, e questa è la prova**: il Punto A è stato chiuso il 24
+agosto. Il 25 è emersa la password WiFi di un cliente vero, leggibile da chiunque. Non era
+un difetto di autorizzazione: nessuna delle otto classi lo copriva. **Il catalogo delle
+classi non è chiuso** — averne battute otto non dice quante ne restano.
+
+### Difetti trovati e chiusi il 25/08
+
+| Cosa | Come usciva | Rimedio |
+|---|---|---|
+| Password WiFi, nomi rete, codici fiscali dei titolari | chiave **anon** (nel bundle di ogni pagina) → `select wifi_password from entita` | migration **082**: `GRANT SELECT` per colonna |
+| Registrazione self-serve | `insert` su un profilo che un trigger aveva già creato → 500 + rollback | `upsert` con `onConflict: 'id'` |
+| Backup distruggibili | la chiave che li scrive poteva cancellarli, ed è accanto a quella del database | pulizia facoltativa; chiave in sola scrittura |
+| `landing-seo` | `select('*')` su route pubblica | colonne elencate |
+
+### Classi esaminate in questa passata
+
+- ✅ **Tabelle leggibili da un estraneo** — 26 chiuse, nessuna tabella privata esce
+- ✅ **Colonne leggibili da un estraneo** — *era il buco*, ora chiuso
+- ✅ **Segreti nei log di Vercel** — nessun valore stampato, solo etichette
+- ✅ **Segreti nel bundle del browser** — nessuno (verificato confrontando la **coda** della
+  chiave: i primi 40 caratteri di un JWT sono uguali per tutti e danno falsi positivi)
+- ✅ **Codice server importato da componenti client** — nessuno
+- ✅ **Campi jsonb serviti al pubblico** — 111 chiavi nei dati reali, nessuna sospetta
+- ✅ **`select('*')` su route senza login** — 4 casi, nessuno restituisce il dato al client
+- ✅ **Multi-tenant su 204 route** — nessuna perdita
+
+### Classi che restano da guardare
+
+- Cosa finisce nei log dei **fornitori** (Resend, Stripe, Meta), non solo nei nostri
+- Il contenuto dei **file caricati** (un PDF con dati altrui in uno Storage pubblico)
+- **Enumerazione**: quali endpoint rivelano l'esistenza di una risorsa dal codice di stato
+- **Catena delle dipendenze**: Dependabot copre gli avvisi noti, non un pacchetto compromesso
+- Un **attaccante che non conosce il sorgente** — è il limite strutturale di chi ha scritto
+  il sistema, e la ragione per cui un pentest esterno non è sostituibile da me
+
+### Il cambio di impostazione
+
+Le sonde non si lanciano più a mano: `deploy.ps1` esegue `probe-security-sweep`,
+`probe-rls-secondo-muro` e `probe-colonne-pubbliche` a **ogni deploy**. L'ultima ha un
+elenco atteso di colonne fissato: **una colonna aggiunta domani a una tabella pubblica fa
+scattare la segnalazione da sola**, che è il modo esatto in cui questi difetti sono nati.
