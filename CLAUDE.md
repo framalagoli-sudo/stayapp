@@ -366,6 +366,16 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - Le sonde usavano `upsert` e quindi funzionavano: **provare in un modo diverso da come il codice gira nasconde il difetto invece di rivelarlo.**
     - `tests/probe-percorso-cliente.mjs` non legge il codice, **percorre** i passi di un cliente il primo giorno e segnala dove servirebbe una telefonata. Da rilanciare prima di aprire le registrazioni.
 
+
+36. **📅 Gli eventi: pulsante, condizioni, prezzo e consenso** (25/08/2026, migration `083`–`085`).
+    - **La foto** in quattro formati (quadrato, verticale, orizzontale, storia) + **punto focale**. ⚠️ Il formato vale nella **pagina** dell'evento, non nell'elenco: se ogni scheda tenesse il proprio rapporto basterebbe un evento verticale per sfondare la riga. Nell'elenco le schede restano uguali e a decidere cosa si vede è il punto focale.
+    - **Il pulsante lo scrive il cliente** (`cta_label`) e sotto ci vanno le sue **condizioni** (`cta_condizioni`), che accettano la formattazione di `lib/testo-ricco.js`.
+    - **Il prezzo si può nascondere o scrivere a parole** (`mostra_prezzo`, `prezzo_testo`): una cena alla carta diventava «Gratis», che è un'informazione falsa. ⚠️ **È solo quello che si vede**: il totale di una prenotazione si calcola sempre da `price`. Se divergono si addebita una cifra che il cliente non ha mai letto — l'editor lo avvisa. La decisione sta in `lib/prezzo-evento.js`, un posto solo: prima la stessa formula era scritta in tre punti.
+    - 🔐 **Il modulo di prenotazione raccoglieva nome, email e telefono senza chiedere nulla.** Ora la spunta è obbligatoria, **ma il controllo vero è nella route** (400 se `privacy_accettata !== true`): una spunta nel browser si toglie con due clic. Si salva la **prova** — quando e **quale formula** è stata letta — perché se il testo cambia le prenotazioni vecchie devono restare ricostruibili. La formula la decide il server, non il componente.
+    - Il link all'informativa si ricava da `?back=` ed è **vincolato allo stesso dominio**: un parametro manomesso non deve dirottare chi clicca «privacy».
+    - ⚠️ **I valori che finiscono in una proprietà CSS** (formato, punto focale) passano da un catalogo chiuso — mai la stringa del client. Tre muri: validazione in route, ricerca nel catalogo lato render, `CHECK` nel database.
+    - Sonda: `probe-consenso-eventi.mjs` (prova a prenotare **saltando il modulo**: senza consenso nessun dato personale entra).
+
 ---
 
 ## Roadmap

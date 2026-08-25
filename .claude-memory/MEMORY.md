@@ -117,3 +117,4 @@
 - [🛡️ Sicurezza continua (non più una fotografia)](project_sicurezza_continua.md) — 3 sonde a ogni deploy; il catalogo delle classi NON è chiuso (il punto A chiuso il 24, buco trovato il 25); un allarme che suona sempre viene ignorato
 - [🔑 La RLS filtra le righe, non le colonne](reference_colonne_non_righe.md) — password WiFi e codici fiscali leggibili con la chiave anon; servono GRANT per colonna (migration 082), e ogni colonna nuova nasce invisibile
 - [💾 Backup: chi scrive non deve cancellare](reference_backup_e_ripristino.md) — chiave R2 sola scrittura + scadenza lato bucket; verifica-backup.mjs apre l'archivio e lo confronta con la produzione; INCIDENTE.md per le 3 di notte
+- [🔐 Consenso ai dati personali: la prova, non la spunta](reference_consenso_dati_personali.md) — il controllo sta nella ROUTE (la spunta nel browser si toglie); si salva quando + quale testo è stato letto; sonda che prenota saltando il modulo

@@ -1,71 +1,66 @@
 ---
 name: todo_prossima_sessione
-description: "To-do prossima sessione (26/8) — RIPARTIRE DAI 3 PUNTI SU FRANCESCO (chiave R2 sola scrittura, prova del backup, 2FA sulle 4 porte). Poi valutare un agent AI per il pentest. Sotto, storico."
+description: "To-do prossima sessione (26/8) — CHIEDERE SUBITO i 3 punti su Francesco (chiave R2 sola scrittura, prova del backup, 2FA sulle 4 porte). Poi: agent AI per il pentest, e onboarding Fase Uno. Sotto, storico."
 metadata:
   type: project
 ---
 
 ## ▶️ RIPARTIRE DA QUI (26/8) — leggere questo
 
-### I tre punti che aspettano FRANCESCO — chiedere subito se sono fatti
+### 1. I tre punti che aspettano FRANCESCO — chiederglielo all'inizio
 
-Sono usciti dalla sessione del 25/8 sulla sicurezza. Nessuno dei tre lo posso
-fare io: servono i suoi account. **Chiederglielo all'inizio, non a metà.**
+Nessuno lo posso fare io: servono i suoi account.
 
-1. **Chiave R2 in sola scrittura** (Cloudflare → R2 → Manage API tokens) +
-   scadenza a 30 giorni come **regola del bucket**, non dal codice.
-   Perché: la chiave che scrive i backup sta nelle variabili di Vercel accanto a
-   quella del database. Se può anche cancellare, un solo furto porta via i dati
-   **e** l'archivio. Il codice è già pronto: se il permesso non c'è, il backup
-   riporta `pulizia: 'non permessa (chiave in sola scrittura: corretto)'` e
-   prosegue senza errore.
-2. **Prova del backup**: scaricare l'ultimo file da R2 e lanciare
-   `node tests/verifica-backup.mjs <percorso>`. Dieci minuti. Finché non è fatto,
-   «abbiamo i backup» è una speranza, non un fatto. Lo script è già provato in
-   entrambe le direzioni (verde su archivio integro, rosso su uno danneggiato).
-3. **Secondo fattore sulle quattro porte**: Vercel, Supabase, Cloudflare, GitHub.
-   In `INCIDENTE.md` la tabella dice «da verificare»: quando conferma, **mettere
-   la data** al posto di quella dicitura.
+1. **Chiave R2 in sola scrittura** (Cloudflare → R2 → Manage API tokens) + scadenza a
+   30 giorni come **regola del bucket**. Il codice è già pronto: se il permesso di
+   cancellazione manca, il backup lo riporta come corretto e prosegue.
+2. **Prova del backup**: scaricare l'ultimo file e lanciare
+   `node tests/verifica-backup.mjs <percorso>`. Dieci minuti.
+3. **Secondo fattore su Vercel, Supabase, Cloudflare, GitHub.** In `INCIDENTE.md` la
+   tabella dice «da verificare»: quando conferma, **mettere la data**.
 
-### Poi: valutare un agent AI per il pentest — chiesto da Francesco
+### 2. L'agent per il pentest — idea sua, da valutare insieme
 
-Idea sua, da valutare insieme alla ripresa: costruire un **agent che faccia da
-attaccante esterno** invece di (o prima di) pagare un pentest umano.
-Il punto onesto da portare al tavolo: il mio limite non è la capacità di
-attaccare, è che **cerco i difetti nel codice che ho letto io** — un agent che
-eredita il mio stesso contesto eredita anche i miei punti ciechi. Perché serva
-davvero dovrebbe partire **senza** conoscenza del sorgente, lavorando solo
-sull'esterno (URL, risposte, comportamenti), come farebbe un estraneo.
-Da discutere: fin dove ha senso, e cosa resta comunque da chiedere a un umano.
+Il punto onesto da portare al tavolo: il mio limite non è attaccare, è che **cerco i
+difetti nel codice che ho letto io**. Un agent che eredita il mio contesto eredita i miei
+punti ciechi. Perché serva dovrebbe partire **senza** conoscenza del sorgente, lavorando
+solo dall'esterno (URL, risposte, comportamenti). Da discutere: fin dove ha senso, e cosa
+resta comunque da chiedere a un umano.
 
-### Lo stato della sicurezza dopo il 25/8
+### 3. Poi: onboarding, Fase Uno
 
-- Le sonde girano **da sole a ogni deploy** (`deploy.ps1`):
-  `probe-security-sweep` (204 route, pulita), `probe-rls-secondo-muro`,
-  `probe-colonne-pubbliche`. Non è più una fotografia.
-- Chiusi tre difetti veri: registrazione che non poteva riuscire, password WiFi
-  leggibile da chiunque con la chiave pubblica (migration 082, permessi per
-  colonna), chiave dei backup che poteva cancellarli.
-- ⚠️ **Detto a Francesco e da non dimenticare**: «invulnerabili» non esiste. La
-  domanda giusta è quanto si perde e in quanto tempo si torna online. Vedi
-  [[reference_backup_e_ripristino]] e [[project_sicurezza_continua]].
+Mappa completa in [[project_onboarding_mappa]]. `/admin/onboarding` risponde **404**
+mentre l'email di benvenuto ci manda; l'azienda nuova nasce con i moduli spenti e solo il
+super_admin può accenderli, quindi il cliente non trova la strada per creare il sito.
 
-### E il lavoro di prodotto che resta aperto
+---
 
-- **Onboarding, Fase Uno** (mappa completa in [[project_onboarding_mappa]]):
-  pagina «Inizia qui» (`/admin/onboarding` risponde **404** mentre l'email di
-  benvenuto ci manda), azienda nuova che nasce con i moduli accesi, prima entità
-  creata dall'onboarding, decidere cosa fare di `/signup`.
-- ⚠️ **Correzione di Francesco da tenere a mente**: l'uso reale delle funzioni
-  **non** è un segnale di mercato. Attiva lui tutti i clienti, a mano, e per ora
-  vende solo siti e menu per ristoranti. Zero righe in una tabella significa «non
-  ancora offerto», non «non lo vuole nessuno». Non ricascarci.
-- Sua richiesta di riflessione (25/8): quello che manca a OltreNova non sono
-  funzioni, è **una definizione di "finito"** e un prodotto che non ha mai
-  incontrato un utente che non sia lui. Primo passo concordato: portare al 100%
-  provato ciò che già vende — sito + menu ristorante — con un criterio scritto.
-- Dismissione vecchie tabelle (migration 084) e rimozione degli alias storici
-  (`modules`/`pwa`/`tipo`): quando è tranquillo.
+### Com'è messa la sicurezza adesso (25/8)
+
+**Non serve più raccomandarsi** — tre livelli, nessuno dipende dalla memoria:
+- **prima di scrivere**: 8 regole operative in cima a `CLAUDE.md`, non un rimando
+- **prima del deploy**: `tests/verifica-regole.mjs` legge il codice e **blocca** il deploy.
+  Eccezione dichiarabile con `regola-ok: <motivo>`, e il motivo deve esserci
+- **dopo il deploy**: `probe-security-sweep`, `probe-rls-secondo-muro`,
+  `probe-colonne-pubbliche` sul sistema vivo
+
+⚠️ **Aggiungendo una colonna a una tabella pubblica**: va concessa nella migration
+(`GRANT SELECT (colonna)`), aggiunta alle select guest **e** dichiarata nel baseline di
+`probe-colonne-pubbliche`, altrimenti il deploy si ferma. È successo davvero il 25/8 ed è
+il sistema che funziona.
+
+### Cosa è andato live il 25/8
+
+Moduli universali (il tipo non limita più niente, pannello + app del QR), registrazione
+riparata, password WiFi e codici fiscali chiusi ai permessi per colonna (migration 082),
+backup non più distruggibili dalla chiave dell'app, piano d'incidente, testo formattabile
+(grassetto e a-capo), logo centrato su mobile, e gli eventi: foto in 4 formati, pulsante
+personalizzato, condizioni, prezzo nascondibile o a parole, **consenso ai dati personali**
+([[reference_consenso_dati_personali]]).
+
+📌 **Correzione di Francesco da non dimenticare**: l'uso reale delle funzioni **non** è un
+segnale di mercato — attiva lui tutti i clienti, a mano, e per ora vende solo siti e menu
+per ristoranti. Zero righe = «non ancora offerto», non «non lo vuole nessuno».
 
 
 ## ▶️ (storico) RIPARTIRE DA QUI (24/8, sera)
