@@ -1,19 +1,33 @@
 ---
 name: feedback_sicurezza_priorita
-description: "La sicurezza è SEMPRE una priorità, in ogni intervento — non un extra opzionale"
-metadata: 
-  node_type: memory
+description: La sicurezza non si raccomanda ogni volta — è un gate automatico prima di ogni deploy + 8 regole in cima a CLAUDE.md; se serve che Francesco lo ricordi, il sistema è rotto
+metadata:
   type: feedback
-  originSessionId: b1ce3b18-eb34-4a91-a99d-4e4300ee6cb8
 ---
 
-Francesco (8/7): "la sicurezza deve essere sempre una priorità".
+**Francesco, 25/08/2026**: *«ogni volta non posso raccomandarmi per la sicurezza. Puoi
+aggiornare il tuo setup in modo che ogni operazione o scrittura di codice sia iper sicura
+e in linea con le nostre policy?»*
 
-**Why:** è un SaaS multi-tenant worldwide con dati di aziende e lead reali; una falla tocca clienti terzi, non solo lui. La sicurezza non è una feature da aggiungere dopo: è un vincolo di ogni intervento.
+**Perché aveva ragione**: le regole c'erano, ma in `CLAUDE.md` la sicurezza era un
+**rimando** (`→ SECURITY.md §0`), e un rimando richiede che io decida di seguirlo. Niente
+scattava da solo *prima* di scrivere. Infatti in quella sessione mi sono ricordato della
+sweep solo perché me l'ha chiesto lui.
 
-**How to apply:** in ogni modifica considerare per default —
-- **Authz multi-tenant**: ogni route scopata per azienda/entità (`requireEntityAccess`/`requireRecordAccess`/`resolveAziendaId`), mai `.eq('id')` nudo. Vedi [[feedback_multitenant_authz]].
-- **Input/output**: sanitizzare gli URL renderizzati (`safeUrl` — solo http(s)/interni, blocca `javascript:`/`data:`), HTML con DOMPurify, mai `dangerouslySetInnerHTML` su input non sanitizzato.
-- **Gating dati sensibili**: i campi riservati non devono MAI finire nel payload pubblico (select solo colonne pubbliche); verificarlo dal vivo (0 leak), non assumere. Vedi [[project_vetrine]].
-- **Endpoint pubblici**: valutare rate-limit/anti-abuso (honeypot, Turnstile soft, `lib/rate-limit.js`).
-- **Verifica**: dopo ogni intervento, provare il caso ostile dal vivo (es. URL malevolo, richiesta senza token → 401), non solo il caso felice.
+**Come si applica adesso** — tre livelli, nessuno dipende dalla memoria:
+1. **`CLAUDE.md` §"Prima di scrivere qualsiasi codice"** — 8 regole operative in cima,
+   ognuna nata da un guasto vero. Non un rimando: la regola stessa.
+2. **`tests/verifica-regole.mjs`** — legge il codice e trova le violazioni meccaniche.
+   Gira **prima** del deploy in `deploy.ps1` e **lo blocca**. Un'eccezione si dichiara con
+   un commento `regola-ok: <motivo>` sopra la riga, e il motivo deve esserci davvero
+   (>12 caratteri): zittire l'allarme senza spiegare non è previsto.
+3. **Le tre sonde dopo il deploy** — provano il sistema vivo
+   ([[project_sicurezza_continua]]).
+
+⚠️ **Il principio che tiene insieme tutto**: un allarme che suona sempre viene ignorato,
+ed è peggio che non averlo. Quando una segnalazione è legittima va **guardata una per una
+e dichiarata col motivo**, mai zittita in blocco.
+
+⚠️ E il limite da dire sempre: questi controlli trovano ciò che è meccanico. Non dicono che
+il codice è sicuro — dicono che non viola le regole che sappiamo controllare da soli.
+Il resto è pensiero, e un pentest esterno resta un'altra cosa.

@@ -7,6 +7,9 @@ export async function GET(request, props) {
     const { searchParams } = new URL(request.url)
     // Le bozze si vedono solo con un token firmato per questa entità.
     const anteprima = verificaTokenAnteprima(searchParams.get('preview'), params.tipo, params.entityId)
+    // regola-ok: le colonne che escono di qui sono elencate e sorvegliate da
+    // tests/probe-colonne-pubbliche.mjs, che gira a ogni deploy: una colonna
+    // aggiunta domani a `pagine` fa scattare la segnalazione prima di passare.
     let q = supabaseAdmin.from('pagine').select('*')
       .eq('entity_tipo', params.tipo).eq('entity_id', params.entityId).eq('slug', params.slug)
     if (!anteprima) q = q.eq('status', 'pubblicata')

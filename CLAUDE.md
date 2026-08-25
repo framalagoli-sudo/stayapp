@@ -14,6 +14,51 @@ Azienda (top-level)
 ```
 
 > **🌐 Registrazione domini (piano, non ancora implementato)** → `REGISTRAR.md` — il fornitore dev'essere sostituibile: interfaccia unica in `lib/registrar/`, implementazioni sotto. Né Cloudflare né Vercel vendono `.it`.
+## ⛔ Prima di scrivere qualsiasi codice
+
+Non è un rimando, è la regola. Vale per **ogni** modifica, anche quelle da due
+minuti, anche quando nessuno l'ha chiesto: un difetto non sa che stavamo andando
+di fretta. Ognuna di queste righe nasce da un guasto vero già successo.
+
+1. **Ogni route API si autentica** con `requireAuth` / `requireEntityAccess` /
+   `requireRecordAccess`, oppure è pubblica **di proposito** e sa di esserlo.
+   Le route usano la chiave di servizio e scavalcano la RLS: senza controllo
+   applicativo, chiunque legge i dati di chiunque.
+2. **Mai `select('*')` dove risponde chi non ha fatto login.** Le colonne si
+   elencano. Con l'asterisco, una colonna aggiunta domani viene pubblicata da
+   sola — è successo col catalogo shop e con la password del WiFi.
+3. **Un dato riservato non si toglie a valle: non si legge a monte.** La query
+   non lo chiede per i rami che non ne hanno diritto. Toglierlo dopo è una
+   difesa sola, che il prossimo ramo aggiunto scavalca in silenzio.
+4. **Un valore che arriva dal client non finisce mai grezzo** in una query, in
+   un URL o in una proprietà CSS: passa da una funzione che cerca in un
+   catalogo chiuso e in mancanza torna al predefinito.
+5. **Quello che legge il browser non importa mai un file che tocca
+   `supabaseAdmin`.** Le costanti condivise vanno in un file senza dipendenze.
+6. **Ogni migration** dichiara `GRANT` e `ENABLE ROW LEVEL SECURITY`, e
+   concede le colonne nuove **una per una** se devono essere pubbliche. La RLS
+   filtra le righe, non le colonne.
+7. **Il dato deve arrivare fino in fondo**: aggiungendo un campo, aggiungerlo
+   anche alle select che servono le pagine pubbliche. Altrimenti si salva e non
+   si vede — ed è già successo due volte in un giorno.
+8. **Verificare dal vivo, col caso ostile.** Non basta che compili e nemmeno che
+   funzioni: si prova anche cosa succede se qualcuno ci mette dentro qualcosa di
+   cattivo. Se tocca il browser (PWA, componenti client), va aperto con un
+   browser vero: `next build` non vede un identificatore fuori scope.
+
+**Il controllo automatico**: `node tests/verifica-regole.mjs` legge il codice e
+trova le violazioni meccaniche di queste regole. Gira **da solo prima di ogni
+deploy** e lo blocca. Un'eccezione si può dichiarare — commento
+`regola-ok: <motivo>` sopra la riga — ma il motivo va scritto, così resta
+leggibile perché quella riga è accettabile.
+
+**Dopo il deploy** girano da sole `probe-security-sweep`,
+`probe-rls-secondo-muro` e `probe-colonne-pubbliche`: provano il sistema vivo.
+
+> Dettaglio e storia degli invarianti → `SECURITY.md` §0.
+
+---
+
 > **🧯 Se succede qualcosa (piano di risposta a un incidente)** → `INCIDENTE.md` — scritto per essere eseguito da soli e sotto pressione; verifica dell'archivio con `tests/verifica-backup.mjs`
 > **🔒 Sicurezza (invarianti, checklist route, procedure rigide)** → `SECURITY.md` §0 — LEGGERE prima di toccare route API/auth/esposizione dati. Multi-tenant + service_role = la sicurezza dipende dai controlli applicativi.
 > **🔍 Check di sicurezza in corso (roadmap A1–A8)** → `SECURITY-CHECK.md` — cosa è già stato verificato e cosa no. A1 (authz) e A2-shop/loyalty fatti; prossimi A3 (mass assignment), A5 (costi AI), A2-booking.

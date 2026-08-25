@@ -13,7 +13,7 @@ export async function GET(request) {
   try {
     const { response } = await isSuperAdmin(request)
     if (response) return response
-    const { data, error } = await supabaseAdmin.from('platform_config').select('*').eq('id', 1).single()
+    const { data, error } = await supabaseAdmin.from('platform_config').select('id, signup_enabled, updated_at').eq('id', 1).single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
     return Response.json(data || { signup_enabled: false })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }

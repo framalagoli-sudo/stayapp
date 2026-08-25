@@ -47,6 +47,23 @@ Set-Location ..
 # Il deploy viene PRIMA del push: la build di Vercel fa da gate. Se il codice non
 # compila, 'main' resta pulito. (Il check CI "Build client-next" non protegge da
 # questi push diretti, che hanno il bypass del branch protection.)
+# ── Le nostre regole, sul codice ─────────────────────────────────────────────
+# Gira PRIMA del deploy, non dopo: le sonde provano il sistema vivo (secondo
+# muro), questo legge il codice e trova le violazioni meccaniche delle regole
+# che ci siamo dati — ognuna nata da un difetto vero. Se trova qualcosa il
+# deploy non parte: e' il momento giusto per accorgersene.
+Write-Host "`n=== Le nostre regole, sul codice ===" -ForegroundColor Cyan
+Set-Location tests
+node verifica-regole.mjs
+$regoleExit = $LASTEXITCODE
+Set-Location ..
+if ($regoleExit -ne 0) {
+    Write-Host "`nIl codice viola una regola che ci siamo dati: GUARDARE SOPRA." -ForegroundColor Red
+    Write-Host "   Niente e' stato deployato. Si sistema, oppure si dichiara l'eccezione" -ForegroundColor Yellow
+    Write-Host "   con un commento 'regola-ok: <motivo>' sopra la riga." -ForegroundColor Yellow
+    exit 1
+}
+
 Write-Host "`n=== Deploy Vercel (Next.js) ===" -ForegroundColor Cyan
 Set-Location client-next
 # --force: rebuild SENZA build cache. Necessario perché Vercel, riusando la cache,

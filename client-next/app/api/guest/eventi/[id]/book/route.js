@@ -28,6 +28,8 @@ export async function POST(request, props) {
 
     // select('*') → indipendente dall'ordine della migration 067 (colonne notify_*
     // assenti = undefined = nessuna mail, niente 500).
+    // regola-ok: l'evento serve solo a validare la prenotazione e a decidere le
+    // notifiche, non viene mai restituito al client — nessuna colonna esce di qui.
     const { data: evento, error: evErr } = await supabaseAdmin.from('eventi')
       .select('*').eq('id', params.id).single()
     if (evErr || !evento) return Response.json({ error: 'Evento non trovato' }, { status: 404 })
