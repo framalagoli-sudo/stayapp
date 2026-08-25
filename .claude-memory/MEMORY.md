@@ -111,3 +111,4 @@
 - [Session 2026-06-01 — Domini custom](project_session_2026_06_01.md) — sistema domini end-to-end
 - [Session 2026-08-25 — Moduli: il tipo non limita più niente](project_session_2026_08_25_moduli.md) — l'all-in-one arriva nel pannello (whitelist, menu laterale e select pubbliche unificate); trovati e chiusi 2 difetti privacy (password WiFi in ogni pagina pubblica, codice server nel bundle browser); PWA ospite = cantiere aperto
 - [🔐 Dato riservato: a monte, non a valle](reference_dato_riservato_a_monte.md) — non chiederlo nella query per i rami che non ne hanno diritto (toglierlo dopo salta al primo ramo nuovo); e cercare un segreto nell'HTML con pochi caratteri dà falsi positivi: confrontare la coda
+- [🔤 Vocabolari dei moduli: alias storici](reference_vocabolari_moduli.md) — `gallery`≠`galleria`, `.modules` annidato sulle attività; funzioneAttiva conosce gli alias; ⚠️ le PWA sono codice browser: il build non le prova, serve probe-app-ospite.mjs
