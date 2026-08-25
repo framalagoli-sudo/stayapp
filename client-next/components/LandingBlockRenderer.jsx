@@ -8,6 +8,7 @@ import Turnstile from '@/components/Turnstile'
 import { applyBlockStyle, blockInverted, textSizeScale, textColorFor, gridTemplate, readableOn } from '@/lib/blockTypes'
 import { ReviewSourceLogo } from '@/lib/reviewLogos'
 import { RichText, richIsEmpty } from '@/lib/richText'
+import { ricco } from '@/lib/testo-ricco'
 import { t as tr } from '@/lib/i18n'
 import { getPreset, fieldOptions } from '@/lib/vetrinePresets'
 
@@ -313,7 +314,7 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, enti
           </div>
         )}
 
-        {dati.descrizione && <p style={{ fontSize: 16, lineHeight: 1.8, color: '#444', whiteSpace: 'pre-line', marginBottom: 32 }}>{dati.descrizione}</p>}
+        {dati.descrizione && <p style={{ fontSize: 16, lineHeight: 1.8, color: '#444', whiteSpace: 'pre-line', marginBottom: 32 }} {...ricco(dati.descrizione)} />}
 
         {geoField && (
           <div style={{ marginBottom: 32 }}>
@@ -531,7 +532,7 @@ function Carousel({ block, primary, heading }) {
                     {(it.title || it.text || (it.button_label && it.button_url)) && (
                       <div style={{ padding: 22 }}>
                         {it.title && <h3 style={{ fontFamily: heading, fontSize: 19, fontWeight: 700, color: '#1a1a2e', margin: '0 0 8px' }}>{it.title}</h3>}
-                        {it.text && <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6, margin: 0 }}>{it.text}</p>}
+                        {it.text && <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6, margin: 0 }} {...ricco(it.text)} />}
                         {it.button_label && it.button_url && <a href={siteHref(it.button_url)} style={{ display: 'inline-block', marginTop: 14, color: primary, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>{it.button_label} →</a>}
                       </div>
                     )}
@@ -850,7 +851,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                         <span style={{ fontWeight: 600, fontSize: 16, color: '#1a1a2e' }}>{it.title}</span>
                         <ChevronDown size={18} strokeWidth={1.5} color="#888" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
                       </button>
-                      {open && <div style={{ padding: '0 20px 18px', fontSize: 15, color: '#555', lineHeight: 1.7, whiteSpace: 'pre-line' }}>{it.text}</div>}
+                      {open && <div style={{ padding: '0 20px 18px', fontSize: 15, color: '#555', lineHeight: 1.7, whiteSpace: 'pre-line' }} {...ricco(it.text)} />}
                     </div>
                   )
                 })}
@@ -908,7 +909,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                 {cols.map(c => (
                   <div key={c.id}>
                     {c.title && <h3 style={{ fontFamily: heading, fontSize: 20, fontWeight: 700, color: cTitle, marginBottom: 10 }}>{c.title}</h3>}
-                    {c.text && <p style={{ fontSize: 15, lineHeight: 1.7, color: cBody || '#555', whiteSpace: 'pre-line' }}>{c.text}</p>}
+                    {c.text && <p style={{ fontSize: 15, lineHeight: 1.7, color: cBody || '#555', whiteSpace: 'pre-line' }} {...ricco(c.text)} />}
                   </div>
                 ))}
               </div>
@@ -1054,7 +1055,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                           <Icon size={20} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />
                         </div>
                         {it.title && <h3 style={{ fontFamily: heading, fontSize: 18, fontWeight: 700, color: '#1a1a2e', marginBottom: 8 }}>{it.title}</h3>}
-                        {it.text && <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6 }}>{it.text}</p>}
+                        {it.text && <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6 }} {...ricco(it.text)} />}
                       </div>
                     </div>
                   )
@@ -1126,7 +1127,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
           <section key={block.id} style={{ padding: '72px 0', background: '#000' }}>
             <div className="lbr-section">
               {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, textAlign: 'center', color: '#fff', margin: `0 auto ${d.testo ? 12 : 32}px` }}>{d.titolo}</h2>}
-              {d.testo && <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.72)', fontSize: 16, lineHeight: 1.6, maxWidth: 720, margin: '0 auto 32px', whiteSpace: 'pre-wrap' }}>{d.testo}</p>}
+              {d.testo && <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.72)', fontSize: 16, lineHeight: 1.6, maxWidth: 720, margin: '0 auto 32px', whiteSpace: 'pre-wrap' }} {...ricco(d.testo)} />}
               <div style={{ position: 'relative', paddingBottom: '56.25%', borderRadius: 16, overflow: 'hidden' }}>
                 <iframe src={embedUrl} title="video" frameBorder="0" allowFullScreen style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
               </div>

@@ -1,5 +1,6 @@
 'use client'
 import React from 'react'
+import { ricco } from '@/lib/testo-ricco'
 
 // Renderer sicuro per il rich-text dei blocchi sito (Fase 1).
 // Input = ProseMirror JSON (da Tiptap, format='json') o stringa legacy.
@@ -81,8 +82,10 @@ export function RichText({ value, primary = '#1a6fc4', style }) {
     // Testo semplice: separa i paragrafi (righe vuote) in <p> distinti così la
     // spaziatura si vede; dentro un paragrafo i singoli a-capo restano (pre-line).
     const paras = value.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean)
-    if (paras.length <= 1) return <div style={style}><p style={{ margin: 0, whiteSpace: 'pre-line' }}>{value}</p></div>
-    return <div style={style}>{paras.map((p, i) => <p key={i} style={{ margin: i ? '0.85em 0 0' : 0, whiteSpace: 'pre-line' }}>{p}</p>)}</div>
+    // `ricco` lascia passare solo grassetto, corsivo e a-capo: tutto il resto
+    // resta testo visibile. Vedi lib/testo-ricco.js.
+    if (paras.length <= 1) return <div style={style}><p style={{ margin: 0, whiteSpace: 'pre-line' }} {...ricco(value)} /></div>
+    return <div style={style}>{paras.map((p, i) => <p key={i} style={{ margin: i ? '0.85em 0 0' : 0, whiteSpace: 'pre-line' }} {...ricco(p)} />)}</div>
   }
   if (!isRichDoc(value)) return null
   return <div style={style}>{renderBlocks(value.content, primary)}</div>

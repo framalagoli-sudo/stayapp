@@ -150,9 +150,20 @@ export default function SiteNav({ entity, mini, pagine = [], prefix, primary, se
         @media (min-width: 769px) { .snav-mobile { display: none !important; } }
         @media (max-width: 768px) {
           .snav { padding: 0 16px; }
-          .snav-centered, .snav-stacked { display: flex !important; flex-direction: row; align-items: center; justify-content: space-between; height: 64px; padding-top: 0; padding-bottom: 0; }
-          .snav-stacked-top { width: auto; }
-          .snav-stacked-actions { position: static; transform: none; }
+          /* Il logo va centrato nella BARRA, non nello spazio che avanza.
+             Con space-between le due estremità hanno larghezze diverse — a
+             sinistra uno spaziatore vuoto, a destra il selettore lingua e il
+             menu — e il marchio finiva spostato a sinistra di 20-40px, come se
+             fosse centrato rispetto all'icona della lingua. Tre colonne con le
+             laterali uguali (1fr) rimettono il centro dov'è davvero. */
+          .snav-centered { display: grid !important; grid-template-columns: 1fr auto 1fr; align-items: center; justify-items: center; height: 64px; padding-top: 0; padding-bottom: 0; }
+          .snav-centered > :last-child { justify-self: end; }
+          .snav-stacked { display: flex !important; flex-direction: row; align-items: center; height: 64px; padding-top: 0; padding-bottom: 0; }
+          /* Stesso principio: la fila resta larga quanto la barra e le azioni
+             restano ancorate a destra, così il marchio è centrato sul serio. */
+          .snav-stacked-top { width: 100%; }
+          /* Il marchio non deve finire sotto le azioni quando il logo è largo. */
+          .snav-centered img[alt="logo"], .snav-stacked img[alt="logo"] { max-width: calc(100vw - 170px); }
           .snav-desktop { display: none !important; }
           .snav-burger { display: flex !important; align-items: center; }
         }
