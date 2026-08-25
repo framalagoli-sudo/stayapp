@@ -147,7 +147,19 @@ export async function runBackup() {
     console.error('[backup] Verifica post-upload fallita:', err.message)
   }
 
+  // Pulizia dei backup scaduti — facoltativa, e deve restarlo.
+  //
+  // La chiave R2 che sta nelle variabili di Vercel è la stessa che l'applicazione
+  // usa per scrivere. Se quella chiave può anche cancellare, chi entrasse
+  // nell'account Vercel avrebbe in mano sia la chiave del database sia il modo
+  // di distruggere i backup: un solo furto e non resta niente da cui ripartire.
+  //
+  // Per questo la chiave dovrebbe avere **solo il permesso di scrivere**, e la
+  // scadenza dei vecchi file va impostata come regola del bucket su Cloudflare,
+  // dove serve un altro accesso per toglierla. Qui la cancellazione si prova e,
+  // se il permesso non c'è, non è un errore: è la configurazione giusta.
   let deleted = []
+  let pulizia = 'eseguita'
   try {
     const { Contents = [] } = await r2.send(new ListObjectsV2Command({ Bucket: bucket }))
     const cutoff = new Date()
@@ -158,7 +170,11 @@ export async function runBackup() {
       deleted.push(obj.Key)
       console.log(`[backup] Eliminato backup scaduto: ${obj.Key}`)
     }
-  } catch (err) { console.error('[backup] Pulizia vecchi backup fallita:', err.message) }
+  } catch (err) {
+    const negato = /AccessDenied|Forbidden|not authorized|403/i.test(err.message || '')
+    pulizia = negato ? 'non permessa (chiave in sola scrittura: corretto)' : `fallita: ${err.message}`
+    console.log(`[backup] Pulizia vecchi backup ${pulizia}`)
+  }
 
   console.log('[backup] ✓ Backup completato con successo')
   return {
@@ -171,6 +187,7 @@ export async function runBackup() {
     verifiedModified,
     rowCounts,
     deleted,
+    pulizia,
     durationMs: Date.now() - startedAt.getTime(),
   }
 }
