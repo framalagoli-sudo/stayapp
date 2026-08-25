@@ -1,21 +1,25 @@
 ---
 name: todo_prossima_sessione
-description: "To-do prossima sessione (26/8) — CHIEDERE SUBITO i 3 punti su Francesco (chiave R2 sola scrittura, prova del backup, 2FA sulle 4 porte). Poi: agent AI per il pentest, e onboarding Fase Uno. Sotto, storico."
+description: "To-do 26/8 — CHIEDERE SUBITO i 3 punti su Francesco (chiave R2 sola scrittura, prova del backup, 2FA sulle 4 porte). Poi: agent AI per il pentest, poi onboarding Fase Uno. Sotto, storico."
 metadata:
   type: project
 ---
 
 ## ▶️ RIPARTIRE DA QUI (26/8) — leggere questo
 
-### 1. I tre punti che aspettano FRANCESCO — chiederglielo all'inizio
+Francesco ha chiuso la sessione del 25/8 dicendo «ne riparliamo domani mattina».
+Gli eventi sono finiti e live: non c'è niente in sospeso di suo su quel fronte.
+
+### 1. I tre punti che aspettano lui — chiederglielo all'inizio
 
 Nessuno lo posso fare io: servono i suoi account.
 
 1. **Chiave R2 in sola scrittura** (Cloudflare → R2 → Manage API tokens) + scadenza a
    30 giorni come **regola del bucket**. Il codice è già pronto: se il permesso di
    cancellazione manca, il backup lo riporta come corretto e prosegue.
-2. **Prova del backup**: scaricare l'ultimo file e lanciare
-   `node tests/verifica-backup.mjs <percorso>`. Dieci minuti.
+2. **Prova del backup**: scaricare l'ultimo file da R2 e lanciare
+   `node tests/verifica-backup.mjs <percorso>`. Dieci minuti. Finché non è fatto,
+   «abbiamo i backup» è una speranza.
 3. **Secondo fattore su Vercel, Supabase, Cloudflare, GitHub.** In `INCIDENTE.md` la
    tabella dice «da verificare»: quando conferma, **mettere la data**.
 
@@ -35,32 +39,35 @@ super_admin può accenderli, quindi il cliente non trova la strada per creare il
 
 ---
 
-### Com'è messa la sicurezza adesso (25/8)
+### La sicurezza adesso: non serve più raccomandarsi
 
-**Non serve più raccomandarsi** — tre livelli, nessuno dipende dalla memoria:
+Tre livelli, nessuno dipende dalla memoria:
 - **prima di scrivere**: 8 regole operative in cima a `CLAUDE.md`, non un rimando
-- **prima del deploy**: `tests/verifica-regole.mjs` legge il codice e **blocca** il deploy.
-  Eccezione dichiarabile con `regola-ok: <motivo>`, e il motivo deve esserci
+- **prima del deploy**: `tests/verifica-regole.mjs` legge il codice e **blocca** il deploy;
+  eccezione dichiarabile con `regola-ok: <motivo>`, e il motivo deve esserci
 - **dopo il deploy**: `probe-security-sweep`, `probe-rls-secondo-muro`,
   `probe-colonne-pubbliche` sul sistema vivo
 
-⚠️ **Aggiungendo una colonna a una tabella pubblica**: va concessa nella migration
-(`GRANT SELECT (colonna)`), aggiunta alle select guest **e** dichiarata nel baseline di
-`probe-colonne-pubbliche`, altrimenti il deploy si ferma. È successo davvero il 25/8 ed è
-il sistema che funziona.
+Il 25/8 il sistema ha fermato il deploy **due volte da solo**, su colonne nuove non
+dichiarate. Una delle due ha fatto scoprire che passavo il `minisito` intero a una pagina
+pubblica: non un buco, ma la forma da cui nasce il prossimo.
+
+⚠️ **Aggiungendo una colonna a una tabella pubblica**: concederla nella migration
+(`GRANT SELECT (colonna)`), aggiungerla alle select guest **e** dichiararla nel baseline di
+`probe-colonne-pubbliche`, altrimenti il deploy si ferma.
 
 ### Cosa è andato live il 25/8
 
 Moduli universali (il tipo non limita più niente, pannello + app del QR), registrazione
-riparata, password WiFi e codici fiscali chiusi ai permessi per colonna (migration 082),
-backup non più distruggibili dalla chiave dell'app, piano d'incidente, testo formattabile
-(grassetto e a-capo), logo centrato su mobile, e gli eventi: foto in 4 formati, pulsante
-personalizzato, condizioni, prezzo nascondibile o a parole, **consenso ai dati personali**
-([[reference_consenso_dati_personali]]).
+riparata, password WiFi e codici fiscali chiusi con i permessi per colonna (migration 082),
+backup non più distruggibili dalla chiave dell'app, piano d'incidente, testo formattabile,
+logo centrato su mobile, e gli **eventi completi**: foto in 4 formati con punto focale,
+pulsante e condizioni scritti dal cliente, prezzo nascondibile o a parole (due flag),
+**consenso ai dati personali** ([[reference_consenso_dati_personali]]), intestazione del
+sito e piede completo nella pagina evento.
 
-📌 **Correzione di Francesco da non dimenticare**: l'uso reale delle funzioni **non** è un
-segnale di mercato — attiva lui tutti i clienti, a mano, e per ora vende solo siti e menu
-per ristoranti. Zero righe = «non ancora offerto», non «non lo vuole nessuno».
+📌 **Da non dimenticare**: l'uso reale delle funzioni **non** è un segnale di mercato —
+attiva lui tutti i clienti, a mano, e per ora vende solo siti e menu per ristoranti.
 
 
 ## ▶️ (storico) RIPARTIRE DA QUI (24/8, sera)

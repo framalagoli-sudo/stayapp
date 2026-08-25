@@ -375,6 +375,10 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - Il link all'informativa si ricava da `?back=` ed è **vincolato allo stesso dominio**: un parametro manomesso non deve dirottare chi clicca «privacy».
     - ⚠️ **I valori che finiscono in una proprietà CSS** (formato, punto focale) passano da un catalogo chiuso — mai la stringa del client. Tre muri: validazione in route, ricerca nel catalogo lato render, `CHECK` nel database.
     - Sonda: `probe-consenso-eventi.mjs` (prova a prenotare **saltando il modulo**: senza consenso nessun dato personale entra).
+    - **La pagina dell'evento ha l'intestazione del sito e un piede completo.** Prima c'era solo un «Indietro»: chi arrivava da un social non capiva di chi fosse la pagina, e in fondo restava in un vicolo cieco. Ora `SiteNav` in cima (menu delle pagine pubblicate, dominio del cliente rispettato) e in fondo logo, ritorno al sito, privacy, cookie e **dati legali del titolare** — che per un sito d'impresa sono un obbligo.
+    - ⚠️ **Nella pagina la locandina NON si ritaglia**: si vede come è stata caricata (`width:auto`, `maxWidth:100%`, `maxHeight:78vh`), su un fondo fatto con la stessa foto sfocata. Il `formato_cover` decide la forma **solo nella scheda dell'elenco**, dove il ritaglio è inevitabile perché le schede stanno in fila. Forzare il rapporto anche nella pagina significa tagliare la locandina di un cliente.
+    - ⚠️ L'endpoint pubblico restituisce anche `sito` (nome, logo, tema, `footer_cfg`, `social`, pagine del menu, dati legali): **mai il `minisito` intero**, che è un oggetto che cresce e al primo campo riservato lo pubblicherebbe da solo.
+    - ⚠️ **Una sonda che misura la cosa sbagliata non è neutrale.** Cercando «la prima immagine larga più di 100px» prendeva il **logo dentro l'intestazione** invece della locandina: dava proporzioni perfette e un padding mancante che c'era. Due giri persi a sistemare ciò che funzionava mentre il difetto vero restava. Quando una misura sorprende, stampare la catena degli elementi prima di fidarsi.
 
 ---
 

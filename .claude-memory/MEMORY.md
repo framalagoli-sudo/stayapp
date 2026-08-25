@@ -118,3 +118,4 @@
 - [🔑 La RLS filtra le righe, non le colonne](reference_colonne_non_righe.md) — password WiFi e codici fiscali leggibili con la chiave anon; servono GRANT per colonna (migration 082), e ogni colonna nuova nasce invisibile
 - [💾 Backup: chi scrive non deve cancellare](reference_backup_e_ripristino.md) — chiave R2 sola scrittura + scadenza lato bucket; verifica-backup.mjs apre l'archivio e lo confronta con la produzione; INCIDENTE.md per le 3 di notte
 - [🔐 Consenso ai dati personali: la prova, non la spunta](reference_consenso_dati_personali.md) — il controllo sta nella ROUTE (la spunta nel browser si toglie); si salva quando + quale testo è stato letto; sonda che prenota saltando il modulo
+- [📏 Una sonda che misura la cosa sbagliata](reference_sonda_misura_sbagliata.md) — prendeva il logo dell'header invece della locandina: due giri persi su un guasto inesistente mentre quello vero restava; ancorare i selettori al contesto e stampare la catena degli elementi
