@@ -1,5 +1,6 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
+import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
 import { ricco } from '@/lib/testo-ricco'
 import { rapportoDi } from '@/lib/formati-foto'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
@@ -155,7 +156,7 @@ export default function EventoPage() {
           )}
 
           <div style={{ fontSize: 28, fontWeight: 800, color: '#00b5b5', marginBottom: 24 }}>
-            {price > 0 ? `€${price} / persona` : 'Gratuito'}
+            {prezzoPersona(evento, selectedPkg ? selectedPkg.price : null) || ''}
           </div>
 
           {done ? (

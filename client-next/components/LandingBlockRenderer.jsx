@@ -1,5 +1,6 @@
 ﻿'use client'
 import { useState, useEffect, useRef, cloneElement } from 'react'
+import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
 import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Mountain, Wind, ChevronDown, ChevronLeft, ChevronRight, Calendar, Users, Check, CheckCircle, Gift, Home, Zap, Shield, Leaf, Sun, Briefcase, Wrench, Euro, Handshake, Smile, Target, TrendingUp, Globe, Camera, BookOpen, Layers, Tag, Search, X, FileText } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
 import BookingWidget from './BookingWidget'
@@ -1535,7 +1536,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                           {ev.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}><MapPin size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{ev.location}</span>}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-                          <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>{ev.price > 0 ? `€${ev.price}` : tr('free', lang)}</span>
+                          {prezzoDaMostrare(ev, { gratuito: tr('free', lang) }) && <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>{prezzoDaMostrare(ev, { gratuito: tr('free', lang) })}</span>}
                           <span style={{ fontSize: 13, fontWeight: 700, color: primary }}>{tr('book_arrow', lang)}</span>
                         </div>
                       </div>

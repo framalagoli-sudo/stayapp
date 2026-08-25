@@ -1,5 +1,6 @@
 ﻿'use client'
 import React, { useEffect, useRef, useState } from 'react'
+import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
 import { rapportoDi } from '@/lib/formati-foto'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import LandingStruttura from './LandingStruttura'
@@ -746,7 +747,7 @@ function EventiTab({ eventi, onOpen, primary, textColor, subText, isDark, radius
             </div>
             {ev.description && <p style={{ margin: '0 0 10px', fontSize: 13, color: subText, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ev.description}</p>}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>{ev.price > 0 ? `€${ev.price}` : tr('free', lang)}</span>
+              {prezzoDaMostrare(ev, { gratuito: tr('free', lang) }) && <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>{prezzoDaMostrare(ev, { gratuito: tr('free', lang) })}</span>}
               <span style={{ fontSize: 12, fontWeight: 600, color: primary }}>{tr('details_arrow', lang)}</span>
             </div>
           </div>
@@ -834,7 +835,7 @@ function EventoDetailView({ evento, onBack, primary, textColor, subText, isDark,
           )}
 
           <div style={{ fontWeight: 800, fontSize: 22, color: primary, marginBottom: 16 }}>
-            {(() => { const pkg = (evento.packages || []).find(p => p.id === pkgId); const price = pkg ? pkg.price : (evento.price || 0); return price > 0 ? `€${price} / ${lang === 'en' ? 'person' : 'persona'}` : tr('free', lang) })()}
+            {(() => { const pkg = (evento.packages || []).find(p => p.id === pkgId); return prezzoPersona(evento, pkg?.price, { gratuito: tr('free', lang), perPersona: lang === 'en' ? '/ person' : '/ persona' }) })()}
           </div>
 
           {done ? (

@@ -33,7 +33,11 @@ const AMMESSE = {
                   // 25/08: la forma della locandina e il punto da tenere visibile. Servono
                   // alla scheda dell'evento, che è pubblica; non dicono nulla di riservato
                   // e i valori ammessi sono un elenco chiuso (lib/formati-foto.js).
-                  'formato_cover','cover_focal'],
+                  'formato_cover','cover_focal',
+                  // 25/08: pulsante personalizzato, condizioni sotto di esso, e come si
+                  // legge il prezzo. Tutto contenuto scritto dal cliente per la sua
+                  // scheda pubblica: niente di riservato.
+                  'cta_label','cta_condizioni','mostra_prezzo','prezzo_testo'],
 }
 const SEGRETE = /password|secret|token|api_key|chiave|private|_key$/i
 

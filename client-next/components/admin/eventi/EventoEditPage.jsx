@@ -37,6 +37,7 @@ export default function EventoEditPage() {
     entity_tipo: '', entity_id: '', azienda_id: '', packages: [],
     notify_owner_on_booking: true, send_guest_confirmation: false,
     cta_label: '', cta_condizioni: '',
+    mostra_prezzo: true, prezzo_testo: '',
   })
   const [cover, setCover] = useState(null)       // URL attuale
   const [formato, setFormato] = useState(FORMATO_PREDEFINITO)
@@ -67,6 +68,8 @@ export default function EventoEditPage() {
           azienda_id:  ev.azienda_id  || '',
           cta_label:       ev.cta_label || '',
           cta_condizioni:  ev.cta_condizioni || '',
+          mostra_prezzo:   ev.mostra_prezzo ?? true,
+          prezzo_testo:    ev.prezzo_testo || '',
           notify_owner_on_booking: ev.notify_owner_on_booking ?? true,
           send_guest_confirmation: ev.send_guest_confirmation ?? false,
           packages:    (ev.packages || []).map(p => ({
@@ -201,6 +204,40 @@ export default function EventoEditPage() {
       </div>
 
       <form onSubmit={handleSubmit}>
+        {/* Come si legge il prezzo */}
+        <div style={cardStyle}>
+          <h3 style={sectionTitle}>Il prezzo, come lo vede chi guarda</h3>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, cursor: 'pointer' }}>
+            <input type="checkbox" checked={form.mostra_prezzo !== false}
+              onChange={e => set('mostra_prezzo', e.target.checked)}
+              style={{ accentColor: '#00b5b5', width: 17, height: 17 }} />
+            <span style={{ fontSize: 14, color: '#333' }}>Mostra il prezzo nella copertina e nella pagina</span>
+          </label>
+
+          {form.mostra_prezzo !== false && (
+            <>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 4 }}>
+                Al posto della cifra, scrivi (facoltativo)
+              </label>
+              <input value={form.prezzo_testo} onChange={e => set('prezzo_testo', e.target.value)} maxLength={40}
+                placeholder="Alla carta"
+                style={{ display: 'block', width: '100%', maxWidth: 280, padding: '12px 14px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14, marginBottom: 4 }} />
+              <div style={{ fontSize: 12, color: '#999' }}>
+                Per una cena alla carta, un preventivo su misura, un ingresso a offerta libera.
+                Lasciandolo vuoto si vede la cifra qui sotto — o «Gratis» se è zero.
+              </div>
+              {form.prezzo_testo && (
+                <div style={{ marginTop: 14, padding: '12px 14px', background: '#fff8e8', borderRadius: 8, fontSize: 12.5, color: '#8a6410', lineHeight: 1.55 }}>
+                  Attenzione: questo è <strong>solo quello che si legge</strong>. Se qualcuno prenota,
+                  il totale viene calcolato dal prezzo qui sotto — mettilo a 0 se l’importo si fa
+                  di persona, altrimenti a chi prenota risulterà una cifra che non ha mai visto.
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
         {/* Il pulsante di prenotazione e le sue condizioni */}
         <div style={cardStyle}>
           <h3 style={sectionTitle}>Il pulsante di prenotazione</h3>
