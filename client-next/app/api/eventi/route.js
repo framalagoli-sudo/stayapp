@@ -18,7 +18,8 @@ async function getProfile(userId) {
 
 const ALLOWED = ['title', 'description', 'cover_url', 'date_start', 'date_end',
   'location', 'price', 'seats_total', 'active', 'published', 'packages', 'entity_tipo', 'entity_id',
-  'notify_owner_on_booking', 'send_guest_confirmation', 'formato_cover', 'cover_focal']
+  'notify_owner_on_booking', 'send_guest_confirmation', 'formato_cover', 'cover_focal',
+  'cta_label', 'cta_condizioni']
 
 export async function GET(request) {
   try {
@@ -72,6 +73,10 @@ export async function POST(request) {
     // Qualsiasi altra cosa diventa null, cioè il predefinito.
     if ('formato_cover' in payload) payload.formato_cover = formatoValido(payload.formato_cover)
     if ('cover_focal' in payload) payload.cover_focal = focalValido(payload.cover_focal)
+    // Il testo del pulsante e' una riga, le condizioni un paragrafo: si tagliano
+    // qui, cosi il cliente vede il testo accorciato invece di un errore opaco.
+    if (typeof payload.cta_label === 'string') payload.cta_label = payload.cta_label.trim().slice(0, 60) || null
+    if (typeof payload.cta_condizioni === 'string') payload.cta_condizioni = payload.cta_condizioni.trim().slice(0, 600) || null
     if (payload.entity_id && !isUUID(payload.entity_id)) { payload.entity_id = null; payload.entity_tipo = null }
     // L'entità dev'essere propria: altrimenti l'evento comparirebbe sul sito di
     // un altro cliente, raccogliendone anche le prenotazioni.

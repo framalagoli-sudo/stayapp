@@ -36,6 +36,7 @@ export default function EventoEditPage() {
     price: '', seats_total: '', active: true, published: false,
     entity_tipo: '', entity_id: '', azienda_id: '', packages: [],
     notify_owner_on_booking: true, send_guest_confirmation: false,
+    cta_label: '', cta_condizioni: '',
   })
   const [cover, setCover] = useState(null)       // URL attuale
   const [formato, setFormato] = useState(FORMATO_PREDEFINITO)
@@ -64,6 +65,8 @@ export default function EventoEditPage() {
           entity_tipo: ev.entity_tipo || '',
           entity_id:   ev.entity_id   || '',
           azienda_id:  ev.azienda_id  || '',
+          cta_label:       ev.cta_label || '',
+          cta_condizioni:  ev.cta_condizioni || '',
           notify_owner_on_booking: ev.notify_owner_on_booking ?? true,
           send_guest_confirmation: ev.send_guest_confirmation ?? false,
           packages:    (ev.packages || []).map(p => ({
@@ -198,6 +201,40 @@ export default function EventoEditPage() {
       </div>
 
       <form onSubmit={handleSubmit}>
+        {/* Il pulsante di prenotazione e le sue condizioni */}
+        <div style={cardStyle}>
+          <h3 style={sectionTitle}>Il pulsante di prenotazione</h3>
+
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 4 }}>
+            Cosa c’è scritto sopra
+          </label>
+          <input value={form.cta_label} onChange={e => set('cta_label', e.target.value)} maxLength={60}
+            placeholder="Prenota ora"
+            style={{ display: 'block', width: '100%', padding: '12px 14px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14, marginBottom: 4 }} />
+          <div style={{ fontSize: 12, color: '#999', marginBottom: 18 }}>
+            «Prenota il tavolo», «Iscriviti alla lezione», «Richiedi il preventivo».
+            Se lo lasci vuoto resta «Prenota ora».
+          </div>
+
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 4 }}>
+            Condizioni, sotto al pulsante
+          </label>
+          <textarea value={form.cta_condizioni} onChange={e => set('cta_condizioni', e.target.value)} maxLength={600} rows={3}
+            placeholder="Caparra di 20€ alla prenotazione. Disdetta gratuita fino a 24 ore prima."
+            style={{ display: 'block', width: '100%', padding: '12px 14px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14, resize: 'vertical', fontFamily: 'inherit', marginBottom: 4 }} />
+          <div style={{ fontSize: 12, color: '#999' }}>
+            Quello che deve sapere prima di premere. Puoi usare &lt;b&gt; per il grassetto
+            e &lt;br&gt; per andare a capo. {form.cta_condizioni.length}/600
+          </div>
+
+          <div style={{ marginTop: 16, padding: '12px 14px', background: '#f0f7f7', borderRadius: 8, fontSize: 12.5, color: '#40706e', lineHeight: 1.55 }}>
+            Chi prenota lascia nome, email e telefono: sotto al pulsante gli viene chiesto il
+            consenso al trattamento dei dati, e senza quello la prenotazione non parte. Il
+            consenso viene registrato con data e testo — è quello che serve se un domani
+            qualcuno chiede conto di come sono stati raccolti.
+          </div>
+        </div>
+
         {/* Cover */}
         {!isNew && (
           <div style={cardStyle}>

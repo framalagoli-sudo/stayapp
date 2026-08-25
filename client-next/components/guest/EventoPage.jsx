@@ -1,5 +1,6 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
+import { ricco } from '@/lib/testo-ricco'
 import { rapportoDi } from '@/lib/formati-foto'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Calendar, MapPin, Users, ArrowLeft, Check } from 'lucide-react'
@@ -11,6 +12,21 @@ export default function EventoPage() {
   const searchParams = useSearchParams()
   const lang = searchParams.get('_lang') === 'en' ? 'en' : 'it'
   const backUrl = searchParams.get('back')
+
+  // L'informativa da mostrare a chi prenota è quella del sito da cui arriva.
+  // `back` è l'indirizzo della sua home — anche su dominio personalizzato —
+  // quindi la pagina privacy sta lì accanto. Se manca, il consenso si chiede
+  // lo stesso: il collegamento è utile, non è la condizione.
+  const privacyUrl = (() => {
+    if (!backUrl) return null
+    try {
+      const u = new URL(backUrl, typeof window !== 'undefined' ? window.location.origin : 'https://oltrenova.com')
+      // Solo lo stesso sito: un `back` manomesso non deve poter dirottare
+      // altrove chi clicca «informativa sulla privacy».
+      if (typeof window !== 'undefined' && u.origin !== window.location.origin) return null
+      return u.pathname.replace(/\/+$/, '') + '/privacy'
+    } catch { return null }
+  })()
 
   // Ritorno: preferisci l'URL di provenienza (?back=, funziona anche senza history
   // e su domini custom); altrimenti torna nella history; ultimo fallback: home.
@@ -26,6 +42,7 @@ export default function EventoPage() {
   const [guestName,  setGuestName]  = useState('')
   const [guestEmail, setGuestEmail] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
+  const [privacyOk,  setPrivacyOk]  = useState(false)
   const [booking,    setBooking]    = useState(false)
   const [done,       setDone]       = useState(false)
   const [emailSent,  setEmailSent]  = useState(false)
@@ -44,7 +61,7 @@ export default function EventoPage() {
     try {
       const res = await guestFetch(`/api/guest/eventi/${id}/book`, {
         method: 'POST',
-        body: JSON.stringify({ guest_name: guestName, guest_email: guestEmail,
+        body: JSON.stringify({ privacy_accettata: privacyOk, guest_name: guestName, guest_email: guestEmail,
           guest_phone: guestPhone || null, package_id: pkgId || null, seats }),
       })
       setEmailSent(!!res?.guest_confirmation_sent)
@@ -157,11 +174,31 @@ export default function EventoPage() {
                 <label style={{ fontSize: 14, color: '#555' }}>Posti:</label>
                 <input type="number" min="1" value={seats} onChange={e => setSeats(parseInt(e.target.value) || 1)} style={{ ...inp, width: 80, textAlign: 'center', marginBottom: 0 }} />
               </div>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 18, cursor: 'pointer', fontSize: 13, color: '#555', lineHeight: 1.5 }}>
+                <input type="checkbox" checked={privacyOk} onChange={e => setPrivacyOk(e.target.checked)} required
+                  style={{ marginTop: 2, accentColor: '#00b5b5', flexShrink: 0 }} />
+                <span>
+                  Ho letto e accetto{' '}
+                  {privacyUrl
+                    ? <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#00b5b5', fontWeight: 600 }}>l’informativa sulla privacy</a>
+                    : <strong>l’informativa sulla privacy</strong>}.
+                  {' '}I miei dati saranno usati per gestire questa prenotazione.
+                </span>
+              </label>
+
               {bookErr && <p style={{ color: '#e53e3e', fontSize: 13, marginBottom: 14 }}>{bookErr}</p>}
-              <button onClick={handleBook} disabled={booking}
-                style={{ width: '100%', padding: 16, background: '#00b5b5', color: '#fff', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
-                {booking ? 'Invio in corso…' : 'Prenota ora'}
+              <button onClick={handleBook} disabled={booking || !privacyOk}
+                style={{ width: '100%', padding: 16, background: privacyOk ? '#00b5b5' : '#ccc', color: '#fff', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 700, cursor: privacyOk ? 'pointer' : 'not-allowed', transition: 'background .2s' }}>
+                {booking ? 'Invio in corso…' : (evento.cta_label || 'Prenota ora')}
               </button>
+
+              {/* Quello che chi prenota deve sapere prima di premere: caparra,
+                  disdetta, cosa è incluso. Lo scrive il cliente, e resta sotto
+                  il pulsante perché è lì che lo si legge davvero. */}
+              {evento.cta_condizioni && (
+                <p style={{ marginTop: 12, marginBottom: 0, fontSize: 12.5, color: '#777', lineHeight: 1.6, textAlign: 'center', whiteSpace: 'pre-line' }}
+                  {...ricco(evento.cta_condizioni)} />
+              )}
             </>
           )}
         </div>

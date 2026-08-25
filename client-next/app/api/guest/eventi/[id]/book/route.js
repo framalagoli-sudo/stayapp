@@ -8,6 +8,14 @@ import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 
 const ENTITY_TBL = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
 
+// La formula che chi prenota accetta. La decide il server, non il componente:
+// è il server a scriverla nella prova del consenso, e se le due copie
+// divergessero resterebbe salvata una formula che nessuno ha mai letto.
+// Cambiandola, le prenotazioni già raccolte conservano quella vecchia — che è
+// esattamente il motivo per cui si salva il testo e non solo la spunta.
+export const TESTO_CONSENSO =
+  "Ho letto e accetto l'informativa sulla privacy. I miei dati saranno usati per gestire questa prenotazione."
+
 function fmtDate(iso) {
   if (!iso) return ''
   return new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -22,9 +30,14 @@ export async function POST(request, props) {
     if (!rl.allowed) return tooManyRequests()
 
     const body = await request.json()
-    const { guest_name, guest_email, guest_phone, package_id, seats, notes } = body
+    const { guest_name, guest_email, guest_phone, package_id, seats, notes, privacy_accettata } = body
     if (!guest_name?.trim()) return Response.json({ error: 'Nome obbligatorio' }, { status: 400 })
     if (!guest_email?.trim()) return Response.json({ error: 'Email obbligatoria' }, { status: 400 })
+    // Qui si raccolgono nome, email e telefono: senza consenso non si raccolgono
+    // affatto. La spunta nel browser non basta — si toglie con due clic — quindi
+    // la condizione sta qui, dove nessuno la può aggirare.
+    if (privacy_accettata !== true)
+      return Response.json({ error: 'Per prenotare serve il consenso al trattamento dei dati.' }, { status: 400 })
 
     // select('*') → indipendente dall'ordine della migration 067 (colonne notify_*
     // assenti = undefined = nessuna mail, niente 500).
@@ -48,6 +61,12 @@ export async function POST(request, props) {
       event_id: params.id, guest_name, guest_email,
       guest_phone: guest_phone || null, package_id: package_id || null,
       seats: reqSeats, total_amount: price * reqSeats, notes: notes || null, status: 'pending',
+      // La prova del consenso, non la sua dichiarazione: quando è stato dato e
+      // quale formula la persona ha letto. Se domani il testo cambia, questo
+      // resta ricostruibile — è il punto dell'articolo 7 del GDPR.
+      privacy_accettata: true,
+      privacy_accettata_il: new Date().toISOString(),
+      privacy_testo: TESTO_CONSENSO,
     }).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
 

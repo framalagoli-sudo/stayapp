@@ -7,7 +7,7 @@ export const maxDuration = 30
 export async function GET(request, props) {
   const params = await props.params;
   const { data, error } = await supabaseAdmin.from('eventi')
-    .select('id, slug, title, description, cover_url, formato_cover, cover_focal, date_start, date_end, location, price, seats_total, seats_booked, packages')
+    .select('id, slug, title, description, cover_url, formato_cover, cover_focal, cta_label, cta_condizioni, date_start, date_end, location, price, seats_total, seats_booked, packages')
     .eq('id', params.id).eq('published', true).eq('active', true).single()
   if (error || !data) return Response.json({ error: 'Evento non trovato' }, { status: 404 })
   const lang = new URL(request.url).searchParams.get('lang') === 'en' ? 'en' : 'it'
