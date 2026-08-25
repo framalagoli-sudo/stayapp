@@ -39,10 +39,17 @@ export async function GET(request, props) {
       const { data: ent } = await supabaseAdmin.from('entita')
         .select(CAMPI_SITO).eq('id', data.entity_id).eq('active', true).maybeSingle()
       if (ent) {
+        // Del minisito servono due cose sole: come si presenta il piede e i
+        // collegamenti social. Passarlo intero sarebbe comodo e sbagliato — è
+        // un oggetto che cresce, e al primo campo riservato che ci finisce
+        // dentro uscirebbe da qui senza che nessuno lo decida.
+        const mini = ent.minisito || {}
         sito = {
           name: ent.name, slug: ent.slug, tipo: ent.tipo,
           logo_url: ent.logo_url, logo_dark_url: ent.logo_dark_url,
-          theme: ent.theme || null, minisito: ent.minisito || null,
+          theme: ent.theme || null,
+          footer_cfg: mini.footer_cfg || null,
+          social: mini.social || null,
           azienda_legale: data.azienda_id ? await getAziendaLegale(data.azienda_id) : null,
         }
       }

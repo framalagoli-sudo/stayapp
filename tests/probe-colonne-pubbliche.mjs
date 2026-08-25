@@ -35,9 +35,14 @@ const AMMESSE = {
                   // e i valori ammessi sono un elenco chiuso (lib/formati-foto.js).
                   'formato_cover','cover_focal',
                   // 25/08: pulsante personalizzato, condizioni sotto di esso, e come si
-                  // legge il prezzo. Tutto contenuto scritto dal cliente per la sua
-                  // scheda pubblica: niente di riservato.
-                  'cta_label','cta_condizioni','mostra_prezzo','prezzo_testo'],
+                  // legge il prezzo (due decisioni: copertina e pagina aperta). Tutto
+                  // contenuto scritto dal cliente per la sua scheda pubblica.
+                  'cta_label','cta_condizioni','mostra_prezzo','mostra_prezzo_pagina','prezzo_testo',
+                  // Il minimo per il piede di pagina: nome, logo, tema, footer_cfg,
+                  // social e i dati legali del titolare — che sono pubblici per obbligo
+                  // di legge. Verificato campo per campo il 25/08; il minisito NON esce
+                  // intero, di proposito.
+                  'sito'],
 }
 const SEGRETE = /password|secret|token|api_key|chiave|private|_key$/i
 
