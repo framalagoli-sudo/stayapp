@@ -28,7 +28,10 @@ export function prezzoDaMostrare(evento, { gratuito = 'Gratis' } = {}) {
 // Per la riga «€25 / persona» della pagina di dettaglio, dove un pacchetto
 // scelto ha la precedenza sulla cifra dell'evento.
 export function prezzoPersona(evento, prezzoScelto, { gratuito = 'Gratuito', perPersona = '/ persona' } = {}) {
-  if (evento?.mostra_prezzo === false) return null
+  // Qui vale il flag della PAGINA: mostrare il prezzo nell'elenco e mostrarlo
+  // dentro sono due decisioni diverse. C'è chi non lo vuole in vetrina ma lo dà
+  // a chi apre, e chi fa il contrario.
+  if (evento?.mostra_prezzo_pagina === false) return null
 
   // Il testo libero vale finché non si sceglie un pacchetto: quello ha un
   // prezzo suo, ed è quello che verrà addebitato.

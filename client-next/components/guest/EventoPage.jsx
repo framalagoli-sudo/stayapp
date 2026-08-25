@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
 import { ricco } from '@/lib/testo-ricco'
+import LegalInfo from './LegalInfo'
 import { rapportoDi } from '@/lib/formati-foto'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Calendar, MapPin, Users, ArrowLeft, Check } from 'lucide-react'
@@ -14,20 +15,29 @@ export default function EventoPage() {
   const lang = searchParams.get('_lang') === 'en' ? 'en' : 'it'
   const backUrl = searchParams.get('back')
 
-  // L'informativa da mostrare a chi prenota è quella del sito da cui arriva.
-  // `back` è l'indirizzo della sua home — anche su dominio personalizzato —
-  // quindi la pagina privacy sta lì accanto. Se manca, il consenso si chiede
-  // lo stesso: il collegamento è utile, non è la condizione.
-  const privacyUrl = (() => {
-    if (!backUrl) return null
-    try {
-      const u = new URL(backUrl, typeof window !== 'undefined' ? window.location.origin : 'https://oltrenova.com')
-      // Solo lo stesso sito: un `back` manomesso non deve poter dirottare
-      // altrove chi clicca «informativa sulla privacy».
-      if (typeof window !== 'undefined' && u.origin !== window.location.origin) return null
-      return u.pathname.replace(/\/+$/, '') + '/privacy'
-    } catch { return null }
-  })()
+  // Da dove viene chi guarda, e dove lo si rimanda.
+  //
+  // `back` è l'indirizzo reale di provenienza — e su un dominio personalizzato
+  // è l'unico che porta davvero al sito del cliente. Vale quindi più dello slug,
+  // che ricostruirebbe solo l'indirizzo su oltrenova.com. Se manca, si ripiega
+  // sui dati dell'entità; se manca anche quella, niente link e nessun danno.
+  //
+  // ⚠️ `back` arriva dall'URL, quindi da chiunque: si accetta solo se punta a
+  // questo stesso sito. Un parametro manomesso non deve poter dirottare chi
+  // clicca «Privacy» o «Torna al sito».
+  const PREFISSO = { struttura: 's', ristorante: 'r', attivita: 'a' }
+  function baseSito(sito) {
+    if (backUrl) {
+      try {
+        const u = new URL(backUrl, typeof window !== 'undefined' ? window.location.origin : 'https://oltrenova.com')
+        if (typeof window === 'undefined' || u.origin === window.location.origin) {
+          return u.pathname.replace(/\/+$/, '')
+        }
+      } catch { /* indirizzo malformato: si passa al ripiego */ }
+    }
+    if (sito?.slug && PREFISSO[sito.tipo]) return `/${PREFISSO[sito.tipo]}/${sito.slug}`
+    return null
+  }
 
   // Ritorno: preferisci l'URL di provenienza (?back=, funziona anche senza history
   // e su domini custom); altrimenti torna nella history; ultimo fallback: home.
@@ -92,6 +102,11 @@ export default function EventoPage() {
   const selectedPkg = (evento.packages || []).find(p => p.id === pkgId)
   const price = selectedPkg ? selectedPkg.price : (evento.price || 0)
 
+  const sito       = evento.sito || null
+  const sitoHome   = baseSito(sito)
+  const privacyUrl = sitoHome ? `${sitoHome}/privacy` : null
+  const cookieUrl  = sitoHome ? `${sitoHome}/cookie`  : null
+
   return (
     <div style={{ minHeight: '100vh', background: '#f9f9fb', fontFamily: 'Inter, system-ui, sans-serif' }}>
       <style>{`* { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
@@ -103,10 +118,24 @@ export default function EventoPage() {
         </button>
       </div>
 
-      {/* Cover */}
+      {/* Copertina: la locandina intera, su un fondo fatto con la locandina stessa.
+          Prima l'immagine veniva ritagliata a piena larghezza — e una locandina
+          verticale ci perdeva la testa o i piedi. Ora si vede tutta, larga quanto
+          il testo che sta sotto, e dietro la stessa foto sfocata riempie il resto
+          senza lasciare due bande vuote ai lati. */}
       {evento.cover_url && (
-        <div style={{ overflow: 'hidden', aspectRatio: rapportoDi(evento.formato_cover), maxHeight: 560 }}>
-          <img src={evento.cover_url} alt={evento.title} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: evento.cover_focal || 'center', display: 'block' }} />
+        <div style={{ position: 'relative', overflow: 'hidden', background: '#1a1a2e' }}>
+          <img src={evento.cover_url} alt="" aria-hidden="true"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+              objectPosition: evento.cover_focal || 'center',
+              filter: 'blur(36px) saturate(1.25)', transform: 'scale(1.15)', opacity: 0.55 }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(20,20,35,0.35) 0%, rgba(20,20,35,0.55) 100%)' }} />
+          <div style={{ position: 'relative', maxWidth: 720, margin: '0 auto', padding: '28px 24px' }}>
+            <img src={evento.cover_url} alt={evento.title}
+              style={{ display: 'block', width: '100%', aspectRatio: rapportoDi(evento.formato_cover),
+                objectFit: 'cover', objectPosition: evento.cover_focal || 'center',
+                maxHeight: '72vh', borderRadius: 14, boxShadow: '0 18px 50px -12px rgba(0,0,0,0.55)' }} />
+          </div>
         </div>
       )}
 
@@ -204,6 +233,43 @@ export default function EventoPage() {
           )}
         </div>
       </div>
+
+      {/* Il piede di pagina.
+          Fin qui l'unica via d'uscita era il «Indietro» in cima: chi arrivava
+          da un social e scorreva fino in fondo restava in un vicolo cieco, senza
+          sapere nemmeno di chi fosse la pagina. E per un sito d'impresa i dati
+          del titolare e il link alla privacy non sono una rifinitura: li chiede
+          la legge. */}
+      <footer style={{ background: '#1a1a2e', color: 'rgba(255,255,255,0.7)', marginTop: 48, padding: '40px 24px 32px' }}>
+        <div style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
+          {sito?.logo_dark_url || sito?.logo_url ? (
+            <img src={sito.logo_dark_url || sito.logo_url} alt={sito.name || ''}
+              style={{ maxHeight: 46, maxWidth: 190, objectFit: 'contain', display: 'block', margin: '0 auto 16px' }} />
+          ) : sito?.name ? (
+            <div style={{ fontSize: 17, fontWeight: 700, color: '#fff', marginBottom: 16 }}>{sito.name}</div>
+          ) : null}
+
+          {sitoHome && (
+            <a href={sitoHome}
+              style={{ display: 'inline-block', padding: '11px 26px', borderRadius: 50, border: '1px solid rgba(255,255,255,0.28)', color: '#fff', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 24 }}>
+              {sito?.name ? `Torna a ${sito.name}` : 'Torna al sito'}
+            </a>
+          )}
+
+          {(privacyUrl || cookieUrl) && (
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 20, flexWrap: 'wrap', fontSize: 13, marginBottom: 18 }}>
+              {privacyUrl && <a href={privacyUrl} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>Privacy</a>}
+              {cookieUrl && <a href={cookieUrl} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>Cookie</a>}
+            </div>
+          )}
+
+          <LegalInfo azienda={sito?.azienda_legale} style={{ marginBottom: 10 }} />
+
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
+            © {new Date().getFullYear()}{sito?.name ? ` ${sito.name}` : ''}
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

@@ -8,7 +8,7 @@ function isUUID(v) { return UUID_RE.test(v) }
 const ALLOWED = ['title', 'description', 'cover_url', 'date_start', 'date_end',
   'location', 'price', 'seats_total', 'active', 'published', 'packages', 'entity_tipo', 'entity_id',
   'notify_owner_on_booking', 'send_guest_confirmation', 'formato_cover', 'cover_focal',
-  'cta_label', 'cta_condizioni', 'mostra_prezzo', 'prezzo_testo']
+  'cta_label', 'cta_condizioni', 'mostra_prezzo', 'mostra_prezzo_pagina', 'prezzo_testo']
 
 export async function GET(request, props) {
   const params = await props.params;
@@ -39,6 +39,7 @@ export async function PATCH(request, props) {
     if (typeof payload.cta_condizioni === 'string') payload.cta_condizioni = payload.cta_condizioni.trim().slice(0, 600) || null
     if (typeof payload.prezzo_testo === 'string') payload.prezzo_testo = payload.prezzo_testo.trim().slice(0, 40) || null
     if ('mostra_prezzo' in payload) payload.mostra_prezzo = payload.mostra_prezzo !== false
+    if ('mostra_prezzo_pagina' in payload) payload.mostra_prezzo_pagina = payload.mostra_prezzo_pagina !== false
     if (payload.entity_id && !isUUID(payload.entity_id)) { payload.entity_id = null; payload.entity_tipo = null }
     // Spostare l'evento su un'entità altrui lo pubblicherebbe sul sito di un
     // altro cliente: il record è mio, la destinazione no.

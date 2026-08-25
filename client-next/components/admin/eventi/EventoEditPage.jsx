@@ -37,7 +37,7 @@ export default function EventoEditPage() {
     entity_tipo: '', entity_id: '', azienda_id: '', packages: [],
     notify_owner_on_booking: true, send_guest_confirmation: false,
     cta_label: '', cta_condizioni: '',
-    mostra_prezzo: true, prezzo_testo: '',
+    mostra_prezzo: true, mostra_prezzo_pagina: true, prezzo_testo: '',
   })
   const [cover, setCover] = useState(null)       // URL attuale
   const [formato, setFormato] = useState(FORMATO_PREDEFINITO)
@@ -68,7 +68,8 @@ export default function EventoEditPage() {
           azienda_id:  ev.azienda_id  || '',
           cta_label:       ev.cta_label || '',
           cta_condizioni:  ev.cta_condizioni || '',
-          mostra_prezzo:   ev.mostra_prezzo ?? true,
+          mostra_prezzo:        ev.mostra_prezzo ?? true,
+          mostra_prezzo_pagina: ev.mostra_prezzo_pagina ?? true,
           prezzo_testo:    ev.prezzo_testo || '',
           notify_owner_on_booking: ev.notify_owner_on_booking ?? true,
           send_guest_confirmation: ev.send_guest_confirmation ?? false,
@@ -208,14 +209,27 @@ export default function EventoEditPage() {
         <div style={cardStyle}>
           <h3 style={sectionTitle}>Il prezzo, come lo vede chi guarda</h3>
 
-          <label style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, cursor: 'pointer' }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12, cursor: 'pointer' }}>
             <input type="checkbox" checked={form.mostra_prezzo !== false}
               onChange={e => set('mostra_prezzo', e.target.checked)}
-              style={{ accentColor: '#00b5b5', width: 17, height: 17 }} />
-            <span style={{ fontSize: 14, color: '#333' }}>Mostra il prezzo nella copertina e nella pagina</span>
+              style={{ accentColor: '#00b5b5', width: 17, height: 17, marginTop: 2 }} />
+            <span style={{ fontSize: 14, color: '#333' }}>
+              Nella copertina
+              <span style={{ display: 'block', fontSize: 12, color: '#999' }}>La scheda dell’evento nell’elenco e sul sito</span>
+            </span>
           </label>
 
-          {form.mostra_prezzo !== false && (
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 16, cursor: 'pointer' }}>
+            <input type="checkbox" checked={form.mostra_prezzo_pagina !== false}
+              onChange={e => set('mostra_prezzo_pagina', e.target.checked)}
+              style={{ accentColor: '#00b5b5', width: 17, height: 17, marginTop: 2 }} />
+            <span style={{ fontSize: 14, color: '#333' }}>
+              Nella pagina dell’evento
+              <span style={{ display: 'block', fontSize: 12, color: '#999' }}>Dove si prenota. Puoi tenerlo qui e toglierlo dalla copertina, o il contrario</span>
+            </span>
+          </label>
+
+          {(form.mostra_prezzo !== false || form.mostra_prezzo_pagina !== false) && (
             <>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 4 }}>
                 Al posto della cifra, scrivi (facoltativo)
