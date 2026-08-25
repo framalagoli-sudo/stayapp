@@ -281,6 +281,16 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - `sharp` era già una dipendenza. Le immagini **già online** sono state ricompresse una tantum con `tests/probe-comprimi-esistenti.mjs` (23,3 MB → 5,4 MB): quello script mantiene formato e percorso originali, così gli URL nel DB non cambiano — e **simula soltanto** se non gli si passa `--esegui`.
     - ⚠️ Dopo una sostituzione, la CDN serve ancora la vecchia copia finché la cache non scade: per verificare, aggiungere un parametro nuovo all'URL.
 
+31. **🧩 UNA SOLA TABELLA `entita`** (25/08/2026, migration `079`–`081`). Le tre tabelle `properties`, `ristoranti` e `attivita` non esistono più per il codice: tutto legge e scrive da `entita`. **Il tipo non limita più nessuna funzione** — decide solo l'indirizzo pubblico (`/s/`, `/r/`, `/a/`) e il preset iniziale; cosa un cliente può fare lo dicono i `moduli`. Un hotel può avere il menù, un ristorante i servizi, una palestra le prenotazioni.
+    - **Perché**: OltreNova è nata come app per hotel e le altre due sono arrivate dopo ereditando solo una parte dei campi — 20 comuni e 17 esclusivi. Un hotel non poteva dichiarare gli orari (da cui il chatbot muto), un ristorante non poteva elencare i servizi, e `whatsapp` esisteva solo sugli hotel.
+    - **`lib/entita.js` è l'unico punto di accesso.** `allaFormaStorica` / `dallaFormaStorica` traducono verso i nomi che il pannello usa da sempre (`modules`, `pwa`, e per le attività `tipo` = descrizione del settore). ⚠️ **Sono un debito con scadenza**: quando l'interfaccia userà i nomi nuovi, i tre alias si tolgono in un colpo.
+    - `tipo` = tecnico e chiuso · `settore` = libero ("Officina meccanica"), per AI e SEO, senza effetti tecnici. Confonderli fa sparire i siti dal routing: è già successo in corsa.
+    - Lo **slug è unico fra tutte le entità**, non più dentro il tipo.
+    - Le vecchie tabelle restano come rete finché non si esegue la migration di dismissione. I trigger `081` le sincronizzano verso `entita`, ma **nessuno ci scrive più**: sono ferme.
+    - ⚠️ **Il `next build` NON segnala una funzione non importata** dentro un handler: è passato due volte con import mancanti, e la seconda ha mandato in 500 le tre route `/api/guest/*` in produzione. Dopo una modifica per script, verificare a mano che ogni file che usa una funzione la importi.
+    - Sonde: `probe-entita-unificata.mjs` (copia corretta), `probe-sincronizzazione.mjs` (i trigger seguono), `probe-entita-ciclo.mjs` (crea/rileggi/modifica/pubblica sui tre tipi), `probe-confronto-siti.mjs` (i siti sono identici prima e dopo).
+    - 📌 **Manca ancora il pezzo che dà valore al cliente**: il pannello non espone le funzioni fuori dal verticale. Un hotel *può* avere il menù nei dati, ma non vede la voce nel menu laterale. Finché non si fa, l'all-in-one è vero nel database e non nell'esperienza.
+
 ---
 
 ## Roadmap

@@ -1,14 +1,51 @@
 ---
 name: todo_prossima_sessione
-description: "To-do prossima sessione (24/8 sera) — sicurezza/performance/monitoraggio a posto. PROSSIMO: percorso da cliente nuovo = specifica onboarding. I clienti usano solo sito+contatti+richieste; 6 moduli su 15 a zero. Sotto, storico."
+description: "To-do prossima sessione (25/8) — UNIFICAZIONE ENTITÀ FATTA E LIVE (una sola tabella, il tipo non limita più le funzioni). PROSSIMO: rendere l'all-in-one visibile nel pannello, poi onboarding. Sotto, storico."
 metadata: 
   node_type: memory
   type: project
   originSessionId: 5c9078da-e20b-4e33-9c9d-fb8574d5ed66
-  modified: 2026-08-24T10:50:16.236Z
+  modified: 2026-08-25T07:33:41.736Z
 ---
 
-## ▶️ RIPARTIRE DA QUI (24/8, sera) — leggere questo
+## ▶️ RIPARTIRE DA QUI (25/8) — leggere questo
+
+**L'UNIFICAZIONE DELLE ENTITÀ È FATTA E LIVE.** Una sola tabella `entita`; il
+tipo decide solo indirizzo e preset, non quali funzioni un cliente può usare.
+Dettaglio e trappole in [[reference_entita_unificata]] e nota 31 del `CLAUDE.md`.
+Verificato sul campo da Francesco: menu e privacy di un ristorante funzionano.
+
+**➡️ IL PROSSIMO PASSO — rendere l'all-in-one VISIBILE.** Oggi un hotel *può*
+avere il menù nei dati ma **non vede la voce nel pannello**: le sezioni sono
+ancora legate al verticale. Finché non si fa, l'unificazione è vera nel database
+e non nell'esperienza del cliente — cioè non ha ancora prodotto valore.
+Serve: menu laterale guidato dai `moduli` invece che dal tipo, e una pagina dove
+il cliente accende ciò che gli serve («questa attività ha un menù? un listino?
+prenotazioni?»). È anche il pezzo che rende sensato l'onboarding.
+
+**Poi, in ordine:**
+- **Percorso da cliente nuovo** → specifica dell'onboarding (era il piano prima
+  dell'unificazione; ora ha molto più senso, perché il preset iniziale esiste).
+  ⛔ Ostacolo noto: le registrazioni sono CHIUSE (`signup_enabled=false`) e la
+  pagina `/signup` si apre lo stesso, facendo compilare il modulo per niente.
+- **Dismissione delle vecchie tabelle** (migration 084): quando Francesco è
+  tranquillo. Ora sono ferme, nessuno ci scrive, servono solo da rete.
+- **Togliere gli alias storici** (`modules`/`pwa`/`tipo`) quando il pannello
+  userà i nomi nuovi. È un debito dichiarato, non una scelta di stile.
+
+**⚠️ Trappola che è costata un guasto in produzione:** `next build` NON segnala
+una funzione non importata dentro un handler. È passato due volte con import
+mancanti; la seconda ha mandato in 500 le tre route `/api/guest/*` (PWA del QR e
+pagine privacy) mentre siti e smoke restavano verdi, perché non le toccano.
+Dopo modifiche fatte via script: controllare a mano gli import.
+
+**A carico di Francesco:** compilare l'email di `futura-club-spiagge-bianche` e
+`piano-editoriale-futura-vacanze` (pagine privacy senza contatto, obbligo GDPR);
+verificare gli URL webhook su Stripe e Meta; provare un ripristino del backup.
+
+---
+
+## ▶️ (storico) RIPARTIRE DA QUI (24/8, sera)
 
 **Sicurezza, performance e monitoraggio sono a posto.** Il capitolo aperto ora è
 uno solo, ed è quello che sposta i ricavi: **il percorso da cliente nuovo**.

@@ -1,6 +1,7 @@
 # Memory Index
 
-- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: sicurezza/performance/monitoraggio a posto. PROSSIMO = percorso da cliente nuovo (specifica onboarding). I clienti usano solo sito+contatti+richieste, 6 moduli su 15 a zero
+- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: unificazione entità FATTA e live. PROSSIMO = rendere l'all-in-one visibile nel pannello (oggi è vero nei dati, non nell'esperienza), poi onboarding
+- [🧩 Una sola tabella `entita`](reference_entita_unificata.md) — il tipo decide solo indirizzo e preset, NON le funzioni; lib/entita.js unico accesso; ⚠️ next build non vede gli import mancanti (500 in produzione sulle route guest)
 - [🔇 Guasti silenziosi: allarmi + battito dei cron](reference_guasti_silenziosi.md) — try/catch NON intercetta un processo che smette di girare; ogni cron lascia un segno e chi gira dopo controlla gli altri; pagina /admin/diagnostica
 - [🛡️ Punto A (sicurezza) CHIUSO — 24/08](project_check_sicurezza_punto_A.md) — 8 sotto-fasi, 6 con buchi veri corretti; il metodo per classi separate è ciò che li ha fatti emergere (A1 è cieca sulle richieste legittime). Dettaglio in `SECURITY-CHECK.md`
 - [🎭 entity_id dal corpo va verificato](reference_entita_dal_corpo.md) — `azienda_id` era protetto, `entity_id` no → si pubblicava un proprio evento sul sito di un'ALTRA azienda; usare `entitaDellaAzienda`. Vale anche per gli upload, che aggiornano il record
