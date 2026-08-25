@@ -112,7 +112,12 @@ export default function EventoPage() {
   const cookieUrl  = sitoHome ? `${sitoHome}/cookie`  : null
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f9f9fb', fontFamily: 'Inter, system-ui, sans-serif' }}>
+    // L'intestazione del sito è fissata in cima allo schermo, quindi non occupa
+    // spazio nel flusso: senza questo margine coprirebbe la locandina. Sta sul
+    // contenitore e non su uno spaziatore fra i due, perché così non dipende
+    // dall'ordine degli elementi — che è come mi si era rotto la prima volta.
+    <div style={{ minHeight: '100vh', background: '#f9f9fb', fontFamily: 'Inter, system-ui, sans-serif',
+      paddingTop: sito?.name ? 64 : 0 }}>
       <style>{`* { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
 
       {/* L'intestazione del sito del cliente, la stessa delle sue altre pagine.
@@ -138,8 +143,6 @@ export default function EventoPage() {
           </button>
         </div>
       )}
-      {/* L'intestazione è fissata in cima: senza questo spazio coprirebbe la locandina. */}
-      {sito?.name && <div style={{ height: 64 }} />}
 
       {/* Copertina: la locandina intera, su un fondo fatto con la locandina stessa.
           Prima l'immagine veniva ritagliata a piena larghezza — e una locandina
@@ -160,8 +163,8 @@ export default function EventoPage() {
                 perché le schede devono stare in fila — qui c'è tutto lo spazio,
                 e tagliare una locandina significa perderne un pezzo. */}
             <img src={evento.cover_url} alt={evento.title}
-              style={{ display: 'block', width: '100%', height: 'auto',
-                maxHeight: '78vh', objectFit: 'contain',
+              style={{ display: 'block', width: 'auto', height: 'auto',
+                maxWidth: '100%', maxHeight: '78vh', margin: '0 auto',
                 borderRadius: 14, boxShadow: '0 18px 50px -12px rgba(0,0,0,0.55)' }} />
           </div>
         </div>
