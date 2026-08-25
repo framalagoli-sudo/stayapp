@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
 import { ricco } from '@/lib/testo-ricco'
 import LegalInfo from './LegalInfo'
-import { rapportoDi } from '@/lib/formati-foto'
+import SiteNav from './SiteNav'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Calendar, MapPin, Users, ArrowLeft, Check } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
@@ -103,6 +103,10 @@ export default function EventoPage() {
   const price = selectedPkg ? selectedPkg.price : (evento.price || 0)
 
   const sito       = evento.sito || null
+  // Su un dominio del cliente i link del menu devono restare sul suo dominio,
+  // non rimandare a oltrenova.com: SiteNav lo sa fare, basta dirglielo.
+  const dominioCustom = (typeof window !== 'undefined' && !/(^|\.)oltrenova\.com$/.test(window.location.hostname))
+    ? window.location.hostname : null
   const sitoHome   = baseSito(sito)
   const privacyUrl = sitoHome ? `${sitoHome}/privacy` : null
   const cookieUrl  = sitoHome ? `${sitoHome}/cookie`  : null
@@ -111,12 +115,31 @@ export default function EventoPage() {
     <div style={{ minHeight: '100vh', background: '#f9f9fb', fontFamily: 'Inter, system-ui, sans-serif' }}>
       <style>{`* { box-sizing: border-box; margin: 0; padding: 0; }`}</style>
 
-      {/* Back bar */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #eee', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center' }}>
-        <button onClick={goBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1a1a2e', padding: 0 }}>
-          <ArrowLeft size={18} strokeWidth={1.5} /> Indietro
-        </button>
-      </div>
+      {/* L'intestazione del sito del cliente, la stessa delle sue altre pagine.
+          Prima c'era solo un «Indietro»: la pagina di un evento sembrava staccata
+          da tutto, e chi ci arrivava da un social non capiva di chi fosse. */}
+      {sito?.name ? (
+        <SiteNav
+          entity={{ name: sito.name, slug: sito.slug, logo_url: sito.logo_url, logo_dark_url: sito.logo_dark_url }}
+          mini={{ header_cfg: sito.header_cfg, logo_size: sito.logo_size }}
+          pagine={sito.pagine || []}
+          prefix={PREFISSO[sito.tipo] || 's'}
+          primary={sito.theme?.primaryColor || '#00b5b5'}
+          secondary={sito.theme?.secondaryColor}
+          heading={sito.theme?.fontHeading}
+          lang={lang}
+          domain={dominioCustom}
+        />
+      ) : (
+        // Un evento aziendale non è appeso a nessun sito: resta il ritorno semplice.
+        <div style={{ background: '#fff', borderBottom: '1px solid #eee', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center' }}>
+          <button onClick={goBack} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#1a1a2e', padding: 0 }}>
+            <ArrowLeft size={18} strokeWidth={1.5} /> Indietro
+          </button>
+        </div>
+      )}
+      {/* L'intestazione è fissata in cima: senza questo spazio coprirebbe la locandina. */}
+      {sito?.name && <div style={{ height: 64 }} />}
 
       {/* Copertina: la locandina intera, su un fondo fatto con la locandina stessa.
           Prima l'immagine veniva ritagliata a piena larghezza — e una locandina
@@ -131,10 +154,15 @@ export default function EventoPage() {
               filter: 'blur(36px) saturate(1.25)', transform: 'scale(1.15)', opacity: 0.55 }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(20,20,35,0.35) 0%, rgba(20,20,35,0.55) 100%)' }} />
           <div style={{ position: 'relative', maxWidth: 720, margin: '0 auto', padding: '28px 24px' }}>
+            {/* Nessun rapporto forzato e nessun ritaglio: la locandina si vede
+                **com'è stata caricata**. Il formato scelto nel pannello decide
+                la forma della scheda nell'elenco, dove il ritaglio è inevitabile
+                perché le schede devono stare in fila — qui c'è tutto lo spazio,
+                e tagliare una locandina significa perderne un pezzo. */}
             <img src={evento.cover_url} alt={evento.title}
-              style={{ display: 'block', width: '100%', aspectRatio: rapportoDi(evento.formato_cover),
-                objectFit: 'cover', objectPosition: evento.cover_focal || 'center',
-                maxHeight: '72vh', borderRadius: 14, boxShadow: '0 18px 50px -12px rgba(0,0,0,0.55)' }} />
+              style={{ display: 'block', width: '100%', height: 'auto',
+                maxHeight: '78vh', objectFit: 'contain',
+                borderRadius: 14, boxShadow: '0 18px 50px -12px rgba(0,0,0,0.55)' }} />
           </div>
         </div>
       )}

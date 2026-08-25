@@ -44,12 +44,25 @@ export async function GET(request, props) {
         // un oggetto che cresce, e al primo campo riservato che ci finisce
         // dentro uscirebbe da qui senza che nessuno lo decida.
         const mini = ent.minisito || {}
+
+        // Il menu in cima mostra le pagine pubblicate del sito, nell'ordine che
+        // il cliente ha scelto. Colonne elencate: `pagine` contiene anche le
+        // bozze e i loro contenuti, e da qui non deve uscire nient'altro.
+        const { data: pagine } = await supabaseAdmin.from('pagine')
+          .select('id, slug, titolo, parent_id, nel_menu, ordine')
+          .eq('entity_tipo', data.entity_tipo).eq('entity_id', data.entity_id)
+          .eq('status', 'pubblicata').neq('slug', '__home__')
+          .order('ordine', { ascending: true })
+
         sito = {
           name: ent.name, slug: ent.slug, tipo: ent.tipo,
           logo_url: ent.logo_url, logo_dark_url: ent.logo_dark_url,
           theme: ent.theme || null,
+          header_cfg: mini.header_cfg || mini.header || null,
           footer_cfg: mini.footer_cfg || null,
+          logo_size: mini.logo_size || null,
           social: mini.social || null,
+          pagine: (pagine || []).filter(p => p.nel_menu !== false),
           azienda_legale: data.azienda_id ? await getAziendaLegale(data.azienda_id) : null,
         }
       }
