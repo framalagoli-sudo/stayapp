@@ -29,7 +29,11 @@ const AMMESSE = {
                   'posti_totali','posti_disponibili','cover_url','slug','entity_tipo','entity_id',
                   'azienda_id','active','published','created_at','updated_at','max_partecipanti',
                   'title','description','date_start','date_end','location','price','seats_total',
-                  'seats_booked','packages'],
+                  'seats_booked','packages',
+                  // 25/08: la forma della locandina e il punto da tenere visibile. Servono
+                  // alla scheda dell'evento, che è pubblica; non dicono nulla di riservato
+                  // e i valori ammessi sono un elenco chiuso (lib/formati-foto.js).
+                  'formato_cover','cover_focal'],
 }
 const SEGRETE = /password|secret|token|api_key|chiave|private|_key$/i
 
