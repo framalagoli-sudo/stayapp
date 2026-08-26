@@ -63,8 +63,12 @@ test.describe('Flussi pubblici — no crash client-side', () => {
     await page.goto(`/eventi/${ev.id}?back=%2F`, { waitUntil: 'load' })
     await page.waitForTimeout(1_500)
     await expectNoClientCrash(page, errors, 'dettaglio evento')
-    // Il bottone di ritorno deve esserci (regressione router.push(-1)).
-    await expect(page.getByText('Indietro').first()).toBeVisible()
+    // Una via d'uscita deve esserci (regressione router.push(-1)). L'etichetta
+    // dipende da dove porta: «Torna a <nome del sito>» per un evento appeso a un
+    // sito, «Indietro» per un evento aziendale che non appartiene a nessuno.
+    // Il test guarda che l'uscita esista, non come si chiama: chiedere una
+    // parola esatta lo fa fallire ogni volta che si migliora una scritta.
+    await expect(page.getByRole('button', { name: /Indietro|Torna a /i }).first()).toBeVisible()
   })
 
   test('blocco eventi VISIBILE sulla landing (guard "tutto bianco")', async ({ page }) => {
