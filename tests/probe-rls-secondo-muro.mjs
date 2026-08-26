@@ -23,11 +23,11 @@ const estraneo = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persist
 const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 
 // Tabelle che le pagine pubbliche devono poter leggere.
-const PUBBLICHE = new Set(['entita', 'pagine', 'articoli', 'eventi', 'landing_seo', 'blog_categories',
+const PUBBLICHE = new Set(['entita', 'offerte', 'pagine', 'articoli', 'eventi', 'landing_seo', 'blog_categories',
   'vetrine', 'vetrina_elementi', 'collegamenti', 'aziende', 'prodotti', 'risorse',
   'risorse_promozioni', 'platform_config'])
 
-const TABELLE = ['entita', 'profiles', 'aziende', 'contatti', 'requests', 'prenotazioni', 'preventivi',
+const TABELLE = ['entita', 'offerte', 'profiles', 'aziende', 'contatti', 'requests', 'prenotazioni', 'preventivi',
   'recensioni', 'survey_risposte', 'form_builder', 'form_submissions', 'articoli', 'eventi',
   'event_bookings', 'newsletters', 'automazioni', 'automazioni_log', 'piano_editoriale', 'pe_campagne',
   'loyalty_programs', 'loyalty_points', 'gift_cards', 'prodotti', 'ordini', 'pagine', 'vetrine',
@@ -69,6 +69,15 @@ if (perdite.length) {
 
 // ── le colonne, che è la domanda che era sfuggita ─────────────────────────────
 console.log('\n  COLONNE RISERVATE — un estraneo può chiederle?')
+// Le colonne di `offerte` che non riguardano chi guarda. Il 26/08 uscivano
+// nonostante il GRANT mirato: su Supabase una tabella nuova nasce gia
+// accessibile, e senza REVOKE il GRANT si somma invece di restringere
+// (invariante 17 in SECURITY.md, migration 088).
+for (const campo of ['origine', 'origine_id', 'avvisa_titolare', 'conferma_ospite']) {
+  const { error } = await estraneo.from('offerte').select(campo).limit(1)
+  if (error) console.log(`     ✓ offerte.${campo.padEnd(16)} rifiutata dal database`)
+  else { console.log(`     ✗ offerte.${campo.padEnd(16)} LEGGIBILE senza sessione`); problemi++ }
+}
 for (const campo of RISERVATE) {
   const { data, error } = await estraneo.from('entita').select(`slug, ${campo}`).limit(30)
   if (error) { console.log(`     ✓ ${campo.padEnd(14)} rifiutata dal database`); continue }
