@@ -4,14 +4,52 @@ import { sendWebhooks } from '@/lib/send-webhooks'
 import { emailTemplate } from '@/lib/email-template'
 import { sendEmail } from '@/lib/send-email'
 
+// La formula che chi prenota accetta. La decide il server, non il componente:
+// e il server a scriverla nella prova del consenso, e se le due copie
+// divergessero resterebbe salvata una frase che nessuno ha mai letto.
+export const TESTO_CONSENSO =
+  "Ho letto e accetto l'informativa sulla privacy. I miei dati saranno usati per gestire questa richiesta."
+
 export async function POST(request) {
   try {
-    const { property_id, room, type, message } = await request.json()
+    const body = await request.json()
+    const { property_id, room, type, message, nome, contatto, privacy_accettata, canale } = body
     if (!property_id || !type || !message) return Response.json({ error: 'property_id, type e message sono obbligatori' }, { status: 400 })
 
+    // Chi prenota un'escursione o un'attività lascia il proprio nome e un
+    // recapito. Prima non li chiedeva nessuno: il titolare riceveva
+    // «Prenotazione escursione — 2 persone» e non poteva richiamare nessuno.
+    // Una prenotazione senza un modo per rispondere non è una prenotazione.
+    const conDati = ['escursione', 'attività', 'attivita'].includes(type)
+    if (conDati) {
+      if (!nome?.trim())    return Response.json({ error: 'Serve il tuo nome per poterti rispondere.' }, { status: 400 })
+      if (!contatto?.trim()) return Response.json({ error: 'Serve un recapito: email o telefono.' }, { status: 400 })
+      // Nome e recapito sono dati personali: senza consenso non si raccolgono.
+      // La spunta nel modulo si toglie con due clic, quindi la condizione sta
+      // qui — dove nessuno la può aggirare.
+      if (privacy_accettata !== true)
+        return Response.json({ error: 'Per prenotare serve il consenso al trattamento dei dati.' }, { status: 400 })
+    }
+
+    // I dati di chi prenota entrano nel messaggio, che è ciò che il titolare
+    // legge nel pannello e nell'email.
+    const messaggioCompleto = conDati
+      ? [message, '', `Nome: ${nome.trim()}`, `Contatto: ${contatto.trim()}`,
+         canale === 'whatsapp' ? 'Ha scelto di scriverti su WhatsApp.' : null].filter(x => x !== null).join('\n')
+      : message
+
     const { data, error } = await supabaseAdmin.from('requests')
-      .insert({ property_id, room: room || null, type, message, status: 'open' }).select().single()
+      .insert({ property_id, room: room || null, type, message: messaggioCompleto, status: 'open' }).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
+
+    // La prova del consenso, dove i dati personali ci sono davvero.
+    if (conDati) {
+      await supabaseAdmin.from('requests').update({
+        privacy_accettata: true,
+        privacy_accettata_il: new Date().toISOString(),
+        privacy_testo: TESTO_CONSENSO,
+      }).eq('id', data.id)
+    }
 
     supabaseAdmin.from('entita').select('name, email, azienda_id').eq('id', property_id).single().then(({ data: prop }) => {
       if (prop?.azienda_id) sendWebhooks(prop.azienda_id, 'nuova_richiesta', { richiesta_id: data.id, property_id, tipo: type, messaggio: message })
@@ -23,7 +61,17 @@ export async function POST(request) {
         subject: `[${prop.name}] Nuova richiesta: ${type}`,
         html: emailTemplate({
           title: 'Nuova richiesta ospite', entityName: prop.name,
-          rows: [{ label: 'Tipo', value: type }, ...(room ? [{ label: 'Camera', value: room }] : []), { label: 'Messaggio', value: message.replace(/\n/g, '<br>') }],
+          rows: [
+            { label: 'Tipo', value: type },
+            ...(room ? [{ label: 'Camera', value: room }] : []),
+            ...(conDati ? [{ label: 'Nome', value: nome.trim() }, { label: 'Contatto', value: contatto.trim() }] : []),
+            { label: 'Messaggio', value: messaggioCompleto.replace(/\n/g, '<br>') },
+            // Se l'ospite ha scelto WhatsApp può aprire la chat e non inviare:
+            // il titolare deve saperlo, così se il messaggio non arriva scrive lui.
+            ...(canale === 'whatsapp'
+              ? [{ label: 'Attenzione', value: 'Ha scelto di scriverti su <strong>WhatsApp</strong>. Se il messaggio non arriva, il suo recapito è qui sopra.' }]
+              : []),
+          ],
           appUrl: (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com',
         }),
       }).catch(() => {})
