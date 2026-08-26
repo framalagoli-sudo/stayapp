@@ -73,14 +73,33 @@ export const IMPEGNI = [
 ]
 
 // I punti di partenza, nel linguaggio di chi li usa.
+//
+// `origine` dice **di che natura** è l'offerta, ed è ciò che decide dove
+// compare sul sito del cliente. Lo scrive il server a partire dal preset: se lo
+// lasciassimo arrivare dal pannello sarebbe un valore libero in una decisione
+// di pubblicazione, ed è esattamente ciò che non deve succedere.
+//
+// `pronto` dice se quel tipo di offerta ha già una casa sulle pagine
+// pubbliche. Un preset non pronto crea una riga che si salva e non si vede da
+// nessuna parte — la promessa peggiore che si possa fare a un cliente, e il
+// motivo per cui il 27/08 «Evento» qui dentro era un doppione di «Eventi» del
+// menu, con la differenza che quello del menu funziona e questo no.
+// Si accendono man mano che la loro sezione pubblica esiste.
 export const PRESET = [
-  { chiave: 'evento',     titolo: 'Evento',              sotto: 'Una serata, una data sola',        modo: 'data_fissa',  impegno: 'prenota' },
-  { chiave: 'tavolo',     titolo: 'Tavolo o sala',       sotto: 'Con orari e coperti',              modo: 'coperti',     impegno: 'prenota' },
-  { chiave: 'risorsa',    titolo: 'Spazio o attrezzatura', sotto: 'Si prenota a fasce orarie',      modo: 'calendario',  impegno: 'prenota' },
-  { chiave: 'escursione', titolo: 'Escursione o gita',   sotto: 'Con una data, o a richiesta',      modo: 'data_fissa',  impegno: 'chiedi'  },
-  { chiave: 'attivita',   titolo: 'Corso o attività',    sotto: 'Chi è interessato ti scrive',      modo: 'richiesta',   impegno: 'chiedi'  },
-  { chiave: 'vendita',    titolo: 'Da vendere online',   sotto: 'Si paga subito, come una cena prepagata', modo: 'data_fissa', impegno: 'acquista' },
+  { chiave: 'attivita',   titolo: 'Corso o attività',    sotto: 'Chi è interessato ti scrive',      modo: 'richiesta',   impegno: 'chiedi',   origine: 'attivita',   pronto: true },
+  { chiave: 'escursione', titolo: 'Escursione o gita',   sotto: 'Con una data, o a richiesta',      modo: 'richiesta',   impegno: 'chiedi',   origine: 'escursione', pronto: true },
+  { chiave: 'evento',     titolo: 'Evento',              sotto: 'Una serata, una data sola',        modo: 'data_fissa',  impegno: 'prenota',  origine: 'evento',     pronto: false },
+  { chiave: 'tavolo',     titolo: 'Tavolo o sala',       sotto: 'Con orari e coperti',              modo: 'coperti',     impegno: 'prenota',  origine: 'tavolo',     pronto: false },
+  { chiave: 'risorsa',    titolo: 'Spazio o attrezzatura', sotto: 'Si prenota a fasce orarie',      modo: 'calendario',  impegno: 'prenota',  origine: 'risorsa',    pronto: false },
+  { chiave: 'vendita',    titolo: 'Da vendere online',   sotto: 'Si paga subito, come una cena prepagata', modo: 'data_fissa', impegno: 'acquista', origine: 'vendita', pronto: false },
 ]
+
+// Quelli che il pannello può davvero proporre oggi.
+export const PRESET_PRONTI = PRESET.filter(p => p.pronto)
+
+// Da usare nella route prima di scrivere: mai la chiave grezza del client, e
+// mai un preset che non ha ancora una casa sul sito.
+export const presetPronto = chiave => PRESET_PRONTI.find(p => p.chiave === chiave) || null
 
 const trova = (elenco, chiave, predefinito) =>
   elenco.find(x => x.chiave === chiave) || elenco.find(x => x.chiave === predefinito)

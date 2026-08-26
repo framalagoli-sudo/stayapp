@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth, getProfile, resolveAziendaId, entitaDellaAzienda } from '@/lib/server-auth'
-import { modoValido, impegnoValido } from '@/lib/offerte-catalogo'
+import { modoValido, impegnoValido, presetPronto } from '@/lib/offerte-catalogo'
 import { formatoValido, focalValido } from '@/lib/formati-foto'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -70,6 +70,13 @@ export async function POST(request) {
     const body = await request.json()
     if (!body.titolo?.trim()) return Response.json({ error: 'Serve un titolo' }, { status: 400 })
 
+    // Il pannello dice da quale punto di partenza, il server decide cosa
+    // significa. `origine` non è un campo che il client possa scrivere: è ciò
+    // che stabilisce dove l'offerta compare sul sito, e un'offerta senza finisce
+    // in nessun posto — si salva e non si vede.
+    const preset = presetPronto(body.preset)
+    if (!preset) return Response.json({ error: 'Tipo di offerta non disponibile' }, { status: 400 })
+
     const azienda_id = resolveAziendaId(profile, isUUID(body.azienda_id) ? body.azienda_id : null)
     if (!azienda_id) return Response.json({ error: 'Nessuna azienda valida associata al profilo.' }, { status: 400 })
 
@@ -88,7 +95,8 @@ export async function POST(request) {
     }
 
     const { data, error } = await supabaseAdmin.from('offerte')
-      .insert({ ...payload, azienda_id }).select().single()
+      .insert({ ...payload, azienda_id, modo: preset.modo, impegno: preset.impegno, origine: preset.origine })
+      .select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
     return Response.json(data, { status: 201 })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }

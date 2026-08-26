@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../context/AuthContext'
 import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch } from '../../../lib/api'
-import { PRESET, modoDi, impegnoDi, postiRimasti } from '../../../lib/offerte-catalogo'
+import { PRESET_PRONTI, modoDi, impegnoDi, postiRimasti } from '../../../lib/offerte-catalogo'
 import { Tag, MapPin, Users, Plus, Calendar, X } from 'lucide-react'
 
 // Tutto ciò che un cliente propone e che qualcuno può prendere: una serata, un
@@ -51,8 +51,9 @@ export default function OfferteListPage() {
       .finally(() => setLoading(false))
   }, [aziendaId, aziLoading])
 
-  // Il preset riempie le due tendine e si va subito all'editor: nessuno pensa
-  // «modo data_fissa, impegno prenota», si pensa «voglio fare una serata».
+  // Il pannello manda solo la chiave del punto di partenza: modo, impegno e
+  // soprattutto `origine` — che decide dove l'offerta compare sul sito — li
+  // scrive il server leggendo il catalogo.
   async function creaDa(preset) {
     if (creando) return
     setCreando(true)
@@ -60,7 +61,7 @@ export default function OfferteListPage() {
       const nuova = await apiFetch('/api/offerte', {
         method: 'POST',
         body: JSON.stringify({
-          titolo: preset.titolo, modo: preset.modo, impegno: preset.impegno,
+          preset: preset.chiave, titolo: preset.titolo,
           azienda_id: aziendaId,
           // Con una sola entità si associa da sola: un'offerta «aziendale» per
           // distrazione comparirebbe sui siti di tutte.
@@ -169,7 +170,7 @@ export default function OfferteListPage() {
               Scegli il punto di partenza. Potrai cambiare tutto dopo.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 190px), 1fr))', gap: 10 }}>
-              {PRESET.map(p => (
+              {PRESET_PRONTI.map(p => (
                 <button key={p.chiave} disabled={creando} onClick={() => creaDa(p)}
                   style={{ textAlign: 'left', background: '#f7f8fb', border: '1px solid #eceef4', borderRadius: 12, padding: '14px 16px', cursor: creando ? 'wait' : 'pointer', minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 3, overflowWrap: 'anywhere' }}>{p.titolo}</div>

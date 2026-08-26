@@ -51,17 +51,26 @@ try {
   ok((await chiama('/api/offerte', null)).status === 401, 'senza credenziali: nessuna lista')
 
   const creata = await chiama('/api/offerte', A.token, 'POST', {
-    titolo: 'ZZ Cena di prova', modo: 'data_fissa', impegno: 'prenota',
+    preset: 'escursione', titolo: 'ZZ Cena di prova',
     entity_id: A.entityId, posti_totali: 10, prezzo: 25,
   })
   ok(creata.status === 201, `A crea la sua offerta (HTTP ${creata.status})`)
   offertaA = creata.ok ? (await creata.json()) : null
 
+  // ⚠️ Un preset senza casa sulle pagine pubbliche crea una riga che si salva e
+  // non si vede: è successo il 27/08 e la sonda non se n'era accorta perché
+  // guardava i permessi e si fermava lì.
+  const nonPronto = await chiama('/api/offerte', A.token, 'POST', { preset: 'evento', titolo: 'ZZ Senza casa' })
+  ok(nonPronto.status === 400, `un tipo che il sito non sa ancora mostrare viene rifiutato (HTTP ${nonPronto.status})`)
+  const senzaPreset = await chiama('/api/offerte', A.token, 'POST', { titolo: 'ZZ Senza tipo' })
+  ok(senzaPreset.status === 400, `e senza tipo non si crea niente (HTTP ${senzaPreset.status})`)
+  ok(offertaA?.origine === 'escursione', `l'origine la scrive il server, non il pannello (${offertaA?.origine})`)
+
   // ⚠️ `entity_id` arriva dal client: senza controllo si pubblica la propria
   // offerta sul sito di un altro cliente, dove compare al pubblico e ne
   // raccoglie le prenotazioni.
   const rubata = await chiama('/api/offerte', A.token, 'POST', {
-    titolo: 'ZZ Sul sito di un altro', modo: 'richiesta', impegno: 'chiedi', entity_id: B.entityId,
+    preset: 'attivita', titolo: 'ZZ Sul sito di un altro', entity_id: B.entityId,
   })
   ok(rubata.status === 403, `A non può pubblicare sul sito di B (HTTP ${rubata.status})`)
 
@@ -84,7 +93,9 @@ try {
     const { data: dopo } = await admin.from('offerte').select('posti_occupati, azienda_id, origine').eq('id', offertaA.id).single()
     ok(dopo.posti_occupati === 4, `i posti già venduti non si azzerano dal pannello (${dopo.posti_occupati})`)
     ok(dopo.azienda_id === A.aziendaId, 'l\'offerta non si sposta a un\'altra azienda')
-    ok(dopo.origine == null, 'l\'origine resta quella che è')
+    // `origine` decide dove l'offerta compare: riscriverla dal pannello vorrebbe
+    // dire spostarla in una sezione del sito a cui non appartiene.
+    ok(dopo.origine === 'escursione', `l'origine non si riscrive dal pannello (${dopo.origine})`)
 
     // Un valore fuori catalogo non entra nel database così com'è.
     await chiama(`/api/offerte/${offertaA.id}`, A.token, 'PATCH', { modo: 'qualsiasi_cosa', impegno: '<script>' })
@@ -93,8 +104,22 @@ try {
        `modo e impegno fuori catalogo tornano al predefinito (${pulita.modo}/${pulita.impegno})`)
   }
 
+  // Il dato deve arrivare fino in fondo: salvarlo e non vederlo è la promessa
+  // peggiore che si possa fare a un cliente.
+  console.log('\nE ARRIVA FINO AL SITO\n')
+  if (offertaA) {
+    await chiama(`/api/offerte/${offertaA.id}`, A.token, 'PATCH', { pubblicata: true, attiva: true, descrizione: 'ZZ visibile' })
+    const { data: ent } = await admin.from('entita').select('slug').eq('id', A.entityId).single()
+    const html = await (await fetch(`${TEST_URL}/s/${ent.slug}?qr=1&tab=esplora`)).text()
+    ok(html.includes('ZZ Cena di prova'), 'l\'offerta pubblicata compare nell\'app dell\'ospite')
+
+    await chiama(`/api/offerte/${offertaA.id}`, A.token, 'PATCH', { pubblicata: false })
+    const bozza = await (await fetch(`${TEST_URL}/s/${ent.slug}?qr=1&tab=esplora`)).text()
+    ok(!bozza.includes('ZZ Cena di prova'), 'e una bozza non si vede')
+  }
+
   console.log('\n' + '-'.repeat(62))
-  console.log(ko ? `  ${ko} PROBLEMI` : '  NESSUNA OFFERTA RAGGIUNGIBILE DA CHI NON È SUA')
+  console.log(ko ? `  ${ko} PROBLEMI` : '  LE OFFERTE RESTANO DI CHI LE HA FATTE, E SI VEDONO DOVE DEVONO')
 } catch (e) { console.error('ERRORE:', e.message); ko++ }
 finally {
   for (const x of [A, B]) {
