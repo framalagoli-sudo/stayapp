@@ -58,8 +58,13 @@ export default function BookingsPage() {
     }
     try {
       const data = await apiFetch(`/api/requests?${params}`)
+      // Le offerte non stanno più qui: chi si interessa a una promozione non
+      // occupa un posto e non c'è niente da confermare — è un contatto, e vive
+      // nel CRM. Le righe vecchie restano visibili finché non si chiudono, così
+      // niente scompare da sotto gli occhi di chi le stava lavorando.
       setBookings(data.filter(r =>
-        r.message?.startsWith('[Prenotazione') || r.message?.startsWith('[Interesse offerta')
+        r.message?.startsWith('[Prenotazione') ||
+        (r.message?.startsWith('[Interesse offerta') && r.status === 'open')
       ))
     } catch {
       setBookings([])
@@ -106,7 +111,12 @@ export default function BookingsPage() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '2px solid #e8e8e8' }}>
-        {[['attivita', 'Attività'], ['escursioni', 'Escursioni'], ['offerte', 'Offerte']].map(([key, label]) => {
+        {/* «Offerte» resta solo finché ci sono richieste vecchie ancora aperte:
+            da oggi gli interessi alle promozioni nascono direttamente come
+            contatti nel CRM, e questa scheda sparisce da sola quando l'ultima
+            richiesta viene chiusa. */}
+        {[['attivita', 'Attività'], ['escursioni', 'Escursioni'],
+          ...(countNew('offerte') > 0 ? [['offerte', 'Offerte']] : [])].map(([key, label]) => {
           const n = countNew(key)
           return (
             <button key={key} onClick={() => setTab(key)} style={{

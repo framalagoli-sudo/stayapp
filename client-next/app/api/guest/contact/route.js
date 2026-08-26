@@ -33,23 +33,33 @@ export async function POST(request) {
       if (data) { entityEmail = data.email; entityName = data.name; azienda_id = data.azienda_id }
     }
 
-    if (source === 'offerta' && entity_tipo === 'struttura' && entity_id) {
-      const msgLines = [`[Interesse offerta: ${source_name || ''}]`, `Nome: ${name.trim()}`, `Email: ${email.trim()}`,
-        message.trim() ? `Messaggio: ${message.trim()}` : null].filter(Boolean).join('\n')
-      await supabaseAdmin.from('requests').insert({ property_id: entity_id, type: 'other', message: msgLines, status: 'open' })
-    }
+    // Chi si interessa a un'offerta non sta prenotando: non occupa un posto e non
+    // c'è niente da confermare. È un contatto commerciale, e va dove si lavorano i
+    // contatti — il CRM, qui sotto — non in mezzo alle prenotazioni.
+    //
+    // Prima finiva in tutti e due i posti: una riga in `requests` (che compariva
+    // fra le prenotazioni) **e** un contatto. Il doppione costringeva a chiudere
+    // la stessa cosa due volte, e per giunta la riga nasceva solo per le
+    // strutture: la stessa offerta su un ristorante non compariva da nessuna parte.
+
+    // A quale offerta si è interessato: senza questo, nel CRM resta un contatto
+    // senza motivo — e il motivo è tutto quello che serve per richiamarlo.
+    const perche = source === 'offerta' && source_name
+      ? `Interessato all'offerta: ${String(source_name).slice(0, 120)}`
+      : null
+    const notaIniziale = [perche, message.trim()].filter(Boolean).join('\n')
 
     let isNewContact = false
     if (azienda_id && email) {
       const { data: existing } = await supabaseAdmin.from('contatti')
         .select('id, note').eq('azienda_id', azienda_id).eq('email', email.trim()).single()
       if (existing) {
-        const notes = [existing.note, `[${new Date().toLocaleDateString('it-IT')}] ${message.trim()}`].filter(Boolean).join('\n\n')
+        const notes = [existing.note, `[${new Date().toLocaleDateString('it-IT')}] ${notaIniziale}`].filter(Boolean).join('\n\n')
         await supabaseAdmin.from('contatti').update({ nome: name.trim(), note: notes, updated_at: new Date().toISOString() }).eq('id', existing.id)
       } else {
         await supabaseAdmin.from('contatti').insert({
           azienda_id, nome: name.trim(), email: email.trim(),
-          fonte: 'minisito', tags: ['lead', entity_tipo, ...(source && source !== 'minisito' ? [source] : [])], note: message.trim(), iscritto_newsletter: false,
+          fonte: 'minisito', tags: ['lead', entity_tipo, ...(source && source !== 'minisito' ? [source] : [])], note: notaIniziale, iscritto_newsletter: false,
         })
         isNewContact = true
       }
