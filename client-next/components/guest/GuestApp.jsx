@@ -214,6 +214,11 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
   const navBg         = isDark ? '#12121f' : '#ffffff'
   const borderColor   = isDark ? '#2a2a3e' : '#efefef'
 
+  // Il numero del titolare per il pulsante WhatsApp: sta nel campo dedicato
+  // o fra i social del minisito, e va ridotto a sole cifre perche wa.me non
+  // accetta spazi ne il segno piu.
+  const numeroWa = String(property.whatsapp || property.minisito?.social?.whatsapp || '')
+    .replace(/[^0-9]/g, '') || null
   const sp = { primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, lang }
 
   const NAV_ITEMS = [
@@ -606,7 +611,7 @@ function EsploraPage({ property, upcomingEventi = [], activeChip, primary, textC
         {activeChip === 'menu'       && <MenuTab menu={property.menu || []} cardBg={cardBg} surfaceBg={surfaceBg} borderColor={borderColor} showAllergens {...sp} />}
         {activeChip === 'servizi'    && <ServicesTab services={property.services} {...sp} />}
         {activeChip === 'attivita'   && <ActivitiesTab activities={property.activities} propertyId={property.id} {...sp} />}
-        {activeChip === 'escursioni' && <ExcursionsTab excursions={property.excursions} propertyId={property.id} {...sp} />}
+        {activeChip === 'escursioni' && <ExcursionsTab excursions={property.excursions} propertyId={property.id} numeroWhatsapp={numeroWa} {...sp} />}
         {activeChip === 'eventi'     && <EventiTab eventi={upcomingEventi} onOpen={setSelectedEvento} {...sp} />}
       </div>
 

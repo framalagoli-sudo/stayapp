@@ -170,6 +170,11 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
 
   const rModules = { pwa_active: true, gallery: true, allergens: true, info: true, booking: true, ...(ristorante.modules || {}) }
   const hasGallery = (ristorante.gallery || []).length > 0
+  // Il numero del titolare per il pulsante WhatsApp: sta nel campo dedicato
+  // o fra i social del minisito, e va ridotto a sole cifre perche wa.me non
+  // accetta spazi ne il segno piu.
+  const numeroWa = String(ristorante.whatsapp || ristorante.minisito?.social?.whatsapp || '')
+    .replace(/[^0-9]/g, '') || null
   const sp = { primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, showAllergens: rModules.allergens, lang }
 
   // Chips per Esplora
@@ -524,7 +529,7 @@ function REsploraPage({ ristorante, activeChip, primary, textColor, subText, isD
         {activeChip === 'menu'    && <MenuTab    menu={ristorante.menu || []}        {...sp} />}
         {activeChip === 'servizi'    && <ServicesTab   services={ristorante.services} {...sp} />}
         {activeChip === 'attivita'   && <ActivitiesTab activities={ristorante.activities} propertyId={ristorante.id} {...sp} />}
-        {activeChip === 'escursioni' && <ExcursionsTab excursions={ristorante.excursions} propertyId={ristorante.id} {...sp} />}
+        {activeChip === 'escursioni' && <ExcursionsTab excursions={ristorante.excursions} propertyId={ristorante.id} numeroWhatsapp={numeroWa} {...sp} />}
         {activeChip === 'galleria'&& <GalleriaTab gallery={ristorante.gallery || []} primary={primary} radius={radius} onOpen={setLightbox} />}
       </div>
 

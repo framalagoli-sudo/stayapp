@@ -162,6 +162,11 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
   const aMods = { ...(attivita.pwa?.modules || {}) }
   const hasGallery  = (attivita.gallery || []).length > 0
   const hasServizi  = (attivita.services || []).length > 0
+  // Il numero del titolare per il pulsante WhatsApp: sta nel campo dedicato
+  // o fra i social del minisito, e va ridotto a sole cifre perche wa.me non
+  // accetta spazi ne il segno piu.
+  const numeroWa = String(attivita.whatsapp || attivita.minisito?.social?.whatsapp || '')
+    .replace(/[^0-9]/g, '') || null
   const sp = { primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, lang }
 
   const homeSections = aMods.home_sections || {}
@@ -516,7 +521,7 @@ function AEsploraPage({ attivita, activeChip, primary, textColor, subText, isDar
           <ActivitiesTab activities={attivita.activities} propertyId={attivita.id} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} lang={lang} />
         )}
         {activeChip === 'escursioni' && (
-          <ExcursionsTab excursions={attivita.excursions} propertyId={attivita.id} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} lang={lang} />
+          <ExcursionsTab excursions={attivita.excursions} propertyId={attivita.id} numeroWhatsapp={numeroWa} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} lang={lang} />
         )}
         {activeChip === 'galleria' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>

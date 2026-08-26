@@ -3,11 +3,22 @@ import { useState } from 'react'
 import { MapPin, Clock, CalendarDays, CheckCircle } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
 
-export default function ExcursionsTab({ excursions = [], propertyId, primary, textColor, subText, isDark, radius }) {
+// Stile dei campi di testo: uno solo, invece di ripeterlo a ogni input.
+const campoStyle = (radius, bordo, sfondo, testo) => ({
+  width: '100%', padding: '10px 12px', borderRadius: radius / 2 || 6,
+  border: `1px solid ${bordo}`, fontSize: 14, marginBottom: 12,
+  boxSizing: 'border-box', background: sfondo, color: testo,
+})
+
+export default function ExcursionsTab({ excursions = [], propertyId, numeroWhatsapp = null, primary, textColor, subText, isDark, radius }) {
   const [booking,   setBooking]   = useState(null)
   const [bookState, setBookState] = useState('idle')
   const [persons,   setPersons]   = useState(1)
   const [notes,     setNotes]     = useState('')
+  const [nome,      setNome]      = useState('')
+  const [contatto,  setContatto]  = useState('')
+  const [privacyOk, setPrivacyOk] = useState(false)
+  const [erroreTesto, setErroreTesto] = useState('')
 
   const cardBg     = isDark ? '#2a2a3e' : '#fff'
   const cardShadow = isDark ? 'none' : '0 2px 12px rgba(0,0,0,0.07)'
@@ -16,19 +27,32 @@ export default function ExcursionsTab({ excursions = [], propertyId, primary, te
 
   const active = excursions.filter(e => e.active)
 
-  async function sendBooking() {
-    setBookState('loading')
+  // Il pulsante si accende solo quando c'è tutto: il server rifiuterebbe
+  // comunque, ma è meglio non far scrivere una richiesta per poi respingerla.
+  const pronto = nome.trim() && contatto.trim() && privacyOk
+
+  async function sendBooking(canale) {
+    setBookState('loading'); setErroreTesto('')
+    const testo = `Prenotazione escursione: ${booking.name}${booking.dates ? ` — ${booking.dates}` : ''} — ${persons} person${persons === 1 ? 'a' : 'e'}${notes.trim() ? `\nNote: ${notes.trim()}` : ''}`
     try {
       await guestFetch('/api/requests', {
         method: 'POST',
         body: JSON.stringify({
-          property_id: propertyId,
-          type: 'escursione',
-          message: `Prenotazione escursione: ${booking.name}${booking.dates ? ` — ${booking.dates}` : ''} — ${persons} person${persons === 1 ? 'a' : 'e'}${notes.trim() ? `\nNote: ${notes.trim()}` : ''}`,
+          property_id: propertyId, type: 'escursione', message: testo,
+          nome: nome.trim(), contatto: contatto.trim(),
+          privacy_accettata: privacyOk, canale: canale || 'email',
         }),
       })
+      // La richiesta è registrata: da qui in poi il titolare ce l'ha comunque,
+      // anche se la chat si apre e non parte nessun messaggio.
+      if (canale === 'whatsapp' && numeroWhatsapp) {
+        const messaggio = `${testo}\n\nNome: ${nome.trim()}\nContatto: ${contatto.trim()}`
+        // encodeURIComponent, o un apostrofo o un a capo rompono il link.
+        window.open(`https://wa.me/${numeroWhatsapp}?text=${encodeURIComponent(messaggio)}`, '_blank', 'noopener')
+      }
       setBookState('success')
-    } catch {
+    } catch (e) {
+      setErroreTesto(e?.message || '')
       setBookState('error')
     }
   }
@@ -98,23 +122,50 @@ export default function ExcursionsTab({ excursions = [], propertyId, primary, te
                   )}
                 </div>
 
+                {/* Chi prenota lascia il proprio nome e un recapito. Prima non
+                    veniva chiesto niente: il titolare riceveva una richiesta e
+                    non poteva richiamare nessuno. */}
+                <label style={lblStyle(subText)}>Il tuo nome *</label>
+                <input value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome e cognome"
+                  style={campoStyle(radius, inputBorder, inputBg, textColor)} />
+
+                <label style={lblStyle(subText)}>Email o telefono *</label>
+                <input value={contatto} onChange={e => setContatto(e.target.value)} placeholder="Per poterti rispondere"
+                  style={campoStyle(radius, inputBorder, inputBg, textColor)} />
+
                 <label style={lblStyle(subText)}>Note (opzionale)</label>
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
                   placeholder="Eventuali richieste speciali, intolleranze alimentari…"
                   style={{ width: '100%', padding: '10px 12px', borderRadius: radius / 2 || 6, border: `1px solid ${inputBorder}`, fontSize: 14, marginBottom: 14, boxSizing: 'border-box', background: inputBg, color: textColor, resize: 'none' }} />
 
-                {bookState === 'error' && <p style={{ color: '#e53e3e', fontSize: 13, margin: '0 0 12px' }}>Errore nell'invio. Riprova.</p>}
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 14, cursor: 'pointer', fontSize: 12.5, color: subText, lineHeight: 1.5 }}>
+                  <input type="checkbox" checked={privacyOk} onChange={e => setPrivacyOk(e.target.checked)}
+                    style={{ marginTop: 2, accentColor: primary, flexShrink: 0 }} />
+                  <span>Ho letto e accetto l’informativa sulla privacy. I miei dati saranno usati per gestire questa richiesta.</span>
+                </label>
 
-                <div style={{ display: 'flex', gap: 10 }}>
+                {bookState === 'error' && <p style={{ color: '#e53e3e', fontSize: 13, margin: '0 0 12px' }}>{erroreTesto || 'Errore nell\'invio. Riprova.'}</p>}
+
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   <button onClick={closeBooking}
-                    style={{ flex: 1, padding: '12px', background: isDark ? '#333' : '#f0f0f0', color: textColor, border: 'none', borderRadius: radius, cursor: 'pointer', fontSize: 14 }}>
+                    style={{ flex: '1 1 100px', padding: '12px', background: isDark ? '#333' : '#f0f0f0', color: textColor, border: 'none', borderRadius: radius, cursor: 'pointer', fontSize: 14 }}>
                     Annulla
                   </button>
-                  <button onClick={sendBooking} disabled={bookState === 'loading'}
-                    style={{ flex: 2, padding: '12px', background: primary, color: '#fff', border: 'none', borderRadius: radius, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
-                    {bookState === 'loading' ? 'Invio…' : 'Conferma richiesta'}
+                  <button onClick={() => sendBooking('email')} disabled={bookState === 'loading' || !pronto}
+                    style={{ flex: '2 1 140px', padding: '12px', background: pronto ? primary : '#bbb', color: '#fff', border: 'none', borderRadius: radius, cursor: pronto ? 'pointer' : 'not-allowed', fontSize: 14, fontWeight: 700 }}>
+                    {bookState === 'loading' ? 'Invio…' : 'Invia richiesta'}
                   </button>
                 </div>
+
+                {/* Il secondo canale, se il titolare ha un numero. La richiesta
+                    viene registrata comunque: WhatsApp è dove continua la
+                    conversazione, non l'unico posto dove esiste. */}
+                {numeroWhatsapp && (
+                  <button onClick={() => sendBooking('whatsapp')} disabled={bookState === 'loading' || !pronto}
+                    style={{ width: '100%', marginTop: 10, padding: '12px', background: pronto ? '#25D366' : '#bbb', color: '#fff', border: 'none', borderRadius: radius, cursor: pronto ? 'pointer' : 'not-allowed', fontSize: 14, fontWeight: 700 }}>
+                    Scrivi su WhatsApp
+                  </button>
+                )}
               </>
             )}
           </div>
