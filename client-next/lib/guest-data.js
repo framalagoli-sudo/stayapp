@@ -62,11 +62,68 @@ const CAMPI_ENTITA = [
 // credenziali del WiFi.
 const CAMPI_OSPITE = `${CAMPI_ENTITA}, wifi_name, wifi_password`
 
+// Le attività e le escursioni ora vivono in `offerte`, ma le pagine e i
+// componenti continuano a leggerle come le hanno sempre lette: un elenco di
+// gruppi per le attività, un elenco piatto per le escursioni. Si cambia **la
+// sorgente, non il contratto** — è quello che ha reso invisibile il passaggio
+// alla tabella unica delle entità, e vale qui uguale.
+//
+// Quando anche le pagine parleranno di «offerte», questa funzione si toglie.
+// È un debito dichiarato, con una scadenza.
+async function nellaFormaStorica(entityId) {
+  const { data } = await supabaseAdmin.from('offerte')
+    .select('id, titolo, descrizione, categoria, impegno, cover_url, luogo, prezzo, posti_totali, cta_condizioni, data_inizio, attiva, ordine, origine')
+    .eq('entity_id', entityId).eq('attiva', true).eq('pubblicata', true)
+    .in('origine', ['attivita', 'escursione'])
+    .order('ordine', { ascending: true })
+
+  if (!data?.length) return null   // niente offerte migrate: si tengono i campi vecchi
+
+  const activities = []
+  for (const o of data.filter(x => x.origine === 'attivita')) {
+    const nomeGruppo = o.categoria || 'Attività'
+    let gruppo = activities.find(g => g.category === nomeGruppo)
+    if (!gruppo) { gruppo = { id: nomeGruppo, category: nomeGruppo, items: [] }; activities.push(gruppo) }
+    gruppo.items.push({
+      id: o.id, name: o.titolo, description: o.descrizione || '',
+      location: o.luogo || '', photo_url: o.cover_url || '',
+      // «prenotabile» era l'interruttore che faceva comparire il pulsante:
+      // adesso è l'impegno, e questi due valori sono la stessa informazione.
+      bookable: o.impegno !== 'chiedi', active: true,
+    })
+  }
+
+  const excursions = data.filter(x => x.origine === 'escursione').map(o => ({
+    id: o.id, name: o.titolo, description: o.descrizione || '',
+    price: Number(o.prezzo) || 0, seats: o.posti_totali ?? null,
+    meeting_point: o.luogo || '', photo_url: o.cover_url || '',
+    dates: o.data_inizio ? new Date(o.data_inizio).toLocaleDateString('it-IT') : '',
+    // Durata e «cosa include» erano due campi separati: la migrazione li ha
+    // messi insieme nelle condizioni, e qui si rimettono dove le pagine li cercano.
+    duration: (o.cta_condizioni || '').match(/Durata:\s*(.+)/)?.[1] || '',
+    includes: (o.cta_condizioni || '').match(/Include:\s*(.+)/)?.[1] || '',
+    active: true,
+  }))
+
+  return { activities, excursions }
+}
+
 async function leggiEntita(slug, tipo, campi) {
   const { data, error } = await supabaseAdmin
     .from('entita').select(campi).eq('slug', slug).eq('tipo', tipo).eq('active', true).maybeSingle()
   if (error || !data) return null
-  return allaFormaStorica(data)
+  const storica = allaFormaStorica(data)
+
+  // Se questa entità ha offerte migrate, valgono quelle. Altrimenti restano i
+  // campi vecchi: durante il passaggio le due sorgenti convivono, e nessuno
+  // resta senza contenuti perché la migrazione non lo ha ancora raggiunto.
+  const daOfferte = await nellaFormaStorica(storica.id)
+  if (!daOfferte) return storica
+  return {
+    ...storica,
+    ...('activities' in storica ? { activities: daOfferte.activities } : {}),
+    ...('excursions' in storica ? { excursions: daOfferte.excursions } : {}),
+  }
 }
 
 export async function getStruttura(slug, { ospite = false } = {}) {
