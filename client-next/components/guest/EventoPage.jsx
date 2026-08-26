@@ -26,7 +26,15 @@ export default function EventoPage() {
   // questo stesso sito. Un parametro manomesso non deve poter dirottare chi
   // clicca «Privacy» o «Torna al sito».
   const PREFISSO = { struttura: 's', ristorante: 'r', attivita: 'a' }
+
+  // Siamo sul dominio del cliente? Allora il suo sito è la radice, e ogni
+  // indirizzo si costruisce da lì: `/privacy`, non `/r/slug/privacy`.
+  function suDominioDelCliente() {
+    return typeof window !== 'undefined' && !/(^|\.)oltrenova\.com$/.test(window.location.hostname)
+  }
+
   function baseSito(sito) {
+    if (suDominioDelCliente()) return ''
     if (backUrl) {
       try {
         const u = new URL(backUrl, typeof window !== 'undefined' ? window.location.origin : 'https://oltrenova.com')
@@ -107,11 +115,14 @@ export default function EventoPage() {
   const sito       = evento.sito || null
   // Su un dominio del cliente i link del menu devono restare sul suo dominio,
   // non rimandare a oltrenova.com: SiteNav lo sa fare, basta dirglielo.
-  const dominioCustom = (typeof window !== 'undefined' && !/(^|\.)oltrenova\.com$/.test(window.location.hostname))
-    ? window.location.hostname : null
+  const dominioCustom = suDominioDelCliente() ? window.location.hostname : null
   const sitoHome   = baseSito(sito)
-  const privacyUrl = sitoHome ? `${sitoHome}/privacy` : null
-  const cookieUrl  = sitoHome ? `${sitoHome}/cookie`  : null
+  // ⚠️ Il confronto è con `null`, non con «vuoto»: sul dominio del cliente la
+  // base È la stringa vuota, e con un controllo di verità i link sparirebbero
+  // proprio lì — cioè sui siti che ai clienti interessano di più.
+  const privacyUrl = sitoHome === null ? null : `${sitoHome}/privacy`
+  const cookieUrl  = sitoHome === null ? null : `${sitoHome}/cookie`
+  const tornaAlSito = sitoHome === null ? null : (sitoHome || '/')
 
   return (
     // L'intestazione del sito è fissata in cima allo schermo, quindi non occupa
@@ -290,8 +301,8 @@ export default function EventoPage() {
             <div style={{ fontSize: 17, fontWeight: 700, color: '#fff', marginBottom: 16 }}>{sito.name}</div>
           ) : null}
 
-          {sitoHome && (
-            <a href={sitoHome}
+          {tornaAlSito && (
+            <a href={tornaAlSito}
               style={{ display: 'inline-block', padding: '11px 26px', borderRadius: 50, border: '1px solid rgba(255,255,255,0.28)', color: '#fff', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 24 }}>
               {sito?.name ? `Torna a ${sito.name}` : 'Torna al sito'}
             </a>
