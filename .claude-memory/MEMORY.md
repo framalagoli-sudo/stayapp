@@ -1,6 +1,6 @@
 # Memory Index
 
-- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: unificazione entità FATTA e live. PROSSIMO = rendere l'all-in-one visibile nel pannello (oggi è vero nei dati, non nell'esperienza), poi onboarding
+- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: modello catalogo a strati DECISO (CATALOGO.md). Francesco deve scegliere da dove partire: selettore vetrina dentro Offerte, o fusione shop (oggi costa zero)
 - [🧩 Una sola tabella `entita`](reference_entita_unificata.md) — il tipo decide solo indirizzo e preset, NON le funzioni; lib/entita.js unico accesso; ⚠️ next build non vede gli import mancanti (500 in produzione sulle route guest)
 - [🔇 Guasti silenziosi: allarmi + battito dei cron](reference_guasti_silenziosi.md) — try/catch NON intercetta un processo che smette di girare; ogni cron lascia un segno e chi gira dopo controlla gli altri; pagina /admin/diagnostica
 - [🛡️ Punto A (sicurezza) CHIUSO — 24/08](project_check_sicurezza_punto_A.md) — 8 sotto-fasi, 6 con buchi veri corretti; il metodo per classi separate è ciò che li ha fatti emergere (A1 è cieca sulle richieste legittime). Dettaglio in `SECURITY-CHECK.md`
@@ -120,3 +120,5 @@
 - [🔐 Consenso ai dati personali: la prova, non la spunta](reference_consenso_dati_personali.md) — il controllo sta nella ROUTE (la spunta nel browser si toglie); si salva quando + quale testo è stato letto; sonda che prenota saltando il modulo
 - [📏 Una sonda che misura la cosa sbagliata](reference_sonda_misura_sbagliata.md) — prendeva il logo dell'header invece della locandina: due giri persi su un guasto inesistente mentre quello vero restava; ancorare i selettori al contesto e stampare la catena degli elementi
 - [🧱 Catalogo a strati: vetrina, offerta, vendita](project_catalogo_strati.md) — Vetrine/Offerte/Shop sono TRE cataloghi con le stesse colonne e 2 su 3 sono VUOTI; il modello a strati deciso il 27/08 (dettaglio in CATALOGO.md), eventi esclusi di proposito
+- [🔧 Sessione 26-27/08 — FK vecchie + PWA rotte + Offerte](project_session_2026_08_26_27.md) — 500 sulle prenotazioni di 9 entità su 13 (i vincoli erano rimasti su properties), Escursioni rotte in tutte le PWA; ⚠️ deploy.ps1 con una pipe PowerShell risulta fallito mentre riesce
+- [🚫 Niente tassonomie: campi liberi](feedback_niente_tassonomie.md) — non inventare elenchi chiusi di tipi né chiedere in una tendina ciò che il dato dice già; «non ti sto dietro» = mi sto allargando, non lui che va piano
