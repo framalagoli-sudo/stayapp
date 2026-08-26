@@ -410,6 +410,8 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - [ ] Email reminder booking, QR Code con logo, PWA installabile da ri-abilitare (NetworkFirst, **mai** precache dello shell), Recensioni ospiti, Integrazione PMS
 
 ### Decisioni prese (NON sono "da fare")
+- **Gli eventi restano a parte: NON migrano dentro `offerte`** (27/08). Sono una voce di menu propria, con la loro pagina pubblica e le loro prenotazioni. Un evento è un'inaugurazione, una mostra, una presentazione — non solo «una serata», e non serve una tassonomia per dirlo.
+- **Le offerte sono a campo libero** (27/08). Niente elenco di tipi da cui scegliere: **come si chiama quello che offre lo decide il cliente**, nel titolo e in una categoria libera. C'erano sei preset con nomi nostri («Corso o attività», «Escursione o gita») ed era il modo per togliere parole a chi il proprio mestiere lo conosce meglio di noi. E niente tendina «modo»: **il quando è già scritto nei dati** — ci sono le date o non ci sono, ci sono i posti o non ci sono. Chiederlo due volte apre solo la strada al caso in cui le due risposte non coincidono. Resta una scelta sola, `impegno` (chiedi / prenota / acquista), perché è l'unica che cambia davvero cosa succede a chi clicca.
 - **GitHub → Vercel auto-deploy: NO, deliberato** (17/7). Il deploy resta manuale via `deploy.ps1` proprio perché così gira sempre lo smoke test integrato: è un valore, non un limite.
 - **Sentry: rimosso** (23/7). Era installato ma inerte su Next 14. Il monitoring è **in casa**: `lib/observability.js` → log su Vercel + alert email via Resend. Riconsiderarlo semmai dopo l'upgrade di Next.
 - **`SiteNav` condiviso: fatto** — l'header pubblico non è più duplicato.

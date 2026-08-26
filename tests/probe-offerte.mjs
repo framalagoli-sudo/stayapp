@@ -51,26 +51,22 @@ try {
   ok((await chiama('/api/offerte', null)).status === 401, 'senza credenziali: nessuna lista')
 
   const creata = await chiama('/api/offerte', A.token, 'POST', {
-    preset: 'escursione', titolo: 'ZZ Cena di prova',
+    titolo: 'ZZ Cena di prova',
     entity_id: A.entityId, posti_totali: 10, prezzo: 25,
   })
   ok(creata.status === 201, `A crea la sua offerta (HTTP ${creata.status})`)
   offertaA = creata.ok ? (await creata.json()) : null
 
-  // ⚠️ Un preset senza casa sulle pagine pubbliche crea una riga che si salva e
-  // non si vede: è successo il 27/08 e la sonda non se n'era accorta perché
-  // guardava i permessi e si fermava lì.
-  const nonPronto = await chiama('/api/offerte', A.token, 'POST', { preset: 'evento', titolo: 'ZZ Senza casa' })
-  ok(nonPronto.status === 400, `un tipo che il sito non sa ancora mostrare viene rifiutato (HTTP ${nonPronto.status})`)
-  const senzaPreset = await chiama('/api/offerte', A.token, 'POST', { titolo: 'ZZ Senza tipo' })
-  ok(senzaPreset.status === 400, `e senza tipo non si crea niente (HTTP ${senzaPreset.status})`)
-  ok(offertaA?.origine === 'escursione', `l'origine la scrive il server, non il pannello (${offertaA?.origine})`)
+  const senzaTitolo = await chiama('/api/offerte', A.token, 'POST', { entity_id: A.entityId })
+  ok(senzaTitolo.status === 400, `senza titolo non si crea niente (HTTP ${senzaTitolo.status})`)
+  // Il «quando» non si chiede: lo dicono le date. Senza date resta aperto.
+  ok(offertaA?.modo === 'richiesta', `senza date il quando resta aperto (${offertaA?.modo})`)
 
   // ⚠️ `entity_id` arriva dal client: senza controllo si pubblica la propria
   // offerta sul sito di un altro cliente, dove compare al pubblico e ne
   // raccoglie le prenotazioni.
   const rubata = await chiama('/api/offerte', A.token, 'POST', {
-    preset: 'attivita', titolo: 'ZZ Sul sito di un altro', entity_id: B.entityId,
+    titolo: 'ZZ Sul sito di un altro', entity_id: B.entityId,
   })
   ok(rubata.status === 403, `A non può pubblicare sul sito di B (HTTP ${rubata.status})`)
 
@@ -95,7 +91,7 @@ try {
     ok(dopo.azienda_id === A.aziendaId, 'l\'offerta non si sposta a un\'altra azienda')
     // `origine` decide dove l'offerta compare: riscriverla dal pannello vorrebbe
     // dire spostarla in una sezione del sito a cui non appartiene.
-    ok(dopo.origine === 'escursione', `l'origine non si riscrive dal pannello (${dopo.origine})`)
+    ok(dopo.origine == null, `l'origine non si scrive dal pannello (${dopo.origine})`)
 
     // Un valore fuori catalogo non entra nel database così com'è.
     await chiama(`/api/offerte/${offertaA.id}`, A.token, 'PATCH', { modo: 'qualsiasi_cosa', impegno: '<script>' })

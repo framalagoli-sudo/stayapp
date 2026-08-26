@@ -3,12 +3,12 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch } from '../../../lib/api'
-import { MODI, IMPEGNI, modoDi, impegnoDi } from '../../../lib/offerte-catalogo'
+import { IMPEGNI, impegnoDi } from '../../../lib/offerte-catalogo'
 import { Trash2, ArrowLeft } from 'lucide-react'
 
-// Le due tendine in cima non sono un dettaglio tecnico: decidono cosa vede chi
-// arriva sul sito. Per questo hanno la spiegazione sotto, scritta per chi le
-// legge la prima volta.
+// Titolo, categoria, date: campi liberi. Come si chiama quello che offre lo
+// decide il cliente, non noi — una palestra fa corsi, un'agenzia gite, un
+// negozio un'inaugurazione.
 
 const inputStyle = { width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box' }
 const labelStyle = { display: 'block', fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 6 }
@@ -67,7 +67,6 @@ export default function OffertaEditPage() {
   if (errore && !o) return <p style={{ padding: 32, color: '#e53e3e' }}>{errore}</p>
   if (!o) return <p style={{ padding: 32, color: '#888' }}>Caricamento…</p>
 
-  const modo = modoDi(o.modo)
   const impegno = impegnoDi(o.impegno)
 
   return (
@@ -86,22 +85,15 @@ export default function OffertaEditPage() {
       </div>
 
       <div style={cardStyle}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: 16 }}>
-          <div>
-            <label style={labelStyle}>Quando si fa</label>
-            <select style={inputStyle} value={o.modo || 'richiesta'} onChange={e => set('modo', e.target.value)}>
-              {MODI.map(m => <option key={m.chiave} value={m.chiave}>{m.titolo}</option>)}
-            </select>
-            <p style={aiuto}>{modo.spiega}</p>
-          </div>
-          <div>
-            <label style={labelStyle}>Cosa succede quando cliccano</label>
-            <select style={inputStyle} value={o.impegno || 'chiedi'} onChange={e => set('impegno', e.target.value)}>
-              {IMPEGNI.map(i => <option key={i.chiave} value={i.chiave}>{i.titolo}</option>)}
-            </select>
-            <p style={aiuto}>{impegno.spiega}</p>
-          </div>
-        </div>
+        {/* Una sola scelta: è l'unica che cambia cosa succede a chi clicca.
+            Quando si fa lo dicono le date, e chiederlo anche qui vorrebbe dire
+            chiedere due volte la stessa cosa — con la possibilità che le due
+            risposte non coincidano. */}
+        <label style={labelStyle}>Cosa succede quando cliccano</label>
+        <select style={inputStyle} value={o.impegno || 'chiedi'} onChange={e => set('impegno', e.target.value)}>
+          {IMPEGNI.map(i => <option key={i.chiave} value={i.chiave}>{i.titolo}</option>)}
+        </select>
+        <p style={aiuto}>{impegno.spiega}</p>
         {impegno.vuolePagamento && (
           <p style={{ margin: '14px 0 0', padding: '10px 12px', background: '#fff8e6', borderRadius: 8, fontSize: 12, color: '#856404' }}>
             Il pagamento online non è ancora collegato: per ora «Acquista ora» si comporta come «Prenota».
@@ -125,8 +117,8 @@ export default function OffertaEditPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: 16, marginTop: 16 }}>
           <div>
             <label style={labelStyle}>Categoria</label>
-            <input style={inputStyle} value={o.categoria || ''} onChange={e => set('categoria', e.target.value)} placeholder="Sport, Benessere…" />
-            <p style={aiuto}>Raggruppa le offerte simili sul sito.</p>
+            <input style={inputStyle} value={o.categoria || ''} onChange={e => set('categoria', e.target.value)} placeholder="Corsi, Escursioni, Serate…" />
+            <p style={aiuto}>Come vuoi tu. Raggruppa sul sito le offerte che la condividono.</p>
           </div>
           <div>
             <label style={labelStyle}>Luogo</label>
@@ -135,7 +127,8 @@ export default function OffertaEditPage() {
         </div>
       </div>
 
-      {modo.vuoleData && (
+      {/* Le date sono facoltative: compilandole l'offerta ha un quando. */}
+      {(
         <div style={cardStyle}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: 16 }}>
             <div>
@@ -160,7 +153,7 @@ export default function OffertaEditPage() {
                 una cifra che il cliente non ha mai visto. */}
             <p style={aiuto}>Su questo si calcola il totale, anche se sotto scrivi altro.</p>
           </div>
-          {modo.vuolePosti && (
+          {(
             <div>
               <label style={labelStyle}>Posti totali</label>
               <input type="number" min="0" style={inputStyle} value={o.posti_totali ?? ''} onChange={e => set('posti_totali', e.target.value === '' ? null : Number(e.target.value))} />

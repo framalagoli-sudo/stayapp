@@ -4,12 +4,12 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../context/AuthContext'
 import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch } from '../../../lib/api'
-import { PRESET_PRONTI, modoDi, impegnoDi, postiRimasti } from '../../../lib/offerte-catalogo'
-import { Tag, MapPin, Users, Plus, Calendar, X } from 'lucide-react'
+import { impegnoDi, postiRimasti } from '../../../lib/offerte-catalogo'
+import { Tag, MapPin, Users, Plus, Calendar } from 'lucide-react'
 
-// Tutto ciò che un cliente propone e che qualcuno può prendere: una serata, un
-// tavolo, un corso, un'escursione, una cena da pagare in anticipo. Sono la
-// stessa cosa configurata in modo diverso — vedi `lib/offerte-catalogo.js`.
+// Tutto ciò che un cliente propone e che qualcuno può prendere. Come si chiama
+// lo decide lui: qui non c'è un elenco di tipi da cui scegliere, ci sono campi
+// liberi. Gli eventi restano una cosa a parte, con la loro voce di menu.
 
 function fmtData(iso) {
   if (!iso) return null
@@ -29,7 +29,6 @@ export default function OfferteListPage() {
   const router = useRouter()
   const [offerte, setOfferte] = useState([])
   const [loading, setLoading] = useState(true)
-  const [sceltaAperta, setSceltaAperta] = useState(false)
   const [creando, setCreando] = useState(false)
 
   // Per un super_admin è l'azienda scelta nella barra: senza filtro la GET
@@ -51,17 +50,18 @@ export default function OfferteListPage() {
       .finally(() => setLoading(false))
   }, [aziendaId, aziLoading])
 
-  // Il pannello manda solo la chiave del punto di partenza: modo, impegno e
-  // soprattutto `origine` — che decide dove l'offerta compare sul sito — li
-  // scrive il server leggendo il catalogo.
-  async function creaDa(preset) {
+  // Si crea e basta: che cosa sia lo scrive il cliente nel titolo e nella
+  // categoria. Prima qui c'era una scelta fra sei tipi con nomi decisi da noi —
+  // un elenco chiuso può solo togliere parole a chi il proprio mestiere lo
+  // conosce meglio di noi.
+  async function crea() {
     if (creando) return
     setCreando(true)
     try {
       const nuova = await apiFetch('/api/offerte', {
         method: 'POST',
         body: JSON.stringify({
-          preset: preset.chiave, titolo: preset.titolo,
+          titolo: 'Nuova offerta',
           azienda_id: aziendaId,
           // Con una sola entità si associa da sola: un'offerta «aziendale» per
           // distrazione comparirebbe sui siti di tutte.
@@ -87,7 +87,7 @@ export default function OfferteListPage() {
             Tutto ciò che i tuoi clienti possono prenotare, richiedere o acquistare.
           </p>
         </div>
-        <button onClick={() => setSceltaAperta(true)}
+        <button onClick={crea} disabled={creando}
           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
           <Plus size={16} strokeWidth={2.5} /> Nuova offerta
         </button>
@@ -126,7 +126,7 @@ export default function OfferteListPage() {
                 </div>
                 <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 12, color: '#888' }}>
-                    {modoDi(o.modo).titolo} · {impegnoDi(o.impegno).titolo}
+                    {impegnoDi(o.impegno).titolo}
                   </span>
                   {o.data_inizio && (
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}>
@@ -155,32 +155,6 @@ export default function OfferteListPage() {
         })}
       </div>
 
-      {sceltaAperta && (
-        <div onClick={() => !creando && setSceltaAperta(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div onClick={e => e.stopPropagation()}
-            style={{ background: '#fff', borderRadius: 16, padding: 28, maxWidth: 640, width: '100%', maxHeight: '86vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 6 }}>
-              <h3 style={{ margin: 0, fontSize: 19 }}>Che cosa vuoi proporre?</h3>
-              <button onClick={() => setSceltaAperta(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-                <X size={18} strokeWidth={1.5} color="#888" />
-              </button>
-            </div>
-            <p style={{ margin: '0 0 20px', fontSize: 13, color: '#888' }}>
-              Scegli il punto di partenza. Potrai cambiare tutto dopo.
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 190px), 1fr))', gap: 10 }}>
-              {PRESET_PRONTI.map(p => (
-                <button key={p.chiave} disabled={creando} onClick={() => creaDa(p)}
-                  style={{ textAlign: 'left', background: '#f7f8fb', border: '1px solid #eceef4', borderRadius: 12, padding: '14px 16px', cursor: creando ? 'wait' : 'pointer', minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 3, overflowWrap: 'anywhere' }}>{p.titolo}</div>
-                  <div style={{ fontSize: 12, color: '#888', overflowWrap: 'anywhere' }}>{p.sotto}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireRecordAccess } from '@/lib/server-auth'
-import { modoValido, impegnoValido } from '@/lib/offerte-catalogo'
+import { impegnoValido, modoDedotto } from '@/lib/offerte-catalogo'
 import { formatoValido, focalValido } from '@/lib/formati-foto'
 
 // Le stesse colonne che il pannello può scrivere in creazione. Restano fuori
@@ -8,7 +8,7 @@ import { formatoValido, focalValido } from '@/lib/formati-foto'
 // `posti_occupati` (lo muove chi prenota: azzerarlo rivenderebbe posti già
 // venduti), `origine` e `origine_id`.
 const AMMESSI = [
-  'entity_id', 'modo', 'impegno', 'titolo', 'descrizione', 'categoria',
+  'entity_id', 'impegno', 'titolo', 'descrizione', 'categoria',
   'cover_url', 'formato_cover', 'cover_focal', 'colore',
   'luogo', 'prezzo', 'valuta', 'mostra_prezzo', 'mostra_prezzo_pagina', 'prezzo_testo',
   'data_inizio', 'data_fine', 'durata_minuti', 'quantita', 'max_coperti',
@@ -27,8 +27,11 @@ export async function PATCH(request, props) {
 
     const body = await request.json()
     const payload = Object.fromEntries(Object.entries(body).filter(([k]) => AMMESSI.includes(k)))
-    if ('modo' in payload) payload.modo = modoValido(payload.modo) || 'richiesta'
+
     if ('impegno' in payload) payload.impegno = impegnoValido(payload.impegno) || 'chiedi'
+    // Il «quando» lo dicono le date: se cambiano, si ricalcola. Non è una
+    // domanda in più da fare al cliente.
+    if ('data_inizio' in payload) payload.modo = modoDedotto(payload)
     if ('formato_cover' in payload) payload.formato_cover = formatoValido(payload.formato_cover)
     if ('cover_focal' in payload) payload.cover_focal = focalValido(payload.cover_focal)
 

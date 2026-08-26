@@ -74,7 +74,6 @@ async function nellaFormaStorica(entityId) {
   const { data } = await supabaseAdmin.from('offerte')
     .select('id, titolo, descrizione, categoria, impegno, cover_url, luogo, prezzo, posti_totali, cta_condizioni, data_inizio, attiva, ordine, origine')
     .eq('entity_id', entityId).eq('attiva', true).eq('pubblicata', true)
-    .in('origine', ['attivita', 'escursione'])
     .order('ordine', { ascending: true })
 
   if (!data?.length) return null   // niente offerte migrate: si tengono i campi vecchi
@@ -93,7 +92,12 @@ async function nellaFormaStorica(entityId) {
     })
   }
 
-  const excursions = data.filter(x => x.origine === 'escursione').map(o => ({
+  // Tutto il resto — comprese le offerte create dal pannello, che non hanno
+  // un'origine perché non vengono da nessuna migrazione — finisce nell'elenco
+  // completo, quello con foto, prezzo, posti e pulsante.
+  // ⚠️ Prima qui c'era un filtro `origine IN (...)`: le offerte nuove non lo
+  // soddisfacevano e sparivano. Si salvavano e non si vedevano.
+  const excursions = data.filter(x => x.origine !== 'attivita').map(o => ({
     id: o.id, name: o.titolo, description: o.descrizione || '',
     price: Number(o.prezzo) || 0, seats: o.posti_totali ?? null,
     meeting_point: o.luogo || '', photo_url: o.cover_url || '',
