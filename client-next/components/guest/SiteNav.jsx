@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import LangToggle from './LangToggle'
-import { entityBasePath } from '@/lib/i18n'
+import { entityBasePath, homeHref } from '@/lib/i18n'
 
 // Header pubblico condiviso da tutte le entità (struttura/ristorante/attività) e
 // dalle sotto-pagine. Sostituisce l'header inline duplicato nei 4 componenti.
@@ -73,7 +73,7 @@ export default function SiteNav({ entity, mini, pagine = [], prefix, primary, se
   const hasActions = !!(pwa || bookingUrl || buttons.length)
 
   const brand = (
-    <a href={base} style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
+    <a href={homeHref(prefix, entity.slug, domain, lang)} style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
       {showLogo && navLogo
         ? <img src={navLogo} alt="logo" style={{ height: logoH, objectFit: 'contain' }} />
         : <span style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, color: navTextColor }}>{entity.name}</span>}

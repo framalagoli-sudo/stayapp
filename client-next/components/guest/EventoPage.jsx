@@ -39,12 +39,14 @@ export default function EventoPage() {
     return null
   }
 
-  // Ritorno: preferisci l'URL di provenienza (?back=, funziona anche senza history
-  // e su domini custom); altrimenti torna nella history; ultimo fallback: home.
+  // Dove si torna, in ordine di quanto è probabile che sia giusto: da dove si
+  // è arrivati, la cronologia, il sito del cliente. La home di OltreNova è
+  // l'ultima spiaggia: a chi guarda l'evento di un ristorante non interessa.
   function goBack() {
-    if (backUrl) router.push(backUrl)
-    else if (typeof window !== 'undefined' && window.history.length > 1) router.back()
-    else router.push('/')
+    if (backUrl) { router.push(backUrl); return }
+    if (typeof window !== 'undefined' && window.history.length > 1) { router.back(); return }
+    const casa = baseSito(evento?.sito || null)
+    router.push(casa || '/')
   }
   const [evento,     setEvento]     = useState(null)
   const [error,      setError]      = useState(null)
@@ -171,6 +173,14 @@ export default function EventoPage() {
       )}
 
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '32px 24px 64px' }}>
+        {/* Il ritorno esplicito. Il logo dell'intestazione porta alla home, ma
+            è un gesto che si impara — qui serve una via d'uscita che si legge. */}
+        <button onClick={goBack}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none',
+            cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#666', padding: 0, marginBottom: 18 }}>
+          <ArrowLeft size={17} strokeWidth={1.5} /> {sito?.name ? `Torna a ${sito.name}` : 'Indietro'}
+        </button>
+
         <h1 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 700, color: '#1a1a2e', marginBottom: 16, lineHeight: 1.2 }}>
           {evento.title}
         </h1>

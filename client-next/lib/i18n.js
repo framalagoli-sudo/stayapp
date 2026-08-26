@@ -274,6 +274,21 @@ export function entityBasePath(prefix, slug, domain, lang) {
   return domain ? lp : `${lp}/${prefix}/${slug}`
 }
 
+// L'indirizzo della home, da usare quando finisce **da solo** in un href.
+//
+// `entityBasePath` restituisce stringa vuota su un dominio del cliente, ed è
+// giusto così per concatenare: `${base}/p/x` diventa `/p/x`. Ma una stringa
+// vuota dentro `href` significa «questa stessa pagina», e il 26/08/2026 il logo
+// dell'intestazione non portava da nessuna parte su **tutti e dodici** i domini
+// attivi — un difetto vecchio, che nessuno aveva mai misurato.
+//
+// Non si può correggere dentro `entityBasePath` restituendo '/': la
+// concatenazione diventerebbe `//p/x`, che per il browser è un indirizzo verso
+// un ALTRO host. Serviva un secondo nome, ed è questo.
+export function homeHref(prefix, slug, domain, lang) {
+  return entityBasePath(prefix, slug, domain, lang) || '/'
+}
+
 // Costruisce il path equivalente in un'altra lingua. IT = nessun prefisso,
 // EN = prefisso /en. Es. ('/s/slug','en') → '/en/s/slug'; ('/en/s/slug','it') → '/s/slug'.
 export function pathForLang(pathname, lang) {
