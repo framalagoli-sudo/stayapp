@@ -89,7 +89,7 @@ export async function GET(request) {
     const { data: profile } = await supabaseAdmin.from('profiles').select('role, azienda_id, property_id').eq('id', user.id).single()
     if (!profile) return Response.json({ error: 'Profilo non trovato' }, { status: 403 })
 
-    let query = supabaseAdmin.from('requests').select('*, properties(name)').order('created_at', { ascending: false })
+    let query = supabaseAdmin.from('requests').select('*').order('created_at', { ascending: false })
 
     if (['admin_struttura', 'staff'].includes(profile.role)) {
       if (!profile.property_id) return Response.json([])
@@ -111,6 +111,18 @@ export async function GET(request) {
     if (searchParams.get('status')) query = query.eq('status', searchParams.get('status'))
     const { data, error } = await query
     if (error) return Response.json({ error: error.message }, { status: 500 })
-    return Response.json(data)
+
+    // Il nome dell'entità arriva da una lettura sua, non da un join. Il join
+    // passava dalla chiave esterna verso `properties`, dove stanno solo le
+    // strutture: le richieste dei ristoranti e delle attività comparivano nel
+    // pannello senza nome. Il pannello legge `properties.name` da sempre — si
+    // cambia da dove arriva il dato, non come si chiama.
+    const ids = [...new Set((data || []).map(r => r.property_id).filter(Boolean))]
+    let nomi = {}
+    if (ids.length) {
+      const { data: ent } = await supabaseAdmin.from('entita').select('id, name').in('id', ids)
+      nomi = Object.fromEntries((ent || []).map(e => [e.id, e.name]))
+    }
+    return Response.json((data || []).map(r => ({ ...r, properties: { name: nomi[r.property_id] || null } })))
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
