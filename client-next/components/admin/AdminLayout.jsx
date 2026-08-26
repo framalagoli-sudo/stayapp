@@ -259,9 +259,20 @@ export default function AdminLayout({ children }) {
     const out = []
     let lastGroup = null
     subs.forEach((voce) => {
-      const { sub, label, icon, group } = voce
+      const { sub, label, icon, group, spenta } = voce
       if (group !== lastGroup) { out.push(<SectionHeader key={`h-${group}`} label={group} />); lastGroup = group }
-      out.push(<NavItem key={sub} to={hrefFor(sub, voce)} icon={icon} label={label} sub />)
+      // Il pallino segna le sezioni che il cliente NON vede: le apri lo stesso,
+      // ma sai che per lui sono spente — senza doverlo andare a controllare.
+      out.push(
+        <NavItem key={sub} to={hrefFor(sub, voce)} icon={icon} sub
+          label={spenta
+            ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                {label}
+                <span title="Spenta per il cliente: la vedi perché sei super_admin"
+                  style={{ width: 6, height: 6, borderRadius: '50%', background: '#c9a227', flexShrink: 0 }} />
+              </span>
+            : label} />
+      )
       if (sub === 'sito')   out.push(<NavItem key="ai-builder" to="/admin/ai-site-builder" icon={Wand2}  label="AI Site Builder" sub />)
       if (sub === 'domini') out.push(<NavItem key="qr"         to="/admin/qrcode"          icon={QrCode} label="QR Code"        sub />)
     })
@@ -285,7 +296,20 @@ export default function AdminLayout({ children }) {
     const conModuli = { ...(ent || {}), tipo, moduli: ent?.moduli || ent?.modules || ent?.pwa }
 
     const base = { struttura: 'struttura', ristorante: 'ristoranti', attivita: 'attivita' }[tipo]
-    const visibili = SEZIONI_ENTITA.filter(s => !s.funzione || (ent && funzioneAttiva(conModuli, s.funzione)))
+
+    // Chi amministra la piattaforma vede TUTTE le sezioni, sempre.
+    //
+    // Gli interruttori decidono cosa vede il cliente e cosa compare sul suo sito:
+    // non devono nascondere niente a chi il prodotto lo sta costruendo. Con i
+    // preset di ieri le Vetrine risultavano invisibili su tutte e tredici le
+    // entità — un modulo intero, completo e irraggiungibile, e ci si arrivava
+    // solo sapendo di doverlo accendere da un'altra pagina.
+    //
+    // Le sezioni spente per il cliente restano riconoscibili (vedi `spenta`),
+    // così si sa sempre cosa lui vede e cosa no.
+    const visibili = SEZIONI_ENTITA
+      .filter(s => !s.funzione || isSuperAdmin || (ent && funzioneAttiva(conModuli, s.funzione)))
+      .map(s => ({ ...s, spenta: !!s.funzione && ent && !funzioneAttiva(conModuli, s.funzione) }))
     return renderSubs(visibili, (sub, voce) => `/admin/${base}/${baseId}/${voce?.nomeSezione?.[tipo] || sub}`)
   }
 
