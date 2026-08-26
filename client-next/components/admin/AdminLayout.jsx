@@ -14,7 +14,7 @@ import {
   QrCode, UserCheck, ClipboardList, LogOut, Activity,
   Building, Building2, Store, Zap, Webhook, BotMessageSquare, Star, Settings,
   Info, Layers, Wrench, Image, Palette, MapPin, Globe, Lock, Bot, UtensilsCrossed,
-  FormInput, ShoppingBag, Sparkles, BarChart3, Gift, SearchCheck, LifeBuoy, LayoutTemplate, Wand2, SlidersHorizontal,
+  FormInput, ShoppingBag, Sparkles, BarChart3, Gift, SearchCheck, LifeBuoy, LayoutTemplate, Wand2, SlidersHorizontal, Tag,
 } from 'lucide-react'
 
 // ─── Nav definitions ──────────────────────────────────────────────────────────
@@ -465,6 +465,7 @@ export default function AdminLayout({ children }) {
             <NavItem to="/admin/shop"             icon={ShoppingBag}      label="Shop" />
             <NavItem to="/admin/loyalty"          icon={Gift}             label="Loyalty" />
             <NavItem to="/admin/eventi"           icon={CalendarDays}     label="Eventi" />
+            <NavItem to="/admin/offerte"          icon={Tag}              label="Offerte" />
 
             {/* Sito & App: visibile con URL entità OPPURE quando super_admin ha un'azienda attiva con entità */}
             {(strutturaUrlId || ristoranteUrlId || attivitaUrlId || (activeAziendaId && activeSitoId)) && (
@@ -515,6 +516,7 @@ export default function AdminLayout({ children }) {
             <SectionHeader label="Contenuti & promo" />
             <NavItem to="/admin/blog"             icon={Newspaper}        label="Blog & News" />
             <NavItem to="/admin/eventi"           icon={CalendarDays}     label="Eventi" />
+            <NavItem to="/admin/offerte"          icon={Tag}              label="Offerte" />
             <NavItem to="/admin/newsletter"       icon={Mail}             label="Newsletter" />
             <NavItem to="/admin/whatsapp"         icon={MessageCircle}    label="WhatsApp" />
             <NavItem to="/admin/automazioni"      icon={BotMessageSquare} label="Automazioni" />
@@ -551,6 +553,7 @@ export default function AdminLayout({ children }) {
                 {perm.prenotazioni && <NavItem to="/admin/prenotazioni" icon={CalendarCheck} label="Prenotazioni" />}
                 {perm.booking      && renderBookingSection()}
                 {perm.eventi       && <NavItem to="/admin/eventi"       icon={CalendarDays}  label="Eventi" />}
+                {perm.eventi       && <NavItem to="/admin/offerte"      icon={Tag}           label="Offerte" />}
                 {perm.recensioni   && <NavItem to="/admin/recensioni"   icon={Star}          label="Recensioni" />}
                 {perm.survey       && <NavItem to="/admin/survey"       icon={BarChart3}     label="Survey & NPS" />}
               </>
@@ -599,6 +602,7 @@ export default function AdminLayout({ children }) {
             {renderBookingSection()}
             <NavItem to="/admin/chat"         icon={MessageCircle} label="Chat" />
             <NavItem to="/admin/eventi"       icon={CalendarDays}  label="Eventi" />
+            <NavItem to="/admin/offerte"      icon={Tag}           label="Offerte" />
 
             <Divider />
             <SectionHeader label="Marketing" />
