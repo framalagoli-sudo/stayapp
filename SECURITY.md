@@ -73,6 +73,13 @@ Dove possibile ognuno ha un test in `tests/smoke/security.spec.js`.
     è corretto così, va messa in allowlist **con il motivo scritto**: un allarme che suona
     sempre viene ignorato, ed è peggio che non averlo.
 
+17. **Per restringere le colonne bisogna prima REVOCARE.** Su Supabase una tabella nuova nello
+    schema `public` nasce già accessibile ai ruoli `anon` e `authenticated`. Un
+    `GRANT SELECT (colonne)` non toglie niente: si somma a un permesso più largo che c'è già,
+    e dà l'illusione di aver ristretto. L'ordine giusto è `REVOKE SELECT ... FROM anon` e poi
+    `GRANT SELECT (colonne pubbliche)`. Misurato il 26/08 sulla tabella `offerte`, dove le
+    colonne interne restavano leggibili nonostante il GRANT mirato (migration 088).
+
 ### Il SISTEMA di monitoraggio (a strati — "sempre" senza sprechi)
 - **Strato 0 — Aggiornamento dipendenze (il "processo tipo WordPress-update").** `.github/dependabot.yml`
   apre PR automatiche per gli aggiornamenti + quelle di **sicurezza (CVE)** se sono attivi i toggle repo
