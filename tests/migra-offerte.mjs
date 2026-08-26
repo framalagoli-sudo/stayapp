@@ -63,6 +63,8 @@ for (const e of entita || []) {
         riga: {
           azienda_id: e.azienda_id, entity_id: e.id,
           modo: 'richiesta',
+          // Il gruppo in cui il cliente l'ha messa: e roba sua, si conserva.
+          categoria: cat.category?.trim() || null,
           // `bookable` diceva se compariva il pulsante «prenota»: chi non lo
           // aveva chiedeva e basta, e resta così.
           impegno: it.bookable ? 'prenota' : 'chiedi',
