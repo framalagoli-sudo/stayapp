@@ -167,7 +167,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
   // accetta spazi ne il segno piu.
   const numeroWa = String(attivita.whatsapp || attivita.minisito?.social?.whatsapp || '')
     .replace(/[^0-9]/g, '') || null
-  const sp = { primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, lang }
+  const sp = { numeroWa, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, lang }
 
   const homeSections = aMods.home_sections || {}
   // Un'attività può essere una palestra, un bar, uno studio: il menù e le
@@ -496,7 +496,7 @@ function AHomePage({ attivita, aMods, hasGallery, hasServizi, onExplore, domain 
 }
 
 // ─── ESPLORA ──────────────────────────────────────────────────────────────────
-function AEsploraPage({ attivita, activeChip, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, lang = 'it' }) {
+function AEsploraPage({ attivita, activeChip, numeroWa = null, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, lang = 'it' }) {
   const [lightbox, setLightbox] = useState(null)
 
   if (!activeChip) return (

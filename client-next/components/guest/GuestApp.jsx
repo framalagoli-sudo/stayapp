@@ -219,7 +219,7 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
   // accetta spazi ne il segno piu.
   const numeroWa = String(property.whatsapp || property.minisito?.social?.whatsapp || '')
     .replace(/[^0-9]/g, '') || null
-  const sp = { primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, lang }
+  const sp = { numeroWa, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, lang }
 
   const NAV_ITEMS = [
     ...BASE_NAV.filter(item => !item.module || modules[item.module]).map(item => ({ ...item, label: tr(item.labelKey, lang) })),
@@ -586,7 +586,7 @@ function HomePage({ property, upcomingEventi = [], modules, onExplore, domain = 
 }
 
 // ─── ESPLORA ──────────────────────────────────────────────────────────────────
-function EsploraPage({ property, upcomingEventi = [], activeChip, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, lang = 'it' }) {
+function EsploraPage({ property, upcomingEventi = [], activeChip, numeroWa = null, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, lang = 'it' }) {
   const [lightbox,      setLightbox]      = useState(null)
   const [selectedEvento, setSelectedEvento] = useState(null)
   const sp = { primary, textColor, subText, isDark, radius, headingFamily, lang }

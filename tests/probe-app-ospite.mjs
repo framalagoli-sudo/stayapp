@@ -34,7 +34,17 @@ try {
     page.on('console', m => { if (m.type() === 'error' && !/favicon|manifest|404/i.test(m.text())) errori.push(m.text()) })
     await page.goto(`${L}/${pref[e.tipo]}/${e.slug}?qr=1&tab=esplora`, { waitUntil: 'networkidle', timeout: 45000 })
     const chip = await page.locator('button, a').filter({ hasText: /^(Menu|Menù|Servizi|Attività|Escursioni|Galleria|Eventi)$/ }).allTextContents()
-    ok(errori.length === 0, `${e.slug.padEnd(33)} sezioni: [${chip.join(' ')||'—'}]${errori.length?'  ERRORI: '+errori.slice(0,2).join(' | '):''}`)
+    // ⚠️ Aprire l'app non basta: ogni sezione si monta **al click**, e finché
+    // nessuno clicca il suo codice non gira. Un identificatore fuori scope in
+    // «Escursioni» è arrivato in produzione proprio così — questa sonda passava
+    // perché guardava che l'app aprisse, non che ci si potesse entrare.
+    for (const c of chip) {
+      const b = page.locator('button, a').filter({ hasText: new RegExp(`^${c}$`) }).first()
+      if (await b.count()) { await b.click(); await page.waitForTimeout(700) }
+    }
+    const rotta = /Ops, qualcosa è andato storto/.test(await page.locator('body').innerText())
+    ok(errori.length === 0 && !rotta,
+       `${e.slug.padEnd(33)} sezioni: [${chip.join(' ')||'—'}]${rotta?'  ← SCHERMATA D\'ERRORE':''}${errori.length?'  ERRORI: '+errori.slice(0,2).join(' | '):''}`)
     await page.close()
   }
 

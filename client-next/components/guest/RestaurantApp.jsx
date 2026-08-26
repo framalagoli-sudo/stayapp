@@ -175,7 +175,7 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
   // accetta spazi ne il segno piu.
   const numeroWa = String(ristorante.whatsapp || ristorante.minisito?.social?.whatsapp || '')
     .replace(/[^0-9]/g, '') || null
-  const sp = { primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, showAllergens: rModules.allergens, lang }
+  const sp = { numeroWa, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, showAllergens: rModules.allergens, lang }
 
   // Chips per Esplora
   const menuCount = (ristorante.menu || []).reduce((n, c) => {
@@ -512,7 +512,7 @@ function RHomePage({ ristorante, rModules, hasGallery, menuCount, onExplore, dom
 }
 
 // ─── ESPLORA ──────────────────────────────────────────────────────────────────
-function REsploraPage({ ristorante, activeChip, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, showAllergens, lang = 'it' }) {
+function REsploraPage({ ristorante, activeChip, numeroWa = null, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, showAllergens, lang = 'it' }) {
   const [lightbox, setLightbox] = useState(null)
   const sp = { primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, showAllergens, lang }
 
