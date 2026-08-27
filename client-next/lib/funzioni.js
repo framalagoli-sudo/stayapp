@@ -89,10 +89,33 @@ export function sezioniOspite(ent, contenuto = {}) {
   return ORDINE_OSPITE.filter(k => contenuto[k] && funzioneAttiva(ent, k))
 }
 
-// Preset per tipo: cosa si trova acceso chi crea una nuova entità.
-// Sono suggerimenti di partenza, non vincoli — si cambiano dal pannello.
-export const MODULI_PREDEFINITI = {
-  struttura:  { galleria: true, servizi: true, attivita: true, escursioni: true, chatbot: true },
-  ristorante: { galleria: true, menu: true, chatbot: true },
-  attivita:   { galleria: true, servizi: true, chatbot: true },
+// Cosa si trova acceso chi apre il pannello per la prima volta: **tutto**.
+//
+// Prima ogni tipo ne accendeva tre o quattro, e il resto restava invisibile
+// finché qualcuno non scopriva la pagina delle Funzioni. Un cliente nuovo si
+// trovava un pannello quasi vuoto e nessun modo di sapere cosa mancava — chi
+// compra OltreNova deve trovare le sue funzioni, non cercarle.
+//
+// ⚠️ Accendere tutto **non pubblica niente**: sull'app dell'ospite `sezioniOspite`
+// pretende anche che ci sia contenuto dentro, e sul sito le sezioni compaiono
+// solo se hanno dati. Cambia cosa il cliente vede nel **suo** pannello, non cosa
+// vede il pubblico. Chi non usa una funzione la spegne, e la sua scelta vince
+// sempre su questi valori.
+const TUTTE_ACCESE = {
+  galleria: true, menu: true, servizi: true,
+  attivita: true, escursioni: true, chatbot: true, sito: true,
 }
+
+export const MODULI_PREDEFINITI = {
+  struttura:  { ...TUTTE_ACCESE },
+  ristorante: { ...TUTTE_ACCESE },
+  attivita:   { ...TUTTE_ACCESE },
+}
+
+// Il sito pubblico nasce acceso.
+//
+// Nasceva `null`, e un cliente doveva scoprire da solo un interruttore per
+// vedere online la cosa per cui ha comprato OltreNova. Il sito **è** il
+// prodotto: chiederne l'attivazione è come consegnare un'auto col motore da
+// avviare a mano.
+export const MINISITO_INIZIALE = { active: true }

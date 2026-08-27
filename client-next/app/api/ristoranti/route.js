@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { assicuraSottodominio } from '@/lib/create-subdomain'
-import { allaFormaStorica, MODULI_PREDEFINITI } from '@/lib/entita'
+import { allaFormaStorica, MODULI_PREDEFINITI, MINISITO_INIZIALE } from '@/lib/entita'
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
@@ -56,7 +56,7 @@ export async function POST(request) {
     const extras = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
 
     const { data, error } = await supabaseAdmin.from('entita')
-      .insert({ azienda_id, tipo: 'ristorante', slug, moduli: MODULI_PREDEFINITI.ristorante, ...extras })
+      .insert({ azienda_id, tipo: 'ristorante', slug, moduli: MODULI_PREDEFINITI.ristorante, minisito: MINISITO_INIZIALE, ...extras })
       .select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
     // await necessario: registra il sottodominio su Vercel e in serverless una

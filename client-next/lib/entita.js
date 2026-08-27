@@ -154,4 +154,4 @@ export function campiAmmessi(body) {
 // Il catalogo delle funzioni vive in `lib/funzioni.js` (senza dipendenze
 // server, perché lo legge anche il browser). Ri-esportato qui perché le route
 // continuino a trovarlo dove l'hanno sempre cercato.
-export { FUNZIONI, funzioneAttiva, MODULI_PREDEFINITI } from '@/lib/funzioni'
+export { FUNZIONI, funzioneAttiva, MODULI_PREDEFINITI, MINISITO_INIZIALE } from '@/lib/funzioni'
