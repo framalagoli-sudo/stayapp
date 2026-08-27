@@ -24,7 +24,12 @@ export async function GET(request) {
       query = query.eq('azienda_id', searchParams.get('azienda_id'))
     }
     if (isUUID(searchParams.get('risorsa_id'))) query = query.eq('risorsa_id', searchParams.get('risorsa_id'))
-    if (searchParams.get('data'))    query = query.eq('data', searchParams.get('data'))
+    // ⚠️ Una prenotazione a giornate copre un intervallo: chiedere il giorno 12
+    // di un affitto dal 10 al 14 con `data = 12` non trova niente. Il calendario
+    // colorerebbe il giorno come occupato e poi mostrerebbe un pannello vuoto.
+    // L'ultimo giorno è quello dell'uscita e non conta come occupato.
+    const giorno = searchParams.get('data')
+    if (giorno) query = query.or(`data.eq.${giorno},and(data.lte.${giorno},data_fine.gt.${giorno})`)
     if (searchParams.get('stato'))   query = query.eq('stato', searchParams.get('stato'))
     if (searchParams.get('data_da')) query = query.gte('data', searchParams.get('data_da'))
     if (searchParams.get('data_a'))  query = query.lte('data', searchParams.get('data_a'))
