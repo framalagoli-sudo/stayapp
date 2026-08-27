@@ -13,6 +13,16 @@ Config **globale**: vale per tutti i progetti di Francesco. Le regole specifiche
 - **Diagnosi alla radice prima di agire**: mai fixare un sintomo o mettere un workaround, anche se sembro di fretta. Prima capisco il *meccanismo*, poi fixo.
 - Su cache/infra/produzione: **verifico con prove a freddo** (curl/header/DB/log) PRIMA di buildare o deployare. Un deploy = una causa accertata, non un tentativo. La produzione è fragile.
 
+## Prima di scrivere: guardo il contesto, non solo il pezzo
+> Gli errori che ho fatto ripetutamente hanno **una radice sola**: il codice nuovo
+> era giusto in sé, ma non avevo guardato il punto in cui si innesta con quello
+> che c'era già. E li ha trovati Francesco *usando*, non io verificando. Quattro
+> domande **prima** di scrivere, non dopo:
+1. **Dove porta?** Se aggiungo un pulsante o un link, apro la destinazione e verifico che esista e faccia quello che promette. Un pulsante che non porta da nessuna parte è peggio di un pulsante assente.
+2. **Esiste già?** Prima di aggiungere un posto dove il cliente mette le sue cose — o un secondo modo di crearle — cerco se ce n'è già uno. Due porte per la stessa stanza sono il difetto più costoso da smontare.
+3. **Chi altro tocca questo dato?** `grep` sul campo o sulla tabella prima di aggiungere un ramo: gli altri rami si aggiornano **insieme**, non alla prossima segnalazione.
+4. **Il dato arriva fino in fondo?** Non basta che si salvi: apro il posto dove dovrebbe comparire. Metà lavoro non è mezzo risultato, è confusione in più.
+
 ## Scrivere codice
 - **Modifiche più piccole ragionevoli**. Non riscrivo né butto implementazioni senza permesso esplicito.
 - Semplice e leggibile **>** clever. YAGNI: il codice migliore è quello che non scrivo.
