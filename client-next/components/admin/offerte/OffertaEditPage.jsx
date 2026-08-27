@@ -38,17 +38,41 @@ export default function OffertaEditPage() {
   }, [id])
 
   const entita = [
-    ...(strutture || []).map(e => ({ id: e.id, etichetta: `Struttura: ${e.name}` })),
-    ...(ristoranti || []).map(e => ({ id: e.id, etichetta: `Ristorante: ${e.name}` })),
-    ...(attivita || []).map(e => ({ id: e.id, etichetta: `Attività: ${e.name}` })),
+    ...(strutture || []).map(e => ({ id: e.id, tipo: 'struttura', etichetta: `Struttura: ${e.name}` })),
+    ...(ristoranti || []).map(e => ({ id: e.id, tipo: 'ristorante', etichetta: `Ristorante: ${e.name}` })),
+    ...(attivita || []).map(e => ({ id: e.id, tipo: 'attivita', etichetta: `Attività: ${e.name}` })),
   ]
+
+  // I prodotti che si possono promuovere sono quelli del sito scelto: proporre
+  // il catalogo di un'altra entità porterebbe a offerte agganciate a cose che su
+  // quel sito non esistono. `null` = non ancora caricato, che è diverso da «zero».
+  const [prodotti, setProdotti] = useState(null)
+  const tipoScelto = entita.find(e => e.id === o?.entity_id)?.tipo
+
+  useEffect(() => {
+    if (!o?.entity_id || !tipoScelto) { setProdotti([]); return }
+    let vivo = true
+    ;(async () => {
+      try {
+        const vetrine = await apiFetch(`/api/vetrine?entity_tipo=${tipoScelto}&entity_id=${o.entity_id}`)
+        const elenchi = await Promise.all(
+          (Array.isArray(vetrine) ? vetrine : []).map(async v => {
+            const el = await apiFetch(`/api/vetrina-elementi?vetrina_id=${v.id}`)
+            return (Array.isArray(el) ? el : []).map(x => ({ ...x, vetrina: v.titolo }))
+          })
+        )
+        if (vivo) setProdotti(elenchi.flat())
+      } catch { if (vivo) setProdotti([]) }
+    })()
+    return () => { vivo = false }
+  }, [o?.entity_id, tipoScelto])
 
   const set = (k, v) => setO(x => ({ ...x, [k]: v }))
 
   async function salva() {
     setSalvando(true); setErrore(null)
     try {
-      const campi = ['entity_id', 'modo', 'impegno', 'titolo', 'descrizione', 'categoria', 'luogo',
+      const campi = ['entity_id', 'prodotto_id', 'impegno', 'titolo', 'descrizione', 'categoria', 'luogo',
         'prezzo', 'mostra_prezzo', 'prezzo_testo', 'data_inizio', 'data_fine', 'posti_totali',
         'cta_label', 'cta_condizioni', 'avvisa_titolare', 'conferma_ospite', 'attiva', 'pubblicata']
       const body = Object.fromEntries(campi.map(k => [k, o[k] ?? null]))
@@ -110,6 +134,42 @@ export default function OffertaEditPage() {
           <option value="">Nessuno — vale per tutte le tue attività</option>
           {entita.map(e => <option key={e.id} value={e.id}>{e.etichetta}</option>)}
         </select>
+
+        {/* Il legame col catalogo: un'offerta amplifica una cosa che il cliente
+            ha già caricato, e quando l'offerta finisce quella cosa resta.
+            Vedi `CATALOGO.md`. */}
+        <label style={{ ...labelStyle, marginTop: 16 }}>Quale prodotto stai promuovendo</label>
+        {prodotti === null ? (
+          <p style={{ ...aiuto, margin: 0 }}>Carico il catalogo…</p>
+        ) : prodotti.length === 0 ? (
+          <p style={{ ...aiuto, margin: 0 }}>
+            Non hai ancora prodotti su questo sito.{' '}
+            <a href="/admin/prodotti" style={{ color: '#1a1a2e', fontWeight: 600 }}>Caricane uno →</a>
+          </p>
+        ) : (
+          <>
+            <select style={inputStyle} value={o.prodotto_id || ''}
+              onChange={e => {
+                const scelto = prodotti.find(x => x.id === e.target.value)
+                // Scegliendo un prodotto si riprende quello che ha già scritto:
+                // ribattere titolo e prezzo è lavoro fatto due volte. I campi
+                // restano modificabili, e ciò che ha scritto a mano non si tocca.
+                setO(x => ({
+                  ...x,
+                  prodotto_id: e.target.value || null,
+                  ...(scelto ? {
+                    titolo: (!x.titolo || x.titolo === 'Nuova offerta') ? scelto.titolo : x.titolo,
+                    cover_url: x.cover_url || scelto.copertina_url || null,
+                    prezzo: x.prezzo ?? (Number(scelto.valore_primario) || null),
+                  } : {}),
+                }))
+              }}>
+              <option value="">Nessuno — offerta a sé</option>
+              {prodotti.map(x => <option key={x.id} value={x.id}>{x.titolo}{x.vetrina ? ` — ${x.vetrina}` : ''}</option>)}
+            </select>
+            <p style={aiuto}>Quando l'offerta finisce, il prodotto resta nel tuo catalogo.</p>
+          </>
+        )}
 
         <label style={{ ...labelStyle, marginTop: 16 }}>Descrizione</label>
         <textarea style={{ ...inputStyle, minHeight: 110, resize: 'vertical' }} value={o.descrizione || ''} onChange={e => set('descrizione', e.target.value)} />
