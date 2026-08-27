@@ -213,7 +213,9 @@ export default function BookingRisorsePage() {
                     <span>
                       {r.modalita === 'slot'
                         ? `Slot · ${r.durata_minuti}min${r.quantita > 1 ? ` × ${r.quantita}` : ''} · €${r.prezzo}`
-                        : `Coperti · max ${r.max_coperti} posti`
+                        : r.modalita === 'giornaliero'
+                          ? `A giornate${r.quantita > 1 ? ` × ${r.quantita}` : ''} · €${r.prezzo} a notte`
+                          : `Coperti · max ${r.max_coperti} posti`
                       }
                       {r.descrizione ? ` · ${r.descrizione}` : ''}
                     </span>

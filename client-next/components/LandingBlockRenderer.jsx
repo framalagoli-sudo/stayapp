@@ -1314,7 +1314,9 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         return (
           <section key={block.id} style={{ padding: '72px 0', background: '#fafafa' }}>
             <div className="lbr-section">
-              <BookingWidget entityId={entity.id} entityTipo={entityType} primary={primary} heading={heading} privacyUrl={privacyUrl} />
+              {/* Il widget vuole `primaryColor`: passandogli `primary` restava
+                  sul turchese predefinito e ignorava il tema del cliente. */}
+              <BookingWidget entityId={entity.id} entityTipo={entityType} primaryColor={primary} />
             </div>
           </section>
         )

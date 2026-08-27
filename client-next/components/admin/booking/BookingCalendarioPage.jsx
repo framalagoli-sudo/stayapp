@@ -157,7 +157,12 @@ export default function BookingCalendarioPage() {
                       <div>
                         <div>{r.nome}</div>
                         <div style={{ fontSize: 11, color: '#999', fontWeight: 400 }}>
-                          {r.modalita === 'coperti' ? `max ${r.max_coperti} coperti` : `${r.durata_minuti}min${r.quantita > 1 ? ` × ${r.quantita}` : ''}`}
+                          {/* Una risorsa a giornate non ha una durata in minuti:
+                              mostrava «60min», che è il valore predefinito della
+                              colonna e non vuol dire niente per chi affitta. */}
+                          {r.modalita === 'coperti' ? `max ${r.max_coperti} coperti`
+                            : r.modalita === 'giornaliero' ? `a giornate${r.quantita > 1 ? ` × ${r.quantita}` : ''}`
+                            : `${r.durata_minuti}min${r.quantita > 1 ? ` × ${r.quantita}` : ''}`}
                         </div>
                       </div>
                     </div>
