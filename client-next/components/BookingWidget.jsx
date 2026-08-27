@@ -19,9 +19,11 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
   const [risorse, setRisorse] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // Step wizard: 'risorsa' | 'data' | 'slot' | 'form' | 'done'
+  // Step wizard: 'risorsa' | 'periodo' | 'data' | 'slot' | 'form' | 'done'
   const [step, setStep] = useState('risorsa')
-  const [selected, setSelected] = useState({ risorsa: null, data: '', slot: null })
+  const [selected, setSelected] = useState({ risorsa: null, data: '', data_fine: '', slot: null })
+  const [periodo, setPeriodo] = useState(null)      // la risposta del server per le risorse a giornate
+  const [verificando, setVerificando] = useState(false)
   const [slots, setSlots] = useState([])
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [form, setForm] = useState({ nome: '', email: '', telefono: '', n_persone: 1, note: '' })
@@ -36,8 +38,12 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
       .finally(() => setLoading(false))
   }, [entityTipo, entityId])
 
-  // Quando cambia data o risorsa, ricarica disponibilità
+  // Quando cambia data o risorsa, ricarica disponibilità.
+  // A giornate non serve: lì la domanda si fa con due date, e la risposta la
+  // chiede `verificaPeriodo`. Senza questa condizione partiva una chiamata in
+  // più a ogni scelta della data d'inizio, per una risposta che nessuno legge.
   useEffect(() => {
+    if (selected.risorsa?.modalita === 'giornaliero') return
     if (!selected.risorsa || !selected.data) return
     setSlots([])
     setLoadingSlots(true)
@@ -46,10 +52,25 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
       .finally(() => setLoadingSlots(false))
   }, [selected.risorsa, selected.data])
 
+  // A giornate non si sceglie un orario ma un periodo: due date e via. Gli altri
+  // due passi (data, poi slot) non hanno niente da chiedere.
   function selectRisorsa(r) {
-    setSelected({ risorsa: r, data: '', slot: null })
+    setSelected({ risorsa: r, data: '', data_fine: '', slot: null })
     setSlots([])
-    setStep('data')
+    setPeriodo(null)
+    setStep(r.modalita === 'giornaliero' ? 'periodo' : 'data')
+  }
+
+  // Il preventivo lo fa il server: quello che si vede qui è la stessa risposta
+  // che deciderà se la prenotazione passa, non un conto rifatto nel browser che
+  // potrebbe non coincidere.
+  async function verificaPeriodo(dal, al) {
+    if (!dal || !al) { setPeriodo(null); return }
+    setVerificando(true)
+    try {
+      setPeriodo(await publicFetch(`/api/booking/public/disponibilita/${selected.risorsa.id}?data=${dal}&data_fine=${al}`))
+    } catch { setPeriodo(null) }
+    finally { setVerificando(false) }
   }
 
   function selectData(data) {
@@ -69,18 +90,21 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
     if (!form.email.trim()) { setErrore("L'email è obbligatoria"); return }
     setSending(true); setErrore('')
     try {
+      const aGiornate = selected.risorsa.modalita === 'giornaliero'
       const body = {
         risorsa_id: selected.risorsa.id,
         data: selected.data,
-        ...(selected.risorsa.modalita === 'slot'
-          ? { ora_inizio: selected.slot.ora }
-          : { servizio: selected.slot.servizio, ora_inizio: selected.slot.ora }),
+        ...(aGiornate
+          ? { data_fine: selected.data_fine }
+          : selected.risorsa.modalita === 'slot'
+            ? { ora_inizio: selected.slot.ora }
+            : { servizio: selected.slot.servizio, ora_inizio: selected.slot.ora }),
         cliente_nome: form.nome.trim(),
         cliente_email: form.email.trim(),
         cliente_telefono: form.telefono.trim() || null,
         n_persone: form.n_persone,
         note_cliente: form.note.trim() || null,
-        promozione_id: selected.slot.promo?.id || null,
+        promozione_id: selected.slot?.promo?.id || null,
       }
       const res = await fetch(`${API_BASE}/api/booking/public/prenota`, {
         method: 'POST',
@@ -96,7 +120,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
   }
 
   function reset() {
-    setStep('risorsa'); setSelected({ risorsa: null, data: '', slot: null })
+    setStep('risorsa'); setSelected({ risorsa: null, data: '', data_fine: '', slot: null }); setPeriodo(null)
     setSlots([]); setForm({ nome: '', email: '', telefono: '', n_persone: 1, note: '' })
     setPrenotazione(null); setErrore('')
   }
@@ -115,8 +139,13 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
         <div style={{ fontSize: 14, color: '#666', marginBottom: 4 }}>
           Hai prenotato <strong>{selected.risorsa.nome}</strong>
         </div>
+        {/* ⚠️ Senza il ramo a giornate qui si leggeva `selected.slot.ora` su uno
+            slot che non esiste: schermata bianca proprio sulla conferma, dopo
+            che la prenotazione è già andata a buon fine. */}
         <div style={{ fontSize: 14, color: '#666', marginBottom: 4 }}>
-          {formatData(selected.data)} {selected.slot.servizio ? `— ${selected.slot.servizio}` : ''} ore {selected.slot.ora}
+          {selected.risorsa.modalita === 'giornaliero'
+            ? `dal ${formatData(selected.data)} al ${formatData(selected.data_fine)}`
+            : <>{formatData(selected.data)} {selected.slot?.servizio ? `— ${selected.slot.servizio}` : ''} ore {selected.slot?.ora}</>}
         </div>
         <div style={{ fontSize: 13, color: '#888', marginBottom: 20 }}>
           Riceverai una conferma a <strong>{form.email}</strong>
@@ -147,7 +176,9 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
                     <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>
                       {r.modalita === 'slot'
                         ? `${r.durata_minuti} min${r.prezzo > 0 ? ` · €${r.prezzo}` : ''}`
-                        : `${r.max_coperti} posti${r.prezzo > 0 ? ` · €${r.prezzo} a persona` : ''}`
+                        : r.modalita === 'giornaliero'
+                          ? `A giornate${r.prezzo > 0 ? ` · €${r.prezzo} a notte` : ''}`
+                          : `${r.max_coperti} posti${r.prezzo > 0 ? ` · €${r.prezzo} a persona` : ''}`
                       }
                     </div>
                   </div>
@@ -156,6 +187,68 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ── STEP: SCEGLI IL PERIODO (risorse a giornate) ─────────────────────── */}
+      {step === 'periodo' && (
+        <div>
+          <div style={titleStyle}>Da quando a quando?</div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <label style={{ flex: '1 1 140px', minWidth: 0 }}>
+              <span style={{ display: 'block', fontSize: 12, color: '#888', marginBottom: 4 }}>Inizio</span>
+              <input type="date" min={today} value={selected.data}
+                onChange={e => {
+                  const dal = e.target.value
+                  // Una fine precedente all'inizio non ha senso: si azzera invece
+                  // di lasciare a schermo una coppia impossibile.
+                  const al = selected.data_fine && selected.data_fine > dal ? selected.data_fine : ''
+                  setSelected(s => ({ ...s, data: dal, data_fine: al }))
+                  verificaPeriodo(dal, al)
+                }}
+                style={dateInputStyle(primaryColor)} />
+            </label>
+            <label style={{ flex: '1 1 140px', minWidth: 0 }}>
+              <span style={{ display: 'block', fontSize: 12, color: '#888', marginBottom: 4 }}>Fine</span>
+              <input type="date" min={selected.data || today} value={selected.data_fine}
+                disabled={!selected.data}
+                onChange={e => {
+                  setSelected(s => ({ ...s, data_fine: e.target.value }))
+                  verificaPeriodo(selected.data, e.target.value)
+                }}
+                style={dateInputStyle(primaryColor)} />
+            </label>
+          </div>
+
+          {verificando && <div style={{ color: '#999', fontSize: 13, marginTop: 14 }}>Verifica disponibilità…</div>}
+
+          {!verificando && periodo && !periodo.disponibile && (
+            <div style={{ marginTop: 14, padding: '12px 14px', background: '#fff5f5', borderRadius: 10, fontSize: 14, color: '#c53030' }}>
+              {periodo.motivo || 'Non disponibile in questo periodo.'}
+            </div>
+          )}
+
+          {!verificando && periodo?.disponibile && (
+            <>
+              <div style={{ marginTop: 14, padding: '14px 16px', background: '#f7f9fc', borderRadius: 10 }}>
+                <div style={{ fontSize: 14, color: '#555' }}>
+                  {periodo.notti} {periodo.notti === 1 ? 'notte' : 'notti'}
+                  {periodo.prezzo > 0 && <> · €{periodo.prezzo} a notte</>}
+                </div>
+                {periodo.totale > 0 && (
+                  <div style={{ fontSize: 20, fontWeight: 700, color: primaryColor, marginTop: 4 }}>€{periodo.totale}</div>
+                )}
+                {periodo.libere > 1 && (
+                  <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>Ne restano {periodo.libere} disponibili.</div>
+                )}
+              </div>
+              <button onClick={() => setStep('form')} style={{ ...btnStyle(primaryColor), marginTop: 14 }}>
+                Continua
+              </button>
+            </>
+          )}
+
+          <button onClick={() => setStep('risorsa')} style={backBtnStyle}>← Indietro</button>
         </div>
       )}
 
@@ -245,10 +338,20 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
           <div style={{ background: '#f8f8f8', borderRadius: 10, padding: 14, marginBottom: 20, fontSize: 14 }}>
             <div style={{ fontWeight: 600 }}>{selected.risorsa.nome}</div>
             <div style={{ color: '#666', marginTop: 2 }}>
-              {formatData(selected.data)} — {selected.slot.servizio ? `${selected.slot.servizio} ` : ''}{selected.slot.ora}
-              {selected.slot.promo
-                ? <span style={{ color: selected.slot.promo.colore, fontWeight: 600 }}> · €{selected.slot.promo.prezzo} ({selected.slot.promo.badge})</span>
-                : selected.slot.prezzo > 0 ? <span> · €{selected.slot.prezzo}</span> : ''}
+              {selected.risorsa.modalita === 'giornaliero' ? (
+                <>
+                  dal {formatData(selected.data)} al {formatData(selected.data_fine)}
+                  {periodo?.notti > 0 && <> · {periodo.notti} {periodo.notti === 1 ? 'notte' : 'notti'}</>}
+                  {periodo?.totale > 0 && <span style={{ fontWeight: 600 }}> · €{periodo.totale}</span>}
+                </>
+              ) : (
+                <>
+                  {formatData(selected.data)} — {selected.slot?.servizio ? `${selected.slot.servizio} ` : ''}{selected.slot?.ora}
+                  {selected.slot?.promo
+                    ? <span style={{ color: selected.slot.promo.colore, fontWeight: 600 }}> · €{selected.slot.promo.prezzo} ({selected.slot.promo.badge})</span>
+                    : selected.slot?.prezzo > 0 ? <span> · €{selected.slot.prezzo}</span> : ''}
+                </>
+              )}
             </div>
           </div>
 
@@ -325,6 +428,11 @@ function formatData(iso) {
 // ─── Stili ────────────────────────────────────────────────────────────────────
 const wrapStyle   = { background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', maxWidth: 520 }
 const titleStyle  = { fontSize: 17, fontWeight: 700, marginBottom: 16, color: '#1a1a2e' }
+const dateInputStyle = (color) => ({
+  width: '100%', padding: '12px 14px', border: `2px solid ${color}`, borderRadius: 10,
+  fontSize: 16, outline: 'none', boxSizing: 'border-box', background: '#fff',
+})
+
 const backBtnStyle = { marginTop: 14, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', padding: 0 }
 const counterBtn  = { width: 32, height: 32, borderRadius: '50%', border: '1px solid #ddd', background: '#f5f5f5', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }
 
