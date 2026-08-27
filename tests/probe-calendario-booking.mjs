@@ -59,12 +59,21 @@ try {
       return null
     }
 
+    // Il verde del «libero» è #f2fbf4.
+    const eLibero = async c => /242,\s*251,\s*244/.test(await c.evaluate(el => getComputedStyle(el).backgroundColor))
+
     const occupato = async giorno => {
       const c = await vaiA(giorno)
       if (!c) return null
-      const sfondo = await c.evaluate(el => getComputedStyle(el).backgroundColor)
-      // Il verde del «libero» è #f2fbf4.
-      return !/242,\s*251,\s*244/.test(sfondo)
+      // ⚠️ Cambiando mese le caselle compaiono **prima** che arrivi l'occupancy:
+      // per un istante sono tutte verdi. Il falso risultato va sempre nella
+      // stessa direzione — «libero» — quindi si rilegge prima di dichiararlo,
+      // invece di allungare l'attesa a caso per tutti i controlli.
+      if (await eLibero(c)) {
+        await page.waitForTimeout(1500)
+        return !(await eLibero(c))
+      }
+      return true
     }
 
     ok(await occupato(g(3)) === true, `il giorno d'ingresso è colorato come occupato`)
@@ -110,7 +119,9 @@ try {
       ok(/Nome \*/.test(await page.locator('body').innerText()), 'da un giorno libero si apre il modulo per prenotare')
       await page.locator('label:has-text("Nome *") input').fill('ZZ Al Telefono')
       await page.getByRole('button', { name: /Salva prenotazione/ }).click()
-      await page.waitForTimeout(2500)
+      // Attesa sulla condizione, non sul cronometro: in produzione il giro è più
+      // lento che in locale e un timeout fisso fa fallire una cosa che funziona.
+      await page.getByText('ZZ Al Telefono').first().waitFor({ timeout: 20000 }).catch(() => {})
       ok(/ZZ Al Telefono/.test(await page.locator('body').innerText()), 'la prenotazione presa al telefono compare nel giorno')
       const { data: righe } = await admin.from('prenotazioni').select('stato').eq('risorsa_id', ris).eq('cliente_nome', 'ZZ Al Telefono')
       ok(righe?.[0]?.stato === 'confermata', 'ed è già confermata: il titolare non deve confermarla a se stesso')
