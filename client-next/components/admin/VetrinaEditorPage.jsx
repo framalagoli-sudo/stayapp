@@ -36,6 +36,31 @@ export default function VetrinaEditorPage() {
   const [expandedId, setExpandedId] = useState(null)
   const [newTitle, setNewTitle] = useState('')
   const [showNew, setShowNew] = useState(false)
+  const [creandoOfferta, setCreandoOfferta] = useState(null)
+
+  // L'offerta nasce col nome e il prezzo del prodotto: chi la crea non deve
+  // ribattere quello che ha già scritto. Resta in bozza — pubblicarla è una
+  // decisione a parte.
+  async function creaOfferta(el) {
+    setCreandoOfferta(el.id)
+    try {
+      const nuova = await apiFetch('/api/offerte', {
+        method: 'POST',
+        body: JSON.stringify({
+          titolo: el.titolo || 'Nuova offerta',
+          prodotto_id: el.id,
+          entity_id: vetrina?.entity_id || null,
+          cover_url: el.copertina_url || null,
+          prezzo: Number(el.valore_primario) || null,
+          attiva: true, pubblicata: false,
+        }),
+      })
+      router.push(`/admin/offerte/${nuova.id}`)
+    } catch (e) {
+      alert(e.message || 'Non sono riuscito a creare l\'offerta')
+      setCreandoOfferta(null)
+    }
+  }
 
   useEffect(() => { load() }, [vetrinaId])
 
@@ -130,6 +155,13 @@ export default function VetrinaEditorPage() {
               {el.stato_pubblico && <span style={{ fontSize: 11, color: '#555', background: '#f0f0f4', padding: '2px 8px', borderRadius: 6 }}>{statoLabel(preset, el.stato_pubblico)}</span>}
               <button onClick={() => toggleStatus(el)} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 10, border: 'none', cursor: 'pointer', background: el.status === 'pubblicata' ? '#d4edda' : '#fff3cd', color: el.status === 'pubblicata' ? '#155724' : '#856404', fontWeight: 600 }}>
                 {el.status === 'pubblicata' ? '✓ Pubblicato' : '○ Bozza'}
+              </button>
+              {/* Da qui nasce l'offerta: il prodotto è già caricato, si tratta
+                  solo di amplificarlo. Quando l'offerta finisce, il prodotto
+                  resta qui — vedi `CATALOGO.md`. */}
+              <button onClick={() => creaOfferta(el)} disabled={creandoOfferta === el.id}
+                style={{ fontSize: 12, padding: '5px 14px', borderRadius: 8, border: 'none', background: '#f0f4ff', color: '#1a1a2e', cursor: creandoOfferta === el.id ? 'wait' : 'pointer', fontWeight: 600 }}>
+                {creandoOfferta === el.id ? 'Creo…' : 'Crea offerta'}
               </button>
               <button onClick={() => setExpandedId(expandedId === el.id ? null : el.id)} style={{ fontSize: 12, padding: '5px 14px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', cursor: 'pointer' }}>
                 {expandedId === el.id ? 'Chiudi' : 'Modifica'}

@@ -55,7 +55,6 @@ const SEZIONI_ENTITA = [
   { sub: 'gallery',    label: 'Galleria',      icon: Image,            group: 'Contenuti',        funzione: 'galleria' },
   { sub: 'sito',       label: 'Sito web',      icon: Globe,            group: 'Sito & presenza' },
   { sub: 'theme',      label: 'Tema e colori', icon: Palette,          group: 'Sito & presenza' },
-  { sub: 'vetrine',    label: 'Vetrine',       icon: Store,            group: 'Sito & presenza',  funzione: 'vetrine' },
   { sub: 'domini',     label: 'Domini',        icon: Globe,            group: 'Sito & presenza' },
   { sub: 'moduli',     label: 'App Clienti',   icon: Layers,           group: 'Sito & presenza',  nomeSezione: { struttura: 'modules' } },
   { sub: 'chatbot',    label: 'Chatbot',       icon: Bot,              group: 'Sito & presenza',  funzione: 'chatbot' },
@@ -462,6 +461,7 @@ export default function AdminLayout({ children }) {
             <NavItem to="/admin/ai-site-builder"  icon={Wand2}            label="AI Site Builder" />
             <NavItem to="/admin/preventivi"       icon={FileText}         label="Preventivi" />
             <NavItem to="/admin/form-builder"     icon={FormInput}        label="Form Builder" />
+            <NavItem to="/admin/prodotti"         icon={Store}            label="Prodotti" />
             <NavItem to="/admin/shop"             icon={ShoppingBag}      label="Shop" />
             <NavItem to="/admin/loyalty"          icon={Gift}             label="Loyalty" />
             <NavItem to="/admin/eventi"           icon={CalendarDays}     label="Eventi" />
@@ -523,6 +523,7 @@ export default function AdminLayout({ children }) {
             <NavItem to="/admin/piano-editoriale" icon={CalendarDays}     label="Piano editoriale" />
             <NavItem to="/admin/content-studio"   icon={Sparkles}         label="Content Studio" />
             <NavItem to="/admin/loyalty"          icon={Gift}             label="Loyalty" />
+            <NavItem to="/admin/prodotti"         icon={Store}            label="Prodotti" />
             <NavItem to="/admin/shop"             icon={ShoppingBag}      label="Shop" />
 
             {(hasStruttura || hasRistorante || hasAttivita) && (
@@ -572,6 +573,7 @@ export default function AdminLayout({ children }) {
                 {perm.content_studio   && <NavItem to="/admin/content-studio"   icon={Sparkles}         label="Content Studio" />}
                 {perm.preventivi       && <NavItem to="/admin/preventivi"       icon={FileText}         label="Preventivi" />}
                 {perm.form_builder     && <NavItem to="/admin/form-builder"     icon={FormInput}        label="Form Builder" />}
+                {perm.shop             && <NavItem to="/admin/prodotti"         icon={Store}            label="Prodotti" />}
                 {perm.shop             && <NavItem to="/admin/shop"             icon={ShoppingBag}      label="Shop" />}
                 {perm.loyalty          && <NavItem to="/admin/loyalty"          icon={Gift}             label="Loyalty" />}
               </>

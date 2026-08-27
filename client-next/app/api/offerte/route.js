@@ -87,8 +87,23 @@ export async function POST(request) {
         return Response.json({ error: 'Entità non valida' }, { status: 403 })
     }
 
+    // Il prodotto che questa offerta amplifica. Arriva dal client come tutto il
+    // resto: si verifica che appartenga alla stessa azienda, altrimenti si
+    // metterebbe in offerta la roba di un altro cliente.
+    let prodotto_id = null
+    if (isUUID(body.prodotto_id)) {
+      const { data: el } = await supabaseAdmin.from('vetrina_elementi')
+        .select('id, entity_id').eq('id', body.prodotto_id).maybeSingle()
+      const { data: suo } = el
+        ? await supabaseAdmin.from('entita').select('azienda_id').eq('id', el.entity_id).maybeSingle()
+        : { data: null }
+      if (!el || suo?.azienda_id !== azienda_id)
+        return Response.json({ error: 'Prodotto non valido' }, { status: 403 })
+      prodotto_id = el.id
+    }
+
     const { data, error } = await supabaseAdmin.from('offerte')
-      .insert({ ...payload, azienda_id, modo: modoDedotto(payload) })
+      .insert({ ...payload, azienda_id, prodotto_id, modo: modoDedotto(payload) })
       .select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
     return Response.json(data, { status: 201 })

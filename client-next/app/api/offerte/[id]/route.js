@@ -8,7 +8,7 @@ import { formatoValido, focalValido } from '@/lib/formati-foto'
 // `posti_occupati` (lo muove chi prenota: azzerarlo rivenderebbe posti già
 // venduti), `origine` e `origine_id`.
 const AMMESSI = [
-  'entity_id', 'impegno', 'titolo', 'descrizione', 'categoria',
+  'entity_id', 'prodotto_id', 'impegno', 'titolo', 'descrizione', 'categoria',
   'cover_url', 'formato_cover', 'cover_focal', 'colore',
   'luogo', 'prezzo', 'valuta', 'mostra_prezzo', 'mostra_prezzo_pagina', 'prezzo_testo',
   'data_inizio', 'data_fine', 'durata_minuti', 'quantita', 'max_coperti',
@@ -34,6 +34,19 @@ export async function PATCH(request, props) {
     if ('data_inizio' in payload) payload.modo = modoDedotto(payload)
     if ('formato_cover' in payload) payload.formato_cover = formatoValido(payload.formato_cover)
     if ('cover_focal' in payload) payload.cover_focal = focalValido(payload.cover_focal)
+
+    // Anche il prodotto collegato dev'essere di casa: senza questo controllo si
+    // aggancerebbe la propria offerta al catalogo di un altro cliente.
+    if (payload.prodotto_id) {
+      const { data: mia } = await supabaseAdmin.from('offerte').select('azienda_id').eq('id', params.id).single()
+      const { data: el } = await supabaseAdmin.from('vetrina_elementi')
+        .select('entity_id').eq('id', payload.prodotto_id).maybeSingle()
+      const { data: suo } = el
+        ? await supabaseAdmin.from('entita').select('azienda_id').eq('id', el.entity_id).maybeSingle()
+        : { data: null }
+      if (!el || !mia || suo?.azienda_id !== mia.azienda_id)
+        return Response.json({ error: 'Prodotto non valido' }, { status: 403 })
+    }
 
     // Spostare un'offerta su un'altra entità è legittimo, ma solo dentro la
     // propria azienda: `entity_id` arriva dal client come tutto il resto.
