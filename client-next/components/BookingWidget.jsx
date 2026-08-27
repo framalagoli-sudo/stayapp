@@ -193,32 +193,41 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
       {/* ── STEP: SCEGLI IL PERIODO (risorse a giornate) ─────────────────────── */}
       {step === 'periodo' && (
         <div>
-          <div style={titleStyle}>Da quando a quando?</div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <label style={{ flex: '1 1 140px', minWidth: 0 }}>
-              <span style={{ display: 'block', fontSize: 12, color: '#888', marginBottom: 4 }}>Inizio</span>
-              <input type="date" min={today} value={selected.data}
-                onChange={e => {
-                  const dal = e.target.value
-                  // Una fine precedente all'inizio non ha senso: si azzera invece
-                  // di lasciare a schermo una coppia impossibile.
-                  const al = selected.data_fine && selected.data_fine > dal ? selected.data_fine : ''
-                  setSelected(s => ({ ...s, data: dal, data_fine: al }))
-                  verificaPeriodo(dal, al)
-                }}
-                style={dateInputStyle(primaryColor)} />
-            </label>
-            <label style={{ flex: '1 1 140px', minWidth: 0 }}>
-              <span style={{ display: 'block', fontSize: 12, color: '#888', marginBottom: 4 }}>Fine</span>
-              <input type="date" min={selected.data || today} value={selected.data_fine}
-                disabled={!selected.data}
-                onChange={e => {
-                  setSelected(s => ({ ...s, data_fine: e.target.value }))
-                  verificaPeriodo(selected.data, e.target.value)
-                }}
-                style={dateInputStyle(primaryColor)} />
-            </label>
+          <div style={titleStyle}>
+            {!selected.data ? 'Quando arrivi?' : !selected.data_fine ? 'E quando riparti?' : 'Il tuo periodo'}
           </div>
+
+          {/* Il calendario al posto di due campi data: chi prenota vuole vedere
+              quali giorni sono liberi, non scoprirlo provando. */}
+          <CalendarioPubblico
+            risorsaId={selected.risorsa.id}
+            primaryColor={primaryColor}
+            dal={selected.data} al={selected.data_fine}
+            onScegli={(giorno) => {
+              // Primo clic sceglie l'arrivo; il secondo la partenza. Cliccando
+              // una data prima dell'arrivo si ricomincia da lì, che è quello che
+              // uno intende — non un errore da segnalare.
+              if (!selected.data || selected.data_fine || giorno <= selected.data) {
+                setSelected(s => ({ ...s, data: giorno, data_fine: '' }))
+                setPeriodo(null)
+              } else {
+                setSelected(s => ({ ...s, data_fine: giorno }))
+                verificaPeriodo(selected.data, giorno)
+              }
+            }}
+          />
+
+          {selected.data && (
+            <div style={{ fontSize: 13, color: '#666', marginTop: 12 }}>
+              Arrivo <strong>{formatData(selected.data)}</strong>
+              {selected.data_fine && <> · partenza <strong>{formatData(selected.data_fine)}</strong></>}
+              {' '}
+              <button onClick={() => { setSelected(s => ({ ...s, data: '', data_fine: '' })); setPeriodo(null) }}
+                style={{ background: 'none', border: 'none', color: primaryColor, cursor: 'pointer', fontSize: 13, textDecoration: 'underline', padding: 0 }}>
+                cambia
+              </button>
+            </div>
+          )}
 
           {verificando && <div style={{ color: '#999', fontSize: 13, marginTop: 14 }}>Verifica disponibilità…</div>}
 
@@ -428,6 +437,108 @@ function formatData(iso) {
 // ─── Stili ────────────────────────────────────────────────────────────────────
 const wrapStyle   = { background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', maxWidth: 520 }
 const titleStyle  = { fontSize: 17, fontWeight: 700, marginBottom: 16, color: '#1a1a2e' }
+// Il calendario che vede chi prenota: i giorni liberi si cliccano, gli occupati
+// no. Un mese alla volta, avanti e indietro.
+//
+// ⚠️ Riceve dal server **solo le date occupate**, mai chi le occupa: qui davanti
+// c'è un visitatore qualsiasi, e l'elenco dei clienti di un'attività non lo
+// riguarda.
+const NOMI_MESI = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
+const SIGLE_GIORNI = ['L', 'M', 'M', 'G', 'V', 'S', 'D']
+
+function CalendarioPubblico({ risorsaId, primaryColor, dal, al, onScegli }) {
+  const adesso = new Date()
+  const [anno, setAnno] = useState(adesso.getFullYear())
+  const [mese, setMese] = useState(adesso.getMonth())
+  const [occupati, setOccupati] = useState([])
+  const [carico, setCarico] = useState(true)
+
+  // ⚠️ Le date si compongono dai campi locali: `toISOString()` passa per UTC e a
+  // est di Greenwich sposta il giorno indietro di uno.
+  const iso = (a, m, g) => `${a}-${String(m + 1).padStart(2, '0')}-${String(g).padStart(2, '0')}`
+  const oggiIso = iso(adesso.getFullYear(), adesso.getMonth(), adesso.getDate())
+
+  useEffect(() => {
+    let vivo = true
+    setCarico(true)
+    publicFetch(`/api/booking/public/disponibilita/${risorsaId}?mese=${anno}-${String(mese + 1).padStart(2, '0')}`)
+      .then(d => { if (vivo) setOccupati(d.occupati || []) })
+      .finally(() => { if (vivo) setCarico(false) })
+    return () => { vivo = false }
+  }, [risorsaId, anno, mese])
+
+  const primo = new Date(anno, mese, 1).getDay()
+  const quanti = new Date(anno, mese + 1, 0).getDate()
+  const celle = [...Array(primo === 0 ? 6 : primo - 1).fill(null), ...Array.from({ length: quanti }, (_, i) => i + 1)]
+
+  // Non si può tornare prima del mese corrente: i giorni passati non si prenotano.
+  const puoIndietro = anno > adesso.getFullYear() || (anno === adesso.getFullYear() && mese > adesso.getMonth())
+  const indietro = () => { if (mese === 0) { setAnno(a => a - 1); setMese(11) } else setMese(m => m - 1) }
+  const avanti = () => { if (mese === 11) { setAnno(a => a + 1); setMese(0) } else setMese(m => m + 1) }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <button onClick={indietro} disabled={!puoIndietro} aria-label="Mese precedente"
+          style={{ ...frecciaStyle, opacity: puoIndietro ? 1 : 0.3, cursor: puoIndietro ? 'pointer' : 'default' }}>‹</button>
+        <div style={{ fontSize: 15, fontWeight: 700 }}>{NOMI_MESI[mese]} {anno}</div>
+        <button onClick={avanti} aria-label="Mese successivo" style={frecciaStyle}>›</button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 3, marginBottom: 4 }}>
+        {SIGLE_GIORNI.map((s, i) => (
+          <div key={i} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#bbb' }}>{s}</div>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 3, opacity: carico ? 0.5 : 1 }}>
+        {celle.map((g, i) => {
+          if (!g) return <div key={`v${i}`} />
+          const giorno = iso(anno, mese, g)
+          const passato = giorno < oggiIso
+          const preso = occupati.includes(giorno)
+          const bloccato = passato || preso
+          const eInizio = giorno === dal
+          const eFine = giorno === al
+          const dentro = dal && al && giorno > dal && giorno < al
+          const scelto = eInizio || eFine
+          return (
+            <button key={giorno} data-giorno={giorno} disabled={bloccato}
+              onClick={() => onScegli(giorno)}
+              title={preso ? 'Non disponibile' : undefined}
+              style={{
+                aspectRatio: '1', border: 'none', borderRadius: 8, fontSize: 13, padding: 0,
+                cursor: bloccato ? 'not-allowed' : 'pointer',
+                fontWeight: scelto ? 700 : 500,
+                background: scelto ? primaryColor : dentro ? `${primaryColor}22` : bloccato ? '#f4f4f5' : '#eefaf1',
+                color: scelto ? '#fff' : bloccato ? '#c8c8cc' : '#2f6b45',
+                // Il giorno occupato si distingue anche senza colore: uno su
+                // dodici uomini non separa il verde dal rosso.
+                textDecoration: preso ? 'line-through' : 'none',
+              }}>
+              {g}
+            </button>
+          )
+        })}
+      </div>
+
+      <div style={{ display: 'flex', gap: 14, marginTop: 10, fontSize: 11, color: '#888', flexWrap: 'wrap' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ width: 12, height: 12, borderRadius: 3, background: '#eefaf1' }} /> libero
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ width: 12, height: 12, borderRadius: 3, background: '#f4f4f5' }} /> non disponibile
+        </span>
+      </div>
+    </div>
+  )
+}
+
+const frecciaStyle = {
+  background: '#f2f2f4', border: 'none', borderRadius: 8, width: 32, height: 32,
+  fontSize: 18, cursor: 'pointer', color: '#444', lineHeight: 1,
+}
+
 const dateInputStyle = (color) => ({
   width: '100%', padding: '12px 14px', border: `2px solid ${color}`, borderRadius: 10,
   fontSize: 16, outline: 'none', boxSizing: 'border-box', background: '#fff',

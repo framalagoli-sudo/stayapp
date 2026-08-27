@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { verificaPeriodo, unitaLibere, totaleGiornaliero, notti } from '@/lib/booking-giornaliero'
+import { verificaPeriodo, unitaLibere, totaleGiornaliero, notti, siSovrappongono, periodoBloccato } from '@/lib/booking-giornaliero'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isUUID = v => UUID_RE.test(v)
@@ -130,6 +130,47 @@ export async function GET(request, props) {
     if (!isUUID(risorsaId)) return Response.json({ error: 'risorsa_id non valido' }, { status: 400 })
 
     const { searchParams } = new URL(request.url)
+
+    // Un mese intero: serve al calendario pubblico per colorare i giorni prima
+    // che il visitatore scelga.
+    //
+    // ⚠️ Risponde **solo** con le date occupate. Chi guarda è un visitatore
+    // qualsiasi: sapere che il 12 è preso è quello che gli serve per scegliere,
+    // sapere *da chi* non lo riguarda. Nessun nome, nessuna email, nessun
+    // importo — e non è un dettaglio, è l'elenco dei clienti di un'attività.
+    const mese = searchParams.get('mese')
+    if (mese) {
+      if (!/^\d{4}-\d{2}$/.test(mese)) return Response.json({ error: 'mese non valido (YYYY-MM)' }, { status: 400 })
+      const [anno, m] = mese.split('-').map(Number)
+      const primo = `${mese}-01`
+      const ultimo = `${mese}-${String(new Date(anno, m, 0).getDate()).padStart(2, '0')}`
+
+      const { data: ris } = await supabaseAdmin.from('risorse')
+        .select('id, modalita, quantita, max_coperti, prezzo, disponibilita, blocchi')
+        .eq('id', risorsaId).eq('attiva', true).maybeSingle()
+      if (!ris) return Response.json({ error: 'Risorsa non trovata' }, { status: 404 })
+
+      const { data: prese } = await supabaseAdmin.from('prenotazioni')
+        .select('data, data_fine')
+        .eq('risorsa_id', risorsaId).in('stato', ['confermata', 'in_attesa'])
+        .lte('data', ultimo)
+        .or(`data_fine.gte.${primo},and(data_fine.is.null,data.gte.${primo})`)
+
+      const occupati = []
+      const capienza = ris.quantita || 1
+      for (let g = 1; g <= new Date(anno, m, 0).getDate(); g++) {
+        const giorno = `${mese}-${String(g).padStart(2, '0')}`
+        const quante = (prese || []).filter(p => siSovrappongono(giorno, giorno, p.data, p.data_fine)).length
+        const chiuso = periodoBloccato(ris.blocchi, giorno, giorno)
+        if (chiuso || quante >= capienza) occupati.push(giorno)
+      }
+      return Response.json({
+        risorsa_id: risorsaId, mese, modalita: ris.modalita,
+        prezzo: ris.prezzo, minimo_notti: Number(ris.disponibilita?.minimo_notti) || 1,
+        occupati,
+      })
+    }
+
     const date = searchParams.get('data')
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date))
       return Response.json({ error: 'data non valida (YYYY-MM-DD)' }, { status: 400 })

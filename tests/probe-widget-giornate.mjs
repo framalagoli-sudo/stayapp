@@ -43,23 +43,44 @@ try {
   ok(/A giornate/.test(await p.locator('body').innerText()), 'la risorsa si presenta come «A giornate · €100 a notte»')
 
   await p.getByText('ZZ Casa al mare').first().click()
-  await p.getByText(/Da quando a quando/).waitFor({ timeout: 15000 }).catch(() => {})
-  ok(/Da quando a quando/.test(await p.locator('body').innerText()), 'chiede il periodo, non un orario')
+  await p.getByText(/Quando arrivi/).waitFor({ timeout: 15000 }).catch(() => {})
+  ok(/Quando arrivi/.test(await p.locator('body').innerText()), 'chiede quando si arriva, non un orario')
 
-  const date = p.locator('input[type=date]')
-  ok(await date.nth(1).isDisabled(), 'la data di fine resta spenta finché non c\'è quella d\'inizio')
-  await date.nth(0).fill(g(10)); await p.waitForTimeout(900)
-  await date.nth(1).fill(g(14))
+  // Il calendario: si clicca un giorno libero, non si compila una data.
+  // ⚠️ Un giorno può cadere nel mese successivo — a fine mese capita sempre —
+  // quindi si passa avanti col pulsante, che è anche il modo di verificarlo.
+  const vaiA = async giorno => {
+    for (let i = 0; i < 3; i++) {
+      const c = p.locator(`[data-giorno="${giorno}"]`)
+      if (await c.count()) return c
+      await p.getByLabel('Mese successivo').click()
+      await p.waitForTimeout(900)
+    }
+    return null
+  }
+
+  const arrivo = await vaiA(g(10))
+  ok(!!arrivo, 'il calendario mostra i giorni, anche del mese dopo')
+  ok(await p.locator('[data-giorno]:not([disabled])').count() > 0, 'ci sono giorni cliccabili')
+  await arrivo.click()
+  await p.waitForTimeout(600)
+  ok(/E quando riparti/.test(await p.locator('body').innerText()), 'dopo l\'arrivo chiede la partenza')
+
+  const partenza = await vaiA(g(14))
+  await partenza.click()
   await p.getByText(/notti/).first().waitFor({ timeout: 15000 }).catch(() => {})
   let t = await p.locator('body').innerText()
   ok(/4 notti/.test(t), 'conta 4 notti')
   ok(/€400/.test(t), 'e fa €400')
 
-  await date.nth(1).fill(g(11))
+  // Sotto il minimo: si ricomincia dall'arrivo e si sceglie il giorno dopo.
+  await (await vaiA(g(10))).click(); await p.waitForTimeout(500)
+  await (await vaiA(g(11))).click()
   await p.getByText(/minimo/).waitFor({ timeout: 15000 }).catch(() => {})
   ok(/minimo è di 2/.test(await p.locator('body').innerText()), 'sotto il minimo lo dice, invece di un «non disponibile»')
 
-  await date.nth(1).fill(g(14))
+  await (await vaiA(g(10))).click(); await p.waitForTimeout(500)
+  await (await vaiA(g(14))).click()
   await p.getByRole('button', { name: /Continua/ }).first().waitFor({ timeout: 15000 }).catch(() => {})
   await p.getByRole('button', { name: /Continua/ }).first().click(); await p.waitForTimeout(900)
   t = await p.locator('body').innerText()
@@ -79,6 +100,24 @@ try {
 
   const { count } = await admin.from('prenotazioni').select('*', { count: 'exact', head: true }).eq('risorsa_id', ris)
   ok(count === 1, `in archivio c'è la prenotazione (${count})`)
+
+  // Ora che un giorno è occupato: il calendario lo deve spegnere, e l'endpoint
+  // pubblico non deve dire **chi** lo occupa.
+  console.log('')
+  const mese = `${g(10).slice(0, 7)}`
+  const risposta = await (await fetch(`${L}/api/booking/public/disponibilita/${ris}?mese=${mese}`)).text()
+  ok(risposta.includes(g(11)), `i giorni presi risultano occupati (${mese})`)
+  // ⚠️ Davanti c'è un visitatore qualsiasi: l'elenco dei clienti di un'attività
+  // non lo riguarda. Si controlla il corpo grezzo, non i campi che ci aspettiamo.
+  ok(!/ZZ Cliente|@example\.com|cliente_nome|importo/i.test(risposta),
+     'e non si sa chi li occupa: nessun nome, nessuna email, nessun importo')
+
+  await p.reload({ waitUntil: 'networkidle' })
+  await p.waitForTimeout(2500)
+  await p.getByText('ZZ Casa al mare').first().click().catch(() => {})
+  await p.waitForTimeout(1200)
+  const occupato = await vaiA(g(11))
+  ok(occupato && await occupato.isDisabled(), 'un giorno già preso non si può cliccare')
   ok(errori.length === 0, `nessun errore nel browser${errori.length ? ': ' + errori.slice(0, 2).join(' | ') : ''}`)
 
   console.log('\n' + '-'.repeat(62))
