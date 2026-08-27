@@ -1,6 +1,7 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
 import { apiFetch } from '../../../lib/api'
+import { useAzienda } from '../../../context/AziendaContext'
 
 const GIORNI = [
   { key: 'lun', label: 'Lunedì' },
@@ -20,6 +21,7 @@ const GIORNI_COPERTI = [
 
 function emptyRisorsa() {
   return {
+    entity_tipo: '', entity_id: '',
     nome: '', descrizione: '', modalita: 'slot',
     durata_minuti: 60, quantita: 1, max_coperti: 40,
     prezzo: 0, valuta: 'EUR', colore: '#00b5b5',
@@ -44,6 +46,12 @@ function emptyDisponibilitaCoperti() {
 }
 
 export default function BookingRisorsePage() {
+  const { strutture, ristoranti, attivita } = useAzienda()
+  const entita = [
+    ...(strutture || []).map(e => ({ id: e.id, tipo: 'struttura', etichetta: `Struttura: ${e.name}` })),
+    ...(ristoranti || []).map(e => ({ id: e.id, tipo: 'ristorante', etichetta: `Ristorante: ${e.name}` })),
+    ...(attivita || []).map(e => ({ id: e.id, tipo: 'attivita', etichetta: `Attività: ${e.name}` })),
+  ]
   const [risorse, setRisorse] = useState([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(null) // null | 'new' | risorsa object
@@ -71,7 +79,10 @@ export default function BookingRisorsePage() {
   }
 
   function openNew() {
-    setForm(emptyRisorsa())
+    // Con una sola entità non c'è niente da scegliere: si preseleziona. È il
+    // caso della maggior parte dei clienti, che hanno un'attività sola.
+    const sola = entita.length === 1 ? entita[0] : null
+    setForm({ ...emptyRisorsa(), ...(sola ? { entity_id: sola.id, entity_tipo: sola.tipo } : {}) })
     setEditing('new')
     setError('')
   }
@@ -98,6 +109,9 @@ export default function BookingRisorsePage() {
 
   async function save() {
     if (!form.nome.trim()) { setError('Il nome è obbligatorio'); return }
+    // Senza entità il database rifiuta la riga: meglio dirlo qui, in parole,
+    // che lasciar arrivare «null value in column entity_tipo» all'utente.
+    if (!form.entity_id) { setError('Scegli dove si prenota questa risorsa'); return }
     setSaving(true); setError('')
     try {
       if (editing === 'new') {
@@ -152,6 +166,10 @@ export default function BookingRisorsePage() {
 
   if (editing) return <RisorseForm
     form={form} patch={patch} patchDisp={patchDisp} initDisp={initDisp}
+    entita={entita} onEntita={id => {
+      const scelta = entita.find(x => x.id === id)
+      setForm(f => ({ ...f, entity_id: scelta?.id || '', entity_tipo: scelta?.tipo || '' }))
+    }}
     onSave={save} onCancel={() => setEditing(null)} saving={saving} error={error} isNew={editing === 'new'}
   />
 
@@ -223,7 +241,7 @@ export default function BookingRisorsePage() {
 
 // ─── Form crea/modifica risorsa ───────────────────────────────────────────────
 
-function RisorseForm({ form, patch, patchDisp, initDisp, onSave, onCancel, saving, error, isNew }) {
+function RisorseForm({ form, patch, patchDisp, initDisp, entita = [], onEntita, onSave, onCancel, saving, error, isNew }) {
   const dispSlot = form.disponibilita
   const dispCop  = form.disponibilita
 
@@ -270,6 +288,18 @@ function RisorseForm({ form, patch, patchDisp, initDisp, onSave, onCancel, savin
         {/* Colonna sinistra */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Card title="Informazioni base">
+            {/* Una risorsa appartiene sempre a un'entità: la tabella lo pretende
+                (entity_tipo ed entity_id sono NOT NULL) e il sito pubblico la
+                cerca da lì. Questo campo mancava del tutto, quindi ogni
+                salvataggio finiva in «null value in column entity_tipo» — ecco
+                perché non esisteva nemmeno una risorsa in archivio. */}
+            <Label>Dove si prenota *</Label>
+            <select value={form.entity_id || ''} style={selectStyle}
+              onChange={e => onEntita(e.target.value)}>
+              <option value="">— scegli —</option>
+              {entita.map(x => <option key={x.id} value={x.id}>{x.etichetta}</option>)}
+            </select>
+
             <Label>Nome *</Label>
             <Input value={form.nome} onChange={e => patch('nome', e.target.value)} placeholder="es. Campo Padel 1, Sala Massaggi, Dr. Rossi" />
 

@@ -49,6 +49,13 @@ export async function POST(request) {
     const azienda_id = resolveAziendaId(profile, isUUID(body.azienda_id) ? body.azienda_id : null)
     if (!azienda_id) return Response.json({ error: 'Nessuna azienda valida' }, { status: 400 })
     if (!body.nome?.trim()) return Response.json({ error: 'Il nome è obbligatorio' }, { status: 400 })
+    // Una risorsa appartiene sempre a un'entità: la colonna è NOT NULL. Senza
+    // questo controllo l'errore che arrivava all'utente era il messaggio grezzo
+    // del database — «null value in column entity_tipo» — che non dice a nessuno
+    // cosa fare. `entitaDellaAzienda` più sotto lascia passare l'assenza,
+    // perché per altri contenuti significa «vale per tutta l'azienda».
+    if (!body.entity_id || !body.entity_tipo)
+      return Response.json({ error: 'Scegli dove si prenota questa risorsa' }, { status: 400 })
 
     const payload = Object.fromEntries(Object.entries(body).filter(([k]) => ALLOWED.includes(k)))
     // L'entità dev'essere propria: altrimenti la risorsa finirebbe prenotabile
