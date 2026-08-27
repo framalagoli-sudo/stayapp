@@ -67,10 +67,15 @@ export default function ShopPage() {
               </button>
             ))}
           </div>
+          {/* ⚠️ I prodotti si caricano **in un posto solo**: i Prodotti. Qui c'era
+              una seconda porta che scriveva nella vecchia tabella dello shop, e
+              il risultato era che la stessa cosa poteva esistere due volte, in
+              due posti che non si parlano. Lo shop mostra quello che è in
+              vendita e raccoglie gli ordini; il catalogo sta altrove. */}
           {tab === 'prodotti' && (
-            <button onClick={() => router.push('/admin/shop/nuovo')}
+            <button onClick={() => router.push('/admin/prodotti')}
               style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontWeight: 600 }}>
-              <Plus size={16} strokeWidth={1.5} /> Nuovo prodotto
+              <Plus size={16} strokeWidth={1.5} /> Aggiungi dai tuoi prodotti
             </button>
           )}
         </div>
@@ -89,10 +94,14 @@ export default function ShopPage() {
             prodotti.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '60px 0', color: '#aaa' }}>
                 <Package size={40} strokeWidth={1} style={{ marginBottom: 12 }} />
-                <p style={{ margin: 0 }}>Nessun prodotto ancora</p>
-                <button onClick={() => router.push('/admin/shop/nuovo')}
+                <p style={{ margin: 0, color: '#888' }}>Niente in vendita, per ora</p>
+                <p style={{ margin: '6px 0 0', fontSize: 13 }}>
+                  I prodotti si caricano una volta sola nel tuo catalogo.<br />
+                  Da lì accendi «Vendi» su quelli che vuoi mettere in vendita qui.
+                </p>
+                <button onClick={() => router.push('/admin/prodotti')}
                   style={{ marginTop: 16, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', cursor: 'pointer', fontWeight: 600, fontSize: 14 }}>
-                  Crea il primo prodotto
+                  Vai ai tuoi prodotti
                 </button>
               </div>
             ) : (

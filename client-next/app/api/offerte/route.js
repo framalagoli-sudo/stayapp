@@ -70,7 +70,17 @@ export async function POST(request) {
     const body = await request.json()
     if (!body.titolo?.trim()) return Response.json({ error: 'Serve un titolo' }, { status: 400 })
 
-    const azienda_id = resolveAziendaId(profile, isUUID(body.azienda_id) ? body.azienda_id : null)
+    let azienda_id = resolveAziendaId(profile, isUUID(body.azienda_id) ? body.azienda_id : null)
+
+    // Un super_admin non ha un'azienda propria e `resolveAziendaId` gliela
+    // chiede nel corpo. Quando crea partendo da un'entità, l'azienda è quella:
+    // chiederla di nuovo significherebbe rifiutare una creazione perfettamente
+    // determinata. Stesso ragionamento delle risorse del booking.
+    if (!azienda_id && profile.role === 'super_admin' && isUUID(body.entity_id)) {
+      const { data: ent } = await supabaseAdmin.from('entita')
+        .select('azienda_id').eq('id', body.entity_id).maybeSingle()
+      azienda_id = ent?.azienda_id || null
+    }
     if (!azienda_id) return Response.json({ error: 'Nessuna azienda valida associata al profilo.' }, { status: 400 })
 
     const payload = ripulisci(body)

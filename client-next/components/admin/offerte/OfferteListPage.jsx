@@ -30,15 +30,17 @@ export default function OfferteListPage() {
   const [offerte, setOfferte] = useState([])
   const [loading, setLoading] = useState(true)
   const [creando, setCreando] = useState(false)
+  const [sceltaAperta, setSceltaAperta] = useState(false)
+  const [prodotti, setProdotti] = useState(null)   // null = non ancora chiesti
 
   // Per un super_admin è l'azienda scelta nella barra: senza filtro la GET
   // restituirebbe le offerte di tutte le aziende.
   const aziendaId = azienda?.id || profile?.azienda_id || activeAziendaId
 
   const entita = [
-    ...(strutture || []).map(e => ({ ...e, etichetta: `Struttura: ${e.name}` })),
-    ...(ristoranti || []).map(e => ({ ...e, etichetta: `Ristorante: ${e.name}` })),
-    ...(attivita || []).map(e => ({ ...e, etichetta: `Attività: ${e.name}` })),
+    ...(strutture || []).map(e => ({ ...e, tipo: 'struttura', etichetta: `Struttura: ${e.name}` })),
+    ...(ristoranti || []).map(e => ({ ...e, tipo: 'ristorante', etichetta: `Ristorante: ${e.name}` })),
+    ...(attivita || []).map(e => ({ ...e, tipo: 'attivita', etichetta: `Attività: ${e.name}` })),
   ]
   const nomeEntita = id => entita.find(e => e.id === id)?.name || null
 
@@ -50,22 +52,25 @@ export default function OfferteListPage() {
       .finally(() => setLoading(false))
   }, [aziendaId, aziLoading])
 
-  // Si crea e basta: che cosa sia lo scrive il cliente nel titolo e nella
-  // categoria. Prima qui c'era una scelta fra sei tipi con nomi decisi da noi —
-  // un elenco chiuso può solo togliere parole a chi il proprio mestiere lo
-  // conosce meglio di noi.
-  async function crea() {
+  // Un'offerta amplifica qualcosa. La prima domanda è quindi **cosa**: una cosa
+  // che hai già, o una nuova? Senza questa domanda l'offerta nasceva staccata e
+  // il legame col catalogo restava un campo sepolto nell'editor — due percorsi
+  // separati invece di uno. Vedi `CATALOGO.md`.
+  async function crea(prodotto = null) {
     if (creando) return
     setCreando(true)
     try {
       const nuova = await apiFetch('/api/offerte', {
         method: 'POST',
         body: JSON.stringify({
-          titolo: 'Nuova offerta',
+          titolo: prodotto?.titolo || 'Nuova offerta',
+          prodotto_id: prodotto?.id || null,
+          cover_url: prodotto?.copertina_url || null,
+          prezzo: prodotto ? (Number(prodotto.valore_primario) || null) : null,
           azienda_id: aziendaId,
           // Con una sola entità si associa da sola: un'offerta «aziendale» per
           // distrazione comparirebbe sui siti di tutte.
-          entity_id: entita.length === 1 ? entita[0].id : null,
+          entity_id: prodotto?.entity_id || (entita.length === 1 ? entita[0].id : null),
           attiva: true, pubblicata: false,
         }),
       })
@@ -74,6 +79,26 @@ export default function OfferteListPage() {
       alert(e.message || 'Non sono riuscito a creare l\'offerta')
       setCreando(false)
     }
+  }
+
+  // Il catalogo, per la scelta «parti da un prodotto che hai già».
+  async function apriScelta() {
+    setSceltaAperta(true)
+    if (prodotti !== null) return
+    try {
+      // I cataloghi sono appesi alle entità, non all'azienda: si passa di lì.
+      const perEntita = await Promise.all(entita.map(async e => {
+        const vetrine = await apiFetch(`/api/vetrine?entity_tipo=${e.tipo}&entity_id=${e.id}`).catch(() => [])
+        const dentro = await Promise.all(
+          (Array.isArray(vetrine) ? vetrine : []).map(async v => {
+            const el = await apiFetch(`/api/vetrina-elementi?vetrina_id=${v.id}`).catch(() => [])
+            return (Array.isArray(el) ? el : []).map(x => ({ ...x, vetrina: v.titolo, entity_id: e.id }))
+          })
+        )
+        return dentro.flat()
+      }))
+      setProdotti(perEntita.flat())
+    } catch { setProdotti([]) }
   }
 
   if (loading) return <p style={{ padding: 32, color: '#888' }}>Caricamento…</p>
@@ -87,7 +112,7 @@ export default function OfferteListPage() {
             Tutto ciò che i tuoi clienti possono prenotare, richiedere o acquistare.
           </p>
         </div>
-        <button onClick={crea} disabled={creando}
+        <button onClick={apriScelta} disabled={creando}
           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
           <Plus size={16} strokeWidth={2.5} /> Nuova offerta
         </button>
@@ -97,6 +122,62 @@ export default function OfferteListPage() {
         <div style={{ background: '#fff', borderRadius: 16, padding: 48, textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
           <Tag size={40} strokeWidth={1} color="#ddd" style={{ marginBottom: 16 }} />
           <p style={{ margin: 0, color: '#888', fontSize: 15 }}>Nessuna offerta ancora. Creane una!</p>
+        </div>
+      )}
+
+      {/* La prima domanda: parti da qualcosa che hai già, o da zero.
+          Senza, l'offerta nasceva staccata dal catalogo e sembravano due
+          percorsi diversi per la stessa cosa. */}
+      {sceltaAperta && (
+        <div onClick={() => !creando && setSceltaAperta(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: 16, padding: 28, maxWidth: 620, width: '100%', maxHeight: '86vh', overflowY: 'auto' }}>
+            <h3 style={{ margin: '0 0 6px', fontSize: 19 }}>Che cosa vuoi mettere in offerta?</h3>
+            <p style={{ margin: '0 0 20px', fontSize: 13, color: '#888' }}>
+              Un'offerta dura un periodo. Quello che promuovi resta nel tuo catalogo anche dopo.
+            </p>
+
+            {prodotti === null ? (
+              <p style={{ color: '#888', fontSize: 14 }}>Carico il tuo catalogo…</p>
+            ) : prodotti.length > 0 ? (
+              <>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 10 }}>
+                  Dai tuoi prodotti
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 8, marginBottom: 22 }}>
+                  {prodotti.map(p => (
+                    <button key={p.id} disabled={creando} onClick={() => crea(p)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', background: '#f7f8fb', border: '1px solid #eceef4', borderRadius: 12, padding: '12px 14px', cursor: creando ? 'wait' : 'pointer', minWidth: 0 }}>
+                      {p.copertina_url
+                        ? <img src={p.copertina_url} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+                        : <div style={{ width: 44, height: 44, borderRadius: 8, background: '#e8ecf6', flexShrink: 0 }} />}
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', overflowWrap: 'anywhere' }}>{p.titolo || 'Senza nome'}</div>
+                        {p.vetrina && <div style={{ fontSize: 12, color: '#888', overflowWrap: 'anywhere' }}>{p.vetrina}</div>}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p style={{ fontSize: 13, color: '#888', marginBottom: 20 }}>
+                Non hai ancora prodotti in catalogo.{' '}
+                <a href="/admin/prodotti" style={{ color: '#1a1a2e', fontWeight: 600 }}>Caricane uno →</a>
+              </p>
+            )}
+
+            <div style={{ borderTop: '1px solid #eee', paddingTop: 18, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button disabled={creando} onClick={() => crea(null)}
+                style={{ background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 18px', fontSize: 14, fontWeight: 600, cursor: creando ? 'wait' : 'pointer' }}>
+                {creando ? 'Creo…' : 'Crea qualcosa di nuovo'}
+              </button>
+              <button onClick={() => setSceltaAperta(false)}
+                style={{ background: '#eee', border: 'none', borderRadius: 10, padding: '10px 16px', fontSize: 14, cursor: 'pointer' }}>
+                Annulla
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
