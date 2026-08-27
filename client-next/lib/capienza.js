@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { siSovrappongono } from '@/lib/booking-giornaliero'
 
 // La capienza deve reggere anche a richieste simultanee.
 //
@@ -48,8 +49,30 @@ export async function confermaPostiEvento(eventId, bookingId) {
 export async function confermaPostiPrenotazione(risorsa, prenotazioneId) {
   try {
     const { data: mia } = await supabaseAdmin.from('prenotazioni')
-      .select('id, data, ora_inizio, servizio, n_persone, created_at').eq('id', prenotazioneId).single()
+      .select('id, data, data_fine, ora_inizio, servizio, n_persone, created_at').eq('id', prenotazioneId).single()
     if (!mia) return false
+
+    // A giornate non si contano le ore ma i periodi che si accavallano. È il
+    // punto dove, senza controllo, si affitta due volte la stessa casa per la
+    // stessa settimana — e a differenza di uno slot doppio, qui se ne accorgono
+    // due clienti davanti alla stessa porta.
+    if (risorsa.modalita === 'giornaliero') {
+      const limite = risorsa.quantita || 1
+      const { data: tutte } = await supabaseAdmin.from('prenotazioni')
+        .select('id, data, data_fine, created_at')
+        .eq('risorsa_id', risorsa.id).in('stato', ['confermata', 'in_attesa'])
+        .gte('data_fine', mia.data)
+
+      const occupatiPrima = (tutte || [])
+        .filter(b => b.id !== mia.id && primaDi(b, mia) && siSovrappongono(mia.data, mia.data_fine, b.data, b.data_fine))
+        .length
+
+      if (occupatiPrima + 1 > limite) {
+        await supabaseAdmin.from('prenotazioni').delete().eq('id', prenotazioneId)
+        return false
+      }
+      return true
+    }
 
     const coperti = risorsa.modalita === 'coperti'
     const limite = coperti ? (risorsa.max_coperti || 0) : (risorsa.quantita || 1)

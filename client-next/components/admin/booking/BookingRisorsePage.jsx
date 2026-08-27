@@ -309,6 +309,7 @@ function RisorseForm({ form, patch, patchDisp, initDisp, entita = [], onEntita, 
             <Label>Modalità</Label>
             <select value={form.modalita} onChange={e => { patch('modalita', e.target.value); patch('disponibilita', {}) }} style={selectStyle}>
               <option value="slot">Slot orari (campi, medici, trattamenti, ecc.)</option>
+              <option value="giornaliero">A giornate (case, auto, camere, attrezzature)</option>
               <option value="coperti">Coperti (ristoranti)</option>
             </select>
 
@@ -328,6 +329,58 @@ function RisorseForm({ form, patch, patchDisp, initDisp, entita = [], onEntita, 
               <Input type="number" min={1} max={100} value={form.quantita} onChange={e => patch('quantita', parseInt(e.target.value) || 1)} />
               <div style={{ fontSize: 12, color: '#888' }}>
                 Es. 3 campi padel identici → inserisci 3. Il sistema assegna automaticamente.
+              </div>
+            </Card>
+          )}
+
+          {form.modalita === 'giornaliero' && (
+            <Card title="Configurazione a giornate">
+              <Label>Quante ne hai identiche</Label>
+              <Input type="number" min={1} max={500} value={form.quantita} onChange={e => patch('quantita', parseInt(e.target.value) || 1)} />
+              <div style={{ fontSize: 12, color: '#888' }}>
+                Es. 4 appartamenti uguali, o 6 auto dello stesso modello. Oltre questo numero il periodo risulta pieno.
+              </div>
+
+              <Label>Notti minime</Label>
+              <Input type="number" min={1} max={365}
+                value={form.disponibilita?.minimo_notti || 1}
+                onChange={e => patchDisp('minimo_notti', parseInt(e.target.value) || 1)} />
+
+              <Label>Notti massime (0 = nessun limite)</Label>
+              <Input type="number" min={0} max={365}
+                value={form.disponibilita?.massimo_notti || 0}
+                onChange={e => patchDisp('massimo_notti', parseInt(e.target.value) || 0)} />
+
+              {/* Chi noleggia un'auto conta i giorni: dal 3 al 5 sono tre giorni,
+                  non due. Chi affitta una casa conta le notti. Cambia il totale
+                  che paga il cliente, quindi lo decide lui. */}
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, marginTop: 12, cursor: 'pointer' }}>
+                <input type="checkbox" checked={!!form.disponibilita?.conta_giorno_uscita}
+                  onChange={e => patchDisp('conta_giorno_uscita', e.target.checked)} />
+                Conta anche il giorno di riconsegna
+              </label>
+              <div style={{ fontSize: 12, color: '#888' }}>
+                Attivalo per i noleggi: dal 3 al 5 diventano 3 giorni invece di 2 notti.
+              </div>
+
+              <Label>Giorni in cui si può iniziare</Label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {GIORNI_COPERTI.map(g => {
+                  const scelti = form.disponibilita?.giorni_arrivo || []
+                  const attivo = scelti.includes(g.val)
+                  return (
+                    <button key={g.val} type="button"
+                      onClick={() => patchDisp('giorni_arrivo', attivo ? scelti.filter(x => x !== g.val) : [...scelti, g.val])}
+                      style={{ fontSize: 12, padding: '5px 12px', borderRadius: 8, cursor: 'pointer',
+                        border: attivo ? 'none' : '1px solid #ddd',
+                        background: attivo ? '#1a1a2e' : '#fff', color: attivo ? '#fff' : '#666' }}>
+                      {g.label}
+                    </button>
+                  )
+                })}
+              </div>
+              <div style={{ fontSize: 12, color: '#888' }}>
+                Nessuno selezionato = si può iniziare qualsiasi giorno. Serve a chi accetta arrivi solo il sabato.
               </div>
             </Card>
           )}
@@ -372,7 +425,17 @@ function RisorseForm({ form, patch, patchDisp, initDisp, entita = [], onEntita, 
 
         {/* Colonna destra: disponibilità */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {form.modalita === 'slot' ? (
+          {form.modalita === 'giornaliero' ? (
+            <Card title="Come funziona">
+              <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6 }}>
+                Chi prenota sceglie <strong>una data di inizio e una di fine</strong>. Non ci sono orari da
+                impostare: il periodo si occupa per intero.
+                <br /><br />
+                I periodi di chiusura si segnano nel calendario e valgono su tutte le giornate,
+                non solo sul giorno d'arrivo.
+              </div>
+            </Card>
+          ) : form.modalita === 'slot' ? (
             <Card title="Orari di apertura">
               {!hasDispo ? (
                 <button onClick={initDisp} style={ghostBtn}>Inizializza orari standard (lun-ven 9-18)</button>

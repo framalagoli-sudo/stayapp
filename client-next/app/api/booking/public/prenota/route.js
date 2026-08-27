@@ -1,5 +1,6 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
+import { verificaPeriodo, totaleGiornaliero, notti } from '@/lib/booking-giornaliero'
 import { confermaPostiPrenotazione } from '@/lib/capienza'
 import { sendWebhooks } from '@/lib/send-webhooks'
 import { triggerAutomazione } from '@/lib/guest-utils'
@@ -54,9 +55,13 @@ async function inviaEmailConferma(prenotazione, risorsa, whatsapp = null) {
   const cancelUrl = `${appUrl}/cancella-prenotazione?token=${prenotazione.cancellation_token}`
   const waUrl = buildWaUrl(whatsapp)
 
-  const quando = risorsa.modalita === 'coperti'
-    ? `${prenotazione.data} — ${prenotazione.servizio} ore ${prenotazione.ora_inizio}`
-    : `${prenotazione.data} ore ${prenotazione.ora_inizio?.slice(0, 5)}–${prenotazione.ora_fine?.slice(0, 5)}`
+  // Ogni modalità si racconta a modo suo: senza questo, una prenotazione a
+  // giornate arrivava al cliente come «ore undefined–undefined».
+  const quando = risorsa.modalita === 'giornaliero'
+    ? `dal ${prenotazione.data} al ${prenotazione.data_fine} (${notti(prenotazione.data, prenotazione.data_fine)} notti)`
+    : risorsa.modalita === 'coperti'
+      ? `${prenotazione.data} — ${prenotazione.servizio} ore ${prenotazione.ora_inizio}`
+      : `${prenotazione.data} ore ${prenotazione.ora_inizio?.slice(0, 5)}–${prenotazione.ora_fine?.slice(0, 5)}`
 
   // Nome business + slug (branding/privacy) + dati legali per il footer conforme.
   let bizName = risorsa.nome, entSlug = null
@@ -102,7 +107,7 @@ export async function POST(request) {
     const rl = await rateLimit(request, { name: 'booking-prenota', limit: 12, windowSec: 3600, ip })
     if (!rl.allowed) return tooManyRequests()
     const body = await request.json()
-    const { risorsa_id, data, ora_inizio, servizio,
+    const { risorsa_id, data, data_fine, ora_inizio, servizio,
       cliente_nome, cliente_email, cliente_telefono,
       n_persone, note_cliente, promozione_id } = body
 
@@ -127,7 +132,29 @@ export async function POST(request) {
       if (promo) prezzo_unitario = promo.prezzo_speciale
     }
     const persone = Math.max(1, parseInt(n_persone) || 1)
-    const importo_totale = prezzo_unitario * persone
+    let importo_totale = prezzo_unitario * persone
+    let fine = null
+
+    // A giornate il totale non dipende da quante persone ma da quante notti: una
+    // casa costa uguale che ci dormano in due o in quattro. Il conto lo rifà il
+    // server — quello mostrato dalla pagina è solo un'anteprima, e chi costruisce
+    // la richiesta a mano potrebbe proporre il totale che preferisce.
+    if (risorsa.modalita === 'giornaliero') {
+      if (!data_fine || !/^\d{4}-\d{2}-\d{2}$/.test(data_fine))
+        return Response.json({ error: 'Serve anche la data di fine' }, { status: 400 })
+
+      const { data: occupate } = await supabaseAdmin.from('prenotazioni')
+        .select('data, data_fine').eq('risorsa_id', risorsa_id)
+        .in('stato', ['confermata', 'in_attesa']).gte('data_fine', data)
+
+      // Le regole del periodo (minimo, massimo, giorni d'arrivo) valgono qui,
+      // non nel browser: una pagina si aggira, questa route no.
+      const esito = verificaPeriodo(risorsa, data, data_fine, occupate || [])
+      if (!esito.ok) return Response.json({ error: esito.motivo }, { status: 409 })
+
+      fine = data_fine
+      importo_totale = totaleGiornaliero(risorsa, data, data_fine)
+    }
 
     const payload = {
       risorsa_id,
@@ -135,6 +162,7 @@ export async function POST(request) {
       entity_tipo: risorsa.entity_tipo,
       entity_id: risorsa.entity_id,
       data,
+      data_fine: fine,
       ora_inizio: ora_inizio || null,
       ora_fine,
       servizio: servizio || null,

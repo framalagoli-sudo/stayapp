@@ -46,7 +46,20 @@ export async function POST(request) {
     if (!profile) return Response.json({ error: 'Profilo non trovato' }, { status: 403 })
 
     const body = await request.json()
-    const azienda_id = resolveAziendaId(profile, isUUID(body.azienda_id) ? body.azienda_id : null)
+    let azienda_id = resolveAziendaId(profile, isUUID(body.azienda_id) ? body.azienda_id : null)
+
+    // Un super_admin non ha un'azienda propria: `resolveAziendaId` gliela chiede
+    // nel corpo, ma il pannello non la manda e ogni salvataggio finiva in
+    // «Nessuna azienda valida». L'azienda si legge dall'entità su cui sta
+    // creando — è il dato che ha davvero in mano, e non dipende da quale voce
+    // sia selezionata nella barra in cima.
+    // Vale solo per lui: per tutti gli altri `resolveAziendaId` ha già imposto
+    // la propria azienda, e questo ramo non viene nemmeno raggiunto.
+    if (!azienda_id && profile.role === 'super_admin' && isUUID(body.entity_id)) {
+      const { data: ent } = await supabaseAdmin.from('entita')
+        .select('azienda_id').eq('id', body.entity_id).maybeSingle()
+      azienda_id = ent?.azienda_id || null
+    }
     if (!azienda_id) return Response.json({ error: 'Nessuna azienda valida' }, { status: 400 })
     if (!body.nome?.trim()) return Response.json({ error: 'Il nome è obbligatorio' }, { status: 400 })
     // Una risorsa appartiene sempre a un'entità: la colonna è NOT NULL. Senza

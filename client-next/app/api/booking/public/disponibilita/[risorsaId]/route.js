@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { verificaPeriodo, unitaLibere, totaleGiornaliero, notti } from '@/lib/booking-giornaliero'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isUUID = v => UUID_RE.test(v)
@@ -139,6 +140,40 @@ export async function GET(request, props) {
 
     const { data: promozioni } = await supabaseAdmin.from('risorse_promozioni')
       .select('*').eq('risorsa_id', risorsaId).eq('attiva', true)
+
+    // A giornate la domanda non è «quali ore sono libere» ma «questo periodo è
+    // libero»: la risposta è una sola, con il totale e il motivo se non si può.
+    if (risorsa.modalita === 'giornaliero') {
+      const fine = searchParams.get('data_fine')
+      if (fine && !/^\d{4}-\d{2}-\d{2}$/.test(fine))
+        return Response.json({ error: 'data_fine non valida (YYYY-MM-DD)' }, { status: 400 })
+
+      const { data: occupate } = await supabaseAdmin.from('prenotazioni')
+        .select('data, data_fine').eq('risorsa_id', risorsaId)
+        .in('stato', ['confermata', 'in_attesa'])
+        // Solo quelle che possono toccare il periodo chiesto: senza filtro si
+        // leggerebbe tutto lo storico a ogni richiesta.
+        .gte('data_fine', date)
+
+      // Senza la data di fine si dice solo se quel giorno si può iniziare: serve
+      // al calendario, che colora i giorni prima che l'ospite scelga l'uscita.
+      if (!fine) {
+        const libere = unitaLibere(risorsa, date, date, occupate || [])
+        return Response.json({
+          risorsa_id: risorsaId, data: date, modalita: 'giornaliero',
+          disponibile: libere > 0, libere, prezzo: risorsa.prezzo,
+        })
+      }
+
+      const esito = verificaPeriodo(risorsa, date, fine, occupate || [])
+      return Response.json({
+        risorsa_id: risorsaId, data: date, data_fine: fine, modalita: 'giornaliero',
+        disponibile: esito.ok, motivo: esito.motivo || null,
+        notti: esito.notti ?? notti(date, fine),
+        libere: esito.libere ?? 0,
+        prezzo: risorsa.prezzo, totale: esito.totale ?? totaleGiornaliero(risorsa, date, fine),
+      })
+    }
 
     const slots = risorsa.modalita === 'coperti'
       ? await calcolaCoperti(risorsa, date)
