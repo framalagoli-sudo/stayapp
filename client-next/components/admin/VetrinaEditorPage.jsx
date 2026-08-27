@@ -37,6 +37,16 @@ export default function VetrinaEditorPage() {
   const [newTitle, setNewTitle] = useState('')
   const [showNew, setShowNew] = useState(false)
   const [creandoOfferta, setCreandoOfferta] = useState(null)
+  const [vendiId, setVendiId] = useState(null)
+
+  // Il pannello della vendita si salva da sé: sono tre campi, e un pulsante
+  // «salva» in più sarebbe solo un modo per dimenticarselo premuto.
+  async function salvaVendita(el, modifiche) {
+    try {
+      await apiFetch(`/api/vetrina-elementi/${el.id}`, { method: 'PATCH', body: JSON.stringify(modifiche) })
+      load()
+    } catch (e) { alert(e.message || 'Non sono riuscito a salvare') }
+  }
 
   // L'offerta nasce col nome e il prezzo del prodotto: chi la crea non deve
   // ribattere quello che ha già scritto. Resta in bozza — pubblicarla è una
@@ -159,6 +169,13 @@ export default function VetrinaEditorPage() {
               {/* Da qui nasce l'offerta: il prodotto è già caricato, si tratta
                   solo di amplificarlo. Quando l'offerta finisce, il prodotto
                   resta qui — vedi `CATALOGO.md`. */}
+              {/* Il terzo strato: questa cosa si può anche comprare. Acceso qui,
+                  compare nello shop del cliente — un solo caricamento. */}
+              <button onClick={() => setVendiId(vendiId === el.id ? null : el.id)}
+                style={{ fontSize: 12, padding: '5px 14px', borderRadius: 8, border: 'none', fontWeight: 600, cursor: 'pointer',
+                  background: el.in_vendita ? '#e6f7ee' : '#f3f4f6', color: el.in_vendita ? '#137a4a' : '#555' }}>
+                {el.in_vendita ? '€ In vendita' : 'Vendi'}
+              </button>
               <button onClick={() => creaOfferta(el)} disabled={creandoOfferta === el.id}
                 style={{ fontSize: 12, padding: '5px 14px', borderRadius: 8, border: 'none', background: '#f0f4ff', color: '#1a1a2e', cursor: creandoOfferta === el.id ? 'wait' : 'pointer', fontWeight: 600 }}>
                 {creandoOfferta === el.id ? 'Creo…' : 'Crea offerta'}
@@ -168,6 +185,41 @@ export default function VetrinaEditorPage() {
               </button>
               <button onClick={() => deleteElemento(el)} style={{ fontSize: 12, padding: '5px 12px', borderRadius: 8, border: 'none', background: '#fce8e8', color: '#c00', cursor: 'pointer' }}>✕</button>
             </div>
+            {vendiId === el.id && (
+              <div style={{ borderTop: '1px solid #f0f0f4', padding: '14px 16px', background: '#fafbfc' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600, marginBottom: 10, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={!!el.in_vendita}
+                    onChange={e => salvaVendita(el, { in_vendita: e.target.checked })} />
+                  Si può comprare dallo shop
+                </label>
+                {el.in_vendita && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: 12 }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 4 }}>Prezzo di vendita (€)</label>
+                      <input type="number" min="0" step="0.01" defaultValue={el.prezzo_vendita ?? ''}
+                        onBlur={e => salvaVendita(el, { prezzo_vendita: e.target.value === '' ? null : Number(e.target.value) })}
+                        style={{ width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                      {/* Il «prezzo da» del catalogo è un richiamo, questo è la
+                          cifra che si addebita: tenerli distinti evita di
+                          incassare un numero che nessuno ha mai accettato. */}
+                      <p style={{ fontSize: 11, color: '#999', margin: '4px 0 0' }}>È quanto si paga davvero, non il «prezzo da» del catalogo.</p>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 4 }}>Pezzi disponibili</label>
+                      <input type="number" min="0" defaultValue={el.stock ?? ''}
+                        onBlur={e => salvaVendita(el, { stock: e.target.value === '' ? null : Number(e.target.value) })}
+                        style={{ width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                      <p style={{ fontSize: 11, color: '#999', margin: '4px 0 0' }}>Vuoto = senza limite.</p>
+                    </div>
+                  </div>
+                )}
+                {el.in_vendita && el.status !== 'pubblicata' && (
+                  <p style={{ margin: '10px 0 0', fontSize: 12, color: '#856404', background: '#fff8e6', padding: '8px 10px', borderRadius: 8 }}>
+                    Finché resta in bozza non compare nello shop.
+                  </p>
+                )}
+              </div>
+            )}
             {expandedId === el.id && (
               <ElementoEditor key={el.id} elemento={el} preset={preset} vetrina={vetrina} onSaved={load} />
             )}

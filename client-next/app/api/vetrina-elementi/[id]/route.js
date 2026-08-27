@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireEntityAccess } from '@/lib/server-auth'
 
-const ALLOWED = ['titolo', 'slug', 'copertina_url', 'valore_primario', 'stato_pubblico', 'num1', 'num2', 'dati', 'dati_privati', 'immagini', 'status', 'ordine', 'seo_title', 'seo_description', 'og_image_url']
+const ALLOWED = ['titolo', 'slug', 'copertina_url', 'valore_primario', 'stato_pubblico', 'num1', 'num2', 'dati', 'dati_privati', 'immagini', 'status', 'ordine', 'seo_title', 'seo_description', 'og_image_url', 'in_vendita', 'prezzo_vendita', 'stock']
 
 // Carica l'elemento e autorizza tramite la sua entità (denormalizzata sulla riga).
 async function loadAndAuthorize(request, id) {

@@ -1,4 +1,5 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
+import { prodottiInVenditaPerId } from '@/lib/prodotti-vendita'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { applicaLoyaltyOrdine } from '@/lib/loyalty-helpers'
 import { sendEmail } from '@/lib/send-email'
@@ -18,9 +19,15 @@ export async function POST(request, props) {
       return Response.json({ error: 'email e voci sono obbligatori' }, { status: 400 })
 
     const ids = voci.map(v => v.prodotto_id)
-    const { data: prodotti } = await supabaseAdmin.from('prodotti').select('id,nome,prezzo,prezzo_scontato,stock')
+    const { data: dellaTabella } = await supabaseAdmin.from('prodotti').select('id,nome,prezzo,prezzo_scontato,stock')
       .in('id', ids).eq('azienda_id', azienda_id).eq('attivo', true)
-    if (!prodotti?.length) return Response.json({ error: 'Prodotti non trovati' }, { status: 400 })
+
+    // Anche i prodotti messi in vendita dal catalogo. Il prezzo si rilegge
+    // sempre dalla fonte, mai dal carrello: quello che arriva dal client dice
+    // *cosa* si compra, non *quanto* costa.
+    const dalCatalogo = await prodottiInVenditaPerId(azienda_id, ids)
+    const prodotti = [...(dellaTabella || []), ...dalCatalogo]
+    if (!prodotti.length) return Response.json({ error: 'Prodotti non trovati' }, { status: 400 })
 
     const vociSicure = []
     let totale = 0

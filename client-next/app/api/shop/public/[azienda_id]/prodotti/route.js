@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { prodottiInVendita } from '@/lib/prodotti-vendita'
 
 export async function GET(request, props) {
   const params = await props.params;
@@ -9,6 +10,11 @@ export async function GET(request, props) {
       .eq('azienda_id', params.azienda_id).eq('attivo', true)
       .order('ordine', { ascending: true })
     if (error) return Response.json({ error: error.message }, { status: 500 })
-    return Response.json(data)
+
+    // Lo scaffale è uno solo: quello che il cliente ha caricato nei Prodotti e
+    // messo in vendita compare qui accanto a quello della vecchia tabella dello
+    // shop. Chi compra non deve sapere che esistono due sorgenti.
+    const dalCatalogo = await prodottiInVendita(params.azienda_id)
+    return Response.json([...(data || []), ...dalCatalogo])
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
