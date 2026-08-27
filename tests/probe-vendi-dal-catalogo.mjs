@@ -57,7 +57,7 @@ try {
   const r = await ordina(A.az, [{ prodotto_id: inVendita.id, qty: 2, prezzo: 1 }])
   ok(r.ok, `l'ordine passa (HTTP ${r.status})`)
   const ord = r.ok ? await r.json() : null
-  ok(ord?.totale === 50, `il totale è 50 € (25 × 2), non quello proposto dal carrello (${ord?.totale})`)
+  ok(ord?.ordine?.totale === 50, `il totale è 50 € (25 × 2), non quello proposto dal carrello (${ord?.ordine?.totale})`)
 
   const rubato = await ordina(A.az, [{ prodotto_id: diB.id, qty: 1 }])
   ok(!rubato.ok, `non si compra dallo shop di A un prodotto di B (HTTP ${rubato.status})`)
