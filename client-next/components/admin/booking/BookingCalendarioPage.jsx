@@ -56,6 +56,22 @@ function quantoPieno(risorsa, cella) {
   return Math.min(1, (cella.count || 0) / max)
 }
 
+// Il modulo parte già col giorno che si è cliccato: chi apre da una casella ha
+// già detto quando, e ripeterlo sarebbe chiederglielo due volte. A giornate la
+// fine si propone al giorno dopo, che è la durata minima possibile.
+function formVuoto(giorno, risorsa) {
+  const domani = new Date(`${giorno}T12:00:00`)
+  domani.setDate(domani.getDate() + 1)
+  return {
+    data: giorno,
+    data_fine: risorsa?.modalita === 'giornaliero' ? isoDi(domani) : '',
+    ora_inizio: risorsa?.modalita === 'slot' ? '10:00' : '',
+    servizio: '',
+    cliente_nome: '', cliente_email: '', cliente_telefono: '',
+    n_persone: 1, note_cliente: '',
+  }
+}
+
 function coloreGiorno(pieno, count) {
   if (!count) return { bg: '#f2fbf4', bordo: '#dcf0e2' }   // libero
   if (pieno >= 1) return { bg: '#fdeeee', bordo: '#f6d4d4' } // pieno
@@ -79,6 +95,9 @@ export default function BookingCalendarioPage() {
   const [giornoAperto, setGiornoAperto] = useState(null)
   const [prenotazioniDelGiorno, setPrenotazioni] = useState([])
   const [caricaGiorno, setCaricaGiorno] = useState(false)
+  const [nuova, setNuova] = useState(null)      // il modulo per inserirne una a mano
+  const [salvando, setSalvando] = useState(false)
+  const [erroreNuova, setErroreNuova] = useState('')
 
   const risorsa = risorse.find(r => r.id === risorsaId) || null
   const caselle = caselleDelMese(anno, mese)
@@ -119,6 +138,17 @@ export default function BookingCalendarioPage() {
       setPrenotazioni(await apiFetch(`/api/booking/prenotazioni?risorsa_id=${risorsaId}&data=${data}`))
     } catch { setPrenotazioni([]) }
     finally { setCaricaGiorno(false) }
+  }
+
+  async function salvaNuova() {
+    setSalvando(true); setErroreNuova('')
+    try {
+      await apiFetch('/api/booking/prenotazioni', { method: 'POST', body: JSON.stringify({ ...nuova, risorsa_id: risorsaId }) })
+      setNuova(null)
+      apriGiorno(giornoAperto)
+      caricaMese()
+    } catch (e) { setErroreNuova(e.message || 'Non sono riuscito a salvare') }
+    finally { setSalvando(false) }
   }
 
   async function cambiaStato(b, stato) {
@@ -244,12 +274,66 @@ export default function BookingCalendarioPage() {
             <button onClick={() => setGiornoAperto(null)} style={{ ...btn, padding: '4px 10px' }}>✕</button>
           </div>
 
-          {caricaGiorno ? (
+          {nuova ? (
+            <div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 190px), 1fr))', gap: 12, marginBottom: 12 }}>
+                {risorsa?.modalita === 'giornaliero' && (
+                  <>
+                    <Campo etichetta="Dal">
+                      <input type="date" value={nuova.data} onChange={e => setNuova(n => ({ ...n, data: e.target.value }))} style={campo} />
+                    </Campo>
+                    <Campo etichetta="Al">
+                      <input type="date" min={nuova.data} value={nuova.data_fine} onChange={e => setNuova(n => ({ ...n, data_fine: e.target.value }))} style={campo} />
+                    </Campo>
+                  </>
+                )}
+                {risorsa?.modalita === 'slot' && (
+                  <Campo etichetta="Ora">
+                    <input type="time" value={nuova.ora_inizio} onChange={e => setNuova(n => ({ ...n, ora_inizio: e.target.value }))} style={campo} />
+                  </Campo>
+                )}
+                {risorsa?.modalita === 'coperti' && (
+                  <>
+                    <Campo etichetta="Servizio">
+                      <input value={nuova.servizio} onChange={e => setNuova(n => ({ ...n, servizio: e.target.value }))} placeholder="Pranzo, Cena…" style={campo} />
+                    </Campo>
+                    <Campo etichetta="Ora">
+                      <input type="time" value={nuova.ora_inizio} onChange={e => setNuova(n => ({ ...n, ora_inizio: e.target.value }))} style={campo} />
+                    </Campo>
+                  </>
+                )}
+                <Campo etichetta="Nome *">
+                  <input autoFocus value={nuova.cliente_nome} onChange={e => setNuova(n => ({ ...n, cliente_nome: e.target.value }))} style={campo} />
+                </Campo>
+                <Campo etichetta="Telefono">
+                  <input value={nuova.cliente_telefono} onChange={e => setNuova(n => ({ ...n, cliente_telefono: e.target.value }))} style={campo} />
+                </Campo>
+                <Campo etichetta="Email">
+                  {/* Non obbligatoria: al telefono capita di avere solo un numero. */}
+                  <input type="email" value={nuova.cliente_email} onChange={e => setNuova(n => ({ ...n, cliente_email: e.target.value }))} style={campo} />
+                </Campo>
+                <Campo etichetta="Persone">
+                  <input type="number" min="1" value={nuova.n_persone} onChange={e => setNuova(n => ({ ...n, n_persone: parseInt(e.target.value) || 1 }))} style={campo} />
+                </Campo>
+              </div>
+              <Campo etichetta="Note">
+                <input value={nuova.note_cliente} onChange={e => setNuova(n => ({ ...n, note_cliente: e.target.value }))} style={campo} />
+              </Campo>
+              {erroreNuova && <p style={{ color: '#c53030', fontSize: 13, margin: '10px 0 0' }}>{erroreNuova}</p>}
+              <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                <button onClick={salvaNuova} disabled={salvando || !nuova.cliente_nome.trim()}
+                  style={{ ...btn, background: '#1a1a2e', color: '#fff', opacity: nuova.cliente_nome.trim() ? 1 : 0.5 }}>
+                  {salvando ? 'Salvo…' : 'Salva prenotazione'}
+                </button>
+                <button onClick={() => { setNuova(null); setErroreNuova('') }} style={btn}>Annulla</button>
+              </div>
+            </div>
+          ) : caricaGiorno ? (
             <div style={{ color: '#999', fontSize: 14 }}>Caricamento…</div>
           ) : prenotazioniDelGiorno.length === 0 ? (
             <div>
               <p style={{ color: '#888', fontSize: 14, margin: '0 0 14px' }}>Nessuna prenotazione in questo giorno.</p>
-              <button onClick={() => router.push(`/admin/booking/prenotazioni?nuova=1&risorsa_id=${risorsaId}&data=${giornoAperto}`)}
+              <button onClick={() => setNuova(formVuoto(giornoAperto, risorsa))}
                 style={{ ...btn, background: '#1a1a2e', color: '#fff' }}>
                 Prenota per un cliente
               </button>
@@ -292,7 +376,7 @@ export default function BookingCalendarioPage() {
                   </div>
                 </div>
               ))}
-              <button onClick={() => router.push(`/admin/booking/prenotazioni?nuova=1&risorsa_id=${risorsaId}&data=${giornoAperto}`)}
+              <button onClick={() => setNuova(formVuoto(giornoAperto, risorsa))}
                 style={{ ...btn, background: '#1a1a2e', color: '#fff', marginTop: 4, justifySelf: 'start' }}>
                 Aggiungi una prenotazione
               </button>
@@ -302,6 +386,20 @@ export default function BookingCalendarioPage() {
       )}
     </div>
   )
+}
+
+function Campo({ etichetta, children }) {
+  return (
+    <label style={{ display: 'block', minWidth: 0 }}>
+      <span style={{ display: 'block', fontSize: 12, color: '#666', marginBottom: 4, fontWeight: 600 }}>{etichetta}</span>
+      {children}
+    </label>
+  )
+}
+
+const campo = {
+  width: '100%', padding: '9px 11px', border: '1px solid #ddd', borderRadius: 8,
+  fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box',
 }
 
 function Legenda({ colore, bordo, testo }) {

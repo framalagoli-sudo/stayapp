@@ -96,6 +96,26 @@ try {
     ok(/ZZ Ospite/.test(dopo), 'cliccando un giorno in mezzo si vede chi ha prenotato')
     ok(/dal .* al /.test(dopo), 'e si legge il periodo, non un orario')
     ok(/Annulla/.test(dopo) && /Elimina/.test(dopo), 'ci sono le azioni: annulla ed elimina')
+    // Il titolare prende una prenotazione al telefono e la mette a mano.
+    // ⚠️ Il pulsante c'era prima della funzione: portava a una pagina che non
+    // sapeva creare niente. Un pulsante che non porta da nessuna parte è peggio
+    // di un pulsante assente.
+    console.log('')
+    const libero = await vaiA(g(12))
+    if (libero) {
+      await libero.click()
+      await page.getByRole('button', { name: /Prenota per un cliente/ }).first().waitFor({ timeout: 15000 }).catch(() => {})
+      await page.getByRole('button', { name: /Prenota per un cliente/ }).first().click().catch(() => {})
+      await page.waitForTimeout(900)
+      ok(/Nome \*/.test(await page.locator('body').innerText()), 'da un giorno libero si apre il modulo per prenotare')
+      await page.locator('label:has-text("Nome *") input').fill('ZZ Al Telefono')
+      await page.getByRole('button', { name: /Salva prenotazione/ }).click()
+      await page.waitForTimeout(2500)
+      ok(/ZZ Al Telefono/.test(await page.locator('body').innerText()), 'la prenotazione presa al telefono compare nel giorno')
+      const { data: righe } = await admin.from('prenotazioni').select('stato').eq('risorsa_id', ris).eq('cliente_nome', 'ZZ Al Telefono')
+      ok(righe?.[0]?.stato === 'confermata', 'ed è già confermata: il titolare non deve confermarla a se stesso')
+    } else ok(false, 'non trovo un giorno libero per la prova')
+
     ok(errori.length === 0, `nessun errore nel browser${errori.length ? ': ' + errori.slice(0, 2).join(' | ') : ''}`)
   }, { width: 1280, height: 1000 })
 
