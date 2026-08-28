@@ -1415,6 +1415,63 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         )
       }
 
+      // Quello che il cliente crea in Offerte, sul suo sito.
+      //
+      // Prima non c'era: un'offerta compariva solo travestita da attività o da
+      // escursione, secondo l'origine — ed è il motivo per cui la sezione
+      // dell'app dell'ospite si chiama ancora «Escursioni».
+      case 'offerte': {
+        const tutte = entity.offerte || []
+        // Il filtro per categoria permette due blocchi diversi sulla stessa
+        // pagina: «I nostri corsi» e «Le escursioni», dalla stessa lista.
+        const cat = (d.categoria || '').trim().toLowerCase()
+        const items = cat ? tutte.filter(o => (o.categoria || '').toLowerCase() === cat) : tutte
+        if (!items.length) return null
+        return (
+          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+            <div className="lbr-section">
+              {d.titolo_sezione && (
+                <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 40, textAlign: 'center', color: '#1a1a2e' }}
+                  {...ricco(d.titolo_sezione)} />
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: 20 }}>
+                {items.map(o => {
+                  // `rimasti` arriva già calcolato dal server: null vuol dire
+                  // senza limite, che è diverso da zero.
+                  const esaurita = o.rimasti !== null && o.rimasti <= 0
+                  return (
+                    <div key={o.id} style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', minWidth: 0, opacity: esaurita ? 0.6 : 1 }}>
+                      {o.cover_url && <img src={o.cover_url} alt="" style={{ width: '100%', height: 170, objectFit: 'cover', display: 'block' }} />}
+                      <div style={{ padding: '16px 18px' }}>
+                        {o.categoria && (
+                          <div style={{ fontSize: 11, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6, overflowWrap: 'anywhere' }}>{o.categoria}</div>
+                        )}
+                        <div style={{ fontWeight: 700, fontSize: 16, color: '#1a1a2e', marginBottom: 6, overflowWrap: 'anywhere' }} {...ricco(o.titolo)} />
+                        {o.descrizione && <p style={{ fontSize: 13, color: '#666', lineHeight: 1.5, margin: '0 0 12px' }} {...ricco(o.descrizione)} />}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', fontSize: 12, color: '#888' }}>
+                          {o.luogo && <span style={{ display: 'flex', alignItems: 'center', gap: 4, overflowWrap: 'anywhere' }}><MapPin size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{o.luogo}</span>}
+                          {/* Il prezzo può essere nascosto o scritto a parole:
+                              una cena alla carta non è «Gratis». */}
+                          {o.mostra_prezzo !== false && (o.prezzo_testo
+                            ? <span style={{ fontWeight: 700, color: primary, fontSize: 14, overflowWrap: 'anywhere' }}>{o.prezzo_testo}</span>
+                            : o.prezzo > 0 ? <span style={{ fontWeight: 700, color: primary, fontSize: 14 }}>€{o.prezzo}</span> : null)}
+                          {esaurita
+                            ? <span style={{ fontWeight: 700, color: '#c53030' }}>Esaurito</span>
+                            : o.rimasti !== null && o.rimasti <= 5 && <span>Restano {o.rimasti}</span>}
+                        </div>
+                        {o.cta_condizioni && (
+                          <p style={{ fontSize: 11, color: '#999', margin: '10px 0 0', lineHeight: 1.5 }} {...ricco(o.cta_condizioni)} />
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+        )
+      }
+
       case 'promozioni': {
         const now = new Date()
         const promo = (mini.promozioni?.length ? mini.promozioni : (d.items || [])).filter(p => p.title && (!p.expires_at || new Date(p.expires_at) >= now))

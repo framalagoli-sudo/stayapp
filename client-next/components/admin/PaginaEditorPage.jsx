@@ -809,6 +809,15 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
     case 'form_builder': return (
       <FormBuilderBlockEditor data={data} onChange={upd} />
     )
+    // ⚠️ Questi due blocchi non avevano **nessuna** configurazione: si
+    // trascinavano nella pagina e non chiedevano niente. E se non c'era niente
+    // da mostrare sparivano in silenzio — sembrava che non funzionassero.
+    case 'offerte': return (
+      <OfferteBlockEditor data={data} onChange={upd} entityId={entityId} entityTipo={entityTipo} />
+    )
+    case 'booking': return (
+      <BookingBlockEditor data={data} onChange={upd} entityId={entityId} entityTipo={entityTipo} />
+    )
     case 'vetrina': return (
       <VetrinaBlockEditor data={data} onChange={upd} entityId={entityId} entityTipo={entityTipo} />
     )
@@ -1764,5 +1773,98 @@ export default function PaginaEditorPage() {
       )}
     </div>
    </LinkContext.Provider>
+  )
+}
+
+// Il blocco «Offerte»: quali mostrare.
+//
+// Senza filtro le mostra tutte; con una categoria si possono mettere due
+// blocchi diversi sulla stessa pagina — «I nostri corsi» e «Le escursioni» —
+// pescando dalla stessa lista.
+function OfferteBlockEditor({ data, onChange, entityId, entityTipo }) {
+  const [offerte, setOfferte] = useState([])
+  const [caricato, setCaricato] = useState(false)
+  useEffect(() => {
+    if (!entityId) return
+    apiFetch(`/api/offerte?entity_id=${entityId}`)
+      .then(o => setOfferte(Array.isArray(o) ? o : []))
+      .catch(() => {})
+      .finally(() => setCaricato(true))
+  }, [entityId])
+
+  const pubblicate = offerte.filter(o => o.attiva && o.pubblicata)
+  const categorie = [...new Set(pubblicate.map(o => (o.categoria || '').trim()).filter(Boolean))]
+  const mostrate = data.categoria
+    ? pubblicate.filter(o => (o.categoria || '').trim().toLowerCase() === data.categoria.toLowerCase())
+    : pubblicate
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <Field label="Titolo sezione" value={data.titolo_sezione || ''} onChange={v => onChange('titolo_sezione', v)}
+        placeholder="Le nostre proposte" />
+
+      <div>
+        <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 500 }}>Quali mostrare</label>
+        <select value={data.categoria || ''} onChange={e => onChange('categoria', e.target.value)}
+          style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13, background: '#fff' }}>
+          <option value="">Tutte le offerte pubblicate</option>
+          {categorie.map(c => <option key={c} value={c}>Solo «{c}»</option>)}
+        </select>
+      </div>
+
+      {/* ⚠️ Un blocco che non ha niente da mostrare **sparisce dal sito senza
+          dire niente**: qui si dice prima, mentre si può ancora rimediare. */}
+      {caricato && (
+        mostrate.length === 0 ? (
+          <p style={{ fontSize: 12, color: '#a15c00', background: '#fff8e6', padding: '8px 10px', borderRadius: 8, margin: 0 }}>
+            {pubblicate.length === 0
+              ? <>Non hai offerte pubblicate: questo blocco resterà invisibile. Creale in <strong>Offerte</strong> e ricordati di pubblicarle.</>
+              : <>Nessuna offerta in questa categoria: il blocco resterà invisibile.</>}
+          </p>
+        ) : (
+          <p style={{ fontSize: 12, color: '#137a4a', background: '#e6f7ee', padding: '8px 10px', borderRadius: 8, margin: 0 }}>
+            {mostrate.length === 1 ? 'Comparirà 1 offerta' : `Compariranno ${mostrate.length} offerte`}: {mostrate.slice(0, 3).map(o => o.titolo).join(', ')}{mostrate.length > 3 ? '…' : ''}
+          </p>
+        )
+      )}
+    </div>
+  )
+}
+
+// Il blocco «Widget prenotazione»: cosa si può prenotare da qui.
+//
+// Prima non chiedeva niente e mostrava tutte le risorse dell'entità. Se non ce
+// n'erano — il caso di ogni cliente nuovo — spariva senza un avviso.
+function BookingBlockEditor({ data, onChange, entityId, entityTipo }) {
+  const [risorse, setRisorse] = useState([])
+  const [caricato, setCaricato] = useState(false)
+  useEffect(() => {
+    if (!entityId) return
+    apiFetch(`/api/booking/risorse?entity_tipo=${entityTipo}&entity_id=${entityId}`)
+      .then(r => setRisorse(Array.isArray(r) ? r : []))
+      .catch(() => {})
+      .finally(() => setCaricato(true))
+  }, [entityId, entityTipo])
+
+  const visibili = risorse.filter(r => r.attiva && r.visibile_minisito)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <Field label="Titolo sezione" value={data.titolo_sezione || ''} onChange={v => onChange('titolo_sezione', v)}
+        placeholder="Prenota" />
+
+      {caricato && (
+        visibili.length === 0 ? (
+          <p style={{ fontSize: 12, color: '#a15c00', background: '#fff8e6', padding: '8px 10px', borderRadius: 8, margin: 0 }}>
+            Non hai risorse prenotabili visibili sul sito: questo blocco resterà invisibile.
+            Creale in <strong>Booking → Risorse</strong> e accendi «Visibile nel sito pubblico».
+          </p>
+        ) : (
+          <p style={{ fontSize: 12, color: '#137a4a', background: '#e6f7ee', padding: '8px 10px', borderRadius: 8, margin: 0 }}>
+            Si potranno prenotare: {visibili.map(r => r.nome).join(', ')}
+          </p>
+        )
+      )}
+    </div>
   )
 }

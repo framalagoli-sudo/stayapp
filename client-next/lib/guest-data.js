@@ -70,9 +70,25 @@ const CAMPI_OSPITE = `${CAMPI_ENTITA}, wifi_name, wifi_password`
 //
 // Quando anche le pagine parleranno di «offerte», questa funzione si toglie.
 // È un debito dichiarato, con una scadenza.
+// Le colonne delle offerte che possono finire nell'HTML pubblico.
+//
+// ⚠️ Elencate una per una, e ognuna guardata: questa lista esce dal sito e la
+// legge chiunque. Restano **fuori** di proposito:
+//   `azienda_id`, `prodotto_id`, `origine`, `origine_id` — riferimenti interni;
+//   `avvisa_titolare`, `conferma_ospite`, `conferma_auto` — come lavora il
+//     cliente, non riguarda chi compra;
+//   `disponibilita`, `chiusure`, `anticipo_ore`, `cancellazione_ore` — le sue
+//     regole di lavoro, e le chiusure dicono quando è via;
+//   `posti_occupati` — quante ne ha vendute: si espone quanti **restano**, che
+//     è quello che serve a chi guarda, non quante ne ha fatte.
+const CAMPI_OFFERTA_PUBBLICI =
+  'id, titolo, descrizione, categoria, impegno, cover_url, formato_cover, cover_focal, colore, ' +
+  'luogo, prezzo, valuta, mostra_prezzo, prezzo_testo, cta_label, cta_condizioni, ' +
+  'data_inizio, data_fine, posti_totali, posti_occupati, ordine, origine'
+
 async function nellaFormaStorica(entityId) {
   const { data } = await supabaseAdmin.from('offerte')
-    .select('id, titolo, descrizione, categoria, impegno, cover_url, luogo, prezzo, posti_totali, cta_condizioni, data_inizio, attiva, ordine, origine')
+    .select(CAMPI_OFFERTA_PUBBLICI)
     .eq('entity_id', entityId).eq('attiva', true).eq('pubblicata', true)
     .order('ordine', { ascending: true })
 
@@ -109,7 +125,21 @@ async function nellaFormaStorica(entityId) {
     active: true,
   }))
 
-  return { activities, excursions }
+  // Le offerte anche **come sono**, per il blocco «Offerte» del sito: quello
+  // che il cliente crea oggi non ha più bisogno di travestirsi da escursione
+  // per comparire.
+  //
+  // ⚠️ `posti_occupati` non esce: si trasforma in quanti ne **restano**, che è
+  // ciò che serve a chi guarda. Quante ne ha vendute è un fatto suo.
+  // ⚠️ `origine` serve **qui sopra**, per dividere attività ed escursioni: non
+  // deve arrivare al browser. È una classificazione nostra, nata dalla
+  // migrazione, e nell'HTML pubblico è rumore che racconta come lavoriamo.
+  const offerte = data.map(({ posti_occupati, origine, ...o }) => ({
+    ...o,
+    rimasti: o.posti_totali == null ? null : Math.max(0, o.posti_totali - (posti_occupati || 0)),
+  }))
+
+  return { activities, excursions, offerte }
 }
 
 async function leggiEntita(slug, tipo, campi) {
@@ -122,9 +152,10 @@ async function leggiEntita(slug, tipo, campi) {
   // campi vecchi: durante il passaggio le due sorgenti convivono, e nessuno
   // resta senza contenuti perché la migrazione non lo ha ancora raggiunto.
   const daOfferte = await nellaFormaStorica(storica.id)
-  if (!daOfferte) return storica
+  if (!daOfferte) return { ...storica, offerte: [] }
   return {
     ...storica,
+    offerte: daOfferte.offerte,
     ...('activities' in storica ? { activities: daOfferte.activities } : {}),
     ...('excursions' in storica ? { excursions: daOfferte.excursions } : {}),
   }
