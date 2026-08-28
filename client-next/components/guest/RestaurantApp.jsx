@@ -580,7 +580,7 @@ function PrenotaTab({ ristorante, primary, textColor, subText, isDark, radius, h
     <div style={{ padding: '20px 16px 28px' }}>
       <h2 style={{ fontFamily: headingFamily, fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 4px' }}>{tr('book_table', lang)}</h2>
       <p style={{ fontSize: 14, color: subText, margin: '0 0 24px' }}>{tr('book_choose_service', lang)}</p>
-      <BookingWidget entityTipo="ristorante" entityId={ristorante.id} primaryColor={primary} />
+      <BookingWidget entityTipo="ristorante" entityId={ristorante.id} primaryColor={primary} privacyUrl={`/r/${ristorante.slug}/privacy`} />
     </div>
   )
 }

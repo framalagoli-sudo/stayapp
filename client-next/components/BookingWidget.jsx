@@ -15,7 +15,7 @@ async function publicFetch(path) {
 //   entityId:   uuid
 //   primaryColor: string (ereditato dal tema)
 
-export default function BookingWidget({ entityTipo, entityId, primaryColor = '#00b5b5' }) {
+export default function BookingWidget({ entityTipo, entityId, primaryColor = '#00b5b5', privacyUrl = null }) {
   const [risorse, setRisorse] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -26,7 +26,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
   const [verificando, setVerificando] = useState(false)
   const [slots, setSlots] = useState([])
   const [loadingSlots, setLoadingSlots] = useState(false)
-  const [form, setForm] = useState({ nome: '', email: '', telefono: '', n_persone: 1, note: '' })
+  const [form, setForm] = useState({ nome: '', email: '', telefono: '', n_persone: 1, note: '', privacy: false })
   const [sending, setSending] = useState(false)
   const [errore, setErrore] = useState('')
   const [prenotazione, setPrenotazione] = useState(null)
@@ -105,6 +105,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
         n_persone: form.n_persone,
         note_cliente: form.note.trim() || null,
         promozione_id: selected.slot?.promo?.id || null,
+        privacy_accettata: form.privacy,
       }
       const res = await fetch(`${API_BASE}/api/booking/public/prenota`, {
         method: 'POST',
@@ -121,7 +122,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
 
   function reset() {
     setStep('risorsa'); setSelected({ risorsa: null, data: '', data_fine: '', slot: null }); setPeriodo(null)
-    setSlots([]); setForm({ nome: '', email: '', telefono: '', n_persone: 1, note: '' })
+    setSlots([]); setForm({ nome: '', email: '', telefono: '', n_persone: 1, note: '', privacy: false })
     setPrenotazione(null); setErrore('')
   }
 
@@ -383,11 +384,28 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
 
             <textarea placeholder="Note (opzionale)" value={form.note} onChange={e => patchForm('note', e.target.value)}
               rows={2} style={{ ...inputStyle(primaryColor), resize: 'vertical' }} />
+
+            {/* ⚠️ Qui si raccolgono nome, email e telefono di una persona: senza
+                consenso non si possono chiedere. Mancava — corretto sulle
+                escursioni il 26/08, sulle attività il 28, e mai qui: il terzo
+                posto dove si ripeteva lo stesso difetto.
+                La spunta è solo quello che si vede: il controllo vero sta nella
+                route, perché una casella nel browser si toglie con due clic. */}
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: '#666', cursor: 'pointer', lineHeight: 1.5 }}>
+              <input type="checkbox" checked={form.privacy} onChange={e => patchForm('privacy', e.target.checked)}
+                style={{ marginTop: 2, flexShrink: 0 }} />
+              <span>
+                Ho letto e accetto {privacyUrl
+                  ? <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: primaryColor }}>l'informativa sulla privacy</a>
+                  : "l'informativa sulla privacy"}. I miei dati saranno usati per gestire questa prenotazione.
+              </span>
+            </label>
           </div>
 
           {errore && <div style={{ marginTop: 10, color: '#c0392b', fontSize: 13 }}>{errore}</div>}
 
-          <button onClick={submit} disabled={sending} style={{ ...btnStyle(primaryColor), marginTop: 16, width: '100%', padding: '14px' }}>
+          <button onClick={submit} disabled={sending || !form.privacy}
+            style={{ ...btnStyle(primaryColor), marginTop: 16, width: '100%', padding: '14px', opacity: form.privacy ? 1 : 0.5, cursor: form.privacy ? 'pointer' : 'not-allowed' }}>
             {sending ? 'Invio in corso...' : 'Conferma prenotazione'}
           </button>
           <button onClick={() => setStep('slot')} style={backBtnStyle}>← Indietro</button>

@@ -90,7 +90,15 @@ try {
   await campi.nth(0).fill('ZZ Cliente')
   await p.locator('input[type=email]').first().fill(`zz${Date.now()}@example.com`)
   await p.waitForTimeout(400)
-  await p.getByRole('button', { name: 'Conferma prenotazione' }).click()
+  // ⚠️ Il consenso e obbligatorio: senza spunta il pulsante resta spento e la
+  // route rifiuta comunque. Si raccolgono nome, email e telefono.
+  const bottone = p.getByRole('button', { name: 'Conferma prenotazione' })
+  ok(await bottone.isDisabled(), 'senza consenso il pulsante resta spento')
+  // ⚠️ Si spunta la **casella**, non il testo: dentro l'etichetta c'è il link
+  // all'informativa, e cliccando lì si apre il link invece di dare il consenso.
+  await p.locator('input[type=checkbox]').last().check()
+  await p.waitForTimeout(400)
+  await bottone.click()
   await p.waitForTimeout(3000)
   t = await p.locator('body').innerText()
   ok(/confermata/i.test(t), 'la prenotazione va a buon fine')

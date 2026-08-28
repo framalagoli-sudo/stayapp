@@ -10,6 +10,12 @@ import { guestEmailTemplate } from '@/lib/email-template'
 import { logError } from '@/lib/observability'
 import { getAziendaLegale } from '@/lib/guest-data'
 
+// La formula che chi prenota accetta. La decide il server, non il componente:
+// è il server a scriverla nella prova, e se le due copie divergessero
+// resterebbe salvata una frase che nessuno ha mai letto.
+export const TESTO_CONSENSO =
+  "Ho letto e accetto l'informativa sulla privacy. I miei dati saranno usati per gestire questa prenotazione."
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isUUID = v => UUID_RE.test(v)
 
@@ -109,11 +115,17 @@ export async function POST(request) {
     const body = await request.json()
     const { risorsa_id, data, data_fine, ora_inizio, servizio,
       cliente_nome, cliente_email, cliente_telefono,
-      n_persone, note_cliente, promozione_id } = body
+      n_persone, note_cliente, promozione_id, privacy_accettata } = body
 
     if (!isUUID(risorsa_id)) return Response.json({ error: 'risorsa_id non valido' }, { status: 400 })
     if (!data) return Response.json({ error: 'data obbligatoria' }, { status: 400 })
     if (!cliente_nome?.trim()) return Response.json({ error: 'Nome obbligatorio' }, { status: 400 })
+    // ⚠️ Qui si raccolgono nome, email e telefono di una persona: senza consenso
+    // non si possono chiedere. Mancava del tutto — corretto sulle escursioni il
+    // 26/08 e sulle attività il 28, mai qui. Il controllo sta nella route perché
+    // la spunta nel modulo si toglie con due clic.
+    if (privacy_accettata !== true)
+      return Response.json({ error: 'Per prenotare serve il consenso al trattamento dei dati.' }, { status: 400 })
     if (!cliente_email?.trim()) return Response.json({ error: 'Email obbligatoria' }, { status: 400 })
 
     const { data: risorsa, error: re } = await supabaseAdmin.from('risorse')
@@ -172,6 +184,12 @@ export async function POST(request) {
       n_persone: persone,
       note_cliente: note_cliente?.trim() || null,
       stato: risorsa.conferma_auto ? 'confermata' : 'in_attesa',
+      // La **prova**, non la spunta: quando è stato dato e quale formula è stata
+      // letta. Se domani il testo cambia, le prenotazioni vecchie restano
+      // ricostruibili.
+      privacy_accettata: true,
+      privacy_accettata_il: new Date().toISOString(),
+      privacy_testo: TESTO_CONSENSO,
       prezzo_unitario,
       importo_totale,
       promozione_id: isUUID(promozione_id) ? promozione_id : null,
