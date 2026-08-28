@@ -100,8 +100,12 @@ for (const e of entita || []) {
     for (const x of elenco) {
       if (fatte.has(x.id)) { console.log(`    · ${tipo}: «${x.title || x.name}» già copiata`); saltate++; continue }
       const riga = converti(x, e)
-      console.log(`    → ${tipo}: «${riga.titolo}»${riga.prezzo != null ? ` · €${riga.prezzo}` : ''}${riga.prezzo_barrato ? ` (invece di €${riga.prezzo_barrato})` : ''}`)
+      console.log(`    → ${tipo}: «${riga.titolo}»${riga.prezzo != null ? ` · €${riga.prezzo}` : ' · senza prezzo'}${riga.prezzo_barrato ? ` (invece di €${riga.prezzo_barrato})` : ''}`)
       if (!esegui) { nuove++; continue }
+      // ⚠️ `prezzo` è `NOT NULL DEFAULT 0`: passare `null` esplicito viola il
+      // vincolo. Una promozione senza prezzo è legittima — «su richiesta» — e
+      // omettere il campo lascia lavorare il valore predefinito.
+      if (riga.prezzo == null) delete riga.prezzo
       const { error: er } = await admin.from('offerte').insert(riga)
       if (er) console.error(`      ✗ ${er.message}`)
       else nuove++
