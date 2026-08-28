@@ -2,7 +2,7 @@
 
 > ⚠️ **Prima di scrivere codice**: [Verificare il contesto, non solo il pezzo](feedback_verificare_il_contesto.md) — la radice comune degli errori ripetuti.
 
-- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: calendario booking chiuso (5 punti su 5), flusso prodotti unificato. Prossimo = rileggere le memory e fare il punto con Francesco, NON scegliere da solo
+- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: unificazione prenotazioni in corso (1 pezzo su 4 fatto). Riprendere da: risorse booking dentro le offerte
 - [🧩 Una sola tabella `entita`](reference_entita_unificata.md) — il tipo decide solo indirizzo e preset, NON le funzioni; lib/entita.js unico accesso; ⚠️ next build non vede gli import mancanti (500 in produzione sulle route guest)
 - [🔇 Guasti silenziosi: allarmi + battito dei cron](reference_guasti_silenziosi.md) — try/catch NON intercetta un processo che smette di girare; ogni cron lascia un segno e chi gira dopo controlla gli altri; pagina /admin/diagnostica
 - [🛡️ Punto A (sicurezza) CHIUSO — 24/08](project_check_sicurezza_punto_A.md) — 8 sotto-fasi, 6 con buchi veri corretti; il metodo per classi separate è ciò che li ha fatti emergere (A1 è cieca sulle richieste legittime). Dettaglio in `SECURITY-CHECK.md`
@@ -127,3 +127,4 @@
 - [📅 Booking a giornate (case, auto, camere)](reference_booking_giornaliero.md) — l'ultimo giorno è l'uscita NON una notte; il doppio affitto si blocca dopo l'insert; ⚠️ 5 trappole di misura che costano giri su guasti inesistenti
 - [⚠️ Verificare il contesto, non solo il pezzo](feedback_verificare_il_contesto.md) — 4 fix di fila su cose consegnate da me: il codice era giusto, la giunzione con l'esistente no. Le 4 domande da farsi PRIMA
 - [📅 Sessione 28/08 — calendario booking + flusso unificato](project_session_2026_08_28.md) — vista mensile admin e front-end; un affitto dal 10 al 14 risultava occupato solo il 10 (si sarebbe riaffittata la stessa casa)
+- [🎯 Prenotazioni unificate: da cinque posti a uno](project_prenotazioni_unificate.md) — analisi completa + le 2 scoperte: metà delle prenotazioni non compariva (riconosciute dal PREFISSO di una stringa) e i posti non si consumavano mai

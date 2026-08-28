@@ -1,46 +1,53 @@
 ---
 name: todo_prossima_sessione
-description: LEGGERE PER PRIMO — dove siamo e cosa si fa dopo (aggiornato 28/08/2026 sera)
+description: "LEGGERE PER PRIMO — dove siamo e cosa si fa dopo (aggiornato 28/08/2026, chiusura seconda sessione)"
 metadata: 
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-08-27T20:57:56.930Z
+  modified: 2026-08-28T08:23:58.299Z
 ---
 
-# Dove siamo (fine 28/08/2026)
+# Dove siamo
 
-⚠️ **Leggere prima di mettere mano al codice**:
-[[feedback_verificare_il_contesto]]. Francesco ha detto che ultimamente le
-sbaglio tutte, e ha ragione: quattro «fix» di fila su cose consegnate da me
-pochi giorni prima, tutte con la stessa radice.
+⚠️ **Prima di scrivere codice**: [[feedback_verificare_il_contesto]] — le
+quattro domande da farsi. Gli errori recenti hanno una radice sola.
 
-## Chiuso oggi
+**Lavoro in corso**: l'unificazione delle prenotazioni.
+Tutto il contesto, l'analisi e le decisioni stanno in
+[[project_prenotazioni_unificate]] — **leggerlo prima di riprendere**.
 
-- **Calendario booking**, tutti e cinque i punti chiesti: vista mensile stile
-  piano editoriale, colori (verde/giallo/rosso con legenda), clic per prenotare
-  o vedere chi c'è, azioni conferma/annulla/completa/elimina, scelta del mese,
-  e sul **front-end** il cliente sceglie il periodo cliccando sul calendario.
-- **Prenotazione a mano dal pannello** (`POST /api/booking/prenotazioni`): non
-  esisteva, e il pulsante che avevo messo puntava al vuoto.
-- **Flusso unificato**: lo shop non ha più una creazione propria, «Nuova
-  offerta» chiede da cosa partire (prodotto esistente o nuovo).
-- Route mancanti dello shop (`/admin/shop/nuovo`, `[id]`, `ordini/[id]`).
+## ⏭️ Riprendere da qui, in quest'ordine
 
-## ⏭️ Il prossimo lavoro
+1. **Le risorse booking dentro le offerte.** I tre campi mancanti
+   (`anticipo_ore`, `cancellazione_ore`, `conferma_auto`) sono **già nel
+   database**, migration 095 eseguita. Restano: migrare le 2 risorse (di
+   prova), portare i campi di disponibilità nell'editor offerte, far leggere al
+   `BookingWidget` le offerte invece delle risorse, togliere «Risorse» dal menu.
+2. **Shop → Ordini e Clienti**, come Shopify. Deciso da Francesco: un ordine
+   non occupa un posto nel tempo, occupa stock.
+3. **Le pagine vecchie Attività ed Escursioni** nel menu dell'entità: scrivono
+   ancora nei campi vecchi mentre il sito legge da `offerte`. **È lo stesso
+   difetto già chiuso sullo shop** — due porte per la stessa stanza.
 
-**Francesco ha detto di aspettare con Stripe.** Ha anche detto che *«in memoria
-c'erano altri pezzi»* da riprendere: **all'inizio della sessione rileggere le
-memory e fargli il punto di cosa resta aperto**, invece di scegliere da solo.
+Poi, quando Francesco lo dice: **Stripe Connect** (in attesa per sua scelta).
+Oggi lo shop incassa sullo Stripe della piattaforma, l'opposto di quello che ha
+deciso: *«io non voglio stare nel flusso di denaro»*.
 
-Candidati già noti:
-- **Onboarding «Inizia qui»** — il capitolo aperto più importante del prodotto:
-  un cliente nuovo deve arrivare al sito pubblicato da solo. `/admin/onboarding`
-  è 404. Vedi [[project_onboarding_mappa]].
-- **Stripe Connect** (in attesa): oggi lo shop incassa sullo Stripe della
-  piattaforma, l'opposto di quello che Francesco ha deciso — *«io non voglio
-  stare nel flusso di denaro»*.
-- **Menu semplificato**: deciso tempo fa, mai fatto.
+## Da provare insieme
+
+Francesco non ha ancora fatto il giro completo del lavoro di oggi. Il percorso
+è: crea un'offerta → la pubblichi → prenoti dal sito → la vedi in
+**Prenotazioni**, con i posti che calano.
+
+## Decisioni ferme (non ridiscuterle da solo)
+
+- **Gli eventi restano fuori** da offerte e dalle prenotazioni unificate.
+  Motivo di Francesco: *«catalogo → offerte → shop sono consequenziali,
+  l'evento no»*. In `CLAUDE.md`, decisioni prese.
+- **Offerte a campo libero**: niente elenchi di tipi decisi da noi.
+- **Il catalogo a strati**: la cosa vive nei Prodotti, sopra vanno *in offerta*
+  e *in vendita*. Vedi `CATALOGO.md` e [[project_catalogo_strati]].
 
 ## A carico di Francesco (aperto da giorni)
 
@@ -51,15 +58,13 @@ Candidati già noti:
 4. Email mancante su `futura-club-spiagge-bianche` e `piano-editoriale-futura-vacanze`
 5. Requisiti Stripe Connect per un ristoratore italiano
 
-## Debiti tecnici noti
+## Altri debiti noti
 
-- Le pagine vecchie **Attività** ed **Escursioni** (menu dell'entità) scrivono
-  ancora nei campi vecchi mentre il sito legge da `offerte`: due porte per la
-  stessa stanza, da spegnere. **È lo stesso difetto appena chiuso sullo shop.**
 - La sezione dell'app ospite dove compaiono le offerte si chiama ancora
-  «Escursioni»: nome ereditato, sbagliato per un'inaugurazione. Come chiamarla
-  è una decisione di Francesco, chiesta due volte e non ancora data.
-- C'è una riga «Evento» in `offerte` creata provando: invisibile ovunque.
-- `prodotti` (shop) resta come rete: zero righe, lo shop legge dal catalogo.
+  «Escursioni»: nome ereditato, sbagliato per un'inaugurazione. Decisione di
+  Francesco, chiesta due volte e non ancora data.
 - Il booking **non compare da solo sul sito**: va aggiunto il blocco «Widget
   prenotazione» alla pagina. Un cliente non può indovinarlo.
+- C'è una riga «Evento» in `offerte` creata provando: invisibile ovunque.
+- Onboarding «Inizia qui»: `/admin/onboarding` è 404. Resta il capitolo aperto
+  più importante del prodotto — vedi [[project_onboarding_mappa]].
