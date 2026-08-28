@@ -215,7 +215,10 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
       </div>
     )
   }
-  if (['booking', 'show_map'].includes(type)) {
+  // ⚠️ `booking` stava qui dentro, e questa scorciatoia scatta **prima** dello
+  // switch: il suo editor esisteva ma non veniva mai raggiunto. Aggiungendo un
+  // `case` va sempre controllato che qualcosa non lo intercetti prima.
+  if (['show_map'].includes(type)) {
     return (
       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: 12, background: '#f8f9ff', borderRadius: 8, border: '1px solid #e8ecff' }}>
         <BlockTypeIcon type={type} size={16} />
