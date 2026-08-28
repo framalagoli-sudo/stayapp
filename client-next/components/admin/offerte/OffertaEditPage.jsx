@@ -74,7 +74,8 @@ export default function OffertaEditPage() {
     try {
       const campi = ['entity_id', 'prodotto_id', 'impegno', 'titolo', 'descrizione', 'categoria', 'luogo',
         'prezzo', 'mostra_prezzo', 'prezzo_testo', 'data_inizio', 'data_fine', 'posti_totali',
-        'cta_label', 'cta_condizioni', 'avvisa_titolare', 'conferma_ospite', 'attiva', 'pubblicata']
+        'cta_label', 'cta_condizioni', 'avvisa_titolare', 'conferma_ospite', 'attiva', 'pubblicata',
+        'anticipo_ore', 'cancellazione_ore', 'conferma_auto']
       const body = Object.fromEntries(campi.map(k => [k, o[k] ?? null]))
       const agg = await apiFetch(`/api/offerte/${id}`, { method: 'PATCH', body: JSON.stringify(body) })
       setO(agg); setSalvato(true); setTimeout(() => setSalvato(false), 2000)
@@ -188,6 +189,41 @@ export default function OffertaEditPage() {
       </div>
 
       {/* Le date sono facoltative: compilandole l'offerta ha un quando. */}
+      {/* Le regole di chi prenota. Vivevano solo nelle «Risorse» del booking, che
+          era una seconda porta per creare cose prenotabili: un campo da padel e
+          un corso sono la stessa cosa vista da due menu diversi. */}
+      <div style={cardStyle}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: 16 }}>
+          <div>
+            <label style={labelStyle}>Quanti posti in tutto</label>
+            <input type="number" min="0" style={inputStyle} value={o.posti_totali ?? ''}
+              onChange={e => set('posti_totali', e.target.value === '' ? null : Number(e.target.value))} />
+            <p style={aiuto}>Vuoto = senza limite. {o.posti_occupati ? `Già presi: ${o.posti_occupati}.` : ''}</p>
+          </div>
+          <div>
+            <label style={labelStyle}>Con quanto anticipo</label>
+            <input type="number" min="0" style={inputStyle} value={o.anticipo_ore ?? 1}
+              onChange={e => set('anticipo_ore', Number(e.target.value) || 0)} />
+            <p style={aiuto}>Ore. Serve a non ricevere una prenotazione per fra dieci minuti.</p>
+          </div>
+          <div>
+            <label style={labelStyle}>Si disdice entro</label>
+            <input type="number" min="0" style={inputStyle} value={o.cancellazione_ore ?? 24}
+              onChange={e => set('cancellazione_ore', Number(e.target.value) || 0)} />
+            <p style={aiuto}>Ore prima. Oltre, deve chiamarti.</p>
+          </div>
+        </div>
+        <label style={{ ...labelStyle, marginTop: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <input type="checkbox" checked={o.conferma_auto !== false} onChange={e => set('conferma_auto', e.target.checked)} />
+          Conferma da sola
+        </label>
+        <p style={aiuto}>
+          {o.conferma_auto !== false
+            ? 'Chi prenota riceve subito la conferma.'
+            : 'La prenotazione resta in attesa finché non la confermi tu.'}
+        </p>
+      </div>
+
       {(
         <div style={cardStyle}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: 16 }}>
@@ -213,13 +249,9 @@ export default function OffertaEditPage() {
                 una cifra che il cliente non ha mai visto. */}
             <p style={aiuto}>Su questo si calcola il totale, anche se sotto scrivi altro.</p>
           </div>
-          {(
-            <div>
-              <label style={labelStyle}>Posti totali</label>
-              <input type="number" min="0" style={inputStyle} value={o.posti_totali ?? ''} onChange={e => set('posti_totali', e.target.value === '' ? null : Number(e.target.value))} />
-              <p style={aiuto}>Vuoto = senza limite. {o.posti_occupati ? `Già presi: ${o.posti_occupati}.` : ''}</p>
-            </div>
-          )}
+          {/* I posti si chiedono una volta sola, insieme alle altre regole di
+              chi prenota: due campi per la stessa cosa sono un modo per farne
+              divergere il valore. */}
         </div>
 
         <label style={{ ...labelStyle, marginTop: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
