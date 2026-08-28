@@ -54,8 +54,15 @@ export async function GET(request) {
     if (propertyIds.length) reqQ = reqQ.in('property_id', propertyIds)
     else if (azienda_id) reqQ = reqQ.eq('property_id', 'none')
     const { data: reqAll = [] } = await reqQ
-    const requests = reqAll.filter(r => !r.message?.startsWith('[Prenotazione') && !r.message?.startsWith('[Interesse offerta'))
-    const bookings = reqAll.filter(r =>  r.message?.startsWith('[Prenotazione') ||  r.message?.startsWith('[Interesse offerta'))
+    // ⚠️ Le prenotazioni non stanno più qui: vivono in `prenotazioni`, con un
+    // riferimento a cosa è stato preso. Questo filtro serve solo a tenere fuori
+    // dalle richieste quelle **vecchie**, scritte quando la distinzione era il
+    // prefisso del testo — un meccanismo che si è rotto due volte in silenzio.
+    // Quando le righe storiche saranno esaurite, questa riga si toglie.
+    const eVecchiaPrenotazione = r =>
+      r.message?.startsWith('[Prenotazione') || r.message?.startsWith('[Interesse offerta')
+    const requests = reqAll.filter(r => !eVecchiaPrenotazione(r))
+    const bookings = reqAll.filter(eVecchiaPrenotazione)
     const reqByType = { reception: 0, maintenance: 0, housekeeping: 0, other: 0 }
     requests.forEach(r => { if (r.type in reqByType) reqByType[r.type]++ })
     const bookByStatus = { open: 0, in_progress: 0, resolved: 0, cancelled: 0 }

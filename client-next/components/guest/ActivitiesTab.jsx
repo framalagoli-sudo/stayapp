@@ -22,6 +22,10 @@ export default function ActivitiesTab({ activities = [], propertyId, primary, te
   const [booking, setBooking] = useState(null)
   const [bookState, setBookState] = useState('idle')
   const [room, setRoom] = useState('')
+  const [nome, setNome] = useState('')
+  const [contatto, setContatto] = useState('')
+  const [privacyOk, setPrivacyOk] = useState(false)
+  const [erroreTesto, setErroreTesto] = useState('')
 
   const cardBg     = isDark ? '#2a2a3e' : '#fff'
   const cardShadow = isDark ? 'none' : '0 2px 12px rgba(0,0,0,0.07)'
@@ -33,20 +37,28 @@ export default function ActivitiesTab({ activities = [], propertyId, primary, te
     ),
   })).filter(cat => cat.items.length > 0)
 
+  // Il pulsante si accende solo quando c'è tutto. Il server rifiuterebbe
+  // comunque, ma è meglio non far scrivere una richiesta per poi respingerla.
+  const pronto = nome.trim() && contatto.trim() && privacyOk
+
+  // ⚠️ Prima questo modulo chiedeva solo la camera: il titolare riceveva
+  // «Richiesta prenotazione: Padel» e non poteva richiamare nessuno. Lo stesso
+  // difetto corretto sulle escursioni il 26/08 e non esteso qui.
   async function sendBooking(activity) {
-    setBookState('loading')
+    setBookState('loading'); setErroreTesto('')
     try {
-      await guestFetch('/api/requests', {
+      await guestFetch('/api/guest/prenota', {
         method: 'POST',
         body: JSON.stringify({
-          property_id: propertyId,
-          type: 'attività',
-          room: room.trim() || undefined,
-          message: `Richiesta prenotazione: ${activity.name}${activity.schedule ? ` — ${activity.schedule}` : ''}`,
+          offerta_id: activity.id,
+          nome: nome.trim(), contatto: contatto.trim(),
+          messaggio: [room.trim() ? `Camera: ${room.trim()}` : null, activity.schedule || null].filter(Boolean).join(' · ') || null,
+          privacy_accettata: privacyOk,
         }),
       })
       setBookState('success')
-    } catch {
+    } catch (e) {
+      setErroreTesto(e?.message || '')
       setBookState('error')
     }
   }
@@ -54,7 +66,7 @@ export default function ActivitiesTab({ activities = [], propertyId, primary, te
   function closeBooking() {
     setBooking(null)
     setBookState('idle')
-    setRoom('')
+    setRoom(''); setNome(''); setContatto(''); setPrivacyOk(false); setErroreTesto('')
   }
 
   return (
@@ -128,13 +140,28 @@ export default function ActivitiesTab({ activities = [], propertyId, primary, te
                     background: isDark ? '#1a1a2e' : '#f8f8f8', color: textColor,
                   }}
                 />
-                {bookState === 'error' && <p style={{ color: '#e53e3e', fontSize: 13, margin: '0 0 12px' }}>Errore nell'invio. Riprova.</p>}
+                {/* Nome e recapito: senza, il titolare riceve una prenotazione
+                    e non sa a chi rispondere. */}
+                <label style={etichetta(subText)}>Il tuo nome *</label>
+                <input value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome e cognome"
+                  style={campo(radius, isDark, textColor)} />
+
+                <label style={etichetta(subText)}>Email o telefono *</label>
+                <input value={contatto} onChange={e => setContatto(e.target.value)} placeholder="Come possiamo risponderti"
+                  style={campo(radius, isDark, textColor)} />
+
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: subText, margin: '4px 0 14px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={privacyOk} onChange={e => setPrivacyOk(e.target.checked)} style={{ marginTop: 2, flexShrink: 0 }} />
+                  <span>Ho letto e accetto l'informativa sulla privacy. I miei dati saranno usati per gestire questa richiesta.</span>
+                </label>
+
+                {bookState === 'error' && <p style={{ color: '#e53e3e', fontSize: 13, margin: '0 0 12px' }}>{erroreTesto || 'Errore nell\'invio. Riprova.'}</p>}
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button onClick={closeBooking} style={{ flex: 1, padding: '12px', background: isDark ? '#333' : '#f0f0f0', color: textColor, border: 'none', borderRadius: radius, cursor: 'pointer', fontSize: 14 }}>
                     Annulla
                   </button>
-                  <button onClick={() => sendBooking(booking)} disabled={bookState === 'loading'}
-                    style={{ flex: 2, padding: '12px', background: primary, color: '#fff', border: 'none', borderRadius: radius, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
+                  <button onClick={() => sendBooking(booking)} disabled={bookState === 'loading' || !pronto}
+                    style={{ flex: 2, padding: '12px', background: primary, color: '#fff', border: 'none', borderRadius: radius, cursor: pronto ? 'pointer' : 'not-allowed', fontSize: 14, fontWeight: 700, opacity: pronto ? 1 : 0.5 }}>
                     {bookState === 'loading' ? 'Invio…' : 'Conferma richiesta'}
                   </button>
                 </div>
@@ -188,3 +215,14 @@ function ActivityCard({ item, primary, textColor, subText, cardBg, cardShadow, r
     </div>
   )
 }
+
+const etichetta = (subText) => ({
+  display: 'block', fontSize: 12, fontWeight: 600, color: subText, marginBottom: 4,
+})
+
+const campo = (radius, isDark, textColor) => ({
+  width: '100%', padding: '10px 12px', borderRadius: radius / 2 || 6,
+  border: `1px solid ${isDark ? '#3a3a5e' : '#ddd'}`, fontSize: 14,
+  marginBottom: 12, boxSizing: 'border-box',
+  background: isDark ? '#1a1a2e' : '#f8f8f8', color: textColor,
+})

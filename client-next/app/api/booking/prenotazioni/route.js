@@ -15,7 +15,7 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url)
     let query = supabaseAdmin.from('prenotazioni')
-      .select('*, risorse(nome, modalita, colore, entity_tipo, entity_id)')
+      .select('*, risorse(nome, modalita, colore, entity_tipo, entity_id), offerte(titolo, categoria)')
       .order('data', { ascending: false })
       .order('ora_inizio', { ascending: true })
 

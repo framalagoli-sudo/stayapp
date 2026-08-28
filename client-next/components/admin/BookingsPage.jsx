@@ -1,255 +1,151 @@
-﻿'use client'
+'use client'
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
+import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
-import { CalendarCheck } from 'lucide-react'
+import { CalendarCheck, Search } from 'lucide-react'
 
-const STATUS_LABELS = { open: 'Nuova', in_progress: 'In gestione', resolved: 'Confermata', cancelled: 'Annullata' }
-const STATUS_COLORS = { open: '#e53e3e', in_progress: '#dd6b20', resolved: '#38a169', cancelled: '#aaa' }
+// Tutte le prenotazioni, di qualunque natura, in un posto solo.
+//
+// Prima questa pagina leggeva le `requests` e distingueva una prenotazione da
+// una richiesta di servizio **dall'inizio del testo del messaggio**
+// (`[Prenotazione…`). Si è rotto due volte in silenzio: i componenti guest
+// scrivevano «Prenotazione escursione:» senza la quadra, e metà delle
+// prenotazioni finiva fra le richieste senza che nessuno se ne accorgesse.
+//
+// Ora si legge la tabella `prenotazioni`, dove ogni riga dice a **cosa** si
+// riferisce. Niente stringhe da interpretare.
+//
+// ⚠️ Gli eventi restano fuori per scelta: hanno la loro voce e le loro
+// prenotazioni. Vedi `CLAUDE.md`, decisioni prese.
 
-function formatDateTime(ts) {
-  return new Date(ts).toLocaleString('it-IT', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  })
+const STATI = {
+  confermata: { label: 'Confermata', colore: '#137a4a', sfondo: '#e6f7ee' },
+  in_attesa:  { label: 'Da confermare', colore: '#a15c00', sfondo: '#fff4e5' },
+  cancellata: { label: 'Annullata', colore: '#888', sfondo: '#f0f0f0' },
+  completata: { label: 'Completata', colore: '#1565c0', sfondo: '#e8f0fe' },
+  no_show:    { label: 'Non presentato', colore: '#b71c1c', sfondo: '#fdeeee' },
 }
 
-function parseBooking(req) {
-  const lines = (req.message || '').split('\n')
-  const firstLine = lines[0] || ''
-  const tipo = firstLine.startsWith('[Prenotazione escursione]') ? 'escursione' : 'attività'
-  const itemName = firstLine.replace(/^\[Prenotazione (?:attività|escursione)\]\s*/, '').trim()
-  const fields = {}
-  lines.slice(1).forEach(line => {
-    const idx = line.indexOf(':')
-    if (idx > -1) fields[line.slice(0, idx).trim()] = line.slice(idx + 1).trim()
-  })
-  return { tipo, itemName, ...fields }
+function quando(p) {
+  if (p.data_fine && p.data_fine !== p.data) return `dal ${data(p.data)} al ${data(p.data_fine)}`
+  if (p.ora_inizio) return `${data(p.data)} · ${p.ora_inizio.slice(0, 5)}${p.servizio ? ` · ${p.servizio}` : ''}`
+  return data(p.data)
 }
+const data = iso => iso ? new Date(`${iso}T12:00:00`).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
 
-function parseInteresse(req) {
-  const lines = (req.message || '').split('\n')
-  const firstLine = lines[0] || ''
-  const itemName = firstLine.replace(/^\[Interesse offerta:\s*/, '').replace(/\]$/, '').trim()
-  const fields = {}
-  lines.slice(1).forEach(line => {
-    const idx = line.indexOf(':')
-    if (idx > -1) fields[line.slice(0, idx).trim()] = line.slice(idx + 1).trim()
-  })
-  return { tipo: 'offerta', itemName, ...fields }
-}
+// Che cosa è stato preso: un'offerta o una risorsa prenotabile.
+const cosa = p => p.offerte?.titolo || p.risorse?.nome || 'Prenotazione'
 
 export default function BookingsPage() {
   const { profile } = useAuth()
-  const [bookings, setBookings] = useState([])
-  const [tab, setTab]           = useState('attivita')
-  const [filter, setFilter]     = useState('all')
-  const [loading, setLoading]   = useState(true)
+  const { azienda, activeAziendaId, loading: aziLoading } = useAzienda()
+  const aziendaId = azienda?.id || profile?.azienda_id || activeAziendaId
+
+  const [prenotazioni, setPrenotazioni] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [filtro, setFiltro] = useState('tutte')
+  const [cerca, setCerca] = useState('')
 
   useEffect(() => {
-    if (profile) fetchBookings()
-  }, [profile])
+    if (aziLoading) return
+    apiFetch(`/api/booking/prenotazioni${aziendaId ? `?azienda_id=${aziendaId}` : ''}`)
+      .then(d => setPrenotazioni(Array.isArray(d) ? d : []))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [aziendaId, aziLoading])
 
-  async function fetchBookings() {
-    setLoading(true)
-    const params = new URLSearchParams()
-    if (['admin_struttura', 'staff'].includes(profile.role) && profile.property_id) {
-      params.set('property_id', profile.property_id)
-    }
-    try {
-      const data = await apiFetch(`/api/requests?${params}`)
-      // Le offerte non stanno più qui: chi si interessa a una promozione non
-      // occupa un posto e non c'è niente da confermare — è un contatto, e vive
-      // nel CRM. Le righe vecchie restano visibili finché non si chiudono, così
-      // niente scompare da sotto gli occhi di chi le stava lavorando.
-      setBookings(data.filter(r =>
-        r.message?.startsWith('[Prenotazione') ||
-        (r.message?.startsWith('[Interesse offerta') && r.status === 'open')
-      ))
-    } catch {
-      setBookings([])
-    } finally {
-      setLoading(false)
-    }
+  async function cambiaStato(p, stato) {
+    await apiFetch(`/api/booking/prenotazioni/${p.id}`, { method: 'PATCH', body: JSON.stringify({ stato }) })
+    setPrenotazioni(l => l.map(x => x.id === p.id ? { ...x, stato } : x))
   }
 
-  async function updateStatus(id, status) {
-    try {
-      await apiFetch(`/api/requests/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status }),
-      })
-      setBookings(prev => prev.map(r => r.id === id ? { ...r, status } : r))
-    } catch (e) {
-      alert(e.message)
-    }
-  }
+  const visibili = prenotazioni
+    .filter(p => filtro === 'tutte' || (filtro === 'offerte' ? !!p.offerta_id : !p.offerta_id))
+    .filter(p => {
+      if (!cerca.trim()) return true
+      const t = cerca.toLowerCase()
+      return [p.cliente_nome, p.cliente_email, p.cliente_telefono, cosa(p)].some(x => (x || '').toLowerCase().includes(t))
+    })
 
-  function countNew(tipoKey) {
-    if (tipoKey === 'offerte') {
-      return bookings.filter(r => r.message?.startsWith('[Interesse offerta') && r.status === 'open').length
-    }
-    return bookings.filter(r => {
-      if (!r.message?.startsWith('[Prenotazione')) return false
-      const p = parseBooking(r)
-      return (tipoKey === 'attivita' ? p.tipo === 'attività' : p.tipo === 'escursione') && r.status === 'open'
-    }).length
-  }
-
-  const displayed = bookings.filter(r => {
-    const matchFilter = filter === 'all' || r.status === filter
-    if (!matchFilter) return false
-    if (tab === 'offerte') return r.message?.startsWith('[Interesse offerta')
-    if (!r.message?.startsWith('[Prenotazione')) return false
-    const p = parseBooking(r)
-    return tab === 'attivita' ? p.tipo === 'attività' : p.tipo === 'escursione'
-  })
+  if (loading) return <p style={{ padding: 32, color: '#888' }}>Caricamento…</p>
 
   return (
-    <div style={{ maxWidth: 720 }}>
-      <h2 style={{ margin: '0 0 24px' }}>Prenotazioni</h2>
-
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '2px solid #e8e8e8' }}>
-        {/* «Offerte» resta solo finché ci sono richieste vecchie ancora aperte:
-            da oggi gli interessi alle promozioni nascono direttamente come
-            contatti nel CRM, e questa scheda sparisce da sola quando l'ultima
-            richiesta viene chiusa. */}
-        {[['attivita', 'Attività'], ['escursioni', 'Escursioni'],
-          ...(countNew('offerte') > 0 ? [['offerte', 'Offerte']] : [])].map(([key, label]) => {
-          const n = countNew(key)
-          return (
-            <button key={key} onClick={() => setTab(key)} style={{
-              padding: '10px 22px', background: 'none', border: 'none',
-              borderBottom: tab === key ? '2px solid #1a1a2e' : '2px solid transparent',
-              marginBottom: -2, fontWeight: tab === key ? 700 : 400,
-              color: tab === key ? '#1a1a2e' : '#888',
-              cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 7,
-            }}>
-              {label}
-              {n > 0 && (
-                <span style={{ background: '#e53e3e', color: '#fff', fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 20 }}>
-                  {n}
-                </span>
-              )}
-            </button>
-          )
-        })}
+    <div style={{ maxWidth: 900 }}>
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Prenotazioni</h1>
+        <p style={{ margin: '4px 0 0', fontSize: 14, color: '#888' }}>
+          Tutto quello che i tuoi clienti hanno preso. Gli eventi hanno la loro sezione.
+        </p>
       </div>
 
-      {/* Filtri stato */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-        {['all', 'open', 'in_progress', 'resolved', 'cancelled'].map(s => (
-          <button key={s} onClick={() => setFilter(s)} style={{
-            padding: '5px 14px', borderRadius: 20, border: '1px solid #ddd',
-            background: filter === s ? '#1a1a2e' : '#fff',
-            color: filter === s ? '#fff' : '#333',
-            cursor: 'pointer', fontSize: 12, fontWeight: filter === s ? 600 : 400,
-          }}>
-            {s === 'all' ? 'Tutte' : STATUS_LABELS[s]}
-          </button>
-        ))}
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
+        <div style={{ display: 'flex', background: '#f5f5f5', borderRadius: 8, padding: 2 }}>
+          {[['tutte', 'Tutte'], ['offerte', 'Offerte'], ['risorse', 'Risorse']].map(([k, l]) => (
+            <button key={k} onClick={() => setFiltro(k)}
+              style={{ padding: '6px 14px', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13,
+                fontWeight: filtro === k ? 600 : 400, background: filtro === k ? '#fff' : 'transparent',
+                color: filtro === k ? '#1a1a2e' : '#888' }}>{l}</button>
+          ))}
+        </div>
+        <div style={{ position: 'relative', flex: '1 1 200px', minWidth: 0 }}>
+          <Search size={15} strokeWidth={1.5} color="#aaa" style={{ position: 'absolute', left: 10, top: 10 }} />
+          <input value={cerca} onChange={e => setCerca(e.target.value)} placeholder="Cerca per nome o cosa"
+            style={{ width: '100%', padding: '9px 12px 9px 32px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+        </div>
       </div>
 
-      {loading ? (
-        <p style={{ color: '#888' }}>Caricamento…</p>
-      ) : displayed.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '48px 24px', color: '#aaa' }}>
-          <CalendarCheck size={36} strokeWidth={1.5} color="#ddd" style={{ display: 'block', margin: '0 auto 12px' }} />
-          <p style={{ margin: 0, fontSize: 15 }}>Nessuna voce.</p>
+      {visibili.length === 0 ? (
+        <div style={{ background: '#fff', borderRadius: 12, padding: 48, textAlign: 'center', color: '#999' }}>
+          <CalendarCheck size={40} strokeWidth={1} color="#ddd" style={{ marginBottom: 12 }} />
+          <p style={{ margin: 0 }}>{prenotazioni.length ? 'Nessuna prenotazione con questi filtri.' : 'Ancora nessuna prenotazione.'}</p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {displayed.map(req => (
-            <BookingCard key={req.id} req={req} onUpdateStatus={updateStatus} />
-          ))}
+        // ⚠️ `minmax(0, 1fr)`: senza, un nome lungo — che è un dato del cliente —
+        // allarga la riga oltre la scheda.
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 8 }}>
+          {visibili.map(p => {
+            const s = STATI[p.stato] || STATI.confermata
+            return (
+              <div key={p.id} style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', overflowWrap: 'anywhere' }}>{cosa(p)}</div>
+                    <div style={{ fontSize: 13, color: '#555', marginTop: 2 }}>{quando(p)}</div>
+                    <div style={{ fontSize: 13, color: '#888', marginTop: 4, overflowWrap: 'anywhere' }}>
+                      {p.cliente_nome}
+                      {p.cliente_email ? ` · ${p.cliente_email}` : ''}
+                      {p.cliente_telefono ? ` · ${p.cliente_telefono}` : ''}
+                      {p.n_persone > 1 ? ` · ${p.n_persone} persone` : ''}
+                    </div>
+                    {p.messaggio && <div style={{ fontSize: 12, color: '#666', fontStyle: 'italic', marginTop: 4, overflowWrap: 'anywhere' }}>{p.messaggio}</div>}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: s.sfondo, color: s.colore }}>{s.label}</span>
+                    {p.importo_totale > 0 && <span style={{ fontWeight: 700, fontSize: 14 }}>€{p.importo_totale}</span>}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                  {p.stato === 'in_attesa' && (
+                    <button onClick={() => cambiaStato(p, 'confermata')} style={{ ...azione, background: '#e6f7ee', color: '#137a4a' }}>Conferma</button>
+                  )}
+                  {p.stato !== 'cancellata' && (
+                    <button onClick={() => cambiaStato(p, 'cancellata')} style={{ ...azione, background: '#fff4e5', color: '#a15c00' }}>Annulla</button>
+                  )}
+                  {p.stato !== 'completata' && (
+                    <button onClick={() => cambiaStato(p, 'completata')} style={azione}>Segna completata</button>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
   )
 }
 
-function BookingCard({ req, onUpdateStatus }) {
-  const isInteresse = req.message?.startsWith('[Interesse offerta')
-  const p = isInteresse ? parseInteresse(req) : parseBooking(req)
-  const isNew = Date.now() - new Date(req.created_at).getTime() < 300_000
-  const propertyName = req.properties?.name
-
-  return (
-    <div style={{
-      background: '#fff', borderRadius: 12, padding: '16px 20px',
-      boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-      borderLeft: `3px solid ${STATUS_COLORS[req.status]}`,
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-            <span style={{ fontWeight: 700, fontSize: 15 }}>
-              {p.itemName || '—'}
-            </span>
-            {propertyName && (
-              <span style={{ fontSize: 11, background: '#f0f4ff', color: '#3b5bdb', padding: '2px 8px', borderRadius: 10, fontWeight: 600, flexShrink: 0 }}>
-                {propertyName}
-              </span>
-            )}
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px 16px', fontSize: 13, color: '#555' }}>
-            {p['Nome']     && <span>{p['Nome']}</span>}
-            {p['Email']    && <a href={`mailto:${p['Email']}`} style={{ color: '#1a6fc4', textDecoration: 'none' }}>{p['Email']}</a>}
-            {p['Telefono'] && <a href={`tel:${p['Telefono']}`} style={{ color: '#555', textDecoration: 'none' }}>{p['Telefono']}</a>}
-          </div>
-          {p['Persone'] && (
-            <div style={{ marginTop: 6, fontSize: 12, color: '#666' }}>
-              <strong>Persone:</strong> {p['Persone']}
-            </div>
-          )}
-          {(p['Note'] || p['Messaggio']) && (
-            <div style={{ marginTop: 4, fontSize: 12, color: '#888', fontStyle: 'italic' }}>
-              {p['Note'] || p['Messaggio']}
-            </div>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
-          <span style={{
-            fontSize: 12, fontWeight: 600,
-            color: STATUS_COLORS[req.status],
-            background: `${STATUS_COLORS[req.status]}18`,
-            padding: '3px 10px', borderRadius: 12,
-          }}>
-            {STATUS_LABELS[req.status]}
-          </span>
-          <span style={{ fontSize: 11, color: '#aaa' }}>{formatDateTime(req.created_at)}</span>
-          {isNew && req.status === 'open' && (
-            <span style={{ fontSize: 10, fontWeight: 700, background: '#e53e3e', color: '#fff', padding: '2px 8px', borderRadius: 10 }}>
-              NUOVA
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
-        {req.status === 'open' && (
-          <button onClick={() => onUpdateStatus(req.id, 'in_progress')} style={btnStyle('#dd6b20')}>
-            Prendi in carico
-          </button>
-        )}
-        {req.status !== 'resolved' && req.status !== 'cancelled' && (
-          <button onClick={() => onUpdateStatus(req.id, 'resolved')} style={btnStyle('#38a169')}>
-            Conferma
-          </button>
-        )}
-        {req.status === 'open' && (
-          <button onClick={() => onUpdateStatus(req.id, 'cancelled')} style={btnStyle('#aaa')}>
-            Annulla
-          </button>
-        )}
-      </div>
-    </div>
-  )
+const azione = {
+  background: '#eef0f4', border: 'none', borderRadius: 8, padding: '6px 12px',
+  fontSize: 12, cursor: 'pointer', fontWeight: 600, color: '#444',
 }
-
-const btnStyle = color => ({
-  padding: '6px 14px', background: color, color: '#fff', border: 'none',
-  borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-})

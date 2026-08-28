@@ -33,13 +33,18 @@ export default function ExcursionsTab({ excursions = [], propertyId, numeroWhats
 
   async function sendBooking(canale) {
     setBookState('loading'); setErroreTesto('')
-    const testo = `Prenotazione escursione: ${booking.name}${booking.dates ? ` — ${booking.dates}` : ''} — ${persons} person${persons === 1 ? 'a' : 'e'}${notes.trim() ? `\nNote: ${notes.trim()}` : ''}`
+    const testo = `${booking.name}${booking.dates ? ` — ${booking.dates}` : ''} — ${persons} person${persons === 1 ? 'a' : 'e'}${notes.trim() ? `\nNote: ${notes.trim()}` : ''}`
     try {
-      await guestFetch('/api/requests', {
+      // Va in `prenotazioni`, non in `requests`: una prenotazione non è un
+      // messaggio, e distinguerle dal prefisso del testo si è già rotto due
+      // volte in silenzio. `booking.id` è l'id dell'offerta.
+      await guestFetch('/api/guest/prenota', {
         method: 'POST',
         body: JSON.stringify({
-          property_id: propertyId, type: 'escursione', message: testo,
+          offerta_id: booking.id,
           nome: nome.trim(), contatto: contatto.trim(),
+          n_persone: persons,
+          messaggio: notes.trim() || null,
           privacy_accettata: privacyOk, canale: canale || 'email',
         }),
       })
