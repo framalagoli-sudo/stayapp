@@ -17,8 +17,7 @@ import Turnstile from '@/components/Turnstile'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import ChatChoice from '@/components/ChatChoice'
 import MenuTab from '@/components/MenuTab'
-import ActivitiesTab from '@/components/guest/ActivitiesTab'
-import ExcursionsTab from '@/components/guest/ExcursionsTab'
+import OfferteTab from '@/components/guest/OfferteTab'
 import { sezioniOspite, ETICHETTA_OSPITE } from '@/lib/funzioni'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -517,11 +516,8 @@ function AEsploraPage({ attivita, activeChip, numeroWa = null, primary, textColo
         {activeChip === 'menu' && (
           <MenuTab menu={attivita.menu || []} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} headingFamily={headingFamily} cardBg={cardBg} surfaceBg={surfaceBg} borderColor={borderColor} showAllergens lang={lang} />
         )}
-        {activeChip === 'attivita' && (
-          <ActivitiesTab activities={attivita.activities} propertyId={attivita.id} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} lang={lang} />
-        )}
-        {activeChip === 'escursioni' && (
-          <ExcursionsTab excursions={attivita.excursions} propertyId={attivita.id} numeroWhatsapp={numeroWa} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} lang={lang} />
+        {activeChip === 'offerte' && (
+          <OfferteTab offerte={attivita.offerte} propertyId={attivita.id} numeroWhatsapp={numeroWa} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} lang={lang} />
         )}
         {activeChip === 'galleria' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>

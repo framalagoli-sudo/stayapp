@@ -10,7 +10,16 @@ const campoStyle = (radius, bordo, sfondo, testo) => ({
   boxSizing: 'border-box', background: sfondo, color: testo,
 })
 
-export default function ExcursionsTab({ excursions = [], propertyId, numeroWhatsapp = null, primary, textColor, subText, isDark, radius }) {
+// Tutto quello che il cliente propone, in una scheda sola.
+//
+// Prima erano **due schede fisse**, «Attività» ed «Escursioni», con due editor
+// dedicati nel pannello. Erano parole del mondo alberghiero, da cui OltreNova è
+// nata: una palestra fa corsi, un'agenzia viaggi, un negozio degustazioni.
+//
+// Ora c'è una scheda sola e a raggruppare sono le **categorie che scrive il
+// cliente**. Così la domanda «come chiamiamo questa sezione» non ha più bisogno
+// di una risposta nostra: la risposta è come la chiama lui.
+export default function OfferteTab({ offerte = [], propertyId, numeroWhatsapp = null, primary, textColor, subText, isDark, radius }) {
   const [booking,   setBooking]   = useState(null)
   const [bookState, setBookState] = useState('idle')
   const [persons,   setPersons]   = useState(1)
@@ -25,7 +34,39 @@ export default function ExcursionsTab({ excursions = [], propertyId, numeroWhats
   const inputBg    = isDark ? '#1a1a2e' : '#f8f8f8'
   const inputBorder= isDark ? '#3a3a5e' : '#ddd'
 
-  const active = excursions.filter(e => e.active)
+  // Le offerte raccontate nella forma che la scheda già conosce: si cambia da
+  // dove arriva il dato, non come si mostra.
+  const active = offerte.map(o => ({
+    id: o.id,
+    name: o.titolo,
+    description: o.descrizione || '',
+    // Il prezzo si può nascondere o scrivere a parole: una cena alla carta non
+    // è «Gratis».
+    price: o.mostra_prezzo === false ? null : (Number(o.prezzo) || 0),
+    prezzo_testo: o.prezzo_testo || null,
+    photo_url: o.cover_url || '',
+    meeting_point: o.luogo || '',
+    dates: o.data_inizio ? new Date(o.data_inizio).toLocaleDateString('it-IT') : '',
+    // `rimasti` arriva già calcolato: null vuol dire senza limite, che è
+    // diverso da zero.
+    seats: o.rimasti,
+    esaurita: o.rimasti !== null && o.rimasti <= 0,
+    categoria: (o.categoria || '').trim(),
+    condizioni: o.cta_condizioni || '',
+    etichettaPulsante: o.cta_label || '',
+  }))
+
+  // I gruppi nell'ordine in cui il cliente li ha creati. Quelle senza categoria
+  // finiscono in fondo, senza intestazione: inventargliene una sarebbe mettergli
+  // in bocca una parola che non ha scelto.
+  const gruppi = []
+  for (const x of active) {
+    const chiave = x.categoria || ''
+    let g = gruppi.find(y => y.nome === chiave)
+    if (!g) { g = { nome: chiave, voci: [] }; gruppi.push(g) }
+    g.voci.push(x)
+  }
+  gruppi.sort((a, b) => (a.nome ? 0 : 1) - (b.nome ? 0 : 1))
 
   // Il pulsante si accende solo quando c'è tutto: il server rifiuterebbe
   // comunque, ma è meglio non far scrivere una richiesta per poi respingerla.
@@ -75,17 +116,26 @@ export default function ExcursionsTab({ excursions = [], propertyId, numeroWhats
   }
 
   if (active.length === 0) {
-    return <p style={{ textAlign: 'center', color: subText, marginTop: 32 }}>Nessuna escursione disponibile.</p>
+    return <p style={{ textAlign: 'center', color: subText, marginTop: 32 }}>Nessuna proposta al momento.</p>
   }
 
   return (
     <div>
-      <div style={{ display: 'grid', gap: 14 }}>
-        {active.map(exc => (
-          <ExcursionCard key={exc.id} exc={exc} primary={primary} textColor={textColor} subText={subText}
-            cardBg={cardBg} cardShadow={cardShadow} radius={radius} onBook={() => openBooking(exc)} />
-        ))}
-      </div>
+      {gruppi.map(g => (
+        <div key={g.nome || '_'} style={{ marginBottom: 26 }}>
+          {g.nome && (
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: textColor, margin: '0 0 12px', paddingBottom: 8, borderBottom: `2px solid ${primary}22`, overflowWrap: 'anywhere' }}>
+              {g.nome}
+            </h3>
+          )}
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 14 }}>
+            {g.voci.map(exc => (
+              <ExcursionCard key={exc.id} exc={exc} primary={primary} textColor={textColor} subText={subText}
+                cardBg={cardBg} cardShadow={cardShadow} radius={radius} onBook={() => openBooking(exc)} />
+            ))}
+          </div>
+        </div>
+      ))}
 
       {/* Booking bottom sheet */}
       {booking && (
@@ -197,10 +247,14 @@ function ExcursionCard({ exc, primary, textColor, subText, cardBg, cardShadow, r
         {/* Content */}
         <div style={{ flex: 1, padding: '14px 16px', minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
-            <div style={{ fontWeight: 700, fontSize: 15, color: textColor, lineHeight: 1.3 }}>{exc.name}</div>
-            {exc.price != null && (
-              <div style={{ fontSize: 18, fontWeight: 700, color: primary, flexShrink: 0 }}>€{exc.price}</div>
-            )}
+            <div style={{ fontWeight: 700, fontSize: 15, color: textColor, lineHeight: 1.3, overflowWrap: 'anywhere' }}>{exc.name}</div>
+            {/* Il prezzo si può nascondere (`price` null) o scrivere a parole:
+                una cena alla carta non è «Gratis». */}
+            {exc.prezzo_testo
+              ? <div style={{ fontSize: 15, fontWeight: 700, color: primary, flexShrink: 0, overflowWrap: 'anywhere' }}>{exc.prezzo_testo}</div>
+              : exc.price != null && exc.price > 0
+                ? <div style={{ fontSize: 18, fontWeight: 700, color: primary, flexShrink: 0 }}>€{exc.price}</div>
+                : null}
           </div>
 
           {exc.duration && (
@@ -219,7 +273,13 @@ function ExcursionCard({ exc, primary, textColor, subText, cardBg, cardShadow, r
             </div>
           )}
 
-          {exc.seats != null && (
+          {/* «Esaurito» non è «zero posti»: è un'informazione diversa, e chi
+              guarda deve capire subito che non serve nemmeno provare. */}
+          {exc.esaurita ? (
+            <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: '#fdeeee', color: '#c53030', marginBottom: 6 }}>
+              Esaurito
+            </span>
+          ) : exc.seats != null && (
             <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: `${primary}18`, color: primary, marginBottom: 6 }}>
               Posti disponibili: {exc.seats}
             </span>

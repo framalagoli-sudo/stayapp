@@ -33,7 +33,7 @@ try {
     page.on('pageerror', err => errori.push(err.message))
     page.on('console', m => { if (m.type() === 'error' && !/favicon|manifest|404/i.test(m.text())) errori.push(m.text()) })
     await page.goto(`${L}/${pref[e.tipo]}/${e.slug}?qr=1&tab=esplora`, { waitUntil: 'networkidle', timeout: 45000 })
-    const chip = await page.locator('button, a').filter({ hasText: /^(Menu|Menù|Servizi|Attività|Escursioni|Galleria|Eventi)$/ }).allTextContents()
+    const chip = await page.locator('button, a').filter({ hasText: /^(Menu|Menù|Servizi|Proposte|Galleria|Eventi)$/ }).allTextContents()
     // ⚠️ Aprire l'app non basta: ogni sezione si monta **al click**, e finché
     // nessuno clicca il suo codice non gira. Un identificatore fuori scope in
     // «Escursioni» è arrivato in produzione proprio così — questa sonda passava
@@ -68,7 +68,7 @@ try {
     const errori = []
     page.on('pageerror', e => errori.push(e.message))
     await page.goto(`${L}/s/${ent.slug}?qr=1&tab=esplora`, { waitUntil:'networkidle', timeout: 45000 })
-    const chip = await page.locator('button, a').filter({ hasText: /^(Menu|Menù|Servizi|Attività|Escursioni|Galleria)$/ }).allTextContents()
+    const chip = await page.locator('button, a').filter({ hasText: /^(Menu|Menù|Servizi|Proposte|Galleria)$/ }).allTextContents()
     await page.close()
     return { chip, errori }
   }

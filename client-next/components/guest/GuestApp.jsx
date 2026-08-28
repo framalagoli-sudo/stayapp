@@ -7,7 +7,7 @@ import LandingStruttura from './LandingStruttura'
 import CookieBanner from '@/components/CookieBanner'
 import {
   Home, Compass, Bell, Info, MessageCircle, Send,
-  Images, LayoutGrid, Zap, Mountain, Calendar, Users, Euro,
+  Images, LayoutGrid, Zap, Mountain, Calendar, Users, Euro, Tag,
   Wifi, Phone, Mail, MapPin, FileText,
   X, Check, ChevronRight, ArrowLeft,
 } from 'lucide-react'
@@ -19,8 +19,7 @@ import RequestForm from './RequestForm'
 import ServicesTab from './ServicesTab'
 import MenuTab from '@/components/MenuTab'
 import { sezioniOspite, ETICHETTA_OSPITE } from '@/lib/funzioni'
-import ActivitiesTab from './ActivitiesTab'
-import ExcursionsTab from './ExcursionsTab'
+import OfferteTab from './OfferteTab'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import ChatChoice from '@/components/ChatChoice'
 import InstallBanner from './InstallBanner'
@@ -238,8 +237,8 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
   // Compute chips for Esplora (used both in chip bar and EsploraPage)
   const hasServices   = (property.services  || []).length > 0
   const hasGallery    = (property.gallery   || []).length > 0
-  const hasActivities = (property.activities|| []).some(c => c.items?.some(i => i.active))
-  const hasExcursions = (property.excursions|| []).some(e => e.active)
+  // Una scheda sola: le due di prima erano parole del mondo alberghiero.
+  const hasOfferte = (property.offerte || []).length > 0
   const hasEventi     = upcomingEventi.length > 0
   const appSections = { ...modules.home_sections }
   const hasMenu = (property.menu || []).length > 0
@@ -248,7 +247,7 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
   // il menù non era fra queste — per questo un hotel poteva riempirlo senza
   // vederlo mai nell'app della camera.
   const CHIPS = [
-    ...sezioniOspite(property, { galleria: hasGallery, servizi: hasServices, attivita: hasActivities, escursioni: hasExcursions, menu: hasMenu })
+    ...sezioniOspite(property, { galleria: hasGallery, servizi: hasServices, offerte: hasOfferte, menu: hasMenu })
       .map(k => ({ key: k, label: tr(ETICHETTA_OSPITE[k], lang) })),
     // Gli eventi non sono una funzione dell'entità: arrivano dall'azienda.
     ...(hasEventi && appSections.eventi !== false ? [{ key: 'eventi', label: tr('events_chip', lang) }] : []),
@@ -446,24 +445,24 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
 function HomePage({ property, upcomingEventi = [], modules, onExplore, domain = null, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, lang = 'it' }) {
   const hasServices   = (property.services  || []).length > 0
   const hasGallery    = (property.gallery   || []).length > 0
-  const hasActivities = (property.activities|| []).some(c => c.items?.some(i => i.active))
-  const hasExcursions = (property.excursions|| []).some(e => e.active)
+  // Una scheda sola: le due di prima erano parole del mondo alberghiero.
+  const hasOfferte = (property.offerte || []).length > 0
   const hasEventi     = upcomingEventi.length > 0
 
   const svcCount = property.services?.length || 0
-  const actCount = (property.activities || []).reduce((n, c) => n + (c.items?.filter(i => i.active).length || 0), 0)
-  const excCount = (property.excursions || []).filter(e => e.active).length
+  const offCount = (property.offerte || []).length
   const galCount = property.gallery?.length || 0
 
   const homeSections = modules.home_sections || {}
-  const defaultOrder = ['galleria', 'servizi', 'attivita', 'escursioni', 'eventi']
+  const defaultOrder = ['galleria', 'servizi', 'offerte', 'eventi']
   const homeOrder = (modules.home_section_order?.length ? modules.home_section_order : defaultOrder)
   const av = lang === 'en' ? 'available' : 'disponibili'
   const allCards = {
     galleria:   hasGallery    && { key: 'galleria',   Icon: Images,    label: tr('gallery', lang),    sub: `${galCount} ${lang === 'en' ? 'photos' : 'foto'}`,                     photo: property.gallery?.[0] },
     servizi:    hasServices   && { key: 'servizi',    Icon: LayoutGrid, label: tr('services_title', lang),    sub: `${svcCount} ${av}`,              photo: null },
-    attivita:   hasActivities && { key: 'attivita',   Icon: Zap,        label: tr('activities_title', lang),   sub: `${actCount} ${lang === 'en' ? 'activities' : 'attività'}`,                 photo: null },
-    escursioni: hasExcursions && { key: 'escursioni', Icon: Mountain,   label: tr('excursions_title', lang), sub: `${excCount} ${av}`,              photo: null },
+    // Una scheda sola al posto di «Attività» ed «Escursioni»: a raggruppare
+    // sono le categorie che scrive il cliente, non due parole scelte da noi.
+    offerte:    hasOfferte    && { key: 'offerte',    Icon: Tag,        label: tr('offers_tab', lang), sub: `${offCount} ${av}`,              photo: (property.offerte || [])[0]?.cover_url || null },
     eventi:     hasEventi     && { key: 'eventi',     Icon: Calendar,   label: tr('events_chip', lang),     sub: `${upcomingEventi.length} ${lang === 'en' ? 'scheduled' : 'in programma'}`, photo: upcomingEventi[0]?.cover_url || null },
   }
   const CARDS = homeOrder
@@ -610,8 +609,8 @@ function EsploraPage({ property, upcomingEventi = [], activeChip, numeroWa = nul
         {activeChip === 'galleria'   && <GalleriaGrid gallery={property.gallery || []} radius={radius} onOpen={setLightbox} />}
         {activeChip === 'menu'       && <MenuTab menu={property.menu || []} cardBg={cardBg} surfaceBg={surfaceBg} borderColor={borderColor} showAllergens {...sp} />}
         {activeChip === 'servizi'    && <ServicesTab services={property.services} {...sp} />}
-        {activeChip === 'attivita'   && <ActivitiesTab activities={property.activities} propertyId={property.id} {...sp} />}
-        {activeChip === 'escursioni' && <ExcursionsTab excursions={property.excursions} propertyId={property.id} numeroWhatsapp={numeroWa} {...sp} />}
+
+        {activeChip === 'offerte' && <OfferteTab offerte={property.offerte} propertyId={property.id} numeroWhatsapp={numeroWa} {...sp} />}
         {activeChip === 'eventi'     && <EventiTab eventi={upcomingEventi} onOpen={setSelectedEvento} {...sp} />}
       </div>
 

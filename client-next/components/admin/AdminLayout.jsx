@@ -50,8 +50,6 @@ const SEZIONI_ENTITA = [
   { sub: 'info',       label: 'Informazioni',  icon: Info,             group: 'Contenuti' },
   { sub: 'menu',       label: 'Menù',          icon: UtensilsCrossed,  group: 'Contenuti',        funzione: 'menu' },
   { sub: 'services',   label: 'Servizi',       icon: Wrench,           group: 'Contenuti',        funzione: 'servizi' },
-  { sub: 'activities', label: 'Attività',      icon: Zap,              group: 'Contenuti',        funzione: 'attivita' },
-  { sub: 'excursions', label: 'Escursioni',    icon: MapPin,           group: 'Contenuti',        funzione: 'escursioni' },
   { sub: 'gallery',    label: 'Galleria',      icon: Image,            group: 'Contenuti',        funzione: 'galleria' },
   { sub: 'sito',       label: 'Sito web',      icon: Globe,            group: 'Sito & presenza' },
   { sub: 'theme',      label: 'Tema e colori', icon: Palette,          group: 'Sito & presenza' },

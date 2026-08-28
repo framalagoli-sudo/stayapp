@@ -25,8 +25,12 @@ export const FUNZIONI = [
   { chiave: 'galleria',   sezione: 'gallery',    titolo: 'Galleria',       descrizione: 'Le foto che raccontano il posto.', alias: ['gallery'] },
   { chiave: 'menu',       sezione: 'menu',       titolo: 'Menù',           descrizione: 'Piatti e prezzi, divisi per categoria. Non solo per i ristoranti: anche un hotel con cucina o un bar.' },
   { chiave: 'servizi',    sezione: 'services',   titolo: 'Servizi',        descrizione: 'Cosa offri: prestazioni, dotazioni, comodità.' },
-  { chiave: 'attivita',   sezione: 'activities', titolo: 'Attività',       descrizione: 'Corsi, esperienze, appuntamenti ricorrenti.' },
-  { chiave: 'escursioni', sezione: 'excursions', titolo: 'Escursioni',     descrizione: 'Uscite ed eventi con data, prezzo e posti.' },
+  // ⚠️ Una voce sola al posto di «Attività» ed «Escursioni»: erano parole del
+  // mondo alberghiero, da cui OltreNova è nata. Una palestra fa corsi,
+  // un'agenzia viaggi, un negozio degustazioni — e a raggruppare sono le
+  // **categorie che scrive il cliente**, non due nomi scelti da noi.
+  // Gli alias tengono accesa la voce a chi aveva già acceso una delle due.
+  { chiave: 'offerte',    sezione: 'offerte',    titolo: 'Offerte',        descrizione: 'Corsi, escursioni, esperienze: quello che i tuoi clienti possono prenotare o richiedere.', alias: ['attivita', 'escursioni', 'activities', 'excursions'] },
   { chiave: 'vetrine',    sezione: 'vetrine',    titolo: 'Vetrine',        descrizione: 'Cataloghi: immobili, veicoli, prodotti, viaggi.' },
   { chiave: 'sito',       sezione: 'sito',       titolo: 'Sito web',       descrizione: 'Le pagine pubbliche.', sempre: true },
   // L'assistente non ha un interruttore qui: si accende nella sua pagina, dove
@@ -72,12 +76,11 @@ export function funzioneAttiva(ent, chiave) {
 }
 
 // L'ordine in cui le sezioni compaiono nell'app dell'ospite.
-export const ORDINE_OSPITE = ['menu', 'servizi', 'attivita', 'escursioni', 'galleria']
+export const ORDINE_OSPITE = ['menu', 'servizi', 'offerte', 'galleria']
 
 // La chiave di traduzione dell'etichetta, perché le tre app la scrivano uguale.
 export const ETICHETTA_OSPITE = {
-  menu: 'menu', servizi: 'services_title', attivita: 'activities_title',
-  escursioni: 'excursions_title', galleria: 'gallery',
+  menu: 'menu', servizi: 'services_title', offerte: 'offers_tab', galleria: 'gallery',
 }
 
 // Quali sezioni mostrare nell'app dell'ospite: la funzione dev'essere accesa
@@ -103,7 +106,7 @@ export function sezioniOspite(ent, contenuto = {}) {
 // sempre su questi valori.
 const TUTTE_ACCESE = {
   galleria: true, menu: true, servizi: true,
-  attivita: true, escursioni: true, chatbot: true, sito: true,
+  offerte: true, chatbot: true, sito: true,
 }
 
 export const MODULI_PREDEFINITI = {

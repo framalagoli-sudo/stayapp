@@ -12,8 +12,7 @@ import {
 } from 'lucide-react'
 import MenuTab from '@/components/MenuTab'
 import ServicesTab from '@/components/guest/ServicesTab'
-import ActivitiesTab from '@/components/guest/ActivitiesTab'
-import ExcursionsTab from '@/components/guest/ExcursionsTab'
+import OfferteTab from '@/components/guest/OfferteTab'
 import { sezioniOspite, ETICHETTA_OSPITE } from '@/lib/funzioni'
 import { guestFetch } from '@/lib/api'
 import { pickAppLogo } from '@/lib/appLogo'
@@ -528,8 +527,7 @@ function REsploraPage({ ristorante, activeChip, numeroWa = null, primary, textCo
       <div key={activeChip} className="fade-up" style={{ padding: '20px 16px 28px' }}>
         {activeChip === 'menu'    && <MenuTab    menu={ristorante.menu || []}        {...sp} />}
         {activeChip === 'servizi'    && <ServicesTab   services={ristorante.services} {...sp} />}
-        {activeChip === 'attivita'   && <ActivitiesTab activities={ristorante.activities} propertyId={ristorante.id} {...sp} />}
-        {activeChip === 'escursioni' && <ExcursionsTab excursions={ristorante.excursions} propertyId={ristorante.id} numeroWhatsapp={numeroWa} {...sp} />}
+        {activeChip === 'offerte' && <OfferteTab offerte={ristorante.offerte} propertyId={ristorante.id} numeroWhatsapp={numeroWa} {...sp} />}
         {activeChip === 'galleria'&& <GalleriaTab gallery={ristorante.gallery || []} primary={primary} radius={radius} onOpen={setLightbox} />}
       </div>
 
