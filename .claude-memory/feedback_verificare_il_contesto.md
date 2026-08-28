@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-08-27T20:57:15.493Z
+  modified: 2026-08-28T14:39:03.756Z
 ---
 
 Il 28/08/2026 Francesco me l'ha detto chiaro: *«fai ragionamenti prima di
@@ -45,6 +45,42 @@ segnale che il mio controllo finiva troppo presto.
    aggiungere un ramo: gli altri rami vanno aggiornati insieme, non dopo.
 4. **Il dato arriva fino in fondo?** Non basta che si salvi: va aperto il posto
    dove dovrebbe comparire. È la regola 7 del progetto, e l'ho violata io.
+
+## L'ultimo miglio (aggiunto il 29/08, dopo che è successo di nuovo)
+
+Le quattro domande qui sopra erano scritte per i **dati**, e non hanno fermato
+l'errore successivo: un `case` in uno switch che non veniva mai raggiunto,
+perché una scorciatoia sopra lo intercettava. Avevo provato il rendering
+pubblico — codice mio, funzionava — e **non avevo mai aperto l'editor**, che è
+dove Francesco ci sarebbe arrivato.
+
+**Il pattern vero, più profondo delle quattro domande: verifico il pezzo che ho
+scritto, non il percorso che fa lui.** Il pulsante «Prenota per un cliente»
+l'avevo scritto e non l'avevo cliccato. Il blocco l'avevo reso e non l'avevo
+configurato.
+
+- Prima di dire «fatto» su qualcosa che tocca il pannello o il sito, **apro il
+  punto esatto da cui ci arriverebbe lui**, con un browser, cliccando.
+- Se non l'ho aperto è **«scritto, non provato»**, e lo dico con queste parole.
+- Un ramo mai raggiunto **non dà errore: dà silenzio**. Aggiungendo un `case`,
+  controllare che niente lo intercetti prima.
+
+Sue parole il 29/08: *«ti ho detto di aggiornare i file md e continui a fare gli
+stessi errori»*. Aveva ragione: la regola c'era ma copriva un caso diverso.
+
+## Quando serve il suo aiuto, chiederlo
+
+Chiesto esplicitamente da Francesco. Ci sono verifiche che da solo non posso
+fare, e fingere di averle fatte è il modo più veloce per mandare in produzione
+qualcosa di rotto.
+
+- Se non ho potuto provare una cosa, lo **scrivo** e dico **come provarla**:
+  quale pagina, cosa cliccare, cosa deve succedere.
+- Serve lui per: pagamenti veri, email in arrivo, WhatsApp, un dispositivo, un
+  fornitore esterno, un flusso legato al suo account. E per **ogni migration**,
+  che esegue lui su Supabase — non dichiarare fatto prima del suo «fatta».
+- Quando gli chiedo di provare, do **il percorso preciso**. Un «fai un giro» gli
+  scarica addosso il lavoro di capire cosa guardare.
 
 **E una cosa pratica che ho sbagliato tre volte in due giorni**: mai lanciare
 `npm run build` mentre gira `npm run dev` — corrompe `.next`, il server

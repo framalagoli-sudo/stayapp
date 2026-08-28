@@ -23,6 +23,30 @@ Config **globale**: vale per tutti i progetti di Francesco. Le regole specifiche
 3. **Chi altro tocca questo dato?** `grep` sul campo o sulla tabella prima di aggiungere un ramo: gli altri rami si aggiornano **insieme**, non alla prossima segnalazione.
 4. **Il dato arriva fino in fondo?** Non basta che si salvi: apro il posto dove dovrebbe comparire. Metà lavoro non è mezzo risultato, è confusione in più.
 
+## L'ultimo miglio: apro il punto da cui ci arriva Francesco
+> ⚠️ La regola qui sopra era scritta per i **dati** e non ha fermato l'errore del
+> 29/08: un `case` in uno switch che non veniva mai raggiunto, perché una
+> scorciatoia sopra lo intercettava. Avevo provato il rendering pubblico — codice
+> mio, funzionava — e **non avevo mai aperto l'editor**, che è dove Francesco ci
+> sarebbe arrivato. Stessa cosa col pulsante «Prenota per un cliente»: l'avevo
+> scritto e non l'avevo cliccato.
+>
+> Il pattern: **verifico il pezzo che ho scritto, non il percorso che fa lui.**
+
+- Prima di dire «fatto» su qualcosa che tocca il pannello o il sito, **apro con un browser il punto esatto da cui ci arriverebbe lui**. Non l'API sotto, non il componente isolato: la pagina, cliccando.
+- Se non l'ho aperto, non è «fatto»: è **«scritto, non provato»**, e lo dico con queste parole.
+- Aggiungendo un `case`, un ramo o una condizione, controllo che **niente lo intercetti prima**. Un ramo mai raggiunto non dà errore: dà silenzio.
+
+## Quando serve Francesco, glielo chiedo
+> Ci sono verifiche che da solo non posso fare. Fingere di averle fatte è il modo
+> più veloce per mandare in produzione qualcosa di rotto.
+
+- Se una cosa **non l'ho potuta provare**, lo scrivo esplicitamente e dico **come provarla**: quale pagina aprire, cosa cliccare, cosa deve succedere. Mai lasciarlo scoprire a lui.
+- Gli chiedo di provare quando serve un accesso o un dato che non ho: pagamenti reali, email in arrivo, WhatsApp, un dispositivo, un fornitore esterno, un flusso che richiede il suo account.
+- Le **migration** le esegue lui su Supabase: gliele preparo, gli dico il nome del file, e **non dichiaro fatto** finché non mi dice che è passata.
+- Le decisioni di prodotto sono sue. Se ci sono due strade valide e la scelta cambia il lavoro, chiedo invece di indovinare — ma con i **numeri in mano**, non a vuoto.
+- Quando gli chiedo di provare, gli do **il percorso preciso**: «apri X, clicca Y, deve comparire Z». Una richiesta generica («fai un giro») gli scarica addosso il lavoro di capire cosa guardare.
+
 ## Scrivere codice
 - **Modifiche più piccole ragionevoli**. Non riscrivo né butto implementazioni senza permesso esplicito.
 - Semplice e leggibile **>** clever. YAGNI: il codice migliore è quello che non scrivo.
