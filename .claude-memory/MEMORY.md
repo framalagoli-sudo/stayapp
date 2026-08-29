@@ -1,5 +1,7 @@
 # Memory Index
 
+> ⛔ **I cambi che un cliente noterebbe li autorizza Francesco PRIMA**: [regola](feedback_autorizzare_cambi_importanti.md). E la sicurezza è il vincolo di ogni riga, non una fase finale.
+
 > ⚠️ **Prima di scrivere codice**: [Verificare il contesto, non solo il pezzo](feedback_verificare_il_contesto.md) — la radice comune degli errori ripetuti.
 
 - [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: blocco Offerte + promozioni migrate + consenso booking. Da provare col percorso preciso; poi risorse booking dentro le offerte
@@ -130,3 +132,4 @@
 - [🎯 Prenotazioni unificate: da cinque posti a uno](project_prenotazioni_unificate.md) — analisi completa + le 2 scoperte: metà delle prenotazioni non compariva (riconosciute dal PREFISSO di una stringa) e i posti non si consumavano mai
 - [🔁 Cercare TUTTI i punti, non solo quello segnalato](feedback_cercare_tutti_i_punti.md) — il consenso privacy è mancato in TRE posti perché ogni volta correggevo solo dove me lo segnalava Francesco: un difetto di categoria si cerca su tutta la categoria
 - [🏷️ Sessione 28/08 pomeriggio — blocco Offerte e blocchi orfani](project_session_2026_08_28b.md) — i blocchi sparivano dal sito senza dirlo; promozioni/pacchetti erano una quarta porta; azienda_id misurato invece che rimosso
+- [⛔ I cambi importanti li autorizza Francesco PRIMA](feedback_autorizzare_cambi_importanti.md) — togliere voci di menu, spostare dove si crea qualcosa, migrare dati: si CHIEDE, non si comunica. E la sicurezza viene prima, sempre
