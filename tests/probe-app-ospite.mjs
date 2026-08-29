@@ -73,13 +73,17 @@ try {
     return { chip, errori }
   }
 
-  // il menù riempito ma la funzione spenta: non deve comparire
+  // ⚠️ Dal 28/08 un cliente nuovo trova **tutte** le funzioni accese: il
+  // controllo di prima («riempito ma spento → non compare») verificava un
+  // comportamento che abbiamo cambiato di proposito, e restava rosso a torto.
+  // Ora si prova il contrario, che è la domanda vera: spegnendola, sparisce?
   await fetch(`${L}${API.struttura}/${ent.id}`, { method:'PATCH', headers:H,
     body: JSON.stringify({ menu:[{ id:'c1', category:'Colazioni', items:[{ id:'i1', name:'Cornetto', price:1.5 }] }] }) })
+  await fetch(`${L}${API.struttura}/${ent.id}`, { method:'PATCH', headers:H, body: JSON.stringify({ modules:{ menu:false } }) })
   let r = await apri()
-  ok(!r.chip.some(c => /^Men[uù]$/.test(c)), `menù riempito ma funzione spenta → non compare  [${r.chip.join(' ')||'—'}]`)
+  ok(!r.chip.some(c => /^Men[uù]$/.test(c)), `funzione spenta → il menù sparisce  [${r.chip.join(' ')||'—'}]`)
 
-  // ora la accendo dal pannello
+  // e riaccendendola torna
   await fetch(`${L}${API.struttura}/${ent.id}`, { method:'PATCH', headers:H, body: JSON.stringify({ modules:{ menu:true } }) })
   r = await apri()
   ok(r.errori.length === 0, `l'app apre senza errori${r.errori.length?': '+r.errori[0]:''}`)
