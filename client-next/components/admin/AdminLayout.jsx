@@ -314,10 +314,14 @@ export default function AdminLayout({ children }) {
     return (
       <CollapseSection label="Booking" icon={Calendar} isOpen={bookingOpen} onToggle={() => setBookingOpen(o => !o)}>
         <NavItem to="/admin/booking" icon={CalendarDays} label="Calendario" sub end />
-        {/* «Risorse» non c'è più: quello che si prenota si crea in **Offerte**,
-            insieme a tutto il resto. Era l'ultima porta separata — un campo da
-            padel e un corso sono la stessa cosa vista da due menu diversi.
-            La pagina resta raggiungibile da chi ha un vecchio segnalibro. */}
+        {/* ⚠️ «Risorse» era stata tolta dal menu il 29/08, pensando che Offerte
+            la sostituisse. Non era vero: l'editor delle offerte sa gestire
+            posti, anticipo e disdetta, ma **non** gli orari di apertura, i
+            giorni, i coperti, le unità identiche né la modalità.
+            Togliere lo strumento prima di aver finito il sostituto lascia il
+            cliente senza un modo di configurare quello che vende. Rimessa: si
+            toglie quando Offerte saprà fare tutto, non prima. */}
+        <NavItem to="/admin/booking/risorse" icon={Package} label="Risorse" sub />
       </CollapseSection>
     )
   }
