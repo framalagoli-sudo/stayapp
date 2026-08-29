@@ -11,11 +11,28 @@ R2. Il codice del backup usava R2 anche per cancellare i file scaduti, il che **
 quella chiave ad avere il permesso di cancellazione: un solo furto e si perde il database
 **e** l'archivio.
 
-**Ora** (25/08/2026) la cancellazione si prova e, se il permesso manca, non è un errore:
-`pulizia: 'non permessa (chiave in sola scrittura: corretto)'`. Questo permette di dare
-alla chiave su Vercel il **solo permesso di scrittura** e spostare la scadenza su una
-regola del bucket Cloudflare, dove serve un altro accesso per toglierla.
-👉 La configurazione su Cloudflare è **a carico di Francesco**, il codice è pronto.
+**Chiuso il 29/08/2026 — ma NON come previsto.** R2 **non ha un permesso di sola
+scrittura**: i livelli sono quattro (*Admin Read & Write*, *Admin Read only*, *Object
+Read & Write*, *Object Read only*) e il più stretto che scrive include la cancellazione.
+Il consiglio dato prima non era realizzabile.
+
+La difesa che regge è un'altra: **Bucket lock** su Cloudflare R2 — gli oggetti non si
+cancellano né si sovrascrivono per 30 giorni **a prescindere dalla chiave**, più una
+regola di *lifecycle* a 31 giorni per la scadenza. Le regole di blocco **vincono sempre**
+su quelle di scadenza. ⚠️ Col blocco attivo il bucket **non si può svuotare**.
+
+⚠️ **La dashboard Cloudflare dice «successfully deleted» anche quando non cancella
+niente** — difetto noto di Cloudflare. Provato: tre tentativi, messaggio di successo ogni
+volta, file sempre lì. **Non fidarsi del messaggio: ricaricare e guardare.**
+
+✅ **Archivio provato davvero il 29/08/2026**: `backup-2026-08-29.json.gz`, 51 tabelle,
+**verde**. Le sei tabelle vitali identiche alla produzione, 26 pagine su 29 coi contenuti,
+16 domini. Unico scarto `event_bookings` 6 vs 7 = una prenotazione arrivata dopo le 05:00.
+⚠️ Da rifare ogni pochi mesi: provato una volta dice solo che funzionava *quel giorno*.
+
+⚠️ **Il file scaricato è il database dei clienti in chiaro**: si cancella dal disco appena
+finita la verifica. `backup/` e `*.json.gz` sono in `.gitignore` dal 29/08 — prima non lo
+erano, e un `git add -A` l'avrebbe pubblicato su GitHub.
 
 **`tests/verifica-backup.mjs`** — apre un backup scaricato da R2 e risponde a una domanda
 sola: da qui si torna in piedi? Confronta riga per riga con la produzione, segnala le

@@ -85,6 +85,17 @@ girare con le vecchie: `.\deploy.ps1`.
 > ⚠️ Con il blocco attivo **il bucket non si può svuotare** finché non si tolgono
 > le regole. È voluto: se durante un incidente devi rimuoverle, sappi che stai
 > aprendo proprio quella porta.
+>
+> ⚠️ **La dashboard di Cloudflare dice «successfully deleted» anche quando NON
+> ha cancellato niente.** Provato il 29/08/2026: tre tentativi sul backup più
+> recente, messaggio di successo ogni volta, e il file sempre lì dopo il
+> refresh. È un difetto noto di Cloudflare, non un errore nostro — e il blocco
+> ha fatto il suo lavoro. Ma qui dentro conta: **non fidarti del messaggio,
+> ricarica la pagina e guarda se il file c'è ancora.**
+>
+> Le regole di blocco **vincono sempre** su quelle di scadenza: se il lifecycle
+> vuole cancellare a 31 giorni ma il blocco ne pretende 30, l'oggetto sparisce
+> al 31° — mai prima.
 
 Cloudflare → R2 → il bucket dei backup.
 
