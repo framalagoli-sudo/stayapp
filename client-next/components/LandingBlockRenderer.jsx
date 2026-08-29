@@ -350,6 +350,106 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, enti
   )
 }
 
+// La pagina di una singola offerta.
+//
+// ⚠️ Nasce da un guasto: il blocco «Offerte» del sito puntava a
+// `/{s|r|a}/[slug]/offerte/[id]`, una pagina che **non era mai stata creata**.
+// Tutte le offerte pubblicate rispondevano 404 — un pulsante scritto senza mai
+// aprire la destinazione.
+//
+// ⛔ Qui non si prenota: un'offerta si **chiede** o si **acquista**. Le cose
+// prenotabili sono le Risorse (Booking) e gli Eventi. Chi clicca lascia i suoi
+// dati, che entrano nei contatti del cliente — il lead resta suo anche quando
+// la conversazione prosegue su WhatsApp.
+function OffertaDettaglio({ block, primary, sec, heading, entity, entityType, privacyUrl }) {
+  const [showForm, setShowForm] = useState(false)
+  const o = block.data || {}
+  const waNumber = (entity?.whatsapp || entity?.minisito?.social?.whatsapp || '').replace(/\D/g, '')
+  const waHref = waNumber ? `https://wa.me/${waNumber}?text=${encodeURIComponent(`Ciao, vorrei informazioni su ${o.titolo || ''} che ho visto sul sito.`)}` : null
+  const immagini = Array.isArray(o.galleria) ? o.galleria.filter(Boolean) : []
+  // Il prezzo lo si mostra solo se c'è: «Gratis» su una cena alla carta è
+  // un'informazione falsa, ed è già costato una correzione sugli eventi.
+  const prezzo = Number(o.prezzo) > 0 ? Number(o.prezzo) : null
+  const barrato = Number(o.prezzo_barrato) > 0 ? Number(o.prezzo_barrato) : null
+  const valuta = o.valuta === 'USD' ? '$' : o.valuta === 'GBP' ? '£' : '€'
+  const scade = o.data_fine ? new Date(o.data_fine) : null
+  const incluso = Array.isArray(o.incluso) ? o.incluso.filter(Boolean) : []
+  const acquista = o.impegno === 'acquista'
+  return (
+    <section style={{ padding: '48px 0 72px' }}>
+      <div className="lbr-section" style={{ maxWidth: 900, margin: '0 auto' }}>
+        {o.categoria && <span style={{ display: 'inline-block', background: `${sec}18`, color: sec, fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 14 }}>{o.categoria}</span>}
+        <h1 style={{ fontFamily: heading, fontSize: 'clamp(28px,4vw,44px)', fontWeight: 800, margin: '0 0 24px', color: '#1a1a2e', overflowWrap: 'anywhere' }} {...ricco(o.titolo)} />
+
+        {(o.cover_url || immagini.length > 0) && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10, marginBottom: 32 }}>
+            {[o.cover_url, ...immagini].filter(Boolean).map((url, i) => (
+              <img key={i} src={url} alt={o.titolo || ''} loading={i === 0 ? 'eager' : 'lazy'} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: 12, gridColumn: i === 0 ? 'span 2' : 'auto' }} />
+            ))}
+          </div>
+        )}
+
+        {(prezzo || o.prezzo_testo || o.luogo || scade) && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: 18, padding: 24, background: '#f8f9fb', borderRadius: 16, marginBottom: 28 }}>
+            {(prezzo || o.prezzo_testo) && (
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 11, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>{o.prezzo_etichetta || 'Prezzo'}</div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a2e', overflowWrap: 'anywhere' }}>
+                  {barrato && <span style={{ textDecoration: 'line-through', color: '#aaa', fontWeight: 400, marginRight: 8 }}>{valuta}{barrato}</span>}
+                  {o.prezzo_testo || `${valuta}${prezzo}`}
+                </div>
+              </div>
+            )}
+            {o.luogo && (
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 11, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>Dove</div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a2e', overflowWrap: 'anywhere' }}>{o.luogo}</div>
+              </div>
+            )}
+            {scade && (
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 11, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>Valida fino al</div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a2e' }}>{scade.toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {o.descrizione && <p style={{ fontSize: 16, lineHeight: 1.8, color: '#444', whiteSpace: 'pre-line', marginBottom: 32 }} {...ricco(o.descrizione)} />}
+
+        {incluso.length > 0 && (
+          <div style={{ marginBottom: 32 }}>
+            <h3 style={{ fontFamily: heading, fontSize: 19, fontWeight: 700, margin: '0 0 10px', color: '#1a1a2e' }}>Cosa comprende</h3>
+            <ul style={{ margin: 0, paddingLeft: 20, color: '#444', lineHeight: 1.9, fontSize: 15 }}>
+              {incluso.map((x, i) => <li key={i} style={{ overflowWrap: 'anywhere' }}>{x}</li>)}
+            </ul>
+          </div>
+        )}
+
+        <div style={{ padding: 32, background: '#1a1a2e', borderRadius: 16 }}>
+          <div style={{ color: '#fff', fontSize: 20, fontWeight: 700, marginBottom: 8, fontFamily: heading, textAlign: 'center' }}>Ti interessa?</div>
+          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, marginBottom: 20, textAlign: 'center' }}>Lascia i tuoi dati: ti ricontattiamo al più presto.</div>
+          {showForm
+            ? <VetrinaLeadForm entity={entity} entityType={entityType} projectTitle={o.titolo} primary={primary} privacyUrl={privacyUrl}
+                source="offerta" etichetta="Interesse offerta" />
+            : <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+                {/* Il pulsante di acquisto porta allo shop solo se il cliente ha scritto dove:
+                    senza indirizzo resterebbe un pulsante che non porta da nessuna parte. */}
+                {acquista && o.cta_url
+                  ? <a href={safeUrl(o.cta_url)} target="_blank" rel="noopener noreferrer" style={{ padding: '14px 34px', background: primary, color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none' }}>{o.cta_label || 'Acquista ora'}</a>
+                  : <button onClick={() => setShowForm(true)} style={{ padding: '14px 34px', background: primary, color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 16, border: 'none', cursor: 'pointer' }}>{o.cta_label || 'Richiedi informazioni'}</button>}
+                {waHref && <a href={waHref} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 28px', background: '#25D366', color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none' }}>💬 WhatsApp</a>}
+              </div>}
+        </div>
+
+        {o.cta_condizioni && (
+          <p style={{ fontSize: 13, color: '#888', lineHeight: 1.7, marginTop: 18, whiteSpace: 'pre-line' }} {...ricco(o.cta_condizioni)} />
+        )}
+      </div>
+    </section>
+  )
+}
+
 const HIGHLIGHT_LUCIDE = {
   star: Star, heart: Heart, award: Award, wifi: Wifi, parking: Car,
   pool: Waves, spa: Sparkles, restaurant: Utensils, gym: Activity,
@@ -664,7 +764,11 @@ function Countdown({ block, primary, heading }) {
 // Form lead del dettaglio vetrina → CRM contatti via /api/guest/contact
 // (stesso percorso dei contatti del sito: upsert in `contatti`, tag 'vetrina',
 // notifica al titolare, automazione nuovo_contatto). Il progetto finisce nella nota.
-function VetrinaLeadForm({ entity, entityType, projectTitle, primary, privacyUrl, successText }) {
+// Un solo modulo per le richieste che arrivano dal sito: il dettaglio di un
+// prodotto in vetrina e quello di un'offerta chiedono la stessa cosa — chi sei,
+// come ti richiamo — e la portano nello stesso posto, i contatti del cliente.
+// `source` ed `etichetta` sono l'unica differenza, e restano parametri.
+function VetrinaLeadForm({ entity, entityType, projectTitle, primary, privacyUrl, successText, source = 'vetrina', etichetta = 'Interesse progetto' }) {
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [messaggio, setMessaggio] = useState('')
@@ -676,11 +780,11 @@ function VetrinaLeadForm({ entity, entityType, projectTitle, primary, privacyUrl
     e.preventDefault()
     if (!privacy) return
     setState('loading')
-    const message = `[Interesse progetto: ${projectTitle || ''}]${messaggio.trim() ? `\n${messaggio.trim()}` : ''}`
+    const message = `[${etichetta}: ${projectTitle || ''}]${messaggio.trim() ? `\n${messaggio.trim()}` : ''}`
     try {
       const r = await guestFetch('/api/guest/contact', {
         method: 'POST',
-        body: JSON.stringify({ entity_tipo: entityType, entity_id: entity?.id, source: 'vetrina', source_name: projectTitle, name: nome, email, message, turnstileToken }),
+        body: JSON.stringify({ entity_tipo: entityType, entity_id: entity?.id, source, source_name: projectTitle, name: nome, email, message, turnstileToken }),
       })
       if (r?.error) throw new Error(r.error)
       setState('done')
@@ -1689,6 +1793,9 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
 
       case 'vetrina_dettaglio':
         return <VetrinaDettaglio key={block.id} block={block} linkBase={linkBase} primary={primary} sec={sec} heading={heading} entity={entity} entityType={entityType} privacyUrl={privacyUrl} />
+
+      case 'offerta_dettaglio':
+        return <OffertaDettaglio key={block.id} block={block} primary={primary} sec={sec} heading={heading} entity={entity} entityType={entityType} privacyUrl={privacyUrl} />
 
       default:
         return null

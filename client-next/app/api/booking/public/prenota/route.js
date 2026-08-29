@@ -1,5 +1,4 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
-import { prenotabilePerId } from '@/lib/offerte-prenotabili'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { verificaPeriodo, totaleGiornaliero, notti } from '@/lib/booking-giornaliero'
 import { confermaPostiPrenotazione } from '@/lib/capienza'
@@ -129,10 +128,9 @@ export async function POST(request) {
       return Response.json({ error: 'Per prenotare serve il consenso al trattamento dei dati.' }, { status: 400 })
     if (!cliente_email?.trim()) return Response.json({ error: 'Email obbligatoria' }, { status: 400 })
 
-    // L'id arriva dal widget e può essere di un'offerta o di una risorsa: le due
-    // sorgenti convivono durante il passaggio, e chi prenota non deve saperlo.
-    const risorsa = await prenotabilePerId(risorsa_id)
-    if (!risorsa) return Response.json({ error: 'Risorsa non trovata o non attiva' }, { status: 404 })
+    const { data: risorsa, error: re } = await supabaseAdmin.from('risorse')
+      .select('*').eq('id', risorsa_id).eq('attiva', true).single()
+    if (re || !risorsa) return Response.json({ error: 'Risorsa non trovata o non attiva' }, { status: 404 })
 
     let ora_fine = null
     if (risorsa.modalita === 'slot' && ora_inizio) {
@@ -171,11 +169,7 @@ export async function POST(request) {
     }
 
     const payload = {
-      // ⚠️ La prenotazione punta a **una** delle due, mai a tutte e due: il
-      // vincolo del database pretende almeno un riferimento, e scriverli
-      // entrambi farebbe contare due volte lo stesso posto.
-      risorsa_id: risorsa._offerta ? null : risorsa_id,
-      offerta_id: risorsa._offerta ? risorsa_id : null,
+      risorsa_id,
       azienda_id: risorsa.azienda_id,
       entity_tipo: risorsa.entity_tipo,
       entity_id: risorsa.entity_id,

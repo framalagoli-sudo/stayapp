@@ -1,5 +1,4 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { offertePrenotabili } from '@/lib/offerte-prenotabili'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isUUID = v => UUID_RE.test(v)
@@ -20,16 +19,11 @@ export async function GET(request, props) {
 
     if (error) return Response.json({ error: error.message }, { status: 500 })
 
-    // Quello che si prenota vive ormai nelle **offerte**. Le risorse restano
-    // vive durante il passaggio: chi ha ancora solo quelle continua a prenotare.
-    //
-    // ⚠️ Quando un'offerta è stata copiata da una risorsa, la risorsa originale
-    // si toglie di mezzo: altrimenti il cliente vedrebbe **due volte** lo stesso
-    // campo da padel, e sceglierebbe a caso quale prenotare.
-    const daOfferte = await offertePrenotabili(entityId)
-    const copiate = new Set(daOfferte.map(o => o.origine_id).filter(Boolean))
-    const soloVecchie = (data || []).filter(r => !copiate.has(r.id))
-
-    return Response.json([...daOfferte, ...soloVecchie])
+    // ⚠️ Solo le risorse. Ci sono state anche le offerte, per un giorno, ed era
+    // un errore di modello: **una risorsa non è un prodotto e un'offerta non si
+    // prenota.** Le risorse sono la configurazione di ciò che si può prenotare
+    // — un furgone, una casa, un campo — e insieme agli eventi sono le uniche
+    // due cose prenotabili. I prodotti si acquistano, le offerte si chiedono.
+    return Response.json(data || [])
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }

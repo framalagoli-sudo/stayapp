@@ -39,8 +39,13 @@ try {
   ris = (await creata.json()).id
 
   const disp = async (d,f) => (await fetch(`${TEST_URL}/api/booking/public/disponibilita/${ris}?data=${d}${f?`&data_fine=${f}`:''}`)).json()
-  const prenota = (d,f,nome='ZZ Cliente') => fetch(`${TEST_URL}/api/booking/public/prenota`, { method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ risorsa_id:ris, data:d, data_fine:f, cliente_nome:nome, cliente_email:`zz${Date.now()}@example.com`, n_persone:2 }) })
+  // ⚠️ `privacy_accettata` è obbligatorio dal 28/08: senza, la route risponde
+  // 400. Provare in un modo diverso da come il codice gira nasconde il difetto
+  // invece di rivelarlo — qui la sonda mandava il corpo di prima e accusava il
+  // booking di essere rotto mentre stava semplicemente rifiutando un consenso
+  // mancante, che è il suo mestiere.
+  const prenota = (d,f,nome='ZZ Cliente',consenso=true) => fetch(`${TEST_URL}/api/booking/public/prenota`, { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ risorsa_id:ris, data:d, data_fine:f, cliente_nome:nome, cliente_email:`zz${Date.now()}@example.com`, n_persone:2, privacy_accettata:consenso }) })
 
   const q = await disp(g(10), g(14))
   ok(q.notti === 4, `dal ${g(10)} al ${g(14)} sono 4 notti (dice ${q.notti})`)
@@ -68,6 +73,11 @@ try {
 
   const senzaFine = await prenota(g(20), null)
   ok(senzaFine.status === 400, `senza data di fine non si prenota (HTTP ${senzaFine.status})`)
+
+  // I dati personali non si raccolgono senza permesso, e il permesso si verifica
+  // qui: una spunta nel browser si toglie con due clic.
+  const senzaConsenso = await prenota(g(24), g(26), 'ZZ Senza Consenso', false)
+  ok(senzaConsenso.status === 400, `senza consenso non si prenota (HTTP ${senzaConsenso.status})`)
 
   console.log('\n' + '-'.repeat(62))
   console.log(ko ? `  ${ko} PROBLEMI` : '  LE GIORNATE SI CONTANO GIUSTE E NON SI AFFITTA DUE VOLTE')

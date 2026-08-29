@@ -211,6 +211,33 @@ export async function getElementoVetrina(tipo, entityId, itemSlug, anteprima = n
   return { ...data, preset: vetrina?.preset || 'progetti_immobiliari', vetrina_titolo: vetrina?.titolo || '' }
 }
 
+// Una singola offerta, per la sua pagina pubblica.
+//
+// ⚠️ Le colonne si elencano una per una: qui risponde chi non ha fatto login, e
+// con un `select('*')` una colonna aggiunta domani verrebbe pubblicata da sola.
+// Restano fuori di proposito `azienda_id`, `origine`/`origine_id`, `prodotto_id`
+// e i contatori interni: dicono come lavora il cliente e non servono a chi legge.
+const CAMPI_OFFERTA_PUBBLICA =
+  'id, titolo, descrizione, categoria, luogo, impegno, prezzo, prezzo_barrato, prezzo_etichetta, ' +
+  'prezzo_testo, valuta, cover_url, galleria, incluso, cta_label, cta_url, cta_condizioni, ' +
+  'data_inizio, data_fine, entity_id'
+
+export async function getOfferta(entityId, offertaId) {
+  if (!entityId || !offertaId) return null
+  const { data, error } = await supabaseAdmin
+    .from('offerte')
+    .select(CAMPI_OFFERTA_PUBBLICA)
+    .eq('id', offertaId)
+    // ⚠️ Scopata per entità: senza questo, l'id di un'offerta di un'altra
+    // azienda si aprirebbe sotto il dominio di chiunque.
+    .eq('entity_id', entityId)
+    .eq('attiva', true)
+    .eq('pubblicata', true)
+    .maybeSingle()
+  if (error || !data) return null
+  return data
+}
+
 // `anteprima` è il token firmato che l'editor mette nell'URL: senza una firma
 // valida per QUESTA entità si vedono solo le pagine pubblicate.
 export async function getPagina(tipo, entityId, pageSlug, anteprima = null) {

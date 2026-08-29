@@ -1,66 +1,48 @@
 // Cosa un cliente può offrire, e cosa succede quando qualcuno clicca.
 //
-// Due scelte indipendenti, non un elenco di tipi:
-//   MODO    → quando si fa      (data fissa, calendario, coperti, su richiesta)
-//   IMPEGNO → cosa succede      (chiedi, prenota, acquista)
+// ⛔ **Un'offerta non si prenota.** È lo strato che sta sopra il catalogo: si
+// prende una cosa che il cliente ha già — un prodotto, un servizio — e la si
+// mette in evidenza a certe condizioni. Chi clicca **chiede informazioni** o
+// **acquista**. Nient'altro.
 //
-// Dodici combinazioni da due tendine. La cena di Capodanno è «data fissa +
-// acquista». Il tavolo del sabato è «coperti + prenota». Il corso di cucina è
-// «su richiesta + chiedi». Non esistono più eventi, escursioni, attività e
-// risorse come cose diverse: sono la stessa cosa configurata in modo diverso.
+// Le cose prenotabili nella piattaforma sono due, e restano dove sono:
+//   · le **Risorse** (Booking) — la configurazione di ciò che si può prenotare:
+//     un furgone, una casa, un campo, un tavolo. Con orari, unità e capienza.
+//   · gli **Eventi** — un fatto che accade, con un inizio e una fine.
 //
-// I PRESET esistono perché nessuno pensa in termini di «modo» e «impegno»:
-// si pensa «voglio fare una serata». Il preset riempie le due tendine e si
-// resta liberi di cambiarle — è la stessa regola del tipo di entità, che
-// sceglie il punto di partenza e non mette recinti.
+// ⚠️ Il 28/08/2026 le risorse erano state copiate dentro le offerte e il widget
+// di prenotazione leggeva queste. Era un errore di modello, non un dettaglio:
+// una risorsa **non** è un prodotto, e un prodotto non si prenota — lo si
+// acquista o si chiedono informazioni. Rientrato il 29/08. Parole di Francesco:
+// «RISORSE non va mai confuso con prodotti, è un'entità separata e deve sempre
+// rimanere tale».
 //
 // ⚠️ Nessun import: questo file lo legge anche il browser.
 
+// Il modo dice solo *quando* si fa, e si deduce dai dati (vedi `modoDedotto`):
+// niente tendina da compilare, perché la risposta è già scritta nelle date.
 export const MODI = [
   {
     chiave: 'data_fissa',
     titolo: 'A data fissa',
-    spiega: 'Succede in un giorno e a un\'ora precisi. I posti si esauriscono e le prenotazioni si chiudono da sole.',
-    esempi: 'una serata, una degustazione, un concerto',
-    vuolePosti: true,
+    spiega: 'Vale in un periodo preciso, e quando è passato l\'offerta si spegne da sola.',
+    esempi: 'una promozione di Pasqua, un pacchetto weekend',
     vuoleData: true,
-  },
-  {
-    chiave: 'calendario',
-    titolo: 'A calendario',
-    spiega: 'Si sceglie giorno e ora fra quelle libere. Puoi averne più copie identiche in parallelo.',
-    esempi: 'un tavolo, una sala, un campo, un\'ora di consulenza',
-    vuoleOrari: true,
-  },
-  {
-    chiave: 'coperti',
-    titolo: 'A coperti',
-    spiega: 'Capienza dentro una fascia oraria: quante persone entrano a pranzo, quante a cena.',
-    esempi: 'il servizio di sala di un ristorante',
-    vuoleOrari: true,
-    vuolePosti: true,
   },
   {
     chiave: 'richiesta',
     titolo: 'Su richiesta',
-    spiega: 'Nessun calendario e nessun posto da contare: qualcuno chiede, tu rispondi.',
-    esempi: 'un corso, un\'escursione, una prestazione',
+    spiega: 'Nessuna scadenza: resta finché non la togli tu.',
+    esempi: 'un corso, una prestazione, un servizio a listino',
   },
 ]
 
 export const IMPEGNI = [
   {
     chiave: 'chiedi',
-    titolo: 'Chiedi informazioni',
-    spiega: 'Arriva un messaggio. Niente si occupa e non c\'è niente da confermare.',
+    titolo: 'Richiedi informazioni',
+    spiega: 'Chi è interessato ti lascia i suoi dati: la richiesta entra nei tuoi contatti e ti arriva un\'email.',
     occupaPosto: false,
-    vuolePagamento: false,
-  },
-  {
-    chiave: 'prenota',
-    titolo: 'Prenota',
-    spiega: 'Il posto è suo da subito. Si paga dopo, o di persona.',
-    occupaPosto: true,
     vuolePagamento: false,
   },
   {
@@ -122,5 +104,5 @@ export function esaurita(offerta) {
 // Cosa scrivere sul pulsante, se il cliente non l'ha deciso lui.
 export function etichettaPredefinita(offerta) {
   if (esaurita(offerta)) return 'Esaurito'
-  return { chiedi: 'Richiedi informazioni', prenota: 'Prenota', acquista: 'Acquista ora' }[offerta?.impegno] || 'Prenota'
+  return { chiedi: 'Richiedi informazioni', acquista: 'Acquista ora' }[offerta?.impegno] || 'Richiedi informazioni'
 }
