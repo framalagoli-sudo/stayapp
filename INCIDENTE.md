@@ -184,6 +184,15 @@ quest'ordine** (le altre dipendono da queste):
 
 Poi il resto, in qualunque ordine.
 
+> 🔴 **Questo percorso non è mai stato provato** (stato al 29/08/2026). Sappiamo
+> che l'archivio contiene i dati giusti — verificato — ma **non sappiamo quante
+> ore costa rimetterli dentro**, né se le chiavi esterne reggono al primo colpo.
+> Se sei qui adesso e hai fretta: **usa i backup automatici di Supabase Pro**
+> (Dashboard → Database → Backups), che hanno un ripristino vero. Il file JSON
+> serve per recuperare *alcune* tabelle o quando è l'account Supabase stesso il
+> problema — e in quel caso metti in conto ore, non minuti.
+
+
 > Supabase Pro conserva anche i propri backup automatici del database — dal
 > Dashboard, sezione **Database → Backups**. Per un ripristino completo quelli
 > sono più comodi del nostro file: il nostro serve quando vuoi recuperare

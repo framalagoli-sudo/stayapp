@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-08-29T14:38:11.706Z
+  modified: 2026-08-29T19:56:38.348Z
 ---
 
 # Dove siamo — 29/08/2026
@@ -31,6 +31,25 @@ metadata:
   «Richiedi informazioni» → CRM (tag `offerta`) + WhatsApp dove il numero c'è.
 - Sonda `probe-pagina-offerta.mjs`, e `probe-booking-giornaliero` aggiornata al
   consenso obbligatorio.
+
+## 🔴 Il buco scoperto il 29/08: il RIPRISTINO non è mai stato provato
+
+**Verifica ≠ ripristino.** Il 29/08 abbiamo accertato che l'archivio *contiene* i
+dati giusti (`verifica-backup.mjs`, verde). Non abbiamo mai accertato che da quel
+file si **torni operativi**: quanto tempo ci vuole, se le tabelle rientrano
+nell'ordine giusto, se le chiavi esterne reggono. Non esiste uno script:
+`INCIDENTE.md` §3.2 dice «si ripristina scrivendo le tabelle una per una».
+
+Non siamo senza rete — **Supabase Pro ha backup propri con ripristino a un clic**,
+ed è quella la difesa per un disastro normale. Il nostro file serve nei due casi
+che quelli non coprono: recuperare **solo alcune tabelle**, o quando è **l'account
+Supabase stesso** il problema. È il secondo a non essere mai stato provato.
+
+**Come si prova sul serio, senza rischiare la produzione**: creare un progetto
+Supabase nuovo e vuoto, eseguirci le 97 migration, riversare l'archivio nell'ordine
+`aziende → profiles → entita → pagine → domini → contatti` e poi il resto,
+puntarci un'istanza locale e **aprire davvero un sito cliente**. Alla fine si sa
+la cosa che oggi non sappiamo: **quante ore costa tornare in piedi.**
 
 ## ⏭️ Tecnico, in ordine di quanto sposta
 
