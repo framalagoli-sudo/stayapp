@@ -319,7 +319,7 @@ Variables**. Qui ci sono solo i nomi e la provenienza.
 | Nome | Dove si rigenera | Se manca |
 |---|---|---|
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → API | **tutto fermo** |
-| `NEXT_PUBLIC_SUPABASE_URL` / `..._ANON_KEY` | Supabase → API | **tutto fermo** |
+| `NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → API | **tutto fermo** |
 | `R2_ACCOUNT_ID` · `R2_ACCESS_KEY_ID` · `R2_SECRET_ACCESS_KEY` · `R2_BUCKET_NAME` | Cloudflare → R2 → Manage API tokens | niente backup |
 | `RESEND_API_KEY` · `RESEND_FROM` · `RESEND_WEBHOOK_SECRET` | Resend → API Keys | nessuna email |
 | `CRON_SECRET` | inventarne una nuova, lunga e casuale | i processi automatici si fermano |
@@ -436,5 +436,36 @@ di chi subentra all'improvviso.
 
 ---
 
-*Documento di progetto — aggiornato al 29 agosto 2026. Da rivedere a ogni cambio
-di fornitore, a ogni nuovo collegamento esterno, e comunque una volta l'anno.*
+---
+
+## 13. Quando si aggiorna questo documento
+
+Un documento come questo non muore per vecchiaia: muore perché **qualcuno
+collega un fornitore nuovo e nessuno lo scrive**. Da quel momento mente proprio
+nel punto che conta — l'elenco di chi tiene acceso il servizio — e chi subentra
+scopre il pezzo mancante quando qualcosa si spegne.
+
+Per questo non c'è una scadenza a calendario, che si dimenterebbe. Ci sono
+**eventi**: quando succede una di queste cose, il documento va rimesso a posto
+**nello stesso momento**, non dopo.
+
+| Se succede questo | Cosa si aggiorna |
+|---|---|
+| **Si collega un fornitore nuovo** (o se ne toglie uno) | §2 per intero: cosa fa, costo, cosa si rompe, dove si entra |
+| **Nasce una variabile d'ambiente nuova** | §8 — è il segnale più affidabile che è entrato un collegamento esterno |
+| **Cambia un piano o un prezzo** | §2 e il totale in §2.7 |
+| **Si apre o si chiude una funzione che tocca i soldi** — registrazioni, pagamenti, abbonamenti | §11, che è l'onestà verso chi compra |
+| **Cambia il dominio principale** | §2.3, §2.4 e i webhook |
+| **Si prova l'archivio** | la data in §6 — «provato una volta» dice solo che funzionava quel giorno |
+| **Prima di far vedere il progetto a qualcuno** — un socio, un acquirente, una banca | tutto, con calma |
+| **Comunque una volta l'anno** | anche se sembra che non sia cambiato niente |
+
+**Il controllo automatico**: `node tests/verifica-regole.mjs` — che gira da solo
+prima di ogni pubblicazione — confronta le variabili d'ambiente usate nel codice
+con quelle elencate qui e **blocca** se ne trova una non documentata. Non
+dipende da chi si ricorda. Non copre tutto il resto della tabella: quello è
+pensiero, e va fatto.
+
+---
+
+*Documento di progetto — aggiornato al 29 agosto 2026.*

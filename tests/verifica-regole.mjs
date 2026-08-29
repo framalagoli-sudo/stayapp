@@ -165,6 +165,55 @@ for (const nome of ultime) {
   }
 }
 
+// ── 📘 un collegamento nuovo verso l'esterno va scritto in PROGETTO.md ──────
+//
+// `PROGETTO.md` esiste per una persona che non ha mai visto questo sistema e
+// deve prenderlo in mano — un erede, un socio, un acquirente. Vale finché è
+// vero, e invecchia in un modo solo: **qualcuno collega un fornitore nuovo e
+// nessuno lo scrive**. Da lì in poi il documento mente, e mente proprio nel
+// punto che conta: l'elenco di chi tiene acceso il servizio.
+//
+// Una regola a calendario («rivedilo ogni sei mesi») si dimentica. Questo è
+// l'evento che conta davvero: una **variabile d'ambiente nuova** è quasi sempre
+// un fornitore nuovo o un collegamento nuovo verso l'esterno.
+function collegamentiNonDocumentati() {
+  let progetto = ''
+  try { progetto = readFileSync(join(RADICE, 'PROGETTO.md'), 'utf8') } catch { return [] }
+
+  // Non sono fornitori: indirizzi del servizio stesso e interruttori interni.
+  // Stanno fuori perché citarli nel documento non aiuterebbe nessuno a capire
+  // da chi dipende OltreNova.
+  const NON_FORNITORI = [
+    'APP_URL', 'CLIENT_URL', 'STAYAPP_DOMAIN', 'VERCEL_URL',
+    'NEXT_PUBLIC_API_URL', 'NEXT_PUBLIC_APP_URL', 'NEXT_PUBLIC_STAYAPP_DOMAIN',
+    'NEXT_INTERNAL_API_URL', 'NODE_ENV',
+    'TURNSTILE_SOFT', 'TURNSTILE_STRICT', 'TURNSTILE_TEST_BYPASS',
+  ]
+
+  const usate = new Set()
+  for (const p of file) {
+    const testo = readFileSync(p, 'utf8')
+    for (const m of testo.matchAll(/process\.env\.([A-Z0-9_]+)/g)) usate.add(m[1])
+  }
+  return [...usate].filter(v => !NON_FORNITORI.includes(v) && !progetto.includes(v)).sort()
+}
+
+const nonDocumentati = collegamentiNonDocumentati()
+if (nonDocumentati.length) {
+  console.log('\n' + '='.repeat(70))
+  console.log('  📘 UN COLLEGAMENTO NUOVO NON È SCRITTO IN PROGETTO.md')
+  console.log('='.repeat(70) + '\n')
+  for (const v of nonDocumentati) console.log(`  · ${v}`)
+  console.log('\n  Una variabile nuova è quasi sempre un fornitore nuovo. PROGETTO.md')
+  console.log('  serve a chi prende in mano il sistema senza averlo mai visto: se')
+  console.log('  l\'elenco dei fornitori è incompleto, il documento mente proprio')
+  console.log('  nel punto che conta.')
+  console.log('\n  Aggiungila alla tabella delle chiavi (§8) dicendo dove si')
+  console.log('  rigenera e cosa si rompe se manca — mai il valore.')
+  console.log('  Se non è un fornitore, aggiungila a NON_FORNITORI qui sopra.\n')
+  process.exit(1)
+}
+
 // ── ⛔ il cancello: cosa sto togliendo al cliente? ──────────────────────────
 //
 // Il 29/08/2026 ho tolto la voce «Risorse» dal menu convinto che «Offerte» la

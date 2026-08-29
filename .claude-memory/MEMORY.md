@@ -5,6 +5,7 @@
 > ⚠️ **Prima di scrivere codice**: [Verificare il contesto, non solo il pezzo](feedback_verificare_il_contesto.md) — la radice comune degli errori ripetuti.
 
 - [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: blocco Offerte + promozioni migrate + consenso booking. Da provare col percorso preciso; poi risorse booking dentro le offerte
+- [📘 PROGETTO.md — per chi subentra da zero](reference_documento_progetto.md) — fornitori/costi/chiavi per un erede o un acquirente; si aggiorna su EVENTI non a calendario, e una env var non documentata BLOCCA il deploy
 - [🎫 Cosa si prenota: SOLO Risorse ed Eventi](reference_cosa_si_prenota.md) — prodotti e offerte NON si prenotano (si acquistano o si chiedono); «una risorsa non è un prodotto»: mai spostarla né confonderla col catalogo
 - [🧩 Una sola tabella `entita`](reference_entita_unificata.md) — il tipo decide solo indirizzo e preset, NON le funzioni; lib/entita.js unico accesso; ⚠️ next build non vede gli import mancanti (500 in produzione sulle route guest)
 - [🔇 Guasti silenziosi: allarmi + battito dei cron](reference_guasti_silenziosi.md) — try/catch NON intercetta un processo che smette di girare; ogni cron lascia un segno e chi gira dopo controlla gli altri; pagina /admin/diagnostica
