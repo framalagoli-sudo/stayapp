@@ -165,6 +165,93 @@ for (const nome of ultime) {
   }
 }
 
+// ── ⛔ il cancello: cosa sto togliendo al cliente? ──────────────────────────
+//
+// Il 29/08/2026 ho tolto la voce «Risorse» dal menu convinto che «Offerte» la
+// sostituisse. Non era vero, e Francesco si è ritrovato senza il posto in cui
+// configurava quello che vende. La regola c'era, scritta da me due giorni
+// prima, e non è servita: **le regole scritte sono passive**, si leggono a
+// inizio sessione e poi non si rileggono.
+//
+// Questo invece è un cancello: gira da solo prima di ogni deploy e non dipende
+// da chi si ricorda. Guarda cosa i commit non ancora pubblicati **tolgono** —
+// voci di menu, pagine, route — e si ferma finché Francesco non ha autorizzato.
+//
+// Aggiungere è reversibile, togliere no: chi cercava quella voce non la trova e
+// non sa dove guardare. E nel frattempo non lavora.
+function cosaSparisce() {
+  let diff = ''
+  try {
+    // I commit fatti e non ancora pubblicati: è esattamente ciò che il deploy
+    // sta per mandare in produzione.
+    diff = execSync('git diff origin/main...HEAD -- client-next', { cwd: RADICE, encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 })
+  } catch {
+    // Nessun remoto, o primo commit: non c'è niente da confrontare, e un
+    // controllo che non può misurare non deve inventarsi un esito.
+    return []
+  }
+  if (!diff.trim()) return []
+
+  const persi = []
+  let fileCorrente = ''
+  for (const riga of diff.split('\n')) {
+    const f = riga.match(/^\+\+\+ b\/(.+)/)
+    if (f) { fileCorrente = f[1]; continue }
+    if (!riga.startsWith('-') || riga.startsWith('---')) continue
+
+    // Una voce di menu tolta.
+    const nav = riga.match(/label="([^"]+)"/) || riga.match(/label:\s*'([^']+)'/)
+    if (nav && /<NavItem|sub:\s*'/.test(riga)) persi.push({ cosa: `la voce «${nav[1]}»`, dove: fileCorrente })
+
+    // Una funzione tolta dal catalogo che il cliente accende e spegne.
+    const fn = riga.match(/chiave:\s*'([^']+)'.*titolo:\s*'([^']+)'/)
+    if (fn) persi.push({ cosa: `la funzione «${fn[2]}»`, dove: fileCorrente })
+  }
+
+  // Pagine e route cancellate: qui il file sparisce del tutto.
+  try {
+    const tolti = execSync('git diff --diff-filter=D --name-only origin/main...HEAD -- client-next', { cwd: RADICE, encoding: 'utf8' })
+    for (const f of tolti.split('\n').filter(Boolean)) {
+      if (/app\/.*\/page\.js$/.test(f)) persi.push({ cosa: 'una pagina', dove: f })
+      if (/app\/api\/.*\/route\.js$/.test(f)) persi.push({ cosa: 'una route API', dove: f })
+    }
+  } catch { /* già gestito sopra */ }
+
+  return persi
+}
+
+// L'autorizzazione si dichiara nel messaggio di commit: `autorizzato: <motivo>`.
+// Nel messaggio e non in un file, perché resta attaccata **a quel** cambiamento
+// e si rilegge nella storia fra sei mesi.
+function autorizzazioneNeiCommit() {
+  try {
+    const msg = execSync('git log origin/main..HEAD --format=%B', { cwd: RADICE, encoding: 'utf8' })
+    const m = msg.match(/autorizzato:\s*(.+)/i)
+    return m && m[1].trim().length > 8 ? m[1].trim() : null
+  } catch { return null }
+}
+
+const sparisce = cosaSparisce()
+if (sparisce.length) {
+  const autorizzato = autorizzazioneNeiCommit()
+  if (autorizzato) {
+    console.log(`\n  ⛔→✓ ${sparisce.length} cose sparirebbero, ma è autorizzato: «${autorizzato}»\n`)
+  } else {
+    console.log('\n' + '='.repeat(70))
+    console.log('  ⛔ QUESTO DEPLOY TOGLIE QUALCOSA AL CLIENTE')
+    console.log('='.repeat(70) + '\n')
+    for (const p of sparisce) console.log(`  · ${p.cosa}  —  ${p.dove}`)
+    console.log('\n  Aggiungere è reversibile, togliere no: chi cercava quella voce')
+    console.log('  non la trova e non sa dove guardare. E nel frattempo non lavora.')
+    console.log('\n  Prima di procedere serve il permesso di Francesco. Portagli:')
+    console.log('    · cosa cambia   · cosa vedrà lui   · cosa si perde se sbaglio')
+    console.log('\n  Se una porta nuova sostituisce la vecchia, verificare che faccia')
+    console.log('  TUTTO quello che faceva — non la metà.')
+    console.log('\n  Quando ha detto sì, scriverlo nel commit:  autorizzato: <motivo>\n')
+    process.exit(1)
+  }
+}
+
 // ── esito ──────────────────────────────────────────────────────────────────
 console.log('\n' + '='.repeat(70))
 console.log(`  LE NOSTRE REGOLE, SUL CODICE${soloModificati ? ' (solo i file modificati)' : ''}`)

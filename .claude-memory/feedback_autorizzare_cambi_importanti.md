@@ -41,9 +41,17 @@ lavoro, non le rileggo. Quello che funziona davvero in questo progetto sono i
 controlli che girano da soli — `verifica-regole.mjs` che blocca il deploy, le
 sonde che trovano i difetti. Quelli non dipendono dalla mia memoria.
 
-Idea proposta e non ancora fatta: aggiungere a `verifica-regole.mjs` un controllo
-che guardi il diff e **blocchi** quando un commit toglie una voce di menu, una
-route o una pagina, finché non è dichiarato dove è finita quella funzione.
+✅ **Fatto il 29/08/2026**: `verifica-regole.mjs` ha ora un **cancello**. Guarda
+il diff `origin/main...HEAD` e, se i commit non ancora pubblicati **tolgono** una
+voce di menu, una funzione del catalogo, una pagina o una route, **blocca il
+deploy** (exit 1) elencando cosa sparirebbe. Si sblocca solo dichiarando
+`autorizzato: <motivo>` nel messaggio di commit — nel messaggio e non in un file,
+così l'autorizzazione resta attaccata **a quel** cambiamento e si rilegge nella
+storia fra sei mesi. Provato dal vivo su un commit finto che toglieva «Risorse»,
+«Menù» e una route: scatta su tutti e tre.
+
+⚠️ Vede solo ciò che è **committato e non ancora pushato**: se qualcosa sparisce
+senza passare da un commit, o dopo il push, non lo intercetta.
 
 ## La sicurezza è il vincolo di ogni riga
 
