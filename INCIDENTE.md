@@ -74,6 +74,18 @@ girare con le vecchie: `.\deploy.ps1`.
 
 ### 1.4 Metti al sicuro l'archivio
 
+> Dal 29 agosto 2026 il bucket dei backup ha una **regola di blocco**: gli
+> oggetti non si cancellano né si sovrascrivono per 30 giorni, **a prescindere
+> dalla chiave**. Serve perché la chiave che scrive i backup sta su Vercel
+> accanto a quella del database: senza il blocco, un solo furto porterebbe via
+> i dati *e* l'archivio da cui ripartire. R2 non offre un permesso di sola
+> scrittura — il livello più stretto che scrive include la cancellazione — e il
+> blocco del bucket è la difesa che regge davvero.
+>
+> ⚠️ Con il blocco attivo **il bucket non si può svuotare** finché non si tolgono
+> le regole. È voluto: se durante un incidente devi rimuoverle, sappi che stai
+> aprendo proprio quella porta.
+
 Cloudflare → R2 → il bucket dei backup.
 
 Se la chiave R2 era compromessa, **scarica subito sul tuo computer gli ultimi due
@@ -119,6 +131,22 @@ node verifica-backup.mjs C:\percorso\backup-AAAA-MM-GG.json.gz
 
 Lo script ti dice, tabella per tabella, cosa c'è nell'archivio e cosa c'è in
 produzione. Le differenze sono ciò che è stato toccato.
+
+> **L'archivio è stato provato davvero il 29 agosto 2026** — non «esiste», ma
+> *da lì si riparte*: `backup-2026-08-29.json.gz`, 51 tabelle, esito **verde**.
+> Aziende, utenti, entità, pagine, domini e contatti identici alla produzione;
+> 26 pagine su 29 con i contenuti dentro; 16 domini presenti, quindi i clienti
+> resterebbero raggiungibili al loro indirizzo. L'unico scarto —
+> `event_bookings` 6 contro 7 — è una prenotazione arrivata **dopo** le 05:00,
+> quando l'archivio era già chiuso: non è una perdita.
+>
+> ⚠️ **Da rifare ogni pochi mesi.** Un backup provato una volta dice che
+> funzionava quel giorno. Nell'agosto 2026 ne salvava 1504 righe su 2908, e
+> girava così da mesi senza che nessuno se ne accorgesse.
+>
+> ⚠️ **Il file scaricato è il database dei clienti in chiaro.** Cancellalo dal
+> disco appena finita la verifica. `backup/` e `*.json.gz` sono in `.gitignore`
+> perché non finiscano su GitHub con un `git add -A`.
 
 ---
 
@@ -207,5 +235,5 @@ con la data.
 
 ---
 
-*Ultimo aggiornamento: 25 agosto 2026. Da rivedere dopo ogni incidente e a ogni
+*Ultimo aggiornamento: 29 agosto 2026 (archivio provato, blocco del bucket attivo). Da rivedere dopo ogni incidente e a ogni
 cambio di fornitore.*
