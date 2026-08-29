@@ -59,6 +59,7 @@ leggibile perché quella riga è accettabile.
 
 ---
 
+> **📘 Cos'è OltreNova, chi la tiene accesa, quanto costa** → `PROGETTO.md` — il documento di progetto: fornitori uno per uno con costi e cosa si rompe se cadono, architettura, dati, chiavi (nomi e dove si rigenerano, mai i valori), procedure. Scritto per chi subentra da zero — un erede, un socio, un acquirente. Da aggiornare **a ogni nuovo collegamento esterno**.
 > **🧯 Se succede qualcosa (piano di risposta a un incidente)** → `INCIDENTE.md` — scritto per essere eseguito da soli e sotto pressione; verifica dell'archivio con `tests/verifica-backup.mjs`
 > **🔒 Sicurezza (invarianti, checklist route, procedure rigide)** → `SECURITY.md` §0 — LEGGERE prima di toccare route API/auth/esposizione dati. Multi-tenant + service_role = la sicurezza dipende dai controlli applicativi.
 > **🔍 Check di sicurezza in corso (roadmap A1–A8)** → `SECURITY-CHECK.md` — cosa è già stato verificato e cosa no. A1 (authz) e A2-shop/loyalty fatti; prossimi A3 (mass assignment), A5 (costi AI), A2-booking.
