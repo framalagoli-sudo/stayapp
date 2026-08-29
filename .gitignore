@@ -13,3 +13,8 @@ dist/
 
 # Screenshot delle sonde diagnostiche (usa e getta)
 tests/*.png
+
+# Gli archivi scaricati da R2 sono il database dei clienti in chiaro:
+# non entrano mai in git, nemmeno per sbaglio con un "git add -A".
+backup/
+*.json.gz
