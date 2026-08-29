@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { prenotabilePerId } from '@/lib/offerte-prenotabili'
 import { verificaPeriodo, unitaLibere, totaleGiornaliero, notti, siSovrappongono, periodoBloccato } from '@/lib/booking-giornaliero'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -145,9 +146,9 @@ export async function GET(request, props) {
       const primo = `${mese}-01`
       const ultimo = `${mese}-${String(new Date(anno, m, 0).getDate()).padStart(2, '0')}`
 
-      const { data: ris } = await supabaseAdmin.from('risorse')
-        .select('id, modalita, quantita, max_coperti, prezzo, disponibilita, blocchi')
-        .eq('id', risorsaId).eq('attiva', true).maybeSingle()
+      // L'id può essere di un'offerta o di una risorsa: chi chiede la
+      // disponibilità non sa da quale delle due sorgenti venga, e non deve saperlo.
+      const ris = await prenotabilePerId(risorsaId)
       if (!ris) return Response.json({ error: 'Risorsa non trovata' }, { status: 404 })
 
       const { data: prese } = await supabaseAdmin.from('prenotazioni')
@@ -175,9 +176,8 @@ export async function GET(request, props) {
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date))
       return Response.json({ error: 'data non valida (YYYY-MM-DD)' }, { status: 400 })
 
-    const { data: risorsa, error: re } = await supabaseAdmin.from('risorse')
-      .select('*').eq('id', risorsaId).eq('attiva', true).single()
-    if (re || !risorsa) return Response.json({ error: 'Risorsa non trovata' }, { status: 404 })
+    const risorsa = await prenotabilePerId(risorsaId)
+    if (!risorsa) return Response.json({ error: 'Risorsa non trovata' }, { status: 404 })
 
     const { data: promozioni } = await supabaseAdmin.from('risorse_promozioni')
       .select('*').eq('risorsa_id', risorsaId).eq('attiva', true)

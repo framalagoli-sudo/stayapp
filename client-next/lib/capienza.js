@@ -48,6 +48,10 @@ export async function confermaPostiEvento(eventId, bookingId) {
 // a coperti quante persone in quel servizio (limite `max_coperti`).
 export async function confermaPostiPrenotazione(risorsa, prenotazioneId) {
   try {
+    // ⚠️ Una prenotazione nata da un'offerta ha `offerta_id`, non `risorsa_id`:
+    // contare sempre per risorsa darebbe zero e la capienza non verrebbe
+    // verificata affatto — il doppio affitto tornerebbe in silenzio.
+    const colonna = risorsa._offerta ? 'offerta_id' : 'risorsa_id'
     const { data: mia } = await supabaseAdmin.from('prenotazioni')
       .select('id, data, data_fine, ora_inizio, servizio, n_persone, created_at').eq('id', prenotazioneId).single()
     if (!mia) return false
@@ -60,7 +64,7 @@ export async function confermaPostiPrenotazione(risorsa, prenotazioneId) {
       const limite = risorsa.quantita || 1
       const { data: tutte } = await supabaseAdmin.from('prenotazioni')
         .select('id, data, data_fine, created_at')
-        .eq('risorsa_id', risorsa.id).in('stato', ['confermata', 'in_attesa'])
+        .eq(colonna, risorsa.id).in('stato', ['confermata', 'in_attesa'])
         .gte('data_fine', mia.data)
 
       const occupatiPrima = (tutte || [])
@@ -80,7 +84,7 @@ export async function confermaPostiPrenotazione(risorsa, prenotazioneId) {
 
     let q = supabaseAdmin.from('prenotazioni')
       .select('id, ora_inizio, servizio, n_persone, created_at')
-      .eq('risorsa_id', risorsa.id).eq('data', mia.data).in('stato', ['confermata', 'in_attesa'])
+      .eq(colonna, risorsa.id).eq('data', mia.data).in('stato', ['confermata', 'in_attesa'])
     const { data: tutte } = await q
 
     const stessoPosto = (b) => coperti

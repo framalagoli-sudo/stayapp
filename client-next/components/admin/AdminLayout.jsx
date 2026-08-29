@@ -314,10 +314,10 @@ export default function AdminLayout({ children }) {
     return (
       <CollapseSection label="Booking" icon={Calendar} isOpen={bookingOpen} onToggle={() => setBookingOpen(o => !o)}>
         <NavItem to="/admin/booking" icon={CalendarDays} label="Calendario" sub end />
-        {/* La voce «Prenotazioni» è una sola, in Operativo: qui dentro ce n'era
-            una seconda con lo stesso nome e un contenuto diverso — una mostrava
-            le risorse, l'altra le escursioni. Non si capiva quale fosse quale. */}
-        <NavItem to="/admin/booking/risorse" icon={Package} label="Risorse" sub />
+        {/* «Risorse» non c'è più: quello che si prenota si crea in **Offerte**,
+            insieme a tutto il resto. Era l'ultima porta separata — un campo da
+            padel e un corso sono la stessa cosa vista da due menu diversi.
+            La pagina resta raggiungibile da chi ha un vecchio segnalibro. */}
       </CollapseSection>
     )
   }
