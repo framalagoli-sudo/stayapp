@@ -212,7 +212,7 @@ export default function ShopPage() {
                   domanda che ci si fa ogni mattina. */}
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8, alignItems: 'center' }}>
                 <span style={etichettaFiltro}>Pagamento</span>
-                <button onClick={() => setFiltroStato('')} style={pill(!filtroStato, { color: '#1a1a2e', bg: '#1a1a2e' }, !filtroStato)}>Tutti</button>
+                <button onClick={() => setFiltroStato('')} style={pill(!filtroStato, { color: '#1a1a2e', bg: '#1a1a2e' }, true)}>Tutti</button>
                 {Object.entries(PAGAMENTO).map(([k, v]) => (
                   <button key={k} onClick={() => setFiltroStato(k)} style={pill(filtroStato === k, v)}>{v.label}</button>
                 ))}
@@ -298,9 +298,12 @@ export default function ShopPage() {
                           {c.ordini} {c.ordini === 1 ? 'ordine' : 'ordini'} · ultimo {new Date(c.ultimo_ordine).toLocaleDateString('it-IT')}
                         </div>
                       </div>
-                      {c.contatto_id
-                        ? <button onClick={() => router.push(`/admin/contatti?id=${c.contatto_id}`)} style={bottoneLink}>Scheda contatto →</button>
-                        : <span style={{ fontSize: 11.5, color: '#bbb', flexShrink: 0 }}>non nei contatti</span>}
+                      {/* Il collegamento c'è dove serve. Prima al suo posto compariva
+                          «non nei contatti» su ogni riga: un'informazione che non
+                          serve a niente ripetuta a ogni cliente è rumore, non aiuto. */}
+                      {c.contatto_id && (
+                        <button onClick={() => router.push(`/admin/contatti?id=${c.contatto_id}`)} style={bottoneLink}>Scheda contatto →</button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -319,11 +322,15 @@ const campoCerca = {
   borderRadius: 8, fontSize: 14, marginBottom: 14, boxSizing: 'border-box',
 }
 const etichettaFiltro = { fontSize: 11, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5, width: 78, flexShrink: 0 }
-const pill = (attivo, v) => ({
+// ⚠️ `testoChiaro` per il pulsante «Tutti», che ha sfondo scuro: senza, il
+// testo prendeva lo stesso colore del fondo e il pulsante risultava **nero su
+// nero**, illeggibile. Trovato guardando la pagina, non leggendo il codice —
+// un colore sbagliato compila benissimo.
+const pill = (attivo, v, testoChiaro = false) => ({
   padding: '5px 12px', border: '1px solid', borderColor: attivo ? v.color : '#ddd',
   borderRadius: 20, fontSize: 12, cursor: 'pointer',
   background: attivo ? (v.bg || '#1a1a2e') : '#fff',
-  color: attivo ? v.color : '#555', fontWeight: attivo ? 700 : 400,
+  color: attivo ? (testoChiaro ? '#fff' : v.color) : '#555', fontWeight: attivo ? 700 : 400,
 })
 const badge = (v) => ({ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 20, background: v.bg, color: v.color, whiteSpace: 'nowrap' })
 const bottoneLink = {
