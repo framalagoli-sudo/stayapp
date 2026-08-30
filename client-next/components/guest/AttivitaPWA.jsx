@@ -18,7 +18,7 @@ import ChatbotWidget from '@/components/ChatbotWidget'
 import ChatChoice from '@/components/ChatChoice'
 import MenuTab from '@/components/MenuTab'
 import OfferteTab from '@/components/guest/OfferteTab'
-import { sezioniOspite, ETICHETTA_OSPITE } from '@/lib/funzioni'
+import { sezioniOspite, etichettaSezione } from '@/lib/funzioni'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DEFAULT_THEME = {
@@ -178,7 +178,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
     menu:       (attivita.menu || []).length > 0,
     attivita:   (attivita.activities || []).some(c => c.items?.some(i => i.active)),
     escursioni: (attivita.excursions || []).some(e => e.active),
-  }).map(k => ({ key: k, label: tr(ETICHETTA_OSPITE[k], lang) }))
+  }).map(k => ({ key: k, label: etichettaSezione(attivita, k, tr, lang) }))
   const activeChip = CHIPS.find(c => c.key === exploreChip) ? exploreChip : CHIPS[0]?.key
 
   function switchTab(key) {

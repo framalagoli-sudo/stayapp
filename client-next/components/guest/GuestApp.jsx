@@ -18,7 +18,7 @@ import { supabase } from '@/lib/supabase'
 import RequestForm from './RequestForm'
 import ServicesTab from './ServicesTab'
 import MenuTab from '@/components/MenuTab'
-import { sezioniOspite, ETICHETTA_OSPITE } from '@/lib/funzioni'
+import { sezioniOspite, etichettaSezione } from '@/lib/funzioni'
 import OfferteTab from './OfferteTab'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import ChatChoice from '@/components/ChatChoice'
@@ -248,7 +248,7 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
   // vederlo mai nell'app della camera.
   const CHIPS = [
     ...sezioniOspite(property, { galleria: hasGallery, servizi: hasServices, offerte: hasOfferte, menu: hasMenu })
-      .map(k => ({ key: k, label: tr(ETICHETTA_OSPITE[k], lang) })),
+      .map(k => ({ key: k, label: etichettaSezione(property, k, tr, lang) })),
     // Gli eventi non sono una funzione dell'entità: arrivano dall'azienda.
     ...(hasEventi && appSections.eventi !== false ? [{ key: 'eventi', label: tr('events_chip', lang) }] : []),
   ]

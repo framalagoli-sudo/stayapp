@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Check } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
-import { FUNZIONI, funzioneAttiva } from '@/lib/funzioni'
+import { FUNZIONI, funzioneAttiva, moduliDi, ETICHETTA_OSPITE, MAX_ETICHETTA } from '@/lib/funzioni'
+import { t as tr } from '@/lib/i18n'
 
 // Dove il cliente sceglie cosa gli serve.
 //
@@ -13,6 +14,33 @@ import { FUNZIONI, funzioneAttiva } from '@/lib/funzioni'
 
 const ROTTA = { struttura: 'struttura', ristorante: 'ristoranti', attivita: 'attivita' }
 const API = { struttura: '/api/properties', ristorante: '/api/ristoranti', attivita: '/api/attivita' }
+
+// ⚠️ Definito **fuori** da `FunzioniPage`: un componente dichiarato dentro un
+// altro cambia identità a ogni render e React lo smonta e rimonta — l'input
+// perderebbe il fuoco a ogni lettera battuta.
+//
+// Testo: si scrive in locale e si propaga all'uscita dal campo, come ovunque
+// nel pannello. Salvare a ogni tasto vorrebbe dire una chiamata per lettera.
+function NomeSezione({ chiave, titolo, valore, predefinito, inCorso, onSalva }) {
+  const [nome, setNome] = useState(valore)
+  useEffect(() => { setNome(valore) }, [valore])
+  return (
+    <div style={{ marginTop: 10 }}>
+      <label style={{ display: 'block', fontSize: 12, color: '#999', marginBottom: 4 }}>
+        Come si chiama nell’app dei tuoi clienti
+      </label>
+      <input value={nome} maxLength={MAX_ETICHETTA} disabled={inCorso}
+        aria-label={`Nome della sezione ${titolo} nell'app`}
+        onChange={e => setNome(e.target.value)}
+        onBlur={() => { if ((nome || '').trim() !== (valore || '').trim()) onSalva(chiave, nome) }}
+        placeholder={predefinito}
+        style={{ width: '100%', maxWidth: 260, padding: '8px 11px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+      <div style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>
+        Lascia vuoto per «{predefinito}».
+      </div>
+    </div>
+  )
+}
 
 export default function FunzioniPage({ entityType }) {
   const { id } = useParams()
@@ -25,15 +53,13 @@ export default function FunzioniPage({ entityType }) {
     apiFetch(`${API[entityType]}/${id}`).then(setEnt).catch(() => setErrore('Impossibile caricare i dati'))
   }, [id, entityType])
 
-  async function commuta(chiave, acceso) {
+  const campoModuli = entityType === 'attivita' ? 'pwa' : 'modules'
+
+  async function salvaModuli(moduli, chiave) {
     setInCorso(chiave)
-    // Si scrive sempre il valore esplicito: finché la chiave manca vale il
-    // preset del tipo, e un cliente che spegne qualcosa deve vederlo restare spento.
-    const moduli = { ...(ent.moduli || ent.modules || ent.pwa || {}), [chiave]: acceso }
-    const campo = entityType === 'attivita' ? 'pwa' : 'modules'
     try {
       const aggiornato = await apiFetch(`${API[entityType]}/${id}`, {
-        method: 'PATCH', body: JSON.stringify({ [campo]: moduli }),
+        method: 'PATCH', body: JSON.stringify({ [campoModuli]: moduli }),
       })
       setEnt(aggiornato)
     } catch {
@@ -41,10 +67,28 @@ export default function FunzioniPage({ entityType }) {
     } finally { setInCorso(null) }
   }
 
+  function commuta(chiave, acceso) {
+    // Si scrive sempre il valore esplicito: finché la chiave manca vale il
+    // preset del tipo, e un cliente che spegne qualcosa deve vederlo restare spento.
+    return salvaModuli({ ...(ent.moduli || ent.modules || ent.pwa || {}), [chiave]: acceso }, chiave)
+  }
+
+  // Come il cliente vuole chiamare questa sezione nell'app dei suoi clienti.
+  // Campo vuoto = torna il nome predefinito, non un'etichetta vuota.
+  function rinomina(chiave, nome) {
+    const base = ent.moduli || ent.modules || ent.pwa || {}
+    const etichette = { ...(base.etichette || {}) }
+    const pulito = (nome || '').trim().slice(0, MAX_ETICHETTA)
+    if (pulito) etichette[chiave] = pulito
+    else delete etichette[chiave]
+    return salvaModuli({ ...base, etichette }, chiave)
+  }
+
   if (errore) return <div style={{ padding: 32, color: '#c0392b' }}>{errore}</div>
   if (!ent) return <div style={{ padding: 32, color: '#888' }}>Caricamento…</div>
 
   const attiva = c => funzioneAttiva({ ...ent, moduli: ent.moduli || ent.modules || ent.pwa }, c)
+  const etichette = moduliDi(ent)?.etichette || {}
 
   return (
     <div style={{ padding: 32, maxWidth: 780 }}>
@@ -68,6 +112,15 @@ export default function FunzioniPage({ entityType }) {
                   {bloccato && <span style={{ fontSize: 12, fontWeight: 500, color: '#aaa', marginLeft: 8 }}>sempre attiva</span>}
                 </div>
                 <div style={{ fontSize: 13.5, color: '#777', lineHeight: 1.55, overflowWrap: 'anywhere' }}>{f.descrizione}</div>
+
+                {/* Il nome della scheda nell'app lo sceglie il cliente: «Proposte»
+                    o «Escursioni» erano parole nostre, e chi fa questo mestiere lo
+                    sa chiamare meglio di noi. Solo per le sezioni che l'ospite vede. */}
+                {acceso && ETICHETTA_OSPITE[f.chiave] && (
+                  <NomeSezione chiave={f.chiave} titolo={f.titolo} valore={etichette[f.chiave] || ''}
+                    predefinito={tr(ETICHETTA_OSPITE[f.chiave], 'it')}
+                    inCorso={inCorso === f.chiave} onSalva={rinomina} />
+                )}
               </div>
 
               {bloccato ? (

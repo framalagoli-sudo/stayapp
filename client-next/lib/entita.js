@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { MAX_ETICHETTA } from '@/lib/funzioni'
 
 // L'unico punto da cui si leggono e si scrivono le entità.
 //
@@ -117,7 +118,32 @@ export function dallaFormaStorica(campi, tipo) {
     out.settore = v && !['attivita', 'attività'].includes(v) ? v : null
   }
   delete out.tipo   // il tipo tecnico non è mai modificabile dal client
+  if (out.moduli) out.moduli = moduliRipuliti(out.moduli)
   return out
+}
+
+// I nomi che il cliente dà alle sezioni sono testo libero, e il testo libero
+// che arriva dal browser non si scrive mai come viene.
+//
+// ⚠️ `maxLength` nell'input è un suggerimento all'utente, non una difesa: il
+// corpo della richiesta si scrive a mano. Il taglio deve stare **qui**, dove il
+// valore entra nel database — altrimenti un nome di mille caratteri sfonda la
+// barra delle schede sul telefono di ogni cliente di quel cliente.
+//
+// Non serve invece ripulire l'HTML: le etichette vengono rese come testo, e
+// React le neutralizza. Se un domani finissero in un `dangerouslySetInnerHTML`
+// o in un attributo, questo commento è il posto da cui ripartire.
+function moduliRipuliti(moduli) {
+  if (!moduli || typeof moduli !== 'object' || Array.isArray(moduli)) return {}
+  const { etichette, ...resto } = moduli
+  if (!etichette || typeof etichette !== 'object' || Array.isArray(etichette)) return resto
+  const pulite = {}
+  for (const [k, v] of Object.entries(etichette)) {
+    if (typeof v !== 'string') continue
+    const nome = v.trim().slice(0, MAX_ETICHETTA)
+    if (nome) pulite[k] = nome
+  }
+  return Object.keys(pulite).length ? { ...resto, etichette: pulite } : resto
 }
 
 // I campi che il pannello può modificare. **Uno solo per tutti i tipi.**

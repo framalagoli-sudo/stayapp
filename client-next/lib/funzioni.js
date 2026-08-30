@@ -83,6 +83,33 @@ export const ETICHETTA_OSPITE = {
   menu: 'menu', servizi: 'services_title', offerte: 'offers_tab', galleria: 'gallery',
 }
 
+// Quanto può essere lungo un nome scelto dal cliente.
+//
+// ⚠️ Non è una preferenza estetica: le schede stanno in una barra che scorre in
+// orizzontale su uno schermo da telefono, e un nome lunghissimo la sfonda. È lo
+// stesso difetto delle liste in `display:grid` — un dato del cliente che allarga
+// il contenitore. Qui si taglia alla fonte, dove il valore entra.
+export const MAX_ETICHETTA = 24
+
+// Come si chiama questa sezione nell'app dell'ospite.
+//
+// ⚠️ «Proposte», «Escursioni», «Attività» erano tutte parole **nostre**, e la
+// regola in questo progetto è che *come si chiama quello che offre lo decide il
+// cliente* — vale per le categorie delle offerte, vale a maggior ragione per il
+// nome della scheda che i suoi clienti vedono per primo.
+//
+// Chi non scrive niente continua a vedere il nome di prima, tradotto: un cliente
+// che non tocca nulla non deve accorgersi che questa possibilità esiste.
+//
+// ⚠️ Il nome scritto dal cliente **non si traduce**: se un albergatore la chiama
+// «Esperienze», in inglese resta «Esperienze». Tradurre la parola scelta da lui
+// significherebbe ridargli un nome nostro dalla porta di servizio.
+export function etichettaSezione(ent, chiave, tr, lang = 'it') {
+  const scelto = moduliDi(ent)?.etichette?.[chiave]
+  if (typeof scelto === 'string' && scelto.trim()) return scelto.trim().slice(0, MAX_ETICHETTA)
+  return tr(ETICHETTA_OSPITE[chiave], lang)
+}
+
 // Quali sezioni mostrare nell'app dell'ospite: la funzione dev'essere accesa
 // **e** avere qualcosa dentro. Una scheda vuota è peggio di una scheda assente.
 //

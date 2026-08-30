@@ -13,7 +13,7 @@ import {
 import MenuTab from '@/components/MenuTab'
 import ServicesTab from '@/components/guest/ServicesTab'
 import OfferteTab from '@/components/guest/OfferteTab'
-import { sezioniOspite, ETICHETTA_OSPITE } from '@/lib/funzioni'
+import { sezioniOspite, etichettaSezione } from '@/lib/funzioni'
 import { guestFetch } from '@/lib/api'
 import { pickAppLogo } from '@/lib/appLogo'
 import { t as tr } from '@/lib/i18n'
@@ -190,7 +190,7 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
     servizi:    (ristorante.services || []).length > 0,
     attivita:   (ristorante.activities || []).some(c => c.items?.some(i => i.active)),
     escursioni: (ristorante.excursions || []).some(e => e.active),
-  }).map(k => ({ key: k, label: tr(ETICHETTA_OSPITE[k], lang) }))
+  }).map(k => ({ key: k, label: etichettaSezione(ristorante, k, tr, lang) }))
   const activeChip = CHIPS.find(c => c.key === exploreChip) ? exploreChip : CHIPS[0]?.key
 
   function switchTab(key) {
