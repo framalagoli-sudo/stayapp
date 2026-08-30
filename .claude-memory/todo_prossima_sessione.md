@@ -66,14 +66,23 @@ la cosa che oggi non sappiamo: **quante ore costa tornare in piedi.**
 6. **Next 16** — manutenzione, non sicurezza. I `params` async sono già migrati.
 7. **Multi-lingua DE** · **Import documento v2** (PDF/DOCX + chunking).
 
-## A carico di Francesco (fermo da giorni)
+## A carico di Francesco
 
-1. Chiave R2 **in sola scrittura** + scadenza 30 giorni come regola del bucket
-2. Prova del backup: `node tests/verifica-backup.mjs <percorso>` — finché non
-   gira, «abbiamo i backup» è una speranza
-3. Secondo fattore su Vercel, Supabase, Cloudflare, GitHub → data in `INCIDENTE.md`
-4. Email mancante su `futura-club-spiagge-bianche` e `piano-editoriale-futura-vacanze`
-5. Requisiti Stripe Connect per un ristoratore italiano
+✅ **Chiuse il 29/08** — *chiave R2*: R2 non ha un permesso di sola scrittura, la
+difesa è il **bucket lock** a 30 giorni, attivo e **provato** (tre tentativi di
+cancellazione, il file resta). *Prova del backup*: fatta, **verde**.
+
+Restano:
+
+1. **Secondo fattore** su Vercel, Supabase, Cloudflare, GitHub → poi la data in
+   `INCIDENTE.md` (~20 min)
+2. **Email mancante su 5 entità** — la più urgente è `noleggio-automax`: ha 3
+   prenotazioni vere e **nessuno riceve gli avvisi**. Le altre:
+   `futura-club-spiagge-bianche`, `piano-editoriale-futura-vacanze`,
+   `giochisenzapanciere`. `zz-hotel-con-cucina` è un residuo di sonda: da cancellare.
+3. **Requisiti Stripe Connect** per un ristoratore italiano
+4. **Una copia di `PROGETTO.md` fuori da GitHub** — stampata o su chiavetta, col
+   foglio delle credenziali a parte. Oggi vive dentro uno degli accessi che descrive.
 
 ## Decisioni ferme (non ridiscuterle da solo)
 
