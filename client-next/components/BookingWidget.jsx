@@ -34,7 +34,15 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
   useEffect(() => {
     if (!entityId) return
     publicFetch(`/api/booking/public/risorse/${entityTipo}/${entityId}`)
-      .then(data => setRisorse(Array.isArray(data) ? data : []))
+      .then(data => {
+        const elenco = Array.isArray(data) ? data : []
+        setRisorse(elenco)
+        // ⚠️ Con una cosa sola da prenotare, «Cosa vuoi prenotare?» è una domanda
+        // con una risposta obbligata: un clic buttato prima ancora di iniziare.
+        // Si entra dritti nelle date. La maggior parte dei clienti ha una sola
+        // risorsa, quindi non è un caso limite — è il caso normale.
+        if (elenco.length === 1) selectRisorsa(elenco[0])
+      })
       .finally(() => setLoading(false))
   }, [entityTipo, entityId])
 
@@ -121,9 +129,14 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
   }
 
   function reset() {
-    setStep('risorsa'); setSelected({ risorsa: null, data: '', data_fine: '', slot: null }); setPeriodo(null)
+    setSelected({ risorsa: null, data: '', data_fine: '', slot: null }); setPeriodo(null)
     setSlots([]); setForm({ nome: '', email: '', telefono: '', n_persone: 1, note: '', privacy: false })
     setPrenotazione(null); setErrore('')
+    // ⚠️ Con una sola risorsa il primo passo non esiste: rimandarci dopo
+    // «Nuova prenotazione» mostrerebbe una scelta con un'opzione sola — proprio
+    // quella che all'inizio abbiamo tolto. Si rientra da dove si era entrati.
+    if (risorse.length === 1) selectRisorsa(risorse[0])
+    else setStep('risorsa')
   }
 
   const today = new Date().toISOString().slice(0, 10)
@@ -159,8 +172,8 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
   return (
     <div style={wrapStyle}>
       {/* Breadcrumb */}
-      <Breadcrumb step={step} risorsa={selected.risorsa} data={selected.data} primaryColor={primaryColor}
-        onStep={(s) => { if (['risorsa','data','slot'].includes(s) && step !== 'done') setStep(s) }} />
+      <Breadcrumb step={step} risorsa={selected.risorsa} data={selected.data} quante={risorse.length} primaryColor={primaryColor}
+        onStep={(s) => { if (['risorsa','periodo','data','slot'].includes(s) && step !== 'done') setStep(s) }} />
 
       {/* ── STEP: SCEGLI RISORSA ─────────────────────────────────────────────── */}
       {step === 'risorsa' && (
@@ -169,22 +182,29 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {risorse.map(r => (
               <button key={r.id} onClick={() => selectRisorsa(r)} style={cardBtnStyle(primaryColor)}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 12, height: 12, borderRadius: '50%', background: r.colore, flexShrink: 0 }} />
-                  <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontWeight: 600, fontSize: 15 }}>{r.nome}</div>
-                    {r.descrizione && <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>{r.descrizione}</div>}
-                    <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>
-                      {r.modalita === 'slot'
-                        ? `${r.durata_minuti} min${r.prezzo > 0 ? ` · €${r.prezzo}` : ''}`
-                        : r.modalita === 'giornaliero'
-                          ? `A giornate${r.prezzo > 0 ? ` · €${r.prezzo} a notte` : ''}`
-                          : `${r.max_coperti} posti${r.prezzo > 0 ? ` · €${r.prezzo} a persona` : ''}`
-                      }
-                    </div>
-                  </div>
+                {/* Una barra del colore della risorsa, non un pallino: dà alla
+                    scheda un bordo che si vede, e distingue le risorse fra loro
+                    quando sono più di una. */}
+                <div style={{ width: 4, alignSelf: 'stretch', borderRadius: 4, background: r.colore || primaryColor, flexShrink: 0 }} />
+                <div style={{ textAlign: 'left', flex: 1, minWidth: 0 }}>
+                  {/* ⚠️ `minWidth: 0` e `overflowWrap`: il nome lo scrive il
+                      cliente, e una parola lunghissima senza spazi allargherebbe
+                      la riga oltre la scheda. */}
+                  <div style={{ fontWeight: 700, fontSize: 15.5, color: '#1a1a2e', overflowWrap: 'anywhere' }}>{r.nome}</div>
+                  {r.descrizione && <div style={{ fontSize: 13, color: '#777', marginTop: 3, overflowWrap: 'anywhere' }}>{r.descrizione}</div>}
+                  <div style={{ fontSize: 13, color: '#999', marginTop: 5 }}>{dettaglioRisorsa(r)}</div>
                 </div>
-                <span style={{ color: primaryColor, fontSize: 18 }}>›</span>
+                {/* Il prezzo è la seconda cosa che si guarda dopo il nome: sta
+                    dove lo si cerca, non annegato nella riga dei dettagli. */}
+                {r.prezzo > 0 && (
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 16, color: primaryColor, whiteSpace: 'nowrap' }}>
+                      {simboloValuta(r.valuta)}{r.prezzo}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: '#aaa', whiteSpace: 'nowrap' }}>{unitaPrezzo(r)}</div>
+                  </div>
+                )}
+                <span aria-hidden="true" style={{ color: primaryColor, fontSize: 20, flexShrink: 0, marginLeft: 2 }}>›</span>
               </button>
             ))}
           </div>
@@ -241,9 +261,14 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
           {!verificando && periodo?.disponibile && (
             <>
               <div style={{ marginTop: 14, padding: '14px 16px', background: '#f7f9fc', borderRadius: 10 }}>
+                {/* ⚠️ Quante unità e come si chiamano lo dice il **server**, che
+                    è lo stesso che calcola il totale. Quando il numero lo
+                    indovinava il browser, un noleggio che conta il giorno della
+                    riconsegna mostrava «2 notti · €90 a notte» sopra un totale
+                    di €270: il conto era giusto e il testo no. */}
                 <div style={{ fontSize: 14, color: '#555' }}>
-                  {periodo.notti} {periodo.notti === 1 ? 'notte' : 'notti'}
-                  {periodo.prezzo > 0 && <> · €{periodo.prezzo} a notte</>}
+                  {unitaLeggibili(periodo)}
+                  {periodo.prezzo > 0 && <> · {simboloValuta(selected.risorsa?.valuta)}{periodo.prezzo} {aUnita(periodo)}</>}
                 </div>
                 {periodo.totale > 0 && (
                   <div style={{ fontSize: 20, fontWeight: 700, color: primaryColor, marginTop: 4 }}>€{periodo.totale}</div>
@@ -258,7 +283,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
             </>
           )}
 
-          <button onClick={() => setStep('risorsa')} style={backBtnStyle}>← Indietro</button>
+          {risorse.length > 1 && <button onClick={() => setStep('risorsa')} style={backBtnStyle}>← Indietro</button>}
         </div>
       )}
 
@@ -273,7 +298,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
             onChange={e => selectData(e.target.value)}
             style={{ width: '100%', padding: '12px 14px', border: `2px solid ${primaryColor}`, borderRadius: 10, fontSize: 16, outline: 'none', boxSizing: 'border-box' }}
           />
-          <button onClick={() => setStep('risorsa')} style={backBtnStyle}>← Indietro</button>
+          {risorse.length > 1 && <button onClick={() => setStep('risorsa')} style={backBtnStyle}>← Indietro</button>}
         </div>
       )}
 
@@ -351,8 +376,8 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
               {selected.risorsa.modalita === 'giornaliero' ? (
                 <>
                   dal {formatData(selected.data)} al {formatData(selected.data_fine)}
-                  {periodo?.notti > 0 && <> · {periodo.notti} {periodo.notti === 1 ? 'notte' : 'notti'}</>}
-                  {periodo?.totale > 0 && <span style={{ fontWeight: 600 }}> · €{periodo.totale}</span>}
+                  {(periodo?.unita ?? periodo?.notti) > 0 && <> · {unitaLeggibili(periodo)}</>}
+                  {periodo?.totale > 0 && <span style={{ fontWeight: 600 }}> · {simboloValuta(selected.risorsa?.valuta)}{periodo.totale}</span>}
                 </>
               ) : (
                 <>
@@ -416,13 +441,31 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
 }
 
 // ─── Breadcrumb ───────────────────────────────────────────────────────────────
-function Breadcrumb({ step, risorsa, data, primaryColor, onStep }) {
-  const steps = [
-    { key: 'risorsa', label: risorsa ? risorsa.nome : 'Servizio' },
-    { key: 'data',    label: data ? formatData(data) : 'Data' },
-    { key: 'slot',    label: 'Orario' },
-    { key: 'form',    label: 'Dati' },
+// I passi che questa prenotazione farà davvero.
+//
+// ⚠️ Prima erano quattro fissi — «Servizio › Data › Orario › Dati» — e mentivano
+// due volte. Su un noleggio a giornate il passo «Orario» **non viene mai
+// raggiunto**: il flusso è periodo → dati. Chi guardava vedeva promessi quattro
+// passi e ne faceva tre, con uno che non arrivava mai.
+//
+// E «Servizio» era una parola nostra: chi noleggia un furgone non sta comprando
+// un servizio. Finché non ha scelto si dice «Cosa», che descrive la domanda e
+// non il mestiere di nessuno; appena sceglie, il passo prende il nome della cosa.
+function passiDi(risorsa, quante, data) {
+  const scelta = quante > 1 ? [{ key: 'risorsa', label: risorsa ? risorsa.nome : 'Cosa' }] : []
+  if (risorsa?.modalita === 'giornaliero') {
+    return [...scelta, { key: 'periodo', label: data ? formatData(data, true) : 'Date' }, { key: 'form', label: 'Dati' }]
+  }
+  return [
+    ...scelta,
+    { key: 'data', label: data ? formatData(data, true) : 'Data' },
+    { key: 'slot', label: 'Orario' },
+    { key: 'form', label: 'Dati' },
   ]
+}
+
+function Breadcrumb({ step, risorsa, data, quante, primaryColor, onStep }) {
+  const steps = passiDi(risorsa, quante, data)
   const currentIdx = steps.findIndex(s => s.key === step)
   if (step === 'done') return null
 
@@ -447,9 +490,58 @@ function Breadcrumb({ step, risorsa, data, primaryColor, onStep }) {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-function formatData(iso) {
+
+// Cosa dire sotto il nome, senza il prezzo — che ha un posto suo.
+//
+// ⚠️ «A giornate» era gergo nostro: descriveva come funziona il nostro
+// calendario, non cosa compra chi legge. Qui si dice quello che il visitatore
+// deve sapere per decidere, e niente altro.
+function dettaglioRisorsa(r) {
+  if (r.modalita === 'giornaliero') {
+    const minimo = Number(r.disponibilita?.minimo_notti) || 0
+    return minimo > 1 ? `Minimo ${minimo} notti` : 'Scegli le date'
+  }
+  if (r.modalita === 'coperti') return r.max_coperti ? `Fino a ${r.max_coperti} posti` : 'Scegli l’orario'
+  return r.durata_minuti ? `${r.durata_minuti} minuti` : 'Scegli l’orario'
+}
+
+// A cosa si riferisce il prezzo. Non è un dettaglio estetico: «€90» senza unità
+// è ambiguo fra tutto il periodo e una notte sola, e l'ambiguità sul prezzo è
+// quella che genera contestazioni.
+//
+// ⚠️ Chi affitta una casa conta le notti, chi noleggia un furgone conta i giorni
+// — e lo decide il cliente con `conta_giorno_uscita`. Dire «a notte» a chi paga
+// a giorni fa quadrare male il conto sotto gli occhi di chi prenota.
+function unitaPrezzo(r) {
+  if (r.modalita === 'giornaliero') return r.disponibilita?.conta_giorno_uscita ? 'al giorno' : 'a notte'
+  if (r.modalita === 'coperti') return 'a persona'
+  return 'a prenotazione'
+}
+
+// «3 giorni», «2 notti»: il numero e il nome arrivano **insieme** dal server.
+// Il ripiego sulle notti serve solo se una versione vecchia della risposta è
+// ancora in cache — non deve far sparire la riga.
+function unitaLeggibili(p) {
+  const n = p?.unita ?? p?.notti ?? 0
+  const nome = p?.unita_nome === 'giorni' ? 'giorn' : 'nott'
+  const suffisso = p?.unita_nome === 'giorni' ? (n === 1 ? 'o' : 'i') : (n === 1 ? 'e' : 'i')
+  return `${n} ${nome}${suffisso}`
+}
+
+function aUnita(p) { return p?.unita_nome === 'giorni' ? 'al giorno' : 'a notte' }
+
+// ⚠️ Catalogo chiuso: la valuta arriva dai dati e non finisce mai grezza in ciò
+// che si mostra. In mancanza, l'euro.
+const VALUTE = { EUR: '€', USD: '$', GBP: '£', CHF: 'CHF ' }
+function simboloValuta(v) { return VALUTE[v] || '€' }
+
+function formatData(iso, breve = false) {
   if (!iso) return ''
-  return new Date(iso + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })
+  // ⚠️ Mezzogiorno, non mezzanotte: `new Date('2026-08-30')` viene letta come
+  // UTC e in Italia diventa il giorno prima.
+  return new Date(iso + 'T12:00:00').toLocaleDateString('it-IT',
+    breve ? { day: 'numeric', month: 'short' }
+          : { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
 // ─── Stili ────────────────────────────────────────────────────────────────────
@@ -577,11 +669,18 @@ const inputStyle = (color) => ({
   onFocus: `border-color: ${color}`,
 })
 
+// La scheda di una cosa prenotabile.
+//
+// ⚠️ Prima era grigia su grigio, con il testo centrato e una freccina piccola:
+// sembrava una riga d'elenco, non un pulsante. Chi arriva qui deve capire in un
+// colpo d'occhio che si clicca — fondo bianco che stacca, un po' di rilievo,
+// e i contenuti allineati a sinistra come si leggono.
 const cardBtnStyle = (color) => ({
-  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-  width: '100%', padding: '14px 16px', background: '#f9f9f9',
-  border: '1px solid #ebebeb', borderRadius: 12, cursor: 'pointer',
-  textAlign: 'left', transition: 'border-color 0.15s',
+  display: 'flex', alignItems: 'center', gap: 14,
+  width: '100%', padding: '15px 16px', background: '#fff',
+  border: '1px solid #e6e6e6', borderRadius: 14, cursor: 'pointer',
+  textAlign: 'left', transition: 'border-color .15s, box-shadow .15s, transform .15s',
+  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
 })
 
 const slotBtnStyle = (color, isPromo) => ({

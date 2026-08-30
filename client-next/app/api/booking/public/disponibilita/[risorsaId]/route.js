@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { verificaPeriodo, unitaLibere, totaleGiornaliero, notti, siSovrappongono, periodoBloccato } from '@/lib/booking-giornaliero'
+import { verificaPeriodo, unitaLibere, totaleGiornaliero, notti, unitaDaPagare, siSovrappongono, periodoBloccato } from '@/lib/booking-giornaliero'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isUUID = v => UUID_RE.test(v)
@@ -207,10 +207,21 @@ export async function GET(request, props) {
       }
 
       const esito = verificaPeriodo(risorsa, date, fine, occupate || [])
+      // ⚠️ Quante unità si pagano **e come si chiamano**: le manda il server
+      // insieme al totale, perché sono la stessa informazione.
+      //
+      // Prima il widget riceveva `notti` e `totale` e li mostrava affiancati.
+      // Su un noleggio che conta il giorno della riconsegna — un furgone, un'auto
+      // — dal 10 al 12 sono 2 notti ma **3 giorni da pagare**: si leggeva «2
+      // notti · €90 a notte» sopra un totale di €270. Il conto era giusto, il
+      // testo no, ed è l'ambiguità sul prezzo quella che genera contestazioni.
+      const contaUscita = !!risorsa.disponibilita?.conta_giorno_uscita
       return Response.json({
         risorsa_id: risorsaId, data: date, data_fine: fine, modalita: 'giornaliero',
         disponibile: esito.ok, motivo: esito.motivo || null,
         notti: esito.notti ?? notti(date, fine),
+        unita: unitaDaPagare(date, fine, contaUscita),
+        unita_nome: contaUscita ? 'giorni' : 'notti',
         libere: esito.libere ?? 0,
         prezzo: risorsa.prezzo, totale: esito.totale ?? totaleGiornaliero(risorsa, date, fine),
       })
