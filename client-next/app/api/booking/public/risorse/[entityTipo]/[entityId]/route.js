@@ -10,7 +10,11 @@ export async function GET(request, props) {
     if (!isUUID(entityId)) return Response.json({ error: 'entity_id non valido' }, { status: 400 })
 
     const { data, error } = await supabaseAdmin.from('risorse')
-      .select('id, nome, descrizione, modalita, durata_minuti, quantita, max_coperti, prezzo, valuta, colore, disponibilita, blocchi, anticipo_ore, cancellazione_ore, conferma_auto')
+      // ⚠️ Le colonne si elencano: qui risponde chi non ha fatto login. E il
+      // dato deve arrivare **fino in fondo** — aggiungere `galleria` alla
+      // tabella senza aggiungerla qui vorrebbe dire foto che si caricano e non
+      // si vedono, che è già successo due volte in un giorno.
+      .select('id, nome, descrizione, modalita, durata_minuti, quantita, max_coperti, prezzo, valuta, colore, galleria, disponibilita, blocchi, anticipo_ore, cancellazione_ore, conferma_auto')
       .eq('entity_tipo', entityTipo)
       .eq('entity_id', entityId)
       .eq('attiva', true)

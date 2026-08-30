@@ -175,6 +175,15 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
       <Breadcrumb step={step} risorsa={selected.risorsa} data={selected.data} quante={risorse.length} primaryColor={primaryColor}
         onStep={(s) => { if (['risorsa','periodo','data','slot'].includes(s) && step !== 'done') setStep(s) }} />
 
+      {/* ⚠️ Le foto **dopo** la scelta, non solo prima.
+          Con una sola risorsa il primo passo si salta, e le foto caricate dal
+          cliente non si vedrebbero mai: proprio nel caso più comune, quello di
+          chi ha un furgone solo o una camera sola. Qui invece si vedono sempre,
+          accanto alle date che si stanno scegliendo. */}
+      {selected.risorsa && step !== 'risorsa' && (
+        <TestataRisorsa risorsa={selected.risorsa} primaryColor={primaryColor} />
+      )}
+
       {/* ── STEP: SCEGLI RISORSA ─────────────────────────────────────────────── */}
       {step === 'risorsa' && (
         <div>
@@ -182,10 +191,13 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {risorse.map(r => (
               <button key={r.id} onClick={() => selectRisorsa(r)} style={cardBtnStyle(primaryColor)}>
-                {/* Una barra del colore della risorsa, non un pallino: dà alla
-                    scheda un bordo che si vede, e distingue le risorse fra loro
-                    quando sono più di una. */}
-                <div style={{ width: 4, alignSelf: 'stretch', borderRadius: 4, background: r.colore || primaryColor, flexShrink: 0 }} />
+                {/* La foto se c'è, altrimenti una barra del colore della
+                    risorsa: un furgone o una camera si scelgono guardandoli, e
+                    dove la foto manca la scheda non deve sembrare rotta. */}
+                {(r.galleria || [])[0]
+                  ? <img src={(r.galleria || [])[0]} alt="" loading="lazy"
+                      style={{ width: 76, height: 60, objectFit: 'cover', borderRadius: 9, flexShrink: 0 }} />
+                  : <div style={{ width: 4, alignSelf: 'stretch', borderRadius: 4, background: r.colore || primaryColor, flexShrink: 0 }} />}
                 <div style={{ textAlign: 'left', flex: 1, minWidth: 0 }}>
                   {/* ⚠️ `minWidth: 0` e `overflowWrap`: il nome lo scrive il
                       cliente, e una parola lunghissima senza spazi allargherebbe
@@ -441,6 +453,38 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
 }
 
 // ─── Breadcrumb ───────────────────────────────────────────────────────────────
+// Cosa si sta prenotando, con le sue foto.
+//
+// La prima grande, le altre in una striscia che scorre e si può toccare per
+// portarle in primo piano: per una camera servono il letto, il bagno e la
+// vista, e mostrarne una sola vorrebbe dire chiedere al cliente di scegliere
+// quale sacrificare.
+function TestataRisorsa({ risorsa, primaryColor }) {
+  const foto = Array.isArray(risorsa.galleria) ? risorsa.galleria.filter(Boolean) : []
+  const [attiva, setAttiva] = useState(0)
+  // ⚠️ Cambiando risorsa si riparte dalla prima: senza, restava selezionato
+  // l'indice della precedente e si vedeva la foto sbagliata — o nessuna.
+  useEffect(() => { setAttiva(0) }, [risorsa.id])
+  if (!foto.length) return null
+  const i = Math.min(attiva, foto.length - 1)
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <img src={foto[i]} alt={risorsa.nome || ''} style={{ width: '100%', height: 168, objectFit: 'cover', borderRadius: 12, display: 'block' }} />
+      {foto.length > 1 && (
+        <div style={{ display: 'flex', gap: 6, marginTop: 8, overflowX: 'auto' }}>
+          {foto.map((url, k) => (
+            <button key={url + k} type="button" onClick={() => setAttiva(k)}
+              aria-label={`Foto ${k + 1} di ${foto.length}`}
+              style={{ padding: 0, border: `2px solid ${k === i ? primaryColor : 'transparent'}`, borderRadius: 8, cursor: 'pointer', background: 'none', flexShrink: 0, lineHeight: 0 }}>
+              <img src={url} alt="" loading="lazy" style={{ width: 56, height: 42, objectFit: 'cover', borderRadius: 6, display: 'block' }} />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // I passi che questa prenotazione farà davvero.
 //
 // ⚠️ Prima erano quattro fissi — «Servizio › Data › Orario › Dati» — e mentivano

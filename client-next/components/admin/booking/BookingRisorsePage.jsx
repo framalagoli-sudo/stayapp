@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
-import { apiFetch } from '../../../lib/api'
+import { apiFetch, uploadMedia } from '../../../lib/api'
 import { useAzienda } from '../../../context/AziendaContext'
 
 const GIORNI = [
@@ -19,12 +19,94 @@ const GIORNI_COPERTI = [
   { val: 4, label: 'Giovedì' }, { val: 5, label: 'Venerdì' }, { val: 6, label: 'Sabato' }, { val: 0, label: 'Domenica' },
 ]
 
+// Le foto di ciò che si prenota.
+//
+// ⚠️ Definito **fuori** dalla pagina: un componente dichiarato dentro un altro
+// cambia identità a ogni render e React lo smonta e rimonta.
+//
+// L'ordine conta e si vede: la prima foto è la copertina, quella che compare
+// nel modulo di prenotazione. Per questo si può spostare, invece di dover
+// ricaricare tutto nell'ordine giusto.
+function GalleriaRisorsa({ foto = [], entityTipo, entityId, onChange }) {
+  const [caricando, setCaricando] = useState(false)
+
+  async function aggiungi(e) {
+    const files = Array.from(e.target.files || []).slice(0, 10 - foto.length)
+    if (!files.length) return
+    if (!entityId || !entityTipo) { alert('Scegli prima a quale attività appartiene questa risorsa.'); return }
+    setCaricando(true)
+    const nuove = []
+    try {
+      for (const file of files) {
+        // Il limite è quello delle altre gallerie del pannello. Le immagini
+        // vengono comunque ricompresse dal server: qui si evita solo di far
+        // partire un caricamento che finirebbe rifiutato.
+        if (file.size > 5 * 1024 * 1024) { alert(`"${file.name}" supera i 5 MB — saltata`); continue }
+        const { url } = await uploadMedia(
+          `/api/upload/risorsa-gallery?entity_tipo=${encodeURIComponent(entityTipo)}&entity_id=${encodeURIComponent(entityId)}`, file)
+        if (url) nuove.push(url)
+      }
+      if (nuove.length) onChange([...foto, ...nuove])
+    } catch (err) {
+      alert(`Non è stato possibile caricare: ${err.message}`)
+    } finally { setCaricando(false); e.target.value = '' }
+  }
+
+  function sposta(i, verso) {
+    const g = [...foto]
+    const j = i + verso
+    if (j < 0 || j >= g.length) return
+    ;[g[i], g[j]] = [g[j], g[i]]
+    onChange(g)
+  }
+
+  return (
+    <div style={{ marginBottom: 14 }}>
+      {foto.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 110px), 1fr))', gap: 8, marginBottom: 10 }}>
+          {foto.map((url, i) => (
+            <div key={url + i} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: '1px solid #e6e6e6' }}>
+              <img src={url} alt="" style={{ width: '100%', height: 84, objectFit: 'cover', display: 'block' }} />
+              {i === 0 && (
+                <span style={{ position: 'absolute', top: 4, left: 4, background: 'rgba(0,0,0,.65)', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>
+                  copertina
+                </span>
+              )}
+              <div style={{ display: 'flex', borderTop: '1px solid #eee' }}>
+                <button type="button" onClick={() => sposta(i, -1)} disabled={i === 0} aria-label="Sposta indietro"
+                  style={miniBtn(i === 0)}>‹</button>
+                <button type="button" onClick={() => sposta(i, 1)} disabled={i === foto.length - 1} aria-label="Sposta avanti"
+                  style={miniBtn(i === foto.length - 1)}>›</button>
+                <button type="button" onClick={() => onChange(foto.filter((_, k) => k !== i))} aria-label="Togli questa foto"
+                  style={{ ...miniBtn(false), color: '#c0392b' }}>✕</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <label style={{ display: 'inline-block', padding: '9px 14px', border: '1px dashed #bbb', borderRadius: 8, cursor: caricando ? 'wait' : 'pointer', fontSize: 13.5, color: '#555' }}>
+        {caricando ? 'Carico…' : foto.length ? '+ Aggiungi foto' : 'Carica le foto'}
+        <input type="file" accept="image/*" multiple onChange={aggiungi} disabled={caricando} style={{ display: 'none' }} />
+      </label>
+      <div style={{ fontSize: 12, color: '#999', marginTop: 6 }}>
+        La prima foto è quella che si vede nel modulo di prenotazione. Fino a 10.
+      </div>
+    </div>
+  )
+}
+
+const miniBtn = (spento) => ({
+  flex: 1, padding: '3px 0', border: 'none', background: '#fafafa',
+  cursor: spento ? 'default' : 'pointer', opacity: spento ? 0.3 : 1, fontSize: 13,
+})
+
 function emptyRisorsa() {
   return {
     entity_tipo: '', entity_id: '',
     nome: '', descrizione: '', modalita: 'slot',
     durata_minuti: 60, quantita: 1, max_coperti: 40,
     prezzo: 0, valuta: 'EUR', colore: '#00b5b5',
+    galleria: [],
     disponibilita: {}, blocchi: [],
     anticipo_ore: 1, cancellazione_ore: 24, conferma_auto: true,
     attiva: true, visibile_minisito: true,
@@ -307,6 +389,10 @@ function RisorseForm({ form, patch, patchDisp, initDisp, entita = [], onEntita, 
 
             <Label>Descrizione</Label>
             <Input value={form.descrizione || ''} onChange={e => patch('descrizione', e.target.value)} placeholder="Descrizione breve (opzionale)" />
+
+            <Label>Foto</Label>
+            <GalleriaRisorsa foto={form.galleria || []} entityTipo={form.entity_tipo} entityId={form.entity_id}
+              onChange={g => patch('galleria', g)} />
 
             <Label>Modalità</Label>
             <select value={form.modalita} onChange={e => { patch('modalita', e.target.value); patch('disponibilita', {}) }} style={selectStyle}>
