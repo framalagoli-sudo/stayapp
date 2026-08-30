@@ -1,14 +1,12 @@
 ---
 name: todo_prossima_sessione
-description: "LEGGERE PER PRIMO — dove siamo e cosa si fa dopo (aggiornato 29/08/2026, fine sessione: rientro offerte + pagina offerta live)"
-metadata: 
+description: "LEGGERE PER PRIMO — dove siamo e cosa si fa dopo (aggiornato 30/08/2026: si riprende da Stripe Connect)"
+metadata:
   node_type: memory
   type: project
-  originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-08-29T19:56:38.348Z
 ---
 
-# Dove siamo — 29/08/2026
+# Dove siamo — 30/08/2026
 
 ⚠️ **Prima di scrivere codice**, tre regole nate da errori veri:
 - [[reference_cosa_si_prenota]] — **prenotabili sono SOLO Risorse ed Eventi.**
@@ -18,96 +16,89 @@ metadata:
 - [[feedback_verificare_il_contesto]] — l'ultimo miglio: apro col browser il
   punto da cui ci arriva Francesco. Se non l'ho aperto è «scritto, non provato».
 
-## Chiuso oggi (live e verificato in produzione)
+## ⏭️ SI RIPRENDE DA QUI: Stripe Connect
 
-- **Il cancello in `verifica-regole.mjs`**: blocca il deploy se un commit toglie
-  una voce di menu, una funzione, una pagina o una route. Si apre con
-  `autorizzato: <motivo>` nel messaggio di commit.
-- **Rientro dall'errore «offerte prenotabili»**: `impegno: prenota` tolto, le
-  tre route booking rileggono solo `risorse`, `offerte-prenotabili.js` e
-  `migra-risorse.mjs` eliminati, copia «Furgone» cancellata.
-- **La pagina dell'offerta** `/{s|r|a}/[slug]/offerte/[id]`: **non era mai stata
-  creata** e tutte le offerte pubblicate davano 404. Ora c'è, col modulo
-  «Richiedi informazioni» → CRM (tag `offerta`) + WhatsApp dove il numero c'è.
-- Sonda `probe-pagina-offerta.mjs`, e `probe-booking-giornaliero` aggiornata al
-  consenso obbligatorio.
+Deciso il 30/08: **account Standard + addebiti diretti, senza commissione**.
+Tutto in [[reference_stripe_connect]] — configurazione, costi, requisiti italiani.
 
-## 🔴 Il buco scoperto il 29/08: il RIPRISTINO non è mai stato provato
+**Francesco deve fare tre cose** (poi implemento io):
+1. Attivare Connect su `dashboard.stripe.com/connect/settings/profile`
+2. Scegliere Standard + addebiti diretti + nessuna commissione
+3. Passare il **client ID** (`ca_...`) e autorizzare il ritorno su **www**
 
-**Verifica ≠ ripristino.** Il 29/08 abbiamo accertato che l'archivio *contiene* i
-dati giusti (`verifica-backup.mjs`, verde). Non abbiamo mai accertato che da quel
-file si **torni operativi**: quanto tempo ci vuole, se le tabelle rientrano
-nell'ordine giusto, se le chiavi esterne reggono. Non esiste uno script:
-`INCIDENTE.md` §3.2 dice «si ripristina scrivendo le tabelle una per una».
+Poi tocca a me: pulsante «Collega Stripe», checkout con header `Stripe-Account`,
+webhook. E il pezzo non tecnico: **i Termini vanno aggiornati**, perché la
+configurazione da sola non sposta la responsabilità.
 
-Non siamo senza rete — **Supabase Pro ha backup propri con ripristino a un clic**,
-ed è quella la difesa per un disastro normale. Il nostro file serve nei due casi
-che quelli non coprono: recuperare **solo alcune tabelle**, o quando è **l'account
-Supabase stesso** il problema. È il secondo a non essere mai stato provato.
+## Chiuso il 30/08 (live e verificato in produzione)
 
-**Come si prova sul serio, senza rischiare la produzione**: creare un progetto
-Supabase nuovo e vuoto, eseguirci le 97 migration, riversare l'archivio nell'ordine
-`aziende → profiles → entita → pagine → domini → contatti` e poi il resto,
-puntarci un'istanza locale e **aprire davvero un sito cliente**. Alla fine si sa
-la cosa che oggi non sappiamo: **quante ore costa tornare in piedi.**
+- **Il nome della sezione lo sceglie il cliente** (`moduli.etichette`, taglio a
+  24 caratteri **nel server**). Il debito «si chiama Escursioni» era vecchio:
+  diceva già «Proposte». Sonda `probe-nome-sezione.mjs`.
+- **Modulo di prenotazione — quattro difetti, il primo non estetico**: diceva
+  «2 notti · €90 a notte» sopra un totale di €270. Il totale era giusto (3
+  giorni di noleggio), il testo no. Ora quante unità **e come si chiamano** le
+  manda il server. Più: passi calcolati sulla modalità (prima prometteva
+  «Orario» su una risorsa a giornate), primo passo saltato con una sola risorsa,
+  parole nostre tolte. Sonda `probe-conto-prenotazione.mjs`.
+- **Foto delle risorse** (migration `097`): galleria fino a 10, la prima è
+  copertina. ⚠️ Si vedono anche nella **testata** dopo la scelta: con una sola
+  risorsa il passo di scelta si salta, e sarebbero rimaste invisibili proprio
+  nel caso più comune. Sonda `probe-foto-risorsa.mjs`.
+- **Shop → Ordini e Clienti** (migration `098`), modello Shopify:
+  **due stati separati** (`pagamento_stato` / `evasione_stato`) perché «ho
+  incassato?» e «è partito?» sono domande diverse; **Clienti ricavati dagli
+  ordini**, non una tabella nuova — l'anagrafica è già i Contatti. «Speso» somma
+  **solo l'incassato**. Sonda `probe-shop-ordini-clienti.mjs`.
 
 ## ⏭️ Tecnico, in ordine di quanto sposta
 
-1. **Onboarding «Inizia qui»** — `/admin/onboarding` è **404**. È il capitolo
-   più importante: la sicurezza è fatta, quello che manca è che un cliente nuovo
-   arrivi al sito pubblicato **da solo**. Oggi trova 26 voci di menu e nessuna
-   strada. Vedi [[project_onboarding_mappa]].
-2. **Shop → Ordini e Clienti** (deciso da Francesco, stile Shopify).
-3. **Design del modulo di prenotazione** — grezzo, notato da lui.
-4. **Stripe Connect** — fermo in attesa dei requisiti (punto 5 della sua lista).
-   Vincolo suo: *«io non voglio stare nel flusso di denaro»*.
-5. **Pagamenti Stripe** su booking risorse ed eventi (colonne
-   `pagamento_stato/pagamento_id` già presenti). Lo Shop è già integrato.
-6. **Next 16** — manutenzione, non sicurezza. I `params` async sono già migrati.
-7. **Multi-lingua DE** · **Import documento v2** (PDF/DOCX + chunking).
+1. **Onboarding «Inizia qui»** — `/admin/onboarding` è **404**. Il capitolo più
+   importante: la sicurezza è fatta, manca che un cliente nuovo arrivi al sito
+   pubblicato **da solo**. Merita una sessione dedicata, non ritagli.
+   Vedi [[project_onboarding_mappa]].
+2. **Stripe Connect** (vedi sopra) — poi i pagamenti su booking ed eventi
+3. **Next 16** — manutenzione, non sicurezza
+4. **Multi-lingua DE** · **Import documento v2** (PDF/DOCX + chunking)
+
+## 🔴 Il buco del ripristino, ancora aperto
+
+**Verifica ≠ ripristino.** L'archivio *contiene* i dati giusti (verificato, verde
+il 29/08). Non sappiamo se da lì si **torna operativi**: quante ore costa, se le
+chiavi esterne reggono. Non esiste uno script. Supabase Pro fa da rete per un
+disastro normale; il caso scoperto è **«l'account Supabase stesso è il problema»**.
+
+Come si prova: progetto Supabase nuovo e vuoto, le 98 migration, l'archivio
+nell'ordine `aziende → profiles → entita → pagine → domini → contatti`, e poi
+**aprire davvero un sito cliente**.
 
 ## A carico di Francesco
 
-✅ **Chiuse**: chiave R2 → **bucket lock** provato · **prova del backup** verde ·
-**copia di `PROGETTO.md`** su seconda cartella e **hard disk esterno** ·
-*email entità*: sono clienti di prova, non è un problema (30/08).
+✅ Chiuse: bucket lock provato · prova del backup verde · copia di `PROGETTO.md`
+su seconda cartella e hard disk esterno · email entità (sono clienti di prova).
 
 Restano:
 
 1. **Secondo fattore** su Vercel, Supabase, Cloudflare, GitHub → poi la data in
-   `INCIDENTE.md` (~20 min). **È l'unica cosa di sicurezza ancora aperta.**
-2. **Requisiti Stripe Connect** per un ristoratore italiano — sblocca i pagamenti
+   `INCIDENTE.md`. **È l'unica cosa di sicurezza ancora aperta.**
+2. **I tre passi Stripe Connect** qui sopra
 3. **Meta developer**: quando l'accesso si sblocca, WhatsApp riparte da lì
 
 ## Decisioni ferme (non ridiscuterle da solo)
 
 - **Risorse è un'entità separata e resta tale.** Non si sposta, non si migra
   dentro Offerte, non diventa un attributo dei Prodotti.
-- **Gli eventi restano fuori** da offerte e prenotazioni unificate: *«catalogo →
-  offerte → shop sono consequenziali, l'evento no»*.
-- **Attività ed Escursioni**: lasciate dove sono (29/08). Non toccarle.
-- **Il Padel** lo creeranno i clienti in **Booking → Risorse**, che è il posto
-  giusto: non va rifatto da noi.
+- **Un'offerta non si prenota**: si chiede o si acquista.
+- **Gli eventi restano fuori** da offerte e prenotazioni unificate.
+- **Attività ed Escursioni**: lasciate dove sono.
+- **Shop = Ordini + Clienti**, e i clienti escono dagli ordini.
+- **Stripe: nessuna commissione trattenuta.** Francesco resta fuori dal denaro.
 - **Offerte a campo libero**, niente elenchi di tipi decisi da noi.
-- **Shop = Ordini + Clienti**: un ordine occupa stock, non un posto nel tempo.
-- `azienda_id` nell'HTML **resta**: apre solo ciò che è già pubblico (misurato).
 
 ## Debiti noti
 
-- **Notifica WhatsApp al titolare: non può partire.** 0 account collegati, e
-  **Meta non fa ancora accedere alla console developer** (confermato da Francesco
-  il 30/08). Vedi [[project_whatsapp_fase0]] e [[reference_meta_blocco_dispositivo]].
-- Il **ripristino** del backup non è mai stato provato (vedi sopra).
-
-### Chiusi il 30/08
-- ~~La sezione dell'app ospite si chiama «Escursioni»~~ → il debito era **vecchio**:
-  diceva già «Proposte». Ora il **nome lo sceglie il cliente** dalla pagina
-  Funzioni (`moduli.etichette`, taglio a 24 caratteri **nel server**). Sonda
-  `probe-nome-sezione.mjs`.
-- ~~Il booking non compare da solo sul sito~~ → **il blocco esiste già**: si chiama
-  «Widget prenotazioni risorse» e Francesco l'ha già inserito su Automax. Non era
-  un debito, era una mia informazione sbagliata.
-- ~~Email mancanti sulle entità~~ → **sono tutti clienti di prova**, noto a
-  Francesco. Non è un problema: rimosso dalla lista.
-- ~~Copia di `PROGETTO.md` fuori da GitHub~~ → fatta: seconda cartella + **hard
-  disk esterno**.
+- **WhatsApp**: 0 account collegati e **Meta non fa ancora accedere alla console
+  developer** (confermato il 30/08).
+- Il **ripristino** non è mai stato provato (vedi sopra).
+- ⚠️ **Mai lanciare `deploy.ps1` dentro una pipe PowerShell**: risulta fallito
+  mentre riesce, o non parte affatto. Rifatto il 30/08 pur avendolo in memoria.
