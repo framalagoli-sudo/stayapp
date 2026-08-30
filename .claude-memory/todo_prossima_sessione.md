@@ -68,21 +68,16 @@ la cosa che oggi non sappiamo: **quante ore costa tornare in piedi.**
 
 ## A carico di Francesco
 
-✅ **Chiuse il 29/08** — *chiave R2*: R2 non ha un permesso di sola scrittura, la
-difesa è il **bucket lock** a 30 giorni, attivo e **provato** (tre tentativi di
-cancellazione, il file resta). *Prova del backup*: fatta, **verde**.
+✅ **Chiuse**: chiave R2 → **bucket lock** provato · **prova del backup** verde ·
+**copia di `PROGETTO.md`** su seconda cartella e **hard disk esterno** ·
+*email entità*: sono clienti di prova, non è un problema (30/08).
 
 Restano:
 
 1. **Secondo fattore** su Vercel, Supabase, Cloudflare, GitHub → poi la data in
-   `INCIDENTE.md` (~20 min)
-2. **Email mancante su 5 entità** — la più urgente è `noleggio-automax`: ha 3
-   prenotazioni vere e **nessuno riceve gli avvisi**. Le altre:
-   `futura-club-spiagge-bianche`, `piano-editoriale-futura-vacanze`,
-   `giochisenzapanciere`. `zz-hotel-con-cucina` è un residuo di sonda: da cancellare.
-3. **Requisiti Stripe Connect** per un ristoratore italiano
-4. **Una copia di `PROGETTO.md` fuori da GitHub** — stampata o su chiavetta, col
-   foglio delle credenziali a parte. Oggi vive dentro uno degli accessi che descrive.
+   `INCIDENTE.md` (~20 min). **È l'unica cosa di sicurezza ancora aperta.**
+2. **Requisiti Stripe Connect** per un ristoratore italiano — sblocca i pagamenti
+3. **Meta developer**: quando l'accesso si sblocca, WhatsApp riparte da lì
 
 ## Decisioni ferme (non ridiscuterle da solo)
 
@@ -99,8 +94,20 @@ Restano:
 
 ## Debiti noti
 
-- La sezione dell'app ospite si chiama ancora «Escursioni».
-- Il booking non compare da solo sul sito: va aggiunto il blocco alla pagina.
-- Notifica WhatsApp al titolare: **non può partire**, 0 account collegati e
-  canale Meta fermo — vedi [[project_whatsapp_fase0]] e
-  [[reference_meta_blocco_dispositivo]].
+- **Notifica WhatsApp al titolare: non può partire.** 0 account collegati, e
+  **Meta non fa ancora accedere alla console developer** (confermato da Francesco
+  il 30/08). Vedi [[project_whatsapp_fase0]] e [[reference_meta_blocco_dispositivo]].
+- Il **ripristino** del backup non è mai stato provato (vedi sopra).
+
+### Chiusi il 30/08
+- ~~La sezione dell'app ospite si chiama «Escursioni»~~ → il debito era **vecchio**:
+  diceva già «Proposte». Ora il **nome lo sceglie il cliente** dalla pagina
+  Funzioni (`moduli.etichette`, taglio a 24 caratteri **nel server**). Sonda
+  `probe-nome-sezione.mjs`.
+- ~~Il booking non compare da solo sul sito~~ → **il blocco esiste già**: si chiama
+  «Widget prenotazioni risorse» e Francesco l'ha già inserito su Automax. Non era
+  un debito, era una mia informazione sbagliata.
+- ~~Email mancanti sulle entità~~ → **sono tutti clienti di prova**, noto a
+  Francesco. Non è un problema: rimosso dalla lista.
+- ~~Copia di `PROGETTO.md` fuori da GitHub~~ → fatta: seconda cartella + **hard
+  disk esterno**.
