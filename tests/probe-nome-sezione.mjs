@@ -67,12 +67,21 @@ try {
   // ── il cliente la rinomina dal pannello, cliccando davvero
   console.log('\nIL CLIENTE LA RINOMINA DAL PANNELLO\n')
   const pannello = await browser.newPage()
-  await pannello.goto(`${L}/admin/login`, { waitUntil: 'networkidle', timeout: 45000 })
+  // ⚠️ Il pannello tiene connessioni aperte: `networkidle` non arriva mai e la
+  // navigazione va in timeout — sembra un sito lento, è un'attesa sbagliata.
+  // Si aspetta il DOM, e poi l'elemento che serve davvero.
+  await pannello.goto(`${L}/admin/login`, { waitUntil: 'domcontentloaded', timeout: 45000 })
+  await pannello.waitForSelector('input[type="email"]', { timeout: 30000 })
   await pannello.fill('input[type="email"]', email)
   await pannello.fill('input[type="password"]', pw)
   await pannello.locator('button[type="submit"]').click()
-  await pannello.waitForURL(/\/admin/, { timeout: 30000 })
-  await pannello.goto(`${L}/admin/struttura/${ent.id}/funzioni`, { waitUntil: 'networkidle', timeout: 45000 })
+  // ⚠️ NON `waitForURL(/\/admin/)`: quel modello corrisponde anche a
+  // `/admin/login`, cioè alla pagina da cui si parte. L'attesa finiva subito, si
+  // navigava via mentre il login era ancora in corso e la pagina successiva
+  // rimbalzava al login — con l'aria di un guasto del prodotto. Si aspetta di
+  // **non essere più** sul login.
+  await pannello.waitForURL(u => !String(u).includes('/admin/login'), { timeout: 40000 })
+  await pannello.goto(`${L}/admin/struttura/${ent.id}/funzioni`, { waitUntil: 'domcontentloaded', timeout: 45000 })
 
   // ⚠️ Ci si ancora all'etichetta della funzione, non al «primo input che c'è».
   // E si **aspetta** che la pagina abbia finito di caricare i dati: sul dev
