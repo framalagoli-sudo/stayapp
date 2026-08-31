@@ -166,7 +166,7 @@ Lo script fa in sequenza: **guardie** → `npm audit` (informativo) → `npx ver
 | Icone | lucide-react ^1.24.0 |
 | Router | Next App Router (file-based) |
 | Email | Resend (RESEND_API_KEY in env) |
-| Pagamenti | Stripe — integrato per lo **shop**; booking/eventi ancora da fare |
+| Pagamenti | Stripe — codice scritto per lo shop ma **mai collegato** (nessuna chiave su Vercel, verificato 31/08/2026); booking/eventi da fare |
 | Hosting | **Vercel** (frontend + route API nella stessa app) — dominio live `https://oltrenova.com` |
 | Cron | Vercel Cron → `client-next/vercel.json` (`/api/cron/*`) |
 
@@ -402,7 +402,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 
 ### Da fare (in ordine)
 - [ ] 🎯 **Onboarding "Inizia qui"** — checklist primo accesso (completa i dati → genera il sito con l'AI → pubblica → dominio → primi contatti). **È il capitolo aperto più importante**: la sicurezza è fatta, quello che manca è che un cliente nuovo arrivi al sito pubblicato *da solo*.
-- [ ] **Pagamenti Stripe** — checkout booking risorse ed eventi (colonne `pagamento_stato/pagamento_id` già su prenotazioni). NB: lo Stripe dello **shop** è già integrato (`app/api/shop/webhook/stripe`).
+- [ ] **Pagamenti Stripe** — checkout booking risorse ed eventi (colonne `pagamento_stato/pagamento_id` già su prenotazioni). ⚠️ Lo Stripe dello shop è **scritto, non collegato**: `STRIPE_SECRET_KEY` non esiste su Vercel e il checkout salta in silenzio (`if (stripeKey && ...)`). Si parte da Connect.
 - [x] **Next 15.5 + React 19** ✅ 18/08/2026 — chiuse le 21 vulnerabilità su `next`. ⚠️ Prima di tentare la **16** vanno migrati i `params` sincroni (~102 occorrenze, codemod `next-async-request-api`): la 15 li tollera, la 16 no
 - [ ] **Upgrade Next 16** — **manutenzione, non sicurezza** (triage 11/8: nessuno degli advisory high ci riguarda). Si farà per React 19 / Sentry / attualità. L'ostacolo `next-pwa` è stato rimosso, quindi ora è meno rischioso.
 - [ ] **Import documento v2** — upload file PDF/DOCX + chunking per documenti lunghi

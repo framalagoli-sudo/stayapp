@@ -145,7 +145,7 @@ deploy si lancia a mano, così girano sempre i controlli (§7).
 | Fornitore | A cosa serve | Se cade |
 |---|---|---|
 | **Anthropic** (Claude) | costruttore di siti con l'AI, traduzioni, chatbot, blog automatico | quelle funzioni si spengono, il resto vive. **A consumo**: si paga quel che si usa |
-| **Stripe** | pagamenti del negozio online | non si vende online. Booking ed eventi non lo usano ancora |
+| **Stripe** | pagamenti del negozio online | ⚠️ **non è mai stato collegato**: il codice esiste ma su Vercel non c'è nessuna chiave Stripe, quindi il checkout non è mai partito. Verificato il 31/08/2026 |
 | **Meta / WhatsApp** | canale WhatsApp | **oggi non è attivo**: nessun account collegato, la verifica Meta è ferma |
 | **Unsplash** | fotografie per il costruttore di siti | si scelgono le foto a mano |
 | **Google** | collegamento con Google Calendar | quel collegamento si spegne |
