@@ -57,7 +57,12 @@ export async function POST(request, props) {
     // l'ordine resta da confermare a mano dal titolare.
     if (totaleFinale > 0) {
       try {
-        const base = (process.env.CLIENT_URL ?? '').trim()
+        // ⚠️ Ripiego sull'origine della richiesta: `CLIENT_URL` esiste su Vercel
+        // ma non in locale, e senza di essa l'indirizzo di ritorno restava
+        // relativo — Stripe rispondeva «Not a valid URL» e il checkout non
+        // nasceva. Il guasto sarebbe stato invisibile in produzione e continuo
+        // in sviluppo: il posto peggiore dove mettere una differenza.
+        const base = (process.env.CLIENT_URL ?? '').trim() || new URL(request.url).origin
         const esito = await creaCheckout({
           aziendaId: azienda_id,
           righe: vociSicure.map(v => ({ nome: v.nome, importo: v.prezzo, quantita: v.qty, immagine: v.immagine })),
