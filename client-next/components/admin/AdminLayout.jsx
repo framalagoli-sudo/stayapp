@@ -15,6 +15,7 @@ import {
   Building, Building2, Store, Zap, Webhook, BotMessageSquare, Star, Settings,
   Info, Layers, Wrench, Image, Palette, MapPin, Globe, Lock, Bot, UtensilsCrossed,
   FormInput, ShoppingBag, Sparkles, BarChart3, Gift, SearchCheck, LifeBuoy, LayoutTemplate, Wand2, SlidersHorizontal, Tag,
+  CreditCard,
 } from 'lucide-react'
 
 // ─── Nav definitions ──────────────────────────────────────────────────────────
@@ -484,6 +485,7 @@ export default function AdminLayout({ children }) {
             <NavItem to="/admin/analytics"    icon={BarChart2}     label="Analytics" />
             <NavItem to="/admin/qrcode"       icon={QrCode}        label="QR Code" />
             <NavItem to="/admin/integrazioni" icon={Webhook}       label="Integrazioni" />
+            <NavItem to="/admin/pagamenti"    icon={CreditCard}    label="Pagamenti" />
             <NavItem to="/admin/seo-geo"      icon={SearchCheck}   label="SEO & GEO" />
             <NavItem to="/admin/audit-log"    icon={ClipboardList} label="Audit log" />
             <NavItem to="/admin/impostazioni" icon={Settings}      label="Impostazioni" />
@@ -542,6 +544,7 @@ export default function AdminLayout({ children }) {
             <NavItem to="/admin/analytics"    icon={BarChart2}  label="Analytics" />
             <NavItem to="/admin/staff"        icon={UserCheck}  label="Collaboratori" />
             <NavItem to="/admin/integrazioni" icon={Webhook}    label="Integrazioni" />
+            <NavItem to="/admin/pagamenti"    icon={CreditCard} label="Pagamenti" />
             <NavItem to="/admin/security"     icon={Shield}     label="Sicurezza" />
             <NavItem to="/admin/help"         icon={LifeBuoy}   label="Aiuto" />
           </>
