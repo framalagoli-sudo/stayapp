@@ -660,6 +660,18 @@ export default function AdminLayout({ children }) {
           <LogOut size={14} strokeWidth={1.8} />
           Esci
         </button>
+
+        {/* ⚠️ Un contratto che sparisce dopo la firma non è consultabile.
+            Chi accetta i Termini all'iscrizione deve poterli rileggere quando
+            vuole, senza cercarli fuori dal pannello — soprattutto ora che
+            regolano anche come incassa i suoi soldi.
+            Nel piede e non fra le voci di menu: si consultano di rado, e non
+            devono togliere spazio a quello che si usa ogni giorno. */}
+        <div style={{ display: 'flex', gap: 10, padding: '10px 8px 2px', fontSize: 11, color: '#555' }}>
+          <a href="/termini" target="_blank" rel="noopener noreferrer" style={{ color: '#666', textDecoration: 'none' }}>Termini</a>
+          <span style={{ opacity: 0.4 }}>·</span>
+          <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#666', textDecoration: 'none' }}>Privacy</a>
+        </div>
       </div>
     </>
   )

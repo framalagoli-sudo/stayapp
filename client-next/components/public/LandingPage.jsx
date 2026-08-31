@@ -651,6 +651,7 @@ export default function LandingPage() {
               {/* Un contratto che nessuno trova non è un contratto: sta nel piede
                   di ogni pagina, come la privacy. */}
               <a href="/termini" style={{ color: 'rgba(255,255,255,0.38)', textDecoration: 'none', fontSize: 14 }}>Termini di servizio</a>
+              <a href="/privacy" style={{ color: 'rgba(255,255,255,0.38)', textDecoration: 'none', fontSize: 14 }}>Privacy</a>
             </div>
             <div style={{ fontSize: 13, lineHeight: 1.7, textAlign: 'right' }}>
               <div>© {new Date().getFullYear()} OltreNova</div>
