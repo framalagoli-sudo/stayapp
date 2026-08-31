@@ -18,8 +18,24 @@ import { apiFetch } from '@/lib/api'
 // circuiti, e una copia direbbe «tutto a posto» mentre l'account è bloccato. Il
 // cliente lo scoprirebbe dal primo pagamento rifiutato.
 //
-// Definito fuori dalla pagina: un componente dentro un altro si rimonta a ogni
-// render.
+// L'intestazione, uguale in ogni stato: senza, la pagina si apriva dritta su un
+// riquadro e non diceva nemmeno dove sei.
+//
+// ⚠️ Definita **fuori** dal componente. Dentro, cambierebbe identità a ogni
+// render e React smonterebbe e rimonterebbe tutto quello che contiene — la
+// stessa regola che vale per gli editor con i campi di testo.
+function Pagina({ children }) {
+  return (
+    <div style={{ maxWidth: 900 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 22 }}>
+        <CreditCard size={22} strokeWidth={1.5} color="#1a1a2e" />
+        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Pagamenti</h1>
+      </div>
+      {children}
+    </div>
+  )
+}
+
 export default function PagamentiPage() {
   const [stato, setStato] = useState(null)
   const [errore, setErrore] = useState('')
@@ -40,18 +56,18 @@ export default function PagamentiPage() {
     } catch (e) { setErrore(e.message); setInCorso(false) }
   }
 
-  if (errore) return <div style={{ padding: 20, color: '#c53030' }}>{errore}</div>
-  if (!stato) return <p style={{ color: '#888' }}>Caricamento…</p>
+  if (errore) return <Pagina><div style={{ color: '#c53030' }}>{errore}</div></Pagina>
+  if (!stato) return <Pagina><p style={{ color: '#888' }}>Caricamento…</p></Pagina>
 
   if (stato.non_configurato) return (
-    <div style={riquadro}>
+    <Pagina><div style={riquadro}>
       <div style={{ fontWeight: 700, marginBottom: 6 }}>Pagamenti non ancora disponibili</div>
       <p style={testo}>I pagamenti online non sono ancora attivi su questa installazione. Ci stiamo lavorando.</p>
-    </div>
+    </div></Pagina>
   )
 
   if (!stato.collegato) return (
-    <div style={riquadro}>
+    <Pagina><div style={riquadro}>
       <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a2e', marginBottom: 8 }}>Incassa i tuoi ordini</div>
       <p style={testo}>
         Per vendere online colleghi un conto Stripe: <strong>gli incassi arrivano direttamente a te</strong>,
@@ -64,11 +80,11 @@ export default function PagamentiPage() {
       <button onClick={collega} disabled={inCorso} style={bottonePrimario(inCorso)}>
         {inCorso ? 'Apro Stripe…' : 'Collega il tuo conto'}
       </button>
-    </div>
+    </div></Pagina>
   )
 
   return (
-    <div style={riquadro}>
+    <Pagina><div style={riquadro}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
         <span style={badge(stato.incassa ? { label: '', color: '#276749', bg: '#f0fff4' } : { label: '', color: '#b7791f', bg: '#fffbeb' })}>
           {stato.incassa ? 'Attivo' : 'Da completare'}
@@ -95,7 +111,7 @@ export default function PagamentiPage() {
         Rimborsi, contestazioni e report li gestisci dal tuo pannello Stripe, dove trovi anche la loro
         assistenza. <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" style={{ color: '#1a1a2e' }}>Vai a Stripe →</a>
       </p>
-    </div>
+    </div></Pagina>
   )
 }
 
