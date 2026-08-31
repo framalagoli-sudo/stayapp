@@ -14,7 +14,7 @@ export async function GET(request, props) {
       // dato deve arrivare **fino in fondo** — aggiungere `galleria` alla
       // tabella senza aggiungerla qui vorrebbe dire foto che si caricano e non
       // si vedono, che è già successo due volte in un giorno.
-      .select('id, nome, descrizione, modalita, durata_minuti, quantita, max_coperti, prezzo, valuta, colore, galleria, disponibilita, blocchi, anticipo_ore, cancellazione_ore, conferma_auto')
+      .select('id, nome, descrizione, modalita, durata_minuti, quantita, max_coperti, prezzo, valuta, colore, galleria, acconto_percentuale, disponibilita, blocchi, anticipo_ore, cancellazione_ore, conferma_auto')
       .eq('entity_tipo', entityTipo)
       .eq('entity_id', entityId)
       .eq('attiva', true)

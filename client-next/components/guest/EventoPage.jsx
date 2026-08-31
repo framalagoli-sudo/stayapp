@@ -85,6 +85,10 @@ export default function EventoPage() {
         body: JSON.stringify({ privacy_accettata: privacyOk, guest_name: guestName, guest_email: guestEmail,
           guest_phone: guestPhone || null, package_id: pkgId || null, seats }),
       })
+      // ⚠️ Se c'è un acconto si va **subito** alla cassa: chi ha appena
+      // prenotato è qui adesso. Il posto è già suo — se non paga, resta da
+      // saldare e il titolare lo vede come «non pagato».
+      if (res?.pagamento?.url) { window.location.href = res.pagamento.url; return }
       setEmailSent(!!res?.guest_confirmation_sent)
       setDone(true)
     } catch (e) { setBookErr(e.message) }

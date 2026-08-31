@@ -106,7 +106,7 @@ function emptyRisorsa() {
     nome: '', descrizione: '', modalita: 'slot',
     durata_minuti: 60, quantita: 1, max_coperti: 40,
     prezzo: 0, valuta: 'EUR', colore: '#00b5b5',
-    galleria: [],
+    galleria: [], acconto_percentuale: 0,
     disponibilita: {}, blocchi: [],
     anticipo_ore: 1, cancellazione_ore: 24, conferma_auto: true,
     attiva: true, visibile_minisito: true,
@@ -484,6 +484,28 @@ function RisorseForm({ form, patch, patchDisp, initDisp, entita = [], onEntita, 
             <Label>Prezzo per slot / persona (€)</Label>
             <Input type="number" min={0} step={0.5} value={form.prezzo} onChange={e => patch('prezzo', parseFloat(e.target.value) || 0)} />
             <div style={{ fontSize: 12, color: '#888' }}>Inserisci 0 per servizio gratuito.</div>
+
+            {/* ⚠️ Un numero, non tre scelte. «Niente», «acconto» e «tutto»
+                sarebbero tre nomi nostri per la stessa informazione, e il
+                giorno che qualcuno vuole il 15% dovremmo aggiungere una voce.
+                Il numero copre anche i casi che non abbiamo previsto. */}
+            <Label style={{ marginTop: 16 }}>Quanto si paga prenotando (%)</Label>
+            <Input type="number" min={0} max={100} step={5} value={form.acconto_percentuale ?? 0}
+              onChange={e => patch('acconto_percentuale', Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))} />
+            <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6 }}>
+              <strong>0</strong> = si paga sul posto · <strong>100</strong> = tutto subito ·{' '}
+              <strong>30</strong> = acconto del 30%, il resto dopo.
+              {form.prezzo > 0 && form.acconto_percentuale > 0 && (
+                <> Su {form.prezzo} € chi prenota pagherà subito{' '}
+                  <strong>{(Math.round(form.prezzo * form.acconto_percentuale) / 100).toFixed(2)} €</strong>.</>
+              )}
+            </div>
+            {form.acconto_percentuale > 0 && (
+              <div style={{ fontSize: 12, color: '#b7791f', marginTop: 6, lineHeight: 1.6 }}>
+                Richiede un conto collegato in <strong>Pagamenti</strong>. Senza, la prenotazione
+                si registra lo stesso e si paga sul posto.
+              </div>
+            )}
           </Card>
 
           <Card title="Regole prenotazione">

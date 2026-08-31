@@ -24,6 +24,29 @@ import { stripeConnect, stripeConfigurato } from '@/lib/stripe-connect'
 // calcolate leggendo il proprio database: un totale che viene dal browser è un
 // totale che chi compra può riscrivere.
 
+// Quanto si paga prenotando, e come si chiama quello che si paga.
+//
+// ⚠️ **Il calcolo sta qui, in un posto solo.** Prenotazioni ed eventi fanno la
+// stessa domanda, e farla due volte significa che al primo arrotondamento
+// diverso i due totali divergono — e la differenza la scopre chi paga.
+//
+// L'arrotondamento è ai centesimi e si fa **una volta**: `Math.round` sul
+// totale in centesimi, non sulle percentuali intermedie.
+export function accontoDovuto(percentuale, importoTotale) {
+  const perc = Math.min(100, Math.max(0, parseInt(percentuale) || 0))
+  const totale = Number(importoTotale) || 0
+  if (perc <= 0 || totale <= 0) return { dovuto: 0, perc, saldo: totale, tutto: false }
+  const dovuto = Math.round(totale * perc) / 100
+  return {
+    dovuto,
+    perc,
+    saldo: +(totale - dovuto).toFixed(2),
+    // 100% non è «un acconto del 100%»: è il pagamento intero, e va detto così
+    // a chi legge. Chiamarlo acconto farebbe aspettare un saldo che non esiste.
+    tutto: perc >= 100,
+  }
+}
+
 // Catalogo chiuso: la valuta non finisce grezza in una chiamata a Stripe.
 const VALUTE = new Set(['eur', 'usd', 'gbp', 'chf'])
 const valutaValida = v => VALUTE.has(String(v || '').toLowerCase()) ? String(v).toLowerCase() : 'eur'

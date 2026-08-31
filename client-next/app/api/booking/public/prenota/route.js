@@ -2,6 +2,7 @@
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { verificaPeriodo, totaleGiornaliero, notti } from '@/lib/booking-giornaliero'
 import { confermaPostiPrenotazione } from '@/lib/capienza'
+import { creaCheckout, accontoDovuto } from '@/lib/checkout'
 import { sendWebhooks } from '@/lib/send-webhooks'
 import { triggerAutomazione } from '@/lib/guest-utils'
 import { syncBookingCreate } from '@/lib/google-calendar-stub'
@@ -206,6 +207,45 @@ export async function POST(request) {
       return Response.json({ error: 'Questo orario non è più disponibile' }, { status: 409 })
     }
 
+    // ── Se questa risorsa vuole un pagamento, si crea la cassa ───────────────
+    //
+    // ⚠️ **Dopo** la conferma del posto, non prima: far pagare qualcuno per un
+    // orario che nel frattempo è stato preso da un altro è il modo peggiore di
+    // sbagliare. Prima si tiene il posto, poi si chiede il denaro.
+    //
+    // ⚠️ E l'importo si calcola **dal prezzo riletto dal database**, mai da
+    // quello che è arrivato nella richiesta: chi prenota dice *cosa*, non
+    // *quanto*.
+    let pagamento = null
+    const conto = accontoDovuto(risorsa.acconto_percentuale, importo_totale)
+    if (conto.dovuto > 0) {
+      try {
+        const base = (process.env.CLIENT_URL ?? '').trim() || new URL(request.url).origin
+        const esito = await creaCheckout({
+          aziendaId: risorsa.azienda_id,
+          righe: [{
+            nome: conto.tutto
+              ? risorsa.nome
+              : `${risorsa.nome} — acconto ${conto.perc}%`,
+            importo: conto.dovuto, quantita: 1,
+          }],
+          email: prenotazione.cliente_email,
+          successUrl: `${base}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${base}/checkout/annullato`,
+        })
+        await supabaseAdmin.from('prenotazioni')
+          .update({ pagamento_id: esito.sessionId, pagamento_stato: 'non_pagato' })
+          .eq('id', prenotazione.id)
+        pagamento = { url: esito.url, importo: conto.dovuto, saldo: conto.saldo, tutto: conto.tutto }
+      } catch (e) {
+        // ⚠️ La prenotazione **resta valida**: il posto è già suo. Se la cassa
+        // non è disponibile — conto non collegato, Stripe giù — si paga sul
+        // posto, che è come funzionava prima. Ma il motivo va scritto: è così
+        // che nessuno si accorge per mesi che qualcosa non parte.
+        console.error('[booking] pagamento non richiesto:', e.message)
+      }
+    }
+
     // Fire-and-forget: email + webhook + Google Calendar
     getEntityWhatsapp(risorsa.entity_tipo, risorsa.entity_id)
       .then(wa => inviaEmailConferma(prenotazione, risorsa, wa))
@@ -262,6 +302,9 @@ export async function POST(request) {
       triggerAutomazione('post_visita', ctx, autoVars).catch(e => console.error('[auto] post_visita:', e.message))
     }
 
-    return Response.json(prenotazione, { status: 201 })
+    // ⚠️ Il link della cassa torna INSIEME alla prenotazione: chi ha appena
+    // prenotato dev'essere portato a pagare subito, non con un'email che
+    // magari legge domani. Se `pagamento` è null si paga sul posto, com'era.
+    return Response.json({ ...prenotazione, pagamento }, { status: 201 })
   } catch (e) { await logError('booking/prenota', e, { alert: true }); return Response.json({ error: e.message }, { status: 500 }) }
 }

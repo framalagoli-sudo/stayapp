@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { recomputeEventSeats } from '@/lib/event-seats'
 import { confermaPostiEvento } from '@/lib/capienza'
+import { creaCheckout, accontoDovuto } from '@/lib/checkout'
 import { sendEmail } from '@/lib/send-email'
 import { emailTemplate, guestEmailTemplate } from '@/lib/email-template'
 import { getAziendaLegale } from '@/lib/guest-data'
@@ -81,6 +82,38 @@ export async function POST(request, props) {
     // Le prenotazioni in attesa riservano subito i posti (anti-overbooking).
     await recomputeEventSeats(params.id)
 
+    // ── Se questo evento vuole un pagamento, si crea la cassa ────────────────
+    //
+    // Stessa regola del booking: **dopo** aver tenuto il posto, mai prima. Far
+    // pagare un posto che nel frattempo è finito è il modo peggiore di
+    // sbagliare. E l'importo si calcola dal prezzo dell'evento riletto dal
+    // database, mai da quello che è arrivato nella richiesta.
+    let pagamento = null
+    const conto = accontoDovuto(evento.acconto_percentuale, price * reqSeats)
+    if (conto.dovuto > 0) {
+      try {
+        const base = (process.env.CLIENT_URL ?? '').trim() || new URL(request.url).origin
+        const esito = await creaCheckout({
+          aziendaId: evento.azienda_id,
+          righe: [{
+            nome: conto.tutto ? evento.title : `${evento.title} — acconto ${conto.perc}%`,
+            importo: conto.dovuto, quantita: 1, immagine: evento.cover_url || undefined,
+          }],
+          email: guest_email.trim(),
+          successUrl: `${base}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${base}/checkout/annullato`,
+        })
+        await supabaseAdmin.from('event_bookings')
+          .update({ pagamento_id: esito.sessionId, pagamento_stato: 'non_pagato' })
+          .eq('id', data.id)
+        pagamento = { url: esito.url, importo: conto.dovuto, saldo: conto.saldo, tutto: conto.tutto }
+      } catch (e) {
+        // La prenotazione resta valida: il posto è già suo. Se la cassa non è
+        // disponibile si paga sul posto, com'era prima — ma il motivo si scrive.
+        console.error('[eventi] pagamento non richiesto:', e.message)
+      }
+    }
+
     // ── Notifiche email (per-evento, configurabili) ──────────────────────────────
     const resendKey = (process.env.RESEND_API_KEY ?? '').trim()
     const from = (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>'
@@ -149,6 +182,8 @@ export async function POST(request, props) {
       }).catch(() => {})
     }
 
-    return Response.json({ ...data, guest_confirmation_sent }, { status: 201 })
+    // Il link della cassa torna insieme alla prenotazione: chi ha appena
+    // prenotato va portato a pagare adesso, non con un'email di domani.
+    return Response.json({ ...data, guest_confirmation_sent, pagamento }, { status: 201 })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }

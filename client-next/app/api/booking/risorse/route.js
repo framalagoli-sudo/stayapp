@@ -6,7 +6,7 @@ const isUUID = v => UUID_RE.test(v)
 
 const ALLOWED = ['nome', 'descrizione', 'modalita', 'entity_tipo', 'entity_id',
   'durata_minuti', 'quantita', 'max_coperti', 'prezzo', 'valuta', 'colore',
-  'galleria', 'disponibilita', 'blocchi', 'anticipo_ore', 'cancellazione_ore', 'conferma_auto', 'attiva', 'visibile_minisito']
+  'galleria', 'disponibilita', 'blocchi', 'acconto_percentuale', 'anticipo_ore', 'cancellazione_ore', 'conferma_auto', 'attiva', 'visibile_minisito']
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()

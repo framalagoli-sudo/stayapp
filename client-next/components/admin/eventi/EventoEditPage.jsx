@@ -37,7 +37,7 @@ export default function EventoEditPage() {
     entity_tipo: '', entity_id: '', azienda_id: '', packages: [],
     notify_owner_on_booking: true, send_guest_confirmation: false,
     cta_label: '', cta_condizioni: '',
-    mostra_prezzo: true, mostra_prezzo_pagina: true, prezzo_testo: '',
+    mostra_prezzo: true, mostra_prezzo_pagina: true, prezzo_testo: '', acconto_percentuale: 0,
   })
   const [cover, setCover] = useState(null)       // URL attuale
   const [formato, setFormato] = useState(FORMATO_PREDEFINITO)
@@ -68,6 +68,7 @@ export default function EventoEditPage() {
           azienda_id:  ev.azienda_id  || '',
           cta_label:       ev.cta_label || '',
           cta_condizioni:  ev.cta_condizioni || '',
+          acconto_percentuale:  ev.acconto_percentuale ?? 0,
           mostra_prezzo:        ev.mostra_prezzo ?? true,
           mostra_prezzo_pagina: ev.mostra_prezzo_pagina ?? true,
           prezzo_testo:    ev.prezzo_testo || '',
@@ -393,7 +394,27 @@ export default function EventoEditPage() {
               <label style={lbl}>Posti disponibili</label>
               <input type="number" min="1" value={form.seats_total} onChange={e => set('seats_total', e.target.value)} style={inp} placeholder="Vuoto = illimitati" />
             </div>
+            {/* ⚠️ Un numero, non tre scelte: 0 = si paga all'ingresso,
+                100 = tutto subito, 30 = acconto. Stessa regola delle risorse:
+                il numero copre anche i casi che non abbiamo previsto. */}
+            <div style={fieldWrap}>
+              <label style={lbl}>Quanto si paga prenotando (%)</label>
+              <input type="number" min="0" max="100" step="5" value={form.acconto_percentuale ?? 0}
+                onChange={e => set('acconto_percentuale', Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+                style={inp} placeholder="0 = si paga all'ingresso" />
+            </div>
           </div>
+
+          {Number(form.acconto_percentuale) > 0 && (
+            <div style={{ fontSize: 12.5, color: '#b7791f', marginTop: -4, marginBottom: 12, lineHeight: 1.6 }}>
+              {Number(form.price) > 0
+                ? <>Chi prenota pagherà subito <strong>{(Math.round(Number(form.price) * Number(form.acconto_percentuale)) / 100).toFixed(2)} €</strong> a posto
+                    {Number(form.acconto_percentuale) < 100 && <>, il resto all’ingresso</>}.{' '}</>
+                : <>⚠️ Il prezzo è 0: non ci sarà nulla da pagare.{' '}</>}
+              Richiede un conto collegato in <strong>Pagamenti</strong>: senza, la prenotazione
+              si registra lo stesso e si paga sul posto.
+            </div>
+          )}
 
           {entityOptions.length > 0 && (
             <div style={fieldWrap}>

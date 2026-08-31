@@ -122,6 +122,13 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Errore')
+      // ⚠️ Se c'è da pagare si va **subito** alla cassa, senza passare dalla
+      // schermata di conferma: chi ha appena prenotato è lì, in quel momento.
+      // Rimandarlo a un'email che leggerà domani significa non incassare.
+      //
+      // La prenotazione è già salvata e il posto è suo: se non paga, resta da
+      // saldare e il titolare la vede come «non pagata».
+      if (data?.pagamento?.url) { window.location.href = data.pagamento.url; return }
       setPrenotazione(data)
       setStep('done')
     } catch (e) { setErrore(e.message) }
@@ -140,6 +147,16 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
   }
 
   const today = new Date().toISOString().slice(0, 10)
+
+  // Quanto verrà chiesto alla conferma. È una **previsione per avvisare**: il
+  // conto che vale è quello della route, che rilegge il prezzo dal database.
+  // A giornate il totale lo dice già il server (`periodo.totale`), altrove è
+  // prezzo × persone.
+  const importoPrevisto = selected.risorsa?.modalita === 'giornaliero'
+    ? (Number(periodo?.totale) || 0)
+    : (Number(selected.slot?.promo?.prezzo ?? selected.slot?.prezzo ?? selected.risorsa?.prezzo) || 0) * (parseInt(form.n_persone) || 1)
+  const percAcconto = Math.min(100, Math.max(0, parseInt(selected.risorsa?.acconto_percentuale) || 0))
+  const daPagare = percAcconto > 0 ? Math.round(importoPrevisto * percAcconto) / 100 : 0
 
   if (loading) return <div style={wrapStyle}>Caricamento...</div>
   if (risorse.length === 0) return null
@@ -380,6 +397,10 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
       {step === 'form' && (
         <div>
           <div style={titleStyle}>I tuoi dati</div>
+          {/* ⚠️ L'importo previsto si calcola con lo **stesso** conto del
+              server, ma resta una previsione: quello che si paga davvero lo
+              decide la route, che rilegge il prezzo dal database. Qui serve
+              solo ad avvisare, mai a stabilire. */}
 
           {/* Riepilogo */}
           <div style={{ background: '#f8f8f8', borderRadius: 10, padding: 14, marginBottom: 20, fontSize: 14 }}>
@@ -441,9 +462,23 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
 
           {errore && <div style={{ marginTop: 10, color: '#c0392b', fontSize: 13 }}>{errore}</div>}
 
+          {/* ⚠️ Se c'è da pagare va detto **prima**, non dopo aver confermato:
+              trovarsi davanti a una richiesta di denaro che nessuno aveva
+              annunciato è il modo più rapido di far chiudere la pagina. */}
+          {daPagare > 0 && (
+            <div style={{ marginTop: 14, padding: '12px 14px', background: '#f7f9fc', borderRadius: 10, fontSize: 13.5, color: '#555', lineHeight: 1.6 }}>
+              Alla conferma ti chiederemo di pagare{' '}
+              <strong style={{ color: primaryColor }}>{simboloValuta(selected.risorsa?.valuta)}{daPagare.toFixed(2)}</strong>
+              {selected.risorsa?.acconto_percentuale < 100 && importoPrevisto > 0 && (
+                <> come acconto: il resto ({simboloValuta(selected.risorsa?.valuta)}{(importoPrevisto - daPagare).toFixed(2)}) si salda dopo.</>
+              )}
+              {selected.risorsa?.acconto_percentuale >= 100 && <>, e la prenotazione sarà saldata.</>}
+            </div>
+          )}
+
           <button onClick={submit} disabled={sending || !form.privacy}
             style={{ ...btnStyle(primaryColor), marginTop: 16, width: '100%', padding: '14px', opacity: form.privacy ? 1 : 0.5, cursor: form.privacy ? 'pointer' : 'not-allowed' }}>
-            {sending ? 'Invio in corso...' : 'Conferma prenotazione'}
+            {sending ? 'Invio in corso...' : daPagare > 0 ? 'Conferma e paga' : 'Conferma prenotazione'}
           </button>
           <button onClick={() => setStep('slot')} style={backBtnStyle}>← Indietro</button>
         </div>
