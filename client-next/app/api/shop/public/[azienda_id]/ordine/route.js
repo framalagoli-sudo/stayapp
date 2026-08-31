@@ -5,6 +5,7 @@ import { applicaLoyaltyOrdine } from '@/lib/loyalty-helpers'
 import { sendEmail } from '@/lib/send-email'
 import { guestEmailTemplate } from '@/lib/email-template'
 import { logError } from '@/lib/observability'
+import { creaCheckout } from '@/lib/checkout'
 
 export async function POST(request, props) {
   const params = await props.params;
@@ -47,42 +48,33 @@ export async function POST(request, props) {
 
     let stripe_session_id = null
     let checkout_url = null
-    const stripeKey = (process.env.STRIPE_SECRET_KEY ?? '').trim()
+    // ⚠️ Il pagamento nasce sul conto del CLIENTE, non sul nostro: lo decide
+    // `creaCheckout`, che è l'unico punto della piattaforma che parla con la
+    // cassa. Prima qui c'era una copia del codice che incassava sul conto di
+    // OltreNova — con i soldi, le commissioni e le contestazioni.
+    //
     // Un checkout da zero euro Stripe non lo accetta: se lo sconto copre tutto,
     // l'ordine resta da confermare a mano dal titolare.
-    if (stripeKey && totaleFinale > 0) {
+    if (totaleFinale > 0) {
       try {
-        const Stripe = (await import('stripe')).default
-        const stripe = new Stripe(stripeKey)
-        const session = await stripe.checkout.sessions.create({
-          payment_method_types: ['card'],
-          mode: 'payment',
-          line_items: vociSicure.map(v => ({
-            price_data: {
-              currency: 'eur',
-              product_data: { name: v.nome, images: v.immagine ? [v.immagine] : [] },
-              unit_amount: Math.round(v.prezzo * 100),
-            },
-            quantity: v.qty,
-          })),
-          // Lo sconto deve arrivare anche alla cassa: senza, il cliente paga il
-          // pieno e si vede consumare punti e gift card lo stesso.
-          ...(scontoTotale > 0 ? {
-            discounts: [{
-              coupon: (await stripe.coupons.create({
-                amount_off: Math.round(scontoTotale * 100), currency: 'eur',
-                duration: 'once', name: 'Sconto fedeltà',
-              })).id,
-            }],
-          } : {}),
-          customer_email: email_cliente,
-          success_url: `${(process.env.CLIENT_URL ?? '').trim()}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${(process.env.CLIENT_URL ?? '').trim()}/checkout/annullato`,
-          metadata: { azienda_id },
+        const base = (process.env.CLIENT_URL ?? '').trim()
+        const esito = await creaCheckout({
+          aziendaId: azienda_id,
+          righe: vociSicure.map(v => ({ nome: v.nome, importo: v.prezzo, quantita: v.qty, immagine: v.immagine })),
+          sconto: scontoTotale, scontoNome: 'Sconto fedeltà',
+          email: email_cliente,
+          successUrl: `${base}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${base}/checkout/annullato`,
         })
-        stripe_session_id = session.id
-        checkout_url = session.url
-      } catch (e) { console.error('[Shop] Stripe error:', e.message) }
+        stripe_session_id = esito.sessionId
+        checkout_url = esito.url
+      } catch (e) {
+        // L'ordine si salva comunque: chi ha comprato non deve perdere il
+        // carrello perché il pagamento non è disponibile. Ma il motivo va
+        // scritto, non ingoiato — è così che nessuno si è accorto per mesi che
+        // lo shop non incassava.
+        console.error('[Shop] checkout non creato:', e.message)
+      }
     }
 
     const { data: ordine, error } = await supabaseAdmin.from('ordini').insert({
