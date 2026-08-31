@@ -324,7 +324,9 @@ Variables**. Qui ci sono solo i nomi e la provenienza.
 | `RESEND_API_KEY` · `RESEND_FROM` · `RESEND_WEBHOOK_SECRET` | Resend → API Keys | nessuna email |
 | `CRON_SECRET` | inventarne una nuova, lunga e casuale | i processi automatici si fermano |
 | `ANTHROPIC_API_KEY` · `AI_MONTHLY_LIMIT` | console Anthropic | l'AI si spegne |
-| `STRIPE_SECRET_KEY` · `STRIPE_WEBHOOK_SECRET` | Stripe → Developers | niente pagamenti |
+| `STRIPE_SECRET_KEY` | Stripe → Developers → Chiavi API | niente pagamenti, in nessun punto della piattaforma |
+| `STRIPE_WEBHOOK_SECRET` | Stripe → Webhook (eventi da **account connessi**) | i pagamenti riescono ma non risultano mai: l'ordine resta «in attesa» per sempre |
+| `STRIPE_ACCOUNT_WEBHOOK_SECRET` | Stripe → Webhook (account connessi, payload **Thin**) | non ci si accorge se Stripe blocca il conto di un cliente: lo scopre lui dal primo pagamento rifiutato |
 | `VERCEL_TOKEN` · `VERCEL_PROJECT_ID` | Vercel → Account Settings → Tokens | i domini dei clienti non si collegano più |
 | `TURNSTILE_SECRET_KEY` · `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare → Turnstile | i moduli restano senza filtro |
 | `META_APP_ID` · `META_APP_SECRET` · `WHATSAPP_TOKEN_KEY` · `WHATSAPP_WEBHOOK_TOKEN` | Meta for Developers | WhatsApp spento *(già così oggi)* |
