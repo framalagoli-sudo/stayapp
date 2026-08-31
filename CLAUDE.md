@@ -188,7 +188,7 @@ hospitality/
 │   │       ├── guest/              # endpoint pubblici (no auth)
 │   │       ├── booking/ · eventi/ · shop/ · vetrine/ · pagine/ …
 │   │       ├── cron/               # newsletter, automazioni, blog, backup
-│   │       └── webhooks/ · resend-webhook/ · shop/webhook/stripe/
+│   │       └── webhooks/ · resend-webhook/ · stripe/webhook · stripe/webhook-account
 │   ├── components/ · context/ · hooks/
 │   └── lib/                        # supabase, send-email, guest-data, blockTypes …
 ├── tests/                          # smoke test Playwright su produzione + sonde `probe-*.mjs`
@@ -307,7 +307,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - Sonda `tests/probe-security-sweep.mjs`: prova **tutte** le route API con nessun token / token di un'altra azienda, e verifica che nessuna lista perda dati altrui. Da rilanciare quando si aggiungono route.
 
 27. **🪝 Gli URL dei webhook vanno registrati su `www`, mai sull'apex** (23/08/2026). `https://oltrenova.com/...` risponde **308** verso `www`, e **un 3xx è un fallimento di consegna**: Svix (il motore che Resend usa per i webhook — header `svix-*`) non segue i redirect, per non trascinare gli header di firma su un altro host. Risultato: il webhook bounce di Resend è rimasto muto **dal 9 luglio al 23 agosto 2026** e Resend lo ha disattivato da solo.
-    - Vale per **tutti** i fornitori: verificato che `resend-webhook`, `shop/webhook/stripe`, `whatsapp/webhook` e `webhooks` danno **308 sull'apex e rispondono solo su `www`**.
+    - Vale per **tutti** i fornitori: verificato che `resend-webhook`, `stripe/webhook`, `whatsapp/webhook` e `webhooks` danno **308 sull'apex e rispondono solo su `www`**.
     - Sintomo ingannevole: l'endpoint provato a mano su `www` funziona benissimo, quindi sembra tutto a posto. Il guasto si vede **solo** provando l'URL esattamente com'è registrato dal fornitore.
     - Conseguenza silenziosa di un webhook bounce morto: le email inesistenti non vengono più marcate `email_non_valida`, si continua a scrivere a caselle morte e la reputazione del dominio peggiora — senza nessun errore visibile.
 
