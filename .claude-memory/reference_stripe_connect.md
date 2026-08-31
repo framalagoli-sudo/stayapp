@@ -60,14 +60,49 @@ Ditta individuale: molto meno, solo i dati della persona.
 ⚠️ **Li raccoglie Stripe, non noi**: il cliente fa il percorso ospitato da loro.
 Non passiamo mai da documenti d'identità — un bene anche per il GDPR.
 
-## A carico di Francesco (aperto al 30/08)
+## ✅ Stato al 31/08/2026 — LIVE in produzione
 
-1. Attivare Connect su `dashboard.stripe.com/connect/settings/profile`, dichiarando:
-   software, **nessuna commissione trattenuta**, non gestisce i fondi
-2. Scegliere **Standard** + **addebiti diretti** + **nessuna commissione**
-3. Passare il **client ID** (`ca_...`) e autorizzare il ritorno
-   `https://www.oltrenova.com/api/stripe/connect/callback`
-   ⚠️ **su `www`, mai sull'apex** — l'apex dà 308, vedi [[reference_webhook_url_www]]
+Fatto e verificato dal vivo:
+
+- **Collegamento**: `Account → Pagamenti` nel pannello. `lib/stripe-connect.js`
+  crea l'account v2 con `dashboard: 'full'` e le tre responsabilità su Stripe.
+  L'id sta in `aziende.stripe_account_id` (migration `099`) — **solo l'id**: lo
+  stato si chiede sempre all'API, perché i requisiti cambiano da soli.
+- **Checkout**: `lib/checkout.js`, **un posto solo per tutta la piattaforma**.
+  `stripeAccount` = conto del cliente, **nessuna `application_fee`**.
+  Lo shop lo usa; prenotazioni ed eventi hanno le colonne pronte (`095`, `100`).
+- **Due webhook**: `/api/stripe/webhook` (pagamenti, riconosce ordine,
+  prenotazione o evento) e `/api/stripe/webhook-account` (requisiti, **thin
+  events**). Registrati su Stripe con **«eventi da account connessi»** — con gli
+  addebiti diretti l'evento nasce sul conto del cliente, e un endpoint
+  registrato per il solo account della piattaforma non riceve **niente**.
+- **Pagine di ritorno**: `/checkout/successo` e `/checkout/annullato`.
+- SDK aggiornato **14 → 22** (`v2.core.accounts` non esiste nella 14).
+
+**Prova completa riuscita in sandbox**, con un pagamento vero di Francesco:
+Stripe consegna `checkout.session.completed` → il codice risponde 200 →
+l'ordine passa a `pagato · da evadere` → la pagina mostra il numero d'ordine.
+
+⚠️ **Due difetti trovati provando, non leggendo il codice:**
+1. `CLIENT_URL` esiste su Vercel ma non in `.env.local`: senza, `success_url`
+   restava relativo e Stripe rifiutava con «Not a valid URL». Ora c'è il ripiego
+   sull'origine della richiesta.
+2. **Dopo aver pagato si finiva su un 404**: `/checkout/successo` non era mai
+   stata creata. Stesso difetto della pagina offerte — un indirizzo scritto
+   senza mai aprirlo — nel punto peggiore possibile. Trovato da Francesco
+   pagando, non da me verificando.
+
+## ⏭️ Cosa manca
+
+- **Nessun cliente vero ha ancora collegato il conto.** Il primo incasso vero
+  non è mai avvenuto.
+- **Prenotazioni ed eventi non incassano ancora**: motore e colonne ci sono,
+  manca l'interruttore «chiedi il pagamento» e il flusso.
+- **I Termini di servizio** vanno aggiornati: i pagamenti sono un rapporto
+  diretto fra cliente e Stripe, noi diamo il software. La configurazione tecnica
+  da sola non sposta la responsabilità.
+- Domanda per il commercialista, **non verificata**: se «fornire lo strumento
+  con cui altri incassano» abbia implicazioni fiscali in Italia.
 
 ## Due cose da non dimenticare
 
