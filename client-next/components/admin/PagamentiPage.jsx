@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { CreditCard } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
+import { useAzienda } from '@/context/AziendaContext'
 
 
 // ⚠️ Sta qui, e non dentro Shop.
@@ -37,24 +38,48 @@ function Pagina({ children }) {
 }
 
 export default function PagamentiPage() {
+  // ⚠️ Per un super_admin l'azienda NON si deduce dal profilo: ne amministra
+  // molte, e va detto di quale si sta parlando. Senza, la route rispondeva
+  // «Nessuna azienda» e la pagina non mostrava niente — trovato da Francesco,
+  // che e' super_admin, mentre le prove le avevo fatte con un utente normale.
+  // Di nuovo: provato il pezzo, non il percorso suo.
+  const { azienda, activeAziendaId, loading: caricaAzienda } = useAzienda()
+  const aziendaId = activeAziendaId || azienda?.id || null
   const [stato, setStato] = useState(null)
   const [errore, setErrore] = useState('')
   const [inCorso, setInCorso] = useState(false)
 
   useEffect(() => {
-    apiFetch('/api/stripe/connect').then(setStato).catch(e => setErrore(e.message))
-  }, [])
+    if (caricaAzienda) return
+    const q = aziendaId ? `?azienda_id=${encodeURIComponent(aziendaId)}` : ''
+    apiFetch(`/api/stripe/connect${q}`).then(setStato).catch(e => setErrore(e.message))
+  }, [aziendaId, caricaAzienda])
 
   async function collega() {
     setInCorso(true); setErrore('')
     try {
-      const { url } = await apiFetch('/api/stripe/connect', { method: 'POST', body: '{}' })
+      const { url } = await apiFetch('/api/stripe/connect', { method: 'POST', body: JSON.stringify({ azienda_id: aziendaId }) })
       // Stessa scheda: si torna qui quando ha finito, e il ritorno porta un
       // parametro che ci dice com'è andata.
       if (url) window.location.href = url
       else throw new Error('Stripe non ha restituito un collegamento')
     } catch (e) { setErrore(e.message); setInCorso(false) }
   }
+
+  if (caricaAzienda) return <Pagina><p style={{ color: '#888' }}>Caricamento…</p></Pagina>
+
+  // ⚠️ Un super_admin amministra più aziende: finché non ne sceglie una, non
+  // c'è un conto di cui parlare. Meglio dirgli cosa fare che mostrargli
+  // «Nessuna azienda», che sembra un guasto e non spiega niente.
+  if (!aziendaId) return (
+    <Pagina><div style={riquadro}>
+      <div style={{ fontWeight: 700, marginBottom: 6 }}>Scegli prima un’azienda</div>
+      <p style={{ ...testo, marginBottom: 0 }}>
+        Il conto per gli incassi è di una singola azienda. Selezionala dal menu in alto e
+        questa pagina ti mostrerà il suo stato.
+      </p>
+    </div></Pagina>
+  )
 
   if (errore) return <Pagina><div style={{ color: '#c53030' }}>{errore}</div></Pagina>
   if (!stato) return <Pagina><p style={{ color: '#888' }}>Caricamento…</p></Pagina>
