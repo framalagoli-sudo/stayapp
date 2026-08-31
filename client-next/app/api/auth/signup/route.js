@@ -3,6 +3,10 @@ import { sendEmail } from '@/lib/send-email'
 import { platformEmailTemplate } from '@/lib/email-template'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 
+// La versione dei Termini in vigore, per data. Cambiando il testo si cambia
+// anche questa: e' il modo per sapere cosa ha accettato chi, e quando.
+const VERSIONE_TERMINI = '2026-08-31'
+
 export async function POST(request) {
   try {
     // Ogni registrazione crea un utente, un'azienda e spedisce un'email
@@ -17,7 +21,12 @@ export async function POST(request) {
     const { data: cfg } = await supabaseAdmin.from('platform_config').select('signup_enabled').eq('id', 1).single()
     if (!cfg?.signup_enabled) return Response.json({ error: 'Le registrazioni sono temporaneamente chiuse.' }, { status: 403 })
 
-    const { nome_azienda, email, password } = await request.json()
+    const { nome_azienda, email, password, accetta_termini } = await request.json()
+    // ⛔ Il controllo sta QUI, non nel modulo: una spunta nel browser si toglie
+    // con due clic, e un contratto non accettato non vale. Vale la stessa
+    // regola del consenso privacy sulle prenotazioni.
+    if (accetta_termini !== true)
+      return Response.json({ error: "Per registrarti devi accettare i Termini di servizio." }, { status: 400 })
     if (!nome_azienda?.trim()) return Response.json({ error: 'Nome azienda obbligatorio' }, { status: 400 })
     if (!email?.trim()) return Response.json({ error: 'Email obbligatoria' }, { status: 400 })
     if (!password || password.length < 8) return Response.json({ error: 'Password minimo 8 caratteri' }, { status: 400 })
@@ -41,6 +50,10 @@ export async function POST(request) {
       email: email.trim().toLowerCase(),
       moduli: { struttura: false, ristorante: false, attivita: false },
       piano: 'base', active: true, trial_ends_at: trialEndsAt, subscription_status: 'trial',
+      // La **prova** del consenso: quando, e quale versione. Se i Termini
+      // cambiano, le accettazioni vecchie restano ricostruibili.
+      termini_accettati_il: new Date().toISOString(),
+      termini_versione: VERSIONE_TERMINI,
     }).select().single()
     if (azErr) { await supabaseAdmin.auth.admin.deleteUser(userId); return Response.json({ error: azErr.message }, { status: 500 }) }
 

@@ -8,7 +8,7 @@ const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? '').trim()
 
 export default function SignupPage() {
   const router = useRouter()
-  const [form, setForm] = useState({ nome_azienda: '', email: '', password: '', confirm: '' })
+  const [form, setForm] = useState({ nome_azienda: '', email: '', password: '', confirm: '', accetta: false })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [checking, setChecking] = useState(true)
@@ -26,12 +26,13 @@ export default function SignupPage() {
     e.preventDefault()
     setError('')
     if (form.password !== form.confirm) return setError('Le password non coincidono.')
+    if (!form.accetta) return setError('Per proseguire devi accettare i Termini di servizio.')
     setLoading(true)
     try {
       const res = await fetch(`${API_BASE}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome_azienda: form.nome_azienda, email: form.email, password: form.password }),
+        body: JSON.stringify({ nome_azienda: form.nome_azienda, email: form.email, password: form.password, accetta_termini: form.accetta }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Errore registrazione'); setLoading(false); return }
@@ -111,6 +112,22 @@ export default function SignupPage() {
             onChange={e => setForm(f => ({ ...f, confirm: e.target.value }))}
             required style={{ ...field, marginBottom: 20 }} placeholder="Ripeti la password"
           />
+
+          {/* ⚠️ Un contratto non accettato non vale. Fino a oggi ci si iscriveva
+              senza accettare niente: nessun documento diceva chi risponde di
+              cosa — e da quando i clienti incassano denaro dai loro clienti,
+              quella mancanza pesa.
+              La spunta è obbligatoria qui, ma il controllo vero è nella route:
+              una casella nel browser si toglie con due clic. */}
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 9, fontSize: 13, color: '#555', lineHeight: 1.6, margin: '4px 0 18px', cursor: 'pointer' }}>
+            <input type="checkbox" checked={form.accetta}
+              onChange={e => setForm(f => ({ ...f, accetta: e.target.checked }))}
+              style={{ marginTop: 3, width: 15, height: 15, flexShrink: 0 }} />
+            <span>
+              Ho letto e accetto i <a href="/termini" target="_blank" rel="noopener noreferrer" style={{ color: '#1a1a2e', fontWeight: 600 }}>Termini di servizio</a>{' '}
+              e l’<a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#1a1a2e', fontWeight: 600 }}>informativa privacy</a>.
+            </span>
+          </label>
 
           {error && (
             <div style={{ background: '#fff5f5', color: '#c53030', fontSize: 13, padding: '10px 14px', borderRadius: 8, marginBottom: 16, border: '1px solid #fed7d7' }}>
