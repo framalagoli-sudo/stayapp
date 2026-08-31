@@ -11,6 +11,18 @@
 // già stato tenuto, e perderlo perché la cassa non è disponibile sarebbe un
 // danno peggiore del mancato incasso.
 //
+// ⛔ **Questa sonda non si lancia in produzione.**
+//
+// Per provare l'acconto serve un conto Stripe collegato, e collegarlo significa
+// **creare un account Stripe vero** — che in modalità live resta nell'account di
+// Francesco e non si cancella. Lanciata in produzione ne ha già lasciati un
+// paio: rumore permanente, per una prova che si può fare in sandbox.
+//
+// E ci sarebbe comunque falsa: in live Stripe **rifiuta** di aprire una cassa su
+// un conto non ancora attivato — giustamente — mentre in sandbox è permissivo.
+// La sonda leggerebbe quel rifiuto come un difetto del nostro codice, che
+// invece si comporta esattamente come deve.
+//
 // Uso: TEST_LOCALE=http://localhost:3000 node probe-acconto.mjs
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
@@ -20,6 +32,16 @@ config({ path: '.env.test' })
 const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY } = process.env
 const L = process.env.TEST_LOCALE || 'https://www.oltrenova.com'
 const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+
+// ⛔ Il guardiano: si esce prima di toccare qualsiasi cosa.
+if (!/localhost|127\.0\.0\.1/.test(L)) {
+  console.log('\n⛔ Questa sonda crea account Stripe VERI e non si lancia in produzione.')
+  console.log('   In live resterebbero nell\'account di Francesco senza potersi cancellare,')
+  console.log('   e Stripe rifiuterebbe comunque la cassa su un conto non attivato —')
+  console.log('   un rifiuto giusto, che la sonda leggerebbe come un nostro difetto.\n')
+  console.log('   Usa:  TEST_LOCALE=http://localhost:3000 node probe-acconto.mjs\n')
+  process.exit(0)
+}
 
 let problemi = 0
 const ok = (c, t) => { console.log(`  ${c ? '✓' : '✗'} ${t}`); if (!c) problemi++ }
