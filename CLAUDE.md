@@ -402,7 +402,8 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 
 ### Da fare (in ordine)
 - [ ] 🎯 **Onboarding "Inizia qui"** — checklist primo accesso (completa i dati → genera il sito con l'AI → pubblica → dominio → primi contatti). **È il capitolo aperto più importante**: la sicurezza è fatta, quello che manca è che un cliente nuovo arrivi al sito pubblicato *da solo*.
-- [ ] **Pagamenti Stripe** — checkout booking risorse ed eventi (colonne `pagamento_stato/pagamento_id` già su prenotazioni). ⚠️ Lo Stripe dello shop è **scritto, non collegato**: `STRIPE_SECRET_KEY` non esiste su Vercel e il checkout salta in silenzio (`if (stripeKey && ...)`). Si parte da Connect.
+- [x] **Pagamenti Stripe** ✅ 31/08/2026 — **Connect live**: ogni cliente collega il proprio conto (`Account → Pagamenti`) e incassa lui. Addebiti diretti, **nessuna commissione trattenuta**, perdite a carico di Stripe. Shop, prenotazioni ed eventi passano tutti da `lib/checkout.js`; l'acconto si decide con un numero (0 = sul posto, 100 = tutto, 30 = acconto). Due webhook registrati per «account connessi». Dettaglio → nota in `PROGETTO.md` §8 e memoria `reference_stripe_connect`.
+  ⚠️ **Nessun cliente vero ha ancora collegato il conto**: il primo incasso reale non è mai avvenuto.
 - [x] **Next 15.5 + React 19** ✅ 18/08/2026 — chiuse le 21 vulnerabilità su `next`. ⚠️ Prima di tentare la **16** vanno migrati i `params` sincroni (~102 occorrenze, codemod `next-async-request-api`): la 15 li tollera, la 16 no
 - [ ] **Upgrade Next 16** — **manutenzione, non sicurezza** (triage 11/8: nessuno degli advisory high ci riguarda). Si farà per React 19 / Sentry / attualità. L'ostacolo `next-pwa` è stato rimosso, quindi ora è meno rischioso.
 - [ ] **Import documento v2** — upload file PDF/DOCX + chunking per documenti lunghi
