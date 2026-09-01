@@ -10,6 +10,7 @@
 // Uso: cd tests && node probe-coda-automazioni.mjs
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
+import { svuotaAzienda } from './pulizia-prove.mjs'
 config({ path: '.env.test' })
 const admin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 const L = process.env.TEST_LOCALE || 'https://www.oltrenova.com'
@@ -62,6 +63,8 @@ try {
 finally {
   for (const id of automazioni) { await admin.from('automazioni_log').delete().eq('automazione_id', id); await admin.from('automazioni').delete().eq('id', id) }
   for (const id of risorse) { await admin.from('prenotazioni').delete().eq('risorsa_id', id); await admin.from('risorse').delete().eq('id', id) }
-  for (const id of aziende) await admin.from('aziende').delete().eq('id', id)
+  // Per AZIENDA, non per gli id raccolti: se la sonda si ferma a meta', quello
+  // che e' nato dopo resterebbe orfano in produzione.
+  for (const id of aziende) { const errore = await svuotaAzienda(id); if (errore) console.error('pulizia:', errore) }
   console.log('[diagnosi] pulito')
 }

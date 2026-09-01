@@ -13,6 +13,7 @@
 // Uso: TEST_LOCALE=http://localhost:3000 node probe-promemoria.mjs
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
+import { svuotaAzienda } from './pulizia-prove.mjs'
 import { randomBytes } from 'crypto'
 config({ path: '.env.test' })
 
@@ -124,7 +125,11 @@ try {
     await admin.from('prenotazioni').delete().eq('risorsa_id', id)
     await admin.from('risorse').delete().eq('id', id)
   }
-  for (const id of aziende) { const { error } = await admin.from('aziende').delete().eq('id', id); if (error) console.error('pulizia:', error.message) }
+  // ⚠️ Si cancella per AZIENDA, non per gli id raccolti: se la sonda si ferma
+  // a meta', tutto quello che e' nato dopo l'ultimo id registrato resterebbe
+  // orfano in produzione. E' successo: tre aziende ZZ rimaste, con dentro
+  // prenotazioni e contatti.
+  for (const id of aziende) { const errore = await svuotaAzienda(id); if (errore) console.error('pulizia:', errore) }
   console.log('[probe] pulito')
   process.exit(problemi ? 1 : 0)
 }
