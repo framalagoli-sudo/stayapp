@@ -1,4 +1,7 @@
 ﻿import { supabaseAdmin } from './supabase-server'
+import { decifra, inviaTemplate, numeroValido } from './whatsapp'
+import { trovaTemplate, nomeMeta } from './whatsapp-catalogo'
+import { valoriTemplate } from './automazioni-canali'
 
 function applyVars(str, vars) {
   if (typeof str !== 'string') return str
@@ -42,10 +45,67 @@ function buildEmailHtml({ entityName, entityLogo, primary = '#1a1a2e', heading, 
 </body></html>`
 }
 
+// ⚠️ Leggeva da `properties`/`ristoranti`/`attivita`, che dalla migration 079
+// **nessuno aggiorna più**: un'entità creata dopo l'unificazione lì non esiste,
+// quindi l'email partiva firmata «OltreNova» invece che col nome del cliente.
+// Nessun errore, nessun log: solo la firma sbagliata addosso a un messaggio che
+// il cliente crede suo. Misurato in produzione: 2 entità su 15, e **tutte**
+// quelle create da qui in avanti.
 async function getEntityBranding(entity_tipo, entity_id) {
-  const table = entity_tipo === 'struttura' ? 'properties' : entity_tipo === 'ristorante' ? 'ristoranti' : 'attivita'
-  const { data } = await supabaseAdmin.from(table).select('name, logo_url, theme').eq('id', entity_id).single()
+  const { data } = await supabaseAdmin.from('entita')
+    .select('name, logo_url, theme').eq('id', entity_id).maybeSingle()
   return { name: data?.name || 'OltreNova', logo: data?.logo_url || null, primary: data?.theme?.primaryColor || '#1a1a2e' }
+}
+
+// ── WhatsApp ──────────────────────────────────────────────────────────────
+//
+// Un messaggio che parte da noi vuole un **template approvato da Meta**: il
+// testo libero dello step qui non può viaggiare (vedi lib/automazioni-canali.js).
+//
+// 🔒 Il consenso si verifica **qui**, non a monte: la coda può essere stata
+// scritta ore prima, e nel frattempo la persona può aver detto basta. Chi ha
+// tolto il consenso non deve ricevere il messaggio già in coda.
+async function inviaWhatsapp(log, auto, vars, entityName) {
+  const telefono = log.contact_telefono
+  if (!numeroValido(telefono)) throw new Error('Numero non valido: serve il prefisso internazionale (+39…)')
+
+  // ⚠️ Due `.eq()` separati, **mai** un `.or()` costruito con la stringa: email e
+  // telefono arrivano da un form pubblico, e dentro un filtro PostgREST una
+  // virgola o una parentesi cambierebbero la condizione. Il numero passa già da
+  // `numeroValido`, l'email no — e non deve servire che passi.
+  const consenso = async (colonna, valore) => {
+    if (!valore) return false
+    const { data } = await supabaseAdmin.from('contatti').select('whatsapp_optin')
+      .eq('azienda_id', auto.azienda_id).eq(colonna, valore).limit(1).maybeSingle()
+    return data?.whatsapp_optin === true
+  }
+  const haConsenso = await consenso('telefono', telefono) || await consenso('email', log.contact_email)
+  if (!haConsenso) throw new Error('Manca il consenso WhatsApp di questo contatto')
+
+  const { data: account } = await supabaseAdmin.from('whatsapp_account')
+    .select('stato, phone_number_id, access_token_cifrato').eq('azienda_id', auto.azienda_id).maybeSingle()
+  if (!account || account.stato !== 'attivo') throw new Error('Il numero WhatsApp non è collegato')
+
+  const step = auto.steps[log.step_index]
+  const t = trovaTemplate(step.wa_template)
+  if (!t) throw new Error('Messaggio WhatsApp non presente nel catalogo')
+
+  // Approvato **su quell'account**: i template sono asset del singolo numero.
+  const { data: tpl } = await supabaseAdmin.from('whatsapp_template').select('stato')
+    .eq('azienda_id', auto.azienda_id).eq('catalogo_key', t.key).eq('catalogo_versione', t.versione).maybeSingle()
+  if (!tpl || tpl.stato !== 'approvato') throw new Error(`Il messaggio "${t.titolo}" non è ancora approvato da Meta`)
+
+  const token = decifra(account.access_token_cifrato)
+  if (!token) throw new Error('Collegamento con WhatsApp non più valido: ricollega il numero')
+
+  const { valori, mancanti } = valoriTemplate(t, vars, { nomeEntita: entityName })
+  if (mancanti.length) throw new Error(`Dati mancanti per il messaggio: ${mancanti.join(', ')}`)
+
+  const r = await inviaTemplate({
+    phoneNumberId: account.phone_number_id, token, a: telefono,
+    nomeTemplate: nomeMeta(t.key, t.versione), valori,
+  })
+  if (!r.ok) throw new Error(r.error || 'WhatsApp ha rifiutato il messaggio')
 }
 
 export async function runAutomazioniScheduler() {
@@ -76,6 +136,12 @@ export async function runAutomazioniScheduler() {
     try {
       const { name: entityName, logo: entityLogo, primary } = await getEntityBranding(auto.entity_tipo, auto.entity_id)
       const vars = (typeof log.vars === 'object' ? log.vars : JSON.parse(log.vars || '{}')) || {}
+
+      if (log.canale === 'whatsapp') {
+        await inviaWhatsapp(log, auto, vars, entityName)
+        await supabaseAdmin.from('automazioni_log').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', log.id)
+        continue
+      }
 
       const subject = applyVars(step.subject || 'Messaggio da ' + entityName, vars)
       const heading = applyVars(step.heading || '', vars)

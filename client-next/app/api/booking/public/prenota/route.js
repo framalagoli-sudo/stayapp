@@ -116,7 +116,7 @@ export async function POST(request) {
     const body = await request.json()
     const { risorsa_id, data, data_fine, ora_inizio, servizio,
       cliente_nome, cliente_email, cliente_telefono,
-      n_persone, note_cliente, promozione_id, privacy_accettata } = body
+      n_persone, note_cliente, promozione_id, privacy_accettata, whatsapp_optin } = body
 
     if (!isUUID(risorsa_id)) return Response.json({ error: 'risorsa_id non valido' }, { status: 400 })
     if (!data) return Response.json({ error: 'data obbligatoria' }, { status: 400 })
@@ -282,9 +282,52 @@ export async function POST(request) {
       } catch (e) { console.error('[booking] genera token recensione:', e.message) }
     }
 
+    // 🔒 Il consenso a essere avvisati su WhatsApp è una **prova**, non una
+    // spunta: si salva quando è stato dato e da dove. E vale solo se è arrivato
+    // esplicitamente insieme a un numero — mai dedotto dall'aver prenotato.
+    //
+    // ⚠️ Il contatto si tocca **solo** in questo caso. Chi prenota senza dare
+    // questo consenso resta com'era: il consenso ha bisogno di un posto dove
+    // stare, ma una prenotazione non è di per sé un'iscrizione a niente.
+    if (whatsapp_optin === true && prenotazione.cliente_telefono) {
+      try {
+        const adesso = new Date().toISOString()
+        const { data: esistente } = await supabaseAdmin.from('contatti')
+          .select('id, telefono, whatsapp_optin')
+          .eq('azienda_id', prenotazione.azienda_id)
+          .eq('email', prenotazione.cliente_email)
+          .maybeSingle()
+        if (esistente) {
+          const upd = {}
+          if (!esistente.whatsapp_optin) {
+            upd.whatsapp_optin = true
+            upd.whatsapp_optin_il = adesso
+            upd.whatsapp_optin_fonte = 'modulo di prenotazione'
+            upd.whatsapp_optout_il = null
+          }
+          if (!esistente.telefono) upd.telefono = prenotazione.cliente_telefono
+          if (Object.keys(upd).length) await supabaseAdmin.from('contatti').update(upd).eq('id', esistente.id)
+        } else {
+          await supabaseAdmin.from('contatti').insert({
+            azienda_id: prenotazione.azienda_id,
+            email: prenotazione.cliente_email,
+            nome: prenotazione.cliente_nome || prenotazione.cliente_email,
+            telefono: prenotazione.cliente_telefono,
+            fonte: 'prenotazione',
+            whatsapp_optin: true,
+            whatsapp_optin_il: adesso,
+            whatsapp_optin_fonte: 'modulo di prenotazione',
+          })
+        }
+      } catch (e) { console.error('[booking] consenso whatsapp:', e.message) }
+    }
+
     const autoVars = {
       nome: prenotazione.cliente_nome,
       email: prenotazione.cliente_email,
+      // Serve al canale WhatsApp. Senza, l'automazione non avrebbe dove
+      // scrivere e la riga di coda non verrebbe nemmeno creata.
+      telefono: prenotazione.cliente_telefono || '',
       data: new Date(prenotazione.data).toLocaleDateString('it-IT'),
       ora: prenotazione.ora_inizio || '',
       servizio: prenotazione.servizio || risorsa.nome || '',

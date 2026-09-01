@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth, entitaDellaAzienda } from '@/lib/server-auth'
+import { requireAuth, entitaDellaAzienda, getEntityAziendaId } from '@/lib/server-auth'
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
@@ -35,7 +35,12 @@ export async function POST(request) {
     const { user, response } = await requireAuth(request)
     if (response) return response
     const profile = await getProfile(user.id)
-    if (!profile?.azienda_id) return Response.json({ error: 'Accesso negato' }, { status: 403 })
+    // Il super_admin non ha un'azienda propria: e' la sua condizione normale.
+    // Con questa guardia scritta su `azienda_id` non riusciva a creare
+    // nemmeno un'automazione sulle entita' che gestisce — e i modelli
+    // «Comincia da qui» rispondevano «Accesso negato» proprio a chi
+    // amministra la piattaforma.
+    if (!profile) return Response.json({ error: 'Accesso negato' }, { status: 403 })
 
     const { nome, entity_tipo, entity_id, trigger_evento, steps } = await request.json()
     if (!entity_tipo || !entity_id) return Response.json({ error: 'entity_tipo e entity_id obbligatori' }, { status: 400 })
@@ -46,8 +51,15 @@ export async function POST(request) {
       return Response.json({ error: 'Entità non valida' }, { status: 404 })
     }
 
+    // L'azienda e' quella dell'ENTITA', non quella scritta nel profilo:
+    // `entitaDellaAzienda` qui sopra ha gia' verificato che chi non e'
+    // super_admin possa toccare solo le proprie, quindi per lui le due
+    // coincidono — mentre per il super_admin la seconda non esiste.
+    const aziendaId = await getEntityAziendaId(entity_tipo, entity_id)
+    if (!aziendaId) return Response.json({ error: 'Entità non valida' }, { status: 404 })
+
     const { data, error } = await supabaseAdmin.from('automazioni').insert({
-      azienda_id: profile.azienda_id,
+      azienda_id: aziendaId,
       nome: nome?.trim() || '', entity_tipo, entity_id, trigger_evento,
       attiva: true, steps: Array.isArray(steps) ? steps : [],
     }).select().single()

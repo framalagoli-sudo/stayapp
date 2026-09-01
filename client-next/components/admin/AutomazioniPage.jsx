@@ -1,11 +1,13 @@
 ﻿'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { MODELLI } from '@/lib/automazioni-modelli'
+import { CANALI } from '@/lib/automazioni-canali'
+import { CATALOGO, anteprima } from '@/lib/whatsapp-catalogo'
 import { apiFetch } from '@/lib/api'
 import { useAzienda } from '@/context/AziendaContext'
 import {
   Zap, Plus, Trash2, ToggleLeft, ToggleRight, ChevronDown, ChevronUp,
-  Send, Check, X, Clock, Mail, AlertCircle,
+  Send, Check, X, Clock, Mail, AlertCircle, MessageCircle,
 } from 'lucide-react'
 import AiButton from '@/components/admin/AiButton'
 
@@ -23,15 +25,67 @@ const VARS_BY_TRIGGER = {
   post_visita:        ['{{nome}}', '{{data}}', '{{ora}}', '{{servizio}}', '{{link_recensione}}'],
 }
 
-const EMPTY_STEP = { delay_ore: 0, subject: '', heading: '', text: '', cta_text: '', cta_url: '' }
+const EMPTY_STEP = { delay_ore: 0, canale: 'email', wa_template: '', subject: '', heading: '', text: '', cta_text: '', cta_url: '' }
 
 const STATUS_COLORS = { sent: '#276749', failed: '#c53030', pending: '#b7791f' }
 const STATUS_LABELS  = { sent: 'Inviata', failed: 'Errore', pending: 'In attesa' }
 
 // ─── StepEditor ───────────────────────────────────────────────────────────────
 
-function StepEditor({ step, idx, trigger, onChange, onRemove }) {
+// Il pannello di WhatsApp dentro uno step.
+//
+// ⚠️ Non è «lo stesso testo su un altro canale»: su WhatsApp un messaggio che
+// parte da noi vuole un template approvato da Meta. Perciò qui non si scrive,
+// si **sceglie** — e lo si dice, invece di lasciare che il cliente scopra da
+// solo che il testo che ha appena scritto non è quello che è arrivato.
+function PannelloWhatsapp({ step, onChange, wa }) {
+  const t = CATALOGO.find(x => x.key === step.wa_template)
+  const approvato = wa?.templates?.find(x => x.catalogo_key === step.wa_template)?.stato
+  return (
+    <div style={{ border: '1px solid #cdebd6', background: '#f4fdf7', borderRadius: 8, padding: 12, marginBottom: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+        <MessageCircle size={14} strokeWidth={1.5} color="#25806a" />
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#1c5c4c' }}>Messaggio WhatsApp</span>
+      </div>
+      <p style={{ fontSize: 12, color: '#4a7c68', margin: '0 0 10px', lineHeight: 1.6 }}>
+        Su WhatsApp si può mandare solo un messaggio già approvato: il testo qui sopra vale per l’email.
+        Scegli quale messaggio usare — i dati della prenotazione ci finiscono dentro da soli.
+      </p>
+      <select
+        value={step.wa_template || ''}
+        onChange={e => onChange({ ...step, wa_template: e.target.value })}
+        style={{ width: '100%', padding: '7px 10px', border: '1px solid #cdebd6', borderRadius: 6, fontSize: 14, background: '#fff', boxSizing: 'border-box' }}
+      >
+        <option value="">— scegli il messaggio —</option>
+        {CATALOGO.map(x => <option key={x.key} value={x.key}>{x.titolo}</option>)}
+      </select>
+      {t && (
+        <div style={{ marginTop: 8, padding: '9px 12px', background: '#fff', border: '1px solid #e4f2ea', borderRadius: 6, fontSize: 12.5, color: '#333', lineHeight: 1.65 }}>
+          {anteprima(t.key)}
+        </div>
+      )}
+      {/* Quello che manca lo diciamo qui, non lo scopre dal messaggio mai arrivato. */}
+      {!wa?.collegato && (
+        <div style={{ marginTop: 8, fontSize: 12, color: '#8a5a12' }}>
+          Il numero WhatsApp non è ancora collegato: fino ad allora parte solo l’email.{' '}
+          <a href="/admin/whatsapp" style={{ color: '#8a5a12', fontWeight: 600 }}>Collega il numero →</a>
+        </div>
+      )}
+      {wa?.collegato && t && approvato !== 'approvato' && (
+        <div style={{ marginTop: 8, fontSize: 12, color: '#8a5a12' }}>
+          Questo messaggio è ancora in approvazione da Meta{approvato ? ` (${approvato})` : ''}: fino ad allora parte solo l’email.
+        </div>
+      )}
+      <div style={{ marginTop: 8, fontSize: 11.5, color: '#7b9c8d' }}>
+        Riceve solo chi ha dato il consenso a essere contattato su WhatsApp e ha lasciato il numero.
+      </div>
+    </div>
+  )
+}
+
+function StepEditor({ step, idx, trigger, onChange, onRemove, wa }) {
   const vars = VARS_BY_TRIGGER[trigger] || []
+  const canale = step.canale || 'email'
   const delayLabel = trigger === 'pre_visita' ? 'ore prima della visita' : trigger === 'post_visita' ? 'ore dopo la visita' : 'ore dopo il trigger'
 
   return (
@@ -43,7 +97,7 @@ function StepEditor({ step, idx, trigger, onChange, onRemove }) {
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 10, marginBottom: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '104px 172px minmax(0, 1fr)', gap: 10, marginBottom: 10 }}>
         <div>
           <label style={{ display: 'block', fontSize: 11, color: '#888', marginBottom: 4 }}>Ritardo ({delayLabel})</label>
           <input
@@ -51,6 +105,23 @@ function StepEditor({ step, idx, trigger, onChange, onRemove }) {
             onChange={e => onChange({ ...step, delay_ore: Math.max(0, Number(e.target.value)) })}
             style={{ width: '100%', padding: '7px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, boxSizing: 'border-box' }}
           />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 11, color: '#888', marginBottom: 4 }}>Come arriva</label>
+          <select
+            value={canale}
+            onChange={e => {
+              const c = e.target.value
+              // Scegliendo WhatsApp senza aver detto quale messaggio, l'invio
+              // fallirebbe a ogni giro: si propone il promemoria, che è quello
+              // per cui il canale serve quasi sempre.
+              const wt = step.wa_template || (c === 'email' ? '' : 'promemoria_appuntamento')
+              onChange({ ...step, canale: c, wa_template: wt })
+            }}
+            style={{ width: '100%', padding: '7px 10px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, background: '#fff', boxSizing: 'border-box' }}
+          >
+            {CANALI.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
+          </select>
         </div>
         <div>
           <label style={{ display: 'block', fontSize: 11, color: '#888', marginBottom: 4 }}>Oggetto email</label>
@@ -61,6 +132,8 @@ function StepEditor({ step, idx, trigger, onChange, onRemove }) {
           />
         </div>
       </div>
+
+      {canale !== 'email' && <PannelloWhatsapp step={step} onChange={onChange} wa={wa} />}
 
       <div style={{ marginBottom: 10 }}>
         <label style={{ display: 'block', fontSize: 11, color: '#888', marginBottom: 4 }}>Titolo email</label>
@@ -122,7 +195,7 @@ function StepEditor({ step, idx, trigger, onChange, onRemove }) {
 
 // ─── AutomazioneCard ─────────────────────────────────────────────────────────
 
-function AutomazioneCard({ auto, onToggle, onDelete, onSave }) {
+function AutomazioneCard({ auto, onToggle, onDelete, onSave, wa }) {
   const [expanded, setExpanded]   = useState(false)
   const [editing, setEditing]     = useState(false)
   const [nome, setNome]           = useState(auto.nome)
@@ -225,7 +298,7 @@ function AutomazioneCard({ auto, onToggle, onDelete, onSave }) {
               </div>
 
               {steps.map((step, idx) => (
-                <StepEditor key={idx} step={step} idx={idx} trigger={auto.trigger_evento}
+                <StepEditor key={idx} step={step} idx={idx} trigger={auto.trigger_evento} wa={wa}
                   onChange={s => updateStep(idx, s)} onRemove={() => removeStep(idx)} />
               ))}
 
@@ -252,6 +325,11 @@ function AutomazioneCard({ auto, onToggle, onDelete, onSave }) {
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e' }}>
                       {step.delay_ore === 0 ? 'Subito' : `Dopo ${step.delay_ore}h`}
+                      {step.canale && step.canale !== 'email' && (
+                        <span style={{ marginLeft: 8, padding: '1px 7px', background: '#e6f6ee', color: '#1c5c4c', borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
+                          {step.canale === 'whatsapp' ? 'WhatsApp' : 'Email + WhatsApp'}
+                        </span>
+                      )}
                       {step.subject && <span style={{ fontWeight: 400, color: '#444', marginLeft: 8 }}>· {step.subject}</span>}
                     </div>
                     {step.text && <div style={{ fontSize: 12, color: '#888', marginTop: 2, whiteSpace: 'pre-wrap' }}>{step.text.slice(0, 120)}{step.text.length > 120 ? '…' : ''}</div>}
@@ -401,6 +479,10 @@ export default function AutomazioniPage() {
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [inCorso, setInCorso] = useState(null)
+  // Stato del numero WhatsApp: serve a **non promettere** un canale che non c'è.
+  // Se non riusciamo a saperlo restiamo su «non collegato», che è la verità più
+  // prudente: al massimo l'avviso invita a collegare un numero già collegato.
+  const [wa, setWa] = useState({ collegato: false, templates: [] })
 
   // Accende un modello: crea l'automazione gia' scritta e attiva.
   //
@@ -449,6 +531,14 @@ export default function AutomazioniPage() {
   }, [selected])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    let vivo = true
+    apiFetch('/api/whatsapp/connect')
+      .then(d => { if (vivo) setWa({ collegato: d?.account?.stato === 'attivo', templates: d?.templates || [] }) })
+      .catch(() => {})
+    return () => { vivo = false }
+  }, [])
 
   async function handleToggle(auto) {
     try {
@@ -532,7 +622,7 @@ export default function AutomazioniPage() {
             </div>
           )}
           {automazioni.map(auto => (
-            <AutomazioneCard key={auto.id} auto={auto}
+            <AutomazioneCard key={auto.id} auto={auto} wa={wa}
               onToggle={handleToggle} onDelete={handleDelete} onSave={handleSave} />
           ))}
         </>

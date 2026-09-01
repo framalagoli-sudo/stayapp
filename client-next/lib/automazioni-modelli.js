@@ -25,6 +25,11 @@ export const MODELLI = [
     trigger: 'pre_visita',
     steps: [{
       delay_ore: 24,
+      // Nasce via email perché l'email ce l'hanno tutti. WhatsApp si accende
+      // dallo step, e vuole tre cose che non dipendono da noi: il numero
+      // collegato, il messaggio approvato da Meta e il consenso della persona.
+      canale: 'email',
+      wa_template: 'promemoria_appuntamento',
       subject: 'Ci vediamo domani, {{nome}}',
       heading: 'A domani!',
       text: 'Ciao {{nome}},\n\nti ricordiamo il tuo appuntamento di domani {{data}} alle {{ora}} per {{servizio}}.\n\nSe non riesci a venire, scrivici: liberiamo il posto per qualcun altro.\n\nA presto!',

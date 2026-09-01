@@ -1,4 +1,5 @@
 import { supabaseAdmin } from './supabase-server'
+import { canaliDelloStep } from './automazioni-canali'
 
 export async function getCollegamenti(tipo, id) {
   const { data: links } = await supabaseAdmin
@@ -29,7 +30,10 @@ export async function getCollegamenti(tipo, id) {
 
 export async function triggerAutomazione(trigger_evento, { azienda_id, entity_tipo, entity_id } = {}, vars = {}) {
   if (!azienda_id || !entity_tipo || !entity_id) return
-  if (!vars.email) return
+  // Un recapito qualsiasi basta a entrare: quale serva davvero lo decide il
+  // canale dello step, più sotto. Pretendere l'email anche per un invio
+  // WhatsApp scarterebbe in silenzio una coda valida.
+  if (!vars.email && !vars.telefono) return
   try {
     const { data: lista } = await supabaseAdmin.from('automazioni')
       .select('*')
@@ -55,16 +59,27 @@ export async function triggerAutomazione(trigger_evento, { azienda_id, entity_ti
           scheduledAt = new Date(now + delayMs)
         }
         if (scheduledAt.getTime() < now - 120_000) return
-        logs.push({
-          automazione_id: auto.id,
-          step_index: idx,
-          source_tipo: vars.source_tipo || null,
-          source_id: vars.source_id || null,
-          contact_email: vars.email,
-          contact_nome: vars.nome || null,
-          vars,
-          scheduled_at: scheduledAt.toISOString(),
-        })
+        // Uno step «email e WhatsApp» lascia due righe. Ognuna ha il suo esito:
+        // se il numero non è collegato deve fallire il WhatsApp e arrivare
+        // comunque l'email.
+        for (const canale of canaliDelloStep(step)) {
+          // Senza il recapito giusto la riga non si crea nemmeno: meglio niente
+          // che una coda destinata a fallire a ogni giro del cron.
+          if (canale === 'email' && !vars.email) continue
+          if (canale === 'whatsapp' && !vars.telefono) continue
+          logs.push({
+            automazione_id: auto.id,
+            step_index: idx,
+            canale,
+            source_tipo: vars.source_tipo || null,
+            source_id: vars.source_id || null,
+            contact_email: vars.email || null,
+            contact_telefono: vars.telefono || null,
+            contact_nome: vars.nome || null,
+            vars,
+            scheduled_at: scheduledAt.toISOString(),
+          })
+        }
       })
     }
     if (logs.length) await supabaseAdmin.from('automazioni_log').insert(logs)

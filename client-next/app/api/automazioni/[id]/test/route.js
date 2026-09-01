@@ -7,7 +7,12 @@ export async function POST(request, props) {
     const { user, response } = await requireAuth(request)
     if (response) return response
     const { data: profile } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', user.id).single()
-    if (!profile?.azienda_id) return Response.json({ error: 'Accesso negato' }, { status: 403 })
+    // Il super_admin non ha un'azienda propria: e' la sua condizione normale,
+    // non un difetto del suo profilo. Pretendere `azienda_id` qui lo bloccava
+    // in cima, e il ramo `role !== 'super_admin'` qui sotto non veniva mai
+    // raggiunto: un ramo mai raggiunto non da' errore, da' silenzio.
+    if (!profile || (profile.role !== 'super_admin' && !profile.azienda_id))
+      return Response.json({ error: 'Accesso negato' }, { status: 403 })
 
     let q = supabaseAdmin.from('automazioni').select('*').eq('id', params.id)
     if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)

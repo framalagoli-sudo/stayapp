@@ -26,10 +26,20 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
   const [verificando, setVerificando] = useState(false)
   const [slots, setSlots] = useState([])
   const [loadingSlots, setLoadingSlots] = useState(false)
-  const [form, setForm] = useState({ nome: '', email: '', telefono: '', n_persone: 1, note: '', privacy: false })
+  const [form, setForm] = useState({ nome: '', email: '', telefono: '', n_persone: 1, note: '', privacy: false, whatsapp: false })
+  // La spunta WhatsApp compare **solo** se questa attività manda davvero
+  // qualcosa su WhatsApp: un consenso che non serve a niente non si chiede.
+  const [waDisponibile, setWaDisponibile] = useState(false)
   const [sending, setSending] = useState(false)
   const [errore, setErrore] = useState('')
   const [prenotazione, setPrenotazione] = useState(null)
+
+  useEffect(() => {
+    if (!entityId) return
+    publicFetch(`/api/guest/canali/${entityTipo}/${entityId}`)
+      .then(d => setWaDisponibile(!!d?.whatsapp))
+      .catch(() => setWaDisponibile(false))
+  }, [entityTipo, entityId])
 
   useEffect(() => {
     if (!entityId) return
@@ -110,6 +120,9 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
         cliente_nome: form.nome.trim(),
         cliente_email: form.email.trim(),
         cliente_telefono: form.telefono.trim() || null,
+        // Vale solo col numero: senza, non c'è dove scrivere e il consenso
+        // resterebbe una spunta senza oggetto.
+        whatsapp_optin: !!(form.whatsapp && form.telefono.trim()),
         n_persone: form.n_persone,
         note_cliente: form.note.trim() || null,
         promozione_id: selected.slot?.promo?.id || null,
@@ -137,7 +150,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
 
   function reset() {
     setSelected({ risorsa: null, data: '', data_fine: '', slot: null }); setPeriodo(null)
-    setSlots([]); setForm({ nome: '', email: '', telefono: '', n_persone: 1, note: '', privacy: false })
+    setSlots([]); setForm({ nome: '', email: '', telefono: '', n_persone: 1, note: '', privacy: false, whatsapp: false })
     setPrenotazione(null); setErrore('')
     // ⚠️ Con una sola risorsa il primo passo non esiste: rimandarci dopo
     // «Nuova prenotazione» mostrerebbe una scelta con un'opzione sola — proprio
@@ -458,6 +471,16 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
                   : "l'informativa sulla privacy"}. I miei dati saranno usati per gestire questa prenotazione.
               </span>
             </label>
+            {/* Consenso separato e mai pre-spuntato: è un canale in più, non una
+                condizione per prenotare. Compare solo se un avviso su WhatsApp
+                partirebbe davvero, e solo con un numero scritto. */}
+            {waDisponibile && form.telefono.trim() && (
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: '#666', cursor: 'pointer', lineHeight: 1.5 }}>
+                <input type="checkbox" checked={form.whatsapp} onChange={e => patchForm('whatsapp', e.target.checked)}
+                  style={{ marginTop: 2, flexShrink: 0 }} />
+                <span>Avvisatemi anche su WhatsApp al numero che ho indicato (promemoria e aggiornamenti su questa prenotazione).</span>
+              </label>
+            )}
           </div>
 
           {errore && <div style={{ marginTop: 10, color: '#c0392b', fontSize: 13 }}>{errore}</div>}

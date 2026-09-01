@@ -17,6 +17,24 @@ import { execSync } from 'child_process'
 const RADICE = join(process.cwd(), '..')
 const APP = join(RADICE, 'client-next')
 
+// Un commento che NOMINA il client di servizio non lo importa.
+//
+// Senza questo, un file scritto apposta per il browser veniva segnalato per la
+// riga in cui spiegava perché NON tocca il server: l'avviso suonava proprio
+// addosso a chi aveva fatto la cosa giusta. E un allarme che suona a vuoto è il
+// modo più rapido di insegnare a ignorarlo.
+//
+// ⚠️ Si tolgono i blocchi /* */ e le righe che **iniziano** con //. Tagliare da
+// metà riga in poi mangerebbe il codice dopo un 'https://…' e renderebbe cieca
+// la regola: meglio un falso positivo raro che un falso negativo silenzioso.
+function senzaCommenti(testo) {
+  return testo
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .split(/\r?\n/)
+    .filter(r => !/^\s*\/\//.test(r))
+    .join('\n')
+}
+
 // Route che rispondono senza login perché è il loro mestiere. La stessa lista
 // di probe-security-sweep.mjs: se una route è qui, è stata guardata a mano.
 const PUBBLICHE_PER_MESTIERE = [
@@ -106,7 +124,7 @@ for (const f of file) {
     for (const modulo of new Set(importati)) {
       const p = join(APP, 'lib', `${modulo}.js`)
       try {
-        const dentro = readFileSync(p, 'utf8')
+        const dentro = senzaCommenti(readFileSync(p, 'utf8'))
         if (/supabaseAdmin|supabase-server|SERVICE_ROLE/.test(dentro)) {
           segnala('codice server importato dal browser', f, 1, `importa lib/${modulo}.js`,
             'trascina nel bundle pubblico codice che apre la connessione con la chiave di servizio')
