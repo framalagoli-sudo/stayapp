@@ -77,19 +77,38 @@ try {
     cliente_email: email1, cliente_telefono: '+393401234567', whatsapp_optin: true,
   })
   ok(p1.status === 201, `la prenotazione riesce (HTTP ${p1.status})${p1.status !== 201 ? ' — ' + (p1.body.error || '') : ''}`)
-  await new Promise(r => setTimeout(r, 2500))
+  await new Promise(r => setTimeout(r, 12000))
 
   const { data: coda } = await admin.from('automazioni_log')
-    .select('canale, contact_email, contact_telefono, scheduled_at').eq('automazione_id', auto.id)
+    .select('canale, contact_email, contact_telefono, scheduled_at, vars').eq('automazione_id', auto.id)
   const canali = (coda || []).map(c => c.canale).sort()
   ok(canali.length === 2, `due righe in coda (${canali.length}: ${canali.join(', ') || 'nessuna'})`)
   ok(canali.join(',') === 'email,whatsapp', 'una per canale, non due uguali')
   const rigaWa = (coda || []).find(c => c.canale === 'whatsapp')
   ok(rigaWa?.contact_telefono === '+393401234567', `la riga WhatsApp porta il numero (${rigaWa?.contact_telefono || 'nessuno'})`)
-  // ⛔ Il canale non cambia il momento: resta 24 ore PRIMA della visita.
+
+  // ⛔ Due cose diverse, misurate separatamente — perché confonderle manda a
+  // caccia del guasto sbagliato (è già costato due giri, vedi memoria).
   if (rigaWa) {
-    const anticipo = Math.round((new Date(`${giorno}T10:00:00`) - new Date(rigaWa.scheduled_at)) / 3_600_000)
-    ok(anticipo === 24, `programmata ${anticipo} ore prima della visita (atteso 24)`)
+    // (a) Il motore è coerente: 24 ore prima dell'istante che LUI considera la
+    //     visita. Questo è il canale che non sposta il momento.
+    const visitaSecondoIlSistema = new Date(rigaWa.vars.visit_datetime)
+    const anticipo = Math.round((visitaSecondoIlSistema - new Date(rigaWa.scheduled_at)) / 3_600_000)
+    ok(anticipo === 24, `programmata ${anticipo} ore prima della visita registrata (atteso 24)`)
+
+    // (b) Ma quell'istante è quello giusto? Chi prenota scrive «10:00» pensando
+    //     al proprio orologio. Il server costruisce `new Date('…T10:00')` senza
+    //     fuso, quindi lo legge nel fuso in cui gira — e Vercel gira in UTC.
+    //     Risultato: per un'attività italiana il promemoria parte 2 ore prima
+    //     del previsto, e da un fuso americano anche 8.
+    //     ⚠️ Difetto PREESISTENTE, non del canale WhatsApp: si vede solo
+    //     provando in produzione, perché in locale il server ha l'ora italiana
+    //     e i conti tornano da soli.
+    const scartoFuso = Math.round((new Date(`${giorno}T10:00:00`) - visitaSecondoIlSistema) / 3_600_000)
+    ok(scartoFuso === 0,
+       scartoFuso === 0
+         ? "l'ora della visita è quella che ha scritto il cliente"
+         : `l'ora della visita è sfasata di ${scartoFuso}h: il server legge «10:00» nel proprio fuso, non in quello dell'attività`)
   }
 
   console.log('\n2 · IL CONSENSO SI SALVA CON LA PROVA\n')
@@ -118,7 +137,7 @@ try {
   const email3 = `zz-tel0-${Date.now()}@playwright.internal`
   const p3 = await prenota(ris.id, giorno, '14:00', { cliente_email: email3, whatsapp_optin: true })
   ok(p3.status === 201, `la prenotazione riesce (HTTP ${p3.status})`)
-  await new Promise(r => setTimeout(r, 2500))
+  await new Promise(r => setTimeout(r, 12000))
   const { data: coda3 } = await admin.from('automazioni_log')
     .select('canale').eq('automazione_id', auto.id).eq('contact_email', email3)
   ok(coda3?.length === 1 && coda3[0].canale === 'email',

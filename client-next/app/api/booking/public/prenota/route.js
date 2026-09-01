@@ -1,4 +1,5 @@
-﻿import { supabaseAdmin } from '@/lib/supabase-server'
+﻿import { after } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase-server'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { verificaPeriodo, totaleGiornaliero, notti } from '@/lib/booking-giornaliero'
 import { confermaPostiPrenotazione } from '@/lib/capienza'
@@ -339,11 +340,24 @@ export async function POST(request) {
       source_id: prenotazione.id,
     }
     const ctx = { azienda_id: prenotazione.azienda_id, entity_tipo: risorsa.entity_tipo, entity_id: risorsa.entity_id }
-    triggerAutomazione('nuova_prenotazione', ctx, autoVars).catch(e => console.error('[auto] nuova_prenotazione:', e.message))
-    if (visitDatetime) {
-      triggerAutomazione('pre_visita', ctx, autoVars).catch(e => console.error('[auto] pre_visita:', e.message))
-      triggerAutomazione('post_visita', ctx, autoVars).catch(e => console.error('[auto] post_visita:', e.message))
-    }
+    // ⚠️ Lasciato a se stesso, questo lavoro NON viene garantito. Misurato in
+    // produzione: su cinque prenotazioni identiche, dopo tre secondi erano in
+    // coda quattro promemoria su cinque, e il quinto e' arrivato solo dopo
+    // trenta. Su Vercel la funzione puo' essere congelata appena risposto, e
+    // quello che era rimasto in volo riprende quando capita — o mai piu'.
+    //
+    // `after` e' lo strumento che Next da' per questo: il lavoro esce dalla
+    // risposta (chi prenota non aspetta) ma la piattaforma tiene viva la
+    // funzione finche' non e' finito.
+    after(async () => {
+      try {
+        await triggerAutomazione('nuova_prenotazione', ctx, autoVars)
+        if (visitDatetime) {
+          await triggerAutomazione('pre_visita', ctx, autoVars)
+          await triggerAutomazione('post_visita', ctx, autoVars)
+        }
+      } catch (e) { await logError('booking/automazioni', e, { alert: true }) }
+    })
 
     // ⚠️ Il link della cassa torna INSIEME alla prenotazione: chi ha appena
     // prenotato dev'essere portato a pagare subito, non con un'email che
