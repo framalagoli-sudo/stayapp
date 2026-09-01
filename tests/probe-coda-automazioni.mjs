@@ -1,5 +1,13 @@
-// Le righe di coda arrivano tardi, o non arrivano mai?
-// Temporanea: diagnosi prima di toccare il codice.
+// Quanto ci mette il promemoria a entrare in coda — e ci entra sempre?
+//
+// Il lavoro che una route fa DOPO aver risposto non e' garantito: su Vercel la
+// funzione puo' essere congelata appena risposto. Misurato il 01/09: quattro
+// promemoria su cinque entro tre secondi, il quinto solo dopo trenta. Da qui
+// `after()` nella route di prenotazione.
+//
+// ⚠️ Il rate limit e' 12 prenotazioni/ora per IP: lanciandola due volte di
+// seguito le prove successive tornano 429 e i conti sembrano peggiorati.
+// Uso: cd tests && node probe-coda-automazioni.mjs
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 config({ path: '.env.test' })
