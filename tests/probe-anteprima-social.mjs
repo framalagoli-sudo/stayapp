@@ -47,7 +47,13 @@ async function guarda(etichetta, url, nomeAtteso) {
   ok(site === nomeAtteso, `og:site_name è «${site || 'assente'}»${site === nomeAtteso ? '' : ` (atteso «${nomeAtteso}»)`}`)
   // Senza site_name Facebook scrive il dominio in maiuscolo: su un link
   // oltrenova.com diventa «OLTRENOVA.COM» sopra il contenuto di un altro.
-  ok(!!img, img ? 'ha un\'immagine' : '⛔ nessuna immagine: su Facebook resta un rettangolo grigio')
+  // ⚠️ Avviso, non errore: se il cliente non ha caricato né copertina né logo
+  // non c'è niente da mettere, e non è il codice a doverlo risolvere. Contarlo
+  // come guasto farebbe suonare la sonda a ogni giro — e un allarme che suona
+  // sempre viene ignorato anche quando ha ragione.
+  if (img) ok(true, "ha un'immagine")
+  else console.log('  ⓘ nessuna immagine: su Facebook resta un rettangolo grigio.'
+    + ' Va caricata una copertina (o almeno un logo) su questa entità.')
   return { img }
 }
 
