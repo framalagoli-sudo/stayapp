@@ -30,7 +30,11 @@ const VERSIONE = '2026-08-26.dahlia'
 const chiave = process.argv[2]
 const esegui = process.argv.includes('--chiudi')
 
-if (!chiave?.startsWith('sk_')) {
+// ⚠️ Anche le chiavi **con limitazioni** (`rk_`), non solo quelle complete:
+// sono la strada giusta per un lavoro come questo — fanno solo ciò che serve —
+// e Stripe ormai propone quelle. Accettarne una sola delle due forme voleva
+// dire rifiutare proprio la più sicura.
+if (!/^(sk|rk)_/.test(chiave || '')) {
   console.error('\nManca la chiave Stripe.\n')
   console.error('  node chiudi-account-stripe.mjs sk_live_...            (mostra e basta)')
   console.error('  node chiudi-account-stripe.mjs sk_live_... --chiudi   (chiude davvero)\n')
@@ -38,7 +42,7 @@ if (!chiave?.startsWith('sk_')) {
 }
 
 const stripe = new Stripe(chiave)
-const ambiente = chiave.startsWith('sk_live_') ? 'LIVE' : 'sandbox'
+const ambiente = /_live_/.test(chiave) ? 'LIVE' : 'sandbox'
 
 console.log(`\nAmbiente: ${ambiente}`)
 console.log(esegui ? 'Modalità: CHIUSURA\n' : 'Modalità: solo elenco — non tocco niente\n')
@@ -72,18 +76,34 @@ if (!daChiudere.length) {
   process.exit(0)
 }
 
+let chiusi = 0, falliti = 0
 for (const a of daChiudere) {
   if (!esegui) { console.log(`  · ${a.display_name} — ${a.id}   (da chiudere)`); continue }
   try {
     await stripe.v2.core.accounts.close(a.id,
       { applied_configurations: a.applied_configurations?.length ? a.applied_configurations : ['customer', 'merchant'] },
       { apiVersion: VERSIONE })
+    chiusi++
     console.log(`  ✓ chiuso  ${a.display_name} — ${a.id}`)
   } catch (e) {
-    console.log(`  ✗ ${a.display_name} — ${a.id}: ${e.message.slice(0, 120)}`)
+    falliti++
+    console.log(`  ✗ ${a.display_name} — ${a.id}: ${e.message.slice(0, 150)}`)
   }
 }
 
-console.log(esegui
-  ? '\nFatto. Gli account chiusi non compaiono più fra quelli operativi.\n'
-  : '\nNessuna modifica. Rilancia con --chiudi per chiuderli davvero.\n')
+// ⚠️ Non si dice «fatto» se non è stato fatto. Dire che è andata quando è
+// fallito tutto fa credere risolto un problema che resta lì — ed è esattamente
+// il genere di bugia che questo progetto ha già pagato caro.
+if (!esegui) {
+  console.log('\nNessuna modifica. Rilancia con --chiudi per chiuderli davvero.\n')
+} else if (falliti && !chiusi) {
+  console.log(`\n⛔ Nessuno chiuso: tutti e ${falliti} rifiutati da Stripe.\n`)
+  console.log('   In LIVE, gli account con le perdite a carico di Stripe e la')
+  console.log('   dashboard completa NON si possono chiudere dalla piattaforma:')
+  console.log('   hanno un rapporto diretto con Stripe e non ne siamo padroni.')
+  console.log('   È la stessa ragione per cui il rischio non è nostro.\n')
+  console.log('   Restano visibili, ma sono vuoti e mai attivati: non incassano')
+  console.log('   niente. Per farli sparire davvero serve chiedere al supporto Stripe.\n')
+} else {
+  console.log(`\nChiusi ${chiusi}${falliti ? `, ${falliti} rifiutati` : ''}.\n`)
+}
