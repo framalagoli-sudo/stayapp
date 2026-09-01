@@ -1,5 +1,6 @@
 ﻿'use client'
 import { useState, useEffect, useCallback } from 'react'
+import { MODELLI } from '@/lib/automazioni-modelli'
 import { apiFetch } from '@/lib/api'
 import { useAzienda } from '@/context/AziendaContext'
 import {
@@ -399,6 +400,28 @@ export default function AutomazioniPage() {
   const [automazioni, setAutomazioni] = useState([])
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
+  const [inCorso, setInCorso] = useState(null)
+
+  // Accende un modello: crea l'automazione gia' scritta e attiva.
+  //
+  // ⚠️ Nasce **attiva**. Un modello che si accende e poi resta spento
+  // finche' non lo si accende di nuovo e' una porta che si apre su un'altra
+  // porta: chi clicca «Attiva» si aspetta che da quel momento funzioni.
+  async function attivaModello(m) {
+    setInCorso(m.id)
+    try {
+      const creata = await apiFetch('/api/automazioni', {
+        method: 'POST',
+        body: JSON.stringify({
+          nome: m.titolo, entity_tipo: selected.tipo, entity_id: selected.id,
+          trigger_evento: m.trigger, steps: m.steps, attiva: true,
+        }),
+      })
+      setAutomazioni(a => [creata, ...a])
+    } catch (e) {
+      alert(`Non e' stato possibile attivare: ${e.message}`)
+    } finally { setInCorso(null) }
+  }
 
   // Auto-seleziona la prima entità disponibile
   useEffect(() => {
@@ -474,11 +497,38 @@ export default function AutomazioniPage() {
       {selected && (
         <>
           {loading && <div style={{ fontSize: 14, color: '#aaa', padding: '20px 0' }}>Caricamento…</div>}
+          {/* ⚠️ Qui c'era solo «Nessuna automazione», e infatti in tutta la
+              storia del progetto non ne è stata creata neanche una. Non perché
+              il motore non funzioni — funziona — ma perché bisognava comporre a
+              mano evento, ritardi e testi. È lavoro da chi conosce lo strumento,
+              e chi compra OltreNova ha un'attività da mandare avanti.
+              I modelli sono la stessa cosa già scritta: si accendono e semmai
+              si correggono le parole. */}
           {!loading && automazioni.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '48px 0', color: '#bbb' }}>
-              <Mail size={40} strokeWidth={1} style={{ marginBottom: 12, opacity: 0.5 }} />
-              <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>Nessuna automazione</div>
-              <div style={{ fontSize: 13 }}>Crea la prima sequenza email per {selected.name}.</div>
+            <div style={{ padding: '8px 0 4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                <Mail size={20} strokeWidth={1.5} color="#1a1a2e" />
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1a2e' }}>Comincia da qui</div>
+              </div>
+              <p style={{ fontSize: 13.5, color: '#888', margin: '0 0 18px', lineHeight: 1.6 }}>
+                Tre messaggi già pronti per {selected.name}: li accendi e partono da soli.
+                I testi li puoi cambiare quando vuoi.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: 12 }}>
+                {MODELLI.map(m => (
+                  <div key={m.id} style={{ background: '#fff', border: '1px solid #eee', borderRadius: 12, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14.5, color: '#1a1a2e' }}>{m.titolo}</div>
+                    <div style={{ fontSize: 13, color: '#777', lineHeight: 1.6, flex: 1 }}>{m.a_cosa_serve}</div>
+                    <button onClick={() => attivaModello(m)} disabled={inCorso === m.id}
+                      style={{ alignSelf: 'flex-start', padding: '8px 16px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, cursor: inCorso === m.id ? 'wait' : 'pointer', fontSize: 13.5, fontWeight: 600 }}>
+                      {inCorso === m.id ? 'Attivo…' : 'Attiva'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <p style={{ fontSize: 12.5, color: '#aaa', marginTop: 16 }}>
+                Oppure <button onClick={() => setShowModal(true)} style={{ background: 'none', border: 'none', padding: 0, color: '#1a1a2e', textDecoration: 'underline', cursor: 'pointer', fontSize: 12.5 }}>creane una da zero</button>.
+              </p>
             </div>
           )}
           {automazioni.map(auto => (
