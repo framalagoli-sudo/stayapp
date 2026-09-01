@@ -7,6 +7,7 @@
 - [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: blocco Offerte + promozioni migrate + consenso booking. Da provare col percorso preciso; poi risorse booking dentro le offerte
 - [📘 PROGETTO.md — per chi subentra da zero](reference_documento_progetto.md) — fornitori/costi/chiavi per un erede o un acquirente; si aggiorna su EVENTI non a calendario, e una env var non documentata BLOCCA il deploy
 - [📜 Termini e privacy: non esistevano](reference_documenti_legali.md) — creati il 31/08 col consenso provato alla registrazione; il contenuto rispecchia il sistema, la forma va rivista da un avvocato
+- [🧪 Sandbox NON è live](feedback_sandbox_non_e_live.md) — provato in un ambiente e dedotto per l'altro: 2 volte in 2 giorni. E le sonde che creano dati non si lanciano in produzione: in live restano per sempre
 - [💳 Stripe Connect: Standard + addebiti diretti](reference_stripe_connect.md) — nessuna commissione trattenuta, rischio e chargeback fra cliente e Stripe; requisiti italiani verificati, i 3 passi a carico di Francesco
 - [🎫 Cosa si prenota: SOLO Risorse ed Eventi](reference_cosa_si_prenota.md) — prodotti e offerte NON si prenotano (si acquistano o si chiedono); «una risorsa non è un prodotto»: mai spostarla né confonderla col catalogo
 - [🧩 Una sola tabella `entita`](reference_entita_unificata.md) — il tipo decide solo indirizzo e preset, NON le funzioni; lib/entita.js unico accesso; ⚠️ next build non vede gli import mancanti (500 in produzione sulle route guest)

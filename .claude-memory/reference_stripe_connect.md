@@ -104,6 +104,37 @@ l'ordine passa a `pagato · da evadere` → la pagina mostra il numero d'ordine.
 - Domanda per il commercialista, **non verificata**: se «fornire lo strumento
   con cui altri incassano» abbia implicazioni fiscali in Italia.
 
+## ⛔ Un account connesso NON si cancella, mai
+
+Verificato in live il **01/09/2026**. Vale anche per i **clienti veri**: il
+giorno che un cliente se ne va, il suo account Stripe resta collegato e la
+piattaforma non può rimuoverlo.
+
+- Dal **pannello**: *«La rimozione degli account con configurazioni cliente non
+  è attualmente supportata»* — perché li creiamo con la configurazione
+  `customer` attiva.
+- Dall'**API**: `v2.core.accounts.close()` funziona **in sandbox** ma in live
+  risponde *«This method may not be used on livemode accounts where
+  `controller[losses][payments]=stripe and dashboard=full`, which includes
+  Standard accounts»*.
+
+**Non è un limite aggirabile: è la conseguenza della configurazione scelta.**
+Quegli account hanno un rapporto diretto con Stripe — dashboard loro, perdite
+loro — e noi non ne siamo padroni. È la stessa ragione per cui il rischio non è
+di Francesco.
+
+L'unica strada è **chiedere al supporto Stripe** la rimozione, indicando gli
+`acct_...`.
+
+⚠️ Restano in live tre account `ZZ-…` creati dalle prove del 31/08
+(`acct_1UAchsQ8YvNEI6OX`, `acct_1UAcgiLZfVG76sqk`, `acct_1UAcgHLYpdAmo6Gb`):
+vuoti, mai attivati, non incassano. Francesco ha deciso di lasciarli.
+
+**Strumento**: `tests/chiudi-account-stripe.mjs` — mostra e basta finché non gli
+si passa `--chiudi`, tocca solo i nomi che iniziano per `ZZ`, accetta anche le
+chiavi con limitazioni (`rk_`). Utile in **sandbox**, dove gli account si
+accumulano a ogni prova e lì si chiudono davvero.
+
 ## Due cose da non dimenticare
 
 - **Nei Termini di OltreNova** va scritto che i pagamenti sono un rapporto
