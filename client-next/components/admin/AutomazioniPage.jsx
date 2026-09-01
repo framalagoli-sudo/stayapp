@@ -446,10 +446,12 @@ function NuovaAutomazioneModal({ entityTipo, entityId, onClose, onCreate }) {
 // ─── EntityPicker ─────────────────────────────────────────────────────────────
 
 function EntityPicker({ strutture, ristoranti, attivita, selected, onSelect }) {
+  // `azienda_id` viaggia con l'entità: serve a chiedere lo stato di WhatsApp, e
+  // chi amministra la piattaforma non ne ha una propria da cui dedurlo.
   const all = [
-    ...strutture.map(e => ({ id: e.id, name: e.name, tipo: 'struttura' })),
-    ...ristoranti.map(e => ({ id: e.id, name: e.name, tipo: 'ristorante' })),
-    ...(attivita || []).map(e => ({ id: e.id, name: e.name, tipo: 'attivita' })),
+    ...strutture.map(e => ({ id: e.id, name: e.name, tipo: 'struttura', azienda_id: e.azienda_id })),
+    ...ristoranti.map(e => ({ id: e.id, name: e.name, tipo: 'ristorante', azienda_id: e.azienda_id })),
+    ...(attivita || []).map(e => ({ id: e.id, name: e.name, tipo: 'attivita', azienda_id: e.azienda_id })),
   ]
   if (all.length === 0) return <div style={{ fontSize: 13, color: '#aaa' }}>Nessuna entità disponibile.</div>
   if (all.length === 1 && !selected) { onSelect(all[0]); return null }
@@ -510,13 +512,13 @@ export default function AutomazioniPage() {
     if (selected) return
     if (selectedStrutturaId && strutture.length) {
       const s = strutture.find(x => x.id === selectedStrutturaId) || strutture[0]
-      setSelected({ id: s.id, name: s.name, tipo: 'struttura' })
+      setSelected({ id: s.id, name: s.name, tipo: 'struttura', azienda_id: s.azienda_id })
     } else if (selectedRistoranteId && ristoranti.length) {
       const r = ristoranti.find(x => x.id === selectedRistoranteId) || ristoranti[0]
-      setSelected({ id: r.id, name: r.name, tipo: 'ristorante' })
+      setSelected({ id: r.id, name: r.name, tipo: 'ristorante', azienda_id: r.azienda_id })
     } else if (selectedAttivitaId && attivita?.length) {
       const a = attivita.find(x => x.id === selectedAttivitaId) || attivita[0]
-      setSelected({ id: a.id, name: a.name, tipo: 'attivita' })
+      setSelected({ id: a.id, name: a.name, tipo: 'attivita', azienda_id: a.azienda_id })
     }
   }, [strutture, ristoranti, attivita, selectedStrutturaId, selectedRistoranteId, selectedAttivitaId])
 
@@ -532,13 +534,18 @@ export default function AutomazioniPage() {
 
   useEffect(() => { load() }, [load])
 
+  // ⚠️ L'azienda si passa esplicitamente: chi amministra la piattaforma non ne
+  // ha una propria, e senza il parametro la route risponde 400. Un errore in
+  // console che nessuno vede resta lì finché uno smoke non lo trova — ed è
+  // successo appena consegnato.
   useEffect(() => {
+    if (!selected?.azienda_id) { setWa({ collegato: false, templates: [] }); return }
     let vivo = true
-    apiFetch('/api/whatsapp/connect')
+    apiFetch(`/api/whatsapp/connect?azienda_id=${encodeURIComponent(selected.azienda_id)}`)
       .then(d => { if (vivo) setWa({ collegato: d?.account?.stato === 'attivo', templates: d?.templates || [] }) })
-      .catch(() => {})
+      .catch(() => { if (vivo) setWa({ collegato: false, templates: [] }) })
     return () => { vivo = false }
-  }, [])
+  }, [selected?.azienda_id])
 
   async function handleToggle(auto) {
     try {
