@@ -31,8 +31,14 @@ export async function generateMetadata(props) {
   if (!offerta) return { title: entita.name }
   const title = `${offerta.titolo} — ${entita.name}`
   const description = (offerta.descrizione || '').slice(0, 160)
-  const image = offerta.cover_url || entita.cover_url || ''
-  return { title, description, openGraph: { title, description, images: image ? [{ url: image }] : [], type: 'website' } }
+  // Meglio il logo che un'anteprima muta: senza immagine Facebook mostra un
+  // rettangolo grigio che nessuno apre. Misurato il 01/09: 11 entita' su 15
+  // non hanno una copertina.
+  const image = offerta.cover_url || entita.cover_url || entita.logo_url || ''
+    // Senza `siteName` Facebook scrive il DOMINIO in maiuscolo sopra il titolo:
+    // su un link oltrenova.com diventa «OLTRENOVA.COM» sul sito di un cliente,
+    // e in un'inserzione a pagamento e' il nostro nome al posto del suo.
+  return { title, description, openGraph: { title, description, siteName: entita.name, images: image ? [{ url: image }] : [], type: 'website' } }
 }
 
 export default async function OffertaDetail(props) {

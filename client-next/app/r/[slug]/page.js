@@ -20,7 +20,10 @@ export async function generateMetadata(props) {
   const mini = ristorante.minisito || {}
   const title = mini.seo_title || ristorante.name
   const description = mini.seo_description || ristorante.description || ''
-  const image = ristorante.cover_url || ''
+  // Meglio il logo che un'anteprima muta: senza immagine Facebook mostra un
+  // rettangolo grigio che nessuno apre. Misurato il 01/09: 11 entita' su 15
+  // non hanno una copertina.
+  const image = ristorante.cover_url || ristorante.logo_url || ''
   const domain = searchParams?._domain
   const itUrl = domain ? `https://${domain}` : `https://www.oltrenova.com/r/${slug}`
   const enUrl = domain ? `https://${domain}/en` : `https://www.oltrenova.com/en/r/${slug}`
@@ -33,7 +36,10 @@ export async function generateMetadata(props) {
     appleWebApp: { capable: true, statusBarStyle: 'default', title: ristorante.name },
     icons: { apple: ristorante.logo_url || '/icons/apple-touch-icon.png' },
     alternates: { canonical: url, languages: { it: itUrl, en: enUrl, 'x-default': itUrl } },
-    openGraph: { title, description, url, images: image ? [{ url: image }] : [], type: 'website', locale: lang === 'en' ? 'en_US' : 'it_IT' },
+    // Senza `siteName` Facebook scrive il DOMINIO in maiuscolo sopra il titolo:
+    // su un link oltrenova.com diventa «OLTRENOVA.COM» sul sito di un cliente,
+    // e in un'inserzione a pagamento e' il nostro nome al posto del suo.
+    openGraph: { title, description, url, siteName: ristorante.name, images: image ? [{ url: image }] : [], type: 'website', locale: lang === 'en' ? 'en_US' : 'it_IT' },
     twitter: { card: 'summary_large_image', title, description, images: image ? [image] : [] },
     ...(mini.google_site_verification && { verification: { google: mini.google_site_verification } }),
   }

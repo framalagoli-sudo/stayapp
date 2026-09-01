@@ -1,3 +1,4 @@
+import { supabaseAdmin } from '@/lib/supabase-server'
 import { getArticolo } from '@/lib/guest-data'
 import ArticoloPage from '@/components/public/ArticoloPage'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
@@ -12,6 +13,16 @@ export async function generateMetadata(props) {
   const itUrl = `https://www.oltrenova.com/blog/${slug}`
   const enUrl = `https://www.oltrenova.com/en/blog/${slug}`
   const url = lang === 'en' ? enUrl : itUrl
+
+  // Di chi e questo articolo. Senza, Facebook scrive il DOMINIO in maiuscolo
+  // sopra il titolo: «OLTRENOVA.COM» sull'articolo di un cliente.
+  let siteName
+  if (art.entity_id) {
+    const { data: ente } = await supabaseAdmin.from('entita')
+      .select('name').eq('id', art.entity_id).maybeSingle()
+    siteName = ente?.name || undefined
+  }
+
   return {
     title: art.title || 'Articolo',
     description: art.excerpt || '',
@@ -20,6 +31,7 @@ export async function generateMetadata(props) {
       title: art.title,
       description: art.excerpt || '',
       url,
+      siteName,
       images: art.cover_url ? [{ url: art.cover_url }] : [],
       type: 'article',
       locale: lang === 'en' ? 'en_US' : 'it_IT',

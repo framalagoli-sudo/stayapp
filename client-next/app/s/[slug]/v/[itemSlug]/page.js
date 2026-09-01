@@ -30,7 +30,10 @@ export async function generateMetadata(props) {
   const lang = searchParams?._lang === 'en' ? 'en' : 'it'
   const title = el.seo_title || `${el.titolo} — ${property.name}`
   const description = el.seo_description || property.minisito?.seo_description || ''
-  const image = el.og_image_url || el.copertina_url || property.cover_url || ''
+  // Meglio il logo che un'anteprima muta: senza immagine Facebook mostra un
+  // rettangolo grigio che nessuno apre. Misurato il 01/09: 11 entita' su 15
+  // non hanno una copertina.
+  const image = el.og_image_url || el.copertina_url || property.cover_url || property.logo_url || ''
   const domain = searchParams?._domain
   const itUrl = domain ? `https://${domain}/v/${itemSlug}` : `https://www.oltrenova.com/s/${slug}/v/${itemSlug}`
   const enUrl = domain ? `https://${domain}/en/v/${itemSlug}` : `https://www.oltrenova.com/en/s/${slug}/v/${itemSlug}`
@@ -38,7 +41,10 @@ export async function generateMetadata(props) {
   return {
     title, description,
     alternates: { canonical: url, languages: { it: itUrl, en: enUrl, 'x-default': itUrl } },
-    openGraph: { title, description, url, images: image ? [{ url: image }] : [], type: 'website', locale: lang === 'en' ? 'en_US' : 'it_IT' },
+    // Senza `siteName` Facebook scrive il DOMINIO in maiuscolo sopra il titolo:
+    // su un link oltrenova.com diventa «OLTRENOVA.COM» sul sito di un cliente,
+    // e in un'inserzione a pagamento e' il nostro nome al posto del suo.
+    openGraph: { title, description, url, siteName: property.name, images: image ? [{ url: image }] : [], type: 'website', locale: lang === 'en' ? 'en_US' : 'it_IT' },
   }
 }
 

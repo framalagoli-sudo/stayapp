@@ -27,7 +27,10 @@ export async function generateMetadata(props) {
   const mostraApp = searchParams?.qr === '1' || !mini.active
   const title = mini.seo_title || property.name
   const description = mini.seo_description || property.description || ''
-  const image = property.cover_url || ''
+  // Meglio il logo che un'anteprima muta: senza immagine Facebook mostra un
+  // rettangolo grigio che nessuno apre. Misurato il 01/09: 11 entita' su 15
+  // non hanno una copertina.
+  const image = property.cover_url || property.logo_url || ''
   const domain = searchParams?._domain
   const itUrl = domain ? `https://${domain}` : `https://www.oltrenova.com/s/${slug}`
   const enUrl = domain ? `https://${domain}/en` : `https://www.oltrenova.com/en/s/${slug}`
@@ -43,6 +46,10 @@ export async function generateMetadata(props) {
     alternates: { canonical: url, languages: { it: itUrl, en: enUrl, 'x-default': itUrl } },
     openGraph: {
       title, description, url,
+      // Senza `siteName` Facebook scrive il DOMINIO in maiuscolo sopra il titolo:
+      // su un link oltrenova.com diventa «OLTRENOVA.COM» sul sito di un cliente,
+      // e in un'inserzione a pagamento e' il nostro nome al posto del suo.
+      siteName: property.name,
       images: image ? [{ url: image, width: 1200, height: 630 }] : [],
       type: 'website', locale: lang === 'en' ? 'en_US' : 'it_IT',
     },
