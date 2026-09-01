@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { apiFetch, uploadMedia } from '../../../lib/api'
 import { useAzienda } from '../../../context/AziendaContext'
+import AvvisoNonSiVede from '../AvvisoNonSiVede'
 
 const GIORNI = [
   { key: 'lun', label: 'Lunedì' },
@@ -151,6 +152,18 @@ export default function BookingRisorsePage() {
     prezzo_speciale: '', badge_label: 'Offerta', colore: '#e53e3e', attiva: true,
   })
 
+  // Le attività che hanno qualcosa di prenotabile e visibile: una sola voce per
+  // attività, non una per risorsa — il blocco manca al sito, non alla singola
+  // risorsa, e ripetere lo stesso avviso cinque volte è rumore.
+  const entitaSenzaWidget = [...new Map(
+    risorse.filter(r => r.attiva && r.visibile_minisito && r.entity_id)
+      .map(r => [r.entity_id, {
+        id: r.entity_id, tipo: r.entity_tipo,
+        // L'etichetta è «Struttura: Hotel X»: nell'avviso serve solo il nome.
+        nome: entita.find(e => e.id === r.entity_id)?.etichetta?.replace(/^[^:]+:\s*/, '') || 'questa attività',
+      }])
+  ).values()]
+
   useEffect(() => { loadRisorse() }, [])
 
   async function loadRisorse() {
@@ -281,6 +294,16 @@ export default function BookingRisorsePage() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {/* ⚠️ Una risorsa configurata benissimo, ma senza il widget sul
+                sito, non la può prenotare nessuno — e il cliente non lo sa.
+                Un avviso per ogni attività che ha qualcosa di prenotabile e
+                visibile, ma nessun blocco dove metterlo. */}
+            {entitaSenzaWidget.map(e => (
+              <AvvisoNonSiVede key={e.id} entityTipo={e.tipo} entityId={e.id} blocco="booking"
+                titolo={`«${e.nome}» non mostra ancora le prenotazioni`}
+                spiegazione="Le risorse sono pronte, ma sul sito non c'è il modulo per prenotarle: aggiungi il blocco «Widget prenotazioni» a una pagina."
+                azione="Aggiungi il blocco" />
+            ))}
             {risorse.map(r => (
               <div key={r.id} style={{
                 background: '#fff', borderRadius: 12, padding: '14px 18px',
