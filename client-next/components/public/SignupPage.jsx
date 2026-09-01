@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { fusoDelBrowser } from '@/lib/fuso'
 import { supabase } from '@/lib/supabase'
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? '').trim()
@@ -32,7 +33,8 @@ export default function SignupPage() {
       const res = await fetch(`${API_BASE}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome_azienda: form.nome_azienda, email: form.email, password: form.password, accetta_termini: form.accetta }),
+        // Il fuso non si chiede: lo sa gia' il browser di chi sta compilando.
+        body: JSON.stringify({ nome_azienda: form.nome_azienda, email: form.email, password: form.password, accetta_termini: form.accetta, fuso_orario: fusoDelBrowser() }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Errore registrazione'); setLoading(false); return }

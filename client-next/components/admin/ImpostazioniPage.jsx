@@ -2,8 +2,69 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
+import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
-import { ToggleLeft, ToggleRight, RefreshCw } from 'lucide-react'
+import { elencoFusi, fusoDelBrowser, FUSO_PREDEFINITO } from '@/lib/fuso'
+import { ToggleLeft, ToggleRight, RefreshCw, Clock } from 'lucide-react'
+
+// Dove si trova l'attivita', in termini di orologio.
+//
+// ⚠️ Non e' una preferenza estetica: un'ora scritta su una prenotazione («10:00»)
+// non e' un istante finche' non si sa dove. Senza questo dato il server la
+// leggeva nel PROPRIO fuso — Vercel gira in UTC — e per un'attivita' italiana il
+// promemoria «24 ore prima» partiva due ore prima del dovuto.
+function FusoOrarioCard({ azienda }) {
+  const [valore, setValore] = useState(azienda?.fuso_orario || FUSO_PREDEFINITO)
+  const [salvando, setSalvando] = useState(false)
+  const [salvato, setSalvato] = useState(false)
+  const [errore, setErrore] = useState('')
+  const suggerito = fusoDelBrowser()
+
+  async function salva(nuovo) {
+    setValore(nuovo); setSalvando(true); setSalvato(false); setErrore('')
+    try {
+      await apiFetch(`/api/aziende/${azienda.id}`, { method: 'PATCH', body: JSON.stringify({ fuso_orario: nuovo }) })
+      setSalvato(true); setTimeout(() => setSalvato(false), 2500)
+    } catch (e) { setErrore(e.message); setValore(azienda?.fuso_orario || FUSO_PREDEFINITO) }
+    setSalvando(false)
+  }
+
+  // L'ora di adesso in quel fuso: e' la verifica che chiunque puo' fare senza
+  // sapere cosa sia un nome IANA — se l'orologio qui sotto e' il tuo, e' giusto.
+  let adesso = ''
+  try { adesso = new Date().toLocaleTimeString('it-IT', { timeZone: valore, hour: '2-digit', minute: '2-digit' }) } catch { /* fuso non valido */ }
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+        <Clock size={16} strokeWidth={1.5} color="#1a1a2e" />
+        <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1a2e' }}>Fuso orario</div>
+        {salvato && <span style={{ fontSize: 12, color: '#276749', background: '#f0fff4', padding: '2px 9px', borderRadius: 20, fontWeight: 600 }}>Salvato</span>}
+      </div>
+      <div style={{ fontSize: 13, color: '#888', lineHeight: 1.6, marginBottom: 14 }}>
+        Serve a capire che ora sono «le 10:00» quando qualcuno prenota: da qui dipendono
+        i promemoria automatici e il termine entro cui si può disdire.
+      </div>
+      <select value={valore} onChange={e => salva(e.target.value)} disabled={salvando}
+        style={{ width: '100%', maxWidth: 420, padding: '9px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, background: '#fff', boxSizing: 'border-box' }}>
+        {elencoFusi().map(f => <option key={f} value={f}>{f.replace(/_/g, ' ')}</option>)}
+      </select>
+      {adesso && (
+        <div style={{ marginTop: 10, fontSize: 13, color: '#555' }}>
+          Adesso qui sono le <strong>{adesso}</strong>. Se non è l’ora del tuo orologio, il fuso è sbagliato.
+        </div>
+      )}
+      {/* Suggerito, non imposto: il titolare potrebbe stare in viaggio, e l'attivita' resta dov'e'. */}
+      {suggerito !== valore && (
+        <div style={{ marginTop: 8, fontSize: 12.5, color: '#8a5a12' }}>
+          Il tuo computer dice <strong>{suggerito.replace(/_/g, ' ')}</strong>.{' '}
+          <button onClick={() => salva(suggerito)} style={{ background: 'none', border: 'none', padding: 0, color: '#8a5a12', textDecoration: 'underline', cursor: 'pointer', fontSize: 12.5, fontWeight: 600 }}>Usa questo</button>
+        </div>
+      )}
+      {errore && <p style={{ margin: '10px 0 0', fontSize: 13, color: '#c53030' }}>{errore}</p>}
+    </div>
+  )
+}
 
 function SyncSubdomainsCard() {
   const [syncing, setSyncing] = useState(false)
@@ -53,14 +114,34 @@ function SyncSubdomainsCard() {
 
 export default function ImpostazioniPage() {
   const { profile } = useAuth()
+  const { azienda } = useAzienda()
+  // ⚠️ Il contesto carica l'azienda da `profile.azienda_id`, che un super_admin
+  // NON ha: sceglierla dal menu in cima riempie solo la sua chiave in sessione.
+  // Senza questo, la scheda del fuso non sarebbe mai comparsa proprio a chi
+  // amministra la piattaforma — la stessa trappola gia' vista sulle automazioni.
+  const [aziendaScelta, setAziendaScelta] = useState(null)
   const router = useRouter()
   const [config, setConfig] = useState(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
+  // ⛔ Prima chi non era super_admin veniva rimandato via: «Impostazioni» sta nel
+  // menu di ogni cliente, quindi cliccarla lo sbatteva fuori senza spiegazioni.
+  // Ora ognuno vede le impostazioni che gli riguardano — quelle della
+  // piattaforma restano di chi la amministra.
   useEffect(() => {
-    if (profile && profile.role !== 'super_admin') { router.push('/admin'); return }
-    if (profile) {
+    if (azienda) { setAziendaScelta(null); return }
+    const id = typeof window !== 'undefined' && sessionStorage.getItem('sa_azienda_id')
+    if (!id) { setAziendaScelta(null); return }
+    let vivo = true
+    apiFetch(`/api/aziende/${id}`)
+      .then(a => { if (vivo) setAziendaScelta(a) })
+      .catch(() => { if (vivo) setAziendaScelta(null) })
+    return () => { vivo = false }
+  }, [azienda, profile?.id])
+
+  useEffect(() => {
+    if (profile?.role === 'super_admin') {
       apiFetch('/api/auth/platform-config').then(setConfig).catch(console.error)
     }
   }, [profile]) // eslint-disable-line
@@ -85,13 +166,16 @@ export default function ImpostazioniPage() {
     setSaving(false)
   }
 
-  if (!config) return <div style={{ color: '#999', padding: 20 }}>Caricamento…</div>
+  const superAdmin = profile?.role === 'super_admin'
+  const aziendaAttiva = azienda || aziendaScelta
+  if (!profile) return <div style={{ color: '#999', padding: 20 }}>Caricamento…</div>
+  if (superAdmin && !config) return <div style={{ color: '#999', padding: 20 }}>Caricamento…</div>
 
 
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Impostazioni piattaforma</h1>
+        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>{superAdmin ? 'Impostazioni piattaforma' : 'Impostazioni'}</h1>
         {saved && (
           <span style={{ fontSize: 13, color: '#276749', background: '#f0fff4', padding: '4px 10px', borderRadius: 20, fontWeight: 600 }}>
             Salvato
@@ -101,6 +185,15 @@ export default function ImpostazioniPage() {
 
       <div style={{ maxWidth: 600, display: 'flex', flexDirection: 'column', gap: 16 }}>
 
+        {aziendaAttiva && <FusoOrarioCard key={aziendaAttiva.id} azienda={aziendaAttiva} />}
+
+        {!superAdmin && !aziendaAttiva && (
+          <div style={{ background: '#f9f9f9', borderRadius: 10, padding: '14px 16px', fontSize: 13, color: '#999' }}>
+            Nessuna azienda collegata a questo profilo.
+          </div>
+        )}
+
+        {superAdmin && <>
         {/* Toggle signup */}
         <div style={{ background: '#fff', borderRadius: 12, padding: '20px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
@@ -144,6 +237,7 @@ export default function ImpostazioniPage() {
         <div style={{ background: '#f9f9f9', borderRadius: 10, padding: '14px 16px', fontSize: 13, color: '#999', lineHeight: 1.6 }}>
           Altre impostazioni (piani Stripe, limiti trial, white-label) saranno disponibili nelle prossime versioni.
         </div>
+        </>}
       </div>
     </div>
   )

@@ -2,6 +2,7 @@
 import { sendEmail } from '@/lib/send-email'
 import { platformEmailTemplate } from '@/lib/email-template'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
+import { fusoSicuro } from '@/lib/fuso'
 
 // La versione dei Termini in vigore, per data. Cambiando il testo si cambia
 // anche questa: e' il modo per sapere cosa ha accettato chi, e quando.
@@ -21,7 +22,7 @@ export async function POST(request) {
     const { data: cfg } = await supabaseAdmin.from('platform_config').select('signup_enabled').eq('id', 1).single()
     if (!cfg?.signup_enabled) return Response.json({ error: 'Le registrazioni sono temporaneamente chiuse.' }, { status: 403 })
 
-    const { nome_azienda, email, password, accetta_termini } = await request.json()
+    const { nome_azienda, email, password, accetta_termini, fuso_orario } = await request.json()
     // ⛔ Il controllo sta QUI, non nel modulo: una spunta nel browser si toglie
     // con due clic, e un contratto non accettato non vale. Vale la stessa
     // regola del consenso privacy sulle prenotazioni.
@@ -48,6 +49,11 @@ export async function POST(request) {
     const { data: az, error: azErr } = await supabaseAdmin.from('aziende').insert({
       ragione_sociale: nome_azienda.trim(),
       email: email.trim().toLowerCase(),
+      // Il fuso dell'attivita', preso dal browser di chi si registra: e' l'unico
+      // momento in cui lo sappiamo senza doverlo chiedere. Da qui dipendono i
+      // promemoria e il termine per disdire. Se arriva una stringa inventata si
+      // torna al predefinito: mai il valore ricevuto, che finirebbe in `Intl`.
+      fuso_orario: fusoSicuro(fuso_orario),
       moduli: { struttura: false, ristorante: false, attivita: false },
       piano: 'base', active: true, trial_ends_at: trialEndsAt, subscription_status: 'trial',
       // La **prova** del consenso: quando, e quale versione. Se i Termini

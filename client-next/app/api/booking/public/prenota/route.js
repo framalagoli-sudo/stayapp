@@ -1,5 +1,6 @@
 ﻿import { after } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { istanteDi } from '@/lib/fuso'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { verificaPeriodo, totaleGiornaliero, notti } from '@/lib/booking-giornaliero'
 import { confermaPostiPrenotazione } from '@/lib/capienza'
@@ -261,9 +262,16 @@ export async function POST(request) {
       importo_totale: prenotazione.importo_totale,
     })
 
-    const visitDatetime = prenotazione.data && prenotazione.ora_inizio
-      ? new Date(`${prenotazione.data}T${prenotazione.ora_inizio}`).toISOString()
-      : prenotazione.data ? new Date(`${prenotazione.data}T09:00:00`).toISOString() : null
+    // ⚠️ «10:00» non e' un istante finche' non si sa dove. Prima nasceva da
+    // `new Date('…T10:00')`, che lo legge nel fuso di CHI ESEGUE: su Vercel, che
+    // gira in UTC, le 10:00 di un'attivita' italiana diventavano le 12:00 e il
+    // promemoria «24 ore prima» partiva due ore prima del dovuto.
+    const { data: aziendaFuso } = await supabaseAdmin.from('aziende')
+      .select('fuso_orario').eq('id', prenotazione.azienda_id).maybeSingle()
+    const fuso = aziendaFuso?.fuso_orario
+    const visitDatetime = prenotazione.data
+      ? istanteDi(prenotazione.data, prenotazione.ora_inizio || '09:00', fuso)?.toISOString() || null
+      : null
 
     // Genera token recensione per automazione post_visita
     let reviewLink = ''

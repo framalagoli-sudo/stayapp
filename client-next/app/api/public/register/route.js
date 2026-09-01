@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { fusoSicuro } from '@/lib/fuso'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 
 export async function POST(request) {
@@ -8,7 +9,7 @@ export async function POST(request) {
     const rl = await rateLimit(request, { name: 'public-register', limit: 5, windowSec: 3600, ip })
     if (!rl.allowed) return tooManyRequests()
 
-    const { ragione_sociale, email, password } = await request.json()
+    const { ragione_sociale, email, password, fuso_orario } = await request.json()
     if (!ragione_sociale?.trim()) return Response.json({ error: 'Ragione sociale obbligatoria' }, { status: 400 })
     if (!email?.trim()) return Response.json({ error: 'Email obbligatoria' }, { status: 400 })
     if (!password || password.length < 8) return Response.json({ error: 'Password minimo 8 caratteri' }, { status: 400 })
@@ -19,6 +20,10 @@ export async function POST(request) {
 
     const { data: az, error: azErr } = await supabaseAdmin.from('aziende').insert({
       ragione_sociale: ragione_sociale.trim(), email: email.trim(),
+      // Il fuso arriva dal browser di chi si registra: e' l'unico momento in cui
+      // lo sappiamo senza chiederlo. Se e' una stringa inventata si torna al
+      // predefinito — mai al valore ricevuto, che poi finirebbe dentro `Intl`.
+      fuso_orario: fusoSicuro(fuso_orario),
       moduli: { struttura: false, ristorante: false, attivita: false }, piano: 'base', active: false,
     }).select().single()
     if (azErr) { await supabaseAdmin.auth.admin.deleteUser(authData.user.id); return Response.json({ error: azErr.message }, { status: 500 }) }

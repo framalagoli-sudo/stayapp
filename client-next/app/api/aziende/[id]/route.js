@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { fusoValido } from '@/lib/fuso'
 import { requireAuth } from '@/lib/server-auth'
 
 async function getProfile(userId) {
@@ -35,10 +36,16 @@ export async function PATCH(request, props) {
     const body = await request.json()
     // Il titolare può modificare i dati anagrafici + require_2fa; piano/moduli/active
     // (commerciale/entitlement/stato) sono riservati a super_admin (no self-upgrade/billing bypass).
-    const OWNER_FIELDS = ['ragione_sociale', 'partita_iva', 'codice_fiscale', 'email', 'pec', 'telefono', 'cellulare', 'indirizzo', 'citta', 'cap', 'provincia', 'rea', 'capitale_sociale', 'require_2fa']
+    const OWNER_FIELDS = ['ragione_sociale', 'partita_iva', 'codice_fiscale', 'email', 'pec', 'telefono', 'cellulare', 'indirizzo', 'citta', 'cap', 'provincia', 'rea', 'capitale_sociale', 'require_2fa', 'fuso_orario']
     const SUPER_FIELDS = ['piano', 'moduli', 'active']
     const allowed = isSuper ? [...OWNER_FIELDS, ...SUPER_FIELDS] : OWNER_FIELDS
     const updates = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
+    // ⚠️ Il fuso finisce dentro `Intl`, che su una stringa inventata lancia: se
+    // entrasse cosi' com'e', ogni prenotazione successiva risponderebbe 500. Si
+    // rifiuta a monte invece di salvarlo e scoprirlo dopo.
+    if ('fuso_orario' in updates && !fusoValido(updates.fuso_orario)) {
+      return Response.json({ error: 'Fuso orario non riconosciuto' }, { status: 400 })
+    }
     if (!Object.keys(updates).length) return Response.json({ error: 'Nessun campo da aggiornare' }, { status: 400 })
     const { data, error } = await supabaseAdmin.from('aziende').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', params.id).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })

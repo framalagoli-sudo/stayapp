@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { istanteDi } from '@/lib/fuso'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isUUID = v => UUID_RE.test(v)
@@ -14,7 +15,10 @@ const isUUID = v => UUID_RE.test(v)
 async function caricaPrenotazione(token) {
   if (!isUUID(token)) return { errore: 'Token non valido', status: 400 }
   const { data: pren, error } = await supabaseAdmin.from('prenotazioni')
-    .select('id, data, ora_inizio, stato, cliente_nome, n_persone, risorse(nome, cancellazione_ore)')
+    // `aziende(fuso_orario)` non e' un dettaglio: senza, l'orario
+    // dell'appuntamento viene letto nel fuso del server e il termine per
+    // disdire si sposta — si puo' non riuscire a cancellare avendone diritto.
+    .select('id, data, ora_inizio, stato, cliente_nome, n_persone, azienda_id, risorse(nome, cancellazione_ore), aziende(fuso_orario)')
     .eq('cancellation_token', token).single()
   if (error || !pren) return { errore: 'Prenotazione non trovata', status: 404 }
   return { pren }
@@ -24,7 +28,11 @@ async function caricaPrenotazione(token) {
 function fuoriTermine(pren) {
   if (!pren.ora_inizio) return null
   const ore = pren.risorse?.cancellazione_ore || 24
-  const appuntamento = new Date(`${pren.data}T${pren.ora_inizio}`)
+  // ⚠️ L'ora scritta sulla prenotazione e' quella del cliente, non del server:
+  // letta senza fuso, il termine si sposta di quanto il server e' distante da
+  // lui (due ore per l'Italia, otto per gli Stati Uniti).
+  const appuntamento = istanteDi(pren.data, pren.ora_inizio, pren.aziende?.fuso_orario)
+  if (!appuntamento) return null
   if (new Date() > new Date(appuntamento.getTime() - ore * 3600000)) {
     return `Non è più possibile cancellare (limite ${ore}h prima)`
   }
