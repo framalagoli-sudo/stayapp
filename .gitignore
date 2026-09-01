@@ -18,3 +18,6 @@ tests/*.png
 # non entrano mai in git, nemmeno per sbaglio con un "git add -A".
 backup/
 *.json.gz
+
+# Il file temporaneo con la chiave Stripe live: non entra mai in git.
+chiave-live.txt
