@@ -1,91 +1,74 @@
 ---
-name: todo_prossima_sessione
-description: "LEGGERE PER PRIMO — dove siamo e cosa si fa dopo (aggiornato 31/08/2026: Stripe live, prenotazioni ed eventi incassano)"
-metadata:
+name: todo-prossima-sessione
+description: "Da dove riprendere — le recensioni, con le 6 route da sbloccare e il percorso da percorrere davvero; deciso il 01/09/2026"
+metadata: 
   node_type: memory
   type: project
+  originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
+  modified: 2026-09-01T22:57:35.890Z
 ---
 
-# Dove siamo — 31/08/2026
+# Si riprende dalle RECENSIONI
 
-⚠️ **Prima di scrivere codice**, le regole nate da errori veri:
-- [[feedback_verificare_il_contesto]] — **l'ultimo miglio**: apro col browser il
-  punto da cui ci arriva Francesco. Oggi l'ho violata due volte: il 404 dopo il
-  pagamento (trovato da lui pagando) e «Nessuna azienda» sulla pagina Pagamenti
-  (provata con un utente normale, mai da super_admin, che è il suo ruolo).
-- [[reference_cosa_si_prenota]] — prenotabili sono **solo Risorse ed Eventi**.
-- [[feedback_autorizzare_cambi_importanti]] — togliere si chiede, non si comunica.
+Deciso con Francesco a fine sessione del **1 settembre 2026**. Sue parole:
+«chiudiamo sessione, riprendiamo domani mattina con queste cose».
 
-## ⏭️ DOMANI SI RIPRENDE DA QUI
+## Perché proprio quelle, e perché adesso
 
-**1. Pulire gli account Stripe di prova** *(5 minuti, tuoi)*
-   Stripe → **modalità Live** → Connect → Accounts: cancellare i `ZZ-…` che la
-   sonda `probe-acconto` ha creato girando per sbaglio in produzione. Sono vuoti
-   e innocui, ma è sporcizia. La sonda ora si rifiuta di girare fuori da locale.
+Misurato sul database il 01/09: **2 recensioni in tutto, 0 richieste inviate, 0
+compilate** in tutta la storia del progetto. Un'altra funzione a uso zero
+([[reference_motore_senza_porta]]).
 
-**2. Il primo incasso vero** *(rimandato dal 31/08)*
-   Un'azienda vera collega il conto da `Account → Pagamenti`, poi un ordine da
-   1 € con carta vera, poi rimborso da Stripe. ⚠️ Stripe può non attivare subito
-   gli incassi: a volte chiede verifiche che richiedono ore.
+⛔ **Ma ora è urgente**: il modello «Grazie, e com'è andata?» messo live il 01/09
+manda a `{{link_recensione}}`. È fatto perché i clienti lo accendano — e li
+porterebbe dentro una funzione mai usata da nessuno, con tre route
+verosimilmente spente. *È una porta appena costruita che dà su una stanza mai
+aperta.*
 
-**3. L'ONBOARDING — `/admin/onboarding` è 404**
-   E adesso pesa il doppio: chi si registra viene mandato **proprio lì**. Le
-   registrazioni sono chiuse, quindi non fa male a nessuno — ma è il primo muro
-   contro cui sbatterebbe il primo cliente il giorno che le apri.
-   Vedi [[project_onboarding_mappa]].
+## L'ordine concordato
 
-**4. Le 10 aziende esistenti non hanno mai accettato i Termini**
-   Colonne pronte (`101`). Vanno fatte accettare al primo accesso, con la stessa
-   prova (quando + versione). Francesco: «sono tutti miei contatti diretti, per
-   ora non sono un problema» — quindi non è urgente, ma resta aperto.
+1. **Le 6 route con la guardia su `azienda_id`** — `recensioni/`,
+   `recensioni/[id]`, `recensioni/genera-link`, `webhooks/`, `webhooks/[id]`,
+   `webhooks/[id]/test`. Da super_admin sono verosimilmente spente. Il come sta
+   in [[reference_super_admin_senza_azienda]]: è la **terza** ricorrenza in un
+   giorno solo.
+2. **Percorrere il giro vero, col browser**: generare un link, aprirlo come
+   farebbe un ospite, lasciare una recensione, vedere se arriva nel pannello.
+   Non il codice — il percorso ([[feedback_verificare_il_contesto]]).
+3. **Pulsanti Google / TripAdvisor**. Strada approvata da Francesco col suo
+   caveat: *«se i pulsanti dicono il vero»*. Il modo onesto: il cliente incolla
+   il **link al suo profilo**, noi mostriamo un pulsante «Lasciaci una recensione
+   su Google» — e **non scriviamo mai un voto**. Un «4,8 su Google» digitato a
+   mano è vero il giorno che lo scrivi e falso il mese dopo. Francesco non ha
+   ancora detto se vuole comunque il voto: **chiedere prima di metterlo**.
 
-**5. Termini e privacy a un avvocato**
-   Il contenuto rispecchia il sistema; la forma giuridica va rivista.
+Francesco ha dato mandato di fare 1 e 2 senza ricontrollare, e di **fermarsi
+prima di aggiungere qualcosa che il cliente vedrebbe sul sito**.
 
-## ✅ Chiuso il 31/08 — tutto live e verificato
+## Dopo: l'onboarding
 
-- **Stripe Connect completo**: collegamento (`Account → Pagamenti`), checkout
-  sul conto del cliente, **due webhook** (pagamenti + requisiti), pagine di
-  ritorno. Le tre responsabilità su Stripe, verificate nella risposta dell'API.
-  Vedi [[reference_stripe_connect]].
-- **Prenotazioni ed eventi incassano** (migration `102`): un campo, un numero —
-  *«quanto si paga prenotando (%)»*. 0 = sul posto, 100 = tutto, 30 = acconto.
-  Zero per tutti di partenza: incassare si accende, non si eredita.
-- **Termini di servizio** e **informativa privacy**: **non esistevano affatto**.
-  Ora ci sono, linkati nel piede della landing, nel pannello e nell'iscrizione.
-- **Spunta all'iscrizione**: prima ci si registrava senza accettare niente. Il
-  controllo sta nella route (400 se `!== true`) e si salva la **prova**.
-- Migration eseguite: `099` (conto Stripe), `100` (pagamento eventi),
-  `101` (accettazione termini), `102` (acconto).
+Resta il capitolo che vale di più ([[project_onboarding_mappa]]), ma Francesco lo
+tiene per ultimo: *«c'è da fare un ragionamento profondo di marketing»*. È una
+sua decisione di prodotto, si aspetta lui.
 
-⚠️ **Scoperto oggi**: Stripe **non era mai stato collegato** — il codice c'era,
-la chiave su Vercel no, e la documentazione diceva «integrato». Corretta.
+## Fermo, e dipende da Francesco
 
-## 🔴 Ancora aperti da giorni
+- **Nessun cliente ha collegato il conto Stripe**: il primo incasso vero non è
+  mai avvenuto. Provato, non collaudato ([[reference_stripe_connect]]).
+- **Meta**: fermi sulla verifica business, il codice Tech Provider è pronto
+  ([[reference_meta_blocco_dispositivo]]). Confermato il 01/09 che restiamo Tech
+  Provider e non passiamo da un BSP.
+- **Termini e privacy** da far leggere a un avvocato
+  ([[reference_documenti_legali]]).
+- **2FA** su Vercel, Supabase, Cloudflare, GitHub.
+- Le 10 aziende devono accettare i Termini.
+- Ripristino del backup mai provato ([[reference_backup_e_ripristino]]).
 
-- **2FA** su Vercel, Supabase, Cloudflare, GitHub — l'unica cosa di sicurezza
-  scoperta. ~20 minuti.
-- **Il ripristino del backup non è mai stato provato.** L'archivio è buono
-  (verificato), ma non sappiamo quante ore costa tornare in piedi.
-- **WhatsApp**: Meta non fa ancora accedere alla console developer.
+## Altro in coda (nessuno urgente)
 
-## Decisioni ferme (non ridiscuterle da solo)
+Next 16, multilingua DE, import documento v2, QR con logo, PWA installabile,
+notifiche realtime, integrazione PMS.
 
-- **Risorse è un'entità separata**; un'offerta non si prenota, si chiede o si
-  acquista; gli eventi restano fuori dalle prenotazioni unificate.
-- **Stripe: nessuna commissione trattenuta.** Francesco resta fuori dal denaro,
-  e le perdite sono di Stripe (`losses_collector: 'stripe'`).
-  ⚠️ Se quel campo venisse omesso creando un account, il valore predefinito è
-  `application` — cioè noi. Per questo la creazione sta in un posto solo.
-- **Niente tassonomie**: campi liberi e numeri, non elenchi chiusi di scelte.
-- Shop = Ordini + Clienti, e i clienti escono dagli ordini.
-
-## Trappole da ricordare
-
-- ⚠️ **Mai lanciare `deploy.ps1` dentro una pipe PowerShell**: risulta fallito
-  mentre riesce, o non parte affatto.
-- ⚠️ **Le sonde che creano account Stripe non vanno lanciate in produzione**:
-  in live restano per sempre, e Stripe rifiuta la cassa su conti non attivati —
-  un rifiuto giusto che la sonda leggerebbe come un nostro difetto.
-- ⚠️ `CLIENT_URL` esiste su Vercel ma **non** in `.env.local`: chi la usa deve
-  avere un ripiego, o funziona in produzione e si rompe in locale.
+⚠️ **Prima di deployare**: `npx vercel` ha avuto una giornata storta il 01/09
+(59.11.0 con una dipendenza rotta, poi «Not authorized» transitorio sulla
+59.11.1). Il ripiego sta in [[reference_anteprima_social]].

@@ -1,10 +1,11 @@
-# Memory Index
+﻿# Memory Index
 
 > ⛔ **I cambi che un cliente noterebbe li autorizza Francesco PRIMA**: [regola](feedback_autorizzare_cambi_importanti.md). E la sicurezza è il vincolo di ogni riga, non una fase finale.
 
 > ⚠️ **Prima di scrivere codice**: [Verificare il contesto, non solo il pezzo](feedback_verificare_il_contesto.md) — la radice comune degli errori ripetuti.
 
 - [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: blocco Offerte + promozioni migrate + consenso booking. Da provare col percorso preciso; poi risorse booking dentro le offerte
+- [📅 Sessione 01/09 — promemoria, campagna che pubblicizzava NOI, fuso orario](project_session_2026_09_01.md) — 3 cose chieste e 4 difetti trovati provando invece che leggendo; cliccare non basta guardare
 - [📘 PROGETTO.md — per chi subentra da zero](reference_documento_progetto.md) — fornitori/costi/chiavi per un erede o un acquirente; si aggiorna su EVENTI non a calendario, e una env var non documentata BLOCCA il deploy
 - [📜 Termini e privacy: non esistevano](reference_documenti_legali.md) — creati il 31/08 col consenso provato alla registrazione; il contenuto rispecchia il sistema, la forma va rivista da un avvocato
 - [🧪 Sandbox NON è live](feedback_sandbox_non_e_live.md) — provato in un ambiente e dedotto per l'altro: 2 volte in 2 giorni. E le sonde che creano dati non si lanciano in produzione: in live restano per sempre
@@ -121,6 +122,13 @@
 - [Session 2026-08-25 — Moduli: il tipo non limita più niente](project_session_2026_08_25_moduli.md) — l'all-in-one arriva nel pannello (whitelist, menu laterale e select pubbliche unificate); trovati e chiusi 2 difetti privacy (password WiFi in ogni pagina pubblica, codice server nel bundle browser); PWA ospite = cantiere aperto
 - [🔐 Dato riservato: a monte, non a valle](reference_dato_riservato_a_monte.md) — non chiederlo nella query per i rami che non ne hanno diritto (toglierlo dopo salta al primo ramo nuovo); e cercare un segreto nell'HTML con pochi caratteri dà falsi positivi: confrontare la coda
 - [🔤 Vocabolari dei moduli: alias storici](reference_vocabolari_moduli.md) — `gallery`≠`galleria`, `.modules` annidato sulle attività; funzioneAttiva conosce gli alias; ⚠️ le PWA sono codice browser: il build non le prova, serve probe-app-ospite.mjs
+- [🚪 Un motore senza porta = funzione a zero uso](reference_motore_senza_porta.md) — il promemoria esisteva e funzionava: ZERO automazioni in tutta la storia del progetto perche' andava composto a mano; si misura sul DB, si cura con modelli gia' scritti che nascono ATTIVI
+- [🔔 Promemoria automatici (email + WhatsApp)](reference_promemoria_automatici.md) — modelli che nascono attivi, canale per step; su WhatsApp NON viaggia il testo del cliente (serve un template approvato da Meta) e il consenso si ricontrolla all'invio
+- [⏱️ Il lavoro dopo la risposta non e' garantito](reference_lavoro_dopo_la_risposta.md) — su Vercel la funzione si congela appena risposto: serve `after()`. Il fuso orario, che era annotato qui come aperto, e' stato chiuso il 01/09
+- [📣 Anteprima social: la pagina evento mostrava OltreNova](reference_anteprima_social.md) — una campagna a pagamento pubblicizzava NOI invece del cliente; og:site_name = nome del cliente (senza, Facebook scrive il dominio), immagine con ripiego sul logo; Facebook tiene in cache: serve «Scrape Again»
+- [🌍 Fuso orario: l'ora e' quella del cliente](reference_fuso_orario.md) — «10:00» letto nel fuso del server (UTC) faceva partire il promemoria 2 ore prima; fuso IANA sull'azienda, conto in lib/fuso.js fatto DUE volte per il cambio d'ora
+- [🧹 Le sonde girano sul DB vero: pulire per azienda](reference_sonde_dati_in_produzione.md) — la pulizia «ricordo gli id creati» lascia residui se la sonda si ferma a meta'; `pulizia-prove.mjs --esegui`. Un file che esporta E fa qualcosa al caricamento e' una trappola
+- [👑 Il super_admin non ha azienda_id](reference_super_admin_senza_azienda.md) — `if (!profile?.azienda_id) return 403` lo blocca in cima e rende irraggiungibile il ramo che lo gestiva; ricapita da giugno. Restano 6 route: recensioni e webhooks
 - [🧭 Mappa del primo giorno + benchmark GHL](project_onboarding_mappa.md) — uso reale misurato (vive il sito e i contatti; 15 funzioni a ZERO), 26 voci di menu senza una strada per creare il sito; da GHL servono pipeline/casella unica/modelli, NON SMS-mobile-whitelabel
 - [🔑 Trigger sui profili: upsert, mai insert](reference_signup_trigger_profili.md) — createUser crea già la riga profiles (staff, senza azienda) → il signup andava in 500 e cancellava tutto; nessuno poteva registrarsi
 - [🛡️ Sicurezza continua (non più una fotografia)](project_sicurezza_continua.md) — 3 sonde a ogni deploy; il catalogo delle classi NON è chiuso (il punto A chiuso il 24, buco trovato il 25); un allarme che suona sempre viene ignorato
