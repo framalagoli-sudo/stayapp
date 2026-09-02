@@ -48,7 +48,8 @@ async function chiediRecensione(ent) {
 
 try {
   const { data: ent } = await admin.from('entita')
-    .select('id, name, slug, tipo, azienda_id, minisito').eq('active', true).limit(1).maybeSingle()
+    .select('id, name, slug, tipo, azienda_id, minisito')
+    .eq('active', true).not('azienda_id', 'is', null).limit(1).maybeSingle()
   entita = ent
   minisitoOriginale = ent.minisito || {}
   console.log(`entità di prova: ${ent.name} (${ent.tipo})`)
