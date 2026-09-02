@@ -1,72 +1,70 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — recensioni chiuse il 02/09, restano due domande in sospeso per Francesco e l'onboarding; e l'incidente della sonda che ha scritto a un cliente"
+description: "Da dove riprendere — manca solo la chiave Google per accendere il voto reale; poi gli eventi (12 prenotazioni vere, mai percorsi) o l'onboarding"
 metadata: 
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-02T07:25:07.105Z
+  modified: 2026-09-02T17:02:41.802Z
 ---
 
 # Si riprende da qui
 
-Sessione chiusa il **2 settembre 2026**. Francesco: «chiudi sessione per adesso,
-riprendiamo dopo» — chiusa dopo un incidente, vedi in fondo.
+Sessione chiusa il **2 settembre 2026**.
 
-## ⚠️ Prima di tutto: in sospeso con Francesco
+## ⚠️ Una cosa sola, e sblocca una funzione già scritta
 
-1. **Verificare su Resend a quali clienti è arrivata l'email della recensione
-   finta** («Nuova recensione ★★☆☆☆ da ZZ Scontento»). Solo Francesco ha la
-   chiave. Certo: Garage 22. Probabili: Borgo del Lago e lui stesso.
-2. **L'entità «Hotel di prova due»** (`/futura-club-spiagge-bianche`) è **attiva
-   e senza azienda**: non appartiene a nessuno. Se è un residuo va cancellata —
-   deciso da Francesco, non da me.
-3. **Lo stato vuoto di Recensioni dice «Genera un link»** ma il pulsante è dentro
-   «+ Aggiungi», in alto. Proposto di metterlo dove lo si cerca: è un cambio che
-   il cliente vedrebbe, quindi **si aspetta il suo sì**.
+**La chiave Google.** Console Google Cloud → abilita **Places API (New)** → crea
+una credenziale → mettila su Vercel come `GOOGLE_PLACES_API_KEY` → **serve un
+redeploy** (le env var sono legate al deployment).
 
-## Fatto il 02/09 (live e verificato in produzione)
+Consigliato: limitare la chiave alle sole Places API e mettere un tetto di spesa
+sul progetto Google Cloud.
 
-Le recensioni. Il giro c'era e non l'aveva percorso nessuno — **0 richieste
-inviate in tutta la storia**. Cinque difetti chiusi, dettaglio in
-[[reference_recensioni]]. Lo «smart redirect» verso Google/TripAdvisor
-**esisteva già**: non è stato rifatto, è stato fatto funzionare.
+Appena c'è: collegare una scheda vera da **Recensioni** e verificare che il voto
+compaia. È l'unica cosa che non ho potuto provare. Dettaglio e conti in
+[[reference_voto_google]] — **oggi è gratis e resta gratis**, la cadenza si
+autoregola per non superare le 1.000 letture al mese.
 
-## Poi: l'onboarding
+## Poi: la scelta è fra due
 
-Resta il capitolo che vale di più ([[project_onboarding_mappa]]), tenuto per
-ultimo da Francesco: *«c'è da fare un ragionamento profondo di marketing»*. È una
-sua decisione di prodotto.
+1. **Percorrere gli eventi.** Hanno **12 prenotazioni reali** e non li ha mai
+   percorsi nessuno end-to-end. Ogni funzione percorsa in questi giorni ha
+   restituito 4-5 difetti veri; qui il danno non sarebbe potenziale, perché ci
+   sono già clienti che hanno pagato — e ci girano **campagne a pagamento**.
+2. **L'onboarding** ([[project_onboarding_mappa]]): il capitolo che vale di più,
+   tenuto per ultimo da Francesco perché vuole ragionarci di marketing. È una sua
+   decisione di prodotto.
+
+Proposto il primo, non ancora deciso.
+
+## Fatto il 02/09 (live e verificato)
+
+- **Recensioni**: il giro c'era e non l'aveva percorso nessuno — 0 richieste
+  inviate in tutta la storia. Cinque difetti chiusi → [[reference_recensioni]].
+- **Voto Google reale** sui siti, con la data di lettura → [[reference_voto_google]].
+- **Guardia**: il deploy si ferma se una sonda tocca un cliente vero →
+  [[feedback_sonde_non_scrivono_a_persone]].
 
 ## Fermo, e dipende da Francesco
 
 - **Nessun cliente ha collegato il conto Stripe**: il primo incasso vero non è
   mai avvenuto ([[reference_stripe_connect]]).
-- **Meta**: fermi sulla verifica business; restiamo Tech Provider, non BSP
-  ([[reference_meta_blocco_dispositivo]]).
+- **Meta**: fermi sulla verifica business; restiamo Tech Provider, non BSP.
 - **Termini e privacy** a un avvocato ([[reference_documenti_legali]]).
 - **2FA** su Vercel, Supabase, Cloudflare, GitHub.
 - Le 10 aziende devono accettare i Termini.
 - Ripristino del backup mai provato ([[reference_backup_e_ripristino]]).
+- **Sottodominio da rimuovere a mano** su Vercel:
+  `futura-club-spiagge-bianche.oltrenova.com` — l'entità è stata cancellata ma
+  il sottodominio resta e mostra la landing di OltreNova. ⚠️ Difetto sotto:
+  **cancellare un'entità non rimuove il suo sottodominio** (`removeProjectDomain`
+  esiste, nessuno la chiama). Proposto di collegarli, non ancora deciso.
 
 ## In coda, nessuno urgente
 
 Next 16, multilingua DE, import documento v2, QR con logo, PWA installabile,
-notifiche realtime, integrazione PMS.
+notifiche realtime, integrazione PMS, TripAdvisor (in attesa di Terra).
 
----
-
-## ⛔ L'incidente del 02/09 — da tenere presente riprendendo
-
-Una mia sonda ha mandato a un cliente vero l'email di una recensione inventata a
-due stelle. Il proprietario ha telefonato a Francesco, che ha dovuto rispondere
-di una cosa che non aveva fatto. Sue parole: *«che casino che hai fatto, ho fatto
-una figura di merda»*.
-
-E ho aggravato: ho detto che a quel cliente non era arrivata, perché avevo
-guardato **cosa era rimasto** nel database — mentre le corse riuscite cancellano
-le proprie tracce. Misurare i sopravvissuti e concludere sui morti.
-
-Regola e rimedi in [[feedback_sonde_non_scrivono_a_persone]]. Ora una guardia
-meccanica blocca il deploy se una sonda pesca un'entità qualsiasi invece di
-crearsi la propria.
+⚠️ **Deploy**: `npx vercel` dà spesso «Not authorized» alla prima esecuzione
+dopo un aggiornamento della CLI. È transitorio: si rilancia `deploy.ps1`.
