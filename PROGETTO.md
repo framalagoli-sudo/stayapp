@@ -331,7 +331,38 @@ Variables**. Qui ci sono solo i nomi e la provenienza.
 | `TURNSTILE_SECRET_KEY` · `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare → Turnstile | i moduli restano senza filtro |
 | `META_APP_ID` · `META_APP_SECRET` · `WHATSAPP_TOKEN_KEY` · `WHATSAPP_WEBHOOK_TOKEN` | Meta for Developers | WhatsApp spento *(già così oggi)* |
 | `GOOGLE_CLIENT_ID` · `GOOGLE_CLIENT_SECRET` | Google Cloud Console | niente Google Calendar |
-| `GOOGLE_PLACES_API_KEY` | Google Cloud Console → API e servizi → Credenziali (serve **Places API (New)** attiva e la fatturazione accesa) | il voto Google sparisce dai siti dei clienti: il blocco «Voto su Google» non compare e il collegamento non si può più agganciare. ⚠️ **Si paga a chiamata** — i campi `rating` e `userRatingCount` stanno nel livello *Enterprise*, ~35 $ ogni mille letture. Per questo si legge **una volta al giorno per attività** (`/api/cron/recensioni-esterne`): con quindici clienti sono ~450 letture al mese, sotto i venti dollari. Se un giorno il costo salisse, la manopola è `SCADENZA_ORE` in `lib/recensioni-esterne.js`. Conviene limitare la chiave alle sole Places API dalla console |
+| `GOOGLE_PLACES_API_KEY` | Google Cloud Console → API e servizi → Credenziali (serve **Places API (New)** attiva e la fatturazione accesa) | il voto Google sparisce dai siti dei clienti: il blocco «Voto su Google» non compare e il collegamento non si può più agganciare. **Sui costi vedi il riquadro qui sotto.** Conviene limitare la chiave alle sole Places API dalla console |
+
+> **💶 Quanto costa il voto Google, e perché non può sfuggire di mano**
+>
+> Voto e numero di recensioni (`rating`, `userRatingCount`) cadono nel livello
+> **Enterprise** di Places API. Dal marzo 2025 il vecchio credito unico da 200 $
+> non esiste più: **ogni livello ha la sua quota gratuita e le quote non si
+> sommano**. Per Enterprise sono **1.000 letture al mese gratis**; oltre, circa
+> **35 $ ogni mille**.
+>
+> Una lettura = un'attività aggiornata una volta. Quindi:
+>
+> | Attività collegate | Se si leggesse ogni giorno | Costo |
+> |---|---|---|
+> | 15 | 450 letture/mese | **0 €** |
+> | 33 | 990 letture/mese | **0 €** — è il tetto |
+> | 100 | 3.000 letture/mese | ~70 $/mese ⚠️ |
+>
+> ⛔ Con una cadenza fissa il costo si accenderebbe **da solo alla 34ª attività
+> collegata**, cioè mentre si vendono clienti: il modo peggiore di scoprire una
+> bolletta. Per questo `scadenzaOre()` in `lib/recensioni-esterne.js` **calcola
+> la cadenza sul numero di schede collegate**, in modo da restare sempre dentro
+> le 1.000: quotidiana con poche attività, ogni tre giorni con cento, ogni
+> quindici con cinquecento. **Il costo resta zero per costruzione.**
+>
+> Un punteggio letto tre giorni fa resta un punteggio vero e datato — che è
+> tutt'altra cosa da un «4,8» scritto a mano due anni prima. Se un domani si
+> vorrà pagare per averlo più fresco, la manopola è `LETTURE_GRATUITE_AL_MESE`:
+> alzandola si accetta di sforare, e si sa esattamente di quanto.
+>
+> La risposta del cron dice sempre `letture_stimate_al_mese` accanto a
+> `gratuite_al_mese`: si vede a colpo d'occhio quanto margine resta.
 | `UNSPLASH_ACCESS_KEY` | Unsplash Developers | niente foto automatiche |
 | `ABSTRACT_API_KEY` | Abstract API | niente verifica email |
 | `ERROR_ALERT_EMAIL` · `DEMO_NOTIFY_EMAIL` | un indirizzo email, non una chiave | **nessuno viene avvisato dei guasti** |

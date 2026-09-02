@@ -80,14 +80,36 @@ export async function leggiGoogle(placeId) {
 
 // ── Comune a tutti i fornitori ────────────────────────────────────────────
 
-// Quanto può essere vecchio un punteggio prima di rileggerlo. Un giorno è un
-// compromesso: le recensioni non arrivano al minuto, e ogni lettura si paga.
-export const SCADENZA_ORE = 24
+// ── Quanto spesso si rilegge, e perché non è una costante ─────────────────
+//
+// Google regala **1.000 letture al mese** per il livello Enterprise, che è
+// quello in cui cadono `rating` e `userRatingCount` (dal marzo 2025 il vecchio
+// credito unico da 200 $ non esiste più: ogni livello ha la sua quota, e le
+// quote non si sommano). Oltre quella soglia si paga ~35 $ ogni mille.
+//
+// ⛔ Con una cadenza fissa il costo cresce col numero di clienti, e cresce
+// **senza che nessuno lo decida**: a 33 attività collegate si consuma tutto il
+// gratis, alla 34ª parte la bolletta. Un costo che si accende da solo mentre
+// vendi è il modo peggiore di scoprire un problema.
+//
+// Perciò la cadenza si adatta: si legge il più spesso possibile **restando
+// dentro il gratuito**. Con pochi clienti è quotidiana; man mano che crescono,
+// si dirada. Un punteggio Google di tre giorni fa è comunque un punteggio vero
+// e datato — molto meglio di uno scritto a mano due anni fa.
+export const LETTURE_GRATUITE_AL_MESE = 1000
+export const SCADENZA_MINIMA_ORE = 24
 
-export function daAggiornare(dato) {
+export function scadenzaOre(quantiCollegati) {
+  const n = Math.max(1, Number(quantiCollegati) || 1)
+  // Ore fra una lettura e l'altra perché n attività stiano in 1000 letture/mese.
+  const necessarie = (n * 30 * 24) / LETTURE_GRATUITE_AL_MESE
+  return Math.max(SCADENZA_MINIMA_ORE, Math.ceil(necessarie))
+}
+
+export function daAggiornare(dato, scadenza = SCADENZA_MINIMA_ORE) {
   if (!dato?.place_id) return false
   if (!dato.aggiornato) return true
-  return (Date.now() - new Date(dato.aggiornato).getTime()) > SCADENZA_ORE * 3_600_000
+  return (Date.now() - new Date(dato.aggiornato).getTime()) > scadenza * 3_600_000
 }
 
 // Quello che si può mostrare senza mentire.
