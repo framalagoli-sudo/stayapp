@@ -28,6 +28,7 @@ export const BLOCK_TYPES = [
   { type: 'annuncio',     label: 'Barra annuncio',     group: 'marketing',   emoji: '📢', desc: 'Striscia sottile con annuncio/promo e link — di solito come primo blocco' },
   { type: 'countdown',    label: 'Countdown',          group: 'marketing',   emoji: '⏳', desc: 'Conto alla rovescia verso una data (evento, lancio, offerta)' },
   { type: 'testimonianze',label: 'Testimonianze',      group: 'marketing',   emoji: '💬', desc: 'Card recensioni con stelle e autore' },
+  { type: 'punteggio',    label: 'Voto su Google',     group: 'marketing',   emoji: '⭐', desc: 'Il voto vero preso da Google, con la data di lettura — si aggiorna da solo' },
   { type: 'promozioni',   label: 'Promozioni',         group: 'marketing',   emoji: '🏷️', desc: 'Card offerte con badge e scadenza' },
   { type: 'pacchetti',    label: 'Pacchetti / Prezzi', group: 'marketing',   emoji: '📦', desc: 'Pricing card con inclusi e CTA' },
   { type: 'faq',          label: 'FAQ',                group: 'marketing',   emoji: '❓', desc: 'Accordion domande e risposte' },
@@ -74,6 +75,9 @@ export const BLOCK_DEFAULTS = {
   stats:        { titolo: '', items: [] },
   cta_banner:   { title: '', subtitle: '', button_text: 'Scopri di più', button_url: '' },
   testimonianze:{ titolo: '', items: [] },
+  // Non ha contenuti da scrivere: il numero arriva da Google. Si sceglie solo
+  // come presentarlo — ed e' il punto: un voto che si scrive a mano invecchia.
+  punteggio:    { titolo: '', sottotitolo: '', mostra_data: true },
   promozioni:   { titolo: '', items: [], per_view: 3 },
   pacchetti:    { titolo: '', items: [] },
   faq:          { titolo: '', items: [] },

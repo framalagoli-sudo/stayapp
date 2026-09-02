@@ -331,6 +331,7 @@ Variables**. Qui ci sono solo i nomi e la provenienza.
 | `TURNSTILE_SECRET_KEY` · `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare → Turnstile | i moduli restano senza filtro |
 | `META_APP_ID` · `META_APP_SECRET` · `WHATSAPP_TOKEN_KEY` · `WHATSAPP_WEBHOOK_TOKEN` | Meta for Developers | WhatsApp spento *(già così oggi)* |
 | `GOOGLE_CLIENT_ID` · `GOOGLE_CLIENT_SECRET` | Google Cloud Console | niente Google Calendar |
+| `GOOGLE_PLACES_API_KEY` | Google Cloud Console → API e servizi → Credenziali (serve **Places API (New)** attiva e la fatturazione accesa) | il voto Google sparisce dai siti dei clienti: il blocco «Voto su Google» non compare e il collegamento non si può più agganciare. ⚠️ **Si paga a chiamata** — i campi `rating` e `userRatingCount` stanno nel livello *Enterprise*, ~35 $ ogni mille letture. Per questo si legge **una volta al giorno per attività** (`/api/cron/recensioni-esterne`): con quindici clienti sono ~450 letture al mese, sotto i venti dollari. Se un giorno il costo salisse, la manopola è `SCADENZA_ORE` in `lib/recensioni-esterne.js`. Conviene limitare la chiave alle sole Places API dalla console |
 | `UNSPLASH_ACCESS_KEY` | Unsplash Developers | niente foto automatiche |
 | `ABSTRACT_API_KEY` | Abstract API | niente verifica email |
 | `ERROR_ALERT_EMAIL` · `DEMO_NOTIFY_EMAIL` | un indirizzo email, non una chiave | **nessuno viene avvisato dei guasti** |

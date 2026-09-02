@@ -49,6 +49,32 @@ export async function svuotaAzienda(aziendaId) {
 // funzione e insieme fa qualcosa al caricamento e una trappola.
 const lanciatoAMano = process.argv[1]?.endsWith('pulizia-prove.mjs')
 if (lanciatoAMano) {
+
+// ── Roba di prova rimasta ADDOSSO a un cliente vero ───────────────────────
+//
+// ⛔ Non basta cercare le aziende `ZZ-`: una sonda può aver scritto un valore
+// di prova dentro un cliente reale e non averlo tolto. È successo il 02/09 —
+// l'indirizzo `g.page/r/zz-prova/review` è rimasto nello «smart redirect» di
+// Borgo del Lago, e chi avesse lasciato cinque stelle sarebbe finito lì. L'ho
+// scoperto per caso guardando uno screenshot: non è un modo di accorgersene.
+{
+  const { data: ent } = await admin.from('entita').select('id, name, minisito')
+  const sporche = (ent || []).filter(e => /zz-prova|javascript:|data:text/i.test(e.minisito?.recensioni_redirect_url || ''))
+  if (sporche.length) {
+    console.log(`⛔ ${sporche.length} clienti con un valore di prova addosso:`)
+    for (const e of sporche) {
+      console.log(`  · ${e.name}: ${e.minisito.recensioni_redirect_url}`)
+      if (ESEGUI) {
+        const m = { ...e.minisito }
+        delete m.recensioni_redirect_url
+        const { error } = await admin.from('entita').update({ minisito: m }).eq('id', e.id)
+        console.log(error ? `      ✗ ${error.message}` : '      ✓ rimosso')
+      }
+    }
+    console.log('')
+  }
+}
+
 const { data: zz } = await admin.from('aziende')
   .select('id, ragione_sociale, created_at').ilike('ragione_sociale', `${MARCHIO}%`)
 

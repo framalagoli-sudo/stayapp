@@ -26,6 +26,10 @@
     {
       "path": "/api/cron/backup",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/recensioni-esterne",
+      "schedule": "0 4 * * *"
     }
   ]
 }

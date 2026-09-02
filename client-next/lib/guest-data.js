@@ -56,6 +56,9 @@ const CAMPI_ENTITA = [
   'services', 'activities', 'excursions', 'menu', 'amenities', 'restaurant',
   'checkin_time', 'checkout_time', 'rules',
   'plan', 'moduli', 'privacy_data', 'chatbot',
+  // ⚠️ Il punteggio letto da Google serve al blocco che lo mostra: senza questa
+  // riga si salverebbe e non si vedrebbe — è già successo due volte in un giorno.
+  'recensioni_esterne',
 ].join(', ')
 
 // L'app dell'ospite (dietro il QR della camera) è l'unica che vede le

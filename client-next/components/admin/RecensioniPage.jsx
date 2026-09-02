@@ -2,8 +2,145 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '@/lib/api'
 import { useAzienda } from '@/context/AziendaContext'
-import { Star, Plus, Trash2, Eye, EyeOff, Link, Copy, Check, AlertCircle, MessageSquare } from 'lucide-react'
+import { Star, Plus, Trash2, Eye, EyeOff, Link, Copy, Check, AlertCircle, MessageSquare, Search, RefreshCw, X } from 'lucide-react'
 import AiButton from '@/components/admin/AiButton'
+import { ReviewSourceLogo } from '@/lib/reviewLogos'
+
+// ─── Il punteggio vero da Google ──────────────────────────────────────────────
+//
+// ⛔ Finora un cliente poteva SCRIVERE «4,8 su Google» in un blocco di testo:
+// vero il giorno che lo scrive, falso il mese dopo. Qui la scheda si collega una
+// volta e il numero lo chiede il sistema, ogni giorno, con la data accanto.
+function PunteggioEsterno({ selected }) {
+  const [stato, setStato] = useState(null)
+  const [cerca, setCerca] = useState('')
+  const [risultati, setRisultati] = useState(null)
+  const [inCorso, setInCorso] = useState(false)
+  const [errore, setErrore] = useState('')
+
+  const carica = useCallback(async () => {
+    if (!selected) return
+    try {
+      const d = await apiFetch(`/api/recensioni/esterne?entity_tipo=${selected.tipo}&entity_id=${selected.id}`)
+      setStato(d)
+      setCerca(c => c || d.suggerimento || '')
+    } catch { setStato(null) }
+  }, [selected])
+  useEffect(() => { carica() }, [carica])
+
+  if (!stato) return null
+  const google = stato.collegati?.google
+
+  async function cercaScheda() {
+    setInCorso(true); setErrore(''); setRisultati(null)
+    try {
+      const d = await apiFetch(`/api/recensioni/esterne?entity_tipo=${selected.tipo}&entity_id=${selected.id}&cerca=${encodeURIComponent(cerca)}`)
+      setRisultati(d.risultati || [])
+    } catch (e) { setErrore(e.message) }
+    setInCorso(false)
+  }
+
+  async function collega(place_id) {
+    setInCorso(true); setErrore('')
+    try {
+      const d = await apiFetch('/api/recensioni/esterne', {
+        method: 'POST',
+        body: JSON.stringify({ entity_tipo: selected.tipo, entity_id: selected.id, fornitore: 'google', place_id }),
+      })
+      setStato(s => ({ ...s, collegati: d.collegati })); setRisultati(null)
+    } catch (e) { setErrore(e.message) }
+    setInCorso(false)
+  }
+
+  async function scollega() {
+    if (!confirm('Scollegare la scheda Google? Il punteggio sparirà dal sito.')) return
+    try {
+      const d = await apiFetch(`/api/recensioni/esterne?entity_tipo=${selected.tipo}&entity_id=${selected.id}&fornitore=google`, { method: 'DELETE' })
+      setStato(s => ({ ...s, collegati: d.collegati }))
+    } catch (e) { setErrore(e.message) }
+  }
+
+  const quando = google?.aggiornato
+    ? new Date(google.aggiornato).toLocaleString('it-IT', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
+    : null
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #e8e8e8', borderRadius: 10, padding: 16, marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+        <ReviewSourceLogo source="google" size={16} />
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>Punteggio da Google</div>
+      </div>
+
+      {/* ⚠️ Se la piattaforma non ha la chiave, lo si dice — invece di mostrare
+          un modulo che non può funzionare e lasciare che lo scopra provando. */}
+      {!stato.configurato && (
+        <div style={{ fontSize: 12.5, color: '#8a5a12', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '10px 12px' }}>
+          Il collegamento con Google non è ancora attivo sulla piattaforma. Appena lo sarà,
+          da qui potrai agganciare la tua scheda e il punteggio comparirà sul sito da solo.
+        </div>
+      )}
+
+      {stato.configurato && google && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, margin: '8px 0 4px' }}>
+            <span style={{ fontSize: 26, fontWeight: 800, color: '#1a1a2e' }}>{google.rating?.toFixed(1) ?? '—'}</span>
+            <span style={{ fontSize: 13, color: '#666' }}>su 5 · {google.totale ?? 0} recensioni</span>
+          </div>
+          {/* ⛔ La data non è un dettaglio: senza, il numero finge di essere di
+              adesso. È esattamente ciò che rende falso un «4,8» scritto a mano. */}
+          <div style={{ fontSize: 12, color: '#888' }}>
+            Letto da Google {quando ? `il ${quando}` : '(mai)'} · si aggiorna da solo ogni giorno
+          </div>
+          {google.errore && (
+            <div style={{ fontSize: 12, color: '#8a5a12', marginTop: 6 }}>
+              L’ultima lettura non è riuscita ({google.errore}). Resta il valore precedente.
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            {google.url && <a href={google.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12.5, color: '#2b6cb0' }}>Apri su Google →</a>}
+            <button onClick={scollega} style={{ background: 'none', border: 'none', padding: 0, color: '#c53030', fontSize: 12.5, cursor: 'pointer' }}>Scollega</button>
+          </div>
+        </>
+      )}
+
+      {stato.configurato && !google && (
+        <>
+          <div style={{ fontSize: 12.5, color: '#888', margin: '4px 0 10px', lineHeight: 1.6 }}>
+            Collega la tua scheda Google: il voto e il numero di recensioni compariranno sul sito,
+            aggiornati da soli. Non li scrivi tu, quindi non invecchiano.
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input value={cerca} onChange={e => setCerca(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && cercaScheda()}
+              placeholder="Nome e città della tua attività"
+              style={{ flex: 1, padding: '8px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }} />
+            <button onClick={cercaScheda} disabled={inCorso || !cerca.trim()}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#1a1a2e', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, color: '#fff', opacity: inCorso || !cerca.trim() ? 0.6 : 1 }}>
+              <Search size={14} strokeWidth={1.5} /> {inCorso ? 'Cerco…' : 'Cerca'}
+            </button>
+          </div>
+          {risultati && risultati.length === 0 && (
+            <div style={{ fontSize: 12.5, color: '#888', marginTop: 10 }}>Nessuna scheda trovata. Prova col nome esatto e la città.</div>
+          )}
+          {risultati?.map(r => (
+            <div key={r.place_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 12px', marginTop: 8, background: '#f9f9fb', borderRadius: 8 }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', overflowWrap: 'anywhere' }}>{r.nome}</div>
+                <div style={{ fontSize: 12, color: '#888', overflowWrap: 'anywhere' }}>{r.indirizzo}</div>
+                {r.rating != null && <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>{r.rating} su 5 · {r.totale ?? 0} recensioni</div>}
+              </div>
+              <button onClick={() => collega(r.place_id)} disabled={inCorso}
+                style={{ flexShrink: 0, padding: '7px 14px', background: '#fff', border: '1px solid #ddd', borderRadius: 8, cursor: 'pointer', fontSize: 12.5, fontWeight: 600 }}>
+                È questa
+              </button>
+            </div>
+          ))}
+        </>
+      )}
+      {errore && <div style={{ fontSize: 12.5, color: '#c53030', marginTop: 10 }}>{errore}</div>}
+    </div>
+  )
+}
 
 const FONTI = [
   { key: 'form',         label: 'Form',         color: '#276749' },
@@ -411,6 +548,7 @@ export default function RecensioniPage() {
 
       {selected && (
         <>
+          <PunteggioEsterno selected={selected} />
           <RedirectConfig selected={selected} />
 
           {/* KPI */}
@@ -434,7 +572,17 @@ export default function RecensioniPage() {
             <div style={{ textAlign: 'center', padding: '48px 0', color: '#bbb' }}>
               <Star size={40} strokeWidth={1} style={{ marginBottom: 12, opacity: 0.4 }} />
               <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>Nessuna recensione</div>
-              <div style={{ fontSize: 13 }}>Genera un link da inviare ai tuoi clienti o importa manualmente.</div>
+              <div style={{ fontSize: 13, marginBottom: 16 }}>Manda un link ai tuoi clienti: chi lo apre lascia il voto in un minuto.</div>
+              {/* ⛔ Prima qui c'era scritto «genera un link» e il pulsante per farlo
+                  stava in alto a destra, dentro «+ Aggiungi». Chi arrivava la prima
+                  volta leggeva un'istruzione e non trovava il comando: cercava, non
+                  trovava, e concludeva che non funzionasse. È lo stesso motivo per
+                  cui le automazioni erano a zero — la funzione c'era, mancava la
+                  porta nel punto in cui uno la cerca. Il «+ Aggiungi» resta dov'è. */}
+              <button onClick={() => setShowModal(true)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '10px 20px', background: '#1a1a2e', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#fff' }}>
+                <Link size={15} strokeWidth={1.5} /> Genera link
+              </button>
             </div>
           )}
 

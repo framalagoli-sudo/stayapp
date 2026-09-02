@@ -1241,6 +1241,62 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         )
       }
 
+      // Il voto vero, preso da Google.
+      //
+      // ⛔ Prima l'unico modo di mostrarlo era **scriverlo a mano** in un blocco
+      // di testo: «4,8 su Google» è vero il giorno che lo scrivi e falso il mese
+      // dopo, e chi legge non ha modo di saperlo. Qui il numero arriva dalla
+      // fonte e porta con sé la data in cui è stato letto.
+      //
+      // ⚠️ Se il collegamento non c'è, il blocco **non si vede**: meglio niente
+      // che un riquadro vuoto o un numero inventato. E per la stessa ragione non
+      // esiste un campo dove digitare il voto — se ci fosse, tornerebbe il
+      // problema da cui siamo partiti.
+      case 'punteggio': {
+        const g = entity?.recensioni_esterne?.google
+        if (!g || typeof g.rating !== 'number' || !g.aggiornato) return null
+        const letto = new Date(g.aggiornato)
+        const quando = letto.toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT', { day: 'numeric', month: 'long', year: 'numeric' })
+        const stelle = Math.round(g.rating)
+        return (
+          <section key={block.id} style={{ padding: '64px 0' }}>
+            <div className="lbr-section" style={{ textAlign: 'center' }}>
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, color: cTitle, marginBottom: 10 }} {...ricco(d.titolo)} />}
+              {d.sottotitolo && <p style={{ fontSize: 16, color: cBody || '#666', marginBottom: 26, lineHeight: 1.6 }} {...ricco(d.sottotitolo)} />}
+              <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 7, padding: '26px 38px', borderRadius: 18, background: '#fff', boxShadow: '0 2px 14px rgba(0,0,0,0.07)', maxWidth: '100%', boxSizing: 'border-box' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 9 }}>
+                  <span style={{ fontSize: 48, fontWeight: 800, lineHeight: 1, color: '#1a1a2e' }}>{g.rating.toFixed(1)}</span>
+                  <span style={{ fontSize: 15, color: '#888' }}>/ 5</span>
+                </div>
+                <div style={{ display: 'flex', gap: 3 }} aria-label={`${g.rating} su 5`}>
+                  {[1, 2, 3, 4, 5].map(n => (
+                    <Star key={n} size={18} fill={n <= stelle ? '#FBBC04' : '#e4e4e7'} color={n <= stelle ? '#FBBC04' : '#e4e4e7'} strokeWidth={0} />
+                  ))}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#444' }}>
+                  <ReviewSourceLogo source="google" size={16} />
+                  {g.totale != null && (
+                    <span>{g.totale} {lang === 'en' ? 'reviews' : g.totale === 1 ? 'recensione' : 'recensioni'}</span>
+                  )}
+                </div>
+                {/* ⚠️ La data è la differenza fra un dato e un'affermazione. */}
+                {d.mostra_data !== false && (
+                  <div style={{ fontSize: 11.5, color: '#9a9aa5' }}>
+                    {lang === 'en' ? 'Read from Google on' : 'Letto da Google il'} {quando}
+                  </div>
+                )}
+                {g.url && (
+                  <a href={safeUrl(g.url)} target="_blank" rel="noopener noreferrer nofollow"
+                    style={{ marginTop: 6, fontSize: 13.5, fontWeight: 600, color: sec, textDecoration: 'none' }}>
+                    {lang === 'en' ? 'Read the reviews →' : 'Leggi le recensioni →'}
+                  </a>
+                )}
+              </div>
+            </div>
+          </section>
+        )
+      }
+
       case 'testimonianze': {
         const items = (d.items || []).filter(t => t.text && t.author)
         if (!items.length) return null

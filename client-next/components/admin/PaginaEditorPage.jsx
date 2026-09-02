@@ -732,6 +732,29 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
           ]} />
       </div>
     )
+    // ⚠️ Qui NON c'è un campo dove scrivere il voto, ed è deliberato: se ci
+    // fosse, tornerebbe il problema da cui siamo partiti — un «4,8 su Google»
+    // digitato a mano è vero il giorno che lo scrivi e falso il mese dopo. Il
+    // numero arriva da Google e si aggiorna da solo; qui si sceglie soltanto
+    // come presentarlo.
+    case 'punteggio': return (
+      <div>
+        <div style={{ fontSize: 12.5, color: '#666', background: '#f9f9fb', borderRadius: 8, padding: '10px 12px', marginBottom: 12, lineHeight: 1.6 }}>
+          Il voto viene preso da Google e si aggiorna da solo ogni giorno.
+          Se non hai ancora collegato la scheda, fallo in <strong>Recensioni</strong>:
+          finché non è collegata, questo blocco non compare sul sito.
+        </div>
+        <Field label="Titolo sezione (opzionale)" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <Field label="Sottotitolo (opzionale)" value={data.sottotitolo} onChange={v => upd('sottotitolo', v)} style={{ marginBottom: 12 }} />
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#555', cursor: 'pointer' }}>
+          <input type="checkbox" checked={data.mostra_data !== false} onChange={e => upd('mostra_data', e.target.checked)} />
+          Mostra quando è stato letto
+        </label>
+        <div style={{ fontSize: 11.5, color: '#999', marginTop: 6, lineHeight: 1.6 }}>
+          Consigliato: la data è ciò che distingue un dato vero da un numero scritto una volta e dimenticato.
+        </div>
+      </div>
+    )
     case 'testimonianze': return (
       <div>
         <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
