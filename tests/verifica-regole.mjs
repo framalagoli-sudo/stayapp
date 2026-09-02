@@ -165,6 +165,47 @@ for (const f of file) {
   })
 }
 
+// ── 8. Una sonda non lavora MAI sui dati di un cliente vero ────────────────
+//
+// Il 02/09/2026 `probe-recensioni.mjs` prendeva «la prima entità attiva che
+// trovo» — cioè un cliente — e il caso «due stelle» fa partire per posta un
+// avviso al titolare. È arrivata a un cliente reale una recensione inventata,
+// e il proprietario ha telefonato a Francesco.
+//
+// ⚠️ Un'email mandata non si richiama indietro: non basta che la sonda pulisca
+// il database dopo. E non basta nemmeno la buona volontà di chi la scrive — la
+// riga incriminata sembrava innocua, era solo un `.limit(1)`.
+//
+// Una sonda si crea la propria azienda e la propria entità, e le cancella.
+// Se davvero deve leggere un'entità esistente (solo per guardare, senza
+// scrivere e senza far partire niente), lo dichiara con `regola-ok: <motivo>`.
+const SONDE = join(RADICE, 'tests')
+for (const f of readdirSync(SONDE).filter(n => /^probe-.*\.mjs$/.test(n))) {
+  const p = join(SONDE, f)
+  if (!interessa(p)) continue
+  const rr = readFileSync(p, 'utf8').split('\n')
+  rr.forEach((r, i) => {
+    // Pesca un'entità o un'azienda esistente senza dire quale: è il gesto che
+    // ha fatto scrivere a un cliente vero.
+    const pesca = /\.from\(['"](entita|aziende|properties|ristoranti|attivita)['"]\)/.test(r)
+    if (!pesca) return
+    const contesto = rr.slice(i, Math.min(rr.length, i + 4)).join(' ')
+    // ⚠️ Il gesto pericoloso è UNO SOLO: prendere «una qualsiasi». Rileggere
+    // un'entità di cui si ha già l'id è normale e va lasciato passare, o la
+    // regola suonerebbe a ogni riga — e un allarme che suona sempre viene
+    // ignorato anche quando ha ragione.
+    if (/\.eq\(\s*['"](id|slug)['"]/.test(contesto)) return
+    if (!/\.limit\(\s*\d+\s*\)|maybeSingle\(\)|\.single\(\)/.test(contesto)) return
+    // Creare o cancellare la propria è esattamente ciò che deve fare.
+    if (/\.insert\(|\.delete\(|\.update\(/.test(contesto)) return
+    // Un filtro sul marchio ZZ dice che sta cercando roba sua.
+    if (/ZZ-|ZZ |playwright\.internal/.test(contesto)) return
+    if (dichiarataOk(rr, i)) return
+    segnala('sonda che pesca un cliente vero', p, i + 1, r.trim().slice(0, 90),
+      'una sonda che scrive o fa partire notifiche su un\'entità reale manda email a persone reali, e quelle non si richiamano indietro')
+  })
+}
+
 // ── 7. Ogni migration nuova concede i permessi in modo esplicito ───────────
 const MIG = join(RADICE, 'supabase', 'migrations')
 const migrazioni = readdirSync(MIG).filter(n => n.endsWith('.sql')).sort()

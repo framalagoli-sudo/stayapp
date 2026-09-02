@@ -45,6 +45,7 @@ export async function withProbeSession(fn, opts = {}) {
     if (cErr) throw new Error(`createUser: ${cErr.message}`)
     userId = created.user.id
 
+    // regola-ok: legge soltanto un id da assegnare all'utente effimero. Nessuna scrittura sull'entità, nessuna notifica.
     const { data: props } = await admin.from('properties').select('id').limit(1)
     const { error: pErr } = await admin.from('profiles').upsert(
       { id: userId, role: 'super_admin', full_name: 'Probe', property_id: props?.[0]?.id ?? null },

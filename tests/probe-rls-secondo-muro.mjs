@@ -79,6 +79,7 @@ for (const campo of ['origine', 'origine_id', 'avvisa_titolare', 'conferma_ospit
   else { console.log(`     ✗ offerte.${campo.padEnd(16)} LEGGIBILE senza sessione`); problemi++ }
 }
 for (const campo of RISERVATE) {
+  // regola-ok: legge soltanto, ed è il suo mestiere — misura cosa vede un estraneo bussando al database. Su dati finti non proverebbe niente.
   const { data, error } = await estraneo.from('entita').select(`slug, ${campo}`).limit(30)
   if (error) { console.log(`     ✓ ${campo.padEnd(14)} rifiutata dal database`); continue }
   const conValore = (data || []).filter(r =>

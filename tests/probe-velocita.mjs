@@ -70,6 +70,7 @@ for (const [nome, percorso] of pagine) {
 
 // Le API che le pagine chiamano mentre l'utente guarda.
 console.log('\nAPI chiamate dalle pagine:')
+// regola-ok: legge soltanto — misura quanto ci mettono le pagine vere a rispondere. Nessuna scrittura, nessuna notifica.
 const { data: e0 } = await admin.from('properties').select('id, slug').eq('active', true).limit(1).maybeSingle()
 if (e0) {
   for (const [nome, p] of [

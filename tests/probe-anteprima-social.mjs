@@ -58,6 +58,7 @@ async function guarda(etichetta, url, nomeAtteso) {
 }
 
 try {
+  // regola-ok: legge soltanto — chiede le pagine pubbliche con lo User-Agent di Facebook e guarda i meta tag. Non scrive niente e non fa partire nessuna notifica.
   const { data: ent } = await admin.from('entita')
     .select('id, name, slug, tipo').eq('active', true).not('slug', 'is', null).limit(30)
   const PREF = { struttura: 's', ristorante: 'r', attivita: 'a' }

@@ -40,6 +40,7 @@ const DEVONO_CHIUDERE = [
 ]
 
 try {
+  // regola-ok: legge soltanto — prova quali route rispondono a chi non ha diritto, e per farlo servono dati veri. Nessuna scrittura.
   const { data: ent } = await admin.from('entita')
     .select('azienda_id, slug, tipo').eq('active', true).not('azienda_id', 'is', null).limit(1).single()
   const AZ = ent.azienda_id
