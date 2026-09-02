@@ -1,4 +1,5 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
+import { urlEsterno } from '@/lib/url-esterno'
 import { sendEmail } from '@/lib/send-email'
 import { emailTemplate } from '@/lib/email-template'
 
@@ -10,14 +11,20 @@ export async function GET(request, props) {
     if (error || !data) return Response.json({ error: 'Link non valido o già utilizzato' }, { status: 404 })
     if (data.pubblica) return Response.json({ error: 'Recensione già inviata' }, { status: 410 })
 
-    const table = data.entity_tipo === 'struttura' ? 'properties' : data.entity_tipo === 'ristorante' ? 'ristoranti' : 'attivita'
-    const { data: entity } = await supabaseAdmin.from(table).select('name, logo_url, theme, minisito').eq('id', data.entity_id).single()
+    // ⚠️ Leggeva da properties/ristoranti/attivita, ferme dalla migration 079:
+    // per un'entità creata dopo l'unificazione lì non c'è niente, quindi la
+    // pagina della recensione usciva senza nome, senza logo e — soprattutto —
+    // senza il collegamento a Google, che è il motivo per cui esiste.
+    const { data: entity } = await supabaseAdmin.from('entita')
+      .select('name, logo_url, theme, minisito').eq('id', data.entity_id).maybeSingle()
     return Response.json({
       autore: data.autore,
       entity_name: entity?.name || '',
       entity_logo: entity?.logo_url || null,
       primary: entity?.theme?.primaryColor || '#1a1a2e',
-      redirect_url: entity?.minisito?.recensioni_redirect_url || null,
+      // 🔒 L'indirizzo lo scrive il cliente nel pannello e il browser ci va da
+      // solo, senza che nessuno clicchi: se non è http o https non esce di qui.
+      redirect_url: urlEsterno(entity?.minisito?.recensioni_redirect_url),
     })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
@@ -36,9 +43,10 @@ export async function POST(request, props) {
     // e ogni invio spediva un'altra email al titolare.
     if (rec.verificata || rec.pubblica) return Response.json({ error: 'Recensione già inviata' }, { status: 410 })
 
-    const table = rec.entity_tipo === 'struttura' ? 'properties' : rec.entity_tipo === 'ristorante' ? 'ristoranti' : 'attivita'
-    const { data: entity } = await supabaseAdmin.from(table).select('minisito').eq('id', rec.entity_id).single()
-    const redirectUrl = entity?.minisito?.recensioni_redirect_url || null
+    // Stessa lettura di sopra: dalla tabella viva, e con l'indirizzo validato.
+    const { data: entity } = await supabaseAdmin.from('entita')
+      .select('minisito').eq('id', rec.entity_id).maybeSingle()
+    const redirectUrl = urlEsterno(entity?.minisito?.recensioni_redirect_url)
     const isPositive = Number(stelle) >= 4
 
     await supabaseAdmin.from('recensioni').update({

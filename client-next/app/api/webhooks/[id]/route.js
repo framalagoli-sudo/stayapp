@@ -12,7 +12,12 @@ export async function PATCH(request, props) {
     const { user, response } = await requireAuth(request)
     if (response) return response
     const profile = await getProfile(user.id)
-    if (!profile?.azienda_id) return Response.json({ error: 'Accesso negato' }, { status: 403 })
+    // Il super_admin non ha un'azienda propria: e' la sua condizione normale.
+    // Scritta su `azienda_id`, questa guardia lo fermava in cima e rendeva
+    // irraggiungibile il ramo `role !== 'super_admin'` qui sotto — un ramo mai
+    // raggiunto non da errore, da silenzio.
+    if (!profile || (profile.role !== 'super_admin' && !profile.azienda_id))
+      return Response.json({ error: 'Accesso negato' }, { status: 403 })
     const body = await request.json()
     const allowed = ['nome', 'url', 'eventi', 'attivo']
     const updates = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
@@ -30,7 +35,12 @@ export async function DELETE(request, props) {
     const { user, response } = await requireAuth(request)
     if (response) return response
     const profile = await getProfile(user.id)
-    if (!profile?.azienda_id) return Response.json({ error: 'Accesso negato' }, { status: 403 })
+    // Il super_admin non ha un'azienda propria: e' la sua condizione normale.
+    // Scritta su `azienda_id`, questa guardia lo fermava in cima e rendeva
+    // irraggiungibile il ramo `role !== 'super_admin'` qui sotto — un ramo mai
+    // raggiunto non da errore, da silenzio.
+    if (!profile || (profile.role !== 'super_admin' && !profile.azienda_id))
+      return Response.json({ error: 'Accesso negato' }, { status: 403 })
     let q = supabaseAdmin.from('webhooks').delete().eq('id', params.id)
     if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
     const { error } = await q

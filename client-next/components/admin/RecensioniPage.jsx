@@ -263,7 +263,14 @@ function EntityPicker({ strutture, ristoranti, attivita, selected, onSelect }) {
     ...ristoranti.map(e => ({ id: e.id, name: e.name, tipo: 'ristorante' })),
     ...(attivita || []).map(e => ({ id: e.id, name: e.name, tipo: 'attivita' })),
   ]
-  if (all.length <= 1) return null
+  // ⛔ Prima era `if (all.length <= 1) return null`: con UNA sola entità il
+  // selettore spariva **senza sceglierla**, e tutto il resto della pagina è
+  // condizionato a quella scelta. Risultato: chi ha una sola attività — cioè
+  // quasi tutti — apriva Recensioni e trovava il titolo e basta, per sempre.
+  // Con zero entità si dice che non ce ne sono, invece di lasciare il vuoto:
+  // una pagina muta si legge come «è rotto».
+  if (all.length === 0) return <div style={{ fontSize: 13, color: '#aaa', marginBottom: 24 }}>Nessuna entità disponibile.</div>
+  if (all.length === 1 && !selected) { onSelect(all[0]); return null }
   return (
     <div style={{ marginBottom: 24 }}>
       <select value={selected ? `${selected.tipo}:${selected.id}` : ''}

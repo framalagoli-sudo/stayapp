@@ -3,10 +3,12 @@ import { requireAuth, getProfile } from '@/lib/server-auth'
 import { buildNewsletterHtml, personalize } from '@/lib/newsletter-html'
 import { sendEmail } from '@/lib/send-email'
 
+// Stessa lettura dell'invio vero, dalla tabella viva: l'email di prova deve
+// somigliare a quella che arriverà davvero, altrimenti non prova niente.
 async function getEntity(entity_tipo, entity_id) {
   if (!entity_tipo || !entity_id) return null
-  const table = entity_tipo === 'struttura' ? 'properties' : entity_tipo === 'ristorante' ? 'ristoranti' : 'attivita'
-  const { data } = await supabaseAdmin.from(table).select('id, name, logo_url, theme').eq('id', entity_id).single()
+  const { data } = await supabaseAdmin.from('entita')
+    .select('id, name, logo_url, theme').eq('id', entity_id).maybeSingle()
   return data
 }
 

@@ -2,10 +2,15 @@
 import { buildNewsletterHtml, personalize } from './newsletter-html.js'
 import { getAziendaLegale } from './guest-data.js'
 
+// ⚠️ Leggeva da properties/ristoranti/attivita, ferme dalla migration 079: per
+// un'entità creata dopo l'unificazione lì non c'è niente, e la newsletter usciva
+// senza nome, senza logo e senza i colori del cliente — firmata da nessuno.
+// Nessun errore, nessun log: la stessa firma sbagliata già trovata sulle email
+// automatiche il 01/09.
 async function getEntity(entity_tipo, entity_id) {
   if (!entity_tipo || !entity_id) return null
-  const table = entity_tipo === 'struttura' ? 'properties' : entity_tipo === 'ristorante' ? 'ristoranti' : 'attivita'
-  const { data } = await supabaseAdmin.from(table).select('id, name, logo_url, theme, slug').eq('id', entity_id).single()
+  const { data } = await supabaseAdmin.from('entita')
+    .select('id, name, logo_url, theme, slug').eq('id', entity_id).maybeSingle()
   return data
 }
 
