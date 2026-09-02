@@ -32,8 +32,39 @@ let problemi = 0
 const ok = (c, t) => { console.log(`  ${c ? '✓' : '✗'} ${t}`); if (!c) problemi++ }
 
 const create = []
-let minisitoOriginale = null
-let entita = null
+const aziende = []
+const entitaCreate = []
+
+// ⛔ La sonda si crea la PROPRIA azienda e la propria entità.
+//
+// Prima usava «la prima entità attiva che trovo» — cioè un cliente vero. E il
+// caso «due stelle» manda per posta un avviso al titolare: il 02/09 sono partite
+// email con una recensione finta di «ZZ Scontento» a `info@borgodellago.com` e a
+// Francesco. Una sonda non scrive a persone reali, mai: non basta che pulisca
+// dopo, perché un'email mandata non si richiama indietro.
+//
+// L'entità nasce `active: false`: non compare in nessun elenco, in nessuna
+// sitemap, su nessun sito. La route della recensione la trova lo stesso, perché
+// cerca per id.
+async function creaAmbienteFinto() {
+  const marchio = `ZZ-REC-${Date.now()}`
+  const { data: az, error: eAz } = await admin.from('aziende').insert({
+    ragione_sociale: marchio,
+    // 🔒 L'indirizzo a cui finirebbe l'avviso: un dominio che non esiste.
+    email: `zz-recensioni-${Date.now()}@playwright.internal`,
+    require_2fa: false,
+  }).select().single()
+  if (eAz) throw new Error(`azienda di prova non creata: ${eAz.message}`)
+  aziende.push(az.id)
+
+  const { data: ent, error: eEnt } = await admin.from('entita').insert({
+    azienda_id: az.id, tipo: 'struttura', name: 'ZZ Struttura di prova',
+    slug: `zz-rec-${Date.now()}`, active: false,
+  }).select().single()
+  if (eEnt) throw new Error(`entità di prova non creata: ${eEnt.message}`)
+  entitaCreate.push(ent.id)
+  return ent
+}
 
 async function chiediRecensione(ent) {
   const { data, error } = await admin.from('recensioni').insert({
@@ -47,16 +78,12 @@ async function chiediRecensione(ent) {
 }
 
 try {
-  const { data: ent } = await admin.from('entita')
-    .select('id, name, slug, tipo, azienda_id, minisito')
-    .eq('active', true).not('azienda_id', 'is', null).limit(1).maybeSingle()
-  entita = ent
-  minisitoOriginale = ent.minisito || {}
-  console.log(`entità di prova: ${ent.name} (${ent.tipo})`)
+  const ent = await creaAmbienteFinto()
+  console.log(`entità di prova: ${ent.name} — creata da questa sonda, non è di nessun cliente`)
 
   // Il cliente ha messo il link al suo profilo Google.
   await admin.from('entita').update({
-    minisito: { ...minisitoOriginale, recensioni_redirect_url: 'https://g.page/r/zz-prova/review' },
+    minisito: { recensioni_redirect_url: 'https://g.page/r/zz-prova/review' },
   }).eq('id', ent.id)
 
   console.log('\n1 · L’OSPITE APRE IL LINK CHE HA RICEVUTO\n')
@@ -111,7 +138,7 @@ try {
   // senza che nessuno clicchi: se non è http o https non deve uscire.
   for (const cattivo of ['javascript:alert(1)', 'data:text/html,<script>alert(1)</script>', '  jAvAsCrIpT:alert(1)']) {
     await admin.from('entita').update({
-      minisito: { ...minisitoOriginale, recensioni_redirect_url: cattivo },
+      minisito: { recensioni_redirect_url: cattivo },
     }).eq('id', ent.id)
     const rec3 = await chiediRecensione(ent)
     const risp = await fetch(`${L}/api/guest/recensione/${rec3.token}`)
@@ -128,12 +155,22 @@ try {
 } catch (e) {
   console.error('ERRORE:', e.message); problemi++
 } finally {
-  // Il minisito torna esattamente com'era: la prova non deve lasciare un cliente
-  // con un indirizzo di redirect che non ha mai scritto.
-  if (entita && minisitoOriginale) {
-    await admin.from('entita').update({ minisito: minisitoOriginale }).eq('id', entita.id)
-  }
+  // ⚠️ Si cancella per AZIENDA, non per gli id raccolti: se la sonda si ferma a
+  // metà, quello che è nato dopo resterebbe in produzione. È già successo —
+  // quattro recensioni finte rimaste, due delle quali PUBBLICHE sul sito di un
+  // cliente, perché troncando l'output con `Select-Object -First N` PowerShell
+  // chiude il tubo e ammazza node: il blocco di pulizia non gira nemmeno.
+  // **Guardare i risultati aveva rotto la pulizia.**
   for (const id of create) await admin.from('recensioni').delete().eq('id', id)
+  for (const id of entitaCreate) {
+    await admin.from('recensioni').delete().eq('entity_id', id)
+    await admin.from('entita').delete().eq('id', id)
+  }
+  for (const id of aziende) {
+    await admin.from('recensioni').delete().eq('azienda_id', id)
+    const { error } = await admin.from('aziende').delete().eq('id', id)
+    if (error) console.error('pulizia:', error.message)
+  }
   console.log('[probe] pulito')
   process.exitCode = problemi ? 1 : 0
 }
