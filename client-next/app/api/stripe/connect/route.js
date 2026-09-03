@@ -61,8 +61,11 @@ export async function POST(request) {
         ? await supabaseAdmin.auth.admin.getUserById(titolare.id)
         : { data: null }
 
+      // ⚠️ Solo l'email, per precompilare l'accesso. Il nome dell'azienda NON si
+      // passa: dev'essere quello dei registri camerali, e il nostro potrebbe
+      // essere scritto diversamente — è già costato a una cliente due iscrizioni
+      // rifatte (vedi il commento in `creaAccountCliente`).
       const account = await creaAccountCliente({
-        nome: az.ragione_sociale || 'Attività',
         email: utente?.user?.email || undefined,
       })
       accountId = account.id

@@ -195,8 +195,22 @@ export default function PagamentiPage() {
             bastano pochi minuti.
           </p>
           {stato.mancanti?.length > 0 && (
+            <ul style={{ margin: '0 0 14px', paddingLeft: 20 }}>
+              {stato.mancanti.map((m, i) => (
+                <li key={i} style={{ ...testo, margin: '0 0 6px' }}>{m}</li>
+              ))}
+            </ul>
+          )}
+          {/* ⚠️ Quando il problema è un nome o un indirizzo che non torna, il
+              pulsante «Completa su Stripe» non basta: quel campo si corregge
+              dal pannello Stripe, e l'iscrizione non lo richiede più. Senza
+              questa riga si rifà l'onboarding all'infinito — è successo. */}
+          {stato.mancanti?.some(m => /non corrisponde/.test(m)) && (
             <p style={{ ...testo, marginBottom: 14 }}>
-              Manca: {stato.mancanti.join(' · ')}
+              Un dato che «non corrisponde» si corregge dal pannello Stripe, non rifacendo l’iscrizione:{' '}
+              <a href="https://dashboard.stripe.com/settings/account" target="_blank" rel="noopener noreferrer" style={{ color: '#1a1a2e', fontWeight: 600 }}>
+                apri i dati dell’attività su Stripe →
+              </a>
             </p>
           )}
           <button onClick={collega} disabled={inCorso} style={{ ...bottonePrimario(inCorso), marginTop: 6 }}>

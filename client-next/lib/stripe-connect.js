@@ -43,9 +43,20 @@ export function stripeConfigurato() {
 }
 
 // Crea l'account del cliente. Una volta sola: l'id si conserva.
-export async function creaAccountCliente({ nome, email, paese = 'it' }) {
+// ⛔ Il nome NON si pre-compila con la nostra ragione sociale.
+//
+// Lo facevamo, per risparmiare una digitazione. Il 03/09 è costato a una
+// cliente due iscrizioni rifatte e un pomeriggio: nel nostro database c'era
+// «Garage22 srls», nei registri camerali la ragione sociale è scritta in un
+// altro modo, e Stripe confronta le due cose. Risultato:
+// `verification_failed_name_match`, con l'account bloccato e l'onboarding che
+// non chiedeva più niente perché i dati, per lui, erano già stati dati.
+//
+// È il danno tipico dell'aiuto non richiesto: mettiamo in bocca al cliente un
+// dato che lui non ha scelto e che noi non possiamo verificare. Il nome legale
+// lo chiede Stripe durante l'iscrizione, a chi lo conosce davvero.
+export async function creaAccountCliente({ email, paese = 'it' }) {
   return stripeConnect().v2.core.accounts.create({
-    display_name: nome || 'Attività',
     contact_email: email || undefined,
     identity: { country: (paese || 'it').toLowerCase() },
     // Dashboard completa: il cliente gestisce da sé rimborsi, contestazioni e
@@ -122,9 +133,32 @@ function descriviRequisito(v) {
   const nome = NOMI_REQUISITI[chiave] || chiave
   // ⚠️ Se Stripe ha già respinto qualcosa, il motivo è la cosa più utile che si
   // possa dire: senza, il cliente ricarica lo stesso documento sfocato tre
-  // volte e non capisce perché non basti mai.
-  const motivo = v.errors?.[0]?.reason || v.errors?.[0]?.message || v.errors?.[0]?.code || null
-  return motivo ? `${nome} — Stripe l’ha respinto: ${motivo}` : nome
+  // volte e non capisce perché non basti mai. E il motivo va **in italiano e in
+  // forma di azione**: «verification_failed_name_match» non dice a nessuno cosa
+  // deve fare.
+  const err = v.errors?.[0]
+  if (!err) return nome
+  const spiegato = MOTIVI_RIFIUTO[err.code]
+  if (spiegato) return `${nome} — ${spiegato}`
+  return `${nome} — Stripe l’ha respinto: ${err.description || err.reason || err.message || err.code}`
+}
+
+// I rifiuti che sappiamo raccontare, detti come farebbe una persona: cosa non
+// va, e cosa si fa per rimediare.
+const MOTIVI_RIFIUTO = {
+  verification_failed_name_match:
+    'il nome dell’attività non corrisponde a quello dei registri pubblici. Va corretto con la ragione sociale esatta della visura camerale (comprese le abbreviazioni: «S.R.L.S.», spazi e punti contano), e poi ricaricato un documento che riporti quel nome.',
+  verification_failed_address_match:
+    'l’indirizzo non corrisponde a quello dei registri pubblici: va messo quello della sede legale, come da visura.',
+  verification_failed_tax_id_match:
+    'la partita IVA non corrisponde al nome dell’attività: controlla che siano della stessa società.',
+  verification_document_not_readable:
+    'il documento non si legge: serve una foto nitida, con tutto il foglio dentro l’inquadratura e senza riflessi.',
+  verification_document_expired: 'il documento è scaduto: ne serve uno in corso di validità.',
+  verification_document_failed_copy: 'Stripe ha riconosciuto una fotocopia o uno screenshot: serve la foto dell’originale.',
+  verification_document_incomplete: 'il documento è incompleto: servono tutte le pagine, o fronte e retro.',
+  verification_failed_other:
+    'Stripe non ha potuto verificare i dati e non dice altro. Da qui si passa dalla loro assistenza, dal pannello Stripe.',
 }
 
 // Come sta questo account — **chiesto sempre all'API, mai a una nostra copia**.
