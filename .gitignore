@@ -21,3 +21,5 @@ backup/
 
 # Il file temporaneo con la chiave Stripe live: non entra mai in git.
 chiave-live.txt
+
+client-next/dev.log
