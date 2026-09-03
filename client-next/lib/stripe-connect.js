@@ -71,9 +71,14 @@ export async function linkAttivazione(accountId, base) {
       type: 'account_onboarding',
       account_onboarding: {
         configurations: ['merchant', 'customer'],
-        // Dove torna se il link è scaduto, e dove torna quando ha finito.
-        refresh_url: `${base}/admin/shop?stripe=riprova`,
-        return_url: `${base}/admin/shop?stripe=fatto`,
+        // ⛔ Tornava su `/admin/shop`, che di Stripe non sa niente: chi finiva
+        // l'iscrizione atterrava su una pagina muta, con un parametro
+        // nell'indirizzo e nessuno che gli dicesse com'era andata. Visto dal
+        // vivo il 03/09, con un cliente davanti che non capiva.
+        //
+        // Si torna dove si era partiti, e lì la pagina commenta.
+        refresh_url: `${base}/admin/pagamenti?stripe=riprova`,
+        return_url: `${base}/admin/pagamenti?stripe=fatto`,
       },
     },
   }, { apiVersion: VERSIONE })
@@ -94,9 +99,36 @@ export async function statoAccount(accountId) {
 
     const carte = a.configuration?.merchant?.capabilities?.card_payments?.status || 'inactive'
     const scadenza = a.requirements?.summary?.minimum_deadline?.status || null
-    // «Da completare» comprende sia ciò che manca adesso sia ciò che è già
-    // scaduto: per chi legge sono la stessa cosa — deve tornare su Stripe.
-    const daCompletare = scadenza === 'currently_due' || scadenza === 'past_due'
+
+    // ⛔ Non basta sapere che non incassa ancora: bisogna sapere PERCHÉ.
+    //
+    // «Manca qualcosa da compilare» e «Stripe sta verificando quello che hai
+    // già dato» sono due situazioni diverse, e confonderle manda in tondo: il
+    // 03/09, con un cliente davanti, il pannello diceva «completa su Stripe»,
+    // Stripe rispondeva «hai già finito, conferma», e si tornava al punto di
+    // partenza. Un giro senza uscita.
+    //
+    // Le voci davvero dovute adesso stanno in `requirements.entries`. Se
+    // l'elenco non c'è (forma diversa, versione diversa), si ripiega sulla
+    // scadenza — ma **senza** dedurre che manchi qualcosa: nel dubbio si dice
+    // che è in verifica, che è la cosa vera nella maggior parte dei casi.
+    const voci = Array.isArray(a.requirements?.entries) ? a.requirements.entries : null
+    const dovuteOra = voci
+      ? voci.filter(v => {
+          const s = v?.minimum_deadline?.status || v?.status || null
+          return s === 'currently_due' || s === 'past_due'
+        })
+      : null
+
+    const daCompletare = dovuteOra
+      ? dovuteOra.length > 0
+      // Senza l'elenco: si considera «da completare» solo se è già scaduto,
+      // che è l'unico caso in cui rimandarlo su Stripe serve di sicuro.
+      : scadenza === 'past_due'
+
+    // Ha finito la sua parte e ora tocca a Stripe controllare. Qui non si manda
+    // nessuno da nessuna parte: si dice di aspettare.
+    const inVerifica = !daCompletare && carte !== 'active'
 
     return {
       collegato: true,
@@ -104,6 +136,11 @@ export async function statoAccount(accountId) {
       nome: a.display_name || '',
       incassa: carte === 'active',
       da_completare: daCompletare,
+      in_verifica: inVerifica,
+      // Cosa manca davvero, in chiaro: serve a non doverlo indovinare guardando
+      // la faccia del cliente.
+      mancanti: dovuteOra ? dovuteOra.map(v => v.id || v.type || v.field || 'dato richiesto').slice(0, 12) : [],
+      scadenza_stato: scadenza,
       stato_carte: carte,
       // Si riporta anche chi porta il rischio: se un giorno un account
       // risultasse `application`, vuol dire che è stato creato fuori da qui e

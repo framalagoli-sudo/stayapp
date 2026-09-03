@@ -25,14 +25,57 @@ import { useAzienda } from '@/context/AziendaContext'
 // ⚠️ Definita **fuori** dal componente. Dentro, cambierebbe identità a ogni
 // render e React smonterebbe e rimonterebbe tutto quello che contiene — la
 // stessa regola che vale per gli editor con i campi di testo.
-function Pagina({ children }) {
+// ⚠️ L'avviso di ritorno sta QUI dentro, non in fondo alla pagina.
+//
+// Messo solo nel ramo finale non compariva a chi torna da Stripe mentre il
+// conto non risulta ancora collegato — e quello e' il caso peggiore: uno ha
+// appena consegnato i dati della sua azienda, torna, e legge «Collega il tuo
+// conto» come se non avesse fatto niente.
+function Pagina({ children, ritorno, stato }) {
   return (
     <div style={{ maxWidth: 900 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 22 }}>
         <CreditCard size={22} strokeWidth={1.5} color="#1a1a2e" />
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Pagamenti</h1>
       </div>
+      <AvvisoRitorno tipo={ritorno} stato={stato} />
       {children}
+    </div>
+  )
+}
+
+// Cosa si legge tornando da Stripe.
+//
+// ⛔ Prima non si leggeva niente: il percorso rimandava su un'altra pagina, che
+// di Stripe non sapeva nulla. Uno finiva di consegnare i dati della propria
+// azienda e un documento d'identità, tornava, e non gli diceva nessuno se
+// fosse andata bene. Con un cliente davanti è il momento peggiore per lasciare
+// una persona a indovinare.
+//
+// ⚠️ Definito **fuori** dal componente, come `Pagina`: dentro cambierebbe
+// identità a ogni render.
+function AvvisoRitorno({ tipo, stato }) {
+  if (!tipo) return null
+  const riprova = tipo === 'riprova'
+  const finito = stato?.incassa
+  // ⚠️ Se Stripe ci rimanda qui ma da noi il conto non risulta, dire «hai
+  // finito» sarebbe una contraddizione con quello che si legge dieci righe
+  // sotto — «Collega il tuo conto». Meglio dire che c'è qualcosa che non torna
+  // e cosa fare, che far dubitare la persona di aver capito male.
+  const nonRisulta = stato && !stato.collegato
+  const testoAvviso = riprova
+    ? 'Il collegamento con Stripe era scaduto — succede, dura pochi minuti. Riprendi da qui: non hai perso niente di quello che avevi già inserito.'
+    : nonRisulta
+      ? 'Stripe ti ha rimandato qui, ma il collegamento non ci risulta ancora registrato. Riprova con il pulsante qui sotto: i dati che hai già inserito su Stripe restano, non li devi riscrivere.'
+      : finito
+        ? 'Fatto: il conto è collegato e da adesso puoi incassare.'
+        : 'Hai finito la tua parte su Stripe. Qui sotto trovi come sta andando.'
+  const colore = (riprova || nonRisulta) ? { c: '#8a5a12', b: '#fffbeb', bo: '#fde68a' }
+    : finito ? { c: '#276749', b: '#f0fff4', bo: '#c6f6d5' }
+    : { c: '#2b6cb0', b: '#f0f4ff', bo: '#c3dafe' }
+  return (
+    <div style={{ background: colore.b, border: `1px solid ${colore.bo}`, borderRadius: 10, padding: '13px 16px', marginBottom: 18, color: colore.c, fontSize: 14, lineHeight: 1.6, maxWidth: 560 }}>
+      {testoAvviso}
     </div>
   )
 }
@@ -48,6 +91,16 @@ export default function PagamentiPage() {
   const [stato, setStato] = useState(null)
   const [errore, setErrore] = useState('')
   const [inCorso, setInCorso] = useState(false)
+  // ⛔ Chi torna da Stripe atterrava su una pagina che non commentava niente:
+  // aveva appena inserito i dati della sua azienda e un documento, e non gli
+  // diceva nessuno se fosse andata bene. Il parametro nell'indirizzo c'era già
+  // — non lo leggeva nessuno.
+  const [ritorno, setRitorno] = useState(null)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const p = new URLSearchParams(window.location.search).get('stripe')
+    if (p === 'fatto' || p === 'riprova') setRitorno(p)
+  }, [])
 
   useEffect(() => {
     if (caricaAzienda) return
@@ -66,13 +119,13 @@ export default function PagamentiPage() {
     } catch (e) { setErrore(e.message); setInCorso(false) }
   }
 
-  if (caricaAzienda) return <Pagina><p style={{ color: '#888' }}>Caricamento…</p></Pagina>
+  if (caricaAzienda) return <Pagina ritorno={ritorno} stato={stato}><p style={{ color: '#888' }}>Caricamento…</p></Pagina>
 
   // ⚠️ Un super_admin amministra più aziende: finché non ne sceglie una, non
   // c'è un conto di cui parlare. Meglio dirgli cosa fare che mostrargli
   // «Nessuna azienda», che sembra un guasto e non spiega niente.
   if (!aziendaId) return (
-    <Pagina><div style={riquadro}>
+    <Pagina ritorno={ritorno} stato={stato}><div style={riquadro}>
       <div style={{ fontWeight: 700, marginBottom: 6 }}>Scegli prima un’azienda</div>
       <p style={{ ...testo, marginBottom: 0 }}>
         Il conto per gli incassi è di una singola azienda. Selezionala dal menu in alto e
@@ -81,18 +134,18 @@ export default function PagamentiPage() {
     </div></Pagina>
   )
 
-  if (errore) return <Pagina><div style={{ color: '#c53030' }}>{errore}</div></Pagina>
-  if (!stato) return <Pagina><p style={{ color: '#888' }}>Caricamento…</p></Pagina>
+  if (errore) return <Pagina ritorno={ritorno} stato={stato}><div style={{ color: '#c53030' }}>{errore}</div></Pagina>
+  if (!stato) return <Pagina ritorno={ritorno} stato={stato}><p style={{ color: '#888' }}>Caricamento…</p></Pagina>
 
   if (stato.non_configurato) return (
-    <Pagina><div style={riquadro}>
+    <Pagina ritorno={ritorno} stato={stato}><div style={riquadro}>
       <div style={{ fontWeight: 700, marginBottom: 6 }}>Pagamenti non ancora disponibili</div>
       <p style={testo}>I pagamenti online non sono ancora attivi su questa installazione. Ci stiamo lavorando.</p>
     </div></Pagina>
   )
 
   if (!stato.collegato) return (
-    <Pagina><div style={riquadro}>
+    <Pagina ritorno={ritorno} stato={stato}><div style={riquadro}>
       <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a2e', marginBottom: 8 }}>Incassa i tuoi ordini</div>
       <p style={testo}>
         Per vendere online colleghi un conto Stripe: <strong>gli incassi arrivano direttamente a te</strong>,
@@ -109,34 +162,68 @@ export default function PagamentiPage() {
   )
 
   return (
-    <Pagina><div style={riquadro}>
+    <Pagina ritorno={ritorno} stato={stato}>
+      <div style={riquadro}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-        <span style={badge(stato.incassa ? { label: '', color: '#276749', bg: '#f0fff4' } : { label: '', color: '#b7791f', bg: '#fffbeb' })}>
-          {stato.incassa ? 'Attivo' : 'Da completare'}
+        {/* ⚠️ «Da completare» detto a chi ha già completato è la frase che ha
+            mandato il cliente in tondo: gli diceva che toccava ancora a lui,
+            mentre toccava a Stripe. Tre etichette, una per situazione. */}
+        <span style={badge(
+          stato.incassa ? { color: '#276749', bg: '#f0fff4' }
+          : stato.da_completare ? { color: '#b7791f', bg: '#fffbeb' }
+          : { color: '#2b6cb0', bg: '#f0f4ff' }
+        )}>
+          {stato.incassa ? 'Attivo' : stato.da_completare ? 'Da completare' : 'In verifica'}
         </span>
         <span style={{ fontWeight: 700, color: '#1a1a2e' }}>{stato.nome || 'Conto collegato'}</span>
       </div>
 
-      {stato.incassa ? (
+      {/* ⛔ Tre situazioni, non due.
+          Prima «non incassa ancora» diceva sempre «Stripe ha bisogno di altri
+          dati, riprendi» — anche quando il cliente aveva finito e Stripe stava
+          soltanto controllando. Lo si rimandava su Stripe, Stripe rispondeva
+          «hai già finito», e si tornava al punto di partenza: un giro senza
+          uscita, visto dal vivo il 03/09 con un cliente davanti. */}
+      {stato.incassa && (
         <p style={testo}>Puoi ricevere pagamenti. Gli incassi arrivano sul tuo conto Stripe.</p>
-      ) : (
-        <p style={testo}>
-          Il collegamento c’è, ma Stripe ha ancora bisogno di alcuni dati prima di farti incassare.
-          Riprendi da dove eri: bastano pochi minuti.
-        </p>
       )}
 
       {stato.da_completare && (
-        <button onClick={collega} disabled={inCorso} style={{ ...bottonePrimario(inCorso), marginTop: 6 }}>
-          {inCorso ? 'Apro Stripe…' : 'Completa su Stripe'}
-        </button>
+        <>
+          <p style={testo}>
+            Stripe ha ancora bisogno di alcuni dati prima di farti incassare. Riprendi da dove eri:
+            bastano pochi minuti.
+          </p>
+          {stato.mancanti?.length > 0 && (
+            <p style={{ ...testo, marginBottom: 14 }}>
+              Manca: {stato.mancanti.join(' · ')}
+            </p>
+          )}
+          <button onClick={collega} disabled={inCorso} style={{ ...bottonePrimario(inCorso), marginTop: 6 }}>
+            {inCorso ? 'Apro Stripe…' : 'Completa su Stripe'}
+          </button>
+        </>
+      )}
+
+      {stato.in_verifica && (
+        <>
+          <p style={testo}>
+            <strong>Hai finito la tua parte.</strong> Ora è Stripe a controllare i dati e i documenti:
+            di solito ci vogliono pochi minuti, a volte un giorno lavorativo. Non devi fare altro —
+            quando avranno finito, questa pagina dirà «Attivo».
+          </p>
+          <p style={{ ...testo, marginBottom: 0 }}>
+            Se vuoi seguire il controllo passo passo, lo vedi dal tuo pannello Stripe qui sotto.
+          </p>
+        </>
       )}
 
       <p style={{ fontSize: 12.5, color: '#999', marginTop: 16, lineHeight: 1.6 }}>
         Rimborsi, contestazioni e report li gestisci dal tuo pannello Stripe, dove trovi anche la loro
         assistenza. <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" style={{ color: '#1a1a2e' }}>Vai a Stripe →</a>
       </p>
-    </div></Pagina>
+      </div>
+    </Pagina>
   )
 }
 
