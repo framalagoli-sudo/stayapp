@@ -105,16 +105,29 @@ try {
   const aPagamento = await creaEvento(az.id, ent.id, 100)
   const p2 = await prenota(aPagamento.id)
   ok(p2.status === 201, `la prenotazione riesce (HTTP ${p2.status})`)
-  ok(p2.body.guest_confirmation_sent === false,
-     `nessuna conferma mandata adesso (mandata: ${p2.body.guest_confirmation_sent})`)
 
-  const { data: b2 } = await admin.from('event_bookings')
-    .select('conferma_inviata_il, pagamento_stato, status').eq('id', p2.body.id).maybeSingle()
-  ok(!b2?.conferma_inviata_il, 'e infatti non risulta nessuna conferma inviata')
-  // ⚠️ Senza Stripe collegato la cassa non nasce: la prenotazione resta valida e
-  // si paga sul posto, che è il comportamento voluto. Con Stripe collegato qui
-  // ci sarebbe `pagamento.url` e lo stato sarebbe `non_pagato`.
-  console.log(`  ⓘ cassa creata: ${p2.body.pagamento ? 'sì' : 'no (Stripe non collegato per questa azienda di prova)'}`)
+  // ⚠️ Questo caso esiste SOLO se una cassa è stata creata davvero. Senza Stripe
+  // collegato `creaCheckout` fallisce, la prenotazione resta valida e si paga
+  // sul posto — quindi la conferma **deve** partire, ed è giusto così.
+  //
+  // La prima versione della sonda dava per scontata la cassa e segnava due
+  // croci su un codice che si stava comportando bene: è la stessa trappola del
+  // 28/08, misurare la cosa sbagliata e andare a caccia di un guasto che non
+  // c'è. Il caso si prova quando c'è un conto collegato, non prima.
+  if (p2.body.pagamento) {
+    ok(p2.body.guest_confirmation_sent === false,
+       `nessuna conferma mandata adesso (mandata: ${p2.body.guest_confirmation_sent})`)
+    const { data: b2 } = await admin.from('event_bookings')
+      .select('conferma_inviata_il, pagamento_stato').eq('id', p2.body.id).maybeSingle()
+    ok(!b2?.conferma_inviata_il, 'e infatti non risulta nessuna conferma inviata')
+    ok(b2?.pagamento_stato === 'non_pagato', `il pagamento risulta in sospeso (${b2?.pagamento_stato})`)
+  } else {
+    console.log('  ⓘ NON VERIFICABILE: nessun conto Stripe collegato a questa azienda di prova,')
+    console.log('    quindi la cassa non nasce e non c\'è nessun pagamento da attendere.')
+    console.log('    Con un conto collegato la conferma resterebbe ferma fino al pagamento.')
+    ok(p2.body.guest_confirmation_sent === true,
+       'senza cassa la conferma parte subito, come dev\'essere (si paga sul posto)')
+  }
 
   console.log('\n4 · IL POSTO È TENUTO SUBITO, PRIMA DI PAGARE\n')
   const { data: evDopo } = await admin.from('eventi').select('seats_booked').eq('id', aPagamento.id).maybeSingle()
