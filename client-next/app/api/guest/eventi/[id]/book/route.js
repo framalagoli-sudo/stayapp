@@ -6,6 +6,7 @@ import { sendEmail } from '@/lib/send-email'
 import { emailTemplate, guestEmailTemplate } from '@/lib/email-template'
 import { getAziendaLegale } from '@/lib/guest-data'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
+import { inviaMessaggioWhatsapp } from '@/lib/whatsapp-messaggio'
 
 const ENTITY_TBL = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
 
@@ -61,7 +62,15 @@ export async function POST(request, props) {
     const { data, error } = await supabaseAdmin.from('event_bookings').insert({
       event_id: params.id, guest_name, guest_email,
       guest_phone: guest_phone || null, package_id: package_id || null,
-      seats: reqSeats, total_amount: price * reqSeats, notes: notes || null, status: 'pending',
+      seats: reqSeats, total_amount: price * reqSeats, notes: notes || null,
+      // ⚠️ Nasce CONFERMATA. Nasceva «in attesa» e nessuno l'ha mai confermata
+      // — tredici su tredici, da aprile a settembre — mentre all'ospite arrivava
+      // già un'email intitolata «Prenotazione confermata»: le due parti
+      // leggevano due verità diverse con la stessa parola.
+      //
+      // «In attesa» torna a valere il giorno che i pagamenti saranno accesi:
+      // allora sarà un'attesa vera, di un pagamento che non è arrivato.
+      status: 'confirmed',
       // La prova del consenso, non la sua dichiarazione: quando è stato dato e
       // quale formula la persona ha letto. Se domani il testo cambia, questo
       // resta ricostruibile — è il punto dell'articolo 7 del GDPR.
@@ -179,6 +188,35 @@ export async function POST(request, props) {
             { label: 'Totale', value: `€${total}` },
           ].filter(Boolean),
         }),
+      }).catch(() => {})
+    }
+
+    // 3) La stessa conferma sul telefono, se le condizioni ci sono.
+    //
+    // ⚠️ Non è un doppione dell'email: è dove la gente legge davvero. Ma parte
+    // solo se tutte e quattro le condizioni sono vere — numero scritto, consenso
+    // dato, numero WhatsApp collegato dall'azienda, template approvato da Meta —
+    // e oggi nessuna azienda ne ha uno collegato, quindi non parte mai. È scritto
+    // adesso perché il giorno che Meta sblocca la verifica non ci sia altro da
+    // fare che accendere.
+    //
+    // ⚠️ Non blocca né rallenta la prenotazione: se fallisce, la persona ha
+    // comunque prenotato e ha comunque l'email. Per questo non si aspetta.
+    if (guest_phone) {
+      inviaMessaggioWhatsapp({
+        aziendaId: evento.azienda_id,
+        telefono: guest_phone,
+        email: guest_email,
+        templateKey: 'conferma_prenotazione',
+        vars: {
+          nome: guest_name,
+          titolo: evento.title,
+          quando: dateStr || 'come da programma',
+          persone: reqSeats === 1 ? '1 persona' : `${reqSeats} persone`,
+        },
+        nomeEntita: bizName,
+      }).then(esito => {
+        if (!esito.ok) console.log(`[whatsapp:evento-conferma] non inviato — ${esito.motivo}`)
       }).catch(() => {})
     }
 

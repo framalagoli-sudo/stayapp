@@ -20,6 +20,17 @@ export async function PATCH(request, props) {
     }
 
     const { status, notes } = await request.json()
+
+    // ⚠️ Lo stato arriva dal client e finiva nella colonna così com'era: una
+    // stringa inventata creava una prenotazione fantasma — nessun riquadro la
+    // contava (né fra le confermate né fra quelle in attesa) mentre continuava
+    // a occupare i posti. Catalogo chiuso, come per ogni valore che arriva da
+    // fuori.
+    const STATI = ['pending', 'confirmed', 'cancelled']
+    if (status !== undefined && !STATI.includes(status)) {
+      return Response.json({ error: 'Stato non valido' }, { status: 400 })
+    }
+
     const payload = { updated_at: new Date().toISOString() }
     if (status !== undefined) payload.status = status
     if (notes  !== undefined) payload.notes  = notes

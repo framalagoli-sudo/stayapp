@@ -1,7 +1,5 @@
 ﻿import { supabaseAdmin } from './supabase-server'
-import { decifra, inviaTemplate, numeroValido } from './whatsapp'
-import { trovaTemplate, nomeMeta } from './whatsapp-catalogo'
-import { valoriTemplate } from './automazioni-canali'
+import { inviaMessaggioWhatsapp } from './whatsapp-messaggio'
 
 function applyVars(str, vars) {
   if (typeof str !== 'string') return str
@@ -57,55 +55,24 @@ async function getEntityBranding(entity_tipo, entity_id) {
   return { name: data?.name || 'OltreNova', logo: data?.logo_url || null, primary: data?.theme?.primaryColor || '#1a1a2e' }
 }
 
-// ── WhatsApp ──────────────────────────────────────────────────────────────
+// Il ramo WhatsApp: i controlli stanno tutti in `inviaMessaggioWhatsapp`, che
+// serve anche alla conferma di una prenotazione. Erano scritti qui dentro; con
+// due chiamanti, tenerli in un posto solo evita che il secondo ne dimentichi
+// uno — ed è così che i controlli si perdono.
 //
-// Un messaggio che parte da noi vuole un **template approvato da Meta**: il
-// testo libero dello step qui non può viaggiare (vedi lib/automazioni-canali.js).
-//
-// 🔒 Il consenso si verifica **qui**, non a monte: la coda può essere stata
-// scritta ore prima, e nel frattempo la persona può aver detto basta. Chi ha
-// tolto il consenso non deve ricevere il messaggio già in coda.
+// ⚠️ Su WhatsApp non viaggia il testo libero dello step: serve un template
+// approvato da Meta, e lo step dice QUALE (vedi lib/automazioni-canali.js).
 async function inviaWhatsapp(log, auto, vars, entityName) {
-  const telefono = log.contact_telefono
-  if (!numeroValido(telefono)) throw new Error('Numero non valido: serve il prefisso internazionale (+39…)')
-
-  // ⚠️ Due `.eq()` separati, **mai** un `.or()` costruito con la stringa: email e
-  // telefono arrivano da un form pubblico, e dentro un filtro PostgREST una
-  // virgola o una parentesi cambierebbero la condizione. Il numero passa già da
-  // `numeroValido`, l'email no — e non deve servire che passi.
-  const consenso = async (colonna, valore) => {
-    if (!valore) return false
-    const { data } = await supabaseAdmin.from('contatti').select('whatsapp_optin')
-      .eq('azienda_id', auto.azienda_id).eq(colonna, valore).limit(1).maybeSingle()
-    return data?.whatsapp_optin === true
-  }
-  const haConsenso = await consenso('telefono', telefono) || await consenso('email', log.contact_email)
-  if (!haConsenso) throw new Error('Manca il consenso WhatsApp di questo contatto')
-
-  const { data: account } = await supabaseAdmin.from('whatsapp_account')
-    .select('stato, phone_number_id, access_token_cifrato').eq('azienda_id', auto.azienda_id).maybeSingle()
-  if (!account || account.stato !== 'attivo') throw new Error('Il numero WhatsApp non è collegato')
-
   const step = auto.steps[log.step_index]
-  const t = trovaTemplate(step.wa_template)
-  if (!t) throw new Error('Messaggio WhatsApp non presente nel catalogo')
-
-  // Approvato **su quell'account**: i template sono asset del singolo numero.
-  const { data: tpl } = await supabaseAdmin.from('whatsapp_template').select('stato')
-    .eq('azienda_id', auto.azienda_id).eq('catalogo_key', t.key).eq('catalogo_versione', t.versione).maybeSingle()
-  if (!tpl || tpl.stato !== 'approvato') throw new Error(`Il messaggio "${t.titolo}" non è ancora approvato da Meta`)
-
-  const token = decifra(account.access_token_cifrato)
-  if (!token) throw new Error('Collegamento con WhatsApp non più valido: ricollega il numero')
-
-  const { valori, mancanti } = valoriTemplate(t, vars, { nomeEntita: entityName })
-  if (mancanti.length) throw new Error(`Dati mancanti per il messaggio: ${mancanti.join(', ')}`)
-
-  const r = await inviaTemplate({
-    phoneNumberId: account.phone_number_id, token, a: telefono,
-    nomeTemplate: nomeMeta(t.key, t.versione), valori,
+  const esito = await inviaMessaggioWhatsapp({
+    aziendaId: auto.azienda_id,
+    telefono: log.contact_telefono,
+    email: log.contact_email,
+    templateKey: step?.wa_template,
+    vars,
+    nomeEntita: entityName,
   })
-  if (!r.ok) throw new Error(r.error || 'WhatsApp ha rifiutato il messaggio')
+  if (!esito.ok) throw new Error(esito.motivo)
 }
 
 export async function runAutomazioniScheduler() {

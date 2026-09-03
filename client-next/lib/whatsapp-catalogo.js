@@ -20,6 +20,28 @@ export const CATEGORIE = { UTILITY: 'UTILITY', MARKETING: 'MARKETING' }
 
 export const CATALOGO = [
   {
+    // La conferma di una prenotazione a un evento, sul telefono.
+    //
+    // È «utility» e non «marketing» perché arriva **subito dopo** che la persona
+    // ha prenotato: è la ricevuta di una cosa che ha chiesto lei. Meta tratta
+    // questa categoria meglio e costa meno — ma vale finché il messaggio resta
+    // una conferma. Infilarci dentro una promozione lo farebbe segnalare, e a
+    // pagarne il prezzo sarebbe il numero del cliente.
+    key: 'conferma_prenotazione',
+    versione: 1,
+    categoria: CATEGORIE.UTILITY,
+    titolo: 'Conferma di prenotazione',
+    descrizione: 'Arriva sul telefono appena qualcuno prenota: cosa, quando, per quante persone. È la stessa cosa che dice l’email, dove la gente la legge davvero.',
+    // {{1}} nome · {{2}} evento · {{3}} data e ora · {{4}} persone
+    corpo: 'Ciao {{1}}, la tua prenotazione per {{2}} è confermata: {{3}}, per {{4}}. Se qualcosa cambia rispondi pure a questo messaggio.',
+    variabili: [
+      { chiave: 'nome', etichetta: 'Nome di chi prenota', esempio: 'Mario' },
+      { chiave: 'titolo', etichetta: 'Cosa ha prenotato', esempio: 'A cena con Chiara e Daniele' },
+      { chiave: 'quando', etichetta: 'Quando', esempio: 'giovedì 12 settembre alle 20:00' },
+      { chiave: 'persone', etichetta: 'Per quante persone', esempio: '2 persone' },
+    ],
+  },
+  {
     key: 'promemoria_appuntamento',
     versione: 1,
     categoria: CATEGORIE.UTILITY,
