@@ -222,6 +222,24 @@ export default function PagamentiPage() {
         Rimborsi, contestazioni e report li gestisci dal tuo pannello Stripe, dove trovi anche la loro
         assistenza. <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" style={{ color: '#1a1a2e' }}>Vai a Stripe →</a>
       </p>
+
+      {/* ⚠️ La risposta di Stripe così com'è, richiudibile.
+          Serve quando il pannello dice che manca qualcosa e sull'onboarding non
+          risulta niente da fare: è successo il 03/09, e senza questo blocco
+          l'unico modo di capirlo era indovinare. Non è un'informazione per il
+          cliente — è per chi deve rimettere le cose a posto. */}
+      {!stato.incassa && stato.requisiti_grezzi && (
+        <details style={{ marginTop: 14 }}>
+          <summary style={{ cursor: 'pointer', fontSize: 12.5, color: '#888' }}>
+            Cosa risponde Stripe, parola per parola
+          </summary>
+          <pre style={{
+            marginTop: 10, padding: 12, background: '#f7f7f9', border: '1px solid #eee',
+            borderRadius: 8, fontSize: 11.5, lineHeight: 1.5, color: '#444',
+            overflowX: 'auto', maxHeight: 320, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere',
+          }}>{JSON.stringify(stato.requisiti_grezzi, null, 2)}</pre>
+        </details>
+      )}
       </div>
     </Pagina>
   )

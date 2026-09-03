@@ -85,6 +85,36 @@ export async function linkAttivazione(accountId, base) {
   return link.url
 }
 
+// Come si chiama, in italiano, la cosa che Stripe sta chiedendo.
+//
+// ⚠️ Se non la riconosciamo si restituisce l'identificativo grezzo, non una
+// frase generica: «dato richiesto» sembra un'informazione e non lo è — chi la
+// legge crede che gli manchi qualcosa senza sapere cosa, e rifà l'iscrizione da
+// capo inseguendo un fantasma. Meglio una sigla brutta ma vera.
+const NOMI_REQUISITI = {
+  'individual.verification.document': 'documento d’identità del titolare',
+  'representative.verification.document': 'documento d’identità del rappresentante',
+  'company.verification.document': 'visura o documento della società',
+  'external_account': 'IBAN dove ricevere gli incassi',
+  'business_profile.url': 'indirizzo del sito',
+  'business_profile.mcc': 'categoria dell’attività',
+  'company.tax_id': 'partita IVA',
+  'company.address': 'sede legale',
+  'owners': 'elenco dei soci sopra il 25%',
+  'directors': 'elenco degli amministratori',
+  'tos_acceptance': 'accettazione delle condizioni Stripe',
+}
+
+function descriviRequisito(v) {
+  if (!v) return null
+  const chiave = v.id || v.type || v.field || v.requirement || v.name || null
+  if (!chiave) {
+    // Nessun identificativo: si mostra la voce intera, così almeno si vede.
+    try { return JSON.stringify(v).slice(0, 120) } catch { return null }
+  }
+  return NOMI_REQUISITI[chiave] || chiave
+}
+
 // Come sta questo account — **chiesto sempre all'API, mai a una nostra copia**.
 //
 // I requisiti cambiano da soli quando cambiano le regole dei circuiti o dei
@@ -139,9 +169,17 @@ export async function statoAccount(accountId) {
       in_verifica: inVerifica,
       // Cosa manca davvero, in chiaro: serve a non doverlo indovinare guardando
       // la faccia del cliente.
-      mancanti: dovuteOra ? dovuteOra.map(v => v.id || v.type || v.field || 'dato richiesto').slice(0, 12) : [],
+      // ⚠️ Non si inventa un'etichetta: si mostra quello che Stripe ha davvero
+      // scritto. Il 03/09 la pagina diceva «dato richiesto» — cioè la mia
+      // scritta di ripiego, che voleva dire «non so leggere questa risposta»
+      // ed è stata scambiata per un'informazione. Un cliente ha rifatto
+      // l'iscrizione due volte inseguendo un dato che nessuno gli nominava.
+      mancanti: dovuteOra ? dovuteOra.map(descriviRequisito).filter(Boolean).slice(0, 12) : [],
       scadenza_stato: scadenza,
       stato_carte: carte,
+      // La risposta com'è: serve a guardare invece di dedurre, quando la forma
+      // non è quella che ci aspettavamo.
+      requisiti_grezzi: a.requirements ?? null,
       // Si riporta anche chi porta il rischio: se un giorno un account
       // risultasse `application`, vuol dire che è stato creato fuori da qui e
       // le perdite tornerebbero a noi. Meglio vederlo che scoprirlo.
