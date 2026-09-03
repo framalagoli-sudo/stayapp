@@ -180,7 +180,11 @@ export default function EventoPrenotazioniPage() {
           { label: 'Posti presi', value: evento.seats_total ? `${presi} / ${evento.seats_total}` : presi,
             sub: liberi === null ? 'nessun limite' : liberi === 0 ? 'tutto esaurito' : `ancora ${liberi} liberi`,
             icon: Check, color: '#155724', bg: '#d4edda' },
-          { label: 'Persone',    value: vive.length, sub: vive.length === 1 ? 'prenotazione' : 'prenotazioni', icon: Users, color: '#1a1a2e', bg: '#f0f4ff' },
+          // ⚠️ Diceva «Persone» e contava le prenotazioni: nove righe per
+          // quindici posti. L'etichetta e il numero si contraddicevano, e chi
+          // legge si fida dell'etichetta — che era quella sbagliata. Le persone
+          // sono i posti, e stanno nel riquadro accanto.
+          { label: 'Prenotazioni', value: vive.length, sub: 'nell’elenco qui sotto', icon: Users, color: '#1a1a2e', bg: '#f0f4ff' },
           { label: 'Valore',     value: `€${revenue}`, sub: pending ? `${pending} posti ancora in attesa` : 'prenotazioni valide', icon: Package, color: '#2b6cb0', bg: '#ebf4ff' },
         ].map(({ label, value, sub, icon: Icon, color, bg }) => (
           <div key={label} style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
