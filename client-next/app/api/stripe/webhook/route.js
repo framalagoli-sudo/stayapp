@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { stripeConnect, stripeConfigurato } from '@/lib/stripe-connect'
 import { finalizzaLoyaltyOrdine } from '@/lib/loyalty-helpers'
 import { logError } from '@/lib/observability'
+import { mandaConfermaEvento } from '@/lib/evento-conferma'
 
 // «Ha pagato?» — la risposta arriva da qui, non dal browser.
 //
@@ -99,7 +100,18 @@ async function segnaPagato(sessione) {
   const { data: ev } = await supabaseAdmin.from('event_bookings')
     .update({ pagamento_stato: 'pagato' })
     .eq('pagamento_id', sid).neq('pagamento_stato', 'pagato').select('id')
-  if (ev?.length) return
+  if (ev?.length) {
+    // ⛔ Qui prima non partiva NIENTE: si segnava «pagato» nel database e finiva
+    // lì. Una persona pagava e non riceveva una riga che glielo confermasse —
+    // e con la scadenza a 30 minuti si sarebbe pure vista annullare il posto se
+    // il webhook fosse arrivato tardi.
+    //
+    // È questo il momento in cui «confermata» è vero, non prima.
+    // ⚠️ Il `neq` qui sopra fa da scambio atomico: passa un solo webhook, quindi
+    // la conferma parte una volta sola anche se Stripe rispedisce l'evento.
+    await mandaConfermaEvento(ev[0].id)
+    return
+  }
 
   // Nessuno dei tre: va detto. Un pagamento incassato che non corrisponde a
   // niente da noi è denaro di un cliente senza una riga che lo spieghi.

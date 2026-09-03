@@ -3,11 +3,10 @@ import { recomputeEventSeats } from '@/lib/event-seats'
 import { confermaPostiEvento } from '@/lib/capienza'
 import { creaCheckout, accontoDovuto } from '@/lib/checkout'
 import { sendEmail } from '@/lib/send-email'
-import { emailTemplate, guestEmailTemplate } from '@/lib/email-template'
+import { emailTemplate } from '@/lib/email-template'
 import { getAziendaLegale } from '@/lib/guest-data'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
-import { inviaMessaggioWhatsapp } from '@/lib/whatsapp-messaggio'
-import { MINUTI_PER_PAGARE } from '@/lib/prenotazioni-scadute'
+import { mandaConfermaEvento } from '@/lib/evento-conferma'
 
 const ENTITY_TBL = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
 
@@ -170,71 +169,19 @@ export async function POST(request, props) {
       }).catch(() => {})
     }
 
-    // 2) Conferma all'ospite (white-label, business → cliente).
+    // 2) La conferma all'ospite parte SOLO se non c'è nulla da pagare.
+    //
+    // ⛔ Se c'è un pagamento in corso, in questo istante la persona è già sulla
+    // pagina di Stripe: un'email che le chiede di pagare la raggiunge mentre sta
+    // pagando, ed è rumore. La conferma la manda il webhook quando i soldi sono
+    // arrivati — è l'unico momento in cui «confermata» è vero.
+    //
+    // Testo ed effetti stanno in `mandaConfermaEvento`, un posto solo: due copie
+    // divergono, e diverge proprio quella che si legge di rado.
     let guest_confirmation_sent = false
-    if (evento.send_guest_confirmation && resendKey && guest_email) {
-      guest_confirmation_sent = true
-      sendEmail({
-        _ctx: 'evento-guest', fromName: bizName,
-        from, to: guest_email, replyTo: ownerEmail || undefined,
-        // ⚠️ L'email dice la verità su cosa è successo davvero.
-        //
-        // Diceva «Prenotazione confermata» sempre — anche quando restava un
-        // pagamento da fare. Con la scadenza a 30 minuti quella parola diventa
-        // una trappola: la persona archivia una conferma, non paga, e trenta
-        // minuti dopo si vede annullare qualcosa che le era stato confermato.
-        // Se c'è da pagare, questo è un promemoria; la conferma arriva quando
-        // il pagamento è arrivato.
-        subject: pagamento
-          ? `Completa la prenotazione — ${evento.title}`
-          : `Conferma prenotazione — ${evento.title}`,
-        html: guestEmailTemplate({
-          entityName: bizName,
-          title: pagamento ? 'Manca solo il pagamento' : 'Prenotazione confermata',
-          legale, privacyUrl,
-          intro: pagamento
-            ? `Ciao ${guest_name}, ti teniamo il posto per <strong>${evento.title}</strong>. Per confermarlo serve il pagamento entro <strong>${MINUTI_PER_PAGARE} minuti</strong>: dopo, il posto torna disponibile per altri.`
-            : `Ciao ${guest_name}, abbiamo ricevuto la tua prenotazione per <strong>${evento.title}</strong>. Ecco il riepilogo:`,
-          rows: [
-            dateStr ? { label: 'Data', value: dateStr } : null,
-            evento.location ? { label: 'Luogo', value: evento.location } : null,
-            { label: 'Posti', value: String(reqSeats) },
-            pkgName ? { label: 'Pacchetto', value: pkgName } : null,
-            { label: 'Totale', value: `€${total}` },
-            pagamento ? { label: 'Da pagare adesso', value: `€${pagamento.importo}` } : null,
-          ].filter(Boolean),
-          ...(pagamento ? { ctaText: 'Paga e conferma il posto', ctaUrl: pagamento.url } : {}),
-        }),
-      }).catch(() => {})
-    }
-
-    // 3) La stessa conferma sul telefono, se le condizioni ci sono.
-    //
-    // ⚠️ Non è un doppione dell'email: è dove la gente legge davvero. Ma parte
-    // solo se tutte e quattro le condizioni sono vere — numero scritto, consenso
-    // dato, numero WhatsApp collegato dall'azienda, template approvato da Meta —
-    // e oggi nessuna azienda ne ha uno collegato, quindi non parte mai. È scritto
-    // adesso perché il giorno che Meta sblocca la verifica non ci sia altro da
-    // fare che accendere.
-    //
-    // ⚠️ Non blocca né rallenta la prenotazione: se fallisce, la persona ha
-    // comunque prenotato e ha comunque l'email. Per questo non si aspetta.
-    if (guest_phone) {
-      inviaMessaggioWhatsapp({
-        aziendaId: evento.azienda_id,
-        telefono: guest_phone,
-        email: guest_email,
-        templateKey: 'conferma_prenotazione',
-        vars: {
-          nome: guest_name,
-          titolo: evento.title,
-          quando: dateStr || 'come da programma',
-          persone: reqSeats === 1 ? '1 persona' : `${reqSeats} persone`,
-        },
-        nomeEntita: bizName,
-      }).then(esito => {
-        if (!esito.ok) console.log(`[whatsapp:evento-conferma] non inviato — ${esito.motivo}`)
-      }).catch(() => {})
+    if (!pagamento) {
+      const esito = await mandaConfermaEvento(data.id)
+      guest_confirmation_sent = esito.ok
     }
 
     // Il link della cassa torna insieme alla prenotazione: chi ha appena
