@@ -91,28 +91,40 @@ export async function linkAttivazione(accountId, base) {
 // frase generica: «dato richiesto» sembra un'informazione e non lo è — chi la
 // legge crede che gli manchi qualcosa senza sapere cosa, e rifà l'iscrizione da
 // capo inseguendo un fantasma. Meglio una sigla brutta ma vera.
+// ⚠️ Il nome del requisito sta in `description`, non in `id` né in `type`.
+// Cercandolo nei posti sbagliati usciva sempre la scritta di ripiego, e una
+// cliente ha rifatto l'iscrizione due volte inseguendo un dato che nessuno le
+// nominava. Visto solo guardando la risposta vera.
 const NOMI_REQUISITI = {
-  'individual.verification.document': 'documento d’identità del titolare',
-  'representative.verification.document': 'documento d’identità del rappresentante',
-  'company.verification.document': 'visura o documento della società',
+  'identity.business_details.documents.primary_verification': 'documento della società (per una SRL/SRLS: la visura camerale)',
+  'identity.business_details.documents.bank_account_ownership_verification': 'documento che prova l’intestazione del conto (estratto conto o certificazione IBAN)',
+  'identity.individual.documents.primary_verification': 'documento d’identità del titolare (fronte e retro)',
+  'identity.representative.documents.primary_verification': 'documento d’identità del rappresentante (fronte e retro)',
+  'identity.business_details.registration_number': 'numero di iscrizione al registro imprese',
+  'identity.business_details.tax_id': 'partita IVA',
+  'identity.business_details.address': 'sede legale',
+  'identity.individual.address': 'indirizzo di residenza',
+  'identity.individual.date_of_birth': 'data di nascita',
+  'identity.attestations.terms_of_service': 'accettazione delle condizioni Stripe',
+  'identity.attestations.company_ownership_declaration': 'dichiarazione dei soci (chi possiede più del 25%)',
+  'configuration.merchant.external_account': 'IBAN dove ricevere gli incassi',
+  'configuration.merchant.mcc': 'categoria dell’attività',
+  'configuration.merchant.url': 'indirizzo del sito',
   'external_account': 'IBAN dove ricevere gli incassi',
-  'business_profile.url': 'indirizzo del sito',
-  'business_profile.mcc': 'categoria dell’attività',
-  'company.tax_id': 'partita IVA',
-  'company.address': 'sede legale',
-  'owners': 'elenco dei soci sopra il 25%',
-  'directors': 'elenco degli amministratori',
-  'tos_acceptance': 'accettazione delle condizioni Stripe',
 }
 
 function descriviRequisito(v) {
   if (!v) return null
-  const chiave = v.id || v.type || v.field || v.requirement || v.name || null
+  const chiave = v.description || v.id || v.type || v.field || v.requirement || v.name || null
   if (!chiave) {
-    // Nessun identificativo: si mostra la voce intera, così almeno si vede.
     try { return JSON.stringify(v).slice(0, 120) } catch { return null }
   }
-  return NOMI_REQUISITI[chiave] || chiave
+  const nome = NOMI_REQUISITI[chiave] || chiave
+  // ⚠️ Se Stripe ha già respinto qualcosa, il motivo è la cosa più utile che si
+  // possa dire: senza, il cliente ricarica lo stesso documento sfocato tre
+  // volte e non capisce perché non basti mai.
+  const motivo = v.errors?.[0]?.reason || v.errors?.[0]?.message || v.errors?.[0]?.code || null
+  return motivo ? `${nome} — Stripe l’ha respinto: ${motivo}` : nome
 }
 
 // Come sta questo account — **chiesto sempre all'API, mai a una nostra copia**.
@@ -143,10 +155,20 @@ export async function statoAccount(accountId) {
     // scadenza — ma **senza** dedurre che manchi qualcosa: nel dubbio si dice
     // che è in verifica, che è la cosa vera nella maggior parte dei casi.
     const voci = Array.isArray(a.requirements?.entries) ? a.requirements.entries : null
+
+    // ⛔ `awaiting_action_from` è la risposta alla domanda che contava: **tocca a
+    // lui o tocca a Stripe?** Senza guardarlo, ogni attesa diventava un «devi
+    // completare» e il cliente veniva rimandato su Stripe, che non aveva niente
+    // da chiedergli. Il giro senza uscita del 03/09 nasceva tutto da qui.
+    const tocca = v => v?.awaiting_action_from || null
     const dovuteOra = voci
       ? voci.filter(v => {
           const s = v?.minimum_deadline?.status || v?.status || null
-          return s === 'currently_due' || s === 'past_due'
+          const scaduto = s === 'currently_due' || s === 'past_due'
+          const suo = tocca(v) === 'user' || tocca(v) === 'merchant'
+          // Se Stripe dice chi deve agire, si crede a lui; altrimenti si guarda
+          // la scadenza, come prima.
+          return tocca(v) ? suo : scaduto
         })
       : null
 
