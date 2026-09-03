@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { apiFetch } from '../../../lib/api'
-import { Users, Calendar, Mail, Phone, Package, ArrowLeft, Check, X, Clock } from 'lucide-react'
+import { Users, Calendar, Mail, Phone, Package, ArrowLeft, Check, X, Clock, Plus, PhoneCall } from 'lucide-react'
 
 function fmtDate(iso) {
   if (!iso) return '—'
@@ -15,6 +15,75 @@ const STATUS_OPTIONS = [
   { value: 'cancelled', label: 'Annullata',  bg: '#f8d7da', color: '#721c24' },
 ]
 
+// Segnare al volo una prenotazione arrivata per telefono.
+//
+// ⚠️ Serve **solo il nome**. Chi telefona mentre il locale è pieno detta un
+// nome e riattacca: pretendere l'email trasformerebbe dieci secondi in una
+// trattativa, e la prenotazione tornerebbe sul quaderno — che è il posto da cui
+// la stiamo togliendo.
+//
+// ⚠️ Definito fuori dalla pagina: dentro cambierebbe identità a ogni render e
+// React smonterebbe i campi mentre ci si scrive.
+function ModuloTelefono({ eventoId, liberi, onChiudi, onFatta }) {
+  const [dati, setDati] = useState({ guest_name: '', guest_phone: '', guest_email: '', seats: 1, notes: '' })
+  const [inCorso, setInCorso] = useState(false)
+  const [errore, setErrore] = useState('')
+  const campo = (k, v) => setDati(d => ({ ...d, [k]: v }))
+
+  async function salva() {
+    if (!dati.guest_name.trim()) { setErrore('Serve almeno il nome'); return }
+    setInCorso(true); setErrore('')
+    try {
+      const creata = await apiFetch(`/api/eventi/${eventoId}/bookings`, {
+        method: 'POST', body: JSON.stringify(dati),
+      })
+      onFatta(creata)
+    } catch (e) { setErrore(e.message); setInCorso(false) }
+  }
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #e2e5ea', borderRadius: 12, padding: 20, marginBottom: 20, boxShadow: '0 1px 4px rgba(0,0,0,.06)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+        <PhoneCall size={16} strokeWidth={1.5} color="#1a1a2e" />
+        <strong style={{ fontSize: 15 }}>Prenotazione presa al telefono</strong>
+      </div>
+      <p style={{ margin: '0 0 14px', fontSize: 13, color: '#888', lineHeight: 1.6 }}>
+        Basta il nome. Il resto se ce l'hai — telefono ed email servono solo se vuoi poterlo avvisare.
+        {liberi !== null && liberi !== undefined && <> Restano <strong>{liberi}</strong> posti.</>}
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 10, marginBottom: 10 }}>
+        <input autoFocus value={dati.guest_name} onChange={e => campo('guest_name', e.target.value)}
+          placeholder="Nome di chi ha chiamato *" style={campoStile} />
+        <input value={dati.guest_phone} onChange={e => campo('guest_phone', e.target.value)}
+          placeholder="Telefono" style={campoStile} />
+        <input value={dati.guest_email} onChange={e => campo('guest_email', e.target.value)}
+          placeholder="Email" style={campoStile} />
+        <input type="number" min="1" value={dati.seats} onChange={e => campo('seats', Math.max(1, Number(e.target.value) || 1))}
+          placeholder="Persone" style={campoStile} />
+      </div>
+      <input value={dati.notes} onChange={e => campo('notes', e.target.value)}
+        placeholder="Note (allergie, tavolo, chi lo conosce…)" style={{ ...campoStile, width: '100%', marginBottom: 12 }} />
+      {errore && <p style={{ margin: '0 0 10px', fontSize: 13, color: '#c53030' }}>{errore}</p>}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button onClick={salva} disabled={inCorso}
+          style={{ padding: '9px 18px', background: '#1a1a2e', border: 'none', borderRadius: 8, cursor: inCorso ? 'wait' : 'pointer', fontSize: 13.5, fontWeight: 600, color: '#fff', opacity: inCorso ? .7 : 1 }}>
+          {inCorso ? 'Salvo…' : 'Segna'}
+        </button>
+        <button onClick={onChiudi} style={{ padding: '9px 16px', background: '#fff', border: '1px solid #ddd', borderRadius: 8, cursor: 'pointer', fontSize: 13.5 }}>
+          Annulla
+        </button>
+      </div>
+      {/* Va detto: non stiamo raccogliendo una spunta, la sta raccogliendo lui. */}
+      <p style={{ margin: '12px 0 0', fontSize: 11.5, color: '#999', lineHeight: 1.6 }}>
+        Registriamo che il consenso ai dati l'hai raccolto tu a voce — non risulta come spunta del cliente,
+        perché non l'ha messa nessuno.
+      </p>
+    </div>
+  )
+}
+
+const campoStile = { padding: '9px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }
+
 function statusStyle(status) {
   return STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0]
 }
@@ -26,6 +95,7 @@ export default function EventoPrenotazioniPage() {
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [updatingId, setUpdatingId] = useState(null)
+  const [nuova, setNuova] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -56,9 +126,17 @@ export default function EventoPrenotazioniPage() {
   if (loading) return <p style={{ padding: 32, color: '#888' }}>Caricamento…</p>
   if (!evento) return <p style={{ padding: 32, color: '#e53e3e' }}>Evento non trovato.</p>
 
-  const confirmed = bookings.filter(b => b.status === 'confirmed').reduce((n, b) => n + (b.seats || 1), 0)
-  const pending   = bookings.filter(b => b.status === 'pending').reduce((n, b) => n + (b.seats || 1), 0)
-  const revenue   = bookings.filter(b => b.status === 'confirmed').reduce((n, b) => n + (b.total_amount || 0), 0)
+  // ⛔ Il primo riquadro contava SOLO le confermate, e mostrava «0 confermati ·
+  // €0» a chi aveva nove persone e 375 € di cena prenotata. Il numero era
+  // esatto e raccontava il falso: quello che il titolare vuole sapere aprendo
+  // questa pagina e' **quanta gente viene**, non in che stato interno sta la
+  // riga. I posti presi sono tutti quelli non annullati — la stessa cosa che
+  // conta `recomputeEventSeats` per decidere se l'evento e' pieno.
+  const vive     = bookings.filter(b => b.status !== 'cancelled')
+  const presi    = vive.reduce((n, b) => n + (b.seats || 1), 0)
+  const pending  = bookings.filter(b => b.status === 'pending').reduce((n, b) => n + (b.seats || 1), 0)
+  const revenue  = vive.reduce((n, b) => n + (b.total_amount || 0), 0)
+  const liberi   = evento.seats_total ? Math.max(0, evento.seats_total - presi) : null
 
   return (
     <div style={{ maxWidth: 860 }}>
@@ -68,18 +146,42 @@ export default function EventoPrenotazioniPage() {
           style={{ background: '#f0f0f0', border: 'none', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#555' }}>
           <ArrowLeft size={14} strokeWidth={2} /> Torna all'evento
         </button>
-        <div>
-          <h2 style={{ margin: 0, fontSize: 20 }}>Prenotazioni — {evento.title}</h2>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h2 style={{ margin: 0, fontSize: 20, overflowWrap: 'anywhere' }}>Prenotazioni — {evento.title}</h2>
           <p style={{ margin: '2px 0 0', fontSize: 13, color: '#888' }}>{fmtDate(evento.date_start)}</p>
         </div>
+        {/* Chi chiama al telefono finiva su un quaderno, e i posti nel pannello
+            non tornavano più con la realtà: l'evento risultava mezzo vuoto
+            mentre era pieno. Adesso si segna qui. */}
+        <button onClick={() => setNuova(true)}
+          style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', background: '#1a1a2e', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: '#fff' }}>
+          <Plus size={15} strokeWidth={2} /> Segna prenotazione
+        </button>
       </div>
+
+      {nuova && (
+        <ModuloTelefono
+          eventoId={id}
+          liberi={liberi}
+          onChiudi={() => setNuova(false)}
+          onFatta={async (creata) => {
+            setBookings(prev => [creata, ...prev])
+            setNuova(false)
+            // I posti li ricalcola il server: si rilegge l'evento invece di
+            // fare un conto parallelo che prima o poi diverge.
+            try { setEvento(await apiFetch(`/api/eventi/${id}`)) } catch {}
+          }}
+        />
+      )}
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
         {[
-          { label: 'Confermati', value: confirmed, sub: evento.seats_total ? `su ${evento.seats_total} posti` : 'posti', icon: Check, color: '#155724', bg: '#d4edda' },
-          { label: 'In attesa',  value: pending,   sub: 'da confermare', icon: Clock, color: '#856404', bg: '#fff3cd' },
-          { label: 'Ricavo',     value: `€${revenue}`, sub: 'prenotazioni confermate', icon: Users, color: '#1a1a2e', bg: '#f0f4ff' },
+          { label: 'Posti presi', value: evento.seats_total ? `${presi} / ${evento.seats_total}` : presi,
+            sub: liberi === null ? 'nessun limite' : liberi === 0 ? 'tutto esaurito' : `ancora ${liberi} liberi`,
+            icon: Check, color: '#155724', bg: '#d4edda' },
+          { label: 'Persone',    value: vive.length, sub: vive.length === 1 ? 'prenotazione' : 'prenotazioni', icon: Users, color: '#1a1a2e', bg: '#f0f4ff' },
+          { label: 'Valore',     value: `€${revenue}`, sub: pending ? `${pending} posti ancora in attesa` : 'prenotazioni valide', icon: Package, color: '#2b6cb0', bg: '#ebf4ff' },
         ].map(({ label, value, sub, icon: Icon, color, bg }) => (
           <div key={label} style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
