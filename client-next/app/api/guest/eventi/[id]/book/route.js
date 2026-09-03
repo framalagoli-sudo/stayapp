@@ -7,6 +7,7 @@ import { emailTemplate, guestEmailTemplate } from '@/lib/email-template'
 import { getAziendaLegale } from '@/lib/guest-data'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { inviaMessaggioWhatsapp } from '@/lib/whatsapp-messaggio'
+import { MINUTI_PER_PAGARE } from '@/lib/prenotazioni-scadute'
 
 const ENTITY_TBL = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
 
@@ -176,17 +177,33 @@ export async function POST(request, props) {
       sendEmail({
         _ctx: 'evento-guest', fromName: bizName,
         from, to: guest_email, replyTo: ownerEmail || undefined,
-        subject: `Conferma prenotazione — ${evento.title}`,
+        // ⚠️ L'email dice la verità su cosa è successo davvero.
+        //
+        // Diceva «Prenotazione confermata» sempre — anche quando restava un
+        // pagamento da fare. Con la scadenza a 30 minuti quella parola diventa
+        // una trappola: la persona archivia una conferma, non paga, e trenta
+        // minuti dopo si vede annullare qualcosa che le era stato confermato.
+        // Se c'è da pagare, questo è un promemoria; la conferma arriva quando
+        // il pagamento è arrivato.
+        subject: pagamento
+          ? `Completa la prenotazione — ${evento.title}`
+          : `Conferma prenotazione — ${evento.title}`,
         html: guestEmailTemplate({
-          entityName: bizName, title: 'Prenotazione confermata', legale, privacyUrl,
-          intro: `Ciao ${guest_name}, abbiamo ricevuto la tua prenotazione per <strong>${evento.title}</strong>. Ecco il riepilogo:`,
+          entityName: bizName,
+          title: pagamento ? 'Manca solo il pagamento' : 'Prenotazione confermata',
+          legale, privacyUrl,
+          intro: pagamento
+            ? `Ciao ${guest_name}, ti teniamo il posto per <strong>${evento.title}</strong>. Per confermarlo serve il pagamento entro <strong>${MINUTI_PER_PAGARE} minuti</strong>: dopo, il posto torna disponibile per altri.`
+            : `Ciao ${guest_name}, abbiamo ricevuto la tua prenotazione per <strong>${evento.title}</strong>. Ecco il riepilogo:`,
           rows: [
             dateStr ? { label: 'Data', value: dateStr } : null,
             evento.location ? { label: 'Luogo', value: evento.location } : null,
             { label: 'Posti', value: String(reqSeats) },
             pkgName ? { label: 'Pacchetto', value: pkgName } : null,
             { label: 'Totale', value: `€${total}` },
+            pagamento ? { label: 'Da pagare adesso', value: `€${pagamento.importo}` } : null,
           ].filter(Boolean),
+          ...(pagamento ? { ctaText: 'Paga e conferma il posto', ctaUrl: pagamento.url } : {}),
         }),
       }).catch(() => {})
     }

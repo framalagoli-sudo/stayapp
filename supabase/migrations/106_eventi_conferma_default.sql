@@ -1,3 +1,8 @@
+-- ⚠️ SE L'HAI GIÀ ESEGUITA, RIESEGUILA: in fondo è stato aggiunto il battito
+-- del processo che libera i posti non pagati. Ogni istruzione qui dentro è
+-- ripetibile senza danno — il default si riscrive uguale, il vincolo si salta
+-- se c'è già, il battito è un upsert.
+
 -- Una prenotazione a un evento nasce CONFERMATA.
 --
 -- Com'era: nasceva «in attesa», e qualcuno avrebbe dovuto confermarla a mano.
@@ -39,3 +44,11 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 --
 -- Le tredici restano «in attesa» com'erano. Solo le nuove nascono confermate.
 -- Si possono sempre confermare a mano dal pannello, una per una, guardandole.
+
+-- Il processo che restituisce i posti tenuti e mai pagati entra nel battito, o
+-- nessuno si accorge se smette di girare — e allora i posti resterebbero
+-- occupati in silenzio, che è il guasto da cui questo processo doveva salvare.
+-- Gira ogni 5 minuti: soglia larga, per non gridare a ogni rallentamento.
+INSERT INTO public.cron_battiti (nome, soglia_minuti) VALUES
+  ('prenotazioni-scadute', 30)
+ON CONFLICT (nome) DO UPDATE SET soglia_minuti = EXCLUDED.soglia_minuti;
