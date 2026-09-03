@@ -1,70 +1,74 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — manca solo la chiave Google per accendere il voto reale; poi gli eventi (12 prenotazioni vere, mai percorsi) o l'onboarding"
+description: "Da dove riprendere — Garage 22 deve correggere il nome su Stripe, poi il primo incasso vero; e il nome pubblico OltreNova da sistemare sul dashboard"
 metadata: 
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-02T17:02:41.802Z
+  modified: 2026-09-03T22:45:28.853Z
 ---
 
 # Si riprende da qui
 
-Sessione chiusa il **2 settembre 2026**.
+Sessione chiusa il **3 settembre 2026**, dopo una giornata sul campo: Francesco
+è andato da Garage 22 a collegare Stripe.
 
-## ⚠️ Una cosa sola, e sblocca una funzione già scritta
+## ⚠️ In sospeso, e dipende da Francesco
 
-**La chiave Google.** Console Google Cloud → abilita **Places API (New)** → crea
-una credenziale → mettila su Vercel come `GOOGLE_PLACES_API_KEY` → **serve un
-redeploy** (le env var sono legate al deployment).
+1. **Garage 22 riprova domani.** Il percorso è: **prima** corregge il nome dal
+   pannello Stripe (Impostazioni → Dati dell'attività) con la ragione sociale
+   **esatta della visura**, **poi** carica la visura. Rifare l'iscrizione dal
+   nostro pannello senza correggere il nome riporta al punto di partenza — è
+   successo due volte. Storia completa in [[reference_stripe_onboarding_campo]].
 
-Consigliato: limitare la chiave alle sole Places API e mettere un tetto di spesa
-sul progetto Google Cloud.
+2. **Il nome pubblico su Stripe.** Chi si iscrive legge «FRANCESCO MALAGOLI»
+   nel momento in cui sta per consegnare IBAN e documento. Due punti:
+   - `Impostazioni → Dati dell'attività` → nome pubblico → *OltreNova*
+   - `Impostazioni → Connect → Branding` → nome **e logo**: è quello che vede
+     il cliente durante l'iscrizione.
+   Non è codice nostro: nel nostro non passiamo nessun nome di piattaforma.
 
-Appena c'è: collegare una scheda vera da **Recensioni** e verificare che il voto
-compaia. È l'unica cosa che non ho potuto provare. Dettaglio e conti in
-[[reference_voto_google]] — **oggi è gratis e resta gratis**, la cadenza si
-autoregola per non superare le 1.000 letture al mese.
+3. **Il primo incasso vero non è ancora avvenuto.** Quando Garage 22 sarà
+   attivo: impostare la percentuale di acconto sull'evento (0 = si paga sul
+   posto), poi **fare una prenotazione da due euro e pagarla davvero**. Tre
+   verifiche: soldi sul suo cruscotto Stripe · email di conferma · prenotazione
+   che risulta pagata nel pannello. Finché non succede, «i pagamenti funzionano»
+   è una frase che nessuno ha verificato.
 
-## Poi: la scelta è fra due
+## Fatto il 03/09 (live e provato in produzione)
 
-1. **Percorrere gli eventi.** Hanno **12 prenotazioni reali** e non li ha mai
-   percorsi nessuno end-to-end. Ogni funzione percorsa in questi giorni ha
-   restituito 4-5 difetti veri; qui il danno non sarebbe potenziale, perché ci
-   sono già clienti che hanno pagato — e ci girano **campagne a pagamento**.
-2. **L'onboarding** ([[project_onboarding_mappa]]): il capitolo che vale di più,
-   tenuto per ultimo da Francesco perché vuole ragionarci di marketing. È una sua
-   decisione di prodotto.
+- **Eventi**: la prenotazione nasce confermata; la conferma parte quando
+  «confermata» è vero (subito se non c'è da pagare, dopo il pagamento se c'è);
+  il posto non pagato torna libero dopo 30 minuti, **chiedendo prima a Stripe**
+  per non annullare chi ha pagato.
+- **Pannello prenotazioni**: «Posti presi 15/60 · Prenotazioni 9 · Valore €375»
+  al posto di «0 confermati · €0», e il modulo per **segnare chi telefona** —
+  serve solo il nome.
+- **Stripe**: ritorno che commenta, tre stati invece di due, requisiti in
+  italiano con il motivo del rifiuto, e la risposta grezza visibile al
+  super_admin.
+- Migration eseguite: **106, 107, 108**.
 
-Proposto il primo, non ancora deciso.
+## Poi
 
-## Fatto il 02/09 (live e verificato)
+**L'onboarding** ([[project_onboarding_mappa]]) resta il capitolo che vale di
+più, tenuto per ultimo da Francesco perché vuole ragionarci di marketing.
 
-- **Recensioni**: il giro c'era e non l'aveva percorso nessuno — 0 richieste
-  inviate in tutta la storia. Cinque difetti chiusi → [[reference_recensioni]].
-- **Voto Google reale** sui siti, con la data di lettura → [[reference_voto_google]].
-- **Guardia**: il deploy si ferma se una sonda tocca un cliente vero →
-  [[feedback_sonde_non_scrivono_a_persone]].
+E il **voto Google** ([[reference_voto_google]]) aspetta solo
+`GOOGLE_PLACES_API_KEY` su Vercel — è gratis fino a 1.000 letture al mese e la
+cadenza si autoregola per non superarle.
 
 ## Fermo, e dipende da Francesco
 
-- **Nessun cliente ha collegato il conto Stripe**: il primo incasso vero non è
-  mai avvenuto ([[reference_stripe_connect]]).
-- **Meta**: fermi sulla verifica business; restiamo Tech Provider, non BSP.
-- **Termini e privacy** a un avvocato ([[reference_documenti_legali]]).
+- **Meta**: verifica business bloccata; restiamo Tech Provider, non BSP.
+- **Termini e privacy** a un avvocato; le 10 aziende devono accettarli.
 - **2FA** su Vercel, Supabase, Cloudflare, GitHub.
-- Le 10 aziende devono accettare i Termini.
-- Ripristino del backup mai provato ([[reference_backup_e_ripristino]]).
-- **Sottodominio da rimuovere a mano** su Vercel:
-  `futura-club-spiagge-bianche.oltrenova.com` — l'entità è stata cancellata ma
-  il sottodominio resta e mostra la landing di OltreNova. ⚠️ Difetto sotto:
-  **cancellare un'entità non rimuove il suo sottodominio** (`removeProjectDomain`
-  esiste, nessuno la chiama). Proposto di collegarli, non ancora deciso.
+- **Ripristino del backup** mai provato.
+- Sottodominio `futura-club-spiagge-bianche.oltrenova.com` da togliere a mano su
+  Vercel. ⚠️ Sotto c'è un difetto: cancellare un'entità non rimuove il suo
+  sottodominio (`removeProjectDomain` esiste, nessuno la chiama).
 
 ## In coda, nessuno urgente
 
 Next 16, multilingua DE, import documento v2, QR con logo, PWA installabile,
-notifiche realtime, integrazione PMS, TripAdvisor (in attesa di Terra).
-
-⚠️ **Deploy**: `npx vercel` dà spesso «Not authorized» alla prima esecuzione
-dopo un aggiornamento della CLI. È transitorio: si rilancia `deploy.ps1`.
+notifiche realtime, PMS, TripAdvisor (in attesa di Terra).
