@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { CreditCard } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import { useAzienda } from '@/context/AziendaContext'
+import { useAuth } from '@/context/AuthContext'
 
 
 // ⚠️ Sta qui, e non dentro Shop.
@@ -87,6 +88,13 @@ export default function PagamentiPage() {
   // che e' super_admin, mentre le prove le avevo fatte con un utente normale.
   // Di nuovo: provato il pezzo, non il percorso suo.
   const { azienda, activeAziendaId, loading: caricaAzienda } = useAzienda()
+  // ⚠️ La risposta grezza di Stripe la vede solo chi amministra la piattaforma.
+  // Serve a rimettere a posto le cose quando il pannello dice che manca
+  // qualcosa e l'iscrizione non lo chiede — e senza, il 03/09 saremmo rimasti
+  // ciechi. Ma un cliente che apre un blocco di JSON pensa che sia rotto: non
+  // e' un'informazione per lui.
+  const { profile } = useAuth()
+  const superAdmin = profile?.role === 'super_admin'
   const aziendaId = activeAziendaId || azienda?.id || null
   const [stato, setStato] = useState(null)
   const [errore, setErrore] = useState('')
@@ -242,10 +250,10 @@ export default function PagamentiPage() {
           risulta niente da fare: è successo il 03/09, e senza questo blocco
           l'unico modo di capirlo era indovinare. Non è un'informazione per il
           cliente — è per chi deve rimettere le cose a posto. */}
-      {!stato.incassa && stato.requisiti_grezzi && (
+      {superAdmin && !stato.incassa && stato.requisiti_grezzi && (
         <details style={{ marginTop: 14 }}>
           <summary style={{ cursor: 'pointer', fontSize: 12.5, color: '#888' }}>
-            Cosa risponde Stripe, parola per parola
+            Cosa risponde Stripe, parola per parola (solo per te)
           </summary>
           <pre style={{
             marginTop: 10, padding: 12, background: '#f7f7f9', border: '1px solid #eee',
