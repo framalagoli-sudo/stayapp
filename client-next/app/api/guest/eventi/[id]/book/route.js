@@ -51,9 +51,17 @@ export async function POST(request, props) {
       .select('*').eq('id', params.id).single()
     if (evErr || !evento) return Response.json({ error: 'Evento non trovato' }, { status: 404 })
 
+    // ⚠️ Il muro sta qui, non nel browser: nascondere il modulo impedisce di
+    // sbagliare a chi guarda la pagina, non a chi manda una richiesta a mano.
+    if (evento.prenotazioni_chiuse) {
+      return Response.json({
+        error: evento.prenotazioni_chiuse_testo?.trim() || 'Le prenotazioni per questo evento sono chiuse.',
+      }, { status: 400 })
+    }
+
     const reqSeats = parseInt(seats) || 1
     if (evento.seats_total && (evento.seats_booked + reqSeats) > evento.seats_total)
-      return Response.json({ error: 'Posti non disponibili' }, { status: 400 })
+      return Response.json({ error: 'Posti esauriti' }, { status: 400 })
 
     let price = evento.price || 0
     let pkgName = ''

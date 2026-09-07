@@ -116,6 +116,12 @@ export default function EventoPage() {
   const selectedPkg = (evento.packages || []).find(p => p.id === pkgId)
   const price = selectedPkg ? selectedPkg.price : (evento.price || 0)
 
+  // Non si può più prenotare per due motivi diversi: perché l'ha deciso il
+  // titolare, o perché i posti sono finiti. Il modulo si chiude in entrambi i
+  // casi, ma il messaggio non è lo stesso — e la differenza la sente chi legge.
+  const rimasti = evento.seats_total ? evento.seats_total - (evento.seats_booked || 0) : null
+  const chiuso = !!evento.prenotazioni_chiuse || (rimasti !== null && rimasti <= 0)
+
   const sito       = evento.sito || null
   // Su un dominio del cliente i link del menu devono restare sul suo dominio,
   // non rimandare a oltrenova.com: SiteNav lo sa fare, basta dirglielo.
@@ -209,9 +215,12 @@ export default function EventoPage() {
               <MapPin size={15} strokeWidth={1.5} color="#00b5b5" /> {evento.location}
             </span>
           )}
+          {/* ⚠️ «0 posti disponibili» è un modo goffo di dire «esaurito», e
+              «-2 posti» — che poteva succedere — è un modo di sembrare rotti. */}
           {evento.seats_total && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: '#555' }}>
-              <Users size={15} strokeWidth={1.5} color="#00b5b5" /> {evento.seats_total - (evento.seats_booked || 0)} posti disponibili
+              <Users size={15} strokeWidth={1.5} color="#00b5b5" />
+              {rimasti > 0 ? `${rimasti} posti disponibili` : 'Tutto esaurito'}
             </span>
           )}
         </div>
@@ -220,7 +229,27 @@ export default function EventoPage() {
           <p style={{ fontSize: 16, lineHeight: 1.8, color: '#444', marginBottom: 32 }}>{evento.description}</p>
         )}
 
-        {/* Form prenotazione */}
+        {/* ⛔ Quando non si può più prenotare, il modulo NON si mostra.
+            Restava aperto anche a posti finiti: si compilava nome, email,
+            telefono e la spunta privacy, si premeva, e solo allora arrivava
+            «posti non disponibili». Con una campagna a pagamento sopra è il
+            modo peggiore di spendere un clic — e di trattare una persona.
+
+            Due motivi diversi, due frasi diverse: «il titolare ha chiuso» e
+            «i posti sono finiti» non sono la stessa cosa per chi legge. */}
+        {chiuso ? (
+          <div style={{ background: '#fff', borderRadius: 16, padding: 32, boxShadow: '0 2px 16px rgba(0,0,0,0.07)', textAlign: 'center' }}>
+            <div style={{ fontSize: 19, fontWeight: 700, color: '#1a1a2e', marginBottom: 10 }}>
+              {evento.prenotazioni_chiuse ? 'Prenotazioni chiuse' : 'Tutto esaurito'}
+            </div>
+            <p style={{ fontSize: 15.5, color: '#555', lineHeight: 1.7, margin: 0, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto' }}>
+              {evento.prenotazioni_chiuse_testo?.trim()
+                || (evento.prenotazioni_chiuse
+                  ? 'Non raccogliamo altre prenotazioni per questo appuntamento. Grazie a chi ci ha scritto!'
+                  : 'I posti per questo appuntamento sono finiti. Grazie a tutti — ci vediamo alla prossima.')}
+            </p>
+          </div>
+        ) : (
         <div style={{ background: '#fff', borderRadius: 16, padding: 32, boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a2e', marginBottom: 24 }}>Prenota</h2>
 
@@ -288,6 +317,7 @@ export default function EventoPage() {
             </>
           )}
         </div>
+        )}
       </div>
 
       {/* Il piede di pagina.

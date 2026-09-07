@@ -38,6 +38,7 @@ export default function EventoEditPage() {
     notify_owner_on_booking: true, send_guest_confirmation: false,
     cta_label: '', cta_condizioni: '',
     mostra_prezzo: true, mostra_prezzo_pagina: true, prezzo_testo: '', acconto_percentuale: 0,
+    prenotazioni_chiuse: false, prenotazioni_chiuse_testo: '',
   })
   const [cover, setCover] = useState(null)       // URL attuale
   const [formato, setFormato] = useState(FORMATO_PREDEFINITO)
@@ -72,6 +73,8 @@ export default function EventoEditPage() {
           mostra_prezzo:        ev.mostra_prezzo ?? true,
           mostra_prezzo_pagina: ev.mostra_prezzo_pagina ?? true,
           prezzo_testo:    ev.prezzo_testo || '',
+          prenotazioni_chiuse: ev.prenotazioni_chiuse ?? false,
+          prenotazioni_chiuse_testo: ev.prenotazioni_chiuse_testo || '',
           notify_owner_on_booking: ev.notify_owner_on_booking ?? true,
           send_guest_confirmation: ev.send_guest_confirmation ?? false,
           packages:    (ev.packages || []).map(p => ({
@@ -445,6 +448,40 @@ export default function EventoEditPage() {
           <div style={{ display: 'flex', gap: 32 }}>
             <Toggle label="Attivo" hint="L'evento è visibile nell'admin" value={form.active} onChange={v => set('active', v)} />
             <Toggle label="Pubblicato" hint="Visibile sul sito e nell'app ospiti" value={form.published} onChange={v => set('published', v)} />
+          </div>
+        </div>
+
+        {/* Chiudere le prenotazioni.
+            ⚠️ Non e' «spegnere l'evento»: la pagina resta viva e continua a
+            raccontarlo. Serve quando il locale e' pieno ma il sistema non lo
+            sa — perche' le prenotazioni al telefono non sono state segnate
+            tutte — e serve soprattutto quando c'e' una campagna a pagamento che
+            manda su quella pagina: spegnerla vorrebbe dire pagare clic che
+            finiscono nel vuoto. */}
+        <div style={cardStyle}>
+          <h3 style={sectionTitle}>Prenotazioni</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <Toggle
+              label="Non accetto piu prenotazioni"
+              hint="La pagina dell'evento resta online e visibile: sparisce solo il modulo, e al suo posto compare il messaggio qui sotto."
+              value={form.prenotazioni_chiuse}
+              onChange={v => set('prenotazioni_chiuse', v)} />
+            {form.prenotazioni_chiuse && (
+              <div>
+                <label style={{ display: 'block', fontSize: 12.5, color: '#666', marginBottom: 6 }}>
+                  Cosa legge chi arriva
+                </label>
+                <input
+                  value={form.prenotazioni_chiuse_testo}
+                  onChange={e => set('prenotazioni_chiuse_testo', e.target.value)}
+                  placeholder="Siamo al completo! Scrivici comunque: teniamo una lista d'attesa."
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                <p style={{ margin: '6px 0 0', fontSize: 12, color: '#999', lineHeight: 1.6 }}>
+                  Se lo lasci vuoto scriviamo noi una frase neutra. Ma «siamo al completo» e
+                  «scrivici, teniamo una lista d'attesa» portano a due cose molto diverse.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

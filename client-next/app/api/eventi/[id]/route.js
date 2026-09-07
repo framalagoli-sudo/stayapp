@@ -8,7 +8,8 @@ function isUUID(v) { return UUID_RE.test(v) }
 const ALLOWED = ['title', 'description', 'cover_url', 'date_start', 'date_end',
   'location', 'price', 'seats_total', 'active', 'published', 'packages', 'entity_tipo', 'entity_id',
   'notify_owner_on_booking', 'send_guest_confirmation', 'formato_cover', 'cover_focal',
-  'cta_label', 'cta_condizioni', 'acconto_percentuale', 'mostra_prezzo', 'mostra_prezzo_pagina', 'prezzo_testo']
+  'cta_label', 'cta_condizioni', 'acconto_percentuale', 'mostra_prezzo', 'mostra_prezzo_pagina', 'prezzo_testo',
+  'prenotazioni_chiuse', 'prenotazioni_chiuse_testo']
 
 export async function GET(request, props) {
   const params = await props.params;
@@ -36,6 +37,10 @@ export async function PATCH(request, props) {
     // Il testo del pulsante e' una riga, le condizioni un paragrafo: si tagliano
     // qui, cosi il cliente vede il testo accorciato invece di un errore opaco.
     if (typeof payload.cta_label === 'string') payload.cta_label = payload.cta_label.trim().slice(0, 60) || null
+    // Una stringa vuota non e' un messaggio: diventa null, cosi la pagina usa
+    // la frase predefinita invece di mostrare un riquadro senza testo.
+    if (typeof payload.prenotazioni_chiuse_testo === 'string')
+      payload.prenotazioni_chiuse_testo = payload.prenotazioni_chiuse_testo.trim().slice(0, 300) || null
     if (typeof payload.cta_condizioni === 'string') payload.cta_condizioni = payload.cta_condizioni.trim().slice(0, 600) || null
     if (typeof payload.prezzo_testo === 'string') payload.prezzo_testo = payload.prezzo_testo.trim().slice(0, 40) || null
     if ('mostra_prezzo' in payload) payload.mostra_prezzo = payload.mostra_prezzo !== false
