@@ -1,8 +1,8 @@
 ﻿'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { apiFetch } from '../../../lib/api'
-import { Users, Calendar, Mail, Phone, Package, ArrowLeft, Check, X, Clock, Plus, PhoneCall } from 'lucide-react'
+import { Users, Calendar, Mail, Phone, Package, ArrowLeft, Check, X, Clock, Plus, PhoneCall, Send } from 'lucide-react'
 
 function fmtDate(iso) {
   if (!iso) return '—'
@@ -96,6 +96,10 @@ export default function EventoPrenotazioniPage() {
   const [loading, setLoading] = useState(true)
   const [updatingId, setUpdatingId] = useState(null)
   const [nuova, setNuova] = useState(false)
+  // Quante persone riceverebbero il promemoria: si chiede prima, così chi
+  // preme il pulsante sa a quanti sta per scrivere.
+  const [prom, setProm] = useState(null)
+  const [inviando, setInviando] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -106,6 +110,25 @@ export default function EventoPrenotazioniPage() {
       setBookings(bk)
     }).catch(() => {}).finally(() => setLoading(false))
   }, [id])
+
+  const caricaPromemoria = useCallback(() => {
+    apiFetch(`/api/eventi/${id}/promemoria`).then(setProm).catch(() => setProm(null))
+  }, [id])
+  useEffect(() => { caricaPromemoria() }, [caricaPromemoria])
+
+  async function mandaPromemoria() {
+    if (!confirm(`Mandare il promemoria a ${prom.da_avvisare} ${prom.da_avvisare === 1 ? 'persona' : 'persone'}?`)) return
+    setInviando(true)
+    try {
+      const esito = await apiFetch(`/api/eventi/${id}/promemoria`, { method: 'POST' })
+      alert(esito.inviati
+        ? `Promemoria mandato a ${esito.inviati} ${esito.inviati === 1 ? 'persona' : 'persone'}.${esito.falliti ? ` ${esito.falliti} non sono partiti.` : ''}`
+        : esito.messaggio || 'Nessuno da avvisare.')
+      caricaPromemoria()
+      setBookings(await apiFetch(`/api/eventi/${id}/bookings`))
+    } catch (e) { alert(`Non è partito: ${e.message}`) }
+    setInviando(false)
+  }
 
   async function updateStatus(bookingId, status) {
     setUpdatingId(bookingId)
@@ -158,6 +181,25 @@ export default function EventoPrenotazioniPage() {
           <Plus size={15} strokeWidth={2} /> Segna prenotazione
         </button>
       </div>
+
+      {/* ⛔ Il promemoria automatico si programma quando uno prenota: chi aveva
+          già prenotato prima non è in nessuna coda, e non ci finirà mai. Per la
+          cena del 10 settembre erano ventisette persone che non avrebbero
+          ricevuto niente. Questo è il pulsante che dice «mandalo adesso a chi
+          c'è» — ed è anche più adatto: il titolare guarda la lista e decide. */}
+      {prom && prom.da_avvisare > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', background: '#f0f4ff', border: '1px solid #c3dafe', borderRadius: 10, padding: '13px 16px', marginBottom: 20 }}>
+          <div style={{ flex: 1, minWidth: 220, fontSize: 14, color: '#2b6cb0', lineHeight: 1.6 }}>
+            <strong>{prom.da_avvisare} {prom.da_avvisare === 1 ? 'persona non ha' : 'persone non hanno'} ancora ricevuto il promemoria.</strong>
+            {prom.gia_avvisati > 0 && <> Ne {prom.gia_avvisati === 1 ? 'è già stata avvisata 1' : `sono già state avvisate ${prom.gia_avvisati}`}.</>}
+            {prom.senza_email > 0 && <> {prom.senza_email} {prom.senza_email === 1 ? 'ha prenotato' : 'hanno prenotato'} senza lasciare un’email: {prom.senza_email === 1 ? 'va avvisata' : 'vanno avvisate'} a voce.</>}
+          </div>
+          <button onClick={mandaPromemoria} disabled={inviando}
+            style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', background: '#2b6cb0', border: 'none', borderRadius: 8, cursor: inviando ? 'wait' : 'pointer', fontSize: 13.5, fontWeight: 600, color: '#fff', opacity: inviando ? .7 : 1 }}>
+            <Send size={15} strokeWidth={2} /> {inviando ? 'Mando…' : 'Manda il promemoria'}
+          </button>
+        </div>
+      )}
 
       {nuova && (
         <ModuloTelefono

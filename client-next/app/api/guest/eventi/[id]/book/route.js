@@ -7,6 +7,8 @@ import { emailTemplate } from '@/lib/email-template'
 import { getAziendaLegale } from '@/lib/guest-data'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { mandaConfermaEvento } from '@/lib/evento-conferma'
+import { after } from 'next/server'
+import { triggerAutomazione } from '@/lib/guest-utils'
 
 const ENTITY_TBL = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
 
@@ -182,6 +184,43 @@ export async function POST(request, props) {
     if (!pagamento) {
       const esito = await mandaConfermaEvento(data.id)
       guest_confirmation_sent = esito.ok
+    }
+
+    // ⛔ Le automazioni scattavano solo sulle prenotazioni di RISORSE: chi
+    // prenotava un evento non entrava in nessuna coda, quindi il «Promemoria
+    // dell'appuntamento» — che esiste, ed è il modo più semplice di ridurre chi
+    // non si presenta — non partiva mai per gli eventi. Trovato il 07/09
+    // guardando perché accendere quell'automazione non avrebbe fatto niente per
+    // una cena con ventisette prenotati.
+    //
+    // ⚠️ `visit_datetime` è l'inizio dell'evento: da lì il promemoria si
+    // programma «X ore prima», che è il senso di `pre_visita`.
+    //
+    // ⚠️ Un evento aziendale (senza entità) non ha automazioni: sono legate a
+    // un'entità. Non è un difetto, è come sono fatte — ma va saputo.
+    if (evento.entity_id && evento.entity_tipo) {
+      const varsAuto = {
+        nome: guest_name,
+        email: guest_email,
+        telefono: guest_phone || '',
+        data: dateStr || '',
+        ora: evento.date_start ? new Date(evento.date_start).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '',
+        servizio: evento.title,
+        n_persone: String(reqSeats),
+        visit_datetime: evento.date_start || null,
+        source_tipo: 'evento',
+        source_id: data.id,
+      }
+      const ctxAuto = { azienda_id: evento.azienda_id, entity_tipo: evento.entity_tipo, entity_id: evento.entity_id }
+      after(async () => {
+        try {
+          await triggerAutomazione('nuova_prenotazione', ctxAuto, varsAuto)
+          if (evento.date_start) {
+            await triggerAutomazione('pre_visita', ctxAuto, varsAuto)
+            await triggerAutomazione('post_visita', ctxAuto, varsAuto)
+          }
+        } catch (e) { console.error('[eventi] automazioni:', e.message) }
+      })
     }
 
     // Il link della cassa torna insieme alla prenotazione: chi ha appena
