@@ -4,6 +4,7 @@ import { sendEmail } from '@/lib/send-email'
 import { guestEmailTemplate } from '@/lib/email-template'
 import { getAziendaLegale } from '@/lib/guest-data'
 import { inviaMessaggioWhatsapp } from '@/lib/whatsapp-messaggio'
+import { testoRicco } from '@/lib/testo-ricco'
 
 // «Ci vediamo domani»: il promemoria a chi ha già prenotato.
 //
@@ -35,8 +36,14 @@ async function raccogli(eventoId) {
   const destinatari = (tutte || []).filter(b => b.guest_email && !b.promemoria_inviato_il)
   const giaFatto = (tutte || []).filter(b => b.promemoria_inviato_il).length
   const senzaEmail = (tutte || []).filter(b => !b.guest_email).length
-  return { evento, destinatari, giaFatto, senzaEmail, totale: (tutte || []).length }
+  return { evento, destinatari, giaFatto, senzaEmail, totale: (tutte || []).length, tutte: tutte || [] }
 }
+
+// Il messaggio che parte se il titolare non ne scrive uno suo. Sta qui e non nel
+// pannello perché è il server a mandarlo: due copie divergerebbero, e a divergere
+// sarebbe proprio quella che nessuno rilegge.
+export const TESTO_PREDEFINITO =
+  'Ti ricordiamo la tua prenotazione. Se non riesci a venire, rispondi a questa email: liberiamo il posto per qualcun altro.'
 
 export async function GET(request, props) {
   const params = await props.params
@@ -50,6 +57,20 @@ export async function GET(request, props) {
       gia_avvisati: r.giaFatto,
       senza_email: r.senzaEmail,
       totale: r.totale,
+      // ⛔ Serve l'elenco, non solo il conteggio: il titolare deve poter
+      // scegliere **chi** avvisare, non solo premere e sperare. Chi ha già
+      // ricevuto e chi non ha lasciato l'email compaiono lo stesso, con il
+      // motivo — sparire senza spiegazione fa credere a un dato mancante.
+      persone: r.tutte.map(b => ({
+        id: b.id,
+        nome: b.guest_name,
+        email: b.guest_email,
+        posti: b.seats || 1,
+        stato: b.status,
+        gia_avvisato: !!b.promemoria_inviato_il,
+        senza_email: !b.guest_email,
+      })),
+      testo_predefinito: TESTO_PREDEFINITO,
     })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
@@ -62,7 +83,28 @@ export async function POST(request, props) {
 
     const r = await raccogli(params.id)
     if (r.errore) return Response.json({ error: r.errore }, { status: 404 })
-    if (!r.destinatari.length) {
+
+    const corpo = await request.json().catch(() => ({}))
+
+    // ⛔ Il testo lo scrive il titolare, e arriva dal browser: si **escapa** e si
+    // riaccendono solo i pochi tag di formattazione (`testoRicco`). Senza,
+    // qualunque cosa finisse in quel campo verrebbe spedita come HTML a decine
+    // di persone, con il mittente del cliente.
+    const testo = String(corpo.testo || '').trim().slice(0, 2000) || TESTO_PREDEFINITO
+
+    // ⛔ Chi avvisare lo sceglie il titolare spuntando la lista. Gli id passano
+    // da un filtro contro le prenotazioni **di questo evento**: un id di un
+    // altro evento — o di un'altra azienda — non deve poter ricevere niente.
+    let destinatari = r.destinatari
+    if (Array.isArray(corpo.destinatari)) {
+      const scelti = new Set(corpo.destinatari)
+      destinatari = r.tutte.filter(b => scelti.has(b.id) && b.guest_email)
+      // ⚠️ Se il titolare rimanda apposta a qualcuno che l'ha già ricevuto, si
+      // manda: è una sua decisione, e la protezione dal doppio invio serve
+      // contro il giro automatico, non contro una scelta esplicita.
+    }
+
+    if (!destinatari.length) {
       return Response.json({ inviati: 0, messaggio: 'Nessuno da avvisare: o l’hanno già ricevuto, o non hanno lasciato un’email.' })
     }
 
@@ -78,14 +120,17 @@ export async function POST(request, props) {
       : ''
 
     let inviati = 0, falliti = 0
-    for (const b of r.destinatari) {
+    for (const b of destinatari) {
       try {
         await sendEmail({
           _ctx: 'evento-promemoria', fromName: nome, to: b.guest_email,
           subject: `Ci vediamo ${quando ? 'il ' + quando.split(' ').slice(0, 3).join(' ') : 'presto'} — ${evento.title}`,
           html: guestEmailTemplate({
             entityName: nome, title: 'Ti aspettiamo', legale,
-            intro: `Ciao ${b.guest_name || ''}, ti ricordiamo la tua prenotazione per <strong>${evento.title}</strong>.<br><br>Se non riesci a venire, rispondi a questa email: liberiamo il posto per qualcun altro.`,
+            // ⚠️ Il titolo dell'evento resta scritto dal server: è l'unica cosa
+            // che chi legge deve poter riconoscere con certezza, e non dipende
+            // da cosa il titolare ha battuto nel campo.
+            intro: `Ciao ${b.guest_name || ''}, a proposito di <strong>${evento.title}</strong>:<br><br>${testoRicco(testo)}`,
             rows: [
               quando ? { label: 'Quando', value: quando } : null,
               evento.location ? { label: 'Dove', value: evento.location } : null,

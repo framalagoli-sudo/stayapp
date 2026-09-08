@@ -1,6 +1,7 @@
 ﻿'use client'
 import React, { useEffect, useRef, useState } from 'react'
 import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
+import { ricco } from '@/lib/testo-ricco'
 import { rapportoDi } from '@/lib/formati-foto'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import LandingStruttura from './LandingStruttura'
@@ -749,7 +750,7 @@ function EventiTab({ eventi, onOpen, primary, textColor, subText, isDark, radius
               {ev.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}><MapPin size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {ev.location}</span>}
               {ev.seats_total && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}><Users size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {ev.seats_total - (ev.seats_booked || 0)} {lang === 'en' ? 'seats' : 'posti'}</span>}
             </div>
-            {ev.description && <p style={{ margin: '0 0 10px', fontSize: 13, color: subText, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{ev.description}</p>}
+            {ev.description && <p style={{ margin: '0 0 10px', fontSize: 13, color: subText, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} {...ricco(ev.description)} />}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               {prezzoDaMostrare(ev, { gratuito: tr('free', lang) }) && <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>{prezzoDaMostrare(ev, { gratuito: tr('free', lang) })}</span>}
               <span style={{ fontSize: 12, fontWeight: 600, color: primary }}>{tr('details_arrow', lang)}</span>
@@ -818,7 +819,7 @@ function EventoDetailView({ evento, onBack, primary, textColor, subText, isDark,
           {evento.seats_total && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><Users size={13} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {evento.seats_total - (evento.seats_booked || 0)} posti</span>}
         </div>
 
-        {evento.description && <p style={{ margin: '0 0 20px', fontSize: 14, color: subText, lineHeight: 1.6 }}>{evento.description}</p>}
+        {evento.description && <p style={{ margin: '0 0 20px', fontSize: 14, color: subText, lineHeight: 1.6, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }} {...ricco(evento.description)} />}
 
         {/* Prenotazione */}
         <div style={{ background: cardBg, borderRadius: radius || 14, padding: 16, border: `1px solid ${border}` }}>

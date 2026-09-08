@@ -9,6 +9,7 @@ import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { mandaConfermaEvento } from '@/lib/evento-conferma'
 import { after } from 'next/server'
 import { triggerAutomazione } from '@/lib/guest-utils'
+import { registraContatto, tagEvento } from '@/lib/crm'
 
 const ENTITY_TBL = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
 
@@ -206,6 +207,30 @@ export async function POST(request, props) {
     //
     // ⚠️ Un evento aziendale (senza entità) non ha automazioni: sono legate a
     // un'entità. Non è un difetto, è come sono fatte — ma va saputo.
+    // ⛔ Chi prenota un evento entra fra i contatti. Misurato l'08/09: su
+    // quattordici persone che avevano lasciato nome, email e telefono, una sola
+    // era nel CRM. Le altre tredici erano perse — e sono esattamente quelle da
+    // invitare alla serata dopo, che è tutto il valore di un evento.
+    //
+    // ⚠️ Dopo la risposta, ma dentro `after()`: su Vercel la funzione si congela
+    // appena risponde, e il lavoro non atteso non è garantito.
+    after(async () => {
+      const { nuovo } = await registraContatto({
+        aziendaId: evento.azienda_id,
+        email: guest_email, nome: guest_name, telefono: guest_phone,
+        fonte: 'evento',
+        tags: tagEvento(evento.title),
+        nota: `Ha prenotato «${evento.title}»${dateStr ? ` del ${dateStr}` : ''} — ${reqSeats} ${reqSeats === 1 ? 'posto' : 'posti'}`,
+      })
+      // L'automazione «nuovo contatto» parte una volta sola: chi torna a una
+      // seconda serata non è un contatto nuovo.
+      if (nuovo && evento.entity_id) {
+        triggerAutomazione('nuovo_contatto',
+          { azienda_id: evento.azienda_id, entity_tipo: evento.entity_tipo, entity_id: evento.entity_id },
+          { nome: guest_name, email: guest_email }).catch(() => {})
+      }
+    })
+
     if (evento.entity_id && evento.entity_tipo) {
       const varsAuto = {
         nome: guest_name,

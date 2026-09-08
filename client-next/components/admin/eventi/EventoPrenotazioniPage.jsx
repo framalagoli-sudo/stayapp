@@ -9,6 +9,101 @@ function fmtDate(iso) {
   return new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
+// Scrivere a chi ha prenotato: cosa dire, e a chi.
+//
+// ⛔ Prima c'era solo un pulsante «Manda il promemoria» che partiva verso tutti
+// con un testo fisso. Ma il gesto vero è più largo: «ci vediamo domani», «la
+// cena è spostata alle 21», «portate una felpa» sono lo stesso invio con tre
+// testi diversi — e il secondo non si manda a chi l'ha già saputo al telefono.
+//
+// ⚠️ Definito FUORI dalla pagina: un componente dichiarato dentro un altro cambia
+// identità a ogni render e React smonta i campi mentre ci si scrive (nota 22).
+// Qui sarebbe il difetto peggiore: si perde un messaggio già battuto.
+function PannelloPromemoria({ prom, inviando, onChiudi, onManda }) {
+  const [testo, setTesto] = useState(prom?.testo_predefinito || '')
+  // Chi ha un'email e non l'ha ancora ricevuto: la proposta di partenza è quella
+  // giusta nel caso normale, e resta modificabile.
+  const raggiungibili = (prom?.persone || []).filter(p => !p.senza_email)
+  const [scelti, setScelti] = useState(
+    () => new Set(raggiungibili.filter(p => !p.gia_avvisato).map(p => p.id)))
+
+  const senzaEmail = (prom?.persone || []).filter(p => p.senza_email)
+  const tuttiScelti = raggiungibili.length > 0 && raggiungibili.every(p => scelti.has(p.id))
+
+  function commuta(id) {
+    setScelti(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 14, padding: '20px 22px', marginBottom: 20, boxShadow: '0 2px 10px rgba(0,0,0,0.08)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+        <Send size={17} strokeWidth={1.5} color="#2b6cb0" />
+        <h3 style={{ margin: 0, fontSize: 16 }}>Scrivi a chi ha prenotato</h3>
+        <button onClick={onChiudi} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: 13 }}>Chiudi</button>
+      </div>
+
+      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 5 }}>Il messaggio</label>
+      <textarea value={testo} onChange={e => setTesto(e.target.value)} rows={4} maxLength={2000}
+        placeholder="Ti ricordiamo la tua prenotazione…"
+        style={{ width: '100%', padding: '11px 13px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14, fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6 }} />
+      <div style={{ fontSize: 12, color: '#999', margin: '5px 0 16px', lineHeight: 1.55 }}>
+        Ognuno lo riceve con il suo nome, il titolo dell’evento, la data e il luogo: qui scrivi
+        solo cosa vuoi dirgli. Gli a-capo si vedono; &lt;b&gt;grassetto&lt;/b&gt; se serve.
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13.5, fontWeight: 600, color: '#444', cursor: 'pointer' }}>
+          <input type="checkbox" checked={tuttiScelti}
+            onChange={e => setScelti(e.target.checked ? new Set(raggiungibili.map(p => p.id)) : new Set())} />
+          Seleziona tutti
+        </label>
+        <span style={{ fontSize: 12.5, color: '#888' }}>
+          {scelti.size} {scelti.size === 1 ? 'persona selezionata' : 'persone selezionate'} su {raggiungibili.length}
+        </span>
+      </div>
+
+      <div style={{ maxHeight: 260, overflowY: 'auto', border: '1px solid #eee', borderRadius: 10 }}>
+        {raggiungibili.map(p => (
+          <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 13px', borderBottom: '1px solid #f5f5f5', cursor: 'pointer', fontSize: 13.5 }}>
+            <input type="checkbox" checked={scelti.has(p.id)} onChange={() => commuta(p.id)} />
+            <span style={{ flex: 1, minWidth: 0, overflowWrap: 'anywhere' }}>
+              <strong>{p.nome}</strong> <span style={{ color: '#999' }}>· {p.email}</span>
+            </span>
+            <span style={{ flexShrink: 0, fontSize: 12, color: '#888' }}>{p.posti} {p.posti === 1 ? 'posto' : 'posti'}</span>
+            {/* ⚠️ Chi l'ha già ricevuto si vede, non sparisce: rimandarglielo è
+                una scelta legittima — un cambio di orario si dice a tutti. */}
+            {p.gia_avvisato && (
+              <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 700, background: '#edf2f7', color: '#4a5568', borderRadius: 4, padding: '2px 6px' }}>già avvisato</span>
+            )}
+            {p.stato === 'waitlist' && (
+              <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 700, background: '#ebf4ff', color: '#2b6cb0', borderRadius: 4, padding: '2px 6px' }}>in lista</span>
+            )}
+          </label>
+        ))}
+      </div>
+
+      {/* ⛔ Chi ha prenotato al telefono senza lasciare l'email non si può
+          avvisare, e va detto: sparire dall'elenco senza spiegazione fa credere
+          che il sistema li abbia contati. Vanno chiamati a voce. */}
+      {senzaEmail.length > 0 && (
+        <div style={{ marginTop: 10, fontSize: 12.5, color: '#8a6d1f', background: '#fffaf0', border: '1px solid #f6d998', borderRadius: 8, padding: '9px 12px', lineHeight: 1.55 }}>
+          {senzaEmail.length === 1 ? 'Una persona ha' : `${senzaEmail.length} persone hanno`} prenotato senza lasciare un’email
+          ({senzaEmail.map(p => p.nome).join(', ')}): {senzaEmail.length === 1 ? 'va avvisata' : 'vanno avvisate'} a voce.
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: 10, marginTop: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+        <button onClick={() => onManda(testo, [...scelti])} disabled={inviando || scelti.size === 0}
+          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: scelti.size ? '#2b6cb0' : '#cbd5e0', border: 'none', borderRadius: 8, cursor: inviando ? 'wait' : scelti.size ? 'pointer' : 'not-allowed', fontSize: 14, fontWeight: 600, color: '#fff' }}>
+          <Send size={15} strokeWidth={2} />
+          {inviando ? 'Mando…' : scelti.size ? `Manda a ${scelti.size}` : 'Scegli chi avvisare'}
+        </button>
+        <button onClick={onChiudi} style={{ background: 'none', border: 'none', color: '#888', fontSize: 13.5, cursor: 'pointer' }}>Annulla</button>
+      </div>
+    </div>
+  )
+}
+
 const STATUS_OPTIONS = [
   { value: 'pending',   label: 'In attesa',  bg: '#fff3cd', color: '#856404' },
   { value: 'confirmed', label: 'Confermata', bg: '#d4edda', color: '#155724' },
@@ -106,6 +201,7 @@ export default function EventoPrenotazioniPage() {
   // preme il pulsante sa a quanti sta per scrivere.
   const [prom, setProm] = useState(null)
   const [inviando, setInviando] = useState(false)
+  const [pannelloProm, setPannelloProm] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -122,14 +218,21 @@ export default function EventoPrenotazioniPage() {
   }, [id])
   useEffect(() => { caricaPromemoria() }, [caricaPromemoria])
 
-  async function mandaPromemoria() {
-    if (!confirm(`Mandare il promemoria a ${prom.da_avvisare} ${prom.da_avvisare === 1 ? 'persona' : 'persone'}?`)) return
+  // ⛔ Prima c'era un pulsante che mandava subito a tutti, con un `confirm()` che
+  // diceva solo quante persone. Francesco: «dovrebbe essere un pannello con un
+  // testo da personalizzare e la lista dei prenotati da checkare». Ha ragione:
+  // «ci vediamo domani» e «la cena è spostata alle 21» sono lo stesso gesto con
+  // due testi diversi, e la seconda non si manda a chi l'ha già saputo.
+  async function mandaPromemoria(testo, destinatari) {
     setInviando(true)
     try {
-      const esito = await apiFetch(`/api/eventi/${id}/promemoria`, { method: 'POST' })
+      const esito = await apiFetch(`/api/eventi/${id}/promemoria`, {
+        method: 'POST', body: JSON.stringify({ testo, destinatari }),
+      })
       alert(esito.inviati
-        ? `Promemoria mandato a ${esito.inviati} ${esito.inviati === 1 ? 'persona' : 'persone'}.${esito.falliti ? ` ${esito.falliti} non sono partiti.` : ''}`
+        ? `Mandato a ${esito.inviati} ${esito.inviati === 1 ? 'persona' : 'persone'}.${esito.falliti ? ` ${esito.falliti} non ${esito.falliti === 1 ? 'è partito' : 'sono partiti'}.` : ''}`
         : esito.messaggio || 'Nessuno da avvisare.')
+      setPannelloProm(false)
       caricaPromemoria()
       setBookings(await apiFetch(`/api/eventi/${id}/bookings`))
     } catch (e) { alert(`Non è partito: ${e.message}`) }
@@ -154,6 +257,55 @@ export default function EventoPrenotazioniPage() {
 
   if (loading) return <p style={{ padding: 32, color: '#888' }}>Caricamento…</p>
   if (!evento) return <p style={{ padding: 32, color: '#e53e3e' }}>Evento non trovato.</p>
+
+  // ⛔ Sotto ogni riga c'erano TRE pulsanti colorati con la freccia — «→ In
+  // attesa», «→ Annullata», «→ In lista d'attesa» — tutti dello stesso peso.
+  // Parole di Francesco: «il mio cliente mi ha detto che non capisce nulla».
+  // Aveva ragione: chiedevano di scegliere uno **stato interno**, mentre chi
+  // gestisce una serata pensa «questo ha disdetto», «questo lo faccio entrare».
+  //
+  // Ora c'è UNA cosa da fare, evidente, con il nome di quello che succede alla
+  // persona; il resto è testo piccolo accanto. Nessuna azione è stata tolta —
+  // sono le stesse quattro transizioni, ordinate.
+  //
+  // ⚠️ È una funzione normale chiamata `{renderAzioni(b)}`, non un componente
+  // definito qui dentro: quello cambierebbe identità a ogni render (nota 22).
+  function renderAzioni(b) {
+    const AZIONI = {
+      // Il caso normale: è confermata e la persona verrà. L'unica cosa che
+      // capita è che disdica.
+      confirmed: { principale: { stato: 'cancelled', testo: 'Ha disdetto', bg: '#f8d7da', color: '#721c24' },
+                   altre: [{ stato: 'pending', testo: 'rimetti in attesa' }] },
+      // In attesa esiste per quando i pagamenti saranno accesi. Finché no, la
+      // cosa da fare è confermare.
+      pending:   { principale: { stato: 'confirmed', testo: 'Conferma', bg: '#d4edda', color: '#155724' },
+                   altre: [{ stato: 'cancelled', testo: 'annulla' }] },
+      // ⛔ «Fai entrare», non «Conferma»: da qui parte l'email che dice alla
+      // persona che il posto è suo, ed è la differenza fra un gesto e una
+      // promessa mantenuta.
+      waitlist:  { principale: { stato: 'confirmed', testo: 'Fai entrare', bg: '#d4edda', color: '#155724' },
+                   altre: [{ stato: 'cancelled', testo: 'togli dalla lista' }] },
+      cancelled: { principale: { stato: 'confirmed', testo: 'Rimetti dentro', bg: '#d4edda', color: '#155724' },
+                   altre: [] },
+    }
+    const a = AZIONI[b.status]
+    if (!a) return null
+    const bloccato = updatingId === b.id
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 12, paddingTop: 12, borderTop: '1px solid #f0f0f0', flexWrap: 'wrap' }}>
+        <button disabled={bloccato} onClick={() => updateStatus(b.id, a.principale.stato)}
+          style={{ fontSize: 13, fontWeight: 700, padding: '8px 18px', borderRadius: 8, border: 'none', cursor: bloccato ? 'wait' : 'pointer', background: a.principale.bg, color: a.principale.color, opacity: bloccato ? 0.6 : 1 }}>
+          {bloccato ? 'Un attimo…' : a.principale.testo}
+        </button>
+        {a.altre.map(x => (
+          <button key={x.stato} disabled={bloccato} onClick={() => updateStatus(b.id, x.stato)}
+            style={{ fontSize: 12.5, background: 'none', border: 'none', padding: 0, color: '#888', cursor: bloccato ? 'wait' : 'pointer', textDecoration: 'underline' }}>
+            {x.testo}
+          </button>
+        ))}
+      </div>
+    )
+  }
 
   // ⛔ Il primo riquadro contava SOLO le confermate, e mostrava «0 confermati ·
   // €0» a chi aveva nove persone e 375 € di cena prenotata. Il numero era
@@ -217,16 +369,27 @@ export default function EventoPrenotazioniPage() {
           cena del 10 settembre erano ventisette persone che non avrebbero
           ricevuto niente. Questo è il pulsante che dice «mandalo adesso a chi
           c'è» — ed è anche più adatto: il titolare guarda la lista e decide. */}
-      {prom && prom.da_avvisare > 0 && (
+      {pannelloProm && prom ? (
+        <PannelloPromemoria prom={prom} inviando={inviando}
+          onChiudi={() => setPannelloProm(false)} onManda={mandaPromemoria} />
+      ) : prom && prom.totale > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', background: '#f0f4ff', border: '1px solid #c3dafe', borderRadius: 10, padding: '13px 16px', marginBottom: 20 }}>
           <div style={{ flex: 1, minWidth: 220, fontSize: 14, color: '#2b6cb0', lineHeight: 1.6 }}>
-            <strong>{prom.da_avvisare} {prom.da_avvisare === 1 ? 'persona non ha' : 'persone non hanno'} ancora ricevuto il promemoria.</strong>
-            {prom.gia_avvisati > 0 && <> Ne {prom.gia_avvisati === 1 ? 'è già stata avvisata 1' : `sono già state avvisate ${prom.gia_avvisati}`}.</>}
+            {prom.da_avvisare > 0 ? (
+              <><strong>{prom.da_avvisare} {prom.da_avvisare === 1 ? 'persona non ha' : 'persone non hanno'} ancora ricevuto niente.</strong>
+                {prom.gia_avvisati > 0 && <> Ne {prom.gia_avvisati === 1 ? 'è già stata avvisata 1' : `sono già state avvisate ${prom.gia_avvisati}`}.</>}</>
+            ) : (
+              // ⚠️ Il riquadro non spariva quando erano tutti avvisati, e con
+              // lui spariva l'unico modo di scrivere a chi ha prenotato: un
+              // cambio d'orario si comunica anche a chi il promemoria l'ha già
+              // ricevuto.
+              <>Tutti hanno ricevuto il promemoria. Se qualcosa cambia — l’orario, il posto — puoi scrivere di nuovo.</>
+            )}
             {prom.senza_email > 0 && <> {prom.senza_email} {prom.senza_email === 1 ? 'ha prenotato' : 'hanno prenotato'} senza lasciare un’email: {prom.senza_email === 1 ? 'va avvisata' : 'vanno avvisate'} a voce.</>}
           </div>
-          <button onClick={mandaPromemoria} disabled={inviando}
-            style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', background: '#2b6cb0', border: 'none', borderRadius: 8, cursor: inviando ? 'wait' : 'pointer', fontSize: 13.5, fontWeight: 600, color: '#fff', opacity: inviando ? .7 : 1 }}>
-            <Send size={15} strokeWidth={2} /> {inviando ? 'Mando…' : 'Manda il promemoria'}
+          <button onClick={() => setPannelloProm(true)}
+            style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', background: '#2b6cb0', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: '#fff' }}>
+            <Send size={15} strokeWidth={2} /> Scrivi a chi ha prenotato
           </button>
         </div>
       )}
@@ -282,6 +445,20 @@ export default function EventoPrenotazioniPage() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {/* ⚠️ Le etichette colorate erano lì da sempre e nessuno aveva mai
+              scritto cosa vogliono dire. Una parola sola su una pastiglia —
+              «In attesa» — non spiega se quella persona verrà o no, e chi
+              gestisce la serata deve saperlo prima di aprire la porta.
+              Si mostrano solo gli stati che ci sono davvero: spiegare la lista
+              d'attesa a chi non la usa è un'altra cosa da leggere per niente. */}
+          <div style={{ background: '#fff', borderRadius: 12, padding: '12px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', fontSize: 12.5, color: '#666', lineHeight: 1.7 }}>
+            {[
+              bookings.some(b => b.status === 'confirmed') && <span key="c"><strong style={{ color: '#155724' }}>Confermata</strong> = ha il posto e verrà.</span>,
+              bookings.some(b => b.status === 'pending') && <span key="p"><strong style={{ color: '#856404' }}>In attesa</strong> = ha prenotato ma il posto non è ancora suo: va confermata.</span>,
+              bookings.some(b => b.status === 'waitlist') && <span key="w"><strong style={{ color: '#2b6cb0' }}>In lista d’attesa</strong> = non c’era posto. Non ne occupa uno, e «Fai entrare» le manda la conferma.</span>,
+              bookings.some(b => b.status === 'cancelled') && <span key="a"><strong style={{ color: '#721c24' }}>Annullata</strong> = ha disdetto, il suo posto è tornato libero.</span>,
+            ].filter(Boolean).map((x, i, arr) => <span key={i}>{x}{i < arr.length - 1 ? ' · ' : ''}</span>)}
+          </div>
           {bookings.map(b => {
             const st = statusStyle(b.status)
             const pkg = b.package_id ? (evento.packages || []).find(p => p.id === b.package_id) : null
@@ -331,16 +508,7 @@ export default function EventoPrenotazioniPage() {
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: 8, marginTop: 12, paddingTop: 12, borderTop: '1px solid #f0f0f0', flexWrap: 'wrap' }}>
-                  {STATUS_OPTIONS.filter(s => s.value !== b.status).map(s => (
-                    <button key={s.value} disabled={updatingId === b.id}
-                      onClick={() => updateStatus(b.id, s.value)}
-                      style={{ fontSize: 12, fontWeight: 700, padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', background: s.bg, color: s.color, opacity: updatingId === b.id ? 0.6 : 1 }}>
-                      → {s.label}
-                    </button>
-                  ))}
-                </div>
+                {renderAzioni(b)}
               </div>
             )
           })}

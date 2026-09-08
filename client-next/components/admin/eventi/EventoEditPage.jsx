@@ -372,7 +372,14 @@ export default function EventoEditPage() {
 
           <div style={fieldWrap}>
             <label style={lbl}>Descrizione</label>
-            <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={4} style={{ ...inp, resize: 'vertical' }} placeholder="Descrivi l'evento, cosa è incluso, programma…" />
+            <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={7} style={{ ...inp, resize: 'vertical', lineHeight: 1.6 }} placeholder={"Descrivi l'evento, cosa è incluso, il programma…\n\nVai a capo quando serve: sulla pagina si vede come lo scrivi qui."} />
+            {/* ⚠️ Se non si dice, nessuno lo sa: la formattazione c'era già sulle
+                condizioni del pulsante e nessuno l'ha mai usata nella
+                descrizione, perché nessuno l'aveva scritto. */}
+            <div style={{ fontSize: 12, color: '#999', marginTop: 4, lineHeight: 1.55 }}>
+              Gli a-capo si vedono sulla pagina, così com’è scritto qui. Per il grassetto usa
+              &lt;b&gt;parola&lt;/b&gt;, per il corsivo &lt;i&gt;parola&lt;/i&gt;.
+            </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>

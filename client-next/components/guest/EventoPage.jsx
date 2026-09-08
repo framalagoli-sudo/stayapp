@@ -248,8 +248,14 @@ export default function EventoPage() {
           )}
         </div>
 
+        {/* ⛔ Era «tutto appiccicato»: il testo finiva in un `<p>` e in HTML gli
+            a-capo non esistono, quindi tre paragrafi diventavano un muro unico.
+            `pre-wrap` rispetta gli invii che il cliente ha battuto davvero — che
+            è il modo in cui uno scrive — e `ricco` riaccende i pochi tag ammessi
+            per chi vuole anche il grassetto. */}
         {evento.description && (
-          <p style={{ fontSize: 16, lineHeight: 1.8, color: '#444', marginBottom: 32 }}>{evento.description}</p>
+          <p style={{ fontSize: 16, lineHeight: 1.8, color: '#444', marginBottom: 32, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
+            {...ricco(evento.description)} />
         )}
 
         {/* ⛔ Quando non si può più prenotare, il modulo NON si mostra.

@@ -3,6 +3,8 @@ import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { sendEmail } from '@/lib/send-email'
 import { guestEmailTemplate } from '@/lib/email-template'
 import { getAziendaLegale } from '@/lib/guest-data'
+import { registraContatto, tagEvento } from '@/lib/crm'
+import { after } from 'next/server'
 
 // «Avvisatemi se si libera un posto.»
 //
@@ -76,6 +78,17 @@ export async function POST(request, props) {
       privacy_testo: TESTO_CONSENSO_ATTESA,
     }).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
+
+    // ⛔ Chi è in lista d'attesa è il contatto più prezioso che l'evento
+    // produce: voleva venire e non è entrato. È la prima persona da chiamare
+    // quando si replica la serata, e finora spariva insieme all'evento.
+    after(() => registraContatto({
+      aziendaId: evento.azienda_id,
+      email: guest_email, nome: guest_name, telefono: guest_phone,
+      fonte: 'evento',
+      tags: [...tagEvento(evento.title), 'lista attesa'],
+      nota: `In lista d'attesa per «${evento.title}» — ${posti} ${posti === 1 ? 'posto' : 'posti'}: voleva venire e non è entrato.`,
+    }))
 
     // Una conferma che dice la verità: **non** è una prenotazione.
     if ((process.env.RESEND_API_KEY ?? '').trim()) {
