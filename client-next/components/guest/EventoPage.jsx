@@ -68,12 +68,35 @@ export default function EventoPage() {
   const [done,       setDone]       = useState(false)
   const [emailSent,  setEmailSent]  = useState(false)
   const [bookErr,    setBookErr]    = useState('')
+  // La lista d'attesa riusa gli stessi campi del modulo di prenotazione: chi
+  // arriva qui compila nome, email e quante persone, e non deve imparare un
+  // secondo modulo per dire la stessa cosa.
+  const [inLista,    setInLista]    = useState(false)
 
   useEffect(() => {
     guestFetch(`/api/guest/eventi/${id}?lang=${lang}`)
       .then(ev => { setEvento(ev); if (ev.packages?.length === 1) setPkgId(ev.packages[0].id) })
       .catch(() => setError('Evento non trovato.'))
   }, [id, lang])
+
+  async function handleAttesa() {
+    setBookErr('')
+    if (!guestName.trim() || !guestEmail.trim()) { setBookErr('Servono nome ed email.'); return }
+    if (!privacyOk) { setBookErr('Serve il consenso al trattamento dei dati.'); return }
+    setBooking(true)
+    try {
+      const res = await guestFetch(`/api/guest/eventi/${id}/lista-attesa`, {
+        method: 'POST',
+        body: JSON.stringify({
+          guest_name: guestName, guest_email: guestEmail, guest_phone: guestPhone,
+          seats, privacy_accettata: privacyOk,
+        }),
+      })
+      if (res.error) throw new Error(res.error)
+      setInLista(true)
+    } catch (e) { setBookErr(e.message || 'Non è riuscito. Riprova.') }
+    setBooking(false)
+  }
 
   async function handleBook() {
     if (!guestName.trim()) { setBookErr('Inserisci il tuo nome'); return }
@@ -238,16 +261,62 @@ export default function EventoPage() {
             Due motivi diversi, due frasi diverse: «il titolare ha chiuso» e
             «i posti sono finiti» non sono la stessa cosa per chi legge. */}
         {chiuso ? (
-          <div style={{ background: '#fff', borderRadius: 16, padding: 32, boxShadow: '0 2px 16px rgba(0,0,0,0.07)', textAlign: 'center' }}>
-            <div style={{ fontSize: 19, fontWeight: 700, color: '#1a1a2e', marginBottom: 10 }}>
-              {evento.prenotazioni_chiuse ? 'Prenotazioni chiuse' : 'Tutto esaurito'}
+          <div style={{ background: '#fff', borderRadius: 16, padding: 32, boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>
+            <div style={{ textAlign: 'center', marginBottom: evento.lista_attesa && !inLista ? 26 : 0 }}>
+              <div style={{ fontSize: 19, fontWeight: 700, color: '#1a1a2e', marginBottom: 10 }}>
+                {evento.prenotazioni_chiuse ? 'Prenotazioni chiuse' : 'Tutto esaurito'}
+              </div>
+              <p style={{ fontSize: 15.5, color: '#555', lineHeight: 1.7, margin: 0, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto' }}>
+                {evento.prenotazioni_chiuse_testo?.trim()
+                  || (evento.prenotazioni_chiuse
+                    ? 'Non raccogliamo altre prenotazioni per questo appuntamento.'
+                    : 'I posti per questo appuntamento sono finiti.')}
+              </p>
             </div>
-            <p style={{ fontSize: 15.5, color: '#555', lineHeight: 1.7, margin: 0, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto' }}>
-              {evento.prenotazioni_chiuse_testo?.trim()
-                || (evento.prenotazioni_chiuse
-                  ? 'Non raccogliamo altre prenotazioni per questo appuntamento. Grazie a chi ci ha scritto!'
-                  : 'I posti per questo appuntamento sono finiti. Grazie a tutti — ci vediamo alla prossima.')}
-            </p>
+
+            {/* ⛔ Qui c'era solo il messaggio, e chi lo leggeva se ne andava.
+                Il valore della lista d'attesa non è la serata in corso — quella
+                è piena — ma la prossima: si parte con l'elenco di chi voleva
+                venire e non è entrato. */}
+            {evento.lista_attesa && (inLista ? (
+              <div style={{ textAlign: 'center', padding: '22px 0 4px' }}>
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#e8f8f8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+                  <Check size={26} strokeWidth={2} color="#00b5b5" />
+                </div>
+                <div style={{ fontWeight: 700, fontSize: 18, color: '#1a1a2e', marginBottom: 8 }}>Sei in lista</div>
+                {/* ⚠️ Va detto che NON è una prenotazione: chi lo legge di fretta
+                    potrebbe presentarsi convinto di avere un posto. */}
+                <p style={{ fontSize: 15, color: '#555', lineHeight: 1.7, margin: 0, maxWidth: 420, marginLeft: 'auto', marginRight: 'auto' }}>
+                  Non è una prenotazione: se qualcuno rinuncia ti scriviamo noi. Non serve che tu faccia altro.
+                </p>
+              </div>
+            ) : (
+              <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 24 }}>
+                <div style={{ fontSize: 16.5, fontWeight: 700, color: '#1a1a2e', marginBottom: 6 }}>Vuoi che ti avvisiamo?</div>
+                <p style={{ fontSize: 14.5, color: '#777', lineHeight: 1.65, marginTop: 0, marginBottom: 18 }}>
+                  Lasciaci un contatto: se qualcuno rinuncia sei il primo a saperlo. Nessun impegno.
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 12 }}>
+                  <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Nome e cognome *" style={inp} />
+                  <input type="email" value={guestEmail} onChange={e => setGuestEmail(e.target.value)} placeholder="Email *" style={inp} />
+                  <input type="tel" value={guestPhone} onChange={e => setGuestPhone(e.target.value)} placeholder="Telefono" style={inp} />
+                  <input type="number" min="1" value={seats} onChange={e => setSeats(Math.max(1, Number(e.target.value) || 1))} placeholder="Per quante persone" style={inp} />
+                </div>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#666', cursor: 'pointer', lineHeight: 1.6, marginBottom: 14 }}>
+                  <input type="checkbox" checked={privacyOk} onChange={e => setPrivacyOk(e.target.checked)} style={{ marginTop: 3, flexShrink: 0, accentColor: '#00b5b5' }} />
+                  <span>
+                    Ho letto e accetto {privacyUrl
+                      ? <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#00b5b5', fontWeight: 600 }}>l’informativa sulla privacy</a>
+                      : <strong>l’informativa sulla privacy</strong>}. I miei dati saranno usati per avvisarmi se si libera un posto.
+                  </span>
+                </label>
+                {bookErr && <p style={{ margin: '0 0 12px', fontSize: 14, color: '#c0392b' }}>{bookErr}</p>}
+                <button onClick={handleAttesa} disabled={booking}
+                  style={{ width: '100%', padding: '14px 20px', background: '#1a1a2e', border: 'none', borderRadius: 10, cursor: booking ? 'wait' : 'pointer', fontSize: 15.5, fontWeight: 700, color: '#fff', opacity: booking ? .7 : 1 }}>
+                  {booking ? 'Un attimo…' : 'Avvisatemi se si libera'}
+                </button>
+              </div>
+            ))}
           </div>
         ) : (
         <div style={{ background: '#fff', borderRadius: 16, padding: 32, boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>

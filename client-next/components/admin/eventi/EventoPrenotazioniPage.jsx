@@ -13,6 +13,10 @@ const STATUS_OPTIONS = [
   { value: 'pending',   label: 'In attesa',  bg: '#fff3cd', color: '#856404' },
   { value: 'confirmed', label: 'Confermata', bg: '#d4edda', color: '#155724' },
   { value: 'cancelled', label: 'Annullata',  bg: '#f8d7da', color: '#721c24' },
+  // ⛔ Chi è in lista d'attesa NON occupa un posto: è il punto della funzione.
+  // Confermarlo lo fa diventare una prenotazione vera — e da lì parte la
+  // conferma all'ospite, che è quella che già funziona.
+  { value: 'waitlist',  label: 'In lista d’attesa', bg: '#ebf4ff', color: '#2b6cb0' },
 ]
 
 // Segnare al volo una prenotazione arrivata per telefono.
@@ -155,7 +159,11 @@ export default function EventoPrenotazioniPage() {
   // questa pagina e' **quanta gente viene**, non in che stato interno sta la
   // riga. I posti presi sono tutti quelli non annullati — la stessa cosa che
   // conta `recomputeEventSeats` per decidere se l'evento e' pieno.
-  const vive     = bookings.filter(b => b.status !== 'cancelled')
+  // ⚠️ La lista d'attesa resta fuori dai posti presi, altrimenti riempirebbe
+  // l'evento da sola: e quando un posto si libera non risulterebbe libero — né
+  // per chi prenota né per chi è in lista.
+  const inAttesa = bookings.filter(b => b.status === 'waitlist')
+  const vive     = bookings.filter(b => b.status !== 'cancelled' && b.status !== 'waitlist')
   const presi    = vive.reduce((n, b) => n + (b.seats || 1), 0)
   const pending  = bookings.filter(b => b.status === 'pending').reduce((n, b) => n + (b.seats || 1), 0)
   const revenue  = vive.reduce((n, b) => n + (b.total_amount || 0), 0)
@@ -226,7 +234,9 @@ export default function EventoPrenotazioniPage() {
           // quindici posti. L'etichetta e il numero si contraddicevano, e chi
           // legge si fida dell'etichetta — che era quella sbagliata. Le persone
           // sono i posti, e stanno nel riquadro accanto.
-          { label: 'Prenotazioni', value: vive.length, sub: 'nell’elenco qui sotto', icon: Users, color: '#1a1a2e', bg: '#f0f4ff' },
+          { label: 'Prenotazioni', value: vive.length,
+            sub: inAttesa.length ? `+ ${inAttesa.length} in lista d’attesa` : 'nell’elenco qui sotto',
+            icon: Users, color: '#1a1a2e', bg: '#f0f4ff' },
           { label: 'Valore',     value: `€${revenue}`, sub: pending ? `${pending} posti ancora in attesa` : 'prenotazioni valide', icon: Package, color: '#2b6cb0', bg: '#ebf4ff' },
         ].map(({ label, value, sub, icon: Icon, color, bg }) => (
           <div key={label} style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
