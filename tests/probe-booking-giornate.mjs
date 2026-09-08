@@ -63,11 +63,17 @@ try {
   const furgone = await creaRisorsa('ZZ Furgone', true)
   const casa    = await creaRisorsa('ZZ Casa', false)
 
+  // ⚠️ L'esito dell'insert si guarda. Senza questo controllo la prima corsa ha
+  // dato sei righe rosse che sembravano difetti del codice: le prenotazioni non
+  // erano mai state create (`cliente_email` è NOT NULL) e la sonda misurava un
+  // database vuoto. Un errore ignorato non resta silenzioso: mente.
   const prenota = async (ris, dal, al) => {
-    await admin.from('prenotazioni').insert({
+    const { error } = await admin.from('prenotazioni').insert({
       risorsa_id: ris.id, azienda_id: az.id, entity_tipo: 'attivita', entity_id: ent.id,
-      data: dal, data_fine: al, cliente_nome: 'ZZ Cliente', stato: 'confermata',
+      data: dal, data_fine: al, cliente_nome: 'ZZ Cliente',
+      cliente_email: `zz-book-${t}@playwright.internal`, stato: 'confermata',
     })
+    if (error) throw new Error(`non riesco a creare la prenotazione ${dal}→${al}: ${error.message}`)
   }
 
   console.log('\n1 · UNA PRENOTAZIONE CORTA NON SPARISCE DAL CALENDARIO\n')
