@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { verificaPeriodo, totaleGiornaliero } from '@/lib/booking-giornaliero'
+import { contoDelPeriodo } from '@/lib/offerte-risorsa'
 import { confermaPostiPrenotazione } from '@/lib/capienza'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -80,6 +81,7 @@ export async function POST(request) {
     let ora_fine = null
     let importo = Number(risorsa.prezzo) || 0
     const persone = Math.max(1, parseInt(n_persone) || 1)
+    let offertaApplicata = null
 
     if (risorsa.modalita === 'giornaliero') {
       if (!data_fine) return Response.json({ error: 'Serve anche la data di fine' }, { status: 400 })
@@ -89,7 +91,16 @@ export async function POST(request) {
       const esito = verificaPeriodo(risorsa, data, data_fine, occupate || [])
       if (!esito.ok) return Response.json({ error: esito.motivo }, { status: 409 })
       fine = data_fine
-      importo = totaleGiornaliero(risorsa, data, data_fine)
+      // ⚠️ Anche la prenotazione presa al telefono passa dalle offerte. Se il
+      // titolare segna a mano un noleggio che cade nel ponte, il prezzo dev'essere
+      // quello del ponte: due strade per la stessa risorsa che danno due totali
+      // diversi diventano una discussione alla consegna.
+      const { data: offerte } = await supabaseAdmin.from('risorse_promozioni')
+        .select('*').eq('risorsa_id', risorsa_id).eq('attiva', true)
+      const conto = contoDelPeriodo(risorsa, data, data_fine, offerte || [],
+        totaleGiornaliero(risorsa, data, data_fine))
+      importo = conto.totale
+      offertaApplicata = conto.offerta?.id || null
     } else {
       if (risorsa.modalita === 'slot' && ora_inizio) {
         const [h, m] = ora_inizio.split(':').map(Number)
@@ -113,6 +124,7 @@ export async function POST(request) {
       // Inserita dal titolare: è già confermata, non deve confermarla a se stesso.
       stato: 'confermata',
       prezzo_unitario: risorsa.prezzo, importo_totale: importo,
+      promozione_id: offertaApplicata,
     }).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
 

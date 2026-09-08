@@ -5,7 +5,8 @@ import { useAzienda } from '../../../context/AziendaContext'
 import AvvisoNonSiVede from '../AvvisoNonSiVede'
 // Sicuro dal browser: `booking-giornaliero` non importa niente, tantomeno
 // `supabaseAdmin`. È scritto in cima a quel file ed è il motivo per cui ci sta.
-import { contaGiorni, nomeUnita, limiteInUnita, limiteInNotti } from '../../../lib/booking-giornaliero'
+import { contaGiorni, nomeUnita, limiteInUnita, limiteInNotti, totaleGiornaliero, unitaDaPagare } from '../../../lib/booking-giornaliero'
+import { totaleConOfferta } from '../../../lib/offerte-risorsa'
 
 const GIORNI = [
   { key: 'lun', label: 'Lunedì' },
@@ -152,7 +153,8 @@ export default function BookingRisorsePage() {
   const [promoData, setPromoData] = useState({
     nome: '', descrizione: '', data_inizio: '', data_fine: '',
     ora_inizio: '', ora_fine: '', giorni_settimana: null,
-    prezzo_speciale: '', badge_label: 'Offerta', colore: '#e53e3e', attiva: true,
+    prezzo_speciale: '', prezzo_modo: 'giorno', minimo_notti: null,
+    badge_label: 'Offerta', colore: '#e53e3e', attiva: true,
   })
 
   // Le attività che hanno qualcosa di prenotabile e visibile: una sola voce per
@@ -699,13 +701,57 @@ function RisorseForm({ form, patch, patchDisp, initDisp, entita = [], onEntita, 
   )
 }
 
+// ─── Anteprima del prezzo che si sta scrivendo ────────────────────────────────
+//
+// ⛔ «Prezzo speciale: 850» non dice quanto pagherà chi prenota. Qui lo dice, e
+// accanto c'è il prezzo di listino per lo stesso periodo: se l'offerta costa più
+// del normale non è per forza un errore — il ponte di un furgone costa di più —
+// ma dev'essere una scelta guardata, non un numero interpretato dal codice.
+//
+// ⚠️ Definita FUORI da `PromoPanel`: dentro cambierebbe identità a ogni render e
+// React smonterebbe i campi mentre ci si scrive (nota 22).
+function AnteprimaOfferta({ risorsa, promo }) {
+  const speciale = Number(promo?.prezzo_speciale)
+  if (!Number.isFinite(speciale) || speciale <= 0) return null
+
+  // Un periodo di esempio: quello dell'offerta se ha le date, altrimenti la
+  // durata minima, altrimenti tre giorni.
+  const dal = promo.data_inizio || '2026-01-05'
+  let al = promo.data_fine
+  if (!al) {
+    const n = Math.max(1, Number(promo.minimo_notti) || 2)
+    const d = new Date(`${dal}T12:00:00`); d.setDate(d.getDate() + n)
+    al = d.toISOString().slice(0, 10)
+  }
+  const conOfferta = totaleConOfferta(risorsa, dal, al, { ...promo, prezzo_speciale: speciale })
+  const pieno = totaleGiornaliero(risorsa, dal, al)
+  if (conOfferta == null) return null
+
+  const unita = unitaDaPagare(dal, al, contaGiorni(risorsa))
+  const piuCaro = conOfferta > pieno
+  return (
+    <div style={{ marginTop: 16, background: piuCaro ? '#fffaf0' : '#f0fff4', border: `1px solid ${piuCaro ? '#f6d998' : '#9ae6b4'}`, borderRadius: 10, padding: '12px 16px', fontSize: 13.5, lineHeight: 1.7, color: piuCaro ? '#8a6d1f' : '#22543d' }}>
+      Chi prenota <strong>dal {dal} al {al}</strong> ({unita} {nomeUnita(risorsa, unita)}) pagherà <strong>€{conOfferta}</strong>,
+      invece di €{pieno} di listino.
+      {piuCaro && <> ⚠️ Con questa offerta costa <strong>di più</strong> del normale: è giusto se è alta stagione, altrimenti controlla se «{promo.prezzo_modo === 'periodo' ? 'per tutto il periodo' : `per ogni ${nomeUnita(risorsa, 1)}`}» è quello che intendi.</>}
+    </div>
+  )
+}
+
 // ─── Pannello promozioni ──────────────────────────────────────────────────────
 
 function PromoPanel({ risorsa, promozioni, promoForm, setPromoForm, promoData, setPromoData, onSave, onDelete, onBack }) {
   function patchP(key, val) { setPromoData(p => ({ ...p, [key]: val })) }
 
+  // A giornate le ore non vogliono dire niente — e il pannello le mostrava
+  // comunque: il titolare del Furgone ha compilato «dalle 09:00 alle 11:00» su
+  // un noleggio a giornate. Un campo fuori posto non viene ignorato, viene
+  // riempito.
+  const aGiornate = risorsa?.modalita === 'giornaliero'
+  const unita = nomeUnita(risorsa, 2)
+
   function openNewPromo() {
-    setPromoData({ nome: '', descrizione: '', data_inizio: '', data_fine: '', ora_inizio: '', ora_fine: '', giorni_settimana: null, prezzo_speciale: '', badge_label: 'Offerta', colore: '#e53e3e', attiva: true })
+    setPromoData({ nome: '', descrizione: '', data_inizio: '', data_fine: '', ora_inizio: '', ora_fine: '', giorni_settimana: null, prezzo_speciale: '', prezzo_modo: 'giorno', minimo_notti: null, badge_label: 'Offerta', colore: '#e53e3e', attiva: true })
     setPromoForm('new')
   }
 
@@ -734,6 +780,31 @@ function PromoPanel({ risorsa, promozioni, promoForm, setPromoForm, promoData, s
               <Label>Prezzo speciale (€) *</Label>
               <Input type="number" min={0} step={0.5} value={promoData.prezzo_speciale} onChange={e => patchP('prezzo_speciale', parseFloat(e.target.value) || '')} />
             </div>
+            {/* ⛔ L'etichetta diceva solo «Prezzo speciale (€)». Su cinque giorni
+                a listino €120, un «850» vale €4.250 letto al giorno e €850 letto
+                a periodo: cinque volte il conto, e a sceglierlo era il codice
+                invece di chi vende. Ora lo dice il cliente. */}
+            {aGiornate && (
+              <div>
+                <Label>Quel prezzo è…</Label>
+                <select value={promoData.prezzo_modo || 'giorno'} onChange={e => patchP('prezzo_modo', e.target.value)}
+                  style={{ width: '100%', padding: '9px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, background: '#fff' }}>
+                  <option value="giorno">per ogni {nomeUnita(risorsa, 1)}</option>
+                  <option value="periodo">per tutto il periodo</option>
+                </select>
+              </div>
+            )}
+            {aGiornate && (
+              <div>
+                <Label>Solo da almeno… ({unita}, vuoto = nessun minimo)</Label>
+                <Input type="number" min={0} max={365}
+                  value={promoData.minimo_notti != null ? limiteInUnita(promoData.minimo_notti, risorsa) : ''}
+                  onChange={e => {
+                    const v = parseInt(e.target.value)
+                    patchP('minimo_notti', Number.isFinite(v) && v > 0 ? limiteInNotti(v, risorsa) : null)
+                  }} />
+              </div>
+            )}
             <div>
               <Label>Badge</Label>
               <Input value={promoData.badge_label} onChange={e => patchP('badge_label', e.target.value)} placeholder="Offerta" />
@@ -750,15 +821,25 @@ function PromoPanel({ risorsa, promozioni, promoForm, setPromoForm, promoData, s
               <Label>Valida fino al</Label>
               <Input type="date" value={promoData.data_fine || ''} onChange={e => patchP('data_fine', e.target.value || null)} />
             </div>
-            <div>
-              <Label>Ore dalle</Label>
-              <Input type="time" value={promoData.ora_inizio || ''} onChange={e => patchP('ora_inizio', e.target.value || null)} />
-            </div>
-            <div>
-              <Label>Ore alle</Label>
-              <Input type="time" value={promoData.ora_fine || ''} onChange={e => patchP('ora_fine', e.target.value || null)} />
-            </div>
+            {!aGiornate && (
+              <>
+                <div>
+                  <Label>Ore dalle</Label>
+                  <Input type="time" value={promoData.ora_inizio || ''} onChange={e => patchP('ora_inizio', e.target.value || null)} />
+                </div>
+                <div>
+                  <Label>Ore alle</Label>
+                  <Input type="time" value={promoData.ora_fine || ''} onChange={e => patchP('ora_fine', e.target.value || null)} />
+                </div>
+              </>
+            )}
           </div>
+
+          {/* ⛔ Il numero che si sta scrivendo, visto come lo vedrà chi prenota.
+              È la stessa difesa messa sugli eventi: l'errore sul prezzo si vede
+              PRIMA di pubblicarlo, non dopo, quando è già stato addebitato. */}
+          {aGiornate && <AnteprimaOfferta risorsa={risorsa} promo={promoData} />}
+
           <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
             <button onClick={onSave} style={primaryBtn}>Salva offerta</button>
             <button onClick={() => setPromoForm(null)} style={ghostBtn}>Annulla</button>
@@ -778,10 +859,13 @@ function PromoPanel({ risorsa, promozioni, promoForm, setPromoForm, promoData, s
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 600 }}>{p.nome}</div>
                 <div style={{ fontSize: 12, color: '#888' }}>
-                  €{p.prezzo_speciale}
+                  {/* «€850» da solo non dice di cosa: era l'ambiguità che
+                      generava il prezzo sbagliato. */}
+                  €{p.prezzo_speciale}{aGiornate ? (p.prezzo_modo === 'periodo' ? ' per tutto il periodo' : ` a ${nomeUnita(risorsa, 1)}`) : ''}
                   {p.data_inizio ? ` · dal ${p.data_inizio}` : ''}
                   {p.data_fine ? ` al ${p.data_fine}` : ''}
-                  {p.ora_inizio ? ` · ${p.ora_inizio}–${p.ora_fine}` : ''}
+                  {p.minimo_notti ? ` · da ${limiteInUnita(p.minimo_notti, risorsa)} ${nomeUnita(risorsa, limiteInUnita(p.minimo_notti, risorsa))} in su` : ''}
+                  {!aGiornate && p.ora_inizio ? ` · ${p.ora_inizio}–${p.ora_fine}` : ''}
                 </div>
               </div>
               <button onClick={() => openEditPromo(p)} style={ghostBtn}>Modifica</button>

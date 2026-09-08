@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { istanteDi } from '@/lib/fuso'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { verificaPeriodo, totaleGiornaliero, unitaDaPagare, contaGiorni, nomeUnita } from '@/lib/booking-giornaliero'
+import { contoDelPeriodo } from '@/lib/offerte-risorsa'
 import { confermaPostiPrenotazione } from '@/lib/capienza'
 import { creaCheckout, accontoDovuto } from '@/lib/checkout'
 import { sendWebhooks } from '@/lib/send-webhooks'
@@ -144,11 +145,21 @@ export async function POST(request) {
       ora_fine = formatTime(parseTime(ora_inizio) + risorsa.durata_minuti)
     }
 
+    // ⛔ L'offerta si rileggeva dal database — giusto, il prezzo non arriva mai
+    // dal client — ma non si controllava che fosse di QUESTA risorsa. L'id di
+    // un'offerta qualunque, anche di un'altra azienda, ne portava via il prezzo.
+    // Quello che arriva dal client dice quale, mai quanto, e nemmeno se vale.
+    let offertaScelta = null
     let prezzo_unitario = risorsa.prezzo
     if (isUUID(promozione_id)) {
       const { data: promo } = await supabaseAdmin.from('risorse_promozioni')
-        .select('prezzo_speciale').eq('id', promozione_id).eq('attiva', true).single()
-      if (promo) prezzo_unitario = promo.prezzo_speciale
+        .select('*').eq('id', promozione_id).eq('risorsa_id', risorsa_id).eq('attiva', true).maybeSingle()
+      if (promo) {
+        offertaScelta = promo
+        // Per gli slot il prezzo speciale è sempre quello dell'unità: è ciò che
+        // il campo ha sempre significato lì, e non cambia.
+        if (risorsa.modalita !== 'giornaliero') prezzo_unitario = promo.prezzo_speciale
+      }
     }
     const persone = Math.max(1, parseInt(n_persone) || 1)
     let importo_totale = prezzo_unitario * persone
@@ -172,7 +183,15 @@ export async function POST(request) {
       if (!esito.ok) return Response.json({ error: esito.motivo }, { status: 409 })
 
       fine = data_fine
-      importo_totale = totaleGiornaliero(risorsa, data, data_fine)
+      // ⛔ Qui l'offerta non la sceglie il client: la sceglie il server fra
+      // quelle che valgono davvero per queste date. Fidarsi dell'id proposto
+      // significherebbe far decidere lo sconto a chi paga.
+      const { data: offerte } = await supabaseAdmin.from('risorse_promozioni')
+        .select('*').eq('risorsa_id', risorsa_id).eq('attiva', true)
+      const conto = contoDelPeriodo(risorsa, data, data_fine, offerte || [],
+        totaleGiornaliero(risorsa, data, data_fine))
+      importo_totale = conto.totale
+      offertaScelta = conto.offerta ? { id: conto.offerta.id } : null
     }
 
     const payload = {
@@ -199,7 +218,10 @@ export async function POST(request) {
       privacy_testo: TESTO_CONSENSO,
       prezzo_unitario,
       importo_totale,
-      promozione_id: isUUID(promozione_id) ? promozione_id : null,
+      // Si registra l'offerta che il server ha **applicato**, non quella che il
+      // client aveva proposto: la riga deve raccontare il prezzo che è stato
+      // fatto, altrimenti mesi dopo nessuno sa più perché si è pagato quello.
+      promozione_id: offertaScelta?.id || null,
     }
 
     const { data: prenotazione, error: pe } = await supabaseAdmin.from('prenotazioni').insert(payload).select().single()

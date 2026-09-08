@@ -316,7 +316,26 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
                   {periodo.prezzo > 0 && <> · {simboloValuta(selected.risorsa?.valuta)}{periodo.prezzo} {aUnita(periodo)}</>}
                 </div>
                 {periodo.totale > 0 && (
-                  <div style={{ fontSize: 20, fontWeight: 700, color: primaryColor, marginTop: 4 }}>€{periodo.totale}</div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: primaryColor }}>€{periodo.totale}</div>
+                    {/* Il prezzo pieno accanto solo quando è DIVERSO e più alto:
+                        «€850 anziché €850» è rumore, e mostrarlo barrato quando
+                        l'offerta costa di più sarebbe una bugia. */}
+                    {periodo.totale_pieno > periodo.totale && (
+                      <div style={{ fontSize: 14, color: '#999', textDecoration: 'line-through' }}>€{periodo.totale_pieno}</div>
+                    )}
+                  </div>
+                )}
+                {/* ⛔ «Il cliente ha creato un'offerta, ma dove si vede?» — qui:
+                    il suo nome, con il suo badge, appena le date la fanno
+                    scattare. Prima non compariva da nessuna parte. */}
+                {periodo.offerta && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                    <span style={{ fontSize: 10.5, fontWeight: 700, color: '#fff', background: periodo.offerta.colore, borderRadius: 4, padding: '2px 6px', flexShrink: 0 }}>
+                      {periodo.offerta.badge}
+                    </span>
+                    <span style={{ fontSize: 13.5, color: '#555', overflowWrap: 'anywhere' }}>{periodo.offerta.nome}</span>
+                  </div>
                 )}
                 {periodo.libere > 1 && (
                   <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>Ne restano {periodo.libere} disponibili.</div>
@@ -670,6 +689,7 @@ function CalendarioPubblico({ risorsaId, primaryColor, dal, al, onScegli }) {
   const [anno, setAnno] = useState(adesso.getFullYear())
   const [mese, setMese] = useState(adesso.getMonth())
   const [occupati, setOccupati] = useState([])
+  const [offerte, setOfferte] = useState({})
   const [carico, setCarico] = useState(true)
 
   // ⚠️ Le date si compongono dai campi locali: `toISOString()` passa per UTC e a
@@ -681,7 +701,7 @@ function CalendarioPubblico({ risorsaId, primaryColor, dal, al, onScegli }) {
     let vivo = true
     setCarico(true)
     publicFetch(`/api/booking/public/disponibilita/${risorsaId}?mese=${anno}-${String(mese + 1).padStart(2, '0')}`)
-      .then(d => { if (vivo) setOccupati(d.occupati || []) })
+      .then(d => { if (vivo) { setOccupati(d.occupati || []); setOfferte(d.offerte || {}) } })
       .finally(() => { if (vivo) setCarico(false) })
     return () => { vivo = false }
   }, [risorsaId, anno, mese])
@@ -721,11 +741,17 @@ function CalendarioPubblico({ risorsaId, primaryColor, dal, al, onScegli }) {
           const eFine = giorno === al
           const dentro = dal && al && giorno > dal && giorno < al
           const scelto = eInizio || eFine
+          // ⛔ L'offerta che il cliente aveva creato non si vedeva da nessuna
+          // parte. Qui il giorno la porta con sé: un punto del suo colore, e il
+          // nome nel tooltip. Solo se il giorno è libero — segnalare un'offerta
+          // su un giorno già preso è un invito a una porta chiusa.
+          const off = !bloccato ? offerte[giorno] : null
           return (
             <button key={giorno} data-giorno={giorno} disabled={bloccato}
               onClick={() => onScegli(giorno)}
-              title={preso ? 'Non disponibile' : undefined}
+              title={preso ? 'Non disponibile' : off ? off.nome : undefined}
               style={{
+                position: 'relative',
                 aspectRatio: '1', border: 'none', borderRadius: 8, fontSize: 13, padding: 0,
                 cursor: bloccato ? 'not-allowed' : 'pointer',
                 fontWeight: scelto ? 700 : 500,
@@ -736,6 +762,12 @@ function CalendarioPubblico({ risorsaId, primaryColor, dal, al, onScegli }) {
                 textDecoration: preso ? 'line-through' : 'none',
               }}>
               {g}
+              {off && (
+                <span aria-hidden="true" style={{
+                  position: 'absolute', bottom: 3, left: '50%', transform: 'translateX(-50%)',
+                  width: 5, height: 5, borderRadius: '50%', background: scelto ? '#fff' : off.colore,
+                }} />
+              )}
             </button>
           )
         })}
@@ -748,6 +780,18 @@ function CalendarioPubblico({ risorsaId, primaryColor, dal, al, onScegli }) {
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
           <span style={{ width: 12, height: 12, borderRadius: 3, background: '#f4f4f5' }} /> non disponibile
         </span>
+        {/* ⛔ Il pallino da solo non dice cosa sia, e il tooltip su un telefono
+            non si apre mai: senza questa riga l'offerta resterebbe visibile solo
+            a chi usa il mouse. Ogni nome compare una volta, anche se copre
+            dieci giorni. */}
+        {[...new Map(Object.values(offerte).map(o => [o.nome, o])).values()].map(o => (
+          <span key={o.nome} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, overflowWrap: 'anywhere' }}>
+            <span style={{ width: 12, height: 12, borderRadius: 3, background: '#eefaf1', position: 'relative' }}>
+              <span style={{ position: 'absolute', bottom: 1, left: '50%', transform: 'translateX(-50%)', width: 5, height: 5, borderRadius: '50%', background: o.colore }} />
+            </span>
+            {o.nome}
+          </span>
+        ))}
       </div>
     </div>
   )

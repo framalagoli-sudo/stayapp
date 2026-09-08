@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { verificaPeriodo, unitaLibereNelGiorno, giornoDopo, totaleGiornaliero, notti, unitaDaPagare, periodoBloccato } from '@/lib/booking-giornaliero'
+import { contoDelPeriodo, offerteDelGiorno } from '@/lib/offerte-risorsa'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isUUID = v => UUID_RE.test(v)
@@ -150,6 +151,12 @@ export async function GET(request, props) {
         .eq('id', risorsaId).eq('attiva', true).maybeSingle()
       if (!ris) return Response.json({ error: 'Risorsa non trovata' }, { status: 404 })
 
+      // ⚠️ Solo le colonne che servono a colorare un giorno. Un `select('*')` su
+      // una route pubblica pubblicherebbe da solo ogni colonna aggiunta domani.
+      const { data: offerteMese } = await supabaseAdmin.from('risorse_promozioni')
+        .select('id, nome, badge_label, colore, data_inizio, data_fine, giorni_settimana, attiva')
+        .eq('risorsa_id', risorsaId).eq('attiva', true)
+
       const { data: prese } = await supabaseAdmin.from('prenotazioni')
         .select('data, data_fine')
         .eq('risorsa_id', risorsaId).in('stato', ['confermata', 'in_attesa'])
@@ -157,8 +164,14 @@ export async function GET(request, props) {
         .or(`data_fine.gte.${primo},and(data_fine.is.null,data.gte.${primo})`)
 
       const occupati = []
+      // ⛔ «Il cliente ha creato un'offerta, ma dove si vede?» — da nessuna
+      // parte. Qui i giorni che ne hanno una escono col nome e il colore, così
+      // chi apre il mese vede che lì c'è qualcosa **prima** di scegliere.
+      const inOfferta = {}
       for (let g = 1; g <= new Date(anno, m, 0).getDate(); g++) {
         const giorno = `${mese}-${String(g).padStart(2, '0')}`
+        const off = offerteDelGiorno(offerteMese || [], giorno)[0]
+        if (off) inOfferta[giorno] = { nome: off.nome, badge: off.badge_label || 'Offerta', colore: off.colore || '#e53e3e' }
         // ⛔ Un giorno solo è l'intervallo `[giorno, giornoDopo)`, non
         // `(giorno, giorno)` — che è vuoto e non tocca mai niente. Con quello,
         // il calendario del Furgone mostrava liberi il primo e l'ultimo giorno
@@ -173,7 +186,7 @@ export async function GET(request, props) {
       return Response.json({
         risorsa_id: risorsaId, mese, modalita: ris.modalita,
         prezzo: ris.prezzo, minimo_notti: Number(ris.disponibilita?.minimo_notti) || 1,
-        occupati,
+        occupati, offerte: inOfferta,
       })
     }
 
@@ -224,6 +237,12 @@ export async function GET(request, props) {
       // notti · €90 a notte» sopra un totale di €270. Il conto era giusto, il
       // testo no, ed è l'ambiguità sul prezzo quella che genera contestazioni.
       const contaUscita = !!risorsa.disponibilita?.conta_giorno_uscita
+      // ⛔ Le offerte valevano solo per gli slot orari: a giornate si
+      // compilavano e non facevano niente. Il conto lo fa `contoDelPeriodo`, lo
+      // stesso che usa la route di prenotazione — così quello che si legge e
+      // quello che si paga escono dallo stesso punto.
+      const conto = contoDelPeriodo(risorsa, date, fine, promozioni || [],
+        esito.totale ?? totaleGiornaliero(risorsa, date, fine))
       return Response.json({
         risorsa_id: risorsaId, data: date, data_fine: fine, modalita: 'giornaliero',
         disponibile: esito.ok, motivo: esito.motivo || null,
@@ -231,7 +250,12 @@ export async function GET(request, props) {
         unita: unitaDaPagare(date, fine, contaUscita),
         unita_nome: contaUscita ? 'giorni' : 'notti',
         libere: esito.libere ?? 0,
-        prezzo: risorsa.prezzo, totale: esito.totale ?? totaleGiornaliero(risorsa, date, fine),
+        prezzo: risorsa.prezzo,
+        totale: conto.totale,
+        // Il prezzo pieno serve a scrivere «€850 anziché €600»: senza, il
+        // risparmio non è dimostrabile e resta una parola.
+        totale_pieno: conto.totalePieno,
+        offerta: conto.offerta,
       })
     }
 
