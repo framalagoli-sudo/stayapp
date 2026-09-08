@@ -35,7 +35,10 @@ export default function EventoEditPage() {
     title: '', description: '', date_start: '', date_end: '', location: '',
     price: '', seats_total: '', active: true, published: false,
     entity_tipo: '', entity_id: '', azienda_id: '', packages: [],
-    notify_owner_on_booking: true, send_guest_confirmation: false,
+    // ⚠️ Il default della colonna (migration 112) NON basta: qui il valore
+    // parte sempre esplicito, quindi un evento creato dal pannello nascerebbe
+    // spento comunque. Le due righe si muovono insieme.
+    notify_owner_on_booking: true, send_guest_confirmation: true,
     cta_label: '', cta_condizioni: '',
     mostra_prezzo: true, mostra_prezzo_pagina: true, prezzo_testo: '', acconto_percentuale: 0,
     prenotazioni_chiuse: false, prenotazioni_chiuse_testo: '',
@@ -76,7 +79,7 @@ export default function EventoEditPage() {
           prenotazioni_chiuse: ev.prenotazioni_chiuse ?? false,
           prenotazioni_chiuse_testo: ev.prenotazioni_chiuse_testo || '',
           notify_owner_on_booking: ev.notify_owner_on_booking ?? true,
-          send_guest_confirmation: ev.send_guest_confirmation ?? false,
+          send_guest_confirmation: ev.send_guest_confirmation ?? true,
           packages:    (ev.packages || []).map(p => ({
             ...p, price: p.price ?? '', includes: p.includes || [],
           })),

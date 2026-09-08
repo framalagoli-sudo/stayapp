@@ -14,8 +14,10 @@ const STATUS_OPTIONS = [
   { value: 'confirmed', label: 'Confermata', bg: '#d4edda', color: '#155724' },
   { value: 'cancelled', label: 'Annullata',  bg: '#f8d7da', color: '#721c24' },
   // ⛔ Chi è in lista d'attesa NON occupa un posto: è il punto della funzione.
-  // Confermarlo lo fa diventare una prenotazione vera — e da lì parte la
-  // conferma all'ospite, che è quella che già funziona.
+  // Confermarlo lo fa diventare una prenotazione vera, e da lì parte la
+  // conferma all'ospite — **ma solo se il titolare l'ha accesa.** Se è spenta,
+  // promuovere qualcuno non gli dice niente: resta ad aspettare una chiamata
+  // già arrivata. L'avviso più sotto lo dichiara invece di lasciarlo scoprire.
   { value: 'waitlist',  label: 'In lista d’attesa', bg: '#ebf4ff', color: '#2b6cb0' },
 ]
 
@@ -189,6 +191,26 @@ export default function EventoPrenotazioniPage() {
           <Plus size={15} strokeWidth={2} /> Segna prenotazione
         </button>
       </div>
+
+      {/* ⛔ Con la conferma spenta, ogni gesto di questa pagina è muto: chi
+          prenota non riceve niente, e chi viene promosso dalla lista d'attesa
+          non sa di essere entrato. Era il caso di **tutti** gli eventi veri
+          fino all'08/09 — spenti per il vecchio default, non per una scelta.
+          Adesso nascono accesi, ma chi la spegne deve leggerlo qui: un pulsante
+          «conferma» che non conferma niente è una promessa falsa. */}
+      {evento.send_guest_confirmation === false && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', background: '#fffaf0', border: '1px solid #f6d998', borderRadius: 10, padding: '13px 16px', marginBottom: 20 }}>
+          <div style={{ flex: 1, minWidth: 220, fontSize: 14, color: '#8a6d1f', lineHeight: 1.6 }}>
+            <strong>La conferma all’ospite è spenta per questo evento.</strong> Chi prenota non riceve nessuna email
+            {inAttesa.length > 0 && <>, e se confermi qualcuno dalla lista d’attesa non saprà di essere entrato</>}
+            : {inAttesa.length > 0 ? 'vanno avvisati' : 'va avvisato'} a voce.
+          </div>
+          <button onClick={() => router.push(`/admin/eventi/${id}`)}
+            style={{ flexShrink: 0, padding: '9px 16px', background: '#8a6d1f', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: '#fff' }}>
+            Accendila
+          </button>
+        </div>
+      )}
 
       {/* ⛔ Il promemoria automatico si programma quando uno prenota: chi aveva
           già prenotato prima non è in nessuna coda, e non ci finirà mai. Per la
