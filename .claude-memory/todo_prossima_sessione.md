@@ -1,62 +1,64 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — Garage 22 deve correggere il nome su Stripe, poi il primo incasso vero; e il nome pubblico OltreNova da sistemare sul dashboard"
+description: "Da dove riprendere — l'offerta del Furgone da confermare col cliente, Garage 22 e il nome su Stripe, poi il primo incasso vero"
 metadata: 
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-03T22:45:28.853Z
+  modified: 2026-09-08T21:08:04.737Z
 ---
 
 # Si riprende da qui
 
-Sessione chiusa il **3 settembre 2026**, dopo una giornata sul campo: Francesco
-è andato da Garage 22 a collegare Stripe.
+Sessione chiusa l'**8 settembre 2026**. Tutto live e provato in produzione;
+migration eseguite: **112**, **113**. Dettaglio in
+[[project_session_2026_09_08]].
 
-## ⚠️ In sospeso, e dipende da Francesco
+## ⚠️ Da chiedere a un cliente
 
-1. **Garage 22 riprova domani.** Il percorso è: **prima** corregge il nome dal
-   pannello Stripe (Impostazioni → Dati dell'attività) con la ragione sociale
-   **esatta della visura**, **poi** carica la visura. Rifare l'iscrizione dal
-   nostro pannello senza correggere il nome riporta al punto di partenza — è
-   successo due volte. Storia completa in [[reference_stripe_onboarding_campo]].
+1. **L'offerta «Ponte dell'8 dicembre» del Furgone (Automax).** Adesso è su
+   «per tutto il periodo»: dal 5 al 9 dicembre costa **€850** invece di €600 di
+   listino. **Confermare col cliente che intendesse questo** e non €850 al
+   giorno. Il pannello ora mostra l'anteprima del totale prima di salvare.
 
-2. **Il nome pubblico su Stripe.** Chi si iscrive legge «FRANCESCO MALAGOLI»
-   nel momento in cui sta per consegnare IBAN e documento. Due punti:
-   - `Impostazioni → Dati dell'attività` → nome pubblico → *OltreNova*
-   - `Impostazioni → Connect → Branding` → nome **e logo**: è quello che vede
-     il cliente durante l'iscrizione.
-   Non è codice nostro: nel nostro non passiamo nessun nome di piattaforma.
+2. **Garage 22 e Stripe.** Prima corregge il nome dal pannello Stripe
+   (Impostazioni → Dati dell'attività) con la ragione sociale **esatta della
+   visura**, poi carica la visura. Rifare l'iscrizione dal nostro pannello senza
+   correggere il nome riporta al punto di partenza — è già successo due volte.
+   Vedi [[reference_stripe_onboarding_campo]].
 
-3. **Il primo incasso vero non è ancora avvenuto.** Quando Garage 22 sarà
-   attivo: impostare la percentuale di acconto sull'evento (0 = si paga sul
-   posto), poi **fare una prenotazione da due euro e pagarla davvero**. Tre
-   verifiche: soldi sul suo cruscotto Stripe · email di conferma · prenotazione
-   che risulta pagata nel pannello. Finché non succede, «i pagamenti funzionano»
-   è una frase che nessuno ha verificato.
+3. **Il nome pubblico su Stripe** (`Impostazioni → Dati dell'attività` e
+   `Impostazioni → Connect → Branding`, nome **e** logo): chi si iscrive legge
+   «FRANCESCO MALAGOLI» mentre sta per consegnare IBAN e documento.
 
-## Fatto il 03/09 (live e provato in produzione)
+4. **Il primo incasso vero non è mai avvenuto.** Quando Garage 22 sarà attivo:
+   una prenotazione da due euro, pagata davvero. Tre verifiche: soldi sul suo
+   cruscotto Stripe · email di conferma · prenotazione che risulta pagata.
 
-- **Eventi**: la prenotazione nasce confermata; la conferma parte quando
-  «confermata» è vero (subito se non c'è da pagare, dopo il pagamento se c'è);
-  il posto non pagato torna libero dopo 30 minuti, **chiedendo prima a Stripe**
-  per non annullare chi ha pagato.
-- **Pannello prenotazioni**: «Posti presi 15/60 · Prenotazioni 9 · Valore €375»
-  al posto di «0 confermati · €0», e il modulo per **segnare chi telefona** —
-  serve solo il nome.
-- **Stripe**: ritorno che commenta, tre stati invece di due, requisiti in
-  italiano con il motivo del rifiuto, e la risposta grezza visibile al
-  super_admin.
-- Migration eseguite: **106, 107, 108**.
+## Fatto l'08/09 (live e provato)
+
+- **Lista d'attesa eventi** completa (iscrizione, promozione, conferma che parte).
+- **La conferma di prenotazione non partiva per nessuno** — era spenta su tutti
+  e quattro gli eventi veri. Migration **112**.
+- **Booking a giornate**: il calendario nascondeva le prenotazioni e lo stesso
+  furgone si vendeva due volte nello stesso giorno →
+  [[reference_intervalli_date_booking]]. E «notti» ora segue la risorsa.
+- **Offerte sulle risorse**: valevano solo per gli slot orari →
+  [[reference_offerte_risorse]]. Migration **113**.
+- **Eventi**: contatti nel CRM con tag, bottoni comprensibili, pannello degli
+  invii con testo e spunte, descrizione formattabile.
+- **15 contatti storici recuperati** nel CRM (`tests/recupera-contatti-eventi.mjs`).
+  ⚠️ **Non iscritti alla newsletter**, deciso da Francesco: la formula che
+  avevano accettato diceva «per gestire questa prenotazione», e 5 non hanno
+  nemmeno quella. Se servirà: invito col double opt-in, che esiste già.
 
 ## Poi
 
 **L'onboarding** ([[project_onboarding_mappa]]) resta il capitolo che vale di
 più, tenuto per ultimo da Francesco perché vuole ragionarci di marketing.
 
-E il **voto Google** ([[reference_voto_google]]) aspetta solo
-`GOOGLE_PLACES_API_KEY` su Vercel — è gratis fino a 1.000 letture al mese e la
-cadenza si autoregola per non superarle.
+Il **voto Google** ([[reference_voto_google]]) aspetta solo
+`GOOGLE_PLACES_API_KEY` su Vercel.
 
 ## Fermo, e dipende da Francesco
 
@@ -67,6 +69,8 @@ cadenza si autoregola per non superarle.
 - Sottodominio `futura-club-spiagge-bianche.oltrenova.com` da togliere a mano su
   Vercel. ⚠️ Sotto c'è un difetto: cancellare un'entità non rimuove il suo
   sottodominio (`removeProjectDomain` esiste, nessuno la chiama).
+- Le **13 prenotazioni storiche** degli eventi restano «in attesa»: nessuno le
+  ha mai confermate e non le tocchiamo.
 
 ## In coda, nessuno urgente
 
