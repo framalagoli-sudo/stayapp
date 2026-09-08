@@ -65,6 +65,10 @@ try {
     azienda_id: az.id, entity_id: ent.id, entity_tipo: 'struttura',
     title: 'ZZ Serata piena', slug: `zz-piena-${t}`, date_start: fra.toISOString(),
     price: 0, seats_total: 2, published: true, active: true, lista_attesa: true,
+    // ⛔ Il titolare deve averla accesa, altrimenti la promozione è muta: la
+    // colonna nasce `false` (migration 067) e senza questa riga la sonda
+    // misurava il flag spento invece della promozione — cioè un'altra cosa.
+    send_guest_confirmation: true,
   }).select().single()
   eventiCreati.push(ev.id)
 
