@@ -3,6 +3,9 @@ import { useState, useEffect } from 'react'
 import { apiFetch, uploadMedia } from '../../../lib/api'
 import { useAzienda } from '../../../context/AziendaContext'
 import AvvisoNonSiVede from '../AvvisoNonSiVede'
+// Sicuro dal browser: `booking-giornaliero` non importa niente, tantomeno
+// `supabaseAdmin`. È scritto in cima a quel file ed è il motivo per cui ci sta.
+import { contaGiorni, nomeUnita, limiteInUnita, limiteInNotti } from '../../../lib/booking-giornaliero'
 
 const GIORNI = [
   { key: 'lun', label: 'Lunedì' },
@@ -319,7 +322,7 @@ export default function BookingRisorsePage() {
                       {r.modalita === 'slot'
                         ? `Slot · ${r.durata_minuti}min${r.quantita > 1 ? ` × ${r.quantita}` : ''} · €${r.prezzo}`
                         : r.modalita === 'giornaliero'
-                          ? `A giornate${r.quantita > 1 ? ` × ${r.quantita}` : ''} · €${r.prezzo} a notte`
+                          ? `A giornate${r.quantita > 1 ? ` × ${r.quantita}` : ''} · €${r.prezzo} a ${nomeUnita(r, 1)}`
                           : `Coperti · max ${r.max_coperti} posti`
                       }
                       {r.descrizione ? ` · ${r.descrizione}` : ''}
@@ -452,19 +455,13 @@ function RisorseForm({ form, patch, patchDisp, initDisp, entita = [], onEntita, 
                 Es. 4 appartamenti uguali, o 6 auto dello stesso modello. Oltre questo numero il periodo risulta pieno.
               </div>
 
-              <Label>Notti minime</Label>
-              <Input type="number" min={1} max={365}
-                value={form.disponibilita?.minimo_notti || 1}
-                onChange={e => patchDisp('minimo_notti', parseInt(e.target.value) || 1)} />
-
-              <Label>Notti massime (0 = nessun limite)</Label>
-              <Input type="number" min={0} max={365}
-                value={form.disponibilita?.massimo_notti || 0}
-                onChange={e => patchDisp('massimo_notti', parseInt(e.target.value) || 0)} />
-
               {/* Chi noleggia un'auto conta i giorni: dal 3 al 5 sono tre giorni,
                   non due. Chi affitta una casa conta le notti. Cambia il totale
-                  che paga il cliente, quindi lo decide lui. */}
+                  che paga il cliente, quindi lo decide lui.
+                  ⚠️ Sta PRIMA dei limiti perché decide come si chiamano: sotto,
+                  «minimi» e «massimi» si leggono in giorni o in notti a seconda
+                  di questa spunta. Chiedere «quante notti minime» a un
+                  autonoleggio era la domanda sbagliata. */}
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, marginTop: 12, cursor: 'pointer' }}>
                 <input type="checkbox" checked={!!form.disponibilita?.conta_giorno_uscita}
                   onChange={e => patchDisp('conta_giorno_uscita', e.target.checked)} />
@@ -473,6 +470,22 @@ function RisorseForm({ form, patch, patchDisp, initDisp, entita = [], onEntita, 
               <div style={{ fontSize: 12, color: '#888' }}>
                 Attivalo per i noleggi: dal 3 al 5 diventano 3 giorni invece di 2 notti.
               </div>
+
+              {/* ⚠️ Si vede in giorni, si salva in notti: `limiteInUnita` e
+                  `limiteInNotti` fanno i due versi. Mostrare il numero salvato
+                  accanto alla parola «giorni» direbbe una cifra falsa. */}
+              <Label>{contaGiorni(form) ? 'Giorni minimi' : 'Notti minime'}</Label>
+              <Input type="number" min={contaGiorni(form) ? 2 : 1} max={365}
+                value={limiteInUnita(form.disponibilita?.minimo_notti || 1, form)}
+                onChange={e => patchDisp('minimo_notti', limiteInNotti(parseInt(e.target.value) || 1, form))} />
+
+              <Label>{contaGiorni(form) ? 'Giorni massimi' : 'Notti massime'} (0 = nessun limite)</Label>
+              <Input type="number" min={0} max={365}
+                value={form.disponibilita?.massimo_notti ? limiteInUnita(form.disponibilita.massimo_notti, form) : 0}
+                onChange={e => {
+                  const v = parseInt(e.target.value) || 0
+                  patchDisp('massimo_notti', v ? limiteInNotti(v, form) : 0)
+                }} />
 
               <Label>Giorni in cui si può iniziare</Label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>

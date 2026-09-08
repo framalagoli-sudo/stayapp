@@ -1,5 +1,8 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
+// Sicuro dal browser: `booking-giornaliero` non importa niente (nemmeno
+// `supabaseAdmin`), ed è scritto in cima a quel file.
+import { limiteInUnita, nomeUnita } from '@/lib/booking-giornaliero'
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').trim()
 
@@ -600,8 +603,12 @@ function Breadcrumb({ step, risorsa, data, quante, primaryColor, onStep }) {
 // deve sapere per decidere, e niente altro.
 function dettaglioRisorsa(r) {
   if (r.modalita === 'giornaliero') {
+    // Il limite è salvato in notti anche per chi conta i giorni: si converte
+    // prima di scriverlo, altrimenti accanto a «giorni» finisce un numero falso.
     const minimo = Number(r.disponibilita?.minimo_notti) || 0
-    return minimo > 1 ? `Minimo ${minimo} notti` : 'Scegli le date'
+    if (minimo <= 1) return 'Scegli le date'
+    const q = limiteInUnita(minimo, r)
+    return `Minimo ${q} ${nomeUnita(r, q)}`
   }
   if (r.modalita === 'coperti') return r.max_coperti ? `Fino a ${r.max_coperti} posti` : 'Scegli l’orario'
   return r.durata_minuti ? `${r.durata_minuti} minuti` : 'Scegli l’orario'

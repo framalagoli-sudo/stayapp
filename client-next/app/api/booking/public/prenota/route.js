@@ -2,7 +2,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { istanteDi } from '@/lib/fuso'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
-import { verificaPeriodo, totaleGiornaliero, notti } from '@/lib/booking-giornaliero'
+import { verificaPeriodo, totaleGiornaliero, unitaDaPagare, contaGiorni, nomeUnita } from '@/lib/booking-giornaliero'
 import { confermaPostiPrenotazione } from '@/lib/capienza'
 import { creaCheckout, accontoDovuto } from '@/lib/checkout'
 import { sendWebhooks } from '@/lib/send-webhooks'
@@ -66,8 +66,12 @@ async function inviaEmailConferma(prenotazione, risorsa, whatsapp = null) {
 
   // Ogni modalità si racconta a modo suo: senza questo, una prenotazione a
   // giornate arrivava al cliente come «ore undefined–undefined».
+  // ⚠️ Anche qui la parola segue la risorsa: a chi noleggia un furgone
+  // l'email diceva «2 notti» sopra un totale calcolato su 3 giorni, ed è
+  // l'ambiguità sul prezzo quella che genera contestazioni.
+  const unita = unitaDaPagare(prenotazione.data, prenotazione.data_fine, contaGiorni(risorsa))
   const quando = risorsa.modalita === 'giornaliero'
-    ? `dal ${prenotazione.data} al ${prenotazione.data_fine} (${notti(prenotazione.data, prenotazione.data_fine)} notti)`
+    ? `dal ${prenotazione.data} al ${prenotazione.data_fine} (${unita} ${nomeUnita(risorsa, unita)})`
     : risorsa.modalita === 'coperti'
       ? `${prenotazione.data} — ${prenotazione.servizio} ore ${prenotazione.ora_inizio}`
       : `${prenotazione.data} ore ${prenotazione.ora_inizio?.slice(0, 5)}–${prenotazione.ora_fine?.slice(0, 5)}`

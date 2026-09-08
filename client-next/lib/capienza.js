@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { siSovrappongono } from '@/lib/booking-giornaliero'
+import { siSovrappongono, fineOccupazione } from '@/lib/booking-giornaliero'
 
 // La capienza deve reggere anche a richieste simultanee.
 //
@@ -63,8 +63,15 @@ export async function confermaPostiPrenotazione(risorsa, prenotazioneId) {
         .eq('risorsa_id', risorsa.id).in('stato', ['confermata', 'in_attesa'])
         .gte('data_fine', mia.data)
 
+      // ⛔ Anche qui il giorno di riconsegna conta, se la risorsa lo fa pagare:
+      // senza `fineOccupazione` questo muro lasciava passare 23→24 accanto a un
+      // 24→25 già preso, cioè lo stesso furgone a due clienti nello stesso
+      // giorno. Su **tutti e due i lati**: su uno solo, la sovrapposizione si
+      // vede da una direzione e non dall'altra.
       const occupatiPrima = (tutte || [])
-        .filter(b => b.id !== mia.id && primaDi(b, mia) && siSovrappongono(mia.data, mia.data_fine, b.data, b.data_fine))
+        .filter(b => b.id !== mia.id && primaDi(b, mia) && siSovrappongono(
+          mia.data, fineOccupazione(risorsa, mia.data, mia.data_fine),
+          b.data,   fineOccupazione(risorsa, b.data, b.data_fine)))
         .length
 
       if (occupatiPrima + 1 > limite) {

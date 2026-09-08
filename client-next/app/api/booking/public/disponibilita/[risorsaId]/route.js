@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { verificaPeriodo, unitaLibere, totaleGiornaliero, notti, unitaDaPagare, siSovrappongono, periodoBloccato } from '@/lib/booking-giornaliero'
+import { verificaPeriodo, unitaLibereNelGiorno, giornoDopo, totaleGiornaliero, notti, unitaDaPagare, periodoBloccato } from '@/lib/booking-giornaliero'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isUUID = v => UUID_RE.test(v)
@@ -157,12 +157,18 @@ export async function GET(request, props) {
         .or(`data_fine.gte.${primo},and(data_fine.is.null,data.gte.${primo})`)
 
       const occupati = []
-      const capienza = ris.quantita || 1
       for (let g = 1; g <= new Date(anno, m, 0).getDate(); g++) {
         const giorno = `${mese}-${String(g).padStart(2, '0')}`
-        const quante = (prese || []).filter(p => siSovrappongono(giorno, giorno, p.data, p.data_fine)).length
-        const chiuso = periodoBloccato(ris.blocchi, giorno, giorno)
-        if (chiuso || quante >= capienza) occupati.push(giorno)
+        // ⛔ Un giorno solo è l'intervallo `[giorno, giornoDopo)`, non
+        // `(giorno, giorno)` — che è vuoto e non tocca mai niente. Con quello,
+        // il calendario del Furgone mostrava liberi il primo e l'ultimo giorno
+        // di ogni noleggio, e le prenotazioni corte sparivano del tutto.
+        // ⚠️ Valeva anche per le **chiusure**: `periodoBloccato` confronta
+        // `b.data >= dal && b.data < al`, che con i due estremi uguali è falso
+        // per qualsiasi data. I giorni che il cliente segnava come chiusi
+        // restavano verdi sul calendario — stessa radice, danno diverso.
+        const chiuso = periodoBloccato(ris.blocchi, giorno, giornoDopo(giorno))
+        if (chiuso || unitaLibereNelGiorno(ris, giorno, prese || []) <= 0) occupati.push(giorno)
       }
       return Response.json({
         risorsa_id: risorsaId, mese, modalita: ris.modalita,
@@ -199,7 +205,9 @@ export async function GET(request, props) {
       // Senza la data di fine si dice solo se quel giorno si può iniziare: serve
       // al calendario, che colora i giorni prima che l'ospite scelga l'uscita.
       if (!fine) {
-        const libere = unitaLibere(risorsa, date, date, occupate || [])
+        // ⛔ Stessa trappola del calendario: `unitaLibere(risorsa, date, date)`
+        // è l'intervallo vuoto e rispondeva «libero» qualunque cosa ci fosse.
+        const libere = unitaLibereNelGiorno(risorsa, date, occupate || [])
         return Response.json({
           risorsa_id: risorsaId, data: date, modalita: 'giornaliero',
           disponibile: libere > 0, libere, prezzo: risorsa.prezzo,
