@@ -138,8 +138,11 @@ try {
   console.log('\n8 · FRA DUE OFFERTE VALIDE VINCE LA PIÙ CONVENIENTE\n')
   // ⛔ Un cliente che scopre di aver pagato il prezzo peggiore fra due offerte
   // entrambe valide non torna, e ha ragione.
-  await admin.from('risorse_promozioni').update({ minimo_notti: null }).eq('id', periodo.id)
-  await creaOfferta(furgone, { nome: 'ZZ Meglio', prezzo_speciale: 150, prezzo_modo: 'periodo' })
+  await admin.from('risorse_promozioni').update({ minimo_notti: null, data_inizio: g(20), data_fine: g(22) }).eq('id', periodo.id)
+  // ⚠️ Con le date, perché un forfait senza date non vale più niente (punto 3):
+  // scritta com'era prima, questa riga misurava un caso che oggi è vietato di
+  // proposito, e la sonda dava per rotto ciò che era stato corretto.
+  await creaOfferta(furgone, { nome: 'ZZ Meglio', prezzo_speciale: 150, prezzo_modo: 'periodo', data_inizio: g(20), data_fine: g(22) })
   const scelta = await chiedi(furgone.id, g(20), g(22))
   ok(scelta.totale === 150, `si paga €${scelta.totale} (€150 a periodo batte €70 × 3 = €210)`)
   ok(scelta.offerta?.nome === 'ZZ Meglio', `e si chiama «${scelta.offerta?.nome}»`)
