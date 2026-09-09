@@ -68,24 +68,32 @@ async function segnaDaRimuovere(record, motivo) {
 // nostro: cancellarla senza aver liberato Vercel lo rende invisibile per
 // sempre, e nessuna query potrà più accorgersene. È successo davvero —
 // `futura-club-spiagge-bianche.oltrenova.com` è rimasto agganciato al progetto
-// mentre nel database non esiste alcuna riga che lo nomini.
-// Quindi: si cancella soltanto ciò che si è riusciti a liberare. Quello che
-// resta tiene la sua riga e verrà ritentato al prossimo giro di manutenzione.
+// mentre nel database non esisteva alcuna riga che lo nominasse.
+//
+// Quindi l'ordine è sempre questo, ovunque si cancelli: prima si stacca
+// l'hostname (e il suo gemello apex/www), e solo se ci si è riusciti si toglie
+// la riga. Quello che non si stacca resta scritto e marcato, così il giro
+// successivo lo ritrova.
+async function staccaERimuoviRiga(record) {
+  const principale = await liberaHostname(record.dominio)
+  const gemello = record.variante_dominio ? await liberaHostname(record.variante_dominio) : { ok: true }
+  if (principale.ok && gemello.ok) {
+    await supabaseAdmin.from('domini').delete().eq('id', record.id)
+    return { ok: true }
+  }
+  const motivo = principale.ok ? gemello.motivo : principale.motivo
+  await segnaDaRimuovere(record, motivo)
+  return { ok: false, motivo }
+}
+
 export async function rimuoviDominiEntita(entity_tipo, entity_id) {
   const { data: records } = await supabaseAdmin.from('domini').select('*')
     .eq('entity_tipo', entity_tipo).eq('entity_id', entity_id)
 
   const rimasti = []
   for (const r of records || []) {
-    const principale = await liberaHostname(r.dominio)
-    const gemello = r.variante_dominio ? await liberaHostname(r.variante_dominio) : { ok: true }
-    if (principale.ok && gemello.ok) {
-      await supabaseAdmin.from('domini').delete().eq('id', r.id)
-    } else {
-      const motivo = principale.ok ? gemello.motivo : principale.motivo
-      await segnaDaRimuovere(r, motivo)
-      rimasti.push({ dominio: r.dominio, motivo })
-    }
+    const esito = await staccaERimuoviRiga(r)
+    if (!esito.ok) rimasti.push({ dominio: r.dominio, motivo: esito.motivo })
   }
   return { rimasti }
 }
@@ -101,13 +109,8 @@ export async function rimuoviDominiAzienda(azienda_id) {
 
   const rimasti = []
   for (const r of records || []) {
-    const principale = await liberaHostname(r.dominio)
-    const gemello = r.variante_dominio ? await liberaHostname(r.variante_dominio) : { ok: true }
-    if (principale.ok && gemello.ok) {
-      await supabaseAdmin.from('domini').delete().eq('id', r.id)
-    } else {
-      rimasti.push({ dominio: r.dominio, motivo: principale.ok ? gemello.motivo : principale.motivo })
-    }
+    const esito = await staccaERimuoviRiga(r)
+    if (!esito.ok) rimasti.push({ dominio: r.dominio, motivo: esito.motivo })
   }
   return { rimasti }
 }
@@ -183,16 +186,9 @@ export async function manutenzioneDomini({ soloPendenti = true, limite = 10 } = 
     // un hostname invisibile no.
     const vivo = await slugVivo(record.entity_tipo, record.entity_id)
     if (!vivo) {
-      const principale = await liberaHostname(record.dominio)
-      const gemello = record.variante_dominio ? await liberaHostname(record.variante_dominio) : { ok: true }
-      if (principale.ok && gemello.ok) {
-        await supabaseAdmin.from('domini').delete().eq('id', record.id)
-        esito.orfani_rimossi++
-      } else {
-        const motivo = principale.ok ? gemello.motivo : principale.motivo
-        await segnaDaRimuovere(record, motivo)
-        esito.problemi.push({ dominio: record.dominio, fase: 'hostname_non_liberato', motivo })
-      }
+      const r = await staccaERimuoviRiga(record)
+      if (r.ok) esito.orfani_rimossi++
+      else esito.problemi.push({ dominio: record.dominio, fase: 'hostname_non_liberato', motivo: r.motivo })
       continue
     }
     if (vivo !== record.entity_slug) {
@@ -209,6 +205,26 @@ export async function manutenzioneDomini({ soloPendenti = true, limite = 10 } = 
     if (aggiornato && aggiornato.stato !== 'attivo') {
       esito.problemi.push({ dominio: record.dominio, fase: aggiornato.verifica_dettaglio?.fase })
     }
+  }
+
+  // ── Righe la cui entità non esiste più ──────────────────────────────────────
+  // Il giro qui sopra non basta: `soloPendenti` guarda solo i domini NON
+  // attivi, e un sottodominio nasce già 'attivo' perché Vercel lo verifica
+  // subito (sta sotto un dominio che è nostro). Quindi un'entità cancellata
+  // direttamente nel database — le sonde lo fanno, e una query a mano pure —
+  // lascia una riga che nessuno riguarderà mai e un hostname agganciato al
+  // progetto che, sparita la riga, nessuno potrà più trovare. È così che se ne
+  // erano accumulati 56.
+  //
+  // Qui non si fa diagnostica: si chiede solo se l'entità c'è ancora. Sono
+  // poche righe e nessuna chiamata di rete per quelle sane, quindi può girare
+  // per intero a ogni passata senza pesare.
+  const { data: tutte } = await supabaseAdmin.from('domini').select('*').limit(500)
+  for (const record of tutte || []) {
+    if (await slugVivo(record.entity_tipo, record.entity_id)) continue
+    const r = await staccaERimuoviRiga(record)
+    if (r.ok) esito.orfani_rimossi++
+    else esito.problemi.push({ dominio: record.dominio, fase: 'hostname_non_liberato', motivo: r.motivo })
   }
 
   // Entità rimaste senza indirizzo incluso (create quando la registrazione non
