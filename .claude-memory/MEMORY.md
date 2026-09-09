@@ -4,7 +4,7 @@
 
 > ⚠️ **Prima di scrivere codice**: [Verificare il contesto, non solo il pezzo](feedback_verificare_il_contesto.md) — la radice comune degli errori ripetuti.
 
-- [🔴 Backup: mancano account e immagini](project_backup_lacune.md) — **PRIORITÀ**: da un ripristino non entrerebbe nessuno e i siti sarebbero senza foto; prima si completa l'archivio, poi si prova
+- [💾 Backup completo: account e immagini](project_backup_lacune.md) — chiuso 09/09 (15 account, 62/62 foto); resta da provare il RIPRISTINO, piano dentro
 - [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: offerta Furgone da confermare col cliente, Garage22 su Stripe, primo incasso mai avvenuto
 - [📅 Sessione 08/09 — conferme spente, calendario cieco, offerte inerti](project_session_2026_09_08.md) — 6 interventi nati da cose non rotte ma che non arrivavano
 - [📆 Intervalli di date nel booking](reference_intervalli_date_booking.md) — (giorno,giorno) e l intervallo VUOTO: non da errore, da «libero»; e con

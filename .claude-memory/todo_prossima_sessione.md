@@ -5,27 +5,25 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-09T15:58:08.861Z
+  modified: 2026-09-09T17:19:47.058Z
 ---
 
 # Si riprende da qui
 
-## 🔴 PRIORITÀ — nell'archivio mancano due cose
+## ✅ Archivio completo — resta da provare il ripristino
 
-Deciso da Francesco a fine sessione 09/09: **si riparte da qui**. Il backup non
-contiene gli **account di accesso** (`auth.users` non è fra le 51 tabelle) né le
-**immagini dei clienti** (Supabase Storage non viene mai letto). Da un
-ripristino non entrerebbe nessuno e i siti avrebbero tutte le foto rotte. Sono
-14 account e ~23,5 MB di immagini: poca roba da salvare, il problema è che
-nessuno l'ha fatto.
+Chiuso il 09/09 pomeriggio: nel backup ora ci sono i **15 account di accesso**
+e le **62 immagini** dei clienti, più una copia mensile tenuta un anno. Provato
+in produzione. Due difetti trovati strada facendo: il pulsante «esegui backup
+adesso» era rotto dal 29/08 (il bucket lock vieta di riscrivere il file del
+giorno) e il cron non dichiarava un tempo massimo.
 
-⚠️ Prima si completa l'archivio, **poi** si prova il ripristino: provare quello
-di oggi darebbe una risposta rassicurante a una domanda incompleta. Dettaglio,
-numeri e piano della prova → [[project_backup_lacune]].
+**Il ripristino resta da provare** — ora però su un archivio completo, che era
+il punto. Piano e prima domanda a cui rispondere in [[project_backup_lacune]].
 
-Sessione chiusa il **9 settembre 2026** (mattina). Tutto live e provato in
-produzione; migration eseguite l'8: **112**, **113** — il 9 nessuna. Dettaglio
-in [[project_session_2026_09_08]].
+Sessione chiusa il **9 settembre 2026** (sera). Tutto live e provato in
+produzione; migration eseguite l'8: **112**, **113** — il 9 **nessuna**, niente
+da eseguire su Supabase. Dettaglio in [[project_session_2026_09_08]].
 
 ## Fatto il 09/09
 
@@ -128,20 +126,12 @@ Il **voto Google** ([[reference_voto_google]]) aspetta solo
 - **Meta**: verifica business bloccata; restiamo Tech Provider, non BSP.
 - **Termini e privacy** a un avvocato; le 10 aziende devono accettarli.
 - **2FA** su Vercel, Supabase, Cloudflare, GitHub.
-- **Ripristino del backup** mai provato.
-- Sottodominio `futura-club-spiagge-bianche.oltrenova.com` **ancora da togliere**:
-  o a mano dal pannello Vercel, o mettendo `VERCEL_TOKEN` e `VERCEL_PROJECT_ID`
-  in `tests/.env.test` e lanciando `node probe-domini-orfani.mjs --esegui`.
-  ⚠️ Risponde **200 con la landing di OltreNova**, non 404: il nome di un ex
-  cliente che pubblicizza noi. Il difetto a monte è chiuso (vedi sotto).
+- **Ripristino del backup** mai provato (l'archivio però ora è completo).
 - Le **13 prenotazioni storiche** degli eventi restano «in attesa»: nessuno le
   ha mai confermate e non le tocchiamo.
-
-- ⚠️ `probe-colonne-pubbliche` segnala **3 colonne non dichiarate** sugli eventi:
-  `prenotazioni_chiuse`, `prenotazioni_chiuse_testo`, `lista_attesa` (arrivano dalla
-  lista d'attesa dell'08/09). Sono innocue — è roba che il pubblico deve vedere —
-  ma finché non entrano nell'elenco atteso **quell'avviso suona a ogni deploy**, e
-  un allarme che suona sempre viene ignorato (nota 34).
+- ⚠️ Gli hostname staccati da Vercel **continuano a rispondere 200** finché il
+  certificato già emesso resta valido: il routing passa dal wildcard
+  `*.oltrenova.com`. Uno mai registrato dà 525. Quanto duri non è misurato.
 
 ## In coda, nessuno urgente
 

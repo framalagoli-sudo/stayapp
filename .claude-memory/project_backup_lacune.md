@@ -1,6 +1,6 @@
 ---
 name: project-backup-lacune
-description: "PRIORITÀ — il backup non contiene gli account di accesso né le immagini dei clienti: da un ripristino nessuno entrerebbe e i siti sarebbero senza foto"
+description: "CHIUSO 09/09 — account e immagini ora sono nell archivio (15 account, 62/62 foto); resta da provare il ripristino, e il piano è qui"
 metadata: 
   node_type: memory
   type: project
@@ -79,3 +79,49 @@ guardato **fuori** dallo schema `public`.
    appena finito.
 
 Vedi [[reference_backup_e_ripristino]], [[reference_guasti_silenziosi]].
+
+---
+
+## ✅ CHIUSO il 09/09/2026 (pomeriggio) — l'archivio è completo
+
+Live e provato in produzione. Ultimo giro:
+
+> Backup completato: `backup-2026-09-09-1717.json.gz` (430 KB), 32 tabelle con
+> dati su 51, **15 account di accesso**, **62/62 immagini al sicuro**.
+
+- **Account**: identità e ruolo, mai le credenziali — la verifica ora controlla
+  anche che nell'archivio *non* finisca niente che somigli a una password.
+  L'`id` si conserva perché `profiles.id` è quello.
+- **Immagini**: copiate accanto all'archivio sotto `media/`, solo quelle nuove o
+  cambiate di dimensione. A gruppi di cinque: una alla volta se ne copiavano
+  quattro in mezzo minuto e la prima copia completa avrebbe richiesto **dieci
+  notti**; a gruppi sono entrate tutte in un giro da 38 secondi.
+- **Una copia al mese tenuta un anno** (`mensili/`): prima tutto scadeva a 30
+  giorni e un problema scoperto al giorno 31 non aveva rete.
+- `verifica-backup.mjs` guarda anche fuori dalle tabelle, **provata nei due
+  versi**: verde sull'archivio completo, rosso su uno come erano tutti fino a
+  stamattina.
+
+### Due difetti trovati provando, che nessuno avrebbe visto
+
+⚠️ **Il pulsante «esegui backup adesso» era rotto dal 29/08**, da quando c'è il
+bucket lock: il nome del file è per data, quindi rifare il backup nello stesso
+giorno prova a sovrascrivere quello della notte e R2 risponde *«The object is
+locked by the bucket policy»*. Nessuno l'aveva mai premuto due volte nello
+stesso giorno. Ora il secondo backup del giorno porta anche l'ora.
+
+⚠️ **Il cron del backup non dichiarava `maxDuration`** e usava il default: era
+già al limite con 51 tabelle, e con le immagini sarebbe andato in timeout ogni
+notte lasciando solo una riga in un log che non legge nessuno.
+
+### Quello che resta
+
+Il **ripristino non è ancora stato provato** — ora però si proverebbe su un
+archivio completo, che era il punto. Piano già scritto qui sopra. Prima
+domanda a cui rispondere: **si può imporre l'id a un account ricreato?** Se no,
+il ripristino deve riscrivere gli id nei profili e in tutto ciò che li riferisce.
+
+**Costo**: zero. R2 regala 10 GB e 1 milione di scritture al mese; l'archivio
+completo con 30 giorni di storico e le immagini sta in ~60 MB, cioè lo 0,6% del
+piano gratuito. Il PITR di Supabase ($100/mese) **non serve**: copre lo scenario
+già coperto dai backup giornalieri inclusi nel Pro.

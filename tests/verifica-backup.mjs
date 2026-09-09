@@ -226,7 +226,8 @@ if (media === undefined) {
 // ── esito ───────────────────────────────────────────────────────────────────
 console.log('\n' + '='.repeat(66))
 if (gravi) {
-  console.log(`  ROSSO — ${gravi} problemi gravi${avvisi ? `, ${avvisi} avvisi` : ''}`)
+  console.log(`  ROSSO — ${gravi} ${gravi === 1 ? 'problema grave' : 'problemi gravi'}`
+    + `${avvisi ? `, ${avvisi} ${avvisi === 1 ? 'avviso' : 'avvisi'}` : ''}`)
   console.log('  Da questo archivio NON si torna in piedi. Va sistemato il backup,')
   console.log('  non rifatta la verifica.')
 } else if (avvisi) {
