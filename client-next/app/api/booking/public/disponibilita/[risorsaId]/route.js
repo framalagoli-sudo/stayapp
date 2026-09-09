@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { verificaPeriodo, unitaLibereNelGiorno, giornoDopo, totaleGiornaliero, notti, unitaDaPagare, periodoBloccato } from '@/lib/booking-giornaliero'
-import { contoDelPeriodo, offerteDelGiorno } from '@/lib/offerte-risorsa'
+import { contoDelPeriodo, offerteDelGiorno, offertaQuasi } from '@/lib/offerte-risorsa'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isUUID = v => UUID_RE.test(v)
@@ -256,6 +256,10 @@ export async function GET(request, props) {
         // risparmio non è dimostrabile e resta una parola.
         totale_pieno: conto.totalePieno,
         offerta: conto.offerta,
+        // ⛔ Un'offerta che c'è ma non si applica a queste date: senza dirlo, il
+        // visitatore vede i giorni colorati sul calendario, ne sceglie due e si
+        // ritrova il prezzo pieno senza capire cosa ha sbagliato.
+        offerta_vicina: conto.offerta ? null : offertaQuasi(promozioni || [], risorsa, date, fine),
       })
     }
 

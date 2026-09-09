@@ -714,6 +714,18 @@ function AnteprimaOfferta({ risorsa, promo }) {
   const speciale = Number(promo?.prezzo_speciale)
   if (!Number.isFinite(speciale) || speciale <= 0) return null
 
+  // ⛔ Un'offerta «per tutto il periodo» vale SOLO per le sue date esatte:
+  // senza date non scatterebbe mai, e mostrare un prezzo di esempio farebbe
+  // credere il contrario. Meglio dire che manca qualcosa.
+  if (promo.prezzo_modo === 'periodo' && (!promo.data_inizio || !promo.data_fine)) {
+    return (
+      <div style={{ marginTop: 16, background: '#fffaf0', border: '1px solid #f6d998', borderRadius: 10, padding: '12px 16px', fontSize: 13.5, lineHeight: 1.6, color: '#8a6d1f' }}>
+        Metti <strong>«valida dal»</strong> e <strong>«valida fino al»</strong>: un prezzo per tutto
+        il periodo vale solo per chi prenota esattamente quelle date, quindi senza non si applica mai.
+      </div>
+    )
+  }
+
   // Un periodo di esempio: quello dell'offerta se ha le date, altrimenti la
   // durata minima, altrimenti tre giorni.
   const dal = promo.data_inizio || '2026-01-05'
@@ -733,6 +745,11 @@ function AnteprimaOfferta({ risorsa, promo }) {
     <div style={{ marginTop: 16, background: piuCaro ? '#fffaf0' : '#f0fff4', border: `1px solid ${piuCaro ? '#f6d998' : '#9ae6b4'}`, borderRadius: 10, padding: '12px 16px', fontSize: 13.5, lineHeight: 1.7, color: piuCaro ? '#8a6d1f' : '#22543d' }}>
       Chi prenota <strong>dal {dal} al {al}</strong> ({unita} {nomeUnita(risorsa, unita)}) pagherà <strong>€{conOfferta}</strong>,
       invece di €{pieno} di listino.
+      {/* Chi sceglie date diverse paga il listino, e va detto qui: è la
+          domanda che il cliente si farà appena qualcuno prenoterà mezzo ponte. */}
+      {promo.prezzo_modo === 'periodo'
+        ? <> Chi ne prenota solo una parte paga il listino: questo prezzo vale <strong>solo per queste date</strong>.</>
+        : <> Vale per qualunque prenotazione dentro il periodo, anche più corta.</>}
       {piuCaro && <> ⚠️ Con questa offerta costa <strong>di più</strong> del normale: è giusto se è alta stagione, altrimenti controlla se «{promo.prezzo_modo === 'periodo' ? 'per tutto il periodo' : `per ogni ${nomeUnita(risorsa, 1)}`}» è quello che intendi.</>}
     </div>
   )
@@ -792,6 +809,15 @@ function PromoPanel({ risorsa, promozioni, promoForm, setPromoForm, promoData, s
                   <option value="giorno">per ogni {nomeUnita(risorsa, 1)}</option>
                   <option value="periodo">per tutto il periodo</option>
                 </select>
+                {/* ⛔ La differenza non è solo nel conto: cambia QUANDO l'offerta
+                    scatta, ed è la cosa che il cliente deve sapere prima di
+                    scriverla. Un forfait applicato a mezzo ponte faceva pagare
+                    €850 al posto di €240. */}
+                <div style={{ fontSize: 12, color: '#999', marginTop: 4, lineHeight: 1.5 }}>
+                  {promoData.prezzo_modo === 'periodo'
+                    ? 'Vale solo per chi prenota esattamente le date qui sotto: è il prezzo di quel soggiorno.'
+                    : `È il listino di quel periodo: vale per qualunque prenotazione ci stia dentro, anche di ${nomeUnita(risorsa, 1)} solo.`}
+                </div>
               </div>
             )}
             {aGiornate && (

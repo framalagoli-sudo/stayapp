@@ -83,13 +83,34 @@ try {
   ok(conPeriodo.totale_pieno === 300, `e il prezzo pieno resta €${conPeriodo.totale_pieno}, per poter scrivere «anziché»`)
   ok(conPeriodo.offerta?.nome === 'ZZ Ponte', `l'offerta si chiama per nome: «${conPeriodo.offerta?.nome}»`)
 
-  console.log('\n3 · FUORI DALLE SUE DATE NON VALE\n')
-  // ⚠️ Il periodo dev'essere CONTENUTO nell'offerta: chi prenota dal 10 al 20
-  // non sta facendo il ponte solo perché due giorni ci cadono dentro.
+  console.log('\n3 · «PER TUTTO IL PERIODO» VUOLE LE DATE ESATTE\n')
+  // ⛔ Il difetto segnalato da Francesco il 09/09: il ponte 5→9 a €850 veniva
+  // applicato anche a chi ne prenotava DUE giorni, che pagava €850 invece di
+  // €240. Un forfait è il prezzo di QUEL soggiorno: mezzo ponte non è il ponte.
+  const meta = await chiedi(furgone.id, g(10), g(11))
+  ok(!meta.offerta, `metà periodo NON prende il forfait (${meta.offerta?.nome || 'nessuna offerta'})`)
+  ok(meta.totale === 200, `e paga il listino: €${meta.totale}, non €250`)
+  const coda = await chiedi(furgone.id, g(11), g(12))
+  ok(!coda.offerta && coda.totale === 200, `nemmeno la coda del periodo (€${coda.totale})`)
   const sbordo = await chiedi(furgone.id, g(10), g(20))
-  ok(!sbordo.offerta, `un periodo che sborda non prende l'offerta (${sbordo.offerta?.nome || 'nessuna'})`)
+  ok(!sbordo.offerta, `né un periodo che sborda (${sbordo.offerta?.nome || 'nessuna'})`)
+  // ⚠️ E le date esatte devono continuare a prenderlo: la correzione non deve
+  // spegnere l'offerta anche per chi ha diritto.
+  const esatto = await chiedi(furgone.id, g(10), g(12))
+  ok(esatto.totale === 250, `le date esatte lo prendono ancora (€${esatto.totale})`)
 
-  console.log('\n4 · «PER OGNI GIORNO» MOLTIPLICA\n')
+  console.log('\n4 · E SE NON SCATTA, IL SITO DICE PERCHÉ\n')
+  // ⛔ Senza questo la correzione sarebbe peggio del difetto: il calendario
+  // colora i giorni del ponte, uno ne sceglie due, paga pieno e non capisce.
+  ok(!!meta.offerta_vicina, `c'è il suggerimento (${meta.offerta_vicina?.nome || 'NESSUNO'})`)
+  ok(meta.offerta_vicina?.dal === g(10) && meta.offerta_vicina?.al === g(12),
+    `con le date che servono (${meta.offerta_vicina?.dal} → ${meta.offerta_vicina?.al})`)
+  ok(meta.offerta_vicina?.totale === 250, `e quanto costerebbe (€${meta.offerta_vicina?.totale})`)
+  ok(!esatto.offerta_vicina, 'e non compare quando l’offerta è già applicata')
+  const lontano = await chiedi(furgone.id, g(25), g(26))
+  ok(!lontano.offerta_vicina, 'né su date che non c’entrano niente')
+
+  console.log('\n5 · «PER OGNI GIORNO» MOLTIPLICA\n')
   await admin.from('risorse_promozioni').update({ prezzo_modo: 'giorno', prezzo_speciale: 70 }).eq('id', periodo.id)
   const alGiorno = await chiedi(furgone.id, g(10), g(12))
   // ⛔ È la differenza che il pannello non chiedeva: 70 al giorno per 3 giorni
@@ -97,7 +118,7 @@ try {
   // volte il conto.
   ok(alGiorno.totale === 210, `€70 al giorno per 3 giorni fanno €${alGiorno.totale}`)
 
-  console.log('\n5 · LA DURATA MINIMA\n')
+  console.log('\n6 · LA DURATA MINIMA\n')
   await admin.from('risorse_promozioni').update({
     data_inizio: null, data_fine: null, prezzo_modo: 'giorno', prezzo_speciale: 70, minimo_notti: 4,
   }).eq('id', periodo.id)
@@ -107,14 +128,14 @@ try {
   ok(!!lungo.offerta, 'da 4 notti in su si applica')
   ok(lungo.totale === 420, `e costa €${lungo.totale} invece di €600`)
 
-  console.log('\n6 · L’OFFERTA DI UN’ALTRA RISORSA NON VALE QUI\n')
+  console.log('\n7 · L’OFFERTA DI UN’ALTRA RISORSA NON VALE QUI\n')
   // ⛔ Il buco: bastava nominare l'id di un'offerta qualunque per averne il
   // prezzo. Ora l'offerta è legata alla sua risorsa.
   await creaOfferta(altra, { nome: 'ZZ Altrui', prezzo_speciale: 1, prezzo_modo: 'periodo' })
   const suFurgone = await chiedi(furgone.id, g(20), g(22))
   ok(suFurgone.totale === 300, `il furgone costa €${suFurgone.totale}, non €1`)
 
-  console.log('\n7 · FRA DUE OFFERTE VALIDE VINCE LA PIÙ CONVENIENTE\n')
+  console.log('\n8 · FRA DUE OFFERTE VALIDE VINCE LA PIÙ CONVENIENTE\n')
   // ⛔ Un cliente che scopre di aver pagato il prezzo peggiore fra due offerte
   // entrambe valide non torna, e ha ragione.
   await admin.from('risorse_promozioni').update({ minimo_notti: null }).eq('id', periodo.id)
@@ -123,7 +144,7 @@ try {
   ok(scelta.totale === 150, `si paga €${scelta.totale} (€150 a periodo batte €70 × 3 = €210)`)
   ok(scelta.offerta?.nome === 'ZZ Meglio', `e si chiama «${scelta.offerta?.nome}»`)
 
-  console.log('\n8 · IL CALENDARIO LO SEGNALA\n')
+  console.log('\n9 · IL CALENDARIO LO SEGNALA\n')
   await admin.from('risorse_promozioni').update({ data_inizio: g(24), data_fine: g(26) }).eq('id', periodo.id)
   const mese = await (await fetch(`${L}/api/booking/public/disponibilita/${furgone.id}?mese=${M}`)).json()
   const segnati = Object.keys(mese.offerte || {})
@@ -133,7 +154,7 @@ try {
   // equivale a non segnalare più nulla.
   ok(!segnati.includes(g(1)), 'e i giorni senza offerta restano puliti')
 
-  console.log('\n9 · SI PAGA QUELLO CHE SI È LETTO\n')
+  console.log('\n10 · SI PAGA QUELLO CHE SI È LETTO\n')
   // ⛔ Il difetto peggiore sarebbe che il totale mostrato e quello salvato
   // divergano: si addebita una cifra che il cliente non ha mai visto.
   const mostrato = await chiedi(furgone.id, g(24), g(26))

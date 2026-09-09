@@ -337,6 +337,29 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
                     <span style={{ fontSize: 13.5, color: '#555', overflowWrap: 'anywhere' }}>{periodo.offerta.nome}</span>
                   </div>
                 )}
+                {/* ⛔ C'è un'offerta su queste giornate ma chiede date precise.
+                    Senza questo avviso il calendario colora i giorni del ponte,
+                    il visitatore ne sceglie due, paga pieno e non sa perché: un
+                    prezzo che cambia senza spiegazione sembra un errore. Qui
+                    dice quali date servono, e cliccando le sceglie. */}
+                {!periodo.offerta && periodo.offerta_vicina && (
+                  <button type="button"
+                    onClick={() => {
+                      // ⚠️ Tutte e due le date: impostarne una sola lascerebbe
+                      // il calendario a metà scelta, aspettando un secondo clic
+                      // che l'utente ha già dato qui.
+                      setSelected(s => ({ ...s, data: periodo.offerta_vicina.dal, data_fine: periodo.offerta_vicina.al }))
+                      verificaPeriodo(periodo.offerta_vicina.dal, periodo.offerta_vicina.al)
+                    }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, width: '100%', textAlign: 'left', background: '#fffaf0', border: '1px solid #f6d998', borderRadius: 8, padding: '9px 12px', cursor: 'pointer', fontSize: 13, color: '#8a6d1f', lineHeight: 1.5 }}>
+                    <span style={{ fontSize: 10.5, fontWeight: 700, color: '#fff', background: periodo.offerta_vicina.colore, borderRadius: 4, padding: '2px 6px', flexShrink: 0 }}>
+                      {periodo.offerta_vicina.badge}
+                    </span>
+                    <span style={{ overflowWrap: 'anywhere' }}>
+                      <strong>{periodo.offerta_vicina.nome}</strong> vale dal {formatData(periodo.offerta_vicina.dal, true)} al {formatData(periodo.offerta_vicina.al, true)} — {simboloValuta(selected.risorsa?.valuta)}{periodo.offerta_vicina.totale}. Tocca per scegliere quelle date.
+                    </span>
+                  </button>
+                )}
                 {periodo.libere > 1 && (
                   <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>Ne restano {periodo.libere} disponibili.</div>
                 )}

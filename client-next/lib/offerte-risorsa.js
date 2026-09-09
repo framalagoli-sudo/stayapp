@@ -28,11 +28,25 @@ export function offertaVale(promo, risorsa, dal, al) {
   // azienda — ne portava via il prezzo.
   if (risorsa?.id && promo.risorsa_id && promo.risorsa_id !== risorsa.id) return false
 
-  // Il periodo dev'essere contenuto nell'offerta, non solo sfiorarlo: chi
-  // prenota dal 3 al 20 non sta facendo il ponte dell'Immacolata perché due dei
-  // suoi giorni ci cadono dentro.
-  if (promo.data_inizio && dal < promo.data_inizio) return false
-  if (promo.data_fine && al > promo.data_fine) return false
+  // ⛔ Le date valgono in modo diverso a seconda di cosa è quel prezzo, e
+  // confonderli è costato caro: il ponte dell'8 dicembre (5→9, €850 forfettari)
+  // veniva applicato anche a chi prenotava DUE giorni là dentro, che pagava
+  // €850 invece di €240. Tre volte e mezzo il dovuto.
+  //
+  //   · «per tutto il periodo» è il prezzo di QUEL soggiorno: un forfait si
+  //     riferisce alle date per cui è stato pensato, quindi vale **solo** se
+  //     coincidono. Prenotare metà ponte non è fare il ponte.
+  //   · «per ogni giorno» è invece il listino di quel periodo — «a dicembre
+  //     costa 150 al giorno» — e vale per qualsiasi tratto ci stia dentro.
+  if (promo.prezzo_modo === 'periodo') {
+    // Un forfait senza date non si applicherebbe a niente di definito: costerebbe
+    // uguale un giorno e tre settimane.
+    if (!promo.data_inizio || !promo.data_fine) return false
+    if (dal !== promo.data_inizio || al !== promo.data_fine) return false
+  } else {
+    if (promo.data_inizio && dal < promo.data_inizio) return false
+    if (promo.data_fine && al > promo.data_fine) return false
+  }
 
   // Quanto dura. `minimo_notti` è in notti come ogni altro limite del booking.
   if (promo.minimo_notti != null && notti(dal, al) < Number(promo.minimo_notti)) return false
@@ -97,6 +111,40 @@ export function contoDelPeriodo(risorsa, dal, al, promozioni, totalePieno) {
       colore: migliore.offerta.colore || '#e53e3e',
     },
   }
+}
+
+// C'è un'offerta lì vicino che con altre date si prenderebbe?
+//
+// ⛔ Senza questo la correzione delle date esatte sarebbe peggio del difetto:
+// il calendario colora i giorni del ponte, il visitatore ne sceglie due, non
+// ottiene l'offerta e **non sa perché**. Un prezzo che cambia senza spiegazione
+// sembra un errore del sito.
+//
+// Torna l'offerta più conveniente fra quelle che toccano il periodo scelto ma
+// non si applicano, con le date che servirebbero e quanto costerebbe.
+export function offertaQuasi(promozioni, risorsa, dal, al) {
+  if (!dal || !al) return null
+  let migliore = null
+  for (const p of promozioni || []) {
+    if (p?.attiva === false) continue
+    if (offertaVale(p, risorsa, dal, al)) continue          // questa si applica già
+    if (!p.data_inizio || !p.data_fine) continue            // non ha date da suggerire
+    // Deve riguardare **queste** giornate, altrimenti si suggerirebbe a marzo
+    // l'offerta di agosto.
+    if (al < p.data_inizio || dal > p.data_fine) continue
+    // Si suggerisce solo ciò che si potrebbe davvero prendere: se le date
+    // proposte non renderebbero valida l'offerta, tacere è meglio.
+    if (!offertaVale(p, risorsa, p.data_inizio, p.data_fine)) continue
+    const totale = totaleConOfferta(risorsa, p.data_inizio, p.data_fine, p)
+    if (totale == null) continue
+    if (!migliore || totale < migliore.totale) {
+      migliore = {
+        nome: p.nome, badge: p.badge_label || 'Offerta', colore: p.colore || '#e53e3e',
+        dal: p.data_inizio, al: p.data_fine, totale,
+      }
+    }
+  }
+  return migliore
 }
 
 // I giorni di un mese toccati da un'offerta, per colorare il calendario prima
