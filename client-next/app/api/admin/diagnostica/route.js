@@ -116,14 +116,26 @@ export async function POST(request) {
         const righe = Object.entries(esito.rowCounts || {})
         const conDati = righe.filter(([, v]) => typeof v === 'number' && v > 0)
         const fallite = righe.filter(([, v]) => typeof v === 'string')
+        // Le tabelle non sono tutto l'archivio: dal 09/09 ci sono anche gli
+        // account di accesso e le immagini dei clienti. Se il riepilogo continua
+        // a parlare solo di tabelle, chi guarda crede che il backup sia a posto
+        // proprio mentre gli manca ciò che gli serve per rientrare.
+        const m = esito.media || {}
+        const immagini = m.errore
+          ? `immagini NON copiate (${m.errore})`
+          : `${(m.gia_presenti ?? 0) + (m.copiate ?? 0)}/${m.totali ?? 0} immagini al sicuro`
         return Response.json({
           ok: true,
-          messaggio: `Backup completato: ${esito.filename} (${esito.sizeKB} KB), ${conDati.length} tabelle con dati su ${righe.length}.`,
+          messaggio: `Backup completato: ${esito.filename} (${esito.sizeKB} KB), ${conDati.length} tabelle con dati su ${righe.length}, `
+            + `${esito.account} account di accesso, ${immagini}.`,
           file: esito.filename,
           verificatoSuR2: esito.verified,
           tabelleConDati: conDati.length,
           tabelleFallite: fallite.map(([t]) => t),
           righeTotali: conDati.reduce((s, [, v]) => s + v, 0),
+          accountDiAccesso: esito.account,
+          immagini: m,
+          copiaMensile: esito.mensile,
           dettaglio: Object.fromEntries(conDati),
         })
       } catch (e) {
