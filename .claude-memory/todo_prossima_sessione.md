@@ -5,21 +5,33 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-08T21:08:04.737Z
+  modified: 2026-09-09T07:14:00.647Z
 ---
 
 # Si riprende da qui
 
-Sessione chiusa l'**8 settembre 2026**. Tutto live e provato in produzione;
-migration eseguite: **112**, **113**. Dettaglio in
-[[project_session_2026_09_08]].
+Sessione chiusa il **9 settembre 2026** (mattina). Tutto live e provato in
+produzione; migration eseguite l'8: **112**, **113** — il 9 nessuna. Dettaglio
+in [[project_session_2026_09_08]].
+
+## Fatto il 09/09
+
+- **Il forfait vale solo per le sue date.** Il ponte 5→9 a €850 veniva applicato
+  anche a chi ne prenotava due giorni: pagava €850 invece di €240. Ora solo le
+  date esatte lo prendono, e chi ne sceglie una parte vede un riquadro con le
+  date giuste e il prezzo, che tocca per impostarle. Vedi
+  [[reference_offerte_risorse]].
+- **Patch di sicurezza**: `next 15.5.24` + `sharp 0.35.4`. Un RCE non
+  autenticato che **questa volta ci riguardava davvero** — `/_next/image` era
+  vivo e processava AVIF anche se `next/image` non è importato da nessuna parte.
+  Vedi [[reference_triage_next_vulns]] §09/09.
 
 ## ⚠️ Da chiedere a un cliente
 
-1. **L'offerta «Ponte dell'8 dicembre» del Furgone (Automax).** Adesso è su
-   «per tutto il periodo»: dal 5 al 9 dicembre costa **€850** invece di €600 di
-   listino. **Confermare col cliente che intendesse questo** e non €850 al
-   giorno. Il pannello ora mostra l'anteprima del totale prima di salvare.
+1. **L'offerta «Ponte dell'8 dicembre» del Furgone (Automax).** È su «per tutto
+   il periodo»: dal 5 al 9 dicembre costa **€850** invece di €600 di listino, e
+   ora vale **solo** per quelle date esatte. **Confermare col cliente che
+   intendesse €850 per tutto il ponte** e non €850 al giorno.
 
 2. **Garage 22 e Stripe.** Prima corregge il nome dal pannello Stripe
    (Impostazioni → Dati dell'attività) con la ragione sociale **esatta della
@@ -71,6 +83,12 @@ Il **voto Google** ([[reference_voto_google]]) aspetta solo
   sottodominio (`removeProjectDomain` esiste, nessuno la chiama).
 - Le **13 prenotazioni storiche** degli eventi restano «in attesa»: nessuno le
   ha mai confermate e non le tocchiamo.
+- ⚠️ **`sharp` sta in `overrides`, non in `dependencies`**, pur essendo importato
+  da `lib/upload-helper.js`. Funziona solo perché ce lo tira dentro Next: il
+  giorno che smettesse di dipenderne, la compressione delle immagini si
+  romperebbe senza che nessuno abbia toccato niente. È una riga da aggiungere.
+- ⚠️ Confermato dal vivo il 09/09: `/s/futura-club-spiagge-bianche` risponde
+  **404** — il sottodominio residuo su Vercel punta a un sito che non esiste.
 
 ## In coda, nessuno urgente
 

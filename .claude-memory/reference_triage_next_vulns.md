@@ -1,8 +1,11 @@
 ---
 name: reference_triage_next_vulns
-description: Triage 18/08/2026 delle 21 vulnerabilità Dependabot (tutte su next, nessuna applicabile) — poi RISOLTE con l'upgrade a Next 15; chiuso anche sharp: zero alert
-metadata:
+description: Metodo di triage degli advisory Next — ma il 09/09 uno CI RIGUARDAVA (RCE AVIF su /_next/image, vivo anche senza usare next/image nel codice)
+metadata: 
+  node_type: memory
   type: reference
+  originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
+  modified: 2026-09-09T07:13:07.800Z
 ---
 
 Le 21 vulnerabilità aperte su GitHub sono **tutte sullo stesso pacchetto: `next`** (siamo su **14.2.35**, l'ultima della linea 14). Ogni patch indicata sta nella serie **15.x** → la linea 14 non riceve più fix di sicurezza.
@@ -31,3 +34,42 @@ Le 21 vulnerabilità aperte su GitHub sono **tutte sullo stesso pacchetto: `next
 **Esito (18/08/2026, stesso giorno)**: chiuse tutte con l'upgrade a **Next 15.5.23 + React 19** (vedi [[project_upgrade_next15]]), più l'override di `sharp` a 0.35.3. Da **21 vulnerabilità (8 alte) a zero**.
 
 Il triage resta valido come **metodo**: confrontare ogni advisory con la configurazione reale — usiamo Server Actions? siamo self-hosted? abbiamo rewrites verso backend esterni? le risposte finiscono in cache condivise? — invece di reagire alla sola severità.
+
+---
+
+## ⛔ 09/09/2026 — la volta che invece ci riguardava
+
+Due triage di fila avevano concluso «nessuna ci tocca», e quella conclusione
+stava diventando un riflesso. Il 09/09 `npm audit` è passato da zero a **1
+critical + 1 high** e stavolta eravamo esposti davvero.
+
+**GHSA-2xp9-vwfh-vxw4** (CVSS 9.5) — RCE non autenticato nell'ottimizzazione
+immagini con file **AVIF**. Il ragionamento a tavolino diceva di archiviarlo:
+`next/image` **non è importato da nessuna parte** nel nostro codice. Ma
+`images.remotePatterns` è configurato in `next.config.js`, e questo **basta a
+tenere vivo l'endpoint**:
+
+    GET /_next/image?url=<un AVIF vero su supabase>&w=640&q=75
+    → HTTP 200 · image/avif · 55.441 byte
+
+Pubblico, senza login, e processava AVIF davvero.
+
+**GHSA-rgj7-g3m4-5g8c** — la stessa `libheif` dentro `sharp`, che usiamo
+**anche direttamente** in `lib/upload-helper.js` per comprimere le foto che
+caricano i clienti: secondo fronte, dal pannello.
+
+Corretto con `next 15.5.24` + `sharp 0.35.4` (due patch, non un salto di
+versione). La 15.5.24 **disattiva l'ottimizzazione AVIF**: verificato dal vivo
+che l'immagine esce identica all'originale — passthrough, `libheif` non
+invocata.
+
+**La lezione**: «non lo importiamo» non vuol dire «non è raggiungibile». Un
+endpoint che il framework monta da sé si prova con una richiesta vera, non si
+deduce dal `grep`. E il metodo del triage vale solo finché ogni advisory viene
+confrontato con la realtà **misurata** — non finché si ripete la conclusione
+delle volte prima.
+
+⚠️ Emerso strada facendo: `sharp` sta in `overrides` e **non** in
+`dependencies`, pur essendo importato da `upload-helper`. Funziona solo perché
+ce lo tira dentro Next: il giorno che smettesse di dipenderne, la compressione
+delle immagini si romperebbe senza che nessuno abbia toccato niente.

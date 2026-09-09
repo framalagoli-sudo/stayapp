@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-08T21:07:37.876Z
+  modified: 2026-09-09T07:13:36.556Z
 ---
 
 ⚠️ **«Offerta» significa due cose diverse** e non vanno confuse (la domanda di
@@ -28,9 +28,26 @@ chiedeva €600, come una settimana qualunque. Un altro caso di
 
 ## Come funziona ora (`lib/offerte-risorsa.js`, migration 113)
 
-- **Due assi**: *quando* (`data_inizio`/`data_fine`, il periodo dev'essere
-  **contenuto** nell'offerta) e *quanto dura* (`minimo_notti`). Ogni condizione
-  vuota è «sempre».
+- **Due assi**: *quando* (`data_inizio`/`data_fine`) e *quanto dura*
+  (`minimo_notti`). Ogni condizione vuota è «sempre» — tranne dove detto sotto.
+
+- ⛔ **Le date valgono in modo diverso secondo il modo del prezzo** (corretto il
+  09/09, era il difetto peggiore della funzione):
+  - **`periodo`** → vale **SOLO se le date coincidono esattamente**. Un forfait
+    è il prezzo di *quel* soggiorno: mezzo ponte non è il ponte, e nemmeno un
+    giorno in più lo è. Senza date non vale affatto (costerebbe uguale un giorno
+    e tre settimane).
+  - **`giorno`** → è il listino di quel periodo, quindi vale per qualsiasi
+    tratto ci stia dentro.
+
+  Prima bastava essere *contenuti* nell'offerta: sul Furgone, chi prenotava due
+  giorni dentro il ponte pagava **€850 invece di €240** — tre volte e mezzo.
+
+- ⛔ **`offertaQuasi`**: senza, la correzione sarebbe stata peggio del difetto.
+  Il calendario colora i giorni del ponte, uno ne sceglie due, paga il listino e
+  **non sa perché** — un prezzo che cambia senza spiegazione sembra un errore
+  del sito. Il widget mostra un riquadro con le date che servono e il prezzo, e
+  toccandolo le imposta.
 - **`prezzo_modo`** (`giorno` | `periodo`): su 5 giorni le due letture
   differiscono di **cinque volte**, e prima la sceglieva il codice. Il pannello
   mostra un'anteprima del totale **prima** di salvare, e avvisa se l'offerta
