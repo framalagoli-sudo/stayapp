@@ -51,3 +51,12 @@ dove, l'ordine di ripristino delle tabelle (aziende → profiles → entita → 
 ⚠️ Supabase Pro ha backup automatici propri (Dashboard → Database → Backups): per un
 ripristino completo sono più comodi del nostro file. Il nostro serve per recuperare **solo
 alcune tabelle**, o quando è l'account Supabase stesso il problema.
+
+## ⚠️ 09/09/2026 — l'archivio è incompleto fuori dallo schema `public`
+
+Guardando `lib/backup.js` per pianificare la prova di ripristino: mancano gli
+**account di accesso** (`auth.users`) e le **immagini dei clienti** (Supabase
+Storage). La verifica del 29/08 non poteva accorgersene, perché confronta
+l'archivio con le tabelle — e quelle due cose non sono tabelle di `public`.
+Da un ripristino non entrerebbe nessuno e i siti avrebbero le foto rotte.
+Priorità della prossima sessione → [[project_backup_lacune]].

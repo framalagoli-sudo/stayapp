@@ -5,10 +5,23 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-09T13:39:33.207Z
+  modified: 2026-09-09T15:58:08.861Z
 ---
 
 # Si riprende da qui
+
+## 🔴 PRIORITÀ — nell'archivio mancano due cose
+
+Deciso da Francesco a fine sessione 09/09: **si riparte da qui**. Il backup non
+contiene gli **account di accesso** (`auth.users` non è fra le 51 tabelle) né le
+**immagini dei clienti** (Supabase Storage non viene mai letto). Da un
+ripristino non entrerebbe nessuno e i siti avrebbero tutte le foto rotte. Sono
+14 account e ~23,5 MB di immagini: poca roba da salvare, il problema è che
+nessuno l'ha fatto.
+
+⚠️ Prima si completa l'archivio, **poi** si prova il ripristino: provare quello
+di oggi darebbe una risposta rassicurante a una domanda incompleta. Dettaglio,
+numeri e piano della prova → [[project_backup_lacune]].
 
 Sessione chiusa il **9 settembre 2026** (mattina). Tutto live e provato in
 produzione; migration eseguite l'8: **112**, **113** — il 9 nessuna. Dettaglio
@@ -98,12 +111,11 @@ staccato da Vercel il 09/09 insieme agli altri 55 orfani):
 
 ## Poi
 
-**Il ripristino del backup non è mai stato provato** — proposto il 09/09,
-Francesco non ha ancora deciso quando. È l'unica voce rimasta che, se è rotta,
-costa tutto: `verifica-backup.mjs` dimostra che l'archivio è leggibile e
-completo, **non** che da lì si torna in piedi. Prima di partire vanno decise due
-cose: dove si ripristina (un progetto Supabase di prova) e fin dove ci si
-spinge. Vedi [[reference_backup_e_ripristino]].
+**Il ripristino del backup non è mai stato provato**, e viene **dopo** aver
+completato l'archivio (vedi la priorità in cima): `verifica-backup.mjs` dimostra
+che l'archivio è leggibile e completo *rispetto alle tabelle che elenca*, non
+che da lì si torna in piedi. Piano della prova già concordato in
+[[project_backup_lacune]]. Vedi anche [[reference_backup_e_ripristino]].
 
 **L'onboarding** ([[project_onboarding_mappa]]) resta il capitolo che vale di
 più, tenuto per ultimo da Francesco perché vuole ragionarci di marketing.
