@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-09T10:59:14.081Z
+  modified: 2026-09-09T11:54:29.313Z
 ---
 
 # Si riprende da qui
@@ -26,6 +26,10 @@ in [[project_session_2026_09_08]].
   date esatte lo prendono, e chi ne sceglie una parte vede un riquadro con le
   date giuste e il prezzo, che tocca per impostarle. Vedi
   [[reference_offerte_risorse]].
+- **I domini non si perdono più.** Cancellando un'entità la riga in `domini`
+  spariva anche quando Vercel non era stato liberato, e l'hostname diventava
+  invisibile. Ora si libera prima e si cancella dopo. Provato dal vivo creando e
+  cancellando un'entità. Vedi [[reference_domini_vercel]].
 - **Patch di sicurezza**: `next 15.5.24` + `sharp 0.35.4`. Un RCE non
   autenticato che **questa volta ci riguardava davvero** — `/_next/image` era
   vivo e processava AVIF anche se `next/image` non è importato da nessuna parte.
@@ -83,13 +87,13 @@ Il **voto Google** ([[reference_voto_google]]) aspetta solo
 - **Termini e privacy** a un avvocato; le 10 aziende devono accettarli.
 - **2FA** su Vercel, Supabase, Cloudflare, GitHub.
 - **Ripristino del backup** mai provato.
-- Sottodominio `futura-club-spiagge-bianche.oltrenova.com` da togliere a mano su
-  Vercel. ⚠️ Sotto c'è un difetto: cancellare un'entità non rimuove il suo
-  sottodominio (`removeProjectDomain` esiste, nessuno la chiama).
+- Sottodominio `futura-club-spiagge-bianche.oltrenova.com` **ancora da togliere**:
+  o a mano dal pannello Vercel, o mettendo `VERCEL_TOKEN` e `VERCEL_PROJECT_ID`
+  in `tests/.env.test` e lanciando `node probe-domini-orfani.mjs --esegui`.
+  ⚠️ Risponde **200 con la landing di OltreNova**, non 404: il nome di un ex
+  cliente che pubblicizza noi. Il difetto a monte è chiuso (vedi sotto).
 - Le **13 prenotazioni storiche** degli eventi restano «in attesa»: nessuno le
   ha mai confermate e non le tocchiamo.
-- ⚠️ Confermato dal vivo il 09/09: `/s/futura-club-spiagge-bianche` risponde
-  **404** — il sottodominio residuo su Vercel punta a un sito che non esiste.
 
 - ⚠️ `probe-colonne-pubbliche` segnala **3 colonne non dichiarate** sugli eventi:
   `prenotazioni_chiuse`, `prenotazioni_chiuse_testo`, `lista_attesa` (arrivano dalla

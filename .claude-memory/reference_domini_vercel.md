@@ -26,3 +26,38 @@ Per un sottodominio rotto Vercel riportava entrambi positivi mentre il sito era 
 Token CLI Vercel per le indagini a freddo: `C:\Users\francesco\AppData\Roaming\com.vercel.cli\Data\auth.json` (campo `token`), progetto live `prj_RHAKm3p6UEXzVFm69mo7BvVO42u1`, team `team_2ODBmkiduLHX5Wz9fn8DnusG`. Il vecchio progetto `stayapp` esiste ancora ma ha solo `struttura-test.stayapp.it`.
 
 Vedi anche [[project_session_2026_08_17_domini]] e la nota 24 in `CLAUDE.md`.
+
+## La riga nel database è l'unica memoria (09/09/2026)
+
+`domini.dominio` è l'**unico** posto in cui è scritto che un hostname è nostro.
+Due punti la cancellavano senza sapere se Vercel era stato liberato davvero —
+`rimuoviDominiEntita` ignorava l'esito di `removeProjectDomain`, e il ramo
+«entità cancellata» del cron faceva un `delete` secco senza chiamare Vercel
+affatto. Chi passava di lì diventava **invisibile**: nessuna query può trovare
+un hostname di cui non resta nessuna riga.
+
+⚠️ La nota precedente diceva «`removeProjectDomain` esiste, nessuno la chiama»:
+**era falso**, veniva chiamata — il difetto era che nessuno guardava com'era
+andata. E il residuo `futura-club-spiagge-bianche.oltrenova.com` non risponde
+404 come annotato: risponde **200 servendo la landing marketing di OltreNova**,
+cioè un indirizzo col nome di un ex cliente che pubblicizza noi.
+
+Ora: si libera prima, si cancella dopo, e **solo ciò che è stato liberato**. Un
+404 da Vercel vale «già libero». Quello che resta viene marcato `stato:
+'errore'` — valore già ammesso dal CHECK, nessuna migration — perché il cron
+guarda solo i domini NON attivi: una riga lasciata 'attivo' non l'avrebbe
+ripresa più nessuno. Provato dal vivo creando e cancellando un'entità dalla
+route vera: la riga sparisce, cioè Vercel ha confermato lo stacco.
+
+`tests/probe-domini-orfani.mjs` trova quelli **già** rimasti — l'unico modo è
+chiedere a Vercel cosa ha e confrontare. Simula per default; la piattaforma
+(apex, www, wildcard, `.vercel.app`) è in una allowlist che `--esegui` non
+scavalca. Richiede `VERCEL_TOKEN` e `VERCEL_PROJECT_ID` in `tests/.env.test`,
+che **oggi lì non ci sono**.
+
+⚠️ Un sottodominio appena creato risponde **525** finché Vercel non emette il
+certificato, anche se è registrato correttamente: visto il 09/09 su un'entità
+di prova. Quindi un cliente nuovo, nei primi minuti, trova il proprio indirizzo
+rotto — quanto duri non è stato misurato. Vale anche come avvertenza per le
+sonde: la rete non distingue «non registrato» da «certificato non ancora
+pronto», entrambi danno 525.
