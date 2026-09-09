@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-09T12:52:26.131Z
+  modified: 2026-09-09T12:52:56.786Z
 ---
 
 # Si riprende da qui
@@ -35,7 +35,25 @@ in [[project_session_2026_09_08]].
   vivo e processava AVIF anche se `next/image` non è importato da nessuna parte.
   Vedi [[reference_triage_next_vulns]] §09/09.
 
-undefined
+## 🗑️ Futura Vacanze Spa — da cancellare (deciso da Francesco il 09/09)
+
+Dentro c'è **una sola entità**, `piano-editoriale-futura-vacanze` (attività),
+con 0 pagine, 0 offerte, 0 contatti, 0 eventi, 0 prenotazioni. E il suo
+indirizzo `piano-editoriale-futura-vacanze.oltrenova.com`, che ora viene
+staccato da Vercel **prima** che l'azienda sparisca.
+
+Tre cose da sapere:
+1. ⚠️ `futura-club-spiagge-bianche.oltrenova.com` **non verrà toccato**: non
+   esiste nel database, quindi nessun codice lo conosce. Resta da togliere a
+   mano su Vercel, oppure con `probe-domini-orfani.mjs --esegui` più il token.
+2. I **6 account restano attivi** e possono ancora entrare: Futura
+   (admin_azienda), FV Hotels, Francesca Del Monte, Giulia Valletta, Fra Del
+   Monte, Angela Salgarelli. Si tolgono da `/admin/users`, anche dopo la
+   cancellazione. Vedi [[reference_domini_vercel]].
+3. Se Vercel non risponde la cancellazione **si blocca** con un messaggio: è
+   voluto, si riprova.
+
+## ⚠️ Da chiedere a un cliente
 
 1. **L'offerta «Ponte dell'8 dicembre» del Furgone (Automax).** È su «per tutto
    il periodo»: dal 5 al 9 dicembre costa **€850** invece di €600 di listino, e
