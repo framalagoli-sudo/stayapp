@@ -31,6 +31,9 @@ config({ path: '.env.test' })
 
 const TOKEN = process.env.VERCEL_TOKEN?.trim()
 const PROGETTO = process.env.VERCEL_PROJECT_ID?.trim()
+// Il progetto sta su un team: senza teamId l'API risponde che non esiste.
+const TEAM = process.env.VERCEL_TEAM_ID?.trim()
+const conTeam = p => p + (TEAM ? (p.includes('?') ? '&' : '?') + 'teamId=' + TEAM : '')
 const ESEGUI = process.argv.includes('--esegui')
 
 // ⛔ Non si toccano mai, nemmeno con --esegui: sono la piattaforma, non un
@@ -58,7 +61,7 @@ export function trovaOrfani(hostnameVercel, righeDb) {
 async function chiediAVercel(path, method = 'GET') {
   // Dieci righe invece di importare `lib/vercel-domains.js`: quel file è ESM
   // dentro un pacchetto CommonJS e da qui non si carica.
-  const res = await fetch(`https://api.vercel.com${path}`, {
+  const res = await fetch(`https://api.vercel.com${conTeam(path)}`, {
     method,
     headers: { Authorization: `Bearer ${TOKEN}` },
     signal: AbortSignal.timeout(20000),
