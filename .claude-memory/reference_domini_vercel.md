@@ -85,3 +85,34 @@ perso no.
 L'ultima riga il testo di conferma non la diceva. Ora la dice. Gli account
 restano visibili in `/admin/users`, che per il super_admin elenca tutti gli
 utenti auth e non solo quelli con un'azienda: si tolgono da lì, anche dopo.
+
+### La radice: nascono «attivi», e il cron guardava solo i pendenti
+
+Il perché dei 56. Un sottodominio nasce con stato **`attivo`** — sta sotto un
+dominio che è già nostro, quindi Vercel lo verifica subito — e la passata di
+manutenzione filtra `soloPendenti` (`stato != 'attivo'`). Quindi un'entità
+cancellata **direttamente nel database** — lo fanno 27 sonde, e una query a
+mano pure — lasciava una riga che nessun processo automatico riguardava mai, e
+un hostname agganciato al progetto.
+
+Ora la passata ha un secondo blocco che cerca le righe **la cui entità non
+esiste più, a prescindere dallo stato**, e le stacca. Per le righe sane è una
+domanda sola al database, nessuna chiamata di rete: gira per intero ogni volta
+senza pesare. **Le 27 sonde non sono state toccate**: il fix sta in un punto
+solo. Provato dal vivo riproducendo il comportamento di una sonda — entità
+creata dalla route, cancellata dal database, manutenzione lanciata: riga
+sparita, hostname staccato.
+
+Tutti i punti che cancellano un dominio (entità, azienda, ramo orfano del cron,
+blocco nuovo) passano dalla stessa `staccaERimuoviRiga`.
+
+**Pulizia del 09/09**: erano 77 hostname su Vercel contro 15 righe nel
+database. Staccati 56 — residui delle sonde (`zz-*`, `ci-sec-*`) più
+`futura-club-spiagge-bianche`. Nessun dominio di cliente era nell'elenco.
+Ora: 21 hostname, zero orfani.
+
+⚠️ Il token della CLI Vercel (`~/AppData/Roaming/com.vercel.cli/Data/auth.json`)
+**scade dopo poche ore** e il campo `expiresAt` è in **secondi**, non
+millisecondi. Quando l'API risponde `Not authorized`, basta un qualsiasi
+comando `npx vercel` per rinnovarlo. Con quelle credenziali la sonda gira senza
+scrivere niente in `.env.test`.

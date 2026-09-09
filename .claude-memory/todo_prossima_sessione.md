@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-09T12:52:56.786Z
+  modified: 2026-09-09T13:39:33.207Z
 ---
 
 # Si riprende da qui
@@ -26,10 +26,15 @@ in [[project_session_2026_09_08]].
   date esatte lo prendono, e chi ne sceglie una parte vede un riquadro con le
   date giuste e il prezzo, che tocca per impostarle. Vedi
   [[reference_offerte_risorse]].
-- **I domini non si perdono più.** Cancellando un'entità la riga in `domini`
-  spariva anche quando Vercel non era stato liberato, e l'hostname diventava
-  invisibile. Ora si libera prima e si cancella dopo. Provato dal vivo creando e
-  cancellando un'entità. Vedi [[reference_domini_vercel]].
+- **I domini non si perdono più, da nessuna delle quattro porte.** La riga in
+  `domini` spariva anche quando Vercel non era stato liberato, e l'hostname
+  restava agganciato e invisibile. Corretto cancellando un'entità, cancellando
+  un'**azienda** (che porta via tutto in cascata) e nel giro del cron. Chiusa
+  anche la radice: i sottodomini nascono **`attivo`** e la manutenzione guardava
+  solo i pendenti, quindi le righe orfane non le vedeva nessuno.
+  **Pulizia**: erano 77 hostname su Vercel contro 15 righe nel database — 56
+  staccati, residui delle sonde più `futura-club-spiagge-bianche`. Ora zero
+  orfani, e il ciclo si richiude da solo. Vedi [[reference_domini_vercel]].
 - **Patch di sicurezza**: `next 15.5.24` + `sharp 0.35.4`. Un RCE non
   autenticato che **questa volta ci riguardava davvero** — `/_next/image` era
   vivo e processava AVIF anche se `next/image` non è importato da nessuna parte.
@@ -42,10 +47,10 @@ con 0 pagine, 0 offerte, 0 contatti, 0 eventi, 0 prenotazioni. E il suo
 indirizzo `piano-editoriale-futura-vacanze.oltrenova.com`, che ora viene
 staccato da Vercel **prima** che l'azienda sparisca.
 
-Tre cose da sapere:
-1. ⚠️ `futura-club-spiagge-bianche.oltrenova.com` **non verrà toccato**: non
-   esiste nel database, quindi nessun codice lo conosce. Resta da togliere a
-   mano su Vercel, oppure con `probe-domini-orfani.mjs --esegui` più il token.
+Due cose da sapere (la terza è già fatta: `futura-club-spiagge-bianche` è stato
+staccato da Vercel il 09/09 insieme agli altri 55 orfani):
+1. L'indirizzo dell'entità viene staccato **prima**, e se Vercel non risponde la
+   cancellazione si blocca invece di perderlo.
 2. I **6 account restano attivi** e possono ancora entrare: Futura
    (admin_azienda), FV Hotels, Francesca Del Monte, Giulia Valletta, Fra Del
    Monte, Angela Salgarelli. Si tolgono da `/admin/users`, anche dopo la
@@ -92,6 +97,13 @@ Tre cose da sapere:
   nemmeno quella. Se servirà: invito col double opt-in, che esiste già.
 
 ## Poi
+
+**Il ripristino del backup non è mai stato provato** — proposto il 09/09,
+Francesco non ha ancora deciso quando. È l'unica voce rimasta che, se è rotta,
+costa tutto: `verifica-backup.mjs` dimostra che l'archivio è leggibile e
+completo, **non** che da lì si torna in piedi. Prima di partire vanno decise due
+cose: dove si ripristina (un progetto Supabase di prova) e fin dove ci si
+spinge. Vedi [[reference_backup_e_ripristino]].
 
 **L'onboarding** ([[project_onboarding_mappa]]) resta il capitolo che vale di
 più, tenuto per ultimo da Francesco perché vuole ragionarci di marketing.
