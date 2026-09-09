@@ -11,7 +11,13 @@ const RETENTION_DAYS = 30
 // per data non può trattarle allo stesso modo: cancellare le immagini o le
 // copie mensili «perché vecchie» significherebbe buttare via proprio ciò che
 // serve dopo il primo mese.
-const GIORNALIERO = /^backup-\d{4}-\d{2}-\d{2}\.json\.gz$/   // scade a 30 giorni
+// Il secondo backup dello stesso giorno porta anche l'ora: senza, riscriverebbe
+// il file del mattino — e il bucket lock lo vieta, giustamente, perché è la
+// difesa che impedisce a chiunque di sostituire un archivio con uno vuoto.
+// Fino al 09/09/2026 il pulsante «esegui backup adesso» falliva per questo
+// motivo con un messaggio incomprensibile, e nessuno l'aveva mai premuto due
+// volte nello stesso giorno per accorgersene.
+const GIORNALIERO = /^backup-\d{4}-\d{2}-\d{2}(-\d{4})?\.json\.gz$/   // scade a 30 giorni
 const PREFISSO_MENSILE = 'mensili/'                          // una copia al mese, tenuta un anno
 const PREFISSO_MEDIA = 'media/'                              // le immagini: non scadono mai
 const MESI_DI_STORICO = 12
@@ -151,6 +157,18 @@ async function elencaMedia(prefisso = '', profondita = 0) {
 
 // Tutto ciò che è già stato copiato nel bucket dei backup, con la sua
 // dimensione: è il confronto che rende la copia incrementale.
+// C'è già un oggetto con questo nome? Serve prima di scrivere: il bucket lock
+// non permette di sovrascrivere, quindi un nome già preso non è un dettaglio
+// ma un errore che fa fallire tutto il backup.
+async function esisteGia(r2, bucket, key) {
+  try {
+    const { Contents = [] } = await r2.send(new ListObjectsV2Command({ Bucket: bucket, Prefix: key }))
+    return Contents.some(o => o.Key === key)
+  } catch {
+    return false // se non riusciamo a guardare, si prova a scrivere: l'errore vero arriva da lì
+  }
+}
+
 async function giaCopiate(r2, bucket) {
   const mappa = new Map()
   let token
@@ -276,7 +294,16 @@ export async function runBackup() {
   console.log(`[backup] Compresso: ${(compressed.length / 1024).toFixed(0)} KB`)
 
   const date = startedAt.toISOString().slice(0, 10)
-  const filename = `backup-${date}.json.gz`
+  // Il giro delle 3 di notte scrive `backup-AAAA-MM-GG.json.gz`. Se quel nome è
+  // già occupato — succede quando si rifà il backup a mano nello stesso giorno —
+  // si aggiunge l'ora invece di sovrascrivere: il bucket lock vieta la
+  // sovrascrittura, ed è giusto così.
+  let filename = `backup-${date}.json.gz`
+  if (await esisteGia(r2, bucket, filename)) {
+    const ora = startedAt.toISOString().slice(11, 16).replace(':', '')
+    filename = `backup-${date}-${ora}.json.gz`
+    console.log(`[backup] il backup di oggi esiste già → scrivo ${filename}`)
+  }
   // Se l'upload fallisce, l'eccezione propaga → la route risponde 500. Niente "ok" falsi.
   const putResult = await r2.send(new PutObjectCommand({ Bucket: bucket, Key: filename, Body: compressed, ContentType: 'application/gzip', ContentLength: compressed.length }))
   console.log(`[backup] Upload completato → ${bucket}/${filename}`)
@@ -287,12 +314,19 @@ export async function runBackup() {
   let mensile = null
   if (startedAt.getUTCDate() === 1) {
     mensile = `${PREFISSO_MENSILE}backup-${date.slice(0, 7)}.json.gz`
-    try {
-      await r2.send(new PutObjectCommand({ Bucket: bucket, Key: mensile, Body: compressed, ContentType: 'application/gzip', ContentLength: compressed.length }))
-      console.log(`[backup] copia mensile → ${mensile}`)
-    } catch (err) {
-      console.error('[backup] copia mensile fallita:', err.message)
-      mensile = null
+    // Se la copia del mese c'è già, si lascia stare: riscriverla è vietato dal
+    // lock e non servirebbe a niente.
+    if (await esisteGia(r2, bucket, mensile)) {
+      console.log(`[backup] copia mensile già presente: ${mensile}`)
+      mensile = `${mensile} (già presente)`
+    } else {
+      try {
+        await r2.send(new PutObjectCommand({ Bucket: bucket, Key: mensile, Body: compressed, ContentType: 'application/gzip', ContentLength: compressed.length }))
+        console.log(`[backup] copia mensile → ${mensile}`)
+      } catch (err) {
+        console.error('[backup] copia mensile fallita:', err.message)
+        mensile = null
+      }
     }
   }
 
