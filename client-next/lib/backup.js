@@ -29,7 +29,9 @@ const BUCKET_MEDIA = 'property-media'
 // giro successivo. La copia è incrementale, quindi interromperla non fa danno:
 // domani riprende da dove si era fermata. Meglio un backup che finisce sempre
 // di uno che ogni tanto va in timeout e non scrive nemmeno le tabelle.
-const TEMPO_MASSIMO_MEDIA_MS = 25_000
+// Il giro intero deve stare nei 60 secondi dichiarati dalle route: le tabelle
+// e gli account ne prendono una quindicina, il resto è per le immagini.
+const TEMPO_MASSIMO_MEDIA_MS = 45_000
 
 // ⚠️ QUESTA LISTA VA AGGIORNATA A OGNI MODULO NUOVO.
 // Era rimasta ferma a quando il prodotto aveva meno funzioni: il 24/08/2026
@@ -188,25 +190,38 @@ async function copiaMedia(r2, bucket, scadenza) {
   const files = await elencaMedia()
   esito.totali = files.length
 
+  const daFare = []
   for (const f of files) {
-    if (presenti.get(f.percorso) === f.dimensione) { esito.gia_presenti++; continue }
-    if (Date.now() > scadenza) { esito.saltate_per_tempo++; continue }
-    try {
-      const { data, error } = await supabaseAdmin.storage.from(BUCKET_MEDIA).download(f.percorso)
-      if (error) throw new Error(error.message)
-      const corpo = Buffer.from(await data.arrayBuffer())
-      await r2.send(new PutObjectCommand({
-        Bucket: bucket,
-        Key: PREFISSO_MEDIA + f.percorso,
-        Body: corpo,
-        ContentLength: corpo.length,
-        ContentType: data.type || 'application/octet-stream',
-      }))
-      esito.copiate++
-      esito.byte += corpo.length
-    } catch (err) {
-      esito.errori.push(`${f.percorso}: ${err.message}`)
-    }
+    if (presenti.get(f.percorso) === f.dimensione) esito.gia_presenti++
+    else daFare.push(f)
+  }
+
+  // A una alla volta ogni foto costa il suo viaggio di andata e ritorno, e in
+  // mezzo minuto se ne copiano quattro: la prima copia completa avrebbe
+  // richiesto dieci notti. A gruppi si aspetta una volta sola per tutto il
+  // gruppo. Cinque e non di più: nessuno dei due servizi va messo sotto sforzo
+  // per un lavoro che può benissimo finire domani.
+  const A_GRUPPI = 5
+  for (let i = 0; i < daFare.length; i += A_GRUPPI) {
+    if (Date.now() > scadenza) { esito.saltate_per_tempo += daFare.length - i; break }
+    await Promise.all(daFare.slice(i, i + A_GRUPPI).map(async f => {
+      try {
+        const { data, error } = await supabaseAdmin.storage.from(BUCKET_MEDIA).download(f.percorso)
+        if (error) throw new Error(error.message)
+        const corpo = Buffer.from(await data.arrayBuffer())
+        await r2.send(new PutObjectCommand({
+          Bucket: bucket,
+          Key: PREFISSO_MEDIA + f.percorso,
+          Body: corpo,
+          ContentLength: corpo.length,
+          ContentType: data.type || 'application/octet-stream',
+        }))
+        esito.copiate++
+        esito.byte += corpo.length
+      } catch (err) {
+        esito.errori.push(`${f.percorso}: ${err.message}`)
+      }
+    }))
   }
   return esito
 }
