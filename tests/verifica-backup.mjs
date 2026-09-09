@@ -171,6 +171,58 @@ if (az.length && prof.length) {
   orfani ? avviso(`${orfani} utenti puntano a un'azienda che non è nell'archivio`) : bene('utenti e aziende sono coerenti fra loro')
 }
 
+// ── 4. quello che non è una tabella ─────────────────────────────────────────
+// Questa sezione nasce dal difetto del 09/09/2026: la verifica guardava solo
+// le tabelle, e per mesi non si è accorta che nell'archivio mancavano gli
+// account di accesso e le immagini — che tabelle non sono. Un controllo che
+// guarda solo dove sa già di dover guardare non trova mai niente di nuovo.
+console.log('\n[4] Quello che non è una tabella\n')
+
+const account = archivio?.accounts
+if (!account) {
+  grave('nessun account di accesso nell\'archivio: si tornerebbe online senza che nessuno possa entrare')
+} else if (account.error) {
+  grave(`gli account non sono stati esportati: ${account.error}`)
+} else if (!Array.isArray(account) || account.length === 0) {
+  grave('la sezione degli account è vuota')
+} else {
+  const { data: veri } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  const quanti = (veri?.users || []).length
+  const senzaEmail = account.filter(a => !a.email).length
+  const scarto = quanti - account.length
+  scarto > 2
+    ? avviso(`${account.length} account nell'archivio, ${quanti} in produzione (${scarto} in più adesso)`)
+    : bene(`${account.length} account di accesso, allineati alla produzione`)
+  if (senzaEmail) grave(`${senzaEmail} account senza email: non si potrebbe rimandare loro un invito`)
+
+  // Il legame che rende utile il resto: ogni profilo deve avere il suo account.
+  const senzaAccesso = prof.filter(p => !account.some(a => a.id === p.id)).length
+  senzaAccesso
+    ? grave(`${senzaAccesso} profili senza un account corrispondente: quelle persone non rientrerebbero`)
+    : bene('ogni profilo ha il suo account: gli accessi sono ricostruibili')
+
+  // ⚠️ Deve restare vero che nell'archivio NON finiscono credenziali.
+  const sospetti = account.filter(a => JSON.stringify(a).match(/password|encrypted|hash|token|secret/i)).length
+  sospetti
+    ? grave(`${sospetti} account contengono qualcosa che somiglia a una credenziale: non devono starci`)
+    : bene('nessuna credenziale nell\'archivio, come deve essere')
+}
+
+// Le immagini non stanno dentro il file: stanno accanto, nel bucket. Qui si può
+// dire solo se il backup dichiara di averle copiate; che ci siano davvero lo
+// dice il conteggio degli oggetti su R2, che questa verifica non raggiunge.
+const media = archivio?._meta?.media
+if (media === undefined) {
+  avviso('questo archivio non dice niente sulle immagini: è precedente al 09/09/2026, oppure la copia non è partita')
+} else if (media?.errore) {
+  grave(`la copia delle immagini è fallita: ${media.errore}`)
+} else if (media) {
+  const mancanti = (media.totali ?? 0) - (media.copiate ?? 0) - (media.gia_presenti ?? 0)
+  mancanti > 0
+    ? avviso(`${mancanti} immagini su ${media.totali} non ancora copiate (rimandate al giro successivo)`)
+    : bene(`${media.totali} immagini dei clienti al sicuro accanto all'archivio`)
+}
+
 // ── esito ───────────────────────────────────────────────────────────────────
 console.log('\n' + '='.repeat(66))
 if (gravi) {

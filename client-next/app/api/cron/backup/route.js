@@ -2,6 +2,13 @@ import { runBackup } from '@/lib/backup'
 import { logError } from '@/lib/observability'
 import { battitoEControllo } from '@/lib/cron-battito'
 
+// Il giro legge 51 tabelle, gli account e copia le immagini nuove: nei pochi
+// secondi di default non ci sta. La stessa dichiarazione c'è sulla route di
+// diagnostica, che fa girare lo stesso backup a mano — qui mancava, e senza
+// nessuno se ne sarebbe accorto: un timeout di notte lascia solo una riga in
+// un log che non legge nessuno.
+export const maxDuration = 60
+
 export async function GET(request) {
   const auth = request.headers.get('authorization')
   // Fail-closed: se il secret non è configurato, rifiuta sempre (no 'Bearer undefined').
