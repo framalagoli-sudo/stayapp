@@ -326,22 +326,22 @@ export async function runBackup() {
   // Una copia al mese, tenuta un anno. I giornalieri scadono a 30 giorni: un
   // problema scoperto al giorno 31 non avrebbe nessuna rete sotto. Costa
   // mezzo megabyte al mese.
-  let mensile = null
-  if (startedAt.getUTCDate() === 1) {
-    mensile = `${PREFISSO_MENSILE}backup-${date.slice(0, 7)}.json.gz`
-    // Se la copia del mese c'è già, si lascia stare: riscriverla è vietato dal
-    // lock e non servirebbe a niente.
-    if (await esisteGia(r2, bucket, mensile)) {
-      console.log(`[backup] copia mensile già presente: ${mensile}`)
-      mensile = `${mensile} (già presente)`
-    } else {
-      try {
-        await r2.send(new PutObjectCommand({ Bucket: bucket, Key: mensile, Body: compressed, ContentType: 'application/gzip', ContentLength: compressed.length }))
-        console.log(`[backup] copia mensile → ${mensile}`)
-      } catch (err) {
-        console.error('[backup] copia mensile fallita:', err.message)
-        mensile = null
-      }
+  // ⚠️ La condizione NON è «è il primo del mese»: se il giro del primo fallisse
+  // — Vercel lento, Supabase in manutenzione — quel mese resterebbe senza copia
+  // e nessuno se ne accorgerebbe fino al giorno in cui la si cerca. La domanda
+  // giusta è «questo mese ce l'ha, la sua copia?»: chiunque passi per primo la
+  // fa, e gli altri la trovano già lì.
+  let mensile = `${PREFISSO_MENSILE}backup-${date.slice(0, 7)}.json.gz`
+  if (await esisteGia(r2, bucket, mensile)) {
+    console.log(`[backup] copia mensile già presente: ${mensile}`)
+    mensile = `${mensile} (già presente)`
+  } else {
+    try {
+      await r2.send(new PutObjectCommand({ Bucket: bucket, Key: mensile, Body: compressed, ContentType: 'application/gzip', ContentLength: compressed.length }))
+      console.log(`[backup] copia mensile → ${mensile}`)
+    } catch (err) {
+      console.error('[backup] copia mensile fallita:', err.message)
+      mensile = null
     }
   }
 
