@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-09T07:14:00.647Z
+  modified: 2026-09-09T10:59:14.081Z
 ---
 
 # Si riprende da qui
@@ -15,6 +15,11 @@ produzione; migration eseguite l'8: **112**, **113** — il 9 nessuna. Dettaglio
 in [[project_session_2026_09_08]].
 
 ## Fatto il 09/09
+
+- **sharp non è più una fortuna.** Era una `optionalDependency` di Next: npm poteva
+  saltarla **senza errore** e la compressione delle immagini sarebbe morta muta.
+  Ora è dichiarata, e `tests/probe-compressione-immagini.mjs` se ne accorge —
+  provata anche al contrario, togliendo sharp. Vedi [[reference_guasti_silenziosi]].
 
 - **Il forfait vale solo per le sue date.** Il ponte 5→9 a €850 veniva applicato
   anche a chi ne prenotava due giorni: pagava €850 invece di €240. Ora solo le
@@ -83,12 +88,14 @@ Il **voto Google** ([[reference_voto_google]]) aspetta solo
   sottodominio (`removeProjectDomain` esiste, nessuno la chiama).
 - Le **13 prenotazioni storiche** degli eventi restano «in attesa»: nessuno le
   ha mai confermate e non le tocchiamo.
-- ⚠️ **`sharp` sta in `overrides`, non in `dependencies`**, pur essendo importato
-  da `lib/upload-helper.js`. Funziona solo perché ce lo tira dentro Next: il
-  giorno che smettesse di dipenderne, la compressione delle immagini si
-  romperebbe senza che nessuno abbia toccato niente. È una riga da aggiungere.
 - ⚠️ Confermato dal vivo il 09/09: `/s/futura-club-spiagge-bianche` risponde
   **404** — il sottodominio residuo su Vercel punta a un sito che non esiste.
+
+- ⚠️ `probe-colonne-pubbliche` segnala **3 colonne non dichiarate** sugli eventi:
+  `prenotazioni_chiuse`, `prenotazioni_chiuse_testo`, `lista_attesa` (arrivano dalla
+  lista d'attesa dell'08/09). Sono innocue — è roba che il pubblico deve vedere —
+  ma finché non entrano nell'elenco atteso **quell'avviso suona a ogni deploy**, e
+  un allarme che suona sempre viene ignorato (nota 34).
 
 ## In coda, nessuno urgente
 
