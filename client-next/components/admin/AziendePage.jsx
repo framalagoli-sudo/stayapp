@@ -78,7 +78,12 @@ export default function AziendePage() {
   }
 
   async function handleDelete(id, name) {
-    if (!confirm(`Eliminare l'azienda "${name}"?\nVerranno eliminate anche tutte le strutture e i ristoranti associati.`)) return
+    // Il testo dice quello che succede davvero, misurato: le entità e i loro
+    // indirizzi web se ne vanno, gli account delle persone NO — restano validi
+    // e chi li ha può ancora entrare, semplicemente senza più un'azienda.
+    if (!confirm(`Eliminare l'azienda "${name}"?\n\n`
+      + `Verranno eliminate tutte le entità collegate, i loro contenuti e i loro indirizzi web.\n`
+      + `Gli account delle persone restano invece attivi: vanno tolti a parte.`)) return
     try {
       await apiFetch(`/api/aziende/${id}`, { method: 'DELETE' })
       setAziende(prev => prev.filter(a => a.id !== id))

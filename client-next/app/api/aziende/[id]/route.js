@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { fusoValido } from '@/lib/fuso'
 import { requireAuth } from '@/lib/server-auth'
+import { rimuoviDominiAzienda } from '@/lib/domini-manutenzione'
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
@@ -60,6 +61,20 @@ export async function DELETE(request, props) {
     if (response) return response
     const profile = await getProfile(user.id)
     if (profile?.role !== 'super_admin') return Response.json({ error: 'Permessi insufficienti' }, { status: 403 })
+
+    // Gli indirizzi web si staccano PRIMA: la cancellazione dell'azienda porta
+    // via in cascata anche le righe `domini`, e con esse l'unica traccia che
+    // quegli hostname fossero nostri. Se anche uno solo non si stacca, non si
+    // procede: l'azienda si potrà cancellare fra un minuto, un hostname perso
+    // non lo ritrova più nessuno.
+    const { rimasti } = await rimuoviDominiAzienda(params.id)
+    if (rimasti.length) {
+      return Response.json({
+        error: `Non sono riuscito a staccare ${rimasti.map(r => r.dominio).join(', ')} da Vercel `
+          + `(${rimasti[0].motivo}). L'azienda non è stata cancellata: riprova fra poco.`,
+      }, { status: 409 })
+    }
+
     const { error } = await supabaseAdmin.from('aziende').delete().eq('id', params.id)
     if (error) return Response.json({ error: error.message }, { status: 500 })
     return Response.json({ success: true })

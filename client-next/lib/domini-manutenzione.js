@@ -90,6 +90,28 @@ export async function rimuoviDominiEntita(entity_tipo, entity_id) {
   return { rimasti }
 }
 
+// Cancellare un'azienda porta via le sue entità e le righe `domini` in cascata
+// (migration 035), tutto in un colpo e senza che nessuno chiami Vercel: gli
+// hostname resterebbero agganciati al progetto e — sparita l'unica riga che li
+// nominava — invisibili per sempre. Perciò si liberano PRIMA, e chi non si
+// riesce a liberare torna indietro come elenco: la cancellazione dell'azienda
+// non deve partire, perché dopo non ci sarebbe più modo di accorgersene.
+export async function rimuoviDominiAzienda(azienda_id) {
+  const { data: records } = await supabaseAdmin.from('domini').select('*').eq('azienda_id', azienda_id)
+
+  const rimasti = []
+  for (const r of records || []) {
+    const principale = await liberaHostname(r.dominio)
+    const gemello = r.variante_dominio ? await liberaHostname(r.variante_dominio) : { ok: true }
+    if (principale.ok && gemello.ok) {
+      await supabaseAdmin.from('domini').delete().eq('id', r.id)
+    } else {
+      rimasti.push({ dominio: r.dominio, motivo: principale.ok ? gemello.motivo : principale.motivo })
+    }
+  }
+  return { rimasti }
+}
+
 // Ricontrolla un dominio dal vivo e salva l'esito. Ritorna il record aggiornato.
 export async function ricontrolla(record) {
   const diagnosi = await diagnosticaDominio(record.dominio)
