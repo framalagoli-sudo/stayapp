@@ -38,6 +38,11 @@ const AMMESSE = {
                   // legge il prezzo (due decisioni: copertina e pagina aperta). Tutto
                   // contenuto scritto dal cliente per la sua scheda pubblica.
                   'cta_label','cta_condizioni','mostra_prezzo','mostra_prezzo_pagina','prezzo_testo',
+                  // 08/09: lo stato delle prenotazioni e la lista d'attesa. Sono
+                  // ciò che il visitatore DEVE vedere — un evento chiuso che
+                  // sembra ancora aperto è peggio di nessuna informazione — e la
+                  // migration 110/111 le concede al ruolo pubblico una per una.
+                  'prenotazioni_chiuse','prenotazioni_chiuse_testo','lista_attesa',
                   // Il minimo per il piede di pagina: nome, logo, tema, footer_cfg,
                   // social e i dati legali del titolare — che sono pubblici per obbligo
                   // di legge. Verificato campo per campo il 25/08; il minisito NON esce
