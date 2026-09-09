@@ -18,7 +18,9 @@ import { config } from 'dotenv'
 import { createRequire } from 'module'
 
 config({ path: '.env.test' })
-const require = createRequire('C:/Users/francesco/progetti/hospitality/client-next/')
+// sharp vive in client-next: percorso relativo a questo file, mai assoluto —
+// con un nome utente diverso (recovery su un altro PC) non partirebbe.
+const require = createRequire(new URL('../client-next/package.json', import.meta.url))
 const sharp = require('sharp')
 const admin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY,
   { auth: { persistSession: false, autoRefreshToken: false } })
