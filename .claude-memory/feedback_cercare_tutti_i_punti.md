@@ -36,3 +36,15 @@ route** — la spunta nel browser si toglie con due clic — e si salva la
 
 Vedi anche [[feedback_verificare_il_contesto]] (l'ultimo miglio) e
 [[reference_consenso_dati_personali]].
+
+**Di nuovo il 09/09/2026, e stavolta con un solo giorno di distanza.** La
+mattina ho corretto la cancellazione di un'entità, che lasciava l'hostname
+agganciato a Vercel. Non ho cercato gli altri modi di arrivare allo stesso
+risultato: cancellare l'**azienda** faceva sparire le stesse righe in cascata,
+con lo stesso danno. L'ho scoperto solo perché Francesco ha detto cosa stava
+per fare — se avesse cancellato e basta, l'hostname sarebbe diventato
+invisibile e nessuno se ne sarebbe accorto.
+
+La domanda da farsi non è «ho corretto il punto segnalato?» ma **«in quanti
+modi si arriva a questo stato?»**. Per una cancellazione: la route dell'oggetto,
+la route del suo contenitore, la cascata del database, il cron che pulisce.

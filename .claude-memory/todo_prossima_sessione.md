@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-09T11:54:29.313Z
+  modified: 2026-09-09T12:52:26.131Z
 ---
 
 # Si riprende da qui
@@ -35,7 +35,7 @@ in [[project_session_2026_09_08]].
   vivo e processava AVIF anche se `next/image` non è importato da nessuna parte.
   Vedi [[reference_triage_next_vulns]] §09/09.
 
-## ⚠️ Da chiedere a un cliente
+undefined
 
 1. **L'offerta «Ponte dell'8 dicembre» del Furgone (Automax).** È su «per tutto
    il periodo»: dal 5 al 9 dicembre costa **€850** invece di €600 di listino, e

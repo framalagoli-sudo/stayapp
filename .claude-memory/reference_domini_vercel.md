@@ -61,3 +61,27 @@ di prova. Quindi un cliente nuovo, nei primi minuti, trova il proprio indirizzo
 rotto — quanto duri non è stato misurato. Vale anche come avvertenza per le
 sonde: la rete non distingue «non registrato» da «certificato non ancora
 pronto», entrambi danno 525.
+
+### La stessa ferita da un'altra porta: cancellare l'AZIENDA
+
+Corretta la cancellazione dell'entità, restava aperta quella dell'azienda —
+trovata solo perché Francesco ha detto cosa stava per fare. `DELETE
+/api/aziende/[id]` faceva un `delete` secco e il database portava via in
+cascata (migration 035) **entità e righe `domini` insieme**, senza che nessuno
+chiamasse Vercel. Ora `rimuoviDominiAzienda` stacca prima; se anche un solo
+hostname non si stacca la cancellazione **non parte** (409 col motivo, mostrato
+in un alert dalla pagina). L'azienda si cancella fra un minuto, un hostname
+perso no.
+
+**Cosa fa davvero la cascata** (misurato su un'azienda effimera il 09/09):
+
+| | |
+|---|---|
+| entità | cancellata |
+| riga `domini` | cancellata — e prima di oggi Vercel non lo sapeva |
+| profili | **restano**, con `azienda_id` azzerato |
+| account di accesso | **restano**: quelle persone possono ancora fare login |
+
+L'ultima riga il testo di conferma non la diceva. Ora la dice. Gli account
+restano visibili in `/admin/users`, che per il super_admin elenca tutti gli
+utenti auth e non solo quelli con un'azienda: si tolgono da lì, anche dopo.
