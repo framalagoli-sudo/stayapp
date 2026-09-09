@@ -17,7 +17,7 @@ const RETENTION_DAYS = 30
 // Fino al 09/09/2026 il pulsante «esegui backup adesso» falliva per questo
 // motivo con un messaggio incomprensibile, e nessuno l'aveva mai premuto due
 // volte nello stesso giorno per accorgersene.
-const GIORNALIERO = /^backup-\d{4}-\d{2}-\d{2}(-\d{4})?\.json\.gz$/   // scade a 30 giorni
+const GIORNALIERO = /^backup-\d{4}-\d{2}-\d{2}(-\d{6})?\.json\.gz$/   // scade a 30 giorni
 const PREFISSO_MENSILE = 'mensili/'                          // una copia al mese, tenuta un anno
 const PREFISSO_MEDIA = 'media/'                              // le immagini: non scadono mai
 const MESI_DI_STORICO = 12
@@ -313,9 +313,14 @@ export async function runBackup() {
   // già occupato — succede quando si rifà il backup a mano nello stesso giorno —
   // si aggiunge l'ora invece di sovrascrivere: il bucket lock vieta la
   // sovrascrittura, ed è giusto così.
+  //
+  // ⚠️ L'ora va fino ai secondi: al minuto non basta. Due backup lanciati a
+  // quaranta secondi di distanza cadono nello stesso minuto, si ritrovano lo
+  // stesso nome e il secondo muore contro il lock — provato il 09/09, ed è
+  // proprio il difetto che questo pezzo di codice doveva risolvere.
   let filename = `backup-${date}.json.gz`
   if (await esisteGia(r2, bucket, filename)) {
-    const ora = startedAt.toISOString().slice(11, 16).replace(':', '')
+    const ora = startedAt.toISOString().slice(11, 19).replace(/:/g, '')
     filename = `backup-${date}-${ora}.json.gz`
     console.log(`[backup] il backup di oggi esiste già → scrivo ${filename}`)
   }
