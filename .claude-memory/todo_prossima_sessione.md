@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-09T17:19:47.058Z
+  modified: 2026-09-09T17:50:14.712Z
 ---
 
 # Si riprende da qui
@@ -20,6 +20,15 @@ giorno) e il cron non dichiarava un tempo massimo.
 
 **Il ripristino resta da provare** — ora però su un archivio completo, che era
 il punto. Piano e prima domanda a cui rispondere in [[project_backup_lacune]].
+
+⚠️ **Due verifiche piccole prima di considerarlo chiuso davvero:**
+1. **Francesco**: scaricare l'ultimo `backup-*.json.gz` dal bucket R2 su
+   Cloudflare e lanciare `node tests/verifica-backup.mjs <file>` — nessuno ha
+   ancora aperto un archivio **vero** fatto dal codice nuovo (in locale le
+   chiavi R2 non si possono avere: `vercel env pull` le maschera). Poi
+   cancellare il file: è il database dei clienti in chiaro.
+2. La notte fra il **9 e il 10 settembre** è la prima volta che il cron gira col
+   codice nuovo. Se fallisce arriva un'email.
 
 Sessione chiusa il **9 settembre 2026** (sera). Tutto live e provato in
 produzione; migration eseguite l'8: **112**, **113** — il 9 **nessuna**, niente

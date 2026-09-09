@@ -125,3 +125,34 @@ il ripristino deve riscrivere gli id nei profili e in tutto ciò che li riferisc
 completo con 30 giorni di storico e le immagini sta in ~60 MB, cioè lo 0,6% del
 piano gratuito. Il PITR di Supabase ($100/mese) **non serve**: copre lo scenario
 già coperto dai backup giornalieri inclusi nel Pro.
+
+### Altri due difetti, trovati DOPO aver detto «fatto»
+
+Emersi solo perché il backup è stato rilanciato più volte di fila invece di
+provarlo una volta e fidarsi:
+
+⚠️ **La copia mensile era un ramo mai eseguito.** Scattava solo il giorno 1 del
+mese, quindi non era mai girata: nessun errore, solo silenzio. E se il giro del
+primo fosse fallito, quel mese sarebbe rimasto senza copia. Ora la condizione
+non è «è il primo del mese» ma «questo mese ce l'ha, la sua copia?» — chiunque
+passi per primo la fa. Così il ramo gira ogni giorno e si può guardare.
+
+⚠️ **Il nome alternativo usava l'ora al minuto**: due backup lanciati a quaranta
+secondi di distanza cadevano nello stesso minuto, stesso nome, e il secondo
+moriva contro il lock — cioè esattamente il difetto che quel codice doveva
+risolvere. Ora arriva ai secondi. Provato: due giri consecutivi, entrambi 200.
+
+### Cosa NON è ancora stato provato (al 09/09 sera)
+
+1. **Nessuno ha mai aperto un archivio VERO** prodotto dal codice nuovo. La
+   verifica è stata provata su archivi costruiti a mano con la stessa forma —
+   che è il modo sbagliato: *provare in un modo diverso da come il codice gira
+   nasconde il difetto invece di rivelarlo*. Le chiavi R2 non sono recuperabili
+   in locale (`vercel env pull` scrive `[SENSITIVE]` al posto dei segreti), per
+   cui questa verifica **la deve fare Francesco**: scaricare l'ultimo
+   `backup-*.json.gz` dal bucket su Cloudflare R2 e lanciare
+   `node tests/verifica-backup.mjs <file>` — poi **cancellare il file**, che è
+   il database dei clienti in chiaro.
+2. **Il cron notturno non ha ancora girato** con il codice nuovo: la prima volta
+   è la notte fra il 9 e il 10 settembre. Se qualcosa non va, l'allarme arriva
+   per email (tutti i cron ora lo fanno).
