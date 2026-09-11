@@ -45,7 +45,7 @@ export const BLOCK_TYPES = [
   { type: 'activities',   label: 'Attività',           group: 'servizi',     emoji: '🧭', desc: 'Attività prenotabili' },
   { type: 'excursions',   label: 'Escursioni',         group: 'servizi',     emoji: '🗺️', desc: 'Escursioni disponibili' },
   { type: 'offerte',      label: 'Offerte',            group: 'servizi',     emoji: '🏷️', desc: 'Quello che crei in Offerte: corsi, escursioni, esperienze. Si può filtrare per categoria.' },
-  { type: 'eventi',       label: 'Prossimi eventi',    group: 'servizi',     emoji: '📅', desc: 'Lista eventi in programma' },
+  { type: 'eventi',       label: 'Prossimi eventi',    group: 'servizi',     emoji: '📅', desc: 'Eventi in programma e, sotto, gli ultimi conclusi' },
   { type: 'vetrina',      label: 'Vetrina',            group: 'servizi',     emoji: '🪟', desc: 'Griglia di elementi di una vetrina (progetti, immobili, veicoli…) con filtri e link alla pagina di dettaglio' },
   { type: 'news',         label: 'Articoli / News',    group: 'servizi',     emoji: '📰', desc: 'Ultimi articoli del blog' },
   { type: 'booking',      label: 'Widget prenotazione',group: 'conversione', emoji: '📆', desc: 'Form prenotazione risorse' },

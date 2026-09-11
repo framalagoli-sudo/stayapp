@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../context/AuthContext'
 import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch } from '../../../lib/api'
+import { eventoConcluso } from '../../../lib/evento-concluso'
 import { Calendar, MapPin, Users, Plus, ChevronRight, Eye, EyeOff } from 'lucide-react'
 
 function fmtDate(iso) {
@@ -14,8 +15,8 @@ function fmtDate(iso) {
 function statusBadge(ev) {
   if (!ev.active)    return { label: 'Disattivo',    bg: '#f0f0f0', color: '#888' }
   if (!ev.published) return { label: 'Bozza',        bg: '#fff3cd', color: '#856404' }
-  const past = new Date(ev.date_start) < new Date()
-  if (past)          return { label: 'Concluso',     bg: '#f0f0f0', color: '#888' }
+  if (eventoConcluso(ev)) return { label: 'Concluso', bg: '#f0f0f0', color: '#888' }
+  if (new Date(ev.date_start) < new Date()) return { label: 'In corso', bg: '#d4edda', color: '#155724' }
   return               { label: 'Pubblicato',         bg: '#d4edda', color: '#155724' }
 }
 
@@ -41,8 +42,8 @@ export default function EventiListPage() {
 
   if (loading) return <p style={{ padding: 32, color: '#888' }}>Caricamento…</p>
 
-  const upcoming = eventi.filter(e => new Date(e.date_start) >= new Date())
-  const past     = eventi.filter(e => new Date(e.date_start) <  new Date())
+  const upcoming = eventi.filter(e => !eventoConcluso(e))
+  const past     = eventi.filter(e => eventoConcluso(e))
 
   return (
     <div style={{ maxWidth: 800 }}>

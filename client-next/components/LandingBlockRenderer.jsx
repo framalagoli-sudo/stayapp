@@ -816,7 +816,11 @@ function VetrinaLeadForm({ entity, entityType, projectTitle, primary, privacyUrl
 export default function LandingBlockRenderer({ blocks, entity, entityType, mini, primary, secondary, heading, body, slug, privacyUrl, aziendaId, lang = 'it', base }) {
   const [faqOpen, setFaqOpen] = useState({})
   const [eventi, setEventi] = useState([])
+  const [eventiPassati, setEventiPassati] = useState([])
   const [articoli, setArticoli] = useState([])
+  // Gli eventi conclusi si chiedono solo se un blocco eventi li mostra: è il
+  // predefinito, e si spengono dal blocco.
+  const vuolePassati = (blocks || []).some(b => b?.type === 'eventi' && b.data?.mostra_passati !== false)
 
   const sec = secondary || primary   // colore accento; default = primario
   const sections = mini.sections || {}
@@ -840,7 +844,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
     return () => io.disconnect()
     // eventi/articoli si caricano async: quando arrivano, i loro blocchi compaiono
     // DOPO il primo setup → vanno ri-scansionati o restano invisibili (opacity:0).
-  }, [blocks, eventi.length, articoli.length])
+  }, [blocks, eventi.length, eventiPassati.length, articoli.length])
   // Base dei link interni, lingua/dominio-aware (dal chiamante via entityBasePath).
   // Fallback all'URL canonico se non fornita (es. anteprima template in admin).
   const linkBase = base != null ? base : (entityType === 'struttura' ? `/s/${slug}` : entityType === 'ristorante' ? `/r/${slug}` : `/a/${slug}`)
@@ -858,11 +862,45 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
 
   useEffect(() => {
     if (!entity?.id) return
-    guestFetch(`/api/guest/eventi?entity_tipo=${entityType}&entity_id=${entity.id}`)
+    guestFetch(`/api/guest/eventi?entity_tipo=${entityType}&entity_id=${entity.id}&lang=${lang}`)
       .then(d => Array.isArray(d) && setEventi(d.slice(0, 6))).catch(() => {})
     guestFetch(`/api/blog/public?azienda_id=${aziendaId}&entity_tipo=${entityType}&entity_id=${entity.id}&limit=6`)
       .then(d => Array.isArray(d) && setArticoli(d)).catch(() => {})
-  }, [entity?.id])
+  }, [entity?.id, lang])
+
+  useEffect(() => {
+    if (!entity?.id || !vuolePassati) { setEventiPassati([]); return }
+    guestFetch(`/api/guest/eventi?entity_tipo=${entityType}&entity_id=${entity.id}&quando=passati&lang=${lang}`)
+      .then(d => Array.isArray(d) && setEventiPassati(d)).catch(() => {})
+  }, [entity?.id, lang, vuolePassati])
+
+  // La scheda di un evento, in programma o concluso. Funzione normale e non
+  // componente: definito qui dentro, un componente si rimonterebbe a ogni render.
+  function renderEventoCard(ev, concluso) {
+    const dateStr = new Date(ev.date_start).toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+    const prezzo = concluso ? null : prezzoDaMostrare(ev, { gratuito: tr('free', lang) })
+    return (
+      <a key={ev.id} href={`/eventi/${ev.id}?back=${encodeURIComponent(homeUrl)}`} style={{ background: '#fafafa', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', border: '1px solid #f0f0f0' }}>
+        {ev.cover_url
+          ? <img src={ev.cover_url} alt={ev.title} style={{ width: '100%', height: 180, objectFit: 'cover', objectPosition: ev.cover_focal || 'center', display: 'block', filter: concluso ? 'grayscale(0.4)' : undefined }} />
+          : <div style={{ height: 100, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Calendar size={36} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /></div>
+        }
+        <div style={{ padding: '16px 18px' }}>
+          <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', marginBottom: 8 }} {...ricco(ev.title)} />
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}><Calendar size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{dateStr}</span>
+            {ev.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}><MapPin size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{ev.location}</span>}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+            {concluso
+              ? <span style={{ fontSize: 12, fontWeight: 600, color: '#888', background: '#eee', borderRadius: 20, padding: '3px 10px' }}>{tr('event_ended', lang)}</span>
+              : prezzo && <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>{prezzo}</span>}
+            <span style={{ fontSize: 13, fontWeight: 700, color: concluso ? '#888' : primary }}>{tr(concluso ? 'details_arrow' : 'book_arrow', lang)}</span>
+          </div>
+        </div>
+      </a>
+    )
+  }
 
   function renderBlock(block, inverted = false) {
     const d = block.data || {}
@@ -1733,36 +1771,30 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
       }
 
       case 'eventi': {
-        if (!eventi.length) return null
+        // Sotto quelli in programma, gli ultimi conclusi: per chi guarda il sito
+        // sono la prova che le serate si fanno davvero. Si spengono dal blocco.
+        const passati = d.mostra_passati === false ? [] : eventiPassati.slice(0, d.limit || 6)
+        if (!eventi.length && !passati.length) return null
         return (
           <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
             <div className="lbr-section">
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || tr('events_title', lang)}</h2>
-              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || `${eventi.length} ${tr(eventi.length === 1 ? 'event_scheduled' : 'events_scheduled', lang)}`}</p>
-              <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 16 }}>
-                {eventi.slice(0, d.limit || eventi.length).map(ev => {
-                  const dateStr = new Date(ev.date_start).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
-                  return (
-                    <a key={ev.id} href={`/eventi/${ev.id}?back=${encodeURIComponent(homeUrl)}`} style={{ background: '#fafafa', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', border: '1px solid #f0f0f0' }}>
-                      {ev.cover_url
-                        ? <img src={ev.cover_url} alt={ev.title} style={{ width: '100%', height: 180, objectFit: 'cover', objectPosition: ev.cover_focal || 'center', display: 'block' }} />
-                        : <div style={{ height: 100, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Calendar size={36} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /></div>
-                      }
-                      <div style={{ padding: '16px 18px' }}>
-                        <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', marginBottom: 8 }} {...ricco(ev.title)} />
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}><Calendar size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{dateStr}</span>
-                          {ev.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}><MapPin size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{ev.location}</span>}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-                          {prezzoDaMostrare(ev, { gratuito: tr('free', lang) }) && <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>{prezzoDaMostrare(ev, { gratuito: tr('free', lang) })}</span>}
-                          <span style={{ fontSize: 13, fontWeight: 700, color: primary }}>{tr('book_arrow', lang)}</span>
-                        </div>
-                      </div>
-                    </a>
-                  )
-                })}
-              </div>
+              {/* «Prossimi eventi» sopra un elenco di soli eventi conclusi
+                  direbbe il falso: senza programma il titolo è solo «Eventi». */}
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || tr(eventi.length ? 'events_title' : 'events_title_all', lang)}</h2>
+              {(d.sottotitolo || eventi.length > 0) && (
+                <p style={{ textAlign: 'center', color: '#888', marginBottom: eventi.length ? 48 : 0, fontSize: 15 }}>{d.sottotitolo || `${eventi.length} ${tr(eventi.length === 1 ? 'event_scheduled' : 'events_scheduled', lang)}`}</p>
+              )}
+              {eventi.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 16 }}>
+                  {eventi.slice(0, d.limit || eventi.length).map(ev => renderEventoCard(ev, false))}
+                </div>
+              )}
+              {passati.length > 0 && <>
+                <h3 style={{ fontFamily: heading, fontSize: 'clamp(18px,2.4vw,24px)', fontWeight: 700, textAlign: 'center', color: '#1a1a2e', margin: eventi.length ? '56px 0 24px' : '28px 0 24px' }}>{tr('past_events', lang)}</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 16 }}>
+                  {passati.map(ev => renderEventoCard(ev, true))}
+                </div>
+              </>}
             </div>
           </section>
         )

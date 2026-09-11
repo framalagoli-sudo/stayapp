@@ -10,6 +10,7 @@ import { mandaConfermaEvento } from '@/lib/evento-conferma'
 import { after } from 'next/server'
 import { triggerAutomazione } from '@/lib/guest-utils'
 import { registraContatto, tagEvento } from '@/lib/crm'
+import { eventoConcluso } from '@/lib/evento-concluso'
 
 const ENTITY_TBL = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
 
@@ -44,16 +45,23 @@ export async function POST(request, props) {
     if (privacy_accettata !== true)
       return Response.json({ error: 'Per prenotare serve il consenso al trattamento dei dati.' }, { status: 400 })
 
+    // Solo un evento che il pubblico può vedere si può prenotare: senza i filtri
+    // su `published` e `active` una bozza o un evento spento accettavano
+    // prenotazioni da chiunque ne conoscesse l'id.
+    //
     // select('*') → indipendente dall'ordine della migration 067 (colonne notify_*
     // assenti = undefined = nessuna mail, niente 500).
     // regola-ok: l'evento serve solo a validare la prenotazione e a decidere le
     // notifiche, non viene mai restituito al client — nessuna colonna esce di qui.
     const { data: evento, error: evErr } = await supabaseAdmin.from('eventi')
-      .select('*').eq('id', params.id).single()
+      .select('*').eq('id', params.id).eq('published', true).eq('active', true).single()
     if (evErr || !evento) return Response.json({ error: 'Evento non trovato' }, { status: 404 })
 
     // ⚠️ Il muro sta qui, non nel browser: nascondere il modulo impedisce di
     // sbagliare a chi guarda la pagina, non a chi manda una richiesta a mano.
+    if (eventoConcluso(evento)) {
+      return Response.json({ error: 'Questo evento si è già concluso.' }, { status: 400 })
+    }
     if (evento.prenotazioni_chiuse) {
       return Response.json({
         error: evento.prenotazioni_chiuse_testo?.trim() || 'Le prenotazioni per questo evento sono chiuse.',

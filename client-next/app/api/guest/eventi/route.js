@@ -1,23 +1,30 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { getEntityAziendaId } from '@/lib/server-auth'
 import { localizeEntity } from '@/lib/translate'
+import { soloAperti, soloConclusi } from '@/lib/evento-concluso'
 
 // Dati live: mai cachare (vedi nota in /api/guest/a/[slug]).
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const MAX_PASSATI = 12
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const entity_tipo = searchParams.get('entity_tipo')
   const entity_id = searchParams.get('entity_id')
   const lang = searchParams.get('lang') === 'en' ? 'en' : 'it'
+  // Di norma gli eventi non ancora finiti, dal più vicino. Con `quando=passati`
+  // quelli conclusi, dal più recente, e pochi: sono memoria, non programma.
+  const passati = searchParams.get('quando') === 'passati'
 
   let query = supabaseAdmin.from('eventi')
     .select('id, slug, title, description, cover_url, formato_cover, cover_focal, cta_label, cta_condizioni, mostra_prezzo, mostra_prezzo_pagina, prezzo_testo, date_start, date_end, location, price, seats_total, seats_booked, packages')
     .eq('published', true).eq('active', true)
-    .gte('date_start', new Date().toISOString()).order('date_start')
+  query = passati
+    ? soloConclusi(query).order('date_start', { ascending: false }).limit(MAX_PASSATI)
+    : soloAperti(query).order('date_start')
 
   // `entity_tipo` finisce interpolato dentro la .or() qui sotto: va whitelistato
   // prima, come già si fa in /api/collegamenti (anti filter-injection).

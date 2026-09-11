@@ -1,6 +1,7 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
 import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
+import { eventoConcluso } from '@/lib/evento-concluso'
 import { ricco } from '@/lib/testo-ricco'
 import LegalInfo from './LegalInfo'
 import SiteNav from './SiteNav'
@@ -144,6 +145,9 @@ export default function EventoPage() {
   // casi, ma il messaggio non è lo stesso — e la differenza la sente chi legge.
   const rimasti = evento.seats_total ? evento.seats_total - (evento.seats_booked || 0) : null
   const chiuso = !!evento.prenotazioni_chiuse || (rimasti !== null && rimasti <= 0)
+  // Un evento finito resta visibile — il sito lo mostra fra i passati, e i
+  // vecchi link continuano a portare qui — ma non si prenota più.
+  const concluso = eventoConcluso(evento)
 
   const sito       = evento.sito || null
   // Su un dominio del cliente i link del menu devono restare sul suo dominio,
@@ -240,7 +244,7 @@ export default function EventoPage() {
           )}
           {/* ⚠️ «0 posti disponibili» è un modo goffo di dire «esaurito», e
               «-2 posti» — che poteva succedere — è un modo di sembrare rotti. */}
-          {evento.seats_total && (
+          {evento.seats_total && !concluso && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: '#555' }}>
               <Users size={15} strokeWidth={1.5} color="#00b5b5" />
               {rimasti > 0 ? `${rimasti} posti disponibili` : 'Tutto esaurito'}
@@ -266,7 +270,20 @@ export default function EventoPage() {
 
             Due motivi diversi, due frasi diverse: «il titolare ha chiuso» e
             «i posti sono finiti» non sono la stessa cosa per chi legge. */}
-        {chiuso ? (
+        {concluso ? (
+          <div style={{ background: '#fff', borderRadius: 16, padding: 32, boxShadow: '0 2px 16px rgba(0,0,0,0.07)', textAlign: 'center' }}>
+            <div style={{ fontSize: 19, fontWeight: 700, color: '#1a1a2e', marginBottom: 10 }}>Evento concluso</div>
+            <p style={{ fontSize: 15.5, color: '#555', lineHeight: 1.7, margin: 0, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto' }}>
+              Questo appuntamento si è già svolto.{tornaAlSito !== null && ' I prossimi li trovi sul sito.'}
+            </p>
+            {tornaAlSito !== null && (
+              <a href={tornaAlSito}
+                style={{ display: 'inline-block', marginTop: 20, padding: '12px 26px', borderRadius: 10, background: '#1a1a2e', color: '#fff', fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+                {sito?.name ? `Vai a ${sito.name}` : 'Vai al sito'}
+              </a>
+            )}
+          </div>
+        ) : chiuso ? (
           <div style={{ background: '#fff', borderRadius: 16, padding: 32, boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>
             <div style={{ textAlign: 'center', marginBottom: evento.lista_attesa && !inLista ? 26 : 0 }}>
               <div style={{ fontSize: 19, fontWeight: 700, color: '#1a1a2e', marginBottom: 10 }}>

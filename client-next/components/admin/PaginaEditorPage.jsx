@@ -212,6 +212,16 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
           </div>
         </div>
         <p style={{ fontSize: 11, color: '#aaa', margin: 0 }}>Su mobile le colonne si adattano automaticamente.</p>
+        {/* Assente = acceso: i blocchi eventi già sui siti li mostrano senza
+            che nessuno debba tornare a spuntarli. */}
+        {type === 'eventi' && (
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#333', cursor: 'pointer', lineHeight: 1.5 }}>
+            <input type="checkbox" checked={data.mostra_passati !== false} onChange={e => upd('mostra_passati', e.target.checked)} style={{ marginTop: 3 }} />
+            <span>Mostra anche gli eventi passati<br />
+              <span style={{ fontSize: 11.5, color: '#888' }}>Sotto quelli in programma, gli ultimi conclusi. Si aprono ma non si prenotano più.</span>
+            </span>
+          </label>
+        )}
       </div>
     )
   }
