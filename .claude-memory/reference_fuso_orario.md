@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: 98e39a37-374d-43a6-a1bf-16225619363f
-  modified: 2026-09-11T14:14:10.008Z
+  modified: 2026-09-11T19:27:29.084Z
 ---
 
 **Chi prenota scrive «10:00» guardando il proprio orologio.** Il server
@@ -53,6 +53,18 @@ in DB alle 14:30 dopo tre salvataggi. Colpiva **eventi** e **newsletter
 programmate**: ora caricano con `perCampoDataOra` (lib/fuso.js), l'andata e
 ritorno è stabile. ⚠️ Gli orari **già scivolati** restano sbagliati nel DB:
 vanno corretti dal cliente.
+
+## Le email degli eventi (corrette l'11/09/2026)
+
+**Accertato, non dedotto**: `TZ` è fra le variabili *riservate* di Vercel
+(docs «Reserved environment variables») → le funzioni girano in UTC e non si
+può cambiare. Sei punti formattavano l'ora dell'evento sul server senza fuso
+(conferma, notifica titolare, nota CRM, `ora` alle automazioni, lista d'attesa,
+promemoria manuale): «18:30» per le 20:30. Ora tutti `oraLocale(iso,
+aziende.fuso_orario, opzioni)` con `aziende(fuso_orario)` nella stessa select.
+⚠️ `oraLocale` aggiunge ora e minuti di default: per la sola data passare
+`hour: undefined, minute: undefined` (l'anteprima social l'aveva presa).
+**Regola**: una data formattata sul server senza `timeZone` è sempre un difetto.
 
 **Offerte** (`OffertaEditPage.perInput`): variante diversa, salvano la stringa
 grezza → Postgres la legge in UTC. Il giro è stabile ma l'istante è sbagliato di

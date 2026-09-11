@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-11T14:22:00.681Z
+  modified: 2026-09-11T19:27:37.241Z
 ---
 
 # Si riprende da qui
@@ -25,6 +25,20 @@ metadata:
   l'ora di creazione. Chiedere orari veri: dalla fine dipende quando si chiude.
 - **Offerte**: variante del difetto non corretta (istante sbagliato di 2h ma
   stabile). Decisione di Francesco se sistemarla — cambia l'ora mostrata.
+
+### Email degli eventi: ora giusta (11/09, live) — manca la prova sull'email vera
+Le route funzionano in produzione, ma **nessuno ha letto un'email vera**. Prova
+di Francesco: evento di prova nell'azienda StayApp Development alle 20:30 →
+prenotarlo con la sua email → la conferma deve dire «alle ore 20:30».
+Poi cancellare evento e prenotazione.
+
+### Trovato e NON toccato
+- **Blog automatico cieco sugli eventi**: `lib/blog-scheduler.js:63` e
+  `app/api/ai/blog-auto/route.js:53` cercano `start_date` in `eventi`, colonna
+  che non esiste (è `date_start`) → la query fallisce muta e l'AI non vede mai
+  gli eventi. Correggerlo cambia cosa scrive il blog: chiedere a Francesco.
+- In coda: modulo evento nel fuso dell'**azienda** (oggi quello del browser di
+  chi compila); pagina pubblica che mostra l'ora nel fuso di chi guarda.
 
 ## ✅ Archivio completo — resta da provare il ripristino
 
