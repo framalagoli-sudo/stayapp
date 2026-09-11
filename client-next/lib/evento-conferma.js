@@ -3,6 +3,7 @@ import { sendEmail } from './send-email'
 import { guestEmailTemplate } from './email-template'
 import { getAziendaLegale } from './guest-data'
 import { inviaMessaggioWhatsapp } from './whatsapp-messaggio'
+import { oraLocale } from './fuso'
 
 // «La tua prenotazione è confermata»: **una sola volta, nel momento giusto.**
 //
@@ -24,9 +25,10 @@ import { inviaMessaggioWhatsapp } from './whatsapp-messaggio'
 // Sta qui e non nelle due route perché il testo della conferma dev'essere uno
 // solo: due copie divergono, e diverge proprio quella che si legge di rado.
 
-function quando(iso) {
-  if (!iso) return ''
-  return new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+// ⛔ Nel fuso dell'azienda, non del server: Vercel gira in UTC e l'email diceva
+// «ore 18:30» per una cena delle 20:30.
+function quando(iso, fuso) {
+  return oraLocale(iso, fuso, { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 export async function mandaConfermaEvento(bookingId) {
@@ -42,7 +44,7 @@ export async function mandaConfermaEvento(bookingId) {
     if (b.conferma_inviata_il) return { ok: false, motivo: 'Conferma già inviata' }
 
     const { data: ev } = await supabaseAdmin.from('eventi')
-      .select('id, title, date_start, location, azienda_id, entity_id, entity_tipo, packages, send_guest_confirmation')
+      .select('id, title, date_start, location, azienda_id, entity_id, entity_tipo, packages, send_guest_confirmation, aziende(fuso_orario)')
       .eq('id', b.event_id).maybeSingle()
     if (!ev) return { ok: false, motivo: 'Evento non trovato' }
     // Il titolare può aver spento la conferma: è una sua scelta, si rispetta.
@@ -58,7 +60,7 @@ export async function mandaConfermaEvento(bookingId) {
     const pref = { struttura: 's', ristorante: 'r', attivita: 'a' }[ev.entity_tipo]
     const privacyUrl = slug && pref ? `${appUrl}/${pref}/${slug}/privacy` : null
     const pkg = (ev.packages || []).find(p => p.id === b.package_id)
-    const dataOra = quando(ev.date_start)
+    const dataOra = quando(ev.date_start, ev.aziende?.fuso_orario)
 
     if ((process.env.RESEND_API_KEY ?? '').trim() && b.guest_email) {
       await sendEmail({

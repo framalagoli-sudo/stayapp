@@ -5,6 +5,7 @@ import { guestEmailTemplate } from '@/lib/email-template'
 import { getAziendaLegale } from '@/lib/guest-data'
 import { registraContatto, tagEvento } from '@/lib/crm'
 import { eventoConcluso } from '@/lib/evento-concluso'
+import { oraLocale } from '@/lib/fuso'
 import { after } from 'next/server'
 
 // «Avvisatemi se si libera un posto.»
@@ -40,7 +41,7 @@ export async function POST(request, props) {
       return Response.json({ error: 'Per entrare in lista serve il consenso al trattamento dei dati.' }, { status: 400 })
 
     const { data: evento } = await supabaseAdmin.from('eventi')
-      .select('id, title, date_start, date_end, location, seats_total, seats_booked, lista_attesa, prenotazioni_chiuse, entity_id, azienda_id')
+      .select('id, title, date_start, date_end, location, seats_total, seats_booked, lista_attesa, prenotazioni_chiuse, entity_id, azienda_id, aziende(fuso_orario)')
       .eq('id', params.id).eq('published', true).eq('active', true).maybeSingle()
     if (!evento) return Response.json({ error: 'Evento non trovato' }, { status: 404 })
     // A evento finito non si libera più nessun posto: la lista resterebbe
@@ -102,9 +103,9 @@ export async function POST(request, props) {
         nome = ent?.name || nome
       }
       const legale = evento.azienda_id ? await getAziendaLegale(evento.azienda_id) : null
-      const quando = evento.date_start
-        ? new Date(evento.date_start).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
-        : ''
+      // Nel fuso dell'azienda: sul server (UTC) l'ora usciva indietro di due.
+      const quando = oraLocale(evento.date_start, evento.aziende?.fuso_orario,
+        { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
       sendEmail({
         _ctx: 'evento-lista-attesa', fromName: nome, to: guest_email.trim(),
         subject: `Sei in lista d’attesa — ${evento.title}`,

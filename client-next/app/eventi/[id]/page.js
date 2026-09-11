@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import EventoPage from '@/components/guest/EventoPage'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
+import { oraLocale } from '@/lib/fuso'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +20,7 @@ export const dynamic = 'force-dynamic'
 // e chi legge i link non esegue JavaScript.
 //
 // Le colonne si elencano: questa risposta finisce nell'HTML pubblico.
-const CAMPI = 'title, description, cover_url, date_start, location, entity_id, entity_tipo'
+const CAMPI = 'title, description, cover_url, date_start, location, entity_id, entity_tipo, aziende(fuso_orario)'
 
 function primeRighe(testo, max = 200) {
   const pulito = String(testo || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
@@ -61,9 +62,10 @@ export async function generateMetadata(props) {
       ? `https://${dominio}/eventi/${id}`
       : `https://www.oltrenova.com/eventi/${id}`
 
-    const quando = ev.date_start
-      ? new Date(ev.date_start).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })
-      : ''
+    // Il giorno nel fuso dell'azienda: sul server (UTC) un evento dopo
+    // mezzanotte finiva sul giorno prima.
+    const quando = oraLocale(ev.date_start, ev.aziende?.fuso_orario,
+      { day: 'numeric', month: 'long', year: 'numeric', hour: undefined, minute: undefined })
     const descrizione = primeRighe(ev.description)
       || [quando, ev.location].filter(Boolean).join(' · ')
       || undefined

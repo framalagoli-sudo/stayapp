@@ -11,6 +11,7 @@ import { after } from 'next/server'
 import { triggerAutomazione } from '@/lib/guest-utils'
 import { registraContatto, tagEvento } from '@/lib/crm'
 import { eventoConcluso } from '@/lib/evento-concluso'
+import { oraLocale } from '@/lib/fuso'
 
 const ENTITY_TBL = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
 
@@ -22,9 +23,10 @@ const ENTITY_TBL = { struttura: 'entita', ristorante: 'entita', attivita: 'entit
 export const TESTO_CONSENSO =
   "Ho letto e accetto l'informativa sulla privacy. I miei dati saranno usati per gestire questa prenotazione."
 
-function fmtDate(iso) {
-  if (!iso) return ''
-  return new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+// ⛔ Nel fuso dell'azienda, non del server: Vercel gira in UTC, e al titolare,
+// nel CRM e nei promemoria arrivava un'ora indietro di due.
+function fmtDate(iso, fuso) {
+  return oraLocale(iso, fuso, { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 export async function POST(request, props) {
@@ -54,7 +56,7 @@ export async function POST(request, props) {
     // regola-ok: l'evento serve solo a validare la prenotazione e a decidere le
     // notifiche, non viene mai restituito al client — nessuna colonna esce di qui.
     const { data: evento, error: evErr } = await supabaseAdmin.from('eventi')
-      .select('*').eq('id', params.id).eq('published', true).eq('active', true).single()
+      .select('*, aziende(fuso_orario)').eq('id', params.id).eq('published', true).eq('active', true).single()
     if (evErr || !evento) return Response.json({ error: 'Evento non trovato' }, { status: 404 })
 
     // ⚠️ Il muro sta qui, non nel browser: nascondere il modulo impedisce di
@@ -146,7 +148,8 @@ export async function POST(request, props) {
     const resendKey = (process.env.RESEND_API_KEY ?? '').trim()
     const from = (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>'
     const total = (price * reqSeats).toFixed(2)
-    const dateStr = fmtDate(evento.date_start)
+    const fuso = evento.aziende?.fuso_orario
+    const dateStr = fmtDate(evento.date_start, fuso)
 
     // Nome/e-mail del titolare: dall'entità associata o, se aziendale, dall'azienda.
     let ownerEmail = null, ownerName = null, entSlug = null
@@ -245,7 +248,7 @@ export async function POST(request, props) {
         email: guest_email,
         telefono: guest_phone || '',
         data: dateStr || '',
-        ora: evento.date_start ? new Date(evento.date_start).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '',
+        ora: oraLocale(evento.date_start, fuso, { day: undefined, month: undefined, hour: '2-digit', minute: '2-digit' }),
         servizio: evento.title,
         n_persone: String(reqSeats),
         visit_datetime: evento.date_start || null,

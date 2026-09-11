@@ -5,6 +5,7 @@ import { guestEmailTemplate } from '@/lib/email-template'
 import { getAziendaLegale } from '@/lib/guest-data'
 import { inviaMessaggioWhatsapp } from '@/lib/whatsapp-messaggio'
 import { testoRicco } from '@/lib/testo-ricco'
+import { oraLocale } from '@/lib/fuso'
 
 // «Ci vediamo domani»: il promemoria a chi ha già prenotato.
 //
@@ -22,7 +23,7 @@ import { testoRicco } from '@/lib/testo-ricco'
 
 async function raccogli(eventoId) {
   const { data: evento } = await supabaseAdmin.from('eventi')
-    .select('id, title, date_start, location, azienda_id, entity_id')
+    .select('id, title, date_start, location, azienda_id, entity_id, aziende(fuso_orario)')
     .eq('id', eventoId).maybeSingle()
   if (!evento) return { errore: 'Evento non trovato' }
 
@@ -115,9 +116,9 @@ export async function POST(request, props) {
       if (ent) { nome = ent.name || nome; slug = ent.slug }
     }
     const legale = evento.azienda_id ? await getAziendaLegale(evento.azienda_id) : null
-    const quando = evento.date_start
-      ? new Date(evento.date_start).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
-      : ''
+    // Nel fuso dell'azienda: sul server (UTC) l'ora usciva indietro di due.
+    const quando = oraLocale(evento.date_start, evento.aziende?.fuso_orario,
+      { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
 
     let inviati = 0, falliti = 0
     for (const b of destinatari) {

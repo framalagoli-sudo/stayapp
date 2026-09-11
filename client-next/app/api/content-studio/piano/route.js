@@ -1,4 +1,5 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
+import { oraLocale } from '@/lib/fuso'
 
 export const maxDuration = 60
 import { requireAuth } from '@/lib/server-auth'
@@ -49,7 +50,7 @@ export async function POST(request) {
     const dataFine = `${anno}-${mesePad}-31`
 
     const [{ data: az }, { data: eventi }, { data: prodotti }, { data: recensioni }] = await Promise.all([
-      supabaseAdmin.from('aziende').select('ragione_sociale, content_strategy').eq('id', azienda_id).single(),
+      supabaseAdmin.from('aziende').select('ragione_sociale, content_strategy, fuso_orario').eq('id', azienda_id).single(),
       supabaseAdmin.from('eventi').select('title, date_start, description')
         .eq('azienda_id', azienda_id).gte('date_start', dataInizio).lte('date_start', dataFine).limit(8),
       supabaseAdmin.from('prodotti').select('nome, descrizione').eq('azienda_id', azienda_id).eq('attivo', true).limit(5),
@@ -70,7 +71,7 @@ Content Pillar: ${pillarNames || 'educational, promozionale, community, behind t
 Piattaforme da usare: ${(strategy.piattaforme || ['instagram', 'facebook']).join(', ')}
 
 Contesto reale del mese:
-- Eventi programmati: ${eventi?.length ? eventi.map(e => `"${e.title}" (${e.date_start})`).join('; ') : 'nessuno'}
+- Eventi programmati: ${eventi?.length ? eventi.map(e => `"${e.title}" (${oraLocale(e.date_start, az?.fuso_orario)})`).join('; ') : 'nessuno'}
 - Prodotti/servizi attivi: ${prodotti?.length ? prodotti.map(p => p.nome).join(', ') : 'nessuno'}
 - Recensioni positive recenti: ${recensioni?.length ? recensioni.map(r => `"${(r.testo || '').substring(0, 70)}"`).join(' | ') : 'nessuna'}
 
