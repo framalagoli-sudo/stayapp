@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: 98e39a37-374d-43a6-a1bf-16225619363f
-  modified: 2026-09-11T19:27:29.084Z
+  modified: 2026-09-11T22:26:34.476Z
 ---
 
 **Chi prenota scrive «10:00» guardando il proprio orologio.** Il server
@@ -53,6 +53,30 @@ in DB alle 14:30 dopo tre salvataggi. Colpiva **eventi** e **newsletter
 programmate**: ora caricano con `perCampoDataOra` (lib/fuso.js), l'andata e
 ritorno è stabile. ⚠️ Gli orari **già scivolati** restano sbagliati nel DB:
 vanno corretti dal cliente.
+
+## 12/09/2026: categoria chiusa, con una guardia
+
+Censimento di tutto il codice (591 file, 147 punti). Regola unica: **l'ora è
+quella dell'azienda** (`aziende.fuso_orario`), mai quella di chi esegue o di chi
+guarda. `lib/fuso.js` è l'unico posto che fa i conti: `oraLocale` (+`locale` per
+la lingua), `perCampoDataOra`/`daCampoDataOra` (i due versi di un
+`datetime-local`), `giornoLocale`, `dataLocale`. `lib/fuso-azienda.js`
+(`fusoDiAzienda`) legge il fuso dal server — sta a parte perché `fuso.js` lo
+importa anche il browser.
+
+Corretti: note CRM (nascevano col giorno prima dopo le 22), «oggi» di una
+prenotazione senza calendario, date offerte sulle pagine pubbliche, modulo
+evento/newsletter/offerte (leggono e salvano nel fuso azienda), pagina evento +
+schede sito + app del QR (le due route pubbliche degli eventi portano `fuso`).
+
+🛡️ **`tests/verifica-regole.mjs`, tre regole nuove** (provate anche al
+contrario): ora formattata sul server senza `timeZone`; `toISOString().slice(0,16)`
+in un campo; «oggi» preso in UTC sul server. Cinque casi legittimi (nomi di
+archivi, aritmetica su giorni puri col trucco di mezzogiorno) dichiarati con
+`regola-ok`. **Da qui in poi la categoria non torna in silenzio.**
+
+⚠️ Restano nel fuso di chi guarda, di proposito, i timestamp di **audit**
+(created_at, ultimo accesso, chat): sono fatti del pannello, non appuntamenti.
 
 ## Le email degli eventi (corrette l'11/09/2026)
 

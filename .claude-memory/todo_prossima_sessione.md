@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-11T19:27:37.241Z
+  modified: 2026-09-11T22:27:04.892Z
 ---
 
 # Si riprende da qui
@@ -32,13 +32,26 @@ di Francesco: evento di prova nell'azienda StayApp Development alle 20:30 →
 prenotarlo con la sua email → la conferma deve dire «alle ore 20:30».
 Poi cancellare evento e prenotazione.
 
+### Fatto il 12/09
+- **Email di conferma provata davvero**: evento di prova alle 20:30 → email a
+  Francesco. Nella nota CRM scritta dalla produzione: «alle ore 20:30» (prima
+  18:30). Tutto cancellato dopo, contatto rimesso com'era.
+  ⚠️ La scrittura nel CRM avviene in `after()`, **dopo** la risposta: una
+  pulizia fatta subito non trova ancora la riga.
+- **Categoria orari chiusa + guardia** → [[reference_fuso_orario]] §12/09.
+- **Blog automatico**: cercava `start_date` (colonna inesistente) → corretto.
+- Garage22 ha corretto l'orario: il Listening ora è 20:30–23:30, salvato col
+  codice nuovo. inLingua Open Week era **di prova**: nessuna telefonata.
+
 ### Trovato e NON toccato
-- **Blog automatico cieco sugli eventi**: `lib/blog-scheduler.js:63` e
-  `app/api/ai/blog-auto/route.js:53` cercano `start_date` in `eventi`, colonna
-  che non esiste (è `date_start`) → la query fallisce muta e l'AI non vede mai
-  gli eventi. Correggerlo cambia cosa scrive il blog: chiedere a Francesco.
-- In coda: modulo evento nel fuso dell'**azienda** (oggi quello del browser di
-  chi compila); pagina pubblica che mostra l'ora nel fuso di chi guarda.
+- **Le due offerte già in archivio** hanno l'istante spostato di 2h (salvate col
+  vecchio modo). Il codice ora salva giusto; quelle due righe no. Sono
+  «Week end di Natale sconto 30%» e «Nuova offerta», entrambe con aria di
+  prova: da guardare con Francesco prima di toccarle.
+- **Avviso React «unique key prop»** sull'app di `deborahresinart`, solo in
+  modalità sviluppo. Verificato il 12/09 che **non** viene dalle modifiche di
+  oggi (provato con e senza, stesso dev): è preesistente, in
+  `LandingBlockRenderer`.
 
 ## ✅ Archivio completo — resta da provare il ripristino
 
