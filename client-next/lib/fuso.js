@@ -86,6 +86,22 @@ export function elencoFusi() {
           'Europe/Paris', 'Europe/Lisbon', 'America/New_York', 'America/Los_Angeles', 'UTC']
 }
 
+// Un istante → il valore di un `<input type="datetime-local">`, nell'ora di chi
+// guarda. È il verso opposto di `new Date(valore)`, con cui i moduli salvano:
+// quel valore lo legge proprio nell'ora di chi guarda.
+//
+// ⛔ Si usava `toISOString().slice(0, 16)`, cioè l'ora UTC: il campo mostrava
+// le 18:30 di un evento delle 20:30, e salvando — anche solo per correggere la
+// descrizione — diventava delle 18:30 davvero. Due ore indietro a ogni
+// salvataggio: la cena di Garage22 del 10/09, alle 20:30, risultava alle 14:30.
+export function perCampoDataOra(istante) {
+  if (!istante) return ''
+  const d = new Date(istante)
+  if (Number.isNaN(d.getTime())) return ''
+  const due = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${due(d.getMonth() + 1)}-${due(d.getDate())}T${due(d.getHours())}:${due(d.getMinutes())}`
+}
+
 // Come si scrive un'ora per chi legge in quel fuso. Senza `timeZone`, un'ora
 // formattata sul server esce nell'ora del server: è lo stesso difetto visto da
 // dietro.

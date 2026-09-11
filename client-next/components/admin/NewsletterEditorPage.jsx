@@ -5,6 +5,7 @@ import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
 import { ArrowLeft, Send, Eye, Save, Plus, Trash2, AlertCircle, CheckCircle, Smile, Clock, X } from 'lucide-react'
 import AiButton from '@/components/admin/AiButton'
+import { perCampoDataOra } from '@/lib/fuso'
 
 const EMOJIS = [
   '🎯','⚡','🔥','✨','💫','🎉','🎁','🌟','💥','❗',
@@ -156,7 +157,10 @@ export default function NewsletterEditorPage() {
         setNl(data)
         setSubject(data.subject || '')
         setPreheader(data.preheader || '')
-        setScheduledAt(data.scheduled_at ? data.scheduled_at.slice(0, 16) : '')
+        // Nell'ora di chi guarda: è quella in cui il salvataggio la rilegge.
+        // Tagliare la stringa dava l'ora UTC, e ogni salvataggio anticipava
+        // l'invio di due ore.
+        setScheduledAt(perCampoDataOra(data.scheduled_at))
         setTagFilter(data.tag_filter || [])
         setTemplateId(data.template_id || 'semplice')
         setContent(data.content && Object.keys(data.content).length ? data.content : DEFAULT_CONTENT[data.template_id] || DEFAULT_CONTENT.semplice)

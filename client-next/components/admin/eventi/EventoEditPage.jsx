@@ -5,6 +5,7 @@ import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch, uploadMedia } from '../../../lib/api'
 import { FORMATI, FORMATO_PREDEFINITO, rapportoDi } from '@/lib/formati-foto'
 import { FocalPointPicker } from '@/components/admin/FocalPointPicker'
+import { perCampoDataOra } from '@/lib/fuso'
 import { Trash2, Plus, X, Upload, Share2 } from 'lucide-react'
 import PostSocialModal from '../../../components/admin/PostSocialModal'
 
@@ -20,10 +21,6 @@ const INCLUDES_OPTIONS = [
 
 const BLANK_PKG = { id: '', name: '', description: '', price: '', includes: [] }
 
-function toInputDate(iso) {
-  if (!iso) return ''
-  return new Date(iso).toISOString().slice(0, 16)
-}
 
 export default function EventoEditPage() {
   const { id } = useParams()   // 'new' = creation
@@ -60,8 +57,9 @@ export default function EventoEditPage() {
         setForm({
           title:       ev.title || '',
           description: ev.description || '',
-          date_start:  toInputDate(ev.date_start),
-          date_end:    toInputDate(ev.date_end),
+          // Nell'ora di chi guarda: è quella in cui il salvataggio li rilegge.
+          date_start:  perCampoDataOra(ev.date_start),
+          date_end:    perCampoDataOra(ev.date_end),
           location:    ev.location || '',
           price:       ev.price ?? '',
           seats_total: ev.seats_total ?? '',
