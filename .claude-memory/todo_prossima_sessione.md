@@ -5,10 +5,26 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-09T17:50:14.712Z
+  modified: 2026-09-11T14:22:00.681Z
 ---
 
 # Si riprende da qui
+
+## Fatto l'11/09 (live, verificato in produzione)
+
+- **Eventi**: un evento finisce alla sua fine (non all'inizio), dopo non si
+  prenota più (route + pagina), e il blocco eventi del sito mostra i **passati,
+  acceso di default** (deciso da Francesco). → [[reference_eventi_conclusi]]
+- **Orari che scivolavano**: modulo evento e newsletter programmate perdevano
+  2h a ogni salvataggio. Corretto → [[reference_fuso_orario]].
+
+### ⚠️ Da chiedere ai clienti (orari già scivolati: il DB non si ripara da solo)
+- **Garage22, «Listening con Federico» del 17/09**: in DB 18:00–21:30. È l'ora
+  giusta? Se era stato salvato più volte potrebbe essere scivolato (es. 20:00).
+- **inLingua, Open Week**: 14/09 14:51 → 18/09 14:52 — minuti strani, sembrano
+  l'ora di creazione. Chiedere orari veri: dalla fine dipende quando si chiude.
+- **Offerte**: variante del difetto non corretta (istante sbagliato di 2h ma
+  stabile). Decisione di Francesco se sistemarla — cambia l'ora mostrata.
 
 ## ✅ Archivio completo — resta da provare il ripristino
 

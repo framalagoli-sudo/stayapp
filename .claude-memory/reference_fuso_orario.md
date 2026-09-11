@@ -1,8 +1,11 @@
 ---
 name: reference-fuso-orario
-description: L'ora di una prenotazione è quella del cliente, non del server — fuso IANA sull'azienda, conto in lib/fuso.js, e le due trappole del cambio d'ora legale
-metadata:
+description: "L'ora di una prenotazione è quella del cliente, non del server — fuso IANA sull'azienda, conto in lib/fuso.js, e le due trappole del cambio d'ora legale"
+metadata: 
+  node_type: memory
   type: reference
+  originSessionId: 98e39a37-374d-43a6-a1bf-16225619363f
+  modified: 2026-09-11T14:14:10.008Z
 ---
 
 **Chi prenota scrive «10:00» guardando il proprio orologio.** Il server
@@ -39,6 +42,22 @@ non riuscire a cancellare avendone diritto). Da un fuso americano: otto ore.
   stare lontani dai bordi del giorno — lì lo scarto non cambia il risultato.
 - **Invisibile in locale**, dove il server ha l'ora italiana e i conti tornano da
   soli: [[feedback_sandbox_non_e_live]].
+
+## ⛔ Il campo `datetime-local` che scivola (trovato l'11/09/2026)
+
+Stesso tema visto dal pannello. Un modulo che **carica** con
+`toISOString().slice(0,16)` (UTC) e **salva** con `new Date(valore)` (ora del
+browser) sposta l'istante di −2h (−1h d'inverno) **a ogni salvataggio**, anche
+se non si tocca la data. La cena di Garage22 del 10/09 (20:30 in locandina) era
+in DB alle 14:30 dopo tre salvataggi. Colpiva **eventi** e **newsletter
+programmate**: ora caricano con `perCampoDataOra` (lib/fuso.js), l'andata e
+ritorno è stabile. ⚠️ Gli orari **già scivolati** restano sbagliati nel DB:
+vanno corretti dal cliente.
+
+**Offerte** (`OffertaEditPage.perInput`): variante diversa, salvano la stringa
+grezza → Postgres la legge in UTC. Il giro è stabile ma l'istante è sbagliato di
+2h. **Non corretto**: cambierebbe l'ora mostrata sulle offerte esistenti →
+decisione di Francesco. Sistemarle vuol dire cambiare load **e** save insieme.
 
 Sonda `tests/probe-fuso.mjs`: cinque fusi (inclusa la mezz'ora di Adelaide),
 entrambi i cambi d'ora legale, e una stringa ostile che non deve far saltare
