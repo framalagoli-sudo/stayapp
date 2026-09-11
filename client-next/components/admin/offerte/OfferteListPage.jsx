@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../context/AuthContext'
 import { useAzienda } from '../../../context/AziendaContext'
+import { oraLocale } from '../../../lib/fuso'
 import { apiFetch } from '../../../lib/api'
 import { impegnoDi, postiRimasti } from '../../../lib/offerte-catalogo'
 import { Tag, MapPin, Users, Plus, Calendar } from 'lucide-react'
@@ -11,9 +12,9 @@ import { Tag, MapPin, Users, Plus, Calendar } from 'lucide-react'
 // lo decide lui: qui non c'è un elenco di tipi da cui scegliere, ci sono campi
 // liberi. Gli eventi restano una cosa a parte, con la loro voce di menu.
 
-function fmtData(iso) {
-  if (!iso) return null
-  return new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+// Nell'ora dell'azienda, non del computer di chi guarda.
+function fmtData(iso, fuso) {
+  return oraLocale(iso, fuso, { day: '2-digit', month: 'short', year: 'numeric' }) || null
 }
 
 function stato(o) {
@@ -211,7 +212,7 @@ export default function OfferteListPage() {
                   </span>
                   {o.data_inizio && (
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}>
-                      <Calendar size={11} strokeWidth={1.5} /> {fmtData(o.data_inizio)}
+                      <Calendar size={11} strokeWidth={1.5} /> {fmtData(o.data_inizio, azienda?.fuso_orario)}
                     </span>
                   )}
                   {o.luogo && (

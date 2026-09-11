@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { useAzienda } from '@/context/AziendaContext'
+import { oraLocale } from '@/lib/fuso'
 import { apiFetch } from '@/lib/api'
 import { Mail, Plus, Send, Copy, Trash2, Edit3, Archive, Clock, UserMinus } from 'lucide-react'
 
@@ -172,7 +173,9 @@ function NewsletterCard({ nl, onEdit, onDuplicate, onDelete }) {
           {isDraft && nl.scheduled_at && (
             <span style={{ fontSize: 12, color: '#38a169', display: 'flex', alignItems: 'center', gap: 4 }}>
               <Clock size={11} strokeWidth={2} />
-              {new Date(nl.scheduled_at).toLocaleString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+              {/* L'ora della partenza è quella dell'azienda: è quella scelta
+                  nell'editor, e deve leggersi uguale da qualunque computer. */}
+              {oraLocale(nl.scheduled_at, azienda?.fuso_orario, { day: '2-digit', month: 'short' })}
             </span>
           )}
           {isDraft && !nl.scheduled_at && (

@@ -15,6 +15,7 @@ import {
 import { guestFetch } from '@/lib/api'
 import { pickAppLogo } from '@/lib/appLogo'
 import { t as tr } from '@/lib/i18n'
+import { oraLocale } from '@/lib/fuso'
 import { supabase } from '@/lib/supabase'
 import RequestForm from './RequestForm'
 import ServicesTab from './ServicesTab'
@@ -730,10 +731,10 @@ function InfoPage({ property, modules, primary, textColor, subText, isDark, radi
 
 // ─── EventiTab ────────────────────────────────────────────────────────────────
 function EventiTab({ eventi, onOpen, primary, textColor, subText, isDark, radius, lang = 'it' }) {
-  function fmtDate(iso) {
-    if (!iso) return '—'
-    return new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-  }
+  // L'ora dell'evento è quella del posto (`ev.fuso`), non del telefono di chi
+  // legge: un ospite arrivato da un altro fuso deve leggere l'ora della serata.
+  const fmtDate = ev => oraLocale(ev.date_start, ev.fuso,
+    { day: '2-digit', month: 'short', year: 'numeric', locale: lang === 'en' ? 'en-GB' : 'it-IT' }) || '—'
   const cardBg = isDark ? '#1e1e32' : '#fff'
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -746,7 +747,7 @@ function EventiTab({ eventi, onOpen, primary, textColor, subText, isDark, radius
           <div style={{ padding: '14px 16px' }}>
             <div style={{ fontWeight: 700, fontSize: 16, color: textColor, marginBottom: 6 }}>{ev.title}</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}><Calendar size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {fmtDate(ev.date_start)}</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}><Calendar size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {fmtDate(ev)}</span>
               {ev.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}><MapPin size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {ev.location}</span>}
               {ev.seats_total && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}><Users size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {ev.seats_total - (ev.seats_booked || 0)} {lang === 'en' ? 'seats' : 'posti'}</span>}
             </div>
@@ -788,10 +789,9 @@ function EventoDetailView({ evento, onBack, primary, textColor, subText, isDark,
     finally { setBooking(false) }
   }
 
-  function fmtDate(iso) {
-    if (!iso) return '—'
-    return new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-  }
+  // Come sopra: l'ora della serata, nel fuso del posto.
+  const fmtDate = ev => oraLocale(ev.date_start, ev.fuso,
+    { day: '2-digit', month: 'long', year: 'numeric', locale: lang === 'en' ? 'en-GB' : 'it-IT' }) || '—'
 
   const cardBg = isDark ? '#1e1e32' : '#fff'
   const border = isDark ? 'rgba(255,255,255,0.08)' : '#f0f0f0'
@@ -814,7 +814,7 @@ function EventoDetailView({ evento, onBack, primary, textColor, subText, isDark,
         <h2 style={{ fontSize: 20, fontWeight: 700, color: textColor, marginBottom: 12, lineHeight: 1.3 }}>{evento.title}</h2>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><Calendar size={13} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {fmtDate(evento.date_start)}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><Calendar size={13} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {fmtDate(evento)}</span>
           {evento.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><MapPin size={13} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {evento.location}</span>}
           {evento.seats_total && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><Users size={13} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {evento.seats_total - (evento.seats_booked || 0)} posti</span>}
         </div>

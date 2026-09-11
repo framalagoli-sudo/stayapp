@@ -11,6 +11,7 @@ import { ReviewSourceLogo } from '@/lib/reviewLogos'
 import { RichText, richIsEmpty } from '@/lib/richText'
 import { ricco } from '@/lib/testo-ricco'
 import { t as tr } from '@/lib/i18n'
+import { oraLocale } from '@/lib/fuso'
 import { getPreset, fieldOptions } from '@/lib/vetrinePresets'
 
 // Sicurezza: accetta solo http(s), mailto:, tel: o path interni; blocca javascript:/data: ecc.
@@ -877,7 +878,12 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
   // La scheda di un evento, in programma o concluso. Funzione normale e non
   // componente: definito qui dentro, un componente si rimonterebbe a ogni render.
   function renderEventoCard(ev, concluso) {
-    const dateStr = new Date(ev.date_start).toLocaleDateString(lang === 'en' ? 'en-GB' : 'it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+    // Il giorno nel fuso dell'evento: una serata che comincia a mezzanotte
+    // cambierebbe data a seconda di dove si trova chi guarda.
+    const dateStr = oraLocale(ev.date_start, ev.fuso, {
+      day: '2-digit', month: 'long', year: 'numeric', hour: undefined, minute: undefined,
+      locale: lang === 'en' ? 'en-GB' : 'it-IT',
+    })
     const prezzo = concluso ? null : prezzoDaMostrare(ev, { gratuito: tr('free', lang) })
     return (
       <a key={ev.id} href={`/eventi/${ev.id}?back=${encodeURIComponent(homeUrl)}`} style={{ background: '#fafafa', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', border: '1px solid #f0f0f0' }}>

@@ -3,10 +3,19 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { apiFetch } from '../../../lib/api'
 import { Users, Calendar, Mail, Phone, Package, ArrowLeft, Check, X, Clock, Plus, PhoneCall, Send } from 'lucide-react'
+import { useAzienda } from '../../../context/AziendaContext'
+import { oraLocale } from '../../../lib/fuso'
 
+// Quando è arrivata una prenotazione (`created_at`) si legge nell'ora di chi
+// guarda — è un fatto del pannello. L'ora dell'evento no: quella è del posto,
+// e passa da `fmtEvento`.
 function fmtDate(iso) {
   if (!iso) return '—'
   return new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+function fmtEvento(iso, fuso) {
+  return oraLocale(iso, fuso, { day: '2-digit', month: 'short', year: 'numeric' }) || '—'
 }
 
 // Scrivere a chi ha prenotato: cosa dire, e a chi.
@@ -192,6 +201,7 @@ function statusStyle(status) {
 export default function EventoPrenotazioniPage() {
   const { id } = useParams()
   const router = useRouter()
+  const { azienda } = useAzienda()
   const [evento, setEvento] = useState(null)
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
@@ -333,7 +343,7 @@ export default function EventoPrenotazioniPage() {
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2 style={{ margin: 0, fontSize: 20, overflowWrap: 'anywhere' }}>Prenotazioni — {evento.title}</h2>
-          <p style={{ margin: '2px 0 0', fontSize: 13, color: '#888' }}>{fmtDate(evento.date_start)}</p>
+          <p style={{ margin: '2px 0 0', fontSize: 13, color: '#888' }}>{fmtEvento(evento.date_start, azienda?.fuso_orario)}</p>
         </div>
         {/* Chi chiama al telefono finiva su un quaderno, e i posti nel pannello
             non tornavano più con la realtà: l'evento risultava mezzo vuoto

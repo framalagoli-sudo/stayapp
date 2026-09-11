@@ -308,6 +308,8 @@ export async function runBackup() {
   const compressed = await gzipAsync(Buffer.from(JSON.stringify(backup), 'utf8'))
   console.log(`[backup] Compresso: ${(compressed.length / 1024).toFixed(0)} KB`)
 
+  // regola-ok: è il nome dell'archivio, non una data letta da qualcuno. In UTC
+  // resta ordinabile e non salta un giorno al cambio dell'ora legale.
   const date = startedAt.toISOString().slice(0, 10)
   // Il giro delle 3 di notte scrive `backup-AAAA-MM-GG.json.gz`. Se quel nome è
   // già occupato — succede quando si rifà il backup a mano nello stesso giorno —

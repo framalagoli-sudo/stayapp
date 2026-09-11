@@ -47,7 +47,11 @@ const AMMESSE = {
                   // social e i dati legali del titolare — che sono pubblici per obbligo
                   // di legge. Verificato campo per campo il 25/08; il minisito NON esce
                   // intero, di proposito.
-                  'sito'],
+                  'sito',
+                  // 12/09: il fuso dell'azienda («Europe/Rome»). Serve alla pagina
+                  // per mostrare l'ora del POSTO invece di quella di chi guarda, e
+                  // non dice niente che il visitatore non veda già dall'indirizzo.
+                  'fuso'],
 }
 const SEGRETE = /password|secret|token|api_key|chiave|private|_key$/i
 

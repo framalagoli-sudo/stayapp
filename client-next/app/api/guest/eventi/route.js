@@ -20,7 +20,9 @@ export async function GET(request) {
   const passati = searchParams.get('quando') === 'passati'
 
   let query = supabaseAdmin.from('eventi')
-    .select('id, slug, title, description, cover_url, formato_cover, cover_focal, cta_label, cta_condizioni, mostra_prezzo, mostra_prezzo_pagina, prezzo_testo, date_start, date_end, location, price, seats_total, seats_booked, packages')
+    // `aziende(fuso_orario)` non è un dettaglio: le schede mostrano l'ora
+    // dell'evento, e senza fuso ognuno la leggerebbe nel proprio.
+    .select('id, slug, title, description, cover_url, formato_cover, cover_focal, cta_label, cta_condizioni, mostra_prezzo, mostra_prezzo_pagina, prezzo_testo, date_start, date_end, location, price, seats_total, seats_booked, packages, aziende(fuso_orario)')
     .eq('published', true).eq('active', true)
   query = passati
     ? soloConclusi(query).order('date_start', { ascending: false }).limit(MAX_PASSATI)
@@ -44,7 +46,9 @@ export async function GET(request) {
   const { data, error } = await query
   if (error) return Response.json({ error: error.message }, { status: 500 })
 
-  let out = data || []
+  // Il fuso esce come campo semplice: l'oggetto annidato dell'unione non è
+  // roba che le pagine debbano conoscere.
+  let out = (data || []).map(({ aziende, ...ev }) => ({ ...ev, fuso: aziende?.fuso_orario || null }))
   if (lang === 'en') out = await Promise.all(out.map(ev => localizeEntity(ev, 'evento', lang)))
   return Response.json(out)
 }

@@ -81,6 +81,8 @@ export function siSovrappongono(dalA, alA, dalB, alB) {
 export function giornoDopo(g) {
   const d = new Date(`${g}T12:00:00`)
   d.setDate(d.getDate() + 1)
+  // regola-ok: aritmetica su giorni puri («2026-09-12»), non su istanti. Il
+  // mezzogiorno di partenza tiene il conto lontano dai bordi del giorno.
   return d.toISOString().slice(0, 10)
 }
 

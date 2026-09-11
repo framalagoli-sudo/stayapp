@@ -41,6 +41,9 @@ export async function GET(request) {
       if (!b.data_fine || b.data_fine <= b.data) return [b.data]
       const giorni = []
       for (let d = new Date(`${b.data}T12:00:00`); ; d.setDate(d.getDate() + 1)) {
+        // regola-ok: non è un istante, è aritmetica su giorni puri. Si parte da
+        // mezzogiorno apposta per stare lontani dai bordi del giorno, dove lo
+        // scarto di fuso cambierebbe la data.
         const iso = d.toISOString().slice(0, 10)
         if (iso >= b.data_fine) break
         if (iso >= data_da && iso <= data_a) giorni.push(iso)

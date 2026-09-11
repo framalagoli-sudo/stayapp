@@ -91,6 +91,8 @@ export async function GET(request, { params }) {
 
   const slug = (azienda.ragione_sociale || azienda.nome || 'azienda')
     .toString().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40)
+  // regola-ok: è il nome di un file di export, non una data che qualcuno legge
+  // come «oggi». In UTC va bene, ed è anche l'unico modo di ordinarli.
   const date = new Date().toISOString().slice(0, 10)
   const filename = `oltrenova-export-${slug}-${date}.json`
 

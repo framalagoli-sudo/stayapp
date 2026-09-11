@@ -1,6 +1,8 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { postiRimasti } from '@/lib/offerte-catalogo'
+import { giornoLocale } from '@/lib/fuso'
+import { fusoDiAzienda } from '@/lib/fuso-azienda'
 import { sendWebhooks } from '@/lib/send-webhooks'
 import { sendEmail } from '@/lib/send-email'
 import { guestEmailTemplate } from '@/lib/email-template'
@@ -75,7 +77,9 @@ export async function POST(request) {
       entity_id: offerta.entity_id,
       // La data di oggi: un'offerta senza calendario si prenota «adesso».
       // Quelle con una data la portano già dentro di sé.
-      data: new Date().toISOString().slice(0, 10),
+      // ⚠️ «Oggi» dove sta il cliente: sul server (UTC) una prenotazione fatta
+      // in Italia dopo le 22 veniva registrata con il giorno prima.
+      data: giornoLocale(new Date(), await fusoDiAzienda(offerta.azienda_id)),
       cliente_nome: nome.trim(),
       // Email o telefono: al telefono non si ha per forza un indirizzo.
       cliente_email: contatto.includes('@') ? contatto.trim().toLowerCase() : '',

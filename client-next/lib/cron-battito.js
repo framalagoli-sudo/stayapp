@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { logError } from '@/lib/observability'
+import { oraLocale, FUSO_PREDEFINITO } from '@/lib/fuso'
 
 // Accorgersi di un processo che ha smesso di girare.
 //
@@ -46,7 +47,7 @@ export async function controllaAltriProcessi(nomeChiamante) {
     for (const p of await processiFermi()) {
       if (p.nome === nomeChiamante) continue
       await logError(`cron-fermo/${p.nome}`,
-        `Il processo "${p.nome}" non gira da ${p.fermoDaMinuti} minuti (soglia: ${p.soglia_minuti}). Ultima esecuzione riuscita: ${new Date(p.ultimo_ok).toLocaleString('it-IT')}.`,
+        `Il processo "${p.nome}" non gira da ${p.fermoDaMinuti} minuti (soglia: ${p.soglia_minuti}). Ultima esecuzione riuscita: ${oraLocale(p.ultimo_ok, FUSO_PREDEFINITO, { year: 'numeric', second: '2-digit' })}.`,
         { alert: true })
     }
   } catch {}

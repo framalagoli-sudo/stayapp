@@ -37,7 +37,11 @@ export async function GET(request) {
     } else if (searchParams.get('mese')) {
       const [year, month] = searchParams.get('mese').split('-')
       const from = `${year}-${month}-01`
-      const to   = new Date(year, month, 1).toISOString().slice(0, 10)
+      // Il primo del mese dopo. Costruito in UTC di proposito: `new Date(a, m, 1)`
+      // lo costruisce nel fuso di CHI ESEGUE, e da un fuso a est del meridiano
+      // l'ultimo giorno del mese resterebbe fuori dall'elenco.
+      // regola-ok: confine di calendario costruito in UTC apposta, non «oggi».
+      const to   = new Date(Date.UTC(Number(year), Number(month), 1)).toISOString().slice(0, 10)
       q = q.gte('data_pianificata', from).lt('data_pianificata', to)
     }
 

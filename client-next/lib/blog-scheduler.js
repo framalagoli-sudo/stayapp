@@ -59,11 +59,14 @@ async function generateArticle(automazione) {
     .eq('id', entity_id).single()
   if (!entity) return
 
+  // ⛔ La colonna si chiama `date_start`: con `start_date` la query falliva
+  // senza dire niente, e nel blog automatico gli eventi non entravano mai.
   const { data: eventi } = await supabaseAdmin.from('eventi')
-    .select('title, start_date')
+    .select('title, date_start')
     .eq('entity_tipo', entity_tipo).eq('entity_id', entity_id)
-    .gte('start_date', new Date().toISOString())
-    .order('start_date').limit(4)
+    .eq('published', true).eq('active', true)
+    .gte('date_start', new Date().toISOString())
+    .order('date_start').limit(4)
 
   const mini      = entity.minisito || {}
   const services   = Array.isArray(entity.services)    ? entity.services.filter(s => s.name).slice(0, 6) : []

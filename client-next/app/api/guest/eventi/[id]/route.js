@@ -16,6 +16,9 @@ const CAMPI_EVENTO = [
   'prenotazioni_chiuse', 'prenotazioni_chiuse_testo', 'lista_attesa',
   // Servono a ricostruire il piede di pagina del sito da cui arriva chi guarda.
   'entity_tipo', 'entity_id', 'azienda_id',
+  // L'ora dell'evento è quella del posto: senza fuso la pagina la mostrerebbe
+  // in quello di chi guarda, e chi prenota da lontano leggerebbe un altro orario.
+  'aziende(fuso_orario)',
 ].join(', ')
 
 // Il minimo per rendere il piede di pagina: chi è il titolare, come si torna al
@@ -77,8 +80,9 @@ export async function GET(request, props) {
     }
 
     // `azienda_id` serviva solo a cercare i dati legali qui sopra: non esce.
-    const { azienda_id, ...pubblico } = out
-    return Response.json({ ...pubblico, sito })
+    // Dell'unione con `aziende` esce solo il fuso, come campo semplice.
+    const { azienda_id, aziende, ...pubblico } = out
+    return Response.json({ ...pubblico, fuso: aziende?.fuso_orario || null, sito })
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 })
   }

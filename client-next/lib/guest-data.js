@@ -2,6 +2,8 @@ import { supabaseAdmin } from './supabase-server'
 import { getCollegamenti } from './guest-utils'
 import { verificaTokenAnteprima } from './preview-token'
 import { allaFormaStorica } from './entita'
+import { dataLocale } from './fuso'
+import { fusoDiAzienda } from './fuso-azienda'
 
 // Query dirette a Supabase dai Server Components — nessun HTTP hop intermedio.
 // Più sicure (nessun endpoint esposto chiamato internamente), più stabili
@@ -89,7 +91,7 @@ const CAMPI_OFFERTA_PUBBLICI =
   'luogo, prezzo, valuta, mostra_prezzo, prezzo_testo, cta_label, cta_condizioni, ' +
   'data_inizio, data_fine, posti_totali, posti_occupati, ordine, origine'
 
-async function nellaFormaStorica(entityId) {
+async function nellaFormaStorica(entityId, fuso) {
   const { data } = await supabaseAdmin.from('offerte')
     .select(CAMPI_OFFERTA_PUBBLICI)
     .eq('entity_id', entityId).eq('attiva', true).eq('pubblicata', true)
@@ -120,7 +122,9 @@ async function nellaFormaStorica(entityId) {
     id: o.id, name: o.titolo, description: o.descrizione || '',
     price: Number(o.prezzo) || 0, seats: o.posti_totali ?? null,
     meeting_point: o.luogo || '', photo_url: o.cover_url || '',
-    dates: o.data_inizio ? new Date(o.data_inizio).toLocaleDateString('it-IT') : '',
+    // Nel fuso dell'azienda: sul server (UTC) un'offerta che comincia a
+    // mezzanotte veniva annunciata con il giorno prima.
+    dates: dataLocale(o.data_inizio, fuso),
     // Durata e «cosa include» erano due campi separati: la migrazione li ha
     // messi insieme nelle condizioni, e qui si rimettono dove le pagine li cercano.
     duration: (o.cta_condizioni || '').match(/Durata:\s*(.+)/)?.[1] || '',
@@ -150,14 +154,18 @@ async function leggiEntita(slug, tipo, campi) {
     .from('entita').select(campi).eq('slug', slug).eq('tipo', tipo).eq('active', true).maybeSingle()
   if (error || !data) return null
   const storica = allaFormaStorica(data)
+  // Il fuso del cliente viaggia con i suoi dati: le pagine mostrano gli orari
+  // del posto dov'è l'attività, non quelli di chi sta guardando da un'altra
+  // parte del mondo.
+  const fuso = await fusoDiAzienda(data.azienda_id)
 
   // Se questa entità ha offerte migrate, valgono quelle. Altrimenti restano i
   // campi vecchi: durante il passaggio le due sorgenti convivono, e nessuno
   // resta senza contenuti perché la migrazione non lo ha ancora raggiunto.
-  const daOfferte = await nellaFormaStorica(storica.id)
-  if (!daOfferte) return { ...storica, offerte: [] }
+  const daOfferte = await nellaFormaStorica(storica.id, fuso)
+  if (!daOfferte) return { ...storica, fuso, offerte: [] }
   return {
-    ...storica,
+    ...storica, fuso,
     offerte: daOfferte.offerte,
     ...('activities' in storica ? { activities: daOfferte.activities } : {}),
     ...('excursions' in storica ? { excursions: daOfferte.excursions } : {}),

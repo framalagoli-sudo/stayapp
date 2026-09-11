@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch } from '../../../lib/api'
 import { IMPEGNI, impegnoDi } from '../../../lib/offerte-catalogo'
+import { perCampoDataOra, daCampoDataOra } from '../../../lib/fuso'
 import { Trash2, ArrowLeft } from 'lucide-react'
 
 // Titolo, categoria, date: campi liberi. Come si chiama quello che offre lo
@@ -16,26 +17,31 @@ const cardStyle = { background: '#fff', borderRadius: 14, padding: 24, boxShadow
 const aiuto = { margin: '6px 0 0', fontSize: 12, color: '#999' }
 
 // Un `datetime-local` vuole `2026-08-26T20:30`, il database restituisce un ISO
-// con fuso: senza questa conversione il campo resta vuoto e salvando si perde
-// la data che c'era.
-const perInput = iso => iso ? new Date(iso).toISOString().slice(0, 16) : ''
+// con fuso: senza conversione il campo resta vuoto e salvando si perde la data
+// che c'era. La conversione la fa `perCampoDataOra`, nel fuso dell'azienda.
+//
+// ⛔ Prima l'andata era in UTC e il ritorno salvava la stringa **grezza**, che
+// Postgres legge in UTC: l'ora scritta finiva nel database spostata di due ore.
+// Ora nello stato c'è sempre un istante, mai il testo del campo.
 
 export default function OffertaEditPage() {
   const { id } = useParams()
   const router = useRouter()
-  const { strutture, ristoranti, attivita } = useAzienda()
+  const { strutture, ristoranti, attivita, azienda, loading: aziLoading } = useAzienda()
+  const fuso = azienda?.fuso_orario
   const [o, setO] = useState(null)
   const [salvando, setSalvando] = useState(false)
   const [salvato, setSalvato] = useState(false)
   const [errore, setErrore] = useState(null)
 
   useEffect(() => {
+    if (aziLoading) return
     apiFetch(`/api/offerte`).then(lista => {
       const trovata = (Array.isArray(lista) ? lista : []).find(x => x.id === id)
       if (!trovata) setErrore('Offerta non trovata')
       else setO(trovata)
     }).catch(e => setErrore(e.message))
-  }, [id])
+  }, [id, aziLoading])
 
   const entita = [
     ...(strutture || []).map(e => ({ id: e.id, tipo: 'struttura', etichetta: `Struttura: ${e.name}` })),
@@ -229,11 +235,11 @@ export default function OffertaEditPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: 16 }}>
             <div>
               <label style={labelStyle}>Inizio</label>
-              <input type="datetime-local" style={inputStyle} value={perInput(o.data_inizio)} onChange={e => set('data_inizio', e.target.value || null)} />
+              <input type="datetime-local" style={inputStyle} value={perCampoDataOra(o.data_inizio, fuso)} onChange={e => set('data_inizio', daCampoDataOra(e.target.value, fuso)?.toISOString() || null)} />
             </div>
             <div>
               <label style={labelStyle}>Fine</label>
-              <input type="datetime-local" style={inputStyle} value={perInput(o.data_fine)} onChange={e => set('data_fine', e.target.value || null)} />
+              <input type="datetime-local" style={inputStyle} value={perCampoDataOra(o.data_fine, fuso)} onChange={e => set('data_fine', daCampoDataOra(e.target.value, fuso)?.toISOString() || null)} />
             </div>
           </div>
         </div>

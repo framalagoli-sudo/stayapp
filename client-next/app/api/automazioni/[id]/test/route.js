@@ -1,5 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
+import { dataLocale } from '@/lib/fuso'
+import { fusoDiAzienda } from '@/lib/fuso-azienda'
 
 export async function POST(request, props) {
   const params = await props.params;
@@ -27,7 +29,7 @@ export async function POST(request, props) {
 
     const testVars = {
       nome: 'Mario Rossi', email,
-      data: new Date().toLocaleDateString('it-IT'),
+      data: dataLocale(new Date(), await fusoDiAzienda(auto.azienda_id)),
       ora: '10:00', servizio: 'Servizio di esempio', n_persone: '2', note: '',
       source_tipo: 'test', source_id: null,
       visit_datetime: new Date(Date.now() + 86400_000).toISOString(),

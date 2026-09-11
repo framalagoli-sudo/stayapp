@@ -5,7 +5,7 @@ import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
 import { ArrowLeft, Send, Eye, Save, Plus, Trash2, AlertCircle, CheckCircle, Smile, Clock, X } from 'lucide-react'
 import AiButton from '@/components/admin/AiButton'
-import { perCampoDataOra } from '@/lib/fuso'
+import { perCampoDataOra, daCampoDataOra, oraLocale } from '@/lib/fuso'
 
 const EMOJIS = [
   '🎯','⚡','🔥','✨','💫','🎉','🎁','🌟','💥','❗',
@@ -115,7 +115,10 @@ function buildPreview(template_id, content, entityName, primary = '#1a1a2e') {
 export default function NewsletterEditorPage() {
   const { id } = useParams()
   const router = useRouter()
-  const { strutture, ristoranti, attivita } = useAzienda()
+  const { strutture, ristoranti, attivita, azienda, loading: aziLoading } = useAzienda()
+  // L'ora della partenza è quella dell'azienda: chi programma un invio per le
+  // 9 lo vuole alle 9 lì, anche se in quel momento si trova altrove.
+  const fuso = azienda?.fuso_orario
 
   const [nl, setNl]           = useState(null)
   const [subject, setSubject] = useState('')
@@ -152,15 +155,16 @@ export default function NewsletterEditorPage() {
   const currentEntity = allEntities.find(e => e.id === entityId) || null
 
   useEffect(() => {
+    if (aziLoading) return
     apiFetch(`/api/newsletter/${id}`)
       .then(data => {
         setNl(data)
         setSubject(data.subject || '')
         setPreheader(data.preheader || '')
-        // Nell'ora di chi guarda: è quella in cui il salvataggio la rilegge.
+        // Nell'ora dell'azienda: è quella in cui il salvataggio la rilegge.
         // Tagliare la stringa dava l'ora UTC, e ogni salvataggio anticipava
         // l'invio di due ore.
-        setScheduledAt(perCampoDataOra(data.scheduled_at))
+        setScheduledAt(perCampoDataOra(data.scheduled_at, fuso))
         setTagFilter(data.tag_filter || [])
         setTemplateId(data.template_id || 'semplice')
         setContent(data.content && Object.keys(data.content).length ? data.content : DEFAULT_CONTENT[data.template_id] || DEFAULT_CONTENT.semplice)
@@ -169,7 +173,7 @@ export default function NewsletterEditorPage() {
       })
       .catch(() => router.push('/admin/newsletter'))
       .finally(() => setLoading(false))
-  }, [id])
+  }, [id, aziLoading, fuso])
 
   // Update iframe preview
   useEffect(() => {
@@ -190,7 +194,7 @@ export default function NewsletterEditorPage() {
         body: JSON.stringify({
           subject, preheader, template_id: templateId, content,
           entity_tipo: entityTipo, entity_id: entityId || null,
-          scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+          scheduled_at: daCampoDataOra(scheduledAt, fuso)?.toISOString() || null,
           tag_filter: tagFilter.length ? tagFilter : null,
         }),
       })
@@ -424,7 +428,7 @@ export default function NewsletterEditorPage() {
                 {scheduledAt && (
                   <div style={{ fontSize: 12, color: '#38a169', marginTop: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
                     <Clock size={12} strokeWidth={2} />
-                    Programmata per {new Date(scheduledAt).toLocaleString('it-IT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    Programmata per {oraLocale(daCampoDataOra(scheduledAt, fuso), fuso, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </div>
                 )}
                 {!scheduledAt && (

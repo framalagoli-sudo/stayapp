@@ -3,6 +3,7 @@
 export const maxDuration = 60
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { callClaude, getRemainingCredits, consumeCredit, MONTHLY_LIMIT } from '@/lib/ai-helpers'
+import { oraLocale } from '@/lib/fuso'
 
 async function getAziendaId(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('azienda_id, role').eq('id', userId).single()
@@ -49,9 +50,12 @@ export async function POST(request) {
       .select('name, description, services, minisito').eq('id', entity_id).single()
     if (entErr || !entity) return Response.json({ error: 'Entità non trovata' }, { status: 404 })
 
+    // ⛔ La colonna si chiama `date_start`, non `start_date`: con il nome
+    // sbagliato la query falliva in silenzio e l'AI non ha mai visto un evento.
     const { data: eventi } = await supabaseAdmin.from('eventi')
-      .select('title, start_date').eq('entity_tipo', entity_tipo).eq('entity_id', entity_id)
-      .gte('start_date', new Date().toISOString()).order('start_date').limit(4)
+      .select('title, date_start, aziende(fuso_orario)').eq('entity_tipo', entity_tipo).eq('entity_id', entity_id)
+      .eq('published', true).eq('active', true)
+      .gte('date_start', new Date().toISOString()).order('date_start').limit(4)
 
     const mini = entity.minisito || {}
     const services = Array.isArray(entity.services) ? entity.services.filter(s => s.name).slice(0, 8) : []
@@ -61,7 +65,7 @@ export async function POST(request) {
     if (entity.description) ctx += `\nDescrizione: ${entity.description}`
     if (services.length) ctx += `\nServizi: ${services.map(s => s.name).join(', ')}`
     if (highlights.length) ctx += `\nPunti di forza: ${highlights.map(h => h.text).join(', ')}`
-    if (eventi?.length) ctx += `\nEventi in programma: ${eventi.map(e => `${e.title} (${new Date(e.start_date).toLocaleDateString('it-IT')})`).join(', ')}`
+    if (eventi?.length) ctx += `\nEventi in programma: ${eventi.map(e => `${e.title} (${oraLocale(e.date_start, e.aziende?.fuso_orario)})`).join(', ')}`
 
     const topicLine = argomento?.trim() ? `\nArgomento richiesto: ${argomento.trim()}` : ''
     const prompt = `Sei un content writer esperto. Scrivi un articolo di blog in italiano per "${entity.name}".

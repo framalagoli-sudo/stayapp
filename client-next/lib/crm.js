@@ -1,4 +1,6 @@
 import { supabaseAdmin } from './supabase-server'
+import { dataLocale } from './fuso'
+import { fusoDiAzienda } from './fuso-azienda'
 
 // Chi lascia i suoi dati finisce fra i contatti dell'azienda. Un punto solo.
 //
@@ -40,7 +42,9 @@ export async function registraContatto({ aziendaId, email, nome, telefono, fonte
       .select('id, tags, note, telefono, nome')
       .eq('azienda_id', aziendaId).eq('email', mail).maybeSingle()
 
-    const rigaNota = nota ? `[${new Date().toLocaleDateString('it-IT')}] ${nota}` : null
+    // La data della nota è quella dell'azienda: sul server (UTC) dopo le 22
+    // italiane la riga nasceva già con il giorno prima.
+    const rigaNota = nota ? `[${dataLocale(new Date(), await fusoDiAzienda(aziendaId))}] ${nota}` : null
 
     if (esistente) {
       const patch = {

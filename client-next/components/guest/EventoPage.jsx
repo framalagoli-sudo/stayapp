@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
 import { eventoConcluso } from '@/lib/evento-concluso'
+import { oraLocale } from '@/lib/fuso'
 import { ricco } from '@/lib/testo-ricco'
 import LegalInfo from './LegalInfo'
 import SiteNav from './SiteNav'
@@ -119,9 +120,13 @@ export default function EventoPage() {
     finally { setBooking(false) }
   }
 
+  // L'ora dell'evento è quella del posto dove si svolge: chi guarda da un
+  // altro fuso deve leggere l'ora a cui deve presentarsi, non la propria.
   function fmtDate(iso) {
-    if (!iso) return '—'
-    return new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    return oraLocale(iso, evento?.fuso, {
+      day: '2-digit', month: 'long', year: 'numeric',
+      locale: lang === 'en' ? 'en-GB' : 'it-IT',
+    }) || '—'
   }
 
   if (error) return (

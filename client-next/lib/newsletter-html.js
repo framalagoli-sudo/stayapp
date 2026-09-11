@@ -102,7 +102,10 @@ function bodyNotizie(c, primary) {
 }
 
 function bodyEvento(c, primary) {
-  const dateStr = c.date ? new Date(c.date).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''
+  // `c.date` è una data scritta a mano nell'editor («2026-09-19»), non un
+  // istante: si legge in UTC perché è così che `new Date` la interpreta, e
+  // senza `timeZone` un fuso a ovest la mostrerebbe con il giorno prima.
+  const dateStr = c.date ? new Date(c.date).toLocaleDateString('it-IT', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''
   return `
     ${c.image_url ? `<tr><td><img src="${c.image_url}" alt="" style="width:100%;max-height:280px;object-fit:cover;display:block"></td></tr>` : ''}
     <tr><td style="padding:36px 36px 40px">

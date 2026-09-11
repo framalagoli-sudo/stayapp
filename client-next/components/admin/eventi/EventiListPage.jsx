@@ -5,11 +5,13 @@ import { useAuth } from '../../../context/AuthContext'
 import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch } from '../../../lib/api'
 import { eventoConcluso } from '../../../lib/evento-concluso'
+import { oraLocale } from '../../../lib/fuso'
 import { Calendar, MapPin, Users, Plus, ChevronRight, Eye, EyeOff } from 'lucide-react'
 
-function fmtDate(iso) {
-  if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+// Nell'ora dell'azienda: un titolare che guarda da un altro fuso deve vedere
+// l'ora a cui la serata comincia lì.
+function fmtDate(iso, fuso) {
+  return oraLocale(iso, fuso, { day: '2-digit', month: 'short', year: 'numeric' }) || '—'
 }
 
 function statusBadge(ev) {
@@ -72,21 +74,21 @@ export default function EventiListPage() {
       {upcoming.length > 0 && (
         <>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#888', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>In programma</div>
-          <EventGrid eventi={upcoming} />
+          <EventGrid eventi={upcoming} fuso={azienda?.fuso_orario} />
         </>
       )}
 
       {past.length > 0 && (
         <>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#888', letterSpacing: 1, textTransform: 'uppercase', margin: '24px 0 10px' }}>Passati</div>
-          <EventGrid eventi={past} muted />
+          <EventGrid eventi={past} muted fuso={azienda?.fuso_orario} />
         </>
       )}
     </div>
   )
 }
 
-function EventGrid({ eventi, muted }) {
+function EventGrid({ eventi, muted, fuso }) {
   const router = useRouter()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -114,7 +116,7 @@ function EventGrid({ eventi, muted }) {
               </div>
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}>
-                  <Calendar size={11} strokeWidth={1.5} /> {fmtDate(ev.date_start)}
+                  <Calendar size={11} strokeWidth={1.5} /> {fmtDate(ev.date_start, fuso)}
                 </span>
                 {ev.location && (
                   <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}>

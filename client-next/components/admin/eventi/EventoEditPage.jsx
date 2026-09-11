@@ -5,7 +5,7 @@ import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch, uploadMedia } from '../../../lib/api'
 import { FORMATI, FORMATO_PREDEFINITO, rapportoDi } from '@/lib/formati-foto'
 import { FocalPointPicker } from '@/components/admin/FocalPointPicker'
-import { perCampoDataOra } from '@/lib/fuso'
+import { perCampoDataOra, daCampoDataOra } from '@/lib/fuso'
 import { Trash2, Plus, X, Upload, Share2 } from 'lucide-react'
 import PostSocialModal from '../../../components/admin/PostSocialModal'
 
@@ -25,8 +25,13 @@ const BLANK_PKG = { id: '', name: '', description: '', price: '', includes: [] }
 export default function EventoEditPage() {
   const { id } = useParams()   // 'new' = creation
   const router = useRouter()
-  const { azienda, strutture, ristoranti, attivita } = useAzienda()
+  const { azienda, strutture, ristoranti, attivita, loading: aziLoading } = useAzienda()
   const isNew = id === 'new'
+  // L'ora dell'evento è quella del posto dove si svolge, non del computer di
+  // chi la scrive: un titolare che modifica da un altro fuso non deve spostare
+  // la serata. Finché l'azienda non è caricata non si legge niente, altrimenti
+  // il campo si riempirebbe con il fuso sbagliato e resterebbe così.
+  const fuso = azienda?.fuso_orario
 
   const [form, setForm] = useState({
     title: '', description: '', date_start: '', date_end: '', location: '',
@@ -49,6 +54,7 @@ export default function EventoEditPage() {
   const [showPostModal, setShowPostModal] = useState(false)
 
   useEffect(() => {
+    if (aziLoading) return
     if (!isNew) {
       apiFetch(`/api/eventi/${id}`).then(ev => {
         setCover(ev.cover_url || null)
@@ -57,9 +63,9 @@ export default function EventoEditPage() {
         setForm({
           title:       ev.title || '',
           description: ev.description || '',
-          // Nell'ora di chi guarda: è quella in cui il salvataggio li rilegge.
-          date_start:  perCampoDataOra(ev.date_start),
-          date_end:    perCampoDataOra(ev.date_end),
+          // Nell'ora dell'azienda: è quella in cui il salvataggio li rilegge.
+          date_start:  perCampoDataOra(ev.date_start, fuso),
+          date_end:    perCampoDataOra(ev.date_end, fuso),
           location:    ev.location || '',
           price:       ev.price ?? '',
           seats_total: ev.seats_total ?? '',
@@ -84,7 +90,7 @@ export default function EventoEditPage() {
         })
       }).catch(() => setError('Evento non trovato'))
     }
-  }, [id])
+  }, [id, aziLoading, fuso])
 
   function set(key, val) { setForm(f => ({ ...f, [key]: val })) }
 
@@ -133,8 +139,8 @@ export default function EventoEditPage() {
         azienda_id:  resolvedAziendaId,
         price:       form.price       === '' ? 0    : parseFloat(form.price),
         seats_total: form.seats_total === '' ? null : parseInt(form.seats_total),
-        date_start:  form.date_start ? new Date(form.date_start).toISOString() : null,
-        date_end:    form.date_end   ? new Date(form.date_end).toISOString()   : null,
+        date_start:  daCampoDataOra(form.date_start, fuso)?.toISOString() || null,
+        date_end:    daCampoDataOra(form.date_end, fuso)?.toISOString()   || null,
         entity_tipo: safeEntityId ? (form.entity_tipo || null) : null,
         entity_id:   safeEntityId,
         packages: form.packages.map(p => ({

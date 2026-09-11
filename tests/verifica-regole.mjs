@@ -155,6 +155,56 @@ for (const f of file) {
       'un trigger ha già creato la riga: l\'insert va in chiave duplicata ed è così che la registrazione non poteva riuscire')
   }
 
+  // ── 9. Un'ora formattata sul server dice sempre in che fuso ──────────────
+  //
+  // Vercel gira in UTC (`TZ` è una variabile riservata: non si può cambiare).
+  // Una data formattata lì senza `timeZone` esce nell'ora del server: le email
+  // degli eventi hanno detto «18:30» per una serata delle 20:30, e le note nel
+  // CRM nascevano con il giorno prima. Il fuso giusto è quello dell'azienda —
+  // `oraLocale(istante, fuso, …)` in lib/fuso.js.
+  if (!eClient && (percorso.startsWith('app/') || percorso.startsWith('lib/')) && percorso !== 'lib/fuso.js') {
+    rr.forEach((r, i) => {
+      if (/^\s*(\/\/|\*)/.test(r)) return   // una riga di commento non è codice
+      if (!/\.toLocale(Date|Time)?String\(/.test(r)) return
+      if (/timeZone/.test(r)) return
+      // Un numero non ha fuso: `(1234).toLocaleString('it-IT')` è un prezzo.
+      if (/\.toLocaleString\(['"]it-IT['"]\s*,\s*\{\s*style/.test(r)) return
+      if (dichiarataOk(rr, i)) return
+      segnala('ora formattata sul server senza fuso', f, i + 1, r.trim().slice(0, 90),
+        'su Vercel il server è in UTC: senza timeZone esce l\'ora sbagliata, ed è già arrivata nelle email dei clienti')
+    })
+  }
+
+  // ── 10. Un campo data-ora non si riempie con l'ora UTC ───────────────────
+  //
+  // `toISOString().slice(0, 16)` mette nel campo l'ora UTC, mentre il
+  // salvataggio la rilegge come ora locale: ogni salvataggio spostava l'evento
+  // di due ore all'indietro, anche senza toccare la data. Si usa
+  // `perCampoDataOra` / `daCampoDataOra`, che sanno in che fuso stanno.
+  rr.forEach((r, i) => {
+    if (/^\s*(\/\/|\*)/.test(r)) return   // una riga di commento non è codice
+    if (!/toISOString\(\)\.slice\(\s*0\s*,\s*16\s*\)/.test(r)) return
+    if (dichiarataOk(rr, i)) return
+    segnala('campo data-ora riempito in UTC', f, i + 1, r.trim().slice(0, 90),
+      'il campo mostra l\'ora UTC e il salvataggio la rilegge come locale: l\'orario scivola a ogni salvataggio')
+  })
+
+  // ── 11. «Oggi» sul server non è oggi per il cliente ──────────────────────
+  //
+  // `toISOString().slice(0, 10)` è il giorno UTC: in Italia, fra mezzanotte e
+  // le due, è già domani mentre il server dice ancora ieri — e la prenotazione
+  // finisce registrata nel giorno sbagliato. `giornoLocale(istante, fuso)`.
+  // Sui nomi degli archivi va benissimo: lì si dichiara con `regola-ok`.
+  if (!eClient && (percorso.startsWith('app/') || percorso.startsWith('lib/')) && percorso !== 'lib/fuso.js') {
+    rr.forEach((r, i) => {
+      if (/^\s*(\/\/|\*)/.test(r)) return   // una riga di commento non è codice
+      if (!/toISOString\(\)\.slice\(\s*0\s*,\s*10\s*\)/.test(r)) return
+      if (dichiarataOk(rr, i)) return
+      segnala('giorno preso in UTC sul server', f, i + 1, r.trim().slice(0, 90),
+        'il giorno del server non è il giorno del cliente: dopo le 22 italiane sono due date diverse')
+    })
+  }
+
   // ── 6. Un valore del client non finisce grezzo in una proprietà CSS ──────
   rr.forEach((r, i) => {
     const m = r.match(/(objectPosition|aspectRatio|gridTemplateColumns|backgroundImage):\s*([a-zA-Z_$][\w$.?]*)\s*[,}]/)

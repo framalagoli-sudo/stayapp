@@ -94,12 +94,52 @@ export function elencoFusi() {
 // le 18:30 di un evento delle 20:30, e salvando — anche solo per correggere la
 // descrizione — diventava delle 18:30 davvero. Due ore indietro a ogni
 // salvataggio: la cena di Garage22 del 10/09, alle 20:30, risultava alle 14:30.
-export function perCampoDataOra(istante) {
+// Senza `fuso` vale quello del browser di chi compila; con `fuso` (quello
+// dell'azienda) l'ora è la stessa per tutti, anche per un titolare in viaggio.
+export function perCampoDataOra(istante, fuso) {
   if (!istante) return ''
   const d = new Date(istante)
   if (Number.isNaN(d.getTime())) return ''
   const due = n => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${due(d.getMonth() + 1)}-${due(d.getDate())}T${due(d.getHours())}:${due(d.getMinutes())}`
+  if (!fuso) {
+    return `${d.getFullYear()}-${due(d.getMonth() + 1)}-${due(d.getDate())}T${due(d.getHours())}:${due(d.getMinutes())}`
+  }
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+    timeZone: fusoSicuro(fuso), hour12: false,
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+  }).formatToParts(d).map(x => [x.type, x.value]))
+  return `${p.year}-${p.month}-${p.day}T${due(Number(p.hour) % 24)}:${p.minute}`
+}
+
+// Il verso opposto: «2026-09-19T20:30» scritto nel campo → l'istante vero,
+// letto nel fuso dell'azienda. Senza `fuso` resta quello del browser, che è
+// come si comportava prima.
+export function daCampoDataOra(valore, fuso) {
+  if (!valore) return null
+  if (!fuso) {
+    const d = new Date(valore)
+    return Number.isNaN(d.getTime()) ? null : d
+  }
+  const [data, ora] = String(valore).split('T')
+  return istanteDi(data, ora, fuso)
+}
+
+// Che giorno è, lì: «2026-09-12». `toISOString().slice(0, 10)` dà il giorno
+// UTC, e in Italia fra mezzanotte e le due è già domani mentre UTC dice ancora
+// ieri — una prenotazione registrata così finisce nel giorno sbagliato.
+export function giornoLocale(istante, fuso) {
+  const d = istante ? new Date(istante) : new Date()
+  if (Number.isNaN(d.getTime())) return ''
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+    timeZone: fusoSicuro(fuso), year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(d).map(x => [x.type, x.value]))
+  return `${p.year}-${p.month}-${p.day}`
+}
+
+// La data breve come la scrive un italiano — «12/9/2026» — nel fuso giusto.
+export function dataLocale(istante, fuso) {
+  if (!istante) return ''
+  return new Date(istante).toLocaleDateString('it-IT', { timeZone: fusoSicuro(fuso) })
 }
 
 // Come si scrive un'ora per chi legge in quel fuso. Senza `timeZone`, un'ora
@@ -107,9 +147,12 @@ export function perCampoDataOra(istante) {
 // dietro.
 export function oraLocale(istante, fuso, opzioni = {}) {
   if (!istante) return ''
-  return new Date(istante).toLocaleString('it-IT', {
+  // `locale` decide la lingua in cui si legge («17 settembre» / «17 September»),
+  // `fuso` decide *quale* istante si sta leggendo: sono due cose diverse.
+  const { locale = 'it-IT', ...resto } = opzioni
+  return new Date(istante).toLocaleString(locale, {
     timeZone: fusoSicuro(fuso),
     day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
-    ...opzioni,
+    ...resto,
   })
 }
