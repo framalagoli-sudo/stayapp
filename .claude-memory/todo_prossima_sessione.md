@@ -5,10 +5,18 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-11T22:27:04.892Z
+  modified: 2026-09-12T09:07:47.550Z
 ---
 
 # Si riprende da qui
+
+## ⚠️ DA ESEGUIRE SU SUPABASE: migration 114
+
+`114_eventi_slug_precedenti.sql` — aggiunge `slug_precedenti` agli eventi.
+Senza, cambiare l'indirizzo di un evento **funziona** ma il vecchio non
+sopravvive (il codice non fallisce: il vincolo è nei dati). Dopo averla
+eseguita, provare: cambiare l'indirizzo di un evento e aprire il vecchio →
+deve rispondere 308 verso quello nuovo. Vedi [[reference_eventi_conclusi]].
 
 ## Fatto l'11/09 (live, verificato in produzione)
 

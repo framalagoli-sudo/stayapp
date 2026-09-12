@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: 98e39a37-374d-43a6-a1bf-16225619363f
-  modified: 2026-09-11T14:14:01.348Z
+  modified: 2026-09-12T09:07:29.874Z
 ---
 
 **Regola unica: `lib/evento-concluso.js`** (nessun import, lo legge anche il
@@ -36,3 +36,26 @@ Senza eventi in programma il titolo predefinito diventa «Eventi» (non
 
 ⚠️ La regola dipende dagli orari salvati bene: vedi [[reference_fuso_orario]],
 il modulo evento li faceva scivolare di 2 ore a ogni salvataggio.
+
+## 🔗 Indirizzo pubblico di un evento (12/09/2026)
+
+`/eventi/<slug>`, non più `/eventi/<uuid>`. Lo slug **esisteva già** in tabella
+dal 2026 (unico, obbligatorio): mancava usarlo.
+
+- **`lib/evento-indirizzo.js` è l'unico punto che risolve un indirizzo**: slug
+  attuale → serve la pagina; **id** o **slug vecchio** → 308 verso quello buono.
+  I link già pubblicati non muoiono mai.
+- Le route che **scrivono** (book, lista-attesa) lavorano per **id**: la pagina
+  prenota con `evento.id`, non con quello che c'è nell'URL.
+- L'indirizzo si corregge dal pannello; il vecchio resta valido grazie a
+  `slug_precedenti` (**migration 114**). Serviva davvero: «A cena con Chiara e
+  Daniele» aveva indirizzo `a-cena-con-sara-e-chiara`, perché lo slug si
+  congela alla creazione e il titolo poi cambia.
+- ⛔ Un indirizzo inesistente rispondeva **200** (la pagina guscio si carica e
+  l'errore lo scrive il browser): ora `notFound()`. Vale per ogni pagina dove
+  il contenuto arriva via fetch dal client — il 200 è il difetto tipico.
+- **SEO**: dati strutturati `Event` scritti dal server (`lib/evento-schema.js`),
+  eventi nella sitemap dell'entità, `/robots.txt` e `/sitemap.xml` che
+  riconoscono il dominio (prima 404: la sitemap c'era e non la trovava nessuno,
+  perché il link lo aggiungeva JavaScript). Il middleware deve lasciar passare
+  quei due percorsi, o sul dominio del cliente diventano `/r/slug/robots.txt`.
