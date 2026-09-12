@@ -1,5 +1,8 @@
 node_modules/
 .env
+# Credenziali del progetto di prova per il ripristino: stanno solo sul disco di
+# chi fa la prova, mai in git. Il file lo crea a mano chi possiede l'account.
+.env.ripristino
 dist/
 .DS_Store
 
