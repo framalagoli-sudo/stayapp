@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 8edd7be8-ac09-496b-aa5b-8cf94981b523
-  modified: 2026-09-09T15:57:54.377Z
+  modified: 2026-09-12T19:19:48.861Z
 ---
 
 # Nell'archivio mancano due cose, e sono grosse
@@ -141,6 +141,15 @@ passi per primo la fa. Così il ramo gira ogni giorno e si può guardare.
 secondi di distanza cadevano nello stesso minuto, stesso nome, e il secondo
 moriva contro il lock — cioè esattamente il difetto che quel codice doveva
 risolvere. Ora arriva ai secondi. Provato: due giri consecutivi, entrambi 200.
+
+### 12/09: lo script del ripristino esiste
+
+`tests/ripristino.mjs` — schema (le 115 migration una per una, dice quali non
+passano), account **con l'id conservato** (e dichiara se ci riesce), dati
+nell'ordine di `INCIDENTE.md`, verifica che guarda dentro. Cronometrato.
+⛔ Sicura nel codice: rifiuta la produzione (indirizzo Supabase **e** stringa
+del database), provata nei tre casi. Senza `--esegui` simula.
+Restano i due passi che richiedono l'account di Francesco → [[todo_prossima_sessione]].
 
 ### Cosa NON è ancora stato provato (al 09/09 sera)
 

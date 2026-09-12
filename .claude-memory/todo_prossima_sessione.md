@@ -5,10 +5,50 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-12T12:21:07.656Z
+  modified: 2026-09-12T19:19:42.157Z
 ---
 
 # Si riprende da qui
+
+## ▶️ PROVA DI RIPRISTINO — si riparte da qui (12/09/2026)
+
+Lo script c'è ed è provato: **`tests/ripristino.mjs`** (schema → account →
+dati → verifica, tutto cronometrato; la sicura che rifiuta la produzione è
+stata provata in tre casi). Manca solo quello che richiede l'account di
+Francesco. **Claude non può fare questi due passi**: le chiavi R2 non esistono
+in locale (`vercel env pull` scrive `[SENSITIVE]`) e nessuna route del pannello
+scarica gli archivi — l'unica che esiste li *crea*.
+
+**Passo 1 — Francesco: l'archivio.** Cloudflare → R2 → bucket → l'ultimo
+`backup-*.json.gz` → Download. Poi dire a Claude il percorso del file.
+→ Claude lancia `node tests/verifica-backup.mjs <file>`.
+⚠️ Finito, **cancellare il file**: è il database dei clienti in chiaro.
+
+**Passo 2 — Francesco: il progetto di prova.** Supabase → New project, piano
+gratuito, regione EU (`oltrenova-ripristino`). Segnare la password del database
+(si vede una volta sola). Creare `tests/.env.ripristino` — è in .gitignore,
+**i valori non passano dalla chat**:
+```
+RIPRISTINO_SUPABASE_URL=https://xxxxx.supabase.co      (Settings → API)
+RIPRISTINO_SERVICE_ROLE_KEY=...                        (Settings → API)
+RIPRISTINO_DB_URL=postgresql://postgres:PWD@db.xxxxx.supabase.co:5432/postgres
+                                                       (Settings → Database → URI)
+```
+
+**Passo 3 — Claude**: `node tests/ripristino.mjs <archivio> ` (simula) e poi
+`--esegui`. Poi **la prova vera**, che non è «le righe sono entrate»: puntare
+l'app locale al progetto ripristinato (env var) e **aprire il sito di un
+cliente ed entrare nel pannello**.
+
+⚠️ **Le immagini restano fuori.** Stanno su R2 accanto all'archivio e
+ricaricarle richiede le stesse chiavi che mancano: serve un secondo giro con
+una chiave R2 di **sola lettura**. Un ripristino senza quel giro riporta i
+testi dei siti con le foto rotte — va detto nel risultato, non scoperto dopo.
+
+Domanda a cui la prova risponde (aperta da luglio): **si può imporre l'id a un
+account ricreato?** Se no, il ripristino deve riscrivere gli id nei profili e
+in tutto ciò che li riferisce. Lo script lo misura e lo dichiara.
+Vedi [[project_backup_lacune]], [[reference_backup_e_ripristino]].
 
 ## ✅ Migration 114 eseguita (12/09), e provata in produzione
 
