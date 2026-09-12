@@ -12,13 +12,21 @@ export async function GET(request, props) {
     const { data: entity } = await supabaseAdmin.from(table).select('id').eq('slug', slug).eq('active', true).single()
     if (!entity) return new Response('Entità non trovata', { status: 404 })
 
-    const [{ data: pagine }, { data: elementi }, { data: dominio }] = await Promise.all([
+    const [{ data: pagine }, { data: elementi }, { data: dominio }, { data: eventi }] = await Promise.all([
       supabaseAdmin.from('pagine').select('slug, updated_at').eq('entity_tipo', tipo).eq('entity_id', entity.id)
         .eq('status', 'pubblicata').neq('slug', '__home__'),
       supabaseAdmin.from('vetrina_elementi').select('slug, updated_at').eq('entity_tipo', tipo).eq('entity_id', entity.id)
         .eq('status', 'pubblicata'),
       supabaseAdmin.from('domini').select('dominio').eq('entity_tipo', tipo).eq('entity_id', entity.id)
         .eq('stato', 'attivo').eq('tipo', 'custom').limit(1).maybeSingle(),
+      // ⛔ Gli eventi non erano in nessuna sitemap: la pagina più condivisa che
+      // abbiamo — quella che i clienti spingono a pagamento — non era dichiarata
+      // da nessuna parte. Ci vanno **anche i conclusi**, perché il sito ora li
+      // mostra e restano pagine valide con una data passata.
+      supabaseAdmin.from('eventi').select('slug, id, date_start, updated_at')
+        .eq('entity_tipo', tipo).eq('entity_id', entity.id)
+        .eq('published', true).eq('active', true)
+        .order('date_start', { ascending: false }).limit(200),
     ])
 
     const clientUrl = (process.env.CLIENT_URL ?? '').trim() || 'https://www.oltrenova.com'
@@ -33,6 +41,11 @@ export async function GET(request, props) {
       ),
       ...(elementi || []).map(el =>
         `  <url><loc>${base}/v/${el.slug}</loc><lastmod>${(el.updated_at || now).split('T')[0]}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>`
+      ),
+      // Gli eventi stanno alla radice del sito, non sotto /{prefix}/{slug}:
+      // è il percorso che il middleware serve anche sui domini dei clienti.
+      ...(eventi || []).map(ev =>
+        `  <url><loc>${baseOrigin}/eventi/${ev.slug || ev.id}</loc><lastmod>${(ev.updated_at || now).split('T')[0]}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>`
       ),
     ]
 

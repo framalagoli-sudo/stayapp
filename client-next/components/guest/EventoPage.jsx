@@ -87,7 +87,8 @@ export default function EventoPage() {
     if (!privacyOk) { setBookErr('Serve il consenso al trattamento dei dati.'); return }
     setBooking(true)
     try {
-      const res = await guestFetch(`/api/guest/eventi/${id}/lista-attesa`, {
+      // Come sopra: la lista d'attesa lavora per id, non per indirizzo.
+      const res = await guestFetch(`/api/guest/eventi/${evento.id}/lista-attesa`, {
         method: 'POST',
         body: JSON.stringify({
           guest_name: guestName, guest_email: guestEmail, guest_phone: guestPhone,
@@ -105,7 +106,9 @@ export default function EventoPage() {
     if (!guestEmail.trim()) { setBookErr('Inserisci la tua email'); return }
     setBooking(true); setBookErr('')
     try {
-      const res = await guestFetch(`/api/guest/eventi/${id}/book`, {
+      // ⚠️ Si prenota sull'**id** dell'evento, non su quello che c'è nell'URL:
+      // l'indirizzo può essere uno slug, e le route che scrivono lavorano per id.
+      const res = await guestFetch(`/api/guest/eventi/${evento.id}/book`, {
         method: 'POST',
         body: JSON.stringify({ privacy_accettata: privacyOk, guest_name: guestName, guest_email: guestEmail,
           guest_phone: guestPhone || null, package_id: pkgId || null, seats }),

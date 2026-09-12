@@ -3,6 +3,10 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import EventoPage from '@/components/guest/EventoPage'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
 import { oraLocale } from '@/lib/fuso'
+import { trovaEvento } from '@/lib/evento-indirizzo'
+import { buildEventoSchema } from '@/lib/evento-schema'
+import { eventoConcluso } from '@/lib/evento-concluso'
+import { permanentRedirect, notFound } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,7 +24,8 @@ export const dynamic = 'force-dynamic'
 // e chi legge i link non esegue JavaScript.
 //
 // Le colonne si elencano: questa risposta finisce nell'HTML pubblico.
-const CAMPI = 'title, description, cover_url, date_start, location, entity_id, entity_tipo, aziende(fuso_orario)'
+const CAMPI = 'id, slug, title, description, cover_url, date_start, date_end, location, price, ' +
+  'mostra_prezzo, seats_total, seats_booked, prenotazioni_chiuse, entity_id, entity_tipo, aziende(fuso_orario)'
 
 function primeRighe(testo, max = 200) {
   const pulito = String(testo || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
@@ -32,8 +37,9 @@ export async function generateMetadata(props) {
   const searchParams = await props.searchParams
 
   try {
-    const { data: ev } = await supabaseAdmin.from('eventi')
-      .select(CAMPI).eq('id', id).eq('published', true).eq('active', true).maybeSingle()
+    // `id` è l'indirizzo scritto nell'URL: lo slug parlante, oppure un id dei
+    // link di prima. Risolve `trovaEvento`, che li conosce tutti e tre.
+    const { evento: ev } = await trovaEvento(id, CAMPI)
     // Un evento non pubblicato non racconta niente di sé: nessuna anteprima da
     // costruire, e nemmeno un titolo che ne riveli l'esistenza.
     if (!ev) return { title: 'Evento' }
@@ -57,10 +63,13 @@ export async function generateMetadata(props) {
 
     // Il dominio del cliente quando c'è: il middleware lo passa qui, e un link
     // pubblicitario deve portare il suo indirizzo, non il nostro.
+    // ⚠️ Il canonical punta SEMPRE all'indirizzo parlante, anche a chi è
+    // arrivato con un id: è il modo di dire ai motori «questa pagina è una
+    // sola», invece di spargere il valore su due indirizzi diversi.
     const dominio = searchParams?._domain
-    const url = dominio
-      ? `https://${dominio}/eventi/${id}`
-      : `https://www.oltrenova.com/eventi/${id}`
+    const prefissoLingua = searchParams?._lang === 'en' ? '/en' : ''
+    const url = (dominio ? `https://${dominio}` : 'https://www.oltrenova.com')
+      + `${prefissoLingua}/eventi/${ev.slug || ev.id}`
 
     // Il giorno nel fuso dell'azienda: sul server (UTC) un evento dopo
     // mezzanotte finiva sul giorno prima.
@@ -97,10 +106,56 @@ export async function generateMetadata(props) {
 }
 
 export default async function Page(props) {
+  const { id } = await props.params
   const searchParams = await props.searchParams;
   const lang = searchParams?._lang === 'en' ? 'en' : 'it'
+
+  const { evento, indirizzoGiusto } = await trovaEvento(id, CAMPI)
+
+  // ⛔ Un indirizzo che non esiste rispondeva **200**: la pagina si caricava
+  // lo stesso e l'errore lo scriveva il browser. Per un motore di ricerca era
+  // una pagina valida da indicizzare, e per chi arrivava da un link vecchio una
+  // pagina bianca senza spiegazione. Un 404 dice la verità a tutti e due.
+  if (!evento) notFound()
+
+  // Chi è arrivato da un id o da un indirizzo di un tempo viene portato su
+  // quello buono, una volta sola e per sempre (308). I link già pubblicati
+  // continuano a funzionare: cambia solo cosa si legge nella barra.
+  //
+  // ⚠️ La query si porta dietro `back` e gli altri parametri veri, ma NON
+  // `_domain` e `_lang`: quelli li mette il middleware per uso interno, e
+  // finirebbero in bella vista nell'indirizzo del cliente. Il prefisso /en si
+  // rimette nel percorso, che è dove il visitatore lo vede.
+  if (indirizzoGiusto && indirizzoGiusto !== id) {
+    const query = new URLSearchParams()
+    for (const [k, v] of Object.entries(searchParams || {})) {
+      if (k === '_domain' || k === '_lang') continue
+      if (typeof v === 'string') query.set(k, v)
+    }
+    const coda = query.toString()
+    permanentRedirect(`${lang === 'en' ? '/en' : ''}/eventi/${indirizzoGiusto}${coda ? `?${coda}` : ''}`)
+  }
+
+  let ente = null
+  if (evento?.entity_id) {
+    const { data } = await supabaseAdmin.from('entita').select('name').eq('id', evento.entity_id).maybeSingle()
+    ente = data
+  }
+  // I dati strutturati li scrive il SERVER: chi legge i link non esegue
+  // JavaScript, e la pagina dell'evento è codice di browser.
+  const schema = evento ? buildEventoSchema({
+    evento, nomeEntita: ente?.name,
+    url: (searchParams?._domain ? `https://${searchParams._domain}` : 'https://www.oltrenova.com')
+      + `${lang === 'en' ? '/en' : ''}/eventi/${evento.slug || evento.id}`,
+    concluso: eventoConcluso(evento),
+  }) : null
+
   return (
     <Suspense fallback={<div style={{padding:40,textAlign:'center',color:'#888'}}>Caricamento…</div>}>
+      {schema && (
+        <script type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }} />
+      )}
       <EventoPage />
       <LanguageSwitcher lang={lang} />
     </Suspense>

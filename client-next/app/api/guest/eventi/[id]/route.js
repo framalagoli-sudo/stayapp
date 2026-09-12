@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { localizeEntity } from '@/lib/translate'
 import { getAziendaLegale } from '@/lib/guest-data'
+import { trovaEvento } from '@/lib/evento-indirizzo'
 
 // Copre la traduzione Haiku dell'evento al primo caricamento EN (cache miss).
 export const maxDuration = 30
@@ -29,10 +30,10 @@ const CAMPI_SITO = 'name, slug, tipo, logo_url, logo_dark_url, theme, minisito'
 export async function GET(request, props) {
   const params = await props.params
   try {
-    const { data, error } = await supabaseAdmin.from('eventi')
-      .select(CAMPI_EVENTO)
-      .eq('id', params.id).eq('published', true).eq('active', true).single()
-    if (error || !data) return Response.json({ error: 'Evento non trovato' }, { status: 404 })
+    // L'indirizzo può essere lo slug parlante, un id (i link di prima) o uno
+    // slug di un tempo: `trovaEvento` li conosce tutti e tre.
+    const { evento: data } = await trovaEvento(params.id, CAMPI_EVENTO)
+    if (!data) return Response.json({ error: 'Evento non trovato' }, { status: 404 })
 
     const lang = new URL(request.url).searchParams.get('lang') === 'en' ? 'en' : 'it'
     const out = lang === 'en' ? await localizeEntity(data, 'evento', lang) : data

@@ -34,7 +34,7 @@ export default function EventoEditPage() {
   const fuso = azienda?.fuso_orario
 
   const [form, setForm] = useState({
-    title: '', description: '', date_start: '', date_end: '', location: '',
+    title: '', slug: '', description: '', date_start: '', date_end: '', location: '',
     price: '', seats_total: '', active: true, published: false,
     entity_tipo: '', entity_id: '', azienda_id: '', packages: [],
     // ⚠️ Il default della colonna (migration 112) NON basta: qui il valore
@@ -62,6 +62,7 @@ export default function EventoEditPage() {
         setFocal(ev.cover_focal || null)
         setForm({
           title:       ev.title || '',
+          slug:        ev.slug || '',
           description: ev.description || '',
           // Nell'ora dell'azienda: è quella in cui il salvataggio li rilegge.
           date_start:  perCampoDataOra(ev.date_start, fuso),
@@ -385,6 +386,24 @@ export default function EventoEditPage() {
               &lt;b&gt;parola&lt;/b&gt;, per il corsivo &lt;i&gt;parola&lt;/i&gt;.
             </div>
           </div>
+
+          {/* L'indirizzo con cui l'evento si apre sul sito. Si vede solo quando
+              l'evento esiste già: alla creazione nasce dal titolo. */}
+          {!isNew && (
+            <div style={fieldWrap}>
+              <label style={lbl}>Indirizzo pubblico</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 13, color: '#888' }}>…/eventi/</span>
+                <input value={form.slug} onChange={e => set('slug', e.target.value)}
+                  placeholder="nome-dell-evento" style={{ ...inp, flex: 1, minWidth: 180 }} />
+              </div>
+              <div style={{ fontSize: 12, color: '#999', marginTop: 4, lineHeight: 1.55 }}>
+                È quello che si legge nel link e che i motori di ricerca mostrano: meglio se contiene
+                il nome dell’evento. Se lo cambi, <strong>il vecchio indirizzo continua a funzionare</strong>
+                {' '}e porta qui — chi l’ha già condiviso non si accorge di niente.
+              </div>
+            </div>
+          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
             <div style={fieldWrap}>

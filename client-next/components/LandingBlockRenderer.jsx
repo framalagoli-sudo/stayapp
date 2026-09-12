@@ -885,8 +885,10 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
       locale: lang === 'en' ? 'en-GB' : 'it-IT',
     })
     const prezzo = concluso ? null : prezzoDaMostrare(ev, { gratuito: tr('free', lang) })
+    // L'indirizzo parlante quando c'è: è quello che finisce nei risultati di
+    // ricerca e nei link condivisi. L'id resta come ripiego.
     return (
-      <a key={ev.id} href={`/eventi/${ev.id}?back=${encodeURIComponent(homeUrl)}`} style={{ background: '#fafafa', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', border: '1px solid #f0f0f0' }}>
+      <a key={ev.id} href={`/eventi/${ev.slug || ev.id}?back=${encodeURIComponent(homeUrl)}`} style={{ background: '#fafafa', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', border: '1px solid #f0f0f0' }}>
         {ev.cover_url
           ? <img src={ev.cover_url} alt={ev.title} style={{ width: '100%', height: 180, objectFit: 'cover', objectPosition: ev.cover_focal || 'center', display: 'block', filter: concluso ? 'grayscale(0.4)' : undefined }} />
           : <div style={{ height: 100, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Calendar size={36} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /></div>

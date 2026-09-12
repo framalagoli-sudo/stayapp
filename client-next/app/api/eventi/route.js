@@ -1,15 +1,10 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { formatoValido, focalValido } from '@/lib/formati-foto'
 import { requireAuth, resolveAziendaId, entitaDellaAzienda } from '@/lib/server-auth'
+import { slugEvento, slugLibero } from '@/lib/evento-indirizzo'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 function isUUID(v) { return UUID_RE.test(v) }
-
-function slugify(str) {
-  return str.toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-}
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
@@ -60,12 +55,9 @@ export async function POST(request) {
     const azienda_id = resolveAziendaId(profile, isUUID(body.azienda_id) ? body.azienda_id : null)
     if (!azienda_id) return Response.json({ error: 'Nessuna azienda valida associata al profilo.' }, { status: 400 })
 
-    let base = slugify(title), slug = base, n = 0
-    while (true) {
-      const { data: ex } = await supabaseAdmin.from('eventi').select('id').eq('slug', slug).maybeSingle()
-      if (!ex) break
-      slug = `${base}-${(++n).toString(36)}`
-    }
+    // L'indirizzo pubblico dell'evento, dal titolo. Stesse regole della
+    // modifica: un posto solo, in lib/evento-indirizzo.js.
+    const slug = await slugLibero(slugEvento(title))
 
     const payload = Object.fromEntries(Object.entries(body).filter(([k]) => ALLOWED.includes(k)))
     // Questi due finiscono in una proprietà CSS della pagina pubblica: si

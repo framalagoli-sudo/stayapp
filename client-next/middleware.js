@@ -25,6 +25,9 @@ function isOwnDomain(hostname) {
 const GLOBAL_PUBLIC_PATHS = [
   '/blog', '/eventi', '/form', '/preventivo', '/recensione',
   '/cancella-prenotazione', '/confirm-subscription', '/unsubscribe', '/signup',
+  // ⚠️ Senza queste due, sul dominio di un cliente `/robots.txt` diventava
+  // `/r/slug/robots.txt` → 404, e i motori di ricerca non trovavano la sitemap.
+  '/robots.txt', '/sitemap.xml',
 ]
 function isGlobalPublicPath(pathname) {
   return GLOBAL_PUBLIC_PATHS.some(r => pathname === r || pathname.startsWith(r + '/'))
