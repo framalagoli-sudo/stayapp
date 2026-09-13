@@ -214,9 +214,20 @@ dentro i blocchi delle pagine, nelle gallerie e nei temi. 65 file in 13 secondi.
 > funzionanti finché il vecchio progetto è ancora vivo, e morte da lì in poi:
 > è il tranello che la prova ha scoperto.
 >
-> ⚠️ Se le chiavi R2 sono nel file `.env.ripristino`, i file si prendono
-> dall'archivio. Senza, si prendono dallo Storage di produzione — che nel
-> giorno vero potrebbe non esserci: **quel pezzo non è ancora stato provato**.
+Le foto si prendono **dall'archivio su R2** — cioè da dove ci sarebbero davvero
+il giorno in cui Supabase non esiste più. Servono quattro righe in
+`tests/.env.ripristino`, da un token R2 con permesso **`Object Read only`**
+sul solo bucket dei backup (Cloudflare → R2 → Manage API tokens):
+
+```
+RIPRISTINO_R2_ACCOUNT_ID=...        (anche l'indirizzo intero va bene)
+RIPRISTINO_R2_ACCESS_KEY_ID=...
+RIPRISTINO_R2_SECRET_ACCESS_KEY=...
+RIPRISTINO_R2_BUCKET=stayapp-backups
+```
+
+Senza quelle righe lo script ripiega sullo Storage di produzione e lo dichiara
+a schermo — utile per provare, inutile il giorno vero.
 
 **Cosa NON torna da solo, e va fatto a mano:**
 1. ⚠️ **Il secondo fattore.** I fattori TOTP vivono in `auth.mfa_factors` e non

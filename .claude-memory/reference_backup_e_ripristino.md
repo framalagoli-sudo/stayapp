@@ -96,6 +96,7 @@ dentro il database** (ogni colonna testo/JSON di ogni tabella: le foto stanno
 anche nei blocchi delle pagine, gallerie, temi). 65 file, 33,7 MB, 13 secondi.
 Verificato col browser: 8 immagini su 3 pagine, **tutte dal progetto nuovo**.
 
-⚠️ Provato con lo **Storage di produzione** come sorgente, perché le chiavi R2
-non sono in locale: «scaricare da R2» resta l'unico pezzo non provato. Con le
-chiavi R2 nel file `.env.ripristino` lo script le usa da solo.
+✅ **Provato anche leggendo dall'ARCHIVIO su R2** (13/09, secondo giro): 65 file
+in 8,6 secondi, poi sito riaperto — tutte le foto dal progetto nuovo. Servono
+le quattro righe  con un token **Object Read only** sul solo
+bucket dei backup. **La catena è completa: dall'archivio si ricostruisce tutto.**

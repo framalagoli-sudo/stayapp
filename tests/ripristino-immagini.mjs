@@ -55,8 +55,14 @@ const bersaglio = createClient(BERSAGLIO, process.env.RIPRISTINO_SERVICE_ROLE_KE
 // foto esistono solo nell'archivio. Sotto `media/`, con lo stesso percorso che
 // avevano nello Storage — lo scrive `lib/backup.js` ogni notte.
 const PREFISSO_MEDIA = 'media/'
+// L'account si può incollare come sigla o come indirizzo intero
+// (`https://abc123.r2.cloudflarestorage.com`): Cloudflare mostra il secondo, e
+// pretendere il primo è un modo di far sbagliare chi ha fretta.
+const soloSigla = v => String(v || '').trim()
+  .replace(/^https?:\/\//, '').replace(/\..*$/, '').replace(/\/.*$/, '')
+
 const r2conf = {
-  account: (process.env.RIPRISTINO_R2_ACCOUNT_ID ?? '').trim(),
+  account: soloSigla(process.env.RIPRISTINO_R2_ACCOUNT_ID),
   chiave: (process.env.RIPRISTINO_R2_ACCESS_KEY_ID ?? '').trim(),
   segreto: (process.env.RIPRISTINO_R2_SECRET_ACCESS_KEY ?? '').trim(),
   bucket: (process.env.RIPRISTINO_R2_BUCKET ?? '').trim(),

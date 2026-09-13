@@ -21,10 +21,10 @@ le migration descrivono di nuovo la realtà. **Migration eseguite: fino a 115
 **Resta:**
 1. **Francesco**: cancellare il progetto Supabase `oltrenova-ripristino`, che
    contiene una copia completa dei dati personali dei clienti.
-2. ✅ **Immagini provate** il 13/09 (`ripristino-immagini.mjs`): copia dei file
+2. ✅ **Immagini provate leggendo dall’archivio su R2** (13/09): copia dei file
    **e riscrittura degli indirizzi nel database**, senza la quale un ripristino
-   vero riporta i siti con le foto morte. Resta non provato solo «scaricare da
-   R2»: servirebbe una chiave R2 di sola lettura.
+   vero riporta i siti con le foto morte. **Niente resta non provato.**
+
 
 ## ▶️ (storico) PROVA DI RIPRISTINO — come si è arrivati qui (12/09/2026)
 
@@ -56,10 +56,6 @@ RIPRISTINO_DB_URL=postgresql://postgres:PWD@db.xxxxx.supabase.co:5432/postgres
 l'app locale al progetto ripristinato (env var) e **aprire il sito di un
 cliente ed entrare nel pannello**.
 
-⚠️ **Le immagini restano fuori.** Stanno su R2 accanto all'archivio e
-ricaricarle richiede le stesse chiavi che mancano: serve un secondo giro con
-una chiave R2 di **sola lettura**. Un ripristino senza quel giro riporta i
-testi dei siti con le foto rotte — va detto nel risultato, non scoperto dopo.
 
 Domanda a cui la prova risponde (aperta da luglio): **si può imporre l'id a un
 account ricreato?** Se no, il ripristino deve riscrivere gli id nei profili e
