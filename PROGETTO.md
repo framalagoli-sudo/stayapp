@@ -267,17 +267,45 @@ lo stato di tutto.
 1504 righe su 2908 — comprese le pagine dei siti dei clienti — e girava così da
 mesi senza che nessuno se ne accorgesse.
 
-**Come si prova** (da rifare ogni pochi mesi):
+**Come si prova** (da rifare ogni pochi mesi). Sono due domande diverse, e
+servono due comandi:
+
+```bash
+cd tests
+node verifica-backup.mjs <archivio.json.gz>   # l'archivio è completo?
+node ripristino.mjs      <archivio.json.gz>   # da qui si torna in piedi?
+node ripristino-immagini.mjs                  # …e le foto?
+```
 
 1. Cloudflare → R2 → il bucket → scarica il file più recente
-2. `cd tests` poi `node verifica-backup.mjs C:\percorso\backup-AAAA-MM-GG.json.gz`
-3. **VERDE** = da lì si riparte. **ROSSO** = il file esiste ma non basta.
+2. `verifica-backup` lo legge e lo confronta con la produzione: **VERDE** = da
+   lì si riparte, **ROSSO** = il file esiste ma non basta
+3. `ripristino` lo rimette davvero in piedi su un progetto Supabase **vuoto**
+   (piano gratuito): schema → account → dati → verifica. Senza `--esegui`
+   simula soltanto, e **si rifiuta di scrivere sulla produzione**
+4. `ripristino-immagini` copia le foto dall'archivio **e riscrive gli indirizzi
+   dentro il database** — senza il secondo passo il sito torna su con le foto
+   morte, perché gli indirizzi salvati puntano al progetto vecchio
 
-Ultima prova: **29 agosto 2026, verde** — 51 tabelle, le sei vitali identiche
-alla produzione, 16 domini presenti.
+Le credenziali del progetto di prova stanno in `tests/.env.ripristino` (in
+`.gitignore`, mai in git). Procedura completa, con i tempi e cosa **non** torna
+da solo → `INCIDENTE.md` §3.2.
+
+**Ultima prova: 13 settembre 2026 — ripristino completo riuscito.**
+117 migration su 117, 5634 righe, 14 account **con il loro id conservato**
+(quindi i profili restano attaccati), 65 foto dall'archivio, i siti dei clienti
+aperti e il pannello in cui si entra. **Meno di due minuti** in tutto.
+
+> Quella prova ha trovato un difetto che nessun controllo da fermo poteva
+> vedere: **le migration non ricostruivano il database**. Mancavano 4 tabelle e
+> 12 colonne aggiunte a mano dal pannello negli anni, e il ripristino si
+> fermava sulla tabella centrale del prodotto. Corretto (`078b`, `115`).
+> È la ragione per cui questa prova va rifatta: non per rassicurarsi, per
+> trovare quello che nel frattempo è cambiato.
 
 ⚠️ Il file scaricato è **il database dei clienti in chiaro**: cancellalo dal
-disco appena finita la verifica.
+disco appena finito. E un progetto di prova ripristinato ne è una copia
+completa, foto comprese: si cancella quando la prova è finita.
 
 **Se succede qualcosa di brutto** → `INCIDENTE.md`, scritto per essere eseguito
 alle tre di notte, da soli. Regola sopra tutte: **prima si chiude, poi si
@@ -382,7 +410,7 @@ toglie da solo, ma se scrivi codice nuovo devi ricordartene.
 |---|---|
 | `CLAUDE.md` | le regole di lavoro e tutta la storia dei guasti già successi |
 | `SECURITY.md` | le regole di sicurezza non negoziabili |
-| `INCIDENTE.md` | **cosa fare se succede qualcosa**, passo per passo |
+| `INCIDENTE.md` | **cosa fare se succede qualcosa**, passo per passo — e §3.2 è **come si rimette in piedi tutto da un archivio**: comandi, tempi misurati, e cosa non torna da solo |
 | `FEATURES.md` | l'elenco completo delle funzioni |
 | `CATALOGO.md` | come si legano prodotti, offerte e negozio |
 | `REGISTRAR.md` | il piano per vendere domini ai clienti (non ancora fatto) |

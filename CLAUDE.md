@@ -60,7 +60,7 @@ leggibile perché quella riga è accettabile.
 ---
 
 > **📘 Cos'è OltreNova, chi la tiene accesa, quanto costa** → `PROGETTO.md` — il documento di progetto: fornitori uno per uno con costi e cosa si rompe se cadono, architettura, dati, chiavi (nomi e dove si rigenerano, mai i valori), procedure. Scritto per chi subentra da zero — un erede, un socio, un acquirente. Da aggiornare **a ogni nuovo collegamento esterno**.
-> **🧯 Se succede qualcosa (piano di risposta a un incidente)** → `INCIDENTE.md` — scritto per essere eseguito da soli e sotto pressione; verifica dell'archivio con `tests/verifica-backup.mjs`
+> **🧯 Se succede qualcosa (piano di risposta a un incidente)** → `INCIDENTE.md` — scritto per essere eseguito da soli e sotto pressione. **§3.2 = come si rimette in piedi tutto da un archivio**, provato davvero il 13/09/2026: `tests/verifica-backup.mjs` (l'archivio è sano), `tests/ripristino.mjs` (schema, account, dati), `tests/ripristino-immagini.mjs` (le foto **e** gli indirizzi da riscrivere). Panoramica per chi subentra → `PROGETTO.md` §6.
 > **🔒 Sicurezza (invarianti, checklist route, procedure rigide)** → `SECURITY.md` §0 — LEGGERE prima di toccare route API/auth/esposizione dati. Multi-tenant + service_role = la sicurezza dipende dai controlli applicativi.
 > **🔍 Check di sicurezza in corso (roadmap A1–A8)** → `SECURITY-CHECK.md` — cosa è già stato verificato e cosa no. A1 (authz) e A2-shop/loyalty fatti; prossimi A3 (mass assignment), A5 (costi AI), A2-booking.
 > **Route frontend E backend, JSONB structures, moduli admin/guest, pattern Next** → `client-next/CLAUDE.md` (auto-caricato quando si lavora in client-next/ — tutto il codice LIVE)
