@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-13T15:07:15.115Z
+  modified: 2026-09-13T15:23:56.553Z
 ---
 
 # Si riprende da qui
@@ -13,14 +13,17 @@ metadata:
 ## ✅ RIPRISTINO PROVATO E RIUSCITO (13/09/2026)
 
 Dettaglio in [[reference_backup_e_ripristino]] e INCIDENTE.md §3.2.
-**Restano due cose da fare:**
-1. **Francesco**: eseguire su Supabase `078b_properties_colonne_storiche.sql` e
-   `115_allinea_schema_alla_realta.sql` — in produzione sono **no-op**
-   (`IF NOT EXISTS`), servono perché le migration tornino a descrivere la realtà.
-2. **Francesco**: cancellare il progetto Supabase `oltrenova-ripristino`, che
+✅ **Migration `078b` e `115` eseguite in produzione il 13/09** e verificate:
+4 tabelle e 12 colonne al loro posto, dati invariati, servizio in piedi. Da qui
+le migration descrivono di nuovo la realtà. **Migration eseguite: fino a 115
+(+078b).**
+
+**Resta:**
+1. **Francesco**: cancellare il progetto Supabase `oltrenova-ripristino`, che
    contiene una copia completa dei dati personali dei clienti.
-3. In coda: le **immagini** nel ripristino (serve una chiave R2 di sola lettura),
-   compresa la riscrittura degli indirizzi nel database.
+2. In coda: le **immagini** nel ripristino (serve una chiave R2 di sola lettura),
+   compresa la riscrittura degli indirizzi nel database — senza quella, un
+   ripristino vero riporta i siti con tutte le foto morte.
 
 ## ▶️ (storico) PROVA DI RIPRISTINO — come si è arrivati qui (12/09/2026)
 
