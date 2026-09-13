@@ -25,6 +25,7 @@
 // ⛔ Stessa sicura del ripristino: non scrive mai sulla produzione.
 
 import { createClient } from '@supabase/supabase-js'
+import { S3Client, ListObjectsV2Command, GetObjectCommand } from '@aws-sdk/client-s3'
 import { config } from 'dotenv'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
@@ -49,6 +50,53 @@ if (refProd === refBers) esci('IL BERSAGLIO È LA PRODUZIONE. Qui non si scrive,
 const sorgente = createClient(PROD, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 const bersaglio = createClient(BERSAGLIO, process.env.RIPRISTINO_SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 
+// ── La sorgente: l'archivio su R2, se ci sono le chiavi ──────────────────────
+// È quella vera: il giorno brutto lo Storage di produzione non c'è più, e le
+// foto esistono solo nell'archivio. Sotto `media/`, con lo stesso percorso che
+// avevano nello Storage — lo scrive `lib/backup.js` ogni notte.
+const PREFISSO_MEDIA = 'media/'
+const r2conf = {
+  account: (process.env.RIPRISTINO_R2_ACCOUNT_ID ?? '').trim(),
+  chiave: (process.env.RIPRISTINO_R2_ACCESS_KEY_ID ?? '').trim(),
+  segreto: (process.env.RIPRISTINO_R2_SECRET_ACCESS_KEY ?? '').trim(),
+  bucket: (process.env.RIPRISTINO_R2_BUCKET ?? '').trim(),
+}
+const DA_R2 = !!(r2conf.account && r2conf.chiave && r2conf.segreto && r2conf.bucket)
+const r2 = DA_R2 ? new S3Client({
+  region: 'auto',
+  endpoint: `https://${r2conf.account}.r2.cloudflarestorage.com`,
+  credentials: { accessKeyId: r2conf.chiave, secretAccessKey: r2conf.segreto },
+}) : null
+
+async function elencaDaR2() {
+  const out = []
+  let token
+  do {
+    const r = await r2.send(new ListObjectsV2Command({
+      Bucket: r2conf.bucket, Prefix: PREFISSO_MEDIA, ContinuationToken: token,
+    }))
+    for (const o of r.Contents || []) {
+      if (o.Key === PREFISSO_MEDIA) continue
+      out.push({ path: o.Key.slice(PREFISSO_MEDIA.length), size: o.Size || 0, tipo: null })
+    }
+    token = r.IsTruncated ? r.NextContinuationToken : null
+  } while (token)
+  return out
+}
+
+async function scaricaDaR2(percorso) {
+  const r = await r2.send(new GetObjectCommand({ Bucket: r2conf.bucket, Key: PREFISSO_MEDIA + percorso }))
+  const pezzi = []
+  for await (const p of r.Body) pezzi.push(p)
+  return { buf: Buffer.concat(pezzi), tipo: r.ContentType || 'application/octet-stream' }
+}
+
+async function scaricaDaProduzione(percorso) {
+  const { data, error } = await sorgente.storage.from(BUCKET).download(percorso)
+  if (error) throw new Error(error.message)
+  return { buf: Buffer.from(await data.arrayBuffer()), tipo: data.type || 'application/octet-stream' }
+}
+
 // Lo Storage non ha un elenco ricorsivo: le cartelle sono voci senza metadata
 // e si scende una alla volta. Stessa logica di `lib/backup.js`.
 async function elenca(prefisso = '', profondita = 0) {
@@ -67,11 +115,12 @@ async function elenca(prefisso = '', profondita = 0) {
 console.log('\n' + '='.repeat(64))
 console.log(`  LE FOTO ${ESEGUI ? '— ESECUZIONE' : '— SIMULAZIONE (non scrive niente)'}`)
 console.log('='.repeat(64))
-console.log(`\n  sorgente : storage di produzione (${refProd})`)
+console.log(`\n  sorgente : ${DA_R2 ? `l’ARCHIVIO su R2 (bucket ${r2conf.bucket}, cartella ${PREFISSO_MEDIA})` : `storage di produzione (${refProd})`}`)
 console.log(`  bersaglio: ${refBers}`)
-console.log('  ⚠ Con questa sorgente NON si prova che l’archivio su R2 sia leggibile.\n')
+if (!DA_R2) console.log('  ⚠ Con questa sorgente NON si prova che l’archivio su R2 sia leggibile.')
+console.log()
 
-const file = await elenca()
+const file = DA_R2 ? await elencaDaR2() : await elenca()
 const mb = (file.reduce((n, f) => n + f.size, 0) / 1024 / 1024).toFixed(1)
 console.log(`  ${file.length} file, ${mb} MB\n`)
 
@@ -101,11 +150,9 @@ let copiati = 0, falliti = []
 for (let i = 0; i < file.length; i += 5) {
   await Promise.all(file.slice(i, i + 5).map(async f => {
     try {
-      const { data, error } = await sorgente.storage.from(BUCKET).download(f.path)
-      if (error) throw new Error('scarico: ' + error.message)
-      const buf = Buffer.from(await data.arrayBuffer())
+      const { buf, tipo } = DA_R2 ? await scaricaDaR2(f.path) : await scaricaDaProduzione(f.path)
       const { error: e2 } = await bersaglio.storage.from(BUCKET)
-        .upload(f.path, buf, { contentType: f.tipo, upsert: true })
+        .upload(f.path, buf, { contentType: f.tipo || tipo, upsert: true })
       if (e2) throw new Error('carico: ' + e2.message)
       copiati++
     } catch (e) { falliti.push(`${f.path}: ${e.message.slice(0, 70)}`) }
