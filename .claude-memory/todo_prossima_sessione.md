@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-13T15:23:56.553Z
+  modified: 2026-09-13T15:32:34.039Z
 ---
 
 # Si riprende da qui
@@ -21,10 +21,10 @@ le migration descrivono di nuovo la realtà. **Migration eseguite: fino a 115
 **Resta:**
 1. **Francesco**: cancellare il progetto Supabase `oltrenova-ripristino`, che
    contiene una copia completa dei dati personali dei clienti.
-2. ✅ Immagini: provate il 13/09 (`ripristino-immagini.mjs`). Resta non provato
-   solo «scaricare da R2»: serve una chiave R2 di sola lettura.
-   compresa la riscrittura degli indirizzi nel database — senza quella, un
-   ripristino vero riporta i siti con tutte le foto morte.
+2. ✅ **Immagini provate** il 13/09 (`ripristino-immagini.mjs`): copia dei file
+   **e riscrittura degli indirizzi nel database**, senza la quale un ripristino
+   vero riporta i siti con le foto morte. Resta non provato solo «scaricare da
+   R2»: servirebbe una chiave R2 di sola lettura.
 
 ## ▶️ (storico) PROVA DI RIPRISTINO — come si è arrivati qui (12/09/2026)
 
