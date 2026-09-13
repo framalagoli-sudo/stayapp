@@ -96,6 +96,31 @@ if (!ESEGUI) {
 }
 
 const sb = createClient(BERSAGLIO, CHIAVE, { auth: { autoRefreshToken: false, persistSession: false } })
+
+// ── 0. Azzerare il bersaglio (--azzera) ──────────────────────────────────────
+// Una prova di ripristino si fa su un database **vuoto**: al secondo tentativo
+// le migration troverebbero le tabelle già create e fallirebbero per il motivo
+// sbagliato, nascondendo quelle che falliscono davvero.
+//
+// ⛔ Vale la stessa sicura di tutto il resto: qui si cancella un intero schema,
+// ed è il gesto più pericoloso di questo file.
+if (process.argv.includes('--azzera')) {
+  if (!DB) esci('Per azzerare serve RIPRISTINO_DB_URL')
+  const fine = T('azzeramento')
+  const c = new pg.Client({ connectionString: DB, ssl: { rejectUnauthorized: false } })
+  await c.connect()
+  await c.query(`
+    drop schema if exists public cascade;
+    create schema public;
+    grant usage on schema public to postgres, anon, authenticated, service_role;
+    grant all on schema public to postgres, service_role;
+    alter default privileges in schema public grant all on tables to postgres, anon, authenticated, service_role;
+    delete from auth.users;
+  `)
+  await c.end()
+  fine()
+  console.log('  0. AZZERATO — schema public ricreato vuoto, nessun account\n')
+}
 const esiti = { schema: { ok: 0, ko: [] }, account: { ok: 0, ko: [] }, dati: {}, }
 
 // ── 1. Lo schema ─────────────────────────────────────────────────────────────
@@ -191,9 +216,9 @@ if (!DB) {
   // Non basta contare: un archivio con le righe giuste e i contenuti vuoti
   // passerebbe qualsiasi conteggio.
   const { data: ent } = await sb.from('entita').select('slug, name').limit(5)
-  const { data: pag } = await sb.from('pagine').select('slug, blocchi').limit(5)
+  const { data: pag } = await sb.from('pagine').select('slug, blocks').limit(5)
   console.log(`\n     entità con slug e nome : ${(ent || []).filter(e => e.slug && e.name).length}/${(ent || []).length}`)
-  console.log(`     pagine con blocchi     : ${(pag || []).filter(p => Array.isArray(p.blocchi) ? p.blocchi.length : p.blocchi).length}/${(pag || []).length}`)
+  console.log(`     pagine con blocchi     : ${(pag || []).filter(p => Array.isArray(p.blocks) ? p.blocks.length : p.blocks).length}/${(pag || []).length}`)
 
   console.log('\n  TEMPI:', Object.entries(cronometro).map(([k, v]) => `${k} ${v}`).join(' · '))
   console.log('\n' + '─'.repeat(64))

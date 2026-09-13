@@ -171,32 +171,51 @@ legittimi arrivati dopo l'attacco.
 
 ### 3.2 Ripristino
 
-Non esiste un pulsante: il backup è un file JSON per tabella. Si ripristina
-scrivendo le tabelle una per una, **partendo dalle indispensabili e in
-quest'ordine** (le altre dipendono da queste):
+✅ **Provato per davvero il 13/09/2026**, su un progetto Supabase vuoto, con
+l'archivio della notte prima. Non è più una speranza: è una procedura con dei
+tempi misurati.
 
-1. `aziende`
-2. `profiles`
-3. `entita`
-4. `pagine`
-5. `domini`
-6. `contatti`
+```
+cd tests
+node verifica-backup.mjs <archivio.json.gz>              # l'archivio è sano?
+node ripristino.mjs <archivio.json.gz>                   # simula
+node ripristino.mjs <archivio.json.gz> --esegui --azzera # esegue
+```
 
-Poi il resto, in qualunque ordine.
+Lo script fa tutto nell'ordine giusto: schema (le migration una per una) →
+account → dati (aziende, entità, profili, pagine, domini, contatti, poi il
+resto) → verifica. Le credenziali del bersaglio stanno in
+`tests/.env.ripristino`, e lo script **si rifiuta di scrivere sulla produzione**.
 
-> 🔴 **Questo percorso non è mai stato provato** (stato al 29/08/2026). Sappiamo
-> che l'archivio contiene i dati giusti — verificato — ma **non sappiamo quante
-> ore costa rimetterli dentro**, né se le chiavi esterne reggono al primo colpo.
-> Se sei qui adesso e hai fretta: **usa i backup automatici di Supabase Pro**
-> (Dashboard → Database → Backups), che hanno un ripristino vero. Il file JSON
-> serve per recuperare *alcune* tabelle o quando è l'account Supabase stesso il
-> problema — e in quel caso metti in conto ore, non minuti.
+**Quanto costa**: schema 6 secondi, account 3, dati 4 — **meno di un minuto**
+per 5634 righe e 14 account. Il tempo vero è quello di creare il progetto
+Supabase e rimettere le chiavi nel deploy.
 
+**Cosa è risultato vero nella prova:**
+- 117 migration su 117 passano (dopo le correzioni `078b` e `115` — prima erano
+  104: mancavano 4 tabelle e 12 colonne che nessuno aveva mai scritto);
+- gli account si ricreano **conservando il loro id**: i profili restano
+  attaccati, e questo era il dubbio più grosso;
+- i siti dei clienti si aprono e **si entra nel pannello**.
 
-> Supabase Pro conserva anche i propri backup automatici del database — dal
-> Dashboard, sezione **Database → Backups**. Per un ripristino completo quelli
-> sono più comodi del nostro file: il nostro serve quando vuoi recuperare
-> **solo alcune tabelle**, o quando l'account Supabase stesso è il problema.
+**Cosa NON torna da solo, e va fatto a mano:**
+1. ⚠️ **Le immagini.** Stanno su R2 accanto all'archivio (cartella `media/`) e
+   vanno ricaricate nello Storage del progetto nuovo. **Non basta**: gli
+   indirizzi salvati nel database contengono la sigla del progetto vecchio, e
+   vanno riscritti ovunque — testi dei siti compresi. Senza, il sito torna su
+   con tutte le foto morte.
+2. ⚠️ **Il secondo fattore.** I fattori TOTP vivono in `auth.mfa_factors` e non
+   sono nell'archivio: dopo un ripristino ogni persona deve riattivare il 2FA
+   al primo accesso (il percorso guidato esiste già).
+3. ⚠️ **Le password.** L'archivio non le contiene di proposito: gli account
+   rinascono senza, e si entra con «Password dimenticata».
+4. ⚠️ **Un'azienda di troppo.** La migration `006` semina «StayApp Development»
+   con un id nuovo: dopo il ripristino ce n'è una doppia e vuota, da cancellare.
+
+> Supabase Pro conserva anche i propri backup automatici del database
+> (Dashboard → **Database → Backups**), e per rimettere in piedi *lo stesso*
+> progetto restano la strada più rapida. Il nostro archivio serve quando è
+> l'account Supabase **stesso** il problema — ed è il caso che abbiamo provato.
 
 ### 3.3 Rimettere in moto
 
