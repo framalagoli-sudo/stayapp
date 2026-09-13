@@ -21,7 +21,8 @@ le migration descrivono di nuovo la realtà. **Migration eseguite: fino a 115
 **Resta:**
 1. **Francesco**: cancellare il progetto Supabase `oltrenova-ripristino`, che
    contiene una copia completa dei dati personali dei clienti.
-2. In coda: le **immagini** nel ripristino (serve una chiave R2 di sola lettura),
+2. ✅ Immagini: provate il 13/09 (`ripristino-immagini.mjs`). Resta non provato
+   solo «scaricare da R2»: serve una chiave R2 di sola lettura.
    compresa la riscrittura degli indirizzi nel database — senza quella, un
    ripristino vero riporta i siti con tutte le foto morte.
 
