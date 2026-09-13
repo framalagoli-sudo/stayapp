@@ -67,11 +67,16 @@ const browser = await chromium.launch()
     if (r.url().includes(PROD)) vecchie.push(r.url())
     if (!r.ok()) rotte.push(r.status())
   })
-  const e = (entita || [])[0]
-  await p.goto(`${APP}/${PRE[e.tipo]}/${e.slug}`, { waitUntil: 'networkidle', timeout: 120000 })
-  await p.waitForTimeout(2000)
-  ok('le immagini arrivano dal progetto ripristinato', nuove.length > 0 && vecchie.length === 0,
-    `nuove ${nuove.length}, dal vecchio ${vecchie.length}`)
+  // ⚠️ Non la prima entità che capita: quella con più foto. Misurare una sola
+  // immagine e dichiarare che «le foto funzionano» è un controllo che si
+  // accontenta — ed è già costato una verifica fatta a metà.
+  const { data: conFoto } = await sb.from('entita')
+    .select('slug, tipo, name, cover_url').eq('active', true).not('cover_url', 'is', null).limit(12)
+  const scelta = (conFoto || [])[0] || (entita || [])[0]
+  await p.goto(`${APP}/${PRE[scelta.tipo]}/${scelta.slug}`, { waitUntil: 'networkidle', timeout: 120000 })
+  await p.waitForTimeout(2500)
+  ok(`le immagini arrivano dal progetto ripristinato (${scelta.name})`.slice(0, 58),
+    nuove.length > 0 && vecchie.length === 0, `nuove ${nuove.length}, dal vecchio ${vecchie.length}`)
   ok('nessuna immagine rotta', rotte.length === 0, rotte.length ? `${rotte.length} non caricate` : '')
   await p.close()
 }
@@ -162,7 +167,9 @@ console.log('\n6. IL PANNELLO\n')
       ['Eventi', '/admin/eventi', /Eventi/i],
       ['Prenotazioni', '/admin/booking/prenotazioni', /Prenotazioni|Booking/i],
       ['Newsletter', '/admin/newsletter', /Newsletter/i],
-      ['Pagine del sito', '/admin/aziende', /Aziende/i],
+      // ⚠️ Una voce vera dell'entità, non un doppione di una sezione già
+      // aperta: un controllo che riapre la stessa pagina non controlla niente.
+      ['Pagine del sito', `/admin/${{ struttura: 'struttura', ristorante: 'ristoranti', attivita: 'attivita' }[(entita || [])[0]?.tipo]}/${(await sb.from('entita').select('id').eq('slug', (entita || [])[0]?.slug).maybeSingle()).data?.id}/pagine`, /\+ Nuova pagina/],
     ]) {
       await p.goto(APP + path, { waitUntil: 'domcontentloaded' })
       const caricata = await p.getByText(atteso).first().waitFor({ timeout: 45000 }).then(() => true).catch(() => false)
