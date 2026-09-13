@@ -113,3 +113,17 @@ Rimedio, perché non dipenda da cosa qualcuno si ricorda di guardare:
 un ospite che manda una richiesta, il pannello che crea e modifica e il
 contenuto che compare sul sito. Finché non è tutta verde, il ripristino non è
 finito e l'ambiente di prova non si cancella (INCIDENTE.md §3.3).
+
+### ✅ Rifatta per intero il 13/09 sera: 24 controlli su 24
+
+Secondo giro su un progetto nuovo, con : siti,
+foto dal progetto giusto, app del QR, un ospite che manda una richiesta, il
+pannello che **crea e modifica** e il contenuto che compare sul sito. Francesco
+ha anche guardato a mano: modifiche dal pannello prese correttamente.
+
+⚠️ Due caselle della lista erano finte alla prima esecuzione (una misurava una
+sola foto, l'altra riapriva una pagina già controllata): corrette e rifatte.
+**Una lista che si accontenta dà la stessa sensazione di aver verificato.**
+
+Produzione mai sfiorata, verificato a fine giro: righe invariate, zero tracce
+delle prove, sito 200.
