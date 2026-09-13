@@ -267,14 +267,15 @@ lo stato di tutto.
 1504 righe su 2908 — comprese le pagine dei siti dei clienti — e girava così da
 mesi senza che nessuno se ne accorgesse.
 
-**Come si prova** (da rifare ogni pochi mesi). Sono due domande diverse, e
-servono due comandi:
+**Come si prova** (da rifare ogni pochi mesi). Sono domande diverse, e servono
+quattro comandi — l'ultimo è quello che dice **quando hai finito**:
 
 ```bash
 cd tests
 node verifica-backup.mjs <archivio.json.gz>   # l'archivio è completo?
 node ripristino.mjs      <archivio.json.gz>   # da qui si torna in piedi?
 node ripristino-immagini.mjs                  # …e le foto?
+node verifica-ripristino.mjs                  # il servizio funziona DAVVERO?
 ```
 
 1. Cloudflare → R2 → il bucket → scarica il file più recente
@@ -286,15 +287,26 @@ node ripristino-immagini.mjs                  # …e le foto?
 4. `ripristino-immagini` copia le foto dall'archivio **e riscrive gli indirizzi
    dentro il database** — senza il secondo passo il sito torna su con le foto
    morte, perché gli indirizzi salvati puntano al progetto vecchio
+5. `verifica-ripristino` è la lista che dice quando è finito: siti, foto dal
+   progetto giusto, **app del QR**, un ospite che **manda una richiesta**, il
+   pannello che **crea e modifica** un contenuto e quel contenuto che compare
+   sul sito. ⛔ Finché non è tutta verde il ripristino non è finito, e
+   l'ambiente di prova **non si cancella**
 
 Le credenziali del progetto di prova stanno in `tests/.env.ripristino` (in
 `.gitignore`, mai in git). Procedura completa, con i tempi e cosa **non** torna
-da solo → `INCIDENTE.md` §3.2.
+da solo → `INCIDENTE.md` §3.2 e §3.3.
 
-**Ultima prova: 13 settembre 2026 — ripristino completo riuscito.**
+**Ultima prova: 13 settembre 2026 — riuscita, e verificata fino in fondo.**
 117 migration su 117, 5634 righe, 14 account **con il loro id conservato**
-(quindi i profili restano attaccati), 65 foto dall'archivio, i siti dei clienti
-aperti e il pannello in cui si entra. **Meno di due minuti** in tutto.
+(quindi i profili restano attaccati), 65 foto lette dall'archivio su R2, e i
+**24 controlli** della lista tutti verdi: si scrive dal pannello, si manda una
+richiesta dal sito e le modifiche compaiono. **Meno di due minuti** in tutto.
+
+> ⚠️ Alla prima esecuzione la prova era stata dichiarata riuscita avendo
+> verificato solo le **letture**, e l'ambiente era già stato cancellato quando
+> è emerso. Da lì nasce `verifica-ripristino.mjs`: **un servizio da cui si
+> legge e basta non è ripristinato.** Vale come metodo, non solo qui.
 
 > Quella prova ha trovato un difetto che nessun controllo da fermo poteva
 > vedere: **le migration non ricostruivano il database**. Mancavano 4 tabelle e

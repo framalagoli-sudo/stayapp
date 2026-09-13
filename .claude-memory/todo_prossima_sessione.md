@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-13T15:32:34.039Z
+  modified: 2026-09-13T18:38:55.348Z
 ---
 
 # Si riprende da qui
@@ -18,9 +18,16 @@ Dettaglio in [[reference_backup_e_ripristino]] e INCIDENTE.md §3.2.
 le migration descrivono di nuovo la realtà. **Migration eseguite: fino a 115
 (+078b).**
 
+**Chiuso davvero il 13/09 sera**: rifatto su un secondo progetto e passata per
+intero la lista di `tests/verifica-ripristino.mjs` — **24 controlli su 24**,
+scritture comprese (un ospite manda una richiesta, il pannello crea e modifica,
+il contenuto compare sul sito). Francesco ha anche guardato a mano.
+Produzione mai sfiorata: righe invariate, zero tracce, sito 200.
+
 **Resta:**
-1. **Francesco**: cancellare il progetto Supabase `oltrenova-ripristino`, che
-   contiene una copia completa dei dati personali dei clienti.
+1. **Francesco**: cancellare il progetto Supabase di prova (autorizzato il
+   13/09) e svuotare `tests/.env.ripristino`. Contiene una copia completa dei
+   dati personali dei clienti.
 2. ✅ **Immagini provate leggendo dall’archivio su R2** (13/09): copia dei file
    **e riscrittura degli indirizzi nel database**, senza la quale un ripristino
    vero riporta i siti con le foto morte. **Niente resta non provato.**
