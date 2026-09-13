@@ -243,7 +243,33 @@ a schermo — utile per provare, inutile il giorno vero.
 > progetto restano la strada più rapida. Il nostro archivio serve quando è
 > l'account Supabase **stesso** il problema — ed è il caso che abbiamo provato.
 
-### 3.3 Rimettere in moto
+### 3.3 Il ripristino è finito solo quando passa questa lista
+
+⛔ **Non fidarti di «i siti si aprono e il pannello carica».** Il 13/09/2026 la
+prova è stata dichiarata riuscita con le sole **letture** verificate: nessuno
+aveva provato a scrivere niente, né l'app del QR, né i moduli pubblici — e
+l'ambiente di prova era già stato cancellato quando ce ne siamo accorti. Un
+servizio da cui si legge e basta non è ripristinato.
+
+Con l'app puntata al progetto ripristinato:
+
+```bash
+cd client-next
+SUPABASE_URL=… NEXT_PUBLIC_SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… \
+NEXT_PUBLIC_SUPABASE_ANON_KEY=… npm run dev -- -p 3002
+cd ../tests && node verifica-ripristino.mjs
+```
+
+Controlla, in ordine: i siti dei clienti · le foto (dal progetto **nuovo**, non
+dal vecchio) · l'**app del QR**, che è codice di browser e non si vede con
+`curl` · un ospite che **manda una richiesta** e la ritrova nel database · il
+pannello che **crea e modifica** un contenuto, e quel contenuto che compare sul
+sito · l'accesso al pannello e le sue sezioni. Quello che scrive lo cancella.
+
+**Finché questa lista non è tutta verde, il ripristino non è finito** — e
+l'ambiente di prova non si cancella.
+
+### 3.4 Rimettere in moto
 
 - nuovo deploy con le chiavi nuove: `.\deploy.ps1`
 - controlla che le sonde di sicurezza a fine deploy siano verdi

@@ -100,3 +100,16 @@ Verificato col browser: 8 immagini su 3 pagine, **tutte dal progetto nuovo**.
 in 8,6 secondi, poi sito riaperto — tutte le foto dal progetto nuovo. Servono
 le quattro righe  con un token **Object Read only** sul solo
 bucket dei backup. **La catena è completa: dall'archivio si ricostruisce tutto.**
+
+### ⛔ Il 13/09 la prova è stata dichiarata finita a metà
+
+Verificate solo le **letture** (siti 200, pannello che carica): non provate le
+scritture, l'app del QR, i moduli pubblici. E l'ambiente di prova era già
+stato cancellato quando è emerso. **Un servizio da cui si legge e basta non è
+ripristinato.**
+
+Rimedio, perché non dipenda da cosa qualcuno si ricorda di guardare:
+ — siti, foto dal progetto giusto, app del QR,
+un ospite che manda una richiesta, il pannello che crea e modifica e il
+contenuto che compare sul sito. Finché non è tutta verde, il ripristino non è
+finito e l'ambiente di prova non si cancella (INCIDENTE.md §3.3).
