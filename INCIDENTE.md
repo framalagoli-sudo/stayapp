@@ -198,18 +198,33 @@ Supabase e rimettere le chiavi nel deploy.
   attaccati, e questo era il dubbio più grosso;
 - i siti dei clienti si aprono e **si entra nel pannello**.
 
+**Le immagini sono un secondo comando** (provato il 13/09):
+
+```
+node ripristino-immagini.mjs            # simula
+node ripristino-immagini.mjs --esegui   # esegue
+```
+
+Fa due cose, e **la seconda è quella che ci si dimentica**: copia i file nello
+Storage del progetto nuovo, poi **riscrive gli indirizzi dentro il database** —
+in ogni colonna di testo e JSON di ogni tabella, perché le foto stanno anche
+dentro i blocchi delle pagine, nelle gallerie e nei temi. 65 file in 13 secondi.
+
+> ⚠️ Senza il secondo passo il sito torna su con le foto **apparentemente**
+> funzionanti finché il vecchio progetto è ancora vivo, e morte da lì in poi:
+> è il tranello che la prova ha scoperto.
+>
+> ⚠️ Se le chiavi R2 sono nel file `.env.ripristino`, i file si prendono
+> dall'archivio. Senza, si prendono dallo Storage di produzione — che nel
+> giorno vero potrebbe non esserci: **quel pezzo non è ancora stato provato**.
+
 **Cosa NON torna da solo, e va fatto a mano:**
-1. ⚠️ **Le immagini.** Stanno su R2 accanto all'archivio (cartella `media/`) e
-   vanno ricaricate nello Storage del progetto nuovo. **Non basta**: gli
-   indirizzi salvati nel database contengono la sigla del progetto vecchio, e
-   vanno riscritti ovunque — testi dei siti compresi. Senza, il sito torna su
-   con tutte le foto morte.
-2. ⚠️ **Il secondo fattore.** I fattori TOTP vivono in `auth.mfa_factors` e non
+1. ⚠️ **Il secondo fattore.** I fattori TOTP vivono in `auth.mfa_factors` e non
    sono nell'archivio: dopo un ripristino ogni persona deve riattivare il 2FA
    al primo accesso (il percorso guidato esiste già).
-3. ⚠️ **Le password.** L'archivio non le contiene di proposito: gli account
+2. ⚠️ **Le password.** L'archivio non le contiene di proposito: gli account
    rinascono senza, e si entra con «Password dimenticata».
-4. ⚠️ **Un'azienda di troppo.** La migration `006` semina «StayApp Development»
+3. ⚠️ **Un'azienda di troppo.** La migration `006` semina «StayApp Development»
    con un id nuovo: dopo il ripristino ce n'è una doppia e vuota, da cancellare.
 
 > Supabase Pro conserva anche i propri backup automatici del database
