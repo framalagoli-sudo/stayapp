@@ -5,12 +5,24 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-12T19:19:42.157Z
+  modified: 2026-09-13T15:07:15.115Z
 ---
 
 # Si riprende da qui
 
-## ▶️ PROVA DI RIPRISTINO — si riparte da qui (12/09/2026)
+## ✅ RIPRISTINO PROVATO E RIUSCITO (13/09/2026)
+
+Dettaglio in [[reference_backup_e_ripristino]] e INCIDENTE.md §3.2.
+**Restano due cose da fare:**
+1. **Francesco**: eseguire su Supabase `078b_properties_colonne_storiche.sql` e
+   `115_allinea_schema_alla_realta.sql` — in produzione sono **no-op**
+   (`IF NOT EXISTS`), servono perché le migration tornino a descrivere la realtà.
+2. **Francesco**: cancellare il progetto Supabase `oltrenova-ripristino`, che
+   contiene una copia completa dei dati personali dei clienti.
+3. In coda: le **immagini** nel ripristino (serve una chiave R2 di sola lettura),
+   compresa la riscrittura degli indirizzi nel database.
+
+## ▶️ (storico) PROVA DI RIPRISTINO — come si è arrivati qui (12/09/2026)
 
 Lo script c'è ed è provato: **`tests/ripristino.mjs`** (schema → account →
 dati → verifica, tutto cronometrato; la sicura che rifiuta la produzione è

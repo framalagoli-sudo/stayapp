@@ -60,3 +60,30 @@ Storage). La verifica del 29/08 non poteva accorgersene, perché confronta
 l'archivio con le tabelle — e quelle due cose non sono tabelle di `public`.
 Da un ripristino non entrerebbe nessuno e i siti avrebbero le foto rotte.
 Priorità della prossima sessione → [[project_backup_lacune]].
+
+## ✅ IL RIPRISTINO È STATO PROVATO (13/09/2026)
+
+Su un progetto Supabase vuoto, con l'archivio della notte prima. Strumenti:
+`tests/verifica-backup.mjs` (l'archivio è sano) e **`tests/ripristino.mjs`**
+(schema → account → dati → verifica; `--azzera` rifà da vuoto; la sicura che
+rifiuta la produzione è provata). Credenziali in `tests/.env.ripristino`
+(gitignored). **Meno di un minuto**: schema 6s, account 3s, dati 4s.
+
+**Risposta alla domanda aperta da luglio: SÌ, l'id di un account si può
+imporre** (`auth.admin.createUser({ id })`) — 14/14 conservati, quindi i
+profili restano attaccati.
+
+⛔ **La scoperta grossa: le migration NON ricostruivano il database.** Mancavano
+4 tabelle e 12 colonne aggiunte a mano dal pannello negli anni. Tutto partiva da
+`properties.whatsapp`, che fa fallire la `079` e con lei dieci migration in fila
+— cioè `entita`, la tabella centrale. Corretto con `078b` (gira PRIMA della 079)
+e `115`. Dopo: **117/117**, siti dei clienti aperti, pannello dentro.
+
+⚠️ **Cosa NON torna da solo** (in INCIDENTE.md §3.2): le immagini — e non basta
+ricaricarle, **gli indirizzi salvati nel database contengono la sigla del
+progetto vecchio e vanno riscritti**; i fattori 2FA (`auth.mfa_factors` non è
+nell'archivio: tutti riattivano al primo accesso); le password (di proposito:
+si entra da «Password dimenticata»); un'azienda doppia seminata dalla `006`.
+
+⚠️ Un progetto ripristinato **contiene una copia completa dei dati personali dei
+clienti**: si cancella appena finita la prova.
