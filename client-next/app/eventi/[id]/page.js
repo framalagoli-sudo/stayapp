@@ -8,6 +8,7 @@ import { buildEventoSchema } from '@/lib/evento-schema'
 import { eventoConcluso } from '@/lib/evento-concluso'
 import { permanentRedirect, notFound } from 'next/navigation'
 import { fuoriDaiMotori, METADATA_NASCOSTA } from '@/lib/visibilita-motori'
+import { hostUfficiale } from '@/lib/indirizzo-ufficiale'
 
 export const dynamic = 'force-dynamic'
 
@@ -70,7 +71,10 @@ export async function generateMetadata(props) {
     // ⚠️ Il canonical punta SEMPRE all'indirizzo parlante, anche a chi è
     // arrivato con un id: è il modo di dire ai motori «questa pagina è una
     // sola», invece di spargere il valore su due indirizzi diversi.
-    const dominio = searchParams?._domain
+    // L'indirizzo ufficiale del sito a cui l'evento appartiene: il dominio del
+    // cliente, o il suo sottodominio. Anche servendo da oltrenova.com, il
+    // canonical deve puntare lì — l'evento è suo, non nostro.
+    const dominio = searchParams?._domain || (ev.entity_id ? await hostUfficiale(ev.entity_id) : null)
     const prefissoLingua = searchParams?._lang === 'en' ? '/en' : ''
     const url = (dominio ? `https://${dominio}` : 'https://www.oltrenova.com')
       + `${prefissoLingua}/eventi/${ev.slug || ev.id}`
@@ -145,15 +149,19 @@ export default async function Page(props) {
   }
 
   let ente = null
+  let ospite = searchParams?._domain || null
   if (evento?.entity_id) {
     const { data } = await supabaseAdmin.from('entita').select('name').eq('id', evento.entity_id).maybeSingle()
     ente = data
+    // Nei dati strutturati l'indirizzo dell'evento è quello ufficiale del sito,
+    // così Google vede lo stesso indirizzo che dichiara il canonical.
+    if (!ospite) ospite = await hostUfficiale(evento.entity_id)
   }
   // I dati strutturati li scrive il SERVER: chi legge i link non esegue
   // JavaScript, e la pagina dell'evento è codice di browser.
   const schema = evento ? buildEventoSchema({
     evento, nomeEntita: ente?.name,
-    url: (searchParams?._domain ? `https://${searchParams._domain}` : 'https://www.oltrenova.com')
+    url: (ospite ? `https://${ospite}` : 'https://www.oltrenova.com')
       + `${lang === 'en' ? '/en' : ''}/eventi/${evento.slug || evento.id}`,
     concluso: eventoConcluso(evento),
   }) : null

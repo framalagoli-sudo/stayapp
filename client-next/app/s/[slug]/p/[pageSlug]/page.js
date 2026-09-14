@@ -4,6 +4,7 @@ import { localizeEntity } from '@/lib/translate'
 import GuestSubPage from '@/components/guest/GuestSubPage'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
 import { fuoriDaiMotori, METADATA_NASCOSTA } from '@/lib/visibilita-motori'
+import { hostUfficiale } from '@/lib/indirizzo-ufficiale'
 
 export const maxDuration = 30
 
@@ -22,7 +23,10 @@ export async function generateMetadata(props) {
   // rettangolo grigio che nessuno apre. Misurato il 01/09: 11 entita' su 15
   // non hanno una copertina.
   const image = pagina.og_image_url || property.cover_url || property.logo_url || ''
-  const domain = searchParams?._domain
+  // L'indirizzo ufficiale del sito: il dominio del cliente, o il suo
+  // sottodominio. Serve anche quando la pagina è servita da oltrenova.com,
+  // altrimenti lo stesso sito si presenta a Google come tre siti gemelli.
+  const domain = searchParams?._domain || await hostUfficiale(property.id)
   const itUrl = domain ? `https://${domain}/p/${pageSlug}` : `https://www.oltrenova.com/s/${slug}/p/${pageSlug}`
   const enUrl = domain ? `https://${domain}/en/p/${pageSlug}` : `https://www.oltrenova.com/en/s/${slug}/p/${pageSlug}`
   const url = lang === 'en' ? enUrl : itUrl
