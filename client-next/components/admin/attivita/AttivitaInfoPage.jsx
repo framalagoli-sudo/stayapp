@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useAttivita } from '../../../hooks/useAttivita'
-import { uploadMedia } from '../../../lib/api'
+import { CampoImmagine } from '../../../components/admin/CampoImmagine'
 import { ExternalLink } from 'lucide-react'
 import CollegamentiSection from '../../../components/admin/CollegamentiSection'
 
@@ -27,7 +27,6 @@ export default function AttivitaInfoPage() {
   const { id } = useParams()
   const { attivita, loading, saving, saved, saveError, save } = useAttivita(id)
   const [form, setForm] = useState({})
-  const [uploading, setUploading] = useState({})
   const [slugInput, setSlugInput] = useState('')
   const [slugSaving, setSlugSaving] = useState(false)
   const [slugSaved, setSlugSaved] = useState(false)
@@ -55,20 +54,10 @@ export default function AttivitaInfoPage() {
     try { await save(updates) } catch {}
   }
 
-  async function handleUpload(field, file) {
-    if (!file) return
-    setUploading(u => ({ ...u, [field]: true }))
-    try {
-      const type = (field === 'logo_url' || field === 'logo_dark_url') ? 'attivita-logo' : 'attivita-cover'
-      const qs = field === 'logo_dark_url' ? '&field=logo_dark_url' : ''
-      const { url } = await uploadMedia(`/api/upload/${type}?attivita_id=${id}${qs}`, file)
-      await save({ [field]: url })
-    } catch (e) { alert(`Errore upload: ${e.message}`) }
-    finally { setUploading(u => ({ ...u, [field]: false })) }
-  }
-
-  async function handleRemove(field) {
-    try { await save({ [field]: null }) } catch (e) { alert(e.message) }
+  // Il caricamento lo fa `CampoImmagine`; qui resta il salvataggio, che avviene
+  // subito. Stringa vuota = «Rimuovi», e in colonna ci va `null`, non ''.
+  async function salvaFoto(field, url) {
+    try { await save({ [field]: url || null }) } catch (e) { alert(e.message) }
   }
 
   if (loading) return <p style={loadingStyle}>Caricamento…</p>
@@ -97,36 +86,24 @@ export default function AttivitaInfoPage() {
         <h3 style={sectionTitle}>Logo e copertina</h3>
 
         <div style={{ marginBottom: 24 }}>
-          <label style={lblStyle}>Logo</label>
-          {attivita.logo_url && (
-            <div style={{ marginBottom: 10, padding: 12, background: '#f5f5f5', borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 12 }}>
-              <img key={attivita.logo_url} src={attivita.logo_url} alt="logo"
-                style={{ maxHeight: 64, maxWidth: 180, objectFit: 'contain' }} />
-              <button type="button" onClick={() => handleRemove('logo_url')} style={removeBtnStyle}>Rimuovi</button>
-            </div>
-          )}
-          <label style={uploadLabelStyle}>
-            {uploading.logo_url ? 'Upload…' : attivita.logo_url ? 'Cambia logo' : 'Carica logo'}
-            <input type="file" accept="image/*" style={{ display: 'none' }}
-              onChange={e => handleUpload('logo_url', e.target.files[0])} />
-          </label>
+          <CampoImmagine
+            etichetta="Logo"
+            valore={attivita.logo_url}
+            onChange={url => salvaFoto('logo_url', url)}
+            endpoint={`/api/upload/attivita-logo?attivita_id=${id}`}
+            adatta="contieni" sfondo="#f5f5f5" altezza={88}
+          />
         </div>
 
         <div style={{ marginBottom: 24 }}>
-          <label style={lblStyle}>Logo per sfondi scuri (negativo)</label>
-          {attivita.logo_dark_url && (
-            <div style={{ marginBottom: 10, padding: 12, background: '#1a1a2e', borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 12 }}>
-              <img key={attivita.logo_dark_url} src={attivita.logo_dark_url} alt="logo negativo"
-                style={{ maxHeight: 64, maxWidth: 180, objectFit: 'contain' }} />
-              <button type="button" onClick={() => handleRemove('logo_dark_url')} style={{ ...removeBtnStyle, color: '#ff8080' }}>Rimuovi</button>
-            </div>
-          )}
-          <label style={uploadLabelStyle}>
-            {uploading.logo_dark_url ? 'Upload…' : attivita.logo_dark_url ? 'Cambia logo' : 'Carica logo negativo'}
-            <input type="file" accept="image/*" style={{ display: 'none' }}
-              onChange={e => handleUpload('logo_dark_url', e.target.files[0])} />
-          </label>
-          <p style={{ margin: '6px 0 0', fontSize: 11, color: '#aaa' }}>Versione chiara del logo, usata su footer e header scuri. Se vuota, si usa il logo normale.</p>
+          <CampoImmagine
+            etichetta="Logo per sfondi scuri (negativo)"
+            aiuto="Versione chiara del logo, usata su footer e header scuri. Se vuota, si usa il logo normale."
+            valore={attivita.logo_dark_url}
+            onChange={url => salvaFoto('logo_dark_url', url)}
+            endpoint={`/api/upload/attivita-logo?attivita_id=${id}&field=logo_dark_url`}
+            adatta="contieni" sfondo="#1a1a2e" altezza={88}
+          />
         </div>
 
         <div style={{ marginBottom: 24 }}>
@@ -163,22 +140,14 @@ export default function AttivitaInfoPage() {
         </div>
 
         <div>
-          <label style={lblStyle}>Foto di copertina</label>
-          {attivita.cover_url && (
-            <div style={{ marginBottom: 10, position: 'relative' }}>
-              <img key={attivita.cover_url} src={attivita.cover_url} alt="cover"
-                style={{ width: '100%', maxHeight: 180, objectFit: 'cover', borderRadius: 10, display: 'block', border: '1px solid #ddd' }} />
-              <button type="button" onClick={() => handleRemove('cover_url')}
-                style={{ position: 'absolute', top: 8, right: 8, fontSize: 12, color: '#fff', background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '4px 10px' }}>
-                Rimuovi
-              </button>
-            </div>
-          )}
-          <label style={uploadLabelStyle}>
-            {uploading.cover_url ? 'Upload…' : attivita.cover_url ? 'Cambia foto' : 'Carica copertina'}
-            <input type="file" accept="image/*" style={{ display: 'none' }}
-              onChange={e => handleUpload('cover_url', e.target.files[0])} />
-          </label>
+          <CampoImmagine
+            etichetta="Foto di copertina"
+            valore={attivita.cover_url}
+            onChange={url => salvaFoto('cover_url', url)}
+            endpoint={`/api/upload/attivita-cover?attivita_id=${id}`}
+            unsplash unsplashQuery={attivita.name || ''}
+            altezza={180}
+          />
         </div>
       </div>
 
@@ -258,8 +227,6 @@ const sectionTitle     = { marginTop: 0, marginBottom: 16, fontSize: 15 }
 const lblStyle         = { display: 'block', fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 5 }
 const inputStyle       = { width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14, boxSizing: 'border-box' }
 const saveBtn          = { padding: '10px 28px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }
-const uploadLabelStyle = { padding: '8px 16px', background: '#f0f0f0', borderRadius: 8, cursor: 'pointer', fontSize: 13, border: '1px solid #ddd', fontWeight: 600, color: '#333', display: 'inline-block' }
-const removeBtnStyle   = { fontSize: 12, color: '#e53e3e', background: 'none', border: 'none', cursor: 'pointer' }
 const loadingStyle     = { padding: 32, color: '#888' }
 const errorStyle       = { padding: 32, color: '#e53e3e' }
 

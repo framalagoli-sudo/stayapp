@@ -2,8 +2,9 @@
 import { useEffect, useState } from 'react'
 import { useProperty } from '../../../hooks/useProperty'
 import { useAuth } from '../../../context/AuthContext'
-import { apiFetch, uploadMedia } from '../../../lib/api'
+import { apiFetch } from '../../../lib/api'
 import CollegamentiSection from '../../../components/admin/CollegamentiSection'
+import { CampoImmagine } from '../../../components/admin/CampoImmagine'
 import { ExternalLink, X } from 'lucide-react'
 
 const AMENITY_PRESETS = [
@@ -41,7 +42,6 @@ export default function PropertyInfoPage() {
   const [form, setForm] = useState({})
   const [amenities, setAmenities] = useState([])
   const [amenityInput, setAmenityInput] = useState('')
-  const [uploading, setUploading] = useState({})
   const [slugInput, setSlugInput] = useState('')
   const [slugSaving, setSlugSaving] = useState(false)
   const [slugSaved, setSlugSaved] = useState(false)
@@ -84,16 +84,10 @@ export default function PropertyInfoPage() {
     save({ amenities: updated }).catch(() => {})
   }
 
-  async function handleUpload(field, file) {
-    if (!file) return
-    setUploading(u => ({ ...u, [field]: true }))
-    try {
-      const type = field === 'logo_url' ? 'logo' : 'cover'
-      const pid = propertyId || property?.id
-      const { url } = await uploadMedia(`/api/upload/${type}?property_id=${pid}`, file)
-      await save({ [field]: url })
-    } catch (e) { alert(`Errore upload: ${e.message}`) }
-    finally { setUploading(u => ({ ...u, [field]: false })) }
+  // Il caricamento lo fa `CampoImmagine`; qui resta il salvataggio, che avviene
+  // subito. Stringa vuota = «Rimuovi», e in colonna ci va `null`, non ''.
+  async function salvaFoto(field, url) {
+    try { await save({ [field]: url || null }) } catch (e) { alert(e.message) }
   }
 
   async function handleSlugSave() {
@@ -158,30 +152,37 @@ export default function PropertyInfoPage() {
       <div style={{ ...cardStyle, marginBottom: 20 }}>
         <h3 style={{ marginTop: 0, marginBottom: 16, fontSize: 15 }}>Logo e copertina</h3>
         <div style={{ marginBottom: 24 }}>
-          <label style={lblStyle}>Logo</label>
-          {property.logo_url && (
-            <div style={{ marginBottom: 10, padding: 12, background: '#f5f5f5', borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 12 }}>
-              <img key={property.logo_url} src={property.logo_url} alt="logo" style={{ maxHeight: 64, maxWidth: 180, objectFit: 'contain' }} />
-              <button type="button" onClick={() => save({ logo_url: null })} style={{ fontSize: 12, color: '#e53e3e', background: 'none', border: 'none', cursor: 'pointer' }}>Rimuovi</button>
-            </div>
-          )}
-          <label style={{ padding: '8px 16px', background: '#f0f0f0', borderRadius: 8, cursor: 'pointer', fontSize: 13, border: '1px solid #ddd', fontWeight: 600, color: '#333', display: 'inline-block' }}>
-            {uploading.logo_url ? 'Upload…' : property.logo_url ? 'Cambia logo' : 'Carica logo'}
-            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleUpload('logo_url', e.target.files[0])} />
-          </label>
+          <CampoImmagine
+            etichetta="Logo"
+            valore={property.logo_url}
+            onChange={url => salvaFoto('logo_url', url)}
+            endpoint={`/api/upload/logo?property_id=${propertyId || property?.id}`}
+            adatta="contieni" sfondo="#f5f5f5" altezza={88}
+          />
+        </div>
+        {/* ⛔ Questo campo mancava SOLO alle strutture, mentre la colonna
+            (`logo_dark_url`, migration 064), la route che la scrive e il sito
+            che la usa c'erano già da tempo: era costruito tutto tranne la
+            porta. Ristoranti e attività ce l'avevano. */}
+        <div style={{ marginBottom: 24 }}>
+          <CampoImmagine
+            etichetta="Logo per sfondi scuri (negativo)"
+            aiuto="Versione chiara del logo, usata su footer e header scuri. Se vuota, si usa il logo normale."
+            valore={property.logo_dark_url}
+            onChange={url => salvaFoto('logo_dark_url', url)}
+            endpoint={`/api/upload/logo?property_id=${propertyId || property?.id}&field=logo_dark_url`}
+            adatta="contieni" sfondo="#1a1a2e" altezza={88}
+          />
         </div>
         <div>
-          <label style={lblStyle}>Foto di copertina</label>
-          {property.cover_url && (
-            <div style={{ marginBottom: 10, position: 'relative' }}>
-              <img key={property.cover_url} src={property.cover_url} alt="cover" style={{ width: '100%', maxHeight: 180, objectFit: 'cover', borderRadius: 10, display: 'block', border: '1px solid #ddd' }} />
-              <button type="button" onClick={() => save({ cover_url: null })} style={{ position: 'absolute', top: 8, right: 8, fontSize: 12, color: '#fff', background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '4px 10px' }}>Rimuovi</button>
-            </div>
-          )}
-          <label style={{ padding: '8px 16px', background: '#f0f0f0', borderRadius: 8, cursor: 'pointer', fontSize: 13, border: '1px solid #ddd', fontWeight: 600, color: '#333', display: 'inline-block' }}>
-            {uploading.cover_url ? 'Upload…' : property.cover_url ? 'Cambia foto' : 'Carica copertina'}
-            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleUpload('cover_url', e.target.files[0])} />
-          </label>
+          <CampoImmagine
+            etichetta="Foto di copertina"
+            valore={property.cover_url}
+            onChange={url => salvaFoto('cover_url', url)}
+            endpoint={`/api/upload/cover?property_id=${propertyId || property?.id}`}
+            unsplash unsplashQuery={property.name || ''}
+            altezza={180}
+          />
         </div>
       </div>
 

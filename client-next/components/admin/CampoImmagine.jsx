@@ -40,6 +40,11 @@ export function CampoImmagine({
   anteprima = 'largo',      // 'largo' | 'cerchio' | un rapporto ('16 / 9')
   indirizzo = false,        // mostra anche il campo con l'URL scritto
   altezza = 170,
+  // ⚠️ Un logo si guarda INTERO: ritagliarlo per riempire il riquadro taglia
+  // proprio il marchio del cliente. Una copertina invece riempie, perché è lo
+  // sfondo di qualcos'altro. Due esigenze diverse, non una da uniformare.
+  adatta = 'riempi',        // 'riempi' (cover) | 'contieni' (contain)
+  sfondo,                   // il logo negativo va guardato su fondo scuro
 }) {
   const inputRef = useRef()
   const [caricando, setCaricando] = useState(false)
@@ -74,7 +79,15 @@ export function CampoImmagine({
       {aiuto && <p style={{ fontSize: 11.5, color: '#888', margin: '0 0 8px', lineHeight: 1.5 }}>{aiuto}</p>}
 
       {valore
-        ? <img src={valore} alt="" style={{ ...stileAnteprima, objectFit: 'cover', objectPosition: focalValido(focale) || 'center', borderRadius: tondo ? '50%' : 8, display: 'block', marginBottom: 8, border: '1px solid #eee' }} />
+        ? <img key={valore} src={valore} alt="" style={{
+            ...stileAnteprima,
+            objectFit: adatta === 'contieni' ? 'contain' : 'cover',
+            // Il punto focale vale solo dove si ritaglia: su un'immagine
+            // mostrata intera non c'è niente da scegliere.
+            ...(adatta === 'contieni' ? null : { objectPosition: focalValido(focale) || 'center' }),
+            borderRadius: tondo ? '50%' : 8, display: 'block', marginBottom: 8,
+            border: '1px solid #eee', ...(sfondo ? { background: sfondo, padding: 12, boxSizing: 'border-box' } : null),
+          }} />
         : <div onClick={() => inputRef.current?.click()}
             style={{ ...stileAnteprima, borderRadius: tondo ? '50%' : 8, border: '2px dashed #ddd', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#aaa', fontSize: 12.5, marginBottom: 8, cursor: 'pointer', minHeight: tondo ? undefined : 110 }}>
             <IconaFoto size={18} strokeWidth={1.5} />
