@@ -42,8 +42,28 @@ function visibleText(html) {
 
 async function activeMinisito(tipo) {
   const { data } = await admin.from('entita')
-    .select('slug, name, minisito').eq('tipo', tipo).eq('active', true).limit(50)
+    .select('id, slug, name, minisito').eq('tipo', tipo).eq('active', true).limit(50)
   return (data || []).find((e) => e?.minisito?.active && e.slug && e.name) || null
+}
+
+// ⚠️ Dal 14/09/2026 un sito con un dominio proprio NON si serve più dal nostro
+// percorso: risponde 307 e manda lì. Chiedere `/r/garage22` significava misurare
+// due avvii a freddo invece di uno — e subito dopo un deploy sono TUTTI freddi,
+// così il test bocciava un deploy sano. Si chiede l'indirizzo vero, che è anche
+// quello da cui ci arriva un visitatore.
+//
+// In locale non si salta mai sul dominio di un cliente vero: si proverebbe la
+// produzione credendo di provare la copia.
+const IN_PRODUZIONE = /^https:\/\/(www\.)?oltrenova\.com/.test(TEST_URL)
+
+async function indirizzoDelSito(entity, prefix) {
+  if (IN_PRODUZIONE) {
+    const { data } = await admin.from('domini')
+      .select('dominio').eq('entity_id', entity.id)
+      .eq('tipo', 'custom').eq('stato', 'attivo').limit(1).maybeSingle()
+    if (data?.dominio) return `https://${data.dominio}/`
+  }
+  return `${TEST_URL}/${prefix}/${entity.slug}`
 }
 
 test.describe('Render pubblico siti — cross-browser safety net', () => {
@@ -52,8 +72,11 @@ test.describe('Render pubblico siti — cross-browser safety net', () => {
     for (const { tipo, prefix } of TYPES) {
       const entity = await activeMinisito(tipo)
       if (!entity) continue
-      const path = `/${prefix}/${entity.slug}`
-      const res = await request.get(path)
+      const path = await indirizzoDelSito(entity, prefix)
+      // Gli smoke partono 15 secondi dopo il deploy, quando ogni funzione è
+      // fredda: misurato oggi, una pagina a freddo impiega ~9s e a caldo ~1s.
+      // Qui si verifica che il contenuto ci SIA, non che arrivi in fretta.
+      const res = await request.get(path, { timeout: 45000 })
       expect(res.status(), `${path} deve rispondere 200`).toBe(200)
       const html = await res.text()
       const text = visibleText(html)
@@ -81,8 +104,11 @@ test.describe('Render pubblico siti — cross-browser safety net', () => {
     for (const { tipo, prefix } of TYPES) {
       const entity = await activeMinisito(tipo)
       if (!entity) continue
-      const path = `/en/${prefix}/${entity.slug}`
-      const res = await request.get(path)
+      // Anche qui l'indirizzo ufficiale: sul dominio del cliente la versione
+      // inglese sta in `/en`, senza il nostro prefisso.
+      const base = await indirizzoDelSito(entity, prefix)
+      const path = base.startsWith(TEST_URL) ? `${TEST_URL}/en/${prefix}/${entity.slug}` : `${base.replace(/\/$/, '')}/en`
+      const res = await request.get(path, { timeout: 45000 })
       expect(res.status(), `${path} deve rispondere 200 (no 404 /en)`).toBe(200)
       const text = visibleText(await res.text())
       const firstWord = entity.name.split(/\s+/)[0]
