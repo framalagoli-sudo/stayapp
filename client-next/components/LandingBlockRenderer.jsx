@@ -11,7 +11,7 @@ import { ReviewSourceLogo } from '@/lib/reviewLogos'
 import { RichText, richIsEmpty } from '@/lib/richText'
 import { ricco } from '@/lib/testo-ricco'
 import { t as tr } from '@/lib/i18n'
-import { focalValido, formaScheda } from '@/lib/formati-foto'
+import { focalValido, formaScheda, rapportoOppure } from '@/lib/formati-foto'
 import { oraLocale } from '@/lib/fuso'
 import { getPreset, fieldOptions } from '@/lib/vetrinePresets'
 
@@ -631,7 +631,7 @@ function Carousel({ block, primary, heading }) {
               {items.map(it => (
                 <div key={it.id} style={{ flex: `0 0 ${100 / pv}%`, padding: '0 10px', boxSizing: 'border-box' }}>
                   <div style={{ background: '#fafafa', border: '1px solid #f0f0f0', borderRadius: 16, overflow: 'hidden', height: '100%' }}>
-                    {it.image_url && <img src={it.image_url} alt={it.title || ''} loading="lazy" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }} />}
+                    {it.image_url && <img src={it.image_url} alt={it.title || ''} loading="lazy" style={{ width: '100%', aspectRatio: rapportoOppure(d.formato, '4 / 3'), objectFit: 'cover', objectPosition: focalValido(it.image_focal) || 'center', display: 'block' }} />}
                     {(it.title || it.text || (it.button_label && it.button_url)) && (
                       <div style={{ padding: 22 }}>
                         {it.title && <h3 style={{ fontFamily: heading, fontSize: 19, fontWeight: 700, color: '#1a1a2e', margin: '0 0 8px' }} {...ricco(it.title)} />}
@@ -1090,7 +1090,10 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
               <div className={`lbr-ft${d.inverti ? ' inv' : ''}`}>
                 {d.image_url && (
                   <div className="lbr-ft-img">
-                    <img src={d.image_url} alt={d.title || ''} style={{ width: '100%', borderRadius: 16, objectFit: 'cover', aspectRatio: '4/3' }} />
+                    {/* La forma la sceglie il cliente; senza scelta resta il
+                        4/3 che questo blocco ha sempre avuto. Punto focale e
+                        rapporto passano entrambi da un catalogo chiuso. */}
+                    <img src={d.image_url} alt={d.title || ''} style={{ width: '100%', borderRadius: 16, objectFit: 'cover', aspectRatio: rapportoOppure(d.formato, '4 / 3'), objectPosition: focalValido(d.focal) || 'center' }} />
                   </div>
                 )}
                 <div className="lbr-ft-txt">
@@ -1201,7 +1204,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                   const Icon = highlightIcon(it.icon)
                   return (
                     <div key={it.id} style={{ background: '#fafafa', borderRadius: 16, overflow: 'hidden', border: '1px solid #f0f0f0' }}>
-                      {it.image_url && <img src={it.image_url} alt={it.title} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover' }} />}
+                      {it.image_url && <img src={it.image_url} alt={it.title} style={{ width: '100%', aspectRatio: rapportoOppure(d.formato, '16 / 9'), objectFit: 'cover', objectPosition: focalValido(it.image_focal) || 'center' }} />}
                       <div style={{ padding: 24 }}>
                         <div style={{ width: 44, height: 44, borderRadius: '50%', background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
                           <Icon size={20} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />

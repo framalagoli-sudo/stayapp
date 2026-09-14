@@ -50,6 +50,19 @@ export function rapportoDi(chiave) {
   return (FORMATI.find(f => f.chiave === chiave) || FORMATI.find(f => f.chiave === FORMATO_PREDEFINITO)).rapporto
 }
 
+// I blocchi del sito avevano ciascuno un rapporto scritto nel codice: 4/3 per
+// il carosello e per foto+testo, 16/9 per i paragrafi. Ora si può scegliere,
+// **ma l'assenza di scelta vale ancora quel rapporto**: chi non tocca niente
+// vede il sito di ieri. E la prima voce riporta lì, altrimenti la scelta
+// sarebbe a senso unico.
+export function rapportoOppure(chiave, rapportoStorico) {
+  return FORMATI.find(f => f.chiave === chiave)?.rapporto || rapportoStorico
+}
+
+export function formatiConPredefinito(rapportoStorico) {
+  return [{ chiave: '', etichetta: 'Predefinito', misura: 'come adesso', rapporto: rapportoStorico }, ...FORMATI]
+}
+
 // Da usare nelle route prima di salvare.
 export function formatoValido(chiave) {
   return FORMATI.some(f => f.chiave === chiave) ? chiave : null

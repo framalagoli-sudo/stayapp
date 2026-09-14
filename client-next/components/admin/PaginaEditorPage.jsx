@@ -6,7 +6,8 @@ import { LinkPicker, buildInternalLinks } from '@/components/admin/LinkPicker'
 import { IconPicker } from '@/components/admin/IconPicker'
 import { FocalPointPicker } from '@/components/admin/FocalPointPicker'
 import { SelettoreFormato } from '@/components/admin/SelettoreFormato'
-import { FORME_SCHEDA, FORMA_SCHEDA_PREDEFINITA, formaScheda } from '@/lib/formati-foto'
+import { FORME_SCHEDA, FORMA_SCHEDA_PREDEFINITA, formaScheda, rapportoOppure, formatiConPredefinito } from '@/lib/formati-foto'
+import { CampoImmagine } from '@/components/admin/CampoImmagine'
 import { getPreset as getVetrinaPreset } from '@/lib/vetrinePresets'
 import {
   GripVertical, AlignLeft, Image, Grid, Users, List, Star, BarChart2, Zap,
@@ -344,10 +345,16 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
     case 'carosello': return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} />
+        <SelettoreFormato
+          valore={data.formato || ''} onChange={v => upd('formato', v)}
+          formati={formatiConPredefinito('4 / 3')}
+          titolo="Forma delle immagini"
+          aiuto="Vale per tutte le schede insieme: se ognuna tenesse la propria, una foto verticale sfonderebbe la riga."
+        />
         <ItemListEditor items={data.items} onChange={v => upd('items', v)} entityId={entityId} entityTipo={entityTipo}
-          newItem={{ image_url: '', title: '', text: '', button_label: '', button_url: '' }}
+          newItem={{ image_url: '', image_focal: '', title: '', text: '', button_label: '', button_url: '' }}
           fields={[
-            { key: 'image_url', label: 'Immagine', type: 'image' },
+            { key: 'image_url', label: 'Immagine', type: 'image', focalKey: 'image_focal', anteprima: rapportoOppure(data.formato, '4 / 3') },
             { key: 'title', label: 'Titolo' },
             { key: 'text', label: 'Testo', type: 'textarea', rows: 2 },
             { key: 'button_label', label: 'Pulsante (opz.)' },
@@ -540,12 +547,22 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
           <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 500 }}>Testo</label>
           <RichTextEditor content={data.text} onChange={v => upd('text', v)} format="json" minimal placeholder="Scrivi il testo…" />
         </div>
-        <Field label="URL immagine" value={data.image_url} onChange={v => upd('image_url', v)} placeholder="https://..." />
-        {data.image_url && <img src={data.image_url} alt="" style={{ maxHeight: 120, borderRadius: 8, objectFit: 'cover', width: '100%' }} />}
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          <UnsplashPicker label="Cerca su Unsplash" defaultQuery={data.title} onPick={url => upd('image_url', url)} />
-          <UploadBtn label="Carica immagine" entityId={entityId} entityTipo={entityTipo} onUrl={url => upd('image_url', url)} />
-        </div>
+        <CampoImmagine
+          etichetta="Immagine"
+          valore={data.image_url}
+          onChange={v => upd('image_url', v)}
+          endpoint={`/api/upload/minisito-image?entity_type=${entityTipo}&entity_id=${entityId}`}
+          unsplash unsplashQuery={typeof data.title === 'string' ? data.title : ''}
+          indirizzo
+          anteprima={rapportoOppure(data.formato, '4 / 3')}
+          focale={data.focal} onFocale={v => upd('focal', v)}
+        />
+        <SelettoreFormato
+          valore={data.formato || ''} onChange={v => upd('formato', v)}
+          formati={formatiConPredefinito('4 / 3')}
+          titolo="Forma dell'immagine"
+          aiuto="Come si vede la foto accanto al testo. «Predefinito» è la forma che ha sempre avuto."
+        />
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
           <input type="checkbox" checked={!!data.inverti} onChange={e => upd('inverti', e.target.checked)} />
           Inverti: testo a sinistra, immagine a destra
@@ -727,13 +744,23 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
     case 'paragrafi': return (
       <div>
         <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
-        <ItemListEditor items={data.items} onChange={v => upd('items', v)}
-          newItem={{ icon: 'star', title: '', text: '', image_url: '' }}
+        <SelettoreFormato
+          valore={data.formato || ''} onChange={v => upd('formato', v)}
+          formati={formatiConPredefinito('16 / 9')}
+          titolo="Forma delle immagini"
+          aiuto="Vale per tutte le schede insieme. «Predefinito» è la forma che hanno sempre avuto."
+        />
+        {/* ⛔ Qui la foto si poteva solo INCOLLARE come indirizzo, come
+            succedeva al Team: per mettere un'immagine bisognava caricarla
+            altrove e copiare il link. `ItemListEditor` sapeva già caricare —
+            mancava dirglielo e passargli l'entità. */}
+        <ItemListEditor items={data.items} onChange={v => upd('items', v)} entityId={entityId} entityTipo={entityTipo}
+          newItem={{ icon: 'star', title: '', text: '', image_url: '', image_focal: '' }}
           fields={[
             { key: 'icon', label: 'Icona', type: 'icon' },
             { key: 'title', label: 'Titolo' },
             { key: 'text', label: 'Testo', type: 'textarea', rows: 2 },
-            { key: 'image_url', label: 'Immagine URL (opz.)', placeholder: 'https://...' },
+            { key: 'image_url', label: 'Immagine (opz.)', type: 'image', focalKey: 'image_focal', anteprima: rapportoOppure(data.formato, '16 / 9') },
           ]} />
       </div>
     )
