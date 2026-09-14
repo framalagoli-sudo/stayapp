@@ -26,7 +26,7 @@ export async function generateMetadata(props) {
   // L'indirizzo ufficiale del sito: il dominio del cliente, o il suo
   // sottodominio. Serve anche quando la pagina è servita da oltrenova.com,
   // altrimenti lo stesso sito si presenta a Google come tre siti gemelli.
-  const domain = searchParams?._domain || await hostUfficiale(attivita.id)
+  const domain = (await hostUfficiale(attivita.id)) || searchParams?._domain
   const itUrl = domain ? `https://${domain}/p/${pageSlug}` : `https://www.oltrenova.com/a/${slug}/p/${pageSlug}`
   const enUrl = domain ? `https://${domain}/en/p/${pageSlug}` : `https://www.oltrenova.com/en/a/${slug}/p/${pageSlug}`
   const url = lang === 'en' ? enUrl : itUrl

@@ -22,6 +22,11 @@ import { supabaseAdmin } from './supabase-server'
 // controlla Vercel, il DNS reale e fa una GET HTTPS vera. Serve, perché un
 // canonical che punta a un indirizzo rotto è peggio di nessun canonical.
 
+// ⚠️ L'indirizzo ufficiale vince SEMPRE su quello da cui arriva la richiesta.
+// Con l'ordine opposto, la pagina servita dal sottodominio dichiarava sé stessa
+// e restava in concorrenza con il dominio del cliente — cioè metà del problema
+// sarebbe rimasta. Visto in produzione il 14/09: `garage22.oltrenova.com`
+// puntava a sé mentre `oltrenova.com/r/garage22` puntava già al cliente.
 export async function hostUfficiale(entityId) {
   if (!entityId) return null
   const { data } = await supabaseAdmin.from('domini')
