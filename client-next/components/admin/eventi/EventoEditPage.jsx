@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch, uploadMedia } from '../../../lib/api'
-import { FORMATI, FORMATO_PREDEFINITO, rapportoDi } from '@/lib/formati-foto'
+import { FORMATI, FORMATO_PREDEFINITO, rapportoDi, fotoTroppoPesante } from '@/lib/formati-foto'
 import { FocalPointPicker } from '@/components/admin/FocalPointPicker'
 import { perCampoDataOra, daCampoDataOra } from '@/lib/fuso'
 import { Trash2, Plus, X, Upload, Share2 } from 'lucide-react'
@@ -117,7 +117,10 @@ export default function EventoEditPage() {
 
   async function handleCoverUpload(file) {
     if (!file) return
-    if (file.size > 5 * 1024 * 1024) { alert('Max 5 MB'); return }
+    // ⚠️ Diceva 5 MB, cioè più di quanto la piattaforma accetti: una locandina
+    // da 4,5 MB partiva e tornava un 413 opaco. Il tetto vero è 4 MB, misurato.
+    const pesante = fotoTroppoPesante(file)
+    if (pesante) { alert(pesante); return }
     if (isNew) { alert('Salva prima l\'evento, poi carica la copertina.'); return }
     setUploading(true)
     try {

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { apiFetch, uploadMedia } from '../../../lib/api'
 import { useAzienda } from '../../../context/AziendaContext'
 import AvvisoNonSiVede from '../AvvisoNonSiVede'
+import { fotoTroppoPesante } from '../../../lib/formati-foto'
 // Sicuro dal browser: `booking-giornaliero` non importa niente, tantomeno
 // `supabaseAdmin`. È scritto in cima a quel file ed è il motivo per cui ci sta.
 import { contaGiorni, nomeUnita, limiteInUnita, limiteInNotti, totaleGiornaliero, unitaDaPagare } from '../../../lib/booking-giornaliero'
@@ -43,10 +44,12 @@ function GalleriaRisorsa({ foto = [], entityTipo, entityId, onChange }) {
     const nuove = []
     try {
       for (const file of files) {
-        // Il limite è quello delle altre gallerie del pannello. Le immagini
-        // vengono comunque ricompresse dal server: qui si evita solo di far
-        // partire un caricamento che finirebbe rifiutato.
-        if (file.size > 5 * 1024 * 1024) { alert(`"${file.name}" supera i 5 MB — saltata`); continue }
+        // Le immagini vengono comunque ricompresse dal server: qui si evita solo
+        // di far partire un caricamento che finirebbe rifiutato. ⚠️ Diceva 5 MB,
+        // cioè più di quanto la piattaforma accetti (413 prima della nostra
+        // route): il tetto vero è 4 MB, misurato.
+        const pesante = fotoTroppoPesante(file)
+        if (pesante) { alert(`"${file.name}": ${pesante}`); continue }
         const { url } = await uploadMedia(
           `/api/upload/risorsa-gallery?entity_tipo=${encodeURIComponent(entityTipo)}&entity_id=${encodeURIComponent(entityId)}`, file)
         if (url) nuove.push(url)

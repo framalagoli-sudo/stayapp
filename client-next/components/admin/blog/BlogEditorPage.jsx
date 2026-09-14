@@ -1,13 +1,14 @@
 ﻿'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '../../../context/AuthContext'
 import { useAzienda } from '../../../context/AziendaContext'
-import { apiFetch, uploadMedia } from '../../../lib/api'
+import { apiFetch } from '../../../lib/api'
 import RichTextEditor from '../../../components/admin/RichTextEditor'
-import { ArrowLeft, Upload, X, Eye, EyeOff, Share2 } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, Share2 } from 'lucide-react'
 import AiButton from '../../../components/admin/AiButton'
 import PostSocialModal from '../../../components/admin/PostSocialModal'
+import { CampoImmagine } from '../../../components/admin/CampoImmagine'
 
 export default function BlogEditorPage() {
   const { id } = useParams()
@@ -30,8 +31,6 @@ export default function BlogEditorPage() {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const [showPostModal, setShowPostModal] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const fileRef = useRef()
 
   useEffect(() => {
     if (!isNew && !UUID_RE.test(id)) { router.push('/admin/blog', { replace: true }); return }
@@ -49,16 +48,6 @@ export default function BlogEditorPage() {
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); setSaved(false) }
 
-  async function handleCoverUpload(e) {
-    const file = e.target.files[0]
-    if (!file) return
-    setUploading(true)
-    try {
-      const data = await uploadMedia('/api/upload/blog-cover', file)
-      set('cover_url', data.url)
-    } catch (err) { setError(err.message) }
-    finally { setUploading(false) }
-  }
 
   async function handleSave(publish) {
     if (!form.title.trim()) { setError('Il titolo è obbligatorio'); return }
@@ -118,24 +107,17 @@ export default function BlogEditorPage() {
       {saved && <p style={{ background: '#f0fff4', color: '#155724', padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>✓ Salvato</p>}
 
       <div style={{ display: 'flex', gap: 20, flexDirection: 'column' }}>
-        {/* Cover */}
+        {/* Cover — dal 14/09 è il campo foto condiviso: stessa ricerca Unsplash
+            che c'era solo nell'editor pagine, e un caricamento fallito lo dice. */}
         <div style={card}>
-          <label style={lbl}>Immagine di copertina</label>
-          {form.cover_url ? (
-            <div style={{ position: 'relative', display: 'inline-block' }}>
-              <img src={form.cover_url} alt="" style={{ width: '100%', maxHeight: 220, objectFit: 'cover', borderRadius: 8 }} />
-              <button onClick={() => set('cover_url', '')} style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <X size={14} />
-              </button>
-            </div>
-          ) : (
-            <div onClick={() => fileRef.current?.click()}
-              style={{ border: '2px dashed #ddd', borderRadius: 8, padding: '32px 16px', textAlign: 'center', cursor: 'pointer', color: '#aaa', fontSize: 13 }}>
-              <Upload size={24} strokeWidth={1.5} style={{ marginBottom: 8, display: 'block', margin: '0 auto 8px' }} />
-              {uploading ? 'Caricamento…' : 'Clicca per caricare la copertina'}
-            </div>
-          )}
-          <input ref={fileRef} type="file" accept="image/*" onChange={handleCoverUpload} style={{ display: 'none' }} />
+          <CampoImmagine
+            etichetta="Immagine di copertina"
+            valore={form.cover_url}
+            onChange={url => set('cover_url', url)}
+            endpoint="/api/upload/blog-cover"
+            unsplash unsplashQuery={form.title || ''}
+            altezza={220}
+          />
         </div>
 
         {/* Titolo + metadati */}
