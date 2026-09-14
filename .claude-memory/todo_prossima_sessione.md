@@ -5,10 +5,74 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-13T18:38:55.348Z
+  modified: 2026-09-14T20:01:32.356Z
 ---
 
 # Si riprende da qui
+
+## ▶️ 14/09/2026 — SI RIPARTE ESATTAMENTE DA QUI
+
+Tutto quello di oggi è **live e verificato in produzione**. Migration eseguite:
+fino alla **116**. Nessuna migration in sospeso.
+
+### La domanda aperta, da fare a Francesco appena si riprende
+Il gruppo "libero" dei formati foto è finito. Restano **tre strade**, lui sceglie:
+
+1. **Il secondo componente condiviso** — per le **gallerie a più foto**
+   (prodotti shop, risorse prenotabili, gallery entità) e le **miniature dentro
+   liste fitte** (foto del piatto nel menu, 56×56 in una riga densa).
+   ⚠️ NON infilarci dentro `CampoImmagine`: snaturerebbe la pagina in cui il
+   cliente lavora ogni giorno. Serve una forma diversa. Vedi
+   [[reference_caricamento_foto]].
+2. **Le migration per i formati mancanti** — servono a me le colonne per:
+   copertina dell'entità (`cover_focal`/`formato` su `entita`), copertina del
+   blog, foto dei prodotti. `cover_focal` oggi esiste **solo** su `eventi`
+   (migration 083). Le migration le esegue lui.
+3. **Il messaggio impreciso della diagnosi domini** (rimasto in coda due volte,
+   lui ha detto «poi vediamo»): dice «manca un record nei DNS» anche quando il
+   record **c'è ma punta altrove** — è successo su `metodotvb.it`, che punta ad
+   Aruba invece che a Vercel, e ha fatto dubitare Francesco del pannello.
+   Da far dire: «c'è un record ma porta da un'altra parte», col valore trovato.
+
+### ⚠️ In attesa di Francesco (dominio)
+**`metodotvb.it` senza www NON funziona**, e non è propagazione: il nameserver
+autoritativo di Aruba pubblica **un solo** record A → `62.149.128.40` (Aruba,
+risponde IIS sulla porta 80 e rifiuta la 443). Il `www` è giusto (CNAME Vercel,
+200). Deve sostituire quel record A con i **due** che chiede Vercel — le due
+righe che gli sembravano un doppione nel pannello **non lo sono**, servono
+entrambe. Valori da leggere in `Admin → metodotvb → Domini` (li chiede a Vercel
+dal vivo, mai scriverli nel codice). Stesso identico problema su
+**`fondaconarni.com`** (apex irraggiungibile, www a posto). Garage22 è a posto.
+Quando dice che ha salvato → rifare il giro dai tre resolver.
+⚠️ Il resolver locale di Telecom **falsifica `nslookup`**: usare
+`https://dns.google/resolve?name=…&type=A`. Vedi [[reference_un_sito_un_indirizzo]].
+
+### Fatto oggi, tutto live
+- **Un sito, un indirizzo** — se il cliente ha un dominio, il nostro percorso e
+  il sottodominio ci mandano lì (307, query preservata, app del QR compresa), e
+  il **QR si incide sul suo dominio**. Sistemate sitemap ed email che
+  dichiaravano un indirizzo diverso dal canonical. → [[reference_un_sito_un_indirizzo]]
+- **Caricamento foto**: `CampoImmagine` (campo unico) su copertina blog, logo +
+  logo negativo + copertina delle Info dei tre tipi, Foto+Testo. Il peso massimo
+  è **4 MB misurati** (sopra risponde 413 la piattaforma). Trovato che **solo le
+  strutture non avevano il campo del logo negativo**, pur avendo colonna, route
+  e sito. → [[reference_caricamento_foto]]
+- **La forma la sceglie il cliente**: selettore condiviso su evento, **Team**
+  (niente più cerchio obbligatorio), Foto+Testo, Carosello, Card paragrafi.
+  ⚠️ Senza scelta resta il rapporto storico: i siti online non cambiano faccia.
+- **Difetto ricorrente trovato due volte**: la foto si poteva solo *incollare*
+  come indirizzo (blocco Team, poi Card paragrafi). Guardare gli altri blocchi.
+- **Test reso meno fragile**: `public-render.spec.js` chiedeva `/r/garage22` sul
+  nostro dominio → dal 14/09 fa 307, quindi due avvii a freddo, e gli smoke
+  partono 15s dopo il deploy. A freddo una pagina impiega ~9s, a caldo ~1s, e il
+  timeout era 10s: ha bocciato un deploy sano. Ora chiede l'indirizzo vero.
+
+### Lezione da non ripetere
+[[feedback_vincolo_o_scelta]] — avevo scritto che il formato «non avrebbe senso»
+sul Team «perché la cornice è un cerchio fisso». Era una riga di CSS, non un
+vincolo: una scelta di prodotto, che spetta a lui.
+
+---
 
 ## ✅ RIPRISTINO PROVATO E RIUSCITO (13/09/2026)
 

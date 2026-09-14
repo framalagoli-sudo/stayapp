@@ -157,3 +157,7 @@
 - [🔁 Cercare TUTTI i punti, non solo quello segnalato](feedback_cercare_tutti_i_punti.md) — il consenso privacy è mancato in TRE posti perché…
 - [28/08 pomeriggio blocco Offerte e blocchi orfani](project_session_2026_08_28b.md)
 - [⛔ I cambi importanti li autorizza Francesco PRIMA](feedback_autorizzare_cambi_importanti.md) — togliere voci di menu, spostare dove si crea…
+- [🏠 Un sito, un indirizzo](reference_un_sito_un_indirizzo.md) — se il cliente ha un dominio si va lì (307, mai 301); sitemap ed email devono dichiarare lo stesso del canonical
+- [📷 Caricamento foto: 4 MB è il tetto della piattaforma](reference_caricamento_foto.md) — misurato (413 prima della nostra route); e CampoImmagine, il campo unico che NON va forzato su gallerie e miniature
+- [⚖️ Vincolo tecnico o scelta di prodotto?](feedback_vincolo_o_scelta.md) — «il cerchio è fisso» era una riga di CSS, non un limite: le scelte le fa Francesco
+- [📅 Sessione 14/09 — un sito un indirizzo, il campo foto unico, la forma scelta dal cliente](project_session_2026_09_14.md) — 7 deploy; 4 MB misurati; 3 difetti trovati facendo altro
