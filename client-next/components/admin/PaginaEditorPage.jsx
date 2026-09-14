@@ -720,10 +720,15 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
     case 'team': return (
       <div>
         <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
-        <ItemListEditor items={data.items} onChange={v => upd('items', v)}
+        {/* ⛔ La foto si poteva solo incollare come indirizzo: per mettere la
+            faccia di una persona bisognava caricarla altrove e copiare il link.
+            `ItemListEditor` sapeva già caricare (`type: 'image'`), mancava
+            dirglielo — e passargli l'entità, senza cui il pulsante non sa dove
+            mettere il file. */}
+        <ItemListEditor items={data.items} onChange={v => upd('items', v)} entityId={entityId} entityTipo={entityTipo}
           newItem={{ photo_url: '', nome: '', ruolo: '', bio: '' }}
           fields={[
-            { key: 'photo_url', label: 'URL foto (circolare)', placeholder: 'https://...' },
+            { key: 'photo_url', label: 'Foto (ritagliata a cerchio)', type: 'image' },
             { key: 'nome', label: 'Nome' },
             { key: 'ruolo', label: 'Ruolo' },
             { key: 'bio', label: 'Breve bio', type: 'textarea', rows: 2 },
