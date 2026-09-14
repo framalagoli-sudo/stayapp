@@ -1,6 +1,7 @@
 ﻿import { supabaseAdmin } from './supabase-server.js'
 import { buildNewsletterHtml, personalize } from './newsletter-html.js'
 import { getAziendaLegale } from './guest-data.js'
+import { hostUfficiale } from './indirizzo-ufficiale.js'
 
 // ⚠️ Leggeva da properties/ristoranti/attivita, ferme dalla migration 079: per
 // un'entità creata dopo l'unificazione lì non c'è niente, e la newsletter usciva
@@ -41,7 +42,14 @@ export async function sendNewsletterById(id) {
   const appUrl     = (process.env.APP_URL ?? '').trim() || 'https://oltrenova.com'
   const legale     = await getAziendaLegale(nl.azienda_id)
   const NL_PREFIX  = { struttura: 's', ristorante: 'r', attivita: 'a' }
-  const privacyUrl = (entity?.slug && NL_PREFIX[nl.entity_tipo]) ? `${appUrl}/${NL_PREFIX[nl.entity_tipo]}/${entity.slug}/privacy` : null
+  // L'informativa è del cliente: nella sua newsletter il link deve portare il
+  // suo nome. Dal nostro indirizzo si arriva lo stesso — c'è il redirect — ma
+  // chi legge l'email vede quello che c'è scritto, non dove finisce.
+  // `unsubscribeUrl` resta sul nostro: la disiscrizione è un nostro servizio e
+  // deve funzionare anche se il dominio del cliente cade.
+  const hostSito   = nl.entity_id ? await hostUfficiale(nl.entity_id) : null
+  const privacyUrl = hostSito ? `https://${hostSito}/privacy`
+    : (entity?.slug && NL_PREFIX[nl.entity_tipo]) ? `${appUrl}/${NL_PREFIX[nl.entity_tipo]}/${entity.slug}/privacy` : null
 
   if (!process.env.RESEND_API_KEY) throw new Error('RESEND_API_KEY non configurata')
 

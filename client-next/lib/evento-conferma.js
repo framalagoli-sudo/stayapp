@@ -4,6 +4,7 @@ import { guestEmailTemplate } from './email-template'
 import { getAziendaLegale } from './guest-data'
 import { inviaMessaggioWhatsapp } from './whatsapp-messaggio'
 import { oraLocale } from './fuso'
+import { hostUfficiale } from './indirizzo-ufficiale'
 
 // «La tua prenotazione è confermata»: **una sola volta, nel momento giusto.**
 //
@@ -58,7 +59,11 @@ export async function mandaConfermaEvento(bookingId) {
     const legale = ev.azienda_id ? await getAziendaLegale(ev.azienda_id) : null
     const appUrl = (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'
     const pref = { struttura: 's', ristorante: 'r', attivita: 'a' }[ev.entity_tipo]
-    const privacyUrl = slug && pref ? `${appUrl}/${pref}/${slug}/privacy` : null
+    // Nell'email di conferma di un evento del cliente, l'informativa è la sua:
+    // il link porta il suo indirizzo, non il nostro.
+    const hostSito = ev.entity_id ? await hostUfficiale(ev.entity_id) : null
+    const privacyUrl = hostSito ? `https://${hostSito}/privacy`
+      : slug && pref ? `${appUrl}/${pref}/${slug}/privacy` : null
     const pkg = (ev.packages || []).find(p => p.id === b.package_id)
     const dataOra = quando(ev.date_start, ev.aziende?.fuso_orario)
 

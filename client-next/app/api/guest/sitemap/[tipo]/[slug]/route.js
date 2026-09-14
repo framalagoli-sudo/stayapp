@@ -1,5 +1,6 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { fuoriDaiMotori } from '@/lib/visibilita-motori'
+import { hostUfficiale } from '@/lib/indirizzo-ufficiale'
 
 export async function GET(request, props) {
   const params = await props.params;
@@ -24,13 +25,17 @@ export async function GET(request, props) {
       )
     }
 
-    const [{ data: pagine }, { data: elementi }, { data: dominio }, { data: eventi }] = await Promise.all([
+    const [{ data: pagine }, { data: elementi }, dominio, { data: eventi }] = await Promise.all([
       supabaseAdmin.from('pagine').select('slug, updated_at').eq('entity_tipo', tipo).eq('entity_id', entity.id)
         .eq('status', 'pubblicata').neq('slug', '__home__'),
       supabaseAdmin.from('vetrina_elementi').select('slug, updated_at').eq('entity_tipo', tipo).eq('entity_id', entity.id)
         .eq('status', 'pubblicata'),
-      supabaseAdmin.from('domini').select('dominio').eq('entity_tipo', tipo).eq('entity_id', entity.id)
-        .eq('stato', 'attivo').eq('tipo', 'custom').limit(1).maybeSingle(),
+      // ⚠️ La stessa funzione che decide il `canonical` delle pagine. Prima qui
+      // si guardava solo il dominio `custom`, e un sito che ha solo il
+      // sottodominio dichiarava nella sitemap un indirizzo diverso da quello
+      // che la pagina stessa indica come originale: elencare un indirizzo e
+      // poi dire «non è questo» è il modo più rapido per farsi ignorare.
+      hostUfficiale(entity.id),
       // ⛔ Gli eventi non erano in nessuna sitemap: la pagina più condivisa che
       // abbiamo — quella che i clienti spingono a pagamento — non era dichiarata
       // da nessuna parte. Ci vanno **anche i conclusi**, perché il sito ora li
@@ -42,12 +47,16 @@ export async function GET(request, props) {
     ])
 
     const clientUrl = (process.env.CLIENT_URL ?? '').trim() || 'https://www.oltrenova.com'
-    const baseOrigin = dominio?.dominio ? `https://${dominio.dominio}` : clientUrl
-    const base = `${baseOrigin}/${prefixMap[tipo]}/${slug}`
+    const baseOrigin = dominio ? `https://${dominio}` : clientUrl
+    // ⚠️ Sul proprio indirizzo il sito sta alla radice: `/p/menu`, non
+    // `/r/garage22/p/menu`. Il secondo risponde lo stesso — il middleware lo
+    // riconosce — ed è proprio il problema: sarebbe un SECONDO indirizzo per
+    // la stessa pagina, dichiarato da noi, mentre la pagina ne indica un altro.
+    const base = dominio ? baseOrigin : `${baseOrigin}/${prefixMap[tipo]}/${slug}`
     const now = new Date().toISOString().split('T')[0]
 
     const urls = [
-      `  <url><loc>${dominio?.dominio ? `https://${dominio.dominio}` : base}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>`,
+      `  <url><loc>${base}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>`,
       ...(pagine || []).map(p =>
         `  <url><loc>${base}/p/${p.slug}</loc><lastmod>${(p.updated_at || now).split('T')[0]}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`
       ),
