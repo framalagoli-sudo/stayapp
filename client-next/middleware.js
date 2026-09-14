@@ -33,6 +33,56 @@ function isGlobalPublicPath(pathname) {
   return GLOBAL_PUBLIC_PATHS.some(r => pathname === r || pathname.startsWith(r + '/'))
 }
 
+// ── Un sito, un indirizzo ────────────────────────────────────────────────────
+//
+// Lo stesso sito vive su tre indirizzi: il nostro percorso, il sottodominio e —
+// quando il cliente ce l'ha — il suo dominio. Il `canonical` lo diceva già ai
+// motori di ricerca, ma una persona che riceve un link vede comunque il nostro
+// nome al posto del suo. Da qui in poi: **se un dominio c'è, si va lì.**
+//
+// ⚠️ Redirect **temporaneo (307)**, non permanente. Un 301 i browser lo tengono
+// in cache per sempre: se domani quel dominio scade o il cliente se ne va,
+// continuerebbero ad andare su un indirizzo morto e non potremmo più rimediare.
+// La parte per i motori la fa il `canonical`, che punta già lì.
+//
+// ⚠️ Vale solo sui NOSTRI domini veri: in locale e nelle anteprime di Vercel si
+// resta dove si è, altrimenti non si potrebbe più lavorare su una copia.
+const PREFISSI = { s: 'struttura', r: 'ristorante', a: 'attivita' }
+
+async function dominioUfficiale(request, query) {
+  try {
+    const r = await fetch(`${API_BASE}/api/public/dominio-ufficiale?${query}`, { next: { revalidate: 60 } })
+    if (!r.ok) return null
+    return (await r.json())?.dominio || null
+  } catch { return null }   // un guasto qui lascia la pagina dov'è: non la rompe
+}
+
+async function versoIlDominioDelCliente(request, hostname, pathname, lang) {
+  // Solo dal dominio della piattaforma, mai da localhost o dalle anteprime.
+  if (hostname !== STAYAPP_DOMAIN && hostname !== `www.${STAYAPP_DOMAIN}`) return null
+
+  const sito = pathname.match(/^\/(s|r|a)\/([^/?#]+)(\/.*)?$/)
+  const evento = pathname.match(/^\/eventi\/([^/?#]+)$/)
+  let dominio = null, resto = ''
+
+  if (sito) {
+    dominio = await dominioUfficiale(request, `tipo=${PREFISSI[sito[1]]}&slug=${encodeURIComponent(sito[2])}`)
+    resto = sito[3] || '/'
+  } else if (evento) {
+    // L'evento sta alla radice, non sotto il sito: il percorso resta uguale.
+    dominio = await dominioUfficiale(request, `evento=${encodeURIComponent(evento[1])}`)
+    resto = pathname
+  } else return null
+
+  if (!dominio || dominio === hostname) return null
+
+  const destinazione = new URL(`${lang === 'en' ? '/en' : ''}${resto}`, `https://${dominio}`)
+  // La query originale si porta dietro tutto: `?qr=1` (l'app del QR), il token
+  // di anteprima, le etichette delle campagne.
+  destinazione.search = request.nextUrl.search
+  return NextResponse.redirect(destinazione, 307)
+}
+
 export async function middleware(request) {
   const hostname = request.headers.get('host')?.split(':')[0] || ''
   let pathname = request.nextUrl.pathname
@@ -47,6 +97,9 @@ export async function middleware(request) {
 
   // Domini propri di OltreNova
   if (isOwnDomain(hostname)) {
+    // Se questo sito ha un dominio suo, si va lì: un sito, un indirizzo.
+    const verso = await versoIlDominioDelCliente(request, hostname, pathname, lang)
+    if (verso) return verso
     if (!lang) return NextResponse.next()  // IT a root → routing normale
     const url = request.nextUrl.clone()
     url.pathname = pathname               // URL nel browser resta /en/... (SEO), serviamo la pagina IT-path
@@ -76,6 +129,18 @@ export async function middleware(request) {
     if (!data?.entity_tipo || !data?.entity_slug) return NextResponse.next()
 
     const { entity_tipo: tipo, entity_slug: slug } = data
+
+    // Anche il sottodominio che diamo noi cede il passo al dominio del cliente:
+    // altrimenti resterebbe in concorrenza proprio con l'indirizzo che deve
+    // vincere. Chi è già sul dominio giusto non viene toccato (`!== hostname`).
+    if (data.tipo === 'subdomain') {
+      const proprio = await dominioUfficiale(request, `tipo=${tipo}&slug=${encodeURIComponent(slug)}`)
+      if (proprio && proprio !== hostname) {
+        const destinazione = new URL(`${lang === 'en' ? '/en' : ''}${pathname}`, `https://${proprio}`)
+        destinazione.search = request.nextUrl.search
+        return NextResponse.redirect(destinazione, 307)
+      }
+    }
     const prefix = tipo === 'struttura' ? 's' : tipo === 'ristorante' ? 'r' : 'a'
 
     // Rewrite trasparente: fondaconarni.com/qualsiasi-path → /{prefix}/{slug}/...
