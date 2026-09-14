@@ -11,6 +11,7 @@ import { ReviewSourceLogo } from '@/lib/reviewLogos'
 import { RichText, richIsEmpty } from '@/lib/richText'
 import { ricco } from '@/lib/testo-ricco'
 import { t as tr } from '@/lib/i18n'
+import { focalValido } from '@/lib/formati-foto'
 import { oraLocale } from '@/lib/fuso'
 import { getPreset, fieldOptions } from '@/lib/vetrinePresets'
 
@@ -1228,7 +1229,9 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                 {items.map(m => (
                   <div key={m.id} style={{ textAlign: 'center' }}>
                     {m.photo_url
-                      ? <img src={m.photo_url} alt={m.nome} style={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover', marginBottom: 14, border: `3px solid ${primary}30` }} />
+                      // ⚠️ Il punto focale finisce in una proprietà CSS: passa dal
+                      // controllo, mai grezzo. In mancanza, il centro come prima.
+                      ? <img src={m.photo_url} alt={m.nome} style={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover', objectPosition: focalValido(m.photo_focal) || 'center', marginBottom: 14, border: `3px solid ${primary}30` }} />
                       : <div style={{ width: 96, height: 96, borderRadius: '50%', background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', fontSize: 32 }}>👤</div>
                     }
                     <div style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, color: cTitle, marginBottom: 4 }} {...ricco(m.nome)} />

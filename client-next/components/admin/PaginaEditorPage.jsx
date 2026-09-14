@@ -104,6 +104,20 @@ function ItemListEditor({ items = [], onChange, fields, newItem, entityId, entit
                       <UploadBtn label="Carica" entityId={entityId} entityTipo={entityTipo} onUrl={url => update(idx, f.key, url)} />
                     </div>
                     <input type="text" value={it[f.key] || ''} onChange={e => update(idx, f.key, e.target.value)} placeholder="https://..." style={inputStyle()} />
+                    {/* Il ritaglio taglia: senza dire quale parte tenere, una foto
+                        di gruppo o un viso di lato finisce fuori dal cerchio.
+                        Stesso selettore della copertina di un evento. */}
+                    {f.focalKey && it[f.key] && (
+                      <div style={{ marginTop: 8 }}>
+                        <FocalPointPicker src={it[f.key]} value={it[f.focalKey]} onChange={v => update(idx, f.focalKey, v)} hint={false} intera />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
+                          <img src={it[f.key]} alt="" style={{ width: 56, height: 56, borderRadius: f.anteprima === 'cerchio' ? '50%' : 8, objectFit: 'cover', objectPosition: it[f.focalKey] || 'center', display: 'block', border: '1px solid #e8e8ee' }} />
+                          <span style={{ fontSize: 11, color: '#888', lineHeight: 1.5 }}>
+                            Clicca sul viso qui sopra: è la parte che resta nel cerchio.
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 : f.type === 'textarea'
                 ? <textarea value={it[f.key] || ''} onChange={e => update(idx, f.key, e.target.value)} rows={f.rows || 3} style={inputStyle()} />
@@ -726,9 +740,9 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
             dirglielo — e passargli l'entità, senza cui il pulsante non sa dove
             mettere il file. */}
         <ItemListEditor items={data.items} onChange={v => upd('items', v)} entityId={entityId} entityTipo={entityTipo}
-          newItem={{ photo_url: '', nome: '', ruolo: '', bio: '' }}
+          newItem={{ photo_url: '', photo_focal: '', nome: '', ruolo: '', bio: '' }}
           fields={[
-            { key: 'photo_url', label: 'Foto (ritagliata a cerchio)', type: 'image' },
+            { key: 'photo_url', label: 'Foto (ritagliata a cerchio)', type: 'image', focalKey: 'photo_focal', anteprima: 'cerchio' },
             { key: 'nome', label: 'Nome' },
             { key: 'ruolo', label: 'Ruolo' },
             { key: 'bio', label: 'Breve bio', type: 'textarea', rows: 2 },
