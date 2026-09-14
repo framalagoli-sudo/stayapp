@@ -21,10 +21,16 @@ config({ path: '.env.test' })
 const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, TEST_URL = 'https://www.oltrenova.com' } = process.env
 const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
 
+// ⛔ Leggeva dalle vecchie tabelle (`properties`, `ristoranti`, `attivita`),
+// che dal 25/08/2026 sono **ferme**: i trigger le aggiornano verso `entita`, non
+// il contrario. Il 14/09 il test ha bocciato un deploy sano perché lì il
+// minisito di `prova` risultava ancora acceso, mentre la pagina — che legge
+// `entita` — mostrava l'app dell'ospite. Una sonda che interroga una sorgente
+// diversa da quella che usa il codice misura un mondo che non esiste più.
 const TYPES = [
-  { table: 'properties', prefix: 's' },
-  { table: 'ristoranti', prefix: 'r' },
-  { table: 'attivita',   prefix: 'a' },
+  { tipo: 'struttura',  prefix: 's' },
+  { tipo: 'ristorante', prefix: 'r' },
+  { tipo: 'attivita',   prefix: 'a' },
 ]
 
 // Testo visibile nel <body> dopo aver tolto <script> e <style>.
@@ -34,16 +40,17 @@ function visibleText(html) {
   return body.replace(/<[^>]+>/g, ' ').replace(/&[a-z#0-9]+;/gi, ' ').replace(/\s+/g, ' ').trim()
 }
 
-async function activeMinisito(table) {
-  const { data } = await admin.from(table).select('slug, name, minisito').eq('active', true).limit(50)
+async function activeMinisito(tipo) {
+  const { data } = await admin.from('entita')
+    .select('slug, name, minisito').eq('tipo', tipo).eq('active', true).limit(50)
   return (data || []).find((e) => e?.minisito?.active && e.slug && e.name) || null
 }
 
 test.describe('Render pubblico siti — cross-browser safety net', () => {
   test('il contenuto dei minisiti è nell\'HTML del server (no white screen)', async ({ request }) => {
     let tested = 0
-    for (const { table, prefix } of TYPES) {
-      const entity = await activeMinisito(table)
+    for (const { tipo, prefix } of TYPES) {
+      const entity = await activeMinisito(tipo)
       if (!entity) continue
       const path = `/${prefix}/${entity.slug}`
       const res = await request.get(path)
@@ -71,8 +78,8 @@ test.describe('Render pubblico siti — cross-browser safety net', () => {
     expect(home.status(), '/en (marketing) deve rispondere 200, non 404').toBe(200)
 
     let tested = 0
-    for (const { table, prefix } of TYPES) {
-      const entity = await activeMinisito(table)
+    for (const { tipo, prefix } of TYPES) {
+      const entity = await activeMinisito(tipo)
       if (!entity) continue
       const path = `/en/${prefix}/${entity.slug}`
       const res = await request.get(path)
