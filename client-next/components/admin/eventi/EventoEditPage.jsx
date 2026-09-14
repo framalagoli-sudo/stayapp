@@ -5,6 +5,7 @@ import { useAzienda } from '../../../context/AziendaContext'
 import { apiFetch, uploadMedia } from '../../../lib/api'
 import { FORMATI, FORMATO_PREDEFINITO, rapportoDi, fotoTroppoPesante } from '@/lib/formati-foto'
 import { FocalPointPicker } from '@/components/admin/FocalPointPicker'
+import { SelettoreFormato } from '@/components/admin/SelettoreFormato'
 import { perCampoDataOra, daCampoDataOra } from '@/lib/fuso'
 import { Trash2, Plus, X, Upload, Share2 } from 'lucide-react'
 import PostSocialModal from '../../../components/admin/PostSocialModal'
@@ -318,31 +319,10 @@ export default function EventoEditPage() {
             {cover && (
               <>
                 <div style={{ marginTop: 14, marginBottom: 10 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 2 }}>Formato</div>
-                  <div style={{ fontSize: 12.5, color: '#888', marginBottom: 10, lineHeight: 1.5 }}>
-                    Come si vede la foto nella pagina dell’evento. Nell’elenco tutte le schede
-                    restano della stessa forma, così la pagina non si scompone.
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {FORMATI.map(f => {
-                      const scelto = formato === f.chiave
-                      return (
-                        <button key={f.chiave} type="button" onClick={() => setFormato(f.chiave)}
-                          style={{ display: 'flex', alignItems: 'center', gap: 9, background: scelto ? '#e8f7f7' : '#fff',
-                            border: `1.5px solid ${scelto ? '#00b5b5' : '#e2e2e2'}`, borderRadius: 10,
-                            padding: '9px 13px 9px 10px', cursor: 'pointer', textAlign: 'left' }}>
-                          <span style={{ width: 22, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
-                            <span style={{ display: 'block', width: '100%', aspectRatio: f.rapporto, maxHeight: 26,
-                              background: scelto ? '#00b5b5' : '#ccc', borderRadius: 3 }} />
-                          </span>
-                          <span style={{ minWidth: 0 }}>
-                            <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#1a1a2e' }}>{f.etichetta}</span>
-                            <span style={{ display: 'block', fontSize: 11.5, color: '#999' }}>{f.misura}</span>
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
+                  <SelettoreFormato
+                    valore={formato} onChange={setFormato} formati={FORMATI}
+                    aiuto="Come si vede la foto nella pagina dell’evento. Nell’elenco tutte le schede restano della stessa forma, così la pagina non si scompone."
+                  />
                 </div>
 
                 <div style={{ marginBottom: 12 }}>

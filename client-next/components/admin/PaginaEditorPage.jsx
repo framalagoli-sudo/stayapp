@@ -5,6 +5,8 @@ import { apiFetch } from '@/lib/api'
 import { LinkPicker, buildInternalLinks } from '@/components/admin/LinkPicker'
 import { IconPicker } from '@/components/admin/IconPicker'
 import { FocalPointPicker } from '@/components/admin/FocalPointPicker'
+import { SelettoreFormato } from '@/components/admin/SelettoreFormato'
+import { FORME_SCHEDA, FORMA_SCHEDA_PREDEFINITA, formaScheda } from '@/lib/formati-foto'
 import { getPreset as getVetrinaPreset } from '@/lib/vetrinePresets'
 import {
   GripVertical, AlignLeft, Image, Grid, Users, List, Star, BarChart2, Zap,
@@ -110,10 +112,14 @@ function ItemListEditor({ items = [], onChange, fields, newItem, entityId, entit
                     {f.focalKey && it[f.key] && (
                       <div style={{ marginTop: 8 }}>
                         <FocalPointPicker src={it[f.key]} value={it[f.focalKey]} onChange={v => update(idx, f.focalKey, v)} hint={false} intera />
+                        {/* L'anteprima ha la forma VERA che avrà sul sito: se
+                            mostrasse sempre un cerchio, chi ha scelto il
+                            verticale sceglierebbe il ritaglio guardando la
+                            forma sbagliata. */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
-                          <img src={it[f.key]} alt="" style={{ width: 56, height: 56, borderRadius: f.anteprima === 'cerchio' ? '50%' : 8, objectFit: 'cover', objectPosition: it[f.focalKey] || 'center', display: 'block', border: '1px solid #e8e8ee' }} />
+                          <img src={it[f.key]} alt="" style={{ width: 56, aspectRatio: f.anteprimaTonda ? '1 / 1' : (f.anteprima || '1 / 1'), borderRadius: f.anteprimaTonda ? '50%' : 8, objectFit: 'cover', objectPosition: it[f.focalKey] || 'center', display: 'block', border: '1px solid #e8e8ee' }} />
                           <span style={{ fontSize: 11, color: '#888', lineHeight: 1.5 }}>
-                            Clicca sul viso qui sopra: è la parte che resta nel cerchio.
+                            Clicca sul viso qui sopra: è la parte che resta nella scheda.
                           </span>
                         </div>
                       </div>
@@ -731,7 +737,9 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
           ]} />
       </div>
     )
-    case 'team': return (
+    case 'team': {
+      const forma = data.formato || FORMA_SCHEDA_PREDEFINITA
+      return (
       <div>
         <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
         {/* ⛔ La foto si poteva solo incollare come indirizzo: per mettere la
@@ -739,16 +747,30 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
             `ItemListEditor` sapeva già caricare (`type: 'image'`), mancava
             dirglielo — e passargli l'entità, senza cui il pulsante non sa dove
             mettere il file. */}
+        {/* La forma vale per TUTTE le schede insieme: se ognuna tenesse la
+            propria basterebbe una foto verticale per sfondare la riga, come
+            negli eventi. ⚠️ Senza scelta resta il cerchio, perché i blocchi
+            già online sono tondi e non si rifà la faccia di un sito a un
+            cliente che non ha chiesto niente; i blocchi nuovi nascono quadrati. */}
+        <div style={{ marginBottom: 14 }}>
+          <SelettoreFormato
+            valore={forma} formati={FORME_SCHEDA}
+            onChange={v => upd('formato', v)}
+            titolo="Forma delle schede"
+            aiuto="Come si vedono le foto delle persone sul sito. Il ritaglio si decide poi foto per foto, col punto da tenere visibile."
+          />
+        </div>
         <ItemListEditor items={data.items} onChange={v => upd('items', v)} entityId={entityId} entityTipo={entityTipo}
           newItem={{ photo_url: '', photo_focal: '', nome: '', ruolo: '', bio: '' }}
           fields={[
-            { key: 'photo_url', label: 'Foto (ritagliata a cerchio)', type: 'image', focalKey: 'photo_focal', anteprima: 'cerchio' },
+            { key: 'photo_url', label: 'Foto', type: 'image', focalKey: 'photo_focal', anteprima: formaScheda(forma).rapporto, anteprimaTonda: forma === 'cerchio' },
             { key: 'nome', label: 'Nome' },
             { key: 'ruolo', label: 'Ruolo' },
             { key: 'bio', label: 'Breve bio', type: 'textarea', rows: 2 },
           ]} />
       </div>
-    )
+      )
+    }
     case 'steps': return (
       <div>
         <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />

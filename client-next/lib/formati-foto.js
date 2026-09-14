@@ -24,6 +24,27 @@ export const FORMATI = [
 
 export const FORMATO_PREDEFINITO = 'orizzontale'
 
+// La forma delle schede in un elenco di persone o cose (il blocco Team, e ogni
+// griglia che verrà). Stessi formati di sopra più il ritaglio tondo.
+//
+// ⚠️ `cerchio` resta il valore in **assenza di scelta**: i blocchi Team creati
+// finora sono tondi, e cambiarli tutti insieme rifarebbe la faccia dei siti di
+// clienti che non hanno chiesto niente. Chi vuole il resto ora può sceglierlo,
+// e i blocchi NUOVI nascono quadrati — più vicino a come si guardano le foto
+// oggi — senza toccare quelli esistenti.
+export const FORME_SCHEDA = [
+  { chiave: 'cerchio', etichetta: 'Cerchio', misura: 'ritaglio tondo', rapporto: '1 / 1' },
+  ...FORMATI,
+]
+export const FORMA_SCHEDA_PREDEFINITA = 'cerchio'
+export const FORMA_SCHEDA_NUOVA = 'quadrato'
+
+// Il rapporto per il CSS, e se è tonda. Mai la stringa che arriva dai dati.
+export function formaScheda(chiave) {
+  return FORME_SCHEDA.find(f => f.chiave === chiave)
+    || FORME_SCHEDA.find(f => f.chiave === FORMA_SCHEDA_PREDEFINITA)
+}
+
 // Il rapporto da dare al CSS. Mai la stringa dell'utente: sempre una di queste.
 export function rapportoDi(chiave) {
   return (FORMATI.find(f => f.chiave === chiave) || FORMATI.find(f => f.chiave === FORMATO_PREDEFINITO)).rapporto

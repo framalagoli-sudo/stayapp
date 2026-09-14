@@ -11,7 +11,7 @@ import { ReviewSourceLogo } from '@/lib/reviewLogos'
 import { RichText, richIsEmpty } from '@/lib/richText'
 import { ricco } from '@/lib/testo-ricco'
 import { t as tr } from '@/lib/i18n'
-import { focalValido } from '@/lib/formati-foto'
+import { focalValido, formaScheda } from '@/lib/formati-foto'
 import { oraLocale } from '@/lib/fuso'
 import { getPreset, fieldOptions } from '@/lib/vetrinePresets'
 
@@ -1221,6 +1221,16 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
       case 'team': {
         const items = (d.items || []).filter(i => i.nome)
         if (!items.length) return null
+        // La forma la sceglie il cliente. ⚠️ Senza scelta resta il cerchio: i
+        // blocchi già online sono tondi. E la chiave non arriva mai grezza al
+        // CSS — passa da `formaScheda`, che cerca in un catalogo chiuso.
+        const forma = formaScheda(d.formato)
+        const tonda = forma.chiave === 'cerchio'
+        // Tonda = come prima, 96px fissi. Le altre forme riempiono la colonna,
+        // altrimenti una scheda verticale in 96px non si vedrebbe.
+        const foto = tonda
+          ? { width: 96, height: 96, borderRadius: '50%', margin: '0 auto 14px' }
+          : { width: '100%', aspectRatio: forma.rapporto, borderRadius: 12, marginBottom: 14 }
         return (
           <section key={block.id} style={{ padding: '72px 0', background: '#fafafa' }}>
             <div className="lbr-section">
@@ -1231,8 +1241,8 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                     {m.photo_url
                       // ⚠️ Il punto focale finisce in una proprietà CSS: passa dal
                       // controllo, mai grezzo. In mancanza, il centro come prima.
-                      ? <img src={m.photo_url} alt={m.nome} style={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover', objectPosition: focalValido(m.photo_focal) || 'center', marginBottom: 14, border: `3px solid ${primary}30` }} />
-                      : <div style={{ width: 96, height: 96, borderRadius: '50%', background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', fontSize: 32 }}>👤</div>
+                      ? <img src={m.photo_url} alt={m.nome} style={{ ...foto, objectFit: 'cover', objectPosition: focalValido(m.photo_focal) || 'center', display: 'block', border: `3px solid ${primary}30`, boxSizing: 'border-box' }} />
+                      : <div style={{ ...foto, background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>👤</div>
                     }
                     <div style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, color: cTitle, marginBottom: 4 }} {...ricco(m.nome)} />
                     {m.ruolo && <div style={{ fontSize: 12, color: primary, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>{m.ruolo}</div>}

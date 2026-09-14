@@ -69,7 +69,10 @@ export const BLOCK_DEFAULTS = {
   pulsante:     { text: 'Scopri di più', url: '', style: 'filled', size: 'medium', align: 'center' },
   foto_testo:   { title: '', text: '', image_url: '', inverti: false, button_label: '', button_url: '' },
   paragrafi:    { titolo: '', items: [] },
-  team:         { titolo: '', items: [] },
+  // ⚠️ I blocchi NUOVI nascono quadrati; quelli già online non hanno la chiave
+  // e restano tondi, perché si sceglie la faccia del proprio sito, non gliela
+  // si cambia sotto. Il cliente può passare all'altra forma quando vuole.
+  team:         { titolo: '', formato: 'quadrato', items: [] },
   steps:        { titolo: '', items: [] },
   highlights:   { titolo: '', items: [] },
   stats:        { titolo: '', items: [] },
