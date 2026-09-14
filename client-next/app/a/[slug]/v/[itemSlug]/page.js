@@ -3,6 +3,7 @@ import { getAttivita, getElementoVetrina } from '@/lib/guest-data'
 import { localizeEntity } from '@/lib/translate'
 import GuestSubPage from '@/components/guest/GuestSubPage'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
+import { fuoriDaiMotori, METADATA_NASCOSTA } from '@/lib/visibilita-motori'
 
 export const maxDuration = 30
 
@@ -40,6 +41,8 @@ export async function generateMetadata(props) {
   const url = lang === 'en' ? enUrl : itUrl
   return {
     title, description,
+    // Se il sito è nascosto ai motori, lo è anche la sua vetrina.
+    ...(fuoriDaiMotori(attivita, searchParams) && METADATA_NASCOSTA),
     alternates: { canonical: url, languages: { it: itUrl, en: enUrl, 'x-default': itUrl } },
     // Senza `siteName` Facebook scrive il DOMINIO in maiuscolo sopra il titolo:
     // su un link oltrenova.com diventa «OLTRENOVA.COM» sul sito di un cliente,

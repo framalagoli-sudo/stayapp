@@ -7,6 +7,7 @@ import { trovaEvento } from '@/lib/evento-indirizzo'
 import { buildEventoSchema } from '@/lib/evento-schema'
 import { eventoConcluso } from '@/lib/evento-concluso'
 import { permanentRedirect, notFound } from 'next/navigation'
+import { fuoriDaiMotori, METADATA_NASCOSTA } from '@/lib/visibilita-motori'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,7 +48,10 @@ export async function generateMetadata(props) {
     let ente = null
     if (ev.entity_id) {
       const { data } = await supabaseAdmin.from('entita')
-        .select('name, slug, cover_url, logo_url').eq('id', ev.entity_id).maybeSingle()
+        // `indicizzabile` e `minisito`: un evento di un sito che non vuole
+        // farsi trovare non deve finire nei motori dalla porta di servizio —
+        // la pagina dell'evento sta su un indirizzo globale, non sotto il sito.
+        .select('name, slug, cover_url, logo_url, indicizzabile, minisito').eq('id', ev.entity_id).maybeSingle()
       ente = data
     }
 
@@ -83,6 +87,10 @@ export async function generateMetadata(props) {
       title: siteName ? `${ev.title} — ${siteName}` : ev.title,
       description: descrizione,
       alternates: { canonical: url },
+      // ⚠️ L'evento di un sito nascosto resta fuori dai motori: l'indirizzo è
+      // globale (`/eventi/…`), quindi il `noindex` del sito da solo non lo
+      // coprirebbe. Un evento aziendale, che non ha entità, resta visibile.
+      ...(ente && fuoriDaiMotori(ente, {}) && METADATA_NASCOSTA),
       openGraph: {
         title: ev.title,
         description: descrizione,

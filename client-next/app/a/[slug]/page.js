@@ -5,6 +5,7 @@ import { localizeEntity } from '@/lib/translate'
 import LandingAttivita from '@/components/guest/LandingAttivita'
 import AttivitaPWA from '@/components/guest/AttivitaPWA'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
+import { fuoriDaiMotori, METADATA_NASCOSTA } from '@/lib/visibilita-motori'
 
 // Copre la traduzione Haiku al primo caricamento EN (cache miss). Visite dopo = cache, istantanee.
 export const maxDuration = 30
@@ -32,6 +33,9 @@ export async function generateMetadata(props) {
   return {
     title,
     description,
+    // ⛔ Mancava anche qui: la regola vale per tutti e tre i tipi, non solo
+    // per le strutture.
+    ...(fuoriDaiMotori(attivita, searchParams) && METADATA_NASCOSTA),
     manifest: `/api/manifest/a/${slug}`,
     appleWebApp: { capable: true, statusBarStyle: 'default', title: attivita.name },
     icons: { apple: attivita.logo_url || '/icons/apple-touch-icon.png' },

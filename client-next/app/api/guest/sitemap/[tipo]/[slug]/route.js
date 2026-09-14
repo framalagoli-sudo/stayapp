@@ -1,4 +1,5 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
+import { fuoriDaiMotori } from '@/lib/visibilita-motori'
 
 export async function GET(request, props) {
   const params = await props.params;
@@ -9,8 +10,19 @@ export async function GET(request, props) {
     const table = tableMap[tipo]
     if (!table) return new Response('Tipo non valido', { status: 400 })
 
-    const { data: entity } = await supabaseAdmin.from(table).select('id').eq('slug', slug).eq('active', true).single()
+    const { data: entity } = await supabaseAdmin.from(table)
+      .select('id, indicizzabile, minisito').eq('slug', slug).eq('active', true).single()
     if (!entity) return new Response('Entità non trovata', { status: 404 })
+
+    // Un sito che ha scelto di non farsi trovare non dichiara niente: la
+    // sitemap è un invito a indicizzare, e sarebbe il contrario di ciò che il
+    // cliente ha chiesto. Si risponde con un elenco vuoto, non con un errore.
+    if (fuoriDaiMotori(entity, {})) {
+      return new Response(
+        '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n</urlset>',
+        { headers: { 'Content-Type': 'application/xml; charset=utf-8' } }
+      )
+    }
 
     const [{ data: pagine }, { data: elementi }, { data: dominio }, { data: eventi }] = await Promise.all([
       supabaseAdmin.from('pagine').select('slug, updated_at').eq('entity_tipo', tipo).eq('entity_id', entity.id)

@@ -61,6 +61,9 @@ const CAMPI_ENTITA = [
   // ⚠️ Il punteggio letto da Google serve al blocco che lo mostra: senza questa
   // riga si salverebbe e non si vedrebbe — è già successo due volte in un giorno.
   'recensioni_esterne',
+  // Senza questa riga la pagina non saprebbe di doversi nascondere ai motori
+  // di ricerca: si salverebbe nel pannello e non cambierebbe niente sul sito.
+  'indicizzabile',
 ].join(', ')
 
 // L'app dell'ospite (dietro il QR della camera) è l'unica che vede le

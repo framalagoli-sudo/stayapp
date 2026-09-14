@@ -167,6 +167,9 @@ export const CAMPI_MODIFICABILI = [
   'services', 'activities', 'excursions', 'menu', 'amenities', 'restaurant',
   'wifi_name', 'wifi_password', 'checkin_time', 'checkout_time', 'rules',
   'chatbot', 'privacy_data', 'active',
+  // «Questo sito è visibile ai motori di ricerca?» — nasce spento sulle entità
+  // nuove (migration 116) e lo accende il cliente quando il sito è pronto.
+  'indicizzabile',
   // Nomi storici che il pannello manda ancora: `dallaFormaStorica` li riporta
   // a `moduli` e a `settore` prima della scrittura.
   'modules', 'pwa', 'tipo',

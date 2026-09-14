@@ -5,6 +5,7 @@ import { localizeEntity } from '@/lib/translate'
 import LandingStruttura from '@/components/guest/LandingStruttura'
 import GuestApp from '@/components/guest/GuestApp'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
+import { fuoriDaiMotori, METADATA_NASCOSTA } from '@/lib/visibilita-motori'
 
 // Copre la traduzione Haiku al primo caricamento EN (cache miss). Visite dopo = cache, istantanee.
 export const maxDuration = 30
@@ -18,13 +19,9 @@ export async function generateMetadata(props) {
 
   const lang = searchParams?._lang === 'en' ? 'en' : 'it'
   const mini = property.minisito || {}
-  // L'app dell'ospite non è una pagina da motore di ricerca: è quello che si
-  // apre inquadrando il QR in camera, e contiene la password del WiFi, gli
-  // orari e le regole della casa. Senza questo, basta che un link finisca in
-  // giro perché Google indicizzi la password di un cliente — misurato il
-  // 25/08/2026 su una struttura vera. Il minisito, che è la pagina di
-  // marketing, resta indicizzabile come prima.
-  const mostraApp = searchParams?.qr === '1' || !mini.active
+  // Chi resta fuori dai motori di ricerca lo decide `fuoriDaiMotori`, in un
+  // posto solo: l'app del QR (che contiene la password del WiFi), un minisito
+  // spento, o un cliente che ha deciso di non farsi ancora trovare.
   const title = mini.seo_title || property.name
   const description = mini.seo_description || property.description || ''
   // Meglio il logo che un'anteprima muta: senza immagine Facebook mostra un
@@ -39,7 +36,7 @@ export async function generateMetadata(props) {
   return {
     title,
     description,
-    ...(mostraApp && { robots: { index: false, follow: false } }),
+    ...(fuoriDaiMotori(property, searchParams) && METADATA_NASCOSTA),
     manifest: `/api/manifest/s/${slug}`,
     appleWebApp: { capable: true, statusBarStyle: 'default', title: property.name },
     icons: { apple: property.logo_url || '/icons/apple-touch-icon.png' },

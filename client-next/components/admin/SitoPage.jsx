@@ -10,6 +10,7 @@ import {
   Search, FileText, SearchX, Navigation, PenLine, Layers, History, Languages, Settings, Sparkles, CornerDownRight,
 } from 'lucide-react'
 import TraduzioniSito from '@/components/admin/TraduzioniSito'
+import VisibilitaMotori from '@/components/admin/VisibilitaMotori'
 
 // ── Template definitions ──────────────────────────────────────────────────────
 const TEMPLATES = [
@@ -571,6 +572,18 @@ export default function SitoPage({ entityTipo }) {
 
   return (
     <div style={{ maxWidth: 820 }}>
+
+      {/* ── Visibile su Google? ──────────────────────────────────────────────
+          In cima e non dentro una scheda: è una scelta che il cliente deve
+          vedere senza cercarla. Un sito nuovo nasce nascosto — quello che
+          Google fotografa il primo giorno è il testo di esempio — e si accende
+          da qui quando è pronto. */}
+      <VisibilitaMotori
+        entityData={entityData}
+        entityTipo={entityTipo}
+        entityId={entityId}
+        onCambiata={ind => setEntityData(d => ({ ...d, indicizzabile: ind }))}
+      />
 
       {/* ── Tab bar ── */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 28, borderBottom: '2px solid #eeeeee' }}>

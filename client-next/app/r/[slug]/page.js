@@ -5,6 +5,7 @@ import { localizeEntity } from '@/lib/translate'
 import LandingRistorante from '@/components/guest/LandingRistorante'
 import RestaurantApp from '@/components/guest/RestaurantApp'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
+import { fuoriDaiMotori, METADATA_NASCOSTA } from '@/lib/visibilita-motori'
 
 // Copre la traduzione Haiku al primo caricamento EN (cache miss). Visite dopo = cache, istantanee.
 export const maxDuration = 30
@@ -32,6 +33,9 @@ export async function generateMetadata(props) {
   return {
     title,
     description,
+    // ⛔ Mancava: l'app del QR di un ristorante era indicizzabile, mentre
+    // quella di una struttura no. La regola è una sola, per tutti e tre i tipi.
+    ...(fuoriDaiMotori(ristorante, searchParams) && METADATA_NASCOSTA),
     manifest: `/api/manifest/r/${slug}`,
     appleWebApp: { capable: true, statusBarStyle: 'default', title: ristorante.name },
     icons: { apple: ristorante.logo_url || '/icons/apple-touch-icon.png' },
