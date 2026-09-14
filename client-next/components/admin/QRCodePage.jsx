@@ -27,9 +27,25 @@ async function downloadQR(url, filename) {
 
 function QRCard({ name, tipo, slug }) {
   const [copied, setCopied] = useState(false)
-  const pwaUrl = tipo === 'ristorante' ? `${baseUrl}/r/${slug}?qr=1`
-              : tipo === 'attivita'   ? `${baseUrl}/a/${slug}?qr=1`
-              :                        `${baseUrl}/s/${slug}?qr=1`
+  // `undefined` = non lo sappiamo ancora · `null` = non ha un dominio suo
+  const [dominio, setDominio] = useState(undefined)
+
+  // ⚠️ Il QR si incide sul dominio del cliente quando ce l'ha. Dal nostro
+  // indirizzo ci si arriverebbe lo stesso — c'è il redirect — ma sull'adesivo
+  // attaccato al tavolo ci resta scritto il NOSTRO nome, e un adesivo stampato
+  // non si aggiorna. Finché la risposta non arriva il codice non si mostra:
+  // un PNG scaricato nell'istante sbagliato è sbagliato per sempre.
+  useEffect(() => {
+    let vivo = true
+    fetch(`/api/public/dominio-ufficiale?tipo=${tipo}&slug=${encodeURIComponent(slug)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => vivo && setDominio(d?.dominio || null))
+      .catch(() => vivo && setDominio(null))
+    return () => { vivo = false }
+  }, [tipo, slug])
+
+  const percorso = tipo === 'ristorante' ? `/r/${slug}` : tipo === 'attivita' ? `/a/${slug}` : `/s/${slug}`
+  const pwaUrl = dominio ? `https://${dominio}/?qr=1` : `${baseUrl}${percorso}?qr=1`
   const typeColor = tipo === 'ristorante' ? '#e63946' : tipo === 'attivita' ? '#7c3aed' : '#1a1a2e'
   const typeLabel = tipo === 'ristorante' ? 'Ristorante' : tipo === 'attivita' ? 'Attività' : 'Struttura'
 
@@ -61,11 +77,16 @@ function QRCard({ name, tipo, slug }) {
 
       {/* QR Code */}
       <div style={{ padding: 12, background: '#fff', borderRadius: 12, border: '1px solid #eee', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-        <img
-          src={qrSrc(pwaUrl)}
-          alt={`QR ${name}`}
-          style={{ display: 'block', width: 200, height: 200 }}
-        />
+        {dominio === undefined
+          ? <div style={{ width: 200, height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb', fontSize: 12 }}>
+              Preparo il codice…
+            </div>
+          : <img
+              src={qrSrc(pwaUrl)}
+              alt={`QR ${name}`}
+              style={{ display: 'block', width: 200, height: 200 }}
+            />
+        }
       </div>
 
       {/* URL */}
@@ -74,11 +95,11 @@ function QRCard({ name, tipo, slug }) {
         padding: '10px 14px', fontSize: 12, color: '#555',
         wordBreak: 'break-all', lineHeight: 1.5,
       }}>
-        {pwaUrl}
+        {dominio === undefined ? '…' : pwaUrl}
       </div>
 
-      {/* Azioni */}
-      <div style={{ display: 'flex', gap: 8, width: '100%' }}>
+      {/* Azioni — spente finché non sappiamo su quale indirizzo va inciso */}
+      <div style={{ display: 'flex', gap: 8, width: '100%', opacity: dominio === undefined ? 0.45 : 1, pointerEvents: dominio === undefined ? 'none' : 'auto' }}>
         <button onClick={copyUrl} style={{
           flex: 1, padding: '10px 8px', borderRadius: 10, border: '1px solid #ddd',
           background: copied ? '#f0fff4' : '#fafafa', cursor: 'pointer',
