@@ -26,3 +26,28 @@ l'interruttore. *Una regola scritta in uno dei tre posti non è una regola.*
   dice che i tempi li decide lui e rimanda a Search Console.
 - I due siti di prova (`prova`, `struttura-test`) sono spenti e non indicizzabili
   dal 14/09.
+
+## 🔗 Un sito, un indirizzo ufficiale (14/09/2026)
+
+Lo stesso sito vive su **tre** indirizzi — `oltrenova.com/{s|r|a}/slug`, il
+**sottodominio** `slug.oltrenova.com` e il **dominio del cliente** — e ognuno
+dichiarava sé stesso come originale. Per un motore sono siti gemelli: sceglie
+lui, e di solito vince il dominio più forte (il nostro). Il cliente paga un
+dominio per farsi trovare col proprio nome e compariva col nostro.
+
+`lib/indirizzo-ufficiale.js` → `hostUfficiale(entityId)`: **dominio del cliente
+(`tipo=custom`, `stato=attivo`) → sottodominio → percorso su oltrenova.com**.
+Applicato a siti, pagine interne, vetrina ed eventi (canonical **e** dati
+strutturati).
+
+⚠️ **L'ufficiale vince SEMPRE su quello da cui arriva la richiesta.** Con
+l'ordine opposto la prima versione sistemava solo `oltrenova.com/r/garage22`
+e lasciava `garage22.oltrenova.com` a dichiarare sé stesso — metà problema,
+scoperto solo perché dopo il deploy sono stati controllati **tutti e tre** gli
+indirizzi, non uno.
+
+⏳ **Non fatto, deciso**: il redirect 301 da oltrenova al dominio del cliente
+sarebbe più forte del canonical, ma se il dominio del cliente si rompe (DNS,
+certificato) il sito diventa irraggiungibile **anche** dal nostro indirizzo,
+che oggi è la rete di sicurezza. Da valutare quando i domini avranno mesi di
+stabilità, eventualmente per singolo cliente.
