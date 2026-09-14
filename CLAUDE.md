@@ -355,6 +355,13 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - Sonda: `probe-wifi-privacy.mjs` (verifica sia che sparisca dove non serve, sia che **resti** dove serve).
 
 
+33-bis. **🔍 Chi va nei motori di ricerca lo decide un posto solo** (14/09/2026, `lib/visibilita-motori.js`, migration `116`). Tre motivi per restare fuori: è l'**app del QR**, il **minisito è spento**, o il cliente ha spento l'interruttore **«Visibile ai motori di ricerca»**.
+    - ⛔ La regola c'era **solo per le strutture**: l'app del QR di ristoranti e attività era indicizzabile. Una regola scritta in un punto solo dei tre non è una regola — è un caso particolare che sembra una regola.
+    - `entita.indicizzabile`: le entità che esistevano restano visibili, **quelle nuove nascono invisibili**. Il giorno della registrazione il sito contiene il testo di esempio, ed è quello che Google fotograferebbe.
+    - Il divieto vale anche dove un sito nascosto rientrerebbe da una porta laterale: pagine interne, vetrina, **eventi** (indirizzo globale `/eventi/…`, quindi il noindex del sito non li copre) e **sitemap**, che per un sito nascosto risponde vuota.
+    - ⚠️ Niente `Disallow` nel robots.txt per nascondere qualcosa: per **leggere** un `noindex` il motore deve poter scaricare la pagina. Bloccarla nel robots ottiene il contrario.
+    - Nel pannello sta **in cima** alla pagina «Sito web», non dentro una scheda, e non promette Google: dice che i tempi li decide lui.
+
 34. **🛡️ La sicurezza non è una fotografia: gira a ogni deploy** (25/08/2026). Il Punto A del check era stato chiuso il 24; il 25 è saltata fuori la password WiFi di un cliente vero, esposta da una classe che nessuna delle otto sotto-fasi copriva. **Il catalogo delle classi non è chiuso**, quindi un controllo una tantum vale finché nessuno tocca il codice.
     - `deploy.ps1` lancia tre sonde dopo gli smoke: `probe-security-sweep` (204 route, con nessun token e con quello di un'altra azienda), `probe-rls-secondo-muro` (cosa legge un estraneo bussando al database, **tabelle e colonne**), `probe-colonne-pubbliche` (quali colonne escono dalle route senza login, con **elenco atteso fissato**: una colonna aggiunta domani fa scattare la segnalazione).
     - ⚠️ **Un allarme che suona sempre viene ignorato.** La sweep aveva 7 segnalazioni permanenti — route pubbliche per costruzione: guardate una per una e messe in allowlist con il motivo scritto. Ora è pulita, quindi quando suona vuol dire qualcosa.
