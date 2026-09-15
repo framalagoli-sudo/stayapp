@@ -654,7 +654,10 @@ export default function LandingPage() {
               <a href="/privacy" style={{ color: 'rgba(255,255,255,0.38)', textDecoration: 'none', fontSize: 14 }}>Privacy</a>
             </div>
             <div style={{ fontSize: 13, lineHeight: 1.7, textAlign: 'right' }}>
-              <div>© {new Date().getFullYear()} OltreNova</div>
+              {/* La ragione sociale per esteso, accanto alla partita IVA: la
+                  verifica aziendale di Meta confronta il nome legale con il sito
+                  e con il solo marchio «OltreNova» l'ha respinta (15/09/2026). */}
+              <div>© {new Date().getFullYear()} OltreNova di Francesco Malagoli</div>
               <div style={{ opacity: 0.8 }}>P.IVA 01630670550</div>
             </div>
           </div>
