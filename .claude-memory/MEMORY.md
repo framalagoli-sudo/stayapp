@@ -161,3 +161,4 @@
 - [📷 Caricamento foto: 4 MB è il tetto della piattaforma](reference_caricamento_foto.md) — misurato (413 prima della nostra route); e CampoImmagine, il campo unico che NON va forzato su gallerie e miniature
 - [⚖️ Vincolo tecnico o scelta di prodotto?](feedback_vincolo_o_scelta.md) — «il cerchio è fisso» era una riga di CSS, non un limite: le scelte le fa Francesco
 - [📅 Sessione 14/09 — un sito un indirizzo, il campo foto unico, la forma scelta dal cliente](project_session_2026_09_14.md) — 7 deploy; 4 MB misurati; 3 difetti trovati facendo altro
+- [🟦 App Meta OltreNova: com'è configurata e le trappole](reference_meta_app_setup.md) — solo caso d'uso WhatsApp; verifica aziendale nel Centro sicurezza (non nell'app); la pagina Di base salva un campo alla volta; chiavi NON ancora su Vercel
