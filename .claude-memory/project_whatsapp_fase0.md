@@ -1,8 +1,11 @@
 ---
 name: project_whatsapp_fase0
 description: WhatsApp — decisioni prese e fase 0 (liste e consensi) in produzione dal 21/08/2026; il canale vero dipende dalla verifica Meta
-metadata:
+metadata: 
+  node_type: memory
   type: project
+  originSessionId: 98e39a37-374d-43a6-a1bf-16225619363f
+  modified: 2026-09-15T10:02:02.272Z
 ---
 
 Modulo WhatsApp: **incluso nel prodotto**, voluto da Francesco come pezzo forte. Richiesto da due clienti veri: **Garage 22** ("posso mandare messaggi a una o più liste?") e **Debora Resinart**. Piano completo in `WHATSAPP.md` nel repo.
@@ -47,3 +50,14 @@ Migration `075` (4 tabelle) eseguita. In produzione ma **in attesa delle credenz
 - Pagina: stato numero con qualità tradotta, messaggi con stato approvazione, invio con anteprima del testo e **stima costi prima di premere invia**.
 
 **Bloccante attuale**: Francesco non riesce a rientrare nell'account Facebook (recupero password in avaria il 22/08), quindi l'app Meta non è ancora creata.
+
+## ⛔ Correzioni del 15/09/2026 (Meta sbloccato, accesso a developers ottenuto)
+
+- **«Codice completo» era FALSO.** Il pulsante «Collega WhatsApp» in `WhatsAppPage.jsx` fa solo `alert('Il collegamento guidato con Meta si aprirà qui.')`: il lancio dell'Embedded Signup nel browser (SDK, config, ascolto del risultato) **non esiste**. Esiste solo il lato server (`/api/whatsapp/connect` POST che scambia il codice).
+- **Embedded Signup v2 dismesso il 15/10/2026** → scrivere direttamente la v4.
+- **Coesistenza**: il numero dell'app WhatsApp Business del telefono si può collegare (storico fino a 180 gg, i messaggi dall'app restano gratis; broadcast in sola lettura, gruppi non sincronizzati, 20 msg/s). La frase nel pannello «serve un numero dedicato» è diventata falsa.
+- **Tariffe a MESSAGGIO dal 1° luglio 2025**, non più a conversazione; service gratis dal 1/11/2024, utility gratis dentro la finestra di 24h. Le tariffe in `lib/whatsapp.js` (da Spoki) vanno riallineate al listino Meta Italia.
+- **Modello deciso in bozza (da confermare con Francesco)**: un accesso per AZIENDA (Facebook Login for Business → token di sistema che non scade), asset (Pagina, Instagram, numero) assegnati alle ENTITÀ. Oggi `whatsapp_account` ha `UNIQUE(azienda_id)`: serve migration.
+- Facebook/Instagram: oggi **nessuna pubblicazione vera** (solo caption AI + piano editoriale).
+- Manca la **richiesta di cancellazione dati** che Meta pretende per le app con login Facebook.
+- Guida pubblicata: https://claude.ai/artifact/NvjsW4esEj2QHFpmB72mvM (4 decisioni aperte A–D).
