@@ -144,8 +144,11 @@ function CreditoAIBanner({ attivo, pathname }) {
   if (!attivo || !uso || uso.percentuale < 80) return null
 
   const adesso = new Date()
-  const rinnovo = new Date(Date.UTC(adesso.getUTCFullYear(), adesso.getUTCMonth() + 1, 1))
-    .toLocaleDateString('it-IT', { day: 'numeric', month: 'long', timeZone: 'UTC' })
+  const mese = new Date(Date.UTC(adesso.getUTCFullYear(), adesso.getUTCMonth() + 1, 1))
+    .toLocaleDateString('it-IT', { month: 'long', timeZone: 'UTC' })
+  const rinnovo = `1° ${mese}`
+  // «l'80%»…«l'89%» ma «il 90%»: ottanta comincia per vocale.
+  const articolo = uso.percentuale >= 80 && uso.percentuale < 90 ? "l'" : 'il '
   const finito = uso.esaurito
   return (
     <div style={{
@@ -157,7 +160,7 @@ function CreditoAIBanner({ attivo, pathname }) {
       <span style={{ fontSize: 13, color: finito ? '#c53030' : '#b7791f', fontWeight: 600 }}>
         {finito
           ? `Hai usato tutto il credito AI di questo mese: le funzioni AI ripartono il ${rinnovo}.`
-          : `Hai usato il ${uso.percentuale}% del credito AI di questo mese. Si rinnova il ${rinnovo}.`}
+          : `Hai usato ${articolo}${uso.percentuale}% del credito AI di questo mese. Si rinnova il ${rinnovo}.`}
       </span>
       <a href="mailto:oltrenova@gmail.com?subject=Credito%20AI" style={{ fontSize: 12, color: finito ? '#c53030' : '#b7791f', fontWeight: 600 }}>
         Te ne serve di più? Scrivici
