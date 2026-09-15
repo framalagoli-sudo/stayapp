@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-15T09:01:34.300Z
+  modified: 2026-09-15T09:27:40.357Z
 ---
 
 # Si riprende da qui
@@ -30,12 +30,23 @@ copertina del sito (striscia dell'app del QR), forma + punto focale sul blog
 schermo), valori ostili → null in creazione, modifica e PATCH entità.
 `prodotti.immagine_focal` esiste ma NON è usata: aspetta la vetrina dello shop.
 
-### 🛒 PROSSIMO LAVORO PROPOSTO (non iniziato): la vetrina dello shop
-Nell'editor del sito NON esiste un blocco Shop/Prodotti, e `ShopWidget` non è
-montato da nessuna parte (ultimo tocco: migrazione a Next, giugno). Pannello,
-ordini, pagamento Stripe e pagine esito ci sono; un visitatore non può vedere
-né comprare. Da fare: blocco nell'editor + render + PROVA DI UN ACQUISTO VERO
-(serve Francesco: pagamenti reali). Poi forma schede + punto focale prodotti.
+### 🛒 BLOCCO SHOP — scritto e provato, sul ramo `shop-vetrina`, NON su main
+Aspetta **migration 118** (`118_ordini_consenso.sql`): senza, ogni ordine va in
+500 (salva la prova del consenso). Verificato alle ~11:15 UTC del 15/09: non
+ancora eseguita.
+Già provato in locale col browser: schede identiche alle Offerte, esaurito,
+scorte, carrello per azienda, carrello col banner cookie aperto, consenso
+(UI + route, 400 anche con "true" stringa), scorta superata/esaurito (409),
+editor col catalogo e i due avvisi.
+**Dopo la 118**: `git checkout shop-vetrina` → dev → ordine completo con email
+`delivered@resend.dev` (MAI un indirizzo inventato: i rimbalzi rovinano la
+reputazione del dominio) → verificare riga `ordini` con privacy_* → merge →
+deploy → verifica live → **cancellare i dati di prova**: prodotti
+`33ad4bfe-3332-40b5-a3bd-9ae9d8c5e12c`, `c7070086-9a5b-4395-9dfb-7c2c553c646e`
+(azienda StayApp Development), pagina `d071c532-0359-4ab4-981f-0a2d909e772a`
+(/s/prova/p/verifica-shop-mu2gnfzn), l'ordine di prova.
+Poi: **acquisto vero con Stripe** (serve Francesco) su Garage22 o su un'azienda
+con pagamenti attivi.
 
 ### ✅ Fatto il 15/09 pomeriggio (live)
 - **Una sola galleria** (`GalleriaFoto`) al posto di 5 copie: riordino, Unsplash,
