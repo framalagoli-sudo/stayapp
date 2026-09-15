@@ -20,7 +20,7 @@ let azId = null, userId = null, entId = null
 try {
   console.log('\nIL PRIMO GIORNO DI UN CLIENTE CHE SI È REGISTRATO DA SOLO\n')
   // ── esattamente quello che fa /api/auth/signup
-  const email = `zz-percorso-${Date.now()}@playwright.internal`, pw = randomBytes(24).toString('base64url')
+  const email = `zz-percorso-${Date.now()}@playwright.internal`, pw = randomBytes(24).toString('base64url') + 'Aa1!'
   const { data: u } = await admin.auth.admin.createUser({ email, password: pw, email_confirm: true })
   userId = u.user.id
   const { data: az } = await admin.from('aziende').insert({

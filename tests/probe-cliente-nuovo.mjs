@@ -21,7 +21,7 @@ const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY } = process.e
 const L = process.env.TEST_URL || 'http://localhost:3488'
 const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth:{persistSession:false} })
 const { data: az } = await admin.from('aziende').insert({ ragione_sociale:`ZZ-DEF-${Date.now()}`, require_2fa:false }).select().single()
-const email=`probe-def-${Date.now()}@playwright.internal`, password=randomBytes(24).toString('base64url')
+const email=`probe-def-${Date.now()}@playwright.internal`, password=randomBytes(24).toString('base64url') + 'Aa1!'
 const { data:u } = await admin.auth.admin.createUser({ email, password, email_confirm:true })
 await admin.from('profiles').upsert({ id:u.user.id, role:'admin_azienda', azienda_id:az.id, full_name:'P' }, { onConflict:'id' })
 const anon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{persistSession:false} })

@@ -74,7 +74,7 @@ async function chiama(path, token, metodo = 'GET') {
 async function creaAzienda(etichetta) {
   const { data: az } = await admin.from('aziende').insert({ ragione_sociale: `ZZ-SEC-${etichetta}-${Date.now()}` }).select().single()
   const email = `probe-sec-${etichetta}-${Date.now()}@playwright.internal`
-  const password = randomBytes(24).toString('base64url')
+  const password = randomBytes(24).toString('base64url') + 'Aa1!'
   const { data: u } = await admin.auth.admin.createUser({ email, password, email_confirm: true })
   await admin.from('profiles').upsert({ id: u.user.id, role: 'admin_azienda', full_name: `Probe ${etichetta}`, azienda_id: az.id }, { onConflict: 'id' })
   const anon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { autoRefreshToken: false, persistSession: false } })

@@ -19,7 +19,7 @@ let az=null, userId=null; const creati=[]
 try {
   const { data: a } = await admin.from('aziende').insert({ ragione_sociale:`ZZ-CICLO-${Date.now()}`, require_2fa:false, moduli:{struttura:true,ristorante:true,attivita:true} }).select().single()
   az = a.id
-  const email=`zz-ciclo-${Date.now()}@playwright.internal`, pw=randomBytes(24).toString('base64url')
+  const email=`zz-ciclo-${Date.now()}@playwright.internal`, pw=randomBytes(24).toString('base64url') + 'Aa1!'
   const { data:u } = await admin.auth.admin.createUser({ email, password:pw, email_confirm:true })
   userId = u.user.id
   await admin.from('profiles').upsert({ id:userId, role:'admin_azienda', azienda_id:az, full_name:'Ciclo' }, { onConflict:'id' })

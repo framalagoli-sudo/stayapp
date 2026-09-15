@@ -35,7 +35,7 @@ const aal = tok => JSON.parse(Buffer.from(tok.split('.')[1], 'base64').toString(
 let userId = null, aziendaId = null
 try {
   const email = `probe-mfa-${Date.now()}@playwright.internal`
-  const password = randomBytes(24).toString('base64url')
+  const password = randomBytes(24).toString('base64url') + 'Aa1!'
 
   const { data: az } = await admin.from('aziende').insert({ ragione_sociale: `TEST-MFA-${Date.now()}`, require_2fa: true }).select().single()
   aziendaId = az.id

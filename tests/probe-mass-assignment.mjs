@@ -22,7 +22,7 @@ const esito = (ok, testo) => { console.log(`  ${ok ? '✓' : '✗'} ${testo}`); 
 async function creaAzienda(tag) {
   const { data: az } = await admin.from('aziende').insert({ ragione_sociale: `ZZ-MA-${tag}-${Date.now()}`, require_2fa: false }).select().single()
   const email = `probe-ma-${tag}-${Date.now()}@playwright.internal`
-  const password = randomBytes(24).toString('base64url')
+  const password = randomBytes(24).toString('base64url') + 'Aa1!'
   const { data: u } = await admin.auth.admin.createUser({ email, password, email_confirm: true })
   await admin.from('profiles').upsert({ id: u.user.id, role: 'admin_azienda', azienda_id: az.id, full_name: `Probe ${tag}` }, { onConflict: 'id' })
   const anon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } })

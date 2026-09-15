@@ -24,7 +24,7 @@ function totp(secret) {
 let userId = null, aziendaId = null
 try {
   const email = `probe-onb-${Date.now()}@playwright.internal`
-  const password = randomBytes(24).toString('base64url')
+  const password = randomBytes(24).toString('base64url') + 'Aa1!'
   const { data: az } = await admin.from('aziende').insert({ ragione_sociale: `TEST-ONB-${Date.now()}`, require_2fa: true }).select().single()
   aziendaId = az.id
   const { data: c } = await admin.auth.admin.createUser({ email, password, email_confirm: true })

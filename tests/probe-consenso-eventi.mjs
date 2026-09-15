@@ -17,7 +17,7 @@ const ok = (c, t) => { console.log(`  ${c?'✓':'✗'} ${t}`); if(!c) ko++ }
 try {
   const { data:a } = await admin.from('aziende').insert({ ragione_sociale:`ZZ-CONS-${Date.now()}`, require_2fa:false }).select().single()
   az = a.id
-  const email = `zz-cons-${Date.now()}@playwright.internal`, pw = randomBytes(24).toString('base64url')
+  const email = `zz-cons-${Date.now()}@playwright.internal`, pw = randomBytes(24).toString('base64url') + 'Aa1!'
   const { data:u } = await admin.auth.admin.createUser({ email, password:pw, email_confirm:true })
   user = u.user.id
   await admin.from('profiles').upsert({ id:user, role:'admin_azienda', azienda_id:az, full_name:'ZZ' }, { onConflict:'id' })

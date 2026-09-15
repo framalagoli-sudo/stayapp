@@ -27,7 +27,7 @@ async function cliente(etichetta) {
     azienda_id: az.id, tipo: 'struttura', slug: `zz-off-${etichetta.toLowerCase()}-${Date.now()}`, name: `ZZ ${etichetta}`, active: true,
   }).select().single()
   const email = `probe-off-${etichetta}-${Date.now()}@playwright.internal`
-  const password = randomBytes(24).toString('base64url')
+  const password = randomBytes(24).toString('base64url') + 'Aa1!'
   const { data: u } = await admin.auth.admin.createUser({ email, password, email_confirm: true })
   await admin.from('profiles').upsert({ id: u.user.id, role: 'admin_azienda', full_name: `Probe ${etichetta}`, azienda_id: az.id }, { onConflict: 'id' })
   const anon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } })

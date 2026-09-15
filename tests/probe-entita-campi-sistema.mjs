@@ -20,7 +20,7 @@ const aziende = [], utenti = [], entita = []
 try {
   const mk = async n => { const { data } = await admin.from('aziende').insert({ ragione_sociale:`ZZ-SYS-${n}-${Date.now()}`, require_2fa:false, moduli:{struttura:true,ristorante:true,attivita:true} }).select().single(); aziende.push(data.id); return data.id }
   const azA = await mk('A'), azB = await mk('B')
-  const email=`zz-sys-${Date.now()}@playwright.internal`, pw=randomBytes(24).toString('base64url')
+  const email=`zz-sys-${Date.now()}@playwright.internal`, pw=randomBytes(24).toString('base64url') + 'Aa1!'
   const { data:u } = await admin.auth.admin.createUser({ email, password:pw, email_confirm:true })
   utenti.push(u.user.id)
   await admin.from('profiles').upsert({ id:u.user.id, role:'admin_azienda', azienda_id:azA, full_name:'Sys' }, { onConflict:'id' })

@@ -25,7 +25,7 @@ try {
   const { data: a } = await admin.from('aziende').insert({ ragione_sociale: `ZZ-SESS-${Date.now()}`, require_2fa: false }).select().single()
   az = a.id
   const email = `probe-sess-${Date.now()}@playwright.internal`
-  const password = randomBytes(24).toString('base64url')
+  const password = randomBytes(24).toString('base64url') + 'Aa1!'
   const { data: u } = await admin.auth.admin.createUser({ email, password, email_confirm: true })
   userId = u.user.id
   await admin.from('profiles').upsert({ id: userId, role: 'staff', azienda_id: az, full_name: 'Probe Sessione', permissions: { contatti: true } }, { onConflict: 'id' })

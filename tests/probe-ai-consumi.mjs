@@ -58,7 +58,7 @@ try {
   }).select().single()
   if (ee) throw new Error(`entita: ${ee.message}`)
   ent = e.id
-  const email = `probe-ai-${n}@playwright.internal`, password = randomBytes(24).toString('base64url')
+  const email = `probe-ai-${n}@playwright.internal`, password = randomBytes(24).toString('base64url') + 'Aa1!'
   const { data: us } = await admin.auth.admin.createUser({ email, password, email_confirm: true }); u = us.user.id
   await admin.from('profiles').upsert({ id: u, role: 'admin_azienda', azienda_id: az, full_name: 'Probe AI' }, { onConflict: 'id' })
   const anon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } })

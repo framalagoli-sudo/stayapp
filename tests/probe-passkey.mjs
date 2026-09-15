@@ -15,7 +15,7 @@ const aal = t => JSON.parse(Buffer.from(t.split('.')[1], 'base64').toString()).a
 let userId = null, aziendaId = null, browser = null
 try {
   const email = `probe-pk-${Date.now()}@playwright.internal`
-  const password = randomBytes(24).toString('base64url')
+  const password = randomBytes(24).toString('base64url') + 'Aa1!'
   const { data: az } = await admin.from('aziende').insert({ ragione_sociale: `TEST-PK-${Date.now()}`, require_2fa: true }).select().single()
   aziendaId = az.id
   const { data: c } = await admin.auth.admin.createUser({ email, password, email_confirm: true })

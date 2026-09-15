@@ -52,7 +52,7 @@ try {
   console.log("\nACCENDO IL MENÙ SU UN HOTEL — compare nell'app della camera?\n")
   const { data: az } = await admin.from('aziende').insert({ ragione_sociale:`ZZ-APP-${Date.now()}`, require_2fa:false, moduli:{struttura:true} }).select().single()
   aziende.push(az.id)
-  const email=`zz-app-${Date.now()}@playwright.internal`, pw=randomBytes(24).toString('base64url')
+  const email=`zz-app-${Date.now()}@playwright.internal`, pw=randomBytes(24).toString('base64url') + 'Aa1!'
   const { data:u } = await admin.auth.admin.createUser({ email, password:pw, email_confirm:true })
   utenti.push(u.user.id)
   await admin.from('profiles').upsert({ id:u.user.id, role:'admin_azienda', azienda_id:az.id, full_name:'App' }, { onConflict:'id' })

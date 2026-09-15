@@ -14,7 +14,7 @@ const nomeVoluto = process.argv[3] || 'prova'
 let userId = null
 try {
   const email = `probe-${Date.now()}@playwright.internal`
-  const password = randomBytes(32).toString('base64url')
+  const password = randomBytes(32).toString('base64url') + 'Aa1!'
   const { data: created } = await admin.auth.admin.createUser({ email, password, email_confirm: true })
   userId = created.user.id
   await admin.from('profiles').upsert({ id: userId, role: 'super_admin', full_name: 'Probe ripristino' }, { onConflict: 'id' })

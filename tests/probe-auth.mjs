@@ -37,7 +37,7 @@ export async function withProbeSession(fn, opts = {}) {
   let browser = null
   try {
     const email = `probe-${Date.now()}@playwright.internal`
-    const password = randomBytes(32).toString('base64url')
+    const password = randomBytes(32).toString('base64url') + 'Aa1!'
 
     const { data: created, error: cErr } = await admin.auth.admin.createUser({
       email, password, email_confirm: true,

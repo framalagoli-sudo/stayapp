@@ -11,7 +11,7 @@ let userId = null
 const daInizio = new Date().toISOString()
 try {
   const email = `probe-audit-${Date.now()}@playwright.internal`
-  const password = randomBytes(24).toString('base64url')
+  const password = randomBytes(24).toString('base64url') + 'Aa1!'
   const { data: c } = await admin.auth.admin.createUser({ email, password, email_confirm: true })
   userId = c.user.id
   await admin.from('profiles').upsert({ id: userId, role: 'super_admin', full_name: 'Probe audit' }, { onConflict: 'id' })

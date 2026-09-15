@@ -14,7 +14,7 @@ const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { au
 let userId = null, aziendaId = null, browser = null
 try {
   const email = `probe-ui-${Date.now()}@playwright.internal`
-  const password = randomBytes(18).toString('base64url') + 'aA1!'
+  const password = randomBytes(18).toString('base64url') + 'Aa1!' + 'aA1!'
   const { data: az } = await admin.from('aziende').insert({ ragione_sociale: `TEST-UI-${Date.now()}`, require_2fa: true }).select().single()
   aziendaId = az.id
   const { data: c } = await admin.auth.admin.createUser({ email, password, email_confirm: true })

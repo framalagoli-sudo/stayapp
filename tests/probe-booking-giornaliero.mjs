@@ -22,7 +22,7 @@ let az=null, ent=null, ris=null, u=null
 try {
   const { data: a } = await admin.from('aziende').insert({ ragione_sociale:`ZZ-GG-${Date.now()}`, require_2fa:false }).select().single(); az=a.id
   const { data: e } = await admin.from('entita').insert({ azienda_id:az, tipo:'attivita', slug:`zz-gg-${Date.now()}`, name:'ZZ Noleggio', active:true }).select().single(); ent=e.id
-  const email=`probe-gg-${Date.now()}@playwright.internal`, password=randomBytes(24).toString('base64url')
+  const email=`probe-gg-${Date.now()}@playwright.internal`, password=randomBytes(24).toString('base64url') + 'Aa1!'
   const { data:us } = await admin.auth.admin.createUser({ email, password, email_confirm:true }); u=us.user.id
   await admin.from('profiles').upsert({ id:u, role:'admin_azienda', azienda_id:az, full_name:'P' }, { onConflict:'id' })
   const anon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{persistSession:false} })

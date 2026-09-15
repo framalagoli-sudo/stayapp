@@ -19,7 +19,7 @@ doppione,Mario,Rossi,altra.test@example.it,3401234567,`
 let userId = null, aziendaId = null
 try {
   const email = `probe-imp-${Date.now()}@playwright.internal`
-  const password = randomBytes(24).toString('base64url')
+  const password = randomBytes(24).toString('base64url') + 'Aa1!'
   const { data: az } = await admin.from('aziende').insert({ ragione_sociale: `TEST-IMPORT-${Date.now()}` }).select().single()
   aziendaId = az.id
   const { data: c } = await admin.auth.admin.createUser({ email, password, email_confirm: true })

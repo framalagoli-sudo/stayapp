@@ -42,7 +42,7 @@ export default async function globalSetup() {
 
   // ── 1. Crea utente effimero ────────────────────────────────────────────────
   const email    = `ci-${Date.now()}@playwright.internal`
-  const password = randomBytes(32).toString('base64url')
+  const password = randomBytes(32).toString('base64url') + 'Aa1!'
 
   const { data: createData, error: createError } = await admin.auth.admin.createUser({
     email,

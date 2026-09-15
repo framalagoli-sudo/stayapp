@@ -39,7 +39,7 @@ try {
     .insert({ ragione_sociale: `ZZ-SHOP-${Date.now()}`, require_2fa: false }).select().single()
   aziende.push(az.id)
   const email = `zz-shop-${Date.now()}@playwright.internal`
-  const pw = randomBytes(24).toString('base64url')
+  const pw = randomBytes(24).toString('base64url') + 'Aa1!'
   const { data: u } = await admin.auth.admin.createUser({ email, password: pw, email_confirm: true })
   utenti.push(u.user.id)
   await admin.from('profiles').upsert({ id: u.user.id, role: 'admin_azienda', azienda_id: az.id, full_name: 'Shop' }, { onConflict: 'id' })
