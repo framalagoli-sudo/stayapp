@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-15T09:27:40.357Z
+  modified: 2026-09-15T09:42:31.331Z
 ---
 
 # Si riprende da qui
@@ -30,23 +30,19 @@ copertina del sito (striscia dell'app del QR), forma + punto focale sul blog
 schermo), valori ostili → null in creazione, modifica e PATCH entità.
 `prodotti.immagine_focal` esiste ma NON è usata: aspetta la vetrina dello shop.
 
-### 🛒 BLOCCO SHOP — scritto e provato, sul ramo `shop-vetrina`, NON su main
-Aspetta **migration 118** (`118_ordini_consenso.sql`): senza, ogni ordine va in
-500 (salva la prova del consenso). Verificato alle ~11:15 UTC del 15/09: non
-ancora eseguita.
-Già provato in locale col browser: schede identiche alle Offerte, esaurito,
-scorte, carrello per azienda, carrello col banner cookie aperto, consenso
-(UI + route, 400 anche con "true" stringa), scorta superata/esaurito (409),
-editor col catalogo e i due avvisi.
-**Dopo la 118**: `git checkout shop-vetrina` → dev → ordine completo con email
-`delivered@resend.dev` (MAI un indirizzo inventato: i rimbalzi rovinano la
-reputazione del dominio) → verificare riga `ordini` con privacy_* → merge →
-deploy → verifica live → **cancellare i dati di prova**: prodotti
-`33ad4bfe-3332-40b5-a3bd-9ae9d8c5e12c`, `c7070086-9a5b-4395-9dfb-7c2c553c646e`
-(azienda StayApp Development), pagina `d071c532-0359-4ab4-981f-0a2d909e772a`
-(/s/prova/p/verifica-shop-mu2gnfzn), l'ordine di prova.
-Poi: **acquisto vero con Stripe** (serve Francesco) su Garage22 o su un'azienda
-con pagamenti attivi.
+### ✅ BLOCCO SHOP — LIVE (15/09). Migration eseguite: fino alla **118**
+Un visitatore ora può vedere e comprare. Provato: ordine completo dal sito
+(prezzo riletto dal server, prova del consenso salvata, scorte NON scalate da
+un ordine non pagato), casi ostili (400 senza consenso, 409 scorte), editor.
+Dati di prova cancellati. La route pubblica dell'ordine ora risponde solo
+`{ numero, checkout_url }` (prima la riga intera).
+Per le prove d'ordine: email `delivered@resend.dev`, MAI un indirizzo inventato.
+
+### ▶️ PROSSIMO: acquisto vero con Stripe (serve Francesco)
+Mai provato un pagamento reale dal blocco Shop. Serve un'azienda con i
+pagamenti attivi (Garage22 dopo l'onboarding Stripe): prodotto da 1–2 €, blocco
+Shop su una pagina, acquisto con carta vera → soldi sul cruscotto Stripe del
+cliente · email di conferma · ordine «pagato» · punti/gift card finalizzati.
 
 ### ✅ Fatto il 15/09 pomeriggio (live)
 - **Una sola galleria** (`GalleriaFoto`) al posto di 5 copie: riordino, Unsplash,
