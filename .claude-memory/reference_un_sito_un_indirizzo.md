@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: 98e39a37-374d-43a6-a1bf-16225619363f
-  modified: 2026-09-14T11:39:48.524Z
+  modified: 2026-09-15T07:58:07.725Z
 ---
 
 Lo stesso sito viveva su tre indirizzi insieme: `oltrenova.com/r/slug`, `slug.oltrenova.com`, `www.dominiodelcliente.it`. Dal 14/09/2026 i primi due **reindirizzano** al terzo quando c'è (middleware, `versoIlDominioDelCliente`), e `lib/indirizzo-ufficiale.js` → `hostUfficiale(entityId)` è l'unica risposta alla domanda «qual è l'indirizzo vero»: dominio custom > sottodominio > nostro percorso.
@@ -14,7 +14,13 @@ Lo stesso sito viveva su tre indirizzi insieme: `oltrenova.com/r/slug`, `slug.ol
 - **307, mai 301.** Un permanente resta nella cache dei browser per sempre: se quel dominio scade non si può più rimediare. La parte per i motori la fa il canonical.
 - **Solo dai NOSTRI domini veri** (`oltrenova.com` / `www.`): mai da `localhost` né da `*.vercel.app`, altrimenti non si può più lavorare su una copia.
 - **La query si porta dietro tutto**: `?qr=1` (app del QR già stampati), il token di anteprima dell'admin, le etichette delle campagne. Senza, si rompono in silenzio.
-- **Solo `stato = 'attivo'`**, che è una misura (`diagnosticaDominio`: Vercel + DNS + GET HTTPS vera, cron ogni 15 min) e non una dichiarazione. È la rete di sicurezza: se il dominio del cliente cade, entro un quarto d'ora smettiamo di mandarci traffico.
+- **Solo `stato = 'attivo'`**, che è una misura (`diagnosticaDominio`: Vercel + DNS + GET HTTPS vera) e non una dichiarazione.
+  ⛔ **Falso quello che avevo scritto il 14/09** («se il dominio cade, entro un quarto d'ora smettiamo di mandarci traffico»). Scoperto il 15/09: il cron passa `soloPendenti: true`, e **un dominio attivo non lo rimisura più nessuno**. Se il dominio di un cliente scade, il redirect continua a mandarci i visitatori. E non si risolve facendo ripassare gli attivi: `resolve-domain` serve il sito solo se `stato = 'attivo'`, la prova aspetta 10s e una pagina a freddo ne impiega 9–14 → un falso allarme **spegnerebbe il sito sul dominio del cliente**. Le due decisioni vanno separate: «servire il sito sul suo dominio» e «mandarci la gente» non possono dipendere dallo stesso interruttore.
+  ✅ **Separate il 15/09** (opzione A, decisa da Francesco):
+  - **servire** non si spegne mai in automatico: `salvaEsito` non riporta un dominio attivo «in attesa». Il pericolo c'era già da un'altra porta — aprire la pagina Domini rimisura i domini «stantii» da 6 ore (`aggiornaSeStantio`) e poteva declassarli per un avvio a freddo;
+  - **mandare** dipende dalla `salute` (`lib/salute-dominio.js`, nel jsonb `verifica_dettaglio.salute`, nessuna migration): il cron prova ogni 15 min i domini `custom` attivi (`controllaSaluteDomini`, attesa 15s); dopo **3 prove fallite di fila** il redirect si sospende — e con lui canonical, sitemap, email e QR, che ripiegano sul sottodominio (`hostUfficiale`) — riparte alla **prima** riuscita, e parte **una** email.
+  - ⚠️ `salvaEsito` riscrive tutta la diagnosi: la `salute` va conservata a mano, altrimenti ogni ricontrolla azzera il conto mentre il dominio sta cadendo.
+  - La diagnosi del gemello ha `causa`: `manca` (aggiungi) · `altrove` (sostituisci, con `trovati`) · `certificato` (niente da fare).
 
 **⚠️ Il canonical da solo non basta: chi dichiara indirizzi deve dichiarare LO STESSO.** Trovati nello stesso giorno tre punti che lo contraddicevano:
 - la sitemap elencava `dominiocliente.it/r/slug/p/menu` mentre la pagina dichiarava `dominiocliente.it/p/menu` — il primo risponde lo stesso (il middleware lo riconosce) ed è proprio il problema: un secondo indirizzo per la stessa pagina, scritto da noi;

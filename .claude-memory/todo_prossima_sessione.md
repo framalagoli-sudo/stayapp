@@ -5,10 +5,26 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-14T20:01:32.356Z
+  modified: 2026-09-15T07:58:18.574Z
 ---
 
 # Si riprende da qui
+
+## ▶️ 15/09/2026 — fatto stamattina
+
+- **Diagnosi domini chiusa**: il gemello (con/senza www) dice `manca` →
+  «aggiungi», `altrove` → «sostituisci» col record da cancellare,
+  `certificato` → niente da fare. Prima diceva sempre «manca un record».
+- **Rete di sicurezza del redirect, che il 14/09 avevo dichiarato e NON
+  esisteva** (il cron rimisurava solo i pendenti). Opzione A di Francesco →
+  [[reference_un_sito_un_indirizzo]]. Anche: un dominio attivo non viene più
+  declassato da una prova a vuoto aprendo la pagina Domini.
+- ⚠️ **Correzione a quanto scritto ieri**: `fondaconarni.com` NON ha lo stesso
+  guasto di metodotvb. Lì il record A dell'apex **manca** (va aggiunto); su
+  metodotvb c'è e punta ad Aruba (va sostituito).
+
+Restano le altre due strade del 14/09 qui sotto: **gallerie/miniature** e
+**migration per i formati**.
 
 ## ▶️ 14/09/2026 — SI RIPARTE ESATTAMENTE DA QUI
 
