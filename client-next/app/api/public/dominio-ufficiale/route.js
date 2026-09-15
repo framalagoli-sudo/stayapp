@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { ENTITY_TABLES } from '@/lib/server-auth'
+import { redirectConsentito } from '@/lib/salute-dominio'
 
 // Il contrario di `resolve-domain`: dato un sito, qual è il suo indirizzo vero?
 //
@@ -9,9 +10,18 @@ import { ENTITY_TABLES } from '@/lib/server-auth'
 //
 // ⚠️ Solo domini `custom` e solo `stato = 'attivo'`. Quello stato è una misura,
 // non una dichiarazione: `diagnosticaDominio` controlla Vercel, il DNS reale e
-// fa una GET HTTPS vera, e il cron ripassa ogni 15 minuti. È la rete di
-// sicurezza del redirect: se il dominio del cliente cade, entro un quarto d'ora
-// smettiamo di mandarci traffico e il nostro indirizzo torna a servire il sito.
+// fa una GET HTTPS vera.
+//
+// ⛔ Il 14/09 qui c'era scritto che «se il dominio del cliente cade, entro un
+// quarto d'ora smettiamo di mandarci traffico»: era falso, scoperto il 15/09 —
+// il cron rimisurava solo i domini in attesa, e un dominio attivo non lo
+// guardava più nessuno.
+//
+// Dal 15/09 i domini dei clienti si provano ogni 15 minuti
+// (`controllaSaluteDomini`) e dopo TRE prove fallite di fila il redirect si
+// sospende. Non si tocca `stato`: da quello dipende se il sito si serve sul
+// dominio del cliente (resolve-domain), e un falso allarme — una pagina a
+// freddo impiega 9–14 secondi — lo spegnerebbe.
 //
 // Pubblica di proposito: dice solo quale dominio corrisponde a un sito già
 // pubblico, cioè un'informazione che si legge dal sito stesso.
@@ -46,11 +56,17 @@ export async function GET(request) {
 
     if (!entityId) return Response.json({}, { headers: cache() })
 
-    const { data: dom } = await supabaseAdmin.from('domini')
-      .select('dominio').eq('entity_id', entityId)
-      .eq('tipo', 'custom').eq('stato', 'attivo').limit(1).maybeSingle()
+    // Si legge solo la `salute` dentro la diagnosi, non tutta la diagnosi: è
+    // un oggetto grande che cresce, e qui serve un solo sì o no.
+    const { data: domini } = await supabaseAdmin.from('domini')
+      .select('dominio, salute:verifica_dettaglio->salute').eq('entity_id', entityId)
+      .eq('tipo', 'custom').eq('stato', 'attivo')
 
-    return Response.json({ dominio: dom?.dominio || null }, { headers: cache() })
+    // Un dominio che non risponde da tre prove di fila non riceve più gente:
+    // chi arriva resta sul sito servito da noi. Vedi `lib/salute-dominio.js`.
+    const vivo = (domini || []).find(d => redirectConsentito(d.salute))
+
+    return Response.json({ dominio: vivo?.dominio || null }, { headers: cache() })
   } catch {
     // Un errore qui non deve impedire di vedere il sito: si resta dove si è.
     return Response.json({}, { status: 200 })

@@ -194,8 +194,14 @@ function BottoneCopia({ valore, copiato, onCopia, etichetta = 'Copia' }) {
   )
 }
 
-function Stato({ stato }) {
-  const s = stato === 'attivo'
+// `nonRisponde`: lo stato di un dominio attivo non scende più da solo (un falso
+// allarme spegnerebbe il sito del cliente), quindi è la `salute` a dire che
+// qualcosa non va. Senza, l'etichetta direbbe «Online» sopra la riga che
+// spiega che il dominio non risponde.
+function Stato({ stato, nonRisponde = false }) {
+  const s = stato === 'attivo' && nonRisponde
+    ? { testo: 'Non risponde', colore: C.attesa, sfondo: C.attesaBg, icona: AlertCircle }
+    : stato === 'attivo'
     ? { testo: 'Online', colore: C.ok, sfondo: C.okBg, icona: ShieldCheck }
     : stato === 'errore'
       ? { testo: 'Da correggere', colore: C.errore, sfondo: C.erroreBg, icona: AlertCircle }
@@ -400,7 +406,7 @@ function CardDominio({ dom, onCopia, copiato, onControlla, onRimuovi }) {
           {dom.dominio}
           <ExternalLink size={14} strokeWidth={1.5} color="#aaa" style={{ flexShrink: 0 }} />
         </a>
-        <Stato stato={dom.stato} />
+        <Stato stato={dom.stato} nonRisponde={d.salute?.sospeso === true} />
         <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
           {online && <BottoneCopia valore={url} copiato={copiato} onCopia={onCopia} etichetta="Copia link" />}
           <button onClick={() => onRimuovi(dom.id, dom.dominio)} title="Scollega" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 4, display: 'flex' }}>
@@ -441,21 +447,34 @@ function CardDominio({ dom, onCopia, copiato, onControlla, onRimuovi }) {
 // entrambe con il loro esito. Prima quella secondaria compariva solo come inciso
 // quando funzionava, così chi aveva appena sistemato i DNS non vedeva conferma.
 function IndirizziCollegati({ dom, d, onCopia, copiato }) {
+  // ⚠️ Un dominio attivo non viene più declassato in automatico (un falso
+  // allarme spegnerebbe il sito del cliente): se non risponde davvero, a dirlo
+  // è la `salute`, misurata ogni 15 minuti. Senza questa riga il pannello
+  // direbbe «Online» su un dominio scaduto.
+  const sospeso = d.salute?.sospeso === true
   const principale = {
     dominio: dom.dominio,
-    ok: true,
-    nota: d.prova_https?.status >= 300 && d.prova_https?.status < 400
-      ? 'Porta all’altro indirizzo'
-      : 'Apre il sito · protetto da certificato',
+    ok: !sospeso,
+    nota: sospeso
+      ? `Non risponde da ${d.salute.fallimenti_consecutivi} controlli di fila: per ora chi apre il tuo indirizzo incluso o il QR resta lì`
+      : d.prova_https?.status >= 300 && d.prova_https?.status < 400
+        ? 'Porta all’altro indirizzo'
+        : 'Apre il sito · protetto da certificato',
   }
   const voci = [principale]
   if (d.gemello) {
     voci.push({
       dominio: d.gemello.dominio,
       ok: d.gemello.raggiungibile,
+      // Il motivo lo decide la diagnosi (`causa`), non questa riga: prima qui
+      // era scritto «manca un record» per conto suo, e restava falso anche
+      // quando il record c'era. Una diagnosi salvata prima del 15/09 non ha
+      // `causa`: la si legge come prima finché il cron non la rifà.
       nota: d.gemello.raggiungibile
         ? (d.gemello.reindirizza ? 'Porta all’indirizzo principale' : 'Apre il sito')
-        : 'Non raggiungibile — manca un record nei DNS',
+        : d.gemello.causa === 'altrove' ? 'Non raggiungibile — il record porta a un altro server'
+        : d.gemello.causa === 'certificato' ? 'Record giusti — certificato in arrivo'
+        : 'Non raggiungibile — manca il record nei DNS',
     })
   }
 
@@ -491,16 +510,32 @@ function IndirizziCollegati({ dom, d, onCopia, copiato }) {
 // il resto è verde, altrimenti il problema resta invisibile.
 function Gemello({ gemello, provider, onCopia, copiato }) {
   if (!gemello || gemello.raggiungibile) return null
+  // Record giusti, manca solo il certificato: non c'è niente da fare, e un
+  // riquadro «aggiungi questi record» vuoto farebbe cercare un errore che non c'è.
+  if (gemello.causa === 'certificato') return null
+  const altrove = gemello.causa === 'altrove'
+  const quanti = gemello.records.length === 1 ? 'questo record' : 'questi record'
   return (
     <div style={{ padding: '14px 18px', background: C.attesaBg, borderTop: `1px solid ${C.attesaBordo}` }}>
       {/* Il nome dell'indirizzo è già nella riga di stato qui sopra: ripeterlo qui
           faceva sembrare che fossero due voci distinte. */}
       <p style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600, color: C.testo }}>
-        Come farlo funzionare: aggiungi {gemello.records.length === 1 ? 'questo record' : 'questi record'}
+        {/* Due rimedi diversi: aggiungere quando manca, SOSTITUIRE quando c'è ma
+            porta altrove. Dire «aggiungi» a chi ha già un record lo porta ad
+            averne due in conflitto, e il sito resta irraggiungibile a caso. */}
+        Come farlo funzionare: {altrove ? <>sostituisci il record con {quanti}</> : <>aggiungi {quanti}</>}
         {provider?.nome ? <> su <strong>{provider.nome}</strong></> : ' dal tuo provider'}
       </p>
+      {altrove && gemello.trovati?.length > 0 && (
+        <div style={{ margin: '0 0 12px', padding: '10px 12px', background: '#fff', borderRadius: 8, border: `1px solid ${C.attesaBordo}`, fontSize: 12.5, color: C.testo, lineHeight: 1.6 }}>
+          <strong>Da cancellare</strong> — oggi l’indirizzo porta qui, a un altro server:
+          {gemello.trovati.map((t, i) => (
+            <div key={i} style={{ fontFamily: 'monospace', overflowWrap: 'anywhere' }}>{t.tipo} → {t.valore}</div>
+          ))}
+        </div>
+      )}
       <p style={{ margin: '0 0 12px', fontSize: 12, color: '#666', lineHeight: 1.5 }}>
-        Finché manca, chi digita l’indirizzo {gemello.senza_www ? 'senza «www»' : 'con «www»'} trova un errore
+        {altrove ? 'Finché non lo sostituisci' : 'Finché manca'}, chi digita l’indirizzo {gemello.senza_www ? 'senza «www»' : 'con «www»'} trova un errore
         del browser — succede spesso a chi lo legge su un volantino o su un biglietto da visita.
         {provider?.nota ? ` ${provider.nota}` : ''}
       </p>

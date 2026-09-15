@@ -232,18 +232,45 @@ export async function controllaGemello(dominio, apexName) {
   // Un 3xx qui non e' un difetto: e' la forma non canonica che porta i visitatori
   // su quella principale, ed e' esattamente cio' che deve fare.
   const reindirizza = raggiungibile && prova.status >= 300 && prova.status < 400
+
+  // ⛔ Qui si diceva sempre «manca un record», per qualunque motivo il gemello
+  // non rispondesse. Il 14/09 su `metodotvb.it` il record c'era, ma puntava
+  // all'hosting di Aruba: il cliente, sentendosi dire che mancava, lo cercava,
+  // lo trovava e dubitava del pannello. Sono tre guasti diversi con tre rimedi
+  // diversi — aggiungere, sostituire, aspettare — e i record trovati li abbiamo
+  // già in mano: sono nella stessa risposta di Vercel da cui leggiamo quelli
+  // da mettere. La diagnosi del dominio principale li distingueva già.
+  const trovati = [
+    ...(cfg.data?.aValues || []).map(v => ({ tipo: 'A', valore: String(v) })),
+    ...(cfg.data?.cnames || []).map(v => ({ tipo: 'CNAME', valore: String(v).replace(/\.$/, '') })),
+  ]
+  const causa = raggiungibile ? null
+    : !trovati.length ? 'manca'
+    // `misconfigured === false` è Vercel che conferma: i record sono quelli
+    // giusti. Se il sito non risponde lo stesso, manca solo il certificato.
+    : cfg.data?.misconfigured === false ? 'certificato'
+    : 'altrove'
+
+  const messaggio = raggiungibile
+    ? (reindirizza
+        ? 'Chi lo digita viene portato all’indirizzo principale.'
+        : 'Apre il sito come l’indirizzo principale.')
+    : causa === 'manca'
+      ? `Chi digita ${gemello} non arriva al sito: manca il record nei DNS.`
+    : causa === 'certificato'
+      ? `I record di ${gemello} sono giusti: stiamo attivando il certificato, di norma pochi minuti.`
+      : `Chi digita ${gemello} non arriva al sito: il record c’è, ma porta ancora a un altro server (${trovati.map(t => t.valore).join(', ')}).`
+
   return {
     dominio: gemello,
     raggiungibile,
     reindirizza,
     stato_http: prova.status ?? null,
     senza_www: !gemello.startsWith('www.'),
-    records: raggiungibile ? [] : recordDns(gemello, { apexName, config: cfg.data }),
-    messaggio: raggiungibile
-      ? (reindirizza
-          ? 'Chi lo digita viene portato all’indirizzo principale.'
-          : 'Apre il sito come l’indirizzo principale.')
-      : `Chi digita ${gemello} non arriva al sito: manca un record nei DNS.`,
+    causa,
+    trovati: raggiungibile ? [] : trovati,
+    records: raggiungibile || causa === 'certificato' ? [] : recordDns(gemello, { apexName, config: cfg.data }),
+    messaggio,
   }
 }
 

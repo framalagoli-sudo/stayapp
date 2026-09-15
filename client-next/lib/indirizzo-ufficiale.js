@@ -1,4 +1,5 @@
 import { supabaseAdmin } from './supabase-server'
+import { redirectConsentito } from './salute-dominio'
 
 // Qual è **l'indirizzo vero** di un sito?
 //
@@ -30,11 +31,15 @@ import { supabaseAdmin } from './supabase-server'
 export async function hostUfficiale(entityId) {
   if (!entityId) return null
   const { data } = await supabaseAdmin.from('domini')
-    .select('dominio, tipo')
+    .select('dominio, tipo, salute:verifica_dettaglio->salute')
     .eq('entity_id', entityId).eq('stato', 'attivo')
     .in('tipo', ['custom', 'subdomain'])
   if (!data?.length) return null
-  // Il dominio del cliente batte sempre il sottodominio che gli diamo noi.
-  const scelto = data.find(d => d.tipo === 'custom') || data.find(d => d.tipo === 'subdomain')
+  // Il dominio del cliente batte sempre il sottodominio che gli diamo noi —
+  // tranne quando non risponde da tre prove di fila: un canonical, una sitemap
+  // o un link in un'email che portano a un indirizzo morto sono peggio del
+  // sottodominio che funziona. Stessa regola del redirect, `lib/salute-dominio.js`.
+  const scelto = data.find(d => d.tipo === 'custom' && redirectConsentito(d.salute))
+    || data.find(d => d.tipo === 'subdomain')
   return scelto?.dominio || null
 }

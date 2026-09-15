@@ -1,7 +1,9 @@
 import { supabaseAdmin } from './supabase-server'
 import { ENTITY_TABLES } from './server-auth'
 import { assicuraSottodominio, registraSottodominio } from './create-subdomain'
-import { diagnosticaDominio, verifyProjectDomain, addProjectDomain, removeProjectDomain, vercelReady } from './vercel-domains'
+import { diagnosticaDominio, verifyProjectDomain, addProjectDomain, removeProjectDomain, vercelReady, probeHttps, controllaGemello } from './vercel-domains'
+import { prossimaSalute } from './salute-dominio'
+import { logError } from './observability'
 
 // Manutenzione dei domini: tiene allineato ciò che è scritto nel DB con ciò che
 // succede davvero in rete. Serve perché tre cose si muovono in modo indipendente:
@@ -153,11 +155,28 @@ export async function ricontrolla(record) {
 }
 
 async function salvaEsito(record, diagnosi) {
+  // ⛔ Un dominio già ATTIVO non torna «in attesa» per una prova andata male.
+  // Da `stato` dipende se il sito si serve sul dominio del cliente
+  // (resolve-domain), e questa funzione gira anche quando qualcuno apre
+  // semplicemente la pagina Domini (ogni 6 ore, `aggiornaSeStantio`): la prova
+  // aspetta 10 secondi e una pagina a freddo ne impiega 9–14. Bastava aprire il
+  // pannello nel momento sbagliato perché al posto del sito del cliente
+  // comparisse la nostra pagina. Scoperto il 15/09.
+  // Se il dominio è morto davvero, non si spegne il sito — non ci arriva
+  // nessuno comunque — si smette di MANDARCI gente: lo decide la `salute`, con
+  // tre prove di fila (`lib/salute-dominio.js`). Deciso da Francesco il 15/09.
+  const restaAttivo = record.stato === 'attivo' && diagnosi.stato !== 'attivo'
   const { data } = await supabaseAdmin.from('domini').update({
-    stato: diagnosi.stato,
+    stato: restaAttivo ? 'attivo' : diagnosi.stato,
     vercel_domain_id: diagnosi.registrato_su_vercel ? record.dominio : null,
     dns_istruzioni: { records: diagnosi.records, verifica_txt: diagnosi.verifica_txt },
-    verifica_dettaglio: diagnosi,
+    // ⚠️ La diagnosi si riscrive tutta, ma la `salute` no: è il conto delle
+    // prove fallite di fila che decide se sospendere il redirect. Perderla a
+    // ogni ricontrolla manuale azzererebbe il conto proprio mentre il dominio
+    // sta cadendo. Vedi `lib/salute-dominio.js`.
+    verifica_dettaglio: record.verifica_dettaglio?.salute
+      ? { ...diagnosi, salute: record.verifica_dettaglio.salute }
+      : diagnosi,
     ultima_verifica: diagnosi.controllato_il,
     updated_at: new Date().toISOString(),
   }).eq('id', record.id).select().single()
@@ -240,6 +259,66 @@ export async function manutenzioneDomini({ soloPendenti = true, limite = 10 } = 
       else esito.problemi.push({ entita: e.slug, fase: 'sottodominio_non_creato' })
     }
   }
+
+  return esito
+}
+
+// ── I domini dei clienti sono ancora vivi? ───────────────────────────────────
+//
+// ⛔ Fino al 15/09/2026 un dominio diventato attivo non lo rimisurava più
+// nessuno: il giro qui sopra passa solo i pendenti. E si era scritto che il
+// redirect verso il dominio del cliente fosse protetto da quel giro — non lo
+// era. Se un dominio scadeva, continuavamo a mandarci i visitatori.
+//
+// Questo giro NON tocca `stato`, di proposito: da `stato` dipende se il sito si
+// serve sul dominio del cliente, e un falso allarme (una pagina a freddo che
+// supera l'attesa) lo spegnerebbe. Misura e annota; la decisione di sospendere
+// il SOLO redirect la prende `prossimaSalute`, con pazienza.
+//
+// Solo i domini `custom`: sono gli unici verso cui mandiamo gente. Sono pochi
+// (3 il 15/09) e le prove partono insieme, quindi il giro dura quanto la più
+// lenta — non la loro somma.
+export async function controllaSaluteDomini() {
+  const esito = { provati: 0, sospesi: [], ripresi: [] }
+  const { data: records, error } = await supabaseAdmin.from('domini')
+    .select('id, dominio, verifica_dettaglio').eq('tipo', 'custom').eq('stato', 'attivo')
+  if (error) throw new Error(error.message)
+
+  await Promise.all((records || []).map(async (record) => {
+    const dettaglio = record.verifica_dettaglio || {}
+    // 15 secondi e non 10: la prova passa dal sito vero, che a freddo ne
+    // impiega 9–14. Il margine è la differenza fra una misura e un falso allarme.
+    const prova = await probeHttps(record.dominio, { timeoutMs: 15000 })
+    const { salute, evento } = prossimaSalute(dettaglio.salute, prova.raggiungibile)
+    if (!prova.raggiungibile) salute.ultima_causa = prova.causa || null
+
+    // Il gemello (con / senza www) si rimisura anche lui, altrimenti il
+    // pannello mostrerebbe per sempre com'era il giorno del collegamento: chi
+    // sistema il DNS si sentirebbe dire che non funziona ancora. Senza Vercel
+    // configurato non si tocca — meglio una misura vecchia che una sbagliata.
+    const nuovo = { ...dettaglio, salute }
+    if (vercelReady() && dettaglio.apex_name) {
+      nuovo.gemello = await controllaGemello(record.dominio, dettaglio.apex_name)
+    }
+
+    await supabaseAdmin.from('domini').update({ verifica_dettaglio: nuovo }).eq('id', record.id)
+    esito.provati++
+
+    if (evento === 'sospeso') {
+      esito.sospesi.push(record.dominio)
+      // Una sorgente per dominio: la deduplica è di un'ora per sorgente, e due
+      // domini che cadono insieme devono arrivare entrambi.
+      await logError(`domini/salute/${record.dominio}`,
+        `${record.dominio} non risponde da ${salute.fallimenti_consecutivi} prove di fila (causa: ${salute.ultima_causa || 'sconosciuta'}). ` +
+        'Il redirect verso questo dominio è SOSPESO: chi apre il nostro indirizzo o il QR resta sul sito servito da noi. ' +
+        'Il sito sul dominio del cliente non è stato spento. Riparte da solo alla prima prova riuscita.',
+        { alert: true })
+    }
+    if (evento === 'ripreso') {
+      esito.ripresi.push(record.dominio)
+      console.log(`[domini/salute] ${record.dominio} di nuovo raggiungibile: redirect ripreso`)
+    }
+  }))
 
   return esito
 }
