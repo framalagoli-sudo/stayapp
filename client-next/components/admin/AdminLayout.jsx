@@ -131,6 +131,41 @@ function TrialBanner({ azienda }) {
   )
 }
 
+// ─── Credito AI in esaurimento ────────────────────────────────────────────────
+// Senza questo il cliente scopriva il tetto solo quando un pulsante smetteva di
+// funzionare. Dall'80% lo vede in cima a ogni pagina, in tempo per chiedere una
+// ricarica. Solo la percentuale: il cliente non paga l'AI a consumo.
+function CreditoAIBanner({ attivo, pathname }) {
+  const [uso, setUso] = useState(null)
+  useEffect(() => {
+    if (!attivo) return
+    apiFetch('/api/ai/usage').then(setUso).catch(() => {})
+  }, [attivo, pathname])
+  if (!attivo || !uso || uso.percentuale < 80) return null
+
+  const adesso = new Date()
+  const rinnovo = new Date(Date.UTC(adesso.getUTCFullYear(), adesso.getUTCMonth() + 1, 1))
+    .toLocaleDateString('it-IT', { day: 'numeric', month: 'long', timeZone: 'UTC' })
+  const finito = uso.esaurito
+  return (
+    <div style={{
+      marginBottom: 20, padding: '10px 16px', borderRadius: 10,
+      background: finito ? '#fff5f5' : '#fffbeb',
+      border: `1px solid ${finito ? '#fed7d7' : '#fef3c7'}`,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+    }}>
+      <span style={{ fontSize: 13, color: finito ? '#c53030' : '#b7791f', fontWeight: 600 }}>
+        {finito
+          ? `Hai usato tutto il credito AI di questo mese: le funzioni AI ripartono il ${rinnovo}.`
+          : `Hai usato il ${uso.percentuale}% del credito AI di questo mese. Si rinnova il ${rinnovo}.`}
+      </span>
+      <a href="mailto:oltrenova@gmail.com?subject=Credito%20AI" style={{ fontSize: 12, color: finito ? '#c53030' : '#b7791f', fontWeight: 600 }}>
+        Te ne serve di più? Scrivici
+      </a>
+    </div>
+  )
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function AdminLayout({ children }) {
   const { profile, signOut } = useAuth()
@@ -700,6 +735,7 @@ export default function AdminLayout({ children }) {
         <main className="admin-main">
           <Breadcrumb />
           <TrialBanner azienda={azienda} />
+          <CreditoAIBanner attivo={!!profile?.azienda_id && profile?.role !== 'super_admin'} pathname={pathname} />
           {children}
         </main>
       </div>

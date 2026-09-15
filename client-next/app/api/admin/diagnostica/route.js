@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { logError } from '@/lib/observability'
-import { BUDGET_MENSILE_PREDEFINITO_USD } from '@/lib/ai-consumi'
+import { BUDGET_MENSILE_PREDEFINITO_USD, meseCorrente } from '@/lib/ai-consumi'
 
 // Stato di salute della piattaforma, per il solo super_admin.
 //
@@ -81,15 +81,17 @@ export async function GET(request) {
     if (!aiErr) {
       const ids = (riepilogo || []).map(r => r.azienda_id).filter(Boolean)
       const { data: az } = ids.length
-        ? await supabaseAdmin.from('aziende').select('id, ragione_sociale, ai_budget_mensile_usd').in('id', ids)
+        ? await supabaseAdmin.from('aziende').select('id, ragione_sociale, ai_budget_mensile_usd, ai_extra_usd, ai_extra_mese').in('id', ids)
         : { data: [] }
       const perId = Object.fromEntries((az || []).map(a => [a.id, a]))
       ai = {
         budgetPredefinito: BUDGET_MENSILE_PREDEFINITO_USD,
         aziende: (riepilogo || []).map(r => {
           const a = perId[r.azienda_id]
+          // Stessa regola di statoBudget: tetto (su misura o predefinito) + extra del mese in corso.
           const budget = r.azienda_id
             ? (a?.ai_budget_mensile_usd != null ? Number(a.ai_budget_mensile_usd) : BUDGET_MENSILE_PREDEFINITO_USD)
+              + (a?.ai_extra_mese === meseCorrente() ? Number(a.ai_extra_usd) || 0 : 0)
             : null
           return {
             nome: r.azienda_id ? (a?.ragione_sociale || r.azienda_id) : 'Piattaforma (super_admin, senza azienda)',

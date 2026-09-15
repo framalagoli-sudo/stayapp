@@ -325,6 +325,9 @@ function AziendaCard({ azienda: a, onEdit, onDelete }) {
           <button onClick={() => togglePanel('accessi')} style={pill({ background: openPanel === 'accessi' ? '#1a1a2e' : '#f5f5f5', color: openPanel === 'accessi' ? '#fff' : '#444', padding: '6px 14px', fontSize: 12 })}>
             Accessi
           </button>
+          <button onClick={() => togglePanel('credito-ai')} style={pill({ background: openPanel === 'credito-ai' ? '#1a1a2e' : '#f5f5f5', color: openPanel === 'credito-ai' ? '#fff' : '#444', padding: '6px 14px', fontSize: 12 })}>
+            Credito AI
+          </button>
           <button onClick={onEdit} style={pill({ background: '#f0f4ff', color: '#1a1a2e', padding: '6px 14px', fontSize: 12 })}>Modifica</button>
           <button onClick={handleExport} disabled={exporting} title="Scarica tutti i dati dell'azienda (GDPR)" style={pill({ background: '#f0fff4', color: '#276749', padding: '6px 14px', fontSize: 12, opacity: exporting ? 0.6 : 1 })}>
             {exporting ? 'Esporto…' : 'Esporta dati'}
@@ -369,6 +372,9 @@ function AziendaCard({ azienda: a, onEdit, onDelete }) {
       )}
       {openPanel === 'accessi' && (
         <AccessiSection aziendaId={a.id} />
+      )}
+      {openPanel === 'credito-ai' && (
+        <CreditoAISection aziendaId={a.id} />
       )}
     </div>
   )
@@ -673,6 +679,102 @@ function AccessiSection({ aziendaId }) {
             </button>
           </div>
         </form>
+      )}
+    </div>
+  )
+}
+
+// ── Credito AI ────────────────────────────────────────────────────────────────
+// Quanto ha speso l'azienda questo mese e la ricarica. Due leve diverse:
+// il tetto su misura resta anche nei mesi dopo, il credito extra vale solo
+// per il mese in corso e il primo del mese sparisce da solo.
+
+function CreditoAISection({ aziendaId }) {
+  const [c, setC] = useState(null)
+  const [errore, setErrore] = useState(null)
+  const [tetto, setTetto] = useState('')
+  const [extra, setExtra] = useState('')
+  const [salvando, setSalvando] = useState(null) // null | 'tetto' | 'extra'
+  const [esito, setEsito] = useState(null)
+
+  function applica(dati) {
+    setC(dati)
+    setTetto(dati.tetto_su_misura != null ? String(dati.tetto_su_misura) : '')
+    setExtra(dati.extra ? String(dati.extra) : '')
+  }
+
+  useEffect(() => {
+    apiFetch(`/api/aziende/${aziendaId}/credito-ai`).then(applica).catch(e => setErrore(e.message))
+  }, [aziendaId])
+
+  async function salva(campo) {
+    setSalvando(campo); setEsito(null); setErrore(null)
+    const body = campo === 'tetto'
+      ? { tetto_su_misura: tetto.trim() === '' ? null : tetto }
+      : { extra_mese: extra.trim() === '' ? 0 : extra }
+    try {
+      applica(await apiFetch(`/api/aziende/${aziendaId}/credito-ai`, { method: 'PATCH', body: JSON.stringify(body) }))
+      setEsito(campo === 'tetto' ? 'Tetto mensile salvato.' : 'Credito di questo mese salvato.')
+      setTimeout(() => setEsito(null), 3000)
+    } catch (e) { setErrore(e.message) }
+    finally { setSalvando(null) }
+  }
+
+  const inp = { width: 110, padding: '8px 10px', borderRadius: 7, border: '1px solid #ddd', fontSize: 14, boxSizing: 'border-box' }
+  const lbl = { display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 4 }
+  const nota = { fontSize: 11.5, color: '#999', marginTop: 4, maxWidth: 260 }
+  const dollari = n => `$${Number(n).toFixed(n > 0 && n < 0.1 ? 3 : 2)}`
+  const colore = !c ? '#00b5b5' : c.esaurito ? '#c0392b' : c.percentuale >= 80 ? '#e65100' : '#00b5b5'
+
+  return (
+    <div style={{ borderTop: '1px solid #f0f0f0', padding: '16px 24px', background: '#fafafa' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#888', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 }}>
+        Credito AI del mese
+      </div>
+
+      {!c && !errore && <p style={{ fontSize: 13, color: '#888', margin: 0 }}>Caricamento…</p>}
+      {errore && <p style={{ fontSize: 13, color: '#c00', margin: '0 0 10px' }}>{errore}</p>}
+
+      {c && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6, maxWidth: 520 }}>
+            <div style={{ flex: 1, minWidth: 0, height: 8, background: '#eee', borderRadius: 4, overflow: 'hidden' }}>
+              <div style={{ width: `${Math.max(2, c.percentuale)}%`, height: '100%', background: colore }} />
+            </div>
+            <div style={{ fontSize: 13, color: '#333', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+              <strong>{dollari(c.speso)}</strong> / {dollari(c.budget)} · {c.percentuale}%
+            </div>
+          </div>
+          <div style={{ fontSize: 12, color: '#888', marginBottom: 16 }}>
+            Tetto {dollari(c.base)}{c.tetto_su_misura == null ? ' (predefinito)' : ' (su misura)'}
+            {c.extra > 0 && ` + ${dollari(c.extra)} extra per questo mese`}
+            {c.esaurito && <span style={{ color: '#c0392b', fontWeight: 600 }}> · funzioni AI ferme</span>}
+          </div>
+
+          <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            <div>
+              <label style={lbl}>Credito extra solo per questo mese ($)</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input type="number" min="0" max="1000" step="1" value={extra} onChange={e => setExtra(e.target.value)} placeholder="0" style={inp} />
+                <button onClick={() => salva('extra')} disabled={salvando !== null} style={pill({ background: '#1a1a2e', color: '#fff', padding: '7px 14px', fontSize: 12 })}>
+                  {salvando === 'extra' ? 'Salvo…' : 'Salva'}
+                </button>
+              </div>
+              <div style={nota}>Si somma al tetto e il primo del mese torna a zero da solo. È la ricarica per chi ha finito il credito.</div>
+            </div>
+            <div>
+              <label style={lbl}>Tetto mensile su misura ($)</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input type="number" min="0" max="1000" step="1" value={tetto} onChange={e => setTetto(e.target.value)} placeholder={`${c.predefinito} (predefinito)`} style={{ ...inp, width: 150 }} />
+                <button onClick={() => salva('tetto')} disabled={salvando !== null} style={pill({ background: '#f0f4ff', color: '#1a1a2e', padding: '7px 14px', fontSize: 12 })}>
+                  {salvando === 'tetto' ? 'Salvo…' : 'Salva'}
+                </button>
+              </div>
+              <div style={nota}>Vale anche nei mesi dopo. Vuoto = predefinito ({dollari(c.predefinito)}).</div>
+            </div>
+          </div>
+          {esito && <div style={{ fontSize: 12, color: '#276749', marginTop: 10 }}>{esito}</div>}
+        </>
       )}
     </div>
   )

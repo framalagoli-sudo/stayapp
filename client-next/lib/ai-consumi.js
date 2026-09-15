@@ -75,13 +75,21 @@ export async function statoBudget(azienda_id) {
   if (!azienda_id) return { speso: 0, budget: null, percentuale: 0, esaurito: false }
   const [{ data: speso, error: e1 }, { data: az, error: e2 }] = await Promise.all([
     supabaseAdmin.rpc('ai_speso_mese', { p_azienda: azienda_id }),
-    supabaseAdmin.from('aziende').select('ragione_sociale, ai_budget_mensile_usd').eq('id', azienda_id).maybeSingle(),
+    supabaseAdmin.from('aziende').select('ragione_sociale, ai_budget_mensile_usd, ai_extra_usd, ai_extra_mese').eq('id', azienda_id).maybeSingle(),
   ])
   if (e1 || e2) throw new Error(`Lettura del budget AI fallita: ${(e1 || e2).message}`)
-  const budget = az?.ai_budget_mensile_usd != null ? Number(az.ai_budget_mensile_usd) : BUDGET_MENSILE_PREDEFINITO_USD
+  const base = az?.ai_budget_mensile_usd != null ? Number(az.ai_budget_mensile_usd) : BUDGET_MENSILE_PREDEFINITO_USD
+  // Il credito extra vale solo nel mese in cui è stato dato: il mese dopo sparisce da solo.
+  const extra = az?.ai_extra_mese === meseCorrente() ? Number(az.ai_extra_usd) || 0 : 0
+  const budget = base + extra
   const spesoN = Number(speso) || 0
   const percentuale = budget > 0 ? Math.min(100, Math.round((spesoN / budget) * 100)) : 100
-  return { speso: spesoN, budget, percentuale, esaurito: spesoN >= budget, nome: az?.ragione_sociale || '' }
+  return { speso: spesoN, budget, base, extra, percentuale, esaurito: spesoN >= budget, nome: az?.ragione_sociale || '' }
+}
+
+// Mese UTC in forma AAAA-MM: lo stesso con cui la funzione SQL somma la spesa.
+export function meseCorrente() {
+  return new Date().toISOString().slice(0, 7)
 }
 
 // Blocca in anticipo, prima di un lavoro che farebbe più chiamate e toccherebbe
@@ -96,13 +104,14 @@ export async function assicuraBudget(azienda_id) {
 }
 
 // Un avviso a Francesco per soglia, per azienda, per mese — non uno a chiamata.
+// Il tetto entra nella chiave: dopo una ricarica, arrivare di nuovo all'80% o
+// al 100% dello stesso mese è un fatto nuovo e merita un avviso nuovo.
 async function avvisaSoglia(azienda_id, stato, soglia) {
   if (!ALERT_TO || !azienda_id) return
   try {
-    // Mese UTC, lo stesso con cui la funzione SQL somma la spesa.
-    const mese = new Date().toISOString().slice(0, 7)
+    const mese = meseCorrente()
     const { data: primaVolta } = await supabaseAdmin.rpc('check_rate_limit', {
-      p_key: `ai-soglia:${soglia}:${azienda_id}:${mese}`, p_limit: 1, p_window_seconds: 40 * 86400,
+      p_key: `ai-soglia:${soglia}:${azienda_id}:${mese}:${stato.budget}`, p_limit: 1, p_window_seconds: 40 * 86400,
     })
     if (primaVolta !== true) return
     const titolo = soglia >= 100 ? 'Credito AI esaurito' : `Credito AI all'${soglia}%`
@@ -113,7 +122,8 @@ async function avvisaSoglia(azienda_id, stato, soglia) {
       html: platformEmailTemplate({
         title: titolo,
         intro: `<strong>${esc(stato.nome || azienda_id)}</strong> ha speso <strong>$${stato.speso.toFixed(2)}</strong> di AI questo mese, su un tetto di <strong>$${stato.budget.toFixed(2)}</strong>.`
-          + (soglia >= 100 ? '<br><br>Le funzioni AI sono ferme per questa azienda fino al primo del mese. Per alzare il tetto: <code>aziende.ai_budget_mensile_usd</code>.' : ''),
+          + (soglia >= 100 ? '<br><br>Le funzioni AI sono ferme per questa azienda fino al primo del mese, a meno di una ricarica.' : '')
+          + '<br><br>Per dare credito in più: <strong>Aziende → Credito AI</strong>.',
         footerNote: 'Un solo avviso per soglia e per mese. Il dettaglio è in Diagnostica.',
       }),
     })
