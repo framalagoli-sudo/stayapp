@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-15T07:58:18.574Z
+  modified: 2026-09-15T08:46:39.774Z
 ---
 
 # Si riprende da qui
@@ -23,8 +23,32 @@ metadata:
   guasto di metodotvb. Lì il record A dell'apex **manca** (va aggiunto); su
   metodotvb c'è e punta ad Aruba (va sostituito).
 
-Restano le altre due strade del 14/09 qui sotto: **gallerie/miniature** e
-**migration per i formati**.
+### ⏸️ IN SOSPESO — ramo `foto-forma-117` (su GitHub), NON su main
+Aspetta che Francesco esegua **`supabase/migrations/117_foto_forma_e_punto_focale.sql`**
+(verificato alle ~09:30 UTC del 15/09: le colonne NON esistono ancora).
+Dentro: punto focale sulla copertina del sito (striscia dell'app del QR), forma
++ punto focale sul blog, controllo entità nella CREAZIONE di un articolo, frase
+falsa «il catalogo mostra la prima foto» corretta.
+**Quando dice «fatto»**: ricontrollare le colonne → `git checkout foto-forma-117`
+→ dev → provare pannello (Info ×3, editor blog) e pagine pubbliche (app del QR,
+articolo con e senza forma, elenco blog) → merge su main → deploy → verifica live.
+⚠️ Pubblicarlo PRIMA della migration rompe l'app del QR e ogni salvataggio blog.
+
+### ✅ Fatto il 15/09 pomeriggio (live)
+- **Una sola galleria** (`GalleriaFoto`) al posto di 5 copie: riordino, Unsplash,
+  4 MB, errori nella pagina, un file sbagliato non ferma gli altri.
+- **Miniature** (piatto, attività, escursioni): `useCaricaFoto`, stessa logica,
+  aspetto invariato. Attività ed escursioni non controllavano il peso affatto.
+- ⛔ **Le foto dei prodotti non si erano MAI potute caricare**: la route
+  `minisito-image` non conosceva `entity_type=prodotto` (400). Corretto.
+
+### ⚠️ Da dire / decidere con Francesco
+- **Lo shop non ha una vetrina sui siti.** `ShopWidget` esiste ma nessuna pagina
+  né blocco lo monta: pannello, carrello, pagamento e ordini ci sono, il catalogo
+  pubblico no. È una funzione che un cliente non può usare davvero.
+- Punto focale per singola foto nelle gallerie: richiede di cambiare la forma dei
+  dati (elenco di indirizzi) letta da più punti → va chiesto prima.
+- `RestaurantSection.jsx` ha ancora il limite a 2 MB ma nessuna route lo monta.
 
 ## ▶️ 14/09/2026 — SI RIPARTE ESATTAMENTE DA QUI
 
