@@ -4,6 +4,7 @@ import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
 import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Mountain, Wind, ChevronDown, ChevronLeft, ChevronRight, Calendar, Users, Check, CheckCircle, Gift, Home, Zap, Shield, Leaf, Sun, Briefcase, Wrench, Euro, Handshake, Smile, Target, TrendingUp, Globe, Camera, BookOpen, Layers, Tag, Search, X, FileText } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
 import BookingWidget from './BookingWidget'
+import ShopBlocco from './ShopBlocco'
 import MenuTab from '@/components/MenuTab'
 import Turnstile from '@/components/Turnstile'
 import { applyBlockStyle, blockInverted, textSizeScale, textColorFor, gridTemplate, readableOn } from '@/lib/blockTypes'
@@ -820,6 +821,9 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
   const [eventi, setEventi] = useState([])
   const [eventiPassati, setEventiPassati] = useState([])
   const [articoli, setArticoli] = useState([])
+  const [prodottiShop, setProdottiShop] = useState([])
+  // I prodotti si chiedono solo se sulla pagina c'è un blocco Shop.
+  const vuoleShop = (blocks || []).some(b => b?.type === 'shop')
   // Gli eventi conclusi si chiedono solo se un blocco eventi li mostra: è il
   // predefinito, e si spengono dal blocco.
   const vuolePassati = (blocks || []).some(b => b?.type === 'eventi' && b.data?.mostra_passati !== false)
@@ -846,7 +850,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
     return () => io.disconnect()
     // eventi/articoli si caricano async: quando arrivano, i loro blocchi compaiono
     // DOPO il primo setup → vanno ri-scansionati o restano invisibili (opacity:0).
-  }, [blocks, eventi.length, eventiPassati.length, articoli.length])
+  }, [blocks, eventi.length, eventiPassati.length, articoli.length, prodottiShop.length])
   // Base dei link interni, lingua/dominio-aware (dal chiamante via entityBasePath).
   // Fallback all'URL canonico se non fornita (es. anteprima template in admin).
   const linkBase = base != null ? base : (entityType === 'struttura' ? `/s/${slug}` : entityType === 'ristorante' ? `/r/${slug}` : `/a/${slug}`)
@@ -869,6 +873,12 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
     guestFetch(`/api/blog/public?azienda_id=${aziendaId}&entity_tipo=${entityType}&entity_id=${entity.id}&limit=6`)
       .then(d => Array.isArray(d) && setArticoli(d)).catch(() => {})
   }, [entity?.id, lang])
+
+  useEffect(() => {
+    if (!aziendaId || !vuoleShop) { setProdottiShop([]); return }
+    guestFetch(`/api/shop/public/${aziendaId}/prodotti`)
+      .then(d => Array.isArray(d) && setProdottiShop(d)).catch(() => {})
+  }, [aziendaId, vuoleShop])
 
   useEffect(() => {
     if (!entity?.id || !vuolePassati) { setEventiPassati([]); return }
@@ -1689,6 +1699,31 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                   )
                 })}
               </div>
+            </div>
+          </section>
+        )
+      }
+
+      case 'shop': {
+        // La <section> e il titolo stanno qui, come in ogni blocco: è su questo
+        // elemento che `applyBlockStyle` applica sfondo, spaziatura e
+        // animazioni scelte nell'editor. Il catalogo, che ha bisogno del
+        // browser (carrello, ordine), è un componente a parte.
+        // Senza niente in vendita il blocco sparisce, come le Offerte: un titolo
+        // con sotto il vuoto è peggio di nessun blocco. Per questo i prodotti
+        // si caricano qui (come eventi e articoli) e non dentro ShopBlocco.
+        const catShop = (d.categoria || '').trim().toLowerCase()
+        const inVendita = catShop ? prodottiShop.filter(p => (p.categoria || '').trim().toLowerCase() === catShop) : prodottiShop
+        if (!aziendaId || !inVendita.length) return null
+        return (
+          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+            <div className="lbr-section">
+              {d.titolo_sezione && (
+                <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 40, textAlign: 'center', color: cTitle }}
+                  {...ricco(d.titolo_sezione)} />
+              )}
+              <ShopBlocco aziendaId={aziendaId} prodotti={prodottiShop} primary={primary} heading={heading}
+                categoria={d.categoria || ''} formato={d.formato || ''} privacyUrl={privacyUrl} />
             </div>
           </section>
         )

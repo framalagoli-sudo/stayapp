@@ -919,6 +919,9 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
     case 'offerte': return (
       <OfferteBlockEditor data={data} onChange={upd} entityId={entityId} entityTipo={entityTipo} />
     )
+    case 'shop': return (
+      <ShopBlockEditor data={data} onChange={upd} entityId={entityId} entityTipo={entityTipo} />
+    )
     case 'booking': return (
       <BookingBlockEditor data={data} onChange={upd} entityId={entityId} entityTipo={entityTipo} />
     )
@@ -1885,6 +1888,82 @@ export default function PaginaEditorPage() {
 // Senza filtro le mostra tutte; con una categoria si possono mettere due
 // blocchi diversi sulla stessa pagina — «I nostri corsi» e «Le escursioni» —
 // pescando dalla stessa lista.
+// Stesso modello di `OfferteBlockEditor`: prima di pubblicare si sa già cosa
+// comparirà, e se il blocco resterà invisibile.
+function ShopBlockEditor({ data, onChange, entityId, entityTipo }) {
+  const [prodotti, setProdotti] = useState([])
+  const [incassa, setIncassa] = useState(null)   // null = non ancora saputo
+  const [caricato, setCaricato] = useState(false)
+  useEffect(() => {
+    if (!entityId) return
+    const ep = entityTipo === 'struttura' ? `/api/properties/${entityId}`
+      : entityTipo === 'ristorante' ? `/api/ristoranti/${entityId}` : `/api/attivita/${entityId}`
+    // Lo shop è dell'azienda, non dell'entità: si risale all'azienda e si
+    // chiede lo stesso elenco che vedrà il sito, catalogo in vendita compreso.
+    apiFetch(ep).then(async ent => {
+      if (!ent?.azienda_id) return
+      const [lista, stato] = await Promise.all([
+        apiFetch(`/api/shop/public/${ent.azienda_id}/prodotti`).catch(() => []),
+        apiFetch(`/api/stripe/connect?azienda_id=${ent.azienda_id}`).catch(() => null),
+      ])
+      setProdotti(Array.isArray(lista) ? lista : [])
+      setIncassa(stato ? stato.incassa === true : null)
+    }).catch(() => {}).finally(() => setCaricato(true))
+  }, [entityId, entityTipo])
+
+  const categorie = [...new Set(prodotti.map(p => (p.categoria || '').trim()).filter(Boolean))]
+  const mostrati = data.categoria
+    ? prodotti.filter(p => (p.categoria || '').trim().toLowerCase() === data.categoria.toLowerCase())
+    : prodotti
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <Field label="Titolo sezione" value={data.titolo_sezione || ''} onChange={v => onChange('titolo_sezione', v)}
+        placeholder="Il nostro shop" />
+
+      <div>
+        <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 500 }}>Quali mostrare</label>
+        <select value={data.categoria || ''} onChange={e => onChange('categoria', e.target.value)}
+          style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13, background: '#fff' }}>
+          <option value="">Tutti i prodotti in vendita</option>
+          {categorie.map(c => <option key={c} value={c}>Solo «{c}»</option>)}
+        </select>
+      </div>
+
+      <SelettoreFormato
+        valore={data.formato || ''} onChange={v => onChange('formato', v)}
+        // «Predefinito» è la scheda alta come quelle delle Offerte.
+        formati={formatiConPredefinito('3 / 2')}
+        titolo="Forma delle foto"
+        aiuto="Vale per tutte le schede insieme. Quale parte di ogni foto si vede lo scegli nel prodotto."
+      />
+
+      {/* ⚠️ Un blocco che non ha niente da mostrare sparisce dal sito senza dire
+          niente: qui si dice prima, mentre si può ancora rimediare. */}
+      {caricato && (
+        mostrati.length === 0 ? (
+          <p style={{ fontSize: 12, color: '#a15c00', background: '#fff8e6', padding: '8px 10px', borderRadius: 8, margin: 0 }}>
+            {prodotti.length === 0
+              ? <>Non hai prodotti in vendita: questo blocco resterà invisibile. Aggiungili in <strong>Shop</strong>.</>
+              : <>Nessun prodotto in questa categoria: il blocco resterà invisibile.</>}
+          </p>
+        ) : (
+          <p style={{ fontSize: 12, color: '#137a4a', background: '#e6f7ee', padding: '8px 10px', borderRadius: 8, margin: 0 }}>
+            {mostrati.length === 1 ? 'Comparirà 1 prodotto' : `Compariranno ${mostrati.length} prodotti`}: {mostrati.slice(0, 3).map(p => p.nome).join(', ')}{mostrati.length > 3 ? '…' : ''}
+          </p>
+        )
+      )}
+      {/* Senza pagamenti collegati l'ordine arriva lo stesso, ma senza soldi:
+          il titolare deve saperlo prima, non dal primo cliente. */}
+      {caricato && incassa === false && mostrati.length > 0 && (
+        <p style={{ fontSize: 12, color: '#a15c00', background: '#fff8e6', padding: '8px 10px', borderRadius: 8, margin: 0 }}>
+          I pagamenti online non sono ancora attivi: gli ordini arriveranno <strong>senza pagamento</strong>, da gestire a mano. Si attivano in <strong>Account → Pagamenti</strong>.
+        </p>
+      )}
+    </div>
+  )
+}
+
 function OfferteBlockEditor({ data, onChange, entityId, entityTipo }) {
   const [offerte, setOfferte] = useState([])
   const [caricato, setCaricato] = useState(false)

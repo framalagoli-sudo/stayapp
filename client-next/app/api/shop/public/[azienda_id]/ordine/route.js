@@ -6,6 +6,7 @@ import { sendEmail } from '@/lib/send-email'
 import { guestEmailTemplate } from '@/lib/email-template'
 import { logError } from '@/lib/observability'
 import { creaCheckout } from '@/lib/checkout'
+import { TESTO_CONSENSO_ORDINE } from '@/lib/consenso-ordine'
 
 export async function POST(request, props) {
   const params = await props.params;
@@ -14,10 +15,15 @@ export async function POST(request, props) {
     const rl = await rateLimit(request, { name: 'shop-ordine', limit: 15, windowSec: 3600, ip })
     if (!rl.allowed) return tooManyRequests()
     const { azienda_id } = params
-    const { email_cliente, nome_cliente, telefono_cliente, indirizzo, voci, note_cliente, punti_da_usare, codice_gift_card } = await request.json()
+    const { email_cliente, nome_cliente, telefono_cliente, indirizzo, voci, note_cliente, punti_da_usare, codice_gift_card, privacy_accettata } = await request.json()
 
     if (!email_cliente || !voci?.length)
       return Response.json({ error: 'email e voci sono obbligatori' }, { status: 400 })
+    // ⛔ Il modulo raccoglieva nome, email, telefono e indirizzo senza chiedere
+    // niente. Il controllo sta QUI e non solo nella spunta: nel browser si
+    // toglie con due clic. Senza consenso nessun dato personale entra.
+    if (privacy_accettata !== true)
+      return Response.json({ error: 'Per ordinare serve accettare l’informativa sulla privacy.' }, { status: 400 })
 
     const ids = voci.map(v => v.prodotto_id)
     const { data: dellaTabella } = await supabaseAdmin.from('prodotti').select('id,nome,prezzo,prezzo_scontato,stock')
@@ -37,6 +43,14 @@ export async function POST(request, props) {
       if (!p) return Response.json({ error: `Prodotto ${v.prodotto_id} non trovato` }, { status: 400 })
       const prezzoUnitario = p.prezzo_scontato ?? p.prezzo
       const qty = Math.max(1, parseInt(v.qty) || 1)
+      // ⛔ Le scorte non si controllavano: un prodotto esaurito si ordinava lo
+      // stesso, e il titolare scopriva di aver venduto quello che non aveva.
+      // `stock` null = senza limite, che è diverso da zero.
+      if (p.stock !== null && p.stock !== undefined && qty > p.stock) {
+        return Response.json({
+          error: p.stock <= 0 ? `«${p.nome}» è esaurito.` : `Di «${p.nome}» ne restano solo ${p.stock}.`,
+        }, { status: 409 })
+      }
       vociSicure.push({ prodotto_id: p.id, nome: p.nome, prezzo: prezzoUnitario, qty, immagine: v.immagine || '' })
       totale += prezzoUnitario * qty
     }
@@ -91,6 +105,12 @@ export async function POST(request, props) {
       sconto_loyalty: loyalty.scontoLoyalty,
       codice_gift_card: codice_gift_card || null,
       sconto_gift_card: loyalty.scontoGiftCard,
+      // La prova, non la spunta: quando e quale formula (migration 118). La
+      // formula la decide il server, non quello che il browser dice di aver
+      // mostrato.
+      privacy_accettata: true,
+      privacy_accettata_il: new Date().toISOString(),
+      privacy_testo: TESTO_CONSENSO_ORDINE,
     }).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
 

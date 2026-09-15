@@ -20,7 +20,10 @@ export default function CookieBanner({ primaryColor = '#00b5b5', privacyUrl, coo
   if (!visible) return null
 
   return createPortal(
-    <div style={{
+    // `data-cookie-banner`: chi apre un pannello fisso in basso (il carrello
+    // dello shop) lo usa per lasciargli spazio. Il banner resta SOPRA a tutto
+    // di proposito — la scelta sui cookie non deve mai finire coperta.
+    <div data-cookie-banner style={{
       position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 2147483647,
       background: '#1a1a2e', color: '#fff',
       padding: '16px 20px', display: 'flex', alignItems: 'center',
