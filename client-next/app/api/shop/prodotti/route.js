@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
+import { focalValido } from '@/lib/formati-foto'
 
 function slugify(s) {
   return (s || '').toLowerCase()
@@ -33,11 +34,12 @@ export async function POST(request) {
     if (response) return response
     const azienda_id = await getAziendaId(user.id)
     if (!azienda_id) return Response.json({ error: 'Nessuna azienda' }, { status: 403 })
-    const { nome, descrizione, prezzo, prezzo_scontato, immagini, stock, categoria, attivo, slug, ordine } = await request.json()
+    const { nome, descrizione, prezzo, prezzo_scontato, immagini, immagine_focal, stock, categoria, attivo, slug, ordine } = await request.json()
     const { data, error } = await supabaseAdmin.from('prodotti').insert({
       azienda_id, nome: nome || '', descrizione: descrizione || '',
       prezzo: prezzo || 0, prezzo_scontato: prezzo_scontato || null,
-      immagini: immagini || [], stock: stock ?? null,
+      // Finisce in `object-position`: una coppia di percentuali, o NULL.
+      immagini: immagini || [], immagine_focal: focalValido(immagine_focal), stock: stock ?? null,
       categoria: categoria || '', attivo: attivo !== false,
       slug: slug || slugify(nome || ''), ordine: ordine || 0,
     }).select().single()

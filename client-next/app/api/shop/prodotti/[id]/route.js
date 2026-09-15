@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
+import { focalValido } from '@/lib/formati-foto'
 
 async function getAziendaId(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('azienda_id').eq('id', userId).single()
@@ -28,9 +29,12 @@ export async function PATCH(request, props) {
     const azienda_id = await getAziendaId(user.id)
     if (!azienda_id) return Response.json({ error: 'Nessuna azienda' }, { status: 403 })
     const body = await request.json()
-    const allowed = ['nome', 'descrizione', 'prezzo', 'prezzo_scontato', 'immagini', 'stock', 'categoria', 'attivo', 'slug', 'ordine']
+    const allowed = ['nome', 'descrizione', 'prezzo', 'prezzo_scontato', 'immagini', 'immagine_focal', 'stock', 'categoria', 'attivo', 'slug', 'ordine']
     const patch = { updated_at: new Date().toISOString() }
     for (const k of allowed) if (k in body) patch[k] = body[k]
+    // Finisce in `object-position` nel blocco Shop: una coppia di percentuali,
+    // o NULL. Il CHECK della migration 117 è il secondo muro.
+    if ('immagine_focal' in patch) patch.immagine_focal = focalValido(patch.immagine_focal)
     const { data, error } = await supabaseAdmin.from('prodotti')
       .update(patch).eq('id', params.id).eq('azienda_id', azienda_id).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })

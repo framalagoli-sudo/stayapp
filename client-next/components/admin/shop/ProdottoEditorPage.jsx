@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { apiFetch } from '../../../lib/api'
 import { ArrowLeft, Save, Trash2, Plus, AlertCircle, ShoppingBag, Share2 } from 'lucide-react'
 import GalleriaFoto from '../GalleriaFoto'
+import { FocalPointPicker } from '../FocalPointPicker'
 import AiButton from '../../../components/admin/AiButton'
 import { useAzienda } from '../../../context/AziendaContext'
 import PostSocialModal from '../../../components/admin/PostSocialModal'
@@ -27,6 +28,8 @@ export default function ProdottoEditorPage() {
   const [categoria, setCat]       = useState('')
   const [attivo, setAttivo]       = useState(true)
   const [immagini, setImmagini]   = useState([])
+  // Quale parte della PRIMA foto resta visibile nella scheda del blocco Shop.
+  const [immagineFocal, setImmagineFocal] = useState('')
 
   useEffect(() => {
     if (isNew) return
@@ -35,7 +38,7 @@ export default function ProdottoEditorPage() {
         setNome(p.nome || ''); setDesc(p.descrizione || '')
         setPrezzo(p.prezzo ?? ''); setPrezzoScontato(p.prezzo_scontato ?? '')
         setStock(p.stock ?? ''); setCat(p.categoria || '')
-        setAttivo(p.attivo !== false); setImmagini(p.immagini || [])
+        setAttivo(p.attivo !== false); setImmagini(p.immagini || []); setImmagineFocal(p.immagine_focal || '')
         setLoading(false)
       })
       .catch(e => { setError(e.message); setLoading(false) })
@@ -48,7 +51,7 @@ export default function ProdottoEditorPage() {
       nome, descrizione, prezzo: parseFloat(prezzo) || 0,
       prezzo_scontato: prezzoScontato !== '' ? parseFloat(prezzoScontato) : null,
       stock: stock !== '' ? parseInt(stock) : null,
-      categoria, attivo, immagini,
+      categoria, attivo, immagini, immagine_focal: immagineFocal || null,
     }
     try {
       if (isNew) {
@@ -180,12 +183,21 @@ export default function ProdottoEditorPage() {
             onChange={setImmagini}
             endpoint="/api/upload/minisito-image?entity_type=prodotto&entity_id=shop"
             unsplashQuery={nome || ''}
-            // ⚠️ Non scrivere «il catalogo mostra…»: al 15/09/2026 il catalogo
-            // pubblico (`ShopWidget`) non è montato da nessuna pagina del sito.
-            primaEtichetta="principale"
-            nota="La prima foto è quella principale del prodotto. Ricordati di salvare."
+            primaEtichetta="nel sito"
+            nota="La prima foto è quella che si vede nel blocco Shop del sito. Ricordati di salvare."
             incollaIndirizzo
           />
+          {immagini[0] && (
+            <div style={{ marginTop: 14 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#444', marginBottom: 2 }}>Punto da tenere visibile nella scheda</div>
+              <div style={{ fontSize: 11.5, color: '#888', lineHeight: 1.5 }}>
+                Nel blocco Shop la prima foto viene ritagliata: clicca sul prodotto e resterà lui al centro.
+              </div>
+              {/* Vale per la foto che è PRIMA adesso: se si riordinano le foto,
+                  va riscelto guardando quella nuova. */}
+              <FocalPointPicker src={typeof immagini[0] === 'string' ? immagini[0] : immagini[0]?.url} value={immagineFocal} onChange={setImmagineFocal} hint={false} intera />
+            </div>
+          )}
         </div>
       </div>
 

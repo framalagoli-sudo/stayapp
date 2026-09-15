@@ -45,6 +45,7 @@ export const BLOCK_TYPES = [
   { type: 'activities',   label: 'Attività',           group: 'servizi',     emoji: '🧭', desc: 'Attività prenotabili' },
   { type: 'excursions',   label: 'Escursioni',         group: 'servizi',     emoji: '🗺️', desc: 'Escursioni disponibili' },
   { type: 'offerte',      label: 'Offerte',            group: 'servizi',     emoji: '🏷️', desc: 'Quello che crei in Offerte: corsi, escursioni, esperienze. Si può filtrare per categoria.' },
+  { type: 'shop',         label: 'Shop',               group: 'servizi',     emoji: '🛍️', desc: 'I prodotti in vendita, con carrello e pagamento: quelli dello Shop e quelli del catalogo messi in vendita' },
   { type: 'eventi',       label: 'Prossimi eventi',    group: 'servizi',     emoji: '📅', desc: 'Eventi in programma e, sotto, gli ultimi conclusi' },
   { type: 'vetrina',      label: 'Vetrina',            group: 'servizi',     emoji: '🪟', desc: 'Griglia di elementi di una vetrina (progetti, immobili, veicoli…) con filtri e link alla pagina di dettaglio' },
   { type: 'news',         label: 'Articoli / News',    group: 'servizi',     emoji: '📰', desc: 'Ultimi articoli del blog' },
@@ -95,6 +96,10 @@ export const BLOCK_DEFAULTS = {
   activities:   {},
   excursions:   {},
   offerte:      { titolo_sezione: '', categoria: '' },
+  // ⛔ Fino al 15/09/2026 lo shop aveva pannello, ordini e pagamento, ma nessun
+  // blocco per metterlo su un sito: un visitatore non poteva né vedere né
+  // comprare. `formato` vuoto = le schede alte 170px come nelle Offerte.
+  shop:         { titolo_sezione: '', categoria: '', formato: '' },
   eventi:       {},
   vetrina:      { vetrina_id: '', titolo: '', colonne: 3, mostra_filtri: true, filtro: '' },
   news:         {},
