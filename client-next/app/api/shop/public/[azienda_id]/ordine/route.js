@@ -160,6 +160,11 @@ export async function POST(request, props) {
       } catch (mailErr) { console.error('[Shop] Email error:', mailErr.message) }
     }
 
-    return Response.json({ ordine, checkout_url }, { status: 201 })
+    // ⛔ Qui usciva la riga intera dell'ordine — id dell'azienda, sessione
+    // Stripe, codice gift card, prova del consenso — a chi chiama senza login.
+    // Oggi erano i dati appena inseriti da chi ordina; ma una colonna aggiunta
+    // domani (note interne del titolare, per dire) sarebbe uscita da sola. Si
+    // restituisce solo quello che serve alla pagina.
+    return Response.json({ numero: ordine.numero, checkout_url }, { status: 201 })
   } catch (e) { await logError('shop/ordine', e, { alert: true }); return Response.json({ error: e.message }, { status: 500 }) }
 }
