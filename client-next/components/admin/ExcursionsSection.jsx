@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState } from 'react'
-import { uploadMedia } from '@/lib/api'
+import { useCaricaFoto } from './useCaricaFoto'
 
 function newExcursion() {
   return {
@@ -12,7 +12,10 @@ function newExcursion() {
 }
 
 // ─── Isolated form — local state for text fields, propagates only onBlur ───────
-function ExcursionForm({ exc, onPatch, onUploadPhoto, uploading }) {
+function ExcursionForm({ exc, onPatch }) {
+  // Nessun controllo di peso prima: una foto da 5 MB partiva, tornava un 413
+  // della piattaforma e il cliente leggeva «Errore upload: upload …: 413».
+  const { carica, caricando: uploading, errore } = useCaricaFoto()
   const [name,          setName]         = useState(exc.name)
   const [description,   setDescription]  = useState(exc.description)
   const [price,         setPrice]        = useState(exc.price ?? '')
@@ -81,8 +84,9 @@ function ExcursionForm({ exc, onPatch, onUploadPhoto, uploading }) {
         <label style={uploadLabel}>
           {uploading ? 'Upload…' : exc.photo_url ? 'Cambia foto' : '+ Aggiungi foto'}
           <input type="file" accept="image/*" style={{ display: 'none' }}
-            onChange={e => onUploadPhoto(e.target.files[0])} />
+            onChange={e => { carica('/api/upload/gallery', e.target.files[0], url => onPatch({ photo_url: url })); e.target.value = '' }} />
         </label>
+        {errore && <p style={{ margin: '6px 0 0', fontSize: 12, color: '#c0392b' }}>{errore}</p>}
       </div>
     </div>
   )
@@ -91,7 +95,6 @@ function ExcursionForm({ exc, onPatch, onUploadPhoto, uploading }) {
 // ─── Main section ──────────────────────────────────────────────────────────────
 export default function ExcursionsSection({ excursions = [], onChange }) {
   const [openId,    setOpenId]    = useState(null)
-  const [uploading, setUploading] = useState({})
 
   function update(list) { onChange(list) }
 
@@ -110,15 +113,6 @@ export default function ExcursionsSection({ excursions = [], onChange }) {
     update(excursions.map(e => e.id === id ? { ...e, ...patch } : e))
   }
 
-  async function uploadPhoto(id, file) {
-    if (!file) return
-    setUploading(u => ({ ...u, [id]: true }))
-    try {
-      const { url } = await uploadMedia('/api/upload/gallery', file)
-      patchExcursion(id, { photo_url: url })
-    } catch (err) { alert(`Errore upload: ${err.message}`) }
-    finally { setUploading(u => ({ ...u, [id]: false })) }
-  }
 
   return (
     <div>
@@ -159,8 +153,6 @@ export default function ExcursionsSection({ excursions = [], onChange }) {
                 key={exc.id}
                 exc={exc}
                 onPatch={patch => patchExcursion(exc.id, patch)}
-                onUploadPhoto={file => uploadPhoto(exc.id, file)}
-                uploading={!!uploading[exc.id]}
               />
             )}
           </div>

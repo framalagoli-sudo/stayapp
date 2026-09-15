@@ -1,8 +1,9 @@
 ﻿'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { apiFetch, uploadMedia } from '../../../lib/api'
-import { ArrowLeft, Save, Trash2, Plus, X, Upload, AlertCircle, ShoppingBag, Share2 } from 'lucide-react'
+import { apiFetch } from '../../../lib/api'
+import { ArrowLeft, Save, Trash2, Plus, AlertCircle, ShoppingBag, Share2 } from 'lucide-react'
+import GalleriaFoto from '../GalleriaFoto'
 import AiButton from '../../../components/admin/AiButton'
 import { useAzienda } from '../../../context/AziendaContext'
 import PostSocialModal from '../../../components/admin/PostSocialModal'
@@ -13,12 +14,10 @@ export default function ProdottoEditorPage() {
   const { azienda } = useAzienda()
   const isNew = id === 'nuovo'
   const [showPostModal, setShowPostModal] = useState(false)
-  const fileRef = useRef()
 
   const [loading, setLoading] = useState(!isNew)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [uploading, setUploading] = useState(false)
 
   const [nome, setNome]           = useState('')
   const [descrizione, setDesc]    = useState('')
@@ -68,18 +67,6 @@ export default function ProdottoEditorPage() {
       await apiFetch(`/api/shop/prodotti/${id}`, { method: 'DELETE' })
       router.push('/admin/shop')
     } catch (e) { setError(e.message) }
-  }
-
-  async function handleUpload(e) {
-    const file = e.target.files[0]
-    if (!file) return
-    setUploading(true)
-    try {
-      const data = await uploadMedia('/api/upload/minisito-image?entity_type=prodotto&entity_id=shop', file)
-      setImmagini(prev => [...prev, data.url])
-    } catch (err) { setError(err.message) }
-    setUploading(false)
-    e.target.value = ''
   }
 
   if (loading) return <p style={{ color: '#888' }}>Caricamento…</p>
@@ -185,25 +172,18 @@ export default function ProdottoEditorPage() {
         {/* Immagini */}
         <div>
           <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 8 }}>Immagini prodotto</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-            {immagini.map((url, i) => (
-              <div key={i} style={{ position: 'relative', width: 96, height: 96 }}>
-                <img src={url} alt="" style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 8, border: '1px solid #eee' }} />
-                <button onClick={() => setImmagini(prev => prev.filter((_, j) => j !== i))}
-                  style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: '#c53030', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>
-                  <X size={10} strokeWidth={2.5} />
-                </button>
-              </div>
-            ))}
-            <div onClick={() => fileRef.current?.click()}
-              style={{ width: 96, height: 96, border: '2px dashed #ddd', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#aaa', fontSize: 11, gap: 4 }}>
-              {uploading ? '…' : <><Upload size={18} strokeWidth={1.5} /><span>Aggiungi</span></>}
-            </div>
-            <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} style={{ display: 'none' }} />
-          </div>
-          <div style={{ fontSize: 11, color: '#bbb', marginTop: 6 }}>Oppure incolla un URL:</div>
-          <input placeholder="https://…" onBlur={e => { if (e.target.value.trim()) { setImmagini(prev => [...prev, e.target.value.trim()]); e.target.value = '' } }}
-            style={{ marginTop: 4, width: '100%', border: '1px solid #eee', borderRadius: 6, padding: '6px 10px', fontSize: 12, boxSizing: 'border-box' }} />
+          {/* Prima si caricava una foto per volta e senza poterle riordinare:
+              per cambiare quella che il catalogo mostra bisognava cancellarle
+              tutte e ricaricarle nell'ordine giusto. */}
+          <GalleriaFoto
+            foto={immagini}
+            onChange={setImmagini}
+            endpoint="/api/upload/minisito-image?entity_type=prodotto&entity_id=shop"
+            unsplashQuery={nome || ''}
+            primaEtichetta="nel catalogo"
+            nota="Il catalogo mostra la prima foto. Ricordati di salvare."
+            incollaIndirizzo
+          />
         </div>
       </div>
 

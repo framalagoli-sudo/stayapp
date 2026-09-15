@@ -16,7 +16,7 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from 
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useEntita } from '../../../hooks/useEntita'
-import { uploadMedia } from '../../../lib/api'
+import { useCaricaFoto } from '../useCaricaFoto'
 
 const BLANK_ITEM = { name: '', description: '', price: '', allergens: [], dietary: [], photo_url: '', active: true }
 
@@ -804,17 +804,13 @@ function ItemRow({ item, ristoranteId, onChange, onDelete, allCatalogues, curren
   const [price,     setPrice]     = useState(item.price)
   const [allergens, setAllergens] = useState(normalizeAllergens(item.allergens))
   const [dietary,   setDietary]   = useState(item.dietary || [])
-  const [uploading, setUploading] = useState(false)
+  const { carica, caricando: uploading, errore: erroreFoto } = useCaricaFoto()
   const active = item.active !== false
 
-  async function handlePhoto(file) {
-    if (!file || file.size > 2 * 1024 * 1024) { alert('Max 2 MB'); return }
-    setUploading(true)
-    try {
-      const { url } = await uploadMedia(`/api/upload/restaurant-gallery?ristorante_id=${ristoranteId}`, file)
-      onChange({ photo_url: url })
-    } catch (e) { alert(e.message) }
-    finally { setUploading(false) }
+  // Fermava a 2 MB: una foto di un piatto fatta col telefono (media 1 MB, punte
+  // di quasi 4) poteva essere rifiutata anche se il server l'avrebbe compressa.
+  function handlePhoto(file) {
+    carica(`/api/upload/restaurant-gallery?ristorante_id=${ristoranteId}`, file, url => onChange({ photo_url: url }))
   }
 
   // Verifica se ci sono cataloghi target disponibili (solo altri cataloghi, non il corrente)
@@ -887,11 +883,12 @@ function ItemRow({ item, ristoranteId, onChange, onDelete, allCatalogues, curren
                   ? <img src={item.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   : uploading ? '…' : '🍽'}
               </div>
-              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handlePhoto(e.target.files[0])} />
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { handlePhoto(e.target.files[0]); e.target.value = '' }} />
             </label>
 
             {/* Campi */}
             <div style={{ flex: 1, minWidth: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 80px', gap: '8px 12px' }}>
+              {erroreFoto && <p style={{ gridColumn: '1 / -1', margin: 0, fontSize: 12, color: '#c0392b', lineHeight: 1.4 }}>{erroreFoto}</p>}
               <input value={name} onChange={e => setName(e.target.value)} onBlur={() => onChange({ name })} placeholder="Nome *" style={inpStyle} />
               <input value={price} onChange={e => setPrice(e.target.value)} onBlur={() => onChange({ price })} placeholder="Prezzo €" style={inpStyle} type="number" min="0" step="0.5" />
               <input value={desc} onChange={e => setDesc(e.target.value)} onBlur={() => onChange({ description: desc })} placeholder="Descrizione" style={{ ...inpStyle, gridColumn: '1 / -1' }} />

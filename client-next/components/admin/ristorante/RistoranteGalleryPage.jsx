@@ -1,45 +1,21 @@
-﻿'use client'
+'use client'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useRistorante } from '../../../hooks/useRistorante'
-import { uploadMedia } from '../../../lib/api'
+import GalleriaFoto from '../GalleriaFoto'
 
 export default function RistoranteGalleryPage() {
   const { id } = useParams()
   const { ristorante, loading, save, saved, saving } = useRistorante(id)
   const [gallery, setGallery] = useState([])
-  const [uploading, setUploading] = useState(false)
 
   useEffect(() => { if (ristorante) setGallery(ristorante.gallery || []) }, [ristorante])
 
-  async function handleFiles(e) {
-    const files = Array.from(e.target.files).slice(0, 10 - gallery.length)
-    if (!files.length) return
-    setUploading(true)
-    const urls = []
-    try {
-      for (const file of files) {
-        if (file.size > 2 * 1024 * 1024) { alert(`"${file.name}" supera i 2 MB — saltata`); continue }
-        const { url } = await uploadMedia(`/api/upload/restaurant-gallery?ristorante_id=${id}`, file)
-        urls.push(url)
-      }
-      if (urls.length) {
-        const updated = [...gallery, ...urls]
-        setGallery(updated)
-        save({ gallery: updated }).catch(() => {})
-      }
-    } catch (err) {
-      alert(`Errore upload: ${err.message}`)
-    } finally {
-      setUploading(false)
-      e.target.value = ''
-    }
-  }
-
-  function remove(i) {
-    const updated = gallery.filter((_, idx) => idx !== i)
-    setGallery(updated)
-    save({ gallery: updated }).catch(() => {})
+  // Ogni cambiamento — foto aggiunta, tolta o spostata — si salva subito, come
+  // prima: su questa pagina non c'è un pulsante Salva da ricordarsi.
+  function aggiorna(nuova) {
+    setGallery(nuova)
+    save({ gallery: nuova }).catch(() => {})
   }
 
   if (loading) return <p style={loadingStyle}>Caricamento…</p>
@@ -52,34 +28,17 @@ export default function RistoranteGalleryPage() {
         {saved && <span style={{ fontSize: 13, color: '#38a169', fontWeight: 600 }}>✓ Salvato</span>}
         {saving && <span style={{ fontSize: 13, color: '#888' }}>Salvataggio…</span>}
       </div>
-      <p style={descStyle}>Le foto vengono mostrate nell'app ai clienti. Max 10 foto, 2 MB ciascuna.</p>
+      <p style={descStyle}>Le foto vengono mostrate nell'app ai clienti.</p>
 
       <div style={cardStyle}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 12 }}>
-          {gallery.map((url, i) => (
-            <div key={url} style={{ position: 'relative', aspectRatio: '1', borderRadius: 10, overflow: 'hidden', border: '1px solid #eee' }}>
-              <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              <button
-                onClick={() => remove(i)}
-                style={{ position: 'absolute', top: 5, right: 5, width: 22, height: 22, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >✕</button>
-            </div>
-          ))}
-
-          {gallery.length < 10 && (
-            <label style={{ aspectRatio: '1', borderRadius: 10, border: '2px dashed #d0d0d0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: uploading ? 'default' : 'pointer', background: '#fafafa', color: '#bbb', fontSize: 12, gap: 4 }}>
-              {uploading
-                ? 'Caricamento…'
-                : <><span style={{ fontSize: 28, lineHeight: 1 }}>+</span>Aggiungi</>}
-              <input type="file" accept="image/*" multiple style={{ display: 'none' }}
-                onChange={handleFiles} disabled={uploading} />
-            </label>
-          )}
-        </div>
-
-        {gallery.length === 0 && !uploading && (
-          <p style={{ color: '#aaa', fontSize: 13, margin: 0 }}>Nessuna foto ancora. Carica la prima foto del ristorante.</p>
-        )}
+        <GalleriaFoto
+          foto={gallery}
+          onChange={aggiorna}
+          endpoint={`/api/upload/restaurant-gallery?ristorante_id=${id}`}
+          unsplashQuery={ristorante.name || ''}
+          primaEtichetta="anteprima"
+          nota="La prima foto è quella che si vede sulla scheda della galleria nell'app."
+        />
       </div>
     </div>
   )

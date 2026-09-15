@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState } from 'react'
-import { uploadMedia } from '@/lib/api'
+import { useCaricaFoto } from './useCaricaFoto'
 
 const AGE_GROUPS = [
   { value: 'tutti',     label: 'Tutti' },
@@ -36,7 +36,10 @@ function CategoryNameInput({ value, onCommit }) {
 }
 
 // ─── Isolated item form — local state for text fields, propagates only onBlur ──
-function ItemForm({ item, onPatch, onUploadPhoto, uploading }) {
+function ItemForm({ item, onPatch }) {
+  // Nessun controllo di peso prima: una foto da 5 MB partiva, tornava un 413
+  // della piattaforma e il cliente leggeva «Errore upload: upload …: 413».
+  const { carica, caricando: uploading, errore } = useCaricaFoto()
   const [name,        setName]        = useState(item.name)
   const [location,    setLocation]    = useState(item.location)
   const [schedule,    setSchedule]    = useState(item.schedule)
@@ -117,8 +120,9 @@ function ItemForm({ item, onPatch, onUploadPhoto, uploading }) {
           <label style={{ ...uploadLabel, fontSize: 12, padding: '6px 12px' }}>
             {uploading ? 'Upload…' : item.photo_url ? 'Cambia foto' : '+ Foto'}
             <input type="file" accept="image/*" style={{ display: 'none' }}
-              onChange={e => onUploadPhoto(e.target.files[0])} />
+              onChange={e => { carica('/api/upload/gallery', e.target.files[0], url => onPatch({ photo_url: url })); e.target.value = '' }} />
           </label>
+          {errore && <p style={{ margin: '6px 0 0', fontSize: 12, color: '#c0392b' }}>{errore}</p>}
         </div>
       </div>
     </div>
@@ -129,7 +133,6 @@ function ItemForm({ item, onPatch, onUploadPhoto, uploading }) {
 export default function ActivitiesSection({ activities = [], onChange }) {
   const [newCatName, setNewCatName] = useState('')
   const [openItem,   setOpenItem]   = useState(null) // 'catId:itemId'
-  const [uploading,  setUploading]  = useState({})
 
   function update(cats) { onChange(cats) }
 
@@ -178,17 +181,6 @@ export default function ActivitiesSection({ activities = [], onChange }) {
     ))
   }
 
-  async function uploadPhoto(catId, itemId, file) {
-    if (!file) return
-    const key = `${catId}:${itemId}`
-    setUploading(u => ({ ...u, [key]: true }))
-    try {
-      const { url } = await uploadMedia('/api/upload/gallery', file)
-      patchItem(catId, itemId, { photo_url: url })
-    } catch (e) { alert(`Errore upload: ${e.message}`) }
-    finally { setUploading(u => ({ ...u, [key]: false })) }
-  }
-
   return (
     <div>
       {activities.map((cat, ci) => (
@@ -231,8 +223,6 @@ export default function ActivitiesSection({ activities = [], onChange }) {
                       key={item.id}
                       item={item}
                       onPatch={patch => patchItem(cat.id, item.id, patch)}
-                      onUploadPhoto={file => uploadPhoto(cat.id, item.id, file)}
-                      uploading={!!uploading[key]}
                     />
                   )}
                 </div>

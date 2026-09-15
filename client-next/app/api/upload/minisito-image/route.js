@@ -26,11 +26,27 @@ export async function POST(request) {
       const { data: att } = await supabaseAdmin.from('entita').select('azienda_id').eq('id', entity_id).single()
       if (!att || (profile.role !== 'super_admin' && att.azienda_id !== profile.azienda_id))
         return Response.json({ error: 'Accesso negato' }, { status: 403 })
+    } else if (entity_type === 'prodotto') {
+      // ⛔ Questo ramo non esisteva: l'editor dei prodotti manda
+      // `entity_type=prodotto` da sempre e qui finiva in «entity_type non
+      // valido», quindi **caricare la foto di un prodotto non ha mai
+      // funzionato**. Scoperto il 15/09/2026 provando un caricamento vero;
+      // nessuno se n'era accorto perché nessun cliente aveva ancora un prodotto.
+      //
+      // Un prodotto appartiene all'azienda, non a un'entità: la cartella si
+      // ricava dal PROFILO di chi carica, mai da `entity_id`, che arriva dal
+      // browser e qui vale sempre «shop».
+      if (profile.role !== 'super_admin' && !profile.azienda_id)
+        return Response.json({ error: 'Accesso negato' }, { status: 403 })
     } else { return Response.json({ error: 'entity_type non valido' }, { status: 400 }) }
+
+    const cartella = entity_type === 'prodotto'
+      ? `prodotto/${profile.azienda_id || 'piattaforma'}`
+      : `${entity_type}/${entity_id}`
 
     const parsed = await parseUpload(request)
     if (parsed.error) return Response.json({ error: parsed.error }, { status: 400 })
-    const result = await uploadToStorage(`${entity_type}/${entity_id}/minisito-${Date.now()}.${parsed.ext}`, parsed.buffer, parsed.contentType)
+    const result = await uploadToStorage(`${cartella}/minisito-${Date.now()}.${parsed.ext}`, parsed.buffer, parsed.contentType)
     if (result.error) return Response.json({ error: result.error }, { status: 500 })
     return Response.json({ url: result.url })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
