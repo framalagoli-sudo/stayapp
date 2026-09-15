@@ -2,7 +2,7 @@
 
 export const maxDuration = 60
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { callClaude, getRemainingCredits, consumeCredit, MONTHLY_LIMIT } from '@/lib/ai-helpers'
+import { chiamaAI, statoBudget, eBudgetEsaurito, rispostaBudgetEsaurito } from '@/lib/ai-consumi'
 
 const TIPO_PROMPTS = {
   blog_titolo: ({ tema, nome_business }) =>
@@ -60,11 +60,11 @@ Brief: ${tema}
 Lingua: italiano. 3-5 frasi coinvolgenti. Solo il testo, senza titoli o virgolette esterne.`,
 }
 
-async function getAziendaId(userId) {
+// Chi paga l'AI è l'azienda di chi preme il pulsante. Il super_admin non ha
+// azienda: le sue chiamate si registrano come uso della piattaforma, senza tetto.
+async function getProfilo(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('azienda_id, role').eq('id', userId).single()
-  if (data?.azienda_id) return data.azienda_id
-  if (data?.role === 'super_admin') return userId
-  return null
+  return data
 }
 
 export async function POST(request) {
@@ -75,19 +75,17 @@ export async function POST(request) {
     if (!tipo || !tema?.trim()) return Response.json({ error: 'tipo e tema sono obbligatori' }, { status: 400 })
     if (!TIPO_PROMPTS[tipo]) return Response.json({ error: `tipo non supportato: ${tipo}` }, { status: 400 })
 
-    const azienda_id = await getAziendaId(user.id)
-    if (!azienda_id) return Response.json({ error: 'Business non trovato' }, { status: 400 })
-
-    const remaining = getRemainingCredits(azienda_id)
-    if (remaining <= 0)
-      return Response.json({ error: `Limite mensile raggiunto (${MONTHLY_LIMIT} generazioni/mese). Si rinnova il mese prossimo.` }, { status: 429 })
+    const profilo = await getProfilo(user.id)
+    const azienda_id = profilo?.azienda_id || null
+    if (!azienda_id && profilo?.role !== 'super_admin') return Response.json({ error: 'Business non trovato' }, { status: 400 })
 
     const prompt = TIPO_PROMPTS[tipo]({ tema, tono, contesto, nome_business })
     const maxTokens = ['blog_corpo', 'newsletter_corpo'].includes(tipo) ? 1500 : 400
-    const testo = await callClaude(prompt, maxTokens)
-    const leftAfter = consumeCredit(azienda_id)
-    return Response.json({ testo, usage: { remaining: leftAfter, limit: MONTHLY_LIMIT } })
+    const testo = await chiamaAI({ azienda_id, funzione: `genera/${tipo}`, prompt, maxTokens })
+    const { percentuale } = await statoBudget(azienda_id)
+    return Response.json({ testo, usage: { percentuale } })
   } catch (e) {
+    if (eBudgetEsaurito(e)) return rispostaBudgetEsaurito()
     console.error('[AI genera]', e.message)
     return Response.json({ error: 'Errore durante la generazione AI. Riprova tra qualche secondo.' }, { status: 500 })
   }

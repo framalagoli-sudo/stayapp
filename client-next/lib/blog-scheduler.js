@@ -1,5 +1,6 @@
 ﻿import { supabaseAdmin } from './supabase-server'
 import { sendEmail } from './send-email.js'
+import { chiamaAI } from './ai-consumi'
 
 export function calcNextRun(frequenza, ora, giornoSettimana, giornoMese, from = new Date()) {
   const d = new Date(from)
@@ -85,9 +86,6 @@ async function generateArticle(automazione) {
     topicLine = `\nArgomento: ${argList[idx]}`
   }
 
-  const apiKey = (process.env.ANTHROPIC_API_KEY ?? '').trim()
-  if (!apiKey) return
-
   const prompt = `Sei un content writer esperto. Scrivi un articolo di blog in italiano per "${entity.name}".
 
 Contesto:
@@ -100,15 +98,9 @@ Rispondi ESCLUSIVAMENTE con un oggetto JSON (nessun testo prima o dopo):
   "content": "Corpo completo in HTML semplice (p, h2, h3, ul, li, strong — min 350 parole)"
 }`
 
-  const apiRes = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 2500, messages: [{ role: 'user', content: prompt }] }),
-  })
-  if (!apiRes.ok) return
-
-  const aiData = await apiRes.json()
-  const raw = aiData.content?.[0]?.text?.trim() || ''
+  // Con il credito finito lancia: il giro salta questo articolo, lo scrive nel
+  // log e passa alla data successiva (l'automazione non resta bloccata).
+  const raw = await chiamaAI({ azienda_id, funzione: 'blog-automatico', prompt, maxTokens: 2500 })
 
   let parsed
   try {

@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireEntityAccess, ENTITY_TABLES } from '@/lib/server-auth'
 import { getTemplate } from '@/lib/siteTemplates'
 import { collectStrings, applyTranslations } from '@/lib/translate'
-import { callClaude } from '@/lib/ai-helpers'
+import { chiamaAI, assicuraBudget, eBudgetEsaurito, rispostaBudgetEsaurito } from '@/lib/ai-consumi'
 import { resolveBlockImages } from '@/lib/unsplash'
 import { entityDataSummary } from '@/lib/ai-entity-context'
 
@@ -31,7 +31,7 @@ function withIds(blocks) {
 
 const TIPO_LABEL = { struttura: 'struttura ricettiva', ristorante: 'ristorante / locale', attivita: 'attività / servizio' }
 
-async function fillTexts(blocks, business, modalita) {
+async function fillTexts(blocks, business, modalita, azienda_id) {
   const source = collectStrings(blocks, '', {})       // { path: testoEsempio }
   const entries = Object.entries(source)
   if (!entries.length) return blocks
@@ -60,7 +60,7 @@ ${JSON.stringify(indexed)}`
 
   const chars = entries.reduce((n, [, v]) => n + v.length, 0)
   const maxTokens = Math.min(8000, Math.max(1024, Math.ceil(chars / 1.4) + 1200))
-  const raw = await callClaude(prompt, maxTokens)
+  const raw = await chiamaAI({ azienda_id, funzione: 'ai-fill/testi', prompt, maxTokens })
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
   const parsed = JSON.parse(cleaned)
 
@@ -76,7 +76,7 @@ ${JSON.stringify(indexed)}`
 // Lavora su una copia; fallback: se l'AI fallisce o salta uno slot resta la query
 // del template. Slot: hero.image_query, foto_testo/immagine.image_query,
 // hero_slider slides[].image_query, carosello items[].image_query.
-async function aiImageQueries(blocks, business) {
+async function aiImageQueries(blocks, business, azienda_id) {
   const clone = JSON.parse(JSON.stringify(blocks))
   const refs = []
   for (const b of clone) {
@@ -99,7 +99,7 @@ ${business}
 Soggetti attuali (JSON {numero: soggetto}):
 ${JSON.stringify(indexed)}`
 
-  const raw = await callClaude(prompt, 700)
+  const raw = await chiamaAI({ azienda_id, funzione: 'ai-fill/immagini', prompt, maxTokens: 700 })
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
   const parsed = JSON.parse(cleaned)
   refs.forEach((r, i) => {
@@ -116,8 +116,17 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Parametri mancanti' }, { status: 400 })
   }
 
-  const { response } = await requireEntityAccess(request, entity_tipo, entity_id)
+  const { profile, response } = await requireEntityAccess(request, entity_tipo, entity_id)
   if (response) return response
+
+  // Il controllo va fatto PRIMA: più sotto, un errore dell'AI ripiega sui testi
+  // d'esempio e riscrive comunque la home. Con il credito finito il cliente si
+  // ritroverebbe il sito sostituito da un template vuoto.
+  const azienda_id = profile.azienda_id || null
+  try { await assicuraBudget(azienda_id) } catch (e) {
+    if (eBudgetEsaurito(e)) return rispostaBudgetEsaurito()
+    return NextResponse.json({ error: 'Servizio AI non disponibile, riprova tra poco.' }, { status: 503 })
+  }
 
   const table = ENTITY_TABLES[entity_tipo]
   if (!table) return NextResponse.json({ error: 'Tipo non valido' }, { status: 400 })
@@ -155,7 +164,7 @@ export async function POST(request) {
   let filledBlocks = tpl.blocks
   let aiUsed = true
   try {
-    filledBlocks = await fillTexts(tpl.blocks, businessFull, modalita)
+    filledBlocks = await fillTexts(tpl.blocks, businessFull, modalita, azienda_id)
   } catch (e) {
     console.error('[ai-fill] AI fallita, uso testi esempio:', e?.message)
     aiUsed = false
@@ -164,7 +173,7 @@ export async function POST(request) {
   // L'AI sceglie soggetti foto mirati al business; fallback: query template + settore.
   let imgAiOk = true
   try {
-    filledBlocks = await aiImageQueries(filledBlocks, businessFull)
+    filledBlocks = await aiImageQueries(filledBlocks, businessFull, azienda_id)
   } catch (e) {
     console.error('[ai-fill] query immagini AI fallite, uso quelle del template:', e?.message)
     imgAiOk = false

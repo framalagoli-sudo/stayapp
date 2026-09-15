@@ -106,6 +106,42 @@ export default function DiagnosticaPage() {
         </div>
       </div>
 
+      {/* ── Consumi AI ─────────────────────────────────────────────────────── */}
+      <div style={{ ...card, marginBottom: 20 }}>
+        <div style={titoletto}>Consumi AI del mese</div>
+        {!dati.ai ? (
+          <div style={{ fontSize: 14, color: '#e65100' }}>
+            Il contatore non è attivo: manca la migration <code>119_ai_consumi.sql</code>.
+          </div>
+        ) : dati.ai.aziende.length === 0 ? (
+          <div style={{ fontSize: 14, color: '#888' }}>Nessuna chiamata all’AI dall’inizio del mese.</div>
+        ) : (
+          <>
+            <div style={{ fontSize: 13, color: '#888', marginBottom: 14 }}>
+              Mese UTC, costi calcolati dai token veri. Tetto predefinito ${dati.ai.budgetPredefinito} per azienda;
+              su misura con <code>aziende.ai_budget_mensile_usd</code>.
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 9 }}>
+              {dati.ai.aziende.map(a => {
+                const quota = a.budget ? Math.min(1, a.costo / a.budget) : 0
+                const colore = quota >= 1 ? '#c0392b' : quota >= 0.8 ? '#e65100' : '#00b5b5'
+                return (
+                  <div key={a.nome} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 200, flexShrink: 0, fontSize: 14, color: '#1a1a2e', overflowWrap: 'anywhere' }}>{a.nome}</div>
+                    <div style={{ flex: 1, minWidth: 0, height: 8, background: '#f0f0f0', borderRadius: 4, overflow: 'hidden' }}>
+                      {a.budget && <div style={{ width: `${Math.max(2, quota * 100)}%`, height: '100%', background: colore }} />}
+                    </div>
+                    <div style={{ width: 150, textAlign: 'right', fontSize: 13, color: '#555', fontVariantNumeric: 'tabular-nums' }}>
+                      <strong>${a.costo.toFixed(2)}</strong>{a.budget ? ` / $${a.budget}` : ''} · {a.chiamate}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )}
+      </div>
+
       {/* ── Backup ─────────────────────────────────────────────────────────── */}
       <div style={{ ...card, marginBottom: 20 }}>
         <div style={titoletto}>Backup</div>

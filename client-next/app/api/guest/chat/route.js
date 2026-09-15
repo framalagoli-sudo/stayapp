@@ -1,5 +1,6 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
+import { chiamaAI, eBudgetEsaurito } from '@/lib/ai-consumi'
 
 export async function POST(request) {
   try {
@@ -24,7 +25,7 @@ export async function POST(request) {
       return Response.json({ error: 'entity_tipo non valido' }, { status: 400 })
     }
     const { data: entity, error } = await supabaseAdmin.from('entita')
-      .select('name, description, address, phone, email, schedule, services, menu, minisito')
+      .select('azienda_id, name, description, address, phone, email, schedule, services, menu, minisito')
       .eq('id', entity_id).eq('tipo', entity_tipo).maybeSingle()
     if (error || !entity) return Response.json({ error: 'Entità non trovata' }, { status: 404 })
 
@@ -42,23 +43,25 @@ export async function POST(request) {
     if (services.length)    system += '\n\nServizi:\n' + services.map(s => `- ${s.name}${s.description ? ': ' + s.description : ''}`).join('\n')
     if (faq.length)         system += '\n\nFAQ:\n' + faq.map(f => `D: ${f.question}\nR: ${f.answer}`).join('\n\n')
 
-    const apiKey = (process.env.ANTHROPIC_API_KEY ?? '').trim()
-    if (!apiKey) return Response.json({ error: 'Servizio AI non configurato' }, { status: 500 })
-
     const chatMessages = messages.slice(-10).map(m => ({
       role: m.role === 'assistant' ? 'assistant' : 'user',
       content: String(m.content || '').slice(0, 800),
     }))
 
-    const apiRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 300, system, messages: chatMessages }),
-    })
-
-    if (!apiRes.ok) return Response.json({ error: 'Servizio AI temporaneamente non disponibile.' }, { status: 500 })
-    const aiData = await apiRes.json()
-    const reply = aiData.content?.[0]?.text?.trim() || 'Mi dispiace, non riesco a rispondere in questo momento.'
-    return Response.json({ reply })
+    // Il chatbot consuma il credito AI dell'azienda come ogni altra funzione:
+    // il limite per IP ferma un singolo visitatore, non cento visitatori diversi.
+    let reply
+    try {
+      reply = await chiamaAI({ azienda_id: entity.azienda_id, funzione: 'chatbot', system, messages: chatMessages, maxTokens: 300 })
+    } catch (e) {
+      // Il visitatore non deve leggere di crediti né di errori: gli si dice a
+      // chi rivolgersi, con i contatti che il sito ha già.
+      if (eBudgetEsaurito(e)) {
+        const contatto = [entity.phone, entity.email].filter(Boolean).join(' · ')
+        return Response.json({ reply: `In questo momento l'assistente non è disponibile. Per informazioni contatta direttamente ${entity.name}${contatto ? `: ${contatto}` : '.'}` })
+      }
+      return Response.json({ error: 'Servizio AI temporaneamente non disponibile.' }, { status: 500 })
+    }
+    return Response.json({ reply: reply || 'Mi dispiace, non riesco a rispondere in questo momento.' })
   } catch (e) { return Response.json({ error: 'Errore del servizio. Riprova tra qualche istante.' }, { status: 500 }) }
 }

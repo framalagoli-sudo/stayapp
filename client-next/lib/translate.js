@@ -1,6 +1,6 @@
 import { createHash } from 'crypto'
 import { supabaseAdmin } from './supabase-server'
-import { callClaude } from './ai-helpers'
+import { chiamaAI } from './ai-consumi'
 
 // Fase 2 multilingua: traduzione automatica del CONTENUTO (non solo UI), cachata.
 // Strategia: lazy + cache. Alla prima visita EN di un'entità estraggo i testi
@@ -115,7 +115,7 @@ function hashSource(map) {
 
 // Traduce un singolo blocco di voci. Usa chiavi NUMERICHE (non le path lunghe) per
 // non gonfiare l'output JSON → evita troncamenti/overflow di token.
-async function translateChunk(entries, lang) {
+async function translateChunk(entries, lang, azienda_id) {
   const target = lang === 'en' ? 'English' : lang
   const indexed = {}
   entries.forEach(([, v], i) => { indexed[i] = v })
@@ -134,7 +134,9 @@ ${JSON.stringify(indexed)}`
 
   const chars = entries.reduce((n, [, v]) => n + v.length, 0)
   const maxTokens = Math.min(8000, Math.max(1024, Math.ceil(chars / 1.4) + 800))
-  const raw = await callClaude(prompt, maxTokens)
+  // Contata ma mai fermata dal tetto: si paga una volta per contenuto (poi resta
+  // in cache) e fermarla lascerebbe il sito inglese in italiano ai visitatori.
+  const raw = await chiamaAI({ azienda_id, funzione: 'traduzione', prompt, maxTokens, controllaBudget: false })
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
   const parsed = JSON.parse(cleaned)
   const out = {}
@@ -144,7 +146,7 @@ ${JSON.stringify(indexed)}`
   return out
 }
 
-async function claudeTranslate(sourceMap, lang) {
+async function claudeTranslate(sourceMap, lang, azienda_id) {
   const entries = Object.entries(sourceMap)
   if (!entries.length) return {}
   // Chunking per ~2500 caratteri di valore: ogni chiamata resta ben sotto i limiti
@@ -160,13 +162,13 @@ async function claudeTranslate(sourceMap, lang) {
   const result = {}
   for (const chunk of chunks) {
     // Resilienza: un blocco che fallisce non azzera la traduzione degli altri.
-    try { Object.assign(result, await translateChunk(chunk, lang)) }
+    try { Object.assign(result, await translateChunk(chunk, lang, azienda_id)) }
     catch (e) { console.error('[translate] blocco fallito:', e?.message) }
   }
   return result
 }
 
-async function getCachedOrTranslate(entityTipo, entityId, lang, sourceMap) {
+async function getCachedOrTranslate(entityTipo, entityId, lang, sourceMap, aziendaId) {
   const sourceHash = hashSource(sourceMap)
   const { data: row } = await supabaseAdmin
     .from('entity_translations')
@@ -181,7 +183,7 @@ async function getCachedOrTranslate(entityTipo, entityId, lang, sourceMap) {
     return { ...row.translations, ...overrides }  // override manuali (Fase 3) hanno priorità
   }
 
-  const translations = await claudeTranslate(sourceMap, lang)
+  const translations = await claudeTranslate(sourceMap, lang, aziendaId)
   await supabaseAdmin
     .from('entity_translations')
     .upsert({
@@ -214,7 +216,7 @@ export async function localizeEntity(obj, entityTipo, lang) {
   try {
     const sourceMap = getTranslatableSource(obj, entityTipo)
     if (!Object.keys(sourceMap).length) return obj
-    const translated = await getCachedOrTranslate(entityTipo, obj.id, lang, sourceMap)
+    const translated = await getCachedOrTranslate(entityTipo, obj.id, lang, sourceMap, obj.azienda_id || null)
     return applyTranslations(obj, translated)
   } catch (e) {
     console.error('[translate] localizeEntity fallita:', e?.message)

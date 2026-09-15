@@ -205,6 +205,23 @@ for (const f of file) {
     })
   }
 
+  // ── 12. L'AI si chiama solo da lib/ai-consumi.js ─────────────────────────
+  //
+  // Il 15/09/2026, con le credenziali già in mano a più clienti, delle 13
+  // chiamate all'AI solo una aveva un limite vero: ognuna si era scritta la sua
+  // `fetch` verso Anthropic, e nessuna registrava quanto spendeva. Una chiamata
+  // fatta da un altro file scavalca il tetto mensile dell'azienda e non lascia
+  // traccia nel conto.
+  if (percorso !== 'lib/ai-consumi.js') {
+    rr.forEach((r, i) => {
+      if (/^\s*(\/\/|\*)/.test(r)) return
+      if (!/api\.anthropic\.com/.test(r)) return
+      if (dichiarataOk(rr, i)) return
+      segnala('chiamata all\'AI fuori da lib/ai-consumi.js', f, i + 1, r.trim().slice(0, 90),
+        'scavalca il tetto mensile dell\'azienda e non registra la spesa: si usa chiamaAI()')
+    })
+  }
+
   // ── 6. Un valore del client non finisce grezzo in una proprietà CSS ──────
   rr.forEach((r, i) => {
     const m = r.match(/(objectPosition|aspectRatio|gridTemplateColumns|backgroundImage):\s*([a-zA-Z_$][\w$.?]*)\s*[,}]/)

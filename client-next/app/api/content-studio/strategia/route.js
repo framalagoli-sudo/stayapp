@@ -2,31 +2,14 @@
 
 export const maxDuration = 60
 import { requireAuth } from '@/lib/server-auth'
+import { chiamaAI, eBudgetEsaurito, rispostaBudgetEsaurito } from '@/lib/ai-consumi'
 
 async function getAziendaId(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('azienda_id').eq('id', userId).single()
   return data?.azienda_id
 }
 
-async function callClaude(prompt, maxTokens = 800) {
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': (process.env.ANTHROPIC_API_KEY ?? '').trim(),
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: maxTokens,
-      system: 'Rispondi SEMPRE e SOLO con JSON valido, senza markdown, senza backtick, senza testo prima o dopo.',
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  })
-  if (!resp.ok) throw new Error(`Claude API error: ${resp.status}`)
-  const data = await resp.json()
-  return data.content?.[0]?.text || ''
-}
+const SOLO_JSON = 'Rispondi SEMPRE e SOLO con JSON valido, senza markdown, senza backtick, senza testo prima o dopo.'
 
 function parseJSON(text) {
   const clean = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
@@ -79,7 +62,7 @@ Rispondi SOLO con JSON valido, senza testo aggiuntivo prima o dopo:
   "mix": { "Educational": 30, "Intrattenimento": 25, "Promozionale": 25, "Community": 20 }
 }`
 
-    const testo = await callClaude(prompt, 2500)
+    const testo = await chiamaAI({ azienda_id, funzione: 'content-studio/strategia', system: SOLO_JSON, prompt, maxTokens: 2500 })
     let strategy
     try { strategy = parseJSON(testo) } catch { return Response.json({ error: 'Risposta AI non valida, riprova' }, { status: 500 }) }
 
@@ -89,7 +72,10 @@ Rispondi SOLO con JSON valido, senza testo aggiuntivo prima o dopo:
 
     await supabaseAdmin.from('aziende').update({ content_strategy: strategy }).eq('id', azienda_id)
     return Response.json({ strategy })
-  } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
+  } catch (e) {
+    if (eBudgetEsaurito(e)) return rispostaBudgetEsaurito()
+    return Response.json({ error: e.message }, { status: 500 })
+  }
 }
 
 export async function PUT(request) {

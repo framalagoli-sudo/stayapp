@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { logError } from '@/lib/observability'
+import { BUDGET_MENSILE_PREDEFINITO_USD } from '@/lib/ai-consumi'
 
 // Stato di salute della piattaforma, per il solo super_admin.
 //
@@ -73,6 +74,31 @@ export async function GET(request) {
     // in tabella. Va detto invece di mostrare una lista vuota — che si leggerebbe
     // come "nessun errore" mentre significa "non li registriamo". È lo stesso
     // inganno dei guasti silenziosi che stiamo cercando di eliminare.
+    // Consumi AI del mese, azienda per azienda, con il tetto di ciascuna.
+    // `null` = migration 119 non ancora eseguita: detto, non mostrato come zero.
+    let ai = null
+    const { data: riepilogo, error: aiErr } = await supabaseAdmin.rpc('ai_consumi_riepilogo_mese')
+    if (!aiErr) {
+      const ids = (riepilogo || []).map(r => r.azienda_id).filter(Boolean)
+      const { data: az } = ids.length
+        ? await supabaseAdmin.from('aziende').select('id, ragione_sociale, ai_budget_mensile_usd').in('id', ids)
+        : { data: [] }
+      const perId = Object.fromEntries((az || []).map(a => [a.id, a]))
+      ai = {
+        budgetPredefinito: BUDGET_MENSILE_PREDEFINITO_USD,
+        aziende: (riepilogo || []).map(r => {
+          const a = perId[r.azienda_id]
+          const budget = r.azienda_id
+            ? (a?.ai_budget_mensile_usd != null ? Number(a.ai_budget_mensile_usd) : BUDGET_MENSILE_PREDEFINITO_USD)
+            : null
+          return {
+            nome: r.azienda_id ? (a?.ragione_sociale || r.azienda_id) : 'Piattaforma (super_admin, senza azienda)',
+            chiamate: Number(r.chiamate), costo: Number(r.costo_usd), budget,
+          }
+        }),
+      }
+    }
+
     const { data: err } = await supabaseAdmin.from('error_log')
       .select('source, message, created_at').order('created_at', { ascending: false }).limit(15)
 
@@ -87,6 +113,7 @@ export async function GET(request) {
         ? processi
         : null, // migration 077 non ancora eseguita
       moduli,
+      ai,
       errori: err
         ? { registrati: true, recenti: err }
         : { registrati: false, recenti: [], nota: 'Gli errori non vengono conservati: finiscono nei log di Vercel e nelle email di avviso. Qui non c’è storico.' },

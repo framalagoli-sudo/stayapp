@@ -3,11 +3,11 @@ import { randomUUID } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireEntityAccess, ENTITY_TABLES } from '@/lib/server-auth'
 import { getTemplate } from '@/lib/siteTemplates'
-import { callClaude } from '@/lib/ai-helpers'
+import { chiamaAI, assicuraBudget, eBudgetEsaurito, rispostaBudgetEsaurito, MODELLO_FEDELE } from '@/lib/ai-consumi'
 import { resolveBlockImages } from '@/lib/unsplash'
 import { AI_BLOCKS_SCHEMA, AI_IMAGE_RULE, AI_BG_RULE, AI_ICONS } from '@/lib/ai-blocks'
 
-export const maxDuration = 300  // Sonnet su doc grandi + output multi-pagina è lento; usiamo il max Vercel Pro (l'abort di callClaude è alzato a 285s sotto)
+export const maxDuration = 300  // Sonnet su doc grandi + output multi-pagina è lento; usiamo il max Vercel Pro (l'abort della chiamata AI è alzato a 285s sotto)
 
 // "Ho già i contenuti": l'utente incolla un documento (es. generato con ChatGPT)
 // con le sezioni già scritte. L'AI lo converte nei NOSTRI blocchi PRESERVANDO la
@@ -172,8 +172,16 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Parametri mancanti (documento vuoto)' }, { status: 400 })
   }
 
-  const { response } = await requireEntityAccess(request, entity_tipo, entity_id)
+  const { profile, response } = await requireEntityAccess(request, entity_tipo, entity_id)
   if (response) return response
+
+  // È la funzione più cara (Sonnet, fino a 15 chiamate in parallelo): il
+  // credito si controlla prima di partire, non a metà delle pagine.
+  const azienda_id = profile.azienda_id || null
+  try { await assicuraBudget(azienda_id) } catch (e) {
+    if (eBudgetEsaurito(e)) return rispostaBudgetEsaurito()
+    return NextResponse.json({ error: 'Servizio AI non disponibile, riprova tra poco.' }, { status: 503 })
+  }
 
   const table = ENTITY_TABLES[entity_tipo]
   if (!table) return NextResponse.json({ error: 'Tipo non valido' }, { status: 400 })
@@ -192,10 +200,14 @@ export async function POST(request) {
 
   const chunks = multi ? splitPages(doc) : null
   if (chunks && chunks.length >= 2) {
+    let creditoFinito = false
     const gen = await mapPool(chunks.slice(0, 15), 4, async (pc, i) => {
       const isHome = i === 0
       try {
-        const raw = await callClaude(buildPagePrompt({ entity: ent, entity_tipo, name: pc.name, content: pc.content, isHome }), 6000, 'claude-sonnet-4-6', 120_000)
+        const raw = await chiamaAI({
+          azienda_id, funzione: 'from-document/pagina', modello: MODELLO_FEDELE, maxTokens: 6000, timeoutMs: 120_000,
+          prompt: buildPagePrompt({ entity: ent, entity_tipo, name: pc.name, content: pc.content, isHome }),
+        })
         const m = raw.match(/\{[\s\S]*\}/)
         const parsed = JSON.parse(m ? m[0] : raw)
         if (!Array.isArray(parsed.blocks) || !parsed.blocks.length) return null
@@ -209,19 +221,25 @@ export async function POST(request) {
           blocks: parsed.blocks,
         }
       } catch (e) {
+        if (eBudgetEsaurito(e)) creditoFinito = true
         console.error(`[from-document] pagina "${pc.name}" fallita:`, e?.message)
         return null
       }
     })
     pages = gen.filter(Boolean)
+    if (!pages.length && creditoFinito) return rispostaBudgetEsaurito()
     if (!pages.length) return NextResponse.json({ error: 'Non sono riuscito a generare le pagine dal documento. Riprova.' }, { status: 502 })
   } else {
     let parsed
     try {
-      const raw = await callClaude(buildPrompt({ entity: ent, entity_tipo, documento: doc, multi }), 16000, 'claude-sonnet-4-6', 285_000)
+      const raw = await chiamaAI({
+        azienda_id, funzione: 'from-document', modello: MODELLO_FEDELE, maxTokens: 16000, timeoutMs: 285_000,
+        prompt: buildPrompt({ entity: ent, entity_tipo, documento: doc, multi }),
+      })
       const m = raw.match(/\{[\s\S]*\}/)
       parsed = JSON.parse(m ? m[0] : raw)
     } catch (e) {
+      if (eBudgetEsaurito(e)) return rispostaBudgetEsaurito()
       console.error('[from-document] parse/AI error:', e?.message)
       const aborted = /abort/i.test(e?.message || '')
       return NextResponse.json({

@@ -78,7 +78,7 @@ export default function AiButton({
                 </div>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>Genera con AI</div>
-                  {usage && <div style={{ fontSize: 11, color: '#aaa' }}>{usage.remaining}/{usage.limit} rimaste questo mese</div>}
+                  {usage?.percentuale != null && <div style={{ fontSize: 11, color: '#aaa' }}>Credito AI del mese usato: {usage.percentuale}%</div>}
                 </div>
               </div>
               <button onClick={close} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa' }}>

@@ -1029,7 +1029,7 @@ export default function PostEditorialePage() {
                 </div>
                 <div>
                   <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a2e' }}>Genera con AI</div>
-                  {aiUsage && <div style={{ fontSize: 11, color: '#aaa' }}>{aiUsage.remaining}/{aiUsage.limit} generazioni rimaste</div>}
+                  {aiUsage?.percentuale != null && <div style={{ fontSize: 11, color: '#aaa' }}>Credito AI del mese usato: {aiUsage.percentuale}%</div>}
                 </div>
               </div>
               <button onClick={() => { setAiOpen(false); setAiResult(''); setAiError('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa' }}>
