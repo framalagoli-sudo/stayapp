@@ -388,6 +388,16 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - ⚠️ L'endpoint pubblico restituisce anche `sito` (nome, logo, tema, `footer_cfg`, `social`, pagine del menu, dati legali): **mai il `minisito` intero**, che è un oggetto che cresce e al primo campo riservato lo pubblicherebbe da solo.
     - ⚠️ **Una sonda che misura la cosa sbagliata non è neutrale.** Cercando «la prima immagine larga più di 100px» prendeva il **logo dentro l'intestazione** invece della locandina: dava proporzioni perfette e un padding mancante che c'era. Due giri persi a sistemare ciò che funzionava mentre il difetto vero restava. Quando una misura sorprende, stampare la catena degli elementi prima di fidarsi.
 
+37. **🤖 L'AI si chiama da un posto solo, con un tetto per azienda** (15/09/2026, migration `119`–`121`). Delle 13 chiamate all'AI solo il chatbot aveva un limite vero, con le credenziali già in mano a più clienti.
+    - **`lib/ai-consumi.js` → `chiamaAI({ azienda_id, funzione, prompt|messages, system, maxTokens, modello })`** è l'unico punto verso Anthropic. Prima legge la spesa del mese (`ai_speso_mese`, la somma la fa il DB: PostgREST taglia a 1000 righe), dopo scrive in `ai_consumi` i token veri. Un `api.anthropic.com` altrove blocca il deploy (regola 12).
+    - **Tetto**: 5 $/mese **per azienda** (non per entità), deciso da Francesco. Su misura in `aziende.ai_budget_mensile_usd`; ricarica valida **solo per il mese** in `ai_extra_usd`+`ai_extra_mese`. Si gestisce da **Aziende → Credito AI** (solo super_admin); il valore dell'extra sostituisce, non somma.
+    - **Paga chi preme il pulsante**: l'azienda del profilo. Il super_admin non ha azienda → registrato come piattaforma, senza tetto.
+    - **Fail closed**: se il budget non si legge, la chiamata non parte. ⚠️ Per questo un deploy che legge colonne nuove va fatto **dopo** la migration, mai prima: l'AI si fermerebbe per tutti.
+    - Al cliente **mai i dollari**: 429 con la data di rinnovo, percentuale nel pannello, banner in cima dall'80%. A te email all'80% e al 100% (una per soglia, mese e tetto).
+    - Eccezioni ragionate: **traduzioni** contate ma mai fermate (fermarle lascia /en in italiano); **chatbot** a credito finito risponde con i contatti dell'entità; **ai-fill** e **from-document** controllano PRIMA di toccare le pagine.
+    - Il tetto della piattaforma intera è il **limite di spesa sulla Console Anthropic**. Diagnostica mostra i consumi del mese azienda per azienda.
+    - Sonda `probe-ai-consumi.mjs`. ⚠️ Le password delle sonde devono avere minuscole, maiuscole, cifre e simboli: Supabase lo pretende e una stringa base64url casuale ogni tanto non li contiene (suffisso `'Aa1!'`).
+
 ---
 
 ## Roadmap
@@ -408,6 +418,10 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - **Sidebar admin riorganizzata** ✅ 2026-07-09: L1 barra principale in linguaggio umano (**Clienti & richieste** / **Contenuti & promo**); L2 menu entità raggruppato (**Contenuti / Sito & presenza / Impostazioni**) con **AI Site Builder** e QR nel menu. Solo `admin_azienda`; super/legacy invariati. Manca onboarding "Inizia qui" (backlog).
 
 ### Da fare (in ordine)
+- [x] **Costi AI sotto controllo** ✅ 15/09/2026 — tetto 5 $/mese per azienda, ricarica da Aziende → Credito AI, avviso al cliente dall'80%. Nota 37.
+- [ ] **Credito AI a pagamento** — prezzo della ricarica e pagamento con carta: richiede l'abbonamento a OltreNova su Stripe, che oggi non esiste (Stripe è collegato solo per gli incassi dei clienti). Decisione di prezzo di Francesco.
+- [ ] **Operazioni del dominio in `lib/`** (15/09, piano approvato) — azioni come «crea evento», «cambia orari», «pubblica pagina» in funzioni con validazione e controllo dell'azienda, usate da pannello **e** dal futuro assistente AI (WhatsApp/voce). Un'API pubblica `/api/v1` con chiavi per azienda **solo** quando c'è un utilizzatore vero. OltreNova oggi **non** è API First: ~200 route pensate per le schermate, senza contratto né versioni.
+- [ ] **Meta / WhatsApp** — app creata il 15/09 (solo caso d'uso WhatsApp); verifica aziendale respinta per ragione sociale assente dal sito, corretta nel piede → **da reinviare**. Poi «Diventa un Tech Provider» e il lanciatore Embedded Signup v4 (oggi il pulsante è un `alert()`). Vedi `WHATSAPP.md`.
 - [ ] 🎯 **Onboarding "Inizia qui"** — checklist primo accesso (completa i dati → genera il sito con l'AI → pubblica → dominio → primi contatti). **È il capitolo aperto più importante**: la sicurezza è fatta, quello che manca è che un cliente nuovo arrivi al sito pubblicato *da solo*.
 - [x] **Pagamenti Stripe** ✅ 31/08/2026 — **Connect live**: ogni cliente collega il proprio conto (`Account → Pagamenti`) e incassa lui. Addebiti diretti, **nessuna commissione trattenuta**, perdite a carico di Stripe. Shop, prenotazioni ed eventi passano tutti da `lib/checkout.js`; l'acconto si decide con un numero (0 = sul posto, 100 = tutto, 30 = acconto). Due webhook registrati per «account connessi». Dettaglio → nota in `PROGETTO.md` §8 e memoria `reference_stripe_connect`.
   ⚠️ **Nessun cliente vero ha ancora collegato il conto**: il primo incasso reale non è mai avvenuto.

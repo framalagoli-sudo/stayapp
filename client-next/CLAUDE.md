@@ -17,6 +17,7 @@ Auto-caricato da Claude Code quando si lavora in `client-next/` (Next.js 14 App 
   - `guestFetch(path)` — pubblico, nessun token (pagine guest). **Usare SEMPRE questo nelle pagine guest** (apiFetch causa bug QR — vedi memoria).
   - `apiFetch(path, opts)` — admin, manda il Bearer (lazy import di `@/lib/supabase`).
   - `serverFetch(path)` — solo SSR/Server Components.
+- **AI**: ogni chiamata ad Anthropic passa da `chiamaAI()` in `lib/ai-consumi.js` (tetto mensile per azienda + registro della spesa). Una `fetch` diretta verso `api.anthropic.com` blocca il deploy. Dettaglio → nota 37 in `../CLAUDE.md`.
 - **`?qr=1`** sull'URL guest → apre la **PWA**; altrimenti, se `minisito.active`, apre il **minisito** (landing). Vedi `app/s/[slug]/page.js`.
 
 ### ⚠️ Caching (lezioni apprese — non ripetere i bug)

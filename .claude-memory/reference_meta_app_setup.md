@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: 98e39a37-374d-43a6-a1bf-16225619363f
-  modified: 2026-09-15T16:00:48.919Z
+  modified: 2026-09-15T17:58:56.316Z
 ---
 
 **App Meta «OltreNova» creata il 15/09/2026**, App ID `28469155976047675` (non segreto), collegata al portafoglio business OltreNova. Guida viva: https://claude.ai/artifact/NvjsW4esEj2QHFpmB72mvM
@@ -25,6 +25,7 @@ metadata:
 
 ## Stato
 - **Verifica aziendale inviata il 15/09** con il **certificato di attribuzione della partita IVA** (Francesco è consulente in regime forfettario: **niente visura**). Nome legale = **Francesco Malagoli** (non «OltreNova»). Risposta: da minuti a 14 giorni lavorativi. Piano B se rifiutata: bolletta intestata.
+- **Respinta la sera del 15/09**: «la ragione sociale deve essere presente sul sito web» — il piede di oltrenova.com diceva solo «© OltreNova · P.IVA». Pubblicato «© OltreNova di Francesco Malagoli» + P.IVA (verificato nell'HTML servito, senza JS). Francesco deve rimandare la verifica.
 - **Chiavi NON su Vercel di proposito**: con `META_APP_ID`+`META_APP_SECRET` presenti, il pannello di tutti i clienti mostra «Collega WhatsApp», che oggi è un `alert()` segnaposto.
 - **Token client incollato in chat il 15/09**: rigenerarlo prima della produzione.
 - In «Avanzate» consigliato: riautorizzazione 2FA sì, accesso API alle impostazioni no, email notifica info@oltrenova.com; «Richiedi chiave segreta» (appsecret_proof) solo DOPO che il codice firma le chiamate.

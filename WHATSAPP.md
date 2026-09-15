@@ -1,6 +1,13 @@
 # WhatsApp — Piano tecnico
 
 > Stato: **piano approvato, non ancora implementato** (redatto 20/08/2026).
+>
+> **Aggiornamento 15/09/2026** — accesso a Meta for Developers sbloccato:
+> - App «OltreNova» creata (App ID `28469155976047675`), caso d'uso **solo WhatsApp**: gli altri (Pagina, Instagram, Messenger) si aggiungono dopo ma **non si tolgono**. Pagina `/cancellazione-dati` pubblicata per Meta.
+> - ⚠️ «Codice fasi 1-2 completo» era falso: il pulsante «Collega WhatsApp» fa solo `alert()`. Manca il lanciatore dell'**Embedded Signup**, da scrivere direttamente in **v4** (la v2 è dismessa il 15/10/2026). `META_APP_ID`/`META_APP_SECRET` restano **fuori da Vercel** finché non esiste, altrimenti tutti i clienti vedono il pulsante finto.
+> - Verifica aziendale inviata con certificato di attribuzione P.IVA (nome legale Francesco Malagoli), **respinta** perché la ragione sociale non era sul sito → aggiunta nel piede di oltrenova.com, **da reinviare** (business.facebook.com → Impostazioni → Centro sicurezza, non nella dashboard dell'app).
+> - Da riallineare: tariffe **a messaggio** dal 1/7/2025 (non a conversazione); con la **coesistenza** si collega anche il numero dell'app WhatsApp Business, quindi «serve un numero dedicato» nel pannello è falso; `whatsapp_account` è `UNIQUE(azienda_id)` ma i numeri andranno per entità (serve migration). Token client dell'app incollato in chat: **rigenerarlo** prima della produzione.
+> - Da gennaio 2026 sono vietati i chatbot AI generici su WhatsApp API; un assistente **del business** (che aggiorna il sito, risponde sui suoi servizi) è ammesso. Guida completa: artifact «meta-guida».
 > Decisione presa: **strada autonoma** (Meta Tech Provider + Embedded Signup), **catalogo template nostro**.
 > Origine: richiesta commerciale di Francesco, con due clienti che l'hanno chiesta esplicitamente (Garage 22, Debora Resinart).
 

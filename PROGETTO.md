@@ -144,7 +144,7 @@ deploy si lancia a mano, così girano sempre i controlli (§7).
 
 | Fornitore | A cosa serve | Se cade |
 |---|---|---|
-| **Anthropic** (Claude) | costruttore di siti con l'AI, traduzioni, chatbot, blog automatico | quelle funzioni si spengono, il resto vive. **A consumo**: si paga quel che si usa |
+| **Anthropic** (Claude) | costruttore di siti con l'AI, traduzioni, chatbot, blog automatico | quelle funzioni si spengono, il resto vive. **A consumo**: si paga quel che si usa. Dal 15/09/2026 ogni azienda ha un tetto (5 $/mese predefinito, ricariche da Aziende → Credito AI) e la spesa reale è in Diagnostica e nella tabella `ai_consumi` |
 | **Stripe** | pagamenti del negozio online | ⚠️ **non è mai stato collegato**: il codice esiste ma su Vercel non c'è nessuna chiave Stripe, quindi il checkout non è mai partito. Verificato il 31/08/2026 |
 | **Meta / WhatsApp** | canale WhatsApp | **oggi non è attivo**: nessun account collegato, la verifica Meta è ferma |
 | **Unsplash** | fotografie per il costruttore di siti | si scelgono le foto a mano |

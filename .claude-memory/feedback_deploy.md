@@ -32,3 +32,7 @@ più**: Railway è dismesso, tutto (frontend + API) sta su Vercel.
 Vedi [[feedback_diagnosi_prima_del_deploy]] e [[reference_vercel_env_cli]].
 Nota operativa: il `Not authorized` di Vercel è **transitorio** — rilanciare
 prima di indagare (successo al secondo tentativo sia l'11/08 che il 12/08).
+
+
+## ⚠️ Mai reindirizzare l'output di deploy.ps1 (15/09/2026)
+`.\deploy.ps1 2>&1 | ...` o `*> file` lo fermano prima del deploy: lo script ha `$ErrorActionPreference = 'Stop'` e la CLI di Vercel scrive su stderr una riga innocua (`<claude-code-hint ...>`), che col reindirizzamento diventa un errore. Lanciarlo **nudo** (`.\deploy.ps1`); l'output lungo finisce comunque salvato su file. Successo due volte di fila.

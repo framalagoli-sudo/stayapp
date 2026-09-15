@@ -79,6 +79,18 @@ Dove possibile ognuno ha un test in `tests/smoke/security.spec.js`.
     e dà l'illusione di aver ristretto. L'ordine giusto è `REVOKE SELECT ... FROM anon` e poi
     `GRANT SELECT (colonne pubbliche)`. Misurato il 26/08 sulla tabella `offerte`, dove le
     colonne interne restavano leggibili nonostante il GRANT mirato (migration 088).
+    ⚠️ Ricaduto il 15/09/2026 con `ai_consumi` (migration 119: GRANT a service_role senza REVOKE
+    ai ruoli pubblici; retta solo dalla RLS senza policy). Chiuso con la 120.
+
+18. **Ogni chiamata all'AI passa da `lib/ai-consumi.js`, e un cliente con il login conta come uno
+    sconosciuto.** Il check A5 aveva guardato solo le route AI raggiungibili senza login; ma le
+    credenziali sono in mano ai clienti, e il 15/09/2026 delle 13 chiamate all'AI dietro il login
+    nessuna aveva un limite vero (quattro «limiti» tenuti in una `new Map()`, che su Vercel riparte a
+    ogni istanza). Ora: tetto mensile in dollari per azienda controllato **prima** della chiamata,
+    spesa scritta **dopo** con i token veri, **fail closed** se il budget non si legge. Un
+    `api.anthropic.com` in un altro file blocca il deploy (`verifica-regole.mjs` regola 12). Vale
+    per ogni fornitore a consumo futuro (voce, trascrizione, immagini): un punto solo, tetto per
+    azienda, registro della spesa. Sonda `probe-ai-consumi.mjs`.
 
 ### Il SISTEMA di monitoraggio (a strati — "sempre" senza sprechi)
 - **Strato 0 — Aggiornamento dipendenze (il "processo tipo WordPress-update").** `.github/dependabot.yml`

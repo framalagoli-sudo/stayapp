@@ -1,14 +1,42 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — l'offerta del Furgone da confermare col cliente, Garage 22 e il nome su Stripe, poi il primo incasso vero"
+description: "Da dove riprendere — 15/09 chiuso: costi AI sotto tetto e live; aperti verifica Meta da reinviare, Console Anthropic, prezzo ricarica AI, DNS clienti, primo incasso Stripe"
 metadata: 
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-15T09:42:31.331Z
+  modified: 2026-09-15T19:44:22.343Z
 ---
 
 # Si riprende da qui
+
+**Sessione chiusa il 15/09/2026 sera.** Tutto live, migration eseguite fino alla **121**, nessuna in sospeso. Riepilogo → [[project_session_2026_09_15]]. Primo passo alla ripresa: chiedere a Francesco se ha reinviato la verifica Meta e cosa ha risposto.
+
+## ✅ 15/09 notte — tetto AI LIVE (migration 119 eseguita, deploy 12c378df)
+`probe-ai-consumi.mjs` in produzione: tutto regge (429 su 6 funzioni, chatbot
+con contatti, blog-auto altrui 404). Diagnostica aperta dal browser: riga visibile.
+Migration **120 eseguita** e verificata (anon 401 in lettura e scrittura).
+**$5/mese per AZIENDA confermato** da Francesco. API: approvato il piano in 3 passi
+(operazioni in lib/ → assistente AI → /api/v1 solo con un utilizzatore vero).
+**Ricarica credito — LIVE 15/09 (deploy 1500a4b3, migration 121 eseguita)**: Aziende → Credito AI
+(tetto su misura + extra solo del mese, route `/api/aziende/[id]/credito-ai`
+solo super_admin), banner al cliente dall'80% in AdminLayout, Diagnostica conta
+l'extra e mostra 3 decimali. Verificato: il cliente NON può aggiornare `aziende`
+dal browser (RLS, 0 righe). Provato in produzione: banner 85%, cliente 404 su ricarica, ricarica 5$ → 14%, AI riparte; probe-ai-consumi ancora verde.
+Trovato e corretto: password sonde non conformi alla nuova policy Supabase (31 file, anche global-setup).
+
+## (storico) PRIORITÀ 15/09 sera — tetto AI: scritto, NON live
+Francesco: «ho già fornito le password a più di un cliente e non vorrei che nel
+tentativo di giocare possano già sforare». Delle 13 chiamate all'AI solo il
+chatbot aveva un limite vero. Fatto sul ramo **`ai-consumi`** (pushato, build ok,
+regole ok): `lib/ai-consumi.js` unico punto, tetto $ per azienda, riga in
+`ai_consumi` per chiamata, avvisi 80/100%, Diagnostica, regola 12 in
+verifica-regole. → [[project_ai_consumi]]
+**Sequenza**: Francesco esegue **migration 119** (su main, idempotente anche se
+avesse eseguito la prima versione) → merge del ramo in main → `deploy.ps1` →
+`node tests/probe-ai-consumi.mjs` → aprire Diagnostica e un «Genera con AI».
+⚠️ NON deployare il ramo prima della 119: senza tabella il controllo lancia e
+l'AI si ferma per tutti. Da decidere con lui: tetto predefinito (messo **$5**).
 
 ## ▶️ 15/09/2026 — fatto stamattina
 

@@ -5,7 +5,9 @@
 > ⚠️ **Prima di scrivere codice**: [Verificare il contesto, non solo il pezzo](feedback_verificare_il_contesto.md) — la radice comune degli errori ripetuti.
 
 - [💾 Backup completo: account e immagini](project_backup_lacune.md) — chiuso 09/09 (15 account, 62/62 foto); resta da provare il RIPRISTINO, piano dentro
-- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: offerta Furgone da confermare col cliente, Garage22 su Stripe, primo incasso mai avvenuto
+- [🤖 Consumi AI e tetto per azienda](project_ai_consumi.md) — 15/09: 12 chiamate su 13 senza limite vero; ora un punto solo, fail closed; LIVE dal 15/09 con ricarica da Aziende → Credito AI e avviso al cliente dall 80%
+- [📅 Sessione 15/09 — shop live, Meta sbloccato, costi AI sotto tetto, decisione API](project_session_2026_09_15.md) — migration fino a 121; verifica Meta da reinviare
+- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: reinviare verifica Meta, Console Anthropic, email unica, prezzo ricarica AI, DNS metodotvb/fondaconarni, primo incasso Stripe
 - [📅 Sessione 08/09 — conferme spente, calendario cieco, offerte inerti](project_session_2026_09_08.md) — 6 interventi nati da cose non rotte ma che non arrivavano
 - [📆 Intervalli di date nel booking](reference_intervalli_date_booking.md) — (giorno,giorno) e l intervallo VUOTO: non da errore, da «libero»; e con
 - [🏷️ Offerte sulle risorse](reference_offerte_risorse.md) — valevano solo per gli slot orari; prezzo_modo dice se e al giorno o del periodo (su 5 giorni sono 5
@@ -21,7 +23,6 @@
 - [🔇 Guasti silenziosi: allarmi + battito dei cron](reference_guasti_silenziosi.md) — try/catch NON intercetta un processo che smette…
 - [🛡️ Punto A (sicurezza) CHIUSO — 24/08](project_check_sicurezza_punto_A.md) — 8 sotto-fasi, 6 con buchi veri corretti; il…
 - [🎭 entity_id dal corpo va verificato](reference_entita_dal_corpo.md) — `azienda_id` era protetto, `entity_id` no → si…
-- [23/08 check sicurezza A1 + buco loyalty](project_session_2026_08_23_check_A.md)
 - [💰 Il valore si consuma solo a pagamento accertato](reference_valore_a_pagamento_accertato.md) — invariante 11: punti/gift card/posti mai alla…
 - [🪝 Webhook su www, mai sull'apex](reference_webhook_url_www.md) — l'apex dà 308 e per Svix un 3xx è consegna…
 - [👁️ Anteprima bozze solo con token firmato](reference_anteprima_bozze_token.md) — `?preview=1` mostrava le bozze a chiunque; iframe…
@@ -35,7 +36,6 @@
 - [🔐 Check MFA 18/08/2026](project_check_mfa_2026_08_18.md) — l'impianto 2FA regge ai test avversariali…
 - [⚠️ AuthContext 406 → admin in caricamento infinito](reference_authcontext_406.md) — `.single()` su profiles/aziende: 0 righe da RLS…
 - [🌐 Domini su Vercel (lezioni verificate)](reference_domini_vercel.md) — IP DNS mai hardcodati (76.76.19.19 è morto), il…
-- [Session 2026-08-17 Sistema domini rifatto](project_session_2026_08_17_domini.md)
 - [Lingua](feedback_lingua.md) — Rispondere sempre in italiano
 - [🔒 Sicurezza sempre priorità](feedback_sicurezza_priorita.md) — la sicurezza è un vincolo di OGNI intervento…
 - [Entità sempre tre](feedback_entita_tre.md) — Menzionare sempre struttura, ristorante E…
@@ -78,54 +78,7 @@
 - [Stato infrastruttura](project_acquisti_pendenti.md) — Vercel Pro ✅, Railway freezato ✅, Supabase Pro ✅…
 - [Robustezza infra](project_robustezza_infra.md) — Supabase Pro ✅, cron Vercel ✅; resta RLS come 2°…
 - [Stato OltreNova + azioni manuali](project_google_calendar_pending.md) — Google Calendar, Cloudflare Bot Fight, og-image…
-- [Migrazione Railway → Vercel COMPLETA](project_session_railway_migration.md) — tutto su Vercel, Railway freezato…
 - [Roadmap Sprint + Piano tecnico 6 fasi](project_roadmap_sprint.md) — Fase 2 COMPLETA, Sprint 10 = Stripe billing
-- [Session 2026-08-12 Chiusi i 3 aperti piccoli](project_session_2026_08_12.md)
-- [Session 2026-08-11 Server Express NON ricostruito](project_session_2026_08_11.md)
-- [23/07/26 Pulizia dipendenze (Sentry rimosso)](project_session_2026_07_23.md)
-- [20/07/26 IconPicker + Punto focale foto](project_session_2026_07_20.md)
-- [19/07/26 micro-feature blocchi sito](project_session_2026_07_19.md)
-- [18/07/26 feature design app/sito](project_session_2026_07_18.md)
-- [17/07/26 2FA account + design header/footer](project_session_2026_07_17.md)
-- [14/07/26 Chiusi i "6 punti" sicurezza](project_session_2026_07_14.md)
-- [13/07/26 Strato 0 sicurezza OPERATIVO](project_session_2026_07_13.md)
-- [11/07/26 email rifatto + AUDIT sicurezza](project_session_2026_07_11.md)
-- [09/07/26 AI Builder pesca entità + riorg sidebar](project_session_2026_07_09.md)
-- [07/07/26 Link interni + fix IT/EN](project_session_2026_07_07.md)
-- [23/06/26 Sicurezza blog + cleanup](project_session_2026_06_23.md)
-- [22/06/26 Block system completo](project_session_2026_06_22.md)
-- [21/06/26 Export contatti CSV + fix deploy.ps1](project_session_2026_06_21.md)
-- [18/06/26 CLAUDE.md + brand completo](project_session_2026_06_18.md)
-- [Session 2026-06-16/17 Backup fix + 5 interventi sicurezza](project_session_2026_06_16_security.md)
-- [15/06/26 Audit sicurezza multi-tenant](project_session_2026_06_15c_security.md)
-- [15/06/26 Debug Form Builder completo](project_session_2026_06_15b_formbuilder.md)
-- [15/06/26 Fix sistemico super_admin azienda_id](project_session_2026_06_15.md)
-- [14/06/26 BOM fix + AI Builder + icone PWA](project_session_2026_06_14d.md)
-- [14/06/26 Form Builder template picker + CRM upsert](project_session_2026_06_14c.md)
-- [14/06/26 Fix SSR guest + BOM](project_session_2026_06_14b.md)
-- [14/06/26 Form Builder public routes](project_session_2026_06_14.md)
-- [13/06/26 Form security stack](project_session_2026_06_13c.md)
-- [13/06/26 Form builder avanzato](project_session_2026_06_13b.md)
-- [13/06/26 Sprint A+B Form Security](project_session_2026_06_13.md)
-- [12/06/26 PWA InstallButton](project_session_2026_06_12.md)
-- [11/06/26 Allineamento docs](project_session_2026_06_11.md)
-- [10/06/26 Fix AttivitaApp](project_session_2026_06_10b.md)
-- [10/06/26 Fix team PE + deploy.ps1](project_session_2026_06_10.md)
-- [09/06/26 CI fix + footer](project_session_2026_06_09b.md)
-- [09/06/26 RistoranteMenu refactor](project_session_2026_06_09.md)
-- [08/06/26 SW stale + Sito web unificato](project_session_2026_06_08b.md)
-- [08/06/26 Cutover oltrenova.com](project_session_2026_06_08.md)
-- [Session 2026-06-06/07 Migrazione Next.js](project_session_2026_06_06.md)
-- [05/06/26 CI/CD smoke test](project_session_2026_06_05.md)
-- [04/06/26 Reset password](project_session_2026_06_04c.md)
-- [04/06/26 Fix QR code](project_session_2026_06_04b.md)
-- [Session 2026-06-03/04 AI Site Builder v2](project_session_2026_06_03.md)
-- [02/06/26 Allergeni EU](project_session_2026_06_02.md)
-- [01/06/26 Menu multi+visibilità](project_session_2026_06_01d.md)
-- [01/06/26 PWA unificata](project_session_2026_06_01c.md)
-- [01/06/26 Block editor](project_session_2026_06_01b.md)
-- [01/06/26 Domini custom](project_session_2026_06_01.md)
-- [Session 2026-08-25 Moduli: il tipo non limita più niente](project_session_2026_08_25_moduli.md)
 - [🔐 Dato riservato: a monte, non a valle](reference_dato_riservato_a_monte.md) — non chiederlo nella query per i rami che non ne…
 - [🔤 Vocabolari dei moduli: alias storici](reference_vocabolari_moduli.md) — `gallery`≠`galleria`, `.modules` annidato sulle…
 - [⏳ Accendere una funzione non è finirla](reference_accendere_non_e_finire.md) — vale solo da ora in poi: chi c era prima resta…
@@ -148,17 +101,15 @@
 - [🔐 Consenso ai dati personali: la prova, non la spunta](reference_consenso_dati_personali.md) — il controllo sta nella ROUTE (la spunta nel…
 - [📏 Una sonda che misura la cosa sbagliata](reference_sonda_misura_sbagliata.md) — prendeva il logo dell'header invece della…
 - [🧱 Catalogo a strati: vetrina, offerta, vendita](project_catalogo_strati.md) — Vetrine/Offerte/Shop sono TRE cataloghi con le…
-- [26-27/08 FK vecchie + PWA rotte + Offerte](project_session_2026_08_26_27.md)
 - [🚫 Niente tassonomie: campi liberi](feedback_niente_tassonomie.md) — non inventare elenchi chiusi di tipi né chiedere…
 - [📅 Booking a giornate (case, auto, camere)](reference_booking_giornaliero.md) — l'ultimo giorno è l'uscita NON una notte; il…
 - [⚠️ Verificare il contesto + L'ULTIMO MIGLIO](feedback_verificare_il_contesto.md) — verifico il pezzo che ho scritto, non il percorso…
-- [28/08 calendario booking + flusso unificato](project_session_2026_08_28.md)
 - [🎯 Prenotazioni unificate: da cinque posti a uno](project_prenotazioni_unificate.md) — analisi completa + le 2 scoperte: metà delle…
 - [🔁 Cercare TUTTI i punti, non solo quello segnalato](feedback_cercare_tutti_i_punti.md) — il consenso privacy è mancato in TRE posti perché…
-- [28/08 pomeriggio blocco Offerte e blocchi orfani](project_session_2026_08_28b.md)
 - [⛔ I cambi importanti li autorizza Francesco PRIMA](feedback_autorizzare_cambi_importanti.md) — togliere voci di menu, spostare dove si crea…
 - [🏠 Un sito, un indirizzo](reference_un_sito_un_indirizzo.md) — se il cliente ha un dominio si va lì (307, mai 301); sitemap ed email devono dichiarare lo stesso del canonical
 - [📷 Caricamento foto: 4 MB è il tetto della piattaforma](reference_caricamento_foto.md) — misurato (413 prima della nostra route); e CampoImmagine, il campo unico che NON va forzato su gallerie e miniature
 - [⚖️ Vincolo tecnico o scelta di prodotto?](feedback_vincolo_o_scelta.md) — «il cerchio è fisso» era una riga di CSS, non un limite: le scelte le fa Francesco
 - [📅 Sessione 14/09 — un sito un indirizzo, il campo foto unico, la forma scelta dal cliente](project_session_2026_09_14.md) — 7 deploy; 4 MB misurati; 3 difetti trovati facendo altro
 - [🟦 App Meta OltreNova: com'è configurata e le trappole](reference_meta_app_setup.md) — solo caso d'uso WhatsApp; verifica aziendale nel Centro sicurezza (non nell'app); la pagina Di base salva un campo alla volta; chiavi NON ancora su Vercel
+- [🗂️ Archivio note di sessione giu–ago 2026](archivio_sessioni.md) — storico, 50 sessioni; il sapere tecnico è già nei reference_
