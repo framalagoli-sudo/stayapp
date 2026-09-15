@@ -1,16 +1,9 @@
-﻿import { requireAuth } from '@/lib/server-auth'
+﻿import { requireEntityAccess, getEntityAziendaId } from '@/lib/server-auth'
 
 export const maxDuration = 60
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { callClaude, getRemainingCredits, consumeCredit, MONTHLY_LIMIT } from '@/lib/ai-helpers'
+import { chiamaAI, statoBudget, eBudgetEsaurito, rispostaBudgetEsaurito } from '@/lib/ai-consumi'
 import { oraLocale } from '@/lib/fuso'
-
-async function getAziendaId(userId) {
-  const { data } = await supabaseAdmin.from('profiles').select('azienda_id, role').eq('id', userId).single()
-  if (data?.azienda_id) return data.azienda_id
-  if (data?.role === 'super_admin') return userId
-  return null
-}
 
 function slugify(str) {
   return str.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
@@ -30,17 +23,20 @@ async function fetchUnsplashCover(query) {
 
 export async function POST(request) {
   try {
-    const { user, response } = await requireAuth(request)
-    if (response) return response
     const { entity_tipo, entity_id, argomento } = await request.json()
     if (!entity_tipo || !entity_id) return Response.json({ error: 'entity_tipo e entity_id obbligatori' }, { status: 400 })
 
-    const azienda_id = await getAziendaId(user.id)
-    if (!azienda_id) return Response.json({ error: 'Business non trovato' }, { status: 400 })
+    // ⛔ Prima bastava il login: con l'id dell'entità di un altro cliente si
+    // leggevano nome, descrizione e servizi nel prompt e si creava un articolo
+    // agganciato al suo sito.
+    const { profile, response } = await requireEntityAccess(request, entity_tipo, entity_id)
+    if (response) return response
 
-    const remaining = getRemainingCredits(azienda_id)
-    if (remaining <= 0)
-      return Response.json({ error: `Limite mensile raggiunto (${MONTHLY_LIMIT} generazioni/mese). Si rinnova il mese prossimo.` }, { status: 429 })
+    // L'articolo appartiene all'azienda dell'entità (anche quando lo crea il
+    // super_admin); l'AI la paga chi preme il pulsante — il super_admin no.
+    const azienda_id = await getEntityAziendaId(entity_tipo, entity_id)
+    if (!azienda_id) return Response.json({ error: 'Entità non trovata' }, { status: 404 })
+    const pagante = profile.azienda_id || null
 
     const tableMap = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
     const table = tableMap[entity_tipo]
@@ -80,7 +76,7 @@ Rispondi ESCLUSIVAMENTE con un oggetto JSON con questa struttura (nessun testo p
   "content": "Corpo completo in HTML semplice (usa p, h2, h3, ul, li, strong — min 350 parole)"
 }`
 
-    const raw = await callClaude(prompt, 2500)
+    const raw = await chiamaAI({ azienda_id: pagante, funzione: 'blog-auto', prompt, maxTokens: 2500 })
     let parsed
     try {
       const match = raw.match(/\{[\s\S]*\}/)
@@ -105,9 +101,10 @@ Rispondi ESCLUSIVAMENTE con un oggetto JSON con questa struttura (nessun testo p
     }).select('id, title, slug').single()
 
     if (artErr) return Response.json({ error: artErr.message }, { status: 500 })
-    const leftAfter = consumeCredit(azienda_id)
-    return Response.json({ ...articolo, usage: { remaining: leftAfter, limit: MONTHLY_LIMIT } }, { status: 201 })
+    const { percentuale } = await statoBudget(pagante)
+    return Response.json({ ...articolo, usage: { percentuale } }, { status: 201 })
   } catch (e) {
+    if (eBudgetEsaurito(e)) return rispostaBudgetEsaurito()
     console.error('[AI blog-auto]', e.message)
     const isTimeout = e.name === 'AbortError'
     return Response.json({ error: isTimeout ? 'Timeout AI (90s). Prova con meno dettagli o riprova.' : 'Errore durante la generazione. Riprova.' }, { status: 500 })

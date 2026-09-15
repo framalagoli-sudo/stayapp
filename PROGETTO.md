@@ -363,7 +363,7 @@ Variables**. Qui ci sono solo i nomi e la provenienza.
 | `R2_ACCOUNT_ID` · `R2_ACCESS_KEY_ID` · `R2_SECRET_ACCESS_KEY` · `R2_BUCKET_NAME` | Cloudflare → R2 → Manage API tokens | niente backup |
 | `RESEND_API_KEY` · `RESEND_FROM` · `RESEND_WEBHOOK_SECRET` | Resend → API Keys | nessuna email |
 | `CRON_SECRET` | inventarne una nuova, lunga e casuale | i processi automatici si fermano |
-| `ANTHROPIC_API_KEY` · `AI_MONTHLY_LIMIT` | console Anthropic | l'AI si spegne |
+| `ANTHROPIC_API_KEY` | console Anthropic (lì va impostato anche il **limite di spesa mensile**: è il tetto della piattaforma intera; quello per azienda sta in `lib/ai-consumi.js`) | l'AI si spegne |
 | `STRIPE_SECRET_KEY` | Stripe → Developers → Chiavi API | niente pagamenti, in nessun punto della piattaforma |
 | `STRIPE_WEBHOOK_SECRET` | Stripe → Webhook (eventi da **account connessi**) | i pagamenti riescono ma non risultano mai: l'ordine resta «in attesa» per sempre |
 | `STRIPE_ACCOUNT_WEBHOOK_SECRET` | Stripe → Webhook (account connessi, payload **Thin**) | non ci si accorge se Stripe blocca il conto di un cliente: lo scopre lui dal primo pagamento rifiutato |

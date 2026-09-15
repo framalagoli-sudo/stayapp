@@ -131,6 +131,18 @@ I limiti sono veri (`tests/probe-rate-limit.mjs`).
       `form-builder/public/submit` sembrava scoperta a una prima scansione: ha invece 5/ora + Turnstile.
 - [ ] **Storage**: caricamenti ripetuti che riempiono lo spazio — rimandato ad **A6**, dove si guardano
       i file nel loro insieme.
+- [x] **⛔ Riaperto e chiuso il 15/09/2026 — l'AI dietro il login.** A5 aveva guardato solo il chatbot
+      pubblico, «l'unica route AI raggiungibile senza login». Ma chi ha il login **è** un cliente, e le
+      credenziali erano già in mano a più clienti: delle 13 chiamate all'AI, quattro avevano un «limite
+      mensile» tenuto in una `new Map()` (su Vercel riparte da zero a ogni istanza: decorativo) e otto
+      nessuno — compreso l'import da documento con Sonnet fino a 15 chiamate in parallelo. Nessuna
+      registrava la spesa. Ora passano tutte da `lib/ai-consumi.js`: tetto mensile **in dollari per
+      azienda** (`aziende.ai_budget_mensile_usd`, predefinito nel codice), spesa scritta in
+      `ai_consumi` coi token veri della risposta, avviso a Francesco all'80% e al 100%, migration `119`.
+      `verifica-regole.mjs` segnala ogni chiamata ad Anthropic fatta da un altro file. Trovato per strada:
+      `ai/blog-auto` accettava l'entità di un altro cliente (solo login, niente `requireEntityAccess`).
+      **La lezione della classe**: «raggiungibile senza login» non è l'unico perimetro dei costi — un
+      cliente autenticato che gioca spende quanto uno sconosciuto.
 
 Sonde: `probe-rate-limit.mjs`, `probe-abuso-volume.mjs`. Un test in `security.spec.js`.
 

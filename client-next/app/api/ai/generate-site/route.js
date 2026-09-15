@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto'
 import { requireAuth } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { callClaude, checkAndConsumeGenRate } from '@/lib/ai-helpers'
+import { chiamaAI } from '@/lib/ai-consumi'
 import { resolveBlockImages } from '@/lib/unsplash'
 import { AI_BLOCKS_SCHEMA, AI_IMAGE_RULE, AI_BG_RULE, AI_ICONS } from '@/lib/ai-blocks'
 import { entityDataSummary } from '@/lib/ai-entity-context'
@@ -12,7 +12,6 @@ const ALLOWED_OBIETTIVI = ['lead_gen', 'vendita', 'vetrina', 'prenotazioni', 'po
 const ALLOWED_TEMPLATES = ['essential', 'complete', 'narrative']
 const ALLOWED_MODES = ['landing', 'site']
 const MAX_LENGTHS = { nome: 100, settore: 150, descrizione: 600, servizi: 500, punti_forza: 400, cta_text: 80, tono: 50, target: 50 }
-const GEN_LIMIT_PER_HOUR = 10
 
 const OBIETTIVO_CONFIGS = {
   lead_gen: { label: 'Lead Generation', landing_blocks: 'hero_slider(1 slide, promessa + CTA) → highlights(3-4 benefici) → stats(style:dark) → about(problema→soluzione) → testimonianze → cta_banner(variant:split) → accordion(obiezioni) → form_builder', site_home_blocks: 'hero_slider → highlights → stats(style:dark) → cta_banner → testimonianze → form_builder', notes: 'CTA form visibile presto. Accordion risponde a obiezioni reali.' },
@@ -91,10 +90,10 @@ export async function POST(request) {
     const { user, response } = await requireAuth(request)
     if (response) return response
     const { data: profile } = await supabaseAdmin.from('profiles').select('role').eq('id', user.id).single()
+    // Solo super_admin: nessuna azienda da addebitare, la spesa si registra come
+    // uso della piattaforma. (Il vecchio «10 generazioni l'ora» stava in memoria
+    // del server e ripartiva da zero a ogni istanza: non limitava niente.)
     if (profile?.role !== 'super_admin') return Response.json({ error: 'Accesso riservato ai super_admin (beta)' }, { status: 403 })
-
-    if (!checkAndConsumeGenRate(user.id))
-      return Response.json({ error: `Limite orario raggiunto (${GEN_LIMIT_PER_HOUR} generazioni/ora). Riprova tra qualche minuto.` }, { status: 429 })
 
     const body = await request.json()
     const { entity_tipo, entity_id, mode, obiettivo, template, answers } = body
@@ -123,7 +122,7 @@ export async function POST(request) {
     }
 
     const prompt = buildSitePrompt({ entity, entity_tipo, mode, obiettivo, template, answers: clean, entityData: entityDataSummary(entity, entity_tipo) })
-    const raw = await callClaude(prompt, 6000)
+    const raw = await chiamaAI({ funzione: 'generate-site', prompt, maxTokens: 6000 })
 
     let parsed
     try {

@@ -441,7 +441,7 @@ Modulo **incluso nel prodotto**, chiesto da due clienti (Garage 22, Debora Resin
 - [x] Canali: Instagram, Facebook, LinkedIn, TikTok, X, Google Business
 - [x] Stato workflow: bozza → pianificato → pubblicato (senza Meta API — pubblicazione manuale)
 - [x] Note interne non pubblicate
-- [x] **AI social post generator** — bottone "✨ Genera con AI" nell'editor post; modal con tema/brief + tono (4 opzioni); genera testo ottimizzato per canale via Claude Haiku; anteprima + "Usa testo" o "Rigenera"; limite 20 gen/mese per azienda (configurabile `AI_MONTHLY_LIMIT`). Usa `fetch` nativo → `POST https://api.anthropic.com/v1/messages`. Richiede `ANTHROPIC_API_KEY` su Vercel.
+- [x] **AI social post generator** — bottone "✨ Genera con AI" nell'editor post; modal con tema/brief + tono (4 opzioni); genera testo ottimizzato per canale via Claude Haiku; anteprima + "Usa testo" o "Rigenera"; consuma il credito AI mensile dell'azienda (tetto in dollari, `lib/ai-consumi.js` — dal 15/09/2026; il vecchio «20 gen/mese» stava in memoria del server e non limitava niente). Richiede `ANTHROPIC_API_KEY` su Vercel.
 - **Migration da eseguire su Supabase:** `034_piano_editoriale.sql`
 
 ### Form builder ✅ 2026-05-16

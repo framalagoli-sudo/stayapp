@@ -2,31 +2,14 @@
 
 export const maxDuration = 60
 import { requireAuth } from '@/lib/server-auth'
+import { chiamaAI, eBudgetEsaurito, rispostaBudgetEsaurito } from '@/lib/ai-consumi'
 
 async function getAziendaId(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('azienda_id').eq('id', userId).single()
   return data?.azienda_id
 }
 
-async function callClaude(prompt, maxTokens = 800) {
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': (process.env.ANTHROPIC_API_KEY ?? '').trim(),
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: maxTokens,
-      system: 'Rispondi SEMPRE e SOLO con JSON valido, senza markdown, senza backtick, senza testo prima o dopo.',
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  })
-  if (!resp.ok) throw new Error(`Claude API error: ${resp.status}`)
-  const data = await resp.json()
-  return data.content?.[0]?.text || ''
-}
+const SOLO_JSON = 'Rispondi SEMPRE e SOLO con JSON valido, senza markdown, senza backtick, senza testo prima o dopo.'
 
 function parseJSON(text) {
   const clean = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
@@ -73,9 +56,12 @@ Rispondi SOLO con JSON valido:
   { "variante": 3, "stile": "Engagement & Domanda", "testo": "caption completa", "hashtag": ["#tag1","#tag2","#tag3","#tag4","#tag5"] }
 ]`
 
-    const testo = await callClaude(prompt, 1200)
+    const testo = await chiamaAI({ azienda_id, funzione: 'content-studio/caption', system: SOLO_JSON, prompt, maxTokens: 1200 })
     let varianti
     try { varianti = parseJSON(testo) } catch { return Response.json({ error: 'Risposta AI non valida, riprova' }, { status: 500 }) }
     return Response.json({ varianti })
-  } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
+  } catch (e) {
+    if (eBudgetEsaurito(e)) return rispostaBudgetEsaurito()
+    return Response.json({ error: e.message }, { status: 500 })
+  }
 }
