@@ -19,6 +19,7 @@ import ChatChoice from '@/components/ChatChoice'
 import MenuTab from '@/components/MenuTab'
 import OfferteTab from '@/components/guest/OfferteTab'
 import { sezioniOspite, etichettaSezione } from '@/lib/funzioni'
+import { focalValido } from '@/lib/formati-foto'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DEFAULT_THEME = {
@@ -218,8 +219,10 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
 
   const AppHeader = attivita.cover_url ? (
     <div style={{ position: 'relative', height: 220, overflow: 'hidden' }}>
+      {/* Striscia alta 200px: taglia molto, quindi il cliente sceglie quale parte
+          resta visibile. Il valore passa dal controllo, mai grezzo nel CSS. */}
       <img src={attivita.cover_url} alt="cover"
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: focalValido(attivita.cover_focal) || 'center' }} />
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 100%)' }} />
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 20px 20px' }}>{headerContent}</div>
       {langToggle}

@@ -1835,7 +1835,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                 {articoli.slice(0, d.limit || articoli.length).map(art => (
                   <a key={art.id} href={`/blog/${art.slug}?back=${encodeURIComponent(homeUrl)}`}
                     style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', display: 'block', textDecoration: 'none', color: 'inherit', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1px solid #f0f0f0' }}>
-                    {art.cover_url && <img src={art.cover_url} alt={art.title} style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />}
+                    {art.cover_url && <img src={art.cover_url} alt={art.title} style={{ width: '100%', height: 160, objectFit: 'cover', objectPosition: focalValido(art.cover_focal) || 'center', display: 'block' }} />}
                     <div style={{ padding: '16px 18px' }}>
                       {art.published_at && <div style={{ fontSize: 11, color: '#aaa', marginBottom: 6 }}>{new Date(art.published_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
                       <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', marginBottom: 8 }} {...ricco(art.title)} />

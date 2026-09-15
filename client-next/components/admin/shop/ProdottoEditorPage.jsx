@@ -180,8 +180,10 @@ export default function ProdottoEditorPage() {
             onChange={setImmagini}
             endpoint="/api/upload/minisito-image?entity_type=prodotto&entity_id=shop"
             unsplashQuery={nome || ''}
-            primaEtichetta="nel catalogo"
-            nota="Il catalogo mostra la prima foto. Ricordati di salvare."
+            // ⚠️ Non scrivere «il catalogo mostra…»: al 15/09/2026 il catalogo
+            // pubblico (`ShopWidget`) non è montato da nessuna pagina del sito.
+            primaEtichetta="principale"
+            nota="La prima foto è quella principale del prodotto. Ricordati di salvare."
             incollaIndirizzo
           />
         </div>

@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { MAX_ETICHETTA } from '@/lib/funzioni'
+import { focalValido } from '@/lib/formati-foto'
 
 // L'unico punto da cui si leggono e si scrivono le entità.
 //
@@ -170,14 +171,24 @@ export const CAMPI_MODIFICABILI = [
   // «Questo sito è visibile ai motori di ricerca?» — nasce spento sulle entità
   // nuove (migration 116) e lo accende il cliente quando il sito è pronto.
   'indicizzabile',
+  // Quale parte della copertina resta visibile nella striscia in cima all'app
+  // (migration 117). Finisce in `object-position`: vedi sotto.
+  'cover_focal',
   // Nomi storici che il pannello manda ancora: `dallaFormaStorica` li riporta
   // a `moduli` e a `settore` prima della scrittura.
   'modules', 'pwa', 'tipo',
 ]
 
 // Tiene del corpo della richiesta solo ciò che è lecito modificare.
+//
+// ⚠️ Filtra i NOMI dei campi, non i valori. Per quelli che finiscono in una
+// proprietà CSS il valore si ricontrolla qui: un valore fuori forma diventa
+// `null` (il centro), non una stringa arbitraria nella pagina di un cliente.
+// Il `CHECK` della migration 117 è il secondo muro.
 export function campiAmmessi(body) {
-  return Object.fromEntries(Object.entries(body || {}).filter(([k]) => CAMPI_MODIFICABILI.includes(k)))
+  const ammessi = Object.fromEntries(Object.entries(body || {}).filter(([k]) => CAMPI_MODIFICABILI.includes(k)))
+  if ('cover_focal' in ammessi) ammessi.cover_focal = focalValido(ammessi.cover_focal)
+  return ammessi
 }
 
 // Il catalogo delle funzioni vive in `lib/funzioni.js` (senza dipendenze

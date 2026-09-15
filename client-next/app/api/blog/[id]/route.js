@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireRecordAccess, entitaDellaAzienda } from '@/lib/server-auth'
+import { formatoValido, focalValido } from '@/lib/formati-foto'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 function toUuid(v) { return (v && UUID_RE.test(v)) ? v : null }
@@ -24,8 +25,13 @@ export async function PATCH(request, props) {
     if (response) return response
 
     const body = await request.json()
-    const allowed = ['title', 'excerpt', 'content', 'cover_url', 'author', 'category_id', 'entity_tipo', 'entity_id', 'published', 'active']
+    const allowed = ['title', 'excerpt', 'content', 'cover_url', 'formato_cover', 'cover_focal', 'author', 'category_id', 'entity_tipo', 'entity_id', 'published', 'active']
     const updates = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
+    // Finiscono in una proprietà CSS: si cerca nel catalogo, e un valore fuori
+    // forma diventa NULL (il predefinito), mai una stringa arbitraria nella
+    // pagina pubblica. Il CHECK della migration 117 è il secondo muro.
+    if ('formato_cover' in updates) updates.formato_cover = formatoValido(updates.formato_cover)
+    if ('cover_focal'   in updates) updates.cover_focal   = focalValido(updates.cover_focal)
 
     if ('category_id' in updates) updates.category_id = toUuid(updates.category_id)
     if ('entity_id'   in updates) updates.entity_id   = toUuid(updates.entity_id)

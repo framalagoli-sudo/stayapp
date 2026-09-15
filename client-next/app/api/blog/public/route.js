@@ -18,7 +18,7 @@ export async function GET(request) {
 
     // In EN includiamo `content` così l'hash sorgente combacia col dettaglio (stessa
     // cache, niente ri-traduzioni doppie); poi lo scartiamo (la lista non lo usa).
-    const cols = `id, title, slug, excerpt, cover_url, author, published_at, category_id, entity_tipo, entity_id${lang === 'en' ? ', content' : ''}`
+    const cols = `id, title, slug, excerpt, cover_url, cover_focal, author, published_at, category_id, entity_tipo, entity_id${lang === 'en' ? ', content' : ''}`
     let q = supabaseAdmin.from('articoli')
       .select(cols)
       .eq('published', true).eq('active', true)

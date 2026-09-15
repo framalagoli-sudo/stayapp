@@ -9,6 +9,8 @@ import { ArrowLeft, Eye, EyeOff, Share2 } from 'lucide-react'
 import AiButton from '../../../components/admin/AiButton'
 import PostSocialModal from '../../../components/admin/PostSocialModal'
 import { CampoImmagine } from '../../../components/admin/CampoImmagine'
+import { SelettoreFormato } from '../../../components/admin/SelettoreFormato'
+import { formatiConPredefinito } from '../../../lib/formati-foto'
 
 export default function BlogEditorPage() {
   const { id } = useParams()
@@ -24,6 +26,9 @@ export default function BlogEditorPage() {
 
   const [form, setForm] = useState({
     title: '', excerpt: '', content: '', cover_url: '', author: '',
+    // ⚠️ Il salvataggio manda l'INTERO modulo: queste due chiavi richiedono le
+    // colonne della migration 117, senza le quali fallisce ogni salvataggio.
+    formato_cover: '', cover_focal: '',
     category_id: '', entity_tipo: '', entity_id: '', published: false,
   })
   const [categories, setCategories] = useState([])
@@ -40,6 +45,7 @@ export default function BlogEditorPage() {
       apiFetch(`/api/blog/${id}`).then(d => setForm({
         title: d.title || '', excerpt: d.excerpt || '', content: d.content || '',
         cover_url: d.cover_url || '', author: d.author || '',
+        formato_cover: d.formato_cover || '', cover_focal: d.cover_focal || '',
         category_id: d.category_id || '', entity_tipo: d.entity_tipo || '',
         entity_id: d.entity_id || '', published: !!d.published,
       })).catch(e => setError(e?.message || 'Errore nel caricamento dell\'articolo'))
@@ -117,7 +123,19 @@ export default function BlogEditorPage() {
             endpoint="/api/upload/blog-cover"
             unsplash unsplashQuery={form.title || ''}
             altezza={220}
+            focale={form.cover_focal} onFocale={v => set('cover_focal', v)}
           />
+          {form.cover_url && (
+            <div style={{ marginTop: 16 }}>
+              <SelettoreFormato
+                valore={form.formato_cover || ''} onChange={v => set('formato_cover', v)}
+                // «Predefinito» è la striscia larga che la pagina ha sempre avuto.
+                formati={formatiConPredefinito('21 / 9')}
+                titolo="Forma nella pagina dell'articolo"
+                aiuto="Come si vede la copertina aprendo l'articolo. «Predefinito» è la fascia larga di sempre; nell'elenco le schede restano tutte uguali."
+              />
+            </div>
+          )}
         </div>
 
         {/* Titolo + metadati */}

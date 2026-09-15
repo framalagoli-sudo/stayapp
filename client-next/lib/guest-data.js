@@ -54,7 +54,7 @@ export async function getAziendaLegale(aziendaId) {
 const CAMPI_ENTITA = [
   'id', 'azienda_id', 'tipo', 'settore', 'slug', 'name', 'description',
   'address', 'phone', 'email', 'schedule', 'whatsapp',
-  'logo_url', 'logo_dark_url', 'cover_url', 'gallery', 'theme', 'minisito',
+  'logo_url', 'logo_dark_url', 'cover_url', 'cover_focal', 'gallery', 'theme', 'minisito',
   'services', 'activities', 'excursions', 'menu', 'amenities', 'restaurant',
   'checkin_time', 'checkout_time', 'rules',
   'plan', 'moduli', 'privacy_data', 'chatbot',
@@ -201,7 +201,7 @@ export async function getAttivita(slug) {
 export async function getArticolo(slug) {
   const { data, error } = await supabaseAdmin
     .from('articoli')
-    .select('id, title, slug, excerpt, content, cover_url, author, published_at, category_id, entity_tipo, entity_id, azienda_id')
+    .select('id, title, slug, excerpt, content, cover_url, formato_cover, cover_focal, author, published_at, category_id, entity_tipo, entity_id, azienda_id')
     .eq('slug', slug).eq('published', true).eq('active', true).single()
   if (error || !data) return null
   return data

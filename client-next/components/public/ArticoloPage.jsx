@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
+import { formatoValido, focalValido, rapportoDi } from '@/lib/formati-foto'
 import { ArrowLeft, Calendar, User, Link2, Check } from 'lucide-react'
 
 function fmtDate(iso) {
@@ -126,11 +127,26 @@ export default function ArticoloPage() {
       </div>
 
       {/* Cover */}
-      {articolo.cover_url && (
-        <div style={{ width: '100%', height: 340, overflow: 'hidden', position: 'relative' }}>
-          <img src={articolo.cover_url} alt={articolo.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.55))' }} />
-        </div>
+      {/* Senza una forma scelta resta la striscia alta 340px di sempre.
+          Con una forma scelta, la copertina si vede in QUELLA forma, come la
+          locandina di un evento: una foto verticale non viene più tagliata
+          a fascia. Rapporto e punto focale passano da un catalogo chiuso. */}
+      {articolo.cover_url && (formatoValido(articolo.formato_cover)
+        ? <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 20px 0' }}>
+            {/* ⚠️ La larghezza si limita con l'altezza dello schermo: con un
+                semplice max-height una foto «storia» (9:16) larga 900px verrebbe
+                tagliata lo stesso, cioè proprio quello che la forma deve evitare.
+                Così entra intera. I numeri vengono dal catalogo, non dal dato. */}
+            <img src={articolo.cover_url} alt={articolo.title} style={{
+              display: 'block', margin: '0 auto', aspectRatio: rapportoDi(articolo.formato_cover),
+              width: `min(100%, calc(78vh * ${rapportoDi(articolo.formato_cover)}))`,
+              objectFit: 'cover', objectPosition: focalValido(articolo.cover_focal) || 'center', borderRadius: 14,
+            }} />
+          </div>
+        : <div style={{ width: '100%', height: 340, overflow: 'hidden', position: 'relative' }}>
+            <img src={articolo.cover_url} alt={articolo.title} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: focalValido(articolo.cover_focal) || 'center' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.55))' }} />
+          </div>
       )}
 
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '0 20px 80px' }}>

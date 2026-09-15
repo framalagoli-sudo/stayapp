@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
 import { ricco } from '@/lib/testo-ricco'
-import { rapportoDi } from '@/lib/formati-foto'
+import { rapportoDi, focalValido } from '@/lib/formati-foto'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import LandingStruttura from './LandingStruttura'
 import CookieBanner from '@/components/CookieBanner'
@@ -284,8 +284,10 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
 
   const AppHeader = property.cover_url ? (
     <div style={{ position: 'relative', height: 200, overflow: 'hidden' }}>
+      {/* Striscia alta 200px: taglia molto, quindi il cliente sceglie quale parte
+          resta visibile. Il valore passa dal controllo, mai grezzo nel CSS. */}
       <img src={property.cover_url} alt="cover"
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: focalValido(property.cover_focal) || 'center' }} />
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%)' }} />
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 20px 18px' }}>{headerContent}</div>
       {langToggle}

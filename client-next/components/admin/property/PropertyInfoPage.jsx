@@ -181,7 +181,11 @@ export default function PropertyInfoPage() {
             onChange={url => salvaFoto('cover_url', url)}
             endpoint={`/api/upload/cover?property_id=${propertyId || property?.id}`}
             unsplash unsplashQuery={property.name || ''}
-            altezza={180}
+            aiuto="Si vede come striscia in cima all'app del QR, con il nome sopra: scegli la parte che deve restare visibile."
+            // L'anteprima ha la forma della striscia vera (circa 2:1 sul telefono),
+            // così il punto si sceglie guardando il ritaglio che vedranno i clienti.
+            anteprima="2 / 1"
+            focale={property.cover_focal} onFocale={v => salvaFoto('cover_focal', v)}
           />
         </div>
       </div>

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { t } from '@/lib/i18n'
+import { focalValido } from '@/lib/formati-foto'
 
 export default function BlogListPage() {
   const params = useSearchParams()
@@ -43,7 +44,9 @@ export default function BlogListPage() {
               onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)' }}>
               {art.cover_url && (
                 <img src={art.cover_url} alt={art.title}
-                  style={{ width: '100%', height: 200, objectFit: 'cover', display: 'block' }} />
+                  // Nell'elenco le schede restano uguali; quale parte si vede lo
+                  // decide il punto focale, passato dal controllo.
+                  style={{ width: '100%', height: 200, objectFit: 'cover', objectPosition: focalValido(art.cover_focal) || 'center', display: 'block' }} />
               )}
               <div style={{ padding: '20px 22px' }}>
                 {art.published_at && (

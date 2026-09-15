@@ -8,7 +8,7 @@ export async function GET(request, props) {
   const params = await props.params;
   try {
     const { data, error } = await supabaseAdmin.from('articoli')
-      .select('id, title, slug, excerpt, content, cover_url, author, published_at, category_id, entity_tipo, entity_id, azienda_id')
+      .select('id, title, slug, excerpt, content, cover_url, formato_cover, cover_focal, author, published_at, category_id, entity_tipo, entity_id, azienda_id')
       .eq('slug', params.slug).eq('published', true).eq('active', true).single()
     if (error || !data) return Response.json({ error: 'Articolo non trovato' }, { status: 404 })
     const lang = new URL(request.url).searchParams.get('lang') === 'en' ? 'en' : 'it'

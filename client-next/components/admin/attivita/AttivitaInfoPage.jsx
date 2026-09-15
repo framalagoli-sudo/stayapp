@@ -146,7 +146,11 @@ export default function AttivitaInfoPage() {
             onChange={url => salvaFoto('cover_url', url)}
             endpoint={`/api/upload/attivita-cover?attivita_id=${id}`}
             unsplash unsplashQuery={attivita.name || ''}
-            altezza={180}
+            aiuto="Si vede come striscia in cima all'app del QR, con il nome sopra: scegli la parte che deve restare visibile."
+            // L'anteprima ha la forma della striscia vera (circa 2:1 sul telefono),
+            // così il punto si sceglie guardando il ritaglio che vedranno i clienti.
+            anteprima="2 / 1"
+            focale={attivita.cover_focal} onFocale={v => salvaFoto('cover_focal', v)}
           />
         </div>
       </div>

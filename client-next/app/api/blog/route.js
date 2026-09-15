@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth, resolveAziendaId } from '@/lib/server-auth'
+import { requireAuth, resolveAziendaId, entitaDellaAzienda } from '@/lib/server-auth'
+import { formatoValido, focalValido } from '@/lib/formati-foto'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 function toUuid(v) { return (v && UUID_RE.test(v)) ? v : null }
@@ -47,6 +48,12 @@ export async function POST(request) {
     const { title, excerpt, content, cover_url, author, category_id, entity_tipo, entity_id, published } = body
     const azienda_id = resolveAziendaId(profile, body.azienda_id)
     if (!azienda_id || !title?.trim()) return Response.json({ error: 'azienda_id e title obbligatori' }, { status: 400 })
+    // ⛔ La modifica (`[id]/route.js`) lo controllava già, la creazione no: si
+    // poteva creare un articolo della propria azienda agganciato all'entità di
+    // un'altra. Stessa regola in entrambe, trovato il 15/09/2026.
+    if (!(await entitaDellaAzienda(profile, entity_tipo, toUuid(entity_id)))) {
+      return Response.json({ error: 'Entità non valida' }, { status: 404 })
+    }
 
     let slug = slugify(title) || `articolo-${Date.now().toString(36)}`
     const { count } = await supabaseAdmin.from('articoli').select('id', { count: 'exact', head: true }).like('slug', `${slug}%`)
@@ -57,6 +64,8 @@ export async function POST(request) {
       azienda_id, slug, title: title.trim(),
       excerpt: excerpt || null, content: content || null,
       cover_url: cover_url || null, author: author || null,
+      // Finiscono in una proprietà CSS: dal catalogo, o NULL (il predefinito).
+      formato_cover: formatoValido(body.formato_cover), cover_focal: focalValido(body.cover_focal),
       category_id: toUuid(category_id),
       entity_tipo: entity_tipo || null, entity_id: toUuid(entity_id),
       published: !!published, published_at: published ? now : null,
