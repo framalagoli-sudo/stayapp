@@ -4,8 +4,11 @@
 
 > ⚠️ **Prima di scrivere codice**: [Verificare il contesto, non solo il pezzo](feedback_verificare_il_contesto.md) — la radice comune degli errori ripetuti.
 
+> 🔌 **Integrazioni**: [la sequenza del fornitore va letta tutta](reference_verifica_la_sequenza_del_fornitore.md) — il collegamento WhatsApp era «pronto» e non avrebbe inviato niente.
+
 - [💾 Backup completo: account e immagini](project_backup_lacune.md) — chiuso 09/09 (15 account, 62/62 foto); resta da provare il RIPRISTINO, piano dentro
 - [🤖 Consumi AI e tetto per azienda](project_ai_consumi.md) — 15/09: 12 chiamate su 13 senza limite vero; ora un punto solo, fail closed; LIVE dal 15/09 con ricarica da Aziende → Credito AI e avviso al cliente dall 80%
+- [📅 Sessione 16/09 — verifica Meta approvata, collegamento WhatsApp vero, numeri per entità](project_session_2026_09_16.md) — migration fino a 122; restano la verifica dell'accesso e la prova dal vivo
 - [📅 Sessione 15/09 — shop live, Meta sbloccato, costi AI sotto tetto, decisione API](project_session_2026_09_15.md) — migration fino a 121; verifica Meta da reinviare
 - [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: reinviare verifica Meta, Console Anthropic, email unica, prezzo ricarica AI, DNS metodotvb/fondaconarni, primo incasso Stripe
 - [📅 Sessione 08/09 — conferme spente, calendario cieco, offerte inerti](project_session_2026_09_08.md) — 6 interventi nati da cose non rotte ma che non arrivavano

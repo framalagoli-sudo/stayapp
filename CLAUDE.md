@@ -398,6 +398,13 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - Il tetto della piattaforma intera è il **limite di spesa sulla Console Anthropic**. Diagnostica mostra i consumi del mese azienda per azienda.
     - Sonda `probe-ai-consumi.mjs`. ⚠️ Le password delle sonde devono avere minuscole, maiuscole, cifre e simboli: Supabase lo pretende e una stringa base64url casuale ogni tanto non li contiene (suffisso `'Aa1!'`).
 
+38. **💬 Il collegamento WhatsApp del cliente** (16/09/2026, migration `122`). Il pulsante «Collega WhatsApp» apriva un `alert()`: il lato server c'era dal 22/08, la finestra di Meta no.
+    - **`components/admin/CollegaWhatsApp.jsx`** apre l'Embedded Signup **v4** (la v2 chiude il 15/10/2026). Il codice torna dalla callback di `FB.login`, l'account e il numero da un `postMessage` della finestra di Meta: **servono entrambi** e arrivano in ordine qualsiasi. Le origini si confrontano per uguaglianza — `endsWith('facebook.com')` accetterebbe `facebook.com.esempio.it`.
+    - ⚠️ **Scambiare il codice non basta**: senza `subscribed_apps` non arriva nessuno stato di consegna, senza `register` (con PIN a due passaggi, custodito cifrato) **ogni invio viene rifiutato**. Se la registrazione fallisce il numero resta `in_verifica`: dirlo «attivo» sarebbe una promessa falsa.
+    - **Un numero per entità**, più uno «generale» dell'azienda (`entity_id` NULL). La domanda «quale numero usa questa entità» ha una risposta sola, in `lib/whatsapp-account.js`: i quattro punti che chiedevano il numero *dell'azienda* con `.maybeSingle()` si rompevano al secondo numero, e il guasto sarebbe comparso solo al primo cliente con due attività.
+    - Le chiavi (`META_APP_ID`, `META_APP_SECRET`, `META_ES_CONFIG_ID`) non sono su Vercel di proposito: senza, il pulsante non compare a nessuno.
+    - ⚠️ **Scritto e non provato**: nessuno ha ancora completato il flusso dal vivo. Prima del primo cliente: numero di test, verifica della coesistenza, tariffe Meta Italia.
+
 ---
 
 ## Roadmap
@@ -421,7 +428,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - [x] **Costi AI sotto controllo** ✅ 15/09/2026 — tetto 5 $/mese per azienda, ricarica da Aziende → Credito AI, avviso al cliente dall'80%. Nota 37.
 - [ ] **Credito AI a pagamento** — prezzo della ricarica e pagamento con carta: richiede l'abbonamento a OltreNova su Stripe, che oggi non esiste (Stripe è collegato solo per gli incassi dei clienti). Decisione di prezzo di Francesco.
 - [ ] **Operazioni del dominio in `lib/`** (15/09, piano approvato) — azioni come «crea evento», «cambia orari», «pubblica pagina» in funzioni con validazione e controllo dell'azienda, usate da pannello **e** dal futuro assistente AI (WhatsApp/voce). Un'API pubblica `/api/v1` con chiavi per azienda **solo** quando c'è un utilizzatore vero. OltreNova oggi **non** è API First: ~200 route pensate per le schermate, senza contratto né versioni.
-- [ ] **Meta / WhatsApp** — app creata il 15/09 (solo caso d'uso WhatsApp); verifica aziendale respinta per ragione sociale assente dal sito, corretta nel piede → **da reinviare**. Poi «Diventa un Tech Provider» e il lanciatore Embedded Signup v4 (oggi il pulsante è un `alert()`). Vedi `WHATSAPP.md`.
+- [ ] **Meta / WhatsApp** — verifica aziendale **approvata il 16/09**; lanciatore Embedded Signup v4 scritto e live (nota 38). Restano: verifica dell'accesso (Tech Provider) da parte di Francesco, configurazione ES + chiavi, prova dal vivo col numero di test, tariffe Meta Italia, due video per l'App Review. Vedi `WHATSAPP.md`.
 - [ ] 🎯 **Onboarding "Inizia qui"** — checklist primo accesso (completa i dati → genera il sito con l'AI → pubblica → dominio → primi contatti). **È il capitolo aperto più importante**: la sicurezza è fatta, quello che manca è che un cliente nuovo arrivi al sito pubblicato *da solo*.
 - [x] **Pagamenti Stripe** ✅ 31/08/2026 — **Connect live**: ogni cliente collega il proprio conto (`Account → Pagamenti`) e incassa lui. Addebiti diretti, **nessuna commissione trattenuta**, perdite a carico di Stripe. Shop, prenotazioni ed eventi passano tutti da `lib/checkout.js`; l'acconto si decide con un numero (0 = sul posto, 100 = tutto, 30 = acconto). Due webhook registrati per «account connessi». Dettaglio → nota in `PROGETTO.md` §8 e memoria `reference_stripe_connect`.
   ⚠️ **Nessun cliente vero ha ancora collegato il conto**: il primo incasso reale non è mai avvenuto.

@@ -1,16 +1,33 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — 15/09 chiuso: costi AI sotto tetto e live; aperti verifica Meta da reinviare, Console Anthropic, prezzo ricarica AI, DNS clienti, primo incasso Stripe"
+description: "Da dove riprendere — 16/09: verifica Meta approvata e collegamento WhatsApp live ma mai provato dal vivo; servono verifica accesso, config ES + chiavi, tariffe Meta, video App Review"
 metadata: 
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-15T19:44:22.343Z
+  modified: 2026-09-16T17:25:34.683Z
 ---
 
 # Si riprende da qui
 
-**Sessione chiusa il 15/09/2026 sera.** Tutto live, migration eseguite fino alla **121**, nessuna in sospeso. Riepilogo → [[project_session_2026_09_15]]. Primo passo alla ripresa: chiedere a Francesco se ha reinviato la verifica Meta e cosa ha risposto.
+**Sessione chiusa il 16/09/2026.** Tutto live, migration eseguite fino alla **122**, nessuna in sospeso. Riepilogo → [[project_session_2026_09_16]].
+**Prima domanda alla ripresa**: ha inviato la verifica dell'accesso? Ha creato la configurazione Embedded Signup e messo `META_APP_ID`/`META_APP_SECRET`/`META_ES_CONFIG_ID` in `client-next/.env.local`? Se sì → provo il collegamento col numero di test (è l'unico pezzo **scritto e non provato**), poi i due video per l'App Review.
+Risposte già date al modulo Meta: «gestisci più portfolio business?» → **No**; sito → `https://www.oltrenova.com` (ora con la sezione `/#canali` che descrive il servizio, aggiunta apposta perché il revisore la trovi).
+
+## ▶️ 16/09 — verifica aziendale Meta APPROVATA, si costruisce WhatsApp
+
+Prossimi passi di Francesco: (1) avviare la **verifica dell'accesso** (Tech Provider) col testo inglese che gli ho dato in chat — Business Verification era il prerequisito, decisione in ~5 giorni; (2) l'**App Review** dei permessi pretende **due video**: un messaggio inviato dalla nostra piattaforma e ricevuto su WhatsApp, e la creazione di un modello dalla nostra piattaforma → prima serve il collegamento funzionante (si gira col numero di test).
+
+Fatto oggi ed è **LIVE** (migration 122 eseguita, deploy `4e36718f`, `probe-whatsapp-numeri` verde in produzione, pagina WhatsApp aperta dal browser senza errori — mostra ancora «stiamo completando l'attivazione» perché mancano le chiavi Meta, ed è voluto):
+- **Embedded Signup v4 vero** in `components/admin/CollegaWhatsApp.jsx`: SDK Facebook, `FB.login` con `config_id`+`response_type:'code'`, il codice va al server e l'evento `WA_EMBEDDED_SIGNUP` dà waba/numero. Origini Meta confrontate per uguaglianza (non `endsWith`). Prima era un `alert()`.
+- **Un numero per entità** + uno generale: migration **122** (droppa l'UNIQUE su azienda_id cercandone il nome, due indici parziali, numero unico globale). `lib/whatsapp-account.js` = unico punto per «quale numero usa questa entità»; aggiornati i 4 lettori che usavano `.maybeSingle()` su azienda (con due numeri **fallivano**) + i 3 chiamanti di `inviaMessaggioWhatsapp` che ora passano `entityId`.
+- Route connect: elenco numeri, POST con `entity_id` verificato, DELETE di un singolo numero (i modelli restano). Sonda `tests/probe-whatsapp-numeri.mjs`.
+- Serve **META_ES_CONFIG_ID** (configurazione Embedded Signup nella dashboard Meta) oltre a META_APP_ID/SECRET: finché mancano, il pulsante non compare (voluto).
+⛔ **Due passi obbligatori che mancavano**, trovati grazie alla domanda di Francesco «ma basta solo quello che hai scritto?»: iscrizione ai webhook del WABA (`POST /{waba}/subscribed_apps`) e registrazione del numero (`POST /{phone}/register` con PIN a 6 cifre, conservato cifrato in `dettaglio.pin_cifrato`). Senza il primo non arriva nessuno stato di consegna, senza il secondo **ogni invio viene rifiutato**. Se la registrazione fallisce il numero resta `in_verifica`, non `attivo`.
+⚠️ Da verificare al primo test dal vivo: la **coesistenza** (numero già sull'app WhatsApp Business) potrebbe richiedere un `featureType` negli extras del launcher.
+⚠️ Manca ancora, prima del primo cliente vero: tariffe Meta Italia al posto di quelle prese da Spoki.
+
+**Sessione del 15/09**: tutto live, migration fino alla **121**. Riepilogo → [[project_session_2026_09_15]].
 
 ## ✅ 15/09 notte — tetto AI LIVE (migration 119 eseguita, deploy 12c378df)
 `probe-ai-consumi.mjs` in produzione: tutto regge (429 su 6 funzioni, chatbot

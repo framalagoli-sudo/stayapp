@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 98e39a37-374d-43a6-a1bf-16225619363f
-  modified: 2026-09-15T10:02:02.272Z
+  modified: 2026-09-16T17:25:15.297Z
 ---
 
 Modulo WhatsApp: **incluso nel prodotto**, voluto da Francesco come pezzo forte. Richiesto da due clienti veri: **Garage 22** ("posso mandare messaggi a una o più liste?") e **Debora Resinart**. Piano completo in `WHATSAPP.md` nel repo.
@@ -50,6 +50,15 @@ Migration `075` (4 tabelle) eseguita. In produzione ma **in attesa delle credenz
 - Pagina: stato numero con qualità tradotta, messaggi con stato approvazione, invio con anteprima del testo e **stima costi prima di premere invia**.
 
 **Bloccante attuale**: Francesco non riesce a rientrare nell'account Facebook (recupero password in avaria il 22/08), quindi l'app Meta non è ancora creata.
+
+## ✅ 16/09/2026 — verifica aziendale approvata e collegamento LIVE
+
+- **Embedded Signup v4** scritto e in produzione (`components/admin/CollegaWhatsApp.jsx`): il pulsante non è più un `alert()`. Codice dalla callback di `FB.login` + account/numero dal `postMessage`: servono **entrambi**. Origini Meta confrontate per uguaglianza, mai `endsWith`.
+- ⛔ **Mancavano due passi obbligatori**: `POST /{waba}/subscribed_apps` e `POST /{phone}/register` col PIN a due passaggi (custodito cifrato in `dettaglio.pin_cifrato`). Senza il primo nessuno stato di consegna, senza il secondo **ogni invio rifiutato**. Registrazione fallita ⇒ numero `in_verifica`, non `attivo`.
+- **Un numero per ENTITÀ** (migration 122, decisione di Francesco): `entity_id` NULL = numero dell'azienda. `lib/whatsapp-account.js` è l'unico punto; aggiornati i 4 lettori e i 3 chiamanti di `inviaMessaggioWhatsapp` (ora passano `entityId`).
+- Chiavi fuori da Vercel di proposito; serve anche `META_ES_CONFIG_ID`.
+- **Scritto e NON provato**: il flusso dal vivo. Poi: coesistenza (`featureType`?), tariffe Meta Italia, due video per l'App Review.
+- Sonda `tests/probe-whatsapp-numeri.mjs`.
 
 ## ⛔ Correzioni del 15/09/2026 (Meta sbloccato, accesso a developers ottenuto)
 

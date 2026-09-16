@@ -2,6 +2,14 @@
 
 > Stato: **piano approvato, non ancora implementato** (redatto 20/08/2026).
 >
+> **Aggiornamento 16/09/2026 — verifica aziendale APPROVATA, e il collegamento adesso esiste davvero.**
+> - **Embedded Signup v4 scritto e in produzione** (`components/admin/CollegaWhatsApp.jsx`): SDK di Facebook, `FB.login` con `config_id` e `response_type: 'code'`, il codice va al server (il segreto dell'app non esce mai), e l'evento `WA_EMBEDDED_SIGNUP` dice quale account e quale numero ha scelto il cliente. Le origini di Meta si confrontano per **uguaglianza**, non con `endsWith`: `facebook.com.esempio.it` passerebbe.
+> - ⚠️ **Due passi obbligatori che mancavano** e senza cui il collegamento è finto: `POST /{waba-id}/subscribed_apps` (senza, nessuno stato di consegna e nessun messaggio in arrivo) e `POST /{phone-number-id}/register` con un PIN di verifica in due passaggi (senza, **ogni invio viene rifiutato**). Il PIN lo generiamo noi e lo conserviamo cifrato in `dettaglio.pin_cifrato`: serve per cambiarlo o staccare il numero. Se la registrazione fallisce il numero resta `in_verifica`, non `attivo`.
+> - **Un numero per entità** (migration `122`): il collegamento resta uno per azienda, ma il ristorante scrive dal suo numero e l'officina dal suo; `entity_id` NULL = numero dell'azienda, per chi non ne ha uno proprio. `lib/whatsapp-account.js` è l'unico punto che risponde «quale numero usa questa entità» — i quattro punti che chiedevano «il numero dell'azienda» con `.maybeSingle()` **fallivano** al secondo numero.
+> - Serve `META_ES_CONFIG_ID` (la configurazione di Embedded Signup nella dashboard) oltre a `META_APP_ID`/`META_APP_SECRET`: finché mancano, il pulsante non compare a nessuno — è voluto.
+> - **Restano da fare**: provare il flusso dal vivo col numero di test (è l'unico pezzo **scritto e non provato**); verificare se la **coesistenza** richiede un `featureType` negli extras; sostituire le tariffe di Spoki con il listino Meta Italia; girare i **due video** per l'App Review (un invio ricevuto su WhatsApp, la creazione di un modello).
+> - Sonda: `tests/probe-whatsapp-numeri.mjs`.
+>
 > **Aggiornamento 15/09/2026** — accesso a Meta for Developers sbloccato:
 > - App «OltreNova» creata (App ID `28469155976047675`), caso d'uso **solo WhatsApp**: gli altri (Pagina, Instagram, Messenger) si aggiungono dopo ma **non si tolgono**. Pagina `/cancellazione-dati` pubblicata per Meta.
 > - ⚠️ «Codice fasi 1-2 completo» era falso: il pulsante «Collega WhatsApp» fa solo `alert()`. Manca il lanciatore dell'**Embedded Signup**, da scrivere direttamente in **v4** (la v2 è dismessa il 15/10/2026). `META_APP_ID`/`META_APP_SECRET` restano **fuori da Vercel** finché non esiste, altrimenti tutti i clienti vedono il pulsante finto.
