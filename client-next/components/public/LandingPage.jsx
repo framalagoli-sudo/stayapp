@@ -184,6 +184,26 @@ const FEATURES = [
   { Icon: Webhook,         title: 'Integrazioni & webhook',   text: 'Connetti Zapier, Make, n8n o qualsiasi sistema con webhook outbound in tempo reale.' },
 ]
 
+// I canali del cliente: il suo numero WhatsApp, i suoi profili social. Tre
+// schede, una per cosa che sa fare, scritte dal punto di vista di chi le usa.
+const CANALI = [
+  {
+    Icon: MessageCircle,
+    title: 'WhatsApp dal tuo numero',
+    text: 'Colleghi il numero WhatsApp Business della tua attività — anche quello che hai già sul telefono — e mandi promemoria, conferme e promozioni ai clienti che ti hanno dato il consenso. Scegli un messaggio già pronto e riempi i campi: ai modelli e alle approvazioni pensiamo noi.',
+  },
+  {
+    Icon: Sparkles,
+    title: 'Social pubblicati dal piano editoriale',
+    text: 'Colleghi la tua Pagina Facebook e il tuo profilo Instagram: il piano editoriale che l’AI prepara per te non resta un documento da copiare a mano, esce sui tuoi profili il giorno e l’ora che hai deciso.',
+  },
+  {
+    Icon: Users,
+    title: 'Ogni attività con la sua voce',
+    text: 'Se hai più attività, ognuna può avere il proprio numero e i propri profili: il ristorante scrive dal suo, l’officina dal suo. Un collegamento solo, fatto una volta.',
+  },
+]
+
 const AI_FEATURES = [
   {
     Icon: BookOpen,
@@ -299,7 +319,7 @@ export default function LandingPage() {
         <div style={{ maxWidth: 1140, margin: '0 auto', padding: '0 24px', height: 66, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Logo />
           <div className="lp-nav-links">
-            {[['#come-funziona','Come funziona'],['#funzionalita','Features'],['#ai','AI'],['#perchi','Per chi è']].map(([h, l]) => (
+            {[['#come-funziona','Come funziona'],['#funzionalita','Features'],['#ai','AI'],['#canali','WhatsApp e social'],['#perchi','Per chi è']].map(([h, l]) => (
               <a key={h} href={h} className="lp-navlink">{l}</a>
             ))}
             <a href="/admin" className="lp-navlink" style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
@@ -321,7 +341,7 @@ export default function LandingPage() {
         </div>
         {mobileOpen && (
           <div style={{ background: DARK, padding: '16px 24px 28px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {[['#come-funziona','Come funziona'],['#funzionalita','Features'],['#ai','AI'],['#perchi','Per chi è']].map(([h, l]) => (
+            {[['#come-funziona','Come funziona'],['#funzionalita','Features'],['#ai','AI'],['#canali','WhatsApp e social'],['#perchi','Per chi è']].map(([h, l]) => (
               <a key={h} href={h} onClick={() => setMobileOpen(false)} style={{ color: 'rgba(255,255,255,0.75)', textDecoration: 'none', fontSize: 17, fontWeight: 500 }}>{l}</a>
             ))}
             <a href="/admin" style={{ color: 'rgba(255,255,255,0.9)', textDecoration: 'none', fontSize: 17, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -586,6 +606,45 @@ export default function LandingPage() {
       {/* ── TESTIMONIANZE ── */}
       <Testimonials />
 
+      {/* ── CANALI: WHATSAPP E SOCIAL ──
+          Sta qui, subito prima delle funzionalità, perché è la cosa che i
+          clienti chiedono per prima dopo il sito — e perché la verifica di Meta
+          pretende che il servizio dichiarato si veda descritto sul sito di chi
+          lo offre. Ogni frase dice chi possiede cosa e chi paga: è il punto in
+          cui un'attività si ferma a chiedere. */}
+      <section id="canali" style={{ padding: '104px 24px', background: '#fff' }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto' }}>
+          <FadeIn>
+            <SecHead
+              label="Messaggi e social"
+              title="Dal tuo numero. Dai tuoi profili."
+              sub="Colleghi WhatsApp Business e i tuoi social una volta sola: gli account restano tuoi, li usi da qui."
+            />
+          </FadeIn>
+          <div className="lp-feat-grid">
+            {CANALI.map(({ Icon, title, text }, i) => (
+              <FadeIn key={i} delay={i * 60}>
+                <div className="lp-featcard" style={{ padding: 28, borderRadius: 16, background: '#fff', border: `1px solid ${PRIMARY}14`, height: '100%' }}>
+                  <div style={{ width: 46, height: 46, borderRadius: 13, background: LIGHT_P, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                    <Icon size={21} strokeWidth={1.5} color={PRIMARY} />
+                  </div>
+                  <h4 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, color: TEXT }}>{title}</h4>
+                  <p style={{ color: TEXT_LIGHT, fontSize: 13.5, lineHeight: 1.7 }}>{text}</p>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+          <FadeIn>
+            <p style={{ maxWidth: 780, margin: '32px auto 0', textAlign: 'center', color: TEXT_LIGHT, fontSize: 13.5, lineHeight: 1.75 }}>
+              I messaggi WhatsApp li fattura <strong>Meta direttamente a te</strong>, sul tuo account: noi non rivendiamo
+              messaggistica e ti mostriamo la spesa stimata prima di ogni invio. Scriviamo solo a chi ti ha dato il
+              consenso, e puoi scollegare i tuoi account quando vuoi: con lo scollegamento cancelliamo il collegamento,
+              la chiave di accesso e i modelli di messaggio creati per te.
+            </p>
+          </FadeIn>
+        </div>
+      </section>
+
       {/* ── FUNZIONALITÀ ── */}
       <section id="funzionalita" style={{ padding: '104px 24px', background: OCRA_SOFT }}>
         <div style={{ maxWidth: 1140, margin: '0 auto' }}>
@@ -644,7 +703,7 @@ export default function LandingPage() {
               <div style={{ fontSize: 13, marginTop: 8 }}>Oltre il solito sito.</div>
             </div>
             <div className="lp-footer-links">
-              {[['#come-funziona','Come funziona'],['#funzionalita','Features'],['#ai','AI'],['#perchi','Per chi è']].map(([h, l]) => (
+              {[['#come-funziona','Come funziona'],['#funzionalita','Features'],['#ai','AI'],['#canali','WhatsApp e social'],['#perchi','Per chi è']].map(([h, l]) => (
                 <a key={h} href={h} style={{ color: 'rgba(255,255,255,0.38)', textDecoration: 'none', fontSize: 14 }}>{l}</a>
               ))}
               <a href={`mailto:${EMAIL}`} style={{ color: 'rgba(255,255,255,0.38)', textDecoration: 'none', fontSize: 14 }}>{EMAIL}</a>
