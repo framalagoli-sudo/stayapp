@@ -1,6 +1,7 @@
 import { supabaseAdmin } from './supabase-server'
 import { decifra, inviaTemplate, stimaCosto, numeroValido } from './whatsapp'
 import { trovaTemplate, nomeMeta } from './whatsapp-catalogo'
+import { accountPerEntita } from './whatsapp-account'
 
 // Invio di una campagna WhatsApp. Stesso schema della newsletter (selezione per
 // lista, invio a blocchi, registro degli esiti), con due differenze che contano:
@@ -68,7 +69,9 @@ export async function eseguiCampagna(campagnaId) {
   }
 
   const t = trovaTemplate(campagna.catalogo_key)
-  const { data: account } = await supabaseAdmin.from('whatsapp_account').select('*').eq('azienda_id', campagna.azienda_id).maybeSingle()
+  // La campagna può essere di un'entità: scrive dal numero di quell'entità, se
+  // ne ha uno suo, altrimenti da quello dell'azienda.
+  const account = await accountPerEntita(campagna.azienda_id, campagna.entity_id)
 
   const fermaCon = async errore => {
     await supabaseAdmin.from('whatsapp_campagna').update({ stato: 'errore', errore, updated_at: new Date().toISOString() }).eq('id', campagnaId)

@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { canaliDelloStep } from '@/lib/automazioni-canali'
+import { accountPerEntita } from '@/lib/whatsapp-account'
 
 // Su quali canali questa attività può davvero scrivere a chi prenota.
 //
@@ -35,8 +36,7 @@ export async function GET(request, props) {
       .select('azienda_id').eq('id', entityId).eq('tipo', entityTipo).maybeSingle()
     if (!ent?.azienda_id) return Response.json({ whatsapp: false })
 
-    const { data: account } = await supabaseAdmin.from('whatsapp_account')
-      .select('stato').eq('azienda_id', ent.azienda_id).maybeSingle()
+    const account = await accountPerEntita(ent.azienda_id, entityId)
     if (account?.stato !== 'attivo') return Response.json({ whatsapp: false })
 
     const { data: automazioni } = await supabaseAdmin.from('automazioni')

@@ -2,6 +2,7 @@ import { eseguiProgrammate } from '@/lib/whatsapp-send'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { decifra, statoTemplate } from '@/lib/whatsapp'
 import { CATALOGO, nomeMeta } from '@/lib/whatsapp-catalogo'
+import { collegamentoDellAzienda } from '@/lib/whatsapp-account'
 import { logError } from '@/lib/observability'
 import { battitoEControllo } from '@/lib/cron-battito'
 
@@ -37,9 +38,9 @@ async function aggiornaTemplateInAttesa() {
 
   let approvati = 0
   for (const t of attesa) {
-    const { data: account } = await supabaseAdmin
-      .from('whatsapp_account').select('waba_id, access_token_cifrato')
-      .eq('azienda_id', t.azienda_id).maybeSingle()
+    // I modelli sono dell'account WhatsApp, non del singolo numero: basta il
+    // collegamento dell'azienda, qualunque numero lo porti.
+    const account = await collegamentoDellAzienda(t.azienda_id)
     const token = decifra(account?.access_token_cifrato)
     if (!account?.waba_id || !token) continue
 

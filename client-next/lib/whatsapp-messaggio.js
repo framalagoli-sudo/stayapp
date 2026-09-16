@@ -1,6 +1,7 @@
 import { supabaseAdmin } from './supabase-server'
 import { decifra, inviaTemplate, numeroValido } from './whatsapp'
 import { trovaTemplate, nomeMeta } from './whatsapp-catalogo'
+import { accountPerEntita } from './whatsapp-account'
 import { valoriTemplate } from './automazioni-canali'
 
 // Mandare UN messaggio WhatsApp a una persona.
@@ -19,7 +20,7 @@ import { valoriTemplate } from './automazioni-canali'
 //   2. la persona ha dato il consenso;
 //   3. l'azienda ha un numero collegato e attivo;
 //   4. quel template è approvato da Meta **su quell'account**.
-export async function inviaMessaggioWhatsapp({ aziendaId, telefono, email, templateKey, vars = {}, nomeEntita = '' }) {
+export async function inviaMessaggioWhatsapp({ aziendaId, entityId = null, telefono, email, templateKey, vars = {}, nomeEntita = '' }) {
   try {
     if (!aziendaId || !templateKey) return { ok: false, motivo: 'Dati mancanti' }
     if (!numeroValido(telefono)) return { ok: false, motivo: 'Numero non valido: serve il prefisso internazionale' }
@@ -39,8 +40,8 @@ export async function inviaMessaggioWhatsapp({ aziendaId, telefono, email, templ
       return { ok: false, motivo: 'Manca il consenso WhatsApp di questa persona' }
     }
 
-    const { data: account } = await supabaseAdmin.from('whatsapp_account')
-      .select('stato, phone_number_id, access_token_cifrato').eq('azienda_id', aziendaId).maybeSingle()
+    // Il numero dell'entità se ce l'ha, altrimenti quello dell'azienda.
+    const account = await accountPerEntita(aziendaId, entityId)
     if (!account || account.stato !== 'attivo') return { ok: false, motivo: 'Il numero WhatsApp non è collegato' }
 
     const t = trovaTemplate(templateKey)

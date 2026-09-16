@@ -149,7 +149,7 @@ export async function POST(request, props) {
         // Anche sul telefono, quando le condizioni ci sono. Non blocca l'email.
         if (b.guest_phone) {
           inviaMessaggioWhatsapp({
-            aziendaId: evento.azienda_id, telefono: b.guest_phone, email: b.guest_email,
+            aziendaId: evento.azienda_id, entityId: evento.entity_id, telefono: b.guest_phone, email: b.guest_email,
             templateKey: 'promemoria_appuntamento',
             vars: { nome: b.guest_name, data: quando, ora: '', luogo: evento.location || nome },
             nomeEntita: nome,

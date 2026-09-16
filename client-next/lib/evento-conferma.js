@@ -88,7 +88,7 @@ export async function mandaConfermaEvento(bookingId) {
     // La stessa cosa sul telefono, se le condizioni ci sono. Non blocca l'email.
     if (b.guest_phone) {
       inviaMessaggioWhatsapp({
-        aziendaId: ev.azienda_id, telefono: b.guest_phone, email: b.guest_email,
+        aziendaId: ev.azienda_id, entityId: ev.entity_id, telefono: b.guest_phone, email: b.guest_email,
         templateKey: 'conferma_prenotazione',
         vars: {
           nome: b.guest_name, titolo: ev.title,

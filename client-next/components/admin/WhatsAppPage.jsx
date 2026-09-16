@@ -4,8 +4,9 @@ import { apiFetch } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import { useAzienda } from '@/context/AziendaContext'
 import {
-  MessageCircle, CheckCircle, AlertCircle, Clock, Send, Users, Euro, Loader, Plus, X, Link2,
+  MessageCircle, CheckCircle, AlertCircle, Clock, Send, Users, Euro, Loader, Plus, X,
 } from 'lucide-react'
+import CollegaWhatsApp from './CollegaWhatsApp'
 
 const C = {
   testo: '#1a1a2e', tenue: '#888', bordo: '#eee',
@@ -114,35 +115,61 @@ function Scheda({ titolo, etichetta, colore, sfondo, descrizione, children }) {
 // ── Collegamento del numero ───────────────────────────────────────────────────
 function Collegamento({ dati, aziendaId, onCambio }) {
   const [attesa, setAttesa] = useState(false)
-  const account = dati?.account
+  const numeri = dati?.numeri || []
+  const entita = dati?.entita || []
+  const attivi = numeri.filter(n => n.stato === 'attivo')
+  const nomeEntita = id => entita.find(e => e.id === id)?.name || 'un’attività cancellata'
 
-  async function scollega() {
-    if (!confirm('Scollegare il numero WhatsApp?\n\nLe campagne già inviate restano nello storico, ma non potrai inviarne altre finché non ricolleghi.')) return
+  async function scollega(account) {
+    const chi = account.entity_id ? nomeEntita(account.entity_id) : 'tutta l’azienda'
+    if (!confirm(`Scollegare ${account.numero_visualizzato} (${chi})?\n\nLe campagne già inviate restano nello storico, ma da questo numero non potrai inviarne altre finché non lo ricolleghi.`)) return
     setAttesa(true)
-    try { await apiFetch(`/api/whatsapp/connect?azienda_id=${aziendaId}`, { method: 'DELETE' }); onCambio() } catch {}
+    try {
+      await apiFetch(`/api/whatsapp/connect?azienda_id=${aziendaId}&account_id=${account.id}`, { method: 'DELETE' })
+      onCambio()
+    } catch {}
     setAttesa(false)
   }
 
-  if (account?.stato === 'attivo') {
+  if (attivi.length) {
     return (
-      <Scheda titolo="Il tuo numero" etichetta="Collegato" colore={C.ok} sfondo={C.okBg}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: C.okBg, border: `1px solid ${C.okBordo}`, borderRadius: 10, padding: '14px 18px', flexWrap: 'wrap' }}>
-          <CheckCircle size={16} strokeWidth={1.5} color={C.ok} style={{ flexShrink: 0 }} />
-          <span style={{ fontWeight: 700, fontSize: 16, color: C.testo }}>{account.numero_visualizzato}</span>
-          {account.quality_rating && (
-            <span style={{ fontSize: 12, color: C.tenue }}>qualità: <strong>{traduciQualita(account.quality_rating)}</strong></span>
-          )}
-          <button onClick={scollega} disabled={attesa} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: 12, textDecoration: 'underline' }}>
-            Scollega
-          </button>
+      <Scheda titolo={attivi.length > 1 ? 'I tuoi numeri' : 'Il tuo numero'} etichetta="Collegato" colore={C.ok} sfondo={C.okBg}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 10 }}>
+          {attivi.map(account => (
+            <div key={account.id}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: C.okBg, border: `1px solid ${C.okBordo}`, borderRadius: 10, padding: '14px 18px', flexWrap: 'wrap' }}>
+                <CheckCircle size={16} strokeWidth={1.5} color={C.ok} style={{ flexShrink: 0 }} />
+                <span style={{ fontWeight: 700, fontSize: 16, color: C.testo, overflowWrap: 'anywhere' }}>{account.numero_visualizzato}</span>
+                <span style={{ fontSize: 12, color: C.tenue }}>
+                  {account.entity_id ? nomeEntita(account.entity_id) : 'tutta l’azienda'}
+                </span>
+                {account.quality_rating && (
+                  <span style={{ fontSize: 12, color: C.tenue }}>qualità: <strong>{traduciQualita(account.quality_rating)}</strong></span>
+                )}
+                <button onClick={() => scollega(account)} disabled={attesa} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: 12, textDecoration: 'underline' }}>
+                  Scollega
+                </button>
+              </div>
+              {account.quality_rating === 'RED' && (
+                <div style={{ display: 'flex', gap: 8, background: C.erroreBg, border: `1px solid ${C.erroreBordo}`, borderRadius: 8, padding: '10px 12px', marginTop: 8 }}>
+                  <AlertCircle size={16} strokeWidth={1.5} color={C.errore} style={{ flexShrink: 0, marginTop: 1 }} />
+                  <p style={{ margin: 0, fontSize: 12, color: C.errore, lineHeight: 1.5 }}>
+                    WhatsApp ha abbassato la qualità di questo numero: troppe persone hanno segnalato i messaggi.
+                    Sospendi le promozioni e scrivi solo a chi te l’ha chiesto, o il numero rischia il blocco.
+                  </p>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
-        {account.quality_rating === 'RED' && (
-          <div style={{ display: 'flex', gap: 8, background: C.erroreBg, border: `1px solid ${C.erroreBordo}`, borderRadius: 8, padding: '10px 12px', marginTop: 12 }}>
-            <AlertCircle size={16} strokeWidth={1.5} color={C.errore} style={{ flexShrink: 0, marginTop: 1 }} />
-            <p style={{ margin: 0, fontSize: 12, color: C.errore, lineHeight: 1.5 }}>
-              WhatsApp ha abbassato la qualità del tuo numero: troppe persone hanno segnalato i messaggi.
-              Sospendi le promozioni e scrivi solo a chi te l’ha chiesto, o il numero rischia il blocco.
+
+        {/* Chi ha più attività può aggiungerne un altro: ognuna scrive dal suo. */}
+        {dati?.collegamento_pronto && entita.length > 1 && attivi.length < entita.length + 1 && (
+          <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #eee' }}>
+            <p style={{ margin: '0 0 10px', fontSize: 13, color: C.tenue }}>
+              Hai più attività: puoi collegare un numero diverso per ciascuna.
             </p>
+            <CollegaWhatsApp aziendaId={aziendaId} meta={dati.meta} entita={entita} numeriCollegati={numeri} onFatto={onCambio} />
           </div>
         )}
       </Scheda>
@@ -155,7 +182,7 @@ function Collegamento({ dati, aziendaId, onCambio }) {
       etichetta="Da fare"
       colore={C.attesa}
       sfondo={C.attesaBg}
-      descrizione="Serve un numero dedicato: non può essere lo stesso che usi su WhatsApp dal telefono."
+      descrizione="Puoi usare anche il numero che hai già su WhatsApp Business: resta sul telefono e continua a funzionare."
     >
       <div style={{ background: C.infoBg, border: `1px solid ${C.infoBordo}`, borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
         <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: C.testo }}>Prima di iniziare, tieni presente che:</p>
@@ -165,7 +192,7 @@ function Collegamento({ dati, aziendaId, onCambio }) {
           <li>servono un account Meta Business e la verifica della tua attività</li>
         </ul>
       </div>
-      {!dati?.configurato ? (
+      {!dati?.collegamento_pronto ? (
         <div style={{ display: 'flex', gap: 8, background: C.attesaBg, border: `1px solid ${C.attesaBordo}`, borderRadius: 8, padding: '12px 14px' }}>
           <Clock size={16} strokeWidth={1.5} color={C.attesa} style={{ flexShrink: 0, marginTop: 1 }} />
           <p style={{ margin: 0, fontSize: 13, color: '#7a4a00', lineHeight: 1.5 }}>
@@ -173,12 +200,7 @@ function Collegamento({ dati, aziendaId, onCambio }) {
           </p>
         </div>
       ) : (
-        <button
-          onClick={() => alert('Il collegamento guidato con Meta si aprirà qui.')}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#25D366', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
-        >
-          <Link2 size={16} strokeWidth={2} /> Collega WhatsApp
-        </button>
+        <CollegaWhatsApp aziendaId={aziendaId} meta={dati.meta} entita={dati.entita || []} numeriCollegati={dati.numeri || []} onFatto={onCambio} />
       )}
     </Scheda>
   )

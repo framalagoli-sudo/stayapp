@@ -66,6 +66,7 @@ async function inviaWhatsapp(log, auto, vars, entityName) {
   const step = auto.steps[log.step_index]
   const esito = await inviaMessaggioWhatsapp({
     aziendaId: auto.azienda_id,
+    entityId: auto.entity_id,
     telefono: log.contact_telefono,
     email: log.contact_email,
     templateKey: step?.wa_template,
