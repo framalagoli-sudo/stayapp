@@ -51,6 +51,7 @@ function caricaSdk(appId) {
 export default function CollegaWhatsApp({ aziendaId, meta, entita = [], numeriCollegati = [], onFatto }) {
   const [attesa, setAttesa] = useState(false)
   const [errore, setErrore] = useState('')
+  const [avvisi, setAvvisi] = useState([])
   // Le entità che un numero ce l'hanno già non si ripropongono: si scollega
   // quello vecchio, altrimenti si collegherebbe due volte la stessa attività.
   const libere = entita.filter(e => !numeriCollegati.some(n => n.entity_id === e.id))
@@ -108,6 +109,9 @@ export default function CollegaWhatsApp({ aziendaId, meta, entita = [], numeriCo
           phone_number_id: scelta.current.phone_number_id,
         }),
       })
+      // Un collegamento riuscito a metà lo si dice qui, non lo si lascia
+      // scoprire al primo invio che fallisce.
+      setAvvisi(esito?.avvisi || [])
       onFatto?.(esito)
     } catch (e) {
       setErrore(e?.message || 'Collegamento non riuscito')
@@ -143,6 +147,13 @@ export default function CollegaWhatsApp({ aziendaId, meta, entita = [], numeriCo
       >
         <Link2 size={16} strokeWidth={2} /> {attesa ? 'Collegamento in corso…' : 'Collega WhatsApp'}
       </button>
+
+      {avvisi.map((a, i) => (
+        <div key={i} style={{ display: 'flex', gap: 8, background: '#fffaf5', border: '1px solid #ffe0b2', borderRadius: 8, padding: '10px 12px', marginTop: 12 }}>
+          <AlertCircle size={16} strokeWidth={1.5} color="#e65100" style={{ flexShrink: 0, marginTop: 1 }} />
+          <p style={{ margin: 0, fontSize: 13, color: '#7a4a00', lineHeight: 1.5 }}>{a}</p>
+        </div>
+      ))}
 
       {errore && (
         <div style={{ display: 'flex', gap: 8, background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 8, padding: '10px 12px', marginTop: 12 }}>

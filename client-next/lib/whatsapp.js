@@ -93,6 +93,35 @@ export async function leggiNumeri(wabaId, token) {
   return await graph(`/${wabaId}/phone_numbers`, { token, query: { fields: 'id,display_phone_number,verified_name,quality_rating,messaging_limit_tier' } })
 }
 
+// ── I due passi che completano il collegamento ────────────────────────────────
+// Scambiare il codice con un token NON basta: senza questi due il numero risulta
+// collegato nel nostro pannello e non funziona niente.
+
+// 1. Iscrivere la nostra app ai webhook dell'account del cliente. Senza, Meta
+//    non ci manda nulla: niente stati di consegna, niente risposte in arrivo.
+export async function iscriviWebhook(wabaId, token) {
+  return await graph(`/${wabaId}/subscribed_apps`, { method: 'POST', token })
+}
+
+// 2. Registrare il numero sulla piattaforma Cloud: è ciò che lo abilita a
+//    inviare. Il PIN è la verifica in due passaggi del numero e serve anche in
+//    futuro per cambiarlo o per staccarlo, quindi va conservato.
+//    Un numero già registrato non è un errore: capita ricollegando.
+export async function registraNumero(phoneNumberId, token, pin) {
+  const r = await graph(`/${phoneNumberId}/register`, {
+    method: 'POST', token,
+    body: { messaging_product: 'whatsapp', pin: String(pin) },
+  })
+  if (!r.ok && /already registered|already exists/i.test(r.error || '')) return { ok: true, data: { esistente: true } }
+  return r
+}
+
+// Il PIN non lo sceglie il cliente: sarebbe una cosa in più da ricordare, e
+// sceglierebbe 000000. Lo generiamo noi, casuale, e lo custodiamo cifrato.
+export function pinCasuale() {
+  return String(randomBytes(4).readUInt32BE(0) % 1_000_000).padStart(6, '0')
+}
+
 // ── Template ──────────────────────────────────────────────────────────────────
 export async function creaTemplate(wabaId, token, definizione) {
   const r = await graph(`/${wabaId}/message_templates`, { method: 'POST', token, body: definizione })

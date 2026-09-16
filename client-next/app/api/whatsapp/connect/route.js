@@ -2,7 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth, getProfile, resolveAziendaId, entitaDellaAzienda } from '@/lib/server-auth'
 import { accountDellAzienda } from '@/lib/whatsapp-account'
 import { CATALOGO, nomeMeta } from '@/lib/whatsapp-catalogo'
-import { scambiaCodice, leggiNumeri, creaCatalogo, cifra, whatsappConfigurato } from '@/lib/whatsapp'
+import { scambiaCodice, leggiNumeri, creaCatalogo, cifra, whatsappConfigurato, iscriviWebhook, registraNumero, pinCasuale } from '@/lib/whatsapp'
 
 // Collegamento del numero WhatsApp del cliente.
 // Il flusso di Meta (Embedded Signup) avviene nel suo browser e ci restituisce un
@@ -121,19 +121,37 @@ export async function POST(request) {
     await supabaseAdmin.from('whatsapp_account').delete()
       .eq('phone_number_id', numero.id).neq('azienda_id', azienda_id)
 
+    // ⚠️ I due passi senza cui il collegamento è finto: iscriversi ai webhook
+    // dell'account (altrimenti non sappiamo mai se un messaggio è arrivato) e
+    // registrare il numero (altrimenti ogni invio viene rifiutato). Si fanno
+    // PRIMA di dire al cliente che è collegato.
+    const webhook = await iscriviWebhook(body.waba_id, token)
+    const pin = pinCasuale()
+    const registrazione = await registraNumero(numero.id, token, pin)
+
     const riga = {
       azienda_id,
       entity_id,
       waba_id: body.waba_id,
       phone_number_id: numero.id,
       numero_visualizzato: numero.display_phone_number,
-      stato: 'attivo',
+      // Se il numero non si è registrato non è «attivo»: dirlo sarebbe una
+      // promessa falsa, e il cliente lo scoprirebbe dal primo invio fallito.
+      stato: registrazione.ok ? 'attivo' : 'in_verifica',
       access_token_cifrato: cifra(token),
       quality_rating: numero.quality_rating || null,
       limite_messaggi: numero.messaging_limit_tier || null,
       collegato_il: new Date().toISOString(),
       ultima_verifica: new Date().toISOString(),
-      dettaglio: { verified_name: numero.verified_name || null },
+      dettaglio: {
+        verified_name: numero.verified_name || null,
+        // Il PIN serve a noi in futuro (cambiarlo, staccare il numero) e non si
+        // tiene in chiaro: è la chiave della verifica in due passaggi.
+        pin_cifrato: registrazione.ok ? cifra(pin) : null,
+        webhook_iscritto: webhook.ok,
+        errore_webhook: webhook.ok ? null : webhook.error,
+        errore_registrazione: registrazione.ok ? null : registrazione.error,
+      },
       updated_at: new Date().toISOString(),
     }
 
@@ -169,6 +187,14 @@ export async function POST(request) {
     return Response.json({
       ok: true,
       account,
+      // Ciò che non è riuscito si dice subito: un collegamento «a metà» che
+      // sembra completo è peggio di uno fallito.
+      registrato: registrazione.ok,
+      webhook: webhook.ok,
+      avvisi: [
+        registrazione.ok ? null : `Il numero non è stato registrato su WhatsApp (${registrazione.error}): non potrai inviare finché non si risolve.`,
+        webhook.ok ? null : `Non siamo riusciti a iscriverci agli avvisi di Meta (${webhook.error}): gli stati di consegna potrebbero mancare.`,
+      ].filter(Boolean),
       messaggi_creati: esiti.filter(e => e.ok).length,
       messaggi_falliti: esiti.filter(e => !e.ok).map(e => ({ key: e.key, errore: e.errore })),
     })

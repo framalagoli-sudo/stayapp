@@ -118,6 +118,9 @@ function Collegamento({ dati, aziendaId, onCambio }) {
   const numeri = dati?.numeri || []
   const entita = dati?.entita || []
   const attivi = numeri.filter(n => n.stato === 'attivo')
+  // Un numero collegato ma non ancora registrato su WhatsApp: si vede, con
+  // scritto cosa manca. Nasconderlo lo farebbe ricollegare all'infinito.
+  const incompleti = numeri.filter(n => n.stato !== 'attivo')
   const nomeEntita = id => entita.find(e => e.id === id)?.name || 'un’attività cancellata'
 
   async function scollega(account) {
@@ -184,6 +187,18 @@ function Collegamento({ dati, aziendaId, onCambio }) {
       sfondo={C.attesaBg}
       descrizione="Puoi usare anche il numero che hai già su WhatsApp Business: resta sul telefono e continua a funzionare."
     >
+      {incompleti.map(n => (
+        <div key={n.id} style={{ display: 'flex', gap: 8, background: C.attesaBg, border: `1px solid ${C.attesaBordo}`, borderRadius: 8, padding: '12px 14px', marginBottom: 16 }}>
+          <AlertCircle size={16} strokeWidth={1.5} color={C.attesa} style={{ flexShrink: 0, marginTop: 1 }} />
+          <p style={{ margin: 0, fontSize: 13, color: '#7a4a00', lineHeight: 1.5 }}>
+            <strong>{n.numero_visualizzato || 'Il numero'}</strong> è collegato ma WhatsApp non lo ha ancora abilitato all’invio.
+            Rifai il collegamento: se l’errore resta, scrivici e lo guardiamo insieme.
+            <button onClick={() => scollega(n)} disabled={attesa} style={{ marginLeft: 8, background: 'none', border: 'none', color: '#7a4a00', cursor: 'pointer', fontSize: 12, textDecoration: 'underline' }}>
+              Scollega
+            </button>
+          </p>
+        </div>
+      ))}
       <div style={{ background: C.infoBg, border: `1px solid ${C.infoBordo}`, borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
         <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: C.testo }}>Prima di iniziare, tieni presente che:</p>
         <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: '#555', lineHeight: 1.7 }}>
