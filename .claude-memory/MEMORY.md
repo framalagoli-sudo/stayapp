@@ -116,3 +116,4 @@
 - [📅 Sessione 14/09 — un sito un indirizzo, il campo foto unico, la forma scelta dal cliente](project_session_2026_09_14.md) — 7 deploy; 4 MB misurati; 3 difetti trovati facendo altro
 - [🟦 App Meta OltreNova: com'è configurata e le trappole](reference_meta_app_setup.md) — solo caso d'uso WhatsApp; verifica aziendale nel Centro sicurezza (non nell'app); la pagina Di base salva un campo alla volta; chiavi NON ancora su Vercel
 - [🗂️ Archivio note di sessione giu–ago 2026](archivio_sessioni.md) — storico, 50 sessioni; il sapere tecnico è già nei reference_
+- [🌐 Quindici indirizzi, una piattaforma](reference_molti_indirizzi.md) — /admin dava 404 sul dominio di un cliente; gli smoke provano UN hostname solo
