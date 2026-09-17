@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { statoBudget, meseCorrente, BUDGET_MENSILE_PREDEFINITO_USD } from '@/lib/ai-consumi'
+import { dollariDaEuro } from '@/lib/valuta-ai'
 
 // Il credito AI di un'azienda: quanto ha speso, quanto può spendere, e la
 // ricarica. Solo il super_admin: il cliente vede la percentuale nel pannello,
@@ -14,13 +15,13 @@ async function soloSuperAdmin(request) {
   return {}
 }
 
-// Un importo in dollari arriva dal browser: numero finito fra 0 e 1000, due
-// decimali. Stessi limiti del CHECK nella migration 121.
+// Dal pannello l'importo arriva in euro e si salva in dollari (vedi lib/valuta-ai).
+// Fra 0 e 850 euro: convertiti restano sotto i 1000 dollari del CHECK nella migration 121.
 function importo(v) {
   if (v === null || v === '') return null
   const n = Number(v)
-  if (!Number.isFinite(n) || n < 0 || n > 1000) return undefined
-  return Math.round(n * 100) / 100
+  if (!Number.isFinite(n) || n < 0 || n > 850) return undefined
+  return dollariDaEuro(n)
 }
 
 async function credito(id, tettoSuMisura) {
@@ -44,8 +45,9 @@ export async function GET(request, props) {
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
 
-// { tetto_su_misura: number|null }  → tetto permanente (null = predefinito)
-// { extra_mese: number }            → credito in più SOLO per il mese corrente
+// { tetto_su_misura_eur: number|null }  → tetto permanente in euro (null = predefinito)
+// { extra_mese_eur: number }            → credito in più in euro, SOLO per il mese corrente
+// La risposta resta in dollari, come il database: le cifre le converte il pannello.
 export async function PATCH(request, props) {
   const params = await props.params
   try {
@@ -53,14 +55,14 @@ export async function PATCH(request, props) {
     if (response) return response
     const body = await request.json().catch(() => ({}))
     const aggiorna = {}
-    if ('tetto_su_misura' in body) {
-      const v = importo(body.tetto_su_misura)
-      if (v === undefined) return Response.json({ error: 'Tetto non valido: un numero fra 0 e 1000' }, { status: 400 })
+    if ('tetto_su_misura_eur' in body) {
+      const v = importo(body.tetto_su_misura_eur)
+      if (v === undefined) return Response.json({ error: 'Tetto non valido: un numero fra 0 e 850 euro' }, { status: 400 })
       aggiorna.ai_budget_mensile_usd = v
     }
-    if ('extra_mese' in body) {
-      const v = importo(body.extra_mese)
-      if (v === undefined) return Response.json({ error: 'Credito extra non valido: un numero fra 0 e 1000' }, { status: 400 })
+    if ('extra_mese_eur' in body) {
+      const v = importo(body.extra_mese_eur)
+      if (v === undefined) return Response.json({ error: 'Credito extra non valido: un numero fra 0 e 850 euro' }, { status: 400 })
       // Il mese lo decide il server, non il browser: vale per quello in corso.
       aggiorna.ai_extra_usd = v || null
       aggiorna.ai_extra_mese = v ? meseCorrente() : null

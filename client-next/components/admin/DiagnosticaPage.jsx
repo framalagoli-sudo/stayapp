@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { Activity, Bell, BellOff, RefreshCw, Send, CheckCircle2, AlertTriangle, Database } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
+import { formatoEuro, USD_PER_EUR } from '@/lib/valuta-ai'
 
 // Stato di salute della piattaforma.
 //
@@ -118,7 +119,8 @@ export default function DiagnosticaPage() {
         ) : (
           <>
             <div style={{ fontSize: 13, color: '#888', marginBottom: 14 }}>
-              Mese UTC, costi calcolati dai token veri. Tetto predefinito ${dati.ai.budgetPredefinito} per azienda;
+              Mese UTC, costi calcolati dai token veri e convertiti al cambio fisso di 1 € = {String(USD_PER_EUR).replace('.', ',')} $.
+              Tetto predefinito {formatoEuro(dati.ai.budgetPredefinito)} per azienda;
               su misura e ricariche da <strong>Aziende → Credito AI</strong>.
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 9 }}>
@@ -132,8 +134,7 @@ export default function DiagnosticaPage() {
                       {a.budget && <div style={{ width: `${Math.max(2, quota * 100)}%`, height: '100%', background: colore }} />}
                     </div>
                     <div style={{ width: 150, textAlign: 'right', fontSize: 13, color: '#555', fontVariantNumeric: 'tabular-nums' }}>
-                      {/* Sotto i 10 centesimi servono tre decimali: «$0.00» si leggerebbe «niente». */}
-                      <strong>${a.costo.toFixed(a.costo > 0 && a.costo < 0.1 ? 3 : 2)}</strong>{a.budget ? ` / $${a.budget}` : ''} · {a.chiamate}
+                      <strong>{formatoEuro(a.costo)}</strong>{a.budget ? ` / ${formatoEuro(a.budget)}` : ''} · {a.chiamate}
                     </div>
                   </div>
                 )

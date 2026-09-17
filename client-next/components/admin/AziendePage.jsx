@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
+import { euroDaDollari, formatoEuro } from '@/lib/valuta-ai'
 
 // Estendi qui per nuovi tipi futuri (libero professionista, studio, palestra, ecc.)
 const MODULO_CONFIG = [
@@ -699,8 +700,8 @@ function CreditoAISection({ aziendaId }) {
 
   function applica(dati) {
     setC(dati)
-    setTetto(dati.tetto_su_misura != null ? String(dati.tetto_su_misura) : '')
-    setExtra(dati.extra ? String(dati.extra) : '')
+    setTetto(dati.tetto_su_misura != null ? String(euroDaDollari(dati.tetto_su_misura)) : '')
+    setExtra(dati.extra ? String(euroDaDollari(dati.extra)) : '')
   }
 
   useEffect(() => {
@@ -710,8 +711,8 @@ function CreditoAISection({ aziendaId }) {
   async function salva(campo) {
     setSalvando(campo); setEsito(null); setErrore(null)
     const body = campo === 'tetto'
-      ? { tetto_su_misura: tetto.trim() === '' ? null : tetto }
-      : { extra_mese: extra.trim() === '' ? 0 : extra }
+      ? { tetto_su_misura_eur: tetto.trim() === '' ? null : tetto }
+      : { extra_mese_eur: extra.trim() === '' ? 0 : extra }
     try {
       applica(await apiFetch(`/api/aziende/${aziendaId}/credito-ai`, { method: 'PATCH', body: JSON.stringify(body) }))
       setEsito(campo === 'tetto' ? 'Tetto mensile salvato.' : 'Credito di questo mese salvato.')
@@ -723,7 +724,6 @@ function CreditoAISection({ aziendaId }) {
   const inp = { width: 110, padding: '8px 10px', borderRadius: 7, border: '1px solid #ddd', fontSize: 14, boxSizing: 'border-box' }
   const lbl = { display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 4 }
   const nota = { fontSize: 11.5, color: '#999', marginTop: 4, maxWidth: 260 }
-  const dollari = n => `$${Number(n).toFixed(n > 0 && n < 0.1 ? 3 : 2)}`
   const colore = !c ? '#00b5b5' : c.esaurito ? '#c0392b' : c.percentuale >= 80 ? '#e65100' : '#00b5b5'
 
   return (
@@ -742,20 +742,20 @@ function CreditoAISection({ aziendaId }) {
               <div style={{ width: `${Math.max(2, c.percentuale)}%`, height: '100%', background: colore }} />
             </div>
             <div style={{ fontSize: 13, color: '#333', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-              <strong>{dollari(c.speso)}</strong> / {dollari(c.budget)} · {c.percentuale}%
+              <strong>{formatoEuro(c.speso)}</strong> / {formatoEuro(c.budget)} · {c.percentuale}%
             </div>
           </div>
           <div style={{ fontSize: 12, color: '#888', marginBottom: 16 }}>
-            Tetto {dollari(c.base)}{c.tetto_su_misura == null ? ' (predefinito)' : ' (su misura)'}
-            {c.extra > 0 && ` + ${dollari(c.extra)} extra per questo mese`}
+            Tetto {formatoEuro(c.base)}{c.tetto_su_misura == null ? ' (predefinito)' : ' (su misura)'}
+            {c.extra > 0 && ` + ${formatoEuro(c.extra)} extra per questo mese`}
             {c.esaurito && <span style={{ color: '#c0392b', fontWeight: 600 }}> · funzioni AI ferme</span>}
           </div>
 
           <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap', alignItems: 'flex-start' }}>
             <div>
-              <label style={lbl}>Credito extra solo per questo mese ($)</label>
+              <label style={lbl}>Credito extra solo per questo mese (€)</label>
               <div style={{ display: 'flex', gap: 8 }}>
-                <input type="number" min="0" max="1000" step="1" value={extra} onChange={e => setExtra(e.target.value)} placeholder="0" style={inp} />
+                <input type="number" min="0" max="850" step="any" value={extra} onChange={e => setExtra(e.target.value)} placeholder="0" style={inp} />
                 <button onClick={() => salva('extra')} disabled={salvando !== null} style={pill({ background: '#1a1a2e', color: '#fff', padding: '7px 14px', fontSize: 12 })}>
                   {salvando === 'extra' ? 'Salvo…' : 'Salva'}
                 </button>
@@ -763,14 +763,14 @@ function CreditoAISection({ aziendaId }) {
               <div style={nota}>Si somma al tetto e il primo del mese torna a zero da solo. È la ricarica per chi ha finito il credito.</div>
             </div>
             <div>
-              <label style={lbl}>Tetto mensile su misura ($)</label>
+              <label style={lbl}>Tetto mensile su misura (€)</label>
               <div style={{ display: 'flex', gap: 8 }}>
-                <input type="number" min="0" max="1000" step="1" value={tetto} onChange={e => setTetto(e.target.value)} placeholder={`${c.predefinito} (predefinito)`} style={{ ...inp, width: 150 }} />
+                <input type="number" min="0" max="850" step="any" value={tetto} onChange={e => setTetto(e.target.value)} placeholder={`${euroDaDollari(c.predefinito)} (predefinito)`} style={{ ...inp, width: 150 }} />
                 <button onClick={() => salva('tetto')} disabled={salvando !== null} style={pill({ background: '#f0f4ff', color: '#1a1a2e', padding: '7px 14px', fontSize: 12 })}>
                   {salvando === 'tetto' ? 'Salvo…' : 'Salva'}
                 </button>
               </div>
-              <div style={nota}>Vale anche nei mesi dopo. Vuoto = predefinito ({dollari(c.predefinito)}).</div>
+              <div style={nota}>Vale anche nei mesi dopo. Vuoto = predefinito ({formatoEuro(c.predefinito)}).</div>
             </div>
           </div>
           {esito && <div style={{ fontSize: 12, color: '#276749', marginTop: 10 }}>{esito}</div>}
