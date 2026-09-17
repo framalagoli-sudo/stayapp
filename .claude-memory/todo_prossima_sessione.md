@@ -5,10 +5,22 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-17T18:19:36.807Z
+  modified: 2026-09-17T20:03:35.734Z
 ---
 
 # Si riprende da qui
+
+## ⛔ PRIMA COSA DELLA PROSSIMA SESSIONE — la decisione sul sito di OltreNova
+
+**Sessione chiusa il 17/09/2026.** Tutto live, nessuna migration in sospeso (ultima eseguita: **122**).
+
+🚨 **Siamo sotto esame di Meta per diventare Tech Provider: non si tocca niente di visibile** — sito pubblico, landing, `/#canali`, pagine legali, `/cancellazione-dati`. Se il revisore apre il sito deve trovarlo com'era quando la richiesta è partita. Vale finché Francesco non dice che la valutazione è finita.
+
+**Da decidere insieme domani** (Francesco: «vorrei pure rifarla», riferito alla landing):
+1. **OltreNova diventa cliente di sé stessa?** Azienda + entità nostre dentro la piattaforma, così il blog e le pagine di marketing si scrivono dal pannello invece che con un deploy. Motivi: contenuti veri su cui posizionarsi, usiamo il nostro prodotto (i difetti li troviamo noi), e «il sito di OltreNova è fatto con OltreNova».
+2. ⚠️ **`oltrenova.com/blog` oggi pubblica l'articolo di un CLIENTE**: `/api/blog/public` senza filtri elenca gli articoli di tutte le aziende, e l'unico pubblicato è «Degustazione di farine» dell'entità di prova `struttura-test`. Da filtrare sulla nostra azienda — ma serve che la nostra azienda esista (punto 1).
+3. **Rifare la landing**: oggi è hardcoded in `LandingPage.jsx`. Se passa nel CMS, ogni parola non richiede più un deploy. Da valutare **dopo** il via libera di Meta.
+4. Nodo tecnico già individuato: l'entità «OltreNova» genererebbe un proprio indirizzo che **non deve farsi concorrenza con `oltrenova.com`** nei motori (canonical + «un sito, un indirizzo»). Ho la soluzione in mente, va discussa prima di scrivere.
 
 ## ▶️ 17/09 — stato aggiornato da Francesco (VALE SU TUTTO QUELLO SOTTO)
 - Verifica accesso Meta (Tech Provider) **inviata, in valutazione**.
@@ -23,6 +35,7 @@ metadata:
 - Limite di spesa sulla **Console Anthropic messo a 20 $/mese** (era 200.000): il tetto della piattaforma ora c'è.
 - ✅ **Credito AI in euro — LIVE 17/09** (deploy `11fbee69`, nessuna migration). `lib/valuta-ai.js` è l'unico punto della conversione, cambio BCE **fisso** 1 € = 1,1537 $; il DB resta in dollari. Pannello, Diagnostica ed email di avviso in euro; route credito-ai riceve `tetto_su_misura_eur`/`extra_mese_eur`, max 850 €. **Tetto predefinito ora 5 € (5,77 $)**, scelto da Francesco. Verificato in produzione: «Tetto 5,00 € (predefinito)», 5000 € rifiutato, Diagnostica in euro.
 - 🕐 **Credito annuale invece che mensile**: ragionato il 17/09 e **rimandato di proposito**. Il contratto sarà annuale, ma oggi mancano i dati (il registro `ai_consumi` ha 1 sola chiamata) e la data di inizio contratto (l'abbonamento OltreNova su Stripe non esiste). Quando ci saranno: credito annuale legato all'anniversario + freno mensile più largo (~3× la quota) contro l'abuso.
+- 🔴 **Il 404 di `/admin` sul dominio di un cliente — successo davanti a un cliente, CORRETTO e live** (`153e005b`). `www.garage22terni.it/admin` → ora 307 al pannello; `/termini` e `/cancellazione-dati` idem; `/checkout` invece **resta** sul dominio del cliente (prima 404 dopo il pagamento) ed è in `Disallow`. Sitemap di `oltrenova.com` non più vuota. Nuova sonda `probe-molti-indirizzi.mjs` in `deploy.ps1`: **15 indirizzi su 15 verdi**, provata prima della correzione (li trovava tutti rotti). Regola 9 in `CLAUDE.md`. → [[reference_molti_indirizzi]]
 - ⚠️ Lo smoke di `deploy.ps1` ha dato **❌ Form Builder «loop di caricamento» a 9,5s**: falso allarme da partenza a freddo — riprovato subito dal vivo, carica in 530 ms e 251 ms. Se si ripete, alzare quella soglia invece di indagare il codice.
 
 **Sessione chiusa il 16/09/2026.** Tutto live, migration eseguite fino alla **122**, nessuna in sospeso. Riepilogo → [[project_session_2026_09_16]].
