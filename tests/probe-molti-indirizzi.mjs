@@ -44,7 +44,13 @@ async function vai(url, salti = 0) {
   return { stato: r.status, url, corpo: await r.text() }
 }
 
-async function controlla(host, pubblicato) {
+// Il pannello si disegna nel browser: nell'HTML grezzo il modulo di accesso non
+// c'è, e cercarlo lì darebbe un allarme a ogni giro. Quello che invece cambia
+// davvero quando la pagina non esiste è il titolo.
+const titolo = html => (html.match(/<title>([^<]*)<\/title>/i)?.[1] || '').trim()
+const paginaMancante = html => /404|could not be found/i.test(titolo(html))
+
+async function controlla(host, pubblicato, hostDellaStessaEntita) {
   // 1. Il sito risponde.
   const home = await vai(`https://${host}/`)
   if (home.stato !== 200) segnala(host, `la home risponde ${home.stato}`)
@@ -54,20 +60,25 @@ async function controlla(host, pubblicato) {
   const finisceSulPannello = new URL(admin.url).hostname === PANNELLO
   if (admin.stato !== 200 || !finisceSulPannello) {
     segnala(host, `/admin finisce su ${admin.url} con stato ${admin.stato} (atteso: il pannello su ${PANNELLO})`)
-  } else if (!/Accedi|Password|pannello/i.test(admin.corpo)) {
-    segnala(host, '/admin arriva al pannello ma non mostra l\'accesso')
+  } else if (paginaMancante(admin.corpo)) {
+    segnala(host, '/admin arriva al pannello ma la pagina non esiste')
   }
 
   // 3. Le altre pagine della piattaforma non devono dare 404 sul sito di un cliente.
   for (const p of ['/termini', '/cancellazione-dati']) {
     const r = await vai(`https://${host}${p}`)
-    if (r.stato !== 200) segnala(host, `${p} risponde ${r.stato}`)
+    if (r.stato !== 200 || paginaMancante(r.corpo)) segnala(host, `${p} risponde ${r.stato}${paginaMancante(r.corpo) ? ' e la pagina non esiste' : ''}`)
   }
 
-  // 4. Il ritorno dopo un pagamento resta sul sito da cui si è comprato.
+  // 4. Il ritorno dopo un pagamento resta sul sito del cliente: sul suo dominio
+  // se ce l'ha (il sottodominio cede il passo, «un sito, un indirizzo»), mai da noi.
   const checkout = await vai(`https://${host}/checkout/annullato`)
-  if (checkout.stato !== 200) segnala(host, `/checkout/annullato risponde ${checkout.stato}: chi ha pagato troverebbe questo`)
-  else if (new URL(checkout.url).hostname !== host) segnala(host, `/checkout/annullato porta fuori, su ${new URL(checkout.url).hostname}`)
+  const dove = new URL(checkout.url).hostname
+  if (checkout.stato !== 200 || paginaMancante(checkout.corpo)) {
+    segnala(host, `/checkout/annullato risponde ${checkout.stato}: chi ha pagato troverebbe questo`)
+  } else if (!hostDellaStessaEntita.has(dove)) {
+    segnala(host, `/checkout/annullato porta su ${dove}, che non è un indirizzo di questo cliente`)
+  }
 
   // 5. Quello che leggono i motori di ricerca.
   const robots = await vai(`https://${host}/robots.txt`)
@@ -98,13 +109,24 @@ const pubblicati = new Map((entita || []).map(e => [e.id, !!e.minisito?.active &
 const host = [...new Map(domini.filter(d => d.dominio).map(d => [d.dominio, d.entity_id])).entries()]
   .sort(([a], [b]) => a.localeCompare(b))
 
+// Tutti gli indirizzi di una stessa entità: il sottodominio e il dominio del
+// cliente sono la stessa casa, quindi passare dall'uno all'altro non è «uscire».
+const indirizziPerEntita = new Map()
+for (const d of domini) {
+  if (!d.dominio) continue
+  if (!indirizziPerEntita.has(d.entity_id)) indirizziPerEntita.set(d.entity_id, new Set())
+  const s = indirizziPerEntita.get(d.entity_id)
+  s.add(d.dominio)
+  s.add(d.dominio.startsWith('www.') ? d.dominio.slice(4) : `www.${d.dominio}`)
+}
+
 console.log('\nLA PIATTAFORMA RISPONDE BENE DA TUTTI I SUOI INDIRIZZI?\n')
 console.log(`  ${host.length} indirizzi vivi, letti dal database\n`)
 
 for (const [h, entityId] of host) {
   const prima = problemi.length
   try {
-    await controlla(h, pubblicati.get(entityId) === true)
+    await controlla(h, pubblicati.get(entityId) === true, indirizziPerEntita.get(entityId) || new Set([h]))
   } catch (e) {
     segnala(h, `non raggiungibile: ${e.message}`)
   }
