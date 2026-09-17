@@ -45,6 +45,13 @@ di fretta. Ognuna di queste righe nasce da un guasto vero già successo.
    funzioni: si prova anche cosa succede se qualcuno ci mette dentro qualcosa di
    cattivo. Se tocca il browser (PWA, componenti client), va aperto con un
    browser vero: `next build` non vede un identificatore fuori scope.
+9. **La stessa pagina risponde da quindici indirizzi.** Il nostro dominio, dieci
+   sottodomini e i domini dei clienti: sui non-nostri il middleware riscrive
+   ogni percorso sotto l'entità, quindi una pagina della piattaforma **lì non
+   esiste**. Una pagina o una route nuova alla radice è verificata solo se
+   aperta **anche da un dominio cliente e da un sottodominio** — gli smoke
+   provano `www.oltrenova.com` e basta. Il controllo automatico è
+   `tests/probe-molti-indirizzi.mjs`, che legge gli indirizzi vivi dal database.
 
 **Il controllo automatico**: `node tests/verifica-regole.mjs` legge il codice e
 trova le violazioni meccaniche di queste regole. Gira **da solo prima di ogni

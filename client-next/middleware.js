@@ -25,12 +25,37 @@ function isOwnDomain(hostname) {
 const GLOBAL_PUBLIC_PATHS = [
   '/blog', '/eventi', '/form', '/preventivo', '/recensione',
   '/cancella-prenotazione', '/confirm-subscription', '/unsubscribe', '/signup',
+  // ⚠️ Il ritorno da Stripe: chi ha appena pagato resta sul sito da cui ha
+  // comprato. Senza questa riga `/checkout/successo` sul dominio del cliente
+  // diventava `/r/slug/checkout/successo` → 404 subito dopo il pagamento.
+  '/checkout',
   // ⚠️ Senza queste due, sul dominio di un cliente `/robots.txt` diventava
   // `/r/slug/robots.txt` → 404, e i motori di ricerca non trovavano la sitemap.
   '/robots.txt', '/sitemap.xml',
 ]
 function isGlobalPublicPath(pathname) {
   return GLOBAL_PUBLIC_PATHS.some(r => pathname === r || pathname.startsWith(r + '/'))
+}
+
+// ── Quello che è della piattaforma, non del sito di un cliente ───────────────
+//
+// ⛔ 17/09/2026: `https://www.garage22terni.it/admin` rispondeva **404**, con un
+// cliente davanti. Sul dominio di un cliente ogni percorso veniva considerato
+// una pagina del suo sito: `/admin` diventava `/r/garage22/admin`, che non
+// esiste. Lo stesso dal sottodominio, che dal 14/09 rimanda al dominio del
+// cliente — quindi il 404 compariva sull'indirizzo del cliente.
+//
+// Il pannello vive su UN dominio solo, ed è una scelta di sicurezza, non di
+// comodità: le passkey sono legate a `oltrenova.com` (Relying Party ID), i
+// Redirect URL di Supabase sono una lista chiusa, e soprattutto **il DNS del
+// dominio di un cliente non è nostro**: se scade e lo compra un altro, quello
+// si ritroverebbe la nostra pagina di accesso sul suo dominio.
+//
+// Quindi non si serve altrove: si rimanda a casa. Chi scrive quell'indirizzo
+// arriva dove voleva, e il sito del cliente non mostra un 404.
+const PERCORSI_PIATTAFORMA = ['/admin', '/termini', '/cancellazione-dati']
+function isPercorsoPiattaforma(pathname) {
+  return PERCORSI_PIATTAFORMA.some(r => pathname === r || pathname.startsWith(r + '/'))
 }
 
 // ── Un sito, un indirizzo ────────────────────────────────────────────────────
@@ -107,6 +132,15 @@ export async function middleware(request) {
     const requestHeaders = new Headers(request.headers)
     requestHeaders.set('x-stayapp-lang', 'en')  // il root layout lo legge per <html lang>
     return NextResponse.rewrite(url, { request: { headers: requestHeaders } })
+  }
+
+  // Il pannello e le pagine di OltreNova tornano a casa, da qualunque indirizzo
+  // siano state chieste. Prima di risolvere il dominio: è una risposta che non
+  // ha bisogno del database, e così non costa una chiamata di rete.
+  if (isPercorsoPiattaforma(pathname)) {
+    const destinazione = new URL(pathname, `https://www.${STAYAPP_DOMAIN}`)
+    destinazione.search = request.nextUrl.search
+    return NextResponse.redirect(destinazione, 307)
   }
 
   // Domini custom → risolvi l'entità e fai rewrite trasparente

@@ -40,12 +40,16 @@ async function entitaDelDominio(host) {
 
 export async function GET(request) {
   const host = request.headers.get('host') || ''
-  const righe = ['User-agent: *', 'Allow: /', 'Disallow: /admin']
+  // `/checkout` è la pagina che si vede dopo aver pagato: non ha niente da dire
+  // a un motore di ricerca, e finirebbe nell'indice con dentro un numero d'ordine.
+  const righe = ['User-agent: *', 'Allow: /', 'Disallow: /admin', 'Disallow: /checkout']
 
   try {
     if (!nostroDominio(host)) {
       const ent = await entitaDelDominio(host)
       if (ent) righe.push('', `Sitemap: https://${host}/api/sitemap/${ent.tipo}/${ent.slug}`)
+    } else {
+      righe.push('', `Sitemap: https://www.${STAYAPP}/sitemap.xml`)
     }
     // Sul nostro dominio non si elencano le sitemap dei clienti: sarebbe
     // l'elenco pubblico di chi lavora con noi, e non lo decidiamo noi.

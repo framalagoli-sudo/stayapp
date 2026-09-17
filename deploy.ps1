@@ -109,11 +109,12 @@ if ($testExit -ne 0) {
 #   - security-sweep      chi puo' leggere cosa senza titolo (multi-tenant)
 #   - rls-secondo-muro    cosa esce bussando al database, colonne comprese
 #   - colonne-pubbliche   quali colonne escono da una route senza login
+#   - molti-indirizzi     la piattaforma vive su 15 hostname, gli smoke ne provano UNO
 # Non bloccano il deploy (e' gia' avvenuto): segnalano subito, forte.
 Write-Host "`n=== Sonde di sicurezza ===" -ForegroundColor Cyan
 Set-Location tests
 $sicurezzaKo = 0
-foreach ($sonda in @("probe-security-sweep.mjs", "probe-rls-secondo-muro.mjs", "probe-colonne-pubbliche.mjs")) {
+foreach ($sonda in @("probe-security-sweep.mjs", "probe-rls-secondo-muro.mjs", "probe-colonne-pubbliche.mjs", "probe-molti-indirizzi.mjs")) {
     Write-Host "-- $sonda" -ForegroundColor DarkGray
     node $sonda
     if ($LASTEXITCODE -ne 0) { $sicurezzaKo++ }
