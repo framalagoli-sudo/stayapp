@@ -5,10 +5,25 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-16T17:25:34.683Z
+  modified: 2026-09-17T18:19:36.807Z
 ---
 
 # Si riprende da qui
+
+## ▶️ 17/09 — stato aggiornato da Francesco (VALE SU TUTTO QUELLO SOTTO)
+- Verifica accesso Meta (Tech Provider) **inviata, in valutazione**.
+- `metodotvb.it` DNS: lo fa la settimana prossima. `fondaconarni.com` (record A apex **mancante**, DNS SiteGround): ce lo notifica lui. Al 17/09 entrambi ancora giù.
+- Abbonamento OltreNova su Stripe + prezzo ricarica AI: **fermi**, sta inquadrando l'attività con la commercialista.
+- Nome pubblico su Stripe **cambiato**. Garage22 dovrebbe collegare Stripe il 17/09 → poi primo incasso vero.
+- Progetto Supabase di ripristino **cancellato**; Futura Vacanze **cancellata**; offerta Automax **risolta** da lui.
+- Evento «A cena con…» di Garage22: **non interessa**, non riproporlo.
+- Chiesto: tetto AI **in euro** (clienti italiani).
+- ⚠️ Già FATTI, non riproporre come aperti: vetrina shop sui siti (blocco Shop, `f4f5edc4`). Le 13 prenotazioni eventi `pending` sono una decisione presa (non si toccano). Le 2 offerte con orario forse spostato sono scadute (maggio e 30/08–02/09): irrilevanti.
+- Lezione: le sezioni «da decidere» di questo file invecchiano; prima di riportarle, verificarle su git log e DB.
+- Limite di spesa sulla **Console Anthropic messo a 20 $/mese** (era 200.000): il tetto della piattaforma ora c'è.
+- ✅ **Credito AI in euro — LIVE 17/09** (deploy `11fbee69`, nessuna migration). `lib/valuta-ai.js` è l'unico punto della conversione, cambio BCE **fisso** 1 € = 1,1537 $; il DB resta in dollari. Pannello, Diagnostica ed email di avviso in euro; route credito-ai riceve `tetto_su_misura_eur`/`extra_mese_eur`, max 850 €. **Tetto predefinito ora 5 € (5,77 $)**, scelto da Francesco. Verificato in produzione: «Tetto 5,00 € (predefinito)», 5000 € rifiutato, Diagnostica in euro.
+- 🕐 **Credito annuale invece che mensile**: ragionato il 17/09 e **rimandato di proposito**. Il contratto sarà annuale, ma oggi mancano i dati (il registro `ai_consumi` ha 1 sola chiamata) e la data di inizio contratto (l'abbonamento OltreNova su Stripe non esiste). Quando ci saranno: credito annuale legato all'anniversario + freno mensile più largo (~3× la quota) contro l'abuso.
+- ⚠️ Lo smoke di `deploy.ps1` ha dato **❌ Form Builder «loop di caricamento» a 9,5s**: falso allarme da partenza a freddo — riprovato subito dal vivo, carica in 530 ms e 251 ms. Se si ripete, alzare quella soglia invece di indagare il codice.
 
 **Sessione chiusa il 16/09/2026.** Tutto live, migration eseguite fino alla **122**, nessuna in sospeso. Riepilogo → [[project_session_2026_09_16]].
 **Prima domanda alla ripresa**: ha inviato la verifica dell'accesso? Ha creato la configurazione Embedded Signup e messo `META_APP_ID`/`META_APP_SECRET`/`META_ES_CONFIG_ID` in `client-next/.env.local`? Se sì → provo il collegamento col numero di test (è l'unico pezzo **scritto e non provato**), poi i due video per l'App Review.
