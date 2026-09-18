@@ -64,6 +64,19 @@ function analizza(host, url, html) {
   if (/noindex/i.test(p.robots)) nota(host, 'alto', `${url} — noindex: questa pagina non entrerà mai nei risultati`)
   if (p.h1 === 0) nota(host, 'medio', `${url} — nessun H1`)
   if (p.h1 > 1) nota(host, 'basso', `${url} — ${p.h1} H1 nella stessa pagina`)
+  // ⛔ La prova decisiva: quanto testo c'è nell'HTML **senza JavaScript**. Un
+  // motore di ricerca legge questo. Il 18/09/2026 la pagina di un evento ne
+  // aveva zero — il contenuto arrivava dopo, dal browser — e per Google era una
+  // pagina vuota. Non è un difetto che si veda guardando il sito.
+  const testo = html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&[a-z]+;/gi, ' ')
+    .replace(/\s+/g, ' ').trim()
+  p.parole = testo ? testo.split(' ').length : 0
+  if (p.parole < 60) nota(host, 'alto', `${url} — solo ${p.parole} parole nell'HTML: per un motore di ricerca questa pagina è quasi vuota (il contenuto arriva dopo, col JavaScript?)`)
+
   if (!p.ogImmagine) nota(host, 'basso', `${url} — nessuna immagine social: condiviso su WhatsApp o Facebook esce senza anteprima`)
   if (p.immaginiSenzaAlt > 0) nota(host, 'basso', `${url} — ${p.immaginiSenzaAlt} immagini su ${p.immagini} senza testo alternativo`)
   return p

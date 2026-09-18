@@ -5,22 +5,25 @@ import { apiFetch } from '@/lib/api'
 import { t } from '@/lib/i18n'
 import { focalValido } from '@/lib/formati-foto'
 
-export default function BlogListPage() {
+export default function BlogListPage({ iniziali = null, lingua = null }) {
   const params = useSearchParams()
   const aziendaId  = params.get('azienda_id')
   const lang       = params.get('_lang') === 'en' ? 'en' : 'it'
   const lp         = lang === 'en' ? '/en' : ''
-  const [articles, setArticles] = useState([])
-  const [loading,  setLoading]  = useState(true)
+  const [articles, setArticles] = useState(iniziali || [])
+  const [loading,  setLoading]  = useState(!iniziali)
 
   useEffect(() => {
+    // L'elenco del primo caricamento lo prepara il server: è quello che legge
+    // un motore di ricerca. Si richiede solo se manca o se cambia lingua.
+    if (iniziali && lang === (lingua || 'it')) { setLoading(false); return }
     let url = `/api/blog/public?limit=50&lang=${lang}`
     if (aziendaId) url += `&azienda_id=${aziendaId}`
     apiFetch(url)
       .then(d => Array.isArray(d) && setArticles(d))
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [aziendaId, lang])
+  }, [aziendaId, lang, iniziali, lingua])
 
   return (
     <div style={{ minHeight: '100vh', background: '#f9f9fb', fontFamily: "'Inter', sans-serif" }}>

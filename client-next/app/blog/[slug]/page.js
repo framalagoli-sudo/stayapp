@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { getArticolo } from '@/lib/guest-data'
 import { ambitoBlog, articoloNellAmbito, baseDelBlog } from '@/lib/blog-ambito'
+import { contenutoArticoloPulito } from '@/lib/articolo-pubblico'
+import { localizeEntity } from '@/lib/translate'
 import ArticoloPage from '@/components/public/ArticoloPage'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
 
@@ -57,9 +59,15 @@ export default async function ArticoloRoute(props) {
   const { slug } = await params
   const art = await getArticolo(slug)
   if (!articoloNellAmbito(art, await ambitoBlog((await headers()).get('host')))) notFound()
+  // Il contenuto viene servito dal SERVER, già ripulito: prima l'articolo
+  // arrivava dal browser e nell'HTML c'erano 4 parole — per un motore di
+  // ricerca il pezzo non esisteva.
+  const tradotto = lang === 'en' ? await localizeEntity(art, 'articolo', 'en') : art
+  const iniziale = { ...tradotto, lingua: lang, contenutoHtml: contenutoArticoloPulito(tradotto.content) }
+
   return (
     <>
-      <ArticoloPage />
+      <ArticoloPage iniziale={iniziale} />
       <LanguageSwitcher lang={lang} />
     </>
   )

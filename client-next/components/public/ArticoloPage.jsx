@@ -53,7 +53,7 @@ function ShareBar({ url, title }) {
   )
 }
 
-export default function ArticoloPage() {
+export default function ArticoloPage({ iniziale = null }) {
   const { slug } = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -65,16 +65,19 @@ export default function ArticoloPage() {
     else if (typeof window !== 'undefined' && window.history.length > 1) router.back()
     else router.push('/blog')
   }
-  const [articolo, setArticolo] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [cleanHtml, setCleanHtml] = useState('')
+  const [articolo, setArticolo] = useState(iniziale)
+  const [loading, setLoading] = useState(!iniziale)
+  const [cleanHtml, setCleanHtml] = useState(iniziale?.contenutoHtml || '')
 
   useEffect(() => {
+    // Il primo caricamento arriva dal SERVER — è quello che legge un motore di
+    // ricerca. Si richiede solo se manca (vecchi montaggi) o se cambia lingua.
+    if (iniziale && lang === (iniziale.lingua || 'it')) { setLoading(false); return }
     apiFetch(`/api/blog/public/${slug}?lang=${lang}`)
       .then(setArticolo)
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [slug, lang])
+  }, [slug, lang, iniziale])
 
   useEffect(() => {
     if (!articolo) return
@@ -89,6 +92,9 @@ export default function ArticoloPage() {
   // Sanitizza il contenuto HTML prima di iniettarlo (anti-XSS). Import dinamico:
   // DOMPurify gira solo in browser → niente problemi in SSR, niente peso altrove.
   useEffect(() => {
+    // Quello che arriva dal server è già pulito (sanitize-html, che gira in
+    // Node): qui si ripulisce solo ciò che è stato chiesto dal browser.
+    if (articolo?.contenutoHtml) { setCleanHtml(articolo.contenutoHtml); return }
     if (!articolo?.content) { setCleanHtml(''); return }
     let active = true
     import('dompurify').then(({ default: DOMPurify }) => {

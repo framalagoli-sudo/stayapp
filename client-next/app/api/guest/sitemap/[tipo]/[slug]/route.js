@@ -12,7 +12,7 @@ export async function GET(request, props) {
     if (!table) return new Response('Tipo non valido', { status: 400 })
 
     const { data: entity } = await supabaseAdmin.from(table)
-      .select('id, indicizzabile, minisito').eq('slug', slug).eq('active', true).single()
+      .select('id, azienda_id, indicizzabile, minisito').eq('slug', slug).eq('active', true).single()
     if (!entity) return new Response('Entità non trovata', { status: 404 })
 
     // Un sito che ha scelto di non farsi trovare non dichiara niente: la
@@ -25,7 +25,7 @@ export async function GET(request, props) {
       )
     }
 
-    const [{ data: pagine }, { data: elementi }, dominio, { data: eventi }] = await Promise.all([
+    const [{ data: pagine }, { data: elementi }, dominio, { data: eventi }, { data: articoli }] = await Promise.all([
       supabaseAdmin.from('pagine').select('slug, updated_at').eq('entity_tipo', tipo).eq('entity_id', entity.id)
         .eq('status', 'pubblicata').neq('slug', '__home__'),
       supabaseAdmin.from('vetrina_elementi').select('slug, updated_at').eq('entity_tipo', tipo).eq('entity_id', entity.id)
@@ -67,6 +67,10 @@ export async function GET(request, props) {
       // è il percorso che il middleware serve anche sui domini dei clienti.
       ...(eventi || []).map(ev =>
         `  <url><loc>${baseOrigin}/eventi/${ev.slug || ev.id}</loc><lastmod>${(ev.updated_at || now).split('T')[0]}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>`
+      ),
+      // Anche gli articoli stanno alla radice del sito: /blog/<indirizzo>.
+      ...(articoli || []).map(a =>
+        `  <url><loc>${baseOrigin}/blog/${a.slug}</loc><lastmod>${(a.updated_at || a.published_at || now).split('T')[0]}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>`
       ),
     ]
 

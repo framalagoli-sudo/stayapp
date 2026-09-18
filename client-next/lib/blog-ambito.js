@@ -64,6 +64,34 @@ export function articoloNellAmbito(articolo, ambito) {
   return !articolo.entity_id || articolo.entity_id === ambito.entity_id
 }
 
+// Gli articoli che si vedono a questo indirizzo, pronti per l'elenco. Stesso
+// recinto della route: lo decide l'host, non un parametro.
+export async function elencoArticoli(host, { lang = 'it', limite = 50 } = {}) {
+  const ambito = await ambitoBlog(host)
+  const colonne = 'id, title, slug, excerpt, cover_url, cover_focal, author, published_at, category_id, entity_tipo, entity_id'
+  let q = supabaseAdmin.from('articoli').select(colonne)
+    .eq('published', true).eq('active', true)
+    .order('published_at', { ascending: false }).limit(limite)
+
+  if (ambito.tipo === 'entita') {
+    q = q.eq('azienda_id', ambito.azienda_id).or(`entity_id.eq.${ambito.entity_id},entity_id.is.null`)
+  } else if (ambito.azienda_id) {
+    q = q.eq('azienda_id', ambito.azienda_id)
+  } else {
+    return []   // nessuna azienda nostra: meglio un elenco vuoto che quello di un altro
+  }
+
+  const { data, error } = await q
+  if (error || !data) return []
+  if (lang !== 'en') return data
+  // In inglese le schede si traducono qui, come faceva la route.
+  const { localizeEntity } = await import('./translate')
+  return Promise.all(data.map(async a => {
+    const { content, ...resto } = await localizeEntity(a, 'articolo', 'en')
+    return resto
+  }))
+}
+
 // L'indirizzo con cui l'articolo si presenta ai motori di ricerca: quello del
 // sito su cui sta, non il nostro. Un sito, un indirizzo.
 export function baseDelBlog(host) {
