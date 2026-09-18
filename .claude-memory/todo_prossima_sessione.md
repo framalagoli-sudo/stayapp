@@ -5,10 +5,15 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-17T20:03:35.734Z
+  modified: 2026-09-18T12:34:58.468Z
 ---
 
 # Si riprende da qui
+
+## 🟢 18/09 — META: VERIFICA TECH PROVIDER **APPROVATA**
+
+«La tua azienda è stata verificata come Tech Provider» (Francesco, 18/09). Era il passo che bloccava WhatsApp. **Restano**: configurazione Embedded Signup + `META_APP_ID`/`META_APP_SECRET`/`META_ES_CONFIG_ID` in `.env.local` (li mette lui), segreto dell'app da rigenerare, prova dal vivo col numero di test (unico pezzo scritto e non provato), i **due video** per l'App Review dei permessi, tariffe Meta Italia.
+⚠️ **Chiedere se il fermo sul sito pubblico vale ancora**: l'App Review dei permessi non è finita e un revisore potrebbe aprire `oltrenova.com`.
 
 ## ⛔ PRIMA COSA DELLA PROSSIMA SESSIONE — la decisione sul sito di OltreNova
 
