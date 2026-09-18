@@ -2,10 +2,17 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { t } from '@/lib/i18n'
+import { readableOn } from '@/lib/blockTypes'
 
 const KEY = 'cookie_consent_v2'
 
 export default function CookieBanner({ primaryColor = '#00b5b5', privacyUrl, cookieUrl, lang = 'it' }) {
+  // ⛔ I link usavano il colore del tema del cliente: su un banner scuro, un
+  // tema scuro li faceva sparire. Misurato su un sito vero il 18/09/2026 —
+  // erano praticamente dello stesso colore dello sfondo, e il consenso ai
+  // cookie è proprio la cosa che deve restare leggibile. Se il colore del
+  // cliente non si stacca dal banner, si usa il bianco.
+  const coloreLink = readableOn(primaryColor, '#1a1a2e', '#ffffff')
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -34,12 +41,12 @@ export default function CookieBanner({ primaryColor = '#00b5b5', privacyUrl, coo
         {t('cookie_notice', lang)}{' '}
         {privacyUrl && (
           <a href={privacyUrl} target="_blank" rel="noopener noreferrer"
-            style={{ color: primaryColor, fontWeight: 600 }}>{t('privacy_policy', lang)}</a>
+            style={{ color: coloreLink, fontWeight: 600 }}>{t('privacy_policy', lang)}</a>
         )}
         {privacyUrl && cookieUrl && ' · '}
         {cookieUrl && (
           <a href={cookieUrl} target="_blank" rel="noopener noreferrer"
-            style={{ color: primaryColor, fontWeight: 600 }}>{t('cookie_policy', lang)}</a>
+            style={{ color: coloreLink, fontWeight: 600 }}>{t('cookie_policy', lang)}</a>
         )}
       </p>
       <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
