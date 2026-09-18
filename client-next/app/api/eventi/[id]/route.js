@@ -3,13 +3,17 @@ import { formatoValido, focalValido } from '@/lib/formati-foto'
 import { requireRecordAccess, entitaDellaAzienda } from '@/lib/server-auth'
 import { slugEvento, slugLibero } from '@/lib/evento-indirizzo'
 
+// I tre modi in cui un evento può dire quanto costa (migration 123):
+// «gratuito», una cifra, o una frase scritta dal cliente. Niente = non si scrive.
+const MODI_PREZZO = ['gratuito', 'cifra', 'testo']
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 function isUUID(v) { return UUID_RE.test(v) }
 
 const ALLOWED = ['title', 'description', 'cover_url', 'date_start', 'date_end',
   'location', 'price', 'seats_total', 'active', 'published', 'packages', 'entity_tipo', 'entity_id',
   'notify_owner_on_booking', 'send_guest_confirmation', 'formato_cover', 'cover_focal',
-  'cta_label', 'cta_condizioni', 'acconto_percentuale', 'mostra_prezzo', 'mostra_prezzo_pagina', 'prezzo_testo',
+  'cta_label', 'cta_condizioni', 'acconto_percentuale', 'mostra_prezzo', 'mostra_prezzo_pagina', 'prezzo_testo', 'prezzo_modo',
   'prenotazioni_chiuse', 'prenotazioni_chiuse_testo', 'slug']
 
 export async function GET(request, props) {
@@ -44,6 +48,13 @@ export async function PATCH(request, props) {
       payload.prenotazioni_chiuse_testo = payload.prenotazioni_chiuse_testo.trim().slice(0, 300) || null
     if (typeof payload.cta_condizioni === 'string') payload.cta_condizioni = payload.cta_condizioni.trim().slice(0, 600) || null
     if (typeof payload.prezzo_testo === 'string') payload.prezzo_testo = payload.prezzo_testo.trim().slice(0, 40) || null
+    // Cosa si legge dove sta il prezzo: solo questi tre, o niente. Un valore
+
+    // inventato dal client finirebbe in pagina — e il CHECK della 123 lo
+
+    // rifiuterebbe comunque, con un 500 al posto di una risposta chiara.
+
+    if ('prezzo_modo' in payload && !MODI_PREZZO.includes(payload.prezzo_modo)) payload.prezzo_modo = null
     if ('mostra_prezzo' in payload) payload.mostra_prezzo = payload.mostra_prezzo !== false
     if ('mostra_prezzo_pagina' in payload) payload.mostra_prezzo_pagina = payload.mostra_prezzo_pagina !== false
     if (payload.entity_id && !isUUID(payload.entity_id)) { payload.entity_id = null; payload.entity_tipo = null }

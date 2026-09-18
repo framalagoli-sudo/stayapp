@@ -43,7 +43,7 @@ export default function EventoEditPage() {
     // spento comunque. Le due righe si muovono insieme.
     notify_owner_on_booking: true, send_guest_confirmation: true,
     cta_label: '', cta_condizioni: '',
-    mostra_prezzo: true, mostra_prezzo_pagina: true, prezzo_testo: '', acconto_percentuale: 0,
+    mostra_prezzo: true, mostra_prezzo_pagina: true, prezzo_testo: '', prezzo_modo: '', acconto_percentuale: 0,
     prenotazioni_chiuse: false, prenotazioni_chiuse_testo: '',
   })
   const [cover, setCover] = useState(null)       // URL attuale
@@ -82,6 +82,7 @@ export default function EventoEditPage() {
           mostra_prezzo:        ev.mostra_prezzo ?? true,
           mostra_prezzo_pagina: ev.mostra_prezzo_pagina ?? true,
           prezzo_testo:    ev.prezzo_testo || '',
+          prezzo_modo:     ev.prezzo_modo || '',
           prenotazioni_chiuse: ev.prenotazioni_chiuse ?? false,
           prenotazioni_chiuse_testo: ev.prenotazioni_chiuse_testo || '',
           notify_owner_on_booking: ev.notify_owner_on_booking ?? true,
@@ -247,22 +248,61 @@ export default function EventoEditPage() {
 
           {(form.mostra_prezzo !== false || form.mostra_prezzo_pagina !== false) && (
             <>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 4 }}>
-                Al posto della cifra, scrivi (facoltativo)
+              {/* ⛔ Segnalato da Garage 22 (18/09/2026): la cena si paga sul
+                  posto, il campo prezzo era vuoto, e la pagina scriveva
+                  «Gratuito». Prima lo deducevamo — nessuna cifra = gratis — e
+                  «nessuno l'ha detto» diventava un'informazione falsa. Adesso
+                  lo si sceglie, e se non si sceglie non si scrive niente. */}
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#444', marginBottom: 8 }}>
+                Cosa si legge dove sta il prezzo
               </label>
-              <input value={form.prezzo_testo} onChange={e => set('prezzo_testo', e.target.value)} maxLength={40}
-                placeholder="Alla carta"
-                style={{ display: 'block', width: '100%', maxWidth: 280, padding: '12px 14px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14, marginBottom: 4 }} />
-              <div style={{ fontSize: 12, color: '#999' }}>
-                Per una cena alla carta, un preventivo su misura, un ingresso a offerta libera.
-                Lasciandolo vuoto si vede la cifra qui sotto — o «Gratis» se è zero.
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+                {[
+                  { k: 'gratuito', l: 'Gratuito' },
+                  { k: 'cifra',    l: 'Una cifra' },
+                  { k: 'testo',    l: 'Lo scrivo io' },
+                ].map(o => {
+                  const scelto = form.prezzo_modo === o.k
+                  return (
+                    <button key={o.k} type="button" onClick={() => set('prezzo_modo', scelto ? '' : o.k)}
+                      style={{
+                        padding: '9px 16px', borderRadius: 8, fontSize: 13.5, fontWeight: 600, cursor: 'pointer',
+                        background: scelto ? '#1a1a2e' : '#fff', color: scelto ? '#fff' : '#444',
+                        border: `1px solid ${scelto ? '#1a1a2e' : '#ddd'}`,
+                      }}>{o.l}</button>
+                  )
+                })}
               </div>
-              {form.prezzo_testo && (
-                <div style={{ marginTop: 14, padding: '12px 14px', background: '#fff8e8', borderRadius: 8, fontSize: 12.5, color: '#8a6410', lineHeight: 1.55 }}>
-                  Attenzione: questo è <strong>solo quello che si legge</strong>. Se qualcuno prenota,
-                  il totale viene calcolato dal prezzo qui sotto — mettilo a 0 se l’importo si fa
-                  di persona, altrimenti a chi prenota risulterà una cifra che non ha mai visto.
+
+              {!form.prezzo_modo && (
+                <div style={{ padding: '12px 14px', background: '#fff8e8', borderRadius: 8, fontSize: 12.5, color: '#8a6410', lineHeight: 1.55, marginBottom: 12 }}>
+                  Finché non scegli, dove sta il prezzo <strong>non si legge niente</strong>.
+                  È voluto: prima un evento senza cifra diceva «Gratuito» anche quando si pagava sul posto.
                 </div>
+              )}
+
+              {form.prezzo_modo === 'cifra' && (
+                <div style={{ fontSize: 12.5, color: '#666', marginBottom: 12 }}>
+                  {Number(form.price) > 0
+                    ? <>Si legge la cifra del campo <strong>Prezzo base</strong> qui sotto: oggi <strong>€{form.price}</strong>.</>
+                    : <>Il <strong>Prezzo base</strong> qui sotto è a zero: si leggerebbe «Gratis». Scrivi la cifra, o scegli «Gratuito».</>}
+                </div>
+              )}
+
+              {form.prezzo_modo === 'testo' && (
+                <>
+                  <input value={form.prezzo_testo} onChange={e => set('prezzo_testo', e.target.value)} maxLength={40}
+                    placeholder="Cena alla carta"
+                    style={{ display: 'block', width: '100%', maxWidth: 280, padding: '12px 14px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14, marginBottom: 4 }} />
+                  <div style={{ fontSize: 12, color: '#999' }}>
+                    Per una cena alla carta, un preventivo su misura, un ingresso a offerta libera.
+                  </div>
+                  <div style={{ marginTop: 14, padding: '12px 14px', background: '#fff8e8', borderRadius: 8, fontSize: 12.5, color: '#8a6410', lineHeight: 1.55 }}>
+                    Attenzione: questo è <strong>solo quello che si legge</strong>. Se qualcuno prenota,
+                    il totale viene calcolato dal <strong>Prezzo base</strong> qui sotto — mettilo a 0 se
+                    l’importo si fa di persona, altrimenti a chi prenota risulterà una cifra che non ha mai visto.
+                  </div>
+                </>
               )}
             </>
           )}

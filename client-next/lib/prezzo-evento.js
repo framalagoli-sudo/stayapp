@@ -14,15 +14,30 @@
 //
 // Nessun import: la usano i componenti che girano nel browser.
 
+// ⛔ 18/09/2026, segnalato da Garage 22: la cena si paga sul posto, il campo
+// prezzo era vuoto, e la pagina scriveva **«Gratuito»**. Il difetto era la
+// deduzione: «nessuna cifra» veniva letto come «è gratis», mentre vuol dire
+// «nessuno l'ha detto». Ora lo dice il cliente, con `prezzo_modo` (migration
+// 123) — e se non l'ha detto **non si scrive niente**.
+function modoDi(evento) {
+  if (evento?.prezzo_modo) return evento.prezzo_modo
+  // Eventi salvati prima della migration (o letti da una select che non chiede
+  // la colonna): si deduce solo ciò che è certo, mai il «gratis».
+  const scritto = typeof evento?.prezzo_testo === 'string' ? evento.prezzo_testo.trim() : ''
+  if (scritto) return 'testo'
+  if ((Number(evento?.price) || 0) > 0) return 'cifra'
+  return null
+}
+
 export function prezzoDaMostrare(evento, { gratuito = 'Gratis' } = {}) {
   if (!evento) return null
   if (evento.mostra_prezzo === false) return null
 
-  const scritto = typeof evento.prezzo_testo === 'string' ? evento.prezzo_testo.trim() : ''
-  if (scritto) return scritto.slice(0, 40)
-
-  const cifra = Number(evento.price) || 0
-  return cifra > 0 ? `€${cifra}` : gratuito
+  const modo = modoDi(evento)
+  if (modo === 'gratuito') return gratuito
+  if (modo === 'testo') return String(evento.prezzo_testo || '').trim().slice(0, 40)
+  if (modo === 'cifra') return `€${Number(evento.price) || 0}`
+  return null
 }
 
 // Per la riga «€25 / persona» della pagina di dettaglio, dove un pacchetto
@@ -33,11 +48,16 @@ export function prezzoPersona(evento, prezzoScelto, { gratuito = 'Gratuito', per
   // a chi apre, e chi fa il contrario.
   if (evento?.mostra_prezzo_pagina === false) return null
 
-  // Il testo libero vale finché non si sceglie un pacchetto: quello ha un
-  // prezzo suo, ed è quello che verrà addebitato.
-  const scritto = typeof evento?.prezzo_testo === 'string' ? evento.prezzo_testo.trim() : ''
-  if (scritto && !prezzoScelto) return scritto.slice(0, 40)
+  // Un pacchetto scelto ha un prezzo suo, ed è quello che verrà addebitato:
+  // vince su qualsiasi cosa dica l'evento.
+  if (prezzoScelto != null && prezzoScelto !== '') {
+    const p = Number(prezzoScelto) || 0
+    return p > 0 ? `€${p} ${perPersona}` : gratuito
+  }
 
-  const cifra = Number(prezzoScelto ?? evento?.price) || 0
-  return cifra > 0 ? `€${cifra} ${perPersona}` : gratuito
+  const modo = modoDi(evento)
+  if (modo === 'gratuito') return gratuito
+  if (modo === 'testo') return String(evento?.prezzo_testo || '').trim().slice(0, 40)
+  if (modo === 'cifra') return `€${Number(evento?.price) || 0} ${perPersona}`
+  return null
 }

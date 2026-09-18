@@ -22,7 +22,7 @@ export async function GET(request) {
   let query = supabaseAdmin.from('eventi')
     // `aziende(fuso_orario)` non è un dettaglio: le schede mostrano l'ora
     // dell'evento, e senza fuso ognuno la leggerebbe nel proprio.
-    .select('id, slug, title, description, cover_url, formato_cover, cover_focal, cta_label, cta_condizioni, mostra_prezzo, mostra_prezzo_pagina, prezzo_testo, date_start, date_end, location, price, seats_total, seats_booked, packages, aziende(fuso_orario)')
+    .select('id, slug, title, description, cover_url, formato_cover, cover_focal, cta_label, cta_condizioni, mostra_prezzo, mostra_prezzo_pagina, prezzo_testo, prezzo_modo, date_start, date_end, location, price, seats_total, seats_booked, packages, aziende(fuso_orario)')
     .eq('published', true).eq('active', true)
   query = passati
     ? soloConclusi(query).order('date_start', { ascending: false }).limit(MAX_PASSATI)

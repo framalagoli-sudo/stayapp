@@ -7,6 +7,7 @@ import { apiFetch } from '../../../lib/api'
 import { eventoConcluso } from '../../../lib/evento-concluso'
 import { oraLocale } from '../../../lib/fuso'
 import { Calendar, MapPin, Users, Plus, ChevronRight, Eye, EyeOff } from 'lucide-react'
+import { prezzoDaMostrare } from '@/lib/prezzo-evento'
 
 // Nell'ora dell'azienda: un titolare che guarda da un altro fuso deve vedere
 // l'ora a cui la serata comincia lì.
@@ -132,7 +133,11 @@ function EventGrid({ eventi, muted, fuso }) {
 
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
               <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e' }}>
-                {ev.price > 0 ? `€${ev.price}` : 'Gratuito'}
+                {/* Anche qui valeva la deduzione «nessuna cifra = gratis»:
+                    l'elenco diceva «Gratuito» a chi il prezzo non l'aveva mai
+                    scelto. Ora si legge la stessa cosa che vede chi guarda il
+                    sito, e se non è stato deciso si vede un trattino. */}
+                {prezzoDaMostrare({ ...ev, mostra_prezzo: true }) || '—'}
               </span>
               <button
                 onClick={e => { e.stopPropagation(); router.push(`/admin/eventi/${ev.id}/prenotazioni`) }}
