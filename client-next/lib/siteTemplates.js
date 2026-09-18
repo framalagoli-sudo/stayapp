@@ -278,15 +278,15 @@ export const SITE_TEMPLATES = [
     obiettivi: ['vetrina', 'lead_gen'],
     theme: { primaryColor: '#23c0d1', secondaryColor: '#ff7a59', bgColor: '#0d0d14', textColor: '#f2f3f7', fontHeading: 'sora', fontBody: 'inter', borderStyle: 'rounded' },
     blocks: [
-      { type: 'hero', data: { title: 'Facciamo funzionare le idee', tagline: 'Strategia, tecnologia e risultati misurabili', cta1_text: 'Parliamone', cta1_url: '', cta2_text: 'Cosa facciamo', cta2_url: '', image_query: 'dark abstract technology gradient', height: 'large' } },
+      { type: 'hero', style: { glow: 'primary' }, data: { title: 'Facciamo <mark>funzionare</mark> le idee', tagline: 'Strategia, tecnologia e risultati misurabili', cta1_text: 'Parliamone', cta1_url: '', cta2_text: 'Cosa facciamo', cta2_url: '', image_query: 'dark abstract technology gradient', height: 'large' } },
       { type: 'stats', data: { titolo: '', items: [{ value: '120+', label: 'Progetti' }, { value: '8', label: 'Anni' }, { value: '24h', label: 'Tempo di risposta' }] } },
-      { type: 'about', data: { title: 'Chi siamo', text: 'Racconta in poche righe cosa fai e per chi. Chi legge deve capire subito se sei la persona giusta.' } },
-      { type: 'paragrafi', data: { titolo: 'Cosa facciamo', items: [
+      { type: 'about', style: { etichetta: '01 · Chi siamo' }, data: { title: 'Chi siamo', text: 'Racconta in poche righe cosa fai e per chi. Chi legge deve capire subito se sei la persona giusta.' } },
+      { type: 'paragrafi', style: { etichetta: '02 · Cosa facciamo' }, data: { titolo: 'Cosa facciamo', items: [
         { icon: 'zap', title: 'Servizio 1', text: 'Descrivi qui il primo servizio.' },
         { icon: 'target', title: 'Servizio 2', text: 'Descrivi qui il secondo servizio.' },
         { icon: 'trending-up', title: 'Servizio 3', text: 'Descrivi qui il terzo servizio.' },
       ] } },
-      { type: 'steps', data: { titolo: 'Come lavoriamo', items: [
+      { type: 'steps', style: { etichetta: '03 · Il metodo' }, data: { titolo: 'Come lavoriamo', items: [
         { icon: 'phone', title: 'Ci parliamo', text: 'Capiamo il problema, senza gergo.' },
         { icon: 'edit', title: 'Proponiamo', text: 'Un piano chiaro, con tempi e costi.' },
         { icon: 'check', title: 'Costruiamo', text: 'E restiamo lì mentre va in produzione.' },
@@ -299,7 +299,7 @@ export const SITE_TEMPLATES = [
         { question: 'Quanto costa un progetto?', answer: 'Dipende dal lavoro: il preventivo è sempre scritto prima di iniziare.' },
         { question: 'In quanto tempo partiamo?', answer: 'Di solito entro due settimane dalla conferma.' },
       ] } },
-      { type: 'cta_banner', data: { title: 'Ne parliamo?', subtitle: 'Prima chiamata senza impegno', button_text: 'Scrivici', button_url: '' } },
+      { type: 'cta_banner', style: { glow: 'secondary' }, data: { title: 'Ne parliamo?', subtitle: 'Prima chiamata senza impegno', button_text: 'Scrivici', button_url: '' } },
     ],
   },
 ]

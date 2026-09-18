@@ -1176,10 +1176,15 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const padMap = { small: '10px 22px', medium: '14px 32px', large: '17px 44px' }
         const fsMap = { small: 14, medium: 16, large: 18 }
         const outline = d.style === 'outline'
+        // L'alone fa «accendere» il pulsante: sui fondi scuri è quello che lo
+        // stacca dalla pagina. Il colore è quello del tema, mai una stringa
+        // che arriva dal cliente.
+        const alone = d.style === 'alone' && /^#[0-9a-fA-F]{6}$/.test(primary || '')
+          ? `0 0 34px ${primary}66, 0 8px 22px ${primary}44` : undefined
         return (
           <section key={block.id} style={{ padding: '40px 0', background: 'var(--sup)' }}>
             <div className="lbr-section" style={{ textAlign: d.align || 'center' }}>
-              <a href={siteHref(d.url)} style={{ display: 'inline-block', padding: padMap[d.size || 'medium'], borderRadius: 50, fontWeight: 700, fontSize: fsMap[d.size || 'medium'], textDecoration: 'none', background: outline ? 'transparent' : primary, color: outline ? primary : '#fff', border: `2px solid ${primary}` }}>{d.text}</a>
+              <a href={siteHref(d.url)} style={{ display: 'inline-block', padding: padMap[d.size || 'medium'], borderRadius: 50, fontWeight: 700, fontSize: fsMap[d.size || 'medium'], textDecoration: 'none', background: outline ? 'transparent' : primary, color: outline ? primary : '#fff', border: `2px solid ${primary}`, boxShadow: alone }}>{d.text}</a>
             </div>
           </section>
         )

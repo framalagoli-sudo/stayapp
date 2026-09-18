@@ -53,7 +53,7 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
   const fondo = theme.bgColor || '#ffffff'
   const testo = theme.textColor || '#1a1a2e'
   const scuro = eScuro(fondo)
-  const varSup = Object.entries(variabiliSuperficie(scuro)).map(([k, v]) => `${k}: ${v};`).join(' ')
+  const varSup = Object.entries({ ...variabiliSuperficie(scuro), '--accento': theme.secondaryColor || theme.primaryColor || '#00b5b5' }).map(([k, v]) => `${k}: ${v};`).join(' ')
   const mini       = ristorante.minisito || {}
   const showPwaLink = mini.show_pwa_link !== false
   const social     = mini.social || {}

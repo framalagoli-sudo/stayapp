@@ -126,6 +126,25 @@ export const BLOCK_BG_OPTIONS = [
   { key: 'gradient',label: 'Gradiente' },
   { key: 'image',   label: 'Immagine' },
 ]
+
+// L'alone: una luce diffusa del colore del tema dietro la sezione. È quello che
+// dà profondità ai siti scuri (i riferimenti del 18/09/2026) senza aggiungere
+// immagini da caricare. Predefinito «nessuno»: i siti online non cambiano.
+// Blocchi che scrivono il titolo a sinistra, non al centro.
+const BLOCCHI_TESTO_SINISTRA = ['about', 'foto_testo', 'colonne']
+
+export const BLOCK_GLOW_OPTIONS = [
+  { key: 'none',      label: 'Nessuno' },
+  { key: 'primary',   label: 'Colore tema' },
+  { key: 'secondary', label: 'Colore accento' },
+]
+// L'alone si costruisce dal colore del tema, mai da una stringa del cliente:
+// finisce in una proprietà CSS, e un valore libero lì è una porta aperta.
+function velo(colore) {
+  return /^#[0-9a-fA-F]{6}$/.test(colore || '')
+    ? `radial-gradient(60% 70% at 50% 0%, ${colore}33 0%, ${colore}00 70%)`
+    : null
+}
 // Risolve lo sfondo di una sezione dallo style + tema. Ritorna { background, inverted }.
 // inverted = testo da schiarire (fondo scuro/immagine). 'primary' invertito solo se il
 // colore tema è scuro. 'image' usa bg_image + velo scuro (overlay 0-0.85).
@@ -255,6 +274,11 @@ export function applyBlockStyle(el, block, opts = {}) {
     const r = resolveBlockBg(st, opts.primary, opts.secondary)
     if (r.background) { ov.background = r.background; inverted = r.inverted }
   }
+  if (st.glow && st.glow !== 'none') {
+    const luce = velo(st.glow === 'secondary' ? (opts.secondary || opts.primary) : opts.primary)
+    // L'alone sta SOPRA lo sfondo della sezione, non al posto suo.
+    if (luce) ov.background = ov.background ? `${luce}, ${ov.background}` : luce
+  }
   // Colore icone per-blocco → CSS var che le icone lucide dentro al blocco ereditano
   // (override del colore globale del tema). Chiave preset o hex diretto.
   if (st.iconColor && st.iconColor !== 'default') {
@@ -273,7 +297,7 @@ export function applyBlockStyle(el, block, opts = {}) {
   // non finire sotto l'header fisso (64px).
   const anchorId = st.anchor ? String(st.anchor).toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '') : null
   if (anchorId) ov.scrollMarginTop = '80px'
-  if (!Object.keys(ov).length && !hasPad && !classes.length && !anchorId) return el
+  if (!Object.keys(ov).length && !hasPad && !classes.length && !anchorId && !st.etichetta) return el
   const base = { ...(el.props.style || {}) }
   if (hasPad) {
     // preserva la spaziatura orizzontale nativa, sovrascrive solo la verticale
@@ -287,6 +311,28 @@ export function applyBlockStyle(el, block, opts = {}) {
   const props = { style: { ...base, ...ov } }
   if (classes.length) props.className = ((el.props.className || '') + ' ' + classes.join(' ')).trim()
   if (anchorId) props.id = anchorId
+
+  // L'etichetta: la parolina in maiuscoletto sopra il titolo («01 · CHI SIAMO»).
+  // Sta qui e non nei singoli blocchi perché i titoli sono scritti dentro
+  // quindici `case` diversi: una riga sola in più, e vale per tutti.
+  if (st.etichetta) {
+    const testo = String(st.etichetta).slice(0, 60)
+    const etichetta = (
+      <div key="etichetta" className="lbr-section" style={{ marginBottom: 14 }}>
+        <div style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: 2.4, textTransform: 'uppercase',
+          color: inverted ? 'rgba(255,255,255,0.65)' : 'var(--txt-tenue)',
+          // Segue l'allineamento del blocco: `about` e `foto_testo` scrivono a
+          // sinistra, gli altri al centro. Un'etichetta centrata sopra un
+          // titolo a sinistra sembra un errore di impaginazione — e lo è.
+          textAlign: st.align === 'left' ? 'left' : st.align === 'right' ? 'right'
+            : st.align === 'center' ? 'center'
+              : BLOCCHI_TESTO_SINISTRA.includes(block.type) ? 'left' : 'center',
+        }}>{testo}</div>
+      </div>
+    )
+    return cloneElement(el, props, etichetta, ...[].concat(el.props.children ?? []))
+  }
   return cloneElement(el, props)
 }
 

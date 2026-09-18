@@ -20,7 +20,7 @@ import RichTextEditor from '@/components/admin/RichTextEditor'
 import MediaPickerButton from '@/components/admin/MediaPicker'
 import UnsplashPicker from '@/components/admin/UnsplashPicker'
 import { BLOCK_PATTERNS } from '@/lib/blockPatterns'
-import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS, BLOCK_PADY_OPTIONS, blockSupportsBg, BLOCK_TEXT_SIZE_OPTIONS, BLOCK_TEXT_COLOR_OPTIONS, BLOCK_ICON_COLOR_OPTIONS, blockHasText, GRID_AUTO_BLOCKS, BLOCK_COLUMNS_OPTIONS } from '@/lib/blockTypes'
+import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS, BLOCK_GLOW_OPTIONS, BLOCK_PADY_OPTIONS, blockSupportsBg, BLOCK_TEXT_SIZE_OPTIONS, BLOCK_TEXT_COLOR_OPTIONS, BLOCK_ICON_COLOR_OPTIONS, blockHasText, GRID_AUTO_BLOCKS, BLOCK_COLUMNS_OPTIONS } from '@/lib/blockTypes'
 
 function uid() { return crypto.randomUUID() }
 
@@ -596,6 +596,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
             <select value={data.style || 'filled'} onChange={e => upd('style', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
               <option value="filled">Pieno</option>
               <option value="outline">Bordato</option>
+              <option value="alone">Pieno con alone</option>
             </select>
           </div>
           <div style={{ flex: 1, minWidth: 120 }}>
@@ -985,6 +986,19 @@ function BlockStylePanel({ block, onChange, entityId, entityTipo }) {
             </select>
           </div>
         )}
+        {showBg && (
+          <div style={{ flex: 1, minWidth: 150 }}>
+            <label style={lbl}>Alone luminoso</label>
+            <select value={st.glow || 'none'} onChange={e => set('glow', e.target.value)} style={sel}>
+              {BLOCK_GLOW_OPTIONS.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+            </select>
+          </div>
+        )}
+        <div style={{ flex: 1, minWidth: 150 }}>
+          <label style={lbl}>Etichetta sopra il titolo</label>
+          <input value={st.etichetta || ''} onChange={e => set('etichetta', e.target.value)} maxLength={60}
+            placeholder="es. Chi siamo" style={{ ...sel, padding: '7px 9px' }} />
+        </div>
         <div style={{ flex: 1, minWidth: 150 }}>
           <label style={lbl}>Spaziatura verticale</label>
           <select value={st.paddingY || 'default'} onChange={e => set('paddingY', e.target.value)} style={sel}>

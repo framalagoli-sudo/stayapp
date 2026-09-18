@@ -56,3 +56,8 @@ a {
 /* Visibilità per dispositivo (per-blocco). */
 @media (max-width: 768px) { .lbr-hide-mob { display: none !important; } }
 @media (min-width: 769px) { .lbr-hide-desk { display: none !important; } }
+
+/* Parola evidenziata dentro un titolo: <mark> senza sfondo, col colore accento
+   del sito. Il colore arriva da --accento (lo imposta il renderer dal tema),
+   mai da quello che scrive il cliente. */
+mark { background: transparent; color: var(--accento, currentColor); }

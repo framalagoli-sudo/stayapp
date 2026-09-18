@@ -35,7 +35,7 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
   const fondo = theme.bgColor || '#ffffff'
   const testo = theme.textColor || '#1a1a2e'
   const scuro = eScuro(fondo)
-  const varSup = Object.entries(variabiliSuperficie(scuro)).map(([k, v]) => `${k}: ${v};`).join(' ')
+  const varSup = Object.entries({ ...variabiliSuperficie(scuro), '--accento': theme.secondaryColor || theme.primaryColor || '#00b5b5' }).map(([k, v]) => `${k}: ${v};`).join(' ')
   const mini    = entity.minisito || {}
   const social  = mini.social || {}
 

@@ -20,7 +20,11 @@
 // Solo formattazione del testo. Niente attributi, quindi niente `href`,
 // `style` o gestori di eventi: aggiungerne uno richiederebbe di validare anche
 // il suo contenuto, ed è un'altra cosa da quella che serve qui.
-const AMMESSI = ['b', 'strong', 'i', 'em', 'u', 's', 'br', 'small', 'sup', 'sub']
+// `mark` = la parola evidenziata col colore del tema dentro un titolo («Pensiamo
+// in **grande**»): è il gesto tipografico che rende vivo un titolo grande.
+// Resta senza attributi come gli altri: il colore glielo dà una regola CSS in
+// globals.css, che legge `--accento`. Nessun colore arriva dal cliente.
+const AMMESSI = ['b', 'strong', 'i', 'em', 'u', 's', 'br', 'small', 'sup', 'sub', 'mark']
 
 const RIACCENDI = new RegExp(`&lt;(/?)(${AMMESSI.join('|')})\\s*/?&gt;`, 'gi')
 
@@ -36,8 +40,15 @@ export function testoRicco(testo) {
 
 // Il testo contiene qualcosa da interpretare? Serve a non pagare un
 // `dangerouslySetInnerHTML` quando non c'è niente da formattare.
+// ⚠️ Regex SENZA `g`: una regex globale con `.test()` ricorda dove si era
+// fermata, quindi sullo stesso testo risponde `true`, poi `false`, poi `true`.
+// Con quella qui sopra un titolo formattato compariva coi tag in chiaro a
+// chiamate alterne — un difetto che si vedeva solo ogni tanto, e per questo non
+// era mai stato preso. Trovato il 18/09/2026 aggiungendo `mark`.
+const HA_TAG = new RegExp(RIACCENDI.source, 'i')
+
 export function haFormattazione(testo) {
-  return typeof testo === 'string' && RIACCENDI.test(testo.replace(/</g, '&lt;').replace(/>/g, '&gt;'))
+  return typeof testo === 'string' && HA_TAG.test(testo.replace(/</g, '&lt;').replace(/>/g, '&gt;'))
 }
 
 // Da sparpagliare sull'elemento che deve mostrare il testo:

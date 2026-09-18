@@ -36,6 +36,10 @@ export default function SiteNav({ entity, mini, pagine = [], prefix, primary, se
   const hover  = ['underline', 'highlight', 'color', 'none'].includes(hdrCfg.hover) ? hdrCfg.hover : 'underline'
   const buttons = Array.isArray(hdrCfg.buttons) ? hdrCfg.buttons.filter(b => b && b.label) : []
 
+  // «pillola»: la barra non tocca i bordi, galleggia staccata dall'alto su un
+  // vetro smerigliato. È il registro dei siti moderni (i riferimenti portati il
+  // 18/09/2026); le altre due restano com'erano, quindi nessun sito cambia.
+  const pillola        = hdrCfg.style === 'pillola'
   const navDark        = hdrCfg.style !== 'light'
   const showLogo       = hdrCfg.logo_in_nav !== false
   const navLogo        = (navDark && entity.logo_dark_url) ? entity.logo_dark_url : entity.logo_url
@@ -135,6 +139,13 @@ export default function SiteNav({ entity, mini, pagine = [], prefix, primary, se
     <>
       <style>{`
         .snav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: ${navBg}; backdrop-filter: blur(14px); border-bottom: 1px solid ${navBorderColor}; padding: 0 32px; transform: translateY(${navVisible ? '0' : '-100%'}); transition: transform 0.3s ease; }
+        ${pillola ? `
+        .snav { top: 14px; left: 50%; right: auto; width: min(1100px, calc(100% - 28px)); transform: translateX(-50%) translateY(${navVisible ? '0' : '-140%'});
+                border: 1px solid ${navBorderColor}; border-radius: 999px; padding: 0 22px; backdrop-filter: blur(18px) saturate(1.4);
+                box-shadow: 0 10px 30px rgba(0,0,0,0.18); }
+        @media (max-width: 768px) { .snav { top: 8px; width: calc(100% - 16px); border-radius: 22px; padding: 0 14px; } }
+        .snav-mobile { top: 78px; left: 12px; right: 12px; border-radius: 18px; border: 1px solid ${navBorderColor}; }
+        ` : ''}
         .snav-classic  { display: flex; align-items: center; justify-content: space-between; height: 64px; }
         .snav-centered { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; height: 64px; gap: 12px; }
         .snav-stacked  { display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 10px; padding-bottom: 10px; }
