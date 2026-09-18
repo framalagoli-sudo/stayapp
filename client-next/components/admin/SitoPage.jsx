@@ -10,7 +10,12 @@ import {
   Search, FileText, SearchX, Navigation, PenLine, Layers, History, Languages, Settings, Sparkles, CornerDownRight,
 } from 'lucide-react'
 import TraduzioniSito from '@/components/admin/TraduzioniSito'
-import VisibilitaMotori from '@/components/admin/VisibilitaMotori'
+import StatoSito from '@/components/admin/StatoSito'
+
+// I percorsi del pannello non usano gli stessi nomi dei tipi: la struttura sta
+// al singolare, il ristorante al plurale. Scriverlo a mano è il modo classico
+// per mandare qualcuno su un 404.
+const PATH_TIPO = { struttura: 'struttura', ristorante: 'ristoranti', attivita: 'attivita' }
 
 // ── Template definitions ──────────────────────────────────────────────────────
 const TEMPLATES = [
@@ -578,11 +583,15 @@ export default function SitoPage({ entityTipo }) {
           vedere senza cercarla. Un sito nuovo nasce nascosto — quello che
           Google fotografa il primo giorno è il testo di esempio — e si accende
           da qui quando è pronto. */}
-      <VisibilitaMotori
+      <StatoSito
         entityData={entityData}
         entityTipo={entityTipo}
         entityId={entityId}
         onCambiata={ind => setEntityData(d => ({ ...d, indicizzabile: ind }))}
+        onVaiA={dove => {
+          if (dove === 'seo') setActiveTab('impostazioni')
+          else if (dove === 'domini') router.push(`/admin/${PATH_TIPO[entityTipo]}/${entityId}/domini`)
+        }}
       />
 
       {/* ── Tab bar ── */}
