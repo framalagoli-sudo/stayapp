@@ -14,3 +14,7 @@ Idea di Francesco (18/09/2026, «tipo WordPress»): un cliente non sa dire se il
 - Il pannello si ricarica quando cambiano pubblicazione o visibilità: senza, resterebbe a dire la cosa di un minuto fa.
 
 **Da fare quando nascerà l'onboarding**: questo pannello è il passo «il tuo sito è pronto» — e lì si decide la domanda ancora aperta, cioè se la visibilità ai motori debba **accendersi da sola** quando il cliente pubblica (oggi ogni sito nuovo nasce invisibile, `DEFAULT false`). → [[reference_seo_primo_giro]], [[project_onboarding_mappa]].
+
+**In Dashboard** (18/09, stessa sessione): `StatoSitoBreve` mette una riga sulla scheda di ogni entità — «Sito online e visibile su Google» oppure **la prima cosa che manca** col numero delle altre («Sito: da pubblicare · +3»). Clic → pagina Sito web. Stessi dati, stessa route: un secondo conteggio direbbe un'altra cosa.
+
+⚠️ **Le schede delle entità in Dashboard le vede solo `admin_azienda`**: provandolo da super_admin la riga non compare, e si direbbe «non funziona» (o peggio, «fatto») guardando la pagina sbagliata. Per provarlo servono un utente effimero `admin_azienda` **e** il 2FA obbligatorio tolto per il tempo del controllo sulla nostra azienda di prova — poi rimesso, verificando che sia tornato `true`.
