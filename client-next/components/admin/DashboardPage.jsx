@@ -13,8 +13,10 @@ import {
   Star, CalendarDays, FileEdit,
   Repeat, Layers, FileText, LayoutList, ShoppingBag, Award, ClipboardList,
 } from 'lucide-react'
+import StatoSitoBreve from '@/components/admin/StatoSitoBreve'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
+
 const TYPE_LABELS  = { reception: 'Reception', maintenance: 'Manutenzione', housekeeping: 'Pulizie', other: 'Altro' }
 const TYPE_COLORS  = { reception: '#1a1a2e', maintenance: '#e53e3e', housekeeping: '#38a169', other: '#888' }
 const TYPE_ICONS   = { reception: Phone, maintenance: Wrench, housekeeping: Sparkles, other: HelpCircle }
@@ -305,6 +307,13 @@ export default function DashboardPage() {
                   <div style={{ fontSize: 10, fontWeight: 700, color: cfg.color, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>{cfg.label}</div>
                   <div style={{ fontWeight: 700, fontSize: 15 }}>{entita.name}</div>
                   {entita.address && <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{entita.address}</div>}
+                  {/* Lo stato del sito si vede da qui, senza entrare: se manca
+                      qualcosa lo dice, e il clic porta dove si risolve. */}
+                  <StatoSitoBreve
+                    entityId={entita.id}
+                    entityTipo={entita.tipo}
+                    onApri={() => router.push(adminPath.replace(/\/info$/, '/sito'))}
+                  />
                   <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                     <button onClick={() => router.push(adminPath)} style={{ flex: 1, padding: '7px 10px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                       <Settings size={12} strokeWidth={2} color="#fff" /> Gestisci
