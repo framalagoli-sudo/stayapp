@@ -313,6 +313,9 @@ function collegamentiNonDocumentati() {
     'APP_URL', 'CLIENT_URL', 'STAYAPP_DOMAIN', 'VERCEL_URL',
     'NEXT_PUBLIC_API_URL', 'NEXT_PUBLIC_APP_URL', 'NEXT_PUBLIC_STAYAPP_DOMAIN',
     'NEXT_INTERNAL_API_URL', 'NODE_ENV',
+    // L'azienda di OltreNova dentro la piattaforma: dice di chi sono gli
+    // articoli sul nostro blog. Un id nostro, non un fornitore.
+    'OLTRENOVA_AZIENDA_ID',
     'TURNSTILE_SOFT', 'TURNSTILE_STRICT', 'TURNSTILE_TEST_BYPASS',
   ]
 
