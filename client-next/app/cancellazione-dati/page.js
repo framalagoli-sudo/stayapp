@@ -16,6 +16,7 @@
 // ⚠️ Bozza tecnica, non parere legale: rientra nella revisione dell'avvocato.
 
 export const metadata = {
+  alternates: { canonical: '/cancellazione-dati' },
   title: 'Cancellazione dei dati — OltreNova',
   description: 'Come chiedere la cancellazione dei dati ricevuti da Facebook, Instagram e WhatsApp.',
 }

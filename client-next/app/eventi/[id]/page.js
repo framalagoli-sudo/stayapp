@@ -9,6 +9,7 @@ import { eventoConcluso } from '@/lib/evento-concluso'
 import { permanentRedirect, notFound } from 'next/navigation'
 import { fuoriDaiMotori, METADATA_NASCOSTA } from '@/lib/visibilita-motori'
 import { hostUfficiale } from '@/lib/indirizzo-ufficiale'
+import { datiEventoPubblico, CAMPI_EVENTO } from '@/lib/evento-pubblico'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,11 +26,11 @@ export const dynamic = 'force-dynamic'
 // ma `generateMetadata` gira sul server: l'anteprima si può costruire lo stesso,
 // e chi legge i link non esegue JavaScript.
 //
-// Le colonne si elencano: questa risposta finisce nell'HTML pubblico.
-const CAMPI = 'id, slug, title, description, cover_url, date_start, date_end, location, price, ' +
-  'mostra_prezzo, seats_total, seats_booked, prenotazioni_chiuse, entity_id, entity_tipo, aziende(fuso_orario)'
+// Le colonne sono quelle di `lib/evento-pubblico.js`: l'elenco era scritto due
+// volte e questo era più corto, quindi la pagina avrebbe reso un evento a metà.
+const CAMPI = CAMPI_EVENTO
 
-function primeRighe(testo, max = 200) {
+function primeRighe(testo, max = 155) {   // 155: oltre, Google tronca la descrizione
   const pulito = String(testo || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
   return pulito.length > max ? pulito.slice(0, max - 1).trimEnd() + '…' : pulito
 }
@@ -167,13 +168,18 @@ export default async function Page(props) {
     concluso: eventoConcluso(evento),
   }) : null
 
+  const iniziale = await datiEventoPubblico(evento.id, lang, evento)
+
   return (
     <Suspense fallback={<div style={{padding:40,textAlign:'center',color:'#888'}}>Caricamento…</div>}>
       {schema && (
         <script type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }} />
       )}
-      <EventoPage />
+      {/* I dati arrivano dal SERVER: così titolo, testo e prezzo stanno
+          nell'HTML. Prima la pagina li chiedeva dal browser e per un motore di
+          ricerca era vuota — nessun H1, nessun testo. */}
+      <EventoPage iniziale={iniziale} />
       <LanguageSwitcher lang={lang} />
     </Suspense>
   )

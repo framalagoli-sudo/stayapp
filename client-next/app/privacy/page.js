@@ -11,6 +11,7 @@
 // La forma va fatta rivedere.
 
 export const metadata = {
+  alternates: { canonical: '/privacy' },
   title: 'Informativa privacy — OltreNova',
   description: 'Come OltreNova tratta i dati personali.',
 }

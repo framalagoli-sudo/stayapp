@@ -5,6 +5,7 @@ import GuestSubPage from '@/components/guest/GuestSubPage'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
 import { fuoriDaiMotori, METADATA_NASCOSTA } from '@/lib/visibilita-motori'
 import { hostUfficiale } from '@/lib/indirizzo-ufficiale'
+import { descrizioneDaBlocchi } from '@/lib/seo-testo'
 
 export const maxDuration = 30
 
@@ -18,7 +19,9 @@ export async function generateMetadata(props) {
   if (!pagina) return { title: property.name }
   const lang = searchParams?._lang === 'en' ? 'en' : 'it'
   const title = pagina.seo_title || `${pagina.titolo} — ${property.name}`
-  const description = pagina.seo_description || property.minisito?.seo_description || ''
+  // Se nessuno l'ha scritta, la si ricava dal contenuto vero della pagina:
+  // senza, Google se la inventa pescando un pezzo qualsiasi (spesso il menu).
+  const description = pagina.seo_description || descrizioneDaBlocchi(pagina.blocks) || property.minisito?.seo_description || ''
   // Meglio il logo che un'anteprima muta: senza immagine Facebook mostra un
   // rettangolo grigio che nessuno apre. Misurato il 01/09: 11 entita' su 15
   // non hanno una copertina.

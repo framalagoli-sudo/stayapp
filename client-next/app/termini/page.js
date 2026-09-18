@@ -14,6 +14,7 @@
 // contestazione vale ciò che è scritto, non com'è configurato un account.
 
 export const metadata = {
+  alternates: { canonical: '/termini' },
   title: 'Termini di servizio — OltreNova',
   description: 'Le condizioni di utilizzo della piattaforma OltreNova.',
 }

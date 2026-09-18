@@ -10,7 +10,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Calendar, MapPin, Users, ArrowLeft, Check } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
 
-export default function EventoPage() {
+export default function EventoPage({ iniziale = null }) {
   const { id } = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -58,7 +58,7 @@ export default function EventoPage() {
     const casa = baseSito(evento?.sito || null)
     router.push(casa || '/')
   }
-  const [evento,     setEvento]     = useState(null)
+  const [evento,     setEvento]     = useState(iniziale)
   const [error,      setError]      = useState(null)
   const [pkgId,      setPkgId]      = useState('')
   const [seats,      setSeats]      = useState(1)
@@ -76,10 +76,17 @@ export default function EventoPage() {
   const [inLista,    setInLista]    = useState(false)
 
   useEffect(() => {
+    // Il primo caricamento arriva dal SERVER: i dati sono già nell'HTML, ed è
+    // quello che leggono i motori di ricerca. Si richiedono solo se non ci
+    // sono (vecchi link montati altrove) o se si cambia lingua.
+    if (iniziale && lang === (iniziale.lingua || 'it')) {
+      if (iniziale.packages?.length === 1) setPkgId(iniziale.packages[0].id)
+      return
+    }
     guestFetch(`/api/guest/eventi/${id}?lang=${lang}`)
       .then(ev => { setEvento(ev); if (ev.packages?.length === 1) setPkgId(ev.packages[0].id) })
       .catch(() => setError('Evento non trovato.'))
-  }, [id, lang])
+  }, [id, lang, iniziale])
 
   async function handleAttesa() {
     setBookErr('')

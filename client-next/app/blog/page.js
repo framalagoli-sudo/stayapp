@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import BlogListPage from '@/components/public/BlogListPage'
 
 export const metadata = {
+  alternates: { canonical: '/blog' },
   title: 'Blog & News — OltreNova',
   description: 'Articoli, aggiornamenti e curiosità',
 }
