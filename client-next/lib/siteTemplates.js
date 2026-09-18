@@ -265,6 +265,43 @@ export const SITE_TEMPLATES = [
       { type: 'cta_banner', data: { title: 'Hai bisogno di una consulenza?', subtitle: 'Contattaci: il primo colloquio è senza impegno', button_text: 'Richiedi consulenza', button_url: '' } },
     ],
   },
+
+  // ── 9. NOTTE — scuro, per chi vende tecnologia o servizi creativi ──────────
+  // Gli otto sopra sono tutti su fondo bianco: era l'unico che il sito sapesse
+  // fare. Questo è il registro dei siti moderni — fondo scuro, un accento solo,
+  // titoli grandi — e insieme la prova che il fondo scuro regge su ogni blocco.
+  {
+    id: 'notte',
+    nome: 'Notte (scuro)',
+    descrizione: 'Fondo scuro, un accento acceso, titoli grandi. Per agenzie, studi creativi, tecnologia.',
+    settori: ['agenzia', 'studio creativo', 'software', 'consulenza digitale', 'fotografo'],
+    obiettivi: ['vetrina', 'lead_gen'],
+    theme: { primaryColor: '#23c0d1', secondaryColor: '#ff7a59', bgColor: '#0d0d14', textColor: '#f2f3f7', fontHeading: 'sora', fontBody: 'inter', borderStyle: 'rounded' },
+    blocks: [
+      { type: 'hero', data: { title: 'Facciamo funzionare le idee', tagline: 'Strategia, tecnologia e risultati misurabili', cta1_text: 'Parliamone', cta1_url: '', cta2_text: 'Cosa facciamo', cta2_url: '', image_query: 'dark abstract technology gradient', height: 'large' } },
+      { type: 'stats', data: { titolo: '', items: [{ value: '120+', label: 'Progetti' }, { value: '8', label: 'Anni' }, { value: '24h', label: 'Tempo di risposta' }] } },
+      { type: 'about', data: { title: 'Chi siamo', text: 'Racconta in poche righe cosa fai e per chi. Chi legge deve capire subito se sei la persona giusta.' } },
+      { type: 'paragrafi', data: { titolo: 'Cosa facciamo', items: [
+        { icon: 'zap', title: 'Servizio 1', text: 'Descrivi qui il primo servizio.' },
+        { icon: 'target', title: 'Servizio 2', text: 'Descrivi qui il secondo servizio.' },
+        { icon: 'trending-up', title: 'Servizio 3', text: 'Descrivi qui il terzo servizio.' },
+      ] } },
+      { type: 'steps', data: { titolo: 'Come lavoriamo', items: [
+        { icon: 'phone', title: 'Ci parliamo', text: 'Capiamo il problema, senza gergo.' },
+        { icon: 'edit', title: 'Proponiamo', text: 'Un piano chiaro, con tempi e costi.' },
+        { icon: 'check', title: 'Costruiamo', text: 'E restiamo lì mentre va in produzione.' },
+      ] } },
+      { type: 'testimonianze', data: { titolo: 'Dicono di noi', items: [
+        { author: 'Elena B.', location: '', rating: 5, text: 'Hanno capito il problema prima di propormi una soluzione.' },
+        { author: 'Stefano P.', location: '', rating: 5, text: 'Tempi rispettati e nessuna sorpresa in fattura.' },
+      ] } },
+      { type: 'faq', data: { titolo: 'Domande frequenti', items: [
+        { question: 'Quanto costa un progetto?', answer: 'Dipende dal lavoro: il preventivo è sempre scritto prima di iniziare.' },
+        { question: 'In quanto tempo partiamo?', answer: 'Di solito entro due settimane dalla conferma.' },
+      ] } },
+      { type: 'cta_banner', data: { title: 'Ne parliamo?', subtitle: 'Prima chiamata senza impegno', button_text: 'Scrivici', button_url: '' } },
+    ],
+  },
 ]
 
 export function getTemplate(id) {

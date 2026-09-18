@@ -21,35 +21,12 @@ import ChatbotWidget from '@/components/ChatbotWidget'
 import ChatChoice from '@/components/ChatChoice'
 import BookingWidget from '@/components/BookingWidget'
 import { focalValido } from '@/lib/formati-foto'
+import { HEADING_FAMILIES, BODY_FAMILIES, caricaFont as loadFont } from '@/lib/fonts'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DEFAULT_THEME = {
   primaryColor: '#e63946', bgColor: '#ffffff', textColor: '#1a1a2e',
   fontHeading: 'playfair', fontBody: 'inter', headerStyle: 'solid', borderStyle: 'mixed',
-}
-const FONT_URLS = {
-  playfair:    'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap',
-  cormorant:   'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&display=swap',
-  raleway:     'https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700&display=swap',
-  montserrat:  'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap',
-  nunito:      'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap',
-  'dm-sans':   'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap',
-  inter:       'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap',
-  lato:        'https://fonts.googleapis.com/css2?family=Lato:wght@400;600;700&display=swap',
-  'open-sans': 'https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap',
-}
-const HEADING_FAMILIES = {
-  playfair:   "'Playfair Display', Georgia, serif",
-  cormorant:  "'Cormorant Garamond', Georgia, serif",
-  raleway:    "'Raleway', system-ui, sans-serif",
-  montserrat: "'Montserrat', system-ui, sans-serif",
-  nunito:     "'Nunito', system-ui, sans-serif",
-  'dm-sans':  "'DM Sans', system-ui, sans-serif",
-}
-const BODY_FAMILIES = {
-  inter:       "'Inter', system-ui, sans-serif",
-  lato:        "'Lato', system-ui, sans-serif",
-  'open-sans': "'Open Sans', system-ui, sans-serif",
 }
 const BORDER_RADII = { rounded: 16, mixed: 8, square: 0 }
 
@@ -59,14 +36,6 @@ function buildWaUrl(wa, name) {
   return `https://wa.me/${clean}?text=${encodeURIComponent(`Ciao! Vorrei un tavolo da ${name}. `)}`
 }
 
-function loadFont(key) {
-  if (!key || !FONT_URLS[key]) return
-  const id = `gfont-${key}`
-  if (document.getElementById(id)) return
-  const link = document.createElement('link')
-  link.id = id; link.rel = 'stylesheet'; link.href = FONT_URLS[key]
-  document.head.appendChild(link)
-}
 
 function EntityLogo({ logoUrl, tipo, typeColor }) {
   const [err, setErr] = useState(false)

@@ -3,15 +3,8 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { guestFetch } from '@/lib/api'
 import { ArrowLeft, Clock, Calendar, Users, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { HEADING_FAMILIES } from '@/lib/fonts'
 
-const HEADING_FAMILIES = {
-  playfair:   "'Playfair Display', Georgia, serif",
-  cormorant:  "'Cormorant Garamond', Georgia, serif",
-  raleway:    "'Raleway', system-ui, sans-serif",
-  montserrat: "'Montserrat', system-ui, sans-serif",
-  nunito:     "'Nunito', system-ui, sans-serif",
-  'dm-sans':  "'DM Sans', system-ui, sans-serif",
-}
 
 export default function PacchettoPage() {
   const { slug, id } = useParams()

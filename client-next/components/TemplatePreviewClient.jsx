@@ -5,6 +5,7 @@ import LandingBlockRenderer from '@/components/LandingBlockRenderer'
 import LandingFooter from '@/components/guest/LandingFooter'
 import { getTemplate } from '@/lib/siteTemplates'
 import { getHeadingFamily, getBodyFamily, FONTS_URL } from '@/lib/fonts'
+import { eScuro, variabiliSuperficie } from '@/lib/superficie'
 
 // Anteprima reale di un template: nav + blocchi (LandingBlockRenderer) + footer,
 // con un'entità fittizia. Come il sito vero, così si vede il template completo.
@@ -69,7 +70,7 @@ export default function TemplatePreviewClient({ id, blocks: blocksProp }) {
   const previewMini = { social: { instagram: '#', facebook: '#' }, footer: {} }
 
   const content = (
-    <div style={{ fontFamily: body, color: theme.textColor || '#1a1a2e', background: theme.bgColor || '#fff', position: 'relative' }}>
+    <div style={{ fontFamily: body, color: theme.textColor || '#1a1a2e', background: theme.bgColor || '#fff', position: 'relative', ...variabiliSuperficie(eScuro(theme.bgColor || '#ffffff')) }}>
       <style>{`
         .tpl-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; padding: 20px clamp(20px,5vw,52px); background: linear-gradient(to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0)); transition: transform 0.3s ease; }
         .tpl-nav-links { display: flex; align-items: center; gap: 26px; }

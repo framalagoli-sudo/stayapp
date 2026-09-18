@@ -8,20 +8,9 @@ import SiteNav from '@/components/guest/SiteNav'
 import CookieBanner from '@/components/CookieBanner'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import WhatsAppButton from '@/components/WhatsAppButton'
+import { HEADING_FAMILIES, BODY_FAMILIES } from '@/lib/fonts'
+import { eScuro, variabiliSuperficie } from '@/lib/superficie'
 
-const HEADING_FAMILIES = {
-  playfair:   "'Playfair Display', Georgia, serif",
-  cormorant:  "'Cormorant Garamond', Georgia, serif",
-  raleway:    "'Raleway', system-ui, sans-serif",
-  montserrat: "'Montserrat', system-ui, sans-serif",
-  nunito:     "'Nunito', system-ui, sans-serif",
-  'dm-sans':  "'DM Sans', system-ui, sans-serif",
-}
-const BODY_FAMILIES = {
-  inter:       "'Inter', system-ui, sans-serif",
-  lato:        "'Lato', system-ui, sans-serif",
-  'open-sans': "'Open Sans', system-ui, sans-serif",
-}
 const DEFAULT_PRIMARY = { struttura: '#00b5b5', ristorante: '#e63946', attivita: '#6b46c1' }
 const ENTITY_PREFIX   = { struttura: 's', ristorante: 'r', attivita: 'a' }
 
@@ -41,6 +30,12 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
   const primary = theme.primaryColor
   const heading = HEADING_FAMILIES[theme.fontHeading] || HEADING_FAMILIES.playfair
   const body    = BODY_FAMILIES[theme.fontBody]       || BODY_FAMILIES.inter
+  // Fondo e testo del sito vengono dal tema: erano scritti a mano, quindi un
+  // tema scuro non poteva funzionare. Senza valori nel tema restano quelli storici.
+  const fondo = theme.bgColor || '#ffffff'
+  const testo = theme.textColor || '#1a1a2e'
+  const scuro = eScuro(fondo)
+  const varSup = Object.entries(variabiliSuperficie(scuro)).map(([k, v]) => `${k}: ${v};`).join(' ')
   const mini    = entity.minisito || {}
   const social  = mini.social || {}
 
@@ -60,7 +55,8 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
     <>
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: ${body}; color: #1a1a2e; background: #fff; }
+        body { font-family: ${body}; color: ${testo}; background: ${fondo}; }
+        :root { ${varSup} }
         .sub-content { padding-top: 64px; min-height: calc(100vh - 64px); }
         .land-section { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
         @media (max-width: 768px) { .land-section { padding: 0 16px; } }

@@ -11,40 +11,10 @@ import LandingFooter from '@/components/guest/LandingFooter'
 import SiteNav from '@/components/guest/SiteNav'
 import { resolveSiteTheme } from '@/lib/siteTheme'
 import { entityBasePath } from '@/lib/i18n'
+import { HEADING_FAMILIES, BODY_FAMILIES, caricaFont as loadFont } from '@/lib/fonts'
+import { eScuro, variabiliSuperficie } from '@/lib/superficie'
 
-const HEADING_FAMILIES = {
-  playfair:   "'Playfair Display', Georgia, serif",
-  cormorant:  "'Cormorant Garamond', Georgia, serif",
-  raleway:    "'Raleway', system-ui, sans-serif",
-  montserrat: "'Montserrat', system-ui, sans-serif",
-  nunito:     "'Nunito', system-ui, sans-serif",
-  'dm-sans':  "'DM Sans', system-ui, sans-serif",
-}
-const BODY_FAMILIES = {
-  inter:       "'Inter', system-ui, sans-serif",
-  lato:        "'Lato', system-ui, sans-serif",
-  'open-sans': "'Open Sans', system-ui, sans-serif",
-}
-const FONT_URLS = {
-  playfair:    'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap',
-  cormorant:   'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&display=swap',
-  raleway:     'https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700&display=swap',
-  montserrat:  'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap',
-  nunito:      'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap',
-  'dm-sans':   'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap',
-  inter:       'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap',
-  lato:        'https://fonts.googleapis.com/css2?family=Lato:wght@400;600;700&display=swap',
-  'open-sans': 'https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap',
-}
 
-function loadFont(key) {
-  if (!key || !FONT_URLS[key]) return
-  const id = `gfont-${key}`
-  if (document.getElementById(id)) return
-  const link = document.createElement('link')
-  link.id = id; link.rel = 'stylesheet'; link.href = FONT_URLS[key]
-  document.head.appendChild(link)
-}
 
 export default function LandingAttivita({ attivita, initialHomeBlocks, domain, lang = 'it' }) {
   const [upcomingEventi, setUpcomingEventi] = useState([])
@@ -78,6 +48,12 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
   const primary = theme.primaryColor
   const heading = HEADING_FAMILIES[theme.fontHeading] || HEADING_FAMILIES.playfair
   const body    = BODY_FAMILIES[theme.fontBody]       || BODY_FAMILIES.inter
+  // Fondo e testo del sito vengono dal tema: erano scritti a mano, quindi un
+  // tema scuro non poteva funzionare. Senza valori nel tema restano quelli storici.
+  const fondo = theme.bgColor || '#ffffff'
+  const testo = theme.textColor || '#1a1a2e'
+  const scuro = eScuro(fondo)
+  const varSup = Object.entries(variabiliSuperficie(scuro)).map(([k, v]) => `${k}: ${v};`).join(' ')
   const mini    = attivita.minisito || {}
   const social  = mini.social || {}
   const base    = entityBasePath('a', attivita.slug, domain, lang)
@@ -131,7 +107,8 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
     <>
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: ${body}; color: #1a1a2e; background: #fff; }
+        body { font-family: ${body}; color: ${testo}; background: ${fondo}; }
+        :root { ${varSup} }
         .land-section { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
         @media (max-width: 768px) { .land-section { padding: 0 16px; } }
       `}</style>

@@ -27,7 +27,7 @@ function safeUrl(u) {
 // stretti (mobile) le card mantengono una larghezza minima → diventa uno slider
 // scorrevole/swipe. Frecce mostrate solo se il contenuto sborda. Una sola card = centrata.
 function arrowBtn(side, primary) {
-  return { position: 'absolute', top: '50%', [side]: -8, transform: 'translateY(-50%)', width: 40, height: 40, borderRadius: '50%', background: '#fff', border: '1px solid #eee', boxShadow: '0 2px 12px rgba(0,0,0,0.15)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: primary, zIndex: 3 }
+  return { position: 'absolute', top: '50%', [side]: -8, transform: 'translateY(-50%)', width: 40, height: 40, borderRadius: '50%', background: 'var(--sup)', border: '1px solid var(--bordo)', boxShadow: '0 2px 12px rgba(0,0,0,0.15)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: primary, zIndex: 3 }
 }
 function ArrowCarousel({ items, perView = 3, gap = 24, minCard = 280, maxCard = 460, primary }) {
   const ref = useRef(null)
@@ -136,15 +136,15 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
   const anyFilter = !!(filters.q || filters.pmin || filters.pmax || filters.stato || numsActive || Object.values(filters.sel).some(Boolean))
   if (loaded && total === 0 && !anyFilter && !d.titolo) return null   // vetrina vuota, non filtrata → nascondi il blocco
 
-  const ctrl = { height: 46, padding: '0 16px', border: '1px solid #e8e8f0', borderRadius: 12, fontSize: 14, background: '#fff', fontFamily: 'inherit', color: '#2a2a35', outline: 'none', boxSizing: 'border-box', boxShadow: '0 1px 3px rgba(20,20,40,0.05)' }
+  const ctrl = { height: 46, padding: '0 16px', border: '1px solid #e8e8f0', borderRadius: 12, fontSize: 14, background: 'var(--sup)', fontFamily: 'inherit', color: '#2a2a35', outline: 'none', boxSizing: 'border-box', boxShadow: '0 1px 3px rgba(20,20,40,0.05)' }
   const numInp = { width: 56, height: 44, border: 'none', outline: 'none', fontSize: 14, background: 'transparent', fontFamily: 'inherit', color: '#2a2a35' }
-  const pill = (active) => ({ padding: '9px 18px', borderRadius: 50, border: `1.5px solid ${active ? primary : '#e4e4ec'}`, background: active ? primary : '#fff', color: active ? '#fff' : '#555', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', transition: 'all .15s', boxShadow: active ? `0 4px 14px ${primary}44` : 'none' })
+  const pill = (active) => ({ padding: '9px 18px', borderRadius: 50, border: `1.5px solid ${active ? primary : 'var(--bordo)'}`, background: active ? primary : 'var(--sup)', color: active ? '#fff' : 'var(--txt-medio)', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', transition: 'all .15s', boxShadow: active ? `0 4px 14px ${primary}44` : 'none' })
   const onFocusA = (e) => { e.currentTarget.style.borderColor = primary; e.currentTarget.style.boxShadow = `0 0 0 3px ${primary}22` }
   const onBlurA  = (e) => { e.currentTarget.style.borderColor = '#e8e8f0'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(20,20,40,0.05)' }
   return (
     <section style={{ padding: '64px 0' }}>
       <div className="lbr-section">
-        {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,36px)', fontWeight: 700, textAlign: 'center', marginBottom: 28, color: '#1a1a2e' }} {...ricco(d.titolo)} />}
+        {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,36px)', fontWeight: 700, textAlign: 'center', marginBottom: 28, color: 'var(--txt)' }} {...ricco(d.titolo)} />}
         {d.mostra_filtri !== false && (showStatoPills || selectFacets.length > 0 || showPrice || rangeFacets.length > 0) && (
           <div style={{ marginBottom: 40 }}>
             {showStatoPills && (
@@ -200,9 +200,9 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
           </div>
         )}
         {loading && elementi.length === 0
-          ? <p style={{ textAlign: 'center', color: '#888' }}>Caricamento…</p>
+          ? <p style={{ textAlign: 'center', color: 'var(--txt-tenue)' }}>Caricamento…</p>
           : elementi.length === 0
-          ? <p style={{ textAlign: 'center', color: '#888' }}>Nessun risultato con questi filtri.</p>
+          ? <p style={{ textAlign: 'center', color: 'var(--txt-tenue)' }}>Nessun risultato con questi filtri.</p>
           : (<>
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${cols >= 4 ? 220 : cols === 3 ? 280 : 340}px, 1fr))`, gap: 24 }}>
           {elementi.map(el => {
@@ -210,22 +210,22 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
             const raccolto = Number(el.dati?.raccolto_perc)
             const roi = el.dati?.roi_atteso
             return (
-              <a key={el.id} href={`${linkBase}/v/${el.slug}`} style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column', textDecoration: 'none', color: 'inherit', borderTop: `4px solid ${primary}` }}>
+              <a key={el.id} href={`${linkBase}/v/${el.slug}`} style={{ background: 'var(--sup)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column', textDecoration: 'none', color: 'inherit', borderTop: `4px solid ${primary}` }}>
                 {el.copertina_url && <img src={el.copertina_url} alt={el.titolo} loading="lazy" style={{ width: '100%', height: 180, objectFit: 'cover' }} />}
                 <div style={{ padding: '20px 20px 24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
                   {statoLbl && <span style={{ alignSelf: 'flex-start', background: `${sec}18`, color: sec, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>{statoLbl}</span>}
-                  <h3 style={{ fontFamily: heading, fontSize: 20, fontWeight: 700, margin: '0 0 6px', color: '#1a1a2e' }} {...ricco(el.titolo)} />
-                  {el.dati?.zona && <div style={{ fontSize: 13, color: '#888', marginBottom: 12 }}>{el.dati.zona}</div>}
+                  <h3 style={{ fontFamily: heading, fontSize: 20, fontWeight: 700, margin: '0 0 6px', color: 'var(--txt)' }} {...ricco(el.titolo)} />
+                  {el.dati?.zona && <div style={{ fontSize: 13, color: 'var(--txt-tenue)', marginBottom: 12 }}>{el.dati.zona}</div>}
                   <div style={{ marginTop: 'auto', display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'baseline' }}>
                     {el.valore_primario != null && (
                       <div>
-                        <div style={{ fontSize: 11, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5 }}>{valoreField?.label || 'Da'}</div>
-                        <div style={{ fontSize: 19, fontWeight: 700, color: '#1a1a2e' }}>{fmtVetrina(el.valore_primario, valoreField?.type || 'currency')}</div>
+                        <div style={{ fontSize: 11, color: 'var(--txt-fioco)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{valoreField?.label || 'Da'}</div>
+                        <div style={{ fontSize: 19, fontWeight: 700, color: 'var(--txt)' }}>{fmtVetrina(el.valore_primario, valoreField?.type || 'currency')}</div>
                       </div>
                     )}
                     {roi != null && roi !== '' && (
                       <div>
-                        <div style={{ fontSize: 11, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5 }}>ROI</div>
+                        <div style={{ fontSize: 11, color: 'var(--txt-fioco)', textTransform: 'uppercase', letterSpacing: 0.5 }}>ROI</div>
                         <div style={{ fontSize: 19, fontWeight: 700, color: primary }}>{fmtVetrina(roi, 'percent')}</div>
                       </div>
                     )}
@@ -235,7 +235,7 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
                       <div style={{ height: 7, background: '#eee', borderRadius: 4, overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${Math.min(Math.max(raccolto, 0), 100)}%`, background: primary }} />
                       </div>
-                      <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>Raccolto {Math.min(Math.max(raccolto, 0), 100)}%</div>
+                      <div style={{ fontSize: 11, color: 'var(--txt-tenue)', marginTop: 4 }}>Raccolto {Math.min(Math.max(raccolto, 0), 100)}%</div>
                     </div>
                   )}
                 </div>
@@ -245,7 +245,7 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
         </div>
         {elementi.length < total && (
           <div style={{ textAlign: 'center', marginTop: 32 }}>
-            <button onClick={loadMore} style={{ padding: '12px 28px', background: '#fff', color: primary, border: `1.5px solid ${primary}`, borderRadius: 50, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>Carica altri</button>
+            <button onClick={loadMore} style={{ padding: '12px 28px', background: 'var(--sup)', color: primary, border: `1.5px solid ${primary}`, borderRadius: 50, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>Carica altri</button>
           </div>
         )}
         </>)}
@@ -279,7 +279,7 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, enti
     <section style={{ padding: '48px 0 72px' }}>
       <div className="lbr-section" style={{ maxWidth: 900, margin: '0 auto' }}>
         {statoLbl && <span style={{ display: 'inline-block', background: `${sec}18`, color: sec, fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 14 }}>{statoLbl}</span>}
-        <h1 style={{ fontFamily: heading, fontSize: 'clamp(28px,4vw,44px)', fontWeight: 800, margin: '0 0 24px', color: '#1a1a2e' }} {...ricco(d.titolo)} />
+        <h1 style={{ fontFamily: heading, fontSize: 'clamp(28px,4vw,44px)', fontWeight: 800, margin: '0 0 24px', color: 'var(--txt)' }} {...ricco(d.titolo)} />
 
         {(d.copertina_url || immagini.length > 0) && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10, marginBottom: 32 }}>
@@ -293,8 +293,8 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, enti
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 18, padding: '24px', background: '#f8f9fb', borderRadius: 16, marginBottom: 28 }}>
             {infoFields.map(f => (
               <div key={f.key}>
-                <div style={{ fontSize: 11, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }} {...ricco(f.label)} />
-                <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a2e' }}>{cellValue(f)}</div>
+                <div style={{ fontSize: 11, color: 'var(--txt-fioco)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }} {...ricco(f.label)} />
+                <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--txt)' }}>{cellValue(f)}</div>
               </div>
             ))}
           </div>
@@ -302,8 +302,8 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, enti
 
         {listFields.map(f => (
           <div key={f.key} style={{ marginBottom: 28 }}>
-            <h3 style={{ fontFamily: heading, fontSize: 19, fontWeight: 700, margin: '0 0 10px', color: '#1a1a2e' }} {...ricco(f.label)} />
-            <ul style={{ margin: 0, paddingLeft: 20, color: '#444', lineHeight: 1.9, fontSize: 15 }}>
+            <h3 style={{ fontFamily: heading, fontSize: 19, fontWeight: 700, margin: '0 0 10px', color: 'var(--txt)' }} {...ricco(f.label)} />
+            <ul style={{ margin: 0, paddingLeft: 20, color: 'var(--txt-medio)', lineHeight: 1.9, fontSize: 15 }}>
               {dati[f.key].map((it, i) => <li key={i}>{it}</li>)}
             </ul>
           </div>
@@ -314,15 +314,15 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, enti
             <div style={{ height: 10, background: '#eee', borderRadius: 6, overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${Math.min(Math.max(raccolto, 0), 100)}%`, background: primary }} />
             </div>
-            <div style={{ fontSize: 13, color: '#666', marginTop: 6, fontWeight: 600 }}>Raccolto {Math.min(Math.max(raccolto, 0), 100)}%</div>
+            <div style={{ fontSize: 13, color: 'var(--txt-tenue)', marginTop: 6, fontWeight: 600 }}>Raccolto {Math.min(Math.max(raccolto, 0), 100)}%</div>
           </div>
         )}
 
-        {dati.descrizione && <p style={{ fontSize: 16, lineHeight: 1.8, color: '#444', whiteSpace: 'pre-line', marginBottom: 32 }} {...ricco(dati.descrizione)} />}
+        {dati.descrizione && <p style={{ fontSize: 16, lineHeight: 1.8, color: 'var(--txt-medio)', whiteSpace: 'pre-line', marginBottom: 32 }} {...ricco(dati.descrizione)} />}
 
         {geoField && (
           <div style={{ marginBottom: 32 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: '#555', fontWeight: 600, marginBottom: 10 }}><MapPin size={16} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {dati[geoField.key]}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: 'var(--txt-medio)', fontWeight: 600, marginBottom: 10 }}><MapPin size={16} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {dati[geoField.key]}</div>
             <iframe title="Mappa" src={`https://www.google.com/maps?q=${encodeURIComponent(dati[geoField.key])}&output=embed`} loading="lazy" style={{ width: '100%', height: 320, border: 0, borderRadius: 16 }} />
           </div>
         )}
@@ -382,7 +382,7 @@ function OffertaDettaglio({ block, primary, sec, heading, entity, entityType, pr
     <section style={{ padding: '48px 0 72px' }}>
       <div className="lbr-section" style={{ maxWidth: 900, margin: '0 auto' }}>
         {o.categoria && <span style={{ display: 'inline-block', background: `${sec}18`, color: sec, fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 14 }}>{o.categoria}</span>}
-        <h1 style={{ fontFamily: heading, fontSize: 'clamp(28px,4vw,44px)', fontWeight: 800, margin: '0 0 24px', color: '#1a1a2e', overflowWrap: 'anywhere' }} {...ricco(o.titolo)} />
+        <h1 style={{ fontFamily: heading, fontSize: 'clamp(28px,4vw,44px)', fontWeight: 800, margin: '0 0 24px', color: 'var(--txt)', overflowWrap: 'anywhere' }} {...ricco(o.titolo)} />
 
         {(o.cover_url || immagini.length > 0) && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10, marginBottom: 32 }}>
@@ -396,34 +396,34 @@ function OffertaDettaglio({ block, primary, sec, heading, entity, entityType, pr
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: 18, padding: 24, background: '#f8f9fb', borderRadius: 16, marginBottom: 28 }}>
             {(prezzo || o.prezzo_testo) && (
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>{o.prezzo_etichetta || 'Prezzo'}</div>
-                <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a2e', overflowWrap: 'anywhere' }}>
-                  {barrato && <span style={{ textDecoration: 'line-through', color: '#aaa', fontWeight: 400, marginRight: 8 }}>{valuta}{barrato}</span>}
+                <div style={{ fontSize: 11, color: 'var(--txt-fioco)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>{o.prezzo_etichetta || 'Prezzo'}</div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--txt)', overflowWrap: 'anywhere' }}>
+                  {barrato && <span style={{ textDecoration: 'line-through', color: 'var(--txt-fioco)', fontWeight: 400, marginRight: 8 }}>{valuta}{barrato}</span>}
                   {o.prezzo_testo || `${valuta}${prezzo}`}
                 </div>
               </div>
             )}
             {o.luogo && (
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>Dove</div>
-                <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a2e', overflowWrap: 'anywhere' }}>{o.luogo}</div>
+                <div style={{ fontSize: 11, color: 'var(--txt-fioco)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>Dove</div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--txt)', overflowWrap: 'anywhere' }}>{o.luogo}</div>
               </div>
             )}
             {scade && (
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>Valida fino al</div>
-                <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a2e' }}>{scade.toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+                <div style={{ fontSize: 11, color: 'var(--txt-fioco)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>Valida fino al</div>
+                <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--txt)' }}>{scade.toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
               </div>
             )}
           </div>
         )}
 
-        {o.descrizione && <p style={{ fontSize: 16, lineHeight: 1.8, color: '#444', whiteSpace: 'pre-line', marginBottom: 32 }} {...ricco(o.descrizione)} />}
+        {o.descrizione && <p style={{ fontSize: 16, lineHeight: 1.8, color: 'var(--txt-medio)', whiteSpace: 'pre-line', marginBottom: 32 }} {...ricco(o.descrizione)} />}
 
         {incluso.length > 0 && (
           <div style={{ marginBottom: 32 }}>
-            <h3 style={{ fontFamily: heading, fontSize: 19, fontWeight: 700, margin: '0 0 10px', color: '#1a1a2e' }}>Cosa comprende</h3>
-            <ul style={{ margin: 0, paddingLeft: 20, color: '#444', lineHeight: 1.9, fontSize: 15 }}>
+            <h3 style={{ fontFamily: heading, fontSize: 19, fontWeight: 700, margin: '0 0 10px', color: 'var(--txt)' }}>Cosa comprende</h3>
+            <ul style={{ margin: 0, paddingLeft: 20, color: 'var(--txt-medio)', lineHeight: 1.9, fontSize: 15 }}>
               {incluso.map((x, i) => <li key={i} style={{ overflowWrap: 'anywhere' }}>{x}</li>)}
             </ul>
           </div>
@@ -446,7 +446,7 @@ function OffertaDettaglio({ block, primary, sec, heading, entity, entityType, pr
         </div>
 
         {o.cta_condizioni && (
-          <p style={{ fontSize: 13, color: '#888', lineHeight: 1.7, marginTop: 18, whiteSpace: 'pre-line' }} {...ricco(o.cta_condizioni)} />
+          <p style={{ fontSize: 13, color: 'var(--txt-tenue)', lineHeight: 1.7, marginTop: 18, whiteSpace: 'pre-line' }} {...ricco(o.cta_condizioni)} />
         )}
       </div>
     </section>
@@ -617,26 +617,26 @@ function Carousel({ block, primary, heading }) {
   const showDots = d.show_dots !== false && maxI > 0
   const arrow = (side, disabled) => ({
     position: 'absolute', top: '50%', [side]: -8, transform: 'translateY(-50%)', zIndex: 3,
-    width: 44, height: 44, borderRadius: '50%', border: '1px solid #e5e5ea', background: '#fff', color: '#1a1a2e',
+    width: 44, height: 44, borderRadius: '50%', border: '1px solid #e5e5ea', background: 'var(--sup)', color: 'var(--txt)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: disabled ? 'default' : 'pointer',
     boxShadow: '0 4px 14px rgba(0,0,0,0.12)', opacity: disabled ? 0.35 : 1,
   })
 
   return (
-    <section style={{ padding: '72px 0', background: '#fff' }}>
+    <section style={{ padding: '72px 0', background: 'var(--sup)' }}>
       <div className="lbr-section">
-        {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,40px)', fontWeight: 700, textAlign: 'center', color: '#1a1a2e', marginBottom: 44 }} {...ricco(d.titolo)} />}
+        {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,40px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)', marginBottom: 44 }} {...ricco(d.titolo)} />}
         <div style={{ position: 'relative' }} onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
           <div style={{ overflow: 'hidden' }}>
             <div style={{ display: 'flex', transform: `translateX(-${i * (100 / pv)}%)`, transition: 'transform 0.5s ease' }}>
               {items.map(it => (
                 <div key={it.id} style={{ flex: `0 0 ${100 / pv}%`, padding: '0 10px', boxSizing: 'border-box' }}>
-                  <div style={{ background: '#fafafa', border: '1px solid #f0f0f0', borderRadius: 16, overflow: 'hidden', height: '100%' }}>
+                  <div style={{ background: 'var(--sup-2)', border: '1px solid var(--bordo)', borderRadius: 16, overflow: 'hidden', height: '100%' }}>
                     {it.image_url && <img src={it.image_url} alt={it.title || ''} loading="lazy" style={{ width: '100%', aspectRatio: rapportoOppure(d.formato, '4 / 3'), objectFit: 'cover', objectPosition: focalValido(it.image_focal) || 'center', display: 'block' }} />}
                     {(it.title || it.text || (it.button_label && it.button_url)) && (
                       <div style={{ padding: 22 }}>
-                        {it.title && <h3 style={{ fontFamily: heading, fontSize: 19, fontWeight: 700, color: '#1a1a2e', margin: '0 0 8px' }} {...ricco(it.title)} />}
-                        {it.text && <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6, margin: 0 }} {...ricco(it.text)} />}
+                        {it.title && <h3 style={{ fontFamily: heading, fontSize: 19, fontWeight: 700, color: 'var(--txt)', margin: '0 0 8px' }} {...ricco(it.title)} />}
+                        {it.text && <p style={{ fontSize: 14, color: 'var(--txt-tenue)', lineHeight: 1.6, margin: 0 }} {...ricco(it.text)} />}
                         {it.button_label && it.button_url && <a href={siteHref(it.button_url)} style={{ display: 'inline-block', marginTop: 14, color: primary, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>{it.button_label} →</a>}
                       </div>
                     )}
@@ -710,7 +710,7 @@ function BeforeAfter({ block, primary }) {
   if (!d.before_url || !d.after_url) return null
   const move = x => { const r = ref.current?.getBoundingClientRect(); if (r) setPos(Math.max(0, Math.min(100, ((x - r.left) / r.width) * 100))) }
   return (
-    <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+    <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
       <div className="lbr-section">
         <div ref={ref} style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden', borderRadius: 16, userSelect: 'none', touchAction: 'none', cursor: 'ew-resize' }}
           onMouseDown={e => move(e.clientX)} onMouseMove={e => e.buttons === 1 && move(e.clientX)}
@@ -719,8 +719,8 @@ function BeforeAfter({ block, primary }) {
           <img src={d.before_url} alt={d.before_label || ''} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', clipPath: `inset(0 ${100 - pos}% 0 0)` }} />
           {d.before_label && <span style={{ position: 'absolute', top: 12, left: 12, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 12, padding: '4px 10px', borderRadius: 20 }} {...ricco(d.before_label)} />}
           {d.after_label && <span style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 12, padding: '4px 10px', borderRadius: 20 }} {...ricco(d.after_label)} />}
-          <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${pos}%`, width: 2, background: '#fff', transform: 'translateX(-1px)', boxShadow: '0 0 8px rgba(0,0,0,0.4)' }}>
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 38, height: 38, borderRadius: '50%', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: primary }}>
+          <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${pos}%`, width: 2, background: 'var(--sup)', transform: 'translateX(-1px)', boxShadow: '0 0 8px rgba(0,0,0,0.4)' }}>
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 38, height: 38, borderRadius: '50%', background: 'var(--sup)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: primary }}>
               <ChevronLeft size={14} strokeWidth={2} style={{ marginRight: -4 }} /><ChevronRight size={14} strokeWidth={2} style={{ marginLeft: -4 }} />
             </div>
           </div>
@@ -748,14 +748,14 @@ function Countdown({ block, primary, heading }) {
   const cell = (n, l) => (
     <div style={{ textAlign: 'center', minWidth: 70 }}>
       <div style={{ fontFamily: heading, fontSize: 'clamp(32px,5vw,52px)', fontWeight: 700, color: primary, lineHeight: 1 }}>{mounted ? String(n).padStart(2, '0') : '—'}</div>
-      <div style={{ fontSize: 12, color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginTop: 6 }}>{l}</div>
+      <div style={{ fontSize: 12, color: 'var(--txt-tenue)', textTransform: 'uppercase', letterSpacing: 1, marginTop: 6 }}>{l}</div>
     </div>
   )
   return (
-    <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+    <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
       <div className="lbr-section" style={{ textAlign: 'center' }}>
-        {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, color: '#1a1a2e', marginBottom: d.sottotitolo ? 8 : 32 }} {...ricco(d.titolo)} />}
-        {d.sottotitolo && <p style={{ color: '#888', marginBottom: 32, fontSize: 15 }} {...ricco(d.sottotitolo)} />}
+        {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, color: 'var(--txt)', marginBottom: d.sottotitolo ? 8 : 32 }} {...ricco(d.titolo)} />}
+        {d.sottotitolo && <p style={{ color: 'var(--txt-tenue)', marginBottom: 32, fontSize: 15 }} {...ricco(d.sottotitolo)} />}
         {done
           ? <p style={{ fontSize: 20, fontWeight: 700, color: primary }}>È arrivato il momento!</p>
           : <div style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap' }}>{cell(dd, 'giorni')}{cell(hh, 'ore')}{cell(mm, 'min')}{cell(ss, 'sec')}</div>}
@@ -899,20 +899,20 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
     // L'indirizzo parlante quando c'è: è quello che finisce nei risultati di
     // ricerca e nei link condivisi. L'id resta come ripiego.
     return (
-      <a key={ev.id} href={`/eventi/${ev.slug || ev.id}?back=${encodeURIComponent(homeUrl)}`} style={{ background: '#fafafa', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', border: '1px solid #f0f0f0' }}>
+      <a key={ev.id} href={`/eventi/${ev.slug || ev.id}?back=${encodeURIComponent(homeUrl)}`} style={{ background: 'var(--sup-2)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', border: '1px solid var(--bordo)' }}>
         {ev.cover_url
           ? <img src={ev.cover_url} alt={ev.title} style={{ width: '100%', height: 180, objectFit: 'cover', objectPosition: ev.cover_focal || 'center', display: 'block', filter: concluso ? 'grayscale(0.4)' : undefined }} />
           : <div style={{ height: 100, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Calendar size={36} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /></div>
         }
         <div style={{ padding: '16px 18px' }}>
-          <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', marginBottom: 8 }} {...ricco(ev.title)} />
+          <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--txt)', marginBottom: 8 }} {...ricco(ev.title)} />
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}><Calendar size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{dateStr}</span>
-            {ev.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#888' }}><MapPin size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{ev.location}</span>}
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--txt-tenue)' }}><Calendar size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{dateStr}</span>
+            {ev.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--txt-tenue)' }}><MapPin size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{ev.location}</span>}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
             {concluso
-              ? <span style={{ fontSize: 12, fontWeight: 600, color: '#888', background: '#eee', borderRadius: 20, padding: '3px 10px' }}>{tr('event_ended', lang)}</span>
+              ? <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt-tenue)', background: '#eee', borderRadius: 20, padding: '3px 10px' }}>{tr('event_ended', lang)}</span>
               : prezzo && <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>{prezzo}</span>}
             <span style={{ fontSize: 13, fontWeight: 700, color: concluso ? '#888' : primary }}>{tr(concluso ? 'details_arrow' : 'book_arrow', lang)}</span>
           </div>
@@ -924,7 +924,10 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
   function renderBlock(block, inverted = false) {
     const d = block.data || {}
     // Colori adattivi allo sfondo di sezione (scuro/immagine → testo chiaro).
-    const cTitle = inverted ? '#ffffff' : '#1a1a2e'
+    // `inverted` = questo blocco ha uno sfondo scuro suo. Senza, il colore lo
+    // dà la superficie della pagina: su un sito con fondo scuro un titolo
+    // «#1a1a2e» spariva dentro il fondo (visto sul template Notte).
+    const cTitle = inverted ? '#ffffff' : 'var(--txt)'
     const cBody  = inverted ? 'rgba(255,255,255,0.82)' : null   // null = usa il colore nativo del blocco
     switch (block.type) {
 
@@ -1000,20 +1003,20 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const items = (d.items || []).filter(i => i.title)
         if (!items.length) return null
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
             <div className="lbr-section" style={{ maxWidth: 760 }}>
               {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: cTitle, marginBottom: 40 }} {...ricco(d.titolo)} />}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {items.map(it => {
                   const open = faqOpen[block.id + it.id]
                   return (
-                    <div key={it.id} style={{ background: '#fafafa', borderRadius: 12, overflow: 'hidden', border: '1px solid #f0f0f0' }}>
+                    <div key={it.id} style={{ background: 'var(--sup-2)', borderRadius: 12, overflow: 'hidden', border: '1px solid var(--bordo)' }}>
                       <button onClick={() => setFaqOpen(p => ({ ...p, [block.id + it.id]: !open }))}
                         style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
-                        <span style={{ fontWeight: 600, fontSize: 16, color: '#1a1a2e' }} {...ricco(it.title)} />
+                        <span style={{ fontWeight: 600, fontSize: 16, color: 'var(--txt)' }} {...ricco(it.title)} />
                         <ChevronDown size={18} strokeWidth={1.5} color="#888" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
                       </button>
-                      {open && <div style={{ padding: '0 20px 18px', fontSize: 15, color: '#555', lineHeight: 1.7, whiteSpace: 'pre-line' }} {...ricco(it.text)} />}
+                      {open && <div style={{ padding: '0 20px 18px', fontSize: 15, color: 'var(--txt-medio)', lineHeight: 1.7, whiteSpace: 'pre-line' }} {...ricco(it.text)} />}
                     </div>
                   )
                 })}
@@ -1027,7 +1030,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const items = (d.items || []).filter(i => i.url)
         if (!items.length) return null
         return (
-          <section key={block.id} style={{ padding: '48px 0', background: '#fff' }}>
+          <section key={block.id} style={{ padding: '48px 0', background: 'var(--sup)' }}>
             <div className="lbr-section" style={{ textAlign: 'center' }}>
               {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, color: cTitle, marginBottom: 20 }} {...ricco(d.titolo)} />}
               <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -1050,7 +1053,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
       case 'embed': {
         if (!d.html) return null
         return (
-          <section key={block.id} style={{ padding: '40px 0', background: '#fff' }}>
+          <section key={block.id} style={{ padding: '40px 0', background: 'var(--sup)' }}>
             <div className="lbr-section">
               <iframe srcDoc={d.html} title="Contenuto incorporato" sandbox="allow-scripts allow-popups allow-forms allow-presentation"
                 style={{ width: '100%', height: Number(d.height) || 400, border: 0, borderRadius: 12 }} />
@@ -1064,14 +1067,14 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         if (!cols.length) return null
         const n = Math.min(Math.max(parseInt(d.columns) || 2, 1), 3)
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
             <div className="lbr-section">
               {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,40px)', fontWeight: 700, textAlign: 'center', color: cTitle, marginBottom: 44 }} {...ricco(d.titolo)} />}
               <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(n), gap: 32 }}>
                 {cols.map(c => (
                   <div key={c.id}>
                     {c.title && <h3 style={{ fontFamily: heading, fontSize: 20, fontWeight: 700, color: cTitle, marginBottom: 10 }} {...ricco(c.title)} />}
-                    {c.text && <p style={{ fontSize: 15, lineHeight: 1.7, color: cBody || '#555', whiteSpace: 'pre-line' }} {...ricco(c.text)} />}
+                    {c.text && <p style={{ fontSize: 15, lineHeight: 1.7, color: cBody || 'var(--txt-medio)', whiteSpace: 'pre-line' }} {...ricco(c.text)} />}
                   </div>
                 ))}
               </div>
@@ -1083,9 +1086,9 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
       case 'about':
         if (!d.title && richIsEmpty(d.text)) return null
         return (
-          <section key={block.id} style={{ padding: '84px 0', background: '#fff' }}>
+          <section key={block.id} style={{ padding: '84px 0', background: 'var(--sup)' }}>
             <div className="lbr-section">
-              {d.title && <h2 style={{ fontFamily: heading, fontSize: 'clamp(28px,4vw,46px)', fontWeight: 700, color: '#1a1a2e', marginBottom: 18 }} {...ricco(d.title)} />}
+              {d.title && <h2 style={{ fontFamily: heading, fontSize: 'clamp(28px,4vw,46px)', fontWeight: 700, color: 'var(--txt)', marginBottom: 18 }} {...ricco(d.title)} />}
               {d.title && <div style={{ width: 54, height: 3, background: sec, borderRadius: 2, marginBottom: 28 }} />}
               <RichText value={d.text} primary={primary} style={{ fontSize: Math.round(18 * textSizeScale(block.style?.textSize)), lineHeight: 1.8, color: cBody || textColorFor(block.style?.textColor, primary) || '#444', maxWidth: 720 }} />
             </div>
@@ -1095,7 +1098,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
       case 'foto_testo':
         if (!d.title && richIsEmpty(d.text) && !d.image_url) return null
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#fafafa' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup-2)' }}>
             <div className="lbr-section">
               <div className={`lbr-ft${d.inverti ? ' inv' : ''}`}>
                 {d.image_url && (
@@ -1107,7 +1110,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                   </div>
                 )}
                 <div className="lbr-ft-txt">
-                  {d.title && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, color: '#1a1a2e', marginBottom: 16 }} {...ricco(d.title)} />}
+                  {d.title && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, color: 'var(--txt)', marginBottom: 16 }} {...ricco(d.title)} />}
                   <RichText value={d.text} primary={primary} style={{ fontSize: Math.round(16 * textSizeScale(block.style?.textSize)), lineHeight: 1.75, color: cBody || textColorFor(block.style?.textColor, primary) || '#555', marginBottom: 24 }} />
                   {d.button_label && d.button_url && (
                     <a href={siteHref(d.button_url)} style={{ display: 'inline-block', padding: '12px 28px', background: primary, color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>{d.button_label}</a>
@@ -1124,9 +1127,9 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const hlPlain = d.variant === 'plain'
         const cardStyle = hlPlain
           ? { display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 16 }
-          : { display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 16, padding: '32px 22px', background: '#fafafa', border: '1px solid #f0f0f0', borderRadius: 16 }
+          : { display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 16, padding: '32px 22px', background: 'var(--sup-2)', border: '1px solid var(--bordo)', borderRadius: 16 }
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)', borderBottom: '1px solid var(--bordo)' }}>
             <div className="lbr-section">
               {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,40px)', fontWeight: 700, textAlign: 'center', marginBottom: 48, color: cTitle }} {...ricco(d.titolo)} />}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24 }}>
@@ -1137,7 +1140,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                       <div style={{ width: 60, height: 60, borderRadius: '50%', background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Icon size={26} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />
                       </div>
-                      <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: hlPlain ? cTitle : '#1a1a2e', lineHeight: 1.5 }} {...ricco(h.text)} />
+                      <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: hlPlain ? cTitle : 'var(--txt)', lineHeight: 1.5 }} {...ricco(h.text)} />
                     </div>
                   )
                 })}
@@ -1152,14 +1155,14 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         if (!items.length) return null
         const plain = d.variant === 'plain'
         return (
-          <section key={block.id} style={{ padding: '64px 0', background: plain ? '#fff' : 'linear-gradient(135deg, #1a1a2e 0%, #0f1a1a 100%)' }}>
+          <section key={block.id} style={{ padding: '64px 0', background: plain ? 'var(--sup)' : 'linear-gradient(135deg, #1a1a2e 0%, #0f1a1a 100%)' }}>
             <div className="lbr-section">
-              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 28, fontWeight: 700, textAlign: 'center', marginBottom: 48, color: plain ? '#1a1a2e' : '#fff' }} {...ricco(d.titolo)} />}
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 28, fontWeight: 700, textAlign: 'center', marginBottom: 48, color: plain ? 'var(--txt)' : '#fff' }} {...ricco(d.titolo)} />}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
                 {items.map((s, i) => (
                   <div key={s.id} style={{ textAlign: 'center', padding: '8px 24px', borderRight: i < items.length - 1 ? `1px solid ${plain ? '#eee' : 'rgba(255,255,255,0.1)'}` : 'none' }}>
                     <CountUp value={s.value} style={{ fontFamily: heading, fontSize: 'clamp(40px,5vw,64px)', fontWeight: 700, color: plain ? primary : readableOn(primary, '#1a1a2e'), lineHeight: 1, marginBottom: 10 }} />
-                    <div style={{ fontSize: 13, fontWeight: 600, color: plain ? '#888' : 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.5 }} {...ricco(s.label)} />
+                    <div style={{ fontSize: 13, fontWeight: 600, color: plain ? 'var(--txt-tenue)' : 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.5 }} {...ricco(s.label)} />
                   </div>
                 ))}
               </div>
@@ -1174,7 +1177,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const fsMap = { small: 14, medium: 16, large: 18 }
         const outline = d.style === 'outline'
         return (
-          <section key={block.id} style={{ padding: '40px 0', background: '#fff' }}>
+          <section key={block.id} style={{ padding: '40px 0', background: 'var(--sup)' }}>
             <div className="lbr-section" style={{ textAlign: d.align || 'center' }}>
               <a href={siteHref(d.url)} style={{ display: 'inline-block', padding: padMap[d.size || 'medium'], borderRadius: 50, fontWeight: 700, fontSize: fsMap[d.size || 'medium'], textDecoration: 'none', background: outline ? 'transparent' : primary, color: outline ? primary : '#fff', border: `2px solid ${primary}` }}>{d.text}</a>
             </div>
@@ -1186,7 +1189,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         if (!d.title) return null
         const split = d.variant === 'split'
         const ctaBtn = d.button_text && d.button_url
-          ? <a href={siteHref(d.button_url)} style={{ display: 'inline-block', padding: '15px 36px', background: '#fff', color: primary, borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.15)', whiteSpace: 'nowrap' }}>{d.button_text}</a>
+          ? <a href={siteHref(d.button_url)} style={{ display: 'inline-block', padding: '15px 36px', background: 'var(--sup)', color: primary, borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.15)', whiteSpace: 'nowrap' }}>{d.button_text}</a>
           : null
         return (
           <section key={block.id} style={{ padding: '72px 24px', background: `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)`, textAlign: split ? 'left' : 'center' }}>
@@ -1206,21 +1209,21 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const items = (d.items || []).filter(i => i.title || i.text)
         if (!items.length) return null
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
             <div className="lbr-section">
-              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: '#1a1a2e', marginBottom: 48 }} {...ricco(d.titolo)} />}
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)', marginBottom: 48 }} {...ricco(d.titolo)} />}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 28 }}>
                 {items.map(it => {
                   const Icon = highlightIcon(it.icon)
                   return (
-                    <div key={it.id} style={{ background: '#fafafa', borderRadius: 16, overflow: 'hidden', border: '1px solid #f0f0f0' }}>
+                    <div key={it.id} style={{ background: 'var(--sup-2)', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--bordo)' }}>
                       {it.image_url && <img src={it.image_url} alt={it.title} style={{ width: '100%', aspectRatio: rapportoOppure(d.formato, '16 / 9'), objectFit: 'cover', objectPosition: focalValido(it.image_focal) || 'center' }} />}
                       <div style={{ padding: 24 }}>
                         <div style={{ width: 44, height: 44, borderRadius: '50%', background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
                           <Icon size={20} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />
                         </div>
-                        {it.title && <h3 style={{ fontFamily: heading, fontSize: 18, fontWeight: 700, color: '#1a1a2e', marginBottom: 8 }} {...ricco(it.title)} />}
-                        {it.text && <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6 }} {...ricco(it.text)} />}
+                        {it.title && <h3 style={{ fontFamily: heading, fontSize: 18, fontWeight: 700, color: 'var(--txt)', marginBottom: 8 }} {...ricco(it.title)} />}
+                        {it.text && <p style={{ fontSize: 14, color: 'var(--txt-tenue)', lineHeight: 1.6 }} {...ricco(it.text)} />}
                       </div>
                     </div>
                   )
@@ -1245,9 +1248,9 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
           ? { width: 96, height: 96, borderRadius: '50%', margin: '0 auto 14px' }
           : { width: '100%', aspectRatio: forma.rapporto, borderRadius: 12, marginBottom: 14 }
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#fafafa' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup-2)' }}>
             <div className="lbr-section">
-              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: '#1a1a2e', marginBottom: 48 }} {...ricco(d.titolo)} />}
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)', marginBottom: 48 }} {...ricco(d.titolo)} />}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 32 }}>
                 {items.map(m => (
                   <div key={m.id} style={{ textAlign: 'center' }}>
@@ -1259,7 +1262,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                     }
                     <div style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, color: cTitle, marginBottom: 4 }} {...ricco(m.nome)} />
                     {m.ruolo && <div style={{ fontSize: 12, color: primary, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>{m.ruolo}</div>}
-                    {m.bio && <p style={{ fontSize: 13, color: cBody || '#666', lineHeight: 1.6 }}>{m.bio}</p>}
+                    {m.bio && <p style={{ fontSize: 13, color: cBody || 'var(--txt-tenue)', lineHeight: 1.6 }}>{m.bio}</p>}
                   </div>
                 ))}
               </div>
@@ -1272,9 +1275,9 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const items = (d.items || []).filter(i => i.title || i.text)
         if (!items.length) return null
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
             <div className="lbr-section">
-              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: '#1a1a2e', marginBottom: 48 }} {...ricco(d.titolo)} />}
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)', marginBottom: 48 }} {...ricco(d.titolo)} />}
               <div className="lbr-steps">
                 {items.map((step, idx) => {
                   const Icon = highlightIcon(step.icon)
@@ -1287,7 +1290,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                         <div style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: '50%', background: primary, color: '#fff', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{idx + 1}</div>
                       </div>
                       {step.title && <h3 style={{ fontFamily: heading, fontSize: 17, fontWeight: 700, color: cTitle, marginBottom: 8 }} {...ricco(step.title)} />}
-                      {step.text && <p style={{ fontSize: 14, color: cBody || '#666', lineHeight: 1.6 }} {...ricco(step.text)} />}
+                      {step.text && <p style={{ fontSize: 14, color: cBody || 'var(--txt-tenue)', lineHeight: 1.6 }} {...ricco(step.text)} />}
                     </div>
                   )
                 })}
@@ -1334,18 +1337,18 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
           <section key={block.id} style={{ padding: '64px 0' }}>
             <div className="lbr-section" style={{ textAlign: 'center' }}>
               {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, color: cTitle, marginBottom: 10 }} {...ricco(d.titolo)} />}
-              {d.sottotitolo && <p style={{ fontSize: 16, color: cBody || '#666', marginBottom: 26, lineHeight: 1.6 }} {...ricco(d.sottotitolo)} />}
-              <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 7, padding: '26px 38px', borderRadius: 18, background: '#fff', boxShadow: '0 2px 14px rgba(0,0,0,0.07)', maxWidth: '100%', boxSizing: 'border-box' }}>
+              {d.sottotitolo && <p style={{ fontSize: 16, color: cBody || 'var(--txt-tenue)', marginBottom: 26, lineHeight: 1.6 }} {...ricco(d.sottotitolo)} />}
+              <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 7, padding: '26px 38px', borderRadius: 18, background: 'var(--sup)', boxShadow: '0 2px 14px rgba(0,0,0,0.07)', maxWidth: '100%', boxSizing: 'border-box' }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 9 }}>
-                  <span style={{ fontSize: 48, fontWeight: 800, lineHeight: 1, color: '#1a1a2e' }}>{g.rating.toFixed(1)}</span>
-                  <span style={{ fontSize: 15, color: '#888' }}>/ 5</span>
+                  <span style={{ fontSize: 48, fontWeight: 800, lineHeight: 1, color: 'var(--txt)' }}>{g.rating.toFixed(1)}</span>
+                  <span style={{ fontSize: 15, color: 'var(--txt-tenue)' }}>/ 5</span>
                 </div>
                 <div style={{ display: 'flex', gap: 3 }} aria-label={`${g.rating} su 5`}>
                   {[1, 2, 3, 4, 5].map(n => (
                     <Star key={n} size={18} fill={n <= stelle ? '#FBBC04' : '#e4e4e7'} color={n <= stelle ? '#FBBC04' : '#e4e4e7'} strokeWidth={0} />
                   ))}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#444' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: 'var(--txt-medio)' }}>
                   <ReviewSourceLogo source="google" size={16} />
                   {g.totale != null && (
                     <span>{g.totale} {lang === 'en' ? 'reviews' : g.totale === 1 ? 'recensione' : 'recensioni'}</span>
@@ -1380,18 +1383,18 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
           </div>
         )
         const card = (t) => (
-          <div style={{ background: '#fff', borderRadius: 16, padding: 28, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', height: '100%', boxSizing: 'border-box' }}>
+          <div style={{ background: 'var(--sup)', borderRadius: 16, padding: 28, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', height: '100%', boxSizing: 'border-box' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               {starsRow(t.rating ?? t.stars, 14)}
               <ReviewSourceLogo source={t.source} size={22} />
             </div>
-            <p style={{ fontSize: 15, color: '#444', lineHeight: 1.65, marginBottom: 16, fontStyle: 'italic' }}>"{t.text}"</p>
-            <div style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>{t.author}</div>
-            {(t.location || t.role) && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{t.location || t.role}</div>}
+            <p style={{ fontSize: 15, color: 'var(--txt-medio)', lineHeight: 1.65, marginBottom: 16, fontStyle: 'italic' }}>"{t.text}"</p>
+            <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--txt)' }}>{t.author}</div>
+            {(t.location || t.role) && <div style={{ fontSize: 12, color: 'var(--txt-tenue)', marginTop: 2 }}>{t.location || t.role}</div>}
           </div>
         )
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: quote ? '#fff' : '#fafafa' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: quote ? 'var(--sup)' : 'var(--sup-2)' }}>
             <div className="lbr-section" style={quote ? { maxWidth: 780 } : undefined}>
               {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: cTitle, marginBottom: 48 }} {...ricco(d.titolo)} />}
               {quote ? (
@@ -1404,7 +1407,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                         <span style={{ fontWeight: 700, fontSize: 15, color: cTitle }}>{t.author}</span>
                         <ReviewSourceLogo source={t.source} size={18} />
                       </div>
-                      {(t.location || t.role) && <div style={{ fontSize: 13, color: cBody || '#888', marginTop: 2 }}>{t.location || t.role}</div>}
+                      {(t.location || t.role) && <div style={{ fontSize: 13, color: cBody || 'var(--txt-tenue)', marginTop: 2 }}>{t.location || t.role}</div>}
                     </div>
                   ))}
                 </div>
@@ -1425,20 +1428,20 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const items = (d.items || []).filter(f => f.question && f.answer)
         if (!items.length) return null
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
             <div className="lbr-section" style={{ maxWidth: 720 }}>
-              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: '#1a1a2e', marginBottom: 48 }} {...ricco(d.titolo)} />}
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)', marginBottom: 48 }} {...ricco(d.titolo)} />}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {items.map(f => {
                   const open = faqOpen[block.id + f.id]
                   return (
-                    <div key={f.id} style={{ background: '#fafafa', borderRadius: 12, overflow: 'hidden', border: '1px solid #f0f0f0' }}>
+                    <div key={f.id} style={{ background: 'var(--sup-2)', borderRadius: 12, overflow: 'hidden', border: '1px solid var(--bordo)' }}>
                       <button onClick={() => setFaqOpen(prev => ({ ...prev, [block.id + f.id]: !open }))}
                         style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
-                        <span style={{ fontWeight: 600, fontSize: 15, color: '#1a1a2e' }}>{f.question}</span>
-                        <ChevronDown size={18} strokeWidth={1.5} color='#888' style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
+                        <span style={{ fontWeight: 600, fontSize: 15, color: 'var(--txt)' }}>{f.question}</span>
+                        <ChevronDown size={18} strokeWidth={1.5} color='var(--txt-tenue)' style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
                       </button>
-                      {open && <div style={{ padding: '0 20px 18px', fontSize: 14, color: '#555', lineHeight: 1.65 }}>{f.answer}</div>}
+                      {open && <div style={{ padding: '0 20px 18px', fontSize: 14, color: 'var(--txt-medio)', lineHeight: 1.65 }}>{f.answer}</div>}
                     </div>
                   )
                 })}
@@ -1453,8 +1456,8 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         return (
           <section key={block.id} style={{ padding: '72px 24px', background: `linear-gradient(135deg, ${primary}15 0%, #fff 100%)`, textAlign: 'center' }}>
             <div className="lbr-section" style={{ maxWidth: 560 }}>
-              {d.title && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, color: '#1a1a2e', marginBottom: 12 }} {...ricco(d.title)} />}
-              {d.subtitle && <p style={{ fontSize: 16, color: '#666', marginBottom: 28 }} {...ricco(d.subtitle)} />}
+              {d.title && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, color: 'var(--txt)', marginBottom: 12 }} {...ricco(d.title)} />}
+              {d.subtitle && <p style={{ fontSize: 16, color: 'var(--txt-tenue)', marginBottom: 28 }} {...ricco(d.subtitle)} />}
               <NewsletterForm aziendaId={aziendaId} primary={primary} privacyUrl={privacyUrl} lang={lang} />
             </div>
           </section>
@@ -1466,7 +1469,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
       case 'show_map':
         if (!entity.address) return null
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
             <div className="lbr-section">
               <div style={{ borderRadius: 16, overflow: 'hidden', height: 400 }}>
                 <iframe
@@ -1488,9 +1491,9 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const imgStyle = { width: '100%', aspectRatio: ratio, objectFit: 'cover', borderRadius: 8, display: 'block' }
         const isCarousel = d.layout === 'carousel'
         return (
-          <section key={block.id} style={{ padding: '64px 0', background: '#fff' }}>
+          <section key={block.id} style={{ padding: '64px 0', background: 'var(--sup)' }}>
             <div className="lbr-section">
-              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: '#1a1a2e', marginBottom: 40 }} {...ricco(d.titolo)} />}
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)', marginBottom: 40 }} {...ricco(d.titolo)} />}
               {isCarousel ? (
                 <ArrowCarousel primary={primary} gap={12}
                   perView={d.format === 'card' ? 4 : d.format === 'square' ? 3 : 2}
@@ -1513,11 +1516,11 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const mw = wMap[d.width || 'large'] || 860
         const img = <img src={d.image_url} alt={d.alt || ''} loading="lazy" style={{ width: '100%', height: 'auto', borderRadius: 12, display: 'block' }} />
         return (
-          <section key={block.id} style={{ padding: '48px 0', background: '#fff' }}>
+          <section key={block.id} style={{ padding: '48px 0', background: 'var(--sup)' }}>
             <div className="lbr-section">
               <figure style={{ margin: 0, maxWidth: mw === '100%' ? '100%' : mw, marginLeft: 'auto', marginRight: 'auto' }}>
                 {d.link_url ? <a href={siteHref(d.link_url)} target="_blank" rel="noopener noreferrer">{img}</a> : img}
-                {d.caption && <figcaption style={{ fontSize: 13, color: '#888', marginTop: 8, textAlign: 'center' }}>{d.caption}</figcaption>}
+                {d.caption && <figcaption style={{ fontSize: 13, color: 'var(--txt-tenue)', marginTop: 8, textAlign: 'center' }}>{d.caption}</figcaption>}
               </figure>
             </div>
           </section>
@@ -1528,10 +1531,10 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const gallery = (entity.gallery || []).slice(0, d.limit || 9)
         if (!gallery.length) return null
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
             <div className="lbr-section">
-              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: d.sottotitolo ? 12 : 40, textAlign: 'center', color: '#1a1a2e' }} {...ricco(d.titolo)} />}
-              {d.sottotitolo && <p style={{ textAlign: 'center', color: '#888', marginBottom: 40, fontSize: 15 }} {...ricco(d.sottotitolo)} />}
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: d.sottotitolo ? 12 : 40, textAlign: 'center', color: 'var(--txt)' }} {...ricco(d.titolo)} />}
+              {d.sottotitolo && <p style={{ textAlign: 'center', color: 'var(--txt-tenue)', marginBottom: 40, fontSize: 15 }} {...ricco(d.sottotitolo)} />}
               <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 320), gap: 8 }}>
                 {gallery.map((url, i) => (
                   <img key={i} src={url} alt="" loading="lazy" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: 4 }} />
@@ -1544,7 +1547,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
 
       case 'booking':
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#fafafa' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup-2)' }}>
             <div className="lbr-section">
               {/* Il widget vuole `primaryColor`: passandogli `primary` restava
                   sul turchese predefinito e ignorava il tema del cliente. */}
@@ -1557,9 +1560,9 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const menus = entity?.menu
         if (!Array.isArray(menus) || !menus.length) return null
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
             <div className="lbr-section">
-              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: '#1a1a2e', marginBottom: 40 }} {...ricco(d.titolo)} />}
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)', marginBottom: 40 }} {...ricco(d.titolo)} />}
               <MenuTab menu={menus} primary={primary} textColor="#1a1a2e" subText="#777" isDark={false} radius={12} headingFamily={heading} cardBg="#fff" surfaceBg="#f7f7f9" borderColor="#efefef" showAllergens lang={lang} />
             </div>
           </section>
@@ -1570,18 +1573,18 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const services = (entity.services || []).filter(s => s.name)
         if (!services.length) return null
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#f9f9fb' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup-2)' }}>
             <div className="lbr-section">
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: d.sottotitolo ? 12 : 48, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || tr('our_services', lang)}</h2>
-              {d.sottotitolo && <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }} {...ricco(d.sottotitolo)} />}
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: d.sottotitolo ? 12 : 48, textAlign: 'center', color: 'var(--txt)' }}>{d.titolo || tr('our_services', lang)}</h2>
+              {d.sottotitolo && <p style={{ textAlign: 'center', color: 'var(--txt-tenue)', marginBottom: 48, fontSize: 15 }} {...ricco(d.sottotitolo)} />}
               <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 160), gap: 20 }}>
                 {services.slice(0, d.limit || services.length).map(s => {
                   const Icon = serviceIcon(s.icon)
                   return (
-                    <div key={s.id} style={{ background: '#fff', borderRadius: 16, padding: '24px 16px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+                    <div key={s.id} style={{ background: 'var(--sup)', borderRadius: 16, padding: '24px 16px', textAlign: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
                       <Icon size={28} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ marginBottom: 10 }} />
-                      <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 4 }} {...ricco(s.name)} />
-                      {s.hours && <div style={{ fontSize: 12, color: '#888' }}>{s.hours}</div>}
+                      <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--txt)', marginBottom: 4 }} {...ricco(s.name)} />
+                      {s.hours && <div style={{ fontSize: 12, color: 'var(--txt-tenue)' }}>{s.hours}</div>}
                     </div>
                   )
                 })}
@@ -1596,19 +1599,19 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
           .flatMap(cat => (cat.items || []).filter(i => i.active !== false).map(i => ({ ...i, category: cat.category })))
         if (!actItems.length) return null
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
             <div className="lbr-section">
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || tr('activities_title', lang)}</h2>
-              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || `${actItems.length} ${tr(actItems.length === 1 ? 'activity_available' : 'activities_available', lang)}`}</p>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: 'var(--txt)' }}>{d.titolo || tr('activities_title', lang)}</h2>
+              <p style={{ textAlign: 'center', color: 'var(--txt-tenue)', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || `${actItems.length} ${tr(actItems.length === 1 ? 'activity_available' : 'activities_available', lang)}`}</p>
               <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 20 }}>
                 {actItems.slice(0, d.limit || actItems.length).map(item => (
-                  <div key={item.id} style={{ background: '#fafafa', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0' }}>
+                  <div key={item.id} style={{ background: 'var(--sup-2)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid var(--bordo)' }}>
                     {item.photo_url && <img src={item.photo_url} alt={item.name} style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />}
                     <div style={{ padding: '16px 18px' }}>
                       {item.category && <div style={{ fontSize: 11, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>{item.category}</div>}
-                      <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', marginBottom: 6 }} {...ricco(item.name)} />
-                      {item.description && <p style={{ fontSize: 13, color: '#666', lineHeight: 1.5, margin: 0 }} {...ricco(item.description)} />}
-                      {item.location && <div style={{ fontSize: 12, color: '#888', marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{item.location}</div>}
+                      <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--txt)', marginBottom: 6 }} {...ricco(item.name)} />
+                      {item.description && <p style={{ fontSize: 13, color: 'var(--txt-tenue)', lineHeight: 1.5, margin: 0 }} {...ricco(item.description)} />}
+                      {item.location && <div style={{ fontSize: 12, color: 'var(--txt-tenue)', marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{item.location}</div>}
                     </div>
                   </div>
                 ))}
@@ -1622,18 +1625,18 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const excItems = (entity.excursions || []).filter(e => e.active !== false && e.name)
         if (!excItems.length) return null
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#f9f9fb' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup-2)' }}>
             <div className="lbr-section">
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || tr('excursions_title', lang)}</h2>
-              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || `${excItems.length} ${tr(excItems.length === 1 ? 'excursion_available' : 'excursions_available', lang)}`}</p>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: 'var(--txt)' }}>{d.titolo || tr('excursions_title', lang)}</h2>
+              <p style={{ textAlign: 'center', color: 'var(--txt-tenue)', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || `${excItems.length} ${tr(excItems.length === 1 ? 'excursion_available' : 'excursions_available', lang)}`}</p>
               <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 20 }}>
                 {excItems.slice(0, d.limit || excItems.length).map(exc => (
-                  <div key={exc.id} style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #f0f0f0' }}>
+                  <div key={exc.id} style={{ background: 'var(--sup)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid var(--bordo)' }}>
                     {exc.photo_url && <img src={exc.photo_url} alt={exc.name} style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />}
                     <div style={{ padding: '16px 18px' }}>
-                      <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', marginBottom: 6 }} {...ricco(exc.name)} />
-                      {exc.description && <p style={{ fontSize: 13, color: '#666', lineHeight: 1.5, margin: '0 0 10px' }} {...ricco(exc.description)} />}
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontSize: 12, color: '#888' }}>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--txt)', marginBottom: 6 }} {...ricco(exc.name)} />
+                      {exc.description && <p style={{ fontSize: 13, color: 'var(--txt-tenue)', lineHeight: 1.5, margin: '0 0 10px' }} {...ricco(exc.description)} />}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontSize: 12, color: 'var(--txt-tenue)' }}>
                         {exc.duration && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{exc.duration}</span>}
                         {exc.price > 0 && <span style={{ fontWeight: 700, color: primary, fontSize: 14 }}>€{exc.price}</span>}
                         {exc.seats && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Users size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />Max {exc.seats}</span>}
@@ -1660,10 +1663,10 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const items = cat ? tutte.filter(o => (o.categoria || '').toLowerCase() === cat) : tutte
         if (!items.length) return null
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
             <div className="lbr-section">
               {d.titolo_sezione && (
-                <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 40, textAlign: 'center', color: '#1a1a2e' }}
+                <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 40, textAlign: 'center', color: 'var(--txt)' }}
                   {...ricco(d.titolo_sezione)} />
               )}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: 20 }}>
@@ -1672,15 +1675,15 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                   // senza limite, che è diverso da zero.
                   const esaurita = o.rimasti !== null && o.rimasti <= 0
                   return (
-                    <div key={o.id} style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', minWidth: 0, opacity: esaurita ? 0.6 : 1 }}>
+                    <div key={o.id} style={{ background: 'var(--sup)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', minWidth: 0, opacity: esaurita ? 0.6 : 1 }}>
                       {o.cover_url && <img src={o.cover_url} alt="" style={{ width: '100%', height: 170, objectFit: 'cover', display: 'block' }} />}
                       <div style={{ padding: '16px 18px' }}>
                         {o.categoria && (
                           <div style={{ fontSize: 11, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6, overflowWrap: 'anywhere' }}>{o.categoria}</div>
                         )}
-                        <div style={{ fontWeight: 700, fontSize: 16, color: '#1a1a2e', marginBottom: 6, overflowWrap: 'anywhere' }} {...ricco(o.titolo)} />
-                        {o.descrizione && <p style={{ fontSize: 13, color: '#666', lineHeight: 1.5, margin: '0 0 12px' }} {...ricco(o.descrizione)} />}
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', fontSize: 12, color: '#888' }}>
+                        <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--txt)', marginBottom: 6, overflowWrap: 'anywhere' }} {...ricco(o.titolo)} />
+                        {o.descrizione && <p style={{ fontSize: 13, color: 'var(--txt-tenue)', lineHeight: 1.5, margin: '0 0 12px' }} {...ricco(o.descrizione)} />}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', fontSize: 12, color: 'var(--txt-tenue)' }}>
                           {o.luogo && <span style={{ display: 'flex', alignItems: 'center', gap: 4, overflowWrap: 'anywhere' }}><MapPin size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{o.luogo}</span>}
                           {/* Il prezzo può essere nascosto o scritto a parole:
                               una cena alla carta non è «Gratis». */}
@@ -1692,7 +1695,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                             : o.rimasti !== null && o.rimasti <= 5 && <span>Restano {o.rimasti}</span>}
                         </div>
                         {o.cta_condizioni && (
-                          <p style={{ fontSize: 11, color: '#999', margin: '10px 0 0', lineHeight: 1.5 }} {...ricco(o.cta_condizioni)} />
+                          <p style={{ fontSize: 11, color: 'var(--txt-fioco)', margin: '10px 0 0', lineHeight: 1.5 }} {...ricco(o.cta_condizioni)} />
                         )}
                       </div>
                     </div>
@@ -1716,7 +1719,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const inVendita = catShop ? prodottiShop.filter(p => (p.categoria || '').trim().toLowerCase() === catShop) : prodottiShop
         if (!aziendaId || !inVendita.length) return null
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
             <div className="lbr-section">
               {d.titolo_sezione && (
                 <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 40, textAlign: 'center', color: cTitle }}
@@ -1736,24 +1739,24 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const ctaHref = mini.booking_url || homeUrl
         const offerteBase = entityType === 'struttura' ? `/s/${slug}/offerte/` : entityType === 'ristorante' ? `/r/${slug}/offerte/` : `/a/${slug}/offerte/`
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
             <div className="lbr-section">
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{tr('offers_title', lang)}</h2>
-              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{tr('offers_subtitle', lang)}</p>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: 'var(--txt)' }}>{tr('offers_title', lang)}</h2>
+              <p style={{ textAlign: 'center', color: 'var(--txt-tenue)', marginBottom: 48, fontSize: 15 }}>{tr('offers_subtitle', lang)}</p>
               <ArrowCarousel primary={primary} perView={Math.min(promo.length, d.per_view || 3)} minCard={280} items={promo.map(p => {
                   const promoUrl = siteHref(p.cta_url?.trim() && p.cta_url !== '#' ? p.cta_url.trim() : ctaHref)
                   const isExternal = promoUrl?.startsWith('http') || promoUrl?.startsWith('tel:') || promoUrl?.startsWith('mailto:')
                   const hasDetail = p.description_full || (p.gallery || []).length > 0
                   return { key: p.id, node: (
-                    <div style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', borderTop: `4px solid ${primary}`, display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}>
+                    <div style={{ background: 'var(--sup)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', borderTop: `4px solid ${primary}`, display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}>
                       {p.cover_url && <img src={p.cover_url} alt={p.title} style={{ width: '100%', height: 180, objectFit: 'cover' }} />}
                       <div style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 14 }}>
                           {p.badge && <span style={{ display: 'inline-block', background: `${sec}18`, color: sec, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase' }}>{p.badge}</span>}
                         </div>
-                        <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 12, color: '#1a1a2e' }} {...ricco(p.title)} />
-                        {p.text && <p style={{ fontSize: 15, color: '#555', lineHeight: 1.7, marginBottom: 16, flex: 1 }} {...ricco(p.text)} />}
-                        {p.expires_at && <div style={{ fontSize: 12, color: '#aaa', marginBottom: 20 }}>Valida fino al {new Date(p.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
+                        <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 12, color: 'var(--txt)' }} {...ricco(p.title)} />
+                        {p.text && <p style={{ fontSize: 15, color: 'var(--txt-medio)', lineHeight: 1.7, marginBottom: 16, flex: 1 }} {...ricco(p.text)} />}
+                        {p.expires_at && <div style={{ fontSize: 12, color: 'var(--txt-fioco)', marginBottom: 20 }}>Valida fino al {new Date(p.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
                         <div style={{ marginTop: 'auto' }}>
                           {hasDetail ? (
                             <a href={`${offerteBase}${p.id}`} style={{ display: 'block', textAlign: 'center', padding: '13px 20px', background: primary, color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
@@ -1779,24 +1782,24 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         if (!packs.length) return null
         const pacchettiBase = entityType === 'struttura' ? `/s/${slug}/pacchetti/` : entityType === 'ristorante' ? `/r/${slug}/pacchetti/` : `/a/${slug}/pacchetti/`
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#f9f9fb' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup-2)' }}>
             <div className="lbr-section">
               <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: cTitle }}>{d.titolo || tr('packages_title', lang)}</h2>
-              <p style={{ textAlign: 'center', color: cBody || '#888', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || tr('packages_subtitle', lang)}</p>
+              <p style={{ textAlign: 'center', color: cBody || 'var(--txt-tenue)', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || tr('packages_subtitle', lang)}</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
                 {packs.map(p => {
                   const hasDetail = p.description_full || (p.gallery || []).length > 0
                   return (
-                    <div key={p.id} style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column' }}>
+                    <div key={p.id} style={{ background: 'var(--sup)', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column' }}>
                       {p.cover_url && <img src={p.cover_url} alt={p.name} style={{ width: '100%', height: 180, objectFit: 'cover' }} />}
                       <div style={{ padding: '28px 28px 0' }}>
                         {p.badge && <span style={{ display: 'inline-block', background: sec, color: readableOn('#ffffff', sec, '#1a1a2e'), fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 16 }}>{p.badge}</span>}
-                        <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 6, color: '#1a1a2e' }} {...ricco(p.name)} />
-                        {p.tagline && <p style={{ fontSize: 14, color: '#888', marginBottom: 20, lineHeight: 1.5 }} {...ricco(p.tagline)} />}
+                        <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 6, color: 'var(--txt)' }} {...ricco(p.name)} />
+                        {p.tagline && <p style={{ fontSize: 14, color: 'var(--txt-tenue)', marginBottom: 20, lineHeight: 1.5 }} {...ricco(p.tagline)} />}
                         {p.price && (
-                          <div style={{ marginBottom: 24, borderTop: '1px solid #f0f0f0', paddingTop: 20 }}>
+                          <div style={{ marginBottom: 24, borderTop: '1px solid var(--bordo)', paddingTop: 20 }}>
                             <span style={{ fontFamily: heading, fontSize: 40, fontWeight: 800, color: primary }}>{p.price}</span>
-                            {p.price_label && <span style={{ fontSize: 14, color: '#aaa', marginLeft: 6 }}>/ {p.price_label}</span>}
+                            {p.price_label && <span style={{ fontSize: 14, color: 'var(--txt-fioco)', marginLeft: 6 }}>/ {p.price_label}</span>}
                           </div>
                         )}
                       </div>
@@ -1804,7 +1807,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                         <div style={{ padding: '0 28px 24px', flex: 1 }}>
                           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
                             {(p.includes || []).filter(Boolean).map((item, i) => (
-                              <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 14, color: '#444' }}>
+                              <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 14, color: 'var(--txt-medio)' }}>
                                 <span style={{ color: primary, fontWeight: 700, fontSize: 15, lineHeight: 1.3, flexShrink: 0 }}>✓</span>
                                 {item}
                               </li>
@@ -1835,13 +1838,13 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const passati = d.mostra_passati === false ? [] : eventiPassati.slice(0, d.limit || 6)
         if (!eventi.length && !passati.length) return null
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#fff' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
             <div className="lbr-section">
               {/* «Prossimi eventi» sopra un elenco di soli eventi conclusi
                   direbbe il falso: senza programma il titolo è solo «Eventi». */}
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || tr(eventi.length ? 'events_title' : 'events_title_all', lang)}</h2>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: 'var(--txt)' }}>{d.titolo || tr(eventi.length ? 'events_title' : 'events_title_all', lang)}</h2>
               {(d.sottotitolo || eventi.length > 0) && (
-                <p style={{ textAlign: 'center', color: '#888', marginBottom: eventi.length ? 48 : 0, fontSize: 15 }}>{d.sottotitolo || `${eventi.length} ${tr(eventi.length === 1 ? 'event_scheduled' : 'events_scheduled', lang)}`}</p>
+                <p style={{ textAlign: 'center', color: 'var(--txt-tenue)', marginBottom: eventi.length ? 48 : 0, fontSize: 15 }}>{d.sottotitolo || `${eventi.length} ${tr(eventi.length === 1 ? 'event_scheduled' : 'events_scheduled', lang)}`}</p>
               )}
               {eventi.length > 0 && (
                 <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 16 }}>
@@ -1849,7 +1852,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                 </div>
               )}
               {passati.length > 0 && <>
-                <h3 style={{ fontFamily: heading, fontSize: 'clamp(18px,2.4vw,24px)', fontWeight: 700, textAlign: 'center', color: '#1a1a2e', margin: eventi.length ? '56px 0 24px' : '28px 0 24px' }}>{tr('past_events', lang)}</h3>
+                <h3 style={{ fontFamily: heading, fontSize: 'clamp(18px,2.4vw,24px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)', margin: eventi.length ? '56px 0 24px' : '28px 0 24px' }}>{tr('past_events', lang)}</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 16 }}>
                   {passati.map(ev => renderEventoCard(ev, true))}
                 </div>
@@ -1862,18 +1865,18 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
       case 'news': {
         if (!articoli.length) return null
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#f9f9fb' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup-2)' }}>
             <div className="lbr-section">
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: '#1a1a2e' }}>{d.titolo || tr('news_title', lang)}</h2>
-              <p style={{ textAlign: 'center', color: '#888', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || tr('news_subtitle', lang)}</p>
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: 'var(--txt)' }}>{d.titolo || tr('news_title', lang)}</h2>
+              <p style={{ textAlign: 'center', color: 'var(--txt-tenue)', marginBottom: 48, fontSize: 15 }}>{d.sottotitolo || tr('news_subtitle', lang)}</p>
               <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 20 }}>
                 {articoli.slice(0, d.limit || articoli.length).map(art => (
                   <a key={art.id} href={`/blog/${art.slug}?back=${encodeURIComponent(homeUrl)}`}
-                    style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', display: 'block', textDecoration: 'none', color: 'inherit', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1px solid #f0f0f0' }}>
+                    style={{ background: 'var(--sup)', borderRadius: 14, overflow: 'hidden', display: 'block', textDecoration: 'none', color: 'inherit', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1px solid var(--bordo)' }}>
                     {art.cover_url && <img src={art.cover_url} alt={art.title} style={{ width: '100%', height: 160, objectFit: 'cover', objectPosition: focalValido(art.cover_focal) || 'center', display: 'block' }} />}
                     <div style={{ padding: '16px 18px' }}>
-                      {art.published_at && <div style={{ fontSize: 11, color: '#aaa', marginBottom: 6 }}>{new Date(art.published_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
-                      <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', marginBottom: 8 }} {...ricco(art.title)} />
+                      {art.published_at && <div style={{ fontSize: 11, color: 'var(--txt-fioco)', marginBottom: 6 }}>{new Date(art.published_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
+                      <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--txt)', marginBottom: 8 }} {...ricco(art.title)} />
                       {art.excerpt && <div style={{ fontSize: 13, color: '#777', lineHeight: 1.5 }}>{art.excerpt}</div>}
                       <div style={{ marginTop: 12, fontSize: 13, fontWeight: 700, color: primary }}>{tr('read_arrow', lang)}</div>
                     </div>
@@ -1895,10 +1898,10 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
       case 'form_builder':
         if (!d.form_token) return null
         return (
-          <section key={block.id} style={{ padding: '72px 0', background: '#fafafa' }}>
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup-2)' }}>
             <div className="lbr-section" style={{ maxWidth: 620 }}>
               {d.titolo_sezione && (
-                <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, textAlign: 'center', color: '#1a1a2e', marginBottom: 40 }}>
+                <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)', marginBottom: 40 }}>
                   {d.titolo_sezione}
                 </h2>
               )}
@@ -1913,10 +1916,10 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const doubled = [...items, ...items]
         const dur = `${Math.max(15, items.length * 3)}s`
         return (
-          <section key={block.id} style={{ padding: '64px 0', background: '#fff', overflow: 'hidden' }}>
+          <section key={block.id} style={{ padding: '64px 0', background: 'var(--sup)', overflow: 'hidden' }}>
             {d.titolo && (
               <div className="lbr-section" style={{ marginBottom: 40 }}>
-                <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3vw,36px)', fontWeight: 700, textAlign: 'center', color: '#1a1a2e' }} {...ricco(d.titolo)} />
+                <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3vw,36px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)' }} {...ricco(d.titolo)} />
               </div>
             )}
             <div style={{ position: 'relative', overflow: 'hidden', WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' }}>
@@ -2016,13 +2019,13 @@ function NewsletterForm({ aziendaId, primary, privacyUrl, lang = 'it' }) {
     <form onSubmit={handleSubmit}>
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
         <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder={tr('newsletter_email', lang)}
-          style={{ flex: 1, padding: '12px 16px', borderRadius: 50, border: '1px solid #ddd', fontSize: 15, outline: 'none' }} />
+          style={{ flex: 1, padding: '12px 16px', borderRadius: 50, border: '1px solid var(--bordo)', fontSize: 15, outline: 'none' }} />
         <button type="submit" disabled={!privacy || state === 'loading'}
           style={{ padding: '12px 24px', borderRadius: 50, background: privacy ? primary : '#ccc', color: '#fff', border: 'none', cursor: privacy ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: 15 }}>
           {state === 'loading' ? '...' : tr('subscribe', lang)}
         </button>
       </div>
-      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: '#666', cursor: 'pointer' }}>
+      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: 'var(--txt-tenue)', cursor: 'pointer' }}>
         <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} style={{ marginTop: 1, flexShrink: 0 }} />
         <span>{tr('consent_privacy', lang)} <a href={privacyUrl} style={{ color: primary }}>{tr('privacy_policy', lang)}</a></span>
       </label>
@@ -2123,9 +2126,9 @@ function FormBuilderBlock({ token, primary, lang = 'it' }) {
     setSubmitting(false)
   }
 
-  const inp = { padding: '11px 14px', border: '1px solid #ddd', borderRadius: 10, fontSize: 15, outline: 'none', width: '100%', display: 'block', fontFamily: 'inherit', boxSizing: 'border-box' }
+  const inp = { padding: '11px 14px', border: '1px solid var(--bordo)', borderRadius: 10, fontSize: 15, outline: 'none', width: '100%', display: 'block', fontFamily: 'inherit', boxSizing: 'border-box' }
 
-  if (loading) return <p style={{ color: '#888', textAlign: 'center' }}>{tr('loading_form', lang)}</p>
+  if (loading) return <p style={{ color: 'var(--txt-tenue)', textAlign: 'center' }}>{tr('loading_form', lang)}</p>
   if (error && !form) return <p style={{ color: '#c53030', textAlign: 'center' }}>{error}</p>
   if (success) return <p style={{ color: '#2d7a2d', fontWeight: 600, textAlign: 'center', padding: '32px 0' }}>{tr('form_sent', lang)}</p>
 
@@ -2139,8 +2142,8 @@ function FormBuilderBlock({ token, primary, lang = 'it' }) {
       {isMultiStep && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-            <span style={{ fontSize: 13, color: '#888' }}>{tr('form_step', lang)} {currentStep + 1}/{totalSteps}</span>
-            <span style={{ fontSize: 12, color: '#aaa' }}>{Math.round(((currentStep + 1) / totalSteps) * 100)}%</span>
+            <span style={{ fontSize: 13, color: 'var(--txt-tenue)' }}>{tr('form_step', lang)} {currentStep + 1}/{totalSteps}</span>
+            <span style={{ fontSize: 12, color: 'var(--txt-fioco)' }}>{Math.round(((currentStep + 1) / totalSteps) * 100)}%</span>
           </div>
           <div style={{ height: 4, background: '#eee', borderRadius: 2 }}>
             <div style={{ height: '100%', background: primary || '#1a1a2e', borderRadius: 2, width: `${((currentStep + 1) / totalSteps) * 100}%`, transition: 'width 0.3s ease' }} />
@@ -2148,11 +2151,11 @@ function FormBuilderBlock({ token, primary, lang = 'it' }) {
         </div>
       )}
 
-      {form?.descrizione && <p style={{ fontSize: 14, color: '#666', margin: '0 0 8px' }} {...ricco(form.descrizione)} />}
+      {form?.descrizione && <p style={{ fontSize: 14, color: 'var(--txt-tenue)', margin: '0 0 8px' }} {...ricco(form.descrizione)} />}
       {visibleCampi.map(c => (
         <div key={c.id}>
           {c.tipo === 'consenso' ? (
-            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontSize: 14, color: '#444' }}>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontSize: 14, color: 'var(--txt-medio)' }}>
               <input type="checkbox" checked={!!dati[c.id]} onChange={e => setField(c.id, e.target.checked)} required style={{ width: 16, height: 16, marginTop: 2, flexShrink: 0 }} />
               <span>
                 {c.privacy_url ? (
@@ -2166,7 +2169,7 @@ function FormBuilderBlock({ token, primary, lang = 'it' }) {
               </span>
             </label>
           ) : c.tipo === 'consenso_marketing' ? (
-            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontSize: 14, color: '#444' }}>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontSize: 14, color: 'var(--txt-medio)' }}>
               <input type="checkbox" checked={!!dati[c.id]} onChange={e => setField(c.id, e.target.checked)} style={{ width: 16, height: 16, marginTop: 2, flexShrink: 0 }} />
               <span>
                 {c.privacy_url ? (
@@ -2191,7 +2194,7 @@ function FormBuilderBlock({ token, primary, lang = 'it' }) {
                   {(c.opzioni || []).map((op, i) => <option key={i} value={op}>{op}</option>)}
                 </select>
               ) : c.tipo === 'checkbox' ? (
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, color: '#555' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, color: 'var(--txt-medio)' }}>
                   <input type="checkbox" checked={!!dati[c.id]} onChange={e => setField(c.id, e.target.checked)} style={{ width: 16, height: 16 }} />
                   {c.placeholder || tr('yes', lang)}
                 </label>
@@ -2206,7 +2209,7 @@ function FormBuilderBlock({ token, primary, lang = 'it' }) {
       <div style={{ display: 'flex', gap: 8 }}>
         {isMultiStep && currentStep > 0 && (
           <button type="button" onClick={() => { setError(''); setCurrentStep(s => s - 1) }}
-            style={{ flex: 1, padding: '13px', background: '#f5f5f5', color: '#555', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: 15, cursor: 'pointer' }}>
+            style={{ flex: 1, padding: '13px', background: 'var(--sup-2)', color: 'var(--txt-medio)', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: 15, cursor: 'pointer' }}>
             ← {tr('back', lang)}
           </button>
         )}
