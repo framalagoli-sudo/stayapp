@@ -5,10 +5,28 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-18T12:34:58.468Z
+  modified: 2026-09-18T15:38:23.435Z
 ---
 
 # Si riprende da qui
+
+## ▶️ 18/09 — SESSIONE CHIUSA. Tutto live, nessuna migration in sospeso (ultima: 122)
+
+**Fatto oggi, in ordine:**
+1. **Credito AI in euro** (cambio BCE fisso 1 € = 1,1537 $ in `lib/valuta-ai.js`), tetto predefinito **5 €**. Console Anthropic messa da Francesco a **20 $/mese**.
+2. **Il 404 di `/admin` sul dominio di un cliente** — corretto, sonda `probe-molti-indirizzi` a ogni deploy → [[reference_molti_indirizzi]].
+3. **Le 8 funzioni del registro visivo** (font display, fondo scuro vero, alone, etichetta, `<mark>`, barra a pillola, pulsante con alone; i numeri animati c'erano già) → [[reference_registro_visivo_siti]]. Tutte **spente di default**.
+4. **SEO, due giri**: evento e blog erano **vuoti per Google**; canonical, descrizioni automatiche, un solo H1, articoli in sitemap; `probe-seo` + `probe-contrasto` in `deploy.ps1` → [[reference_seo_primo_giro]].
+5. **Pannello «Stato del sito»** in Sito web + riga in Dashboard (per cliente **e** super_admin) → [[reference_stato_sito]].
+
+**Aperto, e sono decisioni di Francesco:**
+- ⛔ **Un sito nuovo nasce invisibile ai motori.** Tre strade: resta manuale ma dentro l'onboarding · si accende da solo quando il cliente pubblica (**consigliata**) · sempre acceso.
+- **Quattro siti veri non hanno titolo e descrizione** per i risultati: Metodo TVB, inlingua, Automax, D.O. Giachini. Proposta non ancora approvata: farli **proporre dall'AI**, da confermare con un clic.
+- **OltreNova cliente di sé stessa** (blog e pagine dal pannello) + **rifare la landing**: deciso di riparlarne, fermo per l'esame Meta.
+- **Search Console**: non esiste per nessun dominio → [[project_search_console]].
+- **WhatsApp**: sbloccato (Tech Provider approvato). Servono le chiavi Meta e il numero di prova: primo pezzo di Francesco.
+
+⚠️ **Due trappole di metodo imparate oggi** (valgono sempre): non lanciare `npm run build` mentre gira `npm run dev` (il dev poi serve una copia vecchia o si rompe); e per provare qualcosa «come la vede il cliente» serve un utente effimero `admin_azienda` **e** togliere il 2FA obbligatorio sulla nostra azienda di prova per il tempo del controllo, rimettendolo subito.
 
 ## 🟢 18/09 — META: VERIFICA TECH PROVIDER **APPROVATA**
 

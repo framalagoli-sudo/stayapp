@@ -412,6 +412,21 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - Le chiavi (`META_APP_ID`, `META_APP_SECRET`, `META_ES_CONFIG_ID`) non sono su Vercel di proposito: senza, il pulsante non compare a nessuno.
     - ⚠️ **Scritto e non provato**: nessuno ha ancora completato il flusso dal vivo. Prima del primo cliente: numero di test, verifica della coesistenza, tariffe Meta Italia.
 
+39. **🌐 La piattaforma risponde da quindici indirizzi** (17/09/2026). `https://www.garage22terni.it/admin` dava **404**, davanti a un cliente: sul dominio di un cliente il middleware legge ogni percorso come una pagina del suo sito, quindi `/admin` diventava `/r/garage22/admin`. Ora `PERCORSI_PIATTAFORMA` in `middleware.js` (`/admin`, `/termini`, `/cancellazione-dati`) rimanda **307** a `www.oltrenova.com`, prima della risoluzione del dominio.
+    - Il pannello sta su **un dominio solo** ed è sicurezza: le passkey sono legate a `oltrenova.com`, i Redirect URL di Supabase sono una lista chiusa, e **il DNS di un dominio cliente non è nostro** — se scade e lo compra un altro, si ritrova la nostra pagina di accesso.
+    - `/checkout` fa l'opposto: **resta** sul sito del cliente (chi ha appena pagato non deve cambiare indirizzo) ed è in `Disallow` nel robots.
+    - Sonda `tests/probe-molti-indirizzi.mjs`: legge gli hostname vivi dal database e prova home, pannello, pagine di piattaforma, ritorno dal pagamento, robots e sitemap. In `deploy.ps1`.
+
+40. **🔍 SEO: quello che conta è quante PAROLE ci sono nell'HTML** (18/09/2026). Due tipi di pagina erano **vuoti per Google** senza che si vedesse: l'**evento** (0 parole) e l'**articolo del blog** (4 parole, nessun H1) — il contenuto arrivava dal browser. Ora li serve il server: `lib/evento-pubblico.js` e, per gli articoli, `lib/articolo-pubblico.js` con **`sanitize-html`** (DOMPurify gira solo nel browser: era il motivo per cui non si poteva stampare dal server).
+    - Chiusi nello stesso giro: canonical su tutte le pagine di `oltrenova.com`, descrizione ricavata dal contenuto quando manca (`lib/seo-testo.js`), **un solo H1** per pagina (il carosello ne metteva uno per diapositiva), articoli nella sitemap di ogni sito.
+    - **`lib/blog-ambito.js`**: gli articoli che si vedono a un indirizzo li decide **l'host**, non un parametro. Prima `oltrenova.com/blog` pubblicava l'articolo di un cliente e il sito di un cliente apriva quello di un altro, con `canonical` su di noi.
+    - Sonde in `deploy.ps1`: `probe-seo.mjs` (titoli, canonical, duplicati, **parole nell'HTML**) e `probe-contrasto.mjs` (un testo che non si legge non dà errore).
+    - ⛔ **Un sito nuovo nasce invisibile ai motori** (`indicizzabile DEFAULT false`, migration 116) e nessun passo lo ricorda: da legare all'onboarding.
+
+41. **🩺 «Stato del sito»** (18/09/2026). `components/admin/StatoSito.jsx` in cima a *Sito web* + `StatoSitoBreve` in Dashboard, da `GET /api/entita/[id]/stato-sito`: pubblicato, indirizzo, sezioni della home, titolo e descrizione, immagine social, contenuti nella sitemap. **Non dice «indicizzato»**: non lo sappiamo senza Search Console.
+    - ⚠️ L'interruttore della visibilità è richiamato **dentro** il pannello, non duplicato.
+    - ⚠️ Le schede entità in Dashboard le vede solo `admin_azienda`: **una cosa è provata quando è aperta dal ruolo di chi la userà**, e qui gli utilizzatori sono due (cliente e super_admin).
+
 ---
 
 ## Roadmap
