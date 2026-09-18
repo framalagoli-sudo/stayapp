@@ -44,6 +44,15 @@ export async function GET(request, props) {
         .eq('entity_tipo', tipo).eq('entity_id', entity.id)
         .eq('published', true).eq('active', true)
         .order('date_start', { ascending: false }).limit(200),
+      // ⛔ Gli articoli del blog non erano in nessuna sitemap (18/09/2026): il
+      // blog è la cosa che si scrive APPOSTA per farsi trovare, e non lo
+      // dichiaravamo. Ci vanno anche quelli dell'azienda senza entità, che i
+      // siti di quell'azienda mostrano tutti.
+      supabaseAdmin.from('articoli').select('slug, updated_at, published_at')
+        .eq('azienda_id', entity.azienda_id)
+        .or(`entity_id.eq.${entity.id},entity_id.is.null`)
+        .eq('published', true).eq('active', true)
+        .order('published_at', { ascending: false }).limit(200),
     ])
 
     const clientUrl = (process.env.CLIENT_URL ?? '').trim() || 'https://www.oltrenova.com'

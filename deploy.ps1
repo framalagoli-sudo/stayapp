@@ -110,11 +110,15 @@ if ($testExit -ne 0) {
 #   - rls-secondo-muro    cosa esce bussando al database, colonne comprese
 #   - colonne-pubbliche   quali colonne escono da una route senza login
 #   - molti-indirizzi     la piattaforma vive su 15 hostname, gli smoke ne provano UNO
+#   - seo                 cosa dichiariamo ai motori, e soprattutto quante PAROLE
+#                         ci sono nell'HTML senza JavaScript: e' cosi' che si
+#                         scopre una pagina che il browser riempie dopo, e che
+#                         per Google resta vuota (eventi e blog, 18/09/2026)
 # Non bloccano il deploy (e' gia' avvenuto): segnalano subito, forte.
 Write-Host "`n=== Sonde di sicurezza ===" -ForegroundColor Cyan
 Set-Location tests
 $sicurezzaKo = 0
-foreach ($sonda in @("probe-security-sweep.mjs", "probe-rls-secondo-muro.mjs", "probe-colonne-pubbliche.mjs", "probe-molti-indirizzi.mjs")) {
+foreach ($sonda in @("probe-security-sweep.mjs", "probe-rls-secondo-muro.mjs", "probe-colonne-pubbliche.mjs", "probe-molti-indirizzi.mjs", "probe-seo.mjs")) {
     Write-Host "-- $sonda" -ForegroundColor DarkGray
     node $sonda
     if ($LASTEXITCODE -ne 0) { $sicurezzaKo++ }
