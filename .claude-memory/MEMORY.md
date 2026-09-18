@@ -120,3 +120,4 @@
 - [🎨 Il registro visivo dei siti (18/09)](reference_registro_visivo_siti.md) — font display + fondo scuro vero (277 colori fissi → variabili) + alone/etichetta/mark/pillola; sonda del contrasto
 - [🔍 Primo giro SEO (18/09)](reference_seo_primo_giro.md) — la pagina evento era VUOTA per Google; sonda probe-seo.mjs, da 13 segnalazioni a zero
 - [🔎 Search Console: da creare](project_search_console.md) — non esiste per nessun dominio: senza, di ciò che Google capisce non sappiamo niente
+- [🩺 Pannello «Stato del sito»](reference_stato_sito.md) — pubblicato/indirizzo/contenuti in una schermata; NON dice «indicizzato» e spiega perché
