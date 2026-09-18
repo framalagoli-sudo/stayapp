@@ -117,3 +117,4 @@
 - [🟦 App Meta OltreNova: com'è configurata e le trappole](reference_meta_app_setup.md) — solo caso d'uso WhatsApp; verifica aziendale nel Centro sicurezza (non nell'app); la pagina Di base salva un campo alla volta; chiavi NON ancora su Vercel
 - [🗂️ Archivio note di sessione giu–ago 2026](archivio_sessioni.md) — storico, 50 sessioni; il sapere tecnico è già nei reference_
 - [🌐 Quindici indirizzi, una piattaforma](reference_molti_indirizzi.md) — /admin dava 404 sul dominio di un cliente; gli smoke provano UN hostname solo
+- [🎨 Il registro visivo dei siti (18/09)](reference_registro_visivo_siti.md) — font display + fondo scuro vero (277 colori fissi → variabili) + alone/etichetta/mark/pillola; sonda del contrasto
