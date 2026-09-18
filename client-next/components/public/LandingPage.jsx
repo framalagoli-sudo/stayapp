@@ -373,10 +373,11 @@ export default function LandingPage() {
               </div>
 
               {/* headline */}
-              <h1 style={{ fontSize: 58, fontWeight: 800, lineHeight: 1.06, letterSpacing: '-2px', color: '#fff', marginBottom: 12 }}>
-                Oltre il solito sito.
-              </h1>
-              <h1 style={{ fontSize: 58, fontWeight: 800, lineHeight: 1.06, letterSpacing: '-2px', marginBottom: 28 }}>
+              {/* Un H1 solo: erano due, e per un motore di ricerca la pagina
+                  aveva due argomenti. L'aspetto è identico — le due righe
+                  restano due righe. */}
+              <h1 style={{ fontSize: 58, fontWeight: 800, lineHeight: 1.06, letterSpacing: '-2px', color: '#fff', marginBottom: 28 }}>
+                Oltre il solito sito.<br />
                 <span style={{ background: INSTA, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>Molto oltre.</span>
               </h1>
               <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.58)', lineHeight: 1.82, marginBottom: 44, maxWidth: 480 }}>

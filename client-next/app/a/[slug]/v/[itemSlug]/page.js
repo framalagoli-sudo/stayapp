@@ -5,6 +5,7 @@ import GuestSubPage from '@/components/guest/GuestSubPage'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
 import { fuoriDaiMotori, METADATA_NASCOSTA } from '@/lib/visibilita-motori'
 import { hostUfficiale } from '@/lib/indirizzo-ufficiale'
+import { taglia } from '@/lib/seo-testo'
 
 export const maxDuration = 30
 
@@ -31,7 +32,10 @@ export async function generateMetadata(props) {
   if (!el) return { title: attivita.name }
   const lang = searchParams?._lang === 'en' ? 'en' : 'it'
   const title = el.seo_title || `${el.titolo} — ${attivita.name}`
-  const description = el.seo_description || attivita.minisito?.seo_description || ''
+  // Se il cliente non l'ha scritta, si usa la descrizione della scheda: è la
+  // frase che descrive davvero questo elemento, ed è meglio di quella generica
+  // del sito, uguale per tutte le schede.
+  const description = el.seo_description || taglia(el.dati?.descrizione || el.dati?.testo || '') || attivita.minisito?.seo_description || ''
   // Meglio il logo che un'anteprima muta: senza immagine Facebook mostra un
   // rettangolo grigio che nessuno apre. Misurato il 01/09: 11 entita' su 15
   // non hanno una copertina.

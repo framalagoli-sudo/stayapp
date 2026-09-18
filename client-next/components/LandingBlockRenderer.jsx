@@ -546,7 +546,14 @@ function HeroSlider({ block, primary, heading }) {
           <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(to bottom, rgba(0,0,0,${overlay * 0.6}), rgba(0,0,0,${overlay}))` }} />
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: align === 'left' ? 'flex-start' : 'center' }}>
             <div style={{ textAlign: align, padding: '90px clamp(24px,6vw,90px)', maxWidth: align === 'left' ? 780 : 920, width: '100%' }}>
-              {s.title && <h1 style={{ fontFamily: heading, fontSize: 'clamp(34px,6vw,72px)', fontWeight: 700, color: '#fff', lineHeight: 1.08, margin: 0, textShadow: '0 2px 24px rgba(0,0,0,0.35)' }} {...ricco(s.title)} />}
+              {s.title && (() => {
+                // ⚠️ L'H1 è il titolo della pagina: **uno solo**. Con quattro
+                // diapositive ne uscivano quattro, e un motore di ricerca non
+                // sa più qual è l'argomento della pagina. Le altre sono H2:
+                // stesso aspetto, ruolo diverso.
+                const Titolo = idx === 0 ? 'h1' : 'h2'
+                return <Titolo style={{ fontFamily: heading, fontSize: 'clamp(34px,6vw,72px)', fontWeight: 700, color: '#fff', lineHeight: 1.08, margin: 0, textShadow: '0 2px 24px rgba(0,0,0,0.35)' }} {...ricco(s.title)} />
+              })()}
               {s.subtitle && <p style={{ fontFamily: heading, fontStyle: 'italic', fontSize: 'clamp(18px,2.6vw,28px)', color: 'rgba(255,255,255,0.92)', lineHeight: 1.4, margin: '18px 0 0', maxWidth: align === 'left' ? 620 : 760, marginLeft: align === 'center' ? 'auto' : 0, marginRight: align === 'center' ? 'auto' : 0, textShadow: '0 2px 18px rgba(0,0,0,0.35)' }} {...ricco(s.subtitle)} />}
               {((s.cta1_text && s.cta1_url) || (s.cta2_text && s.cta2_url)) && (
                 <div style={{ display: 'flex', gap: 14, marginTop: 34, flexWrap: 'wrap', justifyContent: align === 'left' ? 'flex-start' : 'center' }}>
