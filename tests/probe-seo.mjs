@@ -75,7 +75,13 @@ function analizza(host, url, html) {
     .replace(/&[a-z]+;/gi, ' ')
     .replace(/\s+/g, ' ').trim()
   p.parole = testo ? testo.split(' ').length : 0
-  if (p.parole < 60) nota(host, 'alto', `${url} — solo ${p.parole} parole nell'HTML: per un motore di ricerca questa pagina è quasi vuota (il contenuto arriva dopo, col JavaScript?)`)
+  // Una pagina che dice «non c'è ancora niente» è vuota di proposito: non è un
+  // difetto, ed è quello che risponde un blog senza articoli. Segnalarla
+  // farebbe suonare l'allarme a ogni deploy finché non si pubblica qualcosa.
+  const vuotaDiProposito = /Nessun articolo|No articles|Nessun evento|nessun elemento/i.test(testo)
+  if (p.parole < 60 && !vuotaDiProposito) {
+    nota(host, 'alto', `${url} — solo ${p.parole} parole nell'HTML: per un motore di ricerca questa pagina è quasi vuota (il contenuto arriva dopo, col JavaScript?)`)
+  }
 
   if (!p.ogImmagine) nota(host, 'basso', `${url} — nessuna immagine social: condiviso su WhatsApp o Facebook esce senza anteprima`)
   if (p.immaginiSenzaAlt > 0) nota(host, 'basso', `${url} — ${p.immaginiSenzaAlt} immagini su ${p.immagini} senza testo alternativo`)
