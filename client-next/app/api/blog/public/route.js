@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { localizeEntity } from '@/lib/translate'
+import { ambitoBlog } from '@/lib/blog-ambito'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -24,13 +25,25 @@ export async function GET(request) {
       .eq('published', true).eq('active', true)
       .order('published_at', { ascending: false }).limit(limit)
 
-    if (azienda_id) q = q.eq('azienda_id', azienda_id)
-    if (category_id) q = q.eq('category_id', category_id)
-    if (entity_id && UUID_RE.test(entity_id)) {
-      q = q.or(`entity_id.eq.${entity_id},entity_tipo.is.null`)
-    } else if (entity_tipo) {
-      q = q.eq('entity_tipo', entity_tipo)
+    // ⛔ Il recinto lo mette l'INDIRIZZO, non i parametri: erano facoltativi, e
+    // le pagine del blog non ne passavano nessuno — così `oltrenova.com/blog`
+    // pubblicava l'articolo di un cliente e il sito di un cliente quello di un
+    // altro. Sul dominio di un cliente vale la sua entità e basta; sul nostro
+    // valgono gli articoli di OltreNova, più quelli di un'entità chiesta
+    // esplicitamente (è il blocco blog dentro il sito servito dal nostro path).
+    const ambito = await ambitoBlog(request.headers.get('host'))
+    if (ambito.tipo === 'entita') {
+      q = q.eq('azienda_id', ambito.azienda_id).or(`entity_id.eq.${ambito.entity_id},entity_id.is.null`)
+    } else if (entity_id && UUID_RE.test(entity_id) && azienda_id && UUID_RE.test(azienda_id)) {
+      q = q.eq('azienda_id', azienda_id).or(`entity_id.eq.${entity_id},entity_id.is.null`)
+    } else if (ambito.azienda_id) {
+      q = q.eq('azienda_id', ambito.azienda_id)
+    } else {
+      // Nessuna azienda nostra: meglio un blog vuoto che il blog di un altro.
+      return Response.json([])
     }
+    if (category_id) q = q.eq('category_id', category_id)
+    if (entity_tipo && ambito.tipo !== 'entita') q = q.eq('entity_tipo', entity_tipo)
 
     const { data, error } = await q
     if (error) return Response.json({ error: error.message }, { status: 500 })

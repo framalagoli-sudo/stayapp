@@ -1,5 +1,8 @@
+import { headers } from 'next/headers'
+import { notFound } from 'next/navigation'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { getArticolo } from '@/lib/guest-data'
+import { ambitoBlog, articoloNellAmbito, baseDelBlog } from '@/lib/blog-ambito'
 import ArticoloPage from '@/components/public/ArticoloPage'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
 
@@ -10,8 +13,12 @@ export async function generateMetadata(props) {
   const art = await getArticolo(slug)
   if (!art) return { title: 'Articolo — OltreNova' }
   const lang = searchParams?._lang === 'en' ? 'en' : 'it'
-  const itUrl = `https://www.oltrenova.com/blog/${slug}`
-  const enUrl = `https://www.oltrenova.com/en/blog/${slug}`
+  // ⛔ L'indirizzo era scritto a mano: l'articolo di un cliente, letto sul SUO
+  // dominio, dichiarava ai motori di ricerca di stare da noi — il contenuto
+  // veniva attribuito a OltreNova. Un sito, un indirizzo: vale anche qui.
+  const base = baseDelBlog((await headers()).get('host'))
+  const itUrl = `${base}/blog/${slug}`
+  const enUrl = `${base}/en/blog/${slug}`
   const url = lang === 'en' ? enUrl : itUrl
 
   // Di chi e questo articolo. Senza, Facebook scrive il DOMINIO in maiuscolo
@@ -45,6 +52,11 @@ export default async function ArticoloRoute(props) {
   const searchParams = await props.searchParams;
   const params = await props.params;
   const lang = searchParams?._lang === 'en' ? 'en' : 'it'
+  // Il divieto vale anche sulla pagina, non solo sulla route che le serve i
+  // dati: altrimenti resterebbe un indirizzo che risponde 200 e si fa indicizzare.
+  const { slug } = await params
+  const art = await getArticolo(slug)
+  if (!articoloNellAmbito(art, await ambitoBlog((await headers()).get('host')))) notFound()
   return (
     <>
       <ArticoloPage />
