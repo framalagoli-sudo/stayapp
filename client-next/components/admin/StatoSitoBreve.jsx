@@ -26,7 +26,18 @@ export default function StatoSitoBreve({ entityId, entityTipo, onApri }) {
 
   // Se non si riesce a leggere lo stato non si scrive niente: una riga che dice
   // «non lo so» occupa spazio e non aiuta.
-  if (fallito || !s) return null
+  if (fallito) return null
+  // Mentre si controlla, però, la riga c'è: in un elenco di dodici siti le
+  // ultime tre comparivano dopo, e sembravano mancanti.
+  if (!s) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 7, width: '100%', marginTop: 12,
+        padding: '8px 10px', borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f2',
+        fontSize: 12, color: '#aaa',
+      }}>Controllo lo stato…</div>
+    )
+  }
 
   // In ordine di importanza: la prima che manca è quella da fare adesso.
   const mancanze = [

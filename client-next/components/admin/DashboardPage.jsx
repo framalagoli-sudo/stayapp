@@ -329,6 +329,34 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* ── Stato dei siti (super_admin) ──────────────────────────────────────
+          Le schede qui sopra le vede solo l'admin dell'azienda: chi guarda da
+          super_admin non aveva **nessuno** stato dei siti sotto gli occhi, ed è
+          proprio chi deve accorgersi se un sito resta da pubblicare. */}
+      {!isAdminAzienda && !aziLoading && allEntita.length > 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <SectionCard title="Stato dei siti" icon={Globe} iconColor="#0284c7">
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 4 }}>
+              {allEntita.slice(0, 12).map(entita => (
+                <div key={`stato-${entita.tipo}-${entita.id}`}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 0', flexWrap: 'wrap' }}>
+                  <div style={{ width: 190, minWidth: 140, fontSize: 13, fontWeight: 600, color: '#1a1a2e', overflowWrap: 'anywhere' }}>
+                    {entita.name}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 220 }}>
+                    <StatoSitoBreve
+                      entityId={entita.id}
+                      entityTipo={entita.tipo}
+                      onApri={() => router.push(`/admin/${entita.tipo === 'struttura' ? 'struttura' : entita.tipo === 'ristorante' ? 'ristoranti' : 'attivita'}/${entita.id}/sito`)}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+        </div>
+      )}
+
       {/* ── KPI row ── */}
       <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexWrap: 'wrap' }}>
         <KpiCard icon={Inbox}        label="Richieste aperte"  value={analytics?.requests?.open}       color="#e53e3e" sub="richieste ospiti"      onClick={() => router.push('/admin/requests')} />
