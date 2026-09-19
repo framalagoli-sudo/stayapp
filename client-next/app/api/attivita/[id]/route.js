@@ -37,7 +37,13 @@ export async function PATCH(request, props) {
 
     // Una sola lista per tutti i tipi: il verticale non decide più cosa si
     // può scrivere (vedi CAMPI_MODIFICABILI in lib/entita.js).
-    const updates = campiAmmessi(body)
+    // Lo stato di adesso serve a una cosa sola: capire se questa richiesta sta
+    // **pubblicando** il sito. In quel caso, se nessuno ha ancora deciso, il
+    // sito si fa anche trovare sui motori (vedi campiAmmessi).
+    const { data: entitaAttuale } = await supabaseAdmin.from('entita')
+      .select('minisito, indicizzabile, indicizzabile_scelto').eq('id', params.id).maybeSingle()
+
+    const updates = campiAmmessi(body, entitaAttuale)
 
     if (body.slug !== undefined) {
       const clean = slugify(String(body.slug))

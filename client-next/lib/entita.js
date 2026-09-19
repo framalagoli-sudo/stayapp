@@ -185,9 +185,28 @@ export const CAMPI_MODIFICABILI = [
 // proprietà CSS il valore si ricontrolla qui: un valore fuori forma diventa
 // `null` (il centro), non una stringa arbitraria nella pagina di un cliente.
 // Il `CHECK` della migration 117 è il secondo muro.
-export function campiAmmessi(body) {
+export function campiAmmessi(body, entitaAttuale = null) {
   const ammessi = Object.fromEntries(Object.entries(body || {}).filter(([k]) => CAMPI_MODIFICABILI.includes(k)))
   if ('cover_focal' in ammessi) ammessi.cover_focal = focalValido(ammessi.cover_focal)
+
+  // Toccare l'interruttore della visibilità è **una decisione di una persona**:
+  // da qui in poi nessuna automazione la ribalta.
+  if ('indicizzabile' in ammessi) ammessi.indicizzabile_scelto = true
+
+  // ⛔ Pubblicare vuol dire «adesso è vero»: se nessuno ha ancora deciso, il
+  // sito che viene pubblicato si fa anche trovare. Senza questo un cliente
+  // restava fuori da Google per sempre senza sapere perché — i siti nuovi
+  // nascono invisibili (migration 116) e nessun passaggio lo ricordava.
+  // Vale per le tre pagine da cui si pubblica, perché passano tutte di qui.
+  if (
+    entitaAttuale
+    && ammessi.minisito?.active === true
+    && entitaAttuale.minisito?.active !== true
+    && entitaAttuale.indicizzabile_scelto !== true
+    && !('indicizzabile' in ammessi)
+  ) {
+    ammessi.indicizzabile = true
+  }
   return ammessi
 }
 

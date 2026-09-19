@@ -37,6 +37,11 @@ export default function StatoSito({ entityData, entityTipo, entityId, onCambiata
   const [s, setS] = useState(null)
   const [errore, setErrore] = useState(null)
   const [caricando, setCaricando] = useState(true)
+  // La proposta dell'AI per titolo e descrizione: si vede prima di tenerla.
+  // Le parole con cui un'attività si presenta sono sue — noi proponiamo.
+  const [proposta, setProposta] = useState(null)
+  const [proponendo, setProponendo] = useState(false)
+  const [salvando, setSalvando] = useState(false)
 
   async function carica() {
     setCaricando(true); setErrore(null)
@@ -49,6 +54,33 @@ export default function StatoSito({ entityData, entityTipo, entityId, onCambiata
   // Il pannello si riallinea quando cambia qualcosa che mostra (pubblicazione,
   // visibilità): senza, resterebbe a dire la cosa di un minuto fa.
   useEffect(() => { if (entityId && s) carica() }, [entityData?.indicizzabile, entityData?.minisito?.active])
+
+  async function proponi() {
+    setProponendo(true); setErrore(null)
+    try {
+      setProposta(await apiFetch(`/api/entita/${entityId}/seo-proposta?tipo=${entityTipo}`, { method: 'POST' }))
+    } catch (e) { setErrore(e?.message || 'Non sono riuscito a scrivere una proposta') }
+    finally { setProponendo(false) }
+  }
+
+  // Si scrive dentro `minisito`, dove il sito tiene le sue impostazioni: si
+  // rilegge quello di adesso e si cambiano due chiavi, altrimenti si
+  // cancellerebbe tutto il resto.
+  async function salvaProposta() {
+    setSalvando(true); setErrore(null)
+    try {
+      const ora = await apiFetch(`/api/${ENDPOINT[entityTipo]}/${entityId}`)
+      await apiFetch(`/api/${ENDPOINT[entityTipo]}/${entityId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          minisito: { ...(ora?.minisito || {}), seo_title: proposta.titolo, seo_description: proposta.descrizione },
+        }),
+      })
+      setProposta(null)
+      await carica()
+    } catch (e) { setErrore(e?.message || 'Non sono riuscito a salvare') }
+    finally { setSalvando(false) }
+  }
 
   const link = azione => azione ? (
     <button onClick={azione.onClick} style={{
@@ -108,6 +140,30 @@ export default function StatoSito({ entityData, entityTipo, entityId, onCambiata
               : 'Senza contenuti, un motore di ricerca non ha niente da mostrare.'}
           />
 
+          {proposta && (
+            <div style={{ border: '1px solid #dbe7ff', background: '#f7faff', borderRadius: 10, padding: '14px 16px', margin: '12px 0' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#3a5a9a', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 8 }}>
+                Proposta — controllala prima di tenerla
+              </div>
+              <div style={{ fontSize: 13.5, color: '#1a1a2e', fontWeight: 600, marginBottom: 4, overflowWrap: 'anywhere' }}>{proposta.titolo}</div>
+              <div style={{ fontSize: 13, color: '#555', lineHeight: 1.55, marginBottom: 12, overflowWrap: 'anywhere' }}>{proposta.descrizione}</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button onClick={salvaProposta} disabled={salvando}
+                  style={{ border: 'none', background: '#1a1a2e', color: '#fff', fontSize: 12.5, fontWeight: 700, padding: '8px 14px', borderRadius: 8, cursor: 'pointer' }}>
+                  {salvando ? 'Salvo…' : 'Usa questi'}
+                </button>
+                <button onClick={() => setProposta(null)} disabled={salvando}
+                  style={{ border: '1px solid #ddd', background: '#fff', color: '#555', fontSize: 12.5, fontWeight: 600, padding: '8px 14px', borderRadius: 8, cursor: 'pointer' }}>
+                  Lascia stare
+                </button>
+                <button onClick={proponi} disabled={salvando}
+                  style={{ border: 'none', background: 'none', color: '#3a5a9a', fontSize: 12.5, fontWeight: 600, padding: '8px 6px', cursor: 'pointer' }}>
+                  Riprova
+                </button>
+              </div>
+            </div>
+          )}
+
           <Riga
             stato={s.titoloSeo && s.descrizioneSeo ? 'ok' : 'attenzione'}
             titolo={s.titoloSeo && s.descrizioneSeo
@@ -118,7 +174,11 @@ export default function StatoSito({ entityData, entityTipo, entityId, onCambiata
             dettaglio={s.titoloSeo && s.descrizioneSeo
               ? s.titoloSeo
               : 'Sono le due righe che si leggono nei risultati di ricerca. Se non li scrivi li ricaviamo dal contenuto, ma scritti da te funzionano meglio.'}
-            azione={link(onVaiA && { testo: 'Scrivili', onClick: () => onVaiA('seo') })}
+            azione={link(
+              s.titoloSeo && s.descrizioneSeo
+                ? (onVaiA && { testo: 'Modifica', onClick: () => onVaiA('seo') })
+                : { testo: proponendo ? 'Ci penso…' : 'Proponili tu', onClick: proponi }
+            )}
           />
 
           <Riga
