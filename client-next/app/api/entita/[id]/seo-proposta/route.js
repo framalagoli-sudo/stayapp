@@ -43,14 +43,37 @@ export async function POST(request, props) {
       .select('blocks').eq('entity_tipo', tipo).eq('entity_id', ent.id)
       .eq('slug', '__home__').maybeSingle()
 
-    const testoHome = (Array.isArray(home?.blocks) ? home.blocks : [])
-      .flatMap(b => [b?.data?.title, b?.data?.titolo, b?.data?.tagline, b?.data?.text, b?.data?.sottotitolo])
-      .filter(t => typeof t === 'string' && t.trim())
-      .join(' · ').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').slice(0, 1200)
+    // ⚠️ I testi stanno anche dentro le diapositive e gli elenchi, non solo in
+    // `data.title`: prendendo solo quelli la proposta usciva generica —
+    // «Attività commerciale in Via Galvani 14» per uno studio di investimenti
+    // immobiliari che sulla home racconta tutt'altro.
+    const testiDi = d => [d?.title, d?.titolo, d?.tagline, d?.subtitle, d?.sottotitolo, d?.text]
+      .concat((Array.isArray(d?.slides) ? d.slides : []).flatMap(x => [x?.title, x?.subtitle]))
+      .concat((Array.isArray(d?.items) ? d.items : []).flatMap(x => [x?.title, x?.text]))
 
-    // `entityDataSummary` è la stessa whitelist che usa l'AI Site Builder:
-    // niente wifi, niente dati del titolare.
-    const contesto = entityDataSummary(ent, tipo)
+    const testoHome = (Array.isArray(home?.blocks) ? home.blocks : [])
+      .flatMap(b => testiDi(b?.data))
+      .filter(t => typeof t === 'string' && t.trim())
+      .join(' · ').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').slice(0, 1500)
+
+    // Le pagine dicono di cosa si occupa: «Il Nostro Metodo», «Investire con Noi».
+    const { data: pagine } = await supabaseAdmin.from('pagine')
+      .select('titolo').eq('entity_tipo', tipo).eq('entity_id', ent.id)
+      .eq('status', 'pubblicata').neq('slug', '__home__').limit(12)
+
+    // ⚠️ `entityDataSummary` è un **supplemento** (servizi, orari, dotazioni):
+    // non contiene nome, settore e descrizione, che sono la sostanza. È la
+    // stessa whitelist dell'AI Site Builder — niente wifi, niente dati del
+    // titolare — e va integrata, non usata da sola.
+    const contesto = [
+      `Nome: ${ent.name || ''}`,
+      ent.settore ? `Settore: ${ent.settore}` : '',
+      ent.description ? `Come si descrive: ${String(ent.description).slice(0, 300)}` : '',
+      ent.minisito?.tagline ? `Slogan: ${String(ent.minisito.tagline).slice(0, 120)}` : '',
+      ent.address ? `Dove: ${String(ent.address).slice(0, 120)}` : '',
+      (pagine || []).length ? `Pagine del sito: ${pagine.map(p => p.titolo).filter(Boolean).join(', ')}` : '',
+      entityDataSummary(ent, tipo),
+    ].filter(Boolean).join('\n')
 
     const testo = await chiamaAI({
       azienda_id: ent.azienda_id,
