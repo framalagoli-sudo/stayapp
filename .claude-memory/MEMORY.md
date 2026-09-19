@@ -122,3 +122,4 @@
 - [🔎 Search Console: da creare](project_search_console.md) — non esiste per nessun dominio: senza, di ciò che Google capisce non sappiamo niente
 - [🩺 Pannello «Stato del sito»](reference_stato_sito.md) — pubblicato/indirizzo/contenuti in una schermata; NON dice «indicizzato» e spiega perché
 - [🏷️ Il prezzo di un evento lo dichiara il cliente](reference_prezzo_evento_scelto.md) — «nessuna cifra» non vuol più dire «gratis» (migration 123, segnalato da Garage 22)
+- [🔦 Pubblicare rende trovabili (e chi spegne resta spento)](reference_visibilita_alla_pubblicazione.md) — migration 124; titolo e descrizione proposti dall'AI, mai salvati da soli
