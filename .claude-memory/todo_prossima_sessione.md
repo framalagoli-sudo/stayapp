@@ -5,10 +5,28 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-18T15:38:23.435Z
+  modified: 2026-09-19T17:24:12.816Z
 ---
 
 # Si riprende da qui
+
+## ▶️ 19/09 — SESSIONE CHIUSA. Tutto live. Migration eseguite: fino alla **124**
+
+**Fatto oggi:**
+1. **Il prezzo di un evento lo dichiara il cliente** (migration **123**, segnalato da Garage 22: la cena si paga sul posto e la pagina diceva «Gratuito»). Tre pulsanti nell'editor — Gratuito · Una cifra · Lo scrivo io — e se non si sceglie non si scrive niente → [[reference_prezzo_evento_scelto]].
+2. **Pubblicare un sito lo rende trovabile su Google** (migration **124**), e **chi spegne di proposito non viene riacceso**: provati tutti e due i versi in produzione. Più **titolo e descrizione proposti dall'AI** («Proponili tu» nel pannello Stato del sito), che **propone e non salva** → [[reference_visibilita_alla_pubblicazione]].
+
+## ⛔ SI RIPARTE DA QUI: WhatsApp, cosa manca nella dashboard Meta
+
+Verificato il 19/09. **Su Vercel c'è solo `WHATSAPP_TOKEN_KEY`**: ne mancano **quattro**, e finché non ci sono il pulsante «Collega WhatsApp» non compare a nessuno (voluto).
+- `META_APP_ID` · `META_APP_SECRET` (**da rigenerare**: il 15/09 è passato dalla chat) · `META_ES_CONFIG_ID` (lo dà la **configurazione Embedded Signup**, ancora da creare) · **`WHATSAPP_WEBHOOK_TOKEN`** (mancava anche dalla nostra lista).
+- ⚠️ Ogni variabile nuova **richiede un redeploy**: senza, Vercel la mostra configurata e il codice la vede vuota.
+- ⚠️ **Il webhook oggi risponde 403** perché manca il token: registrando l'URL su Meta **prima** di metterlo, la verifica fallisce e si cerca l'errore nel posto sbagliato. URL da registrare: `https://www.oltrenova.com/api/whatsapp/webhook` — **su www, mai sull'apex** (l'apex dà 308, e un 3xx è una consegna fallita).
+- Restano poi: **numero di test** di Meta, **App Review** dei permessi `whatsapp_business_management` + `whatsapp_business_messaging` con i **due video** e le «Istruzioni per il test» (lasciate vuote apposta), **tariffe Meta Italia** al posto di quelle Spoki, e la **prova dal vivo** del collegamento — l'unico pezzo scritto e mai provato.
+- Offerta fatta a Francesco e non ancora accettata: preparargli l'elenco campo per campo di cosa incollare dove, più le due tracce per i video.
+- ⚠️ **Email incoerenti** da uniformare prima dell'App Review: `info@oltrenova.com` (app Meta), `oltrenova@gmail.com` (informativa), `fra.malagoli@gmail.com` (DPO).
+
+**Altri aperti**: Search Console (non esiste: senza, «indicizzato» non si può dire) · i 4 siti senza titolo/descrizione, ora sistemabili in un clic · OltreNova cliente di sé stessa + rifare la landing (**il fermo per Meta è tolto**) · primo incasso Stripe con Garage 22 · DNS metodotvb (Francesco, settimana prossima) e fondaconarni · elenco Offerte nel pannello che deduce «Gratis».
 
 ## ▶️ 18/09 — SESSIONE CHIUSA. Tutto live, nessuna migration in sospeso (ultima: 122)
 

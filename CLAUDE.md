@@ -470,3 +470,8 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - **Turnstile: resta SOFT per sempre** — lo strict bloccava clienti veri.
 
 > Per il dettaglio completo vedere `FEATURES.md` nella root del repo.
+42. **🏷️ Il prezzo di un evento lo dichiara il cliente** (19/09/2026, migration `123`). Segnalato da Garage 22: la cena si paga sul posto, il campo prezzo era vuoto, e la pagina scriveva **«Gratuito»**. La radice era una **deduzione** — «nessuna cifra» letto come «è gratis», mentre vuol dire «nessuno l'ha detto». Ora `eventi.prezzo_modo`: `gratuito` · `cifra` · `testo` · **NULL = non si scrive niente**, e l'editor lo dice invece di farlo scoprire sul sito. `mostra_prezzo`/`mostra_prezzo_pagina` restano: dicono DOVE mostrarlo. La cifra vera resta `price`.
+
+43. **🔦 Pubblicare un sito lo rende trovabile** (19/09/2026, migration `124`). I siti nuovi nascono invisibili ai motori (116) ma **nessun passaggio lo ricordava**: si poteva restare fuori da Google per sempre. Ora quando il minisito passa a `active: true` la visibilità si accende, **a meno che una persona non abbia già deciso** (`indicizzabile_scelto`). La regola sta in `campiAmmessi` (`lib/entita.js`), dove passano tutte e tre le pagine da cui si pubblica. Provato in produzione nei due versi, compreso «chi spegne resta spento».
+    - **Titolo e descrizione proposti dall'AI**: `POST /api/entita/[id]/seo-proposta`, pulsante nel pannello «Stato del sito». Passa da `chiamaAI` (tetto dell'azienda) e **propone, non salva**.
+    - ⚠️ `entityDataSummary` è un **supplemento**: senza nome, settore e descrizione la proposta esce generica. E i testi della home stanno anche dentro le diapositive.
