@@ -112,6 +112,8 @@
 - [⛔ I cambi importanti li autorizza Francesco PRIMA](feedback_autorizzare_cambi_importanti.md) — togliere voci di menu, spostare dove si crea…
 - [🏠 Un sito, un indirizzo](reference_un_sito_un_indirizzo.md) — se il cliente ha un dominio si va lì (307, mai 301); sitemap ed email devono dichiarare lo stesso del canonical
 - [📷 Caricamento foto: 4 MB è il tetto della piattaforma](reference_caricamento_foto.md) — misurato (413 prima della nostra route); e CampoImmagine, il campo unico che NON va forzato su gallerie e miniature
+- [🧩 Sezioni «universali» — DA ANALIZZARE](project_sezioni_universali.md) — una sezione definita una volta e usata su più pagine; oggi si copiano i blocchi (4 copie su metodotvb)
+- [🎫 Il modulo di prenotazione evento è fisso](reference_modulo_prenotazione_evento.md) — campi non configurabili; `notes` esiste nel DB e nella route ma il sito non lo manda mai
 - [📊 Vetrina: i numeri in evidenza](reference_vetrina_evidenza.md) — quali cifre risaltare lo dice il preset; e il separatore a forma prende il colore della sezione sotto (era bianco fisso)
 - [👥 Blocco team: tre varianti](reference_blocco_team_varianti.md) — griglia (i siti online) / ritratti (i blocchi nuovi) / editoriale; e in grid `order` sposta anche di colonna
 - [⚖️ Vincolo tecnico o scelta di prodotto?](feedback_vincolo_o_scelta.md) — «il cerchio è fisso» era una riga di CSS, non un limite: le scelte le fa Francesco

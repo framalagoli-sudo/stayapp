@@ -456,6 +456,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
   ⚠️ **Nessun cliente vero ha ancora collegato il conto**: il primo incasso reale non è mai avvenuto.
 - [x] **Next 15.5 + React 19** ✅ 18/08/2026 — chiuse le 21 vulnerabilità su `next`. ⚠️ Prima di tentare la **16** vanno migrati i `params` sincroni (~102 occorrenze, codemod `next-async-request-api`): la 15 li tollera, la 16 no
 - [ ] **Upgrade Next 16** — **manutenzione, non sicurezza** (triage 11/8: nessuno degli advisory high ci riguarda). Si farà per React 19 / Sentry / attualità. L'ostacolo `next-pwa` è stato rimosso, quindi ora è meno rischioso.
+- [ ] **Sezioni «universali» (da analizzare)** — una sezione definita una volta e richiamata su più pagine, modificabile da un punto solo. Oggi si copiano i blocchi: su metodotvb la stessa CTA vive in 4 copie indipendenti. Nodi aperti (dove vivono, come si risolvono in SSR, cosa succede se si cancella) → memoria `project_sezioni_universali`.
 - [ ] **Import documento v2** — upload file PDF/DOCX + chunking per documenti lunghi
 - [ ] **Multi-lingua DE** (IT/EN già fatti)
 - [ ] **Notifiche real-time** — Supabase Realtime su `requests` (bassa priorità)
