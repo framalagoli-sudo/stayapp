@@ -103,7 +103,9 @@ export const BLOCK_DEFAULTS = {
   // comprare. `formato` vuoto = le schede alte 170px come nelle Offerte.
   shop:         { titolo_sezione: '', categoria: '', formato: '' },
   eventi:       {},
-  vetrina:      { vetrina_id: '', titolo: '', colonne: 3, mostra_filtri: true, filtro: '' },
+  // I blocchi nuovi nascono con i numeri in evidenza; quelli già pubblicati non
+  // hanno la chiave e restano la scheda semplice di prima.
+  vetrina:      { vetrina_id: '', titolo: '', colonne: 3, mostra_filtri: true, filtro: '', variant: 'evidenza' },
   news:         {},
   booking:      { titolo_sezione: '' },
   newsletter:   { title: '', subtitle: '' },

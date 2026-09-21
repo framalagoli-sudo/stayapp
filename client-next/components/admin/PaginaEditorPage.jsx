@@ -283,6 +283,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
             <option value="full">Piena (100vh)</option>
             <option value="large">Grande (85vh)</option>
             <option value="medium">Media (65vh)</option>
+            <option value="compatta">Compatta (46vh)</option>
           </select>
         </div>
         <div style={{ borderTop: '1px solid #eee', paddingTop: 12 }}>
@@ -312,6 +313,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
                 <option value="full">Piena (100vh)</option>
                 <option value="large">Grande (85vh)</option>
                 <option value="medium">Media (65vh)</option>
+            <option value="compatta">Compatta (46vh)</option>
               </select>
             </div>
             <div style={{ flex: 1, minWidth: 130 }}>
@@ -493,12 +495,16 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
         {(data.variant === 'wave' || data.variant === 'diagonal') && (
           <div style={{ flex: 1, minWidth: 140 }}>
             <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Colore forma</label>
-            <select value={data.color || 'muted'} onChange={e => upd('color', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+            <select value={data.color || 'auto'} onChange={e => upd('color', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+              <option value="auto">Come la sezione sotto</option>
               <option value="muted">Grigio</option>
               <option value="primary">Colore tema</option>
               <option value="secondary">Accento</option>
               <option value="dark">Scuro</option>
             </select>
+            <div style={{ fontSize: 11.5, color: '#888', marginTop: 5, lineHeight: 1.5 }}>
+              La forma è il bordo in alto della sezione che viene dopo: col suo stesso colore sembra parte di quella, con un colore diverso sembra una fascia a sé.
+            </div>
           </div>
         )}
       </div>
@@ -1188,6 +1194,19 @@ function VetrinaBlockEditor({ data, onChange, entityId, entityTipo }) {
         </div>
       )}
       <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => onChange('titolo', v)} />
+      <div>
+        <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 500 }}>Aspetto delle schede</label>
+        <select value={data.variant === 'evidenza' ? 'evidenza' : 'schede'} onChange={e => onChange('variant', e.target.value)}
+          style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13, background: '#fff' }}>
+          <option value="schede">Scheda semplice</option>
+          <option value="evidenza">Numeri in evidenza</option>
+        </select>
+        <p style={{ fontSize: 12, color: '#aaa', marginTop: 4 }}>
+          «Numeri in evidenza» mette in risalto l'avanzamento e le cifre che contano ({(selected ? (getVetrinaPreset(selected.preset).evidenza?.metriche || []) : []).length > 0
+            ? (getVetrinaPreset(selected.preset).evidenza.metriche || []).map(k => (getVetrinaPreset(selected.preset).campiPubblici || []).find(c => c.key === k)?.breve || k).join(', ')
+            : 'i primi valori numerici'}).
+        </p>
+      </div>
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 120 }}>
           <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 500 }}>Colonne</label>

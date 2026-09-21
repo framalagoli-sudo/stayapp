@@ -7,14 +7,14 @@ import BookingWidget from './BookingWidget'
 import ShopBlocco from './ShopBlocco'
 import MenuTab from '@/components/MenuTab'
 import Turnstile from '@/components/Turnstile'
-import { applyBlockStyle, blockInverted, textSizeScale, textColorFor, gridTemplate, readableOn } from '@/lib/blockTypes'
+import { applyBlockStyle, blockInverted, textSizeScale, textColorFor, gridTemplate, readableOn, resolveBlockBg } from '@/lib/blockTypes'
 import { ReviewSourceLogo } from '@/lib/reviewLogos'
 import { RichText, richIsEmpty } from '@/lib/richText'
 import { ricco } from '@/lib/testo-ricco'
 import { t as tr } from '@/lib/i18n'
 import { focalValido, formaScheda, rapportoOppure } from '@/lib/formati-foto'
 import { oraLocale } from '@/lib/fuso'
-import { getPreset, fieldOptions } from '@/lib/vetrinePresets'
+import { getPreset, fieldOptions, evidenzaDi, etichettaEUnita } from '@/lib/vetrinePresets'
 
 // Sicurezza: accetta solo http(s), mailto:, tel: o path interni; blocca javascript:/data: ecc.
 function safeUrl(u) {
@@ -76,6 +76,90 @@ function fmtVetrina(value, type) {
   return s
 }
 
+// ── Le aree in evidenza di un elemento di vetrina ────────────────────────────
+// Un elenco di campi tutti uguali non dice niente: chi guarda un progetto
+// decide su tre numeri, e quelli devono staccarsi dal resto. QUALI siano lo
+// dice il preset (`evidenza`), perché cambiano col mestiere: per un progetto
+// immobiliare sono quota minima / ROI / durata, per un'auto prezzo / anno / km.
+// Lo stesso blocco serve la scheda nell'elenco e la pagina del dettaglio: due
+// misure, una definizione sola.
+function datiEvidenza(el, preset) {
+  const evid = evidenzaDi(preset)
+  const dati = el?.dati || {}
+  const campo = k => (preset.campiPubblici || []).find(f => f.key === k)
+  const valore = k => {
+    const v = dati[k]
+    if (v !== undefined && v !== null && v !== '') return v
+    return k === preset.valorePrimario ? el?.valore_primario : undefined
+  }
+  const metriche = (evid.metriche || [])
+    .map(k => ({ campo: campo(k), valore: valore(k) }))
+    .filter(m => m.campo && m.valore !== undefined && m.valore !== null && m.valore !== '')
+    .slice(0, 4)
+
+  let avanzamento = null
+  const a = evid.avanzamento
+  if (a) {
+    const perc = Number(dati[a.percentuale])
+    if (Number.isFinite(perc)) {
+      const tot = Number(dati[a.totale])
+      avanzamento = {
+        perc: Math.min(Math.max(perc, 0), 100),
+        totale: Number.isFinite(tot) && tot > 0 ? tot : null,
+        etichetta: a.etichetta || 'Avanzamento',
+      }
+    }
+  }
+  return { avanzamento, metriche, chiavi: metriche.map(m => m.campo.key) }
+}
+
+// Sotto il titolo ci va il primo campo di testo compilato — la zona per un
+// immobile, la marca per un'auto, la destinazione per un viaggio. Nessun elenco
+// per tipo: è sempre il primo che il preset dichiara, e ogni preset mette per
+// primo quello che identifica la cosa.
+function sottotitoloScheda(el, preset) {
+  const f = (preset.campiPubblici || []).find(c => c.type === 'text' && el?.dati?.[c.key])
+  return f ? String(el.dati[f.key]) : ''
+}
+
+function BarraAvanzamento({ av, primary, sec, grande }) {
+  if (!av) return null
+  return (
+    <div style={{ background: 'var(--sup-2)', border: '1px solid var(--bordo-tenue)', borderRadius: 14, padding: grande ? '20px 22px' : '14px 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+        <span style={{ fontSize: grande ? 34 : 26, fontWeight: 800, color: primary, lineHeight: 1 }}>{av.perc}%</span>
+        <span style={{ fontSize: grande ? 13.5 : 12, color: 'var(--txt-medio)' }}>
+          {av.etichetta}{av.totale ? ` · obiettivo ${fmtVetrina(av.totale, 'currency')}` : ''}
+        </span>
+      </div>
+      <div style={{ height: grande ? 10 : 8, background: 'var(--bordo)', borderRadius: 6, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${av.perc}%`, background: `linear-gradient(90deg, ${primary}, ${sec || primary})`, borderRadius: 6 }} />
+      </div>
+    </div>
+  )
+}
+
+function TessereMetriche({ metriche, grande }) {
+  if (!metriche?.length) return null
+  return (
+    // ⚠️ `minmax(0, …)`: senza, una cifra lunga allarga la colonna e sfonda la
+    // scheda (nota 23). Con auto-fit su una scheda stretta vanno a capo.
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${grande ? 150 : 88}px, 1fr))`, gap: grande ? 12 : 8 }}>
+      {metriche.map(({ campo, valore }) => {
+        const { etichetta, unita } = etichettaEUnita(campo)
+        return (
+          <div key={campo.key} style={{ background: 'var(--sup-2)', border: '1px solid var(--bordo-tenue)', borderRadius: 12, padding: grande ? '16px 18px' : '12px 10px', textAlign: grande ? 'left' : 'center', minWidth: 0 }}>
+            <div style={{ fontSize: grande ? 22 : 16, fontWeight: 700, color: 'var(--txt)', lineHeight: 1.25, overflowWrap: 'anywhere' }}>
+              {fmtVetrina(valore, campo.type)}{unita ? ` ${unita}` : ''}
+            </div>
+            <div style={{ fontSize: grande ? 11.5 : 10.5, color: 'var(--txt-medio)', textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 5, overflowWrap: 'anywhere' }}>{etichetta}</div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // Griglia pubblica di una vetrina: carica gli elementi pubblicati (client-side,
 // come i blocchi eventi/news), con filtro per stato e link al dettaglio.
 function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
@@ -122,6 +206,8 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
   if (!d.vetrina_id) return null
   const preset = getPreset(presetKey)
   const valoreField = (preset.campiPubblici || []).find(f => f.key === preset.valorePrimario)
+  // ⚠️ Predefinita la scheda di sempre: le vetrine già online non cambiano.
+  const evidente = d.variant === 'evidenza'
   const cols = Math.min(Math.max(Number(d.colonne) || 3, 1), 4)
   const setF = (patch) => setFilters(f => ({ ...f, ...patch }))
   const setSel = (k, v) => setFilters(f => ({ ...f, sel: { ...f.sel, [k]: v } }))
@@ -209,6 +295,35 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
             const statoLbl = (preset.stati || []).find(s => s.value === el.stato_pubblico)?.label
             const raccolto = Number(el.dati?.raccolto_perc)
             const roi = el.dati?.roi_atteso
+            if (evidente) {
+              const { avanzamento, metriche } = datiEvidenza(el, preset)
+              return (
+                <a key={el.id} href={`${linkBase}/v/${el.slug}`} style={{ background: 'var(--sup)', borderRadius: 18, overflow: 'hidden', border: '1px solid var(--bordo)', boxShadow: 'var(--ombra)', display: 'flex', flexDirection: 'column', textDecoration: 'none', color: 'inherit' }}>
+                  <div style={{ position: 'relative' }}>
+                    {el.copertina_url
+                      ? <img src={el.copertina_url} alt={el.titolo} loading="lazy" style={{ width: '100%', aspectRatio: '16 / 10', objectFit: 'cover', display: 'block' }} />
+                      : <div style={{ width: '100%', aspectRatio: '16 / 10', background: `${primary}14` }} />}
+                    {statoLbl && (
+                      // Sopra la foto, non sotto: la prima cosa da sapere è se
+                      // si può ancora entrare. Fondo scuro proprio, così si
+                      // legge su qualsiasi immagine.
+                      <span style={{ position: 'absolute', top: 14, left: 14, background: 'rgba(12,12,20,0.78)', color: '#ffffff', fontSize: 11, fontWeight: 700, padding: '6px 12px', borderRadius: 20, textTransform: 'uppercase', letterSpacing: 0.6 }}>{statoLbl}</span>
+                    )}
+                  </div>
+                  <div style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
+                    <div>
+                      <h3 style={{ fontFamily: heading, fontSize: 21, fontWeight: 700, margin: 0, lineHeight: 1.25, color: 'var(--txt)' }} {...ricco(el.titolo)} />
+                      {sottotitoloScheda(el, preset) && <div style={{ fontSize: 13.5, color: 'var(--txt-medio)', marginTop: 6 }}>{sottotitoloScheda(el, preset)}</div>}
+                    </div>
+                    <BarraAvanzamento av={avanzamento} primary={primary} sec={sec} />
+                    <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      <TessereMetriche metriche={metriche} />
+                      <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>Scopri di più <span style={{ color: primary }}>→</span></span>
+                    </div>
+                  </div>
+                </a>
+              )
+            }
             return (
               <a key={el.id} href={`${linkBase}/v/${el.slug}`} style={{ background: 'var(--sup)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column', textDecoration: 'none', color: 'inherit', borderTop: `4px solid ${primary}` }}>
                 {el.copertina_url && <img src={el.copertina_url} alt={el.titolo} loading="lazy" style={{ width: '100%', height: 180, objectFit: 'cover' }} />}
@@ -265,27 +380,47 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, enti
   const waHref = waNumber ? `https://wa.me/${waNumber}?text=${encodeURIComponent(`Ciao, sono interessato a ${d.titolo || ''} che ho visto sul sito.`)}` : null
   const dati = d.dati || {}
   const immagini = Array.isArray(d.immagini) ? d.immagini : []
+  const foto = [d.copertina_url, ...immagini].filter(Boolean)
   const statoLbl = (preset.stati || []).find(s => s.value === d.stato_pubblico)?.label
-  const raccolto = Number(dati.raccolto_perc)
   const has = (k) => { const x = dati[k]; return x !== undefined && x !== '' && !(Array.isArray(x) && x.length === 0) }
-  const fields = (preset.campiPubblici || []).filter(f => f.key !== 'descrizione' && f.key !== preset.statoPubblico && has(f.key))
+  const cruscotto = datiEvidenza(d, preset)
+  const inEvidenza = new Set([...cruscotto.chiavi, ...(cruscotto.avanzamento ? [evidenzaDi(preset).avanzamento?.percentuale, evidenzaDi(preset).avanzamento?.totale] : [])].filter(Boolean))
+  const fields = (preset.campiPubblici || []).filter(f => f.key !== 'descrizione' && f.key !== preset.statoPubblico && !inEvidenza.has(f.key) && has(f.key))
   const infoFields = fields.filter(f => ['text', 'number', 'currency', 'percent', 'select', 'date', 'boolean'].includes(f.type))
   const listFields = fields.filter(f => f.type === 'list')
   const geoField   = fields.find(f => f.type === 'geo')
   const fileFields = fields.filter(f => f.type === 'file' && safeUrl(dati[f.key]))
   const cellValue = (f) => f.type === 'select' ? (fieldOptions(preset, f).find(o => o.value === dati[f.key])?.label || dati[f.key])
-    : f.type === 'boolean' ? (dati[f.key] ? 'Sì' : 'No') : fmtVetrina(dati[f.key], f.type)
+    : f.type === 'boolean' ? (dati[f.key] ? 'Sì' : 'No')
+    : fmtVetrina(dati[f.key], f.type) + (f.unita ? ` ${f.unita}` : '')
   return (
     <section style={{ padding: '48px 0 72px' }}>
       <div className="lbr-section" style={{ maxWidth: 900, margin: '0 auto' }}>
         {statoLbl && <span style={{ display: 'inline-block', background: `${sec}18`, color: sec, fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 14 }}>{statoLbl}</span>}
         <h1 style={{ fontFamily: heading, fontSize: 'clamp(28px,4vw,44px)', fontWeight: 800, margin: '0 0 24px', color: 'var(--txt)' }} {...ricco(d.titolo)} />
 
-        {(d.copertina_url || immagini.length > 0) && (
+        {/* ⚠️ Con UNA sola foto la griglia la lasciava larga due colonne su
+            sette: un francobollo in mezzo alla pagina. La copertina da sola
+            occupa tutta la larghezza; le altre restano una griglia. */}
+        {foto.length === 1 && (
+          <img src={foto[0]} alt={d.titolo} style={{ width: '100%', aspectRatio: '16 / 9', objectFit: 'cover', borderRadius: 16, display: 'block', marginBottom: 32 }} />
+        )}
+        {foto.length > 1 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10, marginBottom: 32 }}>
-            {[d.copertina_url, ...immagini].filter(Boolean).map((url, i) => (
+            {foto.map((url, i) => (
               <img key={i} src={url} alt={d.titolo} loading={i === 0 ? 'eager' : 'lazy'} style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: 12, gridColumn: i === 0 ? 'span 2' : 'auto' }} />
             ))}
+          </div>
+        )}
+
+        {/* Il cruscotto: avanzamento e numeri chiave in alto, prima di tutto
+            il resto. Prima erano annegati fra gli altri campi, tutti uguali, e
+            la barra della raccolta stava in fondo alla pagina — dove chi
+            decide non arriva. I campi che finiscono qui NON si ripetono sotto. */}
+        {(cruscotto.avanzamento || cruscotto.metriche.length > 0) && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 28 }}>
+            <BarraAvanzamento av={cruscotto.avanzamento} primary={primary} sec={sec} grande />
+            <TessereMetriche metriche={cruscotto.metriche} grande />
           </div>
         )}
 
@@ -309,16 +444,7 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, enti
           </div>
         ))}
 
-        {!Number.isNaN(raccolto) && dati.raccolto_perc !== undefined && dati.raccolto_perc !== '' && (
-          <div style={{ marginBottom: 28 }}>
-            <div style={{ height: 10, background: '#eee', borderRadius: 6, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${Math.min(Math.max(raccolto, 0), 100)}%`, background: primary }} />
-            </div>
-            <div style={{ fontSize: 13, color: 'var(--txt-tenue)', marginTop: 6, fontWeight: 600 }}>Raccolto {Math.min(Math.max(raccolto, 0), 100)}%</div>
-          </div>
-        )}
-
-        {dati.descrizione && <p style={{ fontSize: 16, lineHeight: 1.8, color: 'var(--txt-medio)', whiteSpace: 'pre-line', marginBottom: 32 }} {...ricco(dati.descrizione)} />}
+        {dati.descrizione &&<p style={{ fontSize: 16, lineHeight: 1.8, color: 'var(--txt-medio)', whiteSpace: 'pre-line', marginBottom: 32 }} {...ricco(dati.descrizione)} />}
 
         {geoField && (
           <div style={{ marginBottom: 32 }}>
@@ -501,7 +627,7 @@ function HeroSlider({ block, primary, heading }) {
   const [paused, setPaused] = useState(false)
   const touchX = useRef(null)
 
-  const heightMap = { full: '100vh', large: '85vh', medium: '65vh' }
+  const heightMap = { full: '100vh', large: '85vh', medium: '65vh', compatta: '46vh' }
   const h = heightMap[d.height || 'full'] || '100vh'
   const align = d.text_align === 'left' ? 'left' : 'center'
   const overlay = d.overlay_opacity ?? 0.45
@@ -928,7 +1054,9 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
     )
   }
 
-  function renderBlock(block, inverted = false) {
+  // `prossimo` = il blocco che viene dopo. Serve al separatore a forma, che è
+  // il bordo superiore della sezione seguente e ne prende il colore.
+  function renderBlock(block, inverted = false, prossimo = null) {
     const d = block.data || {}
     // Colori adattivi allo sfondo di sezione (scuro/immagine → testo chiaro).
     // `inverted` = questo blocco ha uno sfondo scuro suo. Senza, il colore lo
@@ -939,7 +1067,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
     switch (block.type) {
 
       case 'hero': {
-        const heightMap = { full: '100vh', large: '85vh', medium: '65vh' }
+        const heightMap = { full: '100vh', large: '85vh', medium: '65vh', compatta: '46vh' }
         const h = heightMap[d.height || 'large'] || '85vh'
         const bgImg = d.bg_image_url || entity.cover_url
         const focal = d.focal || 'center'
@@ -988,17 +1116,31 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         const dh = sizeMap[d.size] || 64
         if (d.variant === 'line') return (
           <section key={block.id} style={{ padding: `${Math.round(dh / 2)}px 0` }}>
-            <div className="lbr-section"><hr style={{ border: 0, borderTop: '1px solid #e5e5ea' }} /></div>
+            <div className="lbr-section"><hr style={{ border: 0, borderTop: '1px solid var(--bordo)' }} /></div>
           </section>
         )
         if (d.variant === 'wave' || d.variant === 'diagonal') {
-          const fill = d.color === 'dark' ? '#14141f' : d.color === 'primary' ? primary : d.color === 'secondary' ? sec : '#f4f4f7'
+          // Un separatore a forma è il **bordo superiore della sezione che
+          // viene dopo**: con un colore suo diventa un rettangolo capitato lì
+          // per caso. ⛔ Il grigio era `#f4f4f7` fisso, pensato per una pagina
+          // bianca: su un sito scuro Francesco si è trovato una **fascia
+          // bianca** in mezzo alla pagina (metodotvb, 21/09/2026).
+          const sotto = prossimo ? resolveBlockBg(prossimo.style, primary, sec).background : null
+          const sottoSolido = typeof sotto === 'string' && sotto.startsWith('#') ? sotto : null
+          const fill = d.color === 'dark' ? '#14141f'
+            : d.color === 'primary' ? primary
+            : d.color === 'secondary' ? sec
+            : d.color === 'muted' ? 'var(--sup-2)'
+            : sottoSolido || 'var(--sup-2)'
+          const forma = d.variant === 'wave'
+            ? 'M0,40 C300,120 900,-20 1200,60 L1200,120 L0,120 Z'
+            : 'M0,120 L1200,0 L1200,120 Z'
           return (
             <div key={block.id} aria-hidden style={{ lineHeight: 0 }}>
               <svg viewBox="0 0 1200 120" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: dh }}>
-                {d.variant === 'wave'
-                  ? <path d="M0,40 C300,120 900,-20 1200,60 L1200,120 L0,120 Z" fill={fill} />
-                  : <path d="M0,120 L1200,0 L1200,120 Z" fill={fill} />}
+                {/* ⚠️ `fill` come ATTRIBUTO non risolve `var(--…)`: deve essere
+                    la proprietà CSS, altrimenti la forma resta nera. */}
+                <path d={forma} style={{ fill }} />
               </svg>
             </div>
           )
@@ -1191,7 +1333,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         return (
           <section key={block.id} style={{ padding: '40px 0', background: 'var(--sup)' }}>
             <div className="lbr-section" style={{ textAlign: d.align || 'center' }}>
-              <a href={siteHref(d.url)} style={{ display: 'inline-block', padding: padMap[d.size || 'medium'], borderRadius: 50, fontWeight: 700, fontSize: fsMap[d.size || 'medium'], textDecoration: 'none', background: outline ? 'transparent' : primary, color: outline ? primary : '#fff', border: `2px solid ${primary}`, boxShadow: alone }}>{d.text}</a>
+              <a href={siteHref(d.url)} style={{ display: 'inline-block', padding: padMap[d.size || 'medium'], borderRadius: 50, fontWeight: 700, fontSize: fsMap[d.size || 'medium'], textDecoration: 'none', background: outline ? 'transparent' : primary, color: outline ? primary : readableOn('#ffffff', primary, '#1a1a2e'), border: `2px solid ${primary}`, boxShadow: alone }}>{d.text}</a>
             </div>
           </section>
         )
@@ -2071,7 +2213,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
       `}</style>
       <div ref={animRef} style={{ '--icon-color': (entity?.theme?.iconColor || primary) }}>
         {blocks.map((b, i) => {
-          const el = applyBlockStyle(renderBlock(b, blockInverted(b, primary, sec)), b, { primary, secondary: sec })
+          const el = applyBlockStyle(renderBlock(b, blockInverted(b, primary, sec), blocks[i + 1]), b, { primary, secondary: sec })
           return (!el || i === 0) ? el : cloneElement(el, { className: ((el.props.className || '') + ' lbr-reveal').trim() })
         })}
       </div>
@@ -2299,7 +2441,7 @@ function FormBuilderBlock({ token, primary, lang = 'it' }) {
         )}
         {isMultiStep && currentStep < totalSteps - 1 ? (
           <button type="button" onClick={handleNext}
-            style={{ flex: 1, padding: '13px', background: primary || '#1a1a2e', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: 'pointer' }}>
+            style={{ flex: 1, padding: '13px', background: primary || '#1a1a2e', color: readableOn('#ffffff', primary || '#1a1a2e', '#1a1a2e'), border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: 'pointer' }}>
             {tr('next', lang)} →
           </button>
         ) : (
