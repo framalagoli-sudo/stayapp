@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
 import { ricco } from '@/lib/testo-ricco'
 import { rapportoDi, focalValido } from '@/lib/formati-foto'
+import { readableOn } from '@/lib/blockTypes'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import LandingStruttura from './LandingStruttura'
 import CookieBanner from '@/components/CookieBanner'
@@ -573,7 +574,7 @@ function EsploraPage({ property, upcomingEventi = [], activeChip, numeroWa = nul
   }
 
   if (selectedEvento) {
-    return <EventoDetailView evento={selectedEvento} onBack={() => setSelectedEvento(null)} {...sp} />
+    return <EventoDetailView evento={selectedEvento} onBack={() => setSelectedEvento(null)} privacyUrl={property?.slug ? `/s/${property.slug}/privacy` : null} {...sp} />
   }
 
   return (
@@ -735,7 +736,7 @@ function EventiTab({ eventi, onOpen, primary, textColor, subText, isDark, radius
 }
 
 // ─── EventoDetailView — pagina dettaglio evento dentro la PWA (nessun overlay) ──
-function EventoDetailView({ evento, onBack, primary, textColor, subText, isDark, radius, lang = 'it' }) {
+function EventoDetailView({ evento, onBack, privacyUrl = null, primary, textColor, subText, isDark, radius, lang = 'it' }) {
   const [pkgId,      setPkgId]      = useState(evento.packages?.length === 1 ? evento.packages[0].id : '')
   const [seats,      setSeats]      = useState(1)
   const [guestName,  setGuestName]  = useState('')
@@ -744,16 +745,26 @@ function EventoDetailView({ evento, onBack, primary, textColor, subText, isDark,
   const [booking,    setBooking]    = useState(false)
   const [done,       setDone]       = useState(false)
   const [bookErr,    setBookErr]    = useState('')
+  const [notes,      setNotes]      = useState('')
+  const [privacyOk,  setPrivacyOk]  = useState(false)
+  // Il telefono lo pretende chi organizza l'evento, non la piattaforma.
+  const telefonoServe = evento.telefono_obbligatorio === true
 
   async function handleBook() {
     if (!guestName.trim()) { setBookErr('Inserisci il tuo nome'); return }
     if (!guestEmail.trim()) { setBookErr('Inserisci la tua email'); return }
+    if (telefonoServe && !guestPhone.trim()) { setBookErr('Per questo evento serve un numero di telefono'); return }
+    if (!privacyOk) { setBookErr('Serve il consenso al trattamento dei dati.'); return }
     setBooking(true); setBookErr('')
     try {
       await guestFetch(`/api/guest/eventi/${evento.id}/book`, {
         method: 'POST',
-        body: JSON.stringify({ guest_name: guestName, guest_email: guestEmail,
-          guest_phone: guestPhone || null, package_id: pkgId || null, seats }),
+        // ⛔ Mancava `privacy_accettata`: la route lo pretende dal 25/08 e
+          // rispondeva 400 a OGNI prenotazione fatta dall'app del QR, senza che
+          // l'ospite avesse una spunta da mettere. Rotta in silenzio per un mese.
+          body: JSON.stringify({ guest_name: guestName, guest_email: guestEmail,
+            guest_phone: guestPhone || null, package_id: pkgId || null, seats,
+            notes: notes.trim() || null, privacy_accettata: privacyOk }),
       })
       setDone(true)
     } catch (e) { setBookErr(e.message) }
@@ -825,14 +836,26 @@ function EventoDetailView({ evento, onBack, primary, textColor, subText, isDark,
               <div style={{ fontWeight: 700, fontSize: 13, color: textColor, marginBottom: 10 }}>{tr('your_data', lang)}</div>
               <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder={tr('name_full_req', lang)} style={inp} />
               <input value={guestEmail} onChange={e => setGuestEmail(e.target.value)} placeholder={tr('email_req', lang)} type="email" style={inp} />
-              <input value={guestPhone} onChange={e => setGuestPhone(e.target.value)} placeholder={tr('phone_opt', lang)} type="tel" style={inp} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+              <input value={guestPhone} onChange={e => setGuestPhone(e.target.value)} placeholder={tr(telefonoServe ? 'phone_req' : 'phone_opt', lang)} type="tel" style={inp} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                 <label style={{ fontSize: 13, color: subText }}>{tr('seats_label', lang)}</label>
                 <input type="number" min="1" value={seats} onChange={e => setSeats(parseInt(e.target.value) || 1)} style={{ ...inp, width: 70, textAlign: 'center', marginBottom: 0 }} />
               </div>
+              <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} maxLength={500}
+                placeholder={tr('notes_opt', lang)} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }} />
+              {/* Senza questa spunta la prenotazione NON parte: i dati di una
+                  persona non si raccolgono senza dirle perché. */}
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 9, margin: '4px 0 14px', cursor: 'pointer', fontSize: 12.5, color: subText, lineHeight: 1.5 }}>
+                <input type="checkbox" checked={privacyOk} onChange={e => setPrivacyOk(e.target.checked)}
+                  style={{ marginTop: 2, accentColor: primary, flexShrink: 0 }} />
+                <span>
+                  {tr('consent_privacy', lang)}{' '}
+                  {privacyUrl && <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: primary, fontWeight: 600 }}>{tr('privacy_policy', lang)}</a>}
+                </span>
+              </label>
               {bookErr && <p style={{ color: '#e53e3e', fontSize: 13, marginBottom: 10 }}>{bookErr}</p>}
-              <button onClick={handleBook} disabled={booking}
-                style={{ width: '100%', padding: 14, background: primary, color: '#fff', border: 'none', borderRadius: radius || 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+              <button onClick={handleBook} disabled={booking || !privacyOk}
+                style={{ width: '100%', padding: 14, background: privacyOk ? primary : '#bbb', color: readableOn('#ffffff', privacyOk ? primary : '#bbb', '#1a1a2e'), border: 'none', borderRadius: radius || 12, fontSize: 15, fontWeight: 700, cursor: privacyOk ? 'pointer' : 'not-allowed' }}>
                 {booking ? tr('sending', lang) : tr('nav_book', lang)}
               </button>
             </>

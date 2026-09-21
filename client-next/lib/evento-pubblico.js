@@ -18,7 +18,7 @@ import { trovaEvento } from './evento-indirizzo'
 // un `select('*')` una colonna aggiunta domani verrebbe pubblicata da sola.
 export const CAMPI_EVENTO = [
   'id', 'slug', 'title', 'description', 'cover_url', 'formato_cover', 'cover_focal',
-  'cta_label', 'cta_condizioni', 'mostra_prezzo', 'mostra_prezzo_pagina', 'prezzo_testo', 'prezzo_modo',
+  'cta_label', 'cta_condizioni', 'mostra_prezzo', 'mostra_prezzo_pagina', 'prezzo_testo', 'prezzo_modo', 'telefono_obbligatorio',
   'date_start', 'date_end', 'location', 'price', 'seats_total', 'seats_booked', 'packages',
   // ⚠️ Senza queste due la pagina non saprebbe che le prenotazioni sono chiuse:
   // si salverebbe nel pannello e non si vedrebbe sul sito — è già successo.

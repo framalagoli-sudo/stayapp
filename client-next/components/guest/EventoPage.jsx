@@ -66,6 +66,7 @@ export default function EventoPage({ iniziale = null }) {
   const [guestEmail, setGuestEmail] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
   const [privacyOk,  setPrivacyOk]  = useState(false)
+  const [notes,      setNotes]      = useState('')
   const [booking,    setBooking]    = useState(false)
   const [done,       setDone]       = useState(false)
   const [emailSent,  setEmailSent]  = useState(false)
@@ -111,6 +112,8 @@ export default function EventoPage({ iniziale = null }) {
   async function handleBook() {
     if (!guestName.trim()) { setBookErr('Inserisci il tuo nome'); return }
     if (!guestEmail.trim()) { setBookErr('Inserisci la tua email'); return }
+    // Lo stesso controllo c'è nella route: qui si evita solo il giro inutile.
+    if (telefonoServe && !guestPhone.trim()) { setBookErr('Per questo evento serve un numero di telefono'); return }
     setBooking(true); setBookErr('')
     try {
       // ⚠️ Si prenota sull'**id** dell'evento, non su quello che c'è nell'URL:
@@ -118,7 +121,7 @@ export default function EventoPage({ iniziale = null }) {
       const res = await guestFetch(`/api/guest/eventi/${evento.id}/book`, {
         method: 'POST',
         body: JSON.stringify({ privacy_accettata: privacyOk, guest_name: guestName, guest_email: guestEmail,
-          guest_phone: guestPhone || null, package_id: pkgId || null, seats }),
+          guest_phone: guestPhone || null, package_id: pkgId || null, seats, notes: notes.trim() || null }),
       })
       // ⚠️ Se c'è un acconto si va **subito** alla cassa: chi ha appena
       // prenotato è qui adesso. Il posto è già suo — se non paga, resta da
@@ -152,6 +155,9 @@ export default function EventoPage({ iniziale = null }) {
     </div>
   )
 
+  // Il telefono è facoltativo, a meno che chi organizza non l'abbia
+  // richiesto: per una cena bisogna poter richiamare, per un evento online no.
+  const telefonoServe = evento.telefono_obbligatorio === true
   const selectedPkg = (evento.packages || []).find(p => p.id === pkgId)
   const price = selectedPkg ? selectedPkg.price : (evento.price || 0)
 
@@ -391,11 +397,17 @@ export default function EventoPage({ iniziale = null }) {
               <div style={{ fontWeight: 600, fontSize: 14, color: '#333', marginBottom: 14 }}>I tuoi dati</div>
               <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Nome e cognome *" style={inp} />
               <input value={guestEmail} onChange={e => setGuestEmail(e.target.value)} placeholder="Email *" type="email" style={inp} />
-              <input value={guestPhone} onChange={e => setGuestPhone(e.target.value)} placeholder="Telefono (opzionale)" type="tel" style={inp} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+              <input value={guestPhone} onChange={e => setGuestPhone(e.target.value)} placeholder={telefonoServe ? 'Telefono *' : 'Telefono (opzionale)'} type="tel" style={inp} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
                 <label style={{ fontSize: 14, color: '#555' }}>Posti:</label>
                 <input type="number" min="1" value={seats} onChange={e => setSeats(parseInt(e.target.value) || 1)} style={{ ...inp, width: 80, textAlign: 'center', marginBottom: 0 }} />
               </div>
+              {/* Il posto dove salvarle c'era già (colonna `notes`, e l'admin le
+                  mostra), mancava solo il campo: chi prenota non aveva modo di
+                  dire «sono celiaco» o «arrivo tardi». */}
+              <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} maxLength={500}
+                placeholder="Note o richieste particolari (facoltativo)"
+                style={{ ...inp, resize: 'vertical', fontFamily: 'inherit', marginBottom: 24 }} />
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 18, cursor: 'pointer', fontSize: 13, color: '#555', lineHeight: 1.5 }}>
                 <input type="checkbox" checked={privacyOk} onChange={e => setPrivacyOk(e.target.checked)} required
                   style={{ marginTop: 2, accentColor: '#00b5b5', flexShrink: 0 }} />

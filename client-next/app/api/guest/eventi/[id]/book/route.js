@@ -59,6 +59,12 @@ export async function POST(request, props) {
       .select('*, aziende(fuso_orario)').eq('id', params.id).eq('published', true).eq('active', true).single()
     if (evErr || !evento) return Response.json({ error: 'Evento non trovato' }, { status: 404 })
 
+    // Il telefono è obbligatorio solo se lo ha chiesto chi organizza. Il
+    // controllo sta QUI e non solo nel modulo: una validazione nel browser si
+    // toglie con due clic, e chi organizza conta di poter richiamare.
+    if (evento.telefono_obbligatorio === true && !guest_phone?.trim())
+      return Response.json({ error: 'Per questo evento serve un numero di telefono.' }, { status: 400 })
+
     // ⚠️ Il muro sta qui, non nel browser: nascondere il modulo impedisce di
     // sbagliare a chi guarda la pagina, non a chi manda una richiesta a mano.
     if (eventoConcluso(evento)) {

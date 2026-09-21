@@ -44,7 +44,7 @@ export default function EventoEditPage() {
     notify_owner_on_booking: true, send_guest_confirmation: true,
     cta_label: '', cta_condizioni: '',
     mostra_prezzo: true, mostra_prezzo_pagina: true, prezzo_testo: '', prezzo_modo: '', acconto_percentuale: 0,
-    prenotazioni_chiuse: false, prenotazioni_chiuse_testo: '',
+    prenotazioni_chiuse: false, prenotazioni_chiuse_testo: '', telefono_obbligatorio: false,
   })
   const [cover, setCover] = useState(null)       // URL attuale
   const [formato, setFormato] = useState(FORMATO_PREDEFINITO)
@@ -84,6 +84,7 @@ export default function EventoEditPage() {
           prezzo_testo:    ev.prezzo_testo || '',
           prezzo_modo:     ev.prezzo_modo || '',
           prenotazioni_chiuse: ev.prenotazioni_chiuse ?? false,
+          telefono_obbligatorio: ev.telefono_obbligatorio ?? false,
           prenotazioni_chiuse_testo: ev.prenotazioni_chiuse_testo || '',
           notify_owner_on_booking: ev.notify_owner_on_booking ?? true,
           send_guest_confirmation: ev.send_guest_confirmation ?? true,
@@ -517,6 +518,14 @@ export default function EventoEditPage() {
         <div style={cardStyle}>
           <h3 style={sectionTitle}>Prenotazioni</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* Nome, email e consenso sono sempre obbligatori: senza, la
+                prenotazione non esiste e i dati non si possono nemmeno
+                raccogliere. Il telefono invece dipende dall'evento. */}
+            <Toggle
+              label="Chiedi il telefono per forza"
+              hint="Nel modulo il telefono diventa obbligatorio. Utile quando devi poter richiamare (una cena, un posto limitato); inutile per un evento online."
+              value={form.telefono_obbligatorio}
+              onChange={v => set('telefono_obbligatorio', v)} />
             <Toggle
               label="Non accetto piu prenotazioni"
               hint="La pagina dell'evento resta online e visibile: sparisce solo il modulo, e al suo posto compare il messaggio qui sotto."
