@@ -42,7 +42,11 @@ export async function POST(request, props) {
       return Response.json({ error: 'Per entrare in lista serve il consenso al trattamento dei dati.' }, { status: 400 })
 
     const { data: evento } = await supabaseAdmin.from('eventi')
-      .select('id, title, date_start, date_end, location, seats_total, seats_booked, lista_attesa, prenotazioni_chiuse, entity_id, azienda_id, aziende(fuso_orario)')
+      // ⚠️ `posti_riservati` serve QUI: senza, la lista d'attesa crede che i
+      // posti tenuti per il telefono siano ancora vendibili e risponde «ci
+      // sono ancora posti» a chi il sito ha appena mandato via. Trovato
+      // provando, non leggendo.
+      .select('id, title, date_start, date_end, location, seats_total, seats_booked, posti_riservati, lista_attesa, prenotazioni_chiuse, entity_id, azienda_id, aziende(fuso_orario)')
       .eq('id', params.id).eq('published', true).eq('active', true).maybeSingle()
     if (!evento) return Response.json({ error: 'Evento non trovato' }, { status: 404 })
     // A evento finito non si libera più nessun posto: la lista resterebbe
