@@ -27,3 +27,13 @@ metadata:
 **Da costruire perché il testo sia vero**: il webhook deve gestire **`smb_message_echoes`** (i messaggi scritti dall'app devono comparire nel pannello), **`account_update`** (obbligatorio per l'Embedded Signup) e **`message_template_status_update`** (approvazione dei modelli).
 
 Vedi [[project_whatsapp_fase0]], [[reference_meta_app_setup]], [[reference_verifica_la_sequenza_del_fornitore]].
+
+## ✅ Fase 0 fatta e live (21/09/2026)
+
+Il webhook ora capisce tre eventi che prima cadevano nel vuoto:
+- **`account_update`** — obbligatorio per l'Embedded Signup, ed è l'unico modo per sapere che un account **si è staccato**. Gli eventi cattivi (`ACCOUNT_DELETED`, `ACCOUNT_RESTRICTION`, `ACCOUNT_VIOLATION`, `DISABLED_UPDATE`, `PARTNER_REMOVED`, `PARTNER_APP_UNINSTALLED`, **`ACCOUNT_OFFBOARDED`** ← il caso della coesistenza) mettono il numero in `sospeso` e mandano un avviso; `ACCOUNT_RECONNECTED` lo riattiva; un evento informativo **non tocca lo stato**.
+- **`message_template_status_update`** — senza, il cliente creava un modello e restava a guardare il vuoto.
+- **`smb_message_echoes`** — accettati e basta: **manca la casella delle conversazioni** nel pannello, e salvarli senza un posto dove leggerli sarebbe accumulare dati inutili. ⚠️ Finché non c'è, dalla bozza del testo va tolta la riga «i messaggi scritti dall'app li ritrovi anche qui».
+- API da **v21.0 a v25.0**: la v21 scade il 21/01/2027 e una versione scaduta **non dà errore** — Meta fa scivolare la chiamata su un'altra versione e il comportamento cambia in silenzio.
+
+Provato in locale con firma HMAC vera e righe di prova poi cancellate: firma falsa → 401, token di verifica sbagliato → 403, e i sei casi tutti corretti. In produzione il webhook risponde **403** finché non c'è `WHATSAPP_WEBHOOK_TOKEN`: è coerente, ma va messo **prima** di registrare l'URL su Meta.
