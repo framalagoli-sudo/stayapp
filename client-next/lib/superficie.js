@@ -33,7 +33,10 @@ export function variabiliSuperficie(scuro) {
       '--txt': '#f2f3f7',          // testo forte
       '--txt-medio': '#cfd2dc',
       '--txt-tenue': '#9aa0ad',
-      '--txt-fioco': '#7b8190',
+      // Misurato il 21/09 su una scheda di metodotvb: `#7b8190` su una
+      // superficie sollevata dava 4,22, appena sotto il minimo leggibile.
+      // Le etichette piccole sono proprio quelle che non si possono tirare.
+      '--txt-fioco': '#909aa8',
       '--bordo': 'rgba(255,255,255,0.14)',
       '--bordo-tenue': 'rgba(255,255,255,0.08)',
       '--ombra': '0 2px 8px rgba(0,0,0,0.5)',

@@ -87,6 +87,14 @@ const sospetti = await page.evaluate(() => {
     // sopra i 24px (o 18,66px in grassetto), 4,5 per tutto il resto.
     const px = parseFloat(st.fontSize) || 16
     const grande = px >= 24 || (px >= 18.66 && Number(st.fontWeight) >= 700)
+    // Eccezione dichiarata: il pulsante di WhatsApp è bianco sul verde di
+    // WhatsApp. È la coppia ufficiale del marchio, ed è così che la gente lo
+    // riconosce: cambiarla per guadagnare contrasto renderebbe il pulsante meno
+    // riconoscibile. Scritta qui perché un allarme che suona sempre si smette
+    // di leggere — e questo suonerebbe su ogni sito che ha quel pulsante.
+    const verdeWhatsapp = /rgb\(37, 211, 102\)|rgb\(18, 140, 126\)/.test(sfondo)
+    if (verdeWhatsapp) return
+
     if (r < (grande ? 3 : 4.5)) {
       out.push(`«${el.innerText.replace(/\s+/g, ' ').slice(0, 42)}» — contrasto ${r.toFixed(2)} (serve ${grande ? '3,0' : '4,5'}): ${st.color} su ${sfondo}`)
     }
