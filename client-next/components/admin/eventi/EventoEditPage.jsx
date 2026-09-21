@@ -36,7 +36,7 @@ export default function EventoEditPage() {
 
   const [form, setForm] = useState({
     title: '', slug: '', description: '', date_start: '', date_end: '', location: '',
-    price: '', seats_total: '', active: true, published: false,
+    price: '', seats_total: '', posti_riservati: '', active: true, published: false,
     entity_tipo: '', entity_id: '', azienda_id: '', packages: [],
     // ⚠️ Il default della colonna (migration 112) NON basta: qui il valore
     // parte sempre esplicito, quindi un evento creato dal pannello nascerebbe
@@ -71,6 +71,7 @@ export default function EventoEditPage() {
           location:    ev.location || '',
           price:       ev.price ?? '',
           seats_total: ev.seats_total ?? '',
+          posti_riservati: ev.posti_riservati ?? '',
           active:      ev.active ?? true,
           published:   ev.published ?? false,
           entity_tipo: ev.entity_tipo || '',
@@ -146,6 +147,7 @@ export default function EventoEditPage() {
         azienda_id:  resolvedAziendaId,
         price:       form.price       === '' ? 0    : parseFloat(form.price),
         seats_total: form.seats_total === '' ? null : parseInt(form.seats_total),
+        posti_riservati: form.posti_riservati === '' ? 0 : Math.max(0, parseInt(form.posti_riservati) || 0),
         date_start:  daCampoDataOra(form.date_start, fuso)?.toISOString() || null,
         date_end:    daCampoDataOra(form.date_end, fuso)?.toISOString()   || null,
         entity_tipo: safeEntityId ? (form.entity_tipo || null) : null,
@@ -453,7 +455,24 @@ export default function EventoEditPage() {
             <div style={fieldWrap}>
               <label style={lbl}>Posti disponibili</label>
               <input type="number" min="1" value={form.seats_total} onChange={e => set('seats_total', e.target.value)} style={inp} placeholder="Vuoto = illimitati" />
+              <p style={{ margin: '6px 0 0', fontSize: 12, color: '#999', lineHeight: 1.5 }}>Quanti ne tiene il posto in tutto.</p>
             </div>
+            {/* La quota per il telefono. Nasce da un caso vero: un evento da 60
+                posti sold out, e nel sistema ne risultavano 29 — il resto era
+                stato venduto al telefono senza segnarlo. Chi è in servizio non
+                apre il gestionale, quindi invece di pretenderlo gli si riserva
+                una quota e il sito non può più sovravvendere. */}
+            {form.seats_total !== '' && Number(form.seats_total) > 0 && (
+              <div style={fieldWrap}>
+                <label style={lbl}>Di cui tenuti per il telefono</label>
+                <input type="number" min="0" max={form.seats_total} value={form.posti_riservati}
+                  onChange={e => set('posti_riservati', e.target.value)} style={inp} placeholder="0" />
+                <p style={{ margin: '6px 0 0', fontSize: 12, color: '#999', lineHeight: 1.5 }}>
+                  Il sito ne vende <strong>{Math.max(0, (parseInt(form.seats_total) || 0) - (parseInt(form.posti_riservati) || 0))}</strong>{' '}
+                  e poi dice «esaurito». Gli altri restano a te per telefono e sala — e se li segni qui dentro, puoi usarli comunque.
+                </p>
+              </div>
+            )}
             {/* ⚠️ Un numero, non tre scelte: 0 = si paga all'ingresso,
                 100 = tutto subito, 30 = acconto. Stessa regola delle risorse:
                 il numero copre anche i casi che non abbiamo previsto. */}

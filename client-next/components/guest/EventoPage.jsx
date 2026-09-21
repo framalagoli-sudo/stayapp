@@ -9,6 +9,7 @@ import SiteNav from './SiteNav'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Calendar, MapPin, Users, ArrowLeft, Check } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
+import { postiEvento } from '@/lib/posti-evento'
 
 export default function EventoPage({ iniziale = null }) {
   const { id } = useParams()
@@ -164,7 +165,8 @@ export default function EventoPage({ iniziale = null }) {
   // Non si può più prenotare per due motivi diversi: perché l'ha deciso il
   // titolare, o perché i posti sono finiti. Il modulo si chiude in entrambi i
   // casi, ma il messaggio non è lo stesso — e la differenza la sente chi legge.
-  const rimasti = evento.seats_total ? evento.seats_total - (evento.seats_booked || 0) : null
+  // Al netto dei posti tenuti per il telefono: il sito vende solo i suoi.
+  const rimasti = postiEvento(evento).liberiOnline
   const chiuso = !!evento.prenotazioni_chiuse || (rimasti !== null && rimasti <= 0)
   // Un evento finito resta visibile — il sito lo mostra fra i passati, e i
   // vecchi link continuano a portare qui — ma non si prenota più.

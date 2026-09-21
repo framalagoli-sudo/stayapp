@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { postiEvento } from '@/lib/posti-evento'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { sendEmail } from '@/lib/send-email'
 import { guestEmailTemplate } from '@/lib/email-template'
@@ -53,7 +54,7 @@ export async function POST(request, props) {
     // persona resterebbe ad aspettare una chiamata mentre poteva prenotare e
     // basta — ed è il genere di cosa che fa sembrare rotto un sistema che
     // funziona.
-    const pieno = evento.seats_total && (evento.seats_booked || 0) >= evento.seats_total
+    const pieno = postiEvento(evento).liberiOnline === 0
     if (!evento.prenotazioni_chiuse && !pieno) {
       return Response.json({ error: 'Ci sono ancora posti: puoi prenotare direttamente.', posti_liberi: true }, { status: 400 })
     }

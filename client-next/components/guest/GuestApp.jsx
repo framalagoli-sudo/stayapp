@@ -4,6 +4,7 @@ import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
 import { ricco } from '@/lib/testo-ricco'
 import { rapportoDi, focalValido } from '@/lib/formati-foto'
 import { readableOn } from '@/lib/blockTypes'
+import { postiEvento } from '@/lib/posti-evento'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import LandingStruttura from './LandingStruttura'
 import CookieBanner from '@/components/CookieBanner'
@@ -721,7 +722,7 @@ function EventiTab({ eventi, onOpen, primary, textColor, subText, isDark, radius
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}><Calendar size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {fmtDate(ev)}</span>
               {ev.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}><MapPin size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {ev.location}</span>}
-              {ev.seats_total && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}><Users size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {ev.seats_total - (ev.seats_booked || 0)} {lang === 'en' ? 'seats' : 'posti'}</span>}
+              {ev.seats_total && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: subText }}><Users size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {postiEvento(ev).liberiOnline} {lang === 'en' ? 'seats' : 'posti'}</span>}
             </div>
             {ev.description && <p style={{ margin: '0 0 10px', fontSize: 13, color: subText, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} {...ricco(ev.description)} />}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -798,7 +799,7 @@ function EventoDetailView({ evento, onBack, privacyUrl = null, primary, textColo
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><Calendar size={13} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {fmtDate(evento)}</span>
           {evento.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><MapPin size={13} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {evento.location}</span>}
-          {evento.seats_total && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><Users size={13} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {evento.seats_total - (evento.seats_booked || 0)} posti</span>}
+          {evento.seats_total && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: subText }}><Users size={13} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /> {postiEvento(evento).liberiOnline} posti</span>}
         </div>
 
         {evento.description && <p style={{ margin: '0 0 20px', fontSize: 14, color: subText, lineHeight: 1.6, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }} {...ricco(evento.description)} />}

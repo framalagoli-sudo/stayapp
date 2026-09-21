@@ -12,6 +12,7 @@ import { triggerAutomazione } from '@/lib/guest-utils'
 import { registraContatto, tagEvento } from '@/lib/crm'
 import { eventoConcluso } from '@/lib/evento-concluso'
 import { oraLocale } from '@/lib/fuso'
+import { postiEvento, SOGLIA_AVVISO } from '@/lib/posti-evento'
 
 const ENTITY_TBL = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
 
@@ -77,7 +78,10 @@ export async function POST(request, props) {
     }
 
     const reqSeats = parseInt(seats) || 1
-    if (evento.seats_total && (evento.seats_booked + reqSeats) > evento.seats_total)
+    // ⚠️ Il limite del pubblico NON è la capienza: è la capienza meno i posti
+    // riservati a chi prenota al telefono.
+    const posti = postiEvento(evento)
+    if (!posti.illimitato && reqSeats > posti.liberiOnline)
       return Response.json({ error: 'Posti esauriti' }, { status: 400 })
 
     let price = evento.price || 0
@@ -110,13 +114,15 @@ export async function POST(request, props) {
     // Il controllo qui sopra legge i posti prima di inserire: due richieste
     // simultanee lo superano entrambe. Qui si verifica l'ordine di arrivo e chi
     // è in eccesso si ritira — prima di scrivere email a chiunque.
-    if (!(await confermaPostiEvento(params.id, data.id))) {
+    if (!(await confermaPostiEvento(params.id, data.id, posti.illimitato ? null : posti.limiteOnline))) {
       await recomputeEventSeats(params.id)
       return Response.json({ error: 'Posti non disponibili' }, { status: 400 })
     }
 
     // Le prenotazioni in attesa riservano subito i posti (anti-overbooking).
-    await recomputeEventSeats(params.id)
+    // Il totale serve anche a capire se è questa prenotazione ad aver superato
+    // la soglia d'avviso: senza, bisognerebbe ricordarsi se la mail è già partita.
+    const postiDopo = await recomputeEventSeats(params.id)
 
     // ── Se questo evento vuole un pagamento, si crea la cassa ────────────────
     //
@@ -195,6 +201,44 @@ export async function POST(request, props) {
           appUrl: (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com',
         }),
       }).catch(() => {})
+
+      // ── «Da adesso smetti di dire sì al telefono» ────────────────────────
+      //
+      // La mail per ogni prenotazione, dopo la terza, si ignora. Quella che
+      // serve davvero è una sola: il momento in cui i posti stanno finendo.
+      // Si manda solo quando la soglia viene ATTRAVERSATA da questa
+      // prenotazione — così non serve ricordare se è già partita, e non ne
+      // arriva una per ogni prenotazione successiva.
+      const primaDiQuesta = { ...evento, seats_booked: Math.max(0, (postiDopo ?? 0) - reqSeats) }
+      const liberiPrima = postiEvento(primaDiQuesta).liberiOnline
+      const liberiOra = postiEvento({ ...evento, seats_booked: postiDopo ?? 0 }).liberiOnline
+      const esaurito = liberiPrima > 0 && liberiOra === 0
+      const inRiserva = liberiPrima > SOGLIA_AVVISO && liberiOra <= SOGLIA_AVVISO
+      if (!posti.illimitato && (esaurito || inRiserva)) {
+        sendEmail({
+          _ctx: 'evento-soglia', fromName: bizName, from, to: ownerEmail,
+          subject: esaurito
+            ? `[${bizName}] Esaurito online: ${evento.title}`
+            : `[${bizName}] Restano ${liberiOra} posti: ${evento.title}`,
+          html: emailTemplate({
+            title: esaurito ? `${evento.title} — esaurito online` : `${evento.title} — restano ${liberiOra} posti`,
+            entityName: bizName,
+            // ⚠️ `emailTemplate` non ha un campo «intro»: il testo va in
+            // `bodyHtml`, che il modello stampa sotto la tabella.
+            bodyHtml: `<p style="margin:20px 0 0;font-size:14px;color:#444;line-height:1.7">${esaurito
+              ? 'Il sito non accetta più prenotazioni per questo evento. I posti che tieni per il telefono restano tuoi: sono fuori dal conteggio online.'
+              : 'Sono gli ultimi posti che il sito può vendere. Da adesso, se prendi prenotazioni al telefono, segnale nel pannello — o rischi di accettarne più di quanti ne hai.'}</p>`,
+            rows: [
+              { label: 'Posti del locale', value: String(posti.capienza) },
+              posti.riservati ? { label: 'Tenuti per il telefono', value: String(posti.riservati) } : null,
+              { label: 'Prenotati finora', value: String(postiDopo ?? 0) },
+              { label: 'Ancora vendibili online', value: String(liberiOra) },
+              dateStr ? { label: 'Data evento', value: dateStr } : null,
+            ].filter(Boolean),
+            appUrl: (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com',
+          }),
+        }).catch(() => {})
+      }
     }
 
     // 2) La conferma all'ospite parte SOLO se non c'è nulla da pagare.

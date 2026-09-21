@@ -5,6 +5,7 @@ import { apiFetch } from '../../../lib/api'
 import { Users, Calendar, Mail, Phone, Package, ArrowLeft, Check, X, Clock, Plus, PhoneCall, Send } from 'lucide-react'
 import { useAzienda } from '../../../context/AziendaContext'
 import { oraLocale } from '../../../lib/fuso'
+import { postiEvento } from '@/lib/posti-evento'
 
 // Quando è arrivata una prenotazione (`created_at`) si legge nell'ora di chi
 // guarda — è un fatto del pannello. L'ora dell'evento no: quella è del posto,
@@ -331,7 +332,11 @@ export default function EventoPrenotazioniPage() {
   const presi    = vive.reduce((n, b) => n + (b.seats || 1), 0)
   const pending  = bookings.filter(b => b.status === 'pending').reduce((n, b) => n + (b.seats || 1), 0)
   const revenue  = vive.reduce((n, b) => n + (b.total_amount || 0), 0)
-  const liberi   = evento.seats_total ? Math.max(0, evento.seats_total - presi) : null
+  // Due numeri diversi, e vanno detti tutti e due: quanti posti restano in
+  // sala, e quanti di questi il sito può ancora vendere (gli altri sono
+  // tenuti per chi chiama).
+  const conti    = postiEvento({ ...evento, seats_booked: presi })
+  const liberi   = conti.illimitato ? null : conti.liberi
 
   return (
     <div style={{ maxWidth: 860 }}>
@@ -423,7 +428,10 @@ export default function EventoPrenotazioniPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
         {[
           { label: 'Posti presi', value: evento.seats_total ? `${presi} / ${evento.seats_total}` : presi,
-            sub: liberi === null ? 'nessun limite' : liberi === 0 ? 'tutto esaurito' : `ancora ${liberi} liberi`,
+            sub: liberi === null ? 'nessun limite'
+              : liberi === 0 ? 'tutto esaurito'
+              : conti.riservati ? `${liberi} liberi · ${conti.liberiOnline} vendibili online`
+              : `ancora ${liberi} liberi`,
             icon: Check, color: '#155724', bg: '#d4edda' },
           // ⚠️ Diceva «Persone» e contava le prenotazioni: nove righe per
           // quindici posti. L'etichetta e il numero si contraddicevano, e chi

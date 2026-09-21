@@ -16,10 +16,16 @@ import { siSovrappongono, fineOccupazione } from '@/lib/booking-giornaliero'
 const primaDi = (a, b) => a.created_at < b.created_at || (a.created_at === b.created_at && a.id < b.id)
 
 // Restituisce true se la prenotazione può restare, false se è stata ritirata.
-export async function confermaPostiEvento(eventId, bookingId) {
+// `limite` = quanti posti può occupare QUESTO canale. Il pubblico ha il suo
+// (la capienza meno i posti riservati al telefono); chi segna una prenotazione
+// dal pannello usa la capienza piena, perché i riservati sono suoi. Senza
+// questo parametro la corsa fra due richieste simultanee verrebbe arbitrata
+// sulla capienza sbagliata — e il sito venderebbe i posti riservati.
+export async function confermaPostiEvento(eventId, bookingId, limite = null) {
   try {
     const { data: evento } = await supabaseAdmin.from('eventi').select('seats_total').eq('id', eventId).single()
-    if (!evento?.seats_total) return true // capienza non impostata = illimitata
+    const tetto = limite ?? evento?.seats_total
+    if (!tetto) return true // capienza non impostata = illimitata
 
     const { data: mia } = await supabaseAdmin.from('event_bookings')
       .select('id, seats, created_at').eq('id', bookingId).single()
@@ -32,7 +38,7 @@ export async function confermaPostiEvento(eventId, bookingId) {
       .filter(b => b.status !== 'cancelled' && primaDi(b, mia))
       .reduce((s, b) => s + (b.seats || 1), 0)
 
-    if (occupatiPrima + (mia.seats || 1) > evento.seats_total) {
+    if (occupatiPrima + (mia.seats || 1) > tetto) {
       await supabaseAdmin.from('event_bookings').delete().eq('id', bookingId)
       return false
     }
