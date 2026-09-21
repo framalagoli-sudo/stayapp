@@ -33,7 +33,7 @@ function makeTemplateBlocks(templateId) {
     case 'chi_siamo': return [
       { id: id(), type: 'about',      data: { title: 'Chi siamo', text: '' } },
       { id: id(), type: 'foto_testo', data: { title: '', text: '', image_url: '', inverti: false, button_label: '', button_url: '' } },
-      { id: id(), type: 'team',       data: { titolo: 'Il nostro team', items: [] } },
+      { id: id(), type: 'team',       data: { titolo: 'Il nostro team', formato: 'quadrato', variant: 'ritratti', items: [] } },
     ]
     case 'servizi': return [
       { id: id(), type: 'about',      data: { title: 'I nostri servizi', text: '' } },

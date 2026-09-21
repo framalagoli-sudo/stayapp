@@ -73,7 +73,9 @@ export const BLOCK_DEFAULTS = {
   // ⚠️ I blocchi NUOVI nascono quadrati; quelli già online non hanno la chiave
   // e restano tondi, perché si sceglie la faccia del proprio sito, non gliela
   // si cambia sotto. Il cliente può passare all'altra forma quando vuole.
-  team:         { titolo: '', formato: 'quadrato', items: [] },
+  // Stessa ragione per la variante: i blocchi nuovi nascono «ritratti» (foto
+  // grandi in colonna), quelli online non hanno la chiave e restano a griglia.
+  team:         { titolo: '', formato: 'quadrato', variant: 'ritratti', items: [] },
   steps:        { titolo: '', items: [] },
   highlights:   { titolo: '', items: [] },
   stats:        { titolo: '', items: [] },

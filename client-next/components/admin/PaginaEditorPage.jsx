@@ -767,9 +767,26 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
     )
     case 'team': {
       const forma = data.formato || FORMA_SCHEDA_PREDEFINITA
+      // ⚠️ `griglia` è il blocco di sempre: resta il predefinito, così nessun
+      // sito già pubblicato cambia aspetto da solo.
+      const variante = data.variant === 'ritratti' || data.variant === 'editoriale' ? data.variant : 'griglia'
+      const tondaVale = variante === 'griglia'
       return (
       <div>
         <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>Variante</label>
+          <select value={variante} onChange={e => upd('variant', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+            <option value="griglia">Griglia — foto piccole, testo centrato</option>
+            <option value="ritratti">Ritratti — foto grandi in colonna, testo a sinistra</option>
+            <option value="editoriale">Editoriale — una persona per riga, bio estesa</option>
+          </select>
+          <div style={{ fontSize: 11.5, color: '#888', marginTop: 5, lineHeight: 1.5 }}>
+            {variante === 'griglia' && 'Tante persone in fila, adatta a un gruppo numeroso con poche righe di bio.'}
+            {variante === 'ritratti' && 'Foto grandi e nome in evidenza: poche persone, presentate bene.'}
+            {variante === 'editoriale' && 'Ritratto grande a lato che si alterna: la scelta giusta quando ogni bio è un paragrafo.'}
+          </div>
+        </div>
         {/* ⛔ La foto si poteva solo incollare come indirizzo: per mettere la
             faccia di una persona bisognava caricarla altrove e copiare il link.
             `ItemListEditor` sapeva già caricare (`type: 'image'`), mancava
@@ -785,13 +802,15 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
             valore={forma} formati={FORME_SCHEDA}
             onChange={v => upd('formato', v)}
             titolo="Forma delle schede"
-            aiuto="Come si vedono le foto delle persone sul sito. Il ritaglio si decide poi foto per foto, col punto da tenere visibile."
+            aiuto={tondaVale
+              ? 'Come si vedono le foto delle persone sul sito. Il ritaglio si decide poi foto per foto, col punto da tenere visibile.'
+              : 'Come si vedono le foto delle persone sul sito. In questa variante il cerchio non si usa: le foto restano verticali.'}
           />
         </div>
         <ItemListEditor items={data.items} onChange={v => upd('items', v)} entityId={entityId} entityTipo={entityTipo}
           newItem={{ photo_url: '', photo_focal: '', nome: '', ruolo: '', bio: '' }}
           fields={[
-            { key: 'photo_url', label: 'Foto', type: 'image', focalKey: 'photo_focal', anteprima: formaScheda(forma).rapporto, anteprimaTonda: forma === 'cerchio' },
+            { key: 'photo_url', label: 'Foto', type: 'image', focalKey: 'photo_focal', anteprima: tondaVale || forma !== 'cerchio' ? formaScheda(forma).rapporto : '4 / 5', anteprimaTonda: tondaVale && forma === 'cerchio' },
             { key: 'nome', label: 'Nome' },
             { key: 'ruolo', label: 'Ruolo' },
             { key: 'bio', label: 'Breve bio', type: 'textarea', rows: 2 },

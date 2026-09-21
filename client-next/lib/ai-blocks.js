@@ -18,7 +18,7 @@ export const AI_BLOCKS_SCHEMA = `BLOCCHI DISPONIBILI — usa SOLO questi tipi (r
 • faq: { titolo, items:[{question,answer}] }
 • testimonianze: { titolo, items:[{author,role,text,stars(5)}] }
 • pacchetti: { titolo, items:[{name,tagline,price,price_label,badge}] }
-• team: { titolo, items:[{nome,ruolo,bio}] }
+• team: { titolo, items:[{nome,ruolo,bio}], variant("ritratti"|"editoriale") }  ← "ritratti" di norma; "editoriale" se ogni bio è un paragrafo lungo
 • cta_banner: { title, subtitle, button_text, button_url(""), variant("center"|"split") }
 • countdown: { titolo, sottotitolo, target("YYYY-MM-DDTHH:MM") }  ← solo eventi con una data
 • menu: { titolo }  ← SOLO ristoranti

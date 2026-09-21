@@ -1254,6 +1254,67 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         // CSS — passa da `formaScheda`, che cerca in un catalogo chiuso.
         const forma = formaScheda(d.formato)
         const tonda = forma.chiave === 'cerchio'
+        // ⚠️ Predefinita `griglia` = esattamente il blocco di prima: i siti
+        // online non cambiano faccia. Le altre due si scelgono nell'editor.
+        const variante = d.variant === 'ritratti' || d.variant === 'editoriale' ? d.variant : 'griglia'
+        // Nelle due varianti nuove il cerchio non ha senso — sono nate per
+        // togliere proprio quello. Chi l'aveva scelto ricade sul verticale.
+        const rapportoRitratto = tonda ? '4 / 5' : forma.rapporto
+        const titoloSezione = d.titolo && (
+          <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: variante === 'editoriale' ? 'left' : 'center', color: 'var(--txt)', marginBottom: variante === 'griglia' ? 48 : 56 }} {...ricco(d.titolo)} />
+        )
+        // La foto di una persona: o la sua, o un segnaposto della stessa forma.
+        // ⚠️ Il punto focale finisce in una proprietà CSS: passa dal controllo,
+        // mai grezzo. In mancanza, il centro come prima.
+        const ritratto = (m, stile) => m.photo_url
+          ? <img src={m.photo_url} alt={m.nome} style={{ ...stile, objectFit: 'cover', objectPosition: focalValido(m.photo_focal) || 'center', display: 'block' }} />
+          : <div style={{ ...stile, background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34 }}>👤</div>
+
+        if (variante === 'editoriale') {
+          return (
+            <section key={block.id} style={{ padding: '80px 0', background: 'var(--sup-2)' }}>
+              <div className="lbr-section">
+                {titoloSezione}
+                <div style={{ display: 'grid', gap: 64 }}>
+                  {items.map((m, i) => (
+                    <div key={m.id} className={`lbr-team-ed${i % 2 ? ' inv' : ''}`}
+                      style={i ? { borderTop: '1px solid var(--bordo)', paddingTop: 64 } : undefined}>
+                      <div className="lbr-team-foto">
+                        {ritratto(m, { width: '100%', aspectRatio: rapportoRitratto, borderRadius: 18 })}
+                      </div>
+                      <div className="lbr-team-txt">
+                        {m.ruolo && <div style={{ fontSize: 12, color: primary, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.6, lineHeight: 1.6, marginBottom: 12 }}>{m.ruolo}</div>}
+                        <div style={{ fontFamily: heading, fontWeight: 700, fontSize: 'clamp(24px,3.2vw,34px)', lineHeight: 1.15, color: cTitle, marginBottom: 16 }} {...ricco(m.nome)} />
+                        {m.bio && <p style={{ fontSize: 16, color: cBody || 'var(--txt-medio)', lineHeight: 1.75, maxWidth: '60ch' }}>{m.bio}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )
+        }
+
+        if (variante === 'ritratti') {
+          return (
+            <section key={block.id} style={{ padding: '80px 0', background: 'var(--sup-2)' }}>
+              <div className="lbr-section">
+                {titoloSezione}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 44 }}>
+                  {items.map(m => (
+                    <div key={m.id}>
+                      {ritratto(m, { width: '100%', aspectRatio: rapportoRitratto, borderRadius: 14, marginBottom: 20 })}
+                      {m.ruolo && <div style={{ fontSize: 11.5, color: primary, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.4, lineHeight: 1.6, marginBottom: 8 }}>{m.ruolo}</div>}
+                      <div style={{ fontFamily: heading, fontWeight: 700, fontSize: 22, lineHeight: 1.2, color: cTitle, marginBottom: 12 }} {...ricco(m.nome)} />
+                      {m.bio && <p style={{ fontSize: 14.5, color: cBody || 'var(--txt-medio)', lineHeight: 1.7 }}>{m.bio}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )
+        }
+
         // Tonda = come prima, 96px fissi. Le altre forme riempiono la colonna,
         // altrimenti una scheda verticale in 96px non si vedrebbe.
         const foto = tonda
@@ -1262,13 +1323,11 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         return (
           <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup-2)' }}>
             <div className="lbr-section">
-              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)', marginBottom: 48 }} {...ricco(d.titolo)} />}
+              {titoloSezione}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 32 }}>
                 {items.map(m => (
                   <div key={m.id} style={{ textAlign: 'center' }}>
                     {m.photo_url
-                      // ⚠️ Il punto focale finisce in una proprietà CSS: passa dal
-                      // controllo, mai grezzo. In mancanza, il centro come prima.
                       ? <img src={m.photo_url} alt={m.nome} style={{ ...foto, objectFit: 'cover', objectPosition: focalValido(m.photo_focal) || 'center', display: 'block', border: `3px solid ${primary}30`, boxSizing: 'border-box' }} />
                       : <div style={{ ...foto, background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>👤</div>
                     }
@@ -1984,12 +2043,25 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         .lbr-ft.inv .lbr-ft-img { order: 1; }
         .lbr-ft.inv .lbr-ft-txt { order: 0; }
         .lbr-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 32px; }
+        /* Team «editoriale»: una persona per riga, il ritratto cambia lato. */
+        /* ⚠️ order sposta l'elemento ANCHE di colonna: nella riga invertita il
+           ritratto finiva nella traccia larga e diventava enorme. Per questo a
+           invertirsi sono le colonne, non solo l'ordine. */
+        .lbr-team-ed { display: grid; grid-template-columns: 400px 1fr; gap: 64px; align-items: center; }
+        .lbr-team-ed.inv { grid-template-columns: 1fr 400px; }
+        .lbr-team-ed .lbr-team-foto { order: 0; }
+        .lbr-team-ed .lbr-team-txt { order: 1; }
+        .lbr-team-ed.inv .lbr-team-foto { order: 1; }
+        .lbr-team-ed.inv .lbr-team-txt { order: 0; }
         @media (max-width: 768px) {
           .lbr-gallery { grid-template-columns: repeat(2, 1fr); }
           .lbr-section { padding: 0 16px; }
           .lbr-ft { grid-template-columns: 1fr !important; gap: 24px !important; }
           .lbr-ft-img { order: 0 !important; }
           .lbr-ft-txt { order: 1 !important; }
+          .lbr-team-ed { grid-template-columns: 1fr !important; gap: 24px !important; }
+          .lbr-team-ed .lbr-team-foto { order: 0 !important; }
+          .lbr-team-ed .lbr-team-txt { order: 1 !important; }
         }
         @keyframes lbr-logo-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
         .lbr-logo-track { display: flex; gap: 48px; width: max-content; animation: lbr-logo-scroll linear infinite; align-items: center; padding: 16px 24px; }

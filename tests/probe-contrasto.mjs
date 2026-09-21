@@ -22,9 +22,18 @@ const BASE = (process.env.TEST_URL || 'https://www.oltrenova.com').replace(/\/$/
 // percorso di sistema: `/r/garage22` arriva qui come
 // `C:/Program Files/Git/r/garage22`, e la sonda chiedeva un indirizzo inesistente.
 // Si rimette a posto invece di pretendere che chi la lancia se lo ricordi.
+// ⚠️ Due conversioni diverse, entrambe già capitate:
+//   /r/garage22          → C:/Program Files/Git/r/garage22   (prefisso di Git)
+//   /a/metodotvb/p/x     → A:/metodotvb/p/x                  (una lettera sola
+//     diventa una LETTERA DI UNITÀ). Questa seconda ha fatto misurare un 404 e
+//     dire «si legge tutto»: una sonda che misura la pagina sbagliata è peggio
+//     di nessuna sonda. Qui dentro arrivano solo percorsi di URL, mai percorsi
+//     di disco, quindi rimetterli a posto è sempre giusto.
 function percorso(p) {
   if (!p) return '/template-preview/notte'
-  let v = String(p).replace(/^[A-Za-z]:[\\/].*?Git[\\/]?/i, '/').replace(/\\/g, '/')
+  let v = String(p).replace(/\\/g, '/')
+  v = v.replace(/^[A-Za-z]:\/.*?Git\/?/i, '/')
+  v = v.replace(/^([A-Za-z]):\//, (_, l) => '/' + l.toLowerCase() + '/')
   if (v === '.' || v === '') v = '/'
   return v.startsWith('/') ? v : '/' + v
 }
