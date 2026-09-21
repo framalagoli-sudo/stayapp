@@ -45,6 +45,34 @@ export async function POST(request) {
       for (const change of entry.changes || []) {
         const v = change.value || {}
 
+        // ── Eventi sull'account del cliente ──────────────────────────────────
+        // ⚠️ `account_update` è **obbligatorio** per l'Embedded Signup: è così
+        // che Meta dice che un cliente ha finito il collegamento. Ma soprattutto
+        // è l'unico modo per sapere che un account si è **staccato** — e con la
+        // coesistenza succede da solo dopo ~14 giorni che il cliente non apre
+        // l'app. Senza, per lui sarebbe «WhatsApp non funziona più» e la colpa
+        // sarebbe nostra.
+        if (change.field === 'account_update') {
+          await gestisciAccount(entry.id, v)
+          continue
+        }
+
+        // ── Esito dei modelli ────────────────────────────────────────────────
+        // Un modello si manda a Meta e si aspetta: senza questo il cliente lo
+        // crea e resta a guardare il vuoto, perché l'approvazione arriva solo
+        // di qui.
+        if (change.field === 'message_template_status_update') {
+          await gestisciModello(v)
+          continue
+        }
+
+        // ── Messaggi scritti dal cliente dalla SUA app (coesistenza) ─────────
+        // Arrivano come `smb_message_echoes`. Oggi si accettano e basta: il
+        // pannello non ha ancora una casella delle conversazioni, e salvarli
+        // senza un posto dove leggerli sarebbe accumulare dati che non servono
+        // a nessuno. Quando la casella ci sarà, è qui che si entra.
+        if (change.field === 'smb_message_echoes') continue
+
         // Esiti dei messaggi inviati
         for (const s of v.statuses || []) {
           const stato = QUANDO[s.status]
@@ -84,6 +112,73 @@ export async function POST(request) {
   } catch (e) {
     await logError('whatsapp/webhook', e)
     return Response.json({ ok: true })
+  }
+}
+
+// Gli eventi che dicono «questo account non può più mandare messaggi». I nomi
+// sono quelli della documentazione di Meta, non inventati: un evento che non
+// conosciamo si registra e basta, non si tratta come un guasto.
+const EVENTI_BRUTTI = [
+  'ACCOUNT_DELETED',        // l'account non c'è più
+  'ACCOUNT_RESTRICTION',    // limitato per violazioni
+  'ACCOUNT_VIOLATION',      // violazione delle policy
+  'DISABLED_UPDATE',        // disabilitato
+  'PARTNER_REMOVED',        // il cliente ci ha tolto l'accesso
+  'PARTNER_APP_UNINSTALLED',
+  'ACCOUNT_OFFBOARDED',     // numero/dispositivo disattivato — il caso della coesistenza
+]
+
+async function gestisciAccount(wabaId, v) {
+  if (!wabaId) return
+  const tipo = v.event || 'SCONOSCIUTO'
+  const brutto = EVENTI_BRUTTI.includes(tipo)
+  const riconnesso = tipo === 'ACCOUNT_RECONNECTED'
+
+  // Un WABA può avere più numeri (migration 122): l'evento riguarda l'account,
+  // quindi tocca tutte le righe che ne dipendono.
+  const { data: righe } = await supabaseAdmin.from('whatsapp_account')
+    .select('id, azienda_id, dettaglio, stato').eq('waba_id', wabaId)
+
+  for (const r of righe || []) {
+    const patch = {
+      dettaglio: { ...(r.dettaglio || {}), ultimo_evento: { tipo, quando: new Date().toISOString(), dati: v } },
+      updated_at: new Date().toISOString(),
+    }
+    // Lo stato si tocca solo quando l'evento lo dice davvero: un evento
+    // informativo non deve spegnere un numero che funziona.
+    if (brutto) patch.stato = 'sospeso'
+    if (riconnesso && r.stato === 'sospeso') patch.stato = 'attivo'
+    await supabaseAdmin.from('whatsapp_account').update(patch).eq('id', r.id)
+  }
+
+  // Un account che si stacca è la cosa che il cliente scoprirebbe da solo, nel
+  // modo peggiore: scrivendo e non ricevendo risposta. Meglio saperlo noi.
+  if (brutto) {
+    await logError('whatsapp/account', new Error(`WhatsApp: ${tipo} sull'account ${wabaId}`), { alert: true })
+  }
+}
+
+// Meta → nostro vocabolario. Gli stati che non mappiamo (PENDING e simili) non
+// cambiano niente: il modello resta come sta.
+const STATO_MODELLO = {
+  APPROVED: 'approvato',
+  REJECTED: 'rifiutato',
+  PAUSED: 'disabilitato',
+  DISABLED: 'disabilitato',
+}
+
+async function gestisciModello(v) {
+  const stato = STATO_MODELLO[v.event]
+  if (!stato) return
+  const patch = { stato, updated_at: new Date().toISOString() }
+  if (stato === 'rifiutato') patch.motivo_rifiuto = v.reason || 'Rifiutato da Meta'
+
+  // L'id di Meta è il riferimento buono; il nome è il ripiego per i modelli
+  // creati prima che lo salvassimo.
+  if (v.message_template_id) {
+    await supabaseAdmin.from('whatsapp_template').update(patch).eq('template_meta_id', String(v.message_template_id))
+  } else if (v.message_template_name) {
+    await supabaseAdmin.from('whatsapp_template').update(patch).eq('nome_meta', v.message_template_name)
   }
 }
 

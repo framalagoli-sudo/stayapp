@@ -21,7 +21,7 @@ import { Link2, AlertCircle } from 'lucide-react'
 // ⚠️ La v2 del flusso viene dismessa il 15/10/2026: questo è scritto sulla v4.
 
 const SDK = 'https://connect.facebook.net/it_IT/sdk.js'
-const GRAPH_VERSION = 'v21.0'   // la stessa che usa lib/whatsapp.js sul server
+const GRAPH_VERSION = 'v25.0'   // la stessa che usa lib/whatsapp.js sul server
 
 // Solo Meta può dirci quale numero ha collegato il cliente. `endsWith` non
 // basterebbe: `facebook.com.esempio.it` lo passerebbe.

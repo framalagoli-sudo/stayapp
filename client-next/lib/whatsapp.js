@@ -4,7 +4,7 @@ import { definizioneMeta, nomeMeta } from './whatsapp-catalogo'
 // Unico punto di contatto con l'API di Meta, come lib/vercel-domains.js lo è per
 // Vercel: nessun'altra parte del codice deve parlare con Graph. Se un giorno
 // cambiasse il fornitore (o si passasse a un intermediario), si riscrive solo qui.
-const GRAPH = 'https://graph.facebook.com/v21.0'
+const GRAPH = 'https://graph.facebook.com/v25.0'   // la v21 scade il 21/01/2027, e una versione scaduta non dà errore: Meta fa scivolare la chiamata su un'altra e il comportamento cambia in silenzio
 
 const META_APP_ID     = process.env.META_APP_ID?.trim()
 const META_APP_SECRET = process.env.META_APP_SECRET?.trim()
