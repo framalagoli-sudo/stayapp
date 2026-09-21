@@ -427,6 +427,13 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - ⚠️ L'interruttore della visibilità è richiamato **dentro** il pannello, non duplicato.
     - ⚠️ Le schede entità in Dashboard le vede solo `admin_azienda`: **una cosa è provata quando è aperta dal ruolo di chi la userà**, e qui gli utilizzatori sono due (cliente e super_admin).
 
+44. **🪑 Il canale che non scrive: i posti tenuti per il telefono** (21/09/2026, migration `125`–`126`). Garage 22: evento da 60 posti **sold out**, e nel sistema ne risultavano 29 — 12 prenotazioni dal sito e **una sola** segnata a mano. Il modulo per segnarle esisteva già: usato una volta su trenta, perché chi è in servizio non apre il gestionale mentre squilla il telefono. Quando un canale non scrive, o lo si fa scrivere (non succede) o **gli si toglie il potere di vendere ciò che il sistema crede libero**.
+    - `eventi.posti_riservati`: il sito vende `seats_total - riservati - prenotati` e non può sovravvendere **anche se nessuno segna niente**. `seats_total` resta la capienza vera, e chi segna dal pannello può usare i riservati — sono suoi.
+    - **`lib/posti-evento.js`** è l'unico posto dove si contano: la formula stava a mano in **undici** punti, e con i riservati le risposte diventano due (pubblico / titolare). ⚠️ `confermaPostiEvento` prende il **limite del canale**: senza, due richieste simultanee verrebbero arbitrate sulla capienza piena e si prenderebbero i posti riservati.
+    - **Avviso a soglia** (restano 5 · esaurito): si manda solo nell'istante in cui la soglia viene **attraversata** → nessuna colonna «già inviato», nessuna configurazione nuova. Segue l'interruttore delle notifiche esistente.
+    - Stessa sessione: **note** nel modulo (la colonna c'era da sempre, mancava il campo), **telefono obbligatorio** a scelta dell'evento, e il consenso privacy che **mancava nell'app del QR** — 400 a ogni prenotazione, per un mese, senza che nessuno potesse farci niente.
+    - ⚠️ La lista d'attesa rispondeva «ci sono ancora posti» a chi il sito aveva appena respinto: nella **sua** select mancava la colonna nuova (regola 7). **Trovato provando dal vivo, non rileggendo il codice.**
+
 ---
 
 ## Roadmap

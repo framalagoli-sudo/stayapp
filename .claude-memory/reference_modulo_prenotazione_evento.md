@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
-  modified: 2026-09-21T16:30:28.150Z
+  modified: 2026-09-21T19:00:50.560Z
 ---
 
 **Verificato il 21/09/2026** leggendo `components/guest/EventoPage.jsx` e
@@ -14,7 +14,7 @@ metadata:
 **I campi sono scritti nel componente**, non configurabili da nessuna parte:
 - Nome e cognome — **obbligatorio** (controllato anche nella route: 400)
 - Email — **obbligatoria** (idem)
-- Telefono — facoltativo, e non c'è modo di renderlo obbligatorio
+- Telefono — facoltativo, **oppure obbligatorio** se chi organizza accende «Chiedi il telefono per forza» (migration 125). Controllo anche nella route.
 - Per quante persone — numero, minimo 1
 - Consenso privacy — **obbligatorio**, e il controllo vero sta nella route
   (`privacy_accettata !== true` → 400), con la formula decisa dal server
@@ -25,11 +25,16 @@ del pulsante, condizioni sotto il pulsante, prezzo e modo prezzo, posti,
 chiusura delle prenotazioni, lista d'attesa, notifica al titolare, conferma
 all'ospite, promemoria.
 
-⚠️ **`notes` è un tubo senza rubinetto**: la colonna esiste in
-`event_bookings`, la route la accetta (`notes: notes || null`) e l'admin la
-mostra — sia nella prenotazione inserita a mano sia nell'elenco. Ma il modulo
-pubblico **non la manda mai**: nessun campo sul sito. È la modifica più
-economica se serve un «note / richieste particolari».
+✅ **Il campo «Note o richieste particolari» ora c'è** (21/09/2026), su
+entrambe le porte — pagina dell'evento e app del QR. Era «un tubo senza
+rubinetto»: la colonna in `event_bookings` e la sua riga nell'admin esistevano
+da sempre, mancava solo il campo dove scriverle.
+
+⛔ **E il modulo dentro l'app del QR era rotto**: non mandava
+`privacy_accettata`, che la route pretende dal 25/08 → **400 a ogni
+prenotazione**, senza nessuna spunta da mettere. Un vicolo cieco, in silenzio
+per un mese, scoperto cercando altro e riprodotto con una chiamata vera prima
+di correggerlo.
 
 Il **Form Builder** ha invece campi definiti dal cliente con `required` per
 campo, ma è un sistema a sé: salva `submissions`, non prenotazioni — niente
