@@ -124,3 +124,4 @@
 - [🏷️ Il prezzo di un evento lo dichiara il cliente](reference_prezzo_evento_scelto.md) — «nessuna cifra» non vuol più dire «gratis» (migration 123, segnalato da Garage 22)
 - [🔦 Pubblicare rende trovabili (e chi spegne resta spento)](reference_visibilita_alla_pubblicazione.md) — migration 124; titolo e descrizione proposti dall'AI, mai salvati da soli
 - [📱 WhatsApp: quale numero può collegare un cliente](reference_whatsapp_quale_numero.md) — le 4 strade, la coesistenza (ora sì in UE, da provare dal vivo), e i 3 eventi webhook che mancano
+- [🎨 Restyling di metodotvb dai suoi dati (21/09)](reference_restyling_metodotvb.md) — come si rifà un sito via API, l'id della versione per ripristinarlo, e il contrasto 1,84 che la sonda dava per buono
