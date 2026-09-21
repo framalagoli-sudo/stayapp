@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
-  modified: 2026-09-21T12:39:34.227Z
+  modified: 2026-09-21T16:14:22.482Z
 ---
 
 **Riferimento di Francesco** (21/09/2026): `walliance.it/project/...` — barra
@@ -43,6 +43,24 @@ su metodotvb). Ora i colori vengono dalle variabili di superficie e c'è
 l'opzione «come la sezione sotto», che è ciò che quella forma è davvero.
 ⚠️ In SVG `fill` **come attributo non risolve `var(--…)`**: va messo come
 proprietà CSS (`style={{ fill }}`), altrimenti la forma diventa nera.
+
+## Secondo giro, stesso giorno (21/09)
+
+- **Icone sulle tessere** (`icona` nel preset, catalogo di `highlightIcon`) e
+  stacco dal fondo con **bordo nel colore del tema**. ⚠️ NON uno sfondo
+  semitrasparente: la sonda del contrasto salta il testo il cui sfondo ha
+  alpha < 0.5, quindi un fondo con trasparenza lo renderebbe **non
+  controllato, in silenzio**.
+- **Video** (tipo campo nuovo) e **mappa** (`geo`) dopo la descrizione del
+  progetto. Nell'`src` dell'iframe non finisce mai la stringa del cliente:
+  `getEmbedUrl` riconosce YouTube/Vimeo e ricostruisce l'indirizzo
+  dall'identificativo; l'editor avvisa subito se il link non è riconosciuto.
+- **Niente più campi riservati** sul preset immobiliare: quei numeri si mandano
+  a chi si fa avanti. (`dati_privati` non usciva comunque mai dal pannello.)
+- Per provare video e mappa senza toccare i dati veri — Francesco stava
+  editando in quel momento — ho creato un elemento **in bozza** e l'ho aperto
+  con un **token d'anteprima** firmato a mano (`lib/preview-token.js`,
+  segreto `CRON_SECRET`), poi cancellato. Vedi [[reference_anteprima_bozze_token]].
 
 Vedi [[reference_registro_visivo_siti]], [[project_vetrine]],
 [[reference_blocco_team_varianti]].
