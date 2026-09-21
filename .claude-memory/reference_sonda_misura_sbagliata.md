@@ -1,8 +1,11 @@
 ---
 name: reference_sonda_misura_sbagliata
-description: Una sonda che misura la cosa sbagliata è peggio di nessuna sonda — manda a cercare un guasto inesistente e ne nasconde uno vero; quando una misura sorprende, stampare la catena degli elementi
-metadata:
+description: "Una sonda che misura la cosa sbagliata è peggio di nessuna sonda — manda a cercare un guasto inesistente e ne nasconde uno vero; quando una misura sorprende, stampare la catena degli elementi"
+metadata: 
+  node_type: memory
   type: reference
+  originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
+  modified: 2026-09-21T12:05:43.161Z
 ---
 
 **Il fatto** (25/08/2026, pagina evento). Una sonda cercava «la prima immagine larga più di
@@ -28,3 +31,15 @@ misurato sta dentro `.snav` e non nel corpo della pagina.
 ```
 Vedi [[feedback_diagnosi_prima_del_deploy]] — vale lo stesso principio: la causa si accerta,
 non si deduce.
+
+## Terza volta, stesso schema: l'indirizzo sbagliato (21/09/2026)
+
+`PERCORSO=/a/metodotvb/p/chi-siamo node probe-contrasto.mjs` ha misurato
+`/A:/metodotvb/...`: **Git Bash converte un percorso di una sola lettera in una
+lettera di unità** (`/a/…` → `A:/…`), diverso dal caso già noto `/r/…` →
+`C:/Program Files/Git/r/…`. La sonda ha detto «✓ ogni testo si stacca dal suo
+sfondo» misurando **un 404**.
+
+La funzione `percorso()` in `tests/probe-contrasto.mjs` ora rimette a posto
+entrambe le forme. ⚠️ Quando una sonda passa **al primo colpo** su una pagina
+appena cambiata, guardare la riga dell'indirizzo che stampa prima di esultare.
