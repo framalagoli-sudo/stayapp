@@ -58,7 +58,10 @@ export default function CookieBanner({ primaryColor = '#00b5b5', privacyUrl, coo
         </button>
         <button onClick={accept} style={{
           padding: '8px 20px', borderRadius: 50, border: 'none',
-          background: primaryColor, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+          // ⛔ Era sempre bianco: su un colore chiaro (il ciano di metodotvb,
+          // misurato 2,45 il 21/09) la scritta del pulsante non si legge. Il
+          // testo lo decide il colore sotto, non l'abitudine.
+          background: primaryColor, color: readableOn('#1a1a2e', primaryColor, '#ffffff'), fontSize: 12, fontWeight: 700, cursor: 'pointer',
         }}>
           {t('accept', lang)}
         </button>

@@ -1097,7 +1097,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
             <div className="lbr-section">
               {d.title && <h2 style={{ fontFamily: heading, fontSize: 'clamp(28px,4vw,46px)', fontWeight: 700, color: 'var(--txt)', marginBottom: 18 }} {...ricco(d.title)} />}
               {d.title && <div style={{ width: 54, height: 3, background: sec, borderRadius: 2, marginBottom: 28 }} />}
-              <RichText value={d.text} primary={primary} style={{ fontSize: Math.round(18 * textSizeScale(block.style?.textSize)), lineHeight: 1.8, color: cBody || textColorFor(block.style?.textColor, primary) || '#444', maxWidth: 720 }} />
+              <RichText value={d.text} primary={primary} style={{ fontSize: Math.round(18 * textSizeScale(block.style?.textSize)), lineHeight: 1.8, color: cBody || textColorFor(block.style?.textColor, primary) || 'var(--txt-medio)', maxWidth: 720 }} />
             </div>
           </section>
         )
@@ -1118,7 +1118,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                 )}
                 <div className="lbr-ft-txt">
                   {d.title && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, color: 'var(--txt)', marginBottom: 16 }} {...ricco(d.title)} />}
-                  <RichText value={d.text} primary={primary} style={{ fontSize: Math.round(16 * textSizeScale(block.style?.textSize)), lineHeight: 1.75, color: cBody || textColorFor(block.style?.textColor, primary) || '#555', marginBottom: 24 }} />
+                  <RichText value={d.text} primary={primary} style={{ fontSize: Math.round(16 * textSizeScale(block.style?.textSize)), lineHeight: 1.75, color: cBody || textColorFor(block.style?.textColor, primary) || 'var(--txt-medio)', marginBottom: 24 }} />
                   {d.button_label && d.button_url && (
                     <a href={siteHref(d.button_url)} style={{ display: 'inline-block', padding: '12px 28px', background: primary, color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>{d.button_label}</a>
                   )}

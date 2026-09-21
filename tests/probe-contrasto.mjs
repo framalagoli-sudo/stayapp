@@ -48,12 +48,22 @@ await page.evaluate(() => window.scrollTo(0, 0))
 await page.waitForTimeout(600)
 
 const sospetti = await page.evaluate(() => {
+  // ⛔ Prima questa sonda confrontava due luminanze «a occhio», con una soglia
+  // inventata. Il 21/09/2026 ha dato per buono un paragrafo **#444 su fondo
+  // scuro** su un sito di un cliente vero: rapporto reale **1,84**, cioè
+  // illeggibile. Ora si calcola il contrasto come lo calcola il mondo (WCAG),
+  // con la correzione gamma, e la soglia è quella vera: 4,5.
+  const canale = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4) }
   const luminanza = c => {
     const m = String(c).match(/\d+(\.\d+)?/g)
     if (!m || m.length < 3) return null
     if (m[3] !== undefined && Number(m[3]) < 0.5) return null   // quasi trasparente: non è testo visibile
     const [r, g, b] = m.slice(0, 3).map(Number)
-    return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
+    return 0.2126 * canale(r) + 0.7152 * canale(g) + 0.0722 * canale(b)
+  }
+  const rapporto = (a, b) => {
+    const [alto, basso] = [a, b].sort((x, y) => y - x)
+    return (alto + 0.05) / (basso + 0.05)
   }
   const out = []
   document.querySelectorAll('h1,h2,h3,h4,h5,p,span,li,a,div,button').forEach(el => {
@@ -71,8 +81,14 @@ const sospetti = await page.evaluate(() => {
     }
     if (suImmagine) return
     const lt = luminanza(st.color), lb = sfondo ? luminanza(sfondo) : null
-    if (lt != null && lb != null && Math.abs(lt - lb) < 0.16) {
-      out.push(`«${el.innerText.replace(/\s+/g, ' ').slice(0, 45)}» — testo ${st.color} su ${sfondo}`)
+    if (lt == null || lb == null) return
+    const r = rapporto(lt, lb)
+    // Il testo grande si legge anche con meno contrasto: la soglia WCAG è 3,0
+    // sopra i 24px (o 18,66px in grassetto), 4,5 per tutto il resto.
+    const px = parseFloat(st.fontSize) || 16
+    const grande = px >= 24 || (px >= 18.66 && Number(st.fontWeight) >= 700)
+    if (r < (grande ? 3 : 4.5)) {
+      out.push(`«${el.innerText.replace(/\s+/g, ' ').slice(0, 42)}» — contrasto ${r.toFixed(2)} (serve ${grande ? '3,0' : '4,5'}): ${st.color} su ${sfondo}`)
     }
   })
   return [...new Set(out)]
