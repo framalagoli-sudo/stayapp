@@ -337,6 +337,18 @@ function PresetField({ field, preset, value, onChange }) {
     return <textarea value={text} onChange={e => onChange(e.target.value.split('\n'))} rows={4} placeholder="Una voce per riga" style={{ ...inp, resize: 'vertical' }} />
   }
   if (field.type === 'geo') return <input type="text" value={v} onChange={e => onChange(e.target.value)} placeholder="Indirizzo o città (es. Via Roma 1, Milano)" style={inp} />
+  // Si incolla il link della pagina del video, non un codice da incorporare:
+  // l'indirizzo dell'iframe lo ricostruisce il sito. Se il link non è di
+  // YouTube o Vimeo lo diciamo QUI, non lo si scopre guardando il sito vuoto.
+  if (field.type === 'video') {
+    const riconosciuto = !v || /(?:youtube\.com\/watch\?v=|youtu\.be\/)[a-zA-Z0-9_-]{11}|vimeo\.com\/\d+/.test(v)
+    return (
+      <>
+        <input type="text" value={v} onChange={e => onChange(e.target.value)} placeholder="https://www.youtube.com/watch?v=…" style={inp} />
+        {!riconosciuto && <div style={{ fontSize: 12, color: '#b45309', marginTop: 4 }}>Questo link non è di YouTube o Vimeo: sul sito il video non comparirà.</div>}
+      </>
+    )
+  }
   if (field.type === 'file') return <input type="text" value={v} onChange={e => onChange(e.target.value)} placeholder="https://…/documento.pdf" style={inp} />
   if (NUMERIC.has(field.type)) return <input type="number" step="any" value={v} onChange={e => onChange(e.target.value)} style={inp} />
   return <input type="text" value={v} onChange={e => onChange(e.target.value)} style={inp} />

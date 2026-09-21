@@ -1,7 +1,7 @@
 ﻿'use client'
 import { useState, useEffect, useRef, cloneElement } from 'react'
 import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
-import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Mountain, Wind, ChevronDown, ChevronLeft, ChevronRight, Calendar, Users, Check, CheckCircle, Gift, Home, Zap, Shield, Leaf, Sun, Briefcase, Wrench, Euro, Handshake, Smile, Target, TrendingUp, Globe, Camera, BookOpen, Layers, Tag, Search, X, FileText } from 'lucide-react'
+import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Mountain, Wind, ChevronDown, ChevronLeft, ChevronRight, Calendar, Users, Check, CheckCircle, Gift, Home, Zap, Shield, Leaf, Sun, Briefcase, Wrench, Euro, Handshake, Smile, Target, TrendingUp, Globe, Camera, BookOpen, Layers, Tag, Search, X, FileText, Ruler, Gauge } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
 import BookingWidget from './BookingWidget'
 import ShopBlocco from './ShopBlocco'
@@ -122,37 +122,60 @@ function sottotitoloScheda(el, preset) {
   return f ? String(el.dati[f.key]) : ''
 }
 
+// ⚠️ Lo stacco dal fondo lo fanno il BORDO nel colore del tema e l'icona, non
+// uno sfondo semitrasparente: un fondo con trasparenza rende il testo non
+// misurabile dalla sonda del contrasto, che smetterebbe di controllarlo in
+// silenzio. La superficie resta piena.
+function riquadroEvidenza(primary) {
+  return {
+    background: 'var(--sup-2)',
+    border: `1px solid ${/^#[0-9a-fA-F]{6}$/.test(primary || '') ? primary + '4d' : 'var(--bordo)'}`,
+    borderRadius: 14,
+  }
+}
+
 function BarraAvanzamento({ av, primary, sec, grande }) {
   if (!av) return null
   return (
-    <div style={{ background: 'var(--sup-2)', border: '1px solid var(--bordo-tenue)', borderRadius: 14, padding: grande ? '20px 22px' : '14px 16px' }}>
+    <div style={{ ...riquadroEvidenza(primary), padding: grande ? '20px 22px' : '15px 16px' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
-        <span style={{ fontSize: grande ? 34 : 26, fontWeight: 800, color: primary, lineHeight: 1 }}>{av.perc}%</span>
+        <span style={{ fontSize: grande ? 38 : 28, fontWeight: 800, color: primary, lineHeight: 1 }}>{av.perc}%</span>
         <span style={{ fontSize: grande ? 13.5 : 12, color: 'var(--txt-medio)' }}>
-          {av.etichetta}{av.totale ? ` · obiettivo ${fmtVetrina(av.totale, 'currency')}` : ''}
+          {av.etichetta}{av.totale ? ` · di ${fmtVetrina(av.totale, 'currency')}` : ''}
         </span>
       </div>
-      <div style={{ height: grande ? 10 : 8, background: 'var(--bordo)', borderRadius: 6, overflow: 'hidden' }}>
+      <div style={{ height: grande ? 12 : 10, background: 'var(--bordo)', borderRadius: 6, overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${av.perc}%`, background: `linear-gradient(90deg, ${primary}, ${sec || primary})`, borderRadius: 6 }} />
       </div>
     </div>
   )
 }
 
-function TessereMetriche({ metriche, grande }) {
+function TessereMetriche({ metriche, primary, grande }) {
   if (!metriche?.length) return null
+  const riq = riquadroEvidenza(primary)
   return (
     // ⚠️ `minmax(0, …)`: senza, una cifra lunga allarga la colonna e sfonda la
     // scheda (nota 23). Con auto-fit su una scheda stretta vanno a capo.
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${grande ? 150 : 88}px, 1fr))`, gap: grande ? 12 : 8 }}>
+    // ⚠️ 84px di minimo, non 92: con l'icona la tessera cresce, e in una scheda
+    // da tre metriche la terza andava a capo da sola. Misurato, non dedotto.
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${grande ? 160 : 84}px, 1fr))`, gap: grande ? 12 : 6 }}>
       {metriche.map(({ campo, valore }) => {
         const { etichetta, unita } = etichettaEUnita(campo)
+        const Icona = campo.icona ? highlightIcon(campo.icona) : null
         return (
-          <div key={campo.key} style={{ background: 'var(--sup-2)', border: '1px solid var(--bordo-tenue)', borderRadius: 12, padding: grande ? '16px 18px' : '12px 10px', textAlign: grande ? 'left' : 'center', minWidth: 0 }}>
-            <div style={{ fontSize: grande ? 22 : 16, fontWeight: 700, color: 'var(--txt)', lineHeight: 1.25, overflowWrap: 'anywhere' }}>
-              {fmtVetrina(valore, campo.type)}{unita ? ` ${unita}` : ''}
+          <div key={campo.key} style={{ ...riq, borderRadius: 12, padding: grande ? '16px 18px' : '12px 8px', display: 'flex', flexDirection: grande ? 'row' : 'column', alignItems: 'center', gap: grande ? 14 : 6, textAlign: grande ? 'left' : 'center', minWidth: 0 }}>
+            {Icona && (
+              <span style={{ flexShrink: 0, width: grande ? 42 : 26, height: grande ? 42 : 26, borderRadius: '50%', background: `${primary}1f`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Icona size={grande ? 21 : 14} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />
+              </span>
+            )}
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: grande ? 22 : 15.5, fontWeight: 700, color: 'var(--txt)', lineHeight: 1.25, overflowWrap: 'anywhere' }}>
+                {fmtVetrina(valore, campo.type)}{unita ? ` ${unita}` : ''}
+              </div>
+              <div style={{ fontSize: grande ? 11.5 : 10, color: 'var(--txt-medio)', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 4, overflowWrap: 'anywhere' }}>{etichetta}</div>
             </div>
-            <div style={{ fontSize: grande ? 11.5 : 10.5, color: 'var(--txt-medio)', textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 5, overflowWrap: 'anywhere' }}>{etichetta}</div>
           </div>
         )
       })}
@@ -317,7 +340,7 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
                     </div>
                     <BarraAvanzamento av={avanzamento} primary={primary} sec={sec} />
                     <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                      <TessereMetriche metriche={metriche} />
+                      <TessereMetriche metriche={metriche} primary={primary} />
                       <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>Scopri di più <span style={{ color: primary }}>→</span></span>
                     </div>
                   </div>
@@ -389,6 +412,8 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, enti
   const infoFields = fields.filter(f => ['text', 'number', 'currency', 'percent', 'select', 'date', 'boolean'].includes(f.type))
   const listFields = fields.filter(f => f.type === 'list')
   const geoField   = fields.find(f => f.type === 'geo')
+  const videoField = (preset.campiPubblici || []).find(f => f.type === 'video' && has(f.key))
+  const videoEmbed = videoField ? getEmbedUrl(dati[videoField.key]) : null
   const fileFields = fields.filter(f => f.type === 'file' && safeUrl(dati[f.key]))
   const cellValue = (f) => f.type === 'select' ? (fieldOptions(preset, f).find(o => o.value === dati[f.key])?.label || dati[f.key])
     : f.type === 'boolean' ? (dati[f.key] ? 'Sì' : 'No')
@@ -420,7 +445,7 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, enti
         {(cruscotto.avanzamento || cruscotto.metriche.length > 0) && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 28 }}>
             <BarraAvanzamento av={cruscotto.avanzamento} primary={primary} sec={sec} grande />
-            <TessereMetriche metriche={cruscotto.metriche} grande />
+            <TessereMetriche metriche={cruscotto.metriche} primary={primary} grande />
           </div>
         )}
 
@@ -445,6 +470,15 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, enti
         ))}
 
         {dati.descrizione &&<p style={{ fontSize: 16, lineHeight: 1.8, color: 'var(--txt-medio)', whiteSpace: 'pre-line', marginBottom: 32 }} {...ricco(dati.descrizione)} />}
+
+        {/* ⚠️ Nell'`src` dell'iframe non finisce mai l'indirizzo scritto dal
+            cliente: `getEmbedUrl` riconosce YouTube e Vimeo e ricostruisce
+            l'indirizzo dal solo identificativo. Un link qualsiasi non passa. */}
+        {videoEmbed && (
+          <div style={{ position: 'relative', width: '100%', aspectRatio: '16 / 9', marginBottom: 32, borderRadius: 16, overflow: 'hidden', background: '#000' }}>
+            <iframe src={videoEmbed} title={d.titolo || 'Video'} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }} />
+          </div>
+        )}
 
         {geoField && (
           <div style={{ marginBottom: 32 }}>
@@ -592,6 +626,7 @@ const HIGHLIGHT_LUCIDE = {
   sparkles: Sparkles, leaf: Leaf, sun: Sun, briefcase: Briefcase, wrench: Wrench, euro: Euro,
   handshake: Handshake, smile: Smile, target: Target, 'trending-up': TrendingUp, globe: Globe,
   camera: Camera, activity: Activity, book: BookOpen, layers: Layers, tag: Tag,
+  ruler: Ruler, gauge: Gauge,
 }
 function highlightIcon(key) { return HIGHLIGHT_LUCIDE[key] || Star }
 
