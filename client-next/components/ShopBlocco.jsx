@@ -166,7 +166,7 @@ export default function ShopBlocco({ aziendaId, prodotti = [], primary, heading,
             ? { width: '100%', aspectRatio: rapportoDi(forma), objectFit: 'cover', display: 'block' }
             : { width: '100%', height: 170, objectFit: 'cover', display: 'block' }
           return (
-            <div key={p.id} style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', minWidth: 0, opacity: esaurito ? 0.6 : 1, display: 'flex', flexDirection: 'column' }}>
+            <div key={p.id} style={{ background: 'var(--sup, #fff)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', minWidth: 0, opacity: esaurito ? 0.6 : 1, display: 'flex', flexDirection: 'column' }}>
               {img
                 ? <img src={img} alt={p.nome} loading="lazy" style={{ ...stileFoto, objectPosition: focalValido(p.immagine_focal) || 'center' }} />
                 : <div style={{ ...stileFoto, background: `${primary}12`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -230,7 +230,7 @@ export default function ShopBlocco({ aziendaId, prodotti = [], primary, heading,
       {aperto && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9000, display: 'flex' }}>
           <div onClick={() => setAperto(false)} style={{ flex: 1, background: 'rgba(0,0,0,0.4)' }} />
-          <div role="dialog" aria-label="Carrello" style={{ width: '100%', maxWidth: 420, background: '#fff', display: 'flex', flexDirection: 'column', boxShadow: '-4px 0 20px rgba(0,0,0,0.15)', paddingBottom: spazioBanner, boxSizing: 'border-box' }}>
+          <div role="dialog" aria-label="Carrello" style={{ width: '100%', maxWidth: 420, background: 'var(--sup, #fff)', display: 'flex', flexDirection: 'column', boxShadow: '-4px 0 20px rgba(0,0,0,0.15)', paddingBottom: spazioBanner, boxSizing: 'border-box' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid #eee' }}>
               <div style={{ fontFamily: heading, fontWeight: 700, fontSize: 20, color: '#1a1a2e' }}>
                 {passo === 'dati' ? 'I tuoi dati' : passo === 'fatto' ? 'Ordine ricevuto' : `Il tuo carrello (${quanti})`}
@@ -301,7 +301,7 @@ export default function ShopBlocco({ aziendaId, prodotti = [], primary, heading,
                     <label style={etichetta}>Codice gift card (facoltativo)</label>
                     <div style={{ display: 'flex', gap: 8 }}>
                       <input value={codiceGc} onChange={e => { setCodiceGc(e.target.value.toUpperCase()); setGc(null); setErroreGc('') }} style={{ ...campo, flex: 1 }} />
-                      <button type="button" onClick={verificaGc} style={{ padding: '8px 14px', background: '#f5f5f5', border: '1px solid #ddd', borderRadius: 10, cursor: 'pointer', fontSize: 13 }}>Verifica</button>
+                      <button type="button" onClick={verificaGc} style={{ padding: '8px 14px', background: 'var(--sup-2, #f5f5f5)', border: '1px solid #ddd', borderRadius: 10, cursor: 'pointer', fontSize: 13 }}>Verifica</button>
                     </div>
                     {gc && <p style={{ fontSize: 12, color: '#2f855a', margin: '4px 0 0' }}>Saldo disponibile: {fmt(gc.valore_residuo)}</p>}
                     {erroreGc && <p style={{ fontSize: 12, color: '#c53030', margin: '4px 0 0' }}>{erroreGc}</p>}

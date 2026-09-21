@@ -138,7 +138,7 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
 
   const ctrl = { height: 46, padding: '0 16px', border: '1px solid #e8e8f0', borderRadius: 12, fontSize: 14, background: 'var(--sup)', fontFamily: 'inherit', color: '#2a2a35', outline: 'none', boxSizing: 'border-box', boxShadow: '0 1px 3px rgba(20,20,40,0.05)' }
   const numInp = { width: 56, height: 44, border: 'none', outline: 'none', fontSize: 14, background: 'transparent', fontFamily: 'inherit', color: '#2a2a35' }
-  const pill = (active) => ({ padding: '9px 18px', borderRadius: 50, border: `1.5px solid ${active ? primary : 'var(--bordo)'}`, background: active ? primary : 'var(--sup)', color: active ? '#fff' : 'var(--txt-medio)', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', transition: 'all .15s', boxShadow: active ? `0 4px 14px ${primary}44` : 'none' })
+  const pill = (active) => ({ padding: '9px 18px', borderRadius: 50, border: `1.5px solid ${active ? primary : 'var(--bordo)'}`, background: active ? primary : 'var(--sup)', color: active ? readableOn('#ffffff', primary, '#1a1a2e') : 'var(--txt-medio)', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', transition: 'all .15s', boxShadow: active ? `0 4px 14px ${primary}44` : 'none' })
   const onFocusA = (e) => { e.currentTarget.style.borderColor = primary; e.currentTarget.style.boxShadow = `0 0 0 3px ${primary}22` }
   const onBlurA  = (e) => { e.currentTarget.style.borderColor = '#e8e8f0'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(20,20,40,0.05)' }
   return (
@@ -290,7 +290,7 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, enti
         )}
 
         {infoFields.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 18, padding: '24px', background: '#f8f9fb', borderRadius: 16, marginBottom: 28 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 18, padding: '24px', background: 'var(--sup-2, #f8f9fb)', borderRadius: 16, marginBottom: 28 }}>
             {infoFields.map(f => (
               <div key={f.key}>
                 <div style={{ fontSize: 11, color: 'var(--txt-fioco)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }} {...ricco(f.label)} />
@@ -344,7 +344,7 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, enti
           {showForm
             ? <VetrinaLeadForm entity={entity} entityType={entityType} projectTitle={d.titolo} primary={primary} privacyUrl={privacyUrl} successText={cta.success} />
             : <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <button onClick={() => setShowForm(true)} style={{ padding: '14px 34px', background: primary, color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 16, border: 'none', cursor: 'pointer' }}>{cta.text || 'Richiedi informazioni'}</button>
+                <button onClick={() => setShowForm(true)} style={{ padding: '14px 34px', background: primary, color: readableOn('#ffffff', primary, '#1a1a2e'), borderRadius: 50, fontWeight: 700, fontSize: 16, border: 'none', cursor: 'pointer' }}>{cta.text || 'Richiedi informazioni'}</button>
                 {waHref && <a href={waHref} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 28px', background: '#25D366', color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none' }}>💬 WhatsApp</a>}
               </div>}
         </div>
@@ -393,7 +393,7 @@ function OffertaDettaglio({ block, primary, sec, heading, entity, entityType, pr
         )}
 
         {(prezzo || o.prezzo_testo || o.luogo || scade) && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: 18, padding: 24, background: '#f8f9fb', borderRadius: 16, marginBottom: 28 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', gap: 18, padding: 24, background: 'var(--sup-2, #f8f9fb)', borderRadius: 16, marginBottom: 28 }}>
             {(prezzo || o.prezzo_testo) && (
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 11, color: 'var(--txt-fioco)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>{o.prezzo_etichetta || 'Prezzo'}</div>
@@ -439,8 +439,8 @@ function OffertaDettaglio({ block, primary, sec, heading, entity, entityType, pr
                 {/* Il pulsante di acquisto porta allo shop solo se il cliente ha scritto dove:
                     senza indirizzo resterebbe un pulsante che non porta da nessuna parte. */}
                 {acquista && o.cta_url
-                  ? <a href={safeUrl(o.cta_url)} target="_blank" rel="noopener noreferrer" style={{ padding: '14px 34px', background: primary, color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none' }}>{o.cta_label || 'Acquista ora'}</a>
-                  : <button onClick={() => setShowForm(true)} style={{ padding: '14px 34px', background: primary, color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 16, border: 'none', cursor: 'pointer' }}>{o.cta_label || 'Richiedi informazioni'}</button>}
+                  ? <a href={safeUrl(o.cta_url)} target="_blank" rel="noopener noreferrer" style={{ padding: '14px 34px', background: primary, color: readableOn('#ffffff', primary, '#1a1a2e'), borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none' }}>{o.cta_label || 'Acquista ora'}</a>
+                  : <button onClick={() => setShowForm(true)} style={{ padding: '14px 34px', background: primary, color: readableOn('#ffffff', primary, '#1a1a2e'), borderRadius: 50, fontWeight: 700, fontSize: 16, border: 'none', cursor: 'pointer' }}>{o.cta_label || 'Richiedi informazioni'}</button>}
                 {waHref && <a href={waHref} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 28px', background: '#25D366', color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none' }}>💬 WhatsApp</a>}
               </div>}
         </div>
@@ -954,7 +954,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
               {d.tagline && <p style={{ fontSize: 'clamp(16px,2.5vw,22px)', color: 'rgba(255,255,255,0.82)', lineHeight: 1.5, maxWidth: 640, margin: '0 auto 40px' }} {...ricco(d.tagline)} />}
               <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginTop: 8 }}>
                 {d.cta1_text && d.cta1_url && (
-                  <a href={siteHref(d.cta1_url)} style={{ display: 'inline-block', padding: '16px 36px', background: primary, color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 17, textDecoration: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>{d.cta1_text}</a>
+                  <a href={siteHref(d.cta1_url)} style={{ display: 'inline-block', padding: '16px 36px', background: primary, color: readableOn('#ffffff', primary, '#1a1a2e'), borderRadius: 50, fontWeight: 700, fontSize: 17, textDecoration: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>{d.cta1_text}</a>
                 )}
                 {d.cta2_text && d.cta2_url && (
                   <a href={siteHref(d.cta2_url)} style={{ display: 'inline-block', padding: '16px 36px', background: 'rgba(255,255,255,0.15)', color: '#fff', borderRadius: 50, fontWeight: 600, fontSize: 17, textDecoration: 'none', border: '2px solid rgba(255,255,255,0.4)', backdropFilter: 'blur(10px)' }}>{d.cta2_text}</a>
@@ -1120,7 +1120,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                   {d.title && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, color: 'var(--txt)', marginBottom: 16 }} {...ricco(d.title)} />}
                   <RichText value={d.text} primary={primary} style={{ fontSize: Math.round(16 * textSizeScale(block.style?.textSize)), lineHeight: 1.75, color: cBody || textColorFor(block.style?.textColor, primary) || 'var(--txt-medio)', marginBottom: 24 }} />
                   {d.button_label && d.button_url && (
-                    <a href={siteHref(d.button_url)} style={{ display: 'inline-block', padding: '12px 28px', background: primary, color: '#fff', borderRadius: 50, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>{d.button_label}</a>
+                    <a href={siteHref(d.button_url)} style={{ display: 'inline-block', padding: '12px 28px', background: primary, color: readableOn('#ffffff', primary, '#1a1a2e'), borderRadius: 50, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>{d.button_label}</a>
                   )}
                 </div>
               </div>
@@ -1299,7 +1299,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                         <div style={{ width: 64, height: 64, borderRadius: '50%', background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Icon size={28} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />
                         </div>
-                        <div style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: '50%', background: primary, color: '#fff', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{idx + 1}</div>
+                        <div style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: '50%', background: primary, color: readableOn('#ffffff', primary, '#1a1a2e'), fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{idx + 1}</div>
                       </div>
                       {step.title && <h3 style={{ fontFamily: heading, fontSize: 17, fontWeight: 700, color: cTitle, marginBottom: 8 }} {...ricco(step.title)} />}
                       {step.text && <p style={{ fontSize: 14, color: cBody || 'var(--txt-tenue)', lineHeight: 1.6 }} {...ricco(step.text)} />}
@@ -1771,11 +1771,11 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                         {p.expires_at && <div style={{ fontSize: 12, color: 'var(--txt-fioco)', marginBottom: 20 }}>Valida fino al {new Date(p.expires_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
                         <div style={{ marginTop: 'auto' }}>
                           {hasDetail ? (
-                            <a href={`${offerteBase}${p.id}`} style={{ display: 'block', textAlign: 'center', padding: '13px 20px', background: primary, color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+                            <a href={`${offerteBase}${p.id}`} style={{ display: 'block', textAlign: 'center', padding: '13px 20px', background: primary, color: readableOn('#ffffff', primary, '#1a1a2e'), borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
                               {p.cta_label || 'Scopri di più'}
                             </a>
                           ) : (p.cta_label && p.cta_url) ? (
-                            <a href={promoUrl} {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})} style={{ display: 'block', textAlign: 'center', padding: '13px 20px', background: primary, color: '#fff', borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+                            <a href={promoUrl} {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})} style={{ display: 'block', textAlign: 'center', padding: '13px 20px', background: primary, color: readableOn('#ffffff', primary, '#1a1a2e'), borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
                               {p.cta_label}
                             </a>
                           ) : null}
@@ -1832,7 +1832,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                           <a href={`${pacchettiBase}${p.id}`} style={{ display: 'block', textAlign: 'center', padding: '12px', background: 'transparent', color: primary, border: `2px solid ${primary}`, borderRadius: 12, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>Scopri di più</a>
                         )}
                         {p.cta_label && p.cta_url && (
-                          <a href={siteHref(p.cta_url)} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textAlign: 'center', padding: '13px', background: primary, color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>{p.cta_label}</a>
+                          <a href={siteHref(p.cta_url)} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textAlign: 'center', padding: '13px', background: primary, color: readableOn('#ffffff', primary, '#1a1a2e'), borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>{p.cta_label}</a>
                         )}
                       </div>
                     </div>
@@ -2232,7 +2232,7 @@ function FormBuilderBlock({ token, primary, lang = 'it' }) {
           </button>
         ) : (
           <button type="submit" disabled={submitting}
-            style={{ flex: 1, padding: '13px', background: primary, color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: submitting ? 'not-allowed' : 'pointer' }}>
+            style={{ flex: 1, padding: '13px', background: primary, color: readableOn('#ffffff', primary, '#1a1a2e'), border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: submitting ? 'not-allowed' : 'pointer' }}>
             {submitting ? tr('sending', lang) : tr('send', lang)}
           </button>
         )}

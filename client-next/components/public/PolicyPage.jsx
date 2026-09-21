@@ -124,7 +124,7 @@ function PrivacyPolicyContent({ entity, p, primary, entityType }) {
       <Section title="3. Finalità e base giuridica del trattamento">
         <table style={tableStyle}>
           <thead>
-            <tr style={{ background: '#f5f5f5' }}>
+            <tr style={{ background: 'var(--sup-2, #f5f5f5)' }}>
               <th style={thStyle}>Finalità</th>
               <th style={thStyle}>Base giuridica (art. 6 GDPR)</th>
             </tr>
@@ -244,7 +244,7 @@ function CookiePolicyContent({ entity, p, primary }) {
         </p>
         <table style={tableStyle}>
           <thead>
-            <tr style={{ background: '#f5f5f5' }}>
+            <tr style={{ background: 'var(--sup-2, #f5f5f5)' }}>
               <th style={thStyle}>Nome / Chiave</th>
               <th style={thStyle}>Tipo</th>
               <th style={thStyle}>Finalità</th>
@@ -361,7 +361,7 @@ function PrivacyPolicyContentEN({ entity, p, primary, entityType }) {
       <Section title="3. Purposes and legal basis of processing">
         <table style={tableStyle}>
           <thead>
-            <tr style={{ background: '#f5f5f5' }}>
+            <tr style={{ background: 'var(--sup-2, #f5f5f5)' }}>
               <th style={thStyle}>Purpose</th>
               <th style={thStyle}>Legal basis (Art. 6 GDPR)</th>
             </tr>
@@ -481,7 +481,7 @@ function CookiePolicyContentEN({ entity, p, primary }) {
         </p>
         <table style={tableStyle}>
           <thead>
-            <tr style={{ background: '#f5f5f5' }}>
+            <tr style={{ background: 'var(--sup-2, #f5f5f5)' }}>
               <th style={thStyle}>Name / Key</th>
               <th style={thStyle}>Type</th>
               <th style={thStyle}>Purpose</th>
@@ -583,7 +583,7 @@ function PageShell({ entity, primary, title, children, lang = 'it' }) {
       </div>
 
       {/* Footer */}
-      <div style={{ borderTop: '1px solid #eee', padding: '20px 24px', textAlign: 'center', fontSize: 12, color: '#aaa', background: '#fff' }}>
+      <div style={{ borderTop: '1px solid #eee', padding: '20px 24px', textAlign: 'center', fontSize: 12, color: '#aaa', background: 'var(--sup, #fff)' }}>
         © {new Date().getFullYear()} {siteName} — Powered by OltreNova
       </div>
     </div>

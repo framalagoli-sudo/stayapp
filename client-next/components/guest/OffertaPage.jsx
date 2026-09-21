@@ -59,7 +59,7 @@ export default function OffertaPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fff', fontFamily: "'Inter', system-ui, sans-serif", paddingBottom: 88 }}>
+    <div style={{ minHeight: '100vh', background: 'var(--sup, #fff)', fontFamily: "'Inter', system-ui, sans-serif", paddingBottom: 88 }}>
       {/* Back button */}
       <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', borderBottom: '1px solid #f0f0f0', padding: '14px 20px' }}>
         <button onClick={goBack}
@@ -116,7 +116,7 @@ export default function OffertaPage() {
 
         {/* Date validità */}
         {(offerta.valid_from || offerta.expires_at) && (
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 28, padding: '16px 20px', background: '#f9f9fb', borderRadius: 12 }}>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 28, padding: '16px 20px', background: 'var(--sup-2, #f9f9fb)', borderRadius: 12 }}>
             {offerta.valid_from && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#555' }}>
                 <Calendar size={16} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />
@@ -161,7 +161,7 @@ export default function OffertaPage() {
 
         {/* Condizioni */}
         {offerta.conditions && (
-          <div style={{ padding: '16px 20px', background: '#f9f9fb', borderRadius: 10, marginBottom: 36, fontSize: 13, color: '#888', lineHeight: 1.6, borderLeft: '3px solid #ddd' }}>
+          <div style={{ padding: '16px 20px', background: 'var(--sup-2, #f9f9fb)', borderRadius: 10, marginBottom: 36, fontSize: 13, color: '#888', lineHeight: 1.6, borderLeft: '3px solid #ddd' }}>
             <strong style={{ display: 'block', marginBottom: 6, color: '#666' }}>Note e condizioni</strong>
             {offerta.conditions}
           </div>
@@ -196,7 +196,7 @@ export default function OffertaPage() {
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 30 }} />
           <div style={{
             position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40,
-            background: '#fff', borderRadius: '20px 20px 0 0',
+            background: 'var(--sup, #fff)', borderRadius: '20px 20px 0 0',
             maxHeight: '90vh', overflowY: 'auto',
             boxShadow: '0 -8px 40px rgba(0,0,0,0.18)',
             animation: 'slideUp 0.25s ease',
@@ -210,7 +210,7 @@ export default function OffertaPage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
                 <h2 style={{ fontFamily: heading, fontSize: 20, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Sono interessato</h2>
                 <button onClick={() => setSheetOpen(false)}
-                  style={{ background: '#f5f5f5', border: 'none', borderRadius: '50%', width: 36, height: 36, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  style={{ background: 'var(--sup-2, #f5f5f5)', border: 'none', borderRadius: '50%', width: 36, height: 36, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <X size={18} strokeWidth={2} color="#555" />
                 </button>
               </div>
@@ -281,7 +281,7 @@ function InterestForm({ entityTipo, entityId, offertaTitle, primary, privacyUrl,
     width: '100%', padding: '12px 16px', borderRadius: 10,
     border: '1px solid #e0e0e0', fontSize: 15, boxSizing: 'border-box',
     fontFamily: 'inherit', outline: 'none', marginBottom: 14,
-    background: '#fff', color: '#1a1a2e',
+    background: 'var(--sup, #fff)', color: '#1a1a2e',
   }
 
   if (state === 'success') return (

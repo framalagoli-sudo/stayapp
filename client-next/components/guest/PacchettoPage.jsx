@@ -47,7 +47,7 @@ export default function PacchettoPage() {
   const includes = (pacchetto.includes || []).filter(Boolean)
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fff', fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: 'var(--sup, #fff)', fontFamily: "'Inter', system-ui, sans-serif" }}>
       {/* Back button */}
       <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', borderBottom: '1px solid #f0f0f0', padding: '14px 20px' }}>
         <button onClick={goBack}
@@ -92,19 +92,19 @@ export default function PacchettoPage() {
           )}
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignSelf: 'center' }}>
             {pacchetto.duration && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: '#555', background: '#f9f9fb', padding: '8px 14px', borderRadius: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: '#555', background: 'var(--sup-2, #f9f9fb)', padding: '8px 14px', borderRadius: 20 }}>
                 <Clock size={15} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />
                 {pacchetto.duration}
               </div>
             )}
             {pacchetto.period && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: '#555', background: '#f9f9fb', padding: '8px 14px', borderRadius: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: '#555', background: 'var(--sup-2, #f9f9fb)', padding: '8px 14px', borderRadius: 20 }}>
                 <Calendar size={15} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />
                 {pacchetto.period}
               </div>
             )}
             {pacchetto.min_persons && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: '#555', background: '#f9f9fb', padding: '8px 14px', borderRadius: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: '#555', background: 'var(--sup-2, #f9f9fb)', padding: '8px 14px', borderRadius: 20 }}>
                 <Users size={15} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />
                 {pacchetto.min_persons}
               </div>
