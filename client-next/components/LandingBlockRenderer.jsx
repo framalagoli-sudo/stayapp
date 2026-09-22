@@ -1089,7 +1089,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
             {concluso
               ? <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt-tenue)', background: '#eee', borderRadius: 20, padding: '3px 10px' }}>{tr('event_ended', lang)}</span>
               : prezzo && <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>{prezzo}</span>}
-            <span style={{ fontSize: 13, fontWeight: 700, color: concluso ? '#888' : primary }}>{tr(concluso ? 'details_arrow' : 'book_arrow', lang)}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: concluso ? 'var(--txt-tenue)' : primary }}>{tr(concluso ? 'details_arrow' : 'book_arrow', lang)}</span>
           </div>
         </div>
       </a>
