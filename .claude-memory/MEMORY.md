@@ -1,11 +1,15 @@
 ﻿# Memory Index
 
+> 👤 Mi chiamo **Ettore** ([nome](user_nome_assistente.md)) — scelto su richiesta di Francesco il 23/09.
+
 > ⛔ **I cambi che un cliente noterebbe li autorizza Francesco PRIMA**: [regola](feedback_autorizzare_cambi_importanti.md). E la sicurezza è il vincolo di ogni riga, non una fase finale.
 
 > ⚠️ **Prima di scrivere codice**: [Verificare il contesto, non solo il pezzo](feedback_verificare_il_contesto.md) — la radice comune degli errori ripetuti.
 
 > 🔌 **Integrazioni**: [la sequenza del fornitore va letta tutta](reference_verifica_la_sequenza_del_fornitore.md) — il collegamento WhatsApp era «pronto» e non avrebbe inviato niente.
 
+- [🧾 A OGNI chiusura: aggiornare TUTTI i file di progetto](feedback_chiusura_sessione.md) — CLAUDE/FEATURES/PROGETTO/SECURITY, memoria + copia in .claude-memory; ognuno va APERTO, non supposto
+- [📅 Sessione 23/09 — hydration era la lingua, domini tripli, ?back= aperto](project_session_2026_09_23.md) — nessuna migration; PROGETTO.md §11 mentiva ancora sugli incassi
 - [📅 Sessione 21–22/09 — varianti dei blocchi, posti riservati, inlingua da brief](project_session_2026_09_22.md) — migration fino alla 126; 5 difetti di piattaforma trovati provando, non leggendo
 - [💾 Backup completo: account e immagini](project_backup_lacune.md) — chiuso 09/09 (15 account, 62/62 foto); resta da provare il RIPRISTINO, piano dentro
 - [🤖 Consumi AI e tetto per azienda](project_ai_consumi.md) — 15/09: 12 chiamate su 13 senza limite vero; ora un punto solo, fail closed; LIVE dal 15/09 con ricarica da Aziende → Credito AI e avviso al cliente dall 80%
@@ -116,7 +120,7 @@
 - [🏠 Un sito, un indirizzo](reference_un_sito_un_indirizzo.md) — se il cliente ha un dominio si va lì (307, mai 301); sitemap ed email devono dichiarare lo stesso del canonical
 - [📷 Caricamento foto: 4 MB è il tetto della piattaforma](reference_caricamento_foto.md) — misurato (413 prima della nostra route); e CampoImmagine, il campo unico che NON va forzato su gallerie e miniature
 - [🧩 Sezioni «universali» — DA ANALIZZARE](project_sezioni_universali.md) — una sezione definita una volta e usata su più pagine; oggi si copiano i blocchi (4 copie su metodotvb)
-- [🔧 Hydration del dettaglio evento — DA RIPARARE](project_backlog_hydration_evento.md) — attributi, non testo: il ramo typeof window in suDominioDelCliente; soluzione già individuata
+- [🔧 Hydration evento/blog — RISOLTO 23/09](project_backlog_hydration_evento.md) — era la LINGUA letta nel browser (`_lang` esiste solo nella riscrittura); la diagnosi del 22/09 era un artefatto di localhost; condivisione articoli con URL vuoto
 - [🎓 inlingua Terni — restyling da brief](project_inlingua_terni.md) — home rifatta 22/09 dal PDF + registro di Verona; restano le 11 pagine interne e le foto vere
 - [⚠️ Identificatore fuori scope = 500 invisibile](reference_identificatore_fuori_scope.md) — un componente fuori dal renderer che usa una sua funzione: né il build né una GET lo vedono se il ramo è spento dai dati
 - [🗣️ Gli errori che legge l ospite](reference_errori_che_legge_ospite.md) — guestFetch mostrava l indirizzo della nostra API al posto del messaggio; e chi è in lista d attesa occupava posti

@@ -16,7 +16,7 @@ pagarlo**.
 > dentro GitHub, che è uno degli accessi che descrive: se nessuno può entrare in
 > GitHub, nessuno può leggere queste istruzioni. Va tenuta una copia fuori.
 
-*Aggiornato al 29 agosto 2026.*
+*Aggiornato al 23 settembre 2026.*
 
 ---
 
@@ -74,7 +74,7 @@ delle strutture. È materiale da GDPR: se esce, ci sono 72 ore per denunciarlo.
 
 ### 2.2 Vercel — dove gira il programma *(critico assoluto)*
 
-**Cosa fa**: ospita il sito, il pannello e tutte le 207 funzioni di servizio.
+**Cosa fa**: ospita il sito, il pannello e tutte le 224 funzioni di servizio.
 Custodisce **tutte le chiavi segrete** degli altri fornitori. Fa partire i sei
 processi automatici (§5).
 
@@ -207,7 +207,7 @@ dietro. Non ci sono due sistemi da tenere allineati.
  ┌──────────────────────────────────────────────────┐
  │  Il programma (Next.js) — ospitato su Vercel     │
  │  · i siti pubblici    · l'app del QR code        │
- │  · il pannello        · 207 funzioni di servizio │
+ │  · il pannello        · 224 funzioni di servizio │
  └──────────────────┬───────────────────────────────┘
                     │
      ┌──────────────┼───────────────┬──────────────┐
@@ -379,6 +379,14 @@ si sperimenta.
 `supabase/migrations/` si eseguono **a mano** dal pannello Supabase, sezione SQL
 Editor.
 
+**Per togliere un sottodominio `*.oltrenova.com`** (il pannello non lo permette
+ai clienti, di proposito): prima lo si stacca da Vercel con la CLI già
+autenticata — `npx vercel api` con metodo `DELETE` su
+`/v9/projects/<id progetto>/domains/<indirizzo>` (gli id sono in
+`client-next/.vercel/project.json`) — e **solo dopo** si cancella la riga nella
+tabella `domini`. Al contrario, l'indirizzo resterebbe agganciato al progetto
+senza più nessuna riga che lo nomini. Dettaglio → nota 48 in `CLAUDE.md`.
+
 ---
 
 ## 8. Le chiavi — dove si rigenerano
@@ -505,9 +513,10 @@ Chi compra o subentra deve saperlo prima, non dopo.
 - **Non c'è fatturazione automatica.** Nessun abbonamento ricorrente per i
   clienti di OltreNova: quello che si incassa da loro si gestisce fuori dalla
   piattaforma. (Stripe Connect serve agli incassi **dei** clienti, non ai nostri.)
-- **Nessun cliente ha ancora incassato davvero.** I pagamenti sono collegati e
-  coprono negozio, prenotazioni ed eventi, ma il primo pagamento vero non è mai
-  avvenuto: finché non succede, quel percorso è provato solo da noi.
+- **Un solo cliente ha incassato davvero, una volta.** I pagamenti coprono
+  negozio, prenotazioni ed eventi; il primo pagamento vero è del 22/09/2026
+  (Garage 22, un posto a un evento, 1 €). Il percorso eventi è quindi provato dal
+  vivo; negozio e prenotazioni risorse lo sono solo da noi.
 - **WhatsApp è costruito ma spento**: la verifica Meta è **approvata** (Tech
   Provider, 18/09/2026), mancano le chiavi sulla piattaforma e la prova dal vivo.
 - **Il canale in tedesco non c'è** (italiano e inglese sì).

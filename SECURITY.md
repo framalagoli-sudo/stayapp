@@ -92,6 +92,14 @@ Dove possibile ognuno ha un test in `tests/smoke/security.spec.js`.
     per ogni fornitore a consumo futuro (voce, trascrizione, immagini): un punto solo, tetto per
     azienda, registro della spesa. Sonda `probe-ai-consumi.mjs`.
 
+19. **Un indirizzo di ritorno che arriva dall'URL (`?back=`) vale solo se è un percorso di questo
+    sito.** Passa da `percorsoInterno()` (`lib/percorso-interno.js`), che scarta gli indirizzi
+    assoluti e `//altro-sito`. Il 23/09/2026 evento e articolo lo passavano grezzo a
+    `router.push` e a un `href`: bastava un link con `back=https://…` perché «Indietro» portasse
+    fuori, sotto il nostro nome. Stesso giro: **il dominio da cui arriva una pagina si legge
+    dall'header `Host`, mai da `_domain`** — sul nostro dominio quel parametro lo scrive chiunque
+    nell'URL, e finirebbe nei link del menu.
+
 ### Il SISTEMA di monitoraggio (a strati — "sempre" senza sprechi)
 - **Strato 0 — Aggiornamento dipendenze (il "processo tipo WordPress-update").** `.github/dependabot.yml`
   apre PR automatiche per gli aggiornamenti + quelle di **sicurezza (CVE)** se sono attivi i toggle repo

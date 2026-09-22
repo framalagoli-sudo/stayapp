@@ -451,6 +451,15 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - **«Pagamenti» era solo il collegamento del conto.** Ora `GET /api/stripe/incassi` + lista: cosa, quanto, quando, chi. ⚠️ Letta dalle **nostre** righe, zero chiamate a Stripe: nessun dato di carta entra da noi, e ciò che non si chiede non si può perdere. Ricevute, rimborsi e saldo restano sulla dashboard del cliente, dove entra col suo account.
     - ⚠️ **Il webhook funzionava.** La tentazione era cercare il guasto lì; la riga nel database diceva di no. Leggere il dato vero prima di ipotizzare il meccanismo ha risparmiato un giro intero.
 
+47. **🌍 La lingua e il dominio li dice il server, mai `useSearchParams`** (23/09/2026). Con un browser in inglese `LanguageSwitcher` porta su `/en/…`; il middleware aggiunge `_lang=en` (e `_domain`) **solo nella riscrittura interna**, quindi nel browser quei parametri **non esistono**. `EventoPage`, `BlogListPage` e `ArticoloPage` li leggevano da lì: il server rendeva in inglese, il browser disegnava in italiano → React **#418** e pagine con etichette mescolate, su tutti gli eventi, per chiunque arrivasse con un browser inglese. Ora arrivano come **prop** dalla pagina server (`lingua`, `dominioCliente` dall'header `Host`).
+    - ⛔ **Un valore calcolato da `window` durante il render è un attributo sbagliato in produzione**: React non lo corregge, tiene quello del server. I pulsanti di condivisione degli articoli condividevano un URL **vuoto** da sempre.
+    - ⚠️ La diagnosi del 22/09 (un ramo `typeof window`) era stata fatta su **localhost** e trovava un difetto che esisteva solo lì. Playwright Test apre il browser in `en-US`, uno script con `chromium.launch()` nella lingua di sistema: **una diagnosi va rifatta con lo stesso host e la stessa lingua dell'ambiente in cui fallisce.**
+    - `?back=` passa da `lib/percorso-interno.js` (SECURITY §0 invariante 19).
+
+48. **🔁 Un ciclo su `ENTITY_TABLES` legge `entita` tre volte** (23/09/2026). Dopo l'unificazione la mappa manda tutti e tre i tipi sulla stessa tabella. Il giro di riparazione dei sottodomini in `lib/domini-manutenzione.js` la scorreva, e un'entità senza sottodominio ne riceveva **tre** nello stesso giro, due col tipo sbagliato e quindi in 404 (Ristorante Borgo del Lago, 22/09 alle 02:46). Ora legge `entita` una volta, col tipo vero. Unico ciclo del genere nel codice, verificato.
+    - **Togliere un sottodominio**: il pannello lo rifiuta di proposito, e in locale non c'è `VERCEL_TOKEN`. Si fa con la CLI già autenticata: `npx vercel api "/v9/projects/<projectId>/domains/<host>?teamId=<orgId>" -X DELETE --dangerously-skip-permissions` (id in `client-next/.vercel/project.json`), **poi** si cancella la riga in `domini`. Mai solo la riga: l'hostname resterebbe agganciato e invisibile.
+    - Dopo la rimozione l'indirizzo serve per qualche tempo la pagina di OltreNova (il certificato è ancora in giro), invece del 525 di un sottodominio mai esistito. Non è un guasto.
+
 ---
 
 ## Roadmap

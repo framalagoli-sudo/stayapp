@@ -273,6 +273,15 @@ classi non è chiuso** — averne battute otto non dice quante ne restano.
 - ✅ **`select('*')` su route senza login** — 4 casi, nessuno restituisce il dato al client
 - ✅ **Multi-tenant su 204 route** — nessuna perdita
 
+### Trovato il 23/09/2026 — indirizzi di ritorno aperti
+
+Cercando un errore di hydration: `?back=` finiva grezzo in `router.push` (evento, articolo) e in un
+`href` (articolo). Un link con `back=https://altro-sito` faceva portare «Indietro» fuori dal sito, sotto
+il nostro nome: un *open redirect*, la classe che A4 non aveva guardato (A4 cercava `javascript:`, non
+destinazioni esterne). Chiuso con `lib/percorso-interno.js` — solo percorsi di questo sito — e provato
+dal vivo col caso ostile (`back=//sito-malevolo.com` ignorato). SECURITY §0 invariante 19. Cercati gli
+altri punti con `get('back')`: erano questi due.
+
 ### Classi che restano da guardare
 
 - Cosa finisce nei log dei **fornitori** (Resend, Stripe, Meta), non solo nei nostri

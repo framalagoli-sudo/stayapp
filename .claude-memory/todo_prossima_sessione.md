@@ -1,14 +1,29 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — 22/09: blocchi, eventi, inlingua Terni e il PRIMO INCASSO VERO (Garage 22) tutti live, migration fino alla 126; restano 2 verifiche a mano sul pannello pagamenti, WhatsApp/Meta, un difetto di hydration con diagnosi gia fatta, tre siti senza titolo SEO e SENTRY_DSN da togliere da Vercel"
+description: "Da dove riprendere — 23/09: hydration evento/blog RISOLTA (era la lingua), domini tripli corretti e ripuliti; migration ferme alla 126; restano 2 verifiche a mano sul pannello pagamenti, WhatsApp/Meta (e una contraddizione fra documenti sul Tech Provider), tre siti senza titolo SEO, SENTRY_DSN da togliere da Vercel"
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-09-22T20:35:12.586Z
+  modified: 2026-09-22T23:45:56.701Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
+
+## ▶️ 23/09 — SESSIONE CHIUSA (Ettore). Nessuna migration nuova: ferme alla **126**
+
+1. ✅ **Hydration evento + blog risolta** — la causa vera era la **lingua** (`_lang` esiste solo nella riscrittura del middleware, non nell'URL del browser); la diagnosi del 22/09 era un artefatto di localhost. Chiusi nello stesso giro: condivisione articoli con URL **vuoto**, `?back=` aperto verso siti esterni. Smoke 74/74 → [[project_backlog_hydration_evento]] · note 47 `CLAUDE.md`, SECURITY §0 inv. 19
+2. ✅ **Domini tripli** — il giro notturno leggeva `entita` tre volte (via `ENTITY_TABLES`) e creava tre sottodomini, due in 404. Codice corretto; i due di Ristorante Borgo del Lago staccati da Vercel (`npx vercel api … -X DELETE`) e cancellati, su autorizzazione di Francesco → nota 48
+3. **Borgo del Lago** (ristorante + struttura) usa **solo le web app** dell'app del QR, internamente: il sito è su WordPress, la migrazione verrà. Le due entità sono `active:false` ma **devono restare raggiungibili** — non «sistemare» quel flag.
+
+### Nuovi aperti dal 23/09
+- ❓ **Meta Tech Provider**: `PROGETTO.md` §2.6 lo dà **approvato il 18/09**, la roadmap di `CLAUDE.md` lo elenca ancora come da fare. Chiedere a Francesco quale è vera e allineare.
+- Su `/en` il pulsante «Torna a <sito>» della pagina evento resta in italiano.
+- Blog: date con `toLocaleDateString` senza fuso → un articolo pubblicato vicino a mezzanotte può mostrare giorno diverso fra server e browser (altro #418 possibile, raro).
+- Sul PC di Francesco c'erano processi in ascolto su **:3001–:3009** (vecchi dev server?): non toccati.
+- ⚠️ `TaskStop` su un `npm run dev` in background chiude la shell ma **non** il node figlio: fermarlo per PID.
+
+---
 
 ## ▶️ 22/09 — SESSIONE CHIUSA. Tutto live. Migration eseguite: fino alla **126**
 
@@ -58,8 +73,7 @@ Su Vercel c'è solo `WHATSAPP_TOKEN_KEY`: mancano `META_APP_ID` · `META_APP_SEC
 - Restano: numero di test, App Review con i **due video**, tariffe Meta Italia, e la **prova dal vivo** del collegamento (l'unico pezzo scritto e mai provato).
 - ⚠️ Email da uniformare prima dell'App Review: `info@oltrenova.com` · `oltrenova@gmail.com` · `fra.malagoli@gmail.com`.
 
-### 2. Il difetto che ho lasciato lì, con diagnosi già fatta
-**Hydration sul dettaglio evento**: lo smoke `public-flows` è rosso. La pagina **funziona** (1093 parole SSR, H1, contenuto completo), sono **attributi** non testo, causa e soluzione sono scritte → [[project_backlog_hydration_evento]]. Venti minuti a mente fresca, con verifica da dominio cliente **e** da oltrenova.com.
+### 2. ~~Hydration sul dettaglio evento~~ ✅ risolta il 23/09 (vedi in cima).
 
 ### 3. Tre siti senza titolo per Google (10 minuti, serve solo il tuo ok)
 `noleggio-automax`, `d-o-pier-francesco-giachini` e **`metodotvb`** non hanno `seo_title`/`seo_description`: nei risultati di ricerca Google si inventa il titolo. Si scrivono a mano o col pulsante «Proponili tu» nel pannello Stato del sito. Sono testi che vede il pubblico: li approvi tu.
