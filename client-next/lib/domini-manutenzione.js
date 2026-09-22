@@ -250,14 +250,18 @@ export async function manutenzioneDomini({ soloPendenti = true, limite = 10 } = 
   // c'era ancora, o con Vercel irraggiungibile in quel momento).
   const { data: subEsistenti } = await supabaseAdmin.from('domini').select('entity_id').eq('tipo', 'subdomain')
   const conSub = new Set((subEsistenti || []).map(r => r.entity_id))
-  for (const [entity_tipo, table] of Object.entries(ENTITY_TABLES)) {
-    const { data: entita } = await supabaseAdmin.from(table).select('id, slug, azienda_id').not('slug', 'is', null)
-    for (const e of entita || []) {
-      if (conSub.has(e.id)) continue
-      const creato = await assicuraSottodominio({ azienda_id: e.azienda_id, entity_tipo, entity_id: e.id, entity_slug: e.slug })
-      if (creato) esito.riparati++
-      else esito.problemi.push({ entita: e.slug, fase: 'sottodominio_non_creato' })
-    }
+  //
+  // ⛔ Si legge `entita` UNA volta, col suo tipo vero. Prima si scorreva
+  // ENTITY_TABLES, che dopo l'unificazione manda tutti e tre i tipi sulla
+  // stessa tabella: ogni entità veniva letta tre volte, etichettata ogni volta
+  // con un tipo diverso, e ne uscivano tre sottodomini — due dei quali in 404,
+  // perché col tipo sbagliato il middleware li manda su /s/ o /a/.
+  const { data: entita } = await supabaseAdmin.from('entita').select('id, slug, azienda_id, tipo').not('slug', 'is', null)
+  for (const e of entita || []) {
+    if (conSub.has(e.id) || !ENTITY_TABLES[e.tipo]) continue
+    const creato = await assicuraSottodominio({ azienda_id: e.azienda_id, entity_tipo: e.tipo, entity_id: e.id, entity_slug: e.slug })
+    if (creato) { esito.riparati++; conSub.add(e.id) }
+    else esito.problemi.push({ entita: e.slug, fase: 'sottodominio_non_creato' })
   }
 
   return esito
