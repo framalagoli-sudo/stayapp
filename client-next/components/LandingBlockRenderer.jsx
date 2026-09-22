@@ -654,7 +654,12 @@ const API_BASE_FB = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001')
 // Hero a tutto schermo con più slide a scorrimento (crossfade), frecce, puntini,
 // swipe su mobile e autoplay con pausa al passaggio del mouse. Componente a sé
 // (usa hook) renderizzato dal case 'hero_slider'.
-function HeroSlider({ block, primary, heading }) {
+// ⛔ `siteHref` vive dentro il componente principale, questo sta fuori: senza
+// riceverlo, ogni slide CON un pulsante mandava la pagina in **500**. Non era
+// mai emerso perché fino al 22/09/2026 tutti gli slider avevano il link vuoto,
+// quindi il ramo non veniva mai eseguito. Il build non vede un identificatore
+// fuori scope (nota 32): si è visto aprendo la pagina.
+function HeroSlider({ block, primary, heading, siteHref = (u) => u || '#' }) {
   const d = block.data || {}
   const slides = (d.slides || []).filter(s => s.image_url || s.title || s.subtitle)
   const n = slides.length
@@ -749,7 +754,9 @@ function HeroSlider({ block, primary, heading }) {
 
 // Carosello scorrevole di card (immagine + titolo + testo + pulsante). Più card
 // visibili per volta (responsive: 1 su mobile), frecce, puntini, swipe, autoplay.
-function Carousel({ block, primary, heading }) {
+// ⚠️ Stesso difetto dello slider: il pulsante di una scheda usa siteHref, che
+// qui fuori non esiste. Nessun carosello ne aveva ancora uno.
+function Carousel({ block, primary, heading, siteHref = (u) => u || '#' }) {
   const d = block.data || {}
   const items = (d.items || []).filter(it => it.image_url || it.title || it.text)
   const cfgPv = Math.min(Math.max(parseInt(d.per_view) || 3, 1), 4)
@@ -1129,10 +1136,10 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
       }
 
       case 'hero_slider':
-        return <HeroSlider key={block.id} block={block} primary={primary} heading={heading} />
+        return <HeroSlider key={block.id} block={block} primary={primary} heading={heading} siteHref={siteHref} />
 
       case 'carosello':
-        return <Carousel key={block.id} block={block} primary={primary} heading={heading} />
+        return <Carousel key={block.id} block={block} primary={primary} heading={heading} siteHref={siteHref} />
 
       case 'annuncio': {
         if (!d.text) return null
