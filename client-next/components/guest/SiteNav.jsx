@@ -1,4 +1,5 @@
 'use client'
+import { readableOn } from '@/lib/blockTypes'
 import { useEffect, useState } from 'react'
 import LangToggle from './LangToggle'
 import { entityBasePath, homeHref } from '@/lib/i18n'
@@ -27,7 +28,9 @@ function buttonStyle(b, { primary, secondary }) {
   const base = { padding: '8px 20px', borderRadius: radius, fontSize: 13, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', lineHeight: 1.1, transition: 'opacity 0.2s' }
   if (b.variant === 'outline') return { ...base, color: col, border: `1.5px solid ${col}`, background: 'transparent' }
   if (b.variant === 'text')    return { ...base, color: col, background: 'transparent', padding: '8px 10px' }
-  return { ...base, color: '#fff', background: col } // solid (default)
+  // ⛔ Il bianco era fisso: su un colore tema chiaro (il turchese di inlingua
+  // Terni, 2,54) la scritta del pulsante non si legge. Lo decide il colore sotto.
+  return { ...base, color: readableOn('#ffffff', col, '#1a1a2e'), background: col } // solid (default)
 }
 
 export default function SiteNav({ entity, mini, pagine = [], prefix, primary, secondary, heading, lang = 'it', domain = null, pwa = null, bookingUrl = null, currentSlug = null }) {
@@ -109,7 +112,7 @@ export default function SiteNav({ entity, mini, pagine = [], prefix, primary, se
   const actions = (
     <>
       {pwa && <a href={pwa.url} style={{ padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 600, textDecoration: 'none', color: navTextColor, border: `1px solid ${navDark ? 'rgba(255,255,255,0.3)' : '#ddd'}`, whiteSpace: 'nowrap' }}>{pwa.label}</a>}
-      {bookingUrl && <a href={safeUrl(bookingUrl)} target="_blank" rel="noopener noreferrer" style={{ padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 700, textDecoration: 'none', color: '#fff', background: primary, whiteSpace: 'nowrap' }}>Prenota</a>}
+      {bookingUrl && <a href={safeUrl(bookingUrl)} target="_blank" rel="noopener noreferrer" style={{ padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 700, textDecoration: 'none', color: readableOn('#ffffff', primary, '#1a1a2e'), background: primary, whiteSpace: 'nowrap' }}>Prenota</a>}
       {buttons.map(b => (
         <a key={b.id} href={safeUrl(b.url)} target={String(b.url).startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer"
           style={buttonStyle(b, { primary, secondary })}

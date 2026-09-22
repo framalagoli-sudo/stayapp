@@ -12,7 +12,9 @@ export default function CookieBanner({ primaryColor = '#00b5b5', privacyUrl, coo
   // erano praticamente dello stesso colore dello sfondo, e il consenso ai
   // cookie è proprio la cosa che deve restare leggibile. Se il colore del
   // cliente non si stacca dal banner, si usa il bianco.
-  const coloreLink = readableOn(primaryColor, '#1a1a2e', '#ffffff')
+  // 4,5: sono link piccoli, e la scelta sui cookie è proprio ciò che deve
+  // restare leggibile. Con la soglia da pulsante passavano a 3,57.
+  const coloreLink = readableOn(primaryColor, '#1a1a2e', '#ffffff', 4.5)
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -61,7 +63,7 @@ export default function CookieBanner({ primaryColor = '#00b5b5', privacyUrl, coo
           // ⛔ Era sempre bianco: su un colore chiaro (il ciano di metodotvb,
           // misurato 2,45 il 21/09) la scritta del pulsante non si legge. Il
           // testo lo decide il colore sotto, non l'abitudine.
-          background: primaryColor, color: readableOn('#1a1a2e', primaryColor, '#ffffff'), fontSize: 12, fontWeight: 700, cursor: 'pointer',
+          background: primaryColor, color: readableOn('#1a1a2e', primaryColor, '#ffffff', 4.5), fontSize: 12, fontWeight: 700, cursor: 'pointer',
         }}>
           {t('accept', lang)}
         </button>

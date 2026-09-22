@@ -243,8 +243,13 @@ export function contrastRatio(a, b) {
   return (hi + 0.05) / (lo + 0.05)
 }
 // `color` se contrasta a sufficienza con `bg`, altrimenti `fallback`.
-export function readableOn(color, bg, fallback = '#fff') {
-  return contrastRatio(color, bg) >= 3 ? color : fallback
+//
+// La soglia predefinita è 3, quella del testo GRANDE: va bene per i pulsanti,
+// dove la scritta è in grassetto e importante. ⚠️ Per il testo piccolo il
+// minimo è 4,5 e va chiesto esplicitamente — con 3 passavano link da 3,57 che
+// nessuno legge (banner dei cookie, misurato il 22/09/2026).
+export function readableOn(color, bg, fallback = '#fff', soglia = 3) {
+  return contrastRatio(color, bg) >= soglia ? color : fallback
 }
 
 // Blocchi con campo rich-text: mostrano dimensione/colore testo nel pannello stile.
