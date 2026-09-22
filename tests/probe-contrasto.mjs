@@ -56,6 +56,23 @@ for (let y = 0; y < altezza; y += 700) {
 await page.evaluate(() => window.scrollTo(0, 0))
 await page.waitForTimeout(600)
 
+// ⚠️ Prima di fidarsi della sonda, si prova la sonda: due paragrafi finti —
+// uno leggibile, uno bianco su bianco — e si verifica che trovi il secondo e
+// solo quello. Una misura che non trova più niente sembra una buona notizia:
+// è il modo in cui un controllo muore senza che nessuno se ne accorga.
+const autotest = await page.evaluate(() => {
+  const finto = (bg, col, testo) => {
+    const d = document.createElement('div')
+    d.style.cssText = `background:${bg};padding:10px`
+    d.innerHTML = `<p style="color:${col};font-size:14px">${testo}</p>`
+    d.dataset.sondaProva = '1'
+    document.body.appendChild(d)
+  }
+  finto('#ffffff', '#ffffff', 'PROVA SONDA invisibile')
+  finto('#ffffff', '#111111', 'PROVA SONDA leggibile')
+  return true
+})
+
 const sospetti = await page.evaluate(() => {
   // ⛔ Prima questa sonda confrontava due luminanze «a occhio», con una soglia
   // inventata. Il 21/09/2026 ha dato per buono un paragrafo **#444 su fondo
@@ -81,10 +98,24 @@ const sospetti = await page.evaluate(() => {
     // ⚠️ Se sopra c'è un'immagine di sfondo (o un gradiente) non si può dire
     // niente guardando i colori: il testo bianco su una foto è corretto, ed è
     // il caso di quasi tutti gli hero. Misurarlo darebbe un allarme perenne.
+    // ⚠️ La foto di sfondo non è sempre un `background-image`: negli hero è un
+    // `<img>` (o un `<video>`) steso dietro il testo in posizione assoluta.
+    // Guardando solo il CSS la sonda risaliva fino al body bianco e gridava
+    // «bianco su bianco» su OGNI hero con foto — un allarme che suona sempre
+    // si smette di leggere, ed è il difetto peggiore che possa avere.
+    const copertoDaMedia = (nodo, box) => [...nodo.children].some(c => {
+      if (!/^(IMG|VIDEO)$/.test(c.tagName)) return false
+      const p = getComputedStyle(c).position
+      if (p !== 'absolute' && p !== 'fixed') return false
+      const r = c.getBoundingClientRect()
+      return r.width >= box.width * 0.9 && r.height >= box.height * 0.9
+    })
+    const box = el.getBoundingClientRect()
     let sfondo = null, n = el, suImmagine = false
     while (n && !sfondo && !suImmagine) {
       const s = getComputedStyle(n)
       if (s.backgroundImage && s.backgroundImage !== 'none') suImmagine = true
+      else if (copertoDaMedia(n, box)) suImmagine = true
       else if (s.backgroundColor && !/rgba\(0, 0, 0, 0\)|transparent/.test(s.backgroundColor)) sfondo = s.backgroundColor
       n = n.parentElement
     }
@@ -113,13 +144,25 @@ const sospetti = await page.evaluate(() => {
 
 await browser.close()
 
+// L'esito dell'autotest, prima di tutto il resto.
+const trovaInvisibile = sospetti.some(s => s.includes('PROVA SONDA invisibile'))
+const trovaLeggibile = sospetti.some(s => s.includes('PROVA SONDA leggibile'))
+const veri = sospetti.filter(s => !s.includes('PROVA SONDA'))
+if (!trovaInvisibile || trovaLeggibile) {
+  console.log('  ⛔ LA SONDA NON MISURA PIÙ: ' + (trovaInvisibile
+    ? 'segnala come illeggibile un testo che si legge benissimo.'
+    : 'non vede un testo bianco su bianco messo lì apposta.'))
+  console.log('     Va riparata prima di fidarsi di qualunque risultato.\n')
+  process.exit(2)
+}
+
 if (erroriJs.length) {
   console.log('  ⚠️  errori JavaScript nella pagina:')
   for (const e of erroriJs.slice(0, 5)) console.log('     · ' + e)
 }
-if (sospetti.length) {
-  console.log(`  ${sospetti.length} TESTI CHE NON SI LEGGONO\n`)
-  for (const s of sospetti.slice(0, 25)) console.log('  · ' + s)
+if (veri.length) {
+  console.log(`  ${veri.length} TESTI CHE NON SI LEGGONO\n`)
+  for (const s of veri.slice(0, 25)) console.log('  · ' + s)
   console.log('')
   process.exit(1)
 }
