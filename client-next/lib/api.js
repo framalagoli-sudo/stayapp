@@ -15,7 +15,22 @@ export async function guestFetch(path, options = {}) {
     ...options,
     headers: { 'Content-Type': 'application/json', ...options.headers },
   })
-  if (!res.ok) throw new Error(`guestFetch ${path}: ${res.status}`)
+  if (!res.ok) {
+    // ⛔ Qui si buttava via il corpo della risposta e si lanciava
+    // `guestFetch /api/guest/eventi/xxx/book: 400`. Quella stringa **non
+    // finiva in un log**: finiva sotto gli occhi dell'ospite, al posto del
+    // messaggio che la route aveva scritto con cura — «i posti sono appena
+    // finiti», «serve il consenso», «serve un numero di telefono». Segnalato
+    // da Francesco il 22/09/2026 su un evento di Garage 22.
+    let corpo = null
+    try { corpo = await res.json() } catch { /* non era JSON: resta il ripiego */ }
+    const err = new Error(corpo?.error || `Non è riuscito (${res.status}). Riprova fra poco.`)
+    err.stato = res.status
+    // I dati che la route allega all'errore (posti rimasti, lista d'attesa)
+    // servono a chi chiama per reagire, non solo per scrivere una frase.
+    if (corpo && typeof corpo === 'object') Object.assign(err, corpo)
+    throw err
+  }
   return res.json()
 }
 

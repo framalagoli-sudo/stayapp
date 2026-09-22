@@ -130,7 +130,18 @@ export default function EventoPage({ iniziale = null }) {
       if (res?.pagamento?.url) { window.location.href = res.pagamento.url; return }
       setEmailSent(!!res?.guest_confirmation_sent)
       setDone(true)
-    } catch (e) { setBookErr(e.message) }
+    } catch (e) {
+      setBookErr(e.message)
+      // ⛔ Se i posti sono finiti mentre si compilava, restava il modulo con
+      // una riga rossa: si riprovava e si ribeccava lo stesso errore. Ora la
+      // pagina si aggiorna e mostra quello che c'è davvero — «tutto esaurito»
+      // e, se c'è, la lista d'attesa.
+      if (e.posti_liberi === 0) {
+        guestFetch(`/api/guest/eventi/${evento.id}?lang=${lang}`)
+          .then(ev => setEvento(ev))
+          .catch(() => {})
+      }
+    }
     finally { setBooking(false) }
   }
 

@@ -81,8 +81,21 @@ export async function POST(request, props) {
     // ⚠️ Il limite del pubblico NON è la capienza: è la capienza meno i posti
     // riservati a chi prenota al telefono.
     const posti = postiEvento(evento)
-    if (!posti.illimitato && reqSeats > posti.liberiOnline)
-      return Response.json({ error: 'Posti esauriti' }, { status: 400 })
+    if (!posti.illimitato && reqSeats > posti.liberiOnline) {
+      // ⛔ Diceva solo «Posti esauriti», anche a chi ne aveva chiesti 4 quando
+      // ne restavano 2: chi legge non sa se riprovare con meno o rinunciare.
+      // E chi è arrivato un istante dopo qualcun altro merita di sapere che
+      // c'è una lista d'attesa, invece di un errore rosso e basta.
+      return Response.json({
+        error: posti.liberiOnline === 0
+          ? (evento.lista_attesa
+            ? 'I posti sono appena finiti. Puoi metterti in lista d\'attesa: ti avvisiamo se se ne libera uno.'
+            : 'I posti per questo appuntamento sono finiti.')
+          : `Restano ${posti.liberiOnline} ${posti.liberiOnline === 1 ? 'posto' : 'posti'} e ne hai chiesti ${reqSeats}.`,
+        posti_liberi: posti.liberiOnline,
+        lista_attesa: !!evento.lista_attesa,
+      }, { status: 400 })
+    }
 
     let price = evento.price || 0
     let pkgName = ''
@@ -116,7 +129,14 @@ export async function POST(request, props) {
     // è in eccesso si ritira — prima di scrivere email a chiunque.
     if (!(await confermaPostiEvento(params.id, data.id, posti.illimitato ? null : posti.limiteOnline))) {
       await recomputeEventSeats(params.id)
-      return Response.json({ error: 'Posti non disponibili' }, { status: 400 })
+      // Qui ci arriva solo chi ha perso una corsa per un soffio: due richieste
+      // arrivate insieme sull'ultimo posto. Va detto così, non «non disponibili».
+      return Response.json({
+        error: evento.lista_attesa
+          ? 'Qualcuno ha preso l\'ultimo posto un istante prima. Puoi metterti in lista d\'attesa.'
+          : 'Qualcuno ha preso l\'ultimo posto un istante prima.',
+        posti_liberi: 0, lista_attesa: !!evento.lista_attesa,
+      }, { status: 400 })
     }
 
     // Le prenotazioni in attesa riservano subito i posti (anti-overbooking).
