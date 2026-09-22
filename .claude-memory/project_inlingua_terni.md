@@ -34,6 +34,18 @@ registro, mai testi copiati.
 - **SEO**: title/description del brief su entità e home.
 - Versione precedente ripristinabile: snapshot `fb85573d-89ff-4c71-9af6-a234143600d1`.
 
+## Secondo giro (22/09): tutte le pagine allineate
+
+53 blocchi riscritti sulle 11 pagine interne, nel registro nuovo e con i fatti
+delle fonti (metodo diretto, network dal 1968, 55+ anni, dai 3 anni, le aziende
+clienti, le certificazioni lingua per lingua, Virtual Classroom/my.conversations/my.lab).
+SEO per pagina: titoli entro 60 caratteri, descrizioni entro 145, **tutti unici**,
+H1 con «Terni» su ogni pagina, canonical coerenti, 1100+ parole a pagina.
+
+⛔ **Le CTA delle pagine interne non avevano URL**: i pulsanti non comparivano
+affatto. Ora ognuna ha la sua — test di livello gratuito quasi ovunque, WhatsApp
+su Contatti (dove mandare al test sarebbe stato un giro a vuoto).
+
 ## Resta da fare
 
 - Le **11 pagine interne** non sono state toccate (il brief dice di non toccare
