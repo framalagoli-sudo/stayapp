@@ -48,8 +48,6 @@ su Contatti (dove mandare al test sarebbe stato un giro a vuoto).
 
 ## Resta da fare
 
-- Le **11 pagine interne** non sono state toccate (il brief dice di non toccare
-  ciò che le fonti non coprono): ereditano solo il tema nuovo.
 - **Foto vere della scuola e dello staff**: non ce ne sono né in galleria né
   nella cartella del cliente. Oggi sono Unsplash, e le slide stesse dicono che
   servirebbero quelle vere.
