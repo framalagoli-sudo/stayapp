@@ -10,12 +10,17 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Calendar, MapPin, Users, ArrowLeft, Check } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
 import { postiEvento } from '@/lib/posti-evento'
+import { percorsoInterno } from '@/lib/percorso-interno'
 
-export default function EventoPage({ iniziale = null }) {
+export default function EventoPage({ iniziale = null, dominioCliente = null, lingua = 'it' }) {
   const { id } = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const lang = searchParams.get('_lang') === 'en' ? 'en' : 'it'
+  // La lingua la dice il server. `_lang` lo aggiunge il middleware solo nella
+  // riscrittura interna: nel browser l'indirizzo è `/en/eventi/…` senza
+  // parametro, quindi leggerlo da qui disegnava in italiano una pagina servita
+  // in inglese — etichette mescolate ed errore di hydration (#418).
+  const lang = lingua === 'en' ? 'en' : 'it'
   const backUrl = searchParams.get('back')
 
   // Da dove viene chi guarda, e dove lo si rimanda.
@@ -32,20 +37,18 @@ export default function EventoPage({ iniziale = null }) {
 
   // Siamo sul dominio del cliente? Allora il suo sito è la radice, e ogni
   // indirizzo si costruisce da lì: `/privacy`, non `/r/slug/privacy`.
+  //
+  // ⚠️ Lo dice il SERVER (`dominioCliente`, letto dall'header Host), non
+  // `window`: sul server `window` non esiste, quindi gli href uscivano diversi
+  // da quelli del browser e React dava un errore di hydration (#418).
   function suDominioDelCliente() {
-    return typeof window !== 'undefined' && !/(^|\.)oltrenova\.com$/.test(window.location.hostname)
+    return !!dominioCliente
   }
 
   function baseSito(sito) {
     if (suDominioDelCliente()) return ''
-    if (backUrl) {
-      try {
-        const u = new URL(backUrl, typeof window !== 'undefined' ? window.location.origin : 'https://oltrenova.com')
-        if (typeof window === 'undefined' || u.origin === window.location.origin) {
-          return u.pathname.replace(/\/+$/, '')
-        }
-      } catch { /* indirizzo malformato: si passa al ripiego */ }
-    }
+    const back = percorsoInterno(backUrl)
+    if (back) return back.split(/[?#]/)[0].replace(/\/+$/, '')
     if (sito?.slug && PREFISSO[sito.tipo]) return `/${PREFISSO[sito.tipo]}/${sito.slug}`
     return null
   }
@@ -54,7 +57,8 @@ export default function EventoPage({ iniziale = null }) {
   // è arrivati, la cronologia, il sito del cliente. La home di OltreNova è
   // l'ultima spiaggia: a chi guarda l'evento di un ristorante non interessa.
   function goBack() {
-    if (backUrl) { router.push(backUrl); return }
+    const back = percorsoInterno(backUrl)
+    if (back) { router.push(back); return }
     if (typeof window !== 'undefined' && window.history.length > 1) { router.back(); return }
     const casa = baseSito(evento?.sito || null)
     router.push(casa || '/')
@@ -186,7 +190,7 @@ export default function EventoPage({ iniziale = null }) {
   const sito       = evento.sito || null
   // Su un dominio del cliente i link del menu devono restare sul suo dominio,
   // non rimandare a oltrenova.com: SiteNav lo sa fare, basta dirglielo.
-  const dominioCustom = suDominioDelCliente() ? window.location.hostname : null
+  const dominioCustom = dominioCliente
   const sitoHome   = baseSito(sito)
   // ⚠️ Il confronto è con `null`, non con «vuoto»: sul dominio del cliente la
   // base È la stringa vuota, e con un controllo di verità i link sparirebbero

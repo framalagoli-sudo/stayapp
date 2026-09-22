@@ -4,6 +4,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { formatoValido, focalValido, rapportoDi } from '@/lib/formati-foto'
 import { ArrowLeft, Calendar, User, Link2, Check } from 'lucide-react'
+import { percorsoInterno } from '@/lib/percorso-interno'
 
 function fmtDate(iso) {
   if (!iso) return ''
@@ -53,12 +54,15 @@ function ShareBar({ url, title }) {
   )
 }
 
-export default function ArticoloPage({ iniziale = null }) {
+export default function ArticoloPage({ iniziale = null, lingua = 'it', indirizzo = '' }) {
   const { slug } = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const backUrl = searchParams.get('back')
-  const lang = searchParams.get('_lang') === 'en' ? 'en' : 'it'
+  // Solo un percorso di questo sito: il parametro arriva dall'URL.
+  const backUrl = percorsoInterno(searchParams.get('back'))
+  // La lingua la dice il server: `_lang` esiste solo nella riscrittura interna
+  // del middleware, non nell'indirizzo che vede il browser (vedi EventoPage).
+  const lang = lingua === 'en' ? 'en' : 'it'
 
   function goBack() {
     if (backUrl) router.push(backUrl)
@@ -116,7 +120,9 @@ export default function ArticoloPage({ iniziale = null }) {
     </div>
   )
 
-  const pageUrl = typeof window !== 'undefined' ? window.location.href : ''
+  // Si condivide l'indirizzo ufficiale, calcolato dal server: uguale nell'HTML
+  // e nel browser, e senza `?back=` o altri parametri di passaggio.
+  const pageUrl = indirizzo
 
   return (
     <div style={{ background: '#f9f9f9', minHeight: '100vh' }}>

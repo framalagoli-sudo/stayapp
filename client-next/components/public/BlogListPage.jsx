@@ -8,7 +8,9 @@ import { focalValido } from '@/lib/formati-foto'
 export default function BlogListPage({ iniziali = null, lingua = null }) {
   const params = useSearchParams()
   const aziendaId  = params.get('azienda_id')
-  const lang       = params.get('_lang') === 'en' ? 'en' : 'it'
+  // La lingua la dice il server: `_lang` esiste solo nella riscrittura interna
+  // del middleware, non nell'indirizzo che vede il browser.
+  const lang       = lingua === 'en' ? 'en' : 'it'
   const lp         = lang === 'en' ? '/en' : ''
   const [articles, setArticles] = useState(iniziali || [])
   const [loading,  setLoading]  = useState(!iniziali)

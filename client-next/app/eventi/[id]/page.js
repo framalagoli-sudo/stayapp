@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { headers } from 'next/headers'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import EventoPage from '@/components/guest/EventoPage'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
@@ -29,6 +30,16 @@ export const dynamic = 'force-dynamic'
 // Le colonne sono quelle di `lib/evento-pubblico.js`: l'elenco era scritto due
 // volte e questo era più corto, quindi la pagina avrebbe reso un evento a metà.
 const CAMPI = CAMPI_EVENTO
+
+// Il dominio del cliente da cui è stata chiesta la pagina, o null se siamo su
+// un indirizzo nostro (oltrenova.com, i suoi sottodomini, anteprime, locale).
+// Si legge dall'header Host e non da `_domain`: quel parametro sul nostro
+// dominio lo può scrivere chiunque nell'URL, e finirebbe nei link del menu.
+function dominioDelCliente(host) {
+  const h = String(host || '').split(':')[0].toLowerCase()
+  if (!h || h === 'localhost' || h === '127.0.0.1' || h.endsWith('.vercel.app')) return null
+  return /(^|\.)oltrenova\.com$/.test(h) ? null : h
+}
 
 function primeRighe(testo, max = 155) {   // 155: oltre, Google tronca la descrizione
   const pulito = String(testo || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
@@ -169,6 +180,7 @@ export default async function Page(props) {
   }) : null
 
   const iniziale = await datiEventoPubblico(evento.id, lang, evento)
+  const dominioCliente = dominioDelCliente((await headers()).get('host'))
 
   return (
     <Suspense fallback={<div style={{padding:40,textAlign:'center',color:'#888'}}>Caricamento…</div>}>
@@ -179,7 +191,7 @@ export default async function Page(props) {
       {/* I dati arrivano dal SERVER: così titolo, testo e prezzo stanno
           nell'HTML. Prima la pagina li chiedeva dal browser e per un motore di
           ricerca era vuota — nessun H1, nessun testo. */}
-      <EventoPage iniziale={iniziale} />
+      <EventoPage iniziale={iniziale} dominioCliente={dominioCliente} lingua={lang} />
       <LanguageSwitcher lang={lang} />
     </Suspense>
   )

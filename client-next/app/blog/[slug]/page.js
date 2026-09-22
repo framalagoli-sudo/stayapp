@@ -67,7 +67,8 @@ export default async function ArticoloRoute(props) {
 
   return (
     <>
-      <ArticoloPage iniziale={iniziale} />
+      <ArticoloPage iniziale={iniziale} lingua={lang}
+        indirizzo={`${baseDelBlog((await headers()).get('host'))}${lang === 'en' ? '/en' : ''}/blog/${slug}`} />
       <LanguageSwitcher lang={lang} />
     </>
   )
