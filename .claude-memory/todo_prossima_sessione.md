@@ -4,7 +4,7 @@ description: "Da dove riprendere — 22/09: blocchi, eventi, inlingua Terni e il
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-09-22T20:26:05.842Z
+  modified: 2026-09-22T20:35:12.586Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
@@ -71,6 +71,7 @@ Su Vercel c'è solo `WHATSAPP_TOKEN_KEY`: mancano `META_APP_ID` · `META_APP_SEC
 - **OltreNova cliente di sé stessa** + rifare la landing (il fermo per Meta è tolto) · **DNS** metodotvb e fondaconarni · elenco **Offerte** nel pannello che deduce «Gratis».
 - ~~primo incasso Stripe con Garage 22~~ ✅ **fatto il 22/09** (punti 13–14 qui sopra).
 - **`SENTRY_DSN` da togliere da Vercel**: residuo del servizio rimosso il 23/07, nessuna riga di codice la legge. `probe-documenti.mjs` la segnala come *promemoria*, non come errore — sparisce da sola quando la togli.
+- 💡 **Proposto a Francesco il 22/09, da decidere**: estendere `probe-documenti.mjs` a segnalare le voci di `FEATURES.md` marcate «futuro / da fare» il cui **codice però esiste già**. Nasce da un caso vero: «Sprint 11 — Stripe payments (futuro)» aveva tutte le caselle vuote mentre incassava da tre settimane. Oggi il controllo automatico copre solo `PROGETTO.md`; su `FEATURES.md` e su questo promemoria **non c'è niente che contraddica una riga falsa** — restano affidati alla memoria di chi chiude la sessione, che è esattamente ciò che ha fallito → [[reference_documento_che_mente]]
 
 ### 5. Da chiedere a Garage 22
 Quante prenotazioni arrivano al telefono su 60 posti? La risposta decide quanto grande deve essere la quota riservata (punto 8 qui sopra).
