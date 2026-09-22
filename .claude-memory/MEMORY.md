@@ -117,6 +117,7 @@
 - [🔧 Hydration del dettaglio evento — DA RIPARARE](project_backlog_hydration_evento.md) — attributi, non testo: il ramo typeof window in suDominioDelCliente; soluzione già individuata
 - [🎓 inlingua Terni — restyling da brief](project_inlingua_terni.md) — home rifatta 22/09 dal PDF + registro di Verona; restano le 11 pagine interne e le foto vere
 - [⚠️ Identificatore fuori scope = 500 invisibile](reference_identificatore_fuori_scope.md) — un componente fuori dal renderer che usa una sua funzione: né il build né una GET lo vedono se il ramo è spento dai dati
+- [🗣️ Gli errori che legge l ospite](reference_errori_che_legge_ospite.md) — guestFetch mostrava l indirizzo della nostra API al posto del messaggio; e chi è in lista d attesa occupava posti
 - [🪑 Posti riservati al telefono (il canale che non scrive)](reference_posti_riservati_eventi.md) — Garage22: 60 posti sold out, 29 nel sistema; la quota risolve senza chiedere disciplina a nessuno
 - [🎫 Il modulo di prenotazione evento](reference_modulo_prenotazione_evento.md) — campi non configurabili; `notes` esiste nel DB e nella route ma il sito non lo manda mai
 - [📊 Vetrina: i numeri in evidenza](reference_vetrina_evidenza.md) — quali cifre risaltare lo dice il preset; e il separatore a forma prende il colore della sezione sotto (era bianco fisso)
