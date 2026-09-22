@@ -20,7 +20,7 @@ export async function PATCH(request, props) {
         return Response.json({ error: 'Prenotazione non trovata' }, { status: 404 })
     }
 
-    const { status, notes } = await request.json()
+    const { status, notes, seats, guest_name, guest_email, guest_phone } = await request.json()
 
     // ⚠️ Lo stato arriva dal client e finiva nella colonna così com'era: una
     // stringa inventata creava una prenotazione fantasma — nessun riquadro la
@@ -35,6 +35,24 @@ export async function PATCH(request, props) {
     const payload = { updated_at: new Date().toISOString() }
     if (status !== undefined) payload.status = status
     if (notes  !== undefined) payload.notes  = notes
+    // Correggere una prenotazione presa male è il gesto più frequente di tutti:
+    // «ha prenotato per 15 invece che per 5» (Garage 22, 22/09/2026). Finora si
+    // poteva solo annullare e riscrivere tutto a mano, perdendo la data vera e
+    // la prova del consenso.
+    if (guest_name  !== undefined) {
+      if (!String(guest_name).trim()) return Response.json({ error: 'Il nome non può restare vuoto.' }, { status: 400 })
+      payload.guest_name = String(guest_name).trim().slice(0, 200)
+    }
+    if (guest_email !== undefined) payload.guest_email = String(guest_email || '').trim().slice(0, 200) || null
+    if (guest_phone !== undefined) payload.guest_phone = String(guest_phone || '').trim().slice(0, 40) || null
+
+    let postiNuovi = null
+    if (seats !== undefined) {
+      postiNuovi = parseInt(seats, 10)
+      if (!Number.isFinite(postiNuovi) || postiNuovi < 1)
+        return Response.json({ error: 'I posti devono essere almeno 1.' }, { status: 400 })
+      payload.seats = postiNuovi
+    }
 
     // ⚠️ Chi era in lista d'attesa e viene confermato ha un posto adesso: se non
     // ce n'è, va detto **prima** di dirglielo. Promuovere due persone su un
@@ -54,13 +72,44 @@ export async function PATCH(request, props) {
       }
     }
 
+    // Cambiare i posti tocca la capienza e il totale: entrambi si rileggono
+    // dal database, mai da quello che arriva nella richiesta.
+    if (postiNuovi !== null) {
+      const { data: prima } = await supabaseAdmin.from('event_bookings')
+        .select('seats, status, package_id').eq('id', params.bookingId).single()
+      const { data: ev } = await supabaseAdmin.from('eventi')
+        .select('seats_total, seats_booked, price, packages').eq('id', booking.event_id).single()
+      const statoFinale = status ?? prima?.status
+      const NON_OCCUPANO = ['cancelled', 'waitlist']
+      const occupavaPrima = NON_OCCUPANO.includes(prima?.status) ? 0 : (prima?.seats || 1)
+      const occupaOra = NON_OCCUPANO.includes(statoFinale) ? 0 : postiNuovi
+      const differenza = occupaOra - occupavaPrima
+      // ⚠️ Il tetto per chi corregge dal pannello è la capienza PIENA, non
+      // quella del pubblico: i posti tenuti per il telefono sono suoi.
+      if (differenza > 0 && ev?.seats_total) {
+        const liberi = Math.max(0, ev.seats_total - (ev.seats_booked || 0))
+        if (differenza > liberi) {
+          return Response.json({
+            error: `Non c'è spazio: restano ${liberi} posti liberi e questa modifica ne chiede ${differenza} in più.`,
+          }, { status: 400 })
+        }
+      }
+      // Il prezzo lo decide l'evento (o il suo pacchetto), non chi modifica.
+      // ⚠️ Se la prenotazione risulta già pagata, il totale cambia ma l'incasso
+      // no: il rimborso è una cosa che si fa con le mani, e il pannello lo dice.
+      const pkg = prima?.package_id ? (ev?.packages || []).find(p => p.id === prima.package_id) : null
+      const prezzo = pkg ? (pkg.price || 0) : (ev?.price || 0)
+      payload.total_amount = prezzo * postiNuovi
+    }
+
     const { data, error } = await supabaseAdmin
       .from('event_bookings').update(payload).eq('id', params.bookingId).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
 
-    // Ricalcola i posti occupati se è cambiato lo stato. La lista d'attesa non
-    // ne occupa: il conto lo fa `recomputeEventSeats`.
-    if (status) await recomputeEventSeats(data.event_id)
+    // Ricalcola i posti occupati se è cambiato lo stato **o il numero di
+    // posti**: senza la seconda condizione, correggere 15 in 5 lasciava
+    // l'evento convinto di avere dieci posti occupati che non esistono.
+    if (status || postiNuovi !== null) await recomputeEventSeats(data.event_id)
 
     // ⛔ Chi passa dalla lista d'attesa a confermato deve SAPERLO. Senza questa
     // riga resterebbe ad aspettare una chiamata che è già arrivata: il posto è
@@ -71,5 +120,40 @@ export async function PATCH(request, props) {
     if (daListaAttesa) await mandaConfermaEvento(params.bookingId)
 
     return Response.json(data)
+  } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
+}
+
+// Cancellare davvero, non solo segnare «annullata».
+//
+// ⛔ Finora l'unico gesto possibile era lo stato `cancelled`: la riga restava,
+// con nome, email e telefono della persona. Per una prenotazione di prova è
+// disordine; per una persona che chiede la cancellazione dei propri dati **non
+// è una cancellazione**, ed è un obbligo, non una comodità (GDPR art. 17).
+//
+// Irreversibile: la conferma la chiede il pannello, qui non si torna indietro.
+export async function DELETE(request, props) {
+  const params = await props.params
+  try {
+    const { user, response } = await requireAuth(request)
+    if (response) return response
+
+    // Stessa verifica della modifica: la prenotazione → evento → azienda.
+    // Senza, chiunque abbia un account potrebbe cancellare quelle altrui.
+    const { data: booking } = await supabaseAdmin
+      .from('event_bookings').select('event_id').eq('id', params.bookingId).single()
+    if (!booking) return Response.json({ error: 'Prenotazione non trovata' }, { status: 404 })
+    const profile = await getProfile(user.id)
+    if (profile?.role !== 'super_admin') {
+      const { data: ev } = await supabaseAdmin.from('eventi').select('azienda_id').eq('id', booking.event_id).single()
+      if (!ev || ev.azienda_id !== profile?.azienda_id)
+        return Response.json({ error: 'Prenotazione non trovata' }, { status: 404 })
+    }
+
+    const { error } = await supabaseAdmin.from('event_bookings').delete().eq('id', params.bookingId)
+    if (error) return Response.json({ error: error.message }, { status: 500 })
+
+    // I posti tornano liberi subito: il conto si rifà sulle righe rimaste.
+    await recomputeEventSeats(booking.event_id)
+    return Response.json({ eliminata: true })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
