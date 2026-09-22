@@ -6,6 +6,7 @@ import { Users, Calendar, Mail, Phone, Package, ArrowLeft, Check, X, Clock, Plus
 import { useAzienda } from '../../../context/AziendaContext'
 import { oraLocale } from '../../../lib/fuso'
 import { postiEvento } from '@/lib/posti-evento'
+import StatoPagamento from '../StatoPagamento'
 
 // Quando è arrivata una prenotazione (`created_at`) si legge nell'ora di chi
 // guarda — è un fatto del pannello. L'ora dell'evento no: quella è del posto,
@@ -437,6 +438,10 @@ export default function EventoPrenotazioniPage() {
   const presi    = vive.reduce((n, b) => n + (b.seats || 1), 0)
   const pending  = bookings.filter(b => b.status === 'pending').reduce((n, b) => n + (b.seats || 1), 0)
   const revenue  = vive.reduce((n, b) => n + (b.total_amount || 0), 0)
+  // ⚠️ «Valore» e «già incassato» sono due numeri diversi, e finché c'era solo
+  // il primo il titolare non aveva modo di sapere quanto fosse già sul conto.
+  const incassato = vive.filter(b => b.pagamento_stato === 'pagato')
+    .reduce((n, b) => n + (b.total_amount || 0), 0)
   // Due numeri diversi, e vanno detti tutti e due: quanti posti restano in
   // sala, e quanti di questi il sito può ancora vendere (gli altri sono
   // tenuti per chi chiama).
@@ -545,7 +550,7 @@ export default function EventoPrenotazioniPage() {
           { label: 'Prenotazioni', value: vive.length,
             sub: inAttesa.length ? `+ ${inAttesa.length} in lista d’attesa` : 'nell’elenco qui sotto',
             icon: Users, color: '#1a1a2e', bg: '#f0f4ff' },
-          { label: 'Valore',     value: `€${revenue}`, sub: pending ? `${pending} posti ancora in attesa` : 'prenotazioni valide', icon: Package, color: '#2b6cb0', bg: '#ebf4ff' },
+          { label: 'Valore',     value: `€${revenue}`, sub: incassato > 0 ? `€${incassato.toFixed(2)} già incassati online` : (pending ? `${pending} posti ancora in attesa` : 'prenotazioni valide'), icon: Package, color: '#2b6cb0', bg: '#ebf4ff' },
         ].map(({ label, value, sub, icon: Icon, color, bg }) => (
           <div key={label} style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -623,11 +628,14 @@ export default function EventoPrenotazioniPage() {
                     )}
                   </div>
 
-                  {/* Amount */}
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  {/* Quanto, e SE è già stato incassato.
+                      ⛔ Prima qui c'era solo la cifra: la prenotazione pagata
+                      online e quella da saldare sul posto erano indistinguibili. */}
+                  <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
                     <div style={{ fontWeight: 800, fontSize: 16, color: '#1a1a2e' }}>
                       {b.total_amount > 0 ? `€${b.total_amount}` : 'Gratuito'}
                     </div>
+                    <StatoPagamento riga={b} compatto />
                   </div>
                 </div>
 

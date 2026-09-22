@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
 import { CalendarCheck, Search } from 'lucide-react'
+import StatoPagamento from './StatoPagamento'
 
 // Tutte le prenotazioni, di qualunque natura, in un posto solo.
 //
@@ -123,6 +124,7 @@ export default function BookingsPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
                     <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: s.sfondo, color: s.colore }}>{s.label}</span>
                     {p.importo_totale > 0 && <span style={{ fontWeight: 700, fontSize: 14 }}>€{p.importo_totale}</span>}
+                    <StatoPagamento riga={p} compatto />
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>

@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../../../lib/api'
 import { Star, Copy, Check } from 'lucide-react'
+import StatoPagamento from '../StatoPagamento'
 
 const STATI = ['', 'confermata', 'in_attesa', 'completata', 'cancellata', 'no_show']
 const STATI_LABEL = { confermata: 'Confermata', in_attesa: 'In attesa', completata: 'Completata', cancellata: 'Cancellata', no_show: 'No show' }
@@ -169,9 +170,12 @@ export default function BookingPrenotazioniPage() {
                           )}
                         </div>
 
-                        {/* Importo */}
+                        {/* Importo, e se è già stato incassato online */}
                         {p.importo_totale > 0 && (
-                          <div style={{ fontSize: 14, fontWeight: 700, color: '#2e7d32', whiteSpace: 'nowrap' }}>€{p.importo_totale}</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: '#2e7d32', whiteSpace: 'nowrap' }}>€{p.importo_totale}</div>
+                            <StatoPagamento riga={p} compatto />
+                          </div>
                         )}
 
                         {/* Stato selector */}

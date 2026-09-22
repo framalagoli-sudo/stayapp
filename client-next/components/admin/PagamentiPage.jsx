@@ -263,8 +263,101 @@ export default function PagamentiPage() {
         </details>
       )}
       </div>
+
+      {/* Gli incassi veri. Finché non c'era, questa pagina diceva «puoi
+          ricevere pagamenti» e poi non mostrava un solo pagamento ricevuto. */}
+      <ListaIncassi aziendaId={aziendaId} />
     </Pagina>
   )
+}
+
+// ⛔ Perché esiste (22/09/2026). Primo incasso vero di Garage 22: Agnese paga
+// 1 € per un posto, il webhook arriva, la riga viene segnata pagata. Francesco
+// apre questa pagina e non trova niente — perché finora era **solo** il
+// collegamento del conto. Parole sue: «in pagamenti della piattaforma non c'è
+// nulla».
+//
+// ⚠️ Definita FUORI da `PagamentiPage`: un componente dentro un altro cambia
+// identità a ogni render e React lo rismonta (nota 22).
+//
+// ⚠️ Qui si mostra **solo quello che sappiamo già noi**: cosa, quanto, quando,
+// chi. Nessun dato di pagamento — né carte né intestatari: non li chiediamo, e
+// ciò che non si chiede non si può perdere. Ricevute, rimborsi e saldo stanno
+// su Stripe, dove il cliente entra col suo account.
+function ListaIncassi({ aziendaId }) {
+  const [dati, setDati] = useState(null)
+  const [errore, setErrore] = useState('')
+
+  useEffect(() => {
+    if (!aziendaId) return
+    apiFetch(`/api/stripe/incassi?azienda_id=${encodeURIComponent(aziendaId)}`)
+      .then(setDati).catch(e => setErrore(e.message))
+  }, [aziendaId])
+
+  if (errore) return null
+  if (!dati) return null
+
+  return (
+    <div style={{ ...riquadro, marginTop: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
+        <strong style={{ fontSize: 16, color: '#1a1a2e' }}>Incassi ricevuti</strong>
+        {dati.totale > 0 && (
+          <span style={{ fontSize: 15, fontWeight: 800, color: '#276749' }}>€{dati.totale.toFixed(2)}</span>
+        )}
+      </div>
+
+      {/* ⚠️ Una lista vuota si legge come «è rotto». Dire perché è vuota — non
+          hai ancora incassato, non che non lo sappiamo — è la differenza fra
+          una pagina che informa e una che preoccupa. */}
+      {!dati.righe?.length ? (
+        <p style={{ ...testo, margin: 0 }}>
+          Non è ancora arrivato nessun pagamento online. Quando qualcuno pagherà dal tuo sito —
+          un ordine, una prenotazione o un posto a un evento — lo trovi qui.
+        </p>
+      ) : (
+        <>
+          {/* ⚠️ `minmax(0, 1fr)` sulla colonna del testo: un nome lungo è un
+              dato del cliente e senza questo allarga la riga oltre la scheda
+              (nota 23). */}
+          <div style={{ display: 'grid', gap: 1, background: '#f0f0f3', border: '1px solid #eee', borderRadius: 8, overflow: 'hidden' }}>
+            {dati.righe.map(r => (
+              <div key={r.id} style={{
+                display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto',
+                gap: 12, alignItems: 'center', padding: '11px 13px', background: '#fff',
+              }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, color: '#1a1a2e', overflowWrap: 'anywhere' }}>{r.cosa}</div>
+                  <div style={{ fontSize: 12, color: '#888', marginTop: 2, overflowWrap: 'anywhere' }}>
+                    {r.tipo}{r.chi ? ` · ${r.chi}` : ''} · {quandoBreve(r.quando)}
+                  </div>
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#276749', whiteSpace: 'nowrap' }}>
+                  €{r.importo.toFixed(2)}
+                </div>
+              </div>
+            ))}
+          </div>
+          {dati.troncata && (
+            <p style={{ fontSize: 12.5, color: '#999', marginTop: 10, marginBottom: 0 }}>
+              Mostrati i 100 più recenti. Lo storico completo è sul tuo pannello Stripe.
+            </p>
+          )}
+        </>
+      )}
+
+      <p style={{ fontSize: 12.5, color: '#999', marginTop: 14, marginBottom: 0, lineHeight: 1.6 }}>
+        Questi sono i pagamenti registrati da noi. Ricevute, rimborsi e saldo del conto stanno su
+        Stripe: <a href="https://dashboard.stripe.com/payments" target="_blank" rel="noopener noreferrer" style={{ color: '#1a1a2e' }}>apri i pagamenti su Stripe →</a>
+      </p>
+    </div>
+  )
+}
+
+function quandoBreve(iso) {
+  if (!iso) return '—'
+  try {
+    return new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+  } catch { return '—' }
 }
 
 

@@ -184,7 +184,7 @@ da `lib/ai-consumi.js`, con la spesa reale visibile in Diagnostica.
 | Cloudflare | *da riempire* | *da riempire* |
 | Resend | *da riempire* | *da riempire* |
 | GitHub | *da riempire* | *da riempire* |
-| Stripe | *da riempire* | *da riempire* |
+| Stripe | **`fra.malagoli@gmail.com`, accesso «Continua con Google»** ⚠️ non c'è una password Stripe: chi perde l'account Google perde Stripe | quello di Google |
 | Anthropic | *da riempire* | *da riempire* |
 | Meta for Developers | *da riempire* | *da riempire* |
 | Unsplash · Google Cloud · Abstract API | *da riempire* | *da riempire* |
