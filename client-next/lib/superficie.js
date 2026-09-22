@@ -46,8 +46,14 @@ export function variabiliSuperficie(scuro) {
       '--sup-2': '#fafafa',
       '--txt': '#1a1a2e',
       '--txt-medio': '#444444',
-      '--txt-tenue': '#888888',
-      '--txt-fioco': '#aaaaaa',
+      // ⛔ Erano `#888888` e `#aaaaaa`, i valori storici: su bianco danno 3,54
+      // e 2,32, cioè **sotto il minimo leggibile** per il testo piccolo, che è
+      // esattamente il testo a cui vengono applicati (didascalie, ruoli,
+      // etichette). Misurato il 22/09/2026 su inlingua Terni.
+      // `#767676` è il grigio più chiaro che arriva a 4,5 su bianco; il tenue
+      // sta un gradino sopra, così i due restano distinguibili.
+      '--txt-tenue': '#6b6b6b',
+      '--txt-fioco': '#767676',
       '--bordo': '#eeeeee',
       '--bordo-tenue': '#f0f0f0',
       '--ombra': '0 2px 8px rgba(0,0,0,0.06)',
