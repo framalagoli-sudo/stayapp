@@ -46,7 +46,7 @@ posti, niente acconto Stripe, niente lista d'attesa. Non è un sostituto.
 — «per 15 invece che per 5», Garage 22 — si poteva solo annullare e riscrivere
 a mano, perdendo data originale e prova del consenso.
 
-Ora la PATCH accetta anche , , , ,
+Ora la PATCH accetta anche `seats`, `guest_name`, `guest_email` e `guest_phone`,
 ed esiste una **DELETE** che cancella davvero (per «annullata» i dati personali
 restavano a vita: non è una cancellazione ai sensi dell'art. 17 GDPR).
 - Il **totale si rilegge** dal prezzo dell'evento o del pacchetto, mai dalla
@@ -54,8 +54,8 @@ restavano a vita: non è una cancellazione ai sensi dell'art. 17 GDPR).
   non cambia.
 - Il tetto di chi corregge è la **capienza piena**: i posti riservati al
   telefono sono suoi.
--  gira anche quando cambiano solo i posti.
-- Sonda : 10 controlli su un evento creato e
+- `recomputeEventSeats` gira anche quando cambiano solo i posti.
+- Sonda `probe-prenotazione-correzione.mjs`: 10 controlli su un evento creato e
   cancellato dalla sonda stessa, email spente, casi ostili compresi.
 
 Vedi [[reference_eventi_notifiche_email]], [[reference_consenso_dati_personali]],
