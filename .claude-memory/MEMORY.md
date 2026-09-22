@@ -113,6 +113,8 @@
 - [🏠 Un sito, un indirizzo](reference_un_sito_un_indirizzo.md) — se il cliente ha un dominio si va lì (307, mai 301); sitemap ed email devono dichiarare lo stesso del canonical
 - [📷 Caricamento foto: 4 MB è il tetto della piattaforma](reference_caricamento_foto.md) — misurato (413 prima della nostra route); e CampoImmagine, il campo unico che NON va forzato su gallerie e miniature
 - [🧩 Sezioni «universali» — DA ANALIZZARE](project_sezioni_universali.md) — una sezione definita una volta e usata su più pagine; oggi si copiano i blocchi (4 copie su metodotvb)
+- [🎓 inlingua Terni — restyling da brief](project_inlingua_terni.md) — home rifatta 22/09 dal PDF + registro di Verona; restano le 11 pagine interne e le foto vere
+- [⚠️ Identificatore fuori scope = 500 invisibile](reference_identificatore_fuori_scope.md) — un componente fuori dal renderer che usa una sua funzione: né il build né una GET lo vedono se il ramo è spento dai dati
 - [🪑 Posti riservati al telefono (il canale che non scrive)](reference_posti_riservati_eventi.md) — Garage22: 60 posti sold out, 29 nel sistema; la quota risolve senza chiedere disciplina a nessuno
 - [🎫 Il modulo di prenotazione evento](reference_modulo_prenotazione_evento.md) — campi non configurabili; `notes` esiste nel DB e nella route ma il sito non lo manda mai
 - [📊 Vetrina: i numeri in evidenza](reference_vetrina_evidenza.md) — quali cifre risaltare lo dice il preset; e il separatore a forma prende il colore della sezione sotto (era bianco fisso)
