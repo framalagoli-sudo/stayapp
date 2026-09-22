@@ -434,6 +434,15 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - Stessa sessione: **note** nel modulo (la colonna c'era da sempre, mancava il campo), **telefono obbligatorio** a scelta dell'evento, e il consenso privacy che **mancava nell'app del QR** — 400 a ogni prenotazione, per un mese, senza che nessuno potesse farci niente.
     - ⚠️ La lista d'attesa rispondeva «ci sono ancora posti» a chi il sito aveva appena respinto: nella **sua** select mancava la colonna nuova (regola 7). **Trovato provando dal vivo, non rileggendo il codice.**
 
+45. **🎨 I blocchi crescono per varianti, e la leggibilità si misura** (21–22/09/2026). Tre blocchi hanno imparato a presentarsi in modi diversi, **sempre con il modo di oggi come predefinito**: i siti già pubblicati non cambiano faccia da soli.
+    - **Team**: `variante` `griglia` (quella storica) · `ritratti` · `editoriale`. I blocchi NUOVI nascono «ritratti».
+    - **Vetrina**: variante «numeri in evidenza» — barra dell'avanzamento e tessere con icona. ⚠️ **Quali numeri lo dice il preset** (`evidenza` in `lib/vetrinePresets.js`), perché cambiano col mestiere; un preset che non li dichiara prende i primi tre numerici. Lo stesso cruscotto serve la scheda e la pagina del dettaglio, dove sono arrivati anche **video** (tipo campo nuovo, solo YouTube/Vimeo ricostruiti dall'identificativo) e **mappa**.
+    - **Separatore a forma**: è il bordo superiore della sezione che viene dopo, e ora ne prende il colore. Era `#f4f4f7` fisso — su un sito scuro, una fascia bianca in mezzo alla pagina. ⚠️ In SVG `fill` **come attributo non risolve `var(--…)`**: va messo come proprietà CSS.
+    - ⛔ **Identificatore fuori scope = 500 invisibile**: `HeroSlider` e `Carousel` sono dichiarati fuori dal renderer e usavano `siteHref`, che vive dentro. Ogni slide **con un pulsante** mandava la pagina in 500 — mai emerso perché tutti gli slider avevano il link vuoto. Il build non lo vede, **e nemmeno una GET se i dati non accendono quel ramo**.
+    - ⛔ **Nei campi rich-text `<p>` finisce stampato a schermo**: sono ammessi solo b/strong/i/em/u/s/br/small/sup/sub/mark, e i paragrafi si separano con una **riga vuota**. Il titolo del blocco `about` è `title`, non `titolo`.
+    - **Contrasto, tre correzioni che valgono per tutti**: i grigi chiari (`#888888` = 3,54 su bianco) erano sotto il minimo leggibile; `readableOn` aveva soglia fissa 3 — quella del testo **grande** — e ora la soglia è un parametro (il banner dei cookie chiede 4,5); `SiteNav` scriveva bianco fisso sui pulsanti del menu.
+    - ⚠️ **La sonda del contrasto ora prova sé stessa**: inietta due paragrafi finti, uno bianco su bianco e uno leggibile, e si ferma se non trova esattamente il primo. È la terza volta che misurava la cosa sbagliata (soglia inventata · indirizzo convertito da Git Bash · le foto degli hero, che sono `<img>` e non `background-image`). **Un allarme che suona sempre si smette di leggere.**
+
 ---
 
 ## Roadmap

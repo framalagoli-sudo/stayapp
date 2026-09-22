@@ -1,14 +1,67 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — 16/09: verifica Meta approvata e collegamento WhatsApp live ma mai provato dal vivo; servono verifica accesso, config ES + chiavi, tariffe Meta, video App Review"
-metadata: 
+description: "Da dove riprendere — 22/09: due giorni di blocchi, eventi e inlingua Terni tutti live (migration fino alla 126); restano WhatsApp/Meta, un difetto di hydration con diagnosi gia fatta e tre siti senza titolo SEO"
+metadata:
   node_type: memory
   type: project
-  originSessionId: e0aafe55-ef53-42ae-b608-67413a26565e
-  modified: 2026-09-19T17:24:12.816Z
+  modified: 2026-09-22
 ---
 
 # Si riprende da qui
+
+## ▶️ 22/09 — SESSIONE CHIUSA. Tutto live. Migration eseguite: fino alla **126**
+
+**Due giorni di lavoro, tutto in produzione e verificato dal vivo.**
+
+### Blocchi e registro visivo
+1. **Team in tre varianti** — `griglia` (quella di sempre, resta il predefinito dei siti online) · `ritratti` · `editoriale`. I blocchi nuovi nascono «ritratti». Su Metodo TVB i soci sono in «editoriale» → [[reference_blocco_team_varianti]]
+2. **Vetrina: «numeri in evidenza»** — barra dell'avanzamento e tessere con icona; **quali numeri lo dice il preset**, non il codice. Poi **video** (YouTube/Vimeo) e **mappa** nel dettaglio di un progetto, via i campi riservati (decisione di Francesco), «Capitale richiesto» → «Investimento totale» → [[reference_vetrina_evidenza]]
+3. **Separatore a forma**: prende il colore della sezione sotto. Era bianco fisso — su un sito scuro, una fascia bianca in mezzo alla pagina.
+4. **CTA ricorrenti su Metodo TVB** (pulsante progetti + banner) su tutte le pagine tranne dove non ha senso.
+
+### Eventi (migration 125 e 126, entrambe eseguite)
+5. **Note nel modulo** di prenotazione, su pagina evento **e** app del QR. La colonna c'era da sempre: mancava il campo.
+6. **«Chiedi il telefono per forza»**, interruttore per evento (125).
+7. ⛔ **Il modulo dentro l'app del QR era ROTTO**: non mandava il consenso privacy → **400 a ogni prenotazione**, per un mese, senza spunta da mettere → [[reference_modulo_prenotazione_evento]]
+8. **Posti riservati al telefono** (126) + **avviso a soglia** (restano 5 · esaurito). Nato dal sold out di Garage 22: 60 posti, 29 nel sistema, **una sola** prenotazione telefonica segnata su trenta → [[reference_posti_riservati_eventi]]
+
+### inlingua Terni — rifatto da brief
+9. Home e **11 pagine interne** allineate: testi ufficiali del cliente verbatim, registro di inlingua Verona (turchese, Sora), contatti veri, SEO locale su ogni pagina (titoli unici entro 60, H1 con «Terni», 1100+ parole). ⛔ **Nessuna CTA delle pagine interne aveva un link**: i pulsanti non comparivano affatto → [[project_inlingua_terni]]
+
+### Difetti di piattaforma corretti (valgono per tutti i clienti)
+10. ⛔ **Un pulsante sullo slider mandava la pagina in 500** — `siteHref` fuori scope in `HeroSlider` e `Carousel`. Mai emerso perché ogni slider aveva il link vuoto → [[reference_identificatore_fuori_scope]]
+11. **Contrasto**: grigi chiari sotto il minimo leggibile, `readableOn` con soglia da testo grande anche sui link piccoli, pulsanti del menu con bianco fisso. Tutti corretti.
+12. **La sonda del contrasto ora prova sé stessa** prima di misurare: è la terza volta che misurava la cosa sbagliata.
+
+---
+
+## ⛔ SI RIPARTE DA QUI
+
+### 1. WhatsApp — la dashboard Meta (dipende da Francesco, invariato dal 19/09)
+Su Vercel c'è solo `WHATSAPP_TOKEN_KEY`: mancano `META_APP_ID` · `META_APP_SECRET` (**da rigenerare**) · `META_ES_CONFIG_ID` (dalla configurazione Embedded Signup, da creare) · `WHATSAPP_WEBHOOK_TOKEN`. Finché mancano il pulsante «Collega WhatsApp» non compare a nessuno (voluto).
+- ⚠️ Ogni variabile nuova **richiede un redeploy**.
+- ⚠️ Il webhook risponde **403** finché manca il token: metterlo **prima** di registrare l'URL su Meta. URL: `https://www.oltrenova.com/api/whatsapp/webhook` — **su www, mai sull'apex**.
+- Restano: numero di test, App Review con i **due video**, tariffe Meta Italia, e la **prova dal vivo** del collegamento (l'unico pezzo scritto e mai provato).
+- ⚠️ Email da uniformare prima dell'App Review: `info@oltrenova.com` · `oltrenova@gmail.com` · `fra.malagoli@gmail.com`.
+
+### 2. Il difetto che ho lasciato lì, con diagnosi già fatta
+**Hydration sul dettaglio evento**: lo smoke `public-flows` è rosso. La pagina **funziona** (1093 parole SSR, H1, contenuto completo), sono **attributi** non testo, causa e soluzione sono scritte → [[project_backlog_hydration_evento]]. Venti minuti a mente fresca, con verifica da dominio cliente **e** da oltrenova.com.
+
+### 3. Tre siti senza titolo per Google (10 minuti, serve solo il tuo ok)
+`noleggio-automax`, `d-o-pier-francesco-giachini` e **`metodotvb`** non hanno `seo_title`/`seo_description`: nei risultati di ricerca Google si inventa il titolo. Si scrivono a mano o col pulsante «Proponili tu» nel pannello Stato del sito. Sono testi che vede il pubblico: li approvi tu.
+
+### 4. Aperti da prima, invariati
+- **Search Console**: non esiste per nessun dominio → senza, «indicizzato» non si può dire → [[project_search_console]]
+- **Sezioni universali** (idea di Francesco del 22/09): una sezione definita una volta e usata su più pagine → [[project_sezioni_universali]]
+- **Foto vere** di inlingua Terni: oggi sono Unsplash, e le slide del cliente dicono per prime che servirebbero quelle vere.
+- **OltreNova cliente di sé stessa** + rifare la landing (il fermo per Meta è tolto) · **primo incasso Stripe** con Garage 22 · **DNS** metodotvb e fondaconarni · elenco **Offerte** nel pannello che deduce «Gratis».
+
+### 5. Da chiedere a Garage 22
+Quante prenotazioni arrivano al telefono su 60 posti? La risposta decide quanto grande deve essere la quota riservata (punto 8 qui sopra).
+
+---
+
+## 📄 Storico delle sessioni precedenti
 
 ## ▶️ 19/09 — SESSIONE CHIUSA. Tutto live. Migration eseguite: fino alla **124**
 

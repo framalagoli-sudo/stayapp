@@ -6,6 +6,7 @@
 
 > 🔌 **Integrazioni**: [la sequenza del fornitore va letta tutta](reference_verifica_la_sequenza_del_fornitore.md) — il collegamento WhatsApp era «pronto» e non avrebbe inviato niente.
 
+- [📅 Sessione 21–22/09 — varianti dei blocchi, posti riservati, inlingua da brief](project_session_2026_09_22.md) — migration fino alla 126; 5 difetti di piattaforma trovati provando, non leggendo
 - [💾 Backup completo: account e immagini](project_backup_lacune.md) — chiuso 09/09 (15 account, 62/62 foto); resta da provare il RIPRISTINO, piano dentro
 - [🤖 Consumi AI e tetto per azienda](project_ai_consumi.md) — 15/09: 12 chiamate su 13 senza limite vero; ora un punto solo, fail closed; LIVE dal 15/09 con ricarica da Aziende → Credito AI e avviso al cliente dall 80%
 - [📅 Sessione 16/09 — verifica Meta approvata, collegamento WhatsApp vero, numeri per entità](project_session_2026_09_16.md) — migration fino a 122; restano la verifica dell'accesso e la prova dal vivo
