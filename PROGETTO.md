@@ -145,23 +145,53 @@ deploy si lancia a mano, così girano sempre i controlli (§7).
 | Fornitore | A cosa serve | Se cade |
 |---|---|---|
 | **Anthropic** (Claude) | costruttore di siti con l'AI, traduzioni, chatbot, blog automatico | quelle funzioni si spengono, il resto vive. **A consumo**: si paga quel che si usa. Dal 15/09/2026 ogni azienda ha un tetto (5 $/mese predefinito, ricariche da Aziende → Credito AI) e la spesa reale è in Diagnostica e nella tabella `ai_consumi` |
-| **Stripe** | pagamenti del negozio online | ⚠️ **non è mai stato collegato**: il codice esiste ma su Vercel non c'è nessuna chiave Stripe, quindi il checkout non è mai partito. Verificato il 31/08/2026 |
-| **Meta / WhatsApp** | canale WhatsApp | **oggi non è attivo**: nessun account collegato, la verifica Meta è ferma |
+| **Stripe** | incassi dei clienti (negozio, prenotazioni, eventi) | **collegato dal 31/08/2026**, con le tre chiavi in produzione. È **Connect**: ogni cliente collega il **proprio** conto da `Account → Pagamenti` e incassa lui; OltreNova non trattiene commissioni e non tocca il denaro. Se cade, nessun cliente incassa online. ⚠️ **Nessun cliente ha ancora incassato davvero**: il primo pagamento vero non è mai avvenuto |
+| **Meta / WhatsApp** | canale WhatsApp | **non ancora attivo, ma sbloccato**: verifica aziendale approvata il 16/09/2026 e **Tech Provider approvato il 18/09**. Mancano quattro chiavi su Vercel (`META_APP_ID`, `META_APP_SECRET`, `META_ES_CONFIG_ID`, `WHATSAPP_WEBHOOK_TOKEN`), la configurazione Embedded Signup e la prova dal vivo. Finché mancano, il pulsante «Collega WhatsApp» non compare a nessuno — è voluto |
 | **Unsplash** | fotografie per il costruttore di siti | si scelgono le foto a mano |
-| **Google** | collegamento con Google Calendar | quel collegamento si spegne |
+| **Google** | Calendar e voto Google sui siti | ⚠️ **nessuno dei due è attivo**: su Vercel non ci sono né `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` (Calendar) né `GOOGLE_PLACES_API_KEY` (voto). Il codice c'è e aspetta solo le chiavi. Verificato il 22/09/2026 |
 | **Cloudflare Turnstile** | filtro anti-robot sui moduli | i moduli restano aperti. È già impostato in modo **morbido**: segnala e non blocca, perché in modalità severa bloccava clienti veri |
-| **Abstract API** | controlla che le email esistano | si accettano email non verificate |
+| **Abstract API** | controlla che le email esistano nei moduli pubblici | ⚠️ **la chiave non c'è su Vercel**: oggi la verifica non gira e si accettano email non verificate. Il codice la cerca in . Verificato il 22/09/2026 |
 
 ### 2.7 Il conto totale
 
 **Circa 45 $ al mese** di costi fissi (Supabase Pro 25 + Vercel Pro 20), più
-l'uso dell'intelligenza artificiale, che dipende da quanto la si usa e ha un
-tetto impostato nel codice.
+l'uso dell'intelligenza artificiale, che dipende da quanto la si usa.
+
+L'AI ha **due tetti sovrapposti**: il limite di spesa sulla Console Anthropic —
+**20 $/mese**, impostato il 17/09/2026 — che vale per la piattaforma intera e
+non si può sforare; e dentro, un tetto **per azienda** (5 € predefiniti) gestito
+da `lib/ai-consumi.js`, con la spesa reale visibile in Diagnostica.
 
 > ⚠️ **Da completare — solo Francesco può**: con quale carta si paga ciascun
 > fornitore, con quale email è intestato ogni account, e dove si registrano
 > queste spese in contabilità. Senza, chi subentra scopre i pagamenti quando
 > saltano.
+
+### 2.8 Con quale account si entra — **da riempire**
+
+> ⛔ È il buco più grosso di questo documento, e l'ha scoperto Francesco il
+> 22/09/2026 chiedendo una cosa semplice: «con quale account ho creato Stripe?».
+> Nessuno sapeva rispondere, perché non è scritto da nessuna parte.
+>
+> Sapere *dove* si rigenera una chiave (§8) non serve a niente se non si sa con
+> quale indirizzo si entra dal fornitore. Per chi subentra è la **prima**
+> informazione, non l'ultima.
+
+| Fornitore | Indirizzo con cui si accede | Secondo fattore attivo? |
+|---|---|---|
+| Supabase | *da riempire* | *da riempire* |
+| Vercel | *da riempire* | *da riempire* |
+| Cloudflare | *da riempire* | *da riempire* |
+| Resend | *da riempire* | *da riempire* |
+| GitHub | *da riempire* | *da riempire* |
+| Stripe | *da riempire* | *da riempire* |
+| Anthropic | *da riempire* | *da riempire* |
+| Meta for Developers | *da riempire* | *da riempire* |
+| Unsplash · Google Cloud · Abstract API | *da riempire* | *da riempire* |
+
+⚠️ Qui vanno **solo gli indirizzi di accesso**, mai le password: quelle stanno
+nel foglio separato di cui parla §12. Un indirizzo email non è un segreto — è
+l'informazione che permette di avviare un recupero.
 
 ---
 
@@ -368,6 +398,8 @@ Variables**. Qui ci sono solo i nomi e la provenienza.
 | `STRIPE_WEBHOOK_SECRET` | Stripe → Webhook (eventi da **account connessi**) | i pagamenti riescono ma non risultano mai: l'ordine resta «in attesa» per sempre |
 | `STRIPE_ACCOUNT_WEBHOOK_SECRET` | Stripe → Webhook (account connessi, payload **Thin**) | non ci si accorge se Stripe blocca il conto di un cliente: lo scopre lui dal primo pagamento rifiutato |
 | `VERCEL_TOKEN` · `VERCEL_PROJECT_ID` | Vercel → Account Settings → Tokens | i domini dei clienti non si collegano più |
+| `UNSPLASH_ACCESS_KEY` | Unsplash → Developers → la propria app | il costruttore di siti non propone più foto: si caricano a mano |
+| ~~`SENTRY_DSN`~~ | — | ⚠️ **residuo**: Sentry è stato rimosso dal codice il 23/07/2026, ma la variabile è ancora su Vercel. **Nessuna riga la legge**: va tolta |
 | `TURNSTILE_SECRET_KEY` · `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare → Turnstile | i moduli restano senza filtro |
 | `META_APP_ID` · `META_APP_SECRET` · `META_ES_CONFIG_ID` · `WHATSAPP_TOKEN_KEY` · `WHATSAPP_WEBHOOK_TOKEN` | Meta for Developers (`META_ES_CONFIG_ID` = la configurazione di Embedded Signup nella dashboard dell'app: dice a Meta quali permessi chiedere al cliente) | WhatsApp spento: senza le prime tre il pulsante «Collega WhatsApp» non compare nemmeno *(è la situazione di oggi, voluta)* |
 | `GOOGLE_CLIENT_ID` · `GOOGLE_CLIENT_SECRET` | Google Cloud Console | niente Google Calendar |
@@ -404,8 +436,8 @@ Variables**. Qui ci sono solo i nomi e la provenienza.
 > La risposta del cron dice sempre `letture_stimate_al_mese` accanto a
 > `gratuite_al_mese`: si vede a colpo d'occhio quanto margine resta.
 | `UNSPLASH_ACCESS_KEY` | Unsplash Developers | niente foto automatiche |
-| `ABSTRACT_API_KEY` | Abstract API | niente verifica email |
-| `ERROR_ALERT_EMAIL` · `DEMO_NOTIFY_EMAIL` | un indirizzo email, non una chiave | **nessuno viene avvisato dei guasti** |
+| `ABSTRACT_API_KEY` | Abstract API | niente verifica email — ⚠️ **oggi manca**, quindi è già così |
+| `ERROR_ALERT_EMAIL` · `DEMO_NOTIFY_EMAIL` | un indirizzo email, non una chiave | **nessuno viene avvisato dei guasti**. ⚠️ `ERROR_ALERT_EMAIL` **manca**: gli avvisi vanno a `DEMO_NOTIFY_EMAIL`, che è il ripiego previsto dal codice |
 
 ⚠️ **Ogni variabile nuova richiede una nuova pubblicazione**: aggiungerla dal
 pannello non tocca la versione già in funzione, che continua a girare senza. Il
@@ -470,12 +502,14 @@ Chi compra o subentra deve saperlo prima, non dopo.
   esiste. È il lavoro aperto più importante.
 - **Le registrazioni sono chiuse.** Ogni cliente finora è nato da un invito. La
   registrazione automatica funziona ma non è mai stata aperta al pubblico.
-- **Non c'è fatturazione automatica.** Nessun abbonamento ricorrente collegato:
-  gli incassi si gestiscono fuori dalla piattaforma.
-- **I pagamenti online coprono solo il negozio.** Prenotazioni ed eventi non
-  incassano ancora.
-- **WhatsApp è costruito ma spento**: la verifica Meta non è mai stata
-  completata.
+- **Non c'è fatturazione automatica.** Nessun abbonamento ricorrente per i
+  clienti di OltreNova: quello che si incassa da loro si gestisce fuori dalla
+  piattaforma. (Stripe Connect serve agli incassi **dei** clienti, non ai nostri.)
+- **Nessun cliente ha ancora incassato davvero.** I pagamenti sono collegati e
+  coprono negozio, prenotazioni ed eventi, ma il primo pagamento vero non è mai
+  avvenuto: finché non succede, quel percorso è provato solo da noi.
+- **WhatsApp è costruito ma spento**: la verifica Meta è **approvata** (Tech
+  Provider, 18/09/2026), mancano le chiavi sulla piattaforma e la prova dal vivo.
 - **Il canale in tedesco non c'è** (italiano e inglese sì).
 - **Una sola persona sa come funziona.** Questo documento serve a ridurre il
   danno, non lo elimina.
@@ -534,11 +568,28 @@ Per questo non c'è una scadenza a calendario, che si dimenterebbe. Ci sono
 | **Prima di far vedere il progetto a qualcuno** — un socio, un acquirente, una banca | tutto, con calma |
 | **Comunque una volta l'anno** | anche se sembra che non sia cambiato niente |
 
-**Il controllo automatico**: `node tests/verifica-regole.mjs` — che gira da solo
-prima di ogni pubblicazione — confronta le variabili d'ambiente usate nel codice
-con quelle elencate qui e **blocca** se ne trova una non documentata. Non
-dipende da chi si ricorda. Non copre tutto il resto della tabella: quello è
-pensiero, e va fatto.
+**I due controlli automatici**, che girano da soli a ogni pubblicazione:
+
+1. `tests/verifica-regole.mjs` confronta le variabili d'ambiente **usate nel
+   codice** con quelle elencate qui e **blocca** se ne trova una non documentata.
+2. `tests/probe-documenti.mjs` confronta quello che questo documento **afferma**
+   con quello che c'è davvero su Vercel: un fornitore dato per spento che invece
+   ha le sue chiavi, una chiave documentata che non esiste, una chiave in
+   produzione che nessuna riga di codice legge.
+
+> ⛔ **Perché esiste il secondo** (22/09/2026). Per tre settimane questo
+> documento ha scritto «Stripe non è mai stato collegato: su Vercel non c'è
+> nessuna chiave», mentre le chiavi erano in produzione dal 31 agosto. Il primo
+> controllo non poteva accorgersene: le variabili **erano** documentate, era il
+> *fatto* a essere falso. L'ha scoperto Francesco chiedendo una cosa semplice —
+> «con quale account ho creato Stripe?» — e trovando una risposta sbagliata nel
+> punto che conta di più.
+>
+> La lezione non è «ricordarsi di aggiornare». È che **un documento vivo ha
+> bisogno di qualcosa che lo contraddica quando mente**, come ce l'ha il codice.
+
+Restano di pensiero, e non li controlla nessuna macchina: i costi, i piani, il
+§11 sull'onestà, e la tabella §2.8 con gli account di accesso.
 
 ---
 

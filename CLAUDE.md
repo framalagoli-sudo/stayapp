@@ -66,7 +66,8 @@ leggibile perché quella riga è accettabile.
 
 ---
 
-> **📘 Cos'è OltreNova, chi la tiene accesa, quanto costa** → `PROGETTO.md` — il documento di progetto: fornitori uno per uno con costi e cosa si rompe se cadono, architettura, dati, chiavi (nomi e dove si rigenerano, mai i valori), procedure. Scritto per chi subentra da zero — un erede, un socio, un acquirente. Da aggiornare **a ogni nuovo collegamento esterno**.
+> **📘 Cos'è OltreNova, chi la tiene accesa, quanto costa** → `PROGETTO.md` — il documento di progetto: fornitori uno per uno con costi e cosa si rompe se cadono, architettura, dati, chiavi (nomi e dove si rigenerano, mai i valori), procedure. Scritto per chi subentra da zero — un erede, un socio, un acquirente.
+> ⛔ **Si aggiorna a ogni chiusura di sessione, come `CLAUDE.md` e `FEATURES.md`** — non solo «a ogni nuovo collegamento esterno», che è quello che c'era scritto prima e che ha lasciato il documento fermo per settimane: il 22/09/2026 dichiarava Stripe mai collegato mentre incassava dal 31 agosto. `tests/probe-documenti.mjs` (in `deploy.ps1`) confronta quello che il documento **afferma** con le chiavi vere su Vercel e blocca quando mente.
 > **🧯 Se succede qualcosa (piano di risposta a un incidente)** → `INCIDENTE.md` — scritto per essere eseguito da soli e sotto pressione. **§3.2 = come si rimette in piedi tutto da un archivio**, provato davvero il 13/09/2026: `tests/verifica-backup.mjs` (l'archivio è sano), `tests/ripristino.mjs` (schema, account, dati), `tests/ripristino-immagini.mjs` (le foto **e** gli indirizzi da riscrivere). Panoramica per chi subentra → `PROGETTO.md` §6.
 > **🔒 Sicurezza (invarianti, checklist route, procedure rigide)** → `SECURITY.md` §0 — LEGGERE prima di toccare route API/auth/esposizione dati. Multi-tenant + service_role = la sicurezza dipende dai controlli applicativi.
 > **🔍 Check di sicurezza in corso (roadmap A1–A8)** → `SECURITY-CHECK.md` — cosa è già stato verificato e cosa no. A1 (authz) e A2-shop/loyalty fatti; prossimi A3 (mass assignment), A5 (costi AI), A2-booking.
@@ -173,7 +174,7 @@ Lo script fa in sequenza: **guardie** → `npm audit` (informativo) → `npx ver
 | Icone | lucide-react ^1.24.0 |
 | Router | Next App Router (file-based) |
 | Email | Resend (RESEND_API_KEY in env) |
-| Pagamenti | Stripe — codice scritto per lo shop ma **mai collegato** (nessuna chiave su Vercel, verificato 31/08/2026); booking/eventi da fare |
+| Pagamenti | **Stripe Connect, live dal 31/08/2026** — chiavi su Vercel; ogni cliente collega il proprio conto e incassa lui (shop, prenotazioni, eventi da `lib/checkout.js`). ⚠️ Nessun cliente vero l'ha ancora collegato |
 | Hosting | **Vercel** (frontend + route API nella stessa app) — dominio live `https://oltrenova.com` |
 | Cron | Vercel Cron → `client-next/vercel.json` (`/api/cron/*`) |
 
