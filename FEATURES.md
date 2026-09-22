@@ -416,12 +416,14 @@ Modulo **incluso nel prodotto**, chiesto da due clienti (Garage 22, Debora Resin
 - [ ] Dashboard admin super: lista abbonamenti attivi + MRR
 - *Prerequisito per monetizzare la piattaforma*
 
-### Sprint 11 — Stripe payments (futuro) 🟡
-- [ ] Checkout booking risorse (deposito o totale)
-- [ ] Checkout eventi
-- [ ] Link pagamento rapido (admin genera link "paga €X" → cliente paga)
-- [ ] Webhook Stripe → aggiorna stato prenotazione automaticamente
-- *Richiede: account Stripe + chiavi API nelle env di Vercel*
+### Sprint 11 — Stripe payments ✅ **LIVE dal 31/08/2026, primo incasso vero il 22/09**
+- [x] Checkout booking risorse (deposito o totale) — l'acconto è un numero: 0 = sul posto, 100 = tutto, 30 = acconto
+- [x] Checkout eventi
+- [x] Webhook Stripe → aggiorna stato prenotazione automaticamente
+- [x] **Cosa succede DOPO il pagamento** (22/09): pagina di ritorno che dice cosa hai pagato, di chi è l'attività e **come tornare al suo sito** (`lib/esito-pagamento.js`); pastiglia «Pagato / Da pagare / Paga sul posto» sulle righe del pannello (`components/admin/StatoPagamento.jsx`); lista degli incassi in *Account → Pagamenti* (`GET /api/stripe/incassi`)
+- [ ] Link pagamento rapido (admin genera link "paga €X" → cliente paga) — **l'unico pezzo rimasto**
+- *È **Connect**: ogni cliente collega il proprio conto e incassa lui, noi non tratteniamo commissioni e non tocchiamo dati di carta. La lista incassi legge le **nostre** righe, non chiama Stripe: ricevute, rimborsi e saldo stanno sulla dashboard del cliente.*
+- 🟢 **Primo incasso reale**: Garage 22, 22/09/2026, un posto a un evento. Cassa → webhook → riga pagata → email, tutto al primo colpo.
 
 ---
 

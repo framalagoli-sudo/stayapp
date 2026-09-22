@@ -1,10 +1,11 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — 22/09: due giorni di blocchi, eventi e inlingua Terni tutti live (migration fino alla 126); restano WhatsApp/Meta, un difetto di hydration con diagnosi gia fatta e tre siti senza titolo SEO"
-metadata:
+description: "Da dove riprendere — 22/09: blocchi, eventi, inlingua Terni e il PRIMO INCASSO VERO (Garage 22) tutti live, migration fino alla 126; restano 2 verifiche a mano sul pannello pagamenti, WhatsApp/Meta, un difetto di hydration con diagnosi gia fatta, tre siti senza titolo SEO e SENTRY_DSN da togliere da Vercel"
+metadata: 
   node_type: memory
   type: project
-  modified: 2026-09-22
+  modified: 2026-09-22T20:26:05.842Z
+  originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
@@ -33,9 +34,22 @@ metadata:
 11. **Contrasto**: grigi chiari sotto il minimo leggibile, `readableOn` con soglia da testo grande anche sui link piccoli, pulsanti del menu con bianco fisso. Tutti corretti.
 12. **La sonda del contrasto ora prova sé stessa** prima di misurare: è la terza volta che misurava la cosa sbagliata.
 
+### 💳 IL PRIMO INCASSO VERO (coda del 22/09, dopo la chiusura)
+13. **Garage 22 ha incassato davvero**: Agnese, 1 €, un posto a un evento di prova. Cassa → webhook → riga `pagamento_stato: pagato` → email: **tutto al primo colpo**. Noi non tocchiamo nessun dato di carta.
+14. ⛔ **Ma non si vedeva in nessuno dei tre punti.** La pagina dopo il pagamento chiedeva all'endpoint dello **shop** (parlava di «ordine» a chi aveva pagato una cena, senza nome del locale né link per tornare); la riga nel pannello mostrava `€1` e basta; «Pagamenti» era **solo** il collegamento del conto. Tutto corretto e live → [[reference_primo_incasso_invisibile]]
+15. **`PROGETTO.md` diceva il falso su Stripe** («mai collegato») da tre settimane. Corretto, e ora `tests/probe-documenti.mjs` in `deploy.ps1` confronta le *affermazioni* del documento con le chiavi vere su Vercel → [[reference_documento_che_mente]]
+16. **§2.8 di `PROGETTO.md`**: Stripe si apre con `fra.malagoli@gmail.com` via Google. ⚠️ **Non esiste una password Stripe**: chi perde l'account Google perde Stripe.
+
 ---
 
 ## ⛔ SI RIPARTE DA QUI
+
+### 0. Due verifiche a mano che NON ho potuto fare (5 minuti)
+La sonda crea un admin effimero di un'altra azienda, e la lista incassi compare
+solo a conto collegato: ho verificato che le pagine non vadano in errore e che
+le query siano giuste, **non che si vedano bene**.
+- `/admin/pagamenti` → scegli **Garage 22**: deve comparire «Incassi ricevuti €1,00» con la riga di Agnese
+- Prenotazioni dell'evento di prova → pastiglia verde **`Pagato`** sulla riga di Agnese, e «€1,00 già incassati online» in cima
 
 ### 1. WhatsApp — la dashboard Meta (dipende da Francesco, invariato dal 19/09)
 Su Vercel c'è solo `WHATSAPP_TOKEN_KEY`: mancano `META_APP_ID` · `META_APP_SECRET` (**da rigenerare**) · `META_ES_CONFIG_ID` (dalla configurazione Embedded Signup, da creare) · `WHATSAPP_WEBHOOK_TOKEN`. Finché mancano il pulsante «Collega WhatsApp» non compare a nessuno (voluto).
@@ -54,7 +68,9 @@ Su Vercel c'è solo `WHATSAPP_TOKEN_KEY`: mancano `META_APP_ID` · `META_APP_SEC
 - **Search Console**: non esiste per nessun dominio → senza, «indicizzato» non si può dire → [[project_search_console]]
 - **Sezioni universali** (idea di Francesco del 22/09): una sezione definita una volta e usata su più pagine → [[project_sezioni_universali]]
 - **Foto vere** di inlingua Terni: oggi sono Unsplash, e le slide del cliente dicono per prime che servirebbero quelle vere.
-- **OltreNova cliente di sé stessa** + rifare la landing (il fermo per Meta è tolto) · **primo incasso Stripe** con Garage 22 · **DNS** metodotvb e fondaconarni · elenco **Offerte** nel pannello che deduce «Gratis».
+- **OltreNova cliente di sé stessa** + rifare la landing (il fermo per Meta è tolto) · **DNS** metodotvb e fondaconarni · elenco **Offerte** nel pannello che deduce «Gratis».
+- ~~primo incasso Stripe con Garage 22~~ ✅ **fatto il 22/09** (punti 13–14 qui sopra).
+- **`SENTRY_DSN` da togliere da Vercel**: residuo del servizio rimosso il 23/07, nessuna riga di codice la legge. `probe-documenti.mjs` la segnala come *promemoria*, non come errore — sparisce da sola quando la togli.
 
 ### 5. Da chiedere a Garage 22
 Quante prenotazioni arrivano al telefono su 60 posti? La risposta decide quanto grande deve essere la quota riservata (punto 8 qui sopra).
