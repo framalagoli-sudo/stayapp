@@ -4,7 +4,8 @@ Documento vivo. Aggiornato sessione per sessione.
 
 > ⚠️ **Nota di lettura (11/08/2026).** Questo file contiene anche la **cronaca storica** del prodotto: alcune sezioni raccontano fasi già superate. In particolare **Railway è dismesso** — il backend Express in `server/` non esiste più (rimosso il 13/07/2026), le API sono le route Next in `client-next/app/api/`. Ovunque si legga "env var su Railway", **oggi vanno su Vercel**. Le sezioni che descrivono la migrazione Railway→Vercel sono storia, non lavoro da fare: quella migrazione è **completa**. Per lo stato attuale fai fede a `CLAUDE.md`.
 
-Ultima revisione: **2026-09-23** — **pagine in inglese coerenti**: evento, elenco del blog e articolo, aperti con un browser in inglese, mostravano contenuto inglese ed etichette italiane (errore #418) — la lingua ora la dice il server; i **pulsanti di condivisione** degli articoli condividevano un indirizzo vuoto; `?back=` accetta solo percorsi del sito. **Domini**: il giro notturno di riparazione creava tre sottodomini per entità (due in 404); corretto, e tolti i due di Ristorante Borgo del Lago. Dettaglio → note 47 e 48 in `CLAUDE.md`.
+Ultima revisione: **2026-09-23 (pomeriggio)** — **sessione di strategia, nessun codice.** Nasce `STRATEGIA.md`, il documento cardine: B+C adesso (servizio «fatto con te» + verticale locali/eventi), fondamenta self-serve in parallelo; **preconfiguratori per mestiere approvati** (progetto in §6.1); aggregatore locale **sì come direzione, no come prossimo passo**, con sei vincoli da rispettare da subito (§6.2). ⚠️ La sezione «Go-to-market: modello ibrido» del 16/05 qui sotto è **superata** da `STRATEGIA.md` (il white-label è ora fra le cose da non fare).
+Precedente: **2026-09-23** — **pagine in inglese coerenti**: evento, elenco del blog e articolo, aperti con un browser in inglese, mostravano contenuto inglese ed etichette italiane (errore #418) — la lingua ora la dice il server; i **pulsanti di condivisione** degli articoli condividevano un indirizzo vuoto; `?back=` accetta solo percorsi del sito. **Domini**: il giro notturno di riparazione creava tre sottodomini per entità (due in 404); corretto, e tolti i due di Ristorante Borgo del Lago. Dettaglio → note 47 e 48 in `CLAUDE.md`.
 Precedente: **2026-09-22** — **i blocchi crescono per varianti** (team: griglia/ritratti/editoriale · vetrina: «numeri in evidenza» con barra, tessere e icone decise dal preset · video e mappa nel dettaglio di un elemento), **eventi**: note nel modulo, telefono obbligatorio a scelta (migr. 125) e **posti riservati al telefono** con avviso a soglia (migr. 126, nato dal sold out di Garage 22). **Leggibilità**: grigi chiari, soglia di `readableOn` e pulsanti del menu corretti per tutti i siti; la sonda del contrasto ora **prova sé stessa**. Restyling completo di **inlingua Terni** da brief. Dettaglio → note 44 e 45 in `CLAUDE.md`.
 Precedente: **2026-08-22** — **WhatsApp fasi 1-2 in produzione** (numero, template, campagne, esiti) in attesa delle credenziali Meta; **`params` asincroni** su 94 file: pronti per Next 16.
 Precedente: **2026-08-21** — **WhatsApp**: decisioni prese (strada autonoma Meta, catalogo template nostro, paga il cliente) e **fase 0 in produzione** — import contatti CSV, liste e consensi. Il canale dipende dalla verifica Meta. Vedi `WHATSAPP.md`.
@@ -34,6 +35,8 @@ Competitor: GoHighLevel · HubSpot · WordPress · Wix · Webflow
 Vantaggio unico: **PWA installabile via QR** — nessun competitor lo fa integrato.
 
 ### Go-to-market: modello ibrido (concordato 2026-05-16)
+
+> ⚠️ **Superato il 23/09/2026 da `STRATEGIA.md`**, che fa fede. Resta qui come storia.
 
 **Fase 1 — Diretto** *(ora)*
 Primi 20-30 clienti paganti con self-signup. Servono per validare il prodotto,

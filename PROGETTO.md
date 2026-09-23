@@ -460,6 +460,7 @@ toglie da solo, ma se scrivi codice nuovo devi ricordartene.
 
 | File | Cosa contiene |
 |---|---|
+| `STRATEGIA.md` | **dove si sta portando la piattaforma e perché**: le strade scelte, cosa costruire in ordine, cosa non fare, le decisioni ancora aperte |
 | `CLAUDE.md` | le regole di lavoro e tutta la storia dei guasti già successi |
 | `SECURITY.md` | le regole di sicurezza non negoziabili |
 | `INCIDENTE.md` | **cosa fare se succede qualcosa**, passo per passo — e §3.2 è **come si rimette in piedi tutto da un archivio**: comandi, tempi misurati, e cosa non torna da solo |
@@ -519,6 +520,10 @@ Chi compra o subentra deve saperlo prima, non dopo.
   vivo; negozio e prenotazioni risorse lo sono solo da noi.
 - **WhatsApp è costruito ma spento**: la verifica Meta è **approvata** (Tech
   Provider, 18/09/2026), mancano le chiavi sulla piattaforma e la prova dal vivo.
+- **Molte funzioni costruite non le usa nessuno.** Misurato il 23/09/2026: negozio,
+  automazioni, fedeltà, gift card e WhatsApp hanno zero utilizzi reali. Ai clienti
+  si mostrano comunque tutte. Il piano per riordinarle («preconfiguratori per
+  mestiere») è in `STRATEGIA.md` §6.1.
 - **Il canale in tedesco non c'è** (italiano e inglese sì).
 - **Una sola persona sa come funziona.** Questo documento serve a ridurre il
   danno, non lo elimina.

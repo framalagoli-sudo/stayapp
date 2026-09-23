@@ -1,14 +1,36 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — 23/09: hydration evento/blog RISOLTA (era la lingua), domini tripli corretti e ripuliti; migration ferme alla 126; restano 2 verifiche a mano sul pannello pagamenti, WhatsApp/Meta (e una contraddizione fra documenti sul Tech Provider), tre siti senza titolo SEO, SENTRY_DSN da togliere da Vercel"
+description: "Da dove riprendere — 23/09 pomeriggio: STRATEGIA.md nato, preconfiguratori APPROVATI → si parte da F0+F1 (nessun cambio visibile) dopo 3 risposte di Francesco; migration ferme alla 126; restano anche 2 verifiche a mano sul pannello pagamenti, WhatsApp/Meta (e una contraddizione fra documenti sul Tech Provider), tre siti senza titolo SEO, SENTRY_DSN da togliere da Vercel"
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-09-22T23:45:56.701Z
+  modified: 2026-09-23T17:01:46.997Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
+
+## ▶️ 23/09 pomeriggio — SESSIONE DI STRATEGIA CHIUSA (nessun codice, migration ferme alla 126)
+
+**Leggere prima `STRATEGIA.md`**: è il documento cardine → [[project-strategia-cardine]] · [[project-session-2026-09-23-strategia]]
+
+### Il prossimo lavoro: preconfiguratori F0 + F1 (via libera di Francesco)
+- **F0** (2 sessioni): catalogo unico in `lib/funzioni.js` esteso alle ~25 voci di livello
+  azienda + **un menu solo** al posto dei tre scritti a mano in `AdminLayout.jsx`
+  (super_admin / admin_azienda / staff con i `perm.*`). **Nessun cambio visibile**: prima di
+  toccare, scrivere la sonda che fotografa il menu di ogni ruolo, e dopo confrontarla.
+  ⚠️ I permessi staff non coincidono 1:1 con le voci (`perm.newsletter` apre anche WhatsApp,
+  `perm.eventi` anche Offerte, `perm.shop` Prodotti + Shop).
+- **F1** (1 sessione): area super_admin «Funzioni e profili» in sola lettura con la matrice
+  aziende × funzioni (accesa e usata / accesa e vuota / spenta).
+- **Prima chiedere a Francesco** (domande lasciate aperte):
+  1. i profili di partenza vanno bene? (locale con eventi · struttura ricettiva · scuola e corsi · catalogo e noleggio · professionista · parto da zero)
+  2. le funzioni a zero (shop, loyalty, automazioni, gift card) fuori dai profili nuovi ma in «Aggiungi funzioni»?
+  3. perché Giochi senza Panciere raccoglie le iscrizioni col form builder e non con gli eventi?
+  4. le decisioni di `STRATEGIA.md` §7 (più clienti o che paghino di più · verticale eventi · data commercialista · città/consorzio per l'aggregatore).
+- Aggregatore: niente da costruire, ma **i sei vincoli di §6.2** valgono già per F2/F3 (adesione come prova, dati strutturati, una proiezione pubblica a colonne elencate, canonical al cliente, host → rete nel middleware, ordinamento neutrale). Da verificare se le entità hanno già le coordinate.
+
+Tutto quello che segue (22–23/09 mattina) resta valido.
 
 ## ▶️ 23/09 — SESSIONE CHIUSA (Ettore). Nessuna migration nuova: ferme alla **126**
 

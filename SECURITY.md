@@ -299,6 +299,10 @@ Il token OAuth del cliente è salvato in `aziende.google_calendar_token` (JSONB)
 - [ ] **Rotazione annuale** — agendare rotazione `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `ANTHROPIC_API_KEY`
 - [ ] **Data retention cron** — implementare prima del lancio commerciale
 - [ ] **Stripe PCI** — quando si attiva billing: verificare di non loggare mai dati di carta, usare solo Stripe.js client-side
+- [ ] **Chiave di sicurezza fisica** (23/09/2026, `STRATEGIA.md` §4.2) su Google, Vercel, Supabase, Cloudflare + procedura di accesso d'emergenza in `INCIDENTE.md`. Oggi Stripe si apre solo con l'account Google di Francesco: è il punto unico di rottura più grave, più di qualsiasi riga di codice
+- [ ] **Contratto di responsabile del trattamento (art. 28 GDPR) verso i clienti**: la §8 elenca i DPA verso i nostri fornitori, ma non si è trovato quello verso i clienti, di cui trattiamo i dati dei loro clienti. Verificare nei termini del 31/08; se manca, farlo con un legale
+- [ ] **Rotazione di `META_APP_SECRET`** (passato dalla chat il 15/09) e **data** per la rotazione annuale qui sopra
+- [ ] **Pentest esterno prima di aprire le registrazioni**: le nostre sonde trovano le classi che conosciamo; la password del WiFi ha dimostrato che ne esistono altre
 
 ---
 
