@@ -154,6 +154,47 @@ sovrapposto all'onboarding** già previsto in 4.1.
 **Da fare prima**: misurare quale funzione ogni cliente ha usato davvero. Le candidate al
 congelamento si decidono con Francesco una per una.
 
+**✅ Via libera di Francesco il 23/09.** Progetto (bozza, da confermare nei dettagli):
+
+- **Tre assi separati, da non confondere** (è già successo con tipo/settore, nota 31):
+  - `tipo` = tecnico (indirizzo `/s` `/r` `/a`);
+  - `profilo` = la preconfigurazione di partenza;
+  - `settore` = testo libero per l'AI e la SEO.
+- **Tre strati:**
+  1. **Catalogo** unico di tutte le funzioni, di entità **e** di azienda, in codice (una
+     funzione esiste solo se esiste il suo codice). Per ciascuna: livello, gruppo del menu,
+     route, permesso staff, dipendenze, stato (stabile · beta · congelata).
+  2. **Profili di mestiere** in DB, modificabili dall'area super_admin senza deploy.
+  3. **Istanza**: le scelte dell'entità e dell'azienda. Il profilo si applica **come copia**
+     alla nascita: modificare un profilo non cambia i clienti esistenti in silenzio. Si
+     registrano `profilo` e versione per poter *proporre* aggiornamenti.
+- **Menu dell'azienda = unione delle sue entità**: una funzione di livello azienda (eventi,
+  contatti, pagamenti) compare se almeno un'entità la usa. Borgo del Lago (struttura +
+  ristorante) vede l'unione dei due profili.
+- **Un menu solo**: oggi sono tre scritti a mano (super_admin, admin azienda, staff) e ~25 voci
+  azienda non hanno interruttore. Diventa una lista letta dal catalogo e filtrata per ruolo e
+  permessi.
+- **Area super_admin «Funzioni e profili»:**
+  - Catalogo, con quante aziende hanno ogni funzione accesa e quante la usano davvero.
+  - Profili, con editor e anteprima del menu risultante.
+  - Matrice aziende × funzioni: accesa e usata / accesa e vuota / spenta.
+- **Fasi**:
+  - F0 catalogo unico + menu da una fonte sola, **nessun cambio visibile**, verificato con
+    una sonda che confronta i menu per ruolo prima e dopo (2);
+  - F1 area in sola lettura con matrice e uso (1);
+  - F2 profili in DB + editor + migration (2);
+  - F3 profilo applicato alla nascita + «Aggiungi funzioni» per il cliente: **primo cambio
+    visibile, solo per i nuovi, serve l'ok di Francesco** (2);
+  - F4 proposta ai clienti esistenti, mai automatica (1);
+  - F5 le route di una funzione spenta rifiutano le richieste, gradualmente (1–2).
+
+**Uso misurato il 23/09** (righe nel DB per azienda):
+- **A zero ovunque**: shop (prodotti, ordini), automazioni, loyalty, gift card, campagne
+  del piano editoriale, WhatsApp.
+- **Quasi solo nostre**: survey e newsletter.
+- Giochi senza Panciere ha **52 invii di form** e 40 contatti: iscrizioni gestite col form
+  builder invece che con gli eventi. Da capire perché.
+
 ### 6.2 Aggregatore di mercato locale — **sì come direzione, no come prossimo passo**
 
 **Perché è interessante:**
@@ -189,6 +230,29 @@ congelamento si decidono con Francesco una per una.
    associati ricevono il sito**: un contratto porta N attività in un colpo. Risolve l'uovo e la
    gallina e la distribuzione insieme. I tempi della pubblica amministrazione sono lunghi, un
    consorzio privato è più rapido.
+
+**Idee sul tavolo (23/09, solo idee):**
+- Calendario «stasera in città» con i posti liberi.
+- **Rete fra clienti dentro l'app del QR**: l'ospite dell'hotel vede i ristoranti e le serate
+  partner vicini. L'hotel diventa canale di distribuzione per il ristorante. Costa poco ed è
+  un aggregatore in miniatura.
+- Portale del territorio pagato da un ente (consorzio, Pro Loco, associazione).
+- Esperienze combinate fra aziende diverse (dormi + cena + evento). Più avanti: dividere un
+  pagamento fra più conti è complesso.
+- Dati **aggregati e anonimi** per l'ente (domanda, affluenza), solo su contratto.
+
+**Vincoli da rispettare da subito**, anche senza costruire niente:
+1. **Adesione esplicita per entità, come prova** (quando, chi, a quale rete), spenta di
+   default. Mai dedotta.
+2. **Dati strutturati**: posizione (coordinate, comune), orari leggibili da una macchina,
+   fascia di prezzo, lingue. I profili li chiedono all'onboarding. Da verificare se le
+   coordinate le abbiamo già.
+3. **Una sola proiezione pubblica per entità**, a colonne elencate (come `CAMPI_ENTITA`):
+   l'aggregatore legge solo quella.
+4. **Il portale indicizza, non copia**: canonical sempre al sito del cliente.
+5. Nel middleware un host potrà risolvere in una **rete**, non solo in un'entità: non
+   scrivere codice che dia per scontato il contrario.
+6. **Regola di ordinamento neutrale scritta prima del lancio.**
 
 **Giudizio**: l'aggregatore non è il prodotto, è il **premio della densità**. Ci si arriva
 vincendo una città con i locali, e i preconfiguratori sono il primo mattone per entrambe le
