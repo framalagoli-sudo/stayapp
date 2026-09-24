@@ -4,7 +4,7 @@ description: "Da dove riprendere — 23/09 pomeriggio: STRATEGIA.md nato, precon
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-09-24T10:39:36.448Z
+  modified: 2026-09-24T11:45:29.571Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
@@ -15,7 +15,10 @@ metadata:
 - **Cancello** `65923449`: `verifica-regole.mjs` ora capisce il menu a dati (voce spostata ≠ tolta; chiave tolta da `voci:[…]` = tolta). Provato su ramo usa e getta.
 - **F1** `262b47ce`: `/admin/funzioni` + `GET /api/admin/funzioni-uso` (solo super_admin) + `requireSuperAdmin` in `lib/server-auth.js`. Sonda `probe-funzioni-uso.mjs` verde in prod.
 - ⚠️ Deploy da bash: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File deploy.ps1 > log 2>&1`. Con `*>` dentro PowerShell l'avviso di npx su stderr diventa errore (ErrorActionPreference Stop).
-- **Da portare a Francesco**: 5 account staff senza azienda (4 ex Futura Vacanze + 1 gmail, fermi dal 28/05) ancora attivi; staff col permesso «ristorante» NON vede le sezioni dell'entità nel menu; Vetrine in nessun menu.
+- ✅ **Account orfani BLOCCATI** (ban, reversibile) su ok di Francesco: 5 staff + il titolare di Futura Vacanze. Resta attivo `oltrenova@gmail.com` (admin_azienda senza azienda, ultimo accesso 24/04): chiedere cosa farne.
+- 🔴→✅ **Buco di sicurezza chiuso e LIVE** `37c61a0b`: DELETE /api/ristoranti|attivita/:id di un'ALTRA azienda → 200 e domini della vittima staccati da Vercel. Ora `cancellaEntita` (lib/cancellazione.js) chiede «è sua?» prima di tutto. Sonda `probe-cancella-entita-altrui.mjs` in deploy.ps1. Audit log: mai sfruttato.
+- ⏳ **Migration 127 DA ESEGUIRE (Francesco)**: cascate per cancellare un'azienda senza resti. Codice `88547958` già live (raccoglie → cancella riga → poi file/traduzioni/account). Dopo: `node tests/probe-cancella-azienda.mjs` deve dare «L'AZIENDA È SPARITA DEL TUTTO», poi aggiungerla a deploy.ps1.
+- Annotati, non toccati: staff col permesso «ristorante» NON vede le sezioni dell'entità nel menu; Vetrine in nessun menu; strutture cancellabili solo da super_admin/admin_gruppo (ristoranti e attività anche dall'admin azienda); tendina «Azienda attiva» non si aggiorna dopo una cancellazione; export GDPR per azienda copre ~15 tabelle su ~50; cancellando UNA entità restano eventi/articoli/offerte con entity_id pendente (scelta di prodotto).
 
 ## ▶️ 23/09 pomeriggio — SESSIONE DI STRATEGIA CHIUSA (nessun codice, migration ferme alla 126)
 
