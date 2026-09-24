@@ -370,8 +370,15 @@ export default function AdminLayout({ children }) {
       ? !!((perm.struttura || perm.ristorante || perm.attivita_gestione) && haEntita)
       : !!haEntita
 
-  const menu = costruisciMenu({
-    ruolo: isSuperAdmin ? 'super_admin' : isAdminAzienda ? 'admin_azienda' : isStaff ? 'staff' : null,
+  // Senza un ruolo noto (il profilo non è ancora arrivato) non si mostra niente:
+  // costruisciMenu con un ruolo sconosciuto darebbe tutte le voci senza restrizioni.
+  // E finché l'azienda non è caricata non si sa quali funzioni ha: disegnare il
+  // menu intero e poi toglierne metà farebbe comparire e sparire voci davanti
+  // al cliente. Vale anche per il super_admin: prima che arrivino le entità non
+  // saprebbe quali sezioni sono spente per il cliente.
+  const ruoloMenu = isSuperAdmin ? 'super_admin' : isAdminAzienda ? 'admin_azienda' : isStaff ? 'staff' : null
+  const menu = (!ruoloMenu || aziendaLoading) ? [] : costruisciMenu({
+    ruolo: ruoloMenu,
     permessi: perm,
     // null finché la categoria non è assegnata: allora si vede tutto, come prima.
     funzioniAzienda: azienda?.funzioni ?? null,

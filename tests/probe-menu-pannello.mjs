@@ -79,6 +79,9 @@ async function leggiMenu(browser, sessione, percorso) {
   try {
     await page.goto(BASE + percorso, { waitUntil: 'domcontentloaded', timeout: 30_000 })
     await page.waitForSelector('aside.admin-sidebar nav a', { timeout: 20_000 })
+    // Il menu compare solo quando l'azienda è caricata (prima c'è la sola
+    // Dashboard, apposta): si aspetta una voce che hanno tutti i ruoli.
+    await page.waitForSelector('aside.admin-sidebar nav a:has-text("Sicurezza")', { timeout: 30_000 }).catch(() => {})
     await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {})
     await page.waitForTimeout(1500)
     const righe = await page.$$eval('aside.admin-sidebar nav *', (els) => {
