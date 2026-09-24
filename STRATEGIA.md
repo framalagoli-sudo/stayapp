@@ -154,6 +154,17 @@ sovrapposto all'onboarding** già previsto in 4.1.
 **Da fare prima**: misurare quale funzione ogni cliente ha usato davvero. Le candidate al
 congelamento si decidono con Francesco una per una.
 
+**⛔ Deciso da Francesco il 24/09 — le funzioni le accendiamo NOI, per categoria.**
+Il cliente non sceglie né accende funzioni: «altrimenti gli smanettoni mettono cose
+che non hanno senso». L'admin (Francesco, con Ettore) configura il **profilo ottimale
+per ogni categoria di azienda**, e ogni azienda riceve quello della sua categoria. È
+la strada per diventare sempre più verticali: un settore che ha bisogno di funzioni più
+specifiche avrà il suo profilo. Conseguenze sul progetto qui sotto:
+- **niente «Aggiungi funzioni» per il cliente** (F3 com'era scritta è superata);
+- la categoria si assegna dall'area super_admin, alla creazione dell'azienda;
+- la pagina «Funzioni» di ogni entità, oggi visibile al cliente, va ripensata: cosa
+  farne lo decide Francesco, perché toglierla è un cambio che il cliente noterebbe.
+
 **✅ Via libera di Francesco il 23/09.** Progetto (bozza, da confermare nei dettagli):
 
 - **Tre assi separati, da non confondere** (è già successo con tipo/settore, nota 31):
