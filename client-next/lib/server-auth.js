@@ -123,6 +123,20 @@ export async function requireAuth(request) {
   return { user, response: null }
 }
 
+// Solo per chi amministra la piattaforma. Chiunque altro riceve 404, non 403:
+// una pagina che non ti riguarda non deve nemmeno dirti che esiste.
+// Uso: const { response } = await requireSuperAdmin(request)
+//      if (response) return response
+export async function requireSuperAdmin(request) {
+  const { user, response } = await requireAuth(request)
+  if (response) return { user: null, response }
+  const { data: profile } = await supabaseAdmin.from('profiles').select('role').eq('id', user.id).single()
+  if (profile?.role !== 'super_admin') {
+    return { user: null, response: Response.json({ error: 'Non trovato' }, { status: 404 }) }
+  }
+  return { user, response: null }
+}
+
 // Carica il profilo completo (role, azienda_id, ecc.)
 export async function getProfile(userId) {
   const { data } = await supabaseAdmin

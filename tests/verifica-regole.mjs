@@ -99,11 +99,12 @@ for (const f of file) {
 
   // ── 1. Ogni route API si autentica, o dichiara di essere pubblica ──────────
   if (eRoute && !ePubblica) {
-    const haControllo = /requireAuth|requireEntityAccess|requireRecordAccess|CRON_SECRET|verificaTokenAnteprima|svix|stripe/i.test(testo)
+    // requireSuperAdmin passa da requireAuth: autentica, e in più restringe.
+    const haControllo = /requireAuth|requireSuperAdmin|requireEntityAccess|requireRecordAccess|CRON_SECRET|verificaTokenAnteprima|svix|stripe/i.test(testo)
     const soloGet = !/export async function (POST|PATCH|PUT|DELETE)/.test(testo)
     if (!haControllo) {
       segnala('route senza controllo di accesso', f, 1,
-        `nessun requireAuth/requireEntityAccess/requireRecordAccess${soloGet ? ' (solo GET)' : ''}`,
+        `nessun requireAuth/requireSuperAdmin/requireEntityAccess/requireRecordAccess${soloGet ? ' (solo GET)' : ''}`,
         'le route usano la chiave di servizio e scavalcano la RLS: senza controllo applicativo chiunque legge i dati di chiunque')
     }
   }

@@ -46,7 +46,8 @@
     "voce  Ristoranti → /admin/ristoranti",
     "voce  Attività → /admin/attivita",
     "voce  Utenti → /admin/users",
-    "voce  Stato piattaforma → /admin/diagnostica"
+    "voce  Stato piattaforma → /admin/diagnostica",
+    "voce  Funzioni e profili → /admin/funzioni"
   ],
   "super_admin @ /admin/struttura/<struttura>/info": [
     "voce  Dashboard → /admin",
@@ -112,7 +113,8 @@
     "voce  Ristoranti → /admin/ristoranti",
     "voce  Attività → /admin/attivita",
     "voce  Utenti → /admin/users",
-    "voce  Stato piattaforma → /admin/diagnostica"
+    "voce  Stato piattaforma → /admin/diagnostica",
+    "voce  Funzioni e profili → /admin/funzioni"
   ],
   "super_admin @ /admin/ristoranti/<ristorante>/info": [
     "voce  Dashboard → /admin",
@@ -178,7 +180,8 @@
     "voce  Ristoranti → /admin/ristoranti •attiva",
     "voce  Attività → /admin/attivita",
     "voce  Utenti → /admin/users",
-    "voce  Stato piattaforma → /admin/diagnostica"
+    "voce  Stato piattaforma → /admin/diagnostica",
+    "voce  Funzioni e profili → /admin/funzioni"
   ],
   "super_admin @ /admin/attivita/<attivita>/info": [
     "voce  Dashboard → /admin",
@@ -244,7 +247,8 @@
     "voce  Ristoranti → /admin/ristoranti",
     "voce  Attività → /admin/attivita •attiva",
     "voce  Utenti → /admin/users",
-    "voce  Stato piattaforma → /admin/diagnostica"
+    "voce  Stato piattaforma → /admin/diagnostica",
+    "voce  Funzioni e profili → /admin/funzioni"
   ],
   "admin_azienda @ /admin": [
     "voce  Dashboard → /admin •attiva",

@@ -110,6 +110,7 @@ const VOCI = {
   attivita:         { to: '/admin/attivita',         label: 'Attività',          icon: Zap },
   utenti:           { to: '/admin/users',            label: 'Utenti',            icon: Users },
   diagnostica:      { to: '/admin/diagnostica',      label: 'Stato piattaforma', icon: Activity },
+  funzioni:         { to: '/admin/funzioni',         label: 'Funzioni e profili', icon: SlidersHorizontal },
 }
 
 // Come ogni ruolo vede il pannello: blocchi in ordine, ciascuno con le sue voci.
@@ -127,7 +128,7 @@ const MENU_PER_RUOLO = {
     { titolo: 'Marketing',   voci: ['contatti', 'newsletter', 'whatsapp', 'automazioni', 'blog', 'piano_editoriale', 'content_studio', 'ai_site_builder', 'preventivi', 'form_builder', 'prodotti', 'shop', 'loyalty', 'eventi', 'offerte'] },
     'entita',
     { titolo: 'Account',     voci: ['analytics', 'qrcode', 'integrazioni', 'pagamenti', 'seo_geo', 'audit_log', 'impostazioni', 'sicurezza', 'aiuto'] },
-    { titolo: 'Piattaforma', voci: ['aziende', 'strutture', 'ristoranti', 'attivita', 'utenti', 'diagnostica'] },
+    { titolo: 'Piattaforma', voci: ['aziende', 'strutture', 'ristoranti', 'attivita', 'utenti', 'diagnostica', 'funzioni'] },
   ],
   admin_azienda: [
     { titolo: 'Clienti & richieste', voci: ['richieste', 'prenotazioni', 'booking', 'contatti', 'preventivi', 'recensioni', 'survey', 'chat', 'form_builder'] },

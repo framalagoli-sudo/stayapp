@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireSuperAdmin } from '@/lib/server-auth'
 import { logError } from '@/lib/observability'
 import { BUDGET_MENSILE_PREDEFINITO_USD, meseCorrente } from '@/lib/ai-consumi'
 
@@ -14,16 +14,6 @@ import { BUDGET_MENSILE_PREDEFINITO_USD, meseCorrente } from '@/lib/ai-consumi'
 // POST → manda un avviso di PROVA, per verificare che la catena arrivi davvero
 //        a destinazione prima di doverci contare sul serio.
 
-async function soloSuperAdmin(request) {
-  const { user, response } = await requireAuth(request)
-  if (response) return { response }
-  const { data: profile } = await supabaseAdmin.from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'super_admin') {
-    return { response: Response.json({ error: 'Non trovato' }, { status: 404 }) }
-  }
-  return { user }
-}
-
 const MODULI = [
   ['Pagine sito', 'pagine'], ['Contatti', 'contatti'], ['Richieste', 'requests'],
   ['Prenotazioni', 'prenotazioni'], ['Risorse prenotabili', 'risorse'],
@@ -36,7 +26,7 @@ const MODULI = [
 
 export async function GET(request) {
   try {
-    const { response } = await soloSuperAdmin(request)
+    const { response } = await requireSuperAdmin(request)
     if (response) return response
 
     // Dove finiscono gli avvisi. Il valore è nascosto sul dashboard di Vercel,
@@ -133,7 +123,7 @@ export const maxDuration = 60
 //               senza dover conoscere il CRON_SECRET
 export async function POST(request) {
   try {
-    const { response } = await soloSuperAdmin(request)
+    const { response } = await requireSuperAdmin(request)
     if (response) return response
 
     const { azione } = await request.json().catch(() => ({}))

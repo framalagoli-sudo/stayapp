@@ -1,19 +1,11 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireSuperAdmin } from '@/lib/server-auth'
 import { statoBudget, meseCorrente, BUDGET_MENSILE_PREDEFINITO_USD } from '@/lib/ai-consumi'
 import { dollariDaEuro } from '@/lib/valuta-ai'
 
 // Il credito AI di un'azienda: quanto ha speso, quanto può spendere, e la
 // ricarica. Solo il super_admin: il cliente vede la percentuale nel pannello,
 // mai le cifre, e non può alzarsi il tetto da solo.
-
-async function soloSuperAdmin(request) {
-  const { user, response } = await requireAuth(request)
-  if (response) return { response }
-  const { data: profile } = await supabaseAdmin.from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'super_admin') return { response: Response.json({ error: 'Non trovato' }, { status: 404 }) }
-  return {}
-}
 
 // Dal pannello l'importo arriva in euro e si salva in dollari (vedi lib/valuta-ai).
 // Fra 0 e 850 euro: convertiti restano sotto i 1000 dollari del CHECK nella migration 121.
@@ -37,7 +29,7 @@ async function credito(id, tettoSuMisura) {
 export async function GET(request, props) {
   const params = await props.params
   try {
-    const { response } = await soloSuperAdmin(request)
+    const { response } = await requireSuperAdmin(request)
     if (response) return response
     const { data: az } = await supabaseAdmin.from('aziende').select('id, ai_budget_mensile_usd').eq('id', params.id).maybeSingle()
     if (!az) return Response.json({ error: 'Azienda non trovata' }, { status: 404 })
@@ -51,7 +43,7 @@ export async function GET(request, props) {
 export async function PATCH(request, props) {
   const params = await props.params
   try {
-    const { response } = await soloSuperAdmin(request)
+    const { response } = await requireSuperAdmin(request)
     if (response) return response
     const body = await request.json().catch(() => ({}))
     const aggiorna = {}
