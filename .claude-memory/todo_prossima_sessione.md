@@ -4,11 +4,18 @@ description: "Da dove riprendere — 23/09 pomeriggio: STRATEGIA.md nato, precon
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-09-23T17:01:46.997Z
+  modified: 2026-09-24T10:39:36.448Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
+
+## ▶️ 24/09 — F0 + F1 dei preconfiguratori LIVE (sessione ancora aperta, docs da aggiornare alla chiusura)
+- **F0** `4820c0d7`: `FUNZIONI_AZIENDA` in `lib/funzioni.js` + menu da `VOCI`/`MENU_PER_RUOLO` in `AdminLayout.jsx`. Sonda `tests/probe-menu-pannello.mjs` + `menu-pannello.atteso.json` (14 scenari, identici in prod).
+- **Cancello** `65923449`: `verifica-regole.mjs` ora capisce il menu a dati (voce spostata ≠ tolta; chiave tolta da `voci:[…]` = tolta). Provato su ramo usa e getta.
+- **F1** `262b47ce`: `/admin/funzioni` + `GET /api/admin/funzioni-uso` (solo super_admin) + `requireSuperAdmin` in `lib/server-auth.js`. Sonda `probe-funzioni-uso.mjs` verde in prod.
+- ⚠️ Deploy da bash: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File deploy.ps1 > log 2>&1`. Con `*>` dentro PowerShell l'avviso di npx su stderr diventa errore (ErrorActionPreference Stop).
+- **Da portare a Francesco**: 5 account staff senza azienda (4 ex Futura Vacanze + 1 gmail, fermi dal 28/05) ancora attivi; staff col permesso «ristorante» NON vede le sezioni dell'entità nel menu; Vetrine in nessun menu.
 
 ## ▶️ 23/09 pomeriggio — SESSIONE DI STRATEGIA CHIUSA (nessun codice, migration ferme alla 126)
 
