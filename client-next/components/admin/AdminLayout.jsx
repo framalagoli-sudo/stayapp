@@ -1,8 +1,8 @@
 ﻿'use client'
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { funzioneAttiva } from '@/lib/funzioni'
+import { funzioneAttiva, staffPuoAprire } from '@/lib/funzioni'
 import { useAuth } from '@/context/AuthContext'
 import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
@@ -60,6 +60,94 @@ const SEZIONI_ENTITA = [
   { sub: 'funzioni',   label: 'Funzioni',      icon: SlidersHorizontal, group: 'Impostazioni' },
   { sub: 'privacy',    label: 'Privacy',       icon: Lock,             group: 'Impostazioni' },
 ]
+
+// Ogni voce di primo livello del pannello, scritta UNA volta.
+//
+// Prima il menu era scritto a mano quattro volte (super_admin, admin azienda,
+// staff, profili senza azienda): aggiungere una funzione voleva dire ricordarsi
+// quattro punti, e le differenze fra i ruoli non si vedevano — si scoprivano.
+//
+// `funzione` lega la voce al catalogo `FUNZIONI_AZIENDA` (lib/funzioni.js): è da
+// lì che lo staff eredita il permesso che la apre. Le voci senza `funzione` sono
+// l'ossatura (account, piattaforma) e le vede chiunque abbia quel blocco.
+// `booking` non è un link ma la sezione richiudibile Calendario + Risorse.
+const VOCI = {
+  richieste:        { to: '/admin/requests',         label: 'Richieste',         icon: Inbox,            funzione: 'richieste' },
+  prenotazioni:     { to: '/admin/prenotazioni',     label: 'Prenotazioni',      icon: CalendarCheck,    funzione: 'prenotazioni' },
+  booking:          { funzione: 'booking' },
+  contatti:         { to: '/admin/contatti',         label: 'Contatti',          icon: Users,            funzione: 'contatti' },
+  preventivi:       { to: '/admin/preventivi',       label: 'Preventivi',        icon: FileText,         funzione: 'preventivi' },
+  recensioni:       { to: '/admin/recensioni',       label: 'Recensioni',        icon: Star,             funzione: 'recensioni' },
+  survey:           { to: '/admin/survey',           label: 'Survey & NPS',      icon: BarChart3,        funzione: 'survey' },
+  chat:             { to: '/admin/chat',             label: 'Chat',              icon: MessageCircle,    funzione: 'chat' },
+  form_builder:     { to: '/admin/form-builder',     label: 'Form Builder',      icon: FormInput,        funzione: 'form_builder' },
+  blog:             { to: '/admin/blog',             label: 'Blog & News',       icon: Newspaper,        funzione: 'blog' },
+  eventi:           { to: '/admin/eventi',           label: 'Eventi',            icon: CalendarDays,     funzione: 'eventi' },
+  offerte:          { to: '/admin/offerte',          label: 'Offerte',           icon: Tag,              funzione: 'offerte' },
+  newsletter:       { to: '/admin/newsletter',       label: 'Newsletter',        icon: Mail,             funzione: 'newsletter' },
+  whatsapp:         { to: '/admin/whatsapp',         label: 'WhatsApp',          icon: MessageCircle,    funzione: 'whatsapp' },
+  automazioni:      { to: '/admin/automazioni',      label: 'Automazioni',       icon: BotMessageSquare, funzione: 'automazioni' },
+  piano_editoriale: { to: '/admin/piano-editoriale', label: 'Piano editoriale',  icon: CalendarDays,     funzione: 'piano_editoriale' },
+  content_studio:   { to: '/admin/content-studio',   label: 'Content Studio',    icon: Sparkles,         funzione: 'content_studio' },
+  loyalty:          { to: '/admin/loyalty',          label: 'Loyalty',           icon: Gift,             funzione: 'loyalty' },
+  prodotti:         { to: '/admin/prodotti',         label: 'Prodotti',          icon: Store,            funzione: 'shop' },
+  shop:             { to: '/admin/shop',             label: 'Shop',              icon: ShoppingBag,      funzione: 'shop' },
+  analytics:        { to: '/admin/analytics',        label: 'Analytics',         icon: BarChart2,        funzione: 'analytics' },
+  demo:             { to: '/admin/demo',             label: 'Richieste demo',    icon: FileText },
+  ai_site_builder:  { to: '/admin/ai-site-builder',  label: 'AI Site Builder',   icon: Wand2 },
+  qrcode:           { to: '/admin/qrcode',           label: 'QR Code',           icon: QrCode },
+  collaboratori:    { to: '/admin/staff',            label: 'Collaboratori',     icon: UserCheck },
+  integrazioni:     { to: '/admin/integrazioni',     label: 'Integrazioni',      icon: Webhook },
+  pagamenti:        { to: '/admin/pagamenti',        label: 'Pagamenti',         icon: CreditCard },
+  seo_geo:          { to: '/admin/seo-geo',          label: 'SEO & GEO',         icon: SearchCheck },
+  audit_log:        { to: '/admin/audit-log',        label: 'Audit log',         icon: ClipboardList },
+  impostazioni:     { to: '/admin/impostazioni',     label: 'Impostazioni',      icon: Settings },
+  sicurezza:        { to: '/admin/security',         label: 'Sicurezza',         icon: Shield },
+  aiuto:            { to: '/admin/help',             label: 'Aiuto',             icon: LifeBuoy },
+  aziende:          { to: '/admin/aziende',          label: 'Aziende',           icon: Building },
+  strutture:        { to: '/admin/properties',       label: 'Strutture',         icon: Building2 },
+  ristoranti:       { to: '/admin/ristoranti',       label: 'Ristoranti',        icon: Store },
+  attivita:         { to: '/admin/attivita',         label: 'Attività',          icon: Zap },
+  utenti:           { to: '/admin/users',            label: 'Utenti',            icon: Users },
+  diagnostica:      { to: '/admin/diagnostica',      label: 'Stato piattaforma', icon: Activity },
+}
+
+// Come ogni ruolo vede il pannello: blocchi in ordine, ciascuno con le sue voci.
+// `'entita'` è il blocco delle sezioni dell'entità attiva; `'proprieta'` quello
+// storico dei profili senza azienda.
+//
+// ⚠️ Le differenze fra i ruoli (gruppi con nomi diversi, voci in ordine diverso,
+// la Chat che c'è per l'azienda e non per lo staff) sono quelle che c'erano: qui
+// sono solo diventate leggibili. Uniformarle cambia cosa vede un cliente, e va
+// deciso con Francesco — non di passaggio. `tests/probe-menu-pannello.mjs`
+// confronta il menu di ogni ruolo con la fotografia attesa.
+const MENU_PER_RUOLO = {
+  super_admin: [
+    { titolo: 'Operativo',   voci: ['richieste', 'prenotazioni', 'booking', 'demo', 'recensioni', 'survey'] },
+    { titolo: 'Marketing',   voci: ['contatti', 'newsletter', 'whatsapp', 'automazioni', 'blog', 'piano_editoriale', 'content_studio', 'ai_site_builder', 'preventivi', 'form_builder', 'prodotti', 'shop', 'loyalty', 'eventi', 'offerte'] },
+    'entita',
+    { titolo: 'Account',     voci: ['analytics', 'qrcode', 'integrazioni', 'pagamenti', 'seo_geo', 'audit_log', 'impostazioni', 'sicurezza', 'aiuto'] },
+    { titolo: 'Piattaforma', voci: ['aziende', 'strutture', 'ristoranti', 'attivita', 'utenti', 'diagnostica'] },
+  ],
+  admin_azienda: [
+    { titolo: 'Clienti & richieste', voci: ['richieste', 'prenotazioni', 'booking', 'contatti', 'preventivi', 'recensioni', 'survey', 'chat', 'form_builder'] },
+    { titolo: 'Contenuti & promo',   voci: ['blog', 'eventi', 'offerte', 'newsletter', 'whatsapp', 'automazioni', 'piano_editoriale', 'content_studio', 'loyalty', 'prodotti', 'shop'] },
+    'entita',
+    { titolo: 'Account',             voci: ['analytics', 'collaboratori', 'integrazioni', 'pagamenti', 'sicurezza', 'aiuto'] },
+  ],
+  staff: [
+    { titolo: 'Operativo', voci: ['richieste', 'prenotazioni', 'booking', 'eventi', 'offerte', 'recensioni', 'survey'] },
+    { titolo: 'Marketing', voci: ['contatti', 'newsletter', 'whatsapp', 'blog', 'automazioni', 'piano_editoriale', 'content_studio', 'preventivi', 'form_builder', 'prodotti', 'shop', 'loyalty'] },
+    'entita',
+    { titolo: 'Account',   voci: ['analytics', 'sicurezza', 'aiuto'] },
+  ],
+  legacy: [
+    { titolo: 'Operativo', voci: ['richieste', 'prenotazioni', 'booking', 'chat', 'eventi', 'offerte'] },
+    { titolo: 'Marketing', voci: ['blog', 'newsletter', 'contatti'] },
+    'proprieta',
+    { titolo: 'Account',   voci: ['sicurezza'] },
+  ],
+}
 
 // ─── CSS ──────────────────────────────────────────────────────────────────────
 const STYLES = `
@@ -446,6 +534,30 @@ export default function AdminLayout({ children }) {
     )
   }
 
+  // ─── Quale menu, per chi ──────────────────────────────────────────────────
+  const bloccoMenu = MENU_PER_RUOLO[
+    isSuperAdmin ? 'super_admin'
+      : isAdminAzienda ? 'admin_azienda'
+      : isStaff ? 'staff'
+      : isLegacyStruttura ? 'legacy'
+      : null
+  ] || []
+
+  // Il blocco dell'entità compare a condizioni diverse per ruolo: il
+  // super_admin quando sta guardando un'entità, l'azienda quando ne ha, lo
+  // staff quando ha anche il permesso di gestirle.
+  const haEntita = hasStruttura || hasRistorante || hasAttivita
+  const mostraEntita = isSuperAdmin
+    ? !!(strutturaUrlId || ristoranteUrlId || attivitaUrlId || (activeAziendaId && activeSitoId))
+    : isStaff
+      ? !!((perm.struttura || perm.ristorante || perm.attivita_gestione) && haEntita)
+      : !!haEntita
+
+  // Allo staff si apre solo ciò che un permesso concede; l'ossatura (Sicurezza,
+  // Aiuto) non ha funzione e resta visibile. Gli altri ruoli vedono il loro
+  // blocco per intero.
+  const voceVisibile = (k) => !isStaff || !VOCI[k].funzione || staffPuoAprire(VOCI[k].funzione, perm)
+
   // ─── Sidebar content ──────────────────────────────────────────────────────
   const sidebarContent = (
     <>
@@ -480,195 +592,35 @@ export default function AdminLayout({ children }) {
 
         <NavItem to="/admin" icon={LayoutDashboard} label="Dashboard" end />
 
-        {/* ── Super Admin ── */}
-        {isSuperAdmin && (
-          <>
-            <Divider />
-            <SectionHeader label="Operativo" />
-            <NavItem to="/admin/requests"     icon={Inbox}         label="Richieste" />
-            <NavItem to="/admin/prenotazioni" icon={CalendarCheck} label="Prenotazioni" />
-            {renderBookingSection()}
-            <NavItem to="/admin/demo"         icon={FileText}      label="Richieste demo" />
-            <NavItem to="/admin/recensioni"   icon={Star}          label="Recensioni" />
-            <NavItem to="/admin/survey"       icon={BarChart3}     label="Survey & NPS" />
-
-            <Divider />
-            <SectionHeader label="Marketing" />
-            <NavItem to="/admin/contatti"         icon={Users}            label="Contatti" />
-            <NavItem to="/admin/newsletter"       icon={Mail}             label="Newsletter" />
-            <NavItem to="/admin/whatsapp"         icon={MessageCircle}    label="WhatsApp" />
-            <NavItem to="/admin/automazioni"      icon={BotMessageSquare} label="Automazioni" />
-            <NavItem to="/admin/blog"             icon={Newspaper}        label="Blog & News" />
-            <NavItem to="/admin/piano-editoriale" icon={CalendarDays}     label="Piano editoriale" />
-            <NavItem to="/admin/content-studio"   icon={Sparkles}         label="Content Studio" />
-            <NavItem to="/admin/ai-site-builder"  icon={Wand2}            label="AI Site Builder" />
-            <NavItem to="/admin/preventivi"       icon={FileText}         label="Preventivi" />
-            <NavItem to="/admin/form-builder"     icon={FormInput}        label="Form Builder" />
-            <NavItem to="/admin/prodotti"         icon={Store}            label="Prodotti" />
-            <NavItem to="/admin/shop"             icon={ShoppingBag}      label="Shop" />
-            <NavItem to="/admin/loyalty"          icon={Gift}             label="Loyalty" />
-            <NavItem to="/admin/eventi"           icon={CalendarDays}     label="Eventi" />
-            <NavItem to="/admin/offerte"          icon={Tag}              label="Offerte" />
-
-            {/* Sito & App: visibile con URL entità OPPURE quando super_admin ha un'azienda attiva con entità */}
-            {(strutturaUrlId || ristoranteUrlId || attivitaUrlId || (activeAziendaId && activeSitoId)) && (
-              <>
+        {bloccoMenu.map((blocco, i) => {
+          if (blocco === 'entita') {
+            return mostraEntita ? <Fragment key="entita"><Divider /><SitoAppLinks /></Fragment> : null
+          }
+          if (blocco === 'proprieta') {
+            return (
+              <Fragment key="proprieta">
                 <Divider />
-                <SitoAppLinks />
-              </>
-            )}
-
-            <Divider />
-            <SectionHeader label="Account" />
-            <NavItem to="/admin/analytics"    icon={BarChart2}     label="Analytics" />
-            <NavItem to="/admin/qrcode"       icon={QrCode}        label="QR Code" />
-            <NavItem to="/admin/integrazioni" icon={Webhook}       label="Integrazioni" />
-            <NavItem to="/admin/pagamenti"    icon={CreditCard}    label="Pagamenti" />
-            <NavItem to="/admin/seo-geo"      icon={SearchCheck}   label="SEO & GEO" />
-            <NavItem to="/admin/audit-log"    icon={ClipboardList} label="Audit log" />
-            <NavItem to="/admin/impostazioni" icon={Settings}      label="Impostazioni" />
-            <NavItem to="/admin/security"     icon={Shield}        label="Sicurezza" />
-            <NavItem to="/admin/help"         icon={LifeBuoy}      label="Aiuto" />
-
-            <Divider />
-            <SectionHeader label="Piattaforma" />
-            <NavItem to="/admin/aziende"    icon={Building}  label="Aziende" />
-            <NavItem to="/admin/properties" icon={Building2} label="Strutture" />
-            <NavItem to="/admin/ristoranti" icon={Store}     label="Ristoranti" />
-            <NavItem to="/admin/attivita"   icon={Zap}       label="Attività" />
-            <NavItem to="/admin/users"      icon={Users}     label="Utenti" />
-            <NavItem to="/admin/diagnostica" icon={Activity}  label="Stato piattaforma" />
-          </>
-        )}
-
-        {/* ── Admin Azienda ── */}
-        {isAdminAzienda && (
-          <>
-            <Divider />
-            <SectionHeader label="Clienti & richieste" />
-            <NavItem to="/admin/requests"     icon={Inbox}         label="Richieste" />
-            <NavItem to="/admin/prenotazioni" icon={CalendarCheck} label="Prenotazioni" />
-            {renderBookingSection()}
-            <NavItem to="/admin/contatti"     icon={Users}         label="Contatti" />
-            <NavItem to="/admin/preventivi"   icon={FileText}      label="Preventivi" />
-            <NavItem to="/admin/recensioni"   icon={Star}          label="Recensioni" />
-            <NavItem to="/admin/survey"       icon={BarChart3}     label="Survey & NPS" />
-            <NavItem to="/admin/chat"         icon={MessageCircle} label="Chat" />
-            <NavItem to="/admin/form-builder" icon={FormInput}     label="Form Builder" />
-
-            <Divider />
-            <SectionHeader label="Contenuti & promo" />
-            <NavItem to="/admin/blog"             icon={Newspaper}        label="Blog & News" />
-            <NavItem to="/admin/eventi"           icon={CalendarDays}     label="Eventi" />
-            <NavItem to="/admin/offerte"          icon={Tag}              label="Offerte" />
-            <NavItem to="/admin/newsletter"       icon={Mail}             label="Newsletter" />
-            <NavItem to="/admin/whatsapp"         icon={MessageCircle}    label="WhatsApp" />
-            <NavItem to="/admin/automazioni"      icon={BotMessageSquare} label="Automazioni" />
-            <NavItem to="/admin/piano-editoriale" icon={CalendarDays}     label="Piano editoriale" />
-            <NavItem to="/admin/content-studio"   icon={Sparkles}         label="Content Studio" />
-            <NavItem to="/admin/loyalty"          icon={Gift}             label="Loyalty" />
-            <NavItem to="/admin/prodotti"         icon={Store}            label="Prodotti" />
-            <NavItem to="/admin/shop"             icon={ShoppingBag}      label="Shop" />
-
-            {(hasStruttura || hasRistorante || hasAttivita) && (
-              <>
-                <Divider />
-                <SitoAppLinks />
-              </>
-            )}
-
-            <Divider />
-            <SectionHeader label="Account" />
-            <NavItem to="/admin/analytics"    icon={BarChart2}  label="Analytics" />
-            <NavItem to="/admin/staff"        icon={UserCheck}  label="Collaboratori" />
-            <NavItem to="/admin/integrazioni" icon={Webhook}    label="Integrazioni" />
-            <NavItem to="/admin/pagamenti"    icon={CreditCard} label="Pagamenti" />
-            <NavItem to="/admin/security"     icon={Shield}     label="Sicurezza" />
-            <NavItem to="/admin/help"         icon={LifeBuoy}   label="Aiuto" />
-          </>
-        )}
-
-        {/* ── Staff (filtrato per permessi) ── */}
-        {isStaff && (
-          <>
-            {(perm.richieste || perm.prenotazioni || perm.booking || perm.eventi || perm.recensioni || perm.survey) && (
-              <>
-                <Divider />
-                <SectionHeader label="Operativo" />
-                {perm.richieste    && <NavItem to="/admin/requests"     icon={Inbox}         label="Richieste" />}
-                {perm.prenotazioni && <NavItem to="/admin/prenotazioni" icon={CalendarCheck} label="Prenotazioni" />}
-                {perm.booking      && renderBookingSection()}
-                {perm.eventi       && <NavItem to="/admin/eventi"       icon={CalendarDays}  label="Eventi" />}
-                {perm.eventi       && <NavItem to="/admin/offerte"      icon={Tag}           label="Offerte" />}
-                {perm.recensioni   && <NavItem to="/admin/recensioni"   icon={Star}          label="Recensioni" />}
-                {perm.survey       && <NavItem to="/admin/survey"       icon={BarChart3}     label="Survey & NPS" />}
-              </>
-            )}
-
-            {(perm.contatti || perm.newsletter || perm.blog || perm.automazioni || perm.piano_editoriale || perm.content_studio || perm.preventivi || perm.form_builder || perm.shop || perm.loyalty) && (
-              <>
-                <Divider />
-                <SectionHeader label="Marketing" />
-                {perm.contatti         && <NavItem to="/admin/contatti"         icon={Users}            label="Contatti" />}
-                {perm.newsletter       && <NavItem to="/admin/newsletter"       icon={Mail}             label="Newsletter" />}
-                {perm.newsletter       && <NavItem to="/admin/whatsapp"         icon={MessageCircle}    label="WhatsApp" />}
-                {perm.blog             && <NavItem to="/admin/blog"             icon={Newspaper}        label="Blog & News" />}
-                {perm.automazioni      && <NavItem to="/admin/automazioni"      icon={BotMessageSquare} label="Automazioni" />}
-                {perm.piano_editoriale && <NavItem to="/admin/piano-editoriale" icon={CalendarDays}     label="Piano editoriale" />}
-                {perm.content_studio   && <NavItem to="/admin/content-studio"   icon={Sparkles}         label="Content Studio" />}
-                {perm.preventivi       && <NavItem to="/admin/preventivi"       icon={FileText}         label="Preventivi" />}
-                {perm.form_builder     && <NavItem to="/admin/form-builder"     icon={FormInput}        label="Form Builder" />}
-                {perm.shop             && <NavItem to="/admin/prodotti"         icon={Store}            label="Prodotti" />}
-                {perm.shop             && <NavItem to="/admin/shop"             icon={ShoppingBag}      label="Shop" />}
-                {perm.loyalty          && <NavItem to="/admin/loyalty"          icon={Gift}             label="Loyalty" />}
-              </>
-            )}
-
-            {(perm.struttura || perm.ristorante || perm.attivita_gestione) && (hasStruttura || hasRistorante || hasAttivita) && (
-              <>
-                <Divider />
-                <SitoAppLinks />
-              </>
-            )}
-
-            <Divider />
-            <SectionHeader label="Account" />
-            {perm.analytics && <NavItem to="/admin/analytics" icon={BarChart2} label="Analytics" />}
-            <NavItem to="/admin/security" icon={Shield}    label="Sicurezza" />
-            <NavItem to="/admin/help"     icon={LifeBuoy}  label="Aiuto" />
-          </>
-        )}
-
-        {/* ── Admin Struttura / Staff legacy ── */}
-        {isLegacyStruttura && (
-          <>
-            <Divider />
-            <SectionHeader label="Operativo" />
-            <NavItem to="/admin/requests"     icon={Inbox}         label="Richieste" />
-            <NavItem to="/admin/prenotazioni" icon={CalendarCheck} label="Prenotazioni" />
-            {renderBookingSection()}
-            <NavItem to="/admin/chat"         icon={MessageCircle} label="Chat" />
-            <NavItem to="/admin/eventi"       icon={CalendarDays}  label="Eventi" />
-            <NavItem to="/admin/offerte"      icon={Tag}           label="Offerte" />
-
-            <Divider />
-            <SectionHeader label="Marketing" />
-            <NavItem to="/admin/blog"       icon={Newspaper} label="Blog & News" />
-            <NavItem to="/admin/newsletter" icon={Mail}      label="Newsletter" />
-            <NavItem to="/admin/contatti"   icon={Users}     label="Contatti" />
-
-            <Divider />
-            <SectionHeader label="Sito & App" />
-            {NAV_PROPERTY.map(({ to, label, icon }) => (
-              <NavItem key={to} to={to} icon={icon} label={label} sub />
-            ))}
-            <NavItem to="/admin/qrcode" icon={QrCode} label="QR Code" />
-
-            <Divider />
-            <SectionHeader label="Account" />
-            <NavItem to="/admin/security" icon={Shield} label="Sicurezza" />
-          </>
-        )}
+                <SectionHeader label="Sito & App" />
+                {NAV_PROPERTY.map(({ to, label, icon }) => (
+                  <NavItem key={to} to={to} icon={icon} label={label} sub />
+                ))}
+                <NavItem to="/admin/qrcode" icon={QrCode} label="QR Code" />
+              </Fragment>
+            )
+          }
+          // Allo staff un gruppo compare solo se almeno una voce gli è aperta.
+          const voci = blocco.voci.filter(voceVisibile)
+          if (voci.length === 0) return null
+          return (
+            <Fragment key={i}>
+              <Divider />
+              <SectionHeader label={blocco.titolo} />
+              {voci.map(k => k === 'booking'
+                ? <Fragment key={k}>{renderBookingSection()}</Fragment>
+                : <NavItem key={k} to={VOCI[k].to} icon={VOCI[k].icon} label={VOCI[k].label} />)}
+            </Fragment>
+          )
+        })}
 
       </nav>
 

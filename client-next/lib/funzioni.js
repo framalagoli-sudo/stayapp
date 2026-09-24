@@ -149,3 +149,55 @@ export const MODULI_PREDEFINITI = {
 // prodotto: chiederne l'attivazione è come consegnare un'auto col motore da
 // avviare a mano.
 export const MINISITO_INIZIALE = { active: true }
+
+// ── Le funzioni di livello azienda ──────────────────────────────────────────
+//
+// Quelle sopra vivono dentro un'entità (il menù di QUEL ristorante). Queste
+// servono l'azienda intera: i contatti, gli eventi, la newsletter non sono di
+// una sede sola. Erano scritte solo come voci di menu, tre volte (super_admin,
+// admin azienda, staff) e senza nessun interruttore: il cliente le vedeva tutte,
+// sempre, anche quelle che nessuno ha mai usato.
+//
+// Questo è il catalogo da cui partono i profili di mestiere (STRATEGIA.md §6.1).
+// Oggi decide solo quale permesso apre ciascuna funzione allo staff; nessuna
+// funzione qui si spegne ancora.
+//
+// `permesso` è la chiave in `profiles.permissions` che la apre a un
+// collaboratore. ⚠️ Non sempre coincide con la chiave: le Offerte si aprono con
+// il permesso degli eventi e WhatsApp con quello della newsletter, perché sono
+// arrivate dopo e hanno ereditato il permesso della funzione accanto. Scritto qui
+// si vede; prima stava nascosto nel menu.
+//
+// Le voci di account e piattaforma (Sicurezza, Aiuto, Aziende, Diagnostica…)
+// qui non ci sono: sono l'ossatura del pannello, non una cosa che un'azienda usa
+// o non usa.
+export const FUNZIONI_AZIENDA = [
+  { chiave: 'richieste',        titolo: 'Richieste',        permesso: 'richieste' },
+  { chiave: 'prenotazioni',     titolo: 'Prenotazioni',     permesso: 'prenotazioni' },
+  { chiave: 'booking',          titolo: 'Booking',          permesso: 'booking' },
+  { chiave: 'contatti',         titolo: 'Contatti',         permesso: 'contatti' },
+  { chiave: 'preventivi',       titolo: 'Preventivi',       permesso: 'preventivi' },
+  { chiave: 'recensioni',       titolo: 'Recensioni',       permesso: 'recensioni' },
+  { chiave: 'survey',           titolo: 'Survey & NPS',     permesso: 'survey' },
+  { chiave: 'chat',             titolo: 'Chat' },
+  { chiave: 'form_builder',     titolo: 'Form Builder',     permesso: 'form_builder' },
+  { chiave: 'blog',             titolo: 'Blog & News',      permesso: 'blog' },
+  { chiave: 'eventi',           titolo: 'Eventi',           permesso: 'eventi' },
+  { chiave: 'offerte',          titolo: 'Offerte',          permesso: 'eventi' },
+  { chiave: 'newsletter',       titolo: 'Newsletter',       permesso: 'newsletter' },
+  { chiave: 'whatsapp',         titolo: 'WhatsApp',         permesso: 'newsletter' },
+  { chiave: 'automazioni',      titolo: 'Automazioni',      permesso: 'automazioni' },
+  { chiave: 'piano_editoriale', titolo: 'Piano editoriale', permesso: 'piano_editoriale' },
+  { chiave: 'content_studio',   titolo: 'Content Studio',   permesso: 'content_studio' },
+  { chiave: 'loyalty',          titolo: 'Loyalty',          permesso: 'loyalty' },
+  { chiave: 'shop',             titolo: 'Shop',             permesso: 'shop' },
+  { chiave: 'analytics',        titolo: 'Analytics',        permesso: 'analytics' },
+]
+
+// Un collaboratore può aprire questa funzione? Una funzione senza `permesso`
+// (la Chat) non si apre allo staff: in mancanza di un permesso esplicito si
+// nega, non si concede.
+export function staffPuoAprire(chiave, permessi = {}) {
+  const f = FUNZIONI_AZIENDA.find(x => x.chiave === chiave)
+  return !!(f?.permesso && permessi[f.permesso])
+}
