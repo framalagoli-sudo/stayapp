@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Plus, Trash2, Calendar, Wand2, QrCode } from 'lucide-react'
+import { Plus, Trash2, Calendar, CalendarDays, Package, Wand2, QrCode, LayoutDashboard } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import { FUNZIONI, FUNZIONI_AZIENDA } from '@/lib/funzioni'
 import { TIPI_ENTITA } from '@/lib/profili-mestiere'
@@ -32,7 +32,10 @@ function righeMenu(profilo) {
   )
   const titolo = (t) => <div key={`h-${t}`} style={{ fontSize: 9, fontWeight: 700, color: '#666', letterSpacing: 1, padding: '10px 10px 3px', textTransform: 'uppercase' }}>{t}</div>
 
-  const righe = []
+  // Come nella barra vera: Dashboard in cima, e Booking è un gruppo che si apre
+  // su Calendario e Risorse. Il conteggio deve dire lo stesso numero del menu
+  // vero (tests/probe-menu-pannello.mjs), non uno suo.
+  const righe = [voce('dashboard', LayoutDashboard, 'Dashboard')]
   for (const blocco of MENU_PER_RUOLO.admin_azienda) {
     if (blocco === 'entita') {
       let gruppo = null
@@ -47,7 +50,11 @@ function righeMenu(profilo) {
     const voci = blocco.voci.filter(accesaAz)
     if (!voci.length) continue
     righe.push(titolo(blocco.titolo))
-    for (const k of voci) righe.push(k === 'booking' ? voce(k, Calendar, 'Booking') : voce(k, VOCI[k].icon, VOCI[k].label))
+    for (const k of voci) {
+      if (k !== 'booking') { righe.push(voce(k, VOCI[k].icon, VOCI[k].label)); continue }
+      righe.push(voce('h-booking', Calendar, 'Booking'))
+      righe.push(voce('calendario', CalendarDays, 'Calendario', true), voce('risorse', Package, 'Risorse', true))
+    }
   }
   return righe
 }
@@ -65,7 +72,6 @@ function AnteprimaMenu({ profilo }) {
     <div>
       <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Il menu del titolare: <strong>{contaVoci(righe)} voci</strong> (oggi ne vede {MENU_DI_OGGI})</div>
       <div style={{ background: '#1a1a2e', borderRadius: 10, padding: '8px 6px', maxHeight: 560, overflowY: 'auto' }}>
-        <div style={{ padding: '6px 10px', color: '#bbb', fontSize: 13 }}>Dashboard</div>
         {righe}
       </div>
     </div>
