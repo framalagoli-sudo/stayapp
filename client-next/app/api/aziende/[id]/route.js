@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { fusoValido } from '@/lib/fuso'
 import { requireAuth } from '@/lib/server-auth'
 import { rimuoviDominiAzienda } from '@/lib/domini-manutenzione'
+import { cancellaAzienda } from '@/lib/cancellazione'
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
@@ -75,8 +76,9 @@ export async function DELETE(request, props) {
       }, { status: 409 })
     }
 
-    const { error } = await supabaseAdmin.from('aziende').delete().eq('id', params.id)
-    if (error) return Response.json({ error: error.message }, { status: 500 })
-    return Response.json({ success: true })
+    // Entità, dati, file, traduzioni e ACCOUNT delle persone: vedi lib/cancellazione.js.
+    const esito = await cancellaAzienda(params.id)
+    if (!esito.ok) return Response.json({ error: esito.error }, { status: esito.status })
+    return Response.json({ success: true, avvisi: esito.avvisi })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }

@@ -79,15 +79,20 @@ export default function AziendePage() {
   }
 
   async function handleDelete(id, name) {
-    // Il testo dice quello che succede davvero, misurato: le entità e i loro
-    // indirizzi web se ne vanno, gli account delle persone NO — restano validi
-    // e chi li ha può ancora entrare, semplicemente senza più un'azienda.
-    if (!confirm(`Eliminare l'azienda "${name}"?\n\n`
-      + `Verranno eliminate tutte le entità collegate, i loro contenuti e i loro indirizzi web.\n`
-      + `Gli account delle persone restano invece attivi: vanno tolti a parte.`)) return
+    // Il testo dice quello che succede davvero (lib/cancellazione.js, provato da
+    // tests/probe-cancella-azienda.mjs): se ne va TUTTO, anche gli account.
+    // Si conferma scrivendo il nome: un clic su «OK» è troppo poco per una cosa
+    // che non torna indietro.
+    const scritto = prompt(`Eliminare per sempre l'azienda "${name}"?\n\n`
+      + `Se ne vanno le entità con i loro siti e indirizzi web, tutti i dati (contatti, prenotazioni, eventi, pagine…), `
+      + `i file caricati e gli account delle persone dell'azienda, che non potranno più accedere.\n`
+      + `Non si torna indietro.\n\nPer confermare scrivi il nome dell'azienda:`)
+    if (scritto === null) return
+    if (scritto.trim() !== (name || '').trim()) { alert('Il nome non corrisponde: niente è stato cancellato.'); return }
     try {
-      await apiFetch(`/api/aziende/${id}`, { method: 'DELETE' })
+      const esito = await apiFetch(`/api/aziende/${id}`, { method: 'DELETE' })
       setAziende(prev => prev.filter(a => a.id !== id))
+      if (esito?.avvisi?.length) alert(`Azienda cancellata, ma qualcosa non è andato via:\n\n${esito.avvisi.join('\n')}\n\nÈ arrivato anche un avviso per email.`)
     } catch (e) {
       alert(e.message)
     }
