@@ -181,9 +181,14 @@ export default function AdminLayout({ children }) {
   const perm = profile?.permissions || {}
 
   const moduli = azienda?.moduli || {}
-  const hasStruttura = isAdminAzienda ? (!!moduli.struttura && !aziendaLoading) : (moduli.struttura || strutture.length > 0)
-  const hasRistorante = isAdminAzienda ? (!!moduli.ristorante && !aziendaLoading) : (moduli.ristorante || ristoranti.length > 0)
-  const hasAttivita = isAdminAzienda ? (!!moduli.attivita && !aziendaLoading) : (moduli.attivita || attivita?.length > 0)
+  // Un'entità che esiste si vede, per ogni ruolo. Per il titolare contava solo
+  // l'interruttore dell'azienda (`moduli.<tipo>`): il 25/09 D.O. Giachini aveva
+  // la sua attività ma `moduli.attivita` spento, e il suo titolare non ha mai
+  // visto il proprio sito nel menu. Il super_admin e lo staff guardavano già se
+  // le entità c'erano.
+  const hasStruttura = !!moduli.struttura || strutture.length > 0
+  const hasRistorante = !!moduli.ristorante || ristoranti.length > 0
+  const hasAttivita = !!moduli.attivita || (attivita?.length || 0) > 0
 
   const strutturaUrlMatch = pathname.match(/^\/admin\/struttura\/([^/]+)/)
   const ristoranteUrlMatch = pathname.match(/^\/admin\/ristoranti\/([^/]+)\//)
@@ -197,9 +202,11 @@ export default function AdminLayout({ children }) {
     : ristoranteUrlId ? 'ristorante'
     : attivitaUrlId ? 'attivita'
     : pathname.startsWith('/admin/property/') ? 'struttura'
-    : hasStruttura ? 'struttura'
-    : hasRistorante ? 'ristorante'
-    : hasAttivita ? 'attivita'
+    // Fuori dalle pagine di un'entità si parte da una che ESISTE: l'interruttore
+    // dell'azienda per un tipo non dice che ce ne sia una.
+    : strutture.length ? 'struttura'
+    : ristoranti.length ? 'ristorante'
+    : attivita?.length ? 'attivita'
     : null
 
   const activeSitoId = activeEntityType === 'struttura' ? (strutturaUrlId || selectedStrutturaId)
