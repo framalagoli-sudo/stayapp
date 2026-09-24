@@ -1,7 +1,8 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { allaFormaStorica, dallaFormaStorica, campiAmmessi } from '@/lib/entita'
-import { sincronizzaSlugDomini, rimuoviDominiEntita } from '@/lib/domini-manutenzione'
+import { sincronizzaSlugDomini } from '@/lib/domini-manutenzione'
+import { cancellaEntita } from '@/lib/cancellazione'
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
@@ -71,11 +72,9 @@ export async function DELETE(request, props) {
     const profile = await getProfile(user.id)
     if (!profile || !['super_admin', 'admin_azienda'].includes(profile.role))
       return Response.json({ error: 'Permessi insufficienti' }, { status: 403 })
-    let q = supabaseAdmin.from('entita').delete().eq('tipo', 'ristorante').eq('id', params.id)
-    if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
-    const { error } = await q
-    if (error) return Response.json({ error: error.message }, { status: 500 })
-    await rimuoviDominiEntita('ristorante', params.id)
+    // Prima «è sua?», poi qualunque effetto: vedi cancellaEntita.
+    const esito = await cancellaEntita('ristorante', params.id, profile)
+    if (!esito.ok) return Response.json({ error: esito.error }, { status: esito.status })
     return Response.json({ success: true })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
