@@ -418,15 +418,24 @@ function cosaSparisce() {
     const fn = tolta && riga.match(/chiave:\s*'([^']+)'.*titolo:\s*'([^']+)'/)
     if (fn) persi.push({ cosa: `la funzione «${fn[2]}»`, dove: fileCorrente })
   }
+  // Il confronto è su TUTTO il diff, non file per file: le definizioni del menu
+  // si spostano anche fra file (il 24/09 da AdminLayout.jsx a menu-pannello.js),
+  // e una voce spostata non è una voce tolta. La prova che il menu renderizzato
+  // non cambia la dà tests/probe-menu-pannello.mjs.
+  const scritteOvunque = new Set(Object.values(etichette).flatMap(e => [...e.scritte]))
   for (const [file, e] of Object.entries(etichette)) {
     for (const nome of new Set(e.tolte)) {
-      if (!e.scritte.has(nome)) persi.push({ cosa: `la voce «${nome}»`, dove: file })
+      if (!scritteOvunque.has(nome)) persi.push({ cosa: `la voce «${nome}»`, dove: file })
     }
   }
-  for (const [file, c] of Object.entries(chiavi)) {
-    for (const [nome, n] of Object.entries(c.fuori)) {
-      if (n > (c.dentro[nome] || 0)) persi.push({ cosa: `la voce «${nome}» per un ruolo`, dove: file })
-    }
+  const somma = (lato) => {
+    const t = {}
+    for (const c of Object.values(chiavi)) for (const [k, n] of Object.entries(c[lato])) t[k] = (t[k] || 0) + n
+    return t
+  }
+  const fuori = somma('fuori'), dentro = somma('dentro')
+  for (const [nome, n] of Object.entries(fuori)) {
+    if (n > (dentro[nome] || 0)) persi.push({ cosa: `la voce «${nome}» per un ruolo`, dove: Object.keys(chiavi).find(file => chiavi[file].fuori[nome]) })
   }
 
   // Pagine e route cancellate: qui il file sparisce del tutto.
