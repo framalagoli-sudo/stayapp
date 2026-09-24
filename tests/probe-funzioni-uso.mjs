@@ -44,6 +44,7 @@ const CHIAVI_AMMESSE = new Set([
   'funzioniAzienda', 'funzioniEntita', 'aziende', 'nonMisurate',
   'chiave', 'titolo', 'sempre',
   'id', 'nome', 'uso', 'entita', 'tipo', 'accese',
+  'funzioni', 'profilo', 'profilo_versione',
 ])
 function chiaviEstranee(v, via = '') {
   const fuori = []
@@ -52,6 +53,8 @@ function chiaviEstranee(v, via = '') {
     for (const [k, x] of Object.entries(v)) {
       // Dentro `uso` le chiavi sono i nomi delle funzioni: si controlla il valore, che dev'essere un numero.
       if (via.endsWith('.uso')) { if (typeof x !== 'number') fuori.push(`${via}.${k}`); continue }
+      // Dentro `funzioni` le chiavi sono funzioni del catalogo, i valori sì/no.
+      if (via.endsWith('.funzioni')) { if (typeof x !== 'boolean') fuori.push(`${via}.${k}`); continue }
       if (!CHIAVI_AMMESSE.has(k)) fuori.push(`${via}.${k}`)
       fuori.push(...chiaviEstranee(x, `${via}.${k}`))
     }

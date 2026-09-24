@@ -39,6 +39,13 @@ export async function DELETE(request, props) {
     const { response } = await requireSuperAdmin(request)
     if (response) return response
     if (!UUID.test(id)) return Response.json({ error: 'Non trovato' }, { status: 404 })
+    // Un profilo in uso non si elimina: le entità perderebbero la categoria e le
+    // funzioni della loro azienda resterebbero quelle di prima, senza che niente
+    // lo dica. Prima si cambia categoria alle entità, poi si elimina.
+    const { data: profilo } = await supabaseAdmin.from('profili_mestiere').select('chiave').eq('id', id).maybeSingle()
+    if (!profilo) return Response.json({ error: 'Non trovato' }, { status: 404 })
+    const { count } = await supabaseAdmin.from('entita').select('*', { count: 'exact', head: true }).eq('profilo', profilo.chiave)
+    if (count) return Response.json({ error: `È la categoria di ${count} entità: prima assegnane un'altra, poi eliminalo.` }, { status: 409 })
     const { data, error } = await supabaseAdmin.from('profili_mestiere').delete().eq('id', id).select('id')
     if (error) throw error
     if (!data?.length) return Response.json({ error: 'Non trovato' }, { status: 404 })

@@ -60,8 +60,8 @@ export async function GET(request) {
     if (response) return response
 
     const [{ data: aziende, error: eA }, { data: entita, error: eE }, { data: eventi, error: eV }] = await Promise.all([
-      supabaseAdmin.from('aziende').select('id, ragione_sociale, content_strategy').order('ragione_sociale'),
-      supabaseAdmin.from('entita').select('id, azienda_id, tipo, name, moduli').order('name'),
+      supabaseAdmin.from('aziende').select('id, ragione_sociale, content_strategy, funzioni').order('ragione_sociale'),
+      supabaseAdmin.from('entita').select('id, azienda_id, tipo, name, moduli, profilo, profilo_versione').order('name'),
       supabaseAdmin.from('eventi').select('id, azienda_id'),
     ])
     if (eA || eE || eV) throw new Error((eA || eE || eV).message)
@@ -107,11 +107,15 @@ export async function GET(request) {
       aziende: aziende.map(a => ({
         id: a.id,
         nome: a.ragione_sociale,
+        // Le funzioni di livello azienda decise dalle categorie (null = mai decise: vede tutto).
+        funzioni: a.funzioni ?? null,
         uso: uso[a.id],
         entita: entita.filter(e => e.azienda_id === a.id).map(e => ({
           id: e.id,
           tipo: e.tipo,
           nome: e.name,
+          profilo: e.profilo ?? null,
+          profilo_versione: e.profilo_versione ?? null,
           accese: FUNZIONI.filter(f => funzioneAttiva(e, f.chiave)).map(f => f.chiave),
         })),
       })),

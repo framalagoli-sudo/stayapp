@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { SlidersHorizontal, AlertTriangle } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import ProfiliMestiere from './ProfiliMestiere'
+import AssegnaCategorie from './AssegnaCategorie'
 
 // Chi usa cosa, azienda per azienda. Solo per il super_admin.
 //
@@ -35,11 +36,10 @@ export default function FunzioniUsoPage() {
   const [errore, setErrore] = useState('')
   const [scheda, setScheda] = useState('uso')
 
-  useEffect(() => {
-    apiFetch('/api/admin/funzioni-uso')
-      .then(setDati)
-      .catch(e => setErrore(e?.message || 'Impossibile leggere l\'uso delle funzioni'))
-  }, [])
+  const carica = () => apiFetch('/api/admin/funzioni-uso')
+    .then(setDati)
+    .catch(e => setErrore(e?.message || 'Impossibile leggere l\'uso delle funzioni'))
+  useEffect(() => { carica() }, [])
 
   if (errore) return <div style={{ padding: 40 }}><div style={{ ...card, borderColor: '#f5c6cb', background: '#fff5f5', color: '#c0392b' }}>{errore}</div></div>
   if (!dati) return <div style={{ padding: 40, color: '#888' }}>Caricamento…</div>
@@ -61,12 +61,12 @@ export default function FunzioniUsoPage() {
         <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a2e', margin: 0 }}>Funzioni e profili</h1>
       </div>
       <p style={{ color: '#888', fontSize: 14, marginBottom: 20, maxWidth: 720 }}>
-        Chi usa cosa, azienda per azienda, e i profili di mestiere che ne nascono.
-        Da qui non si accende né si spegne niente per nessun cliente.
+        Chi usa cosa, azienda per azienda; i profili di mestiere; e la categoria di ogni entità.
+        Solo la scheda «Categorie» cambia cosa vede un cliente.
       </p>
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 22, borderBottom: '1px solid #e6e6e6' }}>
-        {[['uso', 'Uso'], ['profili', 'Profili di mestiere']].map(([k, t]) => (
+        {[['uso', 'Uso'], ['profili', 'Profili di mestiere'], ['categorie', 'Categorie']].map(([k, t]) => (
           <button key={k} onClick={() => setScheda(k)} style={{
             padding: '9px 16px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 14, fontFamily: 'inherit',
             fontWeight: scheda === k ? 700 : 500, color: scheda === k ? '#1a1a2e' : '#888',
@@ -75,8 +75,11 @@ export default function FunzioniUsoPage() {
         ))}
       </div>
 
+      {scheda === 'categorie' && <AssegnaCategorie aziende={aziende} onCambiato={carica} />}
+
       {scheda === 'profili' && (
         <ProfiliMestiere
+          entitaPerProfilo={aziende.flatMap(a => a.entita).reduce((m, e) => (e.profilo ? { ...m, [e.profilo]: (m[e.profilo] || 0) + 1 } : m), {})}
           totaleAziende={totale}
           usoPerFunzione={Object.fromEntries(perFunzione.map(f => [f.chiave, f.chi.length]))} />
       )}
@@ -95,7 +98,7 @@ export default function FunzioniUsoPage() {
       <div style={card}>
         <div style={titoletto}>Funzioni dell'azienda</div>
         <p style={nota}>
-          Oggi queste funzioni sono accese per tutte le aziende, sempre. «Usata» = almeno una riga nel database.
+          Un'azienda senza categoria le vede tutte; con la categoria, solo quelle dei profili delle sue entità. «Usata» = almeno una riga nel database.
           {maiUsate.length > 0 && <> Mai usate da nessuno: <strong>{maiUsate.map(f => f.titolo).join(', ')}</strong>.</>}
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 14 }}>

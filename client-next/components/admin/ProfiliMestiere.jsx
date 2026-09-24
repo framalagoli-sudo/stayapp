@@ -89,7 +89,7 @@ function Interruttori({ titolo, funzioni, accese, uso, totale, onCambia }) {
   )
 }
 
-export default function ProfiliMestiere({ usoPerFunzione, totaleAziende }) {
+export default function ProfiliMestiere({ usoPerFunzione, totaleAziende, entitaPerProfilo = {} }) {
   const [profili, setProfili] = useState(null)
   const [scelto, setScelto] = useState(null)   // copia in modifica
   const [errore, setErrore] = useState('')
@@ -142,8 +142,22 @@ export default function ProfiliMestiere({ usoPerFunzione, totaleAziende }) {
     } catch (e) { alert(e?.message || 'Creazione non riuscita') }
   }
 
+  // Il profilo si applica come copia: un profilo migliorato arriva ai clienti
+  // solo così, apposta.
+  async function riapplica() {
+    const n = entitaPerProfilo[scelto.chiave] || 0
+    if (!confirm(`Riapplicare «${scelto.nome}» alle ${n} entità di questa categoria?
+
+Il loro menu cambierà come nell'anteprima. Le funzioni con contenuti restano accese.`)) return
+    setSalvataggio('corso')
+    try {
+      const r = await apiFetch(`/api/admin/profili/${scelto.id}/riapplica`, { method: 'POST' })
+      setSalvataggio(`Riapplicato a ${r.riapplicate} entità`)
+    } catch (e) { setSalvataggio(e?.message || 'Riapplicazione non riuscita') }
+  }
+
   async function elimina() {
-    if (!confirm(`Eliminare il profilo «${scelto.nome}»? Nessun cliente lo usa ancora: i profili non si applicano prima della fase F3.`)) return
+    if (!confirm(`Eliminare il profilo «${scelto.nome}»? Se è la categoria di qualche entità non si può: prima le si assegna un'altra categoria.`)) return
     try {
       await apiFetch(`/api/admin/profili/${scelto.id}`, { method: 'DELETE' })
       await carica()
@@ -156,8 +170,8 @@ export default function ProfiliMestiere({ usoPerFunzione, totaleAziende }) {
   return (
     <div>
       <p style={{ fontSize: 13, color: '#888', margin: '0 0 16px', maxWidth: 760 }}>
-        Il punto di partenza di un cliente nuovo: cosa si trova acceso il primo giorno. Qui si scrivono e si confrontano:
-        <strong> non si applicano ancora a nessuno</strong>. Il numero accanto a ogni funzione è quante aziende la usano davvero.
+        Cosa trova acceso chi appartiene a una categoria. Modificare un profilo <strong>non cambia nessun cliente</strong>:
+        si applica dalla scheda «Categorie», o con «Riapplica» qui sotto. Il numero accanto a ogni funzione è quante aziende la usano davvero.
       </p>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
@@ -199,6 +213,11 @@ export default function ProfiliMestiere({ usoPerFunzione, totaleAziende }) {
                 background: modificato ? PRIMARIO : '#ddd', color: '#fff', cursor: modificato ? 'pointer' : 'default',
               }}>{salvataggio === 'corso' ? 'Salvo…' : 'Salva il profilo'}</button>
               {salvataggio === 'ok' && <span style={{ fontSize: 13, color: '#2e7d32' }}>Salvato (versione {originale?.versione})</span>}
+              {(entitaPerProfilo[scelto.chiave] || 0) > 0 && (
+                <button onClick={riapplica} disabled={modificato} title={modificato ? 'Salva prima le modifiche' : ''} style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #bfe9e9', background: '#f0fbfb', color: '#00797a', fontSize: 13, cursor: modificato ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+                  Riapplica alle {entitaPerProfilo[scelto.chiave]} entità
+                </button>
+              )}
               {salvataggio && !['ok', 'corso'].includes(salvataggio) && <span style={{ fontSize: 13, color: '#c0392b' }}>{salvataggio}</span>}
               <button onClick={elimina} style={{ marginLeft: 'auto', padding: '8px 12px', borderRadius: 8, border: '1px solid #f3c1c1', background: '#fff5f5', color: '#c00', fontSize: 12, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
                 <Trash2 size={13} strokeWidth={1.5} color="#c00" />Elimina profilo
