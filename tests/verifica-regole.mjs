@@ -372,18 +372,60 @@ function cosaSparisce() {
 
   const persi = []
   let fileCorrente = ''
+  // Per file: le etichette di menu tolte e quelle scritte, e le chiavi tolte e
+  // aggiunte negli elenchi `voci: [...]` di MENU_PER_RUOLO (AdminLayout).
+  //
+  // ⚠️ Il menu del pannello è fatto a dati (24/09/2026): le voci stanno una
+  // volta in `VOCI`, e ogni ruolo ne elenca le chiavi. Guardare solo le righe
+  // `<NavItem label=…>` tolte avrebbe due difetti opposti:
+  //  · un falso allarme quando una voce si SPOSTA (da JSX a dati: la riga
+  //    sparisce, la voce no) → un'etichetta tolta e riscritta nello stesso
+  //    file non è una voce persa;
+  //  · la cecità quando una voce si toglie DAVVERO a un ruolo, cancellandone la
+  //    chiave da `voci: [...]`, perché nessuna riga `label` cambia → si
+  //    contano le chiavi: quante volte escono e quante rientrano.
+  // La prova vera resta `tests/probe-menu-pannello.mjs`, che legge il menu
+  // renderizzato di ogni ruolo; questo è il cancello che non ha bisogno del
+  // browser.
+  const etichette = {}
+  const chiavi = {}
+  const perFile = (m, f) => (m[f] ||= { tolte: [], scritte: new Set(), fuori: {}, dentro: {} })
   for (const riga of diff.split('\n')) {
     const f = riga.match(/^\+\+\+ b\/(.+)/)
     if (f) { fileCorrente = f[1]; continue }
-    if (!riga.startsWith('-') || riga.startsWith('---')) continue
+    const tolta = riga.startsWith('-') && !riga.startsWith('---')
+    const scritta = riga.startsWith('+') && !riga.startsWith('+++')
+    if (!tolta && !scritta) continue
 
-    // Una voce di menu tolta.
     const nav = riga.match(/label="([^"]+)"/) || riga.match(/label:\s*'([^']+)'/)
-    if (nav && /<NavItem|sub:\s*'/.test(riga)) persi.push({ cosa: `la voce «${nav[1]}»`, dove: fileCorrente })
+    if (nav && /<NavItem|sub:\s*'|\{\s*to:\s*'/.test(riga)) {
+      const e = perFile(etichette, fileCorrente)
+      if (tolta) e.tolte.push(nav[1]); else e.scritte.add(nav[1])
+    }
+
+    const elenco = riga.match(/voci:\s*\[([^\]]*)\]/)
+    if (elenco) {
+      const c = perFile(chiavi, fileCorrente)
+      for (const k of elenco[1].match(/'([^']+)'/g) || []) {
+        const nome = k.slice(1, -1)
+        const lato = tolta ? c.fuori : c.dentro
+        lato[nome] = (lato[nome] || 0) + 1
+      }
+    }
 
     // Una funzione tolta dal catalogo che il cliente accende e spegne.
-    const fn = riga.match(/chiave:\s*'([^']+)'.*titolo:\s*'([^']+)'/)
+    const fn = tolta && riga.match(/chiave:\s*'([^']+)'.*titolo:\s*'([^']+)'/)
     if (fn) persi.push({ cosa: `la funzione «${fn[2]}»`, dove: fileCorrente })
+  }
+  for (const [file, e] of Object.entries(etichette)) {
+    for (const nome of new Set(e.tolte)) {
+      if (!e.scritte.has(nome)) persi.push({ cosa: `la voce «${nome}»`, dove: file })
+    }
+  }
+  for (const [file, c] of Object.entries(chiavi)) {
+    for (const [nome, n] of Object.entries(c.fuori)) {
+      if (n > (c.dentro[nome] || 0)) persi.push({ cosa: `la voce «${nome}» per un ruolo`, dove: file })
+    }
   }
 
   // Pagine e route cancellate: qui il file sparisce del tutto.
