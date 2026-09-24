@@ -2,41 +2,17 @@
 import { usePathname, useRouter } from 'next/navigation'
 import { useAzienda } from '@/context/AziendaContext'
 import { ChevronRight } from 'lucide-react'
+import { SEZIONI, VOCI } from './menu-pannello'
 
-const PROPERTY_SUBS = {
-  info: 'Informazioni', modules: 'App Clienti', services: 'Servizi',
-  gallery: 'Galleria', theme: 'Tema e colori', activities: 'Attività',
-  excursions: 'Escursioni', sito: 'Sito web', privacy: 'Privacy & Policy', chatbot: 'Chatbot',
-}
-const RISTORANTE_SUB_LABELS = {
-  info: 'Informazioni', moduli: 'App Clienti', menu: 'Menu',
-  gallery: 'Galleria', theme: 'Tema e colori', minisito: 'Sito web', sito: 'Pagine CMS',
-  privacy: 'Privacy & Policy', chatbot: 'Chatbot',
-}
-const ATTIVITA_SUB_LABELS = {
-  info: 'Informazioni', moduli: 'App Clienti', gallery: 'Galleria', theme: 'Tema e colori',
-  sito: 'Sito', privacy: 'Privacy & Policy', chatbot: 'Chatbot',
-}
+// I nomi vengono dal menu (menu-pannello.js): la pagina che nel menu si chiama
+// «Sito web» non deve chiamarsi «Pagine CMS» qui sopra. Prima c'erano tre
+// dizionari, uno per tipo di entità, e ciascuno la chiamava in modo diverso.
+const ALTRE_SEZIONI = { modules: SEZIONI.moduli.label, minisito: SEZIONI.sito.label, pagine: 'Pagine', activities: 'Attività', excursions: 'Escursioni' }
+const nomeSezione = (sub) => SEZIONI[sub]?.label || ALTRE_SEZIONI[sub] || sub
+
 const TOP_LEVEL = {
-  '/admin/analytics':    'Analytics',
-  '/admin/security':     'Sicurezza account',
-  '/admin/requests':     'Richieste',
-  '/admin/prenotazioni': 'Prenotazioni',
-  '/admin/booking':      'Booking',
-  '/admin/contatti':     'Contatti',
-  '/admin/newsletter':   'Newsletter',
-  '/admin/blog':         'Blog & News',
-  '/admin/eventi':       'Eventi',
-  '/admin/staff':        'Collaboratori',
-  '/admin/audit-log':    'Audit log',
-  '/admin/demo':         'Richieste demo',
-  '/admin/qrcode':       'QR Code',
-  '/admin/aziende':      'Aziende',
-  '/admin/properties':   'Strutture',
-  '/admin/ristoranti':   'Ristoranti',
-  '/admin/attivita':     'Attività',
-  '/admin/users':        'Utenti',
-  '/admin/chat':         'Chat',
+  ...Object.fromEntries(Object.values(VOCI).filter(v => v.to).map(v => [v.to, v.label])),
+  '/admin/booking': 'Calendario',
 }
 
 function buildCrumbs(pathname, strutture, ristoranti, attivita) {
@@ -47,12 +23,12 @@ function buildCrumbs(pathname, strutture, ristoranti, attivita) {
 
   // Blog categorie
   if (pathname === '/admin/blog/categories')
-    return [root, { label: 'Blog & News', to: '/admin/blog' }, { label: 'Categorie', to: pathname }]
+    return [root, { label: VOCI.blog.label, to: '/admin/blog' }, { label: 'Categorie', to: pathname }]
 
   // Booking sub-pages
   if (pathname.startsWith('/admin/booking/')) {
     const sub = pathname.replace('/admin/booking/', '')
-    return [root, { label: 'Booking', to: '/admin/booking' }, { label: { risorse: 'Risorse', prenotazioni: 'Prenotazioni' }[sub] || sub, to: pathname }]
+    return [root, { label: VOCI.booking.label, to: '/admin/booking' }, { label: { risorse: 'Risorse', prenotazioni: 'Prenotazioni' }[sub] || sub, to: pathname }]
   }
 
   // Newsletter editor
@@ -61,7 +37,7 @@ function buildCrumbs(pathname, strutture, ristoranti, attivita) {
 
   // Blog editor
   if (/^\/admin\/blog\/.+$/.test(pathname))
-    return [root, { label: 'Blog & News', to: '/admin/blog' }, { label: 'Editor', to: pathname }]
+    return [root, { label: VOCI.blog.label, to: '/admin/blog' }, { label: 'Editor', to: pathname }]
 
   // Evento prenotazioni
   const evPrenotMatch = pathname.match(/^\/admin\/eventi\/([^/]+)\/prenotazioni$/)
@@ -79,14 +55,14 @@ function buildCrumbs(pathname, strutture, ristoranti, attivita) {
   // Property sub-pages (legacy /admin/property/*)
   const propertyMatch = pathname.match(/^\/admin\/property\/(.+)$/)
   if (propertyMatch)
-    return [root, { label: 'Struttura', to: '/admin/property/info' }, { label: PROPERTY_SUBS[propertyMatch[1]] || propertyMatch[1], to: pathname }]
+    return [root, { label: 'Struttura', to: '/admin/property/info' }, { label: nomeSezione(propertyMatch[1]), to: pathname }]
 
   // Struttura
   const strutturaMatch = pathname.match(/^\/admin\/struttura\/([^/]+)\/(.+)$/)
   if (strutturaMatch) {
     const [, id, sub] = strutturaMatch
     const name = strutture.find(s => s.id === id)?.name || 'Struttura'
-    return [root, { label: name, to: `/admin/struttura/${id}/info` }, { label: PROPERTY_SUBS[sub] || sub, to: pathname }]
+    return [root, { label: name, to: `/admin/struttura/${id}/sito` }, { label: nomeSezione(sub), to: pathname }]
   }
 
   // Ristorante
@@ -94,7 +70,7 @@ function buildCrumbs(pathname, strutture, ristoranti, attivita) {
   if (ristoranteMatch) {
     const [, id, sub] = ristoranteMatch
     const name = ristoranti.find(r => r.id === id)?.name || 'Ristorante'
-    return [root, { label: name, to: `/admin/ristoranti/${id}/info` }, { label: RISTORANTE_SUB_LABELS[sub] || sub, to: pathname }]
+    return [root, { label: name, to: `/admin/ristoranti/${id}/sito` }, { label: nomeSezione(sub), to: pathname }]
   }
 
   // Attività
@@ -102,7 +78,7 @@ function buildCrumbs(pathname, strutture, ristoranti, attivita) {
   if (attivitaMatch) {
     const [, id, sub] = attivitaMatch
     const name = (attivita || []).find(a => a.id === id)?.name || 'Attività'
-    return [root, { label: name, to: `/admin/attivita/${id}/info` }, { label: ATTIVITA_SUB_LABELS[sub] || sub, to: pathname }]
+    return [root, { label: name, to: `/admin/attivita/${id}/sito` }, { label: nomeSezione(sub), to: pathname }]
   }
 
   return []

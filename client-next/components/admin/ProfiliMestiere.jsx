@@ -1,10 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Plus, Trash2, Calendar, CalendarDays, Package, Wand2, QrCode, LayoutDashboard } from 'lucide-react'
+import { Plus, Trash2, CalendarDays, Package, LayoutDashboard } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import { FUNZIONI, FUNZIONI_AZIENDA } from '@/lib/funzioni'
 import { TIPI_ENTITA } from '@/lib/profili-mestiere'
-import { SEZIONI_ENTITA, VOCI, MENU_PER_RUOLO } from './menu-pannello'
+import { costruisciMenu } from './menu-pannello'
 
 // I profili di mestiere: cosa un cliente nuovo si troverà acceso il primo
 // giorno (STRATEGIA.md §6.1, fase F2). Qui si scrivono e si guardano: NON si
@@ -20,59 +20,45 @@ const campo = { width: '100%', boxSizing: 'border-box', padding: '8px 10px', bor
 const NOME_TIPO = { struttura: 'Struttura (/s/…)', ristorante: 'Ristorante (/r/…)', attivita: 'Attività (/a/…)' }
 const FUNZIONI_SCEGLIBILI = FUNZIONI.filter(f => !f.sempre)
 
-// Il menu che vedrà il titolare di un'azienda nata da questo profilo. Legge le
-// stesse definizioni della barra laterale vera (menu-pannello.js).
-function righeMenu(profilo) {
-  const accesaAz = (k) => !VOCI[k].funzione || !!profilo.funzioni_azienda?.[VOCI[k].funzione]
-  const accesaEnt = (s) => !s.funzione || FUNZIONI.find(f => f.chiave === s.funzione)?.sempre || !!profilo.funzioni_entita?.[s.funzione]
-  const voce = (key, Icon, label, sub) => (
-    <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: sub ? '4px 10px 4px 14px' : '6px 10px', color: '#bbb', fontSize: sub ? 12 : 13 }}>
+// Il menu che vedrà il titolare di un'entità nata da questo profilo. Lo calcola
+// costruisciMenu, la stessa funzione della barra laterale vera: un'anteprima con
+// una regola sua mentirebbe alla prima voce aggiunta da una parte sola.
+function menuDelProfilo(profilo) {
+  return costruisciMenu({
+    ruolo: 'admin_azienda',
+    funzioniAzienda: profilo.funzioni_azienda || {},
+    // Ogni funzione dell'entità dichiarata, accesa o spenta: una chiave assente
+    // varrebbe «decide il tipo», e il tipo accende tutto.
+    entita: { id: 'anteprima', tipo: profilo.tipo_entita, moduli: Object.fromEntries(FUNZIONI_SCEGLIBILI.map(f => [f.chiave, !!profilo.funzioni_entita?.[f.chiave]])) },
+  })
+}
+
+// Come le conta la sonda sul menu vero: la Dashboard, ogni link, e il gruppo
+// «Calendario e risorse» vale i suoi due link.
+const contaVoci = (gruppi) => 1 + gruppi.reduce((n, g) => n + g.voci.reduce((m, v) => m + (v.gruppo ? 2 : 1), 0), 0)
+// Tutto acceso: è il menu che vede oggi un titolare, qualunque mestiere faccia.
+const MENU_DI_OGGI = contaVoci(costruisciMenu({ ruolo: 'admin_azienda', entita: { id: 'anteprima', tipo: 'ristorante', moduli: Object.fromEntries(FUNZIONI.map(f => [f.chiave, true])) } }))
+
+function AnteprimaMenu({ profilo }) {
+  const gruppi = menuDelProfilo(profilo)
+  const riga = (key, Icon, label, sub) => (
+    <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: sub ? '3px 10px 3px 30px' : '5px 10px', color: '#bbb', fontSize: sub ? 12 : 13 }}>
       {Icon && <Icon size={sub ? 12 : 14} strokeWidth={1.5} />}{label}
     </div>
   )
-  const titolo = (t) => <div key={`h-${t}`} style={{ fontSize: 9, fontWeight: 700, color: '#666', letterSpacing: 1, padding: '10px 10px 3px', textTransform: 'uppercase' }}>{t}</div>
-
-  // Come nella barra vera: Dashboard in cima, e Booking è un gruppo che si apre
-  // su Calendario e Risorse. Il conteggio deve dire lo stesso numero del menu
-  // vero (tests/probe-menu-pannello.mjs), non uno suo.
-  const righe = [voce('dashboard', LayoutDashboard, 'Dashboard')]
-  for (const blocco of MENU_PER_RUOLO.admin_azienda) {
-    if (blocco === 'entita') {
-      let gruppo = null
-      for (const s of SEZIONI_ENTITA.filter(accesaEnt)) {
-        if (s.group !== gruppo) { righe.push(titolo(s.group)); gruppo = s.group }
-        righe.push(voce(s.sub, s.icon, s.label, true))
-        if (s.sub === 'sito') righe.push(voce('ai', Wand2, 'AI Site Builder', true))
-        if (s.sub === 'domini') righe.push(voce('qr', QrCode, 'QR Code', true))
-      }
-      continue
-    }
-    const voci = blocco.voci.filter(accesaAz)
-    if (!voci.length) continue
-    righe.push(titolo(blocco.titolo))
-    for (const k of voci) {
-      if (k !== 'booking') { righe.push(voce(k, VOCI[k].icon, VOCI[k].label)); continue }
-      righe.push(voce('h-booking', Calendar, 'Booking'))
-      righe.push(voce('calendario', CalendarDays, 'Calendario', true), voce('risorse', Package, 'Risorse', true))
-    }
-  }
-  return righe
-}
-
-const contaVoci = (righe) => righe.filter(r => !String(r.key).startsWith('h-')).length
-// Tutto acceso: è il menu che vede oggi ogni titolare, qualunque mestiere faccia.
-const MENU_DI_OGGI = contaVoci(righeMenu({
-  funzioni_azienda: Object.fromEntries(FUNZIONI_AZIENDA.map(f => [f.chiave, true])),
-  funzioni_entita: Object.fromEntries(FUNZIONI.map(f => [f.chiave, true])),
-}))
-
-function AnteprimaMenu({ profilo }) {
-  const righe = righeMenu(profilo)
   return (
     <div>
-      <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Il menu del titolare: <strong>{contaVoci(righe)} voci</strong> (oggi ne vede {MENU_DI_OGGI})</div>
-      <div style={{ background: '#1a1a2e', borderRadius: 10, padding: '8px 6px', maxHeight: 560, overflowY: 'auto' }}>
-        {righe}
+      <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>Il menu del titolare: <strong>{contaVoci(gruppi)} voci</strong> (oggi ne vede {MENU_DI_OGGI})</div>
+      <div style={{ background: '#1a1a2e', borderRadius: 10, padding: '8px 6px', maxHeight: 600, overflowY: 'auto' }}>
+        {riga('dashboard', LayoutDashboard, 'Dashboard')}
+        {gruppi.map(g => (
+          <div key={g.titolo}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: '#666', letterSpacing: 1, padding: '10px 10px 3px', textTransform: 'uppercase' }}>{g.titolo}</div>
+            {g.voci.map(v => v.gruppo
+              ? <div key={v.key}>{riga(v.key, v.icon, v.label)}{riga('cal', CalendarDays, 'Calendario', true)}{riga('ris', Package, 'Risorse', true)}</div>
+              : riga(v.key, v.icon, v.label))}
+          </div>
+        ))}
       </div>
     </div>
   )

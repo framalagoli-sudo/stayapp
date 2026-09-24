@@ -275,7 +275,7 @@ export default function DashboardPage() {
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, background: '#fffbeb', border: '1px solid #f6cc5c', borderRadius: 10, padding: '14px 16px', marginBottom: 24 }}>
           <AlertTriangle size={18} strokeWidth={2} color="#b7791f" style={{ flexShrink: 0, marginTop: 1 }} />
           <div style={{ fontSize: 14, color: '#7d5a00', lineHeight: 1.5 }}>
-            <strong>Email mancante</strong> — {missingEmail.map(e => e.name).join(', ')} {missingEmail.length === 1 ? 'non ha' : 'non hanno'} un'email configurata. Le notifiche ospite non verranno inviate.
+            <strong>Email mancante</strong> — {missingEmail.map(e => e.name).join(', ')} {missingEmail.length === 1 ? 'non ha' : 'non hanno'} un'email configurata. Le notifiche ai tuoi clienti non verranno inviate.
           </div>
         </div>
       )}
@@ -286,10 +286,11 @@ export default function DashboardPage() {
           {allEntita.map(entita => {
             const cfg  = TIPO_CFG[entita.tipo]
             const Icon = cfg.icon
+            // Il pulsante porta al SITO: è la cosa per cui il cliente è qui.
             const adminPath =
-              entita.tipo === 'struttura'  ? `/admin/struttura/${entita.id}/info` :
-              entita.tipo === 'ristorante' ? `/admin/ristoranti/${entita.id}/info` :
-                                             `/admin/attivita/${entita.id}/info`
+              entita.tipo === 'struttura'  ? `/admin/struttura/${entita.id}/sito` :
+              entita.tipo === 'ristorante' ? `/admin/ristoranti/${entita.id}/sito` :
+                                             `/admin/attivita/${entita.id}/sito`
             return (
               <div key={`${entita.tipo}-${entita.id}`} style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.07)', display: 'flex', flexDirection: 'column' }}>
                 {/* Cover */}
@@ -312,11 +313,11 @@ export default function DashboardPage() {
                   <StatoSitoBreve
                     entityId={entita.id}
                     entityTipo={entita.tipo}
-                    onApri={() => router.push(adminPath.replace(/\/info$/, '/sito'))}
+                    onApri={() => router.push(adminPath)}
                   />
                   <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                     <button onClick={() => router.push(adminPath)} style={{ flex: 1, padding: '7px 10px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-                      <Settings size={12} strokeWidth={2} color="#fff" /> Gestisci
+                      <Globe size={12} strokeWidth={1.5} color="#fff" /> Il tuo sito
                     </button>
                     <a href={cfg.pwaBase + entita.slug} target="_blank" rel="noopener noreferrer" style={{ flex: 1, padding: '7px 10px', background: '#f5f5f5', color: '#1a1a2e', borderRadius: 8, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, textDecoration: 'none' }}>
                       <ExternalLink size={12} strokeWidth={2} /> Anteprima
@@ -360,7 +361,7 @@ export default function DashboardPage() {
       {/* ── KPI row ── */}
       <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexWrap: 'wrap' }}>
         <KpiCard icon={Inbox}        label="Richieste aperte"  value={analytics?.requests?.open}       color="#e53e3e" sub="richieste ospiti"      onClick={() => router.push('/admin/requests')} />
-        <KpiCard icon={CalendarCheck} label="Prenotazioni oggi" value={prenOggi.length}                 color="#2e7d32" sub={todayStr()}            onClick={() => router.push('/admin/booking')} />
+        <KpiCard icon={CalendarCheck} label="Prenotazioni oggi" value={prenOggi.length}                 color="#2e7d32" sub={todayStr().split('-').reverse().slice(0, 2).join('/')}            onClick={() => router.push('/admin/booking')} />
         <KpiCard icon={Users}         label="Nuovi contatti"    value={analytics?.contacts?.new_period} color="#6b46c1" sub="ultimi 7 giorni"       onClick={() => router.push('/admin/contatti')} />
         <KpiCard icon={Eye}           label="Visite sito"       value={analytics?.pageviews?.total}     color="#1a1a2e" sub="ultimi 7 giorni"       onClick={() => router.push('/admin/analytics')} />
         <KpiCard icon={Star}          label="Recensione media"  value={recensioniKpi ? `⭐ ${recensioniKpi.media}` : '—'} color="#f59e0b" sub={recensioniKpi ? `${recensioniKpi.count} recensioni` : 'nessuna ancora'} onClick={() => router.push('/admin/recensioni')} />

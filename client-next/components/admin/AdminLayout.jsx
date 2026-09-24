@@ -2,12 +2,11 @@
 import { Fragment, useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { funzioneAttiva, staffPuoAprire } from '@/lib/funzioni'
 import { useAuth } from '@/context/AuthContext'
 import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
 import Breadcrumb from './Breadcrumb'
-import { SEZIONI_ENTITA, VOCI, MENU_PER_RUOLO } from './menu-pannello'
+import { VOCI, costruisciMenu } from './menu-pannello'
 import {
   LayoutDashboard, BarChart2, Shield,
   Inbox, CalendarCheck, Calendar, CalendarDays, Package, ListChecks,
@@ -262,69 +261,9 @@ export default function AdminLayout({ children }) {
     )
   }
 
-  // Rende i sub-menu entità raggruppati: un SectionHeader per ogni `group`, e inietta
-  // AI Site Builder (dopo "Sito web") e QR Code (dopo "Domini") nel gruppo del sito.
-  function renderSubs(subs, hrefFor) {
-    const out = []
-    let lastGroup = null
-    subs.forEach((voce) => {
-      const { sub, label, icon, group, spenta } = voce
-      if (group !== lastGroup) { out.push(<SectionHeader key={`h-${group}`} label={group} />); lastGroup = group }
-      // Il pallino segna le sezioni che il cliente NON vede: le apri lo stesso,
-      // ma sai che per lui sono spente — senza doverlo andare a controllare.
-      out.push(
-        <NavItem key={sub} to={hrefFor(sub, voce)} icon={icon} sub
-          label={spenta
-            ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-                {label}
-                <span title="Spenta per il cliente: la vedi perché sei super_admin"
-                  style={{ width: 6, height: 6, borderRadius: '50%', background: '#c9a227', flexShrink: 0 }} />
-              </span>
-            : label} />
-      )
-      if (sub === 'sito')   out.push(<NavItem key="ai-builder" to="/admin/ai-site-builder" icon={Wand2}  label="AI Site Builder" sub />)
-      if (sub === 'domini') out.push(<NavItem key="qr"         to="/admin/qrcode"          icon={QrCode} label="QR Code"        sub />)
-    })
-    return out
-  }
-
-  const noneMsg = (txt) => (
-    <div style={{ padding: '6px 12px 10px 20px', fontSize: 12, color: '#666', fontStyle: 'italic' }}>{txt}</div>
-  )
-  // Le voci di un'entità dipendono da cosa il cliente ha acceso, non dal tipo.
-  // Una lista sola per tutti e tre: prima erano tre, ed è la ragione per cui un
-  // hotel non poteva avere un menù.
-  function EntitaSubLinks({ tipo, baseId }) {
-    const vuoto = { struttura: 'Nessuna struttura creata.', ristorante: 'Nessun ristorante creato.', attivita: 'Nessuna attività creata.' }
-    if (!baseId) return noneMsg(vuoto[tipo])
-
-    const elenco = { struttura: strutture, ristorante: ristoranti, attivita }[tipo] || []
-    const ent = elenco.find(e => e.id === baseId)
-    // `modules` per strutture e ristoranti, `pwa` per le attività: sono i nomi
-    // storici che le route restituiscono ancora.
-    const conModuli = { ...(ent || {}), tipo, moduli: ent?.moduli || ent?.modules || ent?.pwa }
-
-    const base = { struttura: 'struttura', ristorante: 'ristoranti', attivita: 'attivita' }[tipo]
-
-    // Chi amministra la piattaforma vede TUTTE le sezioni, sempre.
-    //
-    // Gli interruttori decidono cosa vede il cliente e cosa compare sul suo sito:
-    // non devono nascondere niente a chi il prodotto lo sta costruendo. Con i
-    // preset di ieri le Vetrine risultavano invisibili su tutte e tredici le
-    // entità — un modulo intero, completo e irraggiungibile, e ci si arrivava
-    // solo sapendo di doverlo accendere da un'altra pagina.
-    //
-    // Le sezioni spente per il cliente restano riconoscibili (vedi `spenta`),
-    // così si sa sempre cosa lui vede e cosa no.
-    const visibili = SEZIONI_ENTITA
-      .filter(s => !s.funzione || isSuperAdmin || (ent && funzioneAttiva(conModuli, s.funzione)))
-      .map(s => ({ ...s, spenta: !!s.funzione && ent && !funzioneAttiva(conModuli, s.funzione) }))
-    return renderSubs(visibili, (sub, voce) => `/admin/${base}/${baseId}/${voce?.nomeSezione?.[tipo] || sub}`)
-  }
-
-  function renderBookingSection() {
+  function renderBookingSection(titolo = VOCI.booking.label) {
     return (
-      <CollapseSection label="Booking" icon={Calendar} isOpen={bookingOpen} onToggle={() => setBookingOpen(o => !o)}>
+      <CollapseSection label={titolo} icon={Calendar} isOpen={bookingOpen} onToggle={() => setBookingOpen(o => !o)}>
         <NavItem to="/admin/booking" icon={CalendarDays} label="Calendario" sub end />
         {/* ⚠️ «Risorse» era stata tolta dal menu il 29/08, pensando che Offerte
             la sostituisse. Non era vero: l'editor delle offerte sa gestire
@@ -365,7 +304,7 @@ export default function AdminLayout({ children }) {
       if (isSuperAdmin && activeAziendaId) {
         return (
           <div style={{ padding: '0 12px 12px', fontSize: 12, color: '#555', fontStyle: 'italic' }}>
-            Nessuna entità registrata.
+            Nessuna attività registrata.
           </div>
         )
       }
@@ -389,7 +328,7 @@ export default function AdminLayout({ children }) {
     return (
       <div style={{ padding: '0 12px 14px' }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: '#444', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 5 }}>
-          Entità attiva
+          {isSuperAdmin ? 'Attività' : 'La tua attività'}
         </div>
         {allEntities.length === 1 ? (
           <button
@@ -409,26 +348,19 @@ export default function AdminLayout({ children }) {
     )
   }
 
-  // ─── Sito & App links (derivati dall'entità attiva) ───────────────────────
-  function SitoAppLinks() {
-    if (activeEntityType) return <EntitaSubLinks tipo={activeEntityType} baseId={activeSitoId} />
-    return (
-      <div style={{ padding: '6px 12px 10px', fontSize: 12, color: '#555', fontStyle: 'italic' }}>
-        Nessuna entità attiva.
-      </div>
-    )
-  }
-
   // ─── Quale menu, per chi ──────────────────────────────────────────────────
-  const bloccoMenu = MENU_PER_RUOLO[
-    isSuperAdmin ? 'super_admin'
-      : isAdminAzienda ? 'admin_azienda'
-      : isStaff ? 'staff'
-      : isLegacyStruttura ? 'legacy'
-      : null
-  ] || []
+  // L'entità su cui si lavora: il sito e i contenuti del menu sono i SUOI.
+  const elencoAttivo = { struttura: strutture, ristorante: ristoranti, attivita }[activeEntityType] || []
+  const entAttiva = elencoAttivo.find(e => e.id === activeSitoId)
+  // `modules` per strutture e ristoranti, `pwa` per le attività: sono i nomi
+  // storici che le route restituiscono ancora. Se l'entità non è fra quelle
+  // caricate (il super_admin che apre l'indirizzo di un'altra azienda) valgono
+  // gli interruttori predefiniti del suo tipo.
+  const entitaMenu = activeSitoId && activeEntityType
+    ? { ...(entAttiva || {}), id: activeSitoId, tipo: activeEntityType, moduli: entAttiva?.moduli || entAttiva?.modules || entAttiva?.pwa }
+    : null
 
-  // Il blocco dell'entità compare a condizioni diverse per ruolo: il
+  // Le voci dell'entità compaiono a condizioni diverse per ruolo: il
   // super_admin quando sta guardando un'entità, l'azienda quando ne ha, lo
   // staff quando ha anche il permesso di gestirle.
   const haEntita = hasStruttura || hasRistorante || hasAttivita
@@ -438,10 +370,53 @@ export default function AdminLayout({ children }) {
       ? !!((perm.struttura || perm.ristorante || perm.attivita_gestione) && haEntita)
       : !!haEntita
 
-  // Allo staff si apre solo ciò che un permesso concede; l'ossatura (Sicurezza,
-  // Aiuto) non ha funzione e resta visibile. Gli altri ruoli vedono il loro
-  // blocco per intero.
-  const voceVisibile = (k) => !isStaff || !VOCI[k].funzione || staffPuoAprire(VOCI[k].funzione, perm)
+  const menu = costruisciMenu({
+    ruolo: isSuperAdmin ? 'super_admin' : isAdminAzienda ? 'admin_azienda' : isStaff ? 'staff' : null,
+    permessi: perm,
+    // null finché la categoria non è assegnata: allora si vede tutto, come prima.
+    funzioniAzienda: azienda?.funzioni ?? null,
+    entita: entitaMenu,
+    conEntita: mostraEntita,
+  })
+
+  // Il pallino segna ciò che il cliente NON vede: il super_admin lo apre lo
+  // stesso, ma sa che per lui è spento — senza doverlo andare a controllare.
+  const etichetta = (v) => v.spenta
+    ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+        {v.label}
+        <span title="Spenta per il cliente: la vedi perché sei super_admin"
+          style={{ width: 6, height: 6, borderRadius: '50%', background: '#c9a227', flexShrink: 0 }} />
+      </span>
+    : v.label
+
+  // Il vecchio menu dei profili senza azienda (admin_struttura, admin_gruppo,
+  // staff orfani): oggi nessuno di loro può più entrare, ma il ramo resta
+  // finché non si decide di toglierlo.
+  function MenuStorico() {
+    return (
+      <>
+        {[['Operativo', ['richieste', 'prenotazioni', 'booking', 'chat', 'eventi', 'offerte']], ['Marketing', ['blog', 'newsletter', 'contatti']]].map(([titolo, voci]) => (
+          <Fragment key={titolo}>
+            <Divider />
+            <SectionHeader label={titolo} />
+            {voci.map(k => k === 'booking'
+              ? <Fragment key={k}>{renderBookingSection()}</Fragment>
+              : <NavItem key={k} to={VOCI[k].to} icon={VOCI[k].icon} label={VOCI[k].label} />)}
+          </Fragment>
+        ))}
+        <Divider />
+        <SectionHeader label="Sito & App" />
+        {NAV_PROPERTY.map(({ to, label, icon }) => (
+          <NavItem key={to} to={to} icon={icon} label={label} sub />
+        ))}
+        <NavItem to="/admin/qrcode" icon={QrCode} label="Codice QR" />
+        <Divider />
+        <SectionHeader label="Account" />
+        <NavItem to={VOCI.sicurezza.to} icon={VOCI.sicurezza.icon} label={VOCI.sicurezza.label} />
+      </>
+    )
+  }
+
 
   // ─── Sidebar content ──────────────────────────────────────────────────────
   const sidebarContent = (
@@ -477,35 +452,15 @@ export default function AdminLayout({ children }) {
 
         <NavItem to="/admin" icon={LayoutDashboard} label="Dashboard" end />
 
-        {bloccoMenu.map((blocco, i) => {
-          if (blocco === 'entita') {
-            return mostraEntita ? <Fragment key="entita"><Divider /><SitoAppLinks /></Fragment> : null
-          }
-          if (blocco === 'proprieta') {
-            return (
-              <Fragment key="proprieta">
-                <Divider />
-                <SectionHeader label="Sito & App" />
-                {NAV_PROPERTY.map(({ to, label, icon }) => (
-                  <NavItem key={to} to={to} icon={icon} label={label} sub />
-                ))}
-                <NavItem to="/admin/qrcode" icon={QrCode} label="QR Code" />
-              </Fragment>
-            )
-          }
-          // Allo staff un gruppo compare solo se almeno una voce gli è aperta.
-          const voci = blocco.voci.filter(voceVisibile)
-          if (voci.length === 0) return null
-          return (
-            <Fragment key={i}>
-              <Divider />
-              <SectionHeader label={blocco.titolo} />
-              {voci.map(k => k === 'booking'
-                ? <Fragment key={k}>{renderBookingSection()}</Fragment>
-                : <NavItem key={k} to={VOCI[k].to} icon={VOCI[k].icon} label={VOCI[k].label} />)}
-            </Fragment>
-          )
-        })}
+        {isLegacyStruttura ? <MenuStorico /> : menu.map(g => (
+          <Fragment key={g.titolo}>
+            <Divider />
+            <SectionHeader label={g.titolo} />
+            {g.voci.map(v => v.gruppo
+              ? <Fragment key={v.key}>{renderBookingSection(v.label)}</Fragment>
+              : <NavItem key={v.key} to={v.to} icon={v.icon} label={etichetta(v)} />)}
+          </Fragment>
+        ))}
 
       </nav>
 
