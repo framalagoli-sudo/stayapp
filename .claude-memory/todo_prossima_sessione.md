@@ -1,6 +1,6 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — 23/09 pomeriggio: STRATEGIA.md nato, preconfiguratori APPROVATI → si parte da F0+F1 (nessun cambio visibile) dopo 3 risposte di Francesco; migration ferme alla 126; restano anche 2 verifiche a mano sul pannello pagamenti, WhatsApp/Meta (e una contraddizione fra documenti sul Tech Provider), tre siti senza titolo SEO, SENTRY_DSN da togliere da Vercel"
+description: "Da dove riprendere — 24/09: F0+F1+F2 dei preconfiguratori LIVE, buco di sicurezza (domini di altre aziende) chiuso, cancellazione azienda completa (migration 127+128 eseguite); prossimo F3 = primo cambio visibile, chiedere a Francesco; docs di progetto da aggiornare alla chiusura"
 metadata: 
   node_type: memory
   type: project
