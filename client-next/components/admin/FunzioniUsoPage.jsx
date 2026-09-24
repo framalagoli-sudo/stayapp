@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { SlidersHorizontal, AlertTriangle } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
+import ProfiliMestiere from './ProfiliMestiere'
 
 // Chi usa cosa, azienda per azienda. Solo per il super_admin.
 //
@@ -32,6 +33,7 @@ function Pastiglia({ accesa, children, title }) {
 export default function FunzioniUsoPage() {
   const [dati, setDati] = useState(null)
   const [errore, setErrore] = useState('')
+  const [scheda, setScheda] = useState('uso')
 
   useEffect(() => {
     apiFetch('/api/admin/funzioni-uso')
@@ -58,11 +60,28 @@ export default function FunzioniUsoPage() {
         <SlidersHorizontal size={26} strokeWidth={1.5} color={PRIMARIO} />
         <h1 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a2e', margin: 0 }}>Funzioni e profili</h1>
       </div>
-      <p style={{ color: '#888', fontSize: 14, marginBottom: 28, maxWidth: 720 }}>
-        Chi usa cosa, azienda per azienda. È la base per decidere i profili di mestiere:
-        da qui non si accende né si spegne niente.
+      <p style={{ color: '#888', fontSize: 14, marginBottom: 20, maxWidth: 720 }}>
+        Chi usa cosa, azienda per azienda, e i profili di mestiere che ne nascono.
+        Da qui non si accende né si spegne niente per nessun cliente.
       </p>
 
+      <div style={{ display: 'flex', gap: 6, marginBottom: 22, borderBottom: '1px solid #e6e6e6' }}>
+        {[['uso', 'Uso'], ['profili', 'Profili di mestiere']].map(([k, t]) => (
+          <button key={k} onClick={() => setScheda(k)} style={{
+            padding: '9px 16px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 14, fontFamily: 'inherit',
+            fontWeight: scheda === k ? 700 : 500, color: scheda === k ? '#1a1a2e' : '#888',
+            borderBottom: `2px solid ${scheda === k ? PRIMARIO : 'transparent'}`, marginBottom: -1,
+          }}>{t}</button>
+        ))}
+      </div>
+
+      {scheda === 'profili' && (
+        <ProfiliMestiere
+          totaleAziende={totale}
+          usoPerFunzione={Object.fromEntries(perFunzione.map(f => [f.chiave, f.chi.length]))} />
+      )}
+
+      {scheda === 'uso' && <>
       {nonMisurate?.length > 0 && (
         <div style={{ ...card, borderColor: '#fde2b3', background: '#fffaf0', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
           <AlertTriangle size={18} strokeWidth={1.5} color="#b7791f" style={{ flexShrink: 0, marginTop: 2 }} />
@@ -158,6 +177,7 @@ export default function FunzioniUsoPage() {
           ))}
         </div>
       </div>
+      </>}
     </div>
   )
 }
