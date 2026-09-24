@@ -1,6 +1,6 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — 24/09: F0+F1+F2 dei preconfiguratori LIVE, buco di sicurezza (domini di altre aziende) chiuso, cancellazione azienda completa (migration 127+128 eseguite); prossimo F3 = primo cambio visibile, chiedere a Francesco; docs di progetto da aggiornare alla chiusura"
+description: "Da dove riprendere — 25/09: categorie per entità LIVE e assegnate ai clienti (menu vero verificato con 2FA); menu nuovo col sito in cima; buco di sicurezza domini chiuso; migration ferme alla 129; docs di progetto (CLAUDE/FEATURES/PROGETTO/SECURITY/STRATEGIA) da aggiornare alla chiusura"
 metadata: 
   node_type: memory
   type: project
@@ -21,7 +21,10 @@ metadata:
 - ✅ `oltrenova@gmail.com` bloccato su ok di Francesco («sono io ma se non serve via»): 0 account senza azienda attivi.
 - ✅ **F2 LIVE** (migration 128 eseguita): tabella `profili_mestiere` + 6 profili, scheda «Profili di mestiere» in /admin/funzioni con anteprima del menu (oggi 41 voci; Locale 25, Struttura 30, Da zero 18). Sonda `probe-profili-mestiere.mjs` verde in prod (non in deploy.ps1). Il cancello ora confronta l'intero diff (voci spostate fra file).
 - ✅ **Menu nuovo LIVE** `e4f8e035` (autorizzato da Francesco «ci sta così»): costruisciMenu() in components/admin/menu-pannello.js è l'unica regola (barra + anteprima profili). Gruppi Il tuo sito · Contenuti · Clienti · Promozione · Impostazioni. Sito web = 1ª voce. Funzioni dell'entità solo super. Breadcrumb dai nomi del menu. Dashboard «Il tuo sito» → /sito.
-- ⏳ **Migration 129 DA ESEGUIRE** (entita.profilo, aziende.funzioni, profili Ristorante + Organizzatore di eventi). Codice `F3` committato NON pubblicato: dopo la 129 → provare in locale, deploy, poi ASSEGNARE (Francesco: «assegna da subito»): Garage22→locale_eventi · Borgo del Lago struttura→struttura_ricettiva · Ristorante Borgo del Lago e Fondaco Narni→ristorante · inlingua→scuola_corsi · Automax→catalogo_noleggio · Metodo TVB→catalogo_noleggio · Giachini→studio_professionale · Giochi senza Panciere→organizzatore_eventi · StayApp Development: nessuna. Categoria sull'ENTITÀ (decisione di Francesco).
+- ✅ **25/09 — CATEGORIE LIVE E ASSEGNATE** (migration 129 eseguita). 9 entità con categoria, verificate col menu VERO di ogni titolare (`tests/probe-menu-clienti.mjs`, a mano: accesso di prova con 2FA fatto come una persona, poi cancellato; MAI spegnere il 2FA dei clienti). Garage 41→24 voci, Giochi 21, Giachini 23, Automax 26, TVB 27, inlingua 26, Borgo 29–30. Protezioni: funzione di entità con contenuti non si spegne; funzione di azienda USATA resta (lib/uso-funzioni.js, misura condivisa con la pagina Uso) → TVB tiene Piano editoriale+Studio contenuti, Automax Offerte, Borgo Blog. Pubblico invariato (verificato: solo TVB Vetrine off→on, non letto dal pubblico).
+- 🐛→✅ Trovato: il titolare di D.O. Giachini non vedeva NESSUNA voce del suo sito (aziende.moduli.attivita=false) — ora conta se l'entità esiste.
+- ⚠️ Il menu non si disegna finché azienda+entità non sono caricate (prima: lampo con tutte le voci; e con ruolo sconosciuto il menu nuovo mostrava tutto).
+- ⚠️ `probe-molti-indirizzi` si è interrotta UNA volta nel deploy senza messaggio (dopo metodo-tvb); rilanciata verde. Se ricapita, indagare.
 - ⚠️ Script node dentro heredoc bash: `\` diventa `` → regex e escape si rompono. Usare String.fromCharCode(92) o l'Edit.
 - Annotati, non toccati: staff col permesso «ristorante» NON vede le sezioni dell'entità nel menu; Vetrine in nessun menu; strutture cancellabili solo da super_admin/admin_gruppo (ristoranti e attività anche dall'admin azienda); tendina «Azienda attiva» non si aggiorna dopo una cancellazione; export GDPR per azienda copre ~15 tabelle su ~50; cancellando UNA entità restano eventi/articoli/offerte con entity_id pendente (scelta di prodotto).
 
