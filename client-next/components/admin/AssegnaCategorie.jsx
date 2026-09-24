@@ -27,6 +27,9 @@ function Esito({ esito }) {
       {esito.tenute.length > 0 && (
         <span style={{ color: '#b7791f' }}> Lasciate accese perché hanno contenuti: {esito.tenute.map(t => `${t.funzione} (${t.contenuti})`).join(', ')}.</span>
       )}
+      {esito.tenuteAzienda?.length > 0 && (
+        <span style={{ color: '#b7791f' }}> Restano nel menu dell'azienda perché le ha usate: {esito.tenuteAzienda.map(t => `${t.funzione} (${t.contenuti})`).join(', ')}.</span>
+      )}
     </div>
   )
 }

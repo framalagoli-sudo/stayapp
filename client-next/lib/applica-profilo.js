@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { FUNZIONI } from '@/lib/funzioni'
+import { FUNZIONI, FUNZIONI_AZIENDA } from '@/lib/funzioni'
+import { usoDiUna } from '@/lib/uso-funzioni'
 
 // Applicare una categoria (profilo di mestiere) a un'entità.
 //
@@ -54,20 +55,32 @@ function scrivi(moduli, f, valore) {
 // solo se TUTTE hanno una categoria. Finché ne manca una, l'azienda vede tutto:
 // nascondere a Borgo del Lago le funzioni della struttura perché si è assegnato
 // solo il ristorante sarebbe un errore silenzioso.
+//
+// A quelle si aggiungono le funzioni che l'azienda HA USATO (righe nel database,
+// lib/uso-funzioni.js): spegnere dal menu il blog di chi ha scritto un articolo
+// è far sparire una cosa sua, come il 29/08 con «Risorse». Stessa regola delle
+// funzioni dell'entità con contenuti.
 async function ricalcolaAzienda(aziendaId) {
   const { data: entita, error } = await supabaseAdmin.from('entita').select('profilo').eq('azienda_id', aziendaId)
   if (error) throw new Error(error.message)
   let funzioni = null
+  const tenute = []
   if (entita.length && entita.every(e => e.profilo)) {
     const chiavi = [...new Set(entita.map(e => e.profilo))]
     const { data: profili, error: pErr } = await supabaseAdmin.from('profili_mestiere').select('funzioni_azienda').in('chiave', chiavi)
     if (pErr) throw new Error(pErr.message)
     funzioni = {}
     for (const p of profili) for (const [k, v] of Object.entries(p.funzioni_azienda || {})) if (v) funzioni[k] = true
+    const uso = await usoDiUna(aziendaId)
+    for (const f of FUNZIONI_AZIENDA) {
+      if (funzioni[f.chiave] || !uso[f.chiave]) continue
+      funzioni[f.chiave] = true
+      tenute.push({ funzione: f.titolo, contenuti: uso[f.chiave] })
+    }
   }
   const { error: uErr } = await supabaseAdmin.from('aziende').update({ funzioni }).eq('id', aziendaId)
   if (uErr) throw new Error(uErr.message)
-  return funzioni
+  return { funzioni, tenute }
 }
 
 // Applica `chiave` (o nessuna categoria, se null) all'entità.
@@ -81,8 +94,8 @@ export async function applicaProfilo(entityId, chiave) {
   if (chiave === null) {
     const { error: uErr } = await supabaseAdmin.from('entita').update({ profilo: null, profilo_versione: null }).eq('id', entityId)
     if (uErr) throw new Error(uErr.message)
-    await ricalcolaAzienda(ent.azienda_id)
-    return { entita: ent.name, profilo: null, accese: [], spente: [], tenute: [] }
+    const { tenute: tenuteAzienda } = await ricalcolaAzienda(ent.azienda_id)
+    return { entita: ent.name, profilo: null, accese: [], spente: [], tenute: [], tenuteAzienda }
   }
 
   const { data: profilo, error: pErr } = await supabaseAdmin.from('profili_mestiere')
@@ -107,6 +120,6 @@ export async function applicaProfilo(entityId, chiave) {
   const { error: uErr } = await supabaseAdmin.from('entita')
     .update({ moduli, profilo: profilo.chiave, profilo_versione: profilo.versione }).eq('id', entityId)
   if (uErr) throw new Error(uErr.message)
-  const funzioniAzienda = await ricalcolaAzienda(ent.azienda_id)
-  return { entita: ent.name, profilo: profilo.nome, accese, spente, tenute, funzioniAzienda }
+  const { funzioni: funzioniAzienda, tenute: tenuteAzienda } = await ricalcolaAzienda(ent.azienda_id)
+  return { entita: ent.name, profilo: profilo.nome, accese, spente, tenute, funzioniAzienda, tenuteAzienda }
 }

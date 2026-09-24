@@ -66,6 +66,10 @@ try {
   const { data: strut } = await admin.from('entita').insert({ azienda_id: aziendaId, tipo: 'struttura', name: 'ZZ cat struttura', slug: `zz-cat-s-${marca}`,
     moduli: { wifi: true, reception: true, housekeeping: false } }).select('id').single()
   entita.push(rist.id, strut.id)
+  // Un prodotto a catalogo: il negozio è USATO, anche se nessuno dei due profili
+  // lo prevede. Deve restare nel menu.
+  const { error: prodErr } = await admin.from('prodotti').insert({ azienda_id: aziendaId, nome: 'ZZ cat prodotto', prezzo: 1 })
+  if (prodErr) throw new Error(`prodotto di prova: ${prodErr.message}`)
   const titolare = await sessione('admin_azienda', { azienda_id: aziendaId })
   const sup = await sessione('super_admin')
 
@@ -90,7 +94,8 @@ try {
   const { data: sDopo } = await admin.from('entita').select('moduli').eq('id', strut.id).single()
   ok(sDopo.moduli.wifi === true && sDopo.moduli.reception === true && sDopo.moduli.housekeeping === false, 'wifi, reception e housekeeping della struttura intatti')
   const f = await leggiAzienda()
-  ok(f && f.contatti && f.preventivi && f.richieste && !f.shop && !f.loyalty, `l'azienda vede l'unione dei due profili (${Object.keys(f || {}).sort().join(', ')})`)
+  ok(f && f.contatti && f.preventivi && f.richieste && !f.loyalty, `l'azienda vede l'unione dei due profili (${Object.keys(f || {}).sort().join(', ')})`)
+  ok(f?.shop === true && (await r2.json()).tenuteAzienda?.some(t => t.funzione === 'Shop'), "il Negozio resta perché l'azienda ha un prodotto, e l'esito lo dice")
 
   console.log('\nnel browser, come lo vede il titolare')
   browser = await chromium.launch()
@@ -98,7 +103,8 @@ try {
   const c = (n) => voci.includes(n)
   ok(c('Sito web') && voci.indexOf('Sito web') <= 1, `«Sito web» è in cima (posizione ${voci.indexOf('Sito web') + 1})`)
   ok(c('Contatti') && c('Preventivi') && c('Richieste'), 'ci sono le funzioni dei due profili (Contatti, Preventivi, Richieste)')
-  ok(!c('Negozio') && !c('Fedeltà') && !c('Automazioni') && !c('WhatsApp'), 'non ci sono quelle che nessuno dei due prevede (Negozio, Fedeltà, Automazioni, WhatsApp)')
+  ok(!c('Fedeltà') && !c('Automazioni') && !c('WhatsApp'), 'non ci sono quelle che nessuno dei due prevede e mai usate (Fedeltà, Automazioni, WhatsApp)')
+  ok(c('Negozio') && c('Prodotti'), "Negozio e Prodotti ci sono: l'azienda li ha usati")
   ok(c('Menù') && !c('Vetrine') && !c('Funzioni'), 'Menù sì (ha contenuti), Vetrine no, Funzioni no (è nostra)')
   console.log(`    ${voci.length} voci: ${voci.join(' · ')}`)
 
