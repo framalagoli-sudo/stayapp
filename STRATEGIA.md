@@ -135,7 +135,8 @@ già fa `funzioneAttiva`.
   - scuola e corsi (inlingua);
   - catalogo e noleggio (Automax);
   - studio professionale;
-  - più **«parto da zero»**.
+  - più **«parto da zero»** (rinominato **«Base»** il 25/09: un'entità in «Base» è un
+    segnale, vuol dire che ci manca il suo profilo).
 
   ⚠️ Tensione con la regola «niente tassonomie, campi liberi» (memoria `feedback_niente_tassonomie`): quella regola vieta di dare noi il nome a
   ciò che il cliente vende. Un punto di partenza che si può cambiare è un'altra cosa, ma va

@@ -13,6 +13,7 @@ metadata:
 5. 🔴 **Buco chiuso**: un'azienda poteva staccare i domini di un'altra (mai sfruttato) → [[reference-cancellazione-completa]].
 6. **Cancellazione azienda completa** (account compresi); Deborah Perfetti cancellata su richiesta; 7 account senza azienda bloccati (Futura Vacanze + oltrenova@gmail.com, su ok).
 7. **Giachini**: il titolare non vedeva il suo sito nel menu da sempre — corretto.
-8. 21 indirizzi di prova orfani su Vercel staccati; le sonde ora puliscono dalla route.
+8. «Parto da zero» → «Base» (decisione di Francesco).
+9. 21 indirizzi di prova orfani su Vercel staccati; le sonde ora puliscono dalla route.
 
-**Aperti** (in `todo_prossima_sessione.md`): onboarding «Inizia qui» (prossimo), «Parto da zero» rinominare/togliere (domanda a Francesco), export GDPR incompleto, staff col permesso ristorante non vede l'entità, pagina elenco Strutture non crea per il super_admin, smoke security.spec può lasciare hostname su Vercel, probe-molti-indirizzi interrotta una volta senza messaggio.
+**Aperti** (in `todo_prossima_sessione.md`): onboarding «Inizia qui» (prossimo), export GDPR incompleto, staff col permesso ristorante non vede l'entità, pagina elenco Strutture non crea per il super_admin, smoke security.spec può lasciare hostname su Vercel, probe-molti-indirizzi interrotta una volta senza messaggio.

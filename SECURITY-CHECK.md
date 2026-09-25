@@ -26,6 +26,15 @@ altrui leggibile, modificabile o cancellabile.
 (→ nota 26 in `CLAUDE.md`); `select('*')` sul catalogo shop pubblico; saldo fedeltà che rivelava se
 un'email fosse cliente.
 
+⚠️ **«Nessuna risorsa altrui cancellabile» era vero per le RIGHE, non per gli EFFETTI** (trovato il
+24/09/2026 leggendo il codice, non dalla sonda). `DELETE /api/ristoranti|attivita/:id` di un'altra
+azienda cancellava 0 righe — quindi la sweep lo vedeva «respinto» — e poi staccava comunque i domini
+della vittima da Vercel: sito offline, risposta 200. Una sonda che guarda cosa **esce** da una route
+non vede cosa **succede**. Chiuso (`cancellaEntita`, SECURITY §0 invariante 20), mai sfruttato (registro
+dal 14/05), e ora una sonda dedicata in `deploy.ps1` verifica l'effetto sulla vittima:
+`probe-cancella-entita-altrui.mjs`. La classe da cercare altrove: **route che fanno qualcosa dopo un
+filtro senza controllarne l'esito** (invio di email, chiamate a fornitori, file).
+
 ---
 
 ## A2 — Logica di valore: denaro, crediti, posti ✅ FATTO (23-24/08)
