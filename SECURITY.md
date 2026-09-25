@@ -99,6 +99,21 @@ Dove possibile ognuno ha un test in `tests/smoke/security.spec.js`.
     fuori, sotto il nostro nome. Stesso giro: **il dominio da cui arriva una pagina si legge
     dall'header `Host`, mai da `_domain`** — sul nostro dominio quel parametro lo scrive chiunque
     nell'URL, e finirebbe nei link del menu.
+20. **Un'azione filtrata che non trova niente NON è un rifiuto: «è sua?» si chiede prima di
+    qualunque effetto.** Il 24/09/2026 `DELETE /api/ristoranti|attivita/:id` cancellava con un
+    filtro per azienda (0 righe, nessun errore, se l'entità era di un altro) e poi **staccava
+    comunque i domini** dell'id ricevuto: un cliente poteva mandare offline il sito di un altro,
+    e riceveva 200. La sweep non lo vedeva perché guarda cosa **esce** da una route, non cosa
+    **succede**. Regola: prima si legge la risorsa con il filtro dell'azienda, se non c'è → 404, e
+    solo dopo si tocca qualunque cosa (righe collegate, file, Vercel, email). Esempio:
+    `cancellaEntita` in `lib/cancellazione.js`. Sonda in `deploy.ps1`: `probe-cancella-entita-altrui.mjs`.
+21. **Cancellare un'azienda porta via anche gli account.** `profiles.azienda_id` è `SET NULL`: il
+    database stacca l'utente, non lo toglie, e l'account resta capace di fare login (così erano
+    rimasti i 6 di Futura Vacanze, bloccati il 24/09). `cancellaAzienda` (`lib/cancellazione.js`)
+    raccoglie → cancella la riga → poi file, traduzioni e **account**. Sonda in `deploy.ps1`:
+    `probe-cancella-azienda.mjs`, che cerca i resti in ogni tabella dello schema pubblicato.
+    Stessa famiglia: una cancellazione diretta nel database lascia su Vercel gli indirizzi
+    dell'entità — le sonde puliscono dalla route (`cancellaAziendaDiProva` in `probe-auth.mjs`).
 
 ### Il SISTEMA di monitoraggio (a strati — "sempre" senza sprechi)
 - **Strato 0 — Aggiornamento dipendenze (il "processo tipo WordPress-update").** `.github/dependabot.yml`
@@ -303,6 +318,8 @@ Il token OAuth del cliente è salvato in `aziende.google_calendar_token` (JSONB)
 - [ ] **Contratto di responsabile del trattamento (art. 28 GDPR) verso i clienti**: la §8 elenca i DPA verso i nostri fornitori, ma non si è trovato quello verso i clienti, di cui trattiamo i dati dei loro clienti. Verificare nei termini del 31/08; se manca, farlo con un legale
 - [ ] **Rotazione di `META_APP_SECRET`** (passato dalla chat il 15/09) e **data** per la rotazione annuale qui sopra
 - [ ] **Pentest esterno prima di aprire le registrazioni**: le nostre sonde trovano le classi che conosciamo; la password del WiFi ha dimostrato che ne esistono altre
+- [ ] **Esportazione GDPR per azienda incompleta** (trovato il 24/09/2026): `GET /api/admin/backup/azienda/[id]` esporta ~15 tabelle, un'azienda ne tocca ~50 (offerte, preventivi, recensioni, form, pagine, vetrine, shop…). È il diritto alla portabilità: va resa completa, leggendo le tabelle dallo schema come fa `probe-cancella-azienda.mjs`, non da un elenco scritto a mano
+- [x] **Account senza azienda** — bloccati il 24–25/09/2026 (6 di Futura Vacanze + `oltrenova@gmail.com`); cancellare un'azienda ora porta via i suoi account (invariante 21)
 
 ---
 

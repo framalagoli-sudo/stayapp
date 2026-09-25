@@ -154,6 +154,12 @@ sovrapposto all'onboarding** già previsto in 4.1.
 **Da fare prima**: misurare quale funzione ogni cliente ha usato davvero. Le candidate al
 congelamento si decidono con Francesco una per una.
 
+**✅ Fatto il 24–25/09 (F0–F3):** catalogo unico e menu nuovo col sito in cima; pagina «Funzioni e
+profili» (uso reale, profili, categorie); categoria sull'**entità**, assegnata a tutti i clienti e
+obbligatoria alla nascita; niente con contenuti o già usato viene nascosto. Dettaglio → note 49–50 di
+`CLAUDE.md`. F4 (proporre il profilo ai clienti esistenti) è superata: le categorie le abbiamo
+assegnate noi, e un profilo migliorato si porta a tutti con «Riapplica».
+
 **⛔ Deciso da Francesco il 24/09 — le funzioni le accendiamo NOI, per categoria.**
 Il cliente non sceglie né accende funzioni: «altrimenti gli smanettoni mettono cose
 che non hanno senso». L'admin (Francesco, con Ettore) configura il **profilo ottimale

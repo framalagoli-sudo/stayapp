@@ -43,3 +43,16 @@ sfondo» misurando **un 404**.
 La funzione `percorso()` in `tests/probe-contrasto.mjs` ora rimette a posto
 entrambe le forme. ⚠️ Quando una sonda passa **al primo colpo** su una pagina
 appena cambiata, guardare la riga dell'indirizzo che stampa prima di esultare.
+
+**24–25/09/2026, quattro volte in due giorni** — ogni volta il risultato strano era della
+prova, e ogni volta andava VERIFICATO, non supposto:
+- **2FA**: il menu di tutti i clienti sembrava senza sito. L'accesso di prova non aveva il
+  secondo fattore e il server, giustamente, non dava l'azienda. Rimedio: la prova fa il
+  TOTP (`probe-menu-clienti.mjs`). Il 2FA dei clienti non si spegne MAI per provare.
+- **Sottostringa**: cercando la voce «Eventi» il selettore spuntava «Pr**eventi**vi».
+  Il database lo ha smascherato. Rimedio: testo esatto (`getByText(x, { exact: true })`).
+- **Selettore su tutta la pagina**: «+ Nuova …» ha preso «+ Nuova azienda» e la prova ha
+  CREATO un'azienda vera in produzione (cancellata subito). Rimedio: cercare dentro il
+  contenitore giusto ed escludere esplicitamente il pulsante sbagliato.
+- **Server di sviluppo che ricompila**: la prima corsa dopo una modifica legge pagine a
+  metà. Rimedio: aspettare un elemento che c'è solo a dati caricati, non un tempo fisso.

@@ -506,9 +506,10 @@ pannello, sezione Aziende.
 
 Chi compra o subentra deve saperlo prima, non dopo.
 
-- **Non c'è un percorso di primo accesso.** Un cliente nuovo trova 26 voci di
-  menu e nessuno che gli dica da dove cominciare. `/admin/onboarding` non
-  esiste. È il lavoro aperto più importante.
+- **Non c'è un percorso di primo accesso.** Dal 25/09/2026 il menu di un cliente
+  mostra solo le funzioni della sua categoria (fra 21 e 30 voci invece di 41) e
+  il sito è in cima, ma nessuno gli dice da dove cominciare: `/admin/onboarding`
+  non esiste. È il lavoro aperto più importante.
 - **Le registrazioni sono chiuse.** Ogni cliente finora è nato da un invito. La
   registrazione automatica funziona ma non è mai stata aperta al pubblico.
 - **Non c'è fatturazione automatica.** Nessun abbonamento ricorrente per i
@@ -521,9 +522,12 @@ Chi compra o subentra deve saperlo prima, non dopo.
 - **WhatsApp è costruito ma spento**: la verifica Meta è **approvata** (Tech
   Provider, 18/09/2026), mancano le chiavi sulla piattaforma e la prova dal vivo.
 - **Molte funzioni costruite non le usa nessuno.** Misurato il 23/09/2026: negozio,
-  automazioni, fedeltà, gift card e WhatsApp hanno zero utilizzi reali. Ai clienti
-  si mostrano comunque tutte. Il piano per riordinarle («preconfiguratori per
-  mestiere») è in `STRATEGIA.md` §6.1.
+  automazioni, fedeltà, gift card e WhatsApp hanno zero utilizzi reali. Dal
+  25/09/2026 ogni entità ha una **categoria** decisa da OltreNova, e il cliente
+  vede solo le funzioni della sua (pagina «Funzioni e profili», solo super_admin;
+  `STRATEGIA.md` §6.1). Le funzioni restano nel codice: nascoste, non tolte.
+- **L'esportazione dei dati di un'azienda è incompleta**: copre circa 15 tabelle
+  su 50. Per una richiesta di portabilità (GDPR) oggi non basta.
 - **Il canale in tedesco non c'è** (italiano e inglese sì).
 - **Una sola persona sa come funziona.** Questo documento serve a ridurre il
   danno, non lo elimina.

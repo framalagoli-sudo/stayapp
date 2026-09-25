@@ -11,6 +11,9 @@
 > 🔌 **Integrazioni**: [la sequenza del fornitore va letta tutta](reference_verifica_la_sequenza_del_fornitore.md) — il collegamento WhatsApp era «pronto» e non avrebbe inviato niente.
 
 - [🧾 A OGNI chiusura: aggiornare TUTTI i file di progetto](feedback_chiusura_sessione.md) — CLAUDE/FEATURES/PROGETTO/SECURITY, memoria + copia in .claude-memory; ognuno va APERTO, non supposto
+- [📅 Sessione 24–25/09 — menu col sito in cima, categorie per entità LIVE, buco domini chiuso](project_session_2026_09_24_25.md) — migration fino a 129; prossimo: onboarding
+- [🧭 Menu e categorie: regole e trappole](reference_categorie_e_menu.md) — costruisciMenu unica regola; categoria sull entità applicata come copia; verifica col 2FA FATTO, mai spento
+- [🗑️ Cancellare porta via tutto](reference_cancellazione_completa.md) — «è sua?» prima di ogni effetto; account compresi; le cancellazioni dirette lasciano hostname su Vercel
 - [📅 Sessione 23/09 pomeriggio — solo strategia: STRATEGIA.md, preconfiguratori approvati](project_session_2026_09_23_strategia.md) — si parte da F0+F1 (nessun cambio visibile); aggregatore rimandato con 6 vincoli; uso misurato per azienda
 - [📅 Sessione 23/09 — hydration era la lingua, domini tripli, ?back= aperto](project_session_2026_09_23.md) — nessuna migration; PROGETTO.md §11 mentiva ancora sugli incassi
 - [📅 Sessione 21–22/09 — varianti dei blocchi, posti riservati, inlingua da brief](project_session_2026_09_22.md) — migration fino alla 126; 5 difetti di piattaforma trovati provando, non leggendo
@@ -18,7 +21,7 @@
 - [🤖 Consumi AI e tetto per azienda](project_ai_consumi.md) — 15/09: 12 chiamate su 13 senza limite vero; ora un punto solo, fail closed; LIVE dal 15/09 con ricarica da Aziende → Credito AI e avviso al cliente dall 80%
 - [📅 Sessione 16/09 — verifica Meta approvata, collegamento WhatsApp vero, numeri per entità](project_session_2026_09_16.md) — migration fino a 122; restano la verifica dell'accesso e la prova dal vivo
 - [📅 Sessione 15/09 — shop live, Meta sbloccato, costi AI sotto tetto, decisione API](project_session_2026_09_15.md) — migration fino a 121; verifica Meta da reinviare
-- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: prossimo lavoro = preconfiguratori F0+F1 (dopo 3 domande a Francesco); poi 2 verifiche a mano sul pannello pagamenti, WhatsApp/Meta, 3 siti senza titolo SEO, SENTRY_DSN da togliere da Vercel, DNS metodotvb/fondaconarni
+- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: preconfiguratori e categorie FATTI (24–25/09); prossimo = onboarding «Inizia qui»; domanda aperta «Parto da zero»; poi pagamenti (2 verifiche), 3 siti senza titolo SEO, SENTRY_DSN, WhatsApp/Meta
 - [📅 Sessione 08/09 — conferme spente, calendario cieco, offerte inerti](project_session_2026_09_08.md) — 6 interventi nati da cose non rotte ma che non arrivavano
 - [📆 Intervalli di date nel booking](reference_intervalli_date_booking.md) — (giorno,giorno) e l intervallo VUOTO: non da errore, da «libero»; e con
 - [🏷️ Offerte sulle risorse](reference_offerte_risorse.md) — valevano solo per gli slot orari; prezzo_modo dice se e al giorno o del periodo (su 5 giorni sono 5
