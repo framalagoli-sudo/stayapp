@@ -123,3 +123,21 @@ export async function applicaProfilo(entityId, chiave) {
   const { funzioni: funzioniAzienda, tenute: tenuteAzienda } = await ricalcolaAzienda(ent.azienda_id)
   return { entita: ent.name, profilo: profilo.nome, accese, spente, tenute, funzioniAzienda, tenuteAzienda }
 }
+
+// La categoria esiste? Serve alle route di creazione, per rifiutare PRIMA di
+// creare l'entità una categoria sbagliata.
+export async function categoriaEsiste(chiave) {
+  if (typeof chiave !== 'string' || !/^[a-z0-9_]{2,40}$/.test(chiave)) return false
+  const { data } = await supabaseAdmin.from('profili_mestiere').select('chiave').eq('chiave', chiave).maybeSingle()
+  return !!data
+}
+
+// Subito dopo la creazione di un'entità. Con la categoria: si applica. Senza:
+// l'azienda ha un'entità senza categoria, quindi torna a vedere tutto finché
+// non gliene si dà una (è la regola di ricalcolaAzienda) — meglio che un menu
+// filtrato su una categoria che l'entità nuova non ha.
+export async function dopoLaNascita(entityId, aziendaId, profilo) {
+  if (profilo) return applicaProfilo(entityId, profilo)
+  await ricalcolaAzienda(aziendaId)
+  return null
+}

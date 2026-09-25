@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { allaFormaStorica, MODULI_PREDEFINITI, MINISITO_INIZIALE } from '@/lib/entita'
 import { assicuraSottodominio } from '@/lib/create-subdomain'
+import { categoriaEsiste, dopoLaNascita } from '@/lib/applica-profilo'
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, property_id, azienda_id').eq('id', userId).single()
@@ -49,6 +50,13 @@ export async function POST(request) {
 
     const azienda_id = profile.role === 'super_admin' ? body.azienda_id : profile.azienda_id
     if (!azienda_id) return Response.json({ error: 'azienda_id obbligatorio' }, { status: 400 })
+    // La categoria la sceglie solo il super_admin: le funzioni le decidiamo noi
+    // (STRATEGIA.md §6.1). Si controlla PRIMA di creare, non dopo.
+    const profilo = body.profilo ?? null
+    if (profilo !== null) {
+      if (profile.role !== 'super_admin') return Response.json({ error: 'La categoria la assegna OltreNova' }, { status: 403 })
+      if (!(await categoriaEsiste(profilo))) return Response.json({ error: 'Categoria non valida' }, { status: 400 })
+    }
 
     const baseSlug = name.toLowerCase().normalize('NFD')
       .replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'struttura'
@@ -67,6 +75,9 @@ export async function POST(request) {
     // await necessario: registra il sottodominio su Vercel e in serverless una
     // chiamata lasciata in sospeso muore con la risposta.
     await assicuraSottodominio({ azienda_id, entity_tipo: 'struttura', entity_id: data.id, entity_slug: data.slug })
-    return Response.json(allaFormaStorica(data), { status: 201 })
+    await dopoLaNascita(data.id, azienda_id, profilo)
+    // Riletta: la categoria ha appena scritto i suoi interruttori.
+    const { data: fresca } = await supabaseAdmin.from('entita').select().eq('id', data.id).single()
+    return Response.json(allaFormaStorica(fresca || data), { status: 201 })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }

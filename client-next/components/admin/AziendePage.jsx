@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import { euroDaDollari, formatoEuro } from '@/lib/valuta-ai'
+import SceltaCategoria from './SceltaCategoria'
 
 // Estendi qui per nuovi tipi futuri (libero professionista, studio, palestra, ecc.)
 const MODULO_CONFIG = [
@@ -160,6 +161,7 @@ function AziendaSetupStep({ azienda, onDone }) {
   const router = useRouter()
   const [selectedKey, setSelectedKey] = useState(null)
   const [name, setName] = useState('')
+  const [profilo, setProfilo] = useState('')
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState(null)
 
@@ -168,12 +170,12 @@ function AziendaSetupStep({ azienda, onDone }) {
   const cfg = MODULO_CONFIG.find(m => m.key === selectedKey)
 
   async function handleCrea() {
-    if (!name.trim() || !cfg) return
+    if (!name.trim() || !cfg || !profilo) return
     setCreating(true); setError(null)
     try {
       const entity = await apiFetch(cfg.apiBase, {
         method: 'POST',
-        body: JSON.stringify({ name: name.trim(), azienda_id: azienda.id }),
+        body: JSON.stringify({ name: name.trim(), azienda_id: azienda.id, profilo }),
       })
       router.push(`${cfg.editBase}/${entity.id}/info`)
     } catch (e) {
@@ -231,12 +233,15 @@ function AziendaSetupStep({ azienda, onDone }) {
             />
             <button
               onClick={handleCrea}
-              disabled={creating || !name.trim()}
-              style={pill({ background: cfg.color, color: '#fff', padding: '10px 20px', opacity: (!name.trim() || creating) ? 0.5 : 1 })}
+              disabled={creating || !name.trim() || !profilo}
+              style={pill({ background: cfg.color, color: '#fff', padding: '10px 20px', opacity: (!name.trim() || !profilo || creating) ? 0.5 : 1 })}
             >
               {creating ? 'Creazione…' : 'Crea →'}
             </button>
           </div>
+          {/* La categoria decide cosa il titolare trova acceso (STRATEGIA.md §6.1). */}
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#555', margin: '14px 0 6px' }}>Categoria *</label>
+          <SceltaCategoria tipo={cfg.key} value={profilo} onChange={setProfilo} style={{ width: '100%' }} />
           {error && <p style={{ color: '#c00', fontSize: 13, margin: '8px 0 0' }}>{error}</p>}
         </div>
       )}
@@ -395,6 +400,7 @@ function EntitaSection({ aziendaId, tipo, apiBase, editBase, label, labelPlural,
   const [error, setError] = useState(null)
   const [showCreate, setShowCreate] = useState(false)
   const [newName, setNewName] = useState('')
+  const [newProfilo, setNewProfilo] = useState('')
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState(null)
 
@@ -412,14 +418,16 @@ function EntitaSection({ aziendaId, tipo, apiBase, editBase, label, labelPlural,
   async function handleCreate(e) {
     e.preventDefault()
     if (!newName.trim()) { setCreateError('Il nome è obbligatorio'); return }
+    if (!newProfilo) { setCreateError('Scegli la categoria: decide cosa il titolare trova acceso.'); return }
     setCreating(true); setCreateError(null)
     try {
       const created = await apiFetch(apiBase, {
         method: 'POST',
-        body: JSON.stringify({ name: newName.trim(), azienda_id: aziendaId }),
+        body: JSON.stringify({ name: newName.trim(), azienda_id: aziendaId, profilo: newProfilo }),
       })
       setItems(prev => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)))
       setNewName('')
+      setNewProfilo('')
       setShowCreate(false)
     } catch (e) { setCreateError(e.message) }
     finally { setCreating(false) }
@@ -463,10 +471,11 @@ function EntitaSection({ aziendaId, tipo, apiBase, editBase, label, labelPlural,
             autoFocus
             style={inp}
           />
+          <SceltaCategoria tipo={tipo} value={newProfilo} onChange={setNewProfilo} style={{ flex: '1 1 180px' }} />
           <button type="submit" disabled={creating} style={pill({ background: accentColor, color: '#fff', padding: '8px 14px', fontSize: 12 })}>
             {creating ? 'Creazione…' : 'Crea'}
           </button>
-          <button type="button" onClick={() => { setShowCreate(false); setNewName(''); setCreateError(null) }} style={pill({ background: '#f0f0f0', color: '#333', padding: '8px 14px', fontSize: 12 })}>
+          <button type="button" onClick={() => { setShowCreate(false); setNewName(''); setNewProfilo(''); setCreateError(null) }} style={pill({ background: '#f0f0f0', color: '#333', padding: '8px 14px', fontSize: 12 })}>
             Annulla
           </button>
           {createError && <p style={{ color: '#c00', fontSize: 12, margin: '4px 0 0', width: '100%' }}>{createError}</p>}

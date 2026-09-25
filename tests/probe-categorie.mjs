@@ -108,6 +108,25 @@ try {
   ok(c('Menù') && !c('Vetrine') && !c('Funzioni'), 'Menù sì (ha contenuti), Vetrine no, Funzioni no (è nostra)')
   console.log(`    ${voci.length} voci: ${voci.join(' · ')}`)
 
+  console.log('\nalla nascita')
+  const crea = (token, corpo) => fetch(`${BASE}/api/attivita`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ azienda_id: aziendaId, ...corpo }) })
+  const n1 = await crea(sup.access_token, { name: `ZZ cat nasce ${marca}`, profilo: 'studio_professionale' })
+  const nata = await n1.json()
+  if (nata?.id) entita.push(nata.id)
+  const { data: nDopo } = await admin.from('entita').select('profilo, moduli').eq('id', nata?.id).maybeSingle()
+  ok(n1.status === 201 && nDopo?.profilo === 'studio_professionale' && nDopo?.moduli?.menu === false, `creata dal super_admin con la categoria: applicata subito (${n1.status}, ${nDopo?.profilo}, menù ${nDopo?.moduli?.menu})`)
+  ok((await leggiAzienda()) !== null, 'con tutte le entità in categoria, l\'azienda resta filtrata')
+  const n2 = await crea(titolare.access_token, { name: `ZZ cat titolare ${marca}`, profilo: 'studio_professionale' })
+  ok(n2.status === 403, `il titolare non può darle una categoria → ${n2.status} (atteso 403)`)
+  const prima = (await admin.from('entita').select('*', { count: 'exact', head: true }).eq('azienda_id', aziendaId)).count
+  const n3 = await crea(sup.access_token, { name: `ZZ cat inventata ${marca}`, profilo: 'categoria_che_non_esiste' })
+  const dopo = (await admin.from('entita').select('*', { count: 'exact', head: true }).eq('azienda_id', aziendaId)).count
+  ok(n3.status === 400 && dopo === prima, `categoria inventata → ${n3.status} (atteso 400) e nessuna entità creata (${prima} → ${dopo})`)
+  const n4 = await crea(titolare.access_token, { name: `ZZ cat senza ${marca}` })
+  const senza = await n4.json()
+  if (senza?.id) entita.push(senza.id)
+  ok(n4.status === 201 && (await leggiAzienda()) === null, `creata senza categoria (${n4.status}): l'azienda torna a vedere tutto finché non gliela si dà`)
+
   console.log('\nindietro e divieti')
   const { data: profilo } = await admin.from('profili_mestiere').select('id').eq('chiave', 'struttura_ricettiva').single()
   const del = await fetch(`${BASE}/api/admin/profili/${profilo.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${sup.access_token}` } })

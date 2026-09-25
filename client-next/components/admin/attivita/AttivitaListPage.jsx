@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { apiFetch } from '../../../lib/api'
 import { useAuth } from '../../../context/AuthContext'
+import SceltaCategoria from '@/components/admin/SceltaCategoria'
 
 const FORM_FIELDS = [
   { key: 'name',        label: 'Nome *', required: true },
@@ -142,6 +143,7 @@ function CreateForm({ isSuperAdmin, aziende, onSave, onCancel }) {
     e.preventDefault()
     if (!form.name?.trim()) { setError('Il nome è obbligatorio.'); return }
     if (isSuperAdmin && !form.azienda_id) { setError("Seleziona un'azienda."); return }
+    if (isSuperAdmin && !form.profilo) { setError('Scegli la categoria: decide cosa il titolare trova acceso.'); return }
     setSaving(true)
     setError(null)
     try {
@@ -166,6 +168,12 @@ function CreateForm({ isSuperAdmin, aziende, onSave, onCancel }) {
               <option value="">— Seleziona azienda —</option>
               {aziende.map(a => <option key={a.id} value={a.id}>{a.ragione_sociale}</option>)}
             </select>
+          </div>
+        )}
+        {isSuperAdmin && (
+          <div style={{ marginBottom: 14 }}>
+            <label style={lblStyle}>Categoria <span style={{ color: '#c00' }}>*</span></label>
+            <SceltaCategoria tipo="attivita" value={form.profilo} onChange={v => set('profilo', v)} style={inputStyle} />
           </div>
         )}
         {FORM_FIELDS.map(({ key, label, type = 'text', placeholder, required }) => (
