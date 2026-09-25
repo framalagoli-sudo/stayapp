@@ -21,6 +21,7 @@ import { chromium } from '@playwright/test'
 import { config } from 'dotenv'
 import { randomBytes } from 'crypto'
 import { readFileSync, writeFileSync, existsSync } from 'fs'
+import { cancellaAziendaDiProva } from './probe-auth.mjs'
 
 config({ path: '.env.test', quiet: true })
 const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY } = process.env
@@ -187,12 +188,10 @@ try {
   esito = 1
 } finally {
   if (browser) await browser.close().catch(() => {})
-  for (const id of Object.values(entita)) await admin.from('entita').delete().eq('id', id)
+  // Dalla route: le entità create dalla route hanno un sottodominio su Vercel,
+  // e solo la route lo stacca (probe-auth.mjs, cancellaAziendaDiProva).
+  await cancellaAziendaDiProva(aziendaId)
   for (const id of utenti) { try { await admin.auth.admin.deleteUser(id) } catch {} }
-  if (aziendaId) {
-    const { error } = await admin.from('aziende').delete().eq('id', aziendaId)
-    if (error) console.error('pulizia azienda:', error.message)
-  }
   console.log('[probe] pulito')
   process.exit(esito)
 }

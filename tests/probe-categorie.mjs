@@ -16,6 +16,7 @@ import { createClient } from '@supabase/supabase-js'
 import { chromium } from '@playwright/test'
 import { config } from 'dotenv'
 import { randomBytes } from 'crypto'
+import { cancellaAziendaDiProva } from './probe-auth.mjs'
 
 config({ path: '.env.test', quiet: true })
 const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY } = process.env
@@ -142,9 +143,10 @@ try {
   problemi++
 } finally {
   if (browser) await browser.close().catch(() => {})
-  for (const id of entita) await admin.from('entita').delete().eq('id', id)
+  // Dalla route: le entità nate dalla route hanno un sottodominio su Vercel, e
+  // solo la route lo stacca (probe-auth.mjs, cancellaAziendaDiProva).
+  await cancellaAziendaDiProva(aziendaId)
   for (const id of utenti) { try { await admin.auth.admin.deleteUser(id) } catch {} }
-  if (aziendaId) { await admin.from('domini').delete().eq('azienda_id', aziendaId); await admin.from('aziende').delete().eq('id', aziendaId) }
   console.log('[probe] pulito')
   console.log(problemi ? `\n${problemi} PROBLEMI` : '\nCATEGORIE A POSTO')
   process.exit(problemi ? 1 : 0)

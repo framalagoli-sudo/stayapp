@@ -88,3 +88,34 @@ export async function gotoAdmin(page, path) {
   await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {})
   await page.waitForTimeout(700)
 }
+
+/**
+ * Cancella un'azienda di prova PASSANDO DALLA ROUTE, come il pulsante del pannello.
+ *
+ * Le entità create dalle route in produzione ricevono un sottodominio registrato
+ * su Vercel. Cancellare l'azienda direttamente nel database toglie la riga di
+ * `domini` ma lascia l'indirizzo agganciato al progetto, invisibile: il 25/09 ce
+ * n'erano 21 così, lasciati da sonde e smoke. La route li stacca.
+ * Se la route non risponde si cancella comunque dal database, e lo si dice.
+ */
+export async function cancellaAziendaDiProva(aziendaId) {
+  if (!aziendaId) return
+  const email = `zz-pulizia-${Date.now()}@playwright.internal`
+  const password = randomBytes(24).toString('base64url') + 'Aa1!'
+  let uid = null
+  try {
+    const { data: u } = await admin.auth.admin.createUser({ email, password, email_confirm: true })
+    uid = u.user.id
+    await admin.from('profiles').upsert({ id: uid, role: 'super_admin', full_name: 'Pulizia' }, { onConflict: 'id' })
+    const anon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { autoRefreshToken: false, persistSession: false } })
+    const { data: s } = await anon.auth.signInWithPassword({ email, password })
+    const r = await fetch(`${TEST_URL}/api/aziende/${aziendaId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${s.session.access_token}` } })
+    if (!r.ok) throw new Error(`route ${r.status}`)
+  } catch (e) {
+    console.log(`  (pulizia dalla route non riuscita: ${e.message} — cancello dal database; controllare gli indirizzi su Vercel)`)
+    await admin.from('domini').delete().eq('azienda_id', aziendaId)
+    await admin.from('aziende').delete().eq('id', aziendaId)
+  } finally {
+    if (uid) await admin.auth.admin.deleteUser(uid).catch(() => {})
+  }
+}
