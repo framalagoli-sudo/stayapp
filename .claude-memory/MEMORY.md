@@ -11,6 +11,7 @@
 > 🔌 **Integrazioni**: [la sequenza del fornitore va letta tutta](reference_verifica_la_sequenza_del_fornitore.md) — il collegamento WhatsApp era «pronto» e non avrebbe inviato niente.
 
 - [🧾 A OGNI chiusura: aggiornare TUTTI i file di progetto](feedback_chiusura_sessione.md) — CLAUDE/FEATURES/PROGETTO/SECURITY, memoria + copia in .claude-memory; ognuno va APERTO, non supposto
+- [📧 Posta elettronica: uscita da SiteGround](project_posta_elettronica.md) — OltreNova su Zoho Lite (zoho.eu), Guru con inoltro Cloudflare, clienti intestati a loro; non tocchiamo i record Resend
 - [📅 Sessione 24–25/09 — menu col sito in cima, categorie per entità LIVE, buco domini chiuso](project_session_2026_09_24_25.md) — migration fino a 129; prossimo: onboarding
 - [🧭 Menu e categorie: regole e trappole](reference_categorie_e_menu.md) — costruisciMenu unica regola; categoria sull entità applicata come copia; verifica col 2FA FATTO, mai spento
 - [🗑️ Cancellare porta via tutto](reference_cancellazione_completa.md) — «è sua?» prima di ogni effetto; account compresi; le cancellazioni dirette lasciano hostname su Vercel

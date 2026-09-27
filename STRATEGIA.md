@@ -96,6 +96,22 @@ conferma esplicita, permessi per operazione e registro di ogni azione.
 SMS, app nativa, white-label, tedesco, Next 16, nuovi blocchi del sito, sezioni universali.
 Ogni funzione nuova è una cosa in più da tenere verificata.
 
+## 4.6 La posta elettronica (✅ deciso da Francesco il 27/09)
+
+«A me non interessa guadagnare rivendendo mail ma offrire un servizio semplice»; «meno cazzi
+abbiamo meglio è». OltreNova **non ospita e non rivende posta**, e per i domini vale lo stesso.
+- **OltreNova** (`oltrenova.com`, collegata alla piattaforma e all'app Meta): **Zoho Mail Lite**,
+  account aperto da **zoho.eu** (dati in UE). DNS già su Cloudflare; i record di Resend
+  (`send.oltrenova.com`, `resend._domainkey`) non si toccano.
+- **Guru Management** (3 indirizzi, tutto oggi su SiteGround, DNS compresi): inoltro gratuito con
+  **Cloudflare Email Routing**, oppure alias dentro lo Zoho di OltreNova se bisogna anche
+  rispondere da quegli indirizzi. Prima i DNS su Cloudflare, poi la posta, poi il sito.
+- **Clienti**: la posta la intestano **a loro** (Zoho Lite di default, Google/Microsoft se vogliono
+  la suite, inoltro Cloudflare se vogliono solo ricevere). Noi li indirizziamo, configuriamo i DNS e
+  aiutiamo la prima migrazione; niente fatture, niente loro posta nei nostri account.
+- Scartati: Qboxmail (per chi rivende), Migadu (limiti di invio condivisi fra clienti), Aruba (prezzi
+  promozionali, gestione dominio per dominio).
+
 ## 5. Ricavi: un'opzione già in mano (*da decidere*)
 Oggi Stripe Connect **non trattiene nulla** (scelta di Francesco). Con gli addebiti diretti si
 può aggiungere una commissione (application fee), per esempio l'1–2% sui biglietti: guadagni
