@@ -10,6 +10,14 @@ metadata:
 
 # Si riprende da qui
 
+## ▶️ 27/09 — POSTA ELETTRONICA: si fa alla prossima sessione (decisioni prese, vedi [[project-posta-elettronica]] e STRATEGIA §4.6)
+- **Da Francesco servono**: (1) elenco caselle attuali su `oltrenova.com`; (2) chi legge le 3 caselle di Guru Management (solo lui → 3 alias nello Zoho di OltreNova, gratis e può rispondere; altre persone → inoltro Cloudflare); (3) dove è registrato `gurumanagement.it`.
+- **OltreNova**: Francesco apre Zoho Mail Lite da **zoho.eu** (paese Italia), aggiunge `oltrenova.com`, mi manda il TXT di verifica → io su Cloudflare, MX ANCORA NO → migrazione IMAP da SiteGround (host IMAP + password) → MX/SPF/DKIM su Zoho, **record Resend intatti** (`send.oltrenova.com`, `resend._domainkey`) → prova dal vivo (arriva, parte, non in spam; `info@` usato da Meta) → seconda copia → solo allora spegnere SiteGround.
+- **Guru**: salvare le mail vecchie; DNS da SiteGround a Cloudflare (ricopiare i record); poi posta; poi sito su OltreNova; poi disdetta.
+- **Clienti nuovi**: posta intestata a loro (Zoho/Google/Microsoft o inoltro Cloudflare); noi DNS e prima migrazione. Pagina di istruzioni da mettere nell onboarding.
+- ⚠️ Garage 22 e Fondaco Narni hanno DNS su SiteGround e nessun MX: spostarli PRIMA di disdire SiteGround (Francesco: «ci penseremo poi»).
+- Dependabot #53 (supabase-js, lucide-react, dompurify, aws-sdk minori) è su main, NON ancora deployato: parte al prossimo deploy.
+
 ## ▶️ 24/09 — F0 + F1 dei preconfiguratori LIVE (sessione ancora aperta, docs da aggiornare alla chiusura)
 - **F0** `4820c0d7`: `FUNZIONI_AZIENDA` in `lib/funzioni.js` + menu da `VOCI`/`MENU_PER_RUOLO` in `AdminLayout.jsx`. Sonda `tests/probe-menu-pannello.mjs` + `menu-pannello.atteso.json` (14 scenari, identici in prod).
 - **Cancello** `65923449`: `verifica-regole.mjs` ora capisce il menu a dati (voce spostata ≠ tolta; chiave tolta da `voci:[…]` = tolta). Provato su ramo usa e getta.
