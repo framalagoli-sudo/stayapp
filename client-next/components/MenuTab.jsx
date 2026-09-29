@@ -104,11 +104,15 @@ export function DietaryBadge({ flag }) {
   )
 }
 
-export function AllergenFilterBar({ excluded, setExcluded, dietaryFilters, setDietaryFilters, subText, cardBg, borderColor, lang = 'it' }) {
+// Il marrone delle etichette allergeni è pensato per il fondo chiaro: su una
+// scheda scura sparisce, quindi lì si passa all'ambra.
+const ALLERGENI_SU = isDark => isDark ? '#FCD34D' : '#92400E'
+
+export function AllergenFilterBar({ excluded, setExcluded, dietaryFilters, setDietaryFilters, subText, cardBg, borderColor, isDark = false, lang = 'it' }) {
   const hasFilters = excluded.length > 0 || dietaryFilters.length > 0
   return (
     <div style={{ marginBottom: 14 }}>
-      <div style={{ fontSize: 10, color: subText, fontWeight: 700, marginBottom: 6, letterSpacing: 0.8, opacity: 0.7 }}>{lang === 'en' ? 'EXCLUDE ALLERGENS' : 'ESCLUDI ALLERGENI'}</div>
+      <div style={{ fontSize: 10, color: subText, fontWeight: 700, marginBottom: 6, letterSpacing: 0.8, opacity: isDark ? 1 : 0.7 }}>{lang === 'en' ? 'EXCLUDE ALLERGENS' : 'ESCLUDI ALLERGENI'}</div>
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         {EU_ALLERGENS.map(a => {
           const active = excluded.includes(a.key)
@@ -125,7 +129,7 @@ export function AllergenFilterBar({ excluded, setExcluded, dietaryFilters, setDi
         })}
       </div>
 
-      <div style={{ fontSize: 10, color: subText, fontWeight: 700, marginBottom: 6, marginTop: 10, letterSpacing: 0.8, opacity: 0.7 }}>{lang === 'en' ? 'SHOW ONLY' : 'MOSTRA SOLO'}</div>
+      <div style={{ fontSize: 10, color: subText, fontWeight: 700, marginBottom: 6, marginTop: 10, letterSpacing: 0.8, opacity: isDark ? 1 : 0.7 }}>{lang === 'en' ? 'SHOW ONLY' : 'MOSTRA SOLO'}</div>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {DIETARY_FLAGS.map(d => {
           const active = dietaryFilters.includes(d.key)
@@ -143,7 +147,7 @@ export function AllergenFilterBar({ excluded, setExcluded, dietaryFilters, setDi
 
       {hasFilters && (
         <button type="button" onClick={() => { setExcluded([]); setDietaryFilters([]) }}
-          style={{ fontSize: 11, color: '#92400E', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', marginTop: 4, fontWeight: 600 }}>
+          style={{ fontSize: 11, color: ALLERGENI_SU(isDark), background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', marginTop: 4, fontWeight: 600 }}>
           ✕ {lang === 'en' ? 'Clear filters' : 'Rimuovi filtri'} ({excluded.length + dietaryFilters.length})
         </button>
       )}
@@ -183,7 +187,7 @@ export function MenuItem({ item, primary, textColor, subText, isDark, radius, ca
             )}
             {allergens.length > 0 && (
               <div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: '#92400E', letterSpacing: 0.7, marginBottom: 3, opacity: 0.75 }}>{lang === 'en' ? 'ALLERGENS' : 'ALLERGENI'}</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: ALLERGENI_SU(isDark), letterSpacing: 0.7, marginBottom: 3, opacity: isDark ? 1 : 0.75 }}>{lang === 'en' ? 'ALLERGENS' : 'ALLERGENI'}</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                   {allergens.map(a => {
                     const obj = EU_ALLERGENS.find(e => e.key === a)
@@ -200,10 +204,10 @@ export function MenuItem({ item, primary, textColor, subText, isDark, radius, ca
 }
 
 // ─── AllergenLegend ───────────────────────────────────────────────────────────
-function AllergenLegend({ subText, cardBg, borderColor, lang = 'it' }) {
+function AllergenLegend({ subText, cardBg, borderColor, isDark = false, lang = 'it' }) {
   return (
     <div style={{ marginTop: 20, padding: '14px 16px', background: cardBg, borderRadius: 10, border: `1px solid ${borderColor}` }}>
-      <div style={{ fontSize: 10, fontWeight: 700, color: subText, letterSpacing: 0.7, marginBottom: 10, opacity: 0.7 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: subText, letterSpacing: 0.7, marginBottom: 10, opacity: isDark ? 1 : 0.7 }}>
         {lang === 'en' ? 'ALLERGENS — EU REG. 1169/2011' : 'ALLERGENI — REG. UE 1169/2011'}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '7px 10px' }}>
@@ -239,7 +243,7 @@ function CatalogoDetail({ selected, onBack, primary, textColor, subText, isDark,
         <span style={{ fontWeight: 700, fontSize: 16, color: textColor, fontFamily: headingFamily }}>{selected.name}</span>
       </div>
 
-      {showAllergens && <AllergenFilterBar excluded={excluded} setExcluded={setExcluded} dietaryFilters={dietaryFilters} setDietaryFilters={setDietaryFilters} subText={subText} cardBg={cardBg} borderColor={borderColor} lang={lang} />}
+      {showAllergens && <AllergenFilterBar excluded={excluded} setExcluded={setExcluded} dietaryFilters={dietaryFilters} setDietaryFilters={setDietaryFilters} subText={subText} cardBg={cardBg} borderColor={borderColor} isDark={isDark} lang={lang} />}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {(selected.categories || []).map(cat => {
@@ -274,7 +278,7 @@ function CatalogoDetail({ selected, onBack, primary, textColor, subText, isDark,
         })}
       </div>
 
-      {showAllergens && <AllergenLegend subText={subText} cardBg={cardBg} borderColor={borderColor} lang={lang} />}
+      {showAllergens && <AllergenLegend subText={subText} cardBg={cardBg} borderColor={borderColor} isDark={isDark} lang={lang} />}
 
       {lightbox && (
         <div onClick={() => setLightbox(null)}
@@ -389,9 +393,9 @@ export default function MenuTab({ menu, primary, textColor, subText, isDark, rad
   // Single menu
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      {showAllergens && <AllergenFilterBar excluded={excluded} setExcluded={setExcluded} dietaryFilters={dietaryFilters} setDietaryFilters={setDietaryFilters} subText={subText} cardBg={cardBg} borderColor={borderColor} lang={lang} />}
+      {showAllergens && <AllergenFilterBar excluded={excluded} setExcluded={setExcluded} dietaryFilters={dietaryFilters} setDietaryFilters={setDietaryFilters} subText={subText} cardBg={cardBg} borderColor={borderColor} isDark={isDark} lang={lang} />}
       {menu.map(cat => renderCategoryAccordion(cat))}
-      {showAllergens && <AllergenLegend subText={subText} cardBg={cardBg} borderColor={borderColor} lang={lang} />}
+      {showAllergens && <AllergenLegend subText={subText} cardBg={cardBg} borderColor={borderColor} isDark={isDark} lang={lang} />}
       {renderLightbox()}
     </div>
   )

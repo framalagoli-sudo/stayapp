@@ -11,7 +11,7 @@ function buildWaUrl(raw) {
 // Mostrato nel tab Chat quando sia WhatsApp che chatbot sono disponibili.
 // onChatbot → mostra il chatbot embedded
 // onWhatsApp → apre wa.me (gestito internamente)
-export default function ChatChoice({ whatsapp, entityName, primary, onChatbot }) {
+export default function ChatChoice({ whatsapp, entityName, primary, onPrimary = '#fff', onChatbot }) {
   const waUrl = buildWaUrl(whatsapp)
   if (!waUrl) return null
 
@@ -68,10 +68,10 @@ export default function ChatChoice({ whatsapp, entityName, primary, onChatbot })
         gap: 14,
         WebkitTapHighlightColor: 'transparent',
       }}>
-        <MessageCircle size={28} strokeWidth={1.5} color="white" style={{ flexShrink: 0 }} />
+        <MessageCircle size={28} strokeWidth={1.5} color={onPrimary} style={{ flexShrink: 0 }} />
         <div style={{ textAlign: 'left' }}>
-          <div style={{ color: '#fff', fontWeight: 700, fontSize: 15 }}>Assistente virtuale</div>
-          <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>Disponibile 24/7</div>
+          <div style={{ color: onPrimary, fontWeight: 700, fontSize: 15 }}>Assistente virtuale</div>
+          <div style={{ color: onPrimary, opacity: 0.8, fontSize: 12 }}>Disponibile 24/7</div>
         </div>
       </button>
     </div>

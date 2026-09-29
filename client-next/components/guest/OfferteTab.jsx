@@ -19,7 +19,7 @@ const campoStyle = (radius, bordo, sfondo, testo) => ({
 // Ora c'è una scheda sola e a raggruppare sono le **categorie che scrive il
 // cliente**. Così la domanda «come chiamiamo questa sezione» non ha più bisogno
 // di una risposta nostra: la risposta è come la chiama lui.
-export default function OfferteTab({ offerte = [], propertyId, numeroWhatsapp = null, primary, textColor, subText, isDark, radius }) {
+export default function OfferteTab({ offerte = [], propertyId, numeroWhatsapp = null, primary, onPrimary = '#fff', textColor, subText, isDark, radius }) {
   const [booking,   setBooking]   = useState(null)
   const [bookState, setBookState] = useState('idle')
   const [persons,   setPersons]   = useState(1)
@@ -130,7 +130,7 @@ export default function OfferteTab({ offerte = [], propertyId, numeroWhatsapp = 
           )}
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 14 }}>
             {g.voci.map(exc => (
-              <ExcursionCard key={exc.id} exc={exc} primary={primary} textColor={textColor} subText={subText}
+              <ExcursionCard key={exc.id} exc={exc} primary={primary} onPrimary={onPrimary} textColor={textColor} subText={subText}
                 cardBg={cardBg} cardShadow={cardShadow} radius={radius} onBook={() => openBooking(exc)} />
             ))}
           </div>
@@ -150,7 +150,7 @@ export default function OfferteTab({ offerte = [], propertyId, numeroWhatsapp = 
                 <p style={{ fontWeight: 600, color: primary, margin: '0 0 6px' }}>Richiesta inviata!</p>
                 <p style={{ color: subText, fontSize: 13, margin: '0 0 16px' }}>Il personale la contatterà per confermare la disponibilità.</p>
                 <button onClick={closeBooking}
-                  style={{ padding: '10px 28px', background: primary, color: '#fff', border: 'none', borderRadius: radius, cursor: 'pointer', fontWeight: 600 }}>
+                  style={{ padding: '10px 28px', background: primary, color: onPrimary, border: 'none', borderRadius: radius, cursor: 'pointer', fontWeight: 600 }}>
                   Chiudi
                 </button>
               </div>
@@ -207,7 +207,7 @@ export default function OfferteTab({ offerte = [], propertyId, numeroWhatsapp = 
                     Annulla
                   </button>
                   <button onClick={() => sendBooking('email')} disabled={bookState === 'loading' || !pronto}
-                    style={{ flex: '2 1 140px', padding: '12px', background: pronto ? primary : '#bbb', color: '#fff', border: 'none', borderRadius: radius, cursor: pronto ? 'pointer' : 'not-allowed', fontSize: 14, fontWeight: 700 }}>
+                    style={{ flex: '2 1 140px', padding: '12px', background: pronto ? primary : '#bbb', color: pronto ? onPrimary : '#fff', border: 'none', borderRadius: radius, cursor: pronto ? 'pointer' : 'not-allowed', fontSize: 14, fontWeight: 700 }}>
                     {bookState === 'loading' ? 'Invio…' : 'Invia richiesta'}
                   </button>
                 </div>
@@ -230,7 +230,7 @@ export default function OfferteTab({ offerte = [], propertyId, numeroWhatsapp = 
   )
 }
 
-function ExcursionCard({ exc, primary, textColor, subText, cardBg, cardShadow, radius, onBook }) {
+function ExcursionCard({ exc, primary, onPrimary = '#fff', textColor, subText, cardBg, cardShadow, radius, onBook }) {
   const includesList = exc.includes
     ? exc.includes.split(',').map(s => s.trim()).filter(Boolean)
     : []
@@ -303,7 +303,7 @@ function ExcursionCard({ exc, primary, textColor, subText, cardBg, cardShadow, r
 
       <div style={{ padding: '0 16px 14px' }}>
         <button type="button" onClick={onBook}
-          style={{ width: '100%', padding: '10px', background: primary, color: '#fff', border: 'none', borderRadius: radius / 2 || 6, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+          style={{ width: '100%', padding: '10px', background: primary, color: onPrimary, border: 'none', borderRadius: radius / 2 || 6, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
           Prenota
         </button>
       </div>

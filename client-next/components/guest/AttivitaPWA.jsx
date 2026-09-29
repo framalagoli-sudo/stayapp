@@ -20,6 +20,7 @@ import MenuTab from '@/components/MenuTab'
 import OfferteTab from '@/components/guest/OfferteTab'
 import { sezioniOspite, etichettaSezione } from '@/lib/funzioni'
 import { focalValido } from '@/lib/formati-foto'
+import { paletteApp } from '@/lib/palette-app'
 import { HEADING_FAMILIES, BODY_FAMILIES, caricaFont as loadFont } from '@/lib/fonts'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -115,18 +116,10 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
   )
 
   const theme         = { ...DEFAULT_THEME, ...(attivita.theme || {}) }
-  const primary       = theme.primaryColor
-  const bgColor       = theme.bgColor
-  const textColor     = theme.textColor
+  const { brand, primary, onPrimary, iconColor, bgColor, textColor, subText, isDark, cardBg, surfaceBg, navBg, borderColor } = paletteApp(theme)
   const headingFamily = HEADING_FAMILIES[theme.fontHeading] || HEADING_FAMILIES.playfair
   const bodyFamily    = BODY_FAMILIES[theme.fontBody]       || BODY_FAMILIES.inter
   const radius        = BORDER_RADII[theme.borderStyle]     ?? 8
-  const isDark        = bgColor === '#1a1a2e'
-  const subText       = isDark ? '#aaa' : '#777'
-  const cardBg        = isDark ? '#1e1e32' : '#fff'
-  const surfaceBg     = isDark ? '#252538' : '#f7f7f9'
-  const navBg         = isDark ? '#12121f' : '#ffffff'
-  const borderColor   = isDark ? '#2a2a3e' : '#efefef'
 
   const aMods = { ...(attivita.pwa?.modules || {}) }
   const hasGallery  = (attivita.gallery || []).length > 0
@@ -136,7 +129,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
   // accetta spazi ne il segno piu.
   const numeroWa = String(attivita.whatsapp || attivita.minisito?.social?.whatsapp || '')
     .replace(/[^0-9]/g, '') || null
-  const sp = { numeroWa, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, lang }
+  const sp = { numeroWa, brand, primary, onPrimary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, lang }
 
   const homeSections = aMods.home_sections || {}
   // Un'attività può essere una palestra, un bar, uno studio: il menù e le
@@ -195,18 +188,18 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 100%)' }} />
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 20px 20px' }}>{headerContent}</div>
       {langToggle}
-      <InstallButton primaryColor={primary} entityName={attivita.name} />
+      <InstallButton primaryColor={brand} entityName={attivita.name} />
     </div>
   ) : (
     <div style={{
       position: 'relative',
       background: theme.headerStyle === 'gradient'
-        ? `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)` : primary,
+        ? `linear-gradient(135deg, ${brand} 0%, ${brand}cc 100%)` : brand,
       padding: '32px 20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       {headerContent}
       {langToggle}
-      <InstallButton primaryColor={primary} entityName={attivita.name} />
+      <InstallButton primaryColor={brand} entityName={attivita.name} />
     </div>
   )
 
@@ -255,14 +248,14 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
         .chip-bar::-webkit-scrollbar { display:none; }
       `}</style>
 
-      <CookieBanner primaryColor={primary} privacyUrl={`/a/${attivita.slug}/privacy`} cookieUrl={`/a/${attivita.slug}/cookie`} lang={lang} />
-      <InstallBanner primaryColor={primary} entityName={attivita.name} />
-      <div className="a-shell" style={{ '--icon-color': theme.iconColor || primary }}>
+      <CookieBanner primaryColor={brand} privacyUrl={`/a/${attivita.slug}/privacy`} cookieUrl={`/a/${attivita.slug}/cookie`} lang={lang} />
+      <InstallBanner primaryColor={brand} entityName={attivita.name} />
+      <div className="a-shell" style={{ '--icon-color': iconColor }}>
         <div className="a-app" style={{ fontFamily: bodyFamily, color: textColor }}>
 
           {/* Compact bar */}
           <div className="a-compact" style={{ maxHeight: compactBar ? 44 : 0 }}>
-            <div style={{ background: primary, height: 44, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10 }}>
+            <div style={{ background: brand, height: 44, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10 }}>
               {appLogo && (
                 <img src={appLogo} alt="logo" style={{ height: 24, maxWidth: 60, objectFit: 'contain', flexShrink: 0 }} />
               )}
@@ -284,7 +277,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
                       fontSize: 13, fontWeight: activeChip === key ? 700 : 400,
                       border: `1.5px solid ${activeChip === key ? primary : borderColor}`,
                       background: activeChip === key ? primary : 'transparent',
-                      color: activeChip === key ? '#fff' : subText,
+                      color: activeChip === key ? onPrimary : subText,
                       transition: 'all 0.15s', WebkitTapHighlightColor: 'transparent',
                     }}>
                       {label}
@@ -312,7 +305,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
                   onChatbot={() => setChatMode('chatbot')}
                 />
               ) : (
-                <ChatbotWidget chatbot={attivita.chatbot} primaryColor={primary} entityTipo="attivita" entityId={attivita.id} embedded={true} lang={lang} />
+                <ChatbotWidget chatbot={attivita.chatbot} primaryColor={brand} entityTipo="attivita" entityId={attivita.id} embedded={true} lang={lang} />
               )}
             </div>
           )}
@@ -348,7 +341,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
 }
 
 // ─── HOME ─────────────────────────────────────────────────────────────────────
-function AHomePage({ attivita, aMods, hasGallery, hasServizi, onExplore, domain = null, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, borderColor, lang = 'it' }) {
+function AHomePage({ attivita, aMods, hasGallery, hasServizi, onExplore, domain = null, primary, onPrimary = '#fff', textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, borderColor, lang = 'it' }) {
   const galCount = (attivita.gallery || []).length
   const svcCount = (attivita.services || []).length
   const homeSections = aMods.home_sections || {}
@@ -375,20 +368,20 @@ function AHomePage({ attivita, aMods, hasGallery, hasServizi, onExplore, domain 
           boxShadow: `0 8px 32px ${primary}44`,
         }}>
           {attivita.description && (
-            <p style={{ margin: (attivita.schedule || attivita.address) ? '0 0 14px' : 0, fontSize: 14, color: 'rgba(255,255,255,0.88)', lineHeight: 1.6 }}>
+            <p style={{ margin: (attivita.schedule || attivita.address) ? '0 0 14px' : 0, fontSize: 14, color: velato(onPrimary, 0.88), lineHeight: 1.6 }}>
               {attivita.description}
             </p>
           )}
           {attivita.schedule && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: attivita.address ? 8 : 0 }}>
-              <Clock size={14} strokeWidth={1.5} color="rgba(255,255,255,0.7)" />
-              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)' }}>{attivita.schedule}</span>
+              <Clock size={14} strokeWidth={1.5} color={velato(onPrimary, 0.7)} />
+              <span style={{ fontSize: 13, color: velato(onPrimary, 0.85) }}>{attivita.schedule}</span>
             </div>
           )}
           {attivita.address && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <MapPin size={14} strokeWidth={1.5} color="rgba(255,255,255,0.7)" />
-              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)' }}>{attivita.address}</span>
+              <MapPin size={14} strokeWidth={1.5} color={velato(onPrimary, 0.7)} />
+              <span style={{ fontSize: 13, color: velato(onPrimary, 0.85) }}>{attivita.address}</span>
             </div>
           )}
         </div>
@@ -408,7 +401,7 @@ function AHomePage({ attivita, aMods, hasGallery, hasServizi, onExplore, domain 
                   minHeight: isAlone ? 100 : 140,
                   display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
                   padding: '14px 16px', position: 'relative',
-                  background: photo ? 'transparent' : isDark ? '#1e1e32' : `${primary}0d`,
+                  background: photo ? 'transparent' : isDark ? cardBg : `${primary}0d`,
                   boxShadow: isDark ? '0 2px 16px rgba(0,0,0,0.35)' : '0 2px 16px rgba(0,0,0,0.07)',
                   border: isDark ? `1px solid ${borderColor}` : 'none',
                 }}>
@@ -553,7 +546,7 @@ function AServiziContent({ attivita, primary, textColor, subText, isDark, radius
 }
 
 // ─── RICHIESTA ────────────────────────────────────────────────────────────────
-function ARichiestaTab({ attivita, primary, textColor, subText, isDark, radius, headingFamily, cardBg, borderColor, lang = 'it' }) {
+function ARichiestaTab({ attivita, primary, onPrimary = '#fff', textColor, subText, isDark, radius, headingFamily, cardBg, borderColor, lang = 'it' }) {
   const [form,    setForm]    = useState({ nome: '', email: '', messaggio: '' })
   const [sending, setSending] = useState(false)
   const [sent,    setSent]    = useState(false)
@@ -625,7 +618,7 @@ function ARichiestaTab({ attivita, primary, textColor, subText, isDark, radius, 
           {error && <p style={{ color: '#e53e3e', fontSize: 13, margin: '0 0 12px' }}>{error}</p>}
           <Turnstile onToken={setTurnstileToken} />
           <button type="submit" disabled={sending}
-            style={{ width: '100%', padding: 14, background: primary, color: '#fff', border: 'none', borderRadius: radius, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+            style={{ width: '100%', padding: 14, background: primary, color: onPrimary, border: 'none', borderRadius: radius, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
             {sending ? tr('sending', lang) : tr('send_message', lang)}
           </button>
         </form>
@@ -691,4 +684,10 @@ function AContactRow({ Icon, label, value, href, primary, textColor, subText, bo
       <span style={{ fontSize: 18, color: primary, flexShrink: 0, opacity: 0.6 }}>›</span>
     </a>
   )
+}
+
+// La scritta sopra il colore principale, un po' trasparente: bianca o scura a
+// seconda di cosa si legge su quel colore.
+function velato(su, a) {
+  return su === '#111111' ? `rgba(17,17,17,${a})` : `rgba(255,255,255,${a})`
 }

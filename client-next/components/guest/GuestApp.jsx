@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
 import { ricco } from '@/lib/testo-ricco'
 import { rapportoDi, focalValido } from '@/lib/formati-foto'
+import { paletteApp } from '@/lib/palette-app'
 import { readableOn } from '@/lib/blockTypes'
 import { postiEvento } from '@/lib/posti-evento'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
@@ -173,25 +174,17 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
 
   const modules       = { ...DEFAULT_MODULES, ...(property.modules || {}) }
   const theme         = { ...DEFAULT_THEME,   ...(property.theme   || {}) }
-  const primary       = theme.primaryColor
-  const bgColor       = theme.bgColor
-  const textColor     = theme.textColor
+  const { brand, primary, onPrimary, iconColor, bgColor, textColor, subText, isDark, cardBg, surfaceBg, navBg, borderColor } = paletteApp(theme)
   const headingFamily = HEADING_FAMILIES[theme.fontHeading] || HEADING_FAMILIES.playfair
   const bodyFamily    = BODY_FAMILIES[theme.fontBody]       || BODY_FAMILIES.inter
   const radius        = BORDER_RADII[theme.borderStyle]     ?? 8
-  const isDark        = bgColor === '#1a1a2e'
-  const subText       = isDark ? '#aaa' : '#777'
-  const cardBg        = isDark ? '#1e1e32' : '#fff'
-  const surfaceBg     = isDark ? '#252538' : '#f7f7f9'
-  const navBg         = isDark ? '#12121f' : '#ffffff'
-  const borderColor   = isDark ? '#2a2a3e' : '#efefef'
 
   // Il numero del titolare per il pulsante WhatsApp: sta nel campo dedicato
   // o fra i social del minisito, e va ridotto a sole cifre perche wa.me non
   // accetta spazi ne il segno piu.
   const numeroWa = String(property.whatsapp || property.minisito?.social?.whatsapp || '')
     .replace(/[^0-9]/g, '') || null
-  const sp = { numeroWa, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, lang }
+  const sp = { numeroWa, brand, primary, onPrimary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, lang }
 
   const NAV_ITEMS = [
     ...BASE_NAV.filter(item => !item.module || modules[item.module]).map(item => ({ ...item, label: tr(item.labelKey, lang) })),
@@ -262,18 +255,18 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%)' }} />
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 20px 18px' }}>{headerContent}</div>
       {langToggle}
-      <InstallButton primaryColor={primary} entityName={property.name} />
+      <InstallButton primaryColor={brand} entityName={property.name} />
     </div>
   ) : (
     <div style={{
       position: 'relative',
       background: theme.headerStyle === 'gradient'
-        ? `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)` : primary,
+        ? `linear-gradient(135deg, ${brand} 0%, ${brand}cc 100%)` : brand,
       padding: '28px 20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       {headerContent}
       {langToggle}
-      <InstallButton primaryColor={primary} entityName={property.name} />
+      <InstallButton primaryColor={brand} entityName={property.name} />
     </div>
   )
 
@@ -314,15 +307,15 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
         .chip-bar::-webkit-scrollbar { display:none; }
       `}</style>
 
-      <CookieBanner primaryColor={primary} privacyUrl={`/s/${slug}/privacy`} cookieUrl={`/s/${slug}/cookie`} lang={lang} />
-      <InstallBanner primaryColor={primary} entityName={property.name} />
-      <div className="g-shell" style={{ '--icon-color': theme.iconColor || primary }}>
+      <CookieBanner primaryColor={brand} privacyUrl={`/s/${slug}/privacy`} cookieUrl={`/s/${slug}/cookie`} lang={lang} />
+      <InstallBanner primaryColor={brand} entityName={property.name} />
+      <div className="g-shell" style={{ '--icon-color': iconColor }}>
         <div className="g-app" style={{ fontFamily: bodyFamily, color: textColor, position: 'relative' }}>
 
           {/* ── Compact name bar (appears after scroll) ── */}
           <div className="g-compact" style={{ maxHeight: compactBar ? 44 : 0 }}>
             <div style={{
-              background: primary,
+              background: brand,
               height: 44, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10,
             }}>
               {appLogo && (
@@ -347,7 +340,7 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
                       fontSize: 13, fontWeight: activeChip === key ? 700 : 400,
                       border: `1.5px solid ${activeChip === key ? primary : borderColor}`,
                       background: activeChip === key ? primary : 'transparent',
-                      color: activeChip === key ? '#fff' : subText,
+                      color: activeChip === key ? onPrimary : subText,
                       transition: 'all 0.15s', WebkitTapHighlightColor: 'transparent',
                     }}>
                       {label}
@@ -380,7 +373,7 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
                   onChatbot={() => setChatMode('chatbot')}
                 />
               ) : (
-                <ChatbotWidget chatbot={property.chatbot} primaryColor={primary} entityTipo="struttura" entityId={property.id} embedded={true} lang={lang} />
+                <ChatbotWidget chatbot={property.chatbot} primaryColor={brand} entityTipo="struttura" entityId={property.id} embedded={true} lang={lang} />
               )}
             </div>
           )}
@@ -417,7 +410,7 @@ export default function GuestApp({ forceSlug, property: propertyProp, domain = n
 }
 
 // ─── HOME ─────────────────────────────────────────────────────────────────────
-function HomePage({ property, upcomingEventi = [], modules, onExplore, domain = null, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, lang = 'it' }) {
+function HomePage({ property, upcomingEventi = [], modules, onExplore, domain = null, primary, onPrimary = '#fff', textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, lang = 'it' }) {
   const hasServices   = (property.services  || []).length > 0
   const hasGallery    = (property.gallery   || []).length > 0
   // Una scheda sola: le due di prima erano parole del mondo alberghiero.
@@ -456,7 +449,7 @@ function HomePage({ property, upcomingEventi = [], modules, onExplore, domain = 
           boxShadow: `0 8px 32px ${primary}44`,
         }}>
           {property.description && (
-            <p style={{ margin: '0 0 16px', fontSize: 14, color: 'rgba(255,255,255,0.88)', lineHeight: 1.6 }}>
+            <p style={{ margin: '0 0 16px', fontSize: 14, color: velato(onPrimary, 0.88), lineHeight: 1.6 }}>
               {property.description}
             </p>
           )}
@@ -464,14 +457,14 @@ function HomePage({ property, upcomingEventi = [], modules, onExplore, domain = 
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 16 }}>
               {property.checkin_time && (
                 <div>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Check-in</div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: '#fff', fontFamily: headingFamily, lineHeight: 1.1, overflowWrap: 'anywhere' }}>{property.checkin_time}</div>
+                  <div style={{ fontSize: 10, color: velato(onPrimary, 0.65), textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Check-in</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: onPrimary, fontFamily: headingFamily, lineHeight: 1.1, overflowWrap: 'anywhere' }}>{property.checkin_time}</div>
                 </div>
               )}
               {property.checkout_time && (
                 <div>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Check-out</div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: '#fff', fontFamily: headingFamily, lineHeight: 1.1, overflowWrap: 'anywhere' }}>{property.checkout_time}</div>
+                  <div style={{ fontSize: 10, color: velato(onPrimary, 0.65), textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Check-out</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: onPrimary, fontFamily: headingFamily, lineHeight: 1.1, overflowWrap: 'anywhere' }}>{property.checkout_time}</div>
                 </div>
               )}
             </div>
@@ -493,7 +486,7 @@ function HomePage({ property, upcomingEventi = [], modules, onExplore, domain = 
                   minHeight: isAlone ? 100 : 140,
                   display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
                   padding: '14px 16px', position: 'relative',
-                  background: photo ? 'transparent' : isDark ? '#1e1e32' : `${primary}0d`,
+                  background: photo ? 'transparent' : isDark ? cardBg : `${primary}0d`,
                   boxShadow: isDark ? '0 2px 16px rgba(0,0,0,0.35)' : '0 2px 16px rgba(0,0,0,0.07)',
                   border: isDark ? `1px solid ${borderColor}` : 'none',
                 }}>
@@ -605,7 +598,7 @@ function EsploraPage({ property, upcomingEventi = [], activeChip, numeroWa = nul
 }
 
 // ─── INFO ─────────────────────────────────────────────────────────────────────
-function InfoPage({ property, modules, primary, textColor, subText, isDark, radius, headingFamily, cardBg, borderColor, lang = 'it' }) {
+function InfoPage({ property, modules, primary, onPrimary = '#fff', textColor, subText, isDark, radius, headingFamily, cardBg, borderColor, lang = 'it' }) {
   const [copied, setCopied] = useState(false)
   const shadow = isDark ? 'none' : '0 2px 16px rgba(0,0,0,0.07)'
 
@@ -629,7 +622,7 @@ function InfoPage({ property, modules, primary, textColor, subText, isDark, radi
                 <div style={{ fontWeight: 600, fontSize: 15, letterSpacing: 2, color: textColor }}>{property.wifi_password}</div>
               </div>
               <button onClick={copyPassword}
-                style={{ padding: '10px 20px', background: copied ? '#22c55e' : primary, color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0 }}>
+                style={{ padding: '10px 20px', background: copied ? '#22c55e' : primary, color: copied ? '#fff' : onPrimary, border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0 }}>
                 {copied
                   ? <><Check size={14} strokeWidth={2.5} style={{ verticalAlign: 'middle', marginRight: 3 }} />{tr('copied', lang)}</>
                   : (lang === 'en' ? 'Copy' : 'Copia')}
@@ -907,7 +900,7 @@ function ContactRow({ Icon, label, value, href, primary, textColor, subText, bor
 }
 
 // ─── CHAT ─────────────────────────────────────────────────────────────────────
-function ChatPage({ propertyId, propertyName, primary, textColor, subText, isDark, radius, cardBg, borderColor, lang = 'it' }) {
+function ChatPage({ propertyId, propertyName, primary, onPrimary = '#fff', textColor, subText, isDark, radius, cardBg, borderColor, lang = 'it' }) {
   const [messages,  setMessages]  = useState([])
   const [guestName, setGuestName] = useState('')
   const [nameSet,   setNameSet]   = useState(false)
@@ -999,7 +992,7 @@ function ChatPage({ propertyId, propertyName, primary, textColor, subText, isDar
             placeholder={tr('name_opt', lang)}
             style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: `1px solid ${borderColor}`, fontSize: 16, boxSizing: 'border-box', background: cardBg, color: textColor, marginBottom: 10 }}
           />
-          <button type="submit" style={{ width: '100%', padding: '12px', background: primary, color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+          <button type="submit" style={{ width: '100%', padding: '12px', background: primary, color: onPrimary, border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
             Inizia la chat
           </button>
           <button type="button" onClick={() => setNameSet(true)} style={{ width: '100%', padding: '10px', background: 'none', border: 'none', color: subText, fontSize: 13, cursor: 'pointer', marginTop: 4 }}>
@@ -1074,4 +1067,10 @@ function ChatPage({ propertyId, propertyName, primary, textColor, subText, isDar
       </form>
     </div>
   )
+}
+
+// La scritta sopra il colore principale, un po' trasparente: bianca o scura a
+// seconda di cosa si legge su quel colore.
+function velato(su, a) {
+  return su === '#111111' ? `rgba(17,17,17,${a})` : `rgba(255,255,255,${a})`
 }

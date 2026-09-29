@@ -21,6 +21,7 @@ import ChatbotWidget from '@/components/ChatbotWidget'
 import ChatChoice from '@/components/ChatChoice'
 import BookingWidget from '@/components/BookingWidget'
 import { focalValido } from '@/lib/formati-foto'
+import { paletteApp } from '@/lib/palette-app'
 import { HEADING_FAMILIES, BODY_FAMILIES, caricaFont as loadFont } from '@/lib/fonts'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -124,18 +125,10 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
   )
 
   const theme         = { ...DEFAULT_THEME, ...(ristorante.theme || {}) }
-  const primary       = theme.primaryColor
-  const bgColor       = theme.bgColor
-  const textColor     = theme.textColor
+  const { brand, primary, onPrimary, iconColor, bgColor, textColor, subText, isDark, cardBg, surfaceBg, navBg, borderColor } = paletteApp(theme)
   const headingFamily = HEADING_FAMILIES[theme.fontHeading] || HEADING_FAMILIES.playfair
   const bodyFamily    = BODY_FAMILIES[theme.fontBody]       || BODY_FAMILIES.inter
   const radius        = BORDER_RADII[theme.borderStyle]     ?? 8
-  const isDark        = bgColor === '#1a1a2e'
-  const subText       = isDark ? '#aaa' : '#777'
-  const cardBg        = isDark ? '#1e1e32' : '#fff'
-  const surfaceBg     = isDark ? '#252538' : '#f7f7f9'
-  const navBg         = isDark ? '#12121f' : '#ffffff'
-  const borderColor   = isDark ? '#2a2a3e' : '#efefef'
 
   const rModules = { pwa_active: true, gallery: true, allergens: true, info: true, booking: true, ...(ristorante.modules || {}) }
   const hasGallery = (ristorante.gallery || []).length > 0
@@ -144,7 +137,7 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
   // accetta spazi ne il segno piu.
   const numeroWa = String(ristorante.whatsapp || ristorante.minisito?.social?.whatsapp || '')
     .replace(/[^0-9]/g, '') || null
-  const sp = { numeroWa, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, showAllergens: rModules.allergens, lang }
+  const sp = { numeroWa, brand, primary, onPrimary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, showAllergens: rModules.allergens, lang }
 
   // Chips per Esplora
   const menuCount = (ristorante.menu || []).reduce((n, c) => {
@@ -210,18 +203,18 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 100%)' }} />
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 20px 20px' }}>{headerContent}</div>
       {langToggle}
-      <InstallButton primaryColor={primary} entityName={ristorante.name} />
+      <InstallButton primaryColor={brand} entityName={ristorante.name} />
     </div>
   ) : (
     <div style={{
       position: 'relative',
       background: theme.headerStyle === 'gradient'
-        ? `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)` : primary,
+        ? `linear-gradient(135deg, ${brand} 0%, ${brand}cc 100%)` : brand,
       padding: '32px 20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       {headerContent}
       {langToggle}
-      <InstallButton primaryColor={primary} entityName={ristorante.name} />
+      <InstallButton primaryColor={brand} entityName={ristorante.name} />
     </div>
   )
 
@@ -270,14 +263,14 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
         .chip-bar::-webkit-scrollbar { display:none; }
       `}</style>
 
-      <CookieBanner primaryColor={primary} privacyUrl={`/r/${slug}/privacy`} cookieUrl={`/r/${slug}/cookie`} lang={lang} />
-      <InstallBanner primaryColor={primary} entityName={ristorante.name} />
-      <div className="r-shell" style={{ '--icon-color': theme.iconColor || primary }}>
+      <CookieBanner primaryColor={brand} privacyUrl={`/r/${slug}/privacy`} cookieUrl={`/r/${slug}/cookie`} lang={lang} />
+      <InstallBanner primaryColor={brand} entityName={ristorante.name} />
+      <div className="r-shell" style={{ '--icon-color': iconColor }}>
         <div className="r-app" style={{ fontFamily: bodyFamily, color: textColor }}>
 
           {/* Compact bar */}
           <div className="r-compact" style={{ maxHeight: compactBar ? 44 : 0 }}>
-            <div style={{ background: primary, height: 44, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10 }}>
+            <div style={{ background: brand, height: 44, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10 }}>
               {appLogo && (
                 <img src={appLogo} alt="logo"
                   style={{ height: 24, maxWidth: 60, objectFit: 'contain', flexShrink: 0 }} />
@@ -300,7 +293,7 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
                       fontSize: 13, fontWeight: activeChip === key ? 700 : 400,
                       border: `1.5px solid ${activeChip === key ? primary : borderColor}`,
                       background: activeChip === key ? primary : 'transparent',
-                      color: activeChip === key ? '#fff' : subText,
+                      color: activeChip === key ? onPrimary : subText,
                       transition: 'all 0.15s', WebkitTapHighlightColor: 'transparent',
                     }}>
                       {label}
@@ -325,10 +318,11 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
                   whatsapp={ristorante.minisito.social.whatsapp}
                   entityName={ristorante.name}
                   primary={primary}
+                  onPrimary={onPrimary}
                   onChatbot={() => setChatMode('chatbot')}
                 />
               ) : (
-                <ChatbotWidget chatbot={ristorante.chatbot} primaryColor={primary} entityTipo="ristorante" entityId={ristorante.id} embedded={true} lang={lang} />
+                <ChatbotWidget chatbot={ristorante.chatbot} primaryColor={brand} entityTipo="ristorante" entityId={ristorante.id} embedded={true} lang={lang} />
               )}
             </div>
           )}
@@ -364,8 +358,9 @@ export default function RestaurantApp({ forceSlug, ristorante: ristoranteProp, d
 }
 
 // ─── HOME ─────────────────────────────────────────────────────────────────────
-function RHomePage({ ristorante, rModules, hasGallery, menuCount, onExplore, domain = null, primary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, borderColor, lang = 'it' }) {
+function RHomePage({ ristorante, rModules, hasGallery, menuCount, onExplore, domain = null, primary, onPrimary = '#fff', textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, borderColor, lang = 'it' }) {
   const galCount = (ristorante.gallery || []).length
+  const su = a => velato(onPrimary, a)
   const homeSections = rModules.home_sections || {}
 
   const allCards = {
@@ -391,14 +386,14 @@ function RHomePage({ ristorante, rModules, hasGallery, menuCount, onExplore, dom
           boxShadow: `0 8px 32px ${primary}44`,
         }}>
           {ristorante.description && (
-            <p style={{ margin: ristorante.schedule ? '0 0 14px' : 0, fontSize: 14, color: 'rgba(255,255,255,0.88)', lineHeight: 1.6 }}>
+            <p style={{ margin: ristorante.schedule ? '0 0 14px' : 0, fontSize: 14, color: su(0.88), lineHeight: 1.6 }}>
               {ristorante.description}
             </p>
           )}
           {ristorante.schedule && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Clock size={14} strokeWidth={1.5} color="rgba(255,255,255,0.7)" />
-              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>{ristorante.schedule}</span>
+              <Clock size={14} strokeWidth={1.5} color={su(0.7)} />
+              <span style={{ fontSize: 13, color: su(0.85), lineHeight: 1.5 }}>{ristorante.schedule}</span>
             </div>
           )}
         </div>
@@ -421,7 +416,7 @@ function RHomePage({ ristorante, rModules, hasGallery, menuCount, onExplore, dom
                     minHeight: isAlone ? 100 : 140,
                     display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
                     padding: '14px 16px', position: 'relative',
-                    background: photo ? 'transparent' : isDark ? '#1e1e32' : `${primary}0d`,
+                    background: photo ? 'transparent' : isDark ? cardBg : `${primary}0d`,
                     boxShadow: isDark ? '0 2px 16px rgba(0,0,0,0.35)' : '0 2px 16px rgba(0,0,0,0.07)',
                     border: isDark ? `1px solid ${borderColor}` : 'none',
                   }}>
@@ -483,9 +478,9 @@ function RHomePage({ ristorante, rModules, hasGallery, menuCount, onExplore, dom
 }
 
 // ─── ESPLORA ──────────────────────────────────────────────────────────────────
-function REsploraPage({ ristorante, activeChip, numeroWa = null, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, showAllergens, lang = 'it' }) {
+function REsploraPage({ ristorante, activeChip, numeroWa = null, primary, onPrimary = '#fff', textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, showAllergens, lang = 'it' }) {
   const [lightbox, setLightbox] = useState(null)
-  const sp = { primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, showAllergens, lang }
+  const sp = { primary, onPrimary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, showAllergens, lang }
 
   if (!activeChip) return (
     <div style={{ padding: 40, textAlign: 'center', color: subText }}>
@@ -531,7 +526,7 @@ function GalleriaTab({ gallery, primary, radius, onOpen }) {
 }
 
 // ─── PRENOTA ──────────────────────────────────────────────────────────────────
-function PrenotaTab({ ristorante, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, lang = 'it' }) {
+function PrenotaTab({ ristorante, brand, primary, onPrimary = '#fff', textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, lang = 'it' }) {
   const bookingUrl = ristorante.minisito?.booking_url
   if (bookingUrl) {
     return (
@@ -540,7 +535,7 @@ function PrenotaTab({ ristorante, primary, textColor, subText, isDark, radius, h
         <h2 style={{ fontFamily: headingFamily, fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 8px' }}>{tr('book_table', lang)}</h2>
         <p style={{ fontSize: 14, color: subText, margin: '0 0 24px', lineHeight: 1.6 }}>{tr('book_choose_day', lang)}</p>
         <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
-          style={{ display: 'inline-block', padding: '14px 36px', background: primary, color: '#fff', borderRadius: 50, fontSize: 16, fontWeight: 700, textDecoration: 'none', boxShadow: `0 6px 24px ${primary}44` }}>
+          style={{ display: 'inline-block', padding: '14px 36px', background: primary, color: onPrimary, borderRadius: 50, fontSize: 16, fontWeight: 700, textDecoration: 'none', boxShadow: `0 6px 24px ${primary}44` }}>
           {tr('book_now', lang)} →
         </a>
       </div>
@@ -550,13 +545,13 @@ function PrenotaTab({ ristorante, primary, textColor, subText, isDark, radius, h
     <div style={{ padding: '20px 16px 28px' }}>
       <h2 style={{ fontFamily: headingFamily, fontSize: 20, fontWeight: 700, color: textColor, margin: '0 0 4px' }}>{tr('book_table', lang)}</h2>
       <p style={{ fontSize: 14, color: subText, margin: '0 0 24px' }}>{tr('book_choose_service', lang)}</p>
-      <BookingWidget entityTipo="ristorante" entityId={ristorante.id} primaryColor={primary} privacyUrl={`/r/${ristorante.slug}/privacy`} />
+      <BookingWidget entityTipo="ristorante" entityId={ristorante.id} primaryColor={brand} privacyUrl={`/r/${ristorante.slug}/privacy`} />
     </div>
   )
 }
 
 // ─── INFO ─────────────────────────────────────────────────────────────────────
-function InfoTab({ ristorante, primary, textColor, subText, isDark, radius, headingFamily, cardBg, borderColor, lang = 'it' }) {
+function InfoTab({ ristorante, primary, onPrimary = '#fff', textColor, subText, isDark, radius, headingFamily, cardBg, borderColor, lang = 'it' }) {
   const shadow = isDark ? 'none' : '0 2px 16px rgba(0,0,0,0.07)'
 
   return (
@@ -564,7 +559,7 @@ function InfoTab({ ristorante, primary, textColor, subText, isDark, radius, head
 
       {ristorante.description && (
         <div style={{ background: `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)`, borderRadius: 20, padding: '20px 22px', marginBottom: 24, boxShadow: `0 8px 28px ${primary}44` }}>
-          <p style={{ margin: 0, fontSize: 14, color: 'rgba(255,255,255,0.92)', lineHeight: 1.7 }}>{ristorante.description}</p>
+          <p style={{ margin: 0, fontSize: 14, color: velato(onPrimary, 0.92), lineHeight: 1.7 }}>{ristorante.description}</p>
         </div>
       )}
 
@@ -604,6 +599,12 @@ function InfoTab({ ristorante, primary, textColor, subText, isDark, radius, head
 }
 
 // ─── Shared ───────────────────────────────────────────────────────────────────
+// La scritta sopra il colore principale, un po' trasparente: bianca o scura a
+// seconda di cosa si legge su quel colore.
+function velato(su, a) {
+  return su === '#111111' ? `rgba(17,17,17,${a})` : `rgba(255,255,255,${a})`
+}
+
 function InfoSection({ Icon, title, primary, headingFamily, textColor, children }) {
   return (
     <section style={{ marginBottom: 24 }}>

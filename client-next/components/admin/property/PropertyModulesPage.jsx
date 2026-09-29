@@ -1,6 +1,7 @@
 ﻿'use client'
 import { useState } from 'react'
 import { useProperty } from '../../../hooks/useProperty'
+import SfondoApp from '../SfondoApp'
 
 const NAV_MODULE_DEFS = [
   { key: 'info',         label: 'Tab Informazioni',        desc: "Tab Info nell'app — orari, WiFi, indirizzo" },
@@ -78,6 +79,8 @@ export default function PropertyModulesPage() {
         {saving && <span style={{ fontSize: 13, color: '#888' }}>Salvataggio…</span>}
       </div>
       <p style={descStyle}>Configura le sezioni e le funzionalità visibili ai clienti nell'app QR.</p>
+
+      <SfondoApp theme={property.theme || {}} onSave={theme => save({ theme })} />
 
       {/* ── Navigazione ── */}
       <SectionTitle>Navigazione — Tab</SectionTitle>

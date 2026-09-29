@@ -2,8 +2,8 @@
 import { iconLucide } from '@/components/admin/ServicesSection'
 import { Clock } from 'lucide-react'
 
-export default function ServicesTab({ services = [], primary, textColor, subText, isDark, radius }) {
-  const cardBg     = isDark ? '#2a2a3e' : '#fff'
+export default function ServicesTab({ services = [], primary, textColor, subText, isDark, radius, cardBg: cardBgApp, borderColor }) {
+  const cardBg     = cardBgApp || (isDark ? '#2a2a3e' : '#fff')
   const cardShadow = isDark ? 'none' : '0 2px 16px rgba(0,0,0,0.07)'
 
   if (!services.length) {
@@ -16,7 +16,7 @@ export default function ServicesTab({ services = [], primary, textColor, subText
         <div key={s.id || i} style={{
           background: cardBg, borderRadius: radius, padding: '20px 12px 16px',
           boxShadow: cardShadow, textAlign: 'center',
-          border: isDark ? '1px solid #3a3a5e' : 'none',
+          border: isDark ? `1px solid ${borderColor || '#3a3a5e'}` : 'none',
         }}>
           {(() => { const Icon = iconLucide(s.icon); return <Icon size={34} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} style={{ marginBottom: 10 }} /> })()}
           <div style={{ fontSize: 13, fontWeight: 700, color: textColor, marginBottom: s.description || s.hours ? 6 : 0 }}>
