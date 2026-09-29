@@ -8,6 +8,7 @@ import {
   ChefHat, Beef, Cookie, Leaf, Waves, Sun, Moon, Sunset,
   Star, Sparkles, Droplets, Grape, IceCream2, Sandwich, Salad, CupSoda,
 } from 'lucide-react'
+import { coloriAllergene } from '@/lib/palette-app'
 
 const CATALOG_ICON_MAP = {
   'utensils':         Utensils,
@@ -85,10 +86,11 @@ export function normalizeAllergens(val) {
 }
 
 // ─── Chips & badge ────────────────────────────────────────────────────────────
-export function AllergenChip({ label, icon: Icon }) {
+export function AllergenChip({ label, icon: Icon, stile = 'classico', isDark = false }) {
+  const c = coloriAllergene(stile, isDark)
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A', whiteSpace: 'nowrap' }}>
-      {Icon && <Icon size={10} strokeWidth={1.5} color="#92400E" />}
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, ...c, whiteSpace: 'nowrap' }}>
+      {Icon && <Icon size={10} strokeWidth={1.5} color={c.color} />}
       {label}
     </span>
   )
@@ -156,13 +158,13 @@ export function AllergenFilterBar({ excluded, setExcluded, dietaryFilters, setDi
 }
 
 // ─── MenuItem ─────────────────────────────────────────────────────────────────
-export function MenuItem({ item, primary, textColor, subText, isDark, radius, cardBg, borderColor, onOpenPhoto, showAllergens, lang = 'it' }) {
-  const shadow = isDark ? 'none' : '0 1px 8px rgba(0,0,0,0.06)'
+export function MenuItem({ item, primary, textColor, subText, isDark, radius, cardBg, borderColor, onOpenPhoto, showAllergens, stileAllergeni, lang = 'it' }) {
+  const shadow = `var(--ombra-scheda, ${isDark ? 'none' : '0 1px 8px rgba(0,0,0,0.06)'})`
   const allergens = showAllergens ? normalizeAllergens(item.allergens) : []
   const dietary   = showAllergens ? (item.dietary || []) : []
   const hasBadges = allergens.length > 0 || dietary.length > 0
   return (
-    <div style={{ background: cardBg, borderRadius: radius, overflow: 'hidden', boxShadow: shadow, border: `1px solid ${borderColor}`, display: 'flex' }}>
+    <div style={{ background: cardBg, borderRadius: radius, overflow: 'hidden', boxShadow: shadow, border: `var(--bordo-scheda, 1px solid ${borderColor})`, display: 'flex' }}>
       {item.photo_url && (
         <div onClick={onOpenPhoto} style={{ width: 90, flexShrink: 0, position: 'relative', cursor: onOpenPhoto ? 'pointer' : 'default' }}>
           <img src={item.photo_url} alt={item.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -191,7 +193,7 @@ export function MenuItem({ item, primary, textColor, subText, isDark, radius, ca
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                   {allergens.map(a => {
                     const obj = EU_ALLERGENS.find(e => e.key === a)
-                    return obj ? <AllergenChip key={a} label={allergenLabel(obj, lang)} icon={obj.icon} /> : null
+                    return obj ? <AllergenChip key={a} label={allergenLabel(obj, lang)} icon={obj.icon} stile={stileAllergeni} isDark={isDark} /> : null
                   })}
                 </div>
               </div>
@@ -226,7 +228,7 @@ function AllergenLegend({ subText, cardBg, borderColor, isDark = false, lang = '
 }
 
 // ─── CatalogoDetail ───────────────────────────────────────────────────────────
-function CatalogoDetail({ selected, onBack, primary, textColor, subText, isDark, radius, headingFamily, cardBg, borderColor, showAllergens, excluded, setExcluded, dietaryFilters, setDietaryFilters, lang = 'it' }) {
+function CatalogoDetail({ selected, onBack, primary, textColor, subText, isDark, radius, headingFamily, cardBg, borderColor, showAllergens, stileAllergeni, excluded, setExcluded, dietaryFilters, setDietaryFilters, lang = 'it' }) {
   const firstId = selected.categories?.[0]?.id || null
   const [openCat,  setOpenCat]  = useState(firstId)
   const [lightbox, setLightbox] = useState(null)
@@ -269,7 +271,7 @@ function CatalogoDetail({ selected, onBack, primary, textColor, subText, isDark,
               {isOpen && (
                 <div className="fade-up" style={{ padding: '10px 12px 14px', display: 'flex', flexDirection: 'column', gap: 10, background: isDark ? cardBg : '#fafafa' }}>
                   {activeItems.map(item => (
-                    <MenuItem key={item.id} item={item} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} cardBg={cardBg} borderColor={borderColor} showAllergens={showAllergens} onOpenPhoto={item.photo_url ? () => setLightbox(item.photo_url) : null} lang={lang} />
+                    <MenuItem key={item.id} item={item} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} cardBg={cardBg} borderColor={borderColor} showAllergens={showAllergens} stileAllergeni={stileAllergeni} onOpenPhoto={item.photo_url ? () => setLightbox(item.photo_url) : null} lang={lang} />
                   ))}
                 </div>
               )}
@@ -295,7 +297,7 @@ function CatalogoDetail({ selected, onBack, primary, textColor, subText, isDark,
 }
 
 // ─── MenuTab (export default) ─────────────────────────────────────────────────
-export default function MenuTab({ menu, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, showAllergens, lang = 'it' }) {
+export default function MenuTab({ menu, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, showAllergens, stileAllergeni, lang = 'it' }) {
   const isCatalogo = menu.length > 0 && menu[0].type === 'catalogo'
   const [selectedId, setSelectedId] = useState(null)
   const firstCatId = !isCatalogo ? (menu[0]?.id || null) : null
@@ -338,7 +340,7 @@ export default function MenuTab({ menu, primary, textColor, subText, isDark, rad
         {isOpen && (
           <div className="fade-up" style={{ padding: '10px 12px 14px', display: 'flex', flexDirection: 'column', gap: 10, background: isDark ? cardBg : '#fafafa' }}>
             {activeItems.map(item => (
-              <MenuItem key={item.id} item={item} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} cardBg={cardBg} borderColor={borderColor} showAllergens={showAllergens} onOpenPhoto={item.photo_url ? () => setLightbox(item.photo_url) : null} lang={lang} />
+              <MenuItem key={item.id} item={item} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} cardBg={cardBg} borderColor={borderColor} showAllergens={showAllergens} stileAllergeni={stileAllergeni} onOpenPhoto={item.photo_url ? () => setLightbox(item.photo_url) : null} lang={lang} />
             ))}
           </div>
         )}
@@ -371,7 +373,7 @@ export default function MenuTab({ menu, primary, textColor, subText, isDark, rad
               const activeCount = (c.categories || []).reduce((n, cat) => n + (cat.items || []).filter(i => i.active !== false).length, 0)
               return (
                 <button key={c.id} type="button" onClick={() => setSelectedId(c.id)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 20px', background: cardBg, borderRadius: radius || 14, border: `1px solid ${borderColor}`, cursor: 'pointer', textAlign: 'left', boxShadow: isDark ? 'none' : '0 2px 12px rgba(0,0,0,0.06)', WebkitTapHighlightColor: 'transparent' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 20px', background: cardBg, borderRadius: radius || 14, border: `1px solid ${borderColor}`, cursor: 'pointer', textAlign: 'left', boxShadow: `var(--ombra-scheda, ${isDark ? 'none' : '0 2px 12px rgba(0,0,0,0.06)'})`, WebkitTapHighlightColor: 'transparent' }}>
                   <div style={{ width: 48, height: 48, borderRadius: 12, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {(() => { const Icon = CATALOG_ICON_MAP[c.icon] || Utensils; return <Icon size={22} strokeWidth={1.5} color={primary} /> })()}
                   </div>
@@ -387,7 +389,7 @@ export default function MenuTab({ menu, primary, textColor, subText, isDark, rad
         </div>
       )
     }
-    return <CatalogoDetail selected={selected} onBack={() => setSelectedId(null)} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} headingFamily={headingFamily} cardBg={cardBg} borderColor={borderColor} showAllergens={showAllergens} excluded={excluded} setExcluded={setExcluded} dietaryFilters={dietaryFilters} setDietaryFilters={setDietaryFilters} lang={lang} />
+    return <CatalogoDetail selected={selected} onBack={() => setSelectedId(null)} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} headingFamily={headingFamily} cardBg={cardBg} borderColor={borderColor} showAllergens={showAllergens} stileAllergeni={stileAllergeni} excluded={excluded} setExcluded={setExcluded} dietaryFilters={dietaryFilters} setDietaryFilters={setDietaryFilters} lang={lang} />
   }
 
   // Single menu

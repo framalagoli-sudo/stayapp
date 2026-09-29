@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useAttivita } from '../../../hooks/useAttivita'
-import SfondoApp from '../SfondoApp'
+import AspettoApp from '../AspettoApp'
 
 const DEFAULT_HOME_SECTIONS = { servizi: true, galleria: true }
 const DEFAULT_HOME_ORDER     = ['servizi', 'galleria']
@@ -114,7 +114,7 @@ export default function AttivitaModuliPage() {
         </div>
       </div>
 
-      <SfondoApp theme={attivita.theme || {}} onSave={theme => save({ theme })} />
+      <AspettoApp theme={attivita.theme || {}} onSave={theme => save({ theme })} />
 
       {/* Schede in evidenza Home */}
       <div style={{ background: '#fff', borderRadius: 12, padding: '20px 28px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>

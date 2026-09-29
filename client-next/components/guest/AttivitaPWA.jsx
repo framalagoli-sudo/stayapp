@@ -84,10 +84,10 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
 
   useEffect(() => {
     if (!attivita) return
-    const t = { ...DEFAULT_THEME, ...(attivita.theme || {}) }
+    const t = paletteApp({ ...DEFAULT_THEME, ...(attivita.theme || {}) })
     loadFont(t.fontHeading)
     loadFont(t.fontBody)
-  }, [attivita?.theme?.fontHeading, attivita?.theme?.fontBody])
+  }, [attivita?.theme?.fontHeading, attivita?.theme?.fontBody, attivita?.theme?.app?.fontTitoli, attivita?.theme?.app?.fontTesto])
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = 0
@@ -116,10 +116,10 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
   )
 
   const theme         = { ...DEFAULT_THEME, ...(attivita.theme || {}) }
-  const { brand, primary, onPrimary, iconColor, bgColor, textColor, subText, isDark, cardBg, surfaceBg, navBg, borderColor } = paletteApp(theme)
-  const headingFamily = HEADING_FAMILIES[theme.fontHeading] || HEADING_FAMILIES.playfair
-  const bodyFamily    = BODY_FAMILIES[theme.fontBody]       || BODY_FAMILIES.inter
-  const radius        = BORDER_RADII[theme.borderStyle]     ?? 8
+  const { brand, primary, onPrimary, iconColor, bgColor, textColor, subText, isDark, cardBg, surfaceBg, navBg, borderColor, variabili, fontHeading, fontBody, borderStyle, intestazione, stileAllergeni } = paletteApp(theme)
+  const headingFamily = HEADING_FAMILIES[fontHeading] || HEADING_FAMILIES.playfair
+  const bodyFamily    = BODY_FAMILIES[fontBody]       || BODY_FAMILIES.inter
+  const radius        = BORDER_RADII[borderStyle]     ?? 8
 
   const aMods = { ...(attivita.pwa?.modules || {}) }
   const hasGallery  = (attivita.gallery || []).length > 0
@@ -129,7 +129,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
   // accetta spazi ne il segno piu.
   const numeroWa = String(attivita.whatsapp || attivita.minisito?.social?.whatsapp || '')
     .replace(/[^0-9]/g, '') || null
-  const sp = { numeroWa, brand, primary, onPrimary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, lang }
+  const sp = { numeroWa, brand, primary, onPrimary, textColor, subText, isDark, radius, headingFamily, bgColor, cardBg, surfaceBg, borderColor, stileAllergeni, lang }
 
   const homeSections = aMods.home_sections || {}
   // Un'attività può essere una palestra, un bar, uno studio: il menù e le
@@ -179,7 +179,10 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
     </button>
   )
 
-  const AppHeader = attivita.cover_url ? (
+  // L'intestazione: la foto se c'è e il cliente non ha chiesto il colore.
+  const conFoto = attivita.cover_url && intestazione !== 'pieno' && intestazione !== 'sfumato'
+  const sfumata = intestazione === 'sfumato' || (intestazione !== 'pieno' && theme.headerStyle === 'gradient')
+  const AppHeader = conFoto ? (
     <div style={{ position: 'relative', height: 220, overflow: 'hidden' }}>
       {/* Striscia alta 200px: taglia molto, quindi il cliente sceglie quale parte
           resta visibile. Il valore passa dal controllo, mai grezzo nel CSS. */}
@@ -193,7 +196,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
   ) : (
     <div style={{
       position: 'relative',
-      background: theme.headerStyle === 'gradient'
+      background: sfumata
         ? `linear-gradient(135deg, ${brand} 0%, ${brand}cc 100%)` : brand,
       padding: '32px 20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
@@ -250,7 +253,7 @@ export default function AttivitaPWA({ attivita: attivitaProp, forceSlug, domain 
 
       <CookieBanner primaryColor={brand} privacyUrl={`/a/${attivita.slug}/privacy`} cookieUrl={`/a/${attivita.slug}/cookie`} lang={lang} />
       <InstallBanner primaryColor={brand} entityName={attivita.name} />
-      <div className="a-shell" style={{ '--icon-color': iconColor }}>
+      <div className="a-shell" style={{ '--icon-color': iconColor, ...variabili }}>
         <div className="a-app" style={{ fontFamily: bodyFamily, color: textColor }}>
 
           {/* Compact bar */}
@@ -402,8 +405,8 @@ function AHomePage({ attivita, aMods, hasGallery, hasServizi, onExplore, domain 
                   display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
                   padding: '14px 16px', position: 'relative',
                   background: photo ? 'transparent' : isDark ? cardBg : `${primary}0d`,
-                  boxShadow: isDark ? '0 2px 16px rgba(0,0,0,0.35)' : '0 2px 16px rgba(0,0,0,0.07)',
-                  border: isDark ? `1px solid ${borderColor}` : 'none',
+                  boxShadow: `var(--ombra-scheda, ${isDark ? '0 2px 16px rgba(0,0,0,0.35)' : '0 2px 16px rgba(0,0,0,0.07)'})`,
+                  border: `var(--bordo-scheda, ${isDark ? `1px solid ${borderColor}` : 'none'})`,
                 }}>
                   {photo && (
                     <>
@@ -437,9 +440,9 @@ function AHomePage({ attivita, aMods, hasGallery, hasServizi, onExplore, domain 
               const base = domain ? 'https://www.oltrenova.com' : ''
               const href = base + (c.tipo === 'ristorante' ? `/r/${c.slug}` : c.tipo === 'attivita' ? `/a/${c.slug}` : `/s/${c.slug}`)
               const typeLabel = c.tipo === 'ristorante' ? tr('label_ristorante', lang) : c.tipo === 'attivita' ? tr('label_attivita', lang) : tr('label_struttura', lang)
-              const shadow = isDark ? 'none' : '0 2px 12px rgba(0,0,0,0.07)'
+              const shadow = `var(--ombra-scheda, ${isDark ? 'none' : '0 2px 12px rgba(0,0,0,0.07)'})`
               return (
-                <a key={c.slug} href={href} style={{ display: 'flex', alignItems: 'center', gap: 14, background: isDark ? cardBg : '#fff', borderRadius: radius, padding: '14px 16px', boxShadow: shadow, textDecoration: 'none', border: isDark ? `1px solid ${borderColor}` : 'none' }}>
+                <a key={c.slug} href={href} style={{ display: 'flex', alignItems: 'center', gap: 14, background: cardBg, borderRadius: radius, padding: '14px 16px', boxShadow: shadow, textDecoration: 'none', border: `var(--bordo-scheda, ${isDark ? `1px solid ${borderColor}` : 'none'})` }}>
                   {c.logo_url
                     ? <img src={c.logo_url} alt="" style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
                     : <div style={{ width: 44, height: 44, borderRadius: 10, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><span style={{ fontSize: 20 }}>🏢</span></div>
@@ -460,7 +463,7 @@ function AHomePage({ attivita, aMods, hasGallery, hasServizi, onExplore, domain 
 }
 
 // ─── ESPLORA ──────────────────────────────────────────────────────────────────
-function AEsploraPage({ attivita, activeChip, numeroWa = null, primary, textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, lang = 'it' }) {
+function AEsploraPage({ attivita, activeChip, numeroWa = null, primary, onPrimary = '#fff', textColor, subText, isDark, radius, headingFamily, cardBg, surfaceBg, borderColor, stileAllergeni, lang = 'it' }) {
   const [lightbox, setLightbox] = useState(null)
 
   if (!activeChip) return (
@@ -479,10 +482,10 @@ function AEsploraPage({ attivita, activeChip, numeroWa = null, primary, textColo
           <AServiziContent attivita={attivita} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} headingFamily={headingFamily} cardBg={cardBg} borderColor={borderColor} lang={lang} />
         )}
         {activeChip === 'menu' && (
-          <MenuTab menu={attivita.menu || []} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} headingFamily={headingFamily} cardBg={cardBg} surfaceBg={surfaceBg} borderColor={borderColor} showAllergens lang={lang} />
+          <MenuTab menu={attivita.menu || []} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} headingFamily={headingFamily} cardBg={cardBg} surfaceBg={surfaceBg} borderColor={borderColor} stileAllergeni={stileAllergeni} showAllergens lang={lang} />
         )}
         {activeChip === 'offerte' && (
-          <OfferteTab offerte={attivita.offerte} propertyId={attivita.id} numeroWhatsapp={numeroWa} primary={primary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} lang={lang} />
+          <OfferteTab offerte={attivita.offerte} propertyId={attivita.id} numeroWhatsapp={numeroWa} primary={primary} onPrimary={onPrimary} textColor={textColor} subText={subText} isDark={isDark} radius={radius} lang={lang} />
         )}
         {activeChip === 'galleria' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -514,7 +517,7 @@ function AEsploraPage({ attivita, activeChip, numeroWa = null, primary, textColo
 
 function AServiziContent({ attivita, primary, textColor, subText, isDark, radius, cardBg, borderColor, lang = 'it' }) {
   const servizi = attivita.services || []
-  const shadow = isDark ? 'none' : '0 1px 6px rgba(0,0,0,0.07)'
+  const shadow = `var(--ombra-scheda, ${isDark ? 'none' : '0 1px 6px rgba(0,0,0,0.07)'})`
 
   if (!servizi.length) return (
     <div style={{ textAlign: 'center', color: subText, paddingTop: 32 }}>
@@ -629,7 +632,7 @@ function ARichiestaTab({ attivita, primary, onPrimary = '#fff', textColor, subTe
 
 // ─── INFO ─────────────────────────────────────────────────────────────────────
 function AInfoPage({ attivita, primary, textColor, subText, isDark, radius, headingFamily, cardBg, borderColor, lang = 'it' }) {
-  const shadow = isDark ? 'none' : '0 2px 16px rgba(0,0,0,0.07)'
+  const shadow = `var(--ombra-scheda, ${isDark ? 'none' : '0 2px 16px rgba(0,0,0,0.07)'})`
 
   return (
     <div style={{ padding: '20px 16px 28px' }}>

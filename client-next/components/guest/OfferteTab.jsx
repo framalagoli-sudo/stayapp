@@ -30,7 +30,7 @@ export default function OfferteTab({ offerte = [], propertyId, numeroWhatsapp = 
   const [erroreTesto, setErroreTesto] = useState('')
 
   const cardBg     = isDark ? '#2a2a3e' : '#fff'
-  const cardShadow = isDark ? 'none' : '0 2px 12px rgba(0,0,0,0.07)'
+  const cardShadow = `var(--ombra-scheda, ${isDark ? 'none' : '0 2px 12px rgba(0,0,0,0.07)'})`
   const inputBg    = isDark ? '#1a1a2e' : '#f8f8f8'
   const inputBorder= isDark ? '#3a3a5e' : '#ddd'
 

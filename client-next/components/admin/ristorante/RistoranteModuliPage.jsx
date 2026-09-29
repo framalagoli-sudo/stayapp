@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useRistorante } from '../../../hooks/useRistorante'
-import SfondoApp from '../SfondoApp'
+import AspettoApp from '../AspettoApp'
 
 const DEFAULT_MODULES = {
   pwa_active: true,
@@ -67,7 +67,7 @@ export default function RistoranteModuliPage() {
       </div>
       <p style={descStyle}>Configura le sezioni visibili ai clienti nell'app QR del ristorante.</p>
 
-      <SfondoApp theme={ristorante.theme || {}} onSave={theme => save({ theme })} />
+      <AspettoApp theme={ristorante.theme || {}} onSave={theme => save({ theme })} />
 
       <div style={cardStyle}>
         {MODULE_CONFIG.map(({ key, label, desc }) => (
