@@ -14,6 +14,7 @@ import {
   Repeat, Layers, FileText, LayoutList, ShoppingBag, Award, ClipboardList,
 } from 'lucide-react'
 import StatoSitoBreve from '@/components/admin/StatoSitoBreve'
+import IniziaQui from '@/components/admin/IniziaQui'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -269,6 +270,10 @@ export default function DashboardPage() {
           {new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
         </p>
       </div>
+
+      {/* ── Inizia qui: i passi che mancano, solo al titolare. Sparisce da
+          solo quando è tutto fatto. ── */}
+      {isAdminAzienda && <IniziaQui />}
 
       {/* ── Alert email mancante ── */}
       {!aziLoading && missingEmail.length > 0 && (

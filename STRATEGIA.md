@@ -96,6 +96,15 @@ conferma esplicita, permessi per operazione e registro di ogni azione.
 SMS, app nativa, white-label, tedesco, Next 16, nuovi blocchi del sito, sezioni universali.
 Ogni funzione nuova è una cosa in più da tenere verificata.
 
+## 4.5-bis Il messaggio: una persona vera, sempre (Francesco, 30/09)
+
+«Uno dei punti di forza sarà che ci sarà sempre io e uno staff umano — dovremmo metterlo nella
+nuova landing che faremo.» Va messo **in evidenza** nella landing nuova di OltreNova: dietro la
+piattaforma c'è Francesco con uno staff umano, non un call center né un chatbot. È coerente con
+la strada B («fatto con te») ed è quello che i grandi del settore non offrono al prezzo di un
+piccolo esercente. ⚠️ Vale anche quando si aprirà la registrazione: il self-serve non deve
+cancellare la promessa (un contatto umano raggiungibile dal pannello).
+
 ## 4.6 La posta elettronica (✅ deciso da Francesco il 27/09)
 
 «A me non interessa guadagnare rivendendo mail ma offrire un servizio semplice»; «meno cazzi
