@@ -11,7 +11,7 @@
 > 🔌 **Integrazioni**: [la sequenza del fornitore va letta tutta](reference_verifica_la_sequenza_del_fornitore.md) — il collegamento WhatsApp era «pronto» e non avrebbe inviato niente.
 
 - [🧾 A OGNI chiusura: aggiornare TUTTI i file di progetto](feedback_chiusura_sessione.md) — CLAUDE/FEATURES/PROGETTO/SECURITY, memoria + copia in .claude-memory; ognuno va APERTO, non supposto
-- [📅 Sessione 29–30/09 — aspetto dell app del QR, Inizia qui LIVE](project_session_2026_09_29_30.md) — prossimo: Meta, poi onboarding v2 (registrazione aperta), poi posta
+- [📅 Sessione 29–30/09 — aspetto app QR, Inizia qui, WhatsApp solo super_admin, posti riservati chiusi](project_session_2026_09_29_30.md) — prossimo: Meta a schermo, poi onboarding v2, posta in attesa
 - [🧑‍🤝‍🧑 Landing nuova: sempre una persona vera](project_landing_persona_umana.md) — Francesco + staff umano come punto di forza, in evidenza (30/09)
 - [📧 Posta elettronica: uscita da SiteGround](project_posta_elettronica.md) — OltreNova su Zoho Lite (zoho.eu), Guru con inoltro Cloudflare, clienti intestati a loro; non tocchiamo i record Resend
 - [📅 Sessione 24–25/09 — menu col sito in cima, categorie per entità LIVE, buco domini chiuso](project_session_2026_09_24_25.md) — migration fino a 129; prossimo: onboarding

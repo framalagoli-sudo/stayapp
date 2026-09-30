@@ -59,7 +59,7 @@ vero è di solito 1,5 volte, perché provando dal vivo esce sempre qualcosa.
 | Cosa | Effort | Note |
 |---|---|---|
 | Abbonamento OltreNova su **Stripe Billing** (piani, prova, rinnovi, carta scaduta, sospensione morbida) | 2–3 | Bloccato sulla commercialista, non sul codice |
-| **Onboarding «Inizia qui»** (dati → sito generato dall'AI → pubblica → dominio) | 2–3 | Oggi un'azienda nuova trova decine di voci a zero. Vedi §6.1: coincide con i preconfiguratori |
+| **Onboarding «Inizia qui»** (dati → sito generato dall'AI → pubblica → dominio) | 2–3 | ✅ **Prima versione LIVE il 30/09** per i clienti invitati (i passi che mancano, dai dati veri). Resta la parte per la registrazione aperta: «che attività hai?» con le nostre categorie — base già scritta in `OnboardingPage.jsx` (giugno, mai collegato) |
 | **Report mensile al cliente** (visite, contatti, prenotazioni, incassi) | 1 | Il cliente vede cosa gli rende e non disdice. Dati già tutti presenti |
 | **Registrazione aperta** (verifica email, Turnstile, limiti) | 1 | Solo dopo che l'onboarding regge |
 

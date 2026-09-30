@@ -28,6 +28,11 @@ Dove possibile ognuno ha un test in `tests/smoke/security.spec.js`.
    `super_admin` può indicare un `azienda_id` diverso dal proprio. Mai fidarsi di `body.azienda_id`.
 4. **Zero leak di campi sensibili** negli endpoint pubblici/guest: mai `dati_privati` (vetrine), token,
    segreti, regole interne. (Eccezione **voluta**: `wifi_password` nella PWA ospite `/api/guest/[slug]`.)
+   ⚠️ **Anche un dato operativo del cliente è una regola interna** (30/09/2026): gli eventi pubblici
+   mandavano capienza, prenotati e **posti riservati al telefono** perché il browser calcolasse i posti
+   liberi. Ora esce solo `posti_online` (`postiPubblici` in `lib/posti-evento.js`). Se il browser ha
+   bisogno di un numero derivato, lo calcola il server: non si manda la materia prima. La sonda
+   `probe-colonne-pubbliche` ha colonne **vietate** e prova **tutti** gli eventi pubblicati.
 5. **Input sanitizzato prima dei filtri.** Input utente in filtri PostgREST (`.or/.filter/.ilike`,
    `dati->>${key}`) → **UUID-validato o whitelistato**, mai grezzo (filter-injection).
 6. **URL/HTML sanitizzati al render.** URL → `safeUrl` (blocca `javascript:`/`data:`); HTML utente → DOMPurify.

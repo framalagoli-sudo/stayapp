@@ -523,6 +523,8 @@ Chi compra o subentra deve saperlo prima, non dopo.
   vivo; negozio e prenotazioni risorse lo sono solo da noi.
 - **WhatsApp è costruito ma spento**: la verifica Meta è **approvata** (Tech
   Provider, 18/09/2026), mancano le chiavi sulla piattaforma e la prova dal vivo.
+  Il collegamento di un numero oggi è aperto **solo al super_admin**; quando si
+  aprirà, solo all'admin dell'azienda, mai allo staff (`lib/whatsapp-pilota.js`).
 - **Molte funzioni costruite non le usa nessuno.** Misurato il 23/09/2026: negozio,
   automazioni, fedeltà, gift card e WhatsApp hanno zero utilizzi reali. Dal
   25/09/2026 ogni entità ha una **categoria** decisa da OltreNova, e il cliente

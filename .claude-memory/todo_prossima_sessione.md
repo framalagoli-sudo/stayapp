@@ -1,6 +1,6 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — 25/09: categorie per entità LIVE e assegnate ai clienti (menu vero verificato con 2FA); menu nuovo col sito in cima; buco di sicurezza domini chiuso; migration ferme alla 129; docs di progetto (CLAUDE/FEATURES/PROGETTO/SECURITY/STRATEGIA) da aggiornare alla chiusura"
+description: "Da dove riprendere — 30/09: prossimo passo = configurazione WhatsApp nella dashboard Meta insieme a schermo (ES config id, webhook su www, 4 chiavi, prova su Giochi senza Panciere); poi onboarding v2; posta in attesa"
 metadata: 
   node_type: memory
   type: project
@@ -10,7 +10,7 @@ metadata:
 
 # Si riprende da qui
 
-## ▶️ 30/09 — ORDINE CONCORDATO CON FRANCESCO
+## ▶️ 30/09 — SESSIONE CHIUSA. Si riprende da qui (ordine concordato con Francesco)
 0. ✅ 30/09 **`posti_riservati` chiuso** (Francesco: «vedi tu»): `postiPubblici()` manda solo `posti_online`; sonda colonne pubbliche su TUTTI gli eventi con colonne vietate. Nota in CLAUDE.md §44.
 1. 🟦 **META / WHATSAPP — «ricordiamoci META» (Francesco, 30/09).** ✅ **Tech Provider APPROVATO** (Francesco, 30/09). Su Vercel c'è solo `WHATSAPP_TOKEN_KEY`; mancano `META_APP_ID`, `META_APP_SECRET`, `META_ES_CONFIG_ID`, `WHATSAPP_WEBHOOK_TOKEN`. Passi: configurazione Embedded Signup in dashboard (→ config id) · webhook su **www** con token di verifica · rigenerare il token client incollato in chat il 15/09 · chiavi su Vercel + redeploy · prova col numero di test (Garage 22 pilota) · coesistenza · tariffe Meta Italia · 2 video App Review. ✅ Deciso 30/09: collegamento SOLO super_admin per ora («non farlo vedere a Garage 22, è l'unico che accede al pannello e non vorrei che si inalberi»); quando si apre, solo `admin_azienda`, mai lo staff (`lib/whatsapp-pilota.js`, cancello nella route). **Ambiente di test = Giochi senza Panciere** (0 consensi WA, 0 automazioni, 0 eventi futuri), collegato dal super_admin. ⚠️ `info@oltrenova.com` è l'indirizzo dell'app Meta: la migrazione della posta non deve farlo rimbalzare. Vedi WHATSAPP.md (aggiornamento 30/09), [[reference_meta_app_setup]].
 2. 🎯 **Onboarding «Inizia qui»**: ⚠️ esiste già `components/admin/OnboardingPage.jsx` (wizard di giugno mai collegato: tipo + nome → crea la prima entità → logo) — trovato DOPO aver scritto IniziaQui: è la base della v2, da adattare alle categorie. ✅ prima versione LIVE il 30/09 (nota 54, sonda `probe-inizia-qui.mjs`). Resta la seconda, da fare PRIMA di aprire le registrazioni: passo «che attività hai?» (categorie NOSTRE, ok di Francesco) che crea entità + categoria per chi si registra da solo; escape del nome azienda nell'email di benvenuto. Cosa mostra oggi ai clienti: Automax 5 dati mancanti + primo contatto; Giachini logo; Giochi email+telefono; inlingua descrizione; Borgo (struttura+ristorante) sito da fare — Francesco: «lo gestisco io, no problema».
