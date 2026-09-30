@@ -4,11 +4,21 @@ description: "Da dove riprendere — 25/09: categorie per entità LIVE e assegna
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-09-24T11:45:29.571Z
+  modified: 2026-09-30T13:27:06.803Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
+
+## ▶️ 30/09 — ORDINE CONCORDATO CON FRANCESCO
+1. 🟦 **META / WHATSAPP — «ricordiamoci META» (Francesco, 30/09).** Stato: verifica aziendale approvata 16/09; lanciatore Embedded Signup v4 live ma spento (nota 38). ❓ Prima cosa: chiarire se il **Tech Provider** è approvato (PROGETTO.md §2.6/§11 dice sì dal 18/09, la roadmap di CLAUDE.md lo dà da fare) e allineare i documenti. Poi: configurazione ES + chiavi su Vercel (`META_APP_ID`, `META_APP_SECRET`, `META_ES_CONFIG_ID`) + redeploy, prova dal vivo col numero di test, coesistenza, tariffe Meta Italia, due video per l'App Review. ⚠️ `info@oltrenova.com` è l'indirizzo dell'app Meta: la migrazione della posta non deve farlo rimbalzare nemmeno un'ora. Vedi WHATSAPP.md, [[reference_meta_app_setup]], [[reference_whatsapp_quale_numero]].
+2. 🎯 **Onboarding «Inizia qui»**: piano da portare a Francesco PRIMA del codice (cambio che il cliente nota).
+3. 📧 Posta (sotto): servono le 3 risposte di Francesco.
+- ✅ 29–30/09 fatto: «Aspetto dell'app» + Garage 22 scuro + verde/grigio nelle app → [[project-session-2026-09-29-30]].
+- Da proporre (non approvato): verde WhatsApp e #777 anche sul **sito**.
+- ⚠️ Smoke 30/09: «QR Code» (/admin/qrcode) rimasto in «Caricamento…» oltre 9,5 s una volta, passato al secondo tentativo. Non toccato da noi: se ricapita, indagare la lentezza.
+- Sul PC resta un node su :3000 avviato il 23/09 (non di questa sessione): non toccato.
+
 
 ## ▶️ 27/09 — POSTA ELETTRONICA: si fa alla prossima sessione (decisioni prese, vedi [[project-posta-elettronica]] e STRATEGIA §4.6)
 - **Da Francesco servono**: (1) elenco caselle attuali su `oltrenova.com`; (2) chi legge le 3 caselle di Guru Management (solo lui → 3 alias nello Zoho di OltreNova, gratis e può rispondere; altre persone → inoltro Cloudflare); (3) dove è registrato `gurumanagement.it`.

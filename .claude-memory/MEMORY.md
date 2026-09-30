@@ -11,6 +11,7 @@
 > 🔌 **Integrazioni**: [la sequenza del fornitore va letta tutta](reference_verifica_la_sequenza_del_fornitore.md) — il collegamento WhatsApp era «pronto» e non avrebbe inviato niente.
 
 - [🧾 A OGNI chiusura: aggiornare TUTTI i file di progetto](feedback_chiusura_sessione.md) — CLAUDE/FEATURES/PROGETTO/SECURITY, memoria + copia in .claude-memory; ognuno va APERTO, non supposto
+- [📅 Sessione 29–30/09 — aspetto dell app del QR, Garage 22 scuro](project_session_2026_09_29_30.md) — prossimo: Meta, poi onboarding, poi posta
 - [📧 Posta elettronica: uscita da SiteGround](project_posta_elettronica.md) — OltreNova su Zoho Lite (zoho.eu), Guru con inoltro Cloudflare, clienti intestati a loro; non tocchiamo i record Resend
 - [📅 Sessione 24–25/09 — menu col sito in cima, categorie per entità LIVE, buco domini chiuso](project_session_2026_09_24_25.md) — migration fino a 129; prossimo: onboarding
 - [🧭 Menu e categorie: regole e trappole](reference_categorie_e_menu.md) — costruisciMenu unica regola; categoria sull entità applicata come copia; verifica col 2FA FATTO, mai spento
@@ -22,7 +23,7 @@
 - [🤖 Consumi AI e tetto per azienda](project_ai_consumi.md) — 15/09: 12 chiamate su 13 senza limite vero; ora un punto solo, fail closed; LIVE dal 15/09 con ricarica da Aziende → Credito AI e avviso al cliente dall 80%
 - [📅 Sessione 16/09 — verifica Meta approvata, collegamento WhatsApp vero, numeri per entità](project_session_2026_09_16.md) — migration fino a 122; restano la verifica dell'accesso e la prova dal vivo
 - [📅 Sessione 15/09 — shop live, Meta sbloccato, costi AI sotto tetto, decisione API](project_session_2026_09_15.md) — migration fino a 121; verifica Meta da reinviare
-- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: preconfiguratori e categorie FATTI (24–25/09); prossimo = onboarding «Inizia qui»; poi pagamenti (2 verifiche), 3 siti senza titolo SEO, SENTRY_DSN, WhatsApp/Meta
+- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: 1) META/WhatsApp (Tech Provider da chiarire, chiavi, prova dal vivo) 2) onboarding «Inizia qui» (piano prima del codice) 3) posta (3 risposte di Francesco)
 - [📅 Sessione 08/09 — conferme spente, calendario cieco, offerte inerti](project_session_2026_09_08.md) — 6 interventi nati da cose non rotte ma che non arrivavano
 - [📆 Intervalli di date nel booking](reference_intervalli_date_booking.md) — (giorno,giorno) e l intervallo VUOTO: non da errore, da «libero»; e con
 - [🏷️ Offerte sulle risorse](reference_offerte_risorse.md) — valevano solo per gli slot orari; prezzo_modo dice se e al giorno o del periodo (su 5 giorni sono 5
@@ -148,3 +149,4 @@
 - [🔦 Pubblicare rende trovabili (e chi spegne resta spento)](reference_visibilita_alla_pubblicazione.md) — migration 124; titolo e descrizione proposti dall'AI, mai salvati da soli
 - [📱 WhatsApp: quale numero può collegare un cliente](reference_whatsapp_quale_numero.md) — le 4 strade, la coesistenza (ora sì in UE, da provare dal vivo), e i 3 eventi webhook che mancano
 - [🎨 Restyling di metodotvb dai suoi dati (21/09)](reference_restyling_metodotvb.md) — come si rifà un sito via API, l'id della versione per ripristinarlo, e il contrasto 1,84 che la sonda dava per buono
+- [🌓 Aspetto dell'app del QR](reference_sfondo_app_qr.md) — stili pronti + personalizzazione (theme.app), palette unica per le 3 app; chi non sceglie vede l'app identica; #777 e verde WhatsApp sotto soglia ovunque (da decidere)

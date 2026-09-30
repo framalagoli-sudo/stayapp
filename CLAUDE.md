@@ -485,6 +485,16 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - Il cancello «togli qualcosa al cliente» capisce il menu a dati: una voce **spostata** (anche fra file) non è tolta, una chiave tolta da `voci: [...]` sì. Un cambio approvato si dichiara nel commit con `autorizzato: <parole di Francesco>`.
     - ⚠️ Deploy lanciato da bash: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File deploy.ps1 > log 2>&1`. Con `*>` dentro PowerShell l'avviso di npx su stderr diventa un errore.
 
+53. **🌓 L'aspetto dell'app del QR lo sceglie il cliente, senza toccare il sito** (29–30/09/2026). Nato da Garage 22 («il menù con sfondo nero», solo l'app); poi Francesco: «un cliente non può personalizzare l'app a piacere?».
+    - **Pannello**: «App del QR» → **«Aspetto dell'app»** (`components/admin/AspettoApp.jsx`, nelle tre pagine moduli): 4 stili pronti (Come il sito · Scuro elegante · Caldo · Minimal), **anteprima dal vivo**, «Personalizza» con sfondo (anche un colore a scelta), colore principale, icone, testi, caratteri, schede, angoli, intestazione, stile degli allergeni.
+    - **Dati**: `theme.appSfondo` + `theme.app` — nel tema perché le tre entità lo hanno uguale (i moduli no: le attività li annidano in `pwa.modules`) e ogni scrittura del tema fa spread. Nessuna migration.
+    - **`lib/palette-app.js` è l'unico punto** dei colori delle tre PWA: `aspettoApp()` ripulisce (cataloghi chiusi, esadecimale controllato: un valore estraneo torna al predefinito — provato con stringhe CSS ostili), `paletteApp()` decide. **Nessuna scelta rende l'app illeggibile**: un colore che non contrasta viene sostituito e il pannello lo dice (`sostituiti`). `brand` = colore originale per le isole con fondo proprio (intestazione, chatbot, prenotazione, banner).
+    - ⛔ **Prima lo scuro si riconosceva solo con fondo esattamente `#1a1a2e`**: un sito scuro diverso (metodotvb) riceveva schede bianche con testo chiaro. Ora decide la luminanza.
+    - **Allergeni**: obbligo di legge → tre stili già leggibili (`coloriAllergene`), mai un colore libero.
+    - **Chi non sceglie nulla vede l'app identica**: ombre e bordi delle schede sono variabili CSS (`--ombra-scheda`, `--bordo-scheda`) impostate **solo** se il cliente sceglie uno stile, e i componenti tengono il valore storico come ripiego. Verificato confrontando gli stili calcolati di 741 elementi fra produzione e locale: 0 differenze.
+    - 30/09, approvato da Francesco: **nelle app** verde WhatsApp scuro `#128C7E` (il bianco sul `#25D366` era 1,98) e grigio secondario `#6b6b76` (il `#777` era 4,48). ⚠️ Il **sito** usa ancora `#25D366` (pulsante flottante, blocchi, condivisione) e `#777` nella pagina evento.
+    - Sonda **`tests/probe-app-leggibile.mjs /r/slug [cartella]`**: contrasto di ogni testo e icona sul fondo su cui sta davvero. ⚠️ Non lanciarla in produzione mentre girano gli smoke del deploy: il 29/09 il setup degli smoke è fallito per le corse sovrapposte (da soli 74/74).
+
 ---
 
 ## Roadmap
