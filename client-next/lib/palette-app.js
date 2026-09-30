@@ -127,7 +127,8 @@ export function paletteApp(theme = {}) {
       bgColor: bgSito,
       textColor: testo && contrastRatio(testo, bgSito) >= 4.5 ? testo : base.textColor,
     }
-    if (!scuro(bgSito)) p.subText = '#777'
+    // #777 era 4,48 sul bianco, appena sotto il minimo di 4,5.
+    if (!scuro(bgSito)) p.subText = '#6b6b76'
   }
   const isDark = scuro(p.bgColor)
 

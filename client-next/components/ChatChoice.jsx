@@ -29,7 +29,7 @@ export default function ChatChoice({ whatsapp, entityName, primary, onPrimary = 
       padding: '32px 24px',
       gap: 16,
     }}>
-      <p style={{ fontSize: 13, color: '#999', margin: 0, textAlign: 'center' }}>
+      <p style={{ fontSize: 13, color: 'inherit', opacity: 0.8, margin: 0, textAlign: 'center' }}>
         Come vuoi contattare{entityName ? ` ${entityName}` : 'ci'}?
       </p>
 
@@ -38,7 +38,7 @@ export default function ChatChoice({ whatsapp, entityName, primary, onPrimary = 
         maxWidth: 320,
         padding: '16px 24px',
         borderRadius: 16,
-        background: '#25D366',
+        background: '#128C7E',
         border: 'none',
         cursor: 'pointer',
         display: 'flex',
@@ -51,7 +51,7 @@ export default function ChatChoice({ whatsapp, entityName, primary, onPrimary = 
         </svg>
         <div style={{ textAlign: 'left' }}>
           <div style={{ color: '#fff', fontWeight: 700, fontSize: 15 }}>WhatsApp</div>
-          <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>Risposta rapida</div>
+          <div style={{ color: '#fff', fontSize: 12 }}>Risposta rapida</div>
         </div>
       </button>
 

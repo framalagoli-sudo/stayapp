@@ -585,7 +585,7 @@ function ARichiestaTab({ attivita, primary, onPrimary = '#fff', textColor, subTe
           </a>
         )}
         {waUrl && (
-          <a href={waUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: radius, background: '#25d366', color: '#fff', fontWeight: 600, fontSize: 13, textDecoration: 'none' }}>
+          <a href={waUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: radius, background: '#128C7E', color: '#fff', fontWeight: 600, fontSize: 13, textDecoration: 'none' }}>
             <Send size={15} strokeWidth={1.5} color="#fff" /> WhatsApp
           </a>
         )}

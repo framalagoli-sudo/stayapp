@@ -217,7 +217,7 @@ export default function OfferteTab({ offerte = [], propertyId, numeroWhatsapp = 
                     conversazione, non l'unico posto dove esiste. */}
                 {numeroWhatsapp && (
                   <button onClick={() => sendBooking('whatsapp')} disabled={bookState === 'loading' || !pronto}
-                    style={{ width: '100%', marginTop: 10, padding: '12px', background: pronto ? '#25D366' : '#bbb', color: '#fff', border: 'none', borderRadius: radius, cursor: pronto ? 'pointer' : 'not-allowed', fontSize: 14, fontWeight: 700 }}>
+                    style={{ width: '100%', marginTop: 10, padding: '12px', background: pronto ? '#128C7E' : '#bbb', color: '#fff', border: 'none', borderRadius: radius, cursor: pronto ? 'pointer' : 'not-allowed', fontSize: 14, fontWeight: 700 }}>
                     Scrivi su WhatsApp
                   </button>
                 )}
