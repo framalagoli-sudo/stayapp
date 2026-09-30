@@ -2,6 +2,12 @@
 
 > Stato: **piano approvato, non ancora implementato** (redatto 20/08/2026).
 >
+> **Aggiornamento 30/09/2026 — Tech Provider APPROVATO** (confermato da Francesco; `PROGETTO.md` lo data 18/09). Meta non blocca più niente: il resto dipende da noi.
+> - Il codice legge **cinque** chiavi. Su Vercel (letto il 30/09, solo i nomi) c'è **solo `WHATSAPP_TOKEN_KEY`**. Mancano `META_APP_ID`, `META_APP_SECRET`, `META_ES_CONFIG_ID`, `WHATSAPP_WEBHOOK_TOKEN`.
+> - Restano, in ordine: configurazione Embedded Signup nella dashboard (dà `META_ES_CONFIG_ID`) · webhook registrato su **`www`** (nota 27) con il token di verifica · rigenerare il token client incollato in chat il 15/09 · chiavi su Vercel + redeploy · prova dal vivo col numero di test · coesistenza · tariffe Meta Italia · due video per l'App Review.
+> - ⚠️ Con `META_APP_ID` + `META_APP_SECRET` presenti il pulsante «Collega WhatsApp» compare a **tutti** i clienti: prima della prova dal vivo va deciso con Francesco se limitarlo a lui e al cliente pilota (Garage 22).
+> - La §12 qui sotto (blocco del dispositivo, 22/08) è **superata**: l'app esiste dal 15/09.
+>
 > **Aggiornamento 16/09/2026 — verifica aziendale APPROVATA, e il collegamento adesso esiste davvero.**
 > - **Embedded Signup v4 scritto e in produzione** (`components/admin/CollegaWhatsApp.jsx`): SDK di Facebook, `FB.login` con `config_id` e `response_type: 'code'`, il codice va al server (il segreto dell'app non esce mai), e l'evento `WA_EMBEDDED_SIGNUP` dice quale account e quale numero ha scelto il cliente. Le origini di Meta si confrontano per **uguaglianza**, non con `endsWith`: `facebook.com.esempio.it` passerebbe.
 > - ⚠️ **Due passi obbligatori che mancavano** e senza cui il collegamento è finto: `POST /{waba-id}/subscribed_apps` (senza, nessuno stato di consegna e nessun messaggio in arrivo) e `POST /{phone-number-id}/register` con un PIN di verifica in due passaggi (senza, **ogni invio viene rifiutato**). Il PIN lo generiamo noi e lo conserviamo cifrato in `dettaglio.pin_cifrato`: serve per cambiarlo o staccare il numero. Se la registrazione fallisce il numero resta `in_verifica`, non `attivo`.
@@ -197,7 +203,7 @@ Passare a **Solution Partner**: paghiamo noi Meta e rifatturiamo, il cliente non
 
 ---
 
-## 12. ⚠️ Bloccante attuale (dal 22/08/2026)
+## 12. ~~Bloccante attuale (dal 22/08/2026)~~ — superato: app creata il 15/09, verifica aziendale 16/09, Tech Provider approvato
 
 Il codice delle fasi 1-2 è **completo e in produzione**, ma il modulo dorme: mancano `META_APP_ID` e `META_APP_SECRET`, e non si riesce a creare l'app perché **Meta blocca l'accesso a developers.facebook.com**:
 
