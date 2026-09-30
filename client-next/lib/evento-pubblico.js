@@ -1,3 +1,4 @@
+import { postiPubblici } from './posti-evento'
 import { supabaseAdmin } from './supabase-server'
 import { localizeEntity } from './translate'
 import { getAziendaLegale } from './guest-data'
@@ -90,5 +91,6 @@ export async function datiEventoPubblico(id, lang = 'it', evento = null) {
   const { azienda_id, aziende, ...pubblico } = out
   // `lingua` dice in che lingua sono questi dati: la pagina la confronta con
   // quella richiesta, e ripesca solo se non combaciano.
-  return { ...pubblico, lingua: lang, fuso: aziende?.fuso_orario || null, sito }
+  // I posti escono solo come «quanti se ne possono prenotare»: vedi postiPubblici.
+  return { ...postiPubblici(pubblico), lingua: lang, fuso: aziende?.fuso_orario || null, sito }
 }

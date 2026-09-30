@@ -1,22 +1,23 @@
-// Chi può collegare un numero WhatsApp mentre il flusso non è ancora provato
-// dal vivo. Decisione di Francesco (30/09/2026): «limitalo anche a Garage 22 —
-// facciamo un ambiente test su un'entità che non usano: Giochi senza Panciere».
+// Chi può collegare un numero WhatsApp.
 //
-// Con le chiavi di Meta su Vercel il pulsante comparirebbe a TUTTI i clienti:
-// un titolare potrebbe collegare il suo numero con un flusso che nessuno ha
-// ancora percorso. Il super_admin passa sempre (è lui che fa la prova, anche
-// sull'entità di test); fra i clienti, solo le aziende qui sotto.
+// Decisioni di Francesco (30/09/2026):
+//  · «solo l'admin dell'azienda può collegare WhatsApp, ovvero chi ha l'accesso
+//    admin» — lo staff no, nemmeno con il permesso sulla pagina WhatsApp;
+//  · «per ora non farlo vedere a Garage 22»: finché il flusso non è provato dal
+//    vivo lo vede solo il super_admin, che fa la prova sull'entità di test
+//    (Giochi senza Panciere).
 //
-// Quando la prova dal vivo è riuscita e Francesco lo decide, si apre a tutti
-// svuotando il cancello (`APERTO_A_TUTTI = true`), non togliendo i controlli.
-const APERTO_A_TUTTI = false
+// Con le chiavi di Meta su Vercel il pulsante comparirebbe a tutti i clienti:
+// quando la prova è riuscita e Francesco lo decide, si apre agli admin
+// d'azienda con `APERTO_AGLI_ADMIN = true` (o aggiungendo un'azienda pilota),
+// senza togliere il controllo sul ruolo.
+const APERTO_AGLI_ADMIN = false
 
-const AZIENDE_PILOTA = new Set([
-  'e287644b-c331-4784-8e98-341c040af500', // Garage22 srls
-])
+// Aziende che vedono il collegamento prima degli altri. Vuoto per decisione.
+const AZIENDE_PILOTA = new Set([])
 
 export function collegamentoWhatsappAperto(profile, aziendaId) {
-  if (APERTO_A_TUTTI) return true
   if (profile?.role === 'super_admin') return true
-  return AZIENDE_PILOTA.has(aziendaId)
+  if (profile?.role !== 'admin_azienda') return false
+  return APERTO_AGLI_ADMIN || AZIENDE_PILOTA.has(aziendaId)
 }

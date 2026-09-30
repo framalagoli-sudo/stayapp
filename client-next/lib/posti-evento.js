@@ -35,6 +35,18 @@ export function postiEvento(evento) {
   }
 }
 
+// Quello che il pubblico sa dei posti: quanti se ne possono ancora prenotare
+// online (`posti_online`, null = senza limite), e basta. Capienza, prenotati e
+// riservati non escono: con due di loro e i posti online il terzo si ricava per
+// sottrazione, e i riservati dicono quanti posti il locale tiene per il
+// telefono — un dato suo, non dei visitatori (segnalato il 30/09/2026 dalla
+// sonda delle colonne pubbliche). Le route pubbliche passano tutte da qui.
+export function postiPubblici(evento) {
+  const { seats_total, seats_booked, posti_riservati, ...resto } = evento || {}
+  const p = postiEvento({ seats_total, seats_booked, posti_riservati })
+  return { ...resto, posti_online: p.illimitato ? null : p.liberiOnline }
+}
+
 // Sotto questa soglia si avvisa chi organizza: è il momento in cui deve
 // smettere di dire sì al telefono. Non è una preferenza da configurare — una
 // tendina in più su un pannello che nessuno apre non salva nessun evento.

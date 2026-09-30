@@ -28,8 +28,15 @@ const AMMESSE = {
   'evento':      ['id','titolo','descrizione','data_inizio','data_fine','luogo','prezzo','posti',
                   'posti_totali','posti_disponibili','cover_url','slug','entity_tipo','entity_id',
                   'azienda_id','active','published','created_at','updated_at','max_partecipanti',
-                  'title','description','date_start','date_end','location','price','seats_total',
-                  'seats_booked','packages',
+                  'title','description','date_start','date_end','location','price','packages',
+                  // 30/09: dei posti esce SOLO quanti se ne possono prenotare online
+                  // (null = senza limite). Capienza, prenotati e riservati no: vedi
+                  // VIETATE qui sotto e `postiPubblici` in lib/posti-evento.js.
+                  'posti_online',
+                  // 19–21/09: come si scrive il prezzo e se il telefono è obbligatorio
+                  // nel modulo; `lingua` dice in che lingua sono i dati. Tutto ciò che
+                  // la scheda pubblica deve sapere per disegnarsi.
+                  'prezzo_modo','telefono_obbligatorio','lingua',
                   // 25/08: la forma della locandina e il punto da tenere visibile. Servono
                   // alla scheda dell'evento, che è pubblica; non dicono nulla di riservato
                   // e i valori ammessi sono un elenco chiuso (lib/formati-foto.js).
@@ -54,20 +61,29 @@ const AMMESSE = {
                   'fuso'],
 }
 const SEGRETE = /password|secret|token|api_key|chiave|private|_key$/i
+// Colonne che NON devono uscire anche se non hanno un nome «segreto». I posti
+// riservati dicono quanti posti il locale tiene per il telefono; capienza e
+// prenotati, insieme ai posti online, permetterebbero di ricavarli.
+const VIETATE = { evento: ['seats_total', 'seats_booked', 'posti_riservati'] }
 
-async function esamina(nome, url) {
+// `tipo` sceglie l'elenco delle ammesse; `etichetta` dice cosa si sta provando.
+// Con `zitto` stampa solo i problemi (per i giri su tanti eventi).
+async function esamina(tipo, url, etichetta = tipo, zitto = false) {
   const r = await fetch(url)
-  if (!r.ok) { console.log(`  · ${nome}: HTTP ${r.status} — non verificabile ora`); return }
+  if (!r.ok) { if (!zitto) console.log(`  · ${etichetta}: HTTP ${r.status} — non verificabile ora`); return false }
   const j = await r.json().catch(() => null)
-  if (!j) { console.log(`  · ${nome}: risposta non JSON`); return }
-  const oggetto = Array.isArray(j) ? (j[0] || {}) : (j.pagina || j.evento || j)
-  const chiavi = Object.keys(oggetto)
-  const attese = AMMESSE[nome] || []
+  if (!j) { console.log(`  · ${etichetta}: risposta non JSON`); return false }
+  const oggetti = Array.isArray(j) ? j : [j.pagina || j.evento || j]
+  if (!oggetti.length) { if (!zitto) console.log(`  · ${etichetta}: elenco vuoto`); return false }
+  const chiavi = [...new Set(oggetti.flatMap(o => Object.keys(o || {})))]
+  const attese = AMMESSE[tipo] || []
   const nuove = chiavi.filter(k => !attese.includes(k))
   const segrete = chiavi.filter(k => SEGRETE.test(k))
-  if (segrete.length) { console.log(`  ✗ ${nome}: ESCE UN CAMPO SEGRETO → ${segrete.join(', ')}`); problemi++ }
-  else if (nuove.length) { console.log(`  ⚠ ${nome}: colonne non dichiarate → ${nuove.join(', ')}`); problemi++ }
-  else console.log(`  ✓ ${nome}: ${chiavi.length} colonne, tutte previste`)
+  const vietate = chiavi.filter(k => (VIETATE[tipo] || []).includes(k))
+  if (segrete.length || vietate.length) { console.log(`  ✗ ${etichetta}: ESCE UN CAMPO CHE NON DEVE USCIRE → ${[...segrete, ...vietate].join(', ')}`); problemi++ }
+  else if (nuove.length) { console.log(`  ⚠ ${etichetta}: colonne non dichiarate → ${nuove.join(', ')}`); problemi++ }
+  else if (!zitto) console.log(`  ✓ ${etichetta}: ${chiavi.length} colonne, tutte previste`)
+  return true
 }
 
 console.log('\nCOSA ESCE DALLE ROUTE PUBBLICHE (nessun login)\n')
@@ -77,9 +93,19 @@ const { data: pag } = await a.from('pagine').select('entity_tipo, entity_id, slu
 if (pag) await esamina('pagina', `${BASE}/api/guest/pagina/${pag.entity_tipo}/${pag.entity_id}/${pag.slug}`)
 else console.log('  · pagina: nessuna pagina pubblicata da provare')
 
-const { data: ev } = await a.from('eventi').select('id').limit(1).maybeSingle()
-if (ev) await esamina('evento', `${BASE}/api/guest/eventi/${ev.id}`)
-else console.log('  · evento: nessun evento da provare')
+// Tutti gli eventi pubblicati, non uno a caso: il 30/09 la sonda ne sceglieva
+// uno con limit(1) senza ordine, e per settimane è capitato un evento non
+// pubblico — la colonna dei posti riservati usciva e nessuno se ne accorgeva.
+const { data: eventi } = await a.from('eventi').select('id, entity_tipo, entity_id')
+  .eq('published', true).eq('active', true).limit(200)
+let provati = 0
+for (const ev of eventi || []) if (await esamina('evento', `${BASE}/api/guest/eventi/${ev.id}`, `evento ${ev.id}`, true)) provati++
+console.log(`  ${provati ? '✓' : '·'} evento: ${provati} eventi pubblicati provati uno per uno`)
+// E l'elenco che servono i siti e l'app del QR, entità per entità.
+const entita = [...new Map((eventi || []).filter(e => e.entity_id).map(e => [e.entity_id, e])).values()]
+let elenchi = 0
+for (const ev of entita) if (await esamina('evento', `${BASE}/api/guest/eventi?entity_tipo=${ev.entity_tipo}&entity_id=${ev.entity_id}`, `elenco eventi ${ev.entity_id}`, true)) elenchi++
+console.log(`  ${elenchi ? '✓' : '·'} elenco eventi: ${elenchi} elenchi provati`)
 
 console.log('\n' + '─'.repeat(58))
 console.log(problemi ? `${problemi} DA GUARDARE` : 'nessuna colonna inattesa esce senza login')

@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { getEntityAziendaId } from '@/lib/server-auth'
 import { localizeEntity } from '@/lib/translate'
 import { soloAperti, soloConclusi } from '@/lib/evento-concluso'
+import { postiPubblici } from '@/lib/posti-evento'
 
 // Dati live: mai cachare (vedi nota in /api/guest/a/[slug]).
 export const dynamic = 'force-dynamic'
@@ -48,7 +49,8 @@ export async function GET(request) {
 
   // Il fuso esce come campo semplice: l'oggetto annidato dell'unione non è
   // roba che le pagine debbano conoscere.
-  let out = (data || []).map(({ aziende, ...ev }) => ({ ...ev, fuso: aziende?.fuso_orario || null }))
+  // I posti escono solo come «quanti se ne possono prenotare»: vedi postiPubblici.
+  let out = (data || []).map(({ aziende, ...ev }) => ({ ...postiPubblici(ev), fuso: aziende?.fuso_orario || null }))
   if (lang === 'en') out = await Promise.all(out.map(ev => localizeEntity(ev, 'evento', lang)))
   return Response.json(out)
 }

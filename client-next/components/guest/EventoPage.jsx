@@ -9,7 +9,6 @@ import SiteNav from './SiteNav'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Calendar, MapPin, Users, ArrowLeft, Check } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
-import { postiEvento } from '@/lib/posti-evento'
 import { percorsoInterno } from '@/lib/percorso-interno'
 
 export default function EventoPage({ iniziale = null, dominioCliente = null, lingua = 'it' }) {
@@ -181,7 +180,8 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
   // titolare, o perché i posti sono finiti. Il modulo si chiude in entrambi i
   // casi, ma il messaggio non è lo stesso — e la differenza la sente chi legge.
   // Al netto dei posti tenuti per il telefono: il sito vende solo i suoi.
-  const rimasti = postiEvento(evento).liberiOnline
+  // Il server manda già i posti prenotabili online (null = senza limite).
+  const rimasti = evento.posti_online ?? null
   const chiuso = !!evento.prenotazioni_chiuse || (rimasti !== null && rimasti <= 0)
   // Un evento finito resta visibile — il sito lo mostra fra i passati, e i
   // vecchi link continuano a portare qui — ma non si prenota più.
@@ -282,7 +282,7 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
           )}
           {/* ⚠️ «0 posti disponibili» è un modo goffo di dire «esaurito», e
               «-2 posti» — che poteva succedere — è un modo di sembrare rotti. */}
-          {evento.seats_total && !concluso && (
+          {rimasti !== null && !concluso && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: '#555' }}>
               <Users size={15} strokeWidth={1.5} color="#00b5b5" />
               {rimasti > 0 ? `${rimasti} posti disponibili` : 'Tutto esaurito'}
