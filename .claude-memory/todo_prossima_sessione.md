@@ -12,7 +12,7 @@ metadata:
 
 ## ▶️ 30/09 — ORDINE CONCORDATO CON FRANCESCO
 1. 🟦 **META / WHATSAPP — «ricordiamoci META» (Francesco, 30/09).** Stato: verifica aziendale approvata 16/09; lanciatore Embedded Signup v4 live ma spento (nota 38). ❓ Prima cosa: chiarire se il **Tech Provider** è approvato (PROGETTO.md §2.6/§11 dice sì dal 18/09, la roadmap di CLAUDE.md lo dà da fare) e allineare i documenti. Poi: configurazione ES + chiavi su Vercel (`META_APP_ID`, `META_APP_SECRET`, `META_ES_CONFIG_ID`) + redeploy, prova dal vivo col numero di test, coesistenza, tariffe Meta Italia, due video per l'App Review. ⚠️ `info@oltrenova.com` è l'indirizzo dell'app Meta: la migrazione della posta non deve farlo rimbalzare nemmeno un'ora. Vedi WHATSAPP.md, [[reference_meta_app_setup]], [[reference_whatsapp_quale_numero]].
-2. 🎯 **Onboarding «Inizia qui»**: piano da portare a Francesco PRIMA del codice (cambio che il cliente nota).
+2. 🎯 **Onboarding «Inizia qui»**: ✅ prima versione LIVE il 30/09 (nota 54, sonda `probe-inizia-qui.mjs`). Resta la seconda, da fare PRIMA di aprire le registrazioni: passo «che attività hai?» (categorie NOSTRE, ok di Francesco) che crea entità + categoria per chi si registra da solo; escape del nome azienda nell'email di benvenuto. Cosa mostra oggi ai clienti: Automax 5 dati mancanti + primo contatto; Giachini logo; Giochi email+telefono; inlingua descrizione; Borgo (struttura+ristorante) sito da fare — Francesco: «lo gestisco io, no problema».
 3. 📧 Posta (sotto): servono le 3 risposte di Francesco.
 - ✅ 29–30/09 fatto: «Aspetto dell'app» + Garage 22 scuro + verde/grigio nelle app → [[project-session-2026-09-29-30]].
 - Da proporre (non approvato): verde WhatsApp e #777 anche sul **sito**.

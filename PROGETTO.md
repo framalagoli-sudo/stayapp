@@ -506,10 +506,12 @@ pannello, sezione Aziende.
 
 Chi compra o subentra deve saperlo prima, non dopo.
 
-- **Non c'è un percorso di primo accesso.** Dal 25/09/2026 il menu di un cliente
-  mostra solo le funzioni della sua categoria (fra 21 e 30 voci invece di 41) e
-  il sito è in cima, ma nessuno gli dice da dove cominciare: `/admin/onboarding`
-  non esiste. È il lavoro aperto più importante.
+- **Il primo accesso è guidato solo a metà.** Dal 30/09/2026 il titolare trova in
+  Dashboard «Inizia qui»: i passi che mancano (dati, sito, pubblicazione, dominio,
+  primo contatto), calcolati dai dati veri, con un clic verso la pagina giusta; è
+  anche su `/admin/onboarding`. Manca il pezzo per la **registrazione aperta**:
+  un'azienda nata da sola non ha ancora un'entità, e il passo «che attività hai?»
+  (scelta fra le nostre categorie) non esiste.
 - **Le registrazioni sono chiuse.** Ogni cliente finora è nato da un invito. La
   registrazione automatica funziona ma non è mai stata aperta al pubblico.
 - **Non c'è fatturazione automatica.** Nessun abbonamento ricorrente per i
