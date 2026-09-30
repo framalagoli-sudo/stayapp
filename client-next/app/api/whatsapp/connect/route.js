@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth, getProfile, resolveAziendaId, entitaDellaAzienda } from '@/lib/server-auth'
 import { accountDellAzienda } from '@/lib/whatsapp-account'
+import { collegamentoWhatsappAperto } from '@/lib/whatsapp-pilota'
 import { CATALOGO, nomeMeta } from '@/lib/whatsapp-catalogo'
 import { scambiaCodice, leggiNumeri, creaCatalogo, cifra, whatsappConfigurato, iscriviWebhook, registraNumero, pinCasuale } from '@/lib/whatsapp'
 
@@ -22,6 +23,7 @@ export async function GET(request) {
     const profile = await getProfile(user.id)
     const azienda_id = resolveAziendaId(profile, new URL(request.url).searchParams.get('azienda_id'))
     if (!azienda_id) return Response.json({ error: 'Azienda non valida' }, { status: 400 })
+    const aperto = collegamentoWhatsappAperto(profile, azienda_id)
 
     // Dal 16/09/2026 i numeri possono essere più d'uno: uno per entità, più
     // eventualmente quello «generale» dell'azienda (migration 122).
@@ -52,15 +54,18 @@ export async function GET(request) {
       entita: entita || [],
       templates: templates || [],
       configurato: whatsappConfigurato(),
+      // Durante la prova il collegamento è aperto solo al super_admin e alle
+      // aziende pilota (lib/whatsapp-pilota.js): agli altri il pulsante non
+      // compare, e gli identificativi di Meta non arrivano nemmeno.
       // Servono al browser per aprire il flusso di Meta e finiscono comunque
       // nell'URL di Facebook: non sono segreti (il segreto dell'app resta qui).
       // Passano da questa route, che chiede il login, invece che da una
       // variabile `NEXT_PUBLIC_`: così cambiarli non richiede una ricompilazione.
-      meta: { app_id: META_APP_ID, config_id: META_ES_CONFIG_ID },
+      meta: aperto ? { app_id: META_APP_ID, config_id: META_ES_CONFIG_ID } : null,
       // Il pulsante compare solo se il flusso può davvero partire: senza la
       // configurazione di Embedded Signup si aprirebbe una finestra che non
       // conclude niente.
-      collegamento_pronto: whatsappConfigurato() && !!META_ES_CONFIG_ID,
+      collegamento_pronto: aperto && whatsappConfigurato() && !!META_ES_CONFIG_ID,
       catalogo: CATALOGO.map(t => ({
         key: t.key, versione: t.versione, titolo: t.titolo, descrizione: t.descrizione,
         categoria: t.categoria, variabili: t.variabili, corpo: t.corpo,
@@ -79,6 +84,11 @@ export async function POST(request) {
     if (!azienda_id) return Response.json({ error: 'Azienda non valida' }, { status: 400 })
     if (!whatsappConfigurato()) {
       return Response.json({ error: 'WhatsApp non è ancora configurato sulla piattaforma. Contatta l’assistenza.' }, { status: 503 })
+    }
+    // ⛔ Il cancello sta anche qui, non solo nel pannello: la route si chiama
+    // a mano, e il codice di Meta verrebbe scambiato lo stesso.
+    if (!collegamentoWhatsappAperto(profile, azienda_id)) {
+      return Response.json({ error: 'Il collegamento di WhatsApp non è ancora disponibile per il tuo account.' }, { status: 403 })
     }
     if (!body.code || !body.waba_id) {
       return Response.json({ error: 'Collegamento non completato: riprova dall’inizio.' }, { status: 400 })

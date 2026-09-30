@@ -5,7 +5,9 @@
 > **Aggiornamento 30/09/2026 — Tech Provider APPROVATO** (confermato da Francesco; `PROGETTO.md` lo data 18/09). Meta non blocca più niente: il resto dipende da noi.
 > - Il codice legge **cinque** chiavi. Su Vercel (letto il 30/09, solo i nomi) c'è **solo `WHATSAPP_TOKEN_KEY`**. Mancano `META_APP_ID`, `META_APP_SECRET`, `META_ES_CONFIG_ID`, `WHATSAPP_WEBHOOK_TOKEN`.
 > - Restano, in ordine: configurazione Embedded Signup nella dashboard (dà `META_ES_CONFIG_ID`) · webhook registrato su **`www`** (nota 27) con il token di verifica · rigenerare il token client incollato in chat il 15/09 · chiavi su Vercel + redeploy · prova dal vivo col numero di test · coesistenza · tariffe Meta Italia · due video per l'App Review.
-> - ⚠️ Con `META_APP_ID` + `META_APP_SECRET` presenti il pulsante «Collega WhatsApp» compare a **tutti** i clienti: prima della prova dal vivo va deciso con Francesco se limitarlo a lui e al cliente pilota (Garage 22).
+> - ✅ **Collegamento limitato durante la prova** (Francesco, 30/09: «limitalo anche a Garage 22 — ambiente test su un'entità che non usano: Giochi senza Panciere»). `lib/whatsapp-pilota.js`: aperto al super_admin e all'azienda Garage22 srls; il cancello sta **nella route** `/api/whatsapp/connect` (GET non dà `collegamento_pronto` né gli id di Meta, POST → 403), non solo nel pannello. Si apre a tutti con `APERTO_A_TUTTI = true` dopo la prova riuscita.
+> - **Ambiente di test = Giochi senza Panciere** (azienda Il Tipico Umbro srl), collegato dal super_admin. Misurato il 30/09: 0 contatti con consenso WhatsApp, 0 automazioni attive, 0 eventi futuri → nessun messaggio automatico può raggiungere persone vere. ⚠️ Col numero attivo, però, i moduli pubblici del **suo sito** mostrano la spunta del consenso WhatsApp ai visitatori veri.
+> - ❓ Aperto: oggi anche lo **staff** dell'azienda può collegare il numero (la route non distingue il ruolo). Da decidere se riservarlo al titolare.
 > - La §12 qui sotto (blocco del dispositivo, 22/08) è **superata**: l'app esiste dal 15/09.
 >
 > **Aggiornamento 16/09/2026 — verifica aziendale APPROVATA, e il collegamento adesso esiste davvero.**
