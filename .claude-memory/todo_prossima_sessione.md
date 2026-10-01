@@ -1,6 +1,6 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — 30/09: prossimo passo = configurazione WhatsApp nella dashboard Meta insieme a schermo (ES config id, webhook su www, 4 chiavi, prova su Giochi senza Panciere); poi onboarding v2; posta in attesa"
+description: "Da dove riprendere — 01/10: eventi a pagamento corretti (chi non paga non è prenotato). Prossimo: configurazione WhatsApp nella dashboard Meta a schermo; booking risorse con lo stesso schema dei pagamenti; onboarding v2; posta in attesa"
 metadata: 
   node_type: memory
   type: project
@@ -12,7 +12,7 @@ metadata:
 
 ## ▶️ 01/10 — EVENTI CON PAGAMENTO CORRETTI (LIVE)
 - Chi non paga non è prenotato: nota 44 di CLAUDE.md, [[reference-eventi-chi-non-paga]].
-- ❓ DECISIONE DI FRANCESCO in sospeso: 5 prenotazioni non pagate «confermate» di Luca Zesi Live Show (Persichetti 1, Depretis 1, Capaldi 12, Cricco 2, Francesco 1 di prova). La regola vecchia le annulla con email all'ospite quando Stripe dà scaduta la sessione: 02/10 fra le ~11 e le ~15 ora italiana.
+- ✅ Le 5 non pagate di Luca Zesi Live Show annullate il 01/10 su decisione di Francesco (posti 20 → 3, tutti pagati).
 - Da fare: booking RISORSE con lo stesso schema (cassa senza scadenza, nessun cron); non mandare l'email «posto tornato disponibile» per un evento già concluso.
 
 ## ▶️ 30/09 — SESSIONE CHIUSA. Si riprende da qui (ordine concordato con Francesco)

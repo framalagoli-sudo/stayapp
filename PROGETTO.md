@@ -517,10 +517,12 @@ Chi compra o subentra deve saperlo prima, non dopo.
 - **Non c'è fatturazione automatica.** Nessun abbonamento ricorrente per i
   clienti di OltreNova: quello che si incassa da loro si gestisce fuori dalla
   piattaforma. (Stripe Connect serve agli incassi **dei** clienti, non ai nostri.)
-- **Un solo cliente ha incassato davvero, una volta.** I pagamenti coprono
-  negozio, prenotazioni ed eventi; il primo pagamento vero è del 22/09/2026
-  (Garage 22, un posto a un evento, 1 €). Il percorso eventi è quindi provato dal
-  vivo; negozio e prenotazioni risorse lo sono solo da noi.
+- **Un solo cliente incassa online: Garage 22, sugli eventi.** Primo pagamento
+  il 22/09/2026; da fine settembre prenotazioni pagate da clienti veri. Il
+  01/10/2026 è stato corretto il caso di chi apre la cassa e non paga (teneva il
+  posto per sempre): ora resta «in attesa» 30 minuti, poi il posto torna libero.
+  Negozio e prenotazioni delle risorse sono provati solo da noi — e le risorse
+  hanno ancora il difetto appena corretto sugli eventi (cassa senza scadenza).
 - **WhatsApp è costruito ma spento**: la verifica Meta è **approvata** (Tech
   Provider, 18/09/2026), mancano le chiavi sulla piattaforma e la prova dal vivo.
   Il collegamento di un numero oggi è aperto **solo al super_admin**; quando si

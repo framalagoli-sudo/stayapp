@@ -46,6 +46,12 @@ Dove possibile ognuno ha un test in `tests/smoke/security.spec.js`.
     firmato o conferma del titolare), e in modo **idempotente**: gli eventi Stripe si ripetono. Un ordine
     mai pagato che accredita punti è denaro fabbricato dal nulla (trovato e chiuso il 23/08, vedi
     `SECURITY-CHECK.md` §A2). Vale per ogni flusso futuro: booking, eventi, abbonamenti.
+    ⚠️ **Eventi, 01/10/2026**: la prenotazione con pagamento nasceva *confermata* e la cassa di Stripe
+    non scadeva — chi non pagava teneva il posto (17 su 60 a Garage 22). Ora nasce `pending`, diventa
+    `confirmed` solo al webhook, la cassa scade a 31 minuti e il cron la chiude **prima** di liberare il
+    posto (mai far pagare un posto già ridato). Le opzioni di Connect vanno nel **terzo** argomento:
+    `retrieve(id, {}, { stripeAccount })` — con due argomenti il cron falliva e taceva. Resta da
+    applicare lo stesso schema al booking delle **risorse**.
 
 12. **Il codice del browser non importa mai un file che tocca `supabaseAdmin`.** Il pannello, le
     pagine ospite e ogni componente `'use client'` finiscono in un bundle che chiunque può scaricare.
