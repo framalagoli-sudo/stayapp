@@ -27,9 +27,12 @@ async function raccogli(eventoId) {
     .eq('id', eventoId).maybeSingle()
   if (!evento) return { errore: 'Evento non trovato' }
 
+  // Solo chi ha il posto: «ti ricordiamo la tua prenotazione» a chi è in lista
+  // d'attesa, o a chi ha aperto la cassa senza pagare, è una promessa falsa.
+  // Prima si escludevano solo le annullate.
   const { data: tutte } = await supabaseAdmin.from('event_bookings')
     .select('id, guest_name, guest_email, guest_phone, seats, promemoria_inviato_il, status')
-    .eq('event_id', eventoId).neq('status', 'cancelled')
+    .eq('event_id', eventoId).eq('status', 'confirmed')
 
   // Chi ha un'email e non l'ha già ricevuto. Chi ha prenotato al telefono senza
   // lasciare l'email resta fuori: non c'è dove scrivergli, e fingere che sia

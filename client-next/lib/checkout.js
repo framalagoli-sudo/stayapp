@@ -75,8 +75,9 @@ export async function puoIncassare(aziendaId) {
  * @param email      di chi compra, per precompilare (facoltativo)
  * @param riferimento come ritrovare l'ordine/prenotazione quando arriva il webhook
  * @param valuta     'eur' se non detto
+ * @param minutiPerPagare dopo quanti minuti la cassa si chiude (facoltativo)
  */
-export async function creaCheckout({ aziendaId, righe, successUrl, cancelUrl, email = null, riferimento = null, valuta = 'eur', sconto = 0, scontoNome = 'Sconto' }) {
+export async function creaCheckout({ aziendaId, righe, successUrl, cancelUrl, email = null, riferimento = null, valuta = 'eur', sconto = 0, scontoNome = 'Sconto', minutiPerPagare = null }) {
   const conto = await contoDi(aziendaId)
   // ⚠️ Errori espliciti, non un ritorno vuoto: è così che lo shop è rimasto
   // mesi senza pagamenti senza che nessuno se ne accorgesse.
@@ -131,6 +132,13 @@ export async function creaCheckout({ aziendaId, righe, successUrl, cancelUrl, em
     // Torna indietro nel webhook: è così che si ritrova cosa è stato pagato,
     // senza doverlo dedurre dagli importi.
     ...(riferimento ? { client_reference_id: String(riferimento).slice(0, 200) } : {}),
+    // ⛔ Senza scadenza Stripe tiene la cassa aperta 24 ore: chi la apre e non
+    // paga tiene il posto un giorno intero, e chi libera i posti non pagati non
+    // può farlo prima — Stripe risponde «ancora aperta». Così è successo a
+    // Garage 22 il 01/10: 17 posti su 60 presi da chi non ha mai pagato.
+    // Stripe accetta una scadenza fra 30 minuti e 24 ore: un minuto di margine
+    // evita il rifiuto per una manciata di secondi.
+    ...(minutiPerPagare ? { expires_at: Math.floor(Date.now() / 1000) + Math.max(31, Number(minutiPerPagare)) * 60 } : {}),
     // ⛔ Nessuna `payment_intent_data.application_fee_amount`: non tratteniamo nulla.
   }, {
     // ⛔ Questa riga è tutto il modello: il pagamento nasce sul conto del

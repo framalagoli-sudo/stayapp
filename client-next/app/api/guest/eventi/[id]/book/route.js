@@ -13,6 +13,8 @@ import { registraContatto, tagEvento } from '@/lib/crm'
 import { eventoConcluso } from '@/lib/evento-concluso'
 import { oraLocale } from '@/lib/fuso'
 import { postiEvento, SOGLIA_AVVISO } from '@/lib/posti-evento'
+import { annunciaPrenotazioneEvento } from '@/lib/evento-prenotato'
+import { MINUTI_PER_PAGARE } from '@/lib/prenotazioni-scadute'
 
 const ENTITY_TBL = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
 
@@ -103,6 +105,9 @@ export async function POST(request, props) {
       const pkg = (evento.packages || []).find(p => p.id === package_id)
       if (pkg) { price = pkg.price || 0; pkgName = pkg.name || '' }
     }
+    // Quanto c'è da pagare adesso: decide se la prenotazione nasce confermata o
+    // in attesa del pagamento.
+    const conto = accontoDovuto(evento.acconto_percentuale, price * reqSeats)
     const { data, error } = await supabaseAdmin.from('event_bookings').insert({
       event_id: params.id, guest_name, guest_email,
       guest_phone: guest_phone || null, package_id: package_id || null,
@@ -112,9 +117,14 @@ export async function POST(request, props) {
       // già un'email intitolata «Prenotazione confermata»: le due parti
       // leggevano due verità diverse con la stessa parola.
       //
-      // «In attesa» torna a valere il giorno che i pagamenti saranno accesi:
-      // allora sarà un'attesa vera, di un pagamento che non è arrivato.
-      status: 'confirmed',
+      // «In attesa» vale quando c'è da pagare: è un'attesa vera, di un
+      // pagamento che non è ancora arrivato. Il posto è tenuto (conta nei
+      // posti occupati, così non si vende due volte), ma la prenotazione
+      // diventa confermata solo quando Stripe dice che ha pagato — e se non
+      // paga entro MINUTI_PER_PAGARE minuti (30) il posto torna libero.
+      // ⛔ Fino al 01/10 nasceva confermata anche così, e chi apriva la cassa
+      // senza pagare restava «prenotato» (Garage 22: 17 posti su 60).
+      status: conto.dovuto > 0 ? 'pending' : 'confirmed',
       // La prova del consenso, non la sua dichiarazione: quando è stato dato e
       // quale formula la persona ha letto. Se domani il testo cambia, questo
       // resta ricostruibile — è il punto dell'articolo 7 del GDPR.
@@ -151,7 +161,6 @@ export async function POST(request, props) {
     // sbagliare. E l'importo si calcola dal prezzo dell'evento riletto dal
     // database, mai da quello che è arrivato nella richiesta.
     let pagamento = null
-    const conto = accontoDovuto(evento.acconto_percentuale, price * reqSeats)
     if (conto.dovuto > 0) {
       try {
         const base = (process.env.CLIENT_URL ?? '').trim() || new URL(request.url).origin
@@ -164,6 +173,8 @@ export async function POST(request, props) {
           email: guest_email.trim(),
           successUrl: `${base}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,
           cancelUrl: `${base}/checkout/annullato`,
+          // La cassa si chiude da sola: chi non paga non tiene il posto.
+          minutiPerPagare: MINUTI_PER_PAGARE,
         })
         await supabaseAdmin.from('event_bookings')
           .update({ pagamento_id: esito.sessionId, pagamento_stato: 'non_pagato' })
@@ -172,7 +183,9 @@ export async function POST(request, props) {
       } catch (e) {
         // La prenotazione resta valida: il posto è già suo. Se la cassa non è
         // disponibile si paga sul posto, com'era prima — ma il motivo si scrive.
+        // Senza cassa non c'è niente da aspettare: diventa confermata.
         console.error('[eventi] pagamento non richiesto:', e.message)
+        await supabaseAdmin.from('event_bookings').update({ status: 'confirmed' }).eq('id', data.id)
       }
     }
 
@@ -201,27 +214,11 @@ export async function POST(request, props) {
     const appUrl = (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'
     const privacyUrl = (entSlug && PREFIX[evento.entity_tipo]) ? `${appUrl}/${PREFIX[evento.entity_tipo]}/${entSlug}/privacy` : null
 
-    // 1) Notifica al titolare (brand OltreNova, è piattaforma → titolare).
+    // 1) «Nuova prenotazione» al titolare: la manda `annunciaPrenotazioneEvento`
+    // (più sotto), e solo quando la prenotazione è vera — subito se non c'è da
+    // pagare, al pagamento se c'è. Qui resta l'avviso sui posti che finiscono:
+    // quello riguarda i posti TENUTI, e chi è alla cassa ne tiene uno.
     if (evento.notify_owner_on_booking && ownerEmail && resendKey) {
-      sendEmail({
-        _ctx: 'evento-owner', fromName: bizName,
-        from, to: ownerEmail, replyTo: guest_email,
-        subject: `[${bizName}] Nuova prenotazione: ${evento.title}`,
-        html: emailTemplate({
-          title: `Nuova prenotazione — ${evento.title}`, entityName: bizName,
-          rows: [
-            { label: 'Nome', value: guest_name },
-            { label: 'Email', value: `<a href="mailto:${guest_email}" style="color:#00b5b5">${guest_email}</a>` },
-            guest_phone ? { label: 'Telefono', value: guest_phone } : null,
-            { label: 'Posti', value: String(reqSeats) },
-            pkgName ? { label: 'Pacchetto', value: pkgName } : null,
-            { label: 'Totale', value: `€${total}` },
-            dateStr ? { label: 'Data evento', value: dateStr } : null,
-          ].filter(Boolean),
-          appUrl: (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com',
-        }),
-      }).catch(() => {})
-
       // ── «Da adesso smetti di dire sì al telefono» ────────────────────────
       //
       // La mail per ogni prenotazione, dopo la terza, si ignora. Quella che
@@ -312,30 +309,12 @@ export async function POST(request, props) {
       }
     })
 
-    if (evento.entity_id && evento.entity_tipo) {
-      const varsAuto = {
-        nome: guest_name,
-        email: guest_email,
-        telefono: guest_phone || '',
-        data: dateStr || '',
-        ora: oraLocale(evento.date_start, fuso, { day: undefined, month: undefined, hour: '2-digit', minute: '2-digit' }),
-        servizio: evento.title,
-        n_persone: String(reqSeats),
-        visit_datetime: evento.date_start || null,
-        source_tipo: 'evento',
-        source_id: data.id,
-      }
-      const ctxAuto = { azienda_id: evento.azienda_id, entity_tipo: evento.entity_tipo, entity_id: evento.entity_id }
-      after(async () => {
-        try {
-          await triggerAutomazione('nuova_prenotazione', ctxAuto, varsAuto)
-          if (evento.date_start) {
-            await triggerAutomazione('pre_visita', ctxAuto, varsAuto)
-            await triggerAutomazione('post_visita', ctxAuto, varsAuto)
-          }
-        } catch (e) { console.error('[eventi] automazioni:', e.message) }
-      })
-    }
+    // Avviso al titolare e automazioni (promemoria prima dell'evento, grazie
+    // dopo): solo per una prenotazione già vera. Con un pagamento in corso li
+    // manda il webhook quando i soldi sono arrivati — chi apre la cassa e non
+    // paga non deve far partire niente. Dentro `after()`: su Vercel la funzione
+    // si congela appena risponde.
+    if (!pagamento) after(() => annunciaPrenotazioneEvento(data.id))
 
     // Il link della cassa torna insieme alla prenotazione: chi ha appena
     // prenotato va portato a pagare adesso, non con un'email di domani.

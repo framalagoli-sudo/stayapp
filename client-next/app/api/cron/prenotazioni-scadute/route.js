@@ -23,6 +23,14 @@ export async function GET(request) {
         new Error(`${esito.recuperate} pagamenti risultavano non pagati ma su Stripe erano riusciti: il webhook non è arrivato`),
         { alert: true })
     }
+    // ⛔ «Incerte» era un numero che nessuno leggeva: il cron diceva «ok» e
+    // saltava, e una prenotazione mai pagata è rimasta «confermata» nove giorni.
+    // Ora il motivo arriva per email (al massimo una all'ora, dice logError).
+    if (esito.incerte > 0) {
+      await logError('cron/prenotazioni-scadute',
+        new Error(`${esito.incerte} prenotazioni non pagate non si possono verificare su Stripe: ${esito.motivi.slice(0, 5).join(' · ')}`),
+        { alert: true })
+    }
     await battitoEControllo('prenotazioni-scadute')
     return Response.json({ ok: true, minuti_per_pagare: MINUTI_PER_PAGARE, ...esito })
   } catch (e) {

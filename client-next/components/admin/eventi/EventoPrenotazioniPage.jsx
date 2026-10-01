@@ -383,8 +383,9 @@ export default function EventoPrenotazioniPage() {
       // capita è che disdica.
       confirmed: { principale: { stato: 'cancelled', testo: 'Ha disdetto', bg: '#f8d7da', color: '#721c24' },
                    altre: [{ stato: 'pending', testo: 'rimetti in attesa' }] },
-      // In attesa esiste per quando i pagamenti saranno accesi. Finché no, la
-      // cosa da fare è confermare.
+      // In attesa: o sta pagando online (si conferma da sola al pagamento, o si
+      // libera dopo 30 minuti), o è stata messa in attesa a mano. «Conferma»
+      // vuol dire che la tiene il titolare: pagherà sul posto.
       pending:   { principale: { stato: 'confirmed', testo: 'Conferma', bg: '#d4edda', color: '#155724' },
                    altre: [{ stato: 'cancelled', testo: 'annulla' }] },
       // ⛔ «Fai entrare», non «Conferma»: da qui parte l'email che dice alla
@@ -582,13 +583,17 @@ export default function EventoPrenotazioniPage() {
           <div style={{ background: '#fff', borderRadius: 12, padding: '12px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', fontSize: 12.5, color: '#666', lineHeight: 1.7 }}>
             {[
               bookings.some(b => b.status === 'confirmed') && <span key="c"><strong style={{ color: '#155724' }}>Confermata</strong> = ha il posto e verrà.</span>,
-              bookings.some(b => b.status === 'pending') && <span key="p"><strong style={{ color: '#856404' }}>In attesa</strong> = ha prenotato ma il posto non è ancora suo: va confermata.</span>,
+              bookings.some(b => b.status === 'pending' && b.pagamento_stato === 'non_pagato') && <span key="pp"><strong style={{ color: '#856404' }}>Attende il pagamento</strong> = è alla cassa online. Il posto è tenuto per 30 minuti: se paga diventa confermata da sola, se no torna libero. «Conferma» = la tieni tu e pagherà sul posto.</span>,
+              bookings.some(b => b.status === 'pending' && b.pagamento_stato !== 'non_pagato') && <span key="p"><strong style={{ color: '#856404' }}>In attesa</strong> = ha prenotato ma il posto non è ancora suo: va confermata.</span>,
               bookings.some(b => b.status === 'waitlist') && <span key="w"><strong style={{ color: '#2b6cb0' }}>In lista d’attesa</strong> = non c’era posto. Non ne occupa uno, e «Fai entrare» le manda la conferma.</span>,
-              bookings.some(b => b.status === 'cancelled') && <span key="a"><strong style={{ color: '#721c24' }}>Annullata</strong> = ha disdetto, il suo posto è tornato libero.</span>,
+              bookings.some(b => b.status === 'cancelled') && <span key="a"><strong style={{ color: '#721c24' }}>Annullata</strong> = ha disdetto o non ha pagato in tempo: il suo posto è tornato libero.</span>,
             ].filter(Boolean).map((x, i, arr) => <span key={i}>{x}{i < arr.length - 1 ? ' · ' : ''}</span>)}
           </div>
           {bookings.map(b => {
-            const st = statusStyle(b.status)
+            // «In attesa» con la cassa aperta si dice per quello che è.
+            const st = b.status === 'pending' && b.pagamento_stato === 'non_pagato'
+              ? { ...statusStyle('pending'), label: 'Attende il pagamento' }
+              : statusStyle(b.status)
             const pkg = b.package_id ? (evento.packages || []).find(p => p.id === b.package_id) : null
             return (
               <div key={b.id} style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>

@@ -34,6 +34,15 @@ export async function PATCH(request, props) {
 
     const payload = { updated_at: new Date().toISOString() }
     if (status !== undefined) payload.status = status
+    // Il titolare conferma a mano una prenotazione che aspettava il pagamento:
+    // vuol dire «la tengo io, pagherà sul posto». Il pagamento online smette di
+    // essere atteso — altrimenti, alla scadenza della cassa, il giro che libera
+    // i posti non pagati la annullerebbe contro la sua decisione.
+    if (status === 'confirmed') {
+      const { data: att } = await supabaseAdmin.from('event_bookings')
+        .select('pagamento_stato').eq('id', params.bookingId).maybeSingle()
+      if (att?.pagamento_stato === 'non_pagato') payload.pagamento_stato = 'non_richiesto'
+    }
     if (notes  !== undefined) payload.notes  = notes
     // Correggere una prenotazione presa male è il gesto più frequente di tutti:
     // «ha prenotato per 15 invece che per 5» (Garage 22, 22/09/2026). Finora si

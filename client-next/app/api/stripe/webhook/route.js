@@ -3,6 +3,7 @@ import { stripeConnect, stripeConfigurato } from '@/lib/stripe-connect'
 import { finalizzaLoyaltyOrdine } from '@/lib/loyalty-helpers'
 import { logError } from '@/lib/observability'
 import { mandaConfermaEvento } from '@/lib/evento-conferma'
+import { annunciaPrenotazioneEvento } from '@/lib/evento-prenotato'
 
 // «Ha pagato?» — la risposta arriva da qui, non dal browser.
 //
@@ -99,8 +100,19 @@ async function segnaPagato(sessione) {
   // 3. Una prenotazione di un evento
   const { data: ev } = await supabaseAdmin.from('event_bookings')
     .update({ pagamento_stato: 'pagato' })
-    .eq('pagamento_id', sid).neq('pagamento_stato', 'pagato').select('id')
+    .eq('pagamento_id', sid).neq('pagamento_stato', 'pagato').select('id, status, event_id')
   if (ev?.length) {
+    // Adesso la prenotazione è vera: da «in attesa del pagamento» a confermata.
+    // Solo se era in attesa — una annullata non si resuscita in silenzio.
+    if (ev[0].status === 'pending') {
+      await supabaseAdmin.from('event_bookings').update({ status: 'confirmed' })
+        .eq('id', ev[0].id).eq('status', 'pending')
+    } else if (ev[0].status === 'cancelled') {
+      // Non dovrebbe succedere: la cassa scade prima che il posto si liberi. Se
+      // succede, qualcuno ha pagato un posto che non ha più — va saputo subito.
+      await logError('stripe/webhook', new Error(`pagamento arrivato per una prenotazione evento ANNULLATA: ${ev[0].id} — da rimborsare o rimettere dentro a mano`), { alert: true })
+      return
+    }
     // ⛔ Qui prima non partiva NIENTE: si segnava «pagato» nel database e finiva
     // lì. Una persona pagava e non riceveva una riga che glielo confermasse —
     // e con la scadenza a 30 minuti si sarebbe pure vista annullare il posto se
@@ -110,6 +122,10 @@ async function segnaPagato(sessione) {
     // ⚠️ Il `neq` qui sopra fa da scambio atomico: passa un solo webhook, quindi
     // la conferma parte una volta sola anche se Stripe rispedisce l'evento.
     await mandaConfermaEvento(ev[0].id)
+    // Avviso al titolare e automazioni: solo ora, a pagamento arrivato. Una
+    // prenotazione nata «confermata» prima del 01/10 li ha già avuti alla
+    // prenotazione: rifarli manderebbe al titolare lo stesso avviso due volte.
+    if (ev[0].status === 'pending') await annunciaPrenotazioneEvento(ev[0].id)
     return
   }
 

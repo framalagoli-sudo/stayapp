@@ -95,6 +95,18 @@ export async function runAutomazioniScheduler() {
       continue
     }
 
+    // ⛔ Un promemoria per una prenotazione di evento che non esiste più — annullata,
+    // o passata in lista d'attesa — non deve partire. Prima lo scheduler non
+    // guardava la prenotazione d'origine: bastava che fosse stata messa in coda.
+    if (log.source_tipo === 'evento' && log.source_id) {
+      const { data: pren } = await supabaseAdmin.from('event_bookings')
+        .select('status').eq('id', log.source_id).maybeSingle()
+      if (!pren || pren.status !== 'confirmed') {
+        await supabaseAdmin.from('automazioni_log').update({ status: 'failed', error_msg: 'Prenotazione non più valida (annullata o non confermata)' }).eq('id', log.id)
+        continue
+      }
+    }
+
     const step = Array.isArray(auto.steps) ? auto.steps[log.step_index] : null
     if (!step) {
       await supabaseAdmin.from('automazioni_log').update({ status: 'failed', error_msg: 'Step non trovato' }).eq('id', log.id)
