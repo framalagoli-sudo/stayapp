@@ -13,6 +13,7 @@
 - [🧾 A OGNI chiusura: aggiornare TUTTI i file di progetto](feedback_chiusura_sessione.md) — CLAUDE/FEATURES/PROGETTO/SECURITY, memoria + copia in .claude-memory; ognuno va APERTO, non supposto
 - [📅 Sessione 29–30/09 — aspetto app QR, Inizia qui, WhatsApp solo super_admin, posti riservati chiusi](project_session_2026_09_29_30.md) — prossimo: Meta a schermo, poi onboarding v2, posta in attesa
 - [🧑‍🤝‍🧑 Landing nuova: sempre una persona vera](project_landing_persona_umana.md) — Francesco + staff umano come punto di forza, in evidenza (30/09)
+- [💳 Eventi: chi non paga non è prenotato](reference_eventi_chi_non_paga.md) — pending→confirmed al webhook, cassa a 31 min, cron che chiude e dice perché; retrieve con stripeAccount nel TERZO argomento (01/10)
 - [📧 Posta elettronica: uscita da SiteGround](project_posta_elettronica.md) — OltreNova su Zoho Lite (zoho.eu), Guru con inoltro Cloudflare, clienti intestati a loro; non tocchiamo i record Resend
 - [📅 Sessione 24–25/09 — menu col sito in cima, categorie per entità LIVE, buco domini chiuso](project_session_2026_09_24_25.md) — migration fino a 129; prossimo: onboarding
 - [🧭 Menu e categorie: regole e trappole](reference_categorie_e_menu.md) — costruisciMenu unica regola; categoria sull entità applicata come copia; verifica col 2FA FATTO, mai spento

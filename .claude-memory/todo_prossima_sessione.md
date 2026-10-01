@@ -10,6 +10,11 @@ metadata:
 
 # Si riprende da qui
 
+## ▶️ 01/10 — EVENTI CON PAGAMENTO CORRETTI (LIVE)
+- Chi non paga non è prenotato: nota 44 di CLAUDE.md, [[reference-eventi-chi-non-paga]].
+- ❓ DECISIONE DI FRANCESCO in sospeso: 5 prenotazioni non pagate «confermate» di Luca Zesi Live Show (Persichetti 1, Depretis 1, Capaldi 12, Cricco 2, Francesco 1 di prova). La regola vecchia le annulla con email all'ospite quando Stripe dà scaduta la sessione: 02/10 fra le ~11 e le ~15 ora italiana.
+- Da fare: booking RISORSE con lo stesso schema (cassa senza scadenza, nessun cron); non mandare l'email «posto tornato disponibile» per un evento già concluso.
+
 ## ▶️ 30/09 — SESSIONE CHIUSA. Si riprende da qui (ordine concordato con Francesco)
 0. ✅ 30/09 **`posti_riservati` chiuso** (Francesco: «vedi tu»): `postiPubblici()` manda solo `posti_online`; sonda colonne pubbliche su TUTTI gli eventi con colonne vietate. Nota in CLAUDE.md §44.
 1. 🟦 **META / WHATSAPP — «ricordiamoci META» (Francesco, 30/09).** ✅ **Tech Provider APPROVATO** (Francesco, 30/09). Su Vercel c'è solo `WHATSAPP_TOKEN_KEY`; mancano `META_APP_ID`, `META_APP_SECRET`, `META_ES_CONFIG_ID`, `WHATSAPP_WEBHOOK_TOKEN`. Passi: configurazione Embedded Signup in dashboard (→ config id) · webhook su **www** con token di verifica · rigenerare il token client incollato in chat il 15/09 · chiavi su Vercel + redeploy · prova col numero di test (Garage 22 pilota) · coesistenza · tariffe Meta Italia · 2 video App Review. ✅ Deciso 30/09: collegamento SOLO super_admin per ora («non farlo vedere a Garage 22, è l'unico che accede al pannello e non vorrei che si inalberi»); quando si apre, solo `admin_azienda`, mai lo staff (`lib/whatsapp-pilota.js`, cancello nella route). **Ambiente di test = Giochi senza Panciere** (0 consensi WA, 0 automazioni, 0 eventi futuri), collegato dal super_admin. ⚠️ `info@oltrenova.com` è l'indirizzo dell'app Meta: la migrazione della posta non deve farlo rimbalzare. Vedi WHATSAPP.md (aggiornamento 30/09), [[reference_meta_app_setup]].
