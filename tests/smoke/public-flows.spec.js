@@ -68,7 +68,9 @@ test.describe('Flussi pubblici — no crash client-side', () => {
     // sito, «Indietro» per un evento aziendale che non appartiene a nessuno.
     // Il test guarda che l'uscita esista, non come si chiama: chiedere una
     // parola esatta lo fa fallire ogni volta che si migliora una scritta.
-    await expect(page.getByRole('button', { name: /Indietro|Torna a /i }).first()).toBeVisible()
+    // ⚠️ Il browser degli smoke è in inglese e viene portato su `/en`, dove la
+    // pagina è tradotta: l'uscita lì si chiama «Back» / «Back to <nome>».
+    await expect(page.getByRole('button', { name: /Indietro|Torna a |Back/i }).first()).toBeVisible()
   })
 
   test('blocco eventi VISIBILE sulla landing (guard "tutto bianco")', async ({ page }) => {
