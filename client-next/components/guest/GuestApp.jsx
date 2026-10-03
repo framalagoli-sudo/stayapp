@@ -20,6 +20,8 @@ import { t as tr } from '@/lib/i18n'
 import { oraLocale } from '@/lib/fuso'
 import { supabase } from '@/lib/supabase'
 import RequestForm from './RequestForm'
+import CampoPosti, { numeroPosti } from './CampoPosti'
+import RiepilogoPrenotazione from './RiepilogoPrenotazione'
 import ServicesTab from './ServicesTab'
 import MenuTab from '@/components/MenuTab'
 import { sezioniOspite, etichettaSezione } from '@/lib/funzioni'
@@ -734,7 +736,10 @@ function EventiTab({ eventi, onOpen, primary, textColor, subText, isDark, radius
 // ─── EventoDetailView — pagina dettaglio evento dentro la PWA (nessun overlay) ──
 function EventoDetailView({ evento, onBack, privacyUrl = null, primary, textColor, subText, isDark, radius, lang = 'it' }) {
   const [pkgId,      setPkgId]      = useState(evento.packages?.length === 1 ? evento.packages[0].id : '')
-  const [seats,      setSeats]      = useState(1)
+  // Testo, non numero: il campo deve poter restare vuoto mentre si scrive.
+  const [seats,      setSeats]      = useState('1')
+  // Il riepilogo da leggere prima di andare a pagare (null = non ancora chiesto).
+  const [riepilogo,  setRiepilogo]  = useState(null)
   const [guestName,  setGuestName]  = useState('')
   const [guestEmail, setGuestEmail] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
@@ -751,17 +756,31 @@ function EventoDetailView({ evento, onBack, privacyUrl = null, primary, textColo
     if (!guestEmail.trim()) { setBookErr('Inserisci la tua email'); return }
     if (telefonoServe && !guestPhone.trim()) { setBookErr('Per questo evento serve un numero di telefono'); return }
     if (!privacyOk) { setBookErr('Serve il consenso al trattamento dei dati.'); return }
+    const posti = numeroPosti(seats)
+    if (!posti) { setBookErr(lang === 'en' ? 'Tell us how many people' : 'Indica per quante persone vuoi prenotare'); return }
     setBooking(true); setBookErr('')
     try {
-      await guestFetch(`/api/guest/eventi/${evento.id}/book`, {
+      // Come nella pagina dell'evento: se c'è da pagare, prima il riepilogo —
+      // e i posti si prendono solo alla conferma.
+      if (!riepilogo) {
+        const conti = await guestFetch(`/api/guest/eventi/${evento.id}/riepilogo`, {
+          method: 'POST', body: JSON.stringify({ package_id: pkgId || null, seats: posti }),
+        })
+        if (conti?.da_pagare > 0) { setRiepilogo(conti); return }
+      }
+      const res = await guestFetch(`/api/guest/eventi/${evento.id}/book`, {
         method: 'POST',
         // ⛔ Mancava `privacy_accettata`: la route lo pretende dal 25/08 e
           // rispondeva 400 a OGNI prenotazione fatta dall'app del QR, senza che
           // l'ospite avesse una spunta da mettere. Rotta in silenzio per un mese.
           body: JSON.stringify({ guest_name: guestName, guest_email: guestEmail,
-            guest_phone: guestPhone || null, package_id: pkgId || null, seats,
+            guest_phone: guestPhone || null, package_id: pkgId || null, seats: posti,
             notes: notes.trim() || null, privacy_accettata: privacyOk }),
       })
+      // ⛔ Il link della cassa veniva ignorato: chi prenotava da qui un evento
+      // a pagamento leggeva «Prenotazione inviata!», non pagava mai, e dopo
+      // mezz'ora la prenotazione si annullava da sola.
+      if (res?.pagamento?.url) { window.location.href = res.pagamento.url; return }
       setDone(true)
     } catch (e) { setBookErr(e.message) }
     finally { setBooking(false) }
@@ -806,7 +825,7 @@ function EventoDetailView({ evento, onBack, privacyUrl = null, primary, textColo
               <div style={{ fontWeight: 700, fontSize: 13, color: textColor, marginBottom: 8 }}>{tr('choose_package', lang)}</div>
               {evento.packages.map(pkg => (
                 <label key={pkg.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: radius || 10, border: `1.5px solid ${pkgId === pkg.id ? primary : (isDark ? 'rgba(255,255,255,0.1)' : '#e0e0e0')}`, marginBottom: 8, cursor: 'pointer', background: pkgId === pkg.id ? `${primary}18` : 'transparent' }}>
-                  <input type="radio" name="pkg" value={pkg.id} checked={pkgId === pkg.id} onChange={() => setPkgId(pkg.id)} style={{ accentColor: primary }} />
+                  <input type="radio" name="pkg" value={pkg.id} checked={pkgId === pkg.id} onChange={() => { setPkgId(pkg.id); setRiepilogo(null) }} style={{ accentColor: primary }} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 600, fontSize: 14, color: textColor }}>{pkg.name}</div>
                     {pkg.description && <div style={{ fontSize: 12, color: subText }}>{pkg.description}</div>}
@@ -827,6 +846,10 @@ function EventoDetailView({ evento, onBack, privacyUrl = null, primary, textColo
               <div style={{ fontWeight: 700, fontSize: 15, color: textColor, marginBottom: 4 }}>{tr('booking_sent', lang)}</div>
               <div style={{ fontSize: 13, color: subText }}>{tr('booking_sent_sub', lang)}</div>
             </div>
+          ) : riepilogo ? (
+            <RiepilogoPrenotazione riepilogo={riepilogo} titoloEvento={evento.title} quando={fmtDate(evento)} lang={lang}
+              inCorso={booking} errore={bookErr} onConferma={handleBook} onModifica={() => { setRiepilogo(null); setBookErr('') }}
+              colori={{ testo: textColor, tenue: subText, bordo: border, primario: primary, suPrimario: readableOn('#ffffff', primary, '#1a1a2e'), raggio: radius || 12 }} />
           ) : (
             <>
               <div style={{ fontWeight: 700, fontSize: 13, color: textColor, marginBottom: 10 }}>{tr('your_data', lang)}</div>
@@ -834,8 +857,8 @@ function EventoDetailView({ evento, onBack, privacyUrl = null, primary, textColo
               <input value={guestEmail} onChange={e => setGuestEmail(e.target.value)} placeholder={tr('email_req', lang)} type="email" style={inp} />
               <input value={guestPhone} onChange={e => setGuestPhone(e.target.value)} placeholder={tr(telefonoServe ? 'phone_req' : 'phone_opt', lang)} type="tel" style={inp} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <label style={{ fontSize: 13, color: subText }}>{tr('seats_label', lang)}</label>
-                <input type="number" min="1" value={seats} onChange={e => setSeats(parseInt(e.target.value) || 1)} style={{ ...inp, width: 70, textAlign: 'center', marginBottom: 0 }} />
+                <label htmlFor="posti-evento" style={{ fontSize: 13, color: subText }}>{tr('seats_label', lang)}</label>
+                <CampoPosti id="posti-evento" value={seats} onChange={setSeats} style={{ ...inp, width: 70, textAlign: 'center', marginBottom: 0 }} />
               </div>
               <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} maxLength={500}
                 placeholder={tr('notes_opt', lang)} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }} />

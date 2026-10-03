@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { recomputeEventSeats } from '@/lib/event-seats'
 import { confermaPostiEvento } from '@/lib/capienza'
-import { creaCheckout, accontoDovuto } from '@/lib/checkout'
+import { creaCheckout } from '@/lib/checkout'
 import { sendEmail } from '@/lib/send-email'
 import { emailTemplate } from '@/lib/email-template'
 import { getAziendaLegale } from '@/lib/guest-data'
@@ -10,7 +10,7 @@ import { mandaConfermaEvento } from '@/lib/evento-conferma'
 import { after } from 'next/server'
 import { triggerAutomazione } from '@/lib/guest-utils'
 import { registraContatto, tagEvento } from '@/lib/crm'
-import { eventoConcluso } from '@/lib/evento-concluso'
+import { postiRichiesti, rifiutoPrenotazione, contoEvento } from '@/lib/evento-prenotazione'
 import { oraLocale } from '@/lib/fuso'
 import { postiEvento, SOGLIA_AVVISO } from '@/lib/posti-evento'
 import { annunciaPrenotazioneEvento } from '@/lib/evento-prenotato'
@@ -70,48 +70,21 @@ export async function POST(request, props) {
 
     // ⚠️ Il muro sta qui, non nel browser: nascondere il modulo impedisce di
     // sbagliare a chi guarda la pagina, non a chi manda una richiesta a mano.
-    if (eventoConcluso(evento)) {
-      return Response.json({ error: 'Questo evento si è già concluso.' }, { status: 400 })
-    }
-    if (evento.prenotazioni_chiuse) {
-      return Response.json({
-        error: evento.prenotazioni_chiuse_testo?.trim() || 'Le prenotazioni per questo evento sono chiuse.',
-      }, { status: 400 })
-    }
-
-    const reqSeats = parseInt(seats) || 1
-    // ⚠️ Il limite del pubblico NON è la capienza: è la capienza meno i posti
-    // riservati a chi prenota al telefono.
+    // Le stesse domande le fa il riepilogo che si legge prima di confermare:
+    // stanno in `lib/evento-prenotazione.js`, così le risposte non divergono.
+    const reqSeats = postiRichiesti(seats)
+    if (!reqSeats) return Response.json({ error: 'Indica per quante persone vuoi prenotare.' }, { status: 400 })
+    const rifiuto = rifiutoPrenotazione(evento, reqSeats)
+    if (rifiuto) return Response.json(rifiuto, { status: 400 })
     const posti = postiEvento(evento)
-    if (!posti.illimitato && reqSeats > posti.liberiOnline) {
-      // ⛔ Diceva solo «Posti esauriti», anche a chi ne aveva chiesti 4 quando
-      // ne restavano 2: chi legge non sa se riprovare con meno o rinunciare.
-      // E chi è arrivato un istante dopo qualcun altro merita di sapere che
-      // c'è una lista d'attesa, invece di un errore rosso e basta.
-      return Response.json({
-        error: posti.liberiOnline === 0
-          ? (evento.lista_attesa
-            ? 'I posti sono appena finiti. Puoi metterti in lista d\'attesa: ti avvisiamo se se ne libera uno.'
-            : 'I posti per questo appuntamento sono finiti.')
-          : `Restano ${posti.liberiOnline} ${posti.liberiOnline === 1 ? 'posto' : 'posti'} e ne hai chiesti ${reqSeats}.`,
-        posti_liberi: posti.liberiOnline,
-        lista_attesa: !!evento.lista_attesa,
-      }, { status: 400 })
-    }
 
-    let price = evento.price || 0
-    let pkgName = ''
-    if (package_id) {
-      const pkg = (evento.packages || []).find(p => p.id === package_id)
-      if (pkg) { price = pkg.price || 0; pkgName = pkg.name || '' }
-    }
     // Quanto c'è da pagare adesso: decide se la prenotazione nasce confermata o
     // in attesa del pagamento.
-    const conto = accontoDovuto(evento.acconto_percentuale, price * reqSeats)
+    const { totale, conto } = contoEvento(evento, package_id, reqSeats)
     const { data, error } = await supabaseAdmin.from('event_bookings').insert({
       event_id: params.id, guest_name, guest_email,
       guest_phone: guest_phone || null, package_id: package_id || null,
-      seats: reqSeats, total_amount: price * reqSeats, notes: notes || null,
+      seats: reqSeats, total_amount: totale, notes: notes || null,
       // ⚠️ Nasce CONFERMATA. Nasceva «in attesa» e nessuno l'ha mai confermata
       // — tredici su tredici, da aprile a settembre — mentre all'ospite arrivava
       // già un'email intitolata «Prenotazione confermata»: le due parti
@@ -192,7 +165,6 @@ export async function POST(request, props) {
     // ── Notifiche email (per-evento, configurabili) ──────────────────────────────
     const resendKey = (process.env.RESEND_API_KEY ?? '').trim()
     const from = (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>'
-    const total = (price * reqSeats).toFixed(2)
     const fuso = evento.aziende?.fuso_orario
     const dateStr = fmtDate(evento.date_start, fuso)
 

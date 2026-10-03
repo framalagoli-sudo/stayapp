@@ -6,6 +6,8 @@ import { oraLocale } from '@/lib/fuso'
 import { ricco } from '@/lib/testo-ricco'
 import LegalInfo from './LegalInfo'
 import SiteNav from './SiteNav'
+import CampoPosti, { numeroPosti } from './CampoPosti'
+import RiepilogoPrenotazione from './RiepilogoPrenotazione'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Calendar, MapPin, Users, ArrowLeft, Check } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
@@ -65,7 +67,10 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
   const [evento,     setEvento]     = useState(iniziale)
   const [error,      setError]      = useState(null)
   const [pkgId,      setPkgId]      = useState('')
-  const [seats,      setSeats]      = useState(1)
+  // Testo, non numero: il campo deve poter restare vuoto mentre si scrive.
+  const [seats,      setSeats]      = useState('1')
+  // Il riepilogo da leggere prima di andare a pagare (null = non ancora chiesto).
+  const [riepilogo,  setRiepilogo]  = useState(null)
   const [guestName,  setGuestName]  = useState('')
   const [guestEmail, setGuestEmail] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
@@ -97,6 +102,8 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
     setBookErr('')
     if (!guestName.trim() || !guestEmail.trim()) { setBookErr('Servono nome ed email.'); return }
     if (!privacyOk) { setBookErr('Serve il consenso al trattamento dei dati.'); return }
+    const posti = numeroPosti(seats)
+    if (!posti) { setBookErr('Indica per quante persone.'); return }
     setBooking(true)
     try {
       // Come sopra: la lista d'attesa lavora per id, non per indirizzo.
@@ -104,7 +111,7 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
         method: 'POST',
         body: JSON.stringify({
           guest_name: guestName, guest_email: guestEmail, guest_phone: guestPhone,
-          seats, privacy_accettata: privacyOk,
+          seats: posti, privacy_accettata: privacyOk,
         }),
       })
       if (res.error) throw new Error(res.error)
@@ -118,18 +125,29 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
     if (!guestEmail.trim()) { setBookErr('Inserisci la tua email'); return }
     // Lo stesso controllo c'è nella route: qui si evita solo il giro inutile.
     if (telefonoServe && !guestPhone.trim()) { setBookErr('Per questo evento serve un numero di telefono'); return }
+    const posti = numeroPosti(seats)
+    if (!posti) { setBookErr('Indica per quante persone vuoi prenotare'); return }
     setBooking(true); setBookErr('')
     try {
+      // ⚠️ Se c'è da pagare, prima si dice cosa sta per succedere — e i posti
+      // NON si prendono ancora. Chi arrivava alla cassa senza aspettarsela la
+      // chiudeva, e i posti restavano tenuti mezz'ora per nessuno. Il secondo
+      // giro (riepilogo già a schermo) è la conferma: da lì si prenota davvero.
+      if (!riepilogo) {
+        const conti = await guestFetch(`/api/guest/eventi/${evento.id}/riepilogo`, {
+          method: 'POST', body: JSON.stringify({ package_id: pkgId || null, seats: posti }),
+        })
+        if (conti?.da_pagare > 0) { setRiepilogo(conti); return }
+      }
       // ⚠️ Si prenota sull'**id** dell'evento, non su quello che c'è nell'URL:
       // l'indirizzo può essere uno slug, e le route che scrivono lavorano per id.
       const res = await guestFetch(`/api/guest/eventi/${evento.id}/book`, {
         method: 'POST',
         body: JSON.stringify({ privacy_accettata: privacyOk, guest_name: guestName, guest_email: guestEmail,
-          guest_phone: guestPhone || null, package_id: pkgId || null, seats, notes: notes.trim() || null }),
+          guest_phone: guestPhone || null, package_id: pkgId || null, seats: posti, notes: notes.trim() || null }),
       })
-      // ⚠️ Se c'è un acconto si va **subito** alla cassa: chi ha appena
-      // prenotato è qui adesso. Il posto è già suo — se non paga, resta da
-      // saldare e il titolare lo vede come «non pagato».
+      // Se c'è da pagare si va subito alla cassa: il posto è tenuto, e torna
+      // libero se il pagamento non arriva.
       if (res?.pagamento?.url) { window.location.href = res.pagamento.url; return }
       setEmailSent(!!res?.guest_confirmation_sent)
       setDone(true)
@@ -361,7 +379,7 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
                   <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Nome e cognome *" style={inp} />
                   <input type="email" value={guestEmail} onChange={e => setGuestEmail(e.target.value)} placeholder="Email *" style={inp} />
                   <input type="tel" value={guestPhone} onChange={e => setGuestPhone(e.target.value)} placeholder="Telefono" style={inp} />
-                  <input type="number" min="1" value={seats} onChange={e => setSeats(Math.max(1, Number(e.target.value) || 1))} placeholder="Per quante persone" style={inp} />
+                  <CampoPosti value={seats} onChange={setSeats} placeholder="Per quante persone" aria-label="Per quante persone" style={inp} />
                 </div>
                 <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#666', cursor: 'pointer', lineHeight: 1.6, marginBottom: 14 }}>
                   <input type="checkbox" checked={privacyOk} onChange={e => setPrivacyOk(e.target.checked)} style={{ marginTop: 3, flexShrink: 0, accentColor: '#00b5b5' }} />
@@ -388,7 +406,7 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
               <div style={{ fontWeight: 600, fontSize: 14, color: '#333', marginBottom: 10 }}>Scegli pacchetto</div>
               {evento.packages.map(pkg => (
                 <label key={pkg.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 10, border: `1.5px solid ${pkgId === pkg.id ? '#00b5b5' : '#e0e0e0'}`, marginBottom: 8, cursor: 'pointer', background: pkgId === pkg.id ? '#00b5b510' : 'transparent' }}>
-                  <input type="radio" name="pkg" value={pkg.id} checked={pkgId === pkg.id} onChange={() => setPkgId(pkg.id)} style={{ accentColor: '#00b5b5' }} />
+                  <input type="radio" name="pkg" value={pkg.id} checked={pkgId === pkg.id} onChange={() => { setPkgId(pkg.id); setRiepilogo(null) }} style={{ accentColor: '#00b5b5' }} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 600, fontSize: 15 }}>{pkg.name}</div>
                     {pkg.description && <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>{pkg.description}</div>}
@@ -409,6 +427,9 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
               <div style={{ fontWeight: 700, fontSize: 20, color: '#1a1a2e', marginBottom: 6 }}>Prenotazione inviata!</div>
               <div style={{ fontSize: 14, color: '#888' }}>{emailSent ? 'Ti abbiamo spedito una mail di conferma.' : 'La tua prenotazione è stata registrata.'}</div>
             </div>
+          ) : riepilogo ? (
+            <RiepilogoPrenotazione riepilogo={riepilogo} titoloEvento={evento.title} quando={fmtDate(evento.date_start)} lang={lang}
+              inCorso={booking} errore={bookErr} onConferma={handleBook} onModifica={() => { setRiepilogo(null); setBookErr('') }} />
           ) : (
             <>
               <div style={{ fontWeight: 600, fontSize: 14, color: '#333', marginBottom: 14 }}>I tuoi dati</div>
@@ -416,8 +437,8 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
               <input value={guestEmail} onChange={e => setGuestEmail(e.target.value)} placeholder="Email *" type="email" style={inp} />
               <input value={guestPhone} onChange={e => setGuestPhone(e.target.value)} placeholder={telefonoServe ? 'Telefono *' : 'Telefono (opzionale)'} type="tel" style={inp} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-                <label style={{ fontSize: 14, color: '#555' }}>Posti:</label>
-                <input type="number" min="1" value={seats} onChange={e => setSeats(parseInt(e.target.value) || 1)} style={{ ...inp, width: 80, textAlign: 'center', marginBottom: 0 }} />
+                <label htmlFor="posti-evento" style={{ fontSize: 14, color: '#555' }}>Posti:</label>
+                <CampoPosti id="posti-evento" value={seats} onChange={setSeats} style={{ ...inp, width: 80, textAlign: 'center', marginBottom: 0 }} />
               </div>
               {/* Il posto dove salvarle c'era già (colonna `notes`, e l'admin le
                   mostra), mancava solo il campo: chi prenota non aveva modo di
