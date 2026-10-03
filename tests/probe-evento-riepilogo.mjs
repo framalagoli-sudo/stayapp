@@ -130,6 +130,7 @@ try {
     ok(/Stai prenotando 5 posti per «ZZ Cena di prova»/.test(testo), `${nome}: il riepilogo dice quanti posti e per quale evento`)
     ok(/Totale 50,00\s?€/.test(testo) && /Paghi adesso \(acconto 30%\) 15,00\s?€/.test(testo) && /Da saldare sul posto 35,00\s?€/.test(testo),
       `${nome}: totale 50 €, adesso 15 €, sul posto 35 €`)
+    ok(/La prenotazione è valida solo dopo il pagamento dell’acconto./.test(testo), `${nome}: dice che si è prenotati solo dopo aver pagato`)
     ok(corpo() === null && await prenotazioni(ev.id) === 0, `${nome}: a riepilogo aperto nessun posto è stato preso`)
     // FOTO=<cartella> salva il riepilogo com'è a schermo, per guardarlo.
     if (process.env.FOTO) await page.getByText('Controlla prima di confermare').locator('xpath=../..').screenshot({ path: `${process.env.FOTO}/riepilogo-${nome}.png` })
@@ -153,6 +154,23 @@ try {
   const sito = await apri(`${BASE}/eventi/${ev.id}`)
   await percorso(sito, 'pagina')
   await sito.ctx.close()
+
+  console.log('\n   …e su /en il modulo e il riepilogo sono in inglese')
+  const en = await apri(`${BASE}/en/eventi/${ev.id}`)
+  await en.page.locator('#posti-evento').waitFor({ timeout: 20000 })
+  const modulo = (await en.page.locator('body').innerText()).replace(/\s+/g, ' ')
+  ok(/Your details/.test(modulo) && /Seats:/.test(modulo) && /I have read and accept the privacy policy/.test(modulo) && !/I tuoi dati|Posti:/.test(modulo),
+    'il modulo è in inglese, senza pezzi in italiano')
+  await en.page.locator('input[type="email"]').fill(`zz-en-${tag}@playwright.internal`)
+  await en.page.locator('input[type="email"]').locator('xpath=preceding-sibling::input[1]').fill('ZZ Prova')
+  await en.page.locator('input[type="checkbox"]').check()
+  await en.page.getByRole('button', { name: /^Book/ }).click()
+  await en.page.getByText('Check before you confirm').waitFor({ timeout: 10000 })
+  const riepEn = (await en.page.locator('body').innerText()).replace(/\s+/g, ' ')
+  ok(/You are booking 1 seat for/.test(riepEn) && /Your booking is valid only once the deposit has been paid\./.test(riepEn) && /€3\.00/.test(riepEn),
+    'il riepilogo è in inglese e dice che vale solo a deposito pagato')
+  ok(en.errori.length === 0, `nessun errore nel browser${en.errori.length ? ' — ' + en.errori[0] : ''}`)
+  await en.ctx.close()
 
   console.log('\n   …un evento che si paga sul posto non mostra nessun riepilogo')
   const posto = await apri(`${BASE}/eventi/${gratis.id}`)

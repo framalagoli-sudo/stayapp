@@ -17,7 +17,9 @@ const TESTI = {
     stai: (n, ev) => <>Stai prenotando <strong>{n} {n === 1 ? 'posto' : 'posti'}</strong> per <strong>«{ev}»</strong>.</>,
     posti: 'Posti', totale: 'Totale', paghiOra: 'Paghi adesso',
     acconto: p => `acconto ${p}%`, saldo: 'Da saldare sul posto',
-    poi: min => `Confermando vai alla pagina di pagamento. I posti restano tuoi per ${min} minuti: se il pagamento non viene completato, la prenotazione si annulla da sola.`,
+    // Vale per l'acconto come per il pagamento intero: finché non si paga non si è prenotati.
+    valida: tutto => `La prenotazione è valida solo dopo il pagamento${tutto ? '' : ' dell’acconto'}.`,
+    poi: min => `Confermando vai alla pagina di pagamento. I posti restano tenuti per ${min} minuti: se il pagamento non viene completato tornano liberi e la prenotazione si annulla da sola.`,
     conferma: 'Conferma e vai al pagamento', modifica: 'Modifica', attesa: 'Un attimo…',
   },
   en: {
@@ -25,7 +27,8 @@ const TESTI = {
     stai: (n, ev) => <>You are booking <strong>{n} {n === 1 ? 'seat' : 'seats'}</strong> for <strong>“{ev}”</strong>.</>,
     posti: 'Seats', totale: 'Total', paghiOra: 'You pay now',
     acconto: p => `${p}% deposit`, saldo: 'Balance due on site',
-    poi: min => `By confirming you go to the payment page. Your seats are held for ${min} minutes: if the payment is not completed, the booking is cancelled automatically.`,
+    valida: tutto => `Your booking is valid only once the ${tutto ? 'payment' : 'deposit'} has been paid.`,
+    poi: min => `By confirming you go to the payment page. Your seats are held for ${min} minutes: if the payment is not completed they are released and the booking is cancelled automatically.`,
     conferma: 'Confirm and go to payment', modifica: 'Edit', attesa: 'One moment…',
   },
 }
@@ -64,6 +67,7 @@ export default function RiepilogoPrenotazione({
         )}
       </div>
 
+      <p style={{ fontSize: 14.5, lineHeight: 1.5, fontWeight: 700, color: c.testo, margin: '0 0 6px' }}>{t.valida(riepilogo.tutto)}</p>
       <p style={{ fontSize: 13, lineHeight: 1.6, color: c.tenue, margin: '0 0 16px' }}>{t.poi(riepilogo.minuti)}</p>
 
       {errore && <p style={{ color: '#e53e3e', fontSize: 13, margin: '0 0 12px' }}>{errore}</p>}

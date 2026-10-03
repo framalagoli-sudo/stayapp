@@ -7,6 +7,7 @@ import { ricco } from '@/lib/testo-ricco'
 import LegalInfo from './LegalInfo'
 import SiteNav from './SiteNav'
 import CampoPosti, { numeroPosti } from './CampoPosti'
+import { testiEvento } from './evento-testi'
 import RiepilogoPrenotazione from './RiepilogoPrenotazione'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Calendar, MapPin, Users, ArrowLeft, Check } from 'lucide-react'
@@ -22,6 +23,7 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
   // parametro, quindi leggerlo da qui disegnava in italiano una pagina servita
   // in inglese — etichette mescolate ed errore di hydration (#418).
   const lang = lingua === 'en' ? 'en' : 'it'
+  const T = testiEvento(lang)
   const backUrl = searchParams.get('back')
 
   // Da dove viene chi guarda, e dove lo si rimanda.
@@ -95,15 +97,15 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
     }
     guestFetch(`/api/guest/eventi/${id}?lang=${lang}`)
       .then(ev => { setEvento(ev); if (ev.packages?.length === 1) setPkgId(ev.packages[0].id) })
-      .catch(() => setError('Evento non trovato.'))
+      .catch(() => setError(T.nonTrovato))
   }, [id, lang, iniziale])
 
   async function handleAttesa() {
     setBookErr('')
-    if (!guestName.trim() || !guestEmail.trim()) { setBookErr('Servono nome ed email.'); return }
-    if (!privacyOk) { setBookErr('Serve il consenso al trattamento dei dati.'); return }
+    if (!guestName.trim() || !guestEmail.trim()) { setBookErr(T.erNomeEmail); return }
+    if (!privacyOk) { setBookErr(T.erConsenso); return }
     const posti = numeroPosti(seats)
-    if (!posti) { setBookErr('Indica per quante persone.'); return }
+    if (!posti) { setBookErr(T.erQuante); return }
     setBooking(true)
     try {
       // Come sopra: la lista d'attesa lavora per id, non per indirizzo.
@@ -116,17 +118,17 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
       })
       if (res.error) throw new Error(res.error)
       setInLista(true)
-    } catch (e) { setBookErr(e.message || 'Non è riuscito. Riprova.') }
+    } catch (e) { setBookErr(e.message || T.erRiprova) }
     setBooking(false)
   }
 
   async function handleBook() {
-    if (!guestName.trim()) { setBookErr('Inserisci il tuo nome'); return }
-    if (!guestEmail.trim()) { setBookErr('Inserisci la tua email'); return }
+    if (!guestName.trim()) { setBookErr(T.erNome); return }
+    if (!guestEmail.trim()) { setBookErr(T.erEmail); return }
     // Lo stesso controllo c'è nella route: qui si evita solo il giro inutile.
-    if (telefonoServe && !guestPhone.trim()) { setBookErr('Per questo evento serve un numero di telefono'); return }
+    if (telefonoServe && !guestPhone.trim()) { setBookErr(T.erTelefono); return }
     const posti = numeroPosti(seats)
-    if (!posti) { setBookErr('Indica per quante persone vuoi prenotare'); return }
+    if (!posti) { setBookErr(T.erQuantePrenota); return }
     setBooking(true); setBookErr('')
     try {
       // ⚠️ Se c'è da pagare, prima si dice cosa sta per succedere — e i posti
@@ -178,13 +180,13 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
   if (error) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>
       <p style={{ color: '#e53e3e', fontSize: 16 }}>{error}</p>
-      <button onClick={goBack} style={backBtnStyle}>← Torna indietro</button>
+      <button onClick={goBack} style={backBtnStyle}>{T.tornaIndietro}</button>
     </div>
   )
 
   if (!evento) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, system-ui, sans-serif', color: '#888' }}>
-      Caricamento…
+      {T.caricamento}
     </div>
   )
 
@@ -282,7 +284,7 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
         <button onClick={goBack}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none',
             cursor: 'pointer', fontSize: 14, fontWeight: 600, color: '#666', padding: 0, marginBottom: 18 }}>
-          <ArrowLeft size={17} strokeWidth={1.5} /> {sito?.name ? `Torna a ${sito.name}` : 'Indietro'}
+          <ArrowLeft size={17} strokeWidth={1.5} /> {sito?.name ? T.tornaA(sito.name) : T.indietro}
         </button>
 
         <h1 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 700, color: '#1a1a2e', marginBottom: 16, lineHeight: 1.2 }}>
@@ -303,7 +305,7 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
           {rimasti !== null && !concluso && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: '#555' }}>
               <Users size={15} strokeWidth={1.5} color="#00b5b5" />
-              {rimasti > 0 ? `${rimasti} posti disponibili` : 'Tutto esaurito'}
+              {rimasti > 0 ? T.postiDisponibili(rimasti) : T.esaurito}
             </span>
           )}
         </div>
@@ -328,14 +330,14 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
             «i posti sono finiti» non sono la stessa cosa per chi legge. */}
         {concluso ? (
           <div style={{ background: '#fff', borderRadius: 16, padding: 32, boxShadow: '0 2px 16px rgba(0,0,0,0.07)', textAlign: 'center' }}>
-            <div style={{ fontSize: 19, fontWeight: 700, color: '#1a1a2e', marginBottom: 10 }}>Evento concluso</div>
+            <div style={{ fontSize: 19, fontWeight: 700, color: '#1a1a2e', marginBottom: 10 }}>{T.concluso}</div>
             <p style={{ fontSize: 15.5, color: '#555', lineHeight: 1.7, margin: 0, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto' }}>
-              Questo appuntamento si è già svolto.{tornaAlSito !== null && ' I prossimi li trovi sul sito.'}
+              {T.giaSvolto}{tornaAlSito !== null && T.prossimi}
             </p>
             {tornaAlSito !== null && (
               <a href={tornaAlSito}
                 style={{ display: 'inline-block', marginTop: 20, padding: '12px 26px', borderRadius: 10, background: '#1a1a2e', color: '#fff', fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-                {sito?.name ? `Vai a ${sito.name}` : 'Vai al sito'}
+                {sito?.name ? T.vaiA(sito.name) : T.vaiAlSito}
               </a>
             )}
           </div>
@@ -343,13 +345,13 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
           <div style={{ background: '#fff', borderRadius: 16, padding: 32, boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>
             <div style={{ textAlign: 'center', marginBottom: evento.lista_attesa && !inLista ? 26 : 0 }}>
               <div style={{ fontSize: 19, fontWeight: 700, color: '#1a1a2e', marginBottom: 10 }}>
-                {evento.prenotazioni_chiuse ? 'Prenotazioni chiuse' : 'Tutto esaurito'}
+                {evento.prenotazioni_chiuse ? T.chiuse : T.esaurito}
               </div>
               <p style={{ fontSize: 15.5, color: '#555', lineHeight: 1.7, margin: 0, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto' }}>
                 {evento.prenotazioni_chiuse_testo?.trim()
                   || (evento.prenotazioni_chiuse
-                    ? 'Non raccogliamo altre prenotazioni per questo appuntamento.'
-                    : 'I posti per questo appuntamento sono finiti.')}
+                    ? T.nonRaccogliamo
+                    : T.postiFiniti)}
               </p>
             </div>
 
@@ -362,48 +364,48 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
                 <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#e8f8f8', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
                   <Check size={26} strokeWidth={2} color="#00b5b5" />
                 </div>
-                <div style={{ fontWeight: 700, fontSize: 18, color: '#1a1a2e', marginBottom: 8 }}>Sei in lista</div>
+                <div style={{ fontWeight: 700, fontSize: 18, color: '#1a1a2e', marginBottom: 8 }}>{T.inLista}</div>
                 {/* ⚠️ Va detto che NON è una prenotazione: chi lo legge di fretta
                     potrebbe presentarsi convinto di avere un posto. */}
                 <p style={{ fontSize: 15, color: '#555', lineHeight: 1.7, margin: 0, maxWidth: 420, marginLeft: 'auto', marginRight: 'auto' }}>
-                  Non è una prenotazione: se qualcuno rinuncia ti scriviamo noi. Non serve che tu faccia altro.
+                  {T.nonPrenotazione}
                 </p>
               </div>
             ) : (
               <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 24 }}>
-                <div style={{ fontSize: 16.5, fontWeight: 700, color: '#1a1a2e', marginBottom: 6 }}>Vuoi che ti avvisiamo?</div>
+                <div style={{ fontSize: 16.5, fontWeight: 700, color: '#1a1a2e', marginBottom: 6 }}>{T.avvisiamo}</div>
                 <p style={{ fontSize: 14.5, color: '#777', lineHeight: 1.65, marginTop: 0, marginBottom: 18 }}>
-                  Lasciaci un contatto: se qualcuno rinuncia sei il primo a saperlo. Nessun impegno.
+                  {T.lasciaContatto}
                 </p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 12 }}>
-                  <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Nome e cognome *" style={inp} />
-                  <input type="email" value={guestEmail} onChange={e => setGuestEmail(e.target.value)} placeholder="Email *" style={inp} />
-                  <input type="tel" value={guestPhone} onChange={e => setGuestPhone(e.target.value)} placeholder="Telefono" style={inp} />
-                  <CampoPosti value={seats} onChange={setSeats} placeholder="Per quante persone" aria-label="Per quante persone" style={inp} />
+                  <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder={T.nome} style={inp} />
+                  <input type="email" value={guestEmail} onChange={e => setGuestEmail(e.target.value)} placeholder={T.email} style={inp} />
+                  <input type="tel" value={guestPhone} onChange={e => setGuestPhone(e.target.value)} placeholder={T.telefono} style={inp} />
+                  <CampoPosti value={seats} onChange={setSeats} placeholder={T.quante} aria-label={T.quante} style={inp} />
                 </div>
                 <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#666', cursor: 'pointer', lineHeight: 1.6, marginBottom: 14 }}>
                   <input type="checkbox" checked={privacyOk} onChange={e => setPrivacyOk(e.target.checked)} style={{ marginTop: 3, flexShrink: 0, accentColor: '#00b5b5' }} />
                   <span>
-                    Ho letto e accetto {privacyUrl
-                      ? <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#00b5b5', fontWeight: 600 }}>l’informativa sulla privacy</a>
-                      : <strong>l’informativa sulla privacy</strong>}. I miei dati saranno usati per avvisarmi se si libera un posto.
+                    {T.hoLetto} {privacyUrl
+                      ? <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#00b5b5', fontWeight: 600 }}>{T.informativa}</a>
+                      : <strong>{T.informativa}</strong>}. {T.usoAttesa}
                   </span>
                 </label>
                 {bookErr && <p style={{ margin: '0 0 12px', fontSize: 14, color: '#c0392b' }}>{bookErr}</p>}
                 <button onClick={handleAttesa} disabled={booking}
                   style={{ width: '100%', padding: '14px 20px', background: '#1a1a2e', border: 'none', borderRadius: 10, cursor: booking ? 'wait' : 'pointer', fontSize: 15.5, fontWeight: 700, color: '#fff', opacity: booking ? .7 : 1 }}>
-                  {booking ? 'Un attimo…' : 'Avvisatemi se si libera'}
+                  {booking ? T.unAttimo : T.avvisatemi}
                 </button>
               </div>
             ))}
           </div>
         ) : (
         <div style={{ background: '#fff', borderRadius: 16, padding: 32, boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a2e', marginBottom: 24 }}>Prenota</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a2e', marginBottom: 24 }}>{T.prenota}</h2>
 
           {(evento.packages || []).length > 0 && (
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontWeight: 600, fontSize: 14, color: '#333', marginBottom: 10 }}>Scegli pacchetto</div>
+              <div style={{ fontWeight: 600, fontSize: 14, color: '#333', marginBottom: 10 }}>{T.scegliPacchetto}</div>
               {evento.packages.map(pkg => (
                 <label key={pkg.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 10, border: `1.5px solid ${pkgId === pkg.id ? '#00b5b5' : '#e0e0e0'}`, marginBottom: 8, cursor: 'pointer', background: pkgId === pkg.id ? '#00b5b510' : 'transparent' }}>
                   <input type="radio" name="pkg" value={pkg.id} checked={pkgId === pkg.id} onChange={() => { setPkgId(pkg.id); setRiepilogo(null) }} style={{ accentColor: '#00b5b5' }} />
@@ -411,57 +413,57 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
                     <div style={{ fontWeight: 600, fontSize: 15 }}>{pkg.name}</div>
                     {pkg.description && <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>{pkg.description}</div>}
                   </div>
-                  <div style={{ fontWeight: 700, color: '#00b5b5', fontSize: 16 }}>{pkg.price > 0 ? `€${pkg.price}` : 'Gratis'}</div>
+                  <div style={{ fontWeight: 700, color: '#00b5b5', fontSize: 16 }}>{pkg.price > 0 ? `€${pkg.price}` : T.gratis}</div>
                 </label>
               ))}
             </div>
           )}
 
           <div style={{ fontSize: 28, fontWeight: 800, color: '#00b5b5', marginBottom: 24 }}>
-            {prezzoPersona(evento, selectedPkg ? selectedPkg.price : null) || ''}
+            {prezzoPersona(evento, selectedPkg ? selectedPkg.price : null, { gratuito: T.gratuito, perPersona: T.perPersona }) || ''}
           </div>
 
           {done ? (
             <div style={{ textAlign: 'center', padding: '32px 0' }}>
               <Check size={52} strokeWidth={1.5} color="#00b5b5" style={{ display: 'block', margin: '0 auto 14px' }} />
-              <div style={{ fontWeight: 700, fontSize: 20, color: '#1a1a2e', marginBottom: 6 }}>Prenotazione inviata!</div>
-              <div style={{ fontSize: 14, color: '#888' }}>{emailSent ? 'Ti abbiamo spedito una mail di conferma.' : 'La tua prenotazione è stata registrata.'}</div>
+              <div style={{ fontWeight: 700, fontSize: 20, color: '#1a1a2e', marginBottom: 6 }}>{T.inviata}</div>
+              <div style={{ fontSize: 14, color: '#888' }}>{emailSent ? T.mailSpedita : T.registrata}</div>
             </div>
           ) : riepilogo ? (
             <RiepilogoPrenotazione riepilogo={riepilogo} titoloEvento={evento.title} quando={fmtDate(evento.date_start)} lang={lang}
               inCorso={booking} errore={bookErr} onConferma={handleBook} onModifica={() => { setRiepilogo(null); setBookErr('') }} />
           ) : (
             <>
-              <div style={{ fontWeight: 600, fontSize: 14, color: '#333', marginBottom: 14 }}>I tuoi dati</div>
-              <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Nome e cognome *" style={inp} />
-              <input value={guestEmail} onChange={e => setGuestEmail(e.target.value)} placeholder="Email *" type="email" style={inp} />
-              <input value={guestPhone} onChange={e => setGuestPhone(e.target.value)} placeholder={telefonoServe ? 'Telefono *' : 'Telefono (opzionale)'} type="tel" style={inp} />
+              <div style={{ fontWeight: 600, fontSize: 14, color: '#333', marginBottom: 14 }}>{T.tuoiDati}</div>
+              <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder={T.nome} style={inp} />
+              <input value={guestEmail} onChange={e => setGuestEmail(e.target.value)} placeholder={T.email} type="email" style={inp} />
+              <input value={guestPhone} onChange={e => setGuestPhone(e.target.value)} placeholder={telefonoServe ? T.telefonoServe : T.telefonoFacoltativo} type="tel" style={inp} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-                <label htmlFor="posti-evento" style={{ fontSize: 14, color: '#555' }}>Posti:</label>
+                <label htmlFor="posti-evento" style={{ fontSize: 14, color: '#555' }}>{T.posti}</label>
                 <CampoPosti id="posti-evento" value={seats} onChange={setSeats} style={{ ...inp, width: 80, textAlign: 'center', marginBottom: 0 }} />
               </div>
               {/* Il posto dove salvarle c'era già (colonna `notes`, e l'admin le
                   mostra), mancava solo il campo: chi prenota non aveva modo di
                   dire «sono celiaco» o «arrivo tardi». */}
               <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} maxLength={500}
-                placeholder="Note o richieste particolari (facoltativo)"
+                placeholder={T.note}
                 style={{ ...inp, resize: 'vertical', fontFamily: 'inherit', marginBottom: 24 }} />
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 18, cursor: 'pointer', fontSize: 13, color: '#555', lineHeight: 1.5 }}>
                 <input type="checkbox" checked={privacyOk} onChange={e => setPrivacyOk(e.target.checked)} required
                   style={{ marginTop: 2, accentColor: '#00b5b5', flexShrink: 0 }} />
                 <span>
-                  Ho letto e accetto{' '}
+                  {T.hoLetto}{' '}
                   {privacyUrl
-                    ? <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#00b5b5', fontWeight: 600 }}>l’informativa sulla privacy</a>
-                    : <strong>l’informativa sulla privacy</strong>}.
-                  {' '}I miei dati saranno usati per gestire questa prenotazione.
+                    ? <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#00b5b5', fontWeight: 600 }}>{T.informativa}</a>
+                    : <strong>{T.informativa}</strong>}.
+                  {' '}{T.usoPrenotazione}
                 </span>
               </label>
 
               {bookErr && <p style={{ color: '#e53e3e', fontSize: 13, marginBottom: 14 }}>{bookErr}</p>}
               <button onClick={handleBook} disabled={booking || !privacyOk}
                 style={{ width: '100%', padding: 16, background: privacyOk ? '#00b5b5' : '#ccc', color: '#fff', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 700, cursor: privacyOk ? 'pointer' : 'not-allowed', transition: 'background .2s' }}>
-                {booking ? 'Invio in corso…' : (evento.cta_label || 'Prenota ora')}
+                {booking ? T.invio : (evento.cta_label || T.prenotaOra)}
               </button>
 
               {/* Quello che chi prenota deve sapere prima di premere: caparra,
@@ -495,7 +497,7 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
           {tornaAlSito && (
             <a href={tornaAlSito}
               style={{ display: 'inline-block', padding: '11px 26px', borderRadius: 50, border: '1px solid rgba(255,255,255,0.28)', color: '#fff', textDecoration: 'none', fontSize: 14, fontWeight: 600, marginBottom: 24 }}>
-              {sito?.name ? `Torna a ${sito.name}` : 'Torna al sito'}
+              {sito?.name ? T.tornaA(sito.name) : T.tornaAlSito}
             </a>
           )}
 
