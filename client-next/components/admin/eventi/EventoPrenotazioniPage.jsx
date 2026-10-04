@@ -335,7 +335,7 @@ export default function EventoPrenotazioniPage() {
 
   // ⚠️ Irreversibile, quindi si chiede — e si dice cosa sparisce davvero.
   async function elimina(b) {
-    const ok = confirm(`Eliminare definitivamente la prenotazione di ${b.guest_name}?\n\nSpariscono nome, email, telefono e note: non si torna indietro. Se vuoi solo liberare i posti, usa «annulla».`)
+    const ok = confirm(`Eliminare definitivamente la prenotazione di ${b.guest_name}?\n\nSpariscono nome, email, telefono e note: non si torna indietro. Se vuoi solo liberare i posti, usa «Annulla prenotazione».`)
     if (!ok) return
     setUpdatingId(b.id)
     try {
@@ -357,9 +357,27 @@ export default function EventoPrenotazioniPage() {
       // Refresh event seats count
       const ev = await apiFetch(`/api/eventi/${id}`)
       setEvento(ev)
-    } catch {} finally {
+      // Chi si può avvisare dipende dallo stato: l'elenco si rilegge, altrimenti
+      // chi è stato appena confermato non compare fra le persone a cui scrivere.
+      apiFetch(`/api/eventi/${id}/promemoria`).then(setProm).catch(() => {})
+    } catch (e) {
+      // ⛔ L'errore si buttava via: se non c'era posto il pulsante non faceva
+      // niente e non diceva perché.
+      alert(`Non è riuscito: ${e.message}`)
+    } finally {
       setUpdatingId(null)
     }
+  }
+
+  // Annullare una prenotazione pagata online libera i posti ma NON restituisce
+  // i soldi: il rimborso si fa da Stripe, a mano. Va detto prima, non scoperto
+  // quando l'ospite scrive per chiedere dove sono finiti.
+  function cambiaStato(b, stato) {
+    if (stato === 'cancelled' && b.pagamento_stato === 'pagato') {
+      const ok = confirm(`${b.guest_name} ha già pagato online.\n\nAnnullando si liberano i posti, ma il rimborso NON parte da solo: va fatto da Stripe.\n\nAnnullare la prenotazione?`)
+      if (!ok) return
+    }
+    updateStatus(b.id, stato)
   }
 
   if (loading) return <p style={{ padding: 32, color: '#888' }}>Caricamento…</p>
@@ -368,45 +386,57 @@ export default function EventoPrenotazioniPage() {
   // ⛔ Sotto ogni riga c'erano TRE pulsanti colorati con la freccia — «→ In
   // attesa», «→ Annullata», «→ In lista d'attesa» — tutti dello stesso peso.
   // Parole di Francesco: «il mio cliente mi ha detto che non capisce nulla».
-  // Aveva ragione: chiedevano di scegliere uno **stato interno**, mentre chi
-  // gestisce una serata pensa «questo ha disdetto», «questo lo faccio entrare».
+  // Ora c'è UNA cosa da fare, evidente; il resto è testo piccolo accanto.
   //
-  // Ora c'è UNA cosa da fare, evidente, con il nome di quello che succede alla
-  // persona; il resto è testo piccolo accanto. Nessuna azione è stata tolta —
-  // sono le stesse quattro transizioni, ordinate.
+  // ⛔ Poi i nomi: «Ha disdetto» sembrava un'etichetta e non un pulsante,
+  // «Rimetti dentro» e «Fai entrare» erano gergo nostro (Francesco, 04/10/2026:
+  // «così come sono non si capiscono»). La regola: verbo + oggetto, lo stesso
+  // verbo per lo stesso gesto ovunque, e sotto una riga che dice COSA SUCCEDE —
+  // compreso se l'ospite viene avvisato oppure no. Quella riga deve dire il
+  // vero: le condizioni sono quelle di `mandaConfermaEvento`.
   //
   // ⚠️ È una funzione normale chiamata `{renderAzioni(b)}`, non un componente
   // definito qui dentro: quello cambierebbe identità a ogni render (nota 22).
   function renderAzioni(b) {
+    const VERDE = { bg: '#d4edda', color: '#155724' }
+    const ROSSO = { bg: '#f8d7da', color: '#721c24' }
+    const attendePagamento = b.status === 'pending' && b.pagamento_stato === 'non_pagato'
+    // La conferma parte una volta sola, solo se l'evento la prevede e c'è un
+    // indirizzo a cui scrivere.
+    const avvisa = !b.conferma_inviata_il && evento.send_guest_confirmation !== false && b.guest_email
+      ? ' L’ospite riceve l’email di conferma.' : ''
+    const ANNULLA = { stato: 'cancelled', testo: 'Annulla prenotazione',
+      nota: 'Libera i posti e la sposta fra le annullate. L’ospite non riceve nessun avviso: va avvisato a parte.' }
     const AZIONI = {
       // Il caso normale: è confermata e la persona verrà. L'unica cosa che
       // capita è che disdica.
-      confirmed: { principale: { stato: 'cancelled', testo: 'Ha disdetto', bg: '#f8d7da', color: '#721c24' },
+      confirmed: { principale: { ...ANNULLA, ...ROSSO },
                    altre: [{ stato: 'pending', testo: 'rimetti in attesa' }] },
       // In attesa: o sta pagando online (si conferma da sola al pagamento, o si
-      // libera dopo 30 minuti), o è stata messa in attesa a mano. «Conferma»
-      // vuol dire che la tiene il titolare: pagherà sul posto.
-      pending:   { principale: { stato: 'confirmed', testo: 'Conferma', bg: '#d4edda', color: '#155724' },
-                   altre: [{ stato: 'cancelled', testo: 'annulla' }] },
-      // ⛔ «Fai entrare», non «Conferma»: da qui parte l'email che dice alla
-      // persona che il posto è suo, ed è la differenza fra un gesto e una
-      // promessa mantenuta.
-      waitlist:  { principale: { stato: 'confirmed', testo: 'Fai entrare', bg: '#d4edda', color: '#155724' },
-                   altre: [{ stato: 'cancelled', testo: 'togli dalla lista' }] },
-      cancelled: { principale: { stato: 'confirmed', testo: 'Rimetti dentro', bg: '#d4edda', color: '#155724' },
+      // libera dopo 30 minuti), o è stata messa in attesa a mano. Confermarla
+      // mentre aspetta il pagamento vuol dire che la tiene il titolare: pagherà
+      // sul posto — e il pulsante lo dice.
+      pending:   { principale: attendePagamento
+                     ? { stato: 'confirmed', testo: 'Conferma: paga sul posto', nota: `Tieni il posto senza pagamento online.${avvisa}`, ...VERDE }
+                     : { stato: 'confirmed', testo: 'Conferma prenotazione', nota: `Il posto diventa suo.${avvisa}`, ...VERDE },
+                   altre: [ANNULLA] },
+      waitlist:  { principale: { stato: 'confirmed', testo: 'Assegna un posto', nota: `Diventa una prenotazione confermata.${avvisa}`, ...VERDE },
+                   altre: [{ stato: 'cancelled', testo: 'Togli dalla lista d’attesa', nota: 'La sposta fra le annullate. L’ospite non riceve nessun avviso.' }] },
+      cancelled: { principale: { stato: 'confirmed', testo: 'Ripristina prenotazione', nota: `Torna confermata e rioccupa i posti.${avvisa}`, ...VERDE },
                    altre: [] },
     }
     const a = AZIONI[b.status]
     if (!a) return null
     const bloccato = updatingId === b.id
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 12, paddingTop: 12, borderTop: '1px solid #f0f0f0', flexWrap: 'wrap' }}>
-        <button disabled={bloccato} onClick={() => updateStatus(b.id, a.principale.stato)}
+      <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f0f0f0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+        <button disabled={bloccato} onClick={() => cambiaStato(b, a.principale.stato)}
           style={{ fontSize: 13, fontWeight: 700, padding: '8px 18px', borderRadius: 8, border: 'none', cursor: bloccato ? 'wait' : 'pointer', background: a.principale.bg, color: a.principale.color, opacity: bloccato ? 0.6 : 1 }}>
           {bloccato ? 'Un attimo…' : a.principale.testo}
         </button>
         {a.altre.map(x => (
-          <button key={x.stato} disabled={bloccato} onClick={() => updateStatus(b.id, x.stato)}
+          <button key={x.stato} disabled={bloccato} onClick={() => cambiaStato(b, x.stato)} title={x.nota}
             style={{ fontSize: 12.5, background: 'none', border: 'none', padding: 0, color: '#888', cursor: bloccato ? 'wait' : 'pointer', textDecoration: 'underline' }}>
             {x.testo}
           </button>
@@ -415,12 +445,18 @@ export default function EventoPrenotazioniPage() {
             giusto è sistemare i posti, non buttare via la prenotazione. */}
         <button disabled={bloccato} onClick={() => setModificaId(modificaId === b.id ? null : b.id)}
           style={{ fontSize: 12.5, background: 'none', border: 'none', padding: 0, color: '#2b6cb0', cursor: bloccato ? 'wait' : 'pointer', textDecoration: 'underline', fontWeight: 600 }}>
-          {modificaId === b.id ? 'chiudi' : 'correggi'}
+          {modificaId === b.id ? 'Chiudi' : 'Modifica'}
         </button>
-        <button disabled={bloccato} onClick={() => elimina(b)}
+        <button disabled={bloccato} onClick={() => elimina(b)} title="Sparisce dall’elenco con tutti i suoi dati. Non si può recuperare."
           style={{ fontSize: 12.5, background: 'none', border: 'none', padding: 0, color: '#c53030', cursor: bloccato ? 'wait' : 'pointer', textDecoration: 'underline', marginLeft: 'auto' }}>
-          elimina
+          Elimina definitivamente
         </button>
+      </div>
+      {a.principale.nota && (
+        <div style={{ fontSize: 12, color: '#888', marginTop: 7, lineHeight: 1.5 }}>
+          <strong style={{ fontWeight: 600, color: '#666' }}>{a.principale.testo}</strong>: {a.principale.nota.charAt(0).toLowerCase() + a.principale.nota.slice(1)}
+        </div>
+      )}
       </div>
     )
   }
@@ -583,9 +619,9 @@ export default function EventoPrenotazioniPage() {
           <div style={{ background: '#fff', borderRadius: 12, padding: '12px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', fontSize: 12.5, color: '#666', lineHeight: 1.7 }}>
             {[
               bookings.some(b => b.status === 'confirmed') && <span key="c"><strong style={{ color: '#155724' }}>Confermata</strong> = ha il posto e verrà.</span>,
-              bookings.some(b => b.status === 'pending' && b.pagamento_stato === 'non_pagato') && <span key="pp"><strong style={{ color: '#856404' }}>Attende il pagamento</strong> = è alla cassa online. Il posto è tenuto per 30 minuti: se paga diventa confermata da sola, se no torna libero. «Conferma» = la tieni tu e pagherà sul posto.</span>,
+              bookings.some(b => b.status === 'pending' && b.pagamento_stato === 'non_pagato') && <span key="pp"><strong style={{ color: '#856404' }}>Attende il pagamento</strong> = è alla cassa online. Il posto è tenuto per 30 minuti: se paga diventa confermata da sola, se no torna libero. «Conferma: paga sul posto» = la tieni tu, senza pagamento online.</span>,
               bookings.some(b => b.status === 'pending' && b.pagamento_stato !== 'non_pagato') && <span key="p"><strong style={{ color: '#856404' }}>In attesa</strong> = ha prenotato ma il posto non è ancora suo: va confermata.</span>,
-              bookings.some(b => b.status === 'waitlist') && <span key="w"><strong style={{ color: '#2b6cb0' }}>In lista d’attesa</strong> = non c’era posto. Non ne occupa uno, e «Fai entrare» le manda la conferma.</span>,
+              bookings.some(b => b.status === 'waitlist') && <span key="w"><strong style={{ color: '#2b6cb0' }}>In lista d’attesa</strong> = non c’era posto. Non ne occupa uno, e «Assegna un posto» le manda la conferma.</span>,
               bookings.some(b => b.status === 'cancelled') && <span key="a"><strong style={{ color: '#721c24' }}>Annullata</strong> = ha disdetto o non ha pagato in tempo: il suo posto è tornato libero.</span>,
             ].filter(Boolean).map((x, i, arr) => <span key={i}>{x}{i < arr.length - 1 ? ' · ' : ''}</span>)}
           </div>

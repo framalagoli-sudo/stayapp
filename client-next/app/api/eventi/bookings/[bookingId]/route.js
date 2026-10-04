@@ -70,7 +70,10 @@ export async function PATCH(request, props) {
     if (daListaAttesa) {
       const { data: prima } = await supabaseAdmin.from('event_bookings')
         .select('status, seats').eq('id', params.bookingId).maybeSingle()
-      if (prima?.status === 'waitlist') {
+      // Vale anche per chi era stata annullata e viene ripristinata: nemmeno lei
+      // occupava un posto, e rimetterla su un evento pieno lo manderebbe oltre
+      // la capienza senza dirlo a nessuno.
+      if (['waitlist', 'cancelled'].includes(prima?.status)) {
         const { data: ev } = await supabaseAdmin.from('eventi')
           .select('seats_total, seats_booked').eq('id', booking.event_id).maybeSingle()
         if (ev?.seats_total && (ev.seats_booked || 0) + (prima.seats || 1) > ev.seats_total) {
