@@ -2,11 +2,12 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { apiFetch } from '../../../lib/api'
-import { Users, Calendar, Mail, Phone, Package, ArrowLeft, Check, X, Clock, Plus, PhoneCall, Send } from 'lucide-react'
+import { Users, Calendar, Mail, Phone, Package, ArrowLeft, Check, X, Clock, Plus, PhoneCall, Send, ChevronDown, ChevronRight } from 'lucide-react'
 import { useAzienda } from '../../../context/AziendaContext'
 import { oraLocale } from '../../../lib/fuso'
 import { postiEvento } from '@/lib/posti-evento'
 import StatoPagamento from '../StatoPagamento'
+import { gruppoPrenotazione, incassatoOnline } from '@/lib/gruppi-prenotazioni-evento'
 
 // Quando è arrivata una prenotazione (`created_at`) si legge nell'ora di chi
 // guarda — è un fatto del pannello. L'ora dell'evento no: quella è del posto,
@@ -288,6 +289,9 @@ export default function EventoPrenotazioniPage() {
   const [prom, setProm] = useState(null)
   const [inviando, setInviando] = useState(false)
   const [pannelloProm, setPannelloProm] = useState(false)
+  // Quali gruppi dell'elenco sono aperti. Quello delle prenotazioni non andate
+  // a buon fine nasce chiuso: serve di rado, e aperto seppelliva chi viene.
+  const [gruppiChiusi, setGruppiChiusi] = useState({ perse: true })
 
   useEffect(() => {
     Promise.all([
@@ -477,13 +481,109 @@ export default function EventoPrenotazioniPage() {
   const revenue  = vive.reduce((n, b) => n + (b.total_amount || 0), 0)
   // ⚠️ «Valore» e «già incassato» sono due numeri diversi, e finché c'era solo
   // il primo il titolare non aveva modo di sapere quanto fosse già sul conto.
-  const incassato = vive.filter(b => b.pagamento_stato === 'pagato')
-    .reduce((n, b) => n + (b.total_amount || 0), 0)
+  // ⚠️ Con un acconto, online è arrivata solo la quota: contare il totale
+  // farebbe credere al titolare di avere già in tasca anche il saldo.
+  const incassato = vive.reduce((n, b) => n + incassatoOnline(evento, b), 0)
   // Due numeri diversi, e vanno detti tutti e due: quanti posti restano in
   // sala, e quanti di questi il sito può ancora vendere (gli altri sono
   // tenuti per chi chiama).
   const conti    = postiEvento({ ...evento, seats_booked: presi })
   const liberi   = conti.illimitato ? null : conti.liberi
+
+  // La scheda di una prenotazione. Funzione normale chiamata `{renderRiga(b)}`,
+  // non un componente definito qui dentro (nota 22).
+  function renderRiga(b) {
+    // «In attesa» con la cassa aperta si dice per quello che è.
+    // Fra le annullate, «non ha pagato» e «ha disdetto» sono due storie
+    // diverse: la prima è una persona che voleva venire e si può richiamare.
+    const st = b.status === 'pending' && b.pagamento_stato === 'non_pagato'
+      ? { ...statusStyle('pending'), label: 'Attende il pagamento' }
+      : b.status === 'cancelled' && b.pagamento_stato === 'non_pagato'
+        ? { ...statusStyle('cancelled'), label: 'Non ha pagato' }
+        : statusStyle(b.status)
+    const pkg = b.package_id ? (evento.packages || []).find(p => p.id === b.package_id) : null
+    return (
+      <div key={b.id} style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+          {/* Avatar */}
+          <div style={{ width: 42, height: 42, borderRadius: 12, background: '#f0f4ff', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, color: '#1a1a2e' }}>
+            {b.guest_name?.charAt(0)?.toUpperCase() || '?'}
+          </div>
+
+          {/* Info */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+              <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e' }}>{b.guest_name}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: st.bg, color: st.color }}>{st.label}</span>
+              <span style={{ fontSize: 12, color: '#888', marginLeft: 'auto' }}>{fmtDate(b.created_at)}</span>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 6 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#555' }}>
+                <Mail size={11} strokeWidth={1.5} /> {b.guest_email}
+              </span>
+              {b.guest_phone && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#555' }}>
+                  <Phone size={11} strokeWidth={1.5} /> {b.guest_phone}
+                </span>
+              )}
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#555' }}>
+                <Users size={11} strokeWidth={1.5} /> {b.seats} {b.seats === 1 ? 'posto' : 'posti'}
+              </span>
+            </div>
+            {pkg && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#555', marginBottom: 4 }}>
+                <Package size={11} strokeWidth={1.5} /> Pacchetto: <strong>{pkg.name}</strong>
+              </div>
+            )}
+            {b.notes && (
+              <div style={{ fontSize: 12, color: '#888', fontStyle: 'italic', marginTop: 2 }}>{b.notes}</div>
+            )}
+          </div>
+
+          {/* Quanto, e SE è già stato incassato.
+              ⛔ Prima qui c'era solo la cifra: la prenotazione pagata
+              online e quella da saldare sul posto erano indistinguibili. */}
+          <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+            <div style={{ fontWeight: 800, fontSize: 16, color: '#1a1a2e' }}>
+              {b.total_amount > 0 ? `€${b.total_amount}` : 'Gratuito'}
+            </div>
+            {/* Su un'annullata «Da pagare» sarebbe una richiesta a chi non viene più:
+                resta solo se i soldi ci sono stati davvero. */}
+            {(b.status !== 'cancelled' || ['pagato', 'rimborsato'].includes(b.pagamento_stato)) && <StatoPagamento riga={b} compatto />}
+          </div>
+        </div>
+
+        {renderAzioni(b)}
+        {modificaId === b.id && (
+          <ModuloModifica b={b} liberi={liberi}
+            onChiudi={() => setModificaId(null)} onFatta={dopoModifica} />
+        )}
+      </div>
+    )
+  }
+
+  // I gruppi dell'elenco, nell'ordine in cui servono a chi gestisce la serata.
+  // In che gruppo sta ognuna lo decide `lib/gruppi-prenotazioni-evento.js`: la
+  // pagina «Prenotazioni» conta con la stessa regola, e i numeri devono tornare.
+  const di = (chiave) => bookings.filter(b => gruppoPrenotazione(b) === chiave)
+  const gruppi = [
+    // Chi viene. In ordine alfabetico: è l'elenco che si scorre alla porta.
+    { chiave: 'confermate', titolo: 'Confermate', colore: '#155724', conValore: true,
+      spiega: 'Hanno il posto e verranno.',
+      righe: di('confermate').sort((a, b) => (a.guest_name || '').localeCompare(b.guest_name || '', 'it')) },
+    { chiave: 'pagamento', titolo: 'Attendono il pagamento', colore: '#856404', conValore: true,
+      spiega: 'Sono alla cassa online. Il posto è tenuto per 30 minuti: se pagano diventano confermate da sole, se no torna libero. «Conferma: paga sul posto» = la tieni tu, senza pagamento online.',
+      righe: di('pagamento') },
+    { chiave: 'daConfermare', titolo: 'Da confermare', colore: '#856404', conValore: true,
+      spiega: 'Hanno prenotato ma il posto non è ancora suo: vanno confermate. Intanto il posto è tenuto.',
+      righe: di('daConfermare') },
+    { chiave: 'attesa', titolo: 'Lista d’attesa', colore: '#2b6cb0',
+      spiega: 'Non c’era posto. Non ne occupa uno, e «Assegna un posto» le manda la conferma.',
+      righe: di('attesa') },
+    { chiave: 'perse', titolo: 'Non andate a buon fine', colore: '#721c24',
+      spiega: 'Hanno disdetto o non hanno pagato in tempo: il posto è tornato libero.',
+      righe: di('perse') },
+  ]
 
   return (
     <div style={{ maxWidth: 860 }}>
@@ -587,7 +687,7 @@ export default function EventoPrenotazioniPage() {
           { label: 'Prenotazioni', value: vive.length,
             sub: inAttesa.length ? `+ ${inAttesa.length} in lista d’attesa` : 'nell’elenco qui sotto',
             icon: Users, color: '#1a1a2e', bg: '#f0f4ff' },
-          { label: 'Valore',     value: `€${revenue}`, sub: incassato > 0 ? `€${incassato.toFixed(2)} già incassati online` : (pending ? `${pending} posti ancora in attesa` : 'prenotazioni valide'), icon: Package, color: '#2b6cb0', bg: '#ebf4ff' },
+          { label: 'Valore',     value: `€${revenue}`, sub: incassato > 0 ? `€${incassato.toFixed(2)} già incassati online${revenue - incassato > 0 ? ` · €${(revenue - incassato).toFixed(2)} ancora da incassare` : ''}` : (pending ? `${pending} posti ancora in attesa` : 'prenotazioni valide'), icon: Package, color: '#2b6cb0', bg: '#ebf4ff' },
         ].map(({ label, value, sub, icon: Icon, color, bg }) => (
           <div key={label} style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -610,89 +710,31 @@ export default function EventoPrenotazioniPage() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {/* ⚠️ Le etichette colorate erano lì da sempre e nessuno aveva mai
-              scritto cosa vogliono dire. Una parola sola su una pastiglia —
-              «In attesa» — non spiega se quella persona verrà o no, e chi
-              gestisce la serata deve saperlo prima di aprire la porta.
-              Si mostrano solo gli stati che ci sono davvero: spiegare la lista
-              d'attesa a chi non la usa è un'altra cosa da leggere per niente. */}
-          <div style={{ background: '#fff', borderRadius: 12, padding: '12px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', fontSize: 12.5, color: '#666', lineHeight: 1.7 }}>
-            {[
-              bookings.some(b => b.status === 'confirmed') && <span key="c"><strong style={{ color: '#155724' }}>Confermata</strong> = ha il posto e verrà.</span>,
-              bookings.some(b => b.status === 'pending' && b.pagamento_stato === 'non_pagato') && <span key="pp"><strong style={{ color: '#856404' }}>Attende il pagamento</strong> = è alla cassa online. Il posto è tenuto per 30 minuti: se paga diventa confermata da sola, se no torna libero. «Conferma: paga sul posto» = la tieni tu, senza pagamento online.</span>,
-              bookings.some(b => b.status === 'pending' && b.pagamento_stato !== 'non_pagato') && <span key="p"><strong style={{ color: '#856404' }}>In attesa</strong> = ha prenotato ma il posto non è ancora suo: va confermata.</span>,
-              bookings.some(b => b.status === 'waitlist') && <span key="w"><strong style={{ color: '#2b6cb0' }}>In lista d’attesa</strong> = non c’era posto. Non ne occupa uno, e «Assegna un posto» le manda la conferma.</span>,
-              bookings.some(b => b.status === 'cancelled') && <span key="a"><strong style={{ color: '#721c24' }}>Annullata</strong> = ha disdetto o non ha pagato in tempo: il suo posto è tornato libero.</span>,
-            ].filter(Boolean).map((x, i, arr) => <span key={i}>{x}{i < arr.length - 1 ? ' · ' : ''}</span>)}
-          </div>
-          {bookings.map(b => {
-            // «In attesa» con la cassa aperta si dice per quello che è.
-            const st = b.status === 'pending' && b.pagamento_stato === 'non_pagato'
-              ? { ...statusStyle('pending'), label: 'Attende il pagamento' }
-              : statusStyle(b.status)
-            const pkg = b.package_id ? (evento.packages || []).find(p => p.id === b.package_id) : null
+          {/* ⛔ Era un elenco unico in ordine d'arrivo: su una serata vera di
+              Garage 22, 9 prenotazioni pagate mescolate a 10 mai pagate —
+              chi viene andava cercato fra chi non viene (Francesco, 04/10/2026:
+              «così non mi piace»). Ora l'elenco è diviso per quello che il
+              titolare deve FARE, e ogni gruppo dice sotto il titolo cosa
+              significa: la spiegazione delle etichette sta lì, dove serve.
+              Si mostrano solo i gruppi che hanno qualcuno dentro. */}
+          {gruppi.filter(g => g.righe.length > 0).map(g => {
+            const chiuso = !!gruppiChiusi[g.chiave]
+            const posti = g.righe.reduce((n, b) => n + (b.seats || 1), 0)
+            const valore = g.righe.reduce((n, b) => n + (Number(b.total_amount) || 0), 0)
             return (
-              <div key={b.id} style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
-                  {/* Avatar */}
-                  <div style={{ width: 42, height: 42, borderRadius: 12, background: '#f0f4ff', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, color: '#1a1a2e' }}>
-                    {b.guest_name?.charAt(0)?.toUpperCase() || '?'}
-                  </div>
-
-                  {/* Info */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-                      <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e' }}>{b.guest_name}</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: st.bg, color: st.color }}>{st.label}</span>
-                      <span style={{ fontSize: 12, color: '#888', marginLeft: 'auto' }}>{fmtDate(b.created_at)}</span>
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 6 }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#555' }}>
-                        <Mail size={11} strokeWidth={1.5} /> {b.guest_email}
-                      </span>
-                      {b.guest_phone && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#555' }}>
-                          <Phone size={11} strokeWidth={1.5} /> {b.guest_phone}
-                        </span>
-                      )}
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#555' }}>
-                        <Users size={11} strokeWidth={1.5} /> {b.seats} {b.seats === 1 ? 'posto' : 'posti'}
-                      </span>
-                    </div>
-                    {pkg && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#555', marginBottom: 4 }}>
-                        <Package size={11} strokeWidth={1.5} /> Pacchetto: <strong>{pkg.name}</strong>
-                      </div>
-                    )}
-                    {b.notes && (
-                      <div style={{ fontSize: 12, color: '#888', fontStyle: 'italic', marginTop: 2 }}>{b.notes}</div>
-                    )}
-                  </div>
-
-                  {/* Quanto, e SE è già stato incassato.
-                      ⛔ Prima qui c'era solo la cifra: la prenotazione pagata
-                      online e quella da saldare sul posto erano indistinguibili. */}
-                  <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
-                    <div style={{ fontWeight: 800, fontSize: 16, color: '#1a1a2e' }}>
-                      {b.total_amount > 0 ? `€${b.total_amount}` : 'Gratuito'}
-                    </div>
-                    <StatoPagamento riga={b} compatto />
-                  </div>
-                </div>
-
-                {renderAzioni(b)}
-
-
-                {modificaId === b.id && (
-
-
-                  <ModuloModifica b={b} liberi={liberi}
-
-
-                    onChiudi={() => setModificaId(null)} onFatta={dopoModifica} />
-
-
-                )}
+              <div key={g.chiave} data-gruppo={g.chiave} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 10, marginTop: 6 }}>
+                <button onClick={() => setGruppiChiusi(c => ({ ...c, [g.chiave]: !chiuso }))} aria-expanded={!chiuso}
+                  style={{ display: 'flex', alignItems: 'flex-start', gap: 10, width: '100%', textAlign: 'left', background: 'none', border: 'none', borderBottom: `2px solid ${g.colore}`, padding: '6px 2px 9px', cursor: 'pointer' }}>
+                  {chiuso ? <ChevronRight size={18} strokeWidth={1.5} color={g.colore} style={{ marginTop: 2, flexShrink: 0 }} />
+                          : <ChevronDown size={18} strokeWidth={1.5} color={g.colore} style={{ marginTop: 2, flexShrink: 0 }} />}
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: 15.5, fontWeight: 700, color: g.colore }}>
+                      {g.titolo} <span style={{ fontWeight: 600, color: '#555' }}>· {g.righe.length} {g.righe.length === 1 ? 'prenotazione' : 'prenotazioni'} · {posti} {posti === 1 ? 'posto' : 'posti'}{g.conValore && valore > 0 ? ` · €${valore}` : ''}</span>
+                    </span>
+                    <span style={{ display: 'block', fontSize: 12.5, color: '#777', lineHeight: 1.6, marginTop: 2 }}>{g.spiega}</span>
+                  </span>
+                </button>
+                {!chiuso && g.righe.map(b => renderRiga(b))}
               </div>
             )
           })}

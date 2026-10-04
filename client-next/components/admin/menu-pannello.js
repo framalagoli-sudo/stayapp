@@ -48,7 +48,10 @@ export const SEZIONI = {
 // gruppo richiudibile Calendario + Risorse.
 export const VOCI = {
   richieste:        { to: '/admin/requests',         label: 'Richieste',          icon: Inbox,            funzione: 'richieste' },
-  prenotazioni:     { to: '/admin/prenotazioni',     label: 'Prenotazioni',       icon: CalendarCheck,    funzione: 'prenotazioni' },
+  // La pagina mostra anche le prenotazioni degli eventi: chi ha gli eventi
+  // accesi la vede anche senza risorse e offerte (`anche`). Senza, per chi
+  // vive di soli eventi la voce non esisteva affatto.
+  prenotazioni:     { to: '/admin/prenotazioni',     label: 'Prenotazioni',       icon: CalendarCheck,    funzione: 'prenotazioni', anche: ['eventi'] },
   booking:          { label: 'Calendario e risorse',                              icon: CalendarDays,     funzione: 'booking' },
   contatti:         { to: '/admin/contatti',         label: 'Contatti',           icon: Users,            funzione: 'contatti' },
   preventivi:       { to: '/admin/preventivi',       label: 'Preventivi',         icon: FileText,         funzione: 'preventivi' },
@@ -141,7 +144,7 @@ export function costruisciMenu({ ruolo, permessi = {}, funzioniAzienda = null, e
       // QR) stanno con il sito: senza un'entità su cui lavorare non hanno senso.
       // Il super_admin li ha sempre avuti a portata di mano: restano.
       if (gruppo.titolo === 'Il tuo sito' && (!entita || !conEntita) && chiave !== 'analytics' && !superAdmin) continue
-      const accesa = !v.funzione || !funzioniAzienda || !!funzioniAzienda[v.funzione]
+      const accesa = !v.funzione || !funzioniAzienda || [v.funzione, ...(v.anche || [])].some(f => !!funzioniAzienda[f])
       if (!accesa && !superAdmin) continue
       voci.push({ key: chiave, label: v.label, icon: v.icon, to: v.to, spenta: !accesa, gruppo: chiave === 'booking' })
     }

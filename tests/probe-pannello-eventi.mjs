@@ -68,6 +68,20 @@ try {
     await page.getByRole('button', { name: 'Modifica', exact: true }).first().waitFor({ timeout: 30000 })
     await page.waitForTimeout(500)
     const testo = async () => (await page.locator('body').innerText()).replace(/\s+/g, ' ')
+    console.log('\n0 · L’ELENCO È DIVISO IN GRUPPI\n')
+    // ⛔ Era un elenco unico in ordine d'arrivo: chi viene andava cercato fra
+    // chi non viene (Garage 22: 9 pagate mescolate a 10 mai pagate).
+    const titoli = await page.locator('[data-gruppo]').evaluateAll(els => els.map(e => e.getAttribute('data-gruppo')))
+    ok(JSON.stringify(titoli) === JSON.stringify(['confermate', 'pagamento', 'daConfermare', 'attesa', 'perse']), `i gruppi, nell'ordine in cui servono (${titoli.join(' · ')})`)
+    const t0 = await testo()
+    ok(/Confermate · 3 prenotazioni · 3 posti/.test(t0), 'ogni gruppo dice quante prenotazioni e quanti posti')
+    const nomi = await page.locator('[data-gruppo="confermate"]').innerText()
+    ok(nomi.indexOf('ZZ Confermata') < nomi.indexOf('ZZ Pagata') && nomi.indexOf('ZZ Pagata') < nomi.indexOf('ZZ Telefono'), 'le confermate sono in ordine alfabetico')
+    // Quelle non andate a buon fine ci sono, ma chiuse: si aprono con un clic.
+    ok(/Non andate a buon fine · 1 prenotazione/.test(t0) && !/ZZ Annullata/.test(t0), '«Non andate a buon fine» è chiuso finché non lo si apre')
+    await page.getByRole('button', { name: /Non andate a buon fine/ }).click()
+    await page.getByText('ZZ Annullata', { exact: true }).waitFor({ timeout: 5000 })
+    ok(true, 'e aprendolo le righe compaiono')
     const t1 = await testo()
     // FOTO=<cartella> salva la pagina com'è a schermo, per guardarla.
     if (process.env.FOTO) await page.screenshot({ path: `${process.env.FOTO}/pannello-eventi.png`, fullPage: true })
@@ -75,7 +89,7 @@ try {
     console.log('\n1 · LE ETICHETTE SONO SPIEGATE\n')
     // ⚠️ Le pastiglie colorate c'erano da sempre e nessuno aveva mai scritto
     // cosa vogliono dire. «In attesa» non dice se quella persona verrà.
-    ok(/ha il posto e verrà/i.test(t1), 'cosa vuol dire «confermata»')
+    ok(/Hanno il posto e verranno/i.test(t1), 'cosa vuol dire «confermata»')
     ok(/non è ancora suo/i.test(t1), 'cosa vuol dire «in attesa»')
     ok(/Non ne occupa uno/i.test(t1), 'e che chi è in lista non occupa un posto')
 
