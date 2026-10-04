@@ -72,6 +72,35 @@ export function emailDaCorreggere(c) {
   return !!c.email_non_valida || !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(c.email) || REFUSI.test(c.email)
 }
 
+// ── Le etichette ────────────────────────────────────────────────────────────
+// Nel campo `tags` convivono due cose diverse: le etichette che il titolare
+// scrive a mano («vip», «fornitori») e quelle che il sistema ha messo da solo —
+// parole nostre («lead», «struttura», «evento») e titoli interi di eventi.
+// Le seconde ripetono quello che il registro dice meglio, e mostrarle era metà
+// del caos. Qui si distinguono: a schermo vanno solo le prime.
+//
+// ⚠️ Quelle automatiche NON si cancellano dai dati: la newsletter sceglie ancora
+// i destinatari per tag. Si smette solo di mostrarle.
+const PAROLE_NOSTRE = new Set(['evento', 'lista attesa', 'lead', 'struttura', 'ristorante', 'attivita', 'attività',
+  'prenotazione', 'newsletter', 'vetrina', 'offerta', 'sito', 'minisito', 'pwa', 'form', 'import'])
+
+// I titoli già nel registro (e il loro taglio a 60 caratteri, che è come
+// finivano nei tag): un tag uguale a uno di questi l'ha messo il sistema.
+export function titoliAutomatici(attivita) {
+  const out = new Set()
+  for (const a of attivita || []) {
+    const t = String(a.titolo || '').trim().toLowerCase()
+    if (t) { out.add(t); out.add(t.slice(0, 60)) }
+  }
+  return out
+}
+export function etichetteAMano(contatto, automatici) {
+  return (contatto?.tags || []).filter(t => {
+    const k = String(t || '').trim().toLowerCase()
+    return k && !PAROLE_NOSTRE.has(k) && !automatici?.has(k)
+  })
+}
+
 // Le occasioni che contano per dire «è tornato»: cose prenotate o comprate.
 // Due prenotazioni per la stessa serata sono una volta sola.
 const TORNA = new Set(['evento', 'prenotazione', 'ordine'])
@@ -80,7 +109,7 @@ const chiaveOrigine = a => `${a.tipo}|${a.origine_id || a.titolo || a.riferiment
 /**
  * Le liste, calcolate dai contatti e dal registro.
  *
- * @returns {{ liste: Array<{chiave, titolo, gruppo, ids: Set|null, n}>, perContatto: Map }}
+ * @returns {{ liste: Array<{chiave, titolo, gruppo, ids: Set|null, n}>, perContatto: Map, automatici: Set }}
  *   `gruppo` raccoglie le liste sotto un'intestazione («Eventi»); `ids` null = tutti.
  */
 export function costruisciListe(contatti, attivita) {
@@ -115,6 +144,18 @@ export function costruisciListe(contatti, attivita) {
   }
   const insieme = cond => new Set(contatti.filter(cond).map(c => c.id))
 
+  // Le etichette scritte a mano e i nomi dati alle liste importate.
+  const automatici = titoliAutomatici(attivita)
+  const perEtichetta = new Map(), perImport = new Map()
+  for (const c of contatti) {
+    for (const t of etichetteAMano(c, automatici)) {
+      const dove = c.fonte === 'import' ? perImport : perEtichetta
+      if (!dove.has(t)) dove.set(t, new Set())
+      dove.get(t).add(c.id)
+    }
+  }
+  const perNumero = m => [...m.entries()].sort((x, y) => y[1].size - x[1].size || x[0].localeCompare(y[0], 'it'))
+
   const liste = [
     { chiave: 'tutti', titolo: 'Tutti', gruppo: null, ids: null, n: contatti.length },
     { chiave: 'contattabili', titolo: 'Si possono contattare', gruppo: null, ids: insieme(contattabile), spiega: 'Hanno dato il consenso a ricevere promozioni, per email o su WhatsApp.' },
@@ -128,6 +169,14 @@ export function costruisciListe(contatti, attivita) {
   for (const tipo of ['ordine', 'richiesta', 'newsletter', 'whatsapp', 'preventivo', 'recensione']) {
     if (perTipo.has(tipo)) liste.push({ chiave: `tipo|${tipo}`, titolo: FATTI[tipo].unica, gruppo: 'Altro', ids: perTipo.get(tipo) })
   }
+  // Le trattative aperte: chi aspetta una risposta o è in corso.
+  const inTrattativa = insieme(c => ['lead', 'contattato', 'proposta'].includes(c.pipeline_stage))
+  if (inTrattativa.size) liste.splice(3, 0, { chiave: 'trattative', titolo: 'In trattativa', gruppo: null, ids: inTrattativa, spiega: 'Hanno chiesto qualcosa o li stai seguendo: si lavorano nella vista «Trattative».' })
+
+  for (const [t, ids] of perNumero(perEtichetta)) liste.push({ chiave: `etichetta|${t}`, titolo: t, titoloLungo: `Etichetta «${t}»`, gruppo: 'Etichette', ids })
+  // Importando un file gli si può dare un nome: è una lista a tutti gli effetti.
+  for (const [t, ids] of perNumero(perImport)) liste.push({ chiave: `import|${t}`, titolo: t, titoloLungo: `Importati: «${t}»`, gruppo: 'Importati', ids })
+
   for (const [fonte, titolo] of [['manuale', 'Aggiunti a mano'], ['import', 'Importati da file']]) {
     const ids = insieme(c => (c.fonte || 'manuale') === fonte)
     if (ids.size) liste.push({ chiave: `fonte|${fonte}`, titolo, gruppo: 'Altro', ids })
@@ -136,5 +185,5 @@ export function costruisciListe(contatti, attivita) {
   if (storte.size) liste.push({ chiave: 'da_correggere', titolo: 'Email da correggere', gruppo: 'Da sistemare', ids: storte, spiega: 'L’email è scritta male o i messaggi tornano indietro: a questo indirizzo non arriva niente.' })
 
   for (const l of liste) if (l.ids) l.n = l.ids.size
-  return { liste, perContatto }
+  return { liste, perContatto, automatici }
 }

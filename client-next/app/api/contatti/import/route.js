@@ -92,6 +92,8 @@ export async function POST(request) {
         note: c.note,
         tags: lista ? [lista] : [],
         fonte: 'import',
+        // Una rubrica importata non è un elenco di trattative: ci si mettono a mano.
+        pipeline_stage: null,
         iscritto_newsletter: false,
         whatsapp_optin: false,
       }))

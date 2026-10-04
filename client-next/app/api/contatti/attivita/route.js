@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth, getProfile } from '@/lib/server-auth'
+import { staffPuoLeggereContatti } from '@/lib/contatti-regole'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -16,6 +17,7 @@ export async function GET(request) {
     if (response) return response
     const profile = await getProfile(user.id)
     if (!profile) return Response.json({ error: 'Profilo non trovato' }, { status: 403 })
+    if (!staffPuoLeggereContatti(profile)) return Response.json({ error: 'Permesso negato per questa sezione', code: 'permission_denied' }, { status: 403 })
 
     let aziendaId = null
     if (profile.role !== 'super_admin') {

@@ -49,7 +49,7 @@ try {
   const { data: s } = await anon.auth.signInWithPassword({ email, password })
   const H = { Authorization: `Bearer ${s.session.access_token}` }
 
-  const contatti = () => a.from('contatti').select('id, nome, email, telefono, telefono_e164, fonte, attivita_numero, ultima_attivita_tipo, ultima_attivita_titolo, iscritto_newsletter, whatsapp_optin').eq('azienda_id', az.id).order('created_at').then(r => r.data || [])
+  const contatti = () => a.from('contatti').select('id, nome, email, telefono, telefono_e164, fonte, note, pipeline_stage, attivita_numero, ultima_attivita_tipo, ultima_attivita_titolo, iscritto_newsletter, whatsapp_optin').eq('azienda_id', az.id).order('created_at').then(r => r.data || [])
   const registro = id => a.from('contatti_attivita').select('tipo, titolo, origine_id, riferimento, dettaglio').eq('contatto_id', id).order('created_at').then(r => r.data || [])
   // Il lavoro dopo la risposta (`after`) non è istantaneo: si aspetta l'esito, non un tempo fisso.
   const finche = async (cond, max = 25) => { for (let i = 0; i < max; i++) { const c = await contatti(); if (cond(c)) return c; await pausa(1000) } return contatti() }
@@ -65,6 +65,8 @@ try {
   let reg = A ? await registro(A.id) : []
   ok(reg.length === 1 && reg[0].tipo === 'evento' && reg[0].titolo === 'ZZ Serata porte' && reg[0].origine_id === ev.id && reg[0].dettaglio?.posti === 2, `nel registro: l’evento, quale, e quanti posti (${JSON.stringify(reg[0] || {}).slice(0, 110)})`)
   ok(A?.ultima_attivita_titolo === 'ZZ Serata porte' && A?.iscritto_newsletter === false, 'il contatto dice qual è l’ultima cosa che ha fatto, e NON è iscritto a niente')
+  // ⛔ Tutti nascevano «Nuovo lead» con una riga nelle note per ogni prenotazione.
+  ok(A?.pipeline_stage === null && A?.note === null, `chi prenota non finisce in trattativa, e nelle note non si scrive niente (stadio ${A?.pipeline_stage}, note ${A?.note === null ? 'vuote' : 'SCRITTE'})`)
 
   console.log('\n2 · LA STESSA PERSONA, SCRITTA DIVERSA\n')
   // Stessa email con le maiuscole: non deve nascere un secondo contatto.
@@ -101,6 +103,7 @@ try {
   r = await manda('/api/guest/contact', { entity_tipo: 'ristorante', entity_id: ent.id, name: 'ZZ Dan', email: dan, message: 'Vorrei informazioni per una cena aziendale.', privacy_accettata: true, privacy: true })
   c = await finche(l => di(l, dan)?.attivita_numero === 1, 12)
   reg = di(c, dan) ? await registro(di(c, dan).id) : []
+  ok(di(c, dan)?.pipeline_stage === 'lead' && /cena aziendale/.test(di(c, dan)?.note || ''), `chi scrive dal sito entra in trattativa, e il suo messaggio resta nelle note (stadio ${di(c, dan)?.pipeline_stage})`)
   ok(r.stato < 300 && reg[0]?.tipo === 'richiesta' && reg[0]?.titolo === 'Messaggio dal sito', `una richiesta dal sito (HTTP ${r.stato}${r.j?.error ? ' ' + r.j.error : ''}, ${reg[0]?.tipo || 'niente nel registro'})`)
 
   console.log('\n6 · OFFERTA, LASCIANDO SOLO IL TELEFONO\n')
@@ -137,6 +140,7 @@ try {
     c = await finche(l => di(l, gio)?.attivita_numero === 1, 12)
     reg = di(c, gio) ? await registro(di(c, gio).id) : []
     ok(r.stato < 300 && reg[0]?.tipo === 'modulo' && reg[0]?.titolo === 'ZZ Iscrizione porte' && reg[0]?.origine_id === fb.id, `il registro dice quale modulo ha compilato (HTTP ${r.stato}${r.j?.error ? ' ' + r.j.error : ''}, ${reg[0]?.titolo || 'non c’è'})`)
+    ok(di(c, gio)?.pipeline_stage === null, 'compilare un modulo non apre una trattativa da solo')
     ok(di(c, gio)?.telefono_e164 === '+390744123456', `e il fisso senza prefisso diventa internazionale (${di(c, gio)?.telefono_e164})`)
   }
 

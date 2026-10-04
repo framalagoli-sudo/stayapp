@@ -42,7 +42,7 @@ async function azienda(nome) {
   return data
 }
 async function persona(az, dati, fatti = []) {
-  const { data, error } = await a.from('contatti').insert({ azienda_id: az.id, fonte: 'evento', tags: ['evento', 'ZZ Serata A con un titolo lungo'], ...dati }).select().single()
+  const { data, error } = await a.from('contatti').insert({ azienda_id: az.id, fonte: 'evento', tags: ['evento', 'ZZ Serata A'], pipeline_stage: null, note: '[03/10/2026] Ha prenotato «ZZ Serata A» — 2 posti', ...dati }).select().single()
   if (error) throw new Error('contatto: ' + error.message)
   for (const f of fatti) {
     const { error: e2 } = await a.from('contatti_attivita').insert({ azienda_id: az.id, contatto_id: data.id, ...f })
@@ -62,7 +62,7 @@ try {
     [serataA(1, giorniFa(20)), serataB(1, giorniFa(3)), { tipo: 'modulo', titolo: 'ZZ Modulo iscrizione', origine_id: MO, riferimento: `m-1-${t}`, avvenuta_il: giorniFa(30) }])
   await persona(mia, { nome: 'ZZ Bruno', email: `zz-bruno-${t}@gmail.con` }, [serataA(2, giorniFa(19), 12), serataA(3, giorniFa(19), 2)])
   await persona(mia, { nome: 'ZZ Carla', telefono: '+39 347 5556677', telefono_e164: '+393475556677' }, [{ tipo: 'lista_attesa', titolo: 'ZZ Serata B', origine_id: SB, riferimento: `w-1-${t}`, dettaglio: { posti: 4 }, avvenuta_il: giorniFa(5) }])
-  await persona(mia, { nome: 'ZZ Dario', email: `zz-dario-${t}@playwright.internal`, fonte: 'manuale', tags: [] })
+  await persona(mia, { nome: 'ZZ Dario', email: `zz-dario-${t}@playwright.internal`, fonte: 'manuale', tags: ['vip'], pipeline_stage: 'proposta', note: null })
   const estraneo = await persona(altra, { nome: 'ZZ Estraneo', email: `zz-estraneo-${t}@playwright.internal` }, [serataA(9, giorniFa(1))])
 
   const email = `zz-cp-tit-${t}@playwright.internal`, password = randomBytes(24).toString('base64url') + 'Aa1!'
@@ -105,14 +105,16 @@ try {
   // Bruno ha prenotato DUE volte la stessa serata: è una volta sola, non «tornato».
   ok(L['ZZ Serata A'] === 2 && L['ZZ Serata B'] === 1, `una lista per ogni evento, e chi prenota due volte la stessa serata conta una volta (A ${L['ZZ Serata A']}, B ${L['ZZ Serata B']})`)
   ok(L['ZZ Modulo iscrizione'] === 1 && L['Aggiunti a mano'] === 1 && L['Email da correggere'] === 1, 'moduli, aggiunti a mano ed email da correggere hanno la loro lista')
+  // Le etichette scritte a mano diventano liste; quelle messe dal sistema («evento», il titolo della serata) no.
+  ok(L['vip'] === 1 && L['evento'] === undefined && L['In trattativa'] === 1, `un’etichetta a mano è una lista, quelle automatiche no (vip ${L['vip']}, evento ${L['evento']}, in trattativa ${L['In trattativa']})`)
   const testoListe = (await page.locator('[data-liste]').innerText()).replace(/\s+/g, ' ')
-  ok(/EVENTI .*LISTE D’ATTESA .*MODULI .*ALTRO .*DA SISTEMARE/i.test(testoListe), 'raggruppate per provenienza')
+  ok(/EVENTI .*LISTE D’ATTESA .*MODULI .*ETICHETTE .*ALTRO .*DA SISTEMARE/i.test(testoListe), 'raggruppate per provenienza')
   ok(!/ZZ Estraneo/.test(await page.locator('body').innerText()), 'i contatti di un’altra azienda non compaiono')
 
   console.log('\n3 · LA TABELLA\n')
   ok((await nomi())[0] === 'ZZ Anna', `all’inizio è in cima chi si è visto più di recente (${(await nomi())[0]})`)
   const corpo = (await page.locator('[data-tabella-contatti]').innerText()).replace(/\s+/g, ' ')
-  ok(!/Nuovo lead|ZZ Serata A con un titolo lungo/.test(corpo), 'niente «Lead» e niente tag automatici sulle righe')
+  ok(!/Nuovo lead|Da contattare|\bevento\b/.test(corpo), 'niente stadio e niente tag automatici sulle righe')
   ok(/Ha prenotato «ZZ Serata B»/.test(corpo) && /In lista d’attesa per «ZZ Serata B»/.test(corpo), 'l’ultima attività è detta a parole')
   ok(/Email da correggere/.test(corpo), 'un’email scritta male è segnalata sulla riga')
   await page.locator('[data-ordina="nome"]').click()
@@ -133,36 +135,92 @@ try {
   console.log('\n4 · LA SCHEDA\n')
   await page.locator(`[data-contatto="${anna.id}"]`).click()
   await page.locator('[data-storia]').waitFor({ timeout: 8000 })
+  const scheda = page.locator('[data-scheda]')
   const storia = (await page.locator('[data-storia]').innerText()).replace(/\s+/g, ' ')
   ok(/3 attività/.test(storia) && storia.indexOf('ZZ Serata B') < storia.indexOf('ZZ Serata A') && /Ha compilato «ZZ Modulo iscrizione»/.test(storia), 'la storia viene dal registro, la più recente in cima')
   ok(/2 posti/.test(storia), 'con i dettagli (quanti posti)')
-  ok(await page.getByRole('button', { name: /Copia il link per la recensione/ }).count() === 1 && await page.getByRole('button', { name: 'Elimina contatto' }).count() === 1, 'il link per la recensione ed «Elimina» ora stanno qui')
-  await page.locator('textarea').fill('Nota scritta dal titolare')
-  await page.getByRole('button', { name: 'Salva modifiche' }).click()
-  await page.locator('[data-storia]').waitFor({ state: 'detached', timeout: 10000 })
-  const { data: dopo } = await a.from('contatti').select('note, attivita_numero').eq('id', anna.id).single()
-  ok(dopo.note === 'Nota scritta dal titolare' && dopo.attivita_numero === 3, 'salvare la scheda scrive le note e non tocca la storia')
+  ok(/Arrivato da: Evento/.test(await page.locator('[data-origine]').innerText()), 'in cima dice da dove è arrivato')
+  const link = await page.locator('[data-recapiti] a').evaluateAll(els => els.map(e => e.getAttribute('href')))
+  ok(link.some(h => h.startsWith('mailto:')) && link.includes('tel:333 1112233') && link.length === 2, `email e telefono si toccano (${link.map(h => h.split(':')[0]).join(', ')})`)
+  // ⛔ La storia era scritta tre volte: registro, tag automatici, note. Nel
+  // campo delle etichette ora ci sono solo quelle del titolare.
+  ok(await scheda.getByText('ZZ Serata A', { exact: true }).count() === 0 && !/evento ×|lista attesa/.test(await scheda.innerText()), 'le etichette messe dal sistema non si vedono nella scheda')
+  if (process.env.FOTO) await page.screenshot({ path: `${process.env.FOTO}/contatti-scheda.png` })
+  const cassa = await scheda.boundingBox(), salva = await page.getByRole('button', { name: 'Salva modifiche' }).boundingBox()
+  ok(cassa.height <= page.viewportSize().height * 0.93 && salva.y + salva.height <= cassa.y + cassa.height + 1 && salva.y > 0, 'la scheda sta nella finestra e «Salva» è sempre a vista')
+  ok(await page.getByRole('button', { name: 'Elimina contatto' }).count() === 0, '«Elimina» non è più un pulsante rosso in fondo')
+  await page.locator('[data-togliere]').click()
+  const togliere = (await scheda.innerText()).replace(/\s+/g, ' ')
+  ok(/Elimina contatto Sparisce dall’elenco/.test(togliere) && /Rendi anonimo Per chi chiede la cancellazione/.test(togliere) && !/GDPR|Art\. 17/.test(togliere), 'le due azioni che non si disfano stanno a parte, e ognuna dice cosa fa')
+  ok(await page.getByRole('button', { name: /Copia il link per la recensione/ }).count() === 1, 'il link per la recensione sta qui')
+  await page.keyboard.press('Escape')
+  await page.locator('[data-scheda]').waitFor({ state: 'detached', timeout: 5000 }).catch(() => {})
+  ok(await page.locator('[data-scheda]').count() === 0, 'Esc chiude la scheda')
 
-  console.log('\n5 · AGGIUNGERE A MANO, E LA PIPELINE\n')
+  // Salvare: le note sono del titolare, le etichette del sistema non si perdono.
+  await page.locator(`[data-contatto="${anna.id}"]`).click()
+  await page.locator('[data-scheda] textarea').fill('Nota scritta dal titolare')
+  await page.locator('[data-scheda]').getByPlaceholder(/Aggiungi tag/).fill('amica')
+  await page.locator('[data-scheda]').getByPlaceholder(/Aggiungi tag/).press('Enter')
+  await page.locator('[data-trattativa]').selectOption('contattato')
+  await page.locator('[data-scheda] input[type="checkbox"]').nth(1).check()
+  ok(/Spunta solo se questa persona ti ha detto di sì/.test(await page.locator('[data-scheda]').innerText()) && /bloccare il numero da Meta/.test(await page.locator('[data-scheda]').innerText()), 'spuntando un consenso a mano si legge cosa comporta')
+  await page.getByRole('button', { name: 'Salva modifiche' }).click()
+  await page.locator('[data-scheda]').waitFor({ state: 'detached', timeout: 10000 })
+  const { data: dopo } = await a.from('contatti').select('note, attivita_numero, tags, pipeline_stage, whatsapp_optin, whatsapp_optin_il, iscritto_newsletter').eq('id', anna.id).single()
+  ok(dopo.note === 'Nota scritta dal titolare' && dopo.attivita_numero === 3, 'salvare la scheda scrive le note e non tocca la storia')
+  ok(JSON.stringify(dopo.tags) === JSON.stringify(['evento', 'ZZ Serata A', 'amica']), `le etichette del sistema restano nei dati, quella nuova si aggiunge (${JSON.stringify(dopo.tags)})`)
+  ok(dopo.pipeline_stage === 'contattato' && dopo.whatsapp_optin === true && !!dopo.whatsapp_optin_il && dopo.iscritto_newsletter === true, 'qualunque contatto si può mettere in trattativa dalla scheda, e il consenso segnato a mano ha la sua data')
+
+  console.log('\n5 · AGGIUNGERE A MANO, E LE TRATTATIVE\n')
   await page.getByRole('button', { name: 'Aggiungi' }).first().click()
   await page.getByPlaceholder('Nome e cognome').fill('ZZ Elena')
   await page.getByPlaceholder('+39 333 1234567').fill('320 1234567')
   await page.getByRole('button', { name: 'Aggiungi contatto' }).click()
   await page.locator('[data-tabella-contatti]').getByText('ZZ Elena').waitFor({ timeout: 15000 }).catch(() => {})
-  const { data: elena } = await a.from('contatti').select('telefono_e164, fonte').eq('azienda_id', mia.id).eq('nome', 'ZZ Elena').maybeSingle()
+  const { data: elena } = await a.from('contatti').select('telefono_e164, fonte, pipeline_stage').eq('azienda_id', mia.id).eq('nome', 'ZZ Elena').maybeSingle()
   ok(elena?.fonte === 'manuale' && elena?.telefono_e164 === '+393201234567', `un contatto aggiunto a mano si crea davvero, con la chiave del telefono (${elena ? elena.telefono_e164 : 'NON CREATO'})`)
+  ok(elena?.pipeline_stage === null, 'e non finisce in trattativa da solo')
   ok((await liste())['Aggiunti a mano'] === 2, 'ed entra da solo nella sua lista')
-  await page.getByRole('button', { name: 'Pipeline' }).click()
-  await page.getByText('Nuovo lead').first().waitFor({ timeout: 8000 })
-  ok(/In trattativa/.test(await page.locator('body').innerText()), 'la pipeline è rimasta, nella sua vista')
+  // ⛔ Si chiamava «Pipeline» e conteneva tutti: 114 contatti su 116 fermi a «Nuovo lead».
+  await page.getByRole('button', { name: 'Trattative' }).click()
+  await page.locator('[data-trattative]').waitFor({ timeout: 8000 })
+  if (process.env.FOTO) await page.screenshot({ path: `${process.env.FOTO}/contatti-trattative.png` })
+  const tr = (await page.locator('[data-trattative]').innerText()).replace(/\s+/g, ' ')
+  ok(await page.locator('[data-trattativa-scheda]').count() === 2 && /Gli altri 3 contatti non sono in trattativa/.test(tr), `in trattativa c’è solo chi ci deve stare: 2 su 5 (${await page.locator('[data-trattativa-scheda]').count()})`)
+  ok(/Da contattare .*Contattato .*In trattativa .*Concluso .*Perso/.test(tr) && !/Nuovo lead|Chiuso ✓/.test(tr), 'gli stadi hanno nomi in italiano')
+  ok(await page.locator('[data-colonna="contattato"] [data-trattativa-scheda]').count() === 1 && await page.locator('[data-colonna="proposta"] [data-trattativa-scheda]').count() === 1, 'ognuno nella sua colonna')
+  const colonne = await page.locator('[data-colonna]').evaluateAll(els => ({ destra: Math.max(...els.map(e => e.getBoundingClientRect().right)), schermo: innerWidth, schede: Math.max(...[...document.querySelectorAll('[data-trattativa-scheda]')].map(e => e.getBoundingClientRect().height)) }))
+  ok(colonne.destra <= colonne.schermo && colonne.schede < 60, `le cinque colonne stanno nello schermo e le schede sono basse (${Math.round(colonne.schede)}px)`)
+  ok(!/\bevento\b/.test(tr), 'niente tag automatici sulle schede')
+  // Uno stadio inventato non entra, e non fa sparire nessuno.
+  const finto = await fetch(`${BASE}/api/contatti/${anna.id}`, { method: 'PATCH', headers: { ...H, 'content-type': 'application/json' }, body: JSON.stringify({ pipeline_stage: 'inventato' }) })
+  ok(finto.status === 400, `uno stadio che non esiste viene rifiutato (HTTP ${finto.status})`)
   ok(errori.length === 0, `nessun errore nel browser${errori.length ? ' — ' + errori[0] : ''}`)
   await ctx.close()
+
+  console.log('\n5b · I COLLABORATORI\n')
+  // 🔒 Senza il permesso «Contatti» non li leggono: prima il permesso nascondeva la voce di menu e basta.
+  const collaboratore = async permessi => {
+    const em = `zz-cp-staff-${utenti.length}-${t}@playwright.internal`, pw = randomBytes(24).toString('base64url') + 'Aa1!'
+    const { data: us } = await a.auth.admin.createUser({ email: em, password: pw, email_confirm: true }); utenti.push(us.user.id)
+    await a.from('profiles').upsert({ id: us.user.id, role: 'staff', full_name: 'ZZ Staff', azienda_id: mia.id, permissions: permessi }, { onConflict: 'id' })
+    const { data: ss } = await createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } }).auth.signInWithPassword({ email: em, password: pw })
+    return { Authorization: `Bearer ${ss.session.access_token}` }
+  }
+  const senza = await collaboratore({ eventi: true })
+  const r1 = await fetch(`${BASE}/api/contatti`, { headers: senza }), r2 = await fetch(`${BASE}/api/contatti/attivita`, { headers: senza })
+  const corpo1 = await r1.text()
+  ok(r1.status === 403 && r2.status === 403 && !/ZZ Anna|playwright/.test(corpo1), `un collaboratore senza il permesso non legge né i contatti né il registro (HTTP ${r1.status}, ${r2.status})`)
+  const con = await collaboratore({ contatti: true })
+  const r3 = await fetch(`${BASE}/api/contatti`, { headers: con }).then(x => x.json())
+  ok(Array.isArray(r3) && r3.length === 5 && r3.every(c => c.azienda_id === mia.id), 'con il permesso li legge, e solo quelli della sua azienda')
 
   console.log('\n6 · SU TELEFONO, E CON TANTA GENTE\n')
   // ⛔ La prima versione su un telefono era alta sei schermate: tutte le liste in
   // colonna prima del primo contatto, una tabella da scorrere di lato e i
   // pulsanti in alto fuori dallo schermo. Francesco: «da smartphone è innavigabile».
-  const folla = Array.from({ length: 26 }, (_, i) => ({ azienda_id: mia.id, nome: `ZZ Folla ${String(i).padStart(2, '0')} con un nome lunghissimo che non finisce più`, email: `zz-folla-${i}-${t}@playwright.internal`, fonte: 'import', tags: [] }))
+  const folla = Array.from({ length: 26 }, (_, i) => ({ azienda_id: mia.id, nome: `ZZ Folla ${String(i).padStart(2, '0')} con un nome lunghissimo che non finisce più`, email: `zz-folla-${i}-${t}@playwright.internal`, fonte: 'import', pipeline_stage: null, tags: i < 10 ? ['clienti-2026'] : [] }))
   await a.from('contatti').insert(folla)
   for (let i = 0; i < 9; i++) await a.from('contatti_attivita').insert({ azienda_id: mia.id, contatto_id: anna.id, tipo: 'evento', titolo: `ZZ Evento numero ${i} con un titolo molto lungo per vedere se si taglia`, origine_id: `44444444-4444-4444-8444-44444444440${i}`, riferimento: `folla-${i}-${t}`, avvenuta_il: giorniFa(40 + i) })
   const tel = await browser.newContext({ locale: 'it-IT', viewport: { width: 390, height: 844 },
@@ -184,6 +242,7 @@ try {
     ok(!!b && b.x >= 0 && b.x + b.width <= 390, `il pulsante «${nome}» sta dentro lo schermo`)
   }
   ok(await m.locator('[data-contatto-scheda]').count() === 25 && /Mostra altri 6 · ne restano 6/.test(await m.locator('[data-mostra-altri]').innerText()), 'si vedono 25 persone per volta, e dice quante ne restano')
+  ok(await m.locator('[data-lista-tendina] optgroup[label="Importati"] option').count() === 1 && /clienti-2026 \(10\)/.test(await m.locator('[data-lista-tendina]').innerText()), 'il nome dato a un file importato è una lista')
   await m.locator('[data-mostra-altri]').click()
   ok(await m.locator('[data-contatto-scheda]').count() === 31 && await m.locator('[data-mostra-altri]').count() === 0, '«Mostra altri» le aggiunge, e quando sono tutte sparisce')
   const larghezze = await m.locator('[data-contatto-scheda]').evaluateAll(els => Math.max(...els.map(e => e.getBoundingClientRect().right)))
@@ -198,6 +257,13 @@ try {
   await m.locator('[data-contatto-scheda]').first().click()
   await m.locator('[data-storia]').waitFor({ timeout: 8000 })
   ok(true, 'toccando una scheda si apre la persona, con la sua storia')
+  await m.keyboard.press('Escape')
+  await m.getByRole('button', { name: 'Trattative' }).click()
+  await m.locator('[data-linguetta="contattato"]').waitFor({ timeout: 8000 })
+  const strette = await m.evaluate(() => ({ largo: document.documentElement.scrollWidth, alto: document.documentElement.scrollHeight, colonneVisibili: [...document.querySelectorAll('[data-colonna]')].filter(e => e.offsetParent).length }))
+  ok(strette.largo <= 390 && strette.colonneVisibili === 0 && strette.alto < 844 * 1.5, `le trattative su telefono: uno stadio alla volta, niente da scorrere di lato (${(strette.alto / 844).toFixed(1)} schermate)`)
+  await m.locator('[data-linguetta="contattato"]').click()
+  ok(await m.locator('[data-trattativa-riga]').count() === 1 && /ZZ Anna/.test(await m.locator('[data-trattativa-riga]').first().innerText()), 'toccando una linguetta si vede chi è in quello stadio')
   ok(erroriTel.length === 0, `nessun errore nel browser${erroriTel.length ? ' — ' + erroriTel[0] : ''}`)
   await tel.close()
 

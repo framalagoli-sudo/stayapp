@@ -4,18 +4,13 @@ import { useAuth } from '@/context/AuthContext'
 import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
 import { Search, Plus, X, Pencil, Trash2, Users, Mail, Phone, Tag, List, LayoutGrid, GripVertical, ChevronDown, ChevronUp, Star, Copy, Check, Download, Upload, Repeat, MessageCircle } from 'lucide-react'
-import { costruisciListe, nomeFonte, fraseAttivita, canaliContattabili, contattabile, emailDaCorreggere } from '@/lib/contatti-liste'
+import { costruisciListe, nomeFonte, fraseAttivita, canaliContattabili, contattabile, emailDaCorreggere, etichetteAMano } from '@/lib/contatti-liste'
+import { STADI_TRATTATIVA_ELENCO } from '@/lib/contatti-regole'
 import ContattiImportModal from './ContattiImportModal'
 import { DndContext, PointerSensor, useSensor, useSensors, useDraggable, useDroppable } from '@dnd-kit/core'
 
-// ─── Pipeline stages ─────────────────────────────────────────────────────────
-const STAGES = [
-  { key: 'lead',         label: 'Nuovo lead',       color: '#888',    light: '#f5f5f5' },
-  { key: 'contattato',   label: 'Contattato',        color: '#2b6cb0', light: '#ebf4ff' },
-  { key: 'proposta',     label: 'In trattativa',     color: '#b7791f', light: '#fffbeb' },
-  { key: 'chiuso_vinto', label: 'Chiuso ✓',          color: '#276749', light: '#f0fff4' },
-  { key: 'chiuso_perso', label: 'Perso',             color: '#c53030', light: '#fff5f5' },
-]
+// Gli stadi di una trattativa: in `lib/contatti-regole.js`, gli stessi che la route accetta.
+const STAGES = STADI_TRATTATIVA_ELENCO
 const STAGE_MAP = Object.fromEntries(STAGES.map(s => [s.key, s]))
 
 // ─── Tag helpers ──────────────────────────────────────────────────────────────
@@ -63,7 +58,7 @@ function csvCell(v) {
 }
 
 function downloadContattiCSV(contatti, nomeLista = '') {
-  const headers = ['Nome', 'Email', 'Telefono', 'Da dove arriva', 'Attività', 'Ultima attività', 'Quando', 'Email promozionali', 'WhatsApp', 'Stage', 'Tag', 'Note', 'Arrivato il']
+  const headers = ['Nome', 'Email', 'Telefono', 'Da dove arriva', 'Attività', 'Ultima attività', 'Quando', 'Email promozionali', 'WhatsApp', 'Trattativa', 'Etichette', 'Note', 'Arrivato il']
   const rows = contatti.map(c => [
     c.nome,
     c.email,
@@ -74,7 +69,7 @@ function downloadContattiCSV(contatti, nomeLista = '') {
     c.ultima_attivita_il ? new Date(c.ultima_attivita_il).toLocaleDateString('it-IT') : '',
     canaliContattabili(c).email ? 'Sì' : 'No',
     canaliContattabili(c).whatsapp ? 'Sì' : 'No',
-    (STAGE_MAP[c.pipeline_stage] || STAGE_MAP.lead).label,
+    STAGE_MAP[c.pipeline_stage]?.label || '',
     (c.tags || []).join(', '),
     c.note,
     c.created_at ? new Date(c.created_at).toLocaleDateString('it-IT') : '',
@@ -93,12 +88,60 @@ function downloadContattiCSV(contatti, nomeLista = '') {
 }
 
 // ─── Contact modal ────────────────────────────────────────────────────────────
-const EMPTY = { nome: '', email: '', telefono: '', tags: [], note: '', iscritto_newsletter: false, whatsapp_optin: false, pipeline_stage: 'lead' }
+// La scheda di una persona.
+//
+// ⛔ Era un modulo di otto campi più alto della finestra, con la storia scritta
+// tre volte — nel registro, nei tag automatici e nelle note («[03/10] Ha
+// prenotato…») — e due pulsanti rossi uguali in fondo, uno dei quali si
+// chiamava «Anonimizza dati (GDPR Art. 17)». Francesco: «serve l'origine del
+// contatto e categorizzarlo in una lista».
+// Ora in cima c'è chi è e da dove arriva, con i recapiti che si toccano; poi la
+// storia; poi quello che il titolare può cambiare. Il salvataggio resta sempre
+// a vista, e le due azioni che non si disfano stanno a parte, spiegate.
+const EMPTY = { nome: '', email: '', telefono: '', tags: [], note: '', iscritto_newsletter: false, whatsapp_optin: false, pipeline_stage: null }
+const quando = iso => iso ? new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' }) : ''
 
-function ContactModal({ contact, aziendaId, onSave, onClose, storia = [], entita = [], onElimina = null }) {
-  const [form, setForm] = useState(contact ? { ...EMPTY, ...contact } : { ...EMPTY })
-  const [saving, setSaving] = useState(false)
+function ContactModal({ contact, aziendaId, onSave, onClose, storia = [], entita = [], onElimina = null, automatici = null }) {
   const isNew = !contact?.id
+  // Nel campo si modificano solo le etichette scritte a mano. Quelle messe dal
+  // sistema restano nei dati (la newsletter le usa ancora) e si riattaccano al
+  // salvataggio: non si vedono e non si perdono.
+  const delSistema = isNew ? [] : (contact.tags || []).filter(t => !etichetteAMano({ tags: [t] }, automatici).length)
+  const [form, setForm] = useState({ ...EMPTY, ...(contact || {}), tags: isNew ? [] : etichetteAMano(contact, automatici) })
+  const [saving, setSaving] = useState(false)
+  const [altro, setAltro] = useState(false)
+
+  // Esc chiude, come ogni finestra.
+  useEffect(() => {
+    const giu = e => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', giu)
+    return () => window.removeEventListener('keydown', giu)
+  }, [onClose])
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      const corpo = { nome: form.nome, email: form.email, telefono: form.telefono, note: form.note,
+        tags: [...delSistema, ...(form.tags || [])], iscritto_newsletter: !!form.iscritto_newsletter,
+        whatsapp_optin: !!form.whatsapp_optin, pipeline_stage: form.pipeline_stage || null }
+      if (isNew) await apiFetch('/api/contatti', { method: 'POST', body: JSON.stringify({ ...corpo, azienda_id: aziendaId }) })
+      else await apiFetch(`/api/contatti/${contact.id}`, { method: 'PATCH', body: JSON.stringify(corpo) })
+      onSave()
+    } catch (e) { alert(e.message) }
+    setSaving(false)
+  }
+
+  async function handleErasure() {
+    if (!window.confirm(`Rendere anonimo ${contact.nome}?\n\nNome, email, telefono, note ed etichette vengono cancellati e non si possono recuperare. Resta una riga senza nome, così i conteggi delle serate non cambiano.`)) return
+    setSaving(true)
+    try {
+      await apiFetch(`/api/contatti/${contact.id}/erasure`, { method: 'POST' })
+      onSave()
+    } catch (e) { alert(e.message) }
+    setSaving(false)
+  }
+
   // Il link per chiedere una recensione: prima stava su ogni riga dell'elenco.
   const [entitaRec, setEntitaRec] = useState(entita[0]?.key || '')
   const [recCopiata, setRecCopiata] = useState(false)
@@ -112,114 +155,115 @@ function ContactModal({ contact, aziendaId, onSave, onClose, storia = [], entita
     } catch (err) { alert(`Non è riuscito: ${err.message}`) }
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault()
-    setSaving(true)
-    try {
-      if (isNew) await apiFetch('/api/contatti', { method: 'POST', body: JSON.stringify({ ...form, azienda_id: aziendaId }) })
-      else await apiFetch(`/api/contatti/${contact.id}`, { method: 'PATCH', body: JSON.stringify(form) })
-      onSave()
-    } catch (e) { alert(e.message) }
-    setSaving(false)
-  }
-
-  async function handleErasure() {
-    if (!window.confirm('Anonimizzare tutti i dati personali di questo contatto?\n\nNome, email, telefono e note verranno sostituiti con dati anonimi. Questa azione è irreversibile (GDPR Art. 17).')) return
-    setSaving(true)
-    try {
-      await apiFetch(`/api/contatti/${contact.id}/erasure`, { method: 'POST' })
-      onSave()
-    } catch (e) { alert(e.message) }
-    setSaving(false)
-  }
-
   const field = { width: '100%', padding: '9px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box', marginBottom: 12 }
   const label = { fontSize: 12, fontWeight: 600, color: '#666', marginBottom: 4, display: 'block' }
+  const sezione = { fontSize: 12, fontWeight: 700, color: '#666', margin: '4px 0 8px' }
+  const recapito = { display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, color: '#2b6cb0', textDecoration: 'none', fontWeight: 600, minWidth: 0 }
+  const numero = contact?.telefono_e164 ? contact.telefono_e164.replace(/\D/g, '') : null
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: '#fff', borderRadius: 16, padding: 28, width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h3 style={{ margin: 0, fontSize: 17, overflowWrap: 'anywhere' }}>{isNew ? 'Nuovo contatto' : contact.nome}</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
-        </div>
-        {/* ⛔ La storia stava in un testo libero nelle note («[03/10] Ha prenotato…
-            12 posti»), mescolata a quello che scrive il titolare. Ora si legge
-            dal registro: una riga per ogni cosa fatta, la più recente in cima. */}
-        {!isNew && (
-          <div data-storia style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 8 }}>
-              Storia {storia.length > 0 && <span style={{ fontWeight: 400, color: '#999' }}>· {storia.length} {storia.length === 1 ? 'attività' : 'attività'} · arrivato da: {nomeFonte(contact.fonte)}</span>}
-            </div>
-            {storia.length === 0 ? (
-              <div style={{ fontSize: 13, color: '#999', background: '#fafafa', borderRadius: 8, padding: '10px 12px' }}>
-                Nessuna attività registrata. Arrivato da: {nomeFonte(contact.fonte)}.
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 0, border: '1px solid #eee', borderRadius: 8, maxHeight: 190, overflowY: 'auto' }}>
-                {storia.map((a, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 10, padding: '8px 12px', borderBottom: i < storia.length - 1 ? '1px solid #f3f3f3' : 'none', fontSize: 13 }}>
-                    <span style={{ color: '#999', flexShrink: 0, width: 78 }}>{new Date(a.avvenuta_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
-                    <span style={{ color: '#333', overflowWrap: 'anywhere' }}>{fraseAttivita(a)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+    // Si chiude anche cliccando fuori: `onMouseDown` sullo sfondo, non sul contenuto.
+    <div onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
+      <form onSubmit={handleSubmit} data-scheda role="dialog" aria-modal="true" aria-label={isNew ? 'Nuovo contatto' : contact.nome}
+        style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 500, maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+        {/* Chi è, e come si raggiunge */}
+        <div style={{ padding: '20px 22px 14px', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+            <h3 style={{ margin: 0, fontSize: 18, overflowWrap: 'anywhere' }}>{isNew ? 'Nuovo contatto' : contact.nome}</h3>
+            <button type="button" onClick={onClose} aria-label="Chiudi" style={{ background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, padding: 0 }}><X size={20} strokeWidth={1.5} /></button>
           </div>
-        )}
-        <form onSubmit={handleSubmit}>
+          {!isNew && (
+            <>
+              <div data-recapiti style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 8 }}>
+                {contact.email && <a href={`mailto:${contact.email}`} style={{ ...recapito, overflowWrap: 'anywhere' }}><Mail size={13} strokeWidth={1.5} /> {contact.email}</a>}
+                {contact.telefono && <a href={`tel:${contact.telefono_e164 || contact.telefono}`} style={recapito}><Phone size={13} strokeWidth={1.5} /> {contact.telefono}</a>}
+                {numero && <a href={`https://wa.me/${numero}`} target="_blank" rel="noopener noreferrer" style={{ ...recapito, color: '#0b6b5c' }}><MessageCircle size={13} strokeWidth={1.5} /> WhatsApp</a>}
+              </div>
+              <div data-origine style={{ fontSize: 12.5, color: '#888', marginTop: 7 }}>
+                Arrivato da: <strong style={{ color: '#555' }}>{nomeFonte(contact.fonte)}</strong> · {quando(contact.created_at)}
+              </div>
+            </>
+          )}
+        </div>
+
+        <div style={{ padding: '16px 22px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
+          {/* La storia, letta dal registro: una riga per ogni cosa fatta. */}
+          {!isNew && (
+            <div data-storia style={{ marginBottom: 18 }}>
+              <div style={sezione}>Cosa ha fatto {storia.length > 0 && <span style={{ fontWeight: 400, color: '#999' }}>· {storia.length} attività</span>}</div>
+              {storia.length === 0 ? (
+                <div style={{ fontSize: 13, color: '#999', background: '#fafafa', borderRadius: 8, padding: '10px 12px' }}>Ancora niente: è fra i contatti ma non ha prenotato, comprato o scritto.</div>
+              ) : (
+                <div style={{ border: '1px solid #eee', borderRadius: 8, maxHeight: 168, overflowY: 'auto' }}>
+                  {storia.map((a, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 10, padding: '8px 12px', borderBottom: i < storia.length - 1 ? '1px solid #f3f3f3' : 'none', fontSize: 13 }}>
+                      <span style={{ color: '#999', flexShrink: 0, width: 78 }}>{new Date(a.avvenuta_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
+                      <span style={{ color: '#333', overflowWrap: 'anywhere' }}>{fraseAttivita(a)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <label style={label}>Nome *</label>
           <input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} required style={field} placeholder="Nome e cognome" />
-          <label style={label}>Email</label>
-          <input value={form.email || ''} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} type="email" style={field} placeholder="email@esempio.it" />
-          <label style={label}>Telefono</label>
-          <input value={form.telefono || ''} onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))} style={field} placeholder="+39 333 1234567" />
-          <label style={label}>Stage pipeline</label>
-          <select value={form.pipeline_stage || 'lead'} onChange={e => setForm(f => ({ ...f, pipeline_stage: e.target.value }))}
-            style={{ ...field, background: '#fff' }}>
-            {STAGES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-          </select>
-          <label style={label}>Tag</label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', columnGap: 10 }}>
+            <div>
+              <label style={label}>Email</label>
+              <input value={form.email || ''} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} type="email" style={field} placeholder="email@esempio.it" />
+            </div>
+            <div>
+              <label style={label}>Telefono</label>
+              <input value={form.telefono || ''} onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))} style={field} placeholder="+39 333 1234567" />
+            </div>
+          </div>
+
+          <label style={label}>Etichette <span style={{ fontWeight: 400, color: '#aaa' }}>— le tue: ognuna diventa una lista</span></label>
           <div style={{ marginBottom: 12 }}>
             <TagInput tags={form.tags || []} onChange={tags => setForm(f => ({ ...f, tags }))} />
           </div>
-          <label style={label}>Note</label>
-          <textarea value={form.note || ''} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} rows={3} style={{ ...field, resize: 'vertical' }} placeholder="Note interne…" />
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 10 }}>
-            <input type="checkbox" checked={!!form.iscritto_newsletter} onChange={e => setForm(f => ({ ...f, iscritto_newsletter: e.target.checked }))} />
-            <span style={{ fontSize: 14 }}>Iscritto alla newsletter</span>
-          </label>
 
+          <label style={label}>Le tue note</label>
+          <textarea value={form.note || ''} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} rows={3} style={{ ...field, resize: 'vertical', fontFamily: 'inherit' }} placeholder="Quello che vuoi ricordarti di questa persona" />
+
+          {/* Qualunque contatto si può seguire come trattativa: chi prenota o
+              compra non ci entra da solo, ma la possibilità resta. */}
+          <label style={label}>Trattativa</label>
+          <select data-trattativa value={form.pipeline_stage || ''} onChange={e => setForm(f => ({ ...f, pipeline_stage: e.target.value || null }))} style={{ ...field, background: '#fff' }}>
+            <option value="">Non in trattativa</option>
+            {STAGES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+          </select>
+
+          <div style={sezione}>Può ricevere promozioni</div>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', marginBottom: 8 }}>
+            <input type="checkbox" checked={!!form.iscritto_newsletter} onChange={e => setForm(f => ({ ...f, iscritto_newsletter: e.target.checked }))} style={{ marginTop: 3 }} />
+            <span style={{ fontSize: 14 }}>Per email
+              {contact?.iscritto_newsletter && contact?.marketing_consenso_il && <span style={{ fontSize: 12, color: '#999' }}> · consenso del {quando(contact.marketing_consenso_il)}{contact.marketing_consenso_fonte ? ` (${contact.marketing_consenso_fonte})` : ''}</span>}
+            </span>
+          </label>
           {/* Il consenso WhatsApp e' l'unica spunta che puo' far bloccare il numero
               del cliente da Meta: va messa solo se il consenso c'e' davvero, e chi
               la mette deve saperlo nel momento in cui clicca, non dopo. */}
           <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', marginBottom: 6 }}>
-            <input
-              type="checkbox"
-              checked={!!form.whatsapp_optin}
-              onChange={e => setForm(f => ({ ...f, whatsapp_optin: e.target.checked }))}
-              style={{ marginTop: 3 }}
-            />
-            <span style={{ fontSize: 14 }}>Può ricevere messaggi su WhatsApp</span>
+            <input type="checkbox" checked={!!form.whatsapp_optin} onChange={e => setForm(f => ({ ...f, whatsapp_optin: e.target.checked }))} style={{ marginTop: 3 }} />
+            <span style={{ fontSize: 14 }}>Su WhatsApp
+              {contact?.whatsapp_optin && contact?.whatsapp_optin_il && <span style={{ fontSize: 12, color: '#999' }}> · consenso del {quando(contact.whatsapp_optin_il)}{contact.whatsapp_optin_fonte ? ` (${contact.whatsapp_optin_fonte})` : ''}</span>}
+            </span>
           </label>
-          {form.whatsapp_optin && (
-            <div style={{ display: 'flex', gap: 8, background: '#fffaf5', border: '1px solid #ffe0b2', borderRadius: 8, padding: '10px 12px', marginBottom: 20 }}>
-              <span style={{ fontSize: 15, lineHeight: 1.2 }}>⚠️</span>
+          {(form.iscritto_newsletter && !contact?.iscritto_newsletter || form.whatsapp_optin && !contact?.whatsapp_optin) && (
+            <div style={{ background: '#fffaf5', border: '1px solid #ffe0b2', borderRadius: 8, padding: '10px 12px', marginBottom: 8 }}>
               <p style={{ margin: 0, fontSize: 12, color: '#7a4a00', lineHeight: 1.5 }}>
-                <strong>Nota bene:</strong> spunta questa casella solo se la persona ti ha
-                autorizzato a scriverle su WhatsApp. Inviare messaggi a chi non ha dato il
-                consenso porta a segnalazioni e <strong>può farti bloccare il numero da Meta</strong> —
-                oltre a non essere consentito dalla normativa privacy.
+                Spunta solo se questa persona ti ha detto di sì. Registriamo che il consenso l’hai segnato tu, oggi.
+                {form.whatsapp_optin && !contact?.whatsapp_optin && <> Scrivere su WhatsApp a chi non l’ha dato <strong>può farti bloccare il numero da Meta</strong>.</>}
               </p>
             </div>
           )}
 
-          <button type="submit" disabled={saving}
-            style={{ width: '100%', padding: '12px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-            {saving ? 'Salvataggio…' : isNew ? 'Aggiungi contatto' : 'Salva modifiche'}
-          </button>
           {!isNew && entita.length > 0 && (
-            <div style={{ display: 'flex', gap: 8, marginTop: 10, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 8, marginTop: 14, alignItems: 'center' }}>
               {entita.length > 1 && (
                 <select value={entitaRec} onChange={e => setEntitaRec(e.target.value)} style={{ flex: 1, minWidth: 0, padding: '8px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, background: '#fff' }}>
                   {entita.map(e => <option key={e.key} value={e.key}>{e.name}</option>)}
@@ -231,109 +275,98 @@ function ContactModal({ contact, aziendaId, onSave, onClose, storia = [], entita
               </button>
             </div>
           )}
-          {!isNew && onElimina && (
-            <button type="button" onClick={() => onElimina(contact)} disabled={saving}
-              style={{ width: '100%', marginTop: 8, padding: '9px', background: '#fff0f0', border: 'none', color: '#c00', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-              Elimina contatto
-            </button>
-          )}
-          {!isNew && (
-            <button type="button" onClick={handleErasure} disabled={saving}
-              style={{ width: '100%', marginTop: 8, padding: '9px', background: 'none', border: '1px solid #fca5a5', color: '#dc2626', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-              Anonimizza dati (GDPR Art. 17)
-            </button>
-          )}
-        </form>
-      </div>
-    </div>
-  )
-}
 
-// ─── Kanban card (module-level — critico per drag!) ───────────────────────────
-function KanbanCard({ contact, onEdit, onDelete }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: contact.id })
-  const style = {
-    background: '#fff',
-    borderRadius: 10,
-    padding: '12px 14px',
-    boxShadow: isDragging ? '0 8px 24px rgba(0,0,0,0.15)' : '0 1px 3px rgba(0,0,0,0.07)',
-    opacity: isDragging ? 0.85 : 1,
-    cursor: 'default',
-    transform: transform ? `translate(${transform.x}px,${transform.y}px)` : undefined,
-    position: 'relative',
-    zIndex: isDragging ? 999 : 'auto',
-    marginBottom: 8,
-    border: '1px solid #f0f0f0',
-  }
-  return (
-    <div ref={setNodeRef} style={style} {...attributes}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-        {/* Drag handle */}
-        <div {...listeners} style={{ cursor: 'grab', color: '#ccc', flexShrink: 0, paddingTop: 2, touchAction: 'none' }}>
-          <GripVertical size={14} strokeWidth={1.5} />
-        </div>
-        {/* Avatar */}
-        <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#1a1a2e15', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 700, fontSize: 13, color: '#1a1a2e' }}>
-          {(contact.nome || '?').charAt(0).toUpperCase()}
-        </div>
-        {/* Info */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{contact.nome}</div>
-          {contact.email && <div style={{ fontSize: 11, color: '#999', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1 }}>{contact.email}</div>}
-          {contact.telefono && <div style={{ fontSize: 11, color: '#bbb', marginTop: 1 }}>{contact.telefono}</div>}
-          {(contact.tags || []).length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginTop: 6 }}>
-              {contact.tags.slice(0, 2).map(t => <TagChip key={t} tag={t} small />)}
-              {contact.tags.length > 2 && <span style={{ fontSize: 10, color: '#aaa', alignSelf: 'center' }}>+{contact.tags.length - 2}</span>}
+          {/* Le due cose che non si disfano stanno a parte, chiuse, e ognuna
+              dice cosa fa: prima erano due pulsanti rossi uguali. */}
+          {!isNew && (
+            <div style={{ marginTop: 16, borderTop: '1px solid #f0f0f0', paddingTop: 10 }}>
+              <button type="button" onClick={() => setAltro(v => !v)} aria-expanded={altro} data-togliere
+                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 12.5, fontWeight: 600, color: '#888', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                {altro ? <ChevronUp size={14} strokeWidth={1.5} /> : <ChevronDown size={14} strokeWidth={1.5} />} Togliere questa persona
+              </button>
+              {altro && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 10, marginTop: 10 }}>
+                  {onElimina && (
+                    <div>
+                      <button type="button" onClick={() => onElimina(contact)} disabled={saving}
+                        style={{ padding: '8px 14px', background: '#fff0f0', border: 'none', color: '#c00', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>Elimina contatto</button>
+                      <div style={{ fontSize: 12, color: '#888', marginTop: 4, lineHeight: 1.5 }}>Sparisce dall’elenco insieme alla sua storia. Le sue prenotazioni restano dove sono.</div>
+                    </div>
+                  )}
+                  <div>
+                    <button type="button" onClick={handleErasure} disabled={saving}
+                      style={{ padding: '8px 14px', background: 'none', border: '1px solid #fca5a5', color: '#dc2626', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>Rendi anonimo</button>
+                    <div style={{ fontSize: 12, color: '#888', marginTop: 4, lineHeight: 1.5 }}>Per chi chiede la cancellazione dei suoi dati: via nome, email, telefono e note. Resta una riga senza nome, così i conteggi non cambiano.</div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
-        {/* Actions */}
-        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-          <button onClick={() => onEdit(contact)} style={{ padding: '4px 6px', background: '#f5f5f5', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
-            <Pencil size={11} strokeWidth={2} color="#555" />
-          </button>
-          <button onClick={() => onDelete(contact.id, contact.nome)} style={{ padding: '4px 6px', background: '#fff0f0', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
-            <Trash2 size={11} strokeWidth={2} color="#c00" />
+
+        {/* Il salvataggio resta sempre a vista: prima era in fondo a un modulo
+            più alto della finestra. */}
+        <div style={{ padding: '12px 22px 16px', borderTop: '1px solid #f0f0f0', flexShrink: 0 }}>
+          <button type="submit" disabled={saving}
+            style={{ width: '100%', padding: '12px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+            {saving ? 'Salvataggio…' : isNew ? 'Aggiungi contatto' : 'Salva modifiche'}
           </button>
         </div>
-      </div>
-      <div style={{ fontSize: 10, color: '#ccc', marginTop: 6, marginLeft: 52 }}>
-        {new Date(contact.created_at).toLocaleDateString('it-IT')} · {contact.fonte || 'manuale'}
-      </div>
+      </form>
     </div>
   )
 }
 
-// ─── Kanban column (module-level) ─────────────────────────────────────────────
-function KanbanColumn({ stage, contacts, onEdit, onDelete, onAdd }) {
-  const { setNodeRef, isOver } = useDroppable({ id: stage.key })
+// ─── Trattative: la scheda di una persona e la colonna ───────────────────────
+// ⚠️ A livello di modulo, non dentro la pagina: un componente dichiarato dentro
+// un altro cambia identità a ogni render e il trascinamento si interrompe.
+//
+// ⛔ Le schede erano alte duecento pixel per via dei tag automatici (il titolo
+// dell'evento spezzato su quattro righe): con ventotto persone la colonna
+// misurava 5.528 px. Ora sono due righe — chi è, e l'ultima cosa che ha fatto.
+function KanbanCard({ contact, onEdit }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: contact.id })
+  const ultima = contact.ultima_attivita_tipo ? fraseAttivita({ tipo: contact.ultima_attivita_tipo, titolo: contact.ultima_attivita_titolo }) : nomeFonte(contact.fonte)
   return (
-    <div style={{ width: 270, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
-      {/* Column header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-        <div style={{ width: 10, height: 10, borderRadius: '50%', background: stage.color, flexShrink: 0 }} />
-        <span style={{ fontSize: 13, fontWeight: 700, color: '#333', flex: 1 }}>{stage.label}</span>
-        <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: stage.light, color: stage.color }}>{contacts.length}</span>
+    <div ref={setNodeRef} {...attributes} data-trattativa-scheda={contact.id}
+      style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', borderRadius: 9, padding: '8px 8px 8px 4px', marginBottom: 6, border: '1px solid #f0f0f0',
+        boxShadow: isDragging ? '0 8px 24px rgba(0,0,0,0.15)' : '0 1px 2px rgba(0,0,0,0.05)', opacity: isDragging ? 0.85 : 1,
+        transform: transform ? `translate(${transform.x}px,${transform.y}px)` : undefined, position: 'relative', zIndex: isDragging ? 999 : 'auto' }}>
+      <div {...listeners} title="Trascina per spostare" style={{ cursor: 'grab', color: '#ccc', flexShrink: 0, touchAction: 'none', display: 'flex' }}>
+        <GripVertical size={14} strokeWidth={1.5} />
       </div>
-      {/* Drop zone */}
-      <div ref={setNodeRef} style={{
-        flex: 1, minHeight: 120, borderRadius: 10, padding: 8,
-        background: isOver ? stage.light : '#f8f8f8',
-        border: `2px dashed ${isOver ? stage.color : 'transparent'}`,
-        transition: 'background .15s, border-color .15s',
-      }}>
-        {contacts.map(c => (
-          <KanbanCard key={c.id} contact={c} onEdit={onEdit} onDelete={onDelete} />
-        ))}
-        {contacts.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '20px 0', color: '#ccc', fontSize: 12 }}>Trascina qui</div>
+      <button type="button" onClick={() => onEdit(contact)} style={{ flex: 1, minWidth: 0, textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+        <div title={contact.nome} style={{ ...unaRiga, fontWeight: 600, fontSize: 13, color: '#1a1a2e' }}>{contact.nome}</div>
+        <div title={ultima} style={{ ...unaRiga, fontSize: 11.5, color: '#888', marginTop: 1 }}>{ultima}</div>
+      </button>
+    </div>
+  )
+}
+
+function KanbanColumn({ stage, contacts, onEdit, onAdd }) {
+  const { setNodeRef, isOver } = useDroppable({ id: stage.key })
+  // Dieci per colonna: una trattativa si lavora dall'alto, non si scorre.
+  const [tutte, setTutte] = useState(false)
+  const mostrate = tutte ? contacts : contacts.slice(0, IN_COLONNA)
+  return (
+    <div data-colonna={stage.key} style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
+        <div style={{ width: 9, height: 9, borderRadius: '50%', background: stage.color, flexShrink: 0 }} />
+        <span style={{ ...unaRiga, fontSize: 13, fontWeight: 700, color: '#333', flex: 1 }}>{stage.label}</span>
+        <span style={{ fontSize: 11.5, fontWeight: 700, padding: '1px 8px', borderRadius: 20, background: stage.light, color: stage.color }}>{contacts.length}</span>
+      </div>
+      <div ref={setNodeRef} style={{ flex: 1, minHeight: 90, borderRadius: 10, padding: 6, background: isOver ? stage.light : '#f8f8f8', border: `2px dashed ${isOver ? stage.color : 'transparent'}`, transition: 'background .15s, border-color .15s' }}>
+        {mostrate.map(c => <KanbanCard key={c.id} contact={c} onEdit={onEdit} />)}
+        {contacts.length === 0 && <div style={{ textAlign: 'center', padding: '18px 0', color: '#ccc', fontSize: 12 }}>Trascina qui</div>}
+        {contacts.length > IN_COLONNA && (
+          <button type="button" onClick={() => setTutte(v => !v)} style={{ width: '100%', padding: '6px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#2b6cb0' }}>
+            {tutte ? 'Mostra meno' : `Mostra altre ${contacts.length - IN_COLONNA}`}
+          </button>
         )}
       </div>
-      {/* Add button */}
-      <button onClick={() => onAdd(stage.key)}
-        style={{ marginTop: 8, padding: '7px', background: 'none', border: '1px dashed #ddd', borderRadius: 8, cursor: 'pointer', color: '#aaa', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-        <Plus size={12} strokeWidth={2} /> Aggiungi
+      <button type="button" onClick={() => onAdd(stage.key)}
+        style={{ marginTop: 6, padding: '6px', background: 'none', border: '1px dashed #ddd', borderRadius: 8, cursor: 'pointer', color: '#aaa', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+        <Plus size={12} strokeWidth={1.5} /> Aggiungi
       </button>
     </div>
   )
@@ -341,6 +374,8 @@ function KanbanColumn({ stage, contacts, onEdit, onDelete, onAdd }) {
 
 // Quante persone si mostrano per volta, e quante liste per gruppo prima di «Mostra altre».
 const PER_VOLTA = 25
+// Quante schede per colonna nelle trattative, prima di «Mostra altre».
+const IN_COLONNA = 10
 const LISTE_A_VISTA = 5
 // Un testo su una riga sola, tagliato con i puntini: è così che un titolo lungo
 // — un dato del cliente — non alza la riga e non allarga la tabella.
@@ -360,10 +395,11 @@ export default function ContattiPage() {
   const [ordine,    setOrdine]    = useState({ per: 'ultima', verso: 'desc' })
   const [quanti,    setQuanti]    = useState(PER_VOLTA)   // quante persone a schermo
   const [gruppiAperti, setGruppiAperti] = useState({})    // i gruppi di liste mostrati per intero
-  const [view,      setView]      = useState('lista') // 'lista' | 'kanban'
+  const [view,      setView]      = useState('lista') // 'lista' | 'kanban' (= Trattative)
+  const [stadioTel, setStadioTel] = useState('lead')  // lo stadio che si guarda su telefono
   const [modal,     setModal]     = useState(null)    // null | 'new' | contact obj
   const [importOpen, setImportOpen] = useState(false)
-  const [newStage,  setNewStage]  = useState('lead')  // stage pre-selezionato per "Aggiungi" da colonna
+  const [newStage,  setNewStage]  = useState(null)    // stadio di chi si aggiunge da una colonna; dalla lista, nessuno
 
   const aziendaId = azienda?.id || profile?.azienda_id || activeAziendaId
     || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id
@@ -414,10 +450,10 @@ export default function ContattiPage() {
   function handleDragEnd({ active, over }) {
     if (!over) return
     const contact = contatti.find(c => c.id === active.id)
-    if (contact && contact.pipeline_stage !== over.id) moveStage(active.id, over.id)
+    if (contact && contact.pipeline_stage !== over.id && STAGE_MAP[over.id]) moveStage(active.id, over.id)
   }
 
-  function openNewContact(stage = 'lead') {
+  function openNewContact(stage = null) {
     setNewStage(stage)
     setModal('new')
   }
@@ -426,7 +462,10 @@ export default function ContattiPage() {
   const newsletter = contatti.filter(c => c.iscritto_newsletter).length
 
   // Le liste si calcolano dai fatti: chi prenota entra da solo.
-  const { liste, perContatto } = costruisciListe(contatti, registro)
+  const { liste, perContatto, automatici } = costruisciListe(contatti, registro)
+  // In trattativa = ha uno stadio. Vuoto = no, ed è il caso normale.
+  const inTrattativa = contatti.filter(c => STAGE_MAP[c.pipeline_stage])
+  const fuoriTrattativa = contatti.length - inTrattativa.length
   const listaScelta = liste.find(l => l.chiave === lista) || liste[0]
   const cercato = search.trim().toLowerCase()
   const COLONNE = {
@@ -447,6 +486,7 @@ export default function ContattiPage() {
       return (ordine.verso === 'asc' ? d : -d) || (x.nome || '').localeCompare(y.nome || '', 'it')
     })
   const contattabiliQui = visibili.filter(contattabile).length
+  const dellaLista = contatti.filter(c => !listaScelta.ids || listaScelta.ids.has(c.id))
   const aSchermo = visibili.slice(0, quanti)
   // Le liste raccolte per intestazione, nell'ordine in cui arrivano.
   const gruppiDiListe = []
@@ -495,7 +535,7 @@ export default function ContattiPage() {
               <button key={key} onClick={() => setView(key)}
                 style={{ padding: '6px 10px', border: 'none', borderRadius: 6, cursor: 'pointer', background: view === key ? '#fff' : 'transparent', boxShadow: view === key ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: view === key ? '#1a1a2e' : '#888', transition: 'all .15s' }}>
                 <Icon size={14} strokeWidth={1.8} />
-                {key === 'lista' ? 'Lista' : 'Pipeline'}
+                {key === 'lista' ? 'Lista' : 'Trattative'}
               </button>
             ))}
           </div>
@@ -509,7 +549,7 @@ export default function ContattiPage() {
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#fff', color: contatti.length === 0 ? '#bbb' : '#1a1a2e', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: contatti.length === 0 ? 'not-allowed' : 'pointer' }}>
             <Download size={15} strokeWidth={2} /> Esporta
           </button>
-          <button onClick={() => openNewContact()}
+          <button onClick={() => openNewContact(null)}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <Plus size={15} strokeWidth={2} /> Aggiungi
           </button>
@@ -519,10 +559,12 @@ export default function ContattiPage() {
       {/* ── Stats ── */}
       <div className="ct-solo-computer" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 24 }}>
         {[
-          { label: 'Totale contatti', value: total,      Icon: Users, color: '#2b6cb0' },
-          { label: 'Newsletter',      value: newsletter,  Icon: Mail,  color: '#276749' },
-          { label: 'Con telefono',    value: contatti.filter(c => c.telefono).length, Icon: Phone, color: '#b7791f' },
-          { label: 'Tornati più volte', value: liste.find(l => l.chiave === 'tornati')?.n || 0, Icon: Repeat, color: '#6b46c1' },
+          // ⚠️ Contano la lista che si sta guardando: prima dicevano sempre il
+          // totale, anche con una lista di otto persone sotto.
+          { label: view === 'lista' && listaScelta.chiave !== 'tutti' ? 'In questa lista' : 'Contatti', value: (view === 'lista' ? dellaLista : contatti).length, Icon: Users, color: '#2b6cb0' },
+          { label: 'Contattabili',      value: (view === 'lista' ? dellaLista : contatti).filter(contattabile).length, Icon: Mail, color: '#276749' },
+          { label: 'Tornati più volte', value: (view === 'lista' ? dellaLista : contatti).filter(c => liste.find(l => l.chiave === 'tornati')?.ids.has(c.id)).length, Icon: Repeat, color: '#6b46c1' },
+          { label: 'In trattativa',     value: (view === 'lista' ? dellaLista : contatti).filter(c => ['lead', 'contattato', 'proposta'].includes(c.pipeline_stage)).length, Icon: LayoutGrid, color: '#b7791f' },
         ].map(({ label, value, Icon, color }) => (
           <div key={label} style={{ background: '#fff', borderRadius: 12, padding: '16px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -533,22 +575,6 @@ export default function ContattiPage() {
           </div>
         ))}
       </div>
-
-      {/* ── Pipeline summary (kanban view only) ── */}
-      {view === 'kanban' && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-          {STAGES.map(s => {
-            const count = contatti.filter(c => (c.pipeline_stage || 'lead') === s.key).length
-            return (
-              <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 20, background: s.light }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: s.color }} />
-                <span style={{ fontSize: 12, color: s.color, fontWeight: 700 }}>{s.label}</span>
-                <span style={{ fontSize: 12, color: s.color, fontWeight: 400 }}>({count})</span>
-              </div>
-            )
-          })}
-        </div>
-      )}
 
       {/* ── Lista: le liste a sinistra, la tabella a destra ──
           ⛔ Era un elenco di schede con quattro comandi per riga, la pastiglia
@@ -749,24 +775,77 @@ export default function ContattiPage() {
         )
       )}
 
-      {/* ── Kanban view ── */}
+      {/* ── Trattative ──
+          ⛔ Si chiamava «Pipeline» e conteneva TUTTI i contatti: chi aveva
+          prenotato una serata nasceva «Nuovo lead», e 114 persone su 116 erano
+          ferme lì. Con ventotto schede la prima colonna era alta 5.528 px, e su
+          telefono si vedeva una colonna e un pezzo.
+          Ora qui c'è solo chi è in trattativa: chi ha chiesto qualcosa (dal
+          sito, da un modulo, su WhatsApp) o chi ci ha messo il titolare dalla
+          scheda. Su computer le cinque colonne stanno nello schermo; su
+          telefono se ne vede una alla volta, scelta dalle linguette. */}
       {view === 'kanban' && (
         loading ? <p style={{ color: '#aaa', fontSize: 14 }}>Caricamento…</p>
         : (
-          <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-            <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 16, alignItems: 'flex-start' }}>
-              {STAGES.map(stage => (
-                <KanbanColumn
-                  key={stage.key}
-                  stage={stage}
-                  contacts={contatti.filter(c => (c.pipeline_stage || 'lead') === stage.key)}
-                  onEdit={setModal}
-                  onDelete={handleDelete}
-                  onAdd={openNewContact}
-                />
-              ))}
-            </div>
-          </DndContext>
+          <div data-trattative>
+            <p style={{ margin: '0 0 14px', fontSize: 13, color: '#777', lineHeight: 1.6, maxWidth: 760 }}>
+              Qui c’è chi ha chiesto qualcosa e aspetta una risposta, e chi hai deciso di seguire.
+              {fuoriTrattativa > 0 && <> Gli altri <strong>{fuoriTrattativa}</strong> contatti non sono in trattativa: per seguirne uno, aprilo dalla lista e scegli uno stadio.</>}
+            </p>
+
+            {inTrattativa.length === 0 ? (
+              <div style={{ background: '#fff', borderRadius: 12, padding: 36, textAlign: 'center', color: '#999', fontSize: 14 }}>
+                Nessuna trattativa aperta. Ci entra da solo chi ti scrive dal sito, compila un modulo o ti scrive su WhatsApp.
+              </div>
+            ) : (
+              <>
+                {/* Su computer: le colonne, tutte nello schermo. */}
+                <div className="ct-solo-computer">
+                  <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                      {STAGES.map(stage => (
+                        <KanbanColumn key={stage.key} stage={stage}
+                          contacts={inTrattativa.filter(c => c.pipeline_stage === stage.key)}
+                          onEdit={setModal} onAdd={openNewContact} />
+                      ))}
+                    </div>
+                  </DndContext>
+                </div>
+
+                {/* Su telefono: uno stadio alla volta. Per spostare qualcuno si
+                    apre la sua scheda: trascinare di lato fuori dallo schermo
+                    non è un gesto che riesce. */}
+                <div className="ct-solo-telefono">
+                  <div role="tablist" style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, marginBottom: 6 }}>
+                    {STAGES.map(s => {
+                      const n = inTrattativa.filter(c => c.pipeline_stage === s.key).length
+                      const attivo = s.key === stadioTel
+                      return (
+                        <button key={s.key} role="tab" aria-selected={attivo} onClick={() => setStadioTel(s.key)} data-linguetta={s.key}
+                          style={{ flexShrink: 0, padding: '7px 12px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12.5, fontWeight: 700, background: attivo ? s.color : s.light, color: attivo ? '#fff' : s.color }}>
+                          {s.label} · {n}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                    {inTrattativa.filter(c => c.pipeline_stage === stadioTel).length === 0 && (
+                      <div style={{ padding: 26, textAlign: 'center', color: '#bbb', fontSize: 13 }}>Nessuno in questo stadio.</div>
+                    )}
+                    {inTrattativa.filter(c => c.pipeline_stage === stadioTel).map((c, i, tutti) => (
+                      <button key={c.id} onClick={() => setModal(c)} data-trattativa-riga={c.id}
+                        style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', borderBottom: i < tutti.length - 1 ? '1px solid #f3f3f3' : 'none', padding: '11px 14px', cursor: 'pointer' }}>
+                        <div style={{ ...unaRiga, fontWeight: 600, fontSize: 14.5, color: '#1a1a2e' }}>{c.nome}</div>
+                        <div style={{ ...unaRiga, fontSize: 12.5, color: '#777', marginTop: 3 }}>
+                          {c.ultima_attivita_tipo ? fraseAttivita({ tipo: c.ultima_attivita_tipo, titolo: c.ultima_attivita_titolo }) : nomeFonte(c.fonte)}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         )
       )}
 
@@ -781,7 +860,9 @@ export default function ContattiPage() {
 
       {modal && (
         <ContactModal
+          key={modal === 'new' ? 'nuovo' : modal.id}
           contact={modal === 'new' ? { pipeline_stage: newStage } : modal}
+          automatici={automatici}
           storia={modal !== 'new' ? (perContatto.get(modal.id) || []) : []}
           entita={allEntities}
           onElimina={modal !== 'new' ? (c => handleDelete(c.id, c.nome)) : null}

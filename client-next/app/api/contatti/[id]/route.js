@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { sendWebhooks } from '@/lib/send-webhooks'
 import { normalizzaTelefono } from '@/lib/contatti-import'
+import { STADI_TRATTATIVA as STADI } from '@/lib/contatti-regole'
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
@@ -34,6 +35,18 @@ export async function PATCH(request, props) {
     // Se cambia il numero cambia anche la sua chiave: lasciarla al numero
     // vecchio farebbe riconoscere questa persona come un'altra.
     if ('telefono' in updates) updates.telefono_e164 = normalizzaTelefono(updates.telefono)
+    // Lo stadio arriva dal client e finiva nella colonna com'era: una parola
+    // inventata faceva sparire il contatto da ogni colonna. Catalogo chiuso;
+    // vuoto = fuori dalle trattative.
+    if ('pipeline_stage' in updates) {
+      if (updates.pipeline_stage === '' || updates.pipeline_stage == null) updates.pipeline_stage = null
+      else if (!STADI.includes(updates.pipeline_stage)) return Response.json({ error: 'Stadio non valido' }, { status: 400 })
+    }
+    // Il consenso alle email cambiato a mano lascia traccia di quando e come.
+    if (body.iscritto_newsletter === true) {
+      const { data: prima } = await supabaseAdmin.from('contatti').select('iscritto_newsletter').eq('id', params.id).maybeSingle()
+      if (prima && !prima.iscritto_newsletter) { updates.marketing_consenso_il = new Date().toISOString(); updates.marketing_consenso_fonte = 'inserimento manuale' }
+    }
     updates.updated_at = new Date().toISOString()
 
     let q = supabaseAdmin.from('contatti').update(updates).eq('id', params.id)

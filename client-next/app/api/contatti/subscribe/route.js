@@ -59,6 +59,8 @@ export async function POST(request) {
       email: email?.trim() || null, telefono: telefono?.trim() || null,
       telefono_e164: normalizzaTelefono(telefono),
       fonte, iscritto_newsletter: false, confirmation_token: token, tags: ['newsletter'],
+      // Iscriversi alla newsletter non è chiedere qualcosa: non è una trattativa.
+      pipeline_stage: null,
     }).select('id').maybeSingle()
     if (error) return Response.json({ error: error.message }, { status: 500 })
     if (creato?.id) await registraAttivita(azienda_id, creato.id, { tipo: 'newsletter', titolo: 'Iscrizione alla newsletter', riferimento: 'iscrizione' })

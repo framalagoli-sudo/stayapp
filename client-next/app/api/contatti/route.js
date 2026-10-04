@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth, getProfile, resolveAziendaId } from '@/lib/server-auth'
 import { sendWebhooks } from '@/lib/send-webhooks'
 import { normalizzaTelefono } from '@/lib/contatti-import'
+import { STADI_TRATTATIVA as STADI, staffPuoLeggereContatti } from '@/lib/contatti-regole'
 
 export async function GET(request) {
   try {
@@ -9,6 +10,11 @@ export async function GET(request) {
     if (response) return response
     const profile = await getProfile(user.id)
     if (!profile) return Response.json({ error: 'Profilo non trovato' }, { status: 403 })
+
+    // 🔒 I collaboratori non usano i contatti (Francesco, 04/10/2026): senza il
+    // permesso non li leggono. Prima il permesso nascondeva la voce di menu e
+    // basta — la rubrica intera usciva comunque da questa route.
+    if (!staffPuoLeggereContatti(profile)) return Response.json({ error: 'Permesso negato per questa sezione', code: 'permission_denied' }, { status: 403 })
 
     const { searchParams } = new URL(request.url)
     let aziendaId = null
@@ -50,6 +56,8 @@ export async function POST(request) {
     const profile = await getProfile(user.id)
     const body = await request.json()
     const { nome, email, telefono, tags, note, iscritto_newsletter, whatsapp_optin } = body
+    // In trattativa solo se chi lo aggiunge lo dice, e solo con uno stadio che esiste.
+    const stadio = STADI.includes(body.pipeline_stage) ? body.pipeline_stage : null
     const azienda_id = resolveAziendaId(profile, body.azienda_id)
     if (!azienda_id || !nome?.trim()) return Response.json({ error: 'azienda_id e nome obbligatori' }, { status: 400 })
 
@@ -61,6 +69,11 @@ export async function POST(request) {
       telefono_e164: normalizzaTelefono(telefono),
       tags: tags || [], note: note || null,
       iscritto_newsletter: !!iscritto_newsletter, fonte: 'manuale',
+      pipeline_stage: stadio,
+      // Il consenso alle email messo a mano dal titolare: si scrive quando e come,
+      // come per WhatsApp. Un consenso senza data non si può dimostrare.
+      marketing_consenso_il: iscritto_newsletter ? new Date().toISOString() : null,
+      marketing_consenso_fonte: iscritto_newsletter ? 'inserimento manuale' : null,
       // Data e provenienza del consenso: servono a dimostrarlo se qualcuno contesta.
       whatsapp_optin: !!whatsapp_optin,
       whatsapp_optin_il: whatsapp_optin ? new Date().toISOString() : null,

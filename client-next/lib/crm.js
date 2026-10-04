@@ -43,7 +43,7 @@ function unisciTag(esistenti, nuovi) {
 // ⚠️ `limit(1)` e non `maybeSingle()`: con due righe uguali — i doppioni
 // esistono — `maybeSingle` dà errore, il contatto «non si trova» e ne nasce un
 // terzo.
-const CAMPI = 'id, nome, email, telefono, telefono_e164, tags, note'
+const CAMPI = 'id, nome, email, telefono, telefono_e164, tags, note, pipeline_stage'
 
 async function trovaContatto(aziendaId, mail, e164) {
   if (mail) {
@@ -69,6 +69,21 @@ async function trovaContatto(aziendaId, mail, e164) {
 // I tipi che il registro accetta (migration 130): stesso elenco del CHECK.
 const TIPI_ATTIVITA = new Set(['evento', 'lista_attesa', 'prenotazione', 'ordine', 'modulo',
   'richiesta', 'newsletter', 'whatsapp', 'preventivo', 'recensione', 'manuale', 'import', 'altro'])
+// Chi entra nelle «Trattative» da solo: chi ha chiesto qualcosa e aspetta una
+// risposta — un messaggio dal sito, WhatsApp, un preventivo.
+//
+// ⚠️ I moduli costruiti dal cliente NO: sono generici, e nei dati veri 40 invii
+// su 42 erano iscrizioni a un gioco, non richieste. Quaranta «da contattare»
+// finti sono lo stesso rumore di prima.
+//
+// ⛔ Prima ci finivano TUTTI: 114 contatti su 116 erano fermi a «Nuovo lead»,
+// e chi aveva prenotato una serata di cabaret risultava una trattativa da
+// lavorare. Chi prenota o compra non ha niente da trattare: ha già deciso.
+// Resta sempre possibile metterlo in trattativa a mano dalla sua scheda —
+// «perché privarci di una possibilità?» (Francesco, 04/10/2026).
+const APRE_TRATTATIVA = new Set(['richiesta', 'whatsapp', 'preventivo'])
+export const apreTrattativa = tipo => APRE_TRATTATIVA.has(tipo)
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
@@ -112,6 +127,11 @@ export async function registraAttivita(aziendaId, contattoId, attivita) {
  *
  * Serve un'email **o** un telefono. `attivita` è facoltativa (vedi `registraAttivita`).
  *
+ * `nota` va nelle note del contatto e serve SOLO per le parole della persona (il
+ * messaggio scritto dal modulo del sito). Cosa ha fatto — «ha prenotato…» — non
+ * si scrive lì: sta nel registro. Era la stessa storia scritta due volte, e nelle
+ * note si mescolava a quello che scrive il titolare.
+ *
  * @returns {{ nuovo: boolean, id: string|null }} `nuovo` serve a far partire
  *   l'automazione «nuovo contatto» una volta sola, non a ogni prenotazione.
  */
@@ -149,6 +169,8 @@ export async function registraContatto({ aziendaId, email, nome, telefono, fonte
         if (chiave) patch.telefono_e164 = chiave
       }
       if (rigaNota) patch.note = [esistente.note, rigaNota].filter(Boolean).join('\n\n')
+      // Chi non era in trattativa e ora chiede qualcosa, ci entra. Chi c'è già resta dov'è.
+      if (!esistente.pipeline_stage && apreTrattativa(attivita?.tipo)) patch.pipeline_stage = 'lead'
       await supabaseAdmin.from('contatti').update(patch).eq('id', id)
     } else {
       const { data: creato, error } = await supabaseAdmin.from('contatti').insert({
@@ -161,6 +183,9 @@ export async function registraContatto({ aziendaId, email, nome, telefono, fonte
         tags: unisciTag([], tags),
         note: rigaNota,
         iscritto_newsletter: false,
+        // ⚠️ Esplicito: la colonna ha «lead» come predefinito, e lasciandola
+        // in bianco ogni persona nuova tornerebbe a essere una trattativa.
+        pipeline_stage: apreTrattativa(attivita?.tipo) ? 'lead' : null,
       }).select('id').maybeSingle()
       if (error) throw new Error(error.message)
       id = creato?.id || null

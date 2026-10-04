@@ -206,7 +206,7 @@ export async function POST(request, { params }) {
 
       const { data: existing } = await supabaseAdmin
         .from('contatti')
-        .select('id, email_non_valida, iscritto_newsletter')
+        .select('id, email_non_valida, iscritto_newsletter, pipeline_stage, telefono, whatsapp_optin')
         .eq('azienda_id', form.azienda_id)
         .eq('email', email)
         .maybeSingle()
@@ -242,6 +242,9 @@ export async function POST(request, { params }) {
             nome: nome || email,
             telefono: telefono || null,
             telefono_e164: normalizzaTelefono(telefono),
+            // Un modulo non apre una trattativa da solo (vedi `lib/crm.js`): la
+            // colonna ha «lead» come predefinito, quindi va detto.
+            pipeline_stage: null,
             fonte: 'form',
             email_non_valida: emailNonValida,
             iscritto_newsletter: newsletterOptin,
