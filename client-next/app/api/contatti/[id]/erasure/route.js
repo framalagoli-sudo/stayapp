@@ -18,6 +18,11 @@ export async function POST(request, props) {
     await supabaseAdmin.from('contatti').update({
       nome: 'Anonimo', email: `cancellato-${short}@gdpr.anonimo`,
       telefono: null, note: null, tags: [], iscritto_newsletter: false, updated_at: new Date().toISOString(),
+      // ⛔ La chiave del telefono (migration 130) è il numero stesso in forma internazionale:
+      // lasciarla avrebbe reso l'anonimizzazione una finta. Via anche i consensi, che dicono
+      // quando e dove quella persona li aveva dati.
+      telefono_e164: null, whatsapp_optin: false, whatsapp_optin_il: null, whatsapp_optin_fonte: null,
+      marketing_consenso_il: null, marketing_consenso_testo: null, marketing_consenso_fonte: null,
     }).eq('id', params.id)
     return Response.json({ ok: true })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
