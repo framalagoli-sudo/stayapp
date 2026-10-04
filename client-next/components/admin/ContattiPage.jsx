@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
-import { Search, Plus, X, Pencil, Trash2, Users, Mail, Phone, Tag, List, LayoutGrid, GripVertical, ChevronDown, Star, Copy, Check, Download, Upload } from 'lucide-react'
+import { Search, Plus, X, Pencil, Trash2, Users, Mail, Phone, Tag, List, LayoutGrid, GripVertical, ChevronDown, ChevronUp, Star, Copy, Check, Download, Upload, Repeat, MessageCircle } from 'lucide-react'
+import { costruisciListe, nomeFonte, fraseAttivita, canaliContattabili, contattabile, emailDaCorreggere } from '@/lib/contatti-liste'
 import ContattiImportModal from './ContattiImportModal'
 import { DndContext, PointerSensor, useSensor, useSensors, useDraggable, useDroppable } from '@dnd-kit/core'
 
@@ -61,17 +62,21 @@ function csvCell(v) {
   return `"${s.replace(/"/g, '""')}"`
 }
 
-function downloadContattiCSV(contatti) {
-  const headers = ['Nome', 'Email', 'Telefono', 'Stage', 'Tag', 'Newsletter', 'Note', 'Fonte', 'Data creazione']
+function downloadContattiCSV(contatti, nomeLista = '') {
+  const headers = ['Nome', 'Email', 'Telefono', 'Da dove arriva', 'Attività', 'Ultima attività', 'Quando', 'Email promozionali', 'WhatsApp', 'Stage', 'Tag', 'Note', 'Arrivato il']
   const rows = contatti.map(c => [
     c.nome,
     c.email,
     c.telefono,
+    nomeFonte(c.fonte),
+    c.attivita_numero || 0,
+    c.ultima_attivita_tipo ? fraseAttivita({ tipo: c.ultima_attivita_tipo, titolo: c.ultima_attivita_titolo }) : '',
+    c.ultima_attivita_il ? new Date(c.ultima_attivita_il).toLocaleDateString('it-IT') : '',
+    canaliContattabili(c).email ? 'Sì' : 'No',
+    canaliContattabili(c).whatsapp ? 'Sì' : 'No',
     (STAGE_MAP[c.pipeline_stage] || STAGE_MAP.lead).label,
     (c.tags || []).join(', '),
-    c.iscritto_newsletter ? 'Sì' : 'No',
     c.note,
-    c.fonte || 'manuale',
     c.created_at ? new Date(c.created_at).toLocaleDateString('it-IT') : '',
   ])
   const csv = [headers, ...rows].map(r => r.map(csvCell).join(';')).join('\r\n')
@@ -79,40 +84,33 @@ function downloadContattiCSV(contatti) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `contatti-${new Date().toISOString().slice(0, 10)}.csv`
+  const lista = nomeLista ? '-' + nomeLista.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) : ''
+  a.download = `contatti${lista}-${new Date().toISOString().slice(0, 10)}.csv`
   document.body.appendChild(a)
   a.click()
   a.remove()
   URL.revokeObjectURL(url)
 }
 
-// ─── Stage badge ──────────────────────────────────────────────────────────────
-function StageBadge({ stage }) {
-  const s = STAGE_MAP[stage] || STAGE_MAP.lead
-  return (
-    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: s.light, color: s.color, whiteSpace: 'nowrap' }}>
-      {s.label}
-    </span>
-  )
-}
-
-// ─── Stage select inline ──────────────────────────────────────────────────────
-function StageSelect({ value, onChange }) {
-  return (
-    <select value={value || 'lead'} onChange={e => onChange(e.target.value)}
-      style={{ fontSize: 11, fontWeight: 700, padding: '3px 6px', borderRadius: 20, border: '1px solid #ddd', background: (STAGE_MAP[value] || STAGE_MAP.lead).light, color: (STAGE_MAP[value] || STAGE_MAP.lead).color, cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none' }}>
-      {STAGES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-    </select>
-  )
-}
-
 // ─── Contact modal ────────────────────────────────────────────────────────────
 const EMPTY = { nome: '', email: '', telefono: '', tags: [], note: '', iscritto_newsletter: false, whatsapp_optin: false, pipeline_stage: 'lead' }
 
-function ContactModal({ contact, aziendaId, onSave, onClose }) {
+function ContactModal({ contact, aziendaId, onSave, onClose, storia = [], entita = [], onElimina = null }) {
   const [form, setForm] = useState(contact ? { ...EMPTY, ...contact } : { ...EMPTY })
   const [saving, setSaving] = useState(false)
-  const isNew = !contact
+  const isNew = !contact?.id
+  // Il link per chiedere una recensione: prima stava su ogni riga dell'elenco.
+  const [entitaRec, setEntitaRec] = useState(entita[0]?.key || '')
+  const [recCopiata, setRecCopiata] = useState(false)
+  async function linkRecensione() {
+    const e = entita.find(x => x.key === entitaRec) || entita[0]
+    if (!e) return
+    try {
+      const data = await apiFetch('/api/recensioni/genera-link', { method: 'POST', body: JSON.stringify({ entity_tipo: e.tipo, entity_id: e.id, autore: contact.nome }) })
+      await navigator.clipboard.writeText(data.link)
+      setRecCopiata(true); setTimeout(() => setRecCopiata(false), 2500)
+    } catch (err) { alert(`Non è riuscito: ${err.message}`) }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -142,9 +140,33 @@ function ContactModal({ contact, aziendaId, onSave, onClose }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ background: '#fff', borderRadius: 16, padding: 28, width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h3 style={{ margin: 0, fontSize: 17 }}>{isNew ? 'Nuovo contatto' : 'Modifica contatto'}</h3>
+          <h3 style={{ margin: 0, fontSize: 17, overflowWrap: 'anywhere' }}>{isNew ? 'Nuovo contatto' : contact.nome}</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
         </div>
+        {/* ⛔ La storia stava in un testo libero nelle note («[03/10] Ha prenotato…
+            12 posti»), mescolata a quello che scrive il titolare. Ora si legge
+            dal registro: una riga per ogni cosa fatta, la più recente in cima. */}
+        {!isNew && (
+          <div data-storia style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 8 }}>
+              Storia {storia.length > 0 && <span style={{ fontWeight: 400, color: '#999' }}>· {storia.length} {storia.length === 1 ? 'attività' : 'attività'} · arrivato da: {nomeFonte(contact.fonte)}</span>}
+            </div>
+            {storia.length === 0 ? (
+              <div style={{ fontSize: 13, color: '#999', background: '#fafafa', borderRadius: 8, padding: '10px 12px' }}>
+                Nessuna attività registrata. Arrivato da: {nomeFonte(contact.fonte)}.
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 0, border: '1px solid #eee', borderRadius: 8, maxHeight: 190, overflowY: 'auto' }}>
+                {storia.map((a, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 10, padding: '8px 12px', borderBottom: i < storia.length - 1 ? '1px solid #f3f3f3' : 'none', fontSize: 13 }}>
+                    <span style={{ color: '#999', flexShrink: 0, width: 78 }}>{new Date(a.avvenuta_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
+                    <span style={{ color: '#333', overflowWrap: 'anywhere' }}>{fraseAttivita(a)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <label style={label}>Nome *</label>
           <input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} required style={field} placeholder="Nome e cognome" />
@@ -196,6 +218,25 @@ function ContactModal({ contact, aziendaId, onSave, onClose }) {
             style={{ width: '100%', padding: '12px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
             {saving ? 'Salvataggio…' : isNew ? 'Aggiungi contatto' : 'Salva modifiche'}
           </button>
+          {!isNew && entita.length > 0 && (
+            <div style={{ display: 'flex', gap: 8, marginTop: 10, alignItems: 'center' }}>
+              {entita.length > 1 && (
+                <select value={entitaRec} onChange={e => setEntitaRec(e.target.value)} style={{ flex: 1, minWidth: 0, padding: '8px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, background: '#fff' }}>
+                  {entita.map(e => <option key={e.key} value={e.key}>{e.name}</option>)}
+                </select>
+              )}
+              <button type="button" onClick={linkRecensione}
+                style={{ flex: entita.length > 1 ? '0 0 auto' : 1, padding: '9px 12px', background: recCopiata ? '#f0fff4' : '#fffbeb', border: 'none', borderRadius: 8, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', color: recCopiata ? '#276749' : '#b7791f', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                {recCopiata ? <><Check size={13} strokeWidth={1.5} /> Link copiato</> : <><Star size={13} strokeWidth={1.5} /> Copia il link per la recensione</>}
+              </button>
+            </div>
+          )}
+          {!isNew && onElimina && (
+            <button type="button" onClick={() => onElimina(contact)} disabled={saving}
+              style={{ width: '100%', marginTop: 8, padding: '9px', background: '#fff0f0', border: 'none', color: '#c00', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+              Elimina contatto
+            </button>
+          )}
           {!isNew && (
             <button type="button" onClick={handleErasure} disabled={saving}
               style={{ width: '100%', marginTop: 8, padding: '9px', background: 'none', border: '1px solid #fca5a5', color: '#dc2626', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
@@ -305,13 +346,14 @@ export default function ContattiPage() {
   const [contatti,  setContatti]  = useState([])
   const [loading,   setLoading]   = useState(true)
   const [search,    setSearch]    = useState('')
-  const [tagFilter, setTagFilter] = useState('')
+  // Il registro di quello che hanno fatto i contatti (`attivita` qui è già l'elenco delle attività dell'azienda).
+  const [registro,  setRegistro]  = useState([])
+  const [lista,     setLista]     = useState('tutti')   // quale lista si sta guardando
+  const [ordine,    setOrdine]    = useState({ per: 'ultima', verso: 'desc' })
   const [view,      setView]      = useState('lista') // 'lista' | 'kanban'
   const [modal,     setModal]     = useState(null)    // null | 'new' | contact obj
   const [importOpen, setImportOpen] = useState(false)
   const [newStage,  setNewStage]  = useState('lead')  // stage pre-selezionato per "Aggiungi" da colonna
-  const [allTags,   setAllTags]   = useState([])
-  const [recLinks,  setRecLinks]  = useState({}) // { [contactId]: { link, copied, picking, entityKey } }
 
   const aziendaId = azienda?.id || profile?.azienda_id || activeAziendaId
     || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id
@@ -321,20 +363,21 @@ export default function ContattiPage() {
   async function load() {
     setLoading(true)
     try {
-      let url = '/api/contatti'
-      const params = []
-      if (aziendaId) params.push(`azienda_id=${aziendaId}`)
-      if (search)    params.push(`search=${encodeURIComponent(search)}`)
-      if (tagFilter) params.push(`tag=${encodeURIComponent(tagFilter)}`)
-      if (params.length) url += '?' + params.join('&')
-      const data = await apiFetch(url)
-      setContatti(data)
-      setAllTags([...new Set(data.flatMap(c => c.tags || []))].sort())
+      // I contatti e il registro di quello che hanno fatto. La ricerca e le
+      // liste si applicano qui nel browser: così ordinare e cambiare lista non
+      // richiede di riscaricare tutto.
+      const dove = aziendaId ? `?azienda_id=${aziendaId}` : ''
+      const [data, storia] = await Promise.all([
+        apiFetch(`/api/contatti${dove}`),
+        apiFetch(`/api/contatti/attivita${dove}`).catch(() => []),
+      ])
+      setContatti(Array.isArray(data) ? data : [])
+      setRegistro(Array.isArray(storia) ? storia : [])
     } catch (e) { console.error(e) }
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [aziendaId, search, tagFilter]) // eslint-disable-line
+  useEffect(() => { load() }, [aziendaId]) // eslint-disable-line
 
   const allEntities = [
     ...(strutture || []).map(e => ({ id: e.id, name: e.name, tipo: 'struttura', key: `struttura:${e.id}` })),
@@ -342,42 +385,11 @@ export default function ContattiPage() {
     ...(attivita || []).map(e => ({ id: e.id, name: e.name, tipo: 'attivita', key: `attivita:${e.id}` })),
   ]
 
-  async function generaLinkRecensioneContatto(contactId, contactNome, entityKey) {
-    const entity = allEntities.find(e => e.key === entityKey) || allEntities[0]
-    if (!entity) return
-    try {
-      const data = await apiFetch('/api/recensioni/genera-link', {
-        method: 'POST',
-        body: JSON.stringify({ entity_tipo: entity.tipo, entity_id: entity.id, autore: contactNome }),
-      })
-      await navigator.clipboard.writeText(data.link)
-      setRecLinks(r => ({ ...r, [contactId]: { link: data.link, copied: true, picking: false, entityKey } }))
-      setTimeout(() => setRecLinks(r => ({ ...r, [contactId]: { ...r[contactId], copied: false } })), 2000)
-    } catch {}
-  }
-
-  function handleRecensioneClick(contactId, contactNome) {
-    const st = recLinks[contactId]
-    // già generato → copia
-    if (st?.link) {
-      navigator.clipboard.writeText(st.link)
-      setRecLinks(r => ({ ...r, [contactId]: { ...r[contactId], copied: true } }))
-      setTimeout(() => setRecLinks(r => ({ ...r, [contactId]: { ...r[contactId], copied: false } })), 2000)
-      return
-    }
-    // una sola entità → genera subito
-    if (allEntities.length === 1) {
-      generaLinkRecensioneContatto(contactId, contactNome, allEntities[0].key)
-      return
-    }
-    // più entità → mostra picker inline
-    setRecLinks(r => ({ ...r, [contactId]: { picking: !r[contactId]?.picking, entityKey: allEntities[0].key } }))
-  }
-
   async function handleDelete(id, nome) {
     if (!confirm(`Eliminare "${nome}"?`)) return
     await apiFetch(`/api/contatti/${id}`, { method: 'DELETE' })
     setContatti(c => c.filter(x => x.id !== id))
+    setModal(null)
   }
 
   async function moveStage(contactId, newStageKey) {
@@ -399,6 +411,32 @@ export default function ContattiPage() {
 
   const total      = contatti.length
   const newsletter = contatti.filter(c => c.iscritto_newsletter).length
+
+  // Le liste si calcolano dai fatti: chi prenota entra da solo.
+  const { liste, perContatto } = costruisciListe(contatti, registro)
+  const listaScelta = liste.find(l => l.chiave === lista) || liste[0]
+  const cercato = search.trim().toLowerCase()
+  const COLONNE = {
+    nome:     c => (c.nome || '').toLowerCase(),
+    fonte:    c => nomeFonte(c.fonte).toLowerCase(),
+    volte:    c => c.attivita_numero || 0,
+    ultima:   c => c.ultima_attivita_il || '',
+    contatto: c => (canaliContattabili(c).email ? 1 : 0) + (canaliContattabili(c).whatsapp ? 1 : 0),
+    dal:      c => c.created_at || '',
+  }
+  const visibili = contatti
+    .filter(c => !listaScelta.ids || listaScelta.ids.has(c.id))
+    .filter(c => !cercato || [c.nome, c.email, c.telefono].some(x => (x || '').toLowerCase().includes(cercato)))
+    .sort((x, y) => {
+      const a = COLONNE[ordine.per](x), b = COLONNE[ordine.per](y)
+      const d = typeof a === 'number' ? a - b : String(a).localeCompare(String(b), 'it')
+      // A parità, il nome: l'ordine non deve cambiare da un caricamento all'altro.
+      return (ordine.verso === 'asc' ? d : -d) || (x.nome || '').localeCompare(y.nome || '', 'it')
+    })
+  const contattabiliQui = visibili.filter(contattabile).length
+  // Cliccando un'intestazione si ordina per quella; ricliccando si inverte.
+  // I testi partono dalla A, numeri e date dal più alto.
+  const ordinaPer = per => setOrdine(o => o.per === per ? { per, verso: o.verso === 'asc' ? 'desc' : 'asc' } : { per, verso: per === 'nome' || per === 'fonte' ? 'asc' : 'desc' })
 
   return (
     <div>
@@ -424,8 +462,8 @@ export default function ContattiPage() {
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#fff', color: '#1a1a2e', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <Upload size={15} strokeWidth={2} /> Importa
           </button>
-          <button onClick={() => downloadContattiCSV(contatti)} disabled={contatti.length === 0}
-            title={contatti.length === 0 ? 'Nessun contatto da esportare' : 'Esporta i contatti visibili in CSV'}
+          <button onClick={() => view === 'lista' ? downloadContattiCSV(visibili, listaScelta.chiave === 'tutti' ? '' : listaScelta.titolo) : downloadContattiCSV(contatti)} disabled={contatti.length === 0}
+            title={contatti.length === 0 ? 'Nessun contatto da esportare' : 'Esporta in CSV i contatti che stai guardando'}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: '#fff', color: contatti.length === 0 ? '#bbb' : '#1a1a2e', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: contatti.length === 0 ? 'not-allowed' : 'pointer' }}>
             <Download size={15} strokeWidth={2} /> Esporta
           </button>
@@ -442,7 +480,7 @@ export default function ContattiPage() {
           { label: 'Totale contatti', value: total,      Icon: Users, color: '#2b6cb0' },
           { label: 'Newsletter',      value: newsletter,  Icon: Mail,  color: '#276749' },
           { label: 'Con telefono',    value: contatti.filter(c => c.telefono).length, Icon: Phone, color: '#b7791f' },
-          { label: 'Tag usati',       value: allTags.length, Icon: Tag, color: '#6b46c1' },
+          { label: 'Tornati più volte', value: liste.find(l => l.chiave === 'tornati')?.n || 0, Icon: Repeat, color: '#6b46c1' },
         ].map(({ label, value, Icon, color }) => (
           <div key={label} style={{ background: '#fff', borderRadius: 12, padding: '16px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -470,92 +508,125 @@ export default function ContattiPage() {
         </div>
       )}
 
-      {/* ── Filters (lista only) ── */}
-      {view === 'lista' && (
-        <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-            <Search size={15} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#aaa' }} />
-            <input value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Cerca nome, email, telefono…"
-              style={{ width: '100%', padding: '9px 12px 9px 34px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
-          </div>
-          <select value={tagFilter} onChange={e => setTagFilter(e.target.value)}
-            style={{ padding: '9px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, background: '#fff' }}>
-            <option value="">Tutti i tag</option>
-            {allTags.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
-          {(search || tagFilter) && (
-            <button onClick={() => { setSearch(''); setTagFilter('') }}
-              style={{ padding: '9px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, background: '#fff', cursor: 'pointer', color: '#666' }}>
-              Reset
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* ── Lista view ── */}
+      {/* ── Lista: le liste a sinistra, la tabella a destra ──
+          ⛔ Era un elenco di schede con quattro comandi per riga, la pastiglia
+          «Lead» su tutti e da due a cinque tag ciascuno — titoli interi di
+          eventi, parole nostre come «lead» e «struttura». Francesco, guardando
+          Garage 22: «trovo grande caos anche qui».
+          Ora: a sinistra le LISTE, calcolate da quello che le persone hanno
+          fatto (chi ha prenotato quella serata, chi è tornato, chi si può
+          contattare); a destra una tabella che si ordina cliccando le
+          intestazioni. I comandi stanno nella scheda, che si apre dalla riga.
+          La pipeline resta nella sua vista. */}
       {view === 'lista' && (
         loading ? <p style={{ color: '#aaa', fontSize: 14 }}>Caricamento…</p>
         : contatti.length === 0 ? (
           <div style={{ background: '#fff', borderRadius: 12, padding: 40, textAlign: 'center', color: '#aaa' }}>
-            {search || tagFilter ? 'Nessun contatto trovato.' : 'Nessun contatto ancora. Aggiungine uno o attiva il widget iscrizione nel sito.'}
+            Nessun contatto ancora. Chi prenota, ordina o compila un modulo entra qui da solo; puoi anche aggiungerne uno a mano o importare un file.
           </div>
         ) : (
-          <div style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-            {contatti.map((c, i) => (
-              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '13px 18px', borderBottom: i < contatti.length - 1 ? '1px solid #f5f5f5' : 'none' }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#1a1a2e15', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>
-                  {c.nome.charAt(0).toUpperCase()}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: 600, fontSize: 14 }}>{c.nome}</span>
-                    <StageBadge stage={c.pipeline_stage || 'lead'} />
-                    {c.iscritto_newsletter && (
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 10, background: '#f0fff4', color: '#276749' }}>Newsletter</span>
-                    )}
-                    {(c.tags || []).map(t => <TagChip key={t} tag={t} small />)}
-                  </div>
-                  <div style={{ fontSize: 12, color: '#888', marginTop: 3, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                    {c.email && <span>{c.email}</span>}
-                    {c.telefono && <span>{c.telefono}</span>}
-                    <span style={{ color: '#bbb' }}>{new Date(c.created_at).toLocaleDateString('it-IT')} · {c.fonte}</span>
-                  </div>
-                </div>
-                {/* Stage quick-change */}
-                <StageSelect value={c.pipeline_stage || 'lead'} onChange={stage => moveStage(c.id, stage)} />
-                <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
-                  {/* Richiedi recensione */}
-                  <div style={{ position: 'relative' }}>
-                    <button onClick={() => handleRecensioneClick(c.id, c.nome)}
-                      title={recLinks[c.id]?.link ? 'Copia link' : 'Genera link recensione'}
-                      style={{ padding: '6px 10px', background: recLinks[c.id]?.copied ? '#f0fff4' : '#fffbeb', border: 'none', borderRadius: 7, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: recLinks[c.id]?.copied ? '#276749' : '#b7791f' }}>
-                      {recLinks[c.id]?.copied ? <><Check size={12} strokeWidth={2} /> Copiato</> : <><Star size={12} strokeWidth={2} /> Recensione</>}
+          <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            {/* Le liste */}
+            <nav data-liste aria-label="Liste di contatti" style={{ flex: '0 0 230px', maxWidth: '100%', background: '#fff', borderRadius: 12, padding: '10px 8px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+              {liste.map((l, i) => {
+                const attiva = l.chiave === listaScelta.chiave
+                const nuovoGruppo = l.gruppo && l.gruppo !== liste[i - 1]?.gruppo
+                return (
+                  <div key={l.chiave}>
+                    {nuovoGruppo && <div style={{ fontSize: 10.5, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.6, padding: '12px 10px 4px' }}>{l.gruppo}</div>}
+                    <button onClick={() => setLista(l.chiave)} data-lista={l.chiave} title={l.titoloLungo || l.titolo}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', padding: '7px 10px', border: 'none', borderRadius: 8, cursor: 'pointer', background: attiva ? '#1a1a2e' : 'transparent', color: attiva ? '#fff' : '#333', fontSize: 13, fontWeight: attiva ? 700 : 500 }}>
+                      <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.titolo}</span>
+                      <span style={{ fontSize: 11.5, fontWeight: 700, color: attiva ? 'rgba(255,255,255,0.75)' : '#999', flexShrink: 0 }}>{l.n}</span>
                     </button>
-                    {recLinks[c.id]?.picking && allEntities.length > 1 && (
-                      <div style={{ position: 'absolute', right: 0, top: '110%', background: '#fff', border: '1px solid #e8e8e8', borderRadius: 8, padding: 10, zIndex: 100, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', minWidth: 200 }}>
-                        <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>Seleziona entità</div>
-                        <select value={recLinks[c.id]?.entityKey || allEntities[0].key}
-                          onChange={e => setRecLinks(r => ({ ...r, [c.id]: { ...r[c.id], entityKey: e.target.value } }))}
-                          style={{ width: '100%', padding: '6px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, marginBottom: 8 }}>
-                          {allEntities.map(e => <option key={e.key} value={e.key}>{e.name}</option>)}
-                        </select>
-                        <button onClick={() => generaLinkRecensioneContatto(c.id, c.nome, recLinks[c.id]?.entityKey || allEntities[0].key)}
-                          style={{ width: '100%', padding: '6px', background: '#1a1a2e', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, color: '#fff' }}>
-                          Genera e copia link
-                        </button>
-                      </div>
-                    )}
                   </div>
-                  <button onClick={() => setModal(c)} style={{ padding: '6px 10px', background: '#f5f5f5', border: 'none', borderRadius: 7, cursor: 'pointer' }}>
-                    <Pencil size={13} strokeWidth={2} color="#555" />
-                  </button>
-                  <button onClick={() => handleDelete(c.id, c.nome)} style={{ padding: '6px 10px', background: '#fff0f0', border: 'none', borderRadius: 7, cursor: 'pointer' }}>
-                    <Trash2 size={13} strokeWidth={2} color="#c00" />
-                  </button>
+                )
+              })}
+            </nav>
+
+            {/* La tabella */}
+            <div style={{ flex: '1 1 520px', minWidth: 0 }}>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 12 }}>
+                <div style={{ flex: '1 1 260px', minWidth: 0 }}>
+                  <div data-titolo-lista style={{ fontSize: 16, fontWeight: 700, color: '#1a1a2e', overflowWrap: 'anywhere' }}>{listaScelta.titoloLungo || listaScelta.titolo}</div>
+                  {/* ⚠️ Avere il contatto di qualcuno non è poterlo invitare: va
+                      detto qui, dove si decide se quella lista serve a qualcosa. */}
+                  <div data-conto-lista style={{ fontSize: 13, color: '#777', marginTop: 2 }}>
+                    {visibili.length} {visibili.length === 1 ? 'persona' : 'persone'}
+                    {visibili.length > 0 && <> · {contattabiliQui === 0 ? 'nessuna ha dato il consenso a ricevere promozioni' : `${contattabiliQui} ${contattabiliQui === 1 ? 'si può' : 'si possono'} contattare per promozione`}</>}
+                  </div>
+                  {listaScelta.spiega && <div style={{ fontSize: 12.5, color: '#999', marginTop: 2 }}>{listaScelta.spiega}</div>}
+                </div>
+                <div style={{ position: 'relative', flex: '0 1 260px', minWidth: 180 }}>
+                  <Search size={15} strokeWidth={1.5} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#aaa' }} />
+                  <input value={search} onChange={e => setSearch(e.target.value)}
+                    placeholder="Cerca nome, email, telefono…"
+                    style={{ width: '100%', padding: '9px 12px 9px 34px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
                 </div>
               </div>
-            ))}
+
+              {visibili.length === 0 ? (
+                <div style={{ background: '#fff', borderRadius: 12, padding: 36, textAlign: 'center', color: '#aaa' }}>
+                  {cercato ? 'Nessuno con questo nome in questa lista.' : 'Nessuno in questa lista.'}
+                </div>
+              ) : (
+                <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflowX: 'auto' }}>
+                  <table data-tabella-contatti style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse', fontSize: 13.5 }}>
+                    <thead>
+                      <tr>
+                        {[['nome', 'Nome'], ['fonte', 'Da dove arriva'], ['volte', 'Attività'], ['ultima', 'Ultima attività'], ['contatto', 'Si può contattare'], ['dal', 'Dal']].map(([k, etichetta]) => (
+                          <th key={k} aria-sort={ordine.per === k ? (ordine.verso === 'asc' ? 'ascending' : 'descending') : 'none'}
+                            style={{ textAlign: k === 'volte' ? 'right' : 'left', padding: 0, borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>
+                            <button onClick={() => ordinaPer(k)} data-ordina={k}
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, width: '100%', justifyContent: k === 'volte' ? 'flex-end' : 'flex-start', padding: '11px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: ordine.per === k ? '#1a1a2e' : '#888' }}>
+                              {etichetta}
+                              {ordine.per === k && (ordine.verso === 'asc' ? <ChevronUp size={13} strokeWidth={1.5} /> : <ChevronDown size={13} strokeWidth={1.5} />)}
+                            </button>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visibili.map(c => {
+                        const canali = canaliContattabili(c)
+                        return (
+                          <tr key={c.id} onClick={() => setModal(c)} data-contatto={c.id} tabIndex={0}
+                            onKeyDown={e => { if (e.key === 'Enter') setModal(c) }}
+                            style={{ cursor: 'pointer', borderBottom: '1px solid #f5f5f5' }}>
+                            <td style={{ padding: '10px 14px', maxWidth: 260 }}>
+                              <div style={{ fontWeight: 600, color: '#1a1a2e', overflowWrap: 'anywhere' }}>{c.nome}</div>
+                              <div style={{ fontSize: 12, color: emailDaCorreggere(c) ? '#c53030' : '#888', marginTop: 2, overflowWrap: 'anywhere' }}>
+                                {[c.email, c.telefono].filter(Boolean).join(' · ') || '—'}
+                                {emailDaCorreggere(c) && ' · email da correggere'}
+                              </div>
+                            </td>
+                            <td style={{ padding: '10px 14px', color: '#555', whiteSpace: 'nowrap' }}>{nomeFonte(c.fonte)}</td>
+                            <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: (c.attivita_numero || 0) > 1 ? '#1a1a2e' : '#999' }}>{c.attivita_numero || 0}</td>
+                            <td style={{ padding: '10px 14px', maxWidth: 280 }}>
+                              {c.ultima_attivita_tipo ? (
+                                <>
+                                  <div style={{ color: '#333', overflowWrap: 'anywhere' }}>{fraseAttivita({ tipo: c.ultima_attivita_tipo, titolo: c.ultima_attivita_titolo })}</div>
+                                  <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{new Date(c.ultima_attivita_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                                </>
+                              ) : <span style={{ color: '#bbb' }}>—</span>}
+                            </td>
+                            <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
+                              {!canali.email && !canali.whatsapp ? <span style={{ color: '#bbb' }}>No</span> : (
+                                <span style={{ display: 'inline-flex', gap: 5 }}>
+                                  {canali.email && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: '#f0fff4', color: '#276749' }}><Mail size={11} strokeWidth={1.5} /> Email</span>}
+                                  {canali.whatsapp && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: '#ebf8f4', color: '#0b6b5c' }}><MessageCircle size={11} strokeWidth={1.5} /> WhatsApp</span>}
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ padding: '10px 14px', color: '#888', whiteSpace: 'nowrap' }}>{new Date(c.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: '2-digit' })}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )
       )}
@@ -593,6 +664,9 @@ export default function ContattiPage() {
       {modal && (
         <ContactModal
           contact={modal === 'new' ? { pipeline_stage: newStage } : modal}
+          storia={modal !== 'new' ? (perContatto.get(modal.id) || []) : []}
+          entita={allEntities}
+          onElimina={modal !== 'new' ? (c => handleDelete(c.id, c.nome)) : null}
           aziendaId={aziendaId}
           onSave={() => { setModal(null); load() }}
           onClose={() => setModal(null)}

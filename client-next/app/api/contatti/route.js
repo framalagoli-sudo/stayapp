@@ -11,24 +11,35 @@ export async function GET(request) {
     if (!profile) return Response.json({ error: 'Profilo non trovato' }, { status: 403 })
 
     const { searchParams } = new URL(request.url)
-    let q = supabaseAdmin.from('contatti').select('*').order('created_at', { ascending: false })
-
+    let aziendaId = null
     if (profile.role !== 'super_admin') {
       if (!profile.azienda_id) return Response.json([])
-      q = q.eq('azienda_id', profile.azienda_id)
+      aziendaId = profile.azienda_id
     } else if (searchParams.get('azienda_id')) {
-      q = q.eq('azienda_id', searchParams.get('azienda_id'))
+      aziendaId = searchParams.get('azienda_id')
     }
-    if (searchParams.get('tag')) q = q.contains('tags', [searchParams.get('tag')])
-    if (searchParams.get('newsletter') === 'true') q = q.eq('iscritto_newsletter', true)
-    if (searchParams.get('search')) {
-      // Sanitizza i metacaratteri PostgREST (,()\\*) per evitare filter-injection nella .or().
-      const s = searchParams.get('search').replace(/[,()\\*]/g, '').trim()
-      if (s) q = q.or(`nome.ilike.%${s}%,email.ilike.%${s}%,telefono.ilike.%${s}%`)
+    // Sanitizza i metacaratteri PostgREST (,()\\*) per evitare filter-injection nella .or().
+    const cerca = (searchParams.get('search') || '').replace(/[,()\\*]/g, '').trim()
+    // La query si ricostruisce a ogni pagina: lo stesso costruttore riusato
+    // porterebbe con sé l'intervallo della pagina precedente.
+    const query = () => {
+      let q = supabaseAdmin.from('contatti').select('*').order('created_at', { ascending: false }).order('id')
+      if (aziendaId) q = q.eq('azienda_id', aziendaId)
+      if (searchParams.get('tag')) q = q.contains('tags', [searchParams.get('tag')])
+      if (searchParams.get('newsletter') === 'true') q = q.eq('iscritto_newsletter', true)
+      if (cerca) q = q.or(`nome.ilike.%${cerca}%,email.ilike.%${cerca}%,telefono.ilike.%${cerca}%`)
+      return q
     }
-    const { data, error } = await q
-    if (error) return Response.json({ error: error.message }, { status: 500 })
-    return Response.json(data || [])
+    // ⚠️ A pagine: PostgREST restituisce al massimo mille righe, e oltre quella
+    // soglia i contatti più vecchi sparivano dall'elenco senza nessun errore.
+    const data = []
+    for (let da = 0; ; da += 1000) {
+      const { data: pagina, error } = await query().range(da, da + 999)
+      if (error) return Response.json({ error: error.message }, { status: 500 })
+      data.push(...(pagina || []))
+      if (!pagina || pagina.length < 1000) break
+    }
+    return Response.json(data)
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
 
