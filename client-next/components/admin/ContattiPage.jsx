@@ -339,6 +339,14 @@ function KanbanColumn({ stage, contacts, onEdit, onDelete, onAdd }) {
   )
 }
 
+// Quante persone si mostrano per volta, e quante liste per gruppo prima di «Mostra altre».
+const PER_VOLTA = 25
+const LISTE_A_VISTA = 5
+// Un testo su una riga sola, tagliato con i puntini: è così che un titolo lungo
+// — un dato del cliente — non alza la riga e non allarga la tabella.
+const unaRiga = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }
+const tendina = { width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, background: '#fff', color: '#1a1a2e', minWidth: 0 }
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function ContattiPage() {
   const { profile } = useAuth()
@@ -350,6 +358,8 @@ export default function ContattiPage() {
   const [registro,  setRegistro]  = useState([])
   const [lista,     setLista]     = useState('tutti')   // quale lista si sta guardando
   const [ordine,    setOrdine]    = useState({ per: 'ultima', verso: 'desc' })
+  const [quanti,    setQuanti]    = useState(PER_VOLTA)   // quante persone a schermo
+  const [gruppiAperti, setGruppiAperti] = useState({})    // i gruppi di liste mostrati per intero
   const [view,      setView]      = useState('lista') // 'lista' | 'kanban'
   const [modal,     setModal]     = useState(null)    // null | 'new' | contact obj
   const [importOpen, setImportOpen] = useState(false)
@@ -378,6 +388,9 @@ export default function ContattiPage() {
   }
 
   useEffect(() => { load() }, [aziendaId]) // eslint-disable-line
+  // Cambiando lista, ricerca o ordine si riparte dalle prime: restare a «pagina
+  // tre» di un'altra lista mostrerebbe un elenco che non si capisce.
+  useEffect(() => { setQuanti(PER_VOLTA) }, [lista, search, ordine.per, ordine.verso])
 
   const allEntities = [
     ...(strutture || []).map(e => ({ id: e.id, name: e.name, tipo: 'struttura', key: `struttura:${e.id}` })),
@@ -434,19 +447,48 @@ export default function ContattiPage() {
       return (ordine.verso === 'asc' ? d : -d) || (x.nome || '').localeCompare(y.nome || '', 'it')
     })
   const contattabiliQui = visibili.filter(contattabile).length
+  const aSchermo = visibili.slice(0, quanti)
+  // Le liste raccolte per intestazione, nell'ordine in cui arrivano.
+  const gruppiDiListe = []
+  for (const l of liste) {
+    const ultimo = gruppiDiListe[gruppiDiListe.length - 1]
+    if (ultimo && ultimo.nome === l.gruppo) ultimo.liste.push(l)
+    else gruppiDiListe.push({ nome: l.gruppo, liste: [l] })
+  }
+  // Le pastiglie dei canali su cui si può scrivere. Funzione normale chiamata
+  // `{renderCanali(…)}`, non un componente definito qui dentro (nota 22).
+  function renderCanali(canali, stretto = false) {
+    if (!canali.email && !canali.whatsapp) return stretto ? null : <span style={{ color: '#bbb' }}>No</span>
+    const pillola = { display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: stretto ? '3px 6px' : '2px 8px', borderRadius: 20, flexShrink: 0 }
+    return (
+      <span style={{ display: 'inline-flex', gap: 5, flexShrink: 0 }}>
+        {canali.email && <span title="Si può scrivere per email" style={{ ...pillola, background: '#f0fff4', color: '#276749' }}><Mail size={11} strokeWidth={1.5} />{!stretto && ' Email'}</span>}
+        {canali.whatsapp && <span title="Si può scrivere su WhatsApp" style={{ ...pillola, background: '#ebf8f4', color: '#0b6b5c' }}><MessageCircle size={11} strokeWidth={1.5} />{!stretto && ' WhatsApp'}</span>}
+      </span>
+    )
+  }
   // Cliccando un'intestazione si ordina per quella; ricliccando si inverte.
   // I testi partono dalla A, numeri e date dal più alto.
   const ordinaPer = per => setOrdine(o => o.per === per ? { per, verso: o.verso === 'asc' ? 'desc' : 'asc' } : { per, verso: per === 'nome' || per === 'fonte' ? 'asc' : 'desc' })
 
   return (
     <div>
+      {/* Schermo stretto e schermo largo mostrano due forme della stessa cosa:
+          come nel resto del pannello (`AdminLayout`), il confine è a 767px. */}
+      <style>{`
+        .ct-solo-telefono { display: none; }
+        @media (max-width: 767px) {
+          .ct-solo-computer { display: none !important; }
+          .ct-solo-telefono { display: block; }
+        }
+      `}</style>
       {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: 20 }}>Contatti</h2>
           <p style={{ margin: '4px 0 0', color: '#888', fontSize: 13 }}>{total} contatti · {newsletter} iscritti newsletter</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {/* View toggle */}
           <div style={{ display: 'flex', background: '#f0f0f0', borderRadius: 8, padding: 3, gap: 2 }}>
             {[{ key: 'lista', Icon: List }, { key: 'kanban', Icon: LayoutGrid }].map(({ key, Icon }) => (
@@ -475,7 +517,7 @@ export default function ContattiPage() {
       </div>
 
       {/* ── Stats ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 24 }}>
+      <div className="ct-solo-computer" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 24 }}>
         {[
           { label: 'Totale contatti', value: total,      Icon: Users, color: '#2b6cb0' },
           { label: 'Newsletter',      value: newsletter,  Icon: Mail,  color: '#276749' },
@@ -517,7 +559,14 @@ export default function ContattiPage() {
           fatto (chi ha prenotato quella serata, chi è tornato, chi si può
           contattare); a destra una tabella che si ordina cliccando le
           intestazioni. I comandi stanno nella scheda, che si apre dalla riga.
-          La pipeline resta nella sua vista. */}
+          La pipeline resta nella sua vista.
+
+          ⛔ La prima versione su un telefono era alta sei schermate: tutte le
+          liste in colonna prima del primo contatto, e una tabella da scorrere
+          di lato (Francesco: «la lista è infinita e da smartphone è
+          innavigabile»). Ora su schermo stretto le liste sono un menu a
+          tendina, i contatti sono schede di due righe, e in ogni caso se ne
+          mostrano venticinque per volta. */}
       {view === 'lista' && (
         loading ? <p style={{ color: '#aaa', fontSize: 14 }}>Caricamento…</p>
         : contatti.length === 0 ? (
@@ -526,26 +575,63 @@ export default function ContattiPage() {
           </div>
         ) : (
           <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-            {/* Le liste */}
-            <nav data-liste aria-label="Liste di contatti" style={{ flex: '0 0 230px', maxWidth: '100%', background: '#fff', borderRadius: 12, padding: '10px 8px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-              {liste.map((l, i) => {
-                const attiva = l.chiave === listaScelta.chiave
-                const nuovoGruppo = l.gruppo && l.gruppo !== liste[i - 1]?.gruppo
+            {/* Le liste, su computer: una colonna che resta a vista scorrendo. */}
+            <nav data-liste aria-label="Liste di contatti" className="ct-solo-computer"
+              style={{ flex: '0 0 230px', maxWidth: '100%', background: '#fff', borderRadius: 12, padding: '10px 8px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', position: 'sticky', top: 16, maxHeight: 'calc(100vh - 32px)', overflowY: 'auto' }}>
+              {gruppiDiListe.map(g => {
+                // Un gruppo lungo (venti eventi) non deve spingere via gli altri:
+                // se ne vedono cinque, più quella che si sta guardando.
+                const aperto = !!gruppiAperti[g.nome]
+                const mostrate = aperto ? g.liste : g.liste.filter((l, i) => i < LISTE_A_VISTA || l.chiave === listaScelta.chiave)
                 return (
-                  <div key={l.chiave}>
-                    {nuovoGruppo && <div style={{ fontSize: 10.5, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.6, padding: '12px 10px 4px' }}>{l.gruppo}</div>}
-                    <button onClick={() => setLista(l.chiave)} data-lista={l.chiave} title={l.titoloLungo || l.titolo}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', padding: '7px 10px', border: 'none', borderRadius: 8, cursor: 'pointer', background: attiva ? '#1a1a2e' : 'transparent', color: attiva ? '#fff' : '#333', fontSize: 13, fontWeight: attiva ? 700 : 500 }}>
-                      <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.titolo}</span>
-                      <span style={{ fontSize: 11.5, fontWeight: 700, color: attiva ? 'rgba(255,255,255,0.75)' : '#999', flexShrink: 0 }}>{l.n}</span>
-                    </button>
+                  <div key={g.nome || 'principali'}>
+                    {g.nome && <div style={{ fontSize: 10.5, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.6, padding: '12px 10px 4px' }}>{g.nome}</div>}
+                    {mostrate.map(l => {
+                      const attiva = l.chiave === listaScelta.chiave
+                      return (
+                        <button key={l.chiave} onClick={() => setLista(l.chiave)} data-lista={l.chiave} title={l.titoloLungo || l.titolo}
+                          style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', padding: '7px 10px', border: 'none', borderRadius: 8, cursor: 'pointer', background: attiva ? '#1a1a2e' : 'transparent', color: attiva ? '#fff' : '#333', fontSize: 13, fontWeight: attiva ? 700 : 500 }}>
+                          <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.titolo}</span>
+                          <span style={{ fontSize: 11.5, fontWeight: 700, color: attiva ? 'rgba(255,255,255,0.75)' : '#999', flexShrink: 0 }}>{l.n}</span>
+                        </button>
+                      )
+                    })}
+                    {g.liste.length > mostrate.length && (
+                      <button onClick={() => setGruppiAperti(a => ({ ...a, [g.nome]: true }))} data-altre={g.nome}
+                        style={{ width: '100%', textAlign: 'left', padding: '6px 10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 12.5, fontWeight: 600, color: '#2b6cb0' }}>
+                        Mostra altre {g.liste.length - mostrate.length}
+                      </button>
+                    )}
+                    {aperto && g.liste.length > LISTE_A_VISTA && (
+                      <button onClick={() => setGruppiAperti(a => ({ ...a, [g.nome]: false }))}
+                        style={{ width: '100%', textAlign: 'left', padding: '6px 10px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 12.5, fontWeight: 600, color: '#888' }}>
+                        Mostra meno
+                      </button>
+                    )}
                   </div>
                 )
               })}
             </nav>
 
-            {/* La tabella */}
             <div style={{ flex: '1 1 520px', minWidth: 0 }}>
+              {/* Le liste e l'ordine, su telefono: due menu a tendina. */}
+              <div className="ct-solo-telefono" style={{ marginBottom: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 2fr)', gap: 8 }}>
+                  <select value={listaScelta.chiave} onChange={e => setLista(e.target.value)} data-lista-tendina aria-label="Lista di contatti" style={tendina}>
+                    {gruppiDiListe.map(g => g.nome
+                      ? <optgroup key={g.nome} label={g.nome}>{g.liste.map(l => <option key={l.chiave} value={l.chiave}>{l.titolo} ({l.n})</option>)}</optgroup>
+                      : g.liste.map(l => <option key={l.chiave} value={l.chiave}>{l.titolo} ({l.n})</option>))}
+                  </select>
+                  <select value={`${ordine.per}:${ordine.verso}`} onChange={e => { const [per, verso] = e.target.value.split(':'); setOrdine({ per, verso }) }} data-ordine-tendina aria-label="Ordina i contatti" style={tendina}>
+                    <option value="ultima:desc">Visti di recente</option>
+                    <option value="volte:desc">Più attività</option>
+                    <option value="nome:asc">Nome, dalla A</option>
+                    <option value="dal:desc">Arrivati di recente</option>
+                    <option value="contatto:desc">Contattabili prima</option>
+                  </select>
+                </div>
+              </div>
+
               <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 12 }}>
                 <div style={{ flex: '1 1 260px', minWidth: 0 }}>
                   <div data-titolo-lista style={{ fontSize: 16, fontWeight: 700, color: '#1a1a2e', overflowWrap: 'anywhere' }}>{listaScelta.titoloLungo || listaScelta.titolo}</div>
@@ -557,7 +643,7 @@ export default function ContattiPage() {
                   </div>
                   {listaScelta.spiega && <div style={{ fontSize: 12.5, color: '#999', marginTop: 2 }}>{listaScelta.spiega}</div>}
                 </div>
-                <div style={{ position: 'relative', flex: '0 1 260px', minWidth: 180 }}>
+                <div style={{ position: 'relative', flex: '1 1 220px', maxWidth: 320, minWidth: 0 }}>
                   <Search size={15} strokeWidth={1.5} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#aaa' }} />
                   <input value={search} onChange={e => setSearch(e.target.value)}
                     placeholder="Cerca nome, email, telefono…"
@@ -570,61 +656,93 @@ export default function ContattiPage() {
                   {cercato ? 'Nessuno con questo nome in questa lista.' : 'Nessuno in questa lista.'}
                 </div>
               ) : (
-                <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflowX: 'auto' }}>
-                  <table data-tabella-contatti style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse', fontSize: 13.5 }}>
-                    <thead>
-                      <tr>
-                        {[['nome', 'Nome'], ['fonte', 'Da dove arriva'], ['volte', 'Attività'], ['ultima', 'Ultima attività'], ['contatto', 'Si può contattare'], ['dal', 'Dal']].map(([k, etichetta]) => (
-                          <th key={k} aria-sort={ordine.per === k ? (ordine.verso === 'asc' ? 'ascending' : 'descending') : 'none'}
-                            style={{ textAlign: k === 'volte' ? 'right' : 'left', padding: 0, borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>
-                            <button onClick={() => ordinaPer(k)} data-ordina={k}
-                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, width: '100%', justifyContent: k === 'volte' ? 'flex-end' : 'flex-start', padding: '11px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: ordine.per === k ? '#1a1a2e' : '#888' }}>
-                              {etichetta}
-                              {ordine.per === k && (ordine.verso === 'asc' ? <ChevronUp size={13} strokeWidth={1.5} /> : <ChevronDown size={13} strokeWidth={1.5} />)}
-                            </button>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {visibili.map(c => {
-                        const canali = canaliContattabili(c)
-                        return (
-                          <tr key={c.id} onClick={() => setModal(c)} data-contatto={c.id} tabIndex={0}
-                            onKeyDown={e => { if (e.key === 'Enter') setModal(c) }}
-                            style={{ cursor: 'pointer', borderBottom: '1px solid #f5f5f5' }}>
-                            <td style={{ padding: '10px 14px', maxWidth: 260 }}>
-                              <div style={{ fontWeight: 600, color: '#1a1a2e', overflowWrap: 'anywhere' }}>{c.nome}</div>
-                              <div style={{ fontSize: 12, color: emailDaCorreggere(c) ? '#c53030' : '#888', marginTop: 2, overflowWrap: 'anywhere' }}>
-                                {[c.email, c.telefono].filter(Boolean).join(' · ') || '—'}
-                                {emailDaCorreggere(c) && ' · email da correggere'}
-                              </div>
-                            </td>
-                            <td style={{ padding: '10px 14px', color: '#555', whiteSpace: 'nowrap' }}>{nomeFonte(c.fonte)}</td>
-                            <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: (c.attivita_numero || 0) > 1 ? '#1a1a2e' : '#999' }}>{c.attivita_numero || 0}</td>
-                            <td style={{ padding: '10px 14px', maxWidth: 280 }}>
-                              {c.ultima_attivita_tipo ? (
-                                <>
-                                  <div style={{ color: '#333', overflowWrap: 'anywhere' }}>{fraseAttivita({ tipo: c.ultima_attivita_tipo, titolo: c.ultima_attivita_titolo })}</div>
-                                  <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{new Date(c.ultima_attivita_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
-                                </>
-                              ) : <span style={{ color: '#bbb' }}>—</span>}
-                            </td>
-                            <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
-                              {!canali.email && !canali.whatsapp ? <span style={{ color: '#bbb' }}>No</span> : (
-                                <span style={{ display: 'inline-flex', gap: 5 }}>
-                                  {canali.email && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: '#f0fff4', color: '#276749' }}><Mail size={11} strokeWidth={1.5} /> Email</span>}
-                                  {canali.whatsapp && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: '#ebf8f4', color: '#0b6b5c' }}><MessageCircle size={11} strokeWidth={1.5} /> WhatsApp</span>}
-                                </span>
-                              )}
-                            </td>
-                            <td style={{ padding: '10px 14px', color: '#888', whiteSpace: 'nowrap' }}>{new Date(c.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: '2-digit' })}</td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <>
+                  {/* Su computer: la tabella. Larghezze fisse e testi su una
+                      riga, tagliati con i puntini: un titolo lungo — che è un
+                      dato del cliente — non deve alzare la riga né allargarla. */}
+                  <div className="ct-solo-computer" style={{ background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflowX: 'auto' }}>
+                    <table data-tabella-contatti style={{ width: '100%', minWidth: 700, borderCollapse: 'collapse', fontSize: 13.5, tableLayout: 'fixed' }}>
+                      <colgroup>
+                        <col style={{ width: '27%' }} /><col style={{ width: '13%' }} /><col style={{ width: '9%' }} /><col style={{ width: '27%' }} /><col style={{ width: '13%' }} /><col style={{ width: '11%' }} />
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          {[['nome', 'Nome'], ['fonte', 'Da dove arriva'], ['volte', 'Attività'], ['ultima', 'Ultima attività'], ['contatto', 'Contattabile'], ['dal', 'Dal']].map(([k, etichetta]) => (
+                            <th key={k} aria-sort={ordine.per === k ? (ordine.verso === 'asc' ? 'ascending' : 'descending') : 'none'}
+                              style={{ textAlign: k === 'volte' ? 'right' : 'left', padding: 0, borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>
+                              <button onClick={() => ordinaPer(k)} data-ordina={k}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, width: '100%', justifyContent: k === 'volte' ? 'flex-end' : 'flex-start', padding: '11px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: ordine.per === k ? '#1a1a2e' : '#888' }}>
+                                {etichetta}
+                                {ordine.per === k && (ordine.verso === 'asc' ? <ChevronUp size={13} strokeWidth={1.5} /> : <ChevronDown size={13} strokeWidth={1.5} />)}
+                              </button>
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {aSchermo.map(c => {
+                          const canali = canaliContattabili(c)
+                          const recapiti = [c.email, c.telefono].filter(Boolean).join(' · ') || '—'
+                          const ultima = c.ultima_attivita_tipo ? fraseAttivita({ tipo: c.ultima_attivita_tipo, titolo: c.ultima_attivita_titolo }) : null
+                          return (
+                            <tr key={c.id} onClick={() => setModal(c)} data-contatto={c.id} tabIndex={0}
+                              onKeyDown={e => { if (e.key === 'Enter') setModal(c) }}
+                              style={{ cursor: 'pointer', borderBottom: '1px solid #f5f5f5' }}>
+                              <td style={{ padding: '9px 14px' }}>
+                                <div data-nome title={c.nome} style={{ ...unaRiga, fontWeight: 600, color: '#1a1a2e' }}>{c.nome}</div>
+                                <div title={recapiti} style={{ ...unaRiga, fontSize: 12, color: emailDaCorreggere(c) ? '#c53030' : '#888', marginTop: 2 }}>
+                                  {emailDaCorreggere(c) && 'Email da correggere · '}{recapiti}
+                                </div>
+                              </td>
+                              <td style={{ padding: '9px 14px', color: '#555' }}><div style={unaRiga}>{nomeFonte(c.fonte)}</div></td>
+                              <td style={{ padding: '9px 14px', textAlign: 'right', fontWeight: 700, color: (c.attivita_numero || 0) > 1 ? '#1a1a2e' : '#999' }}>{c.attivita_numero || 0}</td>
+                              <td style={{ padding: '9px 14px' }}>
+                                {ultima ? (
+                                  <>
+                                    <div title={ultima} style={{ ...unaRiga, color: '#333' }}>{ultima}</div>
+                                    <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{new Date(c.ultima_attivita_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                                  </>
+                                ) : <span style={{ color: '#bbb' }}>—</span>}
+                              </td>
+                              <td style={{ padding: '9px 14px', whiteSpace: 'nowrap' }}>{renderCanali(canali)}</td>
+                              <td style={{ padding: '9px 14px', color: '#888', whiteSpace: 'nowrap' }}>{new Date(c.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: '2-digit' })}</td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Su telefono: una scheda di due righe a persona. */}
+                  <div className="ct-solo-telefono" data-schede-contatti style={{ background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                    {aSchermo.map((c, i) => {
+                      const ultima = c.ultima_attivita_tipo ? fraseAttivita({ tipo: c.ultima_attivita_tipo, titolo: c.ultima_attivita_titolo }) : null
+                      return (
+                        <button key={c.id} onClick={() => setModal(c)} data-contatto-scheda={c.id}
+                          style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', borderBottom: i < aSchermo.length - 1 ? '1px solid #f3f3f3' : 'none', padding: '11px 14px', cursor: 'pointer' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ ...unaRiga, flex: 1, fontWeight: 600, fontSize: 14.5, color: '#1a1a2e' }}>{c.nome}</span>
+                            {(c.attivita_numero || 0) > 1 && <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 20, background: '#f0f0f5', color: '#555' }}>{c.attivita_numero} attività</span>}
+                            {renderCanali(canaliContattabili(c), true)}
+                          </div>
+                          <div style={{ ...unaRiga, fontSize: 12.5, color: '#777', marginTop: 3 }}>
+                            {ultima ? <>{ultima} · {new Date(c.ultima_attivita_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}</> : nomeFonte(c.fonte)}
+                          </div>
+                          {emailDaCorreggere(c) && <div style={{ fontSize: 12, color: '#c53030', marginTop: 2 }}>Email da correggere</div>}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {/* Venticinque per volta: un elenco di trecento persone non si
+                      scorre, si cerca o si ordina. */}
+                  {visibili.length > aSchermo.length && (
+                    <button onClick={() => setQuanti(q => q + PER_VOLTA)} data-mostra-altri
+                      style={{ display: 'block', width: '100%', marginTop: 10, padding: '11px', background: '#fff', border: '1px solid #ddd', borderRadius: 10, cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: '#1a1a2e' }}>
+                      Mostra altri {Math.min(PER_VOLTA, visibili.length - aSchermo.length)} · ne restano {visibili.length - aSchermo.length}
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>
