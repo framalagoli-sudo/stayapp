@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { sendWebhooks } from '@/lib/send-webhooks'
+import { normalizzaTelefono } from '@/lib/contatti-import'
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
@@ -30,6 +31,9 @@ export async function PATCH(request, props) {
         updates.whatsapp_optout_il = new Date().toISOString()
       }
     }
+    // Se cambia il numero cambia anche la sua chiave: lasciarla al numero
+    // vecchio farebbe riconoscere questa persona come un'altra.
+    if ('telefono' in updates) updates.telefono_e164 = normalizzaTelefono(updates.telefono)
     updates.updated_at = new Date().toISOString()
 
     let q = supabaseAdmin.from('contatti').update(updates).eq('id', params.id)

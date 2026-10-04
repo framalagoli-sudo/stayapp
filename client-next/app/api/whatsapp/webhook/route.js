@@ -1,6 +1,9 @@
 import { createHmac, timingSafeEqual } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { logError } from '@/lib/observability'
+import { registraContatto } from '@/lib/crm'
+import { giornoLocale } from '@/lib/fuso'
+import { fusoDiAzienda } from '@/lib/fuso-azienda'
 
 // Notifiche di Meta: consegnato, letto, fallito, e i messaggi in arrivo.
 //
@@ -93,16 +96,48 @@ export async function POST(request) {
           if (msg?.campagna_id) await aggiornaContatori(msg.campagna_id)
         }
 
-        // Messaggi in arrivo: per ora si registra solo chi ha scritto STOP, che
-        // vale come revoca del consenso e va rispettata subito.
+        // ── Messaggi in arrivo ───────────────────────────────────────────────
+        // A quale azienda ha scritto questa persona lo dice il numero che ha
+        // RICEVUTO il messaggio: senza saperlo non si tocca niente.
+        if (!(v.messages || []).length) continue
+        const { data: conto } = await supabaseAdmin.from('whatsapp_account')
+          .select('azienda_id, entity_id').eq('phone_number_id', String(v.metadata?.phone_number_id || '')).maybeSingle()
+        if (!conto?.azienda_id) continue
+        // Meta manda accanto ai messaggi il nome che la persona ha su WhatsApp.
+        // Il giorno è quello dell'azienda, non del server: dopo le 22 italiane sono due date diverse.
+        const fuso = await fusoDiAzienda(conto.azienda_id)
+        const nomi = Object.fromEntries((v.contacts || []).map(c => [String(c.wa_id || ''), c.profile?.name || null]))
+
         for (const m of v.messages || []) {
+          const cifre = String(m.from || '').replace(/\D/g, '')
+          if (!cifre) continue
+          const numero = `+${cifre}`
+
+          // Chi scrive entra fra i contatti dell'azienda a cui ha scritto: ha un
+          // numero e nessuna email, ed è per questo che il telefono è una chiave.
+          // ⚠️ Scrivere NON è acconsentire a ricevere promozioni: il consenso
+          // WhatsApp resta com'era. Nel registro una riga al giorno, non una per
+          // messaggio — una chiacchierata di trenta messaggi è una visita sola.
+          const giorno = giornoLocale(new Date((Number(m.timestamp) || Date.now() / 1000) * 1000), fuso)
+          await registraContatto({
+            aziendaId: conto.azienda_id,
+            telefono: numero, nome: nomi[cifre] || numero,
+            fonte: 'whatsapp',
+            attivita: { tipo: 'whatsapp', titolo: 'Ha scritto su WhatsApp', riferimento: `wa-${giorno}`, entityId: conto.entity_id },
+          })
+
+          // STOP vale come revoca del consenso e va rispettata subito.
+          // ⛔ Si cercava il numero in TUTTE le aziende: lo STOP detto a un
+          // cliente spegneva quella persona anche per gli altri. E si cercava il
+          // numero scritto esattamente «+39…», che è come lo manda Meta e quasi
+          // mai come l'ha scritto chi ha compilato un modulo.
           const testo = (m.text?.body || '').trim().toUpperCase()
           if (!['STOP', 'BASTA', 'CANCELLAMI', 'UNSUBSCRIBE'].includes(testo)) continue
-          const numero = `+${String(m.from || '').replace(/\D/g, '')}`
           await supabaseAdmin
             .from('contatti')
             .update({ whatsapp_optin: false, whatsapp_optout_il: new Date().toISOString() })
-            .eq('telefono', numero)
+            .eq('azienda_id', conto.azienda_id)
+            .eq('telefono_e164', numero)
         }
       }
     }

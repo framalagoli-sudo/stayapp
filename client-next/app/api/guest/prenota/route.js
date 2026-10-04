@@ -6,6 +6,8 @@ import { fusoDiAzienda } from '@/lib/fuso-azienda'
 import { sendWebhooks } from '@/lib/send-webhooks'
 import { sendEmail } from '@/lib/send-email'
 import { guestEmailTemplate } from '@/lib/email-template'
+import { registraContatto } from '@/lib/crm'
+import { after } from 'next/server'
 
 // Chi prenota un'offerta dal sito.
 //
@@ -130,6 +132,15 @@ export async function POST(request) {
           }),
         }).catch(() => {})
       })
+
+    // ⛔ Chi prenotava un'offerta non entrava fra i contatti. Il recapito può
+    // essere un'email o un numero: la porta unica riconosce tutti e due.
+    after(() => registraContatto({
+      aziendaId: offerta.azienda_id,
+      email: creata.cliente_email, nome: creata.cliente_nome, telefono: creata.cliente_telefono,
+      fonte: 'prenotazione',
+      attivita: { tipo: 'prenotazione', titolo: offerta.titolo, origineId: offerta.id, riferimento: creata.id, entityId: offerta.entity_id, dettaglio: { persone } },
+    }))
 
     return Response.json({ id: creata.id, stato: creata.stato }, { status: 201 })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }

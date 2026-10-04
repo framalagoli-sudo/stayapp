@@ -517,6 +517,18 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - **I pulsanti dicono cosa fanno**: verbo + oggetto e sotto la conseguenza, **compreso se l'ospite viene avvisato** («Annulla prenotazione» NON avvisa nessuno). Annullare una pagata avverte che il rimborso si fa da Stripe; ripristinare un'annullata su un evento pieno ora è rifiutato (prima sforava la capienza), e gli errori dei pulsanti si leggono invece di sparire.
     - Sonde (a mano): `probe-pannello-eventi.mjs`, `probe-prenotazioni-eventi.mjs`. ⚠️ Nelle sonde si aspetta l'**esito**, non un tempo fisso: in produzione una risposta supera facilmente il secondo e mezzo e la sonda dà rosso a torto.
 
+56. **👥 I contatti: una porta sola, e un registro di quello che fanno** (04/10/2026, migration `130`). Francesco, guardando Garage 22: «trovo grande caos anche qui» — e poi: «devono entrare tutti in contatti: la forza di OltreNova deve essere questa».
+    - **Misurato** (116 contatti, sei aziende): otto porte creavano contatti ognuna a modo suo — tag fatti di parole nostre («lead», «struttura», «pwa»), nomi di moduli e titoli interi di eventi; la storia in un testo libero nelle note; **tre porte non ne creavano affatto** (risorse, offerte, negozio); la pipeline ferma a «lead» per 114 su 116.
+    - **`lib/crm.js` → `registraContatto()` è l'unica porta.** Riconosce la persona dall'**email o dal telefono** (`telefono_e164`, forma internazionale calcolata da `normalizzaTelefono`): chi lascia solo un numero — al telefono, su un'offerta, **da WhatsApp** — entra una volta sola, e se poi prenota dal sito viene riconosciuto e completato con l'email. Se email e numero indicano due contatti diversi vince l'email e **non si uniscono**: fondere due persone per sbaglio non si disfa.
+    - **`contatti_attivita`** = una riga per ogni cosa fatta (evento, lista d'attesa, prenotazione, ordine, modulo, richiesta, newsletter, WhatsApp), con `origine_id` (l'evento, il modulo, la risorsa: è quello su cui si fa una lista) e `riferimento` (la riga che l'ha generata: la stessa non entra due volte). ⚠️ **Mai dati personali lì dentro**: titolo e numeri, chi sia lo dice `contatto_id`.
+    - Il riepilogo sul contatto (`attivita_numero`, `ultima_attivita_*`) lo tiene allineato un **trigger che conta**, non il codice: vale per chiunque scriva nel registro. Le due funzioni sono chiuse al ruolo pubblico (una funzione nello schema `public` è chiamabile da chiunque via API).
+    - **Entrare fra i contatti non iscrive a niente**: `iscritto_newsletter` e `whatsapp_optin` restano falsi. Le colonne `marketing_consenso_*` sono pronte per la prova del consenso alla promozione (non ancora usate).
+    - ⚠️ `limit(1)`, non `maybeSingle()`, per cercare un contatto: con due doppioni `maybeSingle` dà errore, «non si trova» e ne nasce un terzo.
+    - 🔒 Webhook WhatsApp: lo STOP toglieva il consenso cercando il numero in **tutte le aziende**; ora si risale all'azienda dal numero che ha ricevuto il messaggio. Chi scrive entra fra i contatti (una riga al giorno nel registro). ⚠️ **Scritto e non provato dal vivo**: serve Meta.
+    - ⚠️ I tag per evento si creano ancora: la newsletter sceglie i destinatari per tag (`tag_filter`). Si toglieranno quando saprà scegliere una lista.
+    - Sonde (a mano): `probe-contatti-attivita.mjs` (database: conta, rifiuta, è chiuso), `probe-contatti-porte.mjs` (percorre le porte). `ricostruisci-attivita-contatti.mjs` riscrive la storia di chi c'era già: **simula** finché non gli si passa `--esegui`.
+    - ⛔ Mai `next build` in `client-next/` con il dev server acceso: condividono `.next`.
+
 ---
 
 ## Roadmap

@@ -5,6 +5,8 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { sendWebhooks } from '@/lib/send-webhooks'
 import { rateLimit } from '@/lib/rate-limit'
 import { verifyTurnstile } from '@/lib/turnstile'
+import { registraAttivita } from '@/lib/crm'
+import { normalizzaTelefono } from '@/lib/contatti-import'
 
 // ── Flood detection per-form (max 20 submit / 10 minuti) ─────────────────────
 const formFloodMap = new Map()
@@ -239,6 +241,7 @@ export async function POST(request, { params }) {
             email,
             nome: nome || email,
             telefono: telefono || null,
+            telefono_e164: normalizzaTelefono(telefono),
             fonte: 'form',
             email_non_valida: emailNonValida,
             iscritto_newsletter: newsletterOptin,
@@ -254,7 +257,7 @@ export async function POST(request, { params }) {
     }
 
     // 8. Salva submission con dati consenso GDPR
-    const { error: subErr } = await supabaseAdmin
+    const { data: invio, error: subErr } = await supabaseAdmin
       .from('form_submissions')
       .insert({
         form_id: form.id,
@@ -265,7 +268,14 @@ export async function POST(request, { params }) {
         consenso_dato: consensoDato,
         consenso_privacy_url: consensoPrivacyUrl,
       })
+      .select('id').maybeSingle()
     if (subErr) return NextResponse.json({ error: subErr.message }, { status: 500 })
+
+    // Nel registro del contatto: quale modulo ha compilato. È quello su cui si
+    // costruisce la lista «chi ha risposto a questo modulo».
+    if (contattoId) {
+      await registraAttivita(form.azienda_id, contattoId, { tipo: 'modulo', titolo: form.nome || 'Modulo', origineId: form.id, riferimento: invio?.id })
+    }
 
     // 9. Email notifica admin
     if (form.email_notifica && process.env.RESEND_API_KEY) {

@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth, getProfile, resolveAziendaId } from '@/lib/server-auth'
 import { sendWebhooks } from '@/lib/send-webhooks'
+import { normalizzaTelefono } from '@/lib/contatti-import'
 
 export async function GET(request) {
   try {
@@ -44,6 +45,9 @@ export async function POST(request) {
     const { data, error } = await supabaseAdmin.from('contatti').insert({
       azienda_id, nome: nome.trim(),
       email: email?.trim() || null, telefono: telefono?.trim() || null,
+      // La forma internazionale del numero: è la chiave con cui si riconosce
+      // la stessa persona quando poi prenota o scrive su WhatsApp.
+      telefono_e164: normalizzaTelefono(telefono),
       tags: tags || [], note: note || null,
       iscritto_newsletter: !!iscritto_newsletter, fonte: 'manuale',
       // Data e provenienza del consenso: servono a dimostrarlo se qualcuno contesta.

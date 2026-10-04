@@ -7,6 +7,8 @@ import { guestEmailTemplate } from '@/lib/email-template'
 import { logError } from '@/lib/observability'
 import { creaCheckout } from '@/lib/checkout'
 import { TESTO_CONSENSO_ORDINE } from '@/lib/consenso-ordine'
+import { registraContatto } from '@/lib/crm'
+import { after } from 'next/server'
 
 export async function POST(request, props) {
   const params = await props.params;
@@ -165,6 +167,15 @@ export async function POST(request, props) {
     // Oggi erano i dati appena inseriti da chi ordina; ma una colonna aggiunta
     // domani (note interne del titolare, per dire) sarebbe uscita da sola. Si
     // restituisce solo quello che serve alla pagina.
+    // ⛔ Chi ordinava non entrava fra i contatti: il cliente del negozio era
+    // l'unico che il titolare non poteva ritrovare nel suo elenco.
+    after(() => registraContatto({
+      aziendaId: azienda_id,
+      email: email_cliente, nome: nome_cliente, telefono: telefono_cliente,
+      fonte: 'ordine',
+      attivita: { tipo: 'ordine', titolo: `Ordine #${ordine.numero}`, riferimento: ordine.id, dettaglio: { totale: totaleFinale } },
+    }))
+
     return Response.json({ numero: ordine.numero, checkout_url }, { status: 201 })
   } catch (e) { await logError('shop/ordine', e, { alert: true }); return Response.json({ error: e.message }, { status: 500 }) }
 }

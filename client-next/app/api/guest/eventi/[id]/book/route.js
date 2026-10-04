@@ -270,6 +270,9 @@ export async function POST(request, props) {
         email: guest_email, nome: guest_name, telefono: guest_phone,
         fonte: 'evento',
         tags: tagEvento(evento.title),
+        // Nel registro: quale evento, quanti posti, e la prenotazione a cui si
+        // riferisce — così la stessa non si conta due volte.
+        attivita: { tipo: 'evento', titolo: evento.title, origineId: evento.id, riferimento: data.id, entityId: evento.entity_id, dettaglio: { posti: reqSeats } },
         nota: `Ha prenotato «${evento.title}»${dateStr ? ` del ${dateStr}` : ''} — ${reqSeats} ${reqSeats === 1 ? 'posto' : 'posti'}`,
       })
       // L'automazione «nuovo contatto» parte una volta sola: chi torna a una

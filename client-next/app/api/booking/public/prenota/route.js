@@ -13,6 +13,7 @@ import { sendEmail } from '@/lib/send-email'
 import { guestEmailTemplate } from '@/lib/email-template'
 import { logError } from '@/lib/observability'
 import { getAziendaLegale } from '@/lib/guest-data'
+import { registraContatto } from '@/lib/crm'
 
 // La formula che chi prenota accetta. La decide il server, non il componente:
 // è il server a scriverla nella prova, e se le due copie divergessero
@@ -316,6 +317,17 @@ export async function POST(request) {
         }
       } catch (e) { console.error('[booking] genera token recensione:', e.message) }
     }
+
+    // ⛔ Chi prenotava una risorsa entrava fra i contatti SOLO se spuntava il
+    // consenso WhatsApp: tutti gli altri — nome, email, telefono lasciati per
+    // prenotare — il titolare non li ritrovava più. Stesso difetto corretto
+    // sugli eventi l'08/09. Entrare fra i contatti non iscrive a niente.
+    await registraContatto({
+      aziendaId: prenotazione.azienda_id,
+      email: prenotazione.cliente_email, nome: prenotazione.cliente_nome, telefono: prenotazione.cliente_telefono,
+      fonte: 'prenotazione',
+      attivita: { tipo: 'prenotazione', titolo: risorsa.nome, origineId: risorsa.id, riferimento: prenotazione.id, entityId: risorsa.entity_id, dettaglio: { persone } },
+    })
 
     // 🔒 Il consenso a essere avvisati su WhatsApp è una **prova**, non una
     // spunta: si salva quando è stato dato e da dove. E vale solo se è arrivato

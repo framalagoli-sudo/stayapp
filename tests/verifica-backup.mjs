@@ -126,7 +126,7 @@ if (!problemiAltre.length) bene(`${altre.length} tabelle, tutte allineate alla p
 // Una tabella che esiste in produzione e NON compare affatto nell'archivio è il
 // difetto che è già successo: la lista delle tabelle da salvare era ferma.
 console.log('\n  ── tabelle della produzione che l\'archivio non nomina proprio')
-const NOTE = ['aziende','profiles','entita','pagine','domini','contatti','requests','prenotazioni',
+const NOTE = ['aziende','profiles','entita','pagine','domini','contatti','contatti_attivita','requests','prenotazioni',
   'preventivi','recensioni','eventi','event_bookings','articoli','newsletters','form_builder',
   'form_submissions','vetrine','vetrina_elementi','prodotti','ordini','gift_cards','loyalty_programs',
   'loyalty_points','piano_editoriale','automazioni','survey_risposte','risorse','messages',

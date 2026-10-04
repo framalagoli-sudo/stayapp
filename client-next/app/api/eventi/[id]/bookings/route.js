@@ -1,6 +1,8 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireRecordAccess } from '@/lib/server-auth'
 import { recomputeEventSeats } from '@/lib/event-seats'
+import { registraContatto, tagEvento } from '@/lib/crm'
+import { after } from 'next/server'
 
 export async function GET(request, props) {
   const params = await props.params;
@@ -40,7 +42,7 @@ export async function POST(request, props) {
     const posti = Math.max(1, parseInt(seats) || 1)
 
     const { data: evento } = await supabaseAdmin.from('eventi')
-      .select('id, price, seats_total, seats_booked').eq('id', params.id).maybeSingle()
+      .select('id, title, azienda_id, entity_id, price, seats_total, seats_booked').eq('id', params.id).maybeSingle()
     if (!evento) return Response.json({ error: 'Evento non trovato' }, { status: 404 })
 
     // ⚠️ Il limite vale anche qui: senza, il titolare può segnare più posti di
@@ -77,6 +79,19 @@ export async function POST(request, props) {
     if (error) return Response.json({ error: error.message }, { status: 500 })
 
     await recomputeEventSeats(params.id)
+
+    // ⛔ Chi prenotava al telefono non entrava mai fra i contatti: il canale da
+    // cui arriva più gente era quello che ne lasciava meno. Basta un recapito —
+    // l'email o il numero — e la persona si ritrova, senza iscriverla a niente.
+    if (data.guest_email || data.guest_phone) {
+      after(() => registraContatto({
+        aziendaId: evento.azienda_id,
+        email: data.guest_email, nome: data.guest_name, telefono: data.guest_phone,
+        fonte: 'evento',
+        tags: tagEvento(evento.title),
+        attivita: { tipo: 'evento', titolo: evento.title, origineId: evento.id, riferimento: data.id, entityId: evento.entity_id, dettaglio: { posti, canale: 'telefono' } },
+      }))
+    }
     return Response.json(data, { status: 201 })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }

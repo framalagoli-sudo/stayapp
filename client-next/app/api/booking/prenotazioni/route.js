@@ -3,6 +3,8 @@ import { requireAuth } from '@/lib/server-auth'
 import { verificaPeriodo, totaleGiornaliero } from '@/lib/booking-giornaliero'
 import { contoDelPeriodo } from '@/lib/offerte-risorsa'
 import { confermaPostiPrenotazione } from '@/lib/capienza'
+import { registraContatto } from '@/lib/crm'
+import { after } from 'next/server'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isUUID = v => UUID_RE.test(v)
@@ -132,6 +134,16 @@ export async function POST(request) {
     // posto era già stato preso, questa si ritira.
     if (!(await confermaPostiPrenotazione(risorsa, creata.id)))
       return Response.json({ error: 'Quel posto è appena stato occupato' }, { status: 409 })
+
+    // Anche chi prenota al telefono entra fra i contatti, se ha lasciato un recapito.
+    if (creata.cliente_email || creata.cliente_telefono) {
+      after(() => registraContatto({
+        aziendaId: creata.azienda_id,
+        email: creata.cliente_email, nome: creata.cliente_nome, telefono: creata.cliente_telefono,
+        fonte: 'prenotazione',
+        attivita: { tipo: 'prenotazione', titolo: risorsa.nome, origineId: risorsa.id, riferimento: creata.id, entityId: risorsa.entity_id, dettaglio: { persone, canale: 'telefono' } },
+      }))
+    }
 
     return Response.json(creata, { status: 201 })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }

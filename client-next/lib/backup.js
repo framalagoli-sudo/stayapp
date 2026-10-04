@@ -47,7 +47,7 @@ const TABLES = [
   // il sito: è il prodotto più usato, e mancava del tutto
   'pagine', 'site_snapshots', 'landing_seo', 'domini',
   // clienti e richieste
-  'contatti', 'requests', 'messages', 'demo_requests',
+  'contatti', 'contatti_attivita', 'requests', 'messages', 'demo_requests',
   // moduli
   'eventi', 'event_bookings', 'risorse', 'risorse_promozioni', 'prenotazioni',
   'articoli', 'blog_categories', 'newsletters',

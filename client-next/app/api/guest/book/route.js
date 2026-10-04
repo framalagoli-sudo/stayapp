@@ -3,8 +3,7 @@ import { sendEmail } from '@/lib/send-email'
 import { emailTemplate } from '@/lib/email-template'
 import { triggerAutomazione } from '@/lib/guest-utils'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
-import { dataLocale } from '@/lib/fuso'
-import { fusoDiAzienda } from '@/lib/fuso-azienda'
+import { registraContatto } from '@/lib/crm'
 
 export async function POST(request) {
   try {
@@ -43,15 +42,12 @@ export async function POST(request) {
     let isNewContact = false
     if (azienda_id && email) {
       const noteText = [`Prenotazione ${typeLabel}: ${item_name || ''}`, phone ? `Tel: ${phone}` : null, persons ? `Persone: ${persons}` : null, notes || null].filter(Boolean).join(' — ')
-      const { data: existing } = await supabaseAdmin.from('contatti').select('id, note').eq('azienda_id', azienda_id).eq('email', email.trim()).single()
-      if (existing) {
-        // La data della nota nel fuso dell'azienda, non del server (UTC).
-        const updatedNote = [existing.note, `[${dataLocale(new Date(), await fusoDiAzienda(azienda_id))}] ${noteText}`].filter(Boolean).join('\n\n')
-        await supabaseAdmin.from('contatti').update({ nome: name.trim(), note: updatedNote, updated_at: new Date().toISOString() }).eq('id', existing.id)
-      } else {
-        await supabaseAdmin.from('contatti').insert({ azienda_id, nome: name.trim(), email: email.trim(), telefono: phone || null, fonte: 'pwa', tags: ['prenotazione', entity_tipo], note: noteText, iscritto_newsletter: false })
-        isNewContact = true
-      }
+      const esito = await registraContatto({
+        aziendaId: azienda_id, email, nome: name.trim(), telefono: phone,
+        fonte: 'pwa', tags: ['prenotazione', entity_tipo].filter(Boolean), nota: noteText,
+        attivita: { tipo: 'prenotazione', titolo: item_name || `Prenotazione ${typeLabel}`, entityId: entity_id, dettaglio: persons ? { persone: parseInt(persons) || 1 } : {} },
+      })
+      isNewContact = esito.nuovo
     }
     if (isNewContact && azienda_id) {
       triggerAutomazione('nuovo_contatto', { azienda_id, entity_tipo, entity_id }, { nome: name.trim(), email: email.trim() }).catch(() => {})

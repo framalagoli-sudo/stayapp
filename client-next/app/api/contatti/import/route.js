@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth, getProfile, resolveAziendaId } from '@/lib/server-auth'
 import { rateLimit, tooManyRequests } from '@/lib/rate-limit'
-import { preparaContatti } from '@/lib/contatti-import'
+import { preparaContatti, normalizzaTelefono } from '@/lib/contatti-import'
 
 // Import di una rubrica dentro una lista (tag). Due modalità:
 //  - anteprima: dice cosa succederebbe, senza scrivere niente
@@ -88,6 +88,7 @@ export async function POST(request) {
         nome: c.nome,
         email: c.email,
         telefono: c.telefono,
+        telefono_e164: normalizzaTelefono(c.telefono),
         note: c.note,
         tags: lista ? [lista] : [],
         fonte: 'import',

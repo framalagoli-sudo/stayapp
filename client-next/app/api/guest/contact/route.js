@@ -5,8 +5,7 @@ import { triggerAutomazione } from '@/lib/guest-utils'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { verifyTurnstile } from '@/lib/turnstile'
 import { logError } from '@/lib/observability'
-import { dataLocale } from '@/lib/fuso'
-import { fusoDiAzienda } from '@/lib/fuso-azienda'
+import { registraContatto } from '@/lib/crm'
 
 export async function POST(request) {
   try {
@@ -51,21 +50,23 @@ export async function POST(request) {
       : null
     const notaIniziale = [perche, message.trim()].filter(Boolean).join('\n')
 
+    // Dalla porta unica dei contatti (`lib/crm.js`): stessa regola per
+    // riconoscere la persona, e una riga nel registro che dice cosa ha chiesto.
     let isNewContact = false
     if (azienda_id && email) {
-      const { data: existing } = await supabaseAdmin.from('contatti')
-        .select('id, note').eq('azienda_id', azienda_id).eq('email', email.trim()).single()
-      if (existing) {
-        // La data della nota nel fuso dell'azienda, non del server (UTC).
-        const notes = [existing.note, `[${dataLocale(new Date(), await fusoDiAzienda(azienda_id))}] ${notaIniziale}`].filter(Boolean).join('\n\n')
-        await supabaseAdmin.from('contatti').update({ nome: name.trim(), note: notes, updated_at: new Date().toISOString() }).eq('id', existing.id)
-      } else {
-        await supabaseAdmin.from('contatti').insert({
-          azienda_id, nome: name.trim(), email: email.trim(),
-          fonte: 'minisito', tags: ['lead', entity_tipo, ...(source && source !== 'minisito' ? [source] : [])], note: notaIniziale, iscritto_newsletter: false,
-        })
-        isNewContact = true
-      }
+      const esito = await registraContatto({
+        aziendaId: azienda_id, email, nome: name.trim(),
+        fonte: 'minisito',
+        tags: ['lead', entity_tipo, ...(source && source !== 'minisito' ? [source] : [])].filter(Boolean),
+        nota: notaIniziale,
+        attivita: {
+          tipo: 'richiesta', entityId: entity_id,
+          titolo: source === 'offerta' && source_name ? `Interesse per: ${String(source_name).slice(0, 120)}`
+            : source === 'vetrina' && source_name ? `Richiesta su: ${String(source_name).slice(0, 120)}`
+            : 'Messaggio dal sito',
+        },
+      })
+      isNewContact = esito.nuovo
     }
 
     if (isNewContact && azienda_id) {

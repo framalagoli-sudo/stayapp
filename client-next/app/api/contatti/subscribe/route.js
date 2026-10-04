@@ -4,6 +4,8 @@ import { sendEmail } from '@/lib/send-email'
 import { guestEmailTemplate } from '@/lib/email-template'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { verifyTurnstile } from '@/lib/turnstile'
+import { registraAttivita } from '@/lib/crm'
+import { normalizzaTelefono } from '@/lib/contatti-import'
 
 async function sendConfirmationEmail({ email, nome, entityName, token }) {
   if (!email || !process.env.RESEND_API_KEY) return
@@ -45,18 +47,21 @@ export async function POST(request) {
         if (existing.iscritto_newsletter) return Response.json({ ok: true, duplicate: true })
         const token = randomUUID()
         await supabaseAdmin.from('contatti').update({ confirmation_token: token, nome: nome?.trim() || undefined, updated_at: new Date().toISOString() }).eq('id', existing.id)
+        await registraAttivita(azienda_id, existing.id, { tipo: 'newsletter', titolo: 'Iscrizione alla newsletter', riferimento: 'iscrizione' })
         await sendConfirmationEmail({ email: email.trim(), nome: nome?.trim(), entityName, token })
         return Response.json({ ok: true, pending_confirmation: true })
       }
     }
 
     const token = randomUUID()
-    const { error } = await supabaseAdmin.from('contatti').insert({
+    const { data: creato, error } = await supabaseAdmin.from('contatti').insert({
       azienda_id, nome: nome?.trim() || email?.trim() || '',
       email: email?.trim() || null, telefono: telefono?.trim() || null,
+      telefono_e164: normalizzaTelefono(telefono),
       fonte, iscritto_newsletter: false, confirmation_token: token, tags: ['newsletter'],
-    })
+    }).select('id').maybeSingle()
     if (error) return Response.json({ error: error.message }, { status: 500 })
+    if (creato?.id) await registraAttivita(azienda_id, creato.id, { tipo: 'newsletter', titolo: 'Iscrizione alla newsletter', riferimento: 'iscrizione' })
     await sendConfirmationEmail({ email: email?.trim(), nome: nome?.trim(), entityName, token })
     return Response.json({ ok: true, pending_confirmation: true }, { status: 201 })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }

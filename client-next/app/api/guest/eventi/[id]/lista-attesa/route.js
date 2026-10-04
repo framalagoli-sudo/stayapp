@@ -97,6 +97,7 @@ export async function POST(request, props) {
       email: guest_email, nome: guest_name, telefono: guest_phone,
       fonte: 'evento',
       tags: [...tagEvento(evento.title), 'lista attesa'],
+      attivita: { tipo: 'lista_attesa', titolo: evento.title, origineId: evento.id, riferimento: data.id, entityId: evento.entity_id, dettaglio: { posti } },
       nota: `In lista d'attesa per «${evento.title}» — ${posti} ${posti === 1 ? 'posto' : 'posti'}: voleva venire e non è entrato.`,
     }))
 
