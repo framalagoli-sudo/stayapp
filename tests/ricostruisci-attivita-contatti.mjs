@@ -55,7 +55,10 @@ async function tutte(tabella, colonne) {
 
 const aziende = await tutte('aziende', 'id, ragione_sociale, created_at')
 const nomeAz = Object.fromEntries(aziende.map(z => [z.id, z.ragione_sociale]))
-const contatti = await tutte('contatti', 'id, azienda_id, nome, email, telefono, telefono_e164, fonte, tags, attivita_numero, created_at')
+// Le aziende ZZ sono quelle che le sonde creano e cancellano: se una gira
+// mentre si ricostruisce, i suoi contatti spariscono a metà lavoro. Si saltano.
+const diProva = new Set(aziende.filter(z => (z.ragione_sociale || '').startsWith('ZZ-')).map(z => z.id))
+const contatti = (await tutte('contatti', 'id, azienda_id, nome, email, telefono, telefono_e164, fonte, tags, attivita_numero, created_at')).filter(c => !diProva.has(c.azienda_id))
 const esistenti = new Set((await tutte('contatti_attivita', 'contatto_id, tipo, riferimento, created_at')).map(r => `${r.contatto_id}|${r.tipo}|${r.riferimento}`))
 
 // ── 1. La chiave del telefono ────────────────────────────────────────────────
@@ -98,7 +101,7 @@ function riga(c, aziendaId, r) {
 // ── 2. Eventi ────────────────────────────────────────────────────────────────
 const eventi = new Map((await tutte('eventi', 'id, title, azienda_id, entity_id, created_at')).map(e => [e.id, e]))
 for (const b of await tutte('event_bookings', 'id, event_id, guest_name, guest_email, guest_phone, seats, status, created_at')) {
-  const ev = eventi.get(b.event_id); if (!ev) continue
+  const ev = eventi.get(b.event_id); if (!ev || diProva.has(ev.azienda_id)) continue
   const c = contattoDi(ev.azienda_id, { email: b.guest_email, telefono: b.guest_phone, nome: b.guest_name, fonte: 'evento', quando: b.created_at })
   if (!c) { segna(ev.azienda_id, 'prenotazioni senza recapito (restano fuori)'); continue }
   riga(c, ev.azienda_id, { tipo: b.status === 'waitlist' ? 'lista_attesa' : 'evento', titolo: ev.title, origine_id: ev.id, riferimento: b.id, entity_id: ev.entity_id, dettaglio: { posti: b.seats || 1 }, avvenuta_il: b.created_at })
@@ -108,6 +111,7 @@ for (const b of await tutte('event_bookings', 'id, event_id, guest_name, guest_e
 const risorse = new Map((await tutte('risorse', 'id, nome, created_at')).map(r => [r.id, r]))
 const offerte = new Map((await tutte('offerte', 'id, titolo, created_at')).map(o => [o.id, o]))
 for (const p of await tutte('prenotazioni', 'id, azienda_id, entity_id, risorsa_id, offerta_id, cliente_nome, cliente_email, cliente_telefono, n_persone, created_at')) {
+  if (diProva.has(p.azienda_id)) continue
   const c = contattoDi(p.azienda_id, { email: p.cliente_email, telefono: p.cliente_telefono, nome: p.cliente_nome, fonte: 'prenotazione', quando: p.created_at })
   if (!c) { segna(p.azienda_id, 'prenotazioni senza recapito (restano fuori)'); continue }
   const cosa = p.offerta_id ? offerte.get(p.offerta_id) : risorse.get(p.risorsa_id)
