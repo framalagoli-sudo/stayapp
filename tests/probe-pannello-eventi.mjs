@@ -105,15 +105,18 @@ try {
     await page.waitForTimeout(800)
     ok(/rimborso NON parte da solo/i.test(domanda) && (await stato('ZZ Pagata')).status === 'confirmed', 'annullare una pagata avverte del rimborso, e dicendo no non succede niente')
     // Ripristinare un'annullata su un evento PIENO viene rifiutato, e lo si dice.
+    // ⚠️ Si aspetta il messaggio, non un tempo fisso: in produzione la risposta
+    // può metterci più di un secondo e mezzo, e la sonda dava rosso a torto.
     let avviso = ''
-    page.once('dialog', d => { avviso = d.message(); d.accept() })
+    const arriva = page.waitForEvent('dialog', { timeout: 20000 }).then(d => { avviso = d.message(); return d.accept() }).catch(() => {})
     await riga('ZZ Annullata').getByRole('button', { name: 'Ripristina prenotazione', exact: true }).click()
-    await page.waitForTimeout(1500)
+    await arriva
+    await page.waitForTimeout(500)
     ok(/Non c'è spazio/i.test(avviso) && (await stato('ZZ Annullata')).status === 'cancelled', `ripristinare su un evento pieno è rifiutato con un messaggio («${avviso.slice(0, 60)}»)`)
     // Confermare chi attende il pagamento = paga sul posto.
     await riga('ZZ AllaCassa').getByRole('button', { name: 'Conferma: paga sul posto', exact: true }).click()
-    await page.waitForTimeout(1500)
-    const cassa = await stato('ZZ AllaCassa')
+    let cassa = await stato('ZZ AllaCassa')
+    for (let i = 0; i < 20 && cassa.status !== 'confirmed'; i++) { await page.waitForTimeout(1000); cassa = await stato('ZZ AllaCassa') }
     ok(cassa.status === 'confirmed' && cassa.pagamento_stato === 'non_richiesto', `«Conferma: paga sul posto» la conferma senza pagamento online (${cassa.status}/${cassa.pagamento_stato})`)
 
     console.log('\n3 · IL PANNELLO DEGLI INVII\n')
