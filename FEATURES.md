@@ -686,7 +686,7 @@ Metodologia: voce per voce, spunta quando confermato ok in produzione.
 
 #### Rate limiting (mancante sulle route pubbliche)
 - [ ] `/api/guest/contact` — max 5 req/IP/ora
-- [ ] `/api/guest/book` — max 10 req/IP/ora
+- [x] `/api/guest/book` — **route rimossa il 04/10/2026**: raccoglieva dati senza consenso e nessuna pagina la chiamava più (le app usano `/api/guest/prenota`)
 - [ ] `/api/contatti/subscribe` — max 3 req/IP/ora
 - [ ] `/api/auth/forgot-password` — max 3 req/IP/ora (già ha qualcosa?)
 - [ ] `/api/ai/*` — già limitato per azienda, aggiungere anche IP rate limit

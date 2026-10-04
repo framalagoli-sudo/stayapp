@@ -32,23 +32,19 @@ try {
   entita = e
   console.log(`\nazienda ed entità di prova create (email interna, nessun titolare reale disturbato)\n`)
 
-  // ── 1. Prenotazioni ospite ripetute ─────────────────────────────────────────
-  console.log('[1] prenotazioni ospite ripetute (ognuna scrive nel CRM e manda un’email)')
-  let passate = 0, bloccataAl = null
-  for (let i = 1; i <= 16; i++) {
-    const r = await fetch(`${BASE}/api/guest/book`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        entity_tipo: 'struttura', entity_id: entita.id,
-        item_type: 'activity', item_name: 'Prova',
-        name: `Probe ${i}`, email: `probe${i}@playwright.internal`,
-      }),
-    })
-    if (r.status === 429) { bloccataAl = i; break }
-    if (r.ok) passate++
-  }
-  console.log(`     ${passate} passate${bloccataAl ? `, bloccata alla n° ${bloccataAl}` : ', mai bloccata'}`)
-  esito(!!bloccataAl, bloccataAl ? 'il limite scatta' : 'nessun limite: si inonda la casella di un cliente')
+  // ── 1. La vecchia porta delle prenotazioni dall'app ─────────────────────────
+  // Qui si provava che `/api/guest/book` avesse un limite. Dal 04/10/2026 la
+  // route non esiste più: raccoglieva dati personali senza consenso e nessuna
+  // pagina la chiamava. Il controllo ora è che resti chiusa.
+  console.log('[1] la vecchia porta delle prenotazioni dall’app')
+  const vecchia = await fetch(`${BASE}/api/guest/book`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ entity_tipo: 'struttura', entity_id: entita.id, item_type: 'activity', item_name: 'Prova', name: 'Probe', email: 'probe@playwright.internal' }),
+  })
+  console.log(`     HTTP ${vecchia.status}`)
+  // 404 o 405: tolta la route, l'indirizzo ricade su /api/guest/[slug], che accetta solo letture.
+  const chiusa = [404, 405].includes(vecchia.status)
+  esito(chiusa, chiusa ? 'è chiusa' : 'risponde ancora: raccoglie dati senza consenso')
 
   // ── 2. Reinvio della stessa recensione negativa ─────────────────────────────
   console.log('\n[2] la stessa recensione NEGATIVA reinviata più volte')

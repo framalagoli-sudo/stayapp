@@ -140,12 +140,13 @@ try {
     ok(di(c, gio)?.telefono_e164 === '+390744123456', `e il fisso senza prefisso diventa internazionale (${di(c, gio)?.telefono_e164})`)
   }
 
-  console.log('\n8b · RICHIESTA DALL’APP DEL QR\n')
-  const leo = `zz-leo-${t}@playwright.internal`
-  r = await manda('/api/guest/book', { entity_tipo: 'ristorante', entity_id: ent.id, item_type: 'excursion', item_name: 'ZZ Giro in barca', name: 'ZZ Leo', email: leo, phone: '328 4445566', persons: 3 })
-  c = await finche(l => di(l, leo)?.attivita_numero === 1, 12)
-  reg = di(c, leo) ? await registro(di(c, leo).id) : []
-  ok(r.stato < 300 && reg[0]?.tipo === 'prenotazione' && reg[0]?.titolo === 'ZZ Giro in barca' && reg[0]?.dettaglio?.persone === 3 && di(c, leo)?.fonte === 'pwa', `la richiesta dall’app entra con quello che ha chiesto (HTTP ${r.stato}${r.j?.error ? ' ' + r.j.error : ''}, ${reg[0]?.titolo || 'non c’è'})`)
+  console.log('\n8b · LA VECCHIA PORTA DELL’APP È CHIUSA\n')
+  // `/api/guest/book` raccoglieva nome, email e telefono SENZA chiedere il
+  // consenso, e nessuna nostra pagina la chiamava più dall'8 maggio. Spenta il
+  // 04/10/2026: le app prenotano da `/api/guest/prenota`, che il consenso lo pretende.
+  r = await manda('/api/guest/book', { entity_tipo: 'ristorante', entity_id: ent.id, item_type: 'excursion', item_name: 'ZZ Giro in barca', name: 'ZZ Leo', email: `zz-leo-${t}@playwright.internal`, phone: '328 4445566', persons: 3 })
+  await pausa(1500)
+  ok([404, 405].includes(r.stato) && !(await contatti()).some(x => x.nome === 'ZZ Leo'), `non risponde più e non scrive niente (HTTP ${r.stato})`)
 
   console.log('\n9 · AGGIUNTO A MANO, E CORRETTO\n')
   r = await manda('/api/contatti', { nome: 'ZZ Ilaria', telefono: '339 0001122' }, H)

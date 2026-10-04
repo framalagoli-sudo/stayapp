@@ -527,6 +527,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - 🔒 Webhook WhatsApp: lo STOP toglieva il consenso cercando il numero in **tutte le aziende**; ora si risale all'azienda dal numero che ha ricevuto il messaggio. Chi scrive entra fra i contatti (una riga al giorno nel registro). ⚠️ **Scritto e non provato dal vivo**: serve Meta.
     - ⚠️ I tag per evento si creano ancora: la newsletter sceglie i destinatari per tag (`tag_filter`). Si toglieranno quando saprà scegliere una lista.
     - Sonde (a mano): `probe-contatti-attivita.mjs` (database: conta, rifiuta, è chiuso), `probe-contatti-porte.mjs` (percorre le porte). `ricostruisci-attivita-contatti.mjs` riscrive la storia di chi c'era già: **simula** finché non gli si passa `--esegui`.
+    - 🚪 **`/api/guest/book` rimossa** (ok di Francesco): raccoglieva nome, email e telefono **senza chiedere il consenso**, e nessuna pagina la chiamava dall'8 maggio. Una porta pubblica che nessuno usa è solo superficie esposta. Le app prenotano da `/api/guest/prenota`.
     - ⛔ Mai `next build` in `client-next/` con il dev server acceso: condividono `.next`.
 
 ---
