@@ -137,9 +137,18 @@ try {
   const persone = new Set((inLista.data || []).map(x => x.contatto_id)).size
   ok(d.j.quanti === 3 && d.j.lista?.persone === persone && persone >= 7, `arriverebbe ai 3 iscritti della lista, su ${persone} persone (${d.j.quanti} su ${d.j.lista?.persone})`)
   ok(!/playwright\.internal|ZZ Con Spunta/.test(d.grezzo), 'il conto non fa uscire nomi né indirizzi')
-  // Senza lista arriverebbe a tutti gli iscritti dell'azienda (5: anche lista d'attesa e offerta).
+  // Senza lista arriverebbe a tutti gli iscritti dell'azienda che si possono raggiungere.
+  // ⚠️ Il numero si legge dal database, non si scrive a mano: in produzione un
+  // indirizzo finto viene segnato «email non valida» in pochi secondi (la
+  // conferma della lista d'attesa parte davvero e rimbalza), e chi ha
+  // un'email non valida resta iscritto ma NON è un destinatario. Con «5»
+  // scritto a mano la sonda dava rosso su un comportamento giusto.
+  await pausa(8000)
+  const raggiungibili = async () => (await deve(a.from('contatti').select('email, email_non_valida').eq('azienda_id', mia.id).eq('iscritto_newsletter', true), 'lettura')).filter(x => x.email && !x.email_non_valida)
+  const attesi = (await raggiungibili()).length
+  ok(attesi >= 4 && attesi > 3, `gli iscritti raggiungibili dell’azienda sono più dei 3 della lista (${attesi})`)
   const tutti = await manda('/api/newsletter', { azienda_id: mia.id, entity_tipo: 'ristorante', entity_id: mia.ent.id }, H)
-  ok((await conta(tutti.j.id)).j.quanti === 5, 'senza lista arriva a tutti gli iscritti: la lista restringe davvero')
+  ok((await conta(tutti.j.id)).j.quanti === attesi, `senza lista arriva a tutti gli iscritti raggiungibili (${attesi}): la lista restringe davvero`)
   // Una lista che non esiste (più): ci si ferma, non si scrive a tutti.
   const finta = await manda('/api/newsletter', { azienda_id: mia.id, entity_tipo: 'ristorante', entity_id: mia.ent.id, lista: { chiave: 'evento|00000000-0000-4000-8000-000000000000', titolo: 'Una serata cancellata' } }, H)
   const df = await conta(finta.j.id)
@@ -152,7 +161,7 @@ try {
   ok((await conta(nl.j.id, { Authorization: `Bearer ${sAltra.access_token}` })).stato === 404 && (await fetch(`${BASE}/api/newsletter/${nl.j.id}/destinatari`)).status === 401, 'il conto di una newsletter altrui non si legge, e senza login nemmeno')
   // Togliere la lista dalla bozza.
   const tolta = await fetch(`${BASE}/api/newsletter/${nl.j.id}`, { method: 'PATCH', headers: { ...H, 'content-type': 'application/json' }, body: JSON.stringify({ lista: null }) }).then(r => r.json())
-  ok(tolta.lista === null && (await conta(nl.j.id)).j.quanti === 5, 'togliendo la lista dalla bozza si torna a tutti gli iscritti')
+  ok(tolta.lista === null && (await conta(nl.j.id)).j.quanti === attesi, 'togliendo la lista dalla bozza si torna a tutti gli iscritti')
 
   console.log('\n3 · NEL SITO E NEL PANNELLO\n')
   browser = await chromium.launch()
@@ -185,11 +194,13 @@ try {
   page.on('pageerror', e => errori.push(e.message))
   await page.goto(`${BASE}/admin/contatti`, { waitUntil: 'domcontentloaded' })
   await page.locator('[data-tabella-contatti]').waitFor({ timeout: 60000 })
-  await page.locator('[data-lista]', { hasText: 'ZZ Serata piena' }).click()
   const scrivi = page.locator('[data-scrivi-lista]')
-  ok(/Scrivi a questa lista \(1\)/.test(await scrivi.innerText()) && await scrivi.isEnabled(), `il pulsante dice a quanti arriverà: «${(await scrivi.innerText()).trim()}»`)
   await page.locator('[data-lista]', { hasText: 'ZZ Degustazione consenso' }).click()
-  ok(/\(1\)/.test(await scrivi.innerText()), 'e cambia con la lista')
+  ok(/Scrivi a questa lista \(1\)/.test(await scrivi.innerText()) && await scrivi.isEnabled(), `il pulsante dice a quanti arriverà: «${(await scrivi.innerText()).trim()}»`)
+  // Chi è in lista d'attesa ha detto sì, ma se la sua email risulta non valida non conta: il pulsante segue il database.
+  await page.locator('[data-lista]', { hasText: 'ZZ Serata piena' }).click()
+  const inAttesa = (await raggiungibili()).filter(x => x.email === att).length
+  ok(inAttesa ? /\(1\)/.test(await scrivi.innerText()) : await scrivi.isDisabled(), `e cambia con la lista: un’email che rimbalza non viene contata (${inAttesa ? 'valida: 1' : 'non valida: pulsante spento'})`)
   await page.locator('[data-lista="fonte|manuale"]').click()
   ok(await scrivi.isDisabled() && /Nessuno in questa lista ha dato il consenso/.test(await scrivi.getAttribute('title')), 'dove nessuno ha detto sì non si preme, e dice perché')
   await page.locator('[data-lista]', { hasText: 'ZZ Serata consenso' }).click()

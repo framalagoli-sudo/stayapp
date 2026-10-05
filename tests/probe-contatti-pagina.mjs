@@ -300,6 +300,8 @@ try {
   await d.locator('[data-spunta]').nth(1).check()
   ok(/2 selezionati/.test(await barra()), 'si possono spuntare anche una per una')
   await d.locator('[data-lista="tutti"]').click()
+  // Si aspetta l'esito, non un istante: la selezione si svuota al giro successivo.
+  await d.locator('[data-barra-blocco]').waitFor({ state: 'detached', timeout: 5000 }).catch(() => {})
   ok(await d.locator('[data-barra-blocco]').count() === 0, 'cambiando lista la selezione si svuota: non si agisce su chi non si vede')
   // Eliminare chiede, dice quanti e che non si annulla.
   await d.locator('[data-lista]', { hasText: 'natale 2026' }).click()
