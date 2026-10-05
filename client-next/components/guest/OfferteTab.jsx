@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { MapPin, Clock, CalendarDays, CheckCircle } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
+import SpuntaPromozioni from './SpuntaPromozioni'
 
 // Stile dei campi di testo: uno solo, invece di ripeterlo a ogni input.
 const campoStyle = (radius, bordo, sfondo, testo) => ({
@@ -27,6 +28,7 @@ export default function OfferteTab({ offerte = [], propertyId, numeroWhatsapp = 
   const [nome,      setNome]      = useState('')
   const [contatto,  setContatto]  = useState('')
   const [privacyOk, setPrivacyOk] = useState(false)
+  const [promozioni, setPromozioni] = useState(false)
   const [erroreTesto, setErroreTesto] = useState('')
 
   const cardBg     = isDark ? '#2a2a3e' : '#fff'
@@ -87,6 +89,7 @@ export default function OfferteTab({ offerte = [], propertyId, numeroWhatsapp = 
           n_persone: persons,
           messaggio: notes.trim() || null,
           privacy_accettata: privacyOk, canale: canale || 'email',
+          promozioni: promozioni && contatto.includes('@'),
         }),
       })
       // La richiesta è registrata: da qui in poi il titolare ce l'ha comunque,
@@ -198,6 +201,8 @@ export default function OfferteTab({ offerte = [], propertyId, numeroWhatsapp = 
                     style={{ marginTop: 2, accentColor: primary, flexShrink: 0 }} />
                   <span>Ho letto e accetto l’informativa sulla privacy. I miei dati saranno usati per gestire questa richiesta.</span>
                 </label>
+                {/* Le novità arrivano per email: la casella compare solo se è un'email quella lasciata. */}
+                {contatto.includes('@') && <SpuntaPromozioni checked={promozioni} onChange={setPromozioni} accento={primary} style={{ fontSize: 12.5, color: subText, margin: '-4px 0 14px' }} />}
 
                 {bookState === 'error' && <p style={{ color: '#e53e3e', fontSize: 13, margin: '0 0 12px' }}>{erroreTesto || 'Errore nell\'invio. Riprova.'}</p>}
 

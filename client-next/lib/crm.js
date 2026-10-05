@@ -149,6 +149,11 @@ async function annunciaNuovoContatto({ aziendaId, id, nome, email, telefono, ent
  *
  * Serve un'email **o** un telefono. `attivita` è facoltativa (vedi `registraAttivita`).
  *
+ * `promozioni` = `{ testo, fonte }` quando la persona ha spuntato la casella
+ * «avvisatemi…»: si salva il sì insieme alla frase letta, al momento e al modulo.
+ * Vale per l'EMAIL — è lì che arrivano le newsletter — quindi senza un'email
+ * non si scrive niente. Chi è già iscritto tiene la prova che aveva.
+ *
  * `nota` va nelle note del contatto e serve SOLO per le parole della persona (il
  * messaggio scritto dal modulo del sito). Cosa ha fatto — «ha prenotato…» — non
  * si scrive lì: sta nel registro. Era la stessa storia scritta due volte, e nelle
@@ -157,7 +162,7 @@ async function annunciaNuovoContatto({ aziendaId, id, nome, email, telefono, ent
  * @returns {{ nuovo: boolean, id: string|null }} `nuovo` serve a far partire
  *   l'automazione «nuovo contatto» una volta sola, non a ogni prenotazione.
  */
-export async function registraContatto({ aziendaId, email, nome, telefono, fonte, tags = [], nota, attivita = null }) {
+export async function registraContatto({ aziendaId, email, nome, telefono, fonte, tags = [], nota, attivita = null, promozioni = null }) {
   const mail = String(email || '').trim().toLowerCase() || null
   const tel = String(telefono || '').trim() || null
   const e164 = normalizzaTelefono(tel)
@@ -212,6 +217,23 @@ export async function registraContatto({ aziendaId, email, nome, telefono, fonte
       if (error) throw new Error(error.message)
       id = creato?.id || null
       nuovo = !!id
+    }
+
+    // Il sì alle promozioni, con la sua prova. Solo se non era già iscritto: la
+    // prova di un consenso dato prima non si sovrascrive con una più recente.
+    //
+    // ⚠️ Il sì vale per l'email che la persona ha appena scritto. Se è stata
+    // riconosciuta dal telefono e nella scheda c'è un'ALTRA email, quella non
+    // l'ha autorizzata nessuno: non si iscrive un indirizzo diverso da quello
+    // a cui è stato detto sì.
+    const emailDellaScheda = esistente?.email ? String(esistente.email).trim().toLowerCase() : mail
+    if (id && promozioni?.testo && mail && emailDellaScheda === mail) {
+      await supabaseAdmin.from('contatti').update({
+        iscritto_newsletter: true,
+        marketing_consenso_il: new Date().toISOString(),
+        marketing_consenso_testo: String(promozioni.testo).slice(0, 300),
+        marketing_consenso_fonte: String(promozioni.fonte || 'modulo di prenotazione').slice(0, 200),
+      }).eq('id', id).eq('iscritto_newsletter', false)
     }
 
     if (id && attivita) await registraAttivita(aziendaId, id, attivita)

@@ -138,6 +138,9 @@ export default function NewsletterEditorPage() {
   const [testState, setTestState] = useState('idle')
   const [sendState, setSendState] = useState('idle')
   const [recipientCount, setRecipientCount] = useState(null)
+  // La lista di contatti a cui è destinata, se c'è (si sceglie dalla pagina Contatti).
+  const [lista, setLista] = useState(null)
+  const [destinatari, setDestinatari] = useState(null)   // { lista, problema } dal conto del server
   const [sendConfirm, setSendConfirm] = useState(false)
   const [emojiOpen, setEmojiOpen] = useState(false)
   const iframeRef = useRef(null)
@@ -166,6 +169,7 @@ export default function NewsletterEditorPage() {
         // l'invio di due ore.
         setScheduledAt(perCampoDataOra(data.scheduled_at, fuso))
         setTagFilter(data.tag_filter || [])
+        setLista(data.lista || null)
         setTemplateId(data.template_id || 'semplice')
         setContent(data.content && Object.keys(data.content).length ? data.content : DEFAULT_CONTENT[data.template_id] || DEFAULT_CONTENT.semplice)
         setEntityTipo(data.entity_tipo || 'struttura')
@@ -196,6 +200,7 @@ export default function NewsletterEditorPage() {
           entity_tipo: entityTipo, entity_id: entityId || null,
           scheduled_at: daCampoDataOra(scheduledAt, fuso)?.toISOString() || null,
           tag_filter: tagFilter.length ? tagFilter : null,
+          lista,
         }),
       })
       setNl(updated)
@@ -238,12 +243,16 @@ export default function NewsletterEditorPage() {
   }
 
   async function fetchRecipients() {
-    // Stima: contatti iscritti newsletter dell'azienda
+    // ⛔ Contava TUTTI gli iscritti, anche con un filtro: il numero letto non
+    // era quello delle email che partivano. Ora lo dice il server, con lo
+    // stesso conto dell'invio — e prima si salva, perché il conto si fa su
+    // quello che è scritto nel database, non su quello che c'è a schermo.
     setSendConfirm(true)
-    setRecipientCount(null)
+    setRecipientCount(null); setDestinatari(null)
     try {
-      const data = await apiFetch('/api/contatti?newsletter=true')
-      setRecipientCount(data.length)
+      await save()
+      const d = await apiFetch(`/api/newsletter/${id}/destinatari`)
+      setRecipientCount(d.quanti); setDestinatari(d)
     } catch { setRecipientCount('?') }
   }
 
@@ -380,6 +389,16 @@ export default function NewsletterEditorPage() {
                   <option value="">— seleziona —</option>
                   {allEntities.map(e => <option key={e.id} value={e.id}>{e.label} ({e.tipo})</option>)}
                 </select>
+              </div>
+            )}
+            {/* La lista scelta dalla pagina Contatti. Chi c'è dentro si ricalcola
+                all'invio: chi prenota domani la riceve. */}
+            {lista && (
+              <div data-lista-newsletter style={{ background: '#f0f4ff', border: '1px solid #c3dafe', borderRadius: 10, padding: '10px 12px' }}>
+                <span style={label}>Destinatari</span>
+                <div style={{ fontSize: 13.5, color: '#1a1a2e', fontWeight: 600, overflowWrap: 'anywhere' }}>{lista.titolo || 'Una lista di contatti'}</div>
+                <div style={{ fontSize: 12, color: '#666', marginTop: 3, lineHeight: 1.5 }}>Arriva solo a chi è in questa lista <strong>e</strong> ha dato il consenso a ricevere email.</div>
+                {!isSent && <button type="button" onClick={() => setLista(null)} style={{ marginTop: 6, background: 'none', border: 'none', padding: 0, color: '#2b6cb0', fontSize: 12.5, cursor: 'pointer', textDecoration: 'underline' }}>Togli la lista: scrivi a tutti gli iscritti</button>}
               </div>
             )}
             {!isSent && (
@@ -534,7 +553,13 @@ export default function NewsletterEditorPage() {
             <p style={{ color: '#888', fontSize: 14 }}>Calcolo destinatari…</p>
           ) : (
             <p style={{ fontSize: 15, color: '#444', margin: '0 0 20px', lineHeight: 1.6 }}>
-              Stai per inviare questa newsletter a <strong>{recipientCount}</strong> iscritti. L'operazione non è reversibile.
+              {destinatari?.problema ? (
+                <span style={{ color: '#c53030' }}>{destinatari.problema}</span>
+              ) : (
+                <>Stai per inviare questa newsletter a <strong>{recipientCount}</strong> {recipientCount === 1 ? 'iscritto' : 'iscritti'}
+                  {destinatari?.lista && <> della lista <strong>{destinatari.lista.titolo}</strong> ({destinatari.lista.persone} {destinatari.lista.persone === 1 ? 'persona' : 'persone'} in tutto: riceve solo chi ha dato il consenso)</>}
+                  . L'operazione non è reversibile.</>
+              )}
             </p>
           )}
           {sendState === 'ok' && <FeedbackRow ok>Newsletter inviata con successo!</FeedbackRow>}
@@ -544,7 +569,7 @@ export default function NewsletterEditorPage() {
               flex: 1, padding: '11px', background: '#f5f5f5', color: '#555',
               border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer',
             }}>Annulla</button>
-            <button onClick={sendAll} disabled={sendState === 'loading' || recipientCount === null} style={{
+            <button onClick={sendAll} disabled={sendState === 'loading' || recipientCount === null || !recipientCount || !!destinatari?.problema} style={{
               flex: 1, padding: '11px', background: '#1a1a2e', color: '#fff',
               border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,

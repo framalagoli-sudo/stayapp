@@ -14,6 +14,7 @@ import { guestEmailTemplate } from '@/lib/email-template'
 import { logError } from '@/lib/observability'
 import { getAziendaLegale } from '@/lib/guest-data'
 import { registraContatto } from '@/lib/crm'
+import { testoConsensoPromozioni } from '@/lib/consenso-promozioni'
 
 // La formula che chi prenota accetta. La decide il server, non il componente:
 // è il server a scriverla nella prova, e se le due copie divergessero
@@ -327,6 +328,8 @@ export async function POST(request) {
       email: prenotazione.cliente_email, nome: prenotazione.cliente_nome, telefono: prenotazione.cliente_telefono,
       fonte: 'prenotazione',
       attivita: { tipo: 'prenotazione', titolo: risorsa.nome, origineId: risorsa.id, riferimento: prenotazione.id, entityId: risorsa.entity_id, dettaglio: { persone } },
+      // Solo se la casella è stata spuntata: prenotare non è iscriversi.
+      promozioni: body.promozioni === true ? { testo: testoConsensoPromozioni('altro', body.lang), fonte: `prenotazione di «${risorsa.nome}»` } : null,
     })
 
     // 🔒 Il consenso a essere avvisati su WhatsApp è una **prova**, non una

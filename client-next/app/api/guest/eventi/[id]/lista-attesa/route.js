@@ -8,6 +8,7 @@ import { registraContatto, tagEvento } from '@/lib/crm'
 import { eventoConcluso } from '@/lib/evento-concluso'
 import { oraLocale } from '@/lib/fuso'
 import { after } from 'next/server'
+import { testoConsensoPromozioni } from '@/lib/consenso-promozioni'
 
 // «Avvisatemi se si libera un posto.»
 //
@@ -32,7 +33,9 @@ export async function POST(request, props) {
     const rl = await rateLimit(request, { name: 'evento-attesa', limit: 10, windowSec: 3600, ip })
     if (!rl.allowed) return tooManyRequests()
 
-    const { guest_name, guest_email, guest_phone, seats, privacy_accettata } = await request.json()
+    const corpo = await request.json()
+    const { guest_name, guest_email, guest_phone, seats, privacy_accettata } = corpo
+    const promozioni = corpo.promozioni === true ? testoConsensoPromozioni('evento', corpo.lang) : null
     if (!guest_name?.trim()) return Response.json({ error: 'Nome obbligatorio' }, { status: 400 })
     if (!guest_email?.trim()) return Response.json({ error: 'Email obbligatoria' }, { status: 400 })
     // Qui si raccolgono nome, email e telefono: senza consenso non si
@@ -98,6 +101,7 @@ export async function POST(request, props) {
       fonte: 'evento',
       tags: [...tagEvento(evento.title), 'lista attesa'],
       attivita: { tipo: 'lista_attesa', titolo: evento.title, origineId: evento.id, riferimento: data.id, entityId: evento.entity_id, dettaglio: { posti } },
+      promozioni: promozioni && { testo: promozioni, fonte: `lista d’attesa dell’evento «${evento.title}»` },
     }))
 
     // Una conferma che dice la verità: **non** è una prenotazione.

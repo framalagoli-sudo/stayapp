@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
+import { listaValida } from '@/lib/newsletter-destinatari'
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
@@ -44,6 +45,8 @@ export async function POST(request) {
     const { data, error } = await supabaseAdmin.from('newsletters').insert({
       azienda_id, subject, preheader, template_id, content, entity_tipo,
       entity_id: entity_id || null, status: 'draft', scheduled_at: scheduled_at || null,
+      // La lista di contatti a cui è destinata (dalla pagina Contatti: «Scrivi a questa lista»).
+      lista: listaValida(body.lista),
     }).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
     return Response.json(data, { status: 201 })

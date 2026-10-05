@@ -22,6 +22,7 @@ import { supabase } from '@/lib/supabase'
 import RequestForm from './RequestForm'
 import CampoPosti, { numeroPosti } from './CampoPosti'
 import RiepilogoPrenotazione from './RiepilogoPrenotazione'
+import SpuntaPromozioni from './SpuntaPromozioni'
 import ServicesTab from './ServicesTab'
 import MenuTab from '@/components/MenuTab'
 import { sezioniOspite, etichettaSezione } from '@/lib/funzioni'
@@ -748,6 +749,7 @@ function EventoDetailView({ evento, onBack, privacyUrl = null, primary, textColo
   const [bookErr,    setBookErr]    = useState('')
   const [notes,      setNotes]      = useState('')
   const [privacyOk,  setPrivacyOk]  = useState(false)
+  const [promozioni, setPromozioni] = useState(false)
   // Il telefono lo pretende chi organizza l'evento, non la piattaforma.
   const telefonoServe = evento.telefono_obbligatorio === true
 
@@ -775,7 +777,7 @@ function EventoDetailView({ evento, onBack, privacyUrl = null, primary, textColo
           // l'ospite avesse una spunta da mettere. Rotta in silenzio per un mese.
           body: JSON.stringify({ guest_name: guestName, guest_email: guestEmail,
             guest_phone: guestPhone || null, package_id: pkgId || null, seats: posti,
-            notes: notes.trim() || null, privacy_accettata: privacyOk }),
+            notes: notes.trim() || null, privacy_accettata: privacyOk, promozioni, lang }),
       })
       // ⛔ Il link della cassa veniva ignorato: chi prenotava da qui un evento
       // a pagamento leggeva «Prenotazione inviata!», non pagava mai, e dopo
@@ -872,6 +874,7 @@ function EventoDetailView({ evento, onBack, privacyUrl = null, primary, textColo
                   {privacyUrl && <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: primary, fontWeight: 600 }}>{tr('privacy_policy', lang)}</a>}
                 </span>
               </label>
+              <SpuntaPromozioni tipo="evento" lingua={lang} checked={promozioni} onChange={setPromozioni} accento={primary} style={{ color: subText, fontSize: 12.5, margin: '0 0 14px' }} />
               {bookErr && <p style={{ color: '#e53e3e', fontSize: 13, marginBottom: 10 }}>{bookErr}</p>}
               <button onClick={handleBook} disabled={booking || !privacyOk}
                 style={{ width: '100%', padding: 14, background: privacyOk ? primary : '#bbb', color: readableOn('#ffffff', privacyOk ? primary : '#bbb', '#1a1a2e'), border: 'none', borderRadius: radius || 12, fontSize: 15, fontWeight: 700, cursor: privacyOk ? 'pointer' : 'not-allowed' }}>

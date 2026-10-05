@@ -7,6 +7,7 @@ import { sendWebhooks } from '@/lib/send-webhooks'
 import { sendEmail } from '@/lib/send-email'
 import { guestEmailTemplate } from '@/lib/email-template'
 import { registraContatto } from '@/lib/crm'
+import { testoConsensoPromozioni } from '@/lib/consenso-promozioni'
 import { after } from 'next/server'
 
 // Chi prenota un'offerta dal sito.
@@ -140,6 +141,7 @@ export async function POST(request) {
       email: creata.cliente_email, nome: creata.cliente_nome, telefono: creata.cliente_telefono,
       fonte: 'prenotazione',
       attivita: { tipo: 'prenotazione', titolo: offerta.titolo, origineId: offerta.id, riferimento: creata.id, entityId: offerta.entity_id, dettaglio: { persone } },
+      promozioni: body.promozioni === true ? { testo: testoConsensoPromozioni('altro', body.lang), fonte: `prenotazione di «${offerta.titolo}»` } : null,
     }))
 
     return Response.json({ id: creata.id, stato: creata.stato }, { status: 201 })

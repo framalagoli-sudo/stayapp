@@ -1,5 +1,6 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
@@ -436,6 +437,7 @@ const tendina = { width: '100%', padding: '10px 12px', border: '1px solid #ddd',
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function ContattiPage() {
+  const router = useRouter()
   const { profile } = useAuth()
   const { azienda, strutture, ristoranti, attivita, activeAziendaId } = useAzienda()
   const [contatti,  setContatti]  = useState([])
@@ -450,6 +452,7 @@ export default function ContattiPage() {
   const [scelti,    setScelti]    = useState(() => new Set())   // i contatti spuntati nella tabella
   const [nuovaEtichetta, setNuovaEtichetta] = useState('')
   const [inBlocco,  setInBlocco]  = useState(false)
+  const [scrivendo, setScrivendo] = useState(false)
   const [view,      setView]      = useState('lista') // 'lista' | 'kanban' (= Trattative)
   const [stadioTel, setStadioTel] = useState('lead')  // lo stadio che si guarda su telefono
   const [modal,     setModal]     = useState(null)    // null | 'new' | contact obj
@@ -544,6 +547,21 @@ export default function ContattiPage() {
       return (ordine.verso === 'asc' ? d : -d) || (x.nome || '').localeCompare(y.nome || '', 'it')
     })
   const contattabiliQui = visibili.filter(contattabile).length
+  // Quanti di questa lista hanno detto sì alle EMAIL: è a loro che arriva una newsletter.
+  const perEmailQui = contatti.filter(c => (!listaScelta.ids || listaScelta.ids.has(c.id)) && canaliContattabili(c).email).length
+  // «Scrivi a questa lista»: nasce una bozza di newsletter destinata alla lista.
+  // La lista si salva per CHIAVE, non per elenco di persone: chi ci entra dopo la riceve.
+  async function scriviAllaLista() {
+    setScrivendo(true)
+    try {
+      const prima = allEntities[0]
+      const nl = await apiFetch('/api/newsletter', { method: 'POST', body: JSON.stringify({
+        azienda_id: aziendaId, entity_tipo: prima?.tipo || 'struttura', entity_id: prima?.id || null,
+        lista: listaScelta.chiave === 'tutti' ? null : { chiave: listaScelta.chiave, titolo: listaScelta.titoloLungo || listaScelta.titolo },
+      }) })
+      router.push(`/admin/newsletter/${nl.id}`)
+    } catch (e) { alert(`Non è riuscito: ${e.message}`); setScrivendo(false) }
+  }
   const dellaLista = contatti.filter(c => !listaScelta.ids || listaScelta.ids.has(c.id))
   const aSchermo = visibili.slice(0, quanti)
 
@@ -750,6 +768,15 @@ export default function ContattiPage() {
                   </div>
                   {listaScelta.spiega && <div style={{ fontSize: 12.5, color: '#999', marginTop: 2 }}>{listaScelta.spiega}</div>}
                 </div>
+                {/* ⛔ Le liste si guardavano e basta: per scrivere a chi era venuto a
+                    una serata bisognava ricordarsi il tag giusto nella newsletter.
+                    Il pulsante dice a quanti arriverà DAVVERO: solo a chi ha dato
+                    il consenso alle email. Con zero non si preme, e si legge perché. */}
+                <button type="button" onClick={scriviAllaLista} disabled={scrivendo || perEmailQui === 0} data-scrivi-lista
+                  title={perEmailQui === 0 ? 'Nessuno in questa lista ha dato il consenso a ricevere email' : `Prepara una newsletter per i ${perEmailQui} che hanno dato il consenso`}
+                  style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 700, cursor: perEmailQui === 0 ? 'not-allowed' : 'pointer', background: perEmailQui === 0 ? '#eee' : '#1a1a2e', color: perEmailQui === 0 ? '#999' : '#fff' }}>
+                  <Mail size={14} strokeWidth={1.5} /> {scrivendo ? 'Un attimo…' : `Scrivi a questa lista${perEmailQui ? ` (${perEmailQui})` : ''}`}
+                </button>
                 <div style={{ position: 'relative', flex: '1 1 220px', maxWidth: 320, minWidth: 0 }}>
                   <Search size={15} strokeWidth={1.5} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#aaa' }} />
                   <input value={search} onChange={e => setSearch(e.target.value)}

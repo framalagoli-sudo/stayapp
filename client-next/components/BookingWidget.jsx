@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 // Sicuro dal browser: `booking-giornaliero` non importa niente (nemmeno
 // `supabaseAdmin`), ed è scritto in cima a quel file.
 import { limiteInUnita, nomeUnita } from '@/lib/booking-giornaliero'
+import SpuntaPromozioni from '@/components/guest/SpuntaPromozioni'
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').trim()
 
@@ -29,7 +30,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
   const [verificando, setVerificando] = useState(false)
   const [slots, setSlots] = useState([])
   const [loadingSlots, setLoadingSlots] = useState(false)
-  const [form, setForm] = useState({ nome: '', email: '', telefono: '', n_persone: 1, note: '', privacy: false, whatsapp: false })
+  const [form, setForm] = useState({ nome: '', email: '', telefono: '', n_persone: 1, note: '', privacy: false, whatsapp: false, promozioni: false })
   // La spunta WhatsApp compare **solo** se questa attività manda davvero
   // qualcosa su WhatsApp: un consenso che non serve a niente non si chiede.
   const [waDisponibile, setWaDisponibile] = useState(false)
@@ -130,6 +131,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
         note_cliente: form.note.trim() || null,
         promozione_id: selected.slot?.promo?.id || null,
         privacy_accettata: form.privacy,
+        promozioni: form.promozioni === true,
       }
       const res = await fetch(`${API_BASE}/api/booking/public/prenota`, {
         method: 'POST',
@@ -153,7 +155,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
 
   function reset() {
     setSelected({ risorsa: null, data: '', data_fine: '', slot: null }); setPeriodo(null)
-    setSlots([]); setForm({ nome: '', email: '', telefono: '', n_persone: 1, note: '', privacy: false, whatsapp: false })
+    setSlots([]); setForm({ nome: '', email: '', telefono: '', n_persone: 1, note: '', privacy: false, whatsapp: false, promozioni: false })
     setPrenotazione(null); setErrore('')
     // ⚠️ Con una sola risorsa il primo passo non esiste: rimandarci dopo
     // «Nuova prenotazione» mostrerebbe una scelta con un'opzione sola — proprio
@@ -516,6 +518,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
                   : "l'informativa sulla privacy"}. I miei dati saranno usati per gestire questa prenotazione.
               </span>
             </label>
+            <SpuntaPromozioni checked={form.promozioni} onChange={v => patchForm('promozioni', v)} style={{ fontSize: 12, color: '#666', gap: 8 }} />
             {/* Consenso separato e mai pre-spuntato: è un canale in più, non una
                 condizione per prenotare. Compare solo se un avviso su WhatsApp
                 partirebbe davvero, e solo con un numero scritto. */}

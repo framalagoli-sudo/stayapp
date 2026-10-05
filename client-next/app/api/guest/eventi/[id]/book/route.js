@@ -14,6 +14,7 @@ import { oraLocale } from '@/lib/fuso'
 import { postiEvento, SOGLIA_AVVISO } from '@/lib/posti-evento'
 import { annunciaPrenotazioneEvento } from '@/lib/evento-prenotato'
 import { MINUTI_PER_PAGARE } from '@/lib/prenotazioni-scadute'
+import { testoConsensoPromozioni } from '@/lib/consenso-promozioni'
 
 const ENTITY_TBL = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
 
@@ -41,6 +42,9 @@ export async function POST(request, props) {
 
     const body = await request.json()
     const { guest_name, guest_email, guest_phone, package_id, seats, notes, privacy_accettata } = body
+    // Il sì alle promozioni vale solo se è arrivato esplicito: mai dedotto dall'aver prenotato.
+    const promozioni = body.promozioni === true
+      ? { testo: testoConsensoPromozioni('evento', body.lang), fonte: null } : null
     if (!guest_name?.trim()) return Response.json({ error: 'Nome obbligatorio' }, { status: 400 })
     if (!guest_email?.trim()) return Response.json({ error: 'Email obbligatoria' }, { status: 400 })
     // Qui si raccolgono nome, email e telefono: senza consenso non si raccolgono
@@ -273,6 +277,7 @@ export async function POST(request, props) {
         // Nel registro: quale evento, quanti posti, e la prenotazione a cui si
         // riferisce — così la stessa non si conta due volte.
         attivita: { tipo: 'evento', titolo: evento.title, origineId: evento.id, riferimento: data.id, entityId: evento.entity_id, dettaglio: { posti: reqSeats } },
+        promozioni: promozioni && { ...promozioni, fonte: `prenotazione dell’evento «${evento.title}»` },
       })
     })
 

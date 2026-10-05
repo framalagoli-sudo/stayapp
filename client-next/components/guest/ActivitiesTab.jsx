@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { MapPin, Clock, CheckCircle } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
+import SpuntaPromozioni from './SpuntaPromozioni'
 
 const AGE_FILTERS = [
   { value: 'tutti',    label: 'Tutti' },
@@ -25,6 +26,7 @@ export default function ActivitiesTab({ activities = [], propertyId, primary, te
   const [nome, setNome] = useState('')
   const [contatto, setContatto] = useState('')
   const [privacyOk, setPrivacyOk] = useState(false)
+  const [promozioni, setPromozioni] = useState(false)
   const [erroreTesto, setErroreTesto] = useState('')
 
   const cardBg     = isDark ? '#2a2a3e' : '#fff'
@@ -54,6 +56,7 @@ export default function ActivitiesTab({ activities = [], propertyId, primary, te
           nome: nome.trim(), contatto: contatto.trim(),
           messaggio: [room.trim() ? `Camera: ${room.trim()}` : null, activity.schedule || null].filter(Boolean).join(' · ') || null,
           privacy_accettata: privacyOk,
+          promozioni: promozioni && contatto.includes('@'),
         }),
       })
       setBookState('success')
@@ -154,6 +157,8 @@ export default function ActivitiesTab({ activities = [], propertyId, primary, te
                   <input type="checkbox" checked={privacyOk} onChange={e => setPrivacyOk(e.target.checked)} style={{ marginTop: 2, flexShrink: 0 }} />
                   <span>Ho letto e accetto l'informativa sulla privacy. I miei dati saranno usati per gestire questa richiesta.</span>
                 </label>
+                {/* Le novità arrivano per email: la casella compare solo se è un'email quella lasciata. */}
+                {contatto.includes('@') && <SpuntaPromozioni checked={promozioni} onChange={setPromozioni} style={{ fontSize: 12, color: subText, gap: 8, margin: '-6px 0 14px' }} />}
 
                 {bookState === 'error' && <p style={{ color: '#e53e3e', fontSize: 13, margin: '0 0 12px' }}>{erroreTesto || 'Errore nell\'invio. Riprova.'}</p>}
                 <div style={{ display: 'flex', gap: 10 }}>

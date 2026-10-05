@@ -9,6 +9,7 @@ import SiteNav from './SiteNav'
 import CampoPosti, { numeroPosti } from './CampoPosti'
 import { testiEvento } from './evento-testi'
 import RiepilogoPrenotazione from './RiepilogoPrenotazione'
+import SpuntaPromozioni from './SpuntaPromozioni'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Calendar, MapPin, Users, ArrowLeft, Check } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
@@ -77,6 +78,8 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
   const [guestEmail, setGuestEmail] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
   const [privacyOk,  setPrivacyOk]  = useState(false)
+  // «Avvisatemi delle prossime serate»: facoltativa, mai già spuntata.
+  const [promozioni, setPromozioni] = useState(false)
   const [notes,      setNotes]      = useState('')
   const [booking,    setBooking]    = useState(false)
   const [done,       setDone]       = useState(false)
@@ -113,7 +116,7 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
         method: 'POST',
         body: JSON.stringify({
           guest_name: guestName, guest_email: guestEmail, guest_phone: guestPhone,
-          seats: posti, privacy_accettata: privacyOk,
+          seats: posti, privacy_accettata: privacyOk, promozioni, lang,
         }),
       })
       if (res.error) throw new Error(res.error)
@@ -146,7 +149,7 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
       const res = await guestFetch(`/api/guest/eventi/${evento.id}/book`, {
         method: 'POST',
         body: JSON.stringify({ privacy_accettata: privacyOk, guest_name: guestName, guest_email: guestEmail,
-          guest_phone: guestPhone || null, package_id: pkgId || null, seats: posti, notes: notes.trim() || null }),
+          guest_phone: guestPhone || null, package_id: pkgId || null, seats: posti, notes: notes.trim() || null, promozioni, lang }),
       })
       // Se c'è da pagare si va subito alla cassa: il posto è tenuto, e torna
       // libero se il pagamento non arriva.
@@ -391,6 +394,7 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
                       : <strong>{T.informativa}</strong>}. {T.usoAttesa}
                   </span>
                 </label>
+                <SpuntaPromozioni tipo="evento" lingua={lang} checked={promozioni} onChange={setPromozioni} accento="#00b5b5" style={{ color: '#666', marginBottom: 14 }} />
                 {bookErr && <p style={{ margin: '0 0 12px', fontSize: 14, color: '#c0392b' }}>{bookErr}</p>}
                 <button onClick={handleAttesa} disabled={booking}
                   style={{ width: '100%', padding: '14px 20px', background: '#1a1a2e', border: 'none', borderRadius: 10, cursor: booking ? 'wait' : 'pointer', fontSize: 15.5, fontWeight: 700, color: '#fff', opacity: booking ? .7 : 1 }}>
@@ -459,6 +463,7 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
                   {' '}{T.usoPrenotazione}
                 </span>
               </label>
+              <SpuntaPromozioni tipo="evento" lingua={lang} checked={promozioni} onChange={setPromozioni} accento="#00b5b5" style={{ color: '#555', marginBottom: 18 }} />
 
               {bookErr && <p style={{ color: '#e53e3e', fontSize: 13, marginBottom: 14 }}>{bookErr}</p>}
               <button onClick={handleBook} disabled={booking || !privacyOk}

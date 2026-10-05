@@ -2,6 +2,7 @@
 import { buildNewsletterHtml, personalize } from './newsletter-html.js'
 import { getAziendaLegale } from './guest-data.js'
 import { hostUfficiale } from './indirizzo-ufficiale.js'
+import { destinatariNewsletter } from './newsletter-destinatari.js'
 
 // ⚠️ Leggeva da properties/ristoranti/attivita, ferme dalla migration 079: per
 // un'entità creata dopo l'unificazione lì non c'è niente, e la newsletter usciva
@@ -21,19 +22,11 @@ export async function sendNewsletterById(id) {
   if (nl.status === 'sent') throw new Error('Newsletter già inviata')
   if (!nl.subject?.trim()) throw new Error('Oggetto obbligatorio prima di inviare')
 
-  let contactsQuery = supabaseAdmin.from('contatti')
-    .select('email, nome, unsubscribe_token')
-    .eq('azienda_id', nl.azienda_id)
-    .eq('iscritto_newsletter', true)
-    .not('email', 'is', null)
-    .not('email_non_valida', 'is', true)
-
-  if (nl.tag_filter?.length) {
-    contactsQuery = contactsQuery.overlaps('tags', nl.tag_filter)
-  }
-
-  const { data: contacts } = await contactsQuery
-  if (!contacts?.length) throw new Error('Nessun iscritto trovato')
+  // A chi va lo decide `destinatariNewsletter`, lo stesso conto che il
+  // pannello mostra prima di inviare. Se la lista scelta non esiste più si
+  // ferma qui, prima di segnare la newsletter come inviata.
+  const { contatti: contacts } = await destinatariNewsletter(nl)
+  if (!contacts?.length) throw new Error(nl.lista?.chiave ? 'Nessun iscritto in questa lista' : 'Nessun iscritto trovato')
 
   const entity = await getEntity(nl.entity_tipo, nl.entity_id)
   const entityName = entity?.name || 'OltreNova'
