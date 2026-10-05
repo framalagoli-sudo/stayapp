@@ -1,14 +1,46 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — 01/10: eventi a pagamento corretti (chi non paga non è prenotato). Prossimo: configurazione WhatsApp nella dashboard Meta a schermo; booking risorse con lo stesso schema dei pagamenti; onboarding v2; posta in attesa"
+description: "Da dove riprendere — sessione 03–05/10 CHIUSA (contatti, consenso, newsletter, disiscrizione: tutto live, migration fino alla 133). Prossimo: Meta/WhatsApp a schermo; booking risorse come gli eventi (serve la scelta di Francesco); onboarding v2; posta in attesa"
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-09-30T13:27:06.803Z
+  modified: 2026-10-05T06:39:50.062Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
+
+## ▶️ 05/10 — SESSIONE CHIUSA (03–05/10). Tutto live. Migration eseguite fino alla **133**
+
+Cosa è stato fatto → [[project-session-2026-10-03-05]] · `CLAUDE.md` note 44, 55, 56.
+Prima di toccare contatti o newsletter: [[reference-contatti-porta-unica]], [[reference-newsletter-editor-e-disiscrizione]].
+
+### Si riparte da qui (ordine proposto, decide Francesco)
+1. 🟦 **META / WhatsApp** (resta il primo: «ricordiamoci META»). Passi nel blocco 30/09 qui sotto. In più, da provare alla prima prova col numero di test: chi scrive entra fra i contatti e apre una trattativa; lo STOP toglie il consenso solo in quell'azienda (scritto il 04/10, mai provato dal vivo). Poi: campagne per **lista** come le newsletter, e via i tag col titolo dell'evento.
+2. **Booking RISORSE** come gli eventi (cassa senza scadenza, prenotazione che nasce confermata). Difetto dormiente: una sola risorsa in piattaforma (Furgone Automax), 7 prenotazioni, 0 pagamenti. Chiesto a Francesco e senza risposta: A = si paga online solo con conferma automatica (mia proposta) / B = com'è; e «ora o dopo Meta».
+3. 🎯 **Onboarding v2** per la registrazione aperta (blocco 30/09).
+4. 📧 Posta: in attesa per scelta di Francesco.
+
+### Da guardare a mano (non ho potuto)
+- Una newsletter di prova aperta in **Outlook per Windows**: c'è la correzione standard per la larghezza, nessuno l'ha vista.
+- Francesco ha già visto in Gmail che «Annulla iscrizione» compare ✅.
+
+### Decisioni chieste a Francesco e ancora senza risposta
+- Doppia conferma via email per chi spunta «Avvisatemi…» nei moduli? (oggi no)
+- Togliere «rimetti in attesa» fra i pulsanti delle prenotazioni evento?
+- Totali a € 0 su UOMA / Spallino (prezzo messo dopo le prenotazioni).
+- BRUFENOCENE: 4 in lista d'attesa e capienza non impostata.
+- Interruttore per modulo «apre una trattativa» (proposto, non chiesto).
+- Miniature dei modelli più grandi o ingrandibili con un clic (offerto).
+- Newsletter a blocchi con lo stesso editor del sito: parere dato («andiamo per pezzi»), non un lavoro approvato.
+
+### Da fare, piccole
+- Sonda in `deploy.ps1` per «stessa azienda, collaboratore senza permesso»: la sweep prova solo «un'altra azienda», ed è la classe che ha lasciato passare la rubrica (SECURITY-CHECK, aggiornamento 05/10).
+- Unire il doppione su Garage 22 (stessa persona, due email): lo decide il titolare dalla scheda.
+- Misurare fra 1–2 settimane le non pagate di Garage 22 prima/dopo il riepilogo (deploy del 03/10).
+- `tests/ripristino.mjs`: verificare che carichi `contatti_attivita` dopo `contatti` (il backup la esporta dal 04/10; il ripristino non è stato riprovato).
+- In locale manca `npm install` in `client-next/` e `tests/` dopo Dependabot #58.
+- Non mandare l'email «posto tornato disponibile» per un evento già concluso.
 
 ## ▶️ 01/10 — EVENTI CON PAGAMENTO CORRETTI (LIVE)
 - Chi non paga non è prenotato: nota 44 di CLAUDE.md, [[reference-eventi-chi-non-paga]].

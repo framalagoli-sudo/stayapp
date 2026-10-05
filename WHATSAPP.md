@@ -9,6 +9,11 @@
 > - **Ambiente di test = Giochi senza Panciere** (azienda Il Tipico Umbro srl), collegato dal super_admin. Misurato il 30/09: 0 contatti con consenso WhatsApp, 0 automazioni attive, 0 eventi futuri → nessun messaggio automatico può raggiungere persone vere. ⚠️ Col numero attivo, però, i moduli pubblici del **suo sito** mostrano la spunta del consenso WhatsApp ai visitatori veri.
 > - La §12 qui sotto (blocco del dispositivo, 22/08) è **superata**: l'app esiste dal 15/09.
 >
+> **Aggiornamento 04–05/10/2026 — i contatti sono pronti a ricevere chi scrive.**
+> - Chi scrive al numero del cliente **entra fra i contatti** dalla porta unica (`registraContatto`, riconosciuto dal telefono in forma internazionale) e apre una **trattativa**; una riga al giorno nel registro. ⚠️ **Scritto e non provato dal vivo**: va provato alla prima prova col numero di test.
+> - Lo **STOP** ora toglie il consenso solo nell'azienda del numero che ha ricevuto il messaggio (prima in tutte).
+> - Le campagne scelgono ancora i destinatari per **tag** (`tag_filter`): per questo i tag col titolo dell'evento si creano ancora. Le newsletter sono già passate alle **liste** (`lib/newsletter-destinatari.js`): quando si collega Meta, fare lo stesso per le campagne e togliere quei tag.
+>
 > **Aggiornamento 16/09/2026 — verifica aziendale APPROVATA, e il collegamento adesso esiste davvero.**
 > - **Embedded Signup v4 scritto e in produzione** (`components/admin/CollegaWhatsApp.jsx`): SDK di Facebook, `FB.login` con `config_id` e `response_type: 'code'`, il codice va al server (il segreto dell'app non esce mai), e l'evento `WA_EMBEDDED_SIGNUP` dice quale account e quale numero ha scelto il cliente. Le origini di Meta si confrontano per **uguaglianza**, non con `endsWith`: `facebook.com.esempio.it` passerebbe.
 > - ⚠️ **Due passi obbligatori che mancavano** e senza cui il collegamento è finto: `POST /{waba-id}/subscribed_apps` (senza, nessuno stato di consegna e nessun messaggio in arrivo) e `POST /{phone-number-id}/register` con un PIN di verifica in due passaggi (senza, **ogni invio viene rifiutato**). Il PIN lo generiamo noi e lo conserviamo cifrato in `dettaglio.pin_cifrato`: serve per cambiarlo o staccare il numero. Se la registrazione fallisce il numero resta `in_verifica`, non `attivo`.

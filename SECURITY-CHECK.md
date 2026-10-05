@@ -306,3 +306,24 @@ Le sonde non si lanciano più a mano: `deploy.ps1` esegue `probe-security-sweep`
 `probe-rls-secondo-muro` e `probe-colonne-pubbliche` a **ogni deploy**. L'ultima ha un
 elenco atteso di colonne fissato: **una colonna aggiunta domani a una tabella pubblica fa
 scattare la segnalazione da sola**, che è il modo esatto in cui questi difetti sono nati.
+
+---
+
+## Aggiornamento 05/10/2026 — trovati rifacendo i contatti, non dalle sonde
+
+Nessuno di questi era visibile alla sweep, che guarda cosa **esce** da una route con il token
+sbagliato: qui il token era giusto e mancava il controllo successivo.
+
+| Cosa | Com'era | Ora |
+|---|---|---|
+| Collaboratori senza permesso «Contatti» | la voce di menu era nascosta, la route rispondeva con la rubrica | controllo nella route |
+| STOP su WhatsApp | toglieva il consenso al numero in tutte le aziende | solo nell'azienda che ha ricevuto il messaggio (⚠️ non provato dal vivo: serve Meta) |
+| Conto delle disiscrizioni | l'id della newsletter arrivava dall'indirizzo, senza controllo | solo se è della stessa azienda, una volta sola |
+| `/api/guest/book` | pubblica, senza consenso, mai chiamata | rimossa |
+| `image_url` nelle newsletter | grezzo dentro `src` | `safeUrl` |
+| «Anonimizza» | puliva solo la scheda | pulisce anche prenotazioni e invii dei moduli |
+| Blocco di email rifiutato dal fornitore | contato fra le inviate, in silenzio | non contato, con allarme |
+
+Dettaglio negli invarianti 22 e 23 di `SECURITY.md`. **Da fare**: una sonda in `deploy.ps1` per i
+permessi dei collaboratori (oggi la sweep prova «un'altra azienda», non «stessa azienda, ruolo
+senza permesso»): è la classe che ha lasciato passare il primo caso.

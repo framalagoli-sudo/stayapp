@@ -16,7 +16,7 @@ pagarlo**.
 > dentro GitHub, che è uno degli accessi che descrive: se nessuno può entrare in
 > GitHub, nessuno può leggere queste istruzioni. Va tenuta una copia fuori.
 
-*Aggiornato al 23 settembre 2026.*
+*Aggiornato al 5 ottobre 2026.*
 
 ---
 
@@ -236,17 +236,26 @@ un altro. Il dettaglio sta in `SECURITY.md`.
 
 ## 4. I dati — cosa c'è dentro
 
-Il database ha **97 migrazioni** alle spalle. Le tabelle da cui dipende tutto il
+Il database ha **133 migrazioni** alle spalle. Le tabelle da cui dipende tutto il
 resto, in ordine di ripristino:
 
-| Tabella | Cosa contiene | Righe (29/08/2026) |
+| Tabella | Cosa contiene | Righe (05/10/2026) |
 |---|---|---|
-| `aziende` | i clienti paganti | 11 |
-| `profiles` | le persone che entrano nel pannello | 13 |
-| `entita` | le attività: hotel, ristoranti, negozi… | 15 |
-| `pagine` | le pagine dei siti costruiti dai clienti | 29 |
-| `domini` | gli indirizzi web collegati | 16 |
-| `contatti` | i clienti *dei* clienti (dati personali) | 49 |
+| `aziende` | i clienti | 8 |
+| `profiles` | le persone che entrano nel pannello | 14 |
+| `entita` | le attività: hotel, ristoranti, negozi… | 11 |
+| `pagine` | le pagine dei siti costruiti dai clienti | 27 |
+| `domini` | gli indirizzi web collegati | 14 |
+| `contatti` | i clienti *dei* clienti (dati personali) | 118 |
+| `contatti_attivita` | cosa ha fatto ogni contatto (prenotazioni, ordini, moduli…): titoli e numeri, **mai** dati personali | 141 |
+
+**I contatti sono il centro** (dal 04/10/2026). Chiunque prenoti, ordini, compili un
+modulo o scriva entra fra i contatti da **una porta sola** (`registraContatto` in
+`lib/crm.js`), riconosciuto dall'email o dal telefono. Le liste a cui scrivere non
+si salvano: si **calcolano** da quel registro. Entrare fra i contatti **non iscrive
+a niente**: per ricevere promozioni serve un sì esplicito, che si salva con la sua
+prova (quando, quale frase, da quale modulo) — e, se la persona si toglie, con la
+data e il modo del ritiro.
 
 Poi il resto: prenotazioni, eventi, offerte, prodotti, richieste, newsletter,
 blog, statistiche.
@@ -523,6 +532,14 @@ Chi compra o subentra deve saperlo prima, non dopo.
   posto per sempre): ora resta «in attesa» 30 minuti, poi il posto torna libero.
   Negozio e prenotazioni delle risorse sono provati solo da noi — e le risorse
   hanno ancora il difetto appena corretto sugli eventi (cassa senza scadenza).
+- **Nessuna newsletter è ancora partita a clienti veri.** Al 05/10/2026 in
+  produzione ci sono due bozze e zero invii. L'editor, i destinatari per lista, la
+  disiscrizione e il consenso sono provati da noi, con invii alla casella di prova
+  del fornitore; come si vede in Outlook per Windows non l'ha guardato nessuno.
+- **A pochi contatti si può scrivere.** 118 contatti, 44 iscritti: fino al
+  05/10/2026 nessun modulo di prenotazione chiedeva il consenso alle promozioni
+  (Garage 22: 67 contatti, zero iscritti). Da quel giorno la casella c'è; i numeri
+  cresceranno solo con le prenotazioni nuove.
 - **WhatsApp è costruito ma spento**: la verifica Meta è **approvata** (Tech
   Provider, 18/09/2026), mancano le chiavi sulla piattaforma e la prova dal vivo.
   Il collegamento di un numero oggi è aperto **solo al super_admin**; quando si
@@ -617,4 +634,4 @@ Restano di pensiero, e non li controlla nessuna macchina: i costi, i piani, il
 
 ---
 
-*Documento di progetto — aggiornato al 29 agosto 2026.*
+*Documento di progetto — aggiornato al 5 ottobre 2026.*

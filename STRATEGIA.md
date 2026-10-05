@@ -105,6 +105,18 @@ la strada B («fatto con te») ed è quello che i grandi del settore non offrono
 piccolo esercente. ⚠️ Vale anche quando si aprirà la registrazione: il self-serve non deve
 cancellare la promessa (un contatto umano raggiungibile dal pannello).
 
+## 4.5-ter I contatti sono il centro (Francesco, 04/10)
+
+«Devono entrare tutti in contatti: la forza di OltreNova deve essere questa.» Eventi, risorse,
+offerte, negozio, moduli, sito e — quando Meta sarà collegata — WhatsApp: ogni persona che passa da
+un cliente finisce in **un posto solo**, con la storia di quello che ha fatto, e il cliente può
+scriverle per lista (chi ha prenotato quella serata, chi era in lista d'attesa). ✅ Fatto il 04–05/10:
+porta unica, registro, liste calcolate, consenso con prova, newsletter per lista (`CLAUDE.md` nota 56).
+Conseguenze per le scelte future: una funzione nuova che raccoglie un recapito **passa dalla porta
+unica**, o non è finita; e un costruttore di newsletter a blocchi vale la pena soprattutto per i
+**blocchi collegati ai dati** («metti qui l'evento di venerdì») — parere di Ettore, da fare dopo aver
+visto se i quattro modelli bastano (al 05/10 nessuna newsletter è ancora partita).
+
 ## 4.6 La posta elettronica (✅ deciso da Francesco il 27/09)
 
 «A me non interessa guadagnare rivendendo mail ma offrire un servizio semplice»; «meno cazzi

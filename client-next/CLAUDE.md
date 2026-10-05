@@ -60,6 +60,12 @@ I **domini custom** entrano via `middleware.js`: risolve il dominio → rewrite 
 /admin/demo  /admin/qrcode  /admin/impostazioni  /admin/integrazioni  /admin/audit-log
 /admin/aziende                  → AziendePage (super_admin: CRUD aziende, accessi, "Esporta dati" GDPR)
 /admin/ai-site-builder
+# Contatti (04–05/10/2026 — vedi nota 56 di ../CLAUDE.md):
+#   ContattiPage = liste calcolate (lib/contatti-liste.js) + tabella + scheda + Trattative.
+#   Chi raccoglie un recapito passa da registraContatto (lib/crm.js): mai un insert diretto in `contatti`.
+# Newsletter: NewsletterEditorPage = a chi (GET /api/newsletter/liste) → modello (miniature) → oggetto →
+#   contenuto → quando; l'anteprima usa buildNewsletterHtml (lib/newsletter-html.js), lo stesso dell'invio.
+# Prenotazioni: BookingsPage mostra anche gli eventi; dentro l'evento EventoPrenotazioniPage divide in gruppi.
 # Entità (NB: in Next i path sono per-id, non /admin/property/*):
 /admin/struttura/[id]/{info,gallery,theme,sito,chatbot,domini,privacy,pagine,moduli,minisito}
 /admin/ristoranti/[id]/{info,menu,gallery,theme,sito,chatbot,domini,privacy,pagine}

@@ -11,6 +11,10 @@
 > 🔌 **Integrazioni**: [la sequenza del fornitore va letta tutta](reference_verifica_la_sequenza_del_fornitore.md) — il collegamento WhatsApp era «pronto» e non avrebbe inviato niente.
 
 - [🧾 A OGNI chiusura: aggiornare TUTTI i file di progetto](feedback_chiusura_sessione.md) — CLAUDE/FEATURES/PROGETTO/SECURITY, memoria + copia in .claude-memory; ognuno va APERTO, non supposto
+- [📅 Sessione 03–05/10 — contatti dalle fondamenta, consenso, newsletter che si capiscono](project_session_2026_10_03_05.md) — migration fino a 133; tutto live; prossimo: Meta, poi booking risorse
+- [👥 Contatti: una porta sola](reference_contatti_porta_unica.md) — registraContatto, registro, liste calcolate; pipeline_stage ha 'lead' di default: scriverlo null esplicito
+- [✉️ Newsletter: editor, liste, disiscrizione](reference_newsletter_editor_e_disiscrizione.md) — un solo disegno dell'email; List-Unsubscribe su www; in locale le email sono spente
+- [🪤 Trappole di script e sonde](reference_trappole_script_e_sonde.md) — mai la sonda in catena col deploy; node -e in bash mangia i backtick; le sonde aspettano l'esito
 - [📅 Sessione 29–30/09 — aspetto app QR, Inizia qui, WhatsApp solo super_admin, posti riservati chiusi](project_session_2026_09_29_30.md) — prossimo: Meta a schermo, poi onboarding v2, posta in attesa
 - [🧑‍🤝‍🧑 Landing nuova: sempre una persona vera](project_landing_persona_umana.md) — Francesco + staff umano come punto di forza, in evidenza (30/09)
 - [📅 Sessione 01/10 — chi non paga non è prenotato (Garage 22)](project_session_2026_10_01.md) — corretto e live; 5 non pagate annullate; prossimo: Meta a schermo, risorse con lo stesso schema
@@ -26,7 +30,7 @@
 - [🤖 Consumi AI e tetto per azienda](project_ai_consumi.md) — 15/09: 12 chiamate su 13 senza limite vero; ora un punto solo, fail closed; LIVE dal 15/09 con ricarica da Aziende → Credito AI e avviso al cliente dall 80%
 - [📅 Sessione 16/09 — verifica Meta approvata, collegamento WhatsApp vero, numeri per entità](project_session_2026_09_16.md) — migration fino a 122; restano la verifica dell'accesso e la prova dal vivo
 - [📅 Sessione 15/09 — shop live, Meta sbloccato, costi AI sotto tetto, decisione API](project_session_2026_09_15.md) — migration fino a 121; verifica Meta da reinviare
-- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: 0) booking RISORSE: cassa senza scadenza come gli eventi prima del 01/10 · 1) META/WhatsApp (Tech Provider APPROVATO; mancano config ES, webhook, 4 chiavi, prova dal vivo) 2) onboarding v2 per la registrazione aperta (v1 LIVE 30/09) 3) posta (in attesa, decide Francesco)
+- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: sessione 03–05/10 chiusa · 1) META/WhatsApp (config ES, webhook, 4 chiavi, prova dal vivo — e provare contatti da chi scrive + STOP) 2) booking RISORSE come gli eventi (serve la scelta di Francesco) 3) onboarding v2 4) posta (in attesa)
 - [📅 Sessione 08/09 — conferme spente, calendario cieco, offerte inerti](project_session_2026_09_08.md) — 6 interventi nati da cose non rotte ma che non arrivavano
 - [📆 Intervalli di date nel booking](reference_intervalli_date_booking.md) — (giorno,giorno) e l intervallo VUOTO: non da errore, da «libero»; e con
 - [🏷️ Offerte sulle risorse](reference_offerte_risorse.md) — valevano solo per gli slot orari; prezzo_modo dice se e al giorno o del periodo (su 5 giorni sono 5

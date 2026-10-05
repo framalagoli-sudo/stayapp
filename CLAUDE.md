@@ -192,7 +192,7 @@ hospitality/
 │   │   ├── page.js                 # landing marketing OltreNova (hardcoded)
 │   │   ├── admin/                  # pannello di gestione
 │   │   ├── s/ · r/ · a/            # PWA ospite + minisiti pubblici per entità
-│   │   └── api/                    # ~196 route API — il backend
+│   │   └── api/                    # ~236 route API — il backend
 │   │       ├── auth/ · users/ · aziende/ · properties/
 │   │       ├── guest/              # endpoint pubblici (no auth)
 │   │       ├── booking/ · eventi/ · shop/ · vetrine/ · pagine/ …
@@ -201,7 +201,7 @@ hospitality/
 │   ├── components/ · context/ · hooks/
 │   └── lib/                        # supabase, send-email, guest-data, blockTypes …
 ├── tests/                          # smoke test Playwright su produzione + sonde `probe-*.mjs`
-└── supabase/migrations/            # 001–069, eseguire a mano su Supabase
+└── supabase/migrations/            # 001–133, eseguire a mano su Supabase
 ```
 > `client/` e `server/` non esistono più nel repo (vedi nota in cima). Se li vedi in locale sono residui: sono in `.gitignore` e vanno cancellati, non aggiornati.
 
@@ -571,6 +571,10 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - **Sidebar admin riorganizzata** ✅ 2026-07-09: L1 barra principale in linguaggio umano (**Clienti & richieste** / **Contenuti & promo**); L2 menu entità raggruppato (**Contenuti / Sito & presenza / Impostazioni**) con **AI Site Builder** e QR nel menu. Solo `admin_azienda`; super/legacy invariati. Manca onboarding "Inizia qui" (backlog).
 
 ### Da fare (in ordine)
+- [x] 👥 **Contatti rifatti dalle fondamenta** ✅ 04–05/10/2026 — porta unica, registro delle attività, liste calcolate, Trattative, consenso con prova, newsletter per lista con editor nuovo, disiscrizione con traccia. Note 55–56, migration 130–133.
+- [ ] **Booking delle risorse come gli eventi** — la cassa non ha scadenza e la prenotazione nasce confermata: difetto dormiente (una sola risorsa in piattaforma, zero pagamenti). Francesco deve scegliere: si paga online solo con conferma automatica (proposta) o resta com'è.
+- [ ] **Campagne WhatsApp per lista** (come le newsletter) e via i tag col titolo dell'evento — quando si collega Meta.
+- [ ] **Newsletter a blocchi** (stesso editor del sito, catalogo ridotto per la posta, blocchi collegati a eventi e offerte) — parere dato il 05/10, da riprendere dopo aver visto se i quattro modelli bastano.
 - [x] **Costi AI sotto controllo** ✅ 15/09/2026 — tetto 5 $/mese per azienda, ricarica da Aziende → Credito AI, avviso al cliente dall'80%. Nota 37.
 - [ ] **Credito AI a pagamento** — prezzo della ricarica e pagamento con carta: richiede l'abbonamento a OltreNova su Stripe, che oggi non esiste (Stripe è collegato solo per gli incassi dei clienti). Decisione di prezzo di Francesco.
 - [ ] **Operazioni del dominio in `lib/`** (15/09, piano approvato) — azioni come «crea evento», «cambia orari», «pubblica pagina» in funzioni con validazione e controllo dell'azienda, usate da pannello **e** dal futuro assistente AI (WhatsApp/voce). Un'API pubblica `/api/v1` con chiavi per azienda **solo** quando c'è un utilizzatore vero. OltreNova oggi **non** è API First: ~200 route pensate per le schermate, senza contratto né versioni.

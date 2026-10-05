@@ -125,6 +125,33 @@ Dove possibile ognuno ha un test in `tests/smoke/security.spec.js`.
     `probe-cancella-azienda.mjs`, che cerca i resti in ogni tabella dello schema pubblicato.
     Stessa famiglia: una cancellazione diretta nel database lascia su Vercel gli indirizzi
     dell'entità — le sonde puliscono dalla route (`cancellaAziendaDiProva` in `probe-auth.mjs`).
+22. **Un permesso che nasconde una voce di menu non protegge niente, e un identificativo che arriva
+    da fuori vale solo dentro l'azienda di chi lo porta.** Quattro casi della stessa famiglia,
+    trovati fra il 04 e il 05/10/2026 rifacendo i contatti:
+    - i **collaboratori senza permesso «Contatti»** non vedevano la voce di menu, ma `GET /api/contatti`
+      rispondeva lo stesso con tutta la rubrica. Ora `staffPuoLeggereContatti` (`lib/contatti-regole.js`)
+      sta nella route;
+    - lo **STOP su WhatsApp** toglieva il consenso cercando il numero in **tutte le aziende**: ora si
+      risale all'azienda dal numero che ha ricevuto il messaggio;
+    - il **conto delle disiscrizioni** prendeva l'id della newsletter dall'indirizzo: chi aveva un link
+      valido poteva gonfiare il conto di una newsletter altrui (`lib/disiscrizione.js` ora verifica
+      che sia della stessa azienda del contatto);
+    - le **azioni su più contatti** (`POST /api/contatti/blocco`): gli id dicono QUALI, mai DI CHI —
+      ogni scrittura è filtrata per l'azienda di chi chiede, e la risposta dice quanti sono stati
+      toccati davvero.
+    Stesso giro: `image_url` delle newsletter finiva **grezzo dentro `src`** (ora `safeUrl`,
+    invariante 6), e l'anteprima nel pannello gira in un `<iframe sandbox>`.
+23. **Il consenso alla promozione è una prova, con un inizio e una fine.** Solo `promozioni === true`
+    iscrive (la stringa `"true"`, `1` o un oggetto no); la frase salvata è quella che conosce il
+    **server** (`lib/consenso-promozioni.js`), mai una arrivata dal client; il sì vale per l'email a
+    cui è stato detto, non per un'altra che sta nella scheda. Quando la persona si toglie restano la
+    data e il modo (`marketing_revoca_il/_fonte`, migration 133) e la prova del sì **non si cancella**.
+    Il pulsante «Annulla iscrizione» dei programmi di posta fa una **POST**: l'indirizzo
+    nell'intestazione sta su `www`, perché sull'apex riceve 308 e la persona crederebbe di essersi
+    tolta. Unendo due schede, un sì non passa sopra un no più recente. E una **porta pubblica che
+    nessuno usa si chiude**: `/api/guest/book` raccoglieva nome, email e telefono senza consenso e
+    nessuna pagina la chiamava dall'8 maggio (rimossa il 04/10).
+    Sonde (a mano): `probe-consenso-e-liste.mjs`, `probe-disiscrizione.mjs`, `probe-contatti-cura.mjs`.
 
 ### Il SISTEMA di monitoraggio (a strati — "sempre" senza sprechi)
 - **Strato 0 — Aggiornamento dipendenze (il "processo tipo WordPress-update").** `.github/dependabot.yml`
@@ -258,7 +285,10 @@ Tutti in Railway env vars / Vercel env vars — mai nel codice.
 ### Consenso
 - **CookieBanner** con accettazione esplicita — `localStorage: cookie_consent_v2`
 - Checkbox consenso obbligatorio in form contatti e iscrizione newsletter
-- Double opt-in newsletter — email di conferma prima di iscrivere
+- Double opt-in newsletter — email di conferma prima di iscrivere (solo per il modulo di iscrizione)
+- **Consenso alle promozioni nei moduli di prenotazione e nel carrello** (05/10/2026): casella
+  facoltativa, mai già spuntata; si salva la prova (quando, quale frase, da quale modulo). Qui **non**
+  c'è doppia conferma via email: è una scelta di prodotto ancora aperta (invariante 23)
 
 ### Informativa
 - Privacy policy e cookie policy **auto-generate** per ogni entità da `privacy_data jsonb`
@@ -273,7 +303,7 @@ Tutti in Railway env vars / Vercel env vars — mai nel codice.
 | Rettifica (Art. 16) | ✅ | Admin modifica direttamente da CRM |
 | Cancellazione (Art. 17) | ✅ | Pulsante "Anonimizza dati (GDPR Art. 17)" in modal contatto |
 | Portabilità (Art. 20) | Parziale | Export CSV prenotazioni/contatti disponibile |
-| Opposizione (Art. 21) | ✅ | Unsubscribe newsletter con link token |
+| Opposizione (Art. 21) | ✅ | Link «Annulla iscrizione» in ogni newsletter + pulsante del programma di posta (`List-Unsubscribe`); resta scritto quando e come (05/10/2026) |
 
 ### Anonimizzazione (Art. 17)
 Endpoint `POST /api/contatti/:id/erasure` — sostituisce i dati personali con:
@@ -285,6 +315,13 @@ Endpoint `POST /api/contatti/:id/erasure` — sostituisce i dati personali con:
 - iscritto_newsletter → `false`
 
 Il record viene mantenuto per integrità referenziale. L'operazione è irreversibile.
+
+**Dal 05/10/2026 «anonimo» vuol dire ovunque** (`anonimizzaContatto` in `lib/contatti-cura.js`): prima
+si puliva solo la scheda, e nome, email e telefono restavano nelle prenotazioni di eventi, risorse e
+offerte e negli invii dei moduli. Ora quelle righe si svuotano (non si cancellano: i posti di una
+serata restano), riconoscendo la persona per email **o** per numero; via anche `telefono_e164`, i
+consensi e la traccia del ritiro. ⚠️ Gli **ordini del negozio non si toccano**: sono documenti di
+vendita, e il pannello lo dice a chi preme il pulsante.
 
 ### Data retention
 Non esiste attualmente una policy di pulizia automatica. Dati da considerare per retention:
