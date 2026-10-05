@@ -115,7 +115,7 @@ try {
 
     await page.locator('input[type="email"]').fill(`zz-rie-${Date.now()}@playwright.internal`)
     await page.locator('input[type="email"]').locator('xpath=preceding-sibling::input[1]').fill('ZZ Prova Riepilogo')
-    await page.locator('input[type="checkbox"]').check()
+    await page.locator('input[type="checkbox"]').first().check()
     const prenota = page.getByRole('button', { name: /^Prenota/ })
 
     // Campo vuoto: non si parte, e lo si dice.
@@ -163,7 +163,7 @@ try {
     'il modulo è in inglese, senza pezzi in italiano')
   await en.page.locator('input[type="email"]').fill(`zz-en-${tag}@playwright.internal`)
   await en.page.locator('input[type="email"]').locator('xpath=preceding-sibling::input[1]').fill('ZZ Prova')
-  await en.page.locator('input[type="checkbox"]').check()
+  await en.page.locator('input[type="checkbox"]').first().check()
   await en.page.getByRole('button', { name: /^Book/ }).click()
   await en.page.getByText('Check before you confirm').waitFor({ timeout: 10000 })
   const riepEn = (await en.page.locator('body').innerText()).replace(/\s+/g, ' ')
@@ -176,7 +176,7 @@ try {
   const posto = await apri(`${BASE}/eventi/${gratis.id}`)
   await posto.page.locator('input[type="email"]').fill(`zz-posto-${tag}@playwright.internal`)
   await posto.page.locator('input[type="email"]').locator('xpath=preceding-sibling::input[1]').fill('ZZ Prova')
-  await posto.page.locator('input[type="checkbox"]').check()
+  await posto.page.locator('input[type="checkbox"]').first().check()
   await posto.page.getByRole('button', { name: /^Prenota/ }).click()
   await posto.page.waitForURL('**/checkout/annullato', { timeout: 15000 }).catch(() => {})
   ok(posto.corpo()?.seats === 1, 'la prenotazione parte direttamente, com\'era')
