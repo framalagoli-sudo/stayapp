@@ -8,7 +8,6 @@ import { getAziendaLegale } from '@/lib/guest-data'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { mandaConfermaEvento } from '@/lib/evento-conferma'
 import { after } from 'next/server'
-import { triggerAutomazione } from '@/lib/guest-utils'
 import { registraContatto, tagEvento } from '@/lib/crm'
 import { postiRichiesti, rifiutoPrenotazione, contoEvento } from '@/lib/evento-prenotazione'
 import { oraLocale } from '@/lib/fuso'
@@ -265,7 +264,8 @@ export async function POST(request, props) {
     // ⚠️ Dopo la risposta, ma dentro `after()`: su Vercel la funzione si congela
     // appena risponde, e il lavoro non atteso non è garantito.
     after(async () => {
-      const { nuovo } = await registraContatto({
+      // L'automazione «nuovo contatto» la fa partire la porta unica, una volta sola.
+      await registraContatto({
         aziendaId: evento.azienda_id,
         email: guest_email, nome: guest_name, telefono: guest_phone,
         fonte: 'evento',
@@ -274,13 +274,6 @@ export async function POST(request, props) {
         // riferisce — così la stessa non si conta due volte.
         attivita: { tipo: 'evento', titolo: evento.title, origineId: evento.id, riferimento: data.id, entityId: evento.entity_id, dettaglio: { posti: reqSeats } },
       })
-      // L'automazione «nuovo contatto» parte una volta sola: chi torna a una
-      // seconda serata non è un contatto nuovo.
-      if (nuovo && evento.entity_id) {
-        triggerAutomazione('nuovo_contatto',
-          { azienda_id: evento.azienda_id, entity_tipo: evento.entity_tipo, entity_id: evento.entity_id },
-          { nome: guest_name, email: guest_email }).catch(() => {})
-      }
     })
 
     // Avviso al titolare e automazioni (promemoria prima dell'evento, grazie

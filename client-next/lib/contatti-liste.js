@@ -101,6 +101,24 @@ export function etichetteAMano(contatto, automatici) {
   })
 }
 
+// Chi potrebbe essere la stessa persona di un altro contatto: stesso numero di
+// telefono, oppure stesso nome e cognome scritto uguale. È un SOSPETTO, non una
+// certezza — due «Mario Rossi» esistono — e per questo unirli lo decide il
+// titolare guardandoli, mai il sistema.
+const nomeChiave = c => { const n = String(c?.nome || '').trim().toLowerCase().replace(/\s+/g, ' '); return n.includes(' ') && !n.includes('@') && n !== 'anonimo' ? n : null }
+export function possibiliDoppioni(contatti) {
+  const gruppi = new Map()
+  const metti = (k, c) => { if (!k) return; if (!gruppi.has(k)) gruppi.set(k, []); gruppi.get(k).push(c.id) }
+  for (const c of contatti) { metti(c.telefono_e164 ? `t|${c.telefono_e164}` : null, c); metti(nomeChiave(c) ? `n|${nomeChiave(c)}` : null, c) }
+  // id → gli altri id con cui potrebbe coincidere
+  const simili = new Map()
+  for (const ids of gruppi.values()) {
+    if (ids.length < 2) continue
+    for (const id of ids) { if (!simili.has(id)) simili.set(id, new Set()); for (const altro of ids) if (altro !== id) simili.get(id).add(altro) }
+  }
+  return simili
+}
+
 // Le occasioni che contano per dire «è tornato»: cose prenotate o comprate.
 // Due prenotazioni per la stessa serata sono una volta sola.
 const TORNA = new Set(['evento', 'prenotazione', 'ordine'])
@@ -181,9 +199,11 @@ export function costruisciListe(contatti, attivita) {
     const ids = insieme(c => (c.fonte || 'manuale') === fonte)
     if (ids.size) liste.push({ chiave: `fonte|${fonte}`, titolo, gruppo: 'Altro', ids })
   }
+  const simili = possibiliDoppioni(contatti)
+  if (simili.size) liste.push({ chiave: 'doppioni', titolo: 'Possibili doppioni', gruppo: 'Da sistemare', ids: new Set(simili.keys()), spiega: 'Hanno lo stesso numero o lo stesso nome di un altro contatto: se sono la stessa persona, aprine uno e uniscili.' })
   const storte = insieme(emailDaCorreggere)
   if (storte.size) liste.push({ chiave: 'da_correggere', titolo: 'Email da correggere', gruppo: 'Da sistemare', ids: storte, spiega: 'L’email è scritta male o i messaggi tornano indietro: a questo indirizzo non arriva niente.' })
 
   for (const l of liste) if (l.ids) l.n = l.ids.size
-  return { liste, perContatto, automatici }
+  return { liste, perContatto, automatici, simili }
 }

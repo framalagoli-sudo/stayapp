@@ -1,7 +1,6 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { sendEmail } from '@/lib/send-email'
 import { emailTemplate } from '@/lib/email-template'
-import { triggerAutomazione } from '@/lib/guest-utils'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { verifyTurnstile } from '@/lib/turnstile'
 import { logError } from '@/lib/observability'
@@ -52,9 +51,8 @@ export async function POST(request) {
 
     // Dalla porta unica dei contatti (`lib/crm.js`): stessa regola per
     // riconoscere la persona, e una riga nel registro che dice cosa ha chiesto.
-    let isNewContact = false
     if (azienda_id && email) {
-      const esito = await registraContatto({
+      await registraContatto({
         aziendaId: azienda_id, email, nome: name.trim(),
         fonte: 'minisito',
         tags: ['lead', entity_tipo, ...(source && source !== 'minisito' ? [source] : [])].filter(Boolean),
@@ -66,12 +64,8 @@ export async function POST(request) {
             : 'Messaggio dal sito',
         },
       })
-      isNewContact = esito.nuovo
     }
 
-    if (isNewContact && azienda_id) {
-      triggerAutomazione('nuovo_contatto', { azienda_id, entity_tipo, entity_id }, { nome: name.trim(), email: email.trim() }).catch(() => {})
-    }
 
     if (entityEmail && process.env.RESEND_API_KEY) {
       sendEmail({

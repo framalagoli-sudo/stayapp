@@ -2,6 +2,8 @@ import { supabaseAdmin } from './supabase-server'
 import { dataLocale } from './fuso'
 import { fusoDiAzienda } from './fuso-azienda'
 import { normalizzaTelefono } from './contatti-import'
+import { triggerAutomazione } from './guest-utils'
+import { sendWebhooks } from './send-webhooks'
 
 // Chi lascia i suoi dati finisce fra i contatti dell'azienda. Un punto solo.
 //
@@ -121,6 +123,26 @@ export async function registraAttivita(aziendaId, contattoId, attivita) {
   }
 }
 
+// Un contatto è nato: lo si dice a chi aspetta di saperlo.
+//
+// ⛔ L'automazione «nuovo contatto» partiva da 2 porte su 11 (prenotazione di un
+// evento e modulo del sito) e il webhook da una sola (l'inserimento a mano):
+// chi prenotava una risorsa o ordinava dal negozio era un contatto nuovo che
+// non faceva scattare niente. Scritto qui, vale per ogni porta che passa da
+// `registraContatto` — e una porta nuova lo eredita senza ricordarselo.
+//
+// Le automazioni sono legate a un'entità: se la porta non sa quale, parte solo
+// il webhook. Non lancia mai.
+async function annunciaNuovoContatto({ aziendaId, id, nome, email, telefono, entityId }) {
+  try {
+    sendWebhooks(aziendaId, 'nuovo_contatto', { contatto_id: id, nome, email, telefono })
+    if (!UUID.test(entityId || '')) return
+    const { data: ent } = await supabaseAdmin.from('entita').select('tipo').eq('id', entityId).eq('azienda_id', aziendaId).maybeSingle()
+    if (!ent?.tipo) return
+    await triggerAutomazione('nuovo_contatto', { azienda_id: aziendaId, entity_tipo: ent.tipo, entity_id: entityId }, { nome, email: email || '', telefono: telefono || '' })
+  } catch (e) { console.error('[crm] annunciaNuovoContatto:', e.message) }
+}
+
 /**
  * Registra o aggiorna un contatto, e scrive nel registro cosa ha fatto.
  * È l'unica porta: ogni punto in cui una persona lascia i suoi dati passa di qui.
@@ -193,6 +215,7 @@ export async function registraContatto({ aziendaId, email, nome, telefono, fonte
     }
 
     if (id && attivita) await registraAttivita(aziendaId, id, attivita)
+    if (nuovo) await annunciaNuovoContatto({ aziendaId, id, nome: String(nome || '').trim() || mail || tel, email: mail, telefono: tel, entityId: attivita?.entityId })
     return { nuovo, id }
   } catch (e) {
     // ⚠️ Non blocca mai l'azione che l'ha chiamata. Chi sta prenotando una cena

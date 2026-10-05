@@ -101,7 +101,7 @@ function downloadContattiCSV(contatti, nomeLista = '') {
 const EMPTY = { nome: '', email: '', telefono: '', tags: [], note: '', iscritto_newsletter: false, whatsapp_optin: false, pipeline_stage: null }
 const quando = iso => iso ? new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' }) : ''
 
-function ContactModal({ contact, aziendaId, onSave, onClose, storia = [], entita = [], onElimina = null, automatici = null }) {
+function ContactModal({ contact, aziendaId, onSave, onClose, storia = [], entita = [], onElimina = null, automatici = null, altri = [], simili = [] }) {
   const isNew = !contact?.id
   // Nel campo si modificano solo le etichette scritte a mano. Quelle messe dal
   // sistema restano nei dati (la newsletter le usa ancora) e si riattaccano al
@@ -133,12 +133,34 @@ function ContactModal({ contact, aziendaId, onSave, onClose, storia = [], entita
   }
 
   async function handleErasure() {
-    if (!window.confirm(`Rendere anonimo ${contact.nome}?\n\nNome, email, telefono, note ed etichette vengono cancellati e non si possono recuperare. Resta una riga senza nome, così i conteggi delle serate non cambiano.`)) return
+    if (!window.confirm(`Rendere anonimo ${contact.nome}?\n\nNome, email e telefono vengono cancellati dalla scheda, dalle sue prenotazioni e dai moduli che ha compilato. Non si possono recuperare. Restano righe senza nome, così i conteggi delle serate non cambiano.`)) return
     setSaving(true)
     try {
-      await apiFetch(`/api/contatti/${contact.id}/erasure`, { method: 'POST' })
+      const esito = await apiFetch(`/api/contatti/${contact.id}/erasure`, { method: 'POST' })
+      // Si dice dove sono stati tolti i dati: la scheda era solo uno dei posti.
+      const s = esito?.svuotate || {}
+      const dove = [s.eventi && `${s.eventi} prenotazioni di eventi`, s.prenotazioni && `${s.prenotazioni} altre prenotazioni`, s.moduli && `${s.moduli} moduli compilati`].filter(Boolean)
+      alert(`Reso anonimo.${dove.length ? ` I suoi dati sono stati tolti anche da: ${dove.join(', ')}.` : ''}\n\nGli ordini del negozio, se ce ne sono, restano: sono documenti di vendita e vanno conservati.`)
       onSave()
     } catch (e) { alert(e.message) }
+    setSaving(false)
+  }
+
+  // Unire due schede della stessa persona. Lo decide chi guarda, mai il sistema.
+  const [conChi, setConChi] = useState(simili[0]?.id || '')
+  const [cercaAltro, setCercaAltro] = useState('')
+  const candidati = cercaAltro.trim()
+    ? altri.filter(c => [c.nome, c.email, c.telefono].some(x => (x || '').toLowerCase().includes(cercaAltro.trim().toLowerCase()))).slice(0, 8)
+    : simili
+  async function unisci() {
+    const altro = altri.find(c => c.id === conChi)
+    if (!altro) return
+    if (!window.confirm(`Unire «${altro.nome}» a «${contact.nome}»?\n\nTutta la storia di «${altro.nome}» passa a questa scheda e la sua sparisce. Restano i dati di questa scheda; dell'altra si prende solo ciò che qui manca, e i suoi recapiti diversi finiscono nelle note.\n\nNon si può annullare.`)) return
+    setSaving(true)
+    try {
+      await apiFetch(`/api/contatti/${contact.id}/unisci`, { method: 'POST', body: JSON.stringify({ altro_id: altro.id }) })
+      onSave()
+    } catch (e) { alert(`Non è riuscito: ${e.message}`) }
     setSaving(false)
   }
 
@@ -276,6 +298,35 @@ function ContactModal({ contact, aziendaId, onSave, onClose, storia = [], entita
             </div>
           )}
 
+          {/* ⛔ Due schede per la stessa persona non si potevano unire: chi
+              prenota una volta con un'email e una volta con un'altra restava
+              due contatti, ognuno con metà della storia. Se un altro contatto
+              ha lo stesso numero o lo stesso nome viene proposto qui; altrimenti
+              lo si cerca. */}
+          {!isNew && altri.length > 0 && (
+            <div data-unisci style={{ marginTop: 16, borderTop: '1px solid #f0f0f0', paddingTop: 12, background: simili.length ? '#fffaf0' : 'transparent', borderRadius: simili.length ? 8 : 0, padding: simili.length ? '12px' : '12px 0 0' }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: simili.length ? '#8a6d1f' : '#666', marginBottom: 6 }}>
+                {simili.length ? 'Potrebbe essere la stessa persona di un altro contatto' : 'È la stessa persona di un altro contatto?'}
+              </div>
+              <input value={cercaAltro} onChange={e => { setCercaAltro(e.target.value); setConChi('') }} placeholder="Cerca l’altro contatto per nome, email o telefono"
+                style={{ width: '100%', padding: '8px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, boxSizing: 'border-box', marginBottom: 6 }} />
+              {candidati.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 4, marginBottom: 8 }}>
+                  {candidati.map(c => (
+                    <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', minWidth: 0 }}>
+                      <input type="radio" name="unisci" checked={conChi === c.id} onChange={() => setConChi(c.id)} />
+                      <span style={{ ...unaRiga }}><strong>{c.nome}</strong> <span style={{ color: '#888' }}>· {[c.email, c.telefono].filter(Boolean).join(' · ') || 'senza recapiti'}</span></span>
+                    </label>
+                  ))}
+                </div>
+              )}
+              <button type="button" onClick={unisci} disabled={saving || !conChi}
+                style={{ padding: '8px 14px', background: conChi ? '#1a1a2e' : '#ddd', border: 'none', color: '#fff', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: conChi ? 'pointer' : 'not-allowed' }}>
+                Unisci a questa scheda
+              </button>
+            </div>
+          )}
+
           {/* Le due cose che non si disfano stanno a parte, chiuse, e ognuna
               dice cosa fa: prima erano due pulsanti rossi uguali. */}
           {!isNew && (
@@ -296,7 +347,7 @@ function ContactModal({ contact, aziendaId, onSave, onClose, storia = [], entita
                   <div>
                     <button type="button" onClick={handleErasure} disabled={saving}
                       style={{ padding: '8px 14px', background: 'none', border: '1px solid #fca5a5', color: '#dc2626', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>Rendi anonimo</button>
-                    <div style={{ fontSize: 12, color: '#888', marginTop: 4, lineHeight: 1.5 }}>Per chi chiede la cancellazione dei suoi dati: via nome, email, telefono e note. Resta una riga senza nome, così i conteggi non cambiano.</div>
+                    <div style={{ fontSize: 12, color: '#888', marginTop: 4, lineHeight: 1.5 }}>Per chi chiede la cancellazione dei suoi dati: via nome, email e telefono dalla scheda, dalle sue prenotazioni e dai moduli. Restano righe senza nome, così i conteggi non cambiano.</div>
                   </div>
                 </div>
               )}
@@ -462,7 +513,7 @@ export default function ContattiPage() {
   const newsletter = contatti.filter(c => c.iscritto_newsletter).length
 
   // Le liste si calcolano dai fatti: chi prenota entra da solo.
-  const { liste, perContatto, automatici } = costruisciListe(contatti, registro)
+  const { liste, perContatto, automatici, simili } = costruisciListe(contatti, registro)
   // In trattativa = ha uno stadio. Vuoto = no, ed è il caso normale.
   const inTrattativa = contatti.filter(c => STAGE_MAP[c.pipeline_stage])
   const fuoriTrattativa = contatti.length - inTrattativa.length
@@ -863,6 +914,8 @@ export default function ContattiPage() {
           key={modal === 'new' ? 'nuovo' : modal.id}
           contact={modal === 'new' ? { pipeline_stage: newStage } : modal}
           automatici={automatici}
+          altri={modal !== 'new' ? contatti.filter(c => c.id !== modal.id) : []}
+          simili={modal !== 'new' ? contatti.filter(c => simili.get(modal.id)?.has(c.id)) : []}
           storia={modal !== 'new' ? (perContatto.get(modal.id) || []) : []}
           entita={allEntities}
           onElimina={modal !== 'new' ? (c => handleDelete(c.id, c.nome)) : null}
