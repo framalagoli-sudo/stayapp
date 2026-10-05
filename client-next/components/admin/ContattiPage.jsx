@@ -431,6 +431,7 @@ const LISTE_A_VISTA = 5
 // Un testo su una riga sola, tagliato con i puntini: è così che un titolo lungo
 // — un dato del cliente — non alza la riga e non allarga la tabella.
 const unaRiga = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }
+const azioneBlocco = { padding: '6px 12px', borderRadius: 7, border: 'none', background: 'rgba(255,255,255,0.16)', color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }
 const tendina = { width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, background: '#fff', color: '#1a1a2e', minWidth: 0 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────
@@ -446,6 +447,9 @@ export default function ContattiPage() {
   const [ordine,    setOrdine]    = useState({ per: 'ultima', verso: 'desc' })
   const [quanti,    setQuanti]    = useState(PER_VOLTA)   // quante persone a schermo
   const [gruppiAperti, setGruppiAperti] = useState({})    // i gruppi di liste mostrati per intero
+  const [scelti,    setScelti]    = useState(() => new Set())   // i contatti spuntati nella tabella
+  const [nuovaEtichetta, setNuovaEtichetta] = useState('')
+  const [inBlocco,  setInBlocco]  = useState(false)
   const [view,      setView]      = useState('lista') // 'lista' | 'kanban' (= Trattative)
   const [stadioTel, setStadioTel] = useState('lead')  // lo stadio che si guarda su telefono
   const [modal,     setModal]     = useState(null)    // null | 'new' | contact obj
@@ -478,6 +482,9 @@ export default function ContattiPage() {
   // Cambiando lista, ricerca o ordine si riparte dalle prime: restare a «pagina
   // tre» di un'altra lista mostrerebbe un elenco che non si capisce.
   useEffect(() => { setQuanti(PER_VOLTA) }, [lista, search, ordine.per, ordine.verso])
+  // Cambiando lista la selezione si svuota: agire su persone che non si vedono
+  // più è il modo di eliminare qualcuno senza accorgersene.
+  useEffect(() => { setScelti(new Set()); setNuovaEtichetta('') }, [lista, aziendaId])
 
   const allEntities = [
     ...(strutture || []).map(e => ({ id: e.id, name: e.name, tipo: 'struttura', key: `struttura:${e.id}` })),
@@ -539,6 +546,29 @@ export default function ContattiPage() {
   const contattabiliQui = visibili.filter(contattabile).length
   const dellaLista = contatti.filter(c => !listaScelta.ids || listaScelta.ids.has(c.id))
   const aSchermo = visibili.slice(0, quanti)
+
+  // ── La stessa cosa su più persone insieme ──────────────────────────────────
+  // Solo chi è spuntato E ancora nella lista che si guarda: la ricerca può
+  // nascondere qualcuno dopo che è stato scelto, e non deve restare dentro.
+  const selezionati = visibili.filter(c => scelti.has(c.id))
+  const tuttiScelti = visibili.length > 0 && selezionati.length === visibili.length
+  const spunta = id => setScelti(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  const spuntaTutti = () => setScelti(tuttiScelti ? new Set() : new Set(visibili.map(c => c.id)))
+  async function inBloccoFai(azione, extra = {}) {
+    setInBlocco(true)
+    try {
+      const r = await apiFetch('/api/contatti/blocco', { method: 'POST', body: JSON.stringify({ azienda_id: aziendaId, azione, ids: selezionati.map(c => c.id), ...extra }) })
+      setScelti(new Set()); setNuovaEtichetta('')
+      await load()
+      return r
+    } catch (e) { alert(`Non è riuscito: ${e.message}`) }
+    finally { setInBlocco(false) }
+  }
+  function eliminaScelti() {
+    const n = selezionati.length
+    if (!confirm(`Eliminare ${n} ${n === 1 ? 'contatto' : 'contatti'}?\n\n${n === 1 ? 'Sparisce' : 'Spariscono'} dall'elenco insieme alla ${n === 1 ? 'sua' : 'loro'} storia. Le prenotazioni restano dove sono.\n\nNon si può annullare.`)) return
+    inBloccoFai('elimina')
+  }
   // Le liste raccolte per intestazione, nell'ordine in cui arrivano.
   const gruppiDiListe = []
   for (const l of liste) {
@@ -728,6 +758,25 @@ export default function ContattiPage() {
                 </div>
               </div>
 
+              {/* ⛔ Ogni cosa si faceva una persona alla volta: per dare la stessa
+                  etichetta a venti contatti servivano venti schede. Spuntando
+                  qualcuno compare questa barra; vale per chi è spuntato, non
+                  per tutta la lista. Solo su computer: su telefono le righe
+                  sono pulsanti, e una spunta accanto si sbaglierebbe col dito. */}
+              {selezionati.length > 0 && (
+                <div data-barra-blocco className="ct-solo-computer" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', background: '#1a1a2e', color: '#fff', borderRadius: 10, padding: '9px 14px', marginBottom: 10 }}>
+                  <strong style={{ fontSize: 13.5 }}>{selezionati.length} {selezionati.length === 1 ? 'selezionato' : 'selezionati'}</strong>
+                  <form onSubmit={e => { e.preventDefault(); if (nuovaEtichetta.trim()) inBloccoFai('etichetta', { etichetta: nuovaEtichetta }) }} style={{ display: 'flex', gap: 6, marginLeft: 6 }}>
+                    <input value={nuovaEtichetta} onChange={e => setNuovaEtichetta(e.target.value)} placeholder="Etichetta da aggiungere" maxLength={60} aria-label="Etichetta da aggiungere"
+                      style={{ padding: '6px 10px', borderRadius: 7, border: 'none', fontSize: 13, width: 190 }} />
+                    <button type="submit" disabled={inBlocco || !nuovaEtichetta.trim()} style={{ ...azioneBlocco, opacity: nuovaEtichetta.trim() ? 1 : 0.5 }}>Aggiungi etichetta</button>
+                  </form>
+                  <button type="button" onClick={() => downloadContattiCSV(selezionati, 'selezionati')} style={azioneBlocco}>Esporta</button>
+                  <button type="button" onClick={eliminaScelti} disabled={inBlocco} style={{ ...azioneBlocco, background: '#c53030' }}>Elimina</button>
+                  <button type="button" onClick={() => setScelti(new Set())} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', fontSize: 12.5, cursor: 'pointer', textDecoration: 'underline' }}>Annulla selezione</button>
+                </div>
+              )}
+
               {visibili.length === 0 ? (
                 <div style={{ background: '#fff', borderRadius: 12, padding: 36, textAlign: 'center', color: '#aaa' }}>
                   {cercato ? 'Nessuno con questo nome in questa lista.' : 'Nessuno in questa lista.'}
@@ -740,10 +789,13 @@ export default function ContattiPage() {
                   <div className="ct-solo-computer" style={{ background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflowX: 'auto' }}>
                     <table data-tabella-contatti style={{ width: '100%', minWidth: 700, borderCollapse: 'collapse', fontSize: 13.5, tableLayout: 'fixed' }}>
                       <colgroup>
-                        <col style={{ width: '27%' }} /><col style={{ width: '13%' }} /><col style={{ width: '9%' }} /><col style={{ width: '27%' }} /><col style={{ width: '13%' }} /><col style={{ width: '11%' }} />
+                        <col style={{ width: 40 }} /><col style={{ width: '25%' }} /><col style={{ width: '13%' }} /><col style={{ width: '9%' }} /><col style={{ width: '27%' }} /><col style={{ width: '13%' }} /><col style={{ width: '11%' }} />
                       </colgroup>
                       <thead>
                         <tr>
+                          <th style={{ padding: '0 0 0 14px', borderBottom: '1px solid #eee', textAlign: 'left' }}>
+                            <input type="checkbox" data-spunta-tutti checked={tuttiScelti} onChange={spuntaTutti} aria-label={`Seleziona tutte le ${visibili.length} persone di questa lista`} title={`Seleziona tutte le ${visibili.length} persone di questa lista`} />
+                          </th>
                           {[['nome', 'Nome'], ['fonte', 'Da dove arriva'], ['volte', 'Attività'], ['ultima', 'Ultima attività'], ['contatto', 'Contattabile'], ['dal', 'Dal']].map(([k, etichetta]) => (
                             <th key={k} aria-sort={ordine.per === k ? (ordine.verso === 'asc' ? 'ascending' : 'descending') : 'none'}
                               style={{ textAlign: k === 'volte' ? 'right' : 'left', padding: 0, borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>
@@ -764,7 +816,11 @@ export default function ContattiPage() {
                           return (
                             <tr key={c.id} onClick={() => setModal(c)} data-contatto={c.id} tabIndex={0}
                               onKeyDown={e => { if (e.key === 'Enter') setModal(c) }}
-                              style={{ cursor: 'pointer', borderBottom: '1px solid #f5f5f5' }}>
+                              style={{ cursor: 'pointer', borderBottom: '1px solid #f5f5f5', background: scelti.has(c.id) ? '#f5f7ff' : 'transparent' }}>
+                              {/* La spunta non deve aprire la scheda: il clic si ferma qui. */}
+                              <td onClick={e => e.stopPropagation()} style={{ padding: '9px 0 9px 14px' }}>
+                                <input type="checkbox" data-spunta={c.id} checked={scelti.has(c.id)} onChange={() => spunta(c.id)} aria-label={`Seleziona ${c.nome}`} />
+                              </td>
                               <td style={{ padding: '9px 14px' }}>
                                 <div data-nome title={c.nome} style={{ ...unaRiga, fontWeight: 600, color: '#1a1a2e' }}>{c.nome}</div>
                                 <div title={recapiti} style={{ ...unaRiga, fontSize: 12, color: emailDaCorreggere(c) ? '#c53030' : '#888', marginTop: 2 }}>

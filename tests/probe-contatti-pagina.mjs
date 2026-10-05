@@ -96,7 +96,7 @@ try {
   await page.waitForTimeout(500)
   if (process.env.FOTO) await page.screenshot({ path: `${process.env.FOTO}/contatti-pagina.png`, fullPage: true })
   const liste = async () => Object.fromEntries(await page.locator('[data-lista]').evaluateAll(els => els.map(e => [e.querySelector('span').textContent.trim(), Number(e.querySelectorAll('span')[1].textContent)])))
-  const nomi = () => page.locator('[data-tabella-contatti] tbody tr td:first-child > div:first-child').allInnerTexts()
+  const nomi = () => page.locator('[data-tabella-contatti] [data-nome]').allInnerTexts()
   const conto = async () => (await page.locator('[data-conto-lista]').innerText()).replace(/\s+/g, ' ')
 
   console.log('\n2 · LE LISTE\n')
@@ -281,6 +281,47 @@ try {
   ok(await d.locator('[data-lista]').count() === prima + 6, 'e cliccandolo compaiono tutte')
   const altezze = await d.locator('[data-tabella-contatti] tbody tr').evaluateAll(els => els.map(e => e.getBoundingClientRect().height))
   ok(altezze.length === 25 && Math.max(...altezze) < 70, `le righe restano basse anche con nomi e titoli lunghi (la più alta ${Math.round(Math.max(...altezze))}px)`)
+
+  console.log('\n7 · LA STESSA COSA SU PIÙ PERSONE\n')
+  // ⛔ Ogni cosa si faceva una persona alla volta.
+  ok(await d.locator('[data-barra-blocco]').count() === 0, 'finché non si spunta nessuno, la barra non c’è')
+  await d.locator('[data-lista]', { hasText: 'clienti-2026' }).click()
+  await d.locator('[data-spunta-tutti]').check()
+  const barra = () => d.locator('[data-barra-blocco]').innerText()
+  ok(/10 selezionati/.test(await barra()), `«seleziona tutti» prende le 10 persone della lista, non solo quelle a schermo (${(await barra()).split('\n')[0]})`)
+  await d.getByPlaceholder('Etichetta da aggiungere').fill('Natale 2026')
+  await d.getByRole('button', { name: 'Aggiungi etichetta' }).click()
+  await d.locator('[data-lista]', { hasText: 'natale 2026' }).waitFor({ timeout: 15000 }).catch(() => {})
+  const conEtichetta = await a.from('contatti').select('id', { count: 'exact', head: true }).eq('azienda_id', mia.id).contains('tags', JSON.stringify(['natale 2026']))
+  ok(conEtichetta.count === 10 && await d.locator('[data-barra-blocco]').count() === 0, `l’etichetta è arrivata a tutte e 10, ed è già una lista (${conEtichetta.count})`)
+  // Cambiando lista la selezione si svuota.
+  await d.locator('[data-lista]', { hasText: 'natale 2026' }).click()
+  await d.locator('[data-spunta]').first().check()
+  await d.locator('[data-spunta]').nth(1).check()
+  ok(/2 selezionati/.test(await barra()), 'si possono spuntare anche una per una')
+  await d.locator('[data-lista="tutti"]').click()
+  ok(await d.locator('[data-barra-blocco]').count() === 0, 'cambiando lista la selezione si svuota: non si agisce su chi non si vede')
+  // Eliminare chiede, dice quanti e che non si annulla.
+  await d.locator('[data-lista]', { hasText: 'natale 2026' }).click()
+  await d.locator('[data-spunta]').first().check()
+  await d.locator('[data-spunta]').nth(1).check()
+  let chiede = ''
+  d.once('dialog', x => { chiede = x.message(); x.accept() })
+  await d.locator('[data-barra-blocco]').getByRole('button', { name: 'Elimina' }).click()
+  await d.locator('[data-barra-blocco]').waitFor({ state: 'detached', timeout: 15000 }).catch(() => {})
+  const rimasti = await a.from('contatti').select('id', { count: 'exact', head: true }).eq('azienda_id', mia.id).contains('tags', JSON.stringify(['natale 2026']))
+  ok(/Eliminare 2 contatti/.test(chiede) && /Non si può annullare/.test(chiede) && rimasti.count === 8, `eliminare chiede conferma dicendo quanti e che non si annulla, e toglie solo quelli (${rimasti.count} rimasti su 10)`)
+
+  // Gli id dicono QUALI, mai DI CHI.
+  const blocco = (sessione, corpo) => fetch(`${BASE}/api/contatti/blocco`, { method: 'POST', headers: { ...sessione, 'content-type': 'application/json' }, body: JSON.stringify(corpo) }).then(async x => ({ stato: x.status, j: await x.json().catch(() => ({})) }))
+  const altrui = await blocco(H, { azione: 'elimina', ids: [estraneo.id], azienda_id: altra.id })
+  const vivo = await a.from('contatti').select('id', { count: 'exact', head: true }).eq('id', estraneo.id)
+  ok(altrui.j.fatti === 0 && vivo.count === 1, `l’id di un contatto di un’altra azienda non viene toccato, nemmeno indicando la sua azienda (fatti: ${altrui.j.fatti})`)
+  const marchia = await blocco(H, { azione: 'etichetta', etichetta: 'rubato', ids: [estraneo.id, anna.id] })
+  const { data: e2 } = await a.from('contatti').select('tags').eq('id', estraneo.id).single()
+  ok(marchia.j.fatti === 1 && !(e2.tags || []).includes('rubato'), 'in un gruppo misto si agisce solo sui propri')
+  ok((await blocco(H, { azione: 'svuota tutto', ids: [anna.id] })).stato === 400 && (await blocco(H, { azione: 'elimina', ids: ['non-un-id', null, 7] })).stato === 400, 'un’azione inventata e degli id che non sono id vengono rifiutati')
+  ok((await blocco(senza, { azione: 'elimina', ids: [anna.id] })).stato === 403 && (await fetch(`${BASE}/api/contatti/blocco`, { method: 'POST', body: '{}' })).status === 401, 'un collaboratore senza permesso non può, e senza login nemmeno')
   await pc.close()
 
   console.log('\n' + '─'.repeat(64))
