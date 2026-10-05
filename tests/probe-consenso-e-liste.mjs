@@ -236,7 +236,8 @@ try {
   await page.locator('[data-lista]', { hasText: 'ZZ Serata consenso' }).click()
   await scrivi.click()
   await page.waitForURL(/\/admin\/newsletter\/[0-9a-f-]{36}/, { timeout: 30000 })
-  await page.locator('[data-conto-destinatari]:not([data-conto-destinatari=""])').waitFor({ timeout: 30000 })
+  // Si aspetta il conto finito, non il riquadro: mentre legge le liste dice «Conto i destinatari…».
+  await page.locator('[data-conto-destinatari]', { hasText: 'di questa lista' }).waitFor({ timeout: 30000 }).catch(() => {})
   const scelta = await page.locator('[data-scegli-lista]').evaluate(el => el.selectedOptions[0]?.textContent || '')
   const conto = (await page.locator('[data-conto-destinatari]').innerText()).replace(/\s+/g, ' ')
   ok(/Chi ha prenotato «ZZ Serata consenso»/.test(scelta) && /di questa lista/.test(conto), `si apre una bozza di newsletter già destinata a quella lista, col suo conto («${conto}»)`)
