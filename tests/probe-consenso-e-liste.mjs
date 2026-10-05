@@ -163,6 +163,36 @@ try {
   const tolta = await fetch(`${BASE}/api/newsletter/${nl.j.id}`, { method: 'PATCH', headers: { ...H, 'content-type': 'application/json' }, body: JSON.stringify({ lista: null }) }).then(r => r.json())
   ok(tolta.lista === null && (await conta(nl.j.id)).j.quanti === attesi, 'togliendo la lista dalla bozza si torna a tutti gli iscritti')
 
+  console.log('\n2b · IL NEGOZIO\n')
+  // Qui, dopo i conteggi: l'email dell'ordine a un indirizzo finto rimbalza, e cambierebbe i numeri di sopra.
+  const { data: prod, error: ep } = await a.from('prodotti').insert({ azienda_id: mia.id, nome: 'ZZ Bottiglia', prezzo: 12, attivo: true }).select().single()
+  if (ep) ok(false, 'prodotto di prova non creato: ' + ep.message)
+  else {
+    const ordina = (mail, extra) => manda(`/api/shop/public/${mia.id}/ordine`, { email_cliente: mail, nome_cliente: 'ZZ Cliente', voci: [{ prodotto_id: prod.id, qty: 1 }], privacy_accettata: true, ...extra })
+    const cSi = `zz-ordine-si-${t}@playwright.internal`, cNo = `zz-ordine-no-${t}@playwright.internal`
+    const o1 = await ordina(cSi, { promozioni: true }), o2 = await ordina(cNo, {})
+    const k1 = await finche(cSi, x => x.iscritto_newsletter), k2 = await finche(cNo, x => x.attivita_numero === 1)
+    ok(o1.stato === 201 && k1?.iscritto_newsletter === true && k1?.marketing_consenso_testo === 'Avvisatemi di novità e offerte' && k1?.marketing_consenso_fonte === 'ordine dal negozio',
+      `chi ordina spuntando la casella viene iscritto, con la prova (HTTP ${o1.stato}${o1.j?.error ? ' ' + o1.j.error : ''} · ${k1?.marketing_consenso_fonte})`)
+    ok(o2.stato === 201 && k2?.iscritto_newsletter === false, 'chi ordina senza spuntarla no')
+
+    // Il carrello vero, aperto con un browser: la casella c'è e non è spuntata.
+    await a.from('entita').update({ minisito: { active: true } }).eq('id', mia.ent.id)
+    await deve(a.from('pagine').insert({ entity_tipo: 'ristorante', entity_id: mia.ent.id, slug: '__home__', titolo: 'Home', status: 'pubblicata', blocks: [{ id: 'b1', type: 'shop', data: { titolo_sezione: 'ZZ Negozio' } }] }), 'pagina')
+    const bn = await chromium.launch()
+    try {
+      const pn = await (await bn.newContext({ locale: 'it-IT', viewport: { width: 390, height: 844 } })).newPage()
+      await pn.goto(`${BASE}/r/${mia.ent.slug}`, { waitUntil: 'networkidle' })
+      await pn.getByRole('button', { name: 'Aggiungi' }).first().click()
+      // Alla prima visita il banner dei cookie copre il pulsante fisso: si passa da quello in pagina, come farebbe il visitatore.
+      await pn.getByRole('button', { name: /Vai al carrello/ }).click()
+      await pn.getByRole('button', { name: /Procedi all’ordine/ }).click()
+      const sp = pn.locator('[data-spunta-promozioni]')
+      await sp.waitFor({ timeout: 10000 })
+      ok((await sp.innerText()).trim() === 'Avvisatemi di novità e offerte' && !(await sp.locator('input').isChecked()), 'nel carrello la casella c’è, con la frase giusta, e non è già spuntata')
+    } catch (e) { ok(false, 'il carrello non si è aperto: ' + e.message.split('\n')[0]) } finally { await bn.close() }
+  }
+
   console.log('\n3 · NEL SITO E NEL PANNELLO\n')
   browser = await chromium.launch()
   const sito = await browser.newContext({ locale: 'it-IT', viewport: { width: 390, height: 844 } })

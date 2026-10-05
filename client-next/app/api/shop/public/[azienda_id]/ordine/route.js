@@ -8,6 +8,7 @@ import { logError } from '@/lib/observability'
 import { creaCheckout } from '@/lib/checkout'
 import { TESTO_CONSENSO_ORDINE } from '@/lib/consenso-ordine'
 import { registraContatto } from '@/lib/crm'
+import { testoConsensoPromozioni } from '@/lib/consenso-promozioni'
 import { after } from 'next/server'
 
 export async function POST(request, props) {
@@ -17,7 +18,10 @@ export async function POST(request, props) {
     const rl = await rateLimit(request, { name: 'shop-ordine', limit: 15, windowSec: 3600, ip })
     if (!rl.allowed) return tooManyRequests()
     const { azienda_id } = params
-    const { email_cliente, nome_cliente, telefono_cliente, indirizzo, voci, note_cliente, punti_da_usare, codice_gift_card, privacy_accettata } = await request.json()
+    const corpo = await request.json()
+    const { email_cliente, nome_cliente, telefono_cliente, indirizzo, voci, note_cliente, punti_da_usare, codice_gift_card, privacy_accettata } = corpo
+    // «Avvisatemi di novità e offerte»: vale solo se spuntata. Ordinare non è iscriversi.
+    const promozioni = corpo.promozioni === true ? { testo: testoConsensoPromozioni('altro', corpo.lang), fonte: 'ordine dal negozio' } : null
 
     if (!email_cliente || !voci?.length)
       return Response.json({ error: 'email e voci sono obbligatori' }, { status: 400 })
@@ -173,6 +177,7 @@ export async function POST(request, props) {
       aziendaId: azienda_id,
       email: email_cliente, nome: nome_cliente, telefono: telefono_cliente,
       fonte: 'ordine',
+      promozioni,
       attivita: { tipo: 'ordine', titolo: `Ordine #${ordine.numero}`, riferimento: ordine.id, dettaglio: { totale: totaleFinale } },
     }))
 

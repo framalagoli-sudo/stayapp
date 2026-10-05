@@ -5,6 +5,7 @@ import { guestFetch } from '@/lib/api'
 import { injectJsonLd, buildProductsSchema } from '@/lib/geoSchema'
 import { formatoValido, rapportoDi, focalValido } from '@/lib/formati-foto'
 import { TESTO_CONSENSO_ORDINE } from '@/lib/consenso-ordine'
+import SpuntaPromozioni from '@/components/guest/SpuntaPromozioni'
 
 // Il catalogo dello shop dentro un sito: schede, carrello, ordine.
 //
@@ -45,6 +46,8 @@ export default function ShopBlocco({ aziendaId, prodotti = [], primary, heading,
   const [citta, setCitta] = useState('')
   const [note, setNote] = useState('')
   const [privacy, setPrivacy] = useState(false)
+  // «Avvisatemi di novità e offerte»: facoltativa, mai già spuntata.
+  const [promozioni, setPromozioni] = useState(false)
   const [invio, setInvio] = useState(false)
   const [errore, setErrore] = useState('')
 
@@ -141,6 +144,7 @@ export default function ShopBlocco({ aziendaId, prodotti = [], primary, heading,
           punti_da_usare: usaPunti ? (saldo?.saldo || 0) : 0,
           codice_gift_card: gc ? codiceGc.trim().toUpperCase() : '',
           privacy_accettata: privacy === true,
+          promozioni: promozioni === true,
         }),
       })
       const d = await r.json().catch(() => ({}))
@@ -313,6 +317,7 @@ export default function ShopBlocco({ aziendaId, prodotti = [], primary, heading,
                     <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} style={{ marginTop: 3 }} />
                     <span>{TESTO_CONSENSO_ORDINE}{privacyUrl && <> <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: primary }}>Leggi l’informativa</a></>}</span>
                   </label>
+                  <SpuntaPromozioni checked={promozioni} onChange={setPromozioni} accento={primary} style={{ fontSize: 12.5, color: '#555', gap: 8 }} />
                 </div>
               )}
               {errore && <p style={{ color: '#c53030', fontSize: 13, margin: '12px 0 0' }}>{errore}</p>}
