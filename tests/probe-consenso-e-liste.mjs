@@ -236,9 +236,10 @@ try {
   await page.locator('[data-lista]', { hasText: 'ZZ Serata consenso' }).click()
   await scrivi.click()
   await page.waitForURL(/\/admin\/newsletter\/[0-9a-f-]{36}/, { timeout: 30000 })
-  await page.locator('[data-lista-newsletter]').waitFor({ timeout: 30000 })
-  const box = (await page.locator('[data-lista-newsletter]').innerText()).replace(/\s+/g, ' ')
-  ok(/Chi ha prenotato «ZZ Serata consenso»/.test(box) && /ha dato il consenso/.test(box), 'si apre una bozza di newsletter che dice a quale lista è destinata')
+  await page.locator('[data-conto-destinatari]:not([data-conto-destinatari=""])').waitFor({ timeout: 30000 })
+  const scelta = await page.locator('[data-scegli-lista]').evaluate(el => el.selectedOptions[0]?.textContent || '')
+  const conto = (await page.locator('[data-conto-destinatari]').innerText()).replace(/\s+/g, ' ')
+  ok(/Chi ha prenotato «ZZ Serata consenso»/.test(scelta) && /di questa lista/.test(conto), `si apre una bozza di newsletter già destinata a quella lista, col suo conto («${conto}»)`)
   ok(errori.length === 0, `nessun errore nel browser${errori.length ? ' — ' + errori[0] : ''}`)
   await ctx.close()
 

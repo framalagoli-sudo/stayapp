@@ -61,6 +61,33 @@ export async function destinatariNewsletter(nl) {
   return { contatti: raggiungibili.map(({ id, email, nome, unsubscribe_token }) => ({ id, email, nome, unsubscribe_token })), lista }
 }
 
+// Le liste fra cui si sceglie a chi scrivere, ognuna col suo conto: quante
+// persone ha, e a quante di queste si può scrivere davvero. Le stesse liste
+// della pagina Contatti (`costruisciListe`) e la stessa regola dell'invio.
+// Escono solo titoli e numeri: mai nomi né indirizzi.
+//
+// Non si offrono le liste che non sono un pubblico a cui scrivere: «Tutti» (è
+// la scelta predefinita), «Si possono contattare» (lo è già chiunque riceva) e
+// quelle «da sistemare».
+const NON_SONO_UN_PUBBLICO = new Set(['tutti', 'contattabili', 'doppioni', 'da_correggere'])
+export async function listeNewsletter(aziendaId) {
+  const contatti = await tutte(() => supabaseAdmin.from('contatti')
+    .select('id, email, nome, tags, fonte, telefono, telefono_e164, iscritto_newsletter, email_non_valida, whatsapp_optin, pipeline_stage')
+    .eq('azienda_id', aziendaId).order('created_at').order('id'))
+  const registro = await tutte(() => supabaseAdmin.from('contatti_attivita')
+    .select('contatto_id, tipo, titolo, origine_id, riferimento, avvenuta_il')
+    .eq('azienda_id', aziendaId).order('avvenuta_il', { ascending: false }).order('id'))
+  const raggiungibili = new Set(contatti.filter(c => c.iscritto_newsletter && c.email && !c.email_non_valida).map(c => c.id))
+  const liste = costruisciListe(contatti, registro).liste
+    .filter(l => !NON_SONO_UN_PUBBLICO.has(l.chiave) && l.ids)
+    .map(l => ({
+      chiave: l.chiave, titolo: l.titoloLungo || l.titolo, gruppo: l.gruppo || 'In evidenza',
+      persone: l.ids.size, raggiungibili: [...l.ids].filter(id => raggiungibili.has(id)).length,
+    }))
+    .filter(l => l.persone > 0)
+  return { tutti: { persone: contatti.length, raggiungibili: raggiungibili.size }, liste }
+}
+
 // La lista che arriva dal client, ripulita: una chiave e un titolo, nient'altro.
 // Che la chiave indichi una lista vera lo si scopre contando i destinatari.
 export function listaValida(lista) {

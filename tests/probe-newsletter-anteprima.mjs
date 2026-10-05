@@ -10,7 +10,12 @@
 //   1. aprendo una bozza l'anteprima c'è già, col colore e i dati dell'azienda;
 //   2. scrivendo, cambia da sola (titolo, oggetto, {{nome}});
 //   3. quello che si scrive non diventa codice nell'anteprima (caso ostile);
-//   4. su telefono non si rompe: si alterna con il pulsante.
+//   4. su telefono non si rompe: si alterna con il pulsante;
+//   5. «A chi la mandi»: le liste dei Contatti coi loro numeri, sempre a vista;
+//      il campo dei tag non c'è più; la route delle liste dà solo titoli e
+//      conteggi, e solo della propria azienda;
+//   6. i modelli si vedono: quattro miniature dell'email vera; cambiando
+//      modello resta ciò che il nuovo sa mostrare, e il resto si chiede.
 //
 // Nessuna email parte. Azienda ZZ, si pulisce da sola.
 // Uso: cd tests && TEST_URL=http://localhost:3000 node probe-newsletter-anteprima.mjs [cartella-foto]
@@ -31,12 +36,19 @@ const t = Date.now()
 let problemi = 0
 const ok = (c, m) => { console.log(`  ${c ? '✓' : '✗'} ${m}`); if (!c) problemi++ }
 const deve = async (q, cosa) => { const { data, error } = await q; if (error) throw new Error(`${cosa}: ${error.message}`); return data }
-let az = null, utente = null, browser = null
+let az = null, altra = null, utente = null, browser = null
 try {
   az = await deve(a.from('aziende').insert({ ragione_sociale: `ZZ-ANTEPRIMA-${t}`, partita_iva: '01234567890', citta: 'Terni', require_2fa: false, moduli: { ristorante: true } }).select().single(), 'azienda')
   const ent = await deve(a.from('entita').insert({ azienda_id: az.id, tipo: 'ristorante', name: 'ZZ Locale Anteprima', slug: `zz-ant-${t}`, active: true, theme: { primaryColor: '#b4530a' } }).select().single(), 'entità')
   const nl = await deve(a.from('newsletters').insert({ azienda_id: az.id, entity_tipo: 'ristorante', entity_id: ent.id, status: 'draft', template_id: 'semplice',
     subject: 'Ciao {{nome}}, venerdì si suona', preheader: 'Posti limitati', content: { heading: 'ZZ Titolo iniziale', text: 'Ti aspettiamo.', image_url: '', cta_text: 'Prenota', cta_url: 'https://example.com' } }).select().single(), 'newsletter')
+  // Tre contatti: due iscritti, e un'etichetta («ZZ Amici») su due di loro, di cui uno solo iscritto.
+  const persona = (nome, mail, iscritto, tags = []) => deve(a.from('contatti').insert({ azienda_id: az.id, nome, email: mail, fonte: 'manuale', pipeline_stage: null, iscritto_newsletter: iscritto, tags }).select().single(), 'contatto')
+  await persona('ZZ Anna Segreta', `zz-anna-${t}@playwright.internal`, true, ['ZZ Amici'])
+  await persona('ZZ Bruno Segreto', `zz-bruno-${t}@playwright.internal`, false, ['ZZ Amici'])
+  await persona('ZZ Carla Segreta', `zz-carla-${t}@playwright.internal`, true)
+  const vuota = await deve(a.from('newsletters').insert({ azienda_id: az.id, entity_tipo: 'ristorante', entity_id: ent.id, status: 'draft', template_id: 'semplice', subject: '', content: {} }).select().single(), 'newsletter vuota')
+  altra = await deve(a.from('aziende').insert({ ragione_sociale: `ZZ-ANTEPRIMA-VICINA-${t}`, require_2fa: false }).select().single(), 'azienda vicina')
   const email = `zz-ant-${t}@playwright.internal`, password = randomBytes(24).toString('base64url') + 'Aa1!'
   const { data: u } = await a.auth.admin.createUser({ email, password, email_confirm: true }); utente = u.user.id
   await a.from('profiles').upsert({ id: utente, role: 'admin_azienda', full_name: 'ZZ', azienda_id: az.id }, { onConflict: 'id' })
@@ -88,12 +100,67 @@ try {
   await page.getByPlaceholder('URL immagine (opzionale)').first().fill('https://example.com/a.jpg" onerror="window.top.__colpito=1" data-zz="1')
   await email_.locator('img').first().waitFor({ state: 'attached', timeout: 8000 }).catch(() => {})
   ok(await email_.locator('img[data-zz], img[onerror]').count() === 0 && await email_.locator('img').count() >= 1, 'una virgoletta nell’indirizzo dell’immagine non esce dall’attributo')
+
+  console.log('\n3 · A CHI LA MANDI\n')
+  const H = { Authorization: `Bearer ${s.session.access_token}` }
+  const grezzo = async (percorso, headers) => { const r = await fetch(BASE + percorso, { headers }); return { stato: r.status, testo: await r.text() } }
+  const mie = await grezzo('/api/newsletter/liste', H)
+  const j = JSON.parse(mie.testo)
+  const amici = j.liste?.find(l => l.chiave === 'etichetta|ZZ Amici')
+  ok(mie.stato === 200 && j.tutti.persone === 3 && j.tutti.raggiungibili === 2 && amici?.persone === 2 && amici?.raggiungibili === 1, `la route conta: 2 iscritti su 3 contatti, e 1 su 2 nella lista «ZZ Amici» (${JSON.stringify(j.tutti)} · ${JSON.stringify(amici)})`)
+  ok(!/Segret|@playwright|zz-anna|zz-bruno/i.test(mie.testo) && j.liste.every(l => Object.keys(l).sort().join() === 'chiave,gruppo,persone,raggiungibili,titolo'), 'escono solo titoli e numeri: nessun nome, nessun indirizzo')
+  ok((await grezzo('/api/newsletter/liste')).stato === 401, 'senza login non risponde')
+  const altrui = await grezzo(`/api/newsletter/liste?azienda_id=${altra.id}`, H)
+  ok(altrui.stato === 200 && JSON.parse(altrui.testo).tutti.persone === 3, 'chiedendo le liste di un’altra azienda si ricevono comunque le proprie')
+  ok(await page.getByText('Filtra destinatari per tag').count() === 0 && await page.getByPlaceholder(/Tag \(Invio per aggiungere\)/).count() === 0, 'il campo dei tag non c’è più')
+  const conto = page.locator('[data-conto-destinatari]')
+  await page.locator('[data-conto-destinatari="2"]').waitFor({ timeout: 15000 }).catch(() => {})
+  ok(/riceveranno 2 persone.*su 3 contatti.*L’altra non ha dato il consenso/.test((await conto.innerText()).replace(/\s+/g, ' ')), `il conto è a vista senza premere niente: «${(await conto.innerText()).replace(/\s+/g, ' ').trim()}»`)
+  await page.locator('[data-scegli-lista]').selectOption('etichetta|ZZ Amici')
+  ok(/riceverà 1 persona su 2 di questa lista/.test((await conto.innerText()).replace(/\s+/g, ' ')), `scegliendo una lista il conto cambia subito: «${(await conto.innerText()).replace(/\s+/g, ' ').trim()}»`)
+  await page.getByRole('button', { name: 'Salva bozza' }).click()
+  let salvata = null
+  for (let i = 0; i < 20 && !salvata?.lista; i++) { salvata = (await a.from('newsletters').select('lista, tag_filter').eq('id', nl.id).single()).data; if (!salvata?.lista) await page.waitForTimeout(500) }
+  ok(salvata?.lista?.chiave === 'etichetta|ZZ Amici' && Object.keys(salvata.lista).sort().join() === 'chiave,titolo' && salvata.tag_filter === null, `salvando resta la lista scelta: chiave e titolo, non le persone (${JSON.stringify(salvata?.lista)})`)
+  const ordine = await page.evaluate(() => [...document.querySelectorAll('div')].map(d => d.textContent.trim()).filter(x => ['A chi la mandi', 'Modello', 'Oggetto', 'Contenuto', 'Quando parte'].includes(x)))
+  ok([...new Set(ordine)].join(' → ') === 'A chi la mandi → Modello → Oggetto → Contenuto → Quando parte', `l’ordine è quello in cui si ragiona (${[...new Set(ordine)].join(' → ')})`)
+
+  console.log('\n4 · I MODELLI SI VEDONO\n')
+  const mini = page.locator('[data-modello]')
+  await page.frameLocator('[data-modello="evento"] iframe').getByText('Il nome della serata').waitFor({ timeout: 15000 }).catch(() => {})
+  const viste = []
+  for (const [id, frase] of [['semplice', 'Una novità per te'], ['promozione', 'Solo per questa settimana'], ['notizie', 'Le novità del mese'], ['evento', 'Il nome della serata']]) {
+    const dentro = page.frameLocator(`[data-modello="${id}"] iframe`)
+    const c = await dentro.locator('body').innerText().catch(() => '')
+    const largo = await page.locator(`[data-modello="${id}"] iframe`).evaluate(el => el.getBoundingClientRect().width).catch(() => 0)
+    viste.push(c.includes(frase) && c.includes('ZZ Locale Anteprima') && largo > 120 && largo < 400)
+  }
+  ok(await mini.count() === 4 && viste.every(Boolean), `quattro miniature, ognuna è l’email vera del suo modello col nome del locale (${viste.map(v => v ? 'sì' : 'no').join(' ')})`)
+  ok(await page.locator('[data-modello="semplice"]').getAttribute('aria-pressed') === 'true', 'quello in uso è segnato')
+  if (foto) await page.locator('[data-modello="semplice"]').scrollIntoViewIfNeeded().then(() => page.screenshot({ path: `${foto}/newsletter-modelli.png` }))
+  await titolo.fill('Venerdì jazz')
+  let chiesto = ''
+  page.once('dialog', d => { chiesto = d.message(); d.dismiss() })
+  await page.locator('[data-modello="notizie"]').click()
+  await page.waitForTimeout(400)
+  ok(/non ha: .*testo/.test(chiesto) && await page.locator('[data-modello="semplice"]').getAttribute('aria-pressed') === 'true', `se cambiando modello si perde qualcosa lo chiede, e dicendo no non cambia niente («${chiesto.split('\n')[0]}»)`)
+  await page.locator('[data-modello="evento"]').click()
+  await email_.getByText('Venerdì jazz').waitFor({ timeout: 8000 }).catch(() => {})
+  ok(await page.locator('[data-modello="evento"]').getAttribute('aria-pressed') === 'true' && await email_.getByText('Venerdì jazz').count() === 1 && await email_.getByText('Prenota', { exact: true }).count() === 1, 'verso un modello che ha gli stessi campi si passa senza domande, e titolo e pulsante restano')
+
+  await page.goto(`${BASE}/admin/newsletter/${vuota.id}`, { waitUntil: 'domcontentloaded' })
+  await page.locator('[data-esempio]').waitFor({ timeout: 60000 }).catch(() => {})
+  ok(await email_.getByText('Una novità per te').count() === 1 && await page.locator('[data-esempio]').count() === 1, 'una bozza vuota mostra l’esempio del modello, e dice che è un esempio')
+  ok(/Manca l’oggetto/.test(await page.locator('[data-riga-posta]').innerText()), 'e avvisa che manca l’oggetto')
+  await page.getByPlaceholder('URL immagine (opzionale)').first().locator('xpath=following::input[1]').fill('Il mio titolo vero')
+  await email_.getByText('Il mio titolo vero').waitFor({ timeout: 8000 }).catch(() => {})
+  ok(await email_.getByText('Una novità per te').count() === 0 && await email_.getByText('Il mio titolo vero').count() === 1 && await page.locator('[data-esempio]').count() === 0, 'appena si scrive, l’esempio lascia il posto a quello che si è scritto')
   await page.getByRole('button', { name: 'Nascondi anteprima' }).click()
   ok(await riquadro.count() === 0 && await page.getByRole('button', { name: 'Anteprima', exact: true }).count() === 1, 'chi non la vuole la nasconde, e la ritrova')
   ok(errori.length === 0, `nessun errore nel browser${errori.length ? ' — ' + errori[0] : ''}`)
   await ctx.close()
 
-  console.log('\n3 · SU TELEFONO\n')
+  console.log('\n5 · SU TELEFONO\n')
   const ctxT = await browser.newContext({ locale: 'it-IT', viewport: { width: 390, height: 844 }, storageState: stato })
   const pt = await ctxT.newPage()
   const erroriT = []
@@ -117,6 +184,7 @@ try {
   if (browser) await browser.close().catch(() => {})
   if (utente) await a.auth.admin.deleteUser(utente).catch(() => {})
   if (az) await cancellaAziendaDiProva(az.id)
+  if (altra) await cancellaAziendaDiProva(altra.id)
   console.log('[probe] pulito')
   process.exit(problemi ? 1 : 0)
 }

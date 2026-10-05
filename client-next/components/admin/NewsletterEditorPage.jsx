@@ -1,5 +1,5 @@
 ﻿'use client'
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
@@ -18,9 +18,9 @@ const EMOJIS = [
 // ─── Templates ────────────────────────────────────────────────────────────────
 
 const TEMPLATES = [
-  { id: 'semplice',   label: 'Semplice',   desc: 'Titolo, testo e un bottone CTA',            color: '#6366f1' },
-  { id: 'promozione', label: 'Promozione', desc: 'Offerta con prezzo, badge sconto e CTA',     color: '#f59e0b' },
-  { id: 'notizie',    label: 'Notizie',    desc: 'Più blocchi titolo/testo/immagine',           color: '#10b981' },
+  { id: 'semplice',   label: 'Semplice',   desc: 'Titolo, testo e un pulsante',            color: '#6366f1' },
+  { id: 'promozione', label: 'Promozione', desc: 'Offerta con prezzo, sconto e pulsante',     color: '#f59e0b' },
+  { id: 'notizie',    label: 'Notizie',    desc: 'Più notizie, ognuna con titolo, testo e foto',           color: '#10b981' },
   { id: 'evento',     label: 'Evento',     desc: 'Data, luogo, prezzo e bottone prenota',       color: '#ef4444' },
 ]
 
@@ -30,6 +30,24 @@ const DEFAULT_CONTENT = {
   notizie:    { heading: '', intro: '', blocks: [] },
   evento:     { heading: '', image_url: '', event_title: '', date: '', time: '', location: '', text: '', price: '', cta_text: '', cta_url: '' },
 }
+
+// Un esempio per modello: serve alle miniature e all'anteprima di una bozza
+// ancora vuota. Parole che valgono per qualunque mestiere.
+const FOTO_ESEMPIO = '/newsletter-esempio.svg'
+const ESEMPI = {
+  semplice:   { heading: 'Una novità per te', text: 'Ciao {{nome}}, abbiamo una notizia che ti farà piacere. Qui racconti in poche righe di che cosa si tratta e perché vale la pena.', image_url: FOTO_ESEMPIO, cta_text: 'Scopri di più', cta_url: '#' },
+  promozione: { heading: 'Solo per questa settimana', badge: '-20%', image_url: FOTO_ESEMPIO, price_original: '50', price_discounted: '40', text: 'Un’offerta riservata a chi ci segue: descrivi cosa comprende e fino a quando vale.', cta_text: 'Approfitta ora', cta_url: '#', conditions: 'Valida fino a domenica, fino a esaurimento.' },
+  notizie:    { heading: 'Le novità del mese', intro: 'Tre cose che sono successe da noi e che volevamo raccontarti.', blocks: [
+    { id: 'a', title: 'La prima notizia', text: 'Due righe per dire di che cosa si tratta.', image_url: FOTO_ESEMPIO },
+    { id: 'b', title: 'La seconda notizia', text: 'Ogni notizia ha il suo titolo, il suo testo e la sua foto.', image_url: FOTO_ESEMPIO },
+    { id: 'c', title: 'La terza notizia', text: 'Puoi aggiungerne quante ne servono.', image_url: '' },
+  ] },
+  evento:     { heading: 'Sei dei nostri?', image_url: FOTO_ESEMPIO, event_title: 'Il nome della serata', date: '2026-12-12', time: '20:30', location: 'Dove si svolge', text: 'Che cosa succede, per chi è, e perché non perderlo.', price: '25', cta_text: 'Prenota il tuo posto', cta_url: '#' },
+}
+const NOMI_CAMPI = { heading: 'titolo', text: 'testo', image_url: 'immagine', cta_text: 'testo del pulsante', cta_url: 'link del pulsante', badge: 'etichetta dello sconto',
+  price_original: 'prezzo pieno', price_discounted: 'prezzo scontato', conditions: 'condizioni', intro: 'introduzione', blocks: 'le notizie', event_title: 'nome dell’evento',
+  date: 'data', time: 'ora', location: 'luogo', price: 'prezzo' }
+const pieno = v => Array.isArray(v) ? v.length > 0 : String(v ?? '').trim() !== ''
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -67,6 +85,8 @@ export default function NewsletterEditorPage() {
   // La lista di contatti a cui è destinata, se c'è (si sceglie dalla pagina Contatti).
   const [lista, setLista] = useState(null)
   const [destinatari, setDestinatari] = useState(null)   // { lista, problema } dal conto del server
+  // Le liste fra cui scegliere, coi loro numeri: null = le sto leggendo, false = non ci sono riuscito.
+  const [liste, setListe] = useState(null)
   const [sendConfirm, setSendConfirm] = useState(false)
   const [emojiOpen, setEmojiOpen] = useState(false)
   const subjectRef = useRef(null)
@@ -119,19 +139,34 @@ export default function NewsletterEditorPage() {
   // «{{nome}}» diventa «Mario», come nell'email di prova. Si aspetta un attimo
   // dopo l'ultimo tasto, così non lampeggia a ogni lettera.
   const nomeMittente = currentEntity?.label || 'OltreNova'
+  const disegna = useCallback((tid, c, pre = '') => buildNewsletterHtml({
+    entityName: nomeMittente, entityLogo: currentEntity?.logo || null,
+    primary: currentEntity?.colore || '#1a1a2e',
+    template_id: tid, content: personalize(c, 'Mario'), preheader: pre,
+    unsubscribeUrl: '#', legale: azienda || null, privacyUrl: currentEntity ? '#' : null,
+  }).replace('<head>', '<head><base target="_blank">'), [nomeMittente, currentEntity?.logo, currentEntity?.colore, azienda])
+  // Una bozza ancora vuota mostra l'esempio del modello: un'email bianca non
+  // dice com'è fatta. Appena si scrive qualcosa, l'esempio lascia il posto.
+  const bozzaVuota = !Object.values(content || {}).some(pieno)
+  const miniature = useMemo(() => Object.fromEntries(TEMPLATES.map(t => [t.id, disegna(t.id, ESEMPI[t.id])])), [disegna])
+
+  useEffect(() => {
+    if (!nl) return
+    let vivo = true
+    apiFetch(`/api/newsletter/liste${nl.azienda_id ? `?azienda_id=${nl.azienda_id}` : ''}`)
+      .then(d => { if (vivo) setListe(d) }).catch(() => { if (vivo) setListe(false) })
+    return () => { vivo = false }
+  }, [nl?.id])
+  const listaScelta = lista?.chiave && liste ? liste.liste.find(l => l.chiave === lista.chiave) : null
+  const listaSparita = !!(lista?.chiave && liste && !listaScelta)
+  const gruppiListe = liste ? [...liste.liste.reduce((m, l) => m.set(l.gruppo, [...(m.get(l.gruppo) || []), l]), new Map())] : []
   useEffect(() => {
     const t = setTimeout(() => {
-      const html = buildNewsletterHtml({
-        entityName: nomeMittente, entityLogo: currentEntity?.logo || null,
-        primary: currentEntity?.colore || '#1a1a2e',
-        template_id: templateId, content: personalize(content, 'Mario'), preheader,
-        unsubscribeUrl: '#', legale: azienda || null, privacyUrl: currentEntity ? '#' : null,
-      })
       // I link dell'anteprima non portano da nessuna parte: si guarda, non si naviga.
-      setAnteprima(html.replace('<head>', '<head><base target="_blank">'))
+      setAnteprima(disegna(templateId, bozzaVuota ? ESEMPI[templateId] : content, preheader))
     }, 250)
     return () => clearTimeout(t)
-  }, [templateId, content, preheader, nomeMittente, currentEntity?.logo, currentEntity?.colore, azienda])
+  }, [templateId, content, preheader, disegna, bozzaVuota])
 
   function patchContent(key, value) {
     setContent(prev => ({ ...prev, [key]: value }))
@@ -172,10 +207,20 @@ export default function NewsletterEditorPage() {
     }, 0)
   }
 
+  // Cambiando modello si tiene quello che il nuovo modello sa mostrare (titolo,
+  // testo, immagine, pulsante…). Prima si azzerava tutto senza dire niente.
   function handleTemplateChange(tid) {
-    if (isSent) return
+    if (isSent || tid === templateId) return
+    const nuovo = { ...(DEFAULT_CONTENT[tid] || {}) }
+    const persi = []
+    for (const [k, v] of Object.entries(content || {})) {
+      if (!pieno(v)) continue
+      if (k in nuovo && !Array.isArray(nuovo[k]) && !Array.isArray(v)) nuovo[k] = v
+      else persi.push(NOMI_CAMPI[k] || k)
+    }
+    if (persi.length && !window.confirm(`Il modello «${TEMPLATES.find(t => t.id === tid)?.label}» non ha: ${persi.join(', ')}.\nQuello che hai scritto lì andrà perso. Cambio modello?`)) return
     setTemplateId(tid)
-    setContent(DEFAULT_CONTENT[tid] || {})
+    setContent(nuovo)
   }
 
   async function sendTest() {
@@ -265,7 +310,87 @@ export default function NewsletterEditorPage() {
         <div style={{ display: showPreview && stretto ? 'none' : 'flex', flexDirection: 'column', gap: 20 }}>
 
           {/* Oggetto + Preheader + Mittente + Schedule */}
-          <Section title="Informazioni generali">
+          {/* 1 · A chi */}
+          <Section title="A chi la mandi">
+            {allEntities.length > 1 && (
+              <div style={{ marginBottom: 14 }}>
+                <span style={label}>Chi la manda</span>
+                <select value={entityId} onChange={e => {
+                  const found = allEntities.find(x => x.id === e.target.value)
+                  setEntityId(e.target.value)
+                  if (found) setEntityTipo(found.tipo)
+                }} disabled={isSent} style={inp}>
+                  <option value="">— seleziona —</option>
+                  {allEntities.map(e => <option key={e.id} value={e.id}>{e.label} ({e.tipo})</option>)}
+                </select>
+              </div>
+            )}
+            <div data-destinatari>
+              <span style={label}>Destinatari</span>
+              {isSent ? (
+                <div style={{ fontSize: 14, color: '#1a1a2e', fontWeight: 600, overflowWrap: 'anywhere' }}>{lista?.titolo || 'Tutti gli iscritti'}</div>
+              ) : (
+                <select data-scegli-lista value={lista?.chiave || ''} disabled={!liste} style={inp}
+                  onChange={e => { const l = liste?.liste?.find(x => x.chiave === e.target.value); setLista(l ? { chiave: l.chiave, titolo: l.titolo } : null) }}>
+                  <option value="">Tutti gli iscritti{liste ? ` — ${liste.tutti.raggiungibili}` : ''}</option>
+                  {listaSparita && <option value={lista.chiave}>{lista.titolo || 'Lista scelta'} — non esiste più</option>}
+                  {gruppiListe.map(([gruppo, voci]) => (
+                    <optgroup key={gruppo} label={gruppo}>
+                      {voci.map(l => <option key={l.chiave} value={l.chiave}>{l.titolo} — {l.raggiungibili} su {l.persone}</option>)}
+                    </optgroup>
+                  ))}
+                </select>
+              )}
+              {/* Il conto sta sempre a vista: avere un contatto non è potergli scrivere. */}
+              {!isSent && (() => {
+                const frase = stile => ({ fontSize: 13, lineHeight: 1.5, marginTop: 8, padding: '9px 12px', borderRadius: 8, overflowWrap: 'anywhere', ...stile })
+                const rosso = { background: '#fff5f5', color: '#9b2c2c', border: '1px solid #fed7d7' }, verde = { background: '#f0f7f2', color: '#22543d', border: '1px solid #c6e6d0' }
+                if (liste === null) return <div data-conto-destinatari style={frase({ color: '#767676', padding: 0 })}>Conto i destinatari…</div>
+                if (liste === false) return <div data-conto-destinatari style={frase(rosso)}>Non riesco a leggere le liste in questo momento. Il numero lo vedrai comunque prima di inviare.</div>
+                if (listaSparita) return <div data-conto-destinatari="0" style={frase(rosso)}>La lista «{lista.titolo}» non esiste più: scegline un’altra, oppure «Tutti gli iscritti».</div>
+                const { persone, raggiungibili } = listaScelta || liste.tutti
+                if (!raggiungibili) return <div data-conto-destinatari="0" style={frase(rosso)}>
+                  {persone ? <>Non partirebbe a nessuno: {listaScelta ? (persone === 1 ? 'l’unica persona di questa lista non ha' : `nessuna delle ${persone} persone di questa lista ha`) : (persone === 1 ? 'il tuo unico contatto non ha' : `nessuno dei tuoi ${persone} contatti ha`)} dato il consenso a ricevere email.</> : 'Non hai ancora contatti a cui scrivere.'}
+                </div>
+                return <div data-conto-destinatari={raggiungibili} style={frase(verde)}>
+                  La {raggiungibili === 1 ? 'riceverà' : 'riceveranno'} <strong>{raggiungibili}</strong> {raggiungibili === 1 ? 'persona' : 'persone'}
+                  {listaScelta ? <> su {persone} di questa lista</> : <>: tutti gli iscritti, su {persone} {persone === 1 ? 'contatto' : 'contatti'}</>}.
+                  {raggiungibili < persone && <> {persone - raggiungibili === 1 ? 'L’altra non ha' : 'Le altre non hanno'} dato il consenso a ricevere email.</>}
+                </div>
+              })()}
+              {/* Il vecchio filtro per etichetta: non si sceglie più da qui, ma una bozza che lo ha lo dice. */}
+              {!isSent && tagFilter.length > 0 && (
+                <div data-filtro-storico style={{ fontSize: 12.5, color: '#744210', background: '#fffbeb', border: '1px solid #f6e05e', borderRadius: 8, padding: '8px 12px', marginTop: 8, lineHeight: 1.5 }}>
+                  Questa bozza ha anche un vecchio filtro per etichetta ({tagFilter.join(', ')}): la riceve solo chi ha quell’etichetta, e il numero qui sopra non ne tiene conto.{' '}
+                  <button type="button" onClick={() => setTagFilter([])} style={{ background: 'none', border: 'none', padding: 0, color: '#2b6cb0', fontSize: 12.5, cursor: 'pointer', textDecoration: 'underline' }}>Togli il filtro</button>
+                </div>
+              )}
+            </div>
+          </Section>
+
+          {/* 2 · Che modello */}
+          {!isSent && (
+            <Section title="Modello">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
+                {TEMPLATES.map(t => (
+                  <button key={t.id} type="button" data-modello={t.id} aria-pressed={templateId === t.id} onClick={() => handleTemplateChange(t.id)} style={{
+                    padding: 8, border: `2px solid ${templateId === t.id ? '#1a1a2e' : '#e8e8e8'}`,
+                    borderRadius: 12, background: '#fff', cursor: 'pointer', textAlign: 'left', minWidth: 0,
+                  }}>
+                    <MiniaturaModello html={miniature[t.id]} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '10px 4px 2px' }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{t.label}</span>
+                      {templateId === t.id && <CheckCircle size={14} strokeWidth={1.5} color="#1a1a2e" />}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#666', lineHeight: 1.4, margin: '0 4px 4px' }}>{t.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </Section>
+          )}
+
+          {/* 3 · Cosa scrivi */}
+          <Section title="Oggetto">
             <div style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                 <span style={label}>Oggetto email</span>
@@ -325,57 +450,29 @@ export default function NewsletterEditorPage() {
                 Appare dopo l'oggetto nella casella di posta · max 140 caratteri
               </div>
             </div>
-            {allEntities.length > 1 && (
-              <div style={{ marginBottom: 14 }}>
-                <span style={label}>Mittente (entità)</span>
-                <select value={entityId} onChange={e => {
-                  const found = allEntities.find(x => x.id === e.target.value)
-                  setEntityId(e.target.value)
-                  if (found) setEntityTipo(found.tipo)
-                }} disabled={isSent} style={inp}>
-                  <option value="">— seleziona —</option>
-                  {allEntities.map(e => <option key={e.id} value={e.id}>{e.label} ({e.tipo})</option>)}
-                </select>
-              </div>
-            )}
-            {/* La lista scelta dalla pagina Contatti. Chi c'è dentro si ricalcola
-                all'invio: chi prenota domani la riceve. */}
-            {lista && (
-              <div data-lista-newsletter style={{ background: '#f0f4ff', border: '1px solid #c3dafe', borderRadius: 10, padding: '10px 12px' }}>
-                <span style={label}>Destinatari</span>
-                <div style={{ fontSize: 13.5, color: '#1a1a2e', fontWeight: 600, overflowWrap: 'anywhere' }}>{lista.titolo || 'Una lista di contatti'}</div>
-                <div style={{ fontSize: 12, color: '#666', marginTop: 3, lineHeight: 1.5 }}>Arriva solo a chi è in questa lista <strong>e</strong> ha dato il consenso a ricevere email.</div>
-                {!isSent && <button type="button" onClick={() => setLista(null)} style={{ marginTop: 6, background: 'none', border: 'none', padding: 0, color: '#2b6cb0', fontSize: 12.5, cursor: 'pointer', textDecoration: 'underline' }}>Togli la lista: scrivi a tutti gli iscritti</button>}
-              </div>
-            )}
-            {!isSent && (
-              <div>
-                <span style={label}>Filtra destinatari per tag</span>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 6 }}>
-                  {tagFilter.map(t => (
-                    <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#eef2ff', color: '#3730a3', fontSize: 12, borderRadius: 6, padding: '3px 8px' }}>
-                      {t}
-                      <button onClick={() => setTagFilter(ts => ts.filter(x => x !== t))} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1, color: '#818cf8', fontSize: 14 }}>×</button>
-                    </span>
-                  ))}
-                </div>
-                <input
-                  placeholder="Tag (Invio per aggiungere) — lascia vuoto per tutti gli iscritti"
-                  style={{ ...inp, fontSize: 13 }}
-                  onKeyDown={e => {
-                    if ((e.key === 'Enter' || e.key === ',') && e.target.value.trim()) {
-                      e.preventDefault()
-                      const t = e.target.value.trim().replace(/,/g, '')
-                      if (t && !tagFilter.includes(t)) setTagFilter(ts => [...ts, t])
-                      e.target.value = ''
-                    }
-                  }}
-                />
-                <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>
-                  {tagFilter.length ? `Invierà solo agli iscritti con tag: ${tagFilter.join(', ')}` : 'Invierà a tutti gli iscritti alla newsletter'}
-                </div>
-              </div>
-            )}
+          </Section>
+
+          {/* Content fields */}
+          <Section title="Contenuto" extra={!isSent && templateId !== 'notizie' ? (
+            <AiButton
+              tipo="newsletter_corpo"
+              nomeBusiness={currentEntity?.label || ''}
+              contesto={subject ? `Oggetto: "${subject}"` : ''}
+              temaSuggerito={subject || ''}
+              label="✨ Genera testo"
+              placeholder="Es: promozione weekend, notizie di settembre, evento speciale…"
+              onInsert={t => patchContent('text', t)}
+            />
+          ) : null}>
+            {templateId === 'semplice' && <SempliceFields c={content} patch={patchContent} inp={inp} label={label} disabled={isSent} />}
+            {templateId === 'promozione' && <PromozioneFields c={content} patch={patchContent} inp={inp} label={label} disabled={isSent} />}
+            {templateId === 'notizie' && <NotizieFIelds c={content} setContent={setContent} inp={inp} label={label} disabled={isSent} />}
+            {templateId === 'evento' && <EventoFields c={content} patch={patchContent} inp={inp} label={label} disabled={isSent} />}
+          </Section>
+
+          {/* 4 · Quando parte */}
+          {!isSent && (
+            <Section title="Quando parte">
             {!isSent && (
               <div>
                 <span style={label}>Programmazione invio</span>
@@ -404,43 +501,8 @@ export default function NewsletterEditorPage() {
                 )}
               </div>
             )}
-          </Section>
-
-          {/* Template */}
-          {!isSent && (
-            <Section title="Template">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-                {TEMPLATES.map(t => (
-                  <button key={t.id} onClick={() => handleTemplateChange(t.id)} style={{
-                    padding: '12px 14px', border: `2px solid ${templateId === t.id ? t.color : '#e8e8e8'}`,
-                    borderRadius: 10, background: templateId === t.id ? `${t.color}10` : '#fff',
-                    cursor: 'pointer', textAlign: 'left',
-                  }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: templateId === t.id ? t.color : '#333', marginBottom: 3 }}>{t.label}</div>
-                    <div style={{ fontSize: 11, color: '#888', lineHeight: 1.4 }}>{t.desc}</div>
-                  </button>
-                ))}
-              </div>
             </Section>
           )}
-
-          {/* Content fields */}
-          <Section title="Contenuto" extra={!isSent && templateId !== 'notizie' ? (
-            <AiButton
-              tipo="newsletter_corpo"
-              nomeBusiness={currentEntity?.label || ''}
-              contesto={subject ? `Oggetto: "${subject}"` : ''}
-              temaSuggerito={subject || ''}
-              label="✨ Genera testo"
-              placeholder="Es: promozione weekend, notizie di settembre, evento speciale…"
-              onInsert={t => patchContent('text', t)}
-            />
-          ) : null}>
-            {templateId === 'semplice' && <SempliceFields c={content} patch={patchContent} inp={inp} label={label} disabled={isSent} />}
-            {templateId === 'promozione' && <PromozioneFields c={content} patch={patchContent} inp={inp} label={label} disabled={isSent} />}
-            {templateId === 'notizie' && <NotizieFIelds c={content} setContent={setContent} inp={inp} label={label} disabled={isSent} />}
-            {templateId === 'evento' && <EventoFields c={content} patch={patchContent} inp={inp} label={label} disabled={isSent} />}
-          </Section>
 
           {/* Actions */}
           {!isSent && (
@@ -457,7 +519,7 @@ export default function NewsletterEditorPage() {
                 border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 700,
                 display: 'flex', alignItems: 'center', gap: 7,
               }}>
-                <Send size={15} strokeWidth={2} /> Invia a tutti gli iscritti
+                <Send size={15} strokeWidth={2} /> Invia la newsletter
               </button>
             </div>
           )}
@@ -493,7 +555,9 @@ export default function NewsletterEditorPage() {
                 style={{ width: vista === 'telefono' && !stretto ? 390 : '100%', maxWidth: '100%', height: 'max(480px, calc(100vh - 260px))', border: 'none', background: '#f5f5f5', display: 'block' }} />
             </div>
             <div style={{ fontSize: 12, color: '#767676', marginTop: 8, lineHeight: 1.5 }}>
-              È l’email vera, con il tuo logo e i tuoi dati. Dove scrivi {'{{nome}}'} qui leggi «Mario»: a ognuno arriverà il suo.
+              {bozzaVuota
+                ? <span data-esempio>Questo è un <strong>esempio</strong> del modello, con il tuo logo e i tuoi dati: sparisce appena scrivi qualcosa.</span>
+                : <>È l’email vera, con il tuo logo e i tuoi dati. Dove scrivi {'{{nome}}'} qui leggi «Mario»: a ognuno arriverà il suo.</>}
             </div>
           </div>
         )}
@@ -651,6 +715,29 @@ function EventoFields({ c, patch, inp, label, disabled }) {
 }
 
 // ─── UI helpers ───────────────────────────────────────────────────────────────
+
+// La miniatura di un modello: l'email vera, disegnata a 600px e rimpicciolita
+// alla larghezza della scheda. Non si clicca e non si legge col lettore di
+// schermo: è un'immagine, il nome del modello sta sotto.
+function MiniaturaModello({ html }) {
+  const ref = useRef(null)
+  const [larga, setLarga] = useState(0)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const ro = new ResizeObserver(([e]) => setLarga(e.contentRect.width))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  return (
+    <div ref={ref} aria-hidden="true" style={{ height: larga ? Math.round(larga * 1.05) : 180, overflow: 'hidden', borderRadius: 8, background: '#f5f5f5' }}>
+      {larga > 0 && (
+        <iframe title="" sandbox="" tabIndex={-1} srcDoc={html}
+          style={{ width: 600, height: 640, border: 'none', display: 'block', transform: `scale(${larga / 600})`, transformOrigin: 'top left', pointerEvents: 'none' }} />
+      )}
+    </div>
+  )
+}
 
 function Section({ title, children, extra }) {
   return (
