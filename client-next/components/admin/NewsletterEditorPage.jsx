@@ -3,7 +3,8 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
-import { ArrowLeft, Send, Eye, Save, Plus, Trash2, AlertCircle, CheckCircle, Smile, Clock, X } from 'lucide-react'
+import { ArrowLeft, Send, Eye, Save, Plus, Trash2, AlertCircle, CheckCircle, Smile, Clock, X, Monitor, Smartphone } from 'lucide-react'
+import { buildNewsletterHtml, personalize } from '@/lib/newsletter-html'
 import AiButton from '@/components/admin/AiButton'
 import { perCampoDataOra, daCampoDataOra, oraLocale } from '@/lib/fuso'
 
@@ -30,86 +31,6 @@ const DEFAULT_CONTENT = {
   evento:     { heading: '', image_url: '', event_title: '', date: '', time: '', location: '', text: '', price: '', cta_text: '', cta_url: '' },
 }
 
-// ─── Client-side preview HTML ─────────────────────────────────────────────────
-
-function buildPreview(template_id, content, entityName, primary = '#1a1a2e') {
-  const p = primary
-  const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  const cta = (text, url) => text ? `<a href="${url || '#'}" style="display:inline-block;padding:13px 26px;background:${p};color:#fff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:700;font-family:Arial,sans-serif;margin-top:20px">${esc(text)}</a>` : ''
-
-  let body = ''
-  if (template_id === 'semplice') {
-    const c = content
-    body = `
-      ${c.image_url ? `<img src="${c.image_url}" style="width:100%;max-height:260px;object-fit:cover;display:block">` : ''}
-      <div style="padding:32px">
-        ${c.heading ? `<h1 style="font-size:24px;color:#1a1a2e;margin:0 0 14px;font-family:Georgia,serif">${esc(c.heading)}</h1>` : ''}
-        ${c.text ? `<p style="font-size:15px;color:#444;line-height:1.8;white-space:pre-wrap;margin:0">${esc(c.text)}</p>` : ''}
-        ${cta(c.cta_text, c.cta_url)}
-      </div>`
-  } else if (template_id === 'promozione') {
-    const c = content
-    const orig = parseFloat(c.price_original), disc = parseFloat(c.price_discounted)
-    const pct = orig && disc && orig > disc ? Math.round((1 - disc / orig) * 100) : null
-    body = `
-      ${c.image_url ? `<img src="${c.image_url}" style="width:100%;max-height:300px;object-fit:cover;display:block">` : ''}
-      <div style="padding:32px">
-        ${c.badge ? `<span style="display:inline-block;background:${p}22;color:${p};font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px">${esc(c.badge)}</span>` : ''}
-        ${c.heading ? `<h1 style="font-size:24px;color:#1a1a2e;margin:12px 0 16px;font-family:Georgia,serif">${esc(c.heading)}</h1>` : ''}
-        ${(c.price_discounted || c.price_original) ? `<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:16px">
-          <span style="font-size:40px;font-weight:800;color:${p};line-height:1;font-family:Georgia,serif">€${esc(c.price_discounted || c.price_original)}</span>
-          ${c.price_original && c.price_discounted ? `<span style="font-size:20px;color:#bbb;text-decoration:line-through">€${esc(c.price_original)}</span>` : ''}
-          ${pct ? `<span style="background:#22c55e;color:#fff;font-size:12px;font-weight:800;padding:4px 10px;border-radius:20px">-${pct}%</span>` : ''}
-        </div>` : ''}
-        ${c.text ? `<p style="font-size:15px;color:#444;line-height:1.8;white-space:pre-wrap;margin:0">${esc(c.text)}</p>` : ''}
-        ${cta(c.cta_text, c.cta_url)}
-        ${c.conditions ? `<p style="font-size:11px;color:#aaa;margin-top:16px">${esc(c.conditions)}</p>` : ''}
-      </div>`
-  } else if (template_id === 'notizie') {
-    const c = content
-    body = `<div style="padding:32px">
-      ${c.heading ? `<h1 style="font-size:24px;color:#1a1a2e;margin:0 0 ${c.intro ? '10px' : '24px'};font-family:Georgia,serif">${esc(c.heading)}</h1>` : ''}
-      ${c.intro ? `<p style="font-size:15px;color:#666;line-height:1.8;margin:0 0 24px">${esc(c.intro)}</p>` : ''}
-      ${(c.blocks || []).map(b => `<div style="border-top:1px solid #f0f0f0;padding-top:20px;margin-bottom:20px;display:flex;gap:14px">
-        ${b.image_url ? `<img src="${b.image_url}" style="width:120px;height:90px;object-fit:cover;border-radius:8px;flex-shrink:0">` : ''}
-        <div>
-          ${b.title ? `<h3 style="font-size:16px;font-weight:700;color:#1a1a2e;margin:0 0 6px">${esc(b.title)}</h3>` : ''}
-          ${b.text ? `<p style="font-size:13px;color:#555;line-height:1.7;margin:0">${esc(b.text)}</p>` : ''}
-        </div>
-      </div>`).join('')}
-    </div>`
-  } else if (template_id === 'evento') {
-    const c = content
-    const dateStr = c.date ? new Date(c.date).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''
-    body = `
-      ${c.image_url ? `<img src="${c.image_url}" style="width:100%;max-height:260px;object-fit:cover;display:block">` : ''}
-      <div style="padding:32px">
-        ${c.heading ? `<p style="font-size:12px;font-weight:700;color:${p};text-transform:uppercase;letter-spacing:1px;margin:0 0 6px">${esc(c.heading)}</p>` : ''}
-        ${c.event_title ? `<h1 style="font-size:26px;color:#1a1a2e;margin:0 0 18px;font-family:Georgia,serif">${esc(c.event_title)}</h1>` : ''}
-        ${(c.date || c.location || c.price) ? `<div style="background:#f9f9fb;border-radius:10px;padding:14px 18px;margin-bottom:18px">
-          ${c.date ? `<div style="font-size:13px;color:#555;margin-bottom:6px">📅 <strong>${dateStr}${c.time ? ' alle ' + c.time : ''}</strong></div>` : ''}
-          ${c.location ? `<div style="font-size:13px;color:#555;margin-bottom:6px">📍 ${esc(c.location)}</div>` : ''}
-          ${c.price ? `<div style="font-size:13px;color:#555">💶 A partire da <strong>€${esc(c.price)}</strong></div>` : ''}
-        </div>` : ''}
-        ${c.text ? `<p style="font-size:15px;color:#444;line-height:1.8;white-space:pre-wrap;margin:0">${esc(c.text)}</p>` : ''}
-        ${cta(c.cta_text, c.cta_url)}
-      </div>`
-  }
-
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
-<body style="margin:0;background:#f5f5f5;font-family:Arial,sans-serif">
-<div style="max-width:560px;margin:24px auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.1)">
-  <div style="background:#1a1a2e;padding:20px 28px">
-    <span style="font-size:18px;font-weight:700;color:#fff">${esc(entityName || 'La tua azienda')}</span>
-  </div>
-  ${body}
-  <div style="background:#f9f9fb;padding:16px 28px;text-align:center;border-top:1px solid #f0f0f0">
-    <span style="font-size:11px;color:#bbb">Annulla iscrizione &nbsp;·&nbsp; Powered by OltreNova</span>
-  </div>
-</div>
-</body></html>`
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function NewsletterEditorPage() {
@@ -132,7 +53,12 @@ export default function NewsletterEditorPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving]   = useState(false)
   const [saveTick, setSaveTick] = useState(null)
-  const [showPreview, setShowPreview] = useState(false)
+  // L'anteprima è accesa: chi scrive vede subito come arriverà. Su uno schermo
+  // stretto le due colonne non ci stanno, quindi lì si alterna col pulsante.
+  const [showPreview, setShowPreview] = useState(true)
+  const [stretto, setStretto] = useState(false)
+  const [vista, setVista] = useState('computer')
+  const [anteprima, setAnteprima] = useState('')
   const [testEmail, setTestEmail] = useState('')
   const [testModal, setTestModal] = useState(false)
   const [testState, setTestState] = useState('idle')
@@ -143,16 +69,15 @@ export default function NewsletterEditorPage() {
   const [destinatari, setDestinatari] = useState(null)   // { lista, problema } dal conto del server
   const [sendConfirm, setSendConfirm] = useState(false)
   const [emojiOpen, setEmojiOpen] = useState(false)
-  const iframeRef = useRef(null)
   const subjectRef = useRef(null)
 
   const isSent = nl?.status === 'sent'
 
   // Flatten all entities for the picker
   const allEntities = [
-    ...(strutture || []).map(e => ({ id: e.id, tipo: 'struttura', label: e.name })),
-    ...(ristoranti || []).map(e => ({ id: e.id, tipo: 'ristorante', label: e.name })),
-    ...(attivita || []).map(e => ({ id: e.id, tipo: 'attivita', label: e.name })),
+    ...(strutture || []).map(e => ({ id: e.id, tipo: 'struttura', label: e.name, logo: e.logo_url, colore: e.theme?.primaryColor })),
+    ...(ristoranti || []).map(e => ({ id: e.id, tipo: 'ristorante', label: e.name, logo: e.logo_url, colore: e.theme?.primaryColor })),
+    ...(attivita || []).map(e => ({ id: e.id, tipo: 'attivita', label: e.name, logo: e.logo_url, colore: e.theme?.primaryColor })),
   ]
 
   const currentEntity = allEntities.find(e => e.id === entityId) || null
@@ -179,12 +104,34 @@ export default function NewsletterEditorPage() {
       .finally(() => setLoading(false))
   }, [id, aziLoading, fuso])
 
-  // Update iframe preview
   useEffect(() => {
-    if (!showPreview || !iframeRef.current) return
-    const entityName = currentEntity?.label || 'La tua azienda'
-    iframeRef.current.srcdoc = buildPreview(templateId, content, entityName, '#1a1a2e')
-  }, [showPreview, templateId, content, currentEntity])
+    const mq = window.matchMedia('(max-width: 899px)')
+    const segui = () => { setStretto(mq.matches); if (mq.matches) setShowPreview(false) }
+    segui()
+    mq.addEventListener('change', segui)
+    return () => mq.removeEventListener('change', segui)
+  }, [])
+
+  // L'anteprima è l'email vera: la disegna `buildNewsletterHtml`, lo stesso
+  // costruttore dell'invio, con logo, colore e dati legali dell'azienda.
+  // ⛔ Prima c'era una copia scritta qui dentro: senza logo, con un altro piede
+  // e nascosta dietro un pulsante. Due disegni della stessa email divergono.
+  // «{{nome}}» diventa «Mario», come nell'email di prova. Si aspetta un attimo
+  // dopo l'ultimo tasto, così non lampeggia a ogni lettera.
+  const nomeMittente = currentEntity?.label || 'OltreNova'
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const html = buildNewsletterHtml({
+        entityName: nomeMittente, entityLogo: currentEntity?.logo || null,
+        primary: currentEntity?.colore || '#1a1a2e',
+        template_id: templateId, content: personalize(content, 'Mario'), preheader,
+        unsubscribeUrl: '#', legale: azienda || null, privacyUrl: currentEntity ? '#' : null,
+      })
+      // I link dell'anteprima non portano da nessuna parte: si guarda, non si naviga.
+      setAnteprima(html.replace('<head>', '<head><base target="_blank">'))
+    }, 250)
+    return () => clearTimeout(t)
+  }, [templateId, content, preheader, nomeMittente, currentEntity?.logo, currentEntity?.colore, azienda])
 
   function patchContent(key, value) {
     setContent(prev => ({ ...prev, [key]: value }))
@@ -275,7 +222,7 @@ export default function NewsletterEditorPage() {
   const label = { display: 'block', fontSize: 12, fontWeight: 700, color: '#888', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.5 }
 
   return (
-    <div style={{ maxWidth: 1100 }}>
+    <div style={{ maxWidth: 1280 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
         <button onClick={() => router.push('/admin/newsletter')}
@@ -298,7 +245,7 @@ export default function NewsletterEditorPage() {
             cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6,
           }}>
             <Eye size={14} strokeWidth={2} />
-            Anteprima
+            {showPreview ? (stretto ? 'Torna a scrivere' : 'Nascondi anteprima') : 'Anteprima'}
           </button>
           {!isSent && (
             <button onClick={save} disabled={saving} style={{
@@ -313,9 +260,9 @@ export default function NewsletterEditorPage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: showPreview ? '1fr 1fr' : '1fr', gap: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: showPreview && !stretto ? 'minmax(0, 1fr) minmax(0, 1fr)' : 'minmax(0, 1fr)', gap: 24 }}>
         {/* Left: editor */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ display: showPreview && stretto ? 'none' : 'flex', flexDirection: 'column', gap: 20 }}>
 
           {/* Oggetto + Preheader + Mittente + Schedule */}
           <Section title="Informazioni generali">
@@ -518,11 +465,36 @@ export default function NewsletterEditorPage() {
 
         {/* Right: preview iframe */}
         {showPreview && (
-          <div style={{ position: 'sticky', top: 20, alignSelf: 'flex-start' }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
-              Anteprima email
+          <div data-anteprima-newsletter style={{ position: stretto ? 'static' : 'sticky', top: 20, alignSelf: 'flex-start', width: '100%', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: 0.5 }}>Come arriva</span>
+              {!stretto && (
+                <div style={{ display: 'flex', gap: 4, background: '#eee', borderRadius: 8, padding: 3 }}>
+                  {[['computer', Monitor, 'Computer'], ['telefono', Smartphone, 'Telefono']].map(([k, Icona, nome]) => (
+                    <button key={k} type="button" data-vista={k} onClick={() => setVista(k)} aria-pressed={vista === k}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600, background: vista === k ? '#fff' : 'transparent', color: vista === k ? '#1a1a2e' : '#666' }}>
+                      <Icona size={13} strokeWidth={1.5} /> {nome}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <iframe ref={iframeRef} style={{ width: '100%', height: 620, border: '1px solid #e8e8e8', borderRadius: 12, background: '#fff' }} />
+            {/* Com'è nella casella di posta, prima di aprirla: è lì che si decide se leggerla. */}
+            <div data-riga-posta style={{ background: '#fff', border: '1px solid #e8e8e8', borderRadius: 12, padding: '12px 16px', marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: '#767676', marginBottom: 4 }}>Nella casella di posta</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeMittente}</div>
+              <div style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span style={{ fontWeight: 600, color: subject.trim() ? '#1a1a2e' : '#b45309' }}>{personalize(subject, 'Mario').trim() || 'Manca l’oggetto'}</span>
+                {preheader.trim() && <span style={{ color: '#767676' }}> — {personalize(preheader, 'Mario')}</span>}
+              </div>
+            </div>
+            <div style={{ background: '#f5f5f5', border: '1px solid #e8e8e8', borderRadius: 12, overflow: 'hidden', display: 'flex', justifyContent: 'center' }}>
+              <iframe title="Anteprima dell’email" sandbox="" srcDoc={anteprima}
+                style={{ width: vista === 'telefono' && !stretto ? 390 : '100%', maxWidth: '100%', height: 'max(480px, calc(100vh - 260px))', border: 'none', background: '#f5f5f5', display: 'block' }} />
+            </div>
+            <div style={{ fontSize: 12, color: '#767676', marginTop: 8, lineHeight: 1.5 }}>
+              È l’email vera, con il tuo logo e i tuoi dati. Dove scrivi {'{{nome}}'} qui leggi «Mario»: a ognuno arriverà il suo.
+            </div>
           </div>
         )}
       </div>

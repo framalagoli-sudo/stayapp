@@ -54,7 +54,7 @@ function ctaButton(text, url, primary) {
 
 function bodySemplice(c, primary) {
   return `
-    ${c.image_url ? `<tr><td><img src="${c.image_url}" alt="" style="width:100%;max-height:280px;object-fit:cover;display:block"></td></tr>` : ''}
+    ${c.image_url ? `<tr><td><img src="${safeUrl(c.image_url)}" alt="" style="width:100%;max-height:280px;object-fit:cover;display:block"></td></tr>` : ''}
     <tr><td style="padding:36px 36px 40px">
       ${c.heading ? `<h1 style="font-size:26px;font-weight:700;color:#1a1a2e;margin:0 0 16px;font-family:Georgia,serif;line-height:1.3">${esc(c.heading)}</h1>` : ''}
       ${c.text ? `<p style="font-size:16px;color:#444;line-height:1.8;margin:0;font-family:Arial,sans-serif;white-space:pre-wrap">${esc(c.text)}</p>` : ''}
@@ -67,7 +67,7 @@ function bodyPromozione(c, primary) {
   const pct = orig && disc && orig > disc ? Math.round((1 - disc / orig) * 100) : null
   const displayPrice = c.price_discounted || c.price_original
   return `
-    ${c.image_url ? `<tr><td><img src="${c.image_url}" alt="" style="width:100%;max-height:320px;object-fit:cover;display:block"></td></tr>` : ''}
+    ${c.image_url ? `<tr><td><img src="${safeUrl(c.image_url)}" alt="" style="width:100%;max-height:320px;object-fit:cover;display:block"></td></tr>` : ''}
     <tr><td style="padding:36px 36px 40px">
       ${c.badge ? `<span style="display:inline-block;background:${primary}22;color:${primary};font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px;letter-spacing:0.5px;text-transform:uppercase;font-family:Arial,sans-serif">${esc(c.badge)}</span><br><br>` : ''}
       ${c.heading ? `<h1 style="font-size:26px;font-weight:700;color:#1a1a2e;margin:0 0 20px;font-family:Georgia,serif;line-height:1.3">${esc(c.heading)}</h1>` : ''}
@@ -92,7 +92,7 @@ function bodyNotizie(c, primary) {
     ${blocks.map((b, i) => `
     <tr><td style="padding:0 36px ${i < blocks.length - 1 ? '0' : '40px'}">
       <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #f0f0f0;padding-top:24px;margin-bottom:24px"><tr>
-        ${b.image_url ? `<td style="width:140px;padding-right:16px;vertical-align:top"><img src="${b.image_url}" alt="" style="width:140px;height:100px;object-fit:cover;border-radius:8px;display:block"></td>` : ''}
+        ${b.image_url ? `<td style="width:140px;padding-right:16px;vertical-align:top"><img src="${safeUrl(b.image_url)}" alt="" style="width:140px;height:100px;object-fit:cover;border-radius:8px;display:block"></td>` : ''}
         <td style="vertical-align:top">
           ${b.title ? `<h3 style="font-size:17px;font-weight:700;color:#1a1a2e;margin:0 0 8px;font-family:Arial,sans-serif">${esc(b.title)}</h3>` : ''}
           ${b.text ? `<p style="font-size:14px;color:#555;line-height:1.7;margin:0;font-family:Arial,sans-serif">${esc(b.text)}</p>` : ''}
@@ -107,7 +107,7 @@ function bodyEvento(c, primary) {
   // senza `timeZone` un fuso a ovest la mostrerebbe con il giorno prima.
   const dateStr = c.date ? new Date(c.date).toLocaleDateString('it-IT', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''
   return `
-    ${c.image_url ? `<tr><td><img src="${c.image_url}" alt="" style="width:100%;max-height:280px;object-fit:cover;display:block"></td></tr>` : ''}
+    ${c.image_url ? `<tr><td><img src="${safeUrl(c.image_url)}" alt="" style="width:100%;max-height:280px;object-fit:cover;display:block"></td></tr>` : ''}
     <tr><td style="padding:36px 36px 40px">
       ${c.heading ? `<p style="font-size:13px;font-weight:700;color:${primary};text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;font-family:Arial,sans-serif">${esc(c.heading)}</p>` : ''}
       ${c.event_title ? `<h1 style="font-size:28px;font-weight:700;color:#1a1a2e;margin:0 0 20px;font-family:Georgia,serif;line-height:1.3">${esc(c.event_title)}</h1>` : ''}
@@ -122,6 +122,11 @@ function bodyEvento(c, primary) {
     </td></tr>`
 }
 
+// ⚠️ La tabella dell'email è larga quanto lo schermo, fino a 600px. Con
+// `width="600"` fisso su telefono usciva dal bordo (o veniva rimpicciolita fino
+// a non leggersi): `max-width:100%` su una tabella dentro una cella non conta.
+// Outlook per Windows ignora `max-width`: per lui c'è la tabella da 600 nei
+// commenti condizionali.
 export function buildNewsletterHtml({ entityName, entityLogo, primary = '#1a1a2e', template_id, content, unsubscribeUrl, preheader = '', legale, privacyUrl }) {
   const body = template_id === 'promozione' ? bodyPromozione(content, primary)
     : template_id === 'notizie' ? bodyNotizie(content, primary)
@@ -138,11 +143,13 @@ export function buildNewsletterHtml({ entityName, entityLogo, primary = '#1a1a2e
 <body style="margin:0;padding:0;background:#f5f5f5">
 ${preheaderHtml}
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5"><tr><td style="padding:40px 20px">
-<table width="600" align="center" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);max-width:100%">
+<!--[if mso]><table width="600" align="center" cellpadding="0" cellspacing="0"><tr><td><![endif]-->
+<table width="100%" align="center" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);width:100%;max-width:600px;margin:0 auto;overflow-wrap:anywhere">
   ${nlHeader(entityName, entityLogo)}
   ${body}
   ${nlFooter(unsubscribeUrl, entityName, legale, privacyUrl)}
 </table>
+<!--[if mso]></td></tr></table><![endif]-->
 </td></tr></table>
 </body></html>`
 }
