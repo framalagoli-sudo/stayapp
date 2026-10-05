@@ -3,6 +3,8 @@ import { buildNewsletterHtml, personalize } from './newsletter-html.js'
 import { getAziendaLegale } from './guest-data.js'
 import { hostUfficiale } from './indirizzo-ufficiale.js'
 import { destinatariNewsletter } from './newsletter-destinatari.js'
+import { intestazioniDisiscrizione } from './disiscrizione.js'
+import { logError } from './observability.js'
 
 // ⚠️ Leggeva da properties/ristoranti/attivita, ferme dalla migration 079: per
 // un'entità creata dopo l'unificazione lì non c'è niente, e la newsletter usciva
@@ -76,10 +78,18 @@ export async function sendNewsletterById(id) {
           unsubscribeUrl: `${appUrl}/unsubscribe?token=${c.unsubscribe_token || 'na'}&nl=${nl.id}`,
           legale, privacyUrl,
         }),
+        // Il pulsante «Annulla iscrizione» di Gmail, Yahoo e degli altri programmi di posta.
+        ...(c.unsubscribe_token ? { headers: intestazioniDisiscrizione(appUrl, c.unsubscribe_token, nl.id) } : {}),
       }
     })
     const { error: batchErr } = await resend.batch.send(emails)
-    if (batchErr) console.error(`[email:newsletter] batch FALLITA (${batch.length} dest) →`, batchErr)
+    // Un blocco rifiutato NON è stato inviato: non si conta, e si grida. Prima
+    // finiva nel conto degli inviati e il titolare leggeva un numero falso.
+    if (batchErr) {
+      console.error(`[email:newsletter] batch FALLITA (${batch.length} dest) →`, batchErr)
+      await logError('newsletter-invio', new Error(`Blocco di ${batch.length} email rifiutato: ${batchErr.message || JSON.stringify(batchErr)}`), { alert: true })
+      continue
+    }
     sent += batch.length
   }
 

@@ -233,6 +233,8 @@ export async function registraContatto({ aziendaId, email, nome, telefono, fonte
         marketing_consenso_il: new Date().toISOString(),
         marketing_consenso_testo: String(promozioni.testo).slice(0, 300),
         marketing_consenso_fonte: String(promozioni.fonte || 'modulo di prenotazione').slice(0, 200),
+        // Un nuovo sì chiude il no di prima.
+        marketing_revoca_il: null, marketing_revoca_fonte: null,
       }).eq('id', id).eq('iscritto_newsletter', false)
     }
 

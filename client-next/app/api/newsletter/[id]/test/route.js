@@ -2,6 +2,7 @@
 import { requireAuth, getProfile } from '@/lib/server-auth'
 import { buildNewsletterHtml, personalize } from '@/lib/newsletter-html'
 import { sendEmail } from '@/lib/send-email'
+import { intestazioniDisiscrizione } from '@/lib/disiscrizione'
 
 // Stessa lettura dell'invio vero, dalla tabella viva: l'email di prova deve
 // somigliare a quella che arriverà davvero, altrimenti non prova niente.
@@ -47,6 +48,7 @@ export async function POST(request, props) {
       to: test_email,
       subject: `[TEST] ${personalize(nl.subject, 'Mario') || '(senza oggetto)'}`,
       html,
+      headers: intestazioniDisiscrizione(appUrl, 'TEST'),
     })
     return Response.json({ ok: true })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }

@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/server-auth'
 import { sendWebhooks } from '@/lib/send-webhooks'
 import { normalizzaTelefono } from '@/lib/contatti-import'
 import { STADI_TRATTATIVA as STADI } from '@/lib/contatti-regole'
+import { FONTI_REVOCA } from '@/lib/disiscrizione'
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
@@ -43,9 +44,15 @@ export async function PATCH(request, props) {
       else if (!STADI.includes(updates.pipeline_stage)) return Response.json({ error: 'Stadio non valido' }, { status: 400 })
     }
     // Il consenso alle email cambiato a mano lascia traccia di quando e come.
-    if (body.iscritto_newsletter === true) {
+    if (body.iscritto_newsletter === true || body.iscritto_newsletter === false) {
       const { data: prima } = await supabaseAdmin.from('contatti').select('iscritto_newsletter').eq('id', params.id).maybeSingle()
-      if (prima && !prima.iscritto_newsletter) { updates.marketing_consenso_il = new Date().toISOString(); updates.marketing_consenso_fonte = 'inserimento manuale' }
+      if (prima && !prima.iscritto_newsletter && body.iscritto_newsletter === true) {
+        Object.assign(updates, { marketing_consenso_il: new Date().toISOString(), marketing_consenso_fonte: 'inserimento manuale', marketing_revoca_il: null, marketing_revoca_fonte: null })
+      }
+      // Tolta a mano: resta scritto quando, come per chi si toglie da solo.
+      if (prima?.iscritto_newsletter && body.iscritto_newsletter === false) {
+        Object.assign(updates, { marketing_revoca_il: new Date().toISOString(), marketing_revoca_fonte: FONTI_REVOCA.titolare })
+      }
     }
     updates.updated_at = new Date().toISOString()
 

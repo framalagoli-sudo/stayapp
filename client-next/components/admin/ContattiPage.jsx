@@ -265,6 +265,7 @@ function ContactModal({ contact, aziendaId, onSave, onClose, storia = [], entita
             <input type="checkbox" checked={!!form.iscritto_newsletter} onChange={e => setForm(f => ({ ...f, iscritto_newsletter: e.target.checked }))} style={{ marginTop: 3 }} />
             <span style={{ fontSize: 14 }}>Per email
               {contact?.iscritto_newsletter && contact?.marketing_consenso_il && <span style={{ fontSize: 12, color: '#999' }}> · consenso del {quando(contact.marketing_consenso_il)}{contact.marketing_consenso_fonte ? ` (${contact.marketing_consenso_fonte})` : ''}</span>}
+              {!contact?.iscritto_newsletter && contact?.marketing_revoca_il && <span data-revoca style={{ fontSize: 12, color: '#999' }}> · si è tolto il {quando(contact.marketing_revoca_il)}{contact.marketing_revoca_fonte ? ` (${contact.marketing_revoca_fonte})` : ''}</span>}
             </span>
           </label>
           {/* Il consenso WhatsApp e' l'unica spunta che puo' far bloccare il numero

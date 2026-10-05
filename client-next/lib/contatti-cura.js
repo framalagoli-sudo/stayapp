@@ -86,6 +86,7 @@ export async function anonimizzaContatto(contatto) {
     telefono: null, telefono_e164: null, note: null, tags: [], iscritto_newsletter: false,
     whatsapp_optin: false, whatsapp_optin_il: null, whatsapp_optin_fonte: null,
     marketing_consenso_il: null, marketing_consenso_testo: null, marketing_consenso_fonte: null,
+    marketing_revoca_il: null, marketing_revoca_fonte: null,
     pipeline_stage: null, updated_at: new Date().toISOString(),
   }).eq('id', id).eq('azienda_id', aziendaId)
   if (error) throw new Error(`contatto: ${error.message}`)
@@ -147,8 +148,13 @@ export async function unisciContatti(principale, altro) {
   const note = [principale.note, altro.note, altriRecapiti.length ? `Altri recapiti: ${altriRecapiti.join(', ')}` : null].filter(Boolean).join('\n\n')
   if (note !== (principale.note || '')) patch.note = note || null
 
-  if (!principale.iscritto_newsletter && altro.iscritto_newsletter && stessaEmail(altro.email, emailFinale)) {
-    Object.assign(patch, { iscritto_newsletter: true, marketing_consenso_il: altro.marketing_consenso_il, marketing_consenso_testo: altro.marketing_consenso_testo, marketing_consenso_fonte: altro.marketing_consenso_fonte })
+  // ⚠️ Se la scheda che resta si è disiscritta DOPO quel sì (o non si sa quando
+  // il sì sia stato dato), il no vince: unire due schede non riscrive a chi
+  // aveva chiesto di smettere.
+  const noPiuRecente = principale.marketing_revoca_il
+    && (!altro.marketing_consenso_il || new Date(principale.marketing_revoca_il) >= new Date(altro.marketing_consenso_il))
+  if (!principale.iscritto_newsletter && altro.iscritto_newsletter && stessaEmail(altro.email, emailFinale) && !noPiuRecente) {
+    Object.assign(patch, { iscritto_newsletter: true, marketing_consenso_il: altro.marketing_consenso_il, marketing_consenso_testo: altro.marketing_consenso_testo, marketing_consenso_fonte: altro.marketing_consenso_fonte, marketing_revoca_il: null, marketing_revoca_fonte: null })
   }
   if (!principale.whatsapp_optin && altro.whatsapp_optin && e164Finale && (altro.telefono_e164 || normalizzaTelefono(altro.telefono)) === e164Finale) {
     Object.assign(patch, { whatsapp_optin: true, whatsapp_optin_il: altro.whatsapp_optin_il, whatsapp_optin_fonte: altro.whatsapp_optin_fonte })
