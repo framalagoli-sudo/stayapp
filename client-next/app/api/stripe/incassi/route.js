@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { incassatoOnline } from '@/lib/gruppi-prenotazioni-evento'
 import { requireAuth, getProfile, resolveAziendaId } from '@/lib/server-auth'
 
 // Gli incassi di questa azienda: cosa è stato pagato online, quando e quanto.
@@ -51,7 +52,7 @@ export async function GET(request) {
 
       // `event_bookings` non ha `azienda_id`: si passa dagli eventi dell'azienda.
       supabaseAdmin.from('eventi')
-        .select('id, title, event_bookings(id, seats, total_amount, guest_name, pagamento_stato, created_at, updated_at)')
+        .select('id, title, acconto_percentuale, event_bookings(id, seats, total_amount, importo_online, guest_name, pagamento_stato, created_at, updated_at)')
         .eq('azienda_id', azienda_id),
     ])
 
@@ -80,7 +81,8 @@ export async function GET(request) {
         righe.push({
           id: `evento-${b.id}`, tipo: 'Evento',
           cosa: b.seats > 1 ? `${ev.title} — ${b.seats} posti` : ev.title,
-          chi: b.guest_name || null, importo: Number(b.total_amount) || 0,
+          // La cifra arrivata, non il totale: con un acconto o un link sono diverse.
+          chi: b.guest_name || null, importo: incassatoOnline(ev, b),
           quando: b.updated_at || b.created_at,
         })
       }

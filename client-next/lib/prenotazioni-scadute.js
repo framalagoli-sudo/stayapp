@@ -102,6 +102,9 @@ export async function liberaPostiNonPagati() {
     .select('id, event_id, seats, guest_name, guest_email, pagamento_id, pagamento_stato, created_at, status, conferma_inviata_il')
     .eq('pagamento_stato', 'non_pagato')
     .neq('status', 'cancelled')
+    // Chi ha ricevuto un link dal titolare ha un giorno, e la sua prenotazione
+    // non si annulla: la guarda `chiudiLinkScaduti`, non questo giro.
+    .is('pagamento_richiesto_il', null)
     .lt('created_at', limite)
     .limit(50)
 
@@ -165,6 +168,7 @@ export async function liberaRisorseNonPagate() {
   const { data: candidate } = await supabaseAdmin.from('prenotazioni')
     .select('*')
     .eq('pagamento_stato', 'non_pagato').eq('stato', 'in_attesa')
+    .is('pagamento_richiesto_il', null)
     .lt('created_at', limite).limit(50)
 
   if (!candidate?.length) return { esaminate: 0, liberate: 0, recuperate: 0, incerte: 0, motivi: [] }

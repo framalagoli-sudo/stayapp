@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth, getProfile } from '@/lib/server-auth'
 import { recomputeEventSeats } from '@/lib/event-seats'
 import { mandaConfermaEvento } from '@/lib/evento-conferma'
+import { ritiraLink } from '@/lib/link-pagamento'
 
 export async function PATCH(request, props) {
   const params = await props.params;
@@ -38,10 +39,19 @@ export async function PATCH(request, props) {
     // vuol dire «la tengo io, pagherà sul posto». Il pagamento online smette di
     // essere atteso — altrimenti, alla scadenza della cassa, il giro che libera
     // i posti non pagati la annullerebbe contro la sua decisione.
-    if (status === 'confirmed') {
+    if (status === 'confirmed' || status === 'cancelled') {
       const { data: att } = await supabaseAdmin.from('event_bookings')
-        .select('pagamento_stato').eq('id', params.bookingId).maybeSingle()
-      if (att?.pagamento_stato === 'non_pagato') payload.pagamento_stato = 'non_richiesto'
+        .select('status, pagamento_stato, pagamento_id, pagamento_richiesto_il').eq('id', params.bookingId).maybeSingle()
+      // Confermare una che è alla cassa del sito = «pagherà sul posto». Con un
+      // link mandato dal titolare invece la conferma non tocca il pagamento:
+      // il link resta valido, è lui che l'ha chiesto.
+      if (status === 'confirmed' && att?.pagamento_stato === 'non_pagato' && !att.pagamento_richiesto_il) payload.pagamento_stato = 'non_richiesto'
+      // Annullata con un link ancora valido: il link si chiude, altrimenti la
+      // persona potrebbe pagare un posto che non ha più.
+      if (status === 'cancelled') {
+        const { data: ev } = await supabaseAdmin.from('eventi').select('azienda_id').eq('id', booking.event_id).maybeSingle()
+        Object.assign(payload, await ritiraLink('evento', att, ev?.azienda_id) || {})
+      }
     }
     if (notes  !== undefined) payload.notes  = notes
     // Correggere una prenotazione presa male è il gesto più frequente di tutti:

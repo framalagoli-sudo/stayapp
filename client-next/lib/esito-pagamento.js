@@ -106,7 +106,7 @@ export async function esitoPagamento(sessionId) {
 
   // ── 3. Una prenotazione di un evento ───────────────────────────────────────
   const { data: pev } = await supabaseAdmin.from('event_bookings')
-    .select('seats, total_amount, pagamento_stato, event_id')
+    .select('seats, total_amount, importo_online, pagamento_stato, event_id')
     .eq('pagamento_id', sid).maybeSingle()
   if (pev) {
     const { data: ev } = await supabaseAdmin.from('eventi')
@@ -118,7 +118,8 @@ export async function esitoPagamento(sessionId) {
       titolo: ev?.title || 'Il tuo posto',
       quando: ev?.date_start || null,
       posti: pev.seats || 1,
-      importo: pev.total_amount,
+      importo: pev.importo_online ?? pev.total_amount,
+      saldo: pev.importo_online != null ? Math.max(0, Math.round((Number(pev.total_amount) - Number(pev.importo_online)) * 100) / 100) : 0,
       pagato: pev.pagamento_stato === 'pagato',
       sito: await sitoDi(ev?.entity_tipo, ev?.entity_id),
     }

@@ -14,7 +14,9 @@ export function gruppoPrenotazione(b) {
   if (b.status === 'confirmed') return 'confermate'
   // «In attesa» ha due significati: è alla cassa online (si risolve da sola in
   // mezz'ora), oppure aspetta che il titolare la confermi.
-  if (b.status === 'pending') return b.pagamento_stato === 'non_pagato' ? 'pagamento' : 'daConfermare'
+  // Una a cui il titolare ha mandato un link resta fra quelle «da confermare»:
+  // è lui che la sta seguendo, non si risolve da sola.
+  if (b.status === 'pending') return b.pagamento_stato === 'non_pagato' && !b.pagamento_richiesto_il ? 'pagamento' : 'daConfermare'
   if (b.status === 'waitlist') return 'attesa'
   return 'perse'
 }
@@ -30,6 +32,10 @@ export function occupaPosto(b) {
 // al titolare di avere già in tasca anche il saldo.
 export function incassatoOnline(evento, b) {
   if (b.pagamento_stato !== 'pagato') return 0
+  // Con un link di pagamento la cifra la decide il titolare ed è scritta sulla
+  // riga: vale quella. Le prenotazioni di prima non ce l'hanno, e si ricava
+  // dalla percentuale dell'evento com'è sempre stato.
+  if (b.importo_online != null) return Number(b.importo_online) || 0
   const totale = Number(b.total_amount) || 0
   const perc = Math.min(100, Math.max(0, parseInt(evento?.acconto_percentuale) || 0))
   return perc > 0 ? Math.round(totale * perc) / 100 : totale

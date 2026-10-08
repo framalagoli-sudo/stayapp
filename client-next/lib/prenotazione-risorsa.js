@@ -6,7 +6,7 @@ import { sendWebhooks } from './send-webhooks'
 import { triggerAutomazione } from './guest-utils'
 import { syncBookingCreate } from './google-calendar-stub'
 import { sendEmail } from './send-email'
-import { guestEmailTemplate } from './email-template'
+import { guestEmailTemplate, emailTemplate } from './email-template'
 import { getAziendaLegale } from './guest-data'
 
 // La prenotazione di una risorsa (un furgone, una casa, un campo): quando si
@@ -133,6 +133,54 @@ export async function mandaEmailPrenotazione(prenotazione, risorsa, momento = 'c
   } catch (e) { console.error(`[booking] email «${momento}» fallita:`, e.message) }
 }
 
+// L'avviso al titolare: è arrivata una prenotazione (o una richiesta da
+// approvare). Sugli eventi c'è da sempre; per le risorse non partiva niente, e
+// una richiesta da approvare la si scopriva solo aprendo il pannello.
+// Si spegne nella scheda della risorsa (`avvisa_titolare`).
+// ⚠️ Quando ci sarà WhatsApp, l'avviso potrà partire anche da lì: questo è il
+// punto in cui aggiungerlo.
+export async function avvisaTitolare(prenotazione, risorsa, momento = 'confermata') {
+  if (risorsa?.avvisa_titolare === false || momento === 'scaduta') return
+  if (!(process.env.RESEND_API_KEY ?? '').trim()) return
+  try {
+    const ent = await entitaDi(risorsa)
+    let a = null, nome = ent?.name || null
+    if (risorsa.entity_id) {
+      const { data } = await supabaseAdmin.from('entita').select('email').eq('id', risorsa.entity_id).maybeSingle()
+      a = data?.email || null
+    }
+    if (!a || !nome) {
+      const { data: az } = await supabaseAdmin.from('aziende').select('ragione_sociale, email').eq('id', risorsa.azienda_id).maybeSingle()
+      a = a || az?.email || null; nome = nome || az?.ragione_sociale || risorsa.nome
+    }
+    if (!a) return
+    const pulito = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+    const daApprovare = momento === 'richiesta'
+    const online = Number(prenotazione.importo_online) || 0
+    const appUrl = ((process.env.CLIENT_URL ?? '').trim() || 'https://www.oltrenova.com').replace('://oltrenova.com', '://www.oltrenova.com')
+    await sendEmail({
+      _ctx: 'booking-owner', fromName: nome, to: a,
+      ...(prenotazione.cliente_email ? { replyTo: prenotazione.cliente_email } : {}),
+      subject: `[${nome}] ${daApprovare ? 'Richiesta da approvare' : 'Nuova prenotazione'}: ${risorsa.nome}`,
+      html: emailTemplate({
+        title: `${daApprovare ? 'Richiesta da approvare' : 'Nuova prenotazione'} — ${pulito(risorsa.nome)}`, entityName: pulito(nome),
+        rows: [
+          { label: 'Nome', value: pulito(prenotazione.cliente_nome) },
+          prenotazione.cliente_email ? { label: 'Email', value: `<a href="mailto:${pulito(prenotazione.cliente_email)}" style="color:#00b5b5">${pulito(prenotazione.cliente_email)}</a>` } : null,
+          prenotazione.cliente_telefono ? { label: 'Telefono', value: pulito(prenotazione.cliente_telefono) } : null,
+          { label: 'Quando', value: pulito(quandoDi(prenotazione, risorsa)) },
+          { label: 'Persone', value: String(prenotazione.n_persone || 1) },
+          prenotazione.importo_totale > 0 ? { label: 'Totale', value: `€${Number(prenotazione.importo_totale).toFixed(2)}` } : null,
+          prenotazione.pagamento_stato === 'pagato' && online > 0 ? { label: 'Pagato online', value: `€${online.toFixed(2)}` } : null,
+          prenotazione.note_cliente ? { label: 'Note', value: pulito(prenotazione.note_cliente) } : null,
+          daApprovare ? { label: 'Da fare', value: 'Aprila in «Prenotazioni» e confermala: chi l’ha chiesta sta aspettando la tua risposta.' } : null,
+        ].filter(Boolean),
+        appUrl,
+      }),
+    })
+  } catch (e) { console.error('[booking] avviso al titolare fallito:', e.message) }
+}
+
 // Gli avvisi verso fuori: email a chi ha prenotato, calendario, webhook del
 // titolare. Restituisce una promessa: chi chiama la aspetta (il webhook di
 // Stripe) o la mette dentro `after` (la route che risponde subito a chi
@@ -140,6 +188,7 @@ export async function mandaEmailPrenotazione(prenotazione, risorsa, momento = 'c
 export function avvisaPrenotazione(prenotazione, risorsa, momento = 'confermata') {
   return Promise.allSettled([
     mandaEmailPrenotazione(prenotazione, risorsa, momento),
+    avvisaTitolare(prenotazione, risorsa, momento),
     Promise.resolve().then(() => syncBookingCreate(prenotazione, risorsa)),
     Promise.resolve().then(() => sendWebhooks(prenotazione.azienda_id, 'nuova_prenotazione', {
       prenotazione_id: prenotazione.id,
@@ -217,7 +266,10 @@ export async function automazioniPrenotazione(prenotazione, risorsa) {
 // ⚠️ Lo scambio `in_attesa → confermata` è atomico (`eq('stato', 'in_attesa')`):
 // Stripe rispedisce lo stesso evento in caso di dubbio, e senza questo
 // partirebbero due conferme e due promemoria.
-export async function prenotazionePagata(prenotazioneId) {
+//
+// `automazioni: false` quando il pagamento arriva da un link mandato dal
+// titolare su una richiesta già arrivata: i suoi promemoria sono partiti allora.
+export async function prenotazionePagata(prenotazioneId, { automazioni = true } = {}) {
   const { data: fatte } = await supabaseAdmin.from('prenotazioni')
     .update({ stato: 'confermata', pagamento_stato: 'pagato', updated_at: new Date().toISOString() })
     .eq('id', prenotazioneId).eq('stato', 'in_attesa').select()
@@ -226,6 +278,6 @@ export async function prenotazionePagata(prenotazioneId) {
   const { data: risorsa } = await supabaseAdmin.from('risorse').select('*').eq('id', prenotazione.risorsa_id).maybeSingle()
   if (!risorsa) return { ok: false, motivo: 'risorsa non trovata' }
   await avvisaPrenotazione(prenotazione, risorsa, 'confermata')
-  await automazioniPrenotazione(prenotazione, risorsa)
+  if (automazioni) await automazioniPrenotazione(prenotazione, risorsa)
   return { ok: true }
 }

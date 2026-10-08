@@ -98,11 +98,13 @@ async function segnaPagato(sessione) {
   // promemoria. Se Stripe rispedisce l'evento, la seconda volta non è più in
   // attesa e non parte niente.
   const { data: pren } = await supabaseAdmin.from('prenotazioni')
-    .select('id, stato, pagamento_stato').eq('pagamento_id', sid).limit(1)
+    .select('id, stato, pagamento_stato, pagamento_richiesto_il').eq('pagamento_id', sid).limit(1)
   if (pren?.length) {
     const p = pren[0]
     if (p.pagamento_stato === 'pagato') return
-    if (p.stato === 'in_attesa') { await prenotazionePagata(p.id); return }
+    // Pagata da un link mandato dal titolare: era una richiesta già arrivata,
+    // i promemoria li ha già avuti.
+    if (p.stato === 'in_attesa') { await prenotazionePagata(p.id, { automazioni: !p.pagamento_richiesto_il }); return }
     // Il titolare l'aveva già confermata a mano («pagherà sul posto») e la
     // persona ha pagato lo stesso dalla cassa ancora aperta: il denaro è
     // arrivato, si segna e basta.

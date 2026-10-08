@@ -4,6 +4,7 @@ import { syncBookingCreate, syncBookingDelete } from '@/lib/google-calendar-stub
 import { mandaEmailPrenotazione, automazioniPrenotazione } from '@/lib/prenotazione-risorsa'
 import { STATI_PRENOTAZIONE } from '@/lib/stato-prenotazione'
 import { logError } from '@/lib/observability'
+import { ritiraLink } from '@/lib/link-pagamento'
 
 export async function PATCH(request, props) {
   const params = await props.params;
@@ -26,6 +27,9 @@ export async function PATCH(request, props) {
     // essere atteso — altrimenti il giro che libera ciò che non è stato pagato
     // la annullerebbe contro la sua decisione.
     const attendevaPagamento = prev?.stato === 'in_attesa' && prev?.pagamento_stato === 'non_pagato'
+    // Annullata con un link di pagamento ancora valido: il link si chiude,
+    // altrimenti la persona potrebbe pagare una prenotazione che non c'è più.
+    if (payload.stato === 'cancellata' && prev) Object.assign(payload, await ritiraLink('risorsa', prev, prev.azienda_id) || {})
     if (payload.stato === 'confermata' && attendevaPagamento) {
       payload.pagamento_stato = 'non_richiesto'
       payload.importo_online = null

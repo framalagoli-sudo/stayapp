@@ -558,6 +558,17 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - 🚪 **`/api/guest/book` rimossa** (ok di Francesco): raccoglieva nome, email e telefono **senza chiedere il consenso**, e nessuna pagina la chiamava dall'8 maggio. Una porta pubblica che nessuno usa è solo superficie esposta. Le app prenotano da `/api/guest/prenota`.
     - ⛔ Mai `next build` in `client-next/` con il dev server acceso: condividono `.next`.
 
+57. **🔗 Il link di pagamento per le prenotazioni prese a voce** (08/10/2026, idea di Francesco: «un hotel che riceve una prenotazione telefonica e invia il link per il pagamento»; migration `135`). Vale per le due cose che si prenotano, eventi e risorse.
+    - **Nel pannello**: «Chiedi il pagamento» su ogni prenotazione non pagata e — in una striscia verde — subito dopo averne segnata una a mano. Finestra unica `components/admin/ChiediPagamento.jsx`: cifra (proposta: l'acconto impostato o il totale), **Copia link**, **Apri WhatsApp** col messaggio già scritto (senza Meta: è un `wa.me`), **Invia per email**.
+    - **`lib/link-pagamento.js`** è l'unico posto delle regole. Tre, diverse da quelle della cassa del sito: chiedere il pagamento **non cambia la prenotazione** (l'ha scritta il titolare: a link scaduto torna «si paga sul posto», non si annulla); vale **24 ore**, non mezz'ora; la cifra la decide il titolare **entro il totale**.
+    - ⚠️ Nel database le due cose sembrano uguali (`non_pagato` con una sessione di Stripe). Le distingue **`pagamento_richiesto_il`**: valorizzato = link del titolare. I due giri che liberano chi non paga alla cassa lo **escludono**; i link li guarda `chiudiLinkScaduti` (stesso cron). Aggiungendo un punto che legge `non_pagato`, chiedersi di quale dei due si tratta — `attendePagamento` / `linkInCorso` in `lib/stato-prenotazione.js`.
+    - Il link che si copia è **nostro**: `www.oltrenova.com/paga/<sessione>` (`app/paga/[sid]/route.js`, pubblico di proposito): porta alla cassa finché è aperta, al «grazie» se è pagata, e altrimenti dice di chi era e che è scaduto. L'indirizzo di Stripe è lungo trecento caratteri e muto quando scade.
+    - Cambiare importo chiude il link di prima (due casse aperte = poter pagare due volte). **Annullare la prenotazione ritira il link.** Una richiesta «da confermare» pagata col link diventa confermata — è il modo di far pagare una risorsa con approvazione a mano.
+    - `event_bookings.importo_online`: come per le risorse, la cifra portata alla cassa. `incassatoOnline` la usa quando c'è; «Pagamenti» ora mostra la cifra arrivata anche per gli eventi (contava il totale anche con un acconto).
+    - 📣 **Avviso al titolare per le risorse** (`avvisaTitolare`, `risorse.avvisa_titolare`, accesa per tutte): prima non partiva niente, e una richiesta da approvare si scopriva solo aprendo il pannello. Con l'approvazione a mano l'oggetto è «Richiesta da approvare». È il punto dove agganciare WhatsApp quando ci sarà.
+    - ⚠️ Un numero scritto «333 1234567» non ha prefisso: per WhatsApp si passa da `normalizzaTelefono` (la stessa dei contatti), mai un `replace` fatto a mano.
+    - ⚠️ **Non provato**: un pagamento vero da link in produzione (nessuna azienda di prova ha un conto Stripe attivo) e l'arrivo in casella dell'avviso al titolare. Sonda `tests/probe-link-pagamento.mjs`: in locale tutto con un conto di prova e il browser; `--vivo` in produzione prova l'email del link, la pagina di un link scaduto e il giro.
+
 ---
 
 ## Roadmap
@@ -580,7 +591,8 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 ### Da fare (in ordine)
 - [x] 👥 **Contatti rifatti dalle fondamenta** ✅ 04–05/10/2026 — porta unica, registro delle attività, liste calcolate, Trattative, consenso con prova, newsletter per lista con editor nuovo, disiscrizione con traccia. Note 55–56, migration 130–133.
 - [x] **Booking delle risorse come gli eventi** ✅ 08/10/2026 — cassa a 31 minuti, «in attesa» finché non paga, pagamento online solo con conferma automatica. Nota 44, migration 134.
-- [ ] **Link di pagamento per le prenotazioni prese a mano** (idea di Francesco, 08/10: l'hotel che riceve una telefonata e manda il link per email o WhatsApp) — vale per eventi e risorse; è anche la strada per «approvo a mano, poi faccio pagare». Da progettare.
+- [x] **Link di pagamento per le prenotazioni prese a mano** ✅ 08/10/2026 — copia link, WhatsApp, email; vale 24 ore e la prenotazione resta. Nota 57, migration 135.
+- [ ] **Lo stato vero del conto Stripe** — `puoIncassare` dice sì appena esiste `stripe_account_id`, anche se il collegamento è rimasto a metà: va salvato `charges_enabled` dal webhook dell'account. Oggi il link e la cassa falliscono con un messaggio chiaro, ma il pulsante compare lo stesso.
 - [ ] **Campagne WhatsApp per lista** (come le newsletter) e via i tag col titolo dell'evento — quando si collega Meta.
 - [ ] **Newsletter a blocchi** (stesso editor del sito, catalogo ridotto per la posta, blocchi collegati a eventi e offerte) — parere dato il 05/10, da riprendere dopo aver visto se i quattro modelli bastano.
 - [x] **Costi AI sotto controllo** ✅ 15/09/2026 — tetto 5 $/mese per azienda, ricarica da Aziende → Credito AI, avviso al cliente dall'80%. Nota 37.

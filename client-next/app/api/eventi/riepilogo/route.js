@@ -47,7 +47,7 @@ export async function GET(request) {
       const blocco = ids.slice(i, i + 100)
       for (let da = 0; ; da += 1000) {
         const { data: pagina, error: e2 } = await supabaseAdmin.from('event_bookings')
-          .select('event_id, seats, total_amount, status, pagamento_stato')
+          .select('event_id, seats, total_amount, status, pagamento_stato, pagamento_richiesto_il, importo_online')
           .in('event_id', blocco).order('id').range(da, da + 999)
         if (e2) return Response.json({ error: e2.message }, { status: 500 })
         righe.push(...(pagina || []))

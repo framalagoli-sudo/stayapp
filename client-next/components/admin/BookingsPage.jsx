@@ -6,7 +6,8 @@ import { apiFetch } from '@/lib/api'
 import Link from 'next/link'
 import { CalendarCheck, CalendarDays, Search, ChevronDown, ChevronRight, AlertCircle } from 'lucide-react'
 import StatoPagamento from './StatoPagamento'
-import { etichettaStato, attendePagamento } from '@/lib/stato-prenotazione'
+import { etichettaStato, attendePagamento, puoChiederePagamento, linkInCorso } from '@/lib/stato-prenotazione'
+import ChiediPagamento from './ChiediPagamento'
 import { oraLocale } from '@/lib/fuso'
 import { postiEvento } from '@/lib/posti-evento'
 
@@ -50,6 +51,7 @@ export default function BookingsPage() {
   const [cerca, setCerca] = useState('')
   const [eventi, setEventi] = useState([])
   const [passatiAperti, setPassatiAperti] = useState(false)
+  const [pagamentoDi, setPagamentoDi] = useState(null)   // a quale prenotazione si chiede il pagamento
 
   useEffect(() => {
     if (aziLoading) return
@@ -62,8 +64,13 @@ export default function BookingsPage() {
   }, [aziendaId, aziLoading])
 
   async function cambiaStato(p, stato) {
-    await apiFetch(`/api/booking/prenotazioni/${p.id}`, { method: 'PATCH', body: JSON.stringify({ stato }) })
-    setPrenotazioni(l => l.map(x => x.id === p.id ? { ...x, stato } : x))
+    // Si tiene la riga che torna dal server: cambiando stato può cambiare anche
+    // il pagamento (un link ritirato, un «pagherà sul posto»).
+    const nuova = await apiFetch(`/api/booking/prenotazioni/${p.id}`, { method: 'PATCH', body: JSON.stringify({ stato }) })
+    setPrenotazioni(l => l.map(x => x.id === p.id ? { ...x, ...nuova, stato } : x))
+  }
+  async function ricarica() {
+    try { const d = await apiFetch(`/api/booking/prenotazioni${aziendaId ? `?azienda_id=${aziendaId}` : ''}`); if (Array.isArray(d)) setPrenotazioni(d) } catch {}
   }
 
   const visibili = prenotazioni
@@ -156,6 +163,7 @@ export default function BookingsPage() {
 
   return (
     <div style={{ maxWidth: 900 }}>
+      {pagamentoDi && <ChiediPagamento tipo="risorsa" id={pagamentoDi} onChiudi={() => setPagamentoDi(null)} onCambiato={ricarica} />}
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Prenotazioni</h1>
         <p style={{ margin: '4px 0 0', fontSize: 14, color: '#888' }}>
@@ -240,6 +248,11 @@ export default function BookingsPage() {
                     <StatoPagamento riga={p} importo={p.importo_online} compatto />
                   </div>
                 </div>
+                {linkInCorso(p) && p.stato !== 'cancellata' && (
+                  <div data-link-in-corso style={{ fontSize: 12.5, color: '#8a5a00', marginTop: 8, lineHeight: 1.5 }}>
+                    Link di pagamento inviato{p.importo_online > 0 ? ` per €${Number(p.importo_online).toFixed(2)}` : ''}: vale un giorno. Se non paga la prenotazione resta com’è.
+                  </div>
+                )}
                 {attendePagamento(p) && (
                   <div data-attende-pagamento style={{ fontSize: 12.5, color: '#8a5a00', marginTop: 8, lineHeight: 1.5 }}>
                     Sta pagando online{p.importo_online > 0 ? ` €${Number(p.importo_online).toFixed(2)}` : ''}: ha mezz’ora, poi si annulla da sola e la disponibilità torna libera. Non serve fare niente.
@@ -255,6 +268,10 @@ export default function BookingsPage() {
                   )}
                   {p.stato !== 'completata' && (
                     <button onClick={() => cambiaStato(p, 'completata')} style={azione}>Segna completata</button>
+                  )}
+                  {puoChiederePagamento('risorsa', p) && (
+                    <button data-chiedi-pagamento-di={p.id} onClick={() => setPagamentoDi(p.id)} title="Crea un link di pagamento da copiare o mandare per email"
+                      style={{ ...azione, background: '#eef4ff', color: '#1d4ed8' }}>{linkInCorso(p) ? 'Link di pagamento' : 'Chiedi il pagamento'}</button>
                   )}
                 </div>
               </div>

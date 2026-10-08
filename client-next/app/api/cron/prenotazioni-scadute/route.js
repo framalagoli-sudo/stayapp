@@ -1,5 +1,6 @@
 import { liberaPostiNonPagati, liberaRisorseNonPagate, MINUTI_PER_PAGARE } from '@/lib/prenotazioni-scadute'
 import { logError } from '@/lib/observability'
+import { chiudiLinkScaduti } from '@/lib/link-pagamento'
 import { battitoEControllo } from '@/lib/cron-battito'
 
 // Restituisce i posti tenuti e mai pagati.
@@ -18,10 +19,14 @@ export async function GET(request) {
     // perché a chi legge interessa «quanti posti sono tornati liberi».
     const eventi = await liberaPostiNonPagati()
     const risorse = await liberaRisorseNonPagate()
+    // I link di pagamento mandati dal titolare: scaduti, tornano «si paga sul
+    // posto» e la prenotazione resta.
+    const link = await chiudiLinkScaduti()
     const esito = {
       esaminate: eventi.esaminate + risorse.esaminate, liberate: eventi.liberate + risorse.liberate,
-      recuperate: eventi.recuperate + risorse.recuperate, incerte: eventi.incerte + risorse.incerte,
-      motivi: [...eventi.motivi, ...risorse.motivi],
+      recuperate: eventi.recuperate + risorse.recuperate + link.recuperati, incerte: eventi.incerte + risorse.incerte + link.incerti,
+      motivi: [...eventi.motivi, ...risorse.motivi, ...link.motivi],
+      link_scaduti: link.chiusi,
     }
     // ⚠️ Un webhook che non arriva va detto, non solo riparato in silenzio: se
     // capita spesso c'è qualcosa di rotto nella consegna, e il prossimo caso

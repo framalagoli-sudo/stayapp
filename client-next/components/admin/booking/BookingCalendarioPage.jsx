@@ -2,7 +2,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiFetch } from '../../../lib/api'
-import { etichettaStato } from '../../../lib/stato-prenotazione'
+import { etichettaStato, puoChiederePagamento, linkInCorso } from '../../../lib/stato-prenotazione'
+import ChiediPagamento from '../ChiediPagamento'
 import { useAuth } from '../../../context/AuthContext'
 import { useAzienda } from '../../../context/AziendaContext'
 
@@ -99,6 +100,8 @@ export default function BookingCalendarioPage() {
   const [nuova, setNuova] = useState(null)      // il modulo per inserirne una a mano
   const [salvando, setSalvando] = useState(false)
   const [erroreNuova, setErroreNuova] = useState('')
+  const [pagamentoDi, setPagamentoDi] = useState(null)      // a quale prenotazione si chiede il pagamento
+  const [appenaSegnata, setAppenaSegnata] = useState(null)  // quella appena scritta a mano
 
   const risorsa = risorse.find(r => r.id === risorsaId) || null
   const caselle = caselleDelMese(anno, mese)
@@ -144,8 +147,9 @@ export default function BookingCalendarioPage() {
   async function salvaNuova() {
     setSalvando(true); setErroreNuova('')
     try {
-      await apiFetch('/api/booking/prenotazioni', { method: 'POST', body: JSON.stringify({ ...nuova, risorsa_id: risorsaId }) })
+      const creata = await apiFetch('/api/booking/prenotazioni', { method: 'POST', body: JSON.stringify({ ...nuova, risorsa_id: risorsaId }) })
       setNuova(null)
+      setAppenaSegnata(creata)
       apriGiorno(giornoAperto)
       caricaMese()
     } catch (e) { setErroreNuova(e.message || 'Non sono riuscito a salvare') }
@@ -187,6 +191,22 @@ export default function BookingCalendarioPage() {
 
   return (
     <div>
+      {pagamentoDi && (
+        <ChiediPagamento tipo="risorsa" id={pagamentoDi} onChiudi={() => setPagamentoDi(null)}
+          onCambiato={() => { if (giornoAperto) apriGiorno(giornoAperto) }} />
+      )}
+      {appenaSegnata && (
+        <div data-appena-segnata style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', background: '#f0f7f2', border: '1px solid #c6e6d0', borderRadius: 12, padding: '12px 16px', marginBottom: 16 }}>
+          <span style={{ fontSize: 14, color: '#22543d', flex: 1, minWidth: 200, overflowWrap: 'anywhere' }}>
+            Segnata la prenotazione di <strong>{appenaSegnata.cliente_nome}</strong>{appenaSegnata.importo_totale > 0 ? ` · €${appenaSegnata.importo_totale}` : ''}.
+          </span>
+          <button onClick={() => { setPagamentoDi(appenaSegnata.id); setAppenaSegnata(null) }}
+            style={{ padding: '8px 14px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13.5, fontWeight: 700 }}>
+            Chiedi il pagamento
+          </button>
+          <button onClick={() => setAppenaSegnata(null)} style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: 13, textDecoration: 'underline' }}>Paga sul posto</button>
+        </div>
+      )}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
         <div style={{ minWidth: 0 }}>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Calendario</h1>
@@ -372,6 +392,9 @@ export default function BookingCalendarioPage() {
                     )}
                     {b.stato !== 'completata' && (
                       <button onClick={() => cambiaStato(b, 'completata')} style={btnPiccolo}>Segna completata</button>
+                    )}
+                    {puoChiederePagamento('risorsa', b) && (
+                      <button data-chiedi-pagamento-di={b.id} onClick={() => setPagamentoDi(b.id)} style={{ ...btnPiccolo, background: '#eef4ff', color: '#1d4ed8' }}>{linkInCorso(b) ? 'Link di pagamento' : 'Chiedi il pagamento'}</button>
                     )}
                     <button onClick={() => cancella(b)} style={{ ...btnPiccolo, background: '#fff5f5', color: '#c53030' }}>Elimina</button>
                   </div>

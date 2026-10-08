@@ -8,6 +8,8 @@ import { oraLocale } from '../../../lib/fuso'
 import { postiEvento } from '@/lib/posti-evento'
 import StatoPagamento from '../StatoPagamento'
 import { gruppoPrenotazione, incassatoOnline } from '@/lib/gruppi-prenotazioni-evento'
+import { puoChiederePagamento, linkInCorso } from '@/lib/stato-prenotazione'
+import ChiediPagamento from '../ChiediPagamento'
 
 // Quando è arrivata una prenotazione (`created_at`) si legge nell'ora di chi
 // guarda — è un fatto del pannello. L'ora dell'evento no: quella è del posto,
@@ -292,6 +294,10 @@ export default function EventoPrenotazioniPage() {
   // Quali gruppi dell'elenco sono aperti. Quello delle prenotazioni non andate
   // a buon fine nasce chiuso: serve di rado, e aperto seppelliva chi viene.
   const [gruppiChiusi, setGruppiChiusi] = useState({ perse: true })
+  // A quale prenotazione si sta chiedendo il pagamento, e quale è appena stata
+  // segnata a mano (per offrirlo subito, finché il cliente è al telefono).
+  const [pagamentoDi, setPagamentoDi] = useState(null)
+  const [appenaSegnata, setAppenaSegnata] = useState(null)
 
   useEffect(() => {
     Promise.all([
@@ -404,7 +410,7 @@ export default function EventoPrenotazioniPage() {
   function renderAzioni(b) {
     const VERDE = { bg: '#d4edda', color: '#155724' }
     const ROSSO = { bg: '#f8d7da', color: '#721c24' }
-    const attendePagamento = b.status === 'pending' && b.pagamento_stato === 'non_pagato'
+    const attendePagamento = b.status === 'pending' && b.pagamento_stato === 'non_pagato' && !b.pagamento_richiesto_il
     // La conferma parte una volta sola, solo se l'evento la prevede e c'è un
     // indirizzo a cui scrivere.
     const avvisa = !b.conferma_inviata_il && evento.send_guest_confirmation !== false && b.guest_email
@@ -451,6 +457,12 @@ export default function EventoPrenotazioniPage() {
           style={{ fontSize: 12.5, background: 'none', border: 'none', padding: 0, color: '#2b6cb0', cursor: bloccato ? 'wait' : 'pointer', textDecoration: 'underline', fontWeight: 600 }}>
           {modificaId === b.id ? 'Chiudi' : 'Modifica'}
         </button>
+        {puoChiederePagamento('evento', b) && (
+          <button disabled={bloccato} data-chiedi-pagamento-di={b.id} onClick={() => setPagamentoDi(b.id)} title="Crea un link di pagamento da copiare o mandare per email"
+            style={{ fontSize: 12.5, background: 'none', border: 'none', padding: 0, color: '#2b6cb0', cursor: bloccato ? 'wait' : 'pointer', textDecoration: 'underline', fontWeight: 600 }}>
+            {linkInCorso(b) ? 'Link di pagamento' : 'Chiedi il pagamento'}
+          </button>
+        )}
         <button disabled={bloccato} onClick={() => elimina(b)} title="Sparisce dall’elenco con tutti i suoi dati. Non si può recuperare."
           style={{ fontSize: 12.5, background: 'none', border: 'none', padding: 0, color: '#c53030', cursor: bloccato ? 'wait' : 'pointer', textDecoration: 'underline', marginLeft: 'auto' }}>
           Elimina definitivamente
@@ -496,7 +508,7 @@ export default function EventoPrenotazioniPage() {
     // «In attesa» con la cassa aperta si dice per quello che è.
     // Fra le annullate, «non ha pagato» e «ha disdetto» sono due storie
     // diverse: la prima è una persona che voleva venire e si può richiamare.
-    const st = b.status === 'pending' && b.pagamento_stato === 'non_pagato'
+    const st = b.status === 'pending' && b.pagamento_stato === 'non_pagato' && !b.pagamento_richiesto_il
       ? { ...statusStyle('pending'), label: 'Attende il pagamento' }
       : b.status === 'cancelled' && b.pagamento_stato === 'non_pagato'
         ? { ...statusStyle('cancelled'), label: 'Non ha pagato' }
@@ -549,7 +561,8 @@ export default function EventoPrenotazioniPage() {
             </div>
             {/* Su un'annullata «Da pagare» sarebbe una richiesta a chi non viene più:
                 resta solo se i soldi ci sono stati davvero. */}
-            {(b.status !== 'cancelled' || ['pagato', 'rimborsato'].includes(b.pagamento_stato)) && <StatoPagamento riga={b} compatto />}
+            {(b.status !== 'cancelled' || ['pagato', 'rimborsato'].includes(b.pagamento_stato)) && <StatoPagamento riga={b} importo={b.importo_online} compatto />}
+            {linkInCorso(b) && b.status !== 'cancelled' && <div data-link-in-corso style={{ fontSize: 11, color: '#8a5a00', marginTop: 3, whiteSpace: 'nowrap' }}>link inviato{b.importo_online > 0 ? ` · €${Number(b.importo_online).toFixed(2)}` : ''}</div>}
           </div>
         </div>
 
@@ -664,11 +677,32 @@ export default function EventoPrenotazioniPage() {
           onFatta={async (creata) => {
             setBookings(prev => [creata, ...prev])
             setNuova(false)
+            setAppenaSegnata(creata)
             // I posti li ricalcola il server: si rilegge l'evento invece di
             // fare un conto parallelo che prima o poi diverge.
             try { setEvento(await apiFetch(`/api/eventi/${id}`)) } catch {}
           }}
         />
+      )}
+
+      {/* Appena segnata: il momento giusto per chiedere il pagamento è adesso,
+          con il cliente ancora al telefono. */}
+      {appenaSegnata && (
+        <div data-appena-segnata style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', background: '#f0f7f2', border: '1px solid #c6e6d0', borderRadius: 12, padding: '12px 16px', marginBottom: 20 }}>
+          <span style={{ fontSize: 14, color: '#22543d', flex: 1, minWidth: 200, overflowWrap: 'anywhere' }}>
+            Segnata la prenotazione di <strong>{appenaSegnata.guest_name}</strong>{appenaSegnata.total_amount > 0 ? ` · €${appenaSegnata.total_amount}` : ''}.
+          </span>
+          <button onClick={() => { setPagamentoDi(appenaSegnata.id); setAppenaSegnata(null) }}
+            style={{ padding: '8px 14px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13.5, fontWeight: 700 }}>
+            Chiedi il pagamento
+          </button>
+          <button onClick={() => setAppenaSegnata(null)} style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: 13, textDecoration: 'underline' }}>Paga sul posto</button>
+        </div>
+      )}
+
+      {pagamentoDi && (
+        <ChiediPagamento tipo="evento" id={pagamentoDi} onChiudi={() => setPagamentoDi(null)}
+          onCambiato={async () => { try { setBookings(await apiFetch(`/api/eventi/${id}/bookings`)) } catch {} }} />
       )}
 
       {/* Stats */}

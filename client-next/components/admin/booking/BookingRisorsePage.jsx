@@ -33,7 +33,7 @@ function emptyRisorsa() {
     prezzo: 0, valuta: 'EUR', colore: '#00b5b5',
     galleria: [], acconto_percentuale: 0,
     disponibilita: {}, blocchi: [],
-    anticipo_ore: 1, cancellazione_ore: 24, conferma_auto: true,
+    anticipo_ore: 1, cancellazione_ore: 24, conferma_auto: true, avvisa_titolare: true,
     attiva: true, visibile_minisito: true,
   }
 }
@@ -499,6 +499,12 @@ function RisorseForm({ form, patch, patchDisp, initDisp, entita = [], onEntita, 
               <label htmlFor="conferma_auto" style={{ fontSize: 14, cursor: 'pointer' }}>Conferma automatica</label>
             </div>
             <div style={{ fontSize: 12, color: '#888' }}>Se disattivato, le prenotazioni restano in attesa di approvazione manuale.</div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+              <input type="checkbox" id="avvisa_titolare" checked={form.avvisa_titolare ?? true} onChange={e => patch('avvisa_titolare', e.target.checked)} />
+              <label htmlFor="avvisa_titolare" style={{ fontSize: 14, cursor: 'pointer' }}>Avvisami per email quando arriva una prenotazione</label>
+            </div>
+            <div style={{ fontSize: 12, color: '#888' }}>Arriva all’indirizzo dell’attività. Con l’approvazione manuale ti dice anche che c’è una richiesta da confermare.</div>
 
             <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 10, marginTop: 4 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
