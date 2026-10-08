@@ -189,7 +189,9 @@ export async function automazioniPrenotazione(prenotazione, risorsa) {
     // Serve al canale WhatsApp. Senza, l'automazione non avrebbe dove scrivere
     // e la riga di coda non verrebbe nemmeno creata.
     telefono: prenotazione.cliente_telefono || '',
-    data: new Date(prenotazione.data).toLocaleDateString('it-IT'),
+    // `data` è un giorno scritto («2026-10-14»), non un istante: si legge come
+    // mezzanotte UTC e in UTC si formatta, così il giorno è quello ovunque giri.
+    data: new Date(prenotazione.data).toLocaleDateString('it-IT', { timeZone: 'UTC' }),
     ora: prenotazione.ora_inizio || '',
     servizio: prenotazione.servizio || risorsa.nome || '',
     n_persone: String(prenotazione.n_persone || '1'),
