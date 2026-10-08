@@ -12,6 +12,7 @@
 
 - [🧾 A OGNI chiusura: aggiornare TUTTI i file di progetto](feedback_chiusura_sessione.md) — CLAUDE/FEATURES/PROGETTO/SECURITY, memoria + copia in .claude-memory; ognuno va APERTO, non supposto
 - [📅 Sessione 03–05/10 — contatti dalle fondamenta, consenso, newsletter che si capiscono](project_session_2026_10_03_05.md) — migration fino a 133; tutto live; prossimo: Meta, poi booking risorse
+- [🔗 Link di pagamento e cassa: due cose diverse](reference_link_pagamento.md) — pagamento_richiesto_il distingue il link del titolare (24 ore, resta) dalla cassa del sito (30 min, si annulla); /paga/<sessione>
 - [👥 Contatti: una porta sola](reference_contatti_porta_unica.md) — registraContatto, registro, liste calcolate; pipeline_stage ha 'lead' di default: scriverlo null esplicito
 - [✉️ Newsletter: editor, liste, disiscrizione](reference_newsletter_editor_e_disiscrizione.md) — un solo disegno dell'email; List-Unsubscribe su www; in locale le email sono spente
 - [🪤 Trappole di script e sonde](reference_trappole_script_e_sonde.md) — mai la sonda in catena col deploy; node -e in bash mangia i backtick; le sonde aspettano l'esito
