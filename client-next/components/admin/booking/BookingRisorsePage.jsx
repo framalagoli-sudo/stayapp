@@ -472,7 +472,17 @@ function RisorseForm({ form, patch, patchDisp, initDisp, entita = [], onEntita, 
             {form.acconto_percentuale > 0 && (
               <div style={{ fontSize: 12, color: '#b7791f', marginTop: 6, lineHeight: 1.6 }}>
                 Richiede un conto collegato in <strong>Pagamenti</strong>. Senza, la prenotazione
-                si registra lo stesso e si paga sul posto.
+                si registra lo stesso e si paga sul posto. Chi apre la cassa ha <strong>30 minuti</strong>
+                per pagare: finché non paga non è prenotato, e dopo la disponibilità torna libera.
+              </div>
+            )}
+            {/* Le due scelte insieme non funzionano, e va detto qui dove si fanno:
+                altrimenti il titolare imposta un acconto che non verrà mai chiesto. */}
+            {form.acconto_percentuale > 0 && form.conferma_auto === false && (
+              <div data-avviso-conferma-manuale style={{ fontSize: 12, color: '#9b2c2c', background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 8, padding: '8px 10px', marginTop: 8, lineHeight: 1.6 }}>
+                Con la <strong>conferma automatica spenta</strong> il pagamento online <strong>non viene chiesto</strong>:
+                non facciamo pagare una prenotazione che puoi ancora rifiutare. Si paga sul posto.
+                Per incassare prenotando, accendi «Conferma automatica» qui sotto.
               </div>
             )}
           </Card>

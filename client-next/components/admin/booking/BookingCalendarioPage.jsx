@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiFetch } from '../../../lib/api'
+import { etichettaStato } from '../../../lib/stato-prenotazione'
 import { useAuth } from '../../../context/AuthContext'
 import { useAzienda } from '../../../context/AziendaContext'
 
@@ -359,7 +360,7 @@ export default function BookingCalendarioPage() {
                       </div>
                       {b.note_cliente && <div style={{ fontSize: 12, color: '#666', fontStyle: 'italic', marginTop: 3, overflowWrap: 'anywhere' }}>{b.note_cliente}</div>}
                     </div>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: STATI_COLOR[b.stato], textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{b.stato}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: etichettaStato(b).colore, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{etichettaStato(b).label}</span>
                   </div>
 
                   <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>

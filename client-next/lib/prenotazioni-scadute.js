@@ -7,6 +7,7 @@ import { guestEmailTemplate } from './email-template'
 import { getAziendaLegale } from './guest-data'
 import { mandaConfermaEvento } from './evento-conferma'
 import { annunciaPrenotazioneEvento } from './evento-prenotato'
+import { prenotazionePagata, mandaEmailPrenotazione } from './prenotazione-risorsa'
 
 // Il posto tenuto e mai pagato torna libero.
 //
@@ -150,5 +151,52 @@ export async function liberaPostiNonPagati() {
   // I posti si ricalcolano una volta per evento, non una per prenotazione.
   for (const id of eventiVisti) await recomputeEventSeats(id)
 
+  return { esaminate: candidate.length, liberate, recuperate, incerte, motivi }
+}
+
+// Lo stesso giro per le risorse (un furgone, una casa, un campo): chi ha aperto
+// la cassa e non ha pagato entro il tempo lascia libera la disponibilità.
+//
+// Qui entrano solo le prenotazioni «in attesa» con un pagamento atteso: sono
+// quelle nate dalla cassa. Una richiesta che aspetta l'approvazione del
+// titolare ha `non_richiesto` e non passa di qui — quella la decide lui.
+export async function liberaRisorseNonPagate() {
+  const limite = new Date(Date.now() - MINUTI_PER_PAGARE * 60_000).toISOString()
+  const { data: candidate } = await supabaseAdmin.from('prenotazioni')
+    .select('*')
+    .eq('pagamento_stato', 'non_pagato').eq('stato', 'in_attesa')
+    .lt('created_at', limite).limit(50)
+
+  if (!candidate?.length) return { esaminate: 0, liberate: 0, recuperate: 0, incerte: 0, motivi: [] }
+
+  let liberate = 0, recuperate = 0, incerte = 0
+  const motivi = []
+  for (const p of candidate) {
+    // Senza una sessione salvata la cassa non è mai nata (la richiesta si è
+    // interrotta fra il posto tenuto e Stripe): nessuno può pagarla, quindi è
+    // scaduta per definizione. Chiedere a Stripe darebbe «ignoto» per sempre.
+    let esito = p.pagamento_id ? await statoDelPagamento(p.azienda_id, p.pagamento_id) : { stato: 'scaduto' }
+    if (esito.stato === 'in_attesa') esito = await chiudiCassa(esito.conto, p.pagamento_id)
+
+    if (esito.stato === 'pagato') {
+      // Il webhook non è arrivato: si ripara qui, con la stessa funzione.
+      const fatto = await prenotazionePagata(p.id)
+      if (fatto.ok) recuperate++
+      continue
+    }
+    if (esito.stato === 'ignoto') { incerte++; motivi.push(`risorsa ${p.id}: ${esito.motivo}`); continue }
+    if (esito.stato !== 'scaduto') continue
+
+    // Solo se è ancora in attesa: se nel frattempo il titolare l'ha confermata
+    // a mano, la sua decisione vince.
+    const { data: annullate } = await supabaseAdmin.from('prenotazioni')
+      .update({ stato: 'cancellata', updated_at: new Date().toISOString() })
+      .eq('id', p.id).eq('stato', 'in_attesa').eq('pagamento_stato', 'non_pagato').select('id')
+    if (!annullate?.length) continue
+    const { data: risorsa } = await supabaseAdmin.from('risorse').select('*').eq('id', p.risorsa_id).maybeSingle()
+    // ⚠️ Va detto: questa persona ha lasciato i suoi dati convinta di prenotare.
+    if (risorsa) await mandaEmailPrenotazione(p, risorsa, 'scaduta')
+    liberate++
+  }
   return { esaminate: candidate.length, liberate, recuperate, incerte, motivi }
 }

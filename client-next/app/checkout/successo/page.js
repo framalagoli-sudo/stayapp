@@ -88,7 +88,10 @@ function Esito() {
                 <p style={{ fontSize: 14.5, color: '#666', margin: '0 0 4px' }}>{esito.posti} posti</p>
               )}
               {esito.importo > 0 && (
-                <p style={{ fontSize: 14.5, color: '#666', margin: '0 0 14px' }}>€{esito.importo}</p>
+                <p style={{ fontSize: 14.5, color: '#666', margin: '0 0 14px' }}>
+                  €{esito.importo}
+                  {esito.saldo > 0 && <> di acconto · restano €{esito.saldo} da saldare</>}
+                </p>
               )}
 
               {/* ⚠️ Il pagamento può risultare ancora in corso: la conferma di

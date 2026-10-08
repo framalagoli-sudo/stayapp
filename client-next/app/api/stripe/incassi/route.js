@@ -45,7 +45,7 @@ export async function GET(request) {
         .order('updated_at', { ascending: false }).limit(LIMITE),
 
       supabaseAdmin.from('prenotazioni')
-        .select('id, servizio, importo_totale, cliente_nome, data, created_at, updated_at')
+        .select('id, servizio, importo_totale, importo_online, cliente_nome, data, created_at, updated_at, risorse(nome)')
         .eq('azienda_id', azienda_id).eq('pagamento_stato', 'pagato')
         .order('updated_at', { ascending: false }).limit(LIMITE),
 
@@ -67,8 +67,9 @@ export async function GET(request) {
 
     for (const p of prenotazioni.data || []) {
       righe.push({
-        id: `prenotazione-${p.id}`, tipo: 'Prenotazione', cosa: p.servizio || 'Prenotazione',
-        chi: p.cliente_nome || null, importo: Number(p.importo_totale) || 0,
+        id: `prenotazione-${p.id}`, tipo: 'Prenotazione', cosa: p.risorse?.nome || p.servizio || 'Prenotazione',
+        // Con un acconto è arrivata la quota, non il totale.
+        chi: p.cliente_nome || null, importo: Number(p.importo_online ?? p.importo_totale) || 0,
         quando: p.updated_at || p.created_at,
       })
     }

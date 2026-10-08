@@ -144,8 +144,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
       // schermata di conferma: chi ha appena prenotato è lì, in quel momento.
       // Rimandarlo a un'email che leggerà domani significa non incassare.
       //
-      // La prenotazione è già salvata e il posto è suo: se non paga, resta da
-      // saldare e il titolare la vede come «non pagata».
+      // Il posto è tenuto per mezz'ora: se non paga torna libero da solo.
       if (data?.pagamento?.url) { window.location.href = data.pagamento.url; return }
       setPrenotazione(data)
       setStep('done')
@@ -173,7 +172,10 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
   const importoPrevisto = selected.risorsa?.modalita === 'giornaliero'
     ? (Number(periodo?.totale) || 0)
     : (Number(selected.slot?.promo?.prezzo ?? selected.slot?.prezzo ?? selected.risorsa?.prezzo) || 0) * (parseInt(form.n_persone) || 1)
-  const percAcconto = Math.min(100, Math.max(0, parseInt(selected.risorsa?.acconto_percentuale) || 0))
+  // ⚠️ Solo se la risorsa manda davvero alla cassa (`paga_online`, deciso dal
+  // server): con la sola percentuale si annunciava un pagamento anche quando il
+  // conto non era collegato o la prenotazione andava approvata a mano.
+  const percAcconto = selected.risorsa?.paga_online ? Math.min(100, Math.max(0, parseInt(selected.risorsa?.acconto_percentuale) || 0)) : 0
   const daPagare = percAcconto > 0 ? Math.round(importoPrevisto * percAcconto) / 100 : 0
 
   if (loading) return <div style={wrapStyle}>Caricamento...</div>
@@ -184,9 +186,13 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
     <div style={wrapStyle}>
       <div style={{ textAlign: 'center', padding: '20px 0' }}>
         <div style={{ fontSize: 48, marginBottom: 12 }}>✓</div>
-        <div style={{ fontSize: 18, fontWeight: 700, color: primaryColor, marginBottom: 8 }}>Prenotazione confermata!</div>
+        {/* Una richiesta che il titolare deve ancora approvare NON è confermata:
+            dirlo qui evita che la persona si presenti convinta di avere il posto. */}
+        <div data-esito-prenotazione={prenotazione?.stato === 'in_attesa' ? 'richiesta' : 'confermata'} style={{ fontSize: 18, fontWeight: 700, color: primaryColor, marginBottom: 8 }}>
+          {prenotazione?.stato === 'in_attesa' ? 'Richiesta inviata' : 'Prenotazione confermata!'}
+        </div>
         <div style={{ fontSize: 14, color: '#666', marginBottom: 4 }}>
-          Hai prenotato <strong>{selected.risorsa.nome}</strong>
+          {prenotazione?.stato === 'in_attesa' ? 'Hai chiesto' : 'Hai prenotato'} <strong>{selected.risorsa.nome}</strong>
         </div>
         {/* ⚠️ Senza il ramo a giornate qui si leggeva `selected.slot.ora` su uno
             slot che non esiste: schermata bianca proprio sulla conferma, dopo
@@ -197,7 +203,9 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
             : <>{formatData(selected.data)} {selected.slot?.servizio ? `— ${selected.slot.servizio}` : ''} ore {selected.slot?.ora}</>}
         </div>
         <div style={{ fontSize: 13, color: '#888', marginBottom: 20 }}>
-          Riceverai una conferma a <strong>{form.email}</strong>
+          {prenotazione?.stato === 'in_attesa'
+            ? <>Non è ancora confermata: ti scriviamo a <strong>{form.email}</strong> appena viene approvata.</>
+            : <>Riceverai una conferma a <strong>{form.email}</strong></>}
         </div>
         <button onClick={reset} style={{ ...btnStyle(primaryColor), marginTop: 8 }}>Nuova prenotazione</button>
       </div>
@@ -544,6 +552,10 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
                 <> come acconto: il resto ({simboloValuta(selected.risorsa?.valuta)}{(importoPrevisto - daPagare).toFixed(2)}) si salda dopo.</>
               )}
               {selected.risorsa?.acconto_percentuale >= 100 && <>, e la prenotazione sarà saldata.</>}
+              {/* Come sugli eventi: finché non si paga non si è prenotati. */}
+              <div data-avviso-pagamento style={{ marginTop: 6, fontWeight: 600, color: '#1a1a2e' }}>
+                La prenotazione è valida solo dopo il pagamento{selected.risorsa?.acconto_percentuale < 100 ? ' dell’acconto' : ''}: hai 30 minuti per completarlo.
+              </div>
             </div>
           )}
 

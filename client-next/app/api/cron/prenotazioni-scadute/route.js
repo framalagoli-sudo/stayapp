@@ -1,4 +1,4 @@
-import { liberaPostiNonPagati, MINUTI_PER_PAGARE } from '@/lib/prenotazioni-scadute'
+import { liberaPostiNonPagati, liberaRisorseNonPagate, MINUTI_PER_PAGARE } from '@/lib/prenotazioni-scadute'
 import { logError } from '@/lib/observability'
 import { battitoEControllo } from '@/lib/cron-battito'
 
@@ -14,7 +14,15 @@ export async function GET(request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
   try {
-    const esito = await liberaPostiNonPagati()
+    // Eventi e risorse: due tabelle, la stessa regola. I numeri si sommano
+    // perché a chi legge interessa «quanti posti sono tornati liberi».
+    const eventi = await liberaPostiNonPagati()
+    const risorse = await liberaRisorseNonPagate()
+    const esito = {
+      esaminate: eventi.esaminate + risorse.esaminate, liberate: eventi.liberate + risorse.liberate,
+      recuperate: eventi.recuperate + risorse.recuperate, incerte: eventi.incerte + risorse.incerte,
+      motivi: [...eventi.motivi, ...risorse.motivi],
+    }
     // ⚠️ Un webhook che non arriva va detto, non solo riparato in silenzio: se
     // capita spesso c'è qualcosa di rotto nella consegna, e il prossimo caso
     // potrebbe non avere un cron che lo raccoglie.

@@ -6,6 +6,7 @@ import { apiFetch } from '@/lib/api'
 import Link from 'next/link'
 import { CalendarCheck, CalendarDays, Search, ChevronDown, ChevronRight, AlertCircle } from 'lucide-react'
 import StatoPagamento from './StatoPagamento'
+import { etichettaStato, attendePagamento } from '@/lib/stato-prenotazione'
 import { oraLocale } from '@/lib/fuso'
 import { postiEvento } from '@/lib/posti-evento'
 
@@ -27,13 +28,6 @@ import { postiEvento } from '@/lib/posti-evento'
 // Ora ogni evento compare con i suoi numeri (quanti vengono, quanti aspettano,
 // quanto è incassato) e porta al suo elenco: i nomi stanno lì, non qui.
 
-const STATI = {
-  confermata: { label: 'Confermata', colore: '#137a4a', sfondo: '#e6f7ee' },
-  in_attesa:  { label: 'Da confermare', colore: '#a15c00', sfondo: '#fff4e5' },
-  cancellata: { label: 'Annullata', colore: '#888', sfondo: '#f0f0f0' },
-  completata: { label: 'Completata', colore: '#1565c0', sfondo: '#e8f0fe' },
-  no_show:    { label: 'Non presentato', colore: '#b71c1c', sfondo: '#fdeeee' },
-}
 
 function quando(p) {
   if (p.data_fine && p.data_fine !== p.data) return `dal ${data(p.data)} al ${data(p.data_fine)}`
@@ -99,8 +93,12 @@ export default function BookingsPage() {
     if (g.pagamento.prenotazioni) daGuardare.push({ k: `p${e.id}`, to, testo: `${g.pagamento.prenotazioni} ${g.pagamento.prenotazioni === 1 ? 'attende' : 'attendono'} il pagamento`, dove: e.titolo })
     if (g.attesa.prenotazioni) daGuardare.push({ k: `a${e.id}`, to, testo: `${g.attesa.prenotazioni} in lista d’attesa`, dove: e.titolo })
   }
-  const daConfermare = prenotazioni.filter(x => x.stato === 'in_attesa').length
+  // Chi sta pagando non è «da confermare»: non tocca al titolare, e se la
+  // confermasse a mano il pagamento online non verrebbe più atteso.
+  const daConfermare = prenotazioni.filter(x => x.stato === 'in_attesa' && !attendePagamento(x)).length
   if (daConfermare) daGuardare.push({ k: 'risorse', to: null, testo: `${daConfermare} da confermare`, dove: 'risorse e offerte' })
+  const inPagamento = prenotazioni.filter(attendePagamento).length
+  if (inPagamento) daGuardare.push({ k: 'risorse-pag', to: null, testo: `${inPagamento} ${inPagamento === 1 ? 'attende' : 'attendono'} il pagamento`, dove: 'risorse e offerte' })
 
   const fuso = azienda?.fuso_orario
   const giorno = iso => oraLocale(iso, fuso, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }) || '—'
@@ -221,7 +219,7 @@ export default function BookingsPage() {
         // allarga la riga oltre la scheda.
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 8 }}>
           {visibili.map(p => {
-            const s = STATI[p.stato] || STATI.confermata
+            const s = etichettaStato(p)
             return (
               <div key={p.id} style={{ background: '#fff', borderRadius: 12, padding: '14px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
@@ -239,12 +237,18 @@ export default function BookingsPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
                     <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: s.sfondo, color: s.colore }}>{s.label}</span>
                     {p.importo_totale > 0 && <span style={{ fontWeight: 700, fontSize: 14 }}>€{p.importo_totale}</span>}
-                    <StatoPagamento riga={p} compatto />
+                    <StatoPagamento riga={p} importo={p.importo_online} compatto />
                   </div>
                 </div>
+                {attendePagamento(p) && (
+                  <div data-attende-pagamento style={{ fontSize: 12.5, color: '#8a5a00', marginTop: 8, lineHeight: 1.5 }}>
+                    Sta pagando online{p.importo_online > 0 ? ` €${Number(p.importo_online).toFixed(2)}` : ''}: ha mezz’ora, poi si annulla da sola e la disponibilità torna libera. Non serve fare niente.
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
                   {p.stato === 'in_attesa' && (
-                    <button onClick={() => cambiaStato(p, 'confermata')} style={{ ...azione, background: '#e6f7ee', color: '#137a4a' }}>Conferma</button>
+                    <button onClick={() => cambiaStato(p, 'confermata')} title={attendePagamento(p) ? 'La tieni tu: pagherà sul posto, e il pagamento online non viene più atteso' : undefined}
+                      style={{ ...azione, background: '#e6f7ee', color: '#137a4a' }}>{attendePagamento(p) ? 'Conferma: pagherà sul posto' : 'Conferma'}</button>
                   )}
                   {p.stato !== 'cancellata' && (
                     <button onClick={() => cambiaStato(p, 'cancellata')} style={{ ...azione, background: '#fff4e5', color: '#a15c00' }}>Annulla</button>

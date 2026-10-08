@@ -1,18 +1,13 @@
 ﻿import { after } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { istanteDi } from '@/lib/fuso'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
-import { verificaPeriodo, totaleGiornaliero, unitaDaPagare, contaGiorni, nomeUnita } from '@/lib/booking-giornaliero'
+import { verificaPeriodo, totaleGiornaliero } from '@/lib/booking-giornaliero'
 import { contoDelPeriodo } from '@/lib/offerte-risorsa'
 import { confermaPostiPrenotazione } from '@/lib/capienza'
-import { creaCheckout, accontoDovuto } from '@/lib/checkout'
-import { sendWebhooks } from '@/lib/send-webhooks'
-import { triggerAutomazione } from '@/lib/guest-utils'
-import { syncBookingCreate } from '@/lib/google-calendar-stub'
-import { sendEmail } from '@/lib/send-email'
-import { guestEmailTemplate } from '@/lib/email-template'
+import { creaCheckout } from '@/lib/checkout'
 import { logError } from '@/lib/observability'
-import { getAziendaLegale } from '@/lib/guest-data'
+import { quotaOnline, avvisaPrenotazione, automazioniPrenotazione } from '@/lib/prenotazione-risorsa'
+import { MINUTI_PER_PAGARE } from '@/lib/prenotazioni-scadute'
 import { registraContatto } from '@/lib/crm'
 import { testoConsensoPromozioni } from '@/lib/consenso-promozioni'
 
@@ -31,90 +26,6 @@ function parseTime(str) {
 }
 function formatTime(minutes) {
   return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
-}
-
-function buildWaUrl(raw) {
-  if (!raw) return null
-  if (raw.startsWith('http')) return raw
-  const clean = raw.replace(/[\s\-\(\)\+]/g, '').replace(/^00/, '').replace(/^0/, '39')
-  return `https://wa.me/${clean}`
-}
-
-async function getEntityWhatsapp(entityTipo, entityId) {
-  try {
-    if (entityTipo === 'struttura') {
-      const { data } = await supabaseAdmin.from('entita').select('whatsapp').eq('id', entityId).single()
-      return data?.whatsapp || null
-    }
-    if (entityTipo === 'ristorante') {
-      const { data } = await supabaseAdmin.from('entita').select('minisito').eq('id', entityId).single()
-      return data?.minisito?.social?.whatsapp || null
-    }
-    if (entityTipo === 'attivita') {
-      const { data } = await supabaseAdmin.from('entita').select('minisito').eq('id', entityId).single()
-      return data?.minisito?.social?.whatsapp || null
-    }
-  } catch { /* non bloccante */ }
-  return null
-}
-
-const ENTITY_TBL = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
-const ENTITY_PREFIX = { struttura: 's', ristorante: 'r', attivita: 'a' }
-
-async function inviaEmailConferma(prenotazione, risorsa, whatsapp = null) {
-  if (!process.env.RESEND_API_KEY) return
-  const appUrl = (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'
-  const cancelUrl = `${appUrl}/cancella-prenotazione?token=${prenotazione.cancellation_token}`
-  const waUrl = buildWaUrl(whatsapp)
-
-  // Ogni modalità si racconta a modo suo: senza questo, una prenotazione a
-  // giornate arrivava al cliente come «ore undefined–undefined».
-  // ⚠️ Anche qui la parola segue la risorsa: a chi noleggia un furgone
-  // l'email diceva «2 notti» sopra un totale calcolato su 3 giorni, ed è
-  // l'ambiguità sul prezzo quella che genera contestazioni.
-  const unita = unitaDaPagare(prenotazione.data, prenotazione.data_fine, contaGiorni(risorsa))
-  const quando = risorsa.modalita === 'giornaliero'
-    ? `dal ${prenotazione.data} al ${prenotazione.data_fine} (${unita} ${nomeUnita(risorsa, unita)})`
-    : risorsa.modalita === 'coperti'
-      ? `${prenotazione.data} — ${prenotazione.servizio} ore ${prenotazione.ora_inizio}`
-      : `${prenotazione.data} ore ${prenotazione.ora_inizio?.slice(0, 5)}–${prenotazione.ora_fine?.slice(0, 5)}`
-
-  // Nome business + slug (branding/privacy) + dati legali per il footer conforme.
-  let bizName = risorsa.nome, entSlug = null
-  if (risorsa.entity_tipo && risorsa.entity_id && ENTITY_TBL[risorsa.entity_tipo]) {
-    const { data: ent } = await supabaseAdmin.from(ENTITY_TBL[risorsa.entity_tipo]).select('name, slug').eq('id', risorsa.entity_id).single()
-    if (ent) { bizName = ent.name || bizName; entSlug = ent.slug }
-  }
-  const legale = risorsa.azienda_id ? await getAziendaLegale(risorsa.azienda_id) : null
-  const privacyUrl = (entSlug && ENTITY_PREFIX[risorsa.entity_tipo]) ? `${appUrl}/${ENTITY_PREFIX[risorsa.entity_tipo]}/${entSlug}/privacy` : null
-
-  const rows = [
-    { label: 'Servizio', value: risorsa.nome },
-    { label: 'Quando', value: quando },
-    { label: 'Persone', value: String(prenotazione.n_persone) },
-    prenotazione.importo_totale > 0 ? { label: 'Importo', value: `€${prenotazione.importo_totale}` } : null,
-    prenotazione.note_cliente ? { label: 'Note', value: prenotazione.note_cliente } : null,
-  ].filter(Boolean)
-
-  const bodyHtml = `${waUrl ? `<div style="margin:20px 0;padding:14px 18px;background:#f0fdf4;border-radius:10px;text-align:center">
-      <p style="margin:0;font-size:14px;color:#166534">Hai domande? <a href="${waUrl}" style="color:#25D366;font-weight:700;text-decoration:none">Scrivici su WhatsApp →</a></p>
-    </div>` : ''}
-    <p style="font-size:13px;color:#999;margin-top:20px">Hai bisogno di cancellare? <a href="${cancelUrl}" style="color:#00b5b5">Clicca qui</a> (entro ${risorsa.cancellazione_ore || 24} ore prima).</p>`
-
-  try {
-    await sendEmail({
-      _ctx: 'booking-conferma', fromName: bizName,
-      to: prenotazione.cliente_email,
-      subject: `Prenotazione confermata — ${risorsa.nome}`,
-      html: guestEmailTemplate({
-        entityName: bizName, title: 'Prenotazione confermata ✓',
-        intro: `Ciao <strong>${prenotazione.cliente_nome}</strong>, la tua prenotazione è confermata.`,
-        rows, bodyHtml, legale, privacyUrl,
-      }),
-    })
-  } catch (e) {
-    console.error('[booking] email conferma fallita:', e.message)
-  }
 }
 
 export async function POST(request) {
@@ -196,6 +107,11 @@ export async function POST(request) {
       offertaScelta = conto.offerta ? { id: conto.offerta.id } : null
     }
 
+    // Si paga online? Lo decide una funzione sola (quota chiesta, conferma
+    // automatica, conto collegato). Se sì la prenotazione nasce «in attesa»:
+    // tiene il posto, ma diventa vera solo quando il pagamento arriva.
+    const quota = await quotaOnline(risorsa, importo_totale)
+
     const payload = {
       risorsa_id,
       azienda_id: risorsa.azienda_id,
@@ -211,7 +127,10 @@ export async function POST(request) {
       cliente_telefono: cliente_telefono?.trim() || null,
       n_persone: persone,
       note_cliente: note_cliente?.trim() || null,
-      stato: risorsa.conferma_auto ? 'confermata' : 'in_attesa',
+      stato: quota ? 'in_attesa' : (risorsa.conferma_auto ? 'confermata' : 'in_attesa'),
+      // La cifra portata alla cassa si scrive adesso: è quella che fa fede, anche
+      // se domani il titolare cambia la percentuale dell'acconto.
+      ...(quota ? { pagamento_stato: 'non_pagato', importo_online: quota.dovuto } : {}),
       // La **prova**, non la spunta: quando è stato dato e quale formula è stata
       // letta. Se domani il testo cambia, le prenotazioni vecchie restano
       // ricostruibili.
@@ -226,8 +145,9 @@ export async function POST(request) {
       promozione_id: offertaScelta?.id || null,
     }
 
-    const { data: prenotazione, error: pe } = await supabaseAdmin.from('prenotazioni').insert(payload).select().single()
+    const { data: inserita, error: pe } = await supabaseAdmin.from('prenotazioni').insert(payload).select().single()
     if (pe) return Response.json({ error: pe.message }, { status: 500 })
+    let prenotazione = inserita
 
     // La disponibilità qui non era verificata affatto: gli slot liberi li calcolava
     // solo la pagina, e chiamando l'API si prenotava un posto già pieno. Il
@@ -237,87 +157,50 @@ export async function POST(request) {
       return Response.json({ error: 'Questo orario non è più disponibile' }, { status: 409 })
     }
 
-    // ── Se questa risorsa vuole un pagamento, si crea la cassa ───────────────
+    // ── Se c'è da pagare online, si apre la cassa ────────────────────────────
     //
-    // ⚠️ **Dopo** la conferma del posto, non prima: far pagare qualcuno per un
+    // ⚠️ **Dopo** aver tenuto il posto, non prima: far pagare qualcuno per un
     // orario che nel frattempo è stato preso da un altro è il modo peggiore di
-    // sbagliare. Prima si tiene il posto, poi si chiede il denaro.
+    // sbagliare. E l'importo è quello calcolato dal prezzo riletto dal
+    // database: chi prenota dice *cosa*, non *quanto*.
     //
-    // ⚠️ E l'importo si calcola **dal prezzo riletto dal database**, mai da
-    // quello che è arrivato nella richiesta: chi prenota dice *cosa*, non
-    // *quanto*.
+    // ⛔ La cassa ha una scadenza. Senza, Stripe la tiene aperta 24 ore e chi
+    // libera i posti non pagati non può farlo prima (successo sugli eventi di
+    // Garage 22 il 01/10/2026).
     let pagamento = null
-    const conto = accontoDovuto(risorsa.acconto_percentuale, importo_totale)
-    if (conto.dovuto > 0) {
+    if (quota) {
       try {
         const base = (process.env.CLIENT_URL ?? '').trim() || new URL(request.url).origin
         const esito = await creaCheckout({
           aziendaId: risorsa.azienda_id,
           righe: [{
-            nome: conto.tutto
-              ? risorsa.nome
-              : `${risorsa.nome} — acconto ${conto.perc}%`,
-            importo: conto.dovuto, quantita: 1,
+            nome: quota.tutto ? risorsa.nome : `${risorsa.nome} — acconto ${quota.perc}%`,
+            importo: quota.dovuto, quantita: 1,
           }],
           email: prenotazione.cliente_email,
+          riferimento: prenotazione.id,
           successUrl: `${base}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,
           cancelUrl: `${base}/checkout/annullato`,
+          minutiPerPagare: MINUTI_PER_PAGARE,
         })
-        await supabaseAdmin.from('prenotazioni')
-          .update({ pagamento_id: esito.sessionId, pagamento_stato: 'non_pagato' })
-          .eq('id', prenotazione.id)
-        pagamento = { url: esito.url, importo: conto.dovuto, saldo: conto.saldo, tutto: conto.tutto }
+        await supabaseAdmin.from('prenotazioni').update({ pagamento_id: esito.sessionId }).eq('id', prenotazione.id)
+        pagamento = { url: esito.url, importo: quota.dovuto, saldo: quota.saldo, tutto: quota.tutto, minuti: MINUTI_PER_PAGARE }
       } catch (e) {
-        // ⚠️ La prenotazione **resta valida**: il posto è già suo. Se la cassa
-        // non è disponibile — conto non collegato, Stripe giù — si paga sul
-        // posto, che è come funzionava prima. Ma il motivo va scritto: è così
-        // che nessuno si accorge per mesi che qualcosa non parte.
-        console.error('[booking] pagamento non richiesto:', e.message)
+        // La cassa non si è aperta (Stripe giù, conto sospeso). Il posto è già
+        // suo: la prenotazione resta valida e si paga sul posto, com'era prima
+        // che esistessero i pagamenti. Ma va gridato: un conto collegato che
+        // non incassa è un guasto, non un caso normale.
+        await logError('booking/cassa', new Error(`la cassa non si è aperta per la prenotazione ${prenotazione.id}: ${e.message}`), { alert: true })
+        const { data: sulPosto } = await supabaseAdmin.from('prenotazioni')
+          .update({ stato: 'confermata', pagamento_stato: 'non_richiesto', importo_online: null })
+          .eq('id', prenotazione.id).select().single()
+        if (sulPosto) prenotazione = sulPosto
       }
     }
-
-    // Fire-and-forget: email + webhook + Google Calendar
-    getEntityWhatsapp(risorsa.entity_tipo, risorsa.entity_id)
-      .then(wa => inviaEmailConferma(prenotazione, risorsa, wa))
-    syncBookingCreate(prenotazione, risorsa)
-    sendWebhooks(prenotazione.azienda_id, 'nuova_prenotazione', {
-      prenotazione_id: prenotazione.id,
-      risorsa_id: prenotazione.risorsa_id,
-      cliente_nome: prenotazione.cliente_nome,
-      cliente_email: prenotazione.cliente_email,
-      data: prenotazione.data,
-      ora_inizio: prenotazione.ora_inizio,
-      importo_totale: prenotazione.importo_totale,
-    })
-
-    // ⚠️ «10:00» non e' un istante finche' non si sa dove. Prima nasceva da
-    // `new Date('…T10:00')`, che lo legge nel fuso di CHI ESEGUE: su Vercel, che
-    // gira in UTC, le 10:00 di un'attivita' italiana diventavano le 12:00 e il
-    // promemoria «24 ore prima» partiva due ore prima del dovuto.
-    const { data: aziendaFuso } = await supabaseAdmin.from('aziende')
-      .select('fuso_orario').eq('id', prenotazione.azienda_id).maybeSingle()
-    const fuso = aziendaFuso?.fuso_orario
-    const visitDatetime = prenotazione.data
-      ? istanteDi(prenotazione.data, prenotazione.ora_inizio || '09:00', fuso)?.toISOString() || null
-      : null
-
-    // Genera token recensione per automazione post_visita
-    let reviewLink = ''
-    if (visitDatetime) {
-      try {
-        const { data: recData } = await supabaseAdmin.from('recensioni').insert({
-          azienda_id: prenotazione.azienda_id,
-          entity_tipo: risorsa.entity_tipo,
-          entity_id: risorsa.entity_id,
-          autore: prenotazione.cliente_nome,
-          stelle: 5, testo: '', fonte: 'form',
-          verificata: false, pubblica: false,
-        }).select('token').single()
-        if (recData?.token) {
-          reviewLink = `${(process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'}/recensione?token=${recData.token}`
-        }
-      } catch (e) { console.error('[booking] genera token recensione:', e.message) }
-    }
+    // Finché non paga non è prenotato: niente conferma, niente avviso al
+    // titolare, niente promemoria. Parte tutto quando il pagamento arriva
+    // (`prenotazionePagata`, dal webhook di Stripe).
+    const attendePagamento = !!pagamento
 
     // ⛔ Chi prenotava una risorsa entrava fra i contatti SOLO se spuntava il
     // consenso WhatsApp: tutti gli altri — nome, email, telefono lasciati per
@@ -372,41 +255,20 @@ export async function POST(request) {
       } catch (e) { console.error('[booking] consenso whatsapp:', e.message) }
     }
 
-    const autoVars = {
-      nome: prenotazione.cliente_nome,
-      email: prenotazione.cliente_email,
-      // Serve al canale WhatsApp. Senza, l'automazione non avrebbe dove
-      // scrivere e la riga di coda non verrebbe nemmeno creata.
-      telefono: prenotazione.cliente_telefono || '',
-      data: new Date(prenotazione.data).toLocaleDateString('it-IT'),
-      ora: prenotazione.ora_inizio || '',
-      servizio: prenotazione.servizio || risorsa.nome || '',
-      n_persone: String(prenotazione.n_persone || '1'),
-      note: prenotazione.note_cliente || '',
-      link_recensione: reviewLink,
-      visit_datetime: visitDatetime,
-      source_tipo: 'prenotazione',
-      source_id: prenotazione.id,
+    // ⚠️ Lasciato a se stesso, questo lavoro NON viene garantito: su Vercel la
+    // funzione può essere congelata appena risposto. `after` lo fa uscire dalla
+    // risposta (chi prenota non aspetta) tenendo viva la funzione finché non è
+    // finito.
+    if (!attendePagamento) {
+      after(async () => {
+        try {
+          // Email a chi ha prenotato, calendario, webhook. A chi ha chiesto una
+          // risorsa che si approva a mano NON si scrive «confermata».
+          await avvisaPrenotazione(prenotazione, risorsa, prenotazione.stato === 'confermata' ? 'confermata' : 'richiesta')
+          await automazioniPrenotazione(prenotazione, risorsa)
+        } catch (e) { await logError('booking/automazioni', e, { alert: true }) }
+      })
     }
-    const ctx = { azienda_id: prenotazione.azienda_id, entity_tipo: risorsa.entity_tipo, entity_id: risorsa.entity_id }
-    // ⚠️ Lasciato a se stesso, questo lavoro NON viene garantito. Misurato in
-    // produzione: su cinque prenotazioni identiche, dopo tre secondi erano in
-    // coda quattro promemoria su cinque, e il quinto e' arrivato solo dopo
-    // trenta. Su Vercel la funzione puo' essere congelata appena risposto, e
-    // quello che era rimasto in volo riprende quando capita — o mai piu'.
-    //
-    // `after` e' lo strumento che Next da' per questo: il lavoro esce dalla
-    // risposta (chi prenota non aspetta) ma la piattaforma tiene viva la
-    // funzione finche' non e' finito.
-    after(async () => {
-      try {
-        await triggerAutomazione('nuova_prenotazione', ctx, autoVars)
-        if (visitDatetime) {
-          await triggerAutomazione('pre_visita', ctx, autoVars)
-          await triggerAutomazione('post_visita', ctx, autoVars)
-        }
-      } catch (e) { await logError('booking/automazioni', e, { alert: true }) }
-    })
 
     // ⚠️ Il link della cassa torna INSIEME alla prenotazione: chi ha appena
     // prenotato dev'essere portato a pagare subito, non con un'email che

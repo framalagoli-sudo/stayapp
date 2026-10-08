@@ -107,6 +107,17 @@ export async function runAutomazioniScheduler() {
       }
     }
 
+    // Lo stesso per le risorse: annullata (anche perché mai pagata) o ancora in
+    // attesa → niente promemoria. Prima non si guardava affatto.
+    if (log.source_tipo === 'prenotazione' && log.source_id) {
+      const { data: pren } = await supabaseAdmin.from('prenotazioni')
+        .select('stato').eq('id', log.source_id).maybeSingle()
+      if (!pren || !['confermata', 'completata'].includes(pren.stato)) {
+        await supabaseAdmin.from('automazioni_log').update({ status: 'failed', error_msg: 'Prenotazione non più valida (annullata o non confermata)' }).eq('id', log.id)
+        continue
+      }
+    }
+
     const step = Array.isArray(auto.steps) ? auto.steps[log.step_index] : null
     if (!step) {
       await supabaseAdmin.from('automazioni_log').update({ status: 'failed', error_msg: 'Step non trovato' }).eq('id', log.id)

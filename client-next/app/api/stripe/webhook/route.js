@@ -4,6 +4,7 @@ import { finalizzaLoyaltyOrdine } from '@/lib/loyalty-helpers'
 import { logError } from '@/lib/observability'
 import { mandaConfermaEvento } from '@/lib/evento-conferma'
 import { annunciaPrenotazioneEvento } from '@/lib/evento-prenotato'
+import { prenotazionePagata } from '@/lib/prenotazione-risorsa'
 
 // «Ha pagato?» — la risposta arriva da qui, non dal browser.
 //
@@ -92,10 +93,28 @@ async function segnaPagato(sessione) {
   if (ordini?.length) { await finalizzaLoyaltyOrdine(ordini[0]); return }
 
   // 2. Una prenotazione (booking)
+  // Si cerca soltanto: a segnarla pagata è `prenotazionePagata`, che fa lo
+  // scambio «in attesa → confermata» in un colpo solo e poi manda conferma e
+  // promemoria. Se Stripe rispedisce l'evento, la seconda volta non è più in
+  // attesa e non parte niente.
   const { data: pren } = await supabaseAdmin.from('prenotazioni')
-    .update({ pagamento_stato: 'pagato', updated_at: new Date().toISOString() })
-    .eq('pagamento_id', sid).neq('pagamento_stato', 'pagato').select('id')
-  if (pren?.length) return
+    .select('id, stato, pagamento_stato').eq('pagamento_id', sid).limit(1)
+  if (pren?.length) {
+    const p = pren[0]
+    if (p.pagamento_stato === 'pagato') return
+    if (p.stato === 'in_attesa') { await prenotazionePagata(p.id); return }
+    // Il titolare l'aveva già confermata a mano («pagherà sul posto») e la
+    // persona ha pagato lo stesso dalla cassa ancora aperta: il denaro è
+    // arrivato, si segna e basta.
+    if (p.stato === 'confermata' || p.stato === 'completata') {
+      await supabaseAdmin.from('prenotazioni').update({ pagamento_stato: 'pagato', updated_at: new Date().toISOString() }).eq('id', p.id)
+      return
+    }
+    // Annullata e pagata: non dovrebbe succedere (la cassa scade prima che il
+    // posto si liberi). Se succede qualcuno ha pagato una cosa che non ha più.
+    await logError('stripe/webhook', new Error(`pagamento arrivato per una prenotazione ANNULLATA: ${p.id} — da rimborsare o rimettere dentro a mano`), { alert: true })
+    return
+  }
 
   // 3. Una prenotazione di un evento
   const { data: ev } = await supabaseAdmin.from('event_bookings')

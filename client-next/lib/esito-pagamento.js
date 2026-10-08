@@ -87,15 +87,18 @@ export async function esitoPagamento(sessionId) {
 
   // ── 2. Una prenotazione ────────────────────────────────────────────────────
   const { data: pren } = await supabaseAdmin.from('prenotazioni')
-    .select('servizio, data, importo_totale, pagamento_stato, entity_tipo, entity_id')
+    .select('servizio, data, importo_totale, importo_online, pagamento_stato, entity_tipo, entity_id, risorse(nome)')
     .eq('pagamento_id', sid).maybeSingle()
   if (pren) {
     return {
       trovato: true,
       tipo: 'prenotazione',
-      titolo: pren.servizio || 'La tua prenotazione',
+      titolo: pren.risorse?.nome || pren.servizio || 'La tua prenotazione',
       quando: pren.data || null,
-      importo: pren.importo_totale,
+      // Quello che è stato pagato adesso: con un acconto non è il totale, e chi
+      // torna dalla cassa deve leggere la cifra che ha appena visto su Stripe.
+      importo: pren.importo_online ?? pren.importo_totale,
+      saldo: pren.importo_online != null ? Math.max(0, Math.round((Number(pren.importo_totale) - Number(pren.importo_online)) * 100) / 100) : 0,
       pagato: pren.pagamento_stato === 'pagato',
       sito: await sitoDi(pren.entity_tipo, pren.entity_id),
     }
