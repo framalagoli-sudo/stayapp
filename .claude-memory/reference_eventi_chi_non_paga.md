@@ -13,6 +13,6 @@ metadata:
 
 **Lezioni**: un `catch` che restituisce «non so» senza scrivere il perché è un guasto silenzioso ([[reference_guasti_silenziosi]]). Le opzioni di Stripe Connect vanno sempre nel TERZO argomento delle chiamate con id. In locale la chiave Stripe è di TEST: le sessioni live non si interrogano da qui, e `vercel env pull` restituisce `[SENSITIVE]` (giusto così).
 
-⚠️ Il booking delle RISORSE (`/api/booking/public/prenota`) crea anch'esso una cassa senza scadenza e nessun cron libera gli slot non pagati: oggi 0 usi, da sistemare con lo stesso schema prima che qualcuno lo usi.
+✅ 08/10/2026: lo stesso schema vale per le RISORSE (`lib/prenotazione-risorsa.js`, `liberaRisorseNonPagate`, migration 134 `importo_online`). Lì `in_attesa` vuol dire due cose (aspetta il pagamento / aspetta il titolare): `lib/stato-prenotazione.js`. Si paga online solo con conferma automatica. In sandbox un conto Standard non si attiva via API: la sonda riusa i conti di prova esistenti (uno col nome → cassa vera).
 
 Collegati: [[reference_valore_a_pagamento_accertato]], [[reference_stripe_connect]], [[reference_posti_riservati_eventi]].
