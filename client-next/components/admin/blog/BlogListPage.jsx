@@ -155,12 +155,14 @@ export default function BlogListPage() {
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      {/* Su telefono i quattro pulsanti non stanno in una riga: vanno a capo,
+          invece di finire fuori dallo schermo. */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: 22 }}>Blog & News</h2>
           <p style={{ margin: '4px 0 0', fontSize: 14, color: '#888' }}>Articoli pubblicati e bozze.</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button
             onClick={() => router.push('/admin/blog/categories')}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', background: '#f0f0f0', color: '#1a1a2e', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
