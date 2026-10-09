@@ -396,6 +396,8 @@ export default function RistoranteMenuPage({ entityType = 'ristorante' }) {
                           onRename={name => renameCatalogo(ci, name)}
                           onDelete={() => removeCatalogo(ci)}
                           onUpdateIcon={icon => updateCatalogo(ci, { icon })}
+                          visibile={catalogo.active !== false}
+                          onToggleVisibile={() => updateCatalogo(ci, { active: catalogo.active === false })}
                         />
                       </div>
 
@@ -429,6 +431,8 @@ export default function RistoranteMenuPage({ entityType = 'ristorante' }) {
                                           onRename={name => renameCatInCatalogo(ci, catIdx, name)}
                                           onChangeTipo={tipo => updateCatInCatalogo(ci, catIdx, { tipo })}
                                           onDelete={() => removeCatFromCatalogo(ci, catIdx)}
+                                          visibile={cat.active !== false}
+                                          onToggleVisibile={() => updateCatInCatalogo(ci, catIdx, { active: cat.active === false })}
                                           allCatalogues={menu}
                                           currentCi={ci}
                                           onIncludeCategoryIn={targetCi => includeCategoryInCatalogo(ci, catIdx, targetCi)}
@@ -528,6 +532,8 @@ export default function RistoranteMenuPage({ entityType = 'ristorante' }) {
                           onRename={name => renameCategory(ci, name)}
                           onChangeTipo={tipo => updateCategory(ci, { tipo })}
                           onDelete={() => removeCategory(ci)}
+                          visibile={cat.active !== false}
+                          onToggleVisibile={() => updateCategory(ci, { active: cat.active === false })}
                         />
                       </div>
 
@@ -580,7 +586,24 @@ export default function RistoranteMenuPage({ entityType = 'ristorante' }) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-function CatalogoHeader({ name, icon, open, onToggle, onRename, onDelete, onUpdateIcon }) {
+// L'occhio su un menù intero o su una sezione: come quello dei piatti. Nascosto
+// vuol dire che dal sito e dall'app del QR sparisce, e qui resta tutto com'è.
+function OcchioVisibile({ visibile, cosa, onToggle }) {
+  return (
+    <button
+      data-occhio={cosa}
+      onClick={e => { e.stopPropagation(); onToggle() }}
+      title={visibile ? `Nascondi ${cosa} ai clienti` : `Mostra di nuovo ${cosa} ai clienti`}
+      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, lineHeight: 1, padding: '4px', opacity: visibile ? 1 : 0.5, flexShrink: 0 }}
+    >
+      {visibile ? '👁' : '🚫'}
+    </button>
+  )
+}
+
+const pillNascosto = { marginLeft: 8, fontSize: 10, fontWeight: 700, color: '#92400e', background: '#fef3c7', borderRadius: 20, padding: '2px 8px', verticalAlign: 'middle', textTransform: 'uppercase', letterSpacing: 0.4 }
+
+function CatalogoHeader({ name, icon, open, onToggle, onRename, onDelete, onUpdateIcon, visibile = true, onToggleVisibile }) {
   const [editing,   setEditing]   = useState(false)
   const [val,       setVal]       = useState(name)
   const [showIcons, setShowIcons] = useState(false)
@@ -666,12 +689,15 @@ function CatalogoHeader({ name, icon, open, onToggle, onRename, onDelete, onUpda
       ) : (
         <h3
           onClick={() => setEditing(true)}
-          style={{ flex: 1, margin: 0, fontSize: 17, fontWeight: 700, cursor: 'pointer', color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+          style={{ flex: 1, margin: 0, fontSize: 17, fontWeight: 700, cursor: 'pointer', color: visibile ? '#1a1a2e' : '#999', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
           title="Clicca per rinominare"
         >
           {name}
+          {!visibile && <span style={pillNascosto}>Nascosto</span>}
         </h3>
       )}
+
+      {onToggleVisibile && <OcchioVisibile visibile={visibile} cosa="questo menù" onToggle={onToggleVisibile} />}
 
       <button
         onClick={onDelete}
@@ -683,7 +709,7 @@ function CatalogoHeader({ name, icon, open, onToggle, onRename, onDelete, onUpda
   )
 }
 
-function CategoryHeader({ name, tipo, itemCount, open, onToggle, onRename, onChangeTipo, onDelete, allCatalogues, currentCi, onIncludeCategoryIn }) {
+function CategoryHeader({ name, tipo, itemCount, open, onToggle, onRename, onChangeTipo, onDelete, allCatalogues, currentCi, onIncludeCategoryIn, visibile = true, onToggleVisibile }) {
   const [editing,    setEditing]    = useState(false)
   const [val,        setVal]        = useState(name)
   const isCustom                    = tipo && !TIPO_PRESETS.includes(tipo)
@@ -731,10 +757,11 @@ function CategoryHeader({ name, tipo, itemCount, open, onToggle, onRename, onCha
         ) : (
           <span
             onClick={() => setEditing(true)}
-            style={{ flex: 1, fontSize: 14, fontWeight: 600, cursor: 'pointer', color: '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+            style={{ flex: 1, fontSize: 14, fontWeight: 600, cursor: 'pointer', color: visibile ? '#333' : '#999', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
             title="Clicca per rinominare"
           >
             {name}
+            {!visibile && <span style={pillNascosto}>Nascosta</span>}
             {itemCount !== undefined && (
               <span style={{ marginLeft: 6, fontSize: 11, color: '#aaa', fontWeight: 400 }}>
                 {itemCount} {TIPO_LABELS[tipo] || (tipo ? tipo : 'voci')}
@@ -756,6 +783,7 @@ function CategoryHeader({ name, tipo, itemCount, open, onToggle, onRename, onCha
             ))}
           </select>
         )}
+        {onToggleVisibile && <OcchioVisibile visibile={visibile} cosa="questa sezione" onToggle={onToggleVisibile} />}
         <button
           onClick={onDelete}
           style={{ fontSize: 11, color: '#e53e3e', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, flexShrink: 0 }}

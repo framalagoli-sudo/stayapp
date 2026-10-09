@@ -2,6 +2,7 @@ import { supabaseAdmin } from './supabase-server'
 import { getCollegamenti } from './guest-utils'
 import { verificaTokenAnteprima } from './preview-token'
 import { allaFormaStorica } from './entita'
+import { conMenuPubblico } from './menu-pubblico'
 import { dataLocale } from './fuso'
 import { fusoDiAzienda } from './fuso-azienda'
 
@@ -156,7 +157,9 @@ async function leggiEntita(slug, tipo, campi) {
   const { data, error } = await supabaseAdmin
     .from('entita').select(campi).eq('slug', slug).eq('tipo', tipo).eq('active', true).maybeSingle()
   if (error || !data) return null
-  const storica = allaFormaStorica(data)
+  // Menù, sezioni e piatti che il titolare ha nascosto si tolgono qui: da
+  // questa funzione passano tutte le pagine pubbliche dell'entità.
+  const storica = conMenuPubblico(allaFormaStorica(data))
   // Il fuso del cliente viaggia con i suoi dati: le pagine mostrano gli orari
   // del posto dov'è l'attività, non quelli di chi sta guardando da un'altra
   // parte del mondo.

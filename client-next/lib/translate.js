@@ -1,6 +1,7 @@
 import { createHash } from 'crypto'
 import { supabaseAdmin } from './supabase-server'
 import { chiamaAI } from './ai-consumi'
+import { menuPubblico } from './menu-pubblico'
 
 // Fase 2 multilingua: traduzione automatica del CONTENUTO (non solo UI), cachata.
 // Strategia: lazy + cache. Alla prima visita EN di un'entità estraggo i testi
@@ -205,7 +206,10 @@ export function getTranslatableSource(obj, entityTipo) {
   if (!obj) return {}
   const fields = TRANSLATABLE_FIELDS[entityTipo] || ['description', 'minisito']
   const subset = {}
-  for (const f of fields) if (obj[f] != null) subset[f] = obj[f]
+  // Il menù si traduce com'è al pubblico: i percorsi contano le voci per
+  // posizione, e devono contarle allo stesso modo il sito e l'editor delle
+  // traduzioni. (Ciò che è nascosto non si traduce: non lo legge nessuno.)
+  for (const f of fields) if (obj[f] != null) subset[f] = f === 'menu' ? menuPubblico(obj[f]) : obj[f]
   return collectStrings(subset, '', {})
 }
 

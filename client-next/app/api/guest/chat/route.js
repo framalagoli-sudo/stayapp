@@ -25,7 +25,7 @@ export async function POST(request) {
       return Response.json({ error: 'entity_tipo non valido' }, { status: 400 })
     }
     const { data: entity, error } = await supabaseAdmin.from('entita')
-      .select('azienda_id, name, description, address, phone, email, schedule, services, menu, minisito')
+      .select('azienda_id, name, description, address, phone, email, schedule, services, minisito')
       .eq('id', entity_id).eq('tipo', entity_tipo).maybeSingle()
     if (error || !entity) return Response.json({ error: 'Entità non trovata' }, { status: 404 })
 

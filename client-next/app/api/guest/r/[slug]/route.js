@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { allaFormaStorica } from '@/lib/entita'
 import { getCollegamenti } from '@/lib/guest-utils'
 import { localizeEntity } from '@/lib/translate'
+import { conMenuPubblico } from '@/lib/menu-pubblico'
 
 // Dati live: mai cachare (vedi nota in /api/guest/a/[slug]).
 export const dynamic = 'force-dynamic'
@@ -15,7 +16,7 @@ export async function GET(request, props) {
     .eq('slug', params.slug).eq('tipo', 'ristorante').eq('active', true).maybeSingle()
   if (error || !data) return Response.json({ error: 'Ristorante non trovato' }, { status: 404 })
   // Il client conosce i nomi storici: cambia la sorgente, non il contratto.
-  const ent = allaFormaStorica(data)
+  const ent = conMenuPubblico(allaFormaStorica(data))
   const lang = new URL(request.url).searchParams.get('lang') === 'en' ? 'en' : 'it'
   const localized = lang === 'en' ? await localizeEntity(ent, 'ristorante', lang) : ent
   const collegamenti = await getCollegamenti('ristorante', data.id)

@@ -1,9 +1,11 @@
 // Riassunto compatto dei DATI REALI già inseriti per un'entità, da dare in pasto
 // all'AI builder: così i testi del sito nascono dai contenuti esistenti (servizi,
 // menu, attività, dotazioni, orari, punti forza…) invece di essere ri-digitati.
-// Pura formattazione, nessuna dipendenza, safe server-side. Output limitato.
+// Pura formattazione, nessuna dipendenza verso il database, safe server-side. Output limitato.
 // WHITELIST: emette solo campi pensati per essere pubblici; MAI wifi_password,
 // regole interne, ecc. — anche se l'entità viene letta con select('*').
+
+import { menuPubblico } from './menu-pubblico'
 
 const CAP_ITEMS = 12
 const CAP_CHARS = 1800
@@ -46,8 +48,10 @@ export function entityDataSummary(entity, entity_tipo) {
   const exc = names(entity.excursions, 'name', 'nome')
   if (exc.length) push('Escursioni', exc.slice(0, CAP_ITEMS).join(', '))
 
-  if (Array.isArray(entity.menu) && entity.menu.length) {
-    const cats = entity.menu.slice(0, 6).map(c => {
+  // Solo ciò che è visibile: i testi del sito non devono citare un menù nascosto.
+  const menu = menuPubblico(entity.menu)
+  if (Array.isArray(menu) && menu.length) {
+    const cats = menu.slice(0, 6).map(c => {
       const dishes = names(c?.items, 'name', 'nome').slice(0, 6).join(', ')
       const cat = c?.name || c?.categoria || ''
       return cat ? `${cat}${dishes ? `: ${dishes}` : ''}` : ''
