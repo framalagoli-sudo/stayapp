@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: 83de693b-bb51-4ae3-be58-46648e944853
-  modified: 2026-10-05T17:00:28.968Z
+  modified: 2026-10-09T12:00:00.000Z
 ---
 
 - **Deploy**: prima `git fetch` e controllo di `HEAD..origin/main` (i merge di Dependabot fanno rifiutare il push e fermano smoke e sonde). Il codice d'uscita non è affidabile: si legge il registro. Un caricamento interrotto o «Not authorized» = rilanciare.
@@ -20,5 +20,8 @@ metadata:
   - in locale la pulizia dalla route dà 409 (manca `VERCEL_TOKEN`): cancella dal database, è previsto.
 - ⛔ Mai `next build` in `client-next/` col dev server acceso: condividono `.next`. Riparazione: `touch next.config.js`.
 - I comandi in background sono stati interrotti una volta per rete e una per poca memoria: non rilanciarli di propria iniziativa quando è la memoria.
+- 🖥️ **Memoria del PC di Francesco (16 GB), misurata il 09/10/2026**: il server di sviluppo non rilascia le pagine compilate — dopo le sonde su 42 pagine teneva 6,9 GB — e con Chrome e CapCut aperti il margine era 2,9 GB. Francesco diceva «non ho programmi pesanti aperti» ed era in buona fede: prima di attribuire la colpa si MISURA (`Win32_OperatingSystem` + `PrivateMemorySize64` per processo) e si separano i processi node. Con poco margine: il sistema ferma i comandi in sottofondo, e `probe-molti-indirizzi` è morta a metà dentro il deploy due volte, senza messaggio (da sola passa). Rimedio: riavviare il server di sviluppo (col suo ok: è suo) e lanciare il deploy **in primo piano**.
+- ⛔ Un deploy interrotto a metà degli smoke lascia in produzione l'utente `ci-…@playwright.internal` con ruolo **super_admin**: cercarlo e cancellarlo subito.
+- Una sonda verde in locale non basta per ciò che compare coi dati: `probe-mobile-pannello` dava verde sul Blog in locale e rosso in produzione (misurava prima che arrivasse un pulsante).
 
 Collegato: [[feedback-deploy]], [[reference-sonda-misura-sbagliata]], [[reference-smoke-corse-parziali]].

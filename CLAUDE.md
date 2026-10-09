@@ -201,7 +201,7 @@ hospitality/
 │   ├── components/ · context/ · hooks/
 │   └── lib/                        # supabase, send-email, guest-data, blockTypes …
 ├── tests/                          # smoke test Playwright su produzione + sonde `probe-*.mjs`
-└── supabase/migrations/            # 001–133, eseguire a mano su Supabase
+└── supabase/migrations/            # 001–135, eseguire a mano su Supabase
 ```
 > `client/` e `server/` non esistono più nel repo (vedi nota in cima). Se li vedi in locale sono residui: sono in `.gitignore` e vanno cancellati, non aggiornati.
 
@@ -569,6 +569,20 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - ⚠️ Un numero scritto «333 1234567» non ha prefisso: per WhatsApp si passa da `normalizzaTelefono` (la stessa dei contatti), mai un `replace` fatto a mano.
     - ⚠️ **Non provato**: un pagamento vero da link in produzione (nessuna azienda di prova ha un conto Stripe attivo) e l'arrivo in casella dell'avviso al titolare. Sonda `tests/probe-link-pagamento.mjs`: in locale tutto con un conto di prova e il browser; `--vivo` in produzione prova l'email del link, la pagina di un link scaduto e il giro.
 
+58. **🙈 Un menù intero o una sua sezione si nascondono, come i piatti** (09/10/2026, chiesto da Francesco per Borgo del Lago: il Light Lunch è stagionale). Nessuna migration: `active: false` sul menù (catalogo) o sulla sezione (categoria), come già sul piatto; `active` assente = visibile.
+    - **Nel pannello**: lo stesso occhio dei piatti, accanto a «Elimina» del menù e alla ✕ della sezione; resta lì, grigio, con l'etichetta «Nascosto». Si salva con «Salva».
+    - **`lib/menu-pubblico.js` → `menuPubblico()` / `conMenuPubblico()`** è l'unica regola, senza dipendenze, applicata **dove il menù esce dal server**: `leggiEntita` (`lib/guest-data.js`, da cui passano tutte le pagine pubbliche) e `/api/guest/r/[slug]`. ⛔ Prima il piatto nascosto **arrivava comunque al browser** e lo toglieva `MenuTab`: si toglie a monte. Una route pubblica nuova che serve `menu` deve passare di lì.
+    - ⚠️ **Le traduzioni contano le voci per posizione** (`menu.1.categories.0.name`): per questo anche `getTranslatableSource` traduce il menù **già filtrato**, così sito ed editor delle traduzioni contano allo stesso modo. Nascondere o riaccendere cambia l'impronta → il menù si ritraduce una volta. Le correzioni a mano sul menù (oggi nessuna, in nessuna azienda) restano agganciate alla posizione: è una fragilità che c'era già con il riordino dei piatti.
+    - Anche il riassunto per l'AI (`ai-entity-context`) legge solo il visibile; l'assistente del sito chiedeva `menu` senza usarlo, tolto dalla select.
+    - Sonda `tests/probe-menu-nascosto.mjs` (`--en` per l'inglese): fa il percorso del titolare col browser e cerca i nomi nascosti nel **corpo grezzo**; in inglese confronta la struttura con l'italiano, perché i nomi sono tradotti.
+
+59. **📱 Il pannello da telefono: quasi mai «esce», si stringe** (08–09/10/2026, segnalato da Francesco sugli eventi). Titolo delle prenotazioni di un evento scritto in verticale (stava fra due pulsanti che non si stringono), titoli dell'elenco eventi ridotti a cinque lettere, schede di «Sito web», «Piano editoriale» e «Content Studio» fuori dallo schermo, pulsanti del Blog tagliati, e l'ombra del menu laterale chiuso sul bordo di ogni pagina.
+    - Le tre correzioni che valgono sempre: una riga di intestazione ha `flexWrap: 'wrap'` e il titolo una base sua (`flex: '1 1 240px'`); una barra di schede scorre (`overflowX: 'auto'`, schede `flexShrink: 0; whiteSpace: 'nowrap'`); un nome del cliente ha `overflowWrap: 'anywhere'`, non i puntini.
+    - Sonda **`tests/probe-mobile-pannello.mjs <cartella-foto> [--largo 390]`**: legge le pagine **dal menu** (una pagina nuova entra da sola), con nomi lunghi, e cerca fuori schermo, pulsanti tagliati, testi SCHIACCIATI, che sbordano, troncati. Prima prova sé stessa su due difetti finti. ⚠️ La prima versione cercava solo ciò che esce dallo schermo e dava verde sulla pagina col titolo in verticale.
+    - ⚠️ **In locale ha dato verde sul Blog che in produzione era rotto**: misurava prima che comparisse un pulsante che arriva coi dati. Il verde che conta è quello in produzione.
+    - Resta: «Aggiungi opzione» del chatbot tagliato di 2px a 360px.
+    - 🖥️ **La memoria del PC**: il server di sviluppo non rilascia le pagine compilate — dopo le sonde su 42 pagine teneva 6,9 GB. Con poco margine il sistema ferma i comandi in sottofondo (un deploy interrotto a metà degli smoke ha lasciato in produzione l'utente `ci-…@playwright.internal`, **super_admin**: va cancellato subito) e `probe-molti-indirizzi` è morta due volte a metà dentro il deploy, senza messaggio. Prima di una serie di sonde in locale o di un deploy: misurare, e riavviare il server di sviluppo se è gonfio. Il deploy si lancia **in primo piano**.
+
 ---
 
 ## Roadmap
@@ -592,6 +606,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - [x] 👥 **Contatti rifatti dalle fondamenta** ✅ 04–05/10/2026 — porta unica, registro delle attività, liste calcolate, Trattative, consenso con prova, newsletter per lista con editor nuovo, disiscrizione con traccia. Note 55–56, migration 130–133.
 - [x] **Booking delle risorse come gli eventi** ✅ 08/10/2026 — cassa a 31 minuti, «in attesa» finché non paga, pagamento online solo con conferma automatica. Nota 44, migration 134.
 - [x] **Link di pagamento per le prenotazioni prese a mano** ✅ 08/10/2026 — copia link, WhatsApp, email; vale 24 ore e la prenotazione resta. Nota 57, migration 135.
+- [x] **Menù e sezioni nascondibili** ✅ 09/10/2026 — nota 58. **Pannello da telefono ripassato** ✅ 09/10/2026 — nota 59.
 - [ ] **Lo stato vero del conto Stripe** — `puoIncassare` dice sì appena esiste `stripe_account_id`, anche se il collegamento è rimasto a metà: va salvato `charges_enabled` dal webhook dell'account. Oggi il link e la cassa falliscono con un messaggio chiaro, ma il pulsante compare lo stesso.
 - [ ] **Campagne WhatsApp per lista** (come le newsletter) e via i tag col titolo dell'evento — quando si collega Meta.
 - [ ] **Newsletter a blocchi** (stesso editor del sito, catalogo ridotto per la posta, blocchi collegati a eventi e offerte) — parere dato il 05/10, da riprendere dopo aver visto se i quattro modelli bastano.
