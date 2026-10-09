@@ -523,15 +523,15 @@ export default function EventoPrenotazioniPage() {
           </div>
 
           {/* Info */}
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ flex: '1 1 180px', minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-              <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e' }}>{b.guest_name}</span>
+              <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', minWidth: 0, overflowWrap: 'anywhere' }}>{b.guest_name}</span>
               <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: st.bg, color: st.color }}>{st.label}</span>
               <span style={{ fontSize: 12, color: '#888', marginLeft: 'auto' }}>{fmtDate(b.created_at)}</span>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 6 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#555' }}>
-                <Mail size={11} strokeWidth={1.5} /> {b.guest_email}
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#555', minWidth: 0, overflowWrap: 'anywhere' }}>
+                <Mail size={11} strokeWidth={1.5} style={{ flexShrink: 0 }} /> {b.guest_email}
               </span>
               {b.guest_phone && (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#555' }}>
@@ -555,7 +555,7 @@ export default function EventoPrenotazioniPage() {
           {/* Quanto, e SE è già stato incassato.
               ⛔ Prima qui c'era solo la cifra: la prenotazione pagata
               online e quella da saldare sul posto erano indistinguibili. */}
-          <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+          <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5, marginLeft: 'auto' }}>
             <div style={{ fontWeight: 800, fontSize: 16, color: '#1a1a2e' }}>
               {b.total_amount > 0 ? `€${b.total_amount}` : 'Gratuito'}
             </div>
@@ -601,12 +601,15 @@ export default function EventoPrenotazioniPage() {
   return (
     <div style={{ maxWidth: 860 }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+      {/* ⛔ Su telefono il titolo restava fra due pulsanti che non si stringono:
+          gli rimaneva una colonna larga una lettera e si leggeva in verticale.
+          La riga va a capo, e il titolo ha una larghezza minima sua. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
         <button onClick={() => router.push(`/admin/eventi/${id}`)}
           style={{ background: '#f0f0f0', border: 'none', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#555' }}>
           <ArrowLeft size={14} strokeWidth={2} /> Torna all'evento
         </button>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: '1 1 240px', minWidth: 0 }}>
           <h2 style={{ margin: 0, fontSize: 20, overflowWrap: 'anywhere' }}>Prenotazioni — {evento.title}</h2>
           <p style={{ margin: '2px 0 0', fontSize: 13, color: '#888' }}>{fmtEvento(evento.date_start, azienda?.fuso_orario)}</p>
         </div>
@@ -706,7 +709,7 @@ export default function EventoPrenotazioniPage() {
       )}
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 24 }}>
         {[
           { label: 'Posti presi', value: evento.seats_total ? `${presi} / ${evento.seats_total}` : presi,
             sub: liberi === null ? 'nessun limite'

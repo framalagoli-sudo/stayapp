@@ -99,7 +99,7 @@ function EventGrid({ eventi, muted, fuso }) {
         return (
           <div key={ev.id}
             onClick={() => router.push(`/admin/eventi/${ev.id}`)}
-            style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16, opacity: muted ? 0.65 : 1, transition: 'box-shadow 0.15s' }}
+            style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', opacity: muted ? 0.65 : 1, transition: 'box-shadow 0.15s' }}
             onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.1)'}
             onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)'}
           >
@@ -110,9 +110,11 @@ function EventGrid({ eventi, muted, fuso }) {
                 </div>
             }
 
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.title}</span>
+            <div style={{ flex: '1 1 180px', minWidth: 0 }}>
+              {/* ⛔ Il titolo stava su una riga sola coi puntini: su telefono ne
+                  restavano cinque lettere e gli eventi non si distinguevano più. */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', minWidth: 0, overflowWrap: 'anywhere' }}>{ev.title}</span>
                 <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: badge.bg, color: badge.color, flexShrink: 0 }}>{badge.label}</span>
               </div>
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
@@ -131,7 +133,7 @@ function EventGrid({ eventi, muted, fuso }) {
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0, marginLeft: 'auto' }}>
               <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e' }}>
                 {/* Anche qui valeva la deduzione «nessuna cifra = gratis»:
                     l'elenco diceva «Gratuito» a chi il prezzo non l'aveva mai

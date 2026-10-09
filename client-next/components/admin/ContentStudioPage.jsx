@@ -1343,12 +1343,13 @@ export default function ContentStudioPage() {
       <GuideAccordion />
 
       {/* Tab bar */}
-      <div style={{ display: 'flex', gap: 2, marginBottom: 28, borderBottom: '2px solid #f0f0f0' }}>
+      {/* Su telefono l'ultima scheda finiva fuori dallo schermo: la barra scorre. */}
+      <div style={{ display: 'flex', gap: 2, marginBottom: 28, borderBottom: '2px solid #f0f0f0', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         {TABS.map(({ k, label, Icon }) => {
           const active = tab === k
           return (
             <button key={k} onClick={() => setTab(k)} style={{
-              display: 'flex', alignItems: 'center', gap: 6,
+              display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, whiteSpace: 'nowrap',
               padding: '10px 18px', background: 'none', border: 'none', cursor: 'pointer',
               fontSize: 14, fontWeight: active ? 700 : 500,
               color: active ? '#1a1a2e' : '#888',

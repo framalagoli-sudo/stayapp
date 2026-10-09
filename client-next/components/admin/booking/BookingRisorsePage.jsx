@@ -232,7 +232,7 @@ export default function BookingRisorsePage() {
             {risorse.map(r => (
               <div key={r.id} style={{
                 background: '#fff', borderRadius: 12, padding: '14px 18px',
-                display: 'flex', alignItems: 'center', gap: 14,
+                display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
                 opacity: r.attiva ? 1 : 0.55,
               }}>
@@ -256,7 +256,7 @@ export default function BookingRisorsePage() {
                     )}
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginLeft: 'auto' }}>
                   <button onClick={() => openPromo(r.id)} style={ghostBtn}>Offerte</button>
                   <button onClick={() => openEdit(r)} style={ghostBtn}>Modifica</button>
                   <button onClick={() => toggleAttiva(r)} style={ghostBtn}>{r.attiva ? 'Disattiva' : 'Attiva'}</button>

@@ -56,11 +56,13 @@ const STYLES = `
       position: fixed; top: 0; left: 0; bottom: 0; z-index: 200;
       width: 260px; transform: translateX(-100%);
       transition: transform 0.24s cubic-bezier(0.4,0,0.2,1);
-      box-shadow: 4px 0 24px rgba(0,0,0,0.3);
     }
-    .admin-sidebar.open { transform: translateX(0); }
+    /* L'ombra solo da aperto: da chiuso il menu sta fuori dallo schermo, ma la
+       sua ombra no, e scuriva il bordo sinistro di ogni pagina. */
+    .admin-sidebar.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,0.3); }
     .admin-backdrop.open { display: block; }
-    .admin-main { padding: 72px 16px 32px; }
+    /* Alto almeno quanto lo schermo: una pagina corta lasciava bianco il fondo. */
+    .admin-main { padding: 72px 16px 32px; min-height: 100vh; box-sizing: border-box; }
   }
 
   .sidebar-collapse-btn {

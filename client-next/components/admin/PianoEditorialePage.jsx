@@ -509,8 +509,11 @@ export default function PianoEditorialePage() {
           <Calendar size={22} strokeWidth={1.5} color="#1a1a2e" />
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Piano Editoriale</h1>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ display: 'flex', background: '#f5f5f5', borderRadius: 8, padding: 2 }}>
+        {/* Su telefono le otto viste e «Nuovo contenuto» non stanno in una riga:
+            le viste scorrono di lato, il pulsante va a capo. Prima quattro
+            erano tagliate fuori dallo schermo. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', minWidth: 0, maxWidth: '100%' }}>
+          <div style={{ display: 'flex', background: '#f5f5f5', borderRadius: 8, padding: 2, overflowX: 'auto', maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
             {[
               { key: 'team',      label: 'Team' },
               { key: 'campagne',  label: 'Campagne', count: campagne.length || undefined },
@@ -524,7 +527,7 @@ export default function PianoEditorialePage() {
               <button
                 key={key}
                 onClick={() => setView(key)}
-                style={{ padding: '5px 12px', border: 'none', borderRadius: 6, cursor: 'pointer', background: view === key ? '#fff' : 'transparent', color: view === key ? '#1a1a2e' : '#888', fontSize: 13, fontWeight: view === key ? 600 : 400, display: 'flex', alignItems: 'center', gap: 5 }}
+                style={{ flexShrink: 0, whiteSpace: 'nowrap', padding: '5px 12px', border: 'none', borderRadius: 6, cursor: 'pointer', background: view === key ? '#fff' : 'transparent', color: view === key ? '#1a1a2e' : '#888', fontSize: 13, fontWeight: view === key ? 600 : 400, display: 'flex', alignItems: 'center', gap: 5 }}
               >
                 {label}
                 {count > 0 && (

@@ -595,13 +595,16 @@ export default function SitoPage({ entityTipo }) {
       />
 
       {/* ── Tab bar ── */}
-      <div style={{ display: 'flex', gap: 0, marginBottom: 28, borderBottom: '2px solid #eeeeee' }}>
+      {/* ⛔ Su telefono tre schede su cinque finivano fuori dallo schermo e non si
+          potevano raggiungere (SEO, Traduzioni, Versioni). La barra scorre di
+          lato, e ogni scheda tiene la sua larghezza. */}
+      <div data-schede-sito style={{ display: 'flex', gap: 0, marginBottom: 28, borderBottom: '2px solid #eeeeee', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         {TABS.map(tab => {
           const active = activeTab === tab.id
           return (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               style={{
-                display: 'flex', alignItems: 'center', gap: 7,
+                display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0, whiteSpace: 'nowrap',
                 padding: '10px 20px', border: 'none', background: 'none',
                 cursor: 'pointer', fontSize: 14,
                 fontWeight: active ? 700 : 400,
