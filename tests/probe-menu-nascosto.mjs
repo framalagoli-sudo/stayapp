@@ -29,6 +29,7 @@ let az = null, utente = null, browser = null, rossi = 0
 const esito = (ok, cosa, nota = '') => { if (!ok) rossi++; console.log(`  ${ok ? '✓' : '✗'} ${cosa}${nota ? `  — ${nota}` : ''}`) }
 const deve = async (q, cosa) => { const { data, error } = await q; if (error) throw new Error(`${cosa}: ${error.message}`); return data }
 const id = () => crypto.randomUUID()
+const PIATTI = ['ZZCaprese', 'ZZBruschetta', 'ZZCarbonara']
 const piatto = (name, extra = {}) => ({ id: id(), name, description: '', price: '9', allergens: [], dietary: [], photo_url: '', active: true, ...extra })
 
 try {
@@ -57,8 +58,19 @@ try {
     }
     return corpi
   }
+  // In inglese i nomi di menù e sezioni vengono tradotti: lì non si cercano le
+  // parole ma la STRUTTURA — gli stessi menù, sezioni e piatti dell'italiano,
+  // nello stesso ordine. (Le traduzioni sono agganciate alla posizione: se il
+  // filtro contasse in un altro modo finirebbero sulla voce sbagliata.)
+  const ossatura = testo => { try { return JSON.stringify(JSON.parse(testo).menu.map(c => [c.id, (c.categories || []).map(k => [k.id, (k.items || []).map(i => i.id)])])) } catch { return 'illeggibile' } }
   function controlla(corpi, ci, nonCi, quando) {
     for (const [nome, { stato, testo }] of Object.entries(corpi)) {
+      if (nome.includes('inglese')) {
+        const uguale = ossatura(testo) === ossatura(corpi['route dell’app'].testo)
+        const piatti = ci.filter(x => PIATTI.includes(x)).filter(x => !testo.includes(x))
+        esito(stato === 200 && uguale && !piatti.length, `${quando}: ${nome}`, [!uguale && 'la struttura NON è quella dell’italiano', piatti.length && `MANCA ${piatti.join(', ')}`].filter(Boolean).join(' · '))
+        continue
+      }
       const mancano = ci.filter(x => !testo.includes(x)), escono = nonCi.filter(x => testo.includes(x))
       esito(stato === 200 && !mancano.length && !escono.length, `${quando}: ${nome}`,
         [stato !== 200 && `risponde ${stato}`, mancano.length && `MANCA ${mancano.join(', ')}`, escono.length && `ESCE ${escono.join(', ')}`].filter(Boolean).join(' · '))
