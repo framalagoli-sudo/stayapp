@@ -11,6 +11,7 @@
 > 🔌 **Integrazioni**: [la sequenza del fornitore va letta tutta](reference_verifica_la_sequenza_del_fornitore.md) — il collegamento WhatsApp era «pronto» e non avrebbe inviato niente.
 
 - [🧾 A OGNI chiusura: aggiornare TUTTI i file di progetto](feedback_chiusura_sessione.md) — CLAUDE/FEATURES/PROGETTO/SECURITY, memoria + copia in .claude-memory; ognuno va APERTO, non supposto
+- [📅 Sessione 10/10 — slider eventi, anteprima dal vivo, Guru da WordPress, posta fuori da SiteGround](project_session_2026_10_10.md) — posta di Guru rimasta a metà: è la prima cosa da finire
 - [📅 Sessione 03–05/10 — contatti dalle fondamenta, consenso, newsletter che si capiscono](project_session_2026_10_03_05.md) — migration fino a 133; tutto live; prossimo: Meta, poi booking risorse
 - [🔗 Link di pagamento e cassa: due cose diverse](reference_link_pagamento.md) — pagamento_richiesto_il distingue il link del titolare (24 ore, resta) dalla cassa del sito (30 min, si annulla); /paga/<sessione>
 - [👥 Contatti: una porta sola](reference_contatti_porta_unica.md) — registraContatto, registro, liste calcolate; pipeline_stage ha 'lead' di default: scriverlo null esplicito
@@ -20,7 +21,7 @@
 - [🧑‍🤝‍🧑 Landing nuova: sempre una persona vera](project_landing_persona_umana.md) — Francesco + staff umano come punto di forza, in evidenza (30/09)
 - [📅 Sessione 01/10 — chi non paga non è prenotato (Garage 22)](project_session_2026_10_01.md) — corretto e live; 5 non pagate annullate; prossimo: Meta a schermo, risorse con lo stesso schema
 - [💳 Eventi: chi non paga non è prenotato](reference_eventi_chi_non_paga.md) — pending→confirmed al webhook, cassa a 31 min, cron che chiude e dice perché; retrieve con stripeAccount nel TERZO argomento (01/10)
-- [📧 Posta elettronica: uscita da SiteGround](project_posta_elettronica.md) — OltreNova su Zoho Lite (zoho.eu), Guru con inoltro Cloudflare, clienti intestati a loro; non tocchiamo i record Resend
+- [📧 Posta elettronica: uscita da SiteGround](project_posta_elettronica.md) — info@oltrenova.com = inoltro Cloudflare (fatto 10/10, solo ricezione); Guru a metà; Zoho mai aperto; non tocchiamo i record Resend
 - [📅 Sessione 24–25/09 — menu col sito in cima, categorie per entità LIVE, buco domini chiuso](project_session_2026_09_24_25.md) — migration fino a 129; prossimo: onboarding
 - [🧭 Menu e categorie: regole e trappole](reference_categorie_e_menu.md) — costruisciMenu unica regola; categoria sull entità applicata come copia; verifica col 2FA FATTO, mai spento
 - [🗑️ Cancellare porta via tutto](reference_cancellazione_completa.md) — «è sua?» prima di ogni effetto; account compresi; le cancellazioni dirette lasciano hostname su Vercel
@@ -31,7 +32,7 @@
 - [🤖 Consumi AI e tetto per azienda](project_ai_consumi.md) — 15/09: 12 chiamate su 13 senza limite vero; ora un punto solo, fail closed; LIVE dal 15/09 con ricarica da Aziende → Credito AI e avviso al cliente dall 80%
 - [📅 Sessione 16/09 — verifica Meta approvata, collegamento WhatsApp vero, numeri per entità](project_session_2026_09_16.md) — migration fino a 122; restano la verifica dell'accesso e la prova dal vivo
 - [📅 Sessione 15/09 — shop live, Meta sbloccato, costi AI sotto tetto, decisione API](project_session_2026_09_15.md) — migration fino a 121; verifica Meta da reinviare
-- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: sessione 03–05/10 chiusa · 1) META/WhatsApp (config ES, webhook, 4 chiavi, prova dal vivo — e provare contatti da chi scrive + STOP) 2) ✅ booking risorse come gli eventi (LIVE 08/10) — aperto: link di pagamento per prenotazioni a mano (idea sua, da approvare) e stato vero del conto Stripe 3) onboarding v2 4) posta (in attesa)
+- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: sessione 10/10 chiusa · 1) FINIRE la posta di Guru su Cloudflare (inoltro non acceso, hosting scade 11/10) 2) pannello Domini che dice «Online» a torto 3) META/WhatsApp 4) stato vero del conto Stripe 5) onboarding v2
 - [📅 Sessione 08/09 — conferme spente, calendario cieco, offerte inerti](project_session_2026_09_08.md) — 6 interventi nati da cose non rotte ma che non arrivavano
 - [📆 Intervalli di date nel booking](reference_intervalli_date_booking.md) — (giorno,giorno) e l intervallo VUOTO: non da errore, da «libero»; e con
 - [🏷️ Offerte sulle risorse](reference_offerte_risorse.md) — valevano solo per gli slot orari; prezzo_modo dice se e al giorno o del periodo (su 5 giorni sono 5
@@ -158,3 +159,4 @@
 - [📱 WhatsApp: quale numero può collegare un cliente](reference_whatsapp_quale_numero.md) — le 4 strade, la coesistenza (ora sì in UE, da provare dal vivo), e i 3 eventi webhook che mancano
 - [🎨 Restyling di metodotvb dai suoi dati (21/09)](reference_restyling_metodotvb.md) — come si rifà un sito via API, l'id della versione per ripristinarlo, e il contrasto 1,84 che la sonda dava per buono
 - [🌓 Aspetto dell'app del QR](reference_sfondo_app_qr.md) — stili pronti + personalizzazione (theme.app), palette unica per le 3 app; chi non sceglie vede l'app identica; #777 e verde WhatsApp sotto soglia ovunque (da decidere)
+- [🏨 Guru Management su OltreNova](project_guru_management.md) — ricostruito il 10/10 da WordPress, dominio collegato; zona su Cloudflare, inoltro posta DA FINIRE; modulo contatti non provato

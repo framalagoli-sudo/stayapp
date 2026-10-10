@@ -327,3 +327,17 @@ sbagliato: qui il token era giusto e mancava il controllo successivo.
 Dettaglio negli invarianti 22 e 23 di `SECURITY.md`. **Da fare**: una sonda in `deploy.ps1` per i
 permessi dei collaboratori (oggi la sweep prova «un'altra azienda», non «stessa azienda, ruolo
 senza permesso»): è la classe che ha lasciato passare il primo caso.
+
+## Aggiornamento 10/10/2026
+
+| Punto | Com'era | Com'è |
+|---|---|---|
+| Blocco «Form contatti» nell'editor | al super_admin proponeva i moduli di tutte le aziende: si poteva agganciare al sito di un cliente il modulo di un altro | `/api/form-builder?entity_tipo=&entity_id=` limita all'azienda del sito aperto |
+| Anteprima dal vivo dell'editor | non esisteva | `postMessage` accettato solo dalla finestra madre, stessa origine, stesso percorso (invariante 24) |
+| Posti e locandine nello slider eventi | — | forma e numero di schede da catalogo chiuso; destinazione del pulsante da `safeUrl` (provato con valori ostili) |
+| Pannello Domini | dichiara «Online» se risponde un server qualsiasi | ⚠️ **aperto**: non è una fuga di dati, ma uno stato falso che il cliente legge come «fatto» |
+
+Lavoro fuori dal codice, stesso giorno: la posta in arrivo di `oltrenova.com` è passata a un
+inoltro Cloudflare. Chi controlla quell'account Cloudflare ora legge anche la posta di `info@`,
+che riceve le email di Meta e di recupero di alcuni fornitori: un motivo in più per la chiave di
+sicurezza fisica già in elenco (`SECURITY.md` §6).

@@ -116,3 +116,5 @@ Ora: 21 hostname, zero orfani.
 millisecondi. Quando l'API risponde `Not authorized`, basta un qualsiasi
 comando `npx vercel` per rinnovarlo. Con quelle credenziali la sonda gira senza
 scrivere niente in `.env.test`.
+
+**⛔ Difetto aperto, trovato il 10/10/2026 (gurumanagement.it)**: il pannello Domini ha detto «Online · protetto da certificato» e ha scritto `stato: attivo` mentre il DNS puntava ancora al vecchio server (SiteGround) e Vercel rispondeva `misconfigured: true`. Causa (da confermare leggendo `diagnosticaDominio`): la GET HTTPS di prova riceve 200 **dal sito vecchio** e la prende per nostra. Conseguenze: il pannello non mostra più i record da inserire, e «un sito, un indirizzo» rimanda sottodominio e `/a/<slug>` al dominio — cioè al sito VECCHIO. Da correggere: la prova deve riconoscere che a rispondere siamo noi (intestazione di Vercel o un segno nostro), e `misconfigured` di Vercel deve bastare a dire «non ancora». Valori giusti per quel dominio, chiesti a Vercel col progetto: A `216.150.1.1` / `216.150.16.1`, CNAME `0d1d7632c8ecc768.vercel-dns-017.com` (senza `projectIdOrName` Vercel rispondeva il generico `76.76.21.21`).

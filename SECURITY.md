@@ -152,6 +152,15 @@ Dove possibile ognuno ha un test in `tests/smoke/security.spec.js`.
     nessuno usa si chiude**: `/api/guest/book` raccoglieva nome, email e telefono senza consenso e
     nessuna pagina la chiamava dall'8 maggio (rimossa il 04/10).
     Sonde (a mano): `probe-consenso-e-liste.mjs`, `probe-disiscrizione.mjs`, `probe-contatti-cura.mjs`.
+24. **Una pagina pubblica che accetta contenuto da un'altra finestra dice da chi.** L'anteprima dal
+    vivo dell'editor manda i blocchi alla pagina con `postMessage` (10/10/2026). La pagina li accetta
+    **solo** se arrivano dalla finestra che la contiene (`event.source === window.parent`), dalla
+    **stessa origine**, e per il **suo** percorso; aperta da sola non ascolta nessuno. Senza questi
+    tre controlli chiunque incorniciasse o aprisse il sito di un cliente potrebbe riscriverne il
+    contenuto a schermo. Stesso giro: il middleware non rimanda al dominio del cliente una richiesta
+    con `?preview` o `sec-fetch-dest: iframe` — l'intestazione è del browser e si può falsificare,
+    ma ottiene solo la pagina pubblica all'indirizzo nostro: le bozze restano dietro il token firmato
+    (nota 26 di `CLAUDE.md`). Sonda: `probe-slider-eventi.mjs`.
 
 ### Il SISTEMA di monitoraggio (a strati — "sempre" senza sprechi)
 - **Strato 0 — Aggiornamento dipendenze (il "processo tipo WordPress-update").** `.github/dependabot.yml`

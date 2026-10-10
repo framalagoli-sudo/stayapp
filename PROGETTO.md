@@ -16,7 +16,7 @@ pagarlo**.
 > dentro GitHub, che è uno degli accessi che descrive: se nessuno può entrare in
 > GitHub, nessuno può leggere queste istruzioni. Va tenuta una copia fuori.
 
-*Aggiornato al 5 ottobre 2026.*
+*Aggiornato al 10 ottobre 2026.*
 
 ---
 
@@ -90,12 +90,27 @@ fornitori. È la porta più preziosa del sistema.
 
 ### 2.3 Cloudflare — i domini e l'archivio *(critico)*
 
-Fa **due lavori distinti**:
+Fa **tre lavori distinti**:
 
 1. **DNS e domini**: fa arrivare i visitatori ai siti dei clienti. Se cade, i
    siti risultano irraggiungibili anche se il programma funziona.
 2. **R2 — l'archivio dei backup**: ogni notte alle 3 una copia completa del
    database finisce lì.
+3. **Inoltro della posta** (Email Routing, dal 10/10/2026): quello che arriva a
+   `info@oltrenova.com` viene girato alla casella Gmail di Francesco. È **solo
+   ricezione**: non c'è una casella e da quell'indirizzo non si scrive. Conta più
+   di quanto sembri: `info@oltrenova.com` è l'indirizzo dell'app Meta e di alcuni
+   fornitori. Se l'inoltro si rompe, quelle email tornano indietro in silenzio.
+   Si controlla da Cloudflare → `oltrenova.com` → Email → Email Routing.
+
+Nello stesso account c'è anche la zona `gurumanagement.it` (un sito di
+Francesco ospitato sulla piattaforma): creata il 10/10/2026, con l'inoltro della
+posta **ancora da accendere** quando il cambio dei nameserver sarà visibile. Il
+dominio resta registrato su SiteGround, come `oltrenova.com`.
+
+⚠️ Sulla zona `oltrenova.com` i record `send` (MX e TXT), `resend._domainkey`
+e `_dmarc` servono a Resend per **mandare** le email della piattaforma: non si
+toccano quando si lavora sulla posta in arrivo.
 
 **Piano e costo**: **gratuito** per l'uso attuale (R2 ha una franchigia
 generosa).
@@ -530,8 +545,9 @@ Chi compra o subentra deve saperlo prima, non dopo.
   il 22/09/2026; da fine settembre prenotazioni pagate da clienti veri. Il
   01/10/2026 è stato corretto il caso di chi apre la cassa e non paga (teneva il
   posto per sempre): ora resta «in attesa» 30 minuti, poi il posto torna libero.
-  Negozio e prenotazioni delle risorse sono provati solo da noi — e le risorse
-  hanno ancora il difetto appena corretto sugli eventi (cassa senza scadenza).
+  Negozio e prenotazioni delle risorse sono provati solo da noi. Dall'08/10/2026
+  anche le risorse hanno la cassa a scadenza, e c'è il link di pagamento per le
+  prenotazioni prese a voce: nessuno dei due ha ancora visto un pagamento vero.
 - **Nessuna newsletter è ancora partita a clienti veri.** Al 05/10/2026 in
   produzione ci sono due bozze e zero invii. L'editor, i destinatari per lista, la
   disiscrizione e il consenso sono provati da noi, con invii alla casella di prova
@@ -551,6 +567,13 @@ Chi compra o subentra deve saperlo prima, non dopo.
   `STRATEGIA.md` §6.1). Le funzioni restano nel codice: nascoste, non tolte.
 - **L'esportazione dei dati di un'azienda è incompleta**: copre circa 15 tabelle
   su 50. Per una richiesta di portabilità (GDPR) oggi non basta.
+- **Il pannello Domini può dire «Online» a torto.** Trovato il 10/10/2026: lo
+  stato diventa «attivo» appena l'indirizzo risponde, anche se a rispondere è
+  ancora il vecchio server del cliente. Chi collega un dominio già in uso può
+  credere di aver finito. Da correggere (nota 62 in `CLAUDE.md`).
+- **`oltrenova.com` non ha una casella di posta**: `info@` è un inoltro. Per
+  rispondere da quell'indirizzo serve una casella vera (era stato scelto Zoho
+  Mail Lite, mai aperto).
 - **Il canale in tedesco non c'è** (italiano e inglese sì).
 - **Una sola persona sa come funziona.** Questo documento serve a ridurre il
   danno, non lo elimina.
@@ -634,4 +657,4 @@ Restano di pensiero, e non li controlla nessuna macchina: i costi, i piani, il
 
 ---
 
-*Documento di progetto — aggiornato al 5 ottobre 2026.*
+*Documento di progetto — aggiornato al 10 ottobre 2026.*

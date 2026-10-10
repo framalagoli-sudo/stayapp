@@ -130,6 +130,11 @@ abbiamo meglio è». OltreNova **non ospita e non rivende posta**, e per i domin
 - **Clienti**: la posta la intestano **a loro** (Zoho Lite di default, Google/Microsoft se vogliono
   la suite, inoltro Cloudflare se vogliono solo ricevere). Noi li indirizziamo, configuriamo i DNS e
   aiutiamo la prima migrazione; niente fatture, niente loro posta nei nostri account.
+- **Stato al 10/10/2026** (l'hosting SiteGround scade l'11/10): `info@oltrenova.com` è un **inoltro
+  Cloudflare** verso la Gmail di Francesco, provato; Zoho non è stato aperto, quindi da `info@` non
+  si scrive. Guru: sito già sulla piattaforma, zona su Cloudflare, inoltro verso la casella del
+  cliente da accendere appena i nameserver nuovi sono visibili. L'ordine è stato sito → DNS → posta,
+  non quello scritto sopra: ha deciso la scadenza.
 - Scartati: Qboxmail (per chi rivende), Migadu (limiti di invio condivisi fra clienti), Aruba (prezzi
   promozionali, gestione dominio per dominio).
 
