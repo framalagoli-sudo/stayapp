@@ -111,9 +111,19 @@ try {
       header_cfg: { style: 'light', layout: 'classic', hover: 'underline', always_visible: true, logo_in_nav: true, show_phone: false, show_cta: false, scroll_behavior: 'smart',
         buttons: [{ id: 'call', label: 'Fissiamo una call', url: `${SITO}/p/contatti`, shape: 'pill', variant: 'solid', color: 'primary' }] },
       footer_cfg: { layout: 'full', style: 'dark', copyright: '© GURU MANAGEMENT — All rights reserved', show_socials: false, show_description: true, show_contact: true, extra_links: [] },
-      social: {},
+      social: { whatsapp: '+393517808613' },
+    },
+    whatsapp: '+393517808613',
+    // I dati del titolare per l'informativa: quelli dichiarati nel piede del
+    // vecchio sito, con la partita IVA confermata da Francesco (10/10/2026).
+    privacy_data: {
+      titolare_nome: 'Guru Management', titolare_forma_giuridica: 'S.r.l.', titolare_piva: '18009121007', titolare_cf: '18009121007',
+      titolare_indirizzo: 'Via Salaria 290', titolare_citta: 'Roma', titolare_cap: '00199', titolare_provincia: 'RM',
+      titolare_email: 'infogururoma@gmail.com', titolare_telefono: '+39 351 7808613', dpo_nome: '', dpo_email: '',
+      usa_form_contatti: true, usa_newsletter: false, usa_richieste_ospiti: false, usa_prenotazioni: false,
     },
   })
+  await api('PATCH', `/api/aziende/${stato.azienda}`, { partita_iva: '18009121007' })
 
   // ── Le pagine ──────────────────────────────────────────────────────────────
   const b = (type, data, style) => ({ id: randomUUID(), type, data, ...(style ? { style } : {}) })
