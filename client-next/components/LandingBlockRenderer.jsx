@@ -1044,7 +1044,9 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
   useEffect(() => {
     if (!entity?.id) return
     guestFetch(`/api/guest/eventi?entity_tipo=${entityType}&entity_id=${entity.id}&lang=${lang}`)
-      .then(d => Array.isArray(d) && setEventi(d.slice(0, 6))).catch(() => {})
+      // Tutti: quanti mostrarne lo decide il blocco («Quanti elementi»), e il
+      // sottotitolo li conta — tagliati qui, diceva «6 in programma» con sette.
+      .then(d => Array.isArray(d) && setEventi(d)).catch(() => {})
     guestFetch(`/api/blog/public?azienda_id=${aziendaId}&entity_tipo=${entityType}&entity_id=${entity.id}&limit=6`)
       .then(d => Array.isArray(d) && setArticoli(d)).catch(() => {})
   }, [entity?.id, lang])
