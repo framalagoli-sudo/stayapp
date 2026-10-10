@@ -16,7 +16,7 @@ import { eScuro, variabiliSuperficie } from '@/lib/superficie'
 
 
 
-export default function LandingAttivita({ attivita, initialHomeBlocks, domain, lang = 'it' }) {
+export default function LandingAttivita({ attivita, initialHomeBlocks, eventiIniziali = null, domain, lang = 'it' }) {
   const [upcomingEventi, setUpcomingEventi] = useState([])
   const [pagine,         setPagine]         = useState([])
   const [recensioni,     setRecensioni]     = useState([])
@@ -122,7 +122,7 @@ export default function LandingAttivita({ attivita, initialHomeBlocks, domain, l
           blocks={homeBlocks} entity={attivita} entityType="attivita"
           mini={mini} primary={primary} secondary={theme.secondaryColor} heading={heading} body={body}
           slug={attivita.slug} privacyUrl={`${base}/privacy`} base={base}
-          aziendaId={attivita.azienda_id} lang={lang}
+          aziendaId={attivita.azienda_id} lang={lang} eventiIniziali={eventiIniziali}
         />
       ) : null}
 

@@ -1,56 +1,19 @@
-import { supabaseAdmin } from '@/lib/supabase-server'
-import { getEntityAziendaId } from '@/lib/server-auth'
-import { localizeEntity } from '@/lib/translate'
-import { soloAperti, soloConclusi } from '@/lib/evento-concluso'
-import { postiPubblici } from '@/lib/posti-evento'
+import { eventiPubblici } from '@/lib/eventi-pubblici'
 
 // Dati live: mai cachare (vedi nota in /api/guest/a/[slug]).
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const MAX_PASSATI = 12
-
+// Pubblica di proposito: gli eventi pubblicati di un sito. Cosa esce e per chi
+// lo decide `eventiPubblici`, la stessa funzione che li stampa nelle pagine.
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
-  const entity_tipo = searchParams.get('entity_tipo')
-  const entity_id = searchParams.get('entity_id')
-  const lang = searchParams.get('lang') === 'en' ? 'en' : 'it'
-  // Di norma gli eventi non ancora finiti, dal più vicino. Con `quando=passati`
-  // quelli conclusi, dal più recente, e pochi: sono memoria, non programma.
-  const passati = searchParams.get('quando') === 'passati'
-
-  let query = supabaseAdmin.from('eventi')
-    // `aziende(fuso_orario)` non è un dettaglio: le schede mostrano l'ora
-    // dell'evento, e senza fuso ognuno la leggerebbe nel proprio.
-    .select('id, slug, title, description, cover_url, formato_cover, cover_focal, cta_label, cta_condizioni, mostra_prezzo, mostra_prezzo_pagina, prezzo_testo, prezzo_modo, date_start, date_end, location, price, seats_total, seats_booked, posti_riservati, packages, aziende(fuso_orario)')
-    .eq('published', true).eq('active', true)
-  query = passati
-    ? soloConclusi(query).order('date_start', { ascending: false }).limit(MAX_PASSATI)
-    : soloAperti(query).order('date_start')
-
-  // `entity_tipo` finisce interpolato dentro la .or() qui sotto: va whitelistato
-  // prima, come già si fa in /api/collegamenti (anti filter-injection).
-  if (['struttura', 'ristorante', 'attivita'].includes(entity_tipo) && UUID_RE.test(entity_id || '')) {
-    // Mostra gli eventi di questa entità + gli eventi "aziendali" (senza entità)
-    // della stessa azienda: un evento aziendale compare sui siti di tutte le sue entità.
-    const aziendaId = await getEntityAziendaId(entity_tipo, entity_id)
-    if (aziendaId) {
-      // `azienda_id` anche sul primo ramo: un evento di un'ALTRA azienda puntato
-      // a questa entità non deve comparire qui (difesa in profondità — la scrittura
-      // è già bloccata da `entitaDellaAzienda`, ma i record vecchi restano).
-      query = query.or(`and(entity_tipo.eq.${entity_tipo},entity_id.eq.${entity_id},azienda_id.eq.${aziendaId}),and(entity_id.is.null,azienda_id.eq.${aziendaId})`)
-    } else {
-      query = query.eq('entity_tipo', entity_tipo).eq('entity_id', entity_id)
-    }
-  }
-  const { data, error } = await query
-  if (error) return Response.json({ error: error.message }, { status: 500 })
-
-  // Il fuso esce come campo semplice: l'oggetto annidato dell'unione non è
-  // roba che le pagine debbano conoscere.
-  // I posti escono solo come «quanti se ne possono prenotare»: vedi postiPubblici.
-  let out = (data || []).map(({ aziende, ...ev }) => ({ ...postiPubblici(ev), fuso: aziende?.fuso_orario || null }))
-  if (lang === 'en') out = await Promise.all(out.map(ev => localizeEntity(ev, 'evento', lang)))
-  return Response.json(out)
+  const { eventi, errore } = await eventiPubblici({
+    entity_tipo: searchParams.get('entity_tipo'),
+    entity_id: searchParams.get('entity_id'),
+    lang: searchParams.get('lang') === 'en' ? 'en' : 'it',
+    passati: searchParams.get('quando') === 'passati',
+  })
+  if (errore) return Response.json({ error: errore }, { status: 500 })
+  return Response.json(eventi)
 }

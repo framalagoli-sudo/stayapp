@@ -756,11 +756,24 @@ function HeroSlider({ block, primary, heading, siteHref = (u) => u || '#' }) {
 // visibili per volta (responsive: 1 su mobile), frecce, puntini, swipe, autoplay.
 // ⚠️ Stesso difetto dello slider: il pulsante di una scheda usa siteHref, che
 // qui fuori non esiste. Nessun carosello ne aveva ancora uno.
-function Carousel({ block, primary, heading, siteHref = (u) => u || '#' }) {
-  const d = block.data || {}
-  const items = (d.items || []).filter(it => it.image_url || it.title || it.text)
-  const cfgPv = Math.min(Math.max(parseInt(d.per_view) || 3, 1), 4)
-  const [pv, setPv] = useState(1)
+// Una fila di schede che scorre: frecce, puntini, dito sul telefono, e da sola
+// ogni tot secondi. Lo usano il carosello (schede scritte a mano) e lo slider
+// degli eventi. `visibili` = quante schede per volta su telefono, tablet e
+// computer; `centra` raccoglie al centro le schede quando sono meno di quelle.
+//
+// ⚠️ La larghezza delle schede la decide il CSS (`--pv`, per larghezza dello
+// schermo), non lo stato: le schede arrivano già nell'HTML, e finché il
+// browser non ha finito di caricare si vedrebbe una locandina sola, enorme.
+// Frecce e puntini invece aspettano (`pronto`): dipendono da un conto che
+// prima di allora non si può fare.
+const CSS_SCORRIMENTO = [1, 2, 3, 4].map(n => `.scorr[data-t="${n}"]{--pv:${n}}`).join('')
+  + '@media(min-width:640px){' + [1, 2, 3, 4].map(n => `.scorr[data-b="${n}"]{--pv:${n}}`).join('') + '}'
+  + '@media(min-width:960px){' + [1, 2, 3, 4].map(n => `.scorr[data-c="${n}"]{--pv:${n}}`).join('') + '}'
+
+function Scorrimento({ schede, visibili, autoplay = true, intervallo = 5, frecce = true, puntini = true, centra = false, primary }) {
+  const { telefono, tablet, computer } = visibili
+  const [pv, setPv] = useState(telefono)
+  const [pronto, setPronto] = useState(false)
   const [i, setI] = useState(0)
   const [paused, setPaused] = useState(false)
   const touchX = useRef(null)
@@ -768,28 +781,27 @@ function Carousel({ block, primary, heading, siteHref = (u) => u || '#' }) {
   useEffect(() => {
     const calc = () => {
       const w = window.innerWidth
-      setPv(w < 640 ? 1 : w < 960 ? Math.min(2, cfgPv) : cfgPv)
+      setPv(w < 640 ? telefono : w < 960 ? tablet : computer)
     }
-    calc(); window.addEventListener('resize', calc)
+    calc(); setPronto(true); window.addEventListener('resize', calc)
     return () => window.removeEventListener('resize', calc)
-  }, [cfgPv])
+  }, [telefono, tablet, computer])
 
-  const maxI = Math.max(0, items.length - pv)
+  const maxI = Math.max(0, schede.length - pv)
   useEffect(() => { if (i > maxI) setI(maxI) }, [maxI, i])
-  const autoplay = d.autoplay !== false && items.length > pv
-  const interval = Math.max(2, d.interval || 5) * 1000
+  const daSolo = autoplay && schede.length > pv
+  const interval = Math.max(2, intervallo || 5) * 1000
   useEffect(() => {
-    if (!autoplay || paused) return
+    if (!daSolo || paused) return
     const t = setTimeout(() => setI(p => (p >= maxI ? 0 : p + 1)), interval)
     return () => clearTimeout(t)
-  }, [autoplay, paused, i, maxI, interval])
+  }, [daSolo, paused, i, maxI, interval])
 
-  if (!items.length) return null
   const go = idx => setI(Math.max(0, Math.min(idx, maxI)))
   const onTouchStart = e => { touchX.current = e.touches[0].clientX }
   const onTouchEnd = e => { if (touchX.current == null) return; const dx = e.changedTouches[0].clientX - touchX.current; if (Math.abs(dx) > 45) go(i + (dx < 0 ? 1 : -1)); touchX.current = null }
-  const showArrows = d.show_arrows !== false && items.length > pv
-  const showDots = d.show_dots !== false && maxI > 0
+  const showArrows = pronto && frecce && schede.length > pv
+  const showDots = pronto && puntini && maxI > 0
   const arrow = (side, disabled) => ({
     position: 'absolute', top: '50%', [side]: -8, transform: 'translateY(-50%)', zIndex: 3,
     width: 44, height: 44, borderRadius: '50%', border: '1px solid #e5e5ea', background: 'var(--sup)', color: 'var(--txt)',
@@ -798,43 +810,64 @@ function Carousel({ block, primary, heading, siteHref = (u) => u || '#' }) {
   })
 
   return (
+    <>
+      <div style={{ position: 'relative' }} onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+        <style dangerouslySetInnerHTML={{ __html: CSS_SCORRIMENTO }} />
+        <div data-scorrimento={pronto ? 'pronto' : ''} className="scorr" data-t={telefono} data-b={tablet} data-c={computer} style={{ overflow: 'hidden' }}>
+          <div style={{ display: 'flex', justifyContent: centra && pronto && schede.length < pv ? 'center' : undefined, transform: `translateX(calc(${-i} * 100% / var(--pv)))`, transition: 'transform 0.5s ease' }}>
+            {schede.map(s => (
+              <div key={s.key} style={{ flex: '0 0 calc(100% / var(--pv))', padding: '0 10px', boxSizing: 'border-box' }}>
+                {s.nodo}
+              </div>
+            ))}
+          </div>
+        </div>
+        {showArrows && (
+          <>
+            <button onClick={() => go(i - 1)} disabled={i <= 0} aria-label="Precedente" style={arrow('left', i <= 0)}><ChevronLeft size={22} strokeWidth={1.5} /></button>
+            <button onClick={() => go(i + 1)} disabled={i >= maxI} aria-label="Successiva" style={arrow('right', i >= maxI)}><ChevronRight size={22} strokeWidth={1.5} /></button>
+          </>
+        )}
+      </div>
+      {showDots && (
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 26 }}>
+          {Array.from({ length: maxI + 1 }).map((_, idx) => (
+            <button key={idx} onClick={() => go(idx)} aria-label={`Vai a ${idx + 1}`}
+              style={{ width: idx === i ? 24 : 8, height: 8, borderRadius: 50, border: 'none', cursor: 'pointer', padding: 0, background: idx === i ? primary : '#d5d5dd', transition: 'width 0.3s, background 0.3s' }} />
+          ))}
+        </div>
+      )}
+    </>
+  )
+}
+
+function Carousel({ block, primary, heading, siteHref = (u) => u || '#' }) {
+  const d = block.data || {}
+  const items = (d.items || []).filter(it => it.image_url || it.title || it.text)
+  const cfgPv = Math.min(Math.max(parseInt(d.per_view) || 3, 1), 4)
+  if (!items.length) return null
+
+  return (
     <section style={{ padding: '72px 0', background: 'var(--sup)' }}>
       <div className="lbr-section">
         {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,40px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)', marginBottom: 44 }} {...ricco(d.titolo)} />}
-        <div style={{ position: 'relative' }} onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-          <div style={{ overflow: 'hidden' }}>
-            <div style={{ display: 'flex', transform: `translateX(-${i * (100 / pv)}%)`, transition: 'transform 0.5s ease' }}>
-              {items.map(it => (
-                <div key={it.id} style={{ flex: `0 0 ${100 / pv}%`, padding: '0 10px', boxSizing: 'border-box' }}>
-                  <div style={{ background: 'var(--sup-2)', border: '1px solid var(--bordo)', borderRadius: 16, overflow: 'hidden', height: '100%' }}>
-                    {it.image_url && <img src={it.image_url} alt={it.title || ''} loading="lazy" style={{ width: '100%', aspectRatio: rapportoOppure(d.formato, '4 / 3'), objectFit: 'cover', objectPosition: focalValido(it.image_focal) || 'center', display: 'block' }} />}
-                    {(it.title || it.text || (it.button_label && it.button_url)) && (
-                      <div style={{ padding: 22 }}>
-                        {it.title && <h3 style={{ fontFamily: heading, fontSize: 19, fontWeight: 700, color: 'var(--txt)', margin: '0 0 8px' }} {...ricco(it.title)} />}
-                        {it.text && <p style={{ fontSize: 14, color: 'var(--txt-tenue)', lineHeight: 1.6, margin: 0 }} {...ricco(it.text)} />}
-                        {it.button_label && it.button_url && <a href={siteHref(it.button_url)} style={{ display: 'inline-block', marginTop: 14, color: primary, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>{it.button_label} →</a>}
-                      </div>
-                    )}
-                  </div>
+        <Scorrimento
+          visibili={{ telefono: 1, tablet: Math.min(2, cfgPv), computer: cfgPv }}
+          autoplay={d.autoplay !== false} intervallo={d.interval}
+          frecce={d.show_arrows !== false} puntini={d.show_dots !== false} primary={primary}
+          schede={items.map(it => ({ key: it.id, nodo: (
+            <div style={{ background: 'var(--sup-2)', border: '1px solid var(--bordo)', borderRadius: 16, overflow: 'hidden', height: '100%' }}>
+              {it.image_url && <img src={it.image_url} alt={it.title || ''} loading="lazy" style={{ width: '100%', aspectRatio: rapportoOppure(d.formato, '4 / 3'), objectFit: 'cover', objectPosition: focalValido(it.image_focal) || 'center', display: 'block' }} />}
+              {(it.title || it.text || (it.button_label && it.button_url)) && (
+                <div style={{ padding: 22 }}>
+                  {it.title && <h3 style={{ fontFamily: heading, fontSize: 19, fontWeight: 700, color: 'var(--txt)', margin: '0 0 8px' }} {...ricco(it.title)} />}
+                  {it.text && <p style={{ fontSize: 14, color: 'var(--txt-tenue)', lineHeight: 1.6, margin: 0 }} {...ricco(it.text)} />}
+                  {it.button_label && it.button_url && <a href={siteHref(it.button_url)} style={{ display: 'inline-block', marginTop: 14, color: primary, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>{it.button_label} →</a>}
                 </div>
-              ))}
+              )}
             </div>
-          </div>
-          {showArrows && (
-            <>
-              <button onClick={() => go(i - 1)} disabled={i <= 0} aria-label="Precedente" style={arrow('left', i <= 0)}><ChevronLeft size={22} strokeWidth={1.5} /></button>
-              <button onClick={() => go(i + 1)} disabled={i >= maxI} aria-label="Successiva" style={arrow('right', i >= maxI)}><ChevronRight size={22} strokeWidth={1.5} /></button>
-            </>
-          )}
-        </div>
-        {showDots && (
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 26 }}>
-            {Array.from({ length: maxI + 1 }).map((_, idx) => (
-              <button key={idx} onClick={() => go(idx)} aria-label={`Vai a ${idx + 1}`}
-                style={{ width: idx === i ? 24 : 8, height: 8, borderRadius: 50, border: 'none', cursor: 'pointer', padding: 0, background: idx === i ? primary : '#d5d5dd', transition: 'width 0.3s, background 0.3s' }} />
-            ))}
-          </div>
-        )}
+          ) }))}
+        />
       </div>
     </section>
   )
@@ -991,10 +1024,12 @@ function VetrinaLeadForm({ entity, entityType, projectTitle, primary, privacyUrl
   )
 }
 
-export default function LandingBlockRenderer({ blocks, entity, entityType, mini, primary, secondary, heading, body, slug, privacyUrl, aziendaId, lang = 'it', base }) {
+export default function LandingBlockRenderer({ blocks, entity, entityType, mini, primary, secondary, heading, body, slug, privacyUrl, aziendaId, lang = 'it', base, eventiIniziali = null }) {
   const [faqOpen, setFaqOpen] = useState({})
-  const [eventi, setEventi] = useState([])
-  const [eventiPassati, setEventiPassati] = useState([])
+  // Arrivano già dal server quando la pagina ha un blocco che li mostra
+  // (`eventiIniziali`); il browser li richiede comunque, per averli freschi.
+  const [eventi, setEventi] = useState(eventiIniziali?.prossimi || [])
+  const [eventiPassati, setEventiPassati] = useState(eventiIniziali?.passati || [])
   const [articoli, setArticoli] = useState([])
   const [prodottiShop, setProdottiShop] = useState([])
   // I prodotti si chiedono solo se sulla pagina c'è un blocco Shop.
@@ -1065,7 +1100,9 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
 
   // La scheda di un evento, in programma o concluso. Funzione normale e non
   // componente: definito qui dentro, un componente si rimonterebbe a ogni render.
-  function renderEventoCard(ev, concluso) {
+  // `rapporto` = la forma della locandina quando la decide il blocco (lo
+  // slider); senza, la fascia di sempre dell'elenco.
+  function renderEventoCard(ev, concluso, rapporto = null) {
     // Il giorno nel fuso dell'evento: una serata che comincia a mezzanotte
     // cambierebbe data a seconda di dove si trova chi guarda.
     const dateStr = oraLocale(ev.date_start, ev.fuso, {
@@ -1076,10 +1113,10 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
     // L'indirizzo parlante quando c'è: è quello che finisce nei risultati di
     // ricerca e nei link condivisi. L'id resta come ripiego.
     return (
-      <a key={ev.id} href={`/eventi/${ev.slug || ev.id}?back=${encodeURIComponent(homeUrl)}`} style={{ background: 'var(--sup-2)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', border: '1px solid var(--bordo)' }}>
+      <a key={ev.id} href={`/eventi/${ev.slug || ev.id}?back=${encodeURIComponent(homeUrl)}`} style={{ background: 'var(--sup-2)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', border: '1px solid var(--bordo)', height: rapporto ? '100%' : undefined, boxSizing: 'border-box' }}>
         {ev.cover_url
-          ? <img src={ev.cover_url} alt={ev.title} style={{ width: '100%', height: 180, objectFit: 'cover', objectPosition: ev.cover_focal || 'center', display: 'block', filter: concluso ? 'grayscale(0.4)' : undefined }} />
-          : <div style={{ height: 100, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Calendar size={36} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /></div>
+          ? <img src={ev.cover_url} alt={ev.title} draggable={rapporto ? false : undefined} style={{ width: '100%', height: rapporto ? undefined : 180, aspectRatio: rapporto || undefined, objectFit: 'cover', objectPosition: ev.cover_focal || 'center', display: 'block', filter: concluso ? 'grayscale(0.4)' : undefined }} />
+          : <div style={{ height: rapporto ? undefined : 100, aspectRatio: rapporto || undefined, background: `${primary}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Calendar size={36} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} /></div>
         }
         <div style={{ padding: '16px 18px' }}>
           <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--txt)', marginBottom: 8 }} {...ricco(ev.title)} />
@@ -2114,6 +2151,36 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
                   {passati.map(ev => renderEventoCard(ev, true))}
                 </div>
               </>}
+            </div>
+          </section>
+        )
+      }
+
+      case 'eventi_slider': {
+        // Solo gli eventi in programma: le stesse schede dell'elenco, con la
+        // locandina nella forma scelta qui (tutte uguali, o la fila si storce).
+        const mostrati = eventi.slice(0, d.limit || eventi.length)
+        if (!mostrati.length) return null
+        const rapporto = rapportoOppure(d.formato, '4 / 5')
+        const telefono = Math.min(Math.max(parseInt(d.per_view_mobile) || 1, 1), 2)
+        const computer = Math.min(Math.max(parseInt(d.per_view_desktop) || 3, 2), 4)
+        return (
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
+            <div className="lbr-section">
+              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: d.sottotitolo ? 12 : 40, textAlign: 'center', color: 'var(--txt)' }}>{d.titolo || tr('events_title', lang)}</h2>
+              {d.sottotitolo && <p style={{ textAlign: 'center', color: 'var(--txt-tenue)', marginBottom: 40, fontSize: 15 }}>{d.sottotitolo}</p>}
+              <Scorrimento
+                visibili={{ telefono, tablet: Math.max(telefono, 2), computer }} centra
+                autoplay={d.autoplay !== false} intervallo={d.interval} primary={primary}
+                schede={mostrati.map(ev => ({ key: ev.id, nodo: renderEventoCard(ev, false, rapporto) }))}
+              />
+              {/* Senza destinazione niente pulsante: un pulsante che non porta
+                  da nessuna parte è peggio di un pulsante assente. */}
+              {d.cta_url && (
+                <div style={{ textAlign: 'center', marginTop: 36 }}>
+                  <a href={siteHref(d.cta_url)} style={{ display: 'inline-block', padding: '14px 32px', background: primary, color: readableOn('#ffffff', primary, '#1a1a2e'), borderRadius: 50, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>{d.cta_label || tr('all_events', lang)}</a>
+                </div>
+              )}
             </div>
           </section>
         )

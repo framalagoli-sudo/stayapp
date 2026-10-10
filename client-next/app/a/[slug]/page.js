@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { getAttivita, getPagina } from '@/lib/guest-data'
 import { localizeEntity } from '@/lib/translate'
+import { eventiPerBlocchi } from '@/lib/eventi-pubblici'
 import LandingAttivita from '@/components/guest/LandingAttivita'
 import AttivitaPWA from '@/components/guest/AttivitaPWA'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
@@ -77,9 +78,12 @@ export default async function AttivitaPage(props) {
     if (homePage) homePage = await localizeEntity(homePage, 'pagina', lang)
   }
   const initialHomeBlocks = homePage?.id && Array.isArray(homePage.blocks) && homePage.blocks.length ? homePage.blocks : null
+  // Gli eventi si stampano già nell'HTML: arrivando solo dal browser, per un
+  // motore di ricerca la sezione sarebbe vuota.
+  const eventiIniziali = await eventiPerBlocchi(initialHomeBlocks, 'attivita', attivita.id, lang)
   return (
     <>
-      <LandingAttivita attivita={localized} initialHomeBlocks={initialHomeBlocks} domain={searchParams?._domain || null} lang={lang} />
+      <LandingAttivita attivita={localized} initialHomeBlocks={initialHomeBlocks} eventiIniziali={eventiIniziali} domain={searchParams?._domain || null} lang={lang} />
       <LanguageSwitcher lang={lang} />
     </>
   )

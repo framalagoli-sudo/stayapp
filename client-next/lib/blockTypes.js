@@ -47,6 +47,7 @@ export const BLOCK_TYPES = [
   { type: 'offerte',      label: 'Offerte',            group: 'servizi',     emoji: '🏷️', desc: 'Quello che crei in Offerte: corsi, escursioni, esperienze. Si può filtrare per categoria.' },
   { type: 'shop',         label: 'Shop',               group: 'servizi',     emoji: '🛍️', desc: 'I prodotti in vendita, con carrello e pagamento: quelli dello Shop e quelli del catalogo messi in vendita' },
   { type: 'eventi',       label: 'Prossimi eventi',    group: 'servizi',     emoji: '📅', desc: 'Eventi in programma e, sotto, gli ultimi conclusi' },
+  { type: 'eventi_slider', label: 'Slider eventi',     group: 'servizi',     emoji: '🎟️', desc: 'Le locandine degli eventi in programma che scorrono — frecce, dito su telefono, tempo a scelta e pulsante «tutti gli eventi»' },
   { type: 'vetrina',      label: 'Vetrina',            group: 'servizi',     emoji: '🪟', desc: 'Griglia di elementi di una vetrina (progetti, immobili, veicoli…) con filtri e link alla pagina di dettaglio' },
   { type: 'news',         label: 'Articoli / News',    group: 'servizi',     emoji: '📰', desc: 'Ultimi articoli del blog' },
   { type: 'booking',      label: 'Widget prenotazione',group: 'conversione', emoji: '📆', desc: 'Form prenotazione risorse' },
@@ -103,6 +104,7 @@ export const BLOCK_DEFAULTS = {
   // comprare. `formato` vuoto = le schede alte 170px come nelle Offerte.
   shop:         { titolo_sezione: '', categoria: '', formato: '' },
   eventi:       {},
+  eventi_slider: { titolo: '', sottotitolo: '', formato: 'verticale', per_view_mobile: 1, per_view_desktop: 3, autoplay: true, interval: 5, cta_label: '', cta_url: '' },
   // I blocchi nuovi nascono con i numeri in evidenza; quelli già pubblicati non
   // hanno la chiave e restano la scheda semplice di prima.
   vetrina:      { vetrina_id: '', titolo: '', colonne: 3, mostra_filtri: true, filtro: '', variant: 'evidenza' },

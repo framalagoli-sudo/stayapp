@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getAttivita, getPagina } from '@/lib/guest-data'
 import { localizeEntity } from '@/lib/translate'
+import { eventiPerBlocchi } from '@/lib/eventi-pubblici'
 import GuestSubPage from '@/components/guest/GuestSubPage'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
 import { fuoriDaiMotori, METADATA_NASCOSTA } from '@/lib/visibilita-motori'
@@ -60,9 +61,10 @@ export default async function AttivitaSubPage(props) {
     entity = await localizeEntity(attivita, 'attivita', lang)
     pagina = await localizeEntity(pagina, 'pagina', lang)
   }
+  const eventiIniziali = await eventiPerBlocchi(pagina.blocks, 'attivita', attivita.id, lang)
   return (
     <>
-      <GuestSubPage entity={entity} entityType="attivita" pagina={pagina} domain={searchParams?._domain || null} lang={lang} />
+      <GuestSubPage entity={entity} entityType="attivita" pagina={pagina} eventiIniziali={eventiIniziali} domain={searchParams?._domain || null} lang={lang} />
       {!pagina.hide_header && <LanguageSwitcher lang={lang} />}
     </>
   )

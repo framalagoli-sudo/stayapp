@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { getStruttura, getPagina } from '@/lib/guest-data'
 import { localizeEntity } from '@/lib/translate'
+import { eventiPerBlocchi } from '@/lib/eventi-pubblici'
 import LandingStruttura from '@/components/guest/LandingStruttura'
 import GuestApp from '@/components/guest/GuestApp'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
@@ -85,12 +86,15 @@ export default async function StrutturaPage(props) {
       if (homePage) homePage = await localizeEntity(homePage, 'pagina', lang)
     }
     const initialHomeBlocks = homePage?.id && Array.isArray(homePage.blocks) && homePage.blocks.length ? homePage.blocks : null
+    // Gli eventi si stampano già nell'HTML: arrivando solo dal browser, per un
+    // motore di ricerca la sezione sarebbe vuota.
+    const eventiIniziali = await eventiPerBlocchi(initialHomeBlocks, 'struttura', property.id, lang)
     // Il minisito è la pagina marketing (anonima, indicizzata dai motori): non deve
     // spedire credenziali. Rimuovo i campi wifi (li usa solo la PWA-ospite, ramo sotto).
     const { wifi_password, wifi_name, ...safeProperty } = localized
     return (
       <>
-        <LandingStruttura property={safeProperty} initialHomeBlocks={initialHomeBlocks} domain={searchParams?._domain || null} lang={lang} />
+        <LandingStruttura property={safeProperty} initialHomeBlocks={initialHomeBlocks} eventiIniziali={eventiIniziali} domain={searchParams?._domain || null} lang={lang} />
         <LanguageSwitcher lang={lang} />
       </>
     )

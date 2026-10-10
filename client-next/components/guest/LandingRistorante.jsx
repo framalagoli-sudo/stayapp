@@ -16,7 +16,7 @@ import { eScuro, variabiliSuperficie } from '@/lib/superficie'
 
 
 
-export default function LandingRistorante({ ristorante, initialHomeBlocks, domain, lang = 'it' }) {
+export default function LandingRistorante({ ristorante, initialHomeBlocks, eventiIniziali = null, domain, lang = 'it' }) {
   const [upcomingEventi, setUpcomingEventi] = useState([])
   const [pagine,         setPagine]         = useState([])
   const [recensioni,     setRecensioni]     = useState([])
@@ -124,7 +124,7 @@ export default function LandingRistorante({ ristorante, initialHomeBlocks, domai
           blocks={homeBlocks} entity={ristorante} entityType="ristorante"
           mini={mini} primary={primary} secondary={theme.secondaryColor} heading={heading} body={body}
           slug={ristorante.slug} privacyUrl={`${base}/privacy`} base={base}
-          aziendaId={ristorante.azienda_id} lang={lang}
+          aziendaId={ristorante.azienda_id} lang={lang} eventiIniziali={eventiIniziali}
         />
       ) : null}
 

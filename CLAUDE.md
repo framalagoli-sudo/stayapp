@@ -583,6 +583,13 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - Resta: «Aggiungi opzione» del chatbot tagliato di 2px a 360px.
     - 🖥️ **La memoria del PC**: il server di sviluppo non rilascia le pagine compilate — dopo le sonde su 42 pagine teneva 6,9 GB. Con poco margine il sistema ferma i comandi in sottofondo (un deploy interrotto a metà degli smoke ha lasciato in produzione l'utente `ci-…@playwright.internal`, **super_admin**: va cancellato subito) e `probe-molti-indirizzi` è morta due volte a metà dentro il deploy, senza messaggio. Prima di una serie di sonde in locale o di un deploy: misurare, e riavviare il server di sviluppo se è gonfio. Il deploy si lancia **in primo piano**.
 
+60. **🎟️ Slider eventi, e gli eventi stampati nell'HTML** (10/10/2026, chiesto da Francesco per Garage 22). Blocco nuovo `eventi_slider`: le locandine degli eventi in programma che scorrono (frecce, dito, tempo a scelta), schede per volta su telefono (1–2) e computer (2–4), forma delle locandine dal catalogo chiuso `FORMATI`, pulsante «Scopri tutti gli eventi» con testo e destinazione a scelta — **senza destinazione il pulsante non compare**. Nessuna migration.
+    - **Un motore solo**: `Scorrimento` in `LandingBlockRenderer.jsx`, usato dal Carosello e dallo slider. La scheda è la stessa dell'elenco (`renderEventoCard`, col rapporto come terzo argomento): prezzo, data e link hanno una regola sola.
+    - ⚠️ **La larghezza delle schede la decide il CSS** (`--pv` per larghezza di schermo), non lo stato: le schede sono già nell'HTML e prima che il browser finisca si vedrebbe una locandina sola, enorme. Frecce e puntini aspettano `pronto`.
+    - ⛔ **Il blocco «Prossimi eventi» era vuoto per i motori di ricerca**: gli eventi arrivavano solo dal browser (segnalato da `probe-seo` appena Garage 22 ha pubblicato una pagina «Eventi»: 42 parole). Ora `lib/eventi-pubblici.js` è l'unico posto che dice quali eventi escono — lo usano la route `/api/guest/eventi` e le sei pagine server (`eventiPerBlocchi` → `eventiIniziali`), che li stampano subito. Il browser li richiede comunque, per averli freschi.
+    - Stesso giro: il caricamento tagliava gli eventi **a sei** prima che il blocco applicasse il suo «Quanti elementi» (Garage 22 ne aveva sette); e il blocco «Form contatti» proponeva al super_admin i moduli di **tutte** le aziende — ora `/api/form-builder?entity_tipo=&entity_id=` li limita all'azienda del sito aperto (anche nell'elenco delle traduzioni).
+    - Sonda `tests/probe-slider-eventi.mjs`: corpo grezzo, computer e telefono, frecce/dito/tempo, valori ostili (forma inventata, `javascript:`), editor aperto come il titolare, e il Carosello a tre larghezze.
+
 ---
 
 ## Roadmap
@@ -607,6 +614,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - [x] **Booking delle risorse come gli eventi** ✅ 08/10/2026 — cassa a 31 minuti, «in attesa» finché non paga, pagamento online solo con conferma automatica. Nota 44, migration 134.
 - [x] **Link di pagamento per le prenotazioni prese a mano** ✅ 08/10/2026 — copia link, WhatsApp, email; vale 24 ore e la prenotazione resta. Nota 57, migration 135.
 - [x] **Menù e sezioni nascondibili** ✅ 09/10/2026 — nota 58. **Pannello da telefono ripassato** ✅ 09/10/2026 — nota 59.
+- [x] **Slider eventi + eventi nell'HTML per i motori** ✅ 10/10/2026 — nota 60.
 - [ ] **Lo stato vero del conto Stripe** — `puoIncassare` dice sì appena esiste `stripe_account_id`, anche se il collegamento è rimasto a metà: va salvato `charges_enabled` dal webhook dell'account. Oggi il link e la cassa falliscono con un messaggio chiaro, ma il pulsante compare lo stesso.
 - [ ] **Campagne WhatsApp per lista** (come le newsletter) e via i tag col titolo dell'evento — quando si collega Meta.
 - [ ] **Newsletter a blocchi** (stesso editor del sito, catalogo ridotto per la posta, blocchi collegati a eventi e offerte) — parere dato il 05/10, da riprendere dopo aver visto se i quattro modelli bastano.

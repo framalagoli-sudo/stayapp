@@ -14,7 +14,7 @@ import { eScuro, variabiliSuperficie } from '@/lib/superficie'
 const DEFAULT_PRIMARY = { struttura: '#00b5b5', ristorante: '#e63946', attivita: '#6b46c1' }
 const ENTITY_PREFIX   = { struttura: 's', ristorante: 'r', attivita: 'a' }
 
-export default function GuestSubPage({ entity, entityType, pagina, domain, lang = 'it' }) {
+export default function GuestSubPage({ entity, entityType, pagina, eventiIniziali = null, domain, lang = 'it' }) {
   const [pagine, setPagine] = useState([])
 
   useEffect(() => {
@@ -74,7 +74,7 @@ export default function GuestSubPage({ entity, entityType, pagina, domain, lang 
             blocks={pagina.blocks} entity={entity} entityType={entityType}
             mini={mini} primary={primary} secondary={theme.secondaryColor} heading={heading} body={body}
             slug={entity.slug} privacyUrl={privacyUrl} base={base}
-            aziendaId={entity.azienda_id} lang={lang}
+            aziendaId={entity.azienda_id} lang={lang} eventiIniziali={eventiIniziali}
           />
         ) : (
           <div style={{ maxWidth: 800, margin: '0 auto', padding: '64px 24px' }}>

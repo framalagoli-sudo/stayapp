@@ -6,7 +6,7 @@ import { LinkPicker, buildInternalLinks } from '@/components/admin/LinkPicker'
 import { IconPicker } from '@/components/admin/IconPicker'
 import { FocalPointPicker } from '@/components/admin/FocalPointPicker'
 import { SelettoreFormato } from '@/components/admin/SelettoreFormato'
-import { FORME_SCHEDA, FORMA_SCHEDA_PREDEFINITA, formaScheda, rapportoOppure, formatiConPredefinito } from '@/lib/formati-foto'
+import { FORMATI, FORME_SCHEDA, FORMA_SCHEDA_PREDEFINITA, formaScheda, rapportoOppure, formatiConPredefinito } from '@/lib/formati-foto'
 import { CampoImmagine } from '@/components/admin/CampoImmagine'
 import { getPreset as getVetrinaPreset } from '@/lib/vetrinePresets'
 import {
@@ -39,7 +39,7 @@ const BLOCK_ICON_MAP = {
   team: Users, steps: List, highlights: Star, stats: BarChart2,
   cta_banner: Zap, testimonianze: MessageCircle, promozioni: Tag,
   pacchetti: Package, faq: HelpCircle, immagine: Image, galleria_immagini: Grid, gallery: ImageIcon, video: Video,
-  services: Settings, activities: Compass, excursions: Map, eventi: Calendar, vetrina: Package,
+  services: Settings, activities: Compass, excursions: Map, eventi: Calendar, eventi_slider: GalleryHorizontal, vetrina: Package,
   news: FileText, booking: Clock, newsletter: Mail, contatti: Phone,
   show_map: MapPin, clienti: Building2,
 }
@@ -391,6 +391,62 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
         </div>
       </div>
     )
+    case 'eventi_slider': {
+      const sel = { width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13, background: '#fff', boxSizing: 'border-box' }
+      const etichetta = { fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 500 }
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px 12px', background: '#f8f9ff', borderRadius: 8, border: '1px solid #e8ecff' }}>
+            <BlockTypeIcon type={type} size={16} />
+            <p style={{ fontSize: 12, color: '#555', fontStyle: 'italic', margin: 0, lineHeight: 1.5 }}>
+              Mostra da solo gli eventi in programma, dal più vicino: locandina, titolo e data. Chi tocca una scheda apre quell'evento.
+            </p>
+          </div>
+          <Field label="Titolo sezione (vuoto = predefinito)" value={data.titolo} onChange={v => upd('titolo', v)} />
+          <Field label="Sottotitolo (opz.)" value={data.sottotitolo} onChange={v => upd('sottotitolo', v)} />
+          <SelettoreFormato
+            valore={data.formato || 'verticale'} onChange={v => upd('formato', v)}
+            formati={FORMATI}
+            titolo="Forma delle locandine"
+            aiuto="Vale per tutte le schede insieme. Quale parte della foto resta visibile lo dice il punto focale scelto nell'evento."
+          />
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 120 }}>
+              <label style={etichetta}>Schede per volta — telefono</label>
+              <select value={data.per_view_mobile || 1} onChange={e => upd('per_view_mobile', Number(e.target.value))} style={sel}>
+                <option value={1}>1</option><option value={2}>2</option>
+              </select>
+            </div>
+            <div style={{ flex: 1, minWidth: 120 }}>
+              <label style={etichetta}>Schede per volta — computer</label>
+              <select value={data.per_view_desktop || 3} onChange={e => upd('per_view_desktop', Number(e.target.value))} style={sel}>
+                <option value={2}>2</option><option value={3}>3</option><option value={4}>4</option>
+              </select>
+            </div>
+            <div style={{ flex: 1, minWidth: 120 }}>
+              <label style={etichetta}>Quanti eventi</label>
+              <input type="number" min="1" value={data.limit ?? ''} onChange={e => upd('limit', e.target.value ? Number(e.target.value) : undefined)} placeholder="Tutti" style={sel} />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
+              <input type="checkbox" checked={data.autoplay !== false} onChange={e => upd('autoplay', e.target.checked)} /> Scorre da solo
+            </label>
+            {data.autoplay !== false && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#555' }}>
+                ogni <input type="number" min="2" max="20" value={data.interval ?? 5} onChange={e => upd('interval', Number(e.target.value))} style={{ width: 60, border: '1px solid #ddd', borderRadius: 6, padding: '5px 8px', fontSize: 13 }} /> secondi
+              </label>
+            )}
+          </div>
+          <p style={{ fontSize: 11, color: '#aaa', margin: 0 }}>Su telefono si scorre col dito, su computer con le frecce. Si ferma mentre ci si passa sopra.</p>
+          <div style={{ borderTop: '1px solid #eee', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Field label="Testo del pulsante" value={data.cta_label} onChange={v => upd('cta_label', v)} placeholder="Scopri tutti gli eventi" />
+            <LinkField label="Dove porta il pulsante" value={data.cta_url} onChange={v => upd('cta_url', v)} placeholder="Scegli una pagina o incolla un indirizzo" />
+            <p style={{ fontSize: 11, color: '#aaa', margin: 0 }}>Di solito la pagina con tutti gli eventi. Senza una destinazione il pulsante non compare.</p>
+          </div>
+        </div>
+      )
+    }
     case 'accordion': return (
       <div>
         <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />

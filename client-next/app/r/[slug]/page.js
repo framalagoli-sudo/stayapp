@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { getRistorante, getPagina } from '@/lib/guest-data'
 import { localizeEntity } from '@/lib/translate'
+import { eventiPerBlocchi } from '@/lib/eventi-pubblici'
 import LandingRistorante from '@/components/guest/LandingRistorante'
 import RestaurantApp from '@/components/guest/RestaurantApp'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
@@ -73,9 +74,12 @@ export default async function RistorantePage(props) {
       if (homePage) homePage = await localizeEntity(homePage, 'pagina', lang)
     }
     const initialHomeBlocks = homePage?.id && Array.isArray(homePage.blocks) && homePage.blocks.length ? homePage.blocks : null
+    // Gli eventi si stampano già nell'HTML: arrivando solo dal browser, per un
+    // motore di ricerca la sezione sarebbe vuota.
+    const eventiIniziali = await eventiPerBlocchi(initialHomeBlocks, 'ristorante', ristorante.id, lang)
     return (
       <>
-        <LandingRistorante ristorante={localized} initialHomeBlocks={initialHomeBlocks} domain={searchParams?._domain || null} lang={lang} />
+        <LandingRistorante ristorante={localized} initialHomeBlocks={initialHomeBlocks} eventiIniziali={eventiIniziali} domain={searchParams?._domain || null} lang={lang} />
         <LanguageSwitcher lang={lang} />
       </>
     )
