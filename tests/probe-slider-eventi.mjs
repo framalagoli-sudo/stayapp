@@ -7,7 +7,10 @@
 //  - frecce, dito e tempo fanno scorrere; una scheda apre il suo evento;
 //  - il pulsante porta dove è stato detto, e senza destinazione non c'è;
 //  - valori ostili (forma, indirizzo del pulsante) tornano al predefinito.
-// Infine apre l'editor come il titolare, cambia un'impostazione e salva.
+// Poi le altre cose nate insieme: la scheda «solo locandina», la forma delle
+// locandine nell'elenco, il titolo principale (H1) delle pagine senza copertina.
+// Infine apre l'editor come il titolare: l'anteprima mostra le modifiche PRIMA
+// di salvare, le impostazioni si salvano, e «Pubblica» pubblica davvero.
 //
 // Uso: cd tests && TEST_URL=http://localhost:3000 node probe-slider-eventi.mjs
 import { createClient } from '@supabase/supabase-js'
@@ -46,7 +49,7 @@ try {
     titolo: 'ZZ Carosello', per_view: 3, autoplay: false, show_arrows: true, show_dots: true,
     items: [1, 2, 3, 4, 5].map(n => ({ id: `i${n}`, title: `ZZScheda${n}`, text: 'testo', image_url: `${BASE}/newsletter-esempio.svg` })),
   } }] }).select('id').single(), 'pagina carosello')
-  await deve(a.from('pagine').insert({ entity_tipo: 'ristorante', entity_id: ent.id, slug: 'eventi', titolo: 'Eventi', status: 'pubblicata', nel_menu: true, blocks: [{ id: 'e1', type: 'eventi', data: {} }] }).select('id').single(), 'pagina eventi')
+  const pagEventi = await deve(a.from('pagine').insert({ entity_tipo: 'ristorante', entity_id: ent.id, slug: 'eventi', titolo: 'Eventi', status: 'pubblicata', nel_menu: true, blocks: [{ id: 'e1', type: 'eventi', data: {} }] }).select('id').single(), 'pagina eventi')
   const impostaSlider = extra => deve(a.from('pagine').update({ blocks: [hero, slider(extra)] }).eq('id', home.id).select('id'), 'blocco')
 
   console.log('\nNEL CORPO GREZZO (quello che legge un motore di ricerca)\n')
@@ -77,7 +80,7 @@ try {
     const page = await ctx.newPage()
     page.errori = []; page.on('pageerror', e => page.errori.push(e.message))
     await page.goto(BASE + url, { waitUntil: 'domcontentloaded', timeout: 90000 })
-    await page.getByText('ZZSerata1').first().waitFor({ timeout: 60000 })
+    await page.locator('a[href*="/eventi/zz-serata-1-"]').first().waitFor({ state: 'attached', timeout: 60000 })
     // Le schede sono già nell'HTML: frecce e conti arrivano quando il browser ha finito.
     await page.locator('[data-scorrimento="pronto"]').first().waitFor({ state: 'attached', timeout: 60000 }).catch(() => {})
     return page
@@ -123,9 +126,10 @@ try {
       return { visibili: dentro.length, prima: dentro[0]?.innerText, puntini: document.querySelectorAll('button[aria-label^="Vai a "]').length }
     })
     const prima = await conta()
-    await pc.getByRole('button', { name: 'Successiva' }).click(); await pc.waitForTimeout(900)
+    // Su telefono le frecce non ci sono: si avanza col dito, o da un puntino.
+    await pc.getByRole('button', { name: larghezza < 640 ? 'Vai a 2' : 'Successiva' }).click(); await pc.waitForTimeout(900)
     const dopo = await conta()
-    esito(prima.visibili === attese && prima.puntini === 5 - attese + 1 && dopo.prima === 'ZZScheda2' && !err.length, `a ${larghezza}px: ${attese} per volta, puntini giusti, la freccia avanza`, JSON.stringify({ prima, dopo, err: err[0] }))
+    esito(prima.visibili === attese && prima.puntini === 5 - attese + 1 && dopo.prima === 'ZZScheda2' && !err.length, `a ${larghezza}px: ${attese} per volta, puntini giusti, e si avanza`, JSON.stringify({ prima, dopo, err: err[0] }))
     await ctx.close()
   }
 
@@ -133,16 +137,25 @@ try {
   page = await apri(390)
   m = await misura(page)
   esito(m.schede === 5 && m.visibili === 1 && !m.sborda, 'una scheda per volta, niente fuori schermo', `visibili ${m.visibili}`)
-  // Il dito: da destra a sinistra sulla locandina.
-  const striscia = verso => page.evaluate(verso => {
-    const el = document.querySelector('a[href*="/eventi/zz-serata-"] img'); const r = el.getBoundingClientRect(); const y = r.top + 40
-    const tocco = x => new Touch({ identifier: 1, target: el, clientX: x, clientY: y })
-    const da = verso < 0 ? r.right - 30 : r.left + 30, a = da + verso * 160
-    el.dispatchEvent(new TouchEvent('touchstart', { bubbles: true, touches: [tocco(da)], changedTouches: [tocco(da)] }))
-    el.dispatchEvent(new TouchEvent('touchend', { bubbles: true, touches: [], changedTouches: [tocco(a)] }))
-  }, verso)
-  await striscia(-1); await page.waitForTimeout(900)
-  esito((await misura(page)).prima === 'ZZSerata2', 'col dito verso sinistra si passa alla scheda dopo')
+  esito(!(await page.getByRole('button', { name: 'Successiva' }).isVisible().catch(() => false)), 'su telefono le frecce non ci sono (si scorre col dito)')
+  esito(await page.locator('button[aria-label^="Vai a "]').count() === 5, 'i puntini sì')
+  // Il dito vero, mandato al browser come lo manda uno schermo: da destra a sinistra.
+  const cdp = await page.context().newCDPSession(page)
+  const riq = await page.locator('[data-scorrimento]').boundingBox()
+  const y = riq.y + 150, x0 = riq.x + riq.width - 40
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x0, y }] })
+  for (let k = 1; k <= 10; k++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x0 - k * 22, y }] }); await page.waitForTimeout(16) }
+  const aMeta = await page.evaluate(() => Math.round(document.querySelector('[data-scorrimento]').scrollLeft))
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  esito(aMeta > 60, 'la fila segue il dito mentre lo si trascina', `a metà gesto si è spostata di ${aMeta}px`)
+  await page.waitForFunction(() => {
+    const f = document.querySelector('[data-scorrimento]').getBoundingClientRect()
+    const primo = [...document.querySelectorAll('a[href*="/eventi/zz-serata-"]')].find(x => { const r = x.getBoundingClientRect(); return r.left >= f.left - 2 && r.right <= f.right + 2 })
+    return primo?.innerText.startsWith('ZZSerata2')
+  }, null, { timeout: 6000 }).then(() => esito(true, 'alzato il dito si aggancia alla scheda dopo')).catch(() => esito(false, 'alzato il dito si aggancia alla scheda dopo'))
+  // Si aspetta l'esito, non un tempo: lo scorrimento finisce quando finisce.
+  await page.waitForFunction(() => document.querySelector('button[aria-label="Vai a 2"]')?.getBoundingClientRect().width > 12, null, { timeout: 6000 })
+    .then(() => esito(true, 'e il puntino acceso è il secondo')).catch(() => esito(false, 'e il puntino acceso è il secondo'))
   esito(page.errori.length === 0, 'nessun errore nel browser', page.errori.slice(0, 2).join(' | '))
   await page.context().close()
 
@@ -171,6 +184,37 @@ try {
   esito(await page.getByRole('button', { name: 'Successiva' }).count() === 0, 'niente frecce quando non c’è da scorrere')
   await page.context().close()
 
+  console.log('\nSOLO LA LOCANDINA\n')
+  await impostaSlider({ scheda: 'locandina', autoplay: false })
+  page = await apri(1280)
+  const sola = await page.evaluate(() => { const s = document.querySelector('a[href*="/eventi/zz-serata-1-"]'); return { testo: s.innerText.trim(), alt: s.querySelector('img')?.alt || '', nome: s.getAttribute('aria-label') || '' } })
+  esito(sola.testo === '' && sola.alt.startsWith('ZZSerata1') && sola.nome.startsWith('ZZSerata1'), 'nessun testo sotto, ma il titolo resta per chi non vede la foto', JSON.stringify(sola))
+  await page.locator('a[href*="/eventi/zz-serata-2-"]').click()
+  await page.waitForURL(/\/eventi\/zz-serata-2-/, { timeout: 30000 }).then(() => esito(true, 'la locandina apre il suo evento')).catch(() => esito(false, 'la locandina apre il suo evento', page.url()))
+  await page.context().close()
+
+  console.log('\nL’ELENCO: LA FORMA DELLE LOCANDINE\n')
+  const formaElenco = async () => {
+    const pe = await apri(1280, `/r/${slug}/p/eventi`).catch(() => null); if (!pe) return null
+    const r = await pe.evaluate(() => { const i = document.querySelector('a[href*="/eventi/zz-serata-1-"] img').getBoundingClientRect(); return { alta: Math.round(i.height), rapporto: Math.round(i.width / i.height * 100) / 100 } })
+    await pe.context().close(); return r
+  }
+  let fe = await formaElenco()
+  esito(fe?.alta === 180, 'senza scelta resta la fascia di sempre (180px)', JSON.stringify(fe))
+  await deve(a.from('pagine').update({ blocks: [{ id: 'e1', type: 'eventi', data: { formato: 'verticale' } }] }).eq('id', pagEventi.id).select('id'), 'forma elenco')
+  fe = await formaElenco()
+  esito(fe?.rapporto === 0.8, 'scelta «verticale»: la locandina si vede intera (4:5)', JSON.stringify(fe))
+  await deve(a.from('pagine').update({ blocks: [{ id: 'e1', type: 'eventi', data: { formato: 'x;height:9999px' } }] }).eq('id', pagEventi.id).select('id'), 'forma ostile')
+  fe = await formaElenco()
+  esito(fe?.alta === 180, 'una forma inventata torna alla fascia', JSON.stringify(fe))
+
+  console.log('\nIL TITOLO PRINCIPALE (H1)\n')
+  for (const [nome, url, atteso] of [['home con la copertina', `/r/${slug}`, 'ZZ Locale'], ['pagina «eventi» senza copertina', `/r/${slug}/p/eventi`, 'Prossimi eventi']]) {
+    const html = await (await fetch(BASE + url)).text()
+    const h1 = [...html.matchAll(/<h1[^>]*>([\s\S]*?)<\/h1>/g)].map(x => x[1].replace(/<[^>]+>/g, '').trim())
+    esito(h1.length === 1 && h1[0] === atteso, `${nome}: un solo H1, nel corpo grezzo`, JSON.stringify(h1))
+  }
+
   console.log('\nIL TITOLARE LO REGOLA DALL’EDITOR\n')
   await impostaSlider({})
   const email = `zz-slider-${t}@playwright.internal`, password = randomBytes(24).toString('base64url') + 'Aa1!'
@@ -185,6 +229,15 @@ try {
   await page.getByText('Slider eventi').first().waitFor({ timeout: 60000 })
   await page.getByText('Slider eventi').first().click()
   await page.getByText('Forma delle locandine').waitFor({ timeout: 15000 }).then(() => esito(true, 'il blocco si apre e mostra le sue impostazioni')).catch(() => esito(false, 'il blocco si apre e mostra le sue impostazioni'))
+  // L'anteprima mostra la modifica PRIMA di salvare.
+  await page.getByRole('button', { name: /Anteprima/ }).first().click()
+  const riquadro = page.frameLocator('iframe[title="Anteprima desktop"]')
+  await riquadro.getByText('ZZ In programma').first().waitFor({ timeout: 60000 }).catch(() => {})
+  await page.locator('div', { has: page.locator('> label:text-is("Titolo sezione (vuoto = predefinito)")') }).locator('input').first().fill('ZZ Dal vivo')
+  await riquadro.getByText('ZZ Dal vivo').first().waitFor({ timeout: 15000 }).then(() => esito(true, 'l’anteprima mostra la modifica senza salvare')).catch(() => esito(false, 'l’anteprima mostra la modifica senza salvare'))
+  const nonSalvato = (await deve(a.from('pagine').select('blocks').eq('id', home.id).single(), 'rilettura')).blocks.find(b => b.type === 'eventi_slider').data.titolo
+  esito(nonSalvato === 'ZZ In programma', 'e nel database non è cambiato niente finché non si salva', nonSalvato)
+  await page.getByTitle('Chiudi').click()
   const computer = page.locator('div', { has: page.locator('> label:text-is("Schede per volta — computer")') }).locator('select')
   await computer.selectOption('4')
   await page.getByText('Quadrato', { exact: true }).click()
@@ -193,7 +246,23 @@ try {
   await page.getByRole('button', { name: 'Salva', exact: true }).click()
   esito((await salvato).status() === 200, 'il salvataggio riesce')
   const dopo = (await deve(a.from('pagine').select('blocks').eq('id', home.id).single(), 'rilettura')).blocks.find(b => b.type === 'eventi_slider').data
-  esito(dopo.per_view_desktop === 4 && dopo.formato === 'quadrato' && dopo.cta_label === 'ZZ Vedi il programma', 'nel database ci sono le tre scelte', JSON.stringify(dopo))
+  esito(dopo.per_view_desktop === 4 && dopo.formato === 'quadrato' && dopo.cta_label === 'ZZ Vedi il programma' && dopo.titolo === 'ZZ Dal vivo', 'nel database ci sono le scelte fatte', JSON.stringify(dopo))
+  // Una bozza dice cosa comporta, e «Pubblica» pubblica.
+  await deve(a.from('pagine').update({ status: 'bozza' }).eq('id', pagEventi.id).select('id'), 'bozza')
+  page.on('dialog', d => d.accept())
+  await page.goto(`${BASE}/admin/pagine/${pagEventi.id}`, { waitUntil: 'domcontentloaded' })
+  const stato = page.locator('[data-stato-pagina]')
+  await stato.waitFor({ timeout: 60000 })
+  esito(/nel menu non compare finché non la pubblichi/.test(await stato.innerText()), 'la bozza dice che nel menu non compare')
+  let risposta = page.waitForResponse(r => r.request().method() !== 'GET' && /\/api\/pagine\//.test(r.url()), { timeout: 45000 })
+  await page.getByRole('button', { name: 'Pubblica', exact: true }).click()
+  const statoDi = async () => (await deve(a.from('pagine').select('status').eq('id', pagEventi.id).single(), 'stato')).status
+  esito((await risposta).status() === 200 && await statoDi() === 'pubblicata', '«Pubblica» pubblica davvero, in un gesto')
+  await page.locator('[data-stato-pagina="pubblicata"]').waitFor({ timeout: 15000 }).then(() => esito(true, 'e l’editor lo dice: pubblicata, online e nel menu')).catch(() => esito(false, 'e l’editor lo dice'))
+  risposta = page.waitForResponse(r => r.request().method() !== 'GET' && /\/api\/pagine\//.test(r.url()), { timeout: 45000 })
+  await page.getByRole('button', { name: 'Riporta in bozza' }).click()
+  esito((await risposta).status() === 200 && await statoDi() === 'bozza', '«Riporta in bozza» chiede conferma e la toglie dal sito')
+  await deve(a.from('pagine').update({ status: 'pubblicata' }).eq('id', pagEventi.id).select('id'), 'ripubblica')
   esito(errori.length === 0, 'nessun errore nel browser', errori.slice(0, 2).join(' | '))
   await ctx.close()
   page = await apri(1280)

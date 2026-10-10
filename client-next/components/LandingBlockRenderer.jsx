@@ -1,5 +1,5 @@
 ﻿'use client'
-import { useState, useEffect, useRef, cloneElement } from 'react'
+import { useState, useEffect, useRef, cloneElement, createElement, isValidElement, Fragment } from 'react'
 import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
 import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Mountain, Wind, ChevronDown, ChevronLeft, ChevronRight, Calendar, Users, Check, CheckCircle, Gift, Home, Zap, Shield, Leaf, Sun, Briefcase, Wrench, Euro, Handshake, Smile, Target, TrendingUp, Globe, Camera, BookOpen, Layers, Tag, Search, X, FileText, Ruler, Gauge } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
@@ -769,6 +769,14 @@ function HeroSlider({ block, primary, heading, siteHref = (u) => u || '#' }) {
 const CSS_SCORRIMENTO = [1, 2, 3, 4].map(n => `.scorr[data-t="${n}"]{--pv:${n}}`).join('')
   + '@media(min-width:640px){' + [1, 2, 3, 4].map(n => `.scorr[data-b="${n}"]{--pv:${n}}`).join('') + '}'
   + '@media(min-width:960px){' + [1, 2, 3, 4].map(n => `.scorr[data-c="${n}"]{--pv:${n}}`).join('') + '}'
+  // Lo scorrimento è quello del browser, con l'aggancio alla scheda: sul
+  // telefono la fila segue il dito mentre si trascina, invece di scattare
+  // quando lo si alza. La barra non si disegna.
+  + '.scorr{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}'
+  + '.scorr::-webkit-scrollbar{display:none}'
+  + '.scorr>div{flex:0 0 calc(100% / var(--pv));scroll-snap-align:start;padding:0 10px;box-sizing:border-box}'
+  // Sul telefono si scorre col dito: le frecce coprirebbero solo la foto.
+  + '@media(max-width:639px){.scorr-freccia{display:none!important}}'
 
 function Scorrimento({ schede, visibili, autoplay = true, intervallo = 5, frecce = true, puntini = true, centra = false, primary }) {
   const { telefono, tablet, computer } = visibili
@@ -776,7 +784,7 @@ function Scorrimento({ schede, visibili, autoplay = true, intervallo = 5, frecce
   const [pronto, setPronto] = useState(false)
   const [i, setI] = useState(0)
   const [paused, setPaused] = useState(false)
-  const touchX = useRef(null)
+  const pista = useRef(null)
 
   useEffect(() => {
     const calc = () => {
@@ -788,18 +796,24 @@ function Scorrimento({ schede, visibili, autoplay = true, intervallo = 5, frecce
   }, [telefono, tablet, computer])
 
   const maxI = Math.max(0, schede.length - pv)
-  useEffect(() => { if (i > maxI) setI(maxI) }, [maxI, i])
+  // A che scheda siamo lo dice la posizione della fila: vale per il dito, per
+  // le frecce e per l'avanzamento da solo, senza tenere due conti.
+  const leggiPosizione = () => {
+    const el = pista.current; if (!el || !el.clientWidth) return
+    setI(Math.max(0, Math.min(Math.round(el.scrollLeft / (el.clientWidth / pv)), maxI)))
+  }
+  const go = idx => {
+    const el = pista.current; if (!el) return
+    el.scrollTo({ left: Math.max(0, Math.min(idx, maxI)) * (el.clientWidth / pv), behavior: 'smooth' })
+  }
   const daSolo = autoplay && schede.length > pv
   const interval = Math.max(2, intervallo || 5) * 1000
   useEffect(() => {
     if (!daSolo || paused) return
-    const t = setTimeout(() => setI(p => (p >= maxI ? 0 : p + 1)), interval)
+    const t = setTimeout(() => go(i >= maxI ? 0 : i + 1), interval)
     return () => clearTimeout(t)
   }, [daSolo, paused, i, maxI, interval])
 
-  const go = idx => setI(Math.max(0, Math.min(idx, maxI)))
-  const onTouchStart = e => { touchX.current = e.touches[0].clientX }
-  const onTouchEnd = e => { if (touchX.current == null) return; const dx = e.changedTouches[0].clientX - touchX.current; if (Math.abs(dx) > 45) go(i + (dx < 0 ? 1 : -1)); touchX.current = null }
   const showArrows = pronto && frecce && schede.length > pv
   const showDots = pronto && puntini && maxI > 0
   const arrow = (side, disabled) => ({
@@ -811,21 +825,16 @@ function Scorrimento({ schede, visibili, autoplay = true, intervallo = 5, frecce
 
   return (
     <>
-      <div style={{ position: 'relative' }} onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <div style={{ position: 'relative' }} onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onTouchStart={() => setPaused(true)} onTouchEnd={() => setPaused(false)}>
         <style dangerouslySetInnerHTML={{ __html: CSS_SCORRIMENTO }} />
-        <div data-scorrimento={pronto ? 'pronto' : ''} className="scorr" data-t={telefono} data-b={tablet} data-c={computer} style={{ overflow: 'hidden' }}>
-          <div style={{ display: 'flex', justifyContent: centra && pronto && schede.length < pv ? 'center' : undefined, transform: `translateX(calc(${-i} * 100% / var(--pv)))`, transition: 'transform 0.5s ease' }}>
-            {schede.map(s => (
-              <div key={s.key} style={{ flex: '0 0 calc(100% / var(--pv))', padding: '0 10px', boxSizing: 'border-box' }}>
-                {s.nodo}
-              </div>
-            ))}
-          </div>
+        <div ref={pista} onScroll={leggiPosizione} data-scorrimento={pronto ? 'pronto' : ''} className="scorr" data-t={telefono} data-b={tablet} data-c={computer}
+          style={{ justifyContent: centra && pronto && schede.length < pv ? 'center' : undefined }}>
+          {schede.map(s => <div key={s.key}>{s.nodo}</div>)}
         </div>
         {showArrows && (
           <>
-            <button onClick={() => go(i - 1)} disabled={i <= 0} aria-label="Precedente" style={arrow('left', i <= 0)}><ChevronLeft size={22} strokeWidth={1.5} /></button>
-            <button onClick={() => go(i + 1)} disabled={i >= maxI} aria-label="Successiva" style={arrow('right', i >= maxI)}><ChevronRight size={22} strokeWidth={1.5} /></button>
+            <button className="scorr-freccia" onClick={() => go(i - 1)} disabled={i <= 0} aria-label="Precedente" style={arrow('left', i <= 0)}><ChevronLeft size={22} strokeWidth={1.5} /></button>
+            <button className="scorr-freccia" onClick={() => go(i + 1)} disabled={i >= maxI} aria-label="Successiva" style={arrow('right', i >= maxI)}><ChevronRight size={22} strokeWidth={1.5} /></button>
           </>
         )}
       </div>
@@ -839,6 +848,27 @@ function Scorrimento({ schede, visibili, autoplay = true, intervallo = 5, frecce
       )}
     </>
   )
+}
+
+// Una pagina senza copertina non ha un titolo principale: i blocchi scrivono i
+// loro titoli come H2. Il primo titolo di sezione che si incontra diventa
+// allora l'H1 — stesso aspetto (lo stile è scritto sull'elemento), ruolo
+// diverso: è quello che dice a un motore di ricerca di cosa parla la pagina.
+// Si guarda solo dentro gli elementi semplici: un componente è una scatola chiusa.
+function promuoviPrimoTitolo(el) {
+  if (!isValidElement(el)) return { el, fatto: false }
+  if (el.type === 'h2') return { el: createElement('h1', { ...el.props, key: el.key }), fatto: true }
+  if (typeof el.type !== 'string' && el.type !== Fragment) return { el, fatto: false }
+  const figli = el.props.children
+  if (figli == null || typeof figli === 'string') return { el, fatto: false }
+  const lista = Array.isArray(figli) ? figli : [figli]
+  let fatto = false
+  const nuovi = lista.map(figlio => {
+    if (fatto) return figlio
+    if (Array.isArray(figlio)) return figlio.map(x => { if (fatto) return x; const r = promuoviPrimoTitolo(x); fatto = r.fatto; return r.el })
+    const r = promuoviPrimoTitolo(figlio); fatto = r.fatto; return r.el
+  })
+  return fatto ? { el: cloneElement(el, undefined, ...nuovi), fatto } : { el, fatto }
 }
 
 function Carousel({ block, primary, heading, siteHref = (u) => u || '#' }) {
@@ -1024,7 +1054,28 @@ function VetrinaLeadForm({ entity, entityType, projectTitle, primary, privacyUrl
   )
 }
 
-export default function LandingBlockRenderer({ blocks, entity, entityType, mini, primary, secondary, heading, body, slug, privacyUrl, aziendaId, lang = 'it', base, eventiIniziali = null }) {
+export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, entityType, mini, primary, secondary, heading, body, slug, privacyUrl, aziendaId, lang = 'it', base, eventiIniziali = null }) {
+  // Dentro il riquadro dell'editor la pagina mostra i blocchi come sono in
+  // quel momento, prima di «Salva». Li accetta SOLO dal pannello che la
+  // incornicia (stessa origine, finestra madre) e solo se sono per questa
+  // pagina: aperta da sola, o da chiunque altro, non ascolta nessuno.
+  const [blocchiAnteprima, setBlocchiAnteprima] = useState(null)
+  useEffect(() => {
+    if (window.parent === window) return
+    const ascolta = e => {
+      if (e.origin !== window.location.origin || e.source !== window.parent) return
+      const m = e.data
+      if (m?.tipo !== 'oltrenova:anteprima-blocchi' || !Array.isArray(m.blocks)) return
+      if (m.percorso !== window.location.pathname.replace(/\/$/, '')) return
+      setBlocchiAnteprima(m.blocks)
+    }
+    window.addEventListener('message', ascolta)
+    // Dice al pannello che ora può mandarli (la pagina ha finito di caricarsi).
+    try { window.parent.postMessage({ tipo: 'oltrenova:anteprima-pronta' }, window.location.origin) } catch {}
+    return () => window.removeEventListener('message', ascolta)
+  }, [])
+  const blocks = blocchiAnteprima || blocchiSalvati
+
   const [faqOpen, setFaqOpen] = useState({})
   // Arrivano già dal server quando la pagina ha un blocco che li mostra
   // (`eventiIniziali`); il browser li richiede comunque, per averli freschi.
@@ -1100,9 +1151,10 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
 
   // La scheda di un evento, in programma o concluso. Funzione normale e non
   // componente: definito qui dentro, un componente si rimonterebbe a ogni render.
-  // `rapporto` = la forma della locandina quando la decide il blocco (lo
-  // slider); senza, la fascia di sempre dell'elenco.
-  function renderEventoCard(ev, concluso, rapporto = null) {
+  // `rapporto` = la forma della locandina quando la decide il blocco; senza,
+  // la fascia di sempre dell'elenco. `soloLocandina` = niente testi sotto: per
+  // le locandine che hanno già tutto scritto sopra (senza foto resta la scheda intera).
+  function renderEventoCard(ev, concluso, { rapporto = null, soloLocandina = false } = {}) {
     // Il giorno nel fuso dell'evento: una serata che comincia a mezzanotte
     // cambierebbe data a seconda di dove si trova chi guarda.
     const dateStr = oraLocale(ev.date_start, ev.fuso, {
@@ -1112,6 +1164,11 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
     const prezzo = concluso ? null : prezzoDaMostrare(ev, { gratuito: tr('free', lang) })
     // L'indirizzo parlante quando c'è: è quello che finisce nei risultati di
     // ricerca e nei link condivisi. L'id resta come ripiego.
+    if (soloLocandina && ev.cover_url) return (
+      <a key={ev.id} href={`/eventi/${ev.slug || ev.id}?back=${encodeURIComponent(homeUrl)}`} aria-label={`${ev.title} — ${dateStr}`} style={{ display: 'block', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: '1px solid var(--bordo)' }}>
+        <img src={ev.cover_url} alt={`${ev.title} — ${dateStr}`} draggable={false} style={{ width: '100%', aspectRatio: rapporto || '4 / 5', objectFit: 'cover', objectPosition: ev.cover_focal || 'center', display: 'block' }} />
+      </a>
+    )
     return (
       <a key={ev.id} href={`/eventi/${ev.slug || ev.id}?back=${encodeURIComponent(homeUrl)}`} style={{ background: 'var(--sup-2)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', display: 'block', textDecoration: 'none', color: 'inherit', border: '1px solid var(--bordo)', height: rapporto ? '100%' : undefined, boxSizing: 'border-box' }}>
         {ev.cover_url
@@ -2131,6 +2188,8 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
         // sono la prova che le serate si fanno davvero. Si spengono dal blocco.
         const passati = d.mostra_passati === false ? [] : eventiPassati.slice(0, d.limit || 6)
         if (!eventi.length && !passati.length) return null
+        // La forma delle locandine, se scelta: senza, la fascia di sempre.
+        const forma = { rapporto: rapportoOppure(d.formato, null) }
         return (
           <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
             <div className="lbr-section">
@@ -2142,13 +2201,13 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
               )}
               {eventi.length > 0 && (
                 <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 16 }}>
-                  {eventi.slice(0, d.limit || eventi.length).map(ev => renderEventoCard(ev, false))}
+                  {eventi.slice(0, d.limit || eventi.length).map(ev => renderEventoCard(ev, false, forma))}
                 </div>
               )}
               {passati.length > 0 && <>
                 <h3 style={{ fontFamily: heading, fontSize: 'clamp(18px,2.4vw,24px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)', margin: eventi.length ? '56px 0 24px' : '28px 0 24px' }}>{tr('past_events', lang)}</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 16 }}>
-                  {passati.map(ev => renderEventoCard(ev, true))}
+                  {passati.map(ev => renderEventoCard(ev, true, forma))}
                 </div>
               </>}
             </div>
@@ -2172,7 +2231,7 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
               <Scorrimento
                 visibili={{ telefono, tablet: Math.max(telefono, 2), computer }} centra
                 autoplay={d.autoplay !== false} intervallo={d.interval} primary={primary}
-                schede={mostrati.map(ev => ({ key: ev.id, nodo: renderEventoCard(ev, false, rapporto) }))}
+                schede={mostrati.map(ev => ({ key: ev.id, nodo: renderEventoCard(ev, false, { rapporto, soloLocandina: d.scheda === 'locandina' }) }))}
               />
               {/* Senza destinazione niente pulsante: un pulsante che non porta
                   da nessuna parte è peggio di un pulsante assente. */}
@@ -2276,6 +2335,10 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
     }
   }
 
+  // Senza una copertina col suo titolo la pagina non ha un H1: lo diventa il
+  // primo titolo di sezione (vedi promuoviPrimoTitolo).
+  let mancaH1 = !blocks.some(b => (b?.type === 'hero' && b.data?.title) || (b?.type === 'hero_slider' && b.data?.slides?.[0]?.title))
+
   return (
     <>
       <style>{`
@@ -2324,7 +2387,8 @@ export default function LandingBlockRenderer({ blocks, entity, entityType, mini,
       `}</style>
       <div ref={animRef} style={{ '--icon-color': (entity?.theme?.iconColor || primary) }}>
         {blocks.map((b, i) => {
-          const el = applyBlockStyle(renderBlock(b, blockInverted(b, primary, sec), blocks[i + 1]), b, { primary, secondary: sec })
+          let el = applyBlockStyle(renderBlock(b, blockInverted(b, primary, sec), blocks[i + 1]), b, { primary, secondary: sec })
+          if (mancaH1 && el) { const r = promuoviPrimoTitolo(el); if (r.fatto) { el = r.el; mancaH1 = false } }
           return (!el || i === 0) ? el : cloneElement(el, { className: ((el.props.className || '') + ' lbr-reveal').trim() })
         })}
       </div>

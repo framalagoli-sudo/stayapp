@@ -590,6 +590,15 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - Stesso giro: il caricamento tagliava gli eventi **a sei** prima che il blocco applicasse il suo «Quanti elementi» (Garage 22 ne aveva sette); e il blocco «Form contatti» proponeva al super_admin i moduli di **tutte** le aziende — ora `/api/form-builder?entity_tipo=&entity_id=` li limita all'azienda del sito aperto (anche nell'elenco delle traduzioni).
     - Sonda `tests/probe-slider-eventi.mjs`: corpo grezzo, computer e telefono, frecce/dito/tempo, valori ostili (forma inventata, `javascript:`), editor aperto come il titolare, e il Carosello a tre larghezze.
 
+61. **✋ Editor e sito: sette ritocchi nati guardando Garage 22** (10/10/2026, proposti da Ettore, «fai tutto» di Francesco).
+    - **Lo scorrimento è quello del browser** (`scroll-snap`): su telefono la fila segue il dito mentre si trascina; a che scheda siamo lo dice `scrollLeft`, un conto solo per dito, frecce e tempo. **Su telefono le frecce non ci sono** (`.scorr-freccia`), restano i puntini. Vale anche per il Carosello.
+    - Slider: scheda **«solo la locandina»** (`scheda: 'locandina'`) — il titolo resta in `alt` e `aria-label`; un evento senza foto mostra la scheda intera. Elenco «Prossimi eventi»: **«Forma delle locandine»** (`formato`), con la fascia di 180px come assenza di scelta.
+    - **Una pagina senza copertina ha comunque un H1**: `promuoviPrimoTitolo` trasforma in H1 il primo H2 dei blocchi quando nessun `hero`/`hero_slider` ne porta uno. Stesso aspetto (lo stile è sull'elemento). ⚠️ Guarda solo dentro gli elementi semplici: il titolo di un blocco che è un **componente** (Carosello, Form) non lo vede, e si passa al blocco dopo.
+    - **L'anteprima dell'editor mostra le modifiche prima di «Salva»**: l'editor manda i blocchi al riquadro con `postMessage` (`oltrenova:anteprima-blocchi`), `LandingBlockRenderer` li accetta **solo** dalla finestra madre, della stessa origine, e solo se il percorso è il suo. Aperta da sola la pagina non ascolta nessuno. ⚠️ Vale per i **blocchi**: titolo, menu e header della pagina si vedono dopo il salvataggio; una pagina ancora senza blocchi salvati non ha un riquadro da aggiornare.
+    - ⛔ L'anteprima nel riquadro era **bianca dal 14/09** per ogni sito con un dominio proprio: il 307 verso il dominio del cliente la rendeva un altro indirizzo, e `frame-ancestors 'self'` la bloccava. Il middleware non rimanda più se c'è `?preview` o `sec-fetch-dest: iframe`. In locale il redirect non esiste: si vede solo in produzione.
+    - **Lo stato della pagina dice cosa comporta**: una bozza spiega che sul sito e nel menu non compare, e **«Pubblica» pubblica in un gesto** (`save({ status })`); «Riporta in bozza» chiede conferma. Prima era una casella «○ Bozza» accanto a «Mostra nel menu», accese tutte e due e la pagina non si vedeva.
+    - 🖥️ Il server di sviluppo avviato da questa sessione **viene fermato dopo due ore** (limite dei comandi in sottofondo) e resta in piedi rotto, a rispondere 500: le sonde locali falliscono a caso. Se una sonda locale impazzisce a metà, prima `curl localhost:3000`.
+
 ---
 
 ## Roadmap

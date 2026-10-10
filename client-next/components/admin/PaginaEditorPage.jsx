@@ -236,6 +236,14 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
         {/* Assente = acceso: i blocchi eventi già sui siti li mostrano senza
             che nessuno debba tornare a spuntarli. */}
         {type === 'eventi' && (
+          <SelettoreFormato
+            valore={data.formato || ''} onChange={v => upd('formato', v)}
+            formati={[{ chiave: '', etichetta: 'Fascia', misura: 'come adesso', rapporto: '16 / 9' }, ...FORMATI]}
+            titolo="Forma delle locandine"
+            aiuto="«Fascia» taglia la foto a una striscia bassa: una locandina verticale si vede a metà. Le altre forme valgono per tutte le schede insieme."
+          />
+        )}
+        {type === 'eventi' && (
           <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#333', cursor: 'pointer', lineHeight: 1.5 }}>
             <input type="checkbox" checked={data.mostra_passati !== false} onChange={e => upd('mostra_passati', e.target.checked)} style={{ marginTop: 3 }} />
             <span>Mostra anche gli eventi passati<br />
@@ -410,6 +418,14 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
             titolo="Forma delle locandine"
             aiuto="Vale per tutte le schede insieme. Quale parte della foto resta visibile lo dice il punto focale scelto nell'evento."
           />
+          <div>
+            <label style={etichetta}>Cosa c'è in ogni scheda</label>
+            <select value={data.scheda || 'completa'} onChange={e => upd('scheda', e.target.value)} style={sel}>
+              <option value="completa">Locandina, titolo, data e prezzo</option>
+              <option value="locandina">Solo la locandina</option>
+            </select>
+            <p style={{ fontSize: 11, color: '#aaa', margin: '4px 0 0' }}>«Solo la locandina» è per le locandine che hanno già tutto scritto sopra. Un evento senza foto mostra comunque titolo e data.</p>
+          </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 120 }}>
               <label style={etichetta}>Schede per volta — telefono</label>
@@ -438,7 +454,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
               </label>
             )}
           </div>
-          <p style={{ fontSize: 11, color: '#aaa', margin: 0 }}>Su telefono si scorre col dito, su computer con le frecce. Si ferma mentre ci si passa sopra.</p>
+          <p style={{ fontSize: 11, color: '#aaa', margin: 0 }}>Su telefono si scorre col dito (le frecce lì non ci sono), su computer con le frecce. Si ferma mentre ci si passa sopra.</p>
           <div style={{ borderTop: '1px solid #eee', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <Field label="Testo del pulsante" value={data.cta_label} onChange={v => upd('cta_label', v)} placeholder="Scopri tutti gli eventi" />
             <LinkField label="Dove porta il pulsante" value={data.cta_url} onChange={v => upd('cta_url', v)} placeholder="Scegli una pagina o incolla un indirizzo" />
@@ -1502,6 +1518,26 @@ export default function PaginaEditorPage() {
     return previewToken
   }
 
+  // I blocchi come sono adesso vanno al riquadro dell'anteprima, che li
+  // disegna senza aspettare «Salva». Solo alla nostra stessa origine.
+  const riquadro = useRef(null)
+  const mandaAnteprima = useCallback(() => {
+    const percorso = previewUrl(); const finestra = riquadro.current?.contentWindow
+    if (!percorso || !finestra) return
+    try { finestra.postMessage({ tipo: 'oltrenova:anteprima-blocchi', percorso, blocks }, window.location.origin) } catch {}
+  }, [blocks, entitySlug, page?.slug, page?.entity_tipo])
+  useEffect(() => {
+    if (!showPreview || !dirty) return
+    const t = setTimeout(mandaAnteprima, 250)
+    return () => clearTimeout(t)
+  }, [blocks, showPreview, dirty, mandaAnteprima])
+  // La pagina nel riquadro avvisa quando ha finito di caricarsi: da lì in poi ascolta.
+  useEffect(() => {
+    const pronta = e => { if (e.origin === window.location.origin && e.data?.tipo === 'oltrenova:anteprima-pronta' && dirty) mandaAnteprima() }
+    window.addEventListener('message', pronta)
+    return () => window.removeEventListener('message', pronta)
+  }, [dirty, mandaAnteprima])
+
   function copyLink() {
     const url = previewUrl(); if (!url) return
     navigator.clipboard.writeText(window.location.origin + url)
@@ -1613,7 +1649,10 @@ export default function PaginaEditorPage() {
 
   function resetBlockDrag() { setDragBlockId(null); setDragOverPos(null) }
 
-  async function save() {
+  // `sopra` = campi della pagina da cambiare insieme al salvataggio (pubblicare,
+  // riportare in bozza): un pulsante «Pubblica» che poi chiede un altro clic
+  // su «Salva» non ha pubblicato niente.
+  async function save(sopra = {}) {
     setSaving(true); setSaveError(null)
     try {
       await apiFetch(`/api/pagine/${pageId}`, {
@@ -1623,9 +1662,10 @@ export default function PaginaEditorPage() {
           nel_menu: page.nel_menu, seo_title: page.seo_title,
           seo_description: page.seo_description, og_image_url: page.og_image_url,
           hide_header: !!page.hide_header, hide_footer: !!page.hide_footer,
-          blocks,
+          blocks, ...sopra,
         }),
       })
+      if (Object.keys(sopra).length) setPage(p => ({ ...p, ...sopra }))
       setDirty(false); setSaved(true); setTimeout(() => setSaved(false), 2000)
       setPreviewNonce(n => n + 1)   // ricarica l'anteprima in-editor
     } catch (err) {
@@ -1681,7 +1721,7 @@ export default function PaginaEditorPage() {
             {dirty ? '💾 Salva e apri' : '↗ Apri'}
           </button>
         )}
-        <button onClick={save} disabled={saving || !dirty}
+        <button onClick={() => save()} disabled={saving || !dirty}
           style={{ background: dirty ? '#1a1a2e' : '#e0e0e0', color: dirty ? '#fff' : '#999', border: 'none', borderRadius: 8, padding: '10px 22px', cursor: dirty ? 'pointer' : 'default', fontSize: 14, fontWeight: 600, flexShrink: 0 }}>
           {saving ? 'Salvando...' : 'Salva'}
         </button>
@@ -1701,16 +1741,16 @@ export default function PaginaEditorPage() {
               <button onClick={() => setPreviewNonce(n => n + 1)} title="Aggiorna" style={iconBtn}>↻</button>
               <button onClick={() => setShowPreview(false)} title="Chiudi" style={iconBtn}>✕</button>
             </div>
-            {dirty && <div style={{ fontSize: 11, color: '#856404', background: '#fff3cd', padding: '6px 12px', textAlign: 'center' }}>Salva per aggiornare l'anteprima</div>}
+            {dirty && <div style={{ fontSize: 11, color: '#856404', background: '#fff3cd', padding: '6px 12px', textAlign: 'center' }}>Stai vedendo le modifiche ai blocchi non ancora salvate: sul sito arrivano con «Salva».</div>}
             <div style={{ flex: 1, overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: previewDevice === 'mobile' ? 14 : 0 }}>
               {previewDevice === 'desktop' ? (
                 <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
-                  <iframe key={previewNonce} src={src} title="Anteprima desktop"
+                  <iframe ref={riquadro} key={previewNonce} src={src} title="Anteprima desktop"
                     style={{ width: 1350, height: '250%', border: 0, transform: 'scale(0.4)', transformOrigin: 'top left' }} />
                 </div>
               ) : (
                 <div style={{ width: 390, height: '100%', border: '8px solid #1a1a2e', borderRadius: 30, overflow: 'hidden', background: '#fff' }}>
-                  <iframe key={previewNonce} src={src} title="Anteprima mobile" style={{ width: '100%', height: '100%', border: 0 }} />
+                  <iframe ref={riquadro} key={previewNonce} src={src} title="Anteprima mobile" style={{ width: '100%', height: '100%', border: 0 }} />
                 </div>
               )}
             </div>
@@ -1754,13 +1794,21 @@ export default function PaginaEditorPage() {
             </div>
           </div>
         </div>
+        {/* Lo stato dice cosa comporta, e si cambia con un gesto solo. */}
+        {page.status === 'pubblicata' ? (
+          <div data-stato-pagina="pubblicata" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', background: '#eaf7ee', border: '1px solid #c6e9cf', borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
+            <span style={{ flex: '1 1 240px', fontSize: 13, color: '#155724' }}><strong>✓ Pubblicata</strong> — è online{page.nel_menu && page.slug !== '__home__' ? ' e compare nel menu del sito' : ''}.{dirty ? ' Le modifiche di adesso arrivano sul sito con «Salva».' : ''}</span>
+            <button type="button" disabled={saving} onClick={() => { if (window.confirm('La pagina sparirà dal sito' + (page.nel_menu ? ' e dal menu' : '') + ' finché non la pubblichi di nuovo. Continuare?')) save({ status: 'bozza' }) }}
+              style={{ background: 'none', border: 'none', color: '#555', textDecoration: 'underline', cursor: 'pointer', fontSize: 12.5, padding: 0, flexShrink: 0 }}>Riporta in bozza</button>
+          </div>
+        ) : (
+          <div data-stato-pagina="bozza" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', background: '#fff8e1', border: '1px solid #f3e2a6', borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
+            <span style={{ flex: '1 1 240px', fontSize: 13, color: '#6b5200', lineHeight: 1.5 }}><strong>Bozza</strong> — sul sito non si vede{page.nel_menu ? ', e nel menu non compare finché non la pubblichi' : ''}. La vedi solo tu, dall'anteprima.</span>
+            <button type="button" disabled={saving} onClick={() => save({ status: 'pubblicata' })}
+              style={{ background: '#1a7f37', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', cursor: 'pointer', fontSize: 13.5, fontWeight: 700, flexShrink: 0 }}>{saving ? 'Pubblico…' : 'Pubblica'}</button>
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
-            <input type="checkbox" checked={page.status === 'pubblicata'} onChange={e => patchPage('status', e.target.checked ? 'pubblicata' : 'bozza')} />
-            <span style={{ fontWeight: 600, color: page.status === 'pubblicata' ? '#155724' : '#856404' }}>
-              {page.status === 'pubblicata' ? '✓ Pubblicata' : '○ Bozza'}
-            </span>
-          </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
             <input type="checkbox" checked={!!page.nel_menu} onChange={e => patchPage('nel_menu', e.target.checked)} />
             Mostra nel menu di navigazione
