@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireAuth, getEntityAziendaId } from '@/lib/server-auth'
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
@@ -21,6 +21,13 @@ export async function GET(request) {
     if (profile.role !== 'super_admin') {
       if (!profile.azienda_id) return Response.json([])
       q = q.eq('azienda_id', profile.azienda_id)
+    } else if (searchParams.get('entity_id')) {
+      // Chi sta lavorando sul sito di un'entità vede i moduli della SUA azienda:
+      // il super_admin altrimenti li riceve tutti, e può agganciare al sito di
+      // un cliente il modulo di un altro (le risposte finirebbero a quest'ultimo).
+      const aziendaId = await getEntityAziendaId(searchParams.get('entity_tipo'), searchParams.get('entity_id'))
+      if (!aziendaId) return Response.json([])
+      q = q.eq('azienda_id', aziendaId)
     } else if (searchParams.get('azienda_id')) {
       q = q.eq('azienda_id', searchParams.get('azienda_id'))
     }

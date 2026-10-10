@@ -23,7 +23,7 @@ export default function TraduzioniSito({ entityTipo, entityId }) {
     if (!entityId) return
     Promise.all([
       apiFetch(`/api/pagine?entity_tipo=${entityTipo}&entity_id=${entityId}`).catch(() => []),
-      apiFetch('/api/form-builder').catch(() => []),
+      apiFetch(`/api/form-builder?entity_tipo=${entityTipo}&entity_id=${entityId}`).catch(() => []),
     ]).then(([pagine, forms]) => {
       const pg = (Array.isArray(pagine) ? pagine : []).map(p => ({
         tipo: 'pagina', id: p.id, label: p.slug === '__home__' ? 'Home' : (p.titolo || 'Pagina'),

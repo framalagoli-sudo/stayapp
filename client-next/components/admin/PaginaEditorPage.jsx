@@ -937,7 +937,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
       </div>
     )
     case 'form_builder': return (
-      <FormBuilderBlockEditor data={data} onChange={upd} />
+      <FormBuilderBlockEditor data={data} onChange={upd} entityId={entityId} entityTipo={entityTipo} />
     )
     // ⚠️ Questi due blocchi non avevano **nessuna** configurazione: si
     // trascinavano nella pagina e non chiedevano niente. E se non c'era niente
@@ -1108,11 +1108,13 @@ function BlockStylePanel({ block, onChange, entityId, entityTipo }) {
 }
 
 // ── FormBuilderBlockEditor — carica lista form e mostra picker ───────────────
-function FormBuilderBlockEditor({ data, onChange }) {
+function FormBuilderBlockEditor({ data, onChange, entityId, entityTipo }) {
   const [forms, setForms] = useState([])
+  // Con l'entità: i moduli dell'azienda di QUESTO sito, anche per il super_admin.
   useEffect(() => {
-    apiFetch('/api/form-builder').then(f => setForms(f)).catch(() => {})
-  }, [])
+    if (!entityId) return
+    apiFetch(`/api/form-builder?entity_tipo=${entityTipo}&entity_id=${entityId}`).then(f => setForms(Array.isArray(f) ? f : [])).catch(() => {})
+  }, [entityId, entityTipo])
 
   const selectedForm = forms.find(f => f.token === data.form_token)
 
