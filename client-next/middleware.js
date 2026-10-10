@@ -86,6 +86,14 @@ async function versoIlDominioDelCliente(request, hostname, pathname, lang) {
   // Solo dal dominio della piattaforma, mai da localhost o dalle anteprime.
   if (hostname !== STAYAPP_DOMAIN && hostname !== `www.${STAYAPP_DOMAIN}`) return null
 
+  // L'anteprima dell'editor è un riquadro DENTRO il pannello: portata sul
+  // dominio del cliente diventa un altro indirizzo, e il browser si rifiuta di
+  // mostrarla (`frame-ancestors 'self'`) — il riquadro restava bianco per ogni
+  // sito con un dominio suo. Resta da noi la pagina col permesso di anteprima,
+  // e ogni clic fatto dentro un riquadro. Nessun altro sito può incorniciarci:
+  // la regola sui riquadri non cambia.
+  if (request.nextUrl.searchParams.has('preview') || request.headers.get('sec-fetch-dest') === 'iframe') return null
+
   const sito = pathname.match(/^\/(s|r|a)\/([^/?#]+)(\/.*)?$/)
   const evento = pathname.match(/^\/eventi\/([^/?#]+)$/)
   let dominio = null, resto = ''
