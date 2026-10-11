@@ -548,6 +548,15 @@ Chi compra o subentra deve saperlo prima, non dopo.
   Negozio e prenotazioni delle risorse sono provati solo da noi. Dall'08/10/2026
   anche le risorse hanno la cassa a scadenza, e c'è il link di pagamento per le
   prenotazioni prese a voce: nessuno dei due ha ancora visto un pagamento vero.
+  Misurato l'11/10/2026 chiedendolo a Stripe (`tests/probe-stripe-conti.mjs`):
+  i conti collegati sono **due** — Garage22 attivo, **Automax a metà** (iscrizione
+  cominciata e non finita: si completa da `Account → Pagamenti`). Finché è a
+  metà il pulsante «paga online» compare lo stesso e la cassa non si apre: è il
+  difetto «stato vero del conto», ancora da correggere.
+- **Il nome che un cliente legge mentre collega Stripe** è il «Nome commerciale»
+  del conto Stripe della piattaforma (*Impostazioni → Attività → Informazioni per
+  il cliente*), con la sua icona quadrata. Fino all'11/10/2026 c'era scritto
+  «Francesco Malagoli», la ragione sociale; ora «OltreNova» col simbolo.
 - **Nessuna newsletter è ancora partita a clienti veri.** Al 05/10/2026 in
   produzione ci sono due bozze e zero invii. L'editor, i destinatari per lista, la
   disiscrizione e il consenso sono provati da noi, con invii alla casella di prova

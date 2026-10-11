@@ -140,7 +140,7 @@ export function sezionePerEditor(el, blocco, editor, { primo, ultimo }) {
   const azione = (e, quale) => { e.preventDefault(); e.stopPropagation(); parla({ tipo: 'oltrenova:blocco-azione', id: blocco.id, azione: quale }) }
   return (
     <div key={blocco.id} data-blocco={blocco.id} data-nome={blockLabel(blocco.type)} className={'ev-blocco' + (scelto ? ' ev-scelto' : '')}>
-      {el || <div className="ev-vuoto">«{blockLabel(blocco.type)}» è ancora vuoto: clicca qui e riempilo dalla colonna a sinistra.</div>}
+      {el || <div className="ev-vuoto">«{blockLabel(blocco.type)}» qui non mostra ancora niente. Clicca per aprire la sua scheda.</div>}
       {scelto && (
         <div className="ev-binario">
           <div className="ev-barra">

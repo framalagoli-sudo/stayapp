@@ -10,6 +10,15 @@ metadata:
 
 # Si riprende da qui
 
+## ▶️ 11/10 — sessione lunga in autonomia (Francesco ha lasciato il PC acceso). Migration ferme alla **135**.
+- ✅ **Editor visuale delle pagine** LIVE e provato in produzione (CLAUDE.md nota 64, sonda probe-editor-visuale.mjs): pulsante «Editor visuale» nell'editor di una pagina. Francesco NON l'ha ancora visto: fargli aprire una pagina di Guru → «Editor visuale» → trascinare un blocco, cliccare una sezione. Chiedergli se lo vuole come modo predefinito (oggi lo è l'elenco) e se servono le colonne libere (cambio di forma dei dati: decisione sua).
+- ✅ Corretti due difetti del testo formattato (aprire un blocco lo segnava «non salvato»; scrivendo in fretta si perdeva una lettera).
+- ✅ Stripe: nome «OltreNova» e icona nell'iscrizione dei clienti (li ha messi Francesco; verificato su un link vero).
+- ✅ Editor dell'assistente a 360px riaperto in produzione: a posto.
+- ⏳ Posta di Guru: sempre in attesa del clic di verifica del cliente su infogururoma@gmail.com.
+- ⏳ Automax: conto Stripe a metà, deve finire da Account → Pagamenti.
+- Aperti come prima: stato vero del conto Stripe (serve Francesco 5 minuti per la sandbox) · Meta/WhatsApp (serve lui) · onboarding v2 · banner dei cookie sulla barra in basso delle app del QR.
+
 ## ▶️ 10/10 sera — SESSIONE CHIUSA. Migration ferme alla **135**. Cosa è stato fatto → [[project-session-2026-10-10]] · CLAUDE.md note 60–62
 
 ### ⛔ PRIMA COSA: posta di Guru — 11/10: zona ATTIVA, MX e SPF di Cloudflare misurati, catch-all creato; MANCA SOLO la verifica di infogururoma@gmail.com da parte del cliente, poi la prova di invio di Francesco (passi sotto: storico)
