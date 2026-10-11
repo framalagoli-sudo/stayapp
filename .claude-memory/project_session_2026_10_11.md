@@ -18,4 +18,6 @@ metadata:
 
 **Cosa ho imparato (mio):** la prima ipotesi sul «non salvato» era sbagliata e l'avevo già scritta nel codice; l'ha smentita rimisurare e poi leggere il dato vero nel database. E la sonda, verde in locale, in produzione dava due rossi perché controllava senza aspettare l'esito — vedi [[reference-trappole-script-e-sonde]].
 
+**12/10 — Francesco l'ha provato e l'ha bocciato** («sembra la versione cinese di Elementor»): trascinava un blocco, scriveva a sinistra e sulla pagina non compariva niente. Causa: i blocchi non disegnano nulla finché non hanno un elemento, e la mia sonda controllava dove cadeva il blocco, non che si vedesse. Corretto lo stesso giorno: blocchi che nascono già scritti + testi scrivibili direttamente sulla pagina (`lib/editor-visuale.js`, CLAUDE.md nota 64). Avevo scritto «quello che scrivi si vede subito»: era vero solo per i blocchi che avevo provato io (testo, copertina).
+
 Da dove si riprende → [[todo-prossima-sessione]].

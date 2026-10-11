@@ -20,6 +20,7 @@ import RichTextEditor from '@/components/admin/RichTextEditor'
 import MediaPickerButton from '@/components/admin/MediaPicker'
 import UnsplashPicker from '@/components/admin/UnsplashPicker'
 import { BLOCK_PATTERNS } from '@/lib/blockPatterns'
+import { datiDiNascita, scriviCampo } from '@/lib/editor-visuale'
 import { TIPO_TRASCINATO } from '@/components/EditorNelRiquadro'
 import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS, BLOCK_GLOW_OPTIONS, BLOCK_PADY_OPTIONS, blockSupportsBg, BLOCK_TEXT_SIZE_OPTIONS, BLOCK_TEXT_COLOR_OPTIONS, BLOCK_ICON_COLOR_OPTIONS, blockHasText, GRID_AUTO_BLOCKS, BLOCK_COLUMNS_OPTIONS } from '@/lib/blockTypes'
 
@@ -1576,6 +1577,11 @@ export default function PaginaEditorPage() {
       const [cosa, quale] = String(m.cosa || '').split(':')
       if (cosa === 'nuovo' && tipoAmmesso(quale)) addBlock(quale, prima)
       else if (cosa === 'sposta' && esiste(quale)) moveBlock(quale, prima)
+    } else if (m.tipo === 'oltrenova:campo-scritto' && esiste(m.id)) {
+      // Un testo scritto direttamente sulla pagina. `scriviCampo` accetta solo
+      // un testo al posto di un testo, in un campo fatto di parole.
+      const dati = scriviCampo(blocks.find(b => b.id === m.id).data, m.percorso, m.valore)
+      if (dati) { if (expandedId !== m.id) setExpandedId(m.id); updateBlock(m.id, dati) }
     } else if (m.tipo === 'oltrenova:blocco-azione' && esiste(m.id)) {
       if (m.azione === 'su') spostaDi(m.id, -1)
       else if (m.azione === 'giu') spostaDi(m.id, 1)
@@ -1643,7 +1649,9 @@ export default function PaginaEditorPage() {
   }
   // `prima` = id del blocco davanti a cui metterlo; senza, va in fondo.
   function addBlock(type, prima = null) {
-    const b = { id: uid(), type, data: { ...BLOCK_DEFAULTS[type] } }
+    // Nell'editor visuale un blocco nasce già scritto: sulla pagina si vede
+    // subito com'è fatto. Dall'elenco nasce vuoto, com'è sempre stato.
+    const b = { id: uid(), type, data: visuale ? datiDiNascita(type, BLOCK_DEFAULTS[type], uid) : { ...BLOCK_DEFAULTS[type] } }
     const i = prima ? blocks.findIndex(x => x.id === prima) : -1
     const nb = [...blocks]; nb.splice(i < 0 ? nb.length : i, 0, b)
     patchBlocks(nb)
@@ -1882,7 +1890,7 @@ export default function PaginaEditorPage() {
                   <>
                     <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
                       <div style={{ fontSize: 12.5, color: '#666', lineHeight: 1.5, marginBottom: 10 }}>
-                        <strong style={{ color: '#1a1a2e' }}>Trascina un blocco nella pagina</strong>, nel punto in cui lo vuoi. Per modificare una sezione, cliccala.
+                        <strong style={{ color: '#1a1a2e' }}>Trascina un blocco nella pagina</strong>, nel punto in cui lo vuoi: compare già scritto. <strong style={{ color: '#1a1a2e' }}>Per cambiare un testo, cliccalo e scrivi</strong> direttamente sulla pagina. Foto, link e stile sono nella scheda che si apre qui cliccando la sezione.
                       </div>
                       <input placeholder="Cerca blocco…" value={cercaBlocco} onChange={e => setCercaBlocco(e.target.value)}
                         style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #e0e0e8', borderRadius: 8, fontSize: 13, boxSizing: 'border-box', outline: 'none' }} />

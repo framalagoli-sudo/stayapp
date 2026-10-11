@@ -7,7 +7,7 @@ import BookingWidget from './BookingWidget'
 import ShopBlocco from './ShopBlocco'
 import MenuTab from '@/components/MenuTab'
 import Turnstile from '@/components/Turnstile'
-import { useEditorNelRiquadro, sezionePerEditor, InizioPagina } from '@/components/EditorNelRiquadro'
+import { useEditorNelRiquadro, sezionePerEditor, InizioPagina, conLaScritturaInCorso } from '@/components/EditorNelRiquadro'
 import { applyBlockStyle, blockInverted, textSizeScale, textColorFor, gridTemplate, readableOn, resolveBlockBg } from '@/lib/blockTypes'
 import { ReviewSourceLogo } from '@/lib/reviewLogos'
 import { RichText, richIsEmpty } from '@/lib/richText'
@@ -1064,7 +1064,6 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
   // L'editor visuale del pannello: quale sezione è scelta e a che scala è
   // mostrato il riquadro. Arriva con lo stesso messaggio, dalle stesse mani.
   const [editor, setEditor] = useState(null)
-  useEditorNelRiquadro(editor)
   useEffect(() => {
     if (window.parent === window) return
     const ascolta = e => {
@@ -1072,7 +1071,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
       const m = e.data
       if (m?.tipo !== 'oltrenova:anteprima-blocchi' || !Array.isArray(m.blocks)) return
       if (m.percorso !== window.location.pathname.replace(/\/$/, '')) return
-      setBlocchiAnteprima(m.blocks)
+      setBlocchiAnteprima(m.visuale === true ? conLaScritturaInCorso(m.blocks) : m.blocks)
       setEditor(m.visuale === true ? { selezionato: typeof m.selezionato === 'string' ? m.selezionato : null, scala: Number(m.scala) > 0.1 && Number(m.scala) <= 1 ? Number(m.scala) : 1 } : null)
     }
     window.addEventListener('message', ascolta)
@@ -1081,6 +1080,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
     return () => window.removeEventListener('message', ascolta)
   }, [])
   const blocks = blocchiAnteprima || blocchiSalvati
+  useEditorNelRiquadro(editor, blocks)
 
   const [faqOpen, setFaqOpen] = useState({})
   // Arrivano già dal server quando la pagina ha un blocco che li mostra
