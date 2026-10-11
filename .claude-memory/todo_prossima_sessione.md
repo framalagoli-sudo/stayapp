@@ -19,6 +19,8 @@ metadata:
 4. Finché non è fatto, la posta @gurumanagement.it va al server SiteGround che si spegne: se l hosting è già scaduto le email tornano indietro.
 
 ### Subito dopo
+- ✅ 11/10 **Banner dei cookie: pulsanti fissi sopra il banner** (scelta B di Francesco) + editor assistente a una colonna su telefono — LIVE, CLAUDE.md nota 63, sonda probe-banner-cookie.mjs.
+- ⏳ **Stato vero del conto Stripe** — Francesco ha scelto la strada 1 (attivare un conto di prova nella sandbox, poi correggere puoIncassare). Misurato 11/10: nessuno dei 4 conti sandbox è attivo eppure la cassa si apre; l iscrizione ospitata ha un CAPTCHA e l API rifiuta i dati dell intestatario (forbidden) e il conto bancario → la deve fare Francesco a mano: `cd tests; node stripe-sandbox-link.mjs` stampa il link (conto acct_1UATI4L24buL8fjD, ora «pending», tipo persona fisica messo da me). Quando è «active»: puoIncassare chiede statoAccount (memoria breve; su ERRORE di Stripe resta il sì di prima, mai «gratis» per un guasto), aggiornare probe-risorse-pagamento 1b (a metà → niente cassa, niente allarme) e controllare probe-evento-riepilogo (usa acct finto → errore → sì).
 - ✅ 11/10 **Pannello Domini corretto e LIVE** (rispondeDaNoi, sonda probe-dominio-altrove.mjs; CLAUDE.md nota 62).
 - Guru: far provare a Francesco il modulo contatti (gurumanagement.it/p/contatti → deve arrivare a infogururoma@gmail.com); chiedere se serve un utente titolare.
 - info@oltrenova.com è solo un inoltro: se serve rispondere da lì, Zoho resta da aprire (decisione sua).
