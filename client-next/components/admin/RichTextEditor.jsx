@@ -1,5 +1,5 @@
 ﻿'use client'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
@@ -12,7 +12,7 @@ const BTN = {
   padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center',
   fontSize: 13, color: '#444',
 }
-const BTN_ACTIVE = { ...BTN, background: '#1a1a2e', color: '#fff', borderColor: '#1a1a2e' }
+const BTN_ACTIVE = { ...BTN, background: '#1a1a2e', color: '#fff', border: '1px solid #1a1a2e' }
 
 function ToolbarButton({ onClick, active, title, children }) {
   return (
@@ -22,9 +22,25 @@ function ToolbarButton({ onClick, active, title, children }) {
   )
 }
 
+// Un documento scritto sempre nello stesso ordine di chiavi. Il database
+// restituisce il JSON con le chiavi riordinate: confrontato così com'è, lo
+// stesso identico testo risultava «diverso» da quello dell'editor, veniva
+// rimesso dentro, e bastava aprire un blocco per trovarlo «non salvato».
+function inOrdine(v) {
+  if (Array.isArray(v)) return v.map(inOrdine)
+  if (v && typeof v === 'object') return Object.fromEntries(Object.keys(v).sort().map(k => [k, inOrdine(v[k])]))
+  return v
+}
+const impronta = doc => JSON.stringify(inOrdine(doc))
+
 // format: 'html' (blog, default) | 'json' (blocchi sito → render sicuro via walker).
 // minimal: nasconde citazione/separatore per una toolbar essenziale (target SMB).
 export default function RichTextEditor({ content, onChange, placeholder = 'Scrivi il contenuto dell\'articolo…', format = 'html', minimal = false }) {
+  // Quello che l'editor ha appena detto di contenere. Il testo fa un giro
+  // (editor → pagina → di nuovo qui) e mentre si scrive in fretta torna
+  // indietro una versione di un istante prima: rimetterla dentro cancellava
+  // l'ultima lettera battuta.
+  const eco = useRef([])
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -34,18 +50,36 @@ export default function RichTextEditor({ content, onChange, placeholder = 'Scriv
       Placeholder.configure({ placeholder }),
     ],
     content: content || '',
-    onUpdate: ({ editor }) => onChange(format === 'json' ? editor.getJSON() : editor.getHTML()),
+    onUpdate: ({ editor }) => {
+      const v = format === 'json' ? editor.getJSON() : editor.getHTML()
+      eco.current = [...eco.current.slice(-40), format === 'json' ? impronta(v) : v]
+      onChange(v)
+    },
   })
+
+  // Il testo con cui l'editor è nato ce l'ha già dentro: rimetterglielo viene
+  // letto come una modifica, e bastava APRIRE un blocco con un testo scritto nel
+  // formato di prima per trovarlo «non salvato» e riscritto senza aver toccato niente.
+  const allaNascita = useRef(content)
+  const giaAllineato = useRef(false)
 
   // Aggiorna il contenuto quando cambia esternamente (es. caricamento da DB, insert AI)
   useEffect(() => {
     if (!editor || content === undefined) return
+    const primaVolta = !giaAllineato.current
+    giaAllineato.current = true
+    // Mentre ci si scrive dentro, una versione che l'editor stesso ha appena
+    // emesso non è una novità. Fuori dal campo (annulla, inserimento dell'AI)
+    // quello che arriva si applica sempre.
+    const inArrivo = format === 'json' ? (content && typeof content === 'object' ? impronta(content) : null) : content
+    if (inArrivo !== null && editor.isFocused && eco.current.includes(inArrivo)) return
     if (format === 'json') {
-      const incoming = content && typeof content === 'object' ? JSON.stringify(content) : null
+      const incoming = inArrivo
       if (incoming === null) {
         // stringa legacy o da AI: imposta solo se non vuota (Tiptap la converte in doc)
+        if (primaVolta && content === allaNascita.current) return
         if (typeof content === 'string' && content.trim() !== '') editor.commands.setContent(content)
-      } else if (incoming !== JSON.stringify(editor.getJSON())) {
+      } else if (incoming !== impronta(editor.getJSON())) {
         editor.commands.setContent(content)
       }
     } else if (editor.getHTML() !== content) {

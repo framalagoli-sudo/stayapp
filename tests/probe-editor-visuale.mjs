@@ -39,10 +39,12 @@ try {
   az = await deve(a.from('aziende').insert({ ragione_sociale: `ZZ-VISUALE-${t}`, require_2fa: false, moduli: { ristorante: true } }).select().single(), 'azienda')
   const ent = await deve(a.from('entita').insert({ azienda_id: az.id, tipo: 'ristorante', name: 'ZZ Locale', slug, active: true, minisito: { active: true } }).select().single(), 'entità')
   const hero = { id: 'b-hero', type: 'hero', data: { title: 'ZZ Copertina', height: 'compatta' } }
-  const chi = { id: 'b-chi', type: 'about', data: { title: 'ZZ Chi siamo', text: 'Testo di prova della sezione.' } }
+  // I due formati in cui un testo può essere salvato: qui un documento (e il
+  // database ne riordina le chiavi), nell'altra pagina una stringa, com'era prima.
+  const chi = { id: 'b-chi', type: 'about', data: { title: 'ZZ Chi siamo', text: { type: 'doc', content: [{ type: 'paragraph', attrs: { textAlign: null }, content: [{ text: 'Testo di prova', type: 'text', marks: [{ type: 'bold' }] }, { text: ' della sezione.', type: 'text' }] }] } } }
   const home = await deve(a.from('pagine').insert({ entity_tipo: 'ristorante', entity_id: ent.id, slug: '__home__', titolo: 'Home', status: 'pubblicata', blocks: [hero, chi] }).select('id').single(), 'home')
   const vuota = await deve(a.from('pagine').insert({ entity_tipo: 'ristorante', entity_id: ent.id, slug: 'vuota', titolo: 'ZZ Vuota', status: 'bozza', nel_menu: true, blocks: [] }).select('id').single(), 'pagina vuota')
-  await deve(a.from('pagine').insert({ entity_tipo: 'ristorante', entity_id: ent.id, slug: 'altra', titolo: 'ZZ Altra', status: 'pubblicata', nel_menu: true, blocks: [{ id: 'b-altra', type: 'about', data: { title: 'ZZ Altra pagina' } }] }).select('id').single(), 'altra pagina')
+  const altra = await deve(a.from('pagine').insert({ entity_tipo: 'ristorante', entity_id: ent.id, slug: 'altra', titolo: 'ZZ Altra', status: 'pubblicata', nel_menu: true, blocks: [{ id: 'b-altra', type: 'about', data: { title: 'ZZ Altra pagina', text: 'Un testo scritto nel formato di prima.' } }] }).select('id').single(), 'altra pagina')
 
   console.log('\nLA PAGINA PUBBLICA, APERTA DA SOLA\n')
   for (const url of [`/r/${slug}`, `/r/${slug}?visuale=1`]) {
@@ -59,6 +61,7 @@ try {
     storageState: { cookies: [], origins: [{ origin: new URL(BASE).origin, localStorage: [{ name: `sb-${projectRef}-auth-token`, value: JSON.stringify(s.session) }] }] } })
   const page = await ctx.newPage()
   const errori = []; page.on('pageerror', e => errori.push(e.message))
+  page.on('console', m => { if (m.type() === 'error' && !/favicon|Failed to load resource/.test(m.text())) errori.push('console: ' + m.text().slice(0, 300)) })
   page.on('dialog', d => d.accept())
 
   // Il riquadro e quello che ci si legge dentro.
@@ -101,11 +104,22 @@ try {
   console.log('\nSCEGLIERE E SCRIVERE\n')
   await riq().locator('[data-blocco="b-chi"]').click({ position: { x: 40, y: 20 } })
   await page.locator('[data-scheda-blocco]').waitFor({ timeout: 15000 })
-  esito(await riq().locator('[data-blocco="b-chi"].ev-scelto').count() === 1, 'un clic sulla sezione la sceglie e apre la sua scheda')
-  esito(await riq().locator('.ev-barra').isVisible(), 'sulla sezione scelta compaiono i comandi')
+  // La scelta fa un giro: pagina → pannello → pagina. Si aspetta l'esito, non un tempo.
+  const sceltaVista = await riq().locator('[data-blocco="b-chi"].ev-scelto').waitFor({ timeout: 15000 }).then(() => true, () => false)
+  esito(sceltaVista, 'un clic sulla sezione la sceglie e apre la sua scheda')
+  esito(await riq().locator('[data-blocco="b-chi"] .ev-barra').waitFor({ timeout: 15000 }).then(() => true, () => false), 'sulla sezione scelta compaiono i comandi')
+  // Guardare non è modificare: il testo c'è già, in tutti e due i formati in cui può essere salvato.
+  await page.waitForTimeout(900)
+  esito(await page.locator('[data-editor-visuale]').getByText('Non salvato').count() === 0, 'scegliere una sezione non la segna come modificata')
   const campo = page.locator('[data-scheda-blocco] input').first()
   await campo.fill('ZZ Titolo cambiato')
   await riq().getByText('ZZ Titolo cambiato').first().waitFor({ timeout: 15000 }).then(() => esito(true, 'scrivere nella scheda cambia la pagina senza salvare'), () => esito(false, 'scrivere nella scheda cambia la pagina senza salvare'))
+  await page.locator('[data-scheda-blocco] .ProseMirror').click()
+  // Battuta in fretta, senza pause: nessuna lettera deve perdersi per strada.
+  const frase = ' ZZaggiunta scritta in fretta, tutta di seguito, senza fermarsi mai'
+  await page.keyboard.press('Control+End'); await page.keyboard.type(frase)
+  const arrivata = await riq().getByText(frase.trim()).first().waitFor({ timeout: 15000 }).then(() => true, () => false)
+  esito(arrivata, 'il testo formattato arriva sulla pagina mentre si scrive, senza perdere lettere', arrivata ? '' : (await page.locator('[data-scheda-blocco] .ProseMirror').innerText()).slice(0, 120))
   await foto(page, '2-scheda')
 
   console.log('\nTRASCINARE UN BLOCCO NELLA PAGINA\n')
@@ -203,6 +217,15 @@ try {
   let due = []; for (let i = 0; i < 40 && due.length !== 2; i++) { await page.waitForTimeout(150); due = await ordine().catch(() => []) }
   esito(due.length === 2 && due[0] === primo[0], 'un clic su un blocco della colonna lo mette in fondo')
   await foto(page, '5-pagina-vuota')
+
+  console.log('\nUN TESTO NEL FORMATO DI PRIMA\n')
+  await page.goto(`${BASE}/admin/pagine/${altra.id}`, { waitUntil: 'domcontentloaded', timeout: 120000 })
+  await page.getByRole('button', { name: 'Editor visuale' }).click()
+  await riq().locator('[data-blocco="b-altra"]').click({ position: { x: 40, y: 20 }, timeout: 120000 })
+  await riq().locator('[data-blocco="b-altra"].ev-scelto').waitFor({ timeout: 15000 })
+  await page.locator('[data-scheda-blocco] .ProseMirror').waitFor({ timeout: 15000 })
+  await page.waitForTimeout(900)
+  esito(await page.locator('[data-editor-visuale]').getByText('Non salvato').count() === 0, 'anche qui, scegliere la sezione non la segna come modificata')
 
   console.log('\nERRORI\n')
   esito(errori.length === 0, 'nessun errore nel browser', errori.slice(0, 3).join(' | '))
