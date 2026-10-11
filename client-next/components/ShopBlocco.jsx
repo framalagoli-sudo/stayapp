@@ -6,6 +6,7 @@ import { injectJsonLd, buildProductsSchema } from '@/lib/geoSchema'
 import { formatoValido, rapportoDi, focalValido } from '@/lib/formati-foto'
 import { TESTO_CONSENSO_ORDINE } from '@/lib/consenso-ordine'
 import SpuntaPromozioni from '@/components/guest/SpuntaPromozioni'
+import { sopraIlBanner } from '@/components/CookieBanner'
 
 // Il catalogo dello shop dentro un sito: schede, carrello, ordine.
 //
@@ -226,7 +227,7 @@ export default function ShopBlocco({ aziendaId, prodotti = [], primary, heading,
       )}
       {quanti > 0 && !aperto && (
         <button type="button" aria-label={`Carrello: ${quanti} prodotti`} onClick={() => { setAperto(true); setPasso('carrello') }}
-          style={{ position: 'fixed', left: 20, bottom: 20, zIndex: 8000, display: 'flex', alignItems: 'center', gap: 8, background: primary, color: '#fff', border: 'none', borderRadius: 50, padding: '12px 18px', cursor: 'pointer', fontWeight: 700, fontSize: 14, boxShadow: '0 6px 24px rgba(0,0,0,0.22)' }}>
+          style={{ position: 'fixed', left: 20, bottom: sopraIlBanner(20), zIndex: 8000, display: 'flex', alignItems: 'center', gap: 8, background: primary, color: '#fff', border: 'none', borderRadius: 50, padding: '12px 18px', cursor: 'pointer', fontWeight: 700, fontSize: 14, boxShadow: '0 6px 24px rgba(0,0,0,0.22)' }}>
           <ShoppingCart size={18} strokeWidth={1.5} /> {quanti}
         </button>
       )}

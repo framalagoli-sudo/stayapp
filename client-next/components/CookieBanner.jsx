@@ -1,10 +1,20 @@
 ﻿'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { t } from '@/lib/i18n'
 import { readableOn } from '@/lib/blockTypes'
 
 const KEY = 'cookie_consent_v2'
+
+// Quanto sollevare un pulsante fisso in basso (WhatsApp, assistente, carrello)
+// perché non resti SOTTO il banner. Il banner pubblica la propria altezza in
+// `--spazio-banner` finché è aperto; chiuso, la variabile non c'è e il
+// pulsante sta dov'è sempre stato.
+//
+// ⛔ Su telefono il banner è alto 119px e copriva per intero il pulsante di
+// WhatsApp: chi arrivava per la prima volta non vedeva come scrivere al locale
+// finché non rispondeva ai cookie (misurato l'11/10/2026 su tre siti veri).
+export const sopraIlBanner = px => `calc(${px}px + var(--spazio-banner, 0px))`
 
 export default function CookieBanner({ primaryColor = '#00b5b5', privacyUrl, cookieUrl, lang = 'it' }) {
   // ⛔ I link usavano il colore del tema del cliente: su un banner scuro, un
@@ -16,12 +26,26 @@ export default function CookieBanner({ primaryColor = '#00b5b5', privacyUrl, coo
   // restare leggibile. Con la soglia da pulsante passavano a 3,57.
   const coloreLink = readableOn(primaryColor, '#1a1a2e', '#ffffff', 4.5)
   const [visible, setVisible] = useState(false)
+  const riquadro = useRef(null)
 
   useEffect(() => {
     try {
       if (!localStorage.getItem(KEY)) setVisible(true)
     } catch {}
   }, [])
+
+  // L'altezza cambia con la larghezza dello schermo e con la lingua (il testo
+  // va a capo): si misura, non si scrive a mano.
+  useEffect(() => {
+    const el = riquadro.current
+    if (!visible || !el) return
+    const radice = document.documentElement
+    const misura = () => radice.style.setProperty('--spazio-banner', `${el.offsetHeight}px`)
+    misura()
+    const oss = typeof ResizeObserver === 'function' ? new ResizeObserver(misura) : null
+    oss?.observe(el)
+    return () => { oss?.disconnect(); radice.style.removeProperty('--spazio-banner') }
+  }, [visible])
 
   function accept() { try { localStorage.setItem(KEY, 'accepted') } catch {} setVisible(false) }
   function reject()  { try { localStorage.setItem(KEY, 'rejected') } catch {} setVisible(false) }
@@ -32,7 +56,7 @@ export default function CookieBanner({ primaryColor = '#00b5b5', privacyUrl, coo
     // `data-cookie-banner`: chi apre un pannello fisso in basso (il carrello
     // dello shop) lo usa per lasciargli spazio. Il banner resta SOPRA a tutto
     // di proposito — la scelta sui cookie non deve mai finire coperta.
-    <div data-cookie-banner style={{
+    <div data-cookie-banner ref={riquadro} style={{
       position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 2147483647,
       background: '#1a1a2e', color: '#fff',
       padding: '16px 20px', display: 'flex', alignItems: 'center',

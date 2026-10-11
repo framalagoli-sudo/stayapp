@@ -200,7 +200,13 @@ export default function ChatbotEditor({ chatbot: initialChatbot, onSave, saving,
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 16 }}>
+      {/* Su telefono i passi e il loro editor stanno uno sotto l'altro: affiancati,
+          l'editor finiva per metà fuori dallo schermo e le opzioni non si leggevano. */}
+      <style>{`@media (max-width: 767px) {
+        .cbe-colonne, .cbe-due, .cbe-opzione { grid-template-columns: minmax(0, 1fr) !important; }
+        .cbe-opzione > button { justify-self: end; margin-top: 0 !important; }
+      }`}</style>
+      <div className="cbe-colonne" style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 16 }}>
 
         {/* ── Lista passi (sinistra) ── */}
         <div>
@@ -247,7 +253,7 @@ export default function ChatbotEditor({ chatbot: initialChatbot, onSave, saving,
         {selectedNode && (
           <div>
             <div style={card}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
+              <div className="cbe-due" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 16 }}>
                 <div>
                   <span style={label}>Nome del passo (solo admin)</span>
                   <input
@@ -276,7 +282,7 @@ export default function ChatbotEditor({ chatbot: initialChatbot, onSave, saving,
             </div>
 
             {(selectedNode.options || []).map((opt, i) => (
-              <div key={opt.id} style={{ ...card, display: 'grid', gridTemplateColumns: '1fr 160px 1fr auto', gap: 10, alignItems: 'end', padding: '12px 14px' }}>
+              <div key={opt.id} className="cbe-opzione" style={{ ...card, display: 'grid', gridTemplateColumns: '1fr 160px 1fr auto', gap: 10, alignItems: 'end', padding: '12px 14px' }}>
                 <div>
                   {i === 0 && <span style={label}>Testo pulsante</span>}
                   <input

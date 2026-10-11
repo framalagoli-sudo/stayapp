@@ -1,5 +1,6 @@
 ﻿'use client'
 import { useState } from 'react'
+import { sopraIlBanner } from '@/components/CookieBanner'
 
 const WA_SVG = (
   <svg width="26" height="26" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
@@ -34,7 +35,7 @@ export default function WhatsAppButton({ whatsapp, entityName, fixed = false, ha
       {open && (
         <div style={{
           position: pos,
-          bottom: 92,
+          bottom: fixed ? sopraIlBanner(92) : 92,
           right,
           width: 280,
           background: '#fff',
@@ -118,7 +119,7 @@ export default function WhatsAppButton({ whatsapp, entityName, fixed = false, ha
         title="Scrivici su WhatsApp"
         style={{
           position: pos,
-          bottom: 24,
+          bottom: fixed ? sopraIlBanner(24) : 24,
           right,
           width: 56,
           height: 56,

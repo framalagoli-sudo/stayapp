@@ -608,6 +608,12 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - **«Va sul vecchio» dopo un cambio DNS**: prima i resolver pubblici (8.8.8.8, 1.1.1.1, 9.9.9.9), poi il PC. Il router di casa tiene il vecchio indirizzo per il suo tempo di cache, e `www` e apex scadono in momenti diversi. In PowerShell `Resolve-DnsName -Name 'dominio.it.' -Server 8.8.8.8 -DnsOnly` (col punto finale: senza, il router aggiunge il suo suffisso e risponde su un altro dominio).
     - **Cloudflare Email Routing, i tre inciampi**: gli MX vecchi non li toglie lui (DNS → Records, a mano); verificare la destinazione **non crea la regola** (Routing rules → Create address); gli indirizzi di destinazione valgono per l'account, quindi si possono far verificare prima che la zona sia attiva.
 
+63. **🍪 Il banner dei cookie non copre più i pulsanti per contattare il locale** (11/10/2026, scelta di Francesco fra due proposte con le schermate). Su telefono il banner è alto 119px e sta sopra a tutto, di proposito: il pulsante di WhatsApp ci finiva **sotto per intero**, su tutti i siti.
+    - `CookieBanner` pubblica la propria altezza in `--spazio-banner` finché è aperto (misurata, non scritta: cambia con la larghezza e con la lingua). Chi sta fisso in basso usa **`sopraIlBanner(px)`** (stesso file): WhatsApp e il suo riquadro, l'assistente e il suo pannello, il pulsante del carrello. Chiuso il banner la variabile sparisce e tutto torna dov'era.
+    - Vale solo per i pulsanti `fixed` dei **siti**. Nelle app del QR i pulsanti sono dentro il contenitore dell'app e non cambiano; lì il banner copre ancora la barra in basso finché non si risponde.
+    - Un pulsante fisso nuovo in basso su un sito deve usare `sopraIlBanner`. Sonda `tests/probe-banner-cookie.mjs` (pagine pubbliche, telefono e computer, non scrive niente).
+    - Stesso giro: **l'editor dell'assistente su telefono** era a due colonne affiancate e la seconda usciva dallo schermo per metà (la sonda del pannello segnalava solo «2px» sul pulsante: misurava il pulsante, non la colonna che lo conteneva). Sotto i 767px passi ed editor stanno uno sotto l'altro.
+
 ---
 
 ## Roadmap

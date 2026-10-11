@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { MessageCircle, X, Send } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import { t } from '@/lib/i18n'
+import { sopraIlBanner } from '@/components/CookieBanner'
 
 // fixed=false → posizionato dentro il container PWA (position:absolute)
 // fixed=true  → floating su landing page (position:fixed)
@@ -132,7 +133,7 @@ export default function ChatbotWidget({ chatbot, primaryColor, fixed = false, en
       {!embedded && !open && (
         <div style={{
           position: fixed ? 'fixed' : 'absolute',
-          bottom: fixed ? 24 : 70, right: fixed ? 24 : 12,
+          bottom: fixed ? sopraIlBanner(24) : 70, right: fixed ? 24 : 12,
           zIndex: 9999, animation: 'cb-slidein .3s ease',
         }}>
           <button
@@ -155,7 +156,7 @@ export default function ChatbotWidget({ chatbot, primaryColor, fixed = false, en
         <div style={embedded ? {
           display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, background: '#f0f0f0',
         } : fixed ? {
-          position: 'fixed', bottom: 90, right: 24, zIndex: 9999,
+          position: 'fixed', bottom: sopraIlBanner(90), right: 24, zIndex: 9999,
           width: 360, height: 520, borderRadius: 18,
           display: 'flex', flexDirection: 'column',
           background: '#f0f0f0', overflow: 'hidden',
