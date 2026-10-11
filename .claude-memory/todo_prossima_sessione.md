@@ -12,14 +12,14 @@ metadata:
 
 ## ▶️ 10/10 sera — SESSIONE CHIUSA. Migration ferme alla **135**. Cosa è stato fatto → [[project-session-2026-10-10]] · CLAUDE.md note 60–62
 
-### ⛔ PRIMA COSA: finire la posta di Guru (l hosting SiteGround scade l 11/10)
+### ⛔ PRIMA COSA: posta di Guru — 11/10: zona ATTIVA, MX e SPF di Cloudflare misurati, catch-all creato; MANCA SOLO la verifica di infogururoma@gmail.com da parte del cliente, poi la prova di invio di Francesco (passi sotto: storico)
 1. Misurare se il cambio nameserver è visibile: Resolve-DnsName -Name gurumanagement.it. -Type NS -Server 8.8.8.8 -DnsOnly → deve dare mona / quincy.ns.cloudflare.com. Su Cloudflare la zona passa da Pending ad Active.
 2. Guidare Francesco (PRIMA spiegare il disegno in tre righe, poi i clic): Email → Email Routing → Enable; destinazione infogururoma@gmail.com (il cliente deve cliccare il link di verifica); Routing rules → Catch-all → Send to an email; togliere a mano da DNS → Records i tre MX mailspamprotection.com e il TXT SPF dnssmarthost.net, lasciare _dmarc e i tre record del sito (2 A + CNAME www, DNS only).
 3. Rimisurare: MX route1/2/3.mx.cloudflare.net, SPF _spf.mx.cloudflare.net, sito ancora 200 da Vercel, www ancora 307. Poi una prova vera di Francesco.
 4. Finché non è fatto, la posta @gurumanagement.it va al server SiteGround che si spegne: se l hosting è già scaduto le email tornano indietro.
 
 ### Subito dopo
-- 🐛 **Pannello Domini: «Online» falso** quando risponde un altro server (diagnosticaDominio in lib/vercel-domains.js: prova.raggiungibile → attivo). Far riconoscere una risposta NOSTRA e tenere conto di misconfigured. In roadmap di CLAUDE.md.
+- ✅ 11/10 **Pannello Domini corretto e LIVE** (rispondeDaNoi, sonda probe-dominio-altrove.mjs; CLAUDE.md nota 62).
 - Guru: far provare a Francesco il modulo contatti (gurumanagement.it/p/contatti → deve arrivare a infogururoma@gmail.com); chiedere se serve un utente titolare.
 - info@oltrenova.com è solo un inoltro: se serve rispondere da lì, Zoho resta da aprire (decisione sua).
 - Resta dal 09/10: «Aggiungi opzione» del chatbot tagliato di 2px a 360px; banner dei cookie che copre un elemento fisso su telefono.

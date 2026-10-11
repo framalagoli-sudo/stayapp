@@ -73,10 +73,11 @@ try {
 
   // Il controllo che conta davvero: lo slug scritto nel dominio deve esistere.
   console.log('\n--- allineamento slug ---')
-  const tabelle = { struttura: 'properties', ristorante: 'ristoranti', attivita: 'attivita' }
+  // Le entità stanno tutte in `entita`: le tre tabelle storiche sono ferme, e chi è nato dopo
+  // l'unificazione lì non c'è (la sonda dava per orfani domini sanissimi).
   let disallineati = 0
   for (const d of domini || []) {
-    const { data: e } = await admin.from(tabelle[d.entity_tipo]).select('slug').eq('id', d.entity_id).maybeSingle()
+    const { data: e } = await admin.from('entita').select('slug').eq('id', d.entity_id).maybeSingle()
     if (!e) { console.log(`✗ ${d.dominio}: entità inesistente (record orfano)`); disallineati++ }
     else if (e.slug !== d.entity_slug) { console.log(`✗ ${d.dominio}: copia "${d.entity_slug}" ≠ reale "${e.slug}"`); disallineati++ }
   }
