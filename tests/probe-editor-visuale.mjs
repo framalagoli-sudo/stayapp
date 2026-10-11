@@ -65,7 +65,9 @@ try {
     storageState: { cookies: [], origins: [{ origin: new URL(BASE).origin, localStorage: [{ name: `sb-${projectRef}-auth-token`, value: JSON.stringify(s.session) }] }] } })
   const page = await ctx.newPage()
   const errori = []; page.on('pageerror', e => errori.push(e.message))
-  page.on('console', m => { if (m.type() === 'error' && !/favicon|Failed to load resource/.test(m.text())) errori.push('console: ' + m.text().slice(0, 300)) })
+  // Il controllo anti-spam di Cloudflare (blocco «Newsletter», solo in produzione)
+  // scrive un suo errore in console dal proprio riquadro: non è codice nostro.
+  page.on('console', m => { if (m.type() === 'error' && !/favicon|Failed to load resource/.test(m.text()) && !(m.location()?.url || '').startsWith('https://challenges.cloudflare.com/')) errori.push('console: ' + m.text().slice(0, 300) + ' ← ' + (m.location()?.url || '?').slice(0, 120)) })
   page.on('dialog', d => d.accept())
 
   // Il riquadro e quello che ci si legge dentro.
