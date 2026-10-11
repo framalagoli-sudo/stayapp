@@ -456,7 +456,7 @@ function IndirizziCollegati({ dom, d, onCopia, copiato }) {
     dominio: dom.dominio,
     ok: !sospeso,
     nota: sospeso
-      ? `Non risponde da ${d.salute.fallimenti_consecutivi} controlli di fila: per ora chi apre il tuo indirizzo incluso o il QR resta lì`
+      ? `${d.salute.ultima_causa === 'altrove' ? 'Risponde da un altro server' : 'Non risponde'} da ${d.salute.fallimenti_consecutivi} controlli di fila: per ora chi apre il tuo indirizzo incluso o il QR resta lì`
       : d.prova_https?.status >= 300 && d.prova_https?.status < 400
         ? 'Porta all’altro indirizzo'
         : 'Apre il sito · protetto da certificato',

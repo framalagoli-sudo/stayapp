@@ -335,7 +335,7 @@ senza permesso»): è la classe che ha lasciato passare il primo caso.
 | Blocco «Form contatti» nell'editor | al super_admin proponeva i moduli di tutte le aziende: si poteva agganciare al sito di un cliente il modulo di un altro | `/api/form-builder?entity_tipo=&entity_id=` limita all'azienda del sito aperto |
 | Anteprima dal vivo dell'editor | non esisteva | `postMessage` accettato solo dalla finestra madre, stessa origine, stesso percorso (invariante 24) |
 | Posti e locandine nello slider eventi | — | forma e numero di schede da catalogo chiuso; destinazione del pulsante da `safeUrl` (provato con valori ostili) |
-| Pannello Domini | dichiara «Online» se risponde un server qualsiasi | ⚠️ **aperto**: non è una fuga di dati, ma uno stato falso che il cliente legge come «fatto» |
+| Pannello Domini | dichiarava «Online» se rispondeva un server qualsiasi, e ci mandava i visitatori | ✅ 11/10: vale solo una risposta nostra (`rispondeDaNoi`); un dominio passato a un altro server fa sospendere il redirect |
 
 Lavoro fuori dal codice, stesso giorno: la posta in arrivo di `oltrenova.com` è passata a un
 inoltro Cloudflare. Chi controlla quell'account Cloudflare ora legge anche la posta di `info@`,

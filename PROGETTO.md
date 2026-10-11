@@ -16,7 +16,7 @@ pagarlo**.
 > dentro GitHub, che è uno degli accessi che descrive: se nessuno può entrare in
 > GitHub, nessuno può leggere queste istruzioni. Va tenuta una copia fuori.
 
-*Aggiornato al 10 ottobre 2026.*
+*Aggiornato all'11 ottobre 2026.*
 
 ---
 
@@ -567,10 +567,6 @@ Chi compra o subentra deve saperlo prima, non dopo.
   `STRATEGIA.md` §6.1). Le funzioni restano nel codice: nascoste, non tolte.
 - **L'esportazione dei dati di un'azienda è incompleta**: copre circa 15 tabelle
   su 50. Per una richiesta di portabilità (GDPR) oggi non basta.
-- **Il pannello Domini può dire «Online» a torto.** Trovato il 10/10/2026: lo
-  stato diventa «attivo» appena l'indirizzo risponde, anche se a rispondere è
-  ancora il vecchio server del cliente. Chi collega un dominio già in uso può
-  credere di aver finito. Da correggere (nota 62 in `CLAUDE.md`).
 - **`oltrenova.com` non ha una casella di posta**: `info@` è un inoltro. Per
   rispondere da quell'indirizzo serve una casella vera (era stato scelto Zoho
   Mail Lite, mai aperto).
@@ -657,4 +653,4 @@ Restano di pensiero, e non li controlla nessuna macchina: i costi, i piani, il
 
 ---
 
-*Documento di progetto — aggiornato al 10 ottobre 2026.*
+*Documento di progetto — aggiornato all'11 ottobre 2026.*

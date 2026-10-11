@@ -545,7 +545,7 @@ Il refactor verso "Business" generico richiede principalmente:
 - [x] **Passkey attivate** su Supabase (RP ID `oltrenova.com`, origins con e senza `www`) ✅ 18/08 — ⚠️ da rifare se cambia il dominio del pannello, altrimenti le passkey registrate smettono di funzionare
 
 - [ ] **Record DNS per Fondaco Narni** — `fondaconarni.com` senza `www` non risolve ancora (DNS su **SiteGround**): serve un record `A` con nome `@` verso gli IP mostrati nella pagina Domini della sua scheda (leggerli da lì: Vercel li cambia). Da noi è già tutto agganciato
-- [ ] **Pannello Domini: «Online» falso** (trovato il 10/10 su `gurumanagement.it`) — lo stato passa ad «attivo» quando l'indirizzo risponde, anche se risponde il vecchio server del cliente e i DNS non puntano ancora a noi. La prova deve riconoscere una risposta nostra
+- [x] **Pannello Domini: «Online» falso** ✅ 11/10 (trovato il 10/10 su `gurumanagement.it`) — lo stato passava ad «attivo» quando l'indirizzo rispondeva, anche dal vecchio server del cliente. Ora conta solo una risposta nostra; chi collega un dominio già in uso legge «risponde, ma dal vecchio hosting» con i record da correggere
 - [x] **`garage22terni.it` senza www** ✅ 18/08 — record aggiunto su SiteGround da Francesco, verificato: risponde e reindirizza a `www`
 - [ ] **Struttura orfana** — `futura-club-spiagge-bianche` ("Hotel di prova due", creata 23/04/2026) ha `azienda_id` **NULL**, unica nel DB: non può avere un indirizzo incluso e compare nei problemi della manutenzione domini. Assegnarla a un'azienda o cancellarla
 - [ ] **`fondaconarni.com` apex nel pannello** — valutare se aggiungerlo come dominio collegato nella scheda del ristorante, così lo stato è visibile e la pagina dice da sola quando è a posto

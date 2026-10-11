@@ -1,7 +1,7 @@
 import { supabaseAdmin } from './supabase-server'
 import { ENTITY_TABLES } from './server-auth'
 import { assicuraSottodominio, registraSottodominio } from './create-subdomain'
-import { diagnosticaDominio, verifyProjectDomain, addProjectDomain, removeProjectDomain, vercelReady, probeHttps, controllaGemello } from './vercel-domains'
+import { diagnosticaDominio, verifyProjectDomain, addProjectDomain, removeProjectDomain, vercelReady, probeHttps, rispondeDaNoi, controllaGemello } from './vercel-domains'
 import { prossimaSalute } from './salute-dominio'
 import { logError } from './observability'
 
@@ -293,8 +293,12 @@ export async function controllaSaluteDomini() {
     // 15 secondi e non 10: la prova passa dal sito vero, che a freddo ne
     // impiega 9–14. Il margine è la differenza fra una misura e un falso allarme.
     const prova = await probeHttps(record.dominio, { timeoutMs: 15000 })
-    const { salute, evento } = prossimaSalute(dettaglio.salute, prova.raggiungibile)
-    if (!prova.raggiungibile) salute.ultima_causa = prova.causa || null
+    // Un dominio che risponde da un altro server non è vivo: è tornato al
+    // vecchio hosting, o è passato di mano. Mandarci i visitatori è peggio che
+    // tenerli da noi.
+    const vivo = rispondeDaNoi(prova)
+    const { salute, evento } = prossimaSalute(dettaglio.salute, vivo)
+    if (!vivo) salute.ultima_causa = prova.raggiungibile ? 'altrove' : (prova.causa || null)
 
     // Il gemello (con / senza www) si rimisura anche lui, altrimenti il
     // pannello mostrerebbe per sempre com'era il giorno del collegamento: chi

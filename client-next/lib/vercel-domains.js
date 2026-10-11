@@ -79,6 +79,16 @@ export async function getDnsConfig(name) {
 // perché il certificato TLS per quell'hostname non è stato emesso (è il caso dei
 // sottodomini coperti solo dal wildcard: handshake rifiutato, il visitatore vede 525).
 // L'unica verifica che conta è chiamare l'indirizzo come farebbe un cliente.
+//
+// ⛔ «Risponde» non vuol dire «risponde da noi». Un dominio già in uso continua a
+// rispondere dal vecchio hosting finché i DNS non cambiano: su gurumanagement.it
+// il pannello diceva «Online · protetto da certificato» mentre a rispondere era
+// il vecchio WordPress, e mandavamo lì anche chi apriva il nostro indirizzo.
+// `nostro` dice se la risposta è passata da Vercel (`x-vercel-id`, presente su
+// pagine e redirect, e anche dietro il proxy di Cloudflare). Chi decide se un
+// dominio funziona guarda `rispondeDaNoi`, non `raggiungibile`.
+export const rispondeDaNoi = prova => prova?.raggiungibile === true && prova.nostro !== false
+
 export async function probeHttps(name, { timeoutMs = 10000 } = {}) {
   try {
     const res = await fetch(`https://${name}/`, {
@@ -88,7 +98,7 @@ export async function probeHttps(name, { timeoutMs = 10000 } = {}) {
       headers: { 'user-agent': 'StayApp-DomainCheck/1.0' },
       signal: AbortSignal.timeout(timeoutMs),
     })
-    return { raggiungibile: true, status: res.status }
+    return { raggiungibile: true, status: res.status, nostro: res.headers.has('x-vercel-id') }
   } catch (e) {
     // Distinguiamo il caso tipico "TLS rifiutato" (certificato non ancora emesso)
     // dal DNS che non risolve: al cliente vanno dette due cose diverse.
@@ -228,7 +238,7 @@ export async function controllaGemello(dominio, apexName) {
     probeHttps(gemello, { timeoutMs: 6000 }),
     getDnsConfig(gemello),
   ])
-  const raggiungibile = prova.raggiungibile
+  const raggiungibile = rispondeDaNoi(prova)
   // Un 3xx qui non e' un difetto: e' la forma non canonica che porta i visitatori
   // su quella principale, ed e' esattamente cio' che deve fare.
   const reindirizza = raggiungibile && prova.status >= 300 && prova.status < 400
@@ -245,6 +255,8 @@ export async function controllaGemello(dominio, apexName) {
     ...(cfg.data?.cnames || []).map(v => ({ tipo: 'CNAME', valore: String(v).replace(/\.$/, '') })),
   ]
   const causa = raggiungibile ? null
+    // Risponde, ma non da noi: il record c'è e porta al vecchio server.
+    : prova.raggiungibile ? 'altrove'
     : !trovati.length ? 'manca'
     // `misconfigured === false` è Vercel che conferma: i record sono quelli
     // giusti. Se il sito non risponde lo stesso, manca solo il certificato.
@@ -301,9 +313,12 @@ export async function diagnosticaDominio(dominio) {
   const dnsPuntaAltrove = config?.misconfigured === true || (!dnsAttuale.a.length && !dnsAttuale.cname.length)
 
   let stato, fase, messaggio
-  if (prova.raggiungibile) {
+  if (rispondeDaNoi(prova)) {
     stato = 'attivo'; fase = 'attivo'
     messaggio = 'Il dominio è online e mostra il tuo sito.'
+  } else if (prova.raggiungibile) {
+    stato = 'pending'; fase = 'dns_errato'
+    messaggio = 'Il dominio risponde, ma dal vecchio hosting: finché i record qui sotto non vengono corretti, chi lo apre vede ancora il sito di prima.'
   } else if (!registrato) {
     stato = 'pending'; fase = 'dns_mancante'
     messaggio = 'Stiamo collegando il dominio ai nostri server.'
