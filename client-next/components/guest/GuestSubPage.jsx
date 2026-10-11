@@ -16,6 +16,12 @@ const ENTITY_PREFIX   = { struttura: 's', ristorante: 'r', attivita: 'a' }
 
 export default function GuestSubPage({ entity, entityType, pagina, eventiIniziali = null, domain, lang = 'it' }) {
   const [pagine, setPagine] = useState([])
+  // Una pagina ancora senza blocchi, aperta nell'editor visuale del pannello,
+  // monta comunque il disegnatore dei blocchi: è lì che cade il primo.
+  const [nelEditor, setNelEditor] = useState(false)
+  useEffect(() => {
+    try { if (window.parent !== window && new URLSearchParams(window.location.search).has('visuale')) setNelEditor(true) } catch {}
+  }, [])
 
   useEffect(() => {
     guestFetch(`/api/guest/pagine/${entityType}/${entity.id}`)
@@ -69,9 +75,9 @@ export default function GuestSubPage({ entity, entityType, pagina, eventiInizial
       )}
 
       <div className="sub-content" style={(hideHeader || firstIsHero) ? { paddingTop: 0 } : undefined}>
-        {pagina.blocks?.length > 0 ? (
+        {(pagina.blocks?.length > 0 || nelEditor) ? (
           <LandingBlockRenderer
-            blocks={pagina.blocks} entity={entity} entityType={entityType}
+            blocks={pagina.blocks || []} entity={entity} entityType={entityType}
             mini={mini} primary={primary} secondary={theme.secondaryColor} heading={heading} body={body}
             slug={entity.slug} privacyUrl={privacyUrl} base={base}
             aziendaId={entity.azienda_id} lang={lang} eventiIniziali={eventiIniziali}

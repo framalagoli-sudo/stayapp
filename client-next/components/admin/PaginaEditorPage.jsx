@@ -20,9 +20,13 @@ import RichTextEditor from '@/components/admin/RichTextEditor'
 import MediaPickerButton from '@/components/admin/MediaPicker'
 import UnsplashPicker from '@/components/admin/UnsplashPicker'
 import { BLOCK_PATTERNS } from '@/lib/blockPatterns'
+import { TIPO_TRASCINATO } from '@/components/EditorNelRiquadro'
 import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS, BLOCK_GLOW_OPTIONS, BLOCK_PADY_OPTIONS, blockSupportsBg, BLOCK_TEXT_SIZE_OPTIONS, BLOCK_TEXT_COLOR_OPTIONS, BLOCK_ICON_COLOR_OPTIONS, blockHasText, GRID_AUTO_BLOCKS, BLOCK_COLUMNS_OPTIONS } from '@/lib/blockTypes'
 
 function uid() { return crypto.randomUUID() }
+
+// La larghezza a cui l'editor visuale disegna la pagina «da computer».
+const LARGO_COMPUTER = 1280
 
 function slugify(s) {
   return (s || '').toLowerCase()
@@ -1450,10 +1454,30 @@ export default function PaginaEditorPage() {
   const [previewNonce, setPreviewNonce]  = useState(0)
   const [previewToken, setPreviewToken]  = useState(null)
 
+  // Editor visuale: la pagina vera a tutto schermo, con i blocchi che ci si
+  // trascinano dentro. È un altro modo di lavorare sugli STESSI blocchi: stato,
+  // annulla/ripeti e salvataggio sono quelli dell'elenco.
+  const [visuale,     setVisuale]     = useState(false)
+  const [cercaBlocco, setCercaBlocco] = useState('')
+  const [salvatiVuoti, setSalvatiVuoti] = useState(false)   // sul sito la pagina non ha ancora blocchi
+  const [spazio,      setSpazio]      = useState({ w: 1000, h: 700 })
+  const centro = useRef(null)
+  const scala = previewDevice === 'mobile' ? 1 : Math.min(1, Math.max(0.3, (spazio.w - 28) / LARGO_COMPUTER))
+  useEffect(() => {
+    const el = centro.current
+    if (!visuale || !el) return
+    const misura = () => setSpazio({ w: el.clientWidth, h: el.clientHeight })
+    misura()
+    const ro = new ResizeObserver(misura)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [visuale, loading])
+
   useEffect(() => {
     apiFetch(`/api/pagine/${pageId}`).then(data => {
       setPage(data)
       setBlocks(Array.isArray(data.blocks) ? data.blocks : [])
+      setSalvatiVuoti(!(Array.isArray(data.blocks) && data.blocks.length))
       setOrigSlug(data.slug)
       setLoading(false)
     }).catch(err => {
@@ -1524,19 +1548,49 @@ export default function PaginaEditorPage() {
   const mandaAnteprima = useCallback(() => {
     const percorso = previewUrl(); const finestra = riquadro.current?.contentWindow
     if (!percorso || !finestra) return
-    try { finestra.postMessage({ tipo: 'oltrenova:anteprima-blocchi', percorso, blocks }, window.location.origin) } catch {}
-  }, [blocks, entitySlug, page?.slug, page?.entity_tipo])
+    try { finestra.postMessage({ tipo: 'oltrenova:anteprima-blocchi', percorso, blocks, ...(visuale ? { visuale: true, selezionato: expandedId, scala } : {}) }, window.location.origin) } catch {}
+  }, [blocks, entitySlug, page?.slug, page?.entity_tipo, visuale, expandedId, scala])
   useEffect(() => {
-    if (!showPreview || !dirty) return
-    const t = setTimeout(mandaAnteprima, 250)
+    if (!visuale && !(showPreview && dirty)) return
+    const t = setTimeout(mandaAnteprima, visuale ? 40 : 250)
     return () => clearTimeout(t)
-  }, [blocks, showPreview, dirty, mandaAnteprima])
+  }, [blocks, showPreview, dirty, visuale, mandaAnteprima])
   // La pagina nel riquadro avvisa quando ha finito di caricarsi: da lì in poi ascolta.
   useEffect(() => {
-    const pronta = e => { if (e.origin === window.location.origin && e.data?.tipo === 'oltrenova:anteprima-pronta' && dirty) mandaAnteprima() }
+    const pronta = e => { if (e.origin === window.location.origin && e.data?.tipo === 'oltrenova:anteprima-pronta' && (dirty || visuale)) mandaAnteprima() }
     window.addEventListener('message', pronta)
     return () => window.removeEventListener('message', pronta)
-  }, [dirty, mandaAnteprima])
+  }, [dirty, visuale, mandaAnteprima])
+
+  // Quello che la persona fa DENTRO la pagina dell'editor visuale arriva qui
+  // come messaggio. Si ascolta solo il nostro riquadro, e ogni valore si
+  // ricontrolla: un id deve essere di un blocco di questa pagina, un tipo deve
+  // stare nel catalogo.
+  const dalRiquadro = useRef(null)
+  dalRiquadro.current = m => {
+    if (!visuale || !m || typeof m !== 'object') return
+    const esiste = id => typeof id === 'string' && blocks.some(b => b.id === id)
+    if (m.tipo === 'oltrenova:blocco-scelto') setExpandedId(esiste(m.id) ? m.id : null)
+    else if (m.tipo === 'oltrenova:blocco-rilasciato') {
+      const prima = esiste(m.prima) ? m.prima : null
+      const [cosa, quale] = String(m.cosa || '').split(':')
+      if (cosa === 'nuovo' && tipoAmmesso(quale)) addBlock(quale, prima)
+      else if (cosa === 'sposta' && esiste(quale)) moveBlock(quale, prima)
+    } else if (m.tipo === 'oltrenova:blocco-azione' && esiste(m.id)) {
+      if (m.azione === 'su') spostaDi(m.id, -1)
+      else if (m.azione === 'giu') spostaDi(m.id, 1)
+      else if (m.azione === 'duplica') duplicateBlock(m.id)
+      else if (m.azione === 'elimina') deleteBlock(m.id)
+    }
+  }
+  useEffect(() => {
+    const ascolta = e => {
+      if (e.origin !== window.location.origin || !riquadro.current || e.source !== riquadro.current.contentWindow) return
+      dalRiquadro.current?.(e.data)
+    }
+    window.addEventListener('message', ascolta)
+    return () => window.removeEventListener('message', ascolta)
+  }, [])
 
   function copyLink() {
     const url = previewUrl(); if (!url) return
@@ -1583,10 +1637,42 @@ export default function PaginaEditorPage() {
     return () => window.removeEventListener('keydown', onKey)
   })
 
-  function addBlock(type) {
+  // Il blocco «Menù ristorante» ha senso solo per i ristoranti (vedi BlockPicker).
+  function tipoAmmesso(type) {
+    return typeof type === 'string' && BLOCK_TYPES.some(b => b.type === type) && (type !== 'menu' || page?.entity_tipo === 'ristorante')
+  }
+  // `prima` = id del blocco davanti a cui metterlo; senza, va in fondo.
+  function addBlock(type, prima = null) {
     const b = { id: uid(), type, data: { ...BLOCK_DEFAULTS[type] } }
-    patchBlocks([...blocks, b])
+    const i = prima ? blocks.findIndex(x => x.id === prima) : -1
+    const nb = [...blocks]; nb.splice(i < 0 ? nb.length : i, 0, b)
+    patchBlocks(nb)
     setExpandedId(b.id)
+  }
+  function moveBlock(id, prima = null) {
+    if (id === prima) return
+    const mosso = blocks.find(b => b.id === id); if (!mosso) return
+    const nb = blocks.filter(b => b.id !== id)
+    const i = prima ? nb.findIndex(x => x.id === prima) : -1
+    nb.splice(i < 0 ? nb.length : i, 0, mosso)
+    if (nb.every((b, k) => b.id === blocks[k].id)) return
+    patchBlocks(nb)
+  }
+  function spostaDi(id, passo) {
+    const i = blocks.findIndex(b => b.id === id), j = i + passo
+    if (i < 0 || j < 0 || j >= blocks.length) return
+    const nb = [...blocks]; [nb[i], nb[j]] = [nb[j], nb[i]]
+    patchBlocks(nb)
+  }
+  // Una pagina che sul sito non ha ancora blocchi può non avere, nel riquadro,
+  // il disegnatore su cui farli cadere (la home mostra la versione di prima):
+  // in quel caso il primo blocco si salva prima di entrare.
+  async function apriVisuale() {
+    if (salvatiVuoti && page.slug === '__home__') {
+      if (!blocks.length) { alert('Aggiungi il primo blocco con «Aggiungi blocco», poi apri l\'editor visuale.'); return }
+      await save()
+    }
+    setShowPreview(false); setExpandedId(null); setCercaBlocco(''); setVisuale(true)
   }
   function addPattern(key) {
     const p = BLOCK_PATTERNS.find(x => x.key === key)
@@ -1667,7 +1753,10 @@ export default function PaginaEditorPage() {
       })
       if (Object.keys(sopra).length) setPage(p => ({ ...p, ...sopra }))
       setDirty(false); setSaved(true); setTimeout(() => setSaved(false), 2000)
-      setPreviewNonce(n => n + 1)   // ricarica l'anteprima in-editor
+      setSalvatiVuoti(!blocks.length)
+      // L'editor visuale ha già a schermo quello che si è appena salvato:
+      // ricaricarlo farebbe solo perdere il punto in cui si stava lavorando.
+      if (!visuale) setPreviewNonce(n => n + 1)   // ricarica l'anteprima in-editor
     } catch (err) {
       setSaveError(err?.message || 'Salvataggio fallito — riprova')
     } finally {
@@ -1710,6 +1799,12 @@ export default function PaginaEditorPage() {
             style={{ background: '#f0f0f4', border: 'none', borderRadius: '0 8px 8px 0', padding: '8px 12px', cursor: future.length ? 'pointer' : 'default', fontSize: 15, color: future.length ? '#1a1a2e' : '#bbb' }}>↷</button>
         </div>
         {pUrl && (
+          <button onClick={apriVisuale} className="pe-apri-visuale" title="La pagina vera a tutto schermo: trascini i blocchi dentro e clicchi le sezioni per modificarle"
+            style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#5b6af8', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
+            <Layers size={14} strokeWidth={1.5} color="#fff" /> Editor visuale
+          </button>
+        )}
+        {pUrl && (
           <button onClick={() => setShowPreview(s => !s)}
             style={{ display: 'flex', alignItems: 'center', gap: 6, background: showPreview ? '#1a1a2e' : '#f0f4ff', color: showPreview ? '#fff' : '#1a1a2e', border: '1.5px solid #c8d4f4', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', fontSize: 13, flexShrink: 0 }}>
             👁 Anteprima
@@ -1727,8 +1822,129 @@ export default function PaginaEditorPage() {
         </button>
       </div>
 
+      {/* L'editor visuale chiede spazio: sotto i mille pixel resta l'elenco. */}
+      <style>{`@media (max-width: 999px) { .pe-apri-visuale { display: none !important; } }`}</style>
+
+      {/* ── Editor visuale: la pagina vera al centro, i blocchi a sinistra ── */}
+      {visuale && pUrl && (() => {
+        const scelto = blocks.find(b => b.id === expandedId) || null
+        const disponibili = BLOCK_TYPES.filter(b => tipoAmmesso(b.type))
+        const cerca = cercaBlocco.trim().toLowerCase()
+        const trovati = cerca ? disponibili.filter(b => b.label.toLowerCase().includes(cerca) || b.desc?.toLowerCase().includes(cerca)) : null
+        const src = `${pUrl}?preview=${previewToken || ''}&visuale=1&_n=${previewNonce}`
+        const devBtn = a => ({ padding: '6px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: a ? '#1a1a2e' : '#eee', color: a ? '#fff' : '#555' })
+        const azBtn = { background: '#f0f0f4', border: 'none', borderRadius: 7, padding: '7px 9px', cursor: 'pointer', color: '#444', lineHeight: 0 }
+        const altezza = Math.max(300, spazio.h - 28)
+        return (
+          <div data-editor-visuale style={{ position: 'fixed', inset: 0, zIndex: 900, background: '#e9e9ee', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', background: '#fff', borderBottom: '1px solid #e2e2ea', flexShrink: 0 }}>
+              <button onClick={() => setVisuale(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#666', padding: '6px 4px', flexShrink: 0 }}>← Torna all'elenco dei blocchi</button>
+              <strong style={{ flex: 1, minWidth: 0, fontSize: 14, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{page.titolo || 'Pagina senza titolo'}</strong>
+              {page.status !== 'pubblicata' && <span style={{ fontSize: 11, color: '#6b5200', background: '#fff8e1', padding: '3px 10px', borderRadius: 20, fontWeight: 600, flexShrink: 0 }}>Bozza</span>}
+              {dirty && <span style={{ fontSize: 11, color: '#856404', background: '#fff3cd', padding: '3px 10px', borderRadius: 20, fontWeight: 600, flexShrink: 0 }}>Non salvato</span>}
+              {saved && <span style={{ fontSize: 11, color: '#155724', background: '#d4edda', padding: '3px 10px', borderRadius: 20, fontWeight: 600, flexShrink: 0 }}>Salvato ✓</span>}
+              {saveError && <span style={{ fontSize: 11, color: '#c00', background: '#fce8e8', padding: '3px 10px', borderRadius: 20, fontWeight: 600, flexShrink: 0 }}>⚠ {saveError}</span>}
+              <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+                <button onClick={undo} disabled={!past.length} title="Annulla (Ctrl+Z)" style={{ background: '#f0f0f4', border: 'none', borderRadius: '8px 0 0 8px', padding: '7px 11px', cursor: past.length ? 'pointer' : 'default', fontSize: 15, color: past.length ? '#1a1a2e' : '#bbb' }}>↶</button>
+                <button onClick={redo} disabled={!future.length} title="Ripeti (Ctrl+Y)" style={{ background: '#f0f0f4', border: 'none', borderRadius: '0 8px 8px 0', padding: '7px 11px', cursor: future.length ? 'pointer' : 'default', fontSize: 15, color: future.length ? '#1a1a2e' : '#bbb' }}>↷</button>
+              </div>
+              <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                <button onClick={() => setPreviewDevice('desktop')} style={devBtn(previewDevice === 'desktop')}>Computer</button>
+                <button onClick={() => setPreviewDevice('mobile')} style={devBtn(previewDevice === 'mobile')}>Telefono</button>
+              </div>
+              <button onClick={() => save()} disabled={saving || !dirty}
+                style={{ background: dirty ? '#1a1a2e' : '#e0e0e0', color: dirty ? '#fff' : '#999', border: 'none', borderRadius: 8, padding: '9px 20px', cursor: dirty ? 'pointer' : 'default', fontSize: 14, fontWeight: 600, flexShrink: 0 }}>
+                {saving ? 'Salvando...' : 'Salva'}
+              </button>
+            </div>
+
+            <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
+              {/* Colonna: i blocchi da trascinare, oppure la scheda della sezione scelta */}
+              <div style={{ width: 400, flexShrink: 0, background: '#fff', borderRight: '1px solid #e2e2ea', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                {scelto ? (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
+                      <button onClick={() => setExpandedId(null)} title="Torna ai blocchi" style={{ ...azBtn, fontSize: 13, lineHeight: 1 }}>← Blocchi</button>
+                      <div style={{ width: 28, height: 28, borderRadius: 7, background: `${blockColor(scelto.type)}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <BlockTypeIcon type={scelto.type} size={15} />
+                      </div>
+                      <strong style={{ flex: 1, minWidth: 0, fontSize: 14, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{blockLabel(scelto.type)}</strong>
+                      <button onClick={() => copyBlock(scelto.id)} title="Copia blocco (incollabile su altre pagine)" style={azBtn}><Clipboard size={14} strokeWidth={1.5} /></button>
+                      <button onClick={() => duplicateBlock(scelto.id)} title="Duplica blocco" style={azBtn}><Copy size={14} strokeWidth={1.5} /></button>
+                      <button onClick={() => deleteBlock(scelto.id)} title="Elimina blocco" style={{ ...azBtn, color: '#c0392b' }}><Trash2 size={14} strokeWidth={1.5} /></button>
+                    </div>
+                    <div key={scelto.id} data-scheda-blocco style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 40px', background: '#fafafa' }}>
+                      <BlockEditor block={scelto} onChange={data => updateBlock(scelto.id, data)} entityId={entityId} entityTipo={entityTipo} />
+                      <BlockStylePanel block={scelto} entityId={entityId} entityTipo={entityTipo} onChange={style => updateBlockStyle(scelto.id, style)} />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
+                      <div style={{ fontSize: 12.5, color: '#666', lineHeight: 1.5, marginBottom: 10 }}>
+                        <strong style={{ color: '#1a1a2e' }}>Trascina un blocco nella pagina</strong>, nel punto in cui lo vuoi. Per modificare una sezione, cliccala.
+                      </div>
+                      <input placeholder="Cerca blocco…" value={cercaBlocco} onChange={e => setCercaBlocco(e.target.value)}
+                        style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #e0e0e8', borderRadius: 8, fontSize: 13, boxSizing: 'border-box', outline: 'none' }} />
+                    </div>
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '12px 12px 30px' }}>
+                      {(trovati ? [{ key: 'results', label: `${trovati.length} risultati` }] : BLOCK_GROUPS).map(group => {
+                        const lista = trovati || disponibili.filter(b => b.group === group.key)
+                        if (!lista.length) return null
+                        return (
+                          <div key={group.key} style={{ marginBottom: 16 }}>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6, paddingLeft: 2 }}>{group.label}</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 6 }}>
+                              {lista.map(b => {
+                                const Icon = BLOCK_ICON_MAP[b.type] || FileText
+                                const bColor = blockColor(b.type)
+                                return (
+                                  <div key={b.type} data-tessera={b.type} draggable title={(b.desc ? b.desc + ' — ' : '') + 'trascinalo nella pagina, o clicca per metterlo in fondo'}
+                                    onDragStart={e => { e.dataTransfer.setData(TIPO_TRASCINATO, 'nuovo:' + b.type); e.dataTransfer.effectAllowed = 'copy' }}
+                                    onClick={() => addBlock(b.type)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 10px', borderRadius: 9, border: '1px solid #ececf2', background: '#fff', cursor: 'grab', userSelect: 'none', minWidth: 0 }}
+                                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#5b6af8' }}
+                                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#ececf2' }}>
+                                    <div style={{ width: 28, height: 28, borderRadius: 7, background: `${bColor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                      <Icon size={15} strokeWidth={1.5} color={bColor} />
+                                    </div>
+                                    <span style={{ fontSize: 12, fontWeight: 600, color: '#1a1a2e', lineHeight: 1.25, minWidth: 0, overflowWrap: 'anywhere' }}>{b.label}</span>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )
+                      })}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+                        <button onClick={() => setShowPatterns(true)} style={{ padding: 10, background: '#fff', border: '1.5px dashed #c8d0e8', borderRadius: 9, cursor: 'pointer', fontSize: 12.5, fontWeight: 600, color: '#5b6af8' }}>Inserisci una sezione pronta</button>
+                        {hasClip && <button onClick={pasteBlock} style={{ padding: 10, background: '#fff', border: '1.5px dashed #c8d0e8', borderRadius: 9, cursor: 'pointer', fontSize: 12.5, fontWeight: 600, color: '#5b6af8' }}>Incolla il blocco copiato</button>}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* La pagina */}
+              <div ref={centro} style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: 14, overflow: 'hidden' }}>
+                {previewDevice === 'desktop' ? (
+                  <div style={{ width: Math.round(LARGO_COMPUTER * scala), height: altezza, overflow: 'hidden', background: '#fff', borderRadius: 8, boxShadow: '0 4px 24px rgba(0,0,0,0.12)', flexShrink: 0 }}>
+                    <iframe ref={riquadro} key={previewNonce} src={src} title="Editor visuale"
+                      style={{ width: LARGO_COMPUTER, height: Math.round(altezza / scala), border: 0, transform: `scale(${scala})`, transformOrigin: 'top left' }} />
+                  </div>
+                ) : (
+                  <div style={{ width: 390, height: Math.min(altezza, 820), border: '8px solid #1a1a2e', borderRadius: 30, overflow: 'hidden', background: '#fff', flexShrink: 0 }}>
+                    <iframe ref={riquadro} key={previewNonce} src={src} title="Editor visuale" style={{ width: '100%', height: '100%', border: 0 }} />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* ── Anteprima live in-editor (drawer) ── */}
-      {showPreview && pUrl && (() => {
+      {showPreview && !visuale && pUrl && (() => {
         const src = `${pUrl}?preview=${previewToken || ''}&_n=${previewNonce}`
         const devBtn = a => ({ padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: a ? '#1a1a2e' : '#eee', color: a ? '#fff' : '#555' })
         const iconBtn = { background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#888', padding: '4px 6px' }

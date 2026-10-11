@@ -614,6 +614,16 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - Un pulsante fisso nuovo in basso su un sito deve usare `sopraIlBanner`. Sonda `tests/probe-banner-cookie.mjs` (pagine pubbliche, telefono e computer, non scrive niente).
     - Stesso giro: **l'editor dell'assistente su telefono** era a due colonne affiancate e la seconda usciva dallo schermo per metà (la sonda del pannello segnalava solo «2px» sul pulsante: misurava il pulsante, non la colonna che lo conteneva). Sotto i 767px passi ed editor stanno uno sotto l'altro.
 
+64. **🖱️ Editor visuale: la pagina vera al centro, i blocchi che ci si trascinano dentro** (11/10/2026, chiesto da Francesco: «creare con drag e drop tipo Elementor»). Pulsante **«Editor visuale»** in cima all'editor di una pagina: a tutto schermo, a sinistra i blocchi (o la scheda della sezione scelta), al centro la pagina com'è sul sito. Nessuna migration, nessuna route nuova: è **un altro modo di lavorare sugli stessi blocchi** — stato, annulla/ripeti e «Salva» sono quelli dell'elenco, che resta com'era ed è il predefinito.
+    - **Due metà che si parlano con `postMessage`.** Il pannello (`PaginaEditorPage.jsx`) manda i blocchi col messaggio dell'anteprima (nota 61) più `visuale`, `selezionato`, `scala`. La pagina nel riquadro (`components/EditorNelRiquadro.jsx`, acceso da `LandingBlockRenderer`) **non decide niente**: dice «ha scelto questo», «ha lasciato cadere qui», «sposta su», e il pannello cambia i blocchi.
+    - 🔒 Il pannello ascolta **solo il suo riquadro** (`e.source === riquadro.contentWindow`, stessa origine) e ricontrolla ogni valore: un id dev'essere di un blocco di questa pagina, un tipo deve stare in `BLOCK_TYPES` (`tipoAmmesso`). La pagina pubblica aperta da sola non arriva mai a quel codice: nel corpo grezzo non c'è `data-blocco`.
+    - Dentro l'editor **un clic sceglie, non naviga** (link e moduli fermati in cattura) e il banner dei cookie è nascosto. Le sezioni hanno un involucro `data-blocco` **solo lì**: sul sito l'HTML è quello di prima.
+    - Un blocco che non disegna niente (appena aggiunto, ancora vuoto) nell'editor **si vede** con una fascia «è ancora vuoto»: altrimenti non si potrebbe scegliere.
+    - ⚠️ **Una pagina senza blocchi salvati** non montava il disegnatore: `GuestSubPage` ora lo monta se è nel riquadro con `?visuale`. La **home** vuota no (mostra la versione di prima): lì `apriVisuale` chiede il primo blocco e lo salva prima di entrare.
+    - Salvando dall'editor visuale **il riquadro non si ricarica** (ha già a schermo quello che si salva).
+    - **Non è Elementor**: si lavora per sezioni intere, una sotto l'altra. Colonne libere con widget annidati cambierebbero la forma dei dati di ogni pagina — decisione di Francesco, non presa.
+    - Sotto i 1000px il pulsante non compare. Sonda `tests/probe-editor-visuale.mjs [cartella-foto]`: trascina davvero col mouse, prova i comandi, i valori ostili, il salvataggio e la pagina vuota.
+
 ---
 
 ## Roadmap
@@ -640,6 +650,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - [x] **Menù e sezioni nascondibili** ✅ 09/10/2026 — nota 58. **Pannello da telefono ripassato** ✅ 09/10/2026 — nota 59.
 - [x] **Slider eventi + eventi nell'HTML per i motori** ✅ 10/10/2026 — nota 60.
 - [x] **Pannello Domini: «Online» solo se rispondiamo noi** ✅ 11/10/2026 — nota 62.
+- [x] **Editor visuale delle pagine** (trascina i blocchi nella pagina vera) ✅ 11/10/2026 — nota 64.
 - [ ] **Lo stato vero del conto Stripe** — `puoIncassare` dice sì appena esiste `stripe_account_id`, anche se il collegamento è rimasto a metà: va salvato `charges_enabled` dal webhook dell'account. Oggi il link e la cassa falliscono con un messaggio chiaro, ma il pulsante compare lo stesso.
 - [ ] **Campagne WhatsApp per lista** (come le newsletter) e via i tag col titolo dell'evento — quando si collega Meta.
 - [ ] **Newsletter a blocchi** (stesso editor del sito, catalogo ridotto per la posta, blocchi collegati a eventi e offerte) — parere dato il 05/10, da riprendere dopo aver visto se i quattro modelli bastano.

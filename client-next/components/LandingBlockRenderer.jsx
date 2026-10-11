@@ -7,6 +7,7 @@ import BookingWidget from './BookingWidget'
 import ShopBlocco from './ShopBlocco'
 import MenuTab from '@/components/MenuTab'
 import Turnstile from '@/components/Turnstile'
+import { useEditorNelRiquadro, sezionePerEditor, InizioPagina } from '@/components/EditorNelRiquadro'
 import { applyBlockStyle, blockInverted, textSizeScale, textColorFor, gridTemplate, readableOn, resolveBlockBg } from '@/lib/blockTypes'
 import { ReviewSourceLogo } from '@/lib/reviewLogos'
 import { RichText, richIsEmpty } from '@/lib/richText'
@@ -1060,6 +1061,10 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
   // incornicia (stessa origine, finestra madre) e solo se sono per questa
   // pagina: aperta da sola, o da chiunque altro, non ascolta nessuno.
   const [blocchiAnteprima, setBlocchiAnteprima] = useState(null)
+  // L'editor visuale del pannello: quale sezione è scelta e a che scala è
+  // mostrato il riquadro. Arriva con lo stesso messaggio, dalle stesse mani.
+  const [editor, setEditor] = useState(null)
+  useEditorNelRiquadro(editor)
   useEffect(() => {
     if (window.parent === window) return
     const ascolta = e => {
@@ -1068,6 +1073,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
       if (m?.tipo !== 'oltrenova:anteprima-blocchi' || !Array.isArray(m.blocks)) return
       if (m.percorso !== window.location.pathname.replace(/\/$/, '')) return
       setBlocchiAnteprima(m.blocks)
+      setEditor(m.visuale === true ? { selezionato: typeof m.selezionato === 'string' ? m.selezionato : null, scala: Number(m.scala) > 0.1 && Number(m.scala) <= 1 ? Number(m.scala) : 1 } : null)
     }
     window.addEventListener('message', ascolta)
     // Dice al pannello che ora può mandarli (la pagina ha finito di caricarsi).
@@ -2389,8 +2395,10 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         {blocks.map((b, i) => {
           let el = applyBlockStyle(renderBlock(b, blockInverted(b, primary, sec), blocks[i + 1]), b, { primary, secondary: sec })
           if (mancaH1 && el) { const r = promuoviPrimoTitolo(el); if (r.fatto) { el = r.el; mancaH1 = false } }
-          return (!el || i === 0) ? el : cloneElement(el, { className: ((el.props.className || '') + ' lbr-reveal').trim() })
+          if (el && i !== 0) el = cloneElement(el, { className: ((el.props.className || '') + ' lbr-reveal').trim() })
+          return editor ? sezionePerEditor(el, b, editor, { primo: i === 0, ultimo: i === blocks.length - 1 }) : el
         })}
+        {editor && !blocks.length && <InizioPagina />}
       </div>
     </>
   )

@@ -69,3 +69,20 @@ rifatto tutto due volte. Una scritta di ripiego non deve mai sembrare un dato �
 meglio una sigla brutta e vera.
 
 Vedi [[reference_stripe_connect]], [[feedback_verificare_il_contesto]].
+
+## 4. Il nome e l'icona che il cliente legge nell'iscrizione (11/10/2026)
+
+Automax ha fatto l'iscrizione davanti a Francesco e in cima leggeva «Francesco
+Malagoli utilizza Stripe…»: era la ragione sociale del conto della piattaforma.
+
+- Il nome mostrato è **«Nome commerciale»** in *Impostazioni → Attività →
+  Informazioni per il cliente* del conto Stripe di OltreNova. **Non** il «nome
+  account» (interno: l'ho indicato io per primo ed era sbagliato).
+- L'icona nel cerchietto è l'**icona** (quadrata), non il logo. Viene mostrata a
+  **28 px**: serve il solo simbolo senza scritta. Francesco l'ha trovata al
+  terzo tentativo; in quale pagina esatta non me l'ha detto — chiederlo, non
+  indovinare.
+- Si verifica senza toccare niente: `POST /api/stripe/connect` per un'azienda che
+  ha **già** un conto restituisce un link vero; si apre solo la prima pagina
+  (nome in testa, `document.images`). Mai su un'azienda senza conto: lo creerebbe.
+  La schermata contiene l'email del cliente: ritagliarla e cancellarla.
