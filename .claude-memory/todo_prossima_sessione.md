@@ -12,7 +12,8 @@ metadata:
 
 ## ▶️ 12/10 — editor visuale rifatto dopo la prima prova di Francesco
 - Bocciato alla prima prova (blocco trascinato = fascia vuota; si scriveva a sinistra e non si vedeva niente). Ora: il blocco nasce già scritto e i testi si scrivono sulla pagina con un clic (CLAUDE.md nota 64, lib/editor-visuale.js). **Deve riprovarlo lui**: pagina di Guru → Editor visuale → trascina «FAQ» → clicca una domanda sulla pagina e scrivi.
-- Non fatto, da proporgli se gli piace: caricare una foto cliccandola sulla pagina · «+» per aggiungere un elemento alla lista dalla pagina · a-capo e grassetto sul posto · colonne libere (decisione sua).
+- **Secondo giro lo stesso giorno** («termina questo editor»): foto con un clic sulla pagina, elementi di lista (copia/togli/sposta), «+» fra le sezioni, tasto destro, tasti, struttura della pagina, Contenuto/Stile, tablet, Pubblica. **Deve provarlo lui.**
+- Restano fuori, da decidere con lui: grassetto e a-capo sul posto · colonne libere annidate (cambia la forma dei dati di ogni pagina) · sezioni salvate da riusare (memoria project_sezioni_universali).
 
 ## ▶️ 11/10 — sessione lunga in autonomia (Francesco ha lasciato il PC acceso). Migration ferme alla **135**.
 - ✅ **Editor visuale delle pagine** LIVE e provato in produzione (CLAUDE.md nota 64, sonda probe-editor-visuale.mjs): pulsante «Editor visuale» nell'editor di una pagina. Francesco NON l'ha ancora visto: fargli aprire una pagina di Guru → «Editor visuale» → trascinare un blocco, cliccare una sezione. Chiedergli se lo vuole come modo predefinito (oggi lo è l'elenco) e se servono le colonne libere (cambio di forma dei dati: decisione sua).

@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useLayoutEffect } from 'react'
-import { ArrowUp, ArrowDown, Copy, Trash2, GripVertical } from 'lucide-react'
+import { ArrowUp, ArrowDown, Copy, Trash2, GripVertical, Plus } from 'lucide-react'
 import { blockLabel } from '@/lib/blockTypes'
-import { campiDiTesto, cosaManca } from '@/lib/editor-visuale'
+import { campiDiTesto, campiImmagine, cosaManca, LISTE } from '@/lib/editor-visuale'
 
 // La parte dell'editor visuale che vive DENTRO la pagina, quando è incorniciata
 // dal pannello: le sezioni si scelgono con un clic, si spostano, e accettano i
@@ -42,6 +42,28 @@ const STILE = `
   .ev-barra button:hover, .ev-barra span:hover { background: rgba(255,255,255,0.16); }
   .ev-barra button:disabled { opacity: 0.3; cursor: default; background: none; }
   .ev-barra span { cursor: grab; }
+  .ev-piu { position: absolute; top: 0; left: 50%; z-index: 47; display: none; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%;
+    background: #5b6af8; color: #fff; cursor: pointer; box-shadow: 0 3px 12px rgba(0,0,0,0.3); transform: translate(-50%, -50%) scale(var(--ev-s, 1)); }
+  .ev-piu.ev-piu-primo { transform: translate(-50%, 6px) scale(var(--ev-s, 1)); transform-origin: top center; }
+  .ev-piu.ev-piu-sotto { top: auto; bottom: 0; transform: translate(-50%, -6px) scale(var(--ev-s, 1)); transform-origin: bottom center; }
+  .ev-blocco:hover > .ev-piu { display: flex; }
+  .ev-trascina .ev-piu, .ev-trascina .ev-attrezzi { display: none !important; }
+  .ev-blocco img[data-foto] { cursor: pointer; }
+  .ev-attrezzi { position: absolute; z-index: 2147482000; display: none; gap: 2px; padding: 3px; background: #5b6af8; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    transform: translate(-100%, -100%) scale(var(--ev-s, 1)); transform-origin: bottom right; }
+  .ev-attrezzi.ev-dentro { transform: translate(-100%, 0) scale(var(--ev-s, 1)); transform-origin: top right; }
+  .ev-attrezzi.ev-foto { transform: translate(0, -100%) scale(var(--ev-s, 1)); transform-origin: bottom left; background: #1a1a2e; }
+  .ev-attrezzi button, .ev-menu button { display: flex; align-items: center; gap: 7px; border: 0; background: none; color: #fff; cursor: pointer; font: 600 12.5px/1 system-ui, sans-serif; }
+  .ev-attrezzi button { justify-content: center; min-width: 28px; height: 28px; padding: 0 6px; border-radius: 5px; }
+  .ev-attrezzi button:hover { background: rgba(255,255,255,0.22); }
+  .ev-attrezzi button:disabled { opacity: 0.35; cursor: default; background: none; }
+  .ev-menu { position: fixed; z-index: 2147483100; display: none; flex-direction: column; min-width: 210px; padding: 5px; background: #1a1a2e; border-radius: 10px; box-shadow: 0 10px 34px rgba(0,0,0,0.4);
+    transform: scale(var(--ev-s, 1)); transform-origin: top left; }
+  .ev-menu button { justify-content: space-between; width: 100%; padding: 9px 11px; border-radius: 6px; font-weight: 500; font-size: 13px; text-align: left; }
+  .ev-menu button:hover { background: rgba(255,255,255,0.14); }
+  .ev-menu button:disabled { opacity: 0.35; cursor: default; background: none; }
+  .ev-menu button small { opacity: 0.55; font-size: 11px; }
+  .ev-menu hr { width: 100%; border: 0; border-top: 1px solid rgba(255,255,255,0.14); margin: 4px 0; }
   .ev-linea { position: fixed; left: 0; right: 0; height: calc(5px * var(--ev-s, 1)); margin-top: calc(-2.5px * var(--ev-s, 1)); background: #5b6af8; box-shadow: 0 0 14px rgba(91,106,248,0.7); z-index: 2147483000; pointer-events: none; display: none; }
 `
 
@@ -99,6 +121,71 @@ function segnaTesti(blocks) {
   }
 }
 
+// Le foto della pagina che corrispondono a un campo del blocco: si riconoscono
+// dall'indirizzo, come i testi dal contenuto. Stessa prudenza: se lo stesso
+// indirizzo sta in due campi e la pagina lo mostra un numero diverso di volte,
+// non si offre niente.
+function segnaImmagini(blocks) {
+  const buone = new Set()
+  for (const sez of document.querySelectorAll('[data-blocco]')) {
+    const b = blocks.find(x => x?.id === sez.getAttribute('data-blocco')); if (!b) continue
+    const perIndirizzo = new Map()
+    for (const c of campiImmagine(b.data)) { if (!perIndirizzo.has(c.valore)) perIndirizzo.set(c.valore, []); perIndirizzo.get(c.valore).push(c.percorso) }
+    if (!perIndirizzo.size) continue
+    const perFoto = new Map()
+    for (const img of sez.querySelectorAll('img')) {
+      const s = img.getAttribute('src'); if (!s || !perIndirizzo.has(s)) continue
+      if (!perFoto.has(s)) perFoto.set(s, []); perFoto.get(s).push(img)
+    }
+    for (const [s, foto] of perFoto) {
+      const percorsi = perIndirizzo.get(s)
+      if (percorsi.length > 1 && percorsi.length !== foto.length) continue
+      foto.forEach((img, i) => { buone.add(img); img.setAttribute('data-foto', JSON.stringify(percorsi.length > 1 ? percorsi[i] : percorsi[0])) })
+    }
+  }
+  for (const img of document.querySelectorAll('[data-foto]')) if (!buone.has(img)) img.removeAttribute('data-foto')
+}
+
+// ── Gli elementi di una lista, sulla pagina ──────────────────────────────────
+// Una scheda, una domanda, una persona: è il riquadro più grande che contiene
+// i testi e le foto di UN elemento della lista e di nessun altro. Si ricava
+// dai segni messi qui sopra, senza chiedere niente al disegnatore dei siti.
+function percorsoDi(el) { try { return JSON.parse(el.getAttribute('data-campo') || el.getAttribute('data-foto')) } catch { return null } }
+function chiaveElemento(p) { return Array.isArray(p) && LISTE.includes(p[0]) && Number.isInteger(p[1]) ? p[0] + ':' + p[1] : null }
+function elementiDi(sez) {
+  const segnati = [...sez.querySelectorAll('[data-campo], [data-foto]')].map(el => ({ el, k: chiaveElemento(percorsoDi(el)) }))
+  const trovati = []
+  for (const { el, k } of segnati) {
+    if (!k || trovati.some(t => t.k === k)) continue
+    let box = el, inCima = false
+    while (box.parentElement) {
+      const su = box.parentElement
+      if (su === sez) { inCima = true; break }
+      if (segnati.some(s => s.k !== k && su.contains(s.el))) break
+      box = su
+    }
+    // Un elemento solo, senza nient'altro intorno: non si sa dove finisce.
+    if (inCima) box = el.parentElement && el.parentElement !== sez ? el.parentElement : el
+    const [lista, indice] = k.split(':')
+    trovati.push({ k, box, lista, indice: Number(indice) })
+  }
+  return trovati
+}
+
+const DISEGNO = d => `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`
+const ICONE = {
+  freccia: DISEGNO('<path d="M12 19V5M5 12l7-7 7 7"/>'),
+  copia:   DISEGNO('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'),
+  cestino: DISEGNO('<path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'),
+  foto:    DISEGNO('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>'),
+}
+// Dove il pannello tiene il blocco copiato: stessa origine, quindi la pagina
+// sa se c'è qualcosa da incollare (non cosa).
+const APPUNTI = 'lbr_block_clip'
+
+// I blocchi come sono a schermo adesso, per chi lavora fuori da React.
+let blocchiOra = []
+
 // Dove sta il cursore dentro un elemento, contato in caratteri.
 function cursoreIn(el) {
   const s = window.getSelection()
@@ -152,7 +239,9 @@ export function useEditorNelRiquadro(editor, blocks) {
   // scrivendo, il cursore torna dov'era.
   useLayoutEffect(() => {
     if (!attivo) return
-    segnaTesti(Array.isArray(blocks) ? blocks : [])
+    blocchiOra = Array.isArray(blocks) ? blocks : []
+    segnaTesti(blocchiOra)
+    segnaImmagini(blocchiOra)
     const c = cursoreDaRimettere; cursoreDaRimettere = null
     if (!c?.dove || document.activeElement !== c.el) return
     const ora = cursoreIn(c.el)
@@ -177,7 +266,8 @@ export function useEditorNelRiquadro(editor, blocks) {
 
     // Nell'editor un clic sceglie, non naviga: né i link del sito né i moduli.
     const clic = e => {
-      if (e.target.closest?.('.ev-barra')) return
+      chiudiMenu()
+      if (e.target.closest?.('.ev-barra, .ev-piu, .ev-attrezzi, .ev-menu')) return
       e.preventDefault(); e.stopPropagation()
       const b = e.target.closest?.('[data-blocco]')
       parla({ tipo: 'oltrenova:blocco-scelto', id: b ? b.getAttribute('data-blocco') : null })
@@ -208,13 +298,119 @@ export function useEditorNelRiquadro(editor, blocks) {
       el.removeAttribute('data-disegnato'); el.removeAttribute('data-mandato')
     }
     const tasto = e => {
-      const el = e.target?.closest?.('[data-campo]'); if (!el) return
-      e.stopPropagation()
-      // Sul posto si scrive una riga: Invio chiude. Gli a-capo e la
-      // formattazione si mettono dalla scheda.
-      if (e.key === 'Escape' || e.key === 'Enter') { e.preventDefault(); el.blur() }
-      else if (e.key === ' ' && el.tagName === 'BUTTON') { e.preventDefault(); document.execCommand('insertText', false, ' ') }
+      const el = e.target?.closest?.('[data-campo]')
+      const ctrl = e.ctrlKey || e.metaKey, k = (e.key || '').toLowerCase()
+      // Ctrl+S salva da ovunque, anche mentre si scrive.
+      if (ctrl && k === 's') { e.preventDefault(); e.stopPropagation(); if (el) manda(el, true); parla({ tipo: 'oltrenova:tasto', quale: 'salva' }); return }
+      if (el) {
+        e.stopPropagation()
+        // Sul posto si scrive una riga: Invio chiude. Gli a-capo e la
+        // formattazione si mettono dalla scheda.
+        if (e.key === 'Escape' || e.key === 'Enter') { e.preventDefault(); el.blur() }
+        else if (e.key === ' ' && el.tagName === 'BUTTON') { e.preventDefault(); document.execCommand('insertText', false, ' ') }
+        return
+      }
+      // Fuori dai testi, i tasti sono comandi per il pannello: lì si decide.
+      if (e.target?.closest?.('input, textarea, select')) return
+      let quale = null
+      if (ctrl && k === 'z') quale = e.shiftKey ? 'ripeti' : 'annulla'
+      else if (ctrl && k === 'y') quale = 'ripeti'
+      else if (ctrl && k === 'd') quale = 'duplica'
+      else if (ctrl && k === 'c' && !String(window.getSelection() || '')) quale = 'copia'
+      else if (ctrl && k === 'v') quale = 'incolla'
+      else if (!ctrl && k === 'delete') quale = 'elimina'
+      else if (k === 'escape') { chiudiMenu(); quale = 'deseleziona' }
+      if (quale) { e.preventDefault(); parla({ tipo: 'oltrenova:tasto', quale }) }
     }
+
+    // ── Gli attrezzi che compaiono passando su un elemento di lista o su una foto ──
+    const attrezzi = document.createElement('div')
+    attrezzi.className = 'ev-attrezzi'
+    document.body.appendChild(attrezzi)
+    let mostrato = null, tNascondi = null, ultimoMovimento = null, inAttesa = false
+    const nascondi = () => { clearTimeout(tNascondi); attrezzi.style.display = 'none'; mostrato = null }
+    const nascondiTraPoco = () => { clearTimeout(tNascondi); tNascondi = setTimeout(nascondi, 260) }
+    const guarda = () => {
+      inAttesa = false
+      const e = ultimoMovimento; if (!e || e.buttons) return
+      if (attrezzi.contains(e.target)) { clearTimeout(tNascondi); return }
+      const sez = e.target?.closest?.('[data-blocco]')
+      if (!sez || e.target.closest('.ev-barra, .ev-piu, .ev-menu')) { nascondiTraPoco(); return }
+      const elem = elementiDi(sez).find(x => x.box.contains(e.target)) || null
+      const foto = document.elementsFromPoint(e.clientX, e.clientY).find(x => x.hasAttribute?.('data-foto') && sez.contains(x)) || null
+      if (!elem && !foto) { nascondiTraPoco(); return }
+      clearTimeout(tNascondi)
+      const id = sez.getAttribute('data-blocco')
+      const percorsoFoto = foto ? percorsoDi(foto) : null
+      const chiave = id + '|' + (elem?.k || '') + '|' + JSON.stringify(percorsoFoto)
+      const r = (elem?.box || foto).getBoundingClientRect()
+      if (mostrato?.chiave !== chiave) {
+        const quanti = elem ? (blocchiOra.find(b => b?.id === id)?.data?.[elem.lista]?.length || 0) : 0
+        // In colonna o in fila? Lo dice dove sta l'elemento accanto.
+        const altro = elem && elementiDi(sez).find(x => x.lista === elem.lista && Math.abs(x.indice - elem.indice) === 1)
+        const inFila = !!altro && Math.abs(altro.box.getBoundingClientRect().top - r.top) < r.height / 2
+        const pulsante = (az, titolo, dentro, spento) => '<button type="button" data-az="' + az + '" title="' + titolo + '"' + (spento ? ' disabled' : '') + '>' + dentro + '</button>'
+        const girata = gradi => '<span style="display:flex;transform:rotate(' + gradi + 'deg)">' + ICONE.freccia + '</span>'
+        attrezzi.innerHTML = (elem ? (
+          pulsante('prima', 'Sposta prima', girata(inFila ? -90 : 0), elem.indice === 0) +
+          pulsante('dopo', 'Sposta dopo', girata(inFila ? 90 : 180), elem.indice >= quanti - 1) +
+          pulsante('duplica', 'Aggiungine un altro (una copia di questo)', ICONE.copia) +
+          pulsante('elimina', 'Togli questo elemento', ICONE.cestino)) : '') +
+          (foto ? pulsante('foto', 'Cambia questa foto', ICONE.foto + (elem ? '' : ' Cambia foto')) : '')
+        mostrato = { chiave, id, elem, percorsoFoto }
+      }
+      attrezzi.style.display = 'flex'
+      const soloFoto = !elem
+      attrezzi.className = 'ev-attrezzi' + (soloFoto ? ' ev-foto' : r.top < 44 / scala ? ' ev-dentro' : '')
+      attrezzi.style.left = (soloFoto ? r.left + 10 / scala : r.right) + window.scrollX + 'px'
+      attrezzi.style.top = (soloFoto ? Math.min(r.bottom, window.innerHeight) - 10 / scala : Math.max(r.top, 0)) + window.scrollY + 'px'
+    }
+    const muove = e => { ultimoMovimento = e; if (!inAttesa) { inAttesa = true; requestAnimationFrame(guarda) } }
+    const suAttrezzi = e => {
+      const b = e.target.closest?.('button'); if (!b || b.disabled || !mostrato) return
+      e.preventDefault(); e.stopPropagation()
+      const m = mostrato
+      if (b.dataset.az === 'foto') parla({ tipo: 'oltrenova:cambia-foto', id: m.id, percorso: m.percorsoFoto })
+      else if (m.elem) parla({ tipo: 'oltrenova:elemento-azione', id: m.id, lista: m.elem.lista, indice: m.elem.indice, azione: b.dataset.az })
+      nascondi()
+    }
+    attrezzi.addEventListener('click', suAttrezzi)
+    // Tenere il dito sugli attrezzi non deve togliere il cursore dal testo.
+    attrezzi.addEventListener('mousedown', e => e.preventDefault())
+
+    // ── Il menu del tasto destro su una sezione ──
+    const menu = document.createElement('div')
+    menu.className = 'ev-menu'
+    document.body.appendChild(menu)
+    function chiudiMenu() { menu.style.display = 'none' }
+    const destro = e => {
+      const sez = e.target?.closest?.('[data-blocco]'); if (!sez) return
+      // Mentre si scrive vale il menu del browser: lì ci sono copia e incolla del testo.
+      if (inScrittura() && inScrittura().contains(e.target)) return
+      e.preventDefault(); nascondi()
+      const id = sez.getAttribute('data-blocco')
+      const tutte = [...document.querySelectorAll('[data-blocco]')]
+      const i = tutte.indexOf(sez)
+      let appunti = false; try { appunti = !!window.localStorage.getItem(APPUNTI) } catch {}
+      parla({ tipo: 'oltrenova:blocco-scelto', id })
+      const voce = (az, testo, tasti, spento) => '<button type="button" data-az="' + az + '"' + (spento ? ' disabled' : '') + '>' + testo + '<small>' + (tasti || '') + '</small></button>'
+      menu.innerHTML = voce('duplica', 'Duplica', 'Ctrl+D') + voce('copia', 'Copia', 'Ctrl+C') + voce('incolla', 'Incolla qui sotto', 'Ctrl+V', !appunti) + '<hr>' +
+        voce('aggiungi', 'Aggiungi un blocco qui sopra') + voce('su', 'Sposta su', '', i === 0) + voce('giu', 'Sposta giù', '', i === tutte.length - 1) + '<hr>' + voce('elimina', 'Elimina', 'Canc')
+      menu.dataset.id = id
+      menu.style.display = 'flex'
+      menu.style.left = Math.max(4, Math.min(e.clientX, window.innerWidth - 226 / scala)) + 'px'
+      menu.style.top = Math.max(4, Math.min(e.clientY, window.innerHeight - 300 / scala)) + 'px'
+    }
+    const sulMenu = e => {
+      const b = e.target.closest?.('button'); if (!b || b.disabled) return
+      e.preventDefault(); e.stopPropagation()
+      const id = menu.dataset.id
+      if (b.dataset.az === 'aggiungi') parla({ tipo: 'oltrenova:aggiungi-qui', prima: id })
+      else parla({ tipo: 'oltrenova:blocco-azione', id, azione: b.dataset.az })
+      chiudiMenu()
+    }
+    menu.addEventListener('click', sulMenu)
+    const scorre = () => { chiudiMenu(); nascondi() }
     const altriTasti = e => { if (e.target?.closest?.('[data-campo]')) e.stopPropagation() }
     const incolla = e => {
       if (!e.target?.closest?.('[data-campo]')) return
@@ -239,6 +435,7 @@ export function useEditorNelRiquadro(editor, blocks) {
     const sopra = e => {
       if (!eNostro(e)) return
       e.preventDefault()
+      document.documentElement.classList.add('ev-trascina')
       const d = dove(e.clientY)
       linea.style.display = 'block'
       linea.style.top = Math.max(0, Math.min(window.innerHeight - 4, d.y)) + 'px'
@@ -251,10 +448,11 @@ export function useEditorNelRiquadro(editor, blocks) {
       if (!eNostro(e)) return
       e.preventDefault()
       linea.style.display = 'none'
+      document.documentElement.classList.remove('ev-trascina')
       parla({ tipo: 'oltrenova:blocco-rilasciato', cosa: e.dataTransfer.getData(TIPO_TRASCINATO), prima: dove(e.clientY).prima })
     }
-    const fuori = e => { if (!e.relatedTarget) linea.style.display = 'none' }
-    const fine = () => { linea.style.display = 'none' }
+    const fuori = e => { if (!e.relatedTarget) { linea.style.display = 'none'; document.documentElement.classList.remove('ev-trascina') } }
+    const fine = () => { linea.style.display = 'none'; document.documentElement.classList.remove('ev-trascina') }
 
     document.addEventListener('click', clic, true)
     document.addEventListener('submit', invio, true)
@@ -266,6 +464,10 @@ export function useEditorNelRiquadro(editor, blocks) {
     document.addEventListener('keypress', altriTasti, true)
     document.addEventListener('paste', incolla, true)
     document.addEventListener('dragstart', nonTrascinare, true)
+    document.addEventListener('mousemove', muove)
+    document.addEventListener('contextmenu', destro)
+    window.addEventListener('scroll', scorre, true)
+    window.addEventListener('blur', chiudiMenu)
     document.addEventListener('dragover', sopra)
     document.addEventListener('drop', rilascio)
     document.addEventListener('dragleave', fuori)
@@ -281,6 +483,13 @@ export function useEditorNelRiquadro(editor, blocks) {
       document.removeEventListener('keypress', altriTasti, true)
       document.removeEventListener('paste', incolla, true)
       document.removeEventListener('dragstart', nonTrascinare, true)
+      document.removeEventListener('mousemove', muove)
+      document.removeEventListener('contextmenu', destro)
+      window.removeEventListener('scroll', scorre, true)
+      window.removeEventListener('blur', chiudiMenu)
+      clearTimeout(tNascondi); attrezzi.remove(); menu.remove()
+      document.documentElement.classList.remove('ev-trascina')
+      for (const el of document.querySelectorAll('[data-foto]')) el.removeAttribute('data-foto')
       document.removeEventListener('dragover', sopra)
       document.removeEventListener('drop', rilascio)
       document.removeEventListener('dragleave', fuori)
@@ -312,6 +521,12 @@ export function sezionePerEditor(el, blocco, editor, { primo, ultimo }) {
   return (
     <div key={blocco.id} data-blocco={blocco.id} data-nome={blockLabel(blocco.type)} className={'ev-blocco' + (scelto ? ' ev-scelto' : '')}>
       {el || <div className="ev-vuoto">«{blockLabel(blocco.type)}» {cosaManca(blocco.type)}</div>}
+      <button type="button" className={'ev-piu' + (primo ? ' ev-piu-primo' : '')} title="Aggiungi un blocco qui"
+        onClick={e => { e.preventDefault(); e.stopPropagation(); parla({ tipo: 'oltrenova:aggiungi-qui', prima: blocco.id }) }}><Plus size={17} strokeWidth={2} /></button>
+      {ultimo && (
+        <button type="button" className="ev-piu ev-piu-sotto" title="Aggiungi un blocco in fondo"
+          onClick={e => { e.preventDefault(); e.stopPropagation(); parla({ tipo: 'oltrenova:aggiungi-qui', prima: null }) }}><Plus size={17} strokeWidth={2} /></button>
+      )}
       {scelto && (
         <div className="ev-binario">
           <div className="ev-barra">

@@ -20,4 +20,6 @@ metadata:
 
 **12/10 — Francesco l'ha provato e l'ha bocciato** («sembra la versione cinese di Elementor»): trascinava un blocco, scriveva a sinistra e sulla pagina non compariva niente. Causa: i blocchi non disegnano nulla finché non hanno un elemento, e la mia sonda controllava dove cadeva il blocco, non che si vedesse. Corretto lo stesso giorno: blocchi che nascono già scritti + testi scrivibili direttamente sulla pagina (`lib/editor-visuale.js`, CLAUDE.md nota 64). Avevo scritto «quello che scrivi si vede subito»: era vero solo per i blocchi che avevo provato io (testo, copertina).
 
+**12/10, secondo giro** («termina questo editor con le funzionalità che mancano»): dalla pagina ora si cambiano le foto e si copiano/tolgono/spostano gli elementi delle liste; «+» fra le sezioni, tasto destro, scorciatoie, struttura della pagina, scheda Contenuto/Stile, tablet, «Pubblica». Non fatti di proposito: formattazione sul posto e colonne libere.
+
 Da dove si riprende → [[todo-prossima-sessione]].

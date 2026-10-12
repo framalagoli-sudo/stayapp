@@ -20,7 +20,7 @@ import RichTextEditor from '@/components/admin/RichTextEditor'
 import MediaPickerButton from '@/components/admin/MediaPicker'
 import UnsplashPicker from '@/components/admin/UnsplashPicker'
 import { BLOCK_PATTERNS } from '@/lib/blockPatterns'
-import { datiDiNascita, scriviCampo } from '@/lib/editor-visuale'
+import { datiDiNascita, scriviCampo, campiDiTesto, campiImmagine, scriviImmagine, azioneSuElemento } from '@/lib/editor-visuale'
 import { TIPO_TRASCINATO } from '@/components/EditorNelRiquadro'
 import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS, BLOCK_GLOW_OPTIONS, BLOCK_PADY_OPTIONS, blockSupportsBg, BLOCK_TEXT_SIZE_OPTIONS, BLOCK_TEXT_COLOR_OPTIONS, BLOCK_ICON_COLOR_OPTIONS, blockHasText, GRID_AUTO_BLOCKS, BLOCK_COLUMNS_OPTIONS } from '@/lib/blockTypes'
 
@@ -28,6 +28,19 @@ function uid() { return crypto.randomUUID() }
 
 // La larghezza a cui l'editor visuale disegna la pagina «da computer».
 const LARGO_COMPUTER = 1280
+const LARGO_TABLET = 820
+
+// Carica una foto fra le immagini del sito e ne restituisce l'indirizzo.
+async function caricaImmagine(file, entityTipo, entityId) {
+  const fd = new FormData(); fd.append('file', file)
+  const { supabase } = await import('../../lib/supabase')
+  const token = (await supabase.auth.getSession())?.data?.session?.access_token
+  const res = await fetch(`/api/upload/minisito-image?entity_type=${entityTipo}&entity_id=${entityId}`, { method: 'POST', body: fd, headers: { Authorization: `Bearer ${token}` } })
+  if (res.status === 413) throw new Error('La foto è troppo pesante: il limite è 4 MB.')
+  const json = await res.json().catch(() => ({}))
+  if (!json.url) throw new Error(json.error || 'Caricamento non riuscito: riprova.')
+  return json.url
+}
 
 function slugify(s) {
   return (s || '').toLowerCase()
@@ -1322,15 +1335,7 @@ function UploadBtn({ label, entityId, entityTipo, onUrl }) {
   async function handle(e) {
     const file = e.target.files?.[0]; if (!file) return
     setUpl(true)
-    const fd = new FormData(); fd.append('file', file)
-    try {
-      const res = await fetch(`/api/upload/minisito-image?entity_type=${entityTipo}&entity_id=${entityId}`, {
-        method: 'POST', body: fd,
-        headers: { Authorization: `Bearer ${(await import('../../lib/supabase').then(m => m.supabase.auth.getSession()))?.data?.session?.access_token}` }
-      })
-      const json = await res.json()
-      if (json.url) onUrl(json.url)
-    } finally { setUpl(false) }
+    try { onUrl(await caricaImmagine(file, entityTipo, entityId)) } catch {} finally { setUpl(false) }
   }
   return (
     <>
@@ -1463,7 +1468,21 @@ export default function PaginaEditorPage() {
   const [salvatiVuoti, setSalvatiVuoti] = useState(false)   // sul sito la pagina non ha ancora blocchi
   const [spazio,      setSpazio]      = useState({ w: 1000, h: 700 })
   const centro = useRef(null)
-  const scala = previewDevice === 'mobile' ? 1 : Math.min(1, Math.max(0.3, (spazio.w - 28) / LARGO_COMPUTER))
+  const largoPagina = previewDevice === 'tablet' ? LARGO_TABLET : LARGO_COMPUTER
+  const scala = previewDevice === 'mobile' ? 1 : Math.min(1, Math.max(0.3, (spazio.w - 28) / largoPagina))
+  const [inserisciPrima, setInserisciPrima] = useState(undefined)   // undefined = nessun punto scelto · null = in fondo · id = davanti a quel blocco
+  const [colonna,     setColonna]     = useState('blocchi')           // blocchi · struttura
+  const [schedaTab,   setSchedaTab]   = useState('contenuto')         // contenuto · stile
+  const [avviso,      setAvviso]      = useState(null)                // { testo, annulla? }
+  const [navSopra,    setNavSopra]    = useState(null)                // { id, dopo } mentre si riordina dalla struttura
+  const sceltaFoto = useRef(null)
+  const fotoAttesa = useRef(null)
+  const tAvviso = useRef(null)
+  function avvisa(testo, annulla = false) {
+    clearTimeout(tAvviso.current)
+    setAvviso({ testo, annulla })
+    tAvviso.current = setTimeout(() => setAvviso(null), 7000)
+  }
   useEffect(() => {
     const el = centro.current
     if (!visuale || !el) return
@@ -1567,11 +1586,31 @@ export default function PaginaEditorPage() {
   // come messaggio. Si ascolta solo il nostro riquadro, e ogni valore si
   // ricontrolla: un id deve essere di un blocco di questa pagina, un tipo deve
   // stare nel catalogo.
+  // Per chi finisce un lavoro dopo un'attesa (una foto che si carica): i
+  // blocchi come sono in quel momento, non com'erano quando è partito.
+  const blocchiVivi = useRef(blocks); blocchiVivi.current = blocks
+  const patchVivo = useRef(null); patchVivo.current = patchBlocks
   const dalRiquadro = useRef(null)
   dalRiquadro.current = m => {
     if (!visuale || !m || typeof m !== 'object') return
     const esiste = id => typeof id === 'string' && blocks.some(b => b.id === id)
-    if (m.tipo === 'oltrenova:blocco-scelto') setExpandedId(esiste(m.id) ? m.id : null)
+    if (m.tipo === 'oltrenova:blocco-scelto') { setExpandedId(esiste(m.id) ? m.id : null); setInserisciPrima(undefined) }
+    else if (m.tipo === 'oltrenova:tasto') comando(m.quale)
+    else if (m.tipo === 'oltrenova:aggiungi-qui') {
+      // Il «+» fra due sezioni: a sinistra si sceglie cosa mettere in quel punto.
+      setInserisciPrima(esiste(m.prima) ? m.prima : null); setExpandedId(null); setColonna('blocchi'); setCercaBlocco('')
+    } else if (m.tipo === 'oltrenova:elemento-azione' && esiste(m.id)) {
+      // Un elemento di una lista copiato, tolto o spostato dalla pagina.
+      const dati = azioneSuElemento(blocks.find(b => b.id === m.id).data, m.lista, m.indice, m.azione, uid)
+      if (dati) { if (expandedId !== m.id) setExpandedId(m.id); updateBlock(m.id, dati); if (m.azione === 'elimina') avvisa('Elemento tolto.', true) }
+    } else if (m.tipo === 'oltrenova:cambia-foto' && esiste(m.id)) {
+      // La pagina dice solo QUALE foto: deve essere un campo immagine che c'è
+      // già. La foto nuova la sceglie e la carica il pannello.
+      const chiave = JSON.stringify(m.percorso)
+      if (!campiImmagine(blocks.find(b => b.id === m.id).data).some(c => JSON.stringify(c.percorso) === chiave)) return
+      fotoAttesa.current = { id: m.id, percorso: m.percorso }
+      sceltaFoto.current?.click()
+    }
     else if (m.tipo === 'oltrenova:blocco-rilasciato') {
       const prima = esiste(m.prima) ? m.prima : null
       const [cosa, quale] = String(m.cosa || '').split(':')
@@ -1587,7 +1626,40 @@ export default function PaginaEditorPage() {
       else if (m.azione === 'giu') spostaDi(m.id, 1)
       else if (m.azione === 'duplica') duplicateBlock(m.id)
       else if (m.azione === 'elimina') deleteBlock(m.id)
+      else if (m.azione === 'copia') { copyBlock(m.id); avvisa('Sezione copiata: si incolla qui o in un\'altra pagina.') }
+      else if (m.azione === 'incolla') pasteBlock(m.id)
     }
+  }
+  // I comandi da tastiera dell'editor visuale: arrivano dal pannello o, come
+  // messaggio, dalla pagina nel riquadro. Agiscono sulla sezione scelta.
+  function comando(quale) {
+    if (!visuale) return
+    if (quale === 'salva') { if (dirty && !saving) save() }
+    else if (quale === 'annulla') undo()
+    else if (quale === 'ripeti') redo()
+    else if (quale === 'deseleziona') { setExpandedId(null); setInserisciPrima(undefined) }
+    else if (quale === 'incolla') { if (hasClip) pasteBlock(expandedId) }
+    else if (!expandedId || !blocks.some(b => b.id === expandedId)) return
+    else if (quale === 'duplica') duplicateBlock(expandedId)
+    else if (quale === 'elimina') deleteBlock(expandedId)
+    else if (quale === 'copia') { copyBlock(expandedId); avvisa('Sezione copiata: si incolla qui o in un\'altra pagina.') }
+  }
+  // La foto scelta dopo «Cambia foto» sulla pagina.
+  async function fotoScelta(e) {
+    const file = e.target.files?.[0]; e.target.value = ''
+    const dove = fotoAttesa.current; fotoAttesa.current = null
+    if (!file || !dove) return
+    avvisa('Carico la foto…')
+    try {
+      const indirizzo = await caricaImmagine(file, page.entity_tipo, page.entity_id)
+      const fotoNuova = attuali => {
+        const b = attuali.find(x => x.id === dove.id); if (!b) return null
+        const dati = scriviImmagine(b.data, dove.percorso, indirizzo)
+        return dati ? attuali.map(x => x.id === dove.id ? { ...x, data: dati } : x) : null
+      }
+      const nb = fotoNuova(blocchiVivi.current)
+      if (nb) { patchVivo.current(nb); avvisa('Foto cambiata.', true) } else avvisa('La foto non è più lì: riprova dalla scheda.')
+    } catch (err) { avvisa(err?.message || 'Caricamento non riuscito: riprova.') }
   }
   useEffect(() => {
     const ascolta = e => {
@@ -1606,8 +1678,8 @@ export default function PaginaEditorPage() {
 
   function patchPage(key, val) { setPage(p => ({ ...p, [key]: val })); setDirty(true) }
   function patchBlocks(nb) { setPast(p => [...p.slice(-49), blocks]); setFuture([]); setBlocks(nb); setDirty(true) }
-  function undo() { if (!past.length) return; setFuture(f => [blocks, ...f]); setBlocks(past[past.length - 1]); setPast(p => p.slice(0, -1)); setDirty(true) }
-  function redo() { if (!future.length) return; setPast(p => [...p, blocks]); setBlocks(future[0]); setFuture(f => f.slice(1)); setDirty(true) }
+  function undo() { if (!past.length) return; setAvviso(null); setFuture(f => [blocks, ...f]); setBlocks(past[past.length - 1]); setPast(p => p.slice(0, -1)); setDirty(true) }
+  function redo() { if (!future.length) return; setAvviso(null); setPast(p => [...p, blocks]); setBlocks(future[0]); setFuture(f => f.slice(1)); setDirty(true) }
 
   // Copia/incolla blocco tra pagine (via localStorage, stesso browser).
   const CLIP_KEY = 'lbr_block_clip'
@@ -1616,27 +1688,44 @@ export default function PaginaEditorPage() {
     const b = blocks.find(x => x.id === id); if (!b) return
     try { localStorage.setItem(CLIP_KEY, JSON.stringify({ type: b.type, data: b.data, style: b.style })); setHasClip(true) } catch {}
   }
-  function pasteBlock() {
+  // `dopo` = id del blocco sotto cui incollare (o il punto scelto col «+»); senza, in fondo.
+  function pasteBlock(dopo = null) {
     let raw; try { raw = localStorage.getItem(CLIP_KEY) } catch {}
     if (!raw) return
     try {
       const b = JSON.parse(raw)
+      if (!tipoAmmesso(b.type)) return
       const data = JSON.parse(JSON.stringify(b.data || {}))
       if (Array.isArray(data.items))  data.items  = data.items.map(it => ({ ...it, id: uid() }))
       if (Array.isArray(data.slides)) data.slides = data.slides.map(s => ({ ...s, id: uid() }))
       const nb = { id: uid(), type: b.type, data, ...(b.style ? { style: b.style } : {}) }
-      patchBlocks([...blocks, nb]); setExpandedId(nb.id)
+      const lista = [...blocks]
+      let i = lista.length
+      if (typeof dopo === 'string') { const j = blocks.findIndex(x => x.id === dopo); if (j >= 0) i = j + 1 }
+      else if (typeof inserisciPrima === 'string') { const j = blocks.findIndex(x => x.id === inserisciPrima); if (j >= 0) i = j }
+      lista.splice(i, 0, nb)
+      patchBlocks(lista); setExpandedId(nb.id); setInserisciPrima(undefined)
     } catch {}
   }
 
   // Undo/redo da tastiera (fuori dai campi di testo, dove vince l'undo nativo).
+  // Nell'editor visuale valgono anche salva, duplica, copia, incolla, elimina.
   useEffect(() => {
     const onKey = e => {
-      if (!(e.ctrlKey || e.metaKey)) return
+      const ctrl = e.ctrlKey || e.metaKey, k = (e.key || '').toLowerCase()
       const t = e.target
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
-      const k = e.key.toLowerCase()
-      if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
+      if (visuale && ctrl && k === 's') { e.preventDefault(); comando('salva'); return }
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return
+      if (visuale && !ctrl) {
+        if (k === 'escape') comando('deseleziona')
+        else if (k === 'delete') { e.preventDefault(); comando('elimina') }
+        return
+      }
+      if (!ctrl) return
+      if (visuale && k === 'd') { e.preventDefault(); comando('duplica') }
+      else if (visuale && k === 'c' && !String(window.getSelection() || '')) comando('copia')
+      else if (visuale && k === 'v') comando('incolla')
+      else if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
       else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo() }
     }
     window.addEventListener('keydown', onKey)
@@ -1655,7 +1744,7 @@ export default function PaginaEditorPage() {
     const i = prima ? blocks.findIndex(x => x.id === prima) : -1
     const nb = [...blocks]; nb.splice(i < 0 ? nb.length : i, 0, b)
     patchBlocks(nb)
-    setExpandedId(b.id)
+    setExpandedId(b.id); setInserisciPrima(undefined); setSchedaTab('contenuto')
   }
   function moveBlock(id, prima = null) {
     if (id === prima) return
@@ -1686,14 +1775,21 @@ export default function PaginaEditorPage() {
     const p = BLOCK_PATTERNS.find(x => x.key === key)
     if (!p) return
     const nb = p.blocks.map(b => ({ id: uid(), type: b.type, data: JSON.parse(JSON.stringify(b.data || {})) }))
-    patchBlocks([...blocks, ...nb])
+    // Dal «+» dell'editor visuale la sezione pronta va nel punto scelto.
+    const i = typeof inserisciPrima === 'string' ? blocks.findIndex(x => x.id === inserisciPrima) : -1
+    const lista = [...blocks]; lista.splice(i < 0 ? lista.length : i, 0, ...nb)
+    patchBlocks(lista); setInserisciPrima(undefined)
   }
   function updateBlock(id, data) { patchBlocks(blocks.map(b => b.id === id ? { ...b, data } : b)) }
   function updateBlockStyle(id, style) { patchBlocks(blocks.map(b => b.id === id ? { ...b, style } : b)) }
   function deleteBlock(id) {
-    if (!confirm('Eliminare questo blocco?')) return
+    // Nell'editor visuale non si chiede conferma: si vede cosa sparisce, e
+    // un avviso con «Annulla» resta lì qualche secondo.
+    if (!visuale && !confirm('Eliminare questo blocco?')) return
+    const tolto = blocks.find(b => b.id === id)
     patchBlocks(blocks.filter(b => b.id !== id))
     if (expandedId === id) setExpandedId(null)
+    if (visuale && tolto) avvisa(`Sezione «${blockLabel(tolto.type)}» eliminata.`, true)
   }
   function duplicateBlock(id) {
     const idx = blocks.findIndex(b => b.id === id)
@@ -1843,14 +1939,47 @@ export default function PaginaEditorPage() {
         const devBtn = a => ({ padding: '6px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: a ? '#1a1a2e' : '#eee', color: a ? '#fff' : '#555' })
         const azBtn = { background: '#f0f0f4', border: 'none', borderRadius: 7, padding: '7px 9px', cursor: 'pointer', color: '#444', lineHeight: 0 }
         const altezza = Math.max(300, spazio.h - 28)
+        const linguetta = a => ({ flex: 1, padding: '11px 8px', background: 'none', borderStyle: 'solid', borderWidth: '0 0 2px', borderColor: a ? '#5b6af8' : 'transparent', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: a ? '#1a1a2e' : '#888' })
+        // Una riga della struttura: funzione chiamata, non componente (un
+        // componente definito qui si rimonterebbe a ogni disegno e romperebbe il trascinamento).
+        const rigaStruttura = b => {
+          const testo = campiDiTesto(b.data)[0]?.valore || ''
+          const qui = navSopra?.id === b.id
+          return (
+            <div key={b.id} data-riga-struttura={b.id}
+              onDragOver={e => { if (![...e.dataTransfer.types].includes(TIPO_TRASCINATO)) return; e.preventDefault(); const r = e.currentTarget.getBoundingClientRect(); const dopo = e.clientY > r.top + r.height / 2; setNavSopra(p => p?.id === b.id && p.dopo === dopo ? p : { id: b.id, dopo }) }}
+              onDrop={e => {
+                e.preventDefault(); setNavSopra(null)
+                const [cosa, quale] = String(e.dataTransfer.getData(TIPO_TRASCINATO) || '').split(':')
+                const r = e.currentTarget.getBoundingClientRect(); const dopo = e.clientY > r.top + r.height / 2
+                const prima = dopo ? (blocks[blocks.findIndex(x => x.id === b.id) + 1]?.id || null) : b.id
+                if (cosa === 'sposta' && blocks.some(x => x.id === quale)) moveBlock(quale, prima)
+                else if (cosa === 'nuovo' && tipoAmmesso(quale)) addBlock(quale, prima)
+              }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 8px', marginBottom: 4, borderRadius: 9, border: '1px solid #ececf2', background: '#fff', boxShadow: qui ? (navSopra.dopo ? '0 3px 0 #5b6af8' : '0 -3px 0 #5b6af8') : 'none' }}>
+              <span draggable title="Trascina per spostare" onDragStart={e => { e.dataTransfer.setData(TIPO_TRASCINATO, 'sposta:' + b.id); e.dataTransfer.effectAllowed = 'move' }} onDragEnd={() => setNavSopra(null)}
+                style={{ cursor: 'grab', color: '#bbb', lineHeight: 0, flexShrink: 0 }}><GripVertical size={15} strokeWidth={1.5} /></span>
+              <div onClick={() => { setExpandedId(b.id); setSchedaTab('contenuto') }} style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, cursor: 'pointer' }}>
+                <div style={{ width: 26, height: 26, borderRadius: 7, background: `${blockColor(b.type)}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <BlockTypeIcon type={b.type} size={14} />
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 600, color: '#1a1a2e' }}>{blockLabel(b.type)}</div>
+                  {testo && <div style={{ fontSize: 11.5, color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{testo}</div>}
+                </div>
+              </div>
+              {(b.style?.hide_mobile || b.style?.hide_desktop) && <span title={b.style.hide_mobile && b.style.hide_desktop ? 'Nascosta ovunque' : b.style.hide_mobile ? 'Nascosta su telefono' : 'Nascosta su computer'} style={{ fontSize: 10.5, color: '#856404', background: '#fff3cd', borderRadius: 20, padding: '2px 7px', flexShrink: 0 }}>nascosta</span>}
+            </div>
+          )
+        }
         return (
           <div data-editor-visuale style={{ position: 'fixed', inset: 0, zIndex: 900, background: '#e9e9ee', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', background: '#fff', borderBottom: '1px solid #e2e2ea', flexShrink: 0 }}>
-              <button onClick={() => setVisuale(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#666', padding: '6px 4px', flexShrink: 0 }}>← Torna all'elenco dei blocchi</button>
+              <button onClick={() => { setVisuale(false); setInserisciPrima(undefined); setAvviso(null); if (previewDevice === 'tablet') setPreviewDevice('desktop') }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#666', padding: '6px 4px', flexShrink: 0 }}>← Torna all'elenco dei blocchi</button>
               <strong style={{ flex: 1, minWidth: 0, fontSize: 14, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{page.titolo || 'Pagina senza titolo'}</strong>
               {page.status !== 'pubblicata' && <span style={{ fontSize: 11, color: '#6b5200', background: '#fff8e1', padding: '3px 10px', borderRadius: 20, fontWeight: 600, flexShrink: 0 }}>Bozza</span>}
               {dirty && <span style={{ fontSize: 11, color: '#856404', background: '#fff3cd', padding: '3px 10px', borderRadius: 20, fontWeight: 600, flexShrink: 0 }}>Non salvato</span>}
-              {saved && <span style={{ fontSize: 11, color: '#155724', background: '#d4edda', padding: '3px 10px', borderRadius: 20, fontWeight: 600, flexShrink: 0 }}>Salvato ✓</span>}
+              {saved && !dirty && <span style={{ fontSize: 11, color: '#155724', background: '#d4edda', padding: '3px 10px', borderRadius: 20, fontWeight: 600, flexShrink: 0 }}>Salvato ✓</span>}
               {saveError && <span style={{ fontSize: 11, color: '#c00', background: '#fce8e8', padding: '3px 10px', borderRadius: 20, fontWeight: 600, flexShrink: 0 }}>⚠ {saveError}</span>}
               <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
                 <button onClick={undo} disabled={!past.length} title="Annulla (Ctrl+Z)" style={{ background: '#f0f0f4', border: 'none', borderRadius: '8px 0 0 8px', padding: '7px 11px', cursor: past.length ? 'pointer' : 'default', fontSize: 15, color: past.length ? '#1a1a2e' : '#bbb' }}>↶</button>
@@ -1858,13 +1987,26 @@ export default function PaginaEditorPage() {
               </div>
               <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
                 <button onClick={() => setPreviewDevice('desktop')} style={devBtn(previewDevice === 'desktop')}>Computer</button>
+                <button onClick={() => setPreviewDevice('tablet')} style={devBtn(previewDevice === 'tablet')}>Tablet</button>
                 <button onClick={() => setPreviewDevice('mobile')} style={devBtn(previewDevice === 'mobile')}>Telefono</button>
               </div>
-              <button onClick={() => save()} disabled={saving || !dirty}
+              <button onClick={openPreview} title="Apre la pagina in una scheda nuova, com'è sul sito" style={{ background: '#f0f0f4', border: 'none', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', fontSize: 13, color: '#1a1a2e', flexShrink: 0 }}>{dirty ? 'Salva e apri ↗' : 'Apri ↗'}</button>
+              <button onClick={() => save()} disabled={saving || !dirty} title="Salva (Ctrl+S)"
                 style={{ background: dirty ? '#1a1a2e' : '#e0e0e0', color: dirty ? '#fff' : '#999', border: 'none', borderRadius: 8, padding: '9px 20px', cursor: dirty ? 'pointer' : 'default', fontSize: 14, fontWeight: 600, flexShrink: 0 }}>
                 {saving ? 'Salvando...' : 'Salva'}
               </button>
+              {page.status !== 'pubblicata' && (
+                <button onClick={() => save({ status: 'pubblicata' })} disabled={saving} title="Salva e mette la pagina online"
+                  style={{ background: '#1a7f37', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 16px', cursor: 'pointer', fontSize: 14, fontWeight: 700, flexShrink: 0 }}>Pubblica</button>
+              )}
             </div>
+            <input ref={sceltaFoto} type="file" accept="image/*" data-scelta-foto style={{ display: 'none' }} onChange={fotoScelta} />
+            {avviso && (
+              <div data-avviso style={{ position: 'absolute', left: '50%', bottom: 22, transform: 'translateX(-50%)', zIndex: 5, display: 'flex', alignItems: 'center', gap: 14, background: '#1a1a2e', color: '#fff', borderRadius: 10, padding: '10px 16px', fontSize: 13.5, boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}>
+                {avviso.testo}
+                {avviso.annulla && past.length > 0 && <button onClick={() => { undo(); setAvviso(null) }} style={{ background: 'none', border: 'none', color: '#aab4ff', fontWeight: 700, cursor: 'pointer', fontSize: 13.5, padding: 0 }}>Annulla</button>}
+              </div>
+            )}
 
             <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
               {/* Colonna: i blocchi da trascinare, oppure la scheda della sezione scelta */}
@@ -1881,17 +2023,40 @@ export default function PaginaEditorPage() {
                       <button onClick={() => duplicateBlock(scelto.id)} title="Duplica blocco" style={azBtn}><Copy size={14} strokeWidth={1.5} /></button>
                       <button onClick={() => deleteBlock(scelto.id)} title="Elimina blocco" style={{ ...azBtn, color: '#c0392b' }}><Trash2 size={14} strokeWidth={1.5} /></button>
                     </div>
-                    <div key={scelto.id} data-scheda-blocco style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 40px', background: '#fafafa' }}>
-                      <BlockEditor block={scelto} onChange={data => updateBlock(scelto.id, data)} entityId={entityId} entityTipo={entityTipo} />
-                      <BlockStylePanel block={scelto} entityId={entityId} entityTipo={entityTipo} onChange={style => updateBlockStyle(scelto.id, style)} />
+                    <div style={{ display: 'flex', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
+                      <button onClick={() => setSchedaTab('contenuto')} style={linguetta(schedaTab === 'contenuto')}>Contenuto</button>
+                      <button onClick={() => setSchedaTab('stile')} style={linguetta(schedaTab === 'stile')}>Stile</button>
+                    </div>
+                    <div key={scelto.id + schedaTab} data-scheda-blocco style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 40px', background: '#fafafa' }}>
+                      {schedaTab === 'contenuto'
+                        ? <BlockEditor block={scelto} onChange={data => updateBlock(scelto.id, data)} entityId={entityId} entityTipo={entityTipo} />
+                        : <BlockStylePanel block={scelto} entityId={entityId} entityTipo={entityTipo} onChange={style => updateBlockStyle(scelto.id, style)} />}
                     </div>
                   </>
                 ) : (
                   <>
-                    <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
-                      <div style={{ fontSize: 12.5, color: '#666', lineHeight: 1.5, marginBottom: 10 }}>
-                        <strong style={{ color: '#1a1a2e' }}>Trascina un blocco nella pagina</strong>, nel punto in cui lo vuoi: compare già scritto. <strong style={{ color: '#1a1a2e' }}>Per cambiare un testo, cliccalo e scrivi</strong> direttamente sulla pagina. Foto, link e stile sono nella scheda che si apre qui cliccando la sezione.
+                    <div style={{ display: 'flex', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
+                      <button onClick={() => setColonna('blocchi')} style={linguetta(colonna === 'blocchi')}>Blocchi</button>
+                      <button onClick={() => { setColonna('struttura'); setInserisciPrima(undefined) }} style={linguetta(colonna === 'struttura')}>Struttura della pagina</button>
+                    </div>
+                    {colonna === 'struttura' ? (
+                      <div data-struttura style={{ flex: 1, overflowY: 'auto', padding: '12px 12px 30px' }} onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setNavSopra(null) }}>
+                        <div style={{ fontSize: 12.5, color: '#666', lineHeight: 1.5, marginBottom: 10 }}>Le sezioni della pagina, dall'alto in basso. Un clic ne apre una; dalla maniglia si trascinano per cambiarne l'ordine.</div>
+                        {!blocks.length && <div style={{ fontSize: 13, color: '#999', padding: 12 }}>La pagina non ha ancora sezioni.</div>}
+                        {blocks.map(b => rigaStruttura(b))}
                       </div>
+                    ) : (<>
+                    <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
+                      {inserisciPrima !== undefined ? (
+                        <div data-inserisci-qui style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: '#fff', background: '#5b6af8', borderRadius: 8, padding: '9px 12px', marginBottom: 10, lineHeight: 1.4 }}>
+                          <span style={{ flex: 1 }}><strong>Scegli cosa mettere {typeof inserisciPrima === 'string' ? `sopra «${blockLabel(blocks.find(b => b.id === inserisciPrima)?.type)}»` : 'in fondo alla pagina'}</strong>: un clic sul blocco e compare lì.</span>
+                          <button onClick={() => setInserisciPrima(undefined)} title="Lascia stare" style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 15, padding: 2, lineHeight: 1 }}>✕</button>
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 12.5, color: '#666', lineHeight: 1.5, marginBottom: 10 }}>
+                          <strong style={{ color: '#1a1a2e' }}>Trascina un blocco nella pagina</strong>, o premi il <strong style={{ color: '#5b6af8' }}>+</strong> fra due sezioni: compare già scritto. <strong style={{ color: '#1a1a2e' }}>Testi e foto si cambiano cliccandoli</strong> sulla pagina; passando su una scheda o una domanda compaiono i comandi per copiarla, toglierla, spostarla. Col tasto destro, il menu della sezione.
+                        </div>
+                      )}
                       <input placeholder="Cerca blocco…" value={cercaBlocco} onChange={e => setCercaBlocco(e.target.value)}
                         style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #e0e0e8', borderRadius: 8, fontSize: 13, boxSizing: 'border-box', outline: 'none' }} />
                     </div>
@@ -1909,7 +2074,7 @@ export default function PaginaEditorPage() {
                                 return (
                                   <div key={b.type} data-tessera={b.type} draggable title={(b.desc ? b.desc + ' — ' : '') + 'trascinalo nella pagina, o clicca per metterlo in fondo'}
                                     onDragStart={e => { e.dataTransfer.setData(TIPO_TRASCINATO, 'nuovo:' + b.type); e.dataTransfer.effectAllowed = 'copy' }}
-                                    onClick={() => addBlock(b.type)}
+                                    onClick={() => addBlock(b.type, typeof inserisciPrima === 'string' ? inserisciPrima : null)}
                                     style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 10px', borderRadius: 9, border: '1px solid #ececf2', background: '#fff', cursor: 'grab', userSelect: 'none', minWidth: 0 }}
                                     onMouseEnter={e => { e.currentTarget.style.borderColor = '#5b6af8' }}
                                     onMouseLeave={e => { e.currentTarget.style.borderColor = '#ececf2' }}>
@@ -1926,19 +2091,20 @@ export default function PaginaEditorPage() {
                       })}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
                         <button onClick={() => setShowPatterns(true)} style={{ padding: 10, background: '#fff', border: '1.5px dashed #c8d0e8', borderRadius: 9, cursor: 'pointer', fontSize: 12.5, fontWeight: 600, color: '#5b6af8' }}>Inserisci una sezione pronta</button>
-                        {hasClip && <button onClick={pasteBlock} style={{ padding: 10, background: '#fff', border: '1.5px dashed #c8d0e8', borderRadius: 9, cursor: 'pointer', fontSize: 12.5, fontWeight: 600, color: '#5b6af8' }}>Incolla il blocco copiato</button>}
+                        {hasClip && <button onClick={() => pasteBlock()} style={{ padding: 10, background: '#fff', border: '1.5px dashed #c8d0e8', borderRadius: 9, cursor: 'pointer', fontSize: 12.5, fontWeight: 600, color: '#5b6af8' }}>Incolla il blocco copiato</button>}
                       </div>
                     </div>
+                    </>)}
                   </>
                 )}
               </div>
 
               {/* La pagina */}
               <div ref={centro} style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: 14, overflow: 'hidden' }}>
-                {previewDevice === 'desktop' ? (
-                  <div style={{ width: Math.round(LARGO_COMPUTER * scala), height: altezza, overflow: 'hidden', background: '#fff', borderRadius: 8, boxShadow: '0 4px 24px rgba(0,0,0,0.12)', flexShrink: 0 }}>
+                {previewDevice !== 'mobile' ? (
+                  <div style={{ width: Math.round(largoPagina * scala), height: altezza, overflow: 'hidden', background: '#fff', borderRadius: 8, boxShadow: '0 4px 24px rgba(0,0,0,0.12)', flexShrink: 0 }}>
                     <iframe ref={riquadro} key={previewNonce} src={src} title="Editor visuale"
-                      style={{ width: LARGO_COMPUTER, height: Math.round(altezza / scala), border: 0, transform: `scale(${scala})`, transformOrigin: 'top left' }} />
+                      style={{ width: largoPagina, height: Math.round(altezza / scala), border: 0, transform: `scale(${scala})`, transformOrigin: 'top left' }} />
                   </div>
                 ) : (
                   <div style={{ width: 390, height: Math.min(altezza, 820), border: '8px solid #1a1a2e', borderRadius: 30, overflow: 'hidden', background: '#fff', flexShrink: 0 }}>

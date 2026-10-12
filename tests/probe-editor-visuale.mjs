@@ -48,7 +48,7 @@ try {
   const chi = { id: 'b-chi', type: 'about', data: { title: 'ZZ Chi siamo', text: { type: 'doc', content: [{ type: 'paragraph', attrs: { textAlign: null }, content: [{ text: 'Testo di prova', type: 'text', marks: [{ type: 'bold' }] }, { text: ' della sezione.', type: 'text' }] }] } } }
   const home = await deve(a.from('pagine').insert({ entity_tipo: 'ristorante', entity_id: ent.id, slug: '__home__', titolo: 'Home', status: 'pubblicata', blocks: [hero, chi] }).select('id').single(), 'home')
   const vuota = await deve(a.from('pagine').insert({ entity_tipo: 'ristorante', entity_id: ent.id, slug: 'vuota', titolo: 'ZZ Vuota', status: 'bozza', nel_menu: true, blocks: [] }).select('id').single(), 'pagina vuota')
-  const altra = await deve(a.from('pagine').insert({ entity_tipo: 'ristorante', entity_id: ent.id, slug: 'altra', titolo: 'ZZ Altra', status: 'pubblicata', nel_menu: true, blocks: [{ id: 'b-altra', type: 'about', data: { title: 'ZZ Altra pagina', text: 'Un testo scritto nel formato di prima.' } }] }).select('id').single(), 'altra pagina')
+  const altra = await deve(a.from('pagine').insert({ entity_tipo: 'ristorante', entity_id: ent.id, slug: 'altra', titolo: 'ZZ Altra', status: 'pubblicata', nel_menu: true, blocks: [{ id: 'b-altra', type: 'about', data: { title: 'ZZ Altra pagina', text: 'Un testo scritto nel formato di prima.' } }, { id: 'b-foto', type: 'immagine', data: { image_url: '/newsletter-esempio.svg', alt: 'ZZ foto', caption: '', link_url: 'https://esempio.example/dove', width: 'medium' } }] }).select('id').single(), 'altra pagina')
 
   console.log('\nLA PAGINA PUBBLICA, APERTA DA SOLA\n')
   for (const url of [`/r/${slug}`, `/r/${slug}?visuale=1`]) {
@@ -183,7 +183,7 @@ try {
   await page.keyboard.press('Control+A'); await page.keyboard.type('ZZ Quanto costa?')
   await page.keyboard.press('Enter')
   await page.waitForTimeout(600)
-  esito(await sez.getByText('ZZ Quanto costa?', { exact: true }).count() === 1 && await page.locator('[data-scheda-blocco] input').evaluateAll(els => els.some(e => e.value === 'ZZ Quanto costa?')), 'anche un elemento della lista si scrive sul posto, e Invio chiude')
+  esito(await sez.getByText('ZZ Quanto costa?', { exact: true }).count() === 1 && await page.locator('[data-scheda-blocco] input').evaluateAll(els => els.some(e => e.value === 'ZZ Quanto costa?')), 'anche un elemento della lista si scrive sul posto, e Invio chiude', (await sez.innerText()).replace(/s+/g, ' ').slice(0, 160) + ' | scheda: ' + (await page.locator('[data-scheda-blocco] input').evaluateAll(els => els.map(e => e.value).join(' · '))).slice(0, 160))
   // Un testo formattato: si scrive dentro la parola in grassetto, e resta in grassetto.
   await riq().locator('[data-blocco="b-chi"] strong').click()
   await page.keyboard.press('Control+A'); await page.keyboard.type('ZZ Grassetto')
@@ -263,7 +263,7 @@ try {
 
   console.log('\nSALVARE\n')
   await page.frames().find(f => f.url().includes(`/r/${slug}`)).evaluate(() => { window.__nonRicaricata = true })
-  await page.locator('[data-editor-visuale]').getByRole('button', { name: 'Salva' }).click()
+  await page.locator('[data-editor-visuale]').getByRole('button', { name: 'Salva', exact: true }).click()
   await page.locator('[data-editor-visuale]').getByText('Salvato ✓').waitFor({ timeout: 30000 })
   const salvata = await deve(a.from('pagine').select('blocks').eq('id', home.id).single(), 'rilettura')
   esito(JSON.stringify(salvata.blocks.map(b => b.id)) === JSON.stringify(['b-hero', nuovo, 'b-chi']), 'nel database c’è lo stesso ordine che si vede', salvata.blocks.map(b => b.type).join(' · '))
@@ -278,12 +278,124 @@ try {
   const pubblica = await (await fetch(`${BASE}/r/${slug}`, { headers: { 'cache-control': 'no-cache' } })).text()
   esito(pubblica.includes('ZZ Titolo cambiato') && !/data-blocco|ev-blocco/.test(pubblica), 'sul sito arriva la modifica, e niente dell’editor')
 
+  console.log('\nGLI ELEMENTI DI UNA LISTA, DALLA PAGINA\n')
+  const quadro = () => page.frames().find(f => f.url().includes(`/r/${slug}`))
+  const domande = () => sez.locator('[data-campo]').evaluateAll(els => els.filter(e => (e.getAttribute('data-campo') || '').includes('question')).map(e => e.innerText))
+  const aspettaDomande = async (atteso, cosa) => {
+    let viste = []
+    for (let i = 0; i < 60; i++) { viste = await domande().catch(() => []); if (JSON.stringify(viste) === JSON.stringify(atteso)) break; await page.waitForTimeout(150) }
+    esito(JSON.stringify(viste) === JSON.stringify(atteso), cosa, JSON.stringify(viste) === JSON.stringify(atteso) ? '' : viste.join(' · '))
+  }
+  const attrezzo = async (testo, quale) => {
+    await page.mouse.move(5, 5)
+    await sez.getByText(testo, { exact: true }).first().hover()
+    await riq().locator('.ev-attrezzi').waitFor({ state: 'visible', timeout: 15000 })
+    if (quale === 'duplica') await foto(page, '3a-attrezzi')
+    await riq().locator(`.ev-attrezzi button[data-az="${quale}"]`).click()
+  }
+  await attrezzo('ZZ Quanto costa?', 'duplica')
+  await aspettaDomande(['ZZ Quanto costa?', 'ZZ Quanto costa?', 'Scrivi qui la seconda domanda'], 'passando su una domanda compaiono i comandi, e «copia» ne aggiunge un’altra subito sotto')
+  await attrezzo('Scrivi qui la seconda domanda', 'prima')
+  await aspettaDomande(['ZZ Quanto costa?', 'Scrivi qui la seconda domanda', 'ZZ Quanto costa?'], '«Sposta prima» la porta su di un posto')
+  await attrezzo('Scrivi qui la seconda domanda', 'elimina')
+  await aspettaDomande(['ZZ Quanto costa?', 'ZZ Quanto costa?'], '«Togli» la toglie')
+  esito(await page.locator('[data-avviso]').getByRole('button', { name: 'Annulla' }).count() === 1, 'e un avviso offre di annullare')
+  await page.locator('[data-avviso]').getByRole('button', { name: 'Annulla' }).click()
+  await aspettaDomande(['ZZ Quanto costa?', 'Scrivi qui la seconda domanda', 'ZZ Quanto costa?'], '«Annulla» la rimette')
+  await quadro().evaluate(id => {
+    const d = (lista, indice, azione) => window.parent.postMessage({ tipo: 'oltrenova:elemento-azione', id, lista, indice, azione }, window.location.origin)
+    d('__proto__', 0, 'elimina'); d('titolo', 0, 'elimina'); d('items', 99, 'elimina'); d('items', -1, 'duplica'); d('items', '0', 'elimina'); d('items', 0, 'svuota'); d('items', 0, 'prima')
+    window.parent.postMessage({ tipo: 'oltrenova:elemento-azione', id: 'b-altra', lista: 'items', indice: 0, azione: 'elimina' }, window.location.origin)
+  }, nuovo)
+  await page.waitForTimeout(700)
+  await aspettaDomande(['ZZ Quanto costa?', 'Scrivi qui la seconda domanda', 'ZZ Quanto costa?'], 'una lista inventata, un posto che non c’è o un comando fuori elenco non cambiano niente')
+
+  console.log('\nIL «+», IL TASTO DESTRO, I TASTI\n')
+  await sez.hover({ position: { x: 30, y: 60 } })
+  await sez.locator('> .ev-piu').first().click()
+  await page.locator('[data-inserisci-qui]').waitFor({ timeout: 15000 }).then(() => esito(true, 'il «+» sopra una sezione chiede a sinistra cosa metterci'), () => esito(false, 'il «+» sopra una sezione chiede a sinistra cosa metterci'))
+  await page.locator('[data-tessera="annuncio"]').click()
+  o = await ordine(); for (let i = 0; i < 40 && o.length !== 4; i++) { await page.waitForTimeout(150); o = await ordine() }
+  const ann = o[1]
+  esito(o.length === 4 && o[0] === 'b-hero' && o[2] === nuovo, 'e il blocco scelto compare proprio lì', o.join(' · '))
+  // Il tasto destro: il menu della sezione.
+  const destro = async (id, voce) => {
+    await riq().locator(`[data-blocco="${id}"]`).click({ button: 'right', position: { x: 24, y: 10 } })
+    await riq().locator('.ev-menu').waitFor({ state: 'visible', timeout: 15000 })
+    if (voce === 'Copia') await foto(page, '3a-menu')
+    await riq().locator('.ev-menu button', { hasText: voce }).click()
+  }
+  let dialoghi = 0; page.on('dialog', () => { dialoghi++ })
+  await destro(ann, 'Copia')
+  await destro('b-chi', 'Incolla qui sotto')
+  o = await ordine(); for (let i = 0; i < 40 && o.length !== 5; i++) { await page.waitForTimeout(150); o = await ordine() }
+  const incollato = o[4]
+  esito(o.length === 5 && o[3] === 'b-chi' && await riq().locator(`[data-blocco="${incollato}"]`).getByText('Scrivi qui il tuo annuncio').count() === 1, 'col tasto destro si copia una sezione e la si incolla sotto un’altra', o.join(' · '))
+  await destro(incollato, 'Elimina')
+  await aspettaOrdine(['b-hero', ann, nuovo, 'b-chi'], '«Elimina» dal menu la toglie')
+  esito(dialoghi === 0 && await page.locator('[data-avviso]').getByText('eliminata').count() === 1, 'senza una finestra di conferma: resta un avviso con «Annulla»')
+  // I tasti, con il fuoco dentro la pagina.
+  await riq().locator('[data-blocco="b-chi"]').click({ position: { x: 40, y: 20 } })
+  await riq().locator('[data-blocco="b-chi"].ev-scelto').waitFor({ timeout: 15000 })
+  await page.keyboard.press('Delete')
+  await aspettaOrdine(['b-hero', ann, nuovo], '«Canc» elimina la sezione scelta')
+  await page.keyboard.press('Control+z')
+  await aspettaOrdine(['b-hero', ann, nuovo, 'b-chi'], 'Ctrl+Z la rimette, anche col fuoco dentro la pagina')
+  await riq().locator('[data-blocco="b-chi"]').click({ position: { x: 40, y: 20 } })
+  await riq().locator('[data-blocco="b-chi"].ev-scelto').waitFor({ timeout: 15000 })
+  await page.keyboard.press('Control+d')
+  o = await ordine(); for (let i = 0; i < 40 && o.length !== 5; i++) { await page.waitForTimeout(150); o = await ordine() }
+  esito(o.length === 5 && o[3] === 'b-chi' && o[2] === nuovo, 'Ctrl+D la duplica', o.join(' · '))
+  await page.keyboard.press('Delete')
+  await aspettaOrdine(['b-hero', ann, nuovo, 'b-chi'], 'e «Canc» toglie la copia')
+  // Mentre si scrive, «Canc» cancella una lettera e non la sezione.
+  await riq().locator(`[data-blocco="${ann}"] [data-campo]`).first().click()
+  await page.keyboard.press('End'); await page.keyboard.press('Backspace'); await page.keyboard.press('Home'); await page.keyboard.press('Delete')
+  await page.waitForTimeout(500)
+  esito((await ordine()).length === 4 && await riq().locator(`[data-blocco="${ann}"]`).getByText('crivi qui il tuo annunci', { exact: true }).count() === 1, 'mentre si scrive, «Canc» e «Backspace» cancellano lettere e non la sezione')
+  await page.keyboard.press('Control+s')
+  await page.locator('[data-editor-visuale]').getByText('Salvato ✓').waitFor({ timeout: 30000 }).then(() => esito(true, 'Ctrl+S salva, anche mentre si scrive sulla pagina'), () => esito(false, 'Ctrl+S salva, anche mentre si scrive sulla pagina'))
+  const dopoTasti = await deve(a.from('pagine').select('blocks').eq('id', home.id).single(), 'rilettura')
+  esito(JSON.stringify(dopoTasti.blocks.map(b => b.id)) === JSON.stringify(['b-hero', ann, nuovo, 'b-chi']) && dopoTasti.blocks[1].data.text === 'crivi qui il tuo annunci' && dopoTasti.blocks[2].data.items.length === 3,
+    'e nel database c’è quello che si vede', dopoTasti.blocks.map(b => b.type).join(' · '))
+  await page.keyboard.press('Escape')
+
+  console.log('\nLA STRUTTURA DELLA PAGINA, LE SCHEDE, IL TABLET\n')
+  await riq().locator('[data-blocco="b-chi"]').click({ position: { x: 40, y: 20 } })
+  await page.locator('[data-scheda-blocco]').waitFor({ timeout: 15000 })
+  await page.locator('[data-editor-visuale]').getByRole('button', { name: 'Stile', exact: true }).click()
+  esito(await page.locator('[data-scheda-blocco]').getByText('Spaziatura verticale').count() === 1 && await page.locator('[data-scheda-blocco] input[type="text"]').count() <= 2, 'la scheda ha due linguette: in «Stile» c’è solo lo stile')
+  await page.locator('[data-editor-visuale]').getByRole('button', { name: 'Contenuto', exact: true }).click()
+  esito(await page.locator('[data-scheda-blocco]').getByText('Spaziatura verticale').count() === 0, 'e in «Contenuto» solo i contenuti')
+  await page.getByRole('button', { name: '← Blocchi' }).click()
+  await page.getByRole('button', { name: 'Struttura della pagina' }).click()
+  const righe = () => page.locator('[data-riga-struttura]').evaluateAll(els => els.map(e => e.getAttribute('data-riga-struttura')))
+  esito(JSON.stringify(await righe()) === JSON.stringify(['b-hero', ann, nuovo, 'b-chi']), 'la struttura elenca le sezioni nell’ordine della pagina', (await righe()).join(' · '))
+  // Si trascina l'ultima riga sopra la seconda.
+  const maniglia = await page.locator('[data-riga-struttura="b-chi"] span[draggable]').boundingBox()
+  const meta = await page.locator(`[data-riga-struttura="${ann}"]`).boundingBox()
+  await page.mouse.move(maniglia.x + 6, maniglia.y + 6); await page.mouse.down()
+  await page.mouse.move(maniglia.x + 16, maniglia.y - 10, { steps: 4 })
+  await page.mouse.move(meta.x + 80, meta.y + 6, { steps: 12 }); await page.waitForTimeout(250); await page.mouse.up()
+  await aspettaOrdine(['b-hero', 'b-chi', ann, nuovo], 'trascinando una riga della struttura la sezione cambia posto anche sulla pagina')
+  await page.locator(`[data-riga-struttura="${nuovo}"]`).getByText('FAQ').click()
+  esito(await riq().locator(`[data-blocco="${nuovo}"].ev-scelto`).waitFor({ timeout: 15000 }).then(() => true, () => false) && await page.locator('[data-scheda-blocco]').count() === 1, 'un clic su una riga sceglie la sezione e apre la sua scheda')
+  await page.getByTitle('Annulla (Ctrl+Z)').last().click()
+  await aspettaOrdine(['b-hero', ann, nuovo, 'b-chi'], 'e «Annulla» rimette l’ordine')
+  await foto(page, '3b-struttura')
+  await page.getByRole('button', { name: 'Tablet' }).click()
+  await page.waitForTimeout(400)
+  const tablet = await quadro().evaluate(() => ({ largo: window.innerWidth, stessa: window.__nonRicaricata === true }))
+  esito(tablet.largo === 820 && tablet.stessa, 'in «Tablet» la pagina è larga come un tablet, senza ricaricarsi', JSON.stringify(tablet))
+  await page.getByRole('button', { name: 'Computer' }).click()
+  await foto(page, '3b-come-elementor')
+
   console.log('\nTELEFONO, E RITORNO ALL’ELENCO\n')
   await page.getByRole('button', { name: 'Telefono' }).click()
   await riq().locator('[data-blocco]').first().waitFor({ timeout: 60000 })
   const largo = await page.locator('[data-editor-visuale] iframe').evaluate(f => f.getBoundingClientRect().width)
   esito(largo > 360 && largo < 400, 'in «Telefono» la pagina è larga come un telefono', `${Math.round(largo)}px`)
-  await aspettaOrdine(['b-hero', nuovo, 'b-chi'], 'e mostra le stesse sezioni')
+  await aspettaOrdine(['b-hero', ann, nuovo, 'b-chi'], 'e mostra le stesse sezioni')
   await foto(page, '4-telefono')
   await page.getByRole('button', { name: '← Torna all\'elenco dei blocchi' }).click()
   esito(await page.locator('[data-editor-visuale]').count() === 0 && await page.getByRole('button', { name: 'Aggiungi blocco' }).isVisible(), 'si torna all’elenco di sempre, con gli stessi blocchi')
@@ -334,6 +446,33 @@ try {
   await page.locator('[data-scheda-blocco] .ProseMirror').waitFor({ timeout: 15000 })
   await page.waitForTimeout(900)
   esito(await page.locator('[data-editor-visuale]').getByText('Non salvato').count() === 0, 'anche qui, scegliere la sezione non la segna come modificata')
+
+  console.log('\nUNA FOTO SI CAMBIA DALLA PAGINA\n')
+  const quadroAltra = () => page.frames().find(f => f.url().includes(`/r/${slug}/p/altra`))
+  // Quello che la pagina non può chiedere: «cambia foto» su un campo che non è una foto.
+  let sceltaChiesta = 0; page.on('filechooser', () => { sceltaChiesta++ })
+  await quadroAltra().evaluate(() => {
+    const d = (id, percorso) => window.parent.postMessage({ tipo: 'oltrenova:cambia-foto', id, percorso }, window.location.origin)
+    d('b-foto', ['link_url']); d('b-foto', ['alt']); d('b-foto', ['__proto__']); d('b-foto', 'image_url'); d('b-altra', ['image_url']); d('b-hero', ['image_url'])
+  })
+  await page.waitForTimeout(700)
+  esito(sceltaChiesta === 0, 'un messaggio che chiede di cambiare «la foto» di un link o di un testo non apre niente')
+  await page.mouse.move(5, 5)
+  await riq().locator('[data-blocco="b-foto"] img').hover()
+  await riq().locator('.ev-attrezzi button[data-az="foto"]').waitFor({ state: 'visible', timeout: 15000 }).then(() => esito(true, 'passando su una foto compare «Cambia foto»'), () => esito(false, 'passando su una foto compare «Cambia foto»'))
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAFUlEQVR4nGP8z8DAwMDAxMDAwMDAAAANHQEDasKb6QAAAABJRU5ErkJggg==', 'base64')
+  const [scelta] = await Promise.all([page.waitForEvent('filechooser', { timeout: 15000 }).catch(() => null), riq().locator('.ev-attrezzi button[data-az="foto"]').click()])
+  esito(!!scelta, 'e un clic apre la scelta del file')
+  if (scelta) {
+    await scelta.setFiles({ name: 'zz-foto.png', mimeType: 'image/png', buffer: png })
+    const nuova = await riq().locator('[data-blocco="b-foto"] img[src^="https://"]').waitFor({ timeout: 45000 }).then(() => true, () => false)
+    esito(nuova, 'la foto caricata prende il posto di quella di prima, sulla pagina', nuova ? '' : await page.locator('[data-avviso]').innerText().catch(() => 'nessun avviso'))
+    await page.keyboard.press('Control+s')
+    await page.locator('[data-editor-visuale]').getByText('Salvato ✓').waitFor({ timeout: 30000 }).catch(() => {})
+    const conFoto = await deve(a.from('pagine').select('blocks').eq('id', altra.id).single(), 'rilettura')
+    const f = conFoto.blocks[1].data
+    esito(/^https:\/\//.test(f.image_url) && f.link_url === 'https://esempio.example/dove' && f.alt === 'ZZ foto', 'nel database è cambiata solo la foto: il link e il testo sono quelli di prima', JSON.stringify(f).slice(0, 200))
+  }
 
   console.log('\nERRORI\n')
   esito(errori.length === 0, 'nessun errore nel browser', errori.slice(0, 3).join(' | '))

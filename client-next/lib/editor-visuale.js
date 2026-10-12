@@ -155,6 +155,66 @@ export function campiDiTesto(dati) {
   return trovati
 }
 
+// ── Le foto che si cambiano dalla pagina ─────────────────────────────────────
+// Una foto della pagina si può cambiare sul posto se il suo indirizzo è il
+// valore di un campo del blocco che contiene un indirizzo (`image_url`,
+// `photo_url`, `url` di una galleria…). La pagina dice solo QUALE campo: la
+// foto la carica il pannello, e l'indirizzo nuovo è quello che restituisce il
+// nostro caricamento — mai uno arrivato in un messaggio.
+//
+// ⚠️ I campi sono questi e basta: `url` da solo è anche la destinazione di un
+// pulsante o l'indirizzo di un video, e vale come foto solo dentro `images`.
+const CAMPI_FOTO = ['image_url', 'bg_image_url', 'photo_url', 'logo_url', 'before_url', 'after_url']
+export function campiImmagine(dati) {
+  const trovati = []
+  const eFoto = (k, percorso) => CAMPI_FOTO.includes(k) || (k === 'url' && percorso.length === 2 && percorso[0] === 'images')
+  const guarda = (v, percorso) => {
+    if (!v || typeof v !== 'object' || percorso.length >= 3 || v.type === 'doc') return
+    const chiavi = Array.isArray(v) ? v.map((_, i) => i) : Object.keys(v)
+    for (const k of chiavi) {
+      const x = v[k]
+      if (typeof x === 'string') { if (eFoto(k, percorso) && x.trim()) trovati.push({ percorso: [...percorso, k], valore: x }) }
+      else guarda(x, [...percorso, k])
+    }
+  }
+  if (dati && typeof dati === 'object' && !Array.isArray(dati)) guarda(dati, [])
+  return trovati
+}
+export function scriviImmagine(dati, percorso, indirizzo) {
+  if (typeof indirizzo !== 'string' || !/^https:\/\/[^\s"'<>]{4,1500}$/.test(indirizzo)) return null
+  const chiave = JSON.stringify(percorso)
+  if (!Array.isArray(percorso) || !campiImmagine(dati).some(c => JSON.stringify(c.percorso) === chiave)) return null
+  const copia = JSON.parse(JSON.stringify(dati))
+  let qui = copia
+  for (let i = 0; i < percorso.length - 1; i++) qui = qui[percorso[i]]
+  qui[percorso[percorso.length - 1]] = indirizzo
+  return copia
+}
+
+// ── Gli elementi di una lista, dalla pagina ──────────────────────────────────
+// Una domanda, una scheda, una persona, una foto della galleria: dalla pagina
+// si possono copiare, togliere e spostare di un posto. Le liste sono queste
+// tre e nessun'altra; un elemento nuovo è sempre la copia di uno che c'è, così
+// ha per forza la forma giusta.
+export const LISTE = ['items', 'slides', 'images']
+export const AZIONI_ELEMENTO = ['duplica', 'elimina', 'prima', 'dopo']
+export function azioneSuElemento(dati, lista, indice, azione, nuovoId) {
+  if (!LISTE.includes(lista) || !AZIONI_ELEMENTO.includes(azione)) return null
+  if (!dati || typeof dati !== 'object' || !Object.prototype.hasOwnProperty.call(dati, lista) || !Array.isArray(dati[lista])) return null
+  if (!Number.isInteger(indice) || indice < 0 || indice >= dati[lista].length) return null
+  const elenco = JSON.parse(JSON.stringify(dati[lista]))
+  if (azione === 'elimina') elenco.splice(indice, 1)
+  else if (azione === 'duplica') {
+    const copia = JSON.parse(JSON.stringify(elenco[indice]))
+    elenco.splice(indice + 1, 0, copia && typeof copia === 'object' && !Array.isArray(copia) ? { ...copia, id: nuovoId() } : copia)
+  } else {
+    const j = indice + (azione === 'prima' ? -1 : 1)
+    if (j < 0 || j >= elenco.length) return null
+    ;[elenco[indice], elenco[j]] = [elenco[j], elenco[indice]]
+  }
+  return { ...dati, [lista]: elenco }
+}
+
 // Il pannello riceve «in questo blocco, a questo percorso, ora c'è scritto
 // questo»: restituisce i dati nuovi, oppure null se la richiesta non è una
 // di quelle che la pagina può fare. Si scrive solo dove c'è GIÀ un testo, e
