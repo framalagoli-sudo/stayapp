@@ -33,6 +33,8 @@ Dettaglio tecnico: `CLAUDE.md` nota 66. Francesco **non le ha ancora provate lui
 - in inglese ogni pagina traduce la sua copia: correzioni a mano pagina per pagina;
 - l'AI non conosce il tipo `sezione`.
 
-**Seguito possibile**: le 4 copie della CTA di metodotvb potrebbero diventare una
-sezione sola — è un cambio sul sito di un cliente, serve il sì di Francesco
-([[feedback_autorizzare_cambi_importanti]]).
+**Primo uso vero, 12/10** (ok di Francesco): metodotvb ha due sezioni condivise —
+il pulsante «Scopri i progetti in corso» (4 pagine) e il banner «Pronto a
+Diversificare il Tuo Capitale?» (4 pagine). Due e non una perché non stanno sempre
+vicine. HTML identico prima e dopo, anche in inglese. Copia delle pagine di prima:
+`progetti/backup-pagine-tvb-fondaco-2026-10-12.json`, fuori dal repo.

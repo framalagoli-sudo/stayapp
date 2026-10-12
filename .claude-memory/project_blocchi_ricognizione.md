@@ -11,7 +11,7 @@ metadata:
 Chiesta da Francesco il 12/10/2026 («manca qualche blocco più di design? fai una ricognizione anche su altri siti»). Catalogo al 12/10: 46 tipi in `lib/blockTypes.js`. La ricerca in rete ha reso poco: il confronto è fatto soprattutto su quello che so di quei prodotti, più il catalogo letto dal codice. **Niente di questo è approvato.**
 
 **Buchi misurati nel codice (non blocchi nuovi):**
-- Le gallerie del sito (`gallery`, `galleria_immagini`) non si ingrandiscono al clic: nessun lightbox nel renderer (c'è solo nelle app del QR).
+- ✅ FATTO il 12/10 (CLAUDE.md nota 67, `components/FotoGrande.jsx`): le gallerie del sito (`gallery`, `galleria_immagini`) ora si ingrandiscono al clic. Restano fuori il blocco «Immagine» singola e il dettaglio delle vetrine.
 - Il video di sfondo della copertina esiste (`bg_video`) ma è un campo «URL mp4»: nessun caricamento.
 
 **Proposti da me, in ordine:**

@@ -8,6 +8,7 @@ import BookingWidget from './BookingWidget'
 import ShopBlocco from './ShopBlocco'
 import MenuTab from '@/components/MenuTab'
 import Turnstile from '@/components/Turnstile'
+import FotoGrande, { siIngrandisce } from '@/components/FotoGrande'
 import { useEditorNelRiquadro, sezionePerEditor, InizioPagina, conLaScritturaInCorso } from '@/components/EditorNelRiquadro'
 import { applyBlockStyle, blockInverted, textSizeScale, textColorFor, gridTemplate, readableOn, resolveBlockBg } from '@/lib/blockTypes'
 import { ReviewSourceLogo } from '@/lib/reviewLogos'
@@ -1065,6 +1066,10 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
   // L'editor visuale del pannello: quale sezione è scelta e a che scala è
   // mostrato il riquadro. Arriva con lo stesso messaggio, dalle stesse mani.
   const [editor, setEditor] = useState(null)
+  // La foto di una galleria aperta a tutto schermo: l'elenco a cui appartiene e a quale siamo.
+  const [fotoGrande, setFotoGrande] = useState(null)
+  // Dentro l'editor un clic su una foto la sceglie: lì non si ingrandisce.
+  const ingrandisci = (foto, i) => editor ? {} : siIngrandisce(() => setFotoGrande({ foto, i }))
   useEffect(() => {
     if (window.parent === window) return
     const ascolta = e => {
@@ -1941,7 +1946,8 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         if (!imgs.length) return null
         const cols = d.columns || 3
         const ratio = { square: '1 / 1', card: '1080 / 1920', classic: '1920 / 1080' }[d.format] || '4 / 3'
-        const imgStyle = { width: '100%', aspectRatio: ratio, objectFit: 'cover', borderRadius: 8, display: 'block' }
+        const imgStyle = { width: '100%', aspectRatio: ratio, objectFit: 'cover', borderRadius: 8, display: 'block', cursor: 'zoom-in' }
+        const grandi = imgs.map(im => ({ url: im.url, alt: im.alt || '' }))
         const isCarousel = d.layout === 'carousel'
         return (
           <section key={block.id} style={{ padding: '64px 0', background: 'var(--sup)' }}>
@@ -1952,10 +1958,10 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                   perView={d.format === 'card' ? 4 : d.format === 'square' ? 3 : 2}
                   minCard={d.format === 'card' ? 220 : d.format === 'square' ? 300 : 380}
                   maxCard={d.format === 'card' ? 300 : d.format === 'square' ? 440 : 620}
-                  items={imgs.map((im, i) => ({ key: im.id || i, node: <img src={im.url} alt={im.alt || ''} loading="lazy" style={imgStyle} /> }))} />
+                  items={imgs.map((im, i) => ({ key: im.id || i, node: <img src={im.url} alt={im.alt || ''} loading="lazy" style={imgStyle} {...ingrandisci(grandi, i)} /> }))} />
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(cols, 320), gap: 10 }}>
-                  {imgs.map((im, i) => <img key={im.id || i} src={im.url} alt={im.alt || ''} loading="lazy" style={imgStyle} />)}
+                  {imgs.map((im, i) => <img key={im.id || i} src={im.url} alt={im.alt || ''} loading="lazy" style={imgStyle} {...ingrandisci(grandi, i)} />)}
                 </div>
               )}
             </div>
@@ -1983,6 +1989,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
       case 'gallery': {
         const gallery = (entity.gallery || []).slice(0, d.limit || 9)
         if (!gallery.length) return null
+        const grandi = gallery.map(url => ({ url, alt: '' }))
         return (
           <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
             <div className="lbr-section">
@@ -1990,7 +1997,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
               {d.sottotitolo && <p style={{ textAlign: 'center', color: 'var(--txt-tenue)', marginBottom: 40, fontSize: 15 }} {...ricco(d.sottotitolo)} />}
               <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 320), gap: 8 }}>
                 {gallery.map((url, i) => (
-                  <img key={i} src={url} alt="" loading="lazy" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: 4 }} />
+                  <img key={i} src={url} alt="" loading="lazy" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', borderRadius: 4, cursor: 'zoom-in' }} {...ingrandisci(grandi, i)} />
                 ))}
               </div>
             </div>
@@ -2514,6 +2521,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         })}
         {editor && !blocks.length && <InizioPagina />}
       </div>
+      {fotoGrande && <FotoGrande foto={fotoGrande.foto} indice={fotoGrande.i} lang={lang} onVai={i => setFotoGrande(f => f && { ...f, i })} onChiudi={() => setFotoGrande(null)} />}
     </>
   )
 }

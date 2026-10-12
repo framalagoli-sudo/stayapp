@@ -668,6 +668,13 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - ⚠️ Limiti noti: le **versioni salvate del sito** non contengono le sezioni (ripristinando, le pagine tornano indietro e il contenuto delle sezioni no); in inglese ogni pagina traduce la sua copia, quindi una correzione a mano va fatta pagina per pagina; l'AI non conosce il tipo `sezione`.
     - ⚠️ In `PaginaEditorPage.jsx` `Map` è l'icona di lucide: `new Map()` lì dà «is not a constructor» **solo nel browser**. Oggetti semplici.
     - Sonda `tests/probe-sezioni.mjs` (a mano): due aziende di prova, corpo grezzo delle pagine, una modifica che cambia due pagine, i casi ostili, e il percorso nel pannello col browser.
+    - **Primo uso vero, 12/10 (ok di Francesco)**: su metodotvb le 4 copie del pulsante «Scopri i progetti in corso» e le 4 del banner «Pronto a Diversificare…» sono due sezioni condivise. Due e non una: non stanno sempre vicine (in «Investire» fra i due ci sono altri blocchi; la home ha il pulsante e un altro banner). HTML delle pagine confrontato prima e dopo, italiano e inglese: identico — i percorsi delle traduzioni contano i blocchi **per posizione**, quindi sostituire un blocco con una sezione che ne contiene uno solo non fa ritradurre niente. Copia delle pagine di prima: `progetti/backup-pagine-tvb-fondaco-2026-10-12.json` (fuori dal repo).
+
+67. **🔍 Le foto delle gallerie si aprono in grande** (12/10/2026, primo difetto della ricognizione sui blocchi). `components/FotoGrande.jsx`: clic su una foto dei blocchi `galleria_immagini` (griglia e carosello) e `gallery` → a tutto schermo, con frecce, tasti (← → Esc), dito, contatore; si chiude con ✕, Esc o toccando fuori; sotto la pagina non scorre e chiudendo si torna sulla foto di partenza. Nessuna migration, nessuna opzione: vale per tutti.
+    - Lo stato sta nel disegnatore (`fotoGrande`), una sola finestra per pagina, in un portale su `<body>` (una sezione animata ha un `transform` e la terrebbe dentro di sé). **Dentro l'editor non si ingrandisce**: lì un clic sulla foto la sceglie (`ingrandisci` restituisce niente se `editor`).
+    - Non fatto: il blocco «Immagine» singola (può avere un link suo) e le foto della pagina di dettaglio di una vetrina.
+    - Al 12/10 **nessun sito vero** usa un blocco galleria: provato solo su un'azienda di prova. Sonda `tests/probe-foto-grande.mjs` (a mano): le tre gallerie, computer e telefono.
+    - Stesso giorno, ok di Francesco: sulla home di **Fondaco Narni** il vecchio blocco `contatti` (che non disegnava niente) è diventato «Contatti e orari», col titolo «Contatti» — una sezione nuova sul sito, fra prenotazione e newsletter.
 
 ---
 
