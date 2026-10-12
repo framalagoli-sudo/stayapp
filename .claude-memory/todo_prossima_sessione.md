@@ -1,6 +1,6 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — sessione 10/10 CHIUSA (migration ferme alla 135). Prima cosa: finire la posta di Guru su Cloudflare (inoltro non acceso, hosting SiteGround scade 11/10). Poi: pannello Domini che dice Online a torto, Meta/WhatsApp, stato vero del conto Stripe, onboarding v2"
+description: "Da dove riprendere — sessione 12/10 CHIUSA (migration alla 136). Prossimo: AI dentro la pagina. Da far provare a Francesco: editor visuale, sezioni condivise, foto in grande. In attesa: posta di Guru, Automax su Stripe, Meta/WhatsApp, stato vero del conto Stripe, onboarding v2"
 metadata: 
   node_type: memory
   type: project
@@ -9,6 +9,11 @@ metadata:
 ---
 
 # Si riprende da qui
+
+## ▶️ Chiusura del 12/10 sera — migration alla **136**, tutto live, repo allineato
+- **Si riparte dal punto 4 del piano: l'AI dentro la pagina** (nell'editor: scrivere/riscrivere il testo di un blocco). Prima di scrivere: guardare cosa c'è già (`ai-fill`, `from-document`, `chiamaAI`, tetto per azienda) e portare a Francesco una proposta corta.
+- Da far provare a Francesco: editor visuale (tre giri), sezioni condivise (pagina → «Rendi condivisa» → altra pagina → blocco «Sezione condivisa»), foto in grande (serve un sito con una galleria: oggi nessuno ce l'ha).
+- Idea nuova in valutazione: agente AI al telefono tipo bookli.ai → [[project_agente_vocale]], `STRATEGIA.md` §6.3. Aspetta una sua decisione sul prototipo.
 
 ## ▶️ 12/10 — editor visuale rifatto dopo la prima prova di Francesco
 - Bocciato alla prima prova (blocco trascinato = fascia vuota; si scriveva a sinistra e non si vedeva niente). Ora: il blocco nasce già scritto e i testi si scrivono sulla pagina con un clic (CLAUDE.md nota 64, lib/editor-visuale.js). **Deve riprovarlo lui**: pagina di Guru → Editor visuale → trascina «FAQ» → clicca una domanda sulla pagina e scrivi.

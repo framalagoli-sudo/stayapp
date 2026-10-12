@@ -161,6 +161,13 @@ Dove possibile ognuno ha un test in `tests/smoke/security.spec.js`.
     con `?preview` o `sec-fetch-dest: iframe` — l'intestazione è del browser e si può falsificare,
     ma ottiene solo la pagina pubblica all'indirizzo nostro: le bozze restano dietro il token firmato
     (nota 26 di `CLAUDE.md`). Sonda: `probe-slider-eventi.mjs`.
+25. **Un riferimento salvato dentro un contenuto si risolve solo in casa propria.** Una pagina può
+    contenere l'identificativo di una sezione condivisa (12/10/2026, tabella `sezioni`), e quel
+    valore lo scrive il cliente. `espandiSezioni` (`lib/sezioni.js`) cerca la sezione **solo fra
+    quelle della stessa entità**: l'id di una sezione altrui messo nella propria pagina non mostra
+    niente. Della pagina si salva solo `{ id, type, data: { sezione_id } }` (`soloRiferimenti`,
+    applicata anche nella route): nessun contenuto può viaggiare «dentro» il riferimento. Vale per
+    qualunque contenuto futuro che punti a un'altra riga per id. Sonda: `probe-sezioni.mjs`.
 
 ### Il SISTEMA di monitoraggio (a strati — "sempre" senza sprechi)
 - **Strato 0 — Aggiornamento dipendenze (il "processo tipo WordPress-update").** `.github/dependabot.yml`

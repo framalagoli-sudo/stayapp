@@ -706,6 +706,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - [x] **Blocchi «Contatti e orari» e «Listino prezzi»** ✅ 12/10/2026 — nota 65.
 - [x] **Sezioni condivise** (una sezione scritta una volta e usata su più pagine) ✅ 12/10/2026 — nota 66, migration 136.
 - [ ] **Editor e blocchi, il resto del piano del 12/10** — AI dentro la pagina, poi schede a linguette, tabella di confronto, citazione, titolo, popup; opzioni solo-telefono, larghezza del contenuto, copia stile. (AI istruita sui due blocchi nuovi il 12/10.) Ricognizione del 12/10 sui blocchi che mancano: memoria `project_blocchi_ricognizione`.
+- [ ] **Agente AI al telefono** (idea di Francesco, 12/10 — tipo bookli.ai): in valutazione, `STRATEGIA.md` §6.3. Dopo Meta/WhatsApp e le operazioni in `lib/`; la voce si prende da un fornitore.
 - [ ] **Lo stato vero del conto Stripe** — `puoIncassare` dice sì appena esiste `stripe_account_id`, anche se il collegamento è rimasto a metà: va salvato `charges_enabled` dal webhook dell'account. Oggi il link e la cassa falliscono con un messaggio chiaro, ma il pulsante compare lo stesso.
 - [ ] **Campagne WhatsApp per lista** (come le newsletter) e via i tag col titolo dell'evento — quando si collega Meta.
 - [ ] **Newsletter a blocchi** (stesso editor del sito, catalogo ridotto per la posta, blocchi collegati a eventi e offerte) — parere dato il 05/10, da riprendere dopo aver visto se i quattro modelli bastano.

@@ -16,7 +16,7 @@ pagarlo**.
 > dentro GitHub, che è uno degli accessi che descrive: se nessuno può entrare in
 > GitHub, nessuno può leggere queste istruzioni. Va tenuta una copia fuori.
 
-*Aggiornato all'11 ottobre 2026.*
+*Aggiornato al 12 ottobre 2026.*
 
 ---
 
@@ -251,7 +251,7 @@ un altro. Il dettaglio sta in `SECURITY.md`.
 
 ## 4. I dati — cosa c'è dentro
 
-Il database ha **133 migrazioni** alle spalle. Le tabelle da cui dipende tutto il
+Il database ha **136 migrazioni** alle spalle. Le tabelle da cui dipende tutto il
 resto, in ordine di ripristino:
 
 | Tabella | Cosa contiene | Righe (05/10/2026) |
@@ -260,6 +260,7 @@ resto, in ordine di ripristino:
 | `profiles` | le persone che entrano nel pannello | 14 |
 | `entita` | le attività: hotel, ristoranti, negozi… | 11 |
 | `pagine` | le pagine dei siti costruiti dai clienti | 27 |
+| `sezioni` | le sezioni condivise: un pezzo di pagina scritto una volta e usato su più pagine (dal 12/10/2026). La pagina ne salva solo il riferimento: **senza questa tabella le pagine che le usano hanno un buco** | 2 (12/10) |
 | `domini` | gli indirizzi web collegati | 14 |
 | `contatti` | i clienti *dei* clienti (dati personali) | 118 |
 | `contatti_attivita` | cosa ha fatto ogni contatto (prenotazioni, ordini, moduli…): titoli e numeri, **mai** dati personali | 141 |

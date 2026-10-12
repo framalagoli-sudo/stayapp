@@ -318,6 +318,29 @@ specifiche avrà il suo profilo. Conseguenze sul progetto qui sotto:
 vincendo una città con i locali, e i preconfiguratori sono il primo mattone per entrambe le
 cose.
 
+### 6.3 Agente AI al telefono (tipo bookli.ai) — **sì, dopo WhatsApp, e la voce si compra**
+Idea di Francesco del 12/10/2026 («è una figata»): un agente che risponde alle chiamate o chiama
+i lead, qualifica e prenota. Bookli è italiana, fa entrata e uscita più WhatsApp e SMS, dichiara
+700+ aziende; i prezzi non sono pubblici (prova da 60 minuti, crediti). **Niente di deciso.**
+
+- **Il nostro vantaggio**: un agente vale per ciò che sa e che può fare. A loro CRM e calendario
+  vanno collegati; noi orari, menù, eventi coi posti, risorse, contatti e link di pagamento li
+  abbiamo dentro. Caso già misurato: Garage 22, dove il telefono vendeva posti che il sistema non vedeva.
+- **Tre strati**: linea telefonica e voce (riconoscimento + sintesi sotto il secondo) si prendono da
+  un fornitore, da scegliere **provandolo in italiano**; l'agente — cosa sa, cosa fa, come si
+  configura, cosa succede dopo la chiamata — è il prodotto, ed è nostro.
+- **Viene dopo §4.4**: usa le stesse operazioni in `lib/`. L'assistente su WhatsApp costa molto
+  meno al minuto; la voce è un secondo canale sopra lo stesso motore.
+- **Nodi**: (1) si paga al minuto (stime trovate: 0,07–0,49 $/min) → fuori dal tetto AI, servizio
+  a consumo, quindi serve prima l'abbonamento a OltreNova su Stripe; (2) le chiamate **in uscita**
+  automatizzate chiedono un consenso specifico e c'è il Registro delle Opposizioni — *detto a
+  memoria, da verificare con un legale*; (3) chi chiama deve sapere che parla con un'AI.
+- **Dove loro restano avanti**: la rifinitura fatta su milioni di chiamate vere (accenti,
+  interruzioni, linea disturbata). La prima versione funziona; «non sembra una macchina» sono mesi.
+- **Passo proposto**: un prototipo su un caso solo, in entrata (Garage 22 che risponde per le
+  serate), prima di dargli un posto in roadmap. Scorciatoia da verificare: collegare Bookli stesso
+  ai nostri contatti via webhook per vedere se i clienti lo usano.
+
 ---
 
 ## 7. Decisioni aperte per Francesco
@@ -326,3 +349,4 @@ cose.
 3. Data prevista per il via della commercialista (abbonamento, commissione sulle transazioni).
 4. Preconfiguratori: via libera a partire, insieme all'onboarding?
 5. Aggregatore: quale città, e c'è già un consorzio o un'associazione con cui parlarne?
+6. Agente al telefono (§6.3): prototipo su Garage 22 sì o no, e quando?
