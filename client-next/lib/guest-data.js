@@ -1,6 +1,7 @@
 import { supabaseAdmin } from './supabase-server'
 import { getCollegamenti } from './guest-utils'
 import { verificaTokenAnteprima } from './preview-token'
+import { espandiSezioni } from './sezioni'
 import { allaFormaStorica } from './entita'
 import { conMenuPubblico } from './menu-pubblico'
 import { dataLocale } from './fuso'
@@ -267,5 +268,7 @@ export async function getPagina(tipo, entityId, pageSlug, anteprima = null) {
   if (!verificaTokenAnteprima(anteprima, tipo, entityId)) q = q.eq('status', 'pubblicata')
   const { data, error } = await q.single()
   if (error || !data) return null
+  // Le sezioni condivise si aprono qui: da questo punto in poi sono blocchi normali.
+  data.blocks = await espandiSezioni(data.blocks, tipo, entityId)
   return data
 }

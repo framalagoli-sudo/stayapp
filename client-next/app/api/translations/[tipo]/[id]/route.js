@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth, requireEntityAccess, requireRecordAccess, ENTITY_TABLES } from '@/lib/server-auth'
 import { getTranslatableSource } from '@/lib/translate'
+import { espandiSezioni } from '@/lib/sezioni'
 
 // Editor traduzioni (Fase 3 multilingua). Legge i testi traducibili IT di un'entità
 // o di una sotto-pagina + la traduzione automatica e gli override manuali.
@@ -19,6 +20,8 @@ async function resolveTarget(request, tipo, id) {
     if (!pagina) return { error: NextResponse.json({ error: 'Pagina non trovata' }, { status: 404 }) }
     const { response } = await requireEntityAccess(request, pagina.entity_tipo, pagina.entity_id)
     if (response) return { error: response }
+    // I testi si contano come li conta il sito: con le sezioni condivise già aperte.
+    pagina.blocks = await espandiSezioni(pagina.blocks, pagina.entity_tipo, pagina.entity_id)
     return { record: pagina }
   }
   if (tipo === 'form') {

@@ -45,7 +45,7 @@ const TABLES = [
   // identità e struttura
   'aziende', 'profiles', 'entita', 'properties', 'ristoranti', 'attivita', 'collegamenti',
   // il sito: è il prodotto più usato, e mancava del tutto
-  'pagine', 'site_snapshots', 'landing_seo', 'domini',
+  'pagine', 'sezioni', 'site_snapshots', 'landing_seo', 'domini',
   // clienti e richieste
   'contatti', 'contatti_attivita', 'requests', 'messages', 'demo_requests',
   // moduli

@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { verificaTokenAnteprima } from '@/lib/preview-token'
+import { espandiSezioni } from '@/lib/sezioni'
 
 export async function GET(request, props) {
   const params = await props.params;
@@ -15,6 +16,7 @@ export async function GET(request, props) {
     if (!anteprima) q = q.eq('status', 'pubblicata')
     const { data, error } = await q.single()
     if (error || !data) return Response.json({ error: 'Pagina non trovata' }, { status: 404 })
+    data.blocks = await espandiSezioni(data.blocks, params.tipo, params.entityId)
     return Response.json(data)
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }

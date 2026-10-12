@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireEntityAccess } from '@/lib/server-auth'
+import { espandiSezioni } from '@/lib/sezioni'
 
 // Quali blocchi ci sono davvero sul sito di questa entità.
 //
@@ -37,7 +38,8 @@ export async function GET(request) {
 
     const tipi = new Set()
     for (const p of data || []) {
-      for (const b of p.blocks || []) if (b?.type) tipi.add(b.type)
+      // Un blocco dentro una sezione condivisa sul sito c'è, come gli altri.
+      for (const b of (await espandiSezioni(p.blocks, entity_tipo, entity_id)) || []) if (b?.type) tipi.add(b.type)
     }
     return Response.json({ blocchi: [...tipi] })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }

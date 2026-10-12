@@ -641,7 +641,9 @@ export function useEditorNelRiquadro(editor, blocks, ridisegna) {
       let appunti = false; try { appunti = !!window.localStorage.getItem(APPUNTI) } catch {}
       parla({ tipo: 'oltrenova:blocco-scelto', id })
       const voce = (az, testo, tasti, spento) => '<button type="button" data-az="' + az + '"' + (spento ? ' disabled' : '') + '>' + testo + '<small>' + (tasti || '') + '</small></button>'
+      const condivisa = (sez.getAttribute('data-nome') || '').startsWith('Sezione condivisa')
       menu.innerHTML = voce('duplica', 'Duplica', 'Ctrl+D') + voce('copia', 'Copia', 'Ctrl+C') + voce('incolla', 'Incolla qui sotto', 'Ctrl+V', !appunti) + '<hr>' +
+        (condivisa ? voce('stacca', 'Stacca da questa pagina') : voce('condividi', 'Rendi condivisa…')) + '<hr>' +
         voce('aggiungi', 'Aggiungi un blocco qui sopra') + voce('su', 'Sposta su', '', i === 0) + voce('giu', 'Sposta giù', '', i === tutte.length - 1) + '<hr>' + voce('elimina', 'Elimina', 'Canc')
       menu.dataset.id = id
       menu.style.display = 'flex'
@@ -777,7 +779,7 @@ export function sezionePerEditor(el, blocco, editor, { primo, ultimo }) {
   if (Array.isArray(blocco.data?.images)) fotoDaMettere.push({ percorso: ['images', blocco.data.images.length], nome: 'Aggiungi una foto alla galleria' })
   const azione = (e, quale) => { e.preventDefault(); e.stopPropagation(); parla({ tipo: 'oltrenova:blocco-azione', id: blocco.id, azione: quale }) }
   return (
-    <div key={blocco.id} data-blocco={blocco.id} data-nome={blockLabel(blocco.type)} className={'ev-blocco' + (scelto ? ' ev-scelto' : '') + (el ? '' : ' ev-senza')}>
+    <div key={blocco.id} data-blocco={blocco.id} data-nome={blocco.type === 'sezione' && blocco._nome ? `Sezione condivisa · ${String(blocco._nome).slice(0, 60)}` : blockLabel(blocco.type)} className={'ev-blocco' + (scelto ? ' ev-scelto' : '') + (el ? '' : ' ev-senza')}>
       {el || <div className="ev-vuoto">«{blockLabel(blocco.type)}» {cosaManca(blocco.type)}</div>}
       <button type="button" className={'ev-piu' + (primo ? ' ev-piu-primo' : '')} title="Aggiungi un blocco qui"
         onClick={e => { e.preventDefault(); e.stopPropagation(); parla({ tipo: 'oltrenova:aggiungi-qui', prima: blocco.id }) }}><Plus size={17} strokeWidth={2} /></button>

@@ -106,6 +106,7 @@ const COSA_MANCA = {
   vetrina:           'compare quando scegli quale vetrina mostrare dalla scheda a sinistra.',
   punteggio:         'mostra il voto preso da Google: compare quando il collegamento con Google è attivo.',
   recapiti:          'mostra indirizzo, telefono, email e orari presi dalle Informazioni: oggi sono vuoti.',
+  sezione:           'è vuota: scegli quale sezione mostrare dalla scheda a sinistra.',
   show_map:          'mostra la mappa: compare quando nelle Informazioni c\'è l\'indirizzo.',
   gallery:           'mostra le foto della Galleria: oggi non ce ne sono.',
   menu:              'mostra il menù del ristorante: oggi non ha piatti.',

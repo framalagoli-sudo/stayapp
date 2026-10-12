@@ -20,6 +20,7 @@ import RichTextEditor from '@/components/admin/RichTextEditor'
 import MediaPickerButton from '@/components/admin/MediaPicker'
 import UnsplashPicker from '@/components/admin/UnsplashPicker'
 import { BLOCK_PATTERNS } from '@/lib/blockPatterns'
+import { TIPO_SEZIONE, MAX_BLOCCHI_SEZIONE, idSezione, soloRiferimenti } from '@/lib/sezioni-regole'
 import { datiDiNascita, scriviCampo, scriviParagrafo, campiDiTesto, postoPerFoto, scriviImmagine, azioneSuElemento } from '@/lib/editor-visuale'
 import { TIPO_TRASCINATO } from '@/components/EditorNelRiquadro'
 import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS, BLOCK_GLOW_OPTIONS, BLOCK_PADY_OPTIONS, blockSupportsBg, BLOCK_TEXT_SIZE_OPTIONS, BLOCK_TEXT_COLOR_OPTIONS, BLOCK_ICON_COLOR_OPTIONS, blockHasText, GRID_AUTO_BLOCKS, BLOCK_COLUMNS_OPTIONS } from '@/lib/blockTypes'
@@ -65,7 +66,7 @@ const BLOCK_ICON_MAP = {
   pacchetti: Package, faq: HelpCircle, immagine: Image, galleria_immagini: Grid, gallery: ImageIcon, video: Video,
   services: Settings, activities: Compass, excursions: Map, eventi: Calendar, eventi_slider: GalleryHorizontal, vetrina: Package,
   news: FileText, booking: Clock, newsletter: Mail, contatti: Phone,
-  show_map: MapPin, clienti: Building2, recapiti: MapPin, listino: List,
+  show_map: MapPin, clienti: Building2, recapiti: MapPin, listino: List, sezione: Layers,
 }
 const GROUP_COLORS = {
   layout: '#5b6af8', marketing: '#f97316', media: '#0891b2',
@@ -83,6 +84,23 @@ function BlockTypeIcon({ type, size = 15, muted = false }) {
 // Destinazioni interne (Home/pagine/Privacy/Cookie) condivise da tutti gli editor
 // di blocco senza prop-drilling. Riempito dal componente principale.
 const LinkContext = createContext([])
+// Le sezioni condivise del sito e quello che ci si può fare: lo usa la scheda
+// del blocco «Sezione condivisa», a qualunque profondità si trovi.
+const SezioniContext = createContext(null)
+
+// Un blocco `sezione` appena aggiunto, duplicato o incollato non porta le
+// modifiche non ancora salvate: le prende dal gemello che mostra la stessa sezione.
+function allineaSezioni(blocks) {
+  // ⚠️ In questo file `Map` è l'icona di lucide: qui serve un oggetto semplice.
+  const modificate = {}
+  for (const b of blocks) { const sid = idSezione(b); if (sid && (b._blocchi || typeof b._nome === 'string') && !modificate[sid]) modificate[sid] = b }
+  if (!Object.keys(modificate).length) return blocks
+  return blocks.map(b => {
+    const m = modificate[idSezione(b)] || null
+    if (!m || m === b || (b._blocchi === m._blocchi && b._nome === m._nome)) return b
+    return { ...b, ...(m._blocchi ? { _blocchi: m._blocchi } : {}), ...(typeof m._nome === 'string' ? { _nome: m._nome } : {}) }
+  })
+}
 
 // Campo URL con selettore di pagine interne. Drop-in per <Field> sui link.
 function LinkField({ label, value, onChange, placeholder = 'https://...', style: extraStyle }) {
@@ -231,6 +249,8 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
   const { type, data } = block
   const upd = (key, val) => onChange({ ...data, [key]: val })
   const links = useContext(LinkContext)
+
+  if (type === TIPO_SEZIONE) return <SezioneCondivisa block={block} entityId={entityId} entityTipo={entityTipo} />
 
   if (GRID_AUTO_BLOCKS.includes(type)) {
     const numStyle = { width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13, boxSizing: 'border-box' }
@@ -1131,6 +1151,8 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
 
 // ── BlockStylePanel — stile per-blocco (Fase 0: sfondo + spaziatura) ─────────
 function BlockStylePanel({ block, onChange, entityId, entityTipo }) {
+  // Una sezione condivisa non ha uno stile suo: ce l'hanno i blocchi che contiene.
+  if (block.type === TIPO_SEZIONE) return null
   const st = block.style || {}
   const set = (key, val) => onChange({ ...st, [key]: val })
   const showBg = blockSupportsBg(block.type)
@@ -1365,6 +1387,128 @@ function VetrinaBlockEditor({ data, onChange, entityId, entityTipo }) {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Sezione condivisa ────────────────────────────────────────────────────────
+// La scheda di un blocco `sezione`: quale sezione mostra, cosa c'è dentro, e
+// l'avviso che conta — quello che si cambia qui cambia in ogni pagina che la usa.
+// Il contenuto modificato resta sul blocco (`_blocchi`, `_nome`) finché non si
+// salva: così annulla/ripeti e l'anteprima lo vedono come ogni altra modifica.
+function SezioneCondivisa({ block, entityId, entityTipo }) {
+  const sz = useContext(SezioniContext)
+  const [aperto, setAperto] = useState(null)
+  const [elenco, setElenco] = useState(false)
+  if (!sz) return null
+  const id = block.data?.sezione_id || ''
+  const nota = sz.sezioni.find(s => s.id === id) || null
+  const dentro = sz.blocchiDi(block)
+  const usi = nota?.usata_in || []
+  const altre = usi.filter(u => u.id !== sz.paginaId)
+  const cambia = nb => sz.cambia(block.id, { _blocchi: nb })
+  const sposta = (i, passo) => { const j = i + passo; if (j < 0 || j >= dentro.length) return; const nb = [...dentro]; [nb[i], nb[j]] = [nb[j], nb[i]]; cambia(nb) }
+  const sotto = sz.bloccoSotto(block.id)
+  const piccolo = { background: '#f0f0f4', border: 'none', borderRadius: 6, padding: '6px 8px', cursor: 'pointer', color: '#444', lineHeight: 0 }
+  const secondario = { background: '#fff', border: '1.5px solid #d8d8e4', borderRadius: 8, padding: '9px 12px', cursor: 'pointer', fontSize: 13, color: '#1a1a2e', textAlign: 'left' }
+  const nota2 = { fontSize: 12, color: '#777', lineHeight: 1.5, margin: '4px 0 0' }
+
+  if (!sz.pronte) return <p style={{ fontSize: 13, color: '#888' }}>Carico le sezioni condivise…</p>
+
+  return (
+    <div data-sezione-condivisa style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {sz.sezioni.length === 0 ? (
+        <div style={{ padding: '12px 14px', background: '#f8f9ff', border: '1px solid #e8ecff', borderRadius: 8, fontSize: 13, color: '#444', lineHeight: 1.55 }}>
+          <strong>Non c'è ancora nessuna sezione condivisa.</strong><br />
+          Per crearne una apri un blocco che vuoi ripetere su più pagine e premi <strong>«Rendi condivisa»</strong>: poi la ritrovi qui, da mettere dove vuoi.
+        </div>
+      ) : (
+        <div>
+          <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 500 }}>Quale sezione mostrare qui</label>
+          <select data-sezione-scelta value={nota ? id : ''} onChange={e => sz.scegli(block.id, e.target.value)}
+            style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '9px 10px', fontSize: 13, background: '#fff', fontFamily: 'inherit' }}>
+            <option value="">— scegli una sezione —</option>
+            {sz.sezioni.map(s => <option key={s.id} value={s.id}>{s.nome || 'Senza nome'}</option>)}
+          </select>
+        </div>
+      )}
+
+      {nota && (
+        <>
+          <div data-sezione-avviso style={{ padding: '11px 13px', background: '#fff8e1', border: '1px solid #f0d98a', borderRadius: 8, fontSize: 13, color: '#6b5200', lineHeight: 1.55 }}>
+            <strong>Quello che cambi qui cambia in tutte le pagine che usano questa sezione.</strong><br />
+            {altre.length
+              ? <>Oltre a questa: <strong>{altre.map(u => u.titolo).join(', ')}</strong>.</>
+              : 'Per ora la usa solo questa pagina.'}
+          </div>
+
+          <Field label="Nome (lo vedi solo tu)" value={sz.nomeDi(block)} onChange={v => sz.cambia(block.id, { _nome: v.slice(0, 120) })} />
+
+          <div>
+            <div style={{ fontSize: 12, color: '#555', marginBottom: 6, fontWeight: 500 }}>Cosa c'è dentro</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {dentro.map((x, i) => (
+                <div key={x.id} data-sezione-blocco={x.type} style={{ background: '#fff', border: '1px solid #e4e4ec', borderRadius: 10, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px' }}>
+                    <BlockTypeIcon type={x.type} size={15} />
+                    <span onClick={() => setAperto(aperto === x.id ? null : x.id)} style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, color: '#1a1a2e', cursor: 'pointer' }}>{blockLabel(x.type)}</span>
+                    <button type="button" title="Sposta su" disabled={i === 0} onClick={() => sposta(i, -1)} style={{ ...piccolo, opacity: i === 0 ? 0.35 : 1 }}><ChevronUp size={14} strokeWidth={1.5} /></button>
+                    <button type="button" title="Sposta giù" disabled={i === dentro.length - 1} onClick={() => sposta(i, 1)} style={{ ...piccolo, opacity: i === dentro.length - 1 ? 0.35 : 1 }}><ChevronDown size={14} strokeWidth={1.5} /></button>
+                    {dentro.length > 1 && (
+                      <button type="button" title="Togli dalla sezione (sparisce da tutte le pagine)" onClick={() => { if (confirm('Togliere questo blocco dalla sezione? Sparisce da tutte le pagine che la usano.')) cambia(dentro.filter(y => y.id !== x.id)) }} style={{ ...piccolo, color: '#c0392b' }}><Trash2 size={14} strokeWidth={1.5} /></button>
+                    )}
+                    <button type="button" onClick={() => setAperto(aperto === x.id ? null : x.id)} style={{ ...piccolo, fontSize: 12, lineHeight: 1, fontWeight: 600 }}>{aperto === x.id ? 'Chiudi' : 'Modifica'}</button>
+                  </div>
+                  {aperto === x.id && (
+                    <div style={{ borderTop: '1px solid #f0f0f0', padding: '14px 12px', background: '#fafafa' }}>
+                      <BlockEditor block={x} onChange={data => cambia(dentro.map(y => y.id === x.id ? { ...y, data } : y))} entityId={entityId} entityTipo={entityTipo} />
+                      <BlockStylePanel block={x} entityId={entityId} entityTipo={entityTipo} onChange={style => cambia(dentro.map(y => y.id === x.id ? { ...y, style } : y))} />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {sotto && dentro.length < MAX_BLOCCHI_SEZIONE && (
+            <div>
+              <button type="button" data-sezione-porta-dentro onClick={() => sz.portaDentro(block.id)} style={secondario}>Porta dentro anche «{blockLabel(sotto.type)}», il blocco qui sotto</button>
+              <p style={nota2}>Così i due blocchi viaggiano insieme su ogni pagina.</p>
+            </div>
+          )}
+
+          <div>
+            <button type="button" data-sezione-stacca onClick={() => sz.stacca(block.id)} style={secondario}>Stacca da questa pagina</button>
+            <p style={nota2}>Qui resta una copia normale, che puoi cambiare senza toccare le altre pagine. La sezione condivisa continua a esistere.</p>
+          </div>
+        </>
+      )}
+
+      {sz.sezioni.length > 0 && (
+        <div style={{ borderTop: '1px solid #ececf2', paddingTop: 12 }}>
+          <button type="button" onClick={() => setElenco(a => !a)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 12.5, color: '#5b6af8', fontWeight: 600 }}>
+            {elenco ? '▾' : '▸'} Tutte le sezioni condivise di questo sito ({sz.sezioni.length})
+          </button>
+          {elenco && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
+              {sz.sezioni.map(s => {
+                const quante = (s.usata_in || []).length
+                const inUso = quante > 0 || sz.usataQui(s.id)
+                return (
+                  <div key={s.id} data-sezione-riga style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: '#fff', border: '1px solid #e4e4ec', borderRadius: 8, minWidth: 0 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', overflowWrap: 'anywhere' }}>{s.nome || 'Senza nome'}</div>
+                      <div style={{ fontSize: 11.5, color: '#888' }}>{quante === 0 ? (sz.usataQui(s.id) ? 'usata in questa pagina (da salvare)' : 'non usata in nessuna pagina') : quante === 1 ? `usata in una pagina: ${s.usata_in[0].titolo}` : `usata in ${quante} pagine`}</div>
+                    </div>
+                    <button type="button" disabled={inUso} title={inUso ? 'Si elimina solo una sezione che nessuna pagina usa: prima staccala' : 'Elimina la sezione'} onClick={() => sz.elimina(s.id)}
+                      style={{ ...piccolo, color: inUso ? '#bbb' : '#c0392b', cursor: inUso ? 'default' : 'pointer' }}><Trash2 size={14} strokeWidth={1.5} /></button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Field({ label, value, onChange, multiline, rows = 3, placeholder, style: extraStyle }) {
   return (
     <div style={extraStyle}>
@@ -1523,6 +1667,11 @@ export default function PaginaEditorPage() {
   const [schedaTab,   setSchedaTab]   = useState('contenuto')         // contenuto · stile
   const [avviso,      setAvviso]      = useState(null)                // { testo, annulla? }
   const [navSopra,    setNavSopra]    = useState(null)                // { id, dopo } mentre si riordina dalla struttura
+  // Le sezioni condivise del sito (vedi più sotto «Sezioni condivise»).
+  const [sezioni, setSezioni] = useState([])
+  const [sezioniPronte, setSezioniPronte] = useState(false)
+  const blocchiDi = b => Array.isArray(b?._blocchi) ? b._blocchi : (sezioni.find(s => s.id === b?.data?.sezione_id)?.blocks || [])
+  const nomeDi = b => typeof b?._nome === 'string' ? b._nome : (sezioni.find(s => s.id === b?.data?.sezione_id)?.nome || '')
   const sceltaFoto = useRef(null)
   const fotoAttesa = useRef(null)
   const tAvviso = useRef(null)
@@ -1616,8 +1765,10 @@ export default function PaginaEditorPage() {
   const mandaAnteprima = useCallback(() => {
     const percorso = previewUrl(); const finestra = riquadro.current?.contentWindow
     if (!percorso || !finestra) return
-    try { finestra.postMessage({ tipo: 'oltrenova:anteprima-blocchi', percorso, blocks, ...(visuale ? { visuale: true, selezionato: expandedId, scala } : {}) }, window.location.origin) } catch {}
-  }, [blocks, entitySlug, page?.slug, page?.entity_tipo, visuale, expandedId, scala])
+    // Di una sezione condivisa la pagina salva solo il riferimento: al riquadro va anche quello che contiene.
+    const daDisegnare = blocks.map(b => b.type === TIPO_SEZIONE ? { ...b, _blocchi: blocchiDi(b), _nome: nomeDi(b) } : b)
+    try { finestra.postMessage({ tipo: 'oltrenova:anteprima-blocchi', percorso, blocks: daDisegnare, ...(visuale ? { visuale: true, selezionato: expandedId, scala } : {}) }, window.location.origin) } catch {}
+  }, [blocks, sezioni, entitySlug, page?.slug, page?.entity_tipo, visuale, expandedId, scala])
   useEffect(() => {
     if (!visuale && !(showPreview && dirty)) return
     const t = setTimeout(mandaAnteprima, visuale ? 40 : 250)
@@ -1686,6 +1837,8 @@ export default function PaginaEditorPage() {
       else if (m.azione === 'elimina') deleteBlock(m.id)
       else if (m.azione === 'copia') { copyBlock(m.id); avvisa('Sezione copiata: si incolla qui o in un\'altra pagina.') }
       else if (m.azione === 'incolla') pasteBlock(m.id)
+      else if (m.azione === 'condividi') rendiCondivisa(m.id)
+      else if (m.azione === 'stacca') staccaSezione(m.id)
     }
   }
   // I comandi da tastiera dell'editor visuale: arrivano dal pannello o, come
@@ -1728,6 +1881,97 @@ export default function PaginaEditorPage() {
     return () => window.removeEventListener('message', ascolta)
   }, [])
 
+
+  // ── Sezioni condivise ──────────────────────────────────────────────────────
+  // Un blocco `sezione` nella pagina è solo un riferimento. Quello che contiene
+  // arriva da `sezioni` (com'è salvato) oppure, se lo si è toccato in questa
+  // sessione, da `_blocchi` / `_nome` sul blocco stesso: si salva con «Salva».
+  function caricaSezioni() {
+    if (!page?.entity_id) return Promise.resolve()
+    return apiFetch(`/api/sezioni?entity_tipo=${page.entity_tipo}&entity_id=${page.entity_id}`)
+      .then(d => { if (Array.isArray(d)) setSezioni(d) }).catch(() => {}).finally(() => setSezioniPronte(true))
+  }
+  useEffect(() => { caricaSezioni() }, [page?.entity_id])
+  // Una copia di un blocco con identificativi nuovi (anche per i suoi elementi).
+  function copiaBlocco(src) {
+    const data = JSON.parse(JSON.stringify(src.data || {}))
+    if (Array.isArray(data.items))  data.items  = data.items.map(it => ({ ...it, id: uid() }))
+    if (Array.isArray(data.slides)) data.slides = data.slides.map(s => ({ ...s, id: uid() }))
+    return { id: uid(), type: src.type, data, ...(src.style ? { style: JSON.parse(JSON.stringify(src.style)) } : {}) }
+  }
+  function cambiaSezione(idBlocco, modifica) {
+    const sid = blocks.find(b => b.id === idBlocco)?.data?.sezione_id
+    if (!sid) return
+    // La stessa sezione può stare due volte nella pagina: cambiano insieme.
+    patchBlocks(blocks.map(b => b.type === TIPO_SEZIONE && b.data?.sezione_id === sid ? { ...b, ...modifica } : b))
+  }
+  function scegliSezione(idBlocco, sid) {
+    const valida = sezioni.some(s => s.id === sid) ? sid : ''
+    patchBlocks(blocks.map(b => b.id === idBlocco ? { id: b.id, type: TIPO_SEZIONE, data: { sezione_id: valida } } : b))
+  }
+  function staccaSezione(idBlocco) {
+    const i = blocks.findIndex(b => b.id === idBlocco)
+    if (i < 0 || blocks[i].type !== TIPO_SEZIONE) return
+    const copie = blocchiDi(blocks[i]).filter(x => x.type !== TIPO_SEZIONE).map(copiaBlocco)
+    if (!copie.length) return
+    const nb = [...blocks]; nb.splice(i, 1, ...copie)
+    patchBlocks(nb); setExpandedId(copie[0].id)
+    avvisa('Staccata: qui ora c\'è una copia normale. Le altre pagine non cambiano.', true)
+  }
+  async function rendiCondivisa(idBlocco) {
+    const b = blocks.find(x => x.id === idBlocco)
+    if (!b || b.type === TIPO_SEZIONE) return
+    const nome = window.prompt('Che nome dai a questa sezione condivisa?\n(Lo vedi solo tu: serve a ritrovarla quando la metti su un\'altra pagina.)', blockLabel(b.type))
+    if (nome === null) return
+    try {
+      const nuova = await apiFetch('/api/sezioni', { method: 'POST', body: JSON.stringify({ entity_tipo: page.entity_tipo, entity_id: page.entity_id, nome, blocks: [{ id: uid(), type: b.type, data: b.data || {}, ...(b.style ? { style: b.style } : {}) }] }) })
+      if (!nuova?.id) throw new Error('Non è stato possibile creare la sezione')
+      setSezioni(s => [...s, nuova])
+      const attuali = blocchiVivi.current
+      // Identificativo nuovo: il blocco cambia tipo, e la sua scheda deve rinascere.
+      const idNuovo = uid()
+      patchVivo.current(attuali.map(x => x.id === idBlocco ? { id: idNuovo, type: TIPO_SEZIONE, data: { sezione_id: nuova.id } } : x))
+      setExpandedId(idNuovo); setSchedaTab('contenuto')
+      if (visuale) avvisa('Ora è una sezione condivisa: aggiungila alle altre pagine dal blocco «Sezione condivisa». Ricordati di salvare.')
+    } catch (err) { alert(err?.message || 'Non è stato possibile creare la sezione condivisa. Riprova.') }
+  }
+  function portaDentro(idBlocco) {
+    const i = blocks.findIndex(b => b.id === idBlocco)
+    const sotto = blocks[i + 1]
+    if (i < 0 || !sotto || sotto.type === TIPO_SEZIONE) return
+    const sid = blocks[i].data?.sezione_id
+    const dentro = [...blocchiDi(blocks[i]), { id: uid(), type: sotto.type, data: sotto.data || {}, ...(sotto.style ? { style: sotto.style } : {}) }]
+    patchBlocks(blocks.filter(b => b.id !== sotto.id).map(b => b.type === TIPO_SEZIONE && b.data?.sezione_id === sid ? { ...b, _blocchi: dentro } : b))
+  }
+  async function eliminaSezione(sid) {
+    if (blocks.some(b => idSezione(b) === sid)) return
+    if (!confirm('Eliminare questa sezione condivisa? Non è usata in nessuna pagina.')) return
+    try { await apiFetch(`/api/sezioni/${sid}`, { method: 'DELETE' }); setSezioni(s => s.filter(x => x.id !== sid)) }
+    catch (err) { alert(err?.message || 'Eliminazione non riuscita.'); caricaSezioni() }
+  }
+  const perLeSezioni = {
+    sezioni, pronte: sezioniPronte, paginaId: pageId, blocchiDi, nomeDi,
+    cambia: cambiaSezione, scegli: scegliSezione, stacca: staccaSezione, portaDentro, elimina: eliminaSezione,
+    usataQui: sid => blocks.some(b => idSezione(b) === sid),
+    bloccoSotto: idBlocco => { const s = blocks[blocks.findIndex(b => b.id === idBlocco) + 1]; return s && s.type !== TIPO_SEZIONE ? s : null },
+  }
+  // Le sezioni toccate in questa sessione: si salvano prima della pagina.
+  async function salvaSezioni() {
+    const daSalvare = {}
+    for (const b of blocks) {
+      const sid = idSezione(b); const nota = sid && sezioni.find(s => s.id === sid)
+      if (!nota) continue
+      const corpo = {}
+      if (Array.isArray(b._blocchi) && JSON.stringify(b._blocchi) !== JSON.stringify(nota.blocks)) corpo.blocks = b._blocchi
+      if (typeof b._nome === 'string' && b._nome.trim() && b._nome.trim() !== nota.nome) corpo.nome = b._nome.trim()
+      if (Object.keys(corpo).length) daSalvare[sid] = corpo
+    }
+    for (const [sid, corpo] of Object.entries(daSalvare)) {
+      const salvata = await apiFetch(`/api/sezioni/${sid}`, { method: 'PATCH', body: JSON.stringify(corpo) })
+      if (salvata?.id) setSezioni(s => s.map(x => x.id === sid ? { ...x, ...salvata } : x))
+    }
+  }
+
   function copyLink() {
     const url = previewUrl(); if (!url) return
     navigator.clipboard.writeText(window.location.origin + url)
@@ -1744,7 +1988,7 @@ export default function PaginaEditorPage() {
   function esci() { if (!dirty || window.confirm('Ci sono modifiche non salvate: uscendo si perdono. Uscire lo stesso?')) router.back() }
 
   function patchPage(key, val) { setPage(p => ({ ...p, [key]: val })); setDirty(true) }
-  function patchBlocks(nb) { setPast(p => [...p.slice(-49), blocks]); setFuture([]); setBlocks(nb); setDirty(true) }
+  function patchBlocks(nb) { nb = allineaSezioni(nb); setPast(p => [...p.slice(-49), blocks]); setFuture([]); setBlocks(nb); setDirty(true) }
   function undo() { if (!past.length) return; setAvviso(null); setFuture(f => [blocks, ...f]); setBlocks(past[past.length - 1]); setPast(p => p.slice(0, -1)); setDirty(true) }
   function redo() { if (!future.length) return; setAvviso(null); setPast(p => [...p, blocks]); setBlocks(future[0]); setFuture(f => f.slice(1)); setDirty(true) }
 
@@ -1912,6 +2156,7 @@ export default function PaginaEditorPage() {
   async function save(sopra = {}) {
     setSaving(true); setSaveError(null)
     try {
+      await salvaSezioni()
       await apiFetch(`/api/pagine/${pageId}`, {
         method: 'PATCH',
         body: JSON.stringify({
@@ -1919,12 +2164,13 @@ export default function PaginaEditorPage() {
           nel_menu: page.nel_menu, seo_title: page.seo_title,
           seo_description: page.seo_description, og_image_url: page.og_image_url,
           hide_header: !!page.hide_header, hide_footer: !!page.hide_footer,
-          blocks, ...sopra,
+          blocks: soloRiferimenti(blocks), ...sopra,
         }),
       })
       if (Object.keys(sopra).length) setPage(p => ({ ...p, ...sopra }))
       setDirty(false); setSaved(true); setTimeout(() => setSaved(false), 2000)
       setSalvatiVuoti(!blocks.length)
+      caricaSezioni()   // in quali pagine è usata ogni sezione, com'è adesso
       // L'editor visuale ha già a schermo quello che si è appena salvato:
       // ricaricarlo farebbe solo perdere il punto in cui si stava lavorando.
       if (!visuale) setPreviewNonce(n => n + 1)   // ricarica l'anteprima in-editor
@@ -1951,6 +2197,7 @@ export default function PaginaEditorPage() {
 
   return (
    <LinkContext.Provider value={internalLinks}>
+   <SezioniContext.Provider value={perLeSezioni}>
     <div style={{ maxWidth: 780 }}>
 
       {/* ── Top bar ── */}
@@ -2087,16 +2334,19 @@ export default function PaginaEditorPage() {
                         <BlockTypeIcon type={scelto.type} size={15} />
                       </div>
                       <strong style={{ flex: 1, minWidth: 0, fontSize: 14, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{blockLabel(scelto.type)}</strong>
+                      {scelto.type !== TIPO_SEZIONE && <button data-rendi-condivisa onClick={() => rendiCondivisa(scelto.id)} title="Rendi condivisa: la stessa sezione su più pagine, da cambiare in un posto solo" style={azBtn}><Share2 size={14} strokeWidth={1.5} /></button>}
                       <button onClick={() => copyBlock(scelto.id)} title="Copia blocco (incollabile su altre pagine)" style={azBtn}><Clipboard size={14} strokeWidth={1.5} /></button>
                       <button onClick={() => duplicateBlock(scelto.id)} title="Duplica blocco" style={azBtn}><Copy size={14} strokeWidth={1.5} /></button>
                       <button onClick={() => deleteBlock(scelto.id)} title="Elimina blocco" style={{ ...azBtn, color: '#c0392b' }}><Trash2 size={14} strokeWidth={1.5} /></button>
                     </div>
+                    {scelto.type !== TIPO_SEZIONE && (
                     <div style={{ display: 'flex', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
                       <button onClick={() => setSchedaTab('contenuto')} style={linguetta(schedaTab === 'contenuto')}>Contenuto</button>
                       <button onClick={() => setSchedaTab('stile')} style={linguetta(schedaTab === 'stile')}>Stile</button>
                     </div>
+                    )}
                     <div key={scelto.id + schedaTab} data-scheda-blocco style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 40px', background: '#fafafa' }}>
-                      {schedaTab === 'contenuto'
+                      {schedaTab === 'contenuto' || scelto.type === TIPO_SEZIONE
                         ? <BlockEditor block={scelto} onChange={data => updateBlock(scelto.id, data)} entityId={entityId} entityTipo={entityTipo} />
                         : <BlockStylePanel block={scelto} entityId={entityId} entityTipo={entityTipo} onChange={style => updateBlockStyle(scelto.id, style)} />}
                     </div>
@@ -2344,8 +2594,22 @@ export default function PaginaEditorPage() {
                     style={{ flex: 1, fontWeight: 600, fontSize: 14, color: '#1a1a2e', cursor: 'pointer', userSelect: 'none' }}
                     onClick={() => setExpandedId(isOpen ? null : block.id)}
                   >
-                    {blockLabel(block.type)}
+                    {blockLabel(block.type)}{block.type === TIPO_SEZIONE && nomeDi(block) ? <span style={{ fontWeight: 400, color: '#777' }}> · {nomeDi(block)}</span> : null}
                   </span>
+
+                  {/* Rendi condivisa: la stessa sezione su più pagine */}
+                  {block.type !== TIPO_SEZIONE && (
+                    <button
+                      data-rendi-condivisa
+                      onClick={() => rendiCondivisa(block.id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px 6px', color: '#ddd', lineHeight: 0, flexShrink: 0 }}
+                      onMouseEnter={e => { e.currentTarget.style.color = '#5b6af8' }}
+                      onMouseLeave={e => { e.currentTarget.style.color = '#ddd' }}
+                      title="Rendi condivisa: la stessa sezione su più pagine, da cambiare in un posto solo"
+                    >
+                      <Share2 size={14} strokeWidth={1.5} />
+                    </button>
+                  )}
 
                   {/* Copia (per incollare su altre pagine) */}
                   <button
@@ -2497,6 +2761,7 @@ export default function PaginaEditorPage() {
         </div>
       )}
     </div>
+   </SezioniContext.Provider>
    </LinkContext.Provider>
   )
 }

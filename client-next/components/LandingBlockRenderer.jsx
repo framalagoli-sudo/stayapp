@@ -2439,7 +2439,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
 
   // Senza una copertina col suo titolo la pagina non ha un H1: lo diventa il
   // primo titolo di sezione (vedi promuoviPrimoTitolo).
-  let mancaH1 = !blocks.some(b => (b?.type === 'hero' && b.data?.title) || (b?.type === 'hero_slider' && b.data?.slides?.[0]?.title))
+  let mancaH1 = !blocks.flatMap(b => b?.type === 'sezione' && Array.isArray(b._blocchi) ? b._blocchi : [b]).some(b => (b?.type === 'hero' && b.data?.title) || (b?.type === 'hero_slider' && b.data?.slides?.[0]?.title))
 
   return (
     <>
@@ -2495,9 +2495,21 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
       `}</style>
       <div ref={animRef} style={{ '--icon-color': (entity?.theme?.iconColor || primary) }}>
         {blocks.map((b, i) => {
-          let el = applyBlockStyle(renderBlock(b, blockInverted(b, primary, sec), blocks[i + 1]), b, { primary, secondary: sec })
-          if (mancaH1 && el) { const r = promuoviPrimoTitolo(el); if (r.fatto) { el = r.el; mancaH1 = false } }
-          if (el && i !== 0) el = cloneElement(el, { className: ((el.props.className || '') + ' lbr-reveal').trim() })
+          const disegna = (x, prossimo, primo) => {
+            let el = applyBlockStyle(renderBlock(x, blockInverted(x, primary, sec), prossimo), x, { primary, secondary: sec })
+            if (mancaH1 && el) { const r = promuoviPrimoTitolo(el); if (r.fatto) { el = r.el; mancaH1 = false } }
+            if (el && !primo) el = cloneElement(el, { className: ((el.props.className || '') + ' lbr-reveal').trim() })
+            return el
+          }
+          let el
+          if (b?.type === 'sezione') {
+            // Una sezione condivisa arriva qui solo dall'editor, che manda il suo
+            // contenuto insieme al blocco (`_blocchi`): sul sito il server l'ha
+            // già aperta in blocchi normali, e questo ramo non si incontra.
+            const dentro = Array.isArray(b._blocchi) ? b._blocchi.filter(x => x && x.type !== 'sezione') : []
+            const els = dentro.map((x, j) => disegna({ ...x, id: `${b.id}:${x.id}` }, dentro[j + 1] || blocks[i + 1], i === 0 && j === 0))
+            el = els.some(Boolean) ? <div key={b.id}>{els}</div> : null
+          } else el = disegna(b, blocks[i + 1], i === 0)
           return editor ? sezionePerEditor(el, b, editor, { primo: i === 0, ultimo: i === blocks.length - 1 }) : el
         })}
         {editor && !blocks.length && <InizioPagina />}

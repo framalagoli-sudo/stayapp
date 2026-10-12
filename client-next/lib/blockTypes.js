@@ -22,6 +22,7 @@ export const BLOCK_TYPES = [
   { type: 'accordion',    label: 'Accordion',          group: 'layout',      emoji: '🪗', desc: 'Sezioni a fisarmonica (titolo + contenuto) apribili — per contenuti lunghi' },
   { type: 'divisore',     label: 'Divisore / Spazio',  group: 'layout',      emoji: '➖', desc: 'Spazio vuoto, linea o separatore a forma (onda/diagonale) tra le sezioni' },
   { type: 'social',       label: 'Social',             group: 'layout',      emoji: '🔗', desc: 'Icone dei social con link' },
+  { type: 'sezione',      label: 'Sezione condivisa',  group: 'layout',      emoji: '♻️', desc: 'Una sezione scritta una volta e usata su più pagine: la cambi in un posto e cambia ovunque' },
   { type: 'highlights',   label: 'Highlights',         group: 'marketing',   emoji: '⭐', desc: 'Icona + testo breve, griglia 3 colonne' },
   { type: 'stats',        label: 'Statistiche',        group: 'marketing',   emoji: '📊', desc: 'Banda scura con numeri grandi' },
   { type: 'cta_banner',   label: 'Banner CTA',         group: 'marketing',   emoji: '📣', desc: 'Banda colorata con call to action (ripetibile)' },
@@ -116,6 +117,7 @@ export const BLOCK_DEFAULTS = {
   booking:      { titolo_sezione: '' },
   newsletter:   { title: '', subtitle: '' },
   show_map:     {},
+  sezione:      { sezione_id: '' },
   // Non ha recapiti suoi: li legge dalle Informazioni dell'entità, così c'è un
   // posto solo dove si scrivono. `nascondi` = quali righe non mostrare
   // (indirizzo · telefono · email · whatsapp · orari).
