@@ -183,7 +183,8 @@ try {
   await page.keyboard.press('Control+A'); await page.keyboard.type('ZZ Quanto costa?')
   await page.keyboard.press('Enter')
   await page.waitForTimeout(600)
-  esito(await sez.getByText('ZZ Quanto costa?', { exact: true }).count() === 1 && await page.locator('[data-scheda-blocco] input').evaluateAll(els => els.some(e => e.value === 'ZZ Quanto costa?')), 'anche un elemento della lista si scrive sul posto, e Invio chiude', (await sez.innerText()).replace(/s+/g, ' ').slice(0, 160) + ' | scheda: ' + (await page.locator('[data-scheda-blocco] input').evaluateAll(els => els.map(e => e.value).join(' · '))).slice(0, 160))
+  const elementoScritto = await sez.getByText('ZZ Quanto costa?', { exact: true }).count() === 1 && await page.locator('[data-scheda-blocco] input').evaluateAll(els => els.some(e => e.value === 'ZZ Quanto costa?'))
+  esito(elementoScritto, 'anche un elemento della lista si scrive sul posto, e Invio chiude', elementoScritto ? '' : (await sez.innerText()).replace(/\s+/g, ' ').slice(0, 160) + ' | scheda: ' + (await page.locator('[data-scheda-blocco] input').evaluateAll(els => els.map(e => e.value).join(' · '))).slice(0, 160))
   // Un testo formattato: si scrive dentro la parola in grassetto, e resta in grassetto.
   await riq().locator('[data-blocco="b-chi"] strong').click()
   await page.keyboard.press('Control+A'); await page.keyboard.type('ZZ Grassetto')
