@@ -49,6 +49,12 @@ const ESEMPI = {
     { title: 'Prima sezione',   text: 'Scrivi qui il contenuto della prima sezione.' },
     { title: 'Seconda sezione', text: 'Scrivi qui il contenuto della seconda sezione.' },
   ] },
+  listino:     { titolo: 'Listino prezzi', items: [
+    { name: 'Il nome della prima voce', description: '', price: '10 €' },
+    { name: 'Il nome della seconda voce', description: 'Una riga che la descrive, se serve.', price: '20 €' },
+    { name: 'Il nome della terza voce', description: '', price: '30 €' },
+  ] },
+  recapiti:    { titolo: 'Contatti e orari' },
   faq:         { titolo: 'Domande frequenti', items: [
     { question: 'Scrivi qui la prima domanda', answer: 'Scrivi qui la risposta.' },
     { question: 'Scrivi qui la seconda domanda', answer: 'Scrivi qui la risposta.' },
@@ -99,6 +105,7 @@ const COSA_MANCA = {
   form_builder:      'compare quando scegli quale modulo mostrare dalla scheda a sinistra.',
   vetrina:           'compare quando scegli quale vetrina mostrare dalla scheda a sinistra.',
   punteggio:         'mostra il voto preso da Google: compare quando il collegamento con Google è attivo.',
+  recapiti:          'mostra indirizzo, telefono, email e orari presi dalle Informazioni: oggi sono vuoti.',
   show_map:          'mostra la mappa: compare quando nelle Informazioni c\'è l\'indirizzo.',
   gallery:           'mostra le foto della Galleria: oggi non ce ne sono.',
   menu:              'mostra il menù del ristorante: oggi non ha piatti.',

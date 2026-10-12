@@ -168,6 +168,7 @@ function segnaTesti(blocks) {
 // i nodi veri e si ridisegna col contenuto nuovo.
 let ricco = null          // { el, originali, campo, contenuto, toccato, mandato }
 let blocchiVeri = []      // gli ultimi blocchi arrivati dal pannello, senza ritocchi
+let appenaScritto = null  // il paragrafo da cui si è appena usciti, finché il pannello non lo conferma
 
 function nodoA(blocks, campo) {
   let nodo = blocks.find(b => b?.id === campo.id)?.data
@@ -242,6 +243,9 @@ function chiudiRicco(ridisegna) {
   r.el.replaceChildren(...r.originali)
   ricco = null
   // Il paragrafo era disegnato com'era prima di scriverci: ora si disegna com'è.
+  // Dal pannello stanno ancora tornando le versioni di un attimo fa: finché
+  // non arriva quella uguale a questa, vale questa (`appenaScritto`).
+  appenaScritto = contenuto ? { campo: r.campo, contenuto, chiave: JSON.stringify(contenuto), fino: Date.now() + 1500 } : null
   const veri = contenuto ? conContenuto(blocchiVeri, r.campo, contenuto) : blocchiVeri
   try { flushSync(() => ridisegna(veri)) } catch { ridisegna(veri) }
 }
@@ -338,6 +342,12 @@ let cursoreDaRimettere = null
 export function conLaScritturaInCorso(blocks) {
   blocchiVeri = blocks
   if (ricco) { cursoreDaRimettere = null; return conContenuto(blocks, ricco.campo, ricco.contenuto) }
+  if (appenaScritto) {
+    const a = appenaScritto
+    const arrivato = JSON.stringify(nodoA(blocks, a.campo)?.content) === a.chiave
+    if (arrivato || Date.now() > a.fino) appenaScritto = null
+    else blocks = conContenuto(blocks, a.campo, a.contenuto)
+  }
   const el = inScrittura(); const campo = el && campoDi(el)
   cursoreDaRimettere = el ? { el, dove: cursoreIn(el) } : null
   if (!campo) return blocks

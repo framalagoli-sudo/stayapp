@@ -21,6 +21,7 @@ const FIELDS = [
   { key: 'phone',         label: 'Telefono',         type: 'text' },
   { key: 'whatsapp',      label: 'WhatsApp',         type: 'text', placeholder: 'es. +39 333 1234567' },
   { key: 'email',         label: 'Email',            type: 'email' },
+  { key: 'schedule',      label: 'Orari',            type: 'text', placeholder: 'es. Reception 8:00–22:00, tutti i giorni' },
   { key: 'checkin_time',  label: 'Check-in',         type: 'text', placeholder: 'es. 14:00' },
   { key: 'checkout_time', label: 'Check-out',        type: 'text', placeholder: 'es. 11:00' },
   { key: 'wifi_name',     label: 'Nome WiFi',        type: 'text' },

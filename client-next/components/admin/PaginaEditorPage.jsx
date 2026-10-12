@@ -26,6 +26,12 @@ import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS
 
 function uid() { return crypto.randomUUID() }
 
+// Le righe del blocco «Contatti e orari» che si possono spegnere.
+const RIGHE_RECAPITI = [
+  { key: 'indirizzo', label: 'Indirizzo' }, { key: 'telefono', label: 'Telefono' }, { key: 'email', label: 'Email' },
+  { key: 'whatsapp', label: 'WhatsApp' }, { key: 'orari', label: 'Orari' },
+]
+
 // La larghezza a cui l'editor visuale disegna la pagina «da computer».
 const LARGO_COMPUTER = 1280
 const LARGO_TABLET = 820
@@ -59,7 +65,7 @@ const BLOCK_ICON_MAP = {
   pacchetti: Package, faq: HelpCircle, immagine: Image, galleria_immagini: Grid, gallery: ImageIcon, video: Video,
   services: Settings, activities: Compass, excursions: Map, eventi: Calendar, eventi_slider: GalleryHorizontal, vetrina: Package,
   news: FileText, booking: Clock, newsletter: Mail, contatti: Phone,
-  show_map: MapPin, clienti: Building2,
+  show_map: MapPin, clienti: Building2, recapiti: MapPin, listino: List,
 }
 const GROUP_COLORS = {
   layout: '#5b6af8', marketing: '#f97316', media: '#0891b2',
@@ -975,6 +981,48 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
           ]} />
       </div>
     )
+    case 'listino': return (
+      <div>
+        <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <Field label="Sottotitolo (opz.)" value={data.sottotitolo} onChange={v => upd('sottotitolo', v)} style={{ marginBottom: 12 }} />
+        <ItemListEditor items={data.items} onChange={v => upd('items', v)}
+          newItem={{ name: '', description: '', price: '' }}
+          fields={[
+            { key: 'name', label: 'Voce' },
+            { key: 'price', label: 'Prezzo (come vuoi scriverlo: 25 €, da 30 €, su richiesta)' },
+            { key: 'description', label: 'Descrizione (opz.)', type: 'textarea', rows: 2 },
+          ]} />
+        <Field label="Nota sotto il listino (opz.)" value={data.nota} onChange={v => upd('nota', v)} placeholder="es. Prezzi IVA inclusa" style={{ margin: '12px 0' }} />
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+          <input type="checkbox" checked={!!data.due_colonne} onChange={e => upd('due_colonne', e.target.checked)} /> Su due colonne (da computer)
+        </label>
+      </div>
+    )
+    case 'recapiti': {
+      const via = Array.isArray(data.nascondi) ? data.nascondi : []
+      const dove = { struttura: 'struttura', ristorante: 'ristoranti', attivita: 'attivita' }[entityTipo]
+      return (
+        <div>
+          <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+          <Field label="Sottotitolo (opz.)" value={data.sottotitolo} onChange={v => upd('sottotitolo', v)} style={{ marginBottom: 14 }} />
+          <div style={{ fontSize: 12, color: '#555', fontWeight: 500, marginBottom: 6 }}>Cosa mostrare</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 14 }}>
+            {RIGHE_RECAPITI.map(r => (
+              <label key={r.key} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+                <input type="checkbox" checked={!via.includes(r.key)} onChange={e => upd('nascondi', e.target.checked ? via.filter(k => k !== r.key) : [...via, r.key])} /> {r.label}
+              </label>
+            ))}
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+              <input type="checkbox" checked={data.mostra_mappa !== false} onChange={e => upd('mostra_mappa', e.target.checked)} /> La mappa accanto
+            </label>
+          </div>
+          <div data-recapiti-nota style={{ fontSize: 12.5, color: '#555', lineHeight: 1.55, padding: 12, background: '#f8f9ff', borderRadius: 8, border: '1px solid #e8ecff' }}>
+            Indirizzo, telefono, email e orari non si scrivono qui: il blocco li prende dalle <strong>Informazioni</strong>, così cambiandoli lì cambiano ovunque. Una riga compare solo se il dato c'è.
+            {dove && entityId && <> <a href={'/admin/' + dove + '/' + entityId + '/info'} target="_blank" rel="noopener" style={{ color: '#5b6af8', fontWeight: 600, whiteSpace: 'nowrap' }}>Apri le Informazioni ↗</a></>}
+          </div>
+        </div>
+      )
+    }
     case 'faq': return (
       <div>
         <Field label="Titolo sezione" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
@@ -2247,7 +2295,9 @@ export default function PaginaEditorPage() {
         )}
 
         {blocks.map((block) => {
-          const isOpen     = expandedId === block.id
+          // Sotto l'editor visuale l'elenco non apre la scheda: è già aperta lì, e due
+          // editor dello stesso blocco accesi insieme sono solo un doppione che lavora.
+          const isOpen     = !visuale && expandedId === block.id
           const isDragging = dragBlockId === block.id
           const isBefore   = dragOverPos?.blockId === block.id && dragOverPos.position === 'before'
           const isAfter    = dragOverPos?.blockId === block.id && dragOverPos.position === 'after'

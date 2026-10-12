@@ -1789,6 +1789,36 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         )
       }
 
+      // Listino prezzi: voci una sotto l'altra, col prezzo a destra. Il prezzo è
+      // un testo e si stampa com'è scritto («25 €», «da 30 €», «su richiesta»).
+      case 'listino': {
+        const voci = (d.items || []).filter(v => v && v.name)
+        if (!voci.length) return null
+        const cTenue = inverted ? 'rgba(255,255,255,0.62)' : 'var(--txt-tenue)'
+        const cBordo = inverted ? 'rgba(255,255,255,0.2)' : 'var(--bordo)'
+        return (
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
+            <div className="lbr-section" style={{ maxWidth: d.due_colonne ? 1040 : 720 }}>
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)', marginBottom: d.sottotitolo ? 12 : 40 }} {...ricco(d.titolo)} />}
+              {d.sottotitolo && <p style={{ fontSize: 16, color: cTenue, textAlign: 'center', margin: '0 auto 40px', maxWidth: 620, lineHeight: 1.6 }} {...ricco(d.sottotitolo)} />}
+              <div className={d.due_colonne ? 'lbr-listino due' : 'lbr-listino'}>
+                {voci.map((v, i) => (
+                  <div key={v.id || i} style={{ padding: '14px 0', borderBottom: `1px solid ${cBordo}`, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+                      <span style={{ fontWeight: 600, fontSize: 16, color: cTitle, overflowWrap: 'anywhere' }}>{v.name}</span>
+                      <span aria-hidden="true" style={{ flex: 1, minWidth: 16, borderBottom: `1px dotted ${cTenue}`, opacity: 0.5, transform: 'translateY(-4px)' }} />
+                      {v.price && <span style={{ fontWeight: 700, fontSize: 16, color: cTitle, whiteSpace: 'nowrap' }}>{v.price}</span>}
+                    </div>
+                    {v.description && <p style={{ margin: '4px 0 0', fontSize: 14, color: cBody || 'var(--txt-medio)', lineHeight: 1.55, whiteSpace: 'pre-line' }}>{v.description}</p>}
+                  </div>
+                ))}
+              </div>
+              {d.nota && <p style={{ margin: '20px 0 0', fontSize: 13, color: cTenue, textAlign: 'center' }}>{d.nota}</p>}
+            </div>
+          </section>
+        )
+      }
+
       case 'faq': {
         const items = (d.items || []).filter(f => f.question && f.answer)
         if (!items.length) return null
@@ -1830,6 +1860,64 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
 
       case 'contatti':
         return null
+
+      // Contatti e orari: non ha dati suoi, legge quelli dell'entità (le
+      // Informazioni), così c'è un posto solo dove si scrivono. Una riga compare
+      // solo se il dato c'è; senza nessun dato il blocco non si disegna.
+      case 'recapiti': {
+        const via = Array.isArray(d.nascondi) ? d.nascondi : []
+        const pulito = (chiave, v) => via.includes(chiave) || typeof v !== 'string' ? '' : v.trim()
+        const indirizzo = pulito('indirizzo', entity.address)
+        const telefono = pulito('telefono', entity.phone)
+        const posta = pulito('email', entity.email)
+        const email = /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(posta) ? posta : ''
+        const wa = pulito('whatsapp', entity.whatsapp || mini?.social?.whatsapp || '').replace(/\D/g, '')
+        const orari = pulito('orari', entity.schedule)
+        if (!indirizzo && !telefono && !email && !wa && !orari) return null
+        const mappa = d.mostra_mappa !== false && typeof entity.address === 'string' && !!entity.address.trim()
+        const en = lang === 'en'
+        // Su una sezione scura (o con una foto dietro) testi, bordi e icone si schiariscono.
+        const cTenue = inverted ? 'rgba(255,255,255,0.62)' : 'var(--txt-tenue)'
+        const cBordo = inverted ? 'rgba(255,255,255,0.2)' : 'var(--bordo)'
+        const riga = (Icona, etichetta, contenuto) => (
+          <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: inverted ? 'rgba(255,255,255,0.1)' : 'var(--sup-2)', border: `1px solid ${cBordo}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Icona size={18} strokeWidth={1.5} color={inverted ? '#ffffff' : `var(--icon-color, ${primary})`} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: cTenue, marginBottom: 3 }}>{etichetta}</div>
+              <div style={{ fontSize: 16, lineHeight: 1.55, color: cTitle, overflowWrap: 'anywhere' }}>{contenuto}</div>
+            </div>
+          </div>
+        )
+        const collegamento = { color: cTitle, textDecoration: 'underline', textUnderlineOffset: 3 }
+        return (
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
+            <div className="lbr-section">
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)', marginBottom: d.sottotitolo ? 12 : 40 }} {...ricco(d.titolo)} />}
+              {d.sottotitolo && <p style={{ fontSize: 16, color: cTenue, textAlign: 'center', margin: '0 auto 40px', maxWidth: 620, lineHeight: 1.6 }} {...ricco(d.sottotitolo)} />}
+              <div className={mappa ? 'lbr-recapiti' : 'lbr-recapiti soli'}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+                  {indirizzo && riga(MapPin, en ? 'Address' : 'Indirizzo', <>
+                    {indirizzo}
+                    <div><a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(indirizzo)}`} target="_blank" rel="noopener noreferrer" style={{ ...collegamento, fontSize: 14 }}>{en ? 'Get directions' : 'Come arrivare'}</a></div>
+                  </>)}
+                  {telefono && riga(Phone, en ? 'Phone' : 'Telefono', <a href={`tel:${telefono.replace(/[^\d+]/g, '')}`} style={collegamento}>{telefono}</a>)}
+                  {wa && riga(Phone, 'WhatsApp', <a href={`https://wa.me/${wa}`} target="_blank" rel="noopener noreferrer" style={collegamento}>{en ? 'Message us on WhatsApp' : 'Scrivici su WhatsApp'}</a>)}
+                  {email && riga(Mail, 'Email', <a href={`mailto:${email}`} style={collegamento}>{email}</a>)}
+                  {orari && riga(Clock, en ? 'Opening hours' : 'Orari', <span style={{ whiteSpace: 'pre-line' }}>{orari}</span>)}
+                </div>
+                {mappa && (
+                  <div style={{ borderRadius: 16, overflow: 'hidden', minHeight: 340, height: '100%', border: `1px solid ${cBordo}` }}>
+                    <iframe title={en ? 'Map' : 'Mappa'} width="100%" height="100%" frameBorder="0" loading="lazy" style={{ border: 0, display: 'block', minHeight: 340 }}
+                      src={`https://www.google.com/maps?q=${encodeURIComponent(entity.address.trim())}&output=embed`} allowFullScreen />
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )
+      }
 
       case 'show_map':
         if (!entity.address) return null
@@ -2368,6 +2456,10 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         .lbr-al-right  > .lbr-section > * { margin-left: auto !important; margin-right: 0    !important; }
         .lbr-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .lbr-ft { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+        .lbr-recapiti { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 48px; align-items: stretch; }
+        .lbr-recapiti.soli { grid-template-columns: minmax(0, 1fr); max-width: 560px; margin: 0 auto; }
+        .lbr-listino { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 56px; }
+        .lbr-listino.due { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
         .lbr-ft-img { order: 0; }
         .lbr-ft-txt { order: 1; }
         .lbr-ft.inv .lbr-ft-img { order: 1; }
@@ -2387,6 +2479,8 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
           .lbr-gallery { grid-template-columns: repeat(2, 1fr); }
           .lbr-section { padding: 0 16px; }
           .lbr-ft { grid-template-columns: 1fr !important; gap: 24px !important; }
+          .lbr-recapiti { grid-template-columns: minmax(0, 1fr) !important; gap: 28px !important; }
+          .lbr-listino.due { grid-template-columns: minmax(0, 1fr) !important; }
           .lbr-ft-img { order: 0 !important; }
           .lbr-ft-txt { order: 1 !important; }
           .lbr-team-ed { grid-template-columns: 1fr !important; gap: 24px !important; }

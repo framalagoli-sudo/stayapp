@@ -31,6 +31,7 @@ export const BLOCK_TYPES = [
   { type: 'punteggio',    label: 'Voto su Google',     group: 'marketing',   emoji: '⭐', desc: 'Il voto vero preso da Google, con la data di lettura — si aggiorna da solo' },
   { type: 'promozioni',   label: 'Promozioni',         group: 'marketing',   emoji: '🏷️', desc: 'Card offerte con badge e scadenza' },
   { type: 'pacchetti',    label: 'Pacchetti / Prezzi', group: 'marketing',   emoji: '📦', desc: 'Pricing card con inclusi e CTA' },
+  { type: 'listino',      label: 'Listino prezzi',     group: 'marketing',   emoji: '💶', desc: 'Voci con il loro prezzo, una sotto l\'altra: servizi, trattamenti, tariffe' },
   { type: 'faq',          label: 'FAQ',                group: 'marketing',   emoji: '❓', desc: 'Accordion domande e risposte' },
   { type: 'clienti',     label: 'Loghi clienti',      group: 'marketing',   emoji: '🏢', desc: 'Carosello infinito di loghi clienti/partner — grigi di default, colorati al hover' },
   { type: 'carosello',    label: 'Carosello',          group: 'media',       emoji: '🎠', desc: 'Carosello scorrevole di card (immagine + titolo + testo) — frecce, puntini, swipe e autoplay. Più elementi visibili per volta' },
@@ -53,6 +54,7 @@ export const BLOCK_TYPES = [
   { type: 'booking',      label: 'Widget prenotazione',group: 'conversione', emoji: '📆', desc: 'Form prenotazione risorse' },
   { type: 'newsletter',   label: 'Newsletter',         group: 'conversione', emoji: '✉️', desc: 'Form iscrizione newsletter' },
   { type: 'show_map',     label: 'Solo mappa',         group: 'conversione', emoji: '📍', desc: 'Google Maps embed' },
+  { type: 'recapiti',     label: 'Contatti e orari',   group: 'conversione', emoji: '📍', desc: 'Indirizzo, telefono, email, WhatsApp, orari e mappa — presi dalle Informazioni, si aggiornano da soli' },
   { type: 'form_builder', label: 'Form contatti',      group: 'conversione', emoji: '📋', desc: 'Form per raccogliere contatti e richieste — scrive nel CRM. Crea e personalizza i form nel Form Builder.' },
 ]
 
@@ -88,6 +90,8 @@ export const BLOCK_DEFAULTS = {
   promozioni:   { titolo: '', items: [], per_view: 3 },
   pacchetti:    { titolo: '', items: [] },
   faq:          { titolo: '', items: [] },
+  // Il prezzo è un testo («25 €», «da 30 €», «su richiesta»): come lo scrive il cliente.
+  listino:      { titolo: '', sottotitolo: '', items: [], nota: '', due_colonne: false },
   clienti:      { titolo: 'I nostri clienti', items: [] },
   carosello:    { titolo: '', items: [], per_view: 3, autoplay: true, interval: 5, show_arrows: true, show_dots: true },
   immagine:     { image_url: '', alt: '', caption: '', link_url: '', width: 'large' },
@@ -112,6 +116,10 @@ export const BLOCK_DEFAULTS = {
   booking:      { titolo_sezione: '' },
   newsletter:   { title: '', subtitle: '' },
   show_map:     {},
+  // Non ha recapiti suoi: li legge dalle Informazioni dell'entità, così c'è un
+  // posto solo dove si scrivono. `nascondi` = quali righe non mostrare
+  // (indirizzo · telefono · email · whatsapp · orari).
+  recapiti:     { titolo: '', sottotitolo: '', mostra_mappa: true, nascondi: [] },
   form_builder: { form_token: '', titolo_sezione: '' },
 }
 

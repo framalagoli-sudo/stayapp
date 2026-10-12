@@ -42,7 +42,8 @@ try {
   const t = Date.now().toString(36)
   const slug = `zz-visuale-${t}`
   az = await deve(a.from('aziende').insert({ ragione_sociale: `ZZ-VISUALE-${t}`, require_2fa: false, moduli: { ristorante: true } }).select().single(), 'azienda')
-  const ent = await deve(a.from('entita').insert({ azienda_id: az.id, tipo: 'ristorante', name: 'ZZ Locale', slug, active: true, minisito: { active: true } }).select().single(), 'entità')
+  const ent = await deve(a.from('entita').insert({ azienda_id: az.id, tipo: 'ristorante', name: 'ZZ Locale', slug, active: true, minisito: { active: true },
+    address: 'Via Roma 1, 05100 Terni', phone: '0744 123456 <script>alert(1)</script>', email: 'info@zz-locale.example', schedule: 'Lun–Ven 9:00–18:00\nSabato 9:00–13:00' }).select().single(), 'entità')
   const hero = { id: 'b-hero', type: 'hero', data: { title: 'ZZ Copertina', height: 'compatta' } }
   // I due formati in cui un testo può essere salvato: qui un documento (e il
   // database ne riordina le chiavi), nell'altra pagina una stringa, com'era prima.
@@ -52,12 +53,23 @@ try {
   const altra = await deve(a.from('pagine').insert({ entity_tipo: 'ristorante', entity_id: ent.id, slug: 'altra', titolo: 'ZZ Altra', status: 'pubblicata', nel_menu: true, blocks: [{ id: 'b-altra', type: 'about', data: { title: 'ZZ Altra pagina', text: 'Un testo scritto nel formato di prima.' } }, { id: 'b-foto', type: 'immagine', data: { image_url: '/newsletter-esempio.svg', alt: 'ZZ foto', caption: '', link_url: 'https://esempio.example/dove', width: 'medium' } },
     { id: 'b-ricco', type: 'about', data: { title: 'ZZ Ricco', text: { type: 'doc', content: [{ type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', text: 'Una frase semplice da formattare qui.' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'Secondo paragrafo.' }] }] } } },
     { id: 'b-ft', type: 'foto_testo', data: { title: 'ZZ Foto e testo', text: 'Testo accanto.', image_url: '', inverti: false, button_label: '', button_url: 'https://esempio.example/pulsante' } },
-    { id: 'b-gal', type: 'galleria_immagini', data: { titolo: '', images: [], columns: 3 } }] }).select('id').single(), 'altra pagina')
+    { id: 'b-gal', type: 'galleria_immagini', data: { titolo: '', images: [], columns: 3 } },
+    { id: 'b-rec', type: 'recapiti', data: { titolo: 'ZZ Dove siamo', sottotitolo: '', mostra_mappa: true, nascondi: [] } },
+    { id: 'b-list', type: 'listino', data: { titolo: 'ZZ Listino', sottotitolo: '', items: [{ id: 'l1', name: 'ZZ Taglio', description: 'Con piega.', price: '25 €' }, { id: 'l2', name: 'ZZ Colore', description: '', price: 'da 40 €' }], nota: 'ZZ Prezzi IVA inclusa', due_colonne: false } }] }).select('id').single(), 'altra pagina')
 
   console.log('\nLA PAGINA PUBBLICA, APERTA DA SOLA\n')
   for (const url of [`/r/${slug}`, `/r/${slug}?visuale=1`]) {
     const html = await (await fetch(BASE + url, { headers: { 'cache-control': 'no-cache' } })).text()
     esito(html.includes('ZZ Copertina') && !/data-blocco|ev-blocco|ev-barra/.test(html), `${url}: nel corpo grezzo non c'è niente dell'editor`)
+  }
+
+  // I due blocchi nuovi, come li legge chi apre il sito (e un motore di ricerca): nel corpo grezzo.
+  {
+    const html = await (await fetch(`${BASE}/r/${slug}/p/altra`, { headers: { 'cache-control': 'no-cache' } })).text()
+    esito(html.includes('ZZ Dove siamo') && html.includes('Via Roma 1, 05100 Terni') && html.includes('info@zz-locale.example') && html.includes('Sabato 9:00') && html.includes('href="tel:0744123456') && html.includes('google.com/maps'),
+      '«Contatti e orari» stampa nell’HTML indirizzo, telefono, email, orari e mappa presi dalle Informazioni')
+    esito(!html.includes('<script>alert(1)</script>') && html.includes('&lt;script&gt;alert(1)'), 'un recapito con dentro del codice esce come testo, non come codice')
+    esito(html.includes('ZZ Taglio') && html.includes('25 €') && html.includes('da 40 €') && html.includes('Con piega.') && html.includes('ZZ Prezzi IVA inclusa'), '«Listino prezzi» stampa nell’HTML le voci, i prezzi e la nota')
   }
 
   const email = `zz-visuale-${t}@playwright.internal`, password = randomBytes(24).toString('base64url') + 'Aa1!'
@@ -86,6 +98,7 @@ try {
   // Trascina una cosa del pannello (o del riquadro) sopra una sezione del riquadro.
   // `dove`: 'sopra' = nella metà alta della sezione, 'sotto' = nella metà bassa.
   const trascina = async (sorgente, idSezione, dove) => {
+    await sorgente.scrollIntoViewIfNeeded().catch(() => {})
     const da = await sorgente.boundingBox()
     const meta = async () => {
       const su = await riq().locator(`[data-blocco="${idSezione}"]`).boundingBox()
@@ -317,6 +330,8 @@ try {
   await aspettaDomande(['ZZ Quanto costa?', 'Scrivi qui la seconda domanda', 'ZZ Quanto costa?'], 'una lista inventata, un posto che non c’è o un comando fuori elenco non cambiano niente')
 
   console.log('\nIL «+», IL TASTO DESTRO, I TASTI\n')
+  // Il «+» sta sul bordo alto della sezione: la si porta a metà schermo, o resta sotto l'intestazione del sito.
+  await sez.evaluate(e => e.scrollIntoView({ block: 'center' }))
   await sez.hover({ position: { x: 30, y: 60 } })
   await sez.locator('> .ev-piu').first().click()
   await page.locator('[data-inserisci-qui]').waitFor({ timeout: 15000 }).then(() => esito(true, 'il «+» sopra una sezione chiede a sinistra cosa metterci'), () => esito(false, 'il «+» sopra una sezione chiede a sinistra cosa metterci'))
@@ -426,7 +441,7 @@ try {
   await foto(page, '5-pagina-vuota')
 
   console.log('\nOGNI BLOCCO CHE SI SCRIVE NASCE GIÀ VISIBILE\n')
-  const scritti = ['hero', 'hero_slider', 'foto_testo', 'annuncio', 'newsletter', 'colonne', 'paragrafi', 'highlights', 'steps', 'stats', 'accordion', 'faq', 'team', 'carosello', 'promozioni', 'pacchetti']
+  const scritti = ['hero', 'hero_slider', 'foto_testo', 'annuncio', 'newsletter', 'colonne', 'paragrafi', 'highlights', 'steps', 'stats', 'accordion', 'faq', 'listino', 'team', 'carosello', 'promozioni', 'pacchetti']
   const muti = []
   for (const tipo of scritti) {
     await page.getByRole('button', { name: '← Blocchi' }).click()
@@ -587,10 +602,47 @@ try {
   await page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 }).catch(() => {})
   esito(chiesto === 1, 'ricaricando con modifiche non salvate il browser chiede conferma', `richieste: ${chiesto}`)
 
+  console.log('\nCONTATTI E ORARI, LISTINO PREZZI\n')
+  await page.goto(`${BASE}/admin/pagine/${altra.id}`, { waitUntil: 'domcontentloaded', timeout: 120000 })
+  await page.getByRole('button', { name: 'Editor visuale' }).click()
+  const rec = riq().locator('[data-blocco="b-rec"]')
+  await rec.getByText('Via Roma 1, 05100 Terni').waitFor({ timeout: 120000 }).then(() => esito(true, 'nell’editor «Contatti e orari» mostra i recapiti dell’entità'), () => esito(false, 'nell’editor «Contatti e orari» mostra i recapiti dell’entità'))
+  await page.waitForTimeout(800)
+  const scrivibili = await rec.locator('[data-campo]').evaluateAll(els => els.map(e => e.textContent))
+  esito(JSON.stringify(scrivibili) === JSON.stringify(['ZZ Dove siamo']), 'lì si scrive il titolo; indirizzo, telefono e orari no: non sono del blocco', scrivibili.join(' · '))
+  await rec.click({ position: { x: 12, y: 12 } })
+  await page.locator('[data-recapiti-nota] a').waitFor({ timeout: 15000 })
+  const versoInfo = await page.locator('[data-recapiti-nota] a').getAttribute('href')
+  esito(versoInfo === `/admin/ristoranti/${ent.id}/info`, 'la scheda dice che i dati stanno nelle Informazioni, e offre la porta', versoInfo)
+  {
+    const info = await ctx.newPage()
+    await info.goto(BASE + versoInfo, { waitUntil: 'domcontentloaded', timeout: 120000 })
+    esito(await info.locator('input').evaluateAll(els => els.some(e => e.value === 'Via Roma 1, 05100 Terni')).catch(() => false) || await info.getByText('Orari di apertura').waitFor({ timeout: 120000 }).then(() => info.locator('input').evaluateAll(els => els.some(e => e.value === 'Via Roma 1, 05100 Terni')), () => false), 'la porta arriva dove indirizzo e orari si cambiano davvero')
+    await info.close()
+  }
+  await page.locator('[data-scheda-blocco] label', { hasText: 'Orari' }).locator('input').uncheck()
+  await rec.getByText('Sabato 9:00').waitFor({ state: 'detached', timeout: 15000 }).then(() => esito(true, 'spegnendo «Orari» nella scheda la riga sparisce dalla pagina'), () => esito(false, 'spegnendo «Orari» nella scheda la riga sparisce dalla pagina'))
+  await page.locator('[data-scheda-blocco] label', { hasText: 'La mappa accanto' }).locator('input').uncheck()
+  await rec.locator('iframe').waitFor({ state: 'detached', timeout: 15000 }).then(() => esito(true, 'e spegnendo la mappa resta la sola colonna dei recapiti'), () => esito(false, 'e spegnendo la mappa resta la sola colonna dei recapiti'))
+  // Il listino: il prezzo si corregge sulla pagina, e una voce si copia coi comandi.
+  const lis = riq().locator('[data-blocco="b-list"]')
+  await lis.getByText('25 €', { exact: true }).click()
+  await page.keyboard.press('Control+A'); await page.keyboard.type('28 €'); await page.keyboard.press('Enter')
+  await page.mouse.move(5, 5)
+  await lis.getByText('ZZ Colore', { exact: true }).hover()
+  await riq().locator('.ev-attrezzi button[data-az="duplica"]').click({ timeout: 15000 })
+  await page.waitForTimeout(600)
+  await page.keyboard.press('Control+s')
+  await page.locator('[data-editor-visuale]').getByText('Salvato ✓').waitFor({ timeout: 30000 }).catch(() => {})
+  const nuovi = (await deve(a.from('pagine').select('blocks').eq('id', altra.id).single(), 'rilettura')).blocks
+  const l = nuovi.find(b => b.id === 'b-list').data, r = nuovi.find(b => b.id === 'b-rec').data
+  esito(l.items.length === 3 && l.items[0].price === '28 €' && l.items[1].name === 'ZZ Colore' && l.items[2].name === 'ZZ Colore' && l.items[2].id !== l.items[1].id, 'nel listino il prezzo scritto sulla pagina e la voce copiata sono salvati', JSON.stringify(l.items).slice(0, 220))
+  esito(JSON.stringify(r.nascondi) === JSON.stringify(['orari']) && r.mostra_mappa === false && !('address' in r) && !('phone' in r), 'nel blocco dei contatti si salvano solo le scelte, mai una copia dei recapiti', JSON.stringify(r))
+
   console.log('\nERRORI\n')
   esito(errori.length === 0, 'nessun errore nel browser', errori.slice(0, 3).join(' | '))
 } catch (e) {
-  rossi++; console.log(`\n  ✗ la sonda si è fermata: ${e.message.split('\n')[0]}`)
+  rossi++; console.log(`\n  ✗ la sonda si è fermata: ${e.message.split('\n').slice(0, 9).join(' ⏎ ')}`)
   if (errori.length) console.log('    errori nel browser fin qui: ' + errori.slice(0, 4).join(' | '))
 } finally {
   if (browser) await browser.close().catch(() => {})

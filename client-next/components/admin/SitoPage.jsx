@@ -22,7 +22,7 @@ const TEMPLATES = [
   { id: 'blank',     label: 'Pagina vuota', Icon: FilePlus,   color: '#888',    desc: 'Parti da zero e aggiungi i blocchi che vuoi', blockCount: 0 },
   { id: 'chi_siamo', label: 'Chi siamo',    Icon: Users,      color: '#5b6af8', desc: 'Presentazione, foto+testo, team', blockCount: 3 },
   { id: 'servizi',   label: 'Servizi',      Icon: Briefcase,  color: '#0891b2', desc: 'Card servizi, processo e call-to-action', blockCount: 4 },
-  { id: 'contatti',  label: 'Contatti',     Icon: Mail,       color: '#16a34a', desc: 'Testo introduttivo, form contatti e mappa', blockCount: 3 },
+  { id: 'contatti',  label: 'Contatti',     Icon: Mail,       color: '#16a34a', desc: 'Testo introduttivo, form contatti, recapiti con orari e mappa', blockCount: 3 },
   { id: 'promo',     label: 'Promozioni',   Icon: Tag,        color: '#f97316', desc: 'Statistiche, offerte, testimonianze e CTA', blockCount: 4 },
   { id: 'faq',       label: 'FAQ',          Icon: HelpCircle, color: '#9333ea', desc: 'Introduzione e accordion domande/risposte', blockCount: 2 },
 ]
@@ -43,8 +43,8 @@ function makeTemplateBlocks(templateId) {
     ]
     case 'contatti': return [
       { id: id(), type: 'about',    data: { title: 'Contattaci', text: 'Siamo a tua disposizione.' } },
-      { id: id(), type: 'contatti', data: {} },
-      { id: id(), type: 'show_map', data: {} },
+      { id: id(), type: 'form_builder', data: { form_token: '', titolo_sezione: 'Scrivici' } },
+      { id: id(), type: 'recapiti', data: { titolo: 'Dove siamo', sottotitolo: '', mostra_mappa: true, nascondi: [] } },
     ]
     case 'promo': return [
       { id: id(), type: 'stats',         data: { titolo: '', items: [] } },
