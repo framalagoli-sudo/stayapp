@@ -581,7 +581,7 @@ try {
   esito(await page.locator('[data-avviso]').getByText('L\'intestazione è la stessa su tutte le pagine').waitFor({ timeout: 15000 }).then(() => true, () => false), 'e lo stesso per l’intestazione')
   // Con una modifica non salvata, ricaricare la pagina fa chiedere conferma al browser.
   await riq().locator('[data-blocco="b-ricco"] p').nth(1).click()
-  await page.keyboard.press('Control+End'); await page.keyboard.type(' ZZ non salvato'); await page.keyboard.press('Escape')
+  await page.keyboard.press('Control+End'); await page.keyboard.type(' ZZ in sospeso'); await page.keyboard.press('Escape')
   await page.locator('[data-editor-visuale]').getByText('Non salvato').waitFor({ timeout: 15000 })
   let chiesto = 0; page.on('dialog', d => { if (d.type() === 'beforeunload') chiesto++ })
   await page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 }).catch(() => {})
