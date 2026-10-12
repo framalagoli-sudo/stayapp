@@ -13,7 +13,10 @@ metadata:
 ## ▶️ 12/10 — editor visuale rifatto dopo la prima prova di Francesco
 - Bocciato alla prima prova (blocco trascinato = fascia vuota; si scriveva a sinistra e non si vedeva niente). Ora: il blocco nasce già scritto e i testi si scrivono sulla pagina con un clic (CLAUDE.md nota 64, lib/editor-visuale.js). **Deve riprovarlo lui**: pagina di Guru → Editor visuale → trascina «FAQ» → clicca una domanda sulla pagina e scrivi.
 - **Secondo giro lo stesso giorno** («termina questo editor»): foto con un clic sulla pagina, elementi di lista (copia/togli/sposta), «+» fra le sezioni, tasto destro, tasti, struttura della pagina, Contenuto/Stile, tablet, Pubblica. **Deve provarlo lui.**
-- Restano fuori, da decidere con lui: grassetto e a-capo sul posto · colonne libere annidate (cambia la forma dei dati di ogni pagina) · sezioni salvate da riusare (memoria project_sezioni_universali).
+- **Terzo giro** («parti dal punto 1»): grassetto/corsivo/link/a-capo nei paragrafi, «Aggiungi la foto» dove manca, intestazione e piede → Sito web, avviso d'uscita. Due corse «si perdono lettere scrivendo in fretta» chiuse alla radice (CLAUDE.md nota 64).
+- **Piano concordato il 12/10, in ordine**: (2) blocchi «Contatti e orari» e «Listino prezzi» · (3) sezioni riusabili (memoria project_sezioni_universali) · (4) AI dentro la pagina. Poi: schede a linguette, tabella di confronto, citazione, titolo, popup; opzioni solo-telefono, larghezza del contenuto, copia stile.
+- Restano fuori di proposito: colonne libere annidate (decisione sua). Francesco: «i clienti non usano i blocchi perché la piattaforma è in sviluppo» — niente misura d'uso prima di aggiungerne.
+- Piccolo, da fare: i numeri animati delle statistiche diventano scrivibili solo a conteggio finito; il menu laterale non avvisa delle modifiche non salvate.
 
 ## ▶️ 11/10 — sessione lunga in autonomia (Francesco ha lasciato il PC acceso). Migration ferme alla **135**.
 - ✅ **Editor visuale delle pagine** LIVE e provato in produzione (CLAUDE.md nota 64, sonda probe-editor-visuale.mjs): pulsante «Editor visuale» nell'editor di una pagina. Francesco NON l'ha ancora visto: fargli aprire una pagina di Guru → «Editor visuale» → trascinare un blocco, cliccare una sezione. Chiedergli se lo vuole come modo predefinito (oggi lo è l'elenco) e se servono le colonne libere (cambio di forma dei dati: decisione sua).

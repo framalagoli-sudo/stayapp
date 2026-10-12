@@ -1,5 +1,6 @@
 ﻿'use client'
 import { useState, useEffect, useRef, cloneElement, createElement, isValidElement, Fragment } from 'react'
+import { flushSync } from 'react-dom'
 import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
 import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Mountain, Wind, ChevronDown, ChevronLeft, ChevronRight, Calendar, Users, Check, CheckCircle, Gift, Home, Zap, Shield, Leaf, Sun, Briefcase, Wrench, Euro, Handshake, Smile, Target, TrendingUp, Globe, Camera, BookOpen, Layers, Tag, Search, X, FileText, Ruler, Gauge } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
@@ -1071,8 +1072,15 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
       const m = e.data
       if (m?.tipo !== 'oltrenova:anteprima-blocchi' || !Array.isArray(m.blocks)) return
       if (m.percorso !== window.location.pathname.replace(/\/$/, '')) return
-      setBlocchiAnteprima(m.visuale === true ? conLaScritturaInCorso(m.blocks) : m.blocks)
-      setEditor(m.visuale === true ? { selezionato: typeof m.selezionato === 'string' ? m.selezionato : null, scala: Number(m.scala) > 0.1 && Number(m.scala) <= 1 ? Number(m.scala) : 1 } : null)
+      if (m.visuale !== true) { setBlocchiAnteprima(m.blocks); setEditor(null); return }
+      // Nell'editor visuale si disegna SUBITO, dentro questo stesso istante: nel
+      // campo in cui si scrive vale il testo che c'è sulla pagina adesso, e se
+      // il disegno arrivasse un attimo dopo le lettere battute nel frattempo
+      // verrebbero riscritte con quelle di prima.
+      flushSync(() => {
+        setBlocchiAnteprima(conLaScritturaInCorso(m.blocks))
+        setEditor({ selezionato: typeof m.selezionato === 'string' ? m.selezionato : null, scala: Number(m.scala) > 0.1 && Number(m.scala) <= 1 ? Number(m.scala) : 1 })
+      })
     }
     window.addEventListener('message', ascolta)
     // Dice al pannello che ora può mandarli (la pagina ha finito di caricarsi).
@@ -1080,7 +1088,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
     return () => window.removeEventListener('message', ascolta)
   }, [])
   const blocks = blocchiAnteprima || blocchiSalvati
-  useEditorNelRiquadro(editor, blocks)
+  useEditorNelRiquadro(editor, blocks, setBlocchiAnteprima)
 
   const [faqOpen, setFaqOpen] = useState({})
   // Arrivano già dal server quando la pagina ha un blocco che li mostra

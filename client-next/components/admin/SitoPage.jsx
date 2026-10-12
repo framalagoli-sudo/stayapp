@@ -160,6 +160,12 @@ export default function SitoPage({ entityTipo }) {
     : paramId
 
   const [activeTab,    setActiveTab]    = useState('home')
+  // Si può arrivare già sulla scheda giusta: `?tab=layout` (lo usa l'editor
+  // visuale per portare all'intestazione e al piede). Solo le schede che esistono.
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get('tab')
+    if (['home', 'pagine', 'layout', 'impostazioni', 'traduzioni', 'versioni'].includes(t)) setActiveTab(t)
+  }, [])
   const [pagine,       setPagine]       = useState([])
   const [entitySlug,   setEntitySlug]   = useState(null)
   const [loading,      setLoading]      = useState(true)

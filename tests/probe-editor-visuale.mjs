@@ -33,6 +33,7 @@ const projectRef = new URL(SUPABASE_URL).hostname.split('.')[0]
 const a = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 
 let az = null, utente = null, browser = null, rossi = 0
+const errori = []
 const esito = (ok, cosa, nota = '') => { if (!ok) rossi++; console.log(`  ${ok ? '✓' : '✗'} ${cosa}${nota ? `  — ${nota}` : ''}`) }
 const deve = async (q, cosa) => { const { data, error } = await q; if (error) throw new Error(`${cosa}: ${error.message}`); return data }
 const foto = async (page, nome) => { if (FOTO) await page.screenshot({ path: `${FOTO}/visuale-${nome}.png` }) }
@@ -48,7 +49,10 @@ try {
   const chi = { id: 'b-chi', type: 'about', data: { title: 'ZZ Chi siamo', text: { type: 'doc', content: [{ type: 'paragraph', attrs: { textAlign: null }, content: [{ text: 'Testo di prova', type: 'text', marks: [{ type: 'bold' }] }, { text: ' della sezione.', type: 'text' }] }] } } }
   const home = await deve(a.from('pagine').insert({ entity_tipo: 'ristorante', entity_id: ent.id, slug: '__home__', titolo: 'Home', status: 'pubblicata', blocks: [hero, chi] }).select('id').single(), 'home')
   const vuota = await deve(a.from('pagine').insert({ entity_tipo: 'ristorante', entity_id: ent.id, slug: 'vuota', titolo: 'ZZ Vuota', status: 'bozza', nel_menu: true, blocks: [] }).select('id').single(), 'pagina vuota')
-  const altra = await deve(a.from('pagine').insert({ entity_tipo: 'ristorante', entity_id: ent.id, slug: 'altra', titolo: 'ZZ Altra', status: 'pubblicata', nel_menu: true, blocks: [{ id: 'b-altra', type: 'about', data: { title: 'ZZ Altra pagina', text: 'Un testo scritto nel formato di prima.' } }, { id: 'b-foto', type: 'immagine', data: { image_url: '/newsletter-esempio.svg', alt: 'ZZ foto', caption: '', link_url: 'https://esempio.example/dove', width: 'medium' } }] }).select('id').single(), 'altra pagina')
+  const altra = await deve(a.from('pagine').insert({ entity_tipo: 'ristorante', entity_id: ent.id, slug: 'altra', titolo: 'ZZ Altra', status: 'pubblicata', nel_menu: true, blocks: [{ id: 'b-altra', type: 'about', data: { title: 'ZZ Altra pagina', text: 'Un testo scritto nel formato di prima.' } }, { id: 'b-foto', type: 'immagine', data: { image_url: '/newsletter-esempio.svg', alt: 'ZZ foto', caption: '', link_url: 'https://esempio.example/dove', width: 'medium' } },
+    { id: 'b-ricco', type: 'about', data: { title: 'ZZ Ricco', text: { type: 'doc', content: [{ type: 'paragraph', attrs: { textAlign: 'center' }, content: [{ type: 'text', text: 'Una frase semplice da formattare qui.' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'Secondo paragrafo.' }] }] } } },
+    { id: 'b-ft', type: 'foto_testo', data: { title: 'ZZ Foto e testo', text: 'Testo accanto.', image_url: '', inverti: false, button_label: '', button_url: 'https://esempio.example/pulsante' } },
+    { id: 'b-gal', type: 'galleria_immagini', data: { titolo: '', images: [], columns: 3 } }] }).select('id').single(), 'altra pagina')
 
   console.log('\nLA PAGINA PUBBLICA, APERTA DA SOLA\n')
   for (const url of [`/r/${slug}`, `/r/${slug}?visuale=1`]) {
@@ -64,7 +68,7 @@ try {
   const ctx = await browser.newContext({ locale: 'it-IT', viewport: { width: 1440, height: 900 },
     storageState: { cookies: [], origins: [{ origin: new URL(BASE).origin, localStorage: [{ name: `sb-${projectRef}-auth-token`, value: JSON.stringify(s.session) }] }] } })
   const page = await ctx.newPage()
-  const errori = []; page.on('pageerror', e => errori.push(e.message))
+  page.on('pageerror', e => errori.push(e.message))
   // Il controllo anti-spam di Cloudflare (blocco «Newsletter», solo in produzione)
   // scrive un suo errore in console dal proprio riquadro: non è codice nostro.
   page.on('console', m => { if (m.type() === 'error' && !/favicon|Failed to load resource/.test(m.text()) && !(m.location()?.url || '').startsWith('https://challenges.cloudflare.com/')) errori.push('console: ' + m.text().slice(0, 300) + ' ← ' + (m.location()?.url || '?').slice(0, 120)) })
@@ -185,10 +189,11 @@ try {
   await page.waitForTimeout(600)
   const elementoScritto = await sez.getByText('ZZ Quanto costa?', { exact: true }).count() === 1 && await page.locator('[data-scheda-blocco] input').evaluateAll(els => els.some(e => e.value === 'ZZ Quanto costa?'))
   esito(elementoScritto, 'anche un elemento della lista si scrive sul posto, e Invio chiude', elementoScritto ? '' : (await sez.innerText()).replace(/\s+/g, ' ').slice(0, 160) + ' | scheda: ' + (await page.locator('[data-scheda-blocco] input').evaluateAll(els => els.map(e => e.value).join(' · '))).slice(0, 160))
-  // Un testo formattato: si scrive dentro la parola in grassetto, e resta in grassetto.
+  // Un testo formattato: si scrive nel paragrafo, subito dopo la parola in grassetto, e il grassetto resta.
   await riq().locator('[data-blocco="b-chi"] strong').click()
-  await page.keyboard.press('Control+A'); await page.keyboard.type('ZZ Grassetto')
-  await page.locator('[data-scheda-blocco] .ProseMirror strong').filter({ hasText: 'ZZ Grassetto' }).waitFor({ timeout: 15000 }).then(() => esito(true, 'si scrive anche dentro un testo formattato, e la scheda lo segue'), () => esito(false, 'si scrive anche dentro un testo formattato, e la scheda lo segue'))
+  await page.keyboard.press('Home'); for (let i = 0; i < 'Testo di prova'.length; i++) await page.keyboard.press('ArrowRight')
+  await page.keyboard.type(' ZZdentro')
+  await page.locator('[data-scheda-blocco] .ProseMirror').filter({ hasText: 'Testo di prova ZZdentro della sezione.' }).waitFor({ timeout: 15000 }).then(() => esito(true, 'si scrive anche dentro un testo formattato, e la scheda lo segue'), () => esito(false, 'si scrive anche dentro un testo formattato, e la scheda lo segue'))
   await page.keyboard.press('Escape')
   await riq().locator(`[data-blocco="${nuovo}"]`).click({ position: { x: 30, y: 12 } })
   await riq().locator(`[data-blocco="${nuovo}"].ev-scelto`).waitFor({ timeout: 15000 })
@@ -270,7 +275,7 @@ try {
   esito(JSON.stringify(salvata.blocks.map(b => b.id)) === JSON.stringify(['b-hero', nuovo, 'b-chi']), 'nel database c’è lo stesso ordine che si vede', salvata.blocks.map(b => b.type).join(' · '))
   esito(salvata.blocks[2].data.title === 'ZZ Titolo cambiato' && salvata.blocks[1].type === 'faq', 'con il testo scritto e il blocco trascinato')
   const doc = salvata.blocks[2].data.text
-  esito(doc?.type === 'doc' && doc.content[0].type === 'paragraph' && doc.content[0].content[0].text === 'ZZ Grassetto' && doc.content[0].content[0].marks?.[0]?.type === 'bold' && doc.content[0].attrs?.textAlign == null,
+  esito(doc?.type === 'doc' && doc.content.length === 1 && doc.content[0].type === 'paragraph' && doc.content[0].content[0].text.startsWith('Testo di prova') && doc.content[0].content[0].marks?.[0]?.type === 'bold' && doc.content[0].content.map(x => x.text).join('').startsWith('Testo di prova ZZdentro della sezione.') && doc.content[0].attrs?.textAlign == null,
     'il testo formattato scritto sulla pagina è salvato col suo grassetto, e il documento ha la forma di prima', JSON.stringify(doc).slice(0, 220))
   const faq = salvata.blocks[1].data
   esito(faq.titolo === 'ZZ Riscritto' && faq.items?.[0]?.question === 'ZZ Quanto costa?' && faq.items.length === 2 && faq.items.every(x => typeof x.id === 'string' && x.id !== 'OSTILE') && !('campo_nuovo' in faq) && !salvata.blocks[0].data.bg_image_url,
@@ -475,10 +480,118 @@ try {
     esito(/^https:\/\//.test(f.image_url) && f.link_url === 'https://esempio.example/dove' && f.alt === 'ZZ foto', 'nel database è cambiata solo la foto: il link e il testo sono quelli di prima', JSON.stringify(f).slice(0, 200))
   }
 
+  console.log('\nLA FOTO CHE MANCA SI AGGIUNGE DALLA PAGINA\n')
+  const carica = async (sezione, cosa) => {
+    await page.mouse.move(5, 5)
+    await riq().locator(`[data-blocco="${sezione}"]`).hover({ position: { x: 30, y: 30 } })
+    const bottone = riq().locator(`[data-blocco="${sezione}"] .ev-aggiungi-foto button`).first()
+    if (!await bottone.waitFor({ state: 'visible', timeout: 15000 }).then(() => true, () => false)) { esito(false, cosa, 'il pulsante non compare'); return }
+    const [sc] = await Promise.all([page.waitForEvent('filechooser', { timeout: 15000 }).catch(() => null), bottone.click()])
+    if (!sc) { esito(false, cosa, 'non si apre la scelta del file'); return }
+    await sc.setFiles({ name: 'zz-foto.png', mimeType: 'image/png', buffer: png })
+    const vista = await riq().locator(`[data-blocco="${sezione}"] img[src^="https://"]`).waitFor({ timeout: 45000 }).then(() => true, () => false)
+    esito(vista, cosa, vista ? '' : await page.locator('[data-avviso]').innerText().catch(() => 'nessun avviso'))
+  }
+  await carica('b-ft', 'un blocco senza foto offre «Aggiungi la foto», e la foto caricata compare al suo posto')
+  esito(await riq().locator('[data-blocco="b-gal"] .ev-vuoto').count() === 1, 'una galleria vuota si vede, e dice cosa le manca')
+  await carica('b-gal', 'e da lì si carica la sua prima foto')
+  await quadroAltra().evaluate(() => {
+    const d = (id, percorso) => window.parent.postMessage({ tipo: 'oltrenova:cambia-foto', id, percorso }, window.location.origin)
+    d('b-gal', ['images', 7]); d('b-gal', ['images', -1]); d('b-ft', ['button_url']); d('b-ft', ['images', 0]); d('b-ft', ['items', 0, 'image_url'])
+  })
+  await page.waitForTimeout(700)
+  esito(sceltaChiesta === 3, 'un posto che non c’è (una foto a metà galleria, il link di un pulsante) non apre niente', `scelte di file aperte: ${sceltaChiesta}`)
+
+  console.log('\nGRASSETTO, LINK E A-CAPO SULLA PAGINA\n')
+  const par = riq().locator('[data-blocco="b-ricco"] p').first()
+  const seleziona = parola => quadroAltra().evaluate(p => {
+    const el = document.activeElement
+    const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let n
+    while ((n = w.nextNode())) { const i = n.data.indexOf(p); if (i >= 0) { window.getSelection().setBaseAndExtent(n, i, n, i + p.length); return true } }
+    return false
+  }, parola)
+  await par.click()
+  const barra = await riq().locator('.ev-formato').waitFor({ state: 'visible', timeout: 15000 }).then(() => true, () => false)
+  esito(barra, 'cliccando un paragrafo compare la barra della formattazione', barra ? '' : await quadroAltra().evaluate(() => { const p = document.querySelector('[data-blocco="b-ricco"] p'); const f = document.querySelector('.ev-formato'); return (p?.outerHTML || 'nessun p').slice(0, 260) + ' | attivo: ' + document.activeElement?.tagName + ' | barra: ' + (f ? f.style.cssText + ' ' + f.className : 'non c’è') }))
+  await foto(page, '7-ricco')
+  await seleziona('semplice')
+  await riq().locator('.ev-formato [data-f="bold"]').click()
+  await seleziona('formattare')
+  await riq().locator('.ev-formato [data-f="link"]').click()
+  await riq().locator('.ev-formato input').fill('esempio.example/dove')
+  await page.keyboard.press('Enter')
+  await page.keyboard.press('Control+End'); await page.keyboard.press('Enter'); await page.keyboard.type('Riga nuova, scritta in fretta e di seguito')
+  await page.locator('[data-scheda-blocco] .ProseMirror strong').filter({ hasText: 'semplice' }).waitFor({ timeout: 15000 }).then(() => esito(true, 'mentre si scrive, la scheda a sinistra segue anche la formattazione'), () => esito(false, 'mentre si scrive, la scheda a sinistra segue anche la formattazione'))
+  await page.keyboard.press('Escape')
+  await riq().locator('[data-blocco="b-ricco"] p strong').filter({ hasText: 'semplice' }).waitFor({ timeout: 15000 }).catch(() => {})
+  const comE = await quadroAltra().evaluate(() => {
+    const p = document.querySelectorAll('[data-blocco="b-ricco"] p')
+    return { forte: p[0].querySelector('strong')?.textContent, link: p[0].querySelector('a')?.getAttribute('href'), parolaLink: p[0].querySelector('a')?.textContent, acapo: p[0].querySelectorAll('br').length, testo: p[0].textContent, secondo: p[1]?.textContent, centrato: getComputedStyle(p[0]).textAlign, modificabile: p[0].getAttribute('contenteditable') }
+  })
+  esito(comE.forte === 'semplice' && comE.link === 'https://esempio.example/dove' && comE.parolaLink === 'formattare' && comE.acapo === 1 && comE.testo === 'Una frase semplice da formattare qui.Riga nuova, scritta in fretta e di seguito' && comE.secondo === 'Secondo paragrafo.' && comE.centrato === 'center',
+    'usciti dal paragrafo restano il grassetto, il link e l’a-capo; l’altro paragrafo e l’allineamento non cambiano', JSON.stringify(comE))
+  await page.keyboard.press('Control+s')
+  await page.locator('[data-editor-visuale]').getByText('Salvato ✓').waitFor({ timeout: 30000 }).catch(() => {})
+  const attesoRicco = [{ type: 'text', text: 'Una frase ' }, { type: 'text', text: 'semplice', marks: [{ type: 'bold' }] }, { type: 'text', text: ' da ' }, { type: 'text', text: 'formattare', marks: [{ type: 'link', attrs: { href: 'https://esempio.example/dove' } }] }, { type: 'text', text: ' qui.' }, { type: 'hardBreak' }, { type: 'text', text: 'Riga nuova, scritta in fretta e di seguito' }]
+  const ordinato = v => JSON.stringify(v, (k, x) => x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.keys(x).sort().map(c => [c, x[c]])) : x)
+  let ricca = (await deve(a.from('pagine').select('blocks').eq('id', altra.id).single(), 'rilettura')).blocks
+  esito(ordinato(ricca[2].data.text.content[0].content) === ordinato(attesoRicco) && ricca[2].data.text.content[0].attrs?.textAlign === 'center' && ordinato(ricca[2].data.text.content[1]) === ordinato({ type: 'paragraph', content: [{ type: 'text', text: 'Secondo paragrafo.' }] }) && ricca[2].data.text.content.length === 2,
+    'nel database il paragrafo ha esattamente quei pezzi, e il resto del documento è com’era', JSON.stringify(ricca[2].data.text.content[0].content).slice(0, 300))
+  esito(/^https:\/\//.test(ricca[3].data.image_url) && ricca[3].data.button_url === 'https://esempio.example/pulsante' && ricca[4].data.images.length === 1 && /^https:\/\//.test(ricca[4].data.images[0].url) && typeof ricca[4].data.images[0].id === 'string',
+    'e le foto aggiunte sono al loro posto, senza toccare il link del pulsante', JSON.stringify(ricca[4].data).slice(0, 160))
+  // Entrare in un paragrafo e uscirne senza scrivere non è una modifica.
+  await riq().locator('[data-blocco="b-ricco"] p').nth(1).click()
+  await page.waitForTimeout(500); await page.keyboard.press('Escape'); await page.waitForTimeout(900)
+  esito(await page.locator('[data-editor-visuale]').getByText('Non salvato').count() === 0, 'entrare in un paragrafo e uscirne senza scrivere non lo segna come modificato')
+  // Quello che la pagina non può chiedere.
+  await quadroAltra().evaluate(() => {
+    const d = (percorso, contenuto, id = 'b-ricco') => window.parent.postMessage({ tipo: 'oltrenova:paragrafo-scritto', id, percorso, contenuto }, window.location.origin)
+    const t = (text, marks) => [marks ? { type: 'text', text, marks } : { type: 'text', text }]
+    d(['text', 'content', 1], t('OSTILE', [{ type: 'link', attrs: { href: 'javascript:alert(1)' } }]))
+    d(['text', 'content', 1], t('OSTILE', [{ type: 'link', attrs: { href: 'data:text/html,x' } }]))
+    d(['text', 'content', 1], [{ type: 'image', attrs: { src: 'https://ostile.example/x.png' } }])
+    d(['text', 'content', 1], t('OSTILE', [{ type: 'code' }]))
+    d(['text', 'content', 1], [{ type: 'text', text: 'OSTILE', attrs: { onclick: 'x' }, marks: [] , extra: 1 }].map(x => ({ ...x, marks: [{ type: 'bold', attrs: { style: 'x' } }, { type: 'textStyle' }] })))
+    d(['text', 'content', 9], t('OSTILE')); d(['text'], t('OSTILE')); d(['text', 'content'], t('OSTILE')); d(['title', 'content', 0], t('OSTILE')); d(['text', 'attrs', 0], t('OSTILE'))
+    d(['text', 'content', 1], 'OSTILE'); d(['text', 'content', 1], []); d(['text', 'content', 1], t('OSTILE'), 'b-inesistente')
+    window.parent.postMessage({ tipo: 'oltrenova:campo-scritto', id: 'b-ricco', percorso: ['text', 'content', 1, 'content', 0, 'text'], valore: 'OSTILE' }, window.location.origin)
+  })
+  await page.waitForTimeout(800)
+  esito(await riq().getByText('OSTILE').count() === 0 && await page.locator('[data-editor-visuale]').getByText('Non salvato').count() === 0, 'un link «javascript:», un’immagine, un segno inventato o un percorso fuori dal paragrafo non cambiano niente')
+  // Un testo nel formato di prima va a capo con Invio.
+  await riq().locator('[data-blocco="b-altra"] p').first().click()
+  await page.keyboard.press('Control+End'); await page.keyboard.press('Enter'); await page.keyboard.type('ZZ riga due')
+  await page.waitForTimeout(500); await page.keyboard.press('Escape'); await page.waitForTimeout(700)
+  await page.keyboard.press('Control+s')
+  await page.locator('[data-editor-visuale]').getByText('Salvato ✓').waitFor({ timeout: 30000 }).catch(() => {})
+  ricca = (await deve(a.from('pagine').select('blocks').eq('id', altra.id).single(), 'rilettura')).blocks
+  esito(ricca[0].data.text === 'Un testo scritto nel formato di prima.\nZZ riga due', 'in un testo che sul sito va a capo, Invio va a capo', JSON.stringify(ricca[0].data.text).slice(0, 160))
+
+  console.log('\nINTESTAZIONE E PIEDE, E L’USCITA CON MODIFICHE NON SALVATE\n')
+  await riq().locator('footer').first().click({ position: { x: 20, y: 20 } })
+  const porta = await page.locator('[data-avviso] a').getAttribute('href', { timeout: 15000 }).catch(() => null)
+  esito(!!porta && porta.endsWith(`/admin/ristoranti/${ent.id}/sito?tab=layout`) && await page.locator('[data-avviso]').getByText('Il piede è lo stesso su tutte le pagine').count() === 1, 'un clic sul piede dice dove si cambia e offre la porta per andarci', porta || 'nessun avviso')
+  if (porta) {
+    const altraScheda = await ctx.newPage()
+    await altraScheda.goto(BASE + porta, { waitUntil: 'domcontentloaded', timeout: 120000 })
+    esito(await altraScheda.getByRole('heading', { name: 'Header & Footer' }).waitFor({ timeout: 120000 }).then(() => true, () => false), 'la porta arriva davvero dove intestazione e piede si cambiano')
+    await altraScheda.close()
+  }
+  await riq().locator('nav.snav').first().click({ position: { x: 8, y: 8 } })
+  esito(await page.locator('[data-avviso]').getByText('L\'intestazione è la stessa su tutte le pagine').waitFor({ timeout: 15000 }).then(() => true, () => false), 'e lo stesso per l’intestazione')
+  // Con una modifica non salvata, ricaricare la pagina fa chiedere conferma al browser.
+  await riq().locator('[data-blocco="b-ricco"] p').nth(1).click()
+  await page.keyboard.press('Control+End'); await page.keyboard.type(' ZZ non salvato'); await page.keyboard.press('Escape')
+  await page.locator('[data-editor-visuale]').getByText('Non salvato').waitFor({ timeout: 15000 })
+  let chiesto = 0; page.on('dialog', d => { if (d.type() === 'beforeunload') chiesto++ })
+  await page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 }).catch(() => {})
+  esito(chiesto === 1, 'ricaricando con modifiche non salvate il browser chiede conferma', `richieste: ${chiesto}`)
+
   console.log('\nERRORI\n')
   esito(errori.length === 0, 'nessun errore nel browser', errori.slice(0, 3).join(' | '))
 } catch (e) {
   rossi++; console.log(`\n  ✗ la sonda si è fermata: ${e.message.split('\n')[0]}`)
+  if (errori.length) console.log('    errori nel browser fin qui: ' + errori.slice(0, 4).join(' | '))
 } finally {
   if (browser) await browser.close().catch(() => {})
   if (utente) await a.auth.admin.deleteUser(utente).catch(() => {})

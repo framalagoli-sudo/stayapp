@@ -20,7 +20,7 @@ import RichTextEditor from '@/components/admin/RichTextEditor'
 import MediaPickerButton from '@/components/admin/MediaPicker'
 import UnsplashPicker from '@/components/admin/UnsplashPicker'
 import { BLOCK_PATTERNS } from '@/lib/blockPatterns'
-import { datiDiNascita, scriviCampo, campiDiTesto, campiImmagine, scriviImmagine, azioneSuElemento } from '@/lib/editor-visuale'
+import { datiDiNascita, scriviCampo, scriviParagrafo, campiDiTesto, postoPerFoto, scriviImmagine, azioneSuElemento } from '@/lib/editor-visuale'
 import { TIPO_TRASCINATO } from '@/components/EditorNelRiquadro'
 import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS, BLOCK_GLOW_OPTIONS, BLOCK_PADY_OPTIONS, blockSupportsBg, BLOCK_TEXT_SIZE_OPTIONS, BLOCK_TEXT_COLOR_OPTIONS, BLOCK_ICON_COLOR_OPTIONS, blockHasText, GRID_AUTO_BLOCKS, BLOCK_COLUMNS_OPTIONS } from '@/lib/blockTypes'
 
@@ -1606,8 +1606,7 @@ export default function PaginaEditorPage() {
     } else if (m.tipo === 'oltrenova:cambia-foto' && esiste(m.id)) {
       // La pagina dice solo QUALE foto: deve essere un campo immagine che c'è
       // già. La foto nuova la sceglie e la carica il pannello.
-      const chiave = JSON.stringify(m.percorso)
-      if (!campiImmagine(blocks.find(b => b.id === m.id).data).some(c => JSON.stringify(c.percorso) === chiave)) return
+      if (!postoPerFoto(blocks.find(b => b.id === m.id).data, m.percorso)) return
       fotoAttesa.current = { id: m.id, percorso: m.percorso }
       sceltaFoto.current?.click()
     }
@@ -1621,6 +1620,17 @@ export default function PaginaEditorPage() {
       // un testo al posto di un testo, in un campo fatto di parole.
       const dati = scriviCampo(blocks.find(b => b.id === m.id).data, m.percorso, m.valore)
       if (dati) { if (expandedId !== m.id) setExpandedId(m.id); updateBlock(m.id, dati) }
+    } else if (m.tipo === 'oltrenova:paragrafo-scritto' && esiste(m.id)) {
+      // Un paragrafo di un testo formattato scritto sulla pagina: `scriviParagrafo`
+      // lo ricostruisce pezzo per pezzo e tiene solo grassetto, corsivo, link validi e a-capo.
+      const dati = scriviParagrafo(blocks.find(b => b.id === m.id).data, m.percorso, m.contenuto)
+      if (dati) { if (expandedId !== m.id) setExpandedId(m.id); updateBlock(m.id, dati) }
+    } else if (m.tipo === 'oltrenova:fuori-pagina' && (m.cosa === 'intestazione' || m.cosa === 'piede')) {
+      // Intestazione e piede valgono per tutto il sito: si dice dove si cambiano, con la porta per andarci.
+      const dove = { struttura: 'struttura', ristorante: 'ristoranti', attivita: 'attivita' }[page.entity_tipo]
+      clearTimeout(tAvviso.current)
+      setAvviso({ testo: m.cosa === 'intestazione' ? "L'intestazione è la stessa su tutte le pagine: si cambia in «Sito web → Menu & Layout»." : 'Il piede è lo stesso su tutte le pagine: si cambia in «Sito web → Menu & Layout».', apri: dove ? `/admin/${dove}/${page.entity_id}/sito?tab=layout` : null })
+      tAvviso.current = setTimeout(() => setAvviso(null), 12000)
     } else if (m.tipo === 'oltrenova:blocco-azione' && esiste(m.id)) {
       if (m.azione === 'su') spostaDi(m.id, -1)
       else if (m.azione === 'giu') spostaDi(m.id, 1)
@@ -1654,11 +1664,11 @@ export default function PaginaEditorPage() {
       const indirizzo = await caricaImmagine(file, page.entity_tipo, page.entity_id)
       const fotoNuova = attuali => {
         const b = attuali.find(x => x.id === dove.id); if (!b) return null
-        const dati = scriviImmagine(b.data, dove.percorso, indirizzo)
+        const dati = scriviImmagine(b.data, dove.percorso, indirizzo, uid)
         return dati ? attuali.map(x => x.id === dove.id ? { ...x, data: dati } : x) : null
       }
       const nb = fotoNuova(blocchiVivi.current)
-      if (nb) { patchVivo.current(nb); avvisa('Foto cambiata.', true) } else avvisa('La foto non è più lì: riprova dalla scheda.')
+      if (nb) { patchVivo.current(nb); avvisa('Foto caricata.', true) } else avvisa('La foto non è più lì: riprova dalla scheda.')
     } catch (err) { avvisa(err?.message || 'Caricamento non riuscito: riprova.') }
   }
   useEffect(() => {
@@ -1675,6 +1685,15 @@ export default function PaginaEditorPage() {
     navigator.clipboard.writeText(window.location.origin + url)
     setCopied(true); setTimeout(() => setCopied(false), 1800)
   }
+
+  // Chiudere la scheda o ricaricare con modifiche non salvate: il browser chiede conferma.
+  useEffect(() => {
+    if (!dirty) return
+    const chiede = e => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', chiede)
+    return () => window.removeEventListener('beforeunload', chiede)
+  }, [dirty])
+  function esci() { if (!dirty || window.confirm('Ci sono modifiche non salvate: uscendo si perdono. Uscire lo stesso?')) router.back() }
 
   function patchPage(key, val) { setPage(p => ({ ...p, [key]: val })); setDirty(true) }
   function patchBlocks(nb) { setPast(p => [...p.slice(-49), blocks]); setFuture([]); setBlocks(nb); setDirty(true) }
@@ -1888,7 +1907,7 @@ export default function PaginaEditorPage() {
 
       {/* ── Top bar ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28, flexWrap: 'wrap' }}>
-        <button onClick={() => router.back()} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#888', padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+        <button onClick={esci} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#888', padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
           ← Indietro
         </button>
         <h1 style={{ margin: 0, fontSize: 19, fontWeight: 700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#1a1a2e' }}>
@@ -2002,9 +2021,10 @@ export default function PaginaEditorPage() {
             </div>
             <input ref={sceltaFoto} type="file" accept="image/*" data-scelta-foto style={{ display: 'none' }} onChange={fotoScelta} />
             {avviso && (
-              <div data-avviso style={{ position: 'absolute', left: '50%', bottom: 22, transform: 'translateX(-50%)', zIndex: 5, display: 'flex', alignItems: 'center', gap: 14, background: '#1a1a2e', color: '#fff', borderRadius: 10, padding: '10px 16px', fontSize: 13.5, boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}>
+              <div data-avviso style={{ position: 'absolute', left: '50%', bottom: 22, transform: 'translateX(-50%)', zIndex: 5, pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: 14, background: '#1a1a2e', color: '#fff', borderRadius: 10, padding: '10px 16px', fontSize: 13.5, boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}>
                 {avviso.testo}
-                {avviso.annulla && past.length > 0 && <button onClick={() => { undo(); setAvviso(null) }} style={{ background: 'none', border: 'none', color: '#aab4ff', fontWeight: 700, cursor: 'pointer', fontSize: 13.5, padding: 0 }}>Annulla</button>}
+                {avviso.apri && <a href={avviso.apri} target="_blank" rel="noopener" style={{ pointerEvents: 'auto', color: '#aab4ff', fontWeight: 700, fontSize: 13.5, textDecoration: 'none', whiteSpace: 'nowrap' }}>Apri in un'altra scheda ↗</a>}
+                {avviso.annulla && past.length > 0 && <button onClick={() => { undo(); setAvviso(null) }} style={{ pointerEvents: 'auto', background: 'none', border: 'none', color: '#aab4ff', fontWeight: 700, cursor: 'pointer', fontSize: 13.5, padding: 0 }}>Annulla</button>}
               </div>
             )}
 

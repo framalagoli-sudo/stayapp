@@ -64,6 +64,11 @@ export default function RichTextEditor({ content, onChange, placeholder = 'Scriv
   const giaAllineato = useRef(false)
 
   // Aggiorna il contenuto quando cambia esternamente (es. caricamento da DB, insert AI)
+  // ⚠️ `emitUpdate: false`: un testo arrivato da fuori chi sta sopra ce l'ha già.
+  // Rimandarglielo indietro (il predefinito) lo fa passare per una modifica, e —
+  // peggio — arriva in ritardo: se nel frattempo il testo è cambiato ancora (si
+  // sta scrivendo sulla pagina dell'editor visuale), la versione vecchia gli
+  // passa sopra e le ultime lettere spariscono.
   useEffect(() => {
     if (!editor || content === undefined) return
     const primaVolta = !giaAllineato.current
@@ -78,12 +83,12 @@ export default function RichTextEditor({ content, onChange, placeholder = 'Scriv
       if (incoming === null) {
         // stringa legacy o da AI: imposta solo se non vuota (Tiptap la converte in doc)
         if (primaVolta && content === allaNascita.current) return
-        if (typeof content === 'string' && content.trim() !== '') editor.commands.setContent(content)
+        if (typeof content === 'string' && content.trim() !== '') editor.commands.setContent(content, { emitUpdate: false })
       } else if (incoming !== impronta(editor.getJSON())) {
-        editor.commands.setContent(content)
+        editor.commands.setContent(content, { emitUpdate: false })
       }
     } else if (editor.getHTML() !== content) {
-      editor.commands.setContent(content || '')
+      editor.commands.setContent(content || '', { emitUpdate: false })
     }
   }, [editor, content, format])
 

@@ -1,8 +1,9 @@
 'use client'
 import { useEffect, useLayoutEffect } from 'react'
-import { ArrowUp, ArrowDown, Copy, Trash2, GripVertical, Plus } from 'lucide-react'
+import { flushSync } from 'react-dom'
+import { ArrowUp, ArrowDown, Copy, Trash2, GripVertical, Plus, ImagePlus } from 'lucide-react'
 import { blockLabel } from '@/lib/blockTypes'
-import { campiDiTesto, campiImmagine, cosaManca, LISTE } from '@/lib/editor-visuale'
+import { campiDiTesto, campiImmagine, cosaManca, indirizzoAmmesso, LISTE } from '@/lib/editor-visuale'
 
 // La parte dell'editor visuale che vive DENTRO la pagina, quando è incorniciata
 // dal pannello: le sezioni si scelgono con un clic, si spostano, e accettano i
@@ -64,6 +65,20 @@ const STILE = `
   .ev-menu button:disabled { opacity: 0.35; cursor: default; background: none; }
   .ev-menu button small { opacity: 0.55; font-size: 11px; }
   .ev-menu hr { width: 100%; border: 0; border-top: 1px solid rgba(255,255,255,0.14); margin: 4px 0; }
+  .ev-aggiungi-foto { position: absolute; left: 12px; bottom: 12px; z-index: 46; display: none; gap: 6px; flex-wrap: wrap; transform: scale(var(--ev-s, 1)); transform-origin: bottom left; }
+  .ev-blocco:hover > .ev-aggiungi-foto, .ev-blocco.ev-scelto > .ev-aggiungi-foto, .ev-blocco.ev-senza > .ev-aggiungi-foto { display: flex; }
+  .ev-aggiungi-foto button { display: flex; align-items: center; gap: 7px; padding: 8px 12px; border: 0; border-radius: 8px; background: #1a1a2e; color: #fff; cursor: pointer; font: 600 12.5px/1 system-ui, sans-serif; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+  .ev-aggiungi-foto button:hover { background: #5b6af8; }
+  .ev-trascina .ev-aggiungi-foto, .ev-trascina .ev-formato { display: none !important; }
+  .ev-formato { position: absolute; z-index: 2147482500; display: none; align-items: center; gap: 2px; padding: 4px; background: #1a1a2e; border-radius: 9px; box-shadow: 0 6px 22px rgba(0,0,0,0.35);
+    transform: translate(0, -100%) scale(var(--ev-s, 1)); transform-origin: bottom left; font: 500 12px/1 system-ui, sans-serif; color: #fff; white-space: nowrap; }
+  .ev-formato.ev-sotto { transform: scale(var(--ev-s, 1)); transform-origin: top left; }
+  .ev-formato button { display: flex; align-items: center; justify-content: center; min-width: 30px; height: 30px; padding: 0 8px; border: 0; border-radius: 6px; background: none; color: #fff; cursor: pointer; font: 600 14px/1 Georgia, serif; }
+  .ev-formato button:hover { background: rgba(255,255,255,0.16); }
+  .ev-formato button[data-f="ok"], .ev-formato button[data-f="via"] { font: 600 12px/1 system-ui, sans-serif; }
+  .ev-formato .ev-nota { padding: 0 8px; opacity: 0.6; }
+  .ev-formato input { width: 230px; height: 30px; padding: 0 9px; border: 0; border-radius: 6px; font: 13px/1 system-ui, sans-serif; outline: none; }
+  nav.snav:hover, footer:hover { outline: calc(2px * var(--ev-s, 1)) dashed #5b6af8; outline-offset: calc(-2px * var(--ev-s, 1)); cursor: pointer; }
   .ev-linea { position: fixed; left: 0; right: 0; height: calc(5px * var(--ev-s, 1)); margin-top: calc(-2.5px * var(--ev-s, 1)); background: #5b6af8; box-shadow: 0 0 14px rgba(91,106,248,0.7); z-index: 2147483000; pointer-events: none; display: none; }
 `
 
@@ -85,40 +100,150 @@ function inScrittura() {
   return el && el.hasAttribute?.('data-campo') ? el : null
 }
 
+// Un paragrafo di un testo formattato si riconosce allo stesso modo, ma è un
+// elemento che può contenere grassetti, corsivi, link e a-capo: lì si scrive
+// con la formattazione (`data-ricco`).
+const PARAGRAFI = new Set(['P', 'H2', 'H3'])
+const IN_LINEA = new Set(['STRONG', 'B', 'EM', 'I', 'A', 'BR', 'SPAN'])
+function soloInLinea(el) { for (const x of el.querySelectorAll('*')) if (!IN_LINEA.has(x.tagName)) return false; return true }
+
 function segnaTesti(blocks) {
-  const attivo = inScrittura()
+  const attivo = ricco?.el || inScrittura()
   const buoni = new Set()
+  if (ricco) buoni.add(ricco.el)
   for (const sez of document.querySelectorAll('[data-blocco]')) {
     const b = blocks.find(x => x?.id === sez.getAttribute('data-blocco')); if (!b) continue
-    const perTesto = new Map()
+    const semplici = new Map(), ricchi = new Map()
     for (const c of campiDiTesto(b.data)) {
-      const t = c.valore.trim(); if (!perTesto.has(t)) perTesto.set(t, []); perTesto.get(t).push(c.percorso)
+      const dove = c.ricco ? ricchi : semplici, t = c.valore.trim()
+      if (!dove.has(t)) dove.set(t, []); dove.get(t).push(c.percorso)
     }
-    if (!perTesto.size) continue
-    const perElemento = new Map()
+    if (!semplici.size && !ricchi.size) continue
+    const elSemplici = new Map(), elRicchi = new Map()
     for (const el of sez.querySelectorAll('*')) {
-      if (!(el instanceof HTMLElement) || el.childElementCount || NON_TESTI.has(el.tagName)) continue
-      if (el.closest('.ev-binario, .ev-vuoto, form')) continue
-      const t = testoDi(el).trim(); if (!t || !perTesto.has(t)) continue
-      if (!perElemento.has(t)) perElemento.set(t, []); perElemento.get(t).push(el)
+      if (!(el instanceof HTMLElement) || NON_TESTI.has(el.tagName)) continue
+      if (el.closest('.ev-binario, .ev-vuoto, .ev-piu, .ev-aggiungi-foto, form')) continue
+      const t = testoDi(el).trim(); if (!t) continue
+      // Lo stesso testo in un campo semplice e in un paragrafo: non si sa quale sia, non si offre.
+      if (semplici.has(t) && ricchi.has(t)) continue
+      const dove = ricchi.has(t) && PARAGRAFI.has(el.tagName) && soloInLinea(el) ? elRicchi : semplici.has(t) && !el.childElementCount ? elSemplici : null
+      if (!dove) continue
+      if (!dove.has(t)) dove.set(t, []); dove.get(t).push(el)
     }
-    for (const [t, elementi] of perElemento) {
-      const percorsi = perTesto.get(t)
-      if (percorsi.length > 1 && percorsi.length !== elementi.length) continue
-      elementi.forEach((el, i) => {
-        buoni.add(el)
-        if (el === attivo) return
-        el.setAttribute('data-campo', JSON.stringify(percorsi.length > 1 ? percorsi[i] : percorsi[0]))
-        el.setAttribute('contenteditable', 'plaintext-only')
-        if (el.contentEditable !== 'plaintext-only') el.setAttribute('contenteditable', 'true')
-        el.setAttribute('spellcheck', 'false')
-      })
+    const assegna = (trovati, campi, formattato) => {
+      for (const [t, elementi] of trovati) {
+        const percorsi = campi.get(t)
+        if (percorsi.length > 1 && percorsi.length !== elementi.length) continue
+        elementi.forEach((el, i) => {
+          // Dentro un paragrafo formattato non c'è un altro testo scrivibile: è tutto suo.
+          if (!formattato && el.parentElement?.closest('[data-ricco]')) return
+          buoni.add(el)
+          if (el === attivo) return
+          el.setAttribute('data-campo', JSON.stringify(percorsi.length > 1 ? percorsi[i] : percorsi[0]))
+          if (formattato) { el.setAttribute('data-ricco', '1'); el.setAttribute('contenteditable', 'true') }
+          else {
+            el.removeAttribute('data-ricco')
+            el.setAttribute('contenteditable', 'plaintext-only')
+            if (el.contentEditable !== 'plaintext-only') el.setAttribute('contenteditable', 'true')
+          }
+          el.setAttribute('spellcheck', 'false')
+        })
+      }
     }
+    assegna(elRicchi, ricchi, true)
+    assegna(elSemplici, semplici, false)
   }
   for (const el of document.querySelectorAll('[data-campo]')) {
     if (el === attivo || buoni.has(el)) continue
-    el.removeAttribute('data-campo'); el.removeAttribute('contenteditable'); el.removeAttribute('spellcheck')
+    el.removeAttribute('data-campo'); el.removeAttribute('data-ricco'); el.removeAttribute('contenteditable'); el.removeAttribute('spellcheck')
   }
+}
+
+// ── Scrivere in un paragrafo formattato ──────────────────────────────────────
+// Lì dentro il browser cambia la struttura (aggiunge un grassetto, spezza un
+// testo), e React non perdona che gli si tocchino i suoi nodi. Quindi mentre
+// si scrive i nodi di React vengono messi da parte e al loro posto ci sono
+// delle copie; alla pagina si continua a disegnare il paragrafo com'era
+// (`contenuto`), così React non ha niente da cambiare. Uscendo si rimettono
+// i nodi veri e si ridisegna col contenuto nuovo.
+let ricco = null          // { el, originali, campo, contenuto, toccato, mandato }
+let blocchiVeri = []      // gli ultimi blocchi arrivati dal pannello, senza ritocchi
+
+function nodoA(blocks, campo) {
+  let nodo = blocks.find(b => b?.id === campo.id)?.data
+  for (const k of campo.percorso) nodo = nodo?.[k]
+  return nodo && typeof nodo === 'object' && Array.isArray(nodo.content) ? nodo : null
+}
+function conContenuto(blocks, campo, contenuto) {
+  if (!nodoA(blocks, campo)) return blocks
+  return blocks.map(b => {
+    if (b?.id !== campo.id) return b
+    const dati = JSON.parse(JSON.stringify(b.data))
+    let nodo = dati
+    for (const k of campo.percorso) nodo = nodo[k]
+    nodo.content = contenuto
+    return { ...b, data: dati }
+  })
+}
+function preparaRicco(el) {
+  if (ricco?.el === el) return true
+  if (ricco) return false
+  const campo = campoDi(el); const nodo = campo && nodoA(blocchiOra, campo)
+  if (!nodo) return false
+  const dove = cursoreIn(el)
+  const originali = [...el.childNodes]
+  el.replaceChildren(...originali.map(n => n.cloneNode(true)))
+  ricco = { el, originali, campo, contenuto: JSON.parse(JSON.stringify(nodo.content)), toccato: false, mandato: null }
+  if (dove) mettiCursore(el, dove)
+  return true
+}
+// Quello che c'è scritto nel paragrafo, nella forma dei dati: pezzi di testo
+// coi loro segni, e a-capo. Il pannello lo ricontrolla comunque da zero.
+function contenutoDi(el) {
+  const pezzi = []
+  const visita = (nodo, segni) => {
+    if (nodo.nodeType === 3) {
+      const text = nodo.data.replace(/\u00a0/g, ' ').replace(/[\n\r\t]+/g, ' ')
+      if (!text) return
+      const marks = ['bold', 'italic'].filter(s => segni[s]).map(type => ({ type }))
+      if (segni.link) marks.push({ type: 'link', attrs: { href: segni.link } })
+      const ultimo = pezzi[pezzi.length - 1]
+      if (ultimo?.type === 'text' && JSON.stringify(ultimo.marks || []) === JSON.stringify(marks)) ultimo.text += text
+      else pezzi.push(marks.length ? { type: 'text', text, marks } : { type: 'text', text })
+      return
+    }
+    if (nodo.nodeType !== 1) return
+    if (nodo.tagName === 'BR') { pezzi.push({ type: 'hardBreak' }); return }
+    const s = { ...segni }, stile = nodo.style
+    if (nodo.tagName === 'B' || nodo.tagName === 'STRONG' || stile?.fontWeight === 'bold' || Number(stile?.fontWeight) >= 600) s.bold = true
+    if (nodo.tagName === 'I' || nodo.tagName === 'EM' || stile?.fontStyle === 'italic') s.italic = true
+    if (nodo.tagName === 'A' && nodo.getAttribute('href')) s.link = nodo.getAttribute('href')
+    for (const f of nodo.childNodes) visita(f, s)
+  }
+  for (const f of el.childNodes) visita(f, {})
+  // L'a-capo in fondo è quello che il browser tiene per mostrare la riga: non è contenuto.
+  while (pezzi.length && pezzi[pezzi.length - 1].type === 'hardBreak') pezzi.pop()
+  return pezzi
+}
+function mandaRicco() {
+  const r = ricco; if (!r || !r.toccato) return null
+  const contenuto = contenutoDi(r.el)
+  if (!contenuto.some(p => p.type === 'text' && p.text.trim())) return null
+  const chiave = JSON.stringify(contenuto)
+  if (chiave !== r.mandato && chiave !== JSON.stringify(r.contenuto)) {
+    r.mandato = chiave
+    parla({ tipo: 'oltrenova:paragrafo-scritto', id: r.campo.id, percorso: r.campo.percorso, contenuto })
+  }
+  return contenuto
+}
+function chiudiRicco(ridisegna) {
+  const r = ricco; if (!r) return
+  const contenuto = mandaRicco()
+  r.el.replaceChildren(...r.originali)
+  ricco = null
+  // Il paragrafo era disegnato com'era prima di scriverci: ora si disegna com'è.
+  const veri = contenuto ? conContenuto(blocchiVeri, r.campo, contenuto) : blocchiVeri
+  try { flushSync(() => ridisegna(veri)) } catch { ridisegna(veri) }
 }
 
 // Le foto della pagina che corrispondono a un campo del blocco: si riconoscono
@@ -178,6 +303,7 @@ const ICONE = {
   copia:   DISEGNO('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'),
   cestino: DISEGNO('<path d="M3 6h18M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'),
   foto:    DISEGNO('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>'),
+  link:    DISEGNO('<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>'),
 }
 // Dove il pannello tiene il blocco copiato: stessa origine, quindi la pagina
 // sa se c'è qualcosa da incollare (non cosa).
@@ -210,6 +336,8 @@ function mettiCursore(el, { da, a }) {
 // e il cursore si rimette dov'era dopo il disegno.
 let cursoreDaRimettere = null
 export function conLaScritturaInCorso(blocks) {
+  blocchiVeri = blocks
+  if (ricco) { cursoreDaRimettere = null; return conContenuto(blocks, ricco.campo, ricco.contenuto) }
   const el = inScrittura(); const campo = el && campoDi(el)
   cursoreDaRimettere = el ? { el, dove: cursoreIn(el) } : null
   if (!campo) return blocks
@@ -232,8 +360,11 @@ function metti(dati, percorso, valore) {
 
 // Accende i comportamenti dell'editor sulla pagina. `editor` = null fuori dal
 // pannello: in quel caso non succede niente.
-export function useEditorNelRiquadro(editor, blocks) {
+let ridisegnaOra = () => {}
+let scalaOra = 1
+export function useEditorNelRiquadro(editor, blocks, ridisegna) {
   const attivo = !!editor
+  if (ridisegna) ridisegnaOra = ridisegna
 
   // Dopo ogni disegno: si riconoscono i testi scrivibili e, se si stava
   // scrivendo, il cursore torna dov'era.
@@ -247,7 +378,11 @@ export function useEditorNelRiquadro(editor, blocks) {
     const ora = cursoreIn(c.el)
     if (!ora || ora.da !== c.dove.da || ora.a !== c.dove.a) mettiCursore(c.el, c.dove)
   })
+  // La scala cambia quando la finestra del pannello cambia larghezza: chi lavora
+  // sulla pagina la legge al momento, senza smontare niente (smontare toglierebbe
+  // il cursore da sotto le dita a chi sta scrivendo).
   const scala = editor?.scala || 1
+  scalaOra = scala
   const scelto = editor?.selezionato || null
 
   useEffect(() => {
@@ -267,18 +402,23 @@ export function useEditorNelRiquadro(editor, blocks) {
     // Nell'editor un clic sceglie, non naviga: né i link del sito né i moduli.
     const clic = e => {
       chiudiMenu()
-      if (e.target.closest?.('.ev-barra, .ev-piu, .ev-attrezzi, .ev-menu')) return
+      if (e.target.closest?.('.ev-barra, .ev-piu, .ev-attrezzi, .ev-menu, .ev-formato, .ev-aggiungi-foto')) return
       e.preventDefault(); e.stopPropagation()
       const b = e.target.closest?.('[data-blocco]')
       parla({ tipo: 'oltrenova:blocco-scelto', id: b ? b.getAttribute('data-blocco') : null })
+      // Intestazione e piede sono del sito intero, non di questa pagina: il pannello dice dove si cambiano.
+      const fuori = b ? null : e.target.closest?.('nav.snav') ? 'intestazione' : e.target.closest?.('footer') ? 'piede' : null
+      if (fuori) parla({ tipo: 'oltrenova:fuori-pagina', cosa: fuori })
     }
     const invio = e => { e.preventDefault(); e.stopPropagation() }
 
     // Scrivere su un testo della pagina: ogni battuta va al pannello, che
     // cambia il blocco. Un testo svuotato si manda solo uscendo dal campo.
     const manda = (el, anchePerVuoto) => {
+      if (el.hasAttribute('data-ricco')) { if (ricco?.el === el) { ricco.toccato = true; mandaRicco() } return }
       const campo = campoDi(el); if (!campo) return
-      const valore = testoDi(el)
+      // L'a-capo in fondo è quello che il browser tiene per mostrare la riga vuota.
+      const valore = testoDi(el).replace(/\n+$/, '')
       if (!valore.trim() && !anchePerVuoto) return
       if (el.getAttribute('data-mandato') === valore) return
       el.setAttribute('data-mandato', valore)
@@ -286,14 +426,22 @@ export function useEditorNelRiquadro(editor, blocks) {
     }
     const entra = e => {
       const el = e.target?.closest?.('[data-campo]'); if (!el) return
+      if (el.hasAttribute('data-ricco')) { mostraFormato(el); return }
       el.setAttribute('data-disegnato', testoDi(el)); el.setAttribute('data-mandato', testoDi(el))
     }
+    // In un paragrafo formattato i nodi di React si mettono da parte appena il
+    // cursore si è posato, e comunque prima che il browser cambi qualcosa.
+    const cursoreMosso = () => { const el = inScrittura(); if (el?.hasAttribute('data-ricco') && !ricco) preparaRicco(el) }
+    const primaDiScrivere = e => { const el = e.target?.closest?.('[data-ricco]'); if (el && !preparaRicco(el)) e.preventDefault() }
     const scrive = e => { const el = e.target?.closest?.('[data-campo]'); if (el) manda(el, false) }
     const esce = e => {
       const el = e.target?.closest?.('[data-campo]'); if (!el) return
-      // Un pezzo di testo formattato non può restare vuoto: torna com'era
-      // (per toglierlo c'è la scheda, che sa togliere anche la sua formattazione).
-      if (!testoDi(el).trim() && campoDi(el)?.percorso.includes('content')) el.textContent = el.getAttribute('data-disegnato') || ''
+      if (el.hasAttribute('data-ricco')) {
+        // Si è passati alla barra della formattazione (il campo del link): si sta ancora scrivendo.
+        if (e.relatedTarget && formato.contains(e.relatedTarget)) return
+        nascondiFormato(); chiudiRicco(ridisegnaOra)
+        return
+      }
       manda(el, true)
       el.removeAttribute('data-disegnato'); el.removeAttribute('data-mandato')
     }
@@ -304,8 +452,17 @@ export function useEditorNelRiquadro(editor, blocks) {
       if (ctrl && k === 's') { e.preventDefault(); e.stopPropagation(); if (el) manda(el, true); parla({ tipo: 'oltrenova:tasto', quale: 'salva' }); return }
       if (el) {
         e.stopPropagation()
-        // Sul posto si scrive una riga: Invio chiude. Gli a-capo e la
-        // formattazione si mettono dalla scheda.
+        if (el.hasAttribute('data-ricco')) {
+          // In un paragrafo Invio va a capo; grassetto e corsivo sono Ctrl+B e Ctrl+I.
+          if (e.key === 'Escape') { e.preventDefault(); el.blur() }
+          else if (e.key === 'Enter') { e.preventDefault(); if (preparaRicco(el)) document.execCommand('insertLineBreak') }
+          else if (ctrl && k === 'u') e.preventDefault()
+          return
+        }
+        // Un titolo è una riga: Invio chiude. Dove il testo va a capo anche
+        // sul sito, Invio va a capo. ⚠️ Si guarda lo stile SCRITTO sull'elemento:
+        // quello calcolato dice «pre» per ogni testo che si sta scrivendo.
+        if (e.key === 'Enter' && !e.shiftKey && /^pre/.test(el.style.whiteSpace)) { e.preventDefault(); document.execCommand('insertLineBreak'); return }
         if (e.key === 'Escape' || e.key === 'Enter') { e.preventDefault(); el.blur() }
         else if (e.key === ' ' && el.tagName === 'BUTTON') { e.preventDefault(); document.execCommand('insertText', false, ' ') }
         return
@@ -341,7 +498,10 @@ export function useEditorNelRiquadro(editor, blocks) {
       if (!elem && !foto) { nascondiTraPoco(); return }
       clearTimeout(tNascondi)
       const id = sez.getAttribute('data-blocco')
-      const percorsoFoto = foto ? percorsoDi(foto) : null
+      // Un elemento che ha il posto per una foto ma non la foto: la si aggiunge da qui.
+      const dati = elem && !foto ? blocchiOra.find(b => b?.id === sez.getAttribute('data-blocco'))?.data?.[elem.lista]?.[elem.indice] : null
+      const fotoVuota = dati && typeof dati === 'object' ? ['image_url', 'photo_url', 'logo_url'].find(k => typeof dati[k] === 'string' && !dati[k].trim()) : null
+      const percorsoFoto = foto ? percorsoDi(foto) : fotoVuota ? [elem.lista, elem.indice, fotoVuota] : null
       const chiave = id + '|' + (elem?.k || '') + '|' + JSON.stringify(percorsoFoto)
       const r = (elem?.box || foto).getBoundingClientRect()
       if (mostrato?.chiave !== chiave) {
@@ -356,14 +516,14 @@ export function useEditorNelRiquadro(editor, blocks) {
           pulsante('dopo', 'Sposta dopo', girata(inFila ? 90 : 180), elem.indice >= quanti - 1) +
           pulsante('duplica', 'Aggiungine un altro (una copia di questo)', ICONE.copia) +
           pulsante('elimina', 'Togli questo elemento', ICONE.cestino)) : '') +
-          (foto ? pulsante('foto', 'Cambia questa foto', ICONE.foto + (elem ? '' : ' Cambia foto')) : '')
+          (foto ? pulsante('foto', 'Cambia questa foto', ICONE.foto + (elem ? '' : ' Cambia foto')) : fotoVuota ? pulsante('foto', 'Aggiungi una foto a questo elemento', ICONE.foto) : '')
         mostrato = { chiave, id, elem, percorsoFoto }
       }
       attrezzi.style.display = 'flex'
       const soloFoto = !elem
-      attrezzi.className = 'ev-attrezzi' + (soloFoto ? ' ev-foto' : r.top < 44 / scala ? ' ev-dentro' : '')
-      attrezzi.style.left = (soloFoto ? r.left + 10 / scala : r.right) + window.scrollX + 'px'
-      attrezzi.style.top = (soloFoto ? Math.min(r.bottom, window.innerHeight) - 10 / scala : Math.max(r.top, 0)) + window.scrollY + 'px'
+      attrezzi.className = 'ev-attrezzi' + (soloFoto ? ' ev-foto' : r.top < 44 / scalaOra ? ' ev-dentro' : '')
+      attrezzi.style.left = (soloFoto ? r.left + 10 / scalaOra : r.right) + window.scrollX + 'px'
+      attrezzi.style.top = (soloFoto ? Math.min(r.bottom, window.innerHeight) - 10 / scalaOra : Math.max(r.top, 0)) + window.scrollY + 'px'
     }
     const muove = e => { ultimoMovimento = e; if (!inAttesa) { inAttesa = true; requestAnimationFrame(guarda) } }
     const suAttrezzi = e => {
@@ -377,6 +537,83 @@ export function useEditorNelRiquadro(editor, blocks) {
     attrezzi.addEventListener('click', suAttrezzi)
     // Tenere il dito sugli attrezzi non deve togliere il cursore dal testo.
     attrezzi.addEventListener('mousedown', e => e.preventDefault())
+
+    // ── La barra della formattazione, sopra il paragrafo in cui si scrive ──
+    const formato = document.createElement('div')
+    formato.className = 'ev-formato'
+    formato.innerHTML = '<button type="button" data-f="bold" title="Grassetto (Ctrl+B)"><b>G</b></button>' +
+      '<button type="button" data-f="italic" title="Corsivo (Ctrl+I)"><i>C</i></button>' +
+      '<button type="button" data-f="link" title="Metti un link sulle parole selezionate">' + ICONE.link + '</button>' +
+      '<span class="ev-nota"></span>' +
+      '<input type="text" placeholder="https://…  oppure  /pagina" style="display:none">' +
+      '<button type="button" data-f="ok" style="display:none">OK</button><button type="button" data-f="via" style="display:none">Togli link</button>'
+    document.body.appendChild(formato)
+    const nota = formato.querySelector('.ev-nota'), campoLink = formato.querySelector('input')
+    const NOTA = 'Invio va a capo · Esc per uscire'
+    let selezione = null
+    const rigaLink = aperta => {
+      campoLink.style.display = aperta ? '' : 'none'
+      formato.querySelector('[data-f="ok"]').style.display = aperta ? '' : 'none'
+      formato.querySelector('[data-f="via"]').style.display = aperta && campoLink.value ? '' : 'none'
+      nota.style.display = aperta ? 'none' : ''
+    }
+    function mostraFormato(el) {
+      const r = el.getBoundingClientRect(), sotto = r.top < 60 / scalaOra
+      rigaLink(false); nota.textContent = NOTA
+      formato.className = 'ev-formato' + (sotto ? ' ev-sotto' : '')
+      formato.style.display = 'flex'
+      formato.style.left = r.left + window.scrollX + 'px'
+      formato.style.top = (sotto ? r.bottom + 8 / scalaOra : r.top - 8 / scalaOra) + window.scrollY + 'px'
+    }
+    function nascondiFormato() { formato.style.display = 'none'; selezione = null }
+    const linkSotto = nodo => { const el = nodo?.nodeType === 1 ? nodo : nodo?.parentElement; return el?.closest?.('a') || null }
+    const rimettiSelezione = () => {
+      const el = ricco?.el; if (!el || !selezione) return false
+      el.focus()
+      const s = window.getSelection(); s.removeAllRanges(); s.addRange(selezione)
+      return true
+    }
+    const suFormato = e => {
+      const b = e.target.closest?.('button'); const el = ricco?.el || inScrittura()
+      if (!b || !el?.hasAttribute('data-ricco')) return
+      e.preventDefault(); e.stopPropagation()
+      if (!preparaRicco(el)) return
+      const f = b.dataset.f
+      if (f === 'bold' || f === 'italic') { document.execCommand(f); return }
+      if (f === 'link') {
+        const s = window.getSelection(); if (!s.rangeCount || !ricco.el.contains(s.anchorNode)) return
+        const gia = linkSotto(s.anchorNode)
+        if (s.isCollapsed && !gia) { nota.textContent = 'Seleziona prima le parole da collegare'; return }
+        if (gia && ricco.el.contains(gia)) { const r = document.createRange(); r.selectNodeContents(gia); s.removeAllRanges(); s.addRange(r) }
+        selezione = s.getRangeAt(0).cloneRange()
+        campoLink.value = gia?.getAttribute('href') || ''
+        rigaLink(true); campoLink.focus()
+        return
+      }
+      if (f === 'via') { if (rimettiSelezione()) document.execCommand('unlink'); rigaLink(false); nota.textContent = NOTA; return }
+      if (f === 'ok') confermaLink()
+    }
+    function confermaLink() {
+      let indirizzo = campoLink.value.trim()
+      if (!indirizzo) { if (rimettiSelezione()) document.execCommand('unlink'); rigaLink(false); return }
+      if (!/^(https?:|mailto:|tel:|\/|#)/i.test(indirizzo)) indirizzo = (indirizzo.includes('@') && !indirizzo.includes('/') ? 'mailto:' : 'https://') + indirizzo
+      if (!indirizzoAmmesso(indirizzo)) { campoLink.value = ''; campoLink.placeholder = 'Indirizzo non valido: riprova'; return }
+      if (rimettiSelezione()) document.execCommand('createLink', false, indirizzo)
+      rigaLink(false); nota.textContent = NOTA
+    }
+    formato.addEventListener('click', suFormato)
+    // I pulsanti non devono togliere il cursore dal paragrafo; il campo del link sì.
+    formato.addEventListener('mousedown', e => { if (e.target !== campoLink) e.preventDefault() })
+    campoLink.addEventListener('keydown', e => {
+      e.stopPropagation()
+      if (e.key === 'Enter') { e.preventDefault(); confermaLink() }
+      else if (e.key === 'Escape') { e.preventDefault(); rigaLink(false); rimettiSelezione() }
+    })
+    // Dal campo del link si esce altrove: il paragrafo si chiude come da un'uscita normale.
+    formato.addEventListener('focusout', e => {
+      if (!ricco || e.relatedTarget === ricco.el || (e.relatedTarget && formato.contains(e.relatedTarget))) return
+      nascondiFormato(); chiudiRicco(ridisegnaOra)
+    })
 
     // ── Il menu del tasto destro su una sezione ──
     const menu = document.createElement('div')
@@ -398,8 +635,8 @@ export function useEditorNelRiquadro(editor, blocks) {
         voce('aggiungi', 'Aggiungi un blocco qui sopra') + voce('su', 'Sposta su', '', i === 0) + voce('giu', 'Sposta giù', '', i === tutte.length - 1) + '<hr>' + voce('elimina', 'Elimina', 'Canc')
       menu.dataset.id = id
       menu.style.display = 'flex'
-      menu.style.left = Math.max(4, Math.min(e.clientX, window.innerWidth - 226 / scala)) + 'px'
-      menu.style.top = Math.max(4, Math.min(e.clientY, window.innerHeight - 300 / scala)) + 'px'
+      menu.style.left = Math.max(4, Math.min(e.clientX, window.innerWidth - 226 / scalaOra)) + 'px'
+      menu.style.top = Math.max(4, Math.min(e.clientY, window.innerHeight - 300 / scalaOra)) + 'px'
     }
     const sulMenu = e => {
       const b = e.target.closest?.('button'); if (!b || b.disabled) return
@@ -410,11 +647,12 @@ export function useEditorNelRiquadro(editor, blocks) {
       chiudiMenu()
     }
     menu.addEventListener('click', sulMenu)
-    const scorre = () => { chiudiMenu(); nascondi() }
+    const scorre = () => { chiudiMenu(); nascondi(); if (ricco && formato.style.display !== 'none' && document.activeElement === ricco.el) mostraFormato(ricco.el) }
     const altriTasti = e => { if (e.target?.closest?.('[data-campo]')) e.stopPropagation() }
     const incolla = e => {
-      if (!e.target?.closest?.('[data-campo]')) return
+      const el = e.target?.closest?.('[data-campo]'); if (!el) return
       e.preventDefault()
+      if (el.hasAttribute('data-ricco') && !preparaRicco(el)) return
       document.execCommand('insertText', false, (e.clipboardData?.getData('text/plain') || '').replace(/\r?\n/g, ' '))
     }
     // Un testo dentro un link non si trascina via: ci si scrive.
@@ -440,9 +678,9 @@ export function useEditorNelRiquadro(editor, blocks) {
       linea.style.display = 'block'
       linea.style.top = Math.max(0, Math.min(window.innerHeight - 4, d.y)) + 'px'
       // Vicino ai bordi la pagina scorre, così si arriva a ogni punto senza mollare.
-      const margine = 70 / scala
-      if (e.clientY < margine) window.scrollBy(0, -18 / scala)
-      else if (e.clientY > window.innerHeight - margine) window.scrollBy(0, 18 / scala)
+      const margine = 70 / scalaOra
+      if (e.clientY < margine) window.scrollBy(0, -18 / scalaOra)
+      else if (e.clientY > window.innerHeight - margine) window.scrollBy(0, 18 / scalaOra)
     }
     const rilascio = e => {
       if (!eNostro(e)) return
@@ -458,6 +696,8 @@ export function useEditorNelRiquadro(editor, blocks) {
     document.addEventListener('submit', invio, true)
     document.addEventListener('focusin', entra, true)
     document.addEventListener('input', scrive, true)
+    document.addEventListener('beforeinput', primaDiScrivere, true)
+    document.addEventListener('selectionchange', cursoreMosso)
     document.addEventListener('focusout', esce, true)
     document.addEventListener('keydown', tasto, true)
     document.addEventListener('keyup', altriTasti, true)
@@ -477,6 +717,10 @@ export function useEditorNelRiquadro(editor, blocks) {
       document.removeEventListener('submit', invio, true)
       document.removeEventListener('focusin', entra, true)
       document.removeEventListener('input', scrive, true)
+      document.removeEventListener('beforeinput', primaDiScrivere, true)
+      document.removeEventListener('selectionchange', cursoreMosso)
+      if (ricco) { const r = ricco; ricco = null; r.el.replaceChildren(...r.originali) }
+      formato.remove()
       document.removeEventListener('focusout', esce, true)
       document.removeEventListener('keydown', tasto, true)
       document.removeEventListener('keyup', altriTasti, true)
@@ -498,7 +742,7 @@ export function useEditorNelRiquadro(editor, blocks) {
       for (const el of document.querySelectorAll('[data-campo]')) { el.removeAttribute('data-campo'); el.removeAttribute('contenteditable'); el.removeAttribute('spellcheck') }
       document.documentElement.style.removeProperty('--ev-s')
     }
-  }, [attivo, scala])
+  }, [attivo])
 
   // La sezione scelta dal pannello (appena aggiunta, o spostata) si porta a vista.
   useEffect(() => {
@@ -515,14 +759,27 @@ export function useEditorNelRiquadro(editor, blocks) {
 // Una sezione della pagina vista dall'editor: l'involucro che la rende
 // sceglibile, e sopra quella scelta i comandi. Un blocco che non disegna niente
 // (ancora vuoto) resta visibile, altrimenti non si potrebbe scegliere.
+const NOMI_FOTO = { image_url: 'Aggiungi la foto', bg_image_url: 'Aggiungi la foto di sfondo', photo_url: 'Aggiungi la foto', logo_url: 'Aggiungi il logo', before_url: 'Aggiungi la foto «prima»', after_url: 'Aggiungi la foto «dopo»' }
 export function sezionePerEditor(el, blocco, editor, { primo, ultimo }) {
   const scelto = editor.selezionato === blocco.id
+  // I posti per una foto che ci sono e sono ancora vuoti, più «un'altra foto» nelle gallerie.
+  const fotoDaMettere = campiImmagine(blocco.data, { ancheVuoti: true }).filter(c => c.percorso.length === 1 && !c.valore.trim()).map(c => ({ percorso: c.percorso, nome: NOMI_FOTO[c.percorso[0]] || 'Aggiungi la foto' }))
+  if (Array.isArray(blocco.data?.images)) fotoDaMettere.push({ percorso: ['images', blocco.data.images.length], nome: 'Aggiungi una foto alla galleria' })
   const azione = (e, quale) => { e.preventDefault(); e.stopPropagation(); parla({ tipo: 'oltrenova:blocco-azione', id: blocco.id, azione: quale }) }
   return (
-    <div key={blocco.id} data-blocco={blocco.id} data-nome={blockLabel(blocco.type)} className={'ev-blocco' + (scelto ? ' ev-scelto' : '')}>
+    <div key={blocco.id} data-blocco={blocco.id} data-nome={blockLabel(blocco.type)} className={'ev-blocco' + (scelto ? ' ev-scelto' : '') + (el ? '' : ' ev-senza')}>
       {el || <div className="ev-vuoto">«{blockLabel(blocco.type)}» {cosaManca(blocco.type)}</div>}
       <button type="button" className={'ev-piu' + (primo ? ' ev-piu-primo' : '')} title="Aggiungi un blocco qui"
         onClick={e => { e.preventDefault(); e.stopPropagation(); parla({ tipo: 'oltrenova:aggiungi-qui', prima: blocco.id }) }}><Plus size={17} strokeWidth={2} /></button>
+      {fotoDaMettere.length > 0 && (
+        <div className="ev-aggiungi-foto">
+          {fotoDaMettere.map(f => (
+            <button key={f.percorso.join('.')} type="button" onClick={e => { e.preventDefault(); e.stopPropagation(); parla({ tipo: 'oltrenova:cambia-foto', id: blocco.id, percorso: f.percorso }) }}>
+              <ImagePlus size={15} strokeWidth={1.5} /> {f.nome}
+            </button>
+          ))}
+        </div>
+      )}
       {ultimo && (
         <button type="button" className="ev-piu ev-piu-sotto" title="Aggiungi un blocco in fondo"
           onClick={e => { e.preventDefault(); e.stopPropagation(); parla({ tipo: 'oltrenova:aggiungi-qui', prima: null }) }}><Plus size={17} strokeWidth={2} /></button>

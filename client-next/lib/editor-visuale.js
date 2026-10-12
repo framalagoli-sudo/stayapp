@@ -130,16 +130,21 @@ export function chiaveScrivibile(k) { return typeof k === 'string' && k.length >
 
 // Tutti i campi di testo di un blocco, col percorso per arrivarci:
 // ['title'] · ['items', 2, 'text'] · ['items', 0, 'includes', 1].
-// Un testo formattato è un documento: lì dentro si scrive nei singoli pezzi di
-// testo (['text', 'content', 0, 'content', 0, 'text']), senza toccare né i
-// paragrafi né la formattazione.
+// Un testo formattato è un documento: lì dentro si lavora un paragrafo (o un
+// titolo) per volta, e il percorso arriva al paragrafo
+// (['text', 'content', 0]). Questi campi hanno `ricco: true`: sulla pagina ci
+// si scrive con grassetto, corsivo, link e a-capo — vedi `scriviParagrafo`.
 const PROFONDITA_DOCUMENTO = 14
 export function campiDiTesto(dati) {
   const trovati = []
   const eDocumento = v => v && typeof v === 'object' && v.type === 'doc'
   const nelDocumento = (nodo, percorso) => {
     if (!nodo || typeof nodo !== 'object' || percorso.length >= PROFONDITA_DOCUMENTO) return
-    if (nodo.type === 'text') { if (typeof nodo.text === 'string' && nodo.text.trim()) trovati.push({ percorso: [...percorso, 'text'], valore: nodo.text }); return }
+    if (nodo.type === 'paragraph' || nodo.type === 'heading') {
+      const testo = (Array.isArray(nodo.content) ? nodo.content : []).map(x => x?.type === 'text' && typeof x.text === 'string' ? x.text : '').join('')
+      if (testo.trim()) trovati.push({ percorso, valore: testo, ricco: true })
+      return
+    }
     if (Array.isArray(nodo.content)) nodo.content.forEach((figlio, i) => nelDocumento(figlio, [...percorso, 'content', i]))
   }
   const guarda = (v, percorso) => {
@@ -165,7 +170,9 @@ export function campiDiTesto(dati) {
 // ⚠️ I campi sono questi e basta: `url` da solo è anche la destinazione di un
 // pulsante o l'indirizzo di un video, e vale come foto solo dentro `images`.
 const CAMPI_FOTO = ['image_url', 'bg_image_url', 'photo_url', 'logo_url', 'before_url', 'after_url']
-export function campiImmagine(dati) {
+// `ancheVuoti`: anche i campi foto che ci sono ma non hanno ancora una foto —
+// è lì che l'editor offre «Aggiungi foto».
+export function campiImmagine(dati, { ancheVuoti = false } = {}) {
   const trovati = []
   const eFoto = (k, percorso) => CAMPI_FOTO.includes(k) || (k === 'url' && percorso.length === 2 && percorso[0] === 'images')
   const guarda = (v, percorso) => {
@@ -173,18 +180,30 @@ export function campiImmagine(dati) {
     const chiavi = Array.isArray(v) ? v.map((_, i) => i) : Object.keys(v)
     for (const k of chiavi) {
       const x = v[k]
-      if (typeof x === 'string') { if (eFoto(k, percorso) && x.trim()) trovati.push({ percorso: [...percorso, k], valore: x }) }
+      if (typeof x === 'string') { if (eFoto(k, percorso) && (ancheVuoti || x.trim())) trovati.push({ percorso: [...percorso, k], valore: x }) }
       else guarda(x, [...percorso, k])
     }
   }
   if (dati && typeof dati === 'object' && !Array.isArray(dati)) guarda(dati, [])
   return trovati
 }
-export function scriviImmagine(dati, percorso, indirizzo) {
-  if (typeof indirizzo !== 'string' || !/^https:\/\/[^\s"'<>]{4,1500}$/.test(indirizzo)) return null
+// Dove può andare una foto: in un campo foto che c'è già (anche vuoto), oppure
+// in coda a una galleria — `['images', n]` con n = quante foto ha adesso.
+const FOTO_IN_GALLERIA = 80
+function inCodaAllaGalleria(dati, percorso) {
+  return Array.isArray(percorso) && percorso.length === 2 && percorso[0] === 'images' && !!dati && Object.prototype.hasOwnProperty.call(dati, 'images')
+    && Array.isArray(dati.images) && percorso[1] === dati.images.length && dati.images.length < FOTO_IN_GALLERIA
+}
+export function postoPerFoto(dati, percorso) {
+  if (!Array.isArray(percorso)) return false
   const chiave = JSON.stringify(percorso)
-  if (!Array.isArray(percorso) || !campiImmagine(dati).some(c => JSON.stringify(c.percorso) === chiave)) return null
+  return inCodaAllaGalleria(dati, percorso) || campiImmagine(dati, { ancheVuoti: true }).some(c => JSON.stringify(c.percorso) === chiave)
+}
+export function scriviImmagine(dati, percorso, indirizzo, nuovoId) {
+  if (typeof indirizzo !== 'string' || !/^https:\/\/[^\s"'<>]{4,1500}$/.test(indirizzo)) return null
+  if (!postoPerFoto(dati, percorso)) return null
   const copia = JSON.parse(JSON.stringify(dati))
+  if (inCodaAllaGalleria(dati, percorso)) { copia.images.push({ id: typeof nuovoId === 'function' ? nuovoId() : undefined, url: indirizzo, alt: '' }); return copia }
   let qui = copia
   for (let i = 0; i < percorso.length - 1; i++) qui = qui[percorso[i]]
   qui[percorso[percorso.length - 1]] = indirizzo
@@ -219,28 +238,83 @@ export function azioneSuElemento(dati, lista, indice, azione, nuovoId) {
 // questo»: restituisce i dati nuovi, oppure null se la richiesta non è una
 // di quelle che la pagina può fare. Si scrive solo dove c'è GIÀ un testo, e
 // solo in un campo fatto di parole: la forma dei dati non può cambiare.
-// Dentro un documento le sole strade sono `content` → posizione → … → `text`
-// di un pezzo di testo, che non può restare vuoto (un documento non lo ammette).
+// Dentro un documento non si entra da qui: lì si scrive un paragrafo intero,
+// con `scriviParagrafo`.
 export function scriviCampo(dati, percorso, valore) {
   if (typeof valore !== 'string' || valore.length > LUNGHEZZA_MASSIMA) return null
   if (!Array.isArray(percorso) || percorso.length < 1 || percorso.length > PROFONDITA_DOCUMENTO) return null
   const copia = JSON.parse(JSON.stringify(dati || {}))
-  let qui = copia, documento = false
+  let qui = copia
   for (let i = 0; i < percorso.length; i++) {
     const k = percorso[i], ultimo = i === percorso.length - 1
-    if (!documento && i >= 4) return null
+    if (i >= 4) return null
     if (Array.isArray(qui)) { if (!(Number.isInteger(k) && k >= 0 && k < qui.length)) return null }
-    else if (documento) { if (k !== (ultimo ? 'text' : 'content') || !Object.prototype.hasOwnProperty.call(qui, k)) return null }
     else if (!(chiaveScrivibile(k) && Object.prototype.hasOwnProperty.call(qui, k))) return null
     if (ultimo) {
       if (typeof qui[k] !== 'string') return null
-      if (documento && (qui.type !== 'text' || !valore)) return null
       qui[k] = valore
       return copia
     }
     qui = qui[k]
-    if (!qui || typeof qui !== 'object') return null
-    if (qui.type === 'doc') documento = true
+    if (!qui || typeof qui !== 'object' || qui.type === 'doc') return null
   }
   return null
+}
+
+// ── Un paragrafo di un testo formattato, scritto sulla pagina ────────────────
+// La pagina manda il contenuto nuovo di UN paragrafo: pezzi di testo con
+// grassetto, corsivo o un link, e a-capo. Qui si ricostruisce da zero, pezzo
+// per pezzo, tenendo solo quello che è ammesso: niente di ciò che arriva
+// finisce nei dati così com'è. Un indirizzo passa lo stesso controllo che fa
+// il disegnatore dei siti (`safeHref` in lib/richText.jsx).
+const PROTOCOLLI = ['http:', 'https:', 'mailto:', 'tel:']
+export function indirizzoAmmesso(href) {
+  if (typeof href !== 'string' || !href.trim() || href.length > 1000 || /[\u0000-\u001f\s<>"`]/.test(href.trim())) return null
+  try { return PROTOCOLLI.includes(new URL(href.trim(), 'https://_').protocol) ? href.trim() : null } catch { return null }
+}
+export function contenutoPulito(contenuto) {
+  if (!Array.isArray(contenuto) || contenuto.length > 300) return null
+  const pulito = []
+  let lungo = 0
+  for (const pezzo of contenuto) {
+    if (!pezzo || typeof pezzo !== 'object') return null
+    if (pezzo.type === 'hardBreak') { pulito.push({ type: 'hardBreak' }); continue }
+    if (pezzo.type !== 'text' || typeof pezzo.text !== 'string' || !pezzo.text) return null
+    lungo += pezzo.text.length
+    if (lungo > LUNGHEZZA_MASSIMA * 3) return null
+    const segni = []
+    if (pezzo.marks !== undefined) {
+      if (!Array.isArray(pezzo.marks) || pezzo.marks.length > 3) return null
+      if (pezzo.marks.some(m => m?.type === 'bold')) segni.push({ type: 'bold' })
+      if (pezzo.marks.some(m => m?.type === 'italic')) segni.push({ type: 'italic' })
+      const link = pezzo.marks.find(m => m?.type === 'link')
+      if (link) { const href = indirizzoAmmesso(link.attrs?.href); if (!href) return null; segni.push({ type: 'link', attrs: { href } }) }
+      if (segni.length !== pezzo.marks.length) return null
+    }
+    pulito.push(segni.length ? { type: 'text', text: pezzo.text, marks: segni } : { type: 'text', text: pezzo.text })
+  }
+  return pulito
+}
+// Il percorso deve arrivare a un paragrafo (o a un titolo) che c'è già dentro
+// un documento: campo → `content` → posizione → … Niente altro cambia: né il
+// tipo del nodo, né i suoi attributi, né il resto del documento.
+export function scriviParagrafo(dati, percorso, contenuto) {
+  const pulito = contenutoPulito(contenuto)
+  if (!pulito || !pulito.some(p => p.type === 'text' && p.text.trim())) return null
+  if (!Array.isArray(percorso) || percorso.length < 3 || percorso.length > PROFONDITA_DOCUMENTO) return null
+  const copia = JSON.parse(JSON.stringify(dati || {}))
+  let qui = copia, documento = false, daDoc = 0
+  for (let i = 0; i < percorso.length; i++) {
+    const k = percorso[i]
+    if (Array.isArray(qui)) { if (!(Number.isInteger(k) && k >= 0 && k < qui.length)) return null }
+    else if (documento) { if (k !== 'content' || !Object.prototype.hasOwnProperty.call(qui, k)) return null }
+    else if (i >= 4 || !(chiaveScrivibile(k) && Object.prototype.hasOwnProperty.call(qui, k))) return null
+    qui = qui[k]
+    if (!qui || typeof qui !== 'object') return null
+    if (documento) daDoc++
+    else if (qui.type === 'doc' && !Array.isArray(qui)) documento = true
+  }
+  if (!documento || daDoc < 2 || Array.isArray(qui) || (qui.type !== 'paragraph' && qui.type !== 'heading')) return null
+  qui.content = pulito
+  return copia
 }
