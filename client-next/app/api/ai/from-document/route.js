@@ -5,7 +5,7 @@ import { requireEntityAccess, ENTITY_TABLES } from '@/lib/server-auth'
 import { getTemplate } from '@/lib/siteTemplates'
 import { chiamaAI, assicuraBudget, eBudgetEsaurito, rispostaBudgetEsaurito, MODELLO_FEDELE } from '@/lib/ai-consumi'
 import { resolveBlockImages } from '@/lib/unsplash'
-import { AI_BLOCKS_SCHEMA, AI_IMAGE_RULE, AI_BG_RULE, AI_ICONS } from '@/lib/ai-blocks'
+import { AI_BLOCKS_SCHEMA, AI_IMAGE_RULE, AI_BG_RULE, AI_ICONS, regolaRecapiti } from '@/lib/ai-blocks'
 
 export const maxDuration = 300  // Sonnet su doc grandi + output multi-pagina è lento; usiamo il max Vercel Pro (l'abort della chiamata AI è alzato a 285s sotto)
 
@@ -101,7 +101,9 @@ ${AI_ICONS}
 
 ${STYLE_GUIDE}
 
-MAPPATURA: apertura/claim → hero o hero_slider; chi siamo/storia → about o foto_testo; servizi/benefici → paragrafi/highlights/colonne; come funziona → steps; numeri → stats; recensioni → testimonianze; prezzi → pacchetti; domande → faq o accordion; team → team; call to action → cta_banner; contatti → form_builder; mappa/dove siamo → show_map o embed.${MENU_NOTE[entity_tipo] || ''}
+MAPPATURA: apertura/claim → hero o hero_slider; chi siamo/storia → about o foto_testo; servizi/benefici → paragrafi/highlights/colonne; come funziona → steps; numeri → stats; recensioni → testimonianze; prezzi a piani → pacchetti; listino/tariffe (elenco di voci col prezzo) → listino; domande → faq o accordion; team → team; call to action → cta_banner; contatti → form_builder.${MENU_NOTE[entity_tipo] || ''}
+
+${regolaRecapiti(entity)}
 
 ${isHome ? 'Questa è la HOME: il PRIMO blocco = hero o hero_slider col claim/titolo principale. In fondo al contenuto potresti trovare "SEZIONI RIUSABILI": rendi RECENSIONI→testimonianze, FAQ/DOMANDE→faq, TEAM→team, NUMERI→stats, PREZZI→pacchetti. IGNORA invece eventuali sezioni "BREVE"/"RIASSUNTO", FOOTER e NOTE SEO (sono ripetizioni o istruzioni, NON contenuti da mostrare).' : `Questa è la pagina "${toTitle(name)}".`}
 
@@ -146,7 +148,9 @@ ${AI_BG_RULE}
 
 ${AI_ICONS}
 
-MAPPATURA sezione → blocco (indicativa): apertura/claim → hero_slider o hero; chi siamo/storia → about o foto_testo; servizi/benefici → paragrafi o highlights o colonne; come funziona → steps; numeri → stats; recensioni → testimonianze; prezzi/piani → pacchetti; domande → faq o accordion; team → team; call to action → cta_banner; contatti → form_builder.${MENU_NOTE[entity_tipo] || ''}
+MAPPATURA sezione → blocco (indicativa): apertura/claim → hero_slider o hero; chi siamo/storia → about o foto_testo; servizi/benefici → paragrafi o highlights o colonne; come funziona → steps; numeri → stats; recensioni → testimonianze; prezzi a piani → pacchetti; listino/tariffe (elenco di voci col prezzo) → listino; domande → faq o accordion; team → team; call to action → cta_banner; contatti → form_builder.${MENU_NOTE[entity_tipo] || ''}
+
+${regolaRecapiti(entity)}
 
 ENTITÀ (contesto): Nome "${entity?.name || ''}", tipo ${TIPO_LABEL[entity_tipo] || entity_tipo}.
 
@@ -186,7 +190,7 @@ export async function POST(request) {
   const table = ENTITY_TABLES[entity_tipo]
   if (!table) return NextResponse.json({ error: 'Tipo non valido' }, { status: 400 })
 
-  const { data: ent } = await supabaseAdmin.from(table).select('name, theme, minisito').eq('id', entity_id).single()
+  const { data: ent } = await supabaseAdmin.from(table).select('name, theme, minisito, address, phone, email, schedule').eq('id', entity_id).single()
 
   const doc = documento.trim().slice(0, DOC_MAX)
   const multi = !!multipagina

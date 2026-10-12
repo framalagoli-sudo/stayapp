@@ -45,7 +45,7 @@ function buildSitePrompt({ entity, entity_tipo, mode, obiettivo, template, answe
   const menuNote = entity_tipo === 'ristorante' ? ' Includi un blocco "menu" nella home (mostra il menù reale del ristorante).' : ''
   const pagesSpec = mode === 'landing'
     ? `CREA 1 PAGINA (slug "__home__", nel_menu false, titolo "${nome || entity.name}").\nStruttura blocchi consigliata per obiettivo "${objConf.label}":\n${objConf.landing_blocks}\nNote obiettivo: ${objConf.notes}${menuNote}`
-    : `CREA 4 PAGINE:\n1. Homepage (slug "__home__", nel_menu false): ${objConf.site_home_blocks}${menuNote}\n2. chi-siamo (slug "chi-siamo", nel_menu true): about, foto_testo x2, steps o team, stats(style:dark)\n3. servizi (slug "servizi", nel_menu true): about(intro), paragrafi(3-6 card con icona), highlights, cta_banner\n4. contatti (slug "contatti", nel_menu true): about(intro contatti), form_builder\nNote obiettivo: ${objConf.notes}`
+    : `CREA 4 PAGINE:\n1. Homepage (slug "__home__", nel_menu false): ${objConf.site_home_blocks}${menuNote}\n2. chi-siamo (slug "chi-siamo", nel_menu true): about, foto_testo x2, steps o team, stats(style:dark)\n3. servizi (slug "servizi", nel_menu true): about(intro), paragrafi(3-6 card con icona), highlights, cta_banner\n4. contatti (slug "contatti", nel_menu true): about(intro contatti), form_builder, recapiti\nNote obiettivo: ${objConf.notes}`
 
   return `Sei un web designer e copywriter esperto italiano. Crea ${mode === 'landing' ? 'una landing page' : 'un sito completo'} moderno e professionale per un business.
 
@@ -78,6 +78,8 @@ REGOLE ASSOLUTE:
 - FAQ/accordion: domande reali del cliente
 - Stats: numeri credibili per il settore
 - button_url, cta1_url, form_token: sempre stringa vuota ""
+- "listino" SOLO se nei dati ci sono prezzi veri: MAI inventare un prezzo
+- Indirizzo, telefono, email e orari NON si scrivono nei testi: li mostra il blocco "recapiti"
 - Ogni blocco deve aggiungere valore
 
 Rispondi ESCLUSIVAMENTE con JSON valido (nessun testo prima o dopo):

@@ -24,8 +24,20 @@ export const AI_BLOCKS_SCHEMA = `BLOCCHI DISPONIBILI — usa SOLO questi tipi (r
 • menu: { titolo }  ← SOLO ristoranti
 • divisore: { variant("wave"|"diagonal"), color("muted"|"primary") }  ← separatore decorativo tra sezioni
 • newsletter: { title, subtitle }
+• listino: { titolo, sottotitolo(""), items:[{name, description(""), price}], nota(""), due_colonne(bool) }  ← TANTE voci col loro prezzo (servizi, trattamenti, tariffe). "price" è un TESTO, scritto com'è ("25 €", "da 30 €", "su richiesta"). due_colonne:true da 8 voci in su. "nota" = riga sotto ("Prezzi IVA inclusa"). NON per il menù di un ristorante (lì "menu"). "pacchetti" = 2-4 piani a confronto; "listino" = un elenco.
 • form_builder: { form_token(""), titolo_sezione("Contattaci") }
+• recapiti: { titolo("Dove siamo"), sottotitolo(""), mostra_mappa(true) }  ← indirizzo, telefono, email, WhatsApp, orari e mappa. NON ha testi suoi: li prende da soli dai dati dell'attività. NON scriverci dentro recapiti né orari.
 • gallery (auto): data:{} · services (auto): data:{}`
+
+// Il blocco «recapiti» non contiene dati: mostra quelli salvati nelle
+// Informazioni. Chi trascrive un documento deve quindi sapere se ci sono:
+// altrimenti l'indirizzo scritto nel documento sparirebbe dal sito.
+export function regolaRecapiti(entity) {
+  const cè = ['address', 'phone', 'email', 'schedule'].some(k => typeof entity?.[k] === 'string' && entity[k].trim())
+  return cè
+    ? `CONTATTI: i recapiti dell'attività sono già salvati. Dove il documento parla di contatti, sede o orari metti un blocco "recapiti" (accanto al form_builder) e NON ricopiare indirizzo, telefono, email e orari dentro altri testi.`
+    : `CONTATTI: i recapiti dell'attività NON sono ancora salvati, quindi NON usare il blocco "recapiti" (resterebbe vuoto). Indirizzo, telefono, email e orari scritti nel documento riportali in un blocco "about".`
+}
 
 export const AI_IMAGE_RULE = `IMMAGINI: per ogni campo "image_query" scrivi 2-5 parole in INGLESE che descrivono la foto ideale per QUESTO business (es. "cozy italian restaurant interior", "modern dental studio"). NON inventare URL: verranno risolte automaticamente.`
 
