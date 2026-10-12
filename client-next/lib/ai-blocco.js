@@ -15,6 +15,7 @@
 // Senza dipendenze: lo importa la route, e la sonda lo prova da sola.
 
 import { AI_ICONS } from './ai-blocks'
+import { datiDiNascita } from './editor-visuale'
 
 const ICONE = AI_ICONS.slice(AI_ICONS.indexOf(':') + 1).split(',').map(s => s.trim()).filter(Boolean)
 
@@ -148,7 +149,13 @@ export function ripulisci(grezzi, ctx) {
         if (vere.length < items.length || !items.length) note.add('I nomi delle persone non li conosco: scrivili al posto di «Nome e cognome».')
         items = vere.length ? vere.map(x => ({ photo_url: '', photo_focal: '', ...x })) : [SEGNAPOSTO.persona(), SEGNAPOSTO.persona()]
       }
-      if (!items.length) continue
+      if (!items.length) {
+        // L'AI ha scelto il blocco giusto ma non aveva di che riempirlo: nasce
+        // con le voci di esempio dell'editor, senza cifre, da riscrivere.
+        items = (datiDiNascita(g.type, {}, ctx.nuovoId).items || []).map(x => Object.fromEntries(Object.keys(forma.lista.campi).map(k => [k, forma.lista.campi[k].k === 'cifra' ? forma.lista.campi[k].vuoto : (x[k] ?? '')])))
+        if (!items.length) continue
+        note.add('Non avevo abbastanza informazioni per riempirla: ho lasciato delle voci di esempio da riscrivere.')
+      }
       data.items = items.map(x => ({ id: ctx.nuovoId(), ...x }))
     }
     if (g.type === 'colonne') data.columns = Math.min(3, Math.max(2, data.items.length))
@@ -192,7 +199,8 @@ REGOLE
 - PULSANTI: la destinazione (cta1_url, button_url, url) va scelta SOLO fra questi indirizzi, copiata identica; se nessuno è adatto lasciala "":
 ${destinazioni.length ? destinazioni.map(d => `  ${d.url}  → ${d.label}`).join('\n') : '  (nessuna)'}
 - Puoi aggiungere "style":{"bg":"dark"|"light"|"gradient"} solo se serve a staccare la sezione da quelle vicine.
-- Se la richiesta non è una sezione da aggiungere alla pagina (o chiede qualcosa che il catalogo non sa fare), non forzare: rispondi con blocks vuoto e in "motivo" una frase breve che dice cosa si può chiedere invece.
+- Se la richiesta nomina una sezione ma non dà i contenuti (un listino senza le voci, un team senza i nomi), metti lo stesso il blocco con quello che sai: non rifiutare.
+- Se la richiesta non è una sezione da aggiungere alla pagina (o chiede qualcosa che il catalogo non sa fare), non forzare: rispondi con blocks vuoto e in "motivo" una frase breve, in parole semplici e SENZA i nomi tecnici dei tipi (di' «le domande frequenti», non «faq»), che dice cosa si può chiedere invece. Dai del tu a chi legge: è lui il titolare.
 
 L'ATTIVITÀ
 Nome: ${entity?.name || '(senza nome)'}${entity?.settore ? `\nSettore: ${entity.settore}` : ''}

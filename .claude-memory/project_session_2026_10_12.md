@@ -19,6 +19,15 @@ sonde verdi in produzione, repo allineato.
   «Contatti» scelto da me e detto a Francesco.
 - Idea agente al telefono: [[project_agente_vocale]], `STRATEGIA.md` §6.3.
 
+**Seconda parte del 12/10 — «Chiedi all'AI» dentro la pagina** (nota 68): dal «+»
+dell'editor visuale, riquadro sulla pagina, l'AI sceglie il blocco da un catalogo
+chiuso (`lib/ai-blocco.js`) e la risposta si ricostruisce campo per campo.
+Prezzi, numeri, nomi e recensioni non si inventano: lo garantisce il codice.
+Francesco aveva proposto recensioni inventate su richiesta: ho detto no e non
+l'ho costruito ([[feedback_niente_fatti_inventati_ai]]). ~0,003 $ a richiesta.
+Una sonda con l'AI vera dà un rosso ogni tanto: l'ho trovato al giro 8 (listino
+restituito senza voci → errore), non al primo verde.
+
 **Francesco non ha ancora provato lui**: l'editor visuale dopo i tre giri, le
 sezioni condivise, le foto in grande.
 

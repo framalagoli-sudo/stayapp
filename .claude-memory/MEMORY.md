@@ -12,6 +12,7 @@
 
 - [🧾 A OGNI chiusura: aggiornare TUTTI i file di progetto](feedback_chiusura_sessione.md) — CLAUDE/FEATURES/PROGETTO/SECURITY, memoria + copia in .claude-memory; ognuno va APERTO, non supposto
 - [📅 Sessione 12/10 — sezioni condivise, due blocchi, foto in grande, editor rifinito](project_session_2026_10_12.md) — migration 136; Francesco non ha ancora provato niente di oggi
+- [✨ L'AI non inventa fatti sui siti dei clienti](feedback_niente_fatti_inventati_ai.md) — prezzi, nomi, recensioni: lo garantisce il codice; recensioni inventate proposte da Francesco, rifiutate, non decise
 - [📞 Agente AI al telefono (tipo bookli.ai)](project_agente_vocale.md) — idea del 12/10, parere dato, niente deciso; prima verifica legale per le chiamate in uscita
 - [📅 Sessione 11/10 — editor visuale delle pagine, domini, banner, nome Stripe](project_session_2026_10_11.md) — editor visuale LIVE ma Francesco non l'ha ancora visto; colonne libere = decisione sua
 - [📅 Sessione 10/10 — slider eventi, anteprima dal vivo, Guru da WordPress, posta fuori da SiteGround](project_session_2026_10_10.md) — posta di Guru rimasta a metà: è la prima cosa da finire
@@ -35,7 +36,7 @@
 - [🤖 Consumi AI e tetto per azienda](project_ai_consumi.md) — 15/09: 12 chiamate su 13 senza limite vero; ora un punto solo, fail closed; LIVE dal 15/09 con ricarica da Aziende → Credito AI e avviso al cliente dall 80%
 - [📅 Sessione 16/09 — verifica Meta approvata, collegamento WhatsApp vero, numeri per entità](project_session_2026_09_16.md) — migration fino a 122; restano la verifica dell'accesso e la prova dal vivo
 - [📅 Sessione 15/09 — shop live, Meta sbloccato, costi AI sotto tetto, decisione API](project_session_2026_09_15.md) — migration fino a 121; verifica Meta da reinviare
-- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: 12/10 · prossimo: AI dentro la pagina · far provare a Francesco editor visuale, sezioni, foto · poi Meta/WhatsApp, stato vero del conto Stripe, onboarding v2
+- [➡️ TODO prossima sessione](todo_prossima_sessione.md) — **LEGGERE PER PRIMO**: 12/10 · «Chiedi all'AI» LIVE · far provare a Francesco Chiedi all'AI, editor visuale, sezioni, foto · prossimo: «Riscrivi questa sezione» · poi Meta/WhatsApp, conto Stripe, onboarding v2
 - [📅 Sessione 08/09 — conferme spente, calendario cieco, offerte inerti](project_session_2026_09_08.md) — 6 interventi nati da cose non rotte ma che non arrivavano
 - [📆 Intervalli di date nel booking](reference_intervalli_date_booking.md) — (giorno,giorno) e l intervallo VUOTO: non da errore, da «libero»; e con
 - [🏷️ Offerte sulle risorse](reference_offerte_risorse.md) — valevano solo per gli slot orari; prezzo_modo dice se e al giorno o del periodo (su 5 giorni sono 5

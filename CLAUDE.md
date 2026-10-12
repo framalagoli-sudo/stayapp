@@ -676,6 +676,18 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - Al 12/10 **nessun sito vero** usa un blocco galleria: provato solo su un'azienda di prova. Sonda `tests/probe-foto-grande.mjs` (a mano): le tre gallerie, computer e telefono.
     - Stesso giorno, ok di Francesco: sulla home di **Fondaco Narni** il vecchio blocco `contatti` (che non disegnava niente) è diventato «Contatti e orari», col titolo «Contatti» — una sezione nuova sul sito, fra prenotazione e newsletter.
 
+68. **✨ «Chiedi all'AI» nel punto scelto col «+»** (12/10/2026, idea di Francesco: «l'AI scrive il blocco più consono alla richiesta, non l'HTML»). Nell'editor visuale, premendo «+» fra due sezioni compare **sulla pagina**, in quel punto, il riquadro «Trascina qui il tuo blocco» con «Chiedi all'AI»: si descrive la sezione a parole e arriva lì. Vale anche per la pagina ancora vuota. Nessuna migration.
+    - **`lib/ai-blocco.js`** (senza dipendenze) ha il catalogo chiuso `FORME` — per ogni tipo i campi che l'AI può scrivere — il prompt e **`ripulisci`**, che ricostruisce la risposta **da zero, campo per campo**: tipo fuori catalogo, campo non previsto, marcatura, icona inventata non passano. Mai `embed`, mai `sezione`. Route `POST /api/pagine/[id]/ai-blocco` (`requireEntityAccess`, `chiamaAI` → tetto dell'azienda): **non scrive nella pagina**, restituisce i blocchi all'editor, che li mette come una modifica qualunque (un solo «Annulla» li toglie; sul sito vanno con «Salva»).
+    - ⛔ **I fatti non si inventano, e lo garantisce il codice, non il prompt.** Un prezzo o un numero restano solo se le loro cifre stanno nella richiesta o nei dati dell'attività (altrimenti vuoto / trattino); una persona solo se il nome c'è (altrimenti «Nome e cognome»); una **recensione solo se è stata incollata nella richiesta** (altrimenti «Scrivi qui la recensione di un tuo cliente»). La galleria nasce vuota. La route dice cosa ha lasciato da completare (`note`) e l'avviso lo mostra.
+    - ⚠️ **Recensioni inventate su richiesta**: Francesco l'ha proposto («potrebbe essere interessante»), Ettore ha detto no — una recensione falsa sul sito di un'impresa è una pratica commerciale scorretta (direttiva Omnibus, Codice del Consumo: detto a memoria). **Non costruito; se ne riparla solo se lo chiede lui.**
+    - Un pulsante può portare **solo a una pagina pubblicata dello stesso sito** (l'elenco lo legge la route e lo dà all'AI; un indirizzo diverso diventa vuoto e l'avviso dice di sceglierlo dalla scheda). Foto di repertorio solo dove sono d'atmosfera (`hero`, `foto_testo`), come nel Site Builder.
+    - Un blocco scelto bene ma lasciato senza voci (capitava col listino, una volta su otto) nasce con le voci di esempio dell'editor, senza cifre: prima la route rispondeva con un errore.
+    - La pagina nel riquadro manda **solo le parole** (`oltrenova:chiedi-ai`); **dove** va la sezione lo sa il pannello (`inserisciPrima`), e senza un punto scelto la richiesta non parte. Il punto e lo stato dell'AI viaggiano nel messaggio dell'anteprima (`punto`, `ai`).
+    - ⚠️ `lib/blockTypes.js` è `'use client'`: una route non può importarne `BLOCK_DEFAULTS` (riceverebbe un riferimento, non l'oggetto). I valori di base li aggiunge il pannello.
+    - Costo misurato: **circa 0,003 $ a richiesta** (Haiku, ~1900 token letti).
+    - Solo nell'editor visuale (dall'elenco di sempre no). Non fatto: «Riscrivi questa sezione» su un blocco che c'è già.
+    - Sonda `tests/probe-ai-blocco.mjs` (a mano): le regole senza rete, la route, il percorso col browser con una risposta finta (funziona anche in locale, dove la chiave dell'AI non c'è); `--vero` in produzione fa cinque chiamate vere, l'ultima dal clic alla sezione scritta. ⚠️ Con l'AI vera un rosso può uscire una volta su molte: rilanciarla più volte prima di fidarsi del verde.
+
 ---
 
 ## Roadmap
@@ -705,7 +717,8 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - [x] **Editor visuale delle pagine** (trascina i blocchi nella pagina vera) ✅ 11–12/10/2026 — nota 64.
 - [x] **Blocchi «Contatti e orari» e «Listino prezzi»** ✅ 12/10/2026 — nota 65.
 - [x] **Sezioni condivise** (una sezione scritta una volta e usata su più pagine) ✅ 12/10/2026 — nota 66, migration 136.
-- [ ] **Editor e blocchi, il resto del piano del 12/10** — AI dentro la pagina, poi schede a linguette, tabella di confronto, citazione, titolo, popup; opzioni solo-telefono, larghezza del contenuto, copia stile. (AI istruita sui due blocchi nuovi il 12/10.) Ricognizione del 12/10 sui blocchi che mancano: memoria `project_blocchi_ricognizione`.
+- [x] **«Chiedi all'AI» dentro la pagina** (dal «+»: l'AI sceglie il blocco e lo scrive) ✅ 12/10/2026 — nota 68.
+- [ ] **Editor e blocchi, il resto del piano del 12/10** — «Riscrivi questa sezione» con l'AI, poi schede a linguette, tabella di confronto, citazione, titolo, popup; opzioni solo-telefono, larghezza del contenuto, copia stile. (AI istruita sui due blocchi nuovi il 12/10.) Ricognizione del 12/10 sui blocchi che mancano: memoria `project_blocchi_ricognizione`.
 - [ ] **Agente AI al telefono** (idea di Francesco, 12/10 — tipo bookli.ai): in valutazione, `STRATEGIA.md` §6.3. Dopo Meta/WhatsApp e le operazioni in `lib/`; la voce si prende da un fornitore.
 - [ ] **Lo stato vero del conto Stripe** — `puoIncassare` dice sì appena esiste `stripe_account_id`, anche se il collegamento è rimasto a metà: va salvato `charges_enabled` dal webhook dell'account. Oggi il link e la cassa falliscono con un messaggio chiaro, ma il pulsante compare lo stesso.
 - [ ] **Campagne WhatsApp per lista** (come le newsletter) e via i tag col titolo dell'evento — quando si collega Meta.

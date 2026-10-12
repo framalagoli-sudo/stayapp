@@ -77,6 +77,8 @@ try {
     esito(Array.isArray(r.blocks[0].data.images) && r.blocks[0].data.images.length === 0, 'la galleria nasce vuota, qualunque cosa arrivi')
     r = uno({ type: 'paragrafi', data: { titolo: 'Servizi', items: [{ icon: 'bomba', title: 'Uno', text: 'Testo' }, 'x', null, { icon: 'heart', title: '', text: '' }] } })
     esito(r.blocks[0].data.items.length === 1 && r.blocks[0].data.items[0].icon === 'star' && typeof r.blocks[0].data.items[0].id === 'string', 'un’icona fuori elenco diventa quella predefinita; gli elementi vuoti o malformati si scartano', JSON.stringify(r.blocks[0].data.items))
+    r = uno({ type: 'listino', data: { titolo: 'Listino', items: [] } })
+    esito(r.blocks.length === 1 && r.blocks[0].data.items.length >= 2 && r.blocks[0].data.items.every(v => v.name && v.price === '') && r.note.some(x => /esempio/i.test(x)), 'un blocco scelto bene ma lasciato senza voci nasce con voci di esempio da riscrivere, senza cifre', JSON.stringify(r.blocks[0]?.data.items))
     r = ripulisci(Array.from({ length: 9 }, (_, i) => ({ type: 'about', data: { title: `T${i}`, text: 'x' } })), ctx('x'))
     esito(r.blocks.length === 3, 'mai più di tre sezioni per richiesta', String(r.blocks.length))
   }
@@ -257,8 +259,16 @@ try {
   await riq().locator('.ev-inizio [data-chiedi-ai]').click()
   await riq().locator('[data-richiesta-ai]').fill('una presentazione dello studio')
   prossima = { stato: 200, corpo: { note: [], blocks: [{ id: 'y', type: 'about', data: { title: 'ZZ Prima sezione', text: 'ZZ testo.' } }] } }
+  // Con `--vero` quest'ultimo giro è intero: dal clic alla sezione scritta dall'AI, senza niente di finto.
+  if (VERO) await page.unroute('**/api/pagine/*/ai-blocco')
   await riq().locator('[data-richiesta-ai]').press('Control+Enter')
-  esito(await aspetta(async () => JSON.stringify(await ordine()) === JSON.stringify(['Blocco testo'])), 'e la prima sezione la può scrivere l’AI (Ctrl+Invio manda la richiesta)', (await ordine()).join(' · '))
+  esito(await aspetta(async () => (await ordine()).length >= 1 && !(await ordine()).includes('QUI'), 70000), `e la prima sezione la scrive l’AI${VERO ? ', per davvero' : ''} (Ctrl+Invio manda la richiesta)`, (await ordine()).join(' · '))
+  if (VERO) {
+    console.log('    sulla pagina: ' + (await riq().locator('[data-blocco]').first().innerText()).replace(/\s+/g, ' ').slice(0, 260))
+    const { data: spese } = await a.from('ai_consumi').select('costo_usd, token_input, token_output').eq('azienda_id', az.id).eq('funzione', 'pagina/ai-blocco')
+    const tot = spese.reduce((n, x) => n + Number(x.costo_usd), 0)
+    console.log(`    ${spese.length} chiamate vere: ${tot.toFixed(4)} $ in tutto, ${(tot / spese.length).toFixed(4)} $ l’una (in media ${Math.round(spese.reduce((n, x) => n + x.token_input, 0) / spese.length)} token letti, ${Math.round(spese.reduce((n, x) => n + x.token_output, 0) / spese.length)} scritti)`)
+  }
   await scatto('4-prima-sezione')
 
   esito(!errori.length, 'nessun errore nel browser', errori.join(' | '))

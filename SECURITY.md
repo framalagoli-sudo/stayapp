@@ -168,6 +168,15 @@ Dove possibile ognuno ha un test in `tests/smoke/security.spec.js`.
     niente. Della pagina si salva solo `{ id, type, data: { sezione_id } }` (`soloRiferimenti`,
     applicata anche nella route): nessun contenuto può viaggiare «dentro» il riferimento. Vale per
     qualunque contenuto futuro che punti a un'altra riga per id. Sonda: `probe-sezioni.mjs`.
+26. **Quello che scrive l'AI è un dato arrivato da fuori: si ricostruisce, non si ripulisce.**
+    «Chiedi all'AI» (12/10/2026) mette nelle pagine dei clienti blocchi scritti dal modello, su
+    richiesta di testo libero. La risposta non entra mai così com'è: `ripulisci`
+    (`lib/ai-blocco.js`) parte da un catalogo chiuso di tipi e di campi e copia solo quelli —
+    niente `embed`, niente marcatura, un indirizzo solo se è una pagina pubblicata dello stesso
+    sito. E i **fatti** (prezzi, numeri, nomi, recensioni) restano solo se stanno nella richiesta
+    o nei dati dell'attività: lo controlla il codice, perché un prompt si aggira con una frase.
+    La route non scrive nel database: restituisce, e a salvare è la persona. Sonda:
+    `probe-ai-blocco.mjs` (anche con una richiesta che chiede di ignorare le istruzioni).
 
 ### Il SISTEMA di monitoraggio (a strati — "sempre" senza sprechi)
 - **Strato 0 — Aggiornamento dipendenze (il "processo tipo WordPress-update").** `.github/dependabot.yml`

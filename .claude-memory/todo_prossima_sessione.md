@@ -1,6 +1,6 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — sessione 12/10 CHIUSA (migration alla 136). Prossimo: AI dentro la pagina. Da far provare a Francesco: editor visuale, sezioni condivise, foto in grande. In attesa: posta di Guru, Automax su Stripe, Meta/WhatsApp, stato vero del conto Stripe, onboarding v2"
+description: "Da dove riprendere — 12/10: «Chiedi all'AI» dentro la pagina LIVE (nota 68), migration alla 136. Da far provare a Francesco: Chiedi all'AI, editor visuale, sezioni condivise, foto in grande. Aperto: recensioni inventate (io no). Prossimo: «Riscrivi questa sezione». In attesa: posta di Guru, Automax su Stripe, Meta/WhatsApp, stato vero del conto Stripe, onboarding v2"
 metadata: 
   node_type: memory
   type: project
@@ -9,6 +9,11 @@ metadata:
 ---
 
 # Si riprende da qui
+
+## ▶️ 12/10, seconda parte — «Chiedi all'AI» dentro la pagina LIVE (CLAUDE.md nota 68)
+- Fatto e provato in produzione: «+» → riquadro sulla pagina → «Chiedi all'AI» → la sezione arriva lì. Francesco deve ancora provarlo lui: una pagina → «Editor visuale» → «+» fra due sezioni → «Chiedi all'AI».
+- **Punto aperto con Francesco**: lui aveva proposto recensioni inventate dall'AI su richiesta; io ho detto no (pratica commerciale scorretta) e non l'ho costruito. Non ha ancora risposto. Non riproporlo io; se insiste, prima una verifica legale vera.
+- Prossimo sul filone: «Riscrivi questa sezione» (AI su un blocco che c'è già), poi i blocchi che mancano (linguette, tabella, citazione, titolo, popup).
 
 ## ▶️ Chiusura del 12/10 sera — migration alla **136**, tutto live, repo allineato
 - **Si riparte dal punto 4 del piano: l'AI dentro la pagina** (nell'editor: scrivere/riscrivere il testo di un blocco). Prima di scrivere: guardare cosa c'è già (`ai-fill`, `from-document`, `chiamaAI`, tetto per azienda) e portare a Francesco una proposta corta.
