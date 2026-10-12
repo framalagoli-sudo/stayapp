@@ -14,8 +14,9 @@ metadata:
 - Bocciato alla prima prova (blocco trascinato = fascia vuota; si scriveva a sinistra e non si vedeva niente). Ora: il blocco nasce già scritto e i testi si scrivono sulla pagina con un clic (CLAUDE.md nota 64, lib/editor-visuale.js). **Deve riprovarlo lui**: pagina di Guru → Editor visuale → trascina «FAQ» → clicca una domanda sulla pagina e scrivi.
 - **Secondo giro lo stesso giorno** («termina questo editor»): foto con un clic sulla pagina, elementi di lista (copia/togli/sposta), «+» fra le sezioni, tasto destro, tasti, struttura della pagina, Contenuto/Stile, tablet, Pubblica. **Deve provarlo lui.**
 - **Terzo giro** («parti dal punto 1»): grassetto/corsivo/link/a-capo nei paragrafi, «Aggiungi la foto» dove manca, intestazione e piede → Sito web, avviso d'uscita. Due corse «si perdono lettere scrivendo in fretta» chiuse alla radice (CLAUDE.md nota 64).
-- **Punto 2 fatto il 12/10**: blocchi «Contatti e orari» (tipo `recapiti`, legge dalle Informazioni) e «Listino prezzi» (`listino`) — CLAUDE.md nota 65. ⚠️ Da dire/decidere con Francesco: la home di **Fondaco Narni** ha un vecchio blocco `contatti` che non disegna niente — vuole che diventi il blocco nuovo? L'AI è stata istruita sui due blocchi il 12/10 (sonda `probe-ai-blocchi.mjs`, solo in produzione). Proposta per le sezioni riusabili e ricognizione dei blocchi mancanti portate a Francesco: aspettano il suo sì — vedi `project_blocchi_ricognizione` e `project_sezioni_universali`.
-- **Piano concordato il 12/10, quello che resta**: (3) sezioni riusabili (memoria project_sezioni_universali) · (4) AI dentro la pagina. Poi: schede a linguette, tabella di confronto, citazione, titolo, popup; opzioni solo-telefono, larghezza del contenuto, copia stile.
+- **Punto 2 fatto il 12/10**: blocchi «Contatti e orari» (tipo `recapiti`, legge dalle Informazioni) e «Listino prezzi» (`listino`) — CLAUDE.md nota 65. ⚠️ Da dire/decidere con Francesco: la home di **Fondaco Narni** ha un vecchio blocco `contatti` che non disegna niente — vuole che diventi il blocco nuovo? L'AI è stata istruita sui due blocchi il 12/10 (sonda `probe-ai-blocchi.mjs`, solo in produzione). Ricognizione dei blocchi mancanti portata a Francesco: aspetta il suo sì (per prime le foto che si ingrandiscono) — vedi `project_blocchi_ricognizione`.
+- **Punto 3 fatto il 12/10**: sezioni condivise LIVE (migration 136, CLAUDE.md nota 66, sonda `probe-sezioni.mjs`). **Francesco non le ha ancora provate.** Limiti detti a lui: testi non scrivibili sulla pagina, versioni salvate del sito senza le sezioni, traduzione corretta a mano pagina per pagina. Possibile seguito: usare le sezioni per le 4 copie della CTA di metodotvb (cambio sul sito di un cliente: serve il suo sì).
+- **Piano concordato il 12/10, quello che resta**: (4) AI dentro la pagina. Poi: schede a linguette, tabella di confronto, citazione, titolo, popup; opzioni solo-telefono, larghezza del contenuto, copia stile.
 - Restano fuori di proposito: colonne libere annidate (decisione sua). Francesco: «i clienti non usano i blocchi perché la piattaforma è in sviluppo» — niente misura d'uso prima di aggiungerne.
 - Piccolo, da fare: i numeri animati delle statistiche diventano scrivibili solo a conteggio finito; il menu laterale non avvisa delle modifiche non salvate.
 
@@ -223,7 +224,7 @@ Su Vercel c'è solo `WHATSAPP_TOKEN_KEY`: mancano `META_APP_ID` · `META_APP_SEC
 
 ### 4. Aperti da prima, invariati
 - **Search Console**: non esiste per nessun dominio → senza, «indicizzato» non si può dire → [[project_search_console]]
-- **Sezioni universali** (idea di Francesco del 22/09): una sezione definita una volta e usata su più pagine → [[project_sezioni_universali]]
+- **Sezioni universali**: FATTE il 12/10 → [[project_sezioni_universali]]
 - **Foto vere** di inlingua Terni: oggi sono Unsplash, e le slide del cliente dicono per prime che servirebbero quelle vere.
 - **OltreNova cliente di sé stessa** + rifare la landing (il fermo per Meta è tolto) · **DNS** metodotvb e fondaconarni · elenco **Offerte** nel pannello che deduce «Gratis».
 - ~~primo incasso Stripe con Garage 22~~ ✅ **fatto il 22/09** (punti 13–14 qui sopra).

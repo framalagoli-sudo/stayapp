@@ -137,7 +137,7 @@
 - [⛔ I cambi importanti li autorizza Francesco PRIMA](feedback_autorizzare_cambi_importanti.md) — togliere voci di menu, spostare dove si crea…
 - [🏠 Un sito, un indirizzo](reference_un_sito_un_indirizzo.md) — se il cliente ha un dominio si va lì (307, mai 301); sitemap ed email devono dichiarare lo stesso del canonical
 - [📷 Caricamento foto: 4 MB è il tetto della piattaforma](reference_caricamento_foto.md) — misurato (413 prima della nostra route); e CampoImmagine, il campo unico che NON va forzato su gallerie e miniature
-- [🧩 Sezioni «universali» — DA ANALIZZARE](project_sezioni_universali.md) — una sezione definita una volta e usata su più pagine; oggi si copiano i blocchi (4 copie su metodotvb)
+- [♻️ Sezioni condivise — LIVE dal 12/10](project_sezioni_universali.md) — tabella `sezioni`, nella pagina solo il riferimento, espansione sul server; limiti noti e cosa NON è stato deciso
 - [🔧 Hydration evento/blog — RISOLTO 23/09](project_backlog_hydration_evento.md) — era la LINGUA letta nel browser (`_lang` esiste solo nella riscrittura); la diagnosi del 22/09 era un artefatto di localhost; condivisione articoli con URL vuoto
 - [🎓 inlingua Terni — restyling da brief](project_inlingua_terni.md) — home rifatta 22/09 dal PDF + registro di Verona; restano le 11 pagine interne e le foto vere
 - [⚠️ Identificatore fuori scope = 500 invisibile](reference_identificatore_fuori_scope.md) — un componente fuori dal renderer che usa una sua funzione: né il build né una GET lo vedono se il ramo è spento dai dati

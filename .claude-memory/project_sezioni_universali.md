@@ -1,49 +1,38 @@
 ---
 name: project_sezioni_universali
-description: "DA ANALIZZARE — sezioni riusabili da mettere su più pagine e governate da un punto solo (idea di Francesco, 21/09/2026)"
-metadata: 
-  node_type: memory
+description: "Sezioni condivise LIVE dal 12/10/2026 (migration 136): una sezione scritta una volta e usata su più pagine — scelte prese, limiti, cosa resta"
+metadata:
   type: project
-  originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
-  modified: 2026-10-12T13:40:50.913Z
 ---
 
-**Da dove nasce** (21/09/2026): Francesco ha voluto la stessa CTA — pulsante
-«Scopri i progetti in corso» + banner «Pronto a Diversificare il Tuo Capitale?»
-— su quattro pagine di metodotvb. Oggi l'unico modo è **copiare i blocchi**: sono
-quattro copie indipendenti, e cambiare il testo vuol dire cambiarlo quattro
-volte. Parole sue: *«potremmo creare delle sezioni "universali" da mettere su
-pagine a scelta - non male - segna come cosa da analizzare»*.
+**Da dove nasce** (21/09/2026): Francesco voleva la stessa CTA su quattro pagine
+di metodotvb, e l'unico modo era copiare i blocchi. Parole sue: *«potremmo creare
+delle sezioni "universali" da mettere su pagine a scelta»*.
 
-**Cosa sarebbe**: una sezione (uno o più blocchi) definita **una volta** e
-richiamata su più pagine; la si modifica in un posto e cambia ovunque.
+**Fatto il 12/10/2026**, live, provato in produzione con `tests/probe-sezioni.mjs`.
+Dettaglio tecnico: `CLAUDE.md` nota 66. Francesco **non le ha ancora provate lui**.
 
-**Nodi da sciogliere prima di scrivere codice** — nessuno è deciso:
-- **Dove vivono**: tabella nuova, o pagine con un flag «sezione», o dentro
-  `minisito`? Ricordare che il blocco deve arrivare fino al renderer SSR.
-- **Come si inseriscono in pagina**: un tipo di blocco `sezione` che punta a un
-  id — e allora il renderer deve risolverlo *prima* di rendere (SSR, senza un
-  secondo giro di rete).
-- **Cosa si può cambiare per pagina**: niente (identica ovunque) o qualche
-  sovrascrittura (es. il testo del pulsante)? La seconda è la strada che negli
-  altri prodotti diventa ingestibile.
-- **Cosa succede quando si cancella** una sezione usata in cinque pagine.
-- **L'anteprima e l'editor**: chi modifica la copia in pagina deve capire che
-  sta toccando **tutte** le pagine. Se non si vede, è una trappola.
-- ⚠️ Esiste già un caso vicino: header e footer sono configurati una volta e
-  valgono ovunque (`header_cfg` / `footer_cfg`, anche per-pagina). Guardare
-  come sono fatti prima di inventare un secondo meccanismo.
+**Le tre scelte** (proposte da me, prese col suo «vai procedi» del 12/10):
+- tabella nuova `sezioni`, non un flag sulle pagine;
+- **identica ovunque**: nessuna sovrascrittura per pagina (è la strada che negli
+  altri prodotti diventa ingestibile);
+- una sezione **in uso non si elimina**: prima la si stacca dalle pagine.
 
-**Proposta di Ettore del 12/10/2026 (in attesa del sì di Francesco, niente scritto):**
-tabella nuova `sezioni` (una migration) · in pagina un blocco `sezione` che punta
-a un id · risolto in `getPagina` (`lib/guest-data.js`, l'unico punto da cui le
-pagine pubbliche leggono i blocchi) **prima** di tutto il resto, così traduzioni,
-SEO ed eventi lavorano sui blocchi già espansi senza cambiare · identica ovunque,
-nessuna sovrascrittura per pagina · non si elimina finché è usata (409 con
-l'elenco delle pagine) · nell'editor ha una cornice «Sezione condivisa · usata
-in N pagine» e «Stacca» la trasforma in una copia normale. Da verificare prima
-di scrivere: anche la home e l'anteprima (`postMessage`) passano da lì?
+**Why:** una sezione eliminata lascerebbe un buco in pagine che nessuno sta guardando.
 
-**Priorità** (valutazione del 21/09, superata: il 12/10 è entrata nel piano): bassa finché resta un caso solo (metodotvb, 4 pagine). Diventa
-seria quando un cliente le cambia spesso, o quando le pagine di un sito sono
-tante. Vedi [[project_block_system_roadmap]].
+**How to apply:**
+- Un punto nuovo che legge `pagine.blocks` per mostrarli passa da `espandiSezioni`
+  (`lib/sezioni.js`); la pagina salva solo il riferimento (`soloRiferimenti`).
+- La sezione si cerca solo fra quelle della stessa entità.
+- In `PaginaEditorPage.jsx` niente `new Map()`: `Map` è l'icona di lucide
+  ([[reference_lucide_global_shadow]]).
+
+**Limiti detti a Francesco, non ancora decisi:**
+- i testi di una sezione condivisa non si scrivono cliccandoli sulla pagina (voluto);
+- le versioni salvate del sito non contengono le sezioni;
+- in inglese ogni pagina traduce la sua copia: correzioni a mano pagina per pagina;
+- l'AI non conosce il tipo `sezione`.
+
+**Seguito possibile**: le 4 copie della CTA di metodotvb potrebbero diventare una
+sezione sola — è un cambio sul sito di un cliente, serve il sì di Francesco
+([[feedback_autorizzare_cambi_importanti]]).

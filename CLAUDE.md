@@ -201,7 +201,7 @@ hospitality/
 │   ├── components/ · context/ · hooks/
 │   └── lib/                        # supabase, send-email, guest-data, blockTypes …
 ├── tests/                          # smoke test Playwright su produzione + sonde `probe-*.mjs`
-└── supabase/migrations/            # 001–135, eseguire a mano su Supabase
+└── supabase/migrations/            # 001–136, eseguire a mano su Supabase
 ```
 > `client/` e `server/` non esistono più nel repo (vedi nota in cima). Se li vedi in locale sono residui: sono in `.gitignore` e vanno cancellati, non aggiornati.
 
@@ -658,6 +658,17 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - **L'AI e `recapiti`**: il blocco non ha testi, quindi chi trascrive un documento (`from-document`) lo usa **solo se i recapiti sono già salvati** (`regolaRecapiti(entity)`); altrimenti indirizzo e telefono del documento restano in un blocco di testo — o sparirebbero dal sito. `listino`: mai un prezzo inventato. Sonda `tests/probe-ai-blocchi.mjs` (a mano, **solo in produzione**: in locale manca `ANTHROPIC_API_KEY`; spende due chiamate vere). ⚠️ `generate-site` (solo super_admin) ha lo stesso schema ma non è stato provato con una chiamata; i modelli di `ai-fill` non contengono i due blocchi.
     - Sonda: `probe-editor-visuale.mjs` li cerca nel **corpo grezzo** della pagina pubblica (anche un recapito con dentro del codice: esce come testo) e li usa dall'editor.
 
+66. **♻️ Sezioni condivise: scritte una volta, usate su più pagine** (12/10/2026, idea di Francesco del 21/09 — metodotvb aveva la stessa CTA in quattro copie; migration `136`). Tre scelte prese col suo «procedi»: tabella nuova, **identica ovunque** (nessuna sovrascrittura per pagina), **eliminazione rifiutata finché è in uso**.
+    - **Dati**: tabella `sezioni` (entità, nome, `blocks`). Nella pagina si salva **solo il riferimento** — `{ id, type: 'sezione', data: { sezione_id } }` — e `soloRiferimenti` (`lib/sezioni-regole.js`, senza dipendenze) lo ripulisce sia nel pannello sia nella PATCH della pagina: qualunque altra cosa arrivi dal client viene buttata.
+    - **`lib/sezioni.js` → `espandiSezioni(blocks, tipo, entityId)`** sostituisce il riferimento coi blocchi veri **sul server, prima di tutto il resto** (traduzioni, SEO, eventi non sanno che le sezioni esistono). Passa dai quattro punti che leggono i blocchi di una pagina: `getPagina`, la route pubblica della pagina, la sorgente delle traduzioni, `blocchi-usati`. ⛔ Un punto nuovo che legge `pagine.blocks` per mostrarli deve passare di lì, o al posto della sezione c'è un buco. Una pagina senza sezioni non fa nessuna lettura in più.
+    - 🔒 La sezione si cerca **solo fra quelle della stessa entità**: l'id di una sezione altrui messo nella propria pagina non mostra niente. Le route (`/api/sezioni`, `/api/sezioni/[id]`) chiedono «è sua?» prima di ogni effetto; a un'altra azienda rispondono 404.
+    - Niente sezioni dentro le sezioni (`contenutoSezione` le scarta), massimo 12 blocchi, 50 sezioni per sito. Gli id dei blocchi espansi sono `<id del riferimento>:<id interno>`: la stessa sezione può stare due volte in una pagina.
+    - **Nel pannello**: «Rendi condivisa» su ogni blocco (elenco, scheda dell'editor visuale, tasto destro), blocco «Sezione condivisa» per metterla altrove, avviso giallo con i nomi delle altre pagine, «Porta dentro il blocco qui sotto», «Stacca da questa pagina» (resta una copia normale). Le modifiche restano sul blocco (`_blocchi`, `_nome`) fino a «Salva»: così annulla/ripeti e l'anteprima le vedono come ogni altra.
+    - Nell'editor visuale la sezione è **una cornice sola** e i suoi testi **non si scrivono sulla pagina**: si cambiano dalla scheda, dove c'è l'avviso che vale ovunque.
+    - ⚠️ Limiti noti: le **versioni salvate del sito** non contengono le sezioni (ripristinando, le pagine tornano indietro e il contenuto delle sezioni no); in inglese ogni pagina traduce la sua copia, quindi una correzione a mano va fatta pagina per pagina; l'AI non conosce il tipo `sezione`.
+    - ⚠️ In `PaginaEditorPage.jsx` `Map` è l'icona di lucide: `new Map()` lì dà «is not a constructor» **solo nel browser**. Oggetti semplici.
+    - Sonda `tests/probe-sezioni.mjs` (a mano): due aziende di prova, corpo grezzo delle pagine, una modifica che cambia due pagine, i casi ostili, e il percorso nel pannello col browser.
+
 ---
 
 ## Roadmap
@@ -686,7 +697,8 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - [x] **Pannello Domini: «Online» solo se rispondiamo noi** ✅ 11/10/2026 — nota 62.
 - [x] **Editor visuale delle pagine** (trascina i blocchi nella pagina vera) ✅ 11–12/10/2026 — nota 64.
 - [x] **Blocchi «Contatti e orari» e «Listino prezzi»** ✅ 12/10/2026 — nota 65.
-- [ ] **Editor e blocchi, il resto del piano del 12/10** — sezioni riusabili (memoria `project_sezioni_universali`), AI dentro la pagina, poi schede a linguette, tabella di confronto, citazione, titolo, popup; opzioni solo-telefono, larghezza del contenuto, copia stile. (AI istruita sui due blocchi nuovi il 12/10.) Ricognizione del 12/10 sui blocchi che mancano: memoria `project_blocchi_ricognizione`.
+- [x] **Sezioni condivise** (una sezione scritta una volta e usata su più pagine) ✅ 12/10/2026 — nota 66, migration 136.
+- [ ] **Editor e blocchi, il resto del piano del 12/10** — AI dentro la pagina, poi schede a linguette, tabella di confronto, citazione, titolo, popup; opzioni solo-telefono, larghezza del contenuto, copia stile. (AI istruita sui due blocchi nuovi il 12/10.) Ricognizione del 12/10 sui blocchi che mancano: memoria `project_blocchi_ricognizione`.
 - [ ] **Lo stato vero del conto Stripe** — `puoIncassare` dice sì appena esiste `stripe_account_id`, anche se il collegamento è rimasto a metà: va salvato `charges_enabled` dal webhook dell'account. Oggi il link e la cassa falliscono con un messaggio chiaro, ma il pulsante compare lo stesso.
 - [ ] **Campagne WhatsApp per lista** (come le newsletter) e via i tag col titolo dell'evento — quando si collega Meta.
 - [ ] **Newsletter a blocchi** (stesso editor del sito, catalogo ridotto per la posta, blocchi collegati a eventi e offerte) — parere dato il 05/10, da riprendere dopo aver visto se i quattro modelli bastano.
@@ -700,7 +712,6 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
   ⚠️ **Nessun cliente vero ha ancora collegato il conto**: il primo incasso reale non è mai avvenuto.
 - [x] **Next 15.5 + React 19** ✅ 18/08/2026 — chiuse le 21 vulnerabilità su `next`. ⚠️ Prima di tentare la **16** vanno migrati i `params` sincroni (~102 occorrenze, codemod `next-async-request-api`): la 15 li tollera, la 16 no
 - [ ] **Upgrade Next 16** — **manutenzione, non sicurezza** (triage 11/8: nessuno degli advisory high ci riguarda). Si farà per React 19 / Sentry / attualità. L'ostacolo `next-pwa` è stato rimosso, quindi ora è meno rischioso.
-- [ ] **Sezioni «universali» (da analizzare)** — una sezione definita una volta e richiamata su più pagine, modificabile da un punto solo. Oggi si copiano i blocchi: su metodotvb la stessa CTA vive in 4 copie indipendenti. Nodi aperti (dove vivono, come si risolvono in SSR, cosa succede se si cancella) → memoria `project_sezioni_universali`.
 - [ ] **Import documento v2** — upload file PDF/DOCX + chunking per documenti lunghi
 - [ ] **Multi-lingua DE** (IT/EN già fatti)
 - [ ] **Notifiche real-time** — Supabase Realtime su `requests` (bassa priorità)
