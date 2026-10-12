@@ -69,7 +69,8 @@ try {
   const s2 = await api(A.token, 'PATCH', `/api/pagine/${altraA.id}`, { blocks: [testo('b-serv', 'ZZ Solo dei servizi'), rif('r2'), rif('r3')] })
   esito(s1.stato === 200 && s2.stato === 200, 'si mette in due pagine (in una, due volte)')
   const salvata = (await deve(a.from('pagine').select('blocks').eq('id', homeA.id).single(), 'rilettura')).blocks[1]
-  esito(JSON.stringify(salvata) === JSON.stringify({ id: 'r1', type: 'sezione', data: { sezione_id: sid } }), 'nella pagina si salva SOLO il riferimento: niente copia del contenuto', JSON.stringify(salvata))
+  // jsonb restituisce le chiavi in un ordine suo: si confrontano i campi, non le stringhe.
+  esito(Object.keys(salvata).sort().join() === 'data,id,type' && salvata.id === 'r1' && salvata.type === 'sezione' && JSON.stringify(salvata.data) === JSON.stringify({ sezione_id: sid }), 'nella pagina si salva SOLO il riferimento: niente copia del contenuto', JSON.stringify(salvata))
   let h = await html(urlHome), h2 = await html(urlAltra)
   esito(h.includes('ZZ Condivisa uno') && h.includes('ZZ Solo della home') && !h.includes('OSTILE'), 'la home la stampa nell’HTML, in mezzo ai suoi blocchi')
   esito(quante(h2, 'Scritta una volta.') >= 2 && h2.includes('ZZ Solo dei servizi'), 'l’altra pagina la stampa due volte')
