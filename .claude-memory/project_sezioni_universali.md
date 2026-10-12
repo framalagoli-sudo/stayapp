@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
-  modified: 2026-09-21T16:30:16.256Z
+  modified: 2026-10-12T13:40:50.913Z
 ---
 
 **Da dove nasce** (21/09/2026): Francesco ha voluto la stessa CTA — pulsante
@@ -34,6 +34,16 @@ richiamata su più pagine; la si modifica in un posto e cambia ovunque.
   valgono ovunque (`header_cfg` / `footer_cfg`, anche per-pagina). Guardare
   come sono fatti prima di inventare un secondo meccanismo.
 
-**Priorità**: bassa finché resta un caso solo (metodotvb, 4 pagine). Diventa
+**Proposta di Ettore del 12/10/2026 (in attesa del sì di Francesco, niente scritto):**
+tabella nuova `sezioni` (una migration) · in pagina un blocco `sezione` che punta
+a un id · risolto in `getPagina` (`lib/guest-data.js`, l'unico punto da cui le
+pagine pubbliche leggono i blocchi) **prima** di tutto il resto, così traduzioni,
+SEO ed eventi lavorano sui blocchi già espansi senza cambiare · identica ovunque,
+nessuna sovrascrittura per pagina · non si elimina finché è usata (409 con
+l'elenco delle pagine) · nell'editor ha una cornice «Sezione condivisa · usata
+in N pagine» e «Stacca» la trasforma in una copia normale. Da verificare prima
+di scrivere: anche la home e l'anteprima (`postMessage`) passano da lì?
+
+**Priorità** (valutazione del 21/09, superata: il 12/10 è entrata nel piano): bassa finché resta un caso solo (metodotvb, 4 pagine). Diventa
 seria quando un cliente le cambia spesso, o quando le pagine di un sito sono
 tante. Vedi [[project_block_system_roadmap]].

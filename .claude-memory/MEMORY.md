@@ -161,3 +161,4 @@
 - [🎨 Restyling di metodotvb dai suoi dati (21/09)](reference_restyling_metodotvb.md) — come si rifà un sito via API, l'id della versione per ripristinarlo, e il contrasto 1,84 che la sonda dava per buono
 - [🌓 Aspetto dell'app del QR](reference_sfondo_app_qr.md) — stili pronti + personalizzazione (theme.app), palette unica per le 3 app; chi non sceglie vede l'app identica; #777 e verde WhatsApp sotto soglia ovunque (da decidere)
 - [🏨 Guru Management su OltreNova](project_guru_management.md) — ricostruito il 10/10 da WordPress, dominio collegato; zona su Cloudflare, inoltro posta DA FINIRE; modulo contatti non provato
+- [🧱 Blocchi che mancano: ricognizione 12/10](project_blocchi_ricognizione.md) — lightbox assente sulle gallerie del sito; proposte in ordine, nessuna approvata
