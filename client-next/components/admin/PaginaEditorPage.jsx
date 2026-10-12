@@ -1667,6 +1667,7 @@ export default function PaginaEditorPage() {
   const [schedaTab,   setSchedaTab]   = useState('contenuto')         // contenuto · stile
   const [avviso,      setAvviso]      = useState(null)                // { testo, annulla? }
   const [navSopra,    setNavSopra]    = useState(null)                // { id, dopo } mentre si riordina dalla struttura
+  const [ai,          setAi]          = useState(null)                // «Chiedi all'AI»: null · { lavora: true } · { errore }
   // Le sezioni condivise del sito (vedi più sotto «Sezioni condivise»).
   const [sezioni, setSezioni] = useState([])
   const [sezioniPronte, setSezioniPronte] = useState(false)
@@ -1767,13 +1768,15 @@ export default function PaginaEditorPage() {
     if (!percorso || !finestra) return
     // Di una sezione condivisa la pagina salva solo il riferimento: al riquadro va anche quello che contiene.
     const daDisegnare = blocks.map(b => b.type === TIPO_SEZIONE ? { ...b, _blocchi: blocchiDi(b), _nome: nomeDi(b) } : b)
-    try { finestra.postMessage({ tipo: 'oltrenova:anteprima-blocchi', percorso, blocks: daDisegnare, ...(visuale ? { visuale: true, selezionato: expandedId, scala } : {}) }, window.location.origin) } catch {}
-  }, [blocks, sezioni, entitySlug, page?.slug, page?.entity_tipo, visuale, expandedId, scala])
+    try { finestra.postMessage({ tipo: 'oltrenova:anteprima-blocchi', percorso, blocks: daDisegnare, ...(visuale ? { visuale: true, selezionato: expandedId, scala, punto: inserisciPrima === undefined ? null : { prima: inserisciPrima }, ai } : {}) }, window.location.origin) } catch {}
+  }, [blocks, sezioni, entitySlug, page?.slug, page?.entity_tipo, visuale, expandedId, scala, inserisciPrima, ai])
   useEffect(() => {
     if (!visuale && !(showPreview && dirty)) return
     const t = setTimeout(mandaAnteprima, visuale ? 40 : 250)
     return () => clearTimeout(t)
   }, [blocks, showPreview, dirty, visuale, mandaAnteprima])
+  // Un errore dell'AI vale per il punto in cui è stata chiesta: scelto un altro punto, non c'è più.
+  useEffect(() => { setAi(a => a?.lavora ? a : null) }, [inserisciPrima])
   // La pagina nel riquadro avvisa quando ha finito di caricarsi: da lì in poi ascolta.
   useEffect(() => {
     const pronta = e => { if (e.origin === window.location.origin && e.data?.tipo === 'oltrenova:anteprima-pronta' && (dirty || visuale)) mandaAnteprima() }
@@ -1795,6 +1798,12 @@ export default function PaginaEditorPage() {
     const esiste = id => typeof id === 'string' && blocks.some(b => b.id === id)
     if (m.tipo === 'oltrenova:blocco-scelto') { setExpandedId(esiste(m.id) ? m.id : null); setInserisciPrima(undefined) }
     else if (m.tipo === 'oltrenova:tasto') comando(m.quale)
+    else if (m.tipo === 'oltrenova:punto-chiuso') setInserisciPrima(undefined)
+    else if (m.tipo === 'oltrenova:chiedi-ai') {
+      // La pagina manda solo le parole della richiesta: DOVE va la sezione lo sa il pannello.
+      const richiesta = typeof m.richiesta === 'string' ? m.richiesta.trim().slice(0, 800) : ''
+      if (richiesta.length >= 3 && (inserisciPrima !== undefined || !blocks.length)) chiediAI(richiesta, inserisciPrima ?? null)
+    }
     else if (m.tipo === 'oltrenova:aggiungi-qui') {
       // Il «+» fra due sezioni: a sinistra si sceglie cosa mettere in quel punto.
       setInserisciPrima(esiste(m.prima) ? m.prima : null); setExpandedId(null); setColonna('blocchi'); setCercaBlocco('')
@@ -1839,6 +1848,35 @@ export default function PaginaEditorPage() {
       else if (m.azione === 'incolla') pasteBlock(m.id)
       else if (m.azione === 'condividi') rendiCondivisa(m.id)
       else if (m.azione === 'stacca') staccaSezione(m.id)
+    }
+  }
+  // «Chiedi all'AI»: la route restituisce uno o più blocchi già ripuliti; qui si
+  // ricontrolla il tipo e si mettono nel punto scelto, come una modifica
+  // qualunque — si annulla, e sul sito va solo con «Salva».
+  async function chiediAI(richiesta, prima) {
+    if (ai?.lavora) return
+    setAi({ lavora: true })
+    try {
+      const adesso = blocchiVivi.current
+      const i0 = typeof prima === 'string' ? adesso.findIndex(x => x.id === prima) : -1
+      const r = await apiFetch(`/api/pagine/${pageId}/ai-blocco`, { method: 'POST', body: JSON.stringify({
+        richiesta, sopra: (i0 < 0 ? adesso[adesso.length - 1] : adesso[i0 - 1])?.type || '', sotto: (i0 < 0 ? null : adesso[i0])?.type || '',
+      }) })
+      const nuovi = (Array.isArray(r?.blocks) ? r.blocks : [])
+        .filter(b => b && tipoAmmesso(b.type) && b.type !== TIPO_SEZIONE && b.data && typeof b.data === 'object' && !Array.isArray(b.data)).slice(0, 3)
+        .map(b => ({ id: uid(), type: b.type, data: { ...BLOCK_DEFAULTS[b.type], ...b.data }, ...(b.style && typeof b.style.bg === 'string' ? { style: { bg: b.style.bg } } : {}) }))
+      if (!nuovi.length) throw new Error('Non sono riuscito a preparare la sezione. Riprova, magari con altre parole.')
+      const attuali = blocchiVivi.current
+      const i = typeof prima === 'string' ? attuali.findIndex(x => x.id === prima) : -1
+      const lista = [...attuali]; lista.splice(i < 0 ? lista.length : i, 0, ...nuovi)
+      patchVivo.current(lista)
+      setAi(null); setExpandedId(nuovi[0].id); setInserisciPrima(undefined); setSchedaTab('contenuto')
+      const note = (Array.isArray(r.note) ? r.note : []).filter(n => typeof n === 'string').slice(0, 3)
+      clearTimeout(tAvviso.current)
+      setAvviso({ testo: `Ho aggiunto ${nuovi.map(b => `«${blockLabel(b.type)}»`).join(' e ')}. ${note.length ? note.join(' ') : 'Rileggi i testi prima di salvare.'}`, annulla: true })
+      tAvviso.current = setTimeout(() => setAvviso(null), note.length ? 20000 : 9000)
+    } catch (e) {
+      setAi({ errore: e?.message || 'Non sono riuscito a preparare la sezione. Riprova fra poco.' })
     }
   }
   // I comandi da tastiera dell'editor visuale: arrivano dal pannello o, come
@@ -2316,7 +2354,7 @@ export default function PaginaEditorPage() {
             </div>
             <input ref={sceltaFoto} type="file" accept="image/*" data-scelta-foto style={{ display: 'none' }} onChange={fotoScelta} />
             {avviso && (
-              <div data-avviso style={{ position: 'absolute', left: '50%', bottom: 22, transform: 'translateX(-50%)', zIndex: 5, pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: 14, background: '#1a1a2e', color: '#fff', borderRadius: 10, padding: '10px 16px', fontSize: 13.5, boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}>
+              <div data-avviso style={{ position: 'absolute', left: '50%', bottom: 22, transform: 'translateX(-50%)', zIndex: 5, pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: 14, maxWidth: 'min(760px, calc(100% - 40px))', lineHeight: 1.45, background: '#1a1a2e', color: '#fff', borderRadius: 10, padding: '10px 16px', fontSize: 13.5, boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}>
                 {avviso.testo}
                 {avviso.apri && <a href={avviso.apri} target="_blank" rel="noopener" style={{ pointerEvents: 'auto', color: '#aab4ff', fontWeight: 700, fontSize: 13.5, textDecoration: 'none', whiteSpace: 'nowrap' }}>Apri in un'altra scheda ↗</a>}
                 {avviso.annulla && past.length > 0 && <button onClick={() => { undo(); setAvviso(null) }} style={{ pointerEvents: 'auto', background: 'none', border: 'none', color: '#aab4ff', fontWeight: 700, cursor: 'pointer', fontSize: 13.5, padding: 0 }}>Annulla</button>}
@@ -2367,7 +2405,7 @@ export default function PaginaEditorPage() {
                     <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
                       {inserisciPrima !== undefined ? (
                         <div data-inserisci-qui style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: '#fff', background: '#5b6af8', borderRadius: 8, padding: '9px 12px', marginBottom: 10, lineHeight: 1.4 }}>
-                          <span style={{ flex: 1 }}><strong>Scegli cosa mettere {typeof inserisciPrima === 'string' ? `sopra «${blockLabel(blocks.find(b => b.id === inserisciPrima)?.type)}»` : 'in fondo alla pagina'}</strong>: un clic sul blocco e compare lì.</span>
+                          <span style={{ flex: 1 }}><strong>Scegli cosa mettere {typeof inserisciPrima === 'string' ? `sopra «${blockLabel(blocks.find(b => b.id === inserisciPrima)?.type)}»` : 'in fondo alla pagina'}</strong>: un clic sul blocco e compare lì. Oppure trascinalo nel riquadro sulla pagina, o chiedilo all'AI da lì.</span>
                           <button onClick={() => setInserisciPrima(undefined)} title="Lascia stare" style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 15, padding: 2, lineHeight: 1 }}>✕</button>
                         </div>
                       ) : (

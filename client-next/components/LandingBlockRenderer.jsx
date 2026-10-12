@@ -9,7 +9,7 @@ import ShopBlocco from './ShopBlocco'
 import MenuTab from '@/components/MenuTab'
 import Turnstile from '@/components/Turnstile'
 import FotoGrande, { siIngrandisce } from '@/components/FotoGrande'
-import { useEditorNelRiquadro, sezionePerEditor, InizioPagina, conLaScritturaInCorso } from '@/components/EditorNelRiquadro'
+import { useEditorNelRiquadro, sezionePerEditor, PuntoScelto, conLaScritturaInCorso } from '@/components/EditorNelRiquadro'
 import { applyBlockStyle, blockInverted, textSizeScale, textColorFor, gridTemplate, readableOn, resolveBlockBg } from '@/lib/blockTypes'
 import { ReviewSourceLogo } from '@/lib/reviewLogos'
 import { RichText, richIsEmpty } from '@/lib/richText'
@@ -1084,7 +1084,12 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
       // verrebbero riscritte con quelle di prima.
       flushSync(() => {
         setBlocchiAnteprima(conLaScritturaInCorso(m.blocks))
-        setEditor({ selezionato: typeof m.selezionato === 'string' ? m.selezionato : null, scala: Number(m.scala) > 0.1 && Number(m.scala) <= 1 ? Number(m.scala) : 1 })
+        setEditor({
+          selezionato: typeof m.selezionato === 'string' ? m.selezionato : null, scala: Number(m.scala) > 0.1 && Number(m.scala) <= 1 ? Number(m.scala) : 1,
+          // Il punto scelto col «+» (prima di quale sezione; null = in fondo) e a che punto è la richiesta all'AI.
+          punto: m.punto && typeof m.punto === 'object' ? { prima: typeof m.punto.prima === 'string' ? m.punto.prima : null } : null,
+          ai: m.ai?.lavora === true ? { lavora: true } : typeof m.ai?.errore === 'string' ? { errore: m.ai.errore.slice(0, 300) } : null,
+        })
       })
     }
     window.addEventListener('message', ascolta)
@@ -2517,9 +2522,16 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
             const els = dentro.map((x, j) => disegna({ ...x, id: `${b.id}:${x.id}` }, dentro[j + 1] || blocks[i + 1], i === 0 && j === 0))
             el = els.some(Boolean) ? <div key={b.id}>{els}</div> : null
           } else el = disegna(b, blocks[i + 1], i === 0)
-          return editor ? sezionePerEditor(el, b, editor, { primo: i === 0, ultimo: i === blocks.length - 1 }) : el
+          if (!editor) return el
+          return (
+            <Fragment key={b.id}>
+              {editor.punto?.prima === b.id && <PuntoScelto ai={editor.ai} />}
+              {sezionePerEditor(el, b, editor, { primo: i === 0, ultimo: i === blocks.length - 1 })}
+            </Fragment>
+          )
         })}
-        {editor && !blocks.length && <InizioPagina />}
+        {editor?.punto && blocks.length > 0 && !blocks.some(b => b?.id === editor.punto.prima) && <PuntoScelto ai={editor.ai} />}
+        {editor && !blocks.length && <PuntoScelto ai={editor.ai} primo />}
       </div>
       {fotoGrande && <FotoGrande foto={fotoGrande.foto} indice={fotoGrande.i} lang={lang} onVai={i => setFotoGrande(f => f && { ...f, i })} onChiudi={() => setFotoGrande(null)} />}
     </>

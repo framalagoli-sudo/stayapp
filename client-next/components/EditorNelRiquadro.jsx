@@ -1,7 +1,7 @@
 'use client'
-import { useEffect, useLayoutEffect } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { ArrowUp, ArrowDown, Copy, Trash2, GripVertical, Plus, ImagePlus } from 'lucide-react'
+import { ArrowUp, ArrowDown, Copy, Trash2, GripVertical, Plus, ImagePlus, Sparkles, X } from 'lucide-react'
 import { blockLabel } from '@/lib/blockTypes'
 import { campiDiTesto, campiImmagine, cosaManca, indirizzoAmmesso, LISTE } from '@/lib/editor-visuale'
 
@@ -79,6 +79,25 @@ const STILE = `
   .ev-formato .ev-nota { padding: 0 8px; opacity: 0.6; }
   .ev-formato input { width: 230px; height: 30px; padding: 0 9px; border: 0; border-radius: 6px; font: 13px/1 system-ui, sans-serif; outline: none; }
   nav.snav:hover, footer:hover { outline: calc(2px * var(--ev-s, 1)) dashed #5b6af8; outline-offset: calc(-2px * var(--ev-s, 1)); cursor: pointer; }
+  .ev-qui { position: relative; margin: 0; padding: 1.9em 3.2em 1.7em; text-align: center; cursor: default; background: #f3f4ff; border: calc(2px * var(--ev-s, 1)) dashed #5b6af8; color: #3c3f5c;
+    font: 500 calc(15px * var(--ev-s, 1))/1.5 system-ui, sans-serif; display: flex; flex-direction: column; align-items: center; gap: 0.55em; }
+  .ev-qui.ev-inizio { margin: 48px 24px; padding: 4em 3.2em; border-radius: 14px; }
+  .ev-qui-titolo { font-weight: 700; font-size: 1.15em; color: #5b6af8; }
+  .ev-qui-sotto { font-size: 0.87em; color: #6b6b76; max-width: 46em; }
+  .ev-qui button { font: inherit; cursor: pointer; border: 0; }
+  .ev-qui-ai { display: inline-flex; align-items: center; gap: 0.5em; padding: 0.6em 1.25em; border-radius: 2em; background: #5b6af8; color: #fff; font-weight: 700 !important; }
+  .ev-qui-ai:hover { background: #4a58e0; }
+  .ev-qui-ai:disabled { background: #b9bff5; cursor: default; }
+  .ev-qui-ai svg { width: 1.1em; height: 1.1em; }
+  .ev-qui-indietro { background: none; color: #5b6af8; font-weight: 600 !important; padding: 0.6em 0.8em; }
+  .ev-qui-chiudi { position: absolute; top: 0.5em; right: 0.6em; display: flex; padding: 0.3em; background: none; color: #8a8fb5; border-radius: 0.4em; }
+  .ev-qui-chiudi:hover { background: #e3e5fb; color: #3c3f5c; }
+  .ev-qui-chiudi svg { width: 1.2em; height: 1.2em; }
+  .ev-qui textarea { width: 100%; max-width: 44em; min-height: 5.2em; padding: 0.7em 0.9em; border: calc(1.5px * var(--ev-s, 1)) solid #c3c9fb; border-radius: 0.7em; background: #fff; color: #1a1a2e; font: inherit; resize: vertical; outline: none; box-sizing: border-box; text-align: left; }
+  .ev-qui textarea:focus { border-color: #5b6af8; }
+  .ev-qui-riga { display: flex; align-items: center; gap: 0.4em; flex-wrap: wrap; justify-content: center; }
+  .ev-qui-errore { max-width: 44em; padding: 0.55em 0.9em; border-radius: 0.6em; background: #fdecec; color: #a11919; font-size: 0.92em; }
+  .ev-trascina .ev-qui { background: #e6e8ff; }
   .ev-linea { position: fixed; left: 0; right: 0; height: calc(5px * var(--ev-s, 1)); margin-top: calc(-2.5px * var(--ev-s, 1)); background: #5b6af8; box-shadow: 0 0 14px rgba(91,106,248,0.7); z-index: 2147483000; pointer-events: none; display: none; }
 `
 
@@ -412,7 +431,7 @@ export function useEditorNelRiquadro(editor, blocks, ridisegna) {
     // Nell'editor un clic sceglie, non naviga: né i link del sito né i moduli.
     const clic = e => {
       chiudiMenu()
-      if (e.target.closest?.('.ev-barra, .ev-piu, .ev-attrezzi, .ev-menu, .ev-formato, .ev-aggiungi-foto')) return
+      if (e.target.closest?.('.ev-barra, .ev-piu, .ev-attrezzi, .ev-menu, .ev-formato, .ev-aggiungi-foto, .ev-qui')) return
       e.preventDefault(); e.stopPropagation()
       const b = e.target.closest?.('[data-blocco]')
       parla({ tipo: 'oltrenova:blocco-scelto', id: b ? b.getAttribute('data-blocco') : null })
@@ -814,6 +833,44 @@ export function sezionePerEditor(el, blocco, editor, { primo, ultimo }) {
   )
 }
 
-export function InizioPagina() {
-  return <div className="ev-inizio">Trascina qui il primo blocco dalla colonna a sinistra.</div>
+// Il punto scelto col «+» (o la pagina ancora vuota): dice che lì si può far
+// cadere un blocco e offre di chiederlo all'AI. Qui si scrive solo la
+// richiesta: la manda il pannello, che sa in che punto va e cosa farne.
+export function PuntoScelto({ ai, primo = false }) {
+  const [aperto, setAperto] = useState(false)
+  const [testo, setTesto] = useState('')
+  const qui = useRef(null), campo = useRef(null)
+  useEffect(() => {
+    const r = qui.current?.getBoundingClientRect()
+    if (r && (r.top < 80 || r.bottom > window.innerHeight - 40)) qui.current.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }, [])
+  useEffect(() => { if (aperto) campo.current?.focus({ preventScroll: true }) }, [aperto])
+  const lavora = ai?.lavora === true
+  const chiedi = () => { const richiesta = testo.trim(); if (richiesta.length >= 3 && !lavora) parla({ tipo: 'oltrenova:chiedi-ai', richiesta }) }
+  return (
+    <div ref={qui} data-punto-scelto className={'ev-qui' + (primo ? ' ev-inizio' : '')}>
+      {!primo && !lavora && <button type="button" className="ev-qui-chiudi" title="Lascia stare" onClick={() => parla({ tipo: 'oltrenova:punto-chiuso' })}><X strokeWidth={1.5} /></button>}
+      {!aperto ? (
+        <>
+          <div className="ev-qui-titolo">{primo ? 'Trascina qui il primo blocco' : 'Trascina qui il tuo blocco'}</div>
+          <div className="ev-qui-sotto">dalla colonna a sinistra, oppure</div>
+          <button type="button" className="ev-qui-ai" data-chiedi-ai onClick={() => setAperto(true)}><Sparkles strokeWidth={1.5} /> Chiedi all'AI</button>
+        </>
+      ) : (
+        <>
+          <div className="ev-qui-titolo">Che sezione ti serve?</div>
+          <textarea ref={campo} value={testo} maxLength={800} disabled={lavora} data-richiesta-ai
+            placeholder="Per esempio: le domande frequenti sulle prenotazioni · i nostri tre servizi principali · una galleria di foto"
+            onChange={e => setTesto(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); chiedi() } else if (e.key === 'Escape' && !lavora) setAperto(false) }} />
+          {ai?.errore && !lavora && <div className="ev-qui-errore" data-errore-ai>{ai.errore}</div>}
+          <div className="ev-qui-riga">
+            <button type="button" className="ev-qui-ai" data-crea-sezione disabled={lavora || testo.trim().length < 3} onClick={chiedi}><Sparkles strokeWidth={1.5} /> {lavora ? 'Sto scrivendo la sezione…' : 'Crea la sezione'}</button>
+            {!lavora && <button type="button" className="ev-qui-indietro" onClick={() => setAperto(false)}>Indietro</button>}
+          </div>
+          <div className="ev-qui-sotto">Sceglie il blocco più adatto e lo scrive con i dati della tua attività. Prezzi, nomi e recensioni non li inventa: li lascia da completare. Finché non premi «Salva», sul sito non cambia niente.</div>
+        </>
+      )}
+    </div>
+  )
 }
