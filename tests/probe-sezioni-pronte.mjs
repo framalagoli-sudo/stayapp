@@ -114,7 +114,9 @@ try {
     const p2 = await c2.newPage()
     const err2 = []
     p2.on('pageerror', e => err2.push(e.message))
-    const risposta = await p2.goto(`${BASE}/a/${slug}/p/zz-tutte`, { waitUntil: 'networkidle' })
+    // Non `networkidle`: in produzione il controllo anti-abuso del modulo e la mappa tengono la rete occupata.
+    const risposta = await p2.goto(`${BASE}/a/${slug}/p/zz-tutte`, { waitUntil: 'load', timeout: 60000 })
+    await p2.waitForTimeout(2500)
     const misure = await p2.evaluate(() => ({ sezioni: document.querySelectorAll('section, figure').length, largo: document.documentElement.scrollWidth, schermo: window.innerWidth, testo: document.body.innerText }))
     esito(risposta.status() === 200 && misure.sezioni >= chiavi.length - 3, `${nome}: la pagina pubblica le disegna`, `${risposta.status()} · ${misure.sezioni} sezioni su ${chiavi.length}`)
     esito(misure.largo <= misure.schermo + 1, `${nome}: la pagina non scorre di lato`, JSON.stringify({ largo: misure.largo, schermo: misure.schermo }))

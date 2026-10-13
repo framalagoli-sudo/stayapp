@@ -10,6 +10,11 @@ metadata:
 
 # Si riprende da qui
 
+## ▶️ 13/10, terza parte — galleria delle sezioni pronte LIVE (CLAUDE.md nota 71)
+- Francesco: «template come fa Elementor… per me puoi procedere». Fatta la galleria (20 sezioni, 7 categorie, anteprima vera nei colori del sito), provata in produzione con `tests/probe-sezioni-pronte.mjs`. **Deve guardarla lui e dire quali sezioni gli piacciono**: una pagina → «Inserisci sezione pronta».
+- Detto a lui: le sezioni sono pulite ma non «da vetrina» — il limite sono i blocchi che abbiamo. Per il salto servono varianti nuove (copertina divisa testo/foto, mosaico) e altre sezioni: aspettano il suo giudizio sulla prima ventina.
+- Aperti: «salva questa sezione come modello» (non fatto); Newsletter su fondo scuro illeggibile (difetto del blocco).
+
 ## ▶️ 13/10, seconda parte — cinque blocchi nuovi LIVE (CLAUDE.md nota 70)
 - «falle tutte e 5»: Titolo, Citazione, Schede a linguette, Tabella, Popup. Provati in produzione (`tests/probe-blocchi-nuovi.mjs` verde: corpo grezzo, computer, telefono, valori ostili, /en, tabella costruita dal pannello) e nell'editor visuale in locale. **Francesco deve provarli**: una pagina → «Editor visuale» → colonna dei blocchi → «Tabella» (o Popup, Schede a linguette).
 - Detto a lui: il popup ricorda «già visto» nel browser del visitatore (anche il suo: finestra anonima per riprovarlo); citazione e popup non li scrive l'AI; la tabella non ha «Chiedi all'AI» né «Riscrivi».
