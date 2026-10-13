@@ -177,6 +177,10 @@ Dove possibile ognuno ha un test in `tests/smoke/security.spec.js`.
     o nei dati dell'attività: lo controlla il codice, perché un prompt si aggira con una frase.
     La route non scrive nel database: restituisce, e a salvare è la persona. Sonda:
     `probe-ai-blocco.mjs` (anche con una richiesta che chiede di ignorare le istruzioni).
+    «Riscrivi i testi» (13/10/2026) segue la stessa regola dal lato opposto: all'AI vanno **solo**
+    i testi della sezione e tornano solo testi, uno al posto di uno che c'è già (`conTestiRiscritti`);
+    un numero che non c'era non entra, le recensioni e i nomi non si riscrivono, e dalla pagina
+    nel riquadro non parte mai una chiamata all'AI. Sonda `probe-ai-riscrivi.mjs`.
 
 ### Il SISTEMA di monitoraggio (a strati — "sempre" senza sprechi)
 - **Strato 0 — Aggiornamento dipendenze (il "processo tipo WordPress-update").** `.github/dependabot.yml`

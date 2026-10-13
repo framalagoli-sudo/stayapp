@@ -13,7 +13,7 @@ import {
   GripVertical, AlignLeft, Image, Grid, Users, List, Star, BarChart2, Zap,
   MessageCircle, Tag, Package, HelpCircle, Video, Settings, Compass, Map,
   Calendar, FileText, Clock, Mail, Phone, MapPin, ChevronDown, ChevronUp,
-  Plus, Trash2, Copy, Clipboard, ImageIcon, Layers, Building2, GalleryHorizontal, Columns, Minus, Megaphone, Utensils, Share2, Code, SlidersHorizontal,
+  Plus, Trash2, Copy, Clipboard, ImageIcon, Layers, Building2, GalleryHorizontal, Columns, Minus, Megaphone, Utensils, Share2, Code, SlidersHorizontal, Sparkles,
 } from 'lucide-react'
 import AiButton from '@/components/admin/AiButton'
 import RichTextEditor from '@/components/admin/RichTextEditor'
@@ -21,6 +21,7 @@ import MediaPickerButton from '@/components/admin/MediaPicker'
 import UnsplashPicker from '@/components/admin/UnsplashPicker'
 import { BLOCK_PATTERNS } from '@/lib/blockPatterns'
 import { TIPO_SEZIONE, MAX_BLOCCHI_SEZIONE, idSezione, soloRiferimenti } from '@/lib/sezioni-regole'
+import { testiDaRiscrivere, conTestiRiscritti } from '@/lib/ai-blocco'
 import { datiDiNascita, scriviCampo, scriviParagrafo, campiDiTesto, postoPerFoto, scriviImmagine, azioneSuElemento } from '@/lib/editor-visuale'
 import { TIPO_TRASCINATO } from '@/components/EditorNelRiquadro'
 import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS, BLOCK_GLOW_OPTIONS, BLOCK_PADY_OPTIONS, blockSupportsBg, BLOCK_TEXT_SIZE_OPTIONS, BLOCK_TEXT_COLOR_OPTIONS, BLOCK_ICON_COLOR_OPTIONS, blockHasText, GRID_AUTO_BLOCKS, BLOCK_COLUMNS_OPTIONS } from '@/lib/blockTypes'
@@ -1619,6 +1620,49 @@ function BlockPicker({ onPick, onClose, entityTipo }) {
 }
 
 // ── Main editor ───────────────────────────────────────────────────────────────
+// «Riscrivi i testi con l'AI», in cima alla scheda di una sezione: compare solo
+// se la sezione ha testi che l'AI può riscrivere. Cambia le parole e basta:
+// foto, link, prezzi e numeri restano quelli che sono.
+const MODI_RISCRITTURA = ['Più corto', 'Più caldo', 'Più formale', 'Più semplice', 'Correggi gli errori']
+function RiscriviConAI({ block, aperto, stato, onApri, onChiedi }) {
+  const [come, setCome] = useState('')
+  if (!testiDaRiscrivere(block.type, block.data)) return null
+  const lavora = !!stato?.lavora
+  const chiedi = testo => { const t = String(testo || '').trim(); if (t.length >= 3 && !lavora) onChiedi(t.slice(0, 300)) }
+  if (!aperto) return (
+    <button data-riscrivi-apri onClick={() => onApri(true)}
+      style={{ display: 'flex', alignItems: 'center', gap: 7, width: '100%', boxSizing: 'border-box', background: '#f3f4ff', border: '1px solid #dfe2ff', borderRadius: 8, padding: '9px 12px', marginBottom: 14, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#3d4bd6' }}>
+      <Sparkles size={15} strokeWidth={1.5} color="#5b6af8" /> Riscrivi i testi con l'AI
+    </button>
+  )
+  return (
+    <div data-riscrivi style={{ background: '#f3f4ff', border: '1px solid #dfe2ff', borderRadius: 8, padding: '11px 12px 12px', marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, fontWeight: 600, color: '#3d4bd6' }}>
+        <Sparkles size={15} strokeWidth={1.5} color="#5b6af8" /> <span style={{ flex: 1 }}>Riscrivi i testi con l'AI</span>
+        <button onClick={() => onApri(false)} title="Chiudi" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b6b76', fontSize: 14, padding: 2, lineHeight: 1 }}>✕</button>
+      </div>
+      <div style={{ fontSize: 12, color: '#55556a', lineHeight: 1.45, margin: '6px 0 9px' }}>Cambia solo le parole di questa sezione: foto, link, prezzi e numeri restano come sono.</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+        {MODI_RISCRITTURA.map(m => (
+          <button key={m} data-riscrivi-modo disabled={lavora} onClick={() => chiedi(m)}
+            style={{ background: '#fff', border: '1px solid #cfd3ff', borderRadius: 20, padding: '5px 11px', cursor: lavora ? 'default' : 'pointer', fontSize: 12.5, color: lavora ? '#aaa' : '#1a1a2e' }}>{m}</button>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <input data-riscrivi-come value={come} onChange={e => setCome(e.target.value)} maxLength={300} disabled={lavora}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); chiedi(come) } }}
+          placeholder="Oppure dimmi come: «parla di più dei bambini»"
+          style={{ flex: 1, minWidth: 0, padding: '8px 10px', border: '1.5px solid #cfd3ff', borderRadius: 8, fontSize: 13, boxSizing: 'border-box', outline: 'none', background: '#fff' }} />
+        <button data-riscrivi-vai disabled={lavora || come.trim().length < 3} onClick={() => chiedi(come)}
+          style={{ background: lavora || come.trim().length < 3 ? '#c9cdf5' : '#5b6af8', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 13px', cursor: lavora || come.trim().length < 3 ? 'default' : 'pointer', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>Riscrivi</button>
+      </div>
+      {lavora && <div data-riscrivi-lavora style={{ fontSize: 12.5, color: '#3d4bd6', marginTop: 8 }}>Sto riscrivendo…</div>}
+      {stato?.errore && <div data-riscrivi-errore style={{ fontSize: 12.5, color: '#b3261e', marginTop: 8, lineHeight: 1.45 }}>{stato.errore}</div>}
+      {stato?.fatto && <div data-riscrivi-fatto style={{ fontSize: 12.5, color: '#1a6b34', marginTop: 8, lineHeight: 1.45 }}>{stato.fatto} Se non ti piace, annulla con ↶ (Ctrl+Z).</div>}
+    </div>
+  )
+}
+
 export default function PaginaEditorPage() {
   const { pageId } = useParams()
   const router = useRouter()
@@ -1669,6 +1713,9 @@ export default function PaginaEditorPage() {
   const [navSopra,    setNavSopra]    = useState(null)                // { id, dopo } mentre si riordina dalla struttura
   const [ai,          setAi]          = useState(null)                // «Chiedi all'AI»: null · { lavora: true } · { errore }
   // Le sezioni condivise del sito (vedi più sotto «Sezioni condivise»).
+  // «Riscrivi i testi con l'AI»: di quale sezione è aperto il riquadro, e a che punto è la richiesta.
+  const [riscriviPer, setRiscriviPer] = useState(null)
+  const [riscrive,    setRiscrive]    = useState(null)                // null · { id, lavora } · { id, errore } · { id, fatto }
   const [sezioni, setSezioni] = useState([])
   const [sezioniPronte, setSezioniPronte] = useState(false)
   const blocchiDi = b => Array.isArray(b?._blocchi) ? b._blocchi : (sezioni.find(s => s.id === b?.data?.sezione_id)?.blocks || [])
@@ -1767,7 +1814,7 @@ export default function PaginaEditorPage() {
     const percorso = previewUrl(); const finestra = riquadro.current?.contentWindow
     if (!percorso || !finestra) return
     // Di una sezione condivisa la pagina salva solo il riferimento: al riquadro va anche quello che contiene.
-    const daDisegnare = blocks.map(b => b.type === TIPO_SEZIONE ? { ...b, _blocchi: blocchiDi(b), _nome: nomeDi(b) } : b)
+    const daDisegnare = blocks.map(b => b.type === TIPO_SEZIONE ? { ...b, _blocchi: blocchiDi(b), _nome: nomeDi(b) } : visuale && testiDaRiscrivere(b.type, b.data) ? { ...b, _riscrivi: true } : b)
     try { finestra.postMessage({ tipo: 'oltrenova:anteprima-blocchi', percorso, blocks: daDisegnare, ...(visuale ? { visuale: true, selezionato: expandedId, scala, punto: inserisciPrima === undefined ? null : { prima: inserisciPrima }, ai } : {}) }, window.location.origin) } catch {}
   }, [blocks, sezioni, entitySlug, page?.slug, page?.entity_tipo, visuale, expandedId, scala, inserisciPrima, ai])
   useEffect(() => {
@@ -1848,6 +1895,7 @@ export default function PaginaEditorPage() {
       else if (m.azione === 'incolla') pasteBlock(m.id)
       else if (m.azione === 'condividi') rendiCondivisa(m.id)
       else if (m.azione === 'stacca') staccaSezione(m.id)
+      else if (m.azione === 'riscrivi') { setExpandedId(m.id); setInserisciPrima(undefined); setSchedaTab('contenuto'); setRiscriviPer(m.id) }
     }
   }
   // «Chiedi all'AI»: la route restituisce uno o più blocchi già ripuliti; qui si
@@ -1877,6 +1925,29 @@ export default function PaginaEditorPage() {
       tAvviso.current = setTimeout(() => setAvviso(null), note.length ? 20000 : 9000)
     } catch (e) {
       setAi({ errore: e?.message || 'Non sono riuscito a preparare la sezione. Riprova fra poco.' })
+    }
+  }
+  // «Riscrivi i testi con l'AI»: all'AI vanno solo i testi della sezione, e
+  // tornano solo testi. Si mettono sulla sezione com'è ADESSO (nel frattempo
+  // può essere cambiata), in una modifica sola: un «Annulla» li toglie.
+  async function riscriviAI(id, istruzione) {
+    if (riscrive?.lavora) return
+    const b = blocchiVivi.current.find(x => x.id === id)
+    const testi = b && testiDaRiscrivere(b.type, b.data)
+    if (!testi) return
+    setRiscrive({ id, lavora: true })
+    try {
+      const r = await apiFetch(`/api/pagine/${pageId}/ai-riscrivi`, { method: 'POST', body: JSON.stringify({ istruzione, type: b.type, data: { ...testi.campi, items: testi.items } }) })
+      const ora = blocchiVivi.current.find(x => x.id === id)
+      const esito = ora && ora.type === b.type ? conTestiRiscritti(ora.type, ora.data, r?.testi) : null
+      if (!esito?.cambiati) throw new Error('Non sono riuscito a riscrivere. Riprova, magari con altre parole.')
+      patchVivo.current(blocchiVivi.current.map(x => x.id === id ? { ...x, data: esito.data } : x))
+      const note = [...(Array.isArray(r.note) ? r.note : []), ...esito.note].filter((n, i, t) => typeof n === 'string' && t.indexOf(n) === i).slice(0, 3)
+      const fatto = `Ho riscritto ${esito.cambiati === 1 ? 'un testo' : `${esito.cambiati} testi`}. ${note.length ? note.join(' ') : 'Rileggili prima di salvare.'}`
+      setRiscrive({ id, fatto })
+      if (visuale) { clearTimeout(tAvviso.current); setAvviso({ testo: fatto, annulla: true }); tAvviso.current = setTimeout(() => setAvviso(null), note.length ? 20000 : 9000) }
+    } catch (e) {
+      setRiscrive({ id, errore: e?.message || 'Non sono riuscito a riscrivere. Riprova fra poco.' })
     }
   }
   // I comandi da tastiera dell'editor visuale: arrivano dal pannello o, come
@@ -2385,7 +2456,7 @@ export default function PaginaEditorPage() {
                     )}
                     <div key={scelto.id + schedaTab} data-scheda-blocco style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 40px', background: '#fafafa' }}>
                       {schedaTab === 'contenuto' || scelto.type === TIPO_SEZIONE
-                        ? <BlockEditor block={scelto} onChange={data => updateBlock(scelto.id, data)} entityId={entityId} entityTipo={entityTipo} />
+                        ? <><RiscriviConAI block={scelto} aperto={riscriviPer === scelto.id} stato={riscrive?.id === scelto.id ? riscrive : null} onApri={si => setRiscriviPer(si ? scelto.id : null)} onChiedi={come => riscriviAI(scelto.id, come)} /><BlockEditor block={scelto} onChange={data => updateBlock(scelto.id, data)} entityId={entityId} entityTipo={entityTipo} /></>
                         : <BlockStylePanel block={scelto} entityId={entityId} entityTipo={entityTipo} onChange={style => updateBlockStyle(scelto.id, style)} />}
                     </div>
                   </>
@@ -2694,6 +2765,7 @@ export default function PaginaEditorPage() {
                 {/* Expanded editor */}
                 {isOpen && (
                   <div style={{ borderTop: '1px solid #f0f0f0', padding: '18px 20px', background: '#fafafa' }}>
+                    <RiscriviConAI block={block} aperto={riscriviPer === block.id} stato={riscrive?.id === block.id ? riscrive : null} onApri={si => setRiscriviPer(si ? block.id : null)} onChiedi={come => riscriviAI(block.id, come)} />
                     <BlockEditor block={block} onChange={data => updateBlock(block.id, data)} entityId={entityId} entityTipo={entityTipo} />
                     <BlockStylePanel block={block} entityId={entityId} entityTipo={entityTipo} onChange={style => updateBlockStyle(block.id, style)} />
                   </div>

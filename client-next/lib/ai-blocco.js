@@ -219,6 +219,139 @@ Rispondi ESCLUSIVAMENTE con JSON valido, senza testo prima o dopo:
 {"blocks":[{"type":"...","data":{...}}],"motivo":""}`
 }
 
+// ── «Riscrivi i testi» di una sezione che c'è già ────────────────────────────
+// L'AI riceve SOLO i testi della sezione e restituisce solo testi: foto,
+// indirizzi, icone, prezzi, numeri e scelte non le passano nemmeno davanti.
+// La forma non può cambiare: un testo al posto di un testo che c'è già, stesso
+// numero di elementi. Un campo vuoto resta vuoto.
+export const ISTRUZIONE_MIN = 3
+export const ISTRUZIONE_MAX = 300
+export const TESTI_MAX = 12000
+
+// Parole e nomi di altri: una recensione riscritta non è più quella del cliente.
+const PAROLE_ALTRUI = { testimonianze: ['author', 'role', 'text'], team: ['nome'] }
+const PARAGRAFO_MAX = 1500
+
+// Un testo formattato (il documento dell'editor) si riscrive paragrafo per
+// paragrafo: titoli ed elenchi restano dove sono. Un paragrafo con dentro un
+// link non si tocca — riscriverlo vorrebbe dire perdere il link.
+const eDocumento = v => !!v && typeof v === 'object' && !Array.isArray(v) && v.type === 'doc'
+function paragrafiDi(doc) {
+  const trovati = []
+  const scendi = (n, livello) => {
+    if (!n || typeof n !== 'object' || livello > 8 || !Array.isArray(n.content)) return
+    if (n.type !== 'paragraph' && n.type !== 'heading') { n.content.forEach(c => scendi(c, livello + 1)); return }
+    const semplice = n.content.every(c => c && (c.type === 'hardBreak' || (c.type === 'text' && typeof c.text === 'string' && !(Array.isArray(c.marks) && c.marks.some(m => m?.type === 'link')))))
+    if (!semplice) return
+    const testo = n.content.map(c => c.type === 'hardBreak' ? '\n' : c.text).join('')
+    if (testo.trim()) trovati.push({ nodo: n, testo, formattato: n.content.some(c => Array.isArray(c.marks) && c.marks.length) })
+  }
+  scendi(doc, 0)
+  return trovati
+}
+// Il valore di un campo come lo vede l'AI: una riga di testo, o — per un testo
+// formattato — l'elenco dei suoi paragrafi. null = niente da riscrivere.
+function testoDi(v) {
+  if (typeof v === 'string') return v.trim() ? v : null
+  const paragrafi = eDocumento(v) ? paragrafiDi(v).map(p => p.testo) : Array.isArray(v) && v.length <= 200 && v.every(x => typeof x === 'string') ? v : []
+  return paragrafi.some(p => p.trim()) ? paragrafi : null
+}
+
+// I testi di un blocco che l'AI può riscrivere: { campi, items, quanti } o null.
+export function testiDaRiscrivere(type, data) {
+  const forma = Object.hasOwn(FORME, type) ? FORME[type] : null
+  if (!forma || !data || typeof data !== 'object' || Array.isArray(data)) return null
+  const prendi = (campi, da, esclusi = []) => Object.fromEntries(Object.entries(campi)
+    .filter(([k, f]) => f.k === 'testo' && !esclusi.includes(k)).map(([k]) => [k, testoDi(da[k])]).filter(([, v]) => v))
+  const campi = prendi(forma.campi, data)
+  const items = forma.lista && Array.isArray(data.items)
+    ? data.items.map(x => x && typeof x === 'object' && !Array.isArray(x) ? prendi(forma.lista.campi, x, PAROLE_ALTRUI[type]) : {}) : []
+  const quanti = Object.keys(campi).length + items.reduce((n, x) => n + Object.keys(x).length, 0)
+  return quanti ? { campi, items, quanti } : null
+}
+
+// Mette i testi riscritti al posto di quelli di prima. `nuovi` = { campi, items }.
+// Con `fonti` (lo fa la route) controlla anche i fatti: un testo che porta una
+// cifra che non stava nella sezione, nell'istruzione o nei dati resta com'era.
+// Restituisce { data, testi (solo quelli cambiati), cambiati, note } o null.
+export function conTestiRiscritti(type, data, nuovi, fonti) {
+  const prima = testiDaRiscrivere(type, data)
+  if (!prima || !nuovi || typeof nuovi !== 'object' || Array.isArray(nuovi)) return null
+  const forma = FORME[type]; const note = new Set(); let cambiati = 0
+  const noti = `${[prima.campi, ...prima.items].flatMap(x => Object.values(x).flat()).join('\n')}\n${fonti || ''}`
+  // Un testo proposto al posto di uno che c'è: null = resta quello di prima.
+  const accetta = (proposto, vecchio, max) => {
+    const v = testoPulito(proposto, max)
+    if (!v || v === testoPulito(vecchio, max)) return null
+    if (fonti !== undefined && !cifreNote(v, noti)) { note.add('Dove la riscrittura aggiungeva un numero che non conosco ho lasciato il testo di prima.'); return null }
+    cambiati++
+    return v
+  }
+  const giro = (campi, vecchi, proposti) => {
+    const fuori = {}
+    for (const [k, vecchio] of Object.entries(vecchi)) {
+      const p = proposti && typeof proposti === 'object' ? proposti[k] : undefined
+      if (typeof vecchio === 'string') { const v = accetta(p, vecchio, campi[k].max); if (v !== null) fuori[k] = v; continue }
+      // Paragrafi in numero diverso = non si sa più quale è di chi: non si toccano.
+      if (!Array.isArray(p) || p.length !== vecchio.length) continue
+      const paragrafi = vecchio.map((v0, i) => accetta(p[i], v0, PARAGRAFO_MAX))
+      if (paragrafi.some(x => x !== null)) fuori[k] = paragrafi
+    }
+    return fuori
+  }
+  // I testi cambiati dentro i dati veri: una riga al posto di una riga, un paragrafo al posto di un paragrafo.
+  const metti = (dati, cambi) => {
+    const fuori = { ...dati }
+    for (const [k, nuovo] of Object.entries(cambi)) {
+      if (typeof nuovo === 'string') { if (/<[a-z]/i.test(dati[k])) note.add('Grassetti e corsivi dei testi riscritti vanno rimessi.'); fuori[k] = nuovo; continue }
+      if (!eDocumento(dati[k])) { fuori[k] = dati[k].map((v0, i) => nuovo[i] ?? v0); continue }
+      const doc = JSON.parse(JSON.stringify(dati[k]))
+      paragrafiDi(doc).forEach((p, i) => {
+        if (nuovo[i] == null) return
+        if (p.formattato) note.add('Grassetti e corsivi dei testi riscritti vanno rimessi.')
+        p.nodo.content = nuovo[i].split('\n').flatMap((riga, j) => [...(j ? [{ type: 'hardBreak' }] : []), ...(riga ? [{ type: 'text', text: riga }] : [])])
+      })
+      fuori[k] = doc
+    }
+    return fuori
+  }
+  const campi = giro(forma.campi, prima.campi, nuovi.campi)
+  // Elementi in numero diverso = non si sa più quale testo è di chi: non si toccano.
+  const allineati = Array.isArray(nuovi.items) && nuovi.items.length === prima.items.length
+  const items = prima.items.map((x, i) => allineati ? giro(forma.lista.campi, x, nuovi.items[i]) : {})
+  const fuori = metti(data, campi)
+  if (items.length) fuori.items = data.items.map((x, i) => Object.keys(items[i]).length ? metti(x, items[i]) : x)
+  return { data: fuori, testi: { campi, items }, cambiati, note: [...note] }
+}
+
+export function promptRiscrivi({ entity, type, testi, istruzione }) {
+  const senzaMarcatura = x => Object.fromEntries(Object.entries(x).map(([k, v]) => [k, Array.isArray(v) ? v.map(p => testoPulito(p, 4000)) : testoPulito(v, 4000)]))
+  return `Sei l'assistente dell'editor di un sito. Il titolare ha già scritto una sezione della sua pagina (${FORME[type].cosa}) e ti chiede di riscriverne i testi.
+
+REGOLE
+- Rispondi con lo STESSO JSON che ricevi: stesse chiavi, stesso numero di elementi in "items", nello stesso ordine. Cambi solo i valori.
+- Dove un valore è un ELENCO di paragrafi, restituisci un elenco con lo stesso numero di paragrafi, nello stesso ordine: riscrivi ognuno al suo posto, senza unirli né dividerli.
+- Fai quello che chiede l'istruzione e nient'altro. Un testo che va già bene lascialo identico.
+- NON AGGIUNGERE FATTI: prezzi, numeri, orari, indirizzi, nomi, premi, anni che non stanno già nei testi o nell'istruzione. E quelli che ci sono non cambiarli.
+- Scrivi nella lingua dei testi. Niente marcatura (né HTML né asterischi). Nei testi lunghi separa i paragrafi con una riga vuota.
+- Un titolo resta un titolo e l'etichetta di un pulsante resta di poche parole.
+- Se l'istruzione non è un modo di riscrivere dei testi (chiede foto, colori, una sezione nuova, altro), non riscrivere: rispondi {"motivo":"…"} con una frase breve, in parole semplici, dando del tu, che dice cosa si può chiedere qui.
+
+L'ATTIVITÀ
+Nome: ${entity?.name || '(senza nome)'}${entity?.settore ? `\nSettore: ${entity.settore}` : ''}
+
+I TESTI DI ADESSO
+${JSON.stringify({ campi: senzaMarcatura(testi.campi), items: testi.items.map(senzaMarcatura) }, null, 1)}
+
+L'ISTRUZIONE DEL TITOLARE
+"""
+${istruzione}
+"""
+
+Rispondi ESCLUSIVAMENTE con JSON valido, senza testo prima o dopo:
+{"campi":{...},"items":[...],"motivo":""}`
+}
+
 // Il JSON nella risposta dell'AI, anche se arriva dentro un recinto di codice.
 export function leggiRisposta(raw) {
   const m = String(raw || '').match(/\{[\s\S]*\}/)

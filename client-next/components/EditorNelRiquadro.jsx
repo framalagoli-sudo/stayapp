@@ -662,12 +662,13 @@ export function useEditorNelRiquadro(editor, blocks, ridisegna) {
       const voce = (az, testo, tasti, spento) => '<button type="button" data-az="' + az + '"' + (spento ? ' disabled' : '') + '>' + testo + '<small>' + (tasti || '') + '</small></button>'
       const condivisa = (sez.getAttribute('data-nome') || '').startsWith('Sezione condivisa')
       menu.innerHTML = voce('duplica', 'Duplica', 'Ctrl+D') + voce('copia', 'Copia', 'Ctrl+C') + voce('incolla', 'Incolla qui sotto', 'Ctrl+V', !appunti) + '<hr>' +
+        (blocchiOra.find(b => b?.id === id)?._riscrivi === true ? voce('riscrivi', "Riscrivi i testi con l'AI…") : '') +
         (condivisa ? voce('stacca', 'Stacca da questa pagina') : voce('condividi', 'Rendi condivisa…')) + '<hr>' +
         voce('aggiungi', 'Aggiungi un blocco qui sopra') + voce('su', 'Sposta su', '', i === 0) + voce('giu', 'Sposta giù', '', i === tutte.length - 1) + '<hr>' + voce('elimina', 'Elimina', 'Canc')
       menu.dataset.id = id
       menu.style.display = 'flex'
       menu.style.left = Math.max(4, Math.min(e.clientX, window.innerWidth - 226 / scalaOra)) + 'px'
-      menu.style.top = Math.max(4, Math.min(e.clientY, window.innerHeight - 300 / scalaOra)) + 'px'
+      menu.style.top = Math.max(4, Math.min(e.clientY, window.innerHeight - 336 / scalaOra)) + 'px'
     }
     const sulMenu = e => {
       const b = e.target.closest?.('button'); if (!b || b.disabled) return
