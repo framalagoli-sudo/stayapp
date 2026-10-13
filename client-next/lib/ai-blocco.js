@@ -281,7 +281,8 @@ export function conTestiRiscritti(type, data, nuovi, fonti) {
   const noti = `${[prima.campi, ...prima.items].flatMap(x => Object.values(x).flat()).join('\n')}\n${fonti || ''}`
   // Un testo proposto al posto di uno che c'è: null = resta quello di prima.
   const accetta = (proposto, vecchio, max) => {
-    const v = testoPulito(proposto, max)
+    // L'AI scrive l'apostrofo dritto: dove il testo di prima usava quello tipografico, resta quello.
+    const v = String(vecchio).includes('’') && !String(vecchio).includes("'") ? testoPulito(proposto, max).replaceAll("'", '’') : testoPulito(proposto, max)
     if (!v || v === testoPulito(vecchio, max)) return null
     if (fonti !== undefined && !cifreNote(v, noti)) { note.add('Dove la riscrittura aggiungeva un numero che non conosco ho lasciato il testo di prima.'); return null }
     cambiati++
@@ -332,7 +333,8 @@ REGOLE
 - Rispondi con lo STESSO JSON che ricevi: stesse chiavi, stesso numero di elementi in "items", nello stesso ordine. Cambi solo i valori.
 - Dove un valore è un ELENCO di paragrafi, restituisci un elenco con lo stesso numero di paragrafi, nello stesso ordine: riscrivi ognuno al suo posto, senza unirli né dividerli.
 - Fai quello che chiede l'istruzione e nient'altro. Un testo che va già bene lascialo identico.
-- NON AGGIUNGERE FATTI: prezzi, numeri, orari, indirizzi, nomi, premi, anni che non stanno già nei testi o nell'istruzione. E quelli che ci sono non cambiarli.
+- NON INVENTARE FATTI: prezzi, numeri, orari, indirizzi, nomi, premi, anni che non stanno già nei testi. Quelli che ci sono non cambiarli.
+- Un fatto che il titolare ti DETTA nell'istruzione («aggiungi che siamo aperti dal 1987», «scrivi che abbiamo vinto tre premi») è suo e lo conosce lui: mettilo nel testo così come lo dice, senza obiettare.
 - Scrivi nella lingua dei testi. Niente marcatura (né HTML né asterischi). Nei testi lunghi separa i paragrafi con una riga vuota.
 - Un titolo resta un titolo e l'etichetta di un pulsante resta di poche parole.
 - Se l'istruzione non è un modo di riscrivere dei testi (chiede foto, colori, una sezione nuova, altro), non riscrivere: rispondi {"motivo":"…"} con una frase breve, in parole semplici, dando del tu, che dice cosa si può chiedere qui.
