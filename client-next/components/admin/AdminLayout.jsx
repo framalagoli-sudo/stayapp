@@ -143,6 +143,68 @@ function CreditoAIBanner({ attivo, pathname }) {
   )
 }
 
+// ─── I pezzi del menu ──────────────────────────────────────────────────────
+// ⛔ Stavano DENTRO `AdminLayout`. Un componente definito dentro un altro è una
+// funzione nuova a ogni ridisegno: React lo prende per un componente diverso,
+// butta via tutto il menu e lo ricostruisce. Aprendo «Calendario e risorse» la
+// barra laterale spariva per un istante, la pagina si accorciava e il browser
+// la riportava in cima: la tendina si apriva, ma mille pixel più in basso, e
+// sembrava che il clic non facesse niente (segnalato da Francesco il 13/10/2026;
+// si vedeva solo con una barra lunga, cioè da super_admin con un'azienda scelta).
+// È la stessa trappola della nota 22 di CLAUDE.md. Qui fuori restano gli stessi.
+const navLinkStyle = (isActive, sub = false) => ({
+  display: 'block',
+  padding: sub ? '6px 12px 6px 16px' : '9px 12px',
+  marginBottom: 1,
+  borderRadius: 8,
+  color: isActive ? '#fff' : '#aaa',
+  background: isActive ? 'rgba(255,255,255,0.13)' : 'transparent',
+  textDecoration: 'none',
+  fontSize: sub ? 13 : 14,
+})
+
+function NavItem({ to, icon: Icon, label, sub = false, end = false, activeOverride = false }) {
+  const pathname = usePathname()
+  const isActive = end ? pathname === to : pathname.startsWith(to)
+  return (
+    <Link href={to} style={navLinkStyle(isActive || activeOverride, sub)}>
+      <span style={{ display: 'flex', alignItems: 'center', gap: sub ? 7 : 9 }}>
+        {Icon && <Icon size={sub ? 13 : 15} strokeWidth={1.8} style={{ flexShrink: 0 }} />}
+        {label}
+      </span>
+    </Link>
+  )
+}
+
+function SectionHeader({ label }) {
+  return (
+    <div style={{ fontSize: 10, fontWeight: 700, color: '#555', letterSpacing: 1, padding: '12px 12px 4px', textTransform: 'uppercase' }}>
+      {label}
+    </div>
+  )
+}
+
+function Divider() {
+  return <div className="sidebar-divider" />
+}
+
+function CollapseSection({ label, icon: Icon, isOpen, onToggle, children }) {
+  return (
+    <>
+      <button className="sidebar-collapse-btn" onClick={onToggle}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+          {Icon && <Icon size={15} strokeWidth={1.8} style={{ flexShrink: 0 }} />}
+          {label}
+        </span>
+        <span style={{ fontSize: 14, opacity: 0.4, transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>›</span>
+      </button>
+      <div className="collapse-body" style={{ maxHeight: isOpen ? 800 : 0 }}>
+        {children}
+      </div>
+    </>
+  )
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function AdminLayout({ children }) {
   const { profile, signOut } = useAuth()
@@ -217,58 +279,6 @@ export default function AdminLayout({ children }) {
     : null
 
   // ─── Style helpers ────────────────────────────────────────────────────────
-  const navLinkStyle = (isActive, sub = false) => ({
-    display: 'block',
-    padding: sub ? '6px 12px 6px 16px' : '9px 12px',
-    marginBottom: 1,
-    borderRadius: 8,
-    color: isActive ? '#fff' : '#aaa',
-    background: isActive ? 'rgba(255,255,255,0.13)' : 'transparent',
-    textDecoration: 'none',
-    fontSize: sub ? 13 : 14,
-  })
-
-  // ─── Shared sub-components ────────────────────────────────────────────────
-  function NavItem({ to, icon: Icon, label, sub = false, end = false, activeOverride = false }) {
-    const isActive = end ? pathname === to : pathname.startsWith(to)
-    return (
-      <Link href={to} style={navLinkStyle(isActive || activeOverride, sub)}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: sub ? 7 : 9 }}>
-          {Icon && <Icon size={sub ? 13 : 15} strokeWidth={1.8} style={{ flexShrink: 0 }} />}
-          {label}
-        </span>
-      </Link>
-    )
-  }
-
-  function SectionHeader({ label }) {
-    return (
-      <div style={{ fontSize: 10, fontWeight: 700, color: '#555', letterSpacing: 1, padding: '12px 12px 4px', textTransform: 'uppercase' }}>
-        {label}
-      </div>
-    )
-  }
-
-  function Divider() {
-    return <div className="sidebar-divider" />
-  }
-
-  function CollapseSection({ label, icon: Icon, isOpen, onToggle, children }) {
-    return (
-      <>
-        <button className="sidebar-collapse-btn" onClick={onToggle}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-            {Icon && <Icon size={15} strokeWidth={1.8} style={{ flexShrink: 0 }} />}
-            {label}
-          </span>
-          <span style={{ fontSize: 14, opacity: 0.4, transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>›</span>
-        </button>
-        <div className="collapse-body" style={{ maxHeight: isOpen ? 800 : 0 }}>
-          {children}
-        </div>
-      </>
-    )
-  }
 
   function renderBookingSection(titolo = VOCI.booking.label) {
     return (
@@ -302,6 +312,7 @@ export default function AdminLayout({ children }) {
   }
 
   // ─── Entity switcher (header) ─────────────────────────────────────────────
+  // Chiamata come funzione, non montata come componente: vedi «I pezzi del menu».
   function EntitySwitcher() {
     const allEntities = [
       ...strutture.map(e => ({ id: e.id, name: e.name, key: `s:${e.id}` })),
@@ -462,13 +473,13 @@ export default function AdminLayout({ children }) {
       )}
 
       {/* Entity switcher — admin azienda, staff, e super_admin quando ha un'azienda attiva */}
-      {(isAdminAzienda || isStaff || (isSuperAdmin && activeAziendaId)) && <EntitySwitcher />}
+      {(isAdminAzienda || isStaff || (isSuperAdmin && activeAziendaId)) && EntitySwitcher()}
 
       <nav style={{ flex: 1, padding: '0 12px', overflowY: 'auto' }}>
 
         <NavItem to="/admin" icon={LayoutDashboard} label="Dashboard" end />
 
-        {isLegacyStruttura ? <MenuStorico /> : menu.map(g => (
+        {isLegacyStruttura ? MenuStorico() : menu.map(g => (
           <Fragment key={g.titolo}>
             <Divider />
             <SectionHeader label={g.titolo} />
