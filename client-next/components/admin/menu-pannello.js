@@ -27,7 +27,7 @@ import { funzioneAttiva, staffPuoAprire } from '@/lib/funzioni'
 // funzioni le decidiamo noi per categoria (STRATEGIA.md §6.1, 24/09).
 export const SEZIONI = {
   sito:     { label: 'Sito web',             icon: Globe },
-  theme:    { label: 'Aspetto',              icon: Palette },
+  theme:    { label: 'Marchio e stile',              icon: Palette },
   domini:   { label: 'Indirizzo web',        icon: Globe },
   chatbot:  { label: 'Assistente',           icon: Bot,             funzione: 'chatbot' },
   moduli:   { label: 'App del QR',           icon: Layers,          nomeSezione: { struttura: 'modules' } },

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useRistorante } from '../../../hooks/useRistorante'
 import AspettoApp from '../AspettoApp'
+import LogoNellApp from '@/components/admin/LogoNellApp'
 
 const DEFAULT_MODULES = {
   pwa_active: true,
@@ -68,6 +69,7 @@ export default function RistoranteModuliPage() {
       <p style={descStyle}>Configura le sezioni visibili ai clienti nell'app QR del ristorante.</p>
 
       <AspettoApp theme={ristorante.theme || {}} onSave={theme => save({ theme })} />
+      <LogoNellApp minisito={ristorante.minisito} onSave={minisito => save({ minisito }).catch(() => {})} />
 
       <div style={cardStyle}>
         {MODULE_CONFIG.map(({ key, label, desc }) => (

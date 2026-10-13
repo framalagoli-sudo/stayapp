@@ -22,6 +22,7 @@ import MediaPickerButton from '@/components/admin/MediaPicker'
 import UnsplashPicker from '@/components/admin/UnsplashPicker'
 import { BLOCK_PATTERNS, blocchiDiSezione } from '@/lib/blockPatterns'
 import GalleriaSezioni from '@/components/admin/GalleriaSezioni'
+import MarchioEStile from '@/components/admin/MarchioEStile'
 import { TIPO_SEZIONE, MAX_BLOCCHI_SEZIONE, idSezione, soloRiferimenti } from '@/lib/sezioni-regole'
 import { testiDaRiscrivere, conTestiRiscritti } from '@/lib/ai-blocco'
 import { datiDiNascita, scriviCampo, scriviParagrafo, campiDiTesto, postoPerFoto, scriviImmagine, azioneSuElemento } from '@/lib/editor-visuale'
@@ -1880,6 +1881,8 @@ export default function PaginaEditorPage() {
   const [entitySlug, setEntitySlug] = useState(null)
   // Colori e caratteri del sito: la galleria delle sezioni pronte li usa per le anteprime.
   const [temaSito, setTemaSito] = useState(null)
+  // «Stile» nell'editor visuale: logo, colori e caratteri del sito, accanto alla pagina.
+  const [stileAperto, setStileAperto] = useState(false)
   const [sitePages,  setSitePages]  = useState([])   // pagine sorelle → link interni
   const [copied,     setCopied]     = useState(false)
 
@@ -2079,7 +2082,7 @@ export default function PaginaEditorPage() {
       // Intestazione e piede valgono per tutto il sito: si dice dove si cambiano, con la porta per andarci.
       const dove = { struttura: 'struttura', ristorante: 'ristoranti', attivita: 'attivita' }[page.entity_tipo]
       clearTimeout(tAvviso.current)
-      setAvviso({ testo: m.cosa === 'intestazione' ? "L'intestazione è la stessa su tutte le pagine: si cambia in «Sito web → Menu & Layout»." : 'Il piede è lo stesso su tutte le pagine: si cambia in «Sito web → Menu & Layout».', apri: dove ? `/admin/${dove}/${page.entity_id}/sito?tab=layout` : null })
+      setAvviso({ testo: m.cosa === 'intestazione' ? "L'intestazione è la stessa su tutte le pagine: si cambia in «Sito web → Menu, intestazione e piede»." : 'Il piede è lo stesso su tutte le pagine: si cambia in «Sito web → Menu, intestazione e piede».', apri: dove ? `/admin/${dove}/${page.entity_id}/sito?tab=layout` : null })
       tAvviso.current = setTimeout(() => setAvviso(null), 12000)
     } else if (m.tipo === 'oltrenova:blocco-azione' && esiste(m.id)) {
       if (m.azione === 'su') spostaDi(m.id, -1)
@@ -2291,6 +2294,11 @@ export default function PaginaEditorPage() {
   }, [dirty])
   function esci() { if (!dirty || window.confirm('Ci sono modifiche non salvate: uscendo si perdono. Uscire lo stesso?')) router.back() }
 
+  function aggiornaStile() {
+    setPreviewNonce(n => n + 1)
+    const nome = page.entity_tipo === 'struttura' ? 'properties' : page.entity_tipo === 'ristorante' ? 'ristoranti' : 'attivita'
+    apiFetch(`/api/${nome}/${page.entity_id}`).then(d => { if (d?.theme && typeof d.theme === 'object') setTemaSito(d.theme) }).catch(() => {})
+  }
   function patchPage(key, val) { setPage(p => ({ ...p, [key]: val })); setDirty(true) }
   function patchBlocks(nb) { nb = allineaSezioni(nb); setPast(p => [...p.slice(-49), blocks]); setFuture([]); setBlocks(nb); setDirty(true) }
   function undo() { if (!past.length) return; setAvviso(null); setFuture(f => [blocks, ...f]); setBlocks(past[past.length - 1]); setPast(p => p.slice(0, -1)); setDirty(true) }
@@ -2593,6 +2601,19 @@ export default function PaginaEditorPage() {
         }
         return (
           <div data-editor-visuale style={{ position: 'fixed', inset: 0, zIndex: 900, background: '#e9e9ee', display: 'flex', flexDirection: 'column' }}>
+            {stileAperto && page?.entity_id && (
+              <aside data-pannello-stile style={{ position: 'absolute', top: 56, right: 0, bottom: 0, width: 400, maxWidth: '92vw', zIndex: 60, background: '#fff', borderLeft: '1px solid #e4e4ec', boxShadow: '-12px 0 40px rgba(0,0,0,0.14)', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #ececf2', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <strong style={{ fontSize: 15, color: '#1a1a2e' }}>Marchio e stile</strong>
+                  <button onClick={() => setStileAperto(false)} aria-label="Chiudi" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#888', lineHeight: 1 }}>✕</button>
+                </div>
+                <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 24px' }}>
+                  {/* Il tema si salva da solo: a ogni scelta la pagina accanto si ricarica con la faccia nuova,
+                      e le modifiche ai blocchi non ancora salvate le vengono rimandate come sempre. */}
+                  <MarchioEStile compatto tipo={page.entity_tipo} id={page.entity_id} onCambiato={aggiornaStile} />
+                </div>
+              </aside>
+            )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', background: '#fff', borderBottom: '1px solid #e2e2ea', flexShrink: 0 }}>
               <button onClick={() => { setVisuale(false); setInserisciPrima(undefined); setAvviso(null); if (previewDevice === 'tablet') setPreviewDevice('desktop') }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#666', padding: '6px 4px', flexShrink: 0 }}>← Torna all'elenco dei blocchi</button>
               <strong style={{ flex: 1, minWidth: 0, fontSize: 14, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{page.titolo || 'Pagina senza titolo'}</strong>
@@ -2609,6 +2630,7 @@ export default function PaginaEditorPage() {
                 <button onClick={() => setPreviewDevice('tablet')} style={devBtn(previewDevice === 'tablet')}>Tablet</button>
                 <button onClick={() => setPreviewDevice('mobile')} style={devBtn(previewDevice === 'mobile')}>Telefono</button>
               </div>
+              <button data-apri-stile onClick={() => setStileAperto(v => !v)} title="Logo, colori e caratteri di tutto il sito" style={{ ...devBtn(stileAperto), display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}><Sparkles size={14} strokeWidth={1.5} /> Stile</button>
               <button onClick={openPreview} title="Apre la pagina in una scheda nuova, com'è sul sito" style={{ background: '#f0f0f4', border: 'none', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', fontSize: 13, color: '#1a1a2e', flexShrink: 0 }}>{dirty ? 'Salva e apri ↗' : 'Apri ↗'}</button>
               <button onClick={() => save()} disabled={saving || !dirty} title="Salva (Ctrl+S)"
                 style={{ background: dirty ? '#1a1a2e' : '#e0e0e0', color: dirty ? '#fff' : '#999', border: 'none', borderRadius: 8, padding: '9px 20px', cursor: dirty ? 'pointer' : 'default', fontSize: 14, fontWeight: 600, flexShrink: 0 }}>

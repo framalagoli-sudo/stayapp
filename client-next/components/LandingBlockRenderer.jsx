@@ -17,6 +17,7 @@ import { ricco } from '@/lib/testo-ricco'
 import { t as tr } from '@/lib/i18n'
 import { focalValido, formaScheda, rapportoOppure } from '@/lib/formati-foto'
 import { oraLocale } from '@/lib/fuso'
+import { stileTitoli } from '@/lib/fonts'
 import { getPreset, fieldOptions, evidenzaDi, etichettaEUnita } from '@/lib/vetrinePresets'
 
 // Sicurezza: accetta solo http(s), mailto:, tel: o path interni; blocca javascript:/data: ecc.
@@ -2808,6 +2809,11 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
 
   // Senza una copertina col suo titolo la pagina non ha un H1: lo diventa il
   // primo titolo di sezione (vedi promuoviPrimoTitolo).
+  // Come si compongono i titoli col carattere scelto (peso, spazio fra le
+  // lettere, maiuscolo). Solo per i caratteri che lo dichiarano: con quelli di
+  // sempre non esce nessuna regola. Serve `!important` perché ogni blocco
+  // scrive il peso del suo titolo sull'elemento.
+  const comeTitoli = stileTitoli(heading)
   let mancaH1 = !blocks.flatMap(b => b?.type === 'sezione' && Array.isArray(b._blocchi) ? b._blocchi : [b]).some(b => (b?.type === 'hero' && b.data?.title) || (b?.type === 'hero_slider' && b.data?.slides?.[0]?.title))
 
   return (
@@ -2891,8 +2897,9 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         .lbr-logo-item img { height: 48px; max-width: 140px; object-fit: contain; filter: grayscale(100%) opacity(0.5); transition: filter 0.35s ease; display: block; }
         .lbr-logo-item img:hover { filter: grayscale(0%) opacity(1); }
         .lbr-logo-item a { display: block; }
+        ${comeTitoli ? `.lbr-radice h1, .lbr-radice h2 { font-weight: ${comeTitoli.peso} !important; letter-spacing: ${comeTitoli.spazio} !important;${comeTitoli.maiuscolo ? ' text-transform: uppercase !important;' : ''} }${comeTitoli.unPeso ? ' .lbr-radice { font-synthesis-weight: none; }' : ''}` : ''}
       `}</style>
-      <div ref={animRef} style={{ '--icon-color': (entity?.theme?.iconColor || primary) }}>
+      <div ref={animRef} className="lbr-radice" style={{ '--icon-color': (entity?.theme?.iconColor || primary) }}>
         {blocks.map((b, i) => {
           const disegna = (x, prossimo, primo) => {
             let el = applyBlockStyle(renderBlock(x, blockInverted(x, primary, sec), prossimo), x, { primary, secondary: sec })

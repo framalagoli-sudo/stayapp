@@ -4,8 +4,8 @@ import { useProperty } from '../../../hooks/useProperty'
 import { useAuth } from '../../../context/AuthContext'
 import { apiFetch } from '../../../lib/api'
 import CollegamentiSection from '../../../components/admin/CollegamentiSection'
-import { CampoImmagine } from '../../../components/admin/CampoImmagine'
 import { ExternalLink, X } from 'lucide-react'
+import RimandoAlMarchio from '@/components/admin/RimandoAlMarchio'
 
 const AMENITY_PRESETS = [
   'Wi-Fi gratuito', 'Parcheggio', 'Piscina', 'Spa', 'Palestra', 'Ristorante',
@@ -85,11 +85,6 @@ export default function PropertyInfoPage() {
     save({ amenities: updated }).catch(() => {})
   }
 
-  // Il caricamento lo fa `CampoImmagine`; qui resta il salvataggio, che avviene
-  // subito. Stringa vuota = «Rimuovi», e in colonna ci va `null`, non ''.
-  async function salvaFoto(field, url) {
-    try { await save({ [field]: url || null }) } catch (e) { alert(e.message) }
-  }
 
   async function handleSlugSave() {
     const clean = slugify(slugInput)
@@ -149,47 +144,7 @@ export default function PropertyInfoPage() {
         </div>
       )}
 
-      {/* Logo & Cover */}
-      <div style={{ ...cardStyle, marginBottom: 20 }}>
-        <h3 style={{ marginTop: 0, marginBottom: 16, fontSize: 15 }}>Logo e copertina</h3>
-        <div style={{ marginBottom: 24 }}>
-          <CampoImmagine
-            etichetta="Logo"
-            valore={property.logo_url}
-            onChange={url => salvaFoto('logo_url', url)}
-            endpoint={`/api/upload/logo?property_id=${propertyId || property?.id}`}
-            adatta="contieni" sfondo="#f5f5f5" altezza={88}
-          />
-        </div>
-        {/* ⛔ Questo campo mancava SOLO alle strutture, mentre la colonna
-            (`logo_dark_url`, migration 064), la route che la scrive e il sito
-            che la usa c'erano già da tempo: era costruito tutto tranne la
-            porta. Ristoranti e attività ce l'avevano. */}
-        <div style={{ marginBottom: 24 }}>
-          <CampoImmagine
-            etichetta="Logo per sfondi scuri (negativo)"
-            aiuto="Versione chiara del logo, usata su footer e header scuri. Se vuota, si usa il logo normale."
-            valore={property.logo_dark_url}
-            onChange={url => salvaFoto('logo_dark_url', url)}
-            endpoint={`/api/upload/logo?property_id=${propertyId || property?.id}&field=logo_dark_url`}
-            adatta="contieni" sfondo="#1a1a2e" altezza={88}
-          />
-        </div>
-        <div>
-          <CampoImmagine
-            etichetta="Foto di copertina"
-            valore={property.cover_url}
-            onChange={url => salvaFoto('cover_url', url)}
-            endpoint={`/api/upload/cover?property_id=${propertyId || property?.id}`}
-            unsplash unsplashQuery={property.name || ''}
-            aiuto="Si vede come striscia in cima all'app del QR, con il nome sopra: scegli la parte che deve restare visibile."
-            // L'anteprima ha la forma della striscia vera (circa 2:1 sul telefono),
-            // così il punto si sceglie guardando il ritaglio che vedranno i clienti.
-            anteprima="2 / 1"
-            focale={property.cover_focal} onFocale={v => salvaFoto('cover_focal', v)}
-          />
-        </div>
-      </div>
+      <RimandoAlMarchio href={`/admin/struttura/${propertyId || property?.id}/theme`} />
 
       <form onSubmit={handleSubmit} style={cardStyle}>
         {FIELDS.map(({ key, label, type, placeholder }) => (

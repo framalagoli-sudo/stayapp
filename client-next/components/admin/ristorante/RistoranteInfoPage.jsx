@@ -4,8 +4,8 @@ import { useParams } from 'next/navigation'
 import { useRistorante } from '../../../hooks/useRistorante'
 import { apiFetch } from '../../../lib/api'
 import CollegamentiSection from '../../../components/admin/CollegamentiSection'
-import { CampoImmagine } from '../../../components/admin/CampoImmagine'
 import { ExternalLink } from 'lucide-react'
+import RimandoAlMarchio from '@/components/admin/RimandoAlMarchio'
 
 const FIELDS = [
   { key: 'name',        label: 'Nome ristorante *', type: 'text' },
@@ -54,12 +54,6 @@ export default function RistoranteInfoPage() {
     try { await save(updates) } catch {}
   }
 
-  // Il caricamento lo fa `CampoImmagine`; qui resta solo il salvataggio, che
-  // avviene subito — su questa pagina la foto non aspetta un pulsante Salva.
-  // Stringa vuota = «Rimuovi», e in colonna ci va `null`, non ''.
-  async function salvaFoto(field, url) {
-    try { await save({ [field]: url || null }) } catch (e) { alert(e.message) }
-  }
 
   if (loading) return <p style={loadingStyle}>Caricamento…</p>
   if (!ristorante) return <p style={errorStyle}>Ristorante non trovato.</p>
@@ -82,79 +76,7 @@ export default function RistoranteInfoPage() {
       </div>
       <p style={descStyle}>Dati di base del ristorante visibili ai clienti nell'app.</p>
 
-      {/* Logo & Cover */}
-      <div style={cardStyle}>
-        <h3 style={sectionTitle}>Logo e copertina</h3>
-
-        <div style={{ marginBottom: 24 }}>
-          <CampoImmagine
-            etichetta="Logo"
-            valore={ristorante.logo_url}
-            onChange={url => salvaFoto('logo_url', url)}
-            endpoint={`/api/upload/restaurant-logo?ristorante_id=${id}`}
-            adatta="contieni" sfondo="#f5f5f5" altezza={88}
-          />
-        </div>
-
-        <div style={{ marginBottom: 24 }}>
-          <CampoImmagine
-            etichetta="Logo per sfondi scuri (negativo)"
-            aiuto="Versione chiara del logo, usata su footer e header scuri. Se vuota, si usa il logo normale."
-            valore={ristorante.logo_dark_url}
-            onChange={url => salvaFoto('logo_dark_url', url)}
-            endpoint={`/api/upload/restaurant-logo?ristorante_id=${id}&field=logo_dark_url`}
-            adatta="contieni" sfondo="#1a1a2e" altezza={88}
-          />
-        </div>
-
-        <div style={{ marginBottom: 24 }}>
-          <label style={lblStyle}>Logo nell'app ospite</label>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {[['auto', 'Automatico'], ['light', 'Chiaro'], ['dark', 'Scuro (negativo)']].map(([v, label]) => {
-              const active = (ristorante.minisito?.app_logo || 'auto') === v
-              return (
-                <button key={v} type="button"
-                  onClick={() => save({ minisito: { ...(ristorante.minisito || {}), app_logo: v } }).catch(() => {})}
-                  style={{ padding: '8px 16px', borderRadius: 8, border: `1.5px solid ${active ? '#1a1a2e' : '#ddd'}`, background: active ? '#1a1a2e' : '#fff', color: active ? '#fff' : '#555', fontSize: 13, fontWeight: active ? 700 : 500, cursor: 'pointer' }}>
-                  {label}
-                </button>
-              )
-            })}
-          </div>
-          <p style={{ margin: '6px 0 0', fontSize: 11, color: '#aaa' }}>L'header dell'app ha sfondo scuro: "Automatico" usa il logo negativo se caricato. Scegli "Chiaro" o "Scuro" per forzare.</p>
-        </div>
-
-        <div style={{ marginBottom: 24 }}>
-          <label style={lblStyle}>Dimensione logo (header)</label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {[['small', 'Piccolo'], ['medium', 'Medio'], ['large', 'Grande']].map(([v, label]) => {
-              const active = (ristorante.minisito?.logo_size || 'medium') === v
-              return (
-                <button key={v} type="button"
-                  onClick={() => save({ minisito: { ...(ristorante.minisito || {}), logo_size: v } }).catch(() => {})}
-                  style={{ padding: '8px 16px', borderRadius: 8, border: `1.5px solid ${active ? '#1a1a2e' : '#ddd'}`, background: active ? '#1a1a2e' : '#fff', color: active ? '#fff' : '#555', fontSize: 13, fontWeight: active ? 700 : 500, cursor: 'pointer' }}>
-                  {label}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        <div>
-          <CampoImmagine
-            etichetta="Foto di copertina"
-            valore={ristorante.cover_url}
-            onChange={url => salvaFoto('cover_url', url)}
-            endpoint={`/api/upload/restaurant-cover?ristorante_id=${id}`}
-            unsplash unsplashQuery={ristorante.name || ''}
-            aiuto="Si vede come striscia in cima all'app del QR, con il nome sopra: scegli la parte che deve restare visibile."
-            // L'anteprima ha la forma della striscia vera (circa 2:1 sul telefono),
-            // così il punto si sceglie guardando il ritaglio che vedranno i clienti.
-            anteprima="2 / 1"
-            focale={ristorante.cover_focal} onFocale={v => salvaFoto('cover_focal', v)}
-          />
-        </div>
-      </div>
+      <RimandoAlMarchio href={`/admin/ristoranti/${id}/theme`} />
 
       {/* Info form */}
       <form onSubmit={handleSubmit} style={cardStyle}>

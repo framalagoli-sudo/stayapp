@@ -2,9 +2,9 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useAttivita } from '../../../hooks/useAttivita'
-import { CampoImmagine } from '../../../components/admin/CampoImmagine'
 import { ExternalLink } from 'lucide-react'
 import CollegamentiSection from '../../../components/admin/CollegamentiSection'
+import RimandoAlMarchio from '@/components/admin/RimandoAlMarchio'
 
 const FIELDS = [
   { key: 'name',        label: 'Nome *', type: 'text' },
@@ -54,11 +54,6 @@ export default function AttivitaInfoPage() {
     try { await save(updates) } catch {}
   }
 
-  // Il caricamento lo fa `CampoImmagine`; qui resta il salvataggio, che avviene
-  // subito. Stringa vuota = «Rimuovi», e in colonna ci va `null`, non ''.
-  async function salvaFoto(field, url) {
-    try { await save({ [field]: url || null }) } catch (e) { alert(e.message) }
-  }
 
   if (loading) return <p style={loadingStyle}>Caricamento…</p>
   if (!attivita) return <p style={errorStyle}>Attività non trovata.</p>
@@ -81,79 +76,7 @@ export default function AttivitaInfoPage() {
       </div>
       <p style={descStyle}>Dati di base dell'attività visibili ai clienti.</p>
 
-      {/* Logo & Cover */}
-      <div style={cardStyle}>
-        <h3 style={sectionTitle}>Logo e copertina</h3>
-
-        <div style={{ marginBottom: 24 }}>
-          <CampoImmagine
-            etichetta="Logo"
-            valore={attivita.logo_url}
-            onChange={url => salvaFoto('logo_url', url)}
-            endpoint={`/api/upload/attivita-logo?attivita_id=${id}`}
-            adatta="contieni" sfondo="#f5f5f5" altezza={88}
-          />
-        </div>
-
-        <div style={{ marginBottom: 24 }}>
-          <CampoImmagine
-            etichetta="Logo per sfondi scuri (negativo)"
-            aiuto="Versione chiara del logo, usata su footer e header scuri. Se vuota, si usa il logo normale."
-            valore={attivita.logo_dark_url}
-            onChange={url => salvaFoto('logo_dark_url', url)}
-            endpoint={`/api/upload/attivita-logo?attivita_id=${id}&field=logo_dark_url`}
-            adatta="contieni" sfondo="#1a1a2e" altezza={88}
-          />
-        </div>
-
-        <div style={{ marginBottom: 24 }}>
-          <label style={lblStyle}>Logo nell'app ospite</label>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {[['auto', 'Automatico'], ['light', 'Chiaro'], ['dark', 'Scuro (negativo)']].map(([v, label]) => {
-              const active = (attivita.minisito?.app_logo || 'auto') === v
-              return (
-                <button key={v} type="button"
-                  onClick={() => save({ minisito: { ...(attivita.minisito || {}), app_logo: v } }).catch(() => {})}
-                  style={{ padding: '8px 16px', borderRadius: 8, border: `1.5px solid ${active ? '#1a1a2e' : '#ddd'}`, background: active ? '#1a1a2e' : '#fff', color: active ? '#fff' : '#555', fontSize: 13, fontWeight: active ? 700 : 500, cursor: 'pointer' }}>
-                  {label}
-                </button>
-              )
-            })}
-          </div>
-          <p style={{ margin: '6px 0 0', fontSize: 11, color: '#aaa' }}>L'header dell'app ha sfondo scuro: "Automatico" usa il logo negativo se caricato. Scegli "Chiaro" o "Scuro" per forzare.</p>
-        </div>
-
-        <div style={{ marginBottom: 24 }}>
-          <label style={lblStyle}>Dimensione logo (header)</label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {[['small', 'Piccolo'], ['medium', 'Medio'], ['large', 'Grande']].map(([v, label]) => {
-              const active = (attivita.minisito?.logo_size || 'medium') === v
-              return (
-                <button key={v} type="button"
-                  onClick={() => save({ minisito: { ...(attivita.minisito || {}), logo_size: v } }).catch(() => {})}
-                  style={{ padding: '8px 16px', borderRadius: 8, border: `1.5px solid ${active ? '#1a1a2e' : '#ddd'}`, background: active ? '#1a1a2e' : '#fff', color: active ? '#fff' : '#555', fontSize: 13, fontWeight: active ? 700 : 500, cursor: 'pointer' }}>
-                  {label}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        <div>
-          <CampoImmagine
-            etichetta="Foto di copertina"
-            valore={attivita.cover_url}
-            onChange={url => salvaFoto('cover_url', url)}
-            endpoint={`/api/upload/attivita-cover?attivita_id=${id}`}
-            unsplash unsplashQuery={attivita.name || ''}
-            aiuto="Si vede come striscia in cima all'app del QR, con il nome sopra: scegli la parte che deve restare visibile."
-            // L'anteprima ha la forma della striscia vera (circa 2:1 sul telefono),
-            // così il punto si sceglie guardando il ritaglio che vedranno i clienti.
-            anteprima="2 / 1"
-            focale={attivita.cover_focal} onFocale={v => salvaFoto('cover_focal', v)}
-          />
-        </div>
-      </div>
+      <RimandoAlMarchio href={`/admin/attivita/${id}/theme`} />
 
       {/* Info form */}
       <form onSubmit={handleSubmit} style={cardStyle}>

@@ -575,8 +575,8 @@ export default function SitoPage({ entityTipo }) {
   const TABS = [
     { id: 'home',   label: 'Home',         Icon: Home },
     { id: 'pagine', label: 'Pagine',        Icon: FileText },
-    { id: 'layout', label: 'Menu & Layout', Icon: Navigation },
-    { id: 'impostazioni', label: 'SEO & Impostazioni', Icon: Settings },
+    { id: 'layout', label: 'Menu, intestazione e piede', Icon: Navigation },
+    { id: 'impostazioni', label: 'SEO e tracciamento', Icon: Settings },
     { id: 'traduzioni', label: 'Traduzioni', Icon: Languages },
     { id: 'versioni', label: 'Versioni',    Icon: History },
   ]
@@ -645,8 +645,8 @@ export default function SitoPage({ entityTipo }) {
         const trk = seoForm.tracking_cfg || {}
         return (
           <div style={{ maxWidth: 640 }}>
-            <h3 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 700 }}>SEO & Impostazioni</h3>
-            <p style={{ color: '#666', fontSize: 13, marginTop: 0, marginBottom: 8 }}>Titolo e descrizione per Google e social, link prenotazione, social del sito.</p>
+            <h3 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 700 }}>SEO e tracciamento</h3>
+            <p style={{ color: '#666', fontSize: 13, marginTop: 0, marginBottom: 8 }}>Titolo e descrizione per Google e per i social, verifica di Search Console, codici di tracciamento. Frase, link di prenotazione e social sono in «Menu, intestazione e piede».</p>
 
             <label style={lbl}>Titolo SEO</label>
             <input style={inp} value={seoForm.seo_title} maxLength={70} onChange={e => setF('seo_title', e.target.value)} placeholder="Es. Hotel Belvedere — Mare e relax in Puglia" />
@@ -656,27 +656,8 @@ export default function SitoPage({ entityTipo }) {
             <textarea style={{ ...inp, resize: 'vertical' }} rows={3} value={seoForm.seo_description} maxLength={180} onChange={e => setF('seo_description', e.target.value)} placeholder="Breve descrizione mostrata nei risultati di ricerca." />
             <span style={{ fontSize: 11, color: '#aaa' }}>{seoForm.seo_description.length}/160 consigliati</span>
 
-            <label style={lbl}>Tagline (sottotitolo)</label>
-            <input style={inp} value={seoForm.tagline} onChange={e => setF('tagline', e.target.value)} placeholder="Es. La tua vacanza inizia qui" />
-
-            <label style={lbl}>Link prenotazione (booking esterno)</label>
-            <input style={inp} value={seoForm.booking_url} onChange={e => setF('booking_url', e.target.value)} placeholder="https://..." />
-
             <label style={lbl}>Verifica Google Search Console</label>
             <input style={inp} value={seoForm.google_site_verification} onChange={e => setF('google_site_verification', e.target.value)} placeholder="codice meta google-site-verification" />
-
-            <label style={{ ...lbl, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <input type="checkbox" checked={seoForm.show_pwa_link} onChange={e => setF('show_pwa_link', e.target.checked)} />
-              Mostra nell'header il link all'app ospiti / menu (ristoranti: "Vedi menu")
-            </label>
-
-            <h4 style={{ margin: '24px 0 4px', fontSize: 14, fontWeight: 700 }}>Social</h4>
-            {[['instagram', 'Instagram'], ['facebook', 'Facebook'], ['tripadvisor', 'TripAdvisor'], ['whatsapp', 'WhatsApp (numero)']].map(([k, label]) => (
-              <div key={k}>
-                <label style={lbl}>{label}</label>
-                <input style={inp} value={seoForm.social[k] || ''} onChange={e => setSoc(k, e.target.value)} placeholder={k === 'whatsapp' ? '+39...' : 'https://...'} />
-              </div>
-            ))}
 
             <h4 style={{ margin: '24px 0 4px', fontSize: 14, fontWeight: 700 }}>Tracking / Pixel</h4>
             <p style={{ color: '#888', fontSize: 12, marginTop: 0, marginBottom: 4 }}>Codici di monitoraggio iniettati sul sito pubblico. Lascia vuoto se non li usi.</p>
@@ -996,8 +977,8 @@ export default function SitoPage({ entityTipo }) {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <div>
-                <h2 style={{ margin: '0 0 4px', fontSize: 18, color: '#1a1a2e' }}>Header & Footer</h2>
-                <p style={{ margin: 0, fontSize: 13, color: '#888' }}>Personalizza la barra di navigazione e il footer del sito.</p>
+                <h2 style={{ margin: '0 0 4px', fontSize: 18, color: '#1a1a2e' }}>Intestazione e piede</h2>
+                <p style={{ margin: 0, fontSize: 13, color: '#888' }}>La barra in cima e il piede del sito: valgono per tutte le pagine. Logo, colori e caratteri sono in «Marchio e stile».</p>
               </div>
               <button
                 onClick={saveHeaderFooter}
@@ -1266,6 +1247,49 @@ export default function SitoPage({ entityTipo }) {
                 </div>
               </div>
 
+            </div>
+
+            {/* Quello che intestazione e piede mostrano oltre al menu. Stava in
+                «SEO & Impostazioni», lontano dall'interruttore «mostra i social». */}
+            <div data-sito-social style={{ ...cardStyle, padding: 20, marginTop: 16 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e', marginBottom: 4 }}>Frase, prenotazione e social</div>
+              <p style={{ margin: '0 0 14px', fontSize: 12.5, color: '#888' }}>Compaiono nell'intestazione e nel piede di tutte le pagine.</p>
+              {(() => {
+                const inp = { width: '100%', padding: '9px 11px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13.5, boxSizing: 'border-box', fontFamily: 'inherit' }
+                const lbl = { display: 'block', fontSize: 12, fontWeight: 600, color: '#555', marginBottom: 5 }
+                const setF = (c, v) => setSeoForm(x => ({ ...x, [c]: v }))
+                return (
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14 }}>
+                      <div>
+                        <label style={lbl}>Frase sotto il nome</label>
+                        <input data-sito-frase style={inp} value={seoForm.tagline} onChange={e => setF('tagline', e.target.value)} placeholder="Es. La tua vacanza inizia qui" />
+                      </div>
+                      <div>
+                        <label style={lbl}>Link per prenotare (se usi un sistema esterno)</label>
+                        <input style={inp} value={seoForm.booking_url} onChange={e => setF('booking_url', e.target.value)} placeholder="https://..." />
+                      </div>
+                      {[['instagram', 'Instagram'], ['facebook', 'Facebook'], ['tripadvisor', 'TripAdvisor'], ['whatsapp', 'WhatsApp (numero)']].map(([c, nome]) => (
+                        <div key={c}>
+                          <label style={lbl}>{nome}</label>
+                          <input data-sito-social-campo={c} style={inp} value={seoForm.social[c] || ''} onChange={e => setSeoForm(x => ({ ...x, social: { ...x.social, [c]: e.target.value } }))} placeholder={c === 'whatsapp' ? '+39...' : 'https://...'} />
+                        </div>
+                      ))}
+                    </div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: '#333', marginTop: 14 }}>
+                      <input type="checkbox" checked={seoForm.show_pwa_link} onChange={e => setF('show_pwa_link', e.target.checked)} />
+                      Mostra nell'intestazione il link all'app del QR (per i ristoranti: «Vedi menu»)
+                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
+                      <button type="button" data-sito-social-salva onClick={saveSeo} disabled={savingSeo || !entityData}
+                        style={{ padding: '10px 20px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: savingSeo ? 'not-allowed' : 'pointer' }}>
+                        {savingSeo ? 'Salvataggio…' : 'Salva'}
+                      </button>
+                      {savedSeo && <span style={{ color: '#16a34a', fontSize: 13, fontWeight: 600 }}>✓ Salvato</span>}
+                    </div>
+                  </>
+                )
+              })()}
             </div>
           </div>
 

@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useProperty } from '../../../hooks/useProperty'
 import AspettoApp from '../AspettoApp'
+import LogoNellApp from '@/components/admin/LogoNellApp'
 
 const NAV_MODULE_DEFS = [
   { key: 'info',         label: 'Tab Informazioni',        desc: "Tab Info nell'app — orari, WiFi, indirizzo" },
@@ -81,6 +82,7 @@ export default function PropertyModulesPage() {
       <p style={descStyle}>Configura le sezioni e le funzionalità visibili ai clienti nell'app QR.</p>
 
       <AspettoApp theme={property.theme || {}} onSave={theme => save({ theme })} />
+      <LogoNellApp minisito={property.minisito} onSave={minisito => save({ minisito }).catch(() => {})} />
 
       {/* ── Navigazione ── */}
       <SectionTitle>Navigazione — Tab</SectionTitle>
