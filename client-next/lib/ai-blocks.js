@@ -25,6 +25,8 @@ export const AI_BLOCKS_SCHEMA = `BLOCCHI DISPONIBILI — usa SOLO questi tipi (r
 • divisore: { variant("wave"|"diagonal"), color("muted"|"primary") }  ← separatore decorativo tra sezioni
 • newsletter: { title, subtitle }
 • listino: { titolo, sottotitolo(""), items:[{name, description(""), price}], nota(""), due_colonne(bool) }  ← TANTE voci col loro prezzo (servizi, trattamenti, tariffe). "price" è un TESTO, scritto com'è ("25 €", "da 30 €", "su richiesta"). due_colonne:true da 8 voci in su. "nota" = riga sotto ("Prezzi IVA inclusa"). NON per il menù di un ristorante (lì "menu"). "pacchetti" = 2-4 piani a confronto; "listino" = un elenco.
+• tabella: { titolo, intestazioni:["", "nome colonna", …], items:[{ celle:["etichetta della riga", "valore", …] }], nota("") }  ← SOLO se i contenuti forniti contengono già una tabella (orario settimanale, confronto fra proposte, tariffe per stagione): stesse righe e stesse celle, parola per parola. Massimo 6 colonne; ogni riga ha tante celle quante le intestazioni. MAI inventare una cella.
+• citazione: { text, author(""), role("") }  ← SOLO una frase che nei contenuti forniti è riportata come citazione (un motto, una frase della stampa). MAI inventarla. Per le recensioni dei clienti c'è "testimonianze".
 • form_builder: { form_token(""), titolo_sezione("Contattaci") }
 • recapiti: { titolo("Dove siamo"), sottotitolo(""), mostra_mappa(true) }  ← indirizzo, telefono, email, WhatsApp, orari e mappa. NON ha testi suoi: li prende da soli dai dati dell'attività. NON scriverci dentro recapiti né orari.
 • gallery (auto): data:{} · services (auto): data:{}`

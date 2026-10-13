@@ -46,6 +46,8 @@ const FORME = {
   highlights:  { cosa: 'punti in evidenza: icona + frase breve', campi: { titolo: t(120) }, lista: { campi: { icon: ICONA, text: t(120) }, max: 8 } },
   steps:       { cosa: 'come funziona, a passi numerati', campi: { titolo: t(120) }, lista: { campi: { icon: ICONA, title: t(100), text: t(400) }, max: 6 } },
   accordion:   { cosa: 'sezioni apribili per contenuti lunghi', campi: { titolo: t(120) }, lista: { campi: { title: t(140), text: t(1200) }, max: 8 } },
+  linguette:   { cosa: 'più contenuti nello stesso spazio, uno per linguetta (i corsi, le sedi, le stagioni): il nome della linguetta è di una-tre parole', campi: { titolo: t(120) }, lista: { campi: { title: t(40), text: t(1200) }, max: 6 } },
+  titolo:      { cosa: 'un titolo da solo, con una riga sotto, che apre un gruppo di sezioni', campi: { title: t(140), subtitle: t(240), size: uno('medium', 'large', 'small') } },
   faq:         { cosa: 'domande frequenti', campi: { titolo: t(120) }, lista: { campi: { question: t(200), answer: t(800) }, max: 8 } },
   stats:       { cosa: 'numeri grandi (anni, clienti, coperti)', campi: { titolo: t(120) }, lista: { campi: { value: NUMERO, label: t(80) }, max: 4 } },
   testimonianze: { cosa: 'recensioni dei clienti', campi: { titolo: t(120) }, lista: { campi: { author: t(80), role: t(80), text: t(700) }, max: 6 } },
@@ -165,6 +167,7 @@ export function ripulisci(grezzi, ctx) {
       if (forma.campi[dove] === DOVE && data[testo] && !data[dove]) note.add('Il pulsante compare quando scegli dove porta, dalla scheda a sinistra.')
     }
     if (g.type === 'pulsante' && !data.text) continue
+    if (g.type === 'titolo' && !data.title) continue
     const b = { id: ctx.nuovoId(), type: g.type, data }
     const fondo = g.style && typeof g.style === 'object' ? g.style.bg : null
     if (['dark', 'light', 'gradient'].includes(fondo) && !['hero', 'stats', 'cta_banner', 'divisore', 'menu'].includes(g.type)) b.style = { bg: fondo }

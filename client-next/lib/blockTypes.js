@@ -13,6 +13,8 @@ export const BLOCK_TYPES = [
   { type: 'hero',         label: 'Hero / Copertina',   group: 'layout',      emoji: '🌄', desc: 'Sezione full-screen con foto, titolo, tagline e CTA — ideale come primo blocco della homepage' },
   { type: 'hero_slider',  label: 'Hero slider',        group: 'layout',      emoji: '🎞️', desc: 'Copertina full-screen con più slide a scorrimento (immagine, titolo, sottotitolo, pulsanti) — frecce, puntini, swipe e autoplay' },
   { type: 'about',        label: 'Blocco testo',       group: 'layout',      emoji: '📝', desc: 'Titolo + paragrafo di testo' },
+  { type: 'titolo',       label: 'Titolo',             group: 'layout',      emoji: '🔤', desc: 'Un titolo da solo, con una riga sotto se serve — per aprire un gruppo di sezioni' },
+  { type: 'citazione',    label: 'Citazione',          group: 'layout',      emoji: '❝', desc: 'Una frase in grande, con chi l\'ha detta: un motto, una frase della stampa, il pensiero di chi guida l\'attività' },
   { type: 'pulsante',     label: 'Pulsante',           group: 'layout',      emoji: '🔘', desc: 'Bottone con link, stile (pieno/bordato) e allineamento' },
   { type: 'foto_testo',   label: 'Foto + Testo',       group: 'layout',      emoji: '🖼️', desc: 'Immagine affiancata al testo (ripetibile)' },
   { type: 'paragrafi',    label: 'Card paragrafi',     group: 'layout',      emoji: '🗂️', desc: 'Griglia card con icona, titolo, testo' },
@@ -20,6 +22,8 @@ export const BLOCK_TYPES = [
   { type: 'steps',        label: 'Steps / Processo',   group: 'layout',      emoji: '🔢', desc: 'Passaggi numerati con icona e testo' },
   { type: 'colonne',      label: 'Colonne',            group: 'layout',      emoji: '▦', desc: 'Due o tre colonne di testo affiancate' },
   { type: 'accordion',    label: 'Accordion',          group: 'layout',      emoji: '🪗', desc: 'Sezioni a fisarmonica (titolo + contenuto) apribili — per contenuti lunghi' },
+  { type: 'linguette',    label: 'Schede a linguette', group: 'layout',      emoji: '🗂', desc: 'Più contenuti nello stesso spazio: si sceglie la linguetta e sotto cambia il testo' },
+  { type: 'tabella',      label: 'Tabella',            group: 'layout',      emoji: '▤', desc: 'Righe e colonne: un confronto fra proposte, l\'orario settimanale dei corsi, le tariffe per stagione' },
   { type: 'divisore',     label: 'Divisore / Spazio',  group: 'layout',      emoji: '➖', desc: 'Spazio vuoto, linea o separatore a forma (onda/diagonale) tra le sezioni' },
   { type: 'social',       label: 'Social',             group: 'layout',      emoji: '🔗', desc: 'Icone dei social con link' },
   { type: 'sezione',      label: 'Sezione condivisa',  group: 'layout',      emoji: '♻️', desc: 'Una sezione scritta una volta e usata su più pagine: la cambi in un posto e cambia ovunque' },
@@ -27,6 +31,7 @@ export const BLOCK_TYPES = [
   { type: 'stats',        label: 'Statistiche',        group: 'marketing',   emoji: '📊', desc: 'Banda scura con numeri grandi' },
   { type: 'cta_banner',   label: 'Banner CTA',         group: 'marketing',   emoji: '📣', desc: 'Banda colorata con call to action (ripetibile)' },
   { type: 'annuncio',     label: 'Barra annuncio',     group: 'marketing',   emoji: '📢', desc: 'Striscia sottile con annuncio/promo e link — di solito come primo blocco' },
+  { type: 'popup',        label: 'Popup',              group: 'marketing',   emoji: '🪧', desc: 'Un riquadro che compare sopra la pagina dopo qualche secondo: un avviso, una promozione, un invito' },
   { type: 'countdown',    label: 'Countdown',          group: 'marketing',   emoji: '⏳', desc: 'Conto alla rovescia verso una data (evento, lancio, offerta)' },
   { type: 'testimonianze',label: 'Testimonianze',      group: 'marketing',   emoji: '💬', desc: 'Card recensioni con stelle e autore' },
   { type: 'punteggio',    label: 'Voto su Google',     group: 'marketing',   emoji: '⭐', desc: 'Il voto vero preso da Google, con la data di lettura — si aggiorna da solo' },
@@ -66,6 +71,17 @@ export const BLOCK_DEFAULTS = {
   divisore:     { variant: 'space', size: 'medium' },
   annuncio:     { text: '', link_text: '', link_url: '', bg: 'primary' },
   accordion:    { titolo: '', items: [] },
+  linguette:    { titolo: '', items: [] },
+  titolo:       { title: '', subtitle: '', size: 'medium' },
+  // Parole di qualcuno: chi le ha dette è facoltativo (un motto non ha autore).
+  citazione:    { text: '', author: '', role: '' },
+  // La prima cella di ogni riga è la sua etichetta. `evidenzia` = quale
+  // colonna mettere in risalto (0 = nessuna): è ciò che fa di una tabella un confronto.
+  tabella:      { titolo: '', intestazioni: ['', '', ''], items: [], nota: '', evidenzia: 0 },
+  // `dopo` = secondi prima che compaia; `giorni` = per quanti giorni non si
+  // ripresenta a chi l'ha già visto (0 = a ogni visita). Numeri, non parole:
+  // una parola qui verrebbe tradotta insieme ai testi.
+  popup:        { title: '', text: '', image_url: '', button_text: '', button_url: '', dopo: 5, giorni: 7 },
   social:       { titolo: '', items: [] },
   countdown:    { titolo: '', sottotitolo: '', target: '' },
   before_after: { before_url: '', after_url: '', before_label: 'Prima', after_label: 'Dopo' },
@@ -196,7 +212,7 @@ export const BLOCK_PADY_OPTIONS = [
 ]
 // Blocchi con testo chiaro / sfondo intenzionalmente scuro: niente controllo sfondo
 // (un fondo chiaro renderebbe il testo illeggibile).
-export const BG_EXCLUDED_TYPES = ['hero', 'hero_slider', 'stats', 'cta_banner', 'video', 'divisore', 'annuncio', 'menu', 'embed', 'before_after']
+export const BG_EXCLUDED_TYPES = ['hero', 'hero_slider', 'stats', 'cta_banner', 'video', 'divisore', 'annuncio', 'menu', 'embed', 'before_after', 'popup']
 export function blockSupportsBg(type) { return !BG_EXCLUDED_TYPES.includes(type) }
 
 // ── Tipografia per-blocco (Fase 1.5) — solo blocchi con rich-text ────────────

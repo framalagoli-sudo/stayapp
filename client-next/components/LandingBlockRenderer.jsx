@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useState, useEffect, useRef, cloneElement, createElement, isValidElement, Fragment } from 'react'
-import { flushSync } from 'react-dom'
+import { flushSync, createPortal } from 'react-dom'
 import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
 import { MapPin, Phone, Mail, Star, Heart, Award, Wifi, Car, Waves, Sparkles, Utensils, Activity, Umbrella, Music, Wine, Coffee, Bell, Bus, Clock, Mountain, Wind, ChevronDown, ChevronLeft, ChevronRight, Calendar, Users, Check, CheckCircle, Gift, Home, Zap, Shield, Leaf, Sun, Briefcase, Wrench, Euro, Handshake, Smile, Target, TrendingUp, Globe, Camera, BookOpen, Layers, Tag, Search, X, FileText, Ruler, Gauge } from 'lucide-react'
 import { guestFetch } from '@/lib/api'
@@ -853,6 +853,103 @@ function Scorrimento({ schede, visibili, autoplay = true, intervallo = 5, frecce
   )
 }
 
+// Un riquadro che compare sopra la pagina dopo qualche secondo. Sul sito non
+// occupa posto: aspetta il suo tempo, aspetta che il banner dei cookie abbia
+// avuto risposta (due riquadri insieme sono un muro) e a chi l'ha già visto
+// non si ripresenta per i giorni scelti. Dentro l'editor visuale sta fermo
+// nella pagina, così si vede e ci si scrive.
+//
+// Tempi e giorni sono cataloghi chiusi: un valore diverso torna al predefinito.
+const POPUP_DOPO = [0, 3, 5, 10, 20, 30, 60]
+const POPUP_GIORNI = [0, 1, 7, 30]
+function improntaTesto(s) {
+  let h = 5381
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0
+  return h.toString(36)
+}
+function Popup({ block, primary, heading, siteHref, nellEditor, lang }) {
+  const d = block.data || {}
+  const [aperto, setAperto] = useState(false)
+  const pulsanteChiudi = useRef(null)
+  const dopo = POPUP_DOPO.includes(d.dopo) ? d.dopo : 5
+  const giorni = POPUP_GIORNI.includes(d.giorni) ? d.giorni : 7
+  // Un messaggio nuovo è un popup nuovo: chi aveva visto quello di prima lo rivede.
+  const chiave = `popup_visto_${block.id}_${improntaTesto(`${d.title || ''}|${d.text || ''}|${d.button_url || ''}`)}`
+
+  useEffect(() => {
+    if (nellEditor) return
+    // Nell'anteprima del pannello compare ogni volta: lì serve a guardarlo.
+    const anteprima = window.parent !== window
+    if (!anteprima) {
+      try {
+        if (giorni === 0 ? sessionStorage.getItem(chiave) === '1' : Date.now() - (Number(localStorage.getItem(chiave)) || 0) < giorni * 86400000) return
+      } catch {}
+    }
+    let timer
+    const prova = () => {
+      // Non sopra il banner dei cookie, né sopra una foto aperta o un altro popup.
+      if (document.querySelector('[data-cookie-banner], [data-foto-aperta], [data-popup-aperto]')) { timer = setTimeout(prova, 1000); return }
+      if (!anteprima) { try { giorni === 0 ? sessionStorage.setItem(chiave, '1') : localStorage.setItem(chiave, String(Date.now())) } catch {} }
+      setAperto(true)
+    }
+    timer = setTimeout(prova, dopo * 1000)
+    return () => clearTimeout(timer)
+  }, [nellEditor, chiave, dopo, giorni])
+
+  useEffect(() => {
+    if (!aperto) return
+    const tasti = e => { if (e.key === 'Escape') setAperto(false) }
+    const prima = document.activeElement
+    const scorrimento = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', tasti)
+    pulsanteChiudi.current?.focus()
+    return () => { window.removeEventListener('keydown', tasti); document.body.style.overflow = scorrimento; prima?.focus?.({ preventScroll: true }) }
+  }, [aperto])
+
+  // Il riquadro ha colori suoi, fissi: deve leggersi su qualunque sito, chiaro o scuro.
+  const riquadro = (
+    <div data-popup style={{ background: '#ffffff', borderRadius: 18, overflow: 'hidden', width: '100%', maxWidth: 460, boxShadow: '0 24px 80px rgba(0,0,0,0.35)', textAlign: 'center' }}>
+      {d.image_url && <img src={d.image_url} alt="" style={{ width: '100%', aspectRatio: '16 / 9', objectFit: 'cover', display: 'block' }} />}
+      {(d.title || d.text || (d.button_text && d.button_url)) && (
+        <div style={{ padding: '28px 26px 30px' }}>
+          {d.title && <div style={{ fontFamily: heading, fontSize: 'clamp(22px,4vw,28px)', fontWeight: 700, lineHeight: 1.2, color: '#1a1a2e', overflowWrap: 'anywhere' }} {...ricco(d.title)} />}
+          {d.text && <p style={{ margin: d.title ? '12px 0 0' : 0, fontSize: 15.5, lineHeight: 1.65, color: '#4a4a57', whiteSpace: 'pre-line', overflowWrap: 'anywhere' }} {...ricco(d.text)} />}
+          {d.button_text && d.button_url && (
+            <a href={siteHref(d.button_url)} style={{ display: 'inline-block', marginTop: 22, padding: '13px 30px', borderRadius: 50, background: primary, color: readableOn('#ffffff', primary, '#1a1a2e'), fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>{d.button_text}</a>
+          )}
+        </div>
+      )}
+    </div>
+  )
+
+  if (nellEditor) return (
+    <section style={{ padding: '36px 0', background: 'var(--sup-2)' }}>
+      <div className="lbr-section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+        <div style={{ fontSize: 12.5, color: 'var(--txt-tenue)', textAlign: 'center', lineHeight: 1.5 }}>
+          Sul sito questo riquadro non sta qui: compare sopra la pagina {dopo ? `dopo ${dopo} secondi` : 'appena si apre'}.
+        </div>
+        {riquadro}
+      </div>
+    </section>
+  )
+  if (!aperto) return null
+  return createPortal(
+    <div data-popup-aperto role="dialog" aria-modal="true" aria-label={String(d.title || '').replace(/<[^>]*>/g, '').slice(0, 120) || (lang === 'en' ? 'Notice' : 'Avviso')}
+      onClick={() => setAperto(false)}
+      style={{ position: 'fixed', inset: 0, zIndex: 99990, background: 'rgba(10,10,20,0.6)', display: 'flex', padding: 16, overflowY: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} style={{ position: 'relative', width: '100%', maxWidth: 460, margin: 'auto' }}>
+        {riquadro}
+        <button ref={pulsanteChiudi} type="button" aria-label={lang === 'en' ? 'Close' : 'Chiudi'} onClick={() => setAperto(false)}
+          style={{ position: 'absolute', top: 10, right: 10, width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.94)', color: '#1a1a2e', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, boxShadow: '0 1px 6px rgba(0,0,0,0.25)' }}>
+          <X size={18} strokeWidth={1.5} />
+        </button>
+      </div>
+    </div>,
+    document.body
+  )
+}
+
 // Una pagina senza copertina non ha un titolo principale: i blocchi scrivono i
 // loro titoli come H2. Il primo titolo di sezione che si incontra diventa
 // allora l'H1 — stesso aspetto (lo stile è scritto sull'elemento), ruolo
@@ -1101,6 +1198,8 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
   useEditorNelRiquadro(editor, blocks, setBlocchiAnteprima)
 
   const [faqOpen, setFaqOpen] = useState({})
+  // Quale linguetta è aperta, blocco per blocco (senza scelta: la prima).
+  const [linguetta, setLinguetta] = useState({})
   // Arrivano già dal server quando la pagina ha un blocco che li mostra
   // (`eventiIniziali`); il browser li richiede comunque, per averli freschi.
   const [eventi, setEventi] = useState(eventiIniziali?.prossimi || [])
@@ -1336,6 +1435,135 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
           </section>
         )
       }
+
+      // Un titolo da solo: apre un gruppo di sezioni. È un H2 come gli altri
+      // titoli di sezione, e il primo della pagina diventa l'H1.
+      case 'titolo': {
+        if (!d.title) return null
+        const grande = { small: 'clamp(22px,3vw,30px)', medium: 'clamp(28px,4vw,44px)', large: 'clamp(34px,6vw,64px)' }
+        return (
+          <section key={block.id} style={{ padding: '72px 0 8px', background: 'var(--sup)' }}>
+            <div className="lbr-section" style={{ textAlign: 'center' }}>
+              <h2 style={{ fontFamily: heading, fontSize: grande[d.size] || grande.medium, fontWeight: 700, lineHeight: 1.15, color: cTitle, margin: 0, overflowWrap: 'anywhere' }} {...ricco(d.title)} />
+              {d.subtitle && <p style={{ fontSize: 17, lineHeight: 1.6, color: cBody || 'var(--txt-medio)', margin: '14px auto 0', maxWidth: 640, whiteSpace: 'pre-line' }} {...ricco(d.subtitle)} />}
+            </div>
+          </section>
+        )
+      }
+
+      // Una frase in grande. Chi l'ha detta è facoltativo: un motto non ha autore.
+      case 'citazione': {
+        if (!d.text) return null
+        return (
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
+            <figure className="lbr-section" style={{ maxWidth: 820, textAlign: 'center' }}>
+              <div aria-hidden="true" style={{ fontFamily: heading, fontSize: 76, lineHeight: 0.6, color: inverted ? 'rgba(255,255,255,0.5)' : primary, marginBottom: 14 }}>“</div>
+              <blockquote style={{ margin: 0, fontFamily: heading, fontSize: 'clamp(21px,3.2vw,32px)', lineHeight: 1.45, fontStyle: 'italic', color: cTitle, whiteSpace: 'pre-line', overflowWrap: 'anywhere' }}>{d.text}</blockquote>
+              {(d.author || d.role) && (
+                <figcaption style={{ marginTop: 22, fontSize: 15, color: cBody || 'var(--txt-medio)' }}>
+                  {d.author && <span style={{ fontWeight: 700, color: cTitle }}>{d.author}</span>}
+                  {d.author && d.role && ' · '}
+                  {d.role && <span>{d.role}</span>}
+                </figcaption>
+              )}
+            </figure>
+          </section>
+        )
+      }
+
+      // Schede a linguette: i contenuti ci sono tutti nell'HTML (un motore di
+      // ricerca li legge), a schermo se ne vede uno per volta.
+      case 'linguette': {
+        const voci = (Array.isArray(d.items) ? d.items : []).filter(v => v && typeof v.title === 'string' && v.title)
+        if (!voci.length) return null
+        const quale = Math.min(Number.isInteger(linguetta[block.id]) ? linguetta[block.id] : 0, voci.length - 1)
+        const cTenue = inverted ? 'rgba(255,255,255,0.65)' : 'var(--txt-tenue)'
+        const cBordo = inverted ? 'rgba(255,255,255,0.2)' : 'var(--bordo)'
+        const apri = i => setLinguetta(p => ({ ...p, [block.id]: i }))
+        return (
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
+            <div className="lbr-section" style={{ maxWidth: 880 }}>
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: cTitle, marginBottom: 32 }} {...ricco(d.titolo)} />}
+              <div role="tablist" className="lbr-linguette" style={{ borderBottom: `1px solid ${cBordo}` }}>
+                {voci.map((v, i) => (
+                  <button key={v.id || i} type="button" role="tab" id={`${block.id}-l${i}`} aria-selected={i === quale} aria-controls={`${block.id}-p${i}`} tabIndex={i === quale ? 0 : -1}
+                    onClick={() => apri(i)}
+                    onKeyDown={e => {
+                      const j = e.key === 'ArrowRight' ? (i + 1) % voci.length : e.key === 'ArrowLeft' ? (i - 1 + voci.length) % voci.length : -1
+                      if (j < 0) return
+                      e.preventDefault(); apri(j); e.currentTarget.parentElement.children[j]?.focus()
+                    }}
+                    style={{ flexShrink: 0, whiteSpace: 'nowrap', padding: '12px 18px', background: 'none', border: 'none', borderBottom: `3px solid ${i === quale ? (inverted ? '#ffffff' : primary) : 'transparent'}`, marginBottom: -1, cursor: 'pointer', fontSize: 15, fontWeight: 600, fontFamily: 'inherit', color: i === quale ? cTitle : cTenue }}>
+                    <span {...ricco(v.title)} />
+                  </button>
+                ))}
+              </div>
+              {voci.map((v, i) => (
+                <div key={v.id || i} role="tabpanel" id={`${block.id}-p${i}`} aria-labelledby={`${block.id}-l${i}`} hidden={i !== quale}
+                  style={{ padding: '28px 4px 0', fontSize: 16, lineHeight: 1.75, color: cBody || 'var(--txt-medio)', whiteSpace: 'pre-line', overflowWrap: 'anywhere' }} {...ricco(typeof v.text === 'string' ? v.text : '')} />
+              ))}
+            </div>
+          </section>
+        )
+      }
+
+      // Tabella: la prima cella di ogni riga è la sua etichetta. Una colonna
+      // può essere messa in risalto (il confronto fra proposte). Su telefono
+      // scorre di lato dentro il suo riquadro, la pagina no.
+      case 'tabella': {
+        const COLONNE_MAX = 6
+        const teste = (Array.isArray(d.intestazioni) ? d.intestazioni : []).slice(0, COLONNE_MAX).map(x => typeof x === 'string' ? x : '')
+        const righe = (Array.isArray(d.items) ? d.items : []).filter(r => r && Array.isArray(r.celle) && r.celle.some(c => typeof c === 'string' && c.trim())).slice(0, 60)
+        if (!righe.length) return null
+        const n = Math.min(COLONNE_MAX, Math.max(1, teste.length, ...righe.map(r => r.celle.length)))
+        const conTeste = teste.some(x => x.trim())
+        const evid = Number.isInteger(d.evidenzia) && d.evidenzia >= 1 && d.evidenzia < n ? d.evidenzia : 0
+        const cTenue = inverted ? 'rgba(255,255,255,0.62)' : 'var(--txt-tenue)'
+        const cBordo = inverted ? 'rgba(255,255,255,0.2)' : 'var(--bordo)'
+        const risalto = j => evid && j === evid ? { background: inverted ? 'rgba(255,255,255,0.1)' : `${primary}14` } : null
+        const colonne = Array.from({ length: n }, (_, j) => j)
+        // «✓» e «✗» scritti in una cella diventano il segno.
+        const cella = v => /^[✓✔]$/.test(v) ? <Check size={18} strokeWidth={1.5} color={inverted ? '#ffffff' : `var(--icon-color, ${primary})`} aria-label={lang === 'en' ? 'Yes' : 'Sì'} />
+          : /^[✗✕×]$/.test(v) ? <X size={18} strokeWidth={1.5} color={cTenue} aria-label="No" /> : v
+        return (
+          <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
+            <div className="lbr-section" style={{ maxWidth: 980 }}>
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: cTitle, marginBottom: 36 }} {...ricco(d.titolo)} />}
+              <div className="lbr-tabella" style={{ overflowX: 'auto', border: `1px solid ${cBordo}`, borderRadius: 14 }}>
+                <table style={{ width: '100%', minWidth: n > 3 ? n * 128 : undefined, borderCollapse: 'collapse', fontSize: 15 }}>
+                  {conTeste && (
+                    <thead>
+                      <tr>
+                        {colonne.map(j => (
+                          <th key={j} scope="col" style={{ padding: '14px 16px', textAlign: j ? 'center' : 'left', fontFamily: heading, fontSize: 16, fontWeight: 700, color: cTitle, borderBottom: `2px solid ${cBordo}`, overflowWrap: 'anywhere', ...risalto(j) }}>{teste[j] || ''}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                  )}
+                  <tbody>
+                    {righe.map((r, i) => (
+                      <tr key={r.id || i}>
+                        {colonne.map(j => {
+                          const v = typeof r.celle[j] === 'string' ? r.celle[j] : ''
+                          const base = { padding: '13px 16px', borderTop: i ? `1px solid ${cBordo}` : undefined, overflowWrap: 'anywhere' }
+                          return j === 0
+                            ? <th key={j} scope="row" style={{ ...base, textAlign: 'left', fontWeight: 600, color: cTitle }}>{v}</th>
+                            : <td key={j} style={{ ...base, textAlign: 'center', color: cBody || 'var(--txt-medio)', fontWeight: evid === j ? 600 : 400, ...risalto(j) }}>{cella(v)}</td>
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {d.nota && <p style={{ margin: '16px 0 0', fontSize: 13, color: cTenue, textAlign: 'center' }}>{d.nota}</p>}
+            </div>
+          </section>
+        )
+      }
+
+      case 'popup':
+        if (!d.title && !d.text && !d.image_url) return null
+        return <Popup key={block.id} block={block} primary={primary} heading={heading} siteHref={siteHref} nellEditor={!!editor} lang={lang} />
 
       case 'social': {
         const items = (d.items || []).filter(i => i.url)
@@ -2472,6 +2700,11 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         .lbr-recapiti.soli { grid-template-columns: minmax(0, 1fr); max-width: 560px; margin: 0 auto; }
         .lbr-listino { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 56px; }
         .lbr-listino.due { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+        /* Le linguette stanno al centro finché ci stanno; quando sono troppe
+           scorrono di lato (i due margini automatici fanno tutte e due le cose). */
+        .lbr-linguette { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+        .lbr-linguette::-webkit-scrollbar { display: none; }
+        .lbr-linguette::before, .lbr-linguette::after { content: ''; margin: auto; }
         .lbr-ft-img { order: 0; }
         .lbr-ft-txt { order: 1; }
         .lbr-ft.inv .lbr-ft-img { order: 1; }

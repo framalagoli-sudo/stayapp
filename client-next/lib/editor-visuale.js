@@ -49,6 +49,19 @@ const ESEMPI = {
     { title: 'Prima sezione',   text: 'Scrivi qui il contenuto della prima sezione.' },
     { title: 'Seconda sezione', text: 'Scrivi qui il contenuto della seconda sezione.' },
   ] },
+  titolo:      { title: 'Un titolo per questa parte della pagina' },
+  citazione:   { text: 'Scrivi qui la frase da mettere in evidenza.', author: 'Chi l\'ha detta' },
+  linguette:   { items: [
+    { title: 'Prima linguetta',   text: 'Scrivi qui il contenuto della prima linguetta.' },
+    { title: 'Seconda linguetta', text: 'Scrivi qui il contenuto della seconda linguetta.' },
+    { title: 'Terza linguetta',   text: 'Scrivi qui il contenuto della terza linguetta.' },
+  ] },
+  tabella:     { intestazioni: ['', 'Prima colonna', 'Seconda colonna'], items: [
+    { celle: ['Prima riga',   'Scrivi qui', 'Scrivi qui'] },
+    { celle: ['Seconda riga', 'Scrivi qui', 'Scrivi qui'] },
+    { celle: ['Terza riga',   'Scrivi qui', 'Scrivi qui'] },
+  ] },
+  popup:       { title: 'Il titolo del tuo avviso', text: 'Scrivi qui il messaggio: una novità, una promozione, un invito.' },
   listino:     { titolo: 'Listino prezzi', items: [
     { name: 'Il nome della prima voce', description: '', price: '10 €' },
     { name: 'Il nome della seconda voce', description: 'Una riga che la descrive, se serve.', price: '20 €' },

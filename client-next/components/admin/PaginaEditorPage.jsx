@@ -14,6 +14,7 @@ import {
   MessageCircle, Tag, Package, HelpCircle, Video, Settings, Compass, Map,
   Calendar, FileText, Clock, Mail, Phone, MapPin, ChevronDown, ChevronUp,
   Plus, Trash2, Copy, Clipboard, ImageIcon, Layers, Building2, GalleryHorizontal, Columns, Minus, Megaphone, Utensils, Share2, Code, SlidersHorizontal, Sparkles,
+  Heading, Quote, Table, PanelTop, AppWindow,
 } from 'lucide-react'
 import AiButton from '@/components/admin/AiButton'
 import RichTextEditor from '@/components/admin/RichTextEditor'
@@ -68,6 +69,7 @@ const BLOCK_ICON_MAP = {
   services: Settings, activities: Compass, excursions: Map, eventi: Calendar, eventi_slider: GalleryHorizontal, vetrina: Package,
   news: FileText, booking: Clock, newsletter: Mail, contatti: Phone,
   show_map: MapPin, clienti: Building2, recapiti: MapPin, listino: List, sezione: Layers,
+  titolo: Heading, citazione: Quote, tabella: Table, linguette: PanelTop, popup: AppWindow,
 }
 const GROUP_COLORS = {
   layout: '#5b6af8', marketing: '#f97316', media: '#0891b2',
@@ -514,6 +516,78 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
         <ItemListEditor items={data.items} onChange={v => upd('items', v)}
           newItem={{ title: '', text: '' }}
           fields={[{ key: 'title', label: 'Titolo' }, { key: 'text', label: 'Contenuto', type: 'textarea', rows: 3 }]} />
+      </div>
+    )
+    case 'linguette': return (
+      <div>
+        <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <ItemListEditor items={data.items} onChange={v => upd('items', v)}
+          newItem={{ title: '', text: '' }}
+          fields={[{ key: 'title', label: 'Nome della linguetta (breve)' }, { key: 'text', label: 'Contenuto', type: 'textarea', rows: 4 }]} />
+        <p style={{ fontSize: 11, color: '#aaa', margin: '8px 0 0' }}>Sul sito si vede una linguetta per volta; la prima è quella aperta. Su telefono, se sono tante, scorrono di lato.</p>
+      </div>
+    )
+    case 'titolo': return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="Titolo" value={data.title} onChange={v => upd('title', v)} />
+        <Field label="Riga sotto il titolo (opz.)" value={data.subtitle} onChange={v => upd('subtitle', v)} multiline rows={2} />
+        <div>
+          <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 500 }}>Dimensione</label>
+          <select value={data.size || 'medium'} onChange={e => upd('size', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+            <option value="small">Piccolo</option>
+            <option value="medium">Medio</option>
+            <option value="large">Grande</option>
+          </select>
+        </div>
+        <p style={{ fontSize: 11, color: '#aaa', margin: 0 }}>Sta al centro; l'allineamento si cambia dallo Stile. La sezione che viene dopo ha il suo spazio sopra: se ti sembra troppo, lì scegli la spaziatura «Compatta».</p>
+      </div>
+    )
+    case 'citazione': return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="La frase" value={data.text} onChange={v => upd('text', v)} multiline rows={4} />
+        <Field label="Chi l'ha detta (opz.)" value={data.author} onChange={v => upd('author', v)} />
+        <Field label="Chi è (opz.)" value={data.role} onChange={v => upd('role', v)} placeholder="es. Fondatrice · La Repubblica · Cliente dal 2019" />
+        <p style={{ fontSize: 11, color: '#aaa', margin: 0 }}>Per le recensioni dei clienti con le stelle c'è il blocco «Testimonianze».</p>
+      </div>
+    )
+    case 'tabella': return <TabellaEditor data={data} onChange={onChange} />
+    case 'popup': return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div data-popup-nota style={{ fontSize: 12.5, color: '#555', lineHeight: 1.55, padding: 12, background: '#f8f9ff', borderRadius: 8, border: '1px solid #e8ecff' }}>
+          Compare sopra la pagina in cui lo metti, qualunque sia il punto. Aspetta che il visitatore abbia risposto al banner dei cookie e si chiude con la ✕, con Esc o toccando fuori.
+        </div>
+        <Field label="Titolo" value={data.title} onChange={v => upd('title', v)} />
+        <Field label="Messaggio" value={data.text} onChange={v => upd('text', v)} multiline rows={3} />
+        <CampoImmagine
+          etichetta="Immagine in cima (opz.)"
+          valore={data.image_url}
+          onChange={v => upd('image_url', v)}
+          endpoint={`/api/upload/minisito-image?entity_type=${entityTipo}&entity_id=${entityId}`}
+          indirizzo
+          anteprima="16 / 9"
+        />
+        <Field label="Testo del pulsante (opz.)" value={data.button_text} onChange={v => upd('button_text', v)} />
+        <LinkField label="Dove porta il pulsante" value={data.button_url} onChange={v => upd('button_url', v)} placeholder="Scegli una pagina o incolla un indirizzo" />
+        <p style={{ fontSize: 11, color: '#aaa', margin: 0 }}>Senza una destinazione il pulsante non compare.</p>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 130 }}>
+            <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 500 }}>Quando compare</label>
+            <select value={data.dopo ?? 5} onChange={e => upd('dopo', Number(e.target.value))} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+              <option value={0}>Appena si apre la pagina</option>
+              {[3, 5, 10, 20, 30, 60].map(s => <option key={s} value={s}>Dopo {s} secondi</option>)}
+            </select>
+          </div>
+          <div style={{ flex: 1, minWidth: 130 }}>
+            <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 500 }}>A chi l'ha già visto</label>
+            <select value={data.giorni ?? 7} onChange={e => upd('giorni', Number(e.target.value))} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+              <option value={0}>Lo rivede alla prossima visita</option>
+              <option value={1}>Non lo rivede per un giorno</option>
+              <option value={7}>Non lo rivede per una settimana</option>
+              <option value={30}>Non lo rivede per un mese</option>
+            </select>
+          </div>
+        </div>
+        <p style={{ fontSize: 11, color: '#aaa', margin: 0 }}>Vale anche per te: dopo averlo visto sul sito, per riprovarlo apri il sito in una finestra anonima. Se cambi il messaggio lo rivedono tutti. Nell'anteprima qui accanto compare ogni volta.</p>
       </div>
     )
     case 'social': return (
@@ -1154,6 +1228,8 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
 function BlockStylePanel({ block, onChange, entityId, entityTipo }) {
   // Una sezione condivisa non ha uno stile suo: ce l'hanno i blocchi che contiene.
   if (block.type === TIPO_SEZIONE) return null
+  // Un popup non è una sezione della pagina: sfondo, spaziatura e allineamento non lo toccano.
+  if (block.type === 'popup') return null
   const st = block.style || {}
   const set = (key, val) => onChange({ ...st, [key]: val })
   const showBg = blockSupportsBg(block.type)
@@ -1518,6 +1594,81 @@ function Field({ label, value, onChange, multiline, rows = 3, placeholder, style
         ? <textarea value={value || ''} onChange={e => onChange(e.target.value)} rows={rows} placeholder={placeholder} style={inputStyle()} />
         : <input type="text" value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={inputStyle()} />
       }
+    </div>
+  )
+}
+
+// ── Tabella ──────────────────────────────────────────────────────────────────
+// Una griglia di caselle: la prima riga sono i nomi delle colonne, la prima
+// casella di ogni riga è la sua etichetta. Righe e colonne hanno sempre lo
+// stesso numero di caselle: lo tiene in ordine `forma`.
+const TABELLA_COLONNE = { min: 2, max: 6 }
+const TABELLA_RIGHE_MAX = 60
+function TabellaEditor({ data, onChange }) {
+  const n = Math.min(TABELLA_COLONNE.max, Math.max(TABELLA_COLONNE.min, Array.isArray(data.intestazioni) ? data.intestazioni.length : 0))
+  const lungo = (celle, quante) => Array.from({ length: quante }, (_, j) => typeof celle?.[j] === 'string' ? celle[j] : '')
+  const teste = lungo(data.intestazioni, n)
+  const righe = (Array.isArray(data.items) ? data.items : []).map(r => ({ id: r?.id || uid(), celle: lungo(r?.celle, n) }))
+  const evid = Number.isInteger(data.evidenzia) && data.evidenzia >= 1 && data.evidenzia < n ? data.evidenzia : 0
+  const salva = cambi => onChange({ ...data, intestazioni: teste, items: righe, evidenzia: evid, ...cambi })
+
+  const scriviTesta = (j, v) => salva({ intestazioni: teste.map((x, k) => k === j ? v : x) })
+  const scriviCella = (i, j, v) => salva({ items: righe.map((r, k) => k === i ? { ...r, celle: r.celle.map((x, m) => m === j ? v : x) } : r) })
+  const piuColonna = () => salva({ intestazioni: [...teste, ''], items: righe.map(r => ({ ...r, celle: [...r.celle, ''] })) })
+  const menoColonna = j => salva({
+    intestazioni: teste.filter((_, k) => k !== j), items: righe.map(r => ({ ...r, celle: r.celle.filter((_, k) => k !== j) })),
+    evidenzia: evid === j ? 0 : evid > j ? evid - 1 : evid,
+  })
+  const piuRiga = () => salva({ items: [...righe, { id: uid(), celle: lungo([], n) }] })
+  const menoRiga = i => salva({ items: righe.filter((_, k) => k !== i) })
+  const sposta = (i, passo) => {
+    const j = i + passo; if (j < 0 || j >= righe.length) return
+    const nuove = [...righe]; [nuove[i], nuove[j]] = [nuove[j], nuove[i]]; salva({ items: nuove })
+  }
+
+  const casella = { width: '100%', minWidth: 0, padding: '7px 8px', border: '1px solid #e0e0e8', borderRadius: 6, fontSize: 12.5, boxSizing: 'border-box', fontFamily: 'inherit', background: '#fafafa' }
+  const griglia = { display: 'grid', gridTemplateColumns: `repeat(${n}, minmax(92px, 1fr)) 62px`, gap: 5, alignItems: 'center' }
+  return (
+    <div data-tabella-editor style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => salva({ titolo: v })} />
+      <div style={{ overflowX: 'auto', paddingBottom: 4 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: n * 97 + 62 }}>
+          <div style={griglia}>
+            {teste.map((x, j) => (
+              <div key={j} style={{ position: 'relative' }}>
+                <input data-tabella-testa={j} type="text" value={x} onChange={e => scriviTesta(j, e.target.value)} placeholder={j ? `Colonna ${j + 1}` : '(vuota)'} style={{ ...casella, fontWeight: 700, background: evid && evid === j ? '#eef0ff' : '#f0f0f4', paddingRight: n > TABELLA_COLONNE.min ? 22 : 8 }} />
+                {n > TABELLA_COLONNE.min && <button type="button" title="Togli questa colonna" aria-label={`Togli la colonna ${j + 1}`} onClick={() => menoColonna(j)} style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: 20, border: 'none', background: 'none', cursor: 'pointer', color: '#999', fontSize: 12, padding: 0 }}>✕</button>}
+              </div>
+            ))}
+            <span />
+          </div>
+          {righe.map((r, i) => (
+            <div key={r.id} data-tabella-riga style={griglia}>
+              {r.celle.map((x, j) => (
+                <input key={j} type="text" value={x} onChange={e => scriviCella(i, j, e.target.value)} placeholder={j ? '' : `Riga ${i + 1}`} style={{ ...casella, fontWeight: j ? 400 : 600 }} />
+              ))}
+              <div style={{ display: 'flex', gap: 2 }}>
+                <button type="button" title="Sposta su" onClick={() => sposta(i, -1)} disabled={i === 0} style={tinyBtn}>↑</button>
+                <button type="button" title="Sposta giù" onClick={() => sposta(i, 1)} disabled={i === righe.length - 1} style={tinyBtn}>↓</button>
+                <button type="button" title="Togli questa riga" aria-label={`Togli la riga ${i + 1}`} onClick={() => menoRiga(i)} style={{ ...tinyBtn, color: '#c0392b' }}>✕</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button type="button" data-tabella-riga-piu onClick={piuRiga} disabled={righe.length >= TABELLA_RIGHE_MAX} style={{ fontSize: 12, padding: '6px 14px', borderRadius: 6, border: '1px dashed #c8c8d8', background: '#fafafa', cursor: 'pointer', color: '#555' }}>+ Riga</button>
+        <button type="button" data-tabella-colonna-piu onClick={piuColonna} disabled={n >= TABELLA_COLONNE.max} style={{ fontSize: 12, padding: '6px 14px', borderRadius: 6, border: '1px dashed #c8c8d8', background: '#fafafa', cursor: n >= TABELLA_COLONNE.max ? 'not-allowed' : 'pointer', color: '#555' }}>+ Colonna{n >= TABELLA_COLONNE.max ? ` (massimo ${TABELLA_COLONNE.max})` : ''}</button>
+      </div>
+      <div>
+        <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 500 }}>Colonna in risalto</label>
+        <select value={evid} onChange={e => salva({ evidenzia: Number(e.target.value) })} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+          <option value={0}>Nessuna</option>
+          {teste.slice(1).map((x, k) => <option key={k + 1} value={k + 1}>{x.trim() || `Colonna ${k + 2}`}</option>)}
+        </select>
+      </div>
+      <Field label="Nota sotto la tabella (opz.)" value={data.nota} onChange={v => salva({ nota: v })} />
+      <p style={{ fontSize: 11, color: '#aaa', margin: 0 }}>Scrivi ✓ oppure ✗ da soli in una casella per avere il segno di spunta o la croce. Una riga tutta vuota non compare. Su telefono una tabella larga scorre di lato.</p>
     </div>
   )
 }
