@@ -12,7 +12,8 @@ metadata:
 
 ## ▶️ 13/10, terza parte — galleria delle sezioni pronte LIVE (CLAUDE.md nota 71)
 - Francesco: «template come fa Elementor… per me puoi procedere». Fatta la galleria (20 sezioni, 7 categorie, anteprima vera nei colori del sito), provata in produzione con `tests/probe-sezioni-pronte.mjs`. **Deve guardarla lui e dire quali sezioni gli piacciono**: una pagina → «Inserisci sezione pronta».
-- Detto a lui: le sezioni sono pulite ma non «da vetrina» — il limite sono i blocchi che abbiamo. Per il salto servono varianti nuove (copertina divisa testo/foto, mosaico) e altre sezioni: aspettano il suo giudizio sulla prima ventina.
+- **Secondo giro** (lui: «a livello di design siamo molto molto basic… potresti stupirmi»): copertina divisa e tipografica (`hero.layout`), blocchi `mosaico` e `scorrevole`, 27 sezioni. LIVE e provato in produzione. Aspetta il suo giudizio; idee successive solo se le chiede: linea del tempo, recensione in grande con foto, prezzi a schede con quella consigliata in risalto.
+- (Primo giro) Detto a lui: le sezioni sono pulite ma non «da vetrina» — il limite sono i blocchi che abbiamo. Per il salto servono varianti nuove (copertina divisa testo/foto, mosaico) e altre sezioni: aspettano il suo giudizio sulla prima ventina.
 - Aperti: «salva questa sezione come modello» (non fatto); Newsletter su fondo scuro illeggibile (difetto del blocco).
 
 ## ▶️ 13/10, seconda parte — cinque blocchi nuovi LIVE (CLAUDE.md nota 70)
