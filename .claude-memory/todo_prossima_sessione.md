@@ -1,14 +1,24 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — 12/10: «Chiedi all'AI» dentro la pagina LIVE (nota 68), migration alla 136. Da far provare a Francesco: Chiedi all'AI, editor visuale, sezioni condivise, foto in grande. Aperto: recensioni inventate (io no). Prossimo: «Riscrivi questa sezione». In attesa: posta di Guru, Automax su Stripe, Meta/WhatsApp, stato vero del conto Stripe, onboarding v2"
+description: "Da dove riprendere — 13/10: «Riscrivi i testi con l'AI» LIVE (nota 69), migration alla 136. Da far provare a Francesco: Riscrivi i testi, Chiedi all'AI, editor visuale, sezioni condivise, foto in grande. Prossimo: blocchi che mancano, poi stato vero del conto Stripe, sonde che lasciano sottodomini su Vercel, onboarding v2. In attesa di lui: Fondaco DNS, posta di Guru, Meta/WhatsApp, Automax su Stripe"
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-10-05T06:39:50.062Z
+  modified: 2026-10-13T10:47:44.452Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
+
+## ▶️ 13/10 — «Riscrivi i testi con l'AI» LIVE (CLAUDE.md nota 69), migration ferme alla 136
+- Fatto e provato in produzione (4 giri con l'AI vera, 0,0013 $ a richiesta): in cima alla scheda di ogni sezione (editor visuale ed elenco) e nel tasto destro. **Francesco deve provarlo**: una pagina → apri una sezione con del testo → «Riscrivi i testi con l'AI» → «Più corto».
+- Limite detto a lui: il codice ferma i **numeri** nuovi, non le frasi (l'AI vera ha aggiunto «premi per la qualità dei nostri servizi» a un «3 premi» dettato): i testi vanno riletti.
+- **Prossimo, in ordine proposto** (lui ha detto «ok vai» all'elenco del 13/10): (2) i blocchi che mancano — linguette, tabella di confronto, citazione, titolo, popup; (3) stato vero del conto Stripe; (4) **le sonde lasciano sottodomini `zz-…` su Vercel**; (5) onboarding v2.
+- **Punto 4, misurato il 13/10**: il giro dei domini in produzione (ogni 15 min) registra un sottodominio alle entità di prova mentre la sonda gira; se la sonda viene fermata, o pulisce dal locale (dove manca il token di Vercel), l'hostname resta agganciato. Il 13/10 ne ho tolti 17 vecchi (ok di Francesco: «vai con la pulizia») + `struttura-test.stayapp.it` dal vecchio progetto, poi altri 5 lasciati dalle mie sonde del giorno. Sul progetto restano 22 domini, nessuno di prova. Lasciati: `struttura-test.oltrenova.com`, `prova.oltrenova.com`.
+- **Fondaco Narni**: `fondaconarni.com` senza `www` non ha record A (zona sui nameserver SiteGround). Francesco: «dopo faccio fondaco». Servono due A su `@`: i valori si leggono dal pannello Domini. Quando dice fatto: verificare che l'indirizzo senza www apra col certificato. Domanda senza risposta: di chi è l'account SiteGround che tiene quella zona.
+- L'email di Vercel «3 domains need configuration»: `*.oltrenova.com` è un falso allarme (proxy di Cloudflare).
+- Recensioni inventate dall'AI: sempre senza risposta, non riproporre.
+- ⚠️ Sonde: `innerText()` senza `timeout` dentro un ciclo di attesa blocca la sonda per mezz'ora (30 s a giro); una sonda fermata a mano lascia azienda, utente e sottodomini di prova — pulire subito.
 
 ## ▶️ 12/10, seconda parte — «Chiedi all'AI» dentro la pagina LIVE (CLAUDE.md nota 68)
 - Fatto e provato in produzione: «+» → riquadro sulla pagina → «Chiedi all'AI» → la sezione arriva lì. Francesco deve ancora provarlo lui: una pagina → «Editor visuale» → «+» fra due sezioni → «Chiedi all'AI».
