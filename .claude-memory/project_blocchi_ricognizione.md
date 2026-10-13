@@ -17,11 +17,11 @@ Chiesta da Francesco il 12/10/2026 («manca qualche blocco più di design? fai u
 **Proposti da me, in ordine:**
 1. Foto che si ingrandiscono (lightbox) — galleria, immagine, carosello.
 2. Barra fissa su telefono «Chiama · WhatsApp · Prenota» — è un'opzione del sito, non un blocco; deve usare `sopraIlBanner` (nota 63).
-3. «Tabella» generica al posto della «tabella di confronto» del piano: copre confronto, orario settimanale dei corsi, tariffe per stagione.
+3. ✅ FATTA il 13/10 — «Tabella» generica al posto della «tabella di confronto» del piano: copre confronto, orario settimanale dei corsi, tariffe per stagione.
 4. Testo che scorre (marquee).
 5. Mosaico / bento (riquadri di misure diverse, foto o testo).
 6. Varianti di blocchi esistenti invece di blocchi nuovi: `steps` → «linea del tempo»; `hero` → testo a sinistra e foto a destra; `galleria_immagini` → mosaico.
-7. Citazione, Titolo, Linguette, Popup — già nel piano del 12/10.
+7. ✅ FATTI il 13/10 (CLAUDE.md nota 70): Citazione, Titolo, Linguette, Popup. E la «Tabella» generica del punto 3 (con una colonna in risalto fa anche da confronto).
 
 **Sconsigliati:** feed Instagram (serve Meta, e c'è `embed`), barre di avanzamento, contatori di prezzo mensile/annuale, effetti legati allo scorrimento.
 

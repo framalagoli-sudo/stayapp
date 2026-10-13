@@ -33,6 +33,14 @@ Trattamento viso (pulizia profonda e maschera) — da 45 €
 Pacchetto dieci sedute — su richiesta
 I prezzi si intendono IVA inclusa.
 
+ORARIO DEI CORSI (tabella)
+| | Lunedì | Mercoledì | Venerdì |
+| Yoga | 18:00 | 18:00 | — |
+| Pilates | 19:00 | — | 19:00 |
+
+DICONO DI NOI
+«Qui il tempo rallenta.» — Anna Verdi, fondatrice
+
 CONTATTI
 Ci trovi in Via Garibaldi 12, 05100 Terni. Telefono 0744 987654.
 Aperti dal martedì al sabato, 9:30–19:00.
@@ -73,6 +81,13 @@ try {
     esito(!!listino && ['55 €', '60 €', 'da 45 €'].every(p => listino.data.items.some(v => v.price === p)) && listino.data.items.some(v => /richiesta/i.test(v.price)), 'i prezzi sono quelli del documento, parola per parola')
     esito(html.includes('lbr-listino') && html.includes('da 45 €') && html.includes('Massaggio decontratturante'), 'sul sito il listino si legge nell’HTML')
     const rec = blocchi.find(b => b.type === 'recapiti')
+    const tab = blocchi.find(b => b.type === 'tabella')
+    const righe = tab?.data?.items || []
+    esito(!!tab && righe.length === 2 && ['Lunedì', 'Mercoledì', 'Venerdì'].every(g => (tab.data.intestazioni || []).includes(g)) && righe.every(r => typeof r.id === 'string' && Array.isArray(r.celle) && r.celle.length === tab.data.intestazioni.length) && righe[0].celle[0] === 'Yoga' && righe[1].celle.includes('19:00'),
+      'l’orario dei corsi del documento è un blocco «tabella», con le stesse celle', tab ? JSON.stringify(tab.data).slice(0, 260) : 'assente')
+    esito(html.includes('<table') && html.includes('>Pilates<'), 'sul sito la tabella si legge nell’HTML')
+    const cit = blocchi.find(b => b.type === 'citazione')
+    esito(!!cit && /Qui il tempo rallenta/.test(cit.data.text) && /Anna Verdi/.test(cit.data.author || ''), 'la frase riportata nel documento è un blocco «citazione», con chi l’ha detta', cit ? JSON.stringify(cit.data) : 'assente')
     esito(!!rec, 'c’è il blocco «recapiti»')
     esito(!!rec && !/Garibaldi|987654|Salvata|111222/.test(JSON.stringify(rec.data)), 'e dentro non c’è scritto nessun recapito', rec ? JSON.stringify(rec.data) : '')
     esito(html.includes('Via Salvata 99') && html.includes('href="tel:0744111222'), 'sul sito mostra i recapiti SALVATI, non quelli del documento')

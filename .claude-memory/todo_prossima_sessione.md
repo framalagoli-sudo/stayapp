@@ -1,6 +1,6 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — 13/10: «Riscrivi i testi con l'AI» LIVE (nota 69), migration alla 136. Da far provare a Francesco: Riscrivi i testi, Chiedi all'AI, editor visuale, sezioni condivise, foto in grande. Prossimo: blocchi che mancano, poi stato vero del conto Stripe, sonde che lasciano sottodomini su Vercel, onboarding v2. In attesa di lui: Fondaco DNS, posta di Guru, Meta/WhatsApp, Automax su Stripe"
+description: "Da dove riprendere — 13/10: cinque blocchi nuovi LIVE (Titolo, Citazione, Linguette, Tabella, Popup — nota 70) e «Riscrivi i testi con l’AI» (nota 69), migration alla 136. Da far provare a Francesco: i cinque blocchi, Riscrivi, Chiedi all’AI, editor visuale, sezioni condivise. Prossimo: stato vero del conto Stripe, sonde che lasciano sottodomini su Vercel, onboarding v2. In attesa di lui: Fondaco DNS, posta di Guru, Meta/WhatsApp, Automax su Stripe"
 metadata: 
   node_type: memory
   type: project
@@ -9,6 +9,14 @@ metadata:
 ---
 
 # Si riprende da qui
+
+## ▶️ 13/10, seconda parte — cinque blocchi nuovi LIVE (CLAUDE.md nota 70)
+- «falle tutte e 5»: Titolo, Citazione, Schede a linguette, Tabella, Popup. Provati in produzione (`tests/probe-blocchi-nuovi.mjs` verde: corpo grezzo, computer, telefono, valori ostili, /en, tabella costruita dal pannello) e nell'editor visuale in locale. **Francesco deve provarli**: una pagina → «Editor visuale» → colonna dei blocchi → «Tabella» (o Popup, Schede a linguette).
+- Detto a lui: il popup ricorda «già visto» nel browser del visitatore (anche il suo: finestra anonima per riprovarlo); citazione e popup non li scrive l'AI; la tabella non ha «Chiedi all'AI» né «Riscrivi».
+- **Non provato**: `probe-editor-visuale.mjs` in produzione coi cinque tipi (verde in locale); `generate-site` con lo schema nuovo.
+- Punto 4 ancora aperto: anche oggi una sonda locale ha lasciato un sottodominio `zz-visuale-…` su Vercel (tolto a mano). La pulizia dal locale non può staccarlo: manca il token.
+- **Prossimo**: (3) stato vero del conto Stripe, (4) sonde e sottodomini, (5) onboarding v2. Dei blocchi restano le proposte non approvate in [[project_blocchi_ricognizione]].
+- Alla chiusura della sessione del 13/10 mancano ancora: `PROGETTO.md` e la nota di sessione.
 
 ## ▶️ 13/10 — «Riscrivi i testi con l'AI» LIVE (CLAUDE.md nota 69), migration ferme alla 136
 - Fatto e provato in produzione (4 giri con l'AI vera, 0,0013 $ a richiesta): in cima alla scheda di ogni sezione (editor visuale ed elenco) e nel tasto destro. **Francesco deve provarlo**: una pagina → apri una sezione con del testo → «Riscrivi i testi con l'AI» → «Più corto».
