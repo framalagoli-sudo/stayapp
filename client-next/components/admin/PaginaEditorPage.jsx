@@ -71,6 +71,7 @@ const BLOCK_ICON_MAP = {
   news: FileText, booking: Clock, newsletter: Mail, contatti: Phone,
   show_map: MapPin, clienti: Building2, recapiti: MapPin, listino: List, sezione: Layers,
   titolo: Heading, citazione: Quote, tabella: Table, linguette: PanelTop, popup: AppWindow,
+  mosaico: Grid, scorrevole: Megaphone,
 }
 const GROUP_COLORS = {
   layout: '#5b6af8', marketing: '#f97316', media: '#0891b2',
@@ -319,6 +320,15 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
   switch (type) {
     case 'hero': return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div>
+          <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 500 }}>Impaginazione</label>
+          <select data-hero-layout value={data.layout || ''} onChange={e => upd('layout', e.target.value)} style={{ width: '100%', border: '1px solid #ddd', borderRadius: 8, padding: '8px 10px', fontSize: 13 }}>
+            <option value="">Classica — la foto a tutto schermo, il testo sopra</option>
+            <option value="split">Divisa — il testo da una parte, la foto dall'altra</option>
+            <option value="tipo">Solo titolo — parole enormi su fondo scuro, senza foto</option>
+          </select>
+        </div>
+        {data.layout && <Field label="Riga piccola sopra il titolo (opz.)" value={data.occhiello} onChange={v => upd('occhiello', v)} placeholder="es. Dal 1998 a Terni" />}
         <Field label="Titolo principale" value={data.title} onChange={v => upd('title', v)} />
         <Field label="Tagline / Sottotitolo" value={data.tagline} onChange={v => upd('tagline', v)} />
         <Field label="URL immagine di sfondo" value={data.bg_image_url} onChange={v => upd('bg_image_url', v)} placeholder="https://..." />
@@ -526,6 +536,37 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
           newItem={{ title: '', text: '' }}
           fields={[{ key: 'title', label: 'Nome della linguetta (breve)' }, { key: 'text', label: 'Contenuto', type: 'textarea', rows: 4 }]} />
         <p style={{ fontSize: 11, color: '#aaa', margin: '8px 0 0' }}>Sul sito si vede una linguetta per volta; la prima è quella aperta. Su telefono, se sono tante, scorrono di lato.</p>
+      </div>
+    )
+    case 'mosaico': return (
+      <div>
+        <Field label="Titolo sezione (opz.)" value={data.titolo} onChange={v => upd('titolo', v)} style={{ marginBottom: 12 }} />
+        <Field label="Riga sotto il titolo (opz.)" value={data.sottotitolo} onChange={v => upd('sottotitolo', v)} style={{ marginBottom: 12 }} />
+        <ItemListEditor items={data.items} onChange={v => upd('items', v)} entityId={entityId} entityTipo={entityTipo}
+          newItem={{ title: '', text: '', value: '', icon: '', image_url: '', size: '', style: '' }}
+          fields={[
+            { key: 'title', label: 'Titolo' },
+            { key: 'text', label: 'Testo (opz.)', type: 'textarea', rows: 2 },
+            { key: 'value', label: 'Numero o parola in grande (opz.)', placeholder: 'es. 25 · 4,9 · 100%' },
+            { key: 'size', label: 'Misura', type: 'select', options: [
+              { value: '', label: 'Normale' }, { value: 'wide', label: 'Largo (due colonne)' },
+              { value: 'tall', label: 'Alto (due righe)' }, { value: 'big', label: 'Grande (due colonne, due righe)' },
+            ] },
+            { key: 'style', label: 'Fondo', type: 'select', options: [
+              { value: '', label: 'Chiaro' }, { value: 'dark', label: 'Scuro' }, { value: 'color', label: 'Colore del sito' },
+            ] },
+            { key: 'image_url', label: 'Foto (opz.) — riempie il riquadro, il testo ci va sopra', type: 'image', focalKey: 'image_focal' },
+            { key: 'icon', label: 'Icona (opz.) — senza foto', type: 'icon' },
+          ]} />
+        <p style={{ fontSize: 11, color: '#aaa', margin: '8px 0 0' }}>Da computer i riquadri stanno su quattro colonne e si incastrano da soli; da telefono vanno uno sotto l'altro. Funziona meglio con un riquadro grande e gli altri attorno.</p>
+      </div>
+    )
+    case 'scorrevole': return (
+      <div>
+        <ItemListEditor items={data.items} onChange={v => upd('items', v)}
+          newItem={{ text: '' }}
+          fields={[{ key: 'text', label: 'Parola o frase breve' }]} />
+        <p style={{ fontSize: 11, color: '#aaa', margin: '8px 0 0' }}>Poche parole, corte: scorrono in grande, una piena e una a contorno. Chi ha chiesto al proprio dispositivo meno movimento le vede ferme.</p>
       </div>
     )
     case 'titolo': return (

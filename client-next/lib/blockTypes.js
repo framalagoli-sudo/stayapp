@@ -24,6 +24,8 @@ export const BLOCK_TYPES = [
   { type: 'accordion',    label: 'Accordion',          group: 'layout',      emoji: '🪗', desc: 'Sezioni a fisarmonica (titolo + contenuto) apribili — per contenuti lunghi' },
   { type: 'linguette',    label: 'Schede a linguette', group: 'layout',      emoji: '🗂', desc: 'Più contenuti nello stesso spazio: si sceglie la linguetta e sotto cambia il testo' },
   { type: 'tabella',      label: 'Tabella',            group: 'layout',      emoji: '▤', desc: 'Righe e colonne: un confronto fra proposte, l\'orario settimanale dei corsi, le tariffe per stagione' },
+  { type: 'mosaico',      label: 'Mosaico',            group: 'layout',      emoji: '🧩', desc: 'Riquadri di misure diverse nella stessa griglia: una foto, un numero grande, una frase su fondo scuro o colorato' },
+  { type: 'scorrevole',   label: 'Parole che scorrono', group: 'layout',     emoji: '💫', desc: 'Una fascia di parole grandi che passa da sola: i tuoi servizi, i tuoi valori, quello che ti distingue' },
   { type: 'divisore',     label: 'Divisore / Spazio',  group: 'layout',      emoji: '➖', desc: 'Spazio vuoto, linea o separatore a forma (onda/diagonale) tra le sezioni' },
   { type: 'social',       label: 'Social',             group: 'layout',      emoji: '🔗', desc: 'Icone dei social con link' },
   { type: 'sezione',      label: 'Sezione condivisa',  group: 'layout',      emoji: '♻️', desc: 'Una sezione scritta una volta e usata su più pagine: la cambi in un posto e cambia ovunque' },
@@ -72,6 +74,10 @@ export const BLOCK_DEFAULTS = {
   annuncio:     { text: '', link_text: '', link_url: '', bg: 'primary' },
   accordion:    { titolo: '', items: [] },
   linguette:    { titolo: '', items: [] },
+  // Ogni riquadro: `size` (big · wide · tall, o niente) e `style` (dark · color, o niente = chiaro).
+  // Sono chiavi che il traduttore salta: una parola italiana lì verrebbe tradotta.
+  mosaico:      { titolo: '', sottotitolo: '', items: [] },
+  scorrevole:   { items: [] },
   titolo:       { title: '', subtitle: '', size: 'medium' },
   // Parole di qualcuno: chi le ha dette è facoltativo (un motto non ha autore).
   citazione:    { text: '', author: '', role: '' },

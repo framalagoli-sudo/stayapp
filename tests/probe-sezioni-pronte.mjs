@@ -35,6 +35,7 @@ try {
   const ent = await deve(a.from('entita').insert({ azienda_id: az.id, tipo: 'attivita', name: 'ZZ Studio Pronte', slug, active: true, minisito: { active: true },
     address: 'Via Roma 1, 05100 Terni', phone: '0744 000000', theme: { primaryColor: ROSSO, fontHeading: 'playfair', fontBody: 'inter' } }).select().single(), 'entità')
   const tutte = await deve(a.from('pagine').insert({ entity_tipo: 'attivita', entity_id: ent.id, slug: 'zz-tutte', titolo: 'ZZ Tutte', status: 'pubblicata', blocks: [{ id: 'b0', type: 'about', data: { title: 'ZZ Prima', text: '' } }] }).select('id').single(), 'pagina')
+  const copertina = await deve(a.from('pagine').insert({ entity_tipo: 'attivita', entity_id: ent.id, slug: 'zz-copertina', titolo: 'ZZ Copertina', status: 'pubblicata', blocks: [{ id: 'h1', type: 'hero', data: { title: 'ZZ Copertina', tagline: 'ZZ Riga', bg_image_url: '', overlay_opacity: 0.5, cta1_text: '', cta1_url: '', cta2_text: '', cta2_url: '', height: 'large' } }] }).select('id').single(), 'pagina copertina')
   const visuale = await deve(a.from('pagine').insert({ entity_tipo: 'attivita', entity_id: ent.id, slug: 'zz-visuale', titolo: 'ZZ Visuale', status: 'pubblicata', blocks: [
     { id: 'v1', type: 'about', data: { title: 'ZZ Sopra', text: '' } }, { id: 'v2', type: 'about', data: { title: 'ZZ Sotto', text: '' } }] }).select('id').single(), 'pagina visuale')
 
@@ -125,6 +126,18 @@ try {
     if (FOTO) await p2.screenshot({ path: `${FOTO}/pronte-sito-${nome}.png`, fullPage: true })
     await c2.close()
   }
+
+  console.log('\nLA COPERTINA CAMBIA IMPAGINAZIONE DALLA SUA SCHEDA\n')
+  await page.goto(`${BASE}/admin/pagine/${copertina.id}`, { waitUntil: 'domcontentloaded', timeout: 120000 })
+  await page.locator('button:has(svg.lucide-chevron-down)').first().click({ timeout: 120000 })
+  const scelta = page.locator('[data-hero-layout]')
+  await scelta.waitFor({ timeout: 20000 })
+  await page.waitForLoadState('networkidle').catch(() => {}); await page.waitForTimeout(800)
+  await scelta.selectOption('split')
+  await page.getByRole('button', { name: 'Salva', exact: true }).first().click()
+  esito(await aspetta(async () => (await nelDb(copertina.id))[0].data.layout === 'split'), 'scelta «Divisa» e salvata')
+  const divisa = await (await fetch(`${BASE}/a/${slug}/p/zz-copertina`)).text()
+  esito(divisa.includes('lbr-hero-split') && divisa.includes('ZZ Copertina'), 'e sul sito la copertina è divisa, con lo stesso titolo')
 
   console.log('\nDALL’EDITOR VISUALE, NEL PUNTO SCELTO\n')
   await page.goto(`${BASE}/admin/pagine/${visuale.id}`, { waitUntil: 'domcontentloaded', timeout: 120000 })

@@ -441,7 +441,7 @@ try {
   await foto(page, '5-pagina-vuota')
 
   console.log('\nOGNI BLOCCO CHE SI SCRIVE NASCE GIÀ VISIBILE\n')
-  const scritti = ['hero', 'hero_slider', 'foto_testo', 'annuncio', 'newsletter', 'colonne', 'paragrafi', 'highlights', 'steps', 'stats', 'accordion', 'faq', 'listino', 'team', 'carosello', 'promozioni', 'pacchetti', 'titolo', 'citazione', 'linguette', 'tabella', 'popup']
+  const scritti = ['hero', 'hero_slider', 'foto_testo', 'annuncio', 'newsletter', 'colonne', 'paragrafi', 'highlights', 'steps', 'stats', 'accordion', 'faq', 'listino', 'team', 'carosello', 'promozioni', 'pacchetti', 'titolo', 'citazione', 'linguette', 'tabella', 'popup', 'mosaico', 'scorrevole']
   const muti = []
   for (const tipo of scritti) {
     await page.getByRole('button', { name: '← Blocchi' }).click()

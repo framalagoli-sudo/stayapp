@@ -31,6 +31,8 @@ const STILE = `
     background: #5b6af8; color: #fff; font: 600 12px/1.3 system-ui, sans-serif; border-radius: 0 0 8px 0; transform: scale(var(--ev-s, 1)); transform-origin: top left; }
   .ev-blocco:hover::before, .ev-blocco.ev-scelto::before { display: block; }
   .lbr-anim .ev-blocco .lbr-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+  /* Le parole che scorrono stanno ferme: su un testo che si muove non si scrive. */
+  .ev-blocco .lbr-scorre { animation: none !important; }
   .ev-blocco [data-campo] { cursor: text; outline: calc(1px * var(--ev-s, 1)) dashed transparent; outline-offset: calc(3px * var(--ev-s, 1)); border-radius: 3px; }
   .ev-blocco [data-campo]:hover { outline-color: #5b6af8; }
   .ev-blocco [data-campo]:focus { outline: calc(2px * var(--ev-s, 1)) solid #5b6af8; background: rgba(91,106,248,0.08); }

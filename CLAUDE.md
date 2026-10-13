@@ -717,6 +717,11 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - Le schede sono `div role="button"`, non `<button>`: dentro c'è una pagina intera, con i suoi pulsanti e i suoi moduli.
     - ⚠️ Trovato componendole: il blocco **Newsletter su fondo scuro non si legge** (il titolo resta scuro). La sezione pronta usa il fondo di sempre; il difetto del blocco resta da sistemare.
     - Non è un doppione: i **modelli di sito** (`lib/siteTemplates.js`, scheda «Template») fanno la home intera e cambiano il tema; i **modelli di pagina** nascono con la pagina; le **sezioni condivise** (nota 66) cambiano ovunque. Queste sono copie da riscrivere.
+    - **Secondo giro lo stesso giorno** (Francesco: «a livello di design siamo molto molto basic»). Le sezioni erano piatte perché lo erano i blocchi: titolo al centro e una griglia. Tre pezzi di design nuovi, e 7 sezioni che li usano (27 in tutto):
+      - **Copertina, due impaginazioni in più** (`hero.layout`): `split` = testo da una parte e foto dall'altra, su fondo chiaro; `tipo` = parole enormi su fondo scuro con due luci del colore del sito, senza foto. Più `occhiello` (la riga piccola sopra il titolo). **Senza `layout` la copertina è quella di sempre**: i siti online non cambiano.
+      - **`mosaico`** — riquadri di misure diverse (`size`: big · wide · tall) e toni diversi (`style`: dark · color; con `image_url` è una foto col testo sopra; `value` = numero grande). Quattro colonne, riempimento «denso»; due colonne sotto i 980px, una sotto i 560. ⚠️ `size` e `style` sono in inglese e si chiamano così **di proposito**: sono chiavi che il traduttore salta e che l'editor non offre come testo da scrivere.
+      - **`scorrevole`** — una fascia di parole grandi, una piena e una a contorno, che passa da sola. Ferma per chi ha chiesto meno movimento, e dentro l'editor visuale (su un testo che si muove non si scrive).
+      - I numeri segnaposto sono «00»: si capisce che vanno cambiati, e non sembrano veri.
     - Sonda `tests/probe-sezioni-pronte.mjs [cartella-foto]` (a mano): ogni anteprima è disegnata davvero e nei colori del sito, **tutte le sezioni inserite una per una** e rilette sulla pagina pubblica da computer e da telefono, e l'inserimento dal «+» dell'editor visuale.
 
 ---

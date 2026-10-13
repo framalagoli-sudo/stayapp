@@ -61,6 +61,13 @@ const ESEMPI = {
     { celle: ['Seconda riga', 'Scrivi qui', 'Scrivi qui'] },
     { celle: ['Terza riga',   'Scrivi qui', 'Scrivi qui'] },
   ] },
+  mosaico:     { titolo: 'Un titolo per il mosaico', items: [
+    { title: 'Il riquadro grande', text: 'Scrivi qui la cosa più importante. Dalla scheda puoi metterci una foto.', value: '', icon: '', image_url: '', size: 'big', style: 'dark' },
+    { title: 'Un numero che conta', text: '', value: '—', icon: '', image_url: '', size: '', style: '' },
+    { title: 'Un punto di forza', text: 'Descrivilo in una riga.', value: '', icon: 'star', image_url: '', size: '', style: 'color' },
+    { title: 'Un riquadro largo', text: 'Scrivi qui una frase un po\' più lunga.', value: '', icon: 'heart', image_url: '', size: 'wide', style: '' },
+  ] },
+  scorrevole:  { items: [{ text: 'La prima parola' }, { text: 'La seconda' }, { text: 'La terza' }] },
   popup:       { title: 'Il titolo del tuo avviso', text: 'Scrivi qui il messaggio: una novità, una promozione, un invito.' },
   listino:     { titolo: 'Listino prezzi', items: [
     { name: 'Il nome della prima voce', description: '', price: '10 €' },

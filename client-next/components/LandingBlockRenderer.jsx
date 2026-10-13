@@ -1332,6 +1332,60 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         const h = heightMap[d.height || 'large'] || '85vh'
         const bgImg = d.bg_image_url || entity.cover_url
         const focal = d.focal || 'center'
+        // Due impaginazioni oltre a quella di sempre (la foto a tutto schermo).
+        // Senza `layout` la copertina resta com'è: i siti online non cambiano.
+        const pulsanti = (chiaro) => (
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginTop: 34 }}>
+            {d.cta1_text && d.cta1_url && (
+              <a href={siteHref(d.cta1_url)} style={{ display: 'inline-block', padding: '16px 34px', background: primary, color: readableOn('#ffffff', primary, '#1a1a2e'), borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none', boxShadow: `0 10px 30px ${primary}55` }}>{d.cta1_text}</a>
+            )}
+            {d.cta2_text && d.cta2_url && (
+              <a href={siteHref(d.cta2_url)} style={{ display: 'inline-block', padding: '16px 30px', borderRadius: 50, fontWeight: 600, fontSize: 16, textDecoration: 'none', color: chiaro ? '#fff' : 'var(--txt)', border: `1.5px solid ${chiaro ? 'rgba(255,255,255,0.35)' : 'var(--bordo)'}` }}>{d.cta2_text}</a>
+            )}
+          </div>
+        )
+        const occhiello = (chiaro) => d.occhiello ? (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '7px 15px 7px 12px', borderRadius: 50, fontSize: 12.5, fontWeight: 600, letterSpacing: 0.4, marginBottom: 26, color: chiaro ? 'rgba(255,255,255,0.9)' : 'var(--txt-medio)', border: `1px solid ${chiaro ? 'rgba(255,255,255,0.22)' : 'var(--bordo)'}`, background: chiaro ? 'rgba(255,255,255,0.06)' : 'var(--sup-2)' }}>
+            <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: '50%', background: chiaro ? sec : primary, boxShadow: `0 0 0 4px ${chiaro ? sec : primary}33` }} />
+            <span>{d.occhiello}</span>
+          </div>
+        ) : null
+
+        // «Solo titolo»: parole enormi su un fondo scuro con due luci del colore del sito.
+        if (d.layout === 'tipo') return (
+          <section key={block.id} style={{ position: 'relative', minHeight: h, display: 'flex', alignItems: 'center', background: '#0a0a12', overflow: 'hidden' }}>
+            <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: `radial-gradient(48% 60% at 12% 18%, ${primary}66 0%, ${primary}00 70%), radial-gradient(42% 55% at 92% 88%, ${sec}55 0%, ${sec}00 70%)` }} />
+            <div aria-hidden="true" style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '72px 72px', WebkitMaskImage: 'radial-gradient(75% 75% at 50% 40%, #000 0%, transparent 100%)', maskImage: 'radial-gradient(75% 75% at 50% 40%, #000 0%, transparent 100%)' }} />
+            <div className="lbr-section" style={{ position: 'relative', zIndex: 1, width: '100%', padding: '120px 24px 96px', boxSizing: 'border-box' }}>
+              {occhiello(true)}
+              {d.title && <h1 style={{ fontFamily: heading, fontSize: 'clamp(42px,8.2vw,118px)', fontWeight: 700, color: '#fff', lineHeight: 0.98, letterSpacing: '-0.03em', margin: 0, maxWidth: 1000, overflowWrap: 'anywhere' }} {...ricco(d.title)} />}
+              {d.tagline && <p style={{ fontSize: 'clamp(17px,2vw,22px)', color: 'rgba(255,255,255,0.74)', lineHeight: 1.55, maxWidth: 600, margin: '30px 0 0' }} {...ricco(d.tagline)} />}
+              {pulsanti(true)}
+            </div>
+          </section>
+        )
+
+        // «Divisa»: il testo da una parte, la foto dall'altra, su un fondo chiaro
+        // (o scuro, se il sito è scuro). Senza foto resta un riquadro del colore del sito.
+        if (d.layout === 'split') return (
+          <section key={block.id} style={{ position: 'relative', background: 'var(--sup)', overflow: 'hidden', padding: 'clamp(104px,14vh,160px) 0 clamp(56px,9vh,110px)' }}>
+            <div aria-hidden="true" style={{ position: 'absolute', width: 680, height: 680, right: '-10%', top: '-22%', borderRadius: '50%', background: `radial-gradient(circle, ${primary}30 0%, ${primary}00 68%)`, pointerEvents: 'none' }} />
+            <div className="lbr-section lbr-hero-split" style={{ position: 'relative' }}>
+              <div style={{ minWidth: 0 }}>
+                {occhiello(false)}
+                {d.title && <h1 style={{ fontFamily: heading, fontSize: 'clamp(38px,5.4vw,72px)', fontWeight: 700, color: 'var(--txt)', lineHeight: 1.04, letterSpacing: '-0.02em', margin: 0, overflowWrap: 'anywhere' }} {...ricco(d.title)} />}
+                {d.tagline && <p style={{ fontSize: 'clamp(16px,1.7vw,20px)', color: 'var(--txt-medio)', lineHeight: 1.6, maxWidth: 520, margin: '24px 0 0' }} {...ricco(d.tagline)} />}
+                {pulsanti(false)}
+              </div>
+              <div style={{ position: 'relative', minWidth: 0 }}>
+                <div aria-hidden="true" style={{ position: 'absolute', inset: '7% -5% -5% 9%', borderRadius: 34, background: `linear-gradient(135deg, ${primary} 0%, ${sec} 100%)`, opacity: 0.18, transform: 'rotate(3deg)' }} />
+                {bgImg
+                  ? <img src={bgImg} alt="" className="lbr-hero-split-foto" style={{ position: 'relative', width: '100%', objectFit: 'cover', objectPosition: focal, borderRadius: 28, boxShadow: '0 30px 80px rgba(0,0,0,0.2)', display: 'block' }} />
+                  : <div aria-hidden="true" className="lbr-hero-split-foto" style={{ position: 'relative', width: '100%', borderRadius: 28, background: `linear-gradient(150deg, ${primary} 0%, ${sec} 100%)`, boxShadow: '0 30px 80px rgba(0,0,0,0.2)' }} />}
+              </div>
+            </div>
+          </section>
+        )
         return (
           <section key={block.id} style={{ position: 'relative', minHeight: h, display: 'flex', alignItems: 'center', justifyContent: 'center', background: (bgImg || d.bg_video) ? 'transparent' : `linear-gradient(135deg, #1a1a2e 0%, #0d1a2a 100%)`, overflow: 'hidden' }}>
             {d.bg_video
@@ -1556,6 +1610,81 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                 </table>
               </div>
               {d.nota && <p style={{ margin: '16px 0 0', fontSize: 13, color: cTenue, textAlign: 'center' }}>{d.nota}</p>}
+            </div>
+          </section>
+        )
+      }
+
+      // Mosaico: riquadri di misure diverse nella stessa griglia. Ognuno può
+      // essere una foto, un numero grande, una frase su fondo scuro o del colore
+      // del sito. Misura e tono vengono da due cataloghi chiusi: un valore
+      // diverso è un riquadro normale, chiaro.
+      case 'mosaico': {
+        const tessere = (Array.isArray(d.items) ? d.items : []).filter(x => x && (x.title || x.text || x.image_url || x.value)).slice(0, 12)
+        if (!tessere.length) return null
+        const MISURE = { big: ' grande', wide: ' larga', tall: ' alta' }
+        return (
+          <section key={block.id} style={{ padding: '84px 0', background: 'var(--sup)' }}>
+            <div className="lbr-section">
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(28px,4.4vw,52px)', fontWeight: 700, lineHeight: 1.1, letterSpacing: '-0.015em', color: cTitle, margin: '0 0 14px', maxWidth: 760 }} {...ricco(d.titolo)} />}
+              {d.sottotitolo && <p style={{ fontSize: 17, lineHeight: 1.6, color: cBody || 'var(--txt-medio)', margin: 0, maxWidth: 620 }} {...ricco(d.sottotitolo)} />}
+              <div className="lbr-mosaico" style={{ marginTop: d.titolo || d.sottotitolo ? 44 : 0 }}>
+                {tessere.map((x, i) => {
+                  const foto = typeof x.image_url === 'string' && !!x.image_url
+                  const tono = foto ? 'foto' : x.style === 'dark' ? 'scuro' : x.style === 'color' ? 'colore' : 'chiaro'
+                  const suColore = readableOn('#ffffff', primary, '#1a1a2e')
+                  const fg = tono === 'chiaro' ? 'var(--txt)' : tono === 'colore' ? suColore : '#ffffff'
+                  const fgTenue = tono === 'chiaro' ? 'var(--txt-medio)' : tono === 'colore' ? suColore : 'rgba(255,255,255,0.78)'
+                  const Icon = x.icon ? highlightIcon(x.icon) : null
+                  return (
+                    <div key={x.id || i} className={'lbr-tessera' + (MISURE[x.size] || '')} style={{
+                      background: tono === 'scuro' ? '#11111a' : tono === 'colore' ? `linear-gradient(140deg, ${primary} 0%, ${sec} 100%)` : tono === 'foto' ? '#11111a' : 'var(--sup-2)',
+                      border: tono === 'chiaro' ? '1px solid var(--bordo)' : 'none',
+                      justifyContent: foto || x.value || !Icon ? 'flex-end' : 'space-between',
+                    }}>
+                      {foto && <img src={x.image_url} alt="" loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: focalValido(x.image_focal) || 'center' }} />}
+                      {foto && (x.title || x.text || x.value) && <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.1) 62%, rgba(0,0,0,0) 100%)' }} />}
+                      {tono === 'scuro' && <div aria-hidden="true" style={{ position: 'absolute', inset: 0, background: `radial-gradient(80% 90% at 100% 0%, ${primary}55 0%, ${primary}00 70%)` }} />}
+                      {!foto && Icon && (
+                        <div style={{ position: 'relative', width: 46, height: 46, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: tono === 'chiaro' ? `${primary}14` : 'rgba(255,255,255,0.14)' }}>
+                          <Icon size={22} strokeWidth={1.5} color={tono === 'chiaro' ? `var(--icon-color, ${primary})` : fg} />
+                        </div>
+                      )}
+                      <div style={{ position: 'relative', minWidth: 0 }}>
+                        {x.value && <div style={{ fontFamily: heading, fontSize: 'clamp(40px,5vw,76px)', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.02em', color: tono === 'chiaro' ? primary : fg, marginBottom: x.title || x.text ? 12 : 0, overflowWrap: 'anywhere' }}>{x.value}</div>}
+                        {x.title && <h3 style={{ fontFamily: heading, fontSize: 'clamp(19px,2vw,26px)', fontWeight: 700, lineHeight: 1.2, color: fg, margin: 0, overflowWrap: 'anywhere' }} {...ricco(x.title)} />}
+                        {x.text && <p style={{ fontSize: 14.5, lineHeight: 1.55, color: fgTenue, margin: x.title ? '8px 0 0' : 0, overflowWrap: 'anywhere' }} {...ricco(x.text)} />}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+        )
+      }
+
+      // Parole che scorrono: una fascia di parole grandi, piene e a contorno,
+      // che passa da sola. Chi ha chiesto meno movimento le vede ferme.
+      case 'scorrevole': {
+        const parole = (Array.isArray(d.items) ? d.items : []).map(x => typeof x?.text === 'string' ? x.text.trim() : '').filter(Boolean).slice(0, 12)
+        if (!parole.length) return null
+        // Abbastanza ripetizioni da riempire anche uno schermo largo, poi due metà uguali: la fascia torna su sé stessa senza salto.
+        const meta = Array.from({ length: Math.max(2, Math.ceil(8 / parole.length)) }, () => parole).flat()
+        const tinta = inverted ? '#ffffff' : 'var(--txt)'
+        return (
+          <section key={block.id} aria-label={parole.join(' · ')} style={{ padding: '40px 0', background: 'var(--sup)', overflow: 'hidden' }}>
+            <div className="lbr-scorre" style={{ animationDuration: `${Math.max(24, meta.join('').length * 0.55)}s` }}>
+              {[0, 1].map(k => (
+                <div key={k} aria-hidden={k === 1 ? 'true' : undefined} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                  {meta.map((p, i) => (
+                    <Fragment key={i}>
+                      <span style={{ fontFamily: heading, fontSize: 'clamp(38px,7vw,96px)', fontWeight: 700, lineHeight: 1.15, letterSpacing: '-0.02em', whiteSpace: 'nowrap', padding: '0 0.32em', color: i % 2 ? 'transparent' : tinta, WebkitTextStroke: i % 2 ? `1.5px ${tinta}` : undefined }}>{p}</span>
+                      <span aria-hidden="true" style={{ fontSize: 'clamp(18px,2.6vw,34px)', color: inverted ? '#ffffff' : primary }}>✦</span>
+                    </Fragment>
+                  ))}
+                </div>
+              ))}
             </div>
           </section>
         )
@@ -2705,6 +2834,31 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         .lbr-linguette { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
         .lbr-linguette::-webkit-scrollbar { display: none; }
         .lbr-linguette::before, .lbr-linguette::after { content: ''; margin: auto; }
+        .lbr-hero-split { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: clamp(32px, 5vw, 76px); align-items: center; }
+        .lbr-hero-split-foto { aspect-ratio: 4 / 5; max-height: 640px; }
+        /* Mosaico: quattro colonne, righe uguali; le tessere grandi ne prendono
+           due. Il riempimento «denso» chiude i buchi che lascerebbero. */
+        .lbr-mosaico { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 210px; grid-auto-flow: dense; gap: 16px; }
+        .lbr-tessera { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 26px; border-radius: 24px; overflow: hidden; box-sizing: border-box; transition: transform 0.35s ease, box-shadow 0.35s ease; }
+        .lbr-tessera:hover { transform: translateY(-4px); box-shadow: 0 18px 44px rgba(0,0,0,0.14); }
+        .lbr-tessera.grande { grid-column: span 2; grid-row: span 2; }
+        .lbr-tessera.larga { grid-column: span 2; }
+        .lbr-tessera.alta { grid-row: span 2; }
+        @keyframes lbr-scorre { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        .lbr-scorre { display: flex; width: max-content; animation: lbr-scorre linear infinite; }
+        @media (prefers-reduced-motion: reduce) { .lbr-scorre { animation: none; } .lbr-tessera { transition: none; } }
+        @media (max-width: 980px) {
+          .lbr-mosaico { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 768px) {
+          .lbr-hero-split { grid-template-columns: minmax(0, 1fr); }
+          .lbr-hero-split-foto { aspect-ratio: 4 / 3; }
+        }
+        @media (max-width: 560px) {
+          .lbr-mosaico { grid-template-columns: minmax(0, 1fr); grid-auto-rows: auto; }
+          .lbr-tessera { min-height: 190px; grid-column: auto !important; grid-row: auto !important; }
+          .lbr-tessera.grande, .lbr-tessera.alta { min-height: 320px; }
+        }
         .lbr-ft-img { order: 0; }
         .lbr-ft-txt { order: 1; }
         .lbr-ft.inv .lbr-ft-img { order: 1; }

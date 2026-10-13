@@ -22,7 +22,7 @@ const ENTITA_ANTEPRIMA = { name: 'La tua attività', slug: 'anteprima', phone: '
 
 // Un pulsante senza destinazione sul sito non compare; nell'anteprima sì, o la
 // sezione sembrerebbe monca. Vale solo qui: nella pagina arriva senza destinazione.
-const PULSANTI = [['cta1_text', 'cta1_url'], ['button_text', 'button_url'], ['button_label', 'button_url']]
+const PULSANTI = [['cta1_text', 'cta1_url'], ['cta2_text', 'cta2_url'], ['button_text', 'button_url'], ['button_label', 'button_url']]
 function conIPulsanti(blocco) {
   const data = { ...blocco.data }
   for (const [testo, dove] of PULSANTI) if (data[testo] && data[dove] === '') data[dove] = '#'

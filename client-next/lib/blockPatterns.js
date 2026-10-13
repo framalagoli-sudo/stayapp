@@ -13,6 +13,7 @@
 const foto = id => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=1600&q=80`
 const FOTO_INTERNO = foto('1760326652193-bc25f0fe4a8e')
 const FOTO_MANI = foto('1721508490084-1b1de5b230d4')
+const FOTO_SALOTTO = foto('1632504102612-6ab73f6cf0e2')
 
 export const CATEGORIE_SEZIONI = [
   { key: 'copertine', label: 'Copertine' },
@@ -26,6 +27,31 @@ export const CATEGORIE_SEZIONI = [
 
 export const BLOCK_PATTERNS = [
   // ── Copertine ──────────────────────────────────────────────────────────────
+  {
+    key: 'copertina_divisa', categoria: 'copertine',
+    label: 'Copertina divisa',
+    desc: 'Il titolo grande da una parte, la foto dall’altra, e due pulsanti',
+    blocks: [
+      { type: 'hero', data: { layout: 'split', occhiello: 'Scrivi qui da quando, o dove', title: 'La tua promessa, in poche parole forti', tagline: 'Una frase che dice cosa fai, per chi, e perché scegliere te.', bg_image_url: FOTO_INTERNO, overlay_opacity: 0.5, cta1_text: 'Prenota', cta1_url: '', cta2_text: 'Scopri di più', cta2_url: '', height: 'large' } },
+    ],
+  },
+  {
+    key: 'copertina_tipografica', categoria: 'copertine',
+    label: 'Copertina tipografica',
+    desc: 'Parole enormi su fondo scuro, con le luci del colore del tuo sito',
+    blocks: [
+      { type: 'hero', data: { layout: 'tipo', occhiello: 'Scrivi qui da quando, o dove', title: 'Poche parole. Grandi.', tagline: 'Una frase che dice cosa fai, per chi, e perché scegliere te.', bg_image_url: '', overlay_opacity: 0.5, cta1_text: 'Prenota', cta1_url: '', cta2_text: 'Scopri di più', cta2_url: '', height: 'large' } },
+    ],
+  },
+  {
+    key: 'copertina_parole', categoria: 'copertine',
+    label: 'Copertina con le parole che scorrono',
+    desc: 'La copertina tipografica e, sotto, una fascia di parole in movimento',
+    blocks: [
+      { type: 'hero', data: { layout: 'tipo', occhiello: 'Scrivi qui da quando, o dove', title: 'Il tuo mestiere, detto forte', tagline: 'Una frase che dice cosa fai, per chi, e perché scegliere te.', bg_image_url: '', overlay_opacity: 0.5, cta1_text: 'Contattaci', cta1_url: '', cta2_text: '', cta2_url: '', height: 'medium' } },
+      { type: 'scorrevole', data: { items: [{ text: 'Il primo servizio' }, { text: 'Il secondo' }, { text: 'Il terzo' }, { text: 'Quello che ti distingue' }] } },
+    ],
+  },
   {
     key: 'copertina_titolo', categoria: 'copertine',
     label: 'Copertina a tutto titolo',
@@ -53,6 +79,19 @@ export const BLOCK_PATTERNS = [
 
   // ── Chi siamo ──────────────────────────────────────────────────────────────
   {
+    key: 'mosaico_chi_siamo', categoria: 'presentazione',
+    label: 'Chi siamo, a mosaico',
+    desc: 'Una foto grande, un numero, un valore e una frase: tutto a colpo d’occhio',
+    blocks: [
+      { type: 'mosaico', data: { titolo: 'Chi siamo, in breve', sottotitolo: 'Una riga che introduce i riquadri qui sotto.', items: [
+        { title: 'Come lavoriamo', text: 'Scrivi qui due righe sul tuo modo di lavorare.', value: '', icon: '', image_url: FOTO_MANI, size: 'big', style: '' },
+        { title: 'Scrivi cosa conta questo numero', text: '', value: '00', icon: '', image_url: '', size: '', style: '' },
+        { title: 'Quello in cui crediamo', text: 'Dillo in una riga.', value: '', icon: 'heart', image_url: '', size: '', style: 'color' },
+        { title: 'Una frase che ti racconta', text: 'Scrivi qui cosa trova chi si rivolge a te, e perché torna.', value: '', icon: 'sparkles', image_url: '', size: 'wide', style: 'dark' },
+      ] } },
+    ],
+  },
+  {
     key: 'chi_siamo', categoria: 'presentazione',
     label: 'Chi siamo',
     desc: 'Titolo e paragrafo di presentazione',
@@ -67,9 +106,9 @@ export const BLOCK_PATTERNS = [
     blocks: [
       { type: 'foto_testo', data: { title: 'Come lavoriamo', text: 'Racconta qui il tuo modo di lavorare: da dove vieni, cosa curi di più, cosa trova chi si rivolge a te.', image_url: FOTO_MANI, inverti: false, button_label: '', button_url: '' }, style: { etichetta: 'Chi siamo' } },
       { type: 'stats', data: { titolo: '', items: [
-        { value: '—', label: 'Scrivi cosa conta il primo numero' },
-        { value: '—', label: 'Scrivi cosa conta il secondo numero' },
-        { value: '—', label: 'Scrivi cosa conta il terzo numero' },
+        { value: '00', label: 'Scrivi cosa conta il primo numero' },
+        { value: '00', label: 'Scrivi cosa conta il secondo numero' },
+        { value: '00', label: 'Scrivi cosa conta il terzo numero' },
       ] } },
     ],
   },
@@ -95,6 +134,28 @@ export const BLOCK_PATTERNS = [
   },
 
   // ── Servizi ────────────────────────────────────────────────────────────────
+  {
+    key: 'mosaico_servizi', categoria: 'servizi',
+    label: 'Servizi a mosaico',
+    desc: 'Il servizio principale in evidenza, gli altri attorno, e una foto',
+    blocks: [
+      { type: 'mosaico', data: { titolo: 'Cosa possiamo fare per te', sottotitolo: '', items: [
+        { title: 'Il servizio principale', text: 'Scrivi qui cosa comprende e per chi è.', value: '', icon: 'sparkles', image_url: '', size: 'wide', style: 'color' },
+        { title: 'Secondo servizio', text: 'Descrivilo in una riga.', value: '', icon: 'star', image_url: '', size: '', style: '' },
+        { title: '', text: '', value: '', icon: '', image_url: FOTO_SALOTTO, size: 'tall', style: '' },
+        { title: 'Terzo servizio', text: 'Descrivilo in una riga.', value: '', icon: 'award', image_url: '', size: '', style: 'dark' },
+        { title: 'Quarto servizio', text: 'Scrivi qui una frase un po’ più lunga: cosa comprende, quanto dura.', value: '', icon: 'clock', image_url: '', size: 'wide', style: '' },
+      ] } },
+    ],
+  },
+  {
+    key: 'parole', categoria: 'servizi',
+    label: 'Parole che scorrono',
+    desc: 'Una fascia di parole grandi in movimento, fra una sezione e l’altra',
+    blocks: [
+      { type: 'scorrevole', data: { items: [{ text: 'Il primo servizio' }, { text: 'Il secondo' }, { text: 'Il terzo' }, { text: 'Quello che ti distingue' }] } },
+    ],
+  },
   {
     key: 'servizi_3', categoria: 'servizi',
     label: 'Tre punti di forza',
@@ -143,15 +204,28 @@ export const BLOCK_PATTERNS = [
 
   // ── Numeri e recensioni ────────────────────────────────────────────────────
   {
+    key: 'mosaico_numeri', categoria: 'prove',
+    label: 'Numeri a mosaico',
+    desc: 'Il numero di cui vai più fiero in grande, gli altri attorno',
+    blocks: [
+      { type: 'mosaico', data: { titolo: 'I numeri che ci raccontano', sottotitolo: '', items: [
+        { title: 'Il numero di cui vai più fiero', text: 'Scrivi qui cosa significa, in una riga.', value: '00', icon: '', image_url: '', size: 'big', style: 'dark' },
+        { title: 'Anni di attività', text: '', value: '00', icon: '', image_url: '', size: '', style: '' },
+        { title: 'Clienti seguiti', text: '', value: '00', icon: '', image_url: '', size: '', style: '' },
+        { title: 'Scrivi cosa conta questo numero', text: '', value: '00', icon: '', image_url: '', size: 'wide', style: 'color' },
+      ] } },
+    ],
+  },
+  {
     key: 'numeri', categoria: 'prove',
     label: 'Numeri in evidenza',
     desc: 'Fascia scura con quattro numeri grandi',
     blocks: [
       { type: 'stats', data: { titolo: 'I nostri numeri', items: [
-        { value: '—', label: 'Anni di attività' },
-        { value: '—', label: 'Clienti seguiti' },
-        { value: '—', label: 'Scrivi cosa conta questo numero' },
-        { value: '—', label: 'Scrivi cosa conta questo numero' },
+        { value: '00', label: 'Anni di attività' },
+        { value: '00', label: 'Clienti seguiti' },
+        { value: '00', label: 'Scrivi cosa conta questo numero' },
+        { value: '00', label: 'Scrivi cosa conta questo numero' },
       ] } },
     ],
   },
