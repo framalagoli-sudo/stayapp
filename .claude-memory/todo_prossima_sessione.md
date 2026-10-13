@@ -10,6 +10,12 @@ metadata:
 
 # Si riprende da qui
 
+## ▶️ 13/10, quarta parte — «Marchio e stile» e caratteri rifatti, LIVE (CLAUDE.md nota 72)
+- Francesco: i font «macchinosi», logo/header/footer «sparpagliati… ho fatto fatica io»; poi «sposta senza problemi - sistema come pensi sia meglio». Fatto: un pannello solo (logo, copertina, colori, caratteri) per i tre tipi, aperto anche dall'editor visuale («Stile»); 18 accoppiate; social e frase con intestazione e piede; «Aspetto» → «Marchio e stile». Provato in produzione (`probe-marchio-stile.mjs`, menu identico alla fotografia aggiornata, siti dei clienti senza regole nuove).
+- **Deve provarlo lui**: una pagina → «Editor visuale» → «Stile» → un'accoppiata (es. «Locandina»): la pagina accanto cambia.
+- Non fatto, detto a lui: icona del sito (favicon), parola in evidenza nei titoli, carattere blocco per blocco (di proposito no). I caratteri si caricano ancora da Google: prima di allargare ancora, verificare la questione privacy (sentenza tedesca citata a memoria).
+- Il pannello «Stile» nell'editor copre la parte destra della pagina invece di stringerla: da migliorare se gli dà fastidio.
+
 ## ▶️ 13/10, terza parte — galleria delle sezioni pronte LIVE (CLAUDE.md nota 71)
 - Francesco: «template come fa Elementor… per me puoi procedere». Fatta la galleria (20 sezioni, 7 categorie, anteprima vera nei colori del sito), provata in produzione con `tests/probe-sezioni-pronte.mjs`. **Deve guardarla lui e dire quali sezioni gli piacciono**: una pagina → «Inserisci sezione pronta».
 - **Secondo giro** (lui: «a livello di design siamo molto molto basic… potresti stupirmi»): copertina divisa e tipografica (`hero.layout`), blocchi `mosaico` e `scorrevole`, 27 sezioni. LIVE e provato in produzione. Aspetta il suo giudizio; idee successive solo se le chiede: linea del tempo, recensione in grande con foto, prezzi a schede con quella consigliata in risalto.
