@@ -710,6 +710,15 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - ⚠️ **In sviluppo l'editor legge la pagina due volte** (StrictMode): la seconda lettura arriva un secondo dopo e passa sopra ai clic fatti nel frattempo. In produzione non succede. Una sonda sul pannello in locale aspetta `networkidle` prima di toccare.
     - Sonda `tests/probe-blocchi-nuovi.mjs [cartella-foto]` (a mano; `--pannello` salta la parte pubblica): corpo grezzo, computer e telefono, valori ostili (forme sbagliate, tempi inventati, `javascript:`), `/en` in produzione, e la tabella costruita dal pannello come il titolare. I cinque tipi sono anche in `probe-editor-visuale.mjs` (nascono visibili e scrivibili sulla pagina).
 
+71. **🖼️ La galleria delle sezioni pronte** (13/10/2026, «template come fa Elementor», via libera di Francesco). «Inserisci sezione pronta» apriva un elenco di cinque nomi: ora apre `components/admin/GalleriaSezioni.jsx`, dove ogni sezione **si vede com'è**, per categoria, e un clic la mette nella pagina (dall'elenco di sempre in fondo; dal «+» dell'editor visuale nel punto scelto). Nessuna migration, nessuna route.
+    - **`lib/blockPatterns.js`** (senza dipendenze): `CATEGORIE_SEZIONI`, `BLOCK_PATTERNS` (20 sezioni al 13/10) e `blocchiDiSezione(sezione, nuovoId)`, che ne fa la copia con gli id. Una sezione è **uno o più blocchi con il loro stile** (`style`: fondo, alone, etichetta): è lì che sta il «design», in opzioni che i clienti da soli non scoprono. Aggiungerne una = aggiungere una voce a quel file.
+    - ⚠️ **Sono dati veri** (come i blocchi nati per trascinamento, nota 64): testi che dicono cosa scriverci, **nessun prezzo, numero, nome o recensione che sembri vero**, pulsanti senza destinazione. Le uniche foto sono due di repertorio (Unsplash), in «Copertina con foto» e «La storia»: chi sceglie la sezione le ha viste nell'anteprima, e si cambiano con un clic sulla pagina.
+    - **L'anteprima è il disegnatore vero** (`LandingBlockRenderer`) a 1200px, rimpicciolito con `transform`, **nei colori e caratteri del sito** (`theme` dell'entità, che l'editor ora tiene in `temaSito`). È `inert` e coperta da un velo: lì dentro non si naviga e non si scrive. `.gs-anteprima .lbr-reveal` spegne la comparsa animata. ⚠️ Solo nell'anteprima i pulsanti senza destinazione ricevono `#` (`conIPulsanti`), o la sezione sembrerebbe monca: nella pagina arrivano senza.
+    - Le schede sono `div role="button"`, non `<button>`: dentro c'è una pagina intera, con i suoi pulsanti e i suoi moduli.
+    - ⚠️ Trovato componendole: il blocco **Newsletter su fondo scuro non si legge** (il titolo resta scuro). La sezione pronta usa il fondo di sempre; il difetto del blocco resta da sistemare.
+    - Non è un doppione: i **modelli di sito** (`lib/siteTemplates.js`, scheda «Template») fanno la home intera e cambiano il tema; i **modelli di pagina** nascono con la pagina; le **sezioni condivise** (nota 66) cambiano ovunque. Queste sono copie da riscrivere.
+    - Sonda `tests/probe-sezioni-pronte.mjs [cartella-foto]` (a mano): ogni anteprima è disegnata davvero e nei colori del sito, **tutte le sezioni inserite una per una** e rilette sulla pagina pubblica da computer e da telefono, e l'inserimento dal «+» dell'editor visuale.
+
 ---
 
 ## Roadmap
@@ -742,6 +751,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - [x] **«Chiedi all'AI» dentro la pagina** (dal «+»: l'AI sceglie il blocco e lo scrive) ✅ 12/10/2026 — nota 68.
 - [x] **«Riscrivi i testi con l'AI»** su una sezione che c'è già ✅ 13/10/2026 — nota 69.
 - [x] **Titolo, Citazione, Schede a linguette, Tabella, Popup** ✅ 13/10/2026 — nota 70.
+- [x] **Galleria delle sezioni pronte** (con anteprima vera, per categoria) ✅ 13/10/2026 — nota 71. Da allargare: altre sezioni, e «salva questa sezione come modello».
 - [ ] **Editor, il resto del piano del 12/10** — opzioni solo-telefono, larghezza del contenuto, copia stile. Ricognizione sui blocchi che mancano ancora (barra fissa su telefono, testo che scorre, mosaico): memoria `project_blocchi_ricognizione`.
 - [ ] **Agente AI al telefono** (idea di Francesco, 12/10 — tipo bookli.ai): in valutazione, `STRATEGIA.md` §6.3. Dopo Meta/WhatsApp e le operazioni in `lib/`; la voce si prende da un fornitore.
 - [ ] **Lo stato vero del conto Stripe** — `puoIncassare` dice sì appena esiste `stripe_account_id`, anche se il collegamento è rimasto a metà: va salvato `charges_enabled` dal webhook dell'account. Oggi il link e la cassa falliscono con un messaggio chiaro, ma il pulsante compare lo stesso.

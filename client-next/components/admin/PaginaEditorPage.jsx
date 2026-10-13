@@ -20,7 +20,8 @@ import AiButton from '@/components/admin/AiButton'
 import RichTextEditor from '@/components/admin/RichTextEditor'
 import MediaPickerButton from '@/components/admin/MediaPicker'
 import UnsplashPicker from '@/components/admin/UnsplashPicker'
-import { BLOCK_PATTERNS } from '@/lib/blockPatterns'
+import { BLOCK_PATTERNS, blocchiDiSezione } from '@/lib/blockPatterns'
+import GalleriaSezioni from '@/components/admin/GalleriaSezioni'
 import { TIPO_SEZIONE, MAX_BLOCCHI_SEZIONE, idSezione, soloRiferimenti } from '@/lib/sezioni-regole'
 import { testiDaRiscrivere, conTestiRiscritti } from '@/lib/ai-blocco'
 import { datiDiNascita, scriviCampo, scriviParagrafo, campiDiTesto, postoPerFoto, scriviImmagine, azioneSuElemento } from '@/lib/editor-visuale'
@@ -1836,6 +1837,8 @@ export default function PaginaEditorPage() {
   const [loading,    setLoading]    = useState(true)
   const [loadError,  setLoadError]  = useState(null)
   const [entitySlug, setEntitySlug] = useState(null)
+  // Colori e caratteri del sito: la galleria delle sezioni pronte li usa per le anteprime.
+  const [temaSito, setTemaSito] = useState(null)
   const [sitePages,  setSitePages]  = useState([])   // pagine sorelle → link interni
   const [copied,     setCopied]     = useState(false)
 
@@ -1907,7 +1910,7 @@ export default function PaginaEditorPage() {
     const ep = page.entity_tipo === 'struttura' ? `/api/properties/${page.entity_id}`
       : page.entity_tipo === 'ristorante' ? `/api/ristoranti/${page.entity_id}`
       : `/api/attivita/${page.entity_id}`
-    apiFetch(ep).then(d => { if (d?.slug) setEntitySlug(d.slug) })
+    apiFetch(ep).then(d => { if (d?.slug) setEntitySlug(d.slug); if (d?.theme && typeof d.theme === 'object') setTemaSito(d.theme) })
     apiFetch(`/api/pagine?entity_tipo=${page.entity_tipo}&entity_id=${page.entity_id}`)
       .then(d => Array.isArray(d) && setSitePages(d)).catch(() => {})
     // Permesso di vedere le proprie bozze: l'anteprima si apre in iframe o in
@@ -2345,7 +2348,8 @@ export default function PaginaEditorPage() {
   function addPattern(key) {
     const p = BLOCK_PATTERNS.find(x => x.key === key)
     if (!p) return
-    const nb = p.blocks.map(b => ({ id: uid(), type: b.type, data: JSON.parse(JSON.stringify(b.data || {})) }))
+    // Una sezione pronta porta anche il suo stile; i valori che non dichiara sono quelli di base del blocco.
+    const nb = blocchiDiSezione(p, uid).map(b => ({ ...b, data: { ...(BLOCK_DEFAULTS[b.type] || {}), ...b.data } }))
     // Dal «+» dell'editor visuale la sezione pronta va nel punto scelto.
     const i = typeof inserisciPrima === 'string' ? blocks.findIndex(x => x.id === inserisciPrima) : -1
     const lista = [...blocks]; lista.splice(i < 0 ? lista.length : i, 0, ...nb)
@@ -2994,33 +2998,7 @@ export default function PaginaEditorPage() {
 
       {showPicker && <BlockPicker onPick={addBlock} onClose={() => setShowPicker(false)} entityTipo={page?.entity_tipo} />}
 
-      {showPatterns && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-          onClick={e => { if (e.target === e.currentTarget) setShowPatterns(false) }}>
-          <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 540, maxHeight: '82vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 80px rgba(0,0,0,0.22)' }}>
-            <div style={{ padding: '18px 20px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontWeight: 700, fontSize: 16, color: '#1a1a2e' }}>Inserisci una sezione pronta</span>
-              <button onClick={() => setShowPatterns(false)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#999', lineHeight: 1 }}>✕</button>
-            </div>
-            <div style={{ overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {BLOCK_PATTERNS.map(p => (
-                <button key={p.key} onClick={() => { addPattern(p.key); setShowPatterns(false) }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 10, border: '1px solid #eee', cursor: 'pointer', background: '#fff', textAlign: 'left', width: '100%' }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#f5f5ff'}
-                  onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
-                  <div style={{ width: 36, height: 36, borderRadius: 9, background: '#5b6af818', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Layers size={18} strokeWidth={1.5} color="#5b6af8" />
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: 13, color: '#1a1a2e' }}>{p.label}</div>
-                    <div style={{ fontSize: 11, color: '#888', marginTop: 1 }}>{p.desc}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {showPatterns && <GalleriaSezioni tema={temaSito} onScegli={key => { addPattern(key); setShowPatterns(false) }} onChiudi={() => setShowPatterns(false)} />}
     </div>
    </SezioniContext.Provider>
    </LinkContext.Provider>
