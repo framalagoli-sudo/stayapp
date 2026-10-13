@@ -111,6 +111,11 @@ export default function MarchioEStile({ tipo, id, compatto = false, onCambiato }
             valore={entita.logo_dark_url} onChange={url => salva({ logo_dark_url: url || null })}
             endpoint={`${carica.logo}&field=logo_dark_url`} adatta="contieni" sfondo="#1a1a2e" altezza={88} />
         </div>
+        <div data-ms-icona style={{ marginTop: 18, maxWidth: compatto ? undefined : 260 }}>
+          <CampoImmagine etichetta="Icona del sito" valore={mini.icona_url} onChange={url => salva({ minisito: { ...mini, icona_url: url || '' } })}
+            endpoint={`/api/upload/minisito-image?entity_type=${tipo}&entity_id=${id}&uso=icona`} adatta="contieni" sfondo="#f5f5f5" altezza={88}
+            aiuto="Quella piccola nella linguetta del browser e fra i preferiti. Meglio quadrata e semplice: il simbolo del logo, senza scritte. Senza, lì si vede l'icona di OltreNova." />
+        </div>
         <Voce etichetta="Quanto è grande nell'intestazione del sito">
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {MISURE_LOGO.map(([v, nome]) => {

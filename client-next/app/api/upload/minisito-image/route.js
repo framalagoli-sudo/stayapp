@@ -46,6 +46,16 @@ export async function POST(request) {
 
     const parsed = await parseUpload(request)
     if (parsed.error) return Response.json({ error: parsed.error }, { status: 400 })
+    // L'icona del sito: un PNG quadrato da 256px, col disegno intero e il fondo
+    // trasparente. È il formato che ogni browser accetta nella linguetta.
+    if (searchParams.get('uso') === 'icona') {
+      try {
+        const sharp = (await import('sharp')).default
+        parsed.buffer = await sharp(parsed.buffer, { failOn: 'none' }).rotate()
+          .resize(256, 256, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer()
+        parsed.ext = 'png'; parsed.contentType = 'image/png'
+      } catch { return Response.json({ error: 'Non riesco a leggere questa immagine: prova con un PNG o un JPG.' }, { status: 400 }) }
+    }
     const result = await uploadToStorage(`${cartella}/minisito-${Date.now()}.${parsed.ext}`, parsed.buffer, parsed.contentType)
     if (result.error) return Response.json({ error: result.error }, { status: 500 })
     return Response.json({ url: result.url })

@@ -39,6 +39,7 @@ try {
     { id: 'h', type: 'hero', data: { layout: 'tipo', title: 'ZZ Benvenuti', tagline: 'ZZ Riga', bg_image_url: '', overlay_opacity: 0.5, cta1_text: '', cta1_url: '', cta2_text: '', cta2_url: '', height: 'medium' } },
     { id: 'c', type: 'about', data: { title: 'ZZ Chi siamo', text: 'ZZ Un paragrafo di testo.' } },
   ] }).select('id').single(), 'home')
+  await deve(a.from('pagine').insert({ entity_tipo: 'ristorante', entity_id: rist.id, slug: 'zz-interna', titolo: 'ZZ Interna', status: 'pubblicata', blocks: [{ id: 'i', type: 'about', data: { title: 'ZZ Interna', text: '' } }] }).select('id').single(), 'pagina interna')
   const sito = `${BASE}/r/${rist.slug}`
   const nelDb = async () => (await a.from('entita').select('theme, minisito').eq('id', rist.id).single()).data
 
@@ -81,6 +82,21 @@ try {
   await pannello.locator('[data-ms-logo="large"]').click()
   esito(await aspetta(async () => (await nelDb()).minisito.logo_size === 'large'), 'la misura del logo si salva')
   esito((await nelDb()).theme.fontHeading === 'bebas' && (await nelDb()).minisito.active === true, 'e quello che c’era prima resta (caratteri, sito attivo)')
+
+  // L'icona del sito: si carica qui, diventa un PNG quadrato, ed esce su tutte le pagine.
+  esito(!/rel="icon"[^>]*supabase/.test(prima), 'senza un’icona caricata il sito non ne dichiara una sua')
+  const PUNTO = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAYAAAD0In+KAAAAC0lEQVR4nGNgQAYAAA4AAQ6Q3HcAAAAASUVORK5CYII=', 'base64')
+  await pannello.locator('[data-ms-icona] input[type="file"]').setInputFiles({ name: 'icona.png', mimeType: 'image/png', buffer: PUNTO })
+  esito(await aspetta(async () => /\.png(\?|$)/.test((await nelDb()).minisito.icona_url || ''), 30000), 'l’icona caricata si salva', JSON.stringify((await nelDb()).minisito.icona_url))
+  const icona = (await nelDb()).minisito.icona_url
+  const file = icona ? Buffer.from(await (await fetch(icona)).arrayBuffer()) : Buffer.alloc(0)
+  esito(file.length > 24 && file.subarray(1, 4).toString() === 'PNG' && file.readUInt32BE(16) === 256 && file.readUInt32BE(20) === 256, 'ed è un PNG quadrato da 256 pixel, qualunque forma avesse l’originale', file.length > 24 ? `${file.readUInt32BE(16)}x${file.readUInt32BE(20)}` : 'vuoto')
+  esito((await nelDb()).minisito.logo_size === 'large', 'senza cancellare la misura del logo')
+  for (const [nome, indirizzo] of [['home', sito], ['una pagina interna', `${sito}/p/zz-interna`], ['la privacy', `${sito}/privacy`]]) {
+    const html = await (await fetch(indirizzo)).text()
+    const nomeFile = icona ? icona.split('?')[0].split('/').pop() : '—'
+    esito((html.match(/<link[^>]+rel="(?:shortcut )?icon"[^>]*>/g) || []).some(l => l.includes(nomeFile)), `${nome}: la pagina dichiara l’icona del sito`)
+  }
 
   // Fino al sito.
   const p2 = await (await browser.newContext({ locale: 'it-IT', viewport: { width: 1440, height: 900 } })).newPage()
@@ -125,6 +141,22 @@ try {
   await vai(`/admin/ristoranti/${rist.id}/sito?tab=impostazioni`, 'text=Titolo SEO')
   const seo = await page.locator('body').innerText()
   esito(seo.includes('SEO e tracciamento') && !seo.includes('Tagline') && !seo.includes('TripAdvisor') && seo.includes('Meta Pixel'), 'nella scheda SEO restano SEO e tracciamento, senza i social')
+
+  console.log('\nUNA PAROLA IN EVIDENZA NEL TITOLO\n')
+  await vai(`/admin/pagine/${home.id}`, 'button:has-text("Editor visuale")')
+  await page.locator('button:has(svg.lucide-chevron-down)').first().click()
+  const evid = page.locator('[data-evidenzia]').first()
+  await evid.waitFor({ timeout: 20000 })
+  const titoloIn = await page.evaluateHandle(() => [...document.querySelectorAll('input[type="text"]')].find(i => i.value === 'ZZ Benvenuti'))
+  await evid.click()
+  esito(await page.locator('[data-evidenzia-come]').count() === 1, 'senza una selezione il pulsante dice come fare, e non cambia niente')
+  await titoloIn.evaluate(i => { i.focus(); i.setSelectionRange(3, 12) })
+  await evid.click()
+  esito(await aspetta(async () => await titoloIn.evaluate(i => i.value) === 'ZZ <mark>Benvenuti</mark>', 5000), 'selezionata la parola, il pulsante la mette in evidenza', await titoloIn.evaluate(i => i.value))
+  await page.getByRole('button', { name: 'Salva', exact: true }).first().click()
+  esito(await aspetta(async () => ((await a.from('pagine').select('blocks').eq('id', home.id).single()).data.blocks[0].data.title) === 'ZZ <mark>Benvenuti</mark>'), 'salvato')
+  const conEvidenza = await (await fetch(sito)).text()
+  esito(/<h1[^>]*>ZZ <mark>Benvenuti<\/mark><\/h1>/.test(conEvidenza), 'sul sito la parola è evidenziata dentro il titolo')
 
   console.log('\nDALL’EDITOR VISUALE\n')
   await vai(`/admin/pagine/${home.id}`, 'button:has-text("Editor visuale")')

@@ -1630,13 +1630,41 @@ function SezioneCondivisa({ block, entityId, entityTipo }) {
 }
 
 function Field({ label, value, onChange, multiline, rows = 3, placeholder, style: extraStyle }) {
+  const campo = useRef(null)
+  const [comeFare, setComeFare] = useState(false)
+  // Nei titoli una parola si può mettere in evidenza: sul sito prende il colore
+  // d'accento. È il segno `<mark>` che i titoli accettano da sempre, ma andava
+  // scritto a mano: qui si seleziona la parola e si preme.
+  const evidenziabile = !multiline && /^titolo/i.test(label || '')
+  const testo = typeof value === 'string' ? value : ''
+  const giaEvidenziato = /<mark>/i.test(testo)
+  function evidenzia() {
+    if (giaEvidenziato) { onChange(testo.replace(/<\/?mark>/gi, '')); setComeFare(false); return }
+    const el = campo.current
+    const a = el?.selectionStart ?? 0, b = el?.selectionEnd ?? 0
+    if (!el || b <= a || !testo.slice(a, b).trim()) { setComeFare(true); return }
+    onChange(testo.slice(0, a) + '<mark>' + testo.slice(a, b) + '</mark>' + testo.slice(b)); setComeFare(false)
+  }
   return (
     <div style={extraStyle}>
-      {label && <label style={{ display: 'block', fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 500 }}>{label}</label>}
+      {label && (
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+          <label style={{ fontSize: 12, color: '#555', fontWeight: 500 }}>{label}</label>
+          {evidenziabile && testo && (
+            <button type="button" data-evidenzia onMouseDown={e => e.preventDefault()} onClick={evidenzia}
+              title="Sul sito la parola prende il colore d'accento"
+              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11.5, fontWeight: 600, color: '#5b6af8', whiteSpace: 'nowrap' }}>
+              {giaEvidenziato ? 'Togli l\'evidenza' : 'Evidenzia una parola'}
+            </button>
+          )}
+        </div>
+      )}
       {multiline
         ? <textarea value={value || ''} onChange={e => onChange(e.target.value)} rows={rows} placeholder={placeholder} style={inputStyle()} />
-        : <input type="text" value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={inputStyle()} />
+        : <input ref={campo} type="text" value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={inputStyle()} />
       }
+      {comeFare && <p data-evidenzia-come style={{ margin: '4px 0 0', fontSize: 11.5, color: '#b45309' }}>Seleziona qui sopra la parola (o le parole) da evidenziare, poi premi di nuovo.</p>}
+      {giaEvidenziato && <p style={{ margin: '4px 0 0', fontSize: 11, color: '#999' }}>La parola fra i due segni <code>&lt;mark&gt;</code> sul sito ha il colore d'accento.</p>}
     </div>
   )
 }

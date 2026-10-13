@@ -8,6 +8,7 @@ import GuestApp from '@/components/guest/GuestApp'
 import LanguageSwitcher from '@/components/guest/LanguageSwitcher'
 import { fuoriDaiMotori, METADATA_NASCOSTA } from '@/lib/visibilita-motori'
 import { hostUfficiale } from '@/lib/indirizzo-ufficiale'
+import { iconeSito } from '@/lib/icone-sito'
 
 // Copre la traduzione Haiku al primo caricamento EN (cache miss). Visite dopo = cache, istantanee.
 export const maxDuration = 30
@@ -44,7 +45,7 @@ export async function generateMetadata(props) {
     ...(fuoriDaiMotori(property, searchParams) && METADATA_NASCOSTA),
     manifest: `/api/manifest/s/${slug}`,
     appleWebApp: { capable: true, statusBarStyle: 'default', title: property.name },
-    icons: { apple: property.logo_url || '/icons/apple-touch-icon.png' },
+    icons: iconeSito({ icona: property.minisito?.icona_url, logo: property.logo_url }),
     alternates: { canonical: url, languages: { it: itUrl, en: enUrl, 'x-default': itUrl } },
     openGraph: {
       title, description, url,
