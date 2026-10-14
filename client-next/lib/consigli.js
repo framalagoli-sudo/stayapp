@@ -1,95 +1,39 @@
-// Il consulente dentro OltreNova: «cosa fare adesso», calcolato dai dati veri
-// dell'attività. È la seconda metà della visione del 14/10 (STRATEGIA.md §6.4):
-// il cruscotto dice cosa succede, qui si dice cosa farne.
+// I consigli personali: «cosa fare adesso», dai numeri di un cliente. La regia
+// del Club li crea e li modifica (tabella `club_consigli`, migration 138);
+// QUANDO scattano lo dicono i segnali di lib/consigli-segnali.js.
 //
-// Ogni consiglio ha quattro parti:
-//   · QUANDO scatta — una regola sui dati, mai una spunta;
-//   · PERCHÉ conta — le parole di Francesco: è il suo sapere, e non si inventa;
-//   · COSA fare — un pulsante che porta già nel punto giusto;
-//   · e in fondo una persona («ne parliamo?»), che il componente aggiunge.
+// ⛔ Al titolare arrivano solo i consigli ATTIVI e del suo mestiere; le bozze
+// le vede solo il super_admin, per guardarle all'opera sui clienti veri prima
+// di attivarle. Il filtro sta qui, sul server.
 //
-// ⛔ Un consiglio con `approvato: false` è una BOZZA: lo vede solo il
-// super_admin, con l'etichetta, così Francesco lo guarda scattare sui clienti
-// veri prima di firmarlo. Al titolare arrivano solo quelli approvati — e il
-// filtro sta qui, sul server, non nel componente.
-//
-// Escono titoli, testi e numeri dell'attività stessa: mai nomi o recapiti.
+// Escono titolo, perché e pulsante con i numeri dell'attività stessa: mai nomi
+// o recapiti di persone.
 //
 // Solo server. Chi chiama ha già deciso di quale azienda si parla.
 import { supabaseAdmin } from './supabase-server'
 import { soloAperti } from './evento-concluso'
 import { postiEvento } from './posti-evento'
+import { mestieriDi } from './club'
+import { SEGNALI, parametriPuliti, componi, azioneConsiglio } from './consigli-segnali'
+import { perMestieri } from './club-regole'
 
 const GIORNO = 864e5
-const giorniDa = iso => (Date.now() - new Date(iso).getTime()) / GIORNO
-const giorniA = iso => (new Date(iso).getTime() - Date.now()) / GIORNO
+const COLONNE = 'id, segnale, parametri, mestieri, titolo, perche, azione, stato, ordine'
 
-// Il catalogo. L'ordine è la priorità: si mostrano i primi che scattano.
-// `scatta(fatti)` restituisce null, oppure i pezzi che dipendono dai numeri.
-export const CONSIGLI = [
-  {
-    chiave: 'evento-quasi-pieno',
-    approvato: false,
-    perche: 'Quando una serata è quasi piena, il rischio non è più vendere: è promettere posti che non ci sono. Chi risponde al telefono deve saperlo adesso, non la sera stessa.',
-    scatta: f => {
-      const ev = f.prossimo
-      if (!ev || !ev.capienza || giorniA(ev.quando) > 14) return null
-      const pieno = ev.prenotati / ev.capienza
-      if (pieno < 0.85 || pieno >= 1) return null
-      return {
-        titolo: `«${ev.titolo}» è quasi piena: ${ev.prenotati} posti su ${ev.capienza}`,
-        azione: { testo: 'Apri le prenotazioni', link: `/admin/eventi/${ev.id}` },
-      }
-    },
-  },
-  {
-    chiave: 'evento-da-spingere',
-    approvato: false,
-    perche: 'Una serata che a pochi giorni ha ancora molti posti liberi di solito non si riempie da sola. Un messaggio a chi ti ha già detto sì costa due minuti ed è la promozione che rende di più.',
-    scatta: f => {
-      const ev = f.prossimo
-      if (!ev || !ev.capienza || giorniA(ev.quando) > 7) return null
-      if (ev.prenotati / ev.capienza >= 0.3 || f.invitabili < 5) return null
-      return {
-        titolo: `«${ev.titolo}» è fra pochi giorni e ha ancora ${ev.capienza - ev.prenotati} posti liberi`,
-        azione: { testo: 'Scrivi a chi vuole essere avvisato', link: '/admin/newsletter' },
-      }
-    },
-  },
-  {
-    chiave: 'scrivi-a-chi-ha-detto-si',
-    approvato: false,
-    perche: 'Queste persone ti hanno chiesto di essere avvisate. Se non scrivi loro, fra qualche mese non si ricorderanno più di averlo chiesto, e quel sì vale sempre meno.',
-    scatta: f => {
-      if (f.invitabili < 10) return null
-      if (f.ultimaNewsletter && giorniDa(f.ultimaNewsletter) < 45) return null
-      return {
-        titolo: f.ultimaNewsletter
-          ? `${f.invitabili} persone vogliono tue notizie, e non scrivi loro da più di un mese e mezzo`
-          : `${f.invitabili} persone vogliono tue notizie, e non hai ancora mai scritto loro`,
-        azione: { testo: 'Scrivi una newsletter', link: '/admin/newsletter' },
-      }
-    },
-  },
-  {
-    chiave: 'calendario-vuoto',
-    approvato: false,
-    perche: 'Chi ha già partecipato a un tuo evento torna a guardare il sito per vedere cosa c’è dopo. Se il calendario è vuoto, va altrove.',
-    scatta: f => {
-      // Solo a chi gli eventi li fa davvero: almeno due negli ultimi sei mesi.
-      // Uno solo, o vecchio, è un esperimento — non un calendario rimasto vuoto.
-      if (f.eventiPassati < 2 || f.eventiFuturi > 0) return null
-      return {
-        titolo: 'Non hai eventi in programma',
-        azione: { testo: 'Crea il prossimo evento', link: '/admin/eventi' },
-      }
-    },
-  },
-]
-
-// I fatti che servono alle regole, letti una volta per tutte.
-async function fatti(aziendaId) {
-  const [invitabili, newsletter, passati, futuri, prossimo] = await Promise.all([
+// I fatti che servono ai segnali, letti una volta per tutte.
+export async function fatti(aziendaId) {
+  const adesso = Date.now()
+  const iso = n => new Date(adesso - n * GIORNO).toISOString()
+  const { data: ent, error: e0 } = await supabaseAdmin.from('entita').select('id').eq('azienda_id', aziendaId)
+  if (e0) throw new Error(e0.message)
+  const ids = (ent || []).map(e => e.id)
+  const visite = (da, a) => {
+    if (!ids.length) return Promise.resolve({ count: 0 })
+    let q = supabaseAdmin.from('page_views').select('id', { count: 'exact', head: true }).in('entity_id', ids).gte('viewed_at', da)
+    if (a) q = q.lt('viewed_at', a)
+    return q
+  }
+  const [invitabili, newsletter, passati, futuri, prossimo, vOra, vPrima, contatti, ultimo] = await Promise.all([
     supabaseAdmin.from('contatti').select('id', { count: 'exact', head: true })
       .eq('azienda_id', aziendaId).eq('iscritto_newsletter', true),
     supabaseAdmin.from('newsletters').select('sent_at')
@@ -97,16 +41,20 @@ async function fatti(aziendaId) {
       .order('sent_at', { ascending: false }).limit(1),
     supabaseAdmin.from('eventi').select('id', { count: 'exact', head: true })
       .eq('azienda_id', aziendaId).eq('published', true)
-      .lt('date_start', new Date().toISOString())
-      .gte('date_start', new Date(Date.now() - 180 * GIORNO).toISOString()),
+      .lt('date_start', new Date(adesso).toISOString()).gte('date_start', iso(180)),
     soloAperti(supabaseAdmin.from('eventi').select('id', { count: 'exact', head: true })
       .eq('azienda_id', aziendaId).eq('published', true).eq('active', true)),
     soloAperti(supabaseAdmin.from('eventi')
       .select('id, title, date_start, seats_total, seats_booked, posti_riservati')
       .eq('azienda_id', aziendaId).eq('published', true).eq('active', true))
       .order('date_start').limit(1),
+    visite(iso(7)),
+    visite(iso(14), iso(7)),
+    supabaseAdmin.from('contatti').select('id', { count: 'exact', head: true }).eq('azienda_id', aziendaId),
+    supabaseAdmin.from('contatti').select('created_at').eq('azienda_id', aziendaId)
+      .order('created_at', { ascending: false }).limit(1),
   ])
-  const errore = invitabili.error || newsletter.error || passati.error || futuri.error || prossimo.error
+  const errore = [invitabili, newsletter, passati, futuri, prossimo, vOra, vPrima, contatti, ultimo].find(r => r.error)?.error
   if (errore) throw new Error(errore.message)
 
   const ev = prossimo.data?.[0]
@@ -116,22 +64,54 @@ async function fatti(aziendaId) {
     ultimaNewsletter: newsletter.data?.[0]?.sent_at || null,
     eventiPassati: passati.count || 0,
     eventiFuturi: futuri.count || 0,
-    prossimo: ev ? {
-      id: ev.id, titolo: ev.title, quando: ev.date_start,
-      prenotati: p.prenotati, capienza: p.illimitato ? null : p.capienza,
-    } : null,
+    prossimo: ev ? { id: ev.id, titolo: ev.title, quando: ev.date_start, prenotati: p.prenotati, capienza: p.illimitato ? null : p.capienza } : null,
+    visiteOra: vOra.count || 0,
+    visitePrima: vPrima.count || 0,
+    contattiTotali: contatti.count || 0,
+    ultimoContatto: ultimo.data?.[0]?.created_at || null,
   }
 }
 
+// Un consiglio applicato ai fatti di un'azienda: null se non scatta.
+export function applica(c, f, adesso = Date.now()) {
+  const s = SEGNALI[c.segnale]
+  if (!s) return null
+  const valori = s.scatta(f, parametriPuliti(c.segnale, c.parametri), adesso)
+  if (!valori) return null
+  return {
+    chiave: c.id,
+    titolo: componi(c.titolo, valori),
+    perche: componi(c.perche, valori),
+    azione: azioneConsiglio(c.azione, valori),
+    bozza: c.stato !== 'attivo',
+  }
+}
+
+const MASSIMO = 3
+
 // `bozze`: true solo per il super_admin.
 export async function consigliPer(aziendaId, { bozze = false } = {}) {
+  let q = supabaseAdmin.from('club_consigli').select(COLONNE).order('ordine').order('created_at')
+  if (!bozze) q = q.eq('stato', 'attivo')
+  const [{ data: catalogo, error }, mestieri] = await Promise.all([q, mestieriDi(aziendaId)])
+  if (error) throw new Error(error.message)
+  const suoi = (catalogo || []).filter(c => perMestieri(c, mestieri))
+  if (!suoi.length) return []
   const f = await fatti(aziendaId)
-  const out = []
-  for (const c of CONSIGLI) {
-    if (!c.approvato && !bozze) continue
-    const pezzi = c.scatta(f)
-    if (!pezzi) continue
-    out.push({ chiave: c.chiave, perche: c.perche, bozza: !c.approvato, ...pezzi })
+  return suoi.map(c => applica(c, f)).filter(Boolean).slice(0, bozze ? 20 : MASSIMO)
+}
+
+// La regia, prima di salvare: su quali clienti scatterebbe oggi, e con quale
+// frase. Si guardano le aziende vere (non quelle di prova delle sonde).
+export async function anteprima(consiglio) {
+  const { data: aziende, error } = await supabaseAdmin.from('aziende')
+    .select('id, ragione_sociale').not('ragione_sociale', 'ilike', 'ZZ%').order('ragione_sociale').limit(100)
+  if (error) throw new Error(error.message)
+  const esiti = []
+  for (const az of aziende || []) {
+    if (!perMestieri(consiglio, await mestieriDi(az.id))) continue
+    const r = applica({ ...consiglio, id: 'anteprima' }, await fatti(az.id))
+    if (r) esiti.push({ azienda: az.ragione_sociale, titolo: r.titolo })
   }
-  return out
+  return { aziende: (aziende || []).length, scatta: esiti }
 }

@@ -53,7 +53,12 @@ try {
   // ── Azienda piena: numeri noti ──
   const az = await deve(a.from('aziende').insert({ ragione_sociale: `ZZ-CRUSCOTTO-${t}`, require_2fa: false, moduli: { ristorante: true } }).select().single(), 'azienda')
   aziende.push(az.id)
-  const ent = await deve(a.from('entita').insert({ azienda_id: az.id, tipo: 'ristorante', name: 'ZZ Cruscotto', slug: `zz-cruscotto-${t}`, active: true, minisito: { active: true } }).select().single(), 'entità')
+  // Un mestiere finto e un consiglio in bozza solo per lui: la sonda non dipende
+  // dai consigli della regia, e nessun cliente vero ne vede uno.
+  await deve(a.from('profili_mestiere').upsert({ chiave: 'zz_cruscotto', nome: 'ZZ Cruscotto', tipo_entita: 'ristorante', ordine: 999 }, { onConflict: 'chiave' }), 'mestiere di prova')
+  const consiglio = await deve(a.from('club_consigli').insert({ segnale: 'evento_poco_prenotato', parametri: { percentuale: 30, entro_giorni: 7, min_persone: 5 }, mestieri: ['zz_cruscotto'],
+    titolo: 'ZZ «{evento}» ha ancora {posti_liberi} posti liberi', perche: 'Scrivi a {persone} persone.', azione: 'newsletter', stato: 'bozza' }).select('id').single(), 'consiglio di prova')
+  const ent = await deve(a.from('entita').insert({ azienda_id: az.id, tipo: 'ristorante', name: 'ZZ Cruscotto', slug: `zz-cruscotto-${t}`, active: true, minisito: { active: true }, profilo: 'zz_cruscotto' }).select().single(), 'entità')
   // Visite: 5 negli ultimi 7 giorni, 3 nei 7 prima, 4 fra 14 e 30 giorni fa.
   const visite = [1, 2, 3, 4, 6].map(fa).concat([8, 10, 13].map(fa)).concat([16, 20, 25, 29].map(fa))
   await deve(a.from('page_views').insert(visite.map(v => ({ entity_tipo: 'ristorante', entity_id: ent.id, viewed_at: v }))), 'visite')
@@ -119,9 +124,9 @@ try {
   esito((await consigli(staff)).status === 403, 'staff → 403')
   esito((await consigli(sup)).status === 400, 'super_admin senza azienda → 400')
   const diSup = (await (await consigli(sup, `?azienda_id=${az.id}`)).json()).consigli || []
-  const spingere = diSup.find(c => c.chiave === 'evento-da-spingere')
-  esito(!!spingere && spingere.titolo.includes('52 posti liberi') && spingere.azione?.link === '/admin/newsletter',
-    'all’evento fra 5 giorni con 8 posti su 60 scatta «evento da spingere»', JSON.stringify(diSup.map(c => c.chiave)))
+  const spingere = diSup.find(c => c.titolo.includes('52 posti liberi'))
+  esito(!!spingere && spingere.azione?.link === '/admin/newsletter',
+    'all’evento fra 5 giorni con 8 posti su 60 scatta «evento da spingere»', JSON.stringify(diSup.map(c => c.titolo)))
   const diTit = (await (await consigli(tit, `?azienda_id=${vuota.id}`)).json()).consigli || []
   esito(diTit.every(c => !c.bozza) && JSON.stringify(diTit.map(c => c.chiave)) === JSON.stringify(diSup.filter(c => !c.bozza).map(c => c.chiave)),
     'il titolare riceve solo i consigli approvati, e della sua azienda', JSON.stringify(diTit.map(c => c.chiave)))
@@ -142,7 +147,7 @@ try {
     const p = await ctx.newPage()
     const errori = []; p.on('pageerror', e => errori.push(e.message.slice(0, 200)))
     await p.goto(`${BASE}/admin`, { waitUntil: 'domcontentloaded', timeout: 120000 })
-    const scheda = p.locator('[data-consiglio="evento-da-spingere"]')
+    const scheda = p.locator(`[data-consiglio="${spingere?.chiave}"]`)
     await scheda.waitFor({ timeout: 90000 }).catch(() => {})
     esito(await scheda.locator('[data-bozza]').isVisible().catch(() => false), 'la bozza compare con l’etichetta «la vedi solo tu»')
     if (FOTO) await p.locator('[data-consigli]').screenshot({ path: `${FOTO}/consigli-telefono.png` }).catch(() => {})
@@ -202,11 +207,13 @@ try {
 } finally {
   if (browser) await browser.close()
   for (const id of utenti) await a.auth.admin.deleteUser(id).catch(() => {})
+  await a.from('club_consigli').delete().like('titolo', 'ZZ %')
   for (const id of aziende) {
     const { data: ent } = await a.from('entita').select('id').eq('azienda_id', id)
     if (ent?.length) await a.from('page_views').delete().in('entity_id', ent.map(e => e.id))
     await cancellaAziendaDiProva(id).catch(e => console.error('pulizia:', e.message))
   }
+  await a.from('profili_mestiere').delete().eq('chiave', 'zz_cruscotto')
   console.log('\n[probe] aziende e accessi di prova eliminati')
   console.log(rossi ? `\n${rossi} PROBLEMI` : '\nIL CRUSCOTTO DICE I NUMERI GIUSTI, SOLO A CHI SONO')
   process.exit(rossi ? 1 : 0)

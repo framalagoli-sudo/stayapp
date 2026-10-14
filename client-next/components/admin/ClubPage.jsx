@@ -8,6 +8,7 @@ import { useAzienda } from '@/context/AziendaContext'
 import { ricco } from '@/lib/testo-ricco'
 import { TIPI, AZIONI, oggiIso } from '@/lib/club-regole'
 import { COLORE_TIPO, segnaGesto } from '@/components/admin/ClubOggi'
+import RegiaConsigli from '@/components/admin/RegiaConsigli'
 
 // Il Club: per il cliente l'archivio di occasioni, focus e strategie; per il
 // super_admin anche la regia, dove i contenuti si preparano (con l'AI), si
@@ -27,14 +28,14 @@ export default function ClubPage() {
       <p style={{ color: '#666', fontSize: 14, margin: '0 0 20px' }}>Occasioni da non perdere e strategie di marketing scelte per la tua attività.</p>
       {superAdmin && (
         <div style={{ display: 'flex', gap: 6, marginBottom: 20, overflowX: 'auto' }}>
-          {[['club', 'Come lo vede un cliente'], ['regia', 'Regia']].map(([k, n]) => (
+          {[['club', 'Come lo vede un cliente'], ['regia', 'Regia: contenuti'], ['consigli', 'Regia: consigli personali']].map(([k, n]) => (
             <button key={k} type="button" data-scheda={k} onClick={() => setScheda(k)}
               style={{ flexShrink: 0, whiteSpace: 'nowrap', border: '1px solid #ddd', borderRadius: 20, padding: '7px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
                 background: scheda === k ? '#1a1a2e' : '#fff', color: scheda === k ? '#fff' : '#1a1a2e' }}>{n}</button>
           ))}
         </div>
       )}
-      {superAdmin && scheda === 'regia' ? <Regia /> : <Archivio />}
+      {superAdmin && scheda === 'regia' ? <Regia /> : superAdmin && scheda === 'consigli' ? <RegiaConsigli /> : <Archivio />}
     </div>
   )
 }

@@ -13,7 +13,8 @@
 // 4. Nel browser: la carta in Dashboard (computer e telefono), «Leggi tutto»,
 //    il testo con un <script> che resta testo, il pulsante; la regia che
 //    prepara un'occasione dal calendario.
-// 5. `--vero` (solo in produzione): una bozza scritta davvero dall'AI.
+// 4-bis. I consigli personali: segnali, soglie, segnaposti, chi li vede, anteprima.
+// 5. `--vero` (solo in produzione): un contenuto e un consiglio scritti davvero dall'AI.
 //
 // Uso (a mano):  node probe-club.mjs [cartella-foto] [--vero]   ·  $env:TEST_URL per il locale
 import { createClient } from '@supabase/supabase-js'
@@ -135,6 +136,34 @@ try {
   const conteggio = regia.contenuti?.find(c => c.id === strat.d.id)?.letture
   esito(conteggio?.visto === 1 && conteggio?.clic === 0, 'la regia conta un’azienda una volta sola', JSON.stringify(conteggio))
 
+  console.log('\nI CONSIGLI PERSONALI')
+  esito((await api(titA, '/api/club/regia/consigli')).status === 404, 'un titolare → 404')
+  const cat = await json(await api(sup, '/api/club/regia/consigli'))
+  esito(cat.segnali?.some(s => s.chiave === 'iscritti_senza_newsletter') && !JSON.stringify(cat.segnali).includes('scatta'), 'il catalogo dei segnali arriva senza le funzioni')
+  const nuovoConsiglio = c => api(sup, '/api/club/regia/consigli', { method: 'POST', body: JSON.stringify(c) })
+  esito((await nuovoConsiglio({ segnale: 'boh', titolo: 'x' })).status === 400, 'un segnale inventato → 400')
+  esito((await nuovoConsiglio({ segnale: 'calendario_vuoto', titolo: 'ZZ {persone} persone' })).status === 400, 'un segnaposto che il segnale non conosce → 400')
+  // A ha 2 eventi passati e nessuno in programma → «calendario vuoto» scatta.
+  const entA = (await a.from('entita').select('id').eq('azienda_id', azA.id).single()).data
+  await deve(a.from('eventi').insert([1, 2].map(i => ({ azienda_id: azA.id, entity_tipo: 'ristorante', entity_id: entA.id, title: `ZZ passato ${i}`, slug: `zz-club-passato-${i}-${t}`,
+    date_start: new Date(Date.now() - (10 + i) * 864e5).toISOString(), price: 0, published: true, active: true }))), 'eventi passati')
+  const cv = await json(await nuovoConsiglio({ segnale: 'calendario_vuoto', parametri: { min_passati: 99999 }, mestieri: ['zz_club_a'],
+    titolo: 'ZZ Calendario vuoto dopo {eventi_passati} eventi', perche: 'Prova.', azione: 'eventi', stato: 'attivo' }))
+  const { data: rigaCv } = await a.from('club_consigli').select('parametri').eq('id', cv.id).single()
+  esito(rigaCv?.parametri?.min_passati === 100, 'una soglia fuori misura torna nei limiti del segnale', JSON.stringify(rigaCv?.parametri))
+  await api(sup, `/api/club/regia/consigli/${cv.id}`, { method: 'PATCH', body: JSON.stringify({ segnale: 'calendario_vuoto', parametri: { min_passati: 2 }, mestieri: ['zz_club_a'],
+    titolo: 'ZZ Calendario vuoto dopo {eventi_passati} eventi', perche: 'Prova.', azione: 'eventi', stato: 'attivo' }) })
+  const consA = (await json(await api(titA, '/api/consigli'))).consigli || []
+  const mio = consA.find(c => c.chiave === cv.id)
+  esito(mio?.titolo === 'ZZ Calendario vuoto dopo 2 eventi' && mio.azione?.link === '/admin/eventi' && mio.bozza === false, 'il titolare A vede il consiglio attivo, coi suoi numeri', JSON.stringify(consA))
+  const consB = (await json(await api(titB, '/api/consigli'))).consigli || []
+  esito(!consB.some(c => c.chiave === cv.id), 'il titolare B (altro mestiere) non lo vede')
+  const bz = await json(await nuovoConsiglio({ segnale: 'calendario_vuoto', parametri: { min_passati: 2 }, mestieri: ['zz_club_a'], titolo: 'ZZ Bozza consiglio', stato: 'bozza' }))
+  esito(!((await json(await api(titA, '/api/consigli'))).consigli || []).some(c => c.chiave === bz.id), 'una bozza il titolare non la vede')
+  const ant = await json(await api(sup, '/api/club/regia/consigli/anteprima', { method: 'POST', body: JSON.stringify({ segnale: 'iscritti_senza_newsletter', parametri: { min_persone: 1, giorni: 7 }, titolo: '{persone} persone, {da_quando}' }) }))
+  esito(typeof ant.aziende === 'number' && Array.isArray(ant.scatta) && ant.scatta.every(x => x.azienda && !/ZZ-CLUB/.test(x.azienda)), `l’anteprima guarda i clienti veri (${ant.scatta?.length} su ${ant.aziende}) e non quelli di prova`)
+  esito((await api(titA, '/api/club/regia/consigli/anteprima', { method: 'POST', body: '{}' })).status === 404, 'l’anteprima a un titolare → 404')
+
   console.log('\nNEL BROWSER')
   browser = await chromium.launch()
   const sessione = s => ({ cookies: [], origins: [{ origin: new URL(BASE).origin, localStorage: [{ name: `sb-${projectRef}-auth-token`, value: JSON.stringify(s) }] }] })
@@ -185,6 +214,16 @@ try {
     if (nuova) contenuti.push(nuova.id)
     esito(nuova?.stato === 'bozza' && JSON.stringify(nuova?.mestieri) === '["zz_club_a"]', 'nel database: bozza, solo per il mestiere scelto')
     if (FOTO) await p.screenshot({ path: `${FOTO}/club-regia.png`, fullPage: true }).catch(() => {})
+    // I consigli personali: un consiglio nuovo, le soglie del segnale, l'anteprima.
+    await p.locator('[data-scheda="consigli"]').click()
+    await p.locator('[data-nuovo-consiglio]').click({ timeout: 60000 })
+    await p.locator('[data-campo="segnale"]').selectOption('iscritti_senza_newsletter')
+    esito(await p.locator('[data-parametro="min_persone"]').inputValue() === '10', 'scelto il segnale, le soglie arrivano coi valori predefiniti')
+    await p.locator('[data-campo="titolo"]').fill('ZZ {persone} persone aspettano, {da_quando}')
+    await p.locator('[data-anteprima]').click()
+    await p.locator('[data-esito-anteprima]').waitFor({ timeout: 90000 }).catch(() => {})
+    esito(/scatterebbe/.test(await p.locator('[data-esito-anteprima]').innerText().catch(() => '')), '«Su chi scatterebbe oggi?» risponde')
+    if (FOTO) await p.screenshot({ path: `${FOTO}/club-consigli.png`, fullPage: true }).catch(() => {})
     esito(!errori.length, 'regia: nessun errore nella pagina', errori.join(' | '))
     await ctx.close()
   }
@@ -196,6 +235,10 @@ try {
     console.log(`     titolo: ${d.titolo}\n     testo: ${String(d.testo || '').slice(0, 300)}…\n     pulsante: ${d.azione}`)
     esito(r.status === 200 && d.titolo && d.testo?.length > 100, 'la bozza arriva con titolo e testo')
     esito(!/\d+\s?%/.test(d.testo || ''), 'nessuna percentuale inventata')
+    const rc = await api(sup, '/api/club/regia/consigli/bozza', { method: 'POST', body: JSON.stringify({ segnale: 'iscritti_senza_newsletter' }) })
+    const dc = await json(rc)
+    console.log(`     consiglio: ${dc.titolo}\n     perché: ${dc.perche}\n     pulsante: ${dc.azione}${dc.avviso ? `\n     avviso: ${dc.avviso}` : ''}`)
+    esito(rc.status === 200 && dc.titolo && dc.perche && !dc.avviso, 'il consiglio arriva con titolo e perché, e segnaposti che il segnale conosce')
   }
 } catch (e) {
   console.error('ERRORE:', e.message); rossi++
@@ -203,6 +246,7 @@ try {
   if (browser) await browser.close()
   if (contenuti.length) await a.from('club_contenuti').delete().in('id', contenuti)
   await a.from('club_contenuti').delete().like('titolo', 'ZZ %')
+  await a.from('club_consigli').delete().like('titolo', 'ZZ %')
   for (const id of utenti) await a.auth.admin.deleteUser(id).catch(() => {})
   for (const id of aziende) await cancellaAziendaDiProva(id).catch(e => console.error('pulizia:', e.message))
   await a.from('profili_mestiere').delete().in('chiave', MESTIERI)
