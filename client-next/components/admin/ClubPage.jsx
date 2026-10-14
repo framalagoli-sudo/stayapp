@@ -9,6 +9,7 @@ import { ricco } from '@/lib/testo-ricco'
 import { TIPI, AZIONI, oggiIso } from '@/lib/club-regole'
 import { COLORE_TIPO, segnaGesto } from '@/components/admin/ClubOggi'
 import RegiaConsigli from '@/components/admin/RegiaConsigli'
+import GuidaRegia from '@/components/admin/GuidaRegia'
 
 // Il Club: per il cliente l'archivio di occasioni, focus e strategie; per il
 // super_admin anche la regia, dove i contenuti si preparano (con l'AI), si
@@ -16,8 +17,16 @@ import RegiaConsigli from '@/components/admin/RegiaConsigli'
 export default function ClubPage() {
   const { profile } = useAuth()
   const superAdmin = profile?.role === 'super_admin'
-  const [scheda, setScheda] = useState('club')
-  if (!profile) return null
+  // Per il super_admin si apre la regia: è lì che lavora. «Come lo vede un
+  // cliente» resta a un clic (e ci porta il link ?apri= della carta in Dashboard).
+  const [scheda, setScheda] = useState(null)
+  useEffect(() => {
+    if (!profile || scheda) return
+    let apri = null
+    try { apri = new URLSearchParams(window.location.search).get('apri') } catch {}
+    setScheda(profile.role === 'super_admin' && !apri ? 'regia' : 'club')
+  }, [profile, scheda])
+  if (!profile || !scheda) return null
   if (!['admin_azienda', 'super_admin'].includes(profile.role)) return <p style={{ color: '#888' }}>Il Club è riservato al titolare dell'attività.</p>
   return (
     <div style={{ maxWidth: 900 }}>
@@ -28,13 +37,14 @@ export default function ClubPage() {
       <p style={{ color: '#666', fontSize: 14, margin: '0 0 20px' }}>Occasioni da non perdere e strategie di marketing scelte per la tua attività.</p>
       {superAdmin && (
         <div style={{ display: 'flex', gap: 6, marginBottom: 20, overflowX: 'auto' }}>
-          {[['club', 'Come lo vede un cliente'], ['regia', 'Regia: contenuti'], ['consigli', 'Regia: consigli personali']].map(([k, n]) => (
+          {[['regia', 'Regia: contenuti'], ['consigli', 'Regia: consigli personali'], ['club', 'Come lo vede un cliente']].map(([k, n]) => (
             <button key={k} type="button" data-scheda={k} onClick={() => setScheda(k)}
               style={{ flexShrink: 0, whiteSpace: 'nowrap', border: '1px solid #ddd', borderRadius: 20, padding: '7px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
                 background: scheda === k ? '#1a1a2e' : '#fff', color: scheda === k ? '#fff' : '#1a1a2e' }}>{n}</button>
           ))}
         </div>
       )}
+      {superAdmin && scheda !== 'club' && <GuidaRegia onVai={setScheda} />}
       {superAdmin && scheda === 'regia' ? <Regia /> : superAdmin && scheda === 'consigli' ? <RegiaConsigli /> : <Archivio />}
     </div>
   )
