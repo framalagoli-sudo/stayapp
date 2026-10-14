@@ -17,6 +17,7 @@ import StatoSitoBreve from '@/components/admin/StatoSitoBreve'
 import IniziaQui from '@/components/admin/IniziaQui'
 import Cruscotto from '@/components/admin/Cruscotto'
 import Consigli from '@/components/admin/Consigli'
+import ClubOggi from '@/components/admin/ClubOggi'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -284,6 +285,10 @@ export default function DashboardPage() {
       {/* ── Cosa fare adesso: i consigli che scattano dai dati. Al titolare
           solo quelli approvati; al super_admin anche le bozze. ── */}
       <Consigli />
+
+      {/* ── Il Club: occasioni e strategie di OltreNova, uguali per chi fa lo
+          stesso mestiere. Non c'è quando oggi non ha niente da dire. ── */}
+      <ClubOggi />
 
       {/* ── Alert email mancante ── */}
       {!aziLoading && missingEmail.length > 0 && (

@@ -389,6 +389,11 @@ senza rifarla. Direzione di lungo periodo: attività **leggibili e prenotabili d
    regolabile dal cliente. *1 sessione.*
    ✅ **14/10: punti 1 e 2, prima versione** (CLAUDE.md nota 74). Il cruscotto è live; i
    consigli sono live come **bozze** che vede solo Francesco, finché non li riscrive e approva.
+3-bis. **Il Club OltreNova** (deciso da Francesco il 14/10, nome suo) — un'area condivisa con
+   tutti i clienti, **di sola lettura per loro (NON un social)**: occasioni, focus, strategie di
+   marketing. È la sua consulenza scalata: «farmi pagare poco (e sempre) da più clienti».
+   ✅ 14/10: regia, carta «Oggi per te» e archivio (CLAUDE.md nota 75). Restano i primi
+   contenuti e la voce di menu.
 4. **Il partner** — ⏸️ **parcheggiato il 14/10** da Francesco («parcheggiamolo per adesso»). Un ruolo «gestore» che vede **solo i propri clienti**. È il recinto di sicurezza
    più delicato (oggi un solo super_admin, garantito dal database). Richiede la decisione su
    **chi paga** e l'abbonamento su Stripe Billing (§4.1, bloccato sulla commercialista). *2–3 sessioni.*

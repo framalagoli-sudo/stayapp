@@ -201,7 +201,7 @@ hospitality/
 │   ├── components/ · context/ · hooks/
 │   └── lib/                        # supabase, send-email, guest-data, blockTypes …
 ├── tests/                          # smoke test Playwright su produzione + sonde `probe-*.mjs`
-└── supabase/migrations/            # 001–136, eseguire a mano su Supabase
+└── supabase/migrations/            # 001–137, eseguire a mano su Supabase
 ```
 > `client/` e `server/` non esistono più nel repo (vedi nota in cima). Se li vedi in locale sono residui: sono in `.gitignore` e vanno cancellati, non aggiornati.
 
@@ -760,6 +760,15 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - ⚠️ La riga di numeri di prima (Richieste aperte, Prenotazioni oggi, Nuovi contatti, Visite sito, Recensione media, Prossimi eventi, Bozze piano) **è rimasta sotto**: visite e contatti ora compaiono due volte. Toglierla è un cambio che il cliente nota → si chiede a Francesco.
     - Sonda `tests/probe-cruscotto.mjs [cartella-foto]` (a mano): numeri noti su un'azienda di prova (periodo e periodo prima, annullate e lista d'attesa escluse, incassi), permessi, corpo grezzo senza nomi, bozze solo al super_admin, quali consigli scatterebbero sui clienti veri (sola lettura), Dashboard su computer e telefono.
 
+75. **🧭 Il Club OltreNova: la consulenza scritta una volta, letta da tutti** (14/10/2026, decisione di Francesco: «un'area da condividere con tutti i clienti… consigli, occasioni, focus, strategie di marketing… così posso scalare e farmi pagare poco e sempre da più clienti»; il nome «Club» è suo). Migration `137` (`club_contenuti`, `club_letture`).
+    - ⛔ **Non è un social**: i clienti leggono e basta, niente post né commenti (Francesco, esplicito). Scrive solo la **regia** = il super_admin.
+    - **Tre tipi** (`TIPI` in `lib/club-regole.js`, senza dipendenze): **occasione** (ha un giorno: «fra 10 giorni è Halloween»), **strategia** (resta in archivio), **focus** (il tema del periodo). Ognuno vale per tutti o per alcuni **mestieri** (chiavi di `profili_mestiere`, che stanno su `entita.profilo`), ha una finestra di vetrina (`visibile_dal`/`visibile_al`) e un pulsante scelto da un **catalogo chiuso** (`AZIONI`: nel database solo la chiave, mai un indirizzo). Il testo accetta solo la formattazione di `lib/testo-ricco.js`.
+    - **Cliente** (`GET /api/club`, `lib/club.js` → `clubPer`): solo **pubblicati, già iniziati, del suo mestiere** — il filtro sta sul server. Escono titolo, testo, «quando», pulsante: niente stato, autore, destinatari. Carta **«Oggi per te, dal Club»** in Dashboard (`ClubOggi.jsx`: le occasioni più vicine, poi il resto; massimo due; se non c'è niente non compare) e pagina **`/admin/club`** (`ClubPage.jsx`, archivio per gruppi). Lo staff no.
+    - **«Oggi» si calcola nel fuso dell'azienda** (`oggiIso(d, fuso)`): in UTC, dopo le 22 italiane, «fra 10 giorni» diventava «fra 11» (l'ha fermato `verifica-regole`).
+    - **Regia** (scheda «Regia» della stessa pagina; route `/api/club/regia*` con `requireSuperAdmin`, 404 agli altri): le prossime occasioni del calendario (`CALENDARIO`, date fisse: Pasqua e Black Friday si spostano a mano) che un clic trasforma in un contenuto già datato; **«Scrivi la bozza con l'AI»** (`/api/club/regia/bozza`: non salva niente, vieta percentuali e studi inventati e promesse di risultati, paga la piattaforma); per ogni contenuto **quante aziende l'hanno visto e premuto** (`club_letture`: una riga per contenuto, azienda e gesto; il super_admin non conta; un gesto su un contenuto che quell'azienda non può vedere non conta).
+    - ⚠️ **Nessuna voce nel menu**, di proposito: al Club si arriva dalla carta in Dashboard. La voce si aggiunge col sì di Francesco, quando ci sono i primi contenuti (una pagina vuota aperta da tutti i clienti è peggio di nessuna pagina).
+    - Sonda `tests/probe-club.mjs [cartella-foto] [--vero]` (a mano): ⚠️ i contenuti di prova valgono **solo per due mestieri finti** creati e tolti dalla sonda — un contenuto «per tutti» pubblicato in produzione lo vedrebbero i clienti veri. `--vero` in produzione fa scrivere una bozza all'AI.
+
 ---
 
 ## Roadmap
@@ -796,6 +805,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
 - [x] **«Marchio e stile»** (logo, colori e caratteri in un posto solo, anche dall'editor) e **caratteri rifatti** (18 accoppiate) ✅ 13/10/2026 — nota 72.
 - [x] **Icona del sito** e **parola in evidenza nei titoli** ✅ 13/10/2026 — nota 72.
 - [x] **«Modifica sulla pagina» da telefono** (un tocco sceglie la sezione, la scheda sale dal basso) ✅ 14/10/2026 — nota 73.
+- [~] **Club OltreNova** ✅ 14/10 regia + carta «Oggi per te» + archivio (nota 75, migration 137). Restano: i primi contenuti (Francesco), la voce di menu (col suo sì), il resoconto per email.
 - [~] **Cruscotto e consulente nella Dashboard** (STRATEGIA §6.4) — ✅ 14/10 prima versione: «Cosa succede» live per i titolari; «Cosa fare adesso» live come **bozze visibili solo al super_admin** (nota 74). Restano: i testi dei consigli scritti da Francesco e la loro approvazione, «com'è andata» dopo un consiglio, resoconto settimanale e report mensile per email, decidere se togliere la vecchia riga di numeri. Il partner (ruolo «gestore») è **parcheggiato** su decisione di Francesco.
 - [ ] **Editor, il resto del piano del 12/10** — opzioni solo-telefono, larghezza del contenuto, copia stile. Ricognizione sui blocchi che mancano ancora (barra fissa su telefono, testo che scorre, mosaico): memoria `project_blocchi_ricognizione`.
 - [ ] **Agente AI al telefono** (idea di Francesco, 12/10 — tipo bookli.ai): in valutazione, `STRATEGIA.md` §6.3. Dopo Meta/WhatsApp e le operazioni in `lib/`; la voce si prende da un fornitore.
