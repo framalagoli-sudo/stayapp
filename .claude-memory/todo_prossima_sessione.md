@@ -4,11 +4,17 @@ description: "Da dove riprendere — 13/10: cinque blocchi nuovi LIVE (Titolo, C
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-10-13T10:47:44.452Z
+  modified: 2026-10-14T10:23:56.977Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
+
+## ▶️ 14/10 — «Modifica sulla pagina» da telefono (CLAUDE.md nota 73)
+- Francesco: l'editor da telefono «in sede di vendita ci caratterizzerebbe» → «si ok». Fatto: sotto i 1000px, la pagina vera a tutto schermo, un tocco sceglie la sezione e la scheda sale dal basso; «+» sopra/sotto la sezione scelta, sezioni pronte, Chiedi all'AI, Stile, Salva/Pubblica. Niente trascinamento né scrittura sulla pagina (scelta mia, detta a lui prima).
+- Sonda `tests/probe-editor-telefono.mjs` verde in locale; `probe-editor-visuale.mjs` riallineata a due nomi cambiati (era la sonda a dare rosso).
+- **Deve provarlo lui dal suo telefono**: una pagina → «Modifica sulla pagina» → tocca una sezione → cambia il titolo → Salva. La simulazione non sostituisce un telefono vero (tastiera che sale, Safari).
+- Ordine dopo, detto a lui: stato vero del conto Stripe (nessun cliente l'ha collegato, quindi può aspettare la vendita, non il primo cliente).
 
 ## ▶️ 13/10, quarta parte — «Marchio e stile» e caratteri rifatti, LIVE (CLAUDE.md nota 72)
 - Francesco: i font «macchinosi», logo/header/footer «sparpagliati… ho fatto fatica io»; poi «sposta senza problemi - sistema come pensi sia meglio». Fatto: un pannello solo (logo, copertina, colori, caratteri) per i tre tipi, aperto anche dall'editor visuale («Stile»); 18 accoppiate; social e frase con intestazione e piede; «Aspetto» → «Marchio e stile». Provato in produzione (`probe-marchio-stile.mjs`, menu identico alla fotografia aggiornata, siti dei clienti senza regole nuove).
