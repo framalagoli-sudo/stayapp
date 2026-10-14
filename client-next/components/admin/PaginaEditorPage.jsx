@@ -14,7 +14,7 @@ import {
   MessageCircle, Tag, Package, HelpCircle, Video, Settings, Compass, Map,
   Calendar, FileText, Clock, Mail, Phone, MapPin, ChevronDown, ChevronUp,
   Plus, Trash2, Copy, Clipboard, ImageIcon, Layers, Building2, GalleryHorizontal, Columns, Minus, Megaphone, Utensils, Share2, Code, SlidersHorizontal, Sparkles,
-  Heading, Quote, Table, PanelTop, AppWindow,
+  Heading, Quote, Table, PanelTop, AppWindow, Smartphone,
 } from 'lucide-react'
 import AiButton from '@/components/admin/AiButton'
 import RichTextEditor from '@/components/admin/RichTextEditor'
@@ -1926,6 +1926,11 @@ export default function PaginaEditorPage() {
   // trascinano dentro. È un altro modo di lavorare sugli STESSI blocchi: stato,
   // annulla/ripeti e salvataggio sono quelli dell'elenco.
   const [visuale,     setVisuale]     = useState(false)
+  // Da telefono lo stesso editor visuale, alleggerito: la pagina a tutto
+  // schermo, un tocco sceglie la sezione e la sua scheda sale dal basso.
+  // Niente trascinamento e niente scrittura sulla pagina.
+  const [perTelefono, setPerTelefono] = useState(false)
+  const [foglioAlto,  setFoglioAlto]  = useState(false)
   const [cercaBlocco, setCercaBlocco] = useState('')
   const [salvatiVuoti, setSalvatiVuoti] = useState(false)   // sul sito la pagina non ha ancora blocchi
   const [spazio,      setSpazio]      = useState({ w: 1000, h: 700 })
@@ -2041,8 +2046,8 @@ export default function PaginaEditorPage() {
     if (!percorso || !finestra) return
     // Di una sezione condivisa la pagina salva solo il riferimento: al riquadro va anche quello che contiene.
     const daDisegnare = blocks.map(b => b.type === TIPO_SEZIONE ? { ...b, _blocchi: blocchiDi(b), _nome: nomeDi(b) } : visuale && testiDaRiscrivere(b.type, b.data) ? { ...b, _riscrivi: true } : b)
-    try { finestra.postMessage({ tipo: 'oltrenova:anteprima-blocchi', percorso, blocks: daDisegnare, ...(visuale ? { visuale: true, selezionato: expandedId, scala, punto: inserisciPrima === undefined ? null : { prima: inserisciPrima }, ai } : {}) }, window.location.origin) } catch {}
-  }, [blocks, sezioni, entitySlug, page?.slug, page?.entity_tipo, visuale, expandedId, scala, inserisciPrima, ai])
+    try { finestra.postMessage({ tipo: 'oltrenova:anteprima-blocchi', percorso, blocks: daDisegnare, ...(visuale ? { visuale: true, selezionato: expandedId, scala: perTelefono ? 1 : scala, punto: inserisciPrima === undefined ? null : { prima: inserisciPrima }, ai, ...(perTelefono ? { telefono: true } : {}) } : {}) }, window.location.origin) } catch {}
+  }, [blocks, sezioni, entitySlug, page?.slug, page?.entity_tipo, visuale, perTelefono, expandedId, scala, inserisciPrima, ai])
   useEffect(() => {
     if (!visuale && !(showPreview && dirty)) return
     const t = setTimeout(mandaAnteprima, visuale ? 40 : 250)
@@ -2415,12 +2420,17 @@ export default function PaginaEditorPage() {
   // Una pagina che sul sito non ha ancora blocchi può non avere, nel riquadro,
   // il disegnatore su cui farli cadere (la home mostra la versione di prima):
   // in quel caso il primo blocco si salva prima di entrare.
-  async function apriVisuale() {
+  async function apriVisuale(daTelefono = false) {
     if (salvatiVuoti && page.slug === '__home__') {
-      if (!blocks.length) { alert('Aggiungi il primo blocco con «Aggiungi blocco», poi apri l\'editor visuale.'); return }
+      if (!blocks.length) { alert(`Aggiungi il primo blocco con «Aggiungi blocco», poi apri ${daTelefono ? '«Modifica sulla pagina»' : 'l\'editor visuale'}.`); return }
       await save()
     }
-    setShowPreview(false); setExpandedId(null); setCercaBlocco(''); setVisuale(true)
+    setShowPreview(false); setExpandedId(null); setCercaBlocco(''); setStileAperto(false); setFoglioAlto(false)
+    setPerTelefono(daTelefono); setVisuale(true)
+  }
+  function chiudiVisuale() {
+    setVisuale(false); setPerTelefono(false); setStileAperto(false); setInserisciPrima(undefined); setAvviso(null)
+    if (previewDevice === 'tablet') setPreviewDevice('desktop')
   }
   function addPattern(key) {
     const p = BLOCK_PATTERNS.find(x => x.key === key)
@@ -2558,9 +2568,15 @@ export default function PaginaEditorPage() {
             style={{ background: '#f0f0f4', border: 'none', borderRadius: '0 8px 8px 0', padding: '8px 12px', cursor: future.length ? 'pointer' : 'default', fontSize: 15, color: future.length ? '#1a1a2e' : '#bbb' }}>↷</button>
         </div>
         {pUrl && (
-          <button onClick={apriVisuale} className="pe-apri-visuale" title="La pagina vera a tutto schermo: trascini i blocchi dentro e clicchi le sezioni per modificarle"
+          <button onClick={() => apriVisuale()} className="pe-apri-visuale" title="La pagina vera a tutto schermo: trascini i blocchi dentro e clicchi le sezioni per modificarle"
             style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#5b6af8', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
             <Layers size={14} strokeWidth={1.5} color="#fff" /> Editor visuale
+          </button>
+        )}
+        {pUrl && (
+          <button onClick={() => apriVisuale(true)} className="pe-apri-telefono" data-apri-telefono title="La pagina com'è sul sito: tocchi una sezione e la modifichi"
+            style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#5b6af8', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
+            <Smartphone size={14} strokeWidth={1.5} color="#fff" /> Modifica sulla pagina
           </button>
         )}
         {pUrl && (
@@ -2582,10 +2598,134 @@ export default function PaginaEditorPage() {
       </div>
 
       {/* L'editor visuale chiede spazio: sotto i mille pixel resta l'elenco. */}
-      <style>{`@media (max-width: 999px) { .pe-apri-visuale { display: none !important; } }`}</style>
+      {/* Sotto i mille pixel c'è la versione da telefono, sopra quella da computer: mai tutte e due. */}
+      <style>{`@media (max-width: 999px) { .pe-apri-visuale { display: none !important; } }
+        @media (min-width: 1000px) { .pe-apri-telefono { display: none !important; } }`}</style>
+
+      {/* ── Da telefono: la pagina in alto, la scheda della sezione toccata che sale dal basso ── */}
+      {visuale && perTelefono && pUrl && (() => {
+        const scelto = blocks.find(b => b.id === expandedId) || null
+        const iScelto = scelto ? blocks.indexOf(scelto) : -1
+        const disponibili = BLOCK_TYPES.filter(b => tipoAmmesso(b.type))
+        const cerca = cercaBlocco.trim().toLowerCase()
+        const trovati = cerca ? disponibili.filter(b => b.label.toLowerCase().includes(cerca) || b.desc?.toLowerCase().includes(cerca)) : disponibili
+        const src = `${pUrl}?preview=${previewToken || ''}&visuale=1&_n=${previewNonce}`
+        const tondo = { background: '#f0f0f4', border: 'none', borderRadius: 9, minWidth: 38, height: 38, padding: '0 9px', cursor: 'pointer', color: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 15 }
+        const linguetta = a => ({ flex: 1, padding: '11px 8px', background: 'none', borderStyle: 'solid', borderWidth: '0 0 2px', borderColor: a ? '#5b6af8' : 'transparent', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: a ? '#1a1a2e' : '#888' })
+        const aggiungi = inserisciPrima !== undefined
+        const foglio = scelto || aggiungi || stileAperto
+        const testaFoglio = (titolo, chiudi, altro = null) => (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px 8px', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
+            <button onClick={chiudi} aria-label="Chiudi" style={{ ...tondo, background: 'none', fontSize: 18, color: '#888' }}>✕</button>
+            <div style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titolo}</div>
+            {altro}
+          </div>
+        )
+        return (
+          <div data-editor-telefono style={{ position: 'fixed', inset: 0, zIndex: 900, background: '#e9e9ee', display: 'flex', flexDirection: 'column', height: '100dvh' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', background: '#fff', borderBottom: '1px solid #e2e2ea', flexShrink: 0 }}>
+              <button onClick={chiudiVisuale} aria-label="Torna all'elenco dei blocchi" title="Torna all'elenco dei blocchi" style={{ ...tondo, background: 'none', fontSize: 18 }}>←</button>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{page.titolo || 'Pagina senza titolo'}</div>
+                <div style={{ fontSize: 11.5, fontWeight: 600, color: saveError ? '#c00' : dirty ? '#856404' : '#1a7f37', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {saveError ? `⚠ ${saveError}` : dirty ? 'Non salvato' : saved ? 'Salvato ✓' : page.status !== 'pubblicata' ? 'Bozza: non è sul sito' : 'Tutto salvato'}
+                </div>
+              </div>
+              <button onClick={undo} disabled={!past.length} aria-label="Annulla" style={{ ...tondo, color: past.length ? '#1a1a2e' : '#bbb' }}>↶</button>
+              <button onClick={redo} disabled={!future.length} aria-label="Ripeti" style={{ ...tondo, color: future.length ? '#1a1a2e' : '#bbb' }}>↷</button>
+              <button onClick={() => save()} disabled={saving || !dirty} data-salva style={{ ...tondo, background: dirty ? '#1a1a2e' : '#e0e0e0', color: dirty ? '#fff' : '#999', fontWeight: 700, fontSize: 13.5, padding: '0 12px' }}>{saving ? '…' : 'Salva'}</button>
+              {page.status !== 'pubblicata' && <button onClick={() => save({ status: 'pubblicata' })} disabled={saving} data-pubblica title="Salva e mette la pagina online" style={{ ...tondo, background: '#1a7f37', color: '#fff', fontWeight: 700, fontSize: 13.5, padding: '0 11px' }}>Pubblica</button>}
+            </div>
+
+            <div style={{ flex: 1, minHeight: 0, position: 'relative', background: '#fff' }}>
+              <iframe ref={riquadro} key={previewNonce} src={src} title="Modifica sulla pagina" style={{ width: '100%', height: '100%', border: 0, display: 'block' }} />
+              {avviso && (
+                <div data-avviso style={{ position: 'absolute', left: 10, right: 10, bottom: 10, zIndex: 5, display: 'flex', alignItems: 'center', gap: 12, lineHeight: 1.45, background: '#1a1a2e', color: '#fff', borderRadius: 10, padding: '10px 14px', fontSize: 13.5, boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}>
+                  <span style={{ flex: 1, minWidth: 0 }}>{avviso.testo}</span>
+                  {avviso.annulla && past.length > 0 && <button onClick={() => { undo(); setAvviso(null) }} style={{ background: 'none', border: 'none', color: '#aab4ff', fontWeight: 700, cursor: 'pointer', fontSize: 13.5, padding: 0 }}>Annulla</button>}
+                  {!avviso.annulla && <button onClick={() => setAvviso(null)} aria-label="Chiudi" style={{ background: 'none', border: 'none', color: '#aab4ff', cursor: 'pointer', fontSize: 16, padding: 0 }}>✕</button>}
+                </div>
+              )}
+            </div>
+
+            {foglio ? (
+              <div data-foglio style={{ height: foglioAlto ? '82dvh' : '56dvh', flexShrink: 0, background: '#fff', borderRadius: '16px 16px 0 0', boxShadow: '0 -8px 30px rgba(0,0,0,0.16)', display: 'flex', flexDirection: 'column', minHeight: 0, transition: 'height .2s' }}>
+                <button onClick={() => setFoglioAlto(a => !a)} aria-label={foglioAlto ? 'Abbassa la scheda' : 'Alza la scheda'} data-maniglia
+                  style={{ background: 'none', border: 'none', padding: '8px 0 4px', cursor: 'pointer', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+                  <span style={{ width: 44, height: 5, borderRadius: 3, background: '#d5d5de' }} />
+                </button>
+                {scelto ? (<>
+                  {testaFoglio(blockLabel(scelto.type), () => setExpandedId(null), <>
+                    <button onClick={() => spostaDi(scelto.id, -1)} disabled={iScelto === 0} aria-label="Sposta su" style={{ ...tondo, color: iScelto === 0 ? '#ccc' : '#1a1a2e' }}><ChevronUp size={17} strokeWidth={1.5} /></button>
+                    <button onClick={() => spostaDi(scelto.id, 1)} disabled={iScelto === blocks.length - 1} aria-label="Sposta giù" style={{ ...tondo, color: iScelto === blocks.length - 1 ? '#ccc' : '#1a1a2e' }}><ChevronDown size={17} strokeWidth={1.5} /></button>
+                    <button onClick={() => duplicateBlock(scelto.id)} aria-label="Duplica" style={tondo}><Copy size={15} strokeWidth={1.5} /></button>
+                    <button onClick={() => deleteBlock(scelto.id)} aria-label="Elimina" data-elimina style={{ ...tondo, color: '#c0392b' }}><Trash2 size={15} strokeWidth={1.5} /></button>
+                  </>)}
+                  {scelto.type !== TIPO_SEZIONE && (
+                    <div style={{ display: 'flex', borderBottom: '1px solid #f0f0f0', flexShrink: 0 }}>
+                      <button onClick={() => setSchedaTab('contenuto')} style={linguetta(schedaTab === 'contenuto')}>Contenuto</button>
+                      <button onClick={() => setSchedaTab('stile')} style={linguetta(schedaTab === 'stile')}>Stile</button>
+                    </div>
+                  )}
+                  <div key={scelto.id + schedaTab} data-scheda-blocco style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 40px', background: '#fafafa' }}>
+                    {schedaTab === 'contenuto' || scelto.type === TIPO_SEZIONE
+                      ? <><RiscriviConAI block={scelto} aperto={riscriviPer === scelto.id} stato={riscrive?.id === scelto.id ? riscrive : null} onApri={si => setRiscriviPer(si ? scelto.id : null)} onChiedi={come => riscriviAI(scelto.id, come)} /><BlockEditor block={scelto} onChange={data => updateBlock(scelto.id, data)} entityId={entityId} entityTipo={entityTipo} /></>
+                      : <BlockStylePanel block={scelto} entityId={entityId} entityTipo={entityTipo} onChange={style => updateBlockStyle(scelto.id, style)} />}
+                  </div>
+                </>) : aggiungi ? (<>
+                  {testaFoglio(typeof inserisciPrima === 'string' ? 'Aggiungi nel punto segnato' : 'Aggiungi in fondo alla pagina', () => setInserisciPrima(undefined))}
+                  <div data-catalogo style={{ flex: 1, overflowY: 'auto', padding: '12px 12px 40px' }}>
+                    <div style={{ fontSize: 13, color: '#666', lineHeight: 1.5, marginBottom: 10 }}>Tocca un blocco e compare nel punto segnato sulla pagina, già scritto. Oppure chiedilo all'AI da lì.</div>
+                    <button onClick={() => setShowPatterns(true)} data-sezioni-pronte style={{ width: '100%', padding: 12, marginBottom: 8, background: '#5b6af8', color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>Scegli una sezione pronta</button>
+                    {hasClip && <button onClick={() => pasteBlock()} style={{ width: '100%', padding: 11, marginBottom: 8, background: '#fff', border: '1.5px dashed #c8d0e8', borderRadius: 10, cursor: 'pointer', fontSize: 13.5, fontWeight: 600, color: '#5b6af8' }}>Incolla il blocco copiato</button>}
+                    <input placeholder="Cerca blocco…" value={cercaBlocco} onChange={e => setCercaBlocco(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', margin: '4px 0 10px', border: '1.5px solid #e0e0e8', borderRadius: 9, fontSize: 16, boxSizing: 'border-box', outline: 'none' }} />
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 6 }}>
+                      {trovati.map(b => {
+                        const Icon = BLOCK_ICON_MAP[b.type] || FileText
+                        const bColor = blockColor(b.type)
+                        return (
+                          <button key={b.type} data-tessera={b.type} onClick={() => addBlock(b.type, typeof inserisciPrima === 'string' ? inserisciPrima : null)}
+                            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px', borderRadius: 9, border: '1px solid #ececf2', background: '#fff', cursor: 'pointer', minWidth: 0, textAlign: 'left' }}>
+                            <span style={{ width: 30, height: 30, borderRadius: 7, background: `${bColor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <Icon size={15} strokeWidth={1.5} color={bColor} />
+                            </span>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', lineHeight: 1.25, minWidth: 0, overflowWrap: 'anywhere' }}>{b.label}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {!trovati.length && <div style={{ fontSize: 13, color: '#999', padding: 12 }}>Nessun blocco con questo nome.</div>}
+                  </div>
+                </>) : (<>
+                  {testaFoglio('Marchio e stile', () => setStileAperto(false))}
+                  <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px 40px' }}>
+                    {/* Il tema si salva a ogni scelta, come da computer: la pagina sopra si ricarica con la faccia nuova. */}
+                    <MarchioEStile compatto tipo={page.entity_tipo} id={page.entity_id} onCambiato={aggiornaStile} />
+                  </div>
+                </>)}
+              </div>
+            ) : (
+              <div data-barra-telefono style={{ flexShrink: 0, background: '#fff', borderTop: '1px solid #e2e2ea', padding: '10px 12px calc(10px + env(safe-area-inset-bottom))', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ fontSize: 13, color: '#666', textAlign: 'center' }}>{blocks.length ? 'Tocca una sezione della pagina per modificarla.' : 'La pagina è vuota: aggiungi la prima sezione.'}</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => { setExpandedId(null); setCercaBlocco(''); setInserisciPrima(null) }} data-aggiungi-sezione
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 12, background: '#5b6af8', color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
+                    <Plus size={16} strokeWidth={2} color="#fff" /> Aggiungi una sezione
+                  </button>
+                  <button onClick={() => setStileAperto(true)} data-apri-stile title="Logo, colori e caratteri di tutto il sito"
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 14px', background: '#f0f0f4', color: '#1a1a2e', border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+                    <Sparkles size={15} strokeWidth={1.5} /> Stile
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* ── Editor visuale: la pagina vera al centro, i blocchi a sinistra ── */}
-      {visuale && pUrl && (() => {
+      {visuale && !perTelefono && pUrl && (() => {
         const scelto = blocks.find(b => b.id === expandedId) || null
         const disponibili = BLOCK_TYPES.filter(b => tipoAmmesso(b.type))
         const cerca = cercaBlocco.trim().toLowerCase()
@@ -2643,7 +2783,7 @@ export default function PaginaEditorPage() {
               </aside>
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', background: '#fff', borderBottom: '1px solid #e2e2ea', flexShrink: 0 }}>
-              <button onClick={() => { setVisuale(false); setInserisciPrima(undefined); setAvviso(null); if (previewDevice === 'tablet') setPreviewDevice('desktop') }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#666', padding: '6px 4px', flexShrink: 0 }}>← Torna all'elenco dei blocchi</button>
+              <button onClick={chiudiVisuale} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#666', padding: '6px 4px', flexShrink: 0 }}>← Torna all'elenco dei blocchi</button>
               <strong style={{ flex: 1, minWidth: 0, fontSize: 14, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{page.titolo || 'Pagina senza titolo'}</strong>
               {page.status !== 'pubblicata' && <span style={{ fontSize: 11, color: '#6b5200', background: '#fff8e1', padding: '3px 10px', borderRadius: 20, fontWeight: 600, flexShrink: 0 }}>Bozza</span>}
               {dirty && <span style={{ fontSize: 11, color: '#856404', background: '#fff3cd', padding: '3px 10px', borderRadius: 20, fontWeight: 600, flexShrink: 0 }}>Non salvato</span>}

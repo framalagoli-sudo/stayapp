@@ -1186,6 +1186,8 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
           selezionato: typeof m.selezionato === 'string' ? m.selezionato : null, scala: Number(m.scala) > 0.1 && Number(m.scala) <= 1 ? Number(m.scala) : 1,
           // Il punto scelto col «+» (prima di quale sezione; null = in fondo) e a che punto è la richiesta all'AI.
           punto: m.punto && typeof m.punto === 'object' ? { prima: typeof m.punto.prima === 'string' ? m.punto.prima : null } : null,
+          // Da telefono la pagina serve solo a scegliere: si modifica dalla scheda del pannello.
+          telefono: m.telefono === true,
           ai: m.ai?.lavora === true ? { lavora: true } : typeof m.ai?.errore === 'string' ? { errore: m.ai.errore.slice(0, 300) } : null,
         })
       })
@@ -2919,13 +2921,13 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
           if (!editor) return el
           return (
             <Fragment key={b.id}>
-              {editor.punto?.prima === b.id && <PuntoScelto ai={editor.ai} />}
-              {sezionePerEditor(el, b, editor, { primo: i === 0, ultimo: i === blocks.length - 1 })}
+              {editor.punto?.prima === b.id && <PuntoScelto ai={editor.ai} telefono={editor.telefono} />}
+              {sezionePerEditor(el, b, editor, { primo: i === 0, ultimo: i === blocks.length - 1, dopo: blocks[i + 1]?.id ?? null })}
             </Fragment>
           )
         })}
-        {editor?.punto && blocks.length > 0 && !blocks.some(b => b?.id === editor.punto.prima) && <PuntoScelto ai={editor.ai} />}
-        {editor && !blocks.length && <PuntoScelto ai={editor.ai} primo />}
+        {editor?.punto && blocks.length > 0 && !blocks.some(b => b?.id === editor.punto.prima) && <PuntoScelto ai={editor.ai} telefono={editor.telefono} />}
+        {editor && !blocks.length && <PuntoScelto ai={editor.ai} primo telefono={editor.telefono} />}
       </div>
       {fotoGrande && <FotoGrande foto={fotoGrande.foto} indice={fotoGrande.i} lang={lang} onVai={i => setFotoGrande(f => f && { ...f, i })} onChiudi={() => setFotoGrande(null)} />}
     </>

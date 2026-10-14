@@ -384,7 +384,8 @@ try {
   console.log('\nLA STRUTTURA DELLA PAGINA, LE SCHEDE, IL TABLET\n')
   await riq().locator('[data-blocco="b-chi"]').click({ position: { x: 40, y: 20 } })
   await page.locator('[data-scheda-blocco]').waitFor({ timeout: 15000 })
-  await page.locator('[data-editor-visuale]').getByRole('button', { name: 'Stile', exact: true }).click()
+  // La linguetta della scheda, non il pulsante «Stile» della barra (logo e colori del sito).
+  await page.locator('[data-editor-visuale] button:not([data-apri-stile])', { hasText: /^Stile$/ }).click()
   esito(await page.locator('[data-scheda-blocco]').getByText('Spaziatura verticale').count() === 1 && await page.locator('[data-scheda-blocco] input[type="text"]').count() <= 2, 'la scheda ha due linguette: in «Stile» c’è solo lo stile')
   await page.locator('[data-editor-visuale]').getByRole('button', { name: 'Contenuto', exact: true }).click()
   esito(await page.locator('[data-scheda-blocco]').getByText('Spaziatura verticale').count() === 0, 'e in «Contenuto» solo i contenuti')
@@ -589,7 +590,7 @@ try {
   if (porta) {
     const altraScheda = await ctx.newPage()
     await altraScheda.goto(BASE + porta, { waitUntil: 'domcontentloaded', timeout: 120000 })
-    esito(await altraScheda.getByRole('heading', { name: 'Header & Footer' }).waitFor({ timeout: 120000 }).then(() => true, () => false), 'la porta arriva davvero dove intestazione e piede si cambiano')
+    esito(await altraScheda.getByRole('heading', { name: 'Intestazione e piede' }).waitFor({ timeout: 120000 }).then(() => true, () => false), 'la porta arriva davvero dove intestazione e piede si cambiano')
     await altraScheda.close()
   }
   await riq().locator('nav.snav').first().click({ position: { x: 8, y: 8 } })

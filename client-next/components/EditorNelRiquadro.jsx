@@ -100,6 +100,15 @@ const STILE = `
   .ev-qui-riga { display: flex; align-items: center; gap: 0.4em; flex-wrap: wrap; justify-content: center; }
   .ev-qui-errore { max-width: 44em; padding: 0.55em 0.9em; border-radius: 0.6em; background: #fdecec; color: #a11919; font-size: 0.92em; }
   .ev-trascina .ev-qui { background: #e6e8ff; }
+  /* Da telefono: un tocco sceglie la sezione e basta. Niente comandi al passaggio
+     (col dito il passaggio resta appiccicato), i «+» solo sopra e sotto quella scelta, grandi da toccare. */
+  .ev-telefono .ev-blocco:not(.ev-scelto):hover::after { border: 0; }
+  .ev-telefono .ev-blocco:not(.ev-scelto):hover::before { display: none; }
+  .ev-telefono .ev-blocco > .ev-piu, .ev-telefono .ev-aggiungi-foto { display: none !important; }
+  .ev-telefono .ev-blocco.ev-scelto > .ev-piu { display: flex !important; width: 40px; height: 40px; }
+  .ev-telefono .ev-blocco.ev-scelto > .ev-piu-sotto { top: auto; bottom: 0; transform: translate(-50%, 50%); }
+  .ev-telefono .ev-blocco.ev-scelto > .ev-piu.ev-piu-primo { transform: translate(-50%, 8px); }
+  .ev-telefono .ev-blocco.ev-scelto > .ev-piu.ev-piu-ultimo { transform: translate(-50%, -8px); }
   .ev-linea { position: fixed; left: 0; right: 0; height: calc(5px * var(--ev-s, 1)); margin-top: calc(-2.5px * var(--ev-s, 1)); background: #5b6af8; box-shadow: 0 0 14px rgba(91,106,248,0.7); z-index: 2147483000; pointer-events: none; display: none; }
 `
 
@@ -395,12 +404,16 @@ let ridisegnaOra = () => {}
 let scalaOra = 1
 export function useEditorNelRiquadro(editor, blocks, ridisegna) {
   const attivo = !!editor
+  // Da telefono la pagina serve solo a scegliere una sezione: si modifica
+  // dalla scheda che sale dal basso nel pannello. Col dito, scrivere sulla
+  // pagina, trascinare e scorrere si confonderebbero.
+  const telefono = editor?.telefono === true
   if (ridisegna) ridisegnaOra = ridisegna
 
   // Dopo ogni disegno: si riconoscono i testi scrivibili e, se si stava
   // scrivendo, il cursore torna dov'era.
   useLayoutEffect(() => {
-    if (!attivo) return
+    if (!attivo || telefono) return
     blocchiOra = Array.isArray(blocks) ? blocks : []
     segnaTesti(blocchiOra)
     segnaImmagini(blocchiOra)
@@ -432,7 +445,7 @@ export function useEditorNelRiquadro(editor, blocks, ridisegna) {
 
     // Nell'editor un clic sceglie, non naviga: né i link del sito né i moduli.
     const clic = e => {
-      chiudiMenu()
+      if (!telefono) chiudiMenu()
       if (e.target.closest?.('.ev-barra, .ev-piu, .ev-attrezzi, .ev-menu, .ev-formato, .ev-aggiungi-foto, .ev-qui')) return
       e.preventDefault(); e.stopPropagation()
       const b = e.target.closest?.('[data-blocco]')
@@ -442,6 +455,18 @@ export function useEditorNelRiquadro(editor, blocks, ridisegna) {
       if (fuori) parla({ tipo: 'oltrenova:fuori-pagina', cosa: fuori })
     }
     const invio = e => { e.preventDefault(); e.stopPropagation() }
+
+    if (telefono) {
+      document.documentElement.classList.add('ev-telefono')
+      document.addEventListener('click', clic, true)
+      document.addEventListener('submit', invio, true)
+      return () => {
+        document.removeEventListener('click', clic, true)
+        document.removeEventListener('submit', invio, true)
+        document.documentElement.classList.remove('ev-telefono')
+        stile.remove(); linea.remove()
+      }
+    }
 
     // Scrivere su un testo della pagina: ogni battuta va al pannello, che
     // cambia il blocco. Un testo svuotato si manda solo uscendo dal campo.
@@ -776,7 +801,7 @@ export function useEditorNelRiquadro(editor, blocks, ridisegna) {
       for (const el of document.querySelectorAll('[data-campo]')) { el.removeAttribute('data-campo'); el.removeAttribute('contenteditable'); el.removeAttribute('spellcheck') }
       document.documentElement.style.removeProperty('--ev-s')
     }
-  }, [attivo])
+  }, [attivo, telefono])
 
   // La sezione scelta dal pannello (appena aggiunta, o spostata) si porta a vista.
   useEffect(() => {
@@ -794,8 +819,9 @@ export function useEditorNelRiquadro(editor, blocks, ridisegna) {
 // sceglibile, e sopra quella scelta i comandi. Un blocco che non disegna niente
 // (ancora vuoto) resta visibile, altrimenti non si potrebbe scegliere.
 const NOMI_FOTO = { image_url: 'Aggiungi la foto', bg_image_url: 'Aggiungi la foto di sfondo', photo_url: 'Aggiungi la foto', logo_url: 'Aggiungi il logo', before_url: 'Aggiungi la foto «prima»', after_url: 'Aggiungi la foto «dopo»' }
-export function sezionePerEditor(el, blocco, editor, { primo, ultimo }) {
+export function sezionePerEditor(el, blocco, editor, { primo, ultimo, dopo = null }) {
   const scelto = editor.selezionato === blocco.id
+  const telefono = editor.telefono === true
   // I posti per una foto che ci sono e sono ancora vuoti, più «un'altra foto» nelle gallerie.
   const fotoDaMettere = campiImmagine(blocco.data, { ancheVuoti: true }).filter(c => c.percorso.length === 1 && !c.valore.trim()).map(c => ({ percorso: c.percorso, nome: NOMI_FOTO[c.percorso[0]] || 'Aggiungi la foto' }))
   if (Array.isArray(blocco.data?.images)) fotoDaMettere.push({ percorso: ['images', blocco.data.images.length], nome: 'Aggiungi una foto alla galleria' })
@@ -814,11 +840,11 @@ export function sezionePerEditor(el, blocco, editor, { primo, ultimo }) {
           ))}
         </div>
       )}
-      {ultimo && (
-        <button type="button" className="ev-piu ev-piu-sotto" title="Aggiungi un blocco in fondo"
-          onClick={e => { e.preventDefault(); e.stopPropagation(); parla({ tipo: 'oltrenova:aggiungi-qui', prima: null }) }}><Plus size={17} strokeWidth={2} /></button>
+      {(ultimo || (telefono && scelto)) && (
+        <button type="button" className={'ev-piu ev-piu-sotto' + (ultimo ? ' ev-piu-ultimo' : '')} title={ultimo ? 'Aggiungi un blocco in fondo' : 'Aggiungi un blocco qui sotto'} data-piu-sotto
+          onClick={e => { e.preventDefault(); e.stopPropagation(); parla({ tipo: 'oltrenova:aggiungi-qui', prima: ultimo ? null : dopo }) }}><Plus size={17} strokeWidth={2} /></button>
       )}
-      {scelto && (
+      {scelto && !telefono && (
         <div className="ev-binario">
           <div className="ev-barra">
             <span draggable title="Trascina per spostare"
@@ -839,7 +865,7 @@ export function sezionePerEditor(el, blocco, editor, { primo, ultimo }) {
 // Il punto scelto col «+» (o la pagina ancora vuota): dice che lì si può far
 // cadere un blocco e offre di chiederlo all'AI. Qui si scrive solo la
 // richiesta: la manda il pannello, che sa in che punto va e cosa farne.
-export function PuntoScelto({ ai, primo = false }) {
+export function PuntoScelto({ ai, primo = false, telefono = false }) {
   const [aperto, setAperto] = useState(false)
   const [testo, setTesto] = useState('')
   const qui = useRef(null), campo = useRef(null)
@@ -855,8 +881,8 @@ export function PuntoScelto({ ai, primo = false }) {
       {!primo && !lavora && <button type="button" className="ev-qui-chiudi" title="Lascia stare" onClick={() => parla({ tipo: 'oltrenova:punto-chiuso' })}><X strokeWidth={1.5} /></button>}
       {!aperto ? (
         <>
-          <div className="ev-qui-titolo">{primo ? 'Trascina qui il primo blocco' : 'Trascina qui il tuo blocco'}</div>
-          <div className="ev-qui-sotto">dalla colonna a sinistra, oppure</div>
+          <div className="ev-qui-titolo">{telefono ? (primo ? 'Qui va la prima sezione' : 'Qui va la sezione nuova') : primo ? 'Trascina qui il primo blocco' : 'Trascina qui il tuo blocco'}</div>
+          <div className="ev-qui-sotto">{telefono ? 'scegline una dall\'elenco qui sotto, oppure' : 'dalla colonna a sinistra, oppure'}</div>
           <button type="button" className="ev-qui-ai" data-chiedi-ai onClick={() => setAperto(true)}><Sparkles strokeWidth={1.5} /> Chiedi all'AI</button>
         </>
       ) : (
