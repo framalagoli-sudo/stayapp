@@ -343,10 +343,79 @@ i lead, qualifica e prenota. Bookli è italiana, fa entrata e uscita più WhatsA
 
 ---
 
+## 6.4 La visione del 14/10: un cruscotto e un consulente dentro
+
+Nata da una conversazione fra Francesco ed Ettore. Le frasi di Francesco sono **decise**; il
+piano è il parere di Ettore, **da decidere**.
+
+**Cosa ha detto Francesco (deciso)**
+- Non ha venduto OltreNova: ha venduto strumenti e siti, poi ha introdotto la piattaforma.
+  Ha lasciato WordPress («macchinoso, pericoloso e obsoleto»). **«Il cliente migliore sono io»**:
+  tempo risparmiato, tutto dal telefono, modifiche al volo.
+- **A chi si vende**: a chi fa siti per altri, e a chi fa video e post per i social e non sa
+  cos'è un sito (il consulente social da 300 €/mese che aggiunge il sito ai suoi servizi).
+- **Niente white label**: chi è del settore se ne va dall'oggi al domani. **Meglio molti clienti
+  che pagano ogni anno** che pochi che pagano di più (risponde alla domanda 1 del §7).
+- **Prezzo di riferimento ~80 €/mese**; **200** fra aziende e professionisti bastano.
+- **Non sui social**: lo strumento serve a **sapere cosa succede online**, a costi bassi.
+- **Non un clone di GoHighLevel.**
+- **Il consulente dentro**: la strategia di Francesco «scalata e clonata» nella piattaforma,
+  sempre aggiornata — resoconti, promemoria, consigli applicati al caso del cliente. Chi paga
+  paga l'AI **e** il consulente. In landing: **consulenti, guidati da Francesco, che ci mette
+  la faccia**.
+
+**Perché può renderci unici (parere di Ettore)**
+L'AI che produce (siti, testi, immagini) diventerà gratis per tutti: non è un vantaggio. Cinque
+cose servono a un'attività comunque cambino gli strumenti — farsi trovare, essere scelta,
+farsi prenotare e pagare, far tornare, sapere cosa succede — e le ultime quattro sono già il
+nostro terreno. Il vantaggio sta in ciò che un'AI da sola non ha: i **dati veri** dell'attività,
+il **permesso di agire** per lei, la **lista delle sue persone** col consenso, la **fiducia**, e
+**una persona** che ne sa. Ogni modello nuovo, chiamato da `chiamaAI`, rende OltreNova migliore
+senza rifarla. Direzione di lungo periodo: attività **leggibili e prenotabili dalle macchine**
+(gli assistenti AI che prenotano per conto delle persone), non solo belle da guardare.
+
+**Il piano (da decidere), in un posto solo: la Dashboard**
+1. **Il cruscotto** — «cosa succede»: visite, contatti nuovi, prenotazioni, incassi, sito e
+   dominio che rispondono, voto Google, in una schermata leggibile dal telefono in dieci secondi.
+   I dati ci sono già tutti, sparsi. *1–2 sessioni.*
+2. **Il consulente, prima versione** — «cosa fare»: sotto il cruscotto, **«Inizia qui» che cresce**
+   (non una seconda porta). Ogni consiglio ha: **quando scatta** (regola sui dati veri), **perché**
+   (parole di Francesco), **cosa fare** (un pulsante che porta già nel punto giusto, col lavoro
+   avviato), **com'è andata** (il risultato dopo), e in fondo **la persona** («ne parliamo?»).
+   I consigli li **scrive Francesco**; l'AI li applica al caso, non inventa strategie.
+   Si parte con **cinque**. *1–2 sessioni, più il lavoro di scrittura di Francesco.*
+3. **Resoconti e promemoria** — un riepilogo settimanale e il **report mensile** (§4.1) per email,
+   ognuno con un consiglio; su WhatsApp quando Meta sarà collegata. Frequenza limitata e
+   regolabile dal cliente. *1 sessione.*
+   ✅ **14/10: punti 1 e 2, prima versione** (CLAUDE.md nota 74). Il cruscotto è live; i
+   consigli sono live come **bozze** che vede solo Francesco, finché non li riscrive e approva.
+4. **Il partner** — ⏸️ **parcheggiato il 14/10** da Francesco («parcheggiamolo per adesso»). Un ruolo «gestore» che vede **solo i propri clienti**. È il recinto di sicurezza
+   più delicato (oggi un solo super_admin, garantito dal database). Richiede la decisione su
+   **chi paga** e l'abbonamento su Stripe Billing (§4.1, bloccato sulla commercialista). *2–3 sessioni.*
+5. **Voce e intervista** — interprete nell'editor («dimmi cosa cambiare»), poi l'intervista
+   (scritta o a voce) come **percorso nuovo** dell'AI Builder accanto a quelli di oggi, le
+   **richieste di foto precise per sezione** (pagina con link firmato, poi WhatsApp), e solo
+   molto dopo l'intervista al telefono (§6.3).
+
+**Attenzioni**
+- **Una biblioteca non la apre nessuno** (il promemoria a zero uso). Guide e video stanno dentro
+  il consiglio come «approfondisci», non in una sezione da cercare.
+- **I confronti con gli altri clienti** («i locali come te fanno…») usano dati che trattiamo per
+  conto loro: prima il contratto di responsabile del trattamento (§4.2 punto 2), poi i confronti.
+- **La landing promette ciò che esiste**: «consulenti» al plurale quando c'è almeno un'altra
+  persona o un partner; il consulente dentro quando ci sono i primi consigli.
+
+---
+
 ## 7. Decisioni aperte per Francesco
-1. Nei prossimi sei mesi: **più clienti** o **clienti che pagano di più**?
+1. ~~Nei prossimi sei mesi: più clienti o clienti che pagano di più?~~ → **più clienti che pagano
+   ogni anno** (14/10, §6.4).
 2. Verticale **locali ed eventi** come punta di lancia: sì o no?
 3. Data prevista per il via della commercialista (abbonamento, commissione sulle transazioni).
 4. Preconfiguratori: via libera a partire, insieme all'onboarding?
 5. Aggregatore: quale città, e c'è già un consorzio o un'associazione con cui parlarne?
 6. Agente al telefono (§6.3): prototipo su Garage 22 sì o no, e quando?
+7. Modello partner (§6.4): paga il **cliente finale** (il partner gestisce e guadagna sul suo
+   servizio; se il partner se ne va il cliente resta) o il **partner**?
+8. ~~§6.4: si parte da cruscotto + consulente prima dell'interprete vocale?~~ → **sì** (14/10).
+   Restano i testi dei consigli, scritti da Francesco, e la sua approvazione.

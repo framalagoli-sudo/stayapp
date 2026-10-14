@@ -15,6 +15,8 @@ import {
 } from 'lucide-react'
 import StatoSitoBreve from '@/components/admin/StatoSitoBreve'
 import IniziaQui from '@/components/admin/IniziaQui'
+import Cruscotto from '@/components/admin/Cruscotto'
+import Consigli from '@/components/admin/Consigli'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -271,9 +273,17 @@ export default function DashboardPage() {
         </p>
       </div>
 
+      {/* ── Cosa succede: i numeri dell'attività, al titolare e al
+          super_admin che guarda un'azienda. ── */}
+      <Cruscotto />
+
       {/* ── Inizia qui: i passi che mancano, solo al titolare. Sparisce da
           solo quando è tutto fatto. ── */}
       {isAdminAzienda && <IniziaQui />}
+
+      {/* ── Cosa fare adesso: i consigli che scattano dai dati. Al titolare
+          solo quelli approvati; al super_admin anche le bozze. ── */}
+      <Consigli />
 
       {/* ── Alert email mancante ── */}
       {!aziLoading && missingEmail.length > 0 && (
