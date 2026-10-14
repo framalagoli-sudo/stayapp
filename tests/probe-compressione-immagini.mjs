@@ -157,6 +157,28 @@ try {
     `il lato lungo è stato portato a ${LATO_MAX}px  (${m.larghezza}×${m.altezza})`)
   console.log(`  · peso: ${kb(originale.length)} → ${kb(servito.length)}`)
 
+  // Quello che NON deve arrivare a sharp: un SVG compresso (svgz) spacciato per
+  // PNG non comincia con '<', e sharp lo passerebbe al suo lettore SVG — che ha
+  // avuto vulnerabilità proprie (GHSA-wq5f-xc86-pv6w). E byte a caso col nome jpg.
+  const { gzipSync } = await import('zlib')
+  const ostili = [
+    ['un SVG compresso spacciato per PNG', gzipSync(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>')), 'image/png', 'svgz.png'],
+    ['byte a caso col nome .jpg', Buffer.from('questo non è una foto, solo testo qualunque'), 'image/jpeg', 'finto.jpg'],
+  ]
+  for (const [cosa, dati, tipo, nome] of ostili) {
+    const f = new FormData()
+    f.append('file', new Blob([dati], { type: tipo }), nome)
+    const r = await fetch(`${TEST_URL}/api/upload/minisito-image?entity_type=${ent.tipo}&entity_id=${ent.id}`, {
+      method: 'POST', headers: { Authorization: `Bearer ${signIn.session.access_token}` }, body: f,
+    })
+    const b = await r.json().catch(() => ({}))
+    if (r.ok && b.url) {
+      const p = decodeURIComponent(new URL(b.url).pathname.split(`/${BUCKET}/`)[1] || '')
+      if (p) await admin.storage.from(BUCKET).remove([p])
+    }
+    ok(r.status === 400, `${cosa} → rifiutato (${r.status}${b.error ? ': ' + b.error : ''})`)
+  }
+
   console.log('\n' + '─'.repeat(64))
   console.log(problemi
     ? `${problemi} PROBLEMI — la compressione NON sta lavorando: controllare che sharp sia installato`

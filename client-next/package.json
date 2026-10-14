@@ -31,13 +31,13 @@
     "react-dom": "^19.3.0",
     "resend": "^6.32.1",
     "sanitize-html": "^2.18.0",
-    "sharp": "^0.35.4",
+    "sharp": "^0.35.5",
     "stripe": "^22.6.2"
   },
   "overrides": {
     "postcss": "^8.5.10",
     "rollup": "^3.30.0",
     "serialize-javascript": "^7.0.3",
-    "sharp": "^0.35.4"
+    "sharp": "^0.35.5"
   }
 }

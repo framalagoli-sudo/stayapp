@@ -30,8 +30,26 @@ export async function parseUpload(request) {
   let i = 0
   while (i < buffer.length && [0x20, 0x09, 0x0a, 0x0d, 0xef, 0xbb, 0xbf].includes(buffer[i])) i++
   if (buffer[i] === 0x3c) return { error: 'Contenuto non valido' }
+  // E il contenuto deve essere DAVVERO uno dei formati ammessi: `sharp` riconosce
+  // il formato dai byte, non dal tipo dichiarato, e un SVG compresso (svgz) non
+  // comincia con '<' — finirebbe nel lettore SVG, che ha avuto vulnerabilità
+  // proprie (GHSA-wq5f-xc86-pv6w, 14/10/2026). Si guarda la firma del file.
+  if (!firmaImmagine(buffer)) return { error: 'Formato non valido: solo immagini JPG, PNG, WebP, GIF o AVIF' }
 
   return await comprimi(buffer, ext, file)
+}
+
+// I primi byte dei formati ammessi. Tutto il resto non arriva a `sharp`.
+function firmaImmagine(b) {
+  const da = (pos, ...byte) => byte.every((v, k) => b[pos + k] === v)
+  const testo = (pos, s) => b.length >= pos + s.length && b.toString('latin1', pos, pos + s.length) === s
+  if (da(0, 0xff, 0xd8, 0xff)) return 'jpg'
+  if (da(0, 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return 'png'
+  if (testo(0, 'GIF87a') || testo(0, 'GIF89a')) return 'gif'
+  if (testo(0, 'RIFF') && testo(8, 'WEBP')) return 'webp'
+  // AVIF/HEIF: una «ftyp» al quarto byte, con un marchio della famiglia.
+  if (testo(4, 'ftyp') && ['avif', 'avis', 'heic', 'heix', 'mif1', 'msf1'].includes(b.toString('latin1', 8, 12))) return 'avif'
+  return null
 }
 
 // Le foto arrivano dal telefono del cliente così come sono: misurato il
