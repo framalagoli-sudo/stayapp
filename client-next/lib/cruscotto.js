@@ -51,7 +51,7 @@ export async function cruscotto(aziendaId, giorni = PERIODI[0]) {
   const [
     visiteOra, visitePrima,
     contattiOra, contattiPrima, contattiInvitabili,
-    eventi, risorseRecenti, risorseMai, azienda, prossimo,
+    eventi, risorseRecenti, risorseMai, azienda, prossimo, recensioni,
   ] = await Promise.all([
     visite(q => q.gte('viewed_at', meta)),
     visite(q => q.gte('viewed_at', inizio).lt('viewed_at', meta)),
@@ -68,8 +68,10 @@ export async function cruscotto(aziendaId, giorni = PERIODI[0]) {
       .select('id, title, date_start, seats_total, seats_booked, posti_riservati')
       .eq('azienda_id', aziendaId).eq('published', true).eq('active', true))
       .order('date_start').limit(1),
+    // Le recensioni raccolte da noi (non il voto Google): solo le stelle.
+    supabaseAdmin.from('recensioni').select('stelle, created_at').eq('azienda_id', aziendaId).limit(5000),
   ])
-  const errore = eventi.error || risorseRecenti.error || azienda.error || prossimo.error
+  const errore = eventi.error || risorseRecenti.error || azienda.error || prossimo.error || recensioni.error
   if (errore) throw new Error(errore.message)
 
   // Le prenotazioni: serate e risorse insieme, senza quelle annullate e senza
@@ -102,8 +104,17 @@ export async function cruscotto(aziendaId, giorni = PERIODI[0]) {
     }
   }
 
+  // La media solo a chi ha recensioni: «nessuna recensione» ogni settimana non dice niente.
+  const stelle = (recensioni.data || []).filter(r => r.stelle > 0)
+  const voto = stelle.length ? {
+    media: Math.round(stelle.reduce((n, r) => n + r.stelle, 0) / stelle.length * 10) / 10,
+    totale: stelle.length,
+    ...coppia(stelle, 'created_at', inizio, meta),
+  } : null
+
   return {
     giorni,
+    recensioni: voto,
     fuso: azienda.data?.fuso_orario || null,
     visite: { ora: visiteOra, prima: visitePrima },
     contatti: { ora: contattiOra, prima: contattiPrima, invitabili: contattiInvitabili },

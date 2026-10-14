@@ -86,6 +86,8 @@ try {
     pren(10, { total_amount: 20, pagamento_stato: 'pagato', importo_online: 20, updated_at: fa(10) }),
   ]), 'prenotazioni')
   await deve(a.from('eventi').update({ seats_booked: 8 }).eq('id', ev.id), 'posti prenotati')
+  // Due recensioni (4 e 5 stelle), una nel periodo e una prima: media 4,5.
+  await deve(a.from('recensioni').insert([{ stelle: 5, created_at: fa(2) }, { stelle: 4, created_at: fa(10) }].map(r => ({ ...r, azienda_id: az.id, entity_tipo: 'ristorante', entity_id: ent.id, autore: 'ZZ', fonte: 'manuale' }))), 'recensioni')
 
   // ── Azienda vuota: nessuna prenotazione, nessun incasso ──
   const vuota = await deve(a.from('aziende').insert({ ragione_sociale: `ZZ-CRUSCOTTO-VUOTA-${t}`, require_2fa: false, moduli: { ristorante: true } }).select().single(), 'azienda vuota')
@@ -102,6 +104,7 @@ try {
     esito(d.contatti?.ora === 2 && d.contatti?.prima === 1 && d.contatti?.invitabili === 5, 'contatti: 2 nuovi, 1 prima, 5 invitabili', JSON.stringify(d.contatti))
     esito(d.prenotazioni?.ora === 3 && d.prenotazioni?.prima === 1, 'prenotazioni: 3 (senza annullate e lista d’attesa), 1 prima', JSON.stringify(d.prenotazioni))
     esito(d.incassi?.ora === 30 && d.incassi?.prima === 20, 'incassato: 30 €, prima 20 €', JSON.stringify(d.incassi))
+    esito(d.recensioni?.media === 4.5 && d.recensioni?.totale === 2 && d.recensioni?.ora === 1, 'recensioni: media 4,5 su 2, una nuova', JSON.stringify(d.recensioni))
     esito(d.prossimoEvento?.titolo === 'ZZ Serata del cruscotto' && d.prossimoEvento?.prenotati === 8 && d.prossimoEvento?.capienza === 60, 'prossimo evento con 8 posti su 60', JSON.stringify(d.prossimoEvento))
     const d30 = await (await chiama(tit, '?giorni=30')).json()
     esito(d30.giorni === 30 && d30.visite?.ora === 12, '30 giorni: 12 visite', JSON.stringify(d30.visite))
@@ -189,10 +192,14 @@ try {
     const valore = k => p.locator(`[data-riquadro="${k}"] [data-valore]`).innerText()
     esito(await valore('visite') === '5' && await valore('contatti') === '2' && await valore('prenotazioni') === '3', `${nome}: visite 5, contatti 2, prenotazioni 3`)
     esito((await valore('incassi')).replace(/\s/g, ' ').includes('30,00'), `${nome}: incassato 30,00 €`)
-    esito(await p.locator('[data-prossimo-evento]').innerText().then(s => s.includes('8 posti prenotati su 60')), `${nome}: prossimo evento con i posti`)
+    esito(await p.locator(`[data-in-programma] [data-evento="${ev.id}"]`).innerText().then(s => s.includes('8 su 60 posti')).catch(() => false), `${nome}: «In programma» mostra l’evento con i posti`)
+    esito((await valore('recensioni')).startsWith('4,5'), `${nome}: recensioni 4,5 ★`)
+    esito(await p.locator('[data-testata]').isVisible() && await p.getByText('Richieste aperte', { exact: true }).count() === 0 && await p.getByText('Visite sito', { exact: true }).count() === 0, `${nome}: la testata c’è e la vecchia riga di numeri no`)
+    // Ogni numero in un posto solo: le visite compaiono una volta.
+    esito(await p.getByText(/^Visite/).count() === 1, `${nome}: «Visite» compare una volta sola`)
     const largo = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
     esito(largo <= 0, `${nome}: niente esce di lato`, `${largo}px`)
-    if (FOTO) await p.locator('[data-cruscotto]').screenshot({ path: `${FOTO}/cruscotto-${nome}.png` })
+    if (FOTO) await p.screenshot({ path: `${FOTO}/dashboard-${nome}.png`, fullPage: true })
     await p.locator('[data-periodo="30"]').click()
     await p.waitForFunction(() => document.querySelector('[data-riquadro="visite"] [data-valore]')?.textContent === '12', null, { timeout: 30000 }).catch(() => {})
     esito(await valore('visite') === '12', `${nome}: con 30 giorni le visite diventano 12`)

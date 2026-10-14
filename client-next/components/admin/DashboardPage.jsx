@@ -18,6 +18,7 @@ import IniziaQui from '@/components/admin/IniziaQui'
 import Cruscotto from '@/components/admin/Cruscotto'
 import Consigli from '@/components/admin/Consigli'
 import ClubOggi from '@/components/admin/ClubOggi'
+import { postiEvento } from '@/lib/posti-evento'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -29,6 +30,12 @@ const TIPO_CFG = {
   struttura: { label: 'Struttura', color: '#1a1a2e', icon: Building2, pwaBase: '/s/' },
   ristorante: { label: 'Ristorante', color: '#e63946', icon: Store,    pwaBase: '/r/' },
   attivita:   { label: 'Attività',   color: '#6b46c1', icon: Zap,      pwaBase: '/a/' },
+}
+
+// «Mercoledì 14 ottobre»: maiuscola solo all'inizio, come si scrive in italiano.
+function oggiInLettere() {
+  const s = new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })
+  return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
 function todayStr() { return new Date().toISOString().slice(0, 10) }
@@ -71,7 +78,7 @@ function KpiCard({ icon: Icon, label, value, color, sub, onClick }) {
 function SectionCard({ title, icon: Icon, iconColor = '#1a1a2e', action, actionTo, children }) {
   const router = useRouter()
   return (
-    <div style={{ background: '#fff', borderRadius: 14, padding: '20px 22px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+    <div style={{ background: '#fff', borderRadius: 16, padding: '18px 20px', boxShadow: '0 2px 10px rgba(16,24,40,0.07)', minWidth: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
           {Icon && <Icon size={16} strokeWidth={1.8} color={iconColor} />}
@@ -180,6 +187,10 @@ function StaffDashboard({ profile, strutture, ristoranti, attivita }) {
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
+// L'ordine è quello delle domande di chi apre il pannello: com'è andata (Cosa
+// succede), cosa devo fare (Inizia qui, consigli, Club), cosa c'è oggi e cosa
+// arriva (Oggi · In programma), i miei siti, chi mi ha cercato. Ogni numero
+// compare in un posto solo.
 export default function DashboardPage() {
   const { profile } = useAuth()
   const router      = useRouter()
@@ -187,13 +198,11 @@ export default function DashboardPage() {
   const aziendaId = azienda?.id || profile?.azienda_id || activeAziendaId
     || strutture?.[0]?.azienda_id || ristoranti?.[0]?.azienda_id || attivita?.[0]?.azienda_id
 
-  const [analytics,      setAnalytics]      = useState(null)
   const [requests,       setRequests]       = useState([])
   const [prenOggi,       setPrenOggi]       = useState([])
   const [contatti,       setContatti]       = useState([])
   const [eventiProssimi, setEventiProssimi] = useState([])
-  const [recensioniKpi,  setRecensioniKpi]  = useState(null)
-  const [pianoCount,     setPianoCount]     = useState(null)
+  const [pianoCount,     setPianoCount]     = useState(0)
   const [loading,        setLoading]        = useState(true)
 
   useEffect(() => {
@@ -209,47 +218,31 @@ export default function DashboardPage() {
     setLoading(true)
     const today = todayStr()
     const az = aziendaId ? `&azienda_id=${aziendaId}` : ''
-    const [ana, req, pre, cnt, ev, rec, pia] = await Promise.allSettled([
-      apiFetch(`/api/analytics?range=7${az}`),
-      apiFetch(`/api/requests${az ? '?' + az.slice(1) : ''}`),
+    const q = aziendaId ? `?azienda_id=${aziendaId}` : ''
+    const [req, pre, cnt, ev, pia] = await Promise.allSettled([
+      apiFetch(`/api/requests${q}`),
       apiFetch(`/api/booking/prenotazioni?data_da=${today}&data_a=${today}${az}`),
-      apiFetch(`/api/contatti${az ? '?' + az.slice(1) : ''}`),
-      apiFetch(`/api/eventi${az ? '?' + az.slice(1) : ''}`),
-      apiFetch(`/api/recensioni${az ? '?' + az.slice(1) : ''}`),
-      apiFetch(`/api/piano-editoriale${az ? '?' + az.slice(1) : ''}`),
+      apiFetch(`/api/contatti${q}`),
+      apiFetch(`/api/eventi${q}`),
+      apiFetch(`/api/piano-editoriale${q}`),
     ])
-    if (ana.status === 'fulfilled') setAnalytics(ana.value)
     if (req.status === 'fulfilled') {
-      const all = req.value || []
-      setRequests(
-        all.filter(r =>
-          r.status === 'open' &&
-          !r.message?.startsWith('[Prenotazione') &&
-          !r.message?.startsWith('[Interesse offerta')
-        ).slice(0, 5)
-      )
+      setRequests((req.value || []).filter(r =>
+        r.status === 'open' &&
+        !r.message?.startsWith('[Prenotazione') &&
+        !r.message?.startsWith('[Interesse offerta')
+      ))
     }
-    if (pre.status === 'fulfilled') setPrenOggi((pre.value || []).slice(0, 7))
-    if (cnt.status === 'fulfilled') setContatti((cnt.value || []).slice(0, 6))
+    if (pre.status === 'fulfilled') setPrenOggi(pre.value || [])
+    if (cnt.status === 'fulfilled') setContatti((cnt.value || []).slice(0, 5))
     if (ev.status === 'fulfilled') {
-      const all = ev.value || []
-      const upcoming = all
-        .filter(e => e.date_start && e.date_start >= today)
+      const adesso = new Date().toISOString()
+      setEventiProssimi((ev.value || [])
+        .filter(e => e.published !== false && e.date_start && (e.date_start >= adesso || (e.date_end && e.date_end >= adesso)))
         .sort((a, b) => a.date_start.localeCompare(b.date_start))
-        .slice(0, 5)
-      setEventiProssimi(upcoming)
+        .slice(0, 5))
     }
-    if (rec.status === 'fulfilled') {
-      const all = (rec.value || []).filter(r => r.stelle > 0)
-      if (all.length > 0) {
-        const media = all.reduce((s, r) => s + r.stelle, 0) / all.length
-        setRecensioniKpi({ media: media.toFixed(1), count: all.length })
-      }
-    }
-    if (pia.status === 'fulfilled') {
-      const all = pia.value || []
-      setPianoCount(all.filter(p => p.stato !== 'pubblicato').length)
-    }
+    if (pia.status === 'fulfilled') setPianoCount((pia.value || []).filter(p => p.stato !== 'pubblicato').length)
     setLoading(false)
   }
 
@@ -260,224 +253,136 @@ export default function DashboardPage() {
     ...(attivita || []).map(a => ({ ...a, tipo: 'attivita' })),
   ]
   const missingEmail = allEntita.filter(e => !e.email)
+  const sitoDi = e => `/admin/${e.tipo === 'struttura' ? 'struttura' : e.tipo === 'ristorante' ? 'ristoranti' : 'attivita'}/${e.id}/sito`
+  const scorciatoie = [
+    allEntita.length > 0 && { testo: 'Il tuo sito', icona: Globe, link: sitoDi(allEntita[0]) },
+    { testo: 'Contatti', icona: Users, link: '/admin/contatti' },
+    eventiProssimi.length > 0 && { testo: 'Eventi', icona: CalendarDays, link: '/admin/eventi' },
+    { testo: 'Newsletter', icona: Mail, link: '/admin/newsletter' },
+  ].filter(Boolean)
 
   return (
     <div style={{ maxWidth: 1100 }}>
 
-      {/* ── Header ── */}
-      <div style={{ marginBottom: 28 }}>
-        <h2 style={{ margin: '0 0 4px', fontSize: 22 }}>
-          {greeting(profile?.full_name)}
-        </h2>
-        <p style={{ margin: 0, color: '#999', fontSize: 14 }}>
-          {new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-        </p>
+      {/* ── Testata: chi sei, che giorno è, dove vai di solito ── */}
+      <div data-testata style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, padding: '24px 24px 20px', marginBottom: 24, color: '#fff',
+        background: 'linear-gradient(135deg, #1a1a2e 0%, #23395b 55%, #0f766e 100%)' }}>
+        <div aria-hidden style={{ position: 'absolute', right: -60, top: -60, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.14), transparent 70%)' }} />
+        <div style={{ position: 'relative' }}>
+          <div style={{ fontSize: 13, opacity: 0.8 }}>
+            {oggiInLettere()}
+            {azienda?.ragione_sociale ? <span> · {azienda.ragione_sociale}</span> : null}
+          </div>
+          <h2 style={{ margin: '4px 0 14px', fontSize: 26, fontWeight: 800, letterSpacing: -0.4, overflowWrap: 'anywhere' }}>{greeting(profile?.full_name)}</h2>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {scorciatoie.map(s => (
+              <button key={s.testo} type="button" data-scorciatoia onClick={() => router.push(s.link)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.14)', color: '#fff', border: '1px solid rgba(255,255,255,0.22)',
+                  borderRadius: 20, padding: '7px 13px', fontSize: 13, fontWeight: 600, cursor: 'pointer', backdropFilter: 'blur(4px)' }}>
+                <s.icona size={14} strokeWidth={1.5} color="#fff" /> {s.testo}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* ── Cosa succede: i numeri dell'attività, al titolare e al
-          super_admin che guarda un'azienda. ── */}
-      <Cruscotto />
-
-      {/* ── Inizia qui: i passi che mancano, solo al titolare. Sparisce da
-          solo quando è tutto fatto. ── */}
-      {isAdminAzienda && <IniziaQui />}
-
-      {/* ── Cosa fare adesso: i consigli che scattano dai dati. Al titolare
-          solo quelli approvati; al super_admin anche le bozze. ── */}
-      <Consigli />
-
-      {/* ── Il Club: occasioni e strategie di OltreNova, uguali per chi fa lo
-          stesso mestiere. Non c'è quando oggi non ha niente da dire. ── */}
-      <ClubOggi />
-
-      {/* ── Alert email mancante ── */}
+      {/* ── Email mancante: senza, le notifiche ai clienti non partono ── */}
       {!aziLoading && missingEmail.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, background: '#fffbeb', border: '1px solid #f6cc5c', borderRadius: 10, padding: '14px 16px', marginBottom: 24 }}>
-          <AlertTriangle size={18} strokeWidth={2} color="#b7791f" style={{ flexShrink: 0, marginTop: 1 }} />
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, background: '#fffbeb', border: '1px solid #f6cc5c', borderRadius: 12, padding: '14px 16px', marginBottom: 24 }}>
+          <AlertTriangle size={18} strokeWidth={1.5} color="#b7791f" style={{ flexShrink: 0, marginTop: 1 }} />
           <div style={{ fontSize: 14, color: '#7d5a00', lineHeight: 1.5 }}>
             <strong>Email mancante</strong> — {missingEmail.map(e => e.name).join(', ')} {missingEmail.length === 1 ? 'non ha' : 'non hanno'} un'email configurata. Le notifiche ai tuoi clienti non verranno inviate.
           </div>
         </div>
       )}
 
-      {/* ── Entity cards (solo admin_azienda) ── */}
-      {isAdminAzienda && !aziLoading && allEntita.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 16, marginBottom: 28 }}>
-          {allEntita.map(entita => {
-            const cfg  = TIPO_CFG[entita.tipo]
-            const Icon = cfg.icon
-            // Il pulsante porta al SITO: è la cosa per cui il cliente è qui.
-            const adminPath =
-              entita.tipo === 'struttura'  ? `/admin/struttura/${entita.id}/sito` :
-              entita.tipo === 'ristorante' ? `/admin/ristoranti/${entita.id}/sito` :
-                                             `/admin/attivita/${entita.id}/sito`
-            return (
-              <div key={`${entita.tipo}-${entita.id}`} style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.07)', display: 'flex', flexDirection: 'column' }}>
-                {/* Cover */}
-                <div style={{ position: 'relative', height: 110, background: entita.cover_url ? 'none' : cfg.color + '18', overflow: 'hidden' }}>
-                  {entita.cover_url
-                    ? <img src={entita.cover_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><Icon size={36} color={cfg.color} strokeWidth={1} style={{ opacity: 0.25 }} /></div>
-                  }
-                  <span style={{ position: 'absolute', top: 8, right: 8, fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 20, background: entita.active ? '#38a16920' : '#e53e3e20', color: entita.active ? '#276749' : '#c53030', border: `1px solid ${entita.active ? '#38a16940' : '#e53e3e40'}` }}>
-                    {entita.active ? 'Attivo' : 'Inattivo'}
-                  </span>
-                </div>
-                {/* Body */}
-                <div style={{ padding: '14px 16px', flex: 1 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: cfg.color, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>{cfg.label}</div>
-                  <div style={{ fontWeight: 700, fontSize: 15 }}>{entita.name}</div>
-                  {entita.address && <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{entita.address}</div>}
-                  {/* Lo stato del sito si vede da qui, senza entrare: se manca
-                      qualcosa lo dice, e il clic porta dove si risolve. */}
-                  <StatoSitoBreve
-                    entityId={entita.id}
-                    entityTipo={entita.tipo}
-                    onApri={() => router.push(adminPath)}
-                  />
-                  <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                    <button onClick={() => router.push(adminPath)} style={{ flex: 1, padding: '7px 10px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-                      <Globe size={12} strokeWidth={1.5} color="#fff" /> Il tuo sito
-                    </button>
-                    <a href={cfg.pwaBase + entita.slug} target="_blank" rel="noopener noreferrer" style={{ flex: 1, padding: '7px 10px', background: '#f5f5f5', color: '#1a1a2e', borderRadius: 8, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, textDecoration: 'none' }}>
-                      <ExternalLink size={12} strokeWidth={2} /> Anteprima
-                    </a>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
+      {/* ── Cosa succede: i numeri, una volta sola ── */}
+      <Cruscotto />
 
-      {/* ── Stato dei siti (super_admin) ──────────────────────────────────────
-          Le schede qui sopra le vede solo l'admin dell'azienda: chi guarda da
-          super_admin non aveva **nessuno** stato dei siti sotto gli occhi, ed è
-          proprio chi deve accorgersi se un sito resta da pubblicare. */}
-      {!isAdminAzienda && !aziLoading && allEntita.length > 0 && (
-        <div style={{ marginBottom: 20 }}>
-          <SectionCard title="Stato dei siti" icon={Globe} iconColor="#0284c7">
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 4 }}>
-              {allEntita.slice(0, 12).map(entita => (
-                <div key={`stato-${entita.tipo}-${entita.id}`}
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 0', flexWrap: 'wrap' }}>
-                  <div style={{ width: 190, minWidth: 140, fontSize: 13, fontWeight: 600, color: '#1a1a2e', overflowWrap: 'anywhere' }}>
-                    {entita.name}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 220 }}>
-                    <StatoSitoBreve
-                      entityId={entita.id}
-                      entityTipo={entita.tipo}
-                      onApri={() => router.push(`/admin/${entita.tipo === 'struttura' ? 'struttura' : entita.tipo === 'ristorante' ? 'ristoranti' : 'attivita'}/${entita.id}/sito`)}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-        </div>
-      )}
+      {/* ── Cosa fare: i passi che mancano (solo al titolare), i consigli
+          personali, e il Club. Ognuno sparisce quando non ha niente da dire. ── */}
+      {isAdminAzienda && <IniziaQui />}
+      <Consigli />
+      <ClubOggi />
 
-      {/* ── KPI row ── */}
-      <div style={{ display: 'flex', gap: 14, marginBottom: 20, flexWrap: 'wrap' }}>
-        <KpiCard icon={Inbox}        label="Richieste aperte"  value={analytics?.requests?.open}       color="#e53e3e" sub="richieste ospiti"      onClick={() => router.push('/admin/requests')} />
-        <KpiCard icon={CalendarCheck} label="Prenotazioni oggi" value={prenOggi.length}                 color="#2e7d32" sub={todayStr().split('-').reverse().slice(0, 2).join('/')}            onClick={() => router.push('/admin/booking')} />
-        <KpiCard icon={Users}         label="Nuovi contatti"    value={analytics?.contacts?.new_period} color="#6b46c1" sub="ultimi 7 giorni"       onClick={() => router.push('/admin/contatti')} />
-        <KpiCard icon={Eye}           label="Visite sito"       value={analytics?.pageviews?.total}     color="#1a1a2e" sub="ultimi 7 giorni"       onClick={() => router.push('/admin/analytics')} />
-        <KpiCard icon={Star}          label="Recensione media"  value={recensioniKpi ? `⭐ ${recensioniKpi.media}` : '—'} color="#f59e0b" sub={recensioniKpi ? `${recensioniKpi.count} recensioni` : 'nessuna ancora'} onClick={() => router.push('/admin/recensioni')} />
-        <KpiCard icon={CalendarDays}  label="Prossimi eventi"   value={eventiProssimi.length}           color="#0284c7" sub="nei prossimi 30 giorni" onClick={() => router.push('/admin/eventi')} />
-        <KpiCard icon={FileEdit}      label="Bozze piano"       value={pianoCount ?? '—'}               color="#7c3aed" sub="da pubblicare"          onClick={() => router.push('/admin/piano-editoriale')} />
-      </div>
-
-      {/* ── Richieste + Prenotazioni oggi ── */}
+      {/* ── Oggi · In programma ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, marginBottom: 16 }}>
-
-        <SectionCard title="Richieste aperte" icon={Inbox} iconColor="#e53e3e" action="Vedi tutte" actionTo="/admin/requests">
-          {loading ? <Loading /> : requests.length === 0
-            ? <Empty text="Nessuna richiesta aperta" />
-            : requests.map(r => {
-              const TypeIcon = TYPE_ICONS[r.type] || HelpCircle
-              const color = TYPE_COLORS[r.type] || '#888'
-              return (
-                <div key={r.id} onClick={() => router.push('/admin/requests')}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid #f5f5f5', cursor: 'pointer' }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 8, background: color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <TypeIcon size={15} strokeWidth={1.8} color={color} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color }}>
-                      {TYPE_LABELS[r.type] || r.type}
-                    </div>
-                    <div style={{ fontSize: 12, color: '#bbb', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      {r.room && <><BedDouble size={11} strokeWidth={1.5} /> Camera {r.room} · </>}
-                      <Clock size={11} strokeWidth={1.5} /> {timeAgo(r.created_at)}
-                    </div>
-                  </div>
-                </div>
-              )
-            })
-          }
-        </SectionCard>
-
-        <SectionCard title="Prenotazioni di oggi" icon={CalendarCheck} iconColor="#2e7d32" action="Vai a Booking" actionTo="/admin/booking">
-          {loading ? <Loading /> : prenOggi.length === 0
-            ? <Empty text="Nessuna prenotazione oggi" />
-            : prenOggi.map(p => (
-              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid #f5f5f5' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, width: 52 }}>
-                  <Clock size={12} strokeWidth={1.5} color="#bbb" />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>
-                    {p.ora_inizio ? p.ora_inizio.slice(0, 5) : p.servizio || '—'}
-                  </span>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5, overflow: 'hidden' }}>
-                    <UserRound size={12} strokeWidth={1.5} color="#aaa" style={{ flexShrink: 0 }} />
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.cliente_nome}</span>
-                  </div>
-                  {p.n_persone > 1 && (
-                    <div style={{ fontSize: 12, color: '#bbb', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Users size={11} strokeWidth={1.5} /> {p.n_persone} persone
-                    </div>
+        <SectionCard title="Oggi" icon={Inbox} iconColor="#e53e3e">
+          <div data-oggi>
+            {loading ? <Loading /> : (requests.length === 0 && prenOggi.length === 0 && pianoCount === 0)
+              ? <Empty text="Niente in sospeso per oggi" />
+              : (
+                <>
+                  {requests.length > 0 && (
+                    <RigaOggi testo={`${requests.length} ${requests.length === 1 ? 'richiesta aperta' : 'richieste aperte'}`} colore="#e53e3e" onClick={() => router.push('/admin/requests')}>
+                      {requests.slice(0, 3).map(r => (
+                        <div key={r.id} style={{ fontSize: 12.5, color: '#555', display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <Clock size={11} strokeWidth={1.5} /> {TYPE_LABELS[r.type] || r.type}{r.room ? ` · camera ${r.room}` : ''} · {timeAgo(r.created_at)}
+                        </div>
+                      ))}
+                    </RigaOggi>
                   )}
-                </div>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: (STATO_COLORS[p.stato] || '#888') + '18', color: STATO_COLORS[p.stato] || '#888', flexShrink: 0 }}>
-                  {p.stato}
-                </span>
-              </div>
-            ))
-          }
+                  {prenOggi.length > 0 && (
+                    <RigaOggi testo={`${prenOggi.length} ${prenOggi.length === 1 ? 'prenotazione' : 'prenotazioni'} oggi`} colore="#2e7d32" onClick={() => router.push('/admin/booking')}>
+                      {prenOggi.slice(0, 4).map(p => (
+                        <div key={p.id} style={{ fontSize: 12.5, color: '#555', display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                          <b style={{ color: '#1a1a2e', flexShrink: 0 }}>{p.ora_inizio ? p.ora_inizio.slice(0, 5) : (p.servizio || '—')}</b>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.cliente_nome}{p.n_persone > 1 ? ` · ${p.n_persone} persone` : ''}</span>
+                          <span style={{ marginLeft: 'auto', flexShrink: 0, fontSize: 11, fontWeight: 600, color: STATO_COLORS[p.stato] || '#666' }}>{p.stato}</span>
+                        </div>
+                      ))}
+                    </RigaOggi>
+                  )}
+                  {pianoCount > 0 && (
+                    <RigaOggi testo={`${pianoCount} ${pianoCount === 1 ? 'bozza' : 'bozze'} nel piano editoriale`} colore="#7c3aed" onClick={() => router.push('/admin/piano-editoriale')} />
+                  )}
+                </>
+              )}
+          </div>
         </SectionCard>
 
+        <SectionCard title="In programma" icon={CalendarDays} iconColor="#0284c7" action={eventiProssimi.length ? 'Tutti gli eventi' : null} actionTo="/admin/eventi">
+          <div data-in-programma>
+            {loading ? <Loading /> : eventiProssimi.length === 0
+              ? <Empty text="Nessun evento in programma" />
+              : eventiProssimi.map(e => <RigaEvento key={e.id} e={e} onClick={() => router.push(`/admin/eventi/${e.id}`)} />)}
+          </div>
+        </SectionCard>
       </div>
 
-      {/* ── Prossimi eventi ── */}
-      {eventiProssimi.length > 0 && (
+      {/* ── I tuoi siti (titolare) ── */}
+      {isAdminAzienda && !aziLoading && allEntita.length > 0 && (
         <div style={{ marginBottom: 16 }}>
-          <SectionCard title="Prossimi eventi" icon={CalendarDays} iconColor="#0284c7" action="Tutti gli eventi" actionTo="/admin/eventi">
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {eventiProssimi.map(e => {
-                const data = e.date_start ? new Date(e.date_start) : null
-                const giorno = data ? data.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }) : '—'
-                const ore    = data ? data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : ''
+          <SectionCard title={allEntita.length === 1 ? 'Il tuo sito' : 'I tuoi siti'} icon={Globe} iconColor="#0284c7">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
+              {allEntita.map(entita => {
+                const cfg  = TIPO_CFG[entita.tipo]
+                const Icon = cfg.icon
                 return (
-                  <div key={e.id} onClick={() => router.push(`/admin/eventi/${e.id}`)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #f5f5f5', cursor: 'pointer' }}>
-                    <div style={{ width: 44, textAlign: 'center', flexShrink: 0 }}>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: '#0284c7', lineHeight: 1 }}>
-                        {data ? data.getDate() : '—'}
+                  <div key={`${entita.tipo}-${entita.id}`} data-sito style={{ border: '1px solid #eee', borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12 }}>
+                      <div style={{ width: 52, height: 52, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: cfg.color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {entita.cover_url
+                          ? <img src={entita.cover_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : <Icon size={22} color={cfg.color} strokeWidth={1.5} />}
                       </div>
-                      <div style={{ fontSize: 11, color: '#aaa', textTransform: 'uppercase' }}>
-                        {data ? data.toLocaleDateString('it-IT', { month: 'short' }) : ''}
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', overflowWrap: 'anywhere' }}>{entita.name}</div>
+                        {entita.address && <div style={{ fontSize: 12, color: '#777', overflowWrap: 'anywhere' }}>{entita.address}</div>}
                       </div>
                     </div>
-                    <div style={{ width: 1, height: 36, background: '#f0f0f0', flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title}</div>
-                      {ore && <div style={{ fontSize: 12, color: '#aaa', display: 'flex', alignItems: 'center', gap: 4, marginTop: 1 }}>
-                        <Clock size={11} strokeWidth={1.5} /> {ore}
-                        {e.price ? <><span style={{ color: '#ddd' }}>·</span> €{e.price}</> : null}
-                      </div>}
+                    <div style={{ padding: '0 12px' }}>
+                      {/* Lo stato del sito si vede da qui: se manca qualcosa lo dice,
+                          e il clic porta dove si risolve. */}
+                      <StatoSitoBreve entityId={entita.id} entityTipo={entita.tipo} onApri={() => router.push(sitoDi(entita))} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, padding: 12, marginTop: 'auto' }}>
+                      <button onClick={() => router.push(sitoDi(entita))} style={{ flex: 1, padding: '8px 10px', background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 9, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                        <Globe size={13} strokeWidth={1.5} color="#fff" /> Modifica il sito
+                      </button>
+                      <a href={cfg.pwaBase + entita.slug} target="_blank" rel="noopener noreferrer" style={{ flex: 1, padding: '8px 10px', background: '#f2f2f4', color: '#1a1a2e', borderRadius: 9, fontSize: 12.5, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, textDecoration: 'none' }}>
+                        <ExternalLink size={13} strokeWidth={1.5} /> Guardalo
+                      </a>
                     </div>
                   </div>
                 )
@@ -487,39 +392,90 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── Contatti recenti ── */}
-      <SectionCard title="Contatti recenti" icon={Users} iconColor="#6b46c1" action="Vedi tutti" actionTo="/admin/contatti">
-        {loading ? <Loading /> : contatti.length === 0
-          ? <Empty text="Nessun contatto ancora" />
-          : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
-              {contatti.map(c => (
-                <div key={c.id} onClick={() => router.push('/admin/contatti')} style={{ background: '#f8f8f8', borderRadius: 10, padding: '12px 14px', cursor: 'pointer' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#6b46c115', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <UserRound size={14} strokeWidth={1.8} color="#6b46c1" />
-                    </div>
-                    <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nome || '—'}</div>
+      {/* ── Stato dei siti (super_admin) ──────────────────────────────────────
+          Le schede qui sopra le vede solo l'admin dell'azienda: chi guarda da
+          super_admin deve comunque accorgersi se un sito resta da pubblicare. */}
+      {!isAdminAzienda && !aziLoading && allEntita.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <SectionCard title="Stato dei siti" icon={Globe} iconColor="#0284c7">
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 4 }}>
+              {allEntita.slice(0, 12).map(entita => (
+                <div key={`stato-${entita.tipo}-${entita.id}`}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 0', flexWrap: 'wrap' }}>
+                  <div style={{ width: 190, minWidth: 140, fontSize: 13, fontWeight: 600, color: '#1a1a2e', overflowWrap: 'anywhere' }}>
+                    {entita.name}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#999', marginBottom: 8, overflow: 'hidden' }}>
-                    <Mail size={11} strokeWidth={1.5} color="#bbb" style={{ flexShrink: 0 }} />
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: '#1a1a2e12', color: '#1a1a2e', display: 'flex', alignItems: 'center', gap: 3 }}>
-                      <Globe size={10} strokeWidth={1.5} />{c.fonte || 'sito'}
-                    </span>
-                    <span style={{ fontSize: 11, color: '#ccc', display: 'flex', alignItems: 'center', gap: 3 }}>
-                      <Clock size={10} strokeWidth={1.5} />{timeAgo(c.created_at)}
-                    </span>
+                  <div style={{ flex: 1, minWidth: 220 }}>
+                    <StatoSitoBreve entityId={entita.id} entityTipo={entita.tipo} onApri={() => router.push(sitoDi(entita))} />
                   </div>
                 </div>
               ))}
             </div>
-          )
-        }
+          </SectionCard>
+        </div>
+      )}
+
+      {/* ── Chi ti ha cercato ── */}
+      <SectionCard title="Contatti recenti" icon={Users} iconColor="#6b46c1" action="Vedi tutti" actionTo="/admin/contatti">
+        <div data-contatti-recenti>
+          {loading ? <Loading /> : contatti.length === 0
+            ? <Empty text="Nessun contatto ancora" />
+            : contatti.map(c => (
+              <div key={c.id} onClick={() => router.push('/admin/contatti')}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid #f3f3f3', cursor: 'pointer', minWidth: 0 }}>
+                <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#6b46c115', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 13, fontWeight: 700, color: '#6b46c1' }}>
+                  {(c.nome || c.email || '?').trim().charAt(0).toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nome || c.email || '—'}</div>
+                  <div style={{ fontSize: 12, color: '#777', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.fonte || 'sito'}</div>
+                </div>
+                <span style={{ fontSize: 12, color: '#888', flexShrink: 0 }}>{timeAgo(c.created_at)}</span>
+              </div>
+            ))}
+        </div>
       </SectionCard>
 
+    </div>
+  )
+}
+
+// Una riga di «Oggi»: cosa c'è, quanto, e un clic per andarci.
+function RigaOggi({ testo, colore, onClick, children }) {
+  return (
+    <div onClick={onClick} style={{ padding: '10px 0', borderBottom: '1px solid #f3f3f3', cursor: 'pointer' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ width: 8, height: 8, borderRadius: '50%', background: colore, flexShrink: 0 }} />
+        <span style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', flex: 1 }}>{testo}</span>
+        <ChevronRight size={15} strokeWidth={1.5} color="#999" />
+      </div>
+      {children && <div style={{ display: 'grid', gap: 3, marginTop: 6, paddingLeft: 16 }}>{children}</div>}
+    </div>
+  )
+}
+
+// Un evento in arrivo, con quanto è pieno.
+function RigaEvento({ e, onClick }) {
+  const data = new Date(e.date_start)
+  const p = postiEvento(e)
+  const pieno = p.illimitato ? null : Math.min(100, Math.round(p.prenotati / p.capienza * 100))
+  return (
+    <div data-evento={e.id} onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #f3f3f3', cursor: 'pointer' }}>
+      <div style={{ width: 44, textAlign: 'center', flexShrink: 0, background: '#f0f7fb', borderRadius: 10, padding: '5px 0' }}>
+        <div style={{ fontSize: 17, fontWeight: 800, color: '#0284c7', lineHeight: 1 }}>{data.getDate()}</div>
+        <div style={{ fontSize: 10.5, color: '#555', textTransform: 'uppercase' }}>{data.toLocaleDateString('it-IT', { month: 'short' })}</div>
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13.5, fontWeight: 600, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title}</div>
+        <div style={{ fontSize: 12, color: '#666' }}>
+          {data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })} · {p.illimitato ? `${p.prenotati} prenotati` : `${p.prenotati} su ${p.capienza} posti`}
+        </div>
+        {pieno != null && (
+          <div style={{ height: 5, borderRadius: 3, background: '#e9e9ee', overflow: 'hidden', marginTop: 5 }}>
+            <div style={{ width: `${pieno}%`, height: '100%', background: pieno >= 90 ? '#b45309' : '#0284c7' }} />
+          </div>
+        )}
+      </div>
     </div>
   )
 }
