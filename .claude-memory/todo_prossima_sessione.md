@@ -16,6 +16,8 @@ metadata:
 - Da chiedergli: togliere la vecchia riga di numeri della Dashboard (visite e contatti ora compaiono due volte) — cambio che il cliente nota, serve il suo sì.
 - Landing: lui vuole «consulenti» al plurale; gli ho detto una volta che «consulenza strategica guidata da Francesco» è vera e altrettanto forte. Decide lui.
 - **Club OltreNova LIVE** (nota 75, migration 137 eseguita da Francesco): regia in /admin/club (solo super_admin), carta «Oggi per te» in Dashboard, archivio. Vuoto: **Francesco deve preparare i primi contenuti** (Halloween il 31/10). Nessuna voce di menu finché non c'è contenuto: chiedergli il sì. Consigli personali ora nella regia (migration 138, LIVE): i 4 di partenza sono BOZZE, Francesco deve rivederli e attivarli.
+- Dashboard riordinata LIVE (testata, Cosa succede con recensioni, cosa fare, Oggi + In programma, siti, contatti; vecchia riga tolta con ok di Francesco). Sicurezza: firma dei byte prima di sharp + sharp 0.35.5 (GHSA-wq5f-xc86-pv6w). next 15.5.24 ha advisory ISR «self-hosted»: su Vercel da verificare se ci riguarda, poi eventuale 15.5.28.
+- PROSSIMO concordato: la mail settimanale/mensile (Francesco: «metti la mail per ultima»).
 - Dopo: «com'è andata» dopo un consiglio, resoconto settimanale + report mensile per email, poi interprete vocale nell'editor, intervista nell'AI Builder, richieste di foto per sezione.
 
 ## ▶️ 14/10 — «Modifica sulla pagina» da telefono (CLAUDE.md nota 73)
