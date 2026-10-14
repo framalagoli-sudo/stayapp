@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 2a1be9ea-f8b0-46bd-9c9b-087bb6fdbfb5
-  modified: 2026-10-14T13:45:30.686Z
+  modified: 2026-10-14T16:03:35.470Z
 ---
 
 **Target di StayApp = l'azienda che spende max ~€100/mese, fa da sé, vuole personalizzare ma con SEMPLICITÀ.** NON lo studio strutturato che assume un designer (quello va su WordPress/Webflow/Framer — non è il nostro cliente).
@@ -42,6 +42,18 @@ metadata:
 - 14/10, deciso: **partner/ruolo gestore PARCHEGGIATO** (STRATEGIA §6.4 punto 4) — da
   tenere presente, non da costruire. Via a **cruscotto + consulente** (punti 1–2) prima
   dell'interprete vocale.
+- 14/10 sera, Francesco: i consigli **non li scrive a mano** — devono scattare da soli e
+  lui vuole **un'area dove operare**; «I consigli di OltreNova», non «di Francesco».
+  Poi: **OltreNova come club/community**, «ogni giorno qualcosa di diverso», contenuti
+  social e in piattaforma, occasioni di marketing, spunti; «non acquisti un software ma
+  un club». Ha già avuto una community. Mio parere: sì come posizionamento; non
+  costruire un social dentro (moderazione, GDPR, piazza vuota con 9 clienti): carta
+  «Oggi» in Dashboard da un calendario di occasioni per mestiere.
+  ⛔ CORRETTO da Francesco subito dopo: **NON un social, gli utenti NON postano**. È
+  un'area condivisa con tutti i clienti, di sola lettura per loro: consigli, occasioni
+  («fra 10 giorni è Halloween»), focus, **suggerimenti di strategie di marketing** — il
+  suo mestiere di consulente, scalato: «farmi pagare poco (e sempre) da più clienti».
+  Si costruisce in parallelo alla piattaforma ed è il valore aggiunto.
 Aperto (parere mio): chi paga OltreNova — il cliente finale direttamente (il
 professionista gestisce e guadagna sul servizio) o il professionista? Il primo tiene
 il cliente nostro anche se il partner se ne va. Serve un ruolo «gestore» limitato ai

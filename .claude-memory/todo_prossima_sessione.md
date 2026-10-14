@@ -4,7 +4,7 @@ description: "Da dove riprendere — 14/10 sera: cruscotto + consigli LIVE (nota
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-10-14T13:56:50.771Z
+  modified: 2026-10-14T17:34:10.272Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
@@ -15,6 +15,7 @@ metadata:
 - Fatto: cruscotto e consigli in Dashboard (commit de8130fb). I 4 consigli sono **bozze mie, visibili solo al super_admin**: **Francesco deve riscrivere i testi (quando lo dai · perché · cosa fargli fare) e approvarli**. Gli ho proposto uno schema da compilare.
 - Da chiedergli: togliere la vecchia riga di numeri della Dashboard (visite e contatti ora compaiono due volte) — cambio che il cliente nota, serve il suo sì.
 - Landing: lui vuole «consulenti» al plurale; gli ho detto una volta che «consulenza strategica guidata da Francesco» è vera e altrettanto forte. Decide lui.
+- **Club OltreNova LIVE** (nota 75, migration 137 eseguita da Francesco): regia in /admin/club (solo super_admin), carta «Oggi per te» in Dashboard, archivio. Vuoto: **Francesco deve preparare i primi contenuti** (Halloween il 31/10). Nessuna voce di menu finché non c'è contenuto: chiedergli il sì. I consigli personali vanno spostati nella stessa regia («un'area in cui posso operare», niente testi a mano): segnali da catalogo + testo AI + approvazione.
 - Dopo: «com'è andata» dopo un consiglio, resoconto settimanale + report mensile per email, poi interprete vocale nell'editor, intervista nell'AI Builder, richieste di foto per sezione.
 
 ## ▶️ 14/10 — «Modifica sulla pagina» da telefono (CLAUDE.md nota 73)
