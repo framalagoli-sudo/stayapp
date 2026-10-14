@@ -1,14 +1,21 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — 13/10: cinque blocchi nuovi LIVE (Titolo, Citazione, Linguette, Tabella, Popup — nota 70) e «Riscrivi i testi con l’AI» (nota 69), migration alla 136. Da far provare a Francesco: i cinque blocchi, Riscrivi, Chiedi all’AI, editor visuale, sezioni condivise. Prossimo: stato vero del conto Stripe, sonde che lasciano sottodomini su Vercel, onboarding v2. In attesa di lui: Fondaco DNS, posta di Guru, Meta/WhatsApp, Automax su Stripe"
+description: "Da dove riprendere — 14/10 sera: cruscotto + consigli LIVE (nota 74), consigli = bozze che Francesco deve riscrivere e approvare; partner parcheggiato. Prima: 13/10: cinque blocchi nuovi LIVE (Titolo, Citazione, Linguette, Tabella, Popup — nota 70) e «Riscrivi i testi con l’AI» (nota 69), migration alla 136. Da far provare a Francesco: i cinque blocchi, Riscrivi, Chiedi all’AI, editor visuale, sezioni condivise. Prossimo: stato vero del conto Stripe, sonde che lasciano sottodomini su Vercel, onboarding v2. In attesa di lui: Fondaco DNS, posta di Guru, Meta/WhatsApp, Automax su Stripe"
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-10-14T10:23:56.977Z
+  modified: 2026-10-14T13:56:50.771Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
+
+## ▶️ 14/10 sera — strategia + «Cosa succede» / «Cosa fare adesso» (CLAUDE.md nota 74, STRATEGIA §6.4)
+- Lunga conversazione di strategia con Francesco (vedi [[project_positioning_target]], [[project_agente_vocale]]): a chi si vende (chi fa siti/social per altri), niente white label, ~80 €/mese × 200, il consulente dentro OltreNova. Il partner («gestore») è **parcheggiato**. Ordine deciso: cruscotto + consulente PRIMA dell'interprete vocale; Stripe aspetta il primo cliente che collega il conto.
+- Fatto: cruscotto e consigli in Dashboard (commit de8130fb). I 4 consigli sono **bozze mie, visibili solo al super_admin**: **Francesco deve riscrivere i testi (quando lo dai · perché · cosa fargli fare) e approvarli**. Gli ho proposto uno schema da compilare.
+- Da chiedergli: togliere la vecchia riga di numeri della Dashboard (visite e contatti ora compaiono due volte) — cambio che il cliente nota, serve il suo sì.
+- Landing: lui vuole «consulenti» al plurale; gli ho detto una volta che «consulenza strategica guidata da Francesco» è vera e altrettanto forte. Decide lui.
+- Dopo: «com'è andata» dopo un consiglio, resoconto settimanale + report mensile per email, poi interprete vocale nell'editor, intervista nell'AI Builder, richieste di foto per sezione.
 
 ## ▶️ 14/10 — «Modifica sulla pagina» da telefono (CLAUDE.md nota 73)
 - Francesco: l'editor da telefono «in sede di vendita ci caratterizzerebbe» → «si ok». Fatto: sotto i 1000px, la pagina vera a tutto schermo, un tocco sceglie la sezione e la scheda sale dal basso; «+» sopra/sotto la sezione scelta, sezioni pronte, Chiedi all'AI, Stile, Salva/Pubblica. Niente trascinamento né scrittura sulla pagina (scelta mia, detta a lui prima).
