@@ -45,7 +45,7 @@ export default function Consigli() {
         <Lightbulb size={20} strokeWidth={1.5} color="#b45309" style={{ flexShrink: 0, marginTop: 1 }} />
         <div style={{ minWidth: 0 }}>
           <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#1a1a2e' }}>Cosa fare adesso</h3>
-          <div style={{ fontSize: 13, color: '#666', marginTop: 2 }}>I consigli di Francesco, sui numeri della tua attività.</div>
+          <div style={{ fontSize: 13, color: '#666', marginTop: 2 }}>I consigli di OltreNova, sui numeri della tua attività.</div>
         </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 10 }}>
