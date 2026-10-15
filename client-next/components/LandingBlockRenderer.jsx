@@ -1921,6 +1921,9 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         // ⚠️ Predefinita `griglia` = esattamente il blocco di prima: i siti
         // online non cambiano faccia. Le altre due si scelgono nell'editor.
         const variante = d.variant === 'ritratti' || d.variant === 'editoriale' ? d.variant : 'griglia'
+        // Il ruolo è scritto nel colore del sito: su una sezione scura o di quel
+        // colore sparirebbe, e lì si schiarisce.
+        const cRuolo = inverted ? 'rgba(255,255,255,0.78)' : primary
         // Nelle due varianti nuove il cerchio non ha senso — sono nate per
         // togliere proprio quello. Chi l'aveva scelto ricade sul verticale.
         const rapportoRitratto = tonda ? '4 / 5' : forma.rapporto
@@ -1947,7 +1950,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                         {ritratto(m, { width: '100%', aspectRatio: rapportoRitratto, borderRadius: 18 })}
                       </div>
                       <div className="lbr-team-txt">
-                        {m.ruolo && <div style={{ fontSize: 12, color: primary, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.6, lineHeight: 1.6, marginBottom: 12 }}>{m.ruolo}</div>}
+                        {m.ruolo && <div style={{ fontSize: 12, color: cRuolo, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.6, lineHeight: 1.6, marginBottom: 12 }}>{m.ruolo}</div>}
                         <div style={{ fontFamily: heading, fontWeight: 700, fontSize: 'clamp(24px,3.2vw,34px)', lineHeight: 1.15, color: cTitle, marginBottom: 16 }} {...ricco(m.nome)} />
                         {m.bio && <p style={{ fontSize: 16, color: cBody || 'var(--txt-medio)', lineHeight: 1.75, maxWidth: '60ch' }}>{m.bio}</p>}
                       </div>
@@ -1968,7 +1971,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                   {items.map(m => (
                     <div key={m.id}>
                       {ritratto(m, { width: '100%', aspectRatio: rapportoRitratto, borderRadius: 14, marginBottom: 20 })}
-                      {m.ruolo && <div style={{ fontSize: 11.5, color: primary, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.4, lineHeight: 1.6, marginBottom: 8 }}>{m.ruolo}</div>}
+                      {m.ruolo && <div style={{ fontSize: 11.5, color: cRuolo, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.4, lineHeight: 1.6, marginBottom: 8 }}>{m.ruolo}</div>}
                       <div style={{ fontFamily: heading, fontWeight: 700, fontSize: 22, lineHeight: 1.2, color: cTitle, marginBottom: 12 }} {...ricco(m.nome)} />
                       {m.bio && <p style={{ fontSize: 14.5, color: cBody || 'var(--txt-medio)', lineHeight: 1.7 }}>{m.bio}</p>}
                     </div>
@@ -1996,7 +1999,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                       : <div style={{ ...foto, background: `${primary}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>👤</div>
                     }
                     <div style={{ fontFamily: heading, fontWeight: 700, fontSize: 16, color: cTitle, marginBottom: 4 }} {...ricco(m.nome)} />
-                    {m.ruolo && <div style={{ fontSize: 12, color: primary, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>{m.ruolo}</div>}
+                    {m.ruolo && <div style={{ fontSize: 12, color: cRuolo, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>{m.ruolo}</div>}
                     {m.bio && <p style={{ fontSize: 13, color: cBody || 'var(--txt-tenue)', lineHeight: 1.6 }}>{m.bio}</p>}
                   </div>
                 ))}
