@@ -57,7 +57,6 @@ export const VOCI = {
   preventivi:       { to: '/admin/preventivi',       label: 'Preventivi',         icon: FileText,         funzione: 'preventivi' },
   recensioni:       { to: '/admin/recensioni',       label: 'Recensioni',         icon: Star,             funzione: 'recensioni' },
   survey:           { to: '/admin/survey',           label: 'Sondaggi',           icon: BarChart3,        funzione: 'survey' },
-  chat:             { to: '/admin/chat',             label: 'Chat',               icon: MessageCircle,    funzione: 'chat', ruoli: ['admin_azienda'] },
   form_builder:     { to: '/admin/form-builder',     label: 'Moduli',             icon: FormInput,        funzione: 'form_builder' },
   blog:             { to: '/admin/blog',             label: 'Blog',               icon: Newspaper,        funzione: 'blog' },
   eventi:           { to: '/admin/eventi',           label: 'Eventi',             icon: CalendarDays,     funzione: 'eventi' },
@@ -97,7 +96,7 @@ export const VOCI = {
 export const GRUPPI = [
   { titolo: 'Il tuo sito', voci: ['entita:sito', 'ai_site_builder', 'entita:theme', 'entita:domini', 'entita:chatbot', 'entita:moduli', 'qrcode', 'analytics'] },
   { titolo: 'Contenuti',   voci: ['entita:menu', 'entita:services', 'entita:gallery', 'entita:vetrine', 'eventi', 'offerte', 'blog'] },
-  { titolo: 'Clienti',     voci: ['contatti', 'richieste', 'prenotazioni', 'booking', 'recensioni', 'preventivi', 'form_builder', 'survey', 'chat', 'demo'] },
+  { titolo: 'Clienti',     voci: ['contatti', 'richieste', 'prenotazioni', 'booking', 'recensioni', 'preventivi', 'form_builder', 'survey', 'demo'] },
   { titolo: 'Promozione',  voci: ['newsletter', 'whatsapp', 'automazioni', 'piano_editoriale', 'content_studio', 'loyalty', 'prodotti', 'shop'] },
   { titolo: 'Impostazioni', voci: ['entita:info', 'entita:privacy', 'entita:funzioni', 'collaboratori', 'integrazioni', 'pagamenti', 'seo_geo', 'audit_log', 'impostazioni', 'sicurezza', 'aiuto'] },
   { titolo: 'Piattaforma', voci: ['aziende', 'strutture', 'ristoranti', 'attivita', 'utenti', 'diagnostica', 'funzioni'] },

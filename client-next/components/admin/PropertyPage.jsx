@@ -30,7 +30,7 @@ const MODULE_DEFS = [
 
 const DEFAULT_MODULES = {
   reception: true, housekeeping: false, restaurant: false,
-  upselling: false, chat: false, wifi: true, info: true,
+  upselling: false, wifi: true, info: true,
 }
 
 const DEFAULT_THEME = {

@@ -20,7 +20,6 @@ export const MISURE = {
   preventivi:       [{ tabella: 'preventivi' }],
   recensioni:       [{ tabella: 'recensioni' }],
   survey:           [{ tabella: 'survey_risposte' }],
-  chat:             [{ tabella: 'messages',          via: 'property_id' }],
   form_builder:     [{ tabella: 'form_builder' }, { tabella: 'form_submissions' }],
   blog:             [{ tabella: 'articoli' }],
   eventi:           [{ tabella: 'eventi' }, { tabella: 'event_bookings', via: 'event_id' }],

@@ -9,7 +9,6 @@ const NAV_MODULE_DEFS = [
   { key: 'reception',    label: 'Tab Richieste',           desc: "Tab Richiesta nell'app — messaggi e richieste ospiti" },
   { key: 'wifi',         label: 'WiFi in evidenza',        desc: 'Mostra le credenziali WiFi nella tab Info' },
   { key: 'housekeeping', label: 'Richieste housekeeping',  desc: 'Permette agli ospiti di richiedere pulizie camera' },
-  { key: 'chat',         label: 'Chat con la reception',   desc: 'Tab Chat — messaggistica realtime con gli ospiti' },
 ]
 
 const HOME_SECTION_DEFS = [
@@ -21,7 +20,7 @@ const HOME_SECTION_DEFS = [
 ]
 
 const DEFAULT_MODULES = {
-  reception: true, housekeeping: false, chat: false, wifi: true, info: true,
+  reception: true, housekeeping: false, wifi: true, info: true,
   home_sections: { galleria: true, servizi: true, attivita: true, escursioni: true, eventi: true },
   home_section_order: ['galleria', 'servizi', 'attivita', 'escursioni', 'eventi'],
 }

@@ -422,7 +422,7 @@ export default function AdminLayout({ children }) {
   function MenuStorico() {
     return (
       <>
-        {[['Operativo', ['richieste', 'prenotazioni', 'booking', 'chat', 'eventi', 'offerte']], ['Marketing', ['blog', 'newsletter', 'contatti']]].map(([titolo, voci]) => (
+        {[['Operativo', ['richieste', 'prenotazioni', 'booking', 'eventi', 'offerte']], ['Marketing', ['blog', 'newsletter', 'contatti']]].map(([titolo, voci]) => (
           <Fragment key={titolo}>
             <Divider />
             <SectionHeader label={titolo} />

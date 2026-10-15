@@ -104,7 +104,7 @@ try {
     await pagina.evaluate(([k, v]) => localStorage.setItem(k, v), [`sb-${projectRef}-auth-token`, JSON.stringify(s2)])
     // Non «rete ferma»: con un'azienda nuova il menu mostra tutte le voci e Next
     // pre-carica le loro pagine, e una richiesta che resta aperta basta a non
-    // fermarla mai (15/10: /admin/chat). Si aspetta la scheda.
+    // fermarla mai (successo il 15/10). Si aspetta la scheda.
     await pagina.goto(`${BASE}/admin`, { waitUntil: 'domcontentloaded' })
     const scheda = pagina.locator('[data-prima-attivita]')
     await scheda.waitFor({ timeout: 30000 }).catch(() => {})

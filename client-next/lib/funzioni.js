@@ -179,7 +179,6 @@ export const FUNZIONI_AZIENDA = [
   { chiave: 'preventivi',       titolo: 'Preventivi',       permesso: 'preventivi' },
   { chiave: 'recensioni',       titolo: 'Recensioni',       permesso: 'recensioni' },
   { chiave: 'survey',           titolo: 'Survey & NPS',     permesso: 'survey' },
-  { chiave: 'chat',             titolo: 'Chat' },
   { chiave: 'form_builder',     titolo: 'Form Builder',     permesso: 'form_builder' },
   { chiave: 'blog',             titolo: 'Blog & News',      permesso: 'blog' },
   { chiave: 'eventi',           titolo: 'Eventi',           permesso: 'eventi' },
@@ -195,7 +194,7 @@ export const FUNZIONI_AZIENDA = [
 ]
 
 // Un collaboratore può aprire questa funzione? Una funzione senza `permesso`
-// (la Chat) non si apre allo staff: in mancanza di un permesso esplicito si
+// non si apre allo staff: in mancanza di un permesso esplicito si
 // nega, non si concede.
 export function staffPuoAprire(chiave, permessi = {}) {
   const f = FUNZIONI_AZIENDA.find(x => x.chiave === chiave)
