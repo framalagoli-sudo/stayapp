@@ -11,6 +11,11 @@ import Turnstile from '@/components/Turnstile'
 import FotoGrande, { siIngrandisce } from '@/components/FotoGrande'
 import { useEditorNelRiquadro, sezionePerEditor, PuntoScelto, conLaScritturaInCorso } from '@/components/EditorNelRiquadro'
 import { applyBlockStyle, blockInverted, textSizeScale, textColorFor, gridTemplate, readableOn, resolveBlockBg } from '@/lib/blockTypes'
+// Il colore del sito quando serve a SCRIVERE (un prezzo, un link, un segno).
+// Una sezione con uno sfondo suo lo cambia in `--tinta` (applyBlockStyle): sul
+// colore del sito diventa bianco, su un fondo scuro una tinta che si legge.
+// Senza sfondo scelto la variabile non c'è e resta il colore del sito.
+const tinta = p => `var(--tinta, ${p})`
 import { ReviewSourceLogo } from '@/lib/reviewLogos'
 import { RichText, richIsEmpty } from '@/lib/richText'
 import { ricco } from '@/lib/testo-ricco'
@@ -18,6 +23,8 @@ import { t as tr } from '@/lib/i18n'
 import { focalValido, formaScheda, rapportoOppure } from '@/lib/formati-foto'
 import { oraLocale } from '@/lib/fuso'
 import { stileTitoli } from '@/lib/fonts'
+import { eScuro, variabiliPagina } from '@/lib/superficie'
+import { resolveSiteTheme } from '@/lib/siteTheme'
 import { getPreset, fieldOptions, evidenzaDi, etichettaEUnita } from '@/lib/vetrinePresets'
 
 // Sicurezza: accetta solo http(s), mailto:, tel: o path interni; blocca javascript:/data: ecc.
@@ -31,7 +38,7 @@ function safeUrl(u) {
 // stretti (mobile) le card mantengono una larghezza minima → diventa uno slider
 // scorrevole/swipe. Frecce mostrate solo se il contenuto sborda. Una sola card = centrata.
 function arrowBtn(side, primary) {
-  return { position: 'absolute', top: '50%', [side]: -8, transform: 'translateY(-50%)', width: 40, height: 40, borderRadius: '50%', background: 'var(--sup)', border: '1px solid var(--bordo)', boxShadow: '0 2px 12px rgba(0,0,0,0.15)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: primary, zIndex: 3 }
+  return { position: 'absolute', top: '50%', [side]: -8, transform: 'translateY(-50%)', width: 40, height: 40, borderRadius: '50%', background: 'var(--sup)', border: '1px solid var(--bordo)', boxShadow: '0 2px 12px rgba(0,0,0,0.15)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: tinta(primary), zIndex: 3 }
 }
 function ArrowCarousel({ items, perView = 3, gap = 24, minCard = 280, maxCard = 460, primary }) {
   const ref = useRef(null)
@@ -143,7 +150,7 @@ function BarraAvanzamento({ av, primary, sec, grande }) {
   return (
     <div style={{ ...riquadroEvidenza(primary), padding: grande ? '20px 22px' : '15px 16px' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
-        <span style={{ fontSize: grande ? 38 : 28, fontWeight: 800, color: primary, lineHeight: 1 }}>{av.perc}%</span>
+        <span style={{ fontSize: grande ? 38 : 28, fontWeight: 800, color: tinta(primary), lineHeight: 1 }}>{av.perc}%</span>
         <span style={{ fontSize: grande ? 13.5 : 12, color: 'var(--txt-medio)' }}>
           {av.etichetta}{av.totale ? ` · di ${fmtVetrina(av.totale, 'currency')}` : ''}
         </span>
@@ -305,7 +312,7 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
             {anyFilter && (
               <div style={{ textAlign: 'center', marginTop: 14 }}>
                 <button onClick={() => setFilters({ stato: '', sel: {}, pmin: '', pmax: '', q: '', nums: {} })}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', border: 'none', background: 'none', color: primary, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', border: 'none', background: 'none', color: tinta(primary), fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                   <X size={15} strokeWidth={1.5} /> Azzera filtri
                 </button>
               </div>
@@ -345,7 +352,7 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
                     <BarraAvanzamento av={avanzamento} primary={primary} sec={sec} />
                     <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
                       <TessereMetriche metriche={metriche} primary={primary} />
-                      <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>Scopri di più <span style={{ color: primary }}>→</span></span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>Scopri di più <span style={{ color: tinta(primary) }}>→</span></span>
                     </div>
                   </div>
                 </a>
@@ -368,7 +375,7 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
                     {roi != null && roi !== '' && (
                       <div>
                         <div style={{ fontSize: 11, color: 'var(--txt-fioco)', textTransform: 'uppercase', letterSpacing: 0.5 }}>ROI</div>
-                        <div style={{ fontSize: 19, fontWeight: 700, color: primary }}>{fmtVetrina(roi, 'percent')}</div>
+                        <div style={{ fontSize: 19, fontWeight: 700, color: tinta(primary) }}>{fmtVetrina(roi, 'percent')}</div>
                       </div>
                     )}
                   </div>
@@ -387,7 +394,7 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
         </div>
         {elementi.length < total && (
           <div style={{ textAlign: 'center', marginTop: 32 }}>
-            <button onClick={loadMore} style={{ padding: '12px 28px', background: 'var(--sup)', color: primary, border: `1.5px solid ${primary}`, borderRadius: 50, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>Carica altri</button>
+            <button onClick={loadMore} style={{ padding: '12px 28px', background: 'var(--sup)', color: tinta(primary), border: `1.5px solid ${tinta(primary)}`, borderRadius: 50, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>Carica altri</button>
           </div>
         )}
         </>)}
@@ -494,7 +501,7 @@ function VetrinaDettaglio({ block, linkBase, primary, sec, heading, entity, enti
         {fileFields.length > 0 && (
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 32 }}>
             {fileFields.map(f => (
-              <a key={f.key} href={safeUrl(dati[f.key])} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 18px', border: `1.5px solid ${primary}`, color: primary, borderRadius: 10, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
+              <a key={f.key} href={safeUrl(dati[f.key])} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 18px', border: `1.5px solid ${primary}`, color: tinta(primary), borderRadius: 10, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
                 <FileText size={16} strokeWidth={1.5} /> {f.label}
               </a>
             ))}
@@ -663,7 +670,13 @@ const API_BASE_FB = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001')
 // mai emerso perché fino al 22/09/2026 tutti gli slider avevano il link vuoto,
 // quindi il ramo non veniva mai eseguito. Il build non vede un identificatore
 // fuori scope (nota 32): si è visto aprendo la pagina.
-function HeroSlider({ block, primary, heading, siteHref = (u) => u || '#' }) {
+//
+// `id`, `className` e `style` sono lo «Stile sezione» (`applyBlockStyle`): sui
+// blocchi che sono componenti arrivano come props, e se il componente non li
+// mette sulla sua <section> sfondo, spaziatura, àncora e «nascondi su telefono»
+// non fanno niente (successo a Carosello, Conto alla rovescia e Prima/Dopo fino
+// al 15/10/2026). `children` è l'etichetta sopra il titolo.
+function HeroSlider({ block, primary, heading, siteHref = (u) => u || '#', id, className, style }) {
   const d = block.data || {}
   const slides = (d.slides || []).filter(s => s.image_url || s.title || s.subtitle)
   const n = slides.length
@@ -705,7 +718,7 @@ function HeroSlider({ block, primary, heading, siteHref = (u) => u || '#' }) {
   })
 
   return (
-    <section style={{ position: 'relative', height: h, minHeight: 440, overflow: 'hidden', background: '#1a1a2e' }}
+    <section id={id} className={className} style={{ position: 'relative', height: h, minHeight: 440, overflow: 'hidden', ...style, background: '#1a1a2e' }}
       onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
       onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       {slides.map((s, idx) => (
@@ -972,14 +985,15 @@ function promuoviPrimoTitolo(el) {
   return fatto ? { el: cloneElement(el, undefined, ...nuovi), fatto } : { el, fatto }
 }
 
-function Carousel({ block, primary, heading, siteHref = (u) => u || '#' }) {
+function Carousel({ block, primary, heading, siteHref = (u) => u || '#', id, className, style, children }) {
   const d = block.data || {}
   const items = (d.items || []).filter(it => it.image_url || it.title || it.text)
   const cfgPv = Math.min(Math.max(parseInt(d.per_view) || 3, 1), 4)
   if (!items.length) return null
 
   return (
-    <section style={{ padding: '72px 0', background: 'var(--sup)' }}>
+    <section id={id} className={className} style={{ padding: '72px 0', background: 'var(--sup)', ...style }}>
+      {children}
       <div className="lbr-section">
         {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,40px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)', marginBottom: 44 }} {...ricco(d.titolo)} />}
         <Scorrimento
@@ -993,7 +1007,7 @@ function Carousel({ block, primary, heading, siteHref = (u) => u || '#' }) {
                 <div style={{ padding: 22 }}>
                   {it.title && <h3 style={{ fontFamily: heading, fontSize: 19, fontWeight: 700, color: 'var(--txt)', margin: '0 0 8px' }} {...ricco(it.title)} />}
                   {it.text && <p style={{ fontSize: 14, color: 'var(--txt-tenue)', lineHeight: 1.6, margin: 0 }} {...ricco(it.text)} />}
-                  {it.button_label && it.button_url && <a href={siteHref(it.button_url)} style={{ display: 'inline-block', marginTop: 14, color: primary, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>{it.button_label} →</a>}
+                  {it.button_label && it.button_url && <a href={siteHref(it.button_url)} style={{ display: 'inline-block', marginTop: 14, color: tinta(primary), fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>{it.button_label} →</a>}
                 </div>
               )}
             </div>
@@ -1042,14 +1056,15 @@ function CountUp({ value, style }) {
 }
 
 // Confronto prima/dopo con maniglia trascinabile (clip-path).
-function BeforeAfter({ block, primary }) {
+function BeforeAfter({ block, primary, id, className, style, children }) {
   const d = block.data || {}
   const [pos, setPos] = useState(50)
   const ref = useRef(null)
   if (!d.before_url || !d.after_url) return null
   const move = x => { const r = ref.current?.getBoundingClientRect(); if (r) setPos(Math.max(0, Math.min(100, ((x - r.left) / r.width) * 100))) }
   return (
-    <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
+    <section id={id} className={className} style={{ padding: '72px 0', background: 'var(--sup)', ...style }}>
+      {children}
       <div className="lbr-section">
         <div ref={ref} style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden', borderRadius: 16, userSelect: 'none', touchAction: 'none', cursor: 'ew-resize' }}
           onMouseDown={e => move(e.clientX)} onMouseMove={e => e.buttons === 1 && move(e.clientX)}
@@ -1059,7 +1074,7 @@ function BeforeAfter({ block, primary }) {
           {d.before_label && <span style={{ position: 'absolute', top: 12, left: 12, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 12, padding: '4px 10px', borderRadius: 20 }} {...ricco(d.before_label)} />}
           {d.after_label && <span style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 12, padding: '4px 10px', borderRadius: 20 }} {...ricco(d.after_label)} />}
           <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${pos}%`, width: 2, background: 'var(--sup)', transform: 'translateX(-1px)', boxShadow: '0 0 8px rgba(0,0,0,0.4)' }}>
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 38, height: 38, borderRadius: '50%', background: 'var(--sup)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: primary }}>
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 38, height: 38, borderRadius: '50%', background: 'var(--sup)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: tinta(primary) }}>
               <ChevronLeft size={14} strokeWidth={2} style={{ marginRight: -4 }} /><ChevronRight size={14} strokeWidth={2} style={{ marginLeft: -4 }} />
             </div>
           </div>
@@ -1070,7 +1085,7 @@ function BeforeAfter({ block, primary }) {
 }
 
 // Conto alla rovescia. Gate su mount per evitare mismatch di idratazione (ora server≠client).
-function Countdown({ block, primary, heading }) {
+function Countdown({ block, primary, heading, inverted, id, className, style, children }) {
   const d = block.data || {}
   const [mounted, setMounted] = useState(false)
   const [now, setNow] = useState(0)
@@ -1084,19 +1099,22 @@ function Countdown({ block, primary, heading }) {
   const done = mounted && diff <= 0
   const s = Math.max(0, Math.floor(diff / 1000))
   const dd = Math.floor(s / 86400), hh = Math.floor((s % 86400) / 3600), mm = Math.floor((s % 3600) / 60), ss = s % 60
+  // Su una sezione scura o del colore del sito le cifre nel colore del sito sparirebbero.
+  const cifra = inverted ? '#ffffff' : primary
   const cell = (n, l) => (
     <div style={{ textAlign: 'center', minWidth: 70 }}>
-      <div style={{ fontFamily: heading, fontSize: 'clamp(32px,5vw,52px)', fontWeight: 700, color: primary, lineHeight: 1 }}>{mounted ? String(n).padStart(2, '0') : '—'}</div>
+      <div style={{ fontFamily: heading, fontSize: 'clamp(32px,5vw,52px)', fontWeight: 700, color: cifra, lineHeight: 1 }}>{mounted ? String(n).padStart(2, '0') : '—'}</div>
       <div style={{ fontSize: 12, color: 'var(--txt-tenue)', textTransform: 'uppercase', letterSpacing: 1, marginTop: 6 }}>{l}</div>
     </div>
   )
   return (
-    <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
+    <section id={id} className={className} style={{ padding: '72px 0', background: 'var(--sup)', ...style }}>
+      {children}
       <div className="lbr-section" style={{ textAlign: 'center' }}>
         {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, color: 'var(--txt)', marginBottom: d.sottotitolo ? 8 : 32 }} {...ricco(d.titolo)} />}
         {d.sottotitolo && <p style={{ color: 'var(--txt-tenue)', marginBottom: 32, fontSize: 15 }} {...ricco(d.sottotitolo)} />}
         {done
-          ? <p style={{ fontSize: 20, fontWeight: 700, color: primary }}>È arrivato il momento!</p>
+          ? <p style={{ fontSize: 20, fontWeight: 700, color: cifra }}>È arrivato il momento!</p>
           : <div style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap' }}>{cell(dd, 'giorni')}{cell(hh, 'ore')}{cell(mm, 'min')}{cell(ss, 'sec')}</div>}
       </div>
     </section>
@@ -1143,7 +1161,7 @@ function VetrinaLeadForm({ entity, entityType, projectTitle, primary, privacyUrl
       <textarea value={messaggio} onChange={e => setMessaggio(e.target.value)} placeholder="Messaggio (opzionale)" rows={2} style={{ ...inp, resize: 'vertical' }} />
       <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}>
         <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} style={{ marginTop: 2, flexShrink: 0 }} />
-        <span>Acconsento al trattamento dei dati secondo la <a href={privacyUrl} style={{ color: primary }}>privacy policy</a></span>
+        <span>Acconsento al trattamento dei dati secondo la <a href={privacyUrl} style={{ color: tinta(primary) }}>privacy policy</a></span>
       </label>
       <Turnstile onToken={setTurnstileToken} />
       <button type="submit" disabled={!privacy || state === 'loading'}
@@ -1216,6 +1234,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
   const vuolePassati = (blocks || []).some(b => b?.type === 'eventi' && b.data?.mostra_passati !== false)
 
   const sec = secondary || primary   // colore accento; default = primario
+  const sitoScuro = eScuro(resolveSiteTheme(entity).bgColor)
   const sections = mini.sections || {}
   const animRef = useRef(null)
 
@@ -1310,8 +1329,8 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
             {concluso
               ? <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt-tenue)', background: '#eee', borderRadius: 20, padding: '3px 10px' }}>{tr('event_ended', lang)}</span>
-              : prezzo && <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>{prezzo}</span>}
-            <span style={{ fontSize: 13, fontWeight: 700, color: concluso ? 'var(--txt-tenue)' : primary }}>{tr(concluso ? 'details_arrow' : 'book_arrow', lang)}</span>
+              : prezzo && <span style={{ fontSize: 18, fontWeight: 800, color: tinta(primary) }}>{prezzo}</span>}
+            <span style={{ fontSize: 13, fontWeight: 700, color: concluso ? 'var(--txt-tenue)' : tinta(primary) }}>{tr(concluso ? 'details_arrow' : 'book_arrow', lang)}</span>
           </div>
         </div>
       </a>
@@ -1327,7 +1346,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
     // dà la superficie della pagina: su un sito con fondo scuro un titolo
     // «#1a1a2e» spariva dentro il fondo (visto sul template Notte).
     const cTitle = inverted ? '#ffffff' : 'var(--txt)'
-    const cBody  = inverted ? 'rgba(255,255,255,0.82)' : null   // null = usa il colore nativo del blocco
+    const cBody  = inverted ? 'var(--txt-medio)' : null   // null = usa il colore nativo del blocco; con sfondo, quello della sezione (variabiliSezione)
     switch (block.type) {
 
       case 'hero': {
@@ -1395,10 +1414,10 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
               ? <video src={d.bg_video} autoPlay muted loop playsInline poster={bgImg || undefined} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: focal }} />
               : bgImg && <img src={bgImg} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: focal }} />}
             <div style={{ position: 'absolute', inset: 0, background: `rgba(0,0,0,${d.overlay_opacity ?? 0.5})` }} />
-            <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '80px 24px', maxWidth: 860, margin: '0 auto', width: '100%' }}>
+            <div className="lbr-allinea" style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '80px 24px', maxWidth: 860, margin: '0 auto', width: '100%' }}>
               {d.title && <h1 style={{ fontFamily: heading, fontSize: 'clamp(36px,6vw,72px)', fontWeight: 700, color: '#fff', lineHeight: 1.1, marginBottom: 20 }} {...ricco(d.title)} />}
               {d.tagline && <p style={{ fontSize: 'clamp(16px,2.5vw,22px)', color: 'rgba(255,255,255,0.82)', lineHeight: 1.5, maxWidth: 640, margin: '0 auto 40px' }} {...ricco(d.tagline)} />}
-              <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginTop: 8 }}>
+              <div className="lbr-riga" style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginTop: 8 }}>
                 {d.cta1_text && d.cta1_url && (
                   <a href={siteHref(d.cta1_url)} style={{ display: 'inline-block', padding: '16px 36px', background: primary, color: readableOn('#ffffff', primary, '#1a1a2e'), borderRadius: 50, fontWeight: 700, fontSize: 17, textDecoration: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>{d.cta1_text}</a>
                 )}
@@ -1534,8 +1553,8 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         const voci = (Array.isArray(d.items) ? d.items : []).filter(v => v && typeof v.title === 'string' && v.title)
         if (!voci.length) return null
         const quale = Math.min(Number.isInteger(linguetta[block.id]) ? linguetta[block.id] : 0, voci.length - 1)
-        const cTenue = inverted ? 'rgba(255,255,255,0.65)' : 'var(--txt-tenue)'
-        const cBordo = inverted ? 'rgba(255,255,255,0.2)' : 'var(--bordo)'
+        const cTenue = 'var(--txt-tenue)'   // la sezione con sfondo porta il suo (variabiliSezione)
+        const cBordo = 'var(--bordo)'
         const apri = i => setLinguetta(p => ({ ...p, [block.id]: i }))
         return (
           <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
@@ -1575,9 +1594,9 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         const n = Math.min(COLONNE_MAX, Math.max(1, teste.length, ...righe.map(r => r.celle.length)))
         const conTeste = teste.some(x => x.trim())
         const evid = Number.isInteger(d.evidenzia) && d.evidenzia >= 1 && d.evidenzia < n ? d.evidenzia : 0
-        const cTenue = inverted ? 'rgba(255,255,255,0.62)' : 'var(--txt-tenue)'
-        const cBordo = inverted ? 'rgba(255,255,255,0.2)' : 'var(--bordo)'
-        const risalto = j => evid && j === evid ? { background: inverted ? 'rgba(255,255,255,0.1)' : `${primary}14` } : null
+        const cTenue = 'var(--txt-tenue)'   // la sezione con sfondo porta il suo (variabiliSezione)
+        const cBordo = 'var(--bordo)'
+        const risalto = j => evid && j === evid ? { background: inverted ? 'rgba(0,0,0,0.14)' : `${primary}14` } : null
         const colonne = Array.from({ length: n }, (_, j) => j)
         // «✓» e «✗» scritti in una cella diventano il segno.
         const cella = v => /^[✓✔]$/.test(v) ? <Check size={18} strokeWidth={1.5} color={inverted ? '#ffffff' : `var(--icon-color, ${primary})`} aria-label={lang === 'en' ? 'Yes' : 'Sì'} />
@@ -1654,7 +1673,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                         </div>
                       )}
                       <div style={{ position: 'relative', minWidth: 0 }}>
-                        {x.value && <div style={{ fontFamily: heading, fontSize: 'clamp(40px,5vw,76px)', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.02em', color: tono === 'chiaro' ? primary : fg, marginBottom: x.title || x.text ? 12 : 0, overflowWrap: 'anywhere' }}>{x.value}</div>}
+                        {x.value && <div style={{ fontFamily: heading, fontSize: 'clamp(40px,5vw,76px)', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.02em', color: tono === 'chiaro' ? tinta(primary) : fg, marginBottom: x.title || x.text ? 12 : 0, overflowWrap: 'anywhere' }}>{x.value}</div>}
                         {x.title && <h3 style={{ fontFamily: heading, fontSize: 'clamp(19px,2vw,26px)', fontWeight: 700, lineHeight: 1.2, color: fg, margin: 0, overflowWrap: 'anywhere' }} {...ricco(x.title)} />}
                         {x.text && <p style={{ fontSize: 14.5, lineHeight: 1.55, color: fgTenue, margin: x.title ? '8px 0 0' : 0, overflowWrap: 'anywhere' }} {...ricco(x.text)} />}
                       </div>
@@ -1707,7 +1726,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
               <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
                 {items.map(it => {
                   const label = SOCIAL_LABELS[(it.network || '').toLowerCase()] || it.network || 'Link'
-                  return <a key={it.id} href={siteHref(it.url)} target="_blank" rel="noopener noreferrer" style={{ padding: '9px 20px', borderRadius: 50, border: `1.5px solid ${primary}`, color: primary, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>{label}</a>
+                  return <a key={it.id} href={siteHref(it.url)} target="_blank" rel="noopener noreferrer" style={{ padding: '9px 20px', borderRadius: 50, border: `1.5px solid ${tinta(primary)}`, color: tinta(primary), fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>{label}</a>
                 })}
               </div>
             </div>
@@ -1719,7 +1738,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         return <BeforeAfter key={block.id} block={block} primary={primary} />
 
       case 'countdown':
-        return <Countdown key={block.id} block={block} primary={primary} heading={heading} />
+        return <Countdown key={block.id} block={block} primary={primary} heading={heading} inverted={inverted} />
 
       case 'embed': {
         if (!d.html) return null
@@ -1852,10 +1871,16 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         // che arriva dal cliente.
         const alone = d.style === 'alone' && /^#[0-9a-fA-F]{6}$/.test(primary || '')
           ? `0 0 34px ${primary}66, 0 8px 22px ${primary}44` : undefined
+        // Su una sezione scura o del colore del sito il pulsante nel colore del
+        // sito spariva (bordato: scritta invisibile; pieno: si confondeva col fondo).
+        // Lì diventa bianco, con la scritta nel colore del sito se si legge.
+        const pieno = inverted ? '#ffffff' : primary
+        const bordato = inverted ? '#ffffff' : tinta(primary)
+        const scritta = outline ? bordato : inverted ? readableOn(primary, '#ffffff', '#1a1a2e', 4.5) : readableOn('#ffffff', primary, '#1a1a2e')
         return (
           <section key={block.id} style={{ padding: '40px 0', background: 'var(--sup)' }}>
             <div className="lbr-section" style={{ textAlign: d.align || 'center' }}>
-              <a href={siteHref(d.url)} style={{ display: 'inline-block', padding: padMap[d.size || 'medium'], borderRadius: 50, fontWeight: 700, fontSize: fsMap[d.size || 'medium'], textDecoration: 'none', background: outline ? 'transparent' : primary, color: outline ? primary : readableOn('#ffffff', primary, '#1a1a2e'), border: `2px solid ${primary}`, boxShadow: alone }}>{d.text}</a>
+              <a href={siteHref(d.url)} style={{ display: 'inline-block', padding: padMap[d.size || 'medium'], borderRadius: 50, fontWeight: 700, fontSize: fsMap[d.size || 'medium'], textDecoration: 'none', background: outline ? 'transparent' : pieno, color: scritta, border: `2px solid ${outline ? bordato : pieno}`, boxShadow: alone }}>{d.text}</a>
             </div>
           </section>
         )
@@ -1865,7 +1890,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         if (!d.title) return null
         const split = d.variant === 'split'
         const ctaBtn = d.button_text && d.button_url
-          ? <a href={siteHref(d.button_url)} style={{ display: 'inline-block', padding: '15px 36px', background: 'var(--sup)', color: primary, borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.15)', whiteSpace: 'nowrap' }}>{d.button_text}</a>
+          ? <a href={siteHref(d.button_url)} style={{ display: 'inline-block', padding: '15px 36px', background: 'var(--sup)', color: tinta(primary), borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.15)', whiteSpace: 'nowrap' }}>{d.button_text}</a>
           : null
         return (
           <section key={block.id} style={{ padding: '72px 24px', background: `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)`, textAlign: split ? 'left' : 'center' }}>
@@ -1923,7 +1948,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         const variante = d.variant === 'ritratti' || d.variant === 'editoriale' ? d.variant : 'griglia'
         // Il ruolo è scritto nel colore del sito: su una sezione scura o di quel
         // colore sparirebbe, e lì si schiarisce.
-        const cRuolo = inverted ? 'rgba(255,255,255,0.78)' : primary
+        const cRuolo = inverted ? 'var(--txt-tenue)' : tinta(primary)
         // Nelle due varianti nuove il cerchio non ha senso — sono nate per
         // togliere proprio quello. Chi l'aveva scelto ricade sul verticale.
         const rapportoRitratto = tonda ? '4 / 5' : forma.rapporto
@@ -2117,7 +2142,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         const carousel = d.variant === 'carousel'
         const starsRow = (n, size) => (
           <div style={{ display: 'flex', gap: 2 }}>
-            {Array.from({ length: n || 5 }).map((_, i) => <Star key={i} size={size} fill={primary} color={`var(--icon-color, ${primary})`} strokeWidth={0} />)}
+            {Array.from({ length: n || 5 }).map((_, i) => <Star key={i} size={size} fill="currentColor" color={`var(--icon-color, ${primary})`} strokeWidth={0} />)}
           </div>
         )
         const card = (t) => (
@@ -2167,8 +2192,8 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
       case 'listino': {
         const voci = (d.items || []).filter(v => v && v.name)
         if (!voci.length) return null
-        const cTenue = inverted ? 'rgba(255,255,255,0.62)' : 'var(--txt-tenue)'
-        const cBordo = inverted ? 'rgba(255,255,255,0.2)' : 'var(--bordo)'
+        const cTenue = 'var(--txt-tenue)'   // la sezione con sfondo porta il suo (variabiliSezione)
+        const cBordo = 'var(--bordo)'
         return (
           <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
             <div className="lbr-section" style={{ maxWidth: d.due_colonne ? 1040 : 720 }}>
@@ -2226,7 +2251,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
             <div className="lbr-section" style={{ maxWidth: 560 }}>
               {d.title && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, color: 'var(--txt)', marginBottom: 12 }} {...ricco(d.title)} />}
               {d.subtitle && <p style={{ fontSize: 16, color: 'var(--txt-tenue)', marginBottom: 28 }} {...ricco(d.subtitle)} />}
-              <NewsletterForm aziendaId={aziendaId} primary={primary} privacyUrl={privacyUrl} lang={lang} />
+              <NewsletterForm aziendaId={aziendaId} primary={primary} privacyUrl={privacyUrl} lang={lang} inverted={inverted} />
             </div>
           </section>
         )
@@ -2250,8 +2275,8 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         const mappa = d.mostra_mappa !== false && typeof entity.address === 'string' && !!entity.address.trim()
         const en = lang === 'en'
         // Su una sezione scura (o con una foto dietro) testi, bordi e icone si schiariscono.
-        const cTenue = inverted ? 'rgba(255,255,255,0.62)' : 'var(--txt-tenue)'
-        const cBordo = inverted ? 'rgba(255,255,255,0.2)' : 'var(--bordo)'
+        const cTenue = 'var(--txt-tenue)'   // la sezione con sfondo porta il suo (variabiliSezione)
+        const cBordo = 'var(--bordo)'
         const riga = (Icona, etichetta, contenuto) => (
           <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
             <div style={{ width: 40, height: 40, borderRadius: 10, background: inverted ? 'rgba(255,255,255,0.1)' : 'var(--sup-2)', border: `1px solid ${cBordo}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -2436,7 +2461,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                   <div key={item.id} style={{ background: 'var(--sup-2)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid var(--bordo)' }}>
                     {item.photo_url && <img src={item.photo_url} alt={item.name} style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />}
                     <div style={{ padding: '16px 18px' }}>
-                      {item.category && <div style={{ fontSize: 11, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>{item.category}</div>}
+                      {item.category && <div style={{ fontSize: 11, fontWeight: 700, color: tinta(primary), textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>{item.category}</div>}
                       <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--txt)', marginBottom: 6 }} {...ricco(item.name)} />
                       {item.description && <p style={{ fontSize: 13, color: 'var(--txt-tenue)', lineHeight: 1.5, margin: 0 }} {...ricco(item.description)} />}
                       {item.location && <div style={{ fontSize: 12, color: 'var(--txt-tenue)', marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{item.location}</div>}
@@ -2466,7 +2491,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                       {exc.description && <p style={{ fontSize: 13, color: 'var(--txt-tenue)', lineHeight: 1.5, margin: '0 0 10px' }} {...ricco(exc.description)} />}
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontSize: 12, color: 'var(--txt-tenue)' }}>
                         {exc.duration && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />{exc.duration}</span>}
-                        {exc.price > 0 && <span style={{ fontWeight: 700, color: primary, fontSize: 14 }}>€{exc.price}</span>}
+                        {exc.price > 0 && <span style={{ fontWeight: 700, color: tinta(primary), fontSize: 14 }}>€{exc.price}</span>}
                         {exc.seats && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Users size={12} strokeWidth={1.5} color={`var(--icon-color, ${primary})`} />Max {exc.seats}</span>}
                       </div>
                     </div>
@@ -2507,7 +2532,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                       {o.cover_url && <img src={o.cover_url} alt="" style={{ width: '100%', height: 170, objectFit: 'cover', display: 'block' }} />}
                       <div style={{ padding: '16px 18px' }}>
                         {o.categoria && (
-                          <div style={{ fontSize: 11, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6, overflowWrap: 'anywhere' }}>{o.categoria}</div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: tinta(primary), textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6, overflowWrap: 'anywhere' }}>{o.categoria}</div>
                         )}
                         <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--txt)', marginBottom: 6, overflowWrap: 'anywhere' }} {...ricco(o.titolo)} />
                         {o.descrizione && <p style={{ fontSize: 13, color: 'var(--txt-tenue)', lineHeight: 1.5, margin: '0 0 12px' }} {...ricco(o.descrizione)} />}
@@ -2516,8 +2541,8 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                           {/* Il prezzo può essere nascosto o scritto a parole:
                               una cena alla carta non è «Gratis». */}
                           {o.mostra_prezzo !== false && (o.prezzo_testo
-                            ? <span style={{ fontWeight: 700, color: primary, fontSize: 14, overflowWrap: 'anywhere' }}>{o.prezzo_testo}</span>
-                            : o.prezzo > 0 ? <span style={{ fontWeight: 700, color: primary, fontSize: 14 }}>€{o.prezzo}</span> : null)}
+                            ? <span style={{ fontWeight: 700, color: tinta(primary), fontSize: 14, overflowWrap: 'anywhere' }}>{o.prezzo_testo}</span>
+                            : o.prezzo > 0 ? <span style={{ fontWeight: 700, color: tinta(primary), fontSize: 14 }}>€{o.prezzo}</span> : null)}
                           {esaurita
                             ? <span style={{ fontWeight: 700, color: '#c53030' }}>Esaurito</span>
                             : o.rimasti !== null && o.rimasti <= 5 && <span>Restano {o.rimasti}</span>}
@@ -2580,7 +2605,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                       {p.cover_url && <img src={p.cover_url} alt={p.title} style={{ width: '100%', height: 180, objectFit: 'cover' }} />}
                       <div style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 14 }}>
-                          {p.badge && <span style={{ display: 'inline-block', background: `${sec}18`, color: sec, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase' }}>{p.badge}</span>}
+                          {p.badge && <span style={{ display: 'inline-block', background: `${sec}18`, color: sitoScuro && resolveBlockBg(block.style, primary, sec).tono !== 'chiaro' ? readableOn(sec, '#161622', '#ffffff', 4.5) : sec, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20, letterSpacing: 0.5, textTransform: 'uppercase' }}>{p.badge}</span>}
                         </div>
                         <h3 style={{ fontFamily: heading, fontSize: 22, fontWeight: 700, marginBottom: 12, color: 'var(--txt)' }} {...ricco(p.title)} />
                         {p.text && <p style={{ fontSize: 15, color: 'var(--txt-medio)', lineHeight: 1.7, marginBottom: 16, flex: 1 }} {...ricco(p.text)} />}
@@ -2626,7 +2651,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                         {p.tagline && <p style={{ fontSize: 14, color: 'var(--txt-tenue)', marginBottom: 20, lineHeight: 1.5 }} {...ricco(p.tagline)} />}
                         {p.price && (
                           <div style={{ marginBottom: 24, borderTop: '1px solid var(--bordo)', paddingTop: 20 }}>
-                            <span style={{ fontFamily: heading, fontSize: 40, fontWeight: 800, color: primary }}>{p.price}</span>
+                            <span style={{ fontFamily: heading, fontSize: 40, fontWeight: 800, color: tinta(primary) }}>{p.price}</span>
                             {p.price_label && <span style={{ fontSize: 14, color: 'var(--txt-fioco)', marginLeft: 6 }}>/ {p.price_label}</span>}
                           </div>
                         )}
@@ -2636,7 +2661,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
                             {(p.includes || []).filter(Boolean).map((item, i) => (
                               <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 14, color: 'var(--txt-medio)' }}>
-                                <span style={{ color: primary, fontWeight: 700, fontSize: 15, lineHeight: 1.3, flexShrink: 0 }}>✓</span>
+                                <span style={{ color: tinta(primary), fontWeight: 700, fontSize: 15, lineHeight: 1.3, flexShrink: 0 }}>✓</span>
                                 {item}
                               </li>
                             ))}
@@ -2645,7 +2670,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                       )}
                       <div style={{ padding: '0 28px 28px', display: 'flex', flexDirection: 'column', gap: 10, marginTop: 'auto' }}>
                         {hasDetail && (
-                          <a href={`${pacchettiBase}${p.id}`} style={{ display: 'block', textAlign: 'center', padding: '12px', background: 'transparent', color: primary, border: `2px solid ${primary}`, borderRadius: 12, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>Scopri di più</a>
+                          <a href={`${pacchettiBase}${p.id}`} style={{ display: 'block', textAlign: 'center', padding: '12px', background: 'transparent', color: tinta(primary), border: `2px solid ${tinta(primary)}`, borderRadius: 12, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>Scopri di più</a>
                         )}
                         {p.cta_label && p.cta_url && (
                           <a href={siteHref(p.cta_url)} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textAlign: 'center', padding: '13px', background: primary, color: readableOn('#ffffff', primary, '#1a1a2e'), borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>{p.cta_label}</a>
@@ -2738,14 +2763,14 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                       {art.published_at && <div style={{ fontSize: 11, color: 'var(--txt-fioco)', marginBottom: 6 }}>{new Date(art.published_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
                       <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--txt)', marginBottom: 8 }} {...ricco(art.title)} />
                       {art.excerpt && <div style={{ fontSize: 13, color: '#777', lineHeight: 1.5 }}>{art.excerpt}</div>}
-                      <div style={{ marginTop: 12, fontSize: 13, fontWeight: 700, color: primary }}>{tr('read_arrow', lang)}</div>
+                      <div style={{ marginTop: 12, fontSize: 13, fontWeight: 700, color: tinta(primary) }}>{tr('read_arrow', lang)}</div>
                     </div>
                   </a>
                 ))}
               </div>
               {articoli.length >= 6 && (
                 <div style={{ textAlign: 'center', marginTop: 40 }}>
-                  <a href={`/blog?azienda_id=${entity.azienda_id}`} style={{ display: 'inline-block', padding: '12px 32px', borderRadius: 50, border: `2px solid ${primary}`, color: primary, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+                  <a href={`/blog?azienda_id=${entity.azienda_id}`} style={{ display: 'inline-block', padding: '12px 32px', borderRadius: 50, border: `2px solid ${tinta(primary)}`, color: tinta(primary), fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
                     {tr('view_all_articles', lang)}
                   </a>
                 </div>
@@ -2819,6 +2844,10 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
   // sempre non esce nessuna regola. Serve `!important` perché ogni blocco
   // scrive il peso del suo titolo sull'elemento.
   const comeTitoli = stileTitoli(heading)
+  // Su un sito col fondo scuro il colore del sito usato per scrivere (prezzi,
+  // «Prenota →», social) può non leggersi: lì diventa una tinta che si legge.
+  // Sui siti chiari la variabile non si dichiara e non cambia niente.
+  const tintaSito = sitoScuro && primary ? readableOn(primary, '#161622', '#ffffff', 4.5) : null
   let mancaH1 = !blocks.flatMap(b => b?.type === 'sezione' && Array.isArray(b._blocchi) ? b._blocchi : [b]).some(b => (b?.type === 'hero' && b.data?.title) || (b?.type === 'hero_slider' && b.data?.slides?.[0]?.title))
 
   return (
@@ -2830,10 +2859,21 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         .lbr-al-left,   .lbr-al-left *   { text-align: left   !important; }
         .lbr-al-center, .lbr-al-center * { text-align: center !important; }
         .lbr-al-right,  .lbr-al-right *  { text-align: right  !important; }
+        /* Sezione scura o colorata (applyBlockStyle → .lbr-sez-inv): il testo sul
+           fondo si schiarisce, ma le SCHEDE restano quelle della pagina — dentro
+           tornano i colori della pagina, copiati in --p-… sulla radice. Una scheda
+           si riconosce dal fondo var(--sup) / var(--sup-2). */
+        .lbr-sez-inv [style*="var(--sup"] { --txt: var(--p-txt); --txt-medio: var(--p-txt-medio); --txt-tenue: var(--p-txt-tenue); --txt-fioco: var(--p-txt-fioco); --bordo: var(--p-bordo); --bordo-tenue: var(--p-bordo-tenue); --tinta: var(--p-tinta); --icon-color: var(--p-icon); }
         /* gli elementi a larghezza fissa/limitata (barrette, colonne maxWidth) seguono l'allineamento */
         .lbr-al-left   > .lbr-section > * { margin-left: 0    !important; margin-right: auto !important; }
         .lbr-al-center > .lbr-section > * { margin-left: auto !important; margin-right: auto !important; }
         .lbr-al-right  > .lbr-section > * { margin-left: auto !important; margin-right: 0    !important; }
+        /* Blocchi che non usano .lbr-section (la copertina): il riquadro del testo
+           e la fila dei pulsanti si dichiarano con .lbr-allinea e .lbr-riga. */
+        .lbr-al-left  .lbr-allinea, .lbr-al-left  .lbr-allinea > * { margin-left: 0 !important; margin-right: auto !important; }
+        .lbr-al-right .lbr-allinea, .lbr-al-right .lbr-allinea > * { margin-left: auto !important; margin-right: 0 !important; }
+        .lbr-al-left  .lbr-riga { justify-content: flex-start !important; }
+        .lbr-al-right .lbr-riga { justify-content: flex-end !important; }
         .lbr-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .lbr-ft { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
         .lbr-recapiti { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 48px; align-items: stretch; }
@@ -2904,7 +2944,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         .lbr-logo-item a { display: block; }
         ${comeTitoli ? `.lbr-radice h1, .lbr-radice h2 { font-weight: ${comeTitoli.peso} !important; letter-spacing: ${comeTitoli.spazio} !important;${comeTitoli.maiuscolo ? ' text-transform: uppercase !important;' : ''} }${comeTitoli.unPeso ? ' .lbr-radice { font-synthesis-weight: none; }' : ''}` : ''}
       `}</style>
-      <div ref={animRef} className="lbr-radice" style={{ '--icon-color': (entity?.theme?.iconColor || primary) }}>
+      <div ref={animRef} className="lbr-radice" style={{ '--icon-color': (entity?.theme?.iconColor || primary), ...(tintaSito ? { '--tinta': tintaSito } : {}), ...variabiliPagina(sitoScuro), '--p-tinta': tintaSito || primary, '--p-icon': (entity?.theme?.iconColor || primary) }}>
         {blocks.map((b, i) => {
           const disegna = (x, prossimo, primo) => {
             let el = applyBlockStyle(renderBlock(x, blockInverted(x, primary, sec), prossimo), x, { primary, secondary: sec })
@@ -2937,7 +2977,9 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
   )
 }
 
-function NewsletterForm({ aziendaId, primary, privacyUrl, lang = 'it' }) {
+// `inverted`: la sezione è scura o del colore del sito — pulsante e link nel
+// colore del sito lì sparirebbero, e diventano bianchi.
+function NewsletterForm({ aziendaId, primary, privacyUrl, lang = 'it', inverted = false }) {
   const [email, setEmail] = useState('')
   const [privacy, setPrivacy] = useState(false)
   const [state, setState] = useState('idle')
@@ -2963,13 +3005,13 @@ function NewsletterForm({ aziendaId, primary, privacyUrl, lang = 'it' }) {
         <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder={tr('newsletter_email', lang)}
           style={{ flex: 1, padding: '12px 16px', borderRadius: 50, border: '1px solid var(--bordo)', fontSize: 15, outline: 'none' }} />
         <button type="submit" disabled={!privacy || state === 'loading'}
-          style={{ padding: '12px 24px', borderRadius: 50, background: privacy ? primary : '#ccc', color: '#fff', border: 'none', cursor: privacy ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: 15 }}>
+          style={{ padding: '12px 24px', borderRadius: 50, background: inverted ? '#ffffff' : primary, color: inverted ? readableOn(primary, '#ffffff', '#1a1a2e', 4.5) : readableOn('#ffffff', primary, '#1a1a2e'), opacity: privacy ? 1 : 0.55, border: 'none', cursor: privacy ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: 15 }}>
           {state === 'loading' ? '...' : tr('subscribe', lang)}
         </button>
       </div>
       <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12, color: 'var(--txt-tenue)', cursor: 'pointer' }}>
         <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} style={{ marginTop: 1, flexShrink: 0 }} />
-        <span>{tr('consent_privacy', lang)} <a href={privacyUrl} style={{ color: primary }}>{tr('privacy_policy', lang)}</a></span>
+        <span>{tr('consent_privacy', lang)} <a href={privacyUrl} style={{ color: tinta(primary) }}>{tr('privacy_policy', lang)}</a></span>
       </label>
       <Turnstile onToken={setTurnstileToken} />
     </form>

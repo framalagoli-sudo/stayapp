@@ -29,7 +29,7 @@ import { TIPO_SEZIONE, MAX_BLOCCHI_SEZIONE, idSezione, soloRiferimenti } from '@
 import { testiDaRiscrivere, conTestiRiscritti } from '@/lib/ai-blocco'
 import { datiDiNascita, scriviCampo, scriviParagrafo, campiDiTesto, postoPerFoto, scriviImmagine, azioneSuElemento } from '@/lib/editor-visuale'
 import { TIPO_TRASCINATO } from '@/components/EditorNelRiquadro'
-import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS, BLOCK_GLOW_OPTIONS, BLOCK_PADY_OPTIONS, blockSupportsBg, BLOCK_TEXT_SIZE_OPTIONS, BLOCK_TEXT_COLOR_OPTIONS, BLOCK_ICON_COLOR_OPTIONS, blockHasText, GRID_AUTO_BLOCKS, BLOCK_COLUMNS_OPTIONS } from '@/lib/blockTypes'
+import { BLOCK_TYPES, BLOCK_GROUPS, BLOCK_DEFAULTS, blockLabel, BLOCK_BG_OPTIONS, BLOCK_GLOW_OPTIONS, BLOCK_PADY_OPTIONS, blockSupportsBg, BLOCK_TEXT_SIZE_OPTIONS, BLOCK_TEXT_COLOR_OPTIONS, BLOCK_ICON_COLOR_OPTIONS, blockHasText, GRID_AUTO_BLOCKS, BLOCK_COLUMNS_OPTIONS, conEtichetta } from '@/lib/blockTypes'
 
 function uid() { return crypto.randomUUID() }
 
@@ -1301,11 +1301,13 @@ function BlockStylePanel({ block, onChange, entityId, entityTipo }) {
             </select>
           </div>
         )}
-        <div style={{ flex: 1, minWidth: 150 }}>
-          <label style={lbl}>Etichetta sopra il titolo</label>
-          <input value={st.etichetta || ''} onChange={e => set('etichetta', e.target.value)} maxLength={60}
-            placeholder="es. Chi siamo" style={{ ...sel, padding: '7px 9px' }} />
-        </div>
+        {conEtichetta(block.type) && (
+          <div style={{ flex: 1, minWidth: 150 }}>
+            <label style={lbl}>Etichetta sopra il titolo</label>
+            <input value={st.etichetta || ''} onChange={e => set('etichetta', e.target.value)} maxLength={60}
+              placeholder="es. Chi siamo" style={{ ...sel, padding: '7px 9px' }} />
+          </div>
+        )}
         <div style={{ flex: 1, minWidth: 150 }}>
           <label style={lbl}>Spaziatura verticale</label>
           <select value={st.paddingY || 'default'} onChange={e => set('paddingY', e.target.value)} style={sel}>

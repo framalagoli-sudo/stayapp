@@ -59,3 +59,44 @@ export function variabiliSuperficie(scuro) {
       '--ombra': '0 2px 8px rgba(0,0,0,0.06)',
     }
 }
+
+// I colori di servizio di UNA sezione che ha uno sfondo suo («Stile sezione»).
+// Lo sfondo cambiava solo il fondo: testo, testo tenue e bordi restavano quelli
+// della pagina, e ogni blocco doveva rimediare da solo — quasi nessuno lo faceva
+// per intero. Su una sezione scura i sottotitoli sparivano, e su un sito scuro
+// una sezione «Grigio» o «Bianco» rendeva invisibile il testo di tutti i blocchi
+// (misurato il 15/10/2026, 36 su 38).
+// `tono`: 'chiaro' (bianco, grigi, un colore del tema chiaro) · 'scuro' (il
+// fondo scuro pieno) · 'colore' (colore del tema, sfumato, foto con velo).
+//
+// ⚠️ Su una sezione scura o colorata le SCHEDE restano quelle della pagina (sul
+// sito chiaro, bianche): cambiano solo i testi che stanno direttamente sul fondo.
+// Dentro le schede la regola `.lbr-sez-inv [style*="var(--sup"]` del disegnatore
+// rimette i colori della pagina, che `variabiliPagina` copia in `--p-…`.
+// Così i siti già pubblicati non cambiano faccia: si legge quello che non si leggeva.
+export function variabiliSezione(tono) {
+  if (tono === 'chiaro') return variabiliSuperficie(false)
+  if (tono === 'scuro') {
+    const { '--txt': txt, '--txt-medio': medio, '--txt-tenue': tenue, '--txt-fioco': fioco, '--bordo': bordo, '--bordo-tenue': bordoTenue } = variabiliSuperficie(true)
+    return { '--txt': txt, '--txt-medio': medio, '--txt-tenue': tenue, '--txt-fioco': fioco, '--bordo': bordo, '--bordo-tenue': bordoTenue }
+  }
+  return {
+    '--txt': '#ffffff',
+    // Il testo piccolo sul colore del tema deve stare quasi bianco: già a 0,65
+    // su un blu medio scende a 3,3, e uno sfumato verso un arancio scuro chiede 0,92.
+    '--txt-medio': 'rgba(255,255,255,0.95)',
+    '--txt-tenue': 'rgba(255,255,255,0.92)',
+    '--txt-fioco': 'rgba(255,255,255,0.9)',
+    '--bordo': 'rgba(255,255,255,0.24)',
+    '--bordo-tenue': 'rgba(255,255,255,0.14)',
+  }
+}
+
+// I colori della pagina, copiati in `--p-…`: servono alle schede dentro una
+// sezione scura o colorata per tornare ai colori della pagina (vedi sopra).
+export function variabiliPagina(scuro) {
+  const v = variabiliSuperficie(scuro)
+  const out = {}
+  for (const k of ['--txt', '--txt-medio', '--txt-tenue', '--txt-fioco', '--bordo', '--bordo-tenue']) out['--p-' + k.slice(2)] = v[k]
+  return out
+}

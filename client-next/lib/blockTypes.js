@@ -1,5 +1,6 @@
 ﻿'use client'
 import { cloneElement } from 'react'
+import { variabiliSezione } from './superficie'
 
 export const BLOCK_GROUPS = [
   { key: 'layout',      label: 'Testo & Layout' },
@@ -170,6 +171,19 @@ export const BLOCK_BG_OPTIONS = [
 // immagini da caricare. Predefinito «nessuno»: i siti online non cambiano.
 // Blocchi che scrivono il titolo a sinistra, non al centro.
 const BLOCCHI_TESTO_SINISTRA = ['about', 'foto_testo', 'colonne']
+// Blocchi che hanno un fondo scuro loro (il pannello non offre lo sfondo):
+// l'etichetta sopra il titolo ci sta sopra, e va chiara.
+const FONDO_SCURO_PROPRIO = {
+  hero: d => d.layout !== 'split',
+  hero_slider: () => true,
+  video: () => true,
+  cta_banner: () => true,
+  stats: d => d.variant !== 'plain',
+}
+// Una striscia d'annuncio e uno spazio vuoto non hanno un titolo sopra cui
+// mettere l'etichetta: lì comparirebbe una parolina sospesa nel nulla.
+const SENZA_ETICHETTA = ['annuncio', 'divisore']
+export function conEtichetta(type) { return !SENZA_ETICHETTA.includes(type) }
 
 export const BLOCK_GLOW_OPTIONS = [
   { key: 'none',      label: 'Nessuno' },
@@ -183,29 +197,33 @@ function velo(colore) {
     ? `radial-gradient(60% 70% at 50% 0%, ${colore}33 0%, ${colore}00 70%)`
     : null
 }
-// Risolve lo sfondo di una sezione dallo style + tema. Ritorna { background, inverted }.
+// Risolve lo sfondo di una sezione dallo style + tema. Ritorna { background, inverted, tono }.
+// tono = quali colori di servizio porta la sezione (`variabiliSezione`).
 // inverted = testo da schiarire (fondo scuro/immagine). 'primary' invertito solo se il
 // colore tema è scuro. 'image' usa bg_image + velo scuro (overlay 0-0.85).
 export function resolveBlockBg(style, primary, secondary) {
   const st = style || {}
   if (st.bg === 'primary') {
     const p = primary || '#1a1a2e'
-    return { background: p, inverted: contrastRatio('#ffffff', p) >= 3 }
+    const inv = contrastRatio('#ffffff', p) >= 3
+    return { background: p, inverted: inv, tono: inv ? 'colore' : 'chiaro' }
   }
   if (st.bg === 'gradient') {
     const a = primary || '#1a1a2e'
     const b = secondary || primary || '#1a1a2e'
-    return { background: `linear-gradient(135deg, ${a} 0%, ${b} 100%)`, inverted: contrastRatio('#ffffff', a) >= 3 }
+    const inv = contrastRatio('#ffffff', a) >= 3
+    return { background: `linear-gradient(135deg, ${a} 0%, ${b} 100%)`, inverted: inv, tono: inv ? 'colore' : 'chiaro' }
   }
   if (st.bg === 'image') {
     if (!st.bg_image) return { background: null, inverted: false }
     const ov = st.bg_overlay ?? 0.5
     const pos = st.bg_focal || 'center'
-    return { background: `linear-gradient(rgba(0,0,0,${ov}),rgba(0,0,0,${ov})), url("${st.bg_image}") ${pos}/cover no-repeat`, inverted: true }
+    return { background: `linear-gradient(rgba(0,0,0,${ov}),rgba(0,0,0,${ov})), url("${st.bg_image}") ${pos}/cover no-repeat`, inverted: true, tono: 'colore' }
   }
   const solid = BLOCK_BG[st.bg]
   if (!solid) return { background: null, inverted: false }
-  return { background: solid, inverted: contrastRatio('#ffffff', solid) >= 4.5 }
+  const inv = contrastRatio('#ffffff', solid) >= 4.5
+  return { background: solid, inverted: inv, tono: inv ? 'scuro' : 'chiaro' }
 }
 // px verticali; null = non toccare (mantiene la spaziatura nativa del blocco)
 export const BLOCK_PADY = { default: null, none: 0, compact: 40, spacious: 96, xl: 128 }
@@ -313,13 +331,36 @@ export function applyBlockStyle(el, block, opts = {}) {
   const st = block.style
   const ov = {}
   let inverted = false
+  let sezioneInv = false
   if (blockSupportsBg(block.type)) {
     const r = resolveBlockBg(st, opts.primary, opts.secondary)
-    if (r.background) { ov.background = r.background; inverted = r.inverted }
+    if (r.background) {
+      ov.background = r.background; inverted = r.inverted
+      // I colori di servizio seguono lo sfondo della sezione, non quello della pagina.
+      Object.assign(ov, variabiliSezione(r.tono))
+      // Il colore del sito usato per scrivere (prezzi, link, stelle, icone): sul
+      // colore del sito stesso diventa bianco, su un fondo scuro resta se si legge.
+      // Il «Colore icone» scelto nello Stile, più sotto, vince comunque.
+      if (r.tono !== 'chiaro') {
+        const t = r.tono === 'colore' ? '#ffffff' : readableOn(opts.primary || '#ffffff', '#1e1e2c', '#ffffff', 4.5)
+        ov['--tinta'] = t
+        ov['--icon-color'] = t
+        // Le schede dentro tornano ai colori della pagina (regola nel disegnatore).
+        sezioneInv = true
+      } else if (opts.primary) {
+        // Una sezione chiara su un sito scuro: la tinta della pagina (schiarita
+        // per il fondo scuro) qui tornerebbe chiara su chiaro.
+        ov['--tinta'] = opts.primary
+      }
+    }
   }
   if (st.glow && st.glow !== 'none') {
     const luce = velo(st.glow === 'secondary' ? (opts.secondary || opts.primary) : opts.primary)
     // L'alone sta SOPRA lo sfondo della sezione, non al posto suo.
+    // ⚠️ Sui blocchi con un fondo loro (Banner CTA, Hero slider) prende il posto
+    // di quel fondo: il pannello lì non lo offre, ma il Banner CTA della home di
+    // Metodo TVB ce l'ha, e il suo aspetto scuro di oggi nasce da qui. Cambiarlo
+    // cambierebbe un sito online: decisione di Francesco (15/10/2026).
     if (luce) ov.background = ov.background ? `${luce}, ${ov.background}` : luce
   }
   // Colore icone per-blocco → CSS var che le icone lucide dentro al blocco ereditano
@@ -327,12 +368,14 @@ export function applyBlockStyle(el, block, opts = {}) {
   if (st.iconColor && st.iconColor !== 'default') {
     const map = { light: '#ffffff', dark: '#1a1a2e', primary: opts.primary, secondary: opts.secondary || opts.primary }
     const c = map[st.iconColor] || (typeof st.iconColor === 'string' && st.iconColor.startsWith('#') ? st.iconColor : null)
-    if (c) ov['--icon-color'] = c
+    // Il colore scelto vale anche dentro le schede (`--p-icon`, vedi sopra).
+    if (c) { ov['--icon-color'] = c; ov['--p-icon'] = c }
   }
   const pad = BLOCK_PADY[st.paddingY]
   const hasPad = st.paddingY && st.paddingY !== 'default' && pad != null
   const classes = []
   if (inverted) classes.push('lbr-inv')
+  if (sezioneInv) classes.push('lbr-sez-inv')
   if (st.hide_mobile) classes.push('lbr-hide-mob')
   if (st.hide_desktop) classes.push('lbr-hide-desk')
   if (st.align === 'left' || st.align === 'center' || st.align === 'right') classes.push('lbr-al-' + st.align)
@@ -358,13 +401,13 @@ export function applyBlockStyle(el, block, opts = {}) {
   // L'etichetta: la parolina in maiuscoletto sopra il titolo («01 · CHI SIAMO»).
   // Sta qui e non nei singoli blocchi perché i titoli sono scritti dentro
   // quindici `case` diversi: una riga sola in più, e vale per tutti.
-  if (st.etichetta) {
+  if (st.etichetta && conEtichetta(block.type)) {
     const testo = String(st.etichetta).slice(0, 60)
     const etichetta = (
       <div key="etichetta" className="lbr-section" style={{ marginBottom: 14 }}>
         <div style={{
           fontSize: 11, fontWeight: 700, letterSpacing: 2.4, textTransform: 'uppercase',
-          color: inverted ? 'rgba(255,255,255,0.65)' : 'var(--txt-tenue)',
+          color: inverted || FONDO_SCURO_PROPRIO[block.type]?.(block.data || {}) ? 'rgba(255,255,255,0.8)' : 'var(--txt-tenue)',
           // Segue l'allineamento del blocco: `about` e `foto_testo` scrivono a
           // sinistra, gli altri al centro. Un'etichetta centrata sopra un
           // titolo a sinistra sembra un errore di impaginazione — e lo è.
