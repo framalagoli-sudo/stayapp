@@ -98,6 +98,11 @@ REGOLE
 - Se la frase non è chiara o non riguarda questa pagina, nessuna mossa.
 - "risposta": una frase breve, dando del tu. Se fai mosse, cosa hai fatto; se non ne fai, perché, e un esempio di cosa si può chiedere.
 
+ESEMPI (su una pagina con 1 = copertina, 2 = domande, 3 = listino)
+«cambia la foto della copertina» → {"mosse":[{"fai":"apri","sezione":1}],"risposta":"Ti ho aperto la copertina: la foto si cambia da lì."}
+«via le domande e il listino va in cima» → {"mosse":[{"fai":"elimina","sezione":2},{"fai":"sposta","sezione":3,"dove":"in_cima"}],"risposta":"Ho tolto le domande e portato il listino in cima."}
+«togli la seconda domanda» → {"mosse":[{"fai":"elemento","sezione":2,"elenco":"items","numero":2,"azione":"elimina"}],"risposta":"Ho tolto la seconda domanda."}
+
 L'ATTIVITÀ: ${testoPulito(entity?.name, 120) || '(senza nome)'}
 
 LA PAGINA ADESSO
