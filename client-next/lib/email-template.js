@@ -54,19 +54,22 @@ export function guestEmailTemplate({ entityName, title, intro, rows = [], bodyHt
 }
 
 // Email di PIATTAFORMA (OltreNova → utente): brand OltreNova, con pulsante CTA.
-// Per benvenuto/reset password/inviti. `footerNote` = testo piccolo (es. validità link).
-export function platformEmailTemplate({ title, intro, ctaText, ctaUrl, footerNote }) {
-  return `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f5f5f5;font-family:Inter,Arial,sans-serif">
-  <table width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:40px 20px">
-  <table width="600" cellpadding="0" cellspacing="0" style="margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
+// Per benvenuto/reset password/inviti/resoconti. `footerNote` = testo piccolo (es. validità link).
+// `bodyHtml` = contenuto ricco fra il testo e il pulsante, con i dati già ripuliti da chi lo compone.
+// La tabella è larga al più 600px ma si stringe col telefono (a 600 fissi usciva dal bordo).
+export function platformEmailTemplate({ title, intro, ctaText, ctaUrl, footerNote, bodyHtml }) {
+  return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#f5f5f5;font-family:Inter,Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:40px 12px">
+  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
     <tr><td style="padding:28px 36px 4px">
       <img src="https://www.oltrenova.com/logo-onlight.png" alt="OltreNova" width="138" height="43" style="display:block">
     </td></tr>
     <tr><td style="padding:16px 36px 32px">
       <h2 style="margin:0 0 14px;font-size:20px;color:#1a1a2e">${title}</h2>
       ${intro ? `<p style="margin:0 0 4px;font-size:15px;color:#555;line-height:1.7">${intro}</p>` : ''}
+      ${bodyHtml || ''}
       ${ctaText && ctaUrl ? `<div style="margin:24px 0"><a href="${ctaUrl}" style="display:inline-block;padding:13px 28px;background:#1a1a2e;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">${ctaText}</a></div>` : ''}
-      ${footerNote ? `<p style="margin:20px 0 0;font-size:13px;color:#999;line-height:1.6">${footerNote}</p>` : ''}
+      ${footerNote ? `<p style="margin:20px 0 0;font-size:13px;color:#6b6b76;line-height:1.6">${footerNote}</p>` : ''}
     </td></tr>
   </table>
   </td></tr></table></body></html>`

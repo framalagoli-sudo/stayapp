@@ -5,6 +5,7 @@ import { Eye, Users, CalendarCheck, Wallet, Star, TrendingUp, TrendingDown, Minu
 import { apiFetch } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import { useAzienda } from '@/context/AziendaContext'
+import { SCELTE_RESOCONTI } from '@/lib/resoconti-regole'
 
 // «Cosa succede»: i numeri dell'attività in un colpo d'occhio, confrontati col
 // periodo prima, leggibili dal telefono. I conti li fa lib/cruscotto.js; qui si
@@ -69,7 +70,44 @@ export default function Cruscotto() {
           {riquadri.map(r => <Riquadro key={r.chiave} r={r} giorni={giorni} onApri={() => router.push(r.link)} />)}
         </div>
       )}
+
+      {profile.role === 'super_admin' && <RiceviPerEmail key={aziendaId} aziendaId={aziendaId} />}
     </section>
+  )
+}
+
+// Ogni quanto questa azienda riceve il resoconto per email (lib/resoconti.js).
+// Lo decide OltreNova, quindi lo vede solo il super_admin che guarda l'azienda:
+// il titolare non ha niente da scegliere (decisione di Francesco, 15/10/2026).
+function RiceviPerEmail({ aziendaId }) {
+  const [stato, setStato] = useState(null)
+  const [salvato, setSalvato] = useState(false)
+  const [errore, setErrore] = useState('')
+  useEffect(() => {
+    apiFetch(`/api/resoconti?azienda_id=${aziendaId}`).then(setStato).catch(e => setErrore(e.message))
+  }, [aziendaId])
+  if (!stato) return errore ? <div style={{ marginTop: 12, fontSize: 13, color: '#c53030' }}>Resoconto per email: {errore}</div> : null
+
+  async function scegli(scelta) {
+    const prima = stato.scelta
+    setStato(s => ({ ...s, scelta })); setErrore(''); setSalvato(false)
+    try {
+      await apiFetch('/api/resoconti', { method: 'PATCH', body: JSON.stringify({ azienda_id: aziendaId, scelta }) })
+      setSalvato(true); setTimeout(() => setSalvato(false), 2500)
+    } catch (e) { setErrore(e.message); setStato(s => ({ ...s, scelta: prima })) }
+  }
+
+  return (
+    <div id="resoconti" data-resoconti style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 13, color: '#555' }}>
+      <label htmlFor="scelta-resoconti">Resoconto per email ai titolari:</label>
+      <select id="scelta-resoconti" value={stato.scelta || 'mensile'} onChange={e => scegli(e.target.value)}
+        style={{ padding: '6px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, background: '#fff', maxWidth: '100%' }}>
+        {SCELTE_RESOCONTI.map(s => <option key={s.chiave} value={s.chiave}>{s.etichetta}</option>)}
+      </select>
+      {!stato.attivi && <span style={{ color: '#8a5a12' }}>· i resoconti sono spenti per tutti (Impostazioni): la scelta vale da quando li accendi</span>}
+      {salvato && <span style={{ color: '#276749', fontWeight: 600 }}>Salvato</span>}
+      {errore && <span style={{ color: '#c53030' }}>{errore}</span>}
+    </div>
   )
 }
 

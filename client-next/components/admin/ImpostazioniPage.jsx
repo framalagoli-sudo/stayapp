@@ -6,6 +6,7 @@ import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
 import { elencoFusi, fusoDelBrowser, FUSO_PREDEFINITO } from '@/lib/fuso'
 import { ToggleLeft, ToggleRight, RefreshCw, Clock } from 'lucide-react'
+import ResocontiRegia from './ResocontiRegia'
 
 // Dove si trova l'attivita', in termini di orologio.
 //
@@ -229,6 +230,8 @@ export default function ImpostazioniPage() {
             </a>
           </div>
         )}
+
+        <ResocontiRegia attivi={!!config.resoconti_attivi} saving={saving} onToggle={() => toggle('resoconti_attivi')} />
 
         {/* Sync sottodomini Vercel */}
         <SyncSubdomainsCard />

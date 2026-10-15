@@ -28,15 +28,26 @@ async function conta(query) {
 }
 
 // Un numero e quello del periodo prima, già divisi.
-const coppia = (righe, campo, inizio, meta) => ({
-  ora: righe.filter(r => r[campo] >= meta).length,
+const coppia = (righe, campo, inizio, meta, fine) => ({
+  ora: righe.filter(r => r[campo] >= meta && r[campo] < fine).length,
   prima: righe.filter(r => r[campo] >= inizio && r[campo] < meta).length,
 })
 
+// La Dashboard: gli ultimi N giorni fino ad adesso, contro gli N prima.
 export async function cruscotto(aziendaId, giorni = PERIODI[0]) {
   const adesso = Date.now()
-  const meta = indietro(giorni, adesso)          // inizio del periodo
-  const inizio = indietro(giorni * 2, adesso)    // inizio del periodo prima
+  const r = await cruscottoTra(aziendaId, {
+    inizio: indietro(giorni * 2, adesso),
+    meta: indietro(giorni, adesso),
+    fine: new Date(adesso).toISOString(),
+  })
+  return { giorni, ...r }
+}
+
+// Un periodo qualunque, coi confini scritti: [meta, fine) è il periodo,
+// [inizio, meta) quello prima. Serve ai resoconti per email, dove «il mese»
+// è il mese di calendario e non gli ultimi trenta giorni.
+export async function cruscottoTra(aziendaId, { inizio, meta, fine }) {
 
   const { data: entita, error: e1 } = await supabaseAdmin.from('entita')
     .select('id').eq('azienda_id', aziendaId)
@@ -53,15 +64,15 @@ export async function cruscotto(aziendaId, giorni = PERIODI[0]) {
     contattiOra, contattiPrima, contattiInvitabili,
     eventi, risorseRecenti, risorseMai, azienda, prossimo, recensioni,
   ] = await Promise.all([
-    visite(q => q.gte('viewed_at', meta)),
+    visite(q => q.gte('viewed_at', meta).lt('viewed_at', fine)),
     visite(q => q.gte('viewed_at', inizio).lt('viewed_at', meta)),
-    contatti(q => q.gte('created_at', meta)),
+    contatti(q => q.gte('created_at', meta).lt('created_at', fine)),
     contatti(q => q.gte('created_at', inizio).lt('created_at', meta)),
     // Chi ha detto sì alle promozioni: avere un contatto non è poterlo invitare.
     contatti(q => q.eq('iscritto_newsletter', true)),
     supabaseAdmin.from('eventi').select('id, event_bookings(created_at, status)').eq('azienda_id', aziendaId),
     supabaseAdmin.from('prenotazioni').select('created_at, stato')
-      .eq('azienda_id', aziendaId).gte('created_at', inizio),
+      .eq('azienda_id', aziendaId).gte('created_at', inizio).lt('created_at', fine),
     conta(supabaseAdmin.from('prenotazioni').select('id', { count: 'exact', head: true }).eq('azienda_id', aziendaId)),
     supabaseAdmin.from('aziende').select('stripe_account_id, fuso_orario').eq('id', aziendaId).maybeSingle(),
     soloAperti(supabaseAdmin.from('eventi')
@@ -89,7 +100,7 @@ export async function cruscotto(aziendaId, giorni = PERIODI[0]) {
   if (azienda.data?.stripe_account_id || righe.length) {
     const somma = rr => Math.round(rr.reduce((n, r) => n + r.importo, 0) * 100) / 100
     incassi = {
-      ora: somma(righe.filter(r => r.quando >= meta)),
+      ora: somma(righe.filter(r => r.quando >= meta && r.quando < fine)),
       prima: somma(righe.filter(r => r.quando >= inizio && r.quando < meta)),
     }
   }
@@ -109,16 +120,15 @@ export async function cruscotto(aziendaId, giorni = PERIODI[0]) {
   const voto = stelle.length ? {
     media: Math.round(stelle.reduce((n, r) => n + r.stelle, 0) / stelle.length * 10) / 10,
     totale: stelle.length,
-    ...coppia(stelle, 'created_at', inizio, meta),
+    ...coppia(stelle, 'created_at', inizio, meta, fine),
   } : null
 
   return {
-    giorni,
     recensioni: voto,
     fuso: azienda.data?.fuso_orario || null,
     visite: { ora: visiteOra, prima: visitePrima },
     contatti: { ora: contattiOra, prima: contattiPrima, invitabili: contattiInvitabili },
-    prenotazioni: prenotazioniUsate ? coppia(valide, 'created_at', inizio, meta) : null,
+    prenotazioni: prenotazioniUsate ? coppia(valide, 'created_at', inizio, meta, fine) : null,
     incassi,
     prossimoEvento,
   }
