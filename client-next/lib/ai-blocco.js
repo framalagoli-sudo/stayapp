@@ -73,7 +73,7 @@ export function tipiPerAI(entity_tipo) {
 
 // ── Testi ────────────────────────────────────────────────────────────────────
 // Niente marcatura: sul sito un `<p>` scritto dall'AI finirebbe stampato.
-function testoPulito(v, max) {
+export function testoPulito(v, max) {
   if (typeof v === 'number') v = String(v)
   if (typeof v !== 'string') return ''
   return v.replace(/<[^>]{0,200}>/g, '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').replace(/[ \t]+\n/g, '\n').trim().slice(0, max)
@@ -83,7 +83,7 @@ const parole = (s, min) => piano(s).split(/[^a-z0-9]+/).filter(w => w.length >= 
 
 // Le cifre di un testo stanno tutte in una delle fonti? «su richiesta» (nessuna
 // cifra) passa sempre.
-function cifreNote(valore, fonte) {
+export function cifreNote(valore, fonte) {
   const cifre = String(valore).match(/\d+/g) || []
   if (!cifre.length) return true
   const note = new Set(String(fonte).match(/\d+/g) || [])

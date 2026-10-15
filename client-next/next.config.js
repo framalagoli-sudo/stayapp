@@ -49,6 +49,10 @@ const nextConfig = {
   async headers() {
     return [
       { source: '/(.*)', headers: securityHeaders },
+      // Il microfono solo nel pannello, per «Dimmi cosa cambiare» nell'editor
+      // delle pagine. I siti dei clienti restano senza. A parità di intestazione
+      // vale l'ultima regola che corrisponde.
+      { source: '/admin/:path*', headers: [{ key: 'Permissions-Policy', value: 'camera=(), microphone=(self), geolocation=(self), interest-cohort=()' }] },
     ]
   },
 }

@@ -23,6 +23,8 @@ import UnsplashPicker from '@/components/admin/UnsplashPicker'
 import { BLOCK_PATTERNS, blocchiDiSezione } from '@/lib/blockPatterns'
 import GalleriaSezioni from '@/components/admin/GalleriaSezioni'
 import MarchioEStile from '@/components/admin/MarchioEStile'
+import DimmiCosaCambiare from '@/components/admin/DimmiCosaCambiare'
+import { applicaMosse } from '@/lib/interprete'
 import { TIPO_SEZIONE, MAX_BLOCCHI_SEZIONE, idSezione, soloRiferimenti } from '@/lib/sezioni-regole'
 import { testiDaRiscrivere, conTestiRiscritti } from '@/lib/ai-blocco'
 import { datiDiNascita, scriviCampo, scriviParagrafo, campiDiTesto, postoPerFoto, scriviImmagine, azioneSuElemento } from '@/lib/editor-visuale'
@@ -1947,6 +1949,7 @@ export default function PaginaEditorPage() {
   // «Riscrivi i testi con l'AI»: di quale sezione è aperto il riquadro, e a che punto è la richiesta.
   const [riscriviPer, setRiscriviPer] = useState(null)
   const [riscrive,    setRiscrive]    = useState(null)                // null · { id, lavora } · { id, errore } · { id, fatto }
+  const [interprete,  setInterprete]  = useState(null)                // «Dimmi cosa cambiare»: null · { lavora } · { errore }
   const [sezioni, setSezioni] = useState([])
   const [sezioniPronte, setSezioniPronte] = useState(false)
   const blocchiDi = b => Array.isArray(b?._blocchi) ? b._blocchi : (sezioni.find(s => s.id === b?.data?.sezione_id)?.blocks || [])
@@ -2179,6 +2182,37 @@ export default function PaginaEditorPage() {
       if (visuale) { clearTimeout(tAvviso.current); setAvviso({ testo: fatto, annulla: true }); tAvviso.current = setTimeout(() => setAvviso(null), note.length ? 20000 : 9000) }
     } catch (e) {
       setRiscrive({ id, errore: e?.message || 'Non sono riuscito a riscrivere. Riprova fra poco.' })
+    }
+  }
+  // «Dimmi cosa cambiare»: la frase va alla route con la pagina com'è ADESSO
+  // (anche non salvata); tornano mosse di un catalogo chiuso, che si applicano
+  // ai blocchi di quel momento in una modifica sola. Riscrivere e aggiungere
+  // chiedono di nuovo l'AI: partono dopo, ognuna col suo «Annulla».
+  async function interpreta(frase) {
+    if (interprete?.lavora) return false
+    setInterprete({ lavora: true })
+    try {
+      const perAI = blocchiVivi.current.map(b => b.type === TIPO_SEZIONE
+        ? { id: b.id, type: b.type, etichetta: 'Sezione condivisa', nome: nomeDi(b) }
+        : { id: b.id, type: b.type, etichetta: blockLabel(b.type), data: b.data, ...(b.style?.bg ? { style: { bg: b.style.bg } } : {}) })
+      const r = await apiFetch(`/api/pagine/${pageId}/ai-comando`, { method: 'POST', body: JSON.stringify({ frase, blocchi: perAI }) })
+      const esito = applicaMosse(blocchiVivi.current, r?.mosse, { nuovoId: uid, etichetta: blockLabel })
+      if (esito.cambiato) patchVivo.current(esito.blocchi)
+      if (esito.apri) { setExpandedId(esito.apri); setSchedaTab('contenuto'); setInserisciPrima(undefined) }
+      setInterprete(null)
+      const fatto = esito.fatte.length ? `Fatto: ${esito.fatte.join(', ')}.` : ''
+      const testo = [fatto || (typeof r?.risposta === 'string' ? r.risposta : ''),
+        esito.saltate ? 'Una parte non l’ho fatta: controlla la pagina e, se manca qualcosa, chiedimela di nuovo.' : '',
+        ...(Array.isArray(r?.note) ? r.note.filter(n => typeof n === 'string').slice(0, 2) : [])].filter(Boolean).join(' ')
+      if (testo) { clearTimeout(tAvviso.current); setAvviso({ testo, annulla: esito.cambiato }); tAvviso.current = setTimeout(() => setAvviso(null), 12000) }
+      for (const m of esito.dopo) {
+        if (m.fai === 'riscrivi') await riscriviAI(m.id, m.istruzione)
+        else if (m.fai === 'aggiungi') await chiediAI(m.richiesta, m.prima)
+      }
+      return esito.cambiato || esito.dopo.length > 0 || !!esito.apri
+    } catch (e) {
+      setInterprete({ errore: e?.message || 'Non sono riuscito a capire. Riprova fra poco.' })
+      return false
     }
   }
   // I comandi da tastiera dell'editor visuale: arrivano dal pannello o, come
@@ -2707,7 +2741,8 @@ export default function PaginaEditorPage() {
               </div>
             ) : (
               <div data-barra-telefono style={{ flexShrink: 0, background: '#fff', borderTop: '1px solid #e2e2ea', padding: '10px 12px calc(10px + env(safe-area-inset-bottom))', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={{ fontSize: 13, color: '#666', textAlign: 'center' }}>{blocks.length ? 'Tocca una sezione della pagina per modificarla.' : 'La pagina è vuota: aggiungi la prima sezione.'}</div>
+                <div style={{ fontSize: 13, color: '#666', textAlign: 'center' }}>{blocks.length ? 'Tocca una sezione della pagina per modificarla, oppure dimmi cosa cambiare.' : 'La pagina è vuota: aggiungi la prima sezione.'}</div>
+                {blocks.length > 0 && <DimmiCosaCambiare compatto onInvia={interpreta} lavora={!!interprete?.lavora} errore={interprete?.errore} />}
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => { setExpandedId(null); setCercaBlocco(''); setInserisciPrima(null) }} data-aggiungi-sezione
                     style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 12, background: '#5b6af8', color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
@@ -2811,7 +2846,7 @@ export default function PaginaEditorPage() {
             </div>
             <input ref={sceltaFoto} type="file" accept="image/*" data-scelta-foto style={{ display: 'none' }} onChange={fotoScelta} />
             {avviso && (
-              <div data-avviso style={{ position: 'absolute', left: '50%', bottom: 22, transform: 'translateX(-50%)', zIndex: 5, pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: 14, maxWidth: 'min(760px, calc(100% - 40px))', lineHeight: 1.45, background: '#1a1a2e', color: '#fff', borderRadius: 10, padding: '10px 16px', fontSize: 13.5, boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}>
+              <div data-avviso style={{ position: 'absolute', left: '50%', bottom: blocks.length ? 84 : 22, transform: 'translateX(-50%)', zIndex: 5, pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: 14, maxWidth: 'min(760px, calc(100% - 40px))', lineHeight: 1.45, background: '#1a1a2e', color: '#fff', borderRadius: 10, padding: '10px 16px', fontSize: 13.5, boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}>
                 {avviso.testo}
                 {avviso.apri && <a href={avviso.apri} target="_blank" rel="noopener" style={{ pointerEvents: 'auto', color: '#aab4ff', fontWeight: 700, fontSize: 13.5, textDecoration: 'none', whiteSpace: 'nowrap' }}>Apri in un'altra scheda ↗</a>}
                 {avviso.annulla && past.length > 0 && <button onClick={() => { undo(); setAvviso(null) }} style={{ pointerEvents: 'auto', background: 'none', border: 'none', color: '#aab4ff', fontWeight: 700, cursor: 'pointer', fontSize: 13.5, padding: 0 }}>Annulla</button>}
@@ -2913,7 +2948,12 @@ export default function PaginaEditorPage() {
               </div>
 
               {/* La pagina */}
-              <div ref={centro} style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: 14, overflow: 'hidden' }}>
+              <div ref={centro} style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: 14, overflow: 'hidden', position: 'relative' }}>
+                {blocks.length > 0 && (
+                  <div style={{ position: 'absolute', left: '50%', bottom: 16, transform: 'translateX(-50%)', width: 'min(620px, calc(100% - 40px))', zIndex: 4 }}>
+                    <DimmiCosaCambiare onInvia={interpreta} lavora={!!interprete?.lavora} errore={interprete?.errore} />
+                  </div>
+                )}
                 {previewDevice !== 'mobile' ? (
                   <div style={{ width: Math.round(largoPagina * scala), height: altezza, overflow: 'hidden', background: '#fff', borderRadius: 8, boxShadow: '0 4px 24px rgba(0,0,0,0.12)', flexShrink: 0 }}>
                     <iframe ref={riquadro} key={previewNonce} src={src} title="Editor visuale"
