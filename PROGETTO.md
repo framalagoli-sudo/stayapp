@@ -537,12 +537,12 @@ pannello, sezione Aziende.
 
 Chi compra o subentra deve saperlo prima, non dopo.
 
-- **Il primo accesso è guidato solo a metà.** Dal 30/09/2026 il titolare trova in
-  Dashboard «Inizia qui»: i passi che mancano (dati, sito, pubblicazione, dominio,
-  primo contatto), calcolati dai dati veri, con un clic verso la pagina giusta; è
-  anche su `/admin/onboarding`. Manca il pezzo per la **registrazione aperta**:
-  un'azienda nata da sola non ha ancora un'entità, e il passo «che attività hai?»
-  (scelta fra le nostre categorie) non esiste.
+- **Il primo accesso è guidato, ma la registrazione aperta non è pronta.** Dal
+  30/09/2026 il titolare trova in Dashboard «Inizia qui»: i passi che mancano
+  (dati, sito, pubblicazione, dominio, primo contatto), calcolati dai dati veri;
+  dal 15/10/2026 chi si registra da solo parte da «Che attività hai?» (scelta fra
+  le nostre categorie). Prima di aprire le registrazioni mancano la verifica
+  dell'email e la protezione anti-robot sul modulo.
 - **Le registrazioni sono chiuse.** Ogni cliente finora è nato da un invito. La
   registrazione automatica funziona ma non è mai stata aperta al pubblico.
 - **Non c'è fatturazione automatica.** Nessun abbonamento ricorrente per i
@@ -557,9 +557,9 @@ Chi compra o subentra deve saperlo prima, non dopo.
   prenotazioni prese a voce: nessuno dei due ha ancora visto un pagamento vero.
   Misurato l'11/10/2026 chiedendolo a Stripe (`tests/probe-stripe-conti.mjs`):
   i conti collegati sono **due** — Garage22 attivo, **Automax a metà** (iscrizione
-  cominciata e non finita: si completa da `Account → Pagamenti`). Finché è a
-  metà il pulsante «paga online» compare lo stesso e la cassa non si apre: è il
-  difetto «stato vero del conto», ancora da correggere.
+  cominciata e non finita: si completa da `Account → Pagamenti`). Dal 15/10/2026
+  il sito promette il pagamento online solo se Stripe dice che il conto incassa
+  davvero: a metà, si paga sul posto.
 - **Il nome che un cliente legge mentre collega Stripe** è il «Nome commerciale»
   del conto Stripe della piattaforma (*Impostazioni → Attività → Informazioni per
   il cliente*), con la sua icona quadrata. Fino all'11/10/2026 c'era scritto

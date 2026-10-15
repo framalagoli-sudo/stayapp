@@ -1,8 +1,8 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
-import { allaFormaStorica, MODULI_PREDEFINITI, MINISITO_INIZIALE } from '@/lib/entita'
-import { assicuraSottodominio } from '@/lib/create-subdomain'
-import { categoriaEsiste, dopoLaNascita } from '@/lib/applica-profilo'
+import { allaFormaStorica } from '@/lib/entita'
+import { creaEntita } from '@/lib/crea-entita'
+import { categoriaEsiste } from '@/lib/applica-profilo'
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, property_id, azienda_id').eq('id', userId).single()
@@ -58,26 +58,12 @@ export async function POST(request) {
       if (!(await categoriaEsiste(profilo))) return Response.json({ error: 'Categoria non valida' }, { status: 400 })
     }
 
-    const baseSlug = name.toLowerCase().normalize('NFD')
-      .replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'struttura'
-    // Lo slug ora e' unico fra TUTTE le entita', non piu' solo fra le strutture.
-    const { data: existing } = await supabaseAdmin.from('entita').select('id').eq('slug', baseSlug).limit(1)
-    const slug = existing?.length > 0 ? `${baseSlug}-${Date.now().toString(36)}` : baseSlug
-
     const allowed = ['description', 'address', 'phone', 'whatsapp', 'email', 'wifi_name', 'wifi_password',
       'checkin_time', 'checkout_time', 'rules', 'amenities']
     const extras = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
 
-    const { data, error } = await supabaseAdmin.from('entita')
-      .insert({ name: name.trim(), slug, azienda_id, tipo: 'struttura', moduli: MODULI_PREDEFINITI.struttura, minisito: MINISITO_INIZIALE, ...extras })
-      .select().single()
-    if (error) return Response.json({ error: error.message }, { status: 500 })
-    // await necessario: registra il sottodominio su Vercel e in serverless una
-    // chiamata lasciata in sospeso muore con la risposta.
-    await assicuraSottodominio({ azienda_id, entity_tipo: 'struttura', entity_id: data.id, entity_slug: data.slug })
-    await dopoLaNascita(data.id, azienda_id, profilo)
-    // Riletta: la categoria ha appena scritto i suoi interruttori.
-    const { data: fresca } = await supabaseAdmin.from('entita').select().eq('id', data.id).single()
-    return Response.json(allaFormaStorica(fresca || data), { status: 201 })
+    // Slug, preset, sottodominio e categoria: lib/crea-entita.js, uguale per i tre tipi.
+    const nata = await creaEntita({ aziendaId: azienda_id, tipo: 'struttura', nome: name, extras, profilo })
+    return Response.json(allaFormaStorica(nata), { status: 201 })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }

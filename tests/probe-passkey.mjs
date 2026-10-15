@@ -16,7 +16,7 @@ let userId = null, aziendaId = null, browser = null
 try {
   const email = `probe-pk-${Date.now()}@playwright.internal`
   const password = randomBytes(24).toString('base64url') + 'Aa1!'
-  const { data: az } = await admin.from('aziende').insert({ ragione_sociale: `TEST-PK-${Date.now()}`, require_2fa: true }).select().single()
+  const { data: az } = await admin.from('aziende').insert({ ragione_sociale: `ZZ-TEST-PK-${Date.now()}`, require_2fa: true }).select().single()
   aziendaId = az.id
   const { data: c } = await admin.auth.admin.createUser({ email, password, email_confirm: true })
   userId = c.user.id

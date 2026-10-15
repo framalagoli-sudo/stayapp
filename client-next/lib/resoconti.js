@@ -13,7 +13,7 @@
 import { supabaseAdmin } from './supabase-server'
 import { cruscottoTra } from './cruscotto'
 import { consigliPer } from './consigli'
-import { platformEmailTemplate } from './email-template'
+import { platformEmailTemplate, escEmail as esc } from './email-template'
 import { sendEmail } from './send-email'
 import { fusoSicuro, giornoLocale, istanteDi, oraLocale } from './fuso'
 import { TIPI_RESOCONTO, vuoleIlTipo } from './resoconti-regole'
@@ -24,7 +24,6 @@ const PANNELLO = 'https://www.oltrenova.com/admin'
 // finisce sotto venti email arrivate dopo.
 const ORA_DI_INVIO = 8
 
-const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 const euro = n => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(n || 0)
 const intero = n => new Intl.NumberFormat('it-IT').format(n || 0)
 

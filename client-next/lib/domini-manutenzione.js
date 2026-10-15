@@ -191,8 +191,25 @@ async function salvaEsito(record, diagnosi) {
 export async function manutenzioneDomini({ soloPendenti = true, limite = 10 } = {}) {
   const esito = { controllati: 0, riallineati: 0, riparati: 0, orfani_rimossi: 0, attivi: 0, problemi: [] }
 
+  // ⛔ Le aziende delle sonde («ZZ…», la stessa regola dei consigli e dei
+  // resoconti) non ricevono un indirizzo da questo giro: né registrando una riga
+  // rimasta in attesa, né riparandone una mancante. Una sonda lanciata in locale
+  // scrive nel database di produzione (e la creazione lascia una riga in attesa,
+  // perché in locale non c'è il token di Vercel); se il giro passa mentre lei
+  // gira, registra un `zz-….oltrenova.com` che la pulizia locale non può
+  // staccare: il 13/10 ne sono rimasti 22 da togliere a mano. Gli ORFANI invece
+  // si staccano anche per loro (lo fa la sezione «righe la cui entità non
+  // esiste più», che guarda tutte le righe).
+  // Escluse già nella query, non saltate dopo: il giro prende `limite` righe,
+  // prima le mai verificate, e una riga saltata resterebbe in cima per sempre
+  // togliendo il posto ai domini veri in attesa.
+  const { data: diProva } = await supabaseAdmin.from('aziende').select('id').ilike('ragione_sociale', 'ZZ%')
+  const aziendeDiProva = new Set((diProva || []).map(a => a.id))
+
   let q = supabaseAdmin.from('domini').select('*').order('ultima_verifica', { ascending: true, nullsFirst: true }).limit(limite)
   if (soloPendenti) q = q.neq('stato', 'attivo')
+  // `NOT IN` da solo scarterebbe anche le righe senza azienda (NULL non è mai «diverso»).
+  if (aziendeDiProva.size) q = q.or(`azienda_id.is.null,azienda_id.not.in.(${[...aziendeDiProva].join(',')})`)
   const { data: records, error } = await q
   if (error) throw new Error(error.message)
 
@@ -256,9 +273,10 @@ export async function manutenzioneDomini({ soloPendenti = true, limite = 10 } = 
   // stessa tabella: ogni entità veniva letta tre volte, etichettata ogni volta
   // con un tipo diverso, e ne uscivano tre sottodomini — due dei quali in 404,
   // perché col tipo sbagliato il middleware li manda su /s/ o /a/.
+  // (Le aziende delle sonde no: vedi in cima al giro.)
   const { data: entita } = await supabaseAdmin.from('entita').select('id, slug, azienda_id, tipo').not('slug', 'is', null)
   for (const e of entita || []) {
-    if (conSub.has(e.id) || !ENTITY_TABLES[e.tipo]) continue
+    if (conSub.has(e.id) || !ENTITY_TABLES[e.tipo] || aziendeDiProva.has(e.azienda_id)) continue
     const creato = await assicuraSottodominio({ azienda_id: e.azienda_id, entity_tipo: e.tipo, entity_id: e.id, entity_slug: e.slug })
     if (creato) { esito.riparati++; conSub.add(e.id) }
     else esito.problemi.push({ entita: e.slug, fase: 'sottodominio_non_creato' })

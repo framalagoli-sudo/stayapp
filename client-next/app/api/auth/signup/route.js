@@ -1,6 +1,6 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { sendEmail } from '@/lib/send-email'
-import { platformEmailTemplate } from '@/lib/email-template'
+import { platformEmailTemplate, escEmail } from '@/lib/email-template'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { fusoSicuro } from '@/lib/fuso'
 
@@ -84,7 +84,7 @@ export async function POST(request) {
         subject: 'Benvenuto in OltreNova!',
         html: platformEmailTemplate({
           title: 'Benvenuto in OltreNova!',
-          intro: `Il tuo account per <strong>${nome_azienda.trim()}</strong> è pronto. Hai <strong>14 giorni di prova gratuita</strong> — senza carta di credito.`,
+          intro: `Il tuo account per <strong>${escEmail(nome_azienda.trim())}</strong> è pronto. Hai <strong>14 giorni di prova gratuita</strong> — senza carta di credito.`,
           ctaText: 'Completa il setup →', ctaUrl: `${clientUrl}/admin/onboarding`,
         }),
       }).catch(() => {})

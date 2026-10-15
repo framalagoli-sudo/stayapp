@@ -1,4 +1,5 @@
-function escEmail(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') }
+// Il testo che finisce dentro l'HTML di un'email: un nome con dentro «<» resta testo.
+export function escEmail(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') }
 
 // Footer conforme per le email al CLIENTE: identificazione legale del mittente
 // (ragione sociale/P.IVA/sede) + link all'informativa privacy. `legale` = output

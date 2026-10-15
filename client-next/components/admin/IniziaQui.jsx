@@ -5,6 +5,7 @@ import { Check, ChevronRight, Rocket } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import { useAzienda } from '@/context/AziendaContext'
+import PrimaAttivita from './PrimaAttivita'
 
 // «Inizia qui»: la strada dal primo accesso al sito pubblicato. I passi si
 // spuntano da soli leggendo i dati (lib/primi-passi.js): chi ha già tutto non
@@ -13,11 +14,13 @@ import { useAzienda } from '@/context/AziendaContext'
 export default function IniziaQui({ pagina = false }) {
   const router = useRouter()
   const { profile } = useAuth()
-  const { azienda, activeAziendaId } = useAzienda()
+  const { azienda, activeAziendaId, refresh } = useAzienda()
   const aziendaId = profile?.role === 'super_admin' ? (azienda?.id || activeAziendaId) : profile?.azienda_id
   const [dati, setDati] = useState(null)
   const [errore, setErrore] = useState('')
   const [nascosto, setNascosto] = useState(false)
+  // Sale quando nasce la prima attività: si rileggono i passi.
+  const [giro, setGiro] = useState(0)
   const chiave = `inizia_qui_nascosto_${aziendaId}`
 
   useEffect(() => {
@@ -25,12 +28,19 @@ export default function IniziaQui({ pagina = false }) {
     try { setNascosto(!pagina && localStorage.getItem(chiave) === '1') } catch {}
     const q = profile?.role === 'super_admin' ? `?azienda_id=${aziendaId}` : ''
     apiFetch(`/api/primi-passi${q}`).then(setDati).catch(e => setErrore(e.message))
-  }, [aziendaId]) // eslint-disable-line
+  }, [aziendaId, giro]) // eslint-disable-line
 
   if (!profile || !['admin_azienda', 'super_admin'].includes(profile.role)) return null
   if (!aziendaId) return pagina ? <p style={{ color: '#888' }}>Scegli un'azienda dal menu per vedere i suoi primi passi.</p> : null
   if (errore) return pagina ? <p style={{ color: '#c53030' }}>{errore}</p> : null
   if (!dati) return null
+
+  // Chi si è registrato da solo non ha ancora un'attività: il primo passo è
+  // dire quale (in Dashboard e su /admin/onboarding). Il super_admin che guarda
+  // un'azienda vuota no: le attività dei clienti invitati le crea lui.
+  if (dati.entita.length === 0 && profile.role === 'admin_azienda') {
+    return <PrimaAttivita nomeProposto={azienda?.ragione_sociale || ''} onFatto={async () => { await refresh?.(); setGiro(g => g + 1) }} />
+  }
 
   const obbligatori = [...dati.entita.flatMap(e => e.passi.filter(p => !p.facoltativo)), ...(dati.contatto ? [dati.contatto] : [])]
   const fatti = obbligatori.filter(p => p.fatto).length
