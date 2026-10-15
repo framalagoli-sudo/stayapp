@@ -58,6 +58,10 @@ const TABLES = [
   'piano_editoriale', 'pe_campagne', 'pe_commenti', 'hashtag_sets', 'blog_automazioni',
   'whatsapp_account', 'whatsapp_template', 'whatsapp_campagna', 'whatsapp_messaggio',
   'entity_translations', 'webhooks', 'platform_config',
+  // il Club e i resoconti: i contenuti li scrive OltreNova, ma riscriverli a
+  // mano dopo un guasto è lavoro perso (contenuti prima delle letture: il
+  // ripristino segue quest'ordine)
+  'club_contenuti', 'club_consigli', 'club_letture', 'resoconti_inviati',
   // tracciamento e conformità
   'page_views', 'audit_log',
 ]

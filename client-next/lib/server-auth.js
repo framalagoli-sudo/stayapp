@@ -130,7 +130,11 @@ export async function requireAuth(request) {
 export async function requireSuperAdmin(request) {
   const { user, response } = await requireAuth(request)
   if (response) return { user: null, response }
-  const { data: profile } = await supabaseAdmin.from('profiles').select('role').eq('id', user.id).single()
+  const { data: profile, error } = await supabaseAdmin.from('profiles').select('role').eq('id', user.id).single()
+  // Se la lettura fallisce si risponde comunque 404 (nel dubbio, chiuso), ma lo
+  // si scrive: altrimenti un guasto del database sembra un «non sei tu» e non
+  // lascia traccia (successo una volta il 15/10 in una sonda, non riprodotto).
+  if (error) console.error(`[auth] requireSuperAdmin: profilo non letto per ${user.id}: ${error.message}`)
   if (profile?.role !== 'super_admin') {
     return { user: null, response: Response.json({ error: 'Non trovato' }, { status: 404 }) }
   }

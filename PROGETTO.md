@@ -264,6 +264,7 @@ resto, in ordine di ripristino:
 | `domini` | gli indirizzi web collegati | 14 |
 | `contatti` | i clienti *dei* clienti (dati personali) | 118 |
 | `contatti_attivita` | cosa ha fatto ogni contatto (prenotazioni, ordini, moduli…): titoli e numeri, **mai** dati personali | 141 |
+| `resoconti_inviati` | il registro dei resoconti per email già mandati (persona, tipo, periodo): impedisce i doppioni. Perderlo vuol dire al massimo un resoconto mandato due volte | 0 (15/10) |
 | `club_contenuti` · `club_consigli` · `club_letture` | il **Club OltreNova** (dal 14/10/2026): occasioni, strategie e consigli scritti dal proprietario della piattaforma e letti dai clienti in Dashboard; le letture contano chi ha visto e premuto cosa. Sono contenuti **nostri**, non dei clienti: perderli non tocca nessun sito | 0 pubblicati, 4 consigli in bozza (15/10) |
 
 **I contatti sono il centro** (dal 04/10/2026). Chiunque prenoti, ordini, compili un
@@ -286,16 +287,20 @@ chiedono. Non confonderli: è già costato un rientro.
 
 ## 5. Cosa succede da solo
 
-Sei processi automatici girano su Vercel senza che nessuno li avvii:
+Nove processi automatici girano su Vercel senza che nessuno li avvii (l'elenco
+vero è `client-next/vercel.json`):
 
 | Quando | Cosa fa |
 |---|---|
 | ogni minuto | invia le newsletter programmate |
 | ogni minuto | esegue le automazioni dei clienti |
 | ogni 5 minuti | coda dei messaggi WhatsApp *(oggi inattiva)* |
+| ogni 5 minuti | libera i posti di chi ha aperto la cassa e non ha pagato, chiude i link di pagamento scaduti |
 | ogni 15 minuti | controlla che i domini dei clienti siano davvero raggiungibili |
 | ogni ora | pubblica gli articoli di blog programmati |
+| ogni ora | manda il resoconto per email ai titolari (il lunedì o il 1° del mese, nel loro fuso) — *spento finché non lo accende il proprietario da Impostazioni* |
 | **ogni notte alle 3** | **copia l'intero database su Cloudflare R2** |
+| ogni notte alle 4 | rilegge il voto delle recensioni Google (a cadenza calcolata per restare nel gratuito) |
 
 Ognuno è protetto da una parola d'ordine (`CRON_SECRET`): senza, chiunque
 potrebbe farli partire.

@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { stripeConnect, stripeConfigurato } from '@/lib/stripe-connect'
+import { stripeConnect, stripeConfigurato, statoAccount } from '@/lib/stripe-connect'
 
 // Far pagare qualcosa. **Un posto solo, per tutta la piattaforma.**
 //
@@ -61,8 +61,37 @@ export async function contoDi(aziendaId) {
 
 // Può questa azienda incassare online? Serve al pannello e alle pagine
 // pubbliche per non mostrare un pulsante che poi non funziona.
+//
+// ⛔ Avere un conto collegato non basta: un'iscrizione lasciata a metà (Automax,
+// 11/10) ha l'id ma non incassa, e il sito prometteva «Conferma e paga» per poi
+// non aprire la cassa. Si chiede a Stripe (`statoAccount`, la stessa domanda
+// della pagina Pagamenti) — mai a una nostra copia, che direbbe «attivo» a un
+// conto che Stripe ha fermato.
 export async function puoIncassare(aziendaId) {
-  return stripeConfigurato() && !!(await contoDi(aziendaId))
+  if (!stripeConfigurato()) return false
+  const conto = await contoDi(aziendaId)
+  return conto ? contoIncassa(conto) : false
+}
+
+// Una memoria breve, per istanza: le pagine pubbliche chiedono a ogni visita,
+// e Stripe non va interrogato a ogni visita. Dieci minuti: un conto appena
+// attivato incassa al più dieci minuti dopo.
+const STATI = new Map()
+const DURATA_MS = 10 * 60 * 1000
+
+async function contoIncassa(accountId) {
+  const visto = STATI.get(accountId)
+  if (visto && Date.now() - visto.il < DURATA_MS) return visto.incassa
+  const s = await statoAccount(accountId)
+  if (s.errore || !s.collegato) {
+    // Stripe non ha risposto: si tiene l'ultima risposta buona, e senza una
+    // risposta si dice sì. Un guasto di Stripe non deve spegnere gli incassi
+    // di tutti: la cassa poi prova davvero, e se non si apre si paga sul
+    // posto (la prenotazione resta valida). Mai «gratis» per un guasto.
+    return visto ? visto.incassa : true
+  }
+  STATI.set(accountId, { incassa: !!s.incassa, il: Date.now() })
+  return !!s.incassa
 }
 
 /**

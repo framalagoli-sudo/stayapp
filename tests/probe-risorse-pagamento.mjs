@@ -126,26 +126,31 @@ try {
     const d1 = await riga(p1.j.id)
     ok(p1.stato === 201 && !p1.j.pagamento && d1?.stato === 'confermata' && d1?.pagamento_stato === 'non_richiesto' && d1?.importo_online === null, `nessuna cassa: vale subito e si paga sul posto (HTTP ${p1.stato} · ${d1?.stato}/${d1?.pagamento_stato})`)
 
+    // Dal 15/10 `puoIncassare` chiede a Stripe se il conto incassa davvero:
+    // per la cassa vera serve un conto di prova ATTIVO (iscrizione completata a
+    // mano, `node stripe-sandbox-link.mjs`); uno a metà non apre più la cassa.
     const conti = { pronto: null, aMeta: null }
     for await (const acc of stripe.accounts.list({ limit: 100 })) {
-      const haNome = !!(acc.business_profile?.name || acc.settings?.dashboard?.display_name)
-      if (haNome && !conti.pronto) conti.pronto = acc.id
-      if (!haNome && !conti.aMeta) conti.aMeta = acc.id
+      if (acc.charges_enabled && !conti.pronto) conti.pronto = acc.id
+      if (!acc.charges_enabled && !conti.aMeta) conti.aMeta = acc.id
     }
-    if (!conti.pronto) throw new Error('nella sandbox di Stripe non c’è un conto di prova con un nome: la cassa vera non si può aprire')
 
     if (conti.aMeta) {
-      console.log('\n1b · CONTO COLLEGATO A METÀ: la cassa non si apre\n')
+      console.log('\n1b · CONTO COLLEGATO A METÀ: niente cassa, si paga sul posto\n')
       const meta = await azienda('META')
       await a.from('aziende').update({ stripe_account_id: conti.aMeta }).eq('id', meta.id)
       const rm = await risorsa(meta, 'ZZ Sala a metà')
       const pm = await prenota(rm, giorno(5), '10:00', 'Meta')
       const dm = await riga(pm.j.id)
       ok(pm.stato === 201 && !pm.j.pagamento && dm?.stato === 'confermata' && dm?.pagamento_stato === 'non_richiesto' && dm?.importo_online === null,
-        `la prenotazione NON si perde: resta valida e si paga sul posto (HTTP ${pm.stato} · ${dm?.stato}/${dm?.pagamento_stato}) — e parte l’allarme`)
+        `la prenotazione NON si perde: resta valida e si paga sul posto (HTTP ${pm.stato} · ${dm?.stato}/${dm?.pagamento_stato})`)
+      const elenco = await fetch(`${BASE}/api/booking/public/risorse/${rm.entity_tipo}/${rm.entity_id}`).then(x => x.json()).catch(() => null)
+      const voce = (Array.isArray(elenco) ? elenco : elenco?.risorse || []).find(x => x.id === rm.id)
+      ok(voce && voce.paga_online === false, `e il sito non promette «Conferma e paga» (paga_online: ${voce?.paga_online})`)
       ok(await finche(() => a.from('contatti_attivita').select('id', { count: 'exact', head: true }).eq('riferimento', pm.j.id).then(r => r.count || 0), n => n > 0, 10) > 0, 'e la persona entra comunque fra i contatti')
     }
 
+    if (!conti.pronto) throw new Error('nella sandbox di Stripe non c’è un conto di prova ATTIVO: la cassa vera non si può aprire. Completa l’iscrizione di prova con `node stripe-sandbox-link.mjs`')
     const con = await azienda('CONTO')
     const sCon = await accesso(con.id)
     const H = { Authorization: `Bearer ${sCon.access_token}`, 'content-type': 'application/json' }
