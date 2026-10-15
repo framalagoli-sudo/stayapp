@@ -25,3 +25,6 @@ metadata:
 - Una sonda verde in locale non basta per ciò che compare coi dati: `probe-mobile-pannello` dava verde sul Blog in locale e rosso in produzione (misurava prima che arrivasse un pulsante).
 
 Collegato: [[feedback-deploy]], [[reference-sonda-misura-sbagliata]], [[reference-smoke-corse-parziali]].
+
+- **Le sonde non leggono tutte la stessa variabile** (15/10/2026): `probe-entita-ciclo` usa `TEST_LOCALE`, le altre `TEST_URL`. Lanciata con la variabile sbagliata gira in **produzione** e il verde sembra una prova del codice locale. Prima di contarla: `grep` nel log del server locale che le richieste siano arrivate lì, o leggere la riga `BASE`/`L =` della sonda.
+- `cat > file` senza heredoc aspetta la tastiera: il comando resta appeso fino al timeout (due volte il 15/10).

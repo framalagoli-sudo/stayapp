@@ -4,11 +4,22 @@ description: "Da dove riprendere — 14/10 sera: cruscotto + consigli LIVE (nota
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-10-15T06:57:10.969Z
+  modified: 2026-10-15T08:22:57.320Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
+
+## ▶️ 15/10 — resoconto per email FATTO e SPENTO (CLAUDE.md nota 76, migration 139–140 eseguite)
+- Francesco: «la mail se la vuoi impostare ma poi devo attivarla io» · «per adesso il club non ha senso» · cadenza «solo ogni settimana o ogni mese», la sceglie LUI dal cruscotto (il titolare no; predefinito ogni mese, scelto da me e detto a lui).
+- **Da fare lui**: Impostazioni → «Resoconti per email ai titolari» → «Mandala a me» (primo invio vero, non l'ho mai visto arrivare in una casella), poi accendere. StayApp Development riceverebbe il mese: è un'azienda sua?
+- Trovato e corretto: le tabelle del Club NON erano nel backup notturno (lib/backup.js). Verificare il primo archivio dopo il deploy (`tests/verifica-backup.mjs`).
+- Club e «com'è andata» dopo un consiglio: fermi per decisione di Francesco.
+- ✅ 15/10 stesso giorno, LIVE: **stato vero del conto Stripe** (puoIncassare chiede a Stripe; Garage22 verificato 6 € come prima) · **sonde e sottodomini** (giro domini salta aziende «ZZ…» sia pendenti sia riparazione; 3 sonde TEST- → ZZ-) · **onboarding v2** («Che attività hai?», lib/crea-entita.js usata dalle 3 route). CLAUDE.md nota 54 e roadmap.
+- ❓ **Chiesto a Francesco 15/10**: la voce di menu «Chat» (`menu-pannello.js`, `/admin/chat`) porta a un 404 da quando il menu è a dati (24/09): la pagina Next non è mai esistita (c'è solo `components/admin/ChatPage.jsx`, mai montato). La vede Borgo del Lago (funzione chat accesa) e chi «vede tutto». Nell'app del QR la scheda Chat NON è raggiungibile (BASE_NAV non la contiene): nessun ospite può aver scritto. 7 messaggi in tabella, tutti di prova del 27/04. Togliere la voce = sua decisione; alternativa: montare ChatPage, ma sarebbe una casella che nessun ospite può riempire.
+- ⏳ Da Francesco: `node stripe-sandbox-link.mjs` (dalla cartella tests) per avere un conto di prova ATTIVO — senza, la cassa vera di probe-risorse-pagamento in locale si ferma.
+- Una sonda in produzione ha dato UNA volta 404 «Non trovato» da requireSuperAdmin, non riprodotto: ora la lettura del profilo fallita si scrive nei log (`[auth] requireSuperAdmin`). Se ricapita, cercare quella riga nei log Vercel.
+- Prossimo, dal piano: interprete vocale nell'editor (STRATEGIA §6.4 punto 5) — chiedere a Francesco prima: è una funzione nuova grossa. Registrazione aperta: mancano verifica email e Turnstile.
 
 ## ▶️ 15/10 mattina — sessione del 13–14/10 chiusa a posteriori (reset del PC)
 - Verificato a freddo: repo pulito e su GitHub, deploy di ieri sera in produzione, nessun residuo di prova, 1 super_admin, Club con 0 contenuti e 4 consigli in bozza. Nota: [[project_session_2026_10_13_14]].
