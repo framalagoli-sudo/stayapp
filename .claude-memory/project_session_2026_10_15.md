@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 6f9bd65f-b088-450b-a68e-2f83f514299f
-  modified: 2026-10-15T08:02:07.883Z
+  modified: 2026-10-15T16:31:17.278Z
 ---
 
 Sessione del 15/10/2026, dopo il reset del PC (chiusura del 13–14/10 fatta a
@@ -39,3 +39,12 @@ richieste siano arrivate lì. Vedi [[reference_trappole_script_e_sonde]].
   DimmiCosaCambiare.jsx; microfono solo su /admin. Mio errore ripetuto: uno
   script di aggancio scritto con heredoc ha perso un `\` → errore di sintassi
   visto solo dal server locale. Le modifiche con barre rovesciate: Edit, non shell.
+
+**Sera** — «Stile sezione» per tutti i blocchi (nota 79, 2fe3fb22): misurato
+con `probe-stile-blocchi.mjs`, corretto alla radice (variabiliSezione, --tinta,
+componenti che accettano id/className/style/children). Errore mio: la prima
+correzione scuriva anche le schede e cambiava Garage 22 → visto solo
+confrontando le pagine dei clienti prima/dopo; rifatta lasciando le schede come
+sono. Errore ripetuto ANCORA due volte: `\b` e `\p` persi o trasformati passando
+da heredoc/node -e (un carattere di controllo finito nella sonda). Le stringhe con
+barre rovesciate: SEMPRE Write/Edit.
