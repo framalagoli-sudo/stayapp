@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 6f9bd65f-b088-450b-a68e-2f83f514299f
-  modified: 2026-10-15T17:46:07.978Z
+  modified: 2026-10-15T17:48:21.405Z
 ---
 
 Sessione del 15/10/2026, dopo il reset del PC (chiusura del 13–14/10 fatta a
@@ -48,5 +48,4 @@ confrontando le pagine dei clienti prima/dopo; rifatta lasciando le schede come
 sono. Errore ripetuto ANCORA due volte: `\b` e `\p` persi o trasformati passando
 da heredoc/node -e (un carattere di controllo finito nella sonda). Le stringhe con
 barre rovesciate: SEMPRE Write/Edit.
-Francesco ha controllato sui siti e confermato: «ora funzionano tutti i blocchi».
 Restano sue le due decisioni sul Banner CTA (alone di TVB, sfondo dei 15 banner).
