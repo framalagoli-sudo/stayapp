@@ -341,3 +341,14 @@ Lavoro fuori dal codice, stesso giorno: la posta in arrivo di `oltrenova.com` è
 inoltro Cloudflare. Chi controlla quell'account Cloudflare ora legge anche la posta di `info@`,
 che riceve le email di Meta e di recupero di alcuni fornitori: un motivo in più per la chiave di
 sicurezza fisica già in elenco (`SECURITY.md` §6).
+
+## Aggiornamento 14/10/2026
+
+| Punto | Com'era | Com'è |
+|---|---|---|
+| Caricamento immagini (`sharp`) | `sharp` riconosce il formato dal contenuto, non dal tipo dichiarato: un SVG compresso (svgz) sarebbe arrivato al suo lettore SVG (GHSA-wq5f-xc86-pv6w) | `firmaImmagine` in `parseUpload` fa passare solo byte con la firma di un formato ammesso; `sharp` portato alla 0.35.5. Provato con due caricamenti ostili (`probe-compressione-immagini.mjs`) — CLAUDE.md nota 30 |
+| Regia del Club e consigli | — | route `/api/club/regia*` con `requireSuperAdmin` (404 agli altri); il filtro di cosa vede un cliente sta nella route (`clubPer`), non nel componente; le bozze dei consigli non escono dalla route a chi non è super_admin; pulsanti da catalogo chiuso (`AZIONI`), mai un indirizzo salvato |
+| Cruscotto | — | escono solo conteggi e somme, mai nomi; lo staff riceve 403 |
+
+Aperto: `next` 15.5.24 ha un advisory sull'ISR descritto come «self-hosted». Da verificare se
+riguarda un deploy su Vercel prima di decidere il passaggio alla 15.5.28.

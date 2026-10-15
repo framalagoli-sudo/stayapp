@@ -4,11 +4,16 @@ description: "Da dove riprendere — 14/10 sera: cruscotto + consigli LIVE (nota
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-10-14T17:34:10.272Z
+  modified: 2026-10-15T06:57:10.969Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
+
+## ▶️ 15/10 mattina — sessione del 13–14/10 chiusa a posteriori (reset del PC)
+- Verificato a freddo: repo pulito e su GitHub, deploy di ieri sera in produzione, nessun residuo di prova, 1 super_admin, Club con 0 contenuti e 4 consigli in bozza. Nota: [[project_session_2026_10_13_14]].
+- Aggiornati PROGETTO.md (date, 253 route, migration 138, tabelle Club, §11), FEATURES.md, SECURITY-CHECK.md (14/10).
+- Il «PROSSIMO» resta quello del 14/10 sera qui sotto.
 
 ## ▶️ 14/10 sera — strategia + «Cosa succede» / «Cosa fare adesso» (CLAUDE.md nota 74, STRATEGIA §6.4)
 - Lunga conversazione di strategia con Francesco (vedi [[project_positioning_target]], [[project_agente_vocale]]): a chi si vende (chi fa siti/social per altri), niente white label, ~80 €/mese × 200, il consulente dentro OltreNova. Il partner («gestore») è **parcheggiato**. Ordine deciso: cruscotto + consulente PRIMA dell'interprete vocale; Stripe aspetta il primo cliente che collega il conto.

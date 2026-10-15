@@ -16,7 +16,7 @@ pagarlo**.
 > dentro GitHub, che è uno degli accessi che descrive: se nessuno può entrare in
 > GitHub, nessuno può leggere queste istruzioni. Va tenuta una copia fuori.
 
-*Aggiornato al 12 ottobre 2026.*
+*Aggiornato al 15 ottobre 2026.*
 
 ---
 
@@ -74,7 +74,7 @@ delle strutture. È materiale da GDPR: se esce, ci sono 72 ore per denunciarlo.
 
 ### 2.2 Vercel — dove gira il programma *(critico assoluto)*
 
-**Cosa fa**: ospita il sito, il pannello e tutte le 224 funzioni di servizio.
+**Cosa fa**: ospita il sito, il pannello e tutte le 253 funzioni di servizio.
 Custodisce **tutte le chiavi segrete** degli altri fornitori. Fa partire i sei
 processi automatici (§5).
 
@@ -222,7 +222,7 @@ dietro. Non ci sono due sistemi da tenere allineati.
  ┌──────────────────────────────────────────────────┐
  │  Il programma (Next.js) — ospitato su Vercel     │
  │  · i siti pubblici    · l'app del QR code        │
- │  · il pannello        · 224 funzioni di servizio │
+ │  · il pannello        · 253 funzioni di servizio │
  └──────────────────┬───────────────────────────────┘
                     │
      ┌──────────────┼───────────────┬──────────────┐
@@ -243,7 +243,7 @@ un altro. Il dettaglio sta in `SECURITY.md`.
 | Cartella | Contenuto |
 |---|---|
 | `client-next/` | **tutto il codice vivo**: pagine, pannello, funzioni di servizio |
-| `supabase/migrations/` | le 97 modifiche alla struttura del database, in ordine |
+| `supabase/migrations/` | le modifiche alla struttura del database, numerate fino alla 138, in ordine |
 | `tests/` | i controlli automatici e le sonde diagnostiche |
 | i file `.md` in radice | la documentazione (vedi §9) |
 
@@ -251,7 +251,7 @@ un altro. Il dettaglio sta in `SECURITY.md`.
 
 ## 4. I dati — cosa c'è dentro
 
-Il database ha **136 migrazioni** alle spalle. Le tabelle da cui dipende tutto il
+Il database ha **138 migrazioni** alle spalle. Le tabelle da cui dipende tutto il
 resto, in ordine di ripristino:
 
 | Tabella | Cosa contiene | Righe (05/10/2026) |
@@ -264,6 +264,7 @@ resto, in ordine di ripristino:
 | `domini` | gli indirizzi web collegati | 14 |
 | `contatti` | i clienti *dei* clienti (dati personali) | 118 |
 | `contatti_attivita` | cosa ha fatto ogni contatto (prenotazioni, ordini, moduli…): titoli e numeri, **mai** dati personali | 141 |
+| `club_contenuti` · `club_consigli` · `club_letture` | il **Club OltreNova** (dal 14/10/2026): occasioni, strategie e consigli scritti dal proprietario della piattaforma e letti dai clienti in Dashboard; le letture contano chi ha visto e premuto cosa. Sono contenuti **nostri**, non dei clienti: perderli non tocca nessun sito | 0 pubblicati, 4 consigli in bozza (15/10) |
 
 **I contatti sono il centro** (dal 04/10/2026). Chiunque prenoti, ordini, compili un
 modulo o scriva entra fra i contatti da **una porta sola** (`registraContatto` in
@@ -580,6 +581,13 @@ Chi compra o subentra deve saperlo prima, non dopo.
 - **`oltrenova.com` non ha una casella di posta**: `info@` è un inoltro. Per
   rispondere da quell'indirizzo serve una casella vera (era stato scelto Zoho
   Mail Lite, mai aperto).
+- **Il Club e i consigli sono costruiti ma vuoti.** Dal 14/10/2026 la Dashboard
+  del titolare mostra «Cosa succede» (numeri veri del periodo) e ha il posto per
+  i consigli personali e per i contenuti del Club; la regia per scriverli è in
+  `/admin/club`, solo per il proprietario. Al 15/10 nessun contenuto è
+  pubblicato e i quattro consigli di partenza sono bozze che vede solo lui: per
+  un cliente oggi quella parte non compare. È consulenza, quindi la scrive una
+  persona — se nessuno la scrive, resta vuota.
 - **Il canale in tedesco non c'è** (italiano e inglese sì).
 - **Una sola persona sa come funziona.** Questo documento serve a ridurre il
   danno, non lo elimina.
@@ -663,4 +671,4 @@ Restano di pensiero, e non li controlla nessuna macchina: i costi, i piani, il
 
 ---
 
-*Documento di progetto — aggiornato all'11 ottobre 2026.*
+*Documento di progetto — aggiornato al 15 ottobre 2026.*

@@ -15,6 +15,7 @@
 - [L'AI non inventa fatti](feedback_niente_fatti_inventati_ai.md) — recensioni inventate rifiutate
 
 ## Sessioni
+- [13–14/10 AI riscrivi, blocchi, stile, Club, dashboard](project_session_2026_10_13_14.md)
 - [12/10 sezioni condivise, blocchi, foto grande](project_session_2026_10_12.md)
 - [11/10 editor visuale, domini, banner](project_session_2026_10_11.md)
 - [10/10 slider eventi, Guru, posta](project_session_2026_10_10.md)
