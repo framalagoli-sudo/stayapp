@@ -74,7 +74,7 @@ delle strutture. È materiale da GDPR: se esce, ci sono 72 ore per denunciarlo.
 
 ### 2.2 Vercel — dove gira il programma *(critico assoluto)*
 
-**Cosa fa**: ospita il sito, il pannello e tutte le 253 funzioni di servizio.
+**Cosa fa**: ospita il sito, il pannello e tutte le 257 funzioni di servizio.
 Custodisce **tutte le chiavi segrete** degli altri fornitori. Fa partire i sei
 processi automatici (§5).
 
@@ -222,7 +222,7 @@ dietro. Non ci sono due sistemi da tenere allineati.
  ┌──────────────────────────────────────────────────┐
  │  Il programma (Next.js) — ospitato su Vercel     │
  │  · i siti pubblici    · l'app del QR code        │
- │  · il pannello        · 253 funzioni di servizio │
+ │  · il pannello        · 257 funzioni di servizio │
  └──────────────────┬───────────────────────────────┘
                     │
      ┌──────────────┼───────────────┬──────────────┐

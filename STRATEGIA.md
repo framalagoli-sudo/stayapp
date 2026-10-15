@@ -401,6 +401,7 @@ senza rifarla. Direzione di lungo periodo: attività **leggibili e prenotabili d
    (scritta o a voce) come **percorso nuovo** dell'AI Builder accanto a quelli di oggi, le
    **richieste di foto precise per sezione** (pagina con link firmato, poi WhatsApp), e solo
    molto dopo l'intervista al telefono (§6.3).
+   ✅ 15/10: l'interprete nell'editor, scritto e a voce (CLAUDE.md nota 77).
 
 **Attenzioni**
 - **Una biblioteca non la apre nessuno** (il promemoria a zero uso). Guide e video stanno dentro

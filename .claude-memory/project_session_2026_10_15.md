@@ -31,3 +31,11 @@ altro uuid) → «Evento non trovato» che sembrava un guasto; una sonda che leg
 `TEST_LOCALE` lanciata con `TEST_URL` ha girato in produzione e sembrava una
 prova del codice locale — controllare SEMPRE nel log del server locale che le
 richieste siano arrivate lì. Vedi [[reference_trappole_script_e_sonde]].
+
+**Pomeriggio** (dopo il «togli la chat… procediamo con l'interprete vocale»):
+- Chat con la reception tolta tutta (nota 78), autorizzata. StayApp Development
+  cancellata (sua, di prova; via anche l'account f.malagoli@futuravacanze.it).
+- «Dimmi cosa cambiare» (nota 77): lib/interprete.js + route ai-comando +
+  DimmiCosaCambiare.jsx; microfono solo su /admin. Mio errore ripetuto: uno
+  script di aggancio scritto con heredoc ha perso un `\` → errore di sintassi
+  visto solo dal server locale. Le modifiche con barre rovesciate: Edit, non shell.

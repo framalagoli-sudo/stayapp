@@ -89,6 +89,8 @@ LE MOSSE
 REGOLE
 - Al massimo ${MAX_MOSSE} mosse, nell'ordine in cui vanno fatte; al massimo una "riscrivi" e una "aggiungi".
 - I numeri delle sezioni sono sempre quelli della pagina com'è ADESSO, anche se nella stessa frase chiedi di spostarne una.
+- «Togli», «elimina», «sposta» seguiti da qualcosa che somiglia al nome o al titolo di una sezione («togli i numeri», «via le domande») riguardano la SEZIONE intera. "elemento" solo quando il titolare indica UN elemento preciso dentro un elenco («togli la seconda domanda», «togli il massaggio di coppia»).
+- Nel dubbio fra due sezioni, nessuna mossa: chiedi quale nella risposta. Togliere la cosa sbagliata è peggio che chiedere.
 - Con "scrivi" metti il testo che il titolare detta, com'è detto (sistemando solo maiuscole e punteggiatura). Se chiede di migliorare, accorciare o cambiare tono senza dettare il testo, usa "riscrivi".
 - NON INVENTARE FATTI: prezzi, numeri, orari, nomi, indirizzi che il titolare non ha detto e che non stanno già nella pagina.
 - Da qui non si fanno: foto, link e destinazioni dei pulsanti, colori e caratteri del sito, salvare, pubblicare. Per la foto o il link di una sezione usa "apri" su quella sezione; per il resto nessuna mossa.

@@ -121,7 +121,9 @@ try {
   const { data: u } = await a.auth.admin.createUser({ email, password, email_confirm: true }); utente = u.user.id
   await a.from('profiles').upsert({ id: utente, role: 'admin_azienda', full_name: 'ZZ', azienda_id: az.id }, { onConflict: 'id' })
   const { data: s } = await createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } }).auth.signInWithPassword({ email, password })
-  const perAI = BLOCCHI.map(b => ({ ...b, etichetta: b.type }))
+  // Le etichette sono quelle che manda il pannello (`blockLabel`).
+  const ETICHETTE = { hero: 'Hero / Copertina', about: 'Blocco testo', faq: 'FAQ', listino: 'Listino prezzi', stats: 'Statistiche' }
+  const perAI = BLOCCHI.map(b => ({ ...b, etichetta: ETICHETTE[b.type] }))
   const comanda = (pagina, corpo, token = s.session.access_token) => fetch(`${BASE}/api/pagine/${pagina}/ai-comando`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(corpo) })
 
   console.log(`\nLA ROUTE — ${BASE}\n`)

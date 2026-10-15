@@ -4,11 +4,17 @@ description: "Da dove riprendere — 14/10 sera: cruscotto + consigli LIVE (nota
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-10-15T08:22:57.320Z
+  modified: 2026-10-15T12:01:06.644Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
+
+## ▶️ 15/10 pomeriggio — chat tolta, StayApp Development cancellata, interprete LIVE
+- Francesco: «togli la chat — se collegheremo whatsapp non ha più senso» → tolta tutta (nota 78, commit d2c8f3c9, menu e app del QR verificati in produzione). «StayApp Development si ma si può cancellare» → cancellata dalla route (era tutta di prova: 2 strutture, 4 contatti di prova, il suo account f.malagoli@futuravacanze.it — cancellato anche quello; sottodomini staccati da Vercel).
+- **«Dimmi cosa cambiare»** (nota 77): da far provare a Francesco dal pannello, anche a voce (Chrome chiede il permesso del microfono la prima volta). Dal punto 5 restano: l'intervista nell'AI Builder e le richieste di foto per sezione.
+- Stripe sandbox: Francesco non sapeva come lanciarlo → gli ho spiegato `! cd tests && node stripe-sandbox-link.mjs` + link da aprire con i dati di prova.
+- `probe-seo` nel deploy segnala due titoli di eventi di Garage 22 sopra i 60 caratteri (il conto include `&quot;`): basso, non sicurezza; da guardare se la sonda conta le entità HTML.
 
 ## ▶️ 15/10 — resoconto per email FATTO e SPENTO (CLAUDE.md nota 76, migration 139–140 eseguite)
 - Francesco: «la mail se la vuoi impostare ma poi devo attivarla io» · «per adesso il club non ha senso» · cadenza «solo ogni settimana o ogni mese», la sceglie LUI dal cruscotto (il titolare no; predefinito ogni mese, scelto da me e detto a lui).

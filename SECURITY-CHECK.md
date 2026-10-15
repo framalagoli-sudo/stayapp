@@ -352,3 +352,13 @@ sicurezza fisica già in elenco (`SECURITY.md` §6).
 
 Aperto: `next` 15.5.24 ha un advisory sull'ISR descritto come «self-hosted». Da verificare se
 riguarda un deploy su Vercel prima di decidere il passaggio alla 15.5.28.
+
+## Aggiornamento 15/10/2026
+
+| Punto | Com'era | Com'è |
+|---|---|---|
+| `/api/messages` (chat con la reception) | scrittura **pubblica senza limite** in qualunque struttura, e lettura di una conversazione per `session_id`, mentre nessuna pagina la usava più | **tolta** con tutta la chat (decisione di Francesco). Una porta pubblica che nessuno usa è solo superficie esposta. La tabella `messages` resta, vuota |
+| Microfono | `Permissions-Policy: microphone=()` ovunque | `microphone=(self)` **solo su `/admin/*`** (`next.config.js`), per «Dimmi cosa cambiare»; i siti dei clienti restano senza. Verificato dalla sonda leggendo l'intestazione da pannello e da un sito |
+| «Dimmi cosa cambiare» (`/api/pagine/[id]/ai-comando`) | — | `requireEntityAccess` (404 alla pagina di un'altra azienda), frase e pagina controllate **prima** di pagare l'AI, tetto dell'azienda (`chiamaAI`). All'AI non arrivano id né percorsi; la risposta è ricostruita da un catalogo chiuso (`ripulisciMosse`) e l'editor la applica con i controlli della scrittura sulla pagina. La route non scrive nel database. Provato con frasi ostili (`probe-interprete.mjs --vero`) |
+| Resoconti per email | — | route `/api/resoconti*` con `requireSuperAdmin`; l'anteprima non contiene nomi; «Mandala a me» scrive solo alla casella di chi preme |
+| Pagamento online promesso | `puoIncassare` diceva sì appena esisteva un conto Stripe, anche a metà | chiede a Stripe lo stato vero del conto (memoria 10 minuti) |
