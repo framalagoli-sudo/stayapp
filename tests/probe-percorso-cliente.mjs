@@ -8,6 +8,7 @@
 //
 // Uso: TEST_LOCALE=http://localhost:3488 node probe-percorso-cliente.mjs
 import { createClient } from '@supabase/supabase-js'
+import { cancellaAziendaDiProva } from './probe-auth.mjs'
 import { config } from 'dotenv'
 import { randomBytes } from 'crypto'
 config({ path: '.env.test' })
@@ -86,6 +87,6 @@ try {
 finally {
   if (entId) await admin.from('entita').delete().eq('id', entId)
   if (userId) { try { await admin.auth.admin.deleteUser(userId) } catch {} }
-  if (azId) { const { error } = await admin.from('aziende').delete().eq('id', azId); if (error) console.error('pulizia azienda:', error.message) }
+  if (azId) { await cancellaAziendaDiProva(azId) }
   console.log('[probe] pulito')
 }

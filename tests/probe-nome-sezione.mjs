@@ -13,6 +13,7 @@
 //
 // Uso: TEST_LOCALE=http://localhost:3000 node probe-nome-sezione.mjs
 import { chromium } from '@playwright/test'
+import { cancellaAziendaDiProva } from './probe-auth.mjs'
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 import { randomBytes } from 'crypto'
@@ -133,7 +134,7 @@ try {
   await browser.close()
   for (const id of creati) await admin.from('entita').delete().eq('id', id)
   for (const id of utenti) { try { await admin.auth.admin.deleteUser(id) } catch {} }
-  for (const id of aziende) { const { error } = await admin.from('aziende').delete().eq('id', id); if (error) console.error('pulizia:', error.message) }
+  for (const id of aziende) { await cancellaAziendaDiProva(id) }
   console.log('[probe] pulito')
   process.exit(problemi ? 1 : 0)
 }

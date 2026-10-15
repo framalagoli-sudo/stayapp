@@ -3,6 +3,7 @@
 // livello di sessione (aal) produce un accesso con passkey, visto che il nostro
 // require_2fa pretende aal2? Utente effimero, sempre eliminato.
 import { createClient } from '@supabase/supabase-js'
+import { cancellaAziendaDiProva } from './probe-auth.mjs'
 import { chromium } from '@playwright/test'
 import { config } from 'dotenv'
 import { randomBytes } from 'crypto'
@@ -102,6 +103,6 @@ try {
 finally {
   if (browser) await browser.close().catch(() => {})
   if (userId) { const { error } = await admin.auth.admin.deleteUser(userId); if (error) console.error('cleanup utente:', error.message) }
-  if (aziendaId) { const { error } = await admin.from('aziende').delete().eq('id', aziendaId); if (error) console.error('cleanup azienda:', error.message) }
+  if (aziendaId) { await cancellaAziendaDiProva(aziendaId) }
   console.log('\n[probe] utente effimero eliminato')
 }

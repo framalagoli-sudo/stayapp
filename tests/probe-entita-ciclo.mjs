@@ -9,9 +9,12 @@
 import { createClient } from '@supabase/supabase-js'
 import { config } from 'dotenv'
 import { randomBytes } from 'crypto'
+import { cancellaAziendaDiProva } from './probe-auth.mjs'
 config({ path: '.env.test' })
 const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY } = process.env
-const L = process.env.TEST_LOCALE || 'https://www.oltrenova.com'
+// TEST_URL come tutte le altre sonde (TEST_LOCALE resta per chi lo usava):
+// leggere solo TEST_LOCALE faceva girare in produzione chi credeva di provare il locale.
+const L = (process.env.TEST_LOCALE || process.env.TEST_URL || 'https://www.oltrenova.com').replace(/\/$/, '')
 const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth:{persistSession:false} })
 let problemi = 0
 const ok = (c,t) => { console.log(`  ${c?'✓':'✗'} ${t}`); if(!c) problemi++ }
@@ -65,9 +68,11 @@ try {
   console.log(problemi ? `${problemi} PROBLEMI` : 'CICLO COMPLETO CORRETTO')
 } catch (e) { console.error('ERRORE:', e.message); problemi++ }
 finally {
-  for (const id of creati) await admin.from('entita').delete().eq('id', id)
   if (userId) { try { await admin.auth.admin.deleteUser(userId) } catch {} }
-  if (az) { const { error } = await admin.from('aziende').delete().eq('id', az); if (error) console.error('pulizia:', error.message) }
+  // Dalla route, non dal database: le entità create in produzione hanno un
+  // sottodominio registrato su Vercel, e solo la route lo stacca. Cancellando
+  // dal database ne erano rimasti tre (15/10).
+  if (az) await cancellaAziendaDiProva(az)
   console.log('[probe] pulito')
   process.exit(problemi ? 1 : 0)
 }

@@ -14,6 +14,7 @@
 //
 // Uso: node probe-cliente-nuovo.mjs
 import { createClient } from '@supabase/supabase-js'
+import { cancellaAziendaDiProva } from './probe-auth.mjs'
 import { config } from 'dotenv'
 import { randomBytes } from 'crypto'
 config({ path: '.env.test' })
@@ -44,6 +45,6 @@ for (const [tipo, api, pref] of [['struttura','/api/properties','s'], ['ristoran
 console.log('\n' + (ko ? `  ${ko} PROBLEMI` : '  TUTTO ACCESO, SITO ONLINE DAL PRIMO MINUTO'))
 for (const e of creati) await admin.from('entita').delete().eq('id', e.id)
 await admin.auth.admin.deleteUser(u.user.id)
-const { error } = await admin.from('aziende').delete().eq('id', az.id); if (error) console.error('pulizia:', error.message)
+await cancellaAziendaDiProva(az.id)
 console.log('[probe] pulito')
 process.exit(ko ? 1 : 0)

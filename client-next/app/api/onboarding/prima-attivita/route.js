@@ -37,7 +37,10 @@ export async function GET(request) {
     if (haGia) return Response.json({ gia: true, categorie: [] })
     const { data, error } = await categorie()
     if (error) return Response.json({ error: error.message }, { status: 500 })
-    return Response.json({ gia: false, categorie: (data || []).map(({ chiave, nome, descrizione }) => ({ chiave, nome, descrizione })) })
+    // Della descrizione solo la prima frase: il resto lo scrive OltreNova per
+    // sé (in «Base»: «Un'entità in Base è un segnale: ci manca il suo profilo»).
+    const primaFrase = t => (String(t || '').match(/^[\s\S]*?[.!?](?=\s|$)/)?.[0] || String(t || '')).trim()
+    return Response.json({ gia: false, categorie: (data || []).map(({ chiave, nome, descrizione }) => ({ chiave, nome, descrizione: primaFrase(descrizione) })) })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
 

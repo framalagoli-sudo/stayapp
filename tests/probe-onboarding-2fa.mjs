@@ -2,6 +2,7 @@
 // leggere il flag (che è ciò che lo manda alla pagina di attivazione), registrare
 // l'app e tornare operativo. Utente e azienda effimeri, sempre eliminati.
 import { createClient } from '@supabase/supabase-js'
+import { cancellaAziendaDiProva } from './probe-auth.mjs'
 import { config } from 'dotenv'
 import { randomBytes, createHmac } from 'crypto'
 config({ path: '.env.test' })
@@ -54,6 +55,6 @@ try {
 } catch (e) { console.error('ERRORE:', e.message) }
 finally {
   if (userId) { const { error } = await admin.auth.admin.deleteUser(userId); if (error) console.error('cleanup utente:', error.message) }
-  if (aziendaId) { const { error } = await admin.from('aziende').delete().eq('id', aziendaId); if (error) console.error('cleanup azienda:', error.message) }
+  if (aziendaId) { await cancellaAziendaDiProva(aziendaId) }
   console.log('\n[probe] utente e azienda effimeri eliminati')
 }

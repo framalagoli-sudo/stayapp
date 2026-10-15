@@ -15,6 +15,7 @@
 //
 // Uso: node probe-cancella-entita-altrui.mjs   ($env:TEST_URL per il dev locale)
 import { createClient } from '@supabase/supabase-js'
+import { cancellaAziendaDiProva } from './probe-auth.mjs'
 import { config } from 'dotenv'
 import { randomBytes } from 'crypto'
 
@@ -87,7 +88,7 @@ try {
     await admin.from('entita').delete().in('id', entita)
   }
   for (const id of utenti) { try { await admin.auth.admin.deleteUser(id) } catch {} }
-  if (aziende.length) await admin.from('aziende').delete().in('id', aziende)
+  if (aziende.length) for (const id of aziende) await cancellaAziendaDiProva(id)
   console.log('[probe] pulito')
   console.log(problemi ? `\n${problemi} PROBLEMI` : '\nNESSUNA AZIENDA TOCCA LE ENTITÀ DI UN\'ALTRA')
   process.exit(problemi ? 1 : 0)

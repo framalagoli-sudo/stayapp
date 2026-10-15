@@ -5,6 +5,7 @@
 // Crea un utente e un'azienda effimeri e li elimina sempre.
 
 import { createClient } from '@supabase/supabase-js'
+import { cancellaAziendaDiProva } from './probe-auth.mjs'
 import { config } from 'dotenv'
 import { randomBytes, createHmac } from 'crypto'
 
@@ -87,6 +88,6 @@ try {
 } finally {
   if (userId) await admin.auth.admin.deleteUser(userId).catch(() => {})
   // Niente .catch() su una query Supabase: non e' una Promise, va await-ata e basta.
-  if (aziendaId) { const { error } = await admin.from('aziende').delete().eq('id', aziendaId); if (error) console.error('pulizia azienda:', error.message) }
+  if (aziendaId) { await cancellaAziendaDiProva(aziendaId) }
   console.log('\n[probe] utente e azienda effimeri eliminati')
 }
