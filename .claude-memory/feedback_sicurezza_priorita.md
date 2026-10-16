@@ -1,9 +1,19 @@
 ---
 name: feedback_sicurezza_priorita
-description: La sicurezza non si raccomanda ogni volta — è un gate automatico prima di ogni deploy + 8 regole in cima a CLAUDE.md; se serve che Francesco lo ricordi, il sistema è rotto
+description: "La sicurezza è la PRIORITÀ ASSOLUTA (ribadito 16/10) — gate automatico prima di ogni deploy + regole in cima a CLAUDE.md + un agente che prova a entrare come un attaccante; se serve che Francesco lo ricordi, il sistema è rotto"
 metadata:
+  node_type: memory
   type: feedback
+  originSessionId: 6f9bd65f-b088-450b-a68e-2f83f514299f
+  modified: 2026-10-16T20:33:42.259Z
 ---
+
+**Francesco, 16/10/2026**: *«continua con la sicurezza: segna in memoria, è sempre la nostra
+priorità assoluta, e dobbiamo creare un agente AI che gira per tentare di entrare»* — come lo
+farebbe un bot o un malintenzionato, ma sul **nostro** sistema e solo sulle aziende di prova.
+**Come si applica**: davanti a una scelta fra una funzione nuova e un controllo di sicurezza
+aperto, viene prima il controllo. Le sonde sono il muro che conosco; l'agente serve a cercare
+quello che non so di dover cercare (vedi [[project_agente_attaccante]]).
 
 **Francesco, 25/08/2026**: *«ogni volta non posso raccomandarmi per la sicurezza. Puoi
 aggiornare il tuo setup in modo che ogni operazione o scrittura di codice sia iper sicura

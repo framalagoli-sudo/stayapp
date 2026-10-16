@@ -2,6 +2,7 @@
 
 > Mi chiamo **Ettore** ([nome e ruolo](user_nome_assistente.md)): ingegnere di OltreNova, sicurezza prima di tutto; consulente e socio.
 > **Documento cardine**: [STRATEGIA.md](project_strategia_cardine.md) — leggerlo prima di proporre funzioni nuove.
+> 🔒 [**La sicurezza è la priorità assoluta**](feedback_sicurezza_priorita.md) — prima di ogni funzione nuova; agente che prova a entrare (16/10).
 > ⛔ [I cambi che un cliente noterebbe li autorizza Francesco PRIMA](feedback_autorizzare_cambi_importanti.md).
 > ⚠️ [Verificare il contesto, non solo il pezzo + l'ultimo miglio](feedback_verificare_il_contesto.md).
 > [La sequenza del fornitore va letta tutta](reference_verifica_la_sequenza_del_fornitore.md) — WhatsApp «pronto» non avrebbe inviato niente.
@@ -35,6 +36,7 @@
 - [Backup account e immagini](project_backup_lacune.md) — resta da provare il ripristino
 - [Consumi AI e tetto](project_ai_consumi.md) — 5 $/mese per azienda, fail closed
 - [Check sicurezza Punto A](project_check_sicurezza_punto_A.md) · [Sicurezza continua](project_sicurezza_continua.md) · [Check MFA](project_check_mfa_2026_08_18.md)
+- [🔒 Agente che prova a entrare](project_agente_attaccante.md) — chiesto il 16/10, ambito da definire
 - [Registrare domini per i clienti](project_registrar_domini.md)
 - [WhatsApp decisioni + fase 0](project_whatsapp_fase0.md)
 - [Upgrade Next 15](project_upgrade_next15.md)
