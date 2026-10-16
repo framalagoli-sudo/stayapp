@@ -10,6 +10,11 @@ metadata:
 
 # Si riprende da qui
 
+## ▶️ 16/10 — sicurezza: enumerazione chiusa (nota 80, commit ddca0a05), Next 15.5.27, SENTRY_DSN tolta
+- Francesco: «manutenzione e sicurezza hanno la priorità». Sonda `probe-enumerazione.mjs` (in deploy.ps1). Trovato e chiuso: resend-invite verso utenti di altre aziende (🔴), commenti su post altrui, vetrina in bozza pubblica, sei route che rivelavano l'esistenza. Se fosse mai stato usato: solo dalla cronologia Resend.
+- Prossimi di sicurezza che servono a lui: chiave fisica sugli account, rotazione META_APP_SECRET, contratto art. 28 coi clienti. Classi ancora da guardare: log dei fornitori, contenuto dei file caricati.
+- Poi, proposto: intervista che costruisce il sito (STRATEGIA §6.4 p.5).
+
 ## ▶️ 15/10 sera — «Stile sezione» uguale per tutti i blocchi LIVE (nota 79, commit 2fe3fb22)
 - Francesco: «tutti i blocchi non sono uguali nello stile… a chi funziona a chi no». Sonda nuova `tests/probe-stile-blocchi.mjs` (38 blocchi × 12 opzioni, `--sito-scuro`): prima fino a 29/38 e 36/38 con difetti, ora 0 in produzione.
 - Il «blocco staff» di inlingua chi-siamo era un **Carosello** (ignorava lo stile), non il Team: ora ha bianco + alone come scelto.
