@@ -371,3 +371,24 @@ riguarda un deploy su Vercel prima di decidere il passaggio alla 15.5.28.
 | `next` | 15.5.24, due avvisi Dependabot «medi» (GHSA-4jqv-mc3x-m676, GHSA-mcj8-r9mp-w47p) | **15.5.27**. Nessuno dei due ci colpiva: il primo vale solo per il Pages Router su un server proprio (Vercel escluso dall'avviso), il secondo per una pagina «prendi-tutto» alla radice insieme a pagine statiche o ISR — non ne abbiamo (niente `pages/`, niente `generateStaticParams`/`revalidate`). Aggiornato lo stesso: un avviso sempre acceso smette di essere letto. Scelta la 15.5.27 (30/09) e non la 15.5.28, uscita da due giorni. `npm audit`: 0 |
 | `SENTRY_DSN` su Vercel | residuo di un servizio rimosso il 23/07, nessuna riga lo leggeva | tolto da produzione e anteprima; tolto da `PROGETTO.md` (`probe-documenti`: il documento corrisponde) |
 | Backup notturno | le tabelle del Club non erano esportate (corretto il 15/10) | il giro del 16/10 alle 03:00 è finito «ok» col codice nuovo. Il contenuto dell'archivio non è stato aperto: la chiave che legge R2 di proposito non sta su questo PC |
+
+### Enumerazione — la classe «resta da guardare» del 25/08, guardata il 16/10
+
+Sonda nuova **`tests/probe-enumerazione.mjs`** (in `deploy.ps1`): per le 104 porte con un
+identificativo nell'indirizzo, chiede come l'azienda B e come chi non ha fatto login, con un
+identificativo inventato e con uno vero dell'azienda A, e pretende due risposte identiche. Sulle
+porte pubbliche il confronto si fa con una cosa non pubblicata. In più fotografa i dati di A
+prima e dopo (cancellati? modificati?), cerca righe nuove dell'azienda B nate da oggetti di A
+(«duplica», «pianifica», commenti) e controlla il rovescio: il titolare di A legge le sue cose.
+
+| Punto | Com'era | Com'è |
+|---|---|---|
+| `POST /api/users/[id]/resend-invite` | 🔴 controllava solo che chi chiama fosse un titolare: **chiunque** poteva far partire un'email «imposta la password» verso l'account di qualunque utente della piattaforma (il link arrivava alla vittima, non a chi chiede: niente furto dell'account, ma email a nome nostro a chiunque e un modo per sapere quali utenti esistono) | un titolare rimanda l'invito solo agli utenti della sua azienda; gli altri ricevono la stessa risposta di un utente che non esiste. **Se sia mai stato usato non si può dire da qui**: gli invii non lasciano traccia nel nostro database. La cronologia sta su Resend (Emails, oggetto «Il tuo link per accedere a OltreNova»), per il tempo per cui la conserva; il buco richiedeva comunque un account titolare e l'identificativo dell'utente da colpire |
+| `POST /api/piano-editoriale/[id]/commenti` | si poteva agganciare un commento al post di un'altra azienda (non lo vedeva nessuno: restava con l'azienda di chi scrive) | il post dev'essere della propria azienda, altrimenti 404 |
+| `GET /api/guest/vetrina/[id]` + dettaglio di un elemento | una vetrina in **bozza** mostrava a chiunque il suo titolo; i suoi elementi pubblicati si aprivano dalla pagina di dettaglio | in bozza risponde come una che non esiste, anche nel dettaglio (salvo l'anteprima firmata) |
+| Pagine, sezioni, vetrine, elementi, versioni del sito, traduzioni, «Chiedi/Riscrivi/Dimmi» dell'AI | cercavano l'oggetto **prima** del login e rispondevano «Pagina non trovata» a un id inventato, «Non trovato» o «Non autorizzato» a uno vero: da fuori si capiva cosa esiste | `requireEntityRecordAccess(request, tabella, id)` in `lib/server-auth.js`: prima il login, poi «esiste ed è tuo?» con una risposta sola. `verifica-regole` la riconosce |
+
+Nessun dato di A è risultato letto, modificato, cancellato o copiato da B in produzione prima
+della correzione. Non coperte di proposito (scritte nella sonda col motivo): i link con un segreto
+(token di modulo, preventivo, recensione), le pagine pubbliche di un sito, i domini (una riga di
+prova la prenderebbe il giro di manutenzione), le porte della sola piattaforma.

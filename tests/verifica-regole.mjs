@@ -99,8 +99,9 @@ for (const f of file) {
 
   // ── 1. Ogni route API si autentica, o dichiara di essere pubblica ──────────
   if (eRoute && !ePubblica) {
-    // requireSuperAdmin passa da requireAuth: autentica, e in più restringe.
-    const haControllo = /requireAuth|requireSuperAdmin|requireEntityAccess|requireRecordAccess|CRON_SECRET|verificaTokenAnteprima|svix|stripe/i.test(testo)
+    // requireSuperAdmin e requireEntityRecordAccess passano da requireAuth:
+    // autenticano, e in più restringono.
+    const haControllo = /requireAuth|requireSuperAdmin|requireEntityAccess|requireEntityRecordAccess|requireRecordAccess|CRON_SECRET|verificaTokenAnteprima|svix|stripe/i.test(testo)
     const soloGet = !/export async function (POST|PATCH|PUT|DELETE)/.test(testo)
     if (!haControllo) {
       segnala('route senza controllo di accesso', f, 1,

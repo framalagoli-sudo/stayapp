@@ -1,14 +1,11 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireEntityAccess } from '@/lib/server-auth'
+import { requireEntityRecordAccess } from '@/lib/server-auth'
 
 const ALLOWED = ['titolo', 'slug', 'copertina_url', 'valore_primario', 'stato_pubblico', 'num1', 'num2', 'dati', 'dati_privati', 'immagini', 'status', 'ordine', 'seo_title', 'seo_description', 'og_image_url', 'in_vendita', 'prezzo_vendita', 'stock']
 
 // Carica l'elemento e autorizza tramite la sua entità (denormalizzata sulla riga).
 async function loadAndAuthorize(request, id) {
-  const { data: elemento } = await supabaseAdmin.from('vetrina_elementi')
-    .select('id, entity_tipo, entity_id').eq('id', id).single()
-  if (!elemento) return { response: Response.json({ error: 'Elemento non trovato' }, { status: 404 }) }
-  const { response } = await requireEntityAccess(request, elemento.entity_tipo, elemento.entity_id)
+  const { record: elemento, response } = await requireEntityRecordAccess(request, 'vetrina_elementi', id)
   if (response) return { response }
   return { elemento, response: null }
 }

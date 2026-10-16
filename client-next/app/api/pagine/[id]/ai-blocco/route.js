@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireEntityAccess } from '@/lib/server-auth'
+import { requireEntityRecordAccess } from '@/lib/server-auth'
 import { chiamaAI, statoBudget, eBudgetEsaurito, rispostaBudgetEsaurito } from '@/lib/ai-consumi'
 import { resolveBlockImages } from '@/lib/unsplash'
 import { entityDataSummary } from '@/lib/ai-entity-context'
@@ -16,9 +16,7 @@ export const maxDuration = 60
 export async function POST(request, props) {
   const params = await props.params
   try {
-    const { data: pagina } = await supabaseAdmin.from('pagine').select('id, entity_tipo, entity_id').eq('id', params.id).maybeSingle()
-    if (!pagina) return Response.json({ error: 'Pagina non trovata' }, { status: 404 })
-    const { profile, response } = await requireEntityAccess(request, pagina.entity_tipo, pagina.entity_id)
+    const { record: pagina, profile, response } = await requireEntityRecordAccess(request, 'pagine', params.id)
     if (response) return response
 
     const body = await request.json().catch(() => ({}))

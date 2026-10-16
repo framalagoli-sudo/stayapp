@@ -15,8 +15,10 @@ export async function GET(request, props) {
   const params = await props.params;
   try {
     const { searchParams } = new URL(request.url)
+    // Una vetrina in bozza risponde come una che non esiste: il suo titolo non
+    // esce, e da fuori non si capisce che c'è.
     const { data: vetrina } = await supabaseAdmin.from('vetrine')
-      .select('id, preset, titolo').eq('id', params.id).single()
+      .select('id, preset, titolo').eq('id', params.id).eq('status', 'pubblicata').maybeSingle()
     if (!vetrina) return Response.json({ error: 'Vetrina non trovata' }, { status: 404 })
     const preset = getPreset(vetrina.preset)
 

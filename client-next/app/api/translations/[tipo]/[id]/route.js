@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth, requireEntityAccess, requireRecordAccess, ENTITY_TABLES } from '@/lib/server-auth'
+import { requireAuth, requireEntityAccess, requireEntityRecordAccess, requireRecordAccess, ENTITY_TABLES } from '@/lib/server-auth'
 import { getTranslatableSource } from '@/lib/translate'
 import { espandiSezioni } from '@/lib/sezioni'
 
@@ -16,9 +16,7 @@ async function resolveTarget(request, tipo, id) {
   if (authResp) return { error: authResp }
 
   if (tipo === 'pagina') {
-    const { data: pagina } = await supabaseAdmin.from('pagine').select('*').eq('id', id).single()
-    if (!pagina) return { error: NextResponse.json({ error: 'Pagina non trovata' }, { status: 404 }) }
-    const { response } = await requireEntityAccess(request, pagina.entity_tipo, pagina.entity_id)
+    const { record: pagina, response } = await requireEntityRecordAccess(request, 'pagine', id, '*')
     if (response) return { error: response }
     // I testi si contano come li conta il sito: con le sezioni condivise già aperte.
     pagina.blocks = await espandiSezioni(pagina.blocks, pagina.entity_tipo, pagina.entity_id)

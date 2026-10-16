@@ -228,6 +228,30 @@ export async function requireEntityAccess(request, entity_tipo, entity_id) {
   return { user, profile, response: null }
 }
 
+// Un oggetto che appartiene a un'entità (pagina, sezione, vetrina, versione del
+// sito…): prima il login, poi «esiste ed è tuo?» con UNA risposta sola.
+// Cercarlo prima del login, o rispondere «Pagina non trovata» a un id inventato
+// e «Non trovato» a quello di un altro, dice a chiunque cosa esiste — misurato
+// su sei route il 16/10/2026 (`tests/probe-enumerazione.mjs`).
+// Uso:
+//   const { record, profile, response } = await requireEntityRecordAccess(request, 'pagine', params.id)
+//   if (response) return response
+// `colonne` deve contenere entity_tipo ed entity_id.
+export async function requireEntityRecordAccess(request, table, id, colonne = 'id, entity_tipo, entity_id') {
+  const { user, response } = await requireAuth(request)
+  if (response) return { response }
+  const profile = await getProfile(user.id)
+  if (!profile) return { response: Response.json({ error: 'Profilo non trovato' }, { status: 403 }) }
+  const nonTrovato = { response: Response.json({ error: 'Non trovato' }, { status: 404 }) }
+  const { data: record } = await supabaseAdmin.from(table).select(colonne).eq('id', id).maybeSingle()
+  if (!record) return nonTrovato
+  if (profile.role !== 'super_admin') {
+    const aziendaId = await getEntityAziendaId(record.entity_tipo, record.entity_id)
+    if (!aziendaId || aziendaId !== profile.azienda_id) return nonTrovato
+  }
+  return { user, profile, record, response: null }
+}
+
 // L'entità indicata NEL CORPO della richiesta è davvero della propria azienda?
 //
 // Serve quando si crea o modifica un contenuto agganciato a un'entità (evento,

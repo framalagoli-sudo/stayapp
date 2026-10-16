@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireEntityAccess } from '@/lib/server-auth'
+import { requireEntityRecordAccess } from '@/lib/server-auth'
 import { soloRiferimenti } from '@/lib/sezioni-regole'
 
 const ALLOWED = ['titolo','slug','status','nel_menu','ordine','parent_id','seo_title','seo_description','og_image_url','blocks','hide_header','hide_footer']
@@ -7,10 +7,7 @@ const ALLOWED = ['titolo','slug','status','nel_menu','ordine','parent_id','seo_t
 // Carica la pagina e autorizza l'accesso all'entità che la possiede.
 // Ritorna { pagina, response }. Se response != null, ritornalo subito.
 async function loadAndAuthorize(request, id) {
-  const { data: pagina } = await supabaseAdmin.from('pagine')
-    .select('id, entity_tipo, entity_id').eq('id', id).single()
-  if (!pagina) return { response: Response.json({ error: 'Pagina non trovata' }, { status: 404 }) }
-  const { response } = await requireEntityAccess(request, pagina.entity_tipo, pagina.entity_id)
+  const { record: pagina, response } = await requireEntityRecordAccess(request, 'pagine', id)
   if (response) return { response }
   return { pagina, response: null }
 }

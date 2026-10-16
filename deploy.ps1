@@ -121,11 +121,14 @@ if ($testExit -ne 0) {
 #   - cancella-azienda    cancellare un'azienda porta via TUTTO: righe in ogni
 #                         tabella dello schema, file e account (che prima restavano
 #                         vivi e capaci di fare login)
+#   - enumerazione        nessuna porta risponde in modo diverso a un id inventato
+#                         e a uno vero di un'altra azienda; i dati di A restano
+#                         intatti dopo le richieste di B (16/10/2026)
 # Non bloccano il deploy (e' gia' avvenuto): segnalano subito, forte.
 Write-Host "`n=== Sonde di sicurezza ===" -ForegroundColor Cyan
 Set-Location tests
 $sicurezzaKo = 0
-foreach ($sonda in @("probe-security-sweep.mjs", "probe-rls-secondo-muro.mjs", "probe-colonne-pubbliche.mjs", "probe-molti-indirizzi.mjs", "probe-seo.mjs", "probe-documenti.mjs", "probe-cancella-entita-altrui.mjs", "probe-cancella-azienda.mjs")) {
+foreach ($sonda in @("probe-security-sweep.mjs", "probe-rls-secondo-muro.mjs", "probe-colonne-pubbliche.mjs", "probe-molti-indirizzi.mjs", "probe-seo.mjs", "probe-documenti.mjs", "probe-cancella-entita-altrui.mjs", "probe-cancella-azienda.mjs", "probe-enumerazione.mjs")) {
     Write-Host "-- $sonda" -ForegroundColor DarkGray
     node $sonda
     if ($LASTEXITCODE -ne 0) { $sicurezzaKo++ }

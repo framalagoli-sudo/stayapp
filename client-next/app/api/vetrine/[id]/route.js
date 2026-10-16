@@ -1,14 +1,11 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireEntityAccess } from '@/lib/server-auth'
+import { requireEntityRecordAccess } from '@/lib/server-auth'
 
 const ALLOWED = ['titolo', 'slug', 'status', 'preset', 'schema', 'settings', 'ordine', 'seo_title', 'seo_description', 'og_image_url']
 
 // Carica la vetrina e autorizza l'accesso all'entità che la possiede.
 async function loadAndAuthorize(request, id) {
-  const { data: vetrina } = await supabaseAdmin.from('vetrine')
-    .select('id, entity_tipo, entity_id').eq('id', id).single()
-  if (!vetrina) return { response: Response.json({ error: 'Vetrina non trovata' }, { status: 404 }) }
-  const { response } = await requireEntityAccess(request, vetrina.entity_tipo, vetrina.entity_id)
+  const { record: vetrina, response } = await requireEntityRecordAccess(request, 'vetrine', id)
   if (response) return { response }
   return { vetrina, response: null }
 }

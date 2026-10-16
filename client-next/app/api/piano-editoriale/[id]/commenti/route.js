@@ -31,10 +31,12 @@ export async function POST(request, props) {
     const { testo } = await request.json()
     if (!testo?.trim()) return Response.json({ error: 'Testo obbligatorio' }, { status: 400 })
 
-    if (!azienda_id) {
-      const { data: post } = await supabaseAdmin.from('piano_editoriale').select('azienda_id').eq('id', params.id).single()
-      azienda_id = post?.azienda_id
-    }
+    // Il post dev'essere della propria azienda: prima si poteva agganciare un
+    // commento al post di un'altra (16/10/2026). Che non esista o sia di altri,
+    // la risposta è la stessa.
+    const { data: post } = await supabaseAdmin.from('piano_editoriale').select('azienda_id').eq('id', params.id).maybeSingle()
+    if (!post || (!isSuperAdmin && post.azienda_id !== azienda_id)) return Response.json({ error: 'Non trovato' }, { status: 404 })
+    if (!azienda_id) azienda_id = post.azienda_id
     if (!azienda_id) return Response.json({ error: 'azienda_id non determinabile' }, { status: 400 })
 
     const { data, error } = await supabaseAdmin.from('pe_commenti').insert({

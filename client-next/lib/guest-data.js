@@ -222,10 +222,13 @@ export async function getElementoVetrina(tipo, entityId, itemSlug, anteprima = n
     .eq('entity_tipo', tipo)
     .eq('entity_id', entityId)
     .eq('slug', itemSlug)
-  if (!verificaTokenAnteprima(anteprima, tipo, entityId)) q = q.eq('status', 'pubblicata')
+  const inAnteprima = verificaTokenAnteprima(anteprima, tipo, entityId)
+  if (!inAnteprima) q = q.eq('status', 'pubblicata')
   const { data, error } = await q.single()
   if (error || !data) return null
-  const { data: vetrina } = await supabaseAdmin.from('vetrine').select('preset, titolo').eq('id', data.vetrina_id).single()
+  const { data: vetrina } = await supabaseAdmin.from('vetrine').select('preset, titolo, status').eq('id', data.vetrina_id).single()
+  // Una vetrina in bozza non esce, nemmeno con i suoi elementi pubblicati.
+  if (!inAnteprima && vetrina?.status !== 'pubblicata') return null
   return { ...data, preset: vetrina?.preset || 'progetti_immobiliari', vetrina_titolo: vetrina?.titolo || '' }
 }
 

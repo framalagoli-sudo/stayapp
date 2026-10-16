@@ -1,16 +1,13 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireEntityAccess } from '@/lib/server-auth'
+import { requireEntityRecordAccess } from '@/lib/server-auth'
 import { usiDelleSezioni } from '@/lib/sezioni'
 import { contenutoSezione, eUuid } from '@/lib/sezioni-regole'
 
 // Carica la sezione e autorizza l'accesso all'entità che la possiede: «è sua?»
-// viene prima di qualunque effetto.
+// viene prima di qualunque effetto, con la stessa risposta se non esiste.
 async function caricaEAutorizza(request, id) {
-  const nonTrovata = { response: Response.json({ error: 'Sezione non trovata' }, { status: 404 }) }
-  if (!eUuid(id)) return nonTrovata
-  const { data: sezione } = await supabaseAdmin.from('sezioni').select('id, entity_tipo, entity_id').eq('id', id).maybeSingle()
-  if (!sezione) return nonTrovata
-  const { response } = await requireEntityAccess(request, sezione.entity_tipo, sezione.entity_id)
+  if (!eUuid(id)) return { response: Response.json({ error: 'Non trovato' }, { status: 404 }) }
+  const { record: sezione, response } = await requireEntityRecordAccess(request, 'sezioni', id)
   if (response) return { response }
   return { sezione, response: null }
 }

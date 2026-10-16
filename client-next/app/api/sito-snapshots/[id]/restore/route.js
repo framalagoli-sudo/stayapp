@@ -1,4 +1,4 @@
-import { requireEntityAccess } from '@/lib/server-auth'
+import { requireEntityRecordAccess } from '@/lib/server-auth'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { captureSnapshot, applySnapshot } from '@/lib/site-snapshot'
 
@@ -9,10 +9,7 @@ export const dynamic = 'force-dynamic'
 export async function POST(request, { params }) {
   const { id } = await params
 
-  const { data: snap } = await supabaseAdmin.from('site_snapshots').select('*').eq('id', id).single()
-  if (!snap) return Response.json({ error: 'Versione non trovata' }, { status: 404 })
-
-  const { user, response } = await requireEntityAccess(request, snap.entity_tipo, snap.entity_id)
+  const { record: snap, user, response } = await requireEntityRecordAccess(request, 'site_snapshots', id, '*')
   if (response) return response
 
   // 1. Auto-snapshot dello stato corrente, così il ripristino è a sua volta annullabile.

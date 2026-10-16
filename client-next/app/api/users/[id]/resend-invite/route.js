@@ -11,6 +11,18 @@ export async function POST(request, props) {
     const { data: caller } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', user.id).single()
     if (!['super_admin', 'admin_azienda'].includes(caller?.role)) return Response.json({ error: 'Accesso non autorizzato' }, { status: 403 })
 
+    // Un titolare rimanda l'invito solo a chi è della SUA azienda. Senza questo
+    // controllo poteva far partire un'email «imposta la password» verso
+    // l'account di chiunque sulla piattaforma (trovato il 16/10/2026 con
+    // probe-enumerazione). Chi è di un'altra azienda riceve la stessa risposta
+    // di un utente che non esiste: da fuori non si capisce chi c'è.
+    if (caller.role !== 'super_admin') {
+      const { data: target } = await supabaseAdmin.from('profiles').select('azienda_id, role').eq('id', params.id).maybeSingle()
+      if (!target || !caller.azienda_id || target.azienda_id !== caller.azienda_id || target.role === 'super_admin') {
+        return Response.json({ error: 'Utente non trovato' }, { status: 404 })
+      }
+    }
+
     const { data: authUser, error: fetchErr } = await supabaseAdmin.auth.admin.getUserById(params.id)
     if (fetchErr || !authUser?.user) return Response.json({ error: 'Utente non trovato' }, { status: 404 })
 
