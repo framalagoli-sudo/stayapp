@@ -25,7 +25,7 @@ metadata:
 ## ▶️ 15/10 — resoconto per email FATTO e SPENTO (CLAUDE.md nota 76, migration 139–140 eseguite)
 - Francesco: «la mail se la vuoi impostare ma poi devo attivarla io» · «per adesso il club non ha senso» · cadenza «solo ogni settimana o ogni mese», la sceglie LUI dal cruscotto (il titolare no; predefinito ogni mese, scelto da me e detto a lui).
 - **Da fare lui**: Impostazioni → «Resoconti per email ai titolari» → «Mandala a me» (primo invio vero, non l'ho mai visto arrivare in una casella), poi accendere. StayApp Development riceverebbe il mese: è un'azienda sua?
-- Trovato e corretto: le tabelle del Club NON erano nel backup notturno (lib/backup.js). Verificare il primo archivio dopo il deploy (`tests/verifica-backup.mjs`).
+- Trovato e corretto: le tabelle del Club NON erano nel backup notturno (lib/backup.js). Il giro del 16/10 03:00 è finito «ok»; il contenuto si vede solo scaricando un archivio (la chiave R2 di lettura non è sul PC).
 - Club e «com'è andata» dopo un consiglio: fermi per decisione di Francesco.
 - ✅ 15/10 stesso giorno, LIVE: **stato vero del conto Stripe** (puoIncassare chiede a Stripe; Garage22 verificato 6 € come prima) · **sonde e sottodomini** (giro domini salta aziende «ZZ…» sia pendenti sia riparazione; 3 sonde TEST- → ZZ-) · **onboarding v2** («Che attività hai?», lib/crea-entita.js usata dalle 3 route). CLAUDE.md nota 54 e roadmap.
 - ❓ **Chiesto a Francesco 15/10**: la voce di menu «Chat» (`menu-pannello.js`, `/admin/chat`) porta a un 404 da quando il menu è a dati (24/09): la pagina Next non è mai esistita (c'è solo `components/admin/ChatPage.jsx`, mai montato). La vede Borgo del Lago (funzione chat accesa) e chi «vede tutto». Nell'app del QR la scheda Chat NON è raggiungibile (BASE_NAV non la contiene): nessun ospite può aver scritto. 7 messaggi in tabella, tutti di prova del 27/04. Togliere la voce = sua decisione; alternativa: montare ChatPage, ma sarebbe una casella che nessun ospite può riempire.
@@ -312,7 +312,7 @@ Su Vercel c'è solo `WHATSAPP_TOKEN_KEY`: mancano `META_APP_ID` · `META_APP_SEC
 - **Foto vere** di inlingua Terni: oggi sono Unsplash, e le slide del cliente dicono per prime che servirebbero quelle vere.
 - **OltreNova cliente di sé stessa** + rifare la landing (il fermo per Meta è tolto) · **DNS** metodotvb e fondaconarni · elenco **Offerte** nel pannello che deduce «Gratis».
 - ~~primo incasso Stripe con Garage 22~~ ✅ **fatto il 22/09** (punti 13–14 qui sopra).
-- **`SENTRY_DSN` da togliere da Vercel**: residuo del servizio rimosso il 23/07, nessuna riga di codice la legge. `probe-documenti.mjs` la segnala come *promemoria*, non come errore — sparisce da sola quando la togli.
+- ✅ `SENTRY_DSN` tolta da Vercel il 16/10.
 - 💡 **Proposto a Francesco il 22/09, da decidere**: estendere `probe-documenti.mjs` a segnalare le voci di `FEATURES.md` marcate «futuro / da fare» il cui **codice però esiste già**. Nasce da un caso vero: «Sprint 11 — Stripe payments (futuro)» aveva tutte le caselle vuote mentre incassava da tre settimane. Oggi il controllo automatico copre solo `PROGETTO.md`; su `FEATURES.md` e su questo promemoria **non c'è niente che contraddica una riga falsa** — restano affidati alla memoria di chi chiude la sessione, che è esattamente ciò che ha fallito → [[reference_documento_che_mente]]
 
 ### 5. Da chiedere a Garage 22
