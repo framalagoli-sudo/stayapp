@@ -352,6 +352,7 @@ sicurezza fisica già in elenco (`SECURITY.md` §6).
 
 Aperto: `next` 15.5.24 ha un advisory sull'ISR descritto come «self-hosted». Da verificare se
 riguarda un deploy su Vercel prima di decidere il passaggio alla 15.5.28.
+→ **Chiuso il 16/10** (vedi sotto).
 
 ## Aggiornamento 15/10/2026
 
@@ -362,3 +363,11 @@ riguarda un deploy su Vercel prima di decidere il passaggio alla 15.5.28.
 | «Dimmi cosa cambiare» (`/api/pagine/[id]/ai-comando`) | — | `requireEntityAccess` (404 alla pagina di un'altra azienda), frase e pagina controllate **prima** di pagare l'AI, tetto dell'azienda (`chiamaAI`). All'AI non arrivano id né percorsi; la risposta è ricostruita da un catalogo chiuso (`ripulisciMosse`) e l'editor la applica con i controlli della scrittura sulla pagina. La route non scrive nel database. Provato con frasi ostili (`probe-interprete.mjs --vero`) |
 | Resoconti per email | — | route `/api/resoconti*` con `requireSuperAdmin`; l'anteprima non contiene nomi; «Mandala a me» scrive solo alla casella di chi preme |
 | Pagamento online promesso | `puoIncassare` diceva sì appena esisteva un conto Stripe, anche a metà | chiede a Stripe lo stato vero del conto (memoria 10 minuti) |
+
+## Aggiornamento 16/10/2026
+
+| Punto | Com'era | Com'è |
+|---|---|---|
+| `next` | 15.5.24, due avvisi Dependabot «medi» (GHSA-4jqv-mc3x-m676, GHSA-mcj8-r9mp-w47p) | **15.5.27**. Nessuno dei due ci colpiva: il primo vale solo per il Pages Router su un server proprio (Vercel escluso dall'avviso), il secondo per una pagina «prendi-tutto» alla radice insieme a pagine statiche o ISR — non ne abbiamo (niente `pages/`, niente `generateStaticParams`/`revalidate`). Aggiornato lo stesso: un avviso sempre acceso smette di essere letto. Scelta la 15.5.27 (30/09) e non la 15.5.28, uscita da due giorni. `npm audit`: 0 |
+| `SENTRY_DSN` su Vercel | residuo di un servizio rimosso il 23/07, nessuna riga lo leggeva | tolto da produzione e anteprima; tolto da `PROGETTO.md` (`probe-documenti`: il documento corrisponde) |
+| Backup notturno | le tabelle del Club non erano esportate (corretto il 15/10) | il giro del 16/10 alle 03:00 è finito «ok» col codice nuovo. Il contenuto dell'archivio non è stato aperto: la chiave che legge R2 di proposito non sta su questo PC |

@@ -438,7 +438,6 @@ Variables**. Qui ci sono solo i nomi e la provenienza.
 | `STRIPE_ACCOUNT_WEBHOOK_SECRET` | Stripe → Webhook (account connessi, payload **Thin**) | non ci si accorge se Stripe blocca il conto di un cliente: lo scopre lui dal primo pagamento rifiutato |
 | `VERCEL_TOKEN` · `VERCEL_PROJECT_ID` | Vercel → Account Settings → Tokens | i domini dei clienti non si collegano più |
 | `UNSPLASH_ACCESS_KEY` | Unsplash → Developers → la propria app | il costruttore di siti non propone più foto: si caricano a mano |
-| ~~`SENTRY_DSN`~~ | — | ⚠️ **residuo**: Sentry è stato rimosso dal codice il 23/07/2026, ma la variabile è ancora su Vercel. **Nessuna riga la legge**: va tolta |
 | `TURNSTILE_SECRET_KEY` · `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare → Turnstile | i moduli restano senza filtro |
 | `META_APP_ID` · `META_APP_SECRET` · `META_ES_CONFIG_ID` · `WHATSAPP_TOKEN_KEY` · `WHATSAPP_WEBHOOK_TOKEN` | Meta for Developers (`META_ES_CONFIG_ID` = la configurazione di Embedded Signup nella dashboard dell'app: dice a Meta quali permessi chiedere al cliente) | WhatsApp spento: senza le prime tre il pulsante «Collega WhatsApp» non compare nemmeno *(è la situazione di oggi, voluta)* |
 | `GOOGLE_CLIENT_ID` · `GOOGLE_CLIENT_SECRET` | Google Cloud Console | niente Google Calendar |
