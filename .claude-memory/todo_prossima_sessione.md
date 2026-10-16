@@ -13,7 +13,7 @@ metadata:
 ## ▶️ 15/10 sera — «Stile sezione» uguale per tutti i blocchi LIVE (nota 79, commit 2fe3fb22)
 - Francesco: «tutti i blocchi non sono uguali nello stile… a chi funziona a chi no». Sonda nuova `tests/probe-stile-blocchi.mjs` (38 blocchi × 12 opzioni, `--sito-scuro`): prima fino a 29/38 e 36/38 con difetti, ora 0 in produzione.
 - Il «blocco staff» di inlingua chi-siamo era un **Carosello** (ignorava lo stile), non il Team: ora ha bianco + alone come scelto.
-- ❓ **Decisione aperta di Francesco**: Banner CTA «Cosa Fare Ora» di Metodo TVB ha sfumato + alone; l'alone CANCELLA il fondo del banner (difetto), quindi oggi è scuro. Correggerlo lo renderebbe azzurro → lasciato com'è. Stesso tema: 14 Banner CTA di inlingua + 1 di D.O. hanno uno sfondo salvato che il pannello non offre e non si applica. Chiedere se il Banner CTA deve accettare sfondo/alone.
+- ✅ 16/10 secondo giro («sistemare tutto»): 52 blocchi provati, Banner CTA e Numeri con sfondo/alone, frecce con «Colore icone», Vetrina/Modulo/Negozio/Menù/Prenotazione sistemati sui siti scuri. Gli sfondi mai mostrati di 15 banner riallineati all'aspetto di oggi (scelta di Francesco). Nota 79.
 - Detto a Francesco: nella Chi siamo pubblicata di inlingua il carosello ha ancora i testi d'esempio («Seconda scheda», «Scrivi qui il testo…»).
 
 ## ▶️ 15/10 pomeriggio — chat tolta, StayApp Development cancellata, interprete LIVE

@@ -202,7 +202,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
             ? `dal ${formatData(selected.data)} al ${formatData(selected.data_fine)}`
             : <>{formatData(selected.data)} {selected.slot?.servizio ? `— ${selected.slot.servizio}` : ''} ore {selected.slot?.ora}</>}
         </div>
-        <div style={{ fontSize: 13, color: '#888', marginBottom: 20 }}>
+        <div style={{ fontSize: 13, color: '#6b6b76', marginBottom: 20 }}>
           {prenotazione?.stato === 'in_attesa'
             ? <>Non è ancora confermata: ti scriviamo a <strong>{form.email}</strong> appena viene approvata.</>
             : <>Riceverai una conferma a <strong>{form.email}</strong></>}
@@ -246,8 +246,8 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
                       cliente, e una parola lunghissima senza spazi allargherebbe
                       la riga oltre la scheda. */}
                   <div style={{ fontWeight: 700, fontSize: 15.5, color: '#1a1a2e', overflowWrap: 'anywhere' }}>{r.nome}</div>
-                  {r.descrizione && <div style={{ fontSize: 13, color: '#777', marginTop: 3, overflowWrap: 'anywhere' }}>{r.descrizione}</div>}
-                  <div style={{ fontSize: 13, color: '#999', marginTop: 5 }}>{dettaglioRisorsa(r)}</div>
+                  {r.descrizione && <div style={{ fontSize: 13, color: '#6b6b76', marginTop: 3, overflowWrap: 'anywhere' }}>{r.descrizione}</div>}
+                  <div style={{ fontSize: 13, color: '#6b6b76', marginTop: 5 }}>{dettaglioRisorsa(r)}</div>
                 </div>
                 {/* Il prezzo è la seconda cosa che si guarda dopo il nome: sta
                     dove lo si cerca, non annegato nella riga dei dettagli. */}
@@ -256,7 +256,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
                     <div style={{ fontWeight: 700, fontSize: 16, color: primaryColor, whiteSpace: 'nowrap' }}>
                       {simboloValuta(r.valuta)}{r.prezzo}
                     </div>
-                    <div style={{ fontSize: 11.5, color: '#aaa', whiteSpace: 'nowrap' }}>{unitaPrezzo(r)}</div>
+                    <div style={{ fontSize: 11.5, color: '#6b6b76', whiteSpace: 'nowrap' }}>{unitaPrezzo(r)}</div>
                   </div>
                 )}
                 <span aria-hidden="true" style={{ color: primaryColor, fontSize: 20, flexShrink: 0, marginLeft: 2 }}>›</span>
@@ -305,7 +305,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
             </div>
           )}
 
-          {verificando && <div style={{ color: '#999', fontSize: 13, marginTop: 14 }}>Verifica disponibilità…</div>}
+          {verificando && <div style={{ color: '#6b6b76', fontSize: 13, marginTop: 14 }}>Verifica disponibilità…</div>}
 
           {!verificando && periodo && !periodo.disponibile && (
             <div style={{ marginTop: 14, padding: '12px 14px', background: '#fff5f5', borderRadius: 10, fontSize: 14, color: '#c53030' }}>
@@ -332,7 +332,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
                         «€850 anziché €850» è rumore, e mostrarlo barrato quando
                         l'offerta costa di più sarebbe una bugia. */}
                     {periodo.totale_pieno > periodo.totale && (
-                      <div style={{ fontSize: 14, color: '#999', textDecoration: 'line-through' }}>€{periodo.totale_pieno}</div>
+                      <div style={{ fontSize: 14, color: '#6b6b76', textDecoration: 'line-through' }}>€{periodo.totale_pieno}</div>
                     )}
                   </div>
                 )}
@@ -371,7 +371,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
                   </button>
                 )}
                 {periodo.libere > 1 && (
-                  <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>Ne restano {periodo.libere} disponibili.</div>
+                  <div style={{ fontSize: 12, color: '#6b6b76', marginTop: 4 }}>Ne restano {periodo.libere} disponibili.</div>
                 )}
               </div>
               <button onClick={() => setStep('form')} style={{ ...btnStyle(primaryColor), marginTop: 14 }}>
@@ -407,9 +407,9 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
           </div>
 
           {loadingSlots ? (
-            <div style={{ color: '#999', textAlign: 'center', padding: 20 }}>Verifica disponibilità...</div>
+            <div style={{ color: '#6b6b76', textAlign: 'center', padding: 20 }}>Verifica disponibilità...</div>
           ) : slots.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 24, color: '#999' }}>
+            <div style={{ textAlign: 'center', padding: 24, color: '#6b6b76' }}>
               <div style={{ fontSize: 32, marginBottom: 8 }}>😔</div>
               <div>Nessuna disponibilità per questa data.</div>
               <button onClick={() => setStep('data')} style={{ ...backBtnStyle, marginTop: 12 }}>← Scegli un'altra data</button>
@@ -427,7 +427,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
                       {orari.map(slot => (
                         <button key={slot.ora} onClick={() => selectSlot(slot)} style={slotBtnStyle(primaryColor, false)}>
                           <div style={{ fontWeight: 700 }}>{slot.ora}</div>
-                          <div style={{ fontSize: 11, color: '#888' }}>{slot.disponibili} posti</div>
+                          <div style={{ fontSize: 11, color: '#6b6b76' }}>{slot.disponibili} posti</div>
                         </button>
                       ))}
                     </div>
@@ -445,11 +445,11 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
                         </div>
                       )}
                       <div style={{ fontWeight: 700 }}>{slot.ora}</div>
-                      <div style={{ fontSize: 11, color: slot.promo ? primaryColor : '#888' }}>
+                      <div style={{ fontSize: 11, color: slot.promo ? primaryColor : '#6b6b76' }}>
                         {slot.promo ? `€${slot.promo.prezzo}` : (slot.prezzo > 0 ? `€${slot.prezzo}` : 'Libero')}
                       </div>
                       {slot.totale > 1 && (
-                        <div style={{ fontSize: 10, color: '#aaa' }}>{slot.disponibili}/{slot.totale}</div>
+                        <div style={{ fontSize: 10, color: '#6b6b76' }}>{slot.disponibili}/{slot.totale}</div>
                       )}
                     </button>
                   ))}
@@ -503,7 +503,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
                   <button onClick={() => patchForm('n_persone', Math.max(1, form.n_persone - 1))} style={counterBtn}>−</button>
                   <span style={{ fontSize: 18, fontWeight: 700, minWidth: 24, textAlign: 'center' }}>{form.n_persone}</span>
                   <button onClick={() => patchForm('n_persone', Math.min(selected.slot.disponibili || 20, form.n_persone + 1))} style={counterBtn}>+</button>
-                  <span style={{ fontSize: 13, color: '#888' }}>(max {selected.slot.disponibili})</span>
+                  <span style={{ fontSize: 13, color: '#6b6b76' }}>(max {selected.slot.disponibili})</span>
                 </div>
               </div>
             )}
@@ -638,7 +638,7 @@ function Breadcrumb({ step, risorsa, data, quante, primaryColor, onStep }) {
           <span onClick={() => i < currentIdx && onStep(s.key)} style={{
             fontSize: 12, padding: '3px 8px', borderRadius: 20,
             background: i === currentIdx ? primaryColor : i < currentIdx ? '#e8f0fe' : '#f0f0f0',
-            color: i === currentIdx ? '#fff' : i < currentIdx ? primaryColor : '#aaa',
+            color: i === currentIdx ? '#fff' : i < currentIdx ? primaryColor : '#6b6b76',
             cursor: i < currentIdx ? 'pointer' : 'default',
             fontWeight: i <= currentIdx ? 600 : 400,
           }}>
@@ -711,7 +711,9 @@ function formatData(iso, breve = false) {
 }
 
 // ─── Stili ────────────────────────────────────────────────────────────────────
-const wrapStyle   = { background: '#fff', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', maxWidth: 520 }
+// La scheda è bianca anche sui siti scuri: il testo che non dichiara un colore
+// lo prende da qui, non dal sito (il nome del mese spariva, bianco su bianco).
+const wrapStyle   = { background: '#fff', color: '#1a1a2e', borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', maxWidth: 520 }
 const titleStyle  = { fontSize: 17, fontWeight: 700, marginBottom: 16, color: '#1a1a2e' }
 // Il calendario che vede chi prenota: i giorni liberi si cliccano, gli occupati
 // no. Un mese alla volta, avanti e indietro.
@@ -764,7 +766,7 @@ function CalendarioPubblico({ risorsaId, primaryColor, dal, al, onScegli }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 3, marginBottom: 4 }}>
         {SIGLE_GIORNI.map((s, i) => (
-          <div key={i} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#bbb' }}>{s}</div>
+          <div key={i} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#6b6b76' }}>{s}</div>
         ))}
       </div>
 
@@ -811,7 +813,7 @@ function CalendarioPubblico({ risorsaId, primaryColor, dal, al, onScegli }) {
         })}
       </div>
 
-      <div style={{ display: 'flex', gap: 14, marginTop: 10, fontSize: 11, color: '#888', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 14, marginTop: 10, fontSize: 11, color: '#6b6b76', flexWrap: 'wrap' }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
           <span style={{ width: 12, height: 12, borderRadius: 3, background: '#eefaf1' }} /> libero
         </span>
@@ -845,7 +847,7 @@ const dateInputStyle = (color) => ({
   fontSize: 16, outline: 'none', boxSizing: 'border-box', background: '#fff',
 })
 
-const backBtnStyle = { marginTop: 14, background: 'none', border: 'none', color: '#888', fontSize: 13, cursor: 'pointer', padding: 0 }
+const backBtnStyle = { marginTop: 14, background: 'none', border: 'none', color: '#6b6b76', fontSize: 13, cursor: 'pointer', padding: 0 }
 const counterBtn  = { width: 32, height: 32, borderRadius: '50%', border: '1px solid #ddd', background: '#f5f5f5', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }
 
 const btnStyle = (color) => ({

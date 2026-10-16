@@ -196,7 +196,7 @@ function TessereMetriche({ metriche, primary, grande }) {
 
 // Griglia pubblica di una vetrina: carica gli elementi pubblicati (client-side,
 // come i blocchi eventi/news), con filtro per stato e link al dettaglio.
-function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
+function VetrinaGrid({ block, linkBase, primary, sec, heading, id, className, style, children }) {
   const d = block.data || {}
   const [presetKey, setPresetKey] = useState(null)
   const [elementi, setElementi] = useState([])
@@ -256,13 +256,14 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
   const anyFilter = !!(filters.q || filters.pmin || filters.pmax || filters.stato || numsActive || Object.values(filters.sel).some(Boolean))
   if (loaded && total === 0 && !anyFilter && !d.titolo) return null   // vetrina vuota, non filtrata → nascondi il blocco
 
-  const ctrl = { height: 46, padding: '0 16px', border: '1px solid #e8e8f0', borderRadius: 12, fontSize: 14, background: 'var(--sup)', fontFamily: 'inherit', color: '#2a2a35', outline: 'none', boxSizing: 'border-box', boxShadow: '0 1px 3px rgba(20,20,40,0.05)' }
-  const numInp = { width: 56, height: 44, border: 'none', outline: 'none', fontSize: 14, background: 'transparent', fontFamily: 'inherit', color: '#2a2a35' }
+  const ctrl = { height: 46, padding: '0 16px', border: '1px solid var(--bordo)', borderRadius: 12, fontSize: 14, background: 'var(--sup)', fontFamily: 'inherit', color: 'var(--txt)', outline: 'none', boxSizing: 'border-box', boxShadow: '0 1px 3px rgba(20,20,40,0.05)' }
+  const numInp = { width: 56, height: 44, border: 'none', outline: 'none', fontSize: 14, background: 'transparent', fontFamily: 'inherit', color: 'var(--txt)' }
   const pill = (active) => ({ padding: '9px 18px', borderRadius: 50, border: `1.5px solid ${active ? primary : 'var(--bordo)'}`, background: active ? primary : 'var(--sup)', color: active ? readableOn('#ffffff', primary, '#1a1a2e') : 'var(--txt-medio)', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', transition: 'all .15s', boxShadow: active ? `0 4px 14px ${primary}44` : 'none' })
   const onFocusA = (e) => { e.currentTarget.style.borderColor = primary; e.currentTarget.style.boxShadow = `0 0 0 3px ${primary}22` }
-  const onBlurA  = (e) => { e.currentTarget.style.borderColor = '#e8e8f0'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(20,20,40,0.05)' }
+  const onBlurA  = (e) => { e.currentTarget.style.borderColor = 'var(--bordo)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(20,20,40,0.05)' }
   return (
-    <section style={{ padding: '64px 0' }}>
+    <section id={id} className={className} style={{ padding: '64px 0', ...style }}>
+      {children}
       <div className="lbr-section">
         {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,36px)', fontWeight: 700, textAlign: 'center', marginBottom: 28, color: 'var(--txt)' }} {...ricco(d.titolo)} />}
         {d.mostra_filtri !== false && (showStatoPills || selectFacets.length > 0 || showPrice || rangeFacets.length > 0) && (
@@ -278,22 +279,22 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
             {(selectFacets.length > 0 || showPrice || rangeFacets.length > 0) && (
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
                 <div style={{ position: 'relative', flex: '0 1 260px', minWidth: 190 }}>
-                  <Search size={17} strokeWidth={1.5} style={{ position: 'absolute', left: 15, top: '50%', transform: 'translateY(-50%)', color: '#a6a6b2', pointerEvents: 'none' }} />
+                  <Search size={17} strokeWidth={1.5} style={{ position: 'absolute', left: 15, top: '50%', transform: 'translateY(-50%)', color: 'var(--segni, #a6a6b2)', pointerEvents: 'none' }} />
                   <input value={filters.q} onChange={e => setF({ q: e.target.value })} onFocus={onFocusA} onBlur={onBlurA} placeholder="Cerca…" style={{ ...ctrl, width: '100%', paddingLeft: 44 }} />
                 </div>
                 {selectFacets.map(f => (
                   <div key={f.key} style={{ position: 'relative' }}>
                     <select value={filters.sel[f.key] || ''} onChange={e => setSel(f.key, e.target.value)} onFocus={onFocusA} onBlur={onBlurA}
-                      style={{ ...ctrl, appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none', paddingRight: 40, cursor: 'pointer', color: filters.sel[f.key] ? '#2a2a35' : '#8a8a95' }}>
-                      <option value="" style={{ color: '#8a8a95' }}>{f.label}</option>
-                      {fieldOptions(preset, f).map(o => <option key={o.value} value={o.value} style={{ color: '#2a2a35' }}>{o.label}</option>)}
+                      style={{ ...ctrl, appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none', paddingRight: 40, cursor: 'pointer', color: filters.sel[f.key] ? 'var(--txt)' : 'var(--txt-tenue)' }}>
+                      <option value="" style={{ color: 'var(--txt-tenue)', background: 'var(--sup)' }}>{f.label}</option>
+                      {fieldOptions(preset, f).map(o => <option key={o.value} value={o.value} style={{ color: 'var(--txt)', background: 'var(--sup)' }}>{o.label}</option>)}
                     </select>
-                    <ChevronDown size={16} strokeWidth={1.5} style={{ position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)', color: '#a6a6b2', pointerEvents: 'none' }} />
+                    <ChevronDown size={16} strokeWidth={1.5} style={{ position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--segni, #a6a6b2)', pointerEvents: 'none' }} />
                   </div>
                 ))}
                 {showPrice && (
                   <div style={{ ...ctrl, display: 'inline-flex', alignItems: 'center', gap: 4, padding: '0 14px', width: 'auto' }}>
-                    <Euro size={15} strokeWidth={1.5} style={{ color: '#a6a6b2', flexShrink: 0 }} />
+                    <Euro size={15} strokeWidth={1.5} style={{ color: 'var(--segni, #a6a6b2)', flexShrink: 0 }} />
                     <input type="number" value={filters.pmin} onChange={e => setF({ pmin: e.target.value })} placeholder="min" style={numInp} />
                     <span style={{ color: '#d4d4dc' }}>–</span>
                     <input type="number" value={filters.pmax} onChange={e => setF({ pmax: e.target.value })} placeholder="max" style={numInp} />
@@ -301,7 +302,7 @@ function VetrinaGrid({ block, linkBase, primary, sec, heading }) {
                 )}
                 {rangeFacets.map(f => (
                   <div key={f.key} style={{ ...ctrl, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0 14px', width: 'auto' }}>
-                    <span style={{ fontSize: 12, color: '#8a8a95', whiteSpace: 'nowrap' }} {...ricco(f.label)} />
+                    <span style={{ fontSize: 12, color: 'var(--txt-tenue)', whiteSpace: 'nowrap' }} {...ricco(f.label)} />
                     <input type="number" value={filters.nums[f.key]?.min || ''} onChange={e => setNum(f.key, 'min', e.target.value)} placeholder="min" style={numInp} />
                     <span style={{ color: '#d4d4dc' }}>–</span>
                     <input type="number" value={filters.nums[f.key]?.max || ''} onChange={e => setNum(f.key, 'max', e.target.value)} placeholder="max" style={numInp} />
@@ -676,7 +677,7 @@ const API_BASE_FB = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001')
 // mette sulla sua <section> sfondo, spaziatura, àncora e «nascondi su telefono»
 // non fanno niente (successo a Carosello, Conto alla rovescia e Prima/Dopo fino
 // al 15/10/2026). `children` è l'etichetta sopra il titolo.
-function HeroSlider({ block, primary, heading, siteHref = (u) => u || '#', id, className, style }) {
+function HeroSlider({ block, primary, heading, siteHref = (u) => u || '#', id, className, style, children }) {
   const d = block.data || {}
   const slides = (d.slides || []).filter(s => s.image_url || s.title || s.subtitle)
   const n = slides.length
@@ -729,6 +730,8 @@ function HeroSlider({ block, primary, heading, siteHref = (u) => u || '#', id, c
           <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(to bottom, rgba(0,0,0,${overlay * 0.6}), rgba(0,0,0,${overlay}))` }} />
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: align === 'left' ? 'flex-start' : 'center' }}>
             <div style={{ textAlign: align, padding: '90px clamp(24px,6vw,90px)', maxWidth: align === 'left' ? 780 : 920, width: '100%' }}>
+              {/* L'etichetta dello Stile sopra il titolo, in ogni diapositiva. */}
+              {children}
               {s.title && (() => {
                 // ⚠️ L'H1 è il titolo della pagina: **uno solo**. Con quattro
                 // diapositive ne uscivano quattro, e un motore di ricerca non
@@ -835,7 +838,7 @@ function Scorrimento({ schede, visibili, autoplay = true, intervallo = 5, frecce
   const showDots = pronto && puntini && maxI > 0
   const arrow = (side, disabled) => ({
     position: 'absolute', top: '50%', [side]: -8, transform: 'translateY(-50%)', zIndex: 3,
-    width: 44, height: 44, borderRadius: '50%', border: '1px solid #e5e5ea', background: 'var(--sup)', color: 'var(--txt)',
+    width: 44, height: 44, borderRadius: '50%', border: '1px solid #e5e5ea', background: 'var(--sup)', color: 'var(--segni, var(--txt))',
     display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: disabled ? 'default' : 'pointer',
     boxShadow: '0 4px 14px rgba(0,0,0,0.12)', opacity: disabled ? 0.35 : 1,
   })
@@ -1074,7 +1077,7 @@ function BeforeAfter({ block, primary, id, className, style, children }) {
           {d.before_label && <span style={{ position: 'absolute', top: 12, left: 12, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 12, padding: '4px 10px', borderRadius: 20 }} {...ricco(d.before_label)} />}
           {d.after_label && <span style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 12, padding: '4px 10px', borderRadius: 20 }} {...ricco(d.after_label)} />}
           <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${pos}%`, width: 2, background: 'var(--sup)', transform: 'translateX(-1px)', boxShadow: '0 0 8px rgba(0,0,0,0.4)' }}>
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 38, height: 38, borderRadius: '50%', background: 'var(--sup)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: tinta(primary) }}>
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 38, height: 38, borderRadius: '50%', background: 'var(--sup)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: `var(--segni, ${tinta(primary)})` }}>
               <ChevronLeft size={14} strokeWidth={2} style={{ marginRight: -4 }} /><ChevronRight size={14} strokeWidth={2} style={{ marginLeft: -4 }} />
             </div>
           </div>
@@ -1500,7 +1503,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                       <button onClick={() => setFaqOpen(p => ({ ...p, [block.id + it.id]: !open }))}
                         style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
                         <span style={{ fontWeight: 600, fontSize: 16, color: 'var(--txt)' }} {...ricco(it.title)} />
-                        <ChevronDown size={18} strokeWidth={1.5} color="#888" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
+                        <ChevronDown size={18} strokeWidth={1.5} color="var(--segni, #888)" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
                       </button>
                       {open && <div style={{ padding: '0 20px 18px', fontSize: 15, color: 'var(--txt-medio)', lineHeight: 1.7, whiteSpace: 'pre-line' }} {...ricco(it.text)} />}
                     </div>
@@ -1600,7 +1603,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         const colonne = Array.from({ length: n }, (_, j) => j)
         // «✓» e «✗» scritti in una cella diventano il segno.
         const cella = v => /^[✓✔]$/.test(v) ? <Check size={18} strokeWidth={1.5} color={inverted ? '#ffffff' : `var(--icon-color, ${primary})`} aria-label={lang === 'en' ? 'Yes' : 'Sì'} />
-          : /^[✗✕×]$/.test(v) ? <X size={18} strokeWidth={1.5} color={cTenue} aria-label="No" /> : v
+          : /^[✗✕×]$/.test(v) ? <X size={18} strokeWidth={1.5} color={`var(--segni, ${cTenue})`} aria-label="No" /> : v
         return (
           <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
             <div className="lbr-section" style={{ maxWidth: 980 }}>
@@ -1844,15 +1847,19 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         const items = (d.items || []).filter(s => s.value && s.label)
         if (!items.length) return null
         const plain = d.variant === 'plain'
+        // Il fondo scuro della variante «a fascia» vale finché nello Stile non se
+        // ne sceglie un altro: da lì i colori li porta la sezione (`--txt`, `--tinta`).
+        const scelto = !!resolveBlockBg(block.style, primary, sec).background
+        const fascia = !plain && !scelto
         return (
           <section key={block.id} style={{ padding: '64px 0', background: plain ? 'var(--sup)' : 'linear-gradient(135deg, #1a1a2e 0%, #0f1a1a 100%)' }}>
             <div className="lbr-section">
-              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 28, fontWeight: 700, textAlign: 'center', marginBottom: 48, color: plain ? 'var(--txt)' : '#fff' }} {...ricco(d.titolo)} />}
+              {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 28, fontWeight: 700, textAlign: 'center', marginBottom: 48, color: fascia ? '#fff' : 'var(--txt)' }} {...ricco(d.titolo)} />}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
                 {items.map((s, i) => (
-                  <div key={s.id} style={{ textAlign: 'center', padding: '8px 24px', borderRight: i < items.length - 1 ? `1px solid ${plain ? '#eee' : 'rgba(255,255,255,0.1)'}` : 'none' }}>
-                    <CountUp value={s.value} style={{ fontFamily: heading, fontSize: 'clamp(40px,5vw,64px)', fontWeight: 700, color: plain ? primary : readableOn(primary, '#1a1a2e'), lineHeight: 1, marginBottom: 10 }} />
-                    <div style={{ fontSize: 13, fontWeight: 600, color: plain ? 'var(--txt-tenue)' : 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.5 }} {...ricco(s.label)} />
+                  <div key={s.id} style={{ textAlign: 'center', padding: '8px 24px', borderRight: i < items.length - 1 ? `1px solid ${fascia ? 'rgba(255,255,255,0.1)' : scelto ? 'var(--bordo)' : '#eee'}` : 'none' }}>
+                    <CountUp value={s.value} style={{ fontFamily: heading, fontSize: 'clamp(40px,5vw,64px)', fontWeight: 700, color: fascia ? readableOn(primary, '#1a1a2e') : tinta(primary), lineHeight: 1, marginBottom: 10 }} />
+                    <div style={{ fontSize: 13, fontWeight: 600, color: fascia ? 'rgba(255,255,255,0.55)' : 'var(--txt-tenue)', textTransform: 'uppercase', letterSpacing: 1.5 }} {...ricco(s.label)} />
                   </div>
                 ))}
               </div>
@@ -1889,15 +1896,21 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
       case 'cta_banner': {
         if (!d.title) return null
         const split = d.variant === 'split'
+        // Senza uno sfondo scelto nello Stile il banner tiene il suo sfumato, con
+        // la scritta bianca. Con uno sfondo scelto i testi prendono i colori della
+        // sezione (`--txt`, `--txt-medio`); su uno chiaro il pulsante prende il
+        // colore del sito (bianco su bianco non si vedrebbe).
+        const scelto = !!resolveBlockBg(block.style, primary, sec).background
+        const suChiaro = scelto && !inverted
         const ctaBtn = d.button_text && d.button_url
-          ? <a href={siteHref(d.button_url)} style={{ display: 'inline-block', padding: '15px 36px', background: 'var(--sup)', color: tinta(primary), borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.15)', whiteSpace: 'nowrap' }}>{d.button_text}</a>
+          ? <a href={siteHref(d.button_url)} style={{ display: 'inline-block', padding: '15px 36px', background: suChiaro ? primary : 'var(--sup)', color: suChiaro ? readableOn('#ffffff', primary, '#1a1a2e') : tinta(primary), borderRadius: 50, fontWeight: 700, fontSize: 16, textDecoration: 'none', boxShadow: '0 8px 32px rgba(0,0,0,0.15)', whiteSpace: 'nowrap' }}>{d.button_text}</a>
           : null
         return (
           <section key={block.id} style={{ padding: '72px 24px', background: `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)`, textAlign: split ? 'left' : 'center' }}>
             <div className="lbr-section" style={split ? { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 32, flexWrap: 'wrap' } : undefined}>
               <div style={split ? { flex: 1, minWidth: 260 } : undefined}>
-                <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, color: '#fff', marginBottom: 12 }} {...ricco(d.title)} />
-                {d.subtitle && <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.88)', maxWidth: 600, margin: split ? 0 : '0 auto', marginBottom: split ? 0 : 32 }} {...ricco(d.subtitle)} />}
+                <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, color: scelto ? 'var(--txt)' : '#fff', marginBottom: 12 }} {...ricco(d.title)} />
+                {d.subtitle && <p style={{ fontSize: 18, color: scelto ? 'var(--txt-medio)' : 'rgba(255,255,255,0.88)', maxWidth: 600, margin: split ? 0 : '0 auto', marginBottom: split ? 0 : 32 }} {...ricco(d.subtitle)} />}
                 {!split && ctaBtn}
               </div>
               {split && ctaBtn}
@@ -2119,7 +2132,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                 </div>
                 {/* ⚠️ La data è la differenza fra un dato e un'affermazione. */}
                 {d.mostra_data !== false && (
-                  <div style={{ fontSize: 11.5, color: '#9a9aa5' }}>
+                  <div style={{ fontSize: 11.5, color: 'var(--txt-tenue)' }}>
                     {lang === 'en' ? 'Read from Google on' : 'Letto da Google il'} {quando}
                   </div>
                 )}
@@ -2232,7 +2245,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                       <button onClick={() => setFaqOpen(prev => ({ ...prev, [block.id + f.id]: !open }))}
                         style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
                         <span style={{ fontWeight: 600, fontSize: 15, color: 'var(--txt)' }}>{f.question}</span>
-                        <ChevronDown size={18} strokeWidth={1.5} color='var(--txt-tenue)' style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
+                        <ChevronDown size={18} strokeWidth={1.5} color='var(--segni, var(--txt-tenue))' style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
                       </button>
                       {open && <div style={{ padding: '0 20px 18px', fontSize: 14, color: 'var(--txt-medio)', lineHeight: 1.65 }}>{f.answer}</div>}
                     </div>
@@ -2416,7 +2429,12 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
           <section key={block.id} style={{ padding: '72px 0', background: 'var(--sup)' }}>
             <div className="lbr-section">
               {d.titolo && <h2 style={{ fontFamily: heading, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)', marginBottom: 40 }} {...ricco(d.titolo)} />}
-              <MenuTab menu={menus} primary={primary} textColor="#1a1a2e" subText="#777" isDark={false} radius={12} headingFamily={heading} cardBg="#fff" surfaceBg="#f7f7f9" borderColor="#efefef" showAllergens lang={lang} />
+              {/* Su un sito scuro il menù usa la sua versione scura (quella delle app del
+                  QR) con i colori del sito: le scritte dei filtri stanno sul fondo
+                  della pagina, e in grigio su nero non si leggevano. */}
+              {sitoScuro
+                ? <MenuTab menu={menus} primary={readableOn(primary, '#161622', '#ffffff', 4.5)} textColor="var(--txt)" subText="var(--txt-tenue)" isDark radius={12} headingFamily={heading} cardBg="var(--sup-2)" surfaceBg="var(--sup)" borderColor="var(--bordo)" showAllergens lang={lang} />
+                : <MenuTab menu={menus} primary={primary} textColor="#1a1a2e" subText="#6b6b76" isDark={false} radius={12} headingFamily={heading} cardBg="#fff" surfaceBg="#f7f7f9" borderColor="#efefef" showAllergens lang={lang} />}
             </div>
           </section>
         )
@@ -2762,7 +2780,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                     <div style={{ padding: '16px 18px' }}>
                       {art.published_at && <div style={{ fontSize: 11, color: 'var(--txt-fioco)', marginBottom: 6 }}>{new Date(art.published_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>}
                       <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--txt)', marginBottom: 8 }} {...ricco(art.title)} />
-                      {art.excerpt && <div style={{ fontSize: 13, color: '#777', lineHeight: 1.5 }}>{art.excerpt}</div>}
+                      {art.excerpt && <div style={{ fontSize: 13, color: 'var(--txt-tenue)', lineHeight: 1.5 }}>{art.excerpt}</div>}
                       <div style={{ marginTop: 12, fontSize: 13, fontWeight: 700, color: tinta(primary) }}>{tr('read_arrow', lang)}</div>
                     </div>
                   </a>
@@ -2790,7 +2808,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                   {d.titolo_sezione}
                 </h2>
               )}
-              <FormBuilderBlock token={d.form_token} primary={primary} lang={lang} />
+              <FormBuilderBlock token={d.form_token} primary={primary} inverted={inverted} lang={lang} />
             </div>
           </section>
         )
@@ -3031,7 +3049,10 @@ function fbFieldVisible(campo, dati) {
   }
 }
 
-function FormBuilderBlock({ token, primary, lang = 'it' }) {
+// `inverted`: la sezione ha un fondo scuro o del colore del sito. Le etichette
+// usano le variabili della sezione; i pulsanti lì diventano bianchi, come nel
+// blocco Pulsante, perché nel colore del sito sparirebbero nel fondo.
+function FormBuilderBlock({ token, primary, inverted = false, lang = 'it' }) {
   const [form, setForm]               = useState(null)
   const [loading, setLoading]         = useState(true)
   const [dati, setDati]               = useState({})
@@ -3111,6 +3132,9 @@ function FormBuilderBlock({ token, primary, lang = 'it' }) {
   }
 
   const inp = { padding: '11px 14px', border: '1px solid var(--bordo)', borderRadius: 10, fontSize: 15, outline: 'none', width: '100%', display: 'block', fontFamily: 'inherit', boxSizing: 'border-box' }
+  const pulsanteFondo = inverted ? '#ffffff' : (primary || '#1a1a2e')
+  const pulsanteScritta = inverted ? readableOn(primary || '#1a1a2e', '#ffffff', '#1a1a2e', 4.5) : readableOn('#ffffff', primary || '#1a1a2e', '#1a1a2e')
+  const link = 'var(--tinta, #2b6cb0)'
 
   if (loading) return <p style={{ color: 'var(--txt-tenue)', textAlign: 'center' }}>{tr('loading_form', lang)}</p>
   if (error && !form) return <p style={{ color: '#c53030', textAlign: 'center' }}>{error}</p>
@@ -3143,7 +3167,7 @@ function FormBuilderBlock({ token, primary, lang = 'it' }) {
               <input type="checkbox" checked={!!dati[c.id]} onChange={e => setField(c.id, e.target.checked)} required style={{ width: 16, height: 16, marginTop: 2, flexShrink: 0 }} />
               <span>
                 {c.privacy_url ? (
-                  <a href={safeUrl(c.privacy_url) || '#'} target="_blank" rel="noopener noreferrer" style={{ color: '#2b6cb0' }}>
+                  <a href={safeUrl(c.privacy_url) || '#'} target="_blank" rel="noopener noreferrer" style={{ color: link }}>
                     {c.label || 'Accetto il trattamento dei dati personali'}
                   </a>
                 ) : (
@@ -3157,7 +3181,7 @@ function FormBuilderBlock({ token, primary, lang = 'it' }) {
               <input type="checkbox" checked={!!dati[c.id]} onChange={e => setField(c.id, e.target.checked)} style={{ width: 16, height: 16, marginTop: 2, flexShrink: 0 }} />
               <span>
                 {c.privacy_url ? (
-                  <a href={safeUrl(c.privacy_url) || '#'} target="_blank" rel="noopener noreferrer" style={{ color: '#2b6cb0' }}>
+                  <a href={safeUrl(c.privacy_url) || '#'} target="_blank" rel="noopener noreferrer" style={{ color: link }}>
                     {c.label || 'Acconsento a ricevere comunicazioni commerciali'}
                   </a>
                 ) : (
@@ -3167,7 +3191,7 @@ function FormBuilderBlock({ token, primary, lang = 'it' }) {
             </label>
           ) : (
             <>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 5 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--txt)', marginBottom: 5 }}>
                 {c.label}{c.required && <span style={{ color: '#c53030' }}> *</span>}
               </label>
               {c.tipo === 'textarea' ? (
@@ -3199,12 +3223,12 @@ function FormBuilderBlock({ token, primary, lang = 'it' }) {
         )}
         {isMultiStep && currentStep < totalSteps - 1 ? (
           <button type="button" onClick={handleNext}
-            style={{ flex: 1, padding: '13px', background: primary || '#1a1a2e', color: readableOn('#ffffff', primary || '#1a1a2e', '#1a1a2e'), border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: 'pointer' }}>
+            style={{ flex: 1, padding: '13px', background: pulsanteFondo, color: pulsanteScritta, border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: 'pointer' }}>
             {tr('next', lang)} →
           </button>
         ) : (
           <button type="submit" disabled={submitting}
-            style={{ flex: 1, padding: '13px', background: primary, color: readableOn('#ffffff', primary, '#1a1a2e'), border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: submitting ? 'not-allowed' : 'pointer' }}>
+            style={{ flex: 1, padding: '13px', background: pulsanteFondo, color: pulsanteScritta, border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: submitting ? 'not-allowed' : 'pointer' }}>
             {submitting ? tr('sending', lang) : tr('send', lang)}
           </button>
         )}

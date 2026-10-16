@@ -234,9 +234,11 @@ export const BLOCK_PADY_OPTIONS = [
   { key: 'spacious', label: 'Ampia' },
   { key: 'xl',       label: 'Extra' },
 ]
-// Blocchi con testo chiaro / sfondo intenzionalmente scuro: niente controllo sfondo
-// (un fondo chiaro renderebbe il testo illeggibile).
-export const BG_EXCLUDED_TYPES = ['hero', 'hero_slider', 'stats', 'cta_banner', 'video', 'divisore', 'annuncio', 'menu', 'embed', 'before_after', 'popup']
+// Blocchi a cui lo sfondo non si offre: una copertina e un video sono coperti
+// dalla loro foto, divisore e annuncio hanno il colore fra le loro scelte, il
+// popup non è una sezione. Banner CTA e Numeri lo accettano: senza scelta
+// tengono il loro fondo scuro, con una scelta i testi seguono quel fondo.
+export const BG_EXCLUDED_TYPES = ['hero', 'hero_slider', 'video', 'divisore', 'annuncio', 'menu', 'popup']
 export function blockSupportsBg(type) { return !BG_EXCLUDED_TYPES.includes(type) }
 
 // ── Tipografia per-blocco (Fase 1.5) — solo blocchi con rich-text ────────────
@@ -332,9 +334,11 @@ export function applyBlockStyle(el, block, opts = {}) {
   const ov = {}
   let inverted = false
   let sezioneInv = false
+  let sfondoScelto = false
   if (blockSupportsBg(block.type)) {
     const r = resolveBlockBg(st, opts.primary, opts.secondary)
     if (r.background) {
+      sfondoScelto = true
       ov.background = r.background; inverted = r.inverted
       // I colori di servizio seguono lo sfondo della sezione, non quello della pagina.
       Object.assign(ov, variabiliSezione(r.tono))
@@ -356,20 +360,23 @@ export function applyBlockStyle(el, block, opts = {}) {
   }
   if (st.glow && st.glow !== 'none') {
     const luce = velo(st.glow === 'secondary' ? (opts.secondary || opts.primary) : opts.primary)
-    // L'alone sta SOPRA lo sfondo della sezione, non al posto suo.
-    // ⚠️ Sui blocchi con un fondo loro (Banner CTA, Hero slider) prende il posto
-    // di quel fondo: il pannello lì non lo offre, ma il Banner CTA della home di
-    // Metodo TVB ce l'ha, e il suo aspetto scuro di oggi nasce da qui. Cambiarlo
-    // cambierebbe un sito online: decisione di Francesco (15/10/2026).
-    if (luce) ov.background = ov.background ? `${luce}, ${ov.background}` : luce
+    // L'alone sta SOPRA lo sfondo, non al posto suo: quello scelto nello Stile
+    // o, senza scelta, il fondo scuro che il blocco ha di suo (lo sfumato del
+    // Banner CTA). Gli altri blocchi senza scelta restano trasparenti sotto
+    // l'alone, com'erano: i siti che lo usano non cambiano.
+    const proprio = FONDO_SCURO_PROPRIO[block.type]?.(block.data || {}) ? el.props.style?.background : null
+    const sotto = ov.background || proprio
+    if (luce) ov.background = sotto ? `${luce}, ${sotto}` : luce
   }
   // Colore icone per-blocco → CSS var che le icone lucide dentro al blocco ereditano
   // (override del colore globale del tema). Chiave preset o hex diretto.
   if (st.iconColor && st.iconColor !== 'default') {
     const map = { light: '#ffffff', dark: '#1a1a2e', primary: opts.primary, secondary: opts.secondary || opts.primary }
     const c = map[st.iconColor] || (typeof st.iconColor === 'string' && st.iconColor.startsWith('#') ? st.iconColor : null)
-    // Il colore scelto vale anche dentro le schede (`--p-icon`, vedi sopra).
-    if (c) { ov['--icon-color'] = c; ov['--p-icon'] = c }
+    // Il colore scelto vale anche dentro le schede (`--p-icon`, vedi sopra), e per
+    // i segni del blocco — frecce che aprono, «✗» della tabella (`--segni`): senza
+    // una scelta quelli restano del loro grigio, per questo non usano `--icon-color`.
+    if (c) { ov['--icon-color'] = c; ov['--p-icon'] = c; ov['--segni'] = c }
   }
   const pad = BLOCK_PADY[st.paddingY]
   const hasPad = st.paddingY && st.paddingY !== 'default' && pad != null
@@ -407,7 +414,8 @@ export function applyBlockStyle(el, block, opts = {}) {
       <div key="etichetta" className="lbr-section" style={{ marginBottom: 14 }}>
         <div style={{
           fontSize: 11, fontWeight: 700, letterSpacing: 2.4, textTransform: 'uppercase',
-          color: inverted || FONDO_SCURO_PROPRIO[block.type]?.(block.data || {}) ? 'rgba(255,255,255,0.8)' : 'var(--txt-tenue)',
+          // Il fondo scuro proprio del blocco conta solo se nello Stile non se n'è scelto un altro.
+          color: inverted || (!sfondoScelto && FONDO_SCURO_PROPRIO[block.type]?.(block.data || {})) ? 'rgba(255,255,255,0.8)' : 'var(--txt-tenue)',
           // Segue l'allineamento del blocco: `about` e `foto_testo` scrivono a
           // sinistra, gli altri al centro. Un'etichetta centrata sopra un
           // titolo a sinistra sembra un errore di impaginazione — e lo è.

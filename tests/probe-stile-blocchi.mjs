@@ -82,6 +82,22 @@ const DATI = {
   newsletter: { title: 'ZZ Newsletter', subtitle: 'ZZ Iscriviti' },
   recapiti: { titolo: 'ZZ Contatti', sottotitolo: 'ZZ Sotto', mostra_mappa: false },
   show_map: {},
+  // I blocchi che leggono i dati dell'attività: l'entità e le tabelle di prova
+  // qui sotto li riempiono (menù, servizi, offerte, prodotti, articoli…).
+  hero_slider: { height: 'medium', autoplay: false, slides: [{ id: 'hs1', title: 'ZZ Diapositiva', subtitle: 'ZZ Sotto', cta1_text: 'ZZ Vai', cta1_url: '#' }] },
+  embed: { html: '<p>ZZ incorporato</p>', height: 120 },
+  punteggio: { titolo: 'ZZ Il voto', sottotitolo: 'ZZ Da Google' },
+  gallery: { titolo: 'ZZ Le foto', sottotitolo: 'ZZ Sotto' },
+  booking: {},
+  menu: { titolo: 'ZZ Il menù' },
+  services: { titolo: 'ZZ Servizi', sottotitolo: 'ZZ Sotto' },
+  activities: { titolo: 'ZZ Attività' },
+  excursions: { titolo: 'ZZ Escursioni' },
+  offerte: { titolo_sezione: 'ZZ Offerte' },
+  shop: { titolo_sezione: 'ZZ Negozio' },
+  news: { titolo: 'ZZ Articoli' },
+  form_builder: { titolo_sezione: 'ZZ Scrivici' },   // form_token: dopo aver creato il modulo
+  vetrina: { titolo: 'ZZ Vetrina' },                  // vetrina_id: dopo aver creato la vetrina
 }
 
 // Le opzioni dello Stile, una pagina per ognuna.
@@ -102,8 +118,8 @@ const VARIANTI = {
 const iVar = args.indexOf('--varianti')
 const SCELTE = Object.entries(VARIANTI).filter(([v]) => iVar < 0 || args[iVar + 1].split(',').includes(v))
 // Il fondo di riferimento per misurare un testo che sta direttamente sulla sezione.
-// Blocchi con un fondo loro: il pannello non offre lo sfondo né l'alone (BG_EXCLUDED_TYPES).
-const SENZA_SFONDO = ['hero', 'hero_slider', 'stats', 'cta_banner', 'video', 'divisore', 'annuncio', 'menu', 'embed', 'before_after', 'popup']
+// Blocchi a cui il pannello non offre lo sfondo né l'alone (BG_EXCLUDED_TYPES).
+const SENZA_SFONDO = ['hero', 'hero_slider', 'video', 'divisore', 'annuncio', 'menu', 'popup']
 const RIFERIMENTO = { scuro: ['#14141f'], colore: [PRIMARIO], sfumato: [PRIMARIO, SECONDARIO], immagine: ['#3a3a3a'] }
 
 let az = null, browser = null
@@ -115,7 +131,23 @@ try {
     azienda_id: az.id, tipo: 'ristorante', name: 'ZZ Stile', slug, active: true,
     minisito: { active: true }, theme: { primaryColor: PRIMARIO, secondaryColor: SECONDARIO, ...(SITO_SCURO ? { bgColor: '#0b0f14', textColor: '#eaf0f4' } : {}) },
     address: 'Via Roma 1, Terni', phone: '+39 0744 000000', email: 'zz@playwright.internal',
+    gallery: [FOTO_X, FOTO_X, FOTO_X],
+    services: [{ id: 'sv1', icon: 'wifi', name: 'ZZ Wifi', hours: 'ZZ Sempre' }, { id: 'sv2', icon: 'parking', name: 'ZZ Parcheggio' }],
+    menu: [{ id: 'mn1', name: 'ZZ Carta', categories: [{ id: 'mc1', name: 'ZZ Antipasti', items: [{ id: 'mi1', name: 'ZZ Bruschetta', description: 'ZZ Pane e pomodoro', price: 6, active: true }] }] }],
+    recensioni_esterne: { google: { rating: 4.6, totale: 120, aggiornato: new Date().toISOString() } },
   }).select().single(), 'entità')
+  // Offerte: una nata come attività (blocco Attività), una no (Escursioni e Offerte).
+  for (const [titolo, origine] of [['ZZ Corso di cucina', 'attivita'], ['ZZ Gita in barca', null]]) {
+    await deve(a.from('offerte').insert({ azienda_id: az.id, entity_id: ent.id, titolo, descrizione: 'ZZ Cosa comprende', luogo: 'ZZ Terni', prezzo: 30, attiva: true, pubblicata: true, impegno: 'chiedi', modo: 'richiesta', ...(origine ? { origine } : {}) }).select('id').single(), `offerta ${titolo}`)
+  }
+  await deve(a.from('prodotti').insert({ azienda_id: az.id, nome: 'ZZ Bottiglia', descrizione: 'ZZ Vino rosso', prezzo: 12, attivo: true }).select('id').single(), 'prodotto')
+  await deve(a.from('articoli').insert({ azienda_id: az.id, entity_tipo: 'ristorante', entity_id: ent.id, slug: `zz-art-${t}`, title: 'ZZ Un articolo', excerpt: 'ZZ Riassunto', published: true, published_at: new Date().toISOString(), active: true }).select('id').single(), 'articolo')
+  await deve(a.from('risorse').insert({ azienda_id: az.id, entity_tipo: 'ristorante', entity_id: ent.id, nome: 'ZZ Tavolo', modalita: 'giornaliero', prezzo: 10, quantita: 1, attiva: true, visibile_minisito: true, disponibilita: {} }).select('id').single(), 'risorsa')
+  const modulo = await deve(a.from('form_builder').insert({ azienda_id: az.id, nome: 'ZZ Modulo', attivo: true, campi: [{ id: 'nome', tipo: 'text', label: 'ZZ Nome', required: true }] }).select('token').single(), 'modulo')
+  DATI.form_builder.form_token = modulo.token
+  const vt = await deve(a.from('vetrine').insert({ entity_tipo: 'ristorante', entity_id: ent.id, titolo: 'ZZ Catalogo', preset: 'viaggi', slug: `zz-v-${t}`, status: 'pubblicata' }).select('id').single(), 'vetrina')
+  await deve(a.from('vetrina_elementi').insert({ vetrina_id: vt.id, entity_tipo: 'ristorante', entity_id: ent.id, titolo: 'ZZ Viaggio', slug: `zz-el-${t}`, status: 'pubblicata', valore_primario: '790' }).select('id').single(), 'elemento vetrina')
+  DATI.vetrina.vetrina_id = vt.id
   for (const n of [1, 2]) {
     await deve(a.from('eventi').insert({
       azienda_id: az.id, entity_tipo: 'ristorante', entity_id: ent.id, title: `ZZ Serata ${n}`, slug: `zz-serata-${n}-${t}`,
@@ -215,6 +247,9 @@ try {
           const el = n.parentElement
           const ecs = getComputedStyle(el)
           if (ecs.visibility === 'hidden' || ecs.display === 'none' || el.closest('[hidden]')) continue
+          // Un comando disattivato (un giorno già passato nel calendario) si
+          // mostra spento di proposito: la regola del contrasto non lo conta.
+          if (el.closest('button:disabled')) continue
           const br = el.getBoundingClientRect()
           if (br.width < 1 || br.height < 1) continue
           if (parseFloat(ecs.opacity) < 0.1) continue
@@ -249,10 +284,17 @@ try {
         }
         // Icone
         if (stile.iconColor) {
-          // Frecce e «✗» sono comandi e segni, non icone scelte dal cliente. E
-          // un'icona su un riquadro colorato del mosaico resta chiara per leggersi.
+          // Anche frecce e «✗» seguono la scelta. Restano fuori: un'icona su un
+          // riquadro colorato del mosaico (chiara per leggersi), le frecce bianche
+          // dello slider sopra le foto, i segni nei componenti del menù e della
+          // prenotazione (che hanno i colori dell'app), il logo di Google e le
+          // stelle gialle del voto (sono il marchio e il dato, non decorazioni).
+          // Menù e prenotazione: componenti dell'app, misurati per il contrasto.
           const suRiquadroColorato = s => { for (let e = s.parentElement; e && e !== radice; e = e.parentElement) if (/gradient/.test(getComputedStyle(e).backgroundImage)) return true; return false }
-          const svgs = [...radice.querySelectorAll('svg')].filter(s => s.getBoundingClientRect().width > 6 && !/lucide-(chevron|x)/.test(s.getAttribute('class') || '') && !suRiquadroColorato(s))
+          const fuori = ['hero_slider', 'menu', 'booking', 'punteggio'].includes(tipo)
+          // Un'icona dentro un pulsante pieno («+ Aggiungi») è parte della scritta del pulsante.
+          const inPulsantePieno = s => { const b = s.closest('button, a'); if (!b || !radice.contains(b)) return false; const c = rgb(getComputedStyle(b).backgroundColor); return !!(c && c.a > 0.5) }
+          const svgs = fuori ? [] : [...radice.querySelectorAll('svg')].filter(s => s.getBoundingClientRect().width > 6 && !suRiquadroColorato(s) && !inPulsantePieno(s))
           if (svgs.length) {
             const target = rgb('rgb(255, 0, 128)')
             const prese = svgs.filter(s => { const c = rgb(getComputedStyle(s).color); const st = rgb(getComputedStyle(s).stroke); const f = rgb(getComputedStyle(s).fill); return [c, st, f].some(x => x && x.r === 255 && x.g === 0 && x.b === 128) })

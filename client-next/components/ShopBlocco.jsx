@@ -179,14 +179,14 @@ export default function ShopBlocco({ aziendaId, prodotti = [], primary, heading,
                   </div>}
               <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', flex: 1 }}>
                 {p.categoria && (
-                  <div style={{ fontSize: 11, fontWeight: 700, color: primary, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6, overflowWrap: 'anywhere' }}>{p.categoria}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: `var(--tinta, ${primary})`, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6, overflowWrap: 'anywhere' }}>{p.categoria}</div>
                 )}
-                <div style={{ fontWeight: 700, fontSize: 16, color: '#1a1a2e', marginBottom: 6, overflowWrap: 'anywhere' }}>{p.nome}</div>
-                {p.descrizione && <p style={{ fontSize: 13, color: '#666', lineHeight: 1.5, margin: '0 0 12px' }}>{p.descrizione}</p>}
+                <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--txt, #1a1a2e)', marginBottom: 6, overflowWrap: 'anywhere' }}>{p.nome}</div>
+                {p.descrizione && <p style={{ fontSize: 13, color: 'var(--txt-medio, #555)', lineHeight: 1.5, margin: '0 0 12px' }}>{p.descrizione}</p>}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 'auto', flexWrap: 'wrap' }}>
                   <span>
-                    <span style={{ fontWeight: 700, color: primary, fontSize: 16 }}>{fmt(p.prezzo_scontato ?? p.prezzo)}</span>
-                    {p.prezzo_scontato != null && <span style={{ fontSize: 12, color: '#aaa', textDecoration: 'line-through', marginLeft: 6 }}>{fmt(p.prezzo)}</span>}
+                    <span style={{ fontWeight: 700, color: `var(--tinta, ${primary})`, fontSize: 16 }}>{fmt(p.prezzo_scontato ?? p.prezzo)}</span>
+                    {p.prezzo_scontato != null && <span style={{ fontSize: 12, color: 'var(--txt-tenue, #6b6b76)', textDecoration: 'line-through', marginLeft: 6 }}>{fmt(p.prezzo)}</span>}
                   </span>
                   {esaurito
                     ? <span style={{ fontSize: 12, fontWeight: 700, color: '#c53030' }}>Esaurito</span>
@@ -202,7 +202,7 @@ export default function ShopBlocco({ aziendaId, prodotti = [], primary, heading,
                         </button>}
                 </div>
                 {!esaurito && p.stock !== null && p.stock !== undefined && p.stock <= 5 && (
-                  <div style={{ fontSize: 12, color: '#888', marginTop: 8 }}>Restano {p.stock}</div>
+                  <div style={{ fontSize: 12, color: 'var(--txt-tenue, #6b6b76)', marginTop: 8 }}>Restano {p.stock}</div>
                 )}
               </div>
             </div>
@@ -237,7 +237,7 @@ export default function ShopBlocco({ aziendaId, prodotti = [], primary, heading,
           <div onClick={() => setAperto(false)} style={{ flex: 1, background: 'rgba(0,0,0,0.4)' }} />
           <div role="dialog" aria-label="Carrello" style={{ width: '100%', maxWidth: 420, background: 'var(--sup, #fff)', display: 'flex', flexDirection: 'column', boxShadow: '-4px 0 20px rgba(0,0,0,0.15)', paddingBottom: spazioBanner, boxSizing: 'border-box' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid #eee' }}>
-              <div style={{ fontFamily: heading, fontWeight: 700, fontSize: 20, color: '#1a1a2e' }}>
+              <div style={{ fontFamily: heading, fontWeight: 700, fontSize: 20, color: 'var(--txt, #1a1a2e)' }}>
                 {passo === 'dati' ? 'I tuoi dati' : passo === 'fatto' ? 'Ordine ricevuto' : `Il tuo carrello (${quanti})`}
               </div>
               <button type="button" aria-label="Chiudi" onClick={() => setAperto(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}><X size={20} strokeWidth={1.5} color="#555" /></button>
@@ -247,11 +247,11 @@ export default function ShopBlocco({ aziendaId, prodotti = [], primary, heading,
               {passo === 'fatto' ? (
                 <div style={{ textAlign: 'center', padding: '40px 0' }}>
                   <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
-                  <p style={{ color: '#666', fontSize: 14, lineHeight: 1.6 }}>Riceverai una conferma via email. Ti contatteremo per i dettagli del pagamento.</p>
+                  <p style={{ color: 'var(--txt-medio, #555)', fontSize: 14, lineHeight: 1.6 }}>Riceverai una conferma via email. Ti contatteremo per i dettagli del pagamento.</p>
                 </div>
               ) : passo === 'carrello' ? (
                 voci.length === 0
-                  ? <p style={{ color: '#aaa', textAlign: 'center', marginTop: 40 }}>Il carrello è vuoto</p>
+                  ? <p style={{ color: 'var(--txt-tenue, #6b6b76)', textAlign: 'center', marginTop: 40 }}>Il carrello è vuoto</p>
                   : voci.map(v => {
                       const s = scorta(v.prodotto_id)
                       return (
@@ -266,7 +266,7 @@ export default function ShopBlocco({ aziendaId, prodotti = [], primary, heading,
                             </div>
                           </div>
                           <div style={{ fontWeight: 700, fontSize: 14 }}>{fmt(v.prezzo * v.qty)}</div>
-                          <button type="button" aria-label="Togli dal carrello" onClick={() => cambia(v.prodotto_id, 0)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', display: 'flex' }}><X size={14} strokeWidth={2} /></button>
+                          <button type="button" aria-label="Togli dal carrello" onClick={() => cambia(v.prodotto_id, 0)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--txt-tenue, #6b6b76)', display: 'flex' }}><X size={14} strokeWidth={2} /></button>
                         </div>
                       )
                     })
@@ -275,7 +275,7 @@ export default function ShopBlocco({ aziendaId, prodotti = [], primary, heading,
                   <Campo label="Nome e cognome" value={nome} onChange={setNome} placeholder="Mario Rossi" />
                   <Campo label="Email *" value={email} onChange={setEmail} placeholder="mario@esempio.it" type="email" />
                   <Campo label="Telefono" value={tel} onChange={setTel} placeholder="+39 …" type="tel" />
-                  <div style={{ fontWeight: 700, fontSize: 14, margin: '6px 0 0', color: '#1a1a2e' }}>Indirizzo di spedizione (se serve)</div>
+                  <div style={{ fontWeight: 700, fontSize: 14, margin: '6px 0 0', color: 'var(--txt, #1a1a2e)' }}>Indirizzo di spedizione (se serve)</div>
                   <Campo label="Via e numero" value={via} onChange={setVia} />
                   <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 2fr)', gap: 10 }}>
                     <Campo label="CAP" value={cap} onChange={setCap} />
@@ -288,7 +288,7 @@ export default function ShopBlocco({ aziendaId, prodotti = [], primary, heading,
 
                   {saldo?.programma && (
                     <div style={{ background: `${primary}0d`, borderRadius: 12, padding: '12px 14px', border: `1px solid ${primary}22` }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 13, color: '#1a1a2e', marginBottom: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 13, color: 'var(--txt, #1a1a2e)', marginBottom: 6 }}>
                         <Gift size={14} strokeWidth={1.5} color={primary} /> Programma fedeltà
                       </div>
                       {saldo.saldo > 0
@@ -297,8 +297,8 @@ export default function ShopBlocco({ aziendaId, prodotti = [], primary, heading,
                                 <input type="checkbox" checked={usaPunti} onChange={e => setUsaPunti(e.target.checked)} />
                                 Usa {saldo.saldo} punti (−{fmt(saldo.saldo_euro)})
                               </label>
-                            : <p style={{ fontSize: 12, color: '#888', margin: 0 }}>Hai {saldo.saldo} punti: ne servono {saldo.programma.soglia_riscatto} per usarli.</p>)
-                        : <p style={{ fontSize: 12, color: '#888', margin: 0 }}>Nessun punto con questa email.</p>}
+                            : <p style={{ fontSize: 12, color: 'var(--txt-tenue, #6b6b76)', margin: 0 }}>Hai {saldo.saldo} punti: ne servono {saldo.programma.soglia_riscatto} per usarli.</p>)
+                        : <p style={{ fontSize: 12, color: 'var(--txt-tenue, #6b6b76)', margin: 0 }}>Nessun punto con questa email.</p>}
                     </div>
                   )}
 
@@ -314,11 +314,11 @@ export default function ShopBlocco({ aziendaId, prodotti = [], primary, heading,
 
                   {/* La spunta c'è, ma il controllo vero sta nella route: senza
                       `privacy_accettata === true` l'ordine non entra. */}
-                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: '#555', lineHeight: 1.5, cursor: 'pointer' }}>
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: 'var(--txt-medio, #555)', lineHeight: 1.5, cursor: 'pointer' }}>
                     <input type="checkbox" checked={privacy} onChange={e => setPrivacy(e.target.checked)} style={{ marginTop: 3 }} />
                     <span>{TESTO_CONSENSO_ORDINE}{privacyUrl && <> <a href={privacyUrl} target="_blank" rel="noopener noreferrer" style={{ color: primary }}>Leggi l’informativa</a></>}</span>
                   </label>
-                  <SpuntaPromozioni checked={promozioni} onChange={setPromozioni} accento={primary} style={{ fontSize: 12.5, color: '#555', gap: 8 }} />
+                  <SpuntaPromozioni checked={promozioni} onChange={setPromozioni} accento={primary} style={{ fontSize: 12.5, color: 'var(--txt-medio, #555)', gap: 8 }} />
                 </div>
               )}
               {errore && <p style={{ color: '#c53030', fontSize: 13, margin: '12px 0 0' }}>{errore}</p>}
@@ -327,7 +327,7 @@ export default function ShopBlocco({ aziendaId, prodotti = [], primary, heading,
             {passo !== 'fatto' && voci.length > 0 && (
               <div style={{ padding: '16px 24px', borderTop: '1px solid #eee' }}>
                 {passo === 'dati' && (scontoPunti > 0 || scontoGc > 0) && (
-                  <div style={{ fontSize: 13, color: '#666', marginBottom: 6 }}>
+                  <div style={{ fontSize: 13, color: 'var(--txt-medio, #555)', marginBottom: 6 }}>
                     <Riga a="Subtotale" b={fmt(totale)} />
                     {scontoPunti > 0 && <Riga a="Sconto punti" b={`−${fmt(scontoPunti)}`} />}
                     {scontoGc > 0 && <Riga a="Gift card" b={`−${fmt(scontoGc)}`} />}
@@ -340,7 +340,7 @@ export default function ShopBlocco({ aziendaId, prodotti = [], primary, heading,
                   ? <button type="button" onClick={() => { setPasso('dati'); setErrore('') }} style={pulsante(primary)}>Procedi all’ordine <ArrowRight size={18} strokeWidth={2} /></button>
                   : <>
                       <button type="button" onClick={ordina} disabled={invio} style={{ ...pulsante(primary), opacity: invio ? 0.6 : 1 }}>{invio ? 'Invio…' : 'Conferma ordine'}</button>
-                      <button type="button" onClick={() => { setPasso('carrello'); setErrore('') }} style={{ width: '100%', marginTop: 8, padding: '8px 0', background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 13 }}>← Torna al carrello</button>
+                      <button type="button" onClick={() => { setPasso('carrello'); setErrore('') }} style={{ width: '100%', marginTop: 8, padding: '8px 0', background: 'none', border: 'none', color: 'var(--txt-tenue, #6b6b76)', cursor: 'pointer', fontSize: 13 }}>← Torna al carrello</button>
                     </>}
               </div>
             )}
@@ -364,7 +364,7 @@ function Campo({ label, value, onChange, placeholder, type = 'text' }) {
 function Riga({ a, b }) {
   return <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>{a}</span><span>{b}</span></div>
 }
-const etichetta = { fontSize: 12, color: '#888', display: 'block', marginBottom: 3 }
+const etichetta = { fontSize: 12, color: 'var(--txt-tenue, #6b6b76)', display: 'block', marginBottom: 3 }
 const campo = { width: '100%', border: '1px solid #ddd', borderRadius: 10, padding: '9px 12px', fontSize: 14, boxSizing: 'border-box' }
 const tondo = (bg, color, border, size = 28) => ({ width: size, height: size, borderRadius: '50%', border, background: bg, color, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 })
 const pulsante = (primary) => ({ width: '100%', padding: '13px 0', background: primary, color: '#fff', border: 'none', borderRadius: 50, cursor: 'pointer', fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 })

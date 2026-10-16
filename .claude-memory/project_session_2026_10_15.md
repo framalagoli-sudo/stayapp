@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 6f9bd65f-b088-450b-a68e-2f83f514299f
-  modified: 2026-10-15T17:48:21.405Z
+  modified: 2026-10-16T06:04:09.906Z
 ---
 
 Sessione del 15/10/2026, dopo il reset del PC (chiusura del 13–14/10 fatta a
@@ -48,4 +48,18 @@ confrontando le pagine dei clienti prima/dopo; rifatta lasciando le schede come
 sono. Errore ripetuto ANCORA due volte: `\b` e `\p` persi o trasformati passando
 da heredoc/node -e (un carattere di controllo finito nella sonda). Le stringhe con
 barre rovesciate: SEMPRE Write/Edit.
-Restano sue le due decisioni sul Banner CTA (alone di TVB, sfondo dei 15 banner).
+
+**16/10** — Francesco: «sistemare tutto. banner frecce accordion». Sonda a 52
+blocchi (crea offerte, prodotti, articolo, risorsa, modulo, vetrina): trovati
+difetti veri in Vetrina, Modulo, Negozio, Menù, Prenotazione, Voto Google, Hero
+slider; tutti corretti, zero su sito chiaro e scuro. Banner CTA e Numeri
+accettano sfondo/alone; `--segni` per frecce e «✗». I 15 banner con uno sfondo
+salvato mai mostrato: Francesco «applicali ma poi correggili e riportali come
+sono ora impostando il comando giusto» → dati corretti PRIMA del deploy (il
+codice vecchio li ignorava), backup in progetti/backup-banner-stile-2026-10-16.json.
+Errore mio di comunicazione: ho scritto «sfondo salvato che non si è mai visto»
+senza spiegarlo e Francesco non ha capito — spiegare con l'esempio concreto
+(cosa c'è nei dati, cosa vede lui) prima di chiedere una scelta. Avevo anche
+letto una sua domanda («ora funzionano tutti i blocchi») come una conferma.
+Una sonda interrotta da timeout ha lasciato un'azienda ZZ-STILE: tolta con
+cancellaAziendaDiProva. Dopo un rosso a metà, controllare sempre le ZZ rimaste.
