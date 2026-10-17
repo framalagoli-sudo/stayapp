@@ -392,3 +392,26 @@ Nessun dato di A è risultato letto, modificato, cancellato o copiato da B in pr
 della correzione. Non coperte di proposito (scritte nella sonda col motivo): i link con un segreto
 (token di modulo, preventivo, recensione), le pagine pubbliche di un sito, i domini (una riga di
 prova la prenderebbe il giro di manutenzione), le porte della sola piattaforma.
+
+## Aggiornamento 17/10/2026 — primo giro dell'agente che prova a entrare
+
+Chiesto da Francesco (la sicurezza è la priorità assoluta, [[feedback_sicurezza_priorita]]): un agente
+che prova a **entrare** nel sistema vivo come un attaccante, non solo a leggere il codice. Primo giro
+con Ettore come cervello (la chiave AI non è su questo PC: un loop LLM autonomo è il passo dopo, da
+valutare col costo — [[project_agente_attaccante]]). Bersaglio: il **dirottamento** (mass-assignment
+visto da chi attacca), che le sonde non coprivano. Due aziende di prova A e B; B prova a scrivere in A.
+
+| Punto | Com'era | Com'è |
+|---|---|---|
+| `POST /api/newsletter` | 🟠 non validava `entity_id`: l'azienda B poteva creare una propria newsletter mettendo l'`entity_id` di A. L'archivio pubblico (`/api/newsletter/archive/[tipo]/[id]`, che l'ospite apre) filtra **solo per entità**, non per azienda: una volta inviata (status 'sent'), il contenuto di B sarebbe comparso nelle pagine pubbliche del sito di A. Non furto di dati di A — pubblicazione del contenuto di B sul suo sito, come il buco form-builder (nota 60) e eventi/risorse (24/08). Il **PATCH** della stessa route lo controllava già; il POST no | `resolveAziendaId` + `entitaDellaAzienda` nel POST, come ovunque: `entity_id` fuori dalla propria azienda → 404. Mai sfruttato: nessuna newsletter con entità di un'altra azienda nei dati |
+
+Provato e **non** ceduto (la sonda li tiene): B non crea contatti/eventi/risorse/sezioni/offerte/
+recensioni/articoli/automazioni/moduli nell'azienda o sul sito di A; B non si fa super_admin, non cambia
+la propria azienda, non si mette `plan`/`tipo` di sistema sull'entità, non si alza il budget AI; le liste
+(`?azienda_id=`, `?entity_id=`) non escono dall'azienda di chi chiede (il ramo query vale solo per
+super_admin). E il titolare di A crea le sue cose (la difesa non chiude il caso buono). Sonda
+`tests/probe-dirottamento.mjs`, in `deploy.ps1`.
+
+⚠️ Il primo giro ha anche mostrato un difetto della **sonda** prima che del codice: un marcatore condiviso
+fra A e B dava tre falsi allarmi (B leggeva le proprie liste, che il test stesso aveva riempito). Corretto
+con un marcatore scritto solo in A. Una sonda che misura la cosa sbagliata è rumore, non difesa.

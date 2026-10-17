@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireAuth, resolveAziendaId, entitaDellaAzienda } from '@/lib/server-auth'
 import { listaValida } from '@/lib/newsletter-destinatari'
 
 async function getProfile(userId) {
@@ -38,10 +38,16 @@ export async function POST(request) {
     if (!profile) return Response.json({ error: 'Profilo non trovato' }, { status: 403 })
 
     const body = await request.json()
-    const azienda_id = profile.azienda_id || body.azienda_id
+    const azienda_id = resolveAziendaId(profile, body.azienda_id)
     if (!azienda_id) return Response.json({ error: 'azienda_id mancante' }, { status: 400 })
 
     const { subject = '', preheader = '', template_id = 'semplice', content = {}, entity_tipo = 'struttura', entity_id = null, scheduled_at = null } = body
+    // L'entità riferita dev'essere della propria azienda. Senza, la newsletter di
+    // B — con l'entity_id di A — comparirebbe nell'archivio pubblico sul sito di A,
+    // che filtra per entità (status 'sent'). Il PATCH lo controllava già, il POST no.
+    if (!(await entitaDellaAzienda(profile, entity_tipo, entity_id))) {
+      return Response.json({ error: 'Entità non valida' }, { status: 404 })
+    }
     const { data, error } = await supabaseAdmin.from('newsletters').insert({
       azienda_id, subject, preheader, template_id, content, entity_tipo,
       entity_id: entity_id || null, status: 'draft', scheduled_at: scheduled_at || null,

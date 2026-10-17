@@ -124,11 +124,15 @@ if ($testExit -ne 0) {
 #   - enumerazione        nessuna porta risponde in modo diverso a un id inventato
 #                         e a uno vero di un'altra azienda; i dati di A restano
 #                         intatti dopo le richieste di B (16/10/2026)
+#   - dirottamento        un'azienda non scrive i propri dati dentro quelli di
+#                         un'altra (azienda_id/entity_id dal corpo), non si cambia
+#                         un campo privilegiato, non legge le liste altrui via
+#                         query; e il titolare fa le sue cose (17/10/2026)
 # Non bloccano il deploy (e' gia' avvenuto): segnalano subito, forte.
 Write-Host "`n=== Sonde di sicurezza ===" -ForegroundColor Cyan
 Set-Location tests
 $sicurezzaKo = 0
-foreach ($sonda in @("probe-security-sweep.mjs", "probe-rls-secondo-muro.mjs", "probe-colonne-pubbliche.mjs", "probe-molti-indirizzi.mjs", "probe-seo.mjs", "probe-documenti.mjs", "probe-cancella-entita-altrui.mjs", "probe-cancella-azienda.mjs", "probe-enumerazione.mjs")) {
+foreach ($sonda in @("probe-security-sweep.mjs", "probe-rls-secondo-muro.mjs", "probe-colonne-pubbliche.mjs", "probe-molti-indirizzi.mjs", "probe-seo.mjs", "probe-documenti.mjs", "probe-cancella-entita-altrui.mjs", "probe-cancella-azienda.mjs", "probe-enumerazione.mjs", "probe-dirottamento.mjs")) {
     Write-Host "-- $sonda" -ForegroundColor DarkGray
     node $sonda
     if ($LASTEXITCODE -ne 0) { $sicurezzaKo++ }

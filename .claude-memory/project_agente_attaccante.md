@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 6f9bd65f-b088-450b-a68e-2f83f514299f
-  modified: 2026-10-16T21:12:12.289Z
+  modified: 2026-10-17T05:07:29.343Z
 ---
 
 **Francesco, 16/10/2026**: *«dobbiamo creare un agente AI che gira per tentare di
@@ -28,7 +28,17 @@ di dover cercare: ragiona sulla risposta, cambia tattacco, combina passi.
 - **Non** attacca sistemi di terzi, **non** fa volume/DoS contro la produzione vera,
   **non** cerca di aggirare Stripe/Meta/fornitori. È contenuto al nostro recinto multi-tenant.
 
-**Ambito da decidere con Francesco** (gliel'ho chiesto):
+**Primo giro fatto il 17/10/2026** (CLAUDE.md nota 81, commit dopo): cervello = Ettore (chiave AI non
+su questo PC). Bersaglio = dirottamento. Sonda `probe-dirottamento.mjs` (in deploy.ps1). **Trovato un
+buco vero**: `POST /api/newsletter` non validava `entity_id` → B pubblicava sul sito di A via archivio.
+Chiuso. Lezione: una sonda con marcatore condiviso fra A e B dà falsi positivi — il segnale va messo
+SOLO dove il buco lo metterebbe. Decisioni di Francesco sull'ambito (le sue parole, 16/10):
+«1 sul sito vero online; 2 ogni giorno e sganciato da noi; 3 evitare che ci buchino e che entrino;
+4 fammi sapere cosa consigli». Parere di Ettore dato: no all'attacco dell'infra Vercel/Supabase (è
+di terzi, ci sospendono), sì all'agente sul NOSTRO codice contro produzione ma solo aziende ZZ e senza
+volume; «sganciato» = libero nelle tattiche, dentro un recinto (no DoS, solo ZZ, tetto richieste/min).
+
+**Ambito ancora da decidere con Francesco**:
 1. Dove gira: contro il **locale** (`:3000`, sul DB di produzione — attenzione) o contro
    un deployment di prova. Contro produzione solo prove che non lasciano residui.
 2. Quando: a mano, o un passo in più del deploy, o un cron che prova ogni notte e avvisa.

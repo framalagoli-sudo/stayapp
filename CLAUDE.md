@@ -815,6 +815,11 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - Vetrina in **bozza**: ora non esce né dalla griglia pubblica né dal dettaglio di un elemento (prima il titolo sì). Commento del piano editoriale: solo su un post della propria azienda.
     - Rimangono di proposito: i link con un segreto (token di modulo, preventivo, recensione) — il token non si indovina, e «modulo non attivo» serve a chi lo apre.
 
+81. **🕵️ L'agente che prova a entrare, primo giro** (17/10/2026, chiesto da Francesco: «un agente AI che gira per tentare di entrare come un bot, un hacker»; la sicurezza è la priorità assoluta). Primo giro con Ettore come cervello attaccante (la chiave AI non è su questo PC: il loop LLM autonomo che gira ogni notte è il passo dopo, da valutare col costo — memoria `project_agente_attaccante`). Solo aziende di prova `ZZ-DIR-…`, recapiti finti, niente contro l'infrastruttura di Vercel/Supabase (è di terzi: attaccarla viola i loro termini e ci sospenderebbero). Bersaglio: il **dirottamento**, che le sonde non coprivano — un'azienda che scrive i propri dati **dentro** quelli di un'altra.
+    - 🟠 **`POST /api/newsletter`** non validava `entity_id`: B poteva creare una newsletter con l'entità di A, e via l'archivio pubblico (che filtra per entità, non per azienda) il contenuto di B compariva sul sito di A. Il PATCH lo controllava già, il POST no. Ora `resolveAziendaId` + `entitaDellaAzienda`, come ovunque. Dettaglio in `SECURITY-CHECK.md` (17/10).
+    - Non ha ceduto: creare oggetti nell'azienda/sito di A, promuoversi a super_admin, cambiarsi azienda/piano/tipo/budget, leggere le liste altrui via `?azienda_id=`. Sonda `tests/probe-dirottamento.mjs`, in `deploy.ps1`. Prova anche il rovescio (il titolare crea le sue cose).
+    - ⚠️ Il primo giro ha trovato prima un difetto della **sonda** che del codice: un marcatore condiviso fra A e B dava falsi allarmi (B leggeva le proprie liste). Una sonda che misura la cosa sbagliata è rumore. Vale per ogni sonda nuova: il segnale che cerca deve stare **solo** dove il buco lo metterebbe.
+
 ---
 
 ## Roadmap
