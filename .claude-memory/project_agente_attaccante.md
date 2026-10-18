@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 6f9bd65f-b088-450b-a68e-2f83f514299f
-  modified: 2026-10-18T08:47:55.342Z
+  modified: 2026-10-18T11:36:45.698Z
 ---
 
 **Francesco, 16/10/2026**: *«dobbiamo creare un agente AI che gira per tentare di
@@ -99,9 +99,11 @@ costo li fa Ettore a mano (come 1 e 2); il loop LLM a pagamento si accende dopo 
 ATTIVO (`node stripe-sandbox-link.mjs`); il **pentest esterno** prima di aprire le registrazioni.
 
 **Fuori dai giri perché NON è codice nostro (serve Francesco, manuale):** i log dei fornitori
-(Resend/Stripe/Meta contengono dati personali), la chiave fisica sugli account, la rotazione di
-META_APP_SECRET, il contratto art. 28 GDPR coi clienti, e il **pentest esterno vero** prima di aprire
-le registrazioni (SECURITY §4.2). ⚠️ Anche fatti tutti i 14 giri, NON è un pentest esterno e il catalogo
+(Resend/Stripe/Meta contengono dati personali), la rotazione di `META_APP_SECRET`, il contratto art. 28
+GDPR coi clienti, e il **pentest esterno vero** prima di aprire le registrazioni (SECURITY §4.2).
+✅ **La chiave fisica sugli account è GIÀ fatta** (Google al massimo + Advanced Protection, login via
+Google ovunque → tutti i servizi coperti; 17/07/2026, riconfermato 17/10 — [[project_session_2026_07_17]]).
+Checklist e stato in `SICUREZZA-ACCOUNT.md`. ⚠️ Anche fatti tutti i 14 giri, NON è un pentest esterno e il catalogo
 delle classi non è chiuso: codice nuovo = superficie nuova. I giri sono un **baseline**, poi le sonde +
 i giri periodici lo tengono.
 

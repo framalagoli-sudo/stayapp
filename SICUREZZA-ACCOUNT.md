@@ -1,13 +1,32 @@
 # Blindare gli account — checklist operativa (per Francesco)
 
 > Scritta il 17/10/2026, dopo i 14 giri dell'agente anti-intrusione. Il **codice**
-> dell'app ora ha un buon baseline con sonde che lo sorvegliano a ogni deploy. Il
-> punto debole che resta **non è più il codice: sei tu**. Quasi tutta OltreNova
-> poggia su pochi tuoi account, e se qualcuno entra in uno di quelli — quasi sempre
-> con il phishing, non con un exploit — non serve nessun buco nel nostro codice.
+> dell'app ha un buon baseline con sonde che lo sorvegliano a ogni deploy; il
+> punto debole che resta è il **furto di un account**, non un exploit.
 >
-> ⚠️ Questo documento NON contiene password, chiavi o codici. Solo cosa fare e in
-> che ordine. Non incollarci mai dentro un segreto.
+> ⚠️ Questo documento NON contiene password, chiavi o codici. Non incollarci mai
+> dentro un segreto.
+
+---
+
+## ✅ STATO — lo strato di accesso è GIÀ chiuso (dal 17/07/2026)
+
+Francesco ha blindato **Google** (`fra.malagoli@gmail.com`), che è la **chiave
+madre**, al massimo: 2FA + **passkey** + app authenticator + **codici di backup**
++ **Advanced Protection Program**. Ed entra su **tutti** gli altri servizi con
+«Accedi con Google» — quindi GitHub, Supabase, Vercel, Cloudflare e Resend sono
+**coperti dallo stesso 2FA**. Riconfermato il 17/10/2026 (memoria
+`project_session_2026_07_17`).
+
+**Quindi l'accesso è a posto.** Le sezioni per-servizio qui sotto restano solo
+come **verifica saltuaria**, non come lavoro da fare. Quello che resta davvero
+aperto è nella sezione **«Oltre le chiavi»** e in **«Cosa NON sostituisce»**.
+
+⚠️ **L'unica regola viva**: se un domani crei una **password diretta** su un
+servizio (login non più via Google), quel servizio esce dalla copertura di Google
+— va riprotetto a parte. E le **chiavi/token permanenti** (personal access token
+GitHub, token Vercel, service key Supabase) **non** passano dal 2FA di Google:
+sono segreti a sé, da ruotare se sospetti siano trapelati.
 
 ---
 
@@ -40,11 +59,12 @@ account**:
 
 ---
 
-## Ordine di lavoro
+## Verifica saltuaria per servizio (già coperto via Google)
 
-Fai **un account alla volta**, in quest'ordine (dalla radice ai rami). Per
-ognuno il percorso esatto dei menu cambia nel tempo: cerca la sezione
-**«Sicurezza»** / **«Security»** / **«Autenticazione a due fattori»** e lavora lì.
+⚠️ Questo elenco **non è da fare ora**: l'accesso è già chiuso (vedi STATO). Serve
+come promemoria di cosa ricontrollare ogni tanto, o se cambi il modo di entrare in
+un servizio. I percorsi esatti dei menu cambiano: cerca la sezione **«Sicurezza»**
+/ **«Security»** / **«2FA»**.
 
 ### 1. Google — `fra.malagoli@gmail.com` (la radice)
 - Account Google → **Sicurezza** → **Verifica in due passaggi**: attivala se non lo è.

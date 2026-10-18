@@ -4,7 +4,7 @@ description: "Da dove riprendere — 14/10 sera: cruscotto + consigli LIVE (nota
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-10-18T09:06:08.416Z
+  modified: 2026-10-18T11:36:50.754Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
@@ -27,7 +27,7 @@ metadata:
 
 ## ▶️ 16/10 — sicurezza: enumerazione chiusa (nota 80, commit ddca0a05), Next 15.5.27, SENTRY_DSN tolta
 - Francesco: «manutenzione e sicurezza hanno la priorità». Sonda `probe-enumerazione.mjs` (in deploy.ps1). Trovato e chiuso: resend-invite verso utenti di altre aziende (🔴), commenti su post altrui, vetrina in bozza pubblica, sei route che rivelavano l'esistenza. Se fosse mai stato usato: solo dalla cronologia Resend.
-- Prossimi di sicurezza che servono a lui: chiave fisica sugli account, rotazione META_APP_SECRET, contratto art. 28 coi clienti. Classi ancora da guardare: log dei fornitori, contenuto dei file caricati.
+- Prossimi di sicurezza che servono a lui: rotazione META_APP_SECRET, contratto art. 28 coi clienti, log dei fornitori. ✅ La **chiave fisica sugli account è GIÀ fatta** (Google al massimo + Advanced Protection, login via Google ovunque; 17/07, riconfermato 17/10 — vedi `SICUREZZA-ACCOUNT.md` e [[project_session_2026_07_17]]). NON riproporla come da fare.
 - Poi, proposto: intervista che costruisce il sito (STRATEGIA §6.4 p.5).
 
 ## ▶️ 15/10 sera — «Stile sezione» uguale per tutti i blocchi LIVE (nota 79, commit 2fe3fb22)
