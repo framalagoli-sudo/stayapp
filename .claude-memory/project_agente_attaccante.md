@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 6f9bd65f-b088-450b-a68e-2f83f514299f
-  modified: 2026-10-18T11:36:45.698Z
+  modified: 2026-10-18T11:41:48.119Z
 ---
 
 **Francesco, 16/10/2026**: *«dobbiamo creare un agente AI che gira per tentare di
@@ -68,6 +68,29 @@ quando si tocca la sicurezza (come i due giri del 17/10). Quando si automatizza:
 4 fammi sapere cosa consigli». Parere di Ettore dato: no all'attacco dell'infra Vercel/Supabase (è
 di terzi, ci sospendono), sì all'agente sul NOSTRO codice contro produzione ma solo aziende ZZ e senza
 volume; «sganciato» = libero nelle tattiche, dentro un recinto (no DoS, solo ZZ, tetto richieste/min).
+
+## 📅 QUANDO E COME fare i giri d'ora in poi (regola operativa)
+
+Il baseline delle 14 classi è chiuso (17/10/2026). D'ora in poi i giri funzionano su
+tre livelli:
+
+1. **Continuo, automatico, gratis** — le **17 sonde** in `deploy.ps1` girano a OGNI
+   deploy. Sono la guardia fissa: se un buco già chiuso rientra, il deploy lo segnala.
+   Non si tocca, ci si aggiunge sopra.
+2. **Manuale, gratis, lo fa Ettore — IL TRIGGER:** ogni volta che si **tocca codice
+   di sicurezza**, PRIMA di dire «fatto», si fa un giro mirato su quel codice.
+   «Codice di sicurezza» = una route API nuova o modificata, authz/`server-auth`,
+   upload, pagamenti/webhook, il renderer pubblico/i sanitizzatori, una query con
+   input dal client. COME: si prova dal vivo col **caso ostile** (come B contro A,
+   solo aziende `ZZ`), e ogni sospetto che regge diventa una **sonda deterministica**
+   nuova in `deploy.ps1`. Più un **giro di richiamo** saltuario (ogni 1–2 mesi o prima
+   di un traguardo) anche senza modifiche, perché le dipendenze e i fornitori cambiano.
+3. **Autonomo, a pagamento, DOPO il lancio** — il loop LLM: vedi «PIANO DECISO» qui
+   sopra (non ogni deploy; ≥1 settimana + diff di sicurezza; mirato al diff; tetto
+   5 $/mese fail-closed). Prima di accenderlo, misurare il costo di un giro vero.
+
+⚠️ Non è a calendario fisso: la superficie nuova nasce **col codice nuovo**, quindi il
+trigger vero è il deploy che tocca la sicurezza, non una data.
 
 ## 🗺️ ROADMAP DEI GIRI — «verificare TUTTO» (chiesto da Francesco il 17/10/2026)
 
