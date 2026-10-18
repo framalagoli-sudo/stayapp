@@ -415,3 +415,27 @@ super_admin). E il titolare di A crea le sue cose (la difesa non chiude il caso 
 ⚠️ Il primo giro ha anche mostrato un difetto della **sonda** prima che del codice: un marcatore condiviso
 fra A e B dava tre falsi allarmi (B leggeva le proprie liste, che il test stesso aveva riempito). Corretto
 con un marcatore scritto solo in A. Una sonda che misura la cosa sbagliata è rumore, non difesa.
+
+## Aggiornamento 17/10/2026 — secondo giro: codice ostile nell'HTML altrui (XSS stored)
+
+Classe **XSS stored** (gravità 3 nell'ordine di Francesco: codice ostile nell'HTML di chi apre il sito).
+Un'azienda mette un payload in un campo di un blocco, in un URL o nel corpo di un articolo; se scappasse,
+girerebbe nel browser del visitatore. **Nessun buco trovato — le difese reggono su tutte le vie pubbliche.**
+
+| Via pubblica | Difesa, confermata leggendo e provando dal vivo |
+|---|---|
+| Testo dei blocchi (ricco) | `lib/testo-ricco.js`: escapa tutto e riaccende solo b/strong/i/em/u/s/br/small/sup/sub/mark, **senza attributi** → niente `href`, niente `on*` |
+| URL dei blocchi (CTA, hero, pulsanti) | `safeUrl`/`siteHref` (`LandingBlockRenderer`): whitelist http/https/mailto/tel/`/`/`#`; `javascript:`/`data:` → `#` |
+| Video | `getEmbedUrl`: estrae **solo** l'ID YouTube/Vimeo con regex e ricostruisce un URL fisso; altro → nessun iframe |
+| Blocco «Codice incorporato» | `<iframe srcDoc sandbox="allow-scripts allow-popups allow-forms allow-presentation">` **senza `allow-same-origin`**: lo script gira isolato, non tocca il nostro DOM/cookie/sessione. Provato con uno script che tenta `top.__pwned` e il titolo della pagina madre: fallisce |
+| Corpo del blog (HTML ricco vero) | `sanitize-html` (`lib/articolo-pubblico.js`): niente `script`/`iframe`/`form`/`on*`, schemi solo http/https/mailto/tel, `style` ristretto con regex (niente `url()`/`position`) |
+
+Sonda nuova **`tests/probe-xss-pubblico.mjs`**, in `deploy.ps1`: crea un'azienda `ZZ`, mette i payload,
+apre le pagine **col browser vero** (nessun `alert`, `window.__xss` assente, nessun errore), controlla il
+**DOM renderizzato** (nessun `<a>`/`<iframe>` verso `javascript:`/`data:`, CTA ostile a `#`, nessun iframe
+del video), verifica l'embed murato, e prova il blog sulla funzione vera col caso ostile.
+
+⚠️ **Non si cerca un payload nel corpo grezzo con un grep**: i dati dei blocchi viaggiano anche nel pacchetto
+serializzato per il browser (JSON inerte) e un testo reso da React compare escapato — `alert('…')` e
+`onerror=` ci stanno come **testo**. La prima stesura della sonda dava 6 falsi rossi proprio per questo:
+corretta a misurare il browser e il DOM. Terza volta che una sonda misurava la cosa sbagliata (note 36, 45).

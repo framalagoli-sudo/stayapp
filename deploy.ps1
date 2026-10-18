@@ -128,11 +128,17 @@ if ($testExit -ne 0) {
 #                         un'altra (azienda_id/entity_id dal corpo), non si cambia
 #                         un campo privilegiato, non legge le liste altrui via
 #                         query; e il titolare fa le sue cose (17/10/2026)
+#   - xss-pubblico        nessun contenuto scritto da un'azienda (testo, URL dei
+#                         blocchi, codice incorporato, corpo del blog) diventa
+#                         codice eseguibile nella pagina di un visitatore: lo
+#                         prova col browser vero (nessun alert, nessun errore) e
+#                         con l'iframe dell'embed murato (sandbox senza
+#                         allow-same-origin) (17/10/2026)
 # Non bloccano il deploy (e' gia' avvenuto): segnalano subito, forte.
 Write-Host "`n=== Sonde di sicurezza ===" -ForegroundColor Cyan
 Set-Location tests
 $sicurezzaKo = 0
-foreach ($sonda in @("probe-security-sweep.mjs", "probe-rls-secondo-muro.mjs", "probe-colonne-pubbliche.mjs", "probe-molti-indirizzi.mjs", "probe-seo.mjs", "probe-documenti.mjs", "probe-cancella-entita-altrui.mjs", "probe-cancella-azienda.mjs", "probe-enumerazione.mjs", "probe-dirottamento.mjs")) {
+foreach ($sonda in @("probe-security-sweep.mjs", "probe-rls-secondo-muro.mjs", "probe-colonne-pubbliche.mjs", "probe-molti-indirizzi.mjs", "probe-seo.mjs", "probe-documenti.mjs", "probe-cancella-entita-altrui.mjs", "probe-cancella-azienda.mjs", "probe-enumerazione.mjs", "probe-dirottamento.mjs", "probe-xss-pubblico.mjs")) {
     Write-Host "-- $sonda" -ForegroundColor DarkGray
     node $sonda
     if ($LASTEXITCODE -ne 0) { $sicurezzaKo++ }
