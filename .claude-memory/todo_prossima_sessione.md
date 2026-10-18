@@ -4,11 +4,26 @@ description: "Da dove riprendere — 14/10 sera: cruscotto + consigli LIVE (nota
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-10-15T16:31:13.402Z
+  modified: 2026-10-18T09:06:08.416Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
+
+## ▶️ 17/10 — agente che prova a entrare: TUTTI i giri del baseline fatti (note 81–83)
+- Francesco: «fai tutti i giri senza chiedere, se trovi buchi risolvi e poi rendiconti». Fatti i 6 giri rimasti (G9–G14, commit 3c03e609 + docs 02c64e71). **Due buchi veri chiusi**: 🔴 G10 copertina cross-tenant (`/api/upload/cover` scriveva `cover_url` su qualunque entità senza controllo di proprietà → defacement); 🟠 G12 SSRF nei webhook in uscita (nuovo `lib/url-sicuro.js`). Irrobustiti: date dei filtri booking (G9), rate-limit su 4 scritture pubbliche (G14). G11/G13 nessun buco.
+- **17 sonde di sicurezza verdi in produzione** (deploy fermato dal sistema a metà per memoria, ma Vercel aveva già pubblicato e il push era avvenuto; 13 sonde girate nel deploy + 4 a mano, tutte verdi). 6 sonde nuove in deploy.ps1.
+- ⚠️ Il deploy completo (smoke + 17 sonde, alcune con browser) è TROPPO per la RAM del PC (2–3 GB liberi): il sistema lo ferma a metà. NON è un errore: Vercel pubblica e il push avviene prima delle sonde. Se ricapita, completare le sonde a mano (le 4 finali sono fetch-only, leggere).
+- Roadmap dei giri e classi ancora fuori baseline (log fornitori, pentest esterno): [[project_agente_attaccante]].
+- Il loop LLM autonomo resta per DOPO il lancio (deciso, vedi sotto).
+
+## ▶️ 17/10 — agente: i 2 primi giri (storico, note 81–82)
+- Primo giro: dirottamento → buco newsletter `entity_id` chiuso (commit 5f03fd47), sonda `probe-dirottamento.mjs`. Secondo giro: **XSS stored** → **nessun buco**, difese reggono su tutte le vie (testo-ricco, safeUrl/siteHref, getEmbedUrl, embed sandbox senza allow-same-origin, sanitize-html del blog). Sonda nuova `probe-xss-pubblico.mjs` (in deploy.ps1), verde in produzione.
+- ⚠️ La sonda XSS NON fa grep sul corpo grezzo (i dati dei blocchi sono JSON inerte nella pagina): misura il **browser** e il **DOM**. 6 falsi rossi alla prima stesura, corretti.
+- **DECISO (Francesco «mi torna»): il loop LLM autonomo si fa DOPO IL LANCIO**, con utilizzo vero (oggi la piattaforma è in test, qualche suo piccolo cliente, 90% seguiti da lui). Fino ad allora **zero euro**: sonde gratis a ogni deploy + giri manuali di Ettore a costo zero. Quando si fa: NON a ogni deploy (= ~90 $/mese col suo ritmo); gira solo ≥1 settimana + diff di sicurezza, mirato al diff, tetto 5 $/mese fail-closed via `chiamaAI` → ~2–4 $/mese Sonnet (<1 $ Haiku). Dettaglio in [[project_agente_attaccante]].
+- ✅ Committato e pushato (commit 0102af27, rebased sopra il merge Dependabot #64): `probe-xss-pubblico.mjs` + deploy.ps1 + docs. NESSUN deploy di produzione (nessun cambio al codice dell'app).
+- ⚠️ Su origin/main c'è il merge Dependabot #64 (bump minori) NON ancora deployato in produzione: partirà al prossimo deploy vero. Aperte le PR Dependabot `stripe-23` e `next-16` (next-16 = upgrade grosso rimandato, serve migrare i params).
+- Classi ancora da guardare nei giri successivi: iniezione nei filtri, abuso/rate-limit (senza volume), contenuto dei file caricati, log dei fornitori.
 
 ## ▶️ 16/10 — sicurezza: enumerazione chiusa (nota 80, commit ddca0a05), Next 15.5.27, SENTRY_DSN tolta
 - Francesco: «manutenzione e sicurezza hanno la priorità». Sonda `probe-enumerazione.mjs` (in deploy.ps1). Trovato e chiuso: resend-invite verso utenti di altre aziende (🔴), commenti su post altrui, vetrina in bozza pubblica, sei route che rivelavano l'esistenza. Se fosse mai stato usato: solo dalla cronologia Resend.

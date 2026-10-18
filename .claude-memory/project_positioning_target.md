@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 2a1be9ea-f8b0-46bd-9c9b-087bb6fdbfb5
-  modified: 2026-10-14T16:03:35.470Z
+  modified: 2026-10-18T08:06:17.263Z
 ---
 
 **Target di StayApp = l'azienda che spende max ~€100/mese, fa da sé, vuole personalizzare ma con SEMPLICITÀ.** NON lo studio strutturato che assume un designer (quello va su WordPress/Webflow/Framer — non è il nostro cliente).
@@ -58,5 +58,12 @@ Aperto (parere mio): chi paga OltreNova — il cliente finale direttamente (il
 professionista gestisce e guadagna sul servizio) o il professionista? Il primo tiene
 il cliente nostro anche se il partner se ne va. Serve un ruolo «gestore» limitato ai
 suoi clienti: recinto di sicurezza nuovo, oggi esiste un solo super_admin.
+
+**Stato attuale della piattaforma (17/10/2026, parole di Francesco):** OltreNova è
+ancora **in fase di test**, con **qualche suo piccolo cliente**, e per il **~90% li
+segue lui**. Non è ancora «lanciata». → Molte decisioni «da accendere dopo» aspettano
+un **utilizzo vero post-lancio**, non il primo cliente: p.es. l'[[project_agente_attaccante|agente di sicurezza autonomo]]
+a pagamento, la registrazione aperta, le funzioni a pagamento. Finché siamo in test, si
+tiene tutto a **costo zero** e gestito a mano da noi.
 
 Collegato a [[project_block_system_roadmap]], [[project_strategia_cardine]].

@@ -2,7 +2,7 @@
 
 > Mi chiamo **Ettore** ([nome e ruolo](user_nome_assistente.md)): ingegnere di OltreNova, sicurezza prima di tutto; consulente e socio.
 > **Documento cardine**: [STRATEGIA.md](project_strategia_cardine.md) — leggerlo prima di proporre funzioni nuove.
-> 🔒 [**La sicurezza è la priorità assoluta**](feedback_sicurezza_priorita.md) — prima di ogni funzione nuova; agente che prova a entrare (16/10).
+> 🔒 [**La sicurezza è la priorità assoluta**](feedback_sicurezza_priorita.md) — prima di ogni funzione nuova; [agente che prova a entrare](project_agente_attaccante.md) (2 giri il 17/10: newsletter, XSS pubblico).
 > ⛔ [I cambi che un cliente noterebbe li autorizza Francesco PRIMA](feedback_autorizzare_cambi_importanti.md).
 > ⚠️ [Verificare il contesto, non solo il pezzo + l'ultimo miglio](feedback_verificare_il_contesto.md).
 > [La sequenza del fornitore va letta tutta](reference_verifica_la_sequenza_del_fornitore.md) — WhatsApp «pronto» non avrebbe inviato niente.
