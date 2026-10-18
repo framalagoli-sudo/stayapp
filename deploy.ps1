@@ -151,11 +151,16 @@ if ($testExit -ne 0) {
 #                         emesso non vale piu', e non si puo' rifare login (giro 13)
 #   - rate-limit          ogni scrittura pubblica ha un rateLimit(): una route
 #                         pubblica nuova senza limite viene segnalata (giro 14)
+#   - calendario-uscita   (correttezza, non sicurezza) il calendario del titolare
+#                         occupa gli stessi giorni del sito: una prenotazione su
+#                         una risorsa che "conta il giorno di uscita" occupa anche
+#                         l'ultimo giorno, cosi' non si ri-affitta al telefono una
+#                         data gia' presa (Automax, 17/10)
 # Non bloccano il deploy (e' gia' avvenuto): segnalano subito, forte.
 Write-Host "`n=== Sonde di sicurezza ===" -ForegroundColor Cyan
 Set-Location tests
 $sicurezzaKo = 0
-foreach ($sonda in @("probe-security-sweep.mjs", "probe-rls-secondo-muro.mjs", "probe-colonne-pubbliche.mjs", "probe-molti-indirizzi.mjs", "probe-seo.mjs", "probe-documenti.mjs", "probe-cancella-entita-altrui.mjs", "probe-cancella-azienda.mjs", "probe-enumerazione.mjs", "probe-dirottamento.mjs", "probe-xss-pubblico.mjs", "probe-iniezione-filtri.mjs", "probe-upload-sicurezza.mjs", "probe-webhook-cron-auth.mjs", "probe-ssrf-webhook.mjs", "probe-ban-sessione.mjs", "probe-rate-limit.mjs")) {
+foreach ($sonda in @("probe-security-sweep.mjs", "probe-rls-secondo-muro.mjs", "probe-colonne-pubbliche.mjs", "probe-molti-indirizzi.mjs", "probe-seo.mjs", "probe-documenti.mjs", "probe-cancella-entita-altrui.mjs", "probe-cancella-azienda.mjs", "probe-enumerazione.mjs", "probe-dirottamento.mjs", "probe-xss-pubblico.mjs", "probe-iniezione-filtri.mjs", "probe-upload-sicurezza.mjs", "probe-webhook-cron-auth.mjs", "probe-ssrf-webhook.mjs", "probe-ban-sessione.mjs", "probe-rate-limit.mjs", "probe-calendario-uscita.mjs")) {
     Write-Host "-- $sonda" -ForegroundColor DarkGray
     node $sonda
     if ($LASTEXITCODE -ne 0) { $sicurezzaKo++ }
