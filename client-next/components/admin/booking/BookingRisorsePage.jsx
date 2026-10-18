@@ -308,6 +308,13 @@ function RisorseForm({ form, patch, patchDisp, initDisp, entita = [], onEntita, 
     ? Object.keys(dispSlot).some(k => (dispSlot[k] || []).length > 0)
     : (dispCop.servizi || []).length > 0
 
+  // Per una risorsa a giornate la scelta «l'ultimo giorno è libero o occupato?»
+  // è OBBLIGATORIA: decide prezzo E calendario, e un default silenzioso sbagliato
+  // fa ri-affittare un giorno già preso (Automax, 17/10). Nessuna preselezione:
+  // finché non è un booleano, non si salva.
+  const deveScegliereUscita = form.modalita === 'giornaliero'
+    && typeof form.disponibilita?.conta_giorno_uscita !== 'boolean'
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
@@ -388,21 +395,40 @@ function RisorseForm({ form, patch, patchDisp, initDisp, entita = [], onEntita, 
                 Es. 4 appartamenti uguali, o 6 auto dello stesso modello. Oltre questo numero il periodo risulta pieno.
               </div>
 
-              {/* Chi noleggia un'auto conta i giorni: dal 3 al 5 sono tre giorni,
-                  non due. Chi affitta una casa conta le notti. Cambia il totale
-                  che paga il cliente, quindi lo decide lui.
+              {/* Scelta OBBLIGATORIA, senza preselezione: l'ultimo giorno di un
+                  periodo è libero (hotel) o occupato (noleggio)? Decide SIA il
+                  prezzo SIA il calendario. Prima era una spunta sola che parlava
+                  solo di prezzo: se ignorata, il giorno di riconsegna restava
+                  prenotabile e si ri-affittava (Automax, 17/10).
                   ⚠️ Sta PRIMA dei limiti perché decide come si chiamano: sotto,
                   «minimi» e «massimi» si leggono in giorni o in notti a seconda
-                  di questa spunta. Chiedere «quante notti minime» a un
-                  autonoleggio era la domanda sbagliata. */}
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, marginTop: 12, cursor: 'pointer' }}>
-                <input type="checkbox" checked={!!form.disponibilita?.conta_giorno_uscita}
-                  onChange={e => patchDisp('conta_giorno_uscita', e.target.checked)} />
-                Conta anche il giorno di riconsegna
-              </label>
-              <div style={{ fontSize: 12, color: '#888' }}>
-                Attivalo per i noleggi: dal 3 al 5 diventano 3 giorni invece di 2 notti.
+                  di questa scelta. */}
+              <Label>Quando qualcuno prenota «dal — al», l'ultimo giorno è ancora occupato?</Label>
+              {[
+                { val: false, titolo: 'No — l’ultimo giorno è libero', spiega: 'Come in hotel: si lascia la mattina. Prenota dal 3 al 5 → occupa il 3 e il 4; il 5 un altro può già prenotarlo.', esempi: 'camere, case vacanza, B&B' },
+                { val: true, titolo: 'Sì — l’ultimo giorno resta occupato', spiega: 'Come un noleggio: si riconsegna quel giorno. Prenota dal 3 al 5 → occupa il 3, il 4 e il 5; il 5 nessun altro lo prenota.', esempi: 'auto, attrezzi, barche' },
+              ].map(o => {
+                const scelto = form.disponibilita?.conta_giorno_uscita === o.val
+                return (
+                  <label key={String(o.val)} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: 10, border: `1.5px solid ${scelto ? '#1a1a2e' : '#e0e0e0'}`, borderRadius: 10, marginTop: 8, cursor: 'pointer', background: scelto ? '#f5f5f7' : '#fff' }}>
+                    <input type="radio" name="conta_giorno_uscita" checked={scelto}
+                      onChange={() => patchDisp('conta_giorno_uscita', o.val)} style={{ marginTop: 3 }} />
+                    <span>
+                      <span style={{ fontSize: 14, fontWeight: 600 }}>{o.titolo}</span>
+                      <span style={{ display: 'block', fontSize: 12, color: '#666', marginTop: 2 }}>{o.spiega}</span>
+                      <span style={{ display: 'block', fontSize: 12, color: '#999', marginTop: 2 }}>Di solito: {o.esempi}</span>
+                    </span>
+                  </label>
+                )
+              })}
+              <div style={{ fontSize: 12, color: '#888', marginTop: 6 }}>
+                Vale anche per il prezzo: col noleggio si paga anche l'ultimo giorno.
               </div>
+              {deveScegliereUscita && (
+                <div style={{ fontSize: 12, color: '#b7791f', marginTop: 6, fontWeight: 600 }}>
+                  Scegli un'opzione qui sopra per poter salvare.
+                </div>
+              )}
 
               {/* ⚠️ Si vede in giorni, si salva in notti: `limiteInUnita` e
                   `limiteInNotti` fanno i due versi. Mostrare il numero salvato
@@ -640,8 +666,14 @@ function RisorseForm({ form, patch, patchDisp, initDisp, entita = [], onEntita, 
 
       {error && <div style={{ marginTop: 16, color: '#c0392b', fontSize: 14 }}>{error}</div>}
 
+      {deveScegliereUscita && (
+        <div style={{ marginTop: 16, color: '#b7791f', fontSize: 13, fontWeight: 600 }}>
+          Scegli come contare l'ultimo giorno del periodo (nella sezione «Configurazione a giornate») per salvare.
+        </div>
+      )}
+
       <div style={{ marginTop: 24, display: 'flex', gap: 12 }}>
-        <button onClick={onSave} disabled={saving} style={primaryBtn}>{saving ? 'Salvataggio...' : 'Salva risorsa'}</button>
+        <button onClick={onSave} disabled={saving || deveScegliereUscita} style={{ ...primaryBtn, ...(deveScegliereUscita ? { opacity: 0.5, cursor: 'not-allowed' } : {}) }}>{saving ? 'Salvataggio...' : 'Salva risorsa'}</button>
         <button onClick={onCancel} style={ghostBtn}>Annulla</button>
       </div>
     </div>
