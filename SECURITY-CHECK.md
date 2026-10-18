@@ -439,3 +439,23 @@ del video), verifica l'embed murato, e prova il blog sulla funzione vera col cas
 serializzato per il browser (JSON inerte) e un testo reso da React compare escapato — `alert('…')` e
 `onerror=` ci stanno come **testo**. La prima stesura della sonda dava 6 falsi rossi proprio per questo:
 corretta a misurare il browser e il DOM. Terza volta che una sonda misurava la cosa sbagliata (note 36, 45).
+
+## Aggiornamento 17/10/2026 — giri 9–14 dell'agente: la lista chiusa delle classi
+
+Francesco: «fai tutti i giri, se trovi buchi risolvi e poi rendiconti». Fatti i sei giri rimasti del
+baseline (roadmap in memoria `project_agente_attaccante`). **Due buchi veri chiusi**, il resto regge.
+
+| Giro | Classe | Esito |
+|---|---|---|
+| G9 | Iniezione nei filtri (`.or` PostgREST) | Nessun buco (B non legge A: `contatti` strip `,()\*` + `.eq(azienda_id)`, `collegamenti` whitelist+UUID). **Irrobustito**: date di `booking/occupancy` e `booking/prenotazioni` validate `YYYY-MM-DD`, non più grezze nella `.or()` (invariante 4). |
+| G10 | File caricati | 🔴 **BUCO**: `POST /api/upload/cover?property_id=` scriveva `cover_url` su qualunque entità senza controllo di proprietà → B sovrascriveva la copertina del sito di A (defacement cross-tenant). Chiuso col controllo `azienda_id`, come `logo/route.js`. Il resto regge (firma dei byte, estensione/percorso dal server, `requireEntityAccess` sulle per-entità). |
+| G11 | Pagamenti e webhook | Nessun buco. Webhook (Stripe `constructEvent`, Resend svix, WhatsApp HMAC) e 9 cron rifiutano le chiamate forgiate; importo del link ≤ totale (`importoValido`), `unit_amount` lato server. |
+| G12 | SSRF | 🟠 **BUCO**: i webhook in uscita accettavano un URL verso un indirizzo interno e `/test` lo fetchava restituendo lo status → sonda della rete interna dal nostro server. Nuovo `lib/url-sicuro.js` (blocca IP privati/loopback/link-local, risolvendo il DNS), applicato a creazione/modifica/test/invio. |
+| G13 | Flussi di auth | Nessun buco. Un account bloccato è fermato subito: `getUser(token)` rifiuta il JWT già emesso, login negato. |
+| G14 | Rate-limit | Nessun buco (scritture senza limite tutte token-gated), ma aggiunto un tetto d'abuso a `booking/public/cancella`, `unsubscribe`, `recensione/[token]`, `preventivo/accetta`. Sonda statica di copertura. |
+
+Sonde nuove in `deploy.ps1`: `probe-iniezione-filtri`, `probe-upload-sicurezza`, `probe-webhook-cron-auth`,
+`probe-ssrf-webhook`, `probe-ban-sessione`, `probe-rate-limit`.
+
+⚠️ **Limite onesto**: coperto il baseline delle classi note, non è un pentest esterno e il catalogo non è
+chiuso (codice nuovo = superficie nuova). Prima di aprire le registrazioni serve un pentest vero (§4.2).
