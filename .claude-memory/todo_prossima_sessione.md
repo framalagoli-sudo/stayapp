@@ -4,11 +4,18 @@ description: "Da dove riprendere — 14/10 sera: cruscotto + consigli LIVE (nota
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-10-18T11:36:50.754Z
+  modified: 2026-10-18T12:32:20.739Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
+
+## 🐛 MINI-TASK #1 prossima sessione — calendario admin ignora «conta il giorno di uscita» (Automax, 17/10)
+- **Sintomo** (Automax, segnalato da Francesco): prenotazione Cirulli Romina 17→18 inclusi. Sul **sito** il 18 è rosso/occupato (corretto); nel **calendario admin** il 18 risulta prenotabile.
+- **Causa certa** (diagnosi dal codice): la risorsa ha `disponibilita.conta_giorno_uscita: true` (noleggio auto → l'ultimo giorno conta). Il **sito** usa `fineOccupazione(risorsa, dal, al)` in `lib/booking-giornaliero.js` (se `conta_giorno_uscita` → `giornoDopo(fine)`, quindi occupa anche il 18). Il **calendario admin** (`GET /api/booking/occupancy`, consumato da `BookingCalendarioPage.jsx`) ha una COPIA inline di `giorniOccupati(b)` che fa `iso >= b.data_fine → break`, cioè tratta SEMPRE l'ultimo giorno come uscita libera (stile hotel) e IGNORA `conta_giorno_uscita`.
+- **Fix**: in `occupancy/route.js` sostituire il loop a mano con l'uso di `fineOccupazione` (occupa finché `iso < fineOccupazione(ris, b.data, b.data_fine)`). Serve leggere `risorse.disponibilita.conta_giorno_uscita` per ogni risorsa (oggi la route NON fa join su `risorse`). Doppione da eliminare: una formula sola. Verificare dal vivo su Automax (il 18 deve diventare occupato anche in admin). Nessuna migration.
+- ⚠️ Mentre c'ero (giro 9) ho già validato le date in `occupancy`/`prenotazioni` — non toccare quella parte, è ortogonale.
+
 
 ## ▶️ 17/10 — agente che prova a entrare: TUTTI i giri del baseline fatti (note 81–83)
 - Francesco: «fai tutti i giri senza chiedere, se trovi buchi risolvi e poi rendiconti». Fatti i 6 giri rimasti (G9–G14, commit 3c03e609 + docs 02c64e71). **Due buchi veri chiusi**: 🔴 G10 copertina cross-tenant (`/api/upload/cover` scriveva `cover_url` su qualunque entità senza controllo di proprietà → defacement); 🟠 G12 SSRF nei webhook in uscita (nuovo `lib/url-sicuro.js`). Irrobustiti: date dei filtri booking (G9), rate-limit su 4 scritture pubbliche (G14). G11/G13 nessun buco.
