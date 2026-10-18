@@ -2,6 +2,7 @@
 import { urlEsterno } from '@/lib/url-esterno'
 import { sendEmail } from '@/lib/send-email'
 import { emailTemplate } from '@/lib/email-template'
+import { rateLimit, tooManyRequests } from '@/lib/rate-limit'
 
 export async function GET(request, props) {
   const params = await props.params;
@@ -32,6 +33,10 @@ export async function GET(request, props) {
 export async function POST(request, props) {
   const params = await props.params;
   try {
+    // Limite d'abuso per IP: il token è monouso e non indovinabile; il tetto
+    // blunta il brute-force e lo spam di email al titolare.
+    const rl = await rateLimit(request, { name: 'recensione-invio', limit: 30, windowSec: 3600 })
+    if (!rl.allowed) return tooManyRequests()
     const { autore, stelle, testo } = await request.json()
     if (!stelle || stelle < 1 || stelle > 5) return Response.json({ error: 'stelle obbligatorie (1-5)' }, { status: 400 })
 

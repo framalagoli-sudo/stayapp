@@ -15,6 +15,10 @@ export async function GET(request) {
     const data_da = searchParams.get('data_da')
     const data_a = searchParams.get('data_a')
     if (!data_da || !data_a) return Response.json({ error: 'data_da e data_a obbligatori' }, { status: 400 })
+    // Le date finiscono interpolate nella .or() qui sotto: devono essere date pure,
+    // mai una stringa libera dal client (invariante 4 — niente valori grezzi in query).
+    const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+    if (!ISO_DATE.test(data_da) || !ISO_DATE.test(data_a)) return Response.json({ error: 'date non valide (YYYY-MM-DD)' }, { status: 400 })
 
     // ⚠️ Le prenotazioni a giornate occupano un **intervallo**: chiedere solo
     // `data` fra i due estremi perde chi è entrato prima del periodo mostrato e

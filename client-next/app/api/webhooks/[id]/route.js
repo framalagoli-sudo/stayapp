@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
+import { urlEsternoSicuro } from '@/lib/url-sicuro'
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
@@ -21,6 +22,11 @@ export async function PATCH(request, props) {
     const body = await request.json()
     const allowed = ['nome', 'url', 'eventi', 'attivo']
     const updates = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
+    // Se cambia l'URL, dev'essere ancora un indirizzo esterno sicuro (SSRF).
+    if (updates.url !== undefined) {
+      const sicuro = await urlEsternoSicuro(updates.url)
+      if (sicuro.errore) return Response.json({ error: sicuro.errore }, { status: 400 })
+    }
     let q = supabaseAdmin.from('webhooks').update(updates).eq('id', params.id)
     if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
     const { data, error } = await q.select().single()

@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
+import { urlEsternoSicuro } from '@/lib/url-sicuro'
 
 export async function POST(request, props) {
   const params = await props.params;
@@ -17,6 +18,10 @@ export async function POST(request, props) {
     if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
     const { data: hook, error } = await q.single()
     if (error || !hook) return Response.json({ error: 'Webhook non trovato' }, { status: 404 })
+    // Si controlla ANCHE qui, non solo alla creazione: copre le righe vecchie e
+    // un nome che nel frattempo è stato fatto puntare a un indirizzo interno (SSRF).
+    const sicuro = await urlEsternoSicuro(hook.url)
+    if (sicuro.errore) return Response.json({ ok: false, error: sicuro.errore }, { status: 400 })
     const body = JSON.stringify({ evento: 'test', timestamp: new Date().toISOString(), messaggio: 'Payload di test da OltreNova', azienda_id: hook.azienda_id })
     try {
       const resp = await fetch(hook.url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-OltreNova-Event': 'test' }, body, signal: AbortSignal.timeout(8000) })

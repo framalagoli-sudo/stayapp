@@ -33,7 +33,10 @@ export async function GET(request) {
     // di un affitto dal 10 al 14 con `data = 12` non trova niente. Il calendario
     // colorerebbe il giorno come occupato e poi mostrerebbe un pannello vuoto.
     // L'ultimo giorno è quello dell'uscita e non conta come occupato.
+    // `giorno` finisce interpolato nella .or(): dev'essere una data pura, mai una
+    // stringa libera dal client (invariante 4 — niente valori grezzi in query).
     const giorno = searchParams.get('data')
+    if (giorno && !/^\d{4}-\d{2}-\d{2}$/.test(giorno)) return Response.json({ error: 'data non valida (YYYY-MM-DD)' }, { status: 400 })
     if (giorno) query = query.or(`data.eq.${giorno},and(data.lte.${giorno},data_fine.gt.${giorno})`)
     if (searchParams.get('stato'))   query = query.eq('stato', searchParams.get('stato'))
     if (searchParams.get('data_da')) query = query.gte('data', searchParams.get('data_da'))

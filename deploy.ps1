@@ -134,11 +134,28 @@ if ($testExit -ne 0) {
 #                         prova col browser vero (nessun alert, nessun errore) e
 #                         con l'iframe dell'embed murato (sandbox senza
 #                         allow-same-origin) (17/10/2026)
+#   - iniezione-filtri    un'iniezione nei parametri di ricerca/filtro (.or di
+#                         PostgREST) non fa leggere a B i dati di A; le date dei
+#                         filtri booking sono validate, non interpolate (giro 9)
+#   - upload-sicurezza    l'azienda B non scrive file (ne' la copertina) in
+#                         un'entita' di A; solo immagini vere; il file e' sempre
+#                         servito come immagine (buco copertina cross-tenant
+#                         chiuso il 17/10) (giro 10)
+#   - webhook-cron-auth   webhook (Stripe/Resend/WhatsApp) e cron rifiutano una
+#                         chiamata forgiata/senza firma; mai un 200 che processa (giro 11)
+#   - ssrf-webhook        un webhook in uscita non puo' puntare a un indirizzo
+#                         interno (169.254.169.254, localhost, rete privata):
+#                         creazione, modifica, test e invio lo rifiutano (SSRF
+#                         chiusa il 17/10) (giro 12)
+#   - ban-sessione        un account bloccato e' fermato SUBITO: il token gia'
+#                         emesso non vale piu', e non si puo' rifare login (giro 13)
+#   - rate-limit          ogni scrittura pubblica ha un rateLimit(): una route
+#                         pubblica nuova senza limite viene segnalata (giro 14)
 # Non bloccano il deploy (e' gia' avvenuto): segnalano subito, forte.
 Write-Host "`n=== Sonde di sicurezza ===" -ForegroundColor Cyan
 Set-Location tests
 $sicurezzaKo = 0
-foreach ($sonda in @("probe-security-sweep.mjs", "probe-rls-secondo-muro.mjs", "probe-colonne-pubbliche.mjs", "probe-molti-indirizzi.mjs", "probe-seo.mjs", "probe-documenti.mjs", "probe-cancella-entita-altrui.mjs", "probe-cancella-azienda.mjs", "probe-enumerazione.mjs", "probe-dirottamento.mjs", "probe-xss-pubblico.mjs")) {
+foreach ($sonda in @("probe-security-sweep.mjs", "probe-rls-secondo-muro.mjs", "probe-colonne-pubbliche.mjs", "probe-molti-indirizzi.mjs", "probe-seo.mjs", "probe-documenti.mjs", "probe-cancella-entita-altrui.mjs", "probe-cancella-azienda.mjs", "probe-enumerazione.mjs", "probe-dirottamento.mjs", "probe-xss-pubblico.mjs", "probe-iniezione-filtri.mjs", "probe-upload-sicurezza.mjs", "probe-webhook-cron-auth.mjs", "probe-ssrf-webhook.mjs", "probe-ban-sessione.mjs", "probe-rate-limit.mjs")) {
     Write-Host "-- $sonda" -ForegroundColor DarkGray
     node $sonda
     if ($LASTEXITCODE -ne 0) { $sicurezzaKo++ }

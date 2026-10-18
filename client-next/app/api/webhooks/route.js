@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth, resolveAziendaId } from '@/lib/server-auth'
+import { urlEsternoSicuro } from '@/lib/url-sicuro'
 
 async function getProfile(userId) {
   const { data } = await supabaseAdmin.from('profiles').select('role, azienda_id').eq('id', userId).single()
@@ -44,6 +45,9 @@ export async function POST(request) {
     const aziendaId = resolveAziendaId(profile, azienda_id)
     if (!aziendaId) return Response.json({ error: 'Indicare l’azienda' }, { status: 400 })
     if (!url?.trim()) return Response.json({ error: 'URL obbligatorio' }, { status: 400 })
+    // Il server chiamerà questo URL: non deve puntare a un indirizzo interno (SSRF).
+    const sicuro = await urlEsternoSicuro(url)
+    if (sicuro.errore) return Response.json({ error: sicuro.errore }, { status: 400 })
     const { data, error } = await supabaseAdmin.from('webhooks').insert({
       azienda_id: aziendaId, nome: nome?.trim() || '', url: url.trim(),
       eventi: Array.isArray(eventi) ? eventi : [], attivo: true,

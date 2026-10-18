@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { istanteDi } from '@/lib/fuso'
+import { rateLimit, tooManyRequests } from '@/lib/rate-limit'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isUUID = v => UUID_RE.test(v)
@@ -60,6 +61,11 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
+    // Limite d'abuso: il token è un UUID non indovinabile, ma un tetto per IP
+    // blunta anche il tentativo di indovinarlo a forza bruta. Generoso: nessuno
+    // disdice trenta prenotazioni l'ora dallo stesso indirizzo.
+    const rl = await rateLimit(request, { name: 'booking-cancella', limit: 30, windowSec: 3600 })
+    if (!rl.allowed) return tooManyRequests()
     const { searchParams } = new URL(request.url)
     const { pren, errore, status } = await caricaPrenotazione(searchParams.get('token'))
     if (errore) return Response.json({ error: errore }, { status })

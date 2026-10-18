@@ -1,4 +1,5 @@
 import { disiscrivi } from '@/lib/disiscrizione'
+import { rateLimit, tooManyRequests } from '@/lib/rate-limit'
 
 // Pubblica di proposito: chi si disiscrive non ha un account. Il permesso è il
 // codice personale nell'indirizzo (un UUID casuale, uno per contatto).
@@ -16,6 +17,10 @@ export async function POST(request) {
 
 async function rispondi(request, fonte) {
   try {
+    // Limite d'abuso per IP: il token è personale e non indovinabile, un tetto
+    // generoso blunta il brute-force senza toccare chi si disiscrive davvero.
+    const rl = await rateLimit(request, { name: 'unsubscribe', limit: 60, windowSec: 3600 })
+    if (!rl.allowed) return tooManyRequests()
     const { searchParams } = new URL(request.url)
     const token = searchParams.get('token')
     // «TEST» è il codice delle email di prova: non c'è nessuno da togliere.

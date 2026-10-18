@@ -13,6 +13,14 @@ export async function POST(request) {
     const { data: profile } = await supabaseAdmin.from('profiles').select('property_id, role, azienda_id').eq('id', user.id).single()
     const propertyId = searchParams.get('property_id') || profile?.property_id
     if (!propertyId) return Response.json({ error: 'Struttura non associata al profilo' }, { status: 403 })
+    // ⛔ La copertina si scrive sull'entità `propertyId`: dev'essere della propria
+    // azienda, o l'azienda B potrebbe sovrascrivere la copertina del sito di A
+    // (`?property_id=<entità di A>`). Finché l'id arriva dalla query, si verifica
+    // la proprietà, come in logo/route.js. (Trovato dall'agente, 17/10/2026.)
+    if (searchParams.get('property_id') && profile?.role !== 'super_admin') {
+      const { data: prop } = await supabaseAdmin.from('entita').select('azienda_id').eq('id', propertyId).single()
+      if (!prop || prop.azienda_id !== profile?.azienda_id) return Response.json({ error: 'Accesso negato' }, { status: 403 })
+    }
 
     const result = await uploadToStorage(`${propertyId}/cover_url-${Date.now()}.${parsed.ext}`, parsed.buffer, parsed.contentType)
     if (result.error) return Response.json({ error: result.error }, { status: 500 })

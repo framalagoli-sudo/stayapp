@@ -1,9 +1,14 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { sendWebhooks } from '@/lib/send-webhooks'
+import { rateLimit, tooManyRequests } from '@/lib/rate-limit'
 
 export async function POST(request, props) {
   const params = await props.params;
   try {
+    // Limite d'abuso per IP: il token è monouso e non indovinabile; il tetto
+    // blunta il brute-force e lo spam di accettazioni.
+    const rl = await rateLimit(request, { name: 'preventivo-accetta', limit: 30, windowSec: 3600 })
+    if (!rl.allowed) return tooManyRequests()
     const { firma_nome } = await request.json()
     if (!firma_nome?.trim()) return Response.json({ error: 'Il campo firma è obbligatorio' }, { status: 400 })
 
