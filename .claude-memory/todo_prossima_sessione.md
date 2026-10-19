@@ -1,14 +1,42 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — 14/10 sera: cruscotto + consigli LIVE (nota 74), consigli = bozze che Francesco deve riscrivere e approvare; partner parcheggiato. Prima: 13/10: cinque blocchi nuovi LIVE (Titolo, Citazione, Linguette, Tabella, Popup — nota 70) e «Riscrivi i testi con l’AI» (nota 69), migration alla 136. Da far provare a Francesco: i cinque blocchi, Riscrivi, Chiedi all’AI, editor visuale, sezioni condivise. Prossimo: stato vero del conto Stripe, sonde che lasciano sottodomini su Vercel, onboarding v2. In attesa di lui: Fondaco DNS, posta di Guru, Meta/WhatsApp, Automax su Stripe"
+description: "Da dove riprendere — 18/10: META/WHATSAPP avviato col numero di test. hello_world arrivato sul telefono (Meta→telefono OK). Su Vercel messe META_APP_ID, WHATSAPP_WEBHOOK_TOKEN, META_APP_SECRET (manca solo META_ES_CONFIG_ID, serve al Livello 2). Deploy fatto, env vive, webhook GET verify OK. ⛔ SCOPERTA: Tech Provider NON registrato (memoria 30/09 sbagliata) → ricezione reale + Embedded Signup bloccati finché non si pubblica l'app. Si riprende dal: finire config webhook in dashboard, poi validare NOSTRO invio in dev, poi traguardo pubblicazione (Independent Tech Provider + verifica + App Review con 2 video)."
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-10-18T13:23:01.531Z
+  modified: 2026-10-19T21:57:19.266Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
+
+## ▶️ 18/10 — META/WHATSAPP avviato col numero di test (⬅️ SI RIPRENDE DA QUI)
+
+Sessione dedicata a Meta. Accesso a developers.facebook.com **OK** (blocco dispositivo superato). App ID `28469155976047675`, business_id `245401402797669`.
+
+**FATTO oggi:**
+- ✅ Numero di test Meta trovato e usato: **+1 555 658-7398** · Phone Number ID **1436368769549848** · WABA ID **1100326706242983**. Mandato **«hello_world»** al cellulare di Francesco dalla dashboard → **ARRIVATO**. (Meta → telefono confermato; il suo numero come *destinatario* non rischia niente, non viene registrato sull'API.)
+- ✅ Su Vercel (produzione) 3 chiavi su 4: `META_APP_ID` (io, CLI, = 28469155976047675) · `WHATSAPP_WEBHOOK_TOKEN` (io, CLI) · `META_APP_SECRET` (Francesco, **rigenerato** in dashboard + messo su Vercel — valore MAI passato in chat). **Manca `META_ES_CONFIG_ID`** (serve solo al Livello 2 / Embedded Signup, non al test).
+- ✅ **Deploy fatto** (deploy.ps1, exit 0, 18 sonde verdi nonostante RAM ~2,6 GB) → chiavi applicate. **Webhook GET verify provato dal vivo: risponde la challenge, HTTP 200** → `WHATSAPP_WEBHOOK_TOKEN` e `META_APP_SECRET` sono vivi in produzione.
+
+**🔑 Valore del token webhook**: è su Vercel come `WHATSAPP_WEBHOOK_TOKEN`. Per rileggerlo: `cd client-next && npx vercel env pull --environment=production` (finisce in `.env.local`, gitignored). Altrimenti rigenerarlo e aggiornare Vercel + Meta. (Non lo scrivo nei file memoria: finiscono nel repo.)
+
+**⛔ SCOPERTA IMPORTANTE — corregge la memoria:** il **Tech Provider NON è registrato**. La dashboard oggi mostra *«Decidi come vorresti iniziare la registrazione»* (Independent Tech Provider vs Solution Partner, entrambi «è richiesta l'analisi dell'app»). La memoria/WHATSAPP.md del 30/09 «Tech Provider approvato» era **SBAGLIATA** (corretto in WHATSAPP.md e CLAUDE.md). App **NON pubblicata**. Questo **blocca**: (a) ricevere i messaggi **veri** dei clienti (webhook in arrivo), (b) l'**Embedded Signup** per i clienti veri (Livello 2). `whatsapp_business_management`/`messaging` = «Pronta per il test» (standard: basta per il dev; serve Accesso avanzato via App Review per il live).
+
+**SI RIPRENDE DA QUI** (priorità decise da Ettore — Francesco: «decidi tu le priorità»):
+1. **Finire la config del webhook in dashboard** — Francesco era *esattamente qui* quando ha chiuso. WhatsApp → Configurazione → «Configura webhook»:
+   - URL callback: `https://www.oltrenova.com/api/whatsapp/webhook` (**www**, mai l'apex)
+   - Verify token: (quello su Vercel, vedi sopra come leggerlo)
+   - «Verifica e salva» (già provato: funziona) → sottoscrivere i campi **`messages`**, **`message_template_status_update`**, **`account_update`**.
+   - Poi pulsante **«Test»** della dashboard sul campo `messages`. ⚠️ ATTESO: se il payload di test di Meta non è firmato col nostro app secret, il nostro webhook risponde **401** («firma non valida») — **non è un errore, è la sicurezza che funziona** (vedi `webhook/route.js`, `firmaValida`). Se è firmato, 200.
+2. **Validare il NOSTRO invio in dev mode** col numero di test (prova che `lib/whatsapp.js` → Graph → telefono funziona, non solo il pulsante di Meta). ⚠️ I nostri 5 template del catalogo NON sono sul WABA di test (si creano su un WABA vero solo via `connect`/Embedded Signup): sul numero di test si manda «hello_world» o un testo libero nella finestra 24h. Il token del numero di test è **segreto e scade in 24h** → inserirlo nel DB (azienda `ZZ`) senza passarlo in chat: script locale che lo legge da una env var del terminale di Francesco.
+3. **Traguardo PUBBLICAZIONE** (il palo lungo, per lo più attesa Meta): **verifica azienda** (DA RIVERIFICARE: le schermate di oggi — «Successivo: verifica dell'azienda» — suggeriscono NON completa; memoria conflittuale, 15/09 respinta→reinviata, 30/09 «approvata») + **Independent Tech Provider** + **App Review** con **2 video** (registrabili in dev mode: un messaggio ricevuto su WhatsApp, la creazione di un modello). Solo dopo: ricezione reale + Embedded Signup + sonda `probe-whatsapp-numeri` verde.
+
+**⛔ Non toccare adesso**: la registrazione Tech Provider (traguardo 3), «Registra il tuo numero di telefono» e «Aggiungi il pagamento» (sono per un numero **reale** / Livello 2, non per il numero di test).
+
+**Numero per il test reale (Livello 2), quando ci arriviamo**: NON il suo personale (verrebbe tolto dal suo WhatsApp; la coesistenza richiede l'app WhatsApp Business che non ha). Vie pulite: un **fisso** non-WhatsApp (verifica con chiamata, gratis) o una **prepagata da pochi euro**. Le SIM/numeri virtuali (VoIP, usa-e-getta) spesso rifiutati da WhatsApp: evitarli.
+
+---
 
 ## ✅ FATTO 17/10 — calendario «conta il giorno di uscita» + scelta obbligatoria nel setup (Automax)
 - ✅ **Fix backend LIVE e verificato** (commit 055571ae): `/api/booking/occupancy` ora usa `fineOccupazione` come il sito → il 18 risulta occupato anche in admin. Sonda `probe-calendario-uscita.mjs` verde in produzione (deploy completo, exit 0).

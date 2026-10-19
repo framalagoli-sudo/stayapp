@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: 98e39a37-374d-43a6-a1bf-16225619363f
-  modified: 2026-09-15T17:58:56.316Z
+  modified: 2026-10-19T21:57:36.887Z
 ---
 
 **App Meta «OltreNova» creata il 15/09/2026**, App ID `28469155976047675` (non segreto), collegata al portafoglio business OltreNova. Guida viva: https://claude.ai/artifact/NvjsW4esEj2QHFpmB72mvM
@@ -30,5 +30,15 @@ metadata:
 - **Token client incollato in chat il 15/09**: rigenerarlo prima della produzione.
 - In «Avanzate» consigliato: riautorizzazione 2FA sì, accesso API alle impostazioni no, email notifica info@oltrenova.com; «Richiedi chiave segreta» (appsecret_proof) solo DOPO che il codice firma le chiamate.
 - Incoerenza da risolvere con Francesco: email privacy `oltrenova@gmail.com` (informativa), `info@oltrenova.com` (app), `fra.malagoli@gmail.com` (campo DPO).
+
+## ⚠️ AGGIORNAMENTO 18/10/2026 — verificato dal vivo in dashboard
+
+- **Accesso a developers.facebook.com OK** (blocco dispositivo del 22/08 superato). App ID confermato `28469155976047675`, business_id `245401402797669`.
+- **Numero di test Meta** (WhatsApp → Configurazione API): **+1 555 658-7398** · Phone Number ID **1436368769549848** · WABA ID **1100326706242983**. «hello_world» inviato dal cruscotto → **arrivato** sul cellulare di Francesco.
+- ⛔ **Tech Provider NON registrato** (corregge la memoria del 30/09 «approvato», che era SBAGLIATA). La dashboard chiede di «iniziare la registrazione»: scelta futura = **Independent Tech Provider** (noi colleghiamo i clienti, non sotto un Solution Partner). App **non pubblicata** → bloccati: ricezione reale dei messaggi dei clienti + Embedded Signup per i clienti veri. `whatsapp_business_management`/`messaging` = «Pronta per il test» (standard; serve Accesso avanzato via App Review per il live).
+- ⚠️ **Verifica aziendale: stato incerto** — le schermate di oggi («Successivo: verifica dell'azienda») suggeriscono NON completata; la memoria è conflittuale. Da riverificare su business.facebook.com → Centro sicurezza quando si fa il traguardo pubblicazione.
+- **Su Vercel (produzione) ora**: `META_APP_ID` + `WHATSAPP_WEBHOOK_TOKEN` (messe via CLI in questa sessione) + `META_APP_SECRET` (rigenerato da Francesco in dashboard e messo da lui su Vercel — valore mai in chat) + `WHATSAPP_TOKEN_KEY` (già c'era). **Manca `META_ES_CONFIG_ID`** (serve al Livello 2). Deploy fatto → env vive; webhook GET verify risponde la challenge con 200.
+- **Webhook URL**: `https://www.oltrenova.com/api/whatsapp/webhook` (www, mai apex). Da registrare in dashboard col verify token (= `WHATSAPP_WEBHOOK_TOKEN`), campi `messages` + `message_template_status_update` + `account_update`. Config NON ancora completata (Francesco interrotto).
+- Ripresa e passi: [[todo-prossima-sessione]].
 
 Vedi [[project_whatsapp_fase0]], [[reference_meta_blocco_dispositivo]].
