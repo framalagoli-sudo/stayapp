@@ -25,8 +25,6 @@ export async function GET(request) {
     const { user, response } = await requireAuth(request)
     if (response) return response
     const azienda_id = await getAziendaId(user.id)
-    // Senza azienda l'AI partirebbe «per la piattaforma», senza tetto di spesa.
-    if (!azienda_id) return Response.json({ error: 'Business non trovato' }, { status: 400 })
     const { data } = await supabaseAdmin.from('aziende').select('content_strategy, ragione_sociale').eq('id', azienda_id).single()
     return Response.json({ strategy: data?.content_strategy || {}, nome: data?.ragione_sociale || '' })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
@@ -87,8 +85,6 @@ export async function PUT(request) {
     const { user, response } = await requireAuth(request)
     if (response) return response
     const azienda_id = await getAziendaId(user.id)
-    // Senza azienda l'AI partirebbe «per la piattaforma», senza tetto di spesa.
-    if (!azienda_id) return Response.json({ error: 'Business non trovato' }, { status: 400 })
     const { pillar, voice_tips, hashtag_base, frequenza, mix, tono, target, usp, piattaforme } = await request.json()
     const strategy = {
       pillar: pillar || [], voice_tips: voice_tips || [], hashtag_base: hashtag_base || [],
