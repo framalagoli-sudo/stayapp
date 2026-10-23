@@ -48,6 +48,13 @@ const NON_SI_SCRIVE = [
   /^aziende$/, /^users$/,
 ]
 
+// Porte che scrivono solo sull'account di CHI CHIAMA, mai sui dati
+// dell'azienda: rispondono 2xx a chiunque abbia fatto login, ed è giusto. Il
+// confronto del database prima/dopo resta comunque attivo anche per loro.
+//   auth/completa-registrazione: senza una registrazione in attesa risponde
+//   «niente» e non tocca nulla (lib/registrazione.js).
+const SOLO_SU_SE_STESSO = /^auth\/completa-registrazione$/
+
 // Chi ha TUTTI i permessi del pannello Collaboratori. Le chiavi sono quelle di
 // `StaffPage.jsx`: se lì se ne aggiunge una, va aggiunta qui.
 const TUTTI_I_PERMESSI = Object.fromEntries([
@@ -161,7 +168,7 @@ try {
   for (const pr of daScrivere) {
     if (NON_SI_SCRIVE.some(re => re.test(pr.route))) { saltate.push(`${pr.metodo} ${pr.route} (effetto fuori dal database)`); continue }
     const r = await chiama(pr.path, S0.token, pr.metodo)
-    if (ok(r.status)) scritture.push(`${pr.metodo} /api/${pr.route} → ${r.status} ${r.corpo.slice(0, 120)}`)
+    if (ok(r.status) && !SOLO_SU_SE_STESSO.test(pr.route)) scritture.push(`${pr.metodo} /api/${pr.route} → ${r.status} ${r.corpo.slice(0, 120)}`)
     else if (verbose) console.log(`  · ${pr.metodo} /api/${pr.route} → ${r.status} ${r.corpo.slice(0, 80)}`)
   }
   for (const [tab, id] of R._righe) {
