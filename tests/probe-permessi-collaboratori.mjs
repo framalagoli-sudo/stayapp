@@ -34,7 +34,7 @@ const BASE = (process.env.TEST_URL || 'https://www.oltrenova.com').replace(/\/$/
 const verbose = process.argv.includes('--verbose')
 
 // Pubbliche per costruzione: rispondono a chiunque, collaboratore compreso.
-const PUBBLICA = /^(guest|public|cron|webhooks?$|resend-webhook|whatsapp\/webhook|stripe\/webhook|shop\/webhook|auth\/(forgot-password|reset-password|signup|signup-status)|contatti\/subscribe|client-error|upload$|llms|manifest|sitemap|newsletter\/archive|form-builder\/public|preventivi\/public|blog\/public|booking\/public|loyalty\/public|shop\/public|requests\/public|landing-seo|google-calendar\/callback)/
+const PUBBLICA = /^(guest|public|cron|webhooks?$|resend-webhook|whatsapp\/webhook|stripe\/webhook|shop\/webhook|auth\/(forgot-password|reset-password|signup|signup-status|conferma-email)|contatti\/subscribe|client-error|upload$|llms|manifest|sitemap|newsletter\/archive|form-builder\/public|preventivi\/public|blog\/public|booking\/public|loyalty\/public|shop\/public|requests\/public|landing-seo|google-calendar\/callback)/
 
 // Porte che scrivono e che qui NON si provano, perché il loro effetto esce dal
 // nostro database: creerebbero un conto Stripe vero, un indirizzo su Vercel,

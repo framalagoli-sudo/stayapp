@@ -31,6 +31,8 @@ export async function POST(request) {
     const { user, response } = await requireAuth(request)
     if (response) return response
     const azienda_id = await getAziendaId(user.id)
+    // Senza azienda l'AI partirebbe «per la piattaforma», senza tetto di spesa.
+    if (!azienda_id) return Response.json({ error: 'Business non trovato' }, { status: 400 })
     const { piattaforma, topic, contesto, pillar } = await request.json()
     if (!topic?.trim()) return Response.json({ error: 'Inserisci un argomento per il post' }, { status: 400 })
 

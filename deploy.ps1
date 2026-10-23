@@ -160,7 +160,7 @@ if ($testExit -ne 0) {
 Write-Host "`n=== Sonde di sicurezza ===" -ForegroundColor Cyan
 Set-Location tests
 $sicurezzaKo = 0
-foreach ($sonda in @("probe-security-sweep.mjs", "probe-rls-secondo-muro.mjs", "probe-colonne-pubbliche.mjs", "probe-molti-indirizzi.mjs", "probe-seo.mjs", "probe-documenti.mjs", "probe-cancella-entita-altrui.mjs", "probe-cancella-azienda.mjs", "probe-enumerazione.mjs", "probe-permessi-collaboratori.mjs", "probe-dirottamento.mjs", "probe-xss-pubblico.mjs", "probe-iniezione-filtri.mjs", "probe-upload-sicurezza.mjs", "probe-webhook-cron-auth.mjs", "probe-ssrf-webhook.mjs", "probe-ban-sessione.mjs", "probe-rate-limit.mjs", "probe-calendario-uscita.mjs")) {
+foreach ($sonda in @("probe-security-sweep.mjs", "probe-rls-secondo-muro.mjs", "probe-colonne-pubbliche.mjs", "probe-molti-indirizzi.mjs", "probe-seo.mjs", "probe-documenti.mjs", "probe-cancella-entita-altrui.mjs", "probe-cancella-azienda.mjs", "probe-enumerazione.mjs", "probe-permessi-collaboratori.mjs", "probe-registrazione.mjs", "probe-dirottamento.mjs", "probe-xss-pubblico.mjs", "probe-iniezione-filtri.mjs", "probe-upload-sicurezza.mjs", "probe-webhook-cron-auth.mjs", "probe-ssrf-webhook.mjs", "probe-ban-sessione.mjs", "probe-rate-limit.mjs", "probe-calendario-uscita.mjs")) {
     Write-Host "-- $sonda" -ForegroundColor DarkGray
     node $sonda
     if ($LASTEXITCODE -ne 0) { $sicurezzaKo++ }

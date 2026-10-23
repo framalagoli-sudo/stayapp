@@ -23,7 +23,7 @@ const verbose = process.argv.includes('--verbose')
 const PUBBLICHE = [
   /^\/api\/guest\//, /^\/api\/public\//, /^\/api\/cron\//, /^\/api\/webhooks?$/,
   /^\/api\/resend-webhook/, /^\/api\/whatsapp\/webhook/, /^\/api\/shop\/webhook/,
-  /^\/api\/auth\/(forgot-password|reset-password|signup|signup-status)/,
+  /^\/api\/auth\/(forgot-password|reset-password|signup|signup-status|conferma-email)/,
   /^\/api\/contatti\/subscribe/, /^\/api\/client-error/, /^\/api\/upload$/,
   /^\/api\/(llms|manifest|sitemap)\//, /^\/api\/newsletter\/archive\//,
   /^\/api\/form-builder\/public\//, /^\/api\/preventivi\/public\//,

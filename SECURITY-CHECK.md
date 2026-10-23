@@ -482,3 +482,16 @@ percorso su letture e scritture; Stripe, webhook e Google Calendar solo al titol
 Rimasti fuori, annotati: i permessi su **quale entità** (`struttura_ids`…) non sono applicati dal
 server; un collaboratore con «Richieste» senza struttura assegnata vede una lista vuota
 (`userCanAccessProperty`, limite di funzione, non una fuga).
+
+## Aggiornamento 23/10/2026 (2) — registrazione aperta e un buco trovato per strada
+
+- **Registrazione**: l'account nasce non confermato e l'azienda solo dopo la conferma dell'email
+  (`lib/registrazione.js`, CLAUDE.md nota 86). Stessa risposta per indirizzo nuovo, già registrato e
+  robot; «rimandami la conferma» chiede la password; 3/ora per IP e 50/giorno in tutto. Sonda
+  `probe-registrazione.mjs` (in deploy). Le registrazioni restano chiuse finché Francesco non le apre.
+- 🟠 **Registrazione diretta su Supabase aperta** (`disable_signup: false`): con la chiave pubblica
+  chiunque si crea un account senza passare dalla nostra route né dall'interruttore `signup_enabled`.
+  Mai usata (nessun account del genere al 23/10). Prima della nota 84 un account così, «collaboratore
+  senza azienda», poteva chiamare l'AI dello Studio contenuti **senza tetto di spesa**: chiuso due volte
+  (permessi dei collaboratori + Studio senza azienda → 400). **Da chiudere sul pannello Supabase**:
+  Authentication → «Allow new users to sign up» OFF.

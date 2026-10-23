@@ -1,15 +1,15 @@
 ﻿'use client'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { fusoDelBrowser } from '@/lib/fuso'
-import { supabase } from '@/lib/supabase'
+import Turnstile from '@/components/Turnstile'
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? '').trim()
 
 export default function SignupPage() {
-  const router = useRouter()
-  const [form, setForm] = useState({ nome_azienda: '', email: '', password: '', confirm: '', accetta: false })
+  const [form, setForm] = useState({ nome_azienda: '', email: '', password: '', confirm: '', accetta: false, sito_web: '' })
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [inviata, setInviata] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [checking, setChecking] = useState(true)
@@ -34,15 +34,14 @@ export default function SignupPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // Il fuso non si chiede: lo sa gia' il browser di chi sta compilando.
-        body: JSON.stringify({ nome_azienda: form.nome_azienda, email: form.email, password: form.password, accetta_termini: form.accetta, fuso_orario: fusoDelBrowser() }),
+        body: JSON.stringify({ nome_azienda: form.nome_azienda, email: form.email, password: form.password, accetta_termini: form.accetta, fuso_orario: fusoDelBrowser(), turnstileToken, sito_web: form.sito_web }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Errore registrazione'); setLoading(false); return }
 
-      const { error: signInErr } = await supabase.auth.signInWithPassword({ email: form.email, password: form.password })
-      if (signInErr) { setError(signInErr.message); setLoading(false); return }
-
-      router.push('/admin/onboarding')
+      // Non si entra subito: prima si conferma l'indirizzo (lib/registrazione.js).
+      setInviata(true)
+      setLoading(false)
     } catch {
       setError('Errore di rete. Riprova.')
       setLoading(false)
@@ -66,6 +65,23 @@ export default function SignupPage() {
         <Link href="/admin/login" style={{ color: '#1a1a2e', fontSize: 14, fontWeight: 600 }}>
           Hai già un account? Accedi
         </Link>
+      </div>
+    </div>
+  )
+
+  if (inviata) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#f5f5f5', fontFamily: 'system-ui', padding: 24 }}>
+      <div style={{ background: '#fff', borderRadius: 16, padding: '40px 32px', maxWidth: 420, width: '100%', textAlign: 'center', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', boxSizing: 'border-box' }}>
+        <div style={{ fontSize: 40, marginBottom: 16 }}>📬</div>
+        <h2 style={{ margin: '0 0 12px', fontSize: 20, color: '#1a1a2e' }}>Controlla la posta</h2>
+        <p style={{ color: '#555', fontSize: 14, margin: '0 0 20px', lineHeight: 1.6 }}>
+          Abbiamo mandato un link di conferma a <strong style={{ overflowWrap: 'anywhere' }}>{form.email}</strong>.
+          Aprilo per confermare l’indirizzo ed entrare. Se non lo trovi, guarda nella posta indesiderata.
+        </p>
+        <p style={{ color: '#888', fontSize: 13, margin: '0 0 20px', lineHeight: 1.6 }}>
+          Se con questo indirizzo avevi già un account, non arriva niente di nuovo: accedi con la tua password.
+        </p>
+        <Link href="/admin/login" style={{ color: '#1a1a2e', fontSize: 14, fontWeight: 600 }}>Vai all’accesso</Link>
       </div>
     </div>
   )
@@ -130,6 +146,13 @@ export default function SignupPage() {
               e l’<a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#1a1a2e', fontWeight: 600 }}>informativa privacy</a>.
             </span>
           </label>
+
+          {/* Campo trappola: nascosto a chi guarda, un robot lo compila. */}
+          <input name="sito_web" tabIndex={-1} autoComplete="off" aria-hidden="true"
+            value={form.sito_web} onChange={e => setForm(f => ({ ...f, sito_web: e.target.value }))}
+            style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }} />
+
+          <Turnstile onToken={setTurnstileToken} />
 
           {error && (
             <div style={{ background: '#fff5f5', color: '#c53030', fontSize: 13, padding: '10px 14px', borderRadius: 8, marginBottom: 16, border: '1px solid #fed7d7' }}>

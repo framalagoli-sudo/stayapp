@@ -41,7 +41,7 @@ const PUBBLICHE_PER_MESTIERE = [
   'app/api/guest/', 'app/api/public/', '/public/', 'app/api/cron/',
   'app/api/resend-webhook/', 'app/api/whatsapp/webhook/',
   'app/api/auth/forgot-password/', 'app/api/auth/reset-password/',
-  'app/api/auth/signup/', 'app/api/auth/signup-status/', 'app/api/auth/platform-config/',
+  'app/api/auth/signup/', 'app/api/auth/signup-status/', 'app/api/auth/platform-config/', 'app/api/auth/conferma-email/',
   'app/api/contatti/subscribe/', 'app/api/client-error/',
   'app/api/llms/', 'app/api/manifest/', 'app/api/sitemap/', 'app/api/newsletter/archive/',
   'app/api/landing-seo/', 'app/api/google-calendar/callback/', 'app/api/upload/',

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/lib/supabase'
+import { apiFetch } from '@/lib/api'
 
 export default function LoginPage() {
   const { signIn, refreshAAL } = useAuth()
@@ -16,6 +17,18 @@ export default function LoginPage() {
   const [error, setError]       = useState(null)
   const [loading, setLoading]   = useState(false)
   const [showPwd, setShowPwd]   = useState(false)
+  const [rinvio, setRinvio]     = useState(null) // null · da_chiedere · in_corso · fatto
+
+  // Chiede la password oltre all'email: la route rimanda la conferma solo a chi
+  // la sa (vedi /api/auth/conferma-email).
+  async function rimandaConferma() {
+    setRinvio('in_corso')
+    await fetch('/api/auth/conferma-email', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    }).catch(() => {})
+    setRinvio('fatto')
+  }
   const passkeySupportata = typeof window !== 'undefined' && !!window.PublicKeyCredential
 
   // Accesso con passkey: un solo gesto, e non c'e' niente da digitare che un sito
@@ -36,8 +49,22 @@ export default function LoginPage() {
     e.preventDefault()
     setError(null)
     setLoading(true)
+    setRinvio(null)
     const err = await signIn(email, password)
+    if (err?.code === 'email_not_confirmed') {
+      setLoading(false); setRinvio('da_chiedere')
+      return setError('Non hai ancora confermato il tuo indirizzo email: apri il link che ti abbiamo mandato.')
+    }
     if (err) { setLoading(false); return setError(err.message) }
+
+    // Chi si è registrato e ha confermato ma non è arrivato in fondo (pagina
+    // chiusa, rete caduta) finisce qui: senza una registrazione in attesa non
+    // succede niente. Se nasce l'azienda adesso, si ricarica: il profilo in
+    // memoria è ancora quello senza azienda.
+    try {
+      const fine = await apiFetch('/api/auth/completa-registrazione', { method: 'POST' })
+      if (fine?.stato === 'completata') return window.location.replace('/admin/onboarding')
+    } catch {}
 
     // Controlla se serve 2FA
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
@@ -83,6 +110,15 @@ export default function LoginPage() {
           <input type={showPwd ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required style={inputStyle} />
 
           {error && <p style={errorStyle}>{error}</p>}
+          {rinvio && (
+            <p style={{ margin: '-4px 0 14px', fontSize: 13, color: '#555', lineHeight: 1.5 }}>
+              {rinvio === 'fatto'
+                ? 'Fatto: ti abbiamo rimandato l’email di conferma. Guarda anche nella posta indesiderata.'
+                : <button type="button" onClick={rimandaConferma} disabled={rinvio === 'in_corso'} style={{ background: 'none', border: 'none', padding: 0, color: '#1a1a2e', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer', fontSize: 13 }}>
+                    {rinvio === 'in_corso' ? 'Invio in corso…' : 'Rimandami l’email di conferma'}
+                  </button>}
+            </p>
+          )}
           <button type="submit" disabled={loading} style={buttonStyle}>{loading ? 'Accesso…' : 'Accedi'}</button>
 
           {passkeySupportata && (
