@@ -12,8 +12,14 @@ import { logError } from '@/lib/observability'
 // ⚠️ Questi sono **thin events**, un formato diverso dagli altri: nel corpo
 // arriva quasi solo un id, e l'evento vero va poi richiesto. È voluto da Stripe
 // (meno dati sensibili in transito) ed è il motivo per cui questo endpoint è
-// separato dall'altro: `constructEvent` e `parseThinEvent` non sono la stessa
-// funzione, e mescolarli significa che uno dei due smette di funzionare.
+// separato dall'altro: `constructEvent` e `parseEventNotification` non sono la
+// stessa funzione, e mescolarli significa che uno dei due smette di funzionare.
+//
+// ⛔ Fino al 23/10/2026 qui c'era `parseThinEvent`, il nome che Stripe aveva già
+// tolto prima della versione 22: ogni evento riceveva 400 «is not a function»
+// dentro il ramo «firma non valida», e nessun allarme è mai partito. Una
+// funzione inesistente in un `try` non grida: lo dice solo la risposta vera.
+// Sonda: `tests/probe-webhook-cron-auth.mjs` guarda anche il testo dell'errore.
 //
 // Su Stripe va registrato scegliendo **«eventi da account connessi»** e stile
 // payload **«Thin»**.
@@ -34,7 +40,7 @@ export async function POST(request) {
   try {
     const corpo = await request.text()
     const firma = request.headers.get('stripe-signature')
-    thin = stripe.parseThinEvent(corpo, firma, segreto)
+    thin = stripe.parseEventNotification(corpo, firma, segreto)
   } catch (e) {
     return Response.json({ error: `firma non valida: ${e.message}` }, { status: 400 })
   }

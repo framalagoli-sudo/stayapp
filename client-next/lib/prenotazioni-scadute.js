@@ -8,6 +8,7 @@ import { getAziendaLegale } from './guest-data'
 import { mandaConfermaEvento } from './evento-conferma'
 import { annunciaPrenotazioneEvento } from './evento-prenotato'
 import { prenotazionePagata, mandaEmailPrenotazione } from './prenotazione-risorsa'
+import { eventoConcluso } from './evento-concluso'
 
 // Il posto tenuto e mai pagato torna libero.
 //
@@ -71,6 +72,9 @@ async function chiudiCassa(conto, sessionId) {
 
 async function avvisa(booking, evento) {
   if (!booking.guest_email || !(process.env.RESEND_API_KEY ?? '').trim()) return
+  // A evento finito «il posto è tornato disponibile, puoi prenotare di nuovo»
+  // è un invito falso: la prenotazione si annulla lo stesso, l'email no.
+  if (eventoConcluso(evento)) return
   try {
     const legale = evento.azienda_id ? await getAziendaLegale(evento.azienda_id) : null
     const { data: ent } = evento.entity_id
@@ -116,7 +120,7 @@ export async function liberaPostiNonPagati() {
 
   for (const b of candidate) {
     const { data: evento } = await supabaseAdmin.from('eventi')
-      .select('id, title, azienda_id, entity_id, date_start').eq('id', b.event_id).maybeSingle()
+      .select('id, title, azienda_id, entity_id, date_start, date_end').eq('id', b.event_id).maybeSingle()
     if (!evento) continue
 
     let esito = await statoDelPagamento(evento.azienda_id, b.pagamento_id)

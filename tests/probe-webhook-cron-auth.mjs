@@ -27,7 +27,12 @@ try {
   ]
   for (const [method, path, headers, body] of webhookForgiati) {
     const r = await fetch(`${BASE}${path}`, { method, headers: { 'content-type': 'application/json', ...headers }, body })
-    esito(r.status === 400 || r.status === 401, `${path}${Object.keys(headers).length ? '' : ' (nessun header)'} → ${r.status} (rifiutato)`, `status ${r.status}`)
+    const corpo = await r.text().catch(() => '')
+    // Rifiutato PER LA FIRMA, non perché il codice si rompe prima: il 400 del
+    // webhook dei conti Stripe è stato «verde» per due mesi mentre diceva
+    // «parseThinEvent is not a function» — non avrebbe accettato neanche Stripe.
+    const rotto = /is not a function|is not defined|Cannot read prop|undefined/i.test(corpo)
+    esito((r.status === 400 || r.status === 401) && !rotto, `${path}${Object.keys(headers).length ? '' : ' (nessun header)'} → ${r.status} (rifiutato)`, `status ${r.status}, corpo ${corpo.slice(0, 90)}`)
   }
 
   console.log(`\n2. WHATSAPP verify (GET) — verify_token sbagliato non restituisce la sfida\n`)
