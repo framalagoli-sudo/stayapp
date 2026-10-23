@@ -181,6 +181,18 @@ Dove possibile ognuno ha un test in `tests/smoke/security.spec.js`.
     i testi della sezione e tornano solo testi, uno al posto di uno che c'è già (`conTestiRiscritti`);
     un numero che non c'era non entra, le recensioni e i nomi non si riscrivono, e dalla pagina
     nel riquadro non parte mai una chiamata all'AI. Sonda `probe-ai-riscrivi.mjs`.
+27. **Un collaboratore legge e scrive solo dove ha il permesso — e lo decide un posto solo.**
+    `PERMESSI_STAFF` in `lib/server-auth.js`, applicata da `requireAuth` a **letture e scritture**:
+    per ogni percorso, quali permessi servono (ne basta uno) o `TITOLARE` (mai a un collaboratore).
+    Fino al 23/10/2026 le letture erano libere e le scritture controllate su 15 prefissi: un
+    collaboratore senza nessun permesso leggeva le prenotazioni con nomi ed email e cancellava
+    pagine, vetrine, offerte, webhook. Le letture incrociate che il pannello fa davvero (l'editor
+    del sito sceglie un modulo, le Prenotazioni mostrano gli eventi) sono scritte nella regola,
+    non lasciate aperte per comodità. **Una route o una pagina nuova del pannello che legge da
+    un'altra sezione va aggiunta lì.** Sonda `probe-permessi-collaboratori.mjs` (in deploy).
+    ⚠️ Non ancora: i permessi su **quale** entità (`struttura_ids`, `attivita_ids`) valgono solo
+    nel menu; lato server un collaboratore col permesso del sito tocca tutte le entità della sua
+    azienda.
 
 ### Il SISTEMA di monitoraggio (a strati — "sempre" senza sprechi)
 - **Strato 0 — Aggiornamento dipendenze (il "processo tipo WordPress-update").** `.github/dependabot.yml`

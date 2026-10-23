@@ -59,38 +59,88 @@ export function hasPermission(profile, permKey) {
   return !!profile.permissions?.[permKey]
 }
 
-// Mappa prefisso-route → chiave permesso. Le mutazioni (POST/PATCH/PUT/DELETE) su queste
-// route sono consentite a uno 'staff' solo se ha il permesso corrispondente.
-// Le GET restano libere (scoping per azienda già applicato) per non rompere Dashboard e
-// flussi cross-sezione (es. Preventivi che leggono Contatti).
-const PERMISSION_BY_PREFIX = [
-  ['/api/contatti',         'contatti'],
-  ['/api/newsletter',       'newsletter'],
-  ['/api/blog',             'blog'],            // include /api/blog/categories, /api/blog-automazioni
-  ['/api/automazioni',      'automazioni'],
-  ['/api/piano-editoriale', 'piano_editoriale'],
-  ['/api/content-studio',   'content_studio'],
-  ['/api/preventivi',       'preventivi'],
-  ['/api/form-builder',     'form_builder'],
-  ['/api/shop',             'shop'],
-  ['/api/loyalty',          'loyalty'],
-  ['/api/recensioni',       'recensioni'],
-  ['/api/survey',           'survey'],
-  ['/api/eventi',           'eventi'],
-  ['/api/booking',          'booking'],
-  ['/api/requests',         'richieste'],
+// Cosa può fare un collaboratore ('staff'), percorso per percorso.
+//
+// Per ogni regola: `scrivere` (POST/PATCH/PUT/DELETE) e `leggere` (GET) sono
+// l'elenco dei permessi di cui ne basta UNO; `TITOLARE` = mai a un
+// collaboratore; assente = nessun limite oltre all'azienda. Vince la PRIMA
+// regola che corrisponde, quindi le più specifiche stanno sopra.
+//
+// Prima del 23/10/2026 le letture erano libere e le scritture controllate solo
+// su 15 prefissi: un collaboratore senza nessun permesso leggeva le
+// prenotazioni con nomi ed email e cancellava pagine, vetrine, offerte,
+// webhook (`tests/probe-permessi-collaboratori.mjs`). Il menu nascondeva le
+// voci; la route rispondeva lo stesso.
+//
+// Le letture incrociate sono volute e scritte qui: l'editor del sito sceglie
+// fra moduli e risorse, le Prenotazioni mostrano gli eventi, lo Studio
+// contenuti legge il piano editoriale. Una pagina del pannello nuova che legge
+// da un'altra sezione va aggiunta alla regola di quella sezione.
+const TITOLARE = 'titolare'
+const SITO = ['struttura', 'ristorante', 'attivita_gestione']
+const ENTRAMBI = p => ({ scrivere: p, leggere: p })
+const PERMESSI_STAFF = [
+  [/^\/api\/contatti/,                          { scrivere: ['contatti'], leggere: ['contatti', 'preventivi'] }],
+  [/^\/api\/newsletter/,                        ENTRAMBI(['newsletter'])],
+  [/^\/api\/whatsapp\/connect/,                 { scrivere: TITOLARE }],
+  [/^\/api\/whatsapp/,                          ENTRAMBI(['newsletter'])],
+  [/^\/api\/blog/,                              ENTRAMBI(['blog'])],   // anche /api/blog-automazioni
+  [/^\/api\/automazioni/,                       ENTRAMBI(['automazioni'])],
+  [/^\/api\/piano-editoriale/,                  { scrivere: ['piano_editoriale'], leggere: ['piano_editoriale', 'content_studio'] }],
+  [/^\/api\/content-studio/,                    ENTRAMBI(['content_studio'])],
+  [/^\/api\/preventivi/,                        ENTRAMBI(['preventivi'])],
+  [/^\/api\/form-builder\/[^/]+\/submissions/,  ENTRAMBI(['form_builder'])],
+  [/^\/api\/form-builder/,                      { scrivere: ['form_builder'], leggere: ['form_builder', ...SITO] }],
+  [/^\/api\/shop/,                              ENTRAMBI(['shop'])],
+  [/^\/api\/loyalty/,                           ENTRAMBI(['loyalty'])],
+  [/^\/api\/recensioni/,                        ENTRAMBI(['recensioni'])],
+  [/^\/api\/survey/,                            ENTRAMBI(['survey'])],
+  [/^\/api\/eventi/,                            { scrivere: ['eventi'], leggere: ['eventi', 'prenotazioni'] }],
+  [/^\/api\/booking\/risorse/,                  { scrivere: ['booking'], leggere: ['booking', 'prenotazioni', ...SITO] }],
+  [/^\/api\/booking/,                           { scrivere: ['booking'], leggere: ['booking', 'prenotazioni'] }],
+  [/^\/api\/requests/,                          ENTRAMBI(['richieste'])],
+  [/^\/api\/offerte/,                           { scrivere: ['eventi'], leggere: ['eventi', ...SITO] }],
+  [/^\/api\/pagamenti/,                         ENTRAMBI(['eventi', 'booking', 'prenotazioni'])],
+  [/^\/api\/analytics/,                         { leggere: ['analytics'] }],
+  [/^\/api\/ai\/blog-auto/,                     { scrivere: ['blog'] }],
+  [/^\/api\/ai\/social-post/,                   { scrivere: ['piano_editoriale', 'content_studio'] }],
+  [/^\/api\/ai\/(from-document|generate-site)/, { scrivere: SITO }],
+  [/^\/api\/stripe\/connect/,                   { scrivere: TITOLARE }],   // l'editor del sito legge se si incassa
+  [/^\/api\/stripe/,                            ENTRAMBI(TITOLARE)],
+  [/^\/api\/webhooks/,                          ENTRAMBI(TITOLARE)],
+  [/^\/api\/google-calendar/,                   { scrivere: TITOLARE }],
+  [/^\/api\/(properties|ristoranti|attivita)$/, { scrivere: TITOLARE }],   // creare un'entità
+  [/^\/api\/upload\/event-cover/,               { scrivere: ['eventi'] }],
+  [/^\/api\/upload\/blog-cover/,                { scrivere: ['blog'] }],
+  [/^\/api\/upload\/risorsa-gallery/,           { scrivere: ['booking'] }],
+  [/^\/api\/upload\/minisito-image/,            { scrivere: [...SITO, 'shop'] }],   // anche le foto dei prodotti
+  // Le offerte scelgono un elemento di vetrina: chi ha gli eventi le legge.
+  [/^\/api\/(vetrine|vetrina-elementi)(\/|$)/,  { scrivere: SITO, leggere: ['eventi', ...SITO] }],
+  // Solo QUALI tipi di blocco usa il sito: lo chiede la pagina delle risorse
+  // per avvisare «non si vede da nessuna parte».
+  [/^\/api\/pagine\/blocchi-usati/,             { scrivere: SITO }],
+  [/^\/api\/(pagine|sezioni|translations|sito-snapshots|collegamenti)(\/|$)/, ENTRAMBI(SITO)],
+  [/^\/api\/(upload|site-templates|entita|domini|properties|ristoranti|attivita)\//, { scrivere: SITO }],
 ]
 const MUTATION_METHODS = new Set(['POST', 'PATCH', 'PUT', 'DELETE'])
 
-// Enforcement permessi staff: blocca le mutazioni su sezioni non concesse.
+// La regola di un percorso per un collaboratore: null = concesso.
+function permessoStaffNegato(pathname, metodo, permessi = {}) {
+  const regola = PERMESSI_STAFF.find(([re]) => re.test(pathname))?.[1]
+  const servono = MUTATION_METHODS.has(metodo) ? regola?.scrivere : regola?.leggere
+  if (!servono) return false
+  if (servono === TITOLARE) return true
+  return !servono.some(k => !!permessi?.[k])
+}
+
+// Enforcement permessi staff, per letture e scritture.
 async function enforcePermission(request, user) {
-  if (!MUTATION_METHODS.has(request.method)) return null
   const pathname = new URL(request.url).pathname
-  const entry = PERMISSION_BY_PREFIX.find(([prefix]) => pathname.startsWith(prefix))
-  if (!entry) return null
+  // Un percorso senza regola non costa una lettura del profilo.
+  if (!PERMESSI_STAFF.some(([re]) => re.test(pathname))) return null
   const { data: profile } = await supabaseAdmin.from('profiles').select('role, permissions').eq('id', user.id).single()
   if (!profile || profile.role !== 'staff') return null // solo staff è ristretto
-  if (profile.permissions?.[entry[1]]) return null       // permesso concesso
+  if (!permessoStaffNegato(pathname, request.method, profile.permissions)) return null
   return Response.json({ error: 'Permesso negato per questa sezione', code: 'permission_denied' }, { status: 403 })
 }
 

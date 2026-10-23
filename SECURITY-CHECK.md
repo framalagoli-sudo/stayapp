@@ -459,3 +459,26 @@ Sonde nuove in `deploy.ps1`: `probe-iniezione-filtri`, `probe-upload-sicurezza`,
 
 ⚠️ **Limite onesto**: coperto il baseline delle classi note, non è un pentest esterno e il catalogo non è
 chiuso (codice nuovo = superficie nuova). Prima di aprire le registrazioni serve un pentest vero (§4.2).
+
+## Aggiornamento 23/10/2026 — collaboratori della stessa azienda senza permesso
+
+Il «da fare» del 05/10: la sweep prova «un'altra azienda», mai «stessa azienda, collaboratore senza
+permesso». Sonda nuova **`tests/probe-permessi-collaboratori.mjs`** (in `deploy.ps1`): un'azienda `ZZ`
+con un oggetto di ogni tipo (`probe-azienda-popolata.mjs`, ora condivisa con `probe-enumerazione`), un
+collaboratore **senza permessi** che bussa a ogni porta (289 porta·metodo), uno **con tutti** che deve
+leggere quello che legge il titolare, e uno per ogni lettura incrociata del pannello con un permesso solo.
+
+| Misurato in produzione prima della correzione | |
+|---|---|
+| 🟠 Letture senza permesso | 24 porte: prenotazioni di eventi e risorse **con nomi ed email**, moduli, automazioni, eventi, prodotti, blog, offerte, pagine in bozza |
+| 🟠 Scritture senza permesso | 16 porte: modifica/cancellazione di pagine, sezioni, vetrine, offerte, webhook, traduzioni, versioni del sito (anche il **ripristino**), scollegare Google Calendar |
+
+**Impatto reale: nessuno.** Al 23/10 non esiste un collaboratore attivo su nessuna azienda (5 account
+staff, tutti bloccati da settembre). Il buco era aperto, non sfruttato.
+
+Correzione: `PERMESSI_STAFF` in `lib/server-auth.js` (invariante 27 di `SECURITY.md`) — una regola per
+percorso su letture e scritture; Stripe, webhook e Google Calendar solo al titolare.
+
+Rimasti fuori, annotati: i permessi su **quale entità** (`struttura_ids`…) non sono applicati dal
+server; un collaboratore con «Richieste» senza struttura assegnata vede una lista vuota
+(`userCanAccessProperty`, limite di funzione, non una fuga).
