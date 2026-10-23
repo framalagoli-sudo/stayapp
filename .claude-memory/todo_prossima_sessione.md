@@ -4,7 +4,7 @@ description: "Da dove riprendere — 18/10: META/WHATSAPP avviato col numero di 
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-10-23T08:56:27.133Z
+  modified: 2026-10-23T09:40:27.844Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
@@ -15,6 +15,8 @@ metadata:
 - LIVE (commit 5575fe37 + test 56a1f28b). Deploy: smoke 1 rosso (prova IDOR col collaboratore senza permesso del sito → 403 prima del 404) → corretto il test; security spec 29/29 e 19 sonde verdi lanciate a mano in produzione.
 - Fermato su ok di Francesco il suo `npm run dev` (5,8 GB): gli ho detto che non gli serve ([[feedback-server-sviluppo-non-serve-a-francesco]]).
 - Da fare prima di un cliente con più sedi e collaboratori: permessi per entità lato server ([[project_backlog_staff_attivita_perm]]).
+- ✅ 23/10 punto 4 (piccole) FATTO (CLAUDE.md nota 85): 🔴 webhook conti Stripe MAI funzionato (parseThinEvent → parseEventNotification) corretto; newsletter fondo scuro già ok (misurata); email «riprenota» a evento concluso tolta; ripristino contatti_attivita ok (letto). Stripe 23 NON unita (aspetta sandbox attiva).
+- ⏳ **Da Francesco**: dashboard Stripe → Sviluppatori → Webhook → l'endpoint «eventi da account connessi» (`…/api/stripe/webhook-account`) è ancora ATTIVO? Dopo ~2 mesi di 400 Stripe può averlo disattivato: se sì, riattivarlo. Poi «Invia evento di prova» → deve dare 200.
 
 ## ⏸️ 23/10 — META/WHATSAPP IN PAUSA (Francesco: «mettiamolo in pausa, lo facciamo dopo»)
 Tutto il blocco 18/10 qui sotto resta valido così com'è: si riprende dal punto 1 (config webhook in dashboard). In pausa con lui anche: la prova dal vivo della scelta «giorno di uscita» di Automax (blocco 17/10) e il «Mandala a me» dei resoconti (blocco 15/10). Ricordarglielo a inizio sessione finché non li riprende.
