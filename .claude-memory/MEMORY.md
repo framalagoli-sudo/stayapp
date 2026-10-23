@@ -51,7 +51,7 @@
 
 ## Come lavoro (feedback)
 - [Lingua italiana](feedback_lingua.md) · [Sicurezza priorità](feedback_sicurezza_priorita.md) · [Entità sempre tre](feedback_entita_tre.md) · [Icone flat](feedback_icone_flat.md)
-- [Deploy con deploy.ps1](feedback_deploy.md) · [Diagnosi prima del deploy](feedback_diagnosi_prima_del_deploy.md) · [Workflow review](feedback_workflow_review.md)
+- [Server di sviluppo: non serve a Francesco](feedback_server_sviluppo_non_serve_a_francesco.md) · [Deploy con deploy.ps1](feedback_deploy.md) · [Diagnosi prima del deploy](feedback_diagnosi_prima_del_deploy.md) · [Workflow review](feedback_workflow_review.md)
 - [Sandbox non è live](feedback_sandbox_non_e_live.md) · [Sonde non scrivono a persone vere](feedback_sonde_non_scrivono_a_persone.md)
 - [Cercare TUTTI i punti](feedback_cercare_tutti_i_punti.md) · [Vincolo o scelta?](feedback_vincolo_o_scelta.md) · [Niente tassonomie](feedback_niente_tassonomie.md)
 - [Template email](feedback_email_templates.md) · [guestFetch](feedback_guestfetch.md) · [Traccia il dato](feedback_traccia_dato_fino_api.md)

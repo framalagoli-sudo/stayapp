@@ -4,13 +4,22 @@ description: "Da dove riprendere — 18/10: META/WHATSAPP avviato col numero di 
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-10-19T21:57:19.266Z
+  modified: 2026-10-23T08:56:27.133Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
 
-## ▶️ 18/10 — META/WHATSAPP avviato col numero di test (⬅️ SI RIPRENDE DA QUI)
+## ✅ 23/10 — permessi dei collaboratori chiusi (CLAUDE.md nota 84, SECURITY invariante 27)
+- Francesco ha scelto il punto 1 di questo elenco (in ordine): 1 sicurezza collaboratori ✅ · 2 aprire le registrazioni (verifica email + Turnstile) · 3 intervista che costruisce il sito · 4 piccole (newsletter su fondo scuro, email «posto liberato» su evento passato, ripristino `contatti_attivita`, PR Dependabot stripe) · 5 Halloween 31/10 nel Club (testo suo).
+- LIVE (commit 5575fe37 + test 56a1f28b). Deploy: smoke 1 rosso (prova IDOR col collaboratore senza permesso del sito → 403 prima del 404) → corretto il test; security spec 29/29 e 19 sonde verdi lanciate a mano in produzione.
+- Fermato su ok di Francesco il suo `npm run dev` (5,8 GB): gli ho detto che non gli serve ([[feedback-server-sviluppo-non-serve-a-francesco]]).
+- Da fare prima di un cliente con più sedi e collaboratori: permessi per entità lato server ([[project_backlog_staff_attivita_perm]]).
+
+## ⏸️ 23/10 — META/WHATSAPP IN PAUSA (Francesco: «mettiamolo in pausa, lo facciamo dopo»)
+Tutto il blocco 18/10 qui sotto resta valido così com'è: si riprende dal punto 1 (config webhook in dashboard). In pausa con lui anche: la prova dal vivo della scelta «giorno di uscita» di Automax (blocco 17/10) e il «Mandala a me» dei resoconti (blocco 15/10). Ricordarglielo a inizio sessione finché non li riprende.
+
+## ⏸️ 18/10 — META/WHATSAPP avviato col numero di test (in pausa dal 23/10)
 
 Sessione dedicata a Meta. Accesso a developers.facebook.com **OK** (blocco dispositivo superato). App ID `28469155976047675`, business_id `245401402797669`.
 
