@@ -4,7 +4,7 @@ description: "Da dove riprendere — 18/10: META/WHATSAPP avviato col numero di 
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-10-23T13:08:04.484Z
+  modified: 2026-10-23T14:15:14.373Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
@@ -20,7 +20,8 @@ metadata:
 
 ## ✅ 23/10 punto 2 — registrazione con conferma email LIVE (CLAUDE.md nota 86), registrazioni ancora CHIUSE
 - Commit ca889896 + b3fa3331 (Studio contenuti: blocco «senza azienda» solo dove parte l'AI — il primo deploy aveva un rosso smoke sul super_admin). Ultimo deploy: Vercel + push + smoke 74/74 ok; sonde fermate DAL SISTEMA per memoria a metà (sweep, rls, colonne verdi; da molti-indirizzi in poi NON girate) → rilanciare le sonde a mano quando la memoria lo permette (solo se Francesco dice ok).
-- ⏳ Da Francesco: (1) Supabase → Authentication → «Allow new users to sign up» OFF (registrazione diretta oggi aperta), poi rilanciare probe-registrazione + smoke; (2) ok ad aprire le registrazioni pochi minuti per `node probe-registrazione.mjs --signup` in produzione (la route vera non è mai stata provata dal vivo).
+- ✅ Francesco 23/10: Supabase «Allow new users to sign up» OFF (manual linking e anonymous OFF, Confirm email ON). Verificato: signUp diretto → signup_disabled; createUser, magiclink, invite, recovery ok. Sonde rilanciate a mano in produzione: 17/17 verdi (probe-registrazione compresa; il falso rosso di probe-permessi-collaboratori su completa-registrazione è dichiarato SOLO_SU_SE_STESSO).
+- ⏳ Francesco NON vuole aprire le registrazioni per ora (interruttore: Impostazioni → «Registrazioni pubbliche»). Quando vorrà: ok ad aprire le registrazioni pochi minuti per `node probe-registrazione.mjs --signup` in produzione (la route vera non è mai stata provata dal vivo).
 
 ## ⏸️ 23/10 — META/WHATSAPP IN PAUSA (Francesco: «mettiamolo in pausa, lo facciamo dopo»)
 Tutto il blocco 18/10 qui sotto resta valido così com'è: si riprende dal punto 1 (config webhook in dashboard). In pausa con lui anche: la prova dal vivo della scelta «giorno di uscita» di Automax (blocco 17/10) e il «Mandala a me» dei resoconti (blocco 15/10). Ricordarglielo a inizio sessione finché non li riprende.
