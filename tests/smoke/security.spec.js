@@ -38,12 +38,15 @@ test.describe('Regression sicurezza (ruolo staff)', () => {
     const { data: az } = await admin.from('aziende').insert({ ragione_sociale: RS, require_2fa: false }).select().single()
     ctx.aziendaId = az.id
 
-    // staff con SOLO permesso "contatti"
+    // staff con i permessi "contatti" e "sito" (attivita_gestione), e NON "newsletter".
+    // Il sito serve alla prova IDOR sulle pagine: senza, il collaboratore è
+    // fermato dal permesso (403) prima di arrivare al controllo dell'azienda, e
+    // la prova non misurerebbe più l'isolamento fra aziende.
     const email = `ci-sec-${Date.now()}@playwright.internal`
     const password = 'CiSecTest123!aZ'
     const { data: u } = await admin.auth.admin.createUser({ email, password, email_confirm: true })
     ctx.staffUserId = u.user.id
-    await admin.from('profiles').upsert({ id: u.user.id, role: 'staff', azienda_id: az.id, full_name: 'CI Sec Staff', permissions: { contatti: true } })
+    await admin.from('profiles').upsert({ id: u.user.id, role: 'staff', azienda_id: az.id, full_name: 'CI Sec Staff', permissions: { contatti: true, attivita_gestione: true } })
     const { data: sess } = await anon.auth.signInWithPassword({ email, password })
     ctx.staffToken = sess.session.access_token
 
