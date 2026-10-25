@@ -11,6 +11,7 @@
 - [TODO prossima sessione](todo_prossima_sessione.md) — LEGGERE PER PRIMO
 - [A ogni chiusura: aggiornare TUTTI i file di progetto](feedback_chiusura_sessione.md) — aprirli, non supporli
 - [Posizionamento target](project_positioning_target.md) — 14/10: ~80 €/mese, 200 clienti, «il cliente migliore sono io», no clone GHL, no social
+- [Agenti e automatismi per il titolare](project_agenti_automatismi.md) — 24/10 idea di Francesco, proposte date; Halloween Club in sospeso
 - [Agente AI al telefono + voce](project_agente_vocale.md) — interprete in editor prima di Stripe; intervista che genera il sito; richieste foto per sezione
 - [Landing: sempre una persona vera](project_landing_persona_umana.md)
 - [L'AI non inventa fatti](feedback_niente_fatti_inventati_ai.md) — recensioni inventate rifiutate
