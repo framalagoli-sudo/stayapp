@@ -4,7 +4,7 @@ description: "Da dove riprendere — 18/10: META/WHATSAPP avviato col numero di 
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-10-25T07:52:37.432Z
+  modified: 2026-10-25T07:53:19.016Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
@@ -25,6 +25,8 @@ metadata:
 
 ## ⏸️ 23/10 — META/WHATSAPP IN PAUSA (Francesco: «mettiamolo in pausa, lo facciamo dopo»)
 Tutto il blocco 18/10 qui sotto resta valido così com'è: si riprende dal punto 1 (config webhook in dashboard). In pausa con lui anche: la prova dal vivo della scelta «giorno di uscita» di Automax (blocco 17/10) e il «Mandala a me» dei resoconti (blocco 15/10). Ricordarglielo a inizio sessione finché non li riprende.
+
+⚠️ 25/10: su main c'è il merge Dependabot **#66** (minori: aws-sdk, supabase-js 2.118, lucide-react 1.61, resend 6.34) **NON ancora deployato**: parte al prossimo deploy vero — guardare smoke e sonde con quell'occhio.
 
 ➕ **25/10, deciso con Francesco:** quando si riprende Meta, la App Review deve includere ANCHE i permessi di **pubblicazione su Instagram e Facebook** (pubblicare da OltreNova) — stessa app, una revisione sola. Regole di progetto in [[project-agenti-automatismi]].
 
