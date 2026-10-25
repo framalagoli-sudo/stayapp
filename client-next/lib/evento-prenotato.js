@@ -65,7 +65,7 @@ export async function annunciaPrenotazioneEvento(bookingId) {
           title: `Nuova prenotazione — ${evento.title}`, entityName: bizName,
           rows: [
             { label: 'Nome', value: b.guest_name },
-            { label: 'Email', value: `<a href="mailto:${b.guest_email}" style="color:#00b5b5">${b.guest_email}</a>` },
+            { label: 'Email', value: b.guest_email },
             b.guest_phone ? { label: 'Telefono', value: b.guest_phone } : null,
             { label: 'Posti', value: String(seats) },
             pkgName ? { label: 'Pacchetto', value: pkgName } : null,

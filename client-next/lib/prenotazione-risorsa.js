@@ -6,7 +6,7 @@ import { sendWebhooks } from './send-webhooks'
 import { triggerAutomazione } from './guest-utils'
 import { syncBookingCreate } from './google-calendar-stub'
 import { sendEmail } from './send-email'
-import { guestEmailTemplate, emailTemplate } from './email-template'
+import { guestEmailTemplate, emailTemplate, html } from './email-template'
 import { getAziendaLegale } from './guest-data'
 
 // La prenotazione di una risorsa (un furgone, una casa, un campo): quando si
@@ -111,19 +111,19 @@ export async function mandaEmailPrenotazione(prenotazione, risorsa, momento = 'c
       prenotazione.note_cliente ? { label: 'Note', value: prenotazione.note_cliente } : null,
     ].filter(Boolean)
 
-    const contatto = waUrl ? `<div style="margin:20px 0;padding:14px 18px;background:#f0fdf4;border-radius:10px;text-align:center">
+    const contatto = waUrl ? html`<div style="margin:20px 0;padding:14px 18px;background:#f0fdf4;border-radius:10px;text-align:center">
       <p style="margin:0;font-size:14px;color:#166534">Hai domande? <a href="${waUrl}" style="color:#128C7E;font-weight:700;text-decoration:none">Scrivici su WhatsApp →</a></p>
     </div>` : ''
-    const disdetta = `<p style="font-size:13px;color:#999;margin-top:20px">Hai bisogno di cancellare? <a href="${cancelUrl}" style="color:#00b5b5">Clicca qui</a> (entro ${risorsa.cancellazione_ore || 24} ore prima).</p>`
-    const nome = `<strong>${String(prenotazione.cliente_nome || '').replace(/[<>&"]/g, '')}</strong>`
+    const disdetta = html`<p style="font-size:13px;color:#999;margin-top:20px">Hai bisogno di cancellare? <a href="${cancelUrl}" style="color:#00b5b5">Clicca qui</a> (entro ${risorsa.cancellazione_ore || 24} ore prima).</p>`
+    const nome = html`<strong>${prenotazione.cliente_nome || ''}</strong>`
 
     const testi = {
       confermata: { ctx: 'booking-conferma', oggetto: `Prenotazione confermata — ${risorsa.nome}`, titolo: 'Prenotazione confermata ✓',
-        intro: `Ciao ${nome}, la tua prenotazione è confermata.`, corpo: contatto + disdetta },
+        intro: html`Ciao ${nome}, la tua prenotazione è confermata.`, corpo: html`${contatto}${disdetta}` },
       richiesta: { ctx: 'booking-richiesta', oggetto: `Richiesta ricevuta — ${risorsa.nome}`, titolo: 'Abbiamo ricevuto la tua richiesta',
-        intro: `Ciao ${nome}, la tua richiesta è arrivata. <strong>Non è ancora confermata</strong>: ${bizName} la controlla e ti scrive per confermarla.`, corpo: contatto },
+        intro: html`Ciao ${nome}, la tua richiesta è arrivata. <strong>Non è ancora confermata</strong>: ${bizName} la controlla e ti scrive per confermarla.`, corpo: contatto },
       scaduta: { ctx: 'booking-scaduta', oggetto: `Prenotazione non confermata — ${risorsa.nome}`, titolo: 'La prenotazione non è andata a buon fine',
-        intro: `Ciao ${nome}, il pagamento per <strong>${risorsa.nome}</strong> non è arrivato in tempo, quindi la prenotazione è stata annullata e la disponibilità è tornata libera.<br><br>Se la vuoi ancora puoi prenotare di nuovo — se nel frattempo è rimasta disponibile.`, corpo: contatto },
+        intro: html`Ciao ${nome}, il pagamento per <strong>${risorsa.nome}</strong> non è arrivato in tempo, quindi la prenotazione è stata annullata e la disponibilità è tornata libera.<br><br>Se la vuoi ancora puoi prenotare di nuovo — se nel frattempo è rimasta disponibile.`, corpo: contatto },
     }
     const t = testi[momento] || testi.confermata
     await sendEmail({
@@ -154,7 +154,6 @@ export async function avvisaTitolare(prenotazione, risorsa, momento = 'confermat
       a = a || az?.email || null; nome = nome || az?.ragione_sociale || risorsa.nome
     }
     if (!a) return
-    const pulito = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
     const daApprovare = momento === 'richiesta'
     const online = Number(prenotazione.importo_online) || 0
     const appUrl = ((process.env.CLIENT_URL ?? '').trim() || 'https://www.oltrenova.com').replace('://oltrenova.com', '://www.oltrenova.com')
@@ -163,16 +162,16 @@ export async function avvisaTitolare(prenotazione, risorsa, momento = 'confermat
       ...(prenotazione.cliente_email ? { replyTo: prenotazione.cliente_email } : {}),
       subject: `[${nome}] ${daApprovare ? 'Richiesta da approvare' : 'Nuova prenotazione'}: ${risorsa.nome}`,
       html: emailTemplate({
-        title: `${daApprovare ? 'Richiesta da approvare' : 'Nuova prenotazione'} — ${pulito(risorsa.nome)}`, entityName: pulito(nome),
+        title: `${daApprovare ? 'Richiesta da approvare' : 'Nuova prenotazione'} — ${risorsa.nome}`, entityName: nome,
         rows: [
-          { label: 'Nome', value: pulito(prenotazione.cliente_nome) },
-          prenotazione.cliente_email ? { label: 'Email', value: `<a href="mailto:${pulito(prenotazione.cliente_email)}" style="color:#00b5b5">${pulito(prenotazione.cliente_email)}</a>` } : null,
-          prenotazione.cliente_telefono ? { label: 'Telefono', value: pulito(prenotazione.cliente_telefono) } : null,
-          { label: 'Quando', value: pulito(quandoDi(prenotazione, risorsa)) },
+          { label: 'Nome', value: prenotazione.cliente_nome },
+          prenotazione.cliente_email ? { label: 'Email', value: prenotazione.cliente_email } : null,
+          prenotazione.cliente_telefono ? { label: 'Telefono', value: prenotazione.cliente_telefono } : null,
+          { label: 'Quando', value: quandoDi(prenotazione, risorsa) },
           { label: 'Persone', value: String(prenotazione.n_persone || 1) },
           prenotazione.importo_totale > 0 ? { label: 'Totale', value: `€${Number(prenotazione.importo_totale).toFixed(2)}` } : null,
           prenotazione.pagamento_stato === 'pagato' && online > 0 ? { label: 'Pagato online', value: `€${online.toFixed(2)}` } : null,
-          prenotazione.note_cliente ? { label: 'Note', value: pulito(prenotazione.note_cliente) } : null,
+          prenotazione.note_cliente ? { label: 'Note', value: prenotazione.note_cliente } : null,
           daApprovare ? { label: 'Da fare', value: 'Aprila in «Prenotazioni» e confermala: chi l’ha chiesta sta aspettando la tua risposta.' } : null,
         ].filter(Boolean),
         appUrl,

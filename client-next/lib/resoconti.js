@@ -13,7 +13,7 @@
 import { supabaseAdmin } from './supabase-server'
 import { cruscottoTra } from './cruscotto'
 import { consigliPer } from './consigli'
-import { platformEmailTemplate, escEmail as esc } from './email-template'
+import { platformEmailTemplate, escEmail as esc, htmlGiaPulito } from './email-template'
 import { sendEmail } from './send-email'
 import { fusoSicuro, giornoLocale, istanteDi, oraLocale } from './fuso'
 import { TIPI_RESOCONTO, vuoleIlTipo } from './resoconti-regole'
@@ -173,11 +173,12 @@ export function componiResoconto({ nome, dati, periodo: per, consiglio, fuso }) 
     : `${per.etichetta.charAt(0).toUpperCase()}${per.etichetta.slice(1)} di ${nome}: com'è andata`
   const html = platformEmailTemplate({
     title: settimana ? `La tua settimana, ${per.etichetta}` : `Il tuo mese: ${per.etichetta}`,
-    intro: `Ecco com'è andata per <strong>${esc(nome)}</strong>.`,
-    bodyHtml: `<table width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px">${righe.join('')}</table>${evento}${suggerimento}`,
+    // Composto qui con esc() su ogni dato: per questo «già pulito».
+    intro: htmlGiaPulito(`Ecco com'è andata per <strong>${esc(nome)}</strong>.`),
+    bodyHtml: htmlGiaPulito(`<table width="100%" cellpadding="0" cellspacing="0" style="margin-top:18px">${righe.join('')}</table>${evento}${suggerimento}`),
     ctaText: 'Apri il pannello',
     ctaUrl: PANNELLO,
-    footerNote: `Ricevi questo resoconto ${settimana ? 'ogni settimana' : 'ogni mese'} perché amministri ${esc(nome)} su OltreNova. Per riceverlo con un'altra cadenza, o per non riceverlo più, scrivi a <a href="mailto:info@oltrenova.com" style="color:#6b6b76">info@oltrenova.com</a>.`,
+    footerNote: htmlGiaPulito(`Ricevi questo resoconto ${settimana ? 'ogni settimana' : 'ogni mese'} perché amministri ${esc(nome)} su OltreNova. Per riceverlo con un'altra cadenza, o per non riceverlo più, scrivi a <a href="mailto:info@oltrenova.com" style="color:#6b6b76">info@oltrenova.com</a>.`),
   })
   return { oggetto, html }
 }

@@ -18,7 +18,7 @@ async function sendConfirmationEmail({ email, nome, entityName, token }) {
     html: guestEmailTemplate({
       entityName, title: 'Conferma la tua iscrizione',
       intro: `${nome ? `Ciao ${nome}, ` : ''}clicca il pulsante per confermare e iniziare a ricevere le nostre comunicazioni.`,
-      bodyHtml: `<div style="margin:24px 0"><a href="${confirmUrl}" style="display:inline-block;padding:14px 32px;background:#1a1a2e;color:#fff;text-decoration:none;border-radius:8px;font-weight:700">Conferma iscrizione &rarr;</a></div>`,
+      ctaText: 'Conferma iscrizione →', ctaUrl: confirmUrl,
     }),
   }).catch(() => {})
 }

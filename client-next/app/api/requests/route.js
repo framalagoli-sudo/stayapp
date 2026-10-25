@@ -1,7 +1,7 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { sendWebhooks } from '@/lib/send-webhooks'
-import { emailTemplate } from '@/lib/email-template'
+import { emailTemplate, html, aCapo } from '@/lib/email-template'
 import { sendEmail } from '@/lib/send-email'
 
 // La formula che chi prenota accetta. La decide il server, non il componente:
@@ -65,11 +65,11 @@ export async function POST(request) {
             { label: 'Tipo', value: type },
             ...(room ? [{ label: 'Camera', value: room }] : []),
             ...(conDati ? [{ label: 'Nome', value: nome.trim() }, { label: 'Contatto', value: contatto.trim() }] : []),
-            { label: 'Messaggio', value: messaggioCompleto.replace(/\n/g, '<br>') },
+            { label: 'Messaggio', value: aCapo(messaggioCompleto) },
             // Se l'ospite ha scelto WhatsApp può aprire la chat e non inviare:
             // il titolare deve saperlo, così se il messaggio non arriva scrive lui.
             ...(canale === 'whatsapp'
-              ? [{ label: 'Attenzione', value: 'Ha scelto di scriverti su <strong>WhatsApp</strong>. Se il messaggio non arriva, il suo recapito è qui sopra.' }]
+              ? [{ label: 'Attenzione', value: html`Ha scelto di scriverti su <strong>WhatsApp</strong>. Se il messaggio non arriva, il suo recapito è qui sopra.` }]
               : []),
           ],
           appUrl: (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com',

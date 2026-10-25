@@ -1,7 +1,7 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { sendEmail } from '@/lib/send-email'
-import { platformEmailTemplate } from '@/lib/email-template'
+import { platformEmailTemplate, html } from '@/lib/email-template'
 
 export async function POST(request, props) {
   const params = await props.params;
@@ -45,9 +45,9 @@ export async function POST(request, props) {
         to: email, subject: 'Il tuo link per accedere a OltreNova',
         html: platformEmailTemplate({
           title: 'Nuovo link di accesso',
-          intro: `Ciao <strong>${nome}</strong>, il link precedente è scaduto. Usa questo nuovo link per impostare la tua password.`,
+          intro: html`Ciao <strong>${nome}</strong>, il link precedente è scaduto. Usa questo nuovo link per impostare la tua password.`,
           ctaText: 'Imposta password →', ctaUrl: link,
-          footerNote: 'Il link è valido per <strong>24 ore</strong>.',
+          footerNote: html`Il link è valido per <strong>24 ore</strong>.`,
         }),
       }).catch(() => {})
     }

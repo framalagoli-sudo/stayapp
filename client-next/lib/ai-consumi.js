@@ -1,6 +1,6 @@
 import { supabaseAdmin } from './supabase-server'
 import { sendEmail } from './send-email'
-import { platformEmailTemplate } from './email-template'
+import { platformEmailTemplate, htmlGiaPulito } from './email-template'
 import { dollariDaEuro, formatoEuro } from './valuta-ai'
 
 // L'UNICO punto da cui la piattaforma parla con l'AI.
@@ -124,9 +124,10 @@ async function avvisaSoglia(azienda_id, stato, soglia) {
       subject: `${titolo}: ${stato.nome || azienda_id}`,
       html: platformEmailTemplate({
         title: titolo,
-        intro: `<strong>${esc(stato.nome || azienda_id)}</strong> ha speso <strong>${formatoEuro(stato.speso)}</strong> di AI questo mese, su un tetto di <strong>${formatoEuro(stato.budget)}</strong>.`
+        // Il nome passa da esc() qui sotto: il resto sono cifre e frasi nostre.
+        intro: htmlGiaPulito(`<strong>${esc(stato.nome || azienda_id)}</strong> ha speso <strong>${formatoEuro(stato.speso)}</strong> di AI questo mese, su un tetto di <strong>${formatoEuro(stato.budget)}</strong>.`
           + (soglia >= 100 ? '<br><br>Le funzioni AI sono ferme per questa azienda fino al primo del mese, a meno di una ricarica.' : '')
-          + '<br><br>Per dare credito in più: <strong>Aziende → Credito AI</strong>.',
+          + '<br><br>Per dare credito in più: <strong>Aziende → Credito AI</strong>.'),
         footerNote: 'Un solo avviso per soglia e per mese. Il dettaglio è in Diagnostica.',
       }),
     })

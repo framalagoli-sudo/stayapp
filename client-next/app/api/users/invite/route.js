@@ -1,7 +1,7 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { sendEmail } from '@/lib/send-email'
-import { platformEmailTemplate } from '@/lib/email-template'
+import { platformEmailTemplate, html } from '@/lib/email-template'
 
 export async function POST(request) {
   try {
@@ -39,9 +39,9 @@ export async function POST(request) {
         to: email.trim(), subject: 'Sei stato invitato su OltreNova',
         html: platformEmailTemplate({
           title: 'Benvenuto su OltreNova',
-          intro: `Ciao <strong>${nome}</strong>, sei stato invitato a collaborare sul pannello OltreNova.`,
+          intro: html`Ciao <strong>${nome}</strong>, sei stato invitato a collaborare sul pannello OltreNova.`,
           ctaText: 'Accetta invito →', ctaUrl: inviteLink,
-          footerNote: 'Il link è valido per <strong>24 ore</strong>.',
+          footerNote: html`Il link è valido per <strong>24 ore</strong>.`,
         }),
       }).catch(() => {})
     }

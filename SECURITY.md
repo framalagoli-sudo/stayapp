@@ -193,6 +193,11 @@ Dove possibile ognuno ha un test in `tests/smoke/security.spec.js`.
     ⚠️ Non ancora: i permessi su **quale** entità (`struttura_ids`, `attivita_ids`) valgono solo
     nel menu; lato server un collaboratore col permesso del sito tocca tutte le entità della sua
     azienda.
+28. **Nelle email tutto è testo, l'HTML si dichiara.** `lib/email-template.js` fa l'escape di ogni
+    campo; l'HTML voluto passa da `` html`…` `` (escape dei valori dentro) o `htmlGiaPulito` (già
+    ripulito da chi lo compone). Fino al 25/10/2026 era il contrario, e i moduli pubblici spedivano
+    l'HTML dell'attaccante — anche a indirizzi scelti da lui (lista d'attesa, newsletter, negozio).
+    Sonda `probe-email-sicure.mjs` (in deploy).
 
 ### Il SISTEMA di monitoraggio (a strati — "sempre" senza sprechi)
 - **Strato 0 — Aggiornamento dipendenze (il "processo tipo WordPress-update").** `.github/dependabot.yml`

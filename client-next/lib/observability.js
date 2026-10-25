@@ -1,11 +1,10 @@
 import { supabaseAdmin } from './supabase-server'
 import { sendEmail } from './send-email'
-import { platformEmailTemplate } from './email-template'
+import { platformEmailTemplate, html } from './email-template'
 
 // Destinatario degli alert di errore (l'operatore, es. Francesco). Configurabile;
 // fallback su DEMO_NOTIFY_EMAIL che è già impostata. Se manca → nessun alert.
 const ALERT_TO = (process.env.ERROR_ALERT_EMAIL || process.env.DEMO_NOTIFY_EMAIL || '').trim()
-const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 // Registra un errore server:
 //  - SEMPRE su console → finisce nei Runtime Logs di Vercel (visibili nel dashboard).
@@ -33,7 +32,7 @@ export async function logError(source, err, { alert = false, ...extra } = {}) {
       subject: `⚠️ Errore in produzione: ${source}`,
       html: platformEmailTemplate({
         title: 'Errore in produzione',
-        intro: `Un percorso critico ha generato un errore.<br><br><strong>Dove:</strong> ${esc(source)}<br><strong>Errore:</strong> ${esc(msg)}`,
+        intro: html`Un percorso critico ha generato un errore.<br><br><strong>Dove:</strong> ${source}<br><strong>Errore:</strong> ${msg}`,
         footerNote: 'Alert automatico (max 1/ora per punto). Dettaglio completo nei Runtime Logs di Vercel.',
       }),
     })

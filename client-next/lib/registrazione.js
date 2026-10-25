@@ -1,6 +1,6 @@
 import { supabaseAdmin } from './supabase-server'
 import { sendEmail } from './send-email'
-import { platformEmailTemplate, escEmail } from './email-template'
+import { platformEmailTemplate, html } from './email-template'
 import { fusoSicuro } from './fuso'
 
 // La registrazione aperta, in due tempi.
@@ -40,7 +40,7 @@ export async function mandaConfermaEmail(email) {
     subject: 'Conferma il tuo indirizzo — OltreNova',
     html: platformEmailTemplate({
       title: 'Conferma il tuo indirizzo',
-      intro: `${nome ? `Stai creando l'account di <strong>${escEmail(nome)}</strong> su OltreNova. ` : ''}Premi il pulsante per confermare che questo indirizzo è tuo: poi entri e hai <strong>${GIORNI_DI_PROVA} giorni di prova gratuita</strong>, senza carta di credito.`,
+      intro: html`${nome ? html`Stai creando l'account di <strong>${nome}</strong> su OltreNova. ` : ''}Premi il pulsante per confermare che questo indirizzo è tuo: poi entri e hai <strong>${GIORNI_DI_PROVA} giorni di prova gratuita</strong>, senza carta di credito.`,
       ctaText: 'Conferma e entra →', ctaUrl: link,
       footerNote: 'Se non sei stato tu, ignora questa email: senza conferma non viene creato niente.',
     }),

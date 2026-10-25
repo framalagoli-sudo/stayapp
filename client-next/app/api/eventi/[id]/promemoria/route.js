@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireRecordAccess } from '@/lib/server-auth'
 import { sendEmail } from '@/lib/send-email'
-import { guestEmailTemplate } from '@/lib/email-template'
+import { guestEmailTemplate, html, htmlGiaPulito } from '@/lib/email-template'
 import { getAziendaLegale } from '@/lib/guest-data'
 import { inviaMessaggioWhatsapp } from '@/lib/whatsapp-messaggio'
 import { testoRicco } from '@/lib/testo-ricco'
@@ -134,7 +134,7 @@ export async function POST(request, props) {
             // ⚠️ Il titolo dell'evento resta scritto dal server: è l'unica cosa
             // che chi legge deve poter riconoscere con certezza, e non dipende
             // da cosa il titolare ha battuto nel campo.
-            intro: `Ciao ${b.guest_name || ''}, a proposito di <strong>${evento.title}</strong>:<br><br>${testoRicco(testo)}`,
+            intro: html`Ciao ${b.guest_name || ''}, a proposito di <strong>${evento.title}</strong>:<br><br>${htmlGiaPulito(testoRicco(testo))}`,
             rows: [
               quando ? { label: 'Quando', value: quando } : null,
               evento.location ? { label: 'Dove', value: evento.location } : null,

@@ -2,7 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { postiEvento } from '@/lib/posti-evento'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { sendEmail } from '@/lib/send-email'
-import { guestEmailTemplate } from '@/lib/email-template'
+import { guestEmailTemplate, html } from '@/lib/email-template'
 import { getAziendaLegale } from '@/lib/guest-data'
 import { registraContatto, tagEvento } from '@/lib/crm'
 import { eventoConcluso } from '@/lib/evento-concluso'
@@ -122,7 +122,7 @@ export async function POST(request, props) {
           entityName: nome, title: 'Ti abbiamo messo in lista', legale,
           // ⚠️ «In lista» non è «prenotato», e va detto senza ambiguità: la
           // persona non deve presentarsi convinta di avere un posto.
-          intro: `Ciao ${guest_name.trim()}, ti abbiamo messo in lista d’attesa per <strong>${evento.title}</strong>.<br><br><strong>Non è una prenotazione:</strong> per adesso è tutto esaurito. Se qualcuno rinuncia ti scriviamo noi — non serve che tu faccia altro.`,
+          intro: html`Ciao ${guest_name.trim()}, ti abbiamo messo in lista d’attesa per <strong>${evento.title}</strong>.<br><br><strong>Non è una prenotazione:</strong> per adesso è tutto esaurito. Se qualcuno rinuncia ti scriviamo noi — non serve che tu faccia altro.`,
           rows: [
             quando ? { label: 'Quando', value: quando } : null,
             evento.location ? { label: 'Dove', value: evento.location } : null,

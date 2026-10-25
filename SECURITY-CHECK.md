@@ -495,3 +495,14 @@ server; un collaboratore con «Richieste» senza struttura assegnata vede una li
   senza azienda», poteva chiamare l'AI dello Studio contenuti **senza tetto di spesa**: chiuso due volte
   (permessi dei collaboratori + Studio senza azienda → 400). **Da chiudere sul pannello Supabase**:
   Authentication → «Allow new users to sign up» OFF.
+
+## Aggiornamento 25/10/2026 — HTML dell'attaccante nelle email
+
+🟠 **Iniezione HTML nelle email**: i modelli di `lib/email-template.js` non facevano l'escape. Nome e
+messaggio dei moduli pubblici (contatti, richieste, prenotazioni di offerte, recensioni, demo)
+arrivavano come HTML al titolare o a Francesco; **lista d'attesa, iscrizione alla newsletter e ordine
+del negozio** spedivano l'HTML all'indirizzo scelto da chi compila, col nome del locale e dal nostro
+dominio: phishing con la nostra firma, e reputazione del dominio a rischio. Chiuso alla radice: tutto
+testo di default, l'HTML voluto si dichiara (SECURITY.md invariante 28). 25 chiamate convertite. Sonda
+`probe-email-sicure.mjs` in deploy. Se sia mai stato sfruttato si vedrebbe solo nella cronologia di
+Resend: non conserviamo il contenuto delle email inviate.

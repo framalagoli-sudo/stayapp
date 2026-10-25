@@ -1,6 +1,6 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { sendEmail } from '@/lib/send-email'
-import { platformEmailTemplate } from '@/lib/email-template'
+import { platformEmailTemplate, html } from '@/lib/email-template'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { verifyTurnstile } from '@/lib/turnstile'
 
@@ -38,7 +38,7 @@ export async function POST(request) {
           title: 'Ripristino password',
           intro: 'Hai richiesto di reimpostare la password del tuo account OltreNova. Clicca il pulsante per scegliere una nuova password.',
           ctaText: 'Scegli nuova password →', ctaUrl: resetLink,
-          footerNote: 'Il link è valido per <strong>1 ora</strong> e può essere usato una sola volta. Se non hai richiesto il ripristino, ignora questa email.',
+          footerNote: html`Il link è valido per <strong>1 ora</strong> e può essere usato una sola volta. Se non hai richiesto il ripristino, ignora questa email.`,
         }),
       })
     }

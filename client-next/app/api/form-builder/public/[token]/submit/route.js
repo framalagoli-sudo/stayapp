@@ -1,6 +1,6 @@
 ﻿import { NextResponse } from 'next/server'
 import { sendEmail } from '@/lib/send-email'
-import { emailTemplate } from '@/lib/email-template'
+import { emailTemplate, html, htmlGiaPulito } from '@/lib/email-template'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { sendWebhooks } from '@/lib/send-webhooks'
 import { rateLimit } from '@/lib/rate-limit'
@@ -29,7 +29,7 @@ function trackFlood(form) {
         subject: `⚠️ Form "${escHtml(form.nome)}" sotto attacco`,
         html: emailTemplate({
           title: '⚠️ Possibile attacco al form', entityName: 'OltreNova',
-          bodyHtml: `<p style="font-size:14px;color:#444;line-height:1.7">Il form <strong>${escHtml(form.nome)}</strong> ha ricevuto <strong>${entry.count} invii in 10 minuti</strong>. I nuovi submit sono stati <strong>bloccati automaticamente</strong> per proteggere il tuo account.</p><p style="font-size:13px;color:#888">Puoi disattivare il form dall'editor se il problema persiste.</p>`,
+          bodyHtml: html`<p style="font-size:14px;color:#444;line-height:1.7">Il form <strong>${form.nome}</strong> ha ricevuto <strong>${entry.count} invii in 10 minuti</strong>. I nuovi submit sono stati <strong>bloccati automaticamente</strong> per proteggere il tuo account.</p><p style="font-size:13px;color:#888">Puoi disattivare il form dall'editor se il problema persiste.</p>`,
           appUrl: (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com',
         }),
       }).catch(() => {})
@@ -303,7 +303,8 @@ export async function POST(request, { params }) {
         subject: `Nuova risposta: ${escHtml(form.nome)}`,
         html: emailTemplate({
           title: 'Nuova risposta ricevuta', entityName: 'OltreNova',
-          bodyHtml: `<p style="color:#888;font-size:13px;margin:0 0 12px">Form: <strong>${escHtml(form.nome)}</strong></p><table style="width:100%;border-collapse:collapse">${righe}${consentRow}</table>`,
+          // `righe` e `consentRow` sono già composti con escHtml qui sopra.
+          bodyHtml: html`<p style="color:#888;font-size:13px;margin:0 0 12px">Form: <strong>${form.nome}</strong></p><table style="width:100%;border-collapse:collapse">${htmlGiaPulito(righe + consentRow)}</table>`,
           appUrl: (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com',
         }),
       }).catch(e => console.error('[form-submit] email notifica admin error:', e?.message || e))

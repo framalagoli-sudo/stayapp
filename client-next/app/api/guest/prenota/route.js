@@ -5,7 +5,7 @@ import { giornoLocale } from '@/lib/fuso'
 import { fusoDiAzienda } from '@/lib/fuso-azienda'
 import { sendWebhooks } from '@/lib/send-webhooks'
 import { sendEmail } from '@/lib/send-email'
-import { guestEmailTemplate } from '@/lib/email-template'
+import { guestEmailTemplate, html } from '@/lib/email-template'
 import { registraContatto } from '@/lib/crm'
 import { testoConsensoPromozioni } from '@/lib/consenso-promozioni'
 import { after } from 'next/server'
@@ -123,12 +123,12 @@ export async function POST(request) {
           subject: `[${ent.name}] Nuova prenotazione: ${offerta.titolo}`,
           html: guestEmailTemplate({
             entityName: ent.name, title: 'Nuova prenotazione',
-            intro: `<strong>${creata.cliente_nome}</strong> ha prenotato <strong>${offerta.titolo}</strong>.`,
+            intro: html`<strong>${creata.cliente_nome}</strong> ha prenotato <strong>${offerta.titolo}</strong>.`,
             rows: [
               { label: 'Recapito', value: contatto.trim() },
               { label: 'Persone', value: String(persone) },
               ...(messaggio?.trim() ? [{ label: 'Messaggio', value: messaggio.trim() }] : []),
-              ...(canale === 'whatsapp' ? [{ label: 'Attenzione', value: 'Ha scelto di scriverti su <strong>WhatsApp</strong>. Se il messaggio non arriva, il suo recapito è qui sopra.' }] : []),
+              ...(canale === 'whatsapp' ? [{ label: 'Attenzione', value: html`Ha scelto di scriverti su <strong>WhatsApp</strong>. Se il messaggio non arriva, il suo recapito è qui sopra.` }] : []),
             ],
           }),
         }).catch(() => {})

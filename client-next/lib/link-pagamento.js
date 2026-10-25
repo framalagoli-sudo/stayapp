@@ -2,7 +2,7 @@ import { supabaseAdmin } from './supabase-server'
 import { stripeConnect, stripeConfigurato } from './stripe-connect'
 import { creaCheckout, contoDi, accontoDovuto } from './checkout'
 import { sendEmail } from './send-email'
-import { guestEmailTemplate } from './email-template'
+import { guestEmailTemplate, html } from './email-template'
 import { getAziendaLegale } from './guest-data'
 import { oraLocale } from './fuso'
 import { mandaConfermaEvento } from './evento-conferma'
@@ -36,7 +36,6 @@ const IMPORTO_MINIMO = 0.5                 // sotto, Stripe non apre una cassa i
 const IMPORTO_MASSIMO_LIBERO = 10000       // tetto quando la prenotazione non ha un totale suo
 
 const round2 = n => Math.round((Number(n) || 0) * 100) / 100
-const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
 export function linkPubblico(sessionId) {
   const base = ((process.env.CLIENT_URL ?? '').trim() || 'https://www.oltrenova.com').replace(/\/+$/, '').replace('://oltrenova.com', '://www.oltrenova.com')
@@ -200,16 +199,16 @@ export async function mandaLinkPagamento(pren, a) {
     _ctx: 'link-pagamento', fromName: nome, to: a,
     subject: `Completa il pagamento — ${pren.titolo}`,
     html: guestEmailTemplate({
-      entityName: esc(nome), title: 'Il link per pagare',
-      intro: `Ciao <strong>${esc(pren.nome || '')}</strong>, per completare la prenotazione da <strong>${esc(nome)}</strong> puoi pagare online in modo sicuro.`,
+      entityName: nome, title: 'Il link per pagare',
+      intro: html`Ciao <strong>${pren.nome || ''}</strong>, per completare la prenotazione da <strong>${nome}</strong> puoi pagare online in modo sicuro.`,
       rows: [
-        { label: 'Prenotazione', value: esc(pren.titolo) },
-        pren.quando ? { label: 'Quando', value: esc(pren.quando) } : null,
+        { label: 'Prenotazione', value: pren.titolo },
+        pren.quando ? { label: 'Quando', value: pren.quando } : null,
         { label: parziale ? 'Acconto da pagare' : 'Da pagare', value: `€${link.importo.toFixed(2)}` },
         parziale ? { label: 'Resta da saldare', value: `€${round2(pren.totale - link.importo).toFixed(2)}` } : null,
       ].filter(Boolean),
       ctaText: 'Paga ora', ctaUrl: link.url,
-      bodyHtml: `<p style="font-size:13px;color:#888;margin-top:18px;line-height:1.6">Il link vale ${ORE_LINK} ore. Se scade, scrivi a ${esc(nome)} e te ne mandano un altro.</p>`,
+      bodyHtml: html`<p style="font-size:13px;color:#888;margin-top:18px;line-height:1.6">Il link vale ${ORE_LINK} ore. Se scade, scrivi a ${nome} e te ne mandano un altro.</p>`,
       legale,
     }),
   })

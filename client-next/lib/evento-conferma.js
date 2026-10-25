@@ -1,6 +1,6 @@
 import { supabaseAdmin } from './supabase-server'
 import { sendEmail } from './send-email'
-import { guestEmailTemplate } from './email-template'
+import { guestEmailTemplate, html } from './email-template'
 import { getAziendaLegale } from './guest-data'
 import { inviaMessaggioWhatsapp } from './whatsapp-messaggio'
 import { oraLocale } from './fuso'
@@ -73,7 +73,7 @@ export async function mandaConfermaEvento(bookingId) {
         subject: `Prenotazione confermata — ${ev.title}`,
         html: guestEmailTemplate({
           entityName: nome, title: 'Prenotazione confermata', legale, privacyUrl,
-          intro: `Ciao ${b.guest_name || ''}, il tuo posto per <strong>${ev.title}</strong> è confermato. Ti aspettiamo!`,
+          intro: html`Ciao ${b.guest_name || ''}, il tuo posto per <strong>${ev.title}</strong> è confermato. Ti aspettiamo!`,
           rows: [
             dataOra ? { label: 'Quando', value: dataOra } : null,
             ev.location ? { label: 'Dove', value: ev.location } : null,

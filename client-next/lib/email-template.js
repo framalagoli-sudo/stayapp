@@ -1,6 +1,33 @@
 // Il testo che finisce dentro l'HTML di un'email: un nome con dentro «<» resta testo.
 export function escEmail(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') }
 
+// ⛔ Nei modelli qui sotto TUTTO è testo, di default: titolo, intro, righe,
+// pulsante, nota, corpo. Fino al 25/10/2026 valeva il contrario e i valori
+// entravano crudi: un visitatore scriveva un link finto nel modulo contatti (o
+// metteva l'email di un altro nella lista d'attesa) e noi spedivamo il suo
+// HTML con la grafica del locale, dal nostro dominio.
+//
+// L'HTML voluto si dichiara: html`Ciao <strong>${nome}</strong>` tiene il
+// grassetto e fa l'escape di `nome`. Un HTML composto altrove, con i dati GIÀ
+// ripuliti da chi lo compone (newsletter, resoconti), passa da `htmlGiaPulito`.
+// Se ci si dimentica di dichiararlo, nell'email si vede il tag scritto: brutto,
+// ma innocuo — l'errore opposto era un phishing con la nostra firma.
+class HtmlSicuro { constructor(s) { this.s = s } toString() { return this.s } }
+export function html(parti, ...valori) {
+  return new HtmlSicuro(parti.reduce((acc, p, i) => acc + p + (i < valori.length ? testo(valori[i]) : ''), ''))
+}
+export const htmlGiaPulito = s => new HtmlSicuro(String(s ?? ''))
+// Un testo scritto da una persona, con i suoi a-capo: escape, poi <br>.
+export const aCapo = s => new HtmlSicuro(escEmail(s).replace(/\r?\n/g, '<br>'))
+function testo(v) {
+  if (v instanceof HtmlSicuro) return v.s
+  if (Array.isArray(v)) return v.map(testo).join('')
+  if (v === null || v === undefined || v === false) return ''
+  return escEmail(v)
+}
+// Un indirizzo dentro href: solo http(s), mailto e tel; il resto non diventa un link.
+const indirizzo = u => /^(https?:|mailto:|tel:)/i.test(String(u ?? '').trim()) ? escEmail(String(u).trim()) : '#'
+
 // Footer conforme per le email al CLIENTE: identificazione legale del mittente
 // (ragione sociale/P.IVA/sede) + link all'informativa privacy. `legale` = output
 // di getAziendaLegale (campi opzionali → degrada). Se non c'è nulla, ripiega sul
@@ -33,19 +60,19 @@ export function guestEmailTemplate({ entityName, title, intro, rows = [], bodyHt
   <table width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:40px 20px">
   <table width="600" cellpadding="0" cellspacing="0" style="margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
     <tr><td style="background:#1a1a2e;padding:28px 36px">
-      <div style="font-size:22px;font-weight:700;color:#fff">${entityName}</div>
+      <div style="font-size:22px;font-weight:700;color:#fff">${testo(entityName)}</div>
     </td></tr>
     <tr><td style="padding:32px 36px">
-      <h2 style="margin:0 0 16px;font-size:18px;color:#1a1a2e">${title}</h2>
-      ${intro ? `<p style="margin:0 0 20px;font-size:14px;color:#444;line-height:1.7">${intro}</p>` : ''}
+      <h2 style="margin:0 0 16px;font-size:18px;color:#1a1a2e">${testo(title)}</h2>
+      ${intro ? `<p style="margin:0 0 20px;font-size:14px;color:#444;line-height:1.7">${testo(intro)}</p>` : ''}
       ${rows.length ? `<table width="100%" cellpadding="0" cellspacing="0">
         ${rows.map(r => `<tr>
-          <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;width:130px;font-size:13px;font-weight:600;color:#888;vertical-align:top">${r.label}</td>
-          <td style="padding:10px 0 10px 16px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#1a1a2e;line-height:1.6">${r.value}</td>
+          <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;width:130px;font-size:13px;font-weight:600;color:#888;vertical-align:top">${testo(r.label)}</td>
+          <td style="padding:10px 0 10px 16px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#1a1a2e;line-height:1.6">${testo(r.value)}</td>
         </tr>`).join('')}
       </table>` : ''}
-      ${ctaText && ctaUrl ? `<div style="margin:26px 0 6px"><a href="${ctaUrl}" style="display:inline-block;padding:14px 30px;background:#1a1a2e;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">${ctaText}</a></div>` : ''}
-      ${bodyHtml || ''}
+      ${ctaText && ctaUrl ? `<div style="margin:26px 0 6px"><a href="${indirizzo(ctaUrl)}" style="display:inline-block;padding:14px 30px;background:#1a1a2e;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">${testo(ctaText)}</a></div>` : ''}
+      ${testo(bodyHtml)}
     </td></tr>
     <tr><td style="padding:18px 36px;background:#f9f9fb;border-top:1px solid #f0f0f0;font-size:11px;color:#999;line-height:1.7">
       ${legalFooterHtml({ entityName, legale, privacyUrl })}
@@ -66,11 +93,11 @@ export function platformEmailTemplate({ title, intro, ctaText, ctaUrl, footerNot
       <img src="https://www.oltrenova.com/logo-onlight.png" alt="OltreNova" width="138" height="43" style="display:block">
     </td></tr>
     <tr><td style="padding:16px 36px 32px">
-      <h2 style="margin:0 0 14px;font-size:20px;color:#1a1a2e">${title}</h2>
-      ${intro ? `<p style="margin:0 0 4px;font-size:15px;color:#555;line-height:1.7">${intro}</p>` : ''}
-      ${bodyHtml || ''}
-      ${ctaText && ctaUrl ? `<div style="margin:24px 0"><a href="${ctaUrl}" style="display:inline-block;padding:13px 28px;background:#1a1a2e;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">${ctaText}</a></div>` : ''}
-      ${footerNote ? `<p style="margin:20px 0 0;font-size:13px;color:#6b6b76;line-height:1.6">${footerNote}</p>` : ''}
+      <h2 style="margin:0 0 14px;font-size:20px;color:#1a1a2e">${testo(title)}</h2>
+      ${intro ? `<p style="margin:0 0 4px;font-size:15px;color:#555;line-height:1.7">${testo(intro)}</p>` : ''}
+      ${testo(bodyHtml)}
+      ${ctaText && ctaUrl ? `<div style="margin:24px 0"><a href="${indirizzo(ctaUrl)}" style="display:inline-block;padding:13px 28px;background:#1a1a2e;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">${testo(ctaText)}</a></div>` : ''}
+      ${footerNote ? `<p style="margin:20px 0 0;font-size:13px;color:#6b6b76;line-height:1.6">${testo(footerNote)}</p>` : ''}
     </td></tr>
   </table>
   </td></tr></table></body></html>`
@@ -81,21 +108,21 @@ export function emailTemplate({ title, entityName, rows = [], appUrl, bodyHtml }
   <table width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:40px 20px">
   <table width="600" cellpadding="0" cellspacing="0" style="margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
     <tr><td style="background:#1a1a2e;padding:28px 36px">
-      <div style="font-size:22px;font-weight:700;color:#fff">${entityName}</div>
+      <div style="font-size:22px;font-weight:700;color:#fff">${testo(entityName)}</div>
       <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-top:4px">Notifica OltreNova</div>
     </td></tr>
     <tr><td style="padding:32px 36px">
-      <h2 style="margin:0 0 24px;font-size:18px;color:#1a1a2e">${title}</h2>
+      <h2 style="margin:0 0 24px;font-size:18px;color:#1a1a2e">${testo(title)}</h2>
       ${rows.length ? `<table width="100%" cellpadding="0" cellspacing="0">
         ${rows.map(r => `<tr>
-          <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;width:130px;font-size:13px;font-weight:600;color:#888;vertical-align:top">${r.label}</td>
-          <td style="padding:10px 0 10px 16px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#1a1a2e;line-height:1.6">${r.value}</td>
+          <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;width:130px;font-size:13px;font-weight:600;color:#888;vertical-align:top">${testo(r.label)}</td>
+          <td style="padding:10px 0 10px 16px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#1a1a2e;line-height:1.6">${testo(r.value)}</td>
         </tr>`).join('')}
       </table>` : ''}
-      ${bodyHtml || ''}
+      ${testo(bodyHtml)}
     </td></tr>
     <tr><td style="padding:20px 36px;background:#f9f9fb;border-top:1px solid #f0f0f0">
-      <a href="${appUrl}/admin/requests" style="color:#00b5b5;font-size:13px;text-decoration:none;font-weight:600">Apri il pannello admin →</a>
+      <a href="${indirizzo(appUrl)}/admin/requests" style="color:#00b5b5;font-size:13px;text-decoration:none;font-weight:600">Apri il pannello admin →</a>
       <img src="https://www.oltrenova.com/logo-onlight.png" alt="OltreNova" width="51" height="16" style="vertical-align:middle;margin-left:16px;opacity:0.45">
     </td></tr>
   </table>

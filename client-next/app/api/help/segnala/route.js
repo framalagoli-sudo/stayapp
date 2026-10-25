@@ -1,6 +1,6 @@
 ﻿import { requireAuth } from '@/lib/server-auth'
 import { sendEmail } from '@/lib/send-email'
-import { emailTemplate } from '@/lib/email-template'
+import { emailTemplate, aCapo } from '@/lib/email-template'
 
 export async function POST(request) {
   try {
@@ -18,7 +18,7 @@ export async function POST(request) {
           rows: [
             { label: 'Da', value: email || '—' },
             { label: 'Tipo', value: tipo || '—' },
-            { label: 'Messaggio', value: descrizione.trim().replace(/\n/g, '<br>') },
+            { label: 'Messaggio', value: aCapo(descrizione.trim()) },
           ],
           appUrl: (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com',
         }),

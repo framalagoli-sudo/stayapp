@@ -3,7 +3,7 @@ import { prodottiInVenditaPerId } from '@/lib/prodotti-vendita'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { applicaLoyaltyOrdine } from '@/lib/loyalty-helpers'
 import { sendEmail } from '@/lib/send-email'
-import { guestEmailTemplate } from '@/lib/email-template'
+import { guestEmailTemplate, html } from '@/lib/email-template'
 import { logError } from '@/lib/observability'
 import { creaCheckout } from '@/lib/checkout'
 import { TESTO_CONSENSO_ORDINE } from '@/lib/consenso-ordine'
@@ -126,9 +126,11 @@ export async function POST(request, props) {
 
     if (process.env.RESEND_API_KEY) {
       try {
-        const righeProdotti =vociSicure.map(v =>
-          `<tr><td style="padding:6px 8px;border-bottom:1px solid #eee">${v.nome}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center">${v.qty}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">€${(v.prezzo * v.qty).toFixed(2)}</td></tr>`
-        ).join('')
+        // Un elenco di html``, non una stringa: unito con join() tornerebbe
+        // testo, e nella tabella si vedrebbero i tag.
+        const righeProdotti = vociSicure.map(v =>
+          html`<tr><td style="padding:6px 8px;border-bottom:1px solid #eee">${v.nome}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center">${v.qty}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right">€${(v.prezzo * v.qty).toFixed(2)}</td></tr>`
+        )
         const { data: azShop } = await supabaseAdmin.from('aziende').select('ragione_sociale, partita_iva, indirizzo, citta, cap, provincia').eq('id', azienda_id).single()
         // Lo shop è azienda-level → per il link privacy uso la prima entità attiva dell'azienda.
         const shopAppUrl = (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'
@@ -141,7 +143,7 @@ export async function POST(request, props) {
           const prefisso = { struttura: 's', ristorante: 'r', attivita: 'a' }[entPrivacy.tipo] || 'a'
           shopPrivacyUrl = `${shopAppUrl}/${prefisso}/${entPrivacy.slug}/privacy`
         }
-        const tabellaOrdine = `<table style="width:100%;border-collapse:collapse;margin:8px 0 16px">
+        const tabellaOrdine = html`<table style="width:100%;border-collapse:collapse;margin:8px 0 16px">
             <thead><tr style="background:#f5f5f5">
               <th style="padding:8px;text-align:left;font-size:13px">Prodotto</th>
               <th style="padding:8px;text-align:center;font-size:13px">Qtà</th>
@@ -159,7 +161,7 @@ export async function POST(request, props) {
           html: guestEmailTemplate({
             entityName: azShop?.ragione_sociale || 'Il tuo ordine',
             title: 'Grazie per il tuo ordine!',
-            intro: `Ciao ${nome_cliente || ''}, abbiamo ricevuto il tuo ordine <strong>#${ordine.numero}</strong>.`,
+            intro: html`Ciao ${nome_cliente || ''}, abbiamo ricevuto il tuo ordine <strong>#${ordine.numero}</strong>.`,
             bodyHtml: tabellaOrdine, legale: azShop, privacyUrl: shopPrivacyUrl,
           }),
         })

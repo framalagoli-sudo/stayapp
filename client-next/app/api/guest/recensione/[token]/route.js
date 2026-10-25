@@ -1,7 +1,7 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { urlEsterno } from '@/lib/url-esterno'
 import { sendEmail } from '@/lib/send-email'
-import { emailTemplate } from '@/lib/email-template'
+import { emailTemplate, aCapo } from '@/lib/email-template'
 import { rateLimit, tooManyRequests } from '@/lib/rate-limit'
 
 export async function GET(request, props) {
@@ -72,7 +72,7 @@ export async function POST(request, props) {
             rows: [
               { label: 'Autore', value: autore?.trim() || 'Anonimo' },
               { label: 'Voto', value: `${stelle}/5 stelle` },
-              { label: 'Recensione', value: (testo?.trim() || '—').replace(/\n/g, '<br>') },
+              { label: 'Recensione', value: aCapo(testo?.trim() || '—') },
             ],
             appUrl: (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com',
           }),

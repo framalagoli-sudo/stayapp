@@ -3,7 +3,7 @@ import { recomputeEventSeats } from '@/lib/event-seats'
 import { confermaPostiEvento } from '@/lib/capienza'
 import { creaCheckout } from '@/lib/checkout'
 import { sendEmail } from '@/lib/send-email'
-import { emailTemplate } from '@/lib/email-template'
+import { emailTemplate, html } from '@/lib/email-template'
 import { getAziendaLegale } from '@/lib/guest-data'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { mandaConfermaEvento } from '@/lib/evento-conferma'
@@ -217,7 +217,7 @@ export async function POST(request, props) {
             entityName: bizName,
             // ⚠️ `emailTemplate` non ha un campo «intro»: il testo va in
             // `bodyHtml`, che il modello stampa sotto la tabella.
-            bodyHtml: `<p style="margin:20px 0 0;font-size:14px;color:#444;line-height:1.7">${esaurito
+            bodyHtml: html`<p style="margin:20px 0 0;font-size:14px;color:#444;line-height:1.7">${esaurito
               ? 'Il sito non accetta più prenotazioni per questo evento. I posti che tieni per il telefono restano tuoi: sono fuori dal conteggio online.'
               : 'Sono gli ultimi posti che il sito può vendere. Da adesso, se prendi prenotazioni al telefono, segnale nel pannello — o rischi di accettarne più di quanti ne hai.'}</p>`,
             rows: [

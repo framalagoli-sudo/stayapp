@@ -1,6 +1,6 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
-import { emailTemplate } from '@/lib/email-template'
+import { emailTemplate, aCapo } from '@/lib/email-template'
 import { sendEmail } from '@/lib/send-email'
 
 const NOTIFY_EMAIL = process.env.DEMO_NOTIFY_EMAIL || 'fra.malagoli@gmail.com'
@@ -38,10 +38,10 @@ export async function POST(request) {
             entityName: 'OltreNova',
             rows: [
               { label: 'Nome',      value: nome.trim() },
-              { label: 'Email',     value: `<a href="mailto:${email}" style="color:#1A6490">${email}</a>` },
+              { label: 'Email',     value: email.trim() },
               { label: 'Telefono',  value: telefono?.trim() || '—' },
               { label: 'Attività',  value: tipo_attivita?.trim() || '—' },
-              { label: 'Messaggio', value: messaggio?.trim() ? messaggio.replace(/\n/g, '<br>') : '—' },
+              { label: 'Messaggio', value: messaggio?.trim() ? aCapo(messaggio.trim()) : '—' },
             ],
             appUrl: (process.env.APP_URL ?? '').trim() || 'https://oltrenova.com',
           }),

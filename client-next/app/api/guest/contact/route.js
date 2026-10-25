@@ -1,6 +1,6 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { sendEmail } from '@/lib/send-email'
-import { emailTemplate } from '@/lib/email-template'
+import { emailTemplate, aCapo } from '@/lib/email-template'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { verifyTurnstile } from '@/lib/turnstile'
 import { logError } from '@/lib/observability'
@@ -75,7 +75,7 @@ export async function POST(request) {
         subject: `[${entityName}] Nuovo messaggio dal sito`,
         html: emailTemplate({
           title: 'Nuovo messaggio dal sito', entityName,
-          rows: [{ label: 'Nome', value: name }, { label: 'Email', value: `<a href="mailto:${email}" style="color:#00b5b5">${email}</a>` }, { label: 'Messaggio', value: message.replace(/\n/g, '<br>') }],
+          rows: [{ label: 'Nome', value: name }, { label: 'Email', value: email }, { label: 'Messaggio', value: aCapo(message) }],
           appUrl: (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com',
         }),
       }).catch(() => {})

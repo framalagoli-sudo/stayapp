@@ -3,7 +3,7 @@ import { stripeConnect, stripeConfigurato } from './stripe-connect'
 import { contoDi } from './checkout'
 import { recomputeEventSeats } from './event-seats'
 import { sendEmail } from './send-email'
-import { guestEmailTemplate } from './email-template'
+import { guestEmailTemplate, html } from './email-template'
 import { getAziendaLegale } from './guest-data'
 import { mandaConfermaEvento } from './evento-conferma'
 import { annunciaPrenotazioneEvento } from './evento-prenotato'
@@ -89,7 +89,7 @@ async function avvisa(booking, evento) {
         // ⚠️ Va detto, e va detto con parole chiare: questa persona ha in casella
         // un'email che parlava della sua prenotazione. Se non la avvisiamo si
         // presenta all'evento convinta di avere il posto.
-        intro: `Ciao ${booking.guest_name || ''}, il pagamento per <strong>${evento.title}</strong> non è arrivato entro ${MINUTI_PER_PAGARE} minuti, quindi il posto è tornato disponibile per altri.<br><br>Se lo vuoi ancora puoi prenotare di nuovo — se nel frattempo è rimasto posto.`,
+        intro: html`Ciao ${booking.guest_name || ''}, il pagamento per <strong>${evento.title}</strong> non è arrivato entro ${MINUTI_PER_PAGARE} minuti, quindi il posto è tornato disponibile per altri.<br><br>Se lo vuoi ancora puoi prenotare di nuovo — se nel frattempo è rimasto posto.`,
         rows: [{ label: 'Posti che avevi richiesto', value: String(booking.seats || 1) }],
       }),
     })

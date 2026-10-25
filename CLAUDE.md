@@ -855,6 +855,11 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - ✅ **Registrazione diretta su Supabase CHIUSA il 23/10** da Francesco («Allow new users to sign up» OFF; verificato `signup_disabled`, e createUser/invito/recupero password funzionano). Era aperta (`disable_signup: false`): con la chiave pubblica chiunque si crea un account senza passare da noi. Nessuno l'ha usata (verificato il 23/10) e dalla nota 84 un account così non vede né tocca niente, ma la porta va chiusa da **Supabase → Authentication → Sign In / Providers → «Allow new users to sign up»: OFF**. Le nostre route usano l'API admin, che non dipende da quell'interruttore — da riprovare con le sonde dopo il cambio.
     - Sonda `tests/probe-registrazione.mjs` (in deploy; `--signup` prova la route vera, solo a registrazioni aperte). Indirizzi `delivered+…@resend.dev`, il pozzo di Resend.
 
+87. **✉️ Nelle email quello che scrive un visitatore resta testo** (25/10/2026, trovato preparando il risponditore). I modelli di `lib/email-template.js` mettevano titolo, intro, righe e corpo nell'HTML **crudi**: nome e messaggio del modulo contatti arrivavano al titolare come HTML (un link finto «il tuo account scade», con la nostra grafica e dal nostro dominio), e con **lista d'attesa**, **iscrizione alla newsletter** e **ordine del negozio** l'email partiva verso l'indirizzo scelto da chi compila: un phishing spedito da noi col nome del locale.
+    - Ora **tutto è testo di default**. L'HTML voluto si dichiara: `` html`Ciao <strong>${nome}</strong>` `` fa l'escape dei valori interpolati (e un elenco di `html` dentro `html` resta HTML); `aCapo(testo)` per i messaggi con gli a-capo; `htmlGiaPulito(s)` solo per HTML composto altrove con l'escape già fatto (resoconti, righe dei moduli). Il pulsante accetta solo http(s), mailto e tel.
+    - ⛔ **Dentro `` html`…` `` niente `esc()` a mano** (doppio escape: «Bar &amp;amp; Bistrot») e **niente `.join('')`** su un elenco di `html` (torna una stringa, cioè testo). Se ci si dimentica di dichiarare l'HTML, nell'email si vede il tag scritto: brutto ma innocuo, l'opposto di prima.
+    - Convertite tutte le 25 chiamate; tolti i `pulito()`/`esc()` che sarebbero diventati doppi. Sonda `tests/probe-email-sicure.mjs` (in deploy, senza rete): i modelli veri con gli input di un attaccante.
+
 ---
 
 ## Roadmap
