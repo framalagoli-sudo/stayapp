@@ -1,7 +1,12 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { rateLimit, tooManyRequests } from '@/lib/rate-limit'
 
 export async function POST(request) {
   try {
+    // Il token del link di recupero non si indovina; il tetto ferma i tentativi a raffica.
+    const rl = await rateLimit(request, { name: 'reset-password', limit: 10, windowSec: 3600 })
+    if (!rl.allowed) return tooManyRequests()
+
     const { password, access_token } = await request.json()
     if (!password || !access_token) return Response.json({ error: 'Dati mancanti' }, { status: 400 })
     if (password.length < 8) return Response.json({ error: 'Password minimo 8 caratteri' }, { status: 400 })

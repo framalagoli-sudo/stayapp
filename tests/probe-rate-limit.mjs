@@ -54,6 +54,37 @@ try {
   }
   esito(mancanti.length === 0, `tutte le ${controllate} scritture pubbliche hanno rateLimit()`, mancanti.length ? `SENZA LIMITE: ${mancanti.join(', ')}` : '')
   console.log(`\n  (controllate ${controllate} route pubbliche che mutano)`)
+
+  // Le cartelle non bastano: `/api/requests`, `/api/demo` e `/api/survey/public`
+  // erano pubbliche e senza limite, e la sonda non le vedeva perché stanno
+  // fuori da quelle cartelle (e `requests` aveva il login, ma solo sulla GET).
+  // Quindi, su TUTTE le route, metodo per metodo: chi scrive senza chiedere
+  // chi sei (direttamente o da una funzione d'appoggio dello stesso file) e
+  // senza verificare una firma deve avere un limite.
+  const AUTH = /requireAuth|requireEntityAccess|requireRecordAccess|requireSuperAdmin|requireEntityRecordAccess|CRON_SECRET|constructEvent|parseEventNotification|svix|createHmac|timingSafeEqual/
+  const scoperte = []
+  let metodi = 0
+  for (const file of routeFiles(API)) {
+    const code = readFileSync(file, 'utf8')
+    const rel = file.replace(API, 'api').replace(/\\/g, '/')
+    if (ESENTI.has(rel)) continue
+    // Le funzioni d'appoggio del file che chiedono chi sei.
+    const appoggi = [...code.matchAll(/(?:^|\n)(?:async )?function (\w+)\s*\(/g)].map(m => m[1]).filter(nome => {
+      const da = code.search(new RegExp(`(?:async )?function ${nome}\\s*\\(`))
+      const resto = code.slice(da + 1)
+      const fine = resto.search(/\n(?:export |async function |function )/)
+      return AUTH.test(fine < 0 ? resto : resto.slice(0, fine))
+    })
+    for (const pezzo of code.split(/(?=export (?:async )?function )/).slice(1)) {
+      const m = pezzo.match(/^export (?:async )?function (POST|PUT|PATCH|DELETE)\b/)
+      if (!m) continue
+      metodi++
+      const conLogin = AUTH.test(pezzo) || appoggi.some(nome => new RegExp(`\\b${nome}\\(`).test(pezzo))
+      if (!conLogin && !/rateLimit\(/.test(pezzo)) scoperte.push(`${rel} ${m[1]}`)
+    }
+  }
+  esito(scoperte.length === 0, `ogni scrittura senza login, in tutto app/api, ha rateLimit()`, scoperte.length ? `SENZA LOGIN NÉ LIMITE: ${scoperte.join(', ')}` : '')
+  console.log(`\n  (controllati ${metodi} metodi che mutano in tutte le route)`)
 } catch (e) {
   rossi++; console.log(`\n  ✗ la sonda si è fermata: ${e.message}`)
 }

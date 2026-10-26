@@ -3,6 +3,13 @@ import { requireAuth } from '@/lib/server-auth'
 import { sendWebhooks } from '@/lib/send-webhooks'
 import { emailTemplate, html, aCapo } from '@/lib/email-template'
 import { sendEmail } from '@/lib/send-email'
+import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+// I tipi che l'app del QR sa mandare. Il tipo finisce nell'oggetto dell'email
+// al titolare: una parola scelta da chi invia non ci arriva.
+const TIPI = new Set(['reception', 'housekeeping', 'maintenance', 'other', 'escursione', 'attività', 'attivita'])
 
 // La formula che chi prenota accetta. La decide il server, non il componente:
 // e il server a scriverla nella prova del consenso, e se le due copie
@@ -12,9 +19,32 @@ export const TESTO_CONSENSO =
 
 export async function POST(request) {
   try {
+    // Porta pubblica che manda un'email al titolare: senza un tetto chiunque
+    // potrebbe riempirgli la casella. Due limiti: per indirizzo (chi scrive) e
+    // per entità (chi riceve, anche se gli invii arrivano da molti indirizzi).
+    // Generosi: gli ospiti di un hotel escono tutti dallo stesso WiFi.
+    const ip = getClientIp(request)
+    const rl = await rateLimit(request, { name: 'guest-request', limit: 20, windowSec: 3600, ip })
+    if (!rl.allowed) return tooManyRequests()
+
     const body = await request.json()
     const { property_id, room, type, message, nome, contatto, privacy_accettata, canale } = body
     if (!property_id || !type || !message) return Response.json({ error: 'property_id, type e message sono obbligatori' }, { status: 400 })
+    if (typeof property_id !== 'string' || !UUID_RE.test(property_id)) return Response.json({ error: 'Destinatario non valido' }, { status: 400 })
+    if (!TIPI.has(type)) return Response.json({ error: 'Tipo di richiesta non valido' }, { status: 400 })
+    if (typeof message !== 'string' || !message.trim() || message.length > 2000)
+      return Response.json({ error: 'Il messaggio deve avere al massimo 2000 caratteri' }, { status: 400 })
+    if (room != null && (typeof room !== 'string' || room.length > 50)) return Response.json({ error: 'Camera non valida' }, { status: 400 })
+    if (nome != null && (typeof nome !== 'string' || nome.length > 120)) return Response.json({ error: 'Nome troppo lungo' }, { status: 400 })
+    if (contatto != null && (typeof contatto !== 'string' || contatto.length > 200)) return Response.json({ error: 'Recapito troppo lungo' }, { status: 400 })
+
+    const rlEnt = await rateLimit(request, { name: 'guest-request-entita', limit: 60, windowSec: 3600, ip: property_id })
+    if (!rlEnt.allowed) return tooManyRequests()
+
+    // La richiesta va a un'entità che esiste. Stessa risposta per «non esiste»
+    // e per qualunque altro motivo: la porta non dice quali id sono veri.
+    const { data: prop } = await supabaseAdmin.from('entita').select('name, email, azienda_id').eq('id', property_id).maybeSingle()
+    if (!prop) return Response.json({ error: 'Destinatario non valido' }, { status: 400 })
 
     // Chi prenota un'escursione o un'attività lascia il proprio nome e un
     // recapito. Prima non li chiedeva nessuno: il titolare riceveva
@@ -39,7 +69,8 @@ export async function POST(request) {
       : message
 
     const { data, error } = await supabaseAdmin.from('requests')
-      .insert({ property_id, room: room || null, type, message: messaggioCompleto, status: 'open' }).select().single()
+      .insert({ property_id, room: room?.trim() || null, type, message: messaggioCompleto, status: 'open' })
+      .select('id, status, created_at').single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
 
     // La prova del consenso, dove i dati personali ci sono davvero.
@@ -51,7 +82,7 @@ export async function POST(request) {
       }).eq('id', data.id)
     }
 
-    supabaseAdmin.from('entita').select('name, email, azienda_id').eq('id', property_id).single().then(({ data: prop }) => {
+    Promise.resolve().then(() => {
       if (prop?.azienda_id) sendWebhooks(prop.azienda_id, 'nuova_richiesta', { richiesta_id: data.id, property_id, tipo: type, messaggio: message })
       if (!prop?.email || !process.env.RESEND_API_KEY) return
       sendEmail({

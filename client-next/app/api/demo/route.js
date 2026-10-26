@@ -2,6 +2,7 @@
 import { requireAuth } from '@/lib/server-auth'
 import { emailTemplate, aCapo } from '@/lib/email-template'
 import { sendEmail } from '@/lib/send-email'
+import { rateLimit, tooManyRequests } from '@/lib/rate-limit'
 
 const NOTIFY_EMAIL = process.env.DEMO_NOTIFY_EMAIL || 'fra.malagoli@gmail.com'
 
@@ -10,10 +11,18 @@ async function isSuperAdmin(userId) {
   return data?.role === 'super_admin'
 }
 
+const testo = (v, max) => v == null || (typeof v === 'string' && v.length <= max)
+
 export async function POST(request) {
   try {
+    // Pubblica (modulo della landing) e manda un'email a noi a ogni invio.
+    const rl = await rateLimit(request, { name: 'demo', limit: 5, windowSec: 3600 })
+    if (!rl.allowed) return tooManyRequests()
+
     const body = await request.json()
     const { nome, email, telefono, tipo_attivita, messaggio } = body
+    if (!testo(nome, 120) || !testo(email, 200) || !testo(telefono, 40) || !testo(tipo_attivita, 120) || !testo(messaggio, 3000))
+      return Response.json({ error: 'Uno dei campi è troppo lungo' }, { status: 400 })
     if (!nome?.trim()) return Response.json({ error: 'Nome obbligatorio' }, { status: 400 })
     if (!email?.trim() || !email.includes('@')) return Response.json({ error: 'Email non valida' }, { status: 400 })
 
