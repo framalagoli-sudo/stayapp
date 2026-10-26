@@ -142,12 +142,17 @@ try {
 
   console.log('\n4 · COL BROWSER: ANNULLARE, PRENDERE IL POSTO, EDITOR, PANNELLO\n')
   const e6 = await nuovoEvento({ seats_total: 1 })
-  const p6 = await prenota(e6); const w6 = await inLista(e6)
-  const tok6 = (await riga(p6.d.id)).annulla_token
   await withProbeSession(async ({ page, browser }) => {
     const tel = await browser.newPage({ viewport: { width: 390, height: 844 }, locale: 'it-IT' })
+    // La frase sta sotto il pulsante di prenotazione: si guarda finché l'evento
+    // ha posti, cioè PRIMA di riempirlo.
     await tel.goto(`${TEST_URL}/eventi/${e6.slug}`, { waitUntil: 'networkidle' })
     ok(/annullare gratuitamente fino al/i.test(await tel.locator('[data-termine-annullamento]').innerText().catch(() => '')), 'la pagina dell’evento dice fino a quando si annulla')
+    // A termine passato (e2: fra 10 ore, termine 24) la frase non compare.
+    await tel.goto(`${TEST_URL}/eventi/${e2.slug}`, { waitUntil: 'networkidle' })
+    ok((await tel.locator('[data-termine-annullamento]').count()) === 0, 'a termine passato la pagina non promette niente')
+    const p6 = await prenota(e6); const w6 = await inLista(e6)
+    const tok6 = (await riga(p6.d.id)).annulla_token
     await tel.goto(`${TEST_URL}/annulla-evento?t=${tok6}`, { waitUntil: 'networkidle' })
     await tel.getByRole('button', { name: /annulla la prenotazione/i }).click()
     ok(await tel.getByText('Prenotazione annullata').waitFor({ timeout: 15000 }).then(() => true, () => false), 'dalla pagina, un clic: «Prenotazione annullata»')
@@ -163,19 +168,30 @@ try {
     ok((await riga(w6.d.id)).status === 'confirmed', 'e nel database è confermato')
 
     await page.goto(`${TEST_URL}/admin/eventi/${e6.id}`, { waitUntil: 'networkidle' })
-    await page.getByText('Chi ha prenotato può annullare da solo').waitFor({ timeout: 30000 })
+    // ⚠️ Si aspettano i DATI dell'evento, non una scritta: gli interruttori ci
+    // sono anche nel modulo vuoto, prima che l'evento arrivi.
+    await page.waitForFunction(t => [...document.querySelectorAll('input')].some(i => i.value === t), e6.title, { timeout: 30000 })
+    // In sviluppo l'editor rilegge l'evento una seconda volta (StrictMode, nota
+    // 70): si aspetta che abbia finito, o la seconda lettura cancella quello
+    // che si è appena scritto.
+    await page.waitForLoadState('networkidle'); await page.waitForTimeout(1500)
     ok(await page.getByText('Quando si libera un posto, offrilo al primo in lista').isVisible(), 'l’editor ha i due interruttori')
     await page.locator('input[type=number][max="720"]').fill('6')
     await page.getByRole('button', { name: 'Salva modifiche' }).click()
-    await page.waitForTimeout(2500)
+    // Si aspetta la fine del salvataggio, non un tempo fisso.
+    await page.getByRole('button', { name: 'Salvataggio…' }).waitFor({ state: 'detached', timeout: 30000 }).catch(() => {})
+    await page.getByRole('button', { name: 'Salva modifiche' }).waitFor({ timeout: 30000 })
     const { data: salvato } = await admin.from('eventi').select('annullabile_ore').eq('id', e6.id).single()
     ok(salvato.annullabile_ore === 6, 'dall’editor il termine si salva (6 ore)', String(salvato.annullabile_ore))
     if (FOTO) await page.screenshot({ path: `${FOTO}/editor.png`, fullPage: true })
 
     await page.goto(`${TEST_URL}/admin/eventi/${e1.id}/prenotazioni`, { waitUntil: 'networkidle' })
     await page.getByRole('button', { name: 'Modifica', exact: true }).first().waitFor({ timeout: 30000 })
-    const testo = await page.locator('body').innerText()
-    ok(/annullata dall’ospite/.test(testo) || (await page.locator('[data-annullata-ospite]').count()) > 0, 'il pannello dice «annullata dall’ospite»')
+    // Il gruppo delle annullate nasce chiuso: si apre come farebbe il titolare.
+    await page.getByText('Non andate a buon fine').first().click()
+    await page.locator('[data-annullata-ospite]').first().waitFor({ timeout: 10000 }).catch(() => {})
+    ok((await page.locator('[data-annullata-ospite]').count()) > 0, 'il pannello dice «annullata dall’ospite»')
+    if (FOTO) await page.screenshot({ path: `${FOTO}/pannello.png`, fullPage: true })
   })
 } catch (e) {
   rossi++; console.log(`\n  ✗ la sonda si è fermata: ${e.message}`)

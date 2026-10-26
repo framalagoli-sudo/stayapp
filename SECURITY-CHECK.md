@@ -506,3 +506,19 @@ dominio: phishing con la nostra firma, e reputazione del dominio a rischio. Chiu
 testo di default, l'HTML voluto si dichiara (SECURITY.md invariante 28). 25 chiamate convertite. Sonda
 `probe-email-sicure.mjs` in deploy. Se sia mai stato sfruttato si vedrebbe solo nella cronologia di
 Resend: non conserviamo il contenuto delle email inviate.
+
+## Aggiornamento 26/10/2026 — porte pubbliche fuori dalle cartelle «pubbliche»
+
+🟠 `POST /api/requests` (richieste dall'app del QR) era pubblica, senza limite, e accettava qualunque
+`property_id`: chiunque poteva far arrivare email a raffica al titolare di qualunque entità. Mai
+sfruttato (`requests` vuota da sempre). Ora limite per indirizzo e per entità, entità che deve
+esistere, tipo da catalogo chiuso, lunghezze massime, risposta minima.
+La sonda dei limiti non la vedeva perché guardava solo alcune cartelle: ora controlla tutte le route
+metodo per metodo, e ha trovato altre tre porte senza limite (`/api/demo`, `/api/survey/public`,
+`/api/auth/reset-password`), sistemate. Sonde `probe-rate-limit.mjs` (allargata) e
+`probe-richieste-ospite.mjs`, in deploy. CLAUDE.md nota 88.
+
+Stessa sessione, due porte pubbliche nuove per gli eventi (`/api/guest/eventi/annulla`,
+`/api/guest/eventi/posto`): il permesso è un UUID nel link dell'email, con limite per indirizzo, la
+stessa risposta per «non esiste» e «inventato», nessun dato personale nel corpo; i token non sono
+concessi al ruolo pubblico (migration 141). CLAUDE.md nota 89.

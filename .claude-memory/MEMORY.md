@@ -17,6 +17,7 @@
 - [L'AI non inventa fatti](feedback_niente_fatti_inventati_ai.md) — recensioni inventate rifiutate
 
 ## Sessioni
+- [26/10 annullamento ospite, lista automatica, porte pubbliche](project_session_2026_10_26.md)
 - [15/10 resoconti email, Stripe vero, onboarding v2](project_session_2026_10_15.md)
 - [13–14/10 AI riscrivi, blocchi, stile, Club, dashboard](project_session_2026_10_13_14.md)
 - [12/10 sezioni condivise, blocchi, foto grande](project_session_2026_10_12.md)

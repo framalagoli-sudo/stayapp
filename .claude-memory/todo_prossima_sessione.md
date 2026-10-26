@@ -4,7 +4,7 @@ description: "Da dove riprendere — 18/10: META/WHATSAPP avviato col numero di 
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-10-25T08:51:34.021Z
+  modified: 2026-10-26T13:46:54.518Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
@@ -27,7 +27,8 @@ metadata:
 Tutto il blocco 18/10 qui sotto resta valido così com'è: si riprende dal punto 1 (config webhook in dashboard). In pausa con lui anche: la prova dal vivo della scelta «giorno di uscita» di Automax (blocco 17/10) e il «Mandala a me» dei resoconti (blocco 15/10). Ricordarglielo a inizio sessione finché non li riprende.
 
 ✅ 25/10: **email: il testo del visitatore resta testo** (CLAUDE.md nota 87, SECURITY inv. 28, commit 4fb74574) — LIVE insieme al Dependabot #66; deploy tutto verde (smoke 74/74 + tutte le sonde, compresa la nuova probe-email-sicure). NON verificata a occhio un'email vera in casella dopo il cambio: chiedere a Francesco di mandarsi un messaggio dal modulo contatti di un suo sito con un nome tipo «<b>prova</b>» e guardare che arrivi scritto così, e che grassetti/a-capo delle email normali siano a posto.
-▶️ **RISPONDITORE**: progetto dato il 25/10 (bozza dai dati veri, approvazione con un tocco, poi pilota automatico per le domande semplici; lib/conoscenza-attivita.js condivisa col chatbot; tabella proposte = base della coda degli agenti; link firmato monouso per «Invia» dall'email). **In attesa di 2 risposte di Francesco**: (1) «Invia» direttamente dall'email sì/no; (2) porte della prima versione = messaggio dal sito + richieste dall'app del QR.
+✅ **26/10** ([[project-session-2026-10-26]]): risponditore **rimandato a quando c'è WhatsApp** (4 messaggi in 5 mesi dalle porte previste). Fatti: buco `/api/requests` + 3 porte senza limite (LIVE), **annullamento dell'ospite + lista d'attesa automatica** (migration 141, CLAUDE.md nota 89). Da chiedere a Francesco: prenotare un evento di prova e guardare l'email di conferma (frase del termine + link «Annulla»), e l'email «Si è liberato un posto».
+(storico) **RISPONDITORE**: progetto dato il 25/10 (bozza dai dati veri, approvazione con un tocco, poi pilota automatico per le domande semplici; lib/conoscenza-attivita.js condivisa col chatbot; tabella proposte = base della coda degli agenti; link firmato monouso per «Invia» dall'email). **In attesa di 2 risposte di Francesco**: (1) «Invia» direttamente dall'email sì/no; (2) porte della prima versione = messaggio dal sito + richieste dall'app del QR.
 
 ➕ **25/10, deciso con Francesco:** quando si riprende Meta, la App Review deve includere ANCHE i permessi di **pubblicazione su Instagram e Facebook** (pubblicare da OltreNova) — stessa app, una revisione sola. Regole di progetto in [[project-agenti-automatismi]].
 

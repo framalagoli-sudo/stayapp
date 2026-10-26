@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
 import { eventoConcluso } from '@/lib/evento-concluso'
 import { oraLocale } from '@/lib/fuso'
-import { termineAnnullamento, fraseAnnullamento } from '@/lib/annullamento-regole'
+import { termineAnnullamento, fraseAnnullamento, entroIlTermine } from '@/lib/annullamento-regole'
 import { ricco } from '@/lib/testo-ricco'
 import LegalInfo from './LegalInfo'
 import SiteNav from './SiteNav'
@@ -182,8 +182,9 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
   }
 
   // Calcolato dai dati e dal fuso del locale, mai dall'ora del browser: è lo
-  // stesso testo sul server e nel browser.
-  const termine = evento ? termineAnnullamento(evento) : null
+  // stesso testo sul server e nel browser. A termine passato non si scrive:
+  // «puoi annullare fino a ieri» è una promessa che non vale più.
+  const termine = evento && entroIlTermine(evento) ? termineAnnullamento(evento) : null
   const fraseTermine = termine ? fraseAnnullamento(evento, oraLocale(termine.toISOString(), evento.fuso, {
     day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', locale: lang === 'en' ? 'en-GB' : 'it-IT',
   }), lang) : null

@@ -5,7 +5,7 @@ import { getAziendaLegale } from './guest-data'
 import { inviaMessaggioWhatsapp } from './whatsapp-messaggio'
 import { oraLocale } from './fuso'
 import { hostUfficiale } from './indirizzo-ufficiale'
-import { termineAnnullamento, fraseAnnullamento } from './annullamento-regole'
+import { termineAnnullamento, fraseAnnullamento, entroIlTermine } from './annullamento-regole'
 import { baseLink } from './evento-titolare'
 
 // «La tua prenotazione è confermata»: **una sola volta, nel momento giusto.**
@@ -70,8 +70,9 @@ export async function mandaConfermaEvento(bookingId) {
     const dataOra = quando(ev.date_start, ev.aziende?.fuso_orario)
     // Fino a quando si annulla, e il link per farlo. Discreto, sotto: è una
     // conferma, non un invito a rinunciare. Senza termine (spento dal titolare)
-    // non si scrive niente — né la frase né il link.
-    const termine = termineAnnullamento(ev)
+    // non si scrive niente — né la frase né il link. Nemmeno se il termine è
+    // già passato (chi prenota a 10 ore da un evento con termine di 24).
+    const termine = entroIlTermine(ev) ? termineAnnullamento(ev) : null
     const fraseTermine = termine ? fraseAnnullamento(ev, quando(termine.toISOString(), ev.aziende?.fuso_orario)) : null
     const linkAnnulla = termine && b.annulla_token ? `${await baseLink(ev)}/annulla-evento?t=${b.annulla_token}` : null
 
