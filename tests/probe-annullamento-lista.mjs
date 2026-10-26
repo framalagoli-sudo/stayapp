@@ -39,6 +39,9 @@ async function nuovoEvento(campi) {
 async function prenota(ev, seats = 1) {
   const r = await post(`/api/guest/eventi/${ev.id}/book`, { guest_name: 'ZZ Ospite', guest_email: email(), seats, privacy_accettata: true })
   const d = await r.json()
+  // Una prenotazione che doveva nascere e non nasce si dice col suo motivo:
+  // fermarsi dopo su un valore vuoto nasconde la causa (es. il limite 10/ora).
+  if (r.status !== 201 && r.status !== 400) throw new Error(`prenotazione non nata: ${r.status} ${JSON.stringify(d)}`)
   return { status: r.status, d }
 }
 async function inLista(ev, seats = 1) {
