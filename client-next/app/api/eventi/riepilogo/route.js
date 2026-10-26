@@ -47,7 +47,7 @@ export async function GET(request) {
       const blocco = ids.slice(i, i + 100)
       for (let da = 0; ; da += 1000) {
         const { data: pagina, error: e2 } = await supabaseAdmin.from('event_bookings')
-          .select('event_id, seats, total_amount, status, pagamento_stato, pagamento_richiesto_il, importo_online')
+          .select('event_id, seats, total_amount, status, pagamento_stato, pagamento_richiesto_il, importo_online, offerta_scade_il')
           .in('event_id', blocco).order('id').range(da, da + 999)
         if (e2) return Response.json({ error: e2.message }, { status: 500 })
         righe.push(...(pagina || []))
@@ -69,10 +69,15 @@ export async function GET(request) {
       const posti = b.seats || 1
       const g = r.gruppi[gruppoPrenotazione(b)]
       g.prenotazioni++; g.posti += posti
+      // Un posto offerto a chi è in lista è tenuto (conta nei posti, come nel
+      // conteggio dell'evento) ma non è ancora una prenotazione.
       if (occupaPosto(b)) {
-        r.prenotazioni++; r.posti += posti
-        r.valore += Number(b.total_amount) || 0
-        r.incassato += incassatoOnline(r._evento, b)
+        r.posti += posti
+        if (b.status !== 'waitlist') {
+          r.prenotazioni++
+          r.valore += Number(b.total_amount) || 0
+          r.incassato += incassatoOnline(r._evento, b)
+        }
       }
     }
     return Response.json([...perEvento.values()].map(({ _evento, ...r }) => ({

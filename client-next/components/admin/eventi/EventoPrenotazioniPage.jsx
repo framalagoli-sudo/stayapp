@@ -7,7 +7,7 @@ import { useAzienda } from '../../../context/AziendaContext'
 import { oraLocale } from '../../../lib/fuso'
 import { postiEvento } from '@/lib/posti-evento'
 import StatoPagamento from '../StatoPagamento'
-import { gruppoPrenotazione, incassatoOnline } from '@/lib/gruppi-prenotazioni-evento'
+import { gruppoPrenotazione, incassatoOnline, postoOfferto } from '@/lib/gruppi-prenotazioni-evento'
 import { puoChiederePagamento, linkInCorso } from '@/lib/stato-prenotazione'
 import ChiediPagamento from '../ChiediPagamento'
 
@@ -527,7 +527,22 @@ export default function EventoPrenotazioniPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
               <span style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', minWidth: 0, overflowWrap: 'anywhere' }}>{b.guest_name}</span>
               <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: st.bg, color: st.color }}>{st.label}</span>
-              <span style={{ fontSize: 12, color: '#888', marginLeft: 'auto' }}>{fmtDate(b.created_at)}</span>
+              {/* Lista d'attesa automatica e annullamento dall'ospite: il
+                  titolare deve vedere perché una riga è dove è. */}
+              {postoOfferto(b) && (
+                <span data-posto-offerto style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: '#e6fffa', color: '#1d6b5f' }}>
+                  posto offerto fino alle {new Date(b.offerta_scade_il).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
+              {b.status === 'waitlist' && b.offerta_scaduta_il && (
+                <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: '#f1f1f4', color: '#555' }}>non ha risposto in tempo</span>
+              )}
+              {b.status === 'cancelled' && b.annullata_dall_ospite_il && (
+                <span data-annullata-ospite style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: '#f1f1f4', color: '#555' }}>
+                  annullata dall’ospite{b.pagamento_stato === 'pagato' ? ' · da rimborsare su Stripe' : ''}
+                </span>
+              )}
+              <span style={{ fontSize: 12, color: '#767676', marginLeft: 'auto' }}>{fmtDate(b.created_at)}</span>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 6 }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#555', minWidth: 0, overflowWrap: 'anywhere' }}>

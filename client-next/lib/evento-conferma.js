@@ -5,6 +5,8 @@ import { getAziendaLegale } from './guest-data'
 import { inviaMessaggioWhatsapp } from './whatsapp-messaggio'
 import { oraLocale } from './fuso'
 import { hostUfficiale } from './indirizzo-ufficiale'
+import { termineAnnullamento, fraseAnnullamento } from './annullamento-regole'
+import { baseLink } from './evento-titolare'
 
 // «La tua prenotazione è confermata»: **una sola volta, nel momento giusto.**
 //
@@ -35,7 +37,7 @@ function quando(iso, fuso) {
 export async function mandaConfermaEvento(bookingId) {
   try {
     const { data: b } = await supabaseAdmin.from('event_bookings')
-      .select('id, event_id, guest_name, guest_email, guest_phone, seats, total_amount, package_id, conferma_inviata_il')
+      .select('id, event_id, guest_name, guest_email, guest_phone, seats, total_amount, package_id, conferma_inviata_il, annulla_token')
       .eq('id', bookingId).maybeSingle()
     if (!b) return { ok: false, motivo: 'Prenotazione non trovata' }
 
@@ -45,7 +47,7 @@ export async function mandaConfermaEvento(bookingId) {
     if (b.conferma_inviata_il) return { ok: false, motivo: 'Conferma già inviata' }
 
     const { data: ev } = await supabaseAdmin.from('eventi')
-      .select('id, title, date_start, location, azienda_id, entity_id, entity_tipo, packages, send_guest_confirmation, aziende(fuso_orario)')
+      .select('id, title, date_start, location, azienda_id, entity_id, entity_tipo, packages, send_guest_confirmation, annullabile, annullabile_ore, aziende(fuso_orario)')
       .eq('id', b.event_id).maybeSingle()
     if (!ev) return { ok: false, motivo: 'Evento non trovato' }
     // Il titolare può aver spento la conferma: è una sua scelta, si rispetta.
@@ -66,6 +68,12 @@ export async function mandaConfermaEvento(bookingId) {
       : slug && pref ? `${appUrl}/${pref}/${slug}/privacy` : null
     const pkg = (ev.packages || []).find(p => p.id === b.package_id)
     const dataOra = quando(ev.date_start, ev.aziende?.fuso_orario)
+    // Fino a quando si annulla, e il link per farlo. Discreto, sotto: è una
+    // conferma, non un invito a rinunciare. Senza termine (spento dal titolare)
+    // non si scrive niente — né la frase né il link.
+    const termine = termineAnnullamento(ev)
+    const fraseTermine = termine ? fraseAnnullamento(ev, quando(termine.toISOString(), ev.aziende?.fuso_orario)) : null
+    const linkAnnulla = termine && b.annulla_token ? `${await baseLink(ev)}/annulla-evento?t=${b.annulla_token}` : null
 
     if ((process.env.RESEND_API_KEY ?? '').trim() && b.guest_email) {
       await sendEmail({
@@ -81,6 +89,9 @@ export async function mandaConfermaEvento(bookingId) {
             pkg?.name ? { label: 'Pacchetto', value: pkg.name } : null,
             b.total_amount ? { label: 'Totale', value: `€${b.total_amount}` } : null,
           ].filter(Boolean),
+          bodyHtml: fraseTermine && linkAnnulla
+            ? html`<p style="margin:22px 0 0;font-size:13px;color:#666;line-height:1.7">${fraseTermine} Non puoi più venire? <a href="${linkAnnulla}" style="color:#555">Annulla la prenotazione</a>: il posto passa a qualcun altro.</p>`
+            : undefined,
         }),
       })
     }

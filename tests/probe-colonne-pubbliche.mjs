@@ -50,6 +50,11 @@ const AMMESSE = {
                   // sembra ancora aperto è peggio di nessuna informazione — e la
                   // migration 110/111 le concede al ruolo pubblico una per una.
                   'prenotazioni_chiuse','prenotazioni_chiuse_testo','lista_attesa',
+                  // 26/10: fino a quando si annulla gratuitamente (sì/no e ore prima).
+                  // È la condizione che chi prenota deve leggere PRIMA di prenotare,
+                  // come la cancellazione gratuita di un albergo. `lista_automatica`
+                  // invece no: è un'impostazione del titolare, resta fuori.
+                  'annullabile','annullabile_ore',
                   // Il minimo per il piede di pagina: nome, logo, tema, footer_cfg,
                   // social e i dati legali del titolare — che sono pubblici per obbligo
                   // di legge. Verificato campo per campo il 25/08; il minisito NON esce

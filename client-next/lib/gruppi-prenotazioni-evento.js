@@ -21,10 +21,20 @@ export function gruppoPrenotazione(b) {
   return 'perse'
 }
 
-// Occupa un posto? Tutto tranne chi ha rinunciato e chi è in lista d'attesa:
-// la stessa regola con cui `recomputeEventSeats` decide se l'evento è pieno.
-export function occupaPosto(b) {
-  return b.status !== 'cancelled' && b.status !== 'waitlist'
+// Occupa un posto? Tutto tranne chi ha rinunciato e chi è in lista d'attesa —
+// ma chi è in lista e ha un posto offerto, ancora valido, lo occupa: è tenuto
+// per lui, e se non contasse il sito lo venderebbe a un altro mentre lui legge
+// l'email. È LA regola: la usano `recomputeEventSeats`, `confermaPostiEvento` e
+// la route del pannello. Chi la chiama deve aver letto `offerta_scade_il`.
+export function occupaPosto(b, ora = Date.now()) {
+  if (b.status === 'cancelled') return false
+  if (b.status === 'waitlist') return !!b.offerta_scade_il && new Date(b.offerta_scade_il).getTime() > ora
+  return true
+}
+
+// Chi è in lista e ha un posto offerto, ancora valido.
+export function postoOfferto(b, ora = Date.now()) {
+  return b.status === 'waitlist' && occupaPosto(b, ora)
 }
 
 // Quanto di questa prenotazione è già arrivato online.

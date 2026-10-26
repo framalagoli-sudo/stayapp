@@ -45,6 +45,10 @@ export default function EventoEditPage() {
     cta_label: '', cta_condizioni: '',
     mostra_prezzo: true, mostra_prezzo_pagina: true, prezzo_testo: '', prezzo_modo: '', acconto_percentuale: 0,
     prenotazioni_chiuse: false, prenotazioni_chiuse_testo: '', telefono_obbligatorio: false,
+    // Un evento nuovo nasce con l'annullamento fino a 24 ore prima e con la
+    // lista d'attesa che si muove da sola (decisione di Francesco, 26/10). Sugli
+    // eventi che c'erano la lista automatica resta spenta: la colonna nasce false.
+    annullabile: true, annullabile_ore: 24, lista_automatica: true,
   })
   const [cover, setCover] = useState(null)       // URL attuale
   const [formato, setFormato] = useState(FORMATO_PREDEFINITO)
@@ -87,6 +91,9 @@ export default function EventoEditPage() {
           prenotazioni_chiuse: ev.prenotazioni_chiuse ?? false,
           telefono_obbligatorio: ev.telefono_obbligatorio ?? false,
           prenotazioni_chiuse_testo: ev.prenotazioni_chiuse_testo || '',
+          annullabile:      ev.annullabile ?? true,
+          annullabile_ore:  ev.annullabile_ore ?? 24,
+          lista_automatica: ev.lista_automatica ?? false,
           notify_owner_on_booking: ev.notify_owner_on_booking ?? true,
           send_guest_confirmation: ev.send_guest_confirmation ?? true,
           packages:    (ev.packages || []).map(p => ({
@@ -148,6 +155,8 @@ export default function EventoEditPage() {
         price:       form.price       === '' ? 0    : parseFloat(form.price),
         seats_total: form.seats_total === '' ? null : parseInt(form.seats_total),
         posti_riservati: form.posti_riservati === '' ? 0 : Math.max(0, parseInt(form.posti_riservati) || 0),
+        // Vuoto = 24, come scritto accanto al campo.
+        annullabile_ore: form.annullabile_ore === '' ? 24 : Math.min(720, Math.max(0, parseInt(form.annullabile_ore) || 0)),
         date_start:  daCampoDataOra(form.date_start, fuso)?.toISOString() || null,
         date_end:    daCampoDataOra(form.date_end, fuso)?.toISOString()   || null,
         entity_tipo: safeEntityId ? (form.entity_tipo || null) : null,
@@ -566,6 +575,33 @@ export default function EventoEditPage() {
                 </p>
               </div>
             )}
+            {/* Annullare da soli: come la cancellazione gratuita di Booking.
+                Il rimborso a chi ha pagato lo fa il titolare da Stripe: lo
+                diciamo qui, non lo scopre all'arrivo dell'avviso. */}
+            <Toggle
+              label="Chi ha prenotato può annullare da solo"
+              hint="Nella conferma c'è il link «Annulla la prenotazione», valido fino al termine qui sotto. Oltre il termine il link non annulla più: chi vuole rinunciare ti contatta. Se aveva pagato online, il rimborso lo fai tu da Stripe — ti avvisiamo per email."
+              value={form.annullabile}
+              onChange={v => set('annullabile', v)} />
+            {form.annullabile && (
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 13.5, color: '#444' }}>
+                  Fino a
+                  <input type="number" min="0" max="720" value={form.annullabile_ore}
+                    onChange={e => set('annullabile_ore', e.target.value)}
+                    style={{ width: 80, padding: '8px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' }} />
+                  ore prima dell'inizio
+                </label>
+                <p style={{ margin: '6px 0 0', fontSize: 12, color: '#767676', lineHeight: 1.6 }}>
+                  0 = fino all'inizio dell'evento. Se lo lasci vuoto valgono 24 ore.
+                </p>
+              </div>
+            )}
+            <Toggle
+              label="Quando si libera un posto, offrilo al primo in lista"
+              hint="Chi è in lista d'attesa riceve un'email e ha un'ora per prendere il posto (mezz'ora se l'evento è oggi); il posto resta tenuto per lui. Se non lo prende passa al prossimo. Con un pagamento online va alla cassa come tutti. Quando lo prende ti arriva l'avviso di una prenotazione nuova, se gli avvisi sono accesi."
+              value={form.lista_automatica}
+              onChange={v => set('lista_automatica', v)} />
           </div>
         </div>
 

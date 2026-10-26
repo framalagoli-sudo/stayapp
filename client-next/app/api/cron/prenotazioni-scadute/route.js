@@ -2,6 +2,7 @@ import { liberaPostiNonPagati, liberaRisorseNonPagate, MINUTI_PER_PAGARE } from 
 import { logError } from '@/lib/observability'
 import { chiudiLinkScaduti } from '@/lib/link-pagamento'
 import { battitoEControllo } from '@/lib/cron-battito'
+import { giroListeAttesa } from '@/lib/lista-attesa-automatica'
 
 // Restituisce i posti tenuti e mai pagati.
 //
@@ -22,7 +23,11 @@ export async function GET(request) {
     // I link di pagamento mandati dal titolare: scaduti, tornano «si paga sul
     // posto» e la prenotazione resta.
     const link = await chiudiLinkScaduti()
+    // Dopo aver liberato i posti: chi è in lista li riceve, e le offerte non
+    // prese in tempo passano al prossimo.
+    const liste = await giroListeAttesa()
     const esito = {
+      offerte_scadute: liste.scadute, posti_offerti: liste.offerte,
       esaminate: eventi.esaminate + risorse.esaminate, liberate: eventi.liberate + risorse.liberate,
       recuperate: eventi.recuperate + risorse.recuperate + link.recuperati, incerte: eventi.incerte + risorse.incerte + link.incerti,
       motivi: [...eventi.motivi, ...risorse.motivi, ...link.motivi],

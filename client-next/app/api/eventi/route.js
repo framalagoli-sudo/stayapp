@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { formatoValido, focalValido } from '@/lib/formati-foto'
 import { requireAuth, resolveAziendaId, entitaDellaAzienda } from '@/lib/server-auth'
 import { slugEvento, slugLibero } from '@/lib/evento-indirizzo'
+import { annullamentoPulito } from '@/lib/annullamento-regole'
 
 // I tre modi in cui un evento può dire quanto costa (migration 123):
 // «gratuito», una cifra, o una frase scritta dal cliente. Niente = non si scrive.
@@ -18,7 +19,8 @@ async function getProfile(userId) {
 const ALLOWED = ['title', 'description', 'cover_url', 'date_start', 'date_end',
   'location', 'price', 'seats_total', 'posti_riservati', 'active', 'published', 'packages', 'entity_tipo', 'entity_id',
   'notify_owner_on_booking', 'send_guest_confirmation', 'formato_cover', 'cover_focal',
-  'cta_label', 'cta_condizioni', 'acconto_percentuale', 'mostra_prezzo', 'mostra_prezzo_pagina', 'prezzo_testo', 'prezzo_modo', 'telefono_obbligatorio']
+  'cta_label', 'cta_condizioni', 'acconto_percentuale', 'mostra_prezzo', 'mostra_prezzo_pagina', 'prezzo_testo', 'prezzo_modo', 'telefono_obbligatorio',
+  'annullabile', 'annullabile_ore', 'lista_automatica']
 
 export async function GET(request) {
   try {
@@ -83,6 +85,7 @@ export async function POST(request) {
     if ('prezzo_modo' in payload && !MODI_PREZZO.includes(payload.prezzo_modo)) payload.prezzo_modo = null
     if ('mostra_prezzo' in payload) payload.mostra_prezzo = payload.mostra_prezzo !== false
     if ('mostra_prezzo_pagina' in payload) payload.mostra_prezzo_pagina = payload.mostra_prezzo_pagina !== false
+    annullamentoPulito(payload)
     if (payload.entity_id && !isUUID(payload.entity_id)) { payload.entity_id = null; payload.entity_tipo = null }
     // L'entità dev'essere propria: altrimenti l'evento comparirebbe sul sito di
     // un altro cliente, raccogliendone anche le prenotazioni.

@@ -3,6 +3,8 @@ import { requireAuth, getProfile } from '@/lib/server-auth'
 import { recomputeEventSeats } from '@/lib/event-seats'
 import { mandaConfermaEvento } from '@/lib/evento-conferma'
 import { ritiraLink } from '@/lib/link-pagamento'
+import { occupaPosto } from '@/lib/gruppi-prenotazioni-evento'
+import { muoviListaAttesa } from '@/lib/lista-attesa-automatica'
 
 export async function PATCH(request, props) {
   const params = await props.params;
@@ -35,6 +37,11 @@ export async function PATCH(request, props) {
 
     const payload = { updated_at: new Date().toISOString() }
     if (status !== undefined) payload.status = status
+    // Qualunque stato scelga il titolare, un posto offerto dalla lista d'attesa
+    // smette di esserlo: o l'ha confermato lui, o l'ha tolto. Il link offerto
+    // all'ospite non prende più niente (il token resta: chi lo apre legge
+    // «il posto è già tuo» o «hai rinunciato», non «link non valido»).
+    if (status !== undefined) payload.offerta_scade_il = null
     // Il titolare conferma a mano una prenotazione che aspettava il pagamento:
     // vuol dire «la tengo io, pagherà sul posto». Il pagamento online smette di
     // essere atteso — altrimenti, alla scadenza della cassa, il giro che libera
@@ -79,11 +86,12 @@ export async function PATCH(request, props) {
     const daListaAttesa = status === 'confirmed'
     if (daListaAttesa) {
       const { data: prima } = await supabaseAdmin.from('event_bookings')
-        .select('status, seats').eq('id', params.bookingId).maybeSingle()
+        .select('status, seats, offerta_scade_il').eq('id', params.bookingId).maybeSingle()
       // Vale anche per chi era stata annullata e viene ripristinata: nemmeno lei
       // occupava un posto, e rimetterla su un evento pieno lo manderebbe oltre
-      // la capienza senza dirlo a nessuno.
-      if (['waitlist', 'cancelled'].includes(prima?.status)) {
+      // la capienza senza dirlo a nessuno. Chi ha già un posto offerto lo
+      // occupa: confermarlo non ne chiede uno in più.
+      if (prima && !occupaPosto(prima)) {
         const { data: ev } = await supabaseAdmin.from('eventi')
           .select('seats_total, seats_booked').eq('id', booking.event_id).maybeSingle()
         if (ev?.seats_total && (ev.seats_booked || 0) + (prima.seats || 1) > ev.seats_total) {
@@ -98,13 +106,13 @@ export async function PATCH(request, props) {
     // dal database, mai da quello che arriva nella richiesta.
     if (postiNuovi !== null) {
       const { data: prima } = await supabaseAdmin.from('event_bookings')
-        .select('seats, status, package_id').eq('id', params.bookingId).single()
+        .select('seats, status, package_id, offerta_scade_il').eq('id', params.bookingId).single()
       const { data: ev } = await supabaseAdmin.from('eventi')
         .select('seats_total, seats_booked, price, packages').eq('id', booking.event_id).single()
       const statoFinale = status ?? prima?.status
-      const NON_OCCUPANO = ['cancelled', 'waitlist']
-      const occupavaPrima = NON_OCCUPANO.includes(prima?.status) ? 0 : (prima?.seats || 1)
-      const occupaOra = NON_OCCUPANO.includes(statoFinale) ? 0 : postiNuovi
+      const occupavaPrima = prima && occupaPosto(prima) ? (prima.seats || 1) : 0
+      // Cambiando stato l'offerta si chiude (più sopra): conta lo stato e basta.
+      const occupaOra = occupaPosto({ status: statoFinale, offerta_scade_il: status !== undefined ? null : prima?.offerta_scade_il }) ? postiNuovi : 0
       const differenza = occupaOra - occupavaPrima
       // ⚠️ Il tetto per chi corregge dal pannello è la capienza PIENA, non
       // quella del pubblico: i posti tenuti per il telefono sono suoi.
@@ -131,7 +139,11 @@ export async function PATCH(request, props) {
     // Ricalcola i posti occupati se è cambiato lo stato **o il numero di
     // posti**: senza la seconda condizione, correggere 15 in 5 lasciava
     // l'evento convinto di avere dieci posti occupati che non esistono.
-    if (status || postiNuovi !== null) await recomputeEventSeats(data.event_id)
+    if (status || postiNuovi !== null) {
+      await recomputeEventSeats(data.event_id)
+      // Un posto liberato dal titolare va al primo in lista, se l'evento lo vuole.
+      await muoviListaAttesa(data.event_id)
+    }
 
     // ⛔ Chi passa dalla lista d'attesa a confermato deve SAPERLO. Senza questa
     // riga resterebbe ad aspettare una chiamata che è già arrivata: il posto è
@@ -176,6 +188,7 @@ export async function DELETE(request, props) {
 
     // I posti tornano liberi subito: il conto si rifà sulle righe rimaste.
     await recomputeEventSeats(booking.event_id)
+    await muoviListaAttesa(booking.event_id)
     return Response.json({ eliminata: true })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }

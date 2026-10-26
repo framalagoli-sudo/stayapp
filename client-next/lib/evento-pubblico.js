@@ -24,6 +24,8 @@ export const CAMPI_EVENTO = [
   // ⚠️ Senza queste due la pagina non saprebbe che le prenotazioni sono chiuse:
   // si salverebbe nel pannello e non si vedrebbe sul sito — è già successo.
   'prenotazioni_chiuse', 'prenotazioni_chiuse_testo', 'lista_attesa',
+  // Fino a quando si annulla gratuitamente: si legge sotto il pulsante.
+  'annullabile', 'annullabile_ore',
   // Servono a ricostruire il piede di pagina del sito da cui arriva chi guarda.
   'entity_tipo', 'entity_id', 'azienda_id',
   // L'ora dell'evento è quella del posto: senza fuso la pagina la mostrerebbe

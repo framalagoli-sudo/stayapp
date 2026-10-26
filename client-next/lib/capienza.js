@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { siSovrappongono, fineOccupazione } from '@/lib/booking-giornaliero'
+import { occupaPosto } from '@/lib/gruppi-prenotazioni-evento'
 
 // La capienza deve reggere anche a richieste simultanee.
 //
@@ -32,17 +33,19 @@ export async function confermaPostiEvento(eventId, bookingId, limite = null) {
     if (!mia) return false
 
     const { data: tutte } = await supabaseAdmin.from('event_bookings')
-      .select('id, seats, created_at, status').eq('event_id', eventId)
+      .select('id, seats, created_at, status, offerta_scade_il').eq('event_id', eventId)
 
     // ⛔ Contava anche chi è in **lista d'attesa**: gente che un posto NON ce
     // l'ha — è il senso stesso della lista. Su un evento con dieci persone in
     // attesa, dieci posti risultavano occupati due volte e una prenotazione
     // valida veniva ritirata con «Posti non disponibili». `recomputeEventSeats`
     // le escludeva già: le due regole devono dire la stessa cosa, o il conto
-    // che si mostra e il conto che decide divergono.
-    const NON_OCCUPANO = ['cancelled', 'waitlist']
+    // che si mostra e il conto che decide divergono — per questo la regola è
+    // una sola, `occupaPosto`. Un posto offerto a chi è in lista conta sempre,
+    // anche se l'offerta è nata dopo: è già suo, e chi prenota adesso non può
+    // passargli davanti.
     const occupatiPrima = (tutte || [])
-      .filter(b => !NON_OCCUPANO.includes(b.status) && primaDi(b, mia))
+      .filter(b => b.id !== mia.id && occupaPosto(b) && (primaDi(b, mia) || b.status === 'waitlist'))
       .reduce((s, b) => s + (b.seats || 1), 0)
 
     if (occupatiPrima + (mia.seats || 1) > tetto) {

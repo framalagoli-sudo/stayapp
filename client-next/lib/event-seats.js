@@ -1,4 +1,5 @@
 import { supabaseAdmin } from './supabase-server'
+import { occupaPosto } from './gruppi-prenotazioni-evento'
 
 // Quanti posti sono presi davvero.
 //
@@ -12,14 +13,14 @@ import { supabaseAdmin } from './supabase-server'
 //     sarebbe il difetto che svuota la funzione: la lista d'attesa riempirebbe
 //     l'evento da sola, e quando un posto si libera non risulterebbe libero —
 //     né per chi prenota né per chi è in lista.
-const NON_OCCUPANO = ['cancelled', 'waitlist']
-
+// Tranne chi è in lista con un posto offerto e ancora valido: quello è tenuto
+// per lui. La regola sta in `occupaPosto`, una sola per chi conta i posti.
 export async function recomputeEventSeats(eventId) {
   if (!eventId) return 0
   const { data } = await supabaseAdmin
-    .from('event_bookings').select('seats, status').eq('event_id', eventId)
+    .from('event_bookings').select('seats, status, offerta_scade_il').eq('event_id', eventId)
   const total = (data || [])
-    .filter(b => !NON_OCCUPANO.includes(b.status))
+    .filter(b => occupaPosto(b))
     .reduce((s, b) => s + (b.seats || 1), 0)
   await supabaseAdmin.from('eventi')
     .update({ seats_booked: total, updated_at: new Date().toISOString() })

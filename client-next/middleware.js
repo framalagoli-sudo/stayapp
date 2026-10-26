@@ -25,6 +25,9 @@ function isOwnDomain(hostname) {
 const GLOBAL_PUBLIC_PATHS = [
   '/blog', '/eventi', '/form', '/preventivo', '/recensione',
   '/cancella-prenotazione', '/confirm-subscription', '/unsubscribe', '/signup',
+  // I link nelle email degli eventi: annullare, e prendere un posto dalla lista
+  // d'attesa. Partono dal dominio del cliente quando ne ha uno.
+  '/annulla-evento', '/posto-evento',
   // ⚠️ Il ritorno da Stripe: chi ha appena pagato resta sul sito da cui ha
   // comprato. Senza questa riga `/checkout/successo` sul dominio del cliente
   // diventava `/r/slug/checkout/successo` → 404 subito dopo il pagamento.

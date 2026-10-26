@@ -103,7 +103,7 @@ export async function liberaPostiNonPagati() {
   // Solo chi doveva pagare e non risulta pagato. Chi non doveva pagare niente
   // ha `non_richiesto` e non entra qui dentro.
   const { data: candidate } = await supabaseAdmin.from('event_bookings')
-    .select('id, event_id, seats, guest_name, guest_email, pagamento_id, pagamento_stato, created_at, status, conferma_inviata_il')
+    .select('id, event_id, seats, guest_name, guest_email, pagamento_id, pagamento_stato, created_at, status, conferma_inviata_il, cassa_aperta_il')
     .eq('pagamento_stato', 'non_pagato')
     .neq('status', 'cancelled')
     // Chi ha ricevuto un link dal titolare ha un giorno, e la sua prenotazione
@@ -119,6 +119,10 @@ export async function liberaPostiNonPagati() {
   const motivi = []
 
   for (const b of candidate) {
+    // Chi arriva dalla lista d'attesa ha una riga vecchia di giorni ma la cassa
+    // aperta adesso: la mezz'ora si conta da lì, non da `created_at`.
+    // (Si confrontano istanti, non stringhe: il database scrive «+00:00», noi «Z».)
+    if (b.cassa_aperta_il && new Date(b.cassa_aperta_il) > new Date(limite)) continue
     const { data: evento } = await supabaseAdmin.from('eventi')
       .select('id, title, azienda_id, entity_id, date_start, date_end').eq('id', b.event_id).maybeSingle()
     if (!evento) continue

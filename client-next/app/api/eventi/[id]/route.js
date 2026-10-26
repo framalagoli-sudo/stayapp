@@ -2,6 +2,8 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { formatoValido, focalValido } from '@/lib/formati-foto'
 import { requireRecordAccess, entitaDellaAzienda } from '@/lib/server-auth'
 import { slugEvento, slugLibero } from '@/lib/evento-indirizzo'
+import { annullamentoPulito } from '@/lib/annullamento-regole'
+import { muoviListaAttesa } from '@/lib/lista-attesa-automatica'
 
 // I tre modi in cui un evento può dire quanto costa (migration 123):
 // «gratuito», una cifra, o una frase scritta dal cliente. Niente = non si scrive.
@@ -14,7 +16,8 @@ const ALLOWED = ['title', 'description', 'cover_url', 'date_start', 'date_end',
   'location', 'price', 'seats_total', 'posti_riservati', 'active', 'published', 'packages', 'entity_tipo', 'entity_id',
   'notify_owner_on_booking', 'send_guest_confirmation', 'formato_cover', 'cover_focal',
   'cta_label', 'cta_condizioni', 'acconto_percentuale', 'mostra_prezzo', 'mostra_prezzo_pagina', 'prezzo_testo', 'prezzo_modo', 'telefono_obbligatorio',
-  'prenotazioni_chiuse', 'prenotazioni_chiuse_testo', 'slug']
+  'prenotazioni_chiuse', 'prenotazioni_chiuse_testo', 'slug',
+  'annullabile', 'annullabile_ore', 'lista_automatica']
 
 export async function GET(request, props) {
   const params = await props.params;
@@ -57,6 +60,7 @@ export async function PATCH(request, props) {
     if ('prezzo_modo' in payload && !MODI_PREZZO.includes(payload.prezzo_modo)) payload.prezzo_modo = null
     if ('mostra_prezzo' in payload) payload.mostra_prezzo = payload.mostra_prezzo !== false
     if ('mostra_prezzo_pagina' in payload) payload.mostra_prezzo_pagina = payload.mostra_prezzo_pagina !== false
+    annullamentoPulito(payload)
     if (payload.entity_id && !isUUID(payload.entity_id)) { payload.entity_id = null; payload.entity_tipo = null }
     // Spostare l'evento su un'entità altrui lo pubblicherebbe sul sito di un
     // altro cliente: il record è mio, la destinazione no.
@@ -92,6 +96,9 @@ export async function PATCH(request, props) {
     payload.updated_at = new Date().toISOString()
     const { data, error } = await supabaseAdmin.from('eventi').update(payload).eq('id', params.id).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
+    // Più posti, prenotazioni riaperte, lista automatica appena accesa: se c'è
+    // posto, chi aspetta lo riceve adesso e non al prossimo giro.
+    await muoviListaAttesa(params.id)
     return Response.json(data)
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }

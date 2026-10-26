@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
 import { eventoConcluso } from '@/lib/evento-concluso'
 import { oraLocale } from '@/lib/fuso'
+import { termineAnnullamento, fraseAnnullamento } from '@/lib/annullamento-regole'
 import { ricco } from '@/lib/testo-ricco'
 import LegalInfo from './LegalInfo'
 import SiteNav from './SiteNav'
@@ -179,6 +180,13 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
       locale: lang === 'en' ? 'en-GB' : 'it-IT',
     }) || '—'
   }
+
+  // Calcolato dai dati e dal fuso del locale, mai dall'ora del browser: è lo
+  // stesso testo sul server e nel browser.
+  const termine = evento ? termineAnnullamento(evento) : null
+  const fraseTermine = termine ? fraseAnnullamento(evento, oraLocale(termine.toISOString(), evento.fuso, {
+    day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', locale: lang === 'en' ? 'en-GB' : 'it-IT',
+  }), lang) : null
 
   if (error) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, fontFamily: 'Inter, system-ui, sans-serif' }}>
@@ -477,6 +485,11 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
               {evento.cta_condizioni && (
                 <p style={{ marginTop: 12, marginBottom: 0, fontSize: 12.5, color: '#777', lineHeight: 1.6, textAlign: 'center', whiteSpace: 'pre-line' }}
                   {...ricco(evento.cta_condizioni)} />
+              )}
+              {/* Fino a quando si annulla: si legge prima di prenotare, come
+                  la cancellazione gratuita di un albergo. */}
+              {fraseTermine && (
+                <p data-termine-annullamento style={{ marginTop: 10, marginBottom: 0, fontSize: 12.5, color: '#666', lineHeight: 1.6, textAlign: 'center' }}>{fraseTermine}</p>
               )}
             </>
           )}

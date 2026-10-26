@@ -9,6 +9,7 @@ import { eventoConcluso } from '@/lib/evento-concluso'
 import { oraLocale } from '@/lib/fuso'
 import { after } from 'next/server'
 import { testoConsensoPromozioni } from '@/lib/consenso-promozioni'
+import { baseLink } from '@/lib/evento-titolare'
 
 // «Avvisatemi se si libera un posto.»
 //
@@ -128,6 +129,11 @@ export async function POST(request, props) {
             evento.location ? { label: 'Dove', value: evento.location } : null,
             { label: 'Posti che vorresti', value: String(posti) },
           ].filter(Boolean),
+          // Chi non è più interessato si toglie da solo: così il prossimo
+          // invito va a chi aspetta davvero.
+          bodyHtml: data.annulla_token
+            ? html`<p style="margin:22px 0 0;font-size:13px;color:#666;line-height:1.7">Non ti interessa più? <a href="${`${await baseLink(evento)}/annulla-evento?t=${data.annulla_token}`}" style="color:#555">Toglimi dalla lista</a>.</p>`
+            : undefined,
         }),
       }).catch(() => {})
     }
