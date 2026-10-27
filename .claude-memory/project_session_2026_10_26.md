@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: c69c02d8-2525-4043-b4de-493f6a4d0ef2
-  modified: 2026-10-26T13:46:51.423Z
+  modified: 2026-10-27T06:31:06.803Z
 ---
 
 **PC resettato** la mattina: verificato repo, env, memoria, profilo, Vercel — niente perso. Il codice del risponditore non era mai stato scritto (lo dice la trascrizione `e568d56c`): mi ero fermato dopo aver misurato 4 messaggi in 5 mesi.
@@ -15,4 +15,6 @@ metadata:
 **Annullamento + lista automatica** (migration 141 eseguita da Francesco il 26/10; CLAUDE.md nota 89). Decisioni di Francesco: termine per evento stile Booking (default 24h, «se applicarlo» = interruttore); rimborso **a mano dal titolare** («non tocchiamo i soldi dei clienti»); lista: 1h, 30 min stesso giorno; interruttore per evento. Mie scelte dichiarate: annullamento acceso anche sugli eventi esistenti (per le prenotazioni nuove), lista automatica spenta sugli esistenti e accesa sui nuovi; chi chiede più posti lascia passare; avviso «da rimborsare» anche ad avvisi spenti.
 
 **Why:** Francesco ha notato che senza annullamento dell'ospite la lista automatica non avrebbe posti da muovere — l'ordine giusto era annullamento prima, lista dopo.
+**PC di Francesco (26–27/10, fuori dal progetto)**: sospettava uno script per le finestre DOS lampeggianti prima di un riavvio. Indagine in sola lettura: nessuno script malevolo; BSOD 0xEF CRITICAL_PROCESS_DIED ricorrente (2, 21, 22, 26/10), C: quasi pieno (9 GB), memoria sotto pressione (il sistema ha ucciso un mio `du`), Toshiba E: con blocchi danneggiati, G: NTFS corrotto, WHEA PCIe corretti. Con suo ok: `npm cache clean --force` (−19 GB) e file di Temp >7 giorni (−4,5 GB) → 33,5 GB liberi. Download mai toccata (sua condizione esplicita).
+
 **How to apply:** `occupaPosto` è la regola unica dei posti evento (offerte tenute comprese). Non provati: pagamento vero dalla lista, email in casella, frase del termine nell'app QR (non c'è). Lega con [[project-agenti-automatismi]].
