@@ -4,11 +4,13 @@ description: "Da dove riprendere — 18/10: META/WHATSAPP avviato col numero di 
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-10-27T11:19:16.656Z
+  modified: 2026-10-27T18:12:53.513Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
+
+## ⛔ PRIMA COSA (27/10): mostrare a Francesco il testo di [[project-sentinella-fornitori]] ESATTAMENTE com'è (sua richiesta), poi ripartire dalla sentinella A.
 
 ## ✅ 23/10 — permessi dei collaboratori chiusi (CLAUDE.md nota 84, SECURITY invariante 27)
 - Francesco ha scelto il punto 1 di questo elenco (in ordine): 1 sicurezza collaboratori ✅ · 2 aprire le registrazioni (verifica email + Turnstile) · 3 intervista che costruisce il sito · 4 piccole (newsletter su fondo scuro, email «posto liberato» su evento passato, ripristino `contatti_attivita`, PR Dependabot stripe) · 5 Halloween 31/10 nel Club (testo suo).

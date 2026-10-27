@@ -9,6 +9,7 @@
 
 ## Da leggere per primi
 - [TODO prossima sessione](todo_prossima_sessione.md) — LEGGERE PER PRIMO
+- ⛔ [Sentinella fornitori](project_sentinella_fornitori.md) — a inizio sessione mostrare a Francesco il testo salvato, identico; poi si parte da lì
 - [A ogni chiusura: aggiornare TUTTI i file di progetto](feedback_chiusura_sessione.md) — aprirli, non supporli
 - [Posizionamento target](project_positioning_target.md) — 14/10: ~80 €/mese, 200 clienti, «il cliente migliore sono io», no clone GHL, no social
 - [Agenti e automatismi per il titolare](project_agenti_automatismi.md) — 24/10 idea di Francesco, proposte date; Halloween Club in sospeso
