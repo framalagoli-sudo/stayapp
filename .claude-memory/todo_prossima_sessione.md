@@ -4,7 +4,7 @@ description: "Da dove riprendere — 18/10: META/WHATSAPP avviato col numero di 
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-10-27T06:31:03.365Z
+  modified: 2026-10-27T10:43:17.075Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
@@ -28,7 +28,7 @@ Tutto il blocco 18/10 qui sotto resta valido così com'è: si riprende dal punto
 
 ✅ 25/10: **email: il testo del visitatore resta testo** (CLAUDE.md nota 87, SECURITY inv. 28, commit 4fb74574) — LIVE insieme al Dependabot #66; deploy tutto verde (smoke 74/74 + tutte le sonde, compresa la nuova probe-email-sicure). NON verificata a occhio un'email vera in casella dopo il cambio: chiedere a Francesco di mandarsi un messaggio dal modulo contatti di un suo sito con un nome tipo «<b>prova</b>» e guardare che arrivi scritto così, e che grassetti/a-capo delle email normali siano a posto.
 ✅ **26/10** ([[project-session-2026-10-26]]): risponditore **rimandato a quando c'è WhatsApp** (4 messaggi in 5 mesi dalle porte previste). Fatti: buco `/api/requests` + 3 porte senza limite (LIVE), **annullamento dell'ospite + lista d'attesa automatica** (migration 141, CLAUDE.md nota 89). Da chiedere a Francesco: prenotare un evento di prova e guardare l'email di conferma (frase del termine + link «Annulla»), e l'email «Si è liberato un posto».
-🖥️ **26–27/10, PC di Francesco** (dettaglio in [[project-session-2026-10-26]]): nessuno script malevolo trovato; i riavvii sono BSOD 0xEF ricorrenti. Liberati 9 → 33,5 GB su C: (cache npm + Temp >7 giorni, con suo ok; Download non toccata). **Da ricordargli**: copiare i dati del Toshiba E: (blocchi danneggiati, «Futura Vacanze»), `sfc /scannow` + `DISM /RestoreHealth` da admin (lo guido io), PostgreSQL 9.5 da spegnere (aspetta il suo sì), Google 18 GB da guardare, memoria piena (Chrome). Primo deploy dopo la pulizia: `npx vercel` riscarica, un po' più lento.
+🖥️ **26–27/10, PC di Francesco** (dettaglio in [[project-session-2026-10-26]]): nessuno script malevolo trovato; i riavvii sono BSOD 0xEF ricorrenti. Liberati 9 → 33,5 GB su C: (cache npm + Temp >7 giorni, con suo ok; Download non toccata). **Da ricordargli**: copiare i dati del Toshiba E: (blocchi danneggiati, «Futura Vacanze»), `sfc /scannow` + `DISM /RestoreHealth` da admin (lo guido io), PostgreSQL 9.5 ✅ spento e disabilitato da lui il 27/10 (verificato: Stopped/Disabled), Google 18 GB da guardare, memoria piena (Chrome). Primo deploy dopo la pulizia: `npx vercel` riscarica, un po' più lento.
 (storico) **RISPONDITORE**: progetto dato il 25/10 (bozza dai dati veri, approvazione con un tocco, poi pilota automatico per le domande semplici; lib/conoscenza-attivita.js condivisa col chatbot; tabella proposte = base della coda degli agenti; link firmato monouso per «Invia» dall'email). **In attesa di 2 risposte di Francesco**: (1) «Invia» direttamente dall'email sì/no; (2) porte della prima versione = messaggio dal sito + richieste dall'app del QR.
 
 ➕ **25/10, deciso con Francesco:** quando si riprende Meta, la App Review deve includere ANCHE i permessi di **pubblicazione su Instagram e Facebook** (pubblicare da OltreNova) — stessa app, una revisione sola. Regole di progetto in [[project-agenti-automatismi]].
