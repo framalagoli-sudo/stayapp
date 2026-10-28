@@ -14,7 +14,7 @@ import { logError } from './observability.js'
 async function getEntity(entity_tipo, entity_id) {
   if (!entity_tipo || !entity_id) return null
   const { data } = await supabaseAdmin.from('entita')
-    .select('id, name, logo_url, theme, slug').eq('id', entity_id).maybeSingle()
+    .select('id, name, logo_url, logo_dark_url, theme, slug').eq('id', entity_id).maybeSingle()
   return data
 }
 
@@ -33,6 +33,7 @@ export async function sendNewsletterById(id) {
   const entity = await getEntity(nl.entity_tipo, nl.entity_id)
   const entityName = entity?.name || 'OltreNova'
   const entityLogo = entity?.logo_url || null
+  const entityLogoScuro = entity?.logo_dark_url || null
   const primary    = entity?.theme?.primaryColor || '#1a1a2e'
   const appUrl     = (process.env.APP_URL ?? '').trim() || 'https://oltrenova.com'
   const legale     = await getAziendaLegale(nl.azienda_id)
@@ -71,7 +72,7 @@ export async function sendNewsletterById(id) {
         to: c.email,
         subject: pSubject,
         html: buildNewsletterHtml({
-          entityName, entityLogo, primary,
+          entityName, entityLogo, entityLogoScuro, primary,
           template_id: nl.template_id,
           content: pContent,
           preheader: nl.preheader || '',
@@ -91,6 +92,15 @@ export async function sendNewsletterById(id) {
       continue
     }
     sent += batch.length
+  }
+
+  // Non è partito niente: la newsletter NON è inviata. Restava «inviata a 0»,
+  // senza un pulsante per riprovare (Garage 22, 28/10). Torna com'era, e chi ha
+  // premuto «Invia» legge l'errore invece di un successo.
+  if (sent === 0) {
+    await supabaseAdmin.from('newsletters')
+      .update({ status: nl.status, sent_at: null, updated_at: new Date().toISOString() }).eq('id', nl.id)
+    throw new Error('Il servizio di posta ha rifiutato l’invio: nessuna email è partita. La newsletter è tornata in bozza.')
   }
 
   await supabaseAdmin.from('newsletters').update({ recipients_count: sent, updated_at: new Date().toISOString() }).eq('id', nl.id)

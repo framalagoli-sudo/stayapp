@@ -10,6 +10,8 @@
 //
 // ⚠️ Nessuna dipendenza: lo legge il pannello, che è codice di browser.
 
+import { emailValida } from './contatti-import.js'
+
 // Da quale porta è entrato il contatto (`contatti.fonte`). Le parole storiche
 // del database — `minisito`, `pwa`, `form` — erano gergo nostro.
 const FONTI = {
@@ -58,7 +60,8 @@ export function fraseAttivita(a) {
 // ⚠️ Entrare fra i contatti NON è un consenso: senza la sua spunta non si scrive.
 export function canaliContattabili(c) {
   return {
-    email: !!(c?.email && c.iscritto_newsletter && !c.email_non_valida),
+    // Un'email scritta male non è un canale: la newsletter la salterebbe comunque.
+    email: !!(emailValida(c?.email) && c.iscritto_newsletter && !c.email_non_valida),
     whatsapp: !!((c?.telefono_e164 || c?.telefono) && c.whatsapp_optin),
   }
 }
@@ -69,7 +72,7 @@ export const contattabile = c => { const k = canaliContattabili(c); return k.ema
 const REFUSI = /@(gmail|hotmail|libero|yahoo|outlook|icloud|virgilio|alice|tiscali)\.(con|cmo|ocm|vom|comm|co|cm|i|ti)$|@(gmial|gamil|gmai|gmal|gnail|hotmial|hotmal|yaho|libeo)\.[a-z.]+$/i
 export function emailDaCorreggere(c) {
   if (!c?.email) return false
-  return !!c.email_non_valida || !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(c.email) || REFUSI.test(c.email)
+  return !!c.email_non_valida || !emailValida(c.email) || REFUSI.test(c.email)
 }
 
 // ── Le etichette ────────────────────────────────────────────────────────────

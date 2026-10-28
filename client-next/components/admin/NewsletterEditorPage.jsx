@@ -122,9 +122,9 @@ export default function NewsletterEditorPage() {
 
   // Flatten all entities for the picker
   const allEntities = [
-    ...(strutture || []).map(e => ({ id: e.id, tipo: 'struttura', label: e.name, logo: e.logo_url, colore: e.theme?.primaryColor })),
-    ...(ristoranti || []).map(e => ({ id: e.id, tipo: 'ristorante', label: e.name, logo: e.logo_url, colore: e.theme?.primaryColor })),
-    ...(attivita || []).map(e => ({ id: e.id, tipo: 'attivita', label: e.name, logo: e.logo_url, colore: e.theme?.primaryColor })),
+    ...(strutture || []).map(e => ({ id: e.id, tipo: 'struttura', label: e.name, logo: e.logo_url, logoScuro: e.logo_dark_url, colore: e.theme?.primaryColor })),
+    ...(ristoranti || []).map(e => ({ id: e.id, tipo: 'ristorante', label: e.name, logo: e.logo_url, logoScuro: e.logo_dark_url, colore: e.theme?.primaryColor })),
+    ...(attivita || []).map(e => ({ id: e.id, tipo: 'attivita', label: e.name, logo: e.logo_url, logoScuro: e.logo_dark_url, colore: e.theme?.primaryColor })),
   ]
 
   const currentEntity = allEntities.find(e => e.id === entityId) || null
@@ -168,11 +168,11 @@ export default function NewsletterEditorPage() {
   // dopo l'ultimo tasto, così non lampeggia a ogni lettera.
   const nomeMittente = currentEntity?.label || 'OltreNova'
   const disegna = useCallback((tid, c, pre = '') => buildNewsletterHtml({
-    entityName: nomeMittente, entityLogo: currentEntity?.logo || null,
+    entityName: nomeMittente, entityLogo: currentEntity?.logo || null, entityLogoScuro: currentEntity?.logoScuro || null,
     primary: currentEntity?.colore || '#1a1a2e',
     template_id: tid, content: personalize(c, 'Mario'), preheader: pre,
     unsubscribeUrl: '#', legale: azienda || null, privacyUrl: currentEntity ? '#' : null,
-  }).replace('<head>', '<head><base target="_blank">'), [nomeMittente, currentEntity?.logo, currentEntity?.colore, azienda])
+  }).replace('<head>', '<head><base target="_blank">'), [nomeMittente, currentEntity?.logo, currentEntity?.logoScuro, currentEntity?.colore, azienda])
   // Una bozza ancora vuota mostra l'esempio del modello: un'email bianca non
   // dice com'è fatta. Appena si scrive qualcosa, l'esempio lascia il posto.
   const bozzaVuota = !Object.values(content || {}).some(pieno)

@@ -9,7 +9,7 @@ import { intestazioniDisiscrizione } from '@/lib/disiscrizione'
 async function getEntity(entity_tipo, entity_id) {
   if (!entity_tipo || !entity_id) return null
   const { data } = await supabaseAdmin.from('entita')
-    .select('id, name, logo_url, theme').eq('id', entity_id).maybeSingle()
+    .select('id, name, logo_url, logo_dark_url, theme').eq('id', entity_id).maybeSingle()
   return data
 }
 
@@ -33,7 +33,7 @@ export async function POST(request, props) {
     const entity = await getEntity(nl.entity_tipo, nl.entity_id)
     const appUrl = (process.env.APP_URL ?? '').trim() || 'https://oltrenova.com'
     const html = buildNewsletterHtml({
-      entityName: entity?.name || 'OltreNova', entityLogo: entity?.logo_url || null,
+      entityName: entity?.name || 'OltreNova', entityLogo: entity?.logo_url || null, entityLogoScuro: entity?.logo_dark_url || null,
       primary: entity?.theme?.primaryColor || '#1a1a2e',
       template_id: nl.template_id,
       content: personalize(nl.content, 'Mario'),

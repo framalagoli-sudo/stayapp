@@ -73,10 +73,12 @@ function testoPrincipale(v, primary) {
   return `<p style="${base}margin:0;white-space:pre-wrap">${esc(v)}</p>`
 }
 
+// La testata è scura: il logo da usare è quello per i fondi scuri, quando il
+// cliente l'ha caricato. Un logo nero sul nero non si vedeva (Garage 22, 28/10).
 function nlHeader(entityName, entityLogo) {
   return `<tr><td style="background:#1a1a2e;padding:24px 36px">
     <table width="100%" cellpadding="0" cellspacing="0"><tr>
-      ${entityLogo ? `<td style="width:48px;padding-right:14px;vertical-align:middle"><img src="${safeUrl(entityLogo)}" alt="" style="height:40px;width:40px;object-fit:contain;border-radius:8px;display:block"></td>` : ''}
+      ${entityLogo ? `<td style="width:1%;padding-right:14px;vertical-align:middle"><img src="${safeUrl(entityLogo)}" alt="" height="40" style="height:40px;width:auto;max-width:160px;border-radius:8px;display:block"></td>` : ''}
       <td style="vertical-align:middle"><span style="font-size:20px;font-weight:700;color:#ffffff;font-family:Arial,sans-serif">${esc(entityName)}</span></td>
     </tr></table>
   </td></tr>`
@@ -192,7 +194,7 @@ function bodyEvento(c, primary) {
 // a non leggersi): `max-width:100%` su una tabella dentro una cella non conta.
 // Outlook per Windows ignora `max-width`: per lui c'è la tabella da 600 nei
 // commenti condizionali.
-export function buildNewsletterHtml({ entityName, entityLogo, primary = '#1a1a2e', template_id, content, unsubscribeUrl, preheader = '', legale, privacyUrl }) {
+export function buildNewsletterHtml({ entityName, entityLogo, entityLogoScuro, primary = '#1a1a2e', template_id, content, unsubscribeUrl, preheader = '', legale, privacyUrl }) {
   const body = template_id === 'promozione' ? bodyPromozione(content, primary)
     : template_id === 'notizie' ? bodyNotizie(content, primary)
     : template_id === 'evento' ? bodyEvento(content, primary)
@@ -210,7 +212,7 @@ ${preheaderHtml}
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5"><tr><td style="padding:40px 20px">
 <!--[if mso]><table width="600" align="center" cellpadding="0" cellspacing="0"><tr><td><![endif]-->
 <table width="100%" align="center" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);width:100%;max-width:600px;margin:0 auto;overflow-wrap:anywhere">
-  ${nlHeader(entityName, entityLogo)}
+  ${nlHeader(entityName, entityLogoScuro || entityLogo)}
   ${body}
   ${nlFooter(unsubscribeUrl, entityName, legale, privacyUrl)}
 </table>

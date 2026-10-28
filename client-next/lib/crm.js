@@ -1,7 +1,7 @@
 import { supabaseAdmin } from './supabase-server'
 import { dataLocale } from './fuso'
 import { fusoDiAzienda } from './fuso-azienda'
-import { normalizzaTelefono } from './contatti-import'
+import { normalizzaTelefono, emailValida } from './contatti-import'
 import { triggerAutomazione } from './guest-utils'
 import { sendWebhooks } from './send-webhooks'
 
@@ -163,7 +163,10 @@ async function annunciaNuovoContatto({ aziendaId, id, nome, email, telefono, ent
  *   l'automazione «nuovo contatto» una volta sola, non a ogni prenotazione.
  */
 export async function registraContatto({ aziendaId, email, nome, telefono, fonte, tags = [], nota, attivita = null, promozioni = null }) {
-  const mail = String(email || '').trim().toLowerCase() || null
+  // Un'email scritta male non si salva: «lanterna» è entrata da una lista
+  // d'attesa e ha fatto rifiutare un'intera newsletter. Il telefono, se c'è, basta.
+  const grezza = String(email || '').trim().toLowerCase()
+  const mail = emailValida(grezza) ? grezza : null
   const tel = String(telefono || '').trim() || null
   const e164 = normalizzaTelefono(tel)
   if (!aziendaId || (!mail && !e164)) return { nuovo: false, id: null }

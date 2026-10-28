@@ -10,6 +10,7 @@ import { oraLocale } from '@/lib/fuso'
 import { after } from 'next/server'
 import { testoConsensoPromozioni } from '@/lib/consenso-promozioni'
 import { baseLink } from '@/lib/evento-titolare'
+import { emailValida } from '@/lib/contatti-import'
 
 // «Avvisatemi se si libera un posto.»
 //
@@ -39,6 +40,7 @@ export async function POST(request, props) {
     const promozioni = corpo.promozioni === true ? testoConsensoPromozioni('evento', corpo.lang) : null
     if (!guest_name?.trim()) return Response.json({ error: 'Nome obbligatorio' }, { status: 400 })
     if (!guest_email?.trim()) return Response.json({ error: 'Email obbligatoria' }, { status: 400 })
+    if (!emailValida(guest_email)) return Response.json({ error: 'Controlla l’email: così com’è scritta non arriva.' }, { status: 400 })
     // Qui si raccolgono nome, email e telefono: senza consenso non si
     // raccolgono affatto, e il controllo sta nella route perché una spunta nel
     // browser si toglie con due clic.

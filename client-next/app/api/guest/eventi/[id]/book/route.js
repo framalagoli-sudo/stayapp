@@ -15,6 +15,7 @@ import { postiEvento, SOGLIA_AVVISO } from '@/lib/posti-evento'
 import { annunciaPrenotazioneEvento } from '@/lib/evento-prenotato'
 import { MINUTI_PER_PAGARE } from '@/lib/prenotazioni-scadute'
 import { testoConsensoPromozioni } from '@/lib/consenso-promozioni'
+import { emailValida } from '@/lib/contatti-import'
 
 const ENTITY_TBL = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
 
@@ -47,6 +48,7 @@ export async function POST(request, props) {
       ? { testo: testoConsensoPromozioni('evento', body.lang), fonte: null } : null
     if (!guest_name?.trim()) return Response.json({ error: 'Nome obbligatorio' }, { status: 400 })
     if (!guest_email?.trim()) return Response.json({ error: 'Email obbligatoria' }, { status: 400 })
+    if (!emailValida(guest_email)) return Response.json({ error: 'Controlla l’email: così com’è scritta non arriva.' }, { status: 400 })
     // Qui si raccolgono nome, email e telefono: senza consenso non si raccolgono
     // affatto. La spunta nel browser non basta — si toglie con due clic — quindi
     // la condizione sta qui, dove nessuno la può aggirare.

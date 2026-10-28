@@ -5,7 +5,7 @@ import { guestEmailTemplate } from '@/lib/email-template'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { verifyTurnstile } from '@/lib/turnstile'
 import { registraAttivita } from '@/lib/crm'
-import { normalizzaTelefono } from '@/lib/contatti-import'
+import { normalizzaTelefono, emailValida } from '@/lib/contatti-import'
 
 async function sendConfirmationEmail({ email, nome, entityName, token }) {
   if (!email || !process.env.RESEND_API_KEY) return
@@ -33,6 +33,7 @@ export async function POST(request) {
     const { azienda_id, nome, email, telefono, fonte = 'minisito', turnstileToken } = await request.json()
     if (!azienda_id) return Response.json({ error: 'azienda_id obbligatorio' }, { status: 400 })
     if (!email?.trim() && !telefono?.trim()) return Response.json({ error: 'Email o telefono obbligatori' }, { status: 400 })
+    if (email?.trim() && !emailValida(email)) return Response.json({ error: 'Controlla l’email: così com’è scritta non arriva.' }, { status: 400 })
 
     const captcha = await verifyTurnstile(turnstileToken, ip)
     if (!captcha.success) return Response.json({ error: 'Verifica anti-bot fallita' }, { status: 403 })

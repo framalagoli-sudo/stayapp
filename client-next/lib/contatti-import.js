@@ -27,7 +27,10 @@ export function normalizzaTelefono(raw, prefissoPredefinito = '39') {
   return /^\+\d{8,15}$/.test(n) ? n : null
 }
 
-const EMAIL_VALIDA = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i
+// Niente spazi, virgolette, parentesi angolari o separatori: il fornitore delle
+// email li legge come «Nome <indirizzo>» o come elenco e rifiuta l'indirizzo —
+// in una newsletter, l'intero blocco di cinquanta (Garage 22, 28/10: «lanterna»).
+const EMAIL_VALIDA = /^[^\s@<>(),;:"[\]]+@[^\s@<>(),;:"[\]]+\.[a-z]{2,}$/i
 export const emailValida = e => !!e && EMAIL_VALIDA.test(String(e).trim())
 
 // Parser CSV che regge le virgolette e i separatori dentro i campi: un nome come

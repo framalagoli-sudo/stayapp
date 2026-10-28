@@ -10,6 +10,7 @@ import { quotaOnline, avvisaPrenotazione, automazioniPrenotazione } from '@/lib/
 import { MINUTI_PER_PAGARE } from '@/lib/prenotazioni-scadute'
 import { registraContatto } from '@/lib/crm'
 import { testoConsensoPromozioni } from '@/lib/consenso-promozioni'
+import { emailValida } from '@/lib/contatti-import'
 
 // La formula che chi prenota accetta. La decide il server, non il componente:
 // è il server a scriverla nella prova, e se le due copie divergessero
@@ -48,6 +49,7 @@ export async function POST(request) {
     if (privacy_accettata !== true)
       return Response.json({ error: 'Per prenotare serve il consenso al trattamento dei dati.' }, { status: 400 })
     if (!cliente_email?.trim()) return Response.json({ error: 'Email obbligatoria' }, { status: 400 })
+    if (!emailValida(cliente_email)) return Response.json({ error: 'Controlla l’email: così com’è scritta non arriva.' }, { status: 400 })
 
     const { data: risorsa, error: re } = await supabaseAdmin.from('risorse')
       .select('*').eq('id', risorsa_id).eq('attiva', true).single()

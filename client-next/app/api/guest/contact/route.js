@@ -5,6 +5,7 @@ import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { verifyTurnstile } from '@/lib/turnstile'
 import { logError } from '@/lib/observability'
 import { registraContatto } from '@/lib/crm'
+import { emailValida } from '@/lib/contatti-import'
 
 export async function POST(request) {
   try {
@@ -25,6 +26,7 @@ export async function POST(request) {
     const message = body.message ?? body.messaggio ?? ''
     if (!name?.trim() || !email?.trim() || !message?.trim())
       return Response.json({ error: 'Nome, email e messaggio sono obbligatori' }, { status: 400 })
+    if (!emailValida(email)) return Response.json({ error: 'Controlla l’email: così com’è scritta non arriva.' }, { status: 400 })
 
     let entityEmail = null, entityName = null, azienda_id = null
     const tableMap = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }

@@ -10,6 +10,7 @@ import { TESTO_CONSENSO_ORDINE } from '@/lib/consenso-ordine'
 import { registraContatto } from '@/lib/crm'
 import { testoConsensoPromozioni } from '@/lib/consenso-promozioni'
 import { after } from 'next/server'
+import { emailValida } from '@/lib/contatti-import'
 
 export async function POST(request, props) {
   const params = await props.params;
@@ -25,6 +26,7 @@ export async function POST(request, props) {
 
     if (!email_cliente || !voci?.length)
       return Response.json({ error: 'email e voci sono obbligatori' }, { status: 400 })
+    if (!emailValida(email_cliente)) return Response.json({ error: 'Controlla l’email: così com’è scritta non arriva.' }, { status: 400 })
     // ⛔ Il modulo raccoglieva nome, email, telefono e indirizzo senza chiedere
     // niente. Il controllo sta QUI e non solo nella spunta: nel browser si
     // toglie con due clic. Senza consenso nessun dato personale entra.

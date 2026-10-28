@@ -1,5 +1,10 @@
 import { supabaseAdmin } from './supabase-server.js'
-import { costruisciListe } from './contatti-liste.js'
+import { costruisciListe, canaliContattabili } from './contatti-liste.js'
+
+// La stessa regola della pagina Contatti: un indirizzo scritto male non si
+// raggiunge — contarlo fa leggere un numero falso, mandarlo fa rifiutare dal
+// fornitore tutto il blocco in cui sta.
+const raggiungibile = c => canaliContattabili(c).email
 
 // A chi va una newsletter. Un posto solo, perché la stessa domanda la fanno in
 // due: l'invio, e il pannello che prima di inviare dice «stai per scrivere a N
@@ -43,7 +48,7 @@ export async function destinatariNewsletter(nl) {
     .select('id, email, nome, unsubscribe_token, tags, fonte, telefono, telefono_e164, iscritto_newsletter, email_non_valida, whatsapp_optin, pipeline_stage')
     .eq('azienda_id', nl.azienda_id).order('created_at').order('id'))
 
-  let raggiungibili = tuttiIContatti.filter(c => c.iscritto_newsletter && c.email && !c.email_non_valida)
+  let raggiungibili = tuttiIContatti.filter(raggiungibile)
   if (nl.tag_filter?.length) {
     const voluti = new Set(nl.tag_filter)
     raggiungibili = raggiungibili.filter(c => (c.tags || []).some(t => voluti.has(t)))
@@ -99,7 +104,7 @@ export async function listeNewsletter(aziendaId) {
   const registro = await tutte(() => supabaseAdmin.from('contatti_attivita')
     .select('contatto_id, tipo, titolo, origine_id, riferimento, avvenuta_il')
     .eq('azienda_id', aziendaId).order('avvenuta_il', { ascending: false }).order('id'))
-  const raggiungibili = new Set(contatti.filter(c => c.iscritto_newsletter && c.email && !c.email_non_valida).map(c => c.id))
+  const raggiungibili = new Set(contatti.filter(raggiungibile).map(c => c.id))
   const liste = costruisciListe(contatti, registro).liste
     .filter(l => !NON_SONO_UN_PUBBLICO.has(l.chiave) && l.ids)
     .map(l => ({
