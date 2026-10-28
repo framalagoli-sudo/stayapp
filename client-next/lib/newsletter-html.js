@@ -8,6 +8,71 @@ function safeUrl(u) {
   return '#'
 }
 
+// Il testo principale di una newsletter. Due forme:
+//   · una stringa (com'era sempre stato): resta testo, con i suoi a-capo;
+//   · il documento dell'editor formattato (TipTap, lo stesso dei blocchi del
+//     sito): grassetto, corsivo, titoletti, elenchi, link.
+// Il documento NON si fida di niente: l'HTML si ricostruisce da zero da un
+// elenco chiuso di nodi e segni, ogni testo passa da `esc`, ogni link da
+// `safeUrl`. Un nodo sconosciuto non diventa un tag: se ha del testo dentro,
+// quel testo resta, come paragrafo. Niente arriva dal client già fatto HTML.
+const isDoc = v => !!v && typeof v === 'object' && v.type === 'doc' && Array.isArray(v.content)
+const testoDentro = n => n?.type === 'text' ? String(n.text || '') : Array.isArray(n?.content) ? n.content.map(testoDentro).join('') : ''
+
+export function testoVuoto(v) {
+  if (isDoc(v)) return testoDentro(v).trim() === ''
+  return String(v ?? '').trim() === ''
+}
+
+const ALLINEA = { center: 'center', right: 'right' }
+function inlineEmail(content, primary) {
+  if (!Array.isArray(content)) return ''
+  return content.map(n => {
+    if (n?.type === 'hardBreak') return '<br>'
+    if (n?.type !== 'text') return esc(testoDentro(n))
+    let h = esc(n.text)
+    const segni = Array.isArray(n.marks) ? n.marks : []
+    for (const m of segni) {
+      if (m?.type === 'bold') h = `<strong>${h}</strong>`
+      else if (m?.type === 'italic') h = `<em>${h}</em>`
+      else if (m?.type === 'underline') h = `<u>${h}</u>`
+      else if (m?.type === 'strike') h = `<s>${h}</s>`
+    }
+    const link = segni.find(m => m?.type === 'link')
+    if (link) h = `<a href="${safeUrl(link.attrs?.href)}" style="color:${primary};text-decoration:underline">${h}</a>`
+    return h
+  }).join('')
+}
+function blocchiEmail(content, primary, base) {
+  if (!Array.isArray(content)) return ''
+  return content.map(n => {
+    const al = ALLINEA[n?.attrs?.textAlign] ? `text-align:${ALLINEA[n.attrs.textAlign]};` : ''
+    switch (n?.type) {
+      case 'paragraph': return `<p style="${base}margin:0 0 16px;${al}">${inlineEmail(n.content, primary) || '&nbsp;'}</p>`
+      case 'heading': {
+        const [tag, size] = n.attrs?.level === 3 ? ['h3', 17] : ['h2', 20]
+        return `<${tag} style="font-size:${size}px;font-weight:700;color:#1a1a2e;margin:24px 0 10px;font-family:Georgia,serif;line-height:1.3;${al}">${inlineEmail(n.content, primary)}</${tag}>`
+      }
+      case 'bulletList': case 'orderedList': {
+        const tag = n.type === 'bulletList' ? 'ul' : 'ol'
+        return `<${tag} style="${base}margin:0 0 16px;padding-left:22px">${(n.content || []).map(li => `<li style="margin:0 0 6px">${blocchiEmail(li?.content, primary, base).replace(/margin:0 0 16px;/g, 'margin:0;')}</li>`).join('')}</${tag}>`
+      }
+      case 'blockquote': return `<div style="border-left:3px solid ${primary};padding:2px 0 2px 16px;margin:0 0 16px">${blocchiEmail(n.content, primary, base)}</div>`
+      case 'horizontalRule': return '<hr style="border:none;border-top:1px solid #e8e8e8;margin:20px 0">'
+      default: {
+        const t = testoDentro(n)
+        return t.trim() ? `<p style="${base}margin:0 0 16px">${esc(t)}</p>` : ''
+      }
+    }
+  }).join('')
+}
+function testoPrincipale(v, primary) {
+  const base = 'font-size:16px;color:#444;line-height:1.8;font-family:Arial,sans-serif;'
+  if (testoVuoto(v)) return ''
+  if (isDoc(v)) return `<div>${blocchiEmail(v.content, primary, base)}</div>`
+  return `<p style="${base}margin:0;white-space:pre-wrap">${esc(v)}</p>`
+}
+
 function nlHeader(entityName, entityLogo) {
   return `<tr><td style="background:#1a1a2e;padding:24px 36px">
     <table width="100%" cellpadding="0" cellspacing="0"><tr>
@@ -57,7 +122,7 @@ function bodySemplice(c, primary) {
     ${c.image_url ? `<tr><td><img src="${safeUrl(c.image_url)}" alt="" style="width:100%;max-height:280px;object-fit:cover;display:block"></td></tr>` : ''}
     <tr><td style="padding:36px 36px 40px">
       ${c.heading ? `<h1 style="font-size:26px;font-weight:700;color:#1a1a2e;margin:0 0 16px;font-family:Georgia,serif;line-height:1.3">${esc(c.heading)}</h1>` : ''}
-      ${c.text ? `<p style="font-size:16px;color:#444;line-height:1.8;margin:0;font-family:Arial,sans-serif;white-space:pre-wrap">${esc(c.text)}</p>` : ''}
+      ${testoPrincipale(c.text, primary)}
       ${ctaButton(c.cta_text, c.cta_url, primary)}
     </td></tr>`
 }
@@ -76,7 +141,7 @@ function bodyPromozione(c, primary) {
         ${c.price_original && c.price_discounted ? `<td style="font-size:22px;color:#bbb;text-decoration:line-through;font-family:Arial,sans-serif;padding-right:10px;vertical-align:middle">€${esc(c.price_original)}</td>` : ''}
         ${pct ? `<td style="vertical-align:middle"><span style="display:inline-block;background:#22c55e;color:#fff;font-size:13px;font-weight:800;padding:5px 12px;border-radius:20px;font-family:Arial,sans-serif">-${pct}%</span></td>` : ''}
       </tr></table>` : ''}
-      ${c.text ? `<p style="font-size:16px;color:#444;line-height:1.8;margin:0;font-family:Arial,sans-serif;white-space:pre-wrap">${esc(c.text)}</p>` : ''}
+      ${testoPrincipale(c.text, primary)}
       ${ctaButton(c.cta_text, c.cta_url, primary)}
       ${c.conditions ? `<p style="font-size:12px;color:#aaa;margin:20px 0 0;font-family:Arial,sans-serif;line-height:1.6">${esc(c.conditions)}</p>` : ''}
     </td></tr>`
@@ -117,7 +182,7 @@ function bodyEvento(c, primary) {
         ${c.location ? `<p style="font-size:14px;color:#555;margin:0 0 8px;font-family:Arial,sans-serif">📍 ${esc(c.location)}</p>` : ''}
         ${c.price ? `<p style="font-size:14px;color:#555;margin:0;font-family:Arial,sans-serif">💶 A partire da <strong>€${esc(c.price)}</strong></p>` : ''}
       </td></tr></table>` : ''}
-      ${c.text ? `<p style="font-size:16px;color:#444;line-height:1.8;margin:0;font-family:Arial,sans-serif;white-space:pre-wrap">${esc(c.text)}</p>` : ''}
+      ${testoPrincipale(c.text, primary)}
       ${ctaButton(c.cta_text, c.cta_url, primary)}
     </td></tr>`
 }

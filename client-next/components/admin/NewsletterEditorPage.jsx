@@ -4,7 +4,8 @@ import { useParams, useRouter } from 'next/navigation'
 import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
 import { ArrowLeft, Send, Eye, Save, Plus, Trash2, AlertCircle, CheckCircle, Smile, Clock, X, Monitor, Smartphone } from 'lucide-react'
-import { buildNewsletterHtml, personalize } from '@/lib/newsletter-html'
+import { buildNewsletterHtml, personalize, testoVuoto } from '@/lib/newsletter-html'
+import RichTextEditor from '@/components/admin/RichTextEditor'
 import AiButton from '@/components/admin/AiButton'
 import { perCampoDataOra, daCampoDataOra, oraLocale } from '@/lib/fuso'
 
@@ -47,7 +48,27 @@ const ESEMPI = {
 const NOMI_CAMPI = { heading: 'titolo', text: 'testo', image_url: 'immagine', cta_text: 'testo del pulsante', cta_url: 'link del pulsante', badge: 'etichetta dello sconto',
   price_original: 'prezzo pieno', price_discounted: 'prezzo scontato', conditions: 'condizioni', intro: 'introduzione', blocks: 'le notizie', event_title: 'nome dell’evento',
   date: 'data', time: 'ora', location: 'luogo', price: 'prezzo' }
-const pieno = v => Array.isArray(v) ? v.length > 0 : String(v ?? '').trim() !== ''
+// Il testo principale può essere un documento formattato: è pieno se dentro c'è del testo.
+const pieno = v => Array.isArray(v) ? v.length > 0 : !testoVuoto(v)
+
+// Il testo principale di ogni modello: formattabile (grassetto, corsivo,
+// titoletti, elenchi, link). Lo stesso editor dei blocchi del sito; nell'email
+// lo ridisegna `buildNewsletterHtml` da un elenco chiuso di elementi.
+// Un testo semplice (le bozze di prima, o quello che inserisce l'AI) diventa
+// documento qui: passato come stringa l'editor lo leggerebbe come HTML e gli
+// a-capo sparirebbero al primo ritocco. Riga vuota = paragrafo, a-capo = a-capo.
+function docDaTesto(testo) {
+  const paragrafi = String(testo).split(/\n\s*\n/)
+  return { type: 'doc', content: paragrafi.map(p => ({
+    type: 'paragraph',
+    content: p.split('\n').flatMap((riga, i) => [...(i ? [{ type: 'hardBreak' }] : []), ...(riga ? [{ type: 'text', text: riga }] : [])]),
+  })) }
+}
+function CampoTesto({ c, patch, disabled, placeholder }) {
+  const testo = c.text
+  const contenuto = useMemo(() => typeof testo === 'string' && testo.trim() ? docDaTesto(testo) : (testo || ''), [testo])
+  return <RichTextEditor content={contenuto} onChange={v => patch('text', v)} format="json" minimal disabled={disabled} altezza={140} placeholder={placeholder} />
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -702,7 +723,7 @@ function SempliceFields({ c, patch, inp, label, disabled }) {
   return <>
     <Field label={label} k="Immagine di intestazione"><input value={c.image_url || ''} onChange={e => patch('image_url', e.target.value)} disabled={disabled} placeholder="URL immagine (opzionale)" style={inp} /></Field>
     <Field label={label} k="Titolo"><input value={c.heading || ''} onChange={e => patch('heading', e.target.value)} disabled={disabled} placeholder="Es: Benvenuta primavera!" style={inp} /></Field>
-    <Field label={label} k="Testo"><textarea value={c.text || ''} onChange={e => patch('text', e.target.value)} disabled={disabled} rows={5} placeholder="Corpo del messaggio…" style={{ ...inp, resize: 'vertical' }} /></Field>
+    <Field label={label} k="Testo"><CampoTesto c={c} patch={patch} disabled={disabled} placeholder="Corpo del messaggio…" /></Field>
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
       <Field label={label} k="Testo bottone CTA"><input value={c.cta_text || ''} onChange={e => patch('cta_text', e.target.value)} disabled={disabled} placeholder="Es: Scopri di più" style={inp} /></Field>
       <Field label={label} k="URL bottone CTA"><input value={c.cta_url || ''} onChange={e => patch('cta_url', e.target.value)} disabled={disabled} placeholder="https://…" style={inp} /></Field>
@@ -723,7 +744,7 @@ function PromozioneFields({ c, patch, inp, label, disabled }) {
       <Field label={label} k="Prezzo originale (€)"><input value={c.price_original || ''} onChange={e => patch('price_original', e.target.value)} disabled={disabled} placeholder="Es: 150" style={inp} /></Field>
       <Field label={label} k={`Prezzo scontato (€)${pct ? ` — sconto ${pct}%` : ''}`}><input value={c.price_discounted || ''} onChange={e => patch('price_discounted', e.target.value)} disabled={disabled} placeholder="Es: 99" style={inp} /></Field>
     </div>
-    <Field label={label} k="Descrizione"><textarea value={c.text || ''} onChange={e => patch('text', e.target.value)} disabled={disabled} rows={4} placeholder="Descrizione dell'offerta…" style={{ ...inp, resize: 'vertical' }} /></Field>
+    <Field label={label} k="Descrizione"><CampoTesto c={c} patch={patch} disabled={disabled} placeholder="Descrizione dell'offerta…" /></Field>
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
       <Field label={label} k="Testo bottone CTA"><input value={c.cta_text || ''} onChange={e => patch('cta_text', e.target.value)} disabled={disabled} placeholder="Es: Approfitta ora" style={inp} /></Field>
       <Field label={label} k="URL bottone CTA"><input value={c.cta_url || ''} onChange={e => patch('cta_url', e.target.value)} disabled={disabled} placeholder="https://…" style={inp} /></Field>
@@ -782,7 +803,7 @@ function EventoFields({ c, patch, inp, label, disabled }) {
       <Field label={label} k="Prezzo (€)"><input value={c.price || ''} onChange={e => patch('price', e.target.value)} disabled={disabled} placeholder="Es: 45" style={inp} /></Field>
     </div>
     <Field label={label} k="Luogo"><input value={c.location || ''} onChange={e => patch('location', e.target.value)} disabled={disabled} placeholder="Es: Sala principale" style={inp} /></Field>
-    <Field label={label} k="Descrizione"><textarea value={c.text || ''} onChange={e => patch('text', e.target.value)} disabled={disabled} rows={4} placeholder="Descrizione dell'evento…" style={{ ...inp, resize: 'vertical' }} /></Field>
+    <Field label={label} k="Descrizione"><CampoTesto c={c} patch={patch} disabled={disabled} placeholder="Descrizione dell'evento…" /></Field>
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
       <Field label={label} k="Testo bottone"><input value={c.cta_text || ''} onChange={e => patch('cta_text', e.target.value)} disabled={disabled} placeholder="Es: Prenota il tuo posto" style={inp} /></Field>
       <Field label={label} k="URL bottone"><input value={c.cta_url || ''} onChange={e => patch('cta_url', e.target.value)} disabled={disabled} placeholder="https://…" style={inp} /></Field>

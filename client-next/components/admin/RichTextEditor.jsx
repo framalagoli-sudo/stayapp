@@ -35,7 +35,8 @@ const impronta = doc => JSON.stringify(inOrdine(doc))
 
 // format: 'html' (blog, default) | 'json' (blocchi sito → render sicuro via walker).
 // minimal: nasconde citazione/separatore per una toolbar essenziale (target SMB).
-export default function RichTextEditor({ content, onChange, placeholder = 'Scrivi il contenuto dell\'articolo…', format = 'html', minimal = false }) {
+// disabled: si legge e non si scrive (una newsletter già inviata). altezza: minima, in px.
+export default function RichTextEditor({ content, onChange, placeholder = 'Scrivi il contenuto dell\'articolo…', format = 'html', minimal = false, disabled = false, altezza = 260 }) {
   // Quello che l'editor ha appena detto di contenere. Il testo fa un giro
   // (editor → pagina → di nuovo qui) e mentre si scrive in fretta torna
   // indietro una versione di un istante prima: rimetterla dentro cancellava
@@ -43,6 +44,7 @@ export default function RichTextEditor({ content, onChange, placeholder = 'Scriv
   const eco = useRef([])
   const editor = useEditor({
     immediatelyRender: false,
+    editable: !disabled,
     extensions: [
       StarterKit,
       Link.configure({ openOnClick: false, autolink: true, protocols: ['http', 'https', 'mailto', 'tel'] }),
@@ -92,6 +94,8 @@ export default function RichTextEditor({ content, onChange, placeholder = 'Scriv
     }
   }, [editor, content, format])
 
+  useEffect(() => { if (editor && editor.isEditable === disabled) editor.setEditable(!disabled) }, [editor, disabled])
+
   if (!editor) return null
 
   function setLink() {
@@ -108,7 +112,7 @@ export default function RichTextEditor({ content, onChange, placeholder = 'Scriv
   return (
     <div style={{ border: '1px solid #ddd', borderRadius: 10, overflow: 'hidden' }}>
       {/* Toolbar */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, padding: '8px 10px', background: '#fafafa', borderBottom: '1px solid #e8e8e8' }}>
+      <div style={{ display: disabled ? 'none' : 'flex', flexWrap: 'wrap', gap: 4, padding: '8px 10px', background: '#fafafa', borderBottom: '1px solid #e8e8e8' }}>
         <ToolbarButton onClick={() => tb.chain().focus().toggleBold().run()} active={tb.isActive('bold')} title="Grassetto">
           <Bold size={sz} strokeWidth={2} />
         </ToolbarButton>
@@ -157,7 +161,7 @@ export default function RichTextEditor({ content, onChange, placeholder = 'Scriv
 
       {/* Editor */}
       <style>{`
-        .tiptap { outline: none; min-height: 260px; padding: 16px; font-size: 15px; line-height: 1.7; color: #1a1a2e; }
+        .tiptap { outline: none; min-height: ${altezza}px; padding: 16px; font-size: 15px; line-height: 1.7; color: #1a1a2e; }
         .tiptap h2 { font-size: 20px; margin: 20px 0 10px; }
         .tiptap h3 { font-size: 17px; margin: 16px 0 8px; }
         .tiptap p { margin: 0 0 12px; }
