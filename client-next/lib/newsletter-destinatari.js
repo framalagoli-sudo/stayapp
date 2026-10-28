@@ -16,6 +16,8 @@ import { costruisciListe } from './contatti-liste.js'
 //   3. se c'è una LISTA (migration 131), deve farne parte. Chi c'è dentro si
 //      ricalcola adesso, non quando la bozza è stata scritta: chi ha prenotato
 //      ieri la riceve.
+//   4. se ci sono liste da ESCLUDERE (migration 142), non deve far parte di
+//      nessuna — anche queste ricalcolate adesso.
 //
 // ⚠️ Se la lista scelta non esiste più (l'etichetta è stata tolta a tutti,
 // l'evento non ha più prenotazioni) si FERMA con un errore. Ripiegare su «tutti
@@ -47,18 +49,38 @@ export async function destinatariNewsletter(nl) {
     raggiungibili = raggiungibili.filter(c => (c.tags || []).some(t => voluti.has(t)))
   }
 
-  let lista = null
-  if (nl.lista?.chiave) {
+  let lista = null, esclusi = null
+  const daEscludere = escludiValida(nl.escludi) || []
+  if (nl.lista?.chiave || daEscludere.length) {
     const registro = await tutte(() => supabaseAdmin.from('contatti_attivita')
       .select('contatto_id, tipo, titolo, origine_id, riferimento, avvenuta_il')
       .eq('azienda_id', nl.azienda_id).order('avvenuta_il', { ascending: false }).order('id'))
-    const scelta = costruisciListe(tuttiIContatti, registro).liste.find(l => l.chiave === nl.lista.chiave)
-    if (!scelta) throw new Error(`La lista «${nl.lista.titolo || nl.lista.chiave}» non esiste più: scegline un'altra o togli la lista per scrivere a tutti gli iscritti.`)
-    if (scelta.ids) raggiungibili = raggiungibili.filter(c => scelta.ids.has(c.id))
-    lista = { titolo: scelta.titoloLungo || scelta.titolo, persone: scelta.n }
+    const tutteLeListe = costruisciListe(tuttiIContatti, registro).liste
+    if (nl.lista?.chiave) {
+      const scelta = tutteLeListe.find(l => l.chiave === nl.lista.chiave)
+      if (!scelta) throw new Error(`La lista «${nl.lista.titolo || nl.lista.chiave}» non esiste più: scegline un'altra o togli la lista per scrivere a tutti gli iscritti.`)
+      if (scelta.ids) raggiungibili = raggiungibili.filter(c => scelta.ids.has(c.id))
+      lista = { titolo: scelta.titoloLungo || scelta.titolo, persone: scelta.n }
+    }
+    // Chi è in una lista esclusa non la riceve, anche se è nella lista scelta.
+    // ⛔ Una lista esclusa che non esiste più FERMA l'invio: partire senza
+    // l'esclusione scriverebbe proprio a chi non doveva riceverla.
+    if (daEscludere.length) {
+      const fuori = new Set()
+      const titoli = []
+      for (const e of daEscludere) {
+        const l = tutteLeListe.find(x => x.chiave === e.chiave)
+        if (!l || !l.ids) throw new Error(`La lista da escludere «${e.titolo || e.chiave}» non esiste più: toglila dalle esclusioni prima di inviare.`)
+        for (const id of l.ids) fuori.add(id)
+        titoli.push(l.titoloLungo || l.titolo)
+      }
+      const prima = raggiungibili.length
+      raggiungibili = raggiungibili.filter(c => !fuori.has(c.id))
+      esclusi = { titoli, persone: prima - raggiungibili.length }
+    }
   }
 
-  return { contatti: raggiungibili.map(({ id, email, nome, unsubscribe_token }) => ({ id, email, nome, unsubscribe_token })), lista }
+  return { contatti: raggiungibili.map(({ id, email, nome, unsubscribe_token }) => ({ id, email, nome, unsubscribe_token })), lista, esclusi }
 }
 
 // Le liste fra cui si sceglie a chi scrivere, ognuna col suo conto: quante
@@ -95,4 +117,18 @@ export function listaValida(lista) {
   const chiave = typeof lista.chiave === 'string' ? lista.chiave.trim().slice(0, 300) : ''
   if (!chiave || chiave === 'tutti') return null
   return { chiave, titolo: typeof lista.titolo === 'string' ? lista.titolo.trim().slice(0, 200) : '' }
+}
+
+// Le liste da escludere: ognuna ripulita come `listaValida`, senza doppioni,
+// al massimo 10 (lo stesso tetto del vincolo nel database). Vuoto = null.
+export function escludiValida(escludi) {
+  if (!Array.isArray(escludi)) return null
+  const visti = new Set(), out = []
+  for (const voce of escludi) {
+    const l = voce && typeof voce === 'object' ? listaValida(voce) : null
+    if (!l || visti.has(l.chiave)) continue
+    visti.add(l.chiave); out.push(l)
+    if (out.length === 10) break
+  }
+  return out.length ? out : null
 }

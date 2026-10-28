@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { listaValida } from '@/lib/newsletter-destinatari'
+import { listaValida, escludiValida } from '@/lib/newsletter-destinatari'
 import { requireAuth, entitaDellaAzienda } from '@/lib/server-auth'
 
 async function getProfile(userId) {
@@ -36,6 +36,8 @@ export async function PATCH(request, props) {
     const updates = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)))
     // La lista passa da una funzione che ne tiene solo chiave e titolo: vuota = tutti gli iscritti.
     if ('lista' in body) updates.lista = listaValida(body.lista)
+    // Le liste da escludere: stessa pulizia, al massimo 10. Vuoto = nessuna esclusione.
+    if ('escludi' in body) updates.escludi = escludiValida(body.escludi)
     // L'entità determina mittente e destinatari: dev'essere la propria.
     if (!(await entitaDellaAzienda(profile, updates.entity_tipo, updates.entity_id))) {
       return Response.json({ error: 'Entità non valida' }, { status: 404 })

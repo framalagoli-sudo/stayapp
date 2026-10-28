@@ -84,7 +84,13 @@ export default function NewsletterEditorPage() {
   const [recipientCount, setRecipientCount] = useState(null)
   // La lista di contatti a cui è destinata, se c'è (si sceglie dalla pagina Contatti).
   const [lista, setLista] = useState(null)
-  const [destinatari, setDestinatari] = useState(null)   // { lista, problema } dal conto del server
+  // Le liste da NON raggiungere: chi è in una di queste non la riceve, anche se è nella lista scelta.
+  const [escludi, setEscludi] = useState([])
+  // Il conto del server per la scelta a schermo quando ci sono esclusioni: lo
+  // si chiede a lui perché togliere una lista da un'altra non si fa coi soli
+  // totali. null = lo sto chiedendo.
+  const [contoEsclusi, setContoEsclusi] = useState(null)
+  const [destinatari, setDestinatari] = useState(null)   // { lista, esclusi, problema } dal conto del server
   // Le liste fra cui scegliere, coi loro numeri: null = le sto leggendo, false = non ci sono riuscito.
   const [liste, setListe] = useState(null)
   const [sendConfirm, setSendConfirm] = useState(false)
@@ -115,6 +121,7 @@ export default function NewsletterEditorPage() {
         setScheduledAt(perCampoDataOra(data.scheduled_at, fuso))
         setTagFilter(data.tag_filter || [])
         setLista(data.lista || null)
+        setEscludi(Array.isArray(data.escludi) ? data.escludi : [])
         setTemplateId(data.template_id || 'semplice')
         setContent(data.content && Object.keys(data.content).length ? data.content : DEFAULT_CONTENT[data.template_id] || DEFAULT_CONTENT.semplice)
         setEntityTipo(data.entity_tipo || 'struttura')
@@ -160,6 +167,25 @@ export default function NewsletterEditorPage() {
   const listaScelta = lista?.chiave && liste ? liste.liste.find(l => l.chiave === lista.chiave) : null
   const listaSparita = !!(lista?.chiave && liste && !listaScelta)
   const gruppiListe = liste ? [...liste.liste.reduce((m, l) => m.set(l.gruppo, [...(m.get(l.gruppo) || []), l]), new Map())] : []
+  // Si possono escludere le altre liste: non quella scelta, non una già esclusa.
+  const gruppiDaEscludere = gruppiListe
+    .map(([gruppo, voci]) => [gruppo, voci.filter(l => l.chiave !== lista?.chiave && !escludi.some(e => e.chiave === l.chiave))])
+    .filter(([, voci]) => voci.length)
+  const chiaviEscluse = escludi.map(e => e.chiave).join('\n')
+  useEffect(() => {
+    if (!escludi.length || isSent) { setContoEsclusi(null); return }
+    let vivo = true
+    setContoEsclusi(null)
+    const qs = new URLSearchParams({ anteprima: '1' })
+    if (lista?.chiave) qs.set('lista', lista.chiave)
+    for (const e of escludi) qs.append('escludi', e.chiave)
+    const t = setTimeout(() => {
+      apiFetch(`/api/newsletter/${id}/destinatari?${qs}`)
+        .then(d => { if (vivo) setContoEsclusi(d) })
+        .catch(e => { if (vivo) setContoEsclusi({ problema: `Non riesco a contare i destinatari in questo momento (${e.message}). Il numero lo vedrai comunque prima di inviare.` }) })
+    }, 300)
+    return () => { vivo = false; clearTimeout(t) }
+  }, [id, lista?.chiave, chiaviEscluse, isSent])
   useEffect(() => {
     const t = setTimeout(() => {
       // I link dell'anteprima non portano da nessuna parte: si guarda, non si naviga.
@@ -183,6 +209,7 @@ export default function NewsletterEditorPage() {
           scheduled_at: daCampoDataOra(scheduledAt, fuso)?.toISOString() || null,
           tag_filter: tagFilter.length ? tagFilter : null,
           lista,
+          escludi,
         }),
       })
       setNl(updated)
@@ -328,10 +355,18 @@ export default function NewsletterEditorPage() {
             <div data-destinatari>
               <span style={label}>Destinatari</span>
               {isSent ? (
-                <div style={{ fontSize: 14, color: '#1a1a2e', fontWeight: 600, overflowWrap: 'anywhere' }}>{lista?.titolo || 'Tutti gli iscritti'}</div>
+                <div style={{ fontSize: 14, color: '#1a1a2e', fontWeight: 600, overflowWrap: 'anywhere' }}>
+                  {lista?.titolo || 'Tutti gli iscritti'}
+                  {escludi.length > 0 && <div style={{ fontWeight: 400, fontSize: 13, color: '#555', marginTop: 4 }}>Esclusi: {escludi.map(e => `«${e.titolo || e.chiave}»`).join(', ')}</div>}
+                </div>
               ) : (
                 <select data-scegli-lista value={lista?.chiave || ''} disabled={!liste} style={inp}
-                  onChange={e => { const l = liste?.liste?.find(x => x.chiave === e.target.value); setLista(l ? { chiave: l.chiave, titolo: l.titolo } : null) }}>
+                  onChange={e => {
+                    const l = liste?.liste?.find(x => x.chiave === e.target.value)
+                    setLista(l ? { chiave: l.chiave, titolo: l.titolo } : null)
+                    // Una lista non può essere insieme quella scelta e una esclusa.
+                    if (l) setEscludi(prev => prev.filter(x => x.chiave !== l.chiave))
+                  }}>
                   <option value="">Tutti gli iscritti{liste ? ` — ${liste.tutti.raggiungibili}` : ''}</option>
                   {listaSparita && <option value={lista.chiave}>{lista.titolo || 'Lista scelta'} — non esiste più</option>}
                   {gruppiListe.map(([gruppo, voci]) => (
@@ -341,6 +376,34 @@ export default function NewsletterEditorPage() {
                   ))}
                 </select>
               )}
+              {/* Chi NON deve riceverla: per esempio chi ha già prenotato la serata che si promuove. */}
+              {!isSent && liste && (escludi.length > 0 || gruppiDaEscludere.length > 0) && (
+                <div data-escludi style={{ marginTop: 10 }}>
+                  <span style={{ ...label, marginBottom: 6 }}>Escludi chi è in…</span>
+                  {escludi.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                      {escludi.map(e => (
+                        <span key={e.chiave} data-esclusa={e.chiave} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, maxWidth: '100%', fontSize: 13, background: '#f5f5f7', border: '1px solid #e0e0e0', borderRadius: 999, padding: '4px 6px 4px 12px' }}>
+                          <span style={{ overflowWrap: 'anywhere', minWidth: 0 }}>{e.titolo || e.chiave}</span>
+                          <button type="button" aria-label={`Non escludere più «${e.titolo || e.chiave}»`} onClick={() => setEscludi(prev => prev.filter(x => x.chiave !== e.chiave))}
+                            style={{ flexShrink: 0, display: 'inline-flex', background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#666' }}><X size={14} strokeWidth={1.5} /></button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {gruppiDaEscludere.length > 0 && escludi.length < 10 && (
+                    <select data-aggiungi-esclusione value="" style={inp}
+                      onChange={e => { const l = liste.liste.find(x => x.chiave === e.target.value); if (l) setEscludi(prev => [...prev, { chiave: l.chiave, titolo: l.titolo }]) }}>
+                      <option value="">{escludi.length ? '+ Escludi anche un’altra lista' : 'Nessuna esclusione — scegli una lista da escludere'}</option>
+                      {gruppiDaEscludere.map(([gruppo, voci]) => (
+                        <optgroup key={gruppo} label={gruppo}>
+                          {voci.map(l => <option key={l.chiave} value={l.chiave}>{l.titolo} — {l.persone} {l.persone === 1 ? 'persona' : 'persone'}</option>)}
+                        </optgroup>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
               {/* Il conto sta sempre a vista: avere un contatto non è potergli scrivere. */}
               {!isSent && (() => {
                 const frase = stile => ({ fontSize: 13, lineHeight: 1.5, marginTop: 8, padding: '9px 12px', borderRadius: 8, overflowWrap: 'anywhere', ...stile })
@@ -348,6 +411,18 @@ export default function NewsletterEditorPage() {
                 if (liste === null) return <div data-conto-destinatari style={frase({ color: '#767676', padding: 0 })}>Conto i destinatari…</div>
                 if (liste === false) return <div data-conto-destinatari style={frase(rosso)}>Non riesco a leggere le liste in questo momento. Il numero lo vedrai comunque prima di inviare.</div>
                 if (listaSparita) return <div data-conto-destinatari="0" style={frase(rosso)}>La lista «{lista.titolo}» non esiste più: scegline un’altra, oppure «Tutti gli iscritti».</div>
+                // Con esclusioni il numero lo dà il server: è lo stesso conto dell'invio.
+                if (escludi.length) {
+                  if (contoEsclusi === null) return <div data-conto-destinatari style={frase({ color: '#767676', padding: 0 })}>Conto i destinatari…</div>
+                  if (contoEsclusi.problema) return <div data-conto-destinatari="0" style={frase(rosso)}>{contoEsclusi.problema}</div>
+                  const n = contoEsclusi.quanti, fuori = contoEsclusi.esclusi?.persone || 0
+                  if (!n) return <div data-conto-destinatari="0" style={frase(rosso)}>Non partirebbe a nessuno: {fuori ? `tutti i ${fuori} che potevano riceverla sono nelle liste escluse.` : 'nessuno ha dato il consenso a ricevere email.'}</div>
+                  return <div data-conto-destinatari={n} style={frase(verde)}>
+                    La {n === 1 ? 'riceverà' : 'riceveranno'} <strong>{n}</strong> {n === 1 ? 'persona' : 'persone'}{listaScelta ? <> di questa lista</> : <>, fra tutti gli iscritti</>}.
+                    {' '}{fuori === 0 ? 'Nessuno di loro è nelle liste escluse.' : <>{fuori === 1 ? 'Una esclusa perché è' : `${fuori} escluse perché sono`} in {escludi.map(e => `«${e.titolo}»`).join(', ')}.</>}
+                    {' '}Chi entra in quelle liste prima dell’invio viene escluso lo stesso.
+                  </div>
+                }
                 const { persone, raggiungibili } = listaScelta || liste.tutti
                 if (!raggiungibili) return <div data-conto-destinatari="0" style={frase(rosso)}>
                   {persone ? <>Non partirebbe a nessuno: {listaScelta ? (persone === 1 ? 'l’unica persona di questa lista non ha' : `nessuna delle ${persone} persone di questa lista ha`) : (persone === 1 ? 'il tuo unico contatto non ha' : `nessuno dei tuoi ${persone} contatti ha`)} dato il consenso a ricevere email.</> : 'Non hai ancora contatti a cui scrivere.'}
@@ -594,6 +669,7 @@ export default function NewsletterEditorPage() {
               ) : (
                 <>Stai per inviare questa newsletter a <strong>{recipientCount}</strong> {recipientCount === 1 ? 'iscritto' : 'iscritti'}
                   {destinatari?.lista && <> della lista <strong>{destinatari.lista.titolo}</strong> ({destinatari.lista.persone} {destinatari.lista.persone === 1 ? 'persona' : 'persone'} in tutto: riceve solo chi ha dato il consenso)</>}
+                  {destinatari?.esclusi && <>, escluso chi è in {destinatari.esclusi.titoli.map(t => `«${t}»`).join(', ')} ({destinatari.esclusi.persone} {destinatari.esclusi.persone === 1 ? 'persona tolta' : 'persone tolte'})</>}
                   . L'operazione non è reversibile.</>
               )}
             </p>
