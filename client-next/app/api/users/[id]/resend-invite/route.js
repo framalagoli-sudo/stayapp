@@ -1,6 +1,6 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
-import { sendEmail } from '@/lib/send-email'
+import { sendEmail, rispostaSeNonPartita } from '@/lib/send-email'
 import { platformEmailTemplate, html } from '@/lib/email-template'
 
 export async function POST(request, props) {
@@ -38,10 +38,10 @@ export async function POST(request, props) {
     const tokenType = actionUrl.searchParams.get('type') || 'recovery'
     const link = `${clientUrl}/admin/accept-invite?token_hash=${tokenHash}&type=${tokenType}`
 
-    if (process.env.RESEND_API_KEY) {
+    {
       const { data: profile } = await supabaseAdmin.from('profiles').select('full_name').eq('id', params.id).single()
       const nome = profile?.full_name || email
-      sendEmail({ _ctx: 'reinvito-staff',
+      const esito = await sendEmail({ _ctx: 'reinvito-staff',
         to: email, subject: 'Il tuo link per accedere a OltreNova',
         html: platformEmailTemplate({
           title: 'Nuovo link di accesso',
@@ -49,7 +49,9 @@ export async function POST(request, props) {
           ctaText: 'Imposta password →', ctaUrl: link,
           footerNote: html`Il link è valido per <strong>24 ore</strong>.`,
         }),
-      }).catch(() => {})
+      })
+      const nonPartita = rispostaSeNonPartita(esito)
+      if (nonPartita) return nonPartita
     }
     return Response.json({ ok: true })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }

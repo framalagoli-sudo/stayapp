@@ -1,5 +1,5 @@
 ﻿import { requireAuth } from '@/lib/server-auth'
-import { sendEmail } from '@/lib/send-email'
+import { sendEmail, rispostaSeNonPartita } from '@/lib/send-email'
 import { emailTemplate, aCapo } from '@/lib/email-template'
 
 export async function POST(request) {
@@ -9,8 +9,8 @@ export async function POST(request) {
     const { tipo, descrizione, email } = await request.json()
     if (!descrizione?.trim()) return Response.json({ error: 'Descrizione obbligatoria' }, { status: 400 })
 
-    if (process.env.RESEND_API_KEY) {
-      await sendEmail({ _ctx: 'segnalazione',
+    {
+      const esito = await sendEmail({ _ctx: 'segnalazione',
         to: 'fra.malagoli@gmail.com',
         subject: `[${tipo || 'Segnalazione'}] da ${email || 'utente sconosciuto'}`,
         html: emailTemplate({
@@ -24,6 +24,8 @@ export async function POST(request) {
         }),
         replyTo: email || undefined,
       })
+      const nonPartita = rispostaSeNonPartita(esito)
+      if (nonPartita) return nonPartita
     }
     return Response.json({ ok: true })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }

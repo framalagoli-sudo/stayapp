@@ -37,3 +37,12 @@ export async function sendEmail(payload, ctxArg) {
     return { data: null, error: { message: String(e?.message || e) } }
   }
 }
+
+// Per le route in cui l'email È l'azione («invia prova», «rimanda l'invito»):
+// chi preme il pulsante deve sapere se è partita. `sendEmail` non lancia mai,
+// quindi senza questo controllo la route rispondeva «ok» anche quando Resend
+// rifiutava l'invio. Restituisce la risposta d'errore, o null se è partita.
+export function rispostaSeNonPartita(esito) {
+  if (!esito?.error) return null
+  return Response.json({ error: `L'email non è partita: il servizio di posta l'ha rifiutata (${esito.error.message || 'motivo sconosciuto'}). Riprova tra qualche minuto.` }, { status: 502 })
+}

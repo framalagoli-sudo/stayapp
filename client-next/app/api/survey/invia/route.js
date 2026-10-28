@@ -1,6 +1,7 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
-import { sendEmail } from '@/lib/send-email'
+import { sendEmail, rispostaSeNonPartita } from '@/lib/send-email'
+import { escEmail } from '@/lib/email-template'
 
 export async function POST(request) {
   try {
@@ -21,15 +22,17 @@ export async function POST(request) {
     if (error) throw error
 
     const link = `${(process.env.CLIENT_URL ?? "").trim()}/survey?token=${survey.token}`
-    const nomeDisplay = nome?.trim() || 'Cliente'
-    const business = az?.ragione_sociale || 'il nostro team'
+    // Nome e ragione sociale finiscono nell'HTML dell'email: si fa l'escape.
+    const nomeDisplay = escEmail(nome?.trim() || 'Cliente')
+    const businessNome = az?.ragione_sociale || 'il nostro team'
+    const business = escEmail(businessNome)
 
-    if (process.env.RESEND_API_KEY) {
-      await sendEmail({
-        _ctx: 'survey', fromName: business,
+    {
+      const esito = await sendEmail({
+        _ctx: 'survey', fromName: businessNome,
         from: (process.env.RESEND_FROM ?? '').trim(),
         to: email.trim(),
-        subject: `Come valuteresti la tua esperienza con ${business}?`,
+        subject: `Come valuteresti la tua esperienza con ${businessNome}?`,
         html: `
           <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a2e;">
             <h2 style="margin:0 0 16px;font-size:22px;">Ciao ${nomeDisplay}!</h2>
@@ -44,6 +47,8 @@ export async function POST(request) {
             <p style="color:#aaa;font-size:12px;text-align:center;">Ci vogliono meno di 30 secondi.</p>
           </div>`,
       })
+      const nonPartita = rispostaSeNonPartita(esito)
+      if (nonPartita) return nonPartita
     }
     return Response.json({ ok: true })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }

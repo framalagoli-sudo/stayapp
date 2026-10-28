@@ -1,7 +1,7 @@
 ﻿import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth, getProfile } from '@/lib/server-auth'
 import { buildNewsletterHtml, personalize } from '@/lib/newsletter-html'
-import { sendEmail } from '@/lib/send-email'
+import { sendEmail, rispostaSeNonPartita } from '@/lib/send-email'
 import { intestazioniDisiscrizione } from '@/lib/disiscrizione'
 
 // Stessa lettura dell'invio vero, dalla tabella viva: l'email di prova deve
@@ -42,7 +42,7 @@ export async function POST(request, props) {
     })
 
     if (!process.env.RESEND_API_KEY) return Response.json({ error: 'RESEND_API_KEY non configurata' }, { status: 500 })
-    await sendEmail({
+    const esito = await sendEmail({
       _ctx: 'newsletter-test', fromName: entity?.name || 'OltreNova',
       from: (process.env.RESEND_FROM ?? '').trim() || 'OltreNova <noreply@oltrenova.com>',
       to: test_email,
@@ -50,6 +50,8 @@ export async function POST(request, props) {
       html,
       headers: intestazioniDisiscrizione(appUrl, 'TEST'),
     })
+    const nonPartita = rispostaSeNonPartita(esito)
+    if (nonPartita) return nonPartita
     return Response.json({ ok: true })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
