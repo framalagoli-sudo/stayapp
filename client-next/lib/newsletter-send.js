@@ -18,6 +18,19 @@ async function getEntity(entity_tipo, entity_id) {
   return data
 }
 
+// Una riga per email partita, con l'id che Resend le ha dato (stesso ordine del
+// blocco): è da lì che il webhook risale a newsletter e persona quando arriva
+// «aperta» o «cliccata». Se non si scrive le email sono partite lo stesso: si
+// perde la statistica, non l'invio — quindi si avvisa e si va avanti.
+async function registraDestinatari(nl, batch, ids) {
+  const righe = batch.map((c, k) => ({
+    newsletter_id: nl.id, azienda_id: nl.azienda_id, contatto_id: c.id, resend_id: ids?.[k]?.id || null,
+  })).filter(r => r.contatto_id)
+  if (!righe.length) return
+  const { error } = await supabaseAdmin.from('newsletter_destinatari').insert(righe)
+  if (error) await logError('newsletter-statistiche', new Error(`Destinatari non registrati (${righe.length}): ${error.message}`), { alert: true })
+}
+
 export async function sendNewsletterById(id) {
   const { data: nl, error } = await supabaseAdmin.from('newsletters').select('*').eq('id', id).single()
   if (error || !nl) throw new Error('Newsletter non trovata')
@@ -83,7 +96,7 @@ export async function sendNewsletterById(id) {
         ...(c.unsubscribe_token ? { headers: intestazioniDisiscrizione(appUrl, c.unsubscribe_token, nl.id) } : {}),
       }
     })
-    const { error: batchErr } = await resend.batch.send(emails)
+    const { data: risposta, error: batchErr } = await resend.batch.send(emails)
     // Un blocco rifiutato NON è stato inviato: non si conta, e si grida. Prima
     // finiva nel conto degli inviati e il titolare leggeva un numero falso.
     if (batchErr) {
@@ -92,6 +105,7 @@ export async function sendNewsletterById(id) {
       continue
     }
     sent += batch.length
+    await registraDestinatari(nl, batch, risposta?.data)
   }
 
   // Non è partito niente: la newsletter NON è inviata. Restava «inviata a 0»,

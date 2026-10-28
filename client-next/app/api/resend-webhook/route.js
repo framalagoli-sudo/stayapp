@@ -1,5 +1,6 @@
 ﻿import crypto from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { registraEvento, eventoStatistica } from '@/lib/newsletter-statistiche'
 
 function verifySignature(rawBody, headers) {
   const secret = (process.env.RESEND_WEBHOOK_SECRET ?? '').trim()
@@ -47,6 +48,12 @@ export async function POST(request) {
         await supabaseAdmin.from('contatti').update({ email_non_valida: true }).eq('email', email)
         console.log(`[resend-webhook] ${type} → ${email} marcata email_non_valida`)
       }
+    }
+
+    // Le statistiche delle newsletter (consegnata, aperta, cliccata…). Un errore
+    // qui non deve far ripetere a Resend l'evento: i rimbalzi sono già segnati.
+    if (eventoStatistica(type)) {
+      try { await registraEvento(type, data) } catch (e) { console.error('[resend-webhook] statistiche', e.message) }
     }
 
     return Response.json({ ok: true })

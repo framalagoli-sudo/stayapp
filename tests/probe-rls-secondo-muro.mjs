@@ -29,7 +29,7 @@ const PUBBLICHE = new Set(['entita', 'offerte', 'pagine', 'articoli', 'eventi', 
 
 const TABELLE = ['entita', 'offerte', 'profiles', 'aziende', 'contatti', 'requests', 'prenotazioni', 'preventivi',
   'recensioni', 'survey_risposte', 'form_builder', 'form_submissions', 'articoli', 'eventi',
-  'event_bookings', 'newsletters', 'automazioni', 'automazioni_log', 'piano_editoriale', 'pe_campagne',
+  'event_bookings', 'newsletters', 'newsletter_destinatari', 'newsletter_clic', 'automazioni', 'automazioni_log', 'piano_editoriale', 'pe_campagne',
   'loyalty_programs', 'loyalty_points', 'gift_cards', 'prodotti', 'ordini', 'pagine', 'vetrine',
   'vetrina_elementi', 'domini', 'whatsapp_account', 'whatsapp_campagna', 'whatsapp_messaggio',
   'messages', 'page_views', 'demo_requests', 'site_snapshots', 'landing_seo', 'audit_log',

@@ -50,7 +50,7 @@ const TABLES = [
   'contatti', 'contatti_attivita', 'requests', 'messages', 'demo_requests',
   // moduli
   'eventi', 'event_bookings', 'risorse', 'risorse_promozioni', 'prenotazioni',
-  'articoli', 'blog_categories', 'newsletters',
+  'articoli', 'blog_categories', 'newsletters', 'newsletter_destinatari', 'newsletter_clic',
   'vetrine', 'vetrina_elementi',
   'form_builder', 'form_submissions', 'preventivi', 'recensioni',
   'prodotti', 'ordini', 'gift_cards', 'loyalty_programs', 'loyalty_points',

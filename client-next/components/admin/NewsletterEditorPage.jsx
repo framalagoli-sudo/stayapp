@@ -7,6 +7,7 @@ import { ArrowLeft, Send, Eye, Save, Plus, Trash2, AlertCircle, CheckCircle, Smi
 import { buildNewsletterHtml, personalize, testoVuoto } from '@/lib/newsletter-html'
 import RichTextEditor from '@/components/admin/RichTextEditor'
 import AiButton from '@/components/admin/AiButton'
+import NewsletterStatistiche from '@/components/admin/NewsletterStatistiche'
 import { perCampoDataOra, daCampoDataOra, oraLocale } from '@/lib/fuso'
 
 const EMOJIS = [
@@ -356,6 +357,8 @@ export default function NewsletterEditorPage() {
       <div style={{ display: 'grid', gridTemplateColumns: showPreview && !stretto ? 'minmax(0, 1fr) minmax(0, 1fr)' : 'minmax(0, 1fr)', gap: 24 }}>
         {/* Left: editor */}
         <div style={{ display: showPreview && stretto ? 'none' : 'flex', flexDirection: 'column', gap: 20 }}>
+
+          {isSent && <NewsletterStatistiche id={id} />}
 
           {/* Oggetto + Preheader + Mittente + Schedule */}
           {/* 1 · A chi */}

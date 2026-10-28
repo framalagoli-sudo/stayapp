@@ -97,7 +97,7 @@ export async function anonimizzaContatto(contatto) {
 // Le tabelle che puntano a un contatto. Unendo due schede vanno spostate TUTTE:
 // quella che si dimentica perde i suoi dati quando la seconda scheda viene
 // cancellata (i punti fedeltà se ne vanno in cascata, gli altri restano orfani).
-const PUNTANO_AL_CONTATTO = ['form_submissions', 'preventivi', 'loyalty_points', 'whatsapp_messaggio']
+const PUNTANO_AL_CONTATTO = ['form_submissions', 'preventivi', 'loyalty_points', 'whatsapp_messaggio', 'newsletter_destinatari']
 
 /**
  * Unisce due schede della stessa persona: tutto ciò che è di `altro` passa a
