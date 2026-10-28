@@ -10,6 +10,8 @@ metadata:
 
 # Si riprende da qui
 
+✅ **28/10** — (1) Garage 22 «impossibile inviare» = errore del LORO pc (detto da Francesco); colta l'occasione: i 4 pulsanti che mandano email ora dicono se Resend ha rifiutato (commit 658eefe2, LIVE, non cliccati dal pannello). (2) **Newsletter «Escludi chi è in…»** LIVE (commit 470bd12c, migration 142 eseguita da Francesco al 2° tentativo — il primo non era arrivato sul DB), sonda probe-newsletter-escludi.mjs verde in produzione (computer + telefono). Da dire a Francesco/Garage 22: Newsletter → bozza → sotto «Destinatari» scegliere la serata in «Escludi chi è in…». Annotato: invio PROGRAMMATO fermato da lista sparita lo dice solo nei log (da agganciare a logError). (3) Francesco ha «una cosa importante che fa la differenza su OltreNova» da dirmi: chiedergliela.
+
 ## ⛔ PRIMA COSA (27/10): mostrare a Francesco il testo di [[project-sentinella-fornitori]] ESATTAMENTE com'è (sua richiesta), poi ripartire dalla sentinella A.
 
 ## ✅ 23/10 — permessi dei collaboratori chiusi (CLAUDE.md nota 84, SECURITY invariante 27)
