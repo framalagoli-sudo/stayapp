@@ -16,8 +16,8 @@ export async function GET(request, props) {
     let q = supabaseAdmin.from('newsletters').select('id, azienda_id, recipients_count, unsubscribes_count').eq('id', params.id)
     if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
     const { data: nl } = await q.maybeSingle()
-    // Una bozza non ha righe: risponde coi numeri a zero, non con un errore.
     if (!nl) return Response.json({ error: 'Newsletter non trovata' }, { status: 404 })
+    // Una bozza non ha righe: risponde coi numeri a zero, non con un errore.
 
     return Response.json(await statisticheNewsletter(nl, { conNomi: staffPuoLeggereContatti(profile) }))
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
