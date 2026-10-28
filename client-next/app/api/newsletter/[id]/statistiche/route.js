@@ -13,11 +13,11 @@ export async function GET(request, props) {
     const { data: profile } = await supabaseAdmin.from('profiles').select('role, azienda_id, permissions').eq('id', user.id).single()
     if (!profile) return Response.json({ error: 'Profilo non trovato' }, { status: 403 })
 
-    let q = supabaseAdmin.from('newsletters').select('id, azienda_id, status, recipients_count, unsubscribes_count').eq('id', params.id)
+    let q = supabaseAdmin.from('newsletters').select('id, azienda_id, recipients_count, unsubscribes_count').eq('id', params.id)
     if (profile.role !== 'super_admin') q = q.eq('azienda_id', profile.azienda_id)
     const { data: nl } = await q.maybeSingle()
+    // Una bozza non ha righe: risponde coi numeri a zero, non con un errore.
     if (!nl) return Response.json({ error: 'Newsletter non trovata' }, { status: 404 })
-    if (nl.status !== 'sent') return Response.json({ error: 'La newsletter non è ancora partita' }, { status: 400 })
 
     return Response.json(await statisticheNewsletter(nl, { conNomi: staffPuoLeggereContatti(profile) }))
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
