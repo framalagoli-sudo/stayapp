@@ -16,6 +16,14 @@ import { applyBlockStyle, blockInverted, textSizeScale, textColorFor, gridTempla
 // colore del sito diventa bianco, su un fondo scuro una tinta che si legge.
 // Senza sfondo scelto la variabile non c'è e resta il colore del sito.
 const tinta = p => `var(--tinta, ${p})`
+
+// I numeri di una paginazione: la prima, l'ultima e le vicine a quella aperta,
+// con «…» dove si salta (1 … 4 5 6 … 17). Pagine da 1.
+function numeriPagine(attuale, totale) {
+  const tenute = new Set([1, totale, attuale - 1, attuale, attuale + 1].filter(n => n >= 1 && n <= totale))
+  const ordinate = [...tenute].sort((a, b) => a - b)
+  return ordinate.flatMap((n, i) => (i > 0 && n - ordinate[i - 1] > 1 ? ['…', n] : [n]))
+}
 import { ReviewSourceLogo } from '@/lib/reviewLogos'
 import { RichText, richIsEmpty } from '@/lib/richText'
 import { ricco } from '@/lib/testo-ricco'
@@ -1228,8 +1236,8 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
   // (`eventiIniziali`); il browser li richiede comunque, per averli freschi.
   const [eventi, setEventi] = useState(eventiIniziali?.prossimi || [])
   const [eventiPassati, setEventiPassati] = useState(eventiIniziali?.passati || [])
-  // Quante volte si è premuto «Mostra altri eventi passati», blocco per blocco.
-  const [altriPassati, setAltriPassati] = useState({})
+  // La pagina aperta degli eventi passati, blocco per blocco (senza scelta: la prima).
+  const [paginaPassati, setPaginaPassati] = useState({})
   const [articoli, setArticoli] = useState([])
   const [prodottiShop, setProdottiShop] = useState([])
   // I prodotti si chiedono solo se sulla pagina c'è un blocco Shop.
@@ -2708,11 +2716,18 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
       case 'eventi': {
         // Sotto quelli in programma, gli ultimi conclusi: per chi guarda il sito
         // sono la prova che le serate si fanno davvero. Si spengono dal blocco.
-        // Gli eventi conclusi si mostrano «Quanti elementi» per volta (vuoto = 6),
-        // con un pulsante per gli altri: l'archivio resta intero.
-        const perVolta = d.limit || 6
+        // Gli eventi conclusi si sfogliano a pagine di «Quanti elementi» (vuoto = 6):
+        // l'archivio resta intero e la pagina del sito non si allunga.
+        const perPagina = d.limit || 6
         const tuttiPassati = d.mostra_passati === false ? [] : eventiPassati
-        const passati = tuttiPassati.slice(0, perVolta * (1 + (altriPassati[block.id] || 0)))
+        const totPagine = Math.max(1, Math.ceil(tuttiPassati.length / perPagina))
+        const pagina = Math.min(paginaPassati[block.id] || 1, totPagine)
+        const passati = tuttiPassati.slice((pagina - 1) * perPagina, pagina * perPagina)
+        const vaiAPagina = n => {
+          setPaginaPassati(p => ({ ...p, [block.id]: n }))
+          document.getElementById(`passati-${block.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+        const bottonePagina = attivo => ({ minWidth: 40, height: 40, padding: '0 10px', borderRadius: 20, border: `1px solid ${attivo ? tinta(primary) : 'var(--bordo)'}`, background: attivo ? tinta(primary) : 'transparent', color: attivo ? 'var(--sup)' : 'var(--txt)', fontWeight: 700, fontSize: 14, cursor: attivo ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' })
         if (!eventi.length && !passati.length) return null
         // La forma delle locandine, se scelta: senza, la fascia di sempre.
         const forma = { rapporto: rapportoOppure(d.formato, null) }
@@ -2731,17 +2746,18 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                 </div>
               )}
               {passati.length > 0 && <>
-                <h3 style={{ fontFamily: heading, fontSize: 'clamp(18px,2.4vw,24px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)', margin: eventi.length ? '56px 0 24px' : '28px 0 24px' }}>{tr('past_events', lang)}</h3>
+                <h3 style={{ fontFamily: heading, fontSize: 'clamp(18px,2.4vw,24px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)', margin: eventi.length ? '56px 0 24px' : '28px 0 24px', scrollMarginTop: 96 }} id={`passati-${block.id}`}>{tr('past_events', lang)}</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 16 }}>
                   {passati.map(ev => renderEventoCard(ev, true, forma))}
                 </div>
-                {passati.length < tuttiPassati.length && (
-                  <div style={{ textAlign: 'center', marginTop: 32 }}>
-                    <button type="button" data-altri-passati onClick={() => setAltriPassati(a => ({ ...a, [block.id]: (a[block.id] || 0) + 1 }))}
-                      style={{ padding: '12px 28px', background: 'transparent', border: `2px solid ${tinta(primary)}`, color: tinta(primary), borderRadius: 50, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
-                      {tr('past_events_more', lang)}
-                    </button>
-                  </div>
+                {totPagine > 1 && (
+                  <nav data-pagine-passati aria-label={tr('past_events', lang)} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginTop: 32 }}>
+                    <button type="button" aria-label={tr('page_prev', lang)} disabled={pagina === 1} onClick={() => vaiAPagina(pagina - 1)} style={{ ...bottonePagina(false), opacity: pagina === 1 ? 0.35 : 1, cursor: pagina === 1 ? 'default' : 'pointer' }}><ChevronLeft size={18} strokeWidth={2} /></button>
+                    {numeriPagine(pagina, totPagine).map((n, i) => n === '…'
+                      ? <span key={`s${i}`} style={{ color: 'var(--txt-tenue)', padding: '0 2px' }}>…</span>
+                      : <button key={n} type="button" data-pagina={n} aria-current={n === pagina ? 'page' : undefined} aria-label={`${tr('page_n', lang)} ${n}`} onClick={() => n !== pagina && vaiAPagina(n)} style={bottonePagina(n === pagina)}>{n}</button>)}
+                    <button type="button" aria-label={tr('page_next', lang)} disabled={pagina === totPagine} onClick={() => vaiAPagina(pagina + 1)} style={{ ...bottonePagina(false), opacity: pagina === totPagine ? 0.35 : 1, cursor: pagina === totPagine ? 'default' : 'pointer' }}><ChevronRight size={18} strokeWidth={2} /></button>
+                  </nav>
                 )}
               </>}
             </div>
