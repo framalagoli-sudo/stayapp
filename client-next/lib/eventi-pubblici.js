@@ -60,7 +60,7 @@ export async function eventiPubblici({ entity_tipo, entity_id, lang = 'it', pass
 export async function eventiPerBlocchi(blocks, entity_tipo, entity_id, lang) {
   const blocchi = Array.isArray(blocks) ? blocks : []
   if (!blocchi.some(b => b?.type === 'eventi' || b?.type === 'eventi_slider')) return null
-  const vuolePassati = blocchi.some(b => b?.type === 'eventi' && b.data?.mostra_passati !== false)
+  const vuolePassati = blocchi.some(b => b?.type === 'eventi' && (b.data?.solo_passati === true || b.data?.mostra_passati !== false))
   try {
     const [prossimi, passati] = await Promise.all([
       eventiPubblici({ entity_tipo, entity_id, lang }),

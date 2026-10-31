@@ -295,14 +295,26 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
             aiuto="«Fascia» taglia la foto a una striscia bassa: una locandina verticale si vede a metà. Le altre forme valgono per tutte le schede insieme."
           />
         )}
-        {type === 'eventi' && (
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#333', cursor: 'pointer', lineHeight: 1.5 }}>
-            <input type="checkbox" checked={data.mostra_passati !== false} onChange={e => upd('mostra_passati', e.target.checked)} style={{ marginTop: 3 }} />
-            <span>Mostra anche gli eventi passati<br />
-              <span style={{ fontSize: 11.5, color: '#888' }}>Sotto quelli in programma, i conclusi dal più recente: «Quanti elementi» per pagina (vuoto = 6), sfogliati con i numeri di pagina. Si aprono ma non si prenotano più.</span>
-            </span>
-          </label>
-        )}
+        {/* `mostra_passati` assente = acceso, come sui blocchi già online;
+            `solo_passati` fa del blocco l'archivio (una pagina «Eventi passati»). */}
+        {type === 'eventi' && (() => {
+          const quali = data.solo_passati === true ? 'passati' : data.mostra_passati !== false ? 'entrambi' : 'programma'
+          const scegli = v => onChange({ ...data, solo_passati: v === 'passati', mostra_passati: v !== 'programma' })
+          return (
+            <div>
+              <label style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4, fontWeight: 500 }}>Quali eventi</label>
+              <select data-quali-eventi value={quali} onChange={e => scegli(e.target.value)} style={{ ...numStyle, background: '#fff' }}>
+                <option value="programma">Solo quelli in programma</option>
+                <option value="entrambi">In programma, e sotto i passati</option>
+                <option value="passati">Solo i passati (archivio)</option>
+              </select>
+              <p style={{ fontSize: 11.5, color: '#888', margin: '4px 0 0', lineHeight: 1.5 }}>
+                I passati vanno dal più recente, «Quanti elementi» per pagina (vuoto = 6), sfogliati con i numeri di pagina. Si aprono ma non si prenotano più.
+                Per un archivio a parte: una pagina «Eventi passati» con questo blocco su «Solo i passati», e qui sotto un blocco «Pulsante» che porta lì.
+              </p>
+            </div>
+          )
+        })()}
       </div>
     )
   }

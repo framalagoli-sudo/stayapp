@@ -1244,7 +1244,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
   const vuoleShop = (blocks || []).some(b => b?.type === 'shop')
   // Gli eventi conclusi si chiedono solo se un blocco eventi li mostra: è il
   // predefinito, e si spengono dal blocco.
-  const vuolePassati = (blocks || []).some(b => b?.type === 'eventi' && b.data?.mostra_passati !== false)
+  const vuolePassati = (blocks || []).some(b => b?.type === 'eventi' && (b.data?.solo_passati === true || b.data?.mostra_passati !== false))
 
   const sec = secondary || primary   // colore accento; default = primario
   const sitoScuro = eScuro(resolveSiteTheme(entity).bgColor)
@@ -2718,8 +2718,12 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
         // sono la prova che le serate si fanno davvero. Si spengono dal blocco.
         // Gli eventi conclusi si sfogliano a pagine di «Quanti elementi» (vuoto = 6):
         // l'archivio resta intero e la pagina del sito non si allunga.
+        // Con «solo passati» il blocco è l'archivio (una pagina «Eventi passati»):
+        // niente programma sopra, e il titolo dice cos'è.
+        const soloPassati = d.solo_passati === true
+        const programma = soloPassati ? [] : eventi
         const perPagina = d.limit || 6
-        const tuttiPassati = d.mostra_passati === false ? [] : eventiPassati
+        const tuttiPassati = soloPassati || d.mostra_passati !== false ? eventiPassati : []
         const totPagine = Math.max(1, Math.ceil(tuttiPassati.length / perPagina))
         const pagina = Math.min(paginaPassati[block.id] || 1, totPagine)
         const passati = tuttiPassati.slice((pagina - 1) * perPagina, pagina * perPagina)
@@ -2728,7 +2732,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
           document.getElementById(`passati-${block.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }
         const bottonePagina = attivo => ({ minWidth: 40, height: 40, padding: '0 10px', borderRadius: 20, border: `1px solid ${attivo ? tinta(primary) : 'var(--bordo)'}`, background: attivo ? tinta(primary) : 'transparent', color: attivo ? 'var(--sup)' : 'var(--txt)', fontWeight: 700, fontSize: 14, cursor: attivo ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' })
-        if (!eventi.length && !passati.length) return null
+        if (!programma.length && !passati.length) return null
         // La forma delle locandine, se scelta: senza, la fascia di sempre.
         const forma = { rapporto: rapportoOppure(d.formato, null) }
         return (
@@ -2736,17 +2740,17 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
             <div className="lbr-section">
               {/* «Prossimi eventi» sopra un elenco di soli eventi conclusi
                   direbbe il falso: senza programma il titolo è solo «Eventi». */}
-              <h2 style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: 12, textAlign: 'center', color: 'var(--txt)' }}>{d.titolo || tr(eventi.length ? 'events_title' : 'events_title_all', lang)}</h2>
-              {(d.sottotitolo || eventi.length > 0) && (
-                <p style={{ textAlign: 'center', color: 'var(--txt-tenue)', marginBottom: eventi.length ? 48 : 0, fontSize: 15 }}>{d.sottotitolo || `${eventi.length} ${tr(eventi.length === 1 ? 'event_scheduled' : 'events_scheduled', lang)}`}</p>
+              <h2 id={soloPassati ? `passati-${block.id}` : undefined} style={{ fontFamily: heading, fontSize: 'clamp(24px,3.5vw,38px)', fontWeight: 700, marginBottom: soloPassati && !d.sottotitolo ? 36 : 12, textAlign: 'center', color: 'var(--txt)', scrollMarginTop: 96 }}>{d.titolo || tr(soloPassati ? 'past_events' : programma.length ? 'events_title' : 'events_title_all', lang)}</h2>
+              {(d.sottotitolo || programma.length > 0) && (
+                <p style={{ textAlign: 'center', color: 'var(--txt-tenue)', marginBottom: programma.length || soloPassati ? 48 : 0, fontSize: 15 }}>{d.sottotitolo || `${programma.length} ${tr(programma.length === 1 ? 'event_scheduled' : 'events_scheduled', lang)}`}</p>
               )}
-              {eventi.length > 0 && (
+              {programma.length > 0 && (
                 <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 16 }}>
-                  {eventi.slice(0, d.limit || eventi.length).map(ev => renderEventoCard(ev, false, forma))}
+                  {programma.slice(0, d.limit || programma.length).map(ev => renderEventoCard(ev, false, forma))}
                 </div>
               )}
               {passati.length > 0 && <>
-                <h3 style={{ fontFamily: heading, fontSize: 'clamp(18px,2.4vw,24px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)', margin: eventi.length ? '56px 0 24px' : '28px 0 24px', scrollMarginTop: 96 }} id={`passati-${block.id}`}>{tr('past_events', lang)}</h3>
+                {!soloPassati && <h3 style={{ fontFamily: heading, fontSize: 'clamp(18px,2.4vw,24px)', fontWeight: 700, textAlign: 'center', color: 'var(--txt)', margin: programma.length ? '56px 0 24px' : '28px 0 24px', scrollMarginTop: 96 }} id={`passati-${block.id}`}>{tr('past_events', lang)}</h3>}
                 <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 16 }}>
                   {passati.map(ev => renderEventoCard(ev, true, forma))}
                 </div>
