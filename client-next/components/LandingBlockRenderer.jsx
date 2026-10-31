@@ -1228,6 +1228,8 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
   // (`eventiIniziali`); il browser li richiede comunque, per averli freschi.
   const [eventi, setEventi] = useState(eventiIniziali?.prossimi || [])
   const [eventiPassati, setEventiPassati] = useState(eventiIniziali?.passati || [])
+  // Quante volte si è premuto «Mostra altri eventi passati», blocco per blocco.
+  const [altriPassati, setAltriPassati] = useState({})
   const [articoli, setArticoli] = useState([])
   const [prodottiShop, setProdottiShop] = useState([])
   // I prodotti si chiedono solo se sulla pagina c'è un blocco Shop.
@@ -2706,7 +2708,11 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
       case 'eventi': {
         // Sotto quelli in programma, gli ultimi conclusi: per chi guarda il sito
         // sono la prova che le serate si fanno davvero. Si spengono dal blocco.
-        const passati = d.mostra_passati === false ? [] : eventiPassati.slice(0, d.limit || 6)
+        // Gli eventi conclusi si mostrano «Quanti elementi» per volta (vuoto = 6),
+        // con un pulsante per gli altri: l'archivio resta intero.
+        const perVolta = d.limit || 6
+        const tuttiPassati = d.mostra_passati === false ? [] : eventiPassati
+        const passati = tuttiPassati.slice(0, perVolta * (1 + (altriPassati[block.id] || 0)))
         if (!eventi.length && !passati.length) return null
         // La forma delle locandine, se scelta: senza, la fascia di sempre.
         const forma = { rapporto: rapportoOppure(d.formato, null) }
@@ -2729,6 +2735,14 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
                 <div style={{ display: 'grid', gridTemplateColumns: gridTemplate(d.columns, 280), gap: 16 }}>
                   {passati.map(ev => renderEventoCard(ev, true, forma))}
                 </div>
+                {passati.length < tuttiPassati.length && (
+                  <div style={{ textAlign: 'center', marginTop: 32 }}>
+                    <button type="button" data-altri-passati onClick={() => setAltriPassati(a => ({ ...a, [block.id]: (a[block.id] || 0) + 1 }))}
+                      style={{ padding: '12px 28px', background: 'transparent', border: `2px solid ${tinta(primary)}`, color: tinta(primary), borderRadius: 50, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
+                      {tr('past_events_more', lang)}
+                    </button>
+                  </div>
+                )}
               </>}
             </div>
           </section>

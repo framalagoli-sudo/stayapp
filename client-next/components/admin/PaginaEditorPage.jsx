@@ -299,7 +299,7 @@ function BlockEditor({ block, onChange, entityId, entityTipo }) {
           <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#333', cursor: 'pointer', lineHeight: 1.5 }}>
             <input type="checkbox" checked={data.mostra_passati !== false} onChange={e => upd('mostra_passati', e.target.checked)} style={{ marginTop: 3 }} />
             <span>Mostra anche gli eventi passati<br />
-              <span style={{ fontSize: 11.5, color: '#888' }}>Sotto quelli in programma, gli ultimi conclusi. Si aprono ma non si prenotano più.</span>
+              <span style={{ fontSize: 11.5, color: '#888' }}>Sotto quelli in programma, i conclusi dal più recente: «Quanti elementi» per volta (vuoto = 6), con il pulsante «Mostra altri». Si aprono ma non si prenotano più.</span>
             </span>
           </label>
         )}
