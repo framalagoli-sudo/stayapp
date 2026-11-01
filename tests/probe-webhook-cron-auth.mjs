@@ -9,6 +9,7 @@
 // A mano (non scrive niente, non crea aziende). Uso: cd tests && node probe-webhook-cron-auth.mjs
 //      $env:TEST_URL='http://localhost:3000' per il locale.
 import { config } from 'dotenv'
+import { readFileSync } from 'fs'
 config({ path: '.env.test', quiet: true })
 const BASE = (process.env.TEST_URL || 'https://www.oltrenova.com').replace(/\/$/, '')
 
@@ -41,7 +42,9 @@ try {
   esito(!corpoVerify.includes('SFIDA12345'), 'con verify_token sbagliato la sfida NON viene restituita', `status ${rv.status}, corpo ${corpoVerify.slice(0, 40)}`)
 
   console.log(`\n3. CRON — senza CRON_SECRET → 401\n`)
-  const cron = ['automazioni', 'backup', 'blog', 'domini', 'newsletter', 'prenotazioni-scadute', 'recensioni-esterne', 'resoconti', 'whatsapp']
+  // Letti da vercel.json: un cron nuovo entra nella prova da solo.
+  const cron = JSON.parse(readFileSync(new URL('../client-next/vercel.json', import.meta.url), 'utf8')).crons
+    .map(c => c.path.replace('/api/cron/', ''))
   for (const c of cron) {
     const senza = await fetch(`${BASE}/api/cron/${c}`)
     const sbagliato = await fetch(`${BASE}/api/cron/${c}`, { headers: { Authorization: 'Bearer secret-sbagliato' } })
