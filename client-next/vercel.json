@@ -38,6 +38,10 @@
     {
       "path": "/api/cron/resoconti",
       "schedule": "20 * * * *"
+    },
+    {
+      "path": "/api/cron/sentinella",
+      "schedule": "0 6 * * *"
     }
   ]
 }

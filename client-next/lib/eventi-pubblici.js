@@ -12,7 +12,7 @@ import { postiPubblici } from '@/lib/posti-evento'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 // Un tetto solo contro gli abusi: l'archivio è la prova che le serate si fanno,
-// e il blocco lo mostra qualche scheda per volta («Mostra altri»).
+// e il blocco lo mostra a pagine numerate.
 const MAX_PASSATI = 200
 
 // Di norma gli eventi non ancora finiti, dal più vicino. Con `passati` quelli

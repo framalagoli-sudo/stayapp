@@ -1,6 +1,7 @@
 ﻿import crypto from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { registraEvento, eventoStatistica } from '@/lib/newsletter-statistiche'
+import { INDIRIZZO_POZZO_SENTINELLA } from '@/lib/sentinella-regole'
 
 function verifySignature(rawBody, headers) {
   const secret = (process.env.RESEND_WEBHOOK_SECRET ?? '').trim()
@@ -48,6 +49,19 @@ export async function POST(request) {
         await supabaseAdmin.from('contatti').update({ email_non_valida: true }).eq('email', email)
         console.log(`[resend-webhook] ${type} → ${email} marcata email_non_valida`)
       }
+    }
+
+    // La consegna della prova quotidiana della sentinella (`lib/sentinella.js`):
+    // lascia un battito, così se le conferme smettono di arrivare lo dice
+    // l'allarme dei processi fermi. Soglia 30 ore: la prova parte una volta al
+    // giorno. La riga nasce alla prima consegna, quindi finché il webhook non è
+    // iscritto a email.delivered non c'è niente da sorvegliare (e nessun allarme).
+    if (type === 'email.delivered' && (Array.isArray(data?.to) ? data.to : []).includes(INDIRIZZO_POZZO_SENTINELLA)) {
+      const { data: b } = await supabaseAdmin.from('cron_battiti').select('esecuzioni').eq('nome', 'consegna-posta').maybeSingle()
+      await supabaseAdmin.from('cron_battiti').upsert({
+        nome: 'consegna-posta', ultimo_ok: new Date().toISOString(), soglia_minuti: 1800,
+        esecuzioni: (b?.esecuzioni || 0) + 1, ultimo_esito: 'ok',
+      }, { onConflict: 'nome' })
     }
 
     // Le statistiche delle newsletter (consegnata, aperta, cliccata…). Un errore

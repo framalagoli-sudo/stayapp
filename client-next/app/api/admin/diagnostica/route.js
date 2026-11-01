@@ -162,6 +162,18 @@ export async function POST(request) {
       }
     }
 
+    // La sentinella dei fornitori adesso, invece che domattina: le prove e
+    // l'email con tutti gli esiti, anche se va tutto bene, per vedere com'è.
+    if (azione === 'sentinella') {
+      const { giroSentinella, mandaResoconto } = await import('@/lib/sentinella')
+      const prove = await giroSentinella()
+      const email = await mandaResoconto(prove, { prova: true })
+      return Response.json({
+        ok: true, email,
+        prove: prove.map(p => ({ nome: p.nome, esito: p.esito, dettaglio: p.dettaglio, cosaFare: p.cosaFare || null })),
+      })
+    }
+
     const destinatario = (process.env.ERROR_ALERT_EMAIL || process.env.DEMO_NOTIFY_EMAIL || '').trim()
     if (!destinatario) {
       return Response.json({

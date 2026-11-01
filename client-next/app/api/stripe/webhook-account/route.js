@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { stripeConnect, stripeConfigurato } from '@/lib/stripe-connect'
 import { logError } from '@/lib/observability'
+import { TIPO_PROVA_SENTINELLA } from '@/lib/sentinella-regole'
 
 // «Il conto del cliente funziona ancora?»
 //
@@ -44,6 +45,12 @@ export async function POST(request) {
   } catch (e) {
     return Response.json({ error: `firma non valida: ${e.message}` }, { status: 400 })
   }
+
+  // La prova della sentinella (`lib/sentinella.js`): firmata col nostro
+  // segreto, quindi può produrla solo chi lo ha. Il percorso fin qui è provato;
+  // andare a chiedere a Stripe un evento che non esiste farebbe solo partire un
+  // allarme finto ogni mattina.
+  if (thin.type === TIPO_PROVA_SENTINELLA) return Response.json({ ok: true })
 
   try {
     // Il corpo non basta: l'evento completo si va a prendere.

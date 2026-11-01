@@ -202,3 +202,24 @@ export async function chiamaAI({
 
   return (data?.content?.[0]?.text || '').trim()
 }
+
+// «La chiave funziona?» — per la sentinella dei fornitori. Chiede l'elenco dei
+// modelli, che non consuma token: per questo non passa da `chiamaAI` e non
+// registra niente. Sta qui perché qui sta l'unica chiamata verso Anthropic.
+export async function chiaveAIFunziona() {
+  const apiKey = (process.env.ANTHROPIC_API_KEY ?? '').trim()
+  if (!apiKey) return { ok: false, spenta: true, motivo: 'ANTHROPIC_API_KEY non è configurata su questo ambiente.' }
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 10_000)
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/models?limit=1', {
+      signal: controller.signal,
+      headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    })
+    if (res.ok) return { ok: true }
+    const err = await res.json().catch(() => ({}))
+    return { ok: false, motivo: `Anthropic risponde ${res.status}: ${err?.error?.message || 'nessun testo'}` }
+  } catch (e) {
+    return { ok: false, motivo: `Anthropic non risponde: ${e.message}` }
+  } finally { clearTimeout(timer) }
+}

@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Activity, Bell, BellOff, RefreshCw, Send, CheckCircle2, AlertTriangle, Database } from 'lucide-react'
+import { Activity, Bell, BellOff, RefreshCw, Send, CheckCircle2, AlertTriangle, Database, ShieldCheck } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
 import { formatoEuro, USD_PER_EUR } from '@/lib/valuta-ai'
 
@@ -19,6 +19,7 @@ export default function DiagnosticaPage() {
   const [caricando, setCaricando] = useState(true)
   const [invio, setInvio] = useState(null)   // null | 'corso' | {ok, messaggio}
   const [backup, setBackup] = useState(null) // idem
+  const [sentinella, setSentinella] = useState(null) // null | 'corso' | {ok, prove, email}
 
   async function carica() {
     setCaricando(true); setErrore('')
@@ -45,6 +46,13 @@ export default function DiagnosticaPage() {
       setBackup(r)
       carica()
     } catch (e) { setBackup({ ok: false, messaggio: e?.message || 'Backup fallito' }) }
+  }
+
+  async function eseguiSentinella() {
+    setSentinella('corso')
+    try {
+      setSentinella(await apiFetch('/api/admin/diagnostica', { method: 'POST', body: JSON.stringify({ azione: 'sentinella' }) }))
+    } catch (e) { setSentinella({ ok: false, messaggio: e?.message || 'Prove fallite' }) }
   }
 
   if (caricando) return <div style={{ padding: 40, color: '#888' }}>Caricamento…</div>
@@ -176,6 +184,43 @@ export default function DiagnosticaPage() {
                 </span>
               ))}
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Sentinella dei fornitori ───────────────────────────────────────── */}
+      <div style={{ ...card, marginBottom: 20 }}>
+        <div style={titoletto}>Sentinella dei fornitori</div>
+        <div style={{ fontSize: 13, color: '#888', marginBottom: 14 }}>
+          Ogni mattina alle 7 prova Stripe, Resend, i certificati dei domini e la chiave dell’AI, con un percorso
+          vero ma innocuo. L’email arriva solo se qualcosa non va; da qui la fai girare <strong>adesso</strong> e
+          l’email arriva comunque, con tutti gli esiti.
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <button onClick={eseguiSentinella} disabled={sentinella === 'corso'}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: sentinella === 'corso' ? '#ccc' : '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 14, fontWeight: 600, cursor: sentinella === 'corso' ? 'default' : 'pointer' }}>
+            <ShieldCheck size={15} strokeWidth={1.5} color="#fff" />
+            {sentinella === 'corso' ? 'Prove in corso…' : 'Fai girare la sentinella adesso'}
+          </button>
+          {sentinella && sentinella !== 'corso' && (
+            <span style={{ fontSize: 13, color: sentinella.ok ? '#2e7d32' : '#c0392b', overflowWrap: 'anywhere' }}>
+              {sentinella.ok
+                ? (sentinella.email?.inviata ? `✓ Email inviata a ${sentinella.email.destinatario}` : '✕ Email non inviata: controlla il destinatario degli allarmi')
+                : `✕ ${sentinella.messaggio}`}
+            </span>
+          )}
+        </div>
+        {sentinella?.prove && (
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #f0f0f0', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 10 }}>
+            {sentinella.prove.map((p, i) => (
+              <div key={i} style={{ fontSize: 13.5, color: '#1a1a2e', overflowWrap: 'anywhere' }}>
+                <span style={{ color: p.esito === 'ok' ? '#2e7d32' : p.esito === 'guasto' ? '#c0392b' : '#6b6b76', fontWeight: 700 }}>
+                  {p.esito === 'ok' ? '✓' : p.esito === 'guasto' ? '✕' : '○'}
+                </span>{' '}
+                <strong>{p.nome}</strong> — {p.dettaglio}
+                {p.cosaFare && <div style={{ color: '#6b6b76', fontSize: 12.5, marginTop: 2, marginLeft: 18 }}>Cosa fare: {p.cosaFare}</div>}
+              </div>
+            ))}
           </div>
         )}
       </div>
