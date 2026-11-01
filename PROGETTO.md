@@ -16,7 +16,7 @@ pagarlo**.
 > dentro GitHub, che è uno degli accessi che descrive: se nessuno può entrare in
 > GitHub, nessuno può leggere queste istruzioni. Va tenuta una copia fuori.
 
-*Aggiornato al 15 ottobre 2026.*
+*Aggiornato al 1° novembre 2026.*
 
 ---
 
@@ -287,7 +287,7 @@ chiedono. Non confonderli: è già costato un rientro.
 
 ## 5. Cosa succede da solo
 
-Nove processi automatici girano su Vercel senza che nessuno li avvii (l'elenco
+Dieci processi automatici girano su Vercel senza che nessuno li avvii (l'elenco
 vero è `client-next/vercel.json`):
 
 | Quando | Cosa fa |
@@ -301,6 +301,7 @@ vero è `client-next/vercel.json`):
 | ogni ora | manda il resoconto per email ai titolari (il lunedì o il 1° del mese, nel loro fuso) — *spento finché non lo accende il proprietario da Impostazioni* |
 | **ogni notte alle 3** | **copia l'intero database su Cloudflare R2** |
 | ogni notte alle 4 | rilegge il voto delle recensioni Google (a cadenza calcolata per restare nel gratuito) |
+| ogni mattina alle 7 (8 con l'ora legale) | **la sentinella dei fornitori**: prova davvero Stripe, Resend, i certificati dei domini e la chiave dell'AI, e scrive solo se qualcosa non va |
 
 Ognuno è protetto da una parola d'ordine (`CRON_SECRET`): senza, chiunque
 potrebbe farli partire.
@@ -311,6 +312,24 @@ loro soglia — e avvisa via email. Serve perché un errore si può intercettare
 **una funzione che smette di essere chiamata non lancia nessun errore**: non
 grida nessuno. La pagina `/admin/diagnostica` (solo per il proprietario) mostra
 lo stato di tutto.
+
+**La sentinella dei fornitori** (dal 1° novembre 2026) copre il terzo tipo di
+guasto: quello che sta **dal lato del fornitore** e non dà errore da noi. È
+successo due volte: il webhook dei rimbalzi di Resend muto per 45 giorni, il
+webhook dei conti Stripe rotto dal 31 agosto per una funzione rinominata. Ogni
+mattina fa una prova vera ma innocua: la chiave Stripe funziona; i due webhook
+Stripe sono registrati, attivi e su `www`, e un evento firmato col nostro
+segreto li attraversa; un evento firmato attraversa il webhook dei rimbalzi; una
+email parte verso il «pozzo» di Resend (un indirizzo che accetta e non
+consegna a nessuno) e la conferma di consegna deve tornare; nessun certificato
+scade entro 14 giorni; la chiave dell'AI risponde (senza spendere). Se una prova
+non passa arriva un'email al destinatario degli allarmi. Dalla pagina
+`/admin/diagnostica` si fa girare a mano, e lì l'email arriva sempre, con
+«[Prova]» nell'oggetto. Il limite onesto: si accorge di un guasto entro un
+giorno, non prima che succeda. Quello che i fornitori **annunciano** con una data
+(una versione dell'API ritirata, un modello spento) non lo vede: per quello è
+previsto un registro delle scadenze e un controllo settimanale, **non ancora
+fatti**.
 
 ---
 
@@ -675,4 +694,4 @@ Restano di pensiero, e non li controlla nessuna macchina: i costi, i piani, il
 
 ---
 
-*Documento di progetto — aggiornato al 15 ottobre 2026.*
+*Documento di progetto — aggiornato al 1° novembre 2026.*

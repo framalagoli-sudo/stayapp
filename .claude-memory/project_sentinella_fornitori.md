@@ -1,14 +1,20 @@
 ---
 name: project-sentinella-fornitori
-description: "27/10: proposta sentinella fornitori (A quotidiana in OltreNova + B agente settimanale). ⛔ A inizio sessione MOSTRARE A FRANCESCO IL TESTO QUI SOTTO ESATTAMENTE COM'È, poi ripartire dalla A."
+description: "Sentinella fornitori: A FATTA e live il 01/11 (cron /api/cron/sentinella, lib/sentinella.js, pulsante in Diagnostica, email arrivata). Resta B (agente settimanale + registro scadenze). Il testo del 27/10 è già stato mostrato: non riproporlo."
 metadata:
   node_type: memory
   type: project
   originSessionId: c69c02d8-2525-4043-b4de-493f6a4d0ef2
-  modified: 2026-10-27T18:12:51.709Z
+  modified: 2026-11-01T11:26:23.030Z
 ---
 
-⛔ **Richiesta esplicita di Francesco (27/10): «quando ripartiamo riportami questa schermata esattamente come è».** A inizio della prossima sessione: incollargli il testo fra le due righe, parola per parola, senza riassumerlo né aggiornarlo. Poi si parte dalla sentinella A (prima l'elenco preciso delle prove e cosa arriva nell'email d'allarme, da approvare). Nessun codice scritto il 27/10.
+✅ **01/11: testo mostrato, sentinella A costruita e provata in produzione** (Francesco ha ricevuto l'email di prova). 8 prove: chiave Stripe; i 2 webhook Stripe registrati, attivi, su www, più un evento firmato `oltrenova.sentinella.prova` che attraversa la route (webhook-account si ferma dopo la firma su quel tipo); webhook rimbalzi Resend firmato; invio al pozzo `delivered+sentinella@resend.dev`, la cui consegna torna dal webhook come battito `consegna-posta` (soglia 30h; spento finché il webhook non è iscritto a email.delivered); certificati dei domini attivi < 14 giorni; chiave AI con `chiaveAIFunziona` in ai-consumi (nessun token). Email solo se una prova non passa; dalla Diagnostica parte subito, con [Prova] e tutti gli esiti.
+⚠️ La chiave Resend su Vercel è solo invio: lo stato del webhook su Resend non si legge. Consigliato a Francesco di NON mettere una chiave piena: la disattivazione la scopre il battito della consegna.
+Prossimo: la B (agente settimanale + registro scadenze in PROGETTO.md).
+
+**B — stato al 01/11 sera: NON iniziata, aspetta una scelta di Francesco.** Proposta data: (1) **routine Claude in cloud** settimanale il lunedì (consigliata: legge registro, avvisi GitHub/Dependabot del repo e changelog dei fornitori, prepara la correzione in un ramo, deploy suo; costo sulle routine del suo account Claude, niente credito AI dei clienti) oppure (2) cron dentro OltreNova che chiama l'AI (più fragile, non prepara codice). Primo pezzo comunque: **registro delle scadenze in PROGETTO.md**, compilato da me leggendo codice e chiavi — versione API Stripe (Dependabot stripe-23 PR #62 aperta), versioni API Meta/Embedded Signup, modelli AI usati in ai-consumi, rinnovi dei domini. Poi portargli la configurazione della routine da approvare prima di accenderla. Non scrivere codice B prima del suo sì.
+
+(storico) ⛔ **Richiesta esplicita di Francesco (27/10): «quando ripartiamo riportami questa schermata esattamente come è».** A inizio della prossima sessione: incollargli il testo fra le due righe, parola per parola, senza riassumerlo né aggiornarlo. Poi si parte dalla sentinella A (prima l'elenco preciso delle prove e cosa arriva nell'email d'allarme, da approvare). Nessun codice scritto il 27/10.
 
 **Why:** il webhook dei conti Stripe rotto in silenzio dal 31/08 e gli avvisi Dependabot critici aperti dal 25/10 senza che nessuno se ne accorgesse. Lega con [[reference-guasti-silenziosi]] e [[todo-prossima-sessione]].
 

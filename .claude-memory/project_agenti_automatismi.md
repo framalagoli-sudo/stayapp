@@ -27,3 +27,7 @@ metadata:
 **How to apply:** ⚠️ in tensione con «non sui social» del 14/10 ([[project_positioning_target]]): detto a Francesco. Niente è deciso; prima di costruire, una scelta sua e una voce in `STRATEGIA.md`. Lega con [[project_agente_vocale]] (le operazioni in `lib/` sono la base comune).
 
 **In sospeso dallo stesso giorno:** il punto 5 della lista del 23/10 — contenuto di **Halloween (31/10)** nel Club, testo di Francesco, bozza AI dalla regia se la vuole. Rimandato da lui («facciamo altro, tienilo in memoria»).
+
+## 26/10 — misura prima di costruire il risponditore (Francesco aveva detto «ok vai»)
+In produzione, tutte le aziende: **3 contatti da messaggio del sito in 5 mesi** (06/06, 08/07, 21/09) + 1 nel registro (04/10); **0 richieste dall'app del QR, mai** (`requests` vuota). Il volume vero è sugli eventi: registro 98 prenotazioni evento, **56 liste d'attesa**, 45 moduli. Le domande dei clienti arrivano da WhatsApp/telefono/Instagram, che non riceviamo. → Fermato prima di scrivere codice e riportato a Francesco. Candidato con traffico vero: lista d'attesa che si muove da sola quando un posto si libera (oggi la promozione è solo a mano, `eventi/bookings/[bookingId]`).
+⚠️ Visto di passaggio: `POST /api/requests` è pubblica senza rateLimit né Turnstile e accetta qualunque `property_id` (manda email al titolare di quell'entità). Da sistemare a parte.
