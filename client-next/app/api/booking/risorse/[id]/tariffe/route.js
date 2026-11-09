@@ -138,7 +138,13 @@ export async function GET(request, props) {
     const { response } = await requireRecordAccess(request, 'risorse', params.id)
     if (response) return response
     const { searchParams } = new URL(request.url)
-    const dal = searchParams.get('dal'), al = searchParams.get('al')
+    let dal = searchParams.get('dal'), al = searchParams.get('al')
+    // Senza date: da ieri a un anno avanti. Ieri, perché in qualunque fuso del
+    // mondo «oggi» è già incluso; un anno, perché è il listino che serve.
+    if (!dal && !al) {
+      dal = giornoDopo(new Date().toISOString().slice(0, 10), -1)   // regola-ok: un giorno di margine copre ogni fuso
+      al = giornoDopo(dal, 366)
+    }
     const errore = periodoValido(dal, al)
     if (errore) return Response.json({ error: errore }, { status: 400 })
     return Response.json({ giorni: await righeEsistenti(params.id, dal, al) })

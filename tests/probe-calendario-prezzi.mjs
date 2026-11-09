@@ -145,6 +145,9 @@ try {
   const finto = await fb(`/api/booking/risorse/00000000-0000-4000-8000-000000000000/tariffe?dal=${VEN}&al=${LUN}`)
   ok(finto.status === bLegge.status && (await finto.text()) === (await fb(`/api/booking/risorse/${R}/tariffe?dal=${VEN}&al=${LUN}`).then(x => x.text())),
     'la risposta a un id inventato è identica a quella su una risorsa altrui')
+  const tutto = await fa(`/api/booking/risorse/${R}/tariffe`)
+  const tuttoJ = await tutto.json()
+  ok(tutto.ok && Array.isArray(tuttoJ.giorni) && tuttoJ.giorni.length > 0, `il titolare legge il suo calendario anche senza date (HTTP ${tutto.status}, ${tuttoJ.giorni?.length} giorni)`)
   const senza = await fetch(`${TEST_URL}/api/booking/risorse/${R}/tariffe?dal=${VEN}&al=${LUN}`)
   ok(senza.status === 401, `senza login niente (HTTP ${senza.status})`)
   const { data: dopoB } = await admin.from('risorse_tariffe').select('prezzo').eq('risorsa_id', R).eq('data', VEN).maybeSingle()
