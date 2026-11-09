@@ -142,7 +142,8 @@ export async function GET(request, props) {
     // Senza date: da ieri a un anno avanti. Ieri, perché in qualunque fuso del
     // mondo «oggi» è già incluso; un anno, perché è il listino che serve.
     if (!dal && !al) {
-      dal = giornoDopo(new Date().toISOString().slice(0, 10), -1)   // regola-ok: un giorno di margine copre ogni fuso
+      // regola-ok: si parte da ieri in UTC, e un giorno di margine copre ogni fuso.
+      dal = giornoDopo(new Date().toISOString().slice(0, 10), -1)
       al = giornoDopo(dal, 366)
     }
     const errore = periodoValido(dal, al)
