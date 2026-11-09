@@ -49,7 +49,7 @@ const TABLES = [
   // clienti e richieste
   'contatti', 'contatti_attivita', 'requests', 'messages', 'demo_requests',
   // moduli
-  'eventi', 'event_bookings', 'risorse', 'risorse_promozioni', 'prenotazioni',
+  'eventi', 'event_bookings', 'risorse', 'risorse_promozioni', 'risorse_tariffe', 'prenotazioni',
   'articoli', 'blog_categories', 'newsletters', 'newsletter_destinatari', 'newsletter_clic',
   'vetrine', 'vetrina_elementi',
   'form_builder', 'form_submissions', 'preventivi', 'recensioni',

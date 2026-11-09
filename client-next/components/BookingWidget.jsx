@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 // Sicuro dal browser: `booking-giornaliero` non importa niente (nemmeno
 // `supabaseAdmin`), ed è scritto in cima a quel file.
-import { limiteInUnita, nomeUnita } from '@/lib/booking-giornaliero'
+import { limiteInUnita, nomeUnita, contaGiorni } from '@/lib/booking-giornaliero'
 import SpuntaPromozioni from '@/components/guest/SpuntaPromozioni'
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').trim()
@@ -270,7 +270,13 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
       {step === 'periodo' && (
         <div>
           <div style={titleStyle}>
-            {!selected.data ? 'Quando arrivi?' : !selected.data_fine ? 'E quando riparti?' : 'Il tuo periodo'}
+            {/* Le parole seguono la risorsa: un furgone si ritira e si
+                riconsegna, in una casa si arriva e si riparte. */}
+            {!selected.data
+              ? (contaGiorni(selected.risorsa) ? 'Quando lo ritiri?' : 'Quando arrivi?')
+              : !selected.data_fine
+                ? (contaGiorni(selected.risorsa) ? 'E quando lo riconsegni?' : 'E quando riparti?')
+                : 'Il tuo periodo'}
           </div>
 
           {/* Il calendario al posto di due campi data: chi prenota vuole vedere
@@ -278,6 +284,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
           <CalendarioPubblico
             risorsaId={selected.risorsa.id}
             primaryColor={primaryColor}
+            valuta={selected.risorsa?.valuta}
             dal={selected.data} al={selected.data_fine}
             onScegli={(giorno) => {
               // Primo clic sceglie l'arrivo; il secondo la partenza. Cliccando
@@ -295,8 +302,8 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
 
           {selected.data && (
             <div style={{ fontSize: 13, color: '#666', marginTop: 12 }}>
-              Arrivo <strong>{formatData(selected.data)}</strong>
-              {selected.data_fine && <> · partenza <strong>{formatData(selected.data_fine)}</strong></>}
+              {contaGiorni(selected.risorsa) ? 'Ritiro' : 'Arrivo'} <strong>{formatData(selected.data)}</strong>
+              {selected.data_fine && <> · {contaGiorni(selected.risorsa) ? 'riconsegna' : 'partenza'} <strong>{formatData(selected.data_fine)}</strong></>}
               {' '}
               <button onClick={() => { setSelected(s => ({ ...s, data: '', data_fine: '' })); setPeriodo(null) }}
                 style={{ background: 'none', border: 'none', color: primaryColor, cursor: 'pointer', fontSize: 13, textDecoration: 'underline', padding: 0 }}>
@@ -323,8 +330,21 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
                     di €270: il conto era giusto e il testo no. */}
                 <div style={{ fontSize: 14, color: '#555' }}>
                   {unitaLeggibili(periodo)}
-                  {periodo.prezzo > 0 && <> · {simboloValuta(selected.risorsa?.valuta)}{periodo.prezzo} {aUnita(periodo)}</>}
+                  {/* ⚠️ Con il calendario dei prezzi i giorni possono costare
+                      diverso: «€120 al giorno» sopra un totale fatto di 120 e
+                      150 sarebbe un conto che non torna. Il prezzo unitario si
+                      scrive solo se è uguale per tutti i giorni. */}
+                  {prezzoUnico(periodo) > 0 && <> · {simboloValuta(selected.risorsa?.valuta)}{prezzoUnico(periodo)} {aUnita(periodo)}</>}
                 </div>
+                {prezzoUnico(periodo) == null && Array.isArray(periodo.giorni) && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+                    {periodo.giorni.map(g => (
+                      <span key={g.data} style={{ fontSize: 11.5, color: '#555', background: '#fff', border: '1px solid #e6e8ee', borderRadius: 6, padding: '2px 6px' }}>
+                        {formatData(g.data, true)} {simboloValuta(selected.risorsa?.valuta)}{g.prezzo}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 {periodo.totale > 0 && (
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
                     <div style={{ fontSize: 20, fontWeight: 700, color: primaryColor }}>€{periodo.totale}</div>
@@ -687,6 +707,14 @@ function unitaPrezzo(r) {
 // «3 giorni», «2 notti»: il numero e il nome arrivano **insieme** dal server.
 // Il ripiego sulle notti serve solo se una versione vecchia della risposta è
 // ancora in cache — non deve far sparire la riga.
+// Il prezzo di un giorno, se è uguale per tutti i giorni del periodo; null se
+// cambia (calendario dei prezzi). Senza dettaglio vale il prezzo base.
+function prezzoUnico(p) {
+  if (!Array.isArray(p?.giorni) || !p.giorni.length) return p?.prezzo
+  const diversi = new Set(p.giorni.map(g => Number(g.prezzo)))
+  return diversi.size === 1 ? p.giorni[0].prezzo : null
+}
+
 function unitaLeggibili(p) {
   const n = p?.unita ?? p?.notti ?? 0
   const nome = p?.unita_nome === 'giorni' ? 'giorn' : 'nott'
@@ -724,12 +752,20 @@ const titleStyle  = { fontSize: 17, fontWeight: 700, marginBottom: 16, color: '#
 const NOMI_MESI = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
 const SIGLE_GIORNI = ['L', 'M', 'M', 'G', 'V', 'S', 'D']
 
-function CalendarioPubblico({ risorsaId, primaryColor, dal, al, onScegli }) {
+function CalendarioPubblico({ risorsaId, primaryColor, dal, al, onScegli, valuta }) {
   const adesso = new Date()
   const [anno, setAnno] = useState(adesso.getFullYear())
   const [mese, setMese] = useState(adesso.getMonth())
   const [occupati, setOccupati] = useState([])
   const [offerte, setOfferte] = useState({})
+  // Il calendario dei prezzi (migration 144): i giorni col prezzo diverso dal
+  // base, e quelli in cui non si inizia o non si finisce. Si mostrano qui,
+  // prima di scegliere: scoprirli da un rifiuto dopo il secondo clic fa
+  // perdere la prenotazione.
+  const [prezzi, setPrezzi] = useState({})
+  const [base, setBase] = useState(0)
+  const [noInizio, setNoInizio] = useState([])
+  const [noFine, setNoFine] = useState([])
   const [carico, setCarico] = useState(true)
 
   // ⚠️ Le date si compongono dai campi locali: `toISOString()` passa per UTC e a
@@ -741,7 +777,12 @@ function CalendarioPubblico({ risorsaId, primaryColor, dal, al, onScegli }) {
     let vivo = true
     setCarico(true)
     publicFetch(`/api/booking/public/disponibilita/${risorsaId}?mese=${anno}-${String(mese + 1).padStart(2, '0')}`)
-      .then(d => { if (vivo) { setOccupati(d.occupati || []); setOfferte(d.offerte || {}) } })
+      .then(d => {
+        if (!vivo) return
+        setOccupati(d.occupati || []); setOfferte(d.offerte || {})
+        setPrezzi(d.prezzi || {}); setBase(Number(d.prezzo) || 0)
+        setNoInizio(d.no_inizio || []); setNoFine(d.no_fine || [])
+      })
       .finally(() => { if (vivo) setCarico(false) })
     return () => { vivo = false }
   }, [risorsaId, anno, mese])
@@ -749,6 +790,7 @@ function CalendarioPubblico({ risorsaId, primaryColor, dal, al, onScegli }) {
   const primo = new Date(anno, mese, 1).getDay()
   const quanti = new Date(anno, mese + 1, 0).getDate()
   const celle = [...Array(primo === 0 ? 6 : primo - 1).fill(null), ...Array.from({ length: quanti }, (_, i) => i + 1)]
+  const conPrezzi = Object.keys(prezzi).length > 0
 
   // Non si può tornare prima del mese corrente: i giorni passati non si prenotano.
   const puoIndietro = anno > adesso.getFullYear() || (anno === adesso.getFullYear() && mese > adesso.getMonth())
@@ -776,7 +818,11 @@ function CalendarioPubblico({ risorsaId, primaryColor, dal, al, onScegli }) {
           const giorno = iso(anno, mese, g)
           const passato = giorno < oggiIso
           const preso = occupati.includes(giorno)
-          const bloccato = passato || preso
+          // Il clic che si sta per fare sceglie la fine solo se l'inizio c'è e
+          // il giorno viene dopo; altrimenti ricomincia, e sceglie l'inizio.
+          const sceglieFine = dal && !al && giorno > dal
+          const vietato = sceglieFine ? noFine.includes(giorno) : noInizio.includes(giorno)
+          const bloccato = passato || preso || vietato
           const eInizio = giorno === dal
           const eFine = giorno === al
           const dentro = dal && al && giorno > dal && giorno < al
@@ -789,7 +835,7 @@ function CalendarioPubblico({ risorsaId, primaryColor, dal, al, onScegli }) {
           return (
             <button key={giorno} data-giorno={giorno} disabled={bloccato}
               onClick={() => onScegli(giorno)}
-              title={preso ? 'Non disponibile' : off ? off.nome : undefined}
+              title={preso ? 'Non disponibile' : vietato ? (sceglieFine ? 'In questo giorno non si può finire' : 'In questo giorno non si può iniziare') : off ? off.nome : undefined}
               style={{
                 position: 'relative',
                 aspectRatio: '1', border: 'none', borderRadius: 8, fontSize: 13, padding: 0,
@@ -800,8 +846,16 @@ function CalendarioPubblico({ risorsaId, primaryColor, dal, al, onScegli }) {
                 // Il giorno occupato si distingue anche senza colore: uno su
                 // dodici uomini non separa il verde dal rosso.
                 textDecoration: preso ? 'line-through' : 'none',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', lineHeight: 1.1,
               }}>
               {g}
+              {/* Il prezzo del giorno, solo se la risorsa ha un calendario dei
+                  prezzi: con un prezzo unico ripeterlo su ogni casella è rumore. */}
+              {conPrezzi && !preso && !passato && (
+                <span style={{ fontSize: 9, fontWeight: prezzi[giorno] != null ? 700 : 400, opacity: 0.85 }}>
+                  {simboloValuta(valuta)}{prezzi[giorno] ?? base}
+                </span>
+              )}
               {off && (
                 <span aria-hidden="true" style={{
                   position: 'absolute', bottom: 3, left: '50%', transform: 'translateX(-50%)',

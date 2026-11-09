@@ -4,11 +4,13 @@ description: "Da dove riprendere — 01/11 sera: sentinella A LIVE; Francesco de
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-11-01T11:26:46.632Z
+  modified: 2026-11-09T17:35:07.087Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
+
+⭐ **09/11 — NUOVO LAVORO IN CORSO: tariffe/minimi/promozioni sulle risorse per Automax** → [[project_tariffe_risorse]]. Analisi data a Francesco, aspetto le sue 4 risposte prima di costruire. Il resto qui sotto (sentinella B, Resend, ecc.) resta aperto e in attesa.
 
 ⭐ **01/11 sera — SESSIONE CHIUSA da Francesco** («chiudiamo la sessione e tieni in memoria tutto… ripartiamo da lì»). Cosa è stato fatto → [[project-session-2026-10-31-11-01]] · CLAUDE.md note 90–91.
 **Ripartire così:**

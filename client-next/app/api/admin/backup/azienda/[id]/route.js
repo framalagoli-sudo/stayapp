@@ -76,6 +76,7 @@ export async function GET(request, { params }) {
   await dump('page_views', () => supabaseAdmin.from('page_views').select('*').in('entity_id', entityIds.length ? entityIds : ['00000000-0000-0000-0000-000000000000']))
   await dump('event_bookings', () => supabaseAdmin.from('event_bookings').select('*').in('event_id', eventiIds.length ? eventiIds : ['00000000-0000-0000-0000-000000000000']))
   await dump('risorse_promozioni', () => supabaseAdmin.from('risorse_promozioni').select('*').in('risorsa_id', risorseIds.length ? risorseIds : ['00000000-0000-0000-0000-000000000000']))
+  await dump('risorse_tariffe', () => supabaseAdmin.from('risorse_tariffe').select('*').in('risorsa_id', risorseIds.length ? risorseIds : ['00000000-0000-0000-0000-000000000000']))
 
   const exportData = {
     _meta: {

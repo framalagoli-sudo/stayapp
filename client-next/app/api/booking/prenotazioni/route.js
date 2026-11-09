@@ -1,7 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
-import { verificaPeriodo, totaleGiornaliero } from '@/lib/booking-giornaliero'
-import { contoDelPeriodo } from '@/lib/offerte-risorsa'
+import { contoGiornaliero } from '@/lib/conto-giornaliero'
 import { confermaPostiPrenotazione } from '@/lib/capienza'
 import { registraContatto } from '@/lib/crm'
 import { after } from 'next/server'
@@ -87,24 +86,20 @@ export async function POST(request) {
     let importo = Number(risorsa.prezzo) || 0
     const persone = Math.max(1, parseInt(n_persone) || 1)
     let offertaApplicata = null
+    let dettaglio = null
 
     if (risorsa.modalita === 'giornaliero') {
       if (!data_fine) return Response.json({ error: 'Serve anche la data di fine' }, { status: 400 })
-      const { data: occupate } = await supabaseAdmin.from('prenotazioni')
-        .select('data, data_fine').eq('risorsa_id', risorsa_id)
-        .in('stato', ['confermata', 'in_attesa']).gte('data_fine', data)
-      const esito = verificaPeriodo(risorsa, data, data_fine, occupate || [])
-      if (!esito.ok) return Response.json({ error: esito.motivo }, { status: 409 })
+      // ⚠️ Anche la prenotazione presa al telefono passa dallo stesso conto del
+      // sito — calendario dei prezzi e offerte compresi. Se il titolare segna a
+      // mano un noleggio che cade nel ponte, il prezzo dev'essere quello del
+      // ponte: due strade per la stessa risorsa che danno due totali diversi
+      // diventano una discussione alla consegna.
+      const conto = await contoGiornaliero(risorsa, data, data_fine)
+      if (!conto.ok) return Response.json({ error: conto.motivo }, { status: 409 })
       fine = data_fine
-      // ⚠️ Anche la prenotazione presa al telefono passa dalle offerte. Se il
-      // titolare segna a mano un noleggio che cade nel ponte, il prezzo dev'essere
-      // quello del ponte: due strade per la stessa risorsa che danno due totali
-      // diversi diventano una discussione alla consegna.
-      const { data: offerte } = await supabaseAdmin.from('risorse_promozioni')
-        .select('*').eq('risorsa_id', risorsa_id).eq('attiva', true)
-      const conto = contoDelPeriodo(risorsa, data, data_fine, offerte || [],
-        totaleGiornaliero(risorsa, data, data_fine))
       importo = conto.totale
+      dettaglio = conto.dettaglio
       offertaApplicata = conto.offerta?.id || null
     } else {
       if (risorsa.modalita === 'slot' && ora_inizio) {
@@ -130,6 +125,7 @@ export async function POST(request) {
       stato: 'confermata',
       prezzo_unitario: risorsa.prezzo, importo_totale: importo,
       promozione_id: offertaApplicata,
+      dettaglio_prezzo: dettaglio,
     }).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
 

@@ -55,9 +55,94 @@ export function limiteInNotti(quanteUnita, risorsa) {
   return contaGiorni(risorsa) ? Math.max(1, n - 1) : n
 }
 
-export function totaleGiornaliero(risorsa, dal, al) {
+// ─── Il calendario dei prezzi ────────────────────────────────────────────────
+//
+// Come nei gestionali alberghieri, **la verità è il giorno**: ogni giorno può
+// avere il suo prezzo e le sue restrizioni (`risorse_tariffe`, migration 144).
+// La tabella è sparsa — contiene solo i giorni diversi dal prezzo base — quindi
+// una risorsa senza righe si comporta esattamente come prima.
+
+// Le righe del calendario come mappa giorno → riga. Solo i giorni interi: le
+// fasce orarie appartengono agli slot e qui non hanno senso.
+export function mappaTariffe(righe) {
+  if (!righe) return {}
+  if (!Array.isArray(righe)) return righe     // è già una mappa
+  const m = {}
+  for (const r of righe) if (r?.data && !r.ora_inizio) m[r.data] = r
+  return m
+}
+
+// I giorni che si pagano, uno per uno. Devono essere **tanti quanti dice
+// `unitaDaPagare`**, o il totale giorno per giorno e quello di sempre
+// divergerebbero proprio sulle risorse senza calendario.
+//   · chi conta il giorno di riconsegna (un furgone): dal primo all'ultimo
+//     compreso — sabato e domenica sono due giorni;
+//   · chi conta le notti (una casa): dal primo al giorno prima dell'uscita, e
+//     almeno uno.
+export function giorniPagati(risorsa, dal, al) {
+  if (!dal || !al || al < dal) return []
+  const ultimo = contaGiorni(risorsa) ? al : (al > dal ? al : giornoDopo(dal))
+  const giorni = []
+  for (let g = dal; contaGiorni(risorsa) ? g <= ultimo : g < ultimo; g = giornoDopo(g)) {
+    giorni.push(g)
+    if (giorni.length > 400) break     // un periodo assurdo non blocca il server
+  }
+  return giorni
+}
+
+export function prezzoDelGiorno(risorsa, tariffe, giorno) {
+  const riga = mappaTariffe(tariffe)[giorno]
+  const p = riga?.prezzo
+  return p != null && Number.isFinite(Number(p)) ? Number(p) : (Number(risorsa?.prezzo) || 0)
+}
+
+// Il conto giorno per giorno: il totale e la fotografia di come ci si arriva,
+// che finisce sulla prenotazione (`dettaglio_prezzo`). Con un prezzo che cambia
+// ogni giorno «prezzo × giorni» non spiega più niente.
+export function contoGiornoPerGiorno(risorsa, dal, al, tariffe) {
+  const m = mappaTariffe(tariffe)
+  const giorni = giorniPagati(risorsa, dal, al).map(data => ({ data, prezzo: prezzoDelGiorno(risorsa, m, data) }))
+  const totale = Math.round(giorni.reduce((s, g) => s + g.prezzo, 0) * 100) / 100
+  return { totale, giorni }
+}
+
+export function totaleGiornaliero(risorsa, dal, al, tariffe) {
+  return contoGiornoPerGiorno(risorsa, dal, al, tariffe).totale
+}
+
+// Il minimo e il massimo valgono per il giorno in cui si **inizia**, come nei
+// gestionali alberghieri (decisione di Francesco del 09/11): chi parte il 10
+// agosto segue le regole del 10 agosto. Un giorno senza regola eredita quella
+// della risorsa.
+export function limitiDelPeriodo(risorsa, tariffe, dal) {
   const conf = risorsa?.disponibilita || {}
-  return unitaDaPagare(dal, al, !!conf.conta_giorno_uscita) * (Number(risorsa?.prezzo) || 0)
+  const riga = mappaTariffe(tariffe)[dal]
+  const minimo = riga?.minimo_notti != null ? Number(riga.minimo_notti) : (Number(conf.minimo_notti) || 1)
+  const massimo = riga?.massimo_notti != null ? Number(riga.massimo_notti) : (Number(conf.massimo_notti) || 0)
+  return { minimo: Math.max(minimo, 1), massimo }
+}
+
+function dataBreve(g) {
+  const [, m, d] = g.split('-')
+  return `${Number(d)}/${Number(m)}`
+}
+
+// Le restrizioni del calendario: in quel giorno non si inizia, non si
+// riconsegna, non si vende. Torna il motivo, con la data, o null.
+//
+// ⚠️ «Non vendibile» si guarda su tutti i giorni in cui la risorsa è fuori,
+// non solo su quelli pagati: per un furgone coincidono, per una casa il giorno
+// dell'uscita non è occupato e resta vendibile a chi entra.
+export function restrizioneCalendario(risorsa, tariffe, dal, al) {
+  const m = mappaTariffe(tariffe)
+  if (m[dal]?.chiuso_arrivo)
+    return `Il ${dataBreve(dal)} non si può ${contaGiorni(risorsa) ? 'ritirare' : 'arrivare'}. Prova con un'altra data di inizio.`
+  if (m[al]?.chiuso_partenza)
+    return `Il ${dataBreve(al)} non si può ${contaGiorni(risorsa) ? 'riconsegnare' : 'partire'}. Prova con un'altra data di fine.`
+  for (const g of giorniPagati(risorsa, dal, al)) {
+    if (m[g]?.non_vendibile) return `Il ${dataBreve(g)} non è disponibile.`
+  }
+  return null
 }
 
 // Due periodi si toccano?
@@ -138,7 +223,9 @@ export function periodoBloccato(blocchi, dal, al) {
 
 // Il periodo si può prenotare? Torna il motivo quando non si può, perché
 // «non disponibile» non dice a nessuno cosa cambiare.
-export function verificaPeriodo(risorsa, dal, al, prenotazioni = []) {
+// `tariffe` è il calendario dei prezzi (righe o mappa): facoltativo, e senza
+// tutto funziona come prima.
+export function verificaPeriodo(risorsa, dal, al, prenotazioni = [], tariffe = null) {
   if (!dal || !al) return { ok: false, motivo: 'Scegli la data di inizio e quella di fine.' }
   if (al < dal) return { ok: false, motivo: 'La data di fine viene prima di quella di inizio.' }
 
@@ -148,12 +235,11 @@ export function verificaPeriodo(risorsa, dal, al, prenotazioni = []) {
   // si tocca. Cambia solo come si raccontano a chi legge: chi noleggia un
   // furgone ragiona in giorni, e «il periodo minimo è di 2 notti» non gli dice
   // niente.
-  const minimo = Number(conf.minimo_notti) || 1
+  const { minimo, massimo } = limitiDelPeriodo(risorsa, tariffe, dal)
   if (n < minimo) {
     const q = limiteInUnita(minimo, risorsa)
     return { ok: false, motivo: `Il periodo minimo è di ${q} ${nomeUnita(risorsa, q)}.` }
   }
-  const massimo = Number(conf.massimo_notti) || 0
   if (massimo && n > massimo) {
     const q = limiteInUnita(massimo, risorsa)
     return { ok: false, motivo: `Il periodo massimo è di ${q} ${nomeUnita(risorsa, q)}.` }
@@ -168,8 +254,12 @@ export function verificaPeriodo(risorsa, dal, al, prenotazioni = []) {
   if (periodoBloccato(risorsa?.blocchi, dal, al))
     return { ok: false, motivo: 'In quel periodo siamo chiusi.' }
 
+  const restrizione = restrizioneCalendario(risorsa, tariffe, dal, al)
+  if (restrizione) return { ok: false, motivo: restrizione }
+
   const libere = unitaLibere(risorsa, dal, al, prenotazioni)
   if (libere <= 0) return { ok: false, motivo: 'In quel periodo è già tutto occupato.' }
 
-  return { ok: true, libere, notti: n, totale: totaleGiornaliero(risorsa, dal, al) }
+  const conto = contoGiornoPerGiorno(risorsa, dal, al, tariffe)
+  return { ok: true, libere, notti: n, totale: conto.totale, giorni: conto.giorni }
 }

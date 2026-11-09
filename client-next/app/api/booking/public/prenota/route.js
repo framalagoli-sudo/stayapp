@@ -1,8 +1,7 @@
 ﻿import { after } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
-import { verificaPeriodo, totaleGiornaliero } from '@/lib/booking-giornaliero'
-import { contoDelPeriodo } from '@/lib/offerte-risorsa'
+import { contoGiornaliero } from '@/lib/conto-giornaliero'
 import { confermaPostiPrenotazione } from '@/lib/capienza'
 import { creaCheckout } from '@/lib/checkout'
 import { logError } from '@/lib/observability'
@@ -79,6 +78,7 @@ export async function POST(request) {
     const persone = Math.max(1, parseInt(n_persone) || 1)
     let importo_totale = prezzo_unitario * persone
     let fine = null
+    let dettaglio_prezzo = null
 
     // A giornate il totale non dipende da quante persone ma da quante notti: una
     // casa costa uguale che ci dormano in due o in quattro. Il conto lo rifà il
@@ -88,24 +88,15 @@ export async function POST(request) {
       if (!data_fine || !/^\d{4}-\d{2}-\d{2}$/.test(data_fine))
         return Response.json({ error: 'Serve anche la data di fine' }, { status: 400 })
 
-      const { data: occupate } = await supabaseAdmin.from('prenotazioni')
-        .select('data, data_fine').eq('risorsa_id', risorsa_id)
-        .in('stato', ['confermata', 'in_attesa']).gte('data_fine', data)
-
-      // Le regole del periodo (minimo, massimo, giorni d'arrivo) valgono qui,
-      // non nel browser: una pagina si aggira, questa route no.
-      const esito = verificaPeriodo(risorsa, data, data_fine, occupate || [])
-      if (!esito.ok) return Response.json({ error: esito.motivo }, { status: 409 })
+      // Le regole del periodo (minimo, massimo, giorni d'arrivo, calendario)
+      // valgono qui, non nel browser: una pagina si aggira, questa route no.
+      // ⛔ E l'offerta la sceglie il server, non il client (`contoGiornaliero`).
+      const conto = await contoGiornaliero(risorsa, data, data_fine)
+      if (!conto.ok) return Response.json({ error: conto.motivo }, { status: 409 })
 
       fine = data_fine
-      // ⛔ Qui l'offerta non la sceglie il client: la sceglie il server fra
-      // quelle che valgono davvero per queste date. Fidarsi dell'id proposto
-      // significherebbe far decidere lo sconto a chi paga.
-      const { data: offerte } = await supabaseAdmin.from('risorse_promozioni')
-        .select('*').eq('risorsa_id', risorsa_id).eq('attiva', true)
-      const conto = contoDelPeriodo(risorsa, data, data_fine, offerte || [],
-        totaleGiornaliero(risorsa, data, data_fine))
       importo_totale = conto.totale
+      dettaglio_prezzo = conto.dettaglio
       offertaScelta = conto.offerta ? { id: conto.offerta.id } : null
     }
 
@@ -145,6 +136,8 @@ export async function POST(request) {
       // client aveva proposto: la riga deve raccontare il prezzo che è stato
       // fatto, altrimenti mesi dopo nessuno sa più perché si è pagato quello.
       promozione_id: offertaScelta?.id || null,
+      // Il conto giorno per giorno com'era adesso (solo a giornate).
+      dettaglio_prezzo,
     }
 
     const { data: inserita, error: pe } = await supabaseAdmin.from('prenotazioni').insert(payload).select().single()

@@ -9,6 +9,7 @@
 
 ## Da leggere per primi
 - [TODO prossima sessione](todo_prossima_sessione.md) — LEGGERE PER PRIMO
+- [Tariffe, minimi e promozioni sulle risorse](project_tariffe_risorse.md) — 09/11 richiesta Automax, analisi data, aspetta 4 risposte
 - [Sentinella fornitori](project_sentinella_fornitori.md) — A live dal 01/11 (prove ogni mattina, email solo se guasto); B aspetta la scelta di Francesco (routine cloud consigliata)
 - [A ogni chiusura: aggiornare TUTTI i file di progetto](feedback_chiusura_sessione.md) — aprirli, non supporli
 - [Posizionamento target](project_positioning_target.md) — 14/10: ~80 €/mese, 200 clienti, «il cliente migliore sono io», no clone GHL, no social

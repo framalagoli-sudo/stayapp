@@ -34,7 +34,7 @@ const TABELLE = ['entita', 'offerte', 'profiles', 'aziende', 'contatti', 'reques
   'vetrina_elementi', 'domini', 'whatsapp_account', 'whatsapp_campagna', 'whatsapp_messaggio',
   'messages', 'page_views', 'demo_requests', 'site_snapshots', 'landing_seo', 'audit_log',
   'rate_limits', 'cron_battiti', 'platform_config', 'risorse', 'collegamenti', 'blog_categories',
-  'idee_editoriali', 'hashtag_sets', 'risorse_promozioni', 'blog_automazioni']
+  'idee_editoriali', 'hashtag_sets', 'risorse_promozioni', 'risorse_tariffe', 'blog_automazioni']
 
 // Colonne che non devono uscire dal database senza una sessione, mai.
 const RISERVATE = ['wifi_password', 'wifi_name', 'privacy_data']

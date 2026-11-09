@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { verificaPeriodo, unitaLibereNelGiorno, giornoDopo, totaleGiornaliero, notti, unitaDaPagare, periodoBloccato } from '@/lib/booking-giornaliero'
+import { unitaLibereNelGiorno, giornoDopo, totaleGiornaliero, notti, unitaDaPagare, periodoBloccato } from '@/lib/booking-giornaliero'
+import { contoGiornaliero, leggiTariffe } from '@/lib/conto-giornaliero'
 import { contoDelPeriodo, offerteDelGiorno, offertaQuasi } from '@/lib/offerte-risorsa'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -163,6 +164,12 @@ export async function GET(request, props) {
         .lte('data', ultimo)
         .or(`data_fine.gte.${primo},and(data_fine.is.null,data.gte.${primo})`)
 
+      // Il calendario dei prezzi del mese (solo a giornate). Escono soltanto
+      // prezzo e restrizioni del giorno: sono quello che il visitatore deve
+      // sapere per scegliere, come su qualunque sito di prenotazione.
+      const tariffe = ris.modalita === 'giornaliero' ? await leggiTariffe(risorsaId, primo, ultimo) : {}
+      const prezzi = {}, noInizio = [], noFine = [], minimi = {}
+
       const occupati = []
       // ⛔ «Il cliente ha creato un'offerta, ma dove si vede?» — da nessuna
       // parte. Qui i giorni che ne hanno una escono col nome e il colore, così
@@ -180,13 +187,22 @@ export async function GET(request, props) {
         // `b.data >= dal && b.data < al`, che con i due estremi uguali è falso
         // per qualsiasi data. I giorni che il cliente segnava come chiusi
         // restavano verdi sul calendario — stessa radice, danno diverso.
-        const chiuso = periodoBloccato(ris.blocchi, giorno, giornoDopo(giorno))
+        const t = tariffe[giorno]
+        const chiuso = periodoBloccato(ris.blocchi, giorno, giornoDopo(giorno)) || !!t?.non_vendibile
         if (chiuso || unitaLibereNelGiorno(ris, giorno, prese || []) <= 0) occupati.push(giorno)
+        if (t) {
+          if (t.prezzo != null) prezzi[giorno] = Number(t.prezzo)
+          if (t.chiuso_arrivo) noInizio.push(giorno)
+          if (t.chiuso_partenza) noFine.push(giorno)
+          if (t.minimo_notti != null) minimi[giorno] = Number(t.minimo_notti)
+        }
       }
       return Response.json({
         risorsa_id: risorsaId, mese, modalita: ris.modalita,
         prezzo: ris.prezzo, minimo_notti: Number(ris.disponibilita?.minimo_notti) || 1,
         occupati, offerte: inOfferta,
+        // Solo i giorni diversi dal prezzo base / dalla regola della risorsa.
+        prezzi, no_inizio: noInizio, no_fine: noFine, minimi,
       })
     }
 
@@ -227,7 +243,10 @@ export async function GET(request, props) {
         })
       }
 
-      const esito = verificaPeriodo(risorsa, date, fine, occupate || [])
+      // Lo stesso conto della route di prenotazione (`contoGiornaliero`):
+      // calendario dei prezzi, regole e offerte. Quello che si legge e quello
+      // che si paga escono dallo stesso punto.
+      const esito = await contoGiornaliero(risorsa, date, fine)
       // ⚠️ Quante unità si pagano **e come si chiamano**: le manda il server
       // insieme al totale, perché sono la stessa informazione.
       //
@@ -237,12 +256,12 @@ export async function GET(request, props) {
       // notti · €90 a notte» sopra un totale di €270. Il conto era giusto, il
       // testo no, ed è l'ambiguità sul prezzo quella che genera contestazioni.
       const contaUscita = !!risorsa.disponibilita?.conta_giorno_uscita
-      // ⛔ Le offerte valevano solo per gli slot orari: a giornate si
-      // compilavano e non facevano niente. Il conto lo fa `contoDelPeriodo`, lo
-      // stesso che usa la route di prenotazione — così quello che si legge e
-      // quello che si paga escono dallo stesso punto.
-      const conto = contoDelPeriodo(risorsa, date, fine, promozioni || [],
-        esito.totale ?? totaleGiornaliero(risorsa, date, fine))
+      // Anche quando il periodo non si può prenotare si dice quanto costerebbe:
+      // il motivo da solo non basta a decidere se cambiare le date.
+      const conto = esito.ok
+        ? esito
+        : contoDelPeriodo(risorsa, date, fine, esito.offerte || [],
+            fine >= date ? totaleGiornaliero(risorsa, date, fine, await leggiTariffe(risorsaId, date, fine)) : 0)
       return Response.json({
         risorsa_id: risorsaId, data: date, data_fine: fine, modalita: 'giornaliero',
         disponibile: esito.ok, motivo: esito.motivo || null,
@@ -252,6 +271,9 @@ export async function GET(request, props) {
         libere: esito.libere ?? 0,
         prezzo: risorsa.prezzo,
         totale: conto.totale,
+        // Il conto giorno per giorno: con un prezzo che cambia nei giorni, un
+        // totale senza dettaglio sembra un errore.
+        giorni: esito.ok ? esito.giorni : null,
         // Il prezzo pieno serve a scrivere «€850 anziché €600»: senza, il
         // risparmio non è dimostrabile e resta una parola.
         totale_pieno: conto.totalePieno,

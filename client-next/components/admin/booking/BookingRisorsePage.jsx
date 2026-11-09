@@ -4,6 +4,7 @@ import { apiFetch } from '../../../lib/api'
 import { useAzienda } from '../../../context/AziendaContext'
 import AvvisoNonSiVede from '../AvvisoNonSiVede'
 import GalleriaFoto from '../GalleriaFoto'
+import CalendarioPrezzi from './CalendarioPrezzi'
 // Sicuro dal browser: `booking-giornaliero` non importa niente, tantomeno
 // `supabaseAdmin`. È scritto in cima a quel file ed è il motivo per cui ci sta.
 import { contaGiorni, nomeUnita, limiteInUnita, limiteInNotti, totaleGiornaliero, unitaDaPagare } from '../../../lib/booking-giornaliero'
@@ -65,6 +66,9 @@ export default function BookingRisorsePage() {
   const [form, setForm] = useState(emptyRisorsa())
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  // Il calendario dei prezzi di una risorsa a giornate
+  const [showPrezzi, setShowPrezzi] = useState(null) // risorsa_id
 
   // Promozioni
   const [showPromo, setShowPromo] = useState(null) // risorsa_id
@@ -193,6 +197,11 @@ export default function BookingRisorsePage() {
     onSave={save} onCancel={() => setEditing(null)} saving={saving} error={error} isNew={editing === 'new'}
   />
 
+  if (showPrezzi && risorse.find(r => r.id === showPrezzi)) return <CalendarioPrezzi
+    risorsa={risorse.find(r => r.id === showPrezzi)}
+    onBack={() => setShowPrezzi(null)}
+  />
+
   if (showPromo) return <PromoPanel
     risorsa={risorse.find(r => r.id === showPromo)}
     promozioni={promozioni}
@@ -257,6 +266,7 @@ export default function BookingRisorsePage() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginLeft: 'auto' }}>
+                  {r.modalita === 'giornaliero' && <button onClick={() => setShowPrezzi(r.id)} style={ghostBtn}>Prezzi e regole</button>}
                   <button onClick={() => openPromo(r.id)} style={ghostBtn}>Offerte</button>
                   <button onClick={() => openEdit(r)} style={ghostBtn}>Modifica</button>
                   <button onClick={() => toggleAttiva(r)} style={ghostBtn}>{r.attiva ? 'Disattiva' : 'Attiva'}</button>
@@ -464,6 +474,9 @@ function RisorseForm({ form, patch, patchDisp, initDisp, entita = [], onEntita, 
               </div>
               <div style={{ fontSize: 12, color: '#888' }}>
                 Nessuno selezionato = si può iniziare qualsiasi giorno. Serve a chi accetta arrivi solo il sabato.
+              </div>
+              <div style={{ fontSize: 12, color: '#555', background: '#f5f5f7', borderRadius: 8, padding: '8px 10px' }}>
+                Queste regole valgono tutto l'anno. Prezzi diversi per stagione o per il weekend, e minimi diversi in certi periodi, si mettono in «Prezzi e regole», dall'elenco delle risorse.
               </div>
             </Card>
           )}
