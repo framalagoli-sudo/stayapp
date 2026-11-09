@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 27aa2cbe-ae25-41b1-bbe3-526896a77fd3
-  modified: 2026-11-09T18:08:31.352Z
+  modified: 2026-11-09T22:07:09.459Z
 ---
 
 Richiesta di Francesco del **09/11/2026** per conto di Automax (noleggio): tariffe
@@ -57,7 +57,21 @@ migliore per chi prenota · pannello delle fasce orarie DOPO · il listino lo
 compila Automax · il cliente decide come conta la risorsa (furgone: ritiro
 sabato mattina, riconsegna domenica sera = 2 giorni = `conta_giorno_uscita`).
 
-**09/11 — FASE 1 SCRITTA, NON COMMITTATA, NON DEPLOYATA:**
+**10/11 — FASE 1 LIVE E VERIFICATA** (commit a716ea52 → f72e8243, CLAUDE.md
+nota 92). Migration 144 eseguita al 2° tentativo (il 1° non era arrivato:
+mancava anche la colonna — verificare sempre una colonna). Sonde verdi in
+produzione: probe-calendario-prezzi (36) e probe-calendario-prezzi-browser
+(pannello da titolare computer+telefono, widget). Deploy: smoke 74/74,
+enumerazione verde dopo la correzione (GET senza date = da ieri a +1 anno).
+Furgone vero invariato (23→25 = 360 €, nessun prezzo speciale finché Automax
+non compila). Rossi del deploy NON nostri: robots Cloudflare (5 sottodomini) e
+probe-registrazione (limite 5/ora del rinvio con due deploy in un'ora).
+Da fare: dire a Automax dove compilare (Calendario e risorse → Risorse →
+«Prezzi e regole»); FASE 2 promozioni; sistemare probe-widget-giornate
+(cerca il nome della risorsa, ma con una risorsa sola il widget salta l'elenco).
+Dopo il deploy si può togliere il browser di prova vecchio (chromium-1234, ~0,7 GB).
+
+**09/11 — FASE 1 (stato di allora):**
 - migration `144_risorse_tariffe.sql` (tabella + `prenotazioni.dettaglio_prezzo`)
   → **Francesco deve eseguirla PRIMA del deploy**: provato in locale, senza la
   tabella le route di disponibilità/prenotazione del Furgone rispondono errore.
