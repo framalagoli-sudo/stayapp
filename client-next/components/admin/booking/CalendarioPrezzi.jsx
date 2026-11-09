@@ -104,11 +104,14 @@ export default function CalendarioPrezzi({ risorsa, onBack }) {
     setSalvo(true); setErrore('')
     try {
       const r = await apiFetch(`/api/booking/risorse/${risorsa.id}/tariffe`, { method: 'POST', body: JSON.stringify(corpo) })
-      setAvviso(azione === 'azzera'
-        ? `Fatto: ${r.giorni} giorni tornati al prezzo base.`
-        : `Fatto: aggiornati ${r.giorni} giorni.`)
       setValori({ prezzo: '', minimo: '', arrivo: '', partenza: '', vendibile: '' })
+      // Prima si ricarica il calendario, poi si dice «Fatto»: al contrario, per
+      // un istante «Fatto» stava sopra il calendario ancora vecchio.
       await carica()
+      const quanti = r.giorni === 1 ? '1 giorno' : `${r.giorni} giorni`
+      setAvviso(azione === 'azzera'
+        ? `Fatto: ${quanti} ${r.giorni === 1 ? 'tornato' : 'tornati'} al prezzo base.`
+        : `Fatto: ${r.giorni === 1 ? 'aggiornato' : 'aggiornati'} ${quanti}.`)
     } catch (e) { setErrore(e.message) }
     finally { setSalvo(false) }
   }

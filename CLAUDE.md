@@ -887,6 +887,16 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - ⚠️ La chiave Resend su Vercel è **solo invio**: lo stato del webhook su Resend non si legge. Lasciata così di proposito (una chiave piena è un rischio in più); la disattivazione la scopre il battito della consegna. In locale Resend e AI risultano «spente» (chiavi assenti).
     - `probe-webhook-cron-auth.mjs` legge l'elenco dei cron da `vercel.json`: un cron nuovo entra nella prova da solo.
 
+92. **📆 Il calendario dei prezzi delle risorse a giornate** (09–10/11/2026, richiesta di Automax, disegno «come Octorate» di Francesco; migration `144`). Ogni giorno può avere prezzo e regole sue: **la verità è il giorno**, le «stagioni» sono solo un modo di scriverne tanti insieme.
+    - **`risorse_tariffe`**: una riga per giorno (`ora_inizio` vuoto; le fasce orarie per gli slot sono nello schema ma senza pannello, per decisione di Francesco), **sparsa**: solo i giorni diversi dal prezzo base. Senza righe la risorsa costa e si comporta come prima. Restrizioni come nei gestionali alberghieri: `minimo_notti`/`massimo_notti` **del giorno d'inizio** (decisione di Francesco), `chiuso_arrivo`, `chiuso_partenza`, `non_vendibile`. «Weekend intero» = sabati senza riconsegna + domeniche senza ritiro.
+    - **Il conto è la somma giorno per giorno** (`contoGiornoPerGiorno` in `lib/booking-giornaliero.js`, stessi giorni di `unitaDaPagare`). ⛔ **Un conto solo lato server**: `lib/conto-giornaliero.js` → `contoGiornaliero()`, usato da disponibilità, prenotazione dal sito e prenotazione del titolare — prima la sequenza era copiata in tre route. Una route nuova che fa un conto a giornate passa di lì.
+    - `prenotazioni.dettaglio_prezzo` = fotografia del conto (giorni col prezzo, offerta): cambiare il listino dopo non tocca chi ha già prenotato.
+    - Pannello: «Prezzi e regole» sulle risorse a giornate (`CalendarioPrezzi.jsx`, route `/api/booking/risorse/[id]/tariffe`: imposta · azzera · copia sul prossimo anno a +364 giorni, un sabato resta un sabato). «Prova un noleggio» chiede il conto **alla route del sito**, non lo ricalcola.
+    - Widget: prezzo nel giorno (solo se la risorsa ha un calendario), ritiro/riconsegna vietati non cliccabili, parole «ritiro/riconsegna» per chi conta il giorno di riconsegna, dettaglio dei giorni quando i prezzi variano (mai «€100 al giorno» sopra un totale fatto di 100 e 150).
+    - Le offerte (`risorse_promozioni`) restano lo strato sopra, invariate: **non cumulabili, vince la migliore per chi prenota** (confermato da Francesco). Fase 2: sconto %, anticipo, last minute, pacchetti ricorrenti.
+    - ⚠️ Il primo tentativo della migration non era arrivato al database (come la 142): si controlla una colonna, non ci si fida del «fatto».
+    - Sonde (a mano): `probe-calendario-prezzi.mjs` (conto, regole, prenotazione dal sito e dal titolare, valori ostili, altra azienda, copia, azzera) e `probe-calendario-prezzi-browser.mjs [cartella-foto]` (pannello da titolare su computer e telefono, widget del visitatore). ⚠️ `probe-widget-giornate.mjs` è rimasta indietro: con una risorsa sola il widget salta l'elenco, e la sonda cerca il nome.
+
 ---
 
 ## Roadmap
