@@ -37,6 +37,8 @@ const DATA_RE = /^\d{4}-\d{2}-\d{2}$/
 const dataVera = g => {
   if (!DATA_RE.test(g || '')) return false
   const d = new Date(`${g}T12:00:00Z`)
+  // regola-ok: non è «oggi» sul server, è il controllo che una data scritta
+  // esista; a mezzogiorno UTC il fuso non sposta il giorno.
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === g
 }
 const PAGATA = ['pagato', 'rimborsato']
