@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../../../lib/api'
 import { Star, Copy, Check } from 'lucide-react'
 import StatoPagamento from '../StatoPagamento'
+import ModificaPrenotazione from '../ModificaPrenotazione'
 import { attendePagamento } from '../../../lib/stato-prenotazione'
 
 const STATI = ['', 'confermata', 'in_attesa', 'completata', 'cancellata', 'no_show']
@@ -20,6 +21,7 @@ export default function BookingPrenotazioniPage() {
   const [expanded, setExpanded] = useState(null)
   const [editNote, setEditNote] = useState({})
   const [recLink, setRecLink] = useState({}) // { [id]: { link, copied } }
+  const [modificaDi, setModificaDi] = useState(null) // la prenotazione che si sta modificando
 
   function patchFilter(k, v) { setFilters(f => ({ ...f, [k]: v })) }
 
@@ -87,6 +89,7 @@ export default function BookingPrenotazioniPage() {
 
   return (
     <div>
+      {modificaDi && <ModificaPrenotazione prenotazione={modificaDi} onChiudi={() => setModificaDi(null)} onSalvata={load} />}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Prenotazioni risorse</h1>
         <div style={{ fontSize: 13, color: '#888' }}>{prenotazioni.length} trovate</div>
@@ -187,6 +190,9 @@ export default function BookingPrenotazioniPage() {
                         </select>
 
                         {/* Azioni */}
+                        {p.stato !== 'cancellata' && !attendePagamento(p) && (
+                          <button data-modifica-di={p.id} onClick={() => setModificaDi(p)} style={{ ...ghostBtn, padding: '6px 10px', fontSize: 12 }}>Modifica</button>
+                        )}
                         <button onClick={() => generaLinkRecensione(p)}
                           title={recLink[p.id]?.link ? 'Copia link recensione' : 'Genera link recensione'}
                           style={{ ...ghostBtn, padding: '6px 10px', fontSize: 12, color: recLink[p.id]?.copied ? '#276749' : '#b7791f', display: 'flex', alignItems: 'center', gap: 4 }}>

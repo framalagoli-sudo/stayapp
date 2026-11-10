@@ -146,11 +146,11 @@ function dataBreve(g) {
 // ⚠️ «Non vendibile» si guarda su tutti i giorni in cui la risorsa è fuori,
 // non solo su quelli pagati: per un furgone coincidono, per una casa il giorno
 // dell'uscita non è occupato e resta vendibile a chi entra.
-export function restrizioneCalendario(risorsa, tariffe, dal, al) {
+export function restrizioneCalendario(risorsa, tariffe, dal, al, regoleVendita = true) {
   const m = mappaTariffe(tariffe)
-  if (m[dal]?.chiuso_arrivo)
+  if (regoleVendita && m[dal]?.chiuso_arrivo)
     return `Il ${dataBreve(dal)} non si può ${contaGiorni(risorsa) ? 'ritirare' : 'arrivare'}. Prova con un'altra data di inizio.`
-  if (m[al]?.chiuso_partenza)
+  if (regoleVendita && m[al]?.chiuso_partenza)
     return `Il ${dataBreve(al)} non si può ${contaGiorni(risorsa) ? 'riconsegnare' : 'partire'}. Prova con un'altra data di fine.`
   for (const g of giorniPagati(risorsa, dal, al)) {
     if (m[g]?.non_vendibile) return `Il ${dataBreve(g)} non è disponibile.`
@@ -238,7 +238,12 @@ export function periodoBloccato(blocchi, dal, al) {
 // «non disponibile» non dice a nessuno cosa cambiare.
 // `tariffe` è il calendario dei prezzi (righe o mappa): facoltativo, e senza
 // tutto funziona come prima.
-export function verificaPeriodo(risorsa, dal, al, prenotazioni = [], tariffe = null) {
+//
+// `regoleVendita: false` è per il titolare che sposta una prenotazione: minimo,
+// massimo, giorni di inizio e giorni senza ritiro/riconsegna sono regole per chi
+// prenota dal sito, e chi possiede la risorsa può fare un'eccezione. Restano i
+// vincoli fisici: il periodo libero, le chiusure, i giorni non vendibili.
+export function verificaPeriodo(risorsa, dal, al, prenotazioni = [], tariffe = null, { regoleVendita = true } = {}) {
   if (!dal || !al) return { ok: false, motivo: 'Scegli la data di inizio e quella di fine.' }
   if (al < dal) return { ok: false, motivo: 'La data di fine viene prima di quella di inizio.' }
 
@@ -249,11 +254,11 @@ export function verificaPeriodo(risorsa, dal, al, prenotazioni = [], tariffe = n
   // furgone ragiona in giorni, e «il periodo minimo è di 2 notti» non gli dice
   // niente.
   const { minimo, massimo } = limitiDelPeriodo(risorsa, tariffe, dal)
-  if (n < minimo) {
+  if (regoleVendita && n < minimo) {
     const q = limiteInUnita(minimo, risorsa)
     return { ok: false, motivo: `Il periodo minimo è di ${q} ${nomeUnita(risorsa, q)}.` }
   }
-  if (massimo && n > massimo) {
+  if (regoleVendita && massimo && n > massimo) {
     const q = limiteInUnita(massimo, risorsa)
     return { ok: false, motivo: `Il periodo massimo è di ${q} ${nomeUnita(risorsa, q)}.` }
   }
@@ -261,13 +266,13 @@ export function verificaPeriodo(risorsa, dal, al, prenotazioni = [], tariffe = n
   // I giorni in cui non si accetta l'arrivo: chi affitta case spesso vuole solo
   // il sabato, chi noleggia chiude la domenica.
   const arrivi = conf.giorni_arrivo
-  if (Array.isArray(arrivi) && arrivi.length && !arrivi.includes(new Date(`${dal}T12:00:00`).getDay()))
+  if (regoleVendita && Array.isArray(arrivi) && arrivi.length && !arrivi.includes(new Date(`${dal}T12:00:00`).getDay()))
     return { ok: false, motivo: 'In quel giorno non si può iniziare. Prova con un\'altra data di inizio.' }
 
   if (periodoBloccato(risorsa?.blocchi, dal, al))
     return { ok: false, motivo: 'In quel periodo siamo chiusi.' }
 
-  const restrizione = restrizioneCalendario(risorsa, tariffe, dal, al)
+  const restrizione = restrizioneCalendario(risorsa, tariffe, dal, al, regoleVendita)
   if (restrizione) return { ok: false, motivo: restrizione }
 
   const libere = unitaLibere(risorsa, dal, al, prenotazioni)

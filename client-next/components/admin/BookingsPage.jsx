@@ -8,6 +8,7 @@ import { CalendarCheck, CalendarDays, Search, ChevronDown, ChevronRight, AlertCi
 import StatoPagamento from './StatoPagamento'
 import { etichettaStato, attendePagamento, puoChiederePagamento, linkInCorso } from '@/lib/stato-prenotazione'
 import ChiediPagamento from './ChiediPagamento'
+import ModificaPrenotazione from './ModificaPrenotazione'
 import { oraLocale } from '@/lib/fuso'
 import { postiEvento } from '@/lib/posti-evento'
 
@@ -52,6 +53,7 @@ export default function BookingsPage() {
   const [eventi, setEventi] = useState([])
   const [passatiAperti, setPassatiAperti] = useState(false)
   const [pagamentoDi, setPagamentoDi] = useState(null)   // a quale prenotazione si chiede il pagamento
+  const [modificaDi, setModificaDi] = useState(null)     // la prenotazione che si sta modificando
 
   useEffect(() => {
     if (aziLoading) return
@@ -164,6 +166,7 @@ export default function BookingsPage() {
   return (
     <div style={{ maxWidth: 900 }}>
       {pagamentoDi && <ChiediPagamento tipo="risorsa" id={pagamentoDi} onChiudi={() => setPagamentoDi(null)} onCambiato={ricarica} />}
+      {modificaDi && <ModificaPrenotazione prenotazione={modificaDi} onChiudi={() => setModificaDi(null)} onSalvata={ricarica} />}
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Prenotazioni</h1>
         <p style={{ margin: '4px 0 0', fontSize: 14, color: '#888' }}>
@@ -259,6 +262,9 @@ export default function BookingsPage() {
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                  {p.stato !== 'cancellata' && !attendePagamento(p) && (
+                    <button data-modifica-di={p.id} onClick={() => setModificaDi(p)} style={azione}>Modifica</button>
+                  )}
                   {p.stato === 'in_attesa' && (
                     <button onClick={() => cambiaStato(p, 'confermata')} title={attendePagamento(p) ? 'La tieni tu: pagherà sul posto, e il pagamento online non viene più atteso' : undefined}
                       style={{ ...azione, background: '#e6f7ee', color: '#137a4a' }}>{attendePagamento(p) ? 'Conferma: pagherà sul posto' : 'Conferma'}</button>

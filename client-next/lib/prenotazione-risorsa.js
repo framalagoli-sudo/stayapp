@@ -86,8 +86,10 @@ export function quandoDi(prenotazione, risorsa) {
 // ⛔ Fino all'08/10/2026 partiva sempre «Prenotazione confermata ✓», anche per
 // una richiesta che il titolare doveva ancora approvare: una frase falsa, a una
 // persona che poi si presenta convinta di avere il furgone.
+// Torna true solo se il fornitore ha accettato l'email: chi l'ha chiesta dal
+// pannello («Avvisa il cliente») deve sapere se è partita davvero.
 export async function mandaEmailPrenotazione(prenotazione, risorsa, momento = 'confermata') {
-  if (!(process.env.RESEND_API_KEY ?? '').trim() || !prenotazione?.cliente_email) return
+  if (!(process.env.RESEND_API_KEY ?? '').trim() || !prenotazione?.cliente_email) return false
   try {
     const appUrl = (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'
     const ent = await entitaDi(risorsa)
@@ -124,13 +126,16 @@ export async function mandaEmailPrenotazione(prenotazione, risorsa, momento = 'c
         intro: html`Ciao ${nome}, la tua richiesta è arrivata. <strong>Non è ancora confermata</strong>: ${bizName} la controlla e ti scrive per confermarla.`, corpo: contatto },
       scaduta: { ctx: 'booking-scaduta', oggetto: `Prenotazione non confermata — ${risorsa.nome}`, titolo: 'La prenotazione non è andata a buon fine',
         intro: html`Ciao ${nome}, il pagamento per <strong>${risorsa.nome}</strong> non è arrivato in tempo, quindi la prenotazione è stata annullata e la disponibilità è tornata libera.<br><br>Se la vuoi ancora puoi prenotare di nuovo — se nel frattempo è rimasta disponibile.`, corpo: contatto },
+      modificata: { ctx: 'booking-modificata', oggetto: `Prenotazione modificata — ${risorsa.nome}`, titolo: 'La tua prenotazione è cambiata',
+        intro: html`Ciao ${nome}, ${bizName} ha aggiornato la tua prenotazione. Qui sotto trovi i dati nuovi: fanno fede questi.`, corpo: html`${contatto}${disdetta}` },
     }
     const t = testi[momento] || testi.confermata
-    await sendEmail({
+    const r = await sendEmail({
       _ctx: t.ctx, fromName: bizName, to: prenotazione.cliente_email, subject: t.oggetto,
       html: guestEmailTemplate({ entityName: bizName, title: t.titolo, intro: t.intro, rows, bodyHtml: t.corpo, legale, privacyUrl }),
     })
-  } catch (e) { console.error(`[booking] email «${momento}» fallita:`, e.message) }
+    return !r?.error
+  } catch (e) { console.error(`[booking] email «${momento}» fallita:`, e.message); return false }
 }
 
 // L'avviso al titolare: è arrivata una prenotazione (o una richiesta da

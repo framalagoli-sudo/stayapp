@@ -2,8 +2,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiFetch } from '../../../lib/api'
-import { etichettaStato, puoChiederePagamento, linkInCorso } from '../../../lib/stato-prenotazione'
+import { etichettaStato, puoChiederePagamento, linkInCorso, attendePagamento } from '../../../lib/stato-prenotazione'
 import ChiediPagamento from '../ChiediPagamento'
+import ModificaPrenotazione from '../ModificaPrenotazione'
 import { useAuth } from '../../../context/AuthContext'
 import { useAzienda } from '../../../context/AziendaContext'
 
@@ -101,6 +102,7 @@ export default function BookingCalendarioPage() {
   const [salvando, setSalvando] = useState(false)
   const [erroreNuova, setErroreNuova] = useState('')
   const [pagamentoDi, setPagamentoDi] = useState(null)      // a quale prenotazione si chiede il pagamento
+  const [modificaDi, setModificaDi] = useState(null)        // la prenotazione che si sta modificando
   const [appenaSegnata, setAppenaSegnata] = useState(null)  // quella appena scritta a mano
 
   const risorsa = risorse.find(r => r.id === risorsaId) || null
@@ -194,6 +196,10 @@ export default function BookingCalendarioPage() {
       {pagamentoDi && (
         <ChiediPagamento tipo="risorsa" id={pagamentoDi} onChiudi={() => setPagamentoDi(null)}
           onCambiato={() => { if (giornoAperto) apriGiorno(giornoAperto) }} />
+      )}
+      {modificaDi && (
+        <ModificaPrenotazione prenotazione={modificaDi} onChiudi={() => setModificaDi(null)}
+          onSalvata={() => { if (giornoAperto) apriGiorno(giornoAperto); caricaMese() }} />
       )}
       {appenaSegnata && (
         <div data-appena-segnata style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', background: '#f0f7f2', border: '1px solid #c6e6d0', borderRadius: 12, padding: '12px 16px', marginBottom: 16 }}>
@@ -384,6 +390,9 @@ export default function BookingCalendarioPage() {
                   </div>
 
                   <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                    {b.stato !== 'cancellata' && !attendePagamento(b) && (
+                      <button data-modifica-di={b.id} onClick={() => setModificaDi(b)} style={btnPiccolo}>Modifica</button>
+                    )}
                     {b.stato === 'in_attesa' && (
                       <button onClick={() => cambiaStato(b, 'confermata')} style={{ ...btnPiccolo, background: '#e6f7ee', color: '#137a4a' }}>Conferma</button>
                     )}

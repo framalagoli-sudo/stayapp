@@ -40,7 +40,7 @@ export async function leggiTariffe(risorsaId, dal, al) {
 // Le prenotazioni che possono toccare il periodo (le altre non contano).
 export async function prenotazioniCheToccano(risorsaId, dal) {
   const { data, error } = await supabaseAdmin.from('prenotazioni')
-    .select('data, data_fine').eq('risorsa_id', risorsaId)
+    .select('id, data, data_fine').eq('risorsa_id', risorsaId)
     .in('stato', ['confermata', 'in_attesa']).gte('data_fine', dal)
   if (error) throw error
   return data || []
@@ -55,7 +55,11 @@ export async function prenotazioniCheToccano(risorsaId, dal) {
 // ⚠️ L'offerta la sceglie il server fra quelle che valgono davvero per queste
 // date: fidarsi di un id proposto dal client significherebbe far decidere lo
 // sconto a chi paga.
-export async function contoGiornaliero(risorsa, dal, al) {
+//
+// Per spostare una prenotazione che c'è già: `escludi` è il suo id (altrimenti
+// occuperebbe sé stessa e non si potrebbe allungare di un giorno), e
+// `regoleVendita: false` lascia al titolare le eccezioni (vedi `verificaPeriodo`).
+export async function contoGiornaliero(risorsa, dal, al, { escludi = null, regoleVendita = true } = {}) {
   // Il calendario si legge fino al giorno dopo la fine: serve la riga del
   // giorno di riconsegna (chiuso alla partenza), e per chi conta le notti
   // quella del giorno d'uscita.
@@ -68,7 +72,8 @@ export async function contoGiornaliero(risorsa, dal, al) {
     oggiPerRisorsa(risorsa),
   ])
 
-  const esito = verificaPeriodo(risorsa, dal, al, occupate, tariffe)
+  const altre = escludi ? occupate.filter(p => p.id !== escludi) : occupate
+  const esito = verificaPeriodo(risorsa, dal, al, altre, tariffe, { regoleVendita })
   if (!esito.ok) return { ...esito, offerte, oggi }
 
   const conto = contoDelPeriodo(risorsa, dal, al, offerte, esito.totale, oggi)
