@@ -2,6 +2,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { contoGiornaliero } from '@/lib/conto-giornaliero'
+import { offertaSlotVale } from '@/lib/offerte-risorsa'
 import { confermaPostiPrenotazione } from '@/lib/capienza'
 import { creaCheckout } from '@/lib/checkout'
 import { logError } from '@/lib/observability'
@@ -65,14 +66,19 @@ export async function POST(request) {
     // Quello che arriva dal client dice quale, mai quanto, e nemmeno se vale.
     let offertaScelta = null
     let prezzo_unitario = risorsa.prezzo
-    if (isUUID(promozione_id)) {
+    // A giornate l'offerta la sceglie comunque il server (più sotto): qui conta
+    // solo per slot e coperti.
+    if (isUUID(promozione_id) && risorsa.modalita !== 'giornaliero') {
       const { data: promo } = await supabaseAdmin.from('risorse_promozioni')
         .select('*').eq('id', promozione_id).eq('risorsa_id', risorsa_id).eq('attiva', true).maybeSingle()
-      if (promo) {
+      // ⛔ E deve valere **per questo giorno e quest'ora**: prima bastava che
+      // fosse della risorsa, e una richiesta costruita a mano si prendeva il
+      // prezzo di un'offerta fuori stagione. Se non vale, si paga il listino.
+      if (promo && offertaSlotVale(promo, data, ora_inizio)) {
         offertaScelta = promo
         // Per gli slot il prezzo speciale è sempre quello dell'unità: è ciò che
         // il campo ha sempre significato lì, e non cambia.
-        if (risorsa.modalita !== 'giornaliero') prezzo_unitario = promo.prezzo_speciale
+        prezzo_unitario = Number(promo.prezzo_speciale)
       }
     }
     const persone = Math.max(1, parseInt(n_persone) || 1)

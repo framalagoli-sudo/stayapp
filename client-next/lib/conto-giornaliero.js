@@ -13,6 +13,15 @@
 import { supabaseAdmin } from './supabase-server'
 import { verificaPeriodo, giornoDopo, mappaTariffe } from './booking-giornaliero'
 import { contoDelPeriodo } from './offerte-risorsa'
+import { fusoDiAzienda } from './fuso-azienda'
+import { giornoLocale } from './fuso'
+
+// Che giorno è adesso **per l'azienda**: prenotazione anticipata e last minute
+// contano i giorni che mancano, e il giorno del server (UTC) sbaglierebbe a
+// cavallo della mezzanotte italiana.
+export async function oggiPerRisorsa(risorsa) {
+  return giornoLocale(new Date(), await fusoDiAzienda(risorsa?.azienda_id))
+}
 
 // Colonne del calendario che servono al conto. Elencate, mai `*`: una di
 // queste route risponde a chi non ha fatto login.
@@ -50,28 +59,30 @@ export async function contoGiornaliero(risorsa, dal, al) {
   // Il calendario si legge fino al giorno dopo la fine: serve la riga del
   // giorno di riconsegna (chiuso alla partenza), e per chi conta le notti
   // quella del giorno d'uscita.
-  const [occupate, tariffe, offerte] = await Promise.all([
+  const [occupate, tariffe, offerte, oggi] = await Promise.all([
     prenotazioniCheToccano(risorsa.id, dal),
     leggiTariffe(risorsa.id, dal, al ? giornoDopo(al) : dal),
     supabaseAdmin.from('risorse_promozioni').select('*')
       .eq('risorsa_id', risorsa.id).eq('attiva', true)
       .then(({ data, error }) => { if (error) throw error; return data || [] }),
+    oggiPerRisorsa(risorsa),
   ])
 
   const esito = verificaPeriodo(risorsa, dal, al, occupate, tariffe)
-  if (!esito.ok) return { ...esito, offerte }
+  if (!esito.ok) return { ...esito, offerte, oggi }
 
-  const conto = contoDelPeriodo(risorsa, dal, al, offerte, esito.totale)
+  const conto = contoDelPeriodo(risorsa, dal, al, offerte, esito.totale, oggi)
   return {
     ...esito,
     offerte,
+    oggi,
     totale: conto.totale,
     totalePieno: conto.totalePieno,
     offerta: conto.offerta,
     dettaglio: {
       giorni: esito.giorni,
       totale_listino: conto.totalePieno,
-      offerta: conto.offerta ? { id: conto.offerta.id, nome: conto.offerta.nome } : null,
+      offerta: conto.offerta ? { id: conto.offerta.id, nome: conto.offerta.nome, sconto: conto.offerta.sconto } : null,
       totale: conto.totale,
     },
   }

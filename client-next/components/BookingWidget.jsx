@@ -364,7 +364,7 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
                     <span style={{ fontSize: 10.5, fontWeight: 700, color: '#fff', background: periodo.offerta.colore, borderRadius: 4, padding: '2px 6px', flexShrink: 0 }}>
                       {periodo.offerta.badge}
                     </span>
-                    <span style={{ fontSize: 13.5, color: '#555', overflowWrap: 'anywhere' }}>{periodo.offerta.nome}</span>
+                    <span style={{ fontSize: 13.5, color: '#555', overflowWrap: 'anywhere' }}>{periodo.offerta.nome}{periodo.offerta.sconto ? <strong style={{ marginLeft: 6, color: periodo.offerta.colore }}>{periodo.offerta.sconto}</strong> : null}</span>
                   </div>
                 )}
                 {/* ⛔ C'è un'offerta su queste giornate ma chiede date precise.

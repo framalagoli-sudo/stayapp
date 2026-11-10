@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { unitaLibereNelGiorno, giornoDopo, totaleGiornaliero, notti, unitaDaPagare, periodoBloccato } from '@/lib/booking-giornaliero'
-import { contoGiornaliero, leggiTariffe } from '@/lib/conto-giornaliero'
-import { contoDelPeriodo, offerteDelGiorno, offertaQuasi } from '@/lib/offerte-risorsa'
+import { contoGiornaliero, leggiTariffe, oggiPerRisorsa } from '@/lib/conto-giornaliero'
+import { contoDelPeriodo, offerteDelGiorno, offertaQuasi, offertaSlotVale } from '@/lib/offerte-risorsa'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isUUID = v => UUID_RE.test(v)
@@ -25,20 +25,11 @@ function isDateBlocked(blocchi, date) {
   })
 }
 
+// La regola sta in `offertaSlotVale` (lib/offerte-risorsa), la stessa che la
+// route di prenotazione usa per ricontrollare l'offerta scelta dal browser.
 function findPromo(promozioni, slotOra, date) {
-  const slotMin = parseTime(slotOra)
-  const dayOfWeek = new Date(date + 'T12:00:00').getDay()
-  for (const p of promozioni) {
-    if (!p.attiva) continue
-    if (p.data_inizio && date < p.data_inizio) continue
-    if (p.data_fine && date > p.data_fine) continue
-    if (p.giorni_settimana?.length && !p.giorni_settimana.includes(dayOfWeek)) continue
-    if (p.ora_inizio) {
-      if (slotMin < parseTime(p.ora_inizio) || slotMin >= parseTime(p.ora_fine)) continue
-    }
-    return { id: p.id, nome: p.nome, prezzo: p.prezzo_speciale, badge: p.badge_label, colore: p.colore }
-  }
-  return null
+  const p = (promozioni || []).find(x => offertaSlotVale(x, date, slotOra))
+  return p ? { id: p.id, nome: p.nome, prezzo: p.prezzo_speciale, badge: p.badge_label, colore: p.colore } : null
 }
 
 async function calcolaSlotOrari(risorsa, promozioni, date) {
@@ -148,15 +139,18 @@ export async function GET(request, props) {
       const ultimo = `${mese}-${String(new Date(anno, m, 0).getDate()).padStart(2, '0')}`
 
       const { data: ris } = await supabaseAdmin.from('risorse')
-        .select('id, modalita, quantita, max_coperti, prezzo, disponibilita, blocchi')
+        .select('id, azienda_id, modalita, quantita, max_coperti, prezzo, disponibilita, blocchi')
         .eq('id', risorsaId).eq('attiva', true).maybeSingle()
       if (!ris) return Response.json({ error: 'Risorsa non trovata' }, { status: 404 })
 
       // ⚠️ Solo le colonne che servono a colorare un giorno. Un `select('*')` su
       // una route pubblica pubblicherebbe da solo ogni colonna aggiunta domani.
+      // La finestra di prenotazione serve a non colorare un last minute fra tre
+      // mesi; non esce nella risposta.
       const { data: offerteMese } = await supabaseAdmin.from('risorse_promozioni')
-        .select('id, nome, badge_label, colore, data_inizio, data_fine, giorni_settimana, attiva')
+        .select('id, nome, badge_label, colore, data_inizio, data_fine, giorni_settimana, attiva, prenota_prima_giorni, prenota_entro_giorni')
         .eq('risorsa_id', risorsaId).eq('attiva', true)
+      const oggi = await oggiPerRisorsa(ris)
 
       const { data: prese } = await supabaseAdmin.from('prenotazioni')
         .select('data, data_fine')
@@ -177,7 +171,7 @@ export async function GET(request, props) {
       const inOfferta = {}
       for (let g = 1; g <= new Date(anno, m, 0).getDate(); g++) {
         const giorno = `${mese}-${String(g).padStart(2, '0')}`
-        const off = offerteDelGiorno(offerteMese || [], giorno)[0]
+        const off = offerteDelGiorno(offerteMese || [], giorno, oggi)[0]
         if (off) inOfferta[giorno] = { nome: off.nome, badge: off.badge_label || 'Offerta', colore: off.colore || '#e53e3e' }
         // ⛔ Un giorno solo è l'intervallo `[giorno, giornoDopo)`, non
         // `(giorno, giorno)` — che è vuoto e non tocca mai niente. Con quello,
@@ -261,7 +255,7 @@ export async function GET(request, props) {
       const conto = esito.ok
         ? esito
         : contoDelPeriodo(risorsa, date, fine, esito.offerte || [],
-            fine >= date ? totaleGiornaliero(risorsa, date, fine, await leggiTariffe(risorsaId, date, fine)) : 0)
+            fine >= date ? totaleGiornaliero(risorsa, date, fine, await leggiTariffe(risorsaId, date, fine)) : 0, esito.oggi)
       return Response.json({
         risorsa_id: risorsaId, data: date, data_fine: fine, modalita: 'giornaliero',
         disponibile: esito.ok, motivo: esito.motivo || null,
@@ -281,7 +275,7 @@ export async function GET(request, props) {
         // ⛔ Un'offerta che c'è ma non si applica a queste date: senza dirlo, il
         // visitatore vede i giorni colorati sul calendario, ne sceglie due e si
         // ritrova il prezzo pieno senza capire cosa ha sbagliato.
-        offerta_vicina: conto.offerta ? null : offertaQuasi(promozioni || [], risorsa, date, fine),
+        offerta_vicina: conto.offerta ? null : offertaQuasi(promozioni || [], risorsa, date, fine, esito.oggi),
       })
     }
 

@@ -148,6 +148,51 @@ try {
   ok(await senzaScrollLaterale(w), 'il widget non scorre di lato a 420px')
   if (FOTO) await w.screenshot({ path: `${FOTO}/widget-telefono.png`, fullPage: true })
 
+  // ── Il pacchetto (fase 2): il titolare lo crea, il visitatore lo trova ──
+  console.log('\nPANNELLO — UN PACCHETTO VENERDÌ → LUNEDÌ\n')
+  await p.goto(`${TEST_URL}/admin/booking/risorse`, { waitUntil: 'domcontentloaded' })
+  await p.getByRole('button', { name: 'Offerte' }).first().waitFor({ timeout: 30000 }).catch(() => {})
+  await p.getByRole('button', { name: 'Offerte' }).first().click()
+  await p.getByRole('button', { name: '+ Nuova offerta' }).click()
+  await p.getByPlaceholder('Es. Happy Hour, Prima visita').fill('ZZ Weekend lungo')
+  await p.locator('select').filter({ hasText: 'Pacchetto' }).selectOption('pacchetto')
+  ok(await p.getByText('Durata esatta').count() > 0, 'scegliendo «Pacchetto» compaiono durata esatta e giorno d\'inizio')
+  ok(await p.getByText('Quel prezzo è…').count() === 0, '…e sparisce «Quel prezzo è…», che per un pacchetto non ha senso')
+  await p.getByText('Prezzo del pacchetto (€) *').locator('..').locator('input').fill('300')
+  await p.getByText(/Durata esatta/).locator('..').locator('input').fill('4')
+  await p.getByText('Si inizia di…').locator('..').getByRole('button', { name: 'Venerdì', exact: true }).click()
+  await p.getByText(/pagherà/).first().waitFor({ timeout: 5000 }).catch(() => {})
+  ok(/pagherà\s+€300/.test(await p.locator('body').innerText()), 'l\'anteprima dice «pagherà €300»')
+  await p.getByRole('button', { name: 'Salva offerta' }).click()
+  await p.getByText(/Pacchetto €300 · 4 giorni/).waitFor({ timeout: 15000 }).catch(() => {})
+  ok(await p.getByText(/Pacchetto €300 · 4 giorni/).count() > 0, 'nell\'elenco: «Pacchetto €300 · 4 giorni»')
+  // Un valore senza senso: il pannello deve dire perché, non tacere.
+  await p.getByRole('button', { name: '+ Nuova offerta' }).click()
+  await p.getByPlaceholder('Es. Happy Hour, Prima visita').fill('ZZ Sbagliata')
+  await p.locator('select').filter({ hasText: 'Pacchetto' }).selectOption('percentuale')
+  await p.getByText('Sconto (%) *').locator('..').locator('input').fill('150')
+  await p.getByRole('button', { name: 'Salva offerta' }).click()
+  // Due volte: nell'anteprima (prima di salvare) e nell'errore del server.
+  // Una volta sola vorrebbe dire che il server ha salvato in silenzio.
+  await p.waitForFunction(() => (document.body.innerText.match(/da 1 a 100%/g) || []).length >= 2, null, { timeout: 10000 }).catch(() => {})
+  ok(await p.getByText(/da 1 a 100%/).count() >= 2, 'uno sconto del 150%: l\'anteprima lo dice e il server lo rifiuta col motivo')
+  if (FOTO) await p.screenshot({ path: `${FOTO}/offerte-computer.png`, fullPage: true })
+
+  console.log('\nSITO — IL PACCHETTO APPLICATO\n')
+  const w2 = await nuovaPagina(420, false)
+  await w2.goto(`${TEST_URL}/r/${slug}?qr=1&tab=prenota`, { waitUntil: 'networkidle' })
+  const c2 = w2.getByRole('button', { name: /^Accetto$/ })
+  if (await c2.count()) { await c2.first().click(); await w2.waitForTimeout(600) }
+  await w2.getByText(/Quando lo ritiri/).first().waitFor({ timeout: 90000 }).catch(() => {})
+  await vaiAlMese(w2, SAB)
+  await w2.locator(`[data-giorno="${VEN}"]`).click(); await w2.waitForTimeout(500)
+  await w2.locator(`[data-giorno="${LUN}"]`).click()
+  await w2.getByText('ZZ Weekend lungo').first().waitFor({ timeout: 15000 }).catch(() => {})
+  const t2 = await w2.locator('body').innerText()
+  ok(/€300/.test(t2) && /ZZ Weekend lungo/.test(t2), 'ven→lun: €300 col nome del pacchetto')
+  ok(/€500/.test(t2), '…e il prezzo pieno barrato (€500)')
+  if (FOTO) await w2.screenshot({ path: `${FOTO}/widget-pacchetto.png`, fullPage: true })
+
   console.log('')
   ok(errori.length === 0, errori.length ? `errori nel browser:\n    ${errori.join('\n    ')}` : 'nessun errore nel browser')
 } catch (e) {

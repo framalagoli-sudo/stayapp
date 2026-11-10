@@ -8,7 +8,7 @@ import CalendarioPrezzi from './CalendarioPrezzi'
 // Sicuro dal browser: `booking-giornaliero` non importa niente, tantomeno
 // `supabaseAdmin`. È scritto in cima a quel file ed è il motivo per cui ci sta.
 import { contaGiorni, nomeUnita, limiteInUnita, limiteInNotti, totaleGiornaliero, unitaDaPagare } from '../../../lib/booking-giornaliero'
-import { totaleConOfferta } from '../../../lib/offerte-risorsa'
+import { totaleConOfferta, tipoSconto, ePacchetto, etichettaSconto } from '../../../lib/offerte-risorsa'
 
 const GIORNI = [
   { key: 'lun', label: 'Lunedì' },
@@ -168,16 +168,24 @@ export default function BookingRisorsePage() {
     setPromozioni(data)
   }
 
+  // ⚠️ Il server ricontrolla ogni numero (`datiOffertaPuliti`) e può
+  // rifiutare: l'errore si legge qui, non sparisce. Prima il salvataggio non
+  // guardava la risposta.
+  const [promoErrore, setPromoErrore] = useState('')
   async function savePromo() {
-    if (!promoData.nome.trim()) return
-    const body = { ...promoData, risorsa_id: showPromo }
-    if (promoForm === 'new') {
-      await apiFetch('/api/booking/promozioni', { method: 'POST', body: JSON.stringify(body) })
-    } else {
-      await apiFetch(`/api/booking/promozioni/${promoForm.id}`, { method: 'PATCH', body: JSON.stringify(body) })
-    }
-    setPromoForm(null)
-    openPromo(showPromo)
+    setPromoErrore('')
+    if (!promoData.nome.trim()) return setPromoErrore("Dai un nome all'offerta.")
+    const { risorse: _r, id: _i, created_at: _c, risorsa_id: _ri, ...dati } = promoData
+    const body = { ...dati, risorsa_id: showPromo }
+    try {
+      if (promoForm === 'new') {
+        await apiFetch('/api/booking/promozioni', { method: 'POST', body: JSON.stringify(body) })
+      } else {
+        await apiFetch(`/api/booking/promozioni/${promoForm.id}`, { method: 'PATCH', body: JSON.stringify(body) })
+      }
+      setPromoForm(null)
+      openPromo(showPromo)
+    } catch (e) { setPromoErrore(e.message) }
   }
 
   async function deletePromo(id) {
@@ -207,7 +215,7 @@ export default function BookingRisorsePage() {
     promozioni={promozioni}
     promoForm={promoForm} setPromoForm={setPromoForm}
     promoData={promoData} setPromoData={setPromoData}
-    onSave={savePromo} onDelete={deletePromo}
+    onSave={savePromo} onDelete={deletePromo} errore={promoErrore}
     onBack={() => setShowPromo(null)}
   />
 
@@ -703,53 +711,79 @@ function RisorseForm({ form, patch, patchDisp, initDisp, entita = [], onEntita, 
 // ⚠️ Definita FUORI da `PromoPanel`: dentro cambierebbe identità a ogni render e
 // React smonterebbe i campi mentre ci si scrive (nota 22).
 function AnteprimaOfferta({ risorsa, promo }) {
-  const speciale = Number(promo?.prezzo_speciale)
-  if (!Number.isFinite(speciale) || speciale <= 0) return null
+  const tipo = tipoSconto(promo)
+  const pacchetto = ePacchetto(promo) || promo?._pacchetto
+  const valore = Number(tipo === 'prezzo' ? promo?.prezzo_speciale : promo?.sconto_valore)
+  if (promo?.[tipo === 'prezzo' ? 'prezzo_speciale' : 'sconto_valore'] === '' || !Number.isFinite(valore) || valore <= 0) return null
 
-  // ⛔ Un'offerta «per tutto il periodo» vale SOLO per le sue date esatte:
-  // senza date non scatterebbe mai, e mostrare un prezzo di esempio farebbe
-  // credere il contrario. Meglio dire che manca qualcosa.
-  if (promo.prezzo_modo === 'periodo' && (!promo.data_inizio || !promo.data_fine)) {
+  // ⛔ Un'offerta «per tutto il periodo» (non pacchetto) vale SOLO per le sue
+  // date esatte: senza date non scatterebbe mai, e mostrare un prezzo di
+  // esempio farebbe credere il contrario. Meglio dire che manca qualcosa.
+  if (tipo === 'prezzo' && !pacchetto && promo.prezzo_modo === 'periodo' && (!promo.data_inizio || !promo.data_fine)) {
     return (
-      <div style={{ marginTop: 16, background: '#fffaf0', border: '1px solid #f6d998', borderRadius: 10, padding: '12px 16px', fontSize: 13.5, lineHeight: 1.6, color: '#8a6d1f' }}>
+      <div style={avvisoGiallo}>
         Metti <strong>«valida dal»</strong> e <strong>«valida fino al»</strong>: un prezzo per tutto
         il periodo vale solo per chi prenota esattamente quelle date, quindi senza non si applica mai.
+        Se vuoi un prezzo che vale ogni settimana (es. venerdì → lunedì), scegli «Pacchetto».
       </div>
     )
   }
-
-  // Un periodo di esempio: quello dell'offerta se ha le date, altrimenti la
-  // durata minima, altrimenti tre giorni.
-  const dal = promo.data_inizio || '2026-01-05'
-  let al = promo.data_fine
-  if (!al) {
-    const n = Math.max(1, Number(promo.minimo_notti) || 2)
-    const d = new Date(`${dal}T12:00:00`); d.setDate(d.getDate() + n)
-    al = d.toISOString().slice(0, 10)
+  // Uno sconto oltre il 100% non è un conto da mostrare: è un errore da dire.
+  if (tipo === 'percentuale' && valore > 100) {
+    return <div style={avvisoGiallo}>Lo sconto va da 1 a 100%.</div>
   }
-  const conOfferta = totaleConOfferta(risorsa, dal, al, { ...promo, prezzo_speciale: speciale })
+  if (pacchetto && promo.durata_esatta == null) {
+    return <div style={avvisoGiallo}>Scrivi la <strong>durata esatta</strong>: è quella che fa scattare il pacchetto.</div>
+  }
+
+  // Un periodo di esempio. Per il pacchetto: il primo giorno d'inizio ammesso
+  // e la sua durata esatta; per il resto: le date dell'offerta, altrimenti la
+  // durata minima, altrimenti tre giorni.
+  const piu = (g, n) => { const d = new Date(`${g}T12:00:00`); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10) }
+  let dal = promo.data_inizio || '2026-01-05', al
+  if (pacchetto) {
+    const giorni = promo.giorni_settimana || []
+    for (let i = 0; i < 7 && giorni.length && !giorni.includes(new Date(`${dal}T12:00:00`).getDay()); i++) dal = piu(dal, 1)
+    al = piu(dal, Number(promo.durata_esatta))
+  } else {
+    al = promo.data_fine || piu(dal, Math.max(1, Number(promo.minimo_notti) || 2))
+  }
   const pieno = totaleGiornaliero(risorsa, dal, al)
+  const conOfferta = totaleConOfferta(risorsa, dal, al, { ...promo, prezzo_modo: pacchetto ? 'periodo' : promo.prezzo_modo }, pieno)
   if (conOfferta == null) return null
 
   const unita = unitaDaPagare(dal, al, contaGiorni(risorsa))
   const piuCaro = conOfferta > pieno
+  const quando = promo.prenota_prima_giorni != null
+    ? <> Vale solo per chi prenota <strong>almeno {promo.prenota_prima_giorni} giorni prima</strong>.</>
+    : promo.prenota_entro_giorni != null
+      ? <> Vale solo per chi prenota <strong>al massimo {promo.prenota_entro_giorni} giorni prima</strong> dell'inizio.</>
+      : null
   return (
     <div style={{ marginTop: 16, background: piuCaro ? '#fffaf0' : '#f0fff4', border: `1px solid ${piuCaro ? '#f6d998' : '#9ae6b4'}`, borderRadius: 10, padding: '12px 16px', fontSize: 13.5, lineHeight: 1.7, color: piuCaro ? '#8a6d1f' : '#22543d' }}>
       Chi prenota <strong>dal {dal} al {al}</strong> ({unita} {nomeUnita(risorsa, unita)}) pagherà <strong>€{conOfferta}</strong>,
-      invece di €{pieno} di listino.
+      invece di €{pieno} al prezzo base.
       {/* Chi sceglie date diverse paga il listino, e va detto qui: è la
           domanda che il cliente si farà appena qualcuno prenoterà mezzo ponte. */}
-      {promo.prezzo_modo === 'periodo'
-        ? <> Chi ne prenota solo una parte paga il listino: questo prezzo vale <strong>solo per queste date</strong>.</>
-        : <> Vale per qualunque prenotazione dentro il periodo, anche più corta.</>}
-      {piuCaro && <> ⚠️ Con questa offerta costa <strong>di più</strong> del normale: è giusto se è alta stagione, altrimenti controlla se «{promo.prezzo_modo === 'periodo' ? 'per tutto il periodo' : `per ogni ${nomeUnita(risorsa, 1)}`}» è quello che intendi.</>}
+      {pacchetto
+        ? <> Vale per chi prenota <strong>esattamente {limiteInUnita(promo.durata_esatta, risorsa)} {nomeUnita(risorsa, limiteInUnita(promo.durata_esatta, risorsa))}</strong>{promo.giorni_settimana?.length ? ' partendo nei giorni scelti' : ''}; un giorno in più o in meno paga il listino.</>
+        : tipo !== 'prezzo'
+          ? <> Lo sconto si calcola sul conto di quei giorni, anche con i prezzi di «Prezzi e regole»: qui l'esempio usa il prezzo base.</>
+          : promo.prezzo_modo === 'periodo'
+            ? <> Chi ne prenota solo una parte paga il listino: questo prezzo vale <strong>solo per queste date</strong>.</>
+            : <> Vale per qualunque prenotazione dentro il periodo, anche più corta.</>}
+      {quando}
+      {piuCaro && <> ⚠️ Con questa offerta costa <strong>di più</strong> del normale: è giusto se è alta stagione, altrimenti controlla il prezzo.</>}
+      {' '}Le offerte non si sommano: se ne valgono più insieme, si applica la più conveniente per chi prenota.
     </div>
   )
 }
 
+const avvisoGiallo = { marginTop: 16, background: '#fffaf0', border: '1px solid #f6d998', borderRadius: 10, padding: '12px 16px', fontSize: 13.5, lineHeight: 1.6, color: '#8a6d1f' }
+
 // ─── Pannello promozioni ──────────────────────────────────────────────────────
 
-function PromoPanel({ risorsa, promozioni, promoForm, setPromoForm, promoData, setPromoData, onSave, onDelete, onBack }) {
+function PromoPanel({ risorsa, promozioni, promoForm, setPromoForm, promoData, setPromoData, onSave, onDelete, onBack, errore }) {
   function patchP(key, val) { setPromoData(p => ({ ...p, [key]: val })) }
 
   // A giornate le ore non vogliono dire niente — e il pannello le mostrava
@@ -759,8 +793,30 @@ function PromoPanel({ risorsa, promozioni, promoForm, setPromoForm, promoData, s
   const aGiornate = risorsa?.modalita === 'giornaliero'
   const unita = nomeUnita(risorsa, 2)
 
+  // Il «modo» si legge dai dati, non si salva: un pacchetto è un prezzo per
+  // tutto il periodo con una durata esatta. Così un'offerta salvata si riapre
+  // con la scelta giusta.
+  const modo = ePacchetto(promoData) || promoData._pacchetto ? 'pacchetto' : tipoSconto(promoData)
+  function cambiaModo(nuovo) {
+    setPromoData(p => ({
+      ...p,
+      _pacchetto: nuovo === 'pacchetto',
+      sconto_tipo: nuovo === 'pacchetto' ? 'prezzo' : nuovo,
+      prezzo_modo: nuovo === 'pacchetto' ? 'periodo' : 'giorno',
+      durata_esatta: nuovo === 'pacchetto' ? (p.durata_esatta ?? null) : null,
+      minimo_notti: nuovo === 'pacchetto' ? null : p.minimo_notti,
+    }))
+  }
+  const quando = promoData.prenota_prima_giorni != null ? 'prima' : promoData.prenota_entro_giorni != null ? 'entro' : 'sempre'
+  function cambiaQuando(nuovo) {
+    setPromoData(p => ({ ...p,
+      prenota_prima_giorni: nuovo === 'prima' ? (p.prenota_prima_giorni ?? 30) : null,
+      prenota_entro_giorni: nuovo === 'entro' ? (p.prenota_entro_giorni ?? 3) : null }))
+  }
+
   function openNewPromo() {
-    setPromoData({ nome: '', descrizione: '', data_inizio: '', data_fine: '', ora_inizio: '', ora_fine: '', giorni_settimana: null, prezzo_speciale: '', prezzo_modo: 'giorno', minimo_notti: null, badge_label: 'Offerta', colore: '#e53e3e', attiva: true })
+    setPromoData({ nome: '', descrizione: '', data_inizio: '', data_fine: '', ora_inizio: '', ora_fine: '', giorni_settimana: null, prezzo_speciale: '', prezzo_modo: 'giorno', minimo_notti: null, badge_label: 'Offerta', colore: '#e53e3e', attiva: true,
+      sconto_tipo: 'prezzo', sconto_valore: null, prenota_prima_giorni: null, prenota_entro_giorni: null, durata_esatta: null })
     setPromoForm('new')
   }
 
@@ -785,15 +841,42 @@ function PromoPanel({ risorsa, promozioni, promoForm, setPromoForm, promoData, s
               <Label>Nome offerta *</Label>
               <Input value={promoData.nome} onChange={e => patchP('nome', e.target.value)} placeholder="Es. Happy Hour, Prima visita" />
             </div>
-            <div>
-              <Label>Prezzo speciale (€) *</Label>
-              <Input type="number" min={0} step={0.5} value={promoData.prezzo_speciale} onChange={e => patchP('prezzo_speciale', parseFloat(e.target.value) || '')} />
-            </div>
+            {/* Che tipo di offerta: il modo in cui chi vende ragiona, non il
+                nome di una colonna. «Pacchetto» è un prezzo fisso per tutto il
+                periodo legato a una forma (ven→lun) invece che a date fisse. */}
+            {aGiornate && (
+              <div>
+                <Label>Che tipo di offerta?</Label>
+                <select value={modo} onChange={e => cambiaModo(e.target.value)} style={selectStyle}>
+                  <option value="prezzo">Prezzo speciale</option>
+                  <option value="percentuale">Sconto in percentuale</option>
+                  <option value="importo">Sconto di un importo (€)</option>
+                  <option value="pacchetto">Pacchetto (es. weekend lungo)</option>
+                </select>
+              </div>
+            )}
+            {(modo === 'prezzo' || modo === 'pacchetto') ? (
+              <div>
+                <Label>{modo === 'pacchetto' ? 'Prezzo del pacchetto (€) *' : 'Prezzo speciale (€) *'}</Label>
+                <Input type="number" min={0} step={0.5} value={promoData.prezzo_speciale ?? ''} onChange={e => patchP('prezzo_speciale', e.target.value === '' ? '' : parseFloat(e.target.value))} />
+              </div>
+            ) : (
+              <div>
+                <Label>{modo === 'percentuale' ? 'Sconto (%) *' : 'Sconto (€) *'}</Label>
+                <Input type="number" min={0} max={modo === 'percentuale' ? 100 : undefined} step={modo === 'percentuale' ? 1 : 0.5}
+                  value={promoData.sconto_valore ?? ''} onChange={e => patchP('sconto_valore', e.target.value === '' ? null : parseFloat(e.target.value))} />
+                <div style={nota}>
+                  {modo === 'percentuale'
+                    ? 'Si toglie dal conto di quei giorni, compresi i prezzi di «Prezzi e regole».'
+                    : 'Si toglie dal totale della prenotazione, una volta sola.'}
+                </div>
+              </div>
+            )}
             {/* ⛔ L'etichetta diceva solo «Prezzo speciale (€)». Su cinque giorni
                 a listino €120, un «850» vale €4.250 letto al giorno e €850 letto
                 a periodo: cinque volte il conto, e a sceglierlo era il codice
                 invece di chi vende. Ora lo dice il cliente. */}
-            {aGiornate && (
+            {aGiornate && modo === 'prezzo' && (
               <div>
                 <Label>Quel prezzo è…</Label>
                 <select value={promoData.prezzo_modo || 'giorno'} onChange={e => patchP('prezzo_modo', e.target.value)}
@@ -812,7 +895,38 @@ function PromoPanel({ risorsa, promozioni, promoForm, setPromoForm, promoData, s
                 </div>
               </div>
             )}
-            {aGiornate && (
+            {aGiornate && modo === 'pacchetto' && (
+              <>
+                <div>
+                  <Label>Durata esatta ({unita}) *</Label>
+                  <Input type="number" min={contaGiorni(risorsa) ? 2 : 1} max={365}
+                    value={promoData.durata_esatta != null ? limiteInUnita(promoData.durata_esatta, risorsa) : ''}
+                    onChange={e => {
+                      const v = parseInt(e.target.value)
+                      patchP('durata_esatta', Number.isFinite(v) && v > 0 ? limiteInNotti(v, risorsa) : null)
+                    }} />
+                  <div style={nota}>Es. {contaGiorni(risorsa) ? '4 giorni per venerdì → lunedì' : '3 notti per venerdì → lunedì'}.</div>
+                </div>
+                <div>
+                  <Label>Si inizia di…</Label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {GIORNI_COPERTI.map(g => {
+                      const scelti = promoData.giorni_settimana || []
+                      const on = scelti.includes(g.val)
+                      return (
+                        <button key={g.val} type="button"
+                          onClick={() => patchP('giorni_settimana', on ? scelti.filter(x => x !== g.val) : [...scelti, g.val])}
+                          style={{ fontSize: 12, padding: '5px 10px', borderRadius: 8, cursor: 'pointer', border: on ? 'none' : '1px solid #ddd', background: on ? '#1a1a2e' : '#fff', color: on ? '#fff' : '#666' }}>
+                          {g.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <div style={nota}>Nessuno scelto = qualunque giorno.</div>
+                </div>
+              </>
+            )}
+            {aGiornate && modo !== 'pacchetto' && (
               <div>
                 <Label>Solo da almeno… ({unita}, vuoto = nessun minimo)</Label>
                 <Input type="number" min={0} max={365}
@@ -821,6 +935,30 @@ function PromoPanel({ risorsa, promozioni, promoForm, setPromoForm, promoData, s
                     const v = parseInt(e.target.value)
                     patchP('minimo_notti', Number.isFinite(v) && v > 0 ? limiteInNotti(v, risorsa) : null)
                   }} />
+              </div>
+            )}
+            {aGiornate && (
+              <div>
+                <Label>Quando si prenota</Label>
+                <select value={quando} onChange={e => cambiaQuando(e.target.value)} style={selectStyle}>
+                  <option value="sempre">In qualunque momento</option>
+                  <option value="prima">In anticipo (almeno … giorni prima)</option>
+                  <option value="entro">Last minute (al massimo … giorni prima)</option>
+                </select>
+                {quando !== 'sempre' && (
+                  <Input type="number" min={0} max={730} style={{ marginTop: 6 }}
+                    value={(quando === 'prima' ? promoData.prenota_prima_giorni : promoData.prenota_entro_giorni) ?? ''}
+                    placeholder="giorni"
+                    onChange={e => {
+                      const v = parseInt(e.target.value)
+                      patchP(quando === 'prima' ? 'prenota_prima_giorni' : 'prenota_entro_giorni', Number.isFinite(v) && v >= 0 ? v : null)
+                    }} />
+                )}
+                <div style={nota}>
+                  {quando === 'prima' ? "Vale per chi prenota con almeno questi giorni di anticipo sull'inizio."
+                    : quando === 'entro' ? "Vale per chi prenota a ridosso: l'inizio è al massimo fra questi giorni."
+                    : 'I giorni si contano nel fuso orario della tua attività.'}
+                </div>
               </div>
             )}
             <div>
@@ -832,11 +970,11 @@ function PromoPanel({ risorsa, promozioni, promoForm, setPromoForm, promoData, s
               <input type="color" value={promoData.colore} onChange={e => patchP('colore', e.target.value)} style={{ width: 40, height: 32, border: 'none', borderRadius: 6, cursor: 'pointer' }} />
             </div>
             <div>
-              <Label>Valida dal</Label>
+              <Label>{modo === 'pacchetto' ? 'In vendita dal' : 'Valida dal'}</Label>
               <Input type="date" value={promoData.data_inizio || ''} onChange={e => patchP('data_inizio', e.target.value || null)} />
             </div>
             <div>
-              <Label>Valida fino al</Label>
+              <Label>{modo === 'pacchetto' ? 'In vendita fino al' : 'Valida fino al'}</Label>
               <Input type="date" value={promoData.data_fine || ''} onChange={e => patchP('data_fine', e.target.value || null)} />
             </div>
             {!aGiornate && (
@@ -858,6 +996,7 @@ function PromoPanel({ risorsa, promozioni, promoForm, setPromoForm, promoData, s
               PRIMA di pubblicarlo, non dopo, quando è già stato addebitato. */}
           {aGiornate && <AnteprimaOfferta risorsa={risorsa} promo={promoData} />}
 
+          {errore && <div style={{ marginTop: 14, background: '#fdecea', color: '#a12622', borderRadius: 8, padding: '10px 14px', fontSize: 13 }}>{errore}</div>}
           <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
             <button onClick={onSave} style={primaryBtn}>Salva offerta</button>
             <button onClick={() => setPromoForm(null)} style={ghostBtn}>Annulla</button>
@@ -879,7 +1018,13 @@ function PromoPanel({ risorsa, promozioni, promoForm, setPromoForm, promoData, s
                 <div style={{ fontSize: 12, color: '#888' }}>
                   {/* «€850» da solo non dice di cosa: era l'ambiguità che
                       generava il prezzo sbagliato. */}
-                  €{p.prezzo_speciale}{aGiornate ? (p.prezzo_modo === 'periodo' ? ' per tutto il periodo' : ` a ${nomeUnita(risorsa, 1)}`) : ''}
+                  {etichettaSconto(p)
+                    ? `Sconto ${etichettaSconto(p)}`
+                    : ePacchetto(p)
+                      ? `Pacchetto €${p.prezzo_speciale} · ${limiteInUnita(p.durata_esatta, risorsa)} ${nomeUnita(risorsa, limiteInUnita(p.durata_esatta, risorsa))}`
+                      : <>€{p.prezzo_speciale}{aGiornate ? (p.prezzo_modo === 'periodo' ? ' per tutto il periodo' : ` a ${nomeUnita(risorsa, 1)}`) : ''}</>}
+                  {p.prenota_prima_giorni != null ? ` · prenotando almeno ${p.prenota_prima_giorni} giorni prima` : ''}
+                  {p.prenota_entro_giorni != null ? ` · last minute, entro ${p.prenota_entro_giorni} giorni` : ''}
                   {p.data_inizio ? ` · dal ${p.data_inizio}` : ''}
                   {p.data_fine ? ` al ${p.data_fine}` : ''}
                   {p.minimo_notti ? ` · da ${limiteInUnita(p.minimo_notti, risorsa)} ${nomeUnita(risorsa, limiteInUnita(p.minimo_notti, risorsa))} in su` : ''}
@@ -918,4 +1063,5 @@ function Input({ ...props }) {
 const inputStyle = { width: '100%', padding: '8px 10px', border: '1px solid #e0e0e0', borderRadius: 8, fontSize: 14, boxSizing: 'border-box', outline: 'none' }
 const selectStyle = { ...inputStyle, cursor: 'pointer' }
 const primaryBtn  = { background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 14, cursor: 'pointer', fontWeight: 500 }
+const nota        = { fontSize: 12, color: '#999', marginTop: 4, lineHeight: 1.5 }
 const ghostBtn    = { background: '#f0f0f0', color: '#333', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer' }
