@@ -522,3 +522,23 @@ Stessa sessione, due porte pubbliche nuove per gli eventi (`/api/guest/eventi/an
 `/api/guest/eventi/posto`): il permesso è un UUID nel link dell'email, con limite per indirizzo, la
 stessa risposta per «non esiste» e «inventato», nessun dato personale nel corpo; i token non sono
 concessi al ruolo pubblico (migration 141). CLAUDE.md nota 89.
+
+## Aggiornamento 10/11/2026 — offerte sulla risorsa di un'altra azienda
+
+🟠 **`POST /api/booking/promozioni`** controllava solo il login: un titolare
+qualunque poteva creare un'offerta su una risorsa di un'altra azienda passando
+il suo `risorsa_id` nel corpo, e il sito di quell'azienda applicava il prezzo
+(anche 1 €). Trovato leggendo la route durante la fase 2 del calendario dei
+prezzi. **Mai sfruttato**: in tutta la tabella c'era una sola offerta, quella di
+Automax sulla propria risorsa. PATCH e DELETE erano già protetti.
+- Correzione: `requireRecordAccess(request, 'risorse', risorsa_id)` prima di
+  creare — 404 a chi non è il proprietario, come le altre route sulle risorse.
+- Perché la sonda non lo vedeva: `probe-dirottamento` cercava le righe di A per
+  `azienda_id` o `entity_id`, e un'offerta di risorsa è agganciata alla
+  **risorsa**. Ora la sonda prova anche gli oggetti agganciati a una cosa di A
+  (offerta sulla risorsa, prezzo sul calendario) e il rovescio (A crea i suoi).
+  Verificata rossa sul buco in produzione prima della correzione, verde dopo.
+- Cercati gli altri punti della stessa classe (id «padre» dal corpo): vetrine,
+  unione contatti, offerte e calendario dei prezzi controllano. Il piano
+  editoriale accetta l'id di una campagna altrui, ma il post resta nell'azienda
+  di chi scrive: non entra nei dati di nessun altro (annotato).

@@ -97,6 +97,26 @@ try {
       console.log(`    ✗ ${m.nome} → ${perAzienda ? 'azienda di A' : 'sito di A'}`)
     } else if (verbose) console.log(`    · ${m.nome} → ${r.status}, niente in A`)
   }
+  // Gli oggetti agganciati a una cosa di A (non all'azienda né all'entità): un
+  // filtro per azienda/entità non li vede, e servono controlli a parte.
+  // ⛔ Il 10/11/2026 `POST /api/booking/promozioni` accettava qualunque
+  // `risorsa_id`: B poteva mettere un prezzo da 1 € sulla risorsa di A, e il
+  // sito di A lo applicava.
+  const risA = await deve(a.from('risorse').insert({ azienda_id: A.az, entity_tipo: 'attivita', entity_id: A.ent, nome: 'ZZ Furgone di A',
+    modalita: 'giornaliero', prezzo: 100, quantita: 1, attiva: true, disponibilita: { conta_giorno_uscita: true } }).select('id').single(), 'risorsa di A')
+  const rp = await chiama('/api/booking/promozioni', B.token, 'POST', { risorsa_id: risA.id, nome: `${M} Sconto`, prezzo_speciale: 1, prezzo_modo: 'giorno' })
+  const { count: promoInA } = await a.from('risorse_promozioni').select('id', { count: 'exact', head: true }).eq('risorsa_id', risA.id).ilike('nome', `%${M}%`)
+  if (promoInA) {
+    problemi.push(`DIROTTAMENTO · offerta sulla risorsa di A: B ha messo ${promoInA} offerte sul calendario di A (POST /api/booking/promozioni → ${rp.status})`)
+    console.log('    ✗ offerta sulla risorsa di A')
+  } else if (verbose) console.log(`    · offerta sulla risorsa di A → ${rp.status}, niente in A`)
+  const rt = await chiama(`/api/booking/risorse/${risA.id}/tariffe`, B.token, 'POST', { azione: 'imposta', dal: '2027-01-01', al: '2027-01-01', valori: { prezzo: 1 } })
+  const { count: tariffeInA } = await a.from('risorse_tariffe').select('id', { count: 'exact', head: true }).eq('risorsa_id', risA.id)
+  if (tariffeInA) {
+    problemi.push(`DIROTTAMENTO · prezzo sul calendario di A: B ha scritto ${tariffeInA} giorni (→ ${rt.status})`)
+    console.log('    ✗ prezzo sul calendario di A')
+  }
+
   if (!problemi.length) console.log('    nessun oggetto di B è finito in A ✓')
 
   // ── Campi privilegiati: B prova a cambiarsi qualcosa che non gli spetta ──────
@@ -153,6 +173,8 @@ try {
   const buone = [
     { nome: 'newsletter per la sua entità', path: '/api/newsletter', corpo: { subject: `${M} Mia news`, entity_tipo: 'attivita', entity_id: A.ent } },
     { nome: 'evento sul suo sito',          path: '/api/eventi',     corpo: { title: `${M} Mio evento`, slug: `${M.toLowerCase()}-mio`, date_start: new Date(Date.now()+9e8).toISOString(), entity_tipo: 'attivita', entity_id: A.ent } },
+    { nome: 'offerta sulla sua risorsa',    path: '/api/booking/promozioni', corpo: { risorsa_id: risA.id, nome: `${M} Mio sconto`, prezzo_speciale: 90, prezzo_modo: 'giorno' } },
+    { nome: 'prezzo sul suo calendario',    path: `/api/booking/risorse/${risA.id}/tariffe`, corpo: { azione: 'imposta', dal: '2027-01-02', al: '2027-01-02', valori: { prezzo: 120 } } },
   ]
   for (const b of buone) {
     const r = await chiama(b.path, A.token, 'POST', b.corpo)

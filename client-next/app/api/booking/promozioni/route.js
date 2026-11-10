@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAuth } from '@/lib/server-auth'
+import { requireAuth, requireRecordAccess } from '@/lib/server-auth'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const isUUID = v => UUID_RE.test(v)
@@ -50,11 +50,16 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const { user, response } = await requireAuth(request)
-    if (response) return response
     const body = await request.json()
     if (!body.risorsa_id || !isUUID(body.risorsa_id))
       return Response.json({ error: 'risorsa_id obbligatorio' }, { status: 400 })
+    // ⛔ La risorsa dev'essere tua. Qui c'era solo il login: un titolare
+    // qualunque poteva mettere un'offerta (anche a 1 €) sulla risorsa di
+    // un'altra azienda, e il sito di quell'azienda la applicava (10/11/2026,
+    // trovato leggendo, mai sfruttato). Il risorsa_id dal corpo dice QUALE,
+    // `requireRecordAccess` dice se è TUA.
+    const { response } = await requireRecordAccess(request, 'risorse', body.risorsa_id)
+    if (response) return response
     const payload = ripulisci(Object.fromEntries(Object.entries(body).filter(([k]) => PROMO_ALLOWED.includes(k))))
     const { data, error } = await supabaseAdmin.from('risorse_promozioni')
       .insert({ ...payload, risorsa_id: body.risorsa_id }).select().single()
