@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 27aa2cbe-ae25-41b1-bbe3-526896a77fd3
-  modified: 2026-11-09T22:07:09.459Z
+  modified: 2026-11-10T07:09:37.619Z
 ---
 
 Richiesta di Francesco del **09/11/2026** per conto di Automax (noleggio): tariffe
@@ -56,6 +56,20 @@ cliente lo chiede (lo schema li regge già).
 migliore per chi prenota · pannello delle fasce orarie DOPO · il listino lo
 compila Automax · il cliente decide come conta la risorsa (furgone: ritiro
 sabato mattina, riconsegna domenica sera = 2 giorni = `conta_giorno_uscita`).
+
+**10/11 — FASE 2 LIVE E VERIFICATA** (commit ed0553f3, migration 145
+eseguita al 1° colpo, CLAUDE.md nota 92). Sconto %/importo, in anticipo, last
+minute (fuso azienda), pacchetto che si ripete (`durata_esatta`), non
+cumulabili. `datiOffertaPuliti` unica pulizia. Sonde verdi in produzione:
+probe-offerte-sconti (26), probe-calendario-prezzi, probe-calendario-prezzi-browser
+(anche il pacchetto creato dal pannello e visto nel widget). Furgone invariato
+(360 € / ponte 850 €). Il deploy è stato fermato dal sistema per memoria
+DOPO Vercel+push+smoke 74/74: le sonde mancanti lanciate a mano, tutte verdi;
+resto ZZ-SSRF pulito con cancellaAziendaDiProva.
+🔒 Stesso giorno: buco offerte su risorsa altrui (deploy a sé, SECURITY-CHECK
+10/11) e offerta slot non ricontrollata (dentro la fase 2).
+Da fare: dire ad Automax dove si trovano «Prezzi e regole» e i tipi di offerta;
+sistemare probe-widget-giornate e probe-registrazione (riconoscere il 429).
 
 **10/11 — FASE 1 LIVE E VERIFICATA** (commit a716ea52 → f72e8243, CLAUDE.md
 nota 92). Migration 144 eseguita al 2° tentativo (il 1° non era arrivato:

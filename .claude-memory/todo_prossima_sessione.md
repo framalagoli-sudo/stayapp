@@ -4,13 +4,13 @@ description: "Da dove riprendere — 01/11 sera: sentinella A LIVE; Francesco de
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-11-09T22:07:12.820Z
+  modified: 2026-11-10T07:09:40.134Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
 
-⭐ **10/11 — calendario dei prezzi delle risorse LIVE** (fase 1) → [[project_tariffe_risorse]]. Prossimo: fase 2 promozioni (sconto %, anticipo, last minute, pacchetti ricorrenti) quando Francesco dice. Liberati 4,6 GB su C: (Temp + vecchio chromium), npm-cache lasciata. Il resto qui sotto (sentinella B, Resend, ecc.) resta aperto e in attesa.
+⭐ **10/11 — calendario dei prezzi + offerte (fase 1 e 2) LIVE** → [[project_tariffe_risorse]]. Chiusi 2 buchi (offerte su risorsa altrui, offerta slot non ricontrollata). Restano: spiegare ad Automax, due sonde da aggiornare. Liberati 4,6 GB su C: (Temp + vecchio chromium), npm-cache lasciata. Il resto qui sotto (sentinella B, Resend, ecc.) resta aperto e in attesa.
 
 ⭐ **01/11 sera — SESSIONE CHIUSA da Francesco** («chiudiamo la sessione e tieni in memoria tutto… ripartiamo da lì»). Cosa è stato fatto → [[project-session-2026-10-31-11-01]] · CLAUDE.md note 90–91.
 **Ripartire così:**
