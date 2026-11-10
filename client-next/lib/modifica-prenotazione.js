@@ -32,6 +32,13 @@ import { emailValida } from './contatti-import'
 import { ritiraLink } from './link-pagamento'
 
 const DATA_RE = /^\d{4}-\d{2}-\d{2}$/
+// La forma non basta: «2026-13-45» ha la forma giusta e arriverebbe al
+// database, che risponde con un errore. Una data vera torna uguale a sé stessa.
+const dataVera = g => {
+  if (!DATA_RE.test(g || '')) return false
+  const d = new Date(`${g}T12:00:00Z`)
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === g
+}
 const PAGATA = ['pagato', 'rimborsato']
 
 // I campi che si possono mandare, e nient'altro.
@@ -78,7 +85,7 @@ export async function prepara(prev, risorsa, richiesta) {
   if (cambiaDate) {
     if (risorsa?.modalita !== 'giornaliero')
       return { errore: 'Le date si cambiano da qui solo per le risorse a giornate.', status: 400 }
-    if (!DATA_RE.test(dal || '') || !DATA_RE.test(al || '')) return { errore: 'Date non valide.', status: 400 }
+    if (!dataVera(dal) || !dataVera(al)) return { errore: 'Date non valide.', status: 400 }
     if (al < dal) return { errore: 'La riconsegna viene prima del ritiro.', status: 400 }
     conto = await contoGiornaliero(risorsa, dal, al, { escludi: prev.id, regoleVendita: false })
     if (!conto.ok) return { errore: conto.motivo || 'Quel periodo non è disponibile.', status: 409 }
