@@ -16,7 +16,7 @@ pagarlo**.
 > dentro GitHub, che è uno degli accessi che descrive: se nessuno può entrare in
 > GitHub, nessuno può leggere queste istruzioni. Va tenuta una copia fuori.
 
-*Aggiornato al 1° novembre 2026.*
+*Aggiornato al 10 novembre 2026.*
 
 ---
 
@@ -243,7 +243,7 @@ un altro. Il dettaglio sta in `SECURITY.md`.
 | Cartella | Contenuto |
 |---|---|
 | `client-next/` | **tutto il codice vivo**: pagine, pannello, funzioni di servizio |
-| `supabase/migrations/` | le modifiche alla struttura del database, numerate fino alla 138, in ordine |
+| `supabase/migrations/` | le modifiche alla struttura del database, numerate fino alla 145, in ordine |
 | `tests/` | i controlli automatici e le sonde diagnostiche |
 | i file `.md` in radice | la documentazione (vedi §9) |
 
@@ -282,6 +282,11 @@ blog, statistiche.
 **due**, le **Risorse** (in Booking: un furgone, una casa, un campo, con orari e
 disponibilità) e gli **Eventi**. I **Prodotti** si acquistano, le **Offerte** si
 chiedono. Non confonderli: è già costato un rientro.
+
+Una risorsa a giornate può avere un **calendario dei prezzi** (tabella
+`risorse_tariffe`, dal 10/11/2026): prezzo e regole giorno per giorno, solo per
+i giorni diversi dal prezzo base. Il conto lo fa un posto solo
+(`lib/conto-giornaliero.js`), e la prenotazione ne conserva la fotografia.
 
 ---
 
@@ -694,4 +699,4 @@ Restano di pensiero, e non li controlla nessuna macchina: i costi, i piani, il
 
 ---
 
-*Documento di progetto — aggiornato al 1° novembre 2026.*
+*Documento di progetto — aggiornato al 10 novembre 2026.*

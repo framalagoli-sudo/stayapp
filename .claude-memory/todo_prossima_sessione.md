@@ -1,6 +1,6 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — 01/11 sera: sentinella A LIVE; Francesco deve scegliere dove gira la B (consigliata routine Claude in cloud), poi registro scadenze. Restano le 4 cose del 28/10 (Resend tracking/webhook, robots Cloudflare, frase privacy, Fatti trovare dall AI) e l allarme newsletter programmata ferma."
+description: "Da dove riprendere — 10/11 SESSIONE CHIUSA: calendario prezzi + offerte fase 2 LIVE (Automax), da spiegare ad Automax + 2 sonde. Prima, dal 01/11: sentinella A LIVE; Francesco deve scegliere dove gira la B (consigliata routine Claude in cloud), poi registro scadenze. Restano le 4 cose del 28/10 (Resend tracking/webhook, robots Cloudflare, frase privacy, Fatti trovare dall AI) e l allarme newsletter programmata ferma."
 metadata: 
   node_type: memory
   type: project
@@ -9,6 +9,9 @@ metadata:
 ---
 
 # Si riprende da qui
+
+⭐ **10/11 sera — SESSIONE CHIUSA da Francesco** («chiudiamo sessione e aggiorniamo ogni cosa»). Resoconto → [[project-session-2026-11-09-10]]; CLAUDE.md nota 92, FEATURES e PROGETTO aggiornati.
+**Ripartire così:** (1) chiedere se vuole il messaggio pronto per Automax (Risorse → Furgone → «Prezzi e regole» / «Offerte» → «Che tipo di offerta?»); (2) sistemare probe-widget-giornate e probe-registrazione (429); (3) poi le cose aperte qui sotto (sentinella B, Resend, robots, privacy, «Fatti trovare dall'AI»).
 
 ⭐ **10/11 — calendario dei prezzi + offerte (fase 1 e 2) LIVE** → [[project_tariffe_risorse]]. Chiusi 2 buchi (offerte su risorsa altrui, offerta slot non ricontrollata). Restano: spiegare ad Automax, due sonde da aggiornare. Liberati 4,6 GB su C: (Temp + vecchio chromium), npm-cache lasciata. Il resto qui sotto (sentinella B, Resend, ecc.) resta aperto e in attesa.
 

@@ -1,6 +1,6 @@
 ---
 name: project_tariffe_risorse
-description: "09/11 richiesta Automax: listino a stagioni, minimi per periodo/weekend, promozioni e pacchetti sulle risorse a giornate — analisi data, aspetta 4 risposte di Francesco prima di costruire"
+description: "Calendario dei prezzi (risorse_tariffe) + offerte con sconto/anticipo/last minute/pacchetti sulle risorse a giornate — fasi 1 e 2 LIVE il 10/11 (Automax); restano spiegarlo ad Automax e 2 sonde da sistemare"
 metadata:
   node_type: memory
   type: project

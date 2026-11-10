@@ -202,7 +202,7 @@ hospitality/
 │   ├── components/ · context/ · hooks/
 │   └── lib/                        # supabase, send-email, guest-data, blockTypes …
 ├── tests/                          # smoke test Playwright su produzione + sonde `probe-*.mjs`
-└── supabase/migrations/            # 001–143, eseguire a mano su Supabase
+└── supabase/migrations/            # 001–145, eseguire a mano su Supabase
 ```
 > `client/` e `server/` non esistono più nel repo (vedi nota in cima). Se li vedi in locale sono residui: sono in `.gitignore` e vanno cancellati, non aggiornati.
 

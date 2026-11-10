@@ -9,7 +9,7 @@
 
 ## Da leggere per primi
 - [TODO prossima sessione](todo_prossima_sessione.md) — LEGGERE PER PRIMO
-- [Tariffe, minimi e promozioni sulle risorse](project_tariffe_risorse.md) — 09/11 richiesta Automax, analisi data, aspetta 4 risposte
+- [Tariffe, minimi e promozioni sulle risorse](project_tariffe_risorse.md) — calendario prezzi + offerte fase 2 LIVE il 10/11; da spiegare ad Automax
 - [Sentinella fornitori](project_sentinella_fornitori.md) — A live dal 01/11 (prove ogni mattina, email solo se guasto); B aspetta la scelta di Francesco (routine cloud consigliata)
 - [A ogni chiusura: aggiornare TUTTI i file di progetto](feedback_chiusura_sessione.md) — aprirli, non supporli
 - [Posizionamento target](project_positioning_target.md) — 14/10: ~80 €/mese, 200 clienti, «il cliente migliore sono io», no clone GHL, no social
@@ -19,6 +19,7 @@
 - [L'AI non inventa fatti](feedback_niente_fatti_inventati_ai.md) — recensioni inventate rifiutate
 
 ## Sessioni
+- [09–10/11 calendario dei prezzi e offerte (Automax)](project_session_2026_11_09_10.md)
 - [31/10–01/11 archivio eventi passati, sentinella A](project_session_2026_10_31_11_01.md)
 - [26/10 annullamento ospite, lista automatica, porte pubbliche](project_session_2026_10_26.md)
 - [15/10 resoconti email, Stripe vero, onboarding v2](project_session_2026_10_15.md)
