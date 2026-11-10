@@ -7,7 +7,7 @@ import GalleriaFoto from '../GalleriaFoto'
 import CalendarioPrezzi from './CalendarioPrezzi'
 // Sicuro dal browser: `booking-giornaliero` non importa niente, tantomeno
 // `supabaseAdmin`. È scritto in cima a quel file ed è il motivo per cui ci sta.
-import { contaGiorni, nomeUnita, limiteInUnita, limiteInNotti, totaleGiornaliero, unitaDaPagare } from '../../../lib/booking-giornaliero'
+import { contaGiorni, nomeUnita, limiteInUnita, limiteInNotti, minimoPredefinito, totaleGiornaliero, unitaDaPagare } from '../../../lib/booking-giornaliero'
 import { totaleConOfferta, tipoSconto, ePacchetto, etichettaSconto } from '../../../lib/offerte-risorsa'
 
 const GIORNI = [
@@ -452,8 +452,8 @@ function RisorseForm({ form, patch, patchDisp, initDisp, entita = [], onEntita, 
                   `limiteInNotti` fanno i due versi. Mostrare il numero salvato
                   accanto alla parola «giorni» direbbe una cifra falsa. */}
               <Label>{contaGiorni(form) ? 'Giorni minimi' : 'Notti minime'}</Label>
-              <Input type="number" min={contaGiorni(form) ? 2 : 1} max={365}
-                value={limiteInUnita(form.disponibilita?.minimo_notti || 1, form)}
+              <Input type="number" min={1} max={365}
+                value={limiteInUnita(form.disponibilita?.minimo_notti ?? minimoPredefinito(form), form)}
                 onChange={e => patchDisp('minimo_notti', limiteInNotti(parseInt(e.target.value) || 1, form))} />
 
               <Label>{contaGiorni(form) ? 'Giorni massimi' : 'Notti massime'} (0 = nessun limite)</Label>
@@ -933,7 +933,9 @@ function PromoPanel({ risorsa, promozioni, promoForm, setPromoForm, promoData, s
                   value={promoData.minimo_notti != null ? limiteInUnita(promoData.minimo_notti, risorsa) : ''}
                   onChange={e => {
                     const v = parseInt(e.target.value)
-                    patchP('minimo_notti', Number.isFinite(v) && v > 0 ? limiteInNotti(v, risorsa) : null)
+                    // «Da 1 giorno» vuol dire nessun minimo: si salva vuoto.
+                    const n = Number.isFinite(v) && v > 0 ? limiteInNotti(v, risorsa) : 0
+                    patchP('minimo_notti', n > 0 ? n : null)
                   }} />
               </div>
             )}

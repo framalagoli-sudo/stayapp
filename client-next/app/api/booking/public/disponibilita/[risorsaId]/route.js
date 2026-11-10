@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { unitaLibereNelGiorno, giornoDopo, totaleGiornaliero, notti, unitaDaPagare, periodoBloccato } from '@/lib/booking-giornaliero'
+import { unitaLibereNelGiorno, giornoDopo, totaleGiornaliero, notti, unitaDaPagare, periodoBloccato, limitiDelPeriodo } from '@/lib/booking-giornaliero'
 import { contoGiornaliero, leggiTariffe, oggiPerRisorsa } from '@/lib/conto-giornaliero'
 import { contoDelPeriodo, offerteDelGiorno, offertaQuasi, offertaSlotVale } from '@/lib/offerte-risorsa'
 
@@ -193,7 +193,7 @@ export async function GET(request, props) {
       }
       return Response.json({
         risorsa_id: risorsaId, mese, modalita: ris.modalita,
-        prezzo: ris.prezzo, minimo_notti: Number(ris.disponibilita?.minimo_notti) || 1,
+        prezzo: ris.prezzo, minimo_notti: limitiDelPeriodo(ris, null, null).minimo,
         occupati, offerte: inOfferta,
         // Solo i giorni diversi dal prezzo base / dalla regola della risorsa.
         prezzi, no_inizio: noInizio, no_fine: noFine, minimi,

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 // Sicuro dal browser: `booking-giornaliero` non importa niente (nemmeno
 // `supabaseAdmin`), ed è scritto in cima a quel file.
-import { limiteInUnita, nomeUnita, contaGiorni } from '@/lib/booking-giornaliero'
+import { limiteInUnita, nomeUnita, contaGiorni, minimoPredefinito } from '@/lib/booking-giornaliero'
 import SpuntaPromozioni from '@/components/guest/SpuntaPromozioni'
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').trim()
@@ -278,6 +278,11 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
                 ? (contaGiorni(selected.risorsa) ? 'E quando lo riconsegni?' : 'E quando riparti?')
                 : 'Il tuo periodo'}
           </div>
+          {contaGiorni(selected.risorsa) && selected.data && !selected.data_fine && (
+            <div style={{ fontSize: 13, color: '#6b6b76', margin: '-4px 0 10px' }}>
+              Per un giorno solo tocca di nuovo il {formatData(selected.data)}: ritiro la mattina, riconsegna la sera.
+            </div>
+          )}
 
           {/* Il calendario al posto di due campi data: chi prenota vuole vedere
               quali giorni sono liberi, non scoprirlo provando. */}
@@ -286,11 +291,16 @@ export default function BookingWidget({ entityTipo, entityId, primaryColor = '#0
             primaryColor={primaryColor}
             valuta={selected.risorsa?.valuta}
             dal={selected.data} al={selected.data_fine}
+            stessoGiorno={contaGiorni(selected.risorsa)}
             onScegli={(giorno) => {
               // Primo clic sceglie l'arrivo; il secondo la partenza. Cliccando
               // una data prima dell'arrivo si ricomincia da lì, che è quello che
               // uno intende — non un errore da segnalare.
-              if (!selected.data || selected.data_fine || giorno <= selected.data) {
+              // Chi conta il giorno di riconsegna (un furgone) noleggia anche
+              // per un giorno solo: il secondo clic sullo stesso giorno è la
+              // riconsegna la sera. Per una casa resta un ricominciare.
+              const stessoGiorno = contaGiorni(selected.risorsa) && giorno === selected.data
+              if (!selected.data || selected.data_fine || (giorno <= selected.data && !stessoGiorno)) {
                 setSelected(s => ({ ...s, data: giorno, data_fine: '' }))
                 setPeriodo(null)
               } else {
@@ -683,7 +693,7 @@ function dettaglioRisorsa(r) {
     // Il limite è salvato in notti anche per chi conta i giorni: si converte
     // prima di scriverlo, altrimenti accanto a «giorni» finisce un numero falso.
     const minimo = Number(r.disponibilita?.minimo_notti) || 0
-    if (minimo <= 1) return 'Scegli le date'
+    if (minimo <= minimoPredefinito(r)) return 'Scegli le date'
     const q = limiteInUnita(minimo, r)
     return `Minimo ${q} ${nomeUnita(r, q)}`
   }
@@ -752,7 +762,7 @@ const titleStyle  = { fontSize: 17, fontWeight: 700, marginBottom: 16, color: '#
 const NOMI_MESI = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
 const SIGLE_GIORNI = ['L', 'M', 'M', 'G', 'V', 'S', 'D']
 
-function CalendarioPubblico({ risorsaId, primaryColor, dal, al, onScegli, valuta }) {
+function CalendarioPubblico({ risorsaId, primaryColor, dal, al, onScegli, valuta, stessoGiorno = false }) {
   const adesso = new Date()
   const [anno, setAnno] = useState(adesso.getFullYear())
   const [mese, setMese] = useState(adesso.getMonth())
@@ -819,8 +829,9 @@ function CalendarioPubblico({ risorsaId, primaryColor, dal, al, onScegli, valuta
           const passato = giorno < oggiIso
           const preso = occupati.includes(giorno)
           // Il clic che si sta per fare sceglie la fine solo se l'inizio c'è e
-          // il giorno viene dopo; altrimenti ricomincia, e sceglie l'inizio.
-          const sceglieFine = dal && !al && giorno > dal
+          // il giorno viene dopo (o è lo stesso, per chi noleggia anche un
+          // giorno solo); altrimenti ricomincia, e sceglie l'inizio.
+          const sceglieFine = dal && !al && (giorno > dal || (stessoGiorno && giorno === dal))
           const vietato = sceglieFine ? noFine.includes(giorno) : noInizio.includes(giorno)
           const bloccato = passato || preso || vietato
           const eInizio = giorno === dal

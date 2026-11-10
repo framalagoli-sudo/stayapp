@@ -52,7 +52,18 @@ export function limiteInUnita(quanteNotti, risorsa) {
 // nel pannello salverebbe tre notti — cioè quattro giorni.
 export function limiteInNotti(quanteUnita, risorsa) {
   const n = Number(quanteUnita) || 0
-  return contaGiorni(risorsa) ? Math.max(1, n - 1) : n
+  return contaGiorni(risorsa) ? Math.max(0, n - 1) : n
+}
+
+// Il periodo più corto che si può prenotare, in notti, quando nessuno ha
+// scritto un minimo. Una casa si affitta almeno per una notte; un furgone si
+// noleggia anche per **un giorno solo** — ritiro la mattina, riconsegna la sera
+// — cioè zero notti.
+// ⛔ Prima il minimo era 1 notte per tutti: per chi conta il giorno di
+// riconsegna voleva dire 2 giorni, e il noleggio di un giorno era impossibile
+// anche scrivendo «1 giorno» nel pannello (Automax, 10/11/2026).
+export function minimoPredefinito(risorsa) {
+  return contaGiorni(risorsa) ? 0 : 1
 }
 
 // ─── Il calendario dei prezzi ────────────────────────────────────────────────
@@ -117,9 +128,11 @@ export function totaleGiornaliero(risorsa, dal, al, tariffe) {
 export function limitiDelPeriodo(risorsa, tariffe, dal) {
   const conf = risorsa?.disponibilita || {}
   const riga = mappaTariffe(tariffe)[dal]
-  const minimo = riga?.minimo_notti != null ? Number(riga.minimo_notti) : (Number(conf.minimo_notti) || 1)
+  const base = minimoPredefinito(risorsa)
+  const scritto = riga?.minimo_notti != null ? riga.minimo_notti : conf.minimo_notti
+  const minimo = scritto != null && Number.isFinite(Number(scritto)) ? Number(scritto) : base
   const massimo = riga?.massimo_notti != null ? Number(riga.massimo_notti) : (Number(conf.massimo_notti) || 0)
-  return { minimo: Math.max(minimo, 1), massimo }
+  return { minimo: Math.max(minimo, base), massimo }
 }
 
 function dataBreve(g) {

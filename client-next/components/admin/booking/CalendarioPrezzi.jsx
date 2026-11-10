@@ -251,7 +251,7 @@ export default function CalendarioPrezzi({ risorsa, onBack }) {
           <label style={{ ...campo, marginTop: 10 }}>
             <span style={etichetta}>Minimo di {nomeUnita(risorsa)} per chi inizia in questi giorni</span>
             <div style={{ display: 'flex', gap: 6 }}>
-              <input type="number" min={aGiorni ? 2 : 1} max={365} placeholder="lascia vuoto per non cambiarlo"
+              <input type="number" min={1} max={365} placeholder="lascia vuoto per non cambiarlo"
                 value={valori.minimo === 'base' ? '' : valori.minimo}
                 onChange={e => setValori(v => ({ ...v, minimo: e.target.value }))} style={input} />
               <button type="button" onClick={() => setValori(v => ({ ...v, minimo: v.minimo === 'base' ? '' : 'base' }))}
