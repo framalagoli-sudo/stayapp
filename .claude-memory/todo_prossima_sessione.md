@@ -11,7 +11,7 @@ metadata:
 # Si riprende da qui
 
 ⭐ **10/11 sera — SESSIONE CHIUSA da Francesco** («chiudiamo sessione e aggiorniamo ogni cosa»). Resoconto → [[project-session-2026-11-09-10]]; CLAUDE.md nota 92, FEATURES e PROGETTO aggiornati.
-**Ripartire così:** (1) chiedere se vuole il messaggio pronto per Automax (Risorse → Furgone → «Prezzi e regole» / «Offerte» → «Che tipo di offerta?»); (2) sistemare probe-widget-giornate e probe-registrazione (429); (3) poi le cose aperte qui sotto (sentinella B, Resend, robots, privacy, «Fatti trovare dall'AI»).
+➕ Stessa sera: corretto il noleggio di un giorno solo (13→13), LIVE e provato sul sito di Automax. **Ripartire così:** (1) chiedere se vuole il messaggio pronto per Automax (Risorse → Furgone → «Prezzi e regole» / «Offerte» → «Che tipo di offerta?»); (2) sistemare probe-widget-giornate e probe-registrazione (429); (3) poi le cose aperte qui sotto (sentinella B, Resend, robots, privacy, «Fatti trovare dall'AI»).
 
 ⭐ **10/11 — calendario dei prezzi + offerte (fase 1 e 2) LIVE** → [[project_tariffe_risorse]]. Chiusi 2 buchi (offerte su risorsa altrui, offerta slot non ricontrollata). Restano: spiegare ad Automax, due sonde da aggiornare. Liberati 4,6 GB su C: (Temp + vecchio chromium), npm-cache lasciata. Il resto qui sotto (sentinella B, Resend, ecc.) resta aperto e in attesa.
 

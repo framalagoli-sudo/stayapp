@@ -57,6 +57,8 @@ migliore per chi prenota · pannello delle fasce orarie DOPO · il listino lo
 compila Automax · il cliente decide come conta la risorsa (furgone: ritiro
 sabato mattina, riconsegna domenica sera = 2 giorni = `conta_giorno_uscita`).
 
+**10/11 sera — noleggio di UN giorno** (commit 4876b8bd, LIVE): 13→13 rifiutato perché il minimo predefinito era 1 notte = 2 giorni; ora `minimoPredefinito` 0 per chi conta i giorni, 1 giorno = 0 notti, secondo tocco sullo stesso giorno nel widget. Provato sul sito vero da telefono (1 giorno · €120). Pannello (campo «Giorni minimi» che ora parte da 1) scritto, non aperto. Automax aveva già compilato il calendario: weekend 14–15, 21–22, 28–29/11 a 150 € con minimo 2 giorni, dicembre 12–24 a 110 € con minimo 7 giorni.
+
 **10/11 — FASE 2 LIVE E VERIFICATA** (commit ed0553f3, migration 145
 eseguita al 1° colpo, CLAUDE.md nota 92). Sconto %/importo, in anticipo, last
 minute (fuso azienda), pacchetto che si ripete (`durata_esatta`), non
