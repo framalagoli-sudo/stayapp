@@ -130,6 +130,11 @@ export async function runScheduledSends() {
     try {
       const sent = await sendNewsletterById(id)
       console.log(`[scheduler] Newsletter ${id} inviata a ${sent} iscritti`)
-    } catch (e) { console.error(`[scheduler] Newsletter ${id}:`, e.message) }
+    } catch (e) {
+      // Una newsletter programmata che non parte resta in bozza e il giro la
+      // riprova ogni minuto: senza allarme lo saprebbe solo il log. Un allarme
+      // per newsletter (max 1/ora), finché non parte o non viene tolta.
+      await logError(`newsletter-programmata:${id}`, new Error(`La newsletter programmata non è partita: ${e.message}`), { alert: true })
+    }
   }
 }

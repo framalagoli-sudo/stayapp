@@ -88,7 +88,7 @@ Ordine scelto da Francesco:
 - Icone 192/512/apple-touch presenti. Service worker generato da next-pwa. theme_color/display:standalone ok.
 - Navigazione interna PWA preserva `qr=1` (switchTab) → resta in modalità app.
 - Minisito varianti `LandingRistorante` / `LandingAttivita` / `LandingStruttura`
-- Pagine dettaglio guest: `EventoPage`, `OffertaPage`, `PacchettoPage`, `GuestSubPage`, `PaginaPage`, `NewsletterArchivePage`
+- Pagine dettaglio guest: `EventoPage`, `OffertaPage`, `PacchettoPage`, `GuestSubPage`, `PaginaPage`
 - `ServicesTab` (verificare guestFetch/funzionale)
 - PWA tecnica: manifest, service worker, InstallButton/InstallBanner, icone
 
