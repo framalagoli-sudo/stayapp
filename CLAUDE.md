@@ -913,7 +913,7 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - **`client-next/lib/guida/<voce>.js`**, una scheda per voce del menu (`voce` = chiave di `menu-pannello.js`): `percorsi` (dove si apre), `pagine` (i file che spiega), `pulsanti` (i nomi che cita, **scritti esattamente come nelle pagine**), `rivista` (data), `aCosaServe`, `passi`, `domande`. File senza dipendenze, li legge il browser. `lib/guida/index.js` → `SCHEDE`, `schedaDelPercorso()`.
     - **Dove si vede**: «Come funziona» in cima a ogni pagina che ha la sua scheda (`GuidaPagina.jsx` nell'intestazione di `AdminLayout`, riquadro di lato), e la pagina **Aiuto** (`HelpPage.jsx`), che mostra le schede in cima con la ricerca e tiene le vecchie risposte solo per le voci non ancora scritte (quelle di Prenotazioni e Booking, false, tolte). Disegno unico: `SchedaGuida.jsx`.
     - ⛔ **La procedura è automatica**: `tests/verifica-guida.mjs` gira in `deploy.ps1` prima di Vercel e **blocca** se (1) una voce del menu non ha scheda e non è in `DA_SCRIVERE` (l'elenco può solo accorciarsi), (2) una scheda cita un pulsante che nelle sue pagine non è più scritto così, (3) una pagina è stata cambiata **dopo** la sua scheda (data dell'ultimo commit, o modifica non ancora salvata). Si sblocca rileggendo la scheda e mettendola nello stesso commit della pagina, con `rivista` aggiornata — anche se il testo andava già bene: rileggerla è il punto.
-    - 11/11: scritte **Calendario e risorse** e **Prenotazioni** (le voci di Automax). Le altre 48 a gruppi.
+    - 11/11: scritte **Calendario e risorse** e **Prenotazioni** (le voci di Automax), poi **Eventi**, **Contatti** e **Newsletter**. Le altre 45 a gruppi; il prossimo proposto: Richieste, Recensioni, Offerte.
 
 ---
 
