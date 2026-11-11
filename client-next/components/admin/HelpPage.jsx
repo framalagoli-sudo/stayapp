@@ -2,6 +2,8 @@
 import { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { apiFetch } from '@/lib/api'
+import { SCHEDE } from '@/lib/guida'
+import SchedaGuida from './SchedaGuida'
 import {
   Search, ChevronDown, LifeBuoy, Send, CheckCircle,
   LayoutDashboard, Inbox, CalendarCheck, Calendar, Star, BarChart3,
@@ -46,15 +48,9 @@ const FAQS = [
   { sec: 'richieste', q: 'Come funzionano le richieste degli ospiti?', a: 'Gli ospiti inviano richieste dalla PWA (es. pulizia camera, manutenzione, reception). Ogni richiesta ha un tipo, la camera e l\'orario. Puoi cambiare lo stato in Aperta → In corso → Risolta.' },
   { sec: 'richieste', q: 'Come rispondo a una richiesta?', a: 'Vai su Richieste, clicca sulla richiesta e cambia lo stato. Puoi aggiungere una nota interna per il tuo team. Le richieste chiuse rimangono nello storico.' },
 
-  // ── Prenotazioni ──
-  { sec: 'prenotazioni', q: 'Dove vedo le prenotazioni di attività ed escursioni?', a: 'In Prenotazioni trovi le richieste di prenotazione arrivate dalla PWA per attività, escursioni e interessi offerta. Sono organizzate in tab. Puoi filtrare per stato e vedere tutti i dettagli del cliente.' },
-  { sec: 'prenotazioni', q: 'Qual è la differenza tra Prenotazioni e Booking?', a: '"Prenotazioni" raccoglie le richieste ospiti dalla PWA (attività, escursioni, offerte). "Booking" è il sistema di prenotazione risorse strutturato (slot orari, coperti) con calendario e gestione disponibilità.' },
-
-  // ── Booking ──
-  { sec: 'booking', q: 'Come creo una risorsa prenotabile?', a: 'In Booking → Risorse clicca "+ Nuova risorsa". Scegli "Slot" (durata fissa, es. campo da tennis) o "Coperti" (posti per servizio, es. ristorante). Imposta orari, quantità disponibile e giorni di apertura.' },
-  { sec: 'booking', q: 'Come blocco date o orari specifici?', a: 'In Booking → Risorse, apri la risorsa e aggiungi un Blocco con date di inizio e fine. In quel periodo la risorsa non sarà prenotabile dal widget pubblico.' },
-  { sec: 'booking', q: 'Come gestisco le prenotazioni ricevute?', a: 'In Booking → Prenotazioni filtra per data, risorsa e stato. Clicca su una prenotazione per i dettagli, aggiungere note interne o cambiare stato. Puoi anche inviare un link recensione al completamento.' },
-  { sec: 'booking', q: 'Come mostro il booking nel mio sito?', a: 'In Booking → Risorse attiva "Visibile nel sito pubblico" per ogni risorsa. Poi in Sito & App → Sito aggiungi la sezione "Booking" nell\'ordine sezioni. Il widget appare automaticamente.' },
+  // Prenotazioni e Calendario e risorse: le risposte di prima erano false (risorse
+  // solo «slot o coperti», menu che non esistono più). Ora le spiega la guida
+  // nuova (lib/guida), con una scheda per voce controllata a ogni deploy.
 
   // ── Eventi ──
   { sec: 'eventi', q: 'Come creo un evento?', a: 'Vai su Eventi e clicca "+ Nuovo evento". Inserisci titolo, data, ora, descrizione, prezzo e foto. Puoi impostare il numero massimo di posti. L\'evento appare automaticamente nel sito se la sezione "eventi" è attiva.' },
@@ -162,7 +158,15 @@ export default function HelpPage() {
   const role = profile?.role
   const perm = profile?.permissions || {}
 
-  const visibleSections = SECTIONS.filter(s => isSectionVisible(s, role, perm))
+  const visibleSections = SECTIONS.filter(s => isSectionVisible(s, role, perm) && !SCHEDE[s.key])
+  // Le schede della guida nuova: una per voce, visibili a chi vede la voce.
+  const [schedaAperta, setSchedaAperta] = useState(null)
+  const testoScheda = sc => [sc.titolo, sc.aCosaServe, ...sc.passi.flatMap(p => [p.titolo, ...p.testo]), ...(sc.domande || []).flatMap(x => [x.d, x.r])].join(' ').toLowerCase()
+  const schede = Object.values(SCHEDE).filter(sc => {
+    const sec = SECTIONS.find(x => x.key === sc.voce)
+    if (sec && !isSectionVisible(sec, role, perm)) return false
+    return !search || testoScheda(sc).includes(search.toLowerCase())
+  })
 
   const q = search.toLowerCase()
   const filteredFaqs = FAQS.filter(f => {
@@ -216,6 +220,28 @@ export default function HelpPage() {
           style={{ width: '100%', padding: '12px 16px 12px 42px', border: '1.5px solid #ddd', borderRadius: 12, fontSize: 15, boxSizing: 'border-box', background: '#fff', outline: 'none' }}
         />
       </div>
+
+      {/* ── La guida per sezione ── */}
+      {schede.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 10, marginBottom: 24 }}>
+          {schede.map(sc => {
+            const aperta = schedaAperta === sc.voce || (!!search && schede.length === 1)
+            return (
+              <div key={sc.voce} data-guida-voce={sc.voce} style={{ background: '#fff', borderRadius: 14, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+                <button onClick={() => setSchedaAperta(aperta ? null : sc.voce)} aria-expanded={aperta}
+                  style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: 16, fontWeight: 700, color: '#1a1a2e' }}>{sc.titolo}</span>
+                    <span style={{ display: 'block', fontSize: 13, color: '#777', marginTop: 2, overflowWrap: 'anywhere' }}>{sc.aCosaServe}</span>
+                  </span>
+                  <ChevronDown size={18} strokeWidth={1.5} color="#999" style={{ flexShrink: 0, transform: aperta ? 'rotate(180deg)' : 'none' }} />
+                </button>
+                {aperta && <div style={{ padding: '0 20px 20px' }}><SchedaGuida scheda={sc} /></div>}
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* ── Sezioni (chip) ── */}
       {!search && (

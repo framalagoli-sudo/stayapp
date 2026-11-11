@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useAzienda } from '@/context/AziendaContext'
 import { apiFetch } from '@/lib/api'
 import Breadcrumb from './Breadcrumb'
+import GuidaPagina from './GuidaPagina'
 import { VOCI, costruisciMenu } from './menu-pannello'
 import {
   LayoutDashboard, BarChart2, Shield,
@@ -555,7 +556,12 @@ export default function AdminLayout({ children }) {
           {sidebarContent}
         </aside>
         <main className="admin-main">
-          <Breadcrumb />
+          {/* Il percorso a sinistra e, se la pagina ha la sua scheda, «Come
+              funziona» a destra (lib/guida). */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ minWidth: 0, flex: '1 1 auto' }}><Breadcrumb /></div>
+            <GuidaPagina />
+          </div>
           <TrialBanner azienda={azienda} />
           <CreditoAIBanner attivo={!!profile?.azienda_id && profile?.role !== 'super_admin'} pathname={pathname} />
           {children}

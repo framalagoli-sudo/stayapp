@@ -52,6 +52,14 @@ di fretta. Ognuna di queste righe nasce da un guasto vero già successo.
    aperta **anche da un dominio cliente e da un sottodominio** — gli smoke
    provano `www.oltrenova.com` e basta. Il controllo automatico è
    `tests/probe-molti-indirizzi.mjs`, che legge gli indirizzi vivi dal database.
+10. **Cambiando una pagina del pannello si aggiorna la sua guida**, nello
+    stesso commit (decisione di Francesco dell'11/11/2026: «se aggiorniamo cose
+    aggiorni anche la guida»). Ogni voce del menu ha una scheda in
+    `client-next/lib/guida/`, che dichiara le pagine che spiega e i pulsanti che
+    nomina. Si rilegge la scheda, si corregge se serve, si aggiorna `rivista`.
+    Un pulsante nuovo o rinominato va scritto nella scheda; una voce di menu
+    nuova nasce con la sua scheda. `tests/verifica-guida.mjs` blocca il deploy
+    se una pagina è più nuova della sua scheda. Nota 93.
 
 **Il controllo automatico**: `node tests/verifica-regole.mjs` legge il codice e
 trova le violazioni meccaniche di queste regole. Gira **da solo prima di ogni
@@ -900,6 +908,12 @@ Testo: onChange locale → onBlur propaga. Select/toggle/file: onChange diretto.
     - ✏️ **Il titolare modifica una prenotazione** (10/11 sera, chiesto da Automax; decisioni di Francesco). «Modifica» in Prenotazioni, nel calendario e in «Tutte le prenotazioni» (`components/admin/ModificaPrenotazione.jsx`), route `POST /api/booking/prenotazioni/[id]/modifica` (`anteprima: true` = conto senza scrivere), regole in **`lib/modifica-prenotazione.js`**: date (solo a giornate), nome, email, telefono, note, totale. Il totale si ricalcola col listino; una cifra scritta a mano resta (`dettaglio_prezzo.a_mano`). Date nuove con `contoGiornaliero(..., { escludi, regoleVendita: false })`: periodo libero, chiusure e non vendibili sì; minimo, massimo e giorni senza ritiro/riconsegna no. Già pagata: date sì, totale no; alla cassa del sito o annullata: 409. Dopo il salvataggio si ricontrolla la sovrapposizione e si torna com'era — ⛔ mai `confermaPostiPrenotazione`, che in caso di conflitto **cancella**. «Avvisa il cliente» manda «Prenotazione modificata» e dice se è partita. Sonda `probe-modifica-prenotazione.mjs [--browser]` verde in produzione.
     - ⚠️ Il primo tentativo della migration non era arrivato al database (come la 142): si controlla una colonna, non ci si fida del «fatto».
     - Sonde (a mano): `probe-calendario-prezzi.mjs` (conto, regole, prenotazione dal sito e dal titolare, valori ostili, altra azienda, copia, azzera) e `probe-calendario-prezzi-browser.mjs [cartella-foto]` (pannello da titolare su computer e telefono, widget del visitatore). ⚠️ `probe-widget-giornate.mjs` è rimasta indietro: con una risorsa sola il widget salta l'elenco, e la sonda cerca il nome.
+
+93. **📖 La guida del pannello, una scheda per voce, che non può mentire** (11/11/2026, idea di Francesco: «perché non facciamo una guida interna? andrebbe fatto per ogni voce del menu» e «crea una procedura che se aggiorniamo cose aggiorni anche la guida»). La pagina «Aiuto» di maggio diceva cose false (risorse solo «slot o coperti», menu spariti): una guida che mente è peggio di nessuna.
+    - **`client-next/lib/guida/<voce>.js`**, una scheda per voce del menu (`voce` = chiave di `menu-pannello.js`): `percorsi` (dove si apre), `pagine` (i file che spiega), `pulsanti` (i nomi che cita, **scritti esattamente come nelle pagine**), `rivista` (data), `aCosaServe`, `passi`, `domande`. File senza dipendenze, li legge il browser. `lib/guida/index.js` → `SCHEDE`, `schedaDelPercorso()`.
+    - **Dove si vede**: «Come funziona» in cima a ogni pagina che ha la sua scheda (`GuidaPagina.jsx` nell'intestazione di `AdminLayout`, riquadro di lato), e la pagina **Aiuto** (`HelpPage.jsx`), che mostra le schede in cima con la ricerca e tiene le vecchie risposte solo per le voci non ancora scritte (quelle di Prenotazioni e Booking, false, tolte). Disegno unico: `SchedaGuida.jsx`.
+    - ⛔ **La procedura è automatica**: `tests/verifica-guida.mjs` gira in `deploy.ps1` prima di Vercel e **blocca** se (1) una voce del menu non ha scheda e non è in `DA_SCRIVERE` (l'elenco può solo accorciarsi), (2) una scheda cita un pulsante che nelle sue pagine non è più scritto così, (3) una pagina è stata cambiata **dopo** la sua scheda (data dell'ultimo commit, o modifica non ancora salvata). Si sblocca rileggendo la scheda e mettendola nello stesso commit della pagina, con `rivista` aggiornata — anche se il testo andava già bene: rileggerla è il punto.
+    - 11/11: scritte **Calendario e risorse** e **Prenotazioni** (le voci di Automax). Le altre 48 a gruppi.
 
 ---
 

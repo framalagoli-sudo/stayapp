@@ -64,6 +64,21 @@ if ($regoleExit -ne 0) {
     exit 1
 }
 
+# La guida del pannello (client-next/lib/guida): una pagina cambiata dopo la
+# sua scheda, un pulsante citato che non c'e' piu', una voce di menu senza
+# scheda. Una guida che mente e' peggio di nessuna guida.
+Write-Host "`n=== La guida del pannello ===" -ForegroundColor Cyan
+Set-Location tests
+node verifica-guida.mjs
+$guidaExit = $LASTEXITCODE
+Set-Location ..
+if ($guidaExit -ne 0) {
+    Write-Host "`nLa guida non e' allineata alle pagine: GUARDARE SOPRA." -ForegroundColor Red
+    Write-Host "   Niente e' stato deployato. Si rilegge la scheda, si corregge se serve," -ForegroundColor Yellow
+    Write-Host "   si aggiorna 'rivista' e la si mette nello stesso commit della pagina." -ForegroundColor Yellow
+    exit 1
+}
+
 Write-Host "`n=== Deploy Vercel (Next.js) ===" -ForegroundColor Cyan
 Set-Location client-next
 # --force: rebuild SENZA build cache. Necessario perché Vercel, riusando la cache,

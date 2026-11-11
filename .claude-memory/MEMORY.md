@@ -11,6 +11,7 @@
 - [TODO prossima sessione](todo_prossima_sessione.md) — LEGGERE PER PRIMO
 - [Tariffe, minimi e promozioni sulle risorse](project_tariffe_risorse.md) — calendario prezzi + offerte fase 2 LIVE il 10/11; da spiegare ad Automax
 - [Sentinella fornitori](project_sentinella_fornitori.md) — A live dal 01/11 (prove ogni mattina, email solo se guasto); B aspetta la scelta di Francesco (routine cloud consigliata)
+- [Guida del pannello: cambio pagina = aggiorno la scheda](feedback_guida_pannello.md) — lib/guida, verifica-guida blocca il deploy
 - [A ogni chiusura: aggiornare TUTTI i file di progetto](feedback_chiusura_sessione.md) — aprirli, non supporli
 - [Posizionamento target](project_positioning_target.md) — 14/10: ~80 €/mese, 200 clienti, «il cliente migliore sono io», no clone GHL, no social
 - [Agenti e automatismi per il titolare](project_agenti_automatismi.md) — 24/10 idea di Francesco, proposte date; Halloween Club in sospeso
