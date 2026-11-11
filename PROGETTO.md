@@ -16,7 +16,7 @@ pagarlo**.
 > dentro GitHub, che è uno degli accessi che descrive: se nessuno può entrare in
 > GitHub, nessuno può leggere queste istruzioni. Va tenuta una copia fuori.
 
-*Aggiornato al 10 novembre 2026.*
+*Aggiornato all'11 novembre 2026.*
 
 ---
 
@@ -287,6 +287,9 @@ Una risorsa a giornate può avere un **calendario dei prezzi** (tabella
 `risorse_tariffe`, dal 10/11/2026): prezzo e regole giorno per giorno, solo per
 i giorni diversi dal prezzo base. Il conto lo fa un posto solo
 (`lib/conto-giornaliero.js`), e la prenotazione ne conserva la fotografia.
+Il titolare può **modificare** una prenotazione dal pannello
+(`lib/modifica-prenotazione.js`): stesso conto, e se il periodo nuovo si
+sovrappone a un'altra prenotazione si torna com'era.
 
 ---
 
@@ -424,7 +427,8 @@ si sperimenta.
 
 1. **controlla le regole sul codice** — e si ferma se un cambiamento *toglie*
    qualcosa a un cliente (una voce di menu, una pagina) senza autorizzazione
-   scritta nel messaggio
+   scritta nel messaggio — e **la guida del pannello**: si ferma se una pagina
+   è cambiata dopo la sua scheda in `client-next/lib/guida/` (`tests/verifica-guida.mjs`)
 2. pubblica su Vercel — se non compila, il ramo principale resta pulito
 3. salva su GitHub
 4. lancia i controlli automatici (~3 minuti) e tre sonde di sicurezza che
@@ -699,4 +703,4 @@ Restano di pensiero, e non li controlla nessuna macchina: i costi, i piani, il
 
 ---
 
-*Documento di progetto — aggiornato al 10 novembre 2026.*
+*Documento di progetto — aggiornato all'11 novembre 2026.*

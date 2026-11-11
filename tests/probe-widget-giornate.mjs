@@ -9,21 +9,17 @@
 //
 // Uso: node probe-widget-giornate.mjs
 import { chromium } from '@playwright/test'
-import { createClient } from '@supabase/supabase-js'
-import { config } from 'dotenv'
-config({ path: '.env.test' })
-const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, TEST_URL = 'https://www.oltrenova.com' } = process.env
+import { admin, cancellaAziendaDiProva, TEST_URL } from './probe-auth.mjs'
 const L = process.env.TEST_LOCALE || TEST_URL
-const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 const g = n => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10) }
 let ko = 0
 const ok = (c, t) => { console.log(`  ${c ? '✓' : '✗'} ${t}`); if (!c) ko++ }
 
-let az = null, en = null, ris = null, browser = null
+let az = null, ris = null, browser = null
 try {
   const { data: a } = await admin.from('aziende').insert({ ragione_sociale: `ZZ-WG-${Date.now()}`, require_2fa: false }).select().single(); az = a.id
-  const { data: e } = await admin.from('entita').insert({ azienda_id: az, tipo: 'ristorante', slug: `zz-wg-${Date.now()}`, name: 'ZZ Widget', active: true, moduli: { booking: true } }).select().single(); en = e.id
-  const { data: r } = await admin.from('risorse').insert({ azienda_id: az, entity_tipo: 'ristorante', entity_id: en,
+  const { data: e } = await admin.from('entita').insert({ azienda_id: az, tipo: 'ristorante', slug: `zz-wg-${Date.now()}`, name: 'ZZ Widget', active: true, moduli: { booking: true } }).select().single()
+  const { data: r } = await admin.from('risorse').insert({ azienda_id: az, entity_tipo: 'ristorante', entity_id: e.id,
     nome: 'ZZ Casa al mare', modalita: 'giornaliero', quantita: 1, prezzo: 100, attiva: true, conferma_auto: true,
     visibile_minisito: true, disponibilita: { minimo_notti: 2 }, blocchi: [] }).select().single(); ris = r.id
 
@@ -35,16 +31,14 @@ try {
 
   console.log('\nPRENOTARE UN PERIODO DAL SITO\n')
   await p.goto(`${L}/r/${e.slug}?qr=1&tab=prenota`, { waitUntil: 'networkidle' })
-  await p.getByText('ZZ Casa al mare').first().waitFor({ timeout: 20000 }).catch(() => {})
+  await p.getByText(/Quando arrivi/).waitFor({ timeout: 20000 }).catch(() => {})
   // Il banner dei cookie copre i pulsanti in fondo: va tolto di mezzo come farebbe
   // un visitatore, altrimenti il click finale viene intercettato da lui.
   const cookie = p.getByRole('button', { name: /^Accetto$/ })
   if (await cookie.count()) { await cookie.first().click(); await p.waitForTimeout(600) }
-  ok(/A giornate/.test(await p.locator('body').innerText()), 'la risorsa si presenta come «A giornate · €100 a notte»')
-
-  await p.getByText('ZZ Casa al mare').first().click()
-  await p.getByText(/Quando arrivi/).waitFor({ timeout: 15000 }).catch(() => {})
-  ok(/Quando arrivi/.test(await p.locator('body').innerText()), 'chiede quando si arriva, non un orario')
+  // Con una sola risorsa il modulo salta l'elenco e apre subito le date: è il
+  // caso più comune (un furgone, una casa), e il percorso che va provato.
+  ok(/Quando arrivi/.test(await p.locator('body').innerText()), 'con una sola risorsa si entra dritti nelle date: chiede quando si arriva, non un orario')
 
   // Il calendario: si clicca un giorno libero, non si compila una data.
   // ⚠️ Un giorno può cadere nel mese successivo — a fine mese capita sempre —
@@ -96,7 +90,9 @@ try {
   ok(await bottone.isDisabled(), 'senza consenso il pulsante resta spento')
   // ⚠️ Si spunta la **casella**, non il testo: dentro l'etichetta c'è il link
   // all'informativa, e cliccando lì si apre il link invece di dare il consenso.
-  await p.locator('input[type=checkbox]').last().check()
+  // Le caselle sono più d'una (privacy, promozioni facoltative): si prende
+  // quella dentro l'etichetta dell'informativa, non «l'ultima».
+  await p.locator('label', { hasText: 'Ho letto e accetto' }).locator('input[type=checkbox]').check()
   await p.waitForTimeout(400)
   await bottone.click()
   await p.waitForTimeout(3000)
@@ -122,8 +118,7 @@ try {
 
   await p.reload({ waitUntil: 'networkidle' })
   await p.waitForTimeout(2500)
-  await p.getByText('ZZ Casa al mare').first().click().catch(() => {})
-  await p.waitForTimeout(1200)
+  await p.getByText(/Quando arrivi/).waitFor({ timeout: 20000 }).catch(() => {})
   const occupato = await vaiA(g(11))
   ok(occupato && await occupato.isDisabled(), 'un giorno già preso non si può cliccare')
   ok(errori.length === 0, `nessun errore nel browser${errori.length ? ': ' + errori.slice(0, 2).join(' | ') : ''}`)
@@ -133,9 +128,7 @@ try {
 } catch (e) { console.error('ERRORE:', e.message); ko++ }
 finally {
   if (browser) await browser.close()
-  if (ris) { await admin.from('prenotazioni').delete().eq('risorsa_id', ris); await admin.from('risorse').delete().eq('id', ris) }
-  if (en) await admin.from('entita').delete().eq('id', en)
-  if (az) { const { error } = await admin.from('aziende').delete().eq('id', az); if (error) console.error('pulizia:', error.message) }
+  try { await cancellaAziendaDiProva(az) } catch (e) { console.error('pulizia:', e.message) }
   console.log('[probe] pulito')
   process.exit(ko ? 1 : 0)
 }

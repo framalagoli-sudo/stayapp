@@ -19,4 +19,4 @@ metadata:
 
 **Incidenti**: deploy della fase 2 fermato dal sistema per memoria dopo Vercel+push+smoke 74/74 → sonde rimaste lanciate a mano, verdi; resto ZZ-SSRF pulito. Script con apici rovinati dalla shell (`'all'offerta'`) → d'ora in poi script su file nella scratchpad, mai `cat` senza heredoc (un `cat >` senza input ha bloccato un comando alla chiusura).
 
-**Aperto**: spiegare ad Automax dove sono «Prezzi e regole» e i tipi di offerta (offerto un messaggio pronto); sistemare `probe-widget-giornate.mjs` (una risorsa → il widget salta l'elenco) e `probe-registrazione.mjs` (riconoscere il 429); pannello delle fasce orarie per gli slot = dopo, quando un cliente lo chiede.
+**Aperto**: spiegare ad Automax dove sono «Prezzi e regole» e i tipi di offerta (offerto un messaggio pronto); ~~probe-widget-giornate~~ (sistemata l'11/11, verde) e `probe-registrazione.mjs` (riconoscere il 429); pannello delle fasce orarie per gli slot = dopo, quando un cliente lo chiede.
