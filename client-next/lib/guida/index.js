@@ -16,8 +16,11 @@
 
 import booking from './booking'
 import prenotazioni from './prenotazioni'
+import eventi from './eventi'
+import contatti from './contatti'
+import newsletter from './newsletter'
 
-export const SCHEDE = { booking, prenotazioni }
+export const SCHEDE = { booking, prenotazioni, eventi, contatti, newsletter }
 
 // Quale scheda spiega la pagina aperta. Vince il percorso più lungo:
 // `/admin/booking/risorse` è di «booking» anche se un giorno ci fosse una

@@ -28,9 +28,9 @@ const CARTELLA = path.join(CN, 'lib', 'guida')
 // scheda nasce, la voce si toglie da qui (il controllo lo pretende).
 const DA_SCRIVERE = new Set([
   'entita:sito', 'ai_site_builder', 'entita:theme', 'entita:domini', 'entita:chatbot', 'entita:moduli', 'qrcode', 'analytics',
-  'entita:menu', 'entita:services', 'entita:gallery', 'entita:vetrine', 'eventi', 'offerte', 'blog',
-  'contatti', 'richieste', 'recensioni', 'preventivi', 'form_builder', 'survey', 'demo',
-  'newsletter', 'whatsapp', 'automazioni', 'piano_editoriale', 'content_studio', 'loyalty', 'prodotti', 'shop',
+  'entita:menu', 'entita:services', 'entita:gallery', 'entita:vetrine', 'offerte', 'blog',
+  'richieste', 'recensioni', 'preventivi', 'form_builder', 'survey', 'demo',
+  'whatsapp', 'automazioni', 'piano_editoriale', 'content_studio', 'loyalty', 'prodotti', 'shop',
   'entita:info', 'entita:privacy', 'entita:funzioni', 'collaboratori', 'integrazioni', 'pagamenti', 'seo_geo', 'audit_log', 'impostazioni', 'sicurezza', 'aiuto',
   'aziende', 'strutture', 'ristoranti', 'attivita', 'utenti', 'diagnostica', 'funzioni',
 ])

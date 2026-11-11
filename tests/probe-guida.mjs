@@ -41,7 +41,7 @@ try {
     const errori = []
     p.on('pageerror', x => errori.push(x.message))
 
-    for (const [percorso, titolo] of [['/admin/prenotazioni', 'Prenotazioni'], ['/admin/booking', 'Calendario e risorse'], ['/admin/booking/risorse', 'Calendario e risorse']]) {
+    for (const [percorso, titolo] of [['/admin/prenotazioni', 'Prenotazioni'], ['/admin/booking', 'Calendario e risorse'], ['/admin/booking/risorse', 'Calendario e risorse'], ['/admin/eventi', 'Eventi'], ['/admin/contatti', 'Contatti'], ['/admin/newsletter', 'Newsletter']]) {
       await p.goto(`${TEST_URL}${percorso}`, { waitUntil: 'domcontentloaded' })
       const apri = p.locator('[data-guida-apri]')
       const c = await apri.waitFor({ timeout: 60000 }).then(() => true).catch(() => false)
@@ -59,9 +59,9 @@ try {
     }
 
     // Una pagina senza scheda non promette una guida che non c'è.
-    await p.goto(`${TEST_URL}/admin/contatti`, { waitUntil: 'domcontentloaded' })
+    await p.goto(`${TEST_URL}/admin/blog`, { waitUntil: 'domcontentloaded' })
     await p.waitForTimeout(4000)
-    ok(await p.locator('[data-guida-apri]').count() === 0, `${larg}px /admin/contatti: niente «Come funziona» (scheda non ancora scritta)`)
+    ok(await p.locator('[data-guida-apri]').count() === 0, `${larg}px /admin/blog: niente «Come funziona» (scheda non ancora scritta)`)
 
     // La pagina Aiuto
     await p.goto(`${TEST_URL}/admin/help`, { waitUntil: 'domcontentloaded' })
