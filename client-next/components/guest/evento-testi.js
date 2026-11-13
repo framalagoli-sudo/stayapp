@@ -22,6 +22,7 @@ const TESTI = {
     esaurito: 'Tutto esaurito',
     gratuito: 'Gratuito',
     perPersona: '/ persona',
+    comprende: 'Il prezzo comprende',
 
     concluso: 'Evento concluso',
     giaSvolto: 'Questo appuntamento si è già svolto.',
@@ -81,6 +82,7 @@ const TESTI = {
     esaurito: 'Sold out',
     gratuito: 'Free',
     perPersona: '/ person',
+    comprende: 'The price includes',
 
     concluso: 'This event has ended',
     giaSvolto: 'This event has already taken place.',

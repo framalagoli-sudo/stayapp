@@ -115,10 +115,11 @@ try {
 
   for (const larg of [1280, 390]) {
     const { page, ctx, errori } = await apri(`${BASE}/eventi/${ev.id}`, larg)
-    const riga = page.locator('[data-comprende]')
+    const riga = page.locator('[data-comprende] p')
     ok(await riga.isVisible() && (await riga.innerText()) === COMPRENDE, `${larg}px: sotto il prezzo si legge «${COMPRENDE}»`)
     const fuori = await riga.evaluate(el => el.getBoundingClientRect().right > window.innerWidth + 1)
     ok(!fuori, `${larg}px: la riga sta nello schermo`)
+    if (FOTO) await riga.locator('xpath=..').screenshot({ path: `${FOTO}/comprende-riquadro-${larg}.png` })
     await riempi(page)
     await page.getByRole('button', { name: /^Prenota/ }).click()
     const riep = page.locator('[data-riepilogo-comprende]')
@@ -132,7 +133,7 @@ try {
   console.log('\n3. CON UN PACCHETTO')
   {
     const { page, ctx } = await apri(`${BASE}/eventi/${pkgEv.id}`, 1280)
-    ok((await page.locator('[data-comprende]').innerText()) === 'Spettacolo dal vivo', 'la riga generale sotto il prezzo')
+    ok((await page.locator('[data-comprende] p').innerText()) === 'Spettacolo dal vivo', 'la riga generale sotto il prezzo')
     await page.getByText('Con cena', { exact: true }).click()
     await riempi(page)
     await page.getByRole('button', { name: /^Prenota/ }).click()

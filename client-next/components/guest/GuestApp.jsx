@@ -827,7 +827,10 @@ function EventoDetailView({ evento, onBack, privacyUrl = null, primary, textColo
             {(() => { const pkg = (evento.packages || []).find(p => p.id === pkgId); return prezzoPersona(evento, pkg?.price, { gratuito: tr('free', lang), perPersona: lang === 'en' ? '/ person' : '/ persona' }) })()}
           </div>
           {evento.comprende && (
-            <p style={{ fontSize: 13.5, color: subText, lineHeight: 1.5, margin: '-10px 0 16px', overflowWrap: 'anywhere' }}>{evento.comprende}</p>
+            <div data-comprende style={{ background: `color-mix(in srgb, ${primary} 8%, transparent)`, borderLeft: `3px solid ${primary}`, borderRadius: 10, padding: '10px 12px', margin: '-6px 0 16px' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: subText, marginBottom: 3 }}>{lang === 'en' ? 'The price includes' : 'Il prezzo comprende'}</div>
+              <p style={{ fontSize: 14, fontWeight: 500, color: textColor, lineHeight: 1.5, margin: 0, overflowWrap: 'anywhere' }}>{evento.comprende}</p>
+            </div>
           )}
 
           {done ? (

@@ -432,13 +432,16 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
             </div>
           )}
 
-          <div style={{ fontSize: 28, fontWeight: 800, color: '#00b5b5', marginBottom: evento.comprende ? 6 : 24 }}>
+          <div style={{ fontSize: 28, fontWeight: 800, color: '#00b5b5', marginBottom: evento.comprende ? 12 : 24 }}>
             {prezzoPersona(evento, selectedPkg ? selectedPkg.price : null, { gratuito: T.gratuito, perPersona: T.perPersona }) || ''}
           </div>
           {/* Cosa si sta comprando, scritto dal locale: «€30 / persona» da solo
               non dice se è l'ingresso, la cena o tutte e due. */}
           {evento.comprende && (
-            <p data-comprende style={{ fontSize: 14.5, color: '#444', lineHeight: 1.55, margin: '0 0 24px', overflowWrap: 'anywhere' }}>{evento.comprende}</p>
+            <div data-comprende style={{ background: '#effafa', borderLeft: '3px solid #00b5b5', borderRadius: 10, padding: '12px 14px', margin: '0 0 24px' }}>
+              <div style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#00797a', marginBottom: 4 }}>{T.comprende}</div>
+              <p style={{ fontSize: 15, fontWeight: 500, color: '#1a1a2e', lineHeight: 1.5, margin: 0, overflowWrap: 'anywhere' }}>{evento.comprende}</p>
+            </div>
           )}
 
           {done ? (
