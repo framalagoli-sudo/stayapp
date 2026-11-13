@@ -42,7 +42,7 @@ export default function EventoEditPage() {
     // parte sempre esplicito, quindi un evento creato dal pannello nascerebbe
     // spento comunque. Le due righe si muovono insieme.
     notify_owner_on_booking: true, send_guest_confirmation: true,
-    cta_label: '', cta_condizioni: '',
+    cta_label: '', cta_condizioni: '', comprende: '',
     mostra_prezzo: true, mostra_prezzo_pagina: true, prezzo_testo: '', prezzo_modo: '', acconto_percentuale: 0,
     prenotazioni_chiuse: false, prenotazioni_chiuse_testo: '', telefono_obbligatorio: false,
     // Un evento nuovo nasce con l'annullamento fino a 24 ore prima e con la
@@ -83,6 +83,7 @@ export default function EventoEditPage() {
           azienda_id:  ev.azienda_id  || '',
           cta_label:       ev.cta_label || '',
           cta_condizioni:  ev.cta_condizioni || '',
+          comprende:       ev.comprende || '',
           acconto_percentuale:  ev.acconto_percentuale ?? 0,
           mostra_prezzo:        ev.mostra_prezzo ?? true,
           mostra_prezzo_pagina: ev.mostra_prezzo_pagina ?? true,
@@ -318,6 +319,21 @@ export default function EventoEditPage() {
               )}
             </>
           )}
+
+          {/* Sotto «€30 / persona» non si leggeva per cosa: che fossero cena e
+              spettacolo lo diceva, se andava bene, il titolo (Garage 22, 13/11).
+              Lo scrive il locale: dedurlo dalla descrizione è la trappola del
+              «Gratuito». Si legge anche nel riepilogo, alla cassa e nella conferma. */}
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#444', margin: '18px 0 4px' }}>
+            Cosa comprende il prezzo
+          </label>
+          <input value={form.comprende} onChange={e => set('comprende', e.target.value)} maxLength={160}
+            placeholder="Cena (antipasto, primo, dolce) + spettacolo dal vivo"
+            style={{ display: 'block', width: '100%', padding: '12px 14px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14, marginBottom: 4 }} />
+          <div style={{ fontSize: 12, color: '#999' }}>
+            Una riga, sotto il prezzo. La legge anche chi paga, prima della cassa e nell’email di conferma.
+            Se lo lasci vuoto non compare niente. {form.comprende.length}/160
+          </div>
         </div>
 
         {/* Il pulsante di prenotazione e le sue condizioni */}

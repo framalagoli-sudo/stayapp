@@ -15,7 +15,7 @@ const TESTI = {
   it: {
     titolo: 'Controlla prima di confermare',
     stai: (n, ev) => <>Stai prenotando <strong>{n} {n === 1 ? 'posto' : 'posti'}</strong> per <strong>«{ev}»</strong>.</>,
-    posti: 'Posti', totale: 'Totale', paghiOra: 'Paghi adesso',
+    posti: 'Posti', comprende: 'Comprende', totale: 'Totale', paghiOra: 'Paghi adesso',
     acconto: p => `acconto ${p}%`, saldo: 'Da saldare sul posto',
     // Vale per l'acconto come per il pagamento intero: finché non si paga non si è prenotati.
     valida: tutto => `La prenotazione è valida solo dopo il pagamento${tutto ? '' : ' dell’acconto'}.`,
@@ -25,7 +25,7 @@ const TESTI = {
   en: {
     titolo: 'Check before you confirm',
     stai: (n, ev) => <>You are booking <strong>{n} {n === 1 ? 'seat' : 'seats'}</strong> for <strong>“{ev}”</strong>.</>,
-    posti: 'Seats', totale: 'Total', paghiOra: 'You pay now',
+    posti: 'Seats', comprende: 'Includes', totale: 'Total', paghiOra: 'You pay now',
     acconto: p => `${p}% deposit`, saldo: 'Balance due on site',
     valida: tutto => `Your booking is valid only once the ${tutto ? 'payment' : 'deposit'} has been paid.`,
     poi: min => `By confirming you go to the payment page. Your seats are held for ${min} minutes: if the payment is not completed they are released and the booking is cancelled automatically.`,
@@ -34,7 +34,7 @@ const TESTI = {
 }
 
 export default function RiepilogoPrenotazione({
-  riepilogo, titoloEvento, quando = null, lang = 'it', inCorso = false, errore = '',
+  riepilogo, titoloEvento, quando = null, comprende = '', lang = 'it', inCorso = false, errore = '',
   onConferma, onModifica,
   // Chi lo monta passa i suoi colori: la pagina dell'evento e l'app non si
   // vestono allo stesso modo.
@@ -52,6 +52,12 @@ export default function RiepilogoPrenotazione({
         {t.stai(riepilogo.posti, titoloEvento)}
       </p>
       {quando && <p style={{ fontSize: 13.5, color: c.tenue, margin: '0 0 14px' }}>{quando}</p>}
+      {/* Cosa si compra: lo scrive il locale (cosaComprende in lib/prezzo-evento). */}
+      {comprende && (
+        <p data-riepilogo-comprende style={{ fontSize: 14, color: c.testo, lineHeight: 1.55, margin: '0 0 14px', overflowWrap: 'anywhere' }}>
+          <span style={{ color: c.tenue }}>{t.comprende}: </span>{comprende}
+        </p>
+      )}
 
       <div style={{ borderTop: `1px solid ${c.bordo}`, borderBottom: `1px solid ${c.bordo}`, margin: '14px 0' }}>
         <div style={riga}><span>{t.posti}</span><span style={{ color: c.testo }}>{riepilogo.posti}</span></div>

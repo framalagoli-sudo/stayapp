@@ -1,6 +1,6 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
-import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
+import { prezzoDaMostrare, prezzoPersona, cosaComprende } from '@/lib/prezzo-evento'
 import { eventoConcluso } from '@/lib/evento-concluso'
 import { oraLocale } from '@/lib/fuso'
 import { termineAnnullamento, fraseAnnullamento, entroIlTermine } from '@/lib/annullamento-regole'
@@ -432,9 +432,14 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
             </div>
           )}
 
-          <div style={{ fontSize: 28, fontWeight: 800, color: '#00b5b5', marginBottom: 24 }}>
+          <div style={{ fontSize: 28, fontWeight: 800, color: '#00b5b5', marginBottom: evento.comprende ? 6 : 24 }}>
             {prezzoPersona(evento, selectedPkg ? selectedPkg.price : null, { gratuito: T.gratuito, perPersona: T.perPersona }) || ''}
           </div>
+          {/* Cosa si sta comprando, scritto dal locale: «€30 / persona» da solo
+              non dice se è l'ingresso, la cena o tutte e due. */}
+          {evento.comprende && (
+            <p data-comprende style={{ fontSize: 14.5, color: '#444', lineHeight: 1.55, margin: '0 0 24px', overflowWrap: 'anywhere' }}>{evento.comprende}</p>
+          )}
 
           {done ? (
             <div style={{ textAlign: 'center', padding: '32px 0' }}>
@@ -444,6 +449,7 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
             </div>
           ) : riepilogo ? (
             <RiepilogoPrenotazione riepilogo={riepilogo} titoloEvento={evento.title} quando={fmtDate(evento.date_start)} lang={lang}
+              comprende={cosaComprende(evento, selectedPkg)}
               inCorso={booking} errore={bookErr} onConferma={handleBook} onModifica={() => { setRiepilogo(null); setBookErr('') }} />
           ) : (
             <>

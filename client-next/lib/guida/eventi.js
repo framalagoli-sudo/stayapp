@@ -4,7 +4,7 @@
 export default {
   voce: 'eventi',
   titolo: 'Eventi',
-  rivista: '2026-11-11',
+  rivista: '2026-11-13',
   percorsi: ['/admin/eventi'],
   pagine: [
     'components/admin/eventi/EventiListPage.jsx',
@@ -14,7 +14,7 @@ export default {
   ],
   pulsanti: [
     'Nuovo evento', 'In programma', 'Passati', 'Prenotazioni →', 'Crea evento', 'Salva modifiche', 'Copertina',
-    'Il prezzo, come lo vede chi guarda', 'Gratuito', 'Una cifra', 'Lo scrivo io',
+    'Il prezzo, come lo vede chi guarda', 'Gratuito', 'Una cifra', 'Lo scrivo io', 'Cosa comprende il prezzo',
     'Il pulsante di prenotazione', 'Posti disponibili', 'Di cui tenuti per il telefono', 'Quanto si paga prenotando (%)',
     'Pubblicato', 'Chiedi il telefono per forza', 'Non accetto piu prenotazioni',
     'Chi ha prenotato può annullare da solo', 'Quando si libera un posto, offrilo al primo in lista',
@@ -32,6 +32,7 @@ export default {
       testo: [
         'Premi «Nuovo evento», scrivi titolo, data e ora, descrizione e luogo, e premi «Crea evento». La «Copertina» si carica dopo il primo salvataggio.',
         'In «Il prezzo, come lo vede chi guarda» scegli cosa si legge sul sito: «Gratuito», «Una cifra» (quella del prezzo base) oppure «Lo scrivo io» (per esempio «alla carta»). Se non scegli niente, il prezzo non compare.',
+        'In «Cosa comprende il prezzo» scrivi in una riga cosa si compra (per esempio «Cena + spettacolo dal vivo»): si legge sotto il prezzo, nel riepilogo prima di pagare, alla cassa e nell’email di conferma.',
         'Perché il pubblico lo veda accendi «Pubblicato» e salva con «Salva modifiche».',
       ],
     },

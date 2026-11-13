@@ -14,6 +14,7 @@ import { guestEmailTemplate, html } from './email-template'
 import { getAziendaLegale } from './guest-data'
 import { oraLocale } from './fuso'
 import { chiOrganizza, baseLink } from './evento-titolare'
+import { cosaComprende } from './prezzo-evento'
 
 // La lista d'attesa che si muove da sola (decisione di Francesco, 26/10/2026).
 //
@@ -31,7 +32,7 @@ import { chiOrganizza, baseLink } from './evento-titolare'
 // raccoglie i posti liberati in qualunque altro modo (capienza alzata, non
 // pagati, una chiamata che è fallita).
 
-const EVENTO = 'id, title, date_start, date_end, location, seats_total, seats_booked, posti_riservati, lista_attesa, lista_automatica, prenotazioni_chiuse, published, active, azienda_id, entity_id, price, packages, acconto_percentuale, cover_url, aziende(fuso_orario)'
+const EVENTO = 'id, title, date_start, date_end, location, seats_total, seats_booked, posti_riservati, lista_attesa, lista_automatica, prenotazioni_chiuse, published, active, azienda_id, entity_id, price, packages, acconto_percentuale, cover_url, comprende, aziende(fuso_orario)'
 
 // Sotto questo tempo non si offre più niente: un invito da prendere in cinque
 // minuti è una corsa che nessuno vince, e fa solo un'email in più.
@@ -224,7 +225,7 @@ export async function prendiPosto(token, origine) {
       const base = (process.env.CLIENT_URL ?? '').trim() || origine
       const esito = await creaCheckout({
         aziendaId: evento.azienda_id,
-        righe: [{ nome: conto.tutto ? evento.title : `${evento.title} — acconto ${conto.perc}%`, importo: conto.dovuto, quantita: 1, immagine: evento.cover_url || undefined }],
+        righe: [{ nome: conto.tutto ? evento.title : `${evento.title} — acconto ${conto.perc}%`, importo: conto.dovuto, quantita: 1, immagine: evento.cover_url || undefined, descrizione: cosaComprende(evento, (evento.packages || []).find(p => p.id === b.package_id)) }],
         email: b.guest_email,
         successUrl: `${base}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${base}/checkout/annullato`,

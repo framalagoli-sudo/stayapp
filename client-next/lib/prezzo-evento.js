@@ -61,3 +61,14 @@ export function prezzoPersona(evento, prezzoScelto, { gratuito = 'Gratuito', per
   if (modo === 'cifra') return `€${Number(evento?.price) || 0} ${perPersona}`
   return null
 }
+
+// Cosa si compra prenotando: il pacchetto scelto (nome e descrizione) e la riga
+// «Cosa comprende il prezzo» scritta dal locale (migration 146). Mai dedotto
+// dalla descrizione dell'evento. La usano pagina, app del QR, riepilogo, cassa
+// di Stripe ed email di conferma: la stessa frase ovunque. Vuoto = '' (non si
+// scrive niente).
+export function cosaComprende(evento, pacchetto = null) {
+  const pulito = s => (typeof s === 'string' ? s.replace(/\s+/g, ' ').trim() : '')
+  const pkg = pacchetto ? [pulito(pacchetto.name), pulito(pacchetto.description)].filter(Boolean).join(' — ') : ''
+  return [pkg, pulito(evento?.comprende)].filter(Boolean).join(' · ').slice(0, 400)
+}

@@ -15,7 +15,7 @@ function isUUID(v) { return UUID_RE.test(v) }
 const ALLOWED = ['title', 'description', 'cover_url', 'date_start', 'date_end',
   'location', 'price', 'seats_total', 'posti_riservati', 'active', 'published', 'packages', 'entity_tipo', 'entity_id',
   'notify_owner_on_booking', 'send_guest_confirmation', 'formato_cover', 'cover_focal',
-  'cta_label', 'cta_condizioni', 'acconto_percentuale', 'mostra_prezzo', 'mostra_prezzo_pagina', 'prezzo_testo', 'prezzo_modo', 'telefono_obbligatorio',
+  'cta_label', 'cta_condizioni', 'comprende', 'acconto_percentuale', 'mostra_prezzo', 'mostra_prezzo_pagina', 'prezzo_testo', 'prezzo_modo', 'telefono_obbligatorio',
   'prenotazioni_chiuse', 'prenotazioni_chiuse_testo', 'slug',
   'annullabile', 'annullabile_ore', 'lista_automatica']
 
@@ -51,6 +51,8 @@ export async function PATCH(request, props) {
       payload.prenotazioni_chiuse_testo = payload.prenotazioni_chiuse_testo.trim().slice(0, 300) || null
     if (typeof payload.cta_condizioni === 'string') payload.cta_condizioni = payload.cta_condizioni.trim().slice(0, 600) || null
     if (typeof payload.prezzo_testo === 'string') payload.prezzo_testo = payload.prezzo_testo.trim().slice(0, 40) || null
+    // Cosa si compra: una riga, scritta dal locale (migration 146).
+    if (typeof payload.comprende === 'string') payload.comprende = payload.comprende.replace(/\s+/g, ' ').trim().slice(0, 160) || null
     // Cosa si legge dove sta il prezzo: solo questi tre, o niente. Un valore
 
     // inventato dal client finirebbe in pagina — e il CHECK della 123 lo

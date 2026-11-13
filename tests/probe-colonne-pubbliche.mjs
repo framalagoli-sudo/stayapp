@@ -55,6 +55,9 @@ const AMMESSE = {
                   // come la cancellazione gratuita di un albergo. `lista_automatica`
                   // invece no: è un'impostazione del titolare, resta fuori.
                   'annullabile','annullabile_ore',
+                  // 13/11: cosa comprende il prezzo, una riga scritta dal locale per
+                  // chi prenota (migration 146). Contenuto della scheda pubblica.
+                  'comprende',
                   // Il minimo per il piede di pagina: nome, logo, tema, footer_cfg,
                   // social e i dati legali del titolare — che sono pubblici per obbligo
                   // di legge. Verificato campo per campo il 25/08; il minisito NON esce

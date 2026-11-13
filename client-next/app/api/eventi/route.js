@@ -19,7 +19,7 @@ async function getProfile(userId) {
 const ALLOWED = ['title', 'description', 'cover_url', 'date_start', 'date_end',
   'location', 'price', 'seats_total', 'posti_riservati', 'active', 'published', 'packages', 'entity_tipo', 'entity_id',
   'notify_owner_on_booking', 'send_guest_confirmation', 'formato_cover', 'cover_focal',
-  'cta_label', 'cta_condizioni', 'acconto_percentuale', 'mostra_prezzo', 'mostra_prezzo_pagina', 'prezzo_testo', 'prezzo_modo', 'telefono_obbligatorio',
+  'cta_label', 'cta_condizioni', 'comprende', 'acconto_percentuale', 'mostra_prezzo', 'mostra_prezzo_pagina', 'prezzo_testo', 'prezzo_modo', 'telefono_obbligatorio',
   'annullabile', 'annullabile_ore', 'lista_automatica']
 
 export async function GET(request) {
@@ -76,6 +76,8 @@ export async function POST(request) {
     if (typeof payload.cta_label === 'string') payload.cta_label = payload.cta_label.trim().slice(0, 60) || null
     if (typeof payload.cta_condizioni === 'string') payload.cta_condizioni = payload.cta_condizioni.trim().slice(0, 600) || null
     if (typeof payload.prezzo_testo === 'string') payload.prezzo_testo = payload.prezzo_testo.trim().slice(0, 40) || null
+    // Cosa si compra: una riga, scritta dal locale (migration 146).
+    if (typeof payload.comprende === 'string') payload.comprende = payload.comprende.replace(/\s+/g, ' ').trim().slice(0, 160) || null
     // Cosa si legge dove sta il prezzo: solo questi tre, o niente. Un valore
 
     // inventato dal client finirebbe in pagina — e il CHECK della 123 lo

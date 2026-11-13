@@ -98,7 +98,7 @@ async function contoIncassa(accountId) {
  * Crea la pagina di pagamento sul conto del cliente.
  *
  * @param aziendaId  di chi è l'incasso
- * @param righe      [{ nome, importo (in euro), quantita, immagine }] — già calcolate da chi chiama
+ * @param righe      [{ nome, importo (in euro), quantita, immagine, descrizione }] — già calcolate da chi chiama
  * @param successUrl dove torna chi ha pagato
  * @param cancelUrl  dove torna chi rinuncia
  * @param email      di chi compra, per precompilare (facoltativo)
@@ -128,6 +128,9 @@ export async function creaCheckout({ aziendaId, righe, successUrl, cancelUrl, em
         unit_amount: centesimi,
         product_data: {
           name: String(r.nome || 'Voce').slice(0, 250),
+          // Cosa si sta pagando, sotto il nome (per un evento: cosaComprende).
+          // Stripe rifiuta una descrizione vuota: si passa solo se c'è.
+          ...(r.descrizione && String(r.descrizione).trim() ? { description: String(r.descrizione).trim().slice(0, 500) } : {}),
           ...(r.immagine ? { images: [String(r.immagine)] } : {}),
         },
       },

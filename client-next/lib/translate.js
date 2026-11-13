@@ -17,7 +17,7 @@ const TRANSLATABLE_FIELDS = {
   attivita:   ['description', 'services', 'minisito'],
   pagina:     ['titolo', 'seo_title', 'seo_description', 'blocks'],
   articolo:   ['title', 'excerpt', 'content'],
-  evento:     ['title', 'description', 'location', 'packages'],
+  evento:     ['title', 'description', 'location', 'packages', 'comprende'],
   // Form builder: solo testo display-only. MAI 'opzioni' (sono valori inviati + display:
   // tradurli romperebbe le submission e la logica condizionale) né tipo/operatore/condizione.
   form:       ['descrizione', 'campi'],

@@ -47,7 +47,7 @@ export async function mandaConfermaEvento(bookingId) {
     if (b.conferma_inviata_il) return { ok: false, motivo: 'Conferma già inviata' }
 
     const { data: ev } = await supabaseAdmin.from('eventi')
-      .select('id, title, date_start, location, azienda_id, entity_id, entity_tipo, packages, send_guest_confirmation, annullabile, annullabile_ore, aziende(fuso_orario)')
+      .select('id, title, date_start, location, azienda_id, entity_id, entity_tipo, packages, comprende, send_guest_confirmation, annullabile, annullabile_ore, aziende(fuso_orario)')
       .eq('id', b.event_id).maybeSingle()
     if (!ev) return { ok: false, motivo: 'Evento non trovato' }
     // Il titolare può aver spento la conferma: è una sua scelta, si rispetta.
@@ -88,6 +88,8 @@ export async function mandaConfermaEvento(bookingId) {
             ev.location ? { label: 'Dove', value: ev.location } : null,
             { label: 'Posti', value: String(b.seats || 1) },
             pkg?.name ? { label: 'Pacchetto', value: pkg.name } : null,
+            // Cosa si è comprato, come lo ha scritto il locale (migration 146).
+            ev.comprende?.trim() ? { label: 'Comprende', value: ev.comprende.trim() } : null,
             b.total_amount ? { label: 'Totale', value: `€${b.total_amount}` } : null,
           ].filter(Boolean),
           bodyHtml: fraseTermine && linkAnnulla

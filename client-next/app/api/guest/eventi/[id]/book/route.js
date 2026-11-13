@@ -16,6 +16,7 @@ import { annunciaPrenotazioneEvento } from '@/lib/evento-prenotato'
 import { MINUTI_PER_PAGARE } from '@/lib/prenotazioni-scadute'
 import { testoConsensoPromozioni } from '@/lib/consenso-promozioni'
 import { emailValida } from '@/lib/contatti-import'
+import { cosaComprende } from '@/lib/prezzo-evento'
 
 const ENTITY_TBL = { struttura: 'entita', ristorante: 'entita', attivita: 'entita' }
 
@@ -147,6 +148,7 @@ export async function POST(request, props) {
           righe: [{
             nome: conto.tutto ? evento.title : `${evento.title} — acconto ${conto.perc}%`,
             importo: conto.dovuto, quantita: 1, immagine: evento.cover_url || undefined,
+            descrizione: cosaComprende(evento, (evento.packages || []).find(p => p.id === package_id)),
           }],
           email: guest_email.trim(),
           successUrl: `${base}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,

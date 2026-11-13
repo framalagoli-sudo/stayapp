@@ -1,6 +1,6 @@
 ﻿'use client'
 import React, { useEffect, useRef, useState } from 'react'
-import { prezzoDaMostrare, prezzoPersona } from '@/lib/prezzo-evento'
+import { prezzoDaMostrare, prezzoPersona, cosaComprende } from '@/lib/prezzo-evento'
 import { ricco } from '@/lib/testo-ricco'
 import { rapportoDi, focalValido } from '@/lib/formati-foto'
 import { paletteApp } from '@/lib/palette-app'
@@ -826,6 +826,9 @@ function EventoDetailView({ evento, onBack, privacyUrl = null, primary, textColo
           <div style={{ fontWeight: 800, fontSize: 22, color: primary, marginBottom: 16 }}>
             {(() => { const pkg = (evento.packages || []).find(p => p.id === pkgId); return prezzoPersona(evento, pkg?.price, { gratuito: tr('free', lang), perPersona: lang === 'en' ? '/ person' : '/ persona' }) })()}
           </div>
+          {evento.comprende && (
+            <p style={{ fontSize: 13.5, color: subText, lineHeight: 1.5, margin: '-10px 0 16px', overflowWrap: 'anywhere' }}>{evento.comprende}</p>
+          )}
 
           {done ? (
             <div style={{ textAlign: 'center', padding: '16px 0' }}>
@@ -835,6 +838,7 @@ function EventoDetailView({ evento, onBack, privacyUrl = null, primary, textColo
             </div>
           ) : riepilogo ? (
             <RiepilogoPrenotazione riepilogo={riepilogo} titoloEvento={evento.title} quando={fmtDate(evento)} lang={lang}
+              comprende={cosaComprende(evento, (evento.packages || []).find(p => p.id === pkgId))}
               inCorso={booking} errore={bookErr} onConferma={handleBook} onModifica={() => { setRiepilogo(null); setBookErr('') }}
               colori={{ testo: textColor, tenue: subText, bordo: border, primario: primary, suPrimario: readableOn('#ffffff', primary, '#1a1a2e'), raggio: radius || 12 }} />
           ) : (
