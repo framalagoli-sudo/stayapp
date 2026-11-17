@@ -19,7 +19,10 @@ const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY, TEST_URL = '
 const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
 const anon  = createClient(SUPABASE_URL, SUPABASE_ANON_KEY,         { auth: { persistSession: false, autoRefreshToken: false } })
 
-const RS = 'CI-SEC-TEST'           // ragione_sociale fixture, per pre-cleanup
+// «ZZ…»: è il segno delle aziende di prova (CLAUDE.md nota 48). Senza, il giro
+// dei domini registrava su Vercel un ci-sec-….oltrenova.com mentre lo smoke
+// girava, e la pulizia (che cancella dal database) lo lasciava agganciato.
+const RS = 'ZZ-CI-SEC-TEST'        // ragione_sociale fixture, per pre-cleanup
 const CONTACT_EMAIL = `ci-sec-contact-${Date.now()}@playwright.internal`
 
 const ctx = { aziendaId: null, staffUserId: null, staffToken: null, otherEntity: null, anyEntity: null, vetrinaId: null }
@@ -31,7 +34,7 @@ test.describe('Regression sicurezza (ruolo staff)', () => {
 
   test.beforeAll(async () => {
     // pre-cleanup aziende fixture stale
-    const { data: stale } = await admin.from('aziende').select('id').eq('ragione_sociale', RS)
+    const { data: stale } = await admin.from('aziende').select('id').in('ragione_sociale', [RS, `${RS}-B`, 'CI-SEC-TEST', 'CI-SEC-TEST-B'])
     for (const a of (stale || [])) await admin.from('aziende').delete().eq('id', a.id)
 
     // azienda fixture (require_2fa off)
