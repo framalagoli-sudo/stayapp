@@ -13,6 +13,10 @@ Azienda (top-level)
 └── Attività 1  → Minisito /a/:slug
 ```
 
+> **📋 Le cose aperte stanno in UN posto solo: `DA_FARE.md`** (decisione di Francesco, 18/11/2026).
+> Si legge **a ogni avvio di sessione** e si aggiorna **nello stesso commit** di ogni lavoro che
+> chiude o apre qualcosa. Un elenco sparso fra documenti e memoria ne dimentica metà — è successo.
+
 > **🌐 Registrazione domini (piano, non ancora implementato)** → `REGISTRAR.md` — il fornitore dev'essere sostituibile: interfaccia unica in `lib/registrar/`, implementazioni sotto. Né Cloudflare né Vercel vendono `.it`.
 ## ⛔ Prima di scrivere qualsiasi codice
 

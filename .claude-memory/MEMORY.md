@@ -8,6 +8,7 @@
 > [La sequenza del fornitore va letta tutta](reference_verifica_la_sequenza_del_fornitore.md) — WhatsApp «pronto» non avrebbe inviato niente.
 
 ## Da leggere per primi
+- 📋 [Le cose aperte: SOLO DA_FARE.md](feedback_da_fare_unico.md) — leggerlo a ogni avvio, aggiornarlo in ogni commit
 - [TODO prossima sessione](todo_prossima_sessione.md) — LEGGERE PER PRIMO
 - [Tariffe, minimi e promozioni sulle risorse](project_tariffe_risorse.md) — calendario prezzi + offerte fase 2 LIVE il 10/11; da spiegare ad Automax
 - [Sentinella fornitori](project_sentinella_fornitori.md) — A live dal 01/11 (prove ogni mattina, email solo se guasto); B aspetta la scelta di Francesco (routine cloud consigliata)

@@ -10,6 +10,8 @@ metadata:
 
 # Si riprende da qui
 
+📋 **Dal 18/11/2026 l'elenco delle cose aperte è `DA_FARE.md`** (radice del repo). Questo file è il diario delle sessioni: le voci aperte qui sotto sono state riportate lì; per sapere cosa resta, leggere quello.
+
 ⭐ **18/11 sera — pannello illeggibile col tema scuro del computer** (inlingua: categorie blog; Automax). Causa: globals.css di partenza di Next (#ededed + color-scheme dark). Tolto: `color-scheme: light` fisso. Più 74 grigi #bbb/#ccc → #8a8a8a e le etichette del menu laterale → #8b8ba3. Sonda nuova `tests/probe-colori-pannello.mjs` (43 pagine, tema chiaro e scuro). Francesco ha verificato da inlingua: «si vede, funziona». ⚠️ L'ultimo deploy (538b9bbe) è stato fermato per memoria DOPO smoke 74/74, durante le sonde di sicurezza: da rilanciare quelle e probe-colori-pannello (tolta a mano una ZZ-COLLAB-A rimasta).
 
 ⭐ **18/11 — sito Panoramic Luxury Suite Penthouse** nella struttura del cliente (azienda «Brunetti Giovanni» 96479848…, slug `panoramix-luxury-suite-penthouse`, nome corretto in «Panoramic»), LIVE su **www.suitepanoramic.it**, noindex di proposito (lo accende Francesco). Script `tests/costruisci-panoramic.mjs`, stato nella cartella del cliente. Tutti i «Prenota ora» → WhatsApp; modulo → brunettigio@gmail.com; carattere nuovo Jost (accoppiata «Essenziale»); intestazione chiara, nel layout classico i pulsanti «testo» sono menu al centro (SiteNav). L'azienda doppia creata dallo script è stata cancellata dalla route. Aperti: suitepanoramic.it senza www punta ancora ad Aruba (62.149.128.40); titoli delle tessere del mosaico e fascia che scorre restano in grassetto (cambiarlo tocca tutti i siti: chiedere).
