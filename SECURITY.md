@@ -412,7 +412,7 @@ Il token OAuth del cliente è salvato in `aziende.google_calendar_token` (JSONB)
 - [ ] **Contratto di responsabile del trattamento (art. 28 GDPR) verso i clienti**: la §8 elenca i DPA verso i nostri fornitori, ma non si è trovato quello verso i clienti, di cui trattiamo i dati dei loro clienti. Verificare nei termini del 31/08; se manca, farlo con un legale
 - [ ] **Rotazione di `META_APP_SECRET`** (passato dalla chat il 15/09) e **data** per la rotazione annuale qui sopra
 - [ ] **Pentest esterno prima di aprire le registrazioni**: le nostre sonde trovano le classi che conosciamo; la password del WiFi ha dimostrato che ne esistono altre
-- [ ] **Esportazione GDPR per azienda incompleta** (trovato il 24/09/2026): `GET /api/admin/backup/azienda/[id]` esporta ~15 tabelle, un'azienda ne tocca ~50 (offerte, preventivi, recensioni, form, pagine, vetrine, shop…). È il diritto alla portabilità: va resa completa, leggendo le tabelle dallo schema come fa `probe-cancella-azienda.mjs`, non da un elenco scritto a mano
+- [x] *(fatto il 18/11/2026: `lib/esportazione-azienda.js` legge le tabelle dallo schema e segue le chiavi esterne; sonda `probe-esportazione-azienda.mjs` in deploy)* **Esportazione GDPR per azienda incompleta** (trovato il 24/09/2026): `GET /api/admin/backup/azienda/[id]` esporta ~15 tabelle, un'azienda ne tocca ~50 (offerte, preventivi, recensioni, form, pagine, vetrine, shop…). È il diritto alla portabilità: va resa completa, leggendo le tabelle dallo schema come fa `probe-cancella-azienda.mjs`, non da un elenco scritto a mano
 - [x] **Account senza azienda** — bloccati il 24–25/09/2026 (6 di Futura Vacanze + `oltrenova@gmail.com`); cancellare un'azienda ora porta via i suoi account (invariante 21)
 
 ---

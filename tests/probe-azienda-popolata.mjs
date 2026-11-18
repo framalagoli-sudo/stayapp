@@ -49,30 +49,31 @@ export async function creaAzienda(etichetta, sigla = 'ENUM') {
 
 // Un oggetto di ogni tipo nell'azienda A. Le cose con uno stato pubblico nascono
 // NON pubblicate: sulle porte pubbliche devono sembrare inesistenti.
-export async function popola(A) {
+// `suffisso`: per popolare due aziende nello stesso giro (slug e codici sono unici).
+export async function popola(A, suffisso = '') {
   const base = { azienda_id: A.az }, et = { entity_tipo: 'attivita', entity_id: A.ent }
   const ins = async (tab, riga) => { const r = await deve(a.from(tab).insert(riga).select().single(), tab); R._righe.push([tab, r.id]); return r }
   const R = { _righe: [] }
-  R.contatto = (await ins('contatti', { ...base, nome: M, email: `zz-c-${t}@playwright.internal`, fonte: 'probe', pipeline_stage: null })).id
-  const pagina = await ins('pagine', { ...et, slug: `zz-bozza-${t}`, titolo: M, status: 'bozza', blocks: [] })
+  R.contatto = (await ins('contatti', { ...base, nome: M, email: `zz-c-${t}${suffisso}@playwright.internal`, fonte: 'probe', pipeline_stage: null })).id
+  const pagina = await ins('pagine', { ...et, slug: `zz-bozza-${t}${suffisso}`, titolo: M, status: 'bozza', blocks: [] })
   R.pagina = pagina.id; R.paginaSlug = pagina.slug
-  R.evento = (await ins('eventi', { ...base, ...et, title: M, slug: `zz-ev-${t}`, date_start: new Date(Date.now() + 9e8).toISOString(), published: false, active: true, notify_owner_on_booking: false })).id
-  R.booking = (await ins('event_bookings', { event_id: R.evento, guest_name: M, guest_email: `zz-b-${t}@playwright.internal`, seats: 1, status: 'confirmed' })).id
+  R.evento = (await ins('eventi', { ...base, ...et, title: M, slug: `zz-ev-${t}${suffisso}`, date_start: new Date(Date.now() + 9e8).toISOString(), published: false, active: true, notify_owner_on_booking: false })).id
+  R.booking = (await ins('event_bookings', { event_id: R.evento, guest_name: M, guest_email: `zz-b-${t}${suffisso}@playwright.internal`, seats: 1, status: 'confirmed' })).id
   R.newsletter = (await ins('newsletters', { ...base })).id
   R.preventivo = (await ins('preventivi', { ...base })).id
   const form = await ins('form_builder', { ...base, nome: M, attivo: false, campi: [] })
   R.form = form.id; R.formToken = form.token
-  const art = await ins('articoli', { ...base, ...et, slug: `zz-art-${t}`, title: M, published: false, active: true })
+  const art = await ins('articoli', { ...base, ...et, slug: `zz-art-${t}${suffisso}`, title: M, published: false, active: true })
   R.articolo = art.id; R.articoloSlug = art.slug
-  R.categoria = (await ins('blog_categories', { ...base, name: M, slug: `zz-cat-${t}` })).id
+  R.categoria = (await ins('blog_categories', { ...base, name: M, slug: `zz-cat-${t}${suffisso}` })).id
   R.risorsa = (await ins('risorse', { ...base, ...et, nome: M, modalita: 'giornaliero', prezzo: 1, quantita: 1, attiva: false, visibile_minisito: false, disponibilita: {} })).id
-  R.prenotazione = (await ins('prenotazioni', { ...base, ...et, risorsa_id: R.risorsa, data: '2031-01-01', cliente_nome: M, cliente_email: `zz-p-${t}@playwright.internal` })).id
+  R.prenotazione = (await ins('prenotazioni', { ...base, ...et, risorsa_id: R.risorsa, data: '2031-01-01', cliente_nome: M, cliente_email: `zz-p-${t}${suffisso}@playwright.internal` })).id
   R.promo = (await ins('risorse_promozioni', { risorsa_id: R.risorsa, nome: M, prezzo_speciale: 1 })).id
   R.offerta = (await ins('offerte', { ...base, entity_id: A.ent, titolo: M, attiva: true, pubblicata: false, impegno: 'chiedi', modo: 'richiesta' })).id
   R.prodotto = (await ins('prodotti', { ...base, nome: M, prezzo: 1, attivo: false })).id
   R.ordine = (await ins('ordini', { ...base })).id
-  R.vetrina = (await ins('vetrine', { ...et, titolo: M, preset: 'viaggi', slug: `zz-v-${t}`, status: 'bozza' })).id
-  R.elemento = (await ins('vetrina_elementi', { vetrina_id: R.vetrina, ...et, titolo: M, slug: `zz-el-${t}`, status: 'bozza' })).id
+  R.vetrina = (await ins('vetrine', { ...et, titolo: M, preset: 'viaggi', slug: `zz-v-${t}${suffisso}`, status: 'bozza' })).id
+  R.elemento = (await ins('vetrina_elementi', { vetrina_id: R.vetrina, ...et, titolo: M, slug: `zz-el-${t}${suffisso}`, status: 'bozza' })).id
   R.sezione = (await ins('sezioni', { ...et, nome: M, blocks: [] })).id
   R.automazione = (await ins('automazioni', { ...base, ...et, nome: M, trigger_evento: 'nuovo_contatto', attiva: false, steps: [] })).id
   R.blogAuto = (await ins('blog_automazioni', { ...base, ...et })).id
@@ -86,7 +87,7 @@ export async function popola(A) {
   R.webhook = (await ins('webhooks', { ...base, nome: M, url: 'https://example.invalid/zz' })).id
   R.collegamento = (await ins('collegamenti', { ...base, from_tipo: 'pagina', from_id: R.pagina, to_tipo: 'evento', to_id: R.evento })).id
   R.snapshot = (await ins('site_snapshots', { ...et })).id
-  R.gift = (await ins('gift_cards', { ...base, codice: `ZZ${t}`, valore_iniziale: 1, valore_residuo: 1 })).id
+  R.gift = (await ins('gift_cards', { ...base, codice: `ZZ${t}${suffisso}`, valore_iniziale: 1, valore_residuo: 1 })).id
   return R
 }
 

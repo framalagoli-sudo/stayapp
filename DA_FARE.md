@@ -22,9 +22,6 @@
 ## A. Lavoro di Ettore — senza decisioni da prendere
 
 ### A1. Prima di aprire ai clienti (obblighi e sicurezza)
-- [ ] **Esportazione GDPR per azienda incompleta** — `GET /api/admin/backup/azienda/[id]` esporta ~15
-  tabelle su ~50: è il diritto alla portabilità. Va letta dallo schema come fa
-  `probe-cancella-azienda.mjs`, non da un elenco a mano. (`SECURITY.md` checklist)
 - [ ] **Permessi dei collaboratori per singola attività** — `struttura_ids`/`attivita_ids` valgono solo
   nel menu, non nelle route. Prima che un cliente con più sedi dia accesso a un collaboratore.
   (memoria `project_backlog_staff_attivita_perm`)
