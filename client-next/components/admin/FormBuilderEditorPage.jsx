@@ -307,7 +307,7 @@ export default function FormBuilderEditorPage() {
                   <button onClick={() => moveCampo(idx, 1)} disabled={idx === campi.length - 1} style={{ background: 'none', border: '1px solid #eee', borderRadius: 4, cursor: idx === campi.length - 1 ? 'default' : 'pointer', padding: '2px 6px', color: '#aaa' }}>
                     <ChevronDown size={13} strokeWidth={1.5} />
                   </button>
-                  <button onClick={() => removeCampo(c.id)} style={{ background: 'none', border: '1px solid #eee', borderRadius: 4, cursor: 'pointer', padding: '2px 6px', color: '#ccc' }}>
+                  <button onClick={() => removeCampo(c.id)} style={{ background: 'none', border: '1px solid #eee', borderRadius: 4, cursor: 'pointer', padding: '2px 6px', color: '#8a8a8a' }}>
                     <Trash2 size={13} strokeWidth={1.5} />
                   </button>
                 </div>
@@ -323,7 +323,7 @@ export default function FormBuilderEditorPage() {
                         placeholder={`Opzione ${oi + 1}`}
                         style={{ flex: 1, border: '1px solid #ddd', borderRadius: 6, padding: '5px 8px', fontSize: 12 }}
                       />
-                      <button onClick={() => removeOpzione(c.id, oi)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc' }}>
+                      <button onClick={() => removeOpzione(c.id, oi)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a8a8a' }}>
                         <Trash2 size={13} strokeWidth={1.5} />
                       </button>
                     </div>

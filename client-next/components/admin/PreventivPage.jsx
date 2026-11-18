@@ -167,7 +167,7 @@ export default function PreventivPage() {
                 <ChevronRight size={16} strokeWidth={1.5} color="#ccc" />
                 <button
                   onClick={(e) => handleDelete(p.id, e)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#ccc' }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#8a8a8a' }}
                   title="Elimina"
                 >
                   <Trash2 size={15} strokeWidth={1.5} />

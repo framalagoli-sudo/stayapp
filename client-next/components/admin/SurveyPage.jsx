@@ -132,7 +132,7 @@ export default function SurveyPage() {
         <div style={{ ...card, textAlign: 'center' }}>
           <div style={{ fontSize: 11, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>NPS Score</div>
           <div style={{ fontSize: 36, fontWeight: 800, color: npsColor, lineHeight: 1 }}>{npsScore ?? '—'}</div>
-          <div style={{ fontSize: 11, color: '#bbb', marginTop: 4 }}>
+          <div style={{ fontSize: 11, color: '#8a8a8a', marginTop: 4 }}>
             {npsScore === null ? 'nessuna risposta' : npsScore >= 50 ? 'Eccellente' : npsScore >= 0 ? 'Buono' : 'Da migliorare'}
           </div>
         </div>
@@ -141,26 +141,26 @@ export default function SurveyPage() {
             <ThumbsUp size={12} strokeWidth={1.5} /> Promotori
           </div>
           <div style={{ fontSize: 36, fontWeight: 800, color: '#16a34a', lineHeight: 1 }}>{pPro}%</div>
-          <div style={{ fontSize: 11, color: '#bbb', marginTop: 4 }}>punteggio 9-10</div>
+          <div style={{ fontSize: 11, color: '#8a8a8a', marginTop: 4 }}>punteggio 9-10</div>
         </div>
         <div style={{ ...card, textAlign: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 11, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
             <Minus size={12} strokeWidth={1.5} /> Neutri
           </div>
           <div style={{ fontSize: 36, fontWeight: 800, color: '#d97706', lineHeight: 1 }}>{pNeu}%</div>
-          <div style={{ fontSize: 11, color: '#bbb', marginTop: 4 }}>punteggio 7-8</div>
+          <div style={{ fontSize: 11, color: '#8a8a8a', marginTop: 4 }}>punteggio 7-8</div>
         </div>
         <div style={{ ...card, textAlign: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 11, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
             <ThumbsDown size={12} strokeWidth={1.5} /> Detrattori
           </div>
           <div style={{ fontSize: 36, fontWeight: 800, color: '#dc2626', lineHeight: 1 }}>{pDet}%</div>
-          <div style={{ fontSize: 11, color: '#bbb', marginTop: 4 }}>punteggio 0-6</div>
+          <div style={{ fontSize: 11, color: '#8a8a8a', marginTop: 4 }}>punteggio 0-6</div>
         </div>
         <div style={{ ...card, textAlign: 'center' }}>
           <div style={{ fontSize: 11, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Risposte</div>
           <div style={{ fontSize: 36, fontWeight: 800, color: '#1a1a2e', lineHeight: 1 }}>{tot}</div>
-          <div style={{ fontSize: 11, color: '#bbb', marginTop: 4 }}>totale compilate</div>
+          <div style={{ fontSize: 11, color: '#8a8a8a', marginTop: 4 }}>totale compilate</div>
         </div>
       </div>
 
@@ -168,9 +168,9 @@ export default function SurveyPage() {
       <div style={card}>
         <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 16 }}>Risposte recenti</div>
         {loading ? (
-          <div style={{ color: '#bbb', fontSize: 14, textAlign: 'center', padding: '24px 0' }}>Caricamento…</div>
+          <div style={{ color: '#8a8a8a', fontSize: 14, textAlign: 'center', padding: '24px 0' }}>Caricamento…</div>
         ) : risposte.length === 0 ? (
-          <div style={{ color: '#bbb', fontSize: 14, textAlign: 'center', padding: '40px 0' }}>
+          <div style={{ color: '#8a8a8a', fontSize: 14, textAlign: 'center', padding: '40px 0' }}>
             <Star size={32} strokeWidth={1} color="#ddd" style={{ display: 'block', margin: '0 auto 12px' }} />
             Nessuna risposta ancora. Invia la prima survey!
           </div>
@@ -187,10 +187,10 @@ export default function SurveyPage() {
                 </div>
                 {r.commento && <div style={{ fontSize: 13, color: '#555', lineHeight: 1.5 }}>"{r.commento}"</div>}
                 {r.email_cliente && r.nome_cliente && (
-                  <div style={{ fontSize: 12, color: '#bbb', marginTop: 2 }}>{r.email_cliente}</div>
+                  <div style={{ fontSize: 12, color: '#8a8a8a', marginTop: 2 }}>{r.email_cliente}</div>
                 )}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#bbb', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#8a8a8a', flexShrink: 0 }}>
                 <Clock size={11} strokeWidth={1.5} /> {timeAgo(r.compilato_at)}
               </div>
             </div>

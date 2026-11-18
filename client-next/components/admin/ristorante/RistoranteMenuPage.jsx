@@ -891,7 +891,7 @@ function ItemRow({ item, ristoranteId, onChange, onDelete, allCatalogues, curren
         {/* Elimina */}
         <button
           onClick={e => { e.stopPropagation(); onDelete() }}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 15, lineHeight: 1, padding: '4px', flexShrink: 0 }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a8a8a', fontSize: 15, lineHeight: 1, padding: '4px', flexShrink: 0 }}
           title="Elimina piatto"
         >
           ✕

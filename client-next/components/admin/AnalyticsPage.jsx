@@ -40,7 +40,7 @@ function LineChart({ data, color = '#1a1a2e', height = 90 }) {
       </svg>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
         {labels.map(d => (
-          <span key={d.date} style={{ fontSize: 10, color: '#bbb' }}>
+          <span key={d.date} style={{ fontSize: 10, color: '#8a8a8a' }}>
             {new Date(d.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}
           </span>
         ))}
@@ -90,14 +90,14 @@ function StatCard({ icon, label, value, sub, trend, color = '#1a1a2e' }) {
           </span>
         )}
         {trendFlat && trendPct != null && (
-          <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 12, color: '#bbb' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 12, color: '#8a8a8a' }}>
             <Minus size={12} strokeWidth={2} /> —
           </span>
         )}
       </div>
       <div style={{ fontSize: 28, fontWeight: 800, color: '#1a1a2e', lineHeight: 1, marginBottom: 4 }}>{value ?? '—'}</div>
       <div style={{ fontSize: 12, fontWeight: 600, color: '#888' }}>{label}</div>
-      {sub && <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11, color: '#8a8a8a', marginTop: 2 }}>{sub}</div>}
     </div>
   )
 }
@@ -218,7 +218,7 @@ export default function AnalyticsPage() {
           {/* ── Visite line chart ── */}
           <Card title={`Visite sito — ultimi ${range} giorni`} style={{ marginBottom: 16 }}>
             {data.pageviews.total === 0 ? (
-              <div style={{ padding: '32px 0', textAlign: 'center', color: '#bbb' }}>
+              <div style={{ padding: '32px 0', textAlign: 'center', color: '#8a8a8a' }}>
                 <Eye size={28} strokeWidth={1.5} color="#e0e0e0" style={{ display: 'block', margin: '0 auto 10px' }} />
                 <p style={{ margin: 0, fontSize: 13 }}>Nessuna visita ancora. Il contatore parte non appena qualcuno apre il sito.</p>
               </div>
@@ -238,7 +238,7 @@ export default function AnalyticsPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 24 }}>
             <Card title="Richieste per tipo">
               {data.requests.total === 0 ? (
-                <p style={{ margin: 0, fontSize: 13, color: '#bbb' }}>Nessuna richiesta nel periodo.</p>
+                <p style={{ margin: 0, fontSize: 13, color: '#8a8a8a' }}>Nessuna richiesta nel periodo.</p>
               ) : (
                 <BarChart rows={[
                   { label: 'Ricezione',    value: data.requests.by_type.reception    || 0, color: '#6366f1' },
@@ -251,7 +251,7 @@ export default function AnalyticsPage() {
 
             <Card title="Prenotazioni per stato">
               {data.bookings.total === 0 ? (
-                <p style={{ margin: 0, fontSize: 13, color: '#bbb' }}>Nessuna prenotazione nel periodo.</p>
+                <p style={{ margin: 0, fontSize: 13, color: '#8a8a8a' }}>Nessuna prenotazione nel periodo.</p>
               ) : (
                 <BarChart rows={[
                   { label: 'Nuove',        value: data.bookings.by_status.open        || 0, color: '#e53e3e' },
@@ -263,7 +263,7 @@ export default function AnalyticsPage() {
             </Card>
           </div>
 
-          <p style={{ fontSize: 11, color: '#ccc', textAlign: 'right', margin: 0 }}>
+          <p style={{ fontSize: 11, color: '#8a8a8a', textAlign: 'right', margin: 0 }}>
             Dati in tempo reale · Visite: 1 per sessione browser per entità
           </p>
         </>

@@ -4,7 +4,7 @@
 export default {
   voce: 'eventi',
   titolo: 'Eventi',
-  rivista: '2026-11-13',
+  rivista: '2026-11-18',
   percorsi: ['/admin/eventi'],
   pagine: [
     'components/admin/eventi/EventiListPage.jsx',

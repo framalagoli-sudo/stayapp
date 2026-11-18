@@ -4,7 +4,7 @@
 export default {
   voce: 'newsletter',
   titolo: 'Newsletter',
-  rivista: '2026-11-11',
+  rivista: '2026-11-18',
   percorsi: ['/admin/newsletter'],
   pagine: [
     'components/admin/NewsletterPage.jsx',

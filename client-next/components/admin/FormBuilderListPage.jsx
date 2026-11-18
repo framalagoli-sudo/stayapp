@@ -163,7 +163,7 @@ export default function FormBuilderListPage() {
 
               <ChevronRight size={16} strokeWidth={1.5} color="#ccc" />
 
-              <button onClick={(e) => handleDelete(f.id, e)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#ccc' }}>
+              <button onClick={(e) => handleDelete(f.id, e)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#8a8a8a' }}>
                 <Trash2 size={15} strokeWidth={1.5} />
               </button>
             </div>

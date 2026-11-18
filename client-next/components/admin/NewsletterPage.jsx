@@ -92,7 +92,7 @@ export default function NewsletterPage() {
         <div style={{ textAlign: 'center', padding: '60px 24px', color: '#aaa' }}>
           <Mail size={40} strokeWidth={1.5} color="#ddd" style={{ display: 'block', margin: '0 auto 14px' }} />
           <p style={{ margin: 0, fontSize: 15 }}>Nessuna newsletter ancora.</p>
-          <p style={{ margin: '6px 0 0', fontSize: 13, color: '#ccc' }}>Crea la prima con il pulsante in alto.</p>
+          <p style={{ margin: '6px 0 0', fontSize: 13, color: '#8a8a8a' }}>Crea la prima con il pulsante in alto.</p>
         </div>
       ) : (
         <>

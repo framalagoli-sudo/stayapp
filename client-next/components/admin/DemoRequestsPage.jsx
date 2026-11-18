@@ -70,7 +70,7 @@ export default function DemoRequestsPage() {
 
       {/* Lista vuota */}
       {totale === 0 && (
-        <div style={{ textAlign: 'center', padding: '80px 0', color: '#bbb' }}>
+        <div style={{ textAlign: 'center', padding: '80px 0', color: '#8a8a8a' }}>
           <Inbox size={48} strokeWidth={1} color="#ddd" style={{ marginBottom: 16 }} />
           <p style={{ fontSize: 16 }}>Nessuna richiesta demo ricevuta.</p>
           <p style={{ fontSize: 13, marginTop: 8 }}>Le richieste dal form della landing page appariranno qui.</p>
@@ -120,7 +120,7 @@ export default function DemoRequestsPage() {
                 </div>
               </div>
 
-              <div style={{ fontSize: 12, color: '#bbb', whiteSpace: 'nowrap' }}>{fmt(r.created_at)}</div>
+              <div style={{ fontSize: 12, color: '#8a8a8a', whiteSpace: 'nowrap' }}>{fmt(r.created_at)}</div>
 
               {/* Azioni */}
               <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
@@ -148,7 +148,7 @@ export default function DemoRequestsPage() {
               <div style={{ padding: '0 20px 20px', borderTop: '1px solid #f0f0f0' }}>
                 {r.messaggio ? (
                   <div style={{ marginTop: 16 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#bbb', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#8a8a8a', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>
                       Messaggio
                     </div>
                     <p style={{ fontSize: 14, color: '#333', lineHeight: 1.7, background: '#f9f9fb', borderRadius: 8, padding: '12px 16px', margin: 0 }}>
@@ -156,7 +156,7 @@ export default function DemoRequestsPage() {
                     </p>
                   </div>
                 ) : (
-                  <p style={{ marginTop: 16, fontSize: 13, color: '#bbb', fontStyle: 'italic' }}>Nessun messaggio aggiuntivo.</p>
+                  <p style={{ marginTop: 16, fontSize: 13, color: '#8a8a8a', fontStyle: 'italic' }}>Nessun messaggio aggiuntivo.</p>
                 )}
                 <div style={{ marginTop: 16, display: 'flex', gap: 10 }}>
                   <a

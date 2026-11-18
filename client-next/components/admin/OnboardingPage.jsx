@@ -155,7 +155,7 @@ export default function OnboardingPage() {
                 <>
                   <div style={{ fontSize: 36, marginBottom: 10 }}>🖼️</div>
                   <div style={{ fontSize: 14, color: '#888' }}>Clicca per selezionare un'immagine</div>
-                  <div style={{ fontSize: 12, color: '#bbb', marginTop: 4 }}>PNG, JPG, SVG — max 5 MB</div>
+                  <div style={{ fontSize: 12, color: '#8a8a8a', marginTop: 4 }}>PNG, JPG, SVG — max 5 MB</div>
                 </>
               )}
               <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => setLogoFile(e.target.files[0] || null)} />
@@ -203,7 +203,7 @@ export default function OnboardingPage() {
 
         {step < 3 && (
           <div style={{ textAlign: 'center', marginTop: 18 }}>
-            <button onClick={() => router.push('/admin')} style={{ background: 'none', border: 'none', color: '#bbb', fontSize: 13, cursor: 'pointer' }}>
+            <button onClick={() => router.push('/admin')} style={{ background: 'none', border: 'none', color: '#8a8a8a', fontSize: 13, cursor: 'pointer' }}>
               Salta la configurazione guidata
             </button>
           </div>

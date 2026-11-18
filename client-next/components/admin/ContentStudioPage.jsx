@@ -762,7 +762,7 @@ function PianoMensileTab({ strategy }) {
                 <div style={{ flex: 1 }} />
                 <CopyBtn text={p.testo} />
                 <button onClick={() => setPosts(ps => ps.filter((_, j) => j !== i))}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: 16, padding: '2px 4px', lineHeight: 1 }}>✕</button>
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a8a8a', fontSize: 16, padding: '2px 4px', lineHeight: 1 }}>✕</button>
               </div>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', marginBottom: 8 }}>{p.titolo}</div>
               <div style={{ fontSize: 13, color: '#444', lineHeight: 1.7, whiteSpace: 'pre-line' }}>{p.testo}</div>

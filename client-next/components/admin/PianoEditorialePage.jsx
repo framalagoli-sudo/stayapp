@@ -112,7 +112,7 @@ function PreviewModal({ post, onClose, onClone }) {
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, padding: 28, maxWidth: 480, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', position: 'relative' }}>
-        <button onClick={onClose} style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', padding: 4 }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#8a8a8a', padding: 4 }}>
           <X size={18} strokeWidth={1.5} />
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
@@ -939,7 +939,7 @@ function HashtagView({ sets, setSets, aziendaId }) {
                 <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
                   {cInfo && <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 20, background: cInfo.bg, color: cInfo.color }}>{cInfo.label}</span>}
                   {pInfo && <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 20, background: pInfo.bg, color: pInfo.color }}>{pInfo.label}</span>}
-                  <span style={{ fontSize: 11, color: '#bbb', marginLeft: 'auto' }}>{set.tags.length} tag</span>
+                  <span style={{ fontSize: 11, color: '#8a8a8a', marginLeft: 'auto' }}>{set.tags.length} tag</span>
                 </div>
               </div>
             )
@@ -1266,7 +1266,7 @@ function PostRow({ p, handleDelete, handleClone, highlight, campagnaMap = {} }) 
             <div style={{ fontSize: 10, color: '#aaa', textTransform: 'uppercase' }}>{MESI[new Date(p.data_pianificata).getMonth()]?.slice(0, 3)}</div>
           </>
         ) : (
-          <span style={{ fontSize: 11, color: '#ccc' }}>—</span>
+          <span style={{ fontSize: 11, color: '#8a8a8a' }}>—</span>
         )}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -1298,7 +1298,7 @@ function PostRow({ p, handleDelete, handleClone, highlight, campagnaMap = {} }) 
       <button
         onClick={e => { e.stopPropagation(); handleClone(p.id) }}
         title="Duplica"
-        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#ccc', flexShrink: 0 }}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#8a8a8a', flexShrink: 0 }}
       >
         <Copy size={14} strokeWidth={1.5} />
       </button>
@@ -1559,7 +1559,7 @@ function CampaignView({ campagne, setCampagne, aziendaId }) {
                     )}
                     {c.descrizione && <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{c.descrizione}</div>}
                   </div>
-                  <button onClick={() => startEdit(c)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 4 }}>
+                  <button onClick={() => startEdit(c)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a8a8a', padding: 4 }}>
                     <Pencil size={14} strokeWidth={1.5} />
                   </button>
                   <button onClick={() => handleDelete(c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ddd', padding: 4 }}>

@@ -179,7 +179,7 @@ function NavItem({ to, icon: Icon, label, sub = false, end = false, activeOverri
 
 function SectionHeader({ label }) {
   return (
-    <div style={{ fontSize: 10, fontWeight: 700, color: '#555', letterSpacing: 1, padding: '12px 12px 4px', textTransform: 'uppercase' }}>
+    <div style={{ fontSize: 10, fontWeight: 700, color: '#8b8ba3', letterSpacing: 1, padding: '12px 12px 4px', textTransform: 'uppercase' }}>
       {label}
     </div>
   )
@@ -348,7 +348,7 @@ export default function AdminLayout({ children }) {
 
     return (
       <div style={{ padding: '0 12px 14px' }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: '#444', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 5 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: '#8b8ba3', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 5 }}>
           {isSuperAdmin ? 'Attività' : 'La tua attività'}
         </div>
         {allEntities.length === 1 ? (
@@ -456,7 +456,7 @@ export default function AdminLayout({ children }) {
       {/* Selettore azienda — solo super_admin */}
       {isSuperAdmin && aziendeLista.length > 0 && (
         <div style={{ padding: '0 12px 12px' }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#444', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 5 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#8b8ba3', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 5 }}>
             Azienda attiva
           </div>
           <select

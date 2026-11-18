@@ -42,7 +42,7 @@ const MENU_DI_OGGI = contaVoci(costruisciMenu({ ruolo: 'admin_azienda', entita: 
 function AnteprimaMenu({ profilo }) {
   const gruppi = menuDelProfilo(profilo)
   const riga = (key, Icon, label, sub) => (
-    <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: sub ? '3px 10px 3px 30px' : '5px 10px', color: '#bbb', fontSize: sub ? 12 : 13 }}>
+    <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: sub ? '3px 10px 3px 30px' : '5px 10px', color: '#8a8a8a', fontSize: sub ? 12 : 13 }}>
       {Icon && <Icon size={sub ? 12 : 14} strokeWidth={1.5} />}{label}
     </div>
   )

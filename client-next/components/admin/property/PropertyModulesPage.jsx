@@ -126,7 +126,7 @@ export default function PropertyModulesPage() {
               {/* Label */}
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: isOn ? '#1a1a2e' : '#aaa' }}>{def.label}</div>
-                <div style={{ fontSize: 12, color: '#bbb', marginTop: 2 }}>{def.desc}</div>
+                <div style={{ fontSize: 12, color: '#8a8a8a', marginTop: 2 }}>{def.desc}</div>
               </div>
               {/* Toggle */}
               <ToggleSwitch isOn={isOn} disabled={saving} onToggle={() => toggleSection(key)} />

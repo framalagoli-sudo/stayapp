@@ -259,7 +259,7 @@ export default function BlogAutomazioniPage() {
         <div style={{ background: '#fff', borderRadius: 16, padding: 48, textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
           <Zap size={32} color="#ddd" strokeWidth={1.5} style={{ marginBottom: 12 }} />
           <p style={{ margin: 0, color: '#888', fontSize: 15 }}>Nessuna automazione configurata.</p>
-          <p style={{ margin: '6px 0 0', fontSize: 13, color: '#bbb' }}>Crea la prima per generare articoli in automatico.</p>
+          <p style={{ margin: '6px 0 0', fontSize: 13, color: '#8a8a8a' }}>Crea la prima per generare articoli in automatico.</p>
         </div>
       )}
 

@@ -333,7 +333,7 @@ function RecensioneRow({ rec, onToggle, onDelete, onPatch }) {
             {!rec.pubblica && <span style={{ fontSize: 11, color: '#b7791f', fontWeight: 700 }}>Nascosta</span>}
           </div>
           {rec.testo && <p style={{ margin: '0 0 8px', fontSize: 14, color: '#444', lineHeight: 1.6 }}>{rec.testo}</p>}
-          <div style={{ fontSize: 11, color: '#bbb' }}>{new Date(rec.created_at).toLocaleDateString('it-IT')}</div>
+          <div style={{ fontSize: 11, color: '#8a8a8a' }}>{new Date(rec.created_at).toLocaleDateString('it-IT')}</div>
 
           {/* Risposta admin */}
           {editResp ? (
@@ -569,7 +569,7 @@ export default function RecensioniPage() {
 
           {loading && <div style={{ fontSize: 14, color: '#aaa' }}>Caricamento…</div>}
           {!loading && recensioni.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '48px 0', color: '#bbb' }}>
+            <div style={{ textAlign: 'center', padding: '48px 0', color: '#8a8a8a' }}>
               <Star size={40} strokeWidth={1} style={{ marginBottom: 12, opacity: 0.4 }} />
               <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>Nessuna recensione</div>
               <div style={{ fontSize: 13, marginBottom: 16 }}>Manda un link ai tuoi clienti: chi lo apre lascia il voto in un minuto.</div>

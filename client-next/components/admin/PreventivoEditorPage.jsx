@@ -307,7 +307,7 @@ export default function PreventivoEditorPage() {
                       <td style={{ padding: '4px 4px' }}>
                         <button
                           onClick={() => removeVoce(v.id)}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 2 }}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a8a8a', padding: 2 }}
                           disabled={voci.length === 1}
                         >
                           <Trash2 size={13} strokeWidth={1.5} />

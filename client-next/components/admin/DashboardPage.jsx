@@ -70,7 +70,7 @@ function KpiCard({ icon: Icon, label, value, color, sub, onClick }) {
         <span style={{ fontSize: 13, color: '#888' }}>{label}</span>
       </div>
       <div style={{ fontSize: 34, fontWeight: 700, color, lineHeight: 1 }}>{value ?? '—'}</div>
-      {sub && <div style={{ fontSize: 12, color: '#bbb', marginTop: 4 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 12, color: '#8a8a8a', marginTop: 4 }}>{sub}</div>}
     </div>
   )
 }
@@ -96,11 +96,11 @@ function SectionCard({ title, icon: Icon, iconColor = '#1a1a2e', action, actionT
 }
 
 function Empty({ text }) {
-  return <div style={{ color: '#bbb', fontSize: 14, textAlign: 'center', padding: '18px 0' }}>{text}</div>
+  return <div style={{ color: '#8a8a8a', fontSize: 14, textAlign: 'center', padding: '18px 0' }}>{text}</div>
 }
 
 function Loading() {
-  return <div style={{ color: '#ccc', fontSize: 14 }}>Caricamento…</div>
+  return <div style={{ color: '#8a8a8a', fontSize: 14 }}>Caricamento…</div>
 }
 
 // ─── Staff dashboard (collaboratori) ─────────────────────────────────────────

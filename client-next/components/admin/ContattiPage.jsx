@@ -385,7 +385,7 @@ function KanbanCard({ contact, onEdit }) {
       style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', borderRadius: 9, padding: '8px 8px 8px 4px', marginBottom: 6, border: '1px solid #f0f0f0',
         boxShadow: isDragging ? '0 8px 24px rgba(0,0,0,0.15)' : '0 1px 2px rgba(0,0,0,0.05)', opacity: isDragging ? 0.85 : 1,
         transform: transform ? `translate(${transform.x}px,${transform.y}px)` : undefined, position: 'relative', zIndex: isDragging ? 999 : 'auto' }}>
-      <div {...listeners} title="Trascina per spostare" style={{ cursor: 'grab', color: '#ccc', flexShrink: 0, touchAction: 'none', display: 'flex' }}>
+      <div {...listeners} title="Trascina per spostare" style={{ cursor: 'grab', color: '#8a8a8a', flexShrink: 0, touchAction: 'none', display: 'flex' }}>
         <GripVertical size={14} strokeWidth={1.5} />
       </div>
       <button type="button" onClick={() => onEdit(contact)} style={{ flex: 1, minWidth: 0, textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
@@ -410,7 +410,7 @@ function KanbanColumn({ stage, contacts, onEdit, onAdd }) {
       </div>
       <div ref={setNodeRef} style={{ flex: 1, minHeight: 90, borderRadius: 10, padding: 6, background: isOver ? stage.light : '#f8f8f8', border: `2px dashed ${isOver ? stage.color : 'transparent'}`, transition: 'background .15s, border-color .15s' }}>
         {mostrate.map(c => <KanbanCard key={c.id} contact={c} onEdit={onEdit} />)}
-        {contacts.length === 0 && <div style={{ textAlign: 'center', padding: '18px 0', color: '#ccc', fontSize: 12 }}>Trascina qui</div>}
+        {contacts.length === 0 && <div style={{ textAlign: 'center', padding: '18px 0', color: '#8a8a8a', fontSize: 12 }}>Trascina qui</div>}
         {contacts.length > IN_COLONNA && (
           <button type="button" onClick={() => setTutte(v => !v)} style={{ width: '100%', padding: '6px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#2b6cb0' }}>
             {tutte ? 'Mostra meno' : `Mostra altre ${contacts.length - IN_COLONNA}`}
@@ -598,7 +598,7 @@ export default function ContattiPage() {
   // Le pastiglie dei canali su cui si può scrivere. Funzione normale chiamata
   // `{renderCanali(…)}`, non un componente definito qui dentro (nota 22).
   function renderCanali(canali, stretto = false) {
-    if (!canali.email && !canali.whatsapp) return stretto ? null : <span style={{ color: '#bbb' }}>No</span>
+    if (!canali.email && !canali.whatsapp) return stretto ? null : <span style={{ color: '#8a8a8a' }}>No</span>
     const pillola = { display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: stretto ? '3px 6px' : '2px 8px', borderRadius: 20, flexShrink: 0 }
     return (
       <span style={{ display: 'inline-flex', gap: 5, flexShrink: 0 }}>
@@ -863,7 +863,7 @@ export default function ContattiPage() {
                                     <div title={ultima} style={{ ...unaRiga, color: '#333' }}>{ultima}</div>
                                     <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{new Date(c.ultima_attivita_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
                                   </>
-                                ) : <span style={{ color: '#bbb' }}>—</span>}
+                                ) : <span style={{ color: '#8a8a8a' }}>—</span>}
                               </td>
                               <td style={{ padding: '9px 14px', whiteSpace: 'nowrap' }}>{renderCanali(canali)}</td>
                               <td style={{ padding: '9px 14px', color: '#888', whiteSpace: 'nowrap' }}>{new Date(c.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: '2-digit' })}</td>
@@ -965,7 +965,7 @@ export default function ContattiPage() {
                   </div>
                   <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                     {inTrattativa.filter(c => c.pipeline_stage === stadioTel).length === 0 && (
-                      <div style={{ padding: 26, textAlign: 'center', color: '#bbb', fontSize: 13 }}>Nessuno in questo stadio.</div>
+                      <div style={{ padding: 26, textAlign: 'center', color: '#8a8a8a', fontSize: 13 }}>Nessuno in questo stadio.</div>
                     )}
                     {inTrattativa.filter(c => c.pipeline_stage === stadioTel).map((c, i, tutti) => (
                       <button key={c.id} onClick={() => setModal(c)} data-trattativa-riga={c.id}

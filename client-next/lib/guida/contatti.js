@@ -4,7 +4,7 @@
 export default {
   voce: 'contatti',
   titolo: 'Contatti',
-  rivista: '2026-11-11',
+  rivista: '2026-11-18',
   percorsi: ['/admin/contatti'],
   pagine: [
     'components/admin/ContattiPage.jsx',

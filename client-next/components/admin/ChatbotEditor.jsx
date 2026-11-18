@@ -360,13 +360,13 @@ export default function ChatbotEditor({ chatbot: initialChatbot, onSave, saving,
               <div style={{ background: '#f0f0f0', borderRadius: 14, padding: 16, maxWidth: 320 }}>
                 <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 10 }}>
                   <div style={{ background: '#fff', borderRadius: '14px 14px 14px 4px', padding: '10px 14px', fontSize: 14, color: '#1a1a2e', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', maxWidth: '90%' }}>
-                    {selectedNode.message || <span style={{ color: '#bbb', fontStyle: 'italic' }}>Nessun messaggio</span>}
+                    {selectedNode.message || <span style={{ color: '#8a8a8a', fontStyle: 'italic' }}>Nessun messaggio</span>}
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {(selectedNode.options || []).map(opt => (
                     <div key={opt.id} style={{ padding: '7px 14px', borderRadius: 20, border: '1.5px solid #1a1a2e', fontSize: 13, fontWeight: 600, color: '#1a1a2e', background: 'transparent' }}>
-                      {opt.label || <span style={{ color: '#ccc', fontStyle: 'italic' }}>Testo pulsante</span>}
+                      {opt.label || <span style={{ color: '#8a8a8a', fontStyle: 'italic' }}>Testo pulsante</span>}
                     </div>
                   ))}
                 </div>

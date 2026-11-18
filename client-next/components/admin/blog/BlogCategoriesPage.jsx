@@ -88,7 +88,7 @@ export default function BlogCategoriesPage() {
             <div>
               <div style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>{c.name}</div>
               {c.description && <div style={{ fontSize: 12, color: '#aaa', marginTop: 2 }}>{c.description}</div>}
-              <div style={{ fontSize: 11, color: '#ccc', marginTop: 2 }}>/{c.slug}</div>
+              <div style={{ fontSize: 11, color: '#8a8a8a', marginTop: 2 }}>/{c.slug}</div>
             </div>
             <button onClick={() => deleteCategory(c.id)}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e53e3e', padding: 8, display: 'flex' }}>

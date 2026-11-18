@@ -545,7 +545,7 @@ export default function NewsletterEditorPage() {
               <span style={label}>Testo anteprima (preheader)</span>
               <input value={preheader} onChange={e => setPreheader(e.target.value)} disabled={isSent}
                 placeholder="Testo visibile prima di aprire l'email nel client…" style={inp} maxLength={140} />
-              <div style={{ fontSize: 11, color: '#bbb', marginTop: 4 }}>
+              <div style={{ fontSize: 11, color: '#8a8a8a', marginTop: 4 }}>
                 Appare dopo l'oggetto nella casella di posta · max 140 caratteri
               </div>
             </div>
@@ -594,7 +594,7 @@ export default function NewsletterEditorPage() {
                   </div>
                 )}
                 {!scheduledAt && (
-                  <div style={{ fontSize: 11, color: '#bbb', marginTop: 4 }}>
+                  <div style={{ fontSize: 11, color: '#8a8a8a', marginTop: 4 }}>
                     Lascia vuoto per inviare manualmente
                   </div>
                 )}

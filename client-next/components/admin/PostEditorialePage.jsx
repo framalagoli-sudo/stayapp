@@ -584,7 +584,7 @@ export default function PostEditorialePage() {
                       </button>
                       <button
                         onClick={() => deleteHashtagSet(s.id)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 2, flexShrink: 0, display: 'flex' }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a8a8a', padding: 2, flexShrink: 0, display: 'flex' }}
                       >
                         <X size={13} strokeWidth={2} />
                       </button>
@@ -769,7 +769,7 @@ export default function PostEditorialePage() {
           />
           {designUrl && (
             <div style={{ marginTop: 5, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 11, color: '#bbb' }}>Per Canva: Share → Embed → copia l'URL src dell'iframe</span>
+              <span style={{ fontSize: 11, color: '#8a8a8a' }}>Per Canva: Share → Embed → copia l'URL src dell'iframe</span>
               <a href={safeHttp(designUrl)} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#6366f1', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
                 <ExternalLink size={10} strokeWidth={2} /> Apri
               </a>
@@ -1137,7 +1137,7 @@ export default function PostEditorialePage() {
       {showPreview && (
         <div onClick={() => setShowPreview(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, padding: 28, maxWidth: 540, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', maxHeight: '85vh', overflowY: 'auto', position: 'relative' }}>
-            <button onClick={() => setShowPreview(false)} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#bbb' }}>
+            <button onClick={() => setShowPreview(false)} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#8a8a8a' }}>
               <X size={18} strokeWidth={1.5} />
             </button>
             <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a2e', marginBottom: 20 }}>Anteprima per canale</div>
@@ -1180,7 +1180,7 @@ export default function PostEditorialePage() {
                     <p style={{ margin: 0, fontSize: 13, color: '#333', lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                       {over
                         ? <><span>{testo.slice(0, lim.max)}</span><span style={{ background: '#fca5a5', color: '#7f1d1d' }}>{testo.slice(lim.max)}</span></>
-                        : testo || <span style={{ color: '#ccc' }}>Testo vuoto</span>
+                        : testo || <span style={{ color: '#8a8a8a' }}>Testo vuoto</span>
                       }
                     </p>
                   </div>

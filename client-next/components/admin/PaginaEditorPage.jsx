@@ -2802,7 +2802,7 @@ export default function PaginaEditorPage() {
               }}
               style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 8px', marginBottom: 4, borderRadius: 9, border: '1px solid #ececf2', background: '#fff', boxShadow: qui ? (navSopra.dopo ? '0 3px 0 #5b6af8' : '0 -3px 0 #5b6af8') : 'none' }}>
               <span draggable title="Trascina per spostare" onDragStart={e => { e.dataTransfer.setData(TIPO_TRASCINATO, 'sposta:' + b.id); e.dataTransfer.effectAllowed = 'move' }} onDragEnd={() => setNavSopra(null)}
-                style={{ cursor: 'grab', color: '#bbb', lineHeight: 0, flexShrink: 0 }}><GripVertical size={15} strokeWidth={1.5} /></span>
+                style={{ cursor: 'grab', color: '#8a8a8a', lineHeight: 0, flexShrink: 0 }}><GripVertical size={15} strokeWidth={1.5} /></span>
               <div onClick={() => { setExpandedId(b.id); setSchedaTab('contenuto') }} style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, cursor: 'pointer' }}>
                 <div style={{ width: 26, height: 26, borderRadius: 7, background: `${blockColor(b.type)}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <BlockTypeIcon type={b.type} size={14} />
@@ -3127,7 +3127,7 @@ export default function PaginaEditorPage() {
                     draggable={true}
                     onDragStart={e => { e.stopPropagation(); onBlockDragStart(e, block.id) }}
                     onDragEnd={resetBlockDrag}
-                    style={{ padding: '14px 6px 14px 12px', cursor: 'grab', userSelect: 'none', flexShrink: 0, color: '#ccc', lineHeight: 0 }}
+                    style={{ padding: '14px 6px 14px 12px', cursor: 'grab', userSelect: 'none', flexShrink: 0, color: '#8a8a8a', lineHeight: 0 }}
                     title="Trascina per riordinare"
                   >
                     <GripVertical size={16} strokeWidth={1.5} />
@@ -3196,7 +3196,7 @@ export default function PaginaEditorPage() {
                   {/* Expand */}
                   <button
                     onClick={() => setExpandedId(isOpen ? null : block.id)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px', color: '#bbb', lineHeight: 0, flexShrink: 0 }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px', color: '#8a8a8a', lineHeight: 0, flexShrink: 0 }}
                   >
                     {isOpen ? <ChevronUp size={15} strokeWidth={2} /> : <ChevronDown size={15} strokeWidth={2} />}
                   </button>

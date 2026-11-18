@@ -78,7 +78,7 @@ function QRCard({ name, tipo, slug }) {
       {/* QR Code */}
       <div style={{ padding: 12, background: '#fff', borderRadius: 12, border: '1px solid #eee', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
         {dominio === undefined
-          ? <div style={{ width: 200, height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb', fontSize: 12 }}>
+          ? <div style={{ width: 200, height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8a8a8a', fontSize: 12 }}>
               Preparo il codice…
             </div>
           : <img

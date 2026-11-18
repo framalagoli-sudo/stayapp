@@ -319,7 +319,7 @@ function IndirizziPrecedenti({ alias, onRimuovi }) {
             <button
               onClick={() => onRimuovi(a.id, a.dominio, `Rimuovere il vecchio indirizzo ${a.dominio}?\n\nDa quel momento i QR code e i link che lo usano smetteranno di funzionare.`)}
               title="Rimuovi"
-              style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 4, display: 'flex' }}
+              style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#8a8a8a', padding: 4, display: 'flex' }}
             >
               <Trash2 size={14} strokeWidth={1.5} />
             </button>
@@ -409,7 +409,7 @@ function CardDominio({ dom, onCopia, copiato, onControlla, onRimuovi }) {
         <Stato stato={dom.stato} nonRisponde={d.salute?.sospeso === true} />
         <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
           {online && <BottoneCopia valore={url} copiato={copiato} onCopia={onCopia} etichetta="Copia link" />}
-          <button onClick={() => onRimuovi(dom.id, dom.dominio)} title="Scollega" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 4, display: 'flex' }}>
+          <button onClick={() => onRimuovi(dom.id, dom.dominio)} title="Scollega" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a8a8a', padding: 4, display: 'flex' }}>
             <Trash2 size={15} strokeWidth={1.5} />
           </button>
         </div>

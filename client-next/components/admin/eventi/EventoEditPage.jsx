@@ -645,7 +645,7 @@ export default function EventoEditPage() {
                 <input type="number" min="0" step="0.5" value={pkg.price} onChange={e => updatePkg(pkg.id, { price: e.target.value })}
                   placeholder="€" style={inp} />
                 <button type="button" onClick={() => removePkg(pkg.id)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 4 }}>
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a8a8a', padding: 4 }}>
                   <Trash2 size={16} strokeWidth={1.5} />
                 </button>
               </div>

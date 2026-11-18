@@ -526,7 +526,7 @@ export default function SitoPage({ entityTipo }) {
           <div
             draggable={true}
             onDragStart={e => { e.stopPropagation(); setDragId(p.id); e.dataTransfer.effectAllowed = 'move' }}
-            style={{ padding: '4px 6px', cursor: 'grab', color: '#bbb', flexShrink: 0, display: 'flex', alignItems: 'center', userSelect: 'none' }}
+            style={{ padding: '4px 6px', cursor: 'grab', color: '#8a8a8a', flexShrink: 0, display: 'flex', alignItems: 'center', userSelect: 'none' }}
           >
             <GripVertical size={15} strokeWidth={1.5} />
           </div>
@@ -544,7 +544,7 @@ export default function SitoPage({ entityTipo }) {
           {p.status === 'bozza' && (
             <span style={{ marginLeft: 8, fontSize: 10, background: '#fff3cd', color: '#856404', borderRadius: 4, padding: '1px 6px', fontWeight: 600 }}>BOZZA</span>
           )}
-          <span style={{ marginLeft: 6, fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>/{p.slug}</span>
+          <span style={{ marginLeft: 6, fontSize: 11, color: '#8a8a8a', fontFamily: 'monospace' }}>/{p.slug}</span>
         </div>
         {canIndent && (
           <button onClick={() => makeChild(p)} style={btnAction()}>Rendi sottopagina ↳</button>
@@ -670,7 +670,7 @@ export default function SitoPage({ entityTipo }) {
               <div key={k}>
                 <label style={lbl}>{label}</label>
                 <input style={inp} value={trk[k] || ''} onChange={e => setTrack(k, e.target.value.trim())} placeholder={ph} />
-                <span style={{ fontSize: 11, color: '#bbb' }}>{hint}</span>
+                <span style={{ fontSize: 11, color: '#8a8a8a' }}>{hint}</span>
               </div>
             ))}
 
@@ -858,7 +858,7 @@ export default function SitoPage({ entityTipo }) {
                       <span style={{ fontWeight: 600, fontSize: 14, color: '#1a1a2e' }}>
                         {p.parent_id ? '└─ ' : ''}{p.titolo}
                       </span>
-                      <span style={{ marginLeft: 8, fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>/{p.slug}</span>
+                      <span style={{ marginLeft: 8, fontSize: 11, color: '#8a8a8a', fontFamily: 'monospace' }}>/{p.slug}</span>
                     </div>
 
                     <button onClick={() => toggleStatus(p)} style={{
@@ -882,7 +882,7 @@ export default function SitoPage({ entityTipo }) {
                     </span>
 
                     {p.updated_at && (
-                      <span style={{ fontSize: 11, color: '#ccc', flexShrink: 0 }} title="Ultima modifica">
+                      <span style={{ fontSize: 11, color: '#8a8a8a', flexShrink: 0 }} title="Ultima modifica">
                         {new Date(p.updated_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}
                       </span>
                     )}
@@ -932,7 +932,7 @@ export default function SitoPage({ entityTipo }) {
               <Home size={16} strokeWidth={1.5} color="#bbb" />
               <div style={{ flex: 1 }}>
                 <span style={{ fontWeight: 700, fontSize: 14, color: '#1a1a2e' }}>Home</span>
-                <span style={{ marginLeft: 8, fontSize: 11, color: '#bbb', fontFamily: 'monospace' }}>/</span>
+                <span style={{ marginLeft: 8, fontSize: 11, color: '#8a8a8a', fontFamily: 'monospace' }}>/</span>
               </div>
               <span style={{ fontSize: 11, color: '#888', fontStyle: 'italic' }}>sempre presente</span>
               <button onClick={() => { setActiveTab('home') }} style={btnAction()}>Modifica sezioni →</button>

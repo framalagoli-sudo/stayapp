@@ -166,7 +166,7 @@ function WebhookRow({ hook, onToggle, onDelete, onTest }) {
             ))}
           </div>
           {hook.eventi?.length === 0 && (
-            <div style={{ fontSize: 12, color: '#bbb', fontStyle: 'italic' }}>Nessun evento selezionato — il webhook non verrà mai chiamato.</div>
+            <div style={{ fontSize: 12, color: '#8a8a8a', fontStyle: 'italic' }}>Nessun evento selezionato — il webhook non verrà mai chiamato.</div>
           )}
         </div>
       )}
@@ -328,7 +328,7 @@ export default function IntegrazioniPage() {
         <div style={{ textAlign: 'center', padding: '48px 24px', background: '#fff', borderRadius: 12, border: '1px dashed #ddd' }}>
           <Webhook size={32} strokeWidth={1} color="#ccc" style={{ marginBottom: 12 }} />
           <div style={{ fontSize: 15, color: '#888', marginBottom: 6 }}>Nessun webhook configurato</div>
-          <div style={{ fontSize: 13, color: '#bbb' }}>Aggiungi il primo per iniziare a sincronizzare eventi con Zapier, Make o altri sistemi.</div>
+          <div style={{ fontSize: 13, color: '#8a8a8a' }}>Aggiungi il primo per iniziare a sincronizzare eventi con Zapier, Make o altri sistemi.</div>
         </div>
       ) : (
         hooks.map(hook => (

@@ -232,7 +232,7 @@ export default function BlogListPage() {
                     </div>
                     <div style={{ fontWeight: 700, fontSize: 15, color: '#1a1a2e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.title}</div>
                     {a.excerpt && <div style={{ fontSize: 12, color: '#888', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.excerpt}</div>}
-                    <div style={{ fontSize: 11, color: '#bbb', marginTop: 4 }}>
+                    <div style={{ fontSize: 11, color: '#8a8a8a', marginTop: 4 }}>
                       {a.published ? `Pubblicato ${fmtDate(a.published_at)}` : `Creato ${fmtDate(a.created_at)}`}
                       {a.author && ` · ${a.author}`}
                     </div>
