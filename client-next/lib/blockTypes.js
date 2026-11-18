@@ -170,7 +170,9 @@ export const BLOCK_BG_OPTIONS = [
 // dà profondità ai siti scuri (i riferimenti del 18/09/2026) senza aggiungere
 // immagini da caricare. Predefinito «nessuno»: i siti online non cambiano.
 // Blocchi che scrivono il titolo a sinistra, non al centro.
-const BLOCCHI_TESTO_SINISTRA = ['about', 'foto_testo', 'colonne']
+// Il mosaico scrive il suo titolo sempre a sinistra: senza, l'etichetta sopra
+// restava centrata e staccata dal titolo.
+const BLOCCHI_TESTO_SINISTRA = ['about', 'foto_testo', 'colonne', 'mosaico']
 // Blocchi che hanno un fondo scuro loro (il pannello non offre lo sfondo):
 // l'etichetta sopra il titolo ci sta sopra, e va chiara.
 const FONDO_SCURO_PROPRIO = {
