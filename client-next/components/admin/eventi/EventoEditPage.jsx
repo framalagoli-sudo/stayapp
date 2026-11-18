@@ -57,6 +57,10 @@ export default function EventoEditPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [showPostModal, setShowPostModal] = useState(false)
+  // Un evento che c'è già si mostra solo quando i suoi dati sono arrivati.
+  // Prima il modulo compariva vuoto e la lettura, arrivando, sovrascriveva
+  // quello che si era scritto nel frattempo.
+  const [caricato, setCaricato] = useState(isNew)
 
   useEffect(() => {
     if (aziLoading) return
@@ -101,6 +105,7 @@ export default function EventoEditPage() {
             ...p, price: p.price ?? '', includes: p.includes || [],
           })),
         })
+        setCaricato(true)
       }).catch(() => setError('Evento non trovato'))
     }
   }, [id, aziLoading, fuso])
@@ -209,6 +214,10 @@ export default function EventoEditPage() {
       setForm(f => ({ ...f, entity_id: o.id, entity_tipo: o.tipo, azienda_id: o.azienda_id }))
     }
   }, [isNew, entityOptions.length])
+
+  if (!caricato) return (
+    <p data-evento-in-caricamento style={{ padding: 32, color: error ? '#c00' : '#888', fontSize: 14 }}>{error || 'Caricamento…'}</p>
+  )
 
   return (
     <>

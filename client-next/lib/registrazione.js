@@ -23,13 +23,16 @@ import { fusoSicuro } from './fuso'
 const BASE = (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com'
 const GIORNI_DI_PROVA = 14
 
-// Il link di conferma. Sempre di tipo «magiclink», anche alla prima volta:
-// sull'account non confermato lo conferma (provato su Supabase il 23/10/2026)
-// e non serve conoscere la password, quindi vale anche per il «rimandamela».
+// Il link di conferma: di tipo «signup», con la password che la persona ha
+// scelto (la registrazione la riceve, il «rimandamela» la chiede e la verifica).
+// ⛔ Non «magiclink»: confermare un account con quel link CANCELLA la password
+// (provato su Supabase il 18/11/2026: dopo la conferma il login con la stessa
+// password risponde invalid_credentials). Si entrava una volta e poi mai più.
 // ⛔ Chiamarla SOLO per un account che esiste: per un indirizzo sconosciuto
-// Supabase CREA l'utente (provato lo stesso giorno).
-export async function mandaConfermaEmail(email) {
-  const { data, error } = await supabaseAdmin.auth.admin.generateLink({ type: 'magiclink', email })
+// Supabase CREA l'utente (provato il 23/10/2026).
+export async function mandaConfermaEmail(email, password) {
+  if (typeof password !== 'string' || !password) return { ok: false, errore: 'password mancante' }
+  const { data, error } = await supabaseAdmin.auth.admin.generateLink({ type: 'signup', email, password })
   if (error) return { ok: false, errore: error.message }
   const token = data?.properties?.hashed_token
   if (!token) return { ok: false, errore: 'link di conferma non generato' }

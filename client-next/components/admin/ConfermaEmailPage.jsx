@@ -16,7 +16,9 @@ export default function ConfermaEmailPage() {
 
   async function conferma() {
     setStato('in_corso'); setErrore('')
-    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'magiclink' })
+    // «email» vale per il link di tipo signup (lib/registrazione.js) e anche
+    // per quelli magiclink mandati prima del 18/11/2026.
+    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'email' })
     if (error) {
       setStato('errore')
       return setErrore('Il link è scaduto o è già stato usato. Accedi con email e password: se l’indirizzo non è ancora confermato, da lì puoi farti rimandare l’email.')

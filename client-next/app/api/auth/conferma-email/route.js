@@ -23,7 +23,7 @@ export async function POST(request) {
     )
     const { error } = await anon.auth.signInWithPassword({ email: indirizzo, password })
     // Solo l'account che esiste, con la password giusta, e non ancora confermato.
-    if (error?.code === 'email_not_confirmed') await mandaConfermaEmail(indirizzo)
+    if (error?.code === 'email_not_confirmed') await mandaConfermaEmail(indirizzo, password)
     return Response.json({ ok: true })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }

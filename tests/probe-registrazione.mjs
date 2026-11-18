@@ -116,7 +116,7 @@ try {
 
   // ── 2. Il link di conferma ──────────────────────────────────────────────────
   console.log('\n2. il link di conferma\n')
-  const { data: link } = await a.auth.admin.generateLink({ type: 'magiclink', email: U.email })
+  const { data: link } = await a.auth.admin.generateLink({ type: 'signup', email: U.email, password: U.password }) // come lib/registrazione.js
   const url = `${BASE}/admin/conferma-email?token_hash=${encodeURIComponent(link.properties.hashed_token)}`
   await page.goto(url, { waitUntil: 'networkidle' })
   esito(!(await aziendaDi(U.id))?.azienda_id, 'aprire la pagina non conferma niente da sola (serve il pulsante)')
@@ -145,9 +145,11 @@ try {
 
   // ── 3. Lo stesso link due volte, completare due volte ───────────────────────
   console.log('\n3. ripetere\n')
-  const v2 = await anon().auth.verifyOtp({ token_hash: link.properties.hashed_token, type: 'magiclink' })
+  const v2 = await anon().auth.verifyOtp({ token_hash: link.properties.hashed_token, type: 'email' })
   esito(!!v2.error, 'lo stesso link una seconda volta non vale')
   const s = await anon().auth.signInWithPassword({ email: U.email, password: U.password })
+  // 18/11/2026: confermare col link «magiclink» cancellava la password — si entrava una volta e poi mai più.
+  esito(!!s.data.session, 'dopo la conferma si entra ancora con la propria password', s.error?.message)
   const ancora = await post('/api/auth/completa-registrazione', {}, s.data.session?.access_token)
   const { count } = await a.from('aziende').select('id', { count: 'exact', head: true }).eq('ragione_sociale', NOME)
   esito(ancora.status === 200 && /niente|gia_fatta/.test(ancora.corpo) && count === 1, 'completare di nuovo non crea una seconda azienda', `${ancora.corpo} · aziende ${count}`)

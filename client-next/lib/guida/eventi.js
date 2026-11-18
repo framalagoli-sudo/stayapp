@@ -73,6 +73,8 @@ export default {
   ],
 
   domande: [
+    { d: 'Apro un evento e per un attimo vedo «Caricamento…»: è normale?',
+      r: 'Sì: è il momento in cui arrivano i dati dell’evento, e il modulo compare solo quando ci sono tutti — così quello che scrivi non viene sovrascritto. Se invece leggi «Evento non trovato», l’evento è stato eliminato.' },
     { d: 'Se annullo una prenotazione, il cliente viene avvisato?',
       r: 'No: «Annulla prenotazione» libera i posti ma non manda niente. Avvisalo tu. Se aveva pagato online, il rimborso si fa dalla tua dashboard di Stripe.' },
     { d: 'Ho spento «Manda conferma all\'ospite»: cosa succede?',

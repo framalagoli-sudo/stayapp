@@ -64,7 +64,7 @@ export async function POST(request) {
       return Response.json({ error: authError.message }, { status: 400 })
     }
 
-    const invio = await mandaConfermaEmail(indirizzo)
+    const invio = await mandaConfermaEmail(indirizzo, password)
     if (!invio.ok) {
       // Senza l'email l'account non si potrebbe mai confermare: meglio non lasciarlo.
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
