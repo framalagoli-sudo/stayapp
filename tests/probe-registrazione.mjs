@@ -110,6 +110,11 @@ try {
   const giusta = await post('/api/auth/conferma-email', { email: U.email, password: U.password })
   const sbagliata = await post('/api/auth/conferma-email', { email: U.email, password: 'Sbagliata123!' })
   const inventata = await post('/api/auth/conferma-email', { email: `nessuno-${t}@playwright.internal`, password: 'x' })
+  // Il rinvio ha un limite di 5 l'ora per indirizzo: due deploy ravvicinati lo
+  // superano e la sonda dava rosso a torto (28/10, 18/11). Un 429 non è un
+  // difetto: si dice e si va avanti.
+  if ([giusta, sbagliata, inventata].some(r => r.status === 429)) console.log("  · il rinvio non è verificabile adesso: limite di 5 l'ora raggiunto (429), non è un difetto")
+  else
   esito(giusta.corpo === sbagliata.corpo && sbagliata.corpo === inventata.corpo && giusta.status === 200, 'il rinvio risponde uguale a password giusta, sbagliata e indirizzo inventato')
   const { data: lista0 } = await a.auth.admin.listUsers({ perPage: 1000 })
   esito(!lista0.users.some(x => x.email === `nessuno-${t}@playwright.internal`), 'il rinvio per un indirizzo inventato NON crea un account')

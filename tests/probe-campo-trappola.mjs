@@ -68,7 +68,7 @@ try {
     const tutti = [...f.querySelectorAll('input')]
     const trappola = f.querySelector('input[name="_controllo"]')
     return { ultima: trappola && tutti.indexOf(trappola) === tutti.length - 1, vecchia: !!f.querySelector('input[name="_hp"]'),
-      completamenti: tutti.filter(i => i !== trappola && i.type !== 'checkbox').map(i => i.getAttribute('autocomplete')) }
+      completamenti: tutti.filter(i => i !== trappola && !['checkbox', 'hidden'].includes(i.type)).map(i => i.getAttribute('autocomplete')) }
   })
   ok(info?.ultima && !info.vecchia, 'la trappola è l\'ultimo campo del modulo', JSON.stringify(info))
   ok(JSON.stringify(info?.completamenti) === JSON.stringify(['name', 'email', 'tel']), 'nome, email e telefono dichiarano il completamento automatico', JSON.stringify(info?.completamenti))
