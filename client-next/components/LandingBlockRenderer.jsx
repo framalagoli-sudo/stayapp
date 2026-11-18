@@ -33,6 +33,7 @@ import { oraLocale } from '@/lib/fuso'
 import { stileTitoli } from '@/lib/fonts'
 import { eScuro, variabiliPagina } from '@/lib/superficie'
 import { resolveSiteTheme } from '@/lib/siteTheme'
+import { completamentoDi } from '@/lib/campo-trappola'
 import { getPreset, fieldOptions, evidenzaDi, etichettaEUnita } from '@/lib/vetrinePresets'
 
 // Sicurezza: accetta solo http(s), mailto:, tel: o path interni; blocca javascript:/data: ecc.
@@ -3091,6 +3092,9 @@ function FormBuilderBlock({ token, primary, inverted = false, lang = 'it' }) {
   const [loading, setLoading]         = useState(true)
   const [dati, setDati]               = useState({})
   const [hp, setHp]                   = useState('')
+  // Da quando il modulo è aperto: il server distingue così una persona col
+  // completamento automatico da un robot (lib/campo-trappola.js).
+  const apertoIl = useRef(Date.now())
   const [currentStep, setCurrentStep] = useState(0)
   const [submitting, setSubmitting]   = useState(false)
   const [success, setSuccess]         = useState(false)
@@ -3155,7 +3159,7 @@ function FormBuilderBlock({ token, primary, inverted = false, lang = 'it' }) {
       const res = await fetch(`${API_BASE_FB}/api/form-builder/public/${token}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...datiPuliti, _hp: hp }),
+        body: JSON.stringify({ ...datiPuliti, _hp: hp, _t: Date.now() - apertoIl.current }),
       })
       const body = await res.json()
       if (!res.ok) throw new Error(body.error || tr('send_error', lang))
@@ -3176,10 +3180,6 @@ function FormBuilderBlock({ token, primary, inverted = false, lang = 'it' }) {
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* Honeypot anti-bot */}
-      <div style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
-        <input tabIndex={-1} autoComplete="off" value={hp} onChange={e => setHp(e.target.value)} name="_hp" />
-      </div>
 
       {isMultiStep && (
         <div>
@@ -3241,12 +3241,17 @@ function FormBuilderBlock({ token, primary, inverted = false, lang = 'it' }) {
                   {c.placeholder || tr('yes', lang)}
                 </label>
               ) : (
-                <input type={c.tipo} value={dati[c.id] || ''} onChange={e => setField(c.id, e.target.value)} placeholder={c.placeholder} style={inp} />
+                <input type={c.tipo} autoComplete={completamentoDi(c)} value={dati[c.id] || ''} onChange={e => setField(c.id, e.target.value)} placeholder={c.placeholder} style={inp} />
               )}
             </>
           )}
         </div>
       ))}
+      {/* Campo trappola anti-robot: IN FONDO, lontano dai campi che il browser
+          compila da solo (lib/campo-trappola.js). */}
+      <div style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
+        <input tabIndex={-1} autoComplete="off" value={hp} onChange={e => setHp(e.target.value)} name="_controllo" />
+      </div>
       {error && <p style={{ color: '#c53030', fontSize: 13, margin: 0 }}>{error}</p>}
       <div style={{ display: 'flex', gap: 8 }}>
         {isMultiStep && currentStep > 0 && (

@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { verifyTurnstile } from '@/lib/turnstile'
 import { fusoSicuro } from '@/lib/fuso'
+import { sembraUnRobot } from '@/lib/campo-trappola'
 import { mandaConfermaEmail } from '@/lib/registrazione'
 
 // La versione dei Termini in vigore, per data. Cambiando il testo si cambia
@@ -29,9 +30,10 @@ export async function POST(request) {
     const { data: cfg } = await supabaseAdmin.from('platform_config').select('signup_enabled').eq('id', 1).single()
     if (!cfg?.signup_enabled) return Response.json({ error: 'Le registrazioni sono temporaneamente chiuse.' }, { status: 403 })
 
-    const { nome_azienda, email, password, accetta_termini, fuso_orario, turnstileToken, sito_web } = await request.json()
-    // Campo trappola: invisibile a una persona, un robot lo riempie.
-    if (sito_web) return INVIATA()
+    const { nome_azienda, email, password, accetta_termini, fuso_orario, turnstileToken, sito_web, _t } = await request.json()
+    // Campo trappola: invisibile a una persona, un robot lo riempie. Da solo non
+    // basta: il completamento automatico può riempirlo a una persona vera.
+    if (sembraUnRobot(sito_web, _t)) return INVIATA()
     const captcha = await verifyTurnstile(turnstileToken, ip)
     if (!captcha.success) return Response.json({ error: 'Verifica anti-bot fallita' }, { status: 403 })
 

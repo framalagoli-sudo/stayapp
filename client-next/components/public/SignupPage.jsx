@@ -1,6 +1,6 @@
 ﻿'use client'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { fusoDelBrowser } from '@/lib/fuso'
 import Turnstile from '@/components/Turnstile'
 
@@ -8,6 +8,9 @@ const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? '').trim()
 
 export default function SignupPage() {
   const [form, setForm] = useState({ nome_azienda: '', email: '', password: '', confirm: '', accetta: false, sito_web: '' })
+  // Da quando la pagina è aperta: il server distingue così il completamento
+  // automatico da un robot (lib/campo-trappola.js).
+  const apertoIl = useRef(Date.now())
   const [turnstileToken, setTurnstileToken] = useState('')
   const [inviata, setInviata] = useState(false)
   const [error, setError] = useState('')
@@ -34,7 +37,7 @@ export default function SignupPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // Il fuso non si chiede: lo sa gia' il browser di chi sta compilando.
-        body: JSON.stringify({ nome_azienda: form.nome_azienda, email: form.email, password: form.password, accetta_termini: form.accetta, fuso_orario: fusoDelBrowser(), turnstileToken, sito_web: form.sito_web }),
+        body: JSON.stringify({ nome_azienda: form.nome_azienda, email: form.email, password: form.password, accetta_termini: form.accetta, fuso_orario: fusoDelBrowser(), turnstileToken, sito_web: form.sito_web, _t: Date.now() - apertoIl.current }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Errore registrazione'); setLoading(false); return }

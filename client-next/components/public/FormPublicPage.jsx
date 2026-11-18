@@ -1,8 +1,9 @@
 'use client'
 // v2
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Turnstile from '@/components/Turnstile'
+import { completamentoDi } from '@/lib/campo-trappola'
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').trim()
 
@@ -36,6 +37,8 @@ export default function FormPublicPage() {
   const [error, setError]             = useState('')
   const [dati, setDati]               = useState({})
   const [hp, setHp]                   = useState('')
+  // Da quando il modulo è aperto (lib/campo-trappola.js).
+  const apertoIl = useRef(Date.now())
   const [currentStep, setCurrentStep] = useState(0)
   const [submitting, setSubmitting]   = useState(false)
   const [success, setSuccess]         = useState(false)
@@ -119,7 +122,7 @@ export default function FormPublicPage() {
       const res = await fetch(`${API_BASE}/api/form-builder/public/${token}/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...datiPuliti, _hp: hp, turnstileToken, _whatsapp_optin: whatsappOptin }),
+        body: JSON.stringify({ ...datiPuliti, _hp: hp, _t: Date.now() - apertoIl.current, turnstileToken, _whatsapp_optin: whatsappOptin }),
       })
       const body = await res.json()
       if (!res.ok) throw new Error(body.error || 'Errore invio')
@@ -178,11 +181,6 @@ export default function FormPublicPage() {
         )}
 
         <form onSubmit={handleSubmit}>
-          {/* Honeypot anti-bot */}
-          <div style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
-            <input tabIndex={-1} autoComplete="off" value={hp} onChange={e => setHp(e.target.value)} name="_hp" />
-          </div>
-
           {visibleCampi.map(c => (
             <div key={c.id} style={{ marginBottom: 16 }}>
               {c.tipo === 'consenso' ? (
@@ -240,7 +238,7 @@ export default function FormPublicPage() {
                       {c.placeholder || 'Sì'}
                     </label>
                   ) : (
-                    <input type={c.tipo} value={dati[c.id] || ''}
+                    <input type={c.tipo} autoComplete={completamentoDi(c)} value={dati[c.id] || ''}
                       onChange={e => setField(c.id, e.target.value)}
                       placeholder={c.placeholder} required={c.required}
                       style={inputStyle} />
@@ -290,6 +288,10 @@ export default function FormPublicPage() {
                 {submitting ? 'Invio in corso…' : 'Invia'}
               </button>
             )}
+          </div>
+          {/* Campo trappola anti-robot: in fondo, lontano dai campi che il browser compila da solo. */}
+          <div style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
+            <input tabIndex={-1} autoComplete="off" value={hp} onChange={e => setHp(e.target.value)} name="_controllo" />
           </div>
         </form>
       </div>

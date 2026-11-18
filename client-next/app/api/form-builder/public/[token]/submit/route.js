@@ -7,6 +7,7 @@ import { rateLimit } from '@/lib/rate-limit'
 import { verifyTurnstile } from '@/lib/turnstile'
 import { registraAttivita } from '@/lib/crm'
 import { normalizzaTelefono } from '@/lib/contatti-import'
+import { sembraUnRobot } from '@/lib/campo-trappola'
 
 // ── Flood detection per-form (max 20 submit / 10 minuti) ─────────────────────
 const formFloodMap = new Map()
@@ -126,8 +127,11 @@ export async function POST(request, { params }) {
     const clientIp = getClientIp(request)
     const body = await request.json().catch(() => ({}))
 
-    // 1. Honeypot anti-bot
-    if (body._hp) {
+    // 1. Campo trappola anti-robot. Pieno da solo NON basta: il completamento
+    //    automatico del browser può riempirlo a una persona vera, e la sua
+    //    richiesta spariva senza traccia (Panoramic, 18/11/2026). Robot = trappola
+    //    piena E invio troppo rapido o senza tempo (lib/campo-trappola.js).
+    if (sembraUnRobot(body._hp, body._t)) {
       return NextResponse.json({ ok: true, redirect_url: null })
     }
 
@@ -162,6 +166,7 @@ export async function POST(request, { params }) {
     const campiIds = (form.campi || []).map(c => c.id)
     const rawDati = { ...body }
     delete rawDati._hp
+    delete rawDati._t
     const dati = sanitizeDati(rawDati, campiIds)
 
     // 4b. Spam content detection
