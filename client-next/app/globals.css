@@ -1,13 +1,14 @@
+/* ⛔ Niente tema scuro «di sistema». Era il foglio di partenza di Next: con il
+   computer in tema scuro il testo predefinito diventava #ededed e i campi
+   scuri, ma il pannello è disegnato solo chiaro (schede bianche) e i siti hanno
+   il loro tema. Dove una pagina non dichiarava il colore — il titolo e i campi
+   delle categorie del blog — si leggeva bianco su bianco (inlingua, Automax,
+   18/11/2026). Il colore lo decidono il pannello e il tema del sito, mai il
+   sistema operativo di chi guarda. */
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  color-scheme: light;
 }
 
 html,
@@ -33,12 +34,6 @@ body {
 a {
   color: inherit;
   text-decoration: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
 }
 
 /* Sezione con sfondo scuro/immagine (applyBlockStyle → .lbr-inv): schiarisce i
