@@ -29,6 +29,9 @@ export const HEADING_FONTS = [
   { key: 'bebas',      label: 'Bebas Neue',        family: "'Bebas Neue', 'Arial Narrow', sans-serif", desc: 'Maiuscolo alto, da locandina', titoli: { peso: 400, spazio: '0.02em', maiuscolo: true }, unPeso: true },
   { key: 'manrope',    label: 'Manrope',           family: "'Manrope', system-ui, sans-serif",      desc: 'Geometrico, compatto',       titoli: { peso: 800, spazio: '-0.03em' } },
   { key: 'bricolage',  label: 'Bricolage Grotesque', family: "'Bricolage Grotesque', system-ui, sans-serif", desc: 'Vivace, artigianale', titoli: { peso: 700, spazio: '-0.03em' } },
+  // 18/11/2026: un geometrico sottile, per i titoli minimali (Panoramic). Peso 300:
+  // è il tratto fine a fare il registro, a peso 700 sarebbe un qualunque sans.
+  { key: 'jost',       label: 'Jost',              family: "'Jost', system-ui, sans-serif",         desc: 'Geometrico sottile, minimale', titoli: { peso: 300, spazio: '-0.01em' } },
   { key: 'syne',       label: 'Syne',              family: "'Syne', system-ui, sans-serif",         desc: 'Largo, da galleria d\'arte', titoli: { peso: 800, spazio: '-0.02em' } },
 ]
 export const BODY_FONTS = [
@@ -42,6 +45,7 @@ export const BODY_FONTS = [
   { key: 'work-sans', label: 'Work Sans', family: "'Work Sans', system-ui, sans-serif", desc: 'Aperto, da editoria' },
   { key: 'karla',     label: 'Karla',     family: "'Karla', system-ui, sans-serif",     desc: 'Con un po\' di carattere' },
   { key: 'source-serif', label: 'Source Serif', family: "'Source Serif 4', Georgia, serif", desc: 'Con le grazie, da libro' },
+  { key: 'jost',      label: 'Jost',      family: "'Jost', system-ui, sans-serif",      desc: 'Geometrico, pulito' },
   { key: 'lora',      label: 'Lora',      family: "'Lora', Georgia, serif",             desc: 'Con le grazie, morbido' },
 ]
 
@@ -90,6 +94,7 @@ export const FONT_CSS_URLS = {
   karla:      'https://fonts.googleapis.com/css2?family=Karla:wght@400;600;700&display=swap',
   'source-serif': 'https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&display=swap',
   lora:       'https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&display=swap',
+  jost:       'https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap',
 }
 
 // Tutte le famiglie in un foglio solo, per le pagine del pannello che le
@@ -130,5 +135,6 @@ export const FONT_PAIRS = [
   { key: 'officina',  label: 'Officina',  heading: 'oswald',     body: 'lato',         vibe: 'Solido, da insegna' },
   { key: 'studio',    label: 'Studio',    heading: 'manrope',    body: 'manrope',      vibe: 'Un carattere solo, pesi diversi' },
   { key: 'bottega',   label: 'Bottega',   heading: 'bricolage',  body: 'karla',        vibe: 'Artigianale e vivace' },
+  { key: 'essenziale', label: 'Essenziale', heading: 'jost',     body: 'jost',         vibe: 'Sottile e minimale, da design' },
   { key: 'galleria',  label: 'Galleria',  heading: 'syne',       body: 'work-sans',    vibe: 'Largo e deciso, da mostra' },
 ]

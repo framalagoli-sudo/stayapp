@@ -114,7 +114,7 @@ try {
   const campo = (tipo, label, placeholder, required = true, extra = {}) => ({ id: randomUUID(), tipo, label, opzioni: [], required, placeholder, ...extra })
   if (!stato.formCampi) {
     await api('PATCH', `/api/form-builder/${stato.form}`, {
-      descrizione: 'Indicaci le date del soggiorno: ti risponderemo al più presto.', attivo: true,
+      descrizione: '', attivo: true, email_notifica: 'brunettigio@gmail.com',
       campi: [
         campo('text', 'Nome e cognome', 'Il tuo nome'), campo('email', 'Email', 'la-tua@email.it'), campo('tel', 'Telefono', '+39 …', false),
         campo('date', 'Data di arrivo', ''), campo('date', 'Data di partenza', ''),
@@ -129,12 +129,15 @@ try {
 
   // ── Tema, intestazione, piede ──────────────────────────────────────────────
   // Avorio caldo, antracite e bronzo: il logo è nero e grigio, e un accento
-  // caldo dà il registro «lusso» senza competere con le foto. Titoli in
-  // Instrument Serif (sottile, ricercato), testo in Manrope: l'accoppiata «Atelier».
+  // caldo dà il registro «lusso» senza competere con le foto. Tutto in Jost,
+  // titoli a peso 300: il tratto sottile e geometrico del logo (accoppiata
+  // «Essenziale»). Intestazione chiara e centrata: quella scura «a pillola» è
+  // la stessa di Metodo TVB, e un sito di lusso non deve sembrare un altro.
   await api('PATCH', `/api/properties/${ID}`, {
     logo_url: F.logo, logo_dark_url: F.logoChiaro, cover_url: F.jacuzziLed,
+    description: 'Attico di lusso nel centro di Terni con terrazza panoramica di oltre 80 mq, Jacuzzi privata, pergola bioclimatica e cromoterapia. Ideale per coppie.',
     rules: 'La Jacuzzi esterna è a disposizione esclusiva degli ospiti ed è pronta all’uso tutto l’anno.\nSilenzio dopo le 23:00.\nNon sono ammessi party né ospiti non registrati.',
-    theme: { primaryColor: '#8a6a42', secondaryColor: '#c9b28c', bgColor: '#faf8f4', textColor: '#1d1c1a', fontHeading: 'instrument-serif', fontBody: 'manrope', headerStyle: 'solid', borderStyle: 'mixed' },
+    theme: { primaryColor: '#8a6a42', secondaryColor: '#c9b28c', bgColor: '#faf8f4', textColor: '#1d1c1a', fontHeading: 'jost', fontBody: 'jost', headerStyle: 'solid', borderStyle: 'mixed' },
     minisito: {
       // «App ospiti» nell'intestazione no: è l'app del QR, per chi è già dentro.
       active: true, logo_size: 'medium', show_pwa_link: false,
@@ -142,12 +145,12 @@ try {
       seo_title: 'Suite Panoramic Attico con Jacuzzi Privata – Terni Centro',
       seo_description: 'Attico di lusso nel centro di Terni con terrazza panoramica di oltre 80 mq, Jacuzzi privata, pergola bioclimatica e cromoterapia. Ideale per coppie.',
       header_cfg: {
-        style: 'pillola', layout: 'classic', hover: 'underline', always_visible: true, logo_in_nav: true, scroll_behavior: 'smart',
+        style: 'light', layout: 'centered', hover: 'underline', always_visible: true, logo_in_nav: true, scroll_behavior: 'smart',
         buttons: [
-          { id: 'suite', label: 'La Suite', url: '#la-suite', shape: 'pill', variant: 'text', color: '#e8dcc6' },
-          { id: 'wellness', label: 'Wellness', url: '#terrazza-wellness', shape: 'pill', variant: 'text', color: '#e8dcc6' },
-          { id: 'interni', label: 'Interni', url: '#interni', shape: 'pill', variant: 'text', color: '#e8dcc6' },
-          { id: 'posizione', label: 'Posizione', url: '#posizione', shape: 'pill', variant: 'text', color: '#e8dcc6' },
+          { id: 'suite', label: 'La Suite', url: '#la-suite', shape: 'pill', variant: 'text', color: '#1d1c1a' },
+          { id: 'wellness', label: 'Wellness', url: '#terrazza-wellness', shape: 'pill', variant: 'text', color: '#1d1c1a' },
+          { id: 'interni', label: 'Interni', url: '#interni', shape: 'pill', variant: 'text', color: '#1d1c1a' },
+          { id: 'posizione', label: 'Posizione', url: '#posizione', shape: 'pill', variant: 'text', color: '#1d1c1a' },
           { id: 'prenota', label: 'Prenota ora', url: '#prenota', shape: 'pill', variant: 'solid', color: 'primary' },
         ],
       },
@@ -160,14 +163,15 @@ try {
           { id: 'f-info', label: 'Info utili', url: '#info-utili' },
         ],
       },
-      social: {},
+      social: { whatsapp: '+393282262040' },
     },
     // Fuori dai motori finché il cliente non l'ha visto e non ci sono i recapiti.
     indicizzabile: false,
     privacy_data: {
-      titolare_nome: 'Giovanni Brunetti', titolare_forma_giuridica: '', titolare_piva: '', titolare_cf: '',
-      titolare_indirizzo: '', titolare_citta: '', titolare_cap: '', titolare_provincia: '',
-      titolare_email: '', titolare_telefono: '', dpo_nome: '', dpo_email: '',
+      // I dati che Francesco ha messo nell'azienda del cliente.
+      titolare_nome: 'Giovanni Brunetti', titolare_forma_giuridica: '', titolare_piva: '', titolare_cf: 'BRNGNN74E17L117X',
+      titolare_indirizzo: 'Via Damiano Chiesa 15', titolare_citta: 'Terni', titolare_cap: '05100', titolare_provincia: 'TR',
+      titolare_email: 'brunettigio@gmail.com', titolare_telefono: '+39 328 226 2040', dpo_nome: '', dpo_email: '',
       usa_form_contatti: true, usa_newsletter: false, usa_richieste_ospiti: false, usa_prenotazioni: false,
     },
   })
